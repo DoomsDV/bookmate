@@ -1,0 +1,135 @@
+---
+import type { Service } from '../lib/services';
+
+interface Props {
+	services: Service[];
+}
+
+const { services } = Astro.props;
+
+const currencyFormatter = new Intl.NumberFormat('es-PY', {
+	style: 'currency',
+	currency: 'PYG',
+	maximumFractionDigits: 0,
+});
+
+const dateFormatter = new Intl.DateTimeFormat('es-PY', {
+	day: '2-digit',
+	month: 'short',
+	year: 'numeric',
+});
+
+const accentClasses = [
+	'bg-sky-500',
+	'bg-teal-500',
+	'bg-indigo-500',
+	'bg-amber-500',
+	'bg-fuchsia-500',
+	'bg-cyan-500',
+];
+
+const SERVICE_ICON = 'sell';
+
+const toDurationLabel = (value: number) => {
+	if (value <= 0) return 'Sin duracion';
+	if (value === 60) return '1 hora';
+	if (value > 60 && value % 60 === 0) return `${value / 60} horas`;
+	return `${value} min`;
+};
+
+const toDateLabel = (value: string) => {
+	const parsed = Date.parse(value);
+	if (Number.isNaN(parsed)) return 'Fecha no disponible';
+	return dateFormatter.format(new Date(parsed));
+};
+
+const cardItems = services.map((service, index) => ({
+	service,
+	iconClass: accentClasses[index % accentClasses.length],
+}));
+
+const activeServices = services.filter((item) => item.is_active === 1).length;
+---
+
+<section class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+	<div class="flex flex-wrap items-center justify-between gap-4">
+		<div>
+			<p class="text-xs font-bold uppercase tracking-[0.22em] text-[color:var(--on-surface-variant)]/75">
+				Servicios
+			</p>
+			<h2 class="mt-3 text-2xl font-extrabold tracking-[-0.02em] text-[color:var(--on-surface)]">
+				Menu de servicios
+			</h2>
+		</div>
+
+		<div class="flex flex-wrap gap-2 text-xs font-semibold">
+			<span class="rounded-full bg-[color:var(--secondary-container)] px-3 py-1 text-[color:var(--secondary)]">
+				Total: {services.length}
+			</span>
+			<span class="rounded-full border border-emerald-700/20 bg-emerald-700 px-3 py-1 text-white dark:border-emerald-400/35 dark:bg-emerald-400 dark:text-emerald-950">
+				Activos: {activeServices}
+			</span>
+			<span class="rounded-full border border-rose-700/20 bg-rose-700 px-3 py-1 text-white dark:border-rose-400/35 dark:bg-rose-400 dark:text-rose-950">
+				Inactivos: {services.length - activeServices}
+			</span>
+		</div>
+	</div>
+
+	{
+		services.length === 0 ? (
+			<div class="mt-6 rounded-[1.45rem] border border-dashed border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-5 py-7 text-sm text-[color:var(--on-surface-variant)]">
+				No hay servicios registrados para esta organizacion.
+			</div>
+		) : (
+			<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+				{
+					cardItems.map((item) => (
+						<article class="rounded-[1.45rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+							<div class="flex items-start justify-between gap-3">
+								<div class={`flex size-10 items-center justify-center rounded-xl text-white ${item.iconClass}`}>
+									<span class="material-symbols-rounded text-[1rem]">{SERVICE_ICON}</span>
+								</div>
+
+								<span
+									class:list={[
+										'rounded-full px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.2em]',
+										item.service.is_active === 1
+											? 'border border-emerald-700/20 bg-emerald-700 text-white dark:border-emerald-400/35 dark:bg-emerald-400 dark:text-emerald-950'
+											: 'border border-rose-700/20 bg-rose-700 text-white dark:border-rose-400/35 dark:bg-rose-400 dark:text-rose-950',
+									]}
+								>
+									{item.service.is_active === 1 ? 'Activo' : 'Inactivo'}
+								</span>
+							</div>
+
+							<h3 class="mt-4 text-lg font-semibold leading-6 text-[color:var(--on-surface)]">
+								{item.service.name || `Servicio #${item.service.id_service}`}
+							</h3>
+
+							<div class="mt-5 space-y-3 text-sm text-[color:var(--on-surface-variant)]">
+								<div class="flex items-center justify-between">
+									<span>Duracion</span>
+									<span class="font-semibold text-[color:var(--on-surface)]">
+										{toDurationLabel(item.service.duration_minutes)}
+									</span>
+								</div>
+								<div class="flex items-center justify-between">
+									<span>Precio</span>
+									<span class="font-semibold text-[color:var(--on-surface)]">
+										{currencyFormatter.format(item.service.price)}
+									</span>
+								</div>
+								<div class="flex items-center justify-between">
+									<span>Creado</span>
+									<span class="font-semibold text-[color:var(--on-surface)]">
+										{toDateLabel(item.service.created_at)}
+									</span>
+								</div>
+							</div>
+						</article>
+					))
+				}
+			</div>
+		)
+	}
+</section>

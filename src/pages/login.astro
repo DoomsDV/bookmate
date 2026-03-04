@@ -1,0 +1,38 @@
+---
+import LoginForm from '../components/LoginForm.astro';
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+
+const error = Astro.url.searchParams.get('error') ?? '';
+const identifier = Astro.url.searchParams.get('identifier') ?? '';
+const identifierError = Astro.url.searchParams.get('identifier_error') ?? '';
+const passwordError = Astro.url.searchParams.get('password_error') ?? '';
+---
+
+<Layout>
+	<LoginForm
+		error={error}
+		identifier={identifier}
+		identifierError={identifierError}
+		passwordError={passwordError}
+	/>
+</Layout>
+
+<script is:inline>
+	if (typeof window !== 'undefined') {
+		const currentUrl = new URL(window.location.href);
+		const transientParams = ['error', 'identifier', 'identifier_error', 'password_error'];
+		let hasTransientParams = false;
+
+		for (const param of transientParams) {
+			if (currentUrl.searchParams.has(param)) {
+				currentUrl.searchParams.delete(param);
+				hasTransientParams = true;
+			}
+		}
+
+		if (hasTransientParams) {
+			window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+		}
+	}
+</script>

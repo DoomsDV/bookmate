@@ -1,0 +1,56 @@
+---
+import ServicesGrid from '../components/ServicesGrid.astro';
+import SideNav from '../components/SideNav.astro';
+import TopBar from '../components/TopBar.astro';
+import { ServicesApiError, listServices, type Service } from '../lib/services';
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+
+const token = Astro.locals.token ?? '';
+
+let services: Service[] = [];
+let loadError = '';
+
+if (!token) {
+	loadError = 'No hay sesion valida para consultar servicios.';
+} else {
+	try {
+		services = await listServices(token);
+	} catch (error) {
+		loadError =
+			error instanceof ServicesApiError
+				? error.message
+				: 'No fue posible cargar el listado de servicios.';
+	}
+}
+---
+
+<Layout>
+	<div class="min-h-screen">
+		<div
+			class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+			data-app-shell
+			data-sidebar-state="expanded"
+		>
+			<SideNav currentPath={Astro.url.pathname} />
+
+			<div class="grid min-h-full grid-rows-[auto_1fr]">
+				<TopBar />
+
+				<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
+					<section class="grid gap-6">
+						{
+							loadError ? (
+								<div class="rounded-[1.45rem] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 dark:border-rose-950/50 dark:bg-rose-950/20 dark:text-rose-300">
+									{loadError}
+								</div>
+							) : (
+								<ServicesGrid services={services} />
+							)
+						}
+					</section>
+				</main>
+			</div>
+		</div>
+	</div>
+</Layout>

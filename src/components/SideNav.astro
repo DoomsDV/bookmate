@@ -1,13 +1,39 @@
 ---
-const primaryItems = [
-	{ label: 'Dashboard', icon: 'space_dashboard', href: '#dashboard', active: true },
+interface NavItem {
+	label: string;
+	href: string;
+	icon?: string;
+	active?: boolean;
+}
+
+interface Props {
+	currentPath?: string;
+}
+
+const { currentPath = '/' } = Astro.props;
+
+const normalizePath = (path: string) => {
+	if (!path || path === '/') return '/';
+	return path.endsWith('/') ? path.slice(0, -1) : path;
+};
+
+const activePath = normalizePath(currentPath);
+
+const isItemActive = (item: NavItem) => {
+	if (typeof item.active === 'boolean') return item.active;
+	if (!item.href.startsWith('/')) return false;
+	return normalizePath(item.href) === activePath;
+};
+
+const primaryItems: NavItem[] = [
+	{ label: 'Dashboard', icon: 'space_dashboard', href: '/' },
 	{ label: 'Calendario', icon: 'calendar_month', href: '#calendario' },
-	{ label: 'Servicios', icon: 'inventory_2', href: '#servicios' },
+	{ label: 'Servicios', icon: 'inventory_2', href: '/services' },
 	{ label: 'Sucursales', icon: 'storefront', href: '#sucursales' },
 ];
 
-const teamItems = [
-	{ label: 'Personal', href: '#personal', active: true },
+const teamItems: NavItem[] = [
+	{ label: 'Personal', href: '#personal' },
 	{ label: 'Horarios', href: '#horarios' },
 	{ label: 'Cuentas', href: '#cuentas' },
 ];
@@ -53,7 +79,7 @@ const teamItems = [
 								href={item.href}
 								class:list={[
 									'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold no-underline transition',
-									item.active
+									isItemActive(item)
 										? 'bg-[color:var(--primary-container)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'
 										: 'text-[color:var(--on-surface)] hover:bg-[color:var(--secondary-container)]/55',
 								]}
@@ -89,7 +115,7 @@ const teamItems = [
 												href={item.href}
 												class:list={[
 													'flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition',
-													item.active
+													isItemActive(item)
 														? 'bg-[color:var(--primary-container)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'
 														: 'text-[color:var(--on-surface)] hover:bg-[color:var(--secondary-container)]/45',
 												]}
@@ -147,7 +173,7 @@ const teamItems = [
 								data-sidebar-item
 								class:list={[
 									'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold no-underline transition',
-									item.active
+									isItemActive(item)
 										? 'bg-[color:var(--primary-container)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]'
 										: 'text-[color:var(--on-surface)] hover:bg-white/70',
 								]}
@@ -187,7 +213,7 @@ const teamItems = [
 												data-sidebar-item
 												class:list={[
 													'flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition',
-													item.active
+													isItemActive(item)
 														? 'bg-[color:var(--control-surface-strong)] text-[color:var(--primary)] shadow-[0_10px_22px_rgba(47,111,221,0.08)]'
 														: 'text-[color:var(--on-surface)] hover:bg-white/75',
 												]}

@@ -12,7 +12,7 @@ import '../styles/global.css';
 			data-app-shell
 			data-sidebar-state="expanded"
 		>
-			<SideNav />
+			<SideNav currentPath={Astro.url.pathname} />
 
 			<div class="grid min-h-full grid-rows-[auto_1fr]">
 				<TopBar />

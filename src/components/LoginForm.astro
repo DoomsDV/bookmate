@@ -1,0 +1,155 @@
+---
+interface Props {
+	error?: string;
+	identifier?: string;
+	identifierError?: string;
+	passwordError?: string;
+}
+
+const { error = '', identifier = '', identifierError = '', passwordError = '' } = Astro.props;
+---
+
+<section class="grid min-h-screen bg-[color:var(--page-background)] lg:grid-cols-2">
+	<div class="relative overflow-hidden border-b border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] lg:border-b-0 lg:border-r">
+		<div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(102,167,255,0.12),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(47,111,221,0.08),transparent_30%)]"></div>
+
+		<div class="relative flex h-full items-center px-5 py-10 sm:px-8 lg:px-12 xl:px-16">
+			<div class="max-w-2xl">
+				<p class="text-[0.72rem] font-bold uppercase tracking-[0.3em] text-[color:var(--on-surface-variant)]/80">
+					Bookmate access
+				</p>
+				<h1 class="mt-5 text-4xl font-extrabold tracking-[-0.05em] text-[color:var(--on-surface)] sm:text-5xl xl:text-6xl">
+					Accede a tu espacio con una entrada clara y profesional.
+				</h1>
+				<p class="mt-6 max-w-xl text-base leading-8 text-[color:var(--on-surface-variant)] sm:text-lg">
+					La cuenta de acceso debe ser creada por el administrador o dueno de la
+					organizacion. Una vez asignada, solo necesitas tu correo y contrasena.
+				</p>
+
+				<div class="mt-10 max-w-xl rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+					<p class="text-xs font-bold uppercase tracking-[0.22em] text-[color:var(--on-surface-variant)]/75">
+						Acceso interno
+					</p>
+					<p class="mt-4 text-xl font-semibold text-[color:var(--on-surface)]">
+						Sin registro libre ni redes sociales
+					</p>
+					<p class="mt-3 text-sm leading-7 text-[color:var(--on-surface-variant)]">
+						Bookmate usa cuentas administradas por la organizacion. Si aun no tienes una,
+						debes solicitarla al responsable del espacio.
+					</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<div class="flex items-center justify-center px-5 py-8 sm:px-8 lg:px-10 xl:px-14">
+		<div class="w-full rounded-[2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-6 shadow-[0_24px_60px_rgba(15,23,42,0.12)] sm:p-8 lg:max-w-none">
+			<div class="mb-8">
+				<a
+					href="/"
+					class="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--on-surface-variant)] no-underline"
+				>
+					<span class="material-symbols-rounded text-[1rem]">west</span>
+					Volver
+				</a>
+
+				<p class="mt-6 text-[0.72rem] font-bold uppercase tracking-[0.3em] text-[color:var(--on-surface-variant)]/80">
+					Bookmate
+				</p>
+				<h2 class="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-[color:var(--on-surface)] sm:text-4xl">
+					Iniciar sesion
+				</h2>
+				<p class="mt-3 max-w-xl text-sm leading-7 text-[color:var(--on-surface-variant)] sm:text-base">
+					Ingresa con la cuenta creada para ti por el administrador del espacio.
+				</p>
+			</div>
+
+			<form class="grid gap-5" method="post" action="/api/auth/login">
+				{
+					error && (
+						<div class="rounded-[1.25rem] border border-red-300/70 bg-red-50 px-4 py-3 text-sm text-red-700">
+							{error}
+						</div>
+					)
+				}
+
+				<label class="grid gap-2">
+					<span class="text-sm font-semibold text-[color:var(--on-surface)]">Usuario o correo electronico</span>
+					<input
+						type="text"
+						name="identifier"
+						value={identifier}
+						placeholder="tu@organizacion.com"
+						class:list={[
+							'rounded-2xl border bg-[color:var(--control-surface)] px-4 py-3 text-sm text-[color:var(--on-surface)] outline-none transition placeholder:text-[color:var(--on-surface-variant)]/70 focus:ring-2 focus:ring-[color:var(--primary)]/15',
+							identifierError
+								? 'border-red-300 focus:border-red-400'
+								: 'border-[color:var(--shell-border)] focus:border-[color:var(--primary)]',
+						]}
+					/>
+					{
+						identifierError && (
+							<span class="text-sm text-red-600">
+								{identifierError}
+							</span>
+						)
+					}
+				</label>
+
+				<label class="grid gap-2">
+					<span class="text-sm font-semibold text-[color:var(--on-surface)]">Contrasena</span>
+					<input
+						type="password"
+						name="password"
+						placeholder="********"
+						class:list={[
+							'rounded-2xl border bg-[color:var(--control-surface)] px-4 py-3 text-sm text-[color:var(--on-surface)] outline-none transition placeholder:text-[color:var(--on-surface-variant)]/70 focus:ring-2 focus:ring-[color:var(--primary)]/15',
+							passwordError
+								? 'border-red-300 focus:border-red-400'
+								: 'border-[color:var(--shell-border)] focus:border-[color:var(--primary)]',
+						]}
+					/>
+					{
+						passwordError && (
+							<span class="text-sm text-red-600">
+								{passwordError}
+							</span>
+						)
+					}
+				</label>
+
+				<div class="flex items-center justify-between gap-3">
+					<label class="inline-flex items-center gap-3 text-sm text-[color:var(--on-surface-variant)]">
+						<input
+							type="checkbox"
+							name="remember"
+							class="size-4 rounded border border-[color:var(--shell-border)] text-[color:var(--primary)] focus:ring-[color:var(--primary)]"
+						/>
+						Recordarme
+					</label>
+
+					<a href="#" class="text-sm font-semibold text-[color:var(--primary)] no-underline">
+						Necesitas ayuda?
+					</a>
+				</div>
+
+				<button
+					type="submit"
+					class="mt-2 rounded-2xl bg-[color:var(--primary)] px-4 py-3 text-sm font-bold text-white shadow-[0_14px_30px_rgba(47,111,221,0.22)] transition hover:brightness-[1.03] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] focus-visible:ring-offset-2"
+				>
+					Entrar al espacio
+				</button>
+			</form>
+
+			<div class="mt-6 rounded-[1.4rem] border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-4 py-4">
+				<p class="text-sm font-semibold text-[color:var(--on-surface)]">
+					No ves tu cuenta?
+				</p>
+				<p class="mt-2 text-sm leading-6 text-[color:var(--on-surface-variant)]">
+					Solicita acceso al administrador o dueno de tu organizacion para que cree tu
+					usuario en Bookmate.
+				</p>
+			</div>
+		</div>
+	</div>
+</section>
