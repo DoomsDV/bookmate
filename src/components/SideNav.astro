@@ -1,38 +1,42 @@
 ---
 const primaryItems = [
-	{ label: 'Dashboard', icon: 'space_dashboard', href: '#dashboard' },
+	{ label: 'Dashboard', icon: 'space_dashboard', href: '#dashboard', active: true },
 	{ label: 'Calendario', icon: 'calendar_month', href: '#calendario' },
 	{ label: 'Servicios', icon: 'inventory_2', href: '#servicios' },
+	{ label: 'Sucursales', icon: 'storefront', href: '#sucursales' },
 ];
 
 const teamItems = [
-	{ label: 'Personal', href: '#personal' },
+	{ label: 'Personal', href: '#personal', active: true },
 	{ label: 'Horarios', href: '#horarios' },
 	{ label: 'Cuentas', href: '#cuentas' },
 ];
 ---
 
 <div
-	class="pointer-events-none fixed inset-0 z-40 px-4 pb-4 pt-[5.35rem] sm:px-6 sm:pt-[5.75rem] lg:px-8"
+	class="pointer-events-none fixed inset-0 z-50 px-4 py-4 lg:hidden"
 	data-side-nav-shell
 >
-	<div class="absolute inset-0 bg-slate-950/12 opacity-0 transition duration-200" data-side-nav-backdrop></div>
+	<div class="absolute inset-0 bg-slate-950/18 opacity-0 transition duration-200" data-side-nav-backdrop></div>
 
 	<aside
 		id="app-side-nav"
-		class="relative h-full w-[min(20rem,calc(100vw-2rem))] -translate-x-[calc(100%+2rem)] overflow-y-auto rounded-[2rem] border border-white/70 bg-[color:var(--surface-bright)] px-5 py-6 shadow-[0_18px_48px_rgba(15,23,42,0.16)] transition duration-300"
+		class="relative h-full w-[min(20rem,calc(100vw-2rem))] -translate-x-[calc(100%+2rem)] overflow-y-auto rounded-[1.9rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-6 shadow-[0_24px_64px_rgba(15,23,42,0.18)] transition duration-300"
 		data-side-nav
 	>
 		<div class="mb-8 flex items-center justify-between">
-			<div
-				class="flex size-11 items-center justify-center rounded-2xl bg-[color:var(--primary-container)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]"
-			>
-				<span class="material-symbols-rounded text-[1.35rem]">dashboard_customize</span>
+			<div>
+				<p class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-[color:var(--on-surface-variant)]/75">
+					Navegacion
+				</p>
+				<p class="mt-2 [font-family:var(--font-logo)] text-[1.35rem] font-extrabold uppercase tracking-[0.08em] leading-none text-[color:var(--primary)]">
+					Bookmate
+				</p>
 			</div>
 
 			<button
 				type="button"
-				class="flex size-10 items-center justify-center rounded-full text-[color:var(--on-surface-variant)] transition hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]"
+				class="flex size-10 items-center justify-center rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] text-[color:var(--on-surface-variant)] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-[color:var(--control-surface-strong)]"
 				aria-label="Cerrar menu lateral"
 				data-side-nav-close
 			>
@@ -40,26 +44,29 @@ const teamItems = [
 			</button>
 		</div>
 
-		<nav aria-label="Side navigation">
+		<nav aria-label="Side navigation movil">
 			<ul class="space-y-2">
 				{
 					primaryItems.map((item) => (
 						<li>
 							<a
 								href={item.href}
-								class="flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--secondary-container)]/55"
+								class:list={[
+									'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold no-underline transition',
+									item.active
+										? 'bg-[color:var(--primary-container)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'
+										: 'text-[color:var(--on-surface)] hover:bg-[color:var(--secondary-container)]/55',
+								]}
 								data-side-nav-close
 							>
-								<span class="material-symbols-rounded text-[1.1rem] text-[color:var(--on-surface-variant)]">
-									{item.icon}
-								</span>
+								<span class="material-symbols-rounded text-[1.1rem]">{item.icon}</span>
 								<span>{item.label}</span>
 							</a>
 						</li>
 					))
 				}
 
-				<li>
+				<li class="pt-2">
 					<details open class="group">
 						<summary
 							class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--secondary-container)]/55"
@@ -68,25 +75,22 @@ const teamItems = [
 								<span class="material-symbols-rounded text-[1.1rem]">groups</span>
 								<span>Equipo</span>
 							</span>
-
-							<span
-								class="material-symbols-rounded text-[1rem] transition group-open:rotate-180"
-							>
+							<span class="material-symbols-rounded text-[1rem] transition group-open:rotate-180">
 								expand_more
 							</span>
 						</summary>
 
-						<div class="ml-5 mt-1 border-l border-[color:var(--bar-outline)] pl-4">
+						<div class="ml-5 mt-1 border-l border-[color:var(--shell-border)] pl-4">
 							<ul class="space-y-1">
 								{
-									teamItems.map((item, index) => (
+									teamItems.map((item) => (
 										<li>
 											<a
 												href={item.href}
 												class:list={[
 													'flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition',
-													index === 0
-														? 'bg-[color:var(--primary-container)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]'
+													item.active
+														? 'bg-[color:var(--primary-container)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)]'
 														: 'text-[color:var(--on-surface)] hover:bg-[color:var(--secondary-container)]/45',
 												]}
 												data-side-nav-close
@@ -104,3 +108,122 @@ const teamItems = [
 		</nav>
 	</aside>
 </div>
+
+<aside
+	class="hidden h-full border-r border-[color:var(--shell-border)]/85 bg-[color:var(--sidebar-surface)] transition-[width] duration-300 lg:block"
+	data-desktop-sidebar
+>
+	<div class="flex h-full flex-col px-6 py-7 transition-all duration-300" data-sidebar-desktop-inner>
+		<div class="flex items-center gap-3" data-sidebar-brand>
+			<div
+				class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--primary-container)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]"
+			>
+				<span class="material-symbols-rounded text-[1.15rem]">menu_book</span>
+			</div>
+
+			<div data-sidebar-brand-text>
+				<p
+					class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-[color:var(--on-surface-variant)]/75"
+					data-sidebar-caption
+				>
+					Navegacion
+				</p>
+				<p
+					class="mt-3 [font-family:var(--font-logo)] text-[1.45rem] font-extrabold uppercase tracking-[0.08em] leading-none text-[color:var(--primary)]"
+					data-sidebar-title
+				>
+					Bookmate
+				</p>
+			</div>
+		</div>
+
+		<nav class="mt-10" aria-label="Side navigation desktop">
+			<ul class="space-y-2">
+				{
+					primaryItems.map((item) => (
+						<li>
+							<a
+								href={item.href}
+								data-sidebar-item
+								class:list={[
+									'flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold no-underline transition',
+									item.active
+										? 'bg-[color:var(--primary-container)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.95)]'
+										: 'text-[color:var(--on-surface)] hover:bg-white/70',
+								]}
+							>
+								<span class="material-symbols-rounded shrink-0 text-[1.1rem]">{item.icon}</span>
+								<span data-sidebar-label>{item.label}</span>
+							</a>
+						</li>
+					))
+				}
+
+				<li class="pt-2">
+					<details open class="group">
+						<summary
+							class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-[color:var(--primary)] transition hover:bg-white/70"
+							data-sidebar-summary
+						>
+							<span class="flex items-center gap-3">
+								<span class="material-symbols-rounded shrink-0 text-[1.1rem]">groups</span>
+								<span data-sidebar-label>Equipo</span>
+							</span>
+							<span
+								class="material-symbols-rounded text-[1rem] transition group-open:rotate-180"
+								data-sidebar-trailing
+							>
+								expand_more
+							</span>
+						</summary>
+
+						<div class="ml-5 mt-1 border-l border-[color:var(--shell-border)] pl-4" data-team-submenu>
+							<ul class="space-y-1">
+								{
+									teamItems.map((item) => (
+										<li>
+											<a
+												href={item.href}
+												data-sidebar-item
+												class:list={[
+													'flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition',
+													item.active
+														? 'bg-[color:var(--control-surface-strong)] text-[color:var(--primary)] shadow-[0_10px_22px_rgba(47,111,221,0.08)]'
+														: 'text-[color:var(--on-surface)] hover:bg-white/75',
+												]}
+											>
+												<span data-sidebar-label>{item.label}</span>
+											</a>
+										</li>
+									))
+								}
+							</ul>
+						</div>
+					</details>
+				</li>
+			</ul>
+		</nav>
+
+		<div
+			class="mt-auto rounded-[1.45rem] border border-[color:var(--shell-border)] bg-[color:var(--sidebar-card-surface)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
+			data-sidebar-footer
+		>
+			<p class="text-xs font-bold uppercase tracking-[0.22em] text-[color:var(--on-surface-variant)]/75">
+				Estado
+			</p>
+			<p class="mt-3 text-sm font-semibold text-[color:var(--on-surface)]" data-time-greeting>
+				Buenos dias
+			</p>
+		</div>
+	</div>
+</aside>
+
+<script>
+	const greetingNodes = document.querySelectorAll('[data-time-greeting]');
+	const hour = new Date().getHours();
+	const greeting = hour < 12 ? 'Buenos dias' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+
+	for (const node of greetingNodes) {
+		node.textContent = greeting;
+	}
+</script>

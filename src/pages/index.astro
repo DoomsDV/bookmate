@@ -6,75 +6,105 @@ import '../styles/global.css';
 ---
 
 <Layout>
-	<div class="min-h-screen pb-10">
-		<TopBar />
-		<SideNav />
+	<div class="min-h-screen">
+		<div
+			class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+			data-app-shell
+			data-sidebar-state="expanded"
+		>
+			<SideNav />
 
-		<main class="px-4 pt-8 sm:px-6 lg:px-8">
-			<section class="grid w-full gap-6 xl:grid-cols-[minmax(0,1.5fr)_minmax(22rem,1fr)]">
-				<div
-					class="overflow-hidden rounded-[2rem] border border-white/70 bg-[color:var(--surface)]/75 p-6 shadow-[0_24px_80px_rgba(15,23,42,0.12)] backdrop-blur xl:p-8"
-				>
-					<div class="max-w-3xl">
-						<p
-							class="mb-3 inline-flex rounded-full bg-[color:var(--secondary-container)] px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-[color:var(--secondary)]"
-						>
-							Workspace shell
-						</p>
-						<h1 class="text-4xl font-extrabold tracking-[-0.04em] text-[color:var(--on-surface)] sm:text-5xl">
-							Bookmate ahora usa una navegacion lateral invocada desde el top bar.
-						</h1>
-						<p class="mt-4 max-w-2xl text-base leading-7 text-[color:var(--on-surface-variant)] sm:text-lg">
-							El contenido principal mantiene siempre todo el ancho de la pantalla,
-							mientras el side navigation aparece como drawer flotante al pulsar el menu
-							hamburguesa.
-						</p>
-					</div>
+			<div class="grid min-h-full grid-rows-[auto_1fr]">
+				<TopBar />
 
-					<div class="mt-8 grid gap-4 lg:grid-cols-3">
-						<div class="rounded-[1.5rem] bg-white/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-							<p class="text-sm font-semibold text-[color:var(--on-surface)]">Actividad</p>
-							<p class="mt-2 text-sm leading-6 text-[color:var(--on-surface-variant)]">
-								Aqui puedes conectar el contenido principal del dashboard.
-							</p>
+				<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
+					<section class="grid gap-6 xl:grid-cols-[minmax(0,1.45fr)_21rem]">
+						<div class="grid gap-6">
+							<div
+								class="relative overflow-hidden rounded-[1.85rem] bg-[image:var(--hero-gradient)] p-6 text-white shadow-[0_24px_44px_var(--hero-shadow)]"
+							>
+								<div class="absolute inset-y-0 right-0 w-1/2 bg-[image:var(--hero-glow)]"></div>
+								<div class="relative max-w-xl">
+									<p class="text-xs font-bold uppercase tracking-[0.24em] text-white/75">
+										Workspace
+									</p>
+									<h1 class="mt-4 max-w-lg text-3xl font-extrabold leading-tight tracking-[-0.04em] sm:text-4xl">
+										Una interfaz limpia donde sidebar y top bar hablan el mismo idioma.
+									</h1>
+									<p class="mt-4 max-w-lg text-sm leading-7 text-white/82 sm:text-base">
+										El sistema ahora vive dentro de una sola shell visual: panel lateral
+										integrado, cabecera interna y contenido respirando sobre la misma base.
+									</p>
+								</div>
+							</div>
+
+							<div class="grid gap-4 md:grid-cols-3">
+								<div class="rounded-[1.5rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+									<p class="text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--on-surface-variant)]/75">
+										Dashboard
+									</p>
+									<p class="mt-3 text-lg font-semibold text-[color:var(--on-surface)]">Vista principal</p>
+									<p class="mt-2 text-sm leading-6 text-[color:var(--on-surface-variant)]">
+										Bloques ligeros, bordes suaves y acentos medidos.
+									</p>
+								</div>
+								<div class="rounded-[1.5rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+									<p class="text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--on-surface-variant)]/75">
+										Equipo
+									</p>
+									<p class="mt-3 text-lg font-semibold text-[color:var(--on-surface)]">Segundo nivel</p>
+									<p class="mt-2 text-sm leading-6 text-[color:var(--on-surface-variant)]">
+										El submenu mantiene continuidad con el resto del sistema.
+									</p>
+								</div>
+								<div class="rounded-[1.5rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+									<p class="text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--on-surface-variant)]/75">
+										Servicios
+									</p>
+									<p class="mt-3 text-lg font-semibold text-[color:var(--on-surface)]">Layout unificado</p>
+									<p class="mt-2 text-sm leading-6 text-[color:var(--on-surface-variant)]">
+										Ya no hay sensacion de piezas separadas ni barras flotantes.
+									</p>
+								</div>
+							</div>
+
+							<div class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+								<p class="text-sm font-semibold text-[color:var(--on-surface)]">Contenido central</p>
+								<p class="mt-3 max-w-3xl text-sm leading-7 text-[color:var(--on-surface-variant)]">
+									Esta zona queda lista para insertar tus vistas reales. El objetivo del
+									cambio fue construir una shell consistente, elegante y cohesionada, sin
+									repetir la maqueta de referencia de forma literal.
+								</p>
+							</div>
 						</div>
-						<div class="rounded-[1.5rem] bg-white/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-							<p class="text-sm font-semibold text-[color:var(--on-surface)]">Equipo</p>
-							<p class="mt-2 text-sm leading-6 text-[color:var(--on-surface-variant)]">
-								El submenu de Equipo sigue listo para crecer con vistas reales.
-							</p>
-						</div>
-						<div class="rounded-[1.5rem] bg-white/70 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-							<p class="text-sm font-semibold text-[color:var(--on-surface)]">Servicios</p>
-							<p class="mt-2 text-sm leading-6 text-[color:var(--on-surface-variant)]">
-								La shell principal ya no pierde espacio por una columna fija lateral.
-							</p>
-						</div>
-					</div>
-				</div>
 
-				<div class="grid gap-6">
-					<div class="rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_16px_42px_rgba(15,23,42,0.08)] backdrop-blur">
-						<p class="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--secondary)]">
-							Resumen rapido
-						</p>
-						<p class="mt-4 text-sm leading-7 text-[color:var(--on-surface-variant)]">
-							El top bar y el contenido ahora se extienden de borde a borde util, con el
-							mismo padding exterior para mantener consistencia visual.
-						</p>
-					</div>
+						<aside class="grid gap-6">
+							<div class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+								<p class="text-xs font-bold uppercase tracking-[0.22em] text-[color:var(--on-surface-variant)]/75">
+									Sincronia visual
+								</p>
+								<p class="mt-4 text-lg font-semibold text-[color:var(--on-surface)]">
+									Top bar y side nav comparten la misma familia visual.
+								</p>
+								<p class="mt-3 text-sm leading-7 text-[color:var(--on-surface-variant)]">
+									Mismo borde, mismos radios, mismo tipo de relieve y una jerarquia de color
+									controlada.
+								</p>
+							</div>
 
-					<div class="rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_16px_42px_rgba(15,23,42,0.08)] backdrop-blur">
-						<p class="text-sm font-semibold uppercase tracking-[0.18em] text-[color:var(--secondary)]">
-							Interaccion
-						</p>
-						<p class="mt-4 text-sm leading-7 text-[color:var(--on-surface-variant)]">
-							El drawer lateral se cierra con su boton, al tocar el backdrop o con la
-							tecla Escape.
-						</p>
-					</div>
-				</div>
-			</section>
-		</main>
+							<div class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+								<p class="text-xs font-bold uppercase tracking-[0.22em] text-[color:var(--on-surface-variant)]/75">
+									Interaccion
+								</p>
+								<p class="mt-4 text-sm leading-7 text-[color:var(--on-surface-variant)]">
+									En movil el sidebar aparece como drawer. En desktop queda integrado como
+									columna fija dentro de la shell principal.
+								</p>
+							</div>
+						</aside>
+					</section>
+				</main>
+			</div>
+		</div>
 	</div>
 </Layout>

@@ -2,36 +2,122 @@
 
 :root {
 	--font-body: "Nunito Sans", sans-serif;
-	--font-logo: "Lobster", cursive;
-	--background: #edf1f7;
-	--background-accent: #dce7ff;
-	--page-background: #eef2f5;
+	--font-logo: "Nunito Sans", sans-serif;
+	--background: #eef4fa;
+	--background-accent: #d9e8f8;
+	--page-background: #edf3f9;
 	--surface: rgba(255, 251, 254, 0.72);
-	--surface-container: #f8f2ff;
+	--surface-container: #edf5ff;
 	--surface-bright: #ffffff;
-	--bar-outline: #e5e7eb;
-	--primary: #6750a4;
-	--primary-container: #ece1ff;
-	--secondary: #4a4459;
-	--secondary-container: #e8def8;
-	--on-surface: #1d1b20;
-	--on-surface-variant: #625b71;
+	--bar-outline: #d7e0ea;
+	--shell-surface: rgba(255, 255, 255, 0.9);
+	--sidebar-surface: rgba(244, 249, 255, 0.9);
+	--content-surface: rgba(255, 255, 255, 0.36);
+	--shell-border: rgba(201, 214, 228, 0.95);
+	--primary: #2f6fdd;
+	--primary-container: #dcebff;
+	--secondary: #35506f;
+	--secondary-container: #e6f0fb;
+	--on-surface: #15202b;
+	--on-surface-variant: #58708b;
+	--hero-gradient: linear-gradient(135deg, #2f6fdd 0%, #3b82f6 45%, #6aa7ff 100%);
+	--hero-shadow: rgba(47, 111, 221, 0.24);
+	--hero-glow: radial-gradient(circle at center, rgba(255, 255, 255, 0.18), transparent 55%);
+	--control-surface: rgba(255, 255, 255, 0.76);
+	--control-surface-strong: rgba(255, 255, 255, 0.88);
+	--menu-surface: rgba(255, 255, 255, 0.96);
+	--card-surface: rgba(255, 255, 255, 0.82);
+	--card-surface-strong: rgba(255, 255, 255, 0.84);
+	--sidebar-card-surface: rgba(255, 255, 255, 0.72);
+}
+
+html[data-theme='dark'] {
+	--background: #08111b;
+	--background-accent: #132235;
+	--page-background: #09131d;
+	--surface: rgba(10, 19, 30, 0.84);
+	--surface-container: #0e1c2a;
+	--surface-bright: #122131;
+	--bar-outline: #223447;
+	--shell-surface: rgba(9, 18, 29, 0.92);
+	--sidebar-surface: rgba(10, 20, 31, 0.95);
+	--content-surface: rgba(6, 16, 25, 0.42);
+	--shell-border: rgba(40, 58, 78, 0.9);
+	--primary: #66a7ff;
+	--primary-container: #12345c;
+	--secondary: #a8c1dc;
+	--secondary-container: #102337;
+	--on-surface: #edf4fb;
+	--on-surface-variant: #96aec7;
+	--hero-gradient: linear-gradient(135deg, #254a80 0%, #2d5c97 48%, #4d79b1 100%);
+	--hero-shadow: rgba(24, 44, 72, 0.22);
+	--hero-glow: radial-gradient(circle at center, rgba(255, 255, 255, 0.08), transparent 58%);
+	--control-surface: rgba(15, 28, 41, 0.88);
+	--control-surface-strong: rgba(18, 34, 49, 0.96);
+	--menu-surface: rgba(13, 24, 38, 0.98);
+	--card-surface: rgba(14, 25, 37, 0.9);
+	--card-surface-strong: rgba(15, 28, 41, 0.92);
+	--sidebar-card-surface: rgba(14, 26, 38, 0.92);
 }
 
 html {
 	background:
-		radial-gradient(circle at top left, rgba(220, 231, 255, 0.95), transparent 32%),
-		radial-gradient(circle at top right, rgba(236, 225, 255, 0.9), transparent 24%),
-		linear-gradient(180deg, #f4f7fb 0%, var(--background) 48%, #eef2f8 100%);
+		radial-gradient(circle at top left, rgba(217, 232, 248, 0.96), transparent 32%),
+		radial-gradient(circle at top right, rgba(229, 240, 252, 0.84), transparent 24%),
+		linear-gradient(180deg, #f8fbfe 0%, var(--background) 52%, #edf3f9 100%);
 }
 
 body {
 	font-family: var(--font-body);
 	background-color: var(--page-background);
 	background:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)),
-		linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.28));
+		linear-gradient(135deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0)),
+		linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.3));
 	color: var(--on-surface);
+}
+
+html[data-theme='dark'] body {
+	background:
+		linear-gradient(135deg, rgba(24, 41, 58, 0.35), rgba(7, 15, 23, 0)),
+		linear-gradient(180deg, transparent, rgba(6, 13, 20, 0.34));
+}
+
+@media (min-width: 1024px) {
+	.app-shell {
+		grid-template-columns: 17.5rem minmax(0, 1fr);
+		transition: grid-template-columns 220ms ease;
+	}
+
+	[data-app-shell][data-sidebar-state="collapsed"] {
+		grid-template-columns: 5.5rem minmax(0, 1fr);
+	}
+
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-desktop-inner] {
+		padding-left: 0.875rem;
+		padding-right: 0.875rem;
+	}
+
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand] {
+		justify-content: center;
+	}
+
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand-text],
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-label],
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-trailing],
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-footer] {
+		display: none;
+	}
+
+	[data-app-shell][data-sidebar-state="collapsed"] [data-team-submenu] {
+		display: none;
+	}
+
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-item],
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-summary] {
+		justify-content: center;
+		padding-left: 0.75rem;
+		padding-right: 0.75rem;
+	}
 }
 
 a,
