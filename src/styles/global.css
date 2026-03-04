@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+:root {
+	--font-body: "Nunito Sans", sans-serif;
+	--font-logo: "Lobster", cursive;
+	--background: #edf1f7;
+	--background-accent: #dce7ff;
+	--page-background: #eef2f5;
+	--surface: rgba(255, 251, 254, 0.72);
+	--surface-container: #f8f2ff;
+	--surface-bright: #ffffff;
+	--bar-outline: #e5e7eb;
+	--primary: #6750a4;
+	--primary-container: #ece1ff;
+	--secondary: #4a4459;
+	--secondary-container: #e8def8;
+	--on-surface: #1d1b20;
+	--on-surface-variant: #625b71;
+}
+
+html {
+	background:
+		radial-gradient(circle at top left, rgba(220, 231, 255, 0.95), transparent 32%),
+		radial-gradient(circle at top right, rgba(236, 225, 255, 0.9), transparent 24%),
+		linear-gradient(180deg, #f4f7fb 0%, var(--background) 48%, #eef2f8 100%);
+}
+
+body {
+	font-family: var(--font-body);
+	background-color: var(--page-background);
+	background:
+		linear-gradient(135deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0)),
+		linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.28));
+	color: var(--on-surface);
+}
+
+a,
+button {
+	-webkit-tap-highlight-color: transparent;
+}
+
+.material-symbols-rounded {
+	font-family: "Material Symbols Rounded";
+	font-weight: normal;
+	font-style: normal;
+	font-size: 24px;
+	line-height: 1;
+	letter-spacing: normal;
+	text-transform: none;
+	display: inline-block;
+	white-space: nowrap;
+	word-wrap: normal;
+	direction: ltr;
+	-webkit-font-smoothing: antialiased;
+}

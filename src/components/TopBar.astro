@@ -1,0 +1,134 @@
+---
+interface Props {
+	userName?: string;
+}
+
+const { userName = 'Perfil' } = Astro.props;
+---
+
+<header class="sticky top-0 z-50 w-full px-4 pt-4 sm:px-6 lg:px-8">
+	<div
+		class="flex w-full items-center justify-between rounded-[0.45rem] border border-[color:var(--bar-outline)] bg-[color:var(--surface-bright)] px-5 py-3 shadow-[0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(15,23,42,0.08)] sm:px-8"
+	>
+		<div class="flex items-center gap-3">
+			<button
+				type="button"
+				class="flex size-11 items-center justify-center rounded-full text-[color:var(--on-surface-variant)] transition hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]"
+				aria-label="Abrir menu lateral"
+				aria-controls="app-side-nav"
+				aria-expanded="false"
+				data-nav-toggle
+			>
+				<span class="material-symbols-rounded text-[1.25rem]">menu</span>
+			</button>
+
+			<a href="/" class="flex items-center no-underline">
+				<span
+					class="[font-family:var(--font-logo)] text-[2rem] leading-none tracking-[0.01em] text-[color:var(--primary)]"
+				>
+					Bookmate
+				</span>
+			</a>
+		</div>
+
+		<details class="group relative" data-profile-menu>
+			<summary
+				class="flex size-11 cursor-pointer list-none items-center justify-center rounded-full bg-[color:var(--primary)] text-sm font-bold tracking-[0.08em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_8px_18px_rgba(103,80,164,0.24)] outline-none transition duration-200 hover:brightness-[1.03] focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--page-background)]"
+				aria-label={`Abrir menu de ${userName}`}
+			>
+				BM
+			</summary>
+
+			<div
+				class="absolute right-0 top-[calc(100%+0.65rem)] min-w-48 overflow-hidden rounded-2xl border border-[color:var(--bar-outline)] bg-[color:var(--surface-bright)] py-2 shadow-[0_18px_50px_rgba(15,23,42,0.16)]"
+			>
+				<div class="border-b border-black/5 px-4 py-3">
+					<p class="text-sm font-semibold text-[color:var(--on-surface)]">{userName}</p>
+					<p class="text-xs text-[color:var(--on-surface-variant)]">Menu de cuenta</p>
+				</div>
+
+				<a
+					href="/settings"
+					class="flex items-center gap-3 px-4 py-3 text-sm font-medium text-[color:var(--on-surface)] no-underline transition hover:bg-black/5"
+				>
+					<span class="material-symbols-rounded text-[1.15rem] text-[color:var(--on-surface-variant)]">
+						settings
+					</span>
+					Ajustes
+				</a>
+			</div>
+		</details>
+	</div>
+</header>
+
+<script>
+	const profileMenus = document.querySelectorAll('[data-profile-menu]');
+	const navToggle = document.querySelector('[data-nav-toggle]');
+	const sideNavShell = document.querySelector('[data-side-nav-shell]');
+	const sideNav = document.querySelector('[data-side-nav]');
+	const sideNavBackdrop = document.querySelector('[data-side-nav-backdrop]');
+	const sideNavCloseButtons = document.querySelectorAll('[data-side-nav-close]');
+
+	const closeProfileMenus = () => {
+		for (const menu of profileMenus) {
+			menu.removeAttribute('open');
+		}
+	};
+
+	const openSideNav = () => {
+		if (!sideNavShell || !sideNav || !navToggle) return;
+		sideNavShell.classList.remove('pointer-events-none');
+		sideNavShell.classList.add('pointer-events-auto');
+		sideNavBackdrop?.classList.remove('opacity-0');
+		sideNavBackdrop?.classList.add('opacity-100');
+		sideNav.classList.remove('-translate-x-[calc(100%+2rem)]');
+		sideNav.classList.add('translate-x-0');
+		navToggle.setAttribute('aria-expanded', 'true');
+		document.body.classList.add('overflow-hidden');
+	};
+
+	const closeSideNav = () => {
+		if (!sideNavShell || !sideNav || !navToggle) return;
+		sideNavShell.classList.remove('pointer-events-auto');
+		sideNavShell.classList.add('pointer-events-none');
+		sideNavBackdrop?.classList.remove('opacity-100');
+		sideNavBackdrop?.classList.add('opacity-0');
+		sideNav.classList.remove('translate-x-0');
+		sideNav.classList.add('-translate-x-[calc(100%+2rem)]');
+		navToggle.setAttribute('aria-expanded', 'false');
+		document.body.classList.remove('overflow-hidden');
+	};
+
+	const toggleSideNav = () => {
+		if (!sideNav) return;
+		if (sideNav.classList.contains('translate-x-0')) {
+			closeSideNav();
+			return;
+		}
+		closeProfileMenus();
+		openSideNav();
+	};
+
+	const closeOnOutsideClick = (event: any) => {
+		for (const menu of profileMenus) {
+			if (!menu.contains(event.target)) {
+				menu.removeAttribute('open');
+			}
+		}
+	};
+
+	const closeOnEscape = (event: any) => {
+		if (event.key !== 'Escape') return;
+		closeProfileMenus();
+		closeSideNav();
+	};
+
+	navToggle?.addEventListener('click', toggleSideNav);
+	sideNavBackdrop?.addEventListener('click', closeSideNav);
+	for (const button of sideNavCloseButtons) {
+		button.addEventListener('click', closeSideNav);
+	}
+
+	document.addEventListener('click', closeOnOutsideClick);
+	document.addEventListener('keydown', closeOnEscape);
+</script>
