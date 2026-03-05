@@ -1,4 +1,5 @@
 ---
+import FlashMessage from '../components/FlashMessage.astro';
 import ServicesGrid from '../components/ServicesGrid.astro';
 import SideNav from '../components/SideNav.astro';
 import TopBar from '../components/TopBar.astro';
@@ -7,6 +8,7 @@ import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
 
 const token = Astro.locals.token ?? '';
+const successMessage = Astro.url.searchParams.get('success_message') ?? '';
 
 let services: Service[] = [];
 let loadError = '';
@@ -39,11 +41,28 @@ if (!token) {
 
 				<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
 					<section class="grid gap-6">
+						<div class="flex items-center justify-end">
+							<button
+								type="button"
+								class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[color:var(--primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_var(--hero-shadow)] transition hover:brightness-105"
+								data-open-service-modal
+							>
+								<span class="material-symbols-rounded text-[1.1rem]">add</span>
+								Nuevo servicio
+							</button>
+						</div>
+
+						{
+							successMessage ? (
+								<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
+									<FlashMessage message={successMessage} type="success" autoHideMs={4200} />
+								</div>
+							) : null
+						}
+
 						{
 							loadError ? (
-								<div class="rounded-[1.45rem] border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-700 dark:border-rose-950/50 dark:bg-rose-950/20 dark:text-rose-300">
-									{loadError}
-								</div>
+								<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
 							) : (
 								<ServicesGrid services={services} />
 							)
@@ -53,4 +72,314 @@ if (!token) {
 			</div>
 		</div>
 	</div>
+
+	<dialog
+		class="w-[min(32rem,calc(100vw-2rem))] rounded-[1.25rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_26px_80px_rgba(15,23,42,0.28)] backdrop:bg-slate-950/40"
+		data-service-modal
+	>
+		<div class="border-b border-[color:var(--shell-border)] px-5 py-4">
+			<h2 class="text-lg font-bold">Crear servicio</h2>
+			<p class="mt-1 text-sm text-[color:var(--on-surface-variant)]">
+				Completa los campos para registrar un nuevo servicio.
+			</p>
+		</div>
+
+		<form class="grid gap-4 px-5 py-5" data-service-create-form>
+			<div class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/25 dark:text-rose-300" data-form-error></div>
+
+			<label class="grid gap-1.5 text-sm font-semibold">
+				Nombre
+				<input
+					type="text"
+					name="name"
+					maxlength="100"
+					required
+					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					placeholder="Ej: Corte premium"
+				/>
+				<span class="min-h-5 text-xs text-rose-600 dark:text-rose-300" data-field-error="name"></span>
+			</label>
+
+			<label class="grid gap-1.5 text-sm font-semibold">
+				Duracion (minutos)
+				<input
+					type="number"
+					name="duration_minutes"
+					min="1"
+					step="1"
+					required
+					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					placeholder="Ej: 45"
+				/>
+				<span class="min-h-5 text-xs text-rose-600 dark:text-rose-300" data-field-error="duration_minutes"></span>
+			</label>
+
+			<label class="grid gap-1.5 text-sm font-semibold">
+				Precio (opcional)
+				<input
+					type="text"
+					name="price"
+					inputmode="numeric"
+					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					placeholder="Ej: 45.000"
+					data-price-mask
+				/>
+				<span class="min-h-5 text-xs text-rose-600 dark:text-rose-300" data-field-error="price"></span>
+			</label>
+
+			<label class="grid gap-1.5 text-sm font-semibold">
+				Estado
+				<select
+					name="is_active"
+					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+				>
+					<option value="1">Activo</option>
+					<option value="0">Inactivo</option>
+				</select>
+				<span class="min-h-5 text-xs text-rose-600 dark:text-rose-300" data-field-error="is_active"></span>
+			</label>
+
+			<div class="mt-1 flex items-center justify-end gap-2">
+				<button
+					type="button"
+					class="rounded-xl border border-[color:var(--shell-border)] px-4 py-2 text-sm font-semibold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
+					data-close-service-modal
+				>
+					Cancelar
+				</button>
+				<button
+					type="submit"
+					class="inline-flex items-center gap-2 rounded-xl bg-[color:var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+					data-submit-service
+				>
+					<span class="material-symbols-rounded text-[1rem]">check</span>
+					Crear servicio
+				</button>
+			</div>
+		</form>
+	</dialog>
 </Layout>
+
+<script>
+	const modal = document.querySelector('[data-service-modal]');
+	const openButton = document.querySelector('[data-open-service-modal]');
+	const closeButton = document.querySelector('[data-close-service-modal]');
+	const form = document.querySelector('[data-service-create-form]');
+	const submitButton = document.querySelector('[data-submit-service]');
+	const formErrorNode = document.querySelector('[data-form-error]');
+	const fieldErrorNodes = document.querySelectorAll('[data-field-error]');
+	const priceInput = document.querySelector('[data-price-mask]');
+	let closeTimer = null;
+
+	const currentUrl = new URL(window.location.href);
+	if (currentUrl.searchParams.has('success_message')) {
+		currentUrl.searchParams.delete('success_message');
+		window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+	}
+
+	const clearErrors = () => {
+		if (formErrorNode) {
+			formErrorNode.textContent = '';
+			formErrorNode.classList.add('hidden');
+		}
+
+		for (const node of fieldErrorNodes) {
+			node.textContent = '';
+		}
+	};
+
+	const showFormError = (message) => {
+		if (!formErrorNode) return;
+		formErrorNode.textContent = message;
+		formErrorNode.classList.remove('hidden');
+	};
+
+	const openModal = () => {
+		clearErrors();
+		modal?.classList.remove('is-closing');
+		if (closeTimer) {
+			window.clearTimeout(closeTimer);
+			closeTimer = null;
+		}
+		modal?.showModal();
+	};
+
+	const closeModal = () => {
+		if (!modal?.open) return;
+		modal.classList.add('is-closing');
+
+		closeTimer = window.setTimeout(() => {
+			modal.close();
+			modal.classList.remove('is-closing');
+			form?.reset();
+			clearErrors();
+			closeTimer = null;
+		}, 160);
+	};
+
+	openButton?.addEventListener('click', openModal);
+	closeButton?.addEventListener('click', closeModal);
+
+	modal?.addEventListener('click', (event) => {
+		const target = event.target;
+		if (target instanceof HTMLDialogElement) closeModal();
+	});
+
+	const formatPriceValue = (rawValue) => {
+		const digits = String(rawValue || '').replace(/\D/g, '');
+		if (!digits) return '';
+		return Number(digits).toLocaleString('es-PY');
+	};
+
+	priceInput?.addEventListener('input', () => {
+		priceInput.value = formatPriceValue(priceInput.value);
+	});
+
+	form?.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		clearErrors();
+
+		if (!form) return;
+		const formData = new FormData(form);
+
+		const name = String(formData.get('name') || '').trim();
+		const durationRaw = String(formData.get('duration_minutes') || '').trim();
+		const priceRaw = String(formData.get('price') || '').trim();
+		const isActiveRaw = String(formData.get('is_active') || '1').trim();
+		const duration = Number(durationRaw);
+
+		if (!name || !durationRaw || !Number.isFinite(duration)) {
+			showFormError('Completa los campos requeridos antes de continuar.');
+			return;
+		}
+
+		const payload = {
+			name,
+			duration_minutes: duration,
+			is_active: isActiveRaw === '0' ? 0 : 1,
+		};
+
+		if (priceRaw) {
+			const price = Number(priceRaw.replace(/\D/g, ''));
+			if (Number.isFinite(price)) payload.price = price;
+		}
+
+		if (submitButton) submitButton.disabled = true;
+
+		try {
+			const response = await fetch('/api/services', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+				body: JSON.stringify(payload),
+			});
+
+			let data = null;
+			try {
+				data = await response.json();
+			} catch {
+				throw new Error('No fue posible interpretar la respuesta del servidor.');
+			}
+
+			if (!response.ok || !data || data.status !== 'success') {
+				const message = data?.message || 'No fue posible crear el servicio.';
+				showFormError(message);
+
+				const fieldErrors = Array.isArray(data?.errors) ? data.errors : [];
+				for (const error of fieldErrors) {
+					if (!error || typeof error !== 'object') continue;
+					const field = 'field' in error ? String(error.field || '') : '';
+					const messageText = 'message' in error ? String(error.message || '') : '';
+					if (!field || !messageText) continue;
+
+					const fieldNode = document.querySelector(`[data-field-error="${field}"]`);
+					if (fieldNode) fieldNode.textContent = messageText;
+				}
+
+				return;
+			}
+
+			const success =
+				typeof data?.message === 'string' && data.message.trim()
+					? data.message
+					: 'Servicio creado correctamente.';
+
+			closeModal();
+			const nextUrl = new URL(window.location.href);
+			nextUrl.searchParams.set('success_message', success);
+			window.location.assign(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'No fue posible crear el servicio.';
+			showFormError(message);
+		} finally {
+			if (submitButton) submitButton.disabled = false;
+		}
+	});
+</script>
+
+<style is:global>
+	dialog[data-service-modal] {
+		position: fixed;
+		inset: 0;
+		margin: auto;
+		animation: service-modal-in 180ms ease-out;
+	}
+
+	dialog[data-service-modal]::backdrop {
+		animation: service-backdrop-in 180ms ease-out;
+	}
+
+	dialog[data-service-modal].is-closing {
+		animation: service-modal-out 160ms ease-in forwards;
+	}
+
+	dialog[data-service-modal].is-closing::backdrop {
+		animation: service-backdrop-out 160ms ease-in forwards;
+	}
+
+	@keyframes service-modal-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px) scale(0.98);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes service-modal-out {
+		from {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+
+		to {
+			opacity: 0;
+			transform: translateY(8px) scale(0.98);
+		}
+	}
+
+	@keyframes service-backdrop-in {
+		from {
+			opacity: 0;
+		}
+
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes service-backdrop-out {
+		from {
+			opacity: 1;
+		}
+
+		to {
+			opacity: 0;
+		}
+	}
+</style>

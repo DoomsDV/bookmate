@@ -1,0 +1,113 @@
+---
+type MessageType = 'success' | 'error' | 'info' | 'warning';
+
+interface Props {
+	message: string;
+	type?: MessageType;
+	autoHideMs?: number;
+	expand?: boolean;
+	dismissible?: boolean;
+}
+
+const {
+	message,
+	type = 'info',
+	autoHideMs = 0,
+	expand = false,
+	dismissible = true,
+} = Astro.props;
+
+const toneMap: Record<MessageType, { icon: string; title: string; accent: string; iconColor: string }> = {
+	success: {
+		icon: 'check_circle',
+		title: 'Exito',
+		accent: 'bg-emerald-500',
+		iconColor: 'text-emerald-600 dark:text-emerald-300',
+	},
+	error: {
+		icon: 'error',
+		title: 'Error',
+		accent: 'bg-rose-500',
+		iconColor: 'text-rose-600 dark:text-rose-300',
+	},
+	info: {
+		icon: 'info',
+		title: 'Informacion',
+		accent: 'bg-sky-500',
+		iconColor: 'text-sky-600 dark:text-sky-300',
+	},
+	warning: {
+		icon: 'warning',
+		title: 'Atencion',
+		accent: 'bg-amber-500',
+		iconColor: 'text-amber-600 dark:text-amber-300',
+	},
+};
+
+const tone = toneMap[type];
+---
+
+{
+	message ? (
+		<div
+			role="alert"
+			aria-live="polite"
+			class:list={[
+				'group relative overflow-hidden rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-4 text-[color:var(--on-surface)] shadow-[0_12px_28px_rgba(15,23,42,0.12)] transition duration-200 ease-out',
+				expand ? 'w-full' : 'w-[min(100%,32rem)]',
+			]}
+			data-flash-message
+			data-auto-hide-ms={autoHideMs > 0 ? String(autoHideMs) : undefined}
+		>
+			<span class:list={['absolute inset-y-0 left-0 w-1.5', tone.accent]}></span>
+
+			<div class="flex items-start gap-3 pl-1">
+				<span class:list={['material-symbols-rounded text-[1.1rem]', tone.iconColor]}>{tone.icon}</span>
+
+				<div class="min-w-0 flex-1">
+					<p class="text-sm font-bold leading-5">{tone.title}</p>
+					<p class="mt-1 text-sm leading-6 text-[color:var(--on-surface-variant)]">{message}</p>
+				</div>
+
+				{
+					dismissible ? (
+						<button
+							type="button"
+							class="rounded-lg p-1 text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--control-surface)] hover:text-[color:var(--on-surface)]"
+							aria-label="Cerrar mensaje"
+							data-flash-close
+						>
+							<span class="material-symbols-rounded text-[1rem]">close</span>
+						</button>
+					) : null
+				}
+			</div>
+		</div>
+	) : null
+}
+
+<script>
+	const hideMessage = (node:any) => {
+		if (!node || node.dataset.isClosing === '1') return;
+		node.dataset.isClosing = '1';
+		node.classList.add('pointer-events-none', 'translate-y-2', 'scale-[0.98]', 'opacity-0');
+		window.setTimeout(() => node.remove(), 180);
+	};
+
+	const initMessage = (node:any) => {
+		if (!node || node.dataset.flashBound === '1') return;
+		node.dataset.flashBound = '1';
+
+		const closeButton = node.querySelector('[data-flash-close]');
+		closeButton?.addEventListener('click', () => hideMessage(node));
+
+		const delay = Number(node.dataset.autoHideMs || '0');
+		if (Number.isFinite(delay) && delay > 0) {
+			window.setTimeout(() => hideMessage(node), delay);
+		}
+	};
+
+	for (const node of document.querySelectorAll('[data-flash-message]')) {
+		initMessage(node);
+	}
+</script>
