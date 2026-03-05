@@ -12,6 +12,18 @@ export interface Service {
 	created_at: string;
 }
 
+export interface ServicesListMeta {
+	current_page: number;
+	per_page: number;
+	total_records: number;
+	total_pages: number;
+}
+
+export interface ServicesListResult {
+	data: Service[];
+	meta: ServicesListMeta;
+}
+
 export interface ServiceFieldError {
 	field: string;
 	message: string;
@@ -30,9 +42,20 @@ interface CreateServiceSuccessResponse {
 	id_service: number;
 }
 
+interface ServiceSuccessResponse {
+	status: 'success';
+	data: unknown;
+}
+
+interface ServiceActionSuccessResponse {
+	status: 'success';
+	message?: string;
+}
+
 interface ServicesSuccessResponse {
 	status: 'success';
 	data: unknown[];
+	meta?: unknown;
 }
 
 interface ServicesFailureResponse {
@@ -75,7 +98,10 @@ const parseFieldErrors = (value: unknown): ServiceFieldError[] => {
 	});
 };
 
-const fallbackMessageByStatus = (status: number, action: 'list' | 'create') => {
+const fallbackMessageByStatus = (
+	status: number,
+	action: 'list' | 'get' | 'create' | 'update' | 'delete'
+) => {
 	switch (status) {
 		case 400:
 		case 422:
@@ -85,17 +111,22 @@ const fallbackMessageByStatus = (status: number, action: 'list' | 'create') => {
 		case 403:
 			return 'No tienes permisos para realizar esta accion.';
 		case 404:
-			return 'No se encontro el recurso solicitado.';
+			return action === 'get'
+				? 'Servicio no encontrado.'
+				: 'No se encontro el recurso solicitado.';
 		case 409:
-			return action === 'create'
-				? 'Existe un conflicto y no se pudo crear el servicio.'
-				: 'Existe un conflicto al consultar los servicios.';
+			if (action === 'create') return 'Existe un conflicto y no se pudo crear el servicio.';
+			if (action === 'delete')
+				return 'No se puede eliminar el servicio porque esta siendo utilizado en otros registros.';
+			return 'Existe un conflicto al procesar la solicitud.';
 		case 500:
 			return 'Error interno del servidor. Intenta nuevamente.';
 		default:
-			return action === 'create'
-				? 'No fue posible crear el servicio.'
-				: 'No fue posible obtener el listado de servicios.';
+			if (action === 'create') return 'No fue posible crear el servicio.';
+			if (action === 'update') return 'No fue posible actualizar el servicio.';
+			if (action === 'delete') return 'No fue posible eliminar el servicio.';
+			if (action === 'get') return 'No fue posible obtener el servicio.';
+			return 'No fue posible obtener el listado de servicios.';
 	}
 };
 
@@ -117,7 +148,40 @@ const normalizeService = (value: unknown): Service | null => {
 	};
 };
 
-const parseServicesResponse = async (response: Response) => {
+const normalizeMeta = (
+	value: unknown,
+	fallback: { page: number; limit: number; totalRecords: number }
+): ServicesListMeta => {
+	if (!value || typeof value !== 'object') {
+		return {
+			current_page: fallback.page,
+			per_page: fallback.limit,
+			total_records: fallback.totalRecords,
+			total_pages: Math.max(1, Math.ceil(fallback.totalRecords / fallback.limit)),
+		};
+	}
+
+	const source = value as Record<string, unknown>;
+	const currentPage = toNumber(source.current_page, fallback.page);
+	const perPage = toNumber(source.per_page, fallback.limit);
+	const totalRecords = toNumber(source.total_records, fallback.totalRecords);
+	const totalPages = toNumber(
+		source.total_pages,
+		Math.max(1, Math.ceil(Math.max(0, totalRecords) / Math.max(1, perPage)))
+	);
+
+	return {
+		current_page: Math.max(1, Math.floor(currentPage)),
+		per_page: Math.max(1, Math.floor(perPage)),
+		total_records: Math.max(0, Math.floor(totalRecords)),
+		total_pages: Math.max(1, Math.floor(totalPages)),
+	};
+};
+
+const parseServicesResponse = async (
+	response: Response,
+	pagination: { page: number; limit: number }
+): Promise<ServicesListResult> => {
 	let data: ServicesSuccessResponse | ServicesFailureResponse | null = null;
 
 	try {
@@ -144,17 +208,37 @@ const parseServicesResponse = async (response: Response) => {
 		);
 	}
 
-	return data.data
+	const normalizedServices = data.data
 		.map(normalizeService)
 		.filter((service): service is Service => service !== null);
+
+	return {
+		data: normalizedServices,
+		meta: normalizeMeta(data.meta, {
+			page: pagination.page,
+			limit: pagination.limit,
+			totalRecords: normalizedServices.length,
+		}),
+	};
 };
 
-export const listServices = async (token: string) => {
+export const listServices = async (
+	token: string,
+	options: { page?: number; limit?: number } = {}
+): Promise<ServicesListResult> => {
 	if (!token) {
 		throw new ServicesApiError('Token de acceso requerido.', 401);
 	}
 
-	const response = await fetch(SERVICES_URL, {
+	const page = Number.isInteger(options.page) && Number(options.page) > 0 ? Number(options.page) : 1;
+	const limit =
+		Number.isInteger(options.limit) && Number(options.limit) > 0 ? Number(options.limit) : 9;
+
+	const serviceUrl = new URL(SERVICES_URL);
+	serviceUrl.searchParams.set('page', String(page));
+	serviceUrl.searchParams.set('limit', String(limit));
+
+	const response = await fetch(serviceUrl.toString(), {
 		method: 'GET',
 		headers: {
 			Authorization: `Bearer ${token}`,
@@ -162,7 +246,76 @@ export const listServices = async (token: string) => {
 		},
 	});
 
-	return parseServicesResponse(response);
+	return parseServicesResponse(response, { page, limit });
+};
+
+const parseServiceResponse = async (response: Response) => {
+	let data: ServiceSuccessResponse | ServicesFailureResponse | null = null;
+
+	try {
+		data = await response.json();
+	} catch {
+		throw new ServicesApiError('No fue posible interpretar la respuesta del servidor de servicios.', 502);
+	}
+
+	if (
+		!response.ok ||
+		!data ||
+		typeof data !== 'object' ||
+		data.status !== 'success' ||
+		!('data' in data)
+	) {
+		const failureData = (data ?? {}) as ServicesFailureResponse;
+		throw new ServicesApiError(
+			(typeof failureData.message === 'string' && failureData.message.trim()) ||
+				fallbackMessageByStatus(response.status || 400, 'get'),
+			response.status || 400,
+			failureData.details,
+			parseFieldErrors(failureData.errors)
+		);
+	}
+
+	const normalized = normalizeService(data.data);
+	if (!normalized) {
+		throw new ServicesApiError('No fue posible interpretar el servicio solicitado.', 502);
+	}
+
+	return normalized;
+};
+
+const parseServiceActionResponse = async (
+	response: Response,
+	action: 'update' | 'delete'
+) => {
+	let data: ServiceActionSuccessResponse | ServicesFailureResponse | null = null;
+
+	try {
+		data = await response.json();
+	} catch {
+		throw new ServicesApiError('No fue posible interpretar la respuesta del servidor de servicios.', 502);
+	}
+
+	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
+		const failureData = (data ?? {}) as ServicesFailureResponse;
+		throw new ServicesApiError(
+			(typeof failureData.message === 'string' && failureData.message.trim()) ||
+				fallbackMessageByStatus(response.status || 400, action),
+			response.status || 400,
+			failureData.details,
+			parseFieldErrors(failureData.errors)
+		);
+	}
+
+	if (typeof data.message === 'string' && data.message.trim()) {
+		return { message: data.message };
+	}
+
+	return {
+		message:
+			action === 'update'
+				? 'Servicio actualizado correctamente.'
+				: 'Servicio eliminado correctamente.',
+	};
 };
 
 const parseCreateServiceResponse = async (response: Response) => {
@@ -200,6 +353,8 @@ const parseCreateServiceResponse = async (response: Response) => {
 	};
 };
 
+const getServiceUrlById = (serviceId: number) => `${SERVICES_URL}/${serviceId}`;
+
 export const createServiceWithOrds = async (token: string, payload: CreateServicePayload) => {
 	if (!token) {
 		throw new ServicesApiError('Token de acceso requerido.', 401);
@@ -216,4 +371,70 @@ export const createServiceWithOrds = async (token: string, payload: CreateServic
 	});
 
 	return parseCreateServiceResponse(response);
+};
+
+export const getServiceByIdWithOrds = async (token: string, serviceId: number) => {
+	if (!token) {
+		throw new ServicesApiError('Token de acceso requerido.', 401);
+	}
+
+	if (!Number.isInteger(serviceId) || serviceId <= 0) {
+		throw new ServicesApiError('ID de servicio invalido.', 400);
+	}
+
+	const response = await fetch(getServiceUrlById(serviceId), {
+		method: 'GET',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	return parseServiceResponse(response);
+};
+
+export const updateServiceWithOrds = async (
+	token: string,
+	serviceId: number,
+	payload: CreateServicePayload
+) => {
+	if (!token) {
+		throw new ServicesApiError('Token de acceso requerido.', 401);
+	}
+
+	if (!Number.isInteger(serviceId) || serviceId <= 0) {
+		throw new ServicesApiError('ID de servicio invalido.', 400);
+	}
+
+	const response = await fetch(getServiceUrlById(serviceId), {
+		method: 'PUT',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	return parseServiceActionResponse(response, 'update');
+};
+
+export const deleteServiceWithOrds = async (token: string, serviceId: number) => {
+	if (!token) {
+		throw new ServicesApiError('Token de acceso requerido.', 401);
+	}
+
+	if (!Number.isInteger(serviceId) || serviceId <= 0) {
+		throw new ServicesApiError('ID de servicio invalido.', 400);
+	}
+
+	const response = await fetch(getServiceUrlById(serviceId), {
+		method: 'DELETE',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	return parseServiceActionResponse(response, 'delete');
 };

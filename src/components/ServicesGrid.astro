@@ -84,7 +84,14 @@ const activeServices = services.filter((item) => item.is_active === 1).length;
 			<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
 				{
 					cardItems.map((item) => (
-						<article class="rounded-[1.45rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
+						<article
+							class="cursor-pointer rounded-[1.45rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]"
+							data-service-card
+							data-service-id={item.service.id_service}
+							tabindex="0"
+							role="button"
+							aria-label={`Editar servicio ${item.service.name || item.service.id_service}`}
+						>
 							<div class="flex items-start justify-between gap-3">
 								<div class={`flex size-10 items-center justify-center rounded-xl text-white ${item.iconClass}`}>
 									<span class="material-symbols-rounded text-[1rem]">{SERVICE_ICON}</span>

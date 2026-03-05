@@ -1,0 +1,244 @@
+---
+---
+
+<dialog
+	class="w-[min(28rem,calc(100vw-2rem))] rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_26px_80px_rgba(15,23,42,0.28)] backdrop:bg-slate-950/45"
+	data-app-alert-dialog
+>
+	<div class="border-b border-[color:var(--shell-border)] px-5 py-4">
+		<div class="flex items-start gap-3">
+			<div
+				class="mt-0.5 flex size-8 items-center justify-center rounded-lg bg-sky-500 text-white shadow-[0_8px_18px_rgba(14,116,203,0.28)]"
+				data-app-alert-icon-shell
+			>
+				<span class="material-symbols-rounded text-[1rem]" data-app-alert-icon>info</span>
+			</div>
+
+			<div class="min-w-0 flex-1">
+				<h3 class="text-lg font-bold leading-6" data-app-alert-title>Confirmar accion</h3>
+				<p class="mt-2 text-sm leading-6 text-[color:var(--on-surface-variant)]" data-app-alert-message>
+					Estas seguro de continuar?
+				</p>
+			</div>
+		</div>
+	</div>
+
+	<div class="flex items-center justify-end gap-2 px-5 py-4">
+		<button
+			type="button"
+			class="rounded-xl border border-[color:var(--shell-border)] px-4 py-2 text-sm font-semibold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
+			data-app-alert-cancel
+		>
+			Cancelar
+		</button>
+		<button
+			type="button"
+			class="rounded-xl bg-[color:var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105"
+			data-app-alert-confirm
+		>
+			Aceptar
+		</button>
+	</div>
+</dialog>
+
+<script>
+	const dialog = document.querySelector('[data-app-alert-dialog]');
+	if (dialog && dialog.dataset.bound !== '1') {
+		dialog.dataset.bound = '1';
+		const titleNode = dialog.querySelector('[data-app-alert-title]');
+		const messageNode = dialog.querySelector('[data-app-alert-message]');
+		const iconNode = dialog.querySelector('[data-app-alert-icon]');
+		const iconShellNode = dialog.querySelector('[data-app-alert-icon-shell]');
+		const confirmButton = dialog.querySelector('[data-app-alert-confirm]');
+		const cancelButton = dialog.querySelector('[data-app-alert-cancel]');
+
+		let resolver = null;
+		let closingTimer = null;
+
+		const toneMap = {
+			info: {
+				icon: 'info',
+				iconShell: 'bg-sky-500 text-white shadow-[0_8px_18px_rgba(14,116,203,0.28)]',
+			},
+			success: {
+				icon: 'check_circle',
+				iconShell: 'bg-emerald-500 text-white shadow-[0_8px_18px_rgba(5,150,105,0.28)]',
+			},
+			warning: {
+				icon: 'warning',
+				iconShell: 'bg-amber-500 text-white shadow-[0_8px_18px_rgba(217,119,6,0.28)]',
+			},
+			error: {
+				icon: 'delete',
+				iconShell: 'bg-rose-500 text-white shadow-[0_8px_18px_rgba(225,29,72,0.28)]',
+			},
+		};
+
+		const clearToneClasses = () => {
+			iconShellNode?.classList.remove(
+				'bg-sky-500',
+				'bg-emerald-500',
+				'bg-amber-500',
+				'bg-rose-500',
+				'text-white',
+				'shadow-[0_8px_18px_rgba(14,116,203,0.28)]',
+				'shadow-[0_8px_18px_rgba(5,150,105,0.28)]',
+				'shadow-[0_8px_18px_rgba(217,119,6,0.28)]',
+				'shadow-[0_8px_18px_rgba(225,29,72,0.28)]'
+			);
+		};
+
+		const resolveAndClose = (value) => {
+			if (!resolver) return;
+			if (dialog.dataset.isClosing === '1') return;
+			dialog.dataset.isClosing = '1';
+			dialog.classList.add('is-closing');
+
+			closingTimer = window.setTimeout(() => {
+				dialog.close();
+				dialog.classList.remove('is-closing');
+				dialog.dataset.isClosing = '0';
+				const resolve = resolver;
+				resolver = null;
+				resolve(value);
+			}, 160);
+		};
+
+		const showDialog = (options = {}) => {
+			const mode = options.mode === 'alert' ? 'alert' : 'confirm';
+			const tone = toneMap[options.type] || toneMap.info;
+			if (titleNode) {
+				titleNode.textContent =
+					typeof options.title === 'string' && options.title.trim()
+						? options.title
+						: mode === 'alert'
+							? 'Aviso'
+							: 'Confirmar accion';
+			}
+			if (messageNode) {
+				messageNode.textContent =
+					typeof options.message === 'string' && options.message.trim()
+						? options.message
+						: 'Deseas continuar?';
+			}
+			if (iconNode) iconNode.textContent = tone.icon;
+			clearToneClasses();
+			if (iconShellNode) {
+				for (const className of tone.iconShell.split(' ')) {
+					iconShellNode.classList.add(className);
+				}
+			}
+
+			if (confirmButton) {
+				confirmButton.textContent =
+					typeof options.confirmText === 'string' && options.confirmText.trim()
+						? options.confirmText
+						: mode === 'alert'
+							? 'Entendido'
+							: 'Aceptar';
+			}
+
+			if (cancelButton) {
+				cancelButton.textContent =
+					typeof options.cancelText === 'string' && options.cancelText.trim()
+						? options.cancelText
+						: 'Cancelar';
+				if (mode === 'alert') cancelButton.classList.add('hidden');
+				else cancelButton.classList.remove('hidden');
+			}
+
+			if (closingTimer) {
+				window.clearTimeout(closingTimer);
+				closingTimer = null;
+			}
+
+			dialog.dataset.isClosing = '0';
+			dialog.classList.remove('is-closing');
+			if (!dialog.open) dialog.showModal();
+
+			return new Promise((resolve) => {
+				resolver = resolve;
+			});
+		};
+
+		confirmButton?.addEventListener('click', () => resolveAndClose(true));
+		cancelButton?.addEventListener('click', () => resolveAndClose(false));
+		dialog.addEventListener('cancel', (event) => {
+			event.preventDefault();
+			resolveAndClose(false);
+		});
+		dialog.addEventListener('click', (event) => {
+			if (event.target instanceof HTMLDialogElement) resolveAndClose(false);
+		});
+
+		window.BookmateAlert = {
+			alert: (options = {}) => showDialog({ ...options, mode: 'alert' }),
+			confirm: (options = {}) => showDialog({ ...options, mode: 'confirm' }),
+		};
+	}
+</script>
+
+<style is:global>
+	dialog[data-app-alert-dialog] {
+		position: fixed;
+		inset: 0;
+		margin: auto;
+		animation: app-alert-in 180ms ease-out;
+	}
+
+	dialog[data-app-alert-dialog]::backdrop {
+		animation: app-alert-backdrop-in 180ms ease-out;
+	}
+
+	dialog[data-app-alert-dialog].is-closing {
+		animation: app-alert-out 160ms ease-in forwards;
+	}
+
+	dialog[data-app-alert-dialog].is-closing::backdrop {
+		animation: app-alert-backdrop-out 160ms ease-in forwards;
+	}
+
+	@keyframes app-alert-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px) scale(0.98);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes app-alert-out {
+		from {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+
+		to {
+			opacity: 0;
+			transform: translateY(8px) scale(0.98);
+		}
+	}
+
+	@keyframes app-alert-backdrop-in {
+		from {
+			opacity: 0;
+		}
+
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes app-alert-backdrop-out {
+		from {
+			opacity: 1;
+		}
+
+		to {
+			opacity: 0;
+		}
+	}
+</style>
