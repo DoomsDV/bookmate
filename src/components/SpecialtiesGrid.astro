@@ -1,0 +1,126 @@
+---
+import type { Specialty } from '../lib/specialties';
+
+interface Props {
+	specialties: Specialty[];
+}
+
+const { specialties } = Astro.props;
+
+const dateFormatter = new Intl.DateTimeFormat('es-PY', {
+	day: '2-digit',
+	month: 'short',
+	year: 'numeric',
+});
+
+const accentClasses = [
+	'bg-sky-500',
+	'bg-teal-500',
+	'bg-indigo-500',
+	'bg-amber-500',
+	'bg-fuchsia-500',
+	'bg-cyan-500',
+];
+
+const SPECIALTY_ICON = 'workspace_premium';
+
+const toDateLabel = (value: string) => {
+	const parsed = Date.parse(value);
+	if (Number.isNaN(parsed)) return 'Fecha no disponible';
+	return dateFormatter.format(new Date(parsed));
+};
+
+const toDescriptionLabel = (value: string) => {
+	const text = String(value || '').trim();
+	return text || 'Sin descripcion';
+};
+
+const cardItems = specialties.map((specialty, index) => ({
+	specialty,
+	iconClass: accentClasses[index % accentClasses.length],
+}));
+
+const activeSpecialties = specialties.filter((item) => item.is_active === 1).length;
+---
+
+<section class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+	<div class="flex flex-wrap items-center justify-between gap-4">
+		<div>
+			<p class="text-xs font-bold uppercase tracking-[0.22em] text-[color:var(--on-surface-variant)]/75">
+				Especialidades
+			</p>
+			<h2 class="mt-3 text-2xl font-extrabold tracking-[-0.02em] text-[color:var(--on-surface)]">
+				Menu de especialidades
+			</h2>
+		</div>
+
+		<div class="flex flex-wrap gap-2 text-xs font-semibold">
+			<span class="rounded-full bg-[color:var(--secondary-container)] px-3 py-1 text-[color:var(--secondary)]">
+				Total: {specialties.length}
+			</span>
+			<span class="rounded-full border border-emerald-700/20 bg-emerald-700 px-3 py-1 text-white dark:border-emerald-400/35 dark:bg-emerald-400 dark:text-emerald-950">
+				Activas: {activeSpecialties}
+			</span>
+			<span class="rounded-full border border-rose-700/20 bg-rose-700 px-3 py-1 text-white dark:border-rose-400/35 dark:bg-rose-400 dark:text-rose-950">
+				Inactivas: {specialties.length - activeSpecialties}
+			</span>
+		</div>
+	</div>
+
+	{
+		specialties.length === 0 ? (
+			<div class="mt-6 rounded-[1.45rem] border border-dashed border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-5 py-7 text-sm text-[color:var(--on-surface-variant)]">
+				No hay especialidades registradas para esta organizacion.
+			</div>
+		) : (
+			<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+				{
+					cardItems.map((item) => (
+						<article
+							class="cursor-pointer rounded-[1.45rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]"
+							data-specialty-card
+							data-specialty-id={item.specialty.id_specialty}
+							tabindex="0"
+							role="button"
+							aria-label={`Editar especialidad ${item.specialty.name || item.specialty.id_specialty}`}
+						>
+							<div class="flex items-start justify-between gap-3">
+								<div class={`flex size-10 items-center justify-center rounded-xl text-white ${item.iconClass}`}>
+									<span class="material-symbols-rounded text-[1rem]">{SPECIALTY_ICON}</span>
+								</div>
+
+								<span
+									class:list={[
+										'rounded-full px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.2em]',
+										item.specialty.is_active === 1
+											? 'border border-emerald-700/20 bg-emerald-700 text-white dark:border-emerald-400/35 dark:bg-emerald-400 dark:text-emerald-950'
+											: 'border border-rose-700/20 bg-rose-700 text-white dark:border-rose-400/35 dark:bg-rose-400 dark:text-rose-950',
+									]}
+								>
+									{item.specialty.is_active === 1 ? 'Activa' : 'Inactiva'}
+								</span>
+							</div>
+
+							<h3 class="mt-4 text-lg font-semibold leading-6 text-[color:var(--on-surface)]">
+								{item.specialty.name || `Especialidad #${item.specialty.id_specialty}`}
+							</h3>
+
+							<p class="mt-2 text-sm text-[color:var(--on-surface-variant)]">
+								{toDescriptionLabel(item.specialty.description)}
+							</p>
+
+							<div class="mt-5 space-y-3 text-sm text-[color:var(--on-surface-variant)]">
+								<div class="flex items-center justify-between">
+									<span>Creada</span>
+									<span class="font-semibold text-[color:var(--on-surface)]">
+										{toDateLabel(item.specialty.created_at)}
+									</span>
+								</div>
+							</div>
+						</article>
+					))
+				}
+			</div>
+		)
+	}
+</section>

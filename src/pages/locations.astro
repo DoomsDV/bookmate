@@ -1,0 +1,985 @@
+---
+import AppAlert from '../components/AppAlert.astro';
+import FlashMessage from '../components/FlashMessage.astro';
+import LocationsGrid from '../components/LocationsGrid.astro';
+import SideNav from '../components/SideNav.astro';
+import TopBar from '../components/TopBar.astro';
+import { LocationsApiError, listLocations, type Location } from '../lib/locations';
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+
+const token = Astro.locals.token ?? '';
+const PAGE_SIZE = 9;
+const rawPage = Number(Astro.url.searchParams.get('page') || '1');
+const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+const flashMessage = Astro.url.searchParams.get('flash_message') ?? '';
+const flashTypeRaw = Astro.url.searchParams.get('flash_type') ?? 'success';
+const validFlashTypes = ['success', 'error', 'info', 'warning'] as const;
+type FlashType = (typeof validFlashTypes)[number];
+const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
+	? (flashTypeRaw as FlashType)
+	: 'info';
+
+let locations: Location[] = [];
+let loadError = '';
+let pagination = {
+	current_page: currentPage,
+	per_page: PAGE_SIZE,
+	total_records: 0,
+	total_pages: 1,
+};
+
+if (!token) {
+	loadError = 'No hay sesion valida para consultar sucursales.';
+} else {
+	try {
+		const listResult = await listLocations(token, { page: currentPage, limit: PAGE_SIZE });
+		locations = listResult.data;
+		pagination = listResult.meta;
+	} catch (error) {
+		loadError =
+			error instanceof LocationsApiError
+				? error.message
+				: 'No fue posible cargar el listado de sucursales.';
+	}
+}
+
+const totalPages = Math.max(1, pagination.total_pages);
+const safeCurrentPage = Math.min(Math.max(1, pagination.current_page), totalPages);
+const canPrevPage = safeCurrentPage > 1;
+const canNextPage = safeCurrentPage < totalPages;
+
+const toPageHref = (page: number) => {
+	const nextUrl = new URL(Astro.url);
+	nextUrl.searchParams.set('page', String(page));
+	nextUrl.searchParams.delete('flash_message');
+	nextUrl.searchParams.delete('flash_type');
+	return `${nextUrl.pathname}${nextUrl.search}`;
+};
+
+const pageWindowStart = Math.max(1, safeCurrentPage - 1);
+const pageWindowEnd = Math.min(totalPages, safeCurrentPage + 1);
+const visiblePages = Array.from(
+	{ length: pageWindowEnd - pageWindowStart + 1 },
+	(_, index) => pageWindowStart + index
+);
+---
+
+<Layout>
+	<div class="min-h-screen">
+		<div
+			class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+			data-app-shell
+			data-sidebar-state="expanded"
+		>
+			<SideNav currentPath={Astro.url.pathname} />
+
+			<div class="grid min-h-full grid-rows-[auto_1fr]">
+				<TopBar />
+
+				<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
+					<section class="grid gap-6">
+						<div class="flex items-center justify-end">
+							<button
+								type="button"
+								class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[color:var(--primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_var(--hero-shadow)] transition hover:brightness-105"
+								data-open-location-modal
+							>
+								<span class="material-symbols-rounded text-[1.1rem]">add</span>
+								Nueva sucursal
+							</button>
+						</div>
+
+						{
+							flashMessage ? (
+								<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
+									<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
+								</div>
+							) : null
+						}
+
+						{
+							loadError ? (
+								<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
+							) : (
+								<div class="grid gap-5">
+									<LocationsGrid locations={locations} />
+
+									<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+										<p class="text-sm text-[color:var(--on-surface-variant)]">
+											Pagina <span class="font-semibold text-[color:var(--on-surface)]">{safeCurrentPage}</span> de
+											<span class="font-semibold text-[color:var(--on-surface)]"> {totalPages}</span>
+											<span class="mx-2">-</span>
+											Total de
+											<span class="font-semibold text-[color:var(--on-surface)]">
+												{` ${pagination.total_records} `}
+											</span>
+											sucursales
+										</p>
+
+										<nav class="flex items-center gap-2" aria-label="Paginacion sucursales">
+											{
+												canPrevPage ? (
+													<a
+														href={toPageHref(safeCurrentPage - 1)}
+														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+													>
+														Anterior
+													</a>
+												) : (
+													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
+														Anterior
+													</span>
+												)
+											}
+
+											{
+												visiblePages.map((page) =>
+													page === safeCurrentPage ? (
+														<span class="rounded-lg bg-[color:var(--primary)] px-3 py-1.5 text-sm font-bold text-white">
+															{page}
+														</span>
+													) : (
+														<a
+															href={toPageHref(page)}
+															class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+														>
+															{page}
+														</a>
+													)
+												)
+											}
+
+											{
+												canNextPage ? (
+													<a
+														href={toPageHref(safeCurrentPage + 1)}
+														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+													>
+														Siguiente
+													</a>
+												) : (
+													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
+														Siguiente
+													</span>
+												)
+											}
+										</nav>
+									</div>
+								</div>
+							)
+						}
+					</section>
+				</main>
+			</div>
+		</div>
+	</div>
+
+	<dialog
+		class="w-[min(42rem,calc(100vw-2rem))] rounded-[1.25rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_26px_80px_rgba(15,23,42,0.28)] backdrop:bg-slate-950/40"
+		data-location-modal
+	>
+		<div class="border-b border-[color:var(--shell-border)] px-5 py-4">
+			<h2 class="text-lg font-bold" data-location-modal-title>Crear sucursal</h2>
+			<p class="mt-1 text-sm text-[color:var(--on-surface-variant)]" data-location-modal-description>
+				Completa los campos para registrar una nueva sucursal.
+			</p>
+		</div>
+
+		<form class="relative grid gap-3 px-5 py-5" data-location-form>
+			<div
+				class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-b-[1.25rem] bg-[color:var(--surface-bright)]/78 backdrop-blur-[1px]"
+				data-location-loading
+			>
+				<div class="inline-flex items-center gap-2 rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+					<span class="material-symbols-rounded animate-spin text-[1rem]">progress_activity</span>
+					Cargando sucursal...
+				</div>
+			</div>
+
+			<div class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/25 dark:text-rose-300" data-form-error></div>
+
+			<label class="grid gap-1 text-sm font-semibold">
+				Nombre
+				<input
+					type="text"
+					name="name"
+					maxlength="100"
+					required
+					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					placeholder="Ej: Casa Central"
+				/>
+				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="name"></span>
+			</label>
+
+			<label class="grid gap-1 text-sm font-semibold">
+				Direccion
+				<input
+					type="text"
+					name="address"
+					maxlength="255"
+					required
+					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					placeholder="Ej: Av. Principal 123"
+				/>
+				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="address"></span>
+			</label>
+
+			<div class="grid gap-3 sm:grid-cols-2">
+				<label class="grid gap-1 text-sm font-semibold">
+					Departamento
+					<select
+						name="dep_id_department"
+						required
+						data-department-select
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					>
+						<option value="">Selecciona un departamento</option>
+					</select>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="dep_id_department"></span>
+				</label>
+
+				<label class="grid gap-1 text-sm font-semibold">
+					Ciudad
+					<select
+						name="cit_id_city"
+						required
+						disabled
+						data-city-select
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-70"
+					>
+						<option value="">Selecciona un departamento primero</option>
+					</select>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="cit_id_city"></span>
+				</label>
+			</div>
+
+			<div class="grid gap-3 sm:grid-cols-2">
+				<label class="grid gap-1 text-sm font-semibold">
+					Latitud (opcional)
+					<input
+						type="number"
+						name="latitude"
+						step="any"
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+						placeholder="-25.3000"
+					/>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="latitude"></span>
+				</label>
+
+				<label class="grid gap-1 text-sm font-semibold">
+					Longitud (opcional)
+					<input
+						type="number"
+						name="longitude"
+						step="any"
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+						placeholder="-57.6200"
+					/>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="longitude"></span>
+				</label>
+			</div>
+
+			<label class="grid gap-1 text-sm font-semibold">
+				Estado
+				<select
+					name="is_active"
+					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+				>
+					<option value="1">Activa</option>
+					<option value="0">Inactiva</option>
+				</select>
+				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="is_active"></span>
+			</label>
+
+			<div class="mt-1 flex items-center justify-between gap-2">
+				<button
+					type="button"
+					class="hidden rounded-xl border border-rose-500/30 bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+					data-delete-location
+				>
+					<span class="material-symbols-rounded mr-1 align-[-0.2em] text-[1rem]">delete</span>
+					Eliminar
+				</button>
+
+				<div class="ml-auto flex items-center justify-end gap-2">
+					<button
+						type="button"
+						class="rounded-xl border border-[color:var(--shell-border)] px-4 py-2 text-sm font-semibold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
+						data-close-location-modal
+					>
+						Cancelar
+					</button>
+					<button
+						type="submit"
+						class="inline-flex items-center gap-2 rounded-xl bg-[color:var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+						data-submit-location
+					>
+						<span class="material-symbols-rounded text-[1rem]" data-submit-location-icon>check</span>
+						<span data-submit-location-label>Crear sucursal</span>
+					</button>
+				</div>
+			</div>
+		</form>
+	</dialog>
+
+	<AppAlert />
+</Layout>
+
+<script>
+	const modal = document.querySelector('[data-location-modal]');
+	const openButton = document.querySelector('[data-open-location-modal]');
+	const closeButton = document.querySelector('[data-close-location-modal]');
+	const deleteButton = document.querySelector('[data-delete-location]');
+	const form = document.querySelector('[data-location-form]');
+	const submitButton = document.querySelector('[data-submit-location]');
+	const submitLabel = document.querySelector('[data-submit-location-label]');
+	const submitIcon = document.querySelector('[data-submit-location-icon]');
+	const formErrorNode = document.querySelector('[data-form-error]');
+	const fieldErrorNodes = document.querySelectorAll('[data-field-error]');
+	const loadingNode = document.querySelector('[data-location-loading]');
+	const modalTitle = document.querySelector('[data-location-modal-title]');
+	const modalDescription = document.querySelector('[data-location-modal-description]');
+	const locationCards = document.querySelectorAll('[data-location-card]');
+	const nameInput = form?.querySelector('[name="name"]');
+	const addressInput = form?.querySelector('[name="address"]');
+	const citySelect = form?.querySelector('[data-city-select]');
+	const departmentSelect = form?.querySelector('[data-department-select]');
+	const latitudeInput = form?.querySelector('[name="latitude"]');
+	const longitudeInput = form?.querySelector('[name="longitude"]');
+	const statusInput = form?.querySelector('[name="is_active"]');
+	const formFields = form?.querySelectorAll('input, select, textarea');
+	let closeTimer = null;
+	let mode = 'create';
+	let editingLocationId = 0;
+	let locationReadRequestSeq = 0;
+	let citiesRequestSeq = 0;
+	let departmentsLoaded = false;
+	let departmentsLoadPromise = null;
+	const citiesByDepartment = new Map();
+
+	const currentUrl = new URL(window.location.href);
+	if (currentUrl.searchParams.has('flash_message')) {
+		currentUrl.searchParams.delete('flash_message');
+		currentUrl.searchParams.delete('flash_type');
+		window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+	}
+
+	const redirectWithFlash = (message, type = 'success') => {
+		const nextUrl = new URL(window.location.href);
+		nextUrl.searchParams.set('flash_message', message);
+		nextUrl.searchParams.set('flash_type', type);
+		window.location.assign(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+	};
+
+	const clearErrors = () => {
+		if (formErrorNode) {
+			formErrorNode.textContent = '';
+			formErrorNode.classList.add('hidden');
+		}
+
+		for (const node of fieldErrorNodes) {
+			node.textContent = '';
+			node.classList.add('hidden');
+		}
+	};
+
+	const showFormError = (message) => {
+		if (!formErrorNode) return;
+		formErrorNode.textContent = message;
+		formErrorNode.classList.remove('hidden');
+	};
+
+	const setSelectOptions = (selectNode, items, config) => {
+		if (!selectNode) return;
+
+		selectNode.innerHTML = '';
+		const placeholderOption = document.createElement('option');
+		placeholderOption.value = '';
+		placeholderOption.textContent = config.placeholder;
+		selectNode.appendChild(placeholderOption);
+
+		for (const item of items) {
+			const option = document.createElement('option');
+			option.value = String(config.getValue(item));
+			option.textContent = config.getLabel(item);
+			selectNode.appendChild(option);
+		}
+
+		if (config.selectedValue) {
+			selectNode.value = String(config.selectedValue);
+		}
+	};
+
+	const renderDepartmentOptions = (departments, selectedDepartmentId = 0, placeholder = 'Selecciona un departamento') => {
+		setSelectOptions(departmentSelect, departments, {
+			placeholder,
+			selectedValue: selectedDepartmentId > 0 ? selectedDepartmentId : '',
+			getValue: (item) => item.id_department,
+			getLabel: (item) => item.description || `Departamento #${item.id_department}`,
+		});
+	};
+
+	const renderCityOptions = (cities, selectedCityId = 0, placeholder = 'Selecciona una ciudad') => {
+		setSelectOptions(citySelect, cities, {
+			placeholder,
+			selectedValue: selectedCityId > 0 ? selectedCityId : '',
+			getValue: (item) => item.id_city,
+			getLabel: (item) => item.description || `Ciudad #${item.id_city}`,
+		});
+	};
+
+	const fetchCatalogResource = async (url) => {
+		const response = await fetch(url, {
+			method: 'GET',
+			headers: { Accept: 'application/json' },
+		});
+
+		let data = null;
+		try {
+			data = await response.json();
+		} catch {
+			throw new Error('No fue posible interpretar la respuesta de catalogos.');
+		}
+
+		if (!response.ok || !data || data.status !== 'success' || !Array.isArray(data.data)) {
+			throw new Error(data?.message || 'No fue posible cargar catalogos.');
+		}
+
+		return data.data;
+	};
+
+	const ensureDepartmentsLoaded = async () => {
+		if (departmentsLoaded) return;
+		if (departmentsLoadPromise) return departmentsLoadPromise;
+
+		renderDepartmentOptions([], 0, 'Cargando departamentos...');
+		if (departmentSelect) departmentSelect.disabled = true;
+
+		departmentsLoadPromise = (async () => {
+			const departments = await fetchCatalogResource('/api/catalog/departments');
+			departmentsLoaded = true;
+			renderDepartmentOptions(departments);
+		})()
+			.catch((error) => {
+				renderDepartmentOptions([], 0, 'No fue posible cargar departamentos');
+				throw error;
+			})
+			.finally(() => {
+				departmentsLoadPromise = null;
+				if (departmentSelect) departmentSelect.disabled = false;
+			});
+
+		return departmentsLoadPromise;
+	};
+
+	const loadCitiesByDepartment = async (
+		departmentId,
+		options = { selectedCityId: 0, showErrors: true }
+	) => {
+		if (!citySelect) return;
+
+		const selectedCityId = Number(options?.selectedCityId || 0);
+		const showErrors = options?.showErrors !== false;
+
+		if (!Number.isInteger(departmentId) || departmentId <= 0) {
+			citySelect.disabled = true;
+			renderCityOptions([], 0, 'Selecciona un departamento primero');
+			return;
+		}
+
+		const cachedCities = citiesByDepartment.get(departmentId);
+		if (Array.isArray(cachedCities)) {
+			citySelect.disabled = cachedCities.length === 0;
+			renderCityOptions(
+				cachedCities,
+				selectedCityId,
+				cachedCities.length > 0 ? 'Selecciona una ciudad' : 'Sin ciudades disponibles'
+			);
+			return;
+		}
+
+		const requestId = ++citiesRequestSeq;
+		citySelect.disabled = true;
+		renderCityOptions([], 0, 'Cargando ciudades...');
+
+		try {
+			const cities = await fetchCatalogResource(`/api/catalog/departments/${departmentId}/cities`);
+			if (requestId !== citiesRequestSeq) return;
+			citiesByDepartment.set(departmentId, cities);
+			citySelect.disabled = cities.length === 0;
+			renderCityOptions(
+				cities,
+				selectedCityId,
+				cities.length > 0 ? 'Selecciona una ciudad' : 'Sin ciudades disponibles'
+			);
+		} catch (error) {
+			if (requestId !== citiesRequestSeq) return;
+			citySelect.disabled = true;
+			renderCityOptions([], 0, 'No fue posible cargar ciudades');
+			if (showErrors) {
+				showFormError(
+					error instanceof Error
+						? error.message
+						: 'No fue posible cargar las ciudades del departamento.'
+				);
+			}
+		}
+	};
+
+	const setCreateMode = () => {
+		mode = 'create';
+		editingLocationId = 0;
+		if (modalTitle) modalTitle.textContent = 'Crear sucursal';
+		if (modalDescription) {
+			modalDescription.textContent = 'Completa los campos para registrar una nueva sucursal.';
+		}
+		if (submitLabel) submitLabel.textContent = 'Crear sucursal';
+		if (submitIcon) submitIcon.textContent = 'check';
+		deleteButton?.classList.add('hidden');
+		deleteButton?.setAttribute('disabled', 'true');
+		loadingNode?.classList.add('hidden');
+	};
+
+	const setEditMode = (locationId) => {
+		mode = 'edit';
+		editingLocationId = locationId;
+		if (modalTitle) modalTitle.textContent = 'Editar sucursal';
+		if (modalDescription) {
+			modalDescription.textContent = 'Actualiza la informacion de la sucursal seleccionada.';
+		}
+		if (submitLabel) submitLabel.textContent = 'Guardar cambios';
+		if (submitIcon) submitIcon.textContent = 'save';
+		deleteButton?.classList.remove('hidden');
+		deleteButton?.removeAttribute('disabled');
+	};
+
+	const setFormLoadingState = (isLoading) => {
+		if (isLoading) {
+			loadingNode?.classList.add('flex');
+			loadingNode?.classList.remove('hidden');
+		} else {
+			loadingNode?.classList.add('hidden');
+			loadingNode?.classList.remove('flex');
+		}
+
+		for (const field of formFields ?? []) {
+			field.disabled = isLoading;
+		}
+	};
+
+	const setLoadingMode = (label = 'Procesando...') => {
+		if (submitButton) submitButton.disabled = true;
+		if (deleteButton && mode === 'edit') deleteButton.disabled = true;
+		if (submitLabel) submitLabel.textContent = label;
+		if (submitIcon) submitIcon.textContent = 'hourglass_top';
+	};
+
+	const restoreButtons = () => {
+		if (submitButton) submitButton.disabled = false;
+		if (mode === 'create') {
+			if (submitLabel) submitLabel.textContent = 'Crear sucursal';
+			if (submitIcon) submitIcon.textContent = 'check';
+			return;
+		}
+
+		if (submitLabel) submitLabel.textContent = 'Guardar cambios';
+		if (submitIcon) submitIcon.textContent = 'save';
+		if (deleteButton) deleteButton.disabled = false;
+	};
+
+	const openModalShell = () => {
+		modal?.classList.remove('is-closing');
+		if (closeTimer) {
+			window.clearTimeout(closeTimer);
+			closeTimer = null;
+		}
+		if (!modal?.open) modal?.showModal();
+	};
+
+	const closeModal = () => {
+		if (!modal?.open) return;
+		locationReadRequestSeq += 1;
+		citiesRequestSeq += 1;
+		modal.classList.add('is-closing');
+
+		closeTimer = window.setTimeout(() => {
+			modal.close();
+			modal.classList.remove('is-closing');
+			form?.reset();
+			setCreateMode();
+			setFormLoadingState(false);
+			clearErrors();
+			closeTimer = null;
+		}, 160);
+	};
+
+	const resetFormValues = () => {
+		if (nameInput) nameInput.value = '';
+		if (addressInput) addressInput.value = '';
+		if (departmentSelect) departmentSelect.value = '';
+		if (citySelect) {
+			citySelect.disabled = true;
+			renderCityOptions([], 0, 'Selecciona un departamento primero');
+		}
+		if (latitudeInput) latitudeInput.value = '';
+		if (longitudeInput) longitudeInput.value = '';
+		if (statusInput) statusInput.value = '1';
+	};
+
+	const openCreateModal = async () => {
+		setCreateMode();
+		resetFormValues();
+		setFormLoadingState(false);
+		clearErrors();
+		openModalShell();
+		try {
+			await ensureDepartmentsLoaded();
+		} catch (error) {
+			showFormError(
+				error instanceof Error
+					? error.message
+					: 'No fue posible cargar los departamentos para el formulario.'
+			);
+		}
+	};
+
+	const fillFormWithLocation = (location) => {
+		if (nameInput) nameInput.value = String(location?.name || '');
+		if (addressInput) addressInput.value = String(location?.address || '');
+		if (latitudeInput) {
+			latitudeInput.value =
+				typeof location?.latitude === 'number' ? String(location.latitude) : '';
+		}
+		if (longitudeInput) {
+			longitudeInput.value =
+				typeof location?.longitude === 'number' ? String(location.longitude) : '';
+		}
+		if (statusInput) {
+			statusInput.value = String(location?.is_active === 0 ? 0 : 1);
+		}
+
+		const departmentId =
+			typeof location?.department?.id_department === 'number' &&
+			location.department.id_department > 0
+				? location.department.id_department
+				: 0;
+
+		const cityId =
+			typeof location?.city?.id_city === 'number' && location.city.id_city > 0
+				? location.city.id_city
+				: 0;
+
+		return {
+			departmentId,
+			cityId,
+		};
+	};
+
+	const openEditModal = async (locationId) => {
+		if (!locationId) return;
+		const requestId = ++locationReadRequestSeq;
+		setEditMode(locationId);
+		resetFormValues();
+		clearErrors();
+		openModalShell();
+		setFormLoadingState(true);
+		setLoadingMode('Cargando...');
+
+		try {
+			const response = await fetch(`/api/locations/${locationId}`, {
+				method: 'GET',
+				headers: { Accept: 'application/json' },
+			});
+
+			let data = null;
+			try {
+				data = await response.json();
+			} catch {
+				throw new Error('No fue posible interpretar la respuesta del servidor.');
+			}
+
+			if (!response.ok || !data || data.status !== 'success' || !data.data) {
+				throw new Error(data?.message || 'No fue posible obtener la sucursal seleccionada.');
+			}
+
+			if (requestId !== locationReadRequestSeq) return;
+			const { departmentId, cityId } = fillFormWithLocation(data.data);
+			await ensureDepartmentsLoaded();
+			if (requestId !== locationReadRequestSeq) return;
+			if (departmentSelect) {
+				departmentSelect.value = departmentId > 0 ? String(departmentId) : '';
+			}
+			await loadCitiesByDepartment(departmentId, { selectedCityId: cityId, showErrors: true });
+		} catch (error) {
+			if (requestId !== locationReadRequestSeq) return;
+			setCreateMode();
+			showFormError(error instanceof Error ? error.message : 'No fue posible obtener la sucursal.');
+		} finally {
+			if (requestId !== locationReadRequestSeq) return;
+			setFormLoadingState(false);
+			restoreButtons();
+		}
+	};
+
+	openButton?.addEventListener('click', openCreateModal);
+	closeButton?.addEventListener('click', closeModal);
+
+	modal?.addEventListener('click', (event) => {
+		const target = event.target;
+		if (target instanceof HTMLDialogElement) closeModal();
+	});
+
+	departmentSelect?.addEventListener('change', async () => {
+		const selectedDepartmentId = Number(departmentSelect.value || '0');
+		const departmentErrorNode = document.querySelector('[data-field-error="dep_id_department"]');
+		const cityErrorNode = document.querySelector('[data-field-error="cit_id_city"]');
+		if (departmentErrorNode) {
+			departmentErrorNode.textContent = '';
+			departmentErrorNode.classList.add('hidden');
+		}
+		if (cityErrorNode) {
+			cityErrorNode.textContent = '';
+			cityErrorNode.classList.add('hidden');
+		}
+		await loadCitiesByDepartment(selectedDepartmentId, { selectedCityId: 0, showErrors: true });
+	});
+
+	for (const card of locationCards) {
+		const openFromCard = () => {
+			const locationId = Number(card.getAttribute('data-location-id') || '0');
+			if (locationId > 0) openEditModal(locationId);
+		};
+
+		card.addEventListener('click', openFromCard);
+		card.addEventListener('keydown', (event) => {
+			if (event.key !== 'Enter' && event.key !== ' ') return;
+			event.preventDefault();
+			openFromCard();
+		});
+	}
+
+	form?.addEventListener('submit', async (event) => {
+		event.preventDefault();
+		clearErrors();
+
+		if (!form) return;
+		const formData = new FormData(form);
+
+		const name = String(formData.get('name') || '').trim();
+		const address = String(formData.get('address') || '').trim();
+		const cityRaw = String(formData.get('cit_id_city') || '').trim();
+		const departmentRaw = String(formData.get('dep_id_department') || '').trim();
+		const latitudeRaw = String(formData.get('latitude') || '').trim();
+		const longitudeRaw = String(formData.get('longitude') || '').trim();
+		const isActiveRaw = String(formData.get('is_active') || '1').trim();
+
+		const cityId = Number(cityRaw);
+		const departmentId = Number(departmentRaw);
+
+		if (
+			!name ||
+			!address ||
+			!cityRaw ||
+			!departmentRaw ||
+			!Number.isInteger(cityId) ||
+			cityId <= 0 ||
+			!Number.isInteger(departmentId) ||
+			departmentId <= 0
+		) {
+			showFormError('Completa los campos requeridos antes de continuar.');
+			return;
+		}
+
+		const payload = {
+			name,
+			address,
+			cit_id_city: cityId,
+			dep_id_department: departmentId,
+			is_active: isActiveRaw === '0' ? 0 : 1,
+		};
+
+		if (latitudeRaw !== '') {
+			const latitude = Number(latitudeRaw);
+			if (Number.isFinite(latitude)) payload.latitude = latitude;
+		}
+
+		if (longitudeRaw !== '') {
+			const longitude = Number(longitudeRaw);
+			if (Number.isFinite(longitude)) payload.longitude = longitude;
+		}
+
+		const endpoint =
+			mode === 'edit' && editingLocationId
+				? `/api/locations/${editingLocationId}`
+				: '/api/locations';
+		const httpMethod = mode === 'edit' && editingLocationId ? 'PUT' : 'POST';
+		setLoadingMode(mode === 'edit' ? 'Guardando...' : 'Creando...');
+
+		try {
+			const response = await fetch(endpoint, {
+				method: httpMethod,
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+				body: JSON.stringify(payload),
+			});
+
+			let data = null;
+			try {
+				data = await response.json();
+			} catch {
+				throw new Error('No fue posible interpretar la respuesta del servidor.');
+			}
+
+			if (!response.ok || !data || data.status !== 'success') {
+				const message = data?.message || 'No fue posible guardar la sucursal.';
+				showFormError(message);
+
+				const fieldErrors = Array.isArray(data?.errors) ? data.errors : [];
+				for (const error of fieldErrors) {
+					if (!error || typeof error !== 'object') continue;
+					const field = 'field' in error ? String(error.field || '') : '';
+					const messageText = 'message' in error ? String(error.message || '') : '';
+					if (!field || !messageText) continue;
+
+					const fieldNode = document.querySelector(`[data-field-error="${field}"]`);
+					if (fieldNode) {
+						fieldNode.textContent = messageText;
+						fieldNode.classList.remove('hidden');
+					}
+				}
+
+				return;
+			}
+
+			const successMessage =
+				typeof data?.message === 'string' && data.message.trim()
+					? data.message
+					: mode === 'edit'
+						? 'Sucursal actualizada correctamente.'
+						: 'Sucursal creada correctamente.';
+
+			closeModal();
+			redirectWithFlash(successMessage, 'success');
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'No fue posible guardar la sucursal.';
+			showFormError(message);
+		} finally {
+			restoreButtons();
+		}
+	});
+
+	deleteButton?.addEventListener('click', async () => {
+		if (!editingLocationId || mode !== 'edit') return;
+
+		const confirmed = await window.BookmateAlert?.confirm({
+			type: 'error',
+			title: 'Eliminar sucursal',
+			message: 'Esta accion eliminara la sucursal de forma permanente. Deseas continuar?',
+			confirmText: 'Eliminar',
+			cancelText: 'Cancelar',
+		});
+		if (!confirmed) return;
+
+		clearErrors();
+		setLoadingMode('Eliminando...');
+
+		try {
+			const response = await fetch(`/api/locations/${editingLocationId}`, {
+				method: 'DELETE',
+				headers: { Accept: 'application/json' },
+			});
+
+			let data = null;
+			try {
+				data = await response.json();
+			} catch {
+				throw new Error('No fue posible interpretar la respuesta del servidor.');
+			}
+
+			if (!response.ok || !data || data.status !== 'success') {
+				throw new Error(data?.message || 'No fue posible eliminar la sucursal.');
+			}
+
+			const successMessage =
+				typeof data?.message === 'string' && data.message.trim()
+					? data.message
+					: 'Sucursal eliminada correctamente.';
+
+			closeModal();
+			redirectWithFlash(successMessage, 'success');
+		} catch (error) {
+			showFormError(
+				error instanceof Error ? error.message : 'No fue posible eliminar la sucursal.'
+			);
+			restoreButtons();
+		}
+	});
+</script>
+
+<style is:global>
+	dialog[data-location-modal] {
+		position: fixed;
+		inset: 0;
+		margin: auto;
+		animation: location-modal-in 180ms ease-out;
+	}
+
+	dialog[data-location-modal]::backdrop {
+		animation: location-backdrop-in 180ms ease-out;
+	}
+
+	dialog[data-location-modal].is-closing {
+		animation: location-modal-out 160ms ease-in forwards;
+	}
+
+	dialog[data-location-modal].is-closing::backdrop {
+		animation: location-backdrop-out 160ms ease-in forwards;
+	}
+
+	@keyframes location-modal-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px) scale(0.98);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes location-modal-out {
+		from {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+
+		to {
+			opacity: 0;
+			transform: translateY(8px) scale(0.98);
+		}
+	}
+
+	@keyframes location-backdrop-in {
+		from {
+			opacity: 0;
+		}
+
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes location-backdrop-out {
+		from {
+			opacity: 1;
+		}
+
+		to {
+			opacity: 0;
+		}
+	}
+</style>
