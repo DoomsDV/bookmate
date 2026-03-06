@@ -9,6 +9,12 @@ export const LOGIN_URL = import.meta.env.ORDS_AUTH_LOGIN_URL ?? DEFAULT_LOGIN_UR
 export const REFRESH_URL = import.meta.env.ORDS_AUTH_REFRESH_URL ?? DEFAULT_REFRESH_URL;
 export const LOGOUT_URL = import.meta.env.ORDS_AUTH_LOGOUT_URL ?? DEFAULT_LOGOUT_URL;
 
+const ORGANIZATION_CACHE_COOKIE_KEYS = {
+	id: 'org_id',
+	name: 'org_name',
+	slug: 'org_slug',
+} as const;
+
 export interface AuthSuccessResponse {
 	status: 'success';
 	message: string;
@@ -162,17 +168,19 @@ export const logoutWithOrds = async (refreshToken?: string) => {
 
 const isSecureRequest = (url: URL) => url.protocol === 'https:' || url.hostname !== 'localhost';
 
+const getCookieBaseOptions = (url: URL) => ({
+	httpOnly: true,
+	secure: isSecureRequest(url),
+	sameSite: 'strict' as const,
+	path: '/',
+});
+
 export const setSessionCookies = (
 	cookies: { set: (name: string, value: string, options: Record<string, unknown>) => void },
 	url: URL,
 	session: AuthSuccessResponse
 ) => {
-	const baseOptions = {
-		httpOnly: true,
-		secure: isSecureRequest(url),
-		sameSite: 'strict' as const,
-		path: '/',
-	};
+	const baseOptions = getCookieBaseOptions(url);
 
 	cookies.set('access_token', session.access_token, {
 		...baseOptions,
@@ -185,11 +193,28 @@ export const setSessionCookies = (
 	});
 };
 
+export const setOrganizationCacheCookies = (
+	cookies: { set: (name: string, value: string, options: Record<string, unknown>) => void },
+	url: URL,
+	organization: { id_organization: number; name: string; profile_slug?: string | null }
+) => {
+	const baseOptions = getCookieBaseOptions(url);
+	const safeName = String(organization.name || '').trim();
+	const safeSlug = String(organization.profile_slug || '').trim();
+
+	cookies.set(ORGANIZATION_CACHE_COOKIE_KEYS.id, String(organization.id_organization || 0), baseOptions);
+	cookies.set(ORGANIZATION_CACHE_COOKIE_KEYS.name, safeName, baseOptions);
+	cookies.set(ORGANIZATION_CACHE_COOKIE_KEYS.slug, safeSlug, baseOptions);
+};
+
 export const clearSessionCookies = (
 	cookies: { delete: (name: string, options?: Record<string, unknown>) => void }
 ) => {
 	cookies.delete('access_token', { path: '/' });
 	cookies.delete('refresh_token', { path: '/' });
+	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.id, { path: '/' });
+	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.name, { path: '/' });
+	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.slug, { path: '/' });
 };
 
 export const isPublicPath = (pathname: string) => {

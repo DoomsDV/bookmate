@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
-import { AuthApiError, refreshWithOrds, setSessionCookies } from '../../../lib/auth';
+import { AuthApiError, refreshWithOrds, setOrganizationCacheCookies, setSessionCookies } from '../../../lib/auth';
+import { getCurrentOrganizationWithOrds } from '../../../lib/organization';
 
 export const POST: APIRoute = async ({ request, cookies, url }) => {
 	try {
@@ -13,6 +14,13 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 
 		const session = await refreshWithOrds(refreshToken);
 		setSessionCookies(cookies, url, session);
+
+		try {
+			const organization = await getCurrentOrganizationWithOrds(session.access_token);
+			setOrganizationCacheCookies(cookies, url, organization);
+		} catch {
+			// Si falla la cache de organización, mantenemos la sesión activa.
+		}
 
 		return Response.json({ status: 'success' });
 	} catch (error) {

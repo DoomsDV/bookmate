@@ -63,6 +63,10 @@ const visiblePages = Array.from(
 	{ length: pageWindowEnd - pageWindowStart + 1 },
 	(_, index) => pageWindowStart + index
 );
+const googleMapsApiKey =
+	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
+	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
+	'AIzaSyBaXcEAhW41P0gd3cSY7mi0JHCOwIBfbMc';
 ---
 
 <Layout>
@@ -79,17 +83,6 @@ const visiblePages = Array.from(
 
 				<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
 					<section class="grid gap-6">
-						<div class="flex items-center justify-end">
-							<button
-								type="button"
-								class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[color:var(--primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_var(--hero-shadow)] transition hover:brightness-105"
-								data-open-location-modal
-							>
-								<span class="material-symbols-rounded text-[1.1rem]">add</span>
-								Nueva sucursal
-							</button>
-						</div>
-
 						{
 							flashMessage ? (
 								<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
@@ -103,7 +96,7 @@ const visiblePages = Array.from(
 								<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
 							) : (
 								<div class="grid gap-5">
-									<LocationsGrid locations={locations} />
+									<LocationsGrid locations={locations} showCreateAction={true} />
 
 									<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
 										<p class="text-sm text-[color:var(--on-surface-variant)]">
@@ -136,7 +129,7 @@ const visiblePages = Array.from(
 											{
 												visiblePages.map((page) =>
 													page === safeCurrentPage ? (
-														<span class="rounded-lg bg-[color:var(--primary)] px-3 py-1.5 text-sm font-bold text-white">
+														<span class="rounded-lg border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-sm font-bold text-[color:var(--primary)]">
 															{page}
 														</span>
 													) : (
@@ -178,6 +171,7 @@ const visiblePages = Array.from(
 	<dialog
 		class="w-[min(42rem,calc(100vw-2rem))] rounded-[1.25rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_26px_80px_rgba(15,23,42,0.28)] backdrop:bg-slate-950/40"
 		data-location-modal
+		data-google-maps-api-key={googleMapsApiKey}
 	>
 		<div class="border-b border-[color:var(--shell-border)] px-5 py-4">
 			<h2 class="text-lg font-bold" data-location-modal-title>Crear sucursal</h2>
@@ -188,7 +182,7 @@ const visiblePages = Array.from(
 
 		<form class="relative grid gap-3 px-5 py-5" data-location-form>
 			<div
-				class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-b-[1.25rem] bg-[color:var(--surface-bright)]/78 backdrop-blur-[1px]"
+				class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center rounded-b-[1.25rem] bg-[color:var(--surface-bright)]/78 backdrop-blur-[1px]"
 				data-location-loading
 			>
 				<div class="inline-flex items-center gap-2 rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
@@ -200,7 +194,10 @@ const visiblePages = Array.from(
 			<div class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/25 dark:text-rose-300" data-form-error></div>
 
 			<label class="grid gap-1 text-sm font-semibold">
-				Nombre
+				<span class="inline-flex items-center gap-1">
+					Nombre
+					<span class="text-rose-600">*</span>
+				</span>
 				<input
 					type="text"
 					name="name"
@@ -213,7 +210,10 @@ const visiblePages = Array.from(
 			</label>
 
 			<label class="grid gap-1 text-sm font-semibold">
-				Direccion
+				<span class="inline-flex items-center gap-1">
+					Direccion
+					<span class="text-rose-600">*</span>
+				</span>
 				<input
 					type="text"
 					name="address"
@@ -227,7 +227,10 @@ const visiblePages = Array.from(
 
 			<div class="grid gap-3 sm:grid-cols-2">
 				<label class="grid gap-1 text-sm font-semibold">
-					Departamento
+					<span class="inline-flex items-center gap-1">
+						Departamento
+						<span class="text-rose-600">*</span>
+					</span>
 					<select
 						name="dep_id_department"
 						required
@@ -240,7 +243,10 @@ const visiblePages = Array.from(
 				</label>
 
 				<label class="grid gap-1 text-sm font-semibold">
-					Ciudad
+					<span class="inline-flex items-center gap-1">
+						Ciudad
+						<span class="text-rose-600">*</span>
+					</span>
 					<select
 						name="cit_id_city"
 						required
@@ -254,30 +260,30 @@ const visiblePages = Array.from(
 				</label>
 			</div>
 
-			<div class="grid gap-3 sm:grid-cols-2">
-				<label class="grid gap-1 text-sm font-semibold">
-					Latitud (opcional)
-					<input
-						type="number"
-						name="latitude"
-						step="any"
-						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-						placeholder="-25.3000"
-					/>
-					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="latitude"></span>
-				</label>
+			<div class="grid gap-2">
+				<div class="flex items-center justify-between gap-2">
+					<p class="text-sm font-semibold">Ubicacion en mapa (opcional)</p>
+					<button
+						type="button"
+						class="rounded-lg border border-[color:var(--shell-border)] px-2.5 py-1 text-xs font-semibold text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--control-surface)] disabled:cursor-not-allowed disabled:opacity-60"
+						data-clear-location-point
+					>
+						Limpiar punto
+					</button>
+				</div>
 
-				<label class="grid gap-1 text-sm font-semibold">
-					Longitud (opcional)
-					<input
-						type="number"
-						name="longitude"
-						step="any"
-						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-						placeholder="-57.6200"
-					/>
-					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="longitude"></span>
-				</label>
+				<div class="overflow-hidden rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)]">
+					<div class="h-56 w-full" data-location-map></div>
+				</div>
+
+				<p class="text-xs text-[color:var(--on-surface-variant)]" data-location-map-status>
+					Haz clic en el mapa para seleccionar coordenadas.
+				</p>
+
+				<input type="hidden" name="latitude" data-location-latitude />
+				<input type="hidden" name="longitude" data-location-longitude />
+				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="latitude"></span>
+				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="longitude"></span>
 			</div>
 
 			<label class="grid gap-1 text-sm font-semibold">
@@ -312,7 +318,7 @@ const visiblePages = Array.from(
 					</button>
 					<button
 						type="submit"
-						class="inline-flex items-center gap-2 rounded-xl bg-[color:var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+						class="btn-primary-soft inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
 						data-submit-location
 					>
 						<span class="material-symbols-rounded text-[1rem]" data-submit-location-icon>check</span>
@@ -327,36 +333,87 @@ const visiblePages = Array.from(
 </Layout>
 
 <script>
-	const modal = document.querySelector('[data-location-modal]');
-	const openButton = document.querySelector('[data-open-location-modal]');
-	const closeButton = document.querySelector('[data-close-location-modal]');
-	const deleteButton = document.querySelector('[data-delete-location]');
-	const form = document.querySelector('[data-location-form]');
-	const submitButton = document.querySelector('[data-submit-location]');
-	const submitLabel = document.querySelector('[data-submit-location-label]');
-	const submitIcon = document.querySelector('[data-submit-location-icon]');
-	const formErrorNode = document.querySelector('[data-form-error]');
-	const fieldErrorNodes = document.querySelectorAll('[data-field-error]');
-	const loadingNode = document.querySelector('[data-location-loading]');
-	const modalTitle = document.querySelector('[data-location-modal-title]');
-	const modalDescription = document.querySelector('[data-location-modal-description]');
-	const locationCards = document.querySelectorAll('[data-location-card]');
-	const nameInput = form?.querySelector('[name="name"]');
-	const addressInput = form?.querySelector('[name="address"]');
-	const citySelect = form?.querySelector('[data-city-select]');
-	const departmentSelect = form?.querySelector('[data-department-select]');
-	const latitudeInput = form?.querySelector('[name="latitude"]');
-	const longitudeInput = form?.querySelector('[name="longitude"]');
-	const statusInput = form?.querySelector('[name="is_active"]');
-	const formFields = form?.querySelectorAll('input, select, textarea');
-	let closeTimer = null;
+	const initializeLocationsPage = () => {
+	const modal = document.querySelector<HTMLDialogElement>('[data-location-modal]');
+	if (!modal || modal.dataset.bound === 'true') return;
+	modal.dataset.bound = 'true';
+	const openButton = document.querySelector<HTMLButtonElement>('[data-open-location-modal]');
+	const closeButton = document.querySelector<HTMLButtonElement>('[data-close-location-modal]');
+	const deleteButton = document.querySelector<HTMLButtonElement>('[data-delete-location]');
+	const form = document.querySelector<HTMLFormElement>('[data-location-form]');
+	const submitButton = document.querySelector<HTMLButtonElement>('[data-submit-location]');
+	const submitLabel = document.querySelector<HTMLElement>('[data-submit-location-label]');
+	const submitIcon = document.querySelector<HTMLElement>('[data-submit-location-icon]');
+	const formErrorNode = document.querySelector<HTMLElement>('[data-form-error]');
+	const fieldErrorNodes = document.querySelectorAll<HTMLElement>('[data-field-error]');
+	const loadingNode = document.querySelector<HTMLElement>('[data-location-loading]');
+	const modalTitle = document.querySelector<HTMLElement>('[data-location-modal-title]');
+	const modalDescription = document.querySelector<HTMLElement>('[data-location-modal-description]');
+	const locationCards = document.querySelectorAll<HTMLElement>('[data-location-card]');
+	const nameInput = form ? form.querySelector<HTMLInputElement>('[name="name"]') : null;
+	const addressInput = form ? form.querySelector<HTMLInputElement>('[name="address"]') : null;
+	const citySelect = form ? form.querySelector<HTMLSelectElement>('[data-city-select]') : null;
+	const departmentSelect = form
+		? form.querySelector<HTMLSelectElement>('[data-department-select]')
+		: null;
+	const latitudeInput = form ? form.querySelector<HTMLInputElement>('[data-location-latitude]') : null;
+	const longitudeInput = form ? form.querySelector<HTMLInputElement>('[data-location-longitude]') : null;
+	const statusInput = form ? form.querySelector<HTMLSelectElement>('[name="is_active"]') : null;
+	const mapContainer = form ? form.querySelector<HTMLElement>('[data-location-map]') : null;
+	const mapStatusNode = form ? form.querySelector<HTMLElement>('[data-location-map-status]') : null;
+	const clearMapPointButton = form
+		? form.querySelector<HTMLButtonElement>('[data-clear-location-point]')
+		: null;
+	type DepartmentOption = { id_department: number; description?: string };
+	type CityOption = { id_city: number; description?: string };
+	type GoogleMapsNamespace = {
+		Map: new (container: HTMLElement, options: Record<string, unknown>) => {
+			setCenter: (coords: { lat: number; lng: number }) => void;
+			setZoom: (zoom: number) => void;
+			addListener: (eventName: string, handler: (event: unknown) => void) => void;
+		};
+		Marker: new (options: Record<string, unknown>) => {
+			setPosition: (coords: { lat: number; lng: number }) => void;
+			setMap: (map: unknown | null) => void;
+		};
+		event?: {
+			trigger?: (instance: unknown, eventName: string) => void;
+		};
+	};
+	type WindowWithGoogleMaps = Window & {
+		google?: {
+			maps?: GoogleMapsNamespace;
+		};
+		__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
+	};
+	type Coordinates = {
+		lat: number;
+		lng: number;
+	};
+	const formFields =
+		form?.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+			'input, select, textarea'
+		);
+	let closeTimer: number | null = null;
 	let mode = 'create';
 	let editingLocationId = 0;
 	let locationReadRequestSeq = 0;
 	let citiesRequestSeq = 0;
 	let departmentsLoaded = false;
-	let departmentsLoadPromise = null;
-	const citiesByDepartment = new Map();
+	let departmentsLoadPromise: Promise<void> | null = null;
+	const citiesByDepartment = new Map<number, CityOption[]>();
+	const mapsApiKey = String(modal.dataset.googleMapsApiKey || '').trim();
+	const defaultMapCenter: Coordinates = { lat: -25.28646, lng: -57.647 };
+	let selectedCoordinates: Coordinates | null = null;
+	let mapInstance: {
+		setCenter: (coords: Coordinates) => void;
+		setZoom: (zoom: number) => void;
+		addListener: (eventName: string, handler: (event: unknown) => void) => void;
+	} | null = null;
+	let mapMarker: {
+		setPosition: (coords: Coordinates) => void;
+		setMap: (map: unknown | null) => void;
+	} | null = null;
 
 	const currentUrl = new URL(window.location.href);
 	if (currentUrl.searchParams.has('flash_message')) {
@@ -365,7 +422,7 @@ const visiblePages = Array.from(
 		window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
 	}
 
-	const redirectWithFlash = (message, type = 'success') => {
+	const redirectWithFlash = (message: string, type = 'success') => {
 		const nextUrl = new URL(window.location.href);
 		nextUrl.searchParams.set('flash_message', message);
 		nextUrl.searchParams.set('flash_type', type);
@@ -384,13 +441,171 @@ const visiblePages = Array.from(
 		}
 	};
 
-	const showFormError = (message) => {
+	const showFormError = (message: string) => {
 		if (!formErrorNode) return;
 		formErrorNode.textContent = message;
 		formErrorNode.classList.remove('hidden');
 	};
 
-	const setSelectOptions = (selectNode, items, config) => {
+	const setMapStatus = (message: string, isError = false) => {
+		if (!mapStatusNode) return;
+		mapStatusNode.textContent = message;
+		if (isError) {
+			mapStatusNode.classList.add('text-rose-600', 'dark:text-rose-300');
+			return;
+		}
+		mapStatusNode.classList.remove('text-rose-600', 'dark:text-rose-300');
+	};
+
+	const formatCoordinate = (value: number) => value.toFixed(6);
+
+	const setSelectedCoordinates = (
+		latitude: number | null,
+		longitude: number | null,
+		options: { center?: boolean; zoom?: number } = {}
+	) => {
+		const hasCoordinates = Number.isFinite(latitude) && Number.isFinite(longitude);
+
+		if (!hasCoordinates) {
+			selectedCoordinates = null;
+			if (latitudeInput) latitudeInput.value = '';
+			if (longitudeInput) longitudeInput.value = '';
+			setMapStatus('Haz clic en el mapa para seleccionar coordenadas.');
+			if (mapMarker) mapMarker.setMap(null);
+			mapMarker = null;
+			return;
+		}
+
+		const coords: Coordinates = {
+			lat: Number(latitude),
+			lng: Number(longitude),
+		};
+		selectedCoordinates = coords;
+		if (latitudeInput) latitudeInput.value = formatCoordinate(coords.lat);
+		if (longitudeInput) longitudeInput.value = formatCoordinate(coords.lng);
+		setMapStatus(`Coordenadas seleccionadas: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
+
+		if (!mapInstance) return;
+		if (!mapMarker) {
+			const maps = (window as WindowWithGoogleMaps).google?.maps;
+			if (!maps) return;
+			mapMarker = new maps.Marker({
+				map: mapInstance,
+				position: coords,
+			});
+		} else {
+			mapMarker.setMap(mapInstance);
+			mapMarker.setPosition(coords);
+		}
+
+		if (options.center !== false) {
+			mapInstance.setCenter(coords);
+			mapInstance.setZoom(options.zoom ?? 15);
+		}
+	};
+
+	const loadGoogleMaps = async (): Promise<GoogleMapsNamespace> => {
+		if (!mapsApiKey) {
+			throw new Error('No se encontro la API key de Google Maps para el mapa de sucursales.');
+		}
+
+		const win = window as WindowWithGoogleMaps;
+		if (win.google?.maps) return win.google.maps;
+		if (win.__bookmateGoogleMapsLoader) return win.__bookmateGoogleMapsLoader;
+
+		win.__bookmateGoogleMapsLoader = new Promise<GoogleMapsNamespace>((resolve, reject) => {
+			const handleLoad = () => {
+				const maps = (window as WindowWithGoogleMaps).google?.maps;
+				if (!maps) {
+					reject(new Error('Google Maps cargo, pero no se encontro la libreria maps.'));
+					return;
+				}
+				resolve(maps);
+			};
+
+			const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-maps-loader]');
+			if (existingScript) {
+				existingScript.addEventListener('load', handleLoad, { once: true });
+				existingScript.addEventListener(
+					'error',
+					() => reject(new Error('No fue posible cargar Google Maps.')),
+					{ once: true }
+				);
+				return;
+			}
+
+			const script = document.createElement('script');
+			script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsApiKey)}&v=weekly`;
+			script.async = true;
+			script.defer = true;
+			script.dataset.googleMapsLoader = 'true';
+			script.addEventListener('load', handleLoad, { once: true });
+			script.addEventListener(
+				'error',
+				() => reject(new Error('No fue posible cargar Google Maps.')),
+				{ once: true }
+			);
+			document.head.appendChild(script);
+		});
+
+		try {
+			return await win.__bookmateGoogleMapsLoader;
+		} catch (error) {
+			win.__bookmateGoogleMapsLoader = null;
+			throw error;
+		}
+	};
+
+	const ensureMapReady = async () => {
+		if (!mapContainer) return;
+
+		const maps = await loadGoogleMaps();
+		if (!mapInstance) {
+			mapInstance = new maps.Map(mapContainer, {
+				center: defaultMapCenter,
+				zoom: 12,
+				mapTypeControl: false,
+				streetViewControl: false,
+				fullscreenControl: false,
+				gestureHandling: 'greedy',
+			});
+
+			mapInstance.addListener('click', (event: unknown) => {
+				const source = event as { latLng?: { lat?: () => number; lng?: () => number } };
+				const latitude = source?.latLng?.lat?.();
+				const longitude = source?.latLng?.lng?.();
+				if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+				setSelectedCoordinates(Number(latitude), Number(longitude), { center: false });
+			});
+		}
+
+		window.setTimeout(() => {
+			if (!mapInstance) return;
+			if (maps.event?.trigger) maps.event.trigger(mapInstance, 'resize');
+			mapInstance.setCenter(selectedCoordinates ?? defaultMapCenter);
+			if (selectedCoordinates) mapInstance.setZoom(15);
+		}, 60);
+
+		if (selectedCoordinates) {
+			setSelectedCoordinates(selectedCoordinates.lat, selectedCoordinates.lng, { center: true, zoom: 15 });
+			return;
+		}
+
+		setMapStatus('Haz clic en el mapa para seleccionar coordenadas.');
+	};
+
+	type SelectOptionsConfig<T> = {
+		placeholder: string;
+		selectedValue?: string | number | null;
+		getValue: (item: T) => string | number;
+		getLabel: (item: T) => string;
+	};
+
+	const setSelectOptions = <T,>(
+		selectNode: HTMLSelectElement | null | undefined,
+		items: T[],
+		config: SelectOptionsConfig<T>
+	) => {
 		if (!selectNode) return;
 
 		selectNode.innerHTML = '';
@@ -406,30 +621,62 @@ const visiblePages = Array.from(
 			selectNode.appendChild(option);
 		}
 
-		if (config.selectedValue) {
-			selectNode.value = String(config.selectedValue);
+		const hasSelectedValue =
+			config.selectedValue !== undefined &&
+			config.selectedValue !== null &&
+			String(config.selectedValue).trim() !== '';
+
+		if (hasSelectedValue) {
+			const candidate = String(config.selectedValue);
+			const hasOption = Array.from(selectNode.options).some((option) => option.value === candidate);
+			selectNode.value = hasOption ? candidate : '';
+			return;
 		}
+
+		selectNode.value = '';
 	};
 
-	const renderDepartmentOptions = (departments, selectedDepartmentId = 0, placeholder = 'Selecciona un departamento') => {
+	const renderDepartmentOptions = (
+		departments: DepartmentOption[],
+		selectedDepartmentId = 0,
+		placeholder = 'Selecciona un departamento'
+	) => {
 		setSelectOptions(departmentSelect, departments, {
 			placeholder,
 			selectedValue: selectedDepartmentId > 0 ? selectedDepartmentId : '',
-			getValue: (item) => item.id_department,
-			getLabel: (item) => item.description || `Departamento #${item.id_department}`,
+			getValue: (item: DepartmentOption) => item.id_department,
+			getLabel: (item: DepartmentOption) => item.description || `Departamento #${item.id_department}`,
 		});
 	};
 
-	const renderCityOptions = (cities, selectedCityId = 0, placeholder = 'Selecciona una ciudad') => {
+	const renderCityOptions = (
+		cities: CityOption[],
+		selectedCityId = 0,
+		placeholder = 'Selecciona una ciudad'
+	) => {
 		setSelectOptions(citySelect, cities, {
 			placeholder,
 			selectedValue: selectedCityId > 0 ? selectedCityId : '',
-			getValue: (item) => item.id_city,
-			getLabel: (item) => item.description || `Ciudad #${item.id_city}`,
+			getValue: (item: CityOption) => item.id_city,
+			getLabel: (item: CityOption) => item.description || `Ciudad #${item.id_city}`,
 		});
+		citySelect?.removeAttribute('data-loading');
 	};
 
-	const fetchCatalogResource = async (url) => {
+	const setCityLoadingState = (label = 'Cargando ciudades...') => {
+		if (!citySelect) return;
+		citySelect.innerHTML = '';
+		const loadingOption = document.createElement('option');
+		loadingOption.value = '';
+		loadingOption.textContent = label;
+		loadingOption.selected = true;
+		loadingOption.disabled = true;
+		citySelect.appendChild(loadingOption);
+		citySelect.selectedIndex = 0;
+		citySelect.setAttribute('data-loading', 'true');
+	};
+
+	const fetchCatalogResource = async <T = unknown,>(url: string): Promise<T[]> => {
 		const response = await fetch(url, {
 			method: 'GET',
 			headers: { Accept: 'application/json' },
@@ -446,7 +693,7 @@ const visiblePages = Array.from(
 			throw new Error(data?.message || 'No fue posible cargar catalogos.');
 		}
 
-		return data.data;
+		return data.data as T[];
 	};
 
 	const ensureDepartmentsLoaded = async () => {
@@ -457,7 +704,7 @@ const visiblePages = Array.from(
 		if (departmentSelect) departmentSelect.disabled = true;
 
 		departmentsLoadPromise = (async () => {
-			const departments = await fetchCatalogResource('/api/catalog/departments');
+			const departments = await fetchCatalogResource<DepartmentOption>('/api/catalog/departments');
 			departmentsLoaded = true;
 			renderDepartmentOptions(departments);
 		})()
@@ -474,8 +721,8 @@ const visiblePages = Array.from(
 	};
 
 	const loadCitiesByDepartment = async (
-		departmentId,
-		options = { selectedCityId: 0, showErrors: true }
+		departmentId: number,
+		options: { selectedCityId?: number; showErrors?: boolean } = { selectedCityId: 0, showErrors: true }
 	) => {
 		if (!citySelect) return;
 
@@ -501,10 +748,10 @@ const visiblePages = Array.from(
 
 		const requestId = ++citiesRequestSeq;
 		citySelect.disabled = true;
-		renderCityOptions([], 0, 'Cargando ciudades...');
+		setCityLoadingState();
 
 		try {
-			const cities = await fetchCatalogResource(`/api/catalog/departments/${departmentId}/cities`);
+			const cities = await fetchCatalogResource<CityOption>(`/api/catalog/departments/${departmentId}/cities`);
 			if (requestId !== citiesRequestSeq) return;
 			citiesByDepartment.set(departmentId, cities);
 			citySelect.disabled = cities.length === 0;
@@ -541,7 +788,7 @@ const visiblePages = Array.from(
 		loadingNode?.classList.add('hidden');
 	};
 
-	const setEditMode = (locationId) => {
+	const setEditMode = (locationId: number) => {
 		mode = 'edit';
 		editingLocationId = locationId;
 		if (modalTitle) modalTitle.textContent = 'Editar sucursal';
@@ -554,7 +801,7 @@ const visiblePages = Array.from(
 		deleteButton?.removeAttribute('disabled');
 	};
 
-	const setFormLoadingState = (isLoading) => {
+	const setFormLoadingState = (isLoading: boolean) => {
 		if (isLoading) {
 			loadingNode?.classList.add('flex');
 			loadingNode?.classList.remove('hidden');
@@ -566,6 +813,8 @@ const visiblePages = Array.from(
 		for (const field of formFields ?? []) {
 			field.disabled = isLoading;
 		}
+		if (clearMapPointButton) clearMapPointButton.disabled = isLoading;
+		if (mapContainer) mapContainer.style.pointerEvents = isLoading ? 'none' : 'auto';
 	};
 
 	const setLoadingMode = (label = 'Procesando...') => {
@@ -622,8 +871,7 @@ const visiblePages = Array.from(
 			citySelect.disabled = true;
 			renderCityOptions([], 0, 'Selecciona un departamento primero');
 		}
-		if (latitudeInput) latitudeInput.value = '';
-		if (longitudeInput) longitudeInput.value = '';
+		setSelectedCoordinates(null, null);
 		if (statusInput) statusInput.value = '1';
 	};
 
@@ -634,27 +882,24 @@ const visiblePages = Array.from(
 		clearErrors();
 		openModalShell();
 		try {
-			await ensureDepartmentsLoaded();
+			await Promise.all([ensureDepartmentsLoaded(), ensureMapReady()]);
 		} catch (error) {
-			showFormError(
-				error instanceof Error
-					? error.message
-					: 'No fue posible cargar los departamentos para el formulario.'
-			);
+			const errorMessage =
+				error instanceof Error ? error.message : 'No fue posible cargar recursos del formulario.';
+			if (errorMessage.toLowerCase().includes('google maps')) {
+				setMapStatus(errorMessage, true);
+				return;
+			}
+			showFormError(errorMessage);
 		}
 	};
 
-	const fillFormWithLocation = (location) => {
+	const fillFormWithLocation = (location: any) => {
 		if (nameInput) nameInput.value = String(location?.name || '');
 		if (addressInput) addressInput.value = String(location?.address || '');
-		if (latitudeInput) {
-			latitudeInput.value =
-				typeof location?.latitude === 'number' ? String(location.latitude) : '';
-		}
-		if (longitudeInput) {
-			longitudeInput.value =
-				typeof location?.longitude === 'number' ? String(location.longitude) : '';
-		}
+		const latitude = typeof location?.latitude === 'number' ? location.latitude : null;
+		const longitude = typeof location?.longitude === 'number' ? location.longitude : null;
+		setSelectedCoordinates(latitude, longitude, { center: false });
 		if (statusInput) {
 			statusInput.value = String(location?.is_active === 0 ? 0 : 1);
 		}
@@ -676,7 +921,7 @@ const visiblePages = Array.from(
 		};
 	};
 
-	const openEditModal = async (locationId) => {
+	const openEditModal = async (locationId: number) => {
 		if (!locationId) return;
 		const requestId = ++locationReadRequestSeq;
 		setEditMode(locationId);
@@ -705,7 +950,7 @@ const visiblePages = Array.from(
 
 			if (requestId !== locationReadRequestSeq) return;
 			const { departmentId, cityId } = fillFormWithLocation(data.data);
-			await ensureDepartmentsLoaded();
+			await Promise.all([ensureDepartmentsLoaded(), ensureMapReady()]);
 			if (requestId !== locationReadRequestSeq) return;
 			if (departmentSelect) {
 				departmentSelect.value = departmentId > 0 ? String(departmentId) : '';
@@ -713,8 +958,14 @@ const visiblePages = Array.from(
 			await loadCitiesByDepartment(departmentId, { selectedCityId: cityId, showErrors: true });
 		} catch (error) {
 			if (requestId !== locationReadRequestSeq) return;
-			setCreateMode();
-			showFormError(error instanceof Error ? error.message : 'No fue posible obtener la sucursal.');
+			const errorMessage =
+				error instanceof Error ? error.message : 'No fue posible obtener la sucursal.';
+			if (errorMessage.toLowerCase().includes('google maps')) {
+				setMapStatus(errorMessage, true);
+			} else {
+				setCreateMode();
+				showFormError(errorMessage);
+			}
 		} finally {
 			if (requestId !== locationReadRequestSeq) return;
 			setFormLoadingState(false);
@@ -724,8 +975,11 @@ const visiblePages = Array.from(
 
 	openButton?.addEventListener('click', openCreateModal);
 	closeButton?.addEventListener('click', closeModal);
+	clearMapPointButton?.addEventListener('click', () => {
+		setSelectedCoordinates(null, null);
+	});
 
-	modal?.addEventListener('click', (event) => {
+	modal?.addEventListener('click', (event: MouseEvent) => {
 		const target = event.target;
 		if (target instanceof HTMLDialogElement) closeModal();
 	});
@@ -752,14 +1006,14 @@ const visiblePages = Array.from(
 		};
 
 		card.addEventListener('click', openFromCard);
-		card.addEventListener('keydown', (event) => {
+		card.addEventListener('keydown', (event: KeyboardEvent) => {
 			if (event.key !== 'Enter' && event.key !== ' ') return;
 			event.preventDefault();
 			openFromCard();
 		});
 	}
 
-	form?.addEventListener('submit', async (event) => {
+	form?.addEventListener('submit', async (event: SubmitEvent) => {
 		event.preventDefault();
 		clearErrors();
 
@@ -791,12 +1045,22 @@ const visiblePages = Array.from(
 			return;
 		}
 
-		const payload = {
+		type LocationSubmitPayload = {
+			name: string;
+			address: string;
+			cit_id_city: number;
+			dep_id_department: number;
+			is_active: 0 | 1;
+			latitude?: number;
+			longitude?: number;
+		};
+
+		const payload: LocationSubmitPayload = {
 			name,
 			address,
 			cit_id_city: cityId,
 			dep_id_department: departmentId,
-			is_active: isActiveRaw === '0' ? 0 : 1,
+			is_active: (isActiveRaw === '0' ? 0 : 1) as 0 | 1,
 		};
 
 		if (latitudeRaw !== '') {
@@ -917,6 +1181,10 @@ const visiblePages = Array.from(
 			restoreButtons();
 		}
 	});
+	};
+
+	initializeLocationsPage();
+	document.addEventListener('astro:page-load', initializeLocationsPage);
 </script>
 
 <style is:global>

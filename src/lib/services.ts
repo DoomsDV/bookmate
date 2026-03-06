@@ -1,7 +1,10 @@
 const DEFAULT_SERVICES_URL =
 	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/services';
+const DEFAULT_SERVICES_LOV_URL =
+	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/services/lov';
 
 export const SERVICES_URL = import.meta.env.ORDS_SERVICES_URL ?? DEFAULT_SERVICES_URL;
+export const SERVICES_LOV_URL = import.meta.env.ORDS_SERVICES_LOV_URL ?? DEFAULT_SERVICES_LOV_URL;
 
 export interface Service {
 	id_service: number;
@@ -10,6 +13,13 @@ export interface Service {
 	price: number;
 	is_active: 0 | 1;
 	created_at: string;
+}
+
+export interface ServiceLov {
+	id_service: number;
+	name: string;
+	duration_minutes: number;
+	price: number;
 }
 
 export interface ServicesListMeta {
@@ -148,6 +158,21 @@ const normalizeService = (value: unknown): Service | null => {
 	};
 };
 
+const normalizeServiceLov = (value: unknown): ServiceLov | null => {
+	if (!value || typeof value !== 'object') return null;
+
+	const source = value as Record<string, unknown>;
+	const idService = toNumber(source.id_service, NaN);
+	if (!Number.isFinite(idService)) return null;
+
+	return {
+		id_service: idService,
+		name: String(source.name || '').trim(),
+		duration_minutes: toNumber(source.duration_minutes),
+		price: toNumber(source.price),
+	};
+};
+
 const normalizeMeta = (
 	value: unknown,
 	fallback: { page: number; limit: number; totalRecords: number }
@@ -247,6 +272,52 @@ export const listServices = async (
 	});
 
 	return parseServicesResponse(response, { page, limit });
+};
+
+const parseServicesLovResponse = async (response: Response): Promise<ServiceLov[]> => {
+	let data: ServicesSuccessResponse | ServicesFailureResponse | null = null;
+
+	try {
+		data = await response.json();
+	} catch {
+		throw new ServicesApiError('No fue posible interpretar la respuesta del servidor de servicios.', 502);
+	}
+
+	if (
+		!response.ok ||
+		!data ||
+		typeof data !== 'object' ||
+		data.status !== 'success' ||
+		!('data' in data) ||
+		!Array.isArray(data.data)
+	) {
+		const failureData = (data ?? {}) as ServicesFailureResponse;
+		throw new ServicesApiError(
+			(typeof failureData.message === 'string' && failureData.message.trim()) ||
+				'No fue posible obtener el listado de servicios activos.',
+			response.status || 400,
+			failureData.details,
+			parseFieldErrors(failureData.errors)
+		);
+	}
+
+	return data.data.map(normalizeServiceLov).filter((service): service is ServiceLov => service !== null);
+};
+
+export const listServicesLovWithOrds = async (token: string): Promise<ServiceLov[]> => {
+	if (!token) {
+		throw new ServicesApiError('Token de acceso requerido.', 401);
+	}
+
+	const response = await fetch(SERVICES_LOV_URL, {
+		method: 'GET',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	return parseServicesLovResponse(response);
 };
 
 const parseServiceResponse = async (response: Response) => {

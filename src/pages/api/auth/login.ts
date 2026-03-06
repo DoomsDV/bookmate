@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
-import { AuthApiError, loginWithOrds, setSessionCookies } from '../../../lib/auth';
+import { AuthApiError, loginWithOrds, setOrganizationCacheCookies, setSessionCookies } from '../../../lib/auth';
+import { getCurrentOrganizationWithOrds } from '../../../lib/organization';
 
 const mapFieldParamName = (field: string) => {
 	if (field === 'username' || field === 'email' || field === 'identifier') return 'identifier_error';
@@ -47,6 +48,13 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 
 		const session = await loginWithOrds({ email: identifier, password });
 		setSessionCookies(cookies, url, session);
+
+		try {
+			const organization = await getCurrentOrganizationWithOrds(session.access_token);
+			setOrganizationCacheCookies(cookies, url, organization);
+		} catch {
+			// Si falla la cache de organización, no bloqueamos el inicio de sesión.
+		}
 
 		if (wantsHtml(request)) {
 			return new Response(null, {
@@ -103,4 +111,23 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 			{ status: authError.status }
 		);
 	}
+};
+
+export const GET: APIRoute = async ({ request, url }) => {
+	if (wantsHtml(request)) {
+		return new Response(null, {
+			status: 302,
+			headers: {
+				Location: '/login',
+			},
+		});
+	}
+
+	return Response.json(
+		{
+			error: 'Metodo no permitido para este endpoint.',
+			redirect: '/login',
+		},
+		{ status: 405 }
+	);
 };

@@ -1,3 +1,7 @@
+---
+import { ClientRouter } from 'astro:transitions';
+---
+
 <!doctype html>
 <html lang="es">
 	<head>
@@ -23,6 +27,7 @@
 		<title>Bookmate</title>
 	</head>
 	<body>
+		<ClientRouter />
 		<slot />
 	</body>
 </html>

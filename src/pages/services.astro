@@ -79,17 +79,6 @@ const visiblePages = Array.from(
 
 				<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
 					<section class="grid gap-6">
-						<div class="flex items-center justify-end">
-							<button
-								type="button"
-								class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-[color:var(--primary)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_10px_24px_var(--hero-shadow)] transition hover:brightness-105"
-								data-open-service-modal
-							>
-								<span class="material-symbols-rounded text-[1.1rem]">add</span>
-								Nuevo servicio
-							</button>
-						</div>
-
 						{
 							flashMessage ? (
 								<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
@@ -103,7 +92,7 @@ const visiblePages = Array.from(
 								<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
 							) : (
 								<div class="grid gap-5">
-									<ServicesGrid services={services} />
+									<ServicesGrid services={services} showCreateAction={true} />
 
 									<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
 										<p class="text-sm text-[color:var(--on-surface-variant)]">
@@ -136,7 +125,7 @@ const visiblePages = Array.from(
 											{
 												visiblePages.map((page) =>
 													page === safeCurrentPage ? (
-														<span class="rounded-lg bg-[color:var(--primary)] px-3 py-1.5 text-sm font-bold text-white">
+														<span class="rounded-lg border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-sm font-bold text-[color:var(--primary)]">
 															{page}
 														</span>
 													) : (
@@ -200,7 +189,10 @@ const visiblePages = Array.from(
 			<div class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/25 dark:text-rose-300" data-form-error></div>
 
 			<label class="grid gap-1 text-sm font-semibold">
-				Nombre
+				<span class="inline-flex items-center gap-1">
+					Nombre
+					<span class="text-rose-600">*</span>
+				</span>
 				<input
 					type="text"
 					name="name"
@@ -213,7 +205,10 @@ const visiblePages = Array.from(
 			</label>
 
 			<label class="grid gap-1 text-sm font-semibold">
-				Duracion (minutos)
+				<span class="inline-flex items-center gap-1">
+					Duracion (minutos)
+					<span class="text-rose-600">*</span>
+				</span>
 				<input
 					type="number"
 					name="duration_minutes"
@@ -274,7 +269,7 @@ const visiblePages = Array.from(
 					</button>
 					<button
 						type="submit"
-						class="inline-flex items-center gap-2 rounded-xl bg-[color:var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+						class="btn-primary-soft inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
 						data-submit-service
 					>
 						<span class="material-symbols-rounded text-[1rem]" data-submit-service-icon>check</span>
@@ -289,26 +284,32 @@ const visiblePages = Array.from(
 </Layout>
 
 <script>
-	const modal = document.querySelector('[data-service-modal]');
-	const openButton = document.querySelector('[data-open-service-modal]');
-	const closeButton = document.querySelector('[data-close-service-modal]');
-	const deleteButton = document.querySelector('[data-delete-service]');
-	const form = document.querySelector('[data-service-create-form]');
-	const submitButton = document.querySelector('[data-submit-service]');
-	const submitLabel = document.querySelector('[data-submit-service-label]');
-	const submitIcon = document.querySelector('[data-submit-service-icon]');
-	const formErrorNode = document.querySelector('[data-form-error]');
-	const fieldErrorNodes = document.querySelectorAll('[data-field-error]');
-	const priceInput = document.querySelector('[data-price-mask]');
-	const loadingNode = document.querySelector('[data-service-loading]');
-	const modalTitle = document.querySelector('[data-service-modal-title]');
-	const modalDescription = document.querySelector('[data-service-modal-description]');
-	const serviceCards = document.querySelectorAll('[data-service-card]');
-	const nameInput = form?.querySelector('[name="name"]');
-	const durationInput = form?.querySelector('[name="duration_minutes"]');
-	const statusInput = form?.querySelector('[name="is_active"]');
-	const formFields = form?.querySelectorAll('input, select, textarea');
-	let closeTimer = null;
+	const initializeServicesPage = () => {
+	const modal = document.querySelector<HTMLDialogElement>('[data-service-modal]');
+	if (!modal || modal.dataset.bound === 'true') return;
+	modal.dataset.bound = 'true';
+	const openButton = document.querySelector<HTMLButtonElement>('[data-open-service-modal]');
+	const closeButton = document.querySelector<HTMLButtonElement>('[data-close-service-modal]');
+	const deleteButton = document.querySelector<HTMLButtonElement>('[data-delete-service]');
+	const form = document.querySelector<HTMLFormElement>('[data-service-create-form]');
+	const submitButton = document.querySelector<HTMLButtonElement>('[data-submit-service]');
+	const submitLabel = document.querySelector<HTMLElement>('[data-submit-service-label]');
+	const submitIcon = document.querySelector<HTMLElement>('[data-submit-service-icon]');
+	const formErrorNode = document.querySelector<HTMLElement>('[data-form-error]');
+	const fieldErrorNodes = document.querySelectorAll<HTMLElement>('[data-field-error]');
+	const priceInput = document.querySelector<HTMLInputElement>('[data-price-mask]');
+	const loadingNode = document.querySelector<HTMLElement>('[data-service-loading]');
+	const modalTitle = document.querySelector<HTMLElement>('[data-service-modal-title]');
+	const modalDescription = document.querySelector<HTMLElement>('[data-service-modal-description]');
+	const serviceCards = document.querySelectorAll<HTMLElement>('[data-service-card]');
+	const nameInput = form ? form.querySelector<HTMLInputElement>('[name="name"]') : null;
+	const durationInput = form ? form.querySelector<HTMLInputElement>('[name="duration_minutes"]') : null;
+	const statusInput = form ? form.querySelector<HTMLSelectElement>('[name="is_active"]') : null;
+	const formFields =
+		form?.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+			'input, select, textarea'
+		);
+	let closeTimer: number | null = null;
 	let mode = 'create';
 	let editingServiceId = 0;
 	let serviceReadRequestSeq = 0;
@@ -320,7 +321,7 @@ const visiblePages = Array.from(
 		window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
 	}
 
-	const redirectWithFlash = (message, type = 'success') => {
+	const redirectWithFlash = (message: string, type = 'success') => {
 		const nextUrl = new URL(window.location.href);
 		nextUrl.searchParams.set('flash_message', message);
 		nextUrl.searchParams.set('flash_type', type);
@@ -339,7 +340,7 @@ const visiblePages = Array.from(
 		}
 	};
 
-	const showFormError = (message) => {
+	const showFormError = (message: string) => {
 		if (!formErrorNode) return;
 		formErrorNode.textContent = message;
 		formErrorNode.classList.remove('hidden');
@@ -359,7 +360,7 @@ const visiblePages = Array.from(
 		loadingNode?.classList.add('hidden');
 	};
 
-	const setEditMode = (serviceId) => {
+	const setEditMode = (serviceId: number) => {
 		mode = 'edit';
 		editingServiceId = serviceId;
 		if (modalTitle) modalTitle.textContent = 'Editar servicio';
@@ -372,7 +373,7 @@ const visiblePages = Array.from(
 		deleteButton?.removeAttribute('disabled');
 	};
 
-	const setFormLoadingState = (isLoading) => {
+	const setFormLoadingState = (isLoading: boolean) => {
 		if (isLoading) {
 			loadingNode?.classList.add('flex');
 			loadingNode?.classList.remove('hidden');
@@ -439,13 +440,13 @@ const visiblePages = Array.from(
 		openModalShell();
 	};
 
-	const formatPriceValue = (rawValue) => {
+	const formatPriceValue = (rawValue: string | number | null | undefined) => {
 		const digits = String(rawValue || '').replace(/\D/g, '');
 		if (!digits) return '';
 		return Number(digits).toLocaleString('es-PY');
 	};
 
-	const fillFormWithService = (service) => {
+	const fillFormWithService = (service: any) => {
 		if (nameInput) nameInput.value = String(service?.name || '');
 		if (durationInput) {
 			durationInput.value =
@@ -466,7 +467,7 @@ const visiblePages = Array.from(
 		if (statusInput) statusInput.value = '1';
 	};
 
-	const openEditModal = async (serviceId) => {
+	const openEditModal = async (serviceId: number) => {
 		if (!serviceId) return;
 		const requestId = ++serviceReadRequestSeq;
 		setEditMode(serviceId);
@@ -509,7 +510,7 @@ const visiblePages = Array.from(
 	openButton?.addEventListener('click', openCreateModal);
 	closeButton?.addEventListener('click', closeModal);
 
-	modal?.addEventListener('click', (event) => {
+	modal?.addEventListener('click', (event: MouseEvent) => {
 		const target = event.target;
 		if (target instanceof HTMLDialogElement) closeModal();
 	});
@@ -525,14 +526,14 @@ const visiblePages = Array.from(
 		};
 
 		card.addEventListener('click', openFromCard);
-		card.addEventListener('keydown', (event) => {
+		card.addEventListener('keydown', (event: KeyboardEvent) => {
 			if (event.key !== 'Enter' && event.key !== ' ') return;
 			event.preventDefault();
 			openFromCard();
 		});
 	}
 
-	form?.addEventListener('submit', async (event) => {
+	form?.addEventListener('submit', async (event: SubmitEvent) => {
 		event.preventDefault();
 		clearErrors();
 
@@ -550,10 +551,17 @@ const visiblePages = Array.from(
 			return;
 		}
 
-		const payload = {
+		type ServiceSubmitPayload = {
+			name: string;
+			duration_minutes: number;
+			is_active: 0 | 1;
+			price?: number;
+		};
+
+		const payload: ServiceSubmitPayload = {
 			name,
 			duration_minutes: duration,
-			is_active: isActiveRaw === '0' ? 0 : 1,
+			is_active: (isActiveRaw === '0' ? 0 : 1) as 0 | 1,
 		};
 
 		if (priceRaw) {
@@ -666,6 +674,10 @@ const visiblePages = Array.from(
 			restoreButtons();
 		}
 	});
+	};
+
+	initializeServicesPage();
+	document.addEventListener('astro:page-load', initializeServicesPage);
 </script>
 
 <style is:global>

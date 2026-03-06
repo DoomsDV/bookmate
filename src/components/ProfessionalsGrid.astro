@@ -1,0 +1,144 @@
+---
+import type { Professional } from '../lib/professionals';
+
+interface Props {
+	professionals: Professional[];
+	showCreateAction?: boolean;
+}
+
+const { professionals, showCreateAction = false } = Astro.props;
+
+const PROFESSIONAL_ICON = 'badge';
+
+const toDisplayName = (professional: Professional) => {
+	const first = String(professional.user.first_name || '').trim();
+	const last = String(professional.user.last_name || '').trim();
+	const fullName = `${first} ${last}`.trim();
+	if (fullName) return fullName;
+	return professional.user.apex_user_name || `Personal #${professional.id_professional}`;
+};
+
+const toSpecialtyName = (professional: Professional) => {
+	return professional.specialty?.name || 'Sin especialidad';
+};
+
+const toProfileImageUrl = (professional: Professional) => {
+	return String(professional.profile_image_url || '').trim();
+};
+
+const cardItems = professionals.map((professional) => ({
+	professional,
+	profileImageUrl: toProfileImageUrl(professional),
+}));
+
+const activeProfessionals = professionals.filter((item) => item.is_active === 1).length;
+---
+
+<section class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
+	<div class="flex flex-wrap items-center justify-between gap-3">
+		<div class="flex flex-wrap justify-start gap-2 text-xs font-semibold">
+			<span class="status-chip-total">
+				Total: {professionals.length}
+			</span>
+			<span class="status-chip-success">
+				Activos: {activeProfessionals}
+			</span>
+			<span class="status-chip-danger">
+				Inactivos: {professionals.length - activeProfessionals}
+			</span>
+		</div>
+
+		{
+			showCreateAction ? (
+				<button
+					type="button"
+					class="btn-primary-soft inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition"
+					data-open-professional-modal
+				>
+					<span class="material-symbols-rounded text-[1.1rem]">add</span>
+					Nuevo personal
+				</button>
+			) : null
+		}
+	</div>
+
+	{
+		professionals.length === 0 ? (
+			<div class="mt-6 rounded-[1.45rem] border border-dashed border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-5 py-7 text-sm text-[color:var(--on-surface-variant)]">
+				No hay profesionales registrados para esta organizacion.
+			</div>
+		) : (
+			<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+				{
+					cardItems.map((item) => (
+						<article
+							class="cursor-pointer rounded-[1.45rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]"
+							data-professional-card
+							data-professional-id={item.professional.id_professional}
+							tabindex="0"
+							role="button"
+							aria-label={`Editar personal ${toDisplayName(item.professional)}`}
+						>
+							<div class="flex items-start gap-4">
+								{
+									item.profileImageUrl ? (
+										<img
+											src={item.profileImageUrl}
+											alt={`Foto de perfil de ${toDisplayName(item.professional)}`}
+											class="size-20 shrink-0 rounded-3xl border border-[color:var(--shell-border)] object-cover shadow-[0_12px_24px_rgba(15,23,42,0.16)]"
+											loading="lazy"
+											decoding="async"
+										/>
+									) : (
+										<div class="flex size-20 shrink-0 items-center justify-center rounded-3xl bg-[color:var(--primary-soft)] text-[color:var(--primary)] shadow-[0_12px_24px_rgba(15,23,42,0.16)]">
+											<span class="material-symbols-rounded text-[1.45rem]">{PROFESSIONAL_ICON}</span>
+										</div>
+									)
+								}
+
+								<div class="min-w-0 flex-1">
+									<div class="flex items-start justify-between gap-3">
+										<div class="min-w-0">
+											<h3 class="text-lg font-semibold leading-6 text-[color:var(--on-surface)]">
+												{toDisplayName(item.professional)}
+											</h3>
+											<p class="mt-1 truncate text-sm text-[color:var(--on-surface-variant)]">
+												@{item.professional.user.apex_user_name || '-'}
+											</p>
+										</div>
+
+										<span
+											class:list={[
+												'status-pill',
+												item.professional.is_active === 1
+													? 'status-pill-success'
+													: 'status-pill-danger',
+											]}
+										>
+											{item.professional.is_active === 1 ? 'Activo' : 'Inactivo'}
+										</span>
+									</div>
+								</div>
+							</div>
+
+							<div class="mt-4 space-y-3 text-sm text-[color:var(--on-surface-variant)]">
+								<div class="flex items-center justify-between gap-3">
+									<span>Telefono</span>
+									<span class="text-right font-semibold text-[color:var(--on-surface)]">
+										{item.professional.phone_number || '-'}
+									</span>
+								</div>
+								<div class="flex items-center justify-between gap-3">
+									<span>Especialidad</span>
+									<span class="text-right font-semibold text-[color:var(--on-surface)]">
+										{toSpecialtyName(item.professional)}
+									</span>
+								</div>
+							</div>
+						</article>
+					))
+				}
+			</div>
+		)
+	}
+</section>

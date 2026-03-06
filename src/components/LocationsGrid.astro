@@ -3,68 +3,44 @@ import type { Location } from '../lib/locations';
 
 interface Props {
 	locations: Location[];
+	showCreateAction?: boolean;
 }
 
-const { locations } = Astro.props;
-
-const dateFormatter = new Intl.DateTimeFormat('es-PY', {
-	day: '2-digit',
-	month: 'short',
-	year: 'numeric',
-});
-
-const accentClasses = [
-	'bg-sky-500',
-	'bg-teal-500',
-	'bg-indigo-500',
-	'bg-amber-500',
-	'bg-fuchsia-500',
-	'bg-cyan-500',
-];
+const { locations, showCreateAction = false } = Astro.props;
 
 const LOCATION_ICON = 'storefront';
 
-const toDateLabel = (value: string) => {
-	const parsed = Date.parse(value);
-	if (Number.isNaN(parsed)) return 'Fecha no disponible';
-	return dateFormatter.format(new Date(parsed));
-};
-
-const toCoordinatesLabel = (location: Location) => {
-	if (location.latitude === null || location.longitude === null) return 'No definidas';
-	return `${location.latitude}, ${location.longitude}`;
-};
-
-const cardItems = locations.map((location, index) => ({
-	location,
-	iconClass: accentClasses[index % accentClasses.length],
-}));
+const cardItems = locations.map((location) => ({ location }));
 
 const activeLocations = locations.filter((item) => item.is_active === 1).length;
 ---
 
 <section class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
-	<div class="flex flex-wrap items-center justify-between gap-4">
-		<div>
-			<p class="text-xs font-bold uppercase tracking-[0.22em] text-[color:var(--on-surface-variant)]/75">
-				Sucursales
-			</p>
-			<h2 class="mt-3 text-2xl font-extrabold tracking-[-0.02em] text-[color:var(--on-surface)]">
-				Red de sucursales
-			</h2>
-		</div>
-
-		<div class="flex flex-wrap gap-2 text-xs font-semibold">
-			<span class="rounded-full bg-[color:var(--secondary-container)] px-3 py-1 text-[color:var(--secondary)]">
+	<div class="flex flex-wrap items-center justify-between gap-3">
+		<div class="flex flex-wrap justify-start gap-2 text-xs font-semibold">
+			<span class="status-chip-total">
 				Total: {locations.length}
 			</span>
-			<span class="rounded-full border border-emerald-700/20 bg-emerald-700 px-3 py-1 text-white dark:border-emerald-400/35 dark:bg-emerald-400 dark:text-emerald-950">
+			<span class="status-chip-success">
 				Activas: {activeLocations}
 			</span>
-			<span class="rounded-full border border-rose-700/20 bg-rose-700 px-3 py-1 text-white dark:border-rose-400/35 dark:bg-rose-400 dark:text-rose-950">
+			<span class="status-chip-danger">
 				Inactivas: {locations.length - activeLocations}
 			</span>
 		</div>
+
+		{
+			showCreateAction ? (
+				<button
+					type="button"
+					class="btn-primary-soft inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition"
+					data-open-location-modal
+				>
+					<span class="material-symbols-rounded text-[1.1rem]">add</span>
+					Nueva sucursal
+				</button>
+			) : null
+		}
 	</div>
 
 	{
@@ -85,16 +61,16 @@ const activeLocations = locations.filter((item) => item.is_active === 1).length;
 							aria-label={`Editar sucursal ${item.location.name || item.location.id_location}`}
 						>
 							<div class="flex items-start justify-between gap-3">
-								<div class={`flex size-10 items-center justify-center rounded-xl text-white ${item.iconClass}`}>
+								<div class="flex size-10 items-center justify-center rounded-xl bg-[color:var(--primary-soft)] text-[color:var(--primary)]">
 									<span class="material-symbols-rounded text-[1rem]">{LOCATION_ICON}</span>
 								</div>
 
 								<span
 									class:list={[
-										'rounded-full px-3 py-1 text-[0.68rem] font-bold uppercase tracking-[0.2em]',
+										'status-pill',
 										item.location.is_active === 1
-											? 'border border-emerald-700/20 bg-emerald-700 text-white dark:border-emerald-400/35 dark:bg-emerald-400 dark:text-emerald-950'
-											: 'border border-rose-700/20 bg-rose-700 text-white dark:border-rose-400/35 dark:bg-rose-400 dark:text-rose-950',
+											? 'status-pill-success'
+											: 'status-pill-danger',
 									]}
 								>
 									{item.location.is_active === 1 ? 'Activa' : 'Inactiva'}
@@ -120,18 +96,6 @@ const activeLocations = locations.filter((item) => item.is_active === 1).length;
 									<span>Departamento</span>
 									<span class="text-right font-semibold text-[color:var(--on-surface)]">
 										{item.location.department.name || '-'}
-									</span>
-								</div>
-								<div class="flex items-center justify-between gap-3">
-									<span>Coordenadas</span>
-									<span class="text-right font-semibold text-[color:var(--on-surface)]">
-										{toCoordinatesLabel(item.location)}
-									</span>
-								</div>
-								<div class="flex items-center justify-between gap-3">
-									<span>Creada</span>
-									<span class="text-right font-semibold text-[color:var(--on-surface)]">
-										{toDateLabel(item.location.created_at)}
 									</span>
 								</div>
 							</div>

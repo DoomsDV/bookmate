@@ -33,7 +33,7 @@
 		</button>
 		<button
 			type="button"
-			class="rounded-xl bg-[color:var(--primary)] px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105"
+			class="btn-primary-soft rounded-xl px-4 py-2 text-sm font-semibold transition"
 			data-app-alert-confirm
 		>
 			Aceptar
@@ -42,53 +42,54 @@
 </dialog>
 
 <script>
-	const dialog = document.querySelector('[data-app-alert-dialog]');
-	if (dialog && dialog.dataset.bound !== '1') {
+	type AlertDialogMode = 'alert' | 'confirm';
+	type AlertDialogType = 'info' | 'success' | 'warning' | 'error';
+	type AlertDialogOptions = BookmateAlertOptions & { mode?: AlertDialogMode };
+
+	const initializeAppAlert = () => {
+		const dialog = document.querySelector<HTMLDialogElement>('[data-app-alert-dialog]');
+		if (!dialog || dialog.dataset.bound === '1') return;
 		dialog.dataset.bound = '1';
-		const titleNode = dialog.querySelector('[data-app-alert-title]');
-		const messageNode = dialog.querySelector('[data-app-alert-message]');
-		const iconNode = dialog.querySelector('[data-app-alert-icon]');
-		const iconShellNode = dialog.querySelector('[data-app-alert-icon-shell]');
-		const confirmButton = dialog.querySelector('[data-app-alert-confirm]');
-		const cancelButton = dialog.querySelector('[data-app-alert-cancel]');
 
-		let resolver = null;
-		let closingTimer = null;
+		const titleNode = dialog.querySelector<HTMLElement>('[data-app-alert-title]');
+		const messageNode = dialog.querySelector<HTMLElement>('[data-app-alert-message]');
+		const iconNode = dialog.querySelector<HTMLElement>('[data-app-alert-icon]');
+		const iconShellNode = dialog.querySelector<HTMLElement>('[data-app-alert-icon-shell]');
+		const confirmButton = dialog.querySelector<HTMLButtonElement>('[data-app-alert-confirm]');
+		const cancelButton = dialog.querySelector<HTMLButtonElement>('[data-app-alert-cancel]');
 
-		const toneMap = {
+		let resolver: ((value: boolean) => void) | null = null;
+		let closingTimer: number | null = null;
+
+		const toneMap: Record<AlertDialogType, { icon: string; iconShell: string }> = {
 			info: {
 				icon: 'info',
-				iconShell: 'bg-sky-500 text-white shadow-[0_8px_18px_rgba(14,116,203,0.28)]',
+				iconShell: 'alert-tone-info',
 			},
 			success: {
 				icon: 'check_circle',
-				iconShell: 'bg-emerald-500 text-white shadow-[0_8px_18px_rgba(5,150,105,0.28)]',
+				iconShell: 'alert-tone-success',
 			},
 			warning: {
 				icon: 'warning',
-				iconShell: 'bg-amber-500 text-white shadow-[0_8px_18px_rgba(217,119,6,0.28)]',
+				iconShell: 'alert-tone-warning',
 			},
 			error: {
 				icon: 'delete',
-				iconShell: 'bg-rose-500 text-white shadow-[0_8px_18px_rgba(225,29,72,0.28)]',
+				iconShell: 'alert-tone-danger',
 			},
 		};
 
 		const clearToneClasses = () => {
 			iconShellNode?.classList.remove(
-				'bg-sky-500',
-				'bg-emerald-500',
-				'bg-amber-500',
-				'bg-rose-500',
-				'text-white',
-				'shadow-[0_8px_18px_rgba(14,116,203,0.28)]',
-				'shadow-[0_8px_18px_rgba(5,150,105,0.28)]',
-				'shadow-[0_8px_18px_rgba(217,119,6,0.28)]',
-				'shadow-[0_8px_18px_rgba(225,29,72,0.28)]'
+				'alert-tone-info',
+				'alert-tone-success',
+				'alert-tone-warning',
+				'alert-tone-danger'
 			);
 		};
 
-		const resolveAndClose = (value) => {
+		const resolveAndClose = (value: boolean) => {
 			if (!resolver) return;
 			if (dialog.dataset.isClosing === '1') return;
 			dialog.dataset.isClosing = '1';
@@ -100,13 +101,16 @@
 				dialog.dataset.isClosing = '0';
 				const resolve = resolver;
 				resolver = null;
+				if (!resolve) return;
 				resolve(value);
 			}, 160);
 		};
 
-		const showDialog = (options = {}) => {
-			const mode = options.mode === 'alert' ? 'alert' : 'confirm';
-			const tone = toneMap[options.type] || toneMap.info;
+		const showDialog = (options: AlertDialogOptions = {}): Promise<boolean> => {
+			const mode: AlertDialogMode = options.mode === 'alert' ? 'alert' : 'confirm';
+			const toneKey: AlertDialogType = options.type ?? 'info';
+			const tone = toneMap[toneKey];
+
 			if (titleNode) {
 				titleNode.textContent =
 					typeof options.title === 'string' && options.title.trim()
@@ -156,26 +160,29 @@
 			dialog.classList.remove('is-closing');
 			if (!dialog.open) dialog.showModal();
 
-			return new Promise((resolve) => {
+			return new Promise<boolean>((resolve) => {
 				resolver = resolve;
 			});
 		};
 
 		confirmButton?.addEventListener('click', () => resolveAndClose(true));
 		cancelButton?.addEventListener('click', () => resolveAndClose(false));
-		dialog.addEventListener('cancel', (event) => {
+		dialog.addEventListener('cancel', (event: Event) => {
 			event.preventDefault();
 			resolveAndClose(false);
 		});
-		dialog.addEventListener('click', (event) => {
+		dialog.addEventListener('click', (event: MouseEvent) => {
 			if (event.target instanceof HTMLDialogElement) resolveAndClose(false);
 		});
 
 		window.BookmateAlert = {
-			alert: (options = {}) => showDialog({ ...options, mode: 'alert' }),
-			confirm: (options = {}) => showDialog({ ...options, mode: 'confirm' }),
+			alert: (options: BookmateAlertOptions = {}) => showDialog({ ...options, mode: 'alert' }),
+			confirm: (options: BookmateAlertOptions = {}) => showDialog({ ...options, mode: 'confirm' }),
 		};
-	}
+	};
+
+	initializeAppAlert();
+	document.addEventListener('astro:page-load', initializeAppAlert);
 </script>
 
 <style is:global>

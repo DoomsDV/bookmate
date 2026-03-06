@@ -4,6 +4,10 @@ interface Props {
 }
 
 const { userName = 'Perfil' } = Astro.props;
+const cachedOrganizationName = String(
+	Astro.locals.organizationName || Astro.cookies.get('org_name')?.value || ''
+).trim();
+const workspaceName = cachedOrganizationName || 'Bookmate';
 ---
 
 <header class="relative z-40 border-b border-[color:var(--shell-border)]/80 px-5 py-5 sm:px-7">
@@ -22,13 +26,13 @@ const { userName = 'Perfil' } = Astro.props;
 
 			<div>
 				<p class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-[color:var(--on-surface-variant)]/80">
-					Bookmate workspace
+					{workspaceName} workspace
 				</p>
 				<a href="/" class="mt-1 block no-underline">
 					<span
 						class="[font-family:var(--font-logo)] text-[1.55rem] font-extrabold uppercase leading-none tracking-[0.08em] text-[color:var(--primary)]"
 					>
-						Bookmate
+						{workspaceName}
 					</span>
 				</a>
 			</div>
@@ -58,7 +62,7 @@ const { userName = 'Perfil' } = Astro.props;
 
 			<details class="group relative" data-profile-menu>
 				<summary
-					class="flex size-11 cursor-pointer list-none items-center justify-center rounded-2xl bg-[color:var(--primary)] text-sm font-bold tracking-[0.08em] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_12px_26px_rgba(47,111,221,0.24)] outline-none transition duration-200 hover:brightness-[1.03] focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+					class="flex size-11 cursor-pointer list-none items-center justify-center rounded-2xl border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] text-sm font-bold tracking-[0.08em] text-[color:var(--primary)] outline-none transition duration-200 hover:bg-[color:var(--primary-soft-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
 					aria-label={`Abrir menu de ${userName}`}
 				>
 					BM
@@ -98,126 +102,155 @@ const { userName = 'Perfil' } = Astro.props;
 </header>
 
 <script>
-	const profileMenus = document.querySelectorAll('[data-profile-menu]');
-	const navToggle = document.querySelector('[data-nav-toggle]');
-	const appShell = document.querySelector('[data-app-shell]');
-	const sideNavShell = document.querySelector('[data-side-nav-shell]');
-	const sideNav = document.querySelector('[data-side-nav]');
-	const sideNavBackdrop = document.querySelector('[data-side-nav-backdrop]');
-	const sideNavCloseButtons = document.querySelectorAll('[data-side-nav-close]');
-	const desktopBreakpoint = window.matchMedia('(min-width: 1024px)');
-	const themeToggle = document.querySelector('[data-theme-toggle]');
-	const themeIcon = document.querySelector('[data-theme-icon]');
-	const themeLabel = document.querySelector('[data-theme-label]');
-	const themeToggleMobile = document.querySelector('[data-theme-toggle-mobile]');
-	const themeIconMobile = document.querySelector('[data-theme-icon-mobile]');
+	const initializeTopBar = () => {
+		const currentCleanup = (window as any).__bookmateTopBarCleanup;
+		if (typeof currentCleanup === 'function') currentCleanup();
 
-	const closeProfileMenus = () => {
-		for (const menu of profileMenus) menu.removeAttribute('open');
-	};
+		const profileMenus = document.querySelectorAll('[data-profile-menu]');
+		const navToggle = document.querySelector('[data-nav-toggle]');
+		const appShell = document.querySelector('[data-app-shell]');
+		const sideNavShell = document.querySelector('[data-side-nav-shell]');
+		const sideNav = document.querySelector('[data-side-nav]');
+		const sideNavBackdrop = document.querySelector('[data-side-nav-backdrop]');
+		const sideNavCloseButtons = document.querySelectorAll('[data-side-nav-close]');
+		const desktopBreakpoint = window.matchMedia('(min-width: 1024px)');
+		const themeToggle = document.querySelector('[data-theme-toggle]');
+		const themeIcon = document.querySelector('[data-theme-icon]');
+		const themeLabel = document.querySelector('[data-theme-label]');
+		const themeToggleMobile = document.querySelector('[data-theme-toggle-mobile]');
+		const themeIconMobile = document.querySelector('[data-theme-icon-mobile]');
+		const removeListeners: Array<() => void> = [];
 
-	const openSideNav = () => {
-		if (!sideNavShell || !sideNav || !navToggle) return;
-		sideNavShell.classList.remove('pointer-events-none');
-		sideNavShell.classList.add('pointer-events-auto');
-		sideNavBackdrop?.classList.remove('opacity-0');
-		sideNavBackdrop?.classList.add('opacity-100');
-		sideNav.classList.remove('-translate-x-[calc(100%+2rem)]');
-		sideNav.classList.add('translate-x-0');
-		navToggle.setAttribute('aria-expanded', 'true');
-		document.body.classList.add('overflow-hidden');
-	};
+		const on = (target: any, eventName: string, handler: EventListener) => {
+			if (!target?.addEventListener) return;
+			target.addEventListener(eventName, handler);
+			removeListeners.push(() => target.removeEventListener(eventName, handler));
+		};
 
-	const syncDesktopToggle = () => {
-		if (!appShell || !navToggle || !desktopBreakpoint.matches) return;
-		const expanded = appShell.getAttribute('data-sidebar-state') !== 'collapsed';
-		navToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
-	};
+		const closeProfileMenus = () => {
+			for (const menu of profileMenus) menu.removeAttribute('open');
+		};
 
-	const toggleDesktopSidebar = () => {
-		if (!appShell) return;
-		const nextState =
-			appShell.getAttribute('data-sidebar-state') === 'collapsed' ? 'expanded' : 'collapsed';
-		appShell.setAttribute('data-sidebar-state', nextState);
-		syncDesktopToggle();
-	};
+		const openSideNav = () => {
+			if (!sideNavShell || !sideNav || !navToggle) return;
+			sideNavShell.classList.remove('pointer-events-none');
+			sideNavShell.classList.add('pointer-events-auto');
+			sideNavBackdrop?.classList.remove('opacity-0');
+			sideNavBackdrop?.classList.add('opacity-100');
+			sideNav.classList.remove('-translate-x-[calc(100%+2rem)]');
+			sideNav.classList.add('translate-x-0');
+			navToggle.setAttribute('aria-expanded', 'true');
+			document.body.classList.add('overflow-hidden');
+		};
 
-	const applyTheme = (theme: string) => {
-		document.documentElement.dataset.theme = theme;
-		localStorage.setItem('bookmate-theme', theme);
-		const isDark = theme === 'dark';
-		themeToggle?.setAttribute('aria-pressed', String(isDark));
-		themeToggleMobile?.setAttribute('aria-pressed', String(isDark));
-		if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
-		if (themeIconMobile) themeIconMobile.textContent = isDark ? 'light_mode' : 'dark_mode';
-		if (themeLabel) themeLabel.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
-	};
+		const syncDesktopToggle = () => {
+			if (!appShell || !navToggle || !desktopBreakpoint.matches) return;
+			const expanded = appShell.getAttribute('data-sidebar-state') !== 'collapsed';
+			navToggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+		};
 
-	const toggleTheme = () => {
-		const currentTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
-		applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
-	};
-
-	const closeSideNav = () => {
-		if (!sideNavShell || !sideNav || !navToggle) return;
-		sideNavShell.classList.remove('pointer-events-auto');
-		sideNavShell.classList.add('pointer-events-none');
-		sideNavBackdrop?.classList.remove('opacity-100');
-		sideNavBackdrop?.classList.add('opacity-0');
-		sideNav.classList.remove('translate-x-0');
-		sideNav.classList.add('-translate-x-[calc(100%+2rem)]');
-		navToggle.setAttribute('aria-expanded', 'false');
-		document.body.classList.remove('overflow-hidden');
-	};
-
-	const toggleSideNav = () => {
-		if (desktopBreakpoint.matches) {
-			toggleDesktopSidebar();
-			return;
-		}
-
-		if (!sideNav) return;
-		if (sideNav.classList.contains('translate-x-0')) {
-			closeSideNav();
-			return;
-		}
-		closeProfileMenus();
-		openSideNav();
-	};
-
-	const closeOnOutsideClick = (event: any) => {
-		for (const menu of profileMenus) {
-			if (!menu.contains(event.target)) menu.removeAttribute('open');
-		}
-	};
-
-	const closeOnEscape = (event: any) => {
-		if (event.key !== 'Escape') return;
-		closeProfileMenus();
-		if (desktopBreakpoint.matches) return;
-		closeSideNav();
-	};
-
-	const syncOnResize = () => {
-		if (desktopBreakpoint.matches) {
-			closeSideNav();
+		const toggleDesktopSidebar = () => {
+			if (!appShell) return;
+			const nextState =
+				appShell.getAttribute('data-sidebar-state') === 'collapsed' ? 'expanded' : 'collapsed';
+			appShell.setAttribute('data-sidebar-state', nextState);
 			syncDesktopToggle();
-			return;
+		};
+
+		const applyTheme = (theme: string) => {
+			document.documentElement.dataset.theme = theme;
+			localStorage.setItem('bookmate-theme', theme);
+			const isDark = theme === 'dark';
+			themeToggle?.setAttribute('aria-pressed', String(isDark));
+			themeToggleMobile?.setAttribute('aria-pressed', String(isDark));
+			if (themeIcon) themeIcon.textContent = isDark ? 'light_mode' : 'dark_mode';
+			if (themeIconMobile) themeIconMobile.textContent = isDark ? 'light_mode' : 'dark_mode';
+			if (themeLabel) themeLabel.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
+		};
+
+		const resolveInitialTheme = () => {
+			const storedTheme = localStorage.getItem('bookmate-theme');
+			if (storedTheme === 'dark' || storedTheme === 'light') return storedTheme;
+			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+		};
+
+		const toggleTheme = () => {
+			const currentTheme = document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
+			applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+		};
+
+		const closeSideNav = () => {
+			if (!sideNavShell || !sideNav || !navToggle) return;
+			sideNavShell.classList.remove('pointer-events-auto');
+			sideNavShell.classList.add('pointer-events-none');
+			sideNavBackdrop?.classList.remove('opacity-100');
+			sideNavBackdrop?.classList.add('opacity-0');
+			sideNav.classList.remove('translate-x-0');
+			sideNav.classList.add('-translate-x-[calc(100%+2rem)]');
+			navToggle.setAttribute('aria-expanded', 'false');
+			document.body.classList.remove('overflow-hidden');
+		};
+
+		const toggleSideNav = () => {
+			if (desktopBreakpoint.matches) {
+				toggleDesktopSidebar();
+				return;
+			}
+
+			if (!sideNav) return;
+			if (sideNav.classList.contains('translate-x-0')) {
+				closeSideNav();
+				return;
+			}
+			closeProfileMenus();
+			openSideNav();
+		};
+
+		const closeOnOutsideClick = (event: any) => {
+			for (const menu of profileMenus) {
+				if (!menu.contains(event.target)) menu.removeAttribute('open');
+			}
+		};
+
+		const closeOnEscape = (event: any) => {
+			if (event.key !== 'Escape') return;
+			closeProfileMenus();
+			if (desktopBreakpoint.matches) return;
+			closeSideNav();
+		};
+
+		const syncOnResize = () => {
+			if (desktopBreakpoint.matches) {
+				closeSideNav();
+				syncDesktopToggle();
+				return;
+			}
+			navToggle?.setAttribute('aria-expanded', 'false');
+		};
+
+		on(navToggle, 'click', toggleSideNav);
+		on(themeToggle, 'click', toggleTheme);
+		on(themeToggleMobile, 'click', toggleTheme);
+		on(sideNavBackdrop, 'click', closeSideNav);
+		for (const button of sideNavCloseButtons) {
+			on(button, 'click', closeSideNav);
 		}
-		navToggle?.setAttribute('aria-expanded', 'false');
+
+		on(document, 'click', closeOnOutsideClick as EventListener);
+		on(document, 'keydown', closeOnEscape as EventListener);
+		on(desktopBreakpoint, 'change', syncOnResize as EventListener);
+		applyTheme(resolveInitialTheme());
+		syncOnResize();
+
+		(window as any).__bookmateTopBarCleanup = () => {
+			for (const removeListener of removeListeners) removeListener();
+		};
 	};
 
-	navToggle?.addEventListener('click', toggleSideNav);
-	themeToggle?.addEventListener('click', toggleTheme);
-	themeToggleMobile?.addEventListener('click', toggleTheme);
-	sideNavBackdrop?.addEventListener('click', closeSideNav);
-	for (const button of sideNavCloseButtons) {
-		button.addEventListener('click', closeSideNav);
-	}
+	initializeTopBar();
 
-	document.addEventListener('click', closeOnOutsideClick);
-	document.addEventListener('keydown', closeOnEscape);
-	desktopBreakpoint.addEventListener('change', syncOnResize);
-	applyTheme(document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light');
-	syncOnResize();
+	if (!(window as any).__bookmateTopBarPageLoadBound) {
+		document.addEventListener('astro:page-load', initializeTopBar);
+		(window as any).__bookmateTopBarPageLoadBound = true;
+	}
 </script>

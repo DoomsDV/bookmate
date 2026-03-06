@@ -31,3 +31,26 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
 	return Response.json({ success: true, redirect: '/login' });
 };
+
+export const GET: APIRoute = async ({ request, cookies }) => {
+	const refreshToken = cookies.get('refresh_token')?.value;
+
+	try {
+		await logoutWithOrds(refreshToken);
+	} catch {
+		// El logout debe ser idempotente: aunque ORDS falle, limpiamos la sesión local.
+	}
+
+	clearSessionCookies(cookies);
+
+	if (wantsHtml(request)) {
+		return new Response(null, {
+			status: 302,
+			headers: {
+				Location: '/login',
+			},
+		});
+	}
+
+	return Response.json({ success: true, redirect: '/login' });
+};
