@@ -48,38 +48,38 @@
 }
 
 html[data-theme='dark'] {
-	--background: #0f172a;
-	--background-accent: #1e293b;
-	--page-background: #111827;
-	--surface: rgba(17, 24, 39, 0.84);
-	--surface-container: #1a2437;
-	--surface-bright: #1e293b;
+	--background: #0b0b0c;
+	--background-accent: #141416;
+	--page-background: #0a0a0b;
+	--surface: rgba(20, 20, 22, 0.86);
+	--surface-container: #17181b;
+	--surface-bright: #1c1c20;
 	--bar-outline: rgba(255, 255, 255, 0.12);
-	--shell-surface: rgba(15, 23, 42, 0.9);
-	--sidebar-surface: rgba(15, 23, 42, 0.95);
-	--content-surface: rgba(17, 24, 39, 0.56);
-	--shell-border: rgba(255, 255, 255, 0.1);
+	--shell-surface: rgba(13, 13, 15, 0.92);
+	--sidebar-surface: rgba(16, 16, 18, 0.96);
+	--content-surface: rgba(20, 20, 22, 0.58);
+	--shell-border: rgba(255, 255, 255, 0.09);
 	--primary: #3b82f6;
-	--primary-soft: rgba(59, 130, 246, 0.18);
-	--primary-soft-hover: rgba(59, 130, 246, 0.26);
-	--primary-container: rgba(59, 130, 246, 0.2);
-	--secondary: #b5c7dd;
-	--secondary-container: rgba(148, 163, 184, 0.18);
-	--on-surface: #edf2fb;
-	--on-surface-variant: #9fb2ca;
-	--hero-gradient: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 48%, #3b82f6 100%);
-	--hero-shadow: rgba(30, 64, 175, 0.24);
-	--hero-glow: radial-gradient(circle at center, rgba(255, 255, 255, 0.06), transparent 58%);
-	--control-surface: rgba(30, 41, 59, 0.9);
-	--control-surface-strong: rgba(30, 41, 59, 0.98);
-	--menu-surface: rgba(24, 34, 50, 0.98);
-	--card-surface: rgba(30, 41, 59, 0.86);
-	--card-surface-strong: rgba(30, 41, 59, 0.94);
-	--sidebar-card-surface: rgba(30, 41, 59, 0.88);
-	--sidebar-hover: rgba(255, 255, 255, 0.05);
-	--status-total-bg: rgba(148, 163, 184, 0.18);
-	--status-total-text: #c9d8ea;
-	--status-total-border: rgba(148, 163, 184, 0.3);
+	--primary-soft: rgba(59, 130, 246, 0.14);
+	--primary-soft-hover: rgba(59, 130, 246, 0.22);
+	--primary-container: rgba(59, 130, 246, 0.22);
+	--secondary: #c1c5cf;
+	--secondary-container: rgba(161, 161, 170, 0.2);
+	--on-surface: #f3f4f6;
+	--on-surface-variant: #a1a1aa;
+	--hero-gradient: linear-gradient(135deg, #16171a 0%, #121316 62%, #1d2433 100%);
+	--hero-shadow: rgba(0, 0, 0, 0.36);
+	--hero-glow: radial-gradient(circle at center, rgba(59, 130, 246, 0.08), transparent 60%);
+	--control-surface: rgba(28, 28, 32, 0.92);
+	--control-surface-strong: rgba(35, 35, 40, 0.98);
+	--menu-surface: rgba(20, 20, 23, 0.98);
+	--card-surface: rgba(24, 24, 27, 0.9);
+	--card-surface-strong: rgba(30, 30, 34, 0.96);
+	--sidebar-card-surface: rgba(24, 24, 28, 0.9);
+	--sidebar-hover: rgba(255, 255, 255, 0.06);
+	--status-total-bg: rgba(113, 113, 122, 0.2);
+	--status-total-text: #d4d4d8;
+	--status-total-border: rgba(161, 161, 170, 0.28);
 	--status-success-bg: rgba(16, 185, 129, 0.2);
 	--status-success-text: #34d399;
 	--status-success-border: rgba(52, 211, 153, 0.34);
@@ -110,8 +110,8 @@ body {
 
 html[data-theme='dark'] body {
 	background:
-		linear-gradient(135deg, rgba(30, 41, 59, 0.26), rgba(15, 23, 42, 0)),
-		linear-gradient(180deg, transparent, rgba(15, 23, 42, 0.28));
+		linear-gradient(135deg, rgba(39, 39, 42, 0.28), rgba(10, 10, 11, 0)),
+		linear-gradient(180deg, transparent, rgba(10, 10, 11, 0.34));
 }
 
 @media (min-width: 1024px) {

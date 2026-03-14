@@ -285,11 +285,17 @@ const ensureToken = (token: string) => {
 };
 
 export const listProfessionalsLovWithOrds = async (
-	token: string
+	token: string,
+	options?: { onlyMe?: boolean }
 ): Promise<ScheduleProfessionalLov[]> => {
 	ensureToken(token);
 
-	const response = await fetch(PROFESSIONALS_LOV_URL, {
+	let endpoint = String(PROFESSIONALS_LOV_URL || '').trim();
+	if (options?.onlyMe) {
+		endpoint = `${endpoint}${endpoint.includes('?') ? '&' : '?'}only_me=1`;
+	}
+
+	const response = await fetch(endpoint, {
 		method: 'GET',
 		headers: {
 			Authorization: `Bearer ${token}`,

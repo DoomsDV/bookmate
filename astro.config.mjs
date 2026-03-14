@@ -15,6 +15,16 @@ export default defineConfig({
   integrations: [preact()],
 
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    optimizeDeps: {
+      include: [
+        '@fullcalendar/core',
+        '@fullcalendar/core/locales/es',
+        '@fullcalendar/interaction',
+        '@fullcalendar/daygrid',
+        '@fullcalendar/timegrid',
+        '@fullcalendar/list'
+      ]
+    }
   }
 });

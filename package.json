@@ -4,9 +4,11 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "astro dev",
+    "dev:force": "npm run clean:caches && astro dev --force",
     "build": "astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "clean:caches": "node -e \"const fs=require('fs');for (const p of ['node_modules/.vite','.astro']){try{fs.rmSync(p,{recursive:true,force:true});console.log('removed',p);}catch{}}\""
   },
   "dependencies": {
     "@astrojs/node": "^9.5.4",

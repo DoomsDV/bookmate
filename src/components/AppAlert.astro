@@ -15,9 +15,9 @@
 			</div>
 
 			<div class="min-w-0 flex-1">
-				<h3 class="text-lg font-bold leading-6" data-app-alert-title>Confirmar accion</h3>
+				<h3 class="text-lg font-bold leading-6" data-app-alert-title>Confirmar acción</h3>
 				<p class="mt-2 text-sm leading-6 text-[color:var(--on-surface-variant)]" data-app-alert-message>
-					Estas seguro de continuar?
+					¿Estás seguro de continuar?
 				</p>
 			</div>
 		</div>
@@ -117,13 +117,13 @@
 						? options.title
 						: mode === 'alert'
 							? 'Aviso'
-							: 'Confirmar accion';
+							: 'Confirmar acción';
 			}
 			if (messageNode) {
 				messageNode.textContent =
 					typeof options.message === 'string' && options.message.trim()
 						? options.message
-						: 'Deseas continuar?';
+						: '¿Deseas continuar?';
 			}
 			if (iconNode) iconNode.textContent = tone.icon;
 			clearToneClasses();

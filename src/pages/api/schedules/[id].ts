@@ -1,11 +1,13 @@
 import type { APIRoute } from 'astro';
 
+import { ROLES } from '../../../config/roles';
 import {
 	SchedulesApiError,
 	getProfessionalScheduleWithOrds,
 	type ScheduleUpdatePayload,
 	updateProfessionalScheduleWithOrds,
 } from '../../../lib/schedules';
+import { parseTokenClaims } from '../../../lib/token-claims';
 
 const parseProfessionalId = (value: string | undefined) => {
 	const parsed = Number(value);
@@ -117,10 +119,14 @@ export const GET: APIRoute = async ({ params, locals }) => {
 export const PUT: APIRoute = async ({ request, params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		const claims = parseTokenClaims(token);
 		const professionalId = parseProfessionalId(params.id);
 
 		if (!professionalId) {
 			throw new SchedulesApiError('ID de profesional invalido.', 400);
+		}
+		if (claims.role_id === ROLES.PROFESIONAL) {
+			throw new SchedulesApiError('No tienes permisos para modificar horarios.', 403);
 		}
 
 		const body = await parseBody(request);

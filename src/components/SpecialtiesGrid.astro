@@ -12,7 +12,7 @@ const SPECIALTY_ICON = 'workspace_premium';
 
 const toDescriptionLabel = (value: string) => {
 	const text = String(value || '').trim();
-	return text || 'Sin descripcion';
+	return text || 'Sin descripción';
 };
 
 const cardItems = specialties.map((specialty) => ({ specialty }));
@@ -51,7 +51,7 @@ const activeSpecialties = specialties.filter((item) => item.is_active === 1).len
 	{
 		specialties.length === 0 ? (
 			<div class="mt-6 rounded-[1.45rem] border border-dashed border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-5 py-7 text-sm text-[color:var(--on-surface-variant)]">
-				No hay especialidades registradas para esta organizacion.
+			No hay especialidades registradas para esta organización.
 			</div>
 		) : (
 			<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

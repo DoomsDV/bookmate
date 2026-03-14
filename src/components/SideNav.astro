@@ -1,4 +1,6 @@
 ---
+import { canAccessPath } from '../config/roles';
+
 interface NavItem {
 	label: string;
 	href: string;
@@ -18,6 +20,7 @@ const normalizePath = (path: string) => {
 };
 
 const activePath = normalizePath(currentPath);
+const currentRoleId = Number(Astro.locals.roleId ?? 0);
 
 const isItemActive = (item: NavItem) => {
 	if (typeof item.active === 'boolean') return item.active;
@@ -27,7 +30,7 @@ const isItemActive = (item: NavItem) => {
 
 const primaryItems: NavItem[] = [
 	{ label: 'Dashboard', icon: 'space_dashboard', href: '/' },
-	{ label: 'Calendario', icon: 'calendar_month', href: '#calendario' },
+	{ label: 'Calendario', icon: 'calendar_month', href: '/calendar' },
 	{ label: 'Servicios', icon: 'inventory_2', href: '/services' },
 	{ label: 'Sucursales', icon: 'storefront', href: '/locations' },
 ];
@@ -37,6 +40,9 @@ const teamItems: NavItem[] = [
 	{ label: 'Personal', href: '/professionals' },
 	{ label: 'Horarios', href: '/schedules' },
 ];
+
+const visiblePrimaryItems = primaryItems.filter((item) => canAccessPath(item.href, currentRoleId));
+const visibleTeamItems = teamItems.filter((item) => canAccessPath(item.href, currentRoleId));
 ---
 
 <div
@@ -63,17 +69,17 @@ const teamItems: NavItem[] = [
 			<button
 				type="button"
 				class="flex size-10 items-center justify-center rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] text-[color:var(--on-surface-variant)] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-[color:var(--control-surface-strong)]"
-				aria-label="Cerrar menu lateral"
+				aria-label="Cerrar menú lateral"
 				data-side-nav-close
 			>
 				<span class="material-symbols-rounded text-[1.2rem]">close</span>
 			</button>
 		</div>
 
-		<nav aria-label="Side navigation movil">
+		<nav aria-label="Side navigation móvil">
 			<ul class="space-y-2">
 				{
-					primaryItems.map((item) => (
+					visiblePrimaryItems.map((item) => (
 						<li>
 							<a
 								href={item.href}
@@ -92,44 +98,48 @@ const teamItems: NavItem[] = [
 					))
 				}
 
-				<li class="pt-2">
-					<details open class="group">
-						<summary
-							class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--sidebar-hover)]"
-						>
-							<span class="flex items-center gap-3">
-								<span class="material-symbols-rounded text-[1.1rem]">groups</span>
-								<span>Equipo</span>
-							</span>
-							<span class="material-symbols-rounded text-[1rem] transition group-open:rotate-180">
-								expand_more
-							</span>
-						</summary>
+				{
+					visibleTeamItems.length > 0 && (
+						<li class="pt-2">
+							<details open class="group">
+								<summary
+									class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--sidebar-hover)]"
+								>
+									<span class="flex items-center gap-3">
+										<span class="material-symbols-rounded text-[1.1rem]">groups</span>
+										<span>Equipo</span>
+									</span>
+									<span class="material-symbols-rounded text-[1rem] transition group-open:rotate-180">
+										expand_more
+									</span>
+								</summary>
 
-						<div class="ml-5 mt-1 border-l border-[color:var(--shell-border)] pl-4">
-							<ul class="space-y-1">
-								{
-									teamItems.map((item) => (
-										<li>
-											<a
-												href={item.href}
-												class:list={[
-													'flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition',
-													isItemActive(item)
-														? 'bg-[color:var(--primary-container)] text-[color:var(--primary)]'
-														: 'text-[color:var(--on-surface)] hover:bg-[color:var(--sidebar-hover)]',
-												]}
-												data-side-nav-close
-											>
-												{item.label}
-											</a>
-										</li>
-									))
-								}
-							</ul>
-						</div>
-					</details>
-				</li>
+								<div class="ml-5 mt-1 border-l border-[color:var(--shell-border)] pl-4">
+									<ul class="space-y-1">
+										{
+											visibleTeamItems.map((item) => (
+												<li>
+													<a
+														href={item.href}
+														class:list={[
+															'flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition',
+															isItemActive(item)
+																? 'bg-[color:var(--primary-container)] text-[color:var(--primary)]'
+																: 'text-[color:var(--on-surface)] hover:bg-[color:var(--sidebar-hover)]',
+														]}
+														data-side-nav-close
+													>
+														{item.label}
+													</a>
+												</li>
+											))
+										}
+									</ul>
+								</div>
+							</details>
+						</li>
+					)
+				}
 			</ul>
 		</nav>
 	</aside>
@@ -142,9 +152,14 @@ const teamItems: NavItem[] = [
 	<div class="flex h-full flex-col px-6 py-7 transition-all duration-300" data-sidebar-desktop-inner>
 		<div class="flex items-center gap-3" data-sidebar-brand>
 			<div
-				class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--primary-container)] text-[color:var(--primary)]"
+				class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-[color:var(--primary)] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_10px_22px_rgba(37,99,235,0.28)]"
 			>
-				<span class="material-symbols-rounded text-[1.15rem]">menu_book</span>
+				<span
+					class="translate-y-[-0.03em] text-[1.25rem] font-extrabold tracking-[-0.06em]"
+					style="font-family: Lobster, cursive;"
+				>
+					B
+				</span>
 			</div>
 
 			<div data-sidebar-brand-text>
@@ -152,7 +167,7 @@ const teamItems: NavItem[] = [
 					class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-[color:var(--on-surface-variant)]/75"
 					data-sidebar-caption
 				>
-					Navegacion
+					Navegación
 				</p>
 				<p
 					class="mt-3 [font-family:var(--font-logo)] text-[1.45rem] font-extrabold uppercase tracking-[0.08em] leading-none text-[color:var(--primary)]"
@@ -166,7 +181,7 @@ const teamItems: NavItem[] = [
 		<nav class="mt-10" aria-label="Side navigation desktop">
 			<ul class="space-y-2">
 				{
-					primaryItems.map((item) => (
+					visiblePrimaryItems.map((item) => (
 						<li>
 							<a
 								href={item.href}
@@ -185,48 +200,52 @@ const teamItems: NavItem[] = [
 					))
 				}
 
-				<li class="pt-2">
-					<details open class="group">
-						<summary
-							class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--sidebar-hover)]"
-							data-sidebar-summary
-						>
-							<span class="flex items-center gap-3">
-								<span class="material-symbols-rounded shrink-0 text-[1.1rem]">groups</span>
-								<span data-sidebar-label>Equipo</span>
-							</span>
-							<span
-								class="material-symbols-rounded text-[1rem] transition group-open:rotate-180"
-								data-sidebar-trailing
-							>
-								expand_more
-							</span>
-						</summary>
+				{
+					visibleTeamItems.length > 0 && (
+						<li class="pt-2">
+							<details open class="group">
+								<summary
+									class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--sidebar-hover)]"
+									data-sidebar-summary
+								>
+									<span class="flex items-center gap-3">
+										<span class="material-symbols-rounded shrink-0 text-[1.1rem]">groups</span>
+										<span data-sidebar-label>Equipo</span>
+									</span>
+									<span
+										class="material-symbols-rounded text-[1rem] transition group-open:rotate-180"
+										data-sidebar-trailing
+									>
+										expand_more
+									</span>
+								</summary>
 
-						<div class="ml-5 mt-1 border-l border-[color:var(--shell-border)] pl-4" data-team-submenu>
-							<ul class="space-y-1">
-								{
-									teamItems.map((item) => (
-										<li>
-											<a
-												href={item.href}
-												data-sidebar-item
-												class:list={[
-													'flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition',
-													isItemActive(item)
-														? 'bg-[color:var(--control-surface-strong)] text-[color:var(--primary)]'
-														: 'text-[color:var(--on-surface)] hover:bg-[color:var(--sidebar-hover)]',
-												]}
-											>
-												<span data-sidebar-label>{item.label}</span>
-											</a>
-										</li>
-									))
-								}
-							</ul>
-						</div>
-					</details>
-				</li>
+								<div class="ml-5 mt-1 border-l border-[color:var(--shell-border)] pl-4" data-team-submenu>
+									<ul class="space-y-1">
+										{
+											visibleTeamItems.map((item) => (
+												<li>
+													<a
+														href={item.href}
+														data-sidebar-item
+														class:list={[
+															'flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition',
+															isItemActive(item)
+																? 'bg-[color:var(--control-surface-strong)] text-[color:var(--primary)]'
+																: 'text-[color:var(--on-surface)] hover:bg-[color:var(--sidebar-hover)]',
+														]}
+													>
+														<span data-sidebar-label>{item.label}</span>
+													</a>
+												</li>
+											))
+										}
+									</ul>
+								</div>
+							</details>
+						</li>
+					)
+				}
 			</ul>
 		</nav>
 
@@ -238,7 +257,7 @@ const teamItems: NavItem[] = [
 				Estado
 			</p>
 			<p class="mt-3 text-sm font-semibold text-[color:var(--on-surface)]" data-time-greeting>
-				Buenos dias
+				Buenos días
 			</p>
 		</div>
 	</div>
@@ -247,7 +266,7 @@ const teamItems: NavItem[] = [
 <script>
 	const greetingNodes = document.querySelectorAll('[data-time-greeting]');
 	const hour = new Date().getHours();
-	const greeting = hour < 12 ? 'Buenos dias' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+	const greeting = hour < 12 ? 'Buenos días' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
 
 	for (const node of greetingNodes) {
 		node.textContent = greeting;

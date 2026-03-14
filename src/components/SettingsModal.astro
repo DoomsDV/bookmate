@@ -1,0 +1,856 @@
+﻿---
+import { ROLES } from '../config/roles';
+
+interface Props {
+	roleId?: number;
+}
+
+const { roleId = 0 } = Astro.props;
+const isAdmin = Number(roleId) === ROLES.ADMIN;
+const rawPublicProfileDomain = String(import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? 'bookmate.com').trim();
+const publicProfileDomain =
+	rawPublicProfileDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '') || 'bookmate.com';
+---
+
+<dialog
+	data-settings-modal
+	data-role-id={String(roleId)}
+	data-public-profile-domain={publicProfileDomain}
+	class="m-auto z-[1200] h-[min(92vh,48rem)] w-[min(54rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_60px_rgba(15,23,42,0.28)] backdrop:bg-slate-950/40"
+>
+	<div class="flex items-center justify-between border-b border-[color:var(--shell-border)] px-5 py-4">
+		<div>
+			<h2 class="text-lg font-bold">Ajustes</h2>
+			<p class="text-sm text-[color:var(--on-surface-variant)]">Perfil y preferencias de la cuenta.</p>
+		</div>
+	</div>
+
+	<div class="grid min-h-0 flex-1 gap-4 overflow-hidden p-4 md:grid-cols-[13rem_minmax(0,1fr)]">
+		<nav class="overflow-x-auto md:overflow-y-auto md:pr-1">
+			<div class="flex min-w-max gap-2 md:grid">
+				<button type="button" data-settings-tab-trigger data-settings-tab="profile" class="settings-tab is-active">Mi perfil</button>
+				<button type="button" data-settings-tab-trigger data-settings-tab="security" class="settings-tab">Seguridad</button>
+				<button type="button" data-settings-tab-trigger data-settings-tab="preferences" class="settings-tab">Apariencia</button>
+				{
+					isAdmin ? (
+						<>
+							<button type="button" data-settings-tab-trigger data-settings-tab="workspace" class="settings-tab">Negocio</button>
+							<button type="button" data-settings-tab-trigger data-settings-tab="system" class="settings-tab">Sistema</button>
+						</>
+					) : null
+				}
+			</div>
+		</nav>
+
+		<div class="min-h-0 min-w-0 overflow-y-auto pr-1">
+			<section data-settings-panel="profile" class="grid gap-3">
+				<p data-settings-feedback="profile" class="hidden settings-feedback"></p>
+				<form data-settings-profile-form class="grid gap-4">
+					<div class="grid gap-2">
+						<p class="text-xs font-bold uppercase tracking-[0.08em] text-[color:var(--on-surface-variant)]">Información personal</p>
+						<p class="text-xs font-medium text-[color:var(--on-surface-variant)]">Solo para tu cuenta y acceso interno.</p>
+						<div class="grid gap-3 sm:grid-cols-2">
+							<label class="grid gap-1 text-sm font-semibold">Nombre<input name="first_name" required class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm" /></label>
+							<label class="grid gap-1 text-sm font-semibold">Apellido<input name="last_name" required class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm" /></label>
+						</div>
+						<label class="grid gap-1 text-sm font-semibold">Email<input name="email" readonly class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-3 py-2.5 text-sm text-[color:var(--on-surface-variant)]" /></label>
+					</div>
+
+					<div data-settings-prof-fields class="hidden border-t border-slate-200 pt-4">
+						<div class="grid gap-3 rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-4">
+								<p class="text-xs font-bold uppercase tracking-[0.08em] text-[color:var(--on-surface-variant)]">Avatar público</p>
+							<div class="flex flex-col items-center gap-3 sm:flex-row sm:items-center sm:justify-between">
+								<img data-settings-profile-preview class="hidden h-28 w-28 rounded-full border border-[color:var(--shell-border)] object-cover" alt="Foto de perfil" />
+								<div class="grid w-full gap-2 sm:w-auto">
+									<input id="settings-profile-image-input" type="file" name="profile_image" accept="image/*" class="sr-only" />
+									<label for="settings-profile-image-input" class="inline-flex cursor-pointer items-center justify-center rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2 text-sm font-semibold text-[color:var(--on-surface)] transition hover:border-[color:var(--primary-container)] hover:text-[color:var(--primary)]">
+										Cambiar foto
+									</label>
+									<p class="text-center text-xs font-medium text-[color:var(--on-surface-variant)] sm:text-left">
+											JPG o PNG. Se mostrará en tu perfil público.
+									</p>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<div data-settings-prof-fields class="hidden grid gap-2 border-t border-slate-200 pt-4">
+						<p class="text-xs font-bold uppercase tracking-[0.08em] text-[color:var(--on-surface-variant)]">Perfil público</p>
+						<p class="text-xs font-medium text-[color:var(--on-surface-variant)]">Estos datos se muestran a tus clientes en internet.</p>
+						<label class="grid gap-1 text-sm font-semibold">Teléfono público<input name="phone_number" placeholder="Ej: 0981 123 456" class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm" /></label>
+						<label class="grid gap-1 text-sm font-semibold">
+							URL del perfil público (opcional)
+							<div class="flex items-stretch overflow-hidden rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] transition focus-within:border-[color:var(--primary)]">
+								<span data-settings-profile-slug-prefix class="inline-flex items-center border-r border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-3 text-xs font-semibold text-[color:var(--on-surface-variant)] sm:text-sm">
+									{publicProfileDomain}/p/
+								</span>
+								<input
+									type="text"
+									name="profile_slug"
+									class="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
+									placeholder="maria-lopez"
+								/>
+							</div>
+							<span class="text-xs font-normal text-[color:var(--on-surface-variant)]">
+								Este será el enlace directo para que los clientes agenden contigo.
+							</span>
+							<span data-settings-profile-field-error="profile_slug" class="hidden text-xs text-rose-600 dark:text-rose-300"></span>
+						</label>
+					</div>
+
+					<p data-settings-profile-note class="hidden rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800"></p>
+					<div><button type="submit" class="btn-primary-soft rounded-xl px-4 py-2 text-sm font-semibold">Guardar perfil</button></div>
+				</form>
+			</section>
+
+			<section data-settings-panel="security" class="hidden grid gap-3">
+				<p data-settings-feedback="security" class="hidden settings-feedback"></p>
+				<form
+					data-settings-security-form
+					class="grid gap-3 rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-4"
+				>
+					<p class="text-sm font-semibold">Cambio de contraseña</p>
+					<label class="grid gap-1 text-sm font-semibold">
+						Contraseña actual
+						<input
+							type="password"
+							name="current_password"
+							autocomplete="current-password"
+							required
+							class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2.5 text-sm"
+						/>
+					</label>
+					<label class="grid gap-1 text-sm font-semibold">
+						Nueva contraseña
+						<input
+							type="password"
+							name="new_password"
+							autocomplete="new-password"
+							required
+							minlength="8"
+							class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2.5 text-sm"
+						/>
+					</label>
+					<label class="grid gap-1 text-sm font-semibold">
+						Confirmar nueva contraseña
+						<input
+							type="password"
+							name="confirm_password"
+							autocomplete="new-password"
+							required
+							minlength="8"
+							class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2.5 text-sm"
+						/>
+					</label>
+					<p class="text-xs text-[color:var(--on-surface-variant)]">
+						La nueva contraseña debe tener al menos 8 caracteres.
+					</p>
+					<div>
+						<button type="submit" class="btn-primary-soft rounded-xl px-4 py-2 text-sm font-semibold">
+								Actualizar contraseña
+						</button>
+					</div>
+				</form>
+			</section>
+
+			<section data-settings-panel="preferences" class="hidden grid gap-4">
+				<p data-settings-feedback="preferences" class="hidden settings-feedback"></p>
+				<form
+					data-settings-preferences-form
+					class="grid gap-3 rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-4"
+				>
+					<p class="text-sm font-semibold">Tu panel de control</p>
+					<label class="grid gap-1 text-sm font-semibold">Tema del panel
+						<select name="panel_theme" class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm">
+							<option value="light">Claro</option>
+							<option value="dark">Oscuro</option>
+						</select>
+					</label>
+					<label class="grid gap-1 text-sm font-semibold">Vista inicial calendario
+						<select name="calendar_view" class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm">
+							<option value="timeGridDay">Diaria</option>
+							<option value="timeGridWeek">Semanal</option>
+							<option value="dayGridMonth">Mensual</option>
+							<option value="listWeek">Lista</option>
+						</select>
+					</label>
+					<div><button type="submit" class="btn-primary-soft rounded-xl px-4 py-2 text-sm font-semibold">Guardar panel</button></div>
+				</form>
+
+				{
+					isAdmin ? (
+						<>
+							<p data-settings-feedback="branding" class="hidden settings-feedback"></p>
+							<form
+								data-settings-branding-form
+								class="grid gap-3 rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-4"
+							>
+						<p class="text-sm font-semibold">Página pública de reservas</p>
+						<label class="grid gap-1 text-sm font-semibold">Tema página pública
+									<select name="theme_pref" class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm">
+										<option value="light">Claro</option>
+										<option value="dark">Oscuro</option>
+									</select>
+								</label>
+								<label class="grid gap-1 text-sm font-semibold">Logo negocio<input type="file" name="logo_file" accept="image/*" class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2 text-sm" /></label>
+								<img data-settings-logo-preview class="hidden h-14 w-14 rounded-xl border border-[color:var(--shell-border)] object-cover" alt="logo" />
+								<div><button type="submit" class="btn-primary-soft rounded-xl px-4 py-2 text-sm font-semibold">Guardar página pública</button></div>
+							</form>
+						</>
+					) : null
+				}
+			</section>
+
+			{
+				isAdmin ? (
+					<>
+						<section data-settings-panel="workspace" class="hidden grid gap-3">
+							<p data-settings-feedback="workspace" class="hidden settings-feedback"></p>
+							<form data-settings-workspace-form class="grid gap-3">
+								<label class="grid gap-1 text-sm font-semibold">Nombre negocio<input name="name" class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm" /></label>
+								<input type="hidden" name="profile_slug" />
+								<label class="grid gap-1 text-sm font-semibold">WhatsApp público<input name="public_whatsapp" class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm" /></label>
+								<label class="grid gap-1 text-sm font-semibold">Descripción<textarea name="description" rows="3" class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm"></textarea></label>
+								<div><button type="submit" class="btn-primary-soft rounded-xl px-4 py-2 text-sm font-semibold">Guardar negocio</button></div>
+							</form>
+						</section>
+
+
+						<section data-settings-panel="system" class="hidden grid gap-3">
+							<p data-settings-feedback="system" class="hidden settings-feedback"></p>
+							<form data-settings-system-form class="grid gap-3">
+								<label class="grid gap-1 text-sm font-semibold">Zona horaria<input name="timezone" class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm" /></label>
+								<label class="grid gap-1 text-sm font-semibold">Formato hora
+									<select name="time_format" class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm">
+										<option value="24H">24 horas</option>
+										<option value="12H">12 horas</option>
+									</select>
+								</label>
+								<div><button type="submit" class="btn-primary-soft rounded-xl px-4 py-2 text-sm font-semibold">Guardar sistema</button></div>
+							</form>
+						</section>
+					</>
+				) : null
+			}
+		</div>
+	</div>
+
+	<div class="border-t border-[color:var(--shell-border)] px-4 py-3">
+		<button
+			type="button"
+			data-settings-close
+			class="rounded-xl border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold"
+		>
+			Cerrar
+		</button>
+	</div>
+</dialog>
+
+<script>
+	const readApiMessage = (data, fallback) =>
+		typeof data?.message === 'string' && data.message.trim() ? data.message.trim() : fallback;
+
+	const fileToBase64 = (file) =>
+		new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => {
+				const result = String(reader.result || '');
+				resolve(result.includes(',') ? result.split(',')[1] : result);
+			};
+			reader.onerror = () => reject(new Error('No fue posible leer el archivo.'));
+			reader.readAsDataURL(file);
+		});
+
+	class SettingsApiError extends Error {
+		constructor(message, status = 400, errors = [], details = null) {
+			super(message);
+			this.name = 'SettingsApiError';
+			this.status = status;
+			this.errors = Array.isArray(errors) ? errors : [];
+			this.details = details;
+		}
+	}
+
+	const initializeSettingsModal = () => {
+		const modal = document.querySelector('[data-settings-modal]');
+		if (!modal || modal.dataset.bound === 'true') return;
+		modal.dataset.bound = 'true';
+
+		const roleId = Number(modal.dataset.roleId || '0');
+		const isAdmin = roleId === 1;
+		const openBtn = document.querySelector('[data-open-settings-modal]');
+		const closeBtn = modal.querySelector('[data-settings-close]');
+		const tabButtons = modal.querySelectorAll('[data-settings-tab-trigger]');
+		const panels = modal.querySelectorAll('[data-settings-panel]');
+		const profileForm = modal.querySelector('[data-settings-profile-form]');
+		const securityForm = modal.querySelector('[data-settings-security-form]');
+		const preferencesForm = modal.querySelector('[data-settings-preferences-form]');
+		const workspaceForm = modal.querySelector('[data-settings-workspace-form]');
+		const brandingForm = modal.querySelector('[data-settings-branding-form]');
+		const systemForm = modal.querySelector('[data-settings-system-form]');
+		const profilePreview = modal.querySelector('[data-settings-profile-preview]');
+		const logoPreview = modal.querySelector('[data-settings-logo-preview]');
+		const profFields = modal.querySelectorAll('[data-settings-prof-fields]');
+		const profileNote = modal.querySelector('[data-settings-profile-note]');
+
+		if (!openBtn || !closeBtn || !profileForm || !securityForm || !preferencesForm) return;
+		const firstNameInput = profileForm.querySelector('[name="first_name"]');
+		const lastNameInput = profileForm.querySelector('[name="last_name"]');
+		const profileSlugInput = profileForm.querySelector('[name="profile_slug"]');
+		const profileSlugPrefix = profileForm.querySelector('[data-settings-profile-slug-prefix]');
+		const profileSlugError = profileForm.querySelector('[data-settings-profile-field-error="profile_slug"]');
+		const profileImageInput = profileForm.querySelector('[name="profile_image"]');
+		let profilePreviewObjectUrl = '';
+		let slugSuggestTimer = null;
+		let slugRequestSeq = 0;
+		let slugManuallyEdited = false;
+		let suppressSlugManualTracking = false;
+
+		const releaseProfilePreviewObjectUrl = () => {
+			if (!profilePreviewObjectUrl) return;
+			URL.revokeObjectURL(profilePreviewObjectUrl);
+			profilePreviewObjectUrl = '';
+		};
+
+		const clearSlugSuggestTimer = () => {
+			if (!slugSuggestTimer) return;
+			window.clearTimeout(slugSuggestTimer);
+			slugSuggestTimer = null;
+		};
+
+		const getPublicProfilePrefix = () => {
+			const configuredDomain = String(modal.dataset.publicProfileDomain || '')
+				.replace(/^https?:\/\//i, '')
+				.replace(/\/+$/, '')
+				.trim();
+			if (configuredDomain) return `${configuredDomain}/p/`;
+			const origin = String(window.location?.origin || '').replace(/\/$/, '');
+			return `${origin}/p/`;
+		};
+
+		const getSlugSourceName = () =>
+			`${String(firstNameInput?.value || '').trim()} ${String(lastNameInput?.value || '').trim()}`.trim();
+
+		const setSuggestedSlug = (slug) => {
+			if (!profileSlugInput) return;
+			suppressSlugManualTracking = true;
+			profileSlugInput.value = slug;
+			suppressSlugManualTracking = false;
+		};
+
+		const clearProfileFieldErrors = () => {
+			if (!profileSlugError) return;
+			profileSlugError.textContent = '';
+			profileSlugError.classList.add('hidden');
+		};
+
+		const isGenericValidationMessage = (message) => {
+			const normalized = String(message || '')
+				.trim()
+				.toLowerCase();
+			return (
+				normalized === 'errores de validacion.' ||
+				normalized === 'errores de validacion' ||
+				normalized === 'errores de validaciÃ³n.' ||
+				normalized === 'errores de validaciÃ³n'
+			);
+		};
+
+		const renderProfileFieldErrors = (errors, fallbackMessage = '') => {
+			let rendered = false;
+			const items = Array.isArray(errors) ? errors : [];
+			for (const item of items) {
+				if (!item || typeof item !== 'object') continue;
+				const field = 'field' in item ? String(item.field || '').trim() : '';
+				const message = 'message' in item ? String(item.message || '').trim() : '';
+				if (!field || !message) continue;
+				if (field === 'profile_slug' && profileSlugError) {
+					profileSlugError.textContent = message;
+					profileSlugError.classList.remove('hidden');
+					rendered = true;
+				}
+			}
+			if (rendered) return true;
+			if (typeof fallbackMessage === 'string' && /slug|perfil/i.test(fallbackMessage) && profileSlugError) {
+				profileSlugError.textContent = fallbackMessage;
+				profileSlugError.classList.remove('hidden');
+				return true;
+			}
+			return false;
+		};
+
+		const getFeedback = (key) => modal.querySelector(`[data-settings-feedback="${key}"]`);
+		const showFeedback = (key, message, kind = 'success') => {
+			const node = getFeedback(key);
+			if (!node) return;
+			node.textContent = message;
+			node.classList.remove('hidden', 'is-success', 'is-error');
+			node.classList.add(kind === 'success' ? 'is-success' : 'is-error');
+		};
+		const clearFeedback = () => {
+			modal.querySelectorAll('.settings-feedback').forEach((node) => {
+				node.textContent = '';
+				node.classList.add('hidden');
+				node.classList.remove('is-success', 'is-error');
+			});
+			clearProfileFieldErrors();
+		};
+
+		const requestApi = async (url, options, fallbackMessage) => {
+			const response = await fetch(url, options);
+			let data = null;
+			try {
+				data = await response.json();
+			} catch {
+				throw new SettingsApiError('No fue posible interpretar la respuesta.', response.status || 502);
+			}
+			if (!response.ok || !data || data.status !== 'success') {
+				throw new SettingsApiError(
+					readApiMessage(data, fallbackMessage),
+					response.status || 400,
+					data?.errors,
+					data?.details
+				);
+			}
+			return data;
+		};
+
+		const queueSlugSuggestion = () => {
+			if (!profileSlugInput) return;
+			const profVisible = !profFields[0]?.classList.contains('hidden');
+			if (!profVisible) return;
+			const fullName = getSlugSourceName();
+			if (!fullName) return;
+			if (slugManuallyEdited && profileSlugInput.value.trim() !== '') return;
+			clearSlugSuggestTimer();
+			const currentRequest = ++slugRequestSeq;
+			slugSuggestTimer = window.setTimeout(async () => {
+				try {
+					const response = await fetch(
+						`/api/professionals/slug/suggest?name=${encodeURIComponent(fullName)}`,
+						{
+							method: 'GET',
+							headers: { Accept: 'application/json' },
+						}
+					);
+					let data = null;
+					try {
+						data = await response.json();
+					} catch {
+						return;
+					}
+					if (currentRequest !== slugRequestSeq) return;
+					if (!response.ok || !data || data.status !== 'success' || typeof data.slug !== 'string') return;
+					if (slugManuallyEdited && profileSlugInput.value.trim() !== '') return;
+					const suggestedSlug = String(data.slug || '').trim();
+					if (!suggestedSlug) return;
+					setSuggestedSlug(suggestedSlug);
+				} catch {
+					// Ignoramos errores de red para no bloquear la edicion.
+				}
+			}, 350);
+		};
+
+		const setActiveTab = (tabId) => {
+			tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.settingsTab === tabId));
+			panels.forEach((panel) => panel.classList.toggle('hidden', panel.dataset.settingsPanel !== tabId));
+		};
+
+		const resetSecurityForm = () => {
+			const current = securityForm.querySelector('[name="current_password"]');
+			const next = securityForm.querySelector('[name="new_password"]');
+			const confirm = securityForm.querySelector('[name="confirm_password"]');
+			if (current) current.value = '';
+			if (next) next.value = '';
+			if (confirm) confirm.value = '';
+		};
+
+		const fillProfile = (profile) => {
+			const email = profileForm.querySelector('[name="email"]');
+			const phone = profileForm.querySelector('[name="phone_number"]');
+
+			if (firstNameInput) firstNameInput.value = profile?.first_name || '';
+			if (lastNameInput) lastNameInput.value = profile?.last_name || '';
+			if (email) email.value = profile?.email || '';
+			if (profileImageInput) profileImageInput.value = '';
+			if (profileSlugPrefix) profileSlugPrefix.textContent = getPublicProfilePrefix();
+			clearSlugSuggestTimer();
+			slugRequestSeq += 1;
+			slugManuallyEdited = false;
+			releaseProfilePreviewObjectUrl();
+
+			const prof = profile?.professional_profile;
+			if (prof) {
+				profFields.forEach((el) => el.classList.remove('hidden'));
+				if (phone) phone.value = prof.phone_number || '';
+				if (profileSlugInput) {
+					setSuggestedSlug(String(prof.profile_slug || '').trim());
+					if (profileSlugInput.value.trim() === '') queueSlugSuggestion();
+				}
+				if (profilePreview && prof.image_url) {
+					profilePreview.src = prof.image_url;
+					profilePreview.classList.remove('hidden');
+				} else {
+					profilePreview?.classList.add('hidden');
+				}
+				if (profileNote) {
+					profileNote.classList.add('hidden');
+					profileNote.textContent = '';
+				}
+			} else {
+				profFields.forEach((el) => el.classList.add('hidden'));
+				if (phone) phone.value = '';
+				if (profileSlugInput) setSuggestedSlug('');
+				profilePreview?.classList.add('hidden');
+				if (profileNote) {
+					profileNote.textContent = 'Esta cuenta no tiene perfil profesional público. Solo se guarda nombre y apellido.';
+					profileNote.classList.remove('hidden');
+				}
+			}
+		};
+
+		const fillWorkspace = (workspace) => {
+			const setValue = (selector, value) => {
+				const input = modal.querySelector(selector);
+				if (input) input.value = value || '';
+			};
+			setValue('[data-settings-workspace-form] [name="name"]', workspace?.name);
+			setValue('[data-settings-workspace-form] [name="profile_slug"]', workspace?.profile_slug);
+			setValue('[data-settings-workspace-form] [name="public_whatsapp"]', workspace?.public_whatsapp);
+			setValue('[data-settings-workspace-form] [name="description"]', workspace?.description);
+			setValue('[data-settings-branding-form] [name="theme_pref"]', workspace?.theme_pref === 'dark' ? 'dark' : 'light');
+			setValue('[data-settings-system-form] [name="timezone"]', workspace?.timezone || 'America/Asuncion');
+			setValue('[data-settings-system-form] [name="time_format"]', workspace?.time_format === '12H' ? '12H' : '24H');
+			if (logoPreview && workspace?.logo_url) {
+				logoPreview.src = workspace.logo_url;
+				logoPreview.classList.remove('hidden');
+			} else {
+				logoPreview?.classList.add('hidden');
+			}
+			const logoFile = brandingForm?.querySelector('[name="logo_file"]');
+			if (logoFile) logoFile.value = '';
+		};
+
+		const getWorkspacePayload = () => ({
+			name: String(modal.querySelector('[data-settings-workspace-form] [name="name"]')?.value || '').trim(),
+			profile_slug: String(modal.querySelector('[data-settings-workspace-form] [name="profile_slug"]')?.value || '').trim(),
+			description: String(modal.querySelector('[data-settings-workspace-form] [name="description"]')?.value || '').trim(),
+			public_whatsapp: String(modal.querySelector('[data-settings-workspace-form] [name="public_whatsapp"]')?.value || '').trim(),
+			timezone: String(modal.querySelector('[data-settings-system-form] [name="timezone"]')?.value || '').trim(),
+			time_format: String(modal.querySelector('[data-settings-system-form] [name="time_format"]')?.value || '').trim(),
+			theme_pref: String(modal.querySelector('[data-settings-branding-form] [name="theme_pref"]')?.value || '').trim(),
+		});
+
+		const loadData = async () => {
+			try {
+				const profileRes = await requestApi('/api/profile/me', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar perfil.');
+				fillProfile(profileRes.data || {});
+
+				const panelTheme = preferencesForm.querySelector('[name="panel_theme"]');
+				const calendarView = preferencesForm.querySelector('[name="calendar_view"]');
+				if (panelTheme) panelTheme.value = localStorage.getItem('bookmate-theme') === 'dark' ? 'dark' : 'light';
+				if (calendarView) calendarView.value = localStorage.getItem('bookmate-calendar-default-view') || 'timeGridWeek';
+
+				if (isAdmin) {
+					const workspaceRes = await requestApi('/api/workspace', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar negocio.');
+					fillWorkspace(workspaceRes.data || null);
+				}
+			} catch (error) {
+				showFeedback('profile', error instanceof Error ? error.message : 'No fue posible cargar ajustes.', 'error');
+			}
+		};
+
+		openBtn.addEventListener('click', (event) => {
+			event.preventDefault();
+			openBtn.closest('details')?.removeAttribute('open');
+			setActiveTab('profile');
+			clearFeedback();
+			resetSecurityForm();
+			if (!modal.open) modal.showModal();
+			void loadData();
+		});
+		closeBtn.addEventListener('click', () => {
+			resetSecurityForm();
+			releaseProfilePreviewObjectUrl();
+			clearSlugSuggestTimer();
+			slugRequestSeq += 1;
+			modal.close();
+		});
+		modal.addEventListener('click', (event) => {
+			if (event.target instanceof HTMLDialogElement) {
+				resetSecurityForm();
+				releaseProfilePreviewObjectUrl();
+				clearSlugSuggestTimer();
+				slugRequestSeq += 1;
+				modal.close();
+			}
+		});
+		tabButtons.forEach((btn) => btn.addEventListener('click', () => setActiveTab(btn.dataset.settingsTab || 'profile')));
+		profileSlugInput?.addEventListener('input', () => {
+			if (suppressSlugManualTracking) return;
+			const currentValue = String(profileSlugInput.value || '').trim();
+			slugManuallyEdited = currentValue !== '';
+			clearProfileFieldErrors();
+			if (!slugManuallyEdited) queueSlugSuggestion();
+		});
+		firstNameInput?.addEventListener('input', () => {
+			queueSlugSuggestion();
+		});
+		lastNameInput?.addEventListener('input', () => {
+			queueSlugSuggestion();
+		});
+		profileImageInput?.addEventListener('change', () => {
+			const imageFile = profileImageInput.files?.[0];
+			if (!imageFile || !profilePreview) return;
+			releaseProfilePreviewObjectUrl();
+			profilePreviewObjectUrl = URL.createObjectURL(imageFile);
+			profilePreview.src = profilePreviewObjectUrl;
+			profilePreview.classList.remove('hidden');
+		});
+
+		profileForm.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			clearFeedback();
+
+			const first = String(profileForm.querySelector('[name="first_name"]')?.value || '').trim();
+			const last = String(profileForm.querySelector('[name="last_name"]')?.value || '').trim();
+			if (!first || !last) {
+				showFeedback('profile', 'Nombre y apellido son obligatorios.', 'error');
+				return;
+			}
+
+			const payload = { first_name: first, last_name: last };
+			const profVisible = !profFields[0]?.classList.contains('hidden');
+			if (profVisible) {
+				payload.phone_number = String(profileForm.querySelector('[name="phone_number"]')?.value || '').trim();
+				const profileSlug = String(profileSlugInput?.value || '').trim();
+				if (profileSlug) payload.profile_slug = profileSlug;
+
+				const imageFile = profileForm.querySelector('[name="profile_image"]')?.files?.[0];
+				if (imageFile) {
+					payload.image_base64 = await fileToBase64(imageFile);
+					payload.image_name = imageFile.name;
+					payload.image_mime = imageFile.type || 'application/octet-stream';
+				}
+			}
+
+			try {
+				const data = await requestApi('/api/profile/me', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+					body: JSON.stringify(payload),
+				}, 'No fue posible guardar perfil.');
+				showFeedback('profile', readApiMessage(data, 'Perfil actualizado correctamente.'), 'success');
+				await loadData();
+			} catch (error) {
+				const message = error instanceof Error ? error.message : 'No fue posible guardar perfil.';
+				const hasFieldErrors = renderProfileFieldErrors(
+					error instanceof SettingsApiError ? error.errors : [],
+					message
+				);
+				if (!hasFieldErrors || !isGenericValidationMessage(message)) {
+					showFeedback('profile', message, 'error');
+				}
+			}
+		});
+
+		securityForm.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			clearFeedback();
+
+			const currentPassword = String(
+				securityForm.querySelector('[name="current_password"]')?.value || ''
+			).trim();
+			const newPassword = String(
+				securityForm.querySelector('[name="new_password"]')?.value || ''
+			).trim();
+			const confirmPassword = String(
+				securityForm.querySelector('[name="confirm_password"]')?.value || ''
+			).trim();
+
+			if (!currentPassword || !newPassword || !confirmPassword) {
+				showFeedback('security', 'Completa los tres campos de contrasena.', 'error');
+				return;
+			}
+
+			if (newPassword.length < 8) {
+				showFeedback('security', 'La nueva contrasena debe tener al menos 8 caracteres.', 'error');
+				return;
+			}
+
+			if (newPassword !== confirmPassword) {
+				showFeedback('security', 'La confirmacion no coincide con la nueva contrasena.', 'error');
+				return;
+			}
+
+			if (newPassword === currentPassword) {
+				showFeedback('security', 'La nueva contrasena debe ser distinta a la actual.', 'error');
+				return;
+			}
+
+			try {
+				const data = await requestApi(
+					'/api/profile/change-password',
+					{
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+						body: JSON.stringify({
+							current_password: currentPassword,
+							new_password: newPassword,
+						}),
+					},
+					'No fue posible actualizar la contrasena.'
+				);
+				showFeedback(
+					'security',
+					readApiMessage(data, 'Contrasena actualizada correctamente.'),
+					'success'
+				);
+				resetSecurityForm();
+			} catch (error) {
+				showFeedback(
+					'security',
+					error instanceof Error ? error.message : 'No fue posible actualizar la contrasena.',
+					'error'
+				);
+			}
+		});
+
+		preferencesForm.addEventListener('submit', (event) => {
+			event.preventDefault();
+			clearFeedback();
+			const theme = preferencesForm.querySelector('[name="panel_theme"]')?.value === 'dark' ? 'dark' : 'light';
+			const view = String(preferencesForm.querySelector('[name="calendar_view"]')?.value || 'timeGridWeek');
+			document.documentElement.dataset.theme = theme;
+			localStorage.setItem('bookmate-theme', theme);
+			localStorage.setItem('bookmate-calendar-default-view', view);
+			showFeedback('preferences', 'Preferencias guardadas correctamente.', 'success');
+		});
+
+		if (workspaceForm) {
+			workspaceForm.addEventListener('submit', async (event) => {
+				event.preventDefault();
+				clearFeedback();
+				try {
+					const data = await requestApi('/api/workspace', {
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+						body: JSON.stringify(getWorkspacePayload()),
+					}, 'No fue posible guardar negocio.');
+					showFeedback('workspace', readApiMessage(data, 'Negocio actualizado correctamente.'), 'success');
+					await loadData();
+				} catch (error) {
+					showFeedback('workspace', error instanceof Error ? error.message : 'No fue posible guardar negocio.', 'error');
+				}
+			});
+		}
+
+		if (brandingForm) {
+			brandingForm.addEventListener('submit', async (event) => {
+				event.preventDefault();
+				clearFeedback();
+				try {
+					const payload = getWorkspacePayload();
+					const logoFile = brandingForm.querySelector('[name="logo_file"]')?.files?.[0];
+					if (logoFile) {
+						payload.logo_base64 = await fileToBase64(logoFile);
+						payload.logo_name = logoFile.name;
+						payload.logo_mime = logoFile.type || 'application/octet-stream';
+					}
+					const data = await requestApi('/api/workspace', {
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+						body: JSON.stringify(payload),
+					}, 'No fue posible guardar personalizaciÃ³n.');
+					showFeedback('branding', readApiMessage(data, 'PersonalizaciÃ³n guardada correctamente.'), 'success');
+					await loadData();
+				} catch (error) {
+					showFeedback('branding', error instanceof Error ? error.message : 'No fue posible guardar personalizaciÃ³n.', 'error');
+				}
+			});
+		}
+
+		if (systemForm) {
+			systemForm.addEventListener('submit', async (event) => {
+				event.preventDefault();
+				clearFeedback();
+				try {
+					const data = await requestApi('/api/workspace', {
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+						body: JSON.stringify(getWorkspacePayload()),
+					}, 'No fue posible guardar sistema.');
+					showFeedback('system', readApiMessage(data, 'Sistema actualizado correctamente.'), 'success');
+					await loadData();
+				} catch (error) {
+					showFeedback('system', error instanceof Error ? error.message : 'No fue posible guardar sistema.', 'error');
+				}
+			});
+		}
+	};
+
+	initializeSettingsModal();
+	if (!(window).__bookmateSettingsModalPageLoadBound) {
+		document.addEventListener('astro:page-load', initializeSettingsModal);
+		(window).__bookmateSettingsModalPageLoadBound = true;
+	}
+</script>
+
+<style is:global>
+	[data-settings-modal]:not([open]) {
+		display: none;
+	}
+
+	[data-settings-modal][open] {
+		display: flex;
+	}
+
+	[data-settings-modal] {
+		z-index: 1200;
+	}
+
+	[data-settings-modal]::backdrop {
+		z-index: 1190;
+		background: rgba(2, 6, 23, 0.42);
+	}
+
+	.settings-tab {
+		width: 100%;
+		border: 1px solid var(--shell-border);
+		border-radius: 0.8rem;
+		background: var(--card-surface);
+		padding: 0.55rem 0.75rem;
+		text-align: left;
+		font-size: 0.82rem;
+		font-weight: 700;
+		color: var(--on-surface);
+	}
+
+	.settings-tab.is-active {
+		background: var(--primary-soft);
+		color: var(--primary);
+		border-color: var(--primary-container);
+	}
+
+	.settings-feedback {
+		border-radius: 0.75rem;
+		border: 1px solid transparent;
+		padding: 0.55rem 0.75rem;
+		font-size: 0.82rem;
+		font-weight: 700;
+	}
+
+	.settings-feedback.is-success {
+		border-color: rgba(5, 150, 105, 0.35);
+		background: rgba(220, 252, 231, 0.78);
+		color: #047857;
+	}
+
+	.settings-feedback.is-error {
+		border-color: rgba(225, 29, 72, 0.35);
+		background: rgba(255, 228, 230, 0.8);
+		color: #be123c;
+	}
+</style>
+
+

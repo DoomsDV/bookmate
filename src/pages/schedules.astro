@@ -3,10 +3,13 @@ import AppAlert from '../components/AppAlert.astro';
 import FlashMessage from '../components/FlashMessage.astro';
 import SideNav from '../components/SideNav.astro';
 import TopBar from '../components/TopBar.astro';
+import { ROLES } from '../config/roles';
 import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
 
 const token = Astro.locals.token ?? '';
+const roleId = Number(Astro.locals.roleId ?? 0);
+const isProfessional = roleId === ROLES.PROFESIONAL;
 const flashMessage = Astro.url.searchParams.get('flash_message') ?? '';
 const flashTypeRaw = Astro.url.searchParams.get('flash_type') ?? 'success';
 const validFlashTypes = ['success', 'error', 'info', 'warning'] as const;
@@ -14,7 +17,7 @@ type FlashType = (typeof validFlashTypes)[number];
 const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
 	? (flashTypeRaw as FlashType)
 	: 'info';
-const initialLoadError = token ? '' : 'No hay sesion valida para configurar horarios.';
+const initialLoadError = token ? '' : 'No hay sesión válida para configurar horarios.';
 ---
 
 <Layout>
@@ -30,7 +33,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 				<TopBar />
 
 				<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
-					<section class="grid gap-6" data-schedules-root>
+					<section class="grid gap-6" data-schedules-root data-can-edit={!isProfessional ? 'true' : 'false'}>
 						{
 							flashMessage ? (
 								<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
@@ -55,14 +58,18 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 												</p>
 											</div>
 
-											<button
-												type="button"
-												class="btn-primary-soft inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-												data-save-schedule
-											>
-												<span class="material-symbols-rounded text-[1rem]">save</span>
-												<span data-save-schedule-label>Guardar horarios</span>
-											</button>
+											{
+												!isProfessional && (
+													<button
+														type="button"
+														class="btn-primary-soft inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+														data-save-schedule
+													>
+														<span class="material-symbols-rounded text-[1rem]">save</span>
+														<span data-save-schedule-label>Guardar horarios</span>
+													</button>
+												)
+											}
 										</div>
 
 										<label class="mt-4 grid max-w-xl gap-1 text-sm font-semibold">
@@ -91,7 +98,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 										class="hidden rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 text-sm text-[color:var(--on-surface-variant)]"
 										data-schedule-loading
 									>
-										Cargando configuracion de horarios...
+											Cargando configuración de horarios...
 									</div>
 
 									<div class="grid gap-3" data-weekly-planner></div>
@@ -112,6 +119,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 		const root = document.querySelector<HTMLElement>('[data-schedules-root]');
 		if (!root || root.dataset.bound === 'true') return;
 		root.dataset.bound = 'true';
+		const canEdit = root.dataset.canEdit === 'true';
 
 		const professionalSelect = root.querySelector<HTMLSelectElement>('[data-professional-select]');
 		const plannerNode = root.querySelector<HTMLElement>('[data-weekly-planner]');
@@ -121,7 +129,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 		const errorNode = root.querySelector<HTMLElement>('[data-schedule-error]');
 		const loadingNode = root.querySelector<HTMLElement>('[data-schedule-loading]');
 
-		if (!professionalSelect || !plannerNode || !saveButton || !saveLabel) return;
+		if (!professionalSelect || !plannerNode) return;
 
 		type ProfessionalLov = { id_professional: number; display_name: string };
 		type LocationLov = { id_location: number; name: string };
@@ -253,28 +261,38 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 		};
 
 			const updateControlsState = () => {
-				const blocked = isMetaLoading || isScheduleLoading || isSaving;
-				saveButton.disabled = blocked || selectedProfessionalId <= 0;
+				const blocked = isMetaLoading || isScheduleLoading || isSaving || !canEdit;
+				if (saveButton) {
+					saveButton.disabled = blocked || selectedProfessionalId <= 0;
+				}
 				professionalSelect.disabled = blocked || professionals.length === 0;
-			saveLabel.textContent = isSaving
-				? 'Guardando...'
-				: isDirty
-					? 'Guardar cambios'
-					: 'Guardar horarios';
+				if (saveLabel) {
+					saveLabel.textContent = isSaving
+						? 'Guardando...'
+						: isDirty
+							? 'Guardar cambios'
+							: 'Guardar horarios';
+				}
 				if (loadingNode) {
 					const showLoading = isMetaLoading || isScheduleLoading;
 					loadingNode.classList.toggle('hidden', !showLoading);
 					loadingNode.textContent = isMetaLoading
-						? 'Cargando configuracion de horarios...'
+							? 'Cargando configuración de horarios...'
 						: 'Cargando agenda del profesional...';
 				}
 			if (hintNode) {
-				hintNode.textContent =
-					selectedProfessionalId > 0
-						? isDirty
-							? 'Hay cambios pendientes por guardar.'
-							: 'Selecciona turnos por dia y guarda para sincronizar.'
-						: 'Selecciona una persona para ver o editar su agenda semanal.';
+				if (!canEdit) {
+					hintNode.textContent = '';
+					hintNode.classList.add('hidden');
+				} else {
+					hintNode.classList.remove('hidden');
+					hintNode.textContent =
+						selectedProfessionalId > 0
+							? isDirty
+								? 'Hay cambios pendientes por guardar.'
+								: 'Selecciona turnos por día y guarda para sincronizar.'
+							: 'Selecciona una persona para ver o editar su agenda semanal.';
+				}
 			}
 		};
 
@@ -297,7 +315,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 			dayStates.find((day) => day.day_of_week === dayOfWeek) || null;
 
 		const renderPlanner = () => {
-			const blocked = isMetaLoading || isScheduleLoading || isSaving;
+			const blocked = isMetaLoading || isScheduleLoading || isSaving || !canEdit;
 
 			if (selectedProfessionalId <= 0) {
 				plannerNode.innerHTML = `
@@ -419,17 +437,21 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 									? `
 								<div class="mt-4 grid gap-3">
 									${slotsHtml}
-									<div>
-										<button
-											type="button"
-											data-slot-add
-											data-day-of-week="${dayState.day_of_week}"
-											${blocked ? 'disabled' : ''}
-											class="rounded-xl border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-xs font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--primary-soft-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-										>
-											+ Agregar turno
-										</button>
-									</div>
+									${
+										canEdit
+											? `<div>
+												<button
+													type="button"
+													data-slot-add
+													data-day-of-week="${dayState.day_of_week}"
+													${blocked ? 'disabled' : ''}
+													class="rounded-xl border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-xs font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--primary-soft-hover)] disabled:cursor-not-allowed disabled:opacity-60"
+												>
+													+ Agregar turno
+												</button>
+											</div>`
+											: ''
+									}
 								</div>
 							`
 									: ''
@@ -577,6 +599,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 		};
 
 		const saveSchedule = async () => {
+			if (!canEdit) {
+				showError('No tienes permisos para guardar horarios.');
+				return;
+			}
+
 			if (selectedProfessionalId <= 0) {
 				showError('Selecciona un profesional antes de guardar.');
 				return;
@@ -584,7 +611,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 
 			const result = validateAndBuildPayload();
 			if ('error' in result) {
-				showError(result.error);
+				showError(result.error ?? 'No fue posible validar los horarios.');
 				return;
 			}
 
@@ -704,9 +731,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 			await loadScheduleByProfessional(selectedProfessionalId);
 		});
 
-		saveButton.addEventListener('click', saveSchedule);
+		if (saveButton && canEdit) {
+			saveButton.addEventListener('click', saveSchedule);
+		}
 
 		plannerNode.addEventListener('change', (event) => {
+			if (!canEdit) return;
+
 			const target = event.target;
 			if (!(target instanceof HTMLElement)) return;
 
@@ -764,6 +795,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 		});
 
 		plannerNode.addEventListener('click', (event) => {
+			if (!canEdit) return;
+
 			const target = event.target;
 			if (!(target instanceof HTMLElement)) return;
 

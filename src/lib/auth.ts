@@ -4,10 +4,14 @@ const DEFAULT_REFRESH_URL =
 	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/auth/refresh';
 const DEFAULT_LOGOUT_URL =
 	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/auth/logout';
+const DEFAULT_CHANGE_PASSWORD_URL =
+	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/auth/change-password';
 
 export const LOGIN_URL = import.meta.env.ORDS_AUTH_LOGIN_URL ?? DEFAULT_LOGIN_URL;
 export const REFRESH_URL = import.meta.env.ORDS_AUTH_REFRESH_URL ?? DEFAULT_REFRESH_URL;
 export const LOGOUT_URL = import.meta.env.ORDS_AUTH_LOGOUT_URL ?? DEFAULT_LOGOUT_URL;
+export const CHANGE_PASSWORD_URL =
+	import.meta.env.ORDS_AUTH_CHANGE_PASSWORD_URL ?? DEFAULT_CHANGE_PASSWORD_URL;
 
 const ORGANIZATION_CACHE_COOKIE_KEYS = {
 	id: 'org_id',
@@ -41,6 +45,11 @@ interface AuthFailureResponse {
 interface BasicSuccessResponse {
 	status: 'success';
 	message?: string;
+}
+
+export interface ChangePasswordPayload {
+	current_password: string;
+	new_password: string;
 }
 
 export class AuthApiError extends Error {
@@ -166,6 +175,30 @@ export const logoutWithOrds = async (refreshToken?: string) => {
 	return parseBasicResponse(response);
 };
 
+export const changePasswordWithOrds = async (token: string, payload: ChangePasswordPayload) => {
+	if (!token) {
+		throw new AuthApiError('Token de acceso requerido.', 401);
+	}
+
+	const response = await fetch(CHANGE_PASSWORD_URL, {
+		method: 'PUT',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	const data = await parseBasicResponse(response);
+	return {
+		message:
+			typeof data.message === 'string' && data.message.trim()
+				? data.message
+				: 'Contrasena actualizada correctamente.',
+	};
+};
+
 const isSecureRequest = (url: URL) => url.protocol === 'https:' || url.hostname !== 'localhost';
 
 const getCookieBaseOptions = (url: URL) => ({
@@ -221,6 +254,9 @@ export const isPublicPath = (pathname: string) => {
 	return (
 		pathname.startsWith('/login') ||
 		pathname.startsWith('/api/auth') ||
+		pathname.startsWith('/api/public') ||
+		pathname === '/p' ||
+		pathname.startsWith('/p/') ||
 		pathname.startsWith('/_astro') ||
 		pathname === '/favicon.ico' ||
 		pathname === '/favicon.svg'

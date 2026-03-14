@@ -65,7 +65,7 @@ const activeProfessionals = professionals.filter((item) => item.is_active === 1)
 	{
 		professionals.length === 0 ? (
 			<div class="mt-6 rounded-[1.45rem] border border-dashed border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-5 py-7 text-sm text-[color:var(--on-surface-variant)]">
-				No hay profesionales registrados para esta organizacion.
+			No hay profesionales registrados para esta organización.
 			</div>
 		) : (
 			<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -123,7 +123,7 @@ const activeProfessionals = professionals.filter((item) => item.is_active === 1)
 
 							<div class="mt-4 space-y-3 text-sm text-[color:var(--on-surface-variant)]">
 								<div class="flex items-center justify-between gap-3">
-									<span>Telefono</span>
+								<span>Teléfono</span>
 									<span class="text-right font-semibold text-[color:var(--on-surface)]">
 										{item.professional.phone_number || '-'}
 									</span>

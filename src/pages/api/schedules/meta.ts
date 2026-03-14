@@ -1,11 +1,13 @@
 import type { APIRoute } from 'astro';
 
+import { ROLES } from '../../../config/roles';
 import {
 	SchedulesApiError,
 	listLocationsLovWithOrds,
 	listProfessionalsLovWithOrds,
 	listScheduleDaysWithOrds,
 } from '../../../lib/schedules';
+import { parseTokenClaims } from '../../../lib/token-claims';
 
 const requireToken = (token: string | undefined) => {
 	if (!token) {
@@ -32,9 +34,11 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) => {
 export const GET: APIRoute = async ({ locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		const claims = parseTokenClaims(token);
+		const roleId = Number(locals.roleId ?? claims.role_id ?? 0);
 
 		const [professionals, locations, days] = await Promise.all([
-			listProfessionalsLovWithOrds(token),
+			listProfessionalsLovWithOrds(token, { onlyMe: roleId === ROLES.PROFESIONAL }),
 			listLocationsLovWithOrds(token),
 			listScheduleDaysWithOrds(token),
 		]);

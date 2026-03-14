@@ -34,7 +34,7 @@ let pagination = {
 };
 
 if (!token) {
-	loadError = 'No hay sesion valida para consultar personal.';
+	loadError = 'No hay sesión válida para consultar personal.';
 } else {
 	try {
 		const listResult = await listProfessionals(token, { page: currentPage, limit: PAGE_SIZE });
@@ -100,7 +100,7 @@ const visiblePages = Array.from(
 
 									<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
 										<p class="text-sm text-[color:var(--on-surface-variant)]">
-											Pagina <span class="font-semibold text-[color:var(--on-surface)]">{safeCurrentPage}</span> de
+											Página <span class="font-semibold text-[color:var(--on-surface)]">{safeCurrentPage}</span> de
 											<span class="font-semibold text-[color:var(--on-surface)]"> {totalPages}</span>
 											<span class="mx-2">-</span>
 											Total de
@@ -110,7 +110,7 @@ const visiblePages = Array.from(
 											profesionales
 										</p>
 
-										<nav class="flex items-center gap-2" aria-label="Paginacion personal">
+										<nav class="flex items-center gap-2" aria-label="Paginación personal">
 											{
 												canPrevPage ? (
 													<a
@@ -175,7 +175,7 @@ const visiblePages = Array.from(
 		<div class="border-b border-[color:var(--shell-border)] px-5 py-4">
 			<h2 class="text-lg font-bold" data-professional-modal-title>Crear personal</h2>
 			<p class="mt-1 text-sm text-[color:var(--on-surface-variant)]" data-professional-modal-description>
-				Completa los datos para registrar profesional y cuenta en una sola operacion.
+				Completa los datos para registrar profesional y cuenta en una sola operación.
 			</p>
 		</div>
 
@@ -276,7 +276,7 @@ const visiblePages = Array.from(
 
 				<label class="grid gap-1 text-sm font-semibold">
 					<span class="inline-flex items-center gap-1">
-						Contrasena
+						Contraseña
 						<span data-password-required-indicator class="text-rose-600">*</span>
 					</span>
 					<input
@@ -324,7 +324,7 @@ const visiblePages = Array.from(
 
 			<div class="mt-6 border-b border-[color:var(--shell-border)] pb-1">
 				<p class="text-xs font-bold uppercase tracking-[0.08em] text-[color:var(--on-surface-variant)]">
-					Perfil publico (agenda)
+					Perfil público (agenda)
 				</p>
 			</div>
 
@@ -341,7 +341,7 @@ const visiblePages = Array.from(
 			</label>
 
 			<label class="mt-2 grid gap-1 text-sm font-semibold">
-				URL del perfil publico (opcional)
+				URL del perfil público (opcional)
 				<div class="flex items-stretch overflow-hidden rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] transition focus-within:border-[color:var(--primary)]">
 					<span class="inline-flex items-center border-r border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-3 text-xs font-semibold text-[color:var(--on-surface-variant)] sm:text-sm">
 						{publicProfileDomain}/p/
@@ -354,7 +354,7 @@ const visiblePages = Array.from(
 					/>
 				</div>
 				<span class="text-xs font-normal text-[color:var(--on-surface-variant)]">
-					Este sera el enlace directo para que los clientes agenden con este profesional.
+					Este será el enlace directo para que los clientes agenden con este profesional.
 				</span>
 				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="profile_slug"></span>
 			</label>
@@ -391,7 +391,7 @@ const visiblePages = Array.from(
 					name="services"
 					multiple
 					data-services-select
-					placeholder="Busca o selecciona servicios..."
+					data-placeholder="Busca o selecciona servicios..."
 					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
 				></select>
 				<span class="text-xs font-normal text-[color:var(--on-surface-variant)]">
@@ -907,6 +907,8 @@ const visiblePages = Array.from(
 					title: 'Quitar',
 				},
 			},
+			placeholder:
+				servicesSelect.dataset.placeholder?.trim() || 'Busca o selecciona servicios...',
 			create: false,
 			persist: false,
 			maxOptions: 200,

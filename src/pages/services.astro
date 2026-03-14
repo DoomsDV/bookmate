@@ -30,7 +30,7 @@ let pagination = {
 };
 
 if (!token) {
-	loadError = 'No hay sesion valida para consultar servicios.';
+	loadError = 'No hay sesión válida para consultar servicios.';
 } else {
 	try {
 		const listResult = await listServices(token, { page: currentPage, limit: PAGE_SIZE });
@@ -96,7 +96,7 @@ const visiblePages = Array.from(
 
 									<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
 										<p class="text-sm text-[color:var(--on-surface-variant)]">
-											Pagina <span class="font-semibold text-[color:var(--on-surface)]">{safeCurrentPage}</span> de
+								Página <span class="font-semibold text-[color:var(--on-surface)]">{safeCurrentPage}</span> de
 											<span class="font-semibold text-[color:var(--on-surface)]"> {totalPages}</span>
 											<span class="mx-2">·</span>
 											Total de
@@ -106,7 +106,7 @@ const visiblePages = Array.from(
 											servicios
 										</p>
 
-										<nav class="flex items-center gap-2" aria-label="Paginacion servicios">
+										<nav class="flex items-center gap-2" aria-label="Paginación servicios">
 											{
 												canPrevPage ? (
 													<a
@@ -206,7 +206,7 @@ const visiblePages = Array.from(
 
 			<label class="grid gap-1 text-sm font-semibold">
 				<span class="inline-flex items-center gap-1">
-					Duracion (minutos)
+					Duración (minutos)
 					<span class="text-rose-600">*</span>
 				</span>
 				<input

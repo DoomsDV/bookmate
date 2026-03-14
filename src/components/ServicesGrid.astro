@@ -17,7 +17,7 @@ const currencyFormatter = new Intl.NumberFormat('es-PY', {
 const SERVICE_ICON = 'sell';
 
 const toDurationLabel = (value: number) => {
-	if (value <= 0) return 'Sin duracion';
+	if (value <= 0) return 'Sin duración';
 	if (value === 60) return '1 hora';
 	if (value > 60 && value % 60 === 0) return `${value / 60} horas`;
 	return `${value} min`;
@@ -59,7 +59,7 @@ const activeServices = services.filter((item) => item.is_active === 1).length;
 	{
 		services.length === 0 ? (
 			<div class="mt-6 rounded-[1.45rem] border border-dashed border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-5 py-7 text-sm text-[color:var(--on-surface-variant)]">
-				No hay servicios registrados para esta organizacion.
+			No hay servicios registrados para esta organización.
 			</div>
 		) : (
 			<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

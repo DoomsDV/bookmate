@@ -1,0 +1,431 @@
+---
+import AppAlert from '../components/AppAlert.astro';
+import FlashMessage from '../components/FlashMessage.astro';
+import SideNav from '../components/SideNav.astro';
+import TopBar from '../components/TopBar.astro';
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+
+const token = Astro.locals.token ?? '';
+const flashMessage = Astro.url.searchParams.get('flash_message') ?? '';
+const flashTypeRaw = Astro.url.searchParams.get('flash_type') ?? 'success';
+const validFlashTypes = ['success', 'error', 'info', 'warning'] as const;
+type FlashType = (typeof validFlashTypes)[number];
+const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
+	? (flashTypeRaw as FlashType)
+	: 'info';
+const initialLoadError = token ? '' : 'No hay sesión válida para consultar el calendario.';
+---
+
+<Layout>
+	<div class="min-h-screen">
+		<div
+			class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+			data-app-shell
+			data-sidebar-state="expanded"
+		>
+			<SideNav currentPath={Astro.url.pathname} />
+
+			<div class="grid min-h-full grid-rows-[auto_1fr]">
+				<TopBar />
+
+				<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
+					<section class="grid gap-6" data-calendar-root>
+						{
+							flashMessage ? (
+								<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
+									<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
+								</div>
+							) : null
+						}
+
+						{
+							initialLoadError ? (
+								<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
+							) : (
+								<div class="grid gap-4">
+									<div class="rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-5 py-4">
+										<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+											<div class="grid gap-1">
+												<h1 class="text-lg font-bold text-[color:var(--on-surface)]">
+													Calendario de citas
+												</h1>
+												<p class="text-sm text-[color:var(--on-surface-variant)]">
+													Gestiona reservas por profesional y sucursal con vista semanal.
+												</p>
+											</div>
+
+											<button
+												type="button"
+												class="btn-primary-soft inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+												data-open-appointment-modal
+											>
+												<span class="material-symbols-rounded text-[1rem]">add</span>
+												<span>Nueva cita</span>
+											</button>
+										</div>
+
+										<div class="mt-4 grid gap-3 lg:grid-cols-2">
+											<label class="grid gap-1 text-sm font-semibold" data-professional-filter-wrap>
+												Profesional
+												<select
+													data-professional-filter
+													class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+												>
+													<option value="">Todos los profesionales</option>
+												</select>
+											</label>
+
+											<label class="grid gap-1 text-sm font-semibold">
+												Sucursal
+												<select
+													data-location-filter
+													class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+												>
+													<option value="">Todas las sucursales</option>
+												</select>
+											</label>
+										</div>
+									</div>
+
+									<div
+										class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400"
+										data-calendar-error
+									></div>
+
+									<div class="rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-3 sm:p-4">
+										<div
+											class="mb-3 hidden rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-3 py-2 text-sm text-[color:var(--on-surface-variant)]"
+											data-calendar-loading
+										>
+											Cargando calendario...
+										</div>
+										<div data-calendar-el class="calendar-host min-h-[34rem]"></div>
+									</div>
+								</div>
+							)
+						}
+					</section>
+				</main>
+			</div>
+		</div>
+	</div>
+
+	<dialog
+		class="w-[min(42rem,calc(100vw-2rem))] rounded-[1.25rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_26px_80px_rgba(15,23,42,0.28)] backdrop:bg-slate-950/40"
+		data-appointment-modal
+	>
+		<div class="border-b border-[color:var(--shell-border)] px-5 py-4">
+			<h2 class="text-lg font-bold" data-appointment-modal-title>Crear cita</h2>
+			<p class="mt-1 text-sm text-[color:var(--on-surface-variant)]" data-appointment-modal-description>
+				Completa los datos para registrar una nueva reserva.
+			</p>
+		</div>
+
+		<form class="relative grid gap-3 px-5 py-5" data-appointment-form>
+			<div
+				class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center rounded-b-[1.25rem] bg-[color:var(--surface-bright)]/78 backdrop-blur-[1px]"
+				data-appointment-loading
+			>
+				<div class="inline-flex items-center gap-2 rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+					<span class="material-symbols-rounded animate-spin text-[1rem]">progress_activity</span>
+					Procesando...
+				</div>
+			</div>
+
+			<div class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/25 dark:text-rose-300" data-form-error></div>
+
+			<div class="grid gap-3 sm:grid-cols-2">
+				<label class="grid gap-1 text-sm font-semibold">
+					<span class="inline-flex items-center gap-1">
+						Cliente
+						<span class="text-rose-600">*</span>
+					</span>
+					<input
+						type="text"
+						name="customer_name"
+						required
+						maxlength="100"
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+						placeholder="Ej: Carlos Gomez"
+					/>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="customer_name"></span>
+				</label>
+
+				<label class="grid gap-1 text-sm font-semibold">
+					Telefono
+					<input
+						type="tel"
+						name="customer_phone"
+						maxlength="20"
+						inputmode="tel"
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+						placeholder="Ej: 0981 123 456"
+					/>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="customer_phone"></span>
+				</label>
+			</div>
+
+			<div class="grid gap-3 sm:grid-cols-2">
+				<label class="grid gap-1 text-sm font-semibold" data-modal-professional-wrap>
+					<span class="inline-flex items-center gap-1">
+						Profesional
+						<span class="text-rose-600">*</span>
+					</span>
+					<select
+						name="pro_id_professional"
+						data-modal-professional
+						required
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					>
+						<option value="">Selecciona un profesional</option>
+					</select>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="pro_id_professional"></span>
+				</label>
+
+				<label class="grid gap-1 text-sm font-semibold">
+					<span class="inline-flex items-center gap-1">
+						Sucursal
+						<span class="text-rose-600">*</span>
+					</span>
+					<select
+						name="loc_id_location"
+						data-modal-location
+						required
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					>
+						<option value="">Selecciona una sucursal</option>
+					</select>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="loc_id_location"></span>
+				</label>
+			</div>
+
+			<div class="grid gap-3 sm:grid-cols-2">
+				<label class="grid gap-1 text-sm font-semibold">
+					<span class="inline-flex items-center gap-1">
+						Servicio
+						<span class="text-rose-600">*</span>
+					</span>
+					<select
+						name="ser_id_service"
+						data-modal-service
+						required
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					>
+						<option value="">Selecciona un servicio</option>
+					</select>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="ser_id_service"></span>
+				</label>
+
+				<label class="grid gap-1 text-sm font-semibold">
+					Estado
+					<select
+						name="status"
+						data-modal-status
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					>
+						<option value="PENDIENTE">Pendiente</option>
+						<option value="CONFIRMADO">Confirmado</option>
+						<option value="COMPLETADO">Completado</option>
+						<option value="CANCELADO">Cancelado</option>
+					</select>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="status"></span>
+				</label>
+			</div>
+
+			<div class="grid gap-3 sm:grid-cols-2">
+				<label class="grid gap-1 text-sm font-semibold">
+					<span class="inline-flex items-center gap-1">
+						Inicio
+						<span class="text-rose-600">*</span>
+					</span>
+					<input
+						type="datetime-local"
+						name="start_time"
+						required
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					/>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="start_time"></span>
+				</label>
+
+				<label class="grid gap-1 text-sm font-semibold">
+					<span class="inline-flex items-center gap-1">
+						Fin
+						<span class="text-rose-600">*</span>
+					</span>
+					<input
+						type="datetime-local"
+						name="end_time"
+						required
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					/>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="end_time"></span>
+				</label>
+			</div>
+
+			<div class="mt-2 flex items-center justify-between gap-2">
+				<button
+					type="button"
+					class="hidden rounded-xl border border-rose-500/30 bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+					data-delete-appointment
+				>
+					<span class="material-symbols-rounded mr-1 align-[-0.2em] text-[1rem]">delete</span>
+					Eliminar
+				</button>
+
+				<div class="ml-auto flex items-center justify-end gap-2">
+					<button
+						type="button"
+						class="rounded-xl border border-[color:var(--shell-border)] px-4 py-2 text-sm font-semibold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
+						data-close-appointment-modal
+					>
+						Cancelar
+					</button>
+					<button
+						type="submit"
+						class="btn-primary-soft inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+						data-submit-appointment
+					>
+						<span class="material-symbols-rounded text-[1rem]" data-submit-appointment-icon>check</span>
+						<span data-submit-appointment-label>Crear cita</span>
+					</button>
+				</div>
+			</div>
+		</form>
+	</dialog>
+
+	<AppAlert />
+</Layout>
+
+<script>
+	import { initializeCalendarPage } from '../scripts/calendar-page';
+
+	initializeCalendarPage();
+	document.addEventListener('astro:page-load', initializeCalendarPage);
+</script>
+
+<style is:global>
+	dialog[data-appointment-modal] {
+		position: fixed;
+		inset: 0;
+		margin: auto;
+		animation: appointment-modal-in 180ms ease-out;
+	}
+
+	dialog[data-appointment-modal]::backdrop {
+		animation: appointment-backdrop-in 180ms ease-out;
+	}
+
+	dialog[data-appointment-modal].is-closing {
+		animation: appointment-modal-out 160ms ease-in forwards;
+	}
+
+	dialog[data-appointment-modal].is-closing::backdrop {
+		animation: appointment-backdrop-out 160ms ease-in forwards;
+	}
+
+	[data-calendar-root] .fc-theme-standard .fc-scrollgrid,
+	[data-calendar-root] .fc-theme-standard td,
+	[data-calendar-root] .fc-theme-standard th,
+	[data-calendar-root] .fc-theme-standard .fc-list {
+		border-color: var(--shell-border);
+	}
+
+	[data-calendar-root] .fc .fc-toolbar-title {
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--on-surface);
+	}
+
+	[data-calendar-root] .fc .fc-button {
+		border-color: var(--shell-border);
+		background: var(--control-surface);
+		color: var(--on-surface);
+		box-shadow: none;
+		text-transform: none;
+		font-weight: 600;
+	}
+
+	[data-calendar-root] .fc .fc-button:hover,
+	[data-calendar-root] .fc .fc-button:focus {
+		background: var(--control-surface-strong);
+		color: var(--on-surface);
+		box-shadow: none;
+	}
+
+	[data-calendar-root] .fc .fc-button.fc-button-active {
+		background: var(--primary-soft);
+		border-color: var(--primary-container);
+		color: var(--primary);
+	}
+
+	[data-calendar-root] .fc .fc-timegrid-slot-label,
+	[data-calendar-root] .fc .fc-col-header-cell-cushion,
+	[data-calendar-root] .fc .fc-daygrid-day-number,
+	[data-calendar-root] .fc .fc-list-day-text,
+	[data-calendar-root] .fc .fc-list-day-side-text {
+		color: var(--on-surface-variant);
+		font-weight: 600;
+	}
+
+	[data-calendar-root] .fc .fc-timegrid-axis-cushion,
+	[data-calendar-root] .fc .fc-timegrid-slot-label-cushion {
+		color: var(--on-surface-variant);
+	}
+
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-scrollgrid-section-sticky > *,
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-col-header-cell {
+		background: var(--surface-container);
+	}
+
+	[data-calendar-root] .fc .fc-event {
+		border: 0;
+		border-radius: 0.6rem;
+		padding: 0.15rem 0.2rem;
+		box-shadow: 0 10px 20px rgba(15, 23, 42, 0.14);
+	}
+
+	[data-calendar-root] .fc .fc-event-title {
+		font-weight: 700;
+	}
+
+	@keyframes appointment-modal-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px) scale(0.98);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes appointment-modal-out {
+		from {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(8px) scale(0.98);
+		}
+	}
+
+	@keyframes appointment-backdrop-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes appointment-backdrop-out {
+		from {
+			opacity: 1;
+		}
+		to {
+			opacity: 0;
+		}
+	}
+</style>
