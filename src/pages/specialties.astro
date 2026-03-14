@@ -4,7 +4,7 @@ import FlashMessage from '../components/FlashMessage.astro';
 import SideNav from '../components/SideNav.astro';
 import SpecialtiesGrid from '../components/SpecialtiesGrid.astro';
 import TopBar from '../components/TopBar.astro';
-import { SpecialtiesApiError, listSpecialties, type Specialty } from '../lib/specialties';
+import { SpecialtiesApiError, SpecialtiesClient, type Specialty } from '../lib/specialties';
 import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
 
@@ -30,10 +30,11 @@ let pagination = {
 };
 
 if (!token) {
-	loadError = 'No hay sesión válida para consultar especialidades.';
+	loadError = 'No hay sesion valida para consultar especialidades.';
 } else {
 	try {
-		const listResult = await listSpecialties(token, { page: currentPage, limit: PAGE_SIZE });
+		const apiClient = new SpecialtiesClient(token);
+		const listResult = await apiClient.list(currentPage, PAGE_SIZE);
 		specialties = listResult.data;
 		pagination = listResult.meta;
 	} catch (error) {
@@ -66,356 +67,212 @@ const visiblePages = Array.from(
 ---
 
 <Layout>
-	<div class="min-h-screen">
-		<div
-			class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
-			data-app-shell
-			data-sidebar-state="expanded"
-		>
-			<SideNav currentPath={Astro.url.pathname} />
+	<specialty-manager>
+		<div class="min-h-screen">
+			<div
+				class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+				data-app-shell
+				data-sidebar-state="expanded"
+			>
+				<SideNav currentPath={Astro.url.pathname} />
 
-			<div class="grid min-h-full grid-rows-[auto_1fr]">
-				<TopBar />
+				<div class="grid min-h-full grid-rows-[auto_1fr]">
+					<TopBar />
 
-				<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
-					<section class="grid gap-6">
-						{
-							flashMessage ? (
-								<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
-									<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
-								</div>
-							) : null
-						}
+					<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
+						<section class="grid gap-6">
+							{
+								flashMessage ? (
+									<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
+										<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
+									</div>
+								) : null
+							}
 
-						{
-							loadError ? (
-								<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
-							) : (
-								<div class="grid gap-5">
-									<SpecialtiesGrid specialties={specialties} showCreateAction={true} />
+							{
+								loadError ? (
+									<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
+								) : (
+									<div class="grid gap-5">
+										<SpecialtiesGrid specialties={specialties} showCreateAction={true} />
 
-									<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-										<p class="text-sm text-[color:var(--on-surface-variant)]">
-								Página <span class="font-semibold text-[color:var(--on-surface)]">{safeCurrentPage}</span> de
-											<span class="font-semibold text-[color:var(--on-surface)]"> {totalPages}</span>
-											<span class="mx-2">-</span>
-											Total de
-											<span class="font-semibold text-[color:var(--on-surface)]">
-												{` ${pagination.total_records} `}
-											</span>
-											especialidades
-										</p>
+										<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p class="text-sm text-[color:var(--on-surface-variant)]">
+												Pagina <span class="font-semibold text-[color:var(--on-surface)]">{safeCurrentPage}</span> de
+												<span class="font-semibold text-[color:var(--on-surface)]"> {totalPages}</span>
+												<span class="mx-2">-</span>
+												Total de
+												<span class="font-semibold text-[color:var(--on-surface)]">
+													{` ${pagination.total_records} `}
+												</span>
+												especialidades
+											</p>
 
-										<nav class="flex items-center gap-2" aria-label="Paginación especialidades">
-											{
-												canPrevPage ? (
-													<a
-														href={toPageHref(safeCurrentPage - 1)}
-														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
-													>
-														Anterior
-													</a>
-												) : (
-													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
-														Anterior
-													</span>
-												)
-											}
-
-											{
-												visiblePages.map((page) =>
-													page === safeCurrentPage ? (
-														<span class="rounded-lg border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-sm font-bold text-[color:var(--primary)]">
-															{page}
-														</span>
-													) : (
+											<nav class="flex items-center gap-2" aria-label="Paginacion especialidades">
+												{
+													canPrevPage ? (
 														<a
-															href={toPageHref(page)}
+															href={toPageHref(safeCurrentPage - 1)}
 															class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
 														>
-															{page}
+															Anterior
 														</a>
+													) : (
+														<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
+															Anterior
+														</span>
 													)
-												)
-											}
+												}
 
-											{
-												canNextPage ? (
-													<a
-														href={toPageHref(safeCurrentPage + 1)}
-														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
-													>
-														Siguiente
-													</a>
-												) : (
-													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
-														Siguiente
-													</span>
-												)
-											}
-										</nav>
+												{
+													visiblePages.map((page) =>
+														page === safeCurrentPage ? (
+															<span class="rounded-lg border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-sm font-bold text-[color:var(--primary)]">
+																{page}
+															</span>
+														) : (
+															<a
+																href={toPageHref(page)}
+																class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+															>
+																{page}
+															</a>
+														)
+													)
+												}
+
+												{
+													canNextPage ? (
+														<a
+															href={toPageHref(safeCurrentPage + 1)}
+															class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+														>
+															Siguiente
+														</a>
+													) : (
+														<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
+															Siguiente
+														</span>
+													)
+												}
+											</nav>
+										</div>
 									</div>
-								</div>
-							)
-						}
-					</section>
-				</main>
-			</div>
-		</div>
-	</div>
-
-	<dialog
-		class="w-[min(36rem,calc(100vw-2rem))] rounded-[1.25rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_26px_80px_rgba(15,23,42,0.28)] backdrop:bg-slate-950/40"
-		data-specialty-modal
-	>
-		<div class="border-b border-[color:var(--shell-border)] px-5 py-4">
-			<h2 class="text-lg font-bold" data-specialty-modal-title>Crear especialidad</h2>
-			<p class="mt-1 text-sm text-[color:var(--on-surface-variant)]" data-specialty-modal-description>
-				Completa los campos para registrar una nueva especialidad.
-			</p>
-		</div>
-
-		<form class="relative grid gap-3 px-5 py-5" data-specialty-form>
-			<div
-				class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-b-[1.25rem] bg-[color:var(--surface-bright)]/78 backdrop-blur-[1px]"
-				data-specialty-loading
-			>
-				<div class="inline-flex items-center gap-2 rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
-					<span class="material-symbols-rounded animate-spin text-[1rem]">progress_activity</span>
-					Cargando especialidad...
+								)
+							}
+						</section>
+					</main>
 				</div>
 			</div>
+		</div>
 
-			<div class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/25 dark:text-rose-300" data-form-error></div>
+		<dialog
+			class="w-[min(36rem,calc(100vw-2rem))] rounded-[1.25rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_26px_80px_rgba(15,23,42,0.28)] backdrop:bg-slate-950/40"
+			data-specialty-modal
+		>
+			<div class="border-b border-[color:var(--shell-border)] px-5 py-4">
+				<h2 class="text-lg font-bold" data-specialty-modal-title>Crear especialidad</h2>
+				<p class="mt-1 text-sm text-[color:var(--on-surface-variant)]" data-specialty-modal-description>
+					Completa los campos para registrar una nueva especialidad.
+				</p>
+			</div>
 
-			<label class="grid gap-1 text-sm font-semibold">
-				<span class="inline-flex items-center gap-1">
-					Nombre
-					<span class="text-rose-600">*</span>
-				</span>
-				<input
-					type="text"
-					name="name"
-					maxlength="100"
-					required
-					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-					placeholder="Ej: Colorimetria"
-				/>
-				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="name"></span>
-			</label>
-
-			<label class="grid gap-1 text-sm font-semibold">
-				Descripcion (opcional)
-				<textarea
-					name="description"
-					maxlength="255"
-					rows="3"
-					class="resize-y rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-					placeholder="Describe brevemente la especialidad"
-				></textarea>
-				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="description"></span>
-			</label>
-
-			<label class="grid gap-1 text-sm font-semibold">
-				Estado
-				<select
-					name="is_active"
-					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+			<form class="relative grid gap-3 px-5 py-5" data-specialty-form>
+				<div
+					class="pointer-events-none absolute inset-0 hidden items-center justify-center rounded-b-[1.25rem] bg-[color:var(--surface-bright)]/78 backdrop-blur-[1px]"
+					data-specialty-loading
 				>
-					<option value="1">Activa</option>
-					<option value="0">Inactiva</option>
-				</select>
-				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="is_active"></span>
-			</label>
+					<div class="inline-flex items-center gap-2 rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
+						<span class="material-symbols-rounded animate-spin text-[1rem]">progress_activity</span>
+						Cargando especialidad...
+					</div>
+				</div>
 
-			<div class="mt-1 flex items-center justify-between gap-2">
-				<button
-					type="button"
-					class="hidden rounded-xl border border-rose-500/30 bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-					data-delete-specialty
-				>
-					<span class="material-symbols-rounded mr-1 align-[-0.2em] text-[1rem]">delete</span>
-					Eliminar
-				</button>
+				<div class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/25 dark:text-rose-300" data-form-error></div>
 
-				<div class="ml-auto flex items-center justify-end gap-2">
+				<label class="grid gap-1 text-sm font-semibold">
+					<span class="inline-flex items-center gap-1">
+						Nombre
+						<span class="text-rose-600">*</span>
+					</span>
+					<input
+						type="text"
+						name="name"
+						maxlength="100"
+						required
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+						placeholder="Ej: Colorimetria"
+					/>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="name"></span>
+				</label>
+
+				<label class="grid gap-1 text-sm font-semibold">
+					Descripcion (opcional)
+					<textarea
+						name="description"
+						maxlength="255"
+						rows="3"
+						class="resize-y rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+						placeholder="Describe brevemente la especialidad"
+					></textarea>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="description"></span>
+				</label>
+
+				<label class="grid gap-1 text-sm font-semibold">
+					Estado
+					<select
+						name="is_active"
+						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+					>
+						<option value="1">Activa</option>
+						<option value="0">Inactiva</option>
+					</select>
+					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="is_active"></span>
+				</label>
+
+				<div class="mt-1 flex items-center justify-between gap-2">
 					<button
 						type="button"
-						class="rounded-xl border border-[color:var(--shell-border)] px-4 py-2 text-sm font-semibold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
-						data-close-specialty-modal
+						class="hidden rounded-xl border border-rose-500/30 bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
+						data-delete-specialty
 					>
-						Cancelar
+						<span class="material-symbols-rounded mr-1 align-[-0.2em] text-[1rem]">delete</span>
+						Eliminar
 					</button>
-					<button
-						type="submit"
-						class="btn-primary-soft inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-						data-submit-specialty
-					>
-						<span class="material-symbols-rounded text-[1rem]" data-submit-specialty-icon>check</span>
-						<span data-submit-specialty-label>Crear especialidad</span>
-					</button>
+
+					<div class="ml-auto flex items-center justify-end gap-2">
+						<button
+							type="button"
+							class="rounded-xl border border-[color:var(--shell-border)] px-4 py-2 text-sm font-semibold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
+							data-close-specialty-modal
+						>
+							Cancelar
+						</button>
+						<button
+							type="submit"
+							class="btn-primary-soft inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+							data-submit-specialty
+						>
+							<span class="material-symbols-rounded text-[1rem]" data-submit-specialty-icon>check</span>
+							<span data-submit-specialty-label>Crear especialidad</span>
+						</button>
+					</div>
 				</div>
-			</div>
-		</form>
-	</dialog>
+			</form>
+		</dialog>
+	</specialty-manager>
 
 	<AppAlert />
 </Layout>
 
 <script>
-	const initializeSpecialtiesPage = () => {
-	const modal = document.querySelector<HTMLDialogElement>('[data-specialty-modal]');
-	if (!modal || modal.dataset.bound === 'true') return;
-	modal.dataset.bound = 'true';
-	const openButton = document.querySelector<HTMLButtonElement>('[data-open-specialty-modal]');
-	const closeButton = document.querySelector<HTMLButtonElement>('[data-close-specialty-modal]');
-	const deleteButton = document.querySelector<HTMLButtonElement>('[data-delete-specialty]');
-	const form = document.querySelector<HTMLFormElement>('[data-specialty-form]');
-	const submitButton = document.querySelector<HTMLButtonElement>('[data-submit-specialty]');
-	const submitLabel = document.querySelector<HTMLElement>('[data-submit-specialty-label]');
-	const submitIcon = document.querySelector<HTMLElement>('[data-submit-specialty-icon]');
-	const formErrorNode = document.querySelector<HTMLElement>('[data-form-error]');
-	const fieldErrorNodes = document.querySelectorAll<HTMLElement>('[data-field-error]');
-	const loadingNode = document.querySelector<HTMLElement>('[data-specialty-loading]');
-	const modalTitle = document.querySelector<HTMLElement>('[data-specialty-modal-title]');
-	const modalDescription = document.querySelector<HTMLElement>('[data-specialty-modal-description]');
-	const specialtyCards = document.querySelectorAll<HTMLElement>('[data-specialty-card]');
-	const nameInput = form ? form.querySelector<HTMLInputElement>('[name="name"]') : null;
-	const descriptionInput = form ? form.querySelector<HTMLTextAreaElement>('[name="description"]') : null;
-	const statusInput = form ? form.querySelector<HTMLSelectElement>('[name="is_active"]') : null;
-	const formFields =
-		form?.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
-			'input, select, textarea'
-		);
-	let closeTimer: number | null = null;
-	let mode: 'create' | 'edit' = 'create';
-	let editingSpecialtyId = 0;
-	let specialtyReadRequestSeq = 0;
+	import { navigate } from 'astro:transitions/client';
 
-	const currentUrl = new URL(window.location.href);
-	if (currentUrl.searchParams.has('flash_message')) {
-		currentUrl.searchParams.delete('flash_message');
-		currentUrl.searchParams.delete('flash_type');
-		window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
-	}
-
-	const redirectWithFlash = (message: string, type = 'success') => {
-		const nextUrl = new URL(window.location.href);
-		nextUrl.searchParams.set('flash_message', message);
-		nextUrl.searchParams.set('flash_type', type);
-		window.location.assign(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
-	};
-
-	const clearErrors = () => {
-		if (formErrorNode) {
-			formErrorNode.textContent = '';
-			formErrorNode.classList.add('hidden');
-		}
-
-		for (const node of fieldErrorNodes) {
-			node.textContent = '';
-			node.classList.add('hidden');
-		}
-	};
-
-	const showFormError = (message: string) => {
-		if (!formErrorNode) return;
-		formErrorNode.textContent = message;
-		formErrorNode.classList.remove('hidden');
-	};
-
-	const setCreateMode = () => {
-		mode = 'create';
-		editingSpecialtyId = 0;
-		if (modalTitle) modalTitle.textContent = 'Crear especialidad';
-		if (modalDescription) {
-			modalDescription.textContent = 'Completa los campos para registrar una nueva especialidad.';
-		}
-		if (submitLabel) submitLabel.textContent = 'Crear especialidad';
-		if (submitIcon) submitIcon.textContent = 'check';
-		deleteButton?.classList.add('hidden');
-		deleteButton?.setAttribute('disabled', 'true');
-		loadingNode?.classList.add('hidden');
-	};
-
-	const setEditMode = (specialtyId: number) => {
-		mode = 'edit';
-		editingSpecialtyId = specialtyId;
-		if (modalTitle) modalTitle.textContent = 'Editar especialidad';
-		if (modalDescription) {
-			modalDescription.textContent = 'Actualiza la informacion de la especialidad seleccionada.';
-		}
-		if (submitLabel) submitLabel.textContent = 'Guardar cambios';
-		if (submitIcon) submitIcon.textContent = 'save';
-		deleteButton?.classList.remove('hidden');
-		deleteButton?.removeAttribute('disabled');
-	};
-
-	const setFormLoadingState = (isLoading: boolean) => {
-		if (isLoading) {
-			loadingNode?.classList.add('flex');
-			loadingNode?.classList.remove('hidden');
-		} else {
-			loadingNode?.classList.add('hidden');
-			loadingNode?.classList.remove('flex');
-		}
-
-		for (const field of formFields ?? []) {
-			field.disabled = isLoading;
-		}
-	};
-
-	const setLoadingMode = (label = 'Procesando...') => {
-		if (submitButton) submitButton.disabled = true;
-		if (deleteButton && mode === 'edit') deleteButton.disabled = true;
-		if (submitLabel) submitLabel.textContent = label;
-		if (submitIcon) submitIcon.textContent = 'hourglass_top';
-	};
-
-	const restoreButtons = () => {
-		if (submitButton) submitButton.disabled = false;
-		if (mode === 'create') {
-			if (submitLabel) submitLabel.textContent = 'Crear especialidad';
-			if (submitIcon) submitIcon.textContent = 'check';
-			return;
-		}
-
-		if (submitLabel) submitLabel.textContent = 'Guardar cambios';
-		if (submitIcon) submitIcon.textContent = 'save';
-		if (deleteButton) deleteButton.disabled = false;
-	};
-
-	const openModalShell = () => {
-		modal?.classList.remove('is-closing');
-		if (closeTimer) {
-			window.clearTimeout(closeTimer);
-			closeTimer = null;
-		}
-		if (!modal?.open) modal?.showModal();
-	};
-
-	const closeModal = () => {
-		if (!modal?.open) return;
-		specialtyReadRequestSeq += 1;
-		modal.classList.add('is-closing');
-
-		closeTimer = window.setTimeout(() => {
-			modal.close();
-			modal.classList.remove('is-closing');
-			form?.reset();
-			setCreateMode();
-			setFormLoadingState(false);
-			clearErrors();
-			closeTimer = null;
-		}, 160);
-	};
-
-	const openCreateModal = () => {
-		setCreateMode();
-		resetFormValues();
-		setFormLoadingState(false);
-		clearErrors();
-		openModalShell();
+	type SpecialtyMode = 'create' | 'edit';
+	type SpecialtySubmitPayload = {
+		name: string;
+		description?: string;
+		is_active: 0 | 1;
 	};
 
 	type SpecialtyFormValues = {
@@ -424,232 +281,443 @@ const visiblePages = Array.from(
 		is_active?: number | null;
 	};
 
-	const fillFormWithSpecialty = (specialty: SpecialtyFormValues) => {
-		if (nameInput) nameInput.value = String(specialty?.name || '');
-		if (descriptionInput) descriptionInput.value = String(specialty?.description || '');
-		if (statusInput) {
-			statusInput.value = String(specialty?.is_active === 0 ? 0 : 1);
-		}
-	};
+	class SpecialtyManager extends HTMLElement {
+		modal: HTMLDialogElement | null;
+		form: HTMLFormElement | null;
+		submitButton: HTMLButtonElement | null;
+		submitLabel: HTMLElement | null;
+		submitIcon: HTMLElement | null;
+		deleteButton: HTMLButtonElement | null;
+		formErrorNode: HTMLElement | null;
+		loadingNode: HTMLElement | null;
+		modalTitle: HTMLElement | null;
+		modalDescription: HTMLElement | null;
+		nameInput: HTMLInputElement | null;
+		descriptionInput: HTMLTextAreaElement | null;
+		statusInput: HTMLSelectElement | null;
+		fieldErrorNodes: NodeListOf<HTMLElement>;
+		formFields: NodeListOf<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | null;
 
-	const resetFormValues = () => {
-		if (nameInput) nameInput.value = '';
-		if (descriptionInput) descriptionInput.value = '';
-		if (statusInput) statusInput.value = '1';
-	};
+		bound = false;
+		closeTimer: number | null = null;
+		mode: SpecialtyMode = 'create';
+		editingSpecialtyId = 0;
+		specialtyReadRequestSeq = 0;
 
-	const openEditModal = async (specialtyId: number) => {
-		if (!specialtyId) return;
-		const requestId = ++specialtyReadRequestSeq;
-		setEditMode(specialtyId);
-		resetFormValues();
-		clearErrors();
-		openModalShell();
-		setFormLoadingState(true);
-		setLoadingMode('Cargando...');
-
-		try {
-			const response = await fetch(`/api/specialties/${specialtyId}`, {
-				method: 'GET',
-				headers: { Accept: 'application/json' },
-			});
-
-			let data = null;
-			try {
-				data = await response.json();
-			} catch {
-				throw new Error('No fue posible interpretar la respuesta del servidor.');
-			}
-
-			if (!response.ok || !data || data.status !== 'success' || !data.data) {
-				throw new Error(data?.message || 'No fue posible obtener la especialidad seleccionada.');
-			}
-
-			if (requestId !== specialtyReadRequestSeq) return;
-			fillFormWithSpecialty(data.data);
-		} catch (error) {
-			if (requestId !== specialtyReadRequestSeq) return;
-			setCreateMode();
-			showFormError(
-				error instanceof Error ? error.message : 'No fue posible obtener la especialidad.'
-			);
-		} finally {
-			if (requestId !== specialtyReadRequestSeq) return;
-			setFormLoadingState(false);
-			restoreButtons();
-		}
-	};
-
-	openButton?.addEventListener('click', openCreateModal);
-	closeButton?.addEventListener('click', closeModal);
-
-	modal?.addEventListener('click', (event: MouseEvent) => {
-		const target = event.target;
-		if (target instanceof HTMLDialogElement) closeModal();
-	});
-
-	for (const card of specialtyCards) {
-		const openFromCard = () => {
-			const specialtyId = Number(card.getAttribute('data-specialty-id') || '0');
-			if (specialtyId > 0) openEditModal(specialtyId);
-		};
-
-		card.addEventListener('click', openFromCard);
-		card.addEventListener('keydown', (event: KeyboardEvent) => {
-			if (event.key !== 'Enter' && event.key !== ' ') return;
-			event.preventDefault();
-			openFromCard();
-		});
-	}
-
-	form?.addEventListener('submit', async (event: SubmitEvent) => {
-		event.preventDefault();
-		clearErrors();
-
-		if (!form) return;
-		const formData = new FormData(form);
-
-		const name = String(formData.get('name') || '').trim();
-		const description = String(formData.get('description') || '').trim();
-		const isActiveRaw = String(formData.get('is_active') || '1').trim();
-
-		if (!name) {
-			showFormError('Completa los campos requeridos antes de continuar.');
-			return;
+		constructor() {
+			super();
+			this.modal = this.querySelector<HTMLDialogElement>('[data-specialty-modal]');
+			this.form = this.querySelector<HTMLFormElement>('[data-specialty-form]');
+			this.submitButton = this.querySelector<HTMLButtonElement>('[data-submit-specialty]');
+			this.submitLabel = this.querySelector<HTMLElement>('[data-submit-specialty-label]');
+			this.submitIcon = this.querySelector<HTMLElement>('[data-submit-specialty-icon]');
+			this.deleteButton = this.querySelector<HTMLButtonElement>('[data-delete-specialty]');
+			this.formErrorNode = this.querySelector<HTMLElement>('[data-form-error]');
+			this.loadingNode = this.querySelector<HTMLElement>('[data-specialty-loading]');
+			this.modalTitle = this.querySelector<HTMLElement>('[data-specialty-modal-title]');
+			this.modalDescription = this.querySelector<HTMLElement>('[data-specialty-modal-description]');
+			this.nameInput = this.form ? this.form.querySelector<HTMLInputElement>('[name="name"]') : null;
+			this.descriptionInput = this.form
+				? this.form.querySelector<HTMLTextAreaElement>('[name="description"]')
+				: null;
+			this.statusInput = this.form
+				? this.form.querySelector<HTMLSelectElement>('[name="is_active"]')
+				: null;
+			this.fieldErrorNodes = this.querySelectorAll<HTMLElement>('[data-field-error]');
+			this.formFields = this.form
+				? this.form.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
+						'input, select, textarea'
+					)
+				: null;
 		}
 
-		type SpecialtySubmitPayload = {
-			name: string;
-			description?: string;
-			is_active: 0 | 1;
-		};
+		connectedCallback() {
+			if (this.bound) return;
+			this.bound = true;
+			this.cleanFlashUrl();
+			this.addEventListener('click', this.handleRootClick);
+			this.addEventListener('keydown', this.handleRootKeydown);
+			this.form?.addEventListener('submit', this.handleSubmit);
+		}
 
-		const payload: SpecialtySubmitPayload = {
-			name,
-			is_active: isActiveRaw === '0' ? 0 : 1,
-		};
-		if (description) payload.description = description;
+		disconnectedCallback() {
+			this.bound = false;
+			this.removeEventListener('click', this.handleRootClick);
+			this.removeEventListener('keydown', this.handleRootKeydown);
+			this.form?.removeEventListener('submit', this.handleSubmit);
+			if (this.closeTimer) {
+				window.clearTimeout(this.closeTimer);
+				this.closeTimer = null;
+			}
+		}
 
-		const endpoint =
-			mode === 'edit' && editingSpecialtyId
-				? `/api/specialties/${editingSpecialtyId}`
-				: '/api/specialties';
-		const httpMethod = mode === 'edit' && editingSpecialtyId ? 'PUT' : 'POST';
-		setLoadingMode(mode === 'edit' ? 'Guardando...' : 'Creando...');
+		cleanFlashUrl() {
+			const currentUrl = new URL(window.location.href);
+			if (!currentUrl.searchParams.has('flash_message')) return;
+			currentUrl.searchParams.delete('flash_message');
+			currentUrl.searchParams.delete('flash_type');
+			window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+		}
 
-		try {
-			const response = await fetch(endpoint, {
-				method: httpMethod,
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-				},
-				body: JSON.stringify(payload),
-			});
+		navigateWithFlash(message: string, type = 'success') {
+			const nextUrl = new URL(window.location.href);
+			nextUrl.searchParams.set('flash_message', message);
+			nextUrl.searchParams.set('flash_type', type);
+			void navigate(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+		}
 
-			let data = null;
-			try {
-				data = await response.json();
-			} catch {
-				throw new Error('No fue posible interpretar la respuesta del servidor.');
+		clearErrors() {
+			if (this.formErrorNode) {
+				this.formErrorNode.textContent = '';
+				this.formErrorNode.classList.add('hidden');
 			}
 
-			if (!response.ok || !data || data.status !== 'success') {
-				const message =
-					typeof data?.message === 'string'
-						? data.message
-						: 'No fue posible guardar la especialidad.';
-				showFormError(message);
+			for (const node of this.fieldErrorNodes) {
+				node.textContent = '';
+				node.classList.add('hidden');
+			}
+		}
 
-				const fieldErrors = Array.isArray(data?.errors) ? data.errors : [];
-				for (const error of fieldErrors) {
-					if (!error || typeof error !== 'object') continue;
-					const field = 'field' in error ? String(error.field || '') : '';
-					const messageText = 'message' in error ? String(error.message || '') : '';
-					if (!field || !messageText) continue;
+		showFormError(message: string) {
+			if (!this.formErrorNode) return;
+			this.formErrorNode.textContent = message;
+			this.formErrorNode.classList.remove('hidden');
+		}
 
-					const fieldNode = document.querySelector<HTMLElement>(
-						`[data-field-error="${field}"]`
-					);
-					if (fieldNode) {
-						fieldNode.textContent = messageText;
-						fieldNode.classList.remove('hidden');
-					}
-				}
+		setCreateMode() {
+			this.mode = 'create';
+			this.editingSpecialtyId = 0;
+			if (this.modalTitle) this.modalTitle.textContent = 'Crear especialidad';
+			if (this.modalDescription) {
+				this.modalDescription.textContent = 'Completa los campos para registrar una nueva especialidad.';
+			}
+			if (this.submitLabel) this.submitLabel.textContent = 'Crear especialidad';
+			if (this.submitIcon) this.submitIcon.textContent = 'check';
+			this.deleteButton?.classList.add('hidden');
+			this.deleteButton?.setAttribute('disabled', 'true');
+			this.loadingNode?.classList.add('hidden');
+		}
 
+		setEditMode(specialtyId: number) {
+			this.mode = 'edit';
+			this.editingSpecialtyId = specialtyId;
+			if (this.modalTitle) this.modalTitle.textContent = 'Editar especialidad';
+			if (this.modalDescription) {
+				this.modalDescription.textContent = 'Actualiza la informacion de la especialidad seleccionada.';
+			}
+			if (this.submitLabel) this.submitLabel.textContent = 'Guardar cambios';
+			if (this.submitIcon) this.submitIcon.textContent = 'save';
+			this.deleteButton?.classList.remove('hidden');
+			this.deleteButton?.removeAttribute('disabled');
+		}
+
+		setFormLoadingState(isLoading: boolean) {
+			if (isLoading) {
+				this.loadingNode?.classList.add('flex');
+				this.loadingNode?.classList.remove('hidden');
+			} else {
+				this.loadingNode?.classList.add('hidden');
+				this.loadingNode?.classList.remove('flex');
+			}
+
+			for (const field of this.formFields ?? []) {
+				field.disabled = isLoading;
+			}
+		}
+
+		setLoadingMode(label = 'Procesando...') {
+			if (this.submitButton) this.submitButton.disabled = true;
+			if (this.deleteButton && this.mode === 'edit') this.deleteButton.disabled = true;
+			if (this.submitLabel) this.submitLabel.textContent = label;
+			if (this.submitIcon) this.submitIcon.textContent = 'hourglass_top';
+		}
+
+		restoreButtons() {
+			if (this.submitButton) this.submitButton.disabled = false;
+			if (this.mode === 'create') {
+				if (this.submitLabel) this.submitLabel.textContent = 'Crear especialidad';
+				if (this.submitIcon) this.submitIcon.textContent = 'check';
 				return;
 			}
 
-			const successMessage =
-				typeof data?.message === 'string' && data.message.trim()
-					? data.message
-					: mode === 'edit'
-						? 'Especialidad actualizada correctamente.'
-						: 'Especialidad creada correctamente.';
-
-			closeModal();
-			redirectWithFlash(successMessage, 'success');
-		} catch (error) {
-			const message = error instanceof Error ? error.message : 'No fue posible guardar la especialidad.';
-			showFormError(message);
-		} finally {
-			restoreButtons();
+			if (this.submitLabel) this.submitLabel.textContent = 'Guardar cambios';
+			if (this.submitIcon) this.submitIcon.textContent = 'save';
+			if (this.deleteButton) this.deleteButton.disabled = false;
 		}
-	});
 
-	deleteButton?.addEventListener('click', async () => {
-		if (!editingSpecialtyId || mode !== 'edit') return;
+		openModalShell() {
+			this.modal?.classList.remove('is-closing');
+			if (this.closeTimer) {
+				window.clearTimeout(this.closeTimer);
+				this.closeTimer = null;
+			}
+			if (!this.modal?.open) this.modal?.showModal();
+		}
 
-		const confirmed = await window.BookmateAlert?.confirm({
-			type: 'error',
-			title: 'Eliminar especialidad',
-			message: 'Esta accion eliminara la especialidad de forma permanente. Deseas continuar?',
-			confirmText: 'Eliminar',
-			cancelText: 'Cancelar',
-		});
-		if (!confirmed) return;
+		closeModal() {
+			if (!this.modal?.open) return;
+			this.specialtyReadRequestSeq += 1;
+			this.modal.classList.add('is-closing');
 
-		clearErrors();
-		setLoadingMode('Eliminando...');
+			this.closeTimer = window.setTimeout(() => {
+				this.modal?.close();
+				this.modal?.classList.remove('is-closing');
+				this.form?.reset();
+				this.setCreateMode();
+				this.setFormLoadingState(false);
+				this.clearErrors();
+				this.closeTimer = null;
+			}, 160);
+		}
 
-		try {
-			const response = await fetch(`/api/specialties/${editingSpecialtyId}`, {
-				method: 'DELETE',
-				headers: { Accept: 'application/json' },
-			});
+		openCreateModal() {
+			this.setCreateMode();
+			this.resetFormValues();
+			this.setFormLoadingState(false);
+			this.clearErrors();
+			this.openModalShell();
+		}
 
-			let data = null;
+		fillFormWithSpecialty(specialty: SpecialtyFormValues) {
+			if (this.nameInput) this.nameInput.value = String(specialty?.name || '');
+			if (this.descriptionInput) this.descriptionInput.value = String(specialty?.description || '');
+			if (this.statusInput) {
+				this.statusInput.value = String(specialty?.is_active === 0 ? 0 : 1);
+			}
+		}
+
+		resetFormValues() {
+			if (this.nameInput) this.nameInput.value = '';
+			if (this.descriptionInput) this.descriptionInput.value = '';
+			if (this.statusInput) this.statusInput.value = '1';
+		}
+
+		async parseJson(response: Response) {
 			try {
-				data = await response.json();
+				return await response.json();
 			} catch {
 				throw new Error('No fue posible interpretar la respuesta del servidor.');
 			}
+		}
 
-			if (!response.ok || !data || data.status !== 'success') {
-				throw new Error(data?.message || 'No fue posible eliminar la especialidad.');
+		async openEditModal(specialtyId: number) {
+			if (!specialtyId) return;
+			const requestId = ++this.specialtyReadRequestSeq;
+			this.setEditMode(specialtyId);
+			this.resetFormValues();
+			this.clearErrors();
+			this.openModalShell();
+			this.setFormLoadingState(true);
+			this.setLoadingMode('Cargando...');
+
+			try {
+				const response = await fetch(`/api/specialties/${specialtyId}`, {
+					method: 'GET',
+					headers: { Accept: 'application/json' },
+				});
+
+				const data = await this.parseJson(response);
+				if (!response.ok || !data || data.status !== 'success' || !data.data) {
+					throw new Error(data?.message || 'No fue posible obtener la especialidad seleccionada.');
+				}
+
+				if (requestId !== this.specialtyReadRequestSeq) return;
+				this.fillFormWithSpecialty(data.data);
+			} catch (error) {
+				if (requestId !== this.specialtyReadRequestSeq) return;
+				this.setCreateMode();
+				this.showFormError(
+					error instanceof Error ? error.message : 'No fue posible obtener la especialidad.'
+				);
+			} finally {
+				if (requestId !== this.specialtyReadRequestSeq) return;
+				this.setFormLoadingState(false);
+				this.restoreButtons();
+			}
+		}
+
+		handleRootClick = (event: MouseEvent) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+
+			if (this.modal && target === this.modal) {
+				this.closeModal();
+				return;
 			}
 
-			const successMessage =
-				typeof data?.message === 'string' && data.message.trim()
-					? data.message
-					: 'Especialidad eliminada correctamente.';
+			const closeTrigger = target.closest('[data-close-specialty-modal]');
+			if (closeTrigger && this.contains(closeTrigger)) {
+				this.closeModal();
+				return;
+			}
 
-			closeModal();
-			redirectWithFlash(successMessage, 'success');
-		} catch (error) {
-			showFormError(
-				error instanceof Error ? error.message : 'No fue posible eliminar la especialidad.'
-			);
-			restoreButtons();
+			const deleteTrigger = target.closest('[data-delete-specialty]');
+			if (deleteTrigger && this.contains(deleteTrigger)) {
+				void this.handleDelete();
+				return;
+			}
+
+			const openTrigger = target.closest('[data-open-specialty-modal], [data-specialty-card]');
+			if (!openTrigger || !this.contains(openTrigger)) return;
+
+			const card = openTrigger.closest('[data-specialty-card]');
+			if (card) {
+				const specialtyId = Number(card.getAttribute('data-specialty-id') || '0');
+				if (specialtyId > 0) {
+					void this.openEditModal(specialtyId);
+				}
+				return;
+			}
+
+			this.openCreateModal();
+		};
+
+		handleRootKeydown = (event: KeyboardEvent) => {
+			if (event.key !== 'Enter' && event.key !== ' ') return;
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const card = target.closest('[data-specialty-card]');
+			if (!card || !this.contains(card)) return;
+			event.preventDefault();
+			const specialtyId = Number(card.getAttribute('data-specialty-id') || '0');
+			if (specialtyId > 0) {
+				void this.openEditModal(specialtyId);
+			}
+		};
+
+		handleSubmit = async (event: SubmitEvent) => {
+			event.preventDefault();
+			this.clearErrors();
+
+			if (!this.form) return;
+			const formData = new FormData(this.form);
+
+			const name = String(formData.get('name') || '').trim();
+			const description = String(formData.get('description') || '').trim();
+			const isActiveRaw = String(formData.get('is_active') || '1').trim();
+
+			if (!name) {
+				this.showFormError('Completa los campos requeridos antes de continuar.');
+				return;
+			}
+
+			const payload: SpecialtySubmitPayload = {
+				name,
+				is_active: isActiveRaw === '0' ? 0 : 1,
+			};
+			if (description) payload.description = description;
+
+			const endpoint =
+				this.mode === 'edit' && this.editingSpecialtyId
+					? `/api/specialties/${this.editingSpecialtyId}`
+					: '/api/specialties';
+			const httpMethod = this.mode === 'edit' && this.editingSpecialtyId ? 'PUT' : 'POST';
+			this.setLoadingMode(this.mode === 'edit' ? 'Guardando...' : 'Creando...');
+
+			try {
+				const response = await fetch(endpoint, {
+					method: httpMethod,
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+					},
+					body: JSON.stringify(payload),
+				});
+
+				const data = await this.parseJson(response);
+				if (!response.ok || !data || data.status !== 'success') {
+					const message =
+						typeof data?.message === 'string'
+							? data.message
+							: 'No fue posible guardar la especialidad.';
+					this.showFormError(message);
+
+					const fieldErrors = Array.isArray(data?.errors) ? data.errors : [];
+					for (const error of fieldErrors) {
+						if (!error || typeof error !== 'object') continue;
+						const field = 'field' in error ? String(error.field || '') : '';
+						const messageText = 'message' in error ? String(error.message || '') : '';
+						if (!field || !messageText) continue;
+
+						const fieldNode = this.querySelector<HTMLElement>(`[data-field-error="${field}"]`);
+						if (fieldNode) {
+							fieldNode.textContent = messageText;
+							fieldNode.classList.remove('hidden');
+						}
+					}
+
+					return;
+				}
+
+				const successMessage =
+					typeof data?.message === 'string' && data.message.trim()
+						? data.message
+						: this.mode === 'edit'
+							? 'Especialidad actualizada correctamente.'
+							: 'Especialidad creada correctamente.';
+
+				this.closeModal();
+				this.navigateWithFlash(successMessage, 'success');
+			} catch (error) {
+				const message = error instanceof Error ? error.message : 'No fue posible guardar la especialidad.';
+				this.showFormError(message);
+			} finally {
+				this.restoreButtons();
+			}
+		};
+
+		async handleDelete() {
+			if (!this.editingSpecialtyId || this.mode !== 'edit') return;
+
+			const confirmed = await (window as any).BookmateAlert?.confirm?.({
+				type: 'error',
+				title: 'Eliminar especialidad',
+				message: 'Esta accion eliminara la especialidad de forma permanente. Deseas continuar?',
+				confirmText: 'Eliminar',
+				cancelText: 'Cancelar',
+			});
+			if (!confirmed) return;
+
+			this.clearErrors();
+			this.setLoadingMode('Eliminando...');
+
+			try {
+				const response = await fetch(`/api/specialties/${this.editingSpecialtyId}`, {
+					method: 'DELETE',
+					headers: { Accept: 'application/json' },
+				});
+
+				const data = await this.parseJson(response);
+				if (!response.ok || !data || data.status !== 'success') {
+					throw new Error(data?.message || 'No fue posible eliminar la especialidad.');
+				}
+
+				const successMessage =
+					typeof data?.message === 'string' && data.message.trim()
+						? data.message
+						: 'Especialidad eliminada correctamente.';
+
+				this.closeModal();
+				this.navigateWithFlash(successMessage, 'success');
+			} catch (error) {
+				this.showFormError(
+					error instanceof Error ? error.message : 'No fue posible eliminar la especialidad.'
+				);
+				this.restoreButtons();
+			}
 		}
-	});
-	};
+	}
 
-	initializeSpecialtiesPage();
-	document.addEventListener('astro:page-load', initializeSpecialtiesPage);
+	if (!customElements.get('specialty-manager')) {
+		customElements.define('specialty-manager', SpecialtyManager);
+	}
 </script>
 
 <style is:global>
+	specialty-manager {
+		display: block;
+	}
+
 	dialog[data-specialty-modal] {
 		position: fixed;
 		inset: 0;

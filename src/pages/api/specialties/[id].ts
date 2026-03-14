@@ -2,9 +2,7 @@ import type { APIRoute } from 'astro';
 
 import {
 	SpecialtiesApiError,
-	deleteSpecialtyWithOrds,
-	getSpecialtyByIdWithOrds,
-	updateSpecialtyWithOrds,
+	SpecialtiesClient,
 	type CreateSpecialtyPayload,
 } from '../../../lib/specialties';
 
@@ -77,7 +75,8 @@ export const GET: APIRoute = async ({ params, locals }) => {
 			throw new SpecialtiesApiError('ID de especialidad invalido.', 400);
 		}
 
-		const specialty = await getSpecialtyByIdWithOrds(token, specialtyId);
+		const client = new SpecialtiesClient(token);
+		const specialty = await client.getById(specialtyId);
 
 		return Response.json(
 			{
@@ -102,7 +101,8 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 
 		const body = await parseBody(request);
 		const payload = parseUpdatePayload(body);
-		const updated = await updateSpecialtyWithOrds(token, specialtyId, payload);
+		const client = new SpecialtiesClient(token);
+		const updated = await client.update(specialtyId, payload);
 
 		return Response.json(
 			{
@@ -125,7 +125,8 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 			throw new SpecialtiesApiError('ID de especialidad invalido.', 400);
 		}
 
-		const deleted = await deleteSpecialtyWithOrds(token, specialtyId);
+		const client = new SpecialtiesClient(token);
+		const deleted = await client.delete(specialtyId);
 
 		return Response.json(
 			{

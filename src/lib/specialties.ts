@@ -34,34 +34,24 @@ export interface CreateSpecialtyPayload {
 	is_active?: 0 | 1;
 }
 
-interface CreateSpecialtySuccessResponse {
-	status: 'success';
-	message?: string;
-	id_specialty: number;
-}
-
-interface SpecialtySuccessResponse {
-	status: 'success';
-	data: unknown;
-}
-
-interface SpecialtyActionSuccessResponse {
-	status: 'success';
-	message?: string;
-}
-
-interface SpecialtiesSuccessResponse {
-	status: 'success';
-	data: unknown[];
-	meta?: unknown;
-}
-
 interface SpecialtiesFailureResponse {
 	status?: string;
 	message?: string;
 	details?: unknown;
 	errors?: unknown;
 }
+
+interface SpecialtiesSuccessResponse {
+	status: 'success';
+	message?: string;
+	data?: unknown;
+	meta?: unknown;
+	id_specialty?: unknown;
+}
+
+type SpecialtiesResponseBody = SpecialtiesSuccessResponse | SpecialtiesFailureResponse;
+
+type SpecialtyRequestAction = 'list' | 'get' | 'create' | 'update' | 'delete';
 
 export class SpecialtiesApiError extends Error {
 	status: number;
@@ -96,10 +86,7 @@ const parseFieldErrors = (value: unknown): SpecialtyFieldError[] => {
 	});
 };
 
-const fallbackMessageByStatus = (
-	status: number,
-	action: 'list' | 'get' | 'create' | 'update' | 'delete'
-) => {
+const fallbackMessageByStatus = (status: number, action: SpecialtyRequestAction) => {
 	switch (status) {
 		case 400:
 		case 422:
@@ -109,13 +96,12 @@ const fallbackMessageByStatus = (
 		case 403:
 			return 'No tienes permisos para realizar esta accion.';
 		case 404:
-			return action === 'get'
-				? 'Especialidad no encontrada.'
-				: 'No se encontro el recurso solicitado.';
+			return action === 'get' ? 'Especialidad no encontrada.' : 'No se encontro el recurso solicitado.';
 		case 409:
 			if (action === 'create') return 'Existe un conflicto y no se pudo crear la especialidad.';
-			if (action === 'delete')
+			if (action === 'delete') {
 				return 'No se puede eliminar la especialidad porque esta siendo utilizada en otros registros.';
+			}
 			return 'Existe un conflicto al procesar la solicitud.';
 		case 500:
 			return 'Error interno del servidor. Intenta nuevamente.';
@@ -140,8 +126,7 @@ const normalizeSpecialty = (value: unknown): Specialty | null => {
 		id_specialty: idSpecialty,
 		name: String(source.name || '').trim(),
 		description: String(source.description || '').trim(),
-		is_active:
-			source.is_active === 1 || source.is_active === '1' || source.is_active === true ? 1 : 0,
+		is_active: source.is_active === 1 || source.is_active === '1' || source.is_active === true ? 1 : 0,
 		created_at: String(source.created_at || ''),
 	};
 };
@@ -176,231 +161,202 @@ const normalizeMeta = (
 	};
 };
 
-const parseSpecialtiesResponse = async (
-	response: Response,
-	pagination: { page: number; limit: number }
-): Promise<SpecialtiesListResult> => {
-	let data: SpecialtiesSuccessResponse | SpecialtiesFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new SpecialtiesApiError(
-			'No fue posible interpretar la respuesta del servidor de especialidades.',
-			502
-		);
+const resolveErrorMessage = (body: SpecialtiesResponseBody, status: number, action: SpecialtyRequestAction) => {
+	if (typeof body?.message === 'string' && body.message.trim()) {
+		return body.message;
 	}
-
-	if (
-		!response.ok ||
-		!data ||
-		typeof data !== 'object' ||
-		data.status !== 'success' ||
-		!('data' in data) ||
-		!Array.isArray(data.data)
-	) {
-		const failureData = (data ?? {}) as SpecialtiesFailureResponse;
-		throw new SpecialtiesApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, 'list'),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	const normalizedSpecialties = data.data
-		.map(normalizeSpecialty)
-		.filter((specialty): specialty is Specialty => specialty !== null);
-
-	return {
-		data: normalizedSpecialties,
-		meta: normalizeMeta(data.meta, {
-			page: pagination.page,
-			limit: pagination.limit,
-			totalRecords: normalizedSpecialties.length,
-		}),
-	};
+	return fallbackMessageByStatus(status, action);
 };
+
+const isSuccessResponse = (body: SpecialtiesResponseBody | null): body is SpecialtiesSuccessResponse => {
+	return Boolean(body && typeof body === 'object' && body.status === 'success');
+};
+
+const getSpecialtyUrlById = (specialtyId: number) => `${SPECIALTIES_URL}/${specialtyId}`;
+
+export class SpecialtiesClient {
+	private token: string;
+
+	constructor(token: string) {
+		if (!token) {
+			throw new SpecialtiesApiError('Token de acceso requerido.', 401);
+		}
+		this.token = token;
+	}
+
+	private async request(
+		url: string,
+		options: RequestInit,
+		action: SpecialtyRequestAction
+	): Promise<{ response: Response; data: SpecialtiesSuccessResponse }> {
+		const response = await fetch(url, {
+			...options,
+			headers: {
+				Authorization: `Bearer ${this.token}`,
+				Accept: 'application/json',
+				...(options.headers || {}),
+			},
+		});
+
+		let body: SpecialtiesResponseBody | null = null;
+		try {
+			body = (await response.json()) as SpecialtiesResponseBody;
+		} catch {
+			throw new SpecialtiesApiError(
+				'No fue posible interpretar la respuesta del servidor de especialidades.',
+				502
+			);
+		}
+
+		if (!response.ok || !isSuccessResponse(body)) {
+			const status = response.status || 400;
+			const failureData: SpecialtiesFailureResponse =
+				!body || typeof body !== 'object'
+					? {}
+					: body.status === 'success'
+						? { message: body.message }
+						: body;
+
+			throw new SpecialtiesApiError(
+				resolveErrorMessage(failureData, status, action),
+				status,
+				failureData.details,
+				parseFieldErrors(failureData.errors)
+			);
+		}
+
+		return { response, data: body };
+	}
+
+	async list(page = 1, limit = 9): Promise<SpecialtiesListResult> {
+		const safePage = Number.isInteger(page) && page > 0 ? page : 1;
+		const safeLimit = Number.isInteger(limit) && limit > 0 ? limit : 9;
+
+		const specialtyUrl = new URL(SPECIALTIES_URL);
+		specialtyUrl.searchParams.set('page', String(safePage));
+		specialtyUrl.searchParams.set('limit', String(safeLimit));
+
+		const { response, data } = await this.request(specialtyUrl.toString(), { method: 'GET' }, 'list');
+		if (!Array.isArray(data.data)) {
+			throw new SpecialtiesApiError(
+				fallbackMessageByStatus(response.status || 400, 'list'),
+				response.status || 400
+			);
+		}
+
+		const normalizedSpecialties = data.data
+			.map(normalizeSpecialty)
+			.filter((specialty): specialty is Specialty => specialty !== null);
+
+		return {
+			data: normalizedSpecialties,
+			meta: normalizeMeta(data.meta, {
+				page: safePage,
+				limit: safeLimit,
+				totalRecords: normalizedSpecialties.length,
+			}),
+		};
+	}
+
+	async getById(specialtyId: number): Promise<Specialty> {
+		if (!Number.isInteger(specialtyId) || specialtyId <= 0) {
+			throw new SpecialtiesApiError('ID de especialidad invalido.', 400);
+		}
+
+		const { data } = await this.request(getSpecialtyUrlById(specialtyId), { method: 'GET' }, 'get');
+		const normalized = normalizeSpecialty(data.data);
+		if (!normalized) {
+			throw new SpecialtiesApiError('No fue posible interpretar la especialidad solicitada.', 502);
+		}
+		return normalized;
+	}
+
+	async create(payload: CreateSpecialtyPayload): Promise<{ id_specialty: number; message: string }> {
+		const { response, data } = await this.request(
+			SPECIALTIES_URL,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(payload),
+			},
+			'create'
+		);
+
+		if (!('id_specialty' in data)) {
+			throw new SpecialtiesApiError(
+				fallbackMessageByStatus(response.status || 400, 'create'),
+				response.status || 400
+			);
+		}
+
+		return {
+			id_specialty: toNumber(data.id_specialty, 0),
+			message:
+				typeof data.message === 'string' && data.message.trim()
+					? data.message
+					: 'Especialidad creada correctamente.',
+		};
+	}
+
+	async update(specialtyId: number, payload: CreateSpecialtyPayload): Promise<{ message: string }> {
+		if (!Number.isInteger(specialtyId) || specialtyId <= 0) {
+			throw new SpecialtiesApiError('ID de especialidad invalido.', 400);
+		}
+
+		const { data } = await this.request(
+			getSpecialtyUrlById(specialtyId),
+			{
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(payload),
+			},
+			'update'
+		);
+
+		return {
+			message:
+				typeof data.message === 'string' && data.message.trim()
+					? data.message
+					: 'Especialidad actualizada correctamente.',
+		};
+	}
+
+	async delete(specialtyId: number): Promise<{ message: string }> {
+		if (!Number.isInteger(specialtyId) || specialtyId <= 0) {
+			throw new SpecialtiesApiError('ID de especialidad invalido.', 400);
+		}
+
+		const { data } = await this.request(getSpecialtyUrlById(specialtyId), { method: 'DELETE' }, 'delete');
+
+		return {
+			message:
+				typeof data.message === 'string' && data.message.trim()
+					? data.message
+					: 'Especialidad eliminada correctamente.',
+		};
+	}
+}
 
 export const listSpecialties = async (
 	token: string,
 	options: { page?: number; limit?: number } = {}
 ): Promise<SpecialtiesListResult> => {
-	if (!token) {
-		throw new SpecialtiesApiError('Token de acceso requerido.', 401);
-	}
-
-	const page = Number.isInteger(options.page) && Number(options.page) > 0 ? Number(options.page) : 1;
-	const limit =
-		Number.isInteger(options.limit) && Number(options.limit) > 0 ? Number(options.limit) : 9;
-
-	const specialtyUrl = new URL(SPECIALTIES_URL);
-	specialtyUrl.searchParams.set('page', String(page));
-	specialtyUrl.searchParams.set('limit', String(limit));
-
-	const response = await fetch(specialtyUrl.toString(), {
-		method: 'GET',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			Accept: 'application/json',
-		},
-	});
-
-	return parseSpecialtiesResponse(response, { page, limit });
+	const apiClient = new SpecialtiesClient(token);
+	return apiClient.list(options.page, options.limit);
 };
-
-const parseSpecialtyResponse = async (response: Response) => {
-	let data: SpecialtySuccessResponse | SpecialtiesFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new SpecialtiesApiError(
-			'No fue posible interpretar la respuesta del servidor de especialidades.',
-			502
-		);
-	}
-
-	if (
-		!response.ok ||
-		!data ||
-		typeof data !== 'object' ||
-		data.status !== 'success' ||
-		!('data' in data)
-	) {
-		const failureData = (data ?? {}) as SpecialtiesFailureResponse;
-		throw new SpecialtiesApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, 'get'),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	const normalized = normalizeSpecialty(data.data);
-	if (!normalized) {
-		throw new SpecialtiesApiError('No fue posible interpretar la especialidad solicitada.', 502);
-	}
-
-	return normalized;
-};
-
-const parseSpecialtyActionResponse = async (
-	response: Response,
-	action: 'update' | 'delete'
-) => {
-	let data: SpecialtyActionSuccessResponse | SpecialtiesFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new SpecialtiesApiError(
-			'No fue posible interpretar la respuesta del servidor de especialidades.',
-			502
-		);
-	}
-
-	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
-		const failureData = (data ?? {}) as SpecialtiesFailureResponse;
-		throw new SpecialtiesApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, action),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	if (typeof data.message === 'string' && data.message.trim()) {
-		return { message: data.message };
-	}
-
-	return {
-		message:
-			action === 'update'
-				? 'Especialidad actualizada correctamente.'
-				: 'Especialidad eliminada correctamente.',
-	};
-};
-
-const parseCreateSpecialtyResponse = async (response: Response) => {
-	let data: CreateSpecialtySuccessResponse | SpecialtiesFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new SpecialtiesApiError(
-			'No fue posible interpretar la respuesta del servidor de especialidades.',
-			502
-		);
-	}
-
-	if (
-		!response.ok ||
-		!data ||
-		typeof data !== 'object' ||
-		data.status !== 'success' ||
-		!('id_specialty' in data)
-	) {
-		const failureData = (data ?? {}) as SpecialtiesFailureResponse;
-		throw new SpecialtiesApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, 'create'),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	return {
-		id_specialty: toNumber(data.id_specialty, 0),
-		message:
-			typeof data.message === 'string' && data.message.trim()
-				? data.message
-				: 'Especialidad creada correctamente.',
-	};
-};
-
-const getSpecialtyUrlById = (specialtyId: number) => `${SPECIALTIES_URL}/${specialtyId}`;
 
 export const createSpecialtyWithOrds = async (token: string, payload: CreateSpecialtyPayload) => {
-	if (!token) {
-		throw new SpecialtiesApiError('Token de acceso requerido.', 401);
-	}
-
-	const response = await fetch(SPECIALTIES_URL, {
-		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-		},
-		body: JSON.stringify(payload),
-	});
-
-	return parseCreateSpecialtyResponse(response);
+	const apiClient = new SpecialtiesClient(token);
+	return apiClient.create(payload);
 };
 
 export const getSpecialtyByIdWithOrds = async (token: string, specialtyId: number) => {
-	if (!token) {
-		throw new SpecialtiesApiError('Token de acceso requerido.', 401);
-	}
-
-	if (!Number.isInteger(specialtyId) || specialtyId <= 0) {
-		throw new SpecialtiesApiError('ID de especialidad invalido.', 400);
-	}
-
-	const response = await fetch(getSpecialtyUrlById(specialtyId), {
-		method: 'GET',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			Accept: 'application/json',
-		},
-	});
-
-	return parseSpecialtyResponse(response);
+	const apiClient = new SpecialtiesClient(token);
+	return apiClient.getById(specialtyId);
 };
 
 export const updateSpecialtyWithOrds = async (
@@ -408,43 +364,11 @@ export const updateSpecialtyWithOrds = async (
 	specialtyId: number,
 	payload: CreateSpecialtyPayload
 ) => {
-	if (!token) {
-		throw new SpecialtiesApiError('Token de acceso requerido.', 401);
-	}
-
-	if (!Number.isInteger(specialtyId) || specialtyId <= 0) {
-		throw new SpecialtiesApiError('ID de especialidad invalido.', 400);
-	}
-
-	const response = await fetch(getSpecialtyUrlById(specialtyId), {
-		method: 'PUT',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-		},
-		body: JSON.stringify(payload),
-	});
-
-	return parseSpecialtyActionResponse(response, 'update');
+	const apiClient = new SpecialtiesClient(token);
+	return apiClient.update(specialtyId, payload);
 };
 
 export const deleteSpecialtyWithOrds = async (token: string, specialtyId: number) => {
-	if (!token) {
-		throw new SpecialtiesApiError('Token de acceso requerido.', 401);
-	}
-
-	if (!Number.isInteger(specialtyId) || specialtyId <= 0) {
-		throw new SpecialtiesApiError('ID de especialidad invalido.', 400);
-	}
-
-	const response = await fetch(getSpecialtyUrlById(specialtyId), {
-		method: 'DELETE',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			Accept: 'application/json',
-		},
-	});
-
-	return parseSpecialtyActionResponse(response, 'delete');
+	const apiClient = new SpecialtiesClient(token);
+	return apiClient.delete(specialtyId);
 };

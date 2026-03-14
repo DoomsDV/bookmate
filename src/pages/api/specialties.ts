@@ -2,8 +2,7 @@ import type { APIRoute } from 'astro';
 
 import {
 	SpecialtiesApiError,
-	createSpecialtyWithOrds,
-	listSpecialties,
+	SpecialtiesClient,
 	type CreateSpecialtyPayload,
 } from '../../lib/specialties';
 
@@ -48,7 +47,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			payload.description = description;
 		}
 
-		const created = await createSpecialtyWithOrds(token, payload);
+		const client = new SpecialtiesClient(token);
+		const created = await client.create(payload);
 
 		return Response.json(
 			{
@@ -89,7 +89,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
 		const page = Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : 1;
 		const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? limitRaw : 9;
 
-		const listResult = await listSpecialties(token, { page, limit });
+		const client = new SpecialtiesClient(token);
+		const listResult = await client.list(page, limit);
 
 		return Response.json(
 			{
