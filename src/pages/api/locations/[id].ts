@@ -2,9 +2,7 @@ import type { APIRoute } from 'astro';
 
 import {
 	LocationsApiError,
-	deleteLocationWithOrds,
-	getLocationByIdWithOrds,
-	updateLocationWithOrds,
+	LocationsClient,
 	type CreateLocationPayload,
 } from '../../../lib/locations';
 
@@ -96,7 +94,8 @@ export const GET: APIRoute = async ({ params, locals }) => {
 			throw new LocationsApiError('ID de sucursal invalido.', 400);
 		}
 
-		const location = await getLocationByIdWithOrds(token, locationId);
+		const client = new LocationsClient(token);
+		const location = await client.getById(locationId);
 
 		return Response.json(
 			{
@@ -121,7 +120,8 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 
 		const body = await parseBody(request);
 		const payload = parseUpdatePayload(body);
-		const updated = await updateLocationWithOrds(token, locationId, payload);
+		const client = new LocationsClient(token);
+		const updated = await client.update(locationId, payload);
 
 		return Response.json(
 			{
@@ -144,7 +144,8 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 			throw new LocationsApiError('ID de sucursal invalido.', 400);
 		}
 
-		const deleted = await deleteLocationWithOrds(token, locationId);
+		const client = new LocationsClient(token);
+		const deleted = await client.delete(locationId);
 
 		return Response.json(
 			{

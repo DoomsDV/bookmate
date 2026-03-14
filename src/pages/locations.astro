@@ -4,7 +4,7 @@ import FlashMessage from '../components/FlashMessage.astro';
 import LocationsGrid from '../components/LocationsGrid.astro';
 import SideNav from '../components/SideNav.astro';
 import TopBar from '../components/TopBar.astro';
-import { LocationsApiError, listLocations, type Location } from '../lib/locations';
+import { LocationsApiError, LocationsClient, type Location } from '../lib/locations';
 import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
 
@@ -33,7 +33,8 @@ if (!token) {
 	loadError = 'No hay sesión válida para consultar sucursales.';
 } else {
 	try {
-		const listResult = await listLocations(token, { page: currentPage, limit: PAGE_SIZE });
+		const apiClient = new LocationsClient(token);
+		const listResult = await apiClient.list(currentPage, PAGE_SIZE);
 		locations = listResult.data;
 		pagination = listResult.meta;
 	} catch (error) {
@@ -70,6 +71,7 @@ const googleMapsApiKey =
 ---
 
 <Layout>
+	<location-manager data-google-maps-api-key={googleMapsApiKey}>
 	<div class="min-h-screen">
 		<div
 			class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
@@ -171,7 +173,6 @@ const googleMapsApiKey =
 	<dialog
 		class="w-[min(42rem,calc(100vw-2rem))] rounded-[1.25rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_26px_80px_rgba(15,23,42,0.28)] backdrop:bg-slate-950/40"
 		data-location-modal
-		data-google-maps-api-key={googleMapsApiKey}
 	>
 		<div class="border-b border-[color:var(--shell-border)] px-5 py-4">
 			<h2 class="text-lg font-bold" data-location-modal-title>Crear sucursal</h2>
@@ -328,28 +329,44 @@ const googleMapsApiKey =
 			</div>
 		</form>
 	</dialog>
+	</location-manager>
 
 	<AppAlert />
 </Layout>
 
 <script>
-	const initializeLocationsPage = () => {
-	const modal = document.querySelector<HTMLDialogElement>('[data-location-modal]');
-	if (!modal || modal.dataset.bound === 'true') return;
-	modal.dataset.bound = 'true';
-	const openButton = document.querySelector<HTMLButtonElement>('[data-open-location-modal]');
-	const closeButton = document.querySelector<HTMLButtonElement>('[data-close-location-modal]');
-	const deleteButton = document.querySelector<HTMLButtonElement>('[data-delete-location]');
-	const form = document.querySelector<HTMLFormElement>('[data-location-form]');
-	const submitButton = document.querySelector<HTMLButtonElement>('[data-submit-location]');
-	const submitLabel = document.querySelector<HTMLElement>('[data-submit-location-label]');
-	const submitIcon = document.querySelector<HTMLElement>('[data-submit-location-icon]');
-	const formErrorNode = document.querySelector<HTMLElement>('[data-form-error]');
-	const fieldErrorNodes = document.querySelectorAll<HTMLElement>('[data-field-error]');
-	const loadingNode = document.querySelector<HTMLElement>('[data-location-loading]');
-	const modalTitle = document.querySelector<HTMLElement>('[data-location-modal-title]');
-	const modalDescription = document.querySelector<HTMLElement>('[data-location-modal-description]');
-	const locationCards = document.querySelectorAll<HTMLElement>('[data-location-card]');
+	import { navigate } from 'astro:transitions/client';
+
+	class LocationManager extends HTMLElement {
+		#bound = false;
+		#closeTimer: number | null = null;
+		#listenerController: AbortController | null = null;
+
+		connectedCallback() {
+			if (this.#bound) return;
+			this.#bound = true;
+			this.#listenerController = new AbortController();
+			const listenerSignal = this.#listenerController.signal;
+
+	const modal = this.querySelector<HTMLDialogElement>('[data-location-modal]');
+	if (!modal) {
+		this.#bound = false;
+		this.#listenerController = null;
+		return;
+	}
+	const openButton = this.querySelector<HTMLButtonElement>('[data-open-location-modal]');
+	const closeButton = this.querySelector<HTMLButtonElement>('[data-close-location-modal]');
+	const deleteButton = this.querySelector<HTMLButtonElement>('[data-delete-location]');
+	const form = this.querySelector<HTMLFormElement>('[data-location-form]');
+	const submitButton = this.querySelector<HTMLButtonElement>('[data-submit-location]');
+	const submitLabel = this.querySelector<HTMLElement>('[data-submit-location-label]');
+	const submitIcon = this.querySelector<HTMLElement>('[data-submit-location-icon]');
+	const formErrorNode = this.querySelector<HTMLElement>('[data-form-error]');
+	const fieldErrorNodes = this.querySelectorAll<HTMLElement>('[data-field-error]');
+	const loadingNode = this.querySelector<HTMLElement>('[data-location-loading]');
+	const modalTitle = this.querySelector<HTMLElement>('[data-location-modal-title]');
+	const modalDescription = this.querySelector<HTMLElement>('[data-location-modal-description]');
+	const locationCards = this.querySelectorAll<HTMLElement>('[data-location-card]');
 	const nameInput = form ? form.querySelector<HTMLInputElement>('[name="name"]') : null;
 	const addressInput = form ? form.querySelector<HTMLInputElement>('[name="address"]') : null;
 	const citySelect = form ? form.querySelector<HTMLSelectElement>('[data-city-select]') : null;
@@ -394,7 +411,6 @@ const googleMapsApiKey =
 		form?.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
 			'input, select, textarea'
 		);
-	let closeTimer: number | null = null;
 	let mode = 'create';
 	let editingLocationId = 0;
 	let locationReadRequestSeq = 0;
@@ -402,7 +418,7 @@ const googleMapsApiKey =
 	let departmentsLoaded = false;
 	let departmentsLoadPromise: Promise<void> | null = null;
 	const citiesByDepartment = new Map<number, CityOption[]>();
-	const mapsApiKey = String(modal.dataset.googleMapsApiKey || '').trim();
+	const mapsApiKey = String(this.dataset.googleMapsApiKey || '').trim();
 	const defaultMapCenter: Coordinates = { lat: -25.28646, lng: -57.647 };
 	let selectedCoordinates: Coordinates | null = null;
 	let mapInstance: {
@@ -426,7 +442,7 @@ const googleMapsApiKey =
 		const nextUrl = new URL(window.location.href);
 		nextUrl.searchParams.set('flash_message', message);
 		nextUrl.searchParams.set('flash_type', type);
-		window.location.assign(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+		void navigate(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
 	};
 
 	const clearErrors = () => {
@@ -839,9 +855,9 @@ const googleMapsApiKey =
 
 	const openModalShell = () => {
 		modal?.classList.remove('is-closing');
-		if (closeTimer) {
-			window.clearTimeout(closeTimer);
-			closeTimer = null;
+		if (this.#closeTimer) {
+			window.clearTimeout(this.#closeTimer);
+			this.#closeTimer = null;
 		}
 		if (!modal?.open) modal?.showModal();
 	};
@@ -852,14 +868,14 @@ const googleMapsApiKey =
 		citiesRequestSeq += 1;
 		modal.classList.add('is-closing');
 
-		closeTimer = window.setTimeout(() => {
+		this.#closeTimer = window.setTimeout(() => {
 			modal.close();
 			modal.classList.remove('is-closing');
 			form?.reset();
 			setCreateMode();
 			setFormLoadingState(false);
 			clearErrors();
-			closeTimer = null;
+			this.#closeTimer = null;
 		}, 160);
 	};
 
@@ -973,21 +989,21 @@ const googleMapsApiKey =
 		}
 	};
 
-	openButton?.addEventListener('click', openCreateModal);
-	closeButton?.addEventListener('click', closeModal);
+	openButton?.addEventListener('click', openCreateModal, { signal: listenerSignal });
+	closeButton?.addEventListener('click', closeModal, { signal: listenerSignal });
 	clearMapPointButton?.addEventListener('click', () => {
 		setSelectedCoordinates(null, null);
-	});
+	}, { signal: listenerSignal });
 
 	modal?.addEventListener('click', (event: MouseEvent) => {
 		const target = event.target;
 		if (target instanceof HTMLDialogElement) closeModal();
-	});
+	}, { signal: listenerSignal });
 
 	departmentSelect?.addEventListener('change', async () => {
 		const selectedDepartmentId = Number(departmentSelect.value || '0');
-		const departmentErrorNode = document.querySelector('[data-field-error="dep_id_department"]');
-		const cityErrorNode = document.querySelector('[data-field-error="cit_id_city"]');
+		const departmentErrorNode = this.querySelector('[data-field-error="dep_id_department"]');
+		const cityErrorNode = this.querySelector('[data-field-error="cit_id_city"]');
 		if (departmentErrorNode) {
 			departmentErrorNode.textContent = '';
 			departmentErrorNode.classList.add('hidden');
@@ -997,7 +1013,7 @@ const googleMapsApiKey =
 			cityErrorNode.classList.add('hidden');
 		}
 		await loadCitiesByDepartment(selectedDepartmentId, { selectedCityId: 0, showErrors: true });
-	});
+	}, { signal: listenerSignal });
 
 	for (const card of locationCards) {
 		const openFromCard = () => {
@@ -1005,12 +1021,12 @@ const googleMapsApiKey =
 			if (locationId > 0) openEditModal(locationId);
 		};
 
-		card.addEventListener('click', openFromCard);
+		card.addEventListener('click', openFromCard, { signal: listenerSignal });
 		card.addEventListener('keydown', (event: KeyboardEvent) => {
 			if (event.key !== 'Enter' && event.key !== ' ') return;
 			event.preventDefault();
 			openFromCard();
-		});
+		}, { signal: listenerSignal });
 	}
 
 	form?.addEventListener('submit', async (event: SubmitEvent) => {
@@ -1108,7 +1124,7 @@ const googleMapsApiKey =
 					const messageText = 'message' in error ? String(error.message || '') : '';
 					if (!field || !messageText) continue;
 
-					const fieldNode = document.querySelector(`[data-field-error="${field}"]`);
+					const fieldNode = this.querySelector(`[data-field-error="${field}"]`);
 					if (fieldNode) {
 						fieldNode.textContent = messageText;
 						fieldNode.classList.remove('hidden');
@@ -1133,7 +1149,7 @@ const googleMapsApiKey =
 		} finally {
 			restoreButtons();
 		}
-	});
+	}, { signal: listenerSignal });
 
 	deleteButton?.addEventListener('click', async () => {
 		if (!editingLocationId || mode !== 'edit') return;
@@ -1180,14 +1196,30 @@ const googleMapsApiKey =
 			);
 			restoreButtons();
 		}
-	});
-	};
+	}, { signal: listenerSignal });
+		}
 
-	initializeLocationsPage();
-	document.addEventListener('astro:page-load', initializeLocationsPage);
+		disconnectedCallback() {
+			this.#bound = false;
+			this.#listenerController?.abort();
+			this.#listenerController = null;
+			if (this.#closeTimer) {
+				window.clearTimeout(this.#closeTimer);
+				this.#closeTimer = null;
+			}
+		}
+	}
+
+	if (!customElements.get('location-manager')) {
+		customElements.define('location-manager', LocationManager);
+	}
 </script>
 
 <style is:global>
+	location-manager {
+		display: block;
+	}
+
 	dialog[data-location-modal] {
 		position: fixed;
 		inset: 0;
@@ -1251,3 +1283,4 @@ const googleMapsApiKey =
 		}
 	}
 </style>
+

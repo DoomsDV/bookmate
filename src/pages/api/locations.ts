@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 
 import {
 	LocationsApiError,
-	createLocationWithOrds,
+	LocationsClient,
 	type CreateLocationPayload,
 } from '../../lib/locations';
 
@@ -63,7 +63,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		if (typeof latitude === 'number') payload.latitude = latitude;
 		if (typeof longitude === 'number') payload.longitude = longitude;
 
-		const created = await createLocationWithOrds(token, payload);
+		const client = new LocationsClient(token);
+		const created = await client.create(payload);
 
 		return Response.json(
 			{

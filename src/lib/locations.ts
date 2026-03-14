@@ -52,34 +52,24 @@ export interface CreateLocationPayload {
 	is_active?: 0 | 1;
 }
 
-interface CreateLocationSuccessResponse {
-	status: 'success';
-	message?: string;
-	id_location: number;
-}
-
-interface LocationSuccessResponse {
-	status: 'success';
-	data: unknown;
-}
-
-interface LocationActionSuccessResponse {
-	status: 'success';
-	message?: string;
-}
-
-interface LocationsSuccessResponse {
-	status: 'success';
-	data: unknown[];
-	meta?: unknown;
-}
-
 interface LocationsFailureResponse {
 	status?: string;
 	message?: string;
 	details?: unknown;
 	errors?: unknown;
 }
+
+interface LocationsSuccessResponse {
+	status: 'success';
+	message?: string;
+	data?: unknown;
+	meta?: unknown;
+	id_location?: unknown;
+}
+
+type LocationsResponseBody = LocationsSuccessResponse | LocationsFailureResponse;
+
+type LocationRequestAction = 'list' | 'get' | 'create' | 'update' | 'delete';
 
 export class LocationsApiError extends Error {
 	status: number;
@@ -120,10 +110,7 @@ const parseFieldErrors = (value: unknown): LocationFieldError[] => {
 	});
 };
 
-const fallbackMessageByStatus = (
-	status: number,
-	action: 'list' | 'get' | 'create' | 'update' | 'delete'
-) => {
+const fallbackMessageByStatus = (status: number, action: LocationRequestAction) => {
 	switch (status) {
 		case 400:
 		case 422:
@@ -133,13 +120,12 @@ const fallbackMessageByStatus = (
 		case 403:
 			return 'No tienes permisos para realizar esta accion.';
 		case 404:
-			return action === 'get'
-				? 'Sucursal no encontrada.'
-				: 'No se encontro el recurso solicitado.';
+			return action === 'get' ? 'Sucursal no encontrada.' : 'No se encontro el recurso solicitado.';
 		case 409:
 			if (action === 'create') return 'Existe un conflicto y no se pudo crear la sucursal.';
-			if (action === 'delete')
+			if (action === 'delete') {
 				return 'No se puede eliminar la sucursal porque esta siendo utilizada en otros registros.';
+			}
 			return 'Existe un conflicto al procesar la solicitud.';
 		case 500:
 			return 'Error interno del servidor. Intenta nuevamente.';
@@ -233,219 +219,198 @@ const normalizeMeta = (
 	};
 };
 
-const parseLocationsResponse = async (
-	response: Response,
-	pagination: { page: number; limit: number }
-): Promise<LocationsListResult> => {
-	let data: LocationsSuccessResponse | LocationsFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new LocationsApiError('No fue posible interpretar la respuesta del servidor de sucursales.', 502);
+const resolveErrorMessage = (body: LocationsResponseBody, status: number, action: LocationRequestAction) => {
+	if (typeof body?.message === 'string' && body.message.trim()) {
+		return body.message;
 	}
-
-	if (
-		!response.ok ||
-		!data ||
-		typeof data !== 'object' ||
-		data.status !== 'success' ||
-		!('data' in data) ||
-		!Array.isArray(data.data)
-	) {
-		const failureData = (data ?? {}) as LocationsFailureResponse;
-		throw new LocationsApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, 'list'),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	const normalizedLocations = data.data
-		.map(normalizeLocation)
-		.filter((location): location is Location => location !== null);
-
-	return {
-		data: normalizedLocations,
-		meta: normalizeMeta(data.meta, {
-			page: pagination.page,
-			limit: pagination.limit,
-			totalRecords: normalizedLocations.length,
-		}),
-	};
+	return fallbackMessageByStatus(status, action);
 };
+
+const isSuccessResponse = (body: LocationsResponseBody | null): body is LocationsSuccessResponse => {
+	return Boolean(body && typeof body === 'object' && body.status === 'success');
+};
+
+const getLocationUrlById = (locationId: number) => `${LOCATIONS_URL}/${locationId}`;
+
+export class LocationsClient {
+	private token: string;
+
+	constructor(token: string) {
+		if (!token) {
+			throw new LocationsApiError('Token de acceso requerido.', 401);
+		}
+		this.token = token;
+	}
+
+	private async request(
+		url: string,
+		options: RequestInit,
+		action: LocationRequestAction
+	): Promise<{ response: Response; data: LocationsSuccessResponse }> {
+		const response = await fetch(url, {
+			...options,
+			headers: {
+				Authorization: `Bearer ${this.token}`,
+				Accept: 'application/json',
+				...(options.headers || {}),
+			},
+		});
+
+		let body: LocationsResponseBody | null = null;
+		try {
+			body = (await response.json()) as LocationsResponseBody;
+		} catch {
+			throw new LocationsApiError('No fue posible interpretar la respuesta del servidor de sucursales.', 502);
+		}
+
+		if (!response.ok || !isSuccessResponse(body)) {
+			const status = response.status || 400;
+			const failureData: LocationsFailureResponse =
+				!body || typeof body !== 'object'
+					? {}
+					: body.status === 'success'
+						? { message: body.message }
+						: body;
+
+			throw new LocationsApiError(
+				resolveErrorMessage(failureData, status, action),
+				status,
+				failureData.details,
+				parseFieldErrors(failureData.errors)
+			);
+		}
+
+		return { response, data: body };
+	}
+
+	async list(page = 1, limit = 9): Promise<LocationsListResult> {
+		const safePage = Number.isInteger(page) && page > 0 ? page : 1;
+		const safeLimit = Number.isInteger(limit) && limit > 0 ? limit : 9;
+
+		const locationUrl = new URL(LOCATIONS_URL);
+		locationUrl.searchParams.set('page', String(safePage));
+		locationUrl.searchParams.set('limit', String(safeLimit));
+
+		const { response, data } = await this.request(locationUrl.toString(), { method: 'GET' }, 'list');
+		if (!Array.isArray(data.data)) {
+			throw new LocationsApiError(
+				fallbackMessageByStatus(response.status || 400, 'list'),
+				response.status || 400
+			);
+		}
+
+		const normalizedLocations = data.data
+			.map(normalizeLocation)
+			.filter((location): location is Location => location !== null);
+
+		return {
+			data: normalizedLocations,
+			meta: normalizeMeta(data.meta, {
+				page: safePage,
+				limit: safeLimit,
+				totalRecords: normalizedLocations.length,
+			}),
+		};
+	}
+
+	async getById(locationId: number): Promise<Location> {
+		if (!Number.isInteger(locationId) || locationId <= 0) {
+			throw new LocationsApiError('ID de sucursal invalido.', 400);
+		}
+
+		const { data } = await this.request(getLocationUrlById(locationId), { method: 'GET' }, 'get');
+		const normalized = normalizeLocation(data.data);
+		if (!normalized) {
+			throw new LocationsApiError('No fue posible interpretar la sucursal solicitada.', 502);
+		}
+		return normalized;
+	}
+
+	async create(payload: CreateLocationPayload): Promise<{ id_location: number; message: string }> {
+		const { response, data } = await this.request(
+			LOCATIONS_URL,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(payload),
+			},
+			'create'
+		);
+
+		if (!('id_location' in data)) {
+			throw new LocationsApiError(
+				fallbackMessageByStatus(response.status || 400, 'create'),
+				response.status || 400
+			);
+		}
+
+		return {
+			id_location: toNumber(data.id_location, 0),
+			message:
+				typeof data.message === 'string' && data.message.trim()
+					? data.message
+					: 'Sucursal creada correctamente.',
+		};
+	}
+
+	async update(locationId: number, payload: CreateLocationPayload): Promise<{ message: string }> {
+		if (!Number.isInteger(locationId) || locationId <= 0) {
+			throw new LocationsApiError('ID de sucursal invalido.', 400);
+		}
+
+		const { data } = await this.request(
+			getLocationUrlById(locationId),
+			{
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(payload),
+			},
+			'update'
+		);
+
+		return {
+			message:
+				typeof data.message === 'string' && data.message.trim()
+					? data.message
+					: 'Sucursal actualizada correctamente.',
+		};
+	}
+
+	async delete(locationId: number): Promise<{ message: string }> {
+		if (!Number.isInteger(locationId) || locationId <= 0) {
+			throw new LocationsApiError('ID de sucursal invalido.', 400);
+		}
+
+		const { data } = await this.request(getLocationUrlById(locationId), { method: 'DELETE' }, 'delete');
+		return {
+			message:
+				typeof data.message === 'string' && data.message.trim()
+					? data.message
+					: 'Sucursal eliminada correctamente.',
+		};
+	}
+}
 
 export const listLocations = async (
 	token: string,
 	options: { page?: number; limit?: number } = {}
 ): Promise<LocationsListResult> => {
-	if (!token) {
-		throw new LocationsApiError('Token de acceso requerido.', 401);
-	}
-
-	const page = Number.isInteger(options.page) && Number(options.page) > 0 ? Number(options.page) : 1;
-	const limit =
-		Number.isInteger(options.limit) && Number(options.limit) > 0 ? Number(options.limit) : 9;
-
-	const locationUrl = new URL(LOCATIONS_URL);
-	locationUrl.searchParams.set('page', String(page));
-	locationUrl.searchParams.set('limit', String(limit));
-
-	const response = await fetch(locationUrl.toString(), {
-		method: 'GET',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			Accept: 'application/json',
-		},
-	});
-
-	return parseLocationsResponse(response, { page, limit });
+	const apiClient = new LocationsClient(token);
+	return apiClient.list(options.page, options.limit);
 };
-
-const parseLocationResponse = async (response: Response) => {
-	let data: LocationSuccessResponse | LocationsFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new LocationsApiError('No fue posible interpretar la respuesta del servidor de sucursales.', 502);
-	}
-
-	if (
-		!response.ok ||
-		!data ||
-		typeof data !== 'object' ||
-		data.status !== 'success' ||
-		!('data' in data)
-	) {
-		const failureData = (data ?? {}) as LocationsFailureResponse;
-		throw new LocationsApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, 'get'),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	const normalized = normalizeLocation(data.data);
-	if (!normalized) {
-		throw new LocationsApiError('No fue posible interpretar la sucursal solicitada.', 502);
-	}
-
-	return normalized;
-};
-
-const parseLocationActionResponse = async (
-	response: Response,
-	action: 'update' | 'delete'
-) => {
-	let data: LocationActionSuccessResponse | LocationsFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new LocationsApiError('No fue posible interpretar la respuesta del servidor de sucursales.', 502);
-	}
-
-	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
-		const failureData = (data ?? {}) as LocationsFailureResponse;
-		throw new LocationsApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, action),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	if (typeof data.message === 'string' && data.message.trim()) {
-		return { message: data.message };
-	}
-
-	return {
-		message:
-			action === 'update'
-				? 'Sucursal actualizada correctamente.'
-				: 'Sucursal eliminada correctamente.',
-	};
-};
-
-const parseCreateLocationResponse = async (response: Response) => {
-	let data: CreateLocationSuccessResponse | LocationsFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new LocationsApiError('No fue posible interpretar la respuesta del servidor de sucursales.', 502);
-	}
-
-	if (
-		!response.ok ||
-		!data ||
-		typeof data !== 'object' ||
-		data.status !== 'success' ||
-		!('id_location' in data)
-	) {
-		const failureData = (data ?? {}) as LocationsFailureResponse;
-		throw new LocationsApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, 'create'),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	return {
-		id_location: toNumber(data.id_location, 0),
-		message:
-			typeof data.message === 'string' && data.message.trim()
-				? data.message
-				: 'Sucursal creada correctamente.',
-	};
-};
-
-const getLocationUrlById = (locationId: number) => `${LOCATIONS_URL}/${locationId}`;
 
 export const createLocationWithOrds = async (token: string, payload: CreateLocationPayload) => {
-	if (!token) {
-		throw new LocationsApiError('Token de acceso requerido.', 401);
-	}
-
-	const response = await fetch(LOCATIONS_URL, {
-		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-		},
-		body: JSON.stringify(payload),
-	});
-
-	return parseCreateLocationResponse(response);
+	const apiClient = new LocationsClient(token);
+	return apiClient.create(payload);
 };
 
 export const getLocationByIdWithOrds = async (token: string, locationId: number) => {
-	if (!token) {
-		throw new LocationsApiError('Token de acceso requerido.', 401);
-	}
-
-	if (!Number.isInteger(locationId) || locationId <= 0) {
-		throw new LocationsApiError('ID de sucursal invalido.', 400);
-	}
-
-	const response = await fetch(getLocationUrlById(locationId), {
-		method: 'GET',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			Accept: 'application/json',
-		},
-	});
-
-	return parseLocationResponse(response);
+	const apiClient = new LocationsClient(token);
+	return apiClient.getById(locationId);
 };
 
 export const updateLocationWithOrds = async (
@@ -453,43 +418,11 @@ export const updateLocationWithOrds = async (
 	locationId: number,
 	payload: CreateLocationPayload
 ) => {
-	if (!token) {
-		throw new LocationsApiError('Token de acceso requerido.', 401);
-	}
-
-	if (!Number.isInteger(locationId) || locationId <= 0) {
-		throw new LocationsApiError('ID de sucursal invalido.', 400);
-	}
-
-	const response = await fetch(getLocationUrlById(locationId), {
-		method: 'PUT',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-		},
-		body: JSON.stringify(payload),
-	});
-
-	return parseLocationActionResponse(response, 'update');
+	const apiClient = new LocationsClient(token);
+	return apiClient.update(locationId, payload);
 };
 
 export const deleteLocationWithOrds = async (token: string, locationId: number) => {
-	if (!token) {
-		throw new LocationsApiError('Token de acceso requerido.', 401);
-	}
-
-	if (!Number.isInteger(locationId) || locationId <= 0) {
-		throw new LocationsApiError('ID de sucursal invalido.', 400);
-	}
-
-	const response = await fetch(getLocationUrlById(locationId), {
-		method: 'DELETE',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			Accept: 'application/json',
-		},
-	});
-
-	return parseLocationActionResponse(response, 'delete');
+	const apiClient = new LocationsClient(token);
+	return apiClient.delete(locationId);
 };
