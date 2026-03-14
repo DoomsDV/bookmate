@@ -1,17 +1,26 @@
-const DEFAULT_LOGIN_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/auth/login';
-const DEFAULT_REFRESH_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/auth/refresh';
-const DEFAULT_LOGOUT_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/auth/logout';
-const DEFAULT_CHANGE_PASSWORD_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/auth/change-password';
+import { resolveOrdsApiUrl } from './env-urls';
 
-export const LOGIN_URL = import.meta.env.ORDS_AUTH_LOGIN_URL ?? DEFAULT_LOGIN_URL;
-export const REFRESH_URL = import.meta.env.ORDS_AUTH_REFRESH_URL ?? DEFAULT_REFRESH_URL;
-export const LOGOUT_URL = import.meta.env.ORDS_AUTH_LOGOUT_URL ?? DEFAULT_LOGOUT_URL;
+export const LOGIN_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_LOGIN_URL,
+	'ORDS_AUTH_LOGIN_URL',
+	'/auth/login'
+);
+export const REFRESH_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_REFRESH_URL,
+	'ORDS_AUTH_REFRESH_URL',
+	'/auth/refresh'
+);
+export const LOGOUT_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_LOGOUT_URL,
+	'ORDS_AUTH_LOGOUT_URL',
+	'/auth/logout'
+);
 export const CHANGE_PASSWORD_URL =
-	import.meta.env.ORDS_AUTH_CHANGE_PASSWORD_URL ?? DEFAULT_CHANGE_PASSWORD_URL;
+	resolveOrdsApiUrl(
+		import.meta.env.ORDS_AUTH_CHANGE_PASSWORD_URL,
+		'ORDS_AUTH_CHANGE_PASSWORD_URL',
+		'/auth/change-password'
+	);
 
 const ORGANIZATION_CACHE_COOKIE_KEYS = {
 	id: 'org_id',

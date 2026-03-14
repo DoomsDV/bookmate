@@ -1,6 +1,4 @@
-const DEFAULT_PUBLIC_BOOKMATE_DOMAIN = 'https://bookmate.com';
-const DEFAULT_PUBLIC_BOOKING_API_BASE_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/public/v1';
+import { resolveOrdsPublicApiUrl } from './env-urls';
 
 const toPositiveInt = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);
@@ -9,41 +7,36 @@ const toPositiveInt = (value: unknown, fallback = 0) => {
 
 const normalizePublicDomainOrigin = (value: string) => {
 	const trimmed = String(value || '').trim();
+	if (!trimmed) return '';
 	const withScheme = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
 
 	try {
 		return new URL(withScheme).origin;
 	} catch {
-		return new URL(DEFAULT_PUBLIC_BOOKMATE_DOMAIN).origin;
+		return '';
 	}
 };
 
-const resolvePublicBookingBaseUrl = () => {
-	const explicitApiUrl = String(import.meta.env.ORDS_PUBLIC_BOOKING_URL ?? '').trim();
-	const rawValue = explicitApiUrl || String(import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? '').trim();
-	if (!rawValue) return DEFAULT_PUBLIC_BOOKING_API_BASE_URL;
-
-	const withScheme = /^https?:\/\//i.test(rawValue) ? rawValue : `https://${rawValue}`;
-	try {
-		const parsed = new URL(withScheme);
-		const normalizedPath = parsed.pathname.replace(/\/+$/, '');
-		if (/\/ords\//i.test(normalizedPath)) {
-			const pathWithVersion =
-				normalizedPath.endsWith('/public') || normalizedPath.endsWith('/public/')
-					? `${normalizedPath.replace(/\/+$/, '')}/v1`
-					: normalizedPath;
-			return `${parsed.origin}${pathWithVersion}`;
-		}
-		return `${parsed.origin}/ords/bookmate/public/v1`;
-	} catch {
-		return DEFAULT_PUBLIC_BOOKING_API_BASE_URL;
-	}
-};
-
-export const PUBLIC_BOOKMATE_DOMAIN_ORIGIN = normalizePublicDomainOrigin(
-	String(import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? DEFAULT_PUBLIC_BOOKMATE_DOMAIN)
+export const PUBLIC_BOOKING_API_BASE_URL = resolveOrdsPublicApiUrl(
+	import.meta.env.ORDS_PUBLIC_BOOKING_URL,
+	'ORDS_PUBLIC_BOOKING_URL',
+	''
 );
-export const PUBLIC_BOOKING_API_BASE_URL = resolvePublicBookingBaseUrl();
+
+const resolvePublicDomainOrigin = () => {
+	const fromPublicDomain = normalizePublicDomainOrigin(
+		String(import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? '')
+	);
+	if (fromPublicDomain) return fromPublicDomain;
+
+	try {
+		return new URL(PUBLIC_BOOKING_API_BASE_URL).origin;
+	} catch {
+		return '';
+	}
+};
+
+export const PUBLIC_BOOKMATE_DOMAIN_ORIGIN = resolvePublicDomainOrigin();
 
 export interface PublicBookingService {
 	id_service: number;

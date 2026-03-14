@@ -1,7 +1,10 @@
-const DEFAULT_MY_PROFILE_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/profile/me';
+import { resolveOrdsApiUrl } from './env-urls';
 
-export const MY_PROFILE_URL = import.meta.env.ORDS_PROFILE_ME_URL ?? DEFAULT_MY_PROFILE_URL;
+export const MY_PROFILE_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_PROFILE_ME_URL,
+	'ORDS_PROFILE_ME_URL',
+	'/profile/me'
+);
 
 export interface MyProfileProfessional {
 	id_professional: number;

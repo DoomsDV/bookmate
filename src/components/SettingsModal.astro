@@ -7,9 +7,11 @@ interface Props {
 
 const { roleId = 0 } = Astro.props;
 const isAdmin = Number(roleId) === ROLES.ADMIN;
-const rawPublicProfileDomain = String(import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? 'bookmate.com').trim();
+const rawPublicProfileDomain = String(
+	import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? Astro.url.origin
+).trim();
 const publicProfileDomain =
-	rawPublicProfileDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '') || 'bookmate.com';
+	rawPublicProfileDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '') || Astro.url.host;
 ---
 
 <dialog
@@ -852,5 +854,4 @@ const publicProfileDomain =
 		color: #be123c;
 	}
 </style>
-
 

@@ -1,7 +1,10 @@
-const DEFAULT_LOCATIONS_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/locations';
+import { resolveOrdsApiUrl } from './env-urls';
 
-export const LOCATIONS_URL = import.meta.env.ORDS_LOCATIONS_URL ?? DEFAULT_LOCATIONS_URL;
+export const LOCATIONS_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_LOCATIONS_URL,
+	'ORDS_LOCATIONS_URL',
+	'/locations'
+);
 
 export interface LocationCity {
 	id_city: number;

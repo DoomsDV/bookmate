@@ -1,10 +1,16 @@
-const DEFAULT_PROFESSIONALS_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/professionals';
+import { resolveOrdsApiUrl } from './env-urls';
 
-export const PROFESSIONALS_URL =
-	import.meta.env.ORDS_PROFESSIONALS_URL ?? DEFAULT_PROFESSIONALS_URL;
+export const PROFESSIONALS_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_PROFESSIONALS_URL,
+	'ORDS_PROFESSIONALS_URL',
+	'/professionals'
+);
 export const PROFESSIONALS_SLUG_SUGGEST_URL =
-	import.meta.env.ORDS_PROFESSIONALS_SLUG_SUGGEST_URL ?? `${PROFESSIONALS_URL}/slug/suggest`;
+	resolveOrdsApiUrl(
+		import.meta.env.ORDS_PROFESSIONALS_SLUG_SUGGEST_URL,
+		'ORDS_PROFESSIONALS_SLUG_SUGGEST_URL',
+		'/professionals/slug/suggest'
+	);
 
 export interface ProfessionalUser {
 	id_user: number;

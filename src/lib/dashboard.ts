@@ -1,7 +1,10 @@
-const DEFAULT_DASHBOARD_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/dashboard';
+import { resolveOrdsApiUrl } from './env-urls';
 
-export const DASHBOARD_URL = import.meta.env.ORDS_DASHBOARD_URL ?? DEFAULT_DASHBOARD_URL;
+export const DASHBOARD_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_DASHBOARD_URL,
+	'ORDS_DASHBOARD_URL',
+	'/dashboard'
+);
 
 export interface DashboardKpis {
 	today_appointments: number;

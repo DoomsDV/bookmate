@@ -44,3 +44,20 @@ All commands are run from the root of the project, from a terminal:
 ## 👀 Want to learn more?
 
 Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+
+## Environment Variables
+
+Create a local `.env` file from `.env.example`:
+
+```sh
+cp .env.example .env
+```
+
+Minimum required values:
+
+- `ORDS_API_BASE_URL`
+- `ORDS_PUBLIC_API_BASE_URL`
+- `PUBLIC_BOOKMATE_PUBLIC_DOMAIN`
+- `PUBLIC_G_MAPS_API_KEY` (required for branch map in locations)
+
+Optional endpoint-specific overrides are documented in `.env.example`.

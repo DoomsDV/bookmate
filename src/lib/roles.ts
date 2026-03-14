@@ -1,7 +1,10 @@
-const DEFAULT_ROLES_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/roles';
+import { resolveOrdsApiUrl } from './env-urls';
 
-export const ROLES_URL = import.meta.env.ORDS_ROLES_URL ?? DEFAULT_ROLES_URL;
+export const ROLES_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_ROLES_URL,
+	'ORDS_ROLES_URL',
+	'/roles'
+);
 
 export interface Role {
 	id_role: number;

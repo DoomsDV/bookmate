@@ -18,9 +18,12 @@ const queryLocationId = parseLocationId(
 	Astro.url.searchParams.get('loc_id') ?? Astro.url.searchParams.get('loc')
 );
 const envDefaultLocationId = parseLocationId(
-	String(import.meta.env.PUBLIC_BOOKMATE_DEFAULT_LOCATION_ID ?? '3')
+	String(import.meta.env.PUBLIC_BOOKMATE_DEFAULT_LOCATION_ID ?? '')
 );
-const initialLocationId = queryLocationId || envDefaultLocationId || 3;
+const initialLocationId = queryLocationId || envDefaultLocationId || 0;
+const profilePlaceholderImageUrl = String(
+	import.meta.env.PUBLIC_BOOKMATE_PROFILE_PLACEHOLDER_IMAGE_URL ?? '/favicon.svg'
+).trim();
 
 let profile: PublicBookingProfile | null = null;
 let loadError = '';
@@ -81,7 +84,7 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 						<header class="relative overflow-hidden rounded-[1.4rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-5 shadow-[0_28px_80px_rgba(2,6,23,0.5)]">
 							<div class="relative grid justify-items-center gap-3 text-center sm:grid-cols-[auto_1fr] sm:items-center sm:justify-items-start sm:gap-4 sm:text-left">
 							<img
-								src={profile.image_url || 'https://placehold.co/200x200?text=Bookmate'}
+								src={profile.image_url || profilePlaceholderImageUrl}
 								alt={`Foto de ${profile.full_name}`}
 								loading="lazy"
 								class="h-20 w-20 rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] object-cover sm:h-28 sm:w-28"

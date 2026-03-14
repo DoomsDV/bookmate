@@ -1,7 +1,10 @@
-const DEFAULT_DEPARTMENTS_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/departments';
+import { resolveOrdsApiUrl } from './env-urls';
 
-export const DEPARTMENTS_URL = import.meta.env.ORDS_DEPARTMENTS_URL ?? DEFAULT_DEPARTMENTS_URL;
+export const DEPARTMENTS_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_DEPARTMENTS_URL,
+	'ORDS_DEPARTMENTS_URL',
+	'/departments'
+);
 
 export interface Department {
 	id_department: number;

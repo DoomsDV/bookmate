@@ -1,8 +1,6 @@
 import { LOCATIONS_URL } from './locations';
+import { resolveOrdsApiUrl } from './env-urls';
 import { PROFESSIONALS_URL } from './professionals';
-
-const DEFAULT_DAYS_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/days';
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '');
 
@@ -14,7 +12,11 @@ export const LOCATIONS_LOV_URL =
 	import.meta.env.ORDS_LOCATIONS_LOV_URL ??
 	`${trimTrailingSlash(LOCATIONS_URL)}/lov`;
 
-export const DAYS_URL = import.meta.env.ORDS_DAYS_URL ?? DEFAULT_DAYS_URL;
+export const DAYS_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_DAYS_URL,
+	'ORDS_DAYS_URL',
+	'/days'
+);
 
 export interface ScheduleProfessionalLov {
 	id_professional: number;

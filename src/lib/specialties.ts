@@ -1,7 +1,10 @@
-const DEFAULT_SPECIALTIES_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/specialties';
+import { resolveOrdsApiUrl } from './env-urls';
 
-export const SPECIALTIES_URL = import.meta.env.ORDS_SPECIALTIES_URL ?? DEFAULT_SPECIALTIES_URL;
+export const SPECIALTIES_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SPECIALTIES_URL,
+	'ORDS_SPECIALTIES_URL',
+	'/specialties'
+);
 
 export interface Specialty {
 	id_specialty: number;

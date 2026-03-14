@@ -1,8 +1,11 @@
-const DEFAULT_ORGANIZATION_CURRENT_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/organization/current';
+import { resolveOrdsApiUrl } from './env-urls';
 
 export const ORGANIZATION_CURRENT_URL =
-	import.meta.env.ORDS_ORGANIZATION_CURRENT_URL ?? DEFAULT_ORGANIZATION_CURRENT_URL;
+	resolveOrdsApiUrl(
+		import.meta.env.ORDS_ORGANIZATION_CURRENT_URL,
+		'ORDS_ORGANIZATION_CURRENT_URL',
+		'/organization/current'
+	);
 
 export interface OrganizationCurrent {
 	id_organization: number;

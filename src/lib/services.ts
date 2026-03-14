@@ -1,10 +1,15 @@
-const DEFAULT_SERVICES_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/services';
-const DEFAULT_SERVICES_LOV_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/services/lov';
+import { resolveOrdsApiUrl } from './env-urls';
 
-export const SERVICES_URL = import.meta.env.ORDS_SERVICES_URL ?? DEFAULT_SERVICES_URL;
-export const SERVICES_LOV_URL = import.meta.env.ORDS_SERVICES_LOV_URL ?? DEFAULT_SERVICES_LOV_URL;
+export const SERVICES_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SERVICES_URL,
+	'ORDS_SERVICES_URL',
+	'/services'
+);
+export const SERVICES_LOV_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SERVICES_LOV_URL,
+	'ORDS_SERVICES_LOV_URL',
+	'/services/lov'
+);
 
 export interface Service {
 	id_service: number;

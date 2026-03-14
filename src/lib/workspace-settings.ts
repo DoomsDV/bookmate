@@ -1,7 +1,10 @@
-const DEFAULT_WORKSPACE_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/workspace';
+import { resolveOrdsApiUrl } from './env-urls';
 
-export const WORKSPACE_URL = import.meta.env.ORDS_WORKSPACE_URL ?? DEFAULT_WORKSPACE_URL;
+export const WORKSPACE_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_WORKSPACE_URL,
+	'ORDS_WORKSPACE_URL',
+	'/workspace'
+);
 
 export interface WorkspaceSettingsData {
 	id_organization: number;

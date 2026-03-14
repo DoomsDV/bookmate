@@ -7,6 +7,11 @@ import {
 	updateProfessionalWithUserWithOrds,
 	type UpdateProfessionalWithUserPayload,
 } from '../../../lib/professionals';
+import {
+	parseRequestBody,
+	requireToken as requireApiToken,
+	toErrorResponse as toApiErrorResponse,
+} from '../../../utils/api-helpers';
 
 const parseProfessionalId = (value: string | undefined) => {
 	const parsed = Number(value);
@@ -34,15 +39,8 @@ const parseServiceIds = (value: unknown): number[] | undefined => {
 		.filter((serviceId) => Number.isInteger(serviceId) && serviceId > 0);
 };
 
-const parseBody = async (request: Request) => {
-	const contentType = request.headers.get('content-type') || '';
-
-	if (contentType.includes('application/json')) {
-		return request.json();
-	}
-
-	const formData = await request.formData();
-	return {
+const parseBody = (request: Request) =>
+	parseRequestBody(request, (formData) => ({
 		rol_id_role: formData.get('rol_id_role'),
 		apex_user_name: formData.get('apex_user_name'),
 		first_name: formData.get('first_name'),
@@ -58,8 +56,7 @@ const parseBody = async (request: Request) => {
 		image_name: formData.get('image_name'),
 		image_mime: formData.get('image_mime'),
 		services: formData.getAll('services'),
-	};
-};
+	}));
 
 const parseUpdatePayload = (body: any): UpdateProfessionalWithUserPayload => {
 	const roleId = Number(body?.rol_id_role);
@@ -114,29 +111,22 @@ const parseUpdatePayload = (body: any): UpdateProfessionalWithUserPayload => {
 	return payload;
 };
 
-const toErrorResponse = (error: unknown, fallbackMessage: string) => {
-	const professionalError =
-		error instanceof ProfessionalsApiError
-			? error
-			: new ProfessionalsApiError(fallbackMessage, 500);
+const createProfessionalError = (message: string, status = 400) =>
+	new ProfessionalsApiError(message, status);
 
-	return Response.json(
-		{
-			status: 'error',
-			message: professionalError.message,
-			details: professionalError.details,
-			errors: professionalError.fieldErrors,
-		},
-		{ status: professionalError.status }
+const toErrorResponse = (error: unknown, fallbackMessage: string) =>
+	toApiErrorResponse(error, fallbackMessage, {
+		isKnownError: (value): value is ProfessionalsApiError =>
+			value instanceof ProfessionalsApiError,
+		createError: createProfessionalError,
+	});
+
+const requireToken = (token: string | undefined) =>
+	requireApiToken(
+		token,
+		createProfessionalError,
+		'No hay sesion valida para procesar personal.'
 	);
-};
-
-const requireToken = (token: string | undefined) => {
-	if (!token) {
-		throw new ProfessionalsApiError('No hay sesion valida para procesar personal.', 401);
-	}
-	return token;
-};
 
 export const GET: APIRoute = async ({ params, locals }) => {
 	try {

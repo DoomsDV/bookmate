@@ -4,30 +4,27 @@ import {
 	ProfessionalsApiError,
 	suggestProfessionalSlugWithOrds,
 } from '../../../../lib/professionals';
+import {
+	requireToken as requireApiToken,
+	toErrorResponse as toApiErrorResponse,
+} from '../../../../utils/api-helpers';
 
-const requireToken = (token: string | undefined) => {
-	if (!token) {
-		throw new ProfessionalsApiError('No hay sesion valida para procesar personal.', 401);
-	}
-	return token;
-};
+const createProfessionalError = (message: string, status = 400) =>
+	new ProfessionalsApiError(message, status);
 
-const toErrorResponse = (error: unknown, fallbackMessage: string) => {
-	const professionalError =
-		error instanceof ProfessionalsApiError
-			? error
-			: new ProfessionalsApiError(fallbackMessage, 500);
-
-	return Response.json(
-		{
-			status: 'error',
-			message: professionalError.message,
-			details: professionalError.details,
-			errors: professionalError.fieldErrors,
-		},
-		{ status: professionalError.status }
+const requireToken = (token: string | undefined) =>
+	requireApiToken(
+		token,
+		createProfessionalError,
+		'No hay sesion valida para procesar personal.'
 	);
-};
+
+const toErrorResponse = (error: unknown, fallbackMessage: string) =>
+	toApiErrorResponse(error, fallbackMessage, {
+		isKnownError: (value): value is ProfessionalsApiError =>
+			value instanceof ProfessionalsApiError,
+		createError: createProfessionalError,
+	});
 
 export const GET: APIRoute = async ({ request, locals }) => {
 	try {

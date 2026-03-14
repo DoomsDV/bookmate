@@ -1,11 +1,16 @@
-const DEFAULT_APPOINTMENTS_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/appointments';
-const DEFAULT_APPOINTMENTS_CALENDAR_URL =
-	'https://g9549f707e8ebfa-aox.adb.sa-saopaulo-1.oraclecloudapps.com/ords/bookmate/api/v1/appointments/calendar';
+import { resolveOrdsApiUrl } from './env-urls';
 
-export const APPOINTMENTS_URL = import.meta.env.ORDS_APPOINTMENTS_URL ?? DEFAULT_APPOINTMENTS_URL;
+export const APPOINTMENTS_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_APPOINTMENTS_URL,
+	'ORDS_APPOINTMENTS_URL',
+	'/appointments'
+);
 export const APPOINTMENTS_CALENDAR_URL =
-	import.meta.env.ORDS_APPOINTMENTS_CALENDAR_URL ?? DEFAULT_APPOINTMENTS_CALENDAR_URL;
+	resolveOrdsApiUrl(
+		import.meta.env.ORDS_APPOINTMENTS_CALENDAR_URL,
+		'ORDS_APPOINTMENTS_CALENDAR_URL',
+		'/appointments/calendar'
+	);
 
 export interface AppointmentFieldError {
 	field: string;
