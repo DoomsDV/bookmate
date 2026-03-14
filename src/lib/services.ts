@@ -46,34 +46,24 @@ export interface CreateServicePayload {
 	is_active?: 0 | 1;
 }
 
-interface CreateServiceSuccessResponse {
-	status: 'success';
-	message?: string;
-	id_service: number;
-}
-
-interface ServiceSuccessResponse {
-	status: 'success';
-	data: unknown;
-}
-
-interface ServiceActionSuccessResponse {
-	status: 'success';
-	message?: string;
-}
-
-interface ServicesSuccessResponse {
-	status: 'success';
-	data: unknown[];
-	meta?: unknown;
-}
-
 interface ServicesFailureResponse {
 	status?: string;
 	message?: string;
 	details?: unknown;
 	errors?: unknown;
 }
+
+interface ServicesSuccessResponse {
+	status: 'success';
+	message?: string;
+	data?: unknown;
+	meta?: unknown;
+	id_service?: unknown;
+}
+
+type ServicesResponseBody = ServicesSuccessResponse | ServicesFailureResponse;
+
+type ServiceRequestAction = 'list' | 'listLov' | 'get' | 'create' | 'update' | 'delete';
 
 export class ServicesApiError extends Error {
 	status: number;
@@ -108,10 +98,7 @@ const parseFieldErrors = (value: unknown): ServiceFieldError[] => {
 	});
 };
 
-const fallbackMessageByStatus = (
-	status: number,
-	action: 'list' | 'get' | 'create' | 'update' | 'delete'
-) => {
+const fallbackMessageByStatus = (status: number, action: ServiceRequestAction) => {
 	switch (status) {
 		case 400:
 		case 422:
@@ -121,13 +108,12 @@ const fallbackMessageByStatus = (
 		case 403:
 			return 'No tienes permisos para realizar esta accion.';
 		case 404:
-			return action === 'get'
-				? 'Servicio no encontrado.'
-				: 'No se encontro el recurso solicitado.';
+			return action === 'get' ? 'Servicio no encontrado.' : 'No se encontro el recurso solicitado.';
 		case 409:
 			if (action === 'create') return 'Existe un conflicto y no se pudo crear el servicio.';
-			if (action === 'delete')
+			if (action === 'delete') {
 				return 'No se puede eliminar el servicio porque esta siendo utilizado en otros registros.';
+			}
 			return 'Existe un conflicto al procesar la solicitud.';
 		case 500:
 			return 'Error interno del servidor. Intenta nuevamente.';
@@ -136,6 +122,7 @@ const fallbackMessageByStatus = (
 			if (action === 'update') return 'No fue posible actualizar el servicio.';
 			if (action === 'delete') return 'No fue posible eliminar el servicio.';
 			if (action === 'get') return 'No fue posible obtener el servicio.';
+			if (action === 'listLov') return 'No fue posible obtener el listado de servicios activos.';
 			return 'No fue posible obtener el listado de servicios.';
 	}
 };
@@ -203,265 +190,214 @@ const normalizeMeta = (
 	};
 };
 
-const parseServicesResponse = async (
-	response: Response,
-	pagination: { page: number; limit: number }
-): Promise<ServicesListResult> => {
-	let data: ServicesSuccessResponse | ServicesFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new ServicesApiError('No fue posible interpretar la respuesta del servidor de servicios.', 502);
+const resolveErrorMessage = (body: ServicesResponseBody, status: number, action: ServiceRequestAction) => {
+	if (typeof body?.message === 'string' && body.message.trim()) {
+		return body.message;
 	}
-
-	if (
-		!response.ok ||
-		!data ||
-		typeof data !== 'object' ||
-		data.status !== 'success' ||
-		!('data' in data) ||
-		!Array.isArray(data.data)
-	) {
-		const failureData = (data ?? {}) as ServicesFailureResponse;
-		throw new ServicesApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, 'list'),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	const normalizedServices = data.data
-		.map(normalizeService)
-		.filter((service): service is Service => service !== null);
-
-	return {
-		data: normalizedServices,
-		meta: normalizeMeta(data.meta, {
-			page: pagination.page,
-			limit: pagination.limit,
-			totalRecords: normalizedServices.length,
-		}),
-	};
+	return fallbackMessageByStatus(status, action);
 };
+
+const isSuccessResponse = (body: ServicesResponseBody | null): body is ServicesSuccessResponse => {
+	return Boolean(body && typeof body === 'object' && body.status === 'success');
+};
+
+const getServiceUrlById = (serviceId: number) => `${SERVICES_URL}/${serviceId}`;
+
+export class ServicesClient {
+	private token: string;
+
+	constructor(token: string) {
+		if (!token) {
+			throw new ServicesApiError('Token de acceso requerido.', 401);
+		}
+		this.token = token;
+	}
+
+	private async request(
+		url: string,
+		options: RequestInit,
+		action: ServiceRequestAction
+	): Promise<{ response: Response; data: ServicesSuccessResponse }> {
+		const response = await fetch(url, {
+			...options,
+			headers: {
+				Authorization: `Bearer ${this.token}`,
+				Accept: 'application/json',
+				...(options.headers || {}),
+			},
+		});
+
+		let body: ServicesResponseBody | null = null;
+		try {
+			body = (await response.json()) as ServicesResponseBody;
+		} catch {
+			throw new ServicesApiError('No fue posible interpretar la respuesta del servidor de servicios.', 502);
+		}
+
+		if (!response.ok || !isSuccessResponse(body)) {
+			const status = response.status || 400;
+			const failureData: ServicesFailureResponse =
+				!body || typeof body !== 'object'
+					? {}
+					: body.status === 'success'
+						? { message: body.message }
+						: body;
+
+			throw new ServicesApiError(
+				resolveErrorMessage(failureData, status, action),
+				status,
+				failureData.details,
+				parseFieldErrors(failureData.errors)
+			);
+		}
+
+		return { response, data: body };
+	}
+
+	async list(page = 1, limit = 9): Promise<ServicesListResult> {
+		const safePage = Number.isInteger(page) && page > 0 ? page : 1;
+		const safeLimit = Number.isInteger(limit) && limit > 0 ? limit : 9;
+
+		const serviceUrl = new URL(SERVICES_URL);
+		serviceUrl.searchParams.set('page', String(safePage));
+		serviceUrl.searchParams.set('limit', String(safeLimit));
+
+		const { response, data } = await this.request(serviceUrl.toString(), { method: 'GET' }, 'list');
+		if (!Array.isArray(data.data)) {
+			throw new ServicesApiError(fallbackMessageByStatus(response.status || 400, 'list'), response.status || 400);
+		}
+
+		const normalizedServices = data.data
+			.map(normalizeService)
+			.filter((service): service is Service => service !== null);
+
+		return {
+			data: normalizedServices,
+			meta: normalizeMeta(data.meta, {
+				page: safePage,
+				limit: safeLimit,
+				totalRecords: normalizedServices.length,
+			}),
+		};
+	}
+
+	async listLov(): Promise<ServiceLov[]> {
+		const { response, data } = await this.request(SERVICES_LOV_URL, { method: 'GET' }, 'listLov');
+		if (!Array.isArray(data.data)) {
+			throw new ServicesApiError(
+				fallbackMessageByStatus(response.status || 400, 'listLov'),
+				response.status || 400
+			);
+		}
+
+		return data.data.map(normalizeServiceLov).filter((service): service is ServiceLov => service !== null);
+	}
+
+	async getById(serviceId: number): Promise<Service> {
+		if (!Number.isInteger(serviceId) || serviceId <= 0) {
+			throw new ServicesApiError('ID de servicio invalido.', 400);
+		}
+
+		const { data } = await this.request(getServiceUrlById(serviceId), { method: 'GET' }, 'get');
+		const normalized = normalizeService(data.data);
+		if (!normalized) {
+			throw new ServicesApiError('No fue posible interpretar el servicio solicitado.', 502);
+		}
+
+		return normalized;
+	}
+
+	async create(payload: CreateServicePayload): Promise<{ id_service: number; message: string }> {
+		const { response, data } = await this.request(
+			SERVICES_URL,
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(payload),
+			},
+			'create'
+		);
+
+		if (!('id_service' in data)) {
+			throw new ServicesApiError(
+				fallbackMessageByStatus(response.status || 400, 'create'),
+				response.status || 400
+			);
+		}
+
+		return {
+			id_service: toNumber(data.id_service, 0),
+			message:
+				typeof data.message === 'string' && data.message.trim()
+					? data.message
+					: 'Servicio creado correctamente.',
+		};
+	}
+
+	async update(serviceId: number, payload: CreateServicePayload): Promise<{ message: string }> {
+		if (!Number.isInteger(serviceId) || serviceId <= 0) {
+			throw new ServicesApiError('ID de servicio invalido.', 400);
+		}
+
+		const { data } = await this.request(
+			getServiceUrlById(serviceId),
+			{
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify(payload),
+			},
+			'update'
+		);
+
+		return {
+			message:
+				typeof data.message === 'string' && data.message.trim()
+					? data.message
+					: 'Servicio actualizado correctamente.',
+		};
+	}
+
+	async delete(serviceId: number): Promise<{ message: string }> {
+		if (!Number.isInteger(serviceId) || serviceId <= 0) {
+			throw new ServicesApiError('ID de servicio invalido.', 400);
+		}
+
+		const { data } = await this.request(getServiceUrlById(serviceId), { method: 'DELETE' }, 'delete');
+
+		return {
+			message:
+				typeof data.message === 'string' && data.message.trim()
+					? data.message
+					: 'Servicio eliminado correctamente.',
+		};
+	}
+}
 
 export const listServices = async (
 	token: string,
 	options: { page?: number; limit?: number } = {}
 ): Promise<ServicesListResult> => {
-	if (!token) {
-		throw new ServicesApiError('Token de acceso requerido.', 401);
-	}
-
-	const page = Number.isInteger(options.page) && Number(options.page) > 0 ? Number(options.page) : 1;
-	const limit =
-		Number.isInteger(options.limit) && Number(options.limit) > 0 ? Number(options.limit) : 9;
-
-	const serviceUrl = new URL(SERVICES_URL);
-	serviceUrl.searchParams.set('page', String(page));
-	serviceUrl.searchParams.set('limit', String(limit));
-
-	const response = await fetch(serviceUrl.toString(), {
-		method: 'GET',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			Accept: 'application/json',
-		},
-	});
-
-	return parseServicesResponse(response, { page, limit });
-};
-
-const parseServicesLovResponse = async (response: Response): Promise<ServiceLov[]> => {
-	let data: ServicesSuccessResponse | ServicesFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new ServicesApiError('No fue posible interpretar la respuesta del servidor de servicios.', 502);
-	}
-
-	if (
-		!response.ok ||
-		!data ||
-		typeof data !== 'object' ||
-		data.status !== 'success' ||
-		!('data' in data) ||
-		!Array.isArray(data.data)
-	) {
-		const failureData = (data ?? {}) as ServicesFailureResponse;
-		throw new ServicesApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				'No fue posible obtener el listado de servicios activos.',
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	return data.data.map(normalizeServiceLov).filter((service): service is ServiceLov => service !== null);
+	const apiClient = new ServicesClient(token);
+	return apiClient.list(options.page, options.limit);
 };
 
 export const listServicesLovWithOrds = async (token: string): Promise<ServiceLov[]> => {
-	if (!token) {
-		throw new ServicesApiError('Token de acceso requerido.', 401);
-	}
-
-	const response = await fetch(SERVICES_LOV_URL, {
-		method: 'GET',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			Accept: 'application/json',
-		},
-	});
-
-	return parseServicesLovResponse(response);
+	const apiClient = new ServicesClient(token);
+	return apiClient.listLov();
 };
-
-const parseServiceResponse = async (response: Response) => {
-	let data: ServiceSuccessResponse | ServicesFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new ServicesApiError('No fue posible interpretar la respuesta del servidor de servicios.', 502);
-	}
-
-	if (
-		!response.ok ||
-		!data ||
-		typeof data !== 'object' ||
-		data.status !== 'success' ||
-		!('data' in data)
-	) {
-		const failureData = (data ?? {}) as ServicesFailureResponse;
-		throw new ServicesApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, 'get'),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	const normalized = normalizeService(data.data);
-	if (!normalized) {
-		throw new ServicesApiError('No fue posible interpretar el servicio solicitado.', 502);
-	}
-
-	return normalized;
-};
-
-const parseServiceActionResponse = async (
-	response: Response,
-	action: 'update' | 'delete'
-) => {
-	let data: ServiceActionSuccessResponse | ServicesFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new ServicesApiError('No fue posible interpretar la respuesta del servidor de servicios.', 502);
-	}
-
-	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
-		const failureData = (data ?? {}) as ServicesFailureResponse;
-		throw new ServicesApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, action),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	if (typeof data.message === 'string' && data.message.trim()) {
-		return { message: data.message };
-	}
-
-	return {
-		message:
-			action === 'update'
-				? 'Servicio actualizado correctamente.'
-				: 'Servicio eliminado correctamente.',
-	};
-};
-
-const parseCreateServiceResponse = async (response: Response) => {
-	let data: CreateServiceSuccessResponse | ServicesFailureResponse | null = null;
-
-	try {
-		data = await response.json();
-	} catch {
-		throw new ServicesApiError('No fue posible interpretar la respuesta del servidor de servicios.', 502);
-	}
-
-	if (
-		!response.ok ||
-		!data ||
-		typeof data !== 'object' ||
-		data.status !== 'success' ||
-		!('id_service' in data)
-	) {
-		const failureData = (data ?? {}) as ServicesFailureResponse;
-		throw new ServicesApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) ||
-				fallbackMessageByStatus(response.status || 400, 'create'),
-			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
-		);
-	}
-
-	return {
-		id_service: toNumber(data.id_service, 0),
-		message:
-			typeof data.message === 'string' && data.message.trim()
-				? data.message
-				: 'Servicio creado correctamente.',
-	};
-};
-
-const getServiceUrlById = (serviceId: number) => `${SERVICES_URL}/${serviceId}`;
 
 export const createServiceWithOrds = async (token: string, payload: CreateServicePayload) => {
-	if (!token) {
-		throw new ServicesApiError('Token de acceso requerido.', 401);
-	}
-
-	const response = await fetch(SERVICES_URL, {
-		method: 'POST',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-		},
-		body: JSON.stringify(payload),
-	});
-
-	return parseCreateServiceResponse(response);
+	const apiClient = new ServicesClient(token);
+	return apiClient.create(payload);
 };
 
 export const getServiceByIdWithOrds = async (token: string, serviceId: number) => {
-	if (!token) {
-		throw new ServicesApiError('Token de acceso requerido.', 401);
-	}
-
-	if (!Number.isInteger(serviceId) || serviceId <= 0) {
-		throw new ServicesApiError('ID de servicio invalido.', 400);
-	}
-
-	const response = await fetch(getServiceUrlById(serviceId), {
-		method: 'GET',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			Accept: 'application/json',
-		},
-	});
-
-	return parseServiceResponse(response);
+	const apiClient = new ServicesClient(token);
+	return apiClient.getById(serviceId);
 };
 
 export const updateServiceWithOrds = async (
@@ -469,43 +405,12 @@ export const updateServiceWithOrds = async (
 	serviceId: number,
 	payload: CreateServicePayload
 ) => {
-	if (!token) {
-		throw new ServicesApiError('Token de acceso requerido.', 401);
-	}
-
-	if (!Number.isInteger(serviceId) || serviceId <= 0) {
-		throw new ServicesApiError('ID de servicio invalido.', 400);
-	}
-
-	const response = await fetch(getServiceUrlById(serviceId), {
-		method: 'PUT',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-		},
-		body: JSON.stringify(payload),
-	});
-
-	return parseServiceActionResponse(response, 'update');
+	const apiClient = new ServicesClient(token);
+	return apiClient.update(serviceId, payload);
 };
 
 export const deleteServiceWithOrds = async (token: string, serviceId: number) => {
-	if (!token) {
-		throw new ServicesApiError('Token de acceso requerido.', 401);
-	}
-
-	if (!Number.isInteger(serviceId) || serviceId <= 0) {
-		throw new ServicesApiError('ID de servicio invalido.', 400);
-	}
-
-	const response = await fetch(getServiceUrlById(serviceId), {
-		method: 'DELETE',
-		headers: {
-			Authorization: `Bearer ${token}`,
-			Accept: 'application/json',
-		},
-	});
-
-	return parseServiceActionResponse(response, 'delete');
+	const apiClient = new ServicesClient(token);
+	return apiClient.delete(serviceId);
 };
+
