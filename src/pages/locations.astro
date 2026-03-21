@@ -1,27 +1,31 @@
 ---
-import AppAlert from '../components/AppAlert.astro';
-import FlashMessage from '../components/FlashMessage.astro';
-import LocationsGrid from '../components/LocationsGrid.astro';
-import SideNav from '../components/SideNav.astro';
-import TopBar from '../components/TopBar.astro';
-import { LocationsApiError, LocationsClient, type Location } from '../lib/locations';
-import Layout from '../layouts/Layout.astro';
-import '../styles/global.css';
+import AppAlert from "../components/AppAlert.astro";
+import FlashMessage from "../components/FlashMessage.astro";
+import LocationsGrid from "../components/LocationsGrid.astro";
+import SideNav from "../components/SideNav.astro";
+import TopBar from "../components/TopBar.astro";
+import {
+	LocationsApiError,
+	LocationsClient,
+	type Location,
+} from "../lib/locations";
+import Layout from "../layouts/Layout.astro";
+import "../styles/global.css";
 
-const token = Astro.locals.token ?? '';
+const token = Astro.locals.token ?? "";
 const PAGE_SIZE = 9;
-const rawPage = Number(Astro.url.searchParams.get('page') || '1');
+const rawPage = Number(Astro.url.searchParams.get("page") || "1");
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
-const flashMessage = Astro.url.searchParams.get('flash_message') ?? '';
-const flashTypeRaw = Astro.url.searchParams.get('flash_type') ?? 'success';
-const validFlashTypes = ['success', 'error', 'info', 'warning'] as const;
+const flashMessage = Astro.url.searchParams.get("flash_message") ?? "";
+const flashTypeRaw = Astro.url.searchParams.get("flash_type") ?? "success";
+const validFlashTypes = ["success", "error", "info", "warning"] as const;
 type FlashType = (typeof validFlashTypes)[number];
 const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
 	? (flashTypeRaw as FlashType)
-	: 'info';
+	: "info";
 
 let locations: Location[] = [];
-let loadError = '';
+let loadError = "";
 let pagination = {
 	current_page: currentPage,
 	per_page: PAGE_SIZE,
@@ -30,7 +34,7 @@ let pagination = {
 };
 
 if (!token) {
-	loadError = 'No hay sesión válida para consultar sucursales.';
+	loadError = "No hay sesión válida para consultar sucursales.";
 } else {
 	try {
 		const apiClient = new LocationsClient(token);
@@ -41,20 +45,23 @@ if (!token) {
 		loadError =
 			error instanceof LocationsApiError
 				? error.message
-				: 'No fue posible cargar el listado de sucursales.';
+				: "No fue posible cargar el listado de sucursales.";
 	}
 }
 
 const totalPages = Math.max(1, pagination.total_pages);
-const safeCurrentPage = Math.min(Math.max(1, pagination.current_page), totalPages);
+const safeCurrentPage = Math.min(
+	Math.max(1, pagination.current_page),
+	totalPages,
+);
 const canPrevPage = safeCurrentPage > 1;
 const canNextPage = safeCurrentPage < totalPages;
 
 const toPageHref = (page: number) => {
 	const nextUrl = new URL(Astro.url);
-	nextUrl.searchParams.set('page', String(page));
-	nextUrl.searchParams.delete('flash_message');
-	nextUrl.searchParams.delete('flash_type');
+	nextUrl.searchParams.set("page", String(page));
+	nextUrl.searchParams.delete("flash_message");
+	nextUrl.searchParams.delete("flash_type");
 	return `${nextUrl.pathname}${nextUrl.search}`;
 };
 
@@ -62,61 +69,86 @@ const pageWindowStart = Math.max(1, safeCurrentPage - 1);
 const pageWindowEnd = Math.min(totalPages, safeCurrentPage + 1);
 const visiblePages = Array.from(
 	{ length: pageWindowEnd - pageWindowStart + 1 },
-	(_, index) => pageWindowStart + index
+	(_, index) => pageWindowStart + index,
 );
 const googleMapsApiKey =
 	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
 	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
-	'';
+	"";
 ---
 
 <Layout>
 	<location-manager data-google-maps-api-key={googleMapsApiKey}>
-	<div class="min-h-screen">
-		<div
-			class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
-			data-app-shell
-			data-sidebar-state="expanded"
-		>
-			<SideNav currentPath={Astro.url.pathname} />
+		<div class="min-h-screen">
+			<div
+				class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+				data-app-shell
+				data-sidebar-state="expanded"
+			>
+				<SideNav currentPath={Astro.url.pathname} />
 
-			<div class="grid min-h-full grid-rows-[auto_1fr]">
-				<TopBar />
+				<div class="grid min-h-full grid-rows-[auto_1fr]">
+					<TopBar />
 
-				<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
-					<section class="grid gap-6">
-						{
-							flashMessage ? (
-								<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
-									<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
-								</div>
-							) : null
-						}
+					<main
+						class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7"
+					>
+						<section class="grid gap-6">
+							{
+								flashMessage ? (
+									<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
+										<FlashMessage
+											message={flashMessage}
+											type={flashType}
+											autoHideMs={4200}
+										/>
+									</div>
+								) : null
+							}
 
-						{
-							loadError ? (
-								<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
-							) : (
-								<div class="grid gap-5">
-									<LocationsGrid locations={locations} showCreateAction={true} />
+							{
+								loadError ? (
+									<FlashMessage
+										message={loadError}
+										type="error"
+										expand={true}
+										dismissible={false}
+									/>
+								) : (
+									<div class="grid gap-5">
+										<LocationsGrid
+											locations={locations}
+											showCreateAction={true}
+										/>
 
-									<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-										<p class="text-sm text-[color:var(--on-surface-variant)]">
-											Pagina <span class="font-semibold text-[color:var(--on-surface)]">{safeCurrentPage}</span> de
-											<span class="font-semibold text-[color:var(--on-surface)]"> {totalPages}</span>
-											<span class="mx-2">-</span>
-											Total de
-											<span class="font-semibold text-[color:var(--on-surface)]">
-												{` ${pagination.total_records} `}
-											</span>
-											sucursales
-										</p>
+										<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p class="text-sm text-[color:var(--on-surface-variant)]">
+												Pagina{" "}
+												<span class="font-semibold text-[color:var(--on-surface)]">
+													{safeCurrentPage}
+												</span>{" "}
+												de
+												<span class="font-semibold text-[color:var(--on-surface)]">
+													{" "}
+													{totalPages}
+												</span>
+												<span class="mx-2">-</span>
+												Total de
+												<span class="font-semibold text-[color:var(--on-surface)]">
+													{` ${pagination.total_records} `}
+												</span>
+												sucursales
+											</p>
 
-										<nav class="flex items-center gap-2" aria-label="Paginación sucursales">
-											{
-												canPrevPage ? (
+											<nav
+												class="flex items-center gap-2"
+												aria-label="Paginación sucursales"
+											>
+												{canPrevPage ? (
 													<a
-														href={toPageHref(safeCurrentPage - 1)}
+														href={toPageHref(
+															safeCurrentPage - 1,
+														)}
 														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
 													>
 														Anterior
@@ -125,30 +157,30 @@ const googleMapsApiKey =
 													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
 														Anterior
 													</span>
-												)
-											}
+												)}
 
-											{
-												visiblePages.map((page) =>
+												{visiblePages.map((page) =>
 													page === safeCurrentPage ? (
 														<span class="rounded-lg border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-sm font-bold text-[color:var(--primary)]">
 															{page}
 														</span>
 													) : (
 														<a
-															href={toPageHref(page)}
+															href={toPageHref(
+																page,
+															)}
 															class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
 														>
 															{page}
 														</a>
-													)
-												)
-											}
+													),
+												)}
 
-											{
-												canNextPage ? (
+												{canNextPage ? (
 													<a
-														href={toPageHref(safeCurrentPage + 1)}
+														href={toPageHref(
+															safeCurrentPage + 1,
+														)}
 														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
 													>
 														Siguiente
@@ -157,211 +189,322 @@ const googleMapsApiKey =
 													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
 														Siguiente
 													</span>
-												)
-											}
-										</nav>
+												)}
+											</nav>
+										</div>
 									</div>
-								</div>
-							)
-						}
-					</section>
-				</main>
-			</div>
-		</div>
-	</div>
-
-	<dialog
-		class="w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
-		data-location-modal
-	>
-		<div class="shrink-0 border-b border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-6 z-10 shadow-sm">
-			<div class="flex items-center gap-4">
-				<div class="flex size-12 shrink-0 items-center justify-center rounded-[1rem] bg-[color:var(--primary-soft)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
-					<span class="material-symbols-rounded text-[1.4rem]">storefront</span>
-				</div>
-				<div>
-					<h2 class="text-[1.2rem] font-extrabold tracking-tight text-[color:var(--on-surface)]" data-location-modal-title>Crear sucursal</h2>
-					<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)] mt-0.5" data-location-modal-description>
-						Completa los campos para registrar una nueva sucursal.
-					</p>
+								)
+							}
+						</section>
+					</main>
 				</div>
 			</div>
 		</div>
 
-		<form class="relative grid gap-5 px-7 py-7 bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-location-form>
+		<dialog
+			class="w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
+			data-location-modal
+		>
 			<div
-				class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center bg-[color:var(--surface-bright)]/80 backdrop-blur-[2px] transition-all"
-				data-location-loading
+				class="shrink-0 border-b border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-6 z-10 shadow-sm"
 			>
-				<div class="inline-flex items-center gap-3 rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-3.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
-					<span class="material-symbols-rounded animate-spin text-[1.2rem] text-[color:var(--primary)]">progress_activity</span>
-					Procesando...
+				<div class="flex items-start justify-between gap-4">
+					<div class="flex items-center gap-4">
+						<div
+							class="flex size-12 shrink-0 items-center justify-center rounded-[1rem] bg-[color:var(--primary-soft)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
+						>
+							<span class="material-symbols-rounded text-[1.4rem]"
+								>storefront</span
+							>
+						</div>
+						<div>
+							<h2
+								class="text-[1.2rem] font-extrabold tracking-tight text-[color:var(--on-surface)]"
+								data-location-modal-title
+							>
+								Crear sucursal
+							</h2>
+							<p
+								class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)] mt-0.5"
+								data-location-modal-description
+							>
+								Completa los campos para registrar una nueva
+								sucursal.
+							</p>
+						</div>
+					</div>
+					<button
+						type="button"
+						class="flex size-9 shrink-0 items-center justify-center rounded-full text-[color:var(--on-surface-variant)] transition-colors hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]"
+						data-close-location-modal
+						aria-label="Cerrar modal"
+					>
+						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+					</button>
 				</div>
 			</div>
 
-			<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
+			<form
+				class="relative grid gap-5 px-7 py-7 bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
+				data-location-form
+			>
+				<div
+					class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center bg-[color:var(--surface-bright)]/80 backdrop-blur-[2px] transition-all"
+					data-location-loading
+				>
+					<div
+						class="inline-flex items-center gap-3 rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-3.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+					>
+						<span
+							class="material-symbols-rounded animate-spin text-[1.2rem] text-[color:var(--primary)]"
+							>progress_activity</span
+						>
+						Procesando...
+					</div>
+				</div>
 
-			<div class="grid gap-5 sm:grid-cols-2">
-				<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
-					<span class="inline-flex items-center gap-1">
-						Nombre
-						<span class="text-rose-500">*</span>
-					</span>
+				<div
+					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
+					data-form-error
+				>
+				</div>
+
+				<div class="grid gap-5 sm:grid-cols-2">
+					<label
+						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+					>
+						<span class="inline-flex items-center gap-1">
+							Nombre
+							<span class="text-rose-500">*</span>
+						</span>
+						<input
+							type="text"
+							name="name"
+							maxlength="100"
+							required
+							class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							placeholder="Ej: Casa Central"
+						/>
+						<span
+							class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+							data-field-error="name"></span>
+					</label>
+
+					<label
+						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+					>
+						<span class="inline-flex items-center gap-1">
+							Dirección
+							<span class="text-rose-500">*</span>
+						</span>
+						<input
+							type="text"
+							name="address"
+							maxlength="255"
+							required
+							class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							placeholder="Ej: Av. Principal 123"
+						/>
+						<span
+							class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+							data-field-error="address"></span>
+					</label>
+				</div>
+
+				<div class="grid gap-5 sm:grid-cols-2">
+					<label
+						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+					>
+						<span class="inline-flex items-center gap-1">
+							Departamento
+							<span class="text-rose-500">*</span>
+						</span>
+						<div class="relative">
+							<select
+								name="dep_id_department"
+								required
+								data-department-select
+								class="w-full appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 font-bold text-[color:var(--on-surface)] cursor-pointer shadow-sm"
+							>
+								<option value=""
+									>Selecciona un departamento</option
+								>
+							</select>
+							<span
+								class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]"
+							>
+								<span class="material-symbols-rounded"
+									>expand_more</span
+								>
+							</span>
+						</div>
+						<span
+							class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+							data-field-error="dep_id_department"></span>
+					</label>
+
+					<label
+						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+					>
+						<span class="inline-flex items-center gap-1">
+							Ciudad
+							<span class="text-rose-500">*</span>
+						</span>
+						<div class="relative">
+							<select
+								name="cit_id_city"
+								required
+								disabled
+								data-city-select
+								class="w-full appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 font-bold text-[color:var(--on-surface)] cursor-pointer shadow-sm disabled:cursor-not-allowed disabled:opacity-70"
+							>
+								<option value=""
+									>Selecciona un departamento primero</option
+								>
+							</select>
+							<span
+								class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]"
+							>
+								<span class="material-symbols-rounded"
+									>expand_more</span
+								>
+							</span>
+						</div>
+						<span
+							class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+							data-field-error="cit_id_city"></span>
+					</label>
+				</div>
+
+				<div class="grid gap-2">
+					<div class="flex items-center justify-between gap-2">
+						<p
+							class="text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+						>
+							Ubicación en mapa <span
+								class="text-[color:var(--on-surface-variant)] font-medium"
+								>(Opcional)</span>
+						</p>
+						<button
+							type="button"
+							class="rounded-[0.8rem] border border-[color:var(--shell-border)] px-3 py-1.5 text-[0.8rem] font-extrabold text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--surface-variant)] disabled:cursor-not-allowed disabled:opacity-60"
+							data-clear-location-point
+						>
+							Limpiar punto
+						</button>
+					</div>
+
+					<div
+						class="overflow-hidden rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] shadow-sm"
+					>
+						<div class="h-[260px] w-full" data-location-map></div>
+					</div>
+
+					<p
+						class="text-[0.85rem] font-medium text-[color:var(--on-surface-variant)] mt-1"
+						data-location-map-status
+					>
+						Haz clic en el mapa para registrar coordenadas exactas.
+					</p>
+
 					<input
-						type="text"
-						name="name"
-						maxlength="100"
-						required
-						class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
-						placeholder="Ej: Casa Central"
+						type="hidden"
+						name="latitude"
+						data-location-latitude
 					/>
-					<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="name"></span>
-				</label>
-
-				<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
-					<span class="inline-flex items-center gap-1">
-						Dirección
-						<span class="text-rose-500">*</span>
-					</span>
 					<input
-						type="text"
-						name="address"
-						maxlength="255"
-						required
-						class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
-						placeholder="Ej: Av. Principal 123"
+						type="hidden"
+						name="longitude"
+						data-location-longitude
 					/>
-					<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="address"></span>
-				</label>
-			</div>
+					<span
+						class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+						data-field-error="latitude"></span>
+					<span
+						class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+						data-field-error="longitude"></span>
+				</div>
 
-			<div class="grid gap-5 sm:grid-cols-2">
-				<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
-					<span class="inline-flex items-center gap-1">
-						Departamento
-						<span class="text-rose-500">*</span>
-					</span>
+				<label
+					class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)] pt-1"
+				>
+					Estado
 					<div class="relative">
 						<select
-							name="dep_id_department"
-							required
-							data-department-select
+							name="is_active"
 							class="w-full appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 font-bold text-[color:var(--on-surface)] cursor-pointer shadow-sm"
 						>
-							<option value="">Selecciona un departamento</option>
+							<option value="1"
+								>Activa (Visible para clientes)</option
+							>
+							<option value="0"
+								>Inactiva (Oculto temporalmente)</option
+							>
 						</select>
-						<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]">
-							<span class="material-symbols-rounded">expand_more</span>
-						</span>
-					</div>
-					<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="dep_id_department"></span>
-				</label>
-
-				<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
-					<span class="inline-flex items-center gap-1">
-						Ciudad
-						<span class="text-rose-500">*</span>
-					</span>
-					<div class="relative">
-						<select
-							name="cit_id_city"
-							required
-							disabled
-							data-city-select
-							class="w-full appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 font-bold text-[color:var(--on-surface)] cursor-pointer shadow-sm disabled:cursor-not-allowed disabled:opacity-70"
+						<span
+							class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]"
 						>
-							<option value="">Selecciona un departamento primero</option>
-						</select>
-						<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]">
-							<span class="material-symbols-rounded">expand_more</span>
+							<span class="material-symbols-rounded"
+								>expand_more</span
+							>
 						</span>
 					</div>
-					<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="cit_id_city"></span>
+					<span
+						class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+						data-field-error="is_active"></span>
 				</label>
-			</div>
 
-			<div class="grid gap-2">
-				<div class="flex items-center justify-between gap-2">
-					<p class="text-[0.95rem] font-bold text-[color:var(--on-surface)]">Ubicación en mapa <span class="text-[color:var(--on-surface-variant)] font-medium">(Opcional)</span></p>
-					<button
-						type="button"
-						class="rounded-[0.8rem] border border-[color:var(--shell-border)] px-3 py-1.5 text-[0.8rem] font-extrabold text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--surface-variant)] disabled:cursor-not-allowed disabled:opacity-60"
-						data-clear-location-point
-					>
-						Limpiar punto
-					</button>
-				</div>
-
-				<div class="overflow-hidden rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] shadow-sm">
-					<div class="h-[260px] w-full" data-location-map></div>
-				</div>
-
-				<p class="text-[0.85rem] font-medium text-[color:var(--on-surface-variant)] mt-1" data-location-map-status>
-					Haz clic en el mapa para registrar coordenadas exactas.
-				</p>
-
-				<input type="hidden" name="latitude" data-location-latitude />
-				<input type="hidden" name="longitude" data-location-longitude />
-				<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="latitude"></span>
-				<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="longitude"></span>
-			</div>
-
-			<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)] pt-1">
-				Estado
-				<div class="relative">
-					<select
-						name="is_active"
-						class="w-full appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 font-bold text-[color:var(--on-surface)] cursor-pointer shadow-sm"
-					>
-						<option value="1">Activa (Visible para clientes)</option>
-						<option value="0">Inactiva (Oculto temporalmente)</option>
-					</select>
-					<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]">
-						<span class="material-symbols-rounded">expand_more</span>
-					</span>
-				</div>
-				<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="is_active"></span>
-			</label>
-
-			<div class="mt-3 flex items-center gap-3 pt-5 border-t border-[color:var(--shell-border)]">
-				<button
-					type="button"
-					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none"
-					data-delete-location
+				<div
+					class="mt-3 flex items-center gap-3 pt-5 border-t border-[color:var(--shell-border)]"
 				>
-					<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
-					Eliminar
-				</button>
-
-				<div class="ml-auto w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
 					<button
 						type="button"
-						class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--shell-border)]"
-						data-close-location-modal
+						class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none"
+						data-delete-location
 					>
-						Cancelar
+						<span
+							class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]"
+							>delete</span
+						>
+						Eliminar
 					</button>
-					<button
-						type="submit"
-						class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)] disabled:opacity-60 disabled:pointer-events-none"
-						data-submit-location
+
+					<div
+						class="ml-auto w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3"
 					>
-						<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" data-submit-location-icon>check</span>
-						<span data-submit-location-label>Crear sucursal</span>
-					</button>
+						<button
+							type="button"
+							class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--shell-border)]"
+							data-close-location-modal
+						>
+							Cancelar
+						</button>
+						<button
+							type="submit"
+							class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)] disabled:opacity-60 disabled:pointer-events-none"
+							data-submit-location
+						>
+							<span
+								class="material-symbols-rounded text-[1.2rem] hidden sm:inline"
+								data-submit-location-icon>check</span
+							>
+							<span data-submit-location-label
+								>Crear sucursal</span
+							>
+						</button>
+					</div>
 				</div>
-			</div>
-		</form>
-	</dialog>
+			</form>
+		</dialog>
 	</location-manager>
 
 	<AppAlert />
 </Layout>
 
 <script>
-	import { navigate } from 'astro:transitions/client';
+	import { navigate } from "astro:transitions/client";
 
-	type LocationMode = 'create' | 'edit';
+	type LocationMode = "create" | "edit";
 	type Coordinates = { lat: number; lng: number };
 	type DepartmentOption = { id_department: number; description?: string };
 	type CityOption = { id_city: number; description?: string };
@@ -377,7 +520,10 @@ const googleMapsApiKey =
 	};
 
 	type GoogleMapsNamespace = {
-		Map: new (container: HTMLElement, options: Record<string, unknown>) => any;
+		Map: new (
+			container: HTMLElement,
+			options: Record<string, unknown>,
+		) => any;
 		Marker: new (options: Record<string, unknown>) => any;
 		event?: { trigger?: (instance: unknown, eventName: string) => void };
 	};
@@ -397,7 +543,7 @@ const googleMapsApiKey =
 	class LocationManager extends HTMLElement {
 		private abortController: AbortController | null = null;
 		private closeTimer: number | null = null;
-		private mode: LocationMode = 'create';
+		private mode: LocationMode = "create";
 		private editingLocationId = 0;
 		private locationReadRequestSeq = 0;
 		private citiesRequestSeq = 0;
@@ -406,8 +552,11 @@ const googleMapsApiKey =
 		private departmentsLoadPromise: Promise<void> | null = null;
 		private citiesByDepartment = new Map<number, CityOption[]>();
 
-		private mapsApiKey = '';
-		private defaultMapCenter: Coordinates = { lat: -25.28646, lng: -57.647 };
+		private mapsApiKey = "";
+		private defaultMapCenter: Coordinates = {
+			lat: -25.28646,
+			lng: -57.647,
+		};
 		private selectedCoordinates: Coordinates | null = null;
 		private mapInstance: any = null;
 		private mapMarker: any = null;
@@ -436,7 +585,9 @@ const googleMapsApiKey =
 			latitude: HTMLInputElement | null;
 			longitude: HTMLInputElement | null;
 			status: HTMLSelectElement | null;
-			fields: NodeListOf<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement> | null;
+			fields: NodeListOf<
+				HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+			> | null;
 			fieldErrors: NodeListOf<HTMLElement>;
 		};
 
@@ -446,45 +597,110 @@ const googleMapsApiKey =
 			const { signal } = this.abortController;
 
 			this.els = {
-				modal: this.querySelector<HTMLDialogElement>('[data-location-modal]'),
-				form: this.querySelector<HTMLFormElement>('[data-location-form]'),
-				submitBtn: this.querySelector<HTMLButtonElement>('[data-submit-location]'),
-				submitLabel: this.querySelector<HTMLElement>('[data-submit-location-label]'),
-				submitIcon: this.querySelector<HTMLElement>('[data-submit-location-icon]'),
-				deleteBtn: this.querySelector<HTMLButtonElement>('[data-delete-location]'),
-				errorBox: this.querySelector<HTMLElement>('[data-form-error]'),
-				loading: this.querySelector<HTMLElement>('[data-location-loading]'),
-				modalTitle: this.querySelector<HTMLElement>('[data-location-modal-title]'),
-				modalDesc: this.querySelector<HTMLElement>('[data-location-modal-description]'),
-				mapContainer: this.querySelector<HTMLElement>('[data-location-map]'),
-				mapStatus: this.querySelector<HTMLElement>('[data-location-map-status]'),
-				clearMapBtn: this.querySelector<HTMLButtonElement>('[data-clear-location-point]'),
+				modal: this.querySelector<HTMLDialogElement>(
+					"[data-location-modal]",
+				),
+				form: this.querySelector<HTMLFormElement>(
+					"[data-location-form]",
+				),
+				submitBtn: this.querySelector<HTMLButtonElement>(
+					"[data-submit-location]",
+				),
+				submitLabel: this.querySelector<HTMLElement>(
+					"[data-submit-location-label]",
+				),
+				submitIcon: this.querySelector<HTMLElement>(
+					"[data-submit-location-icon]",
+				),
+				deleteBtn: this.querySelector<HTMLButtonElement>(
+					"[data-delete-location]",
+				),
+				errorBox: this.querySelector<HTMLElement>("[data-form-error]"),
+				loading: this.querySelector<HTMLElement>(
+					"[data-location-loading]",
+				),
+				modalTitle: this.querySelector<HTMLElement>(
+					"[data-location-modal-title]",
+				),
+				modalDesc: this.querySelector<HTMLElement>(
+					"[data-location-modal-description]",
+				),
+				mapContainer: this.querySelector<HTMLElement>(
+					"[data-location-map]",
+				),
+				mapStatus: this.querySelector<HTMLElement>(
+					"[data-location-map-status]",
+				),
+				clearMapBtn: this.querySelector<HTMLButtonElement>(
+					"[data-clear-location-point]",
+				),
 			};
 
 			this.formEls = {
-				name: this.els.form?.querySelector<HTMLInputElement>('[name="name"]') ?? null,
-				address: this.els.form?.querySelector<HTMLInputElement>('[name="address"]') ?? null,
-				department: this.els.form?.querySelector<HTMLSelectElement>('[data-department-select]') ?? null,
-				city: this.els.form?.querySelector<HTMLSelectElement>('[data-city-select]') ?? null,
-				latitude: this.els.form?.querySelector<HTMLInputElement>('[data-location-latitude]') ?? null,
-				longitude: this.els.form?.querySelector<HTMLInputElement>('[data-location-longitude]') ?? null,
-				status: this.els.form?.querySelector<HTMLSelectElement>('[name="is_active"]') ?? null,
-				fields: this.els.form?.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea') ?? null,
-				fieldErrors: this.querySelectorAll<HTMLElement>('[data-field-error]'),
+				name:
+					this.els.form?.querySelector<HTMLInputElement>(
+						'[name="name"]',
+					) ?? null,
+				address:
+					this.els.form?.querySelector<HTMLInputElement>(
+						'[name="address"]',
+					) ?? null,
+				department:
+					this.els.form?.querySelector<HTMLSelectElement>(
+						"[data-department-select]",
+					) ?? null,
+				city:
+					this.els.form?.querySelector<HTMLSelectElement>(
+						"[data-city-select]",
+					) ?? null,
+				latitude:
+					this.els.form?.querySelector<HTMLInputElement>(
+						"[data-location-latitude]",
+					) ?? null,
+				longitude:
+					this.els.form?.querySelector<HTMLInputElement>(
+						"[data-location-longitude]",
+					) ?? null,
+				status:
+					this.els.form?.querySelector<HTMLSelectElement>(
+						'[name="is_active"]',
+					) ?? null,
+				fields:
+					this.els.form?.querySelectorAll<
+						| HTMLInputElement
+						| HTMLSelectElement
+						| HTMLTextAreaElement
+					>("input, select, textarea") ?? null,
+				fieldErrors:
+					this.querySelectorAll<HTMLElement>("[data-field-error]"),
 			};
 
-			this.mapsApiKey = String(this.dataset.googleMapsApiKey || '').trim();
+			this.mapsApiKey = String(
+				this.dataset.googleMapsApiKey || "",
+			).trim();
 
 			this.cleanUrlParams();
-			this.addEventListener('click', this.handleRootClick, { signal });
-			this.addEventListener('keydown', this.handleRootKeydown, { signal });
-			this.els.form?.addEventListener('submit', this.handleSubmit, { signal });
+			this.addEventListener("click", this.handleRootClick, { signal });
+			this.addEventListener("keydown", this.handleRootKeydown, {
+				signal,
+			});
+			this.els.form?.addEventListener("submit", this.handleSubmit, {
+				signal,
+			});
 
 			if (this.formEls.department) {
-				this.formEls.department.addEventListener('change', this.handleDepartmentChange, { signal });
+				this.formEls.department.addEventListener(
+					"change",
+					this.handleDepartmentChange,
+					{ signal },
+				);
 			}
 			if (this.els.clearMapBtn) {
-				this.els.clearMapBtn.addEventListener('click', this.handleClearMapPoint, { signal });
+				this.els.clearMapBtn.addEventListener(
+					"click",
+					this.handleClearMapPoint,
+					{ signal },
+				);
 			}
 		}
 
@@ -496,18 +712,24 @@ const googleMapsApiKey =
 
 		private cleanUrlParams = () => {
 			const currentUrl = new URL(window.location.href);
-			if (currentUrl.searchParams.has('flash_message')) {
-				currentUrl.searchParams.delete('flash_message');
-				currentUrl.searchParams.delete('flash_type');
-				window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+			if (currentUrl.searchParams.has("flash_message")) {
+				currentUrl.searchParams.delete("flash_message");
+				currentUrl.searchParams.delete("flash_type");
+				window.history.replaceState(
+					{},
+					"",
+					`${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`,
+				);
 			}
 		};
 
-		private redirectWithFlash = (message: string, type = 'success') => {
+		private redirectWithFlash = (message: string, type = "success") => {
 			const nextUrl = new URL(window.location.href);
-			nextUrl.searchParams.set('flash_message', message);
-			nextUrl.searchParams.set('flash_type', type);
-			void navigate(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+			nextUrl.searchParams.set("flash_message", message);
+			nextUrl.searchParams.set("flash_type", type);
+			void navigate(
+				`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`,
+			);
 		};
 
 		private handleRootClick = (event: MouseEvent) => {
@@ -518,38 +740,42 @@ const googleMapsApiKey =
 				return;
 			}
 
-			const openBtn = target.closest('[data-open-location-modal]');
+			const openBtn = target.closest("[data-open-location-modal]");
 			if (openBtn) {
 				void this.openCreateModal();
 				return;
 			}
 
-			const closeBtn = target.closest('[data-close-location-modal]');
+			const closeBtn = target.closest("[data-close-location-modal]");
 			if (closeBtn) {
 				this.closeModal();
 				return;
 			}
 
-			const deleteBtn = target.closest('[data-delete-location]');
+			const deleteBtn = target.closest("[data-delete-location]");
 			if (deleteBtn) {
 				void this.handleDelete();
 				return;
 			}
 
-			const card = target.closest('[data-location-card]');
+			const card = target.closest("[data-location-card]");
 			if (card) {
-				const locationId = Number(card.getAttribute('data-location-id') || '0');
+				const locationId = Number(
+					card.getAttribute("data-location-id") || "0",
+				);
 				if (locationId > 0) void this.openEditModal(locationId);
 			}
 		};
 
 		private handleRootKeydown = (event: KeyboardEvent) => {
-			if (event.key !== 'Enter' && event.key !== ' ') return;
+			if (event.key !== "Enter" && event.key !== " ") return;
 			const target = event.target as HTMLElement;
-			const card = target.closest('[data-location-card]');
+			const card = target.closest("[data-location-card]");
 			if (card) {
 				event.preventDefault();
-				const locationId = Number(card.getAttribute('data-location-id') || '0');
+				const locationId = Number(
+					card.getAttribute("data-location-id") || "0",
+				);
 				if (locationId > 0) void this.openEditModal(locationId);
 			}
 		};
@@ -560,45 +786,63 @@ const googleMapsApiKey =
 
 		private handleDepartmentChange = async () => {
 			if (!this.formEls.department) return;
-			const selectedDepartmentId = Number(this.formEls.department.value || '0');
-			
-			const departmentErrorNode = this.querySelector('[data-field-error="dep_id_department"]');
-			const cityErrorNode = this.querySelector('[data-field-error="cit_id_city"]');
-			
+			const selectedDepartmentId = Number(
+				this.formEls.department.value || "0",
+			);
+
+			const departmentErrorNode = this.querySelector(
+				'[data-field-error="dep_id_department"]',
+			);
+			const cityErrorNode = this.querySelector(
+				'[data-field-error="cit_id_city"]',
+			);
+
 			if (departmentErrorNode) {
-				departmentErrorNode.textContent = '';
-				departmentErrorNode.classList.add('hidden');
+				departmentErrorNode.textContent = "";
+				departmentErrorNode.classList.add("hidden");
 			}
 			if (cityErrorNode) {
-				cityErrorNode.textContent = '';
-				cityErrorNode.classList.add('hidden');
+				cityErrorNode.textContent = "";
+				cityErrorNode.classList.add("hidden");
 			}
-			
-			await this.loadCitiesByDepartment(selectedDepartmentId, { selectedCityId: 0, showErrors: true });
+
+			await this.loadCitiesByDepartment(selectedDepartmentId, {
+				selectedCityId: 0,
+				showErrors: true,
+			});
 		};
 
 		private setMapStatus = (message: string, isError = false) => {
 			if (!this.els.mapStatus) return;
 			this.els.mapStatus.textContent = message;
 			if (isError) {
-				this.els.mapStatus.classList.add('text-rose-600', 'dark:text-rose-300');
+				this.els.mapStatus.classList.add(
+					"text-rose-600",
+					"dark:text-rose-300",
+				);
 			} else {
-				this.els.mapStatus.classList.remove('text-rose-600', 'dark:text-rose-300');
+				this.els.mapStatus.classList.remove(
+					"text-rose-600",
+					"dark:text-rose-300",
+				);
 			}
 		};
 
 		private setSelectedCoordinates = (
 			latitude: number | null,
 			longitude: number | null,
-			options: { center?: boolean; zoom?: number } = {}
+			options: { center?: boolean; zoom?: number } = {},
 		) => {
-			const hasCoordinates = Number.isFinite(latitude) && Number.isFinite(longitude);
+			const hasCoordinates =
+				Number.isFinite(latitude) && Number.isFinite(longitude);
 
 			if (!hasCoordinates) {
 				this.selectedCoordinates = null;
-				if (this.formEls.latitude) this.formEls.latitude.value = '';
-				if (this.formEls.longitude) this.formEls.longitude.value = '';
-				this.setMapStatus('Haz clic en el mapa para registrar coordenadas exactas.');
+				if (this.formEls.latitude) this.formEls.latitude.value = "";
+				if (this.formEls.longitude) this.formEls.longitude.value = "";
+				this.setMapStatus(
+					"Haz clic en el mapa para registrar coordenadas exactas.",
+				);
 				if (this.mapMarker) this.mapMarker.setMap(null);
 				this.mapMarker = null;
 				return;
@@ -609,9 +853,13 @@ const googleMapsApiKey =
 				lng: Number(longitude),
 			};
 			this.selectedCoordinates = coords;
-			if (this.formEls.latitude) this.formEls.latitude.value = coords.lat.toFixed(6);
-			if (this.formEls.longitude) this.formEls.longitude.value = coords.lng.toFixed(6);
-			this.setMapStatus(`Coordenadas seleccionadas: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`);
+			if (this.formEls.latitude)
+				this.formEls.latitude.value = coords.lat.toFixed(6);
+			if (this.formEls.longitude)
+				this.formEls.longitude.value = coords.lng.toFixed(6);
+			this.setMapStatus(
+				`Coordenadas seleccionadas: ${coords.lat.toFixed(6)}, ${coords.lng.toFixed(6)}`,
+			);
 
 			if (!this.mapInstance) return;
 			if (!this.mapMarker) {
@@ -634,39 +882,70 @@ const googleMapsApiKey =
 
 		private loadGoogleMaps = async (): Promise<GoogleMapsNamespace> => {
 			if (!this.mapsApiKey) {
-				throw new Error('No se encontró la API key de Google Maps para el mapa de sucursales.');
+				throw new Error(
+					"No se encontró la API key de Google Maps para el mapa de sucursales.",
+				);
 			}
 
 			const win = window as WindowWithGoogleMaps;
 			if (win.google?.maps) return win.google.maps;
-			if (win.__bookmateGoogleMapsLoader) return win.__bookmateGoogleMapsLoader;
+			if (win.__bookmateGoogleMapsLoader)
+				return win.__bookmateGoogleMapsLoader;
 
-			win.__bookmateGoogleMapsLoader = new Promise<GoogleMapsNamespace>((resolve, reject) => {
-				const handleLoad = () => {
-					const maps = (window as WindowWithGoogleMaps).google?.maps;
-					if (!maps) {
-						reject(new Error('Google Maps cargó, pero no se encontró la librería maps.'));
+			win.__bookmateGoogleMapsLoader = new Promise<GoogleMapsNamespace>(
+				(resolve, reject) => {
+					const handleLoad = () => {
+						const maps = (window as WindowWithGoogleMaps).google
+							?.maps;
+						if (!maps) {
+							reject(
+								new Error(
+									"Google Maps cargó, pero no se encontró la librería maps.",
+								),
+							);
+							return;
+						}
+						resolve(maps);
+					};
+
+					const existingScript =
+						document.querySelector<HTMLScriptElement>(
+							"script[data-google-maps-loader]",
+						);
+					if (existingScript) {
+						existingScript.addEventListener("load", handleLoad, {
+							once: true,
+						});
+						existingScript.addEventListener(
+							"error",
+							() =>
+								reject(
+									new Error(
+										"No fue posible cargar Google Maps.",
+									),
+								),
+							{ once: true },
+						);
 						return;
 					}
-					resolve(maps);
-				};
 
-				const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-maps-loader]');
-				if (existingScript) {
-					existingScript.addEventListener('load', handleLoad, { once: true });
-					existingScript.addEventListener('error', () => reject(new Error('No fue posible cargar Google Maps.')), { once: true });
-					return;
-				}
-
-				const script = document.createElement('script');
-				script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(this.mapsApiKey)}&v=weekly`;
-				script.async = true;
-				script.defer = true;
-				script.dataset.googleMapsLoader = 'true';
-				script.addEventListener('load', handleLoad, { once: true });
-				script.addEventListener('error', () => reject(new Error('No fue posible cargar Google Maps.')), { once: true });
-				document.head.appendChild(script);
-			});
+					const script = document.createElement("script");
+					script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(this.mapsApiKey)}&v=weekly`;
+					script.async = true;
+					script.defer = true;
+					script.dataset.googleMapsLoader = "true";
+					script.addEventListener("load", handleLoad, { once: true });
+					script.addEventListener(
+						"error",
+						() =>
+							reject(
+								new Error("No fue posible cargar Google Maps."),
+							),
+						{ once: true },
+					);
+					document.head.appendChild(script);
+				},
+			);
 
 			try {
 				return await win.__bookmateGoogleMapsLoader;
@@ -687,113 +966,169 @@ const googleMapsApiKey =
 					mapTypeControl: false,
 					streetViewControl: false,
 					fullscreenControl: false,
-					gestureHandling: 'greedy',
+					gestureHandling: "greedy",
 				});
 
-				this.mapInstance.addListener('click', (event: unknown) => {
-					const source = event as { latLng?: { lat?: () => number; lng?: () => number } };
+				this.mapInstance.addListener("click", (event: unknown) => {
+					const source = event as {
+						latLng?: { lat?: () => number; lng?: () => number };
+					};
 					const latitude = source?.latLng?.lat?.();
 					const longitude = source?.latLng?.lng?.();
-					if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
-					this.setSelectedCoordinates(Number(latitude), Number(longitude), { center: false });
+					if (
+						!Number.isFinite(latitude) ||
+						!Number.isFinite(longitude)
+					)
+						return;
+					this.setSelectedCoordinates(
+						Number(latitude),
+						Number(longitude),
+						{ center: false },
+					);
 				});
 			}
 
 			window.setTimeout(() => {
 				if (!this.mapInstance) return;
-				if (maps.event?.trigger) maps.event.trigger(this.mapInstance, 'resize');
-				this.mapInstance.setCenter(this.selectedCoordinates ?? this.defaultMapCenter);
+				if (maps.event?.trigger)
+					maps.event.trigger(this.mapInstance, "resize");
+				this.mapInstance.setCenter(
+					this.selectedCoordinates ?? this.defaultMapCenter,
+				);
 				if (this.selectedCoordinates) this.mapInstance.setZoom(15);
 			}, 60);
 
 			if (this.selectedCoordinates) {
-				this.setSelectedCoordinates(this.selectedCoordinates.lat, this.selectedCoordinates.lng, { center: true, zoom: 15 });
+				this.setSelectedCoordinates(
+					this.selectedCoordinates.lat,
+					this.selectedCoordinates.lng,
+					{ center: true, zoom: 15 },
+				);
 				return;
 			}
 
-			this.setMapStatus('Haz clic en el mapa para registrar coordenadas exactas.');
+			this.setMapStatus(
+				"Haz clic en el mapa para registrar coordenadas exactas.",
+			);
 		};
 
 		private setSelectOptions = <T,>(
 			selectNode: HTMLSelectElement | null | undefined,
 			items: T[],
-			config: SelectOptionsConfig<T>
+			config: SelectOptionsConfig<T>,
 		) => {
 			if (!selectNode) return;
 
-			selectNode.innerHTML = '';
-			const placeholderOption = document.createElement('option');
-			placeholderOption.value = '';
+			selectNode.innerHTML = "";
+			const placeholderOption = document.createElement("option");
+			placeholderOption.value = "";
 			placeholderOption.textContent = config.placeholder;
 			selectNode.appendChild(placeholderOption);
 
 			for (const item of items) {
-				const option = document.createElement('option');
+				const option = document.createElement("option");
 				option.value = String(config.getValue(item));
 				option.textContent = config.getLabel(item);
 				selectNode.appendChild(option);
 			}
 
-			const hasSelectedValue = config.selectedValue !== undefined && config.selectedValue !== null && String(config.selectedValue).trim() !== '';
+			const hasSelectedValue =
+				config.selectedValue !== undefined &&
+				config.selectedValue !== null &&
+				String(config.selectedValue).trim() !== "";
 
 			if (hasSelectedValue) {
 				const candidate = String(config.selectedValue);
-				const hasOption = Array.from(selectNode.options).some((option) => option.value === candidate);
-				selectNode.value = hasOption ? candidate : '';
+				const hasOption = Array.from(selectNode.options).some(
+					(option) => option.value === candidate,
+				);
+				selectNode.value = hasOption ? candidate : "";
 			} else {
-				selectNode.value = '';
+				selectNode.value = "";
 			}
 		};
 
-		private fetchCatalogResource = async <T = unknown,>(url: string): Promise<T[]> => {
+		private fetchCatalogResource = async <T = unknown,>(
+			url: string,
+		): Promise<T[]> => {
 			const response = await fetch(url, {
-				method: 'GET',
-				headers: { Accept: 'application/json' },
+				method: "GET",
+				headers: { Accept: "application/json" },
 			});
 
 			let data = null;
 			try {
 				data = await response.json();
 			} catch {
-				throw new Error('No fue posible interpretar la respuesta de catálogos.');
+				throw new Error(
+					"No fue posible interpretar la respuesta de catálogos.",
+				);
 			}
 
-			if (!response.ok || !data || data.status !== 'success' || !Array.isArray(data.data)) {
-				throw new Error(data?.message || 'No fue posible cargar catálogos.');
+			if (
+				!response.ok ||
+				!data ||
+				data.status !== "success" ||
+				!Array.isArray(data.data)
+			) {
+				throw new Error(
+					data?.message || "No fue posible cargar catálogos.",
+				);
 			}
 
 			return data.data as T[];
 		};
 
 		private ensureDepartmentsLoaded = async () => {
-			if (this.departmentsLoaded || this.departmentsLoadPromise) return this.departmentsLoadPromise;
+			if (this.departmentsLoaded || this.departmentsLoadPromise)
+				return this.departmentsLoadPromise;
 
-			this.setSelectOptions(this.formEls.department, [], { placeholder: 'Cargando departamentos...', getValue: (i: any) => i.id_department, getLabel: (i: any) => i.description });
-			if (this.formEls.department) this.formEls.department.disabled = true;
+			this.setSelectOptions(this.formEls.department, [], {
+				placeholder: "Cargando departamentos...",
+				getValue: (i: any) => i.id_department,
+				getLabel: (i: any) => i.description,
+			});
+			if (this.formEls.department)
+				this.formEls.department.disabled = true;
 
 			this.departmentsLoadPromise = (async () => {
-				const departments = await this.fetchCatalogResource<DepartmentOption>('/api/catalog/departments');
+				const departments =
+					await this.fetchCatalogResource<DepartmentOption>(
+						"/api/catalog/departments",
+					);
 				this.departmentsLoaded = true;
 				this.setSelectOptions(this.formEls.department, departments, {
-					placeholder: 'Selecciona un departamento',
-					selectedValue: '',
+					placeholder: "Selecciona un departamento",
+					selectedValue: "",
 					getValue: (item) => item.id_department,
-					getLabel: (item) => item.description || `Departamento #${item.id_department}`,
+					getLabel: (item) =>
+						item.description ||
+						`Departamento #${item.id_department}`,
 				});
-			})().catch((error) => {
-				this.setSelectOptions(this.formEls.department, [], { placeholder: 'No fue posible cargar departamentos', getValue: (i: any) => i.id_department, getLabel: (i: any) => i.description });
-				throw error;
-			}).finally(() => {
-				this.departmentsLoadPromise = null;
-				if (this.formEls.department) this.formEls.department.disabled = false;
-			});
+			})()
+				.catch((error) => {
+					this.setSelectOptions(this.formEls.department, [], {
+						placeholder: "No fue posible cargar departamentos",
+						getValue: (i: any) => i.id_department,
+						getLabel: (i: any) => i.description,
+					});
+					throw error;
+				})
+				.finally(() => {
+					this.departmentsLoadPromise = null;
+					if (this.formEls.department)
+						this.formEls.department.disabled = false;
+				});
 
 			return this.departmentsLoadPromise;
 		};
 
 		private loadCitiesByDepartment = async (
 			departmentId: number,
-			options: { selectedCityId?: number; showErrors?: boolean } = { selectedCityId: 0, showErrors: true }
+			options: { selectedCityId?: number; showErrors?: boolean } = {
+				selectedCityId: 0,
+				showErrors: true,
+			},
 		) => {
 			const citySelect = this.formEls.city;
 			if (!citySelect) return;
@@ -802,7 +1137,11 @@ const googleMapsApiKey =
 
 			if (!Number.isInteger(departmentId) || departmentId <= 0) {
 				citySelect.disabled = true;
-				this.setSelectOptions(citySelect, [], { placeholder: 'Selecciona un departamento primero', getValue: (i: any) => i.id_city, getLabel: (i: any) => i.description });
+				this.setSelectOptions(citySelect, [], {
+					placeholder: "Selecciona un departamento primero",
+					getValue: (i: any) => i.id_city,
+					getLabel: (i: any) => i.description,
+				});
 				return;
 			}
 
@@ -810,69 +1149,91 @@ const googleMapsApiKey =
 			if (Array.isArray(cachedCities)) {
 				citySelect.disabled = cachedCities.length === 0;
 				this.setSelectOptions(citySelect, cachedCities, {
-					placeholder: cachedCities.length > 0 ? 'Selecciona una ciudad' : 'Sin ciudades disponibles',
-					selectedValue: selectedCityId > 0 ? selectedCityId : '',
+					placeholder:
+						cachedCities.length > 0
+							? "Selecciona una ciudad"
+							: "Sin ciudades disponibles",
+					selectedValue: selectedCityId > 0 ? selectedCityId : "",
 					getValue: (item: CityOption) => item.id_city,
-					getLabel: (item: CityOption) => item.description || `Ciudad #${item.id_city}`,
+					getLabel: (item: CityOption) =>
+						item.description || `Ciudad #${item.id_city}`,
 				});
-				citySelect.removeAttribute('data-loading');
+				citySelect.removeAttribute("data-loading");
 				return;
 			}
 
 			const requestId = ++this.citiesRequestSeq;
 			citySelect.disabled = true;
-			citySelect.setAttribute('data-loading', 'true');
-			this.setSelectOptions(citySelect, [], { placeholder: 'Cargando ciudades...', getValue: (i: any) => i.id_city, getLabel: (i: any) => i.description });
+			citySelect.setAttribute("data-loading", "true");
+			this.setSelectOptions(citySelect, [], {
+				placeholder: "Cargando ciudades...",
+				getValue: (i: any) => i.id_city,
+				getLabel: (i: any) => i.description,
+			});
 
 			try {
-				const cities = await this.fetchCatalogResource<CityOption>(`/api/catalog/departments/${departmentId}/cities`);
+				const cities = await this.fetchCatalogResource<CityOption>(
+					`/api/catalog/departments/${departmentId}/cities`,
+				);
 				if (requestId !== this.citiesRequestSeq) return;
-				
+
 				this.citiesByDepartment.set(departmentId, cities);
 				citySelect.disabled = cities.length === 0;
 				this.setSelectOptions(citySelect, cities, {
-					placeholder: cities.length > 0 ? 'Selecciona una ciudad' : 'Sin ciudades disponibles',
-					selectedValue: selectedCityId > 0 ? selectedCityId : '',
+					placeholder:
+						cities.length > 0
+							? "Selecciona una ciudad"
+							: "Sin ciudades disponibles",
+					selectedValue: selectedCityId > 0 ? selectedCityId : "",
 					getValue: (item: CityOption) => item.id_city,
-					getLabel: (item: CityOption) => item.description || `Ciudad #${item.id_city}`,
+					getLabel: (item: CityOption) =>
+						item.description || `Ciudad #${item.id_city}`,
 				});
 			} catch (error) {
 				if (requestId !== this.citiesRequestSeq) return;
 				citySelect.disabled = true;
-				this.setSelectOptions(citySelect, [], { placeholder: 'No fue posible cargar ciudades', getValue: (i: any) => i.id_city, getLabel: (i: any) => i.description });
+				this.setSelectOptions(citySelect, [], {
+					placeholder: "No fue posible cargar ciudades",
+					getValue: (i: any) => i.id_city,
+					getLabel: (i: any) => i.description,
+				});
 				if (options?.showErrors !== false) {
-					this.showFormError(error instanceof Error ? error.message : 'No fue posible cargar las ciudades del departamento.');
+					this.showFormError(
+						error instanceof Error
+							? error.message
+							: "No fue posible cargar las ciudades del departamento.",
+					);
 				}
 			} finally {
-				citySelect.removeAttribute('data-loading');
+				citySelect.removeAttribute("data-loading");
 			}
 		};
 
 		private clearErrors = () => {
 			if (this.els.errorBox) {
-				this.els.errorBox.textContent = '';
-				this.els.errorBox.classList.add('hidden');
+				this.els.errorBox.textContent = "";
+				this.els.errorBox.classList.add("hidden");
 			}
 			for (const node of this.formEls.fieldErrors) {
-				node.textContent = '';
-				node.classList.add('hidden');
+				node.textContent = "";
+				node.classList.add("hidden");
 			}
 		};
 
 		private showFormError = (message: string) => {
 			if (!this.els.errorBox) return;
 			this.els.errorBox.textContent = message;
-			this.els.errorBox.classList.remove('hidden');
+			this.els.errorBox.classList.remove("hidden");
 		};
 
 		private setFormLoadingState = (isLoading: boolean) => {
 			if (this.els.loading) {
 				if (isLoading) {
-					this.els.loading.classList.remove('hidden');
-					this.els.loading.classList.add('flex');
+					this.els.loading.classList.remove("hidden");
+					this.els.loading.classList.add("flex");
 				} else {
-					this.els.loading.classList.remove('flex');
-					this.els.loading.classList.add('hidden');
+					this.els.loading.classList.remove("flex");
+					this.els.loading.classList.add("hidden");
 				}
 			}
 
@@ -882,30 +1243,38 @@ const googleMapsApiKey =
 				}
 			}
 			if (this.els.clearMapBtn) this.els.clearMapBtn.disabled = isLoading;
-			if (this.els.mapContainer) this.els.mapContainer.style.pointerEvents = isLoading ? 'none' : 'auto';
+			if (this.els.mapContainer)
+				this.els.mapContainer.style.pointerEvents = isLoading
+					? "none"
+					: "auto";
 		};
 
-		private setLoadingMode = (label = 'Procesando...') => {
+		private setLoadingMode = (label = "Procesando...") => {
 			if (this.els.submitBtn) this.els.submitBtn.disabled = true;
-			if (this.els.deleteBtn && this.mode === 'edit') this.els.deleteBtn.disabled = true;
+			if (this.els.deleteBtn && this.mode === "edit")
+				this.els.deleteBtn.disabled = true;
 			if (this.els.submitLabel) this.els.submitLabel.textContent = label;
-			if (this.els.submitIcon) this.els.submitIcon.textContent = 'hourglass_top';
+			if (this.els.submitIcon)
+				this.els.submitIcon.textContent = "hourglass_top";
 		};
 
 		private restoreButtons = () => {
 			if (this.els.submitBtn) this.els.submitBtn.disabled = false;
-			if (this.mode === 'create') {
-				if (this.els.submitLabel) this.els.submitLabel.textContent = 'Crear sucursal';
-				if (this.els.submitIcon) this.els.submitIcon.textContent = 'check';
+			if (this.mode === "create") {
+				if (this.els.submitLabel)
+					this.els.submitLabel.textContent = "Crear sucursal";
+				if (this.els.submitIcon)
+					this.els.submitIcon.textContent = "check";
 				return;
 			}
-			if (this.els.submitLabel) this.els.submitLabel.textContent = 'Guardar cambios';
-			if (this.els.submitIcon) this.els.submitIcon.textContent = 'save';
+			if (this.els.submitLabel)
+				this.els.submitLabel.textContent = "Guardar cambios";
+			if (this.els.submitIcon) this.els.submitIcon.textContent = "save";
 			if (this.els.deleteBtn) this.els.deleteBtn.disabled = false;
 		};
 
 		private openModalShell = () => {
-			this.els.modal?.classList.remove('is-closing');
+			this.els.modal?.classList.remove("is-closing");
 			if (this.closeTimer) {
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
@@ -917,11 +1286,11 @@ const googleMapsApiKey =
 			if (!this.els.modal?.open) return;
 			this.locationReadRequestSeq += 1;
 			this.citiesRequestSeq += 1;
-			this.els.modal.classList.add('is-closing');
+			this.els.modal.classList.add("is-closing");
 
 			this.closeTimer = window.setTimeout(() => {
 				this.els.modal?.close();
-				this.els.modal?.classList.remove('is-closing');
+				this.els.modal?.classList.remove("is-closing");
 				this.els.form?.reset();
 				this.setCreateMode();
 				this.setFormLoadingState(false);
@@ -931,46 +1300,50 @@ const googleMapsApiKey =
 		};
 
 		private resetFormValues = () => {
-			if (this.formEls.name) this.formEls.name.value = '';
-			if (this.formEls.address) this.formEls.address.value = '';
-			if (this.formEls.department) this.formEls.department.value = '';
+			if (this.formEls.name) this.formEls.name.value = "";
+			if (this.formEls.address) this.formEls.address.value = "";
+			if (this.formEls.department) this.formEls.department.value = "";
 			if (this.formEls.city) {
 				this.formEls.city.disabled = true;
-				this.setSelectOptions(this.formEls.city, [], { placeholder: 'Selecciona un departamento primero', getValue: (i: any) => i.id_city, getLabel: (i: any) => i.description });
+				this.setSelectOptions(this.formEls.city, [], {
+					placeholder: "Selecciona un departamento primero",
+					getValue: (i: any) => i.id_city,
+					getLabel: (i: any) => i.description,
+				});
 			}
 			this.setSelectedCoordinates(null, null);
-			if (this.formEls.status) this.formEls.status.value = '1';
+			if (this.formEls.status) this.formEls.status.value = "1";
 		};
 
 		private setCreateMode = () => {
-			this.mode = 'create';
+			this.mode = "create";
 			this.editingLocationId = 0;
-			if (this.els.modalTitle) this.els.modalTitle.textContent = 'Crear sucursal';
-			if (this.els.modalDesc) this.els.modalDesc.textContent = 'Completa los campos para registrar una nueva sucursal.';
-			if (this.els.submitLabel) this.els.submitLabel.textContent = 'Crear sucursal';
-			if (this.els.submitIcon) this.els.submitIcon.textContent = 'check';
-			this.els.deleteBtn?.classList.add('hidden');
-			this.els.deleteBtn?.setAttribute('disabled', 'true');
-			if (this.els.loading) this.els.loading.classList.add('hidden');
-			if (this.formEls.department) {
-				this.setSelectOptions(this.formEls.department, [], { placeholder: 'Cargando departamentos...', getValue: (i: any) => i.id_department, getLabel: (i: any) => i.description });
-				this.formEls.department.disabled = true;
-			}
-			if (this.formEls.city) {
-				this.setSelectOptions(this.formEls.city, [], { placeholder: 'Selecciona un departamento primero', getValue: (i: any) => i.id_city, getLabel: (i: any) => i.description });
-				this.formEls.city.disabled = true;
-			}
+			if (this.els.modalTitle)
+				this.els.modalTitle.textContent = "Crear sucursal";
+			if (this.els.modalDesc)
+				this.els.modalDesc.textContent =
+					"Completa los campos para registrar una nueva sucursal.";
+			if (this.els.submitLabel)
+				this.els.submitLabel.textContent = "Crear sucursal";
+			if (this.els.submitIcon) this.els.submitIcon.textContent = "check";
+			this.els.deleteBtn?.classList.add("hidden");
+			this.els.deleteBtn?.setAttribute("disabled", "true");
+			if (this.els.loading) this.els.loading.classList.add("hidden");
 		};
 
 		private setEditMode = (locationId: number) => {
-			this.mode = 'edit';
+			this.mode = "edit";
 			this.editingLocationId = locationId;
-			if (this.els.modalTitle) this.els.modalTitle.textContent = 'Editar sucursal';
-			if (this.els.modalDesc) this.els.modalDesc.textContent = 'Actualiza la información de la sucursal seleccionada.';
-			if (this.els.submitLabel) this.els.submitLabel.textContent = 'Guardar cambios';
-			if (this.els.submitIcon) this.els.submitIcon.textContent = 'save';
-			this.els.deleteBtn?.classList.remove('hidden');
-			this.els.deleteBtn?.removeAttribute('disabled');
+			if (this.els.modalTitle)
+				this.els.modalTitle.textContent = "Editar sucursal";
+			if (this.els.modalDesc)
+				this.els.modalDesc.textContent =
+					"Actualiza la información de la sucursal seleccionada.";
+			if (this.els.submitLabel)
+				this.els.submitLabel.textContent = "Guardar cambios";
+			if (this.els.submitIcon) this.els.submitIcon.textContent = "save";
+			this.els.deleteBtn?.classList.remove("hidden");
+			this.els.deleteBtn?.removeAttribute("disabled");
 		};
 
 		private openCreateModal = async () => {
@@ -980,10 +1353,16 @@ const googleMapsApiKey =
 			this.clearErrors();
 			this.openModalShell();
 			try {
-				await Promise.all([this.ensureDepartmentsLoaded(), this.ensureMapReady()]);
+				await Promise.all([
+					this.ensureDepartmentsLoaded(),
+					this.ensureMapReady(),
+				]);
 			} catch (error) {
-				const errorMessage = error instanceof Error ? error.message : 'No fue posible cargar recursos del formulario.';
-				if (errorMessage.toLowerCase().includes('google maps')) {
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "No fue posible cargar recursos del formulario.";
+				if (errorMessage.toLowerCase().includes("google maps")) {
 					this.setMapStatus(errorMessage, true);
 					return;
 				}
@@ -999,45 +1378,84 @@ const googleMapsApiKey =
 			this.clearErrors();
 			this.openModalShell();
 			this.setFormLoadingState(true);
-			this.setLoadingMode('Cargando...');
+			this.setLoadingMode("Cargando...");
 
 			try {
 				const response = await fetch(`/api/locations/${locationId}`, {
-					method: 'GET',
-					headers: { Accept: 'application/json' },
+					method: "GET",
+					headers: { Accept: "application/json" },
 				});
 
 				let data = null;
-				try { data = await response.json(); } catch { throw new Error('Error al interpretar respuesta del servidor.'); }
+				try {
+					data = await response.json();
+				} catch {
+					throw new Error(
+						"Error al interpretar respuesta del servidor.",
+					);
+				}
 
-				if (!response.ok || !data || data.status !== 'success' || !data.data) {
-					throw new Error(data?.message || 'No fue posible obtener la sucursal seleccionada.');
+				if (
+					!response.ok ||
+					!data ||
+					data.status !== "success" ||
+					!data.data
+				) {
+					throw new Error(
+						data?.message ||
+							"No fue posible obtener la sucursal seleccionada.",
+					);
 				}
 
 				if (requestId !== this.locationReadRequestSeq) return;
 				const loc = data.data;
 
-				if (this.formEls.name) this.formEls.name.value = String(loc?.name || '');
-				if (this.formEls.address) this.formEls.address.value = String(loc?.address || '');
-				if (this.formEls.status) this.formEls.status.value = String(loc?.is_active === 0 ? 0 : 1);
-				
-				const lat = typeof loc?.latitude === 'number' ? loc.latitude : null;
-				const lng = typeof loc?.longitude === 'number' ? loc.longitude : null;
+				if (this.formEls.name)
+					this.formEls.name.value = String(loc?.name || "");
+				if (this.formEls.address)
+					this.formEls.address.value = String(loc?.address || "");
+				if (this.formEls.status)
+					this.formEls.status.value = String(
+						loc?.is_active === 0 ? 0 : 1,
+					);
+
+				const lat =
+					typeof loc?.latitude === "number" ? loc.latitude : null;
+				const lng =
+					typeof loc?.longitude === "number" ? loc.longitude : null;
 				this.setSelectedCoordinates(lat, lng, { center: false });
 
-				const departmentId = typeof loc?.department?.id_department === 'number' && loc.department.id_department > 0 ? loc.department.id_department : 0;
-				const cityId = typeof loc?.city?.id_city === 'number' && loc.city.id_city > 0 ? loc.city.id_city : 0;
+				const departmentId =
+					typeof loc?.department?.id_department === "number" &&
+					loc.department.id_department > 0
+						? loc.department.id_department
+						: 0;
+				const cityId =
+					typeof loc?.city?.id_city === "number" &&
+					loc.city.id_city > 0
+						? loc.city.id_city
+						: 0;
 
-				await Promise.all([this.ensureDepartmentsLoaded(), this.ensureMapReady()]);
+				await Promise.all([
+					this.ensureDepartmentsLoaded(),
+					this.ensureMapReady(),
+				]);
 				if (requestId !== this.locationReadRequestSeq) return;
-				
-				if (this.formEls.department) this.formEls.department.value = departmentId > 0 ? String(departmentId) : '';
-				await this.loadCitiesByDepartment(departmentId, { selectedCityId: cityId, showErrors: true });
 
+				if (this.formEls.department)
+					this.formEls.department.value =
+						departmentId > 0 ? String(departmentId) : "";
+				await this.loadCitiesByDepartment(departmentId, {
+					selectedCityId: cityId,
+					showErrors: true,
+				});
 			} catch (error) {
 				if (requestId !== this.locationReadRequestSeq) return;
-				const errorMessage = error instanceof Error ? error.message : 'No fue posible obtener la sucursal.';
-				if (errorMessage.toLowerCase().includes('google maps')) {
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "No fue posible obtener la sucursal.";
+				if (errorMessage.toLowerCase().includes("google maps")) {
 					this.setMapStatus(errorMessage, true);
 				} else {
 					this.setCreateMode();
@@ -1051,38 +1469,56 @@ const googleMapsApiKey =
 		};
 
 		private handleDelete = async () => {
-			if (!this.editingLocationId || this.mode !== 'edit') return;
+			if (!this.editingLocationId || this.mode !== "edit") return;
 
 			// @ts-ignore - BookmateAlert is a custom global
 			const confirmed = await window.BookmateAlert?.confirm({
-				type: 'error',
-				title: 'Eliminar sucursal',
-				message: 'Esta acción eliminará la sucursal de forma permanente. ¿Deseas continuar?',
-				confirmText: 'Eliminar',
-				cancelText: 'Cancelar',
+				type: "error",
+				title: "Eliminar sucursal",
+				message:
+					"Esta acción eliminará la sucursal de forma permanente. ¿Deseas continuar?",
+				confirmText: "Eliminar",
+				cancelText: "Cancelar",
 			});
 			if (!confirmed) return;
 
 			this.clearErrors();
-			this.setLoadingMode('Eliminando...');
+			this.setLoadingMode("Eliminando...");
 
 			try {
-				const response = await fetch(`/api/locations/${this.editingLocationId}`, {
-					method: 'DELETE',
-					headers: { Accept: 'application/json' },
-				});
+				const response = await fetch(
+					`/api/locations/${this.editingLocationId}`,
+					{
+						method: "DELETE",
+						headers: { Accept: "application/json" },
+					},
+				);
 
 				let data = null;
-				try { data = await response.json(); } catch { throw new Error('Error al conectar con el servidor.'); }
+				try {
+					data = await response.json();
+				} catch {
+					throw new Error("Error al conectar con el servidor.");
+				}
 
-				if (!response.ok || !data || data.status !== 'success') {
-					throw new Error(data?.message || 'No fue posible eliminar la sucursal.');
+				if (!response.ok || !data || data.status !== "success") {
+					throw new Error(
+						data?.message || "No fue posible eliminar la sucursal.",
+					);
 				}
 
 				this.closeModal();
-				this.redirectWithFlash(data?.message?.trim() || 'Sucursal eliminada correctamente.', 'success');
+				this.redirectWithFlash(
+					data?.message?.trim() ||
+						"Sucursal eliminada correctamente.",
+					"success",
+				);
 			} catch (error) {
-				this.showFormError(error instanceof Error ? error.message : 'No fue posible eliminar la sucursal.');
+				this.showFormError(
+					error instanceof Error
+						? error.message
+						: "No fue posible eliminar la sucursal.",
+				);
 				this.restoreButtons();
 			}
 		};
@@ -1093,64 +1529,102 @@ const googleMapsApiKey =
 			if (!this.els.form) return;
 
 			const formData = new FormData(this.els.form);
-			const name = String(formData.get('name') || '').trim();
-			const address = String(formData.get('address') || '').trim();
-			const cityRaw = String(formData.get('cit_id_city') || '').trim();
-			const departmentRaw = String(formData.get('dep_id_department') || '').trim();
-			const latitudeRaw = String(formData.get('latitude') || '').trim();
-			const longitudeRaw = String(formData.get('longitude') || '').trim();
-			const isActiveRaw = String(formData.get('is_active') || '1').trim();
+			const name = String(formData.get("name") || "").trim();
+			const address = String(formData.get("address") || "").trim();
+			const cityRaw = String(formData.get("cit_id_city") || "").trim();
+			const departmentRaw = String(
+				formData.get("dep_id_department") || "",
+			).trim();
+			const latitudeRaw = String(formData.get("latitude") || "").trim();
+			const longitudeRaw = String(formData.get("longitude") || "").trim();
+			const isActiveRaw = String(formData.get("is_active") || "1").trim();
 
 			const cityId = Number(cityRaw);
 			const departmentId = Number(departmentRaw);
 
-			if (!name || !address || !cityRaw || !departmentRaw || !Number.isInteger(cityId) || cityId <= 0 || !Number.isInteger(departmentId) || departmentId <= 0) {
-				this.showFormError('Completa los campos requeridos antes de continuar.');
+			if (
+				!name ||
+				!address ||
+				!cityRaw ||
+				!departmentRaw ||
+				!Number.isInteger(cityId) ||
+				cityId <= 0 ||
+				!Number.isInteger(departmentId) ||
+				departmentId <= 0
+			) {
+				this.showFormError(
+					"Completa los campos requeridos antes de continuar.",
+				);
 				return;
 			}
 
 			const payload: LocationSubmitPayload = {
-				name, address, cit_id_city: cityId,
+				name,
+				address,
+				cit_id_city: cityId,
 				dep_id_department: departmentId,
-				is_active: (isActiveRaw === '0' ? 0 : 1),
+				is_active: isActiveRaw === "0" ? 0 : 1,
 			};
 
-			if (latitudeRaw !== '') {
+			if (latitudeRaw !== "") {
 				const lat = Number(latitudeRaw);
 				if (Number.isFinite(lat)) payload.latitude = lat;
 			}
-			if (longitudeRaw !== '') {
+			if (longitudeRaw !== "") {
 				const lng = Number(longitudeRaw);
 				if (Number.isFinite(lng)) payload.longitude = lng;
 			}
 
-			const endpoint = this.mode === 'edit' && this.editingLocationId ? `/api/locations/${this.editingLocationId}` : '/api/locations';
-			const httpMethod = this.mode === 'edit' && this.editingLocationId ? 'PUT' : 'POST';
-			
-			this.setLoadingMode(this.mode === 'edit' ? 'Guardando...' : 'Creando...');
+			const endpoint =
+				this.mode === "edit" && this.editingLocationId
+					? `/api/locations/${this.editingLocationId}`
+					: "/api/locations";
+			const httpMethod =
+				this.mode === "edit" && this.editingLocationId ? "PUT" : "POST";
+
+			this.setLoadingMode(
+				this.mode === "edit" ? "Guardando..." : "Creando...",
+			);
 
 			try {
 				const response = await fetch(endpoint, {
 					method: httpMethod,
-					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+					headers: {
+						"Content-Type": "application/json",
+						Accept: "application/json",
+					},
 					body: JSON.stringify(payload),
 				});
 
 				let data = null;
-				try { data = await response.json(); } catch { throw new Error('Error al interpretar respuesta.'); }
+				try {
+					data = await response.json();
+				} catch {
+					throw new Error("Error al interpretar respuesta.");
+				}
 
-				if (!response.ok || !data || data.status !== 'success') {
-					this.showFormError(data?.message || 'No fue posible guardar la sucursal.');
+				if (!response.ok || !data || data.status !== "success") {
+					this.showFormError(
+						data?.message || "No fue posible guardar la sucursal.",
+					);
 					if (Array.isArray(data?.errors)) {
 						for (const error of data.errors) {
-							if (!error || typeof error !== 'object') continue;
-							const field = 'field' in error ? String(error.field || '') : '';
-							const messageText = 'message' in error ? String(error.message || '') : '';
+							if (!error || typeof error !== "object") continue;
+							const field =
+								"field" in error
+									? String(error.field || "")
+									: "";
+							const messageText =
+								"message" in error
+									? String(error.message || "")
+									: "";
 							if (!field || !messageText) continue;
-							const fieldNode = this.querySelector(`[data-field-error="${field}"]`);
+							const fieldNode = this.querySelector(
+								`[data-field-error="${field}"]`,
+							);
 							if (fieldNode) {
 								fieldNode.textContent = messageText;
-								fieldNode.classList.remove('hidden');
+								fieldNode.classList.remove("hidden");
 							}
 						}
 					}
@@ -1158,20 +1632,29 @@ const googleMapsApiKey =
 				}
 
 				this.closeModal();
-				this.redirectWithFlash(data?.message?.trim() || (this.mode === 'edit' ? 'Sucursal actualizada.' : 'Sucursal creada.'), 'success');
+				this.redirectWithFlash(
+					data?.message?.trim() ||
+						(this.mode === "edit"
+							? "Sucursal actualizada."
+							: "Sucursal creada."),
+					"success",
+				);
 			} catch (error) {
-				this.showFormError(error instanceof Error ? error.message : 'No fue posible guardar la sucursal.');
+				this.showFormError(
+					error instanceof Error
+						? error.message
+						: "No fue posible guardar la sucursal.",
+				);
 			} finally {
 				this.restoreButtons();
 			}
 		};
 	}
 
-	if (!customElements.get('location-manager')) {
-		customElements.define('location-manager', LocationManager);
+	if (!customElements.get("location-manager")) {
+		customElements.define("location-manager", LocationManager);
 	}
 </script>
-
 
 <style is:global>
 	location-manager {
@@ -1241,4 +1724,3 @@ const googleMapsApiKey =
 		}
 	}
 </style>
-

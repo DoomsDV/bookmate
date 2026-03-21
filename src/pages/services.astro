@@ -1,27 +1,31 @@
 ---
-import AppAlert from '../components/AppAlert.astro';
-import FlashMessage from '../components/FlashMessage.astro';
-import ServicesGrid from '../components/ServicesGrid.astro';
-import SideNav from '../components/SideNav.astro';
-import TopBar from '../components/TopBar.astro';
-import { ServicesApiError, ServicesClient, type Service } from '../lib/services';
-import Layout from '../layouts/Layout.astro';
-import '../styles/global.css';
+import AppAlert from "../components/AppAlert.astro";
+import FlashMessage from "../components/FlashMessage.astro";
+import ServicesGrid from "../components/ServicesGrid.astro";
+import SideNav from "../components/SideNav.astro";
+import TopBar from "../components/TopBar.astro";
+import {
+	ServicesApiError,
+	ServicesClient,
+	type Service,
+} from "../lib/services";
+import Layout from "../layouts/Layout.astro";
+import "../styles/global.css";
 
-const token = Astro.locals.token ?? '';
+const token = Astro.locals.token ?? "";
 const PAGE_SIZE = 9;
-const rawPage = Number(Astro.url.searchParams.get('page') || '1');
+const rawPage = Number(Astro.url.searchParams.get("page") || "1");
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
-const flashMessage = Astro.url.searchParams.get('flash_message') ?? '';
-const flashTypeRaw = Astro.url.searchParams.get('flash_type') ?? 'success';
-const validFlashTypes = ['success', 'error', 'info', 'warning'] as const;
+const flashMessage = Astro.url.searchParams.get("flash_message") ?? "";
+const flashTypeRaw = Astro.url.searchParams.get("flash_type") ?? "success";
+const validFlashTypes = ["success", "error", "info", "warning"] as const;
 type FlashType = (typeof validFlashTypes)[number];
 const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
 	? (flashTypeRaw as FlashType)
-	: 'info';
+	: "info";
 
 let services: Service[] = [];
-let loadError = '';
+let loadError = "";
 let pagination = {
 	current_page: currentPage,
 	per_page: PAGE_SIZE,
@@ -30,7 +34,7 @@ let pagination = {
 };
 
 if (!token) {
-	loadError = 'No hay sesion valida para consultar servicios.';
+	loadError = "No hay sesion valida para consultar servicios.";
 } else {
 	try {
 		const apiClient = new ServicesClient(token);
@@ -41,20 +45,23 @@ if (!token) {
 		loadError =
 			error instanceof ServicesApiError
 				? error.message
-				: 'No fue posible cargar el listado de servicios.';
+				: "No fue posible cargar el listado de servicios.";
 	}
 }
 
 const totalPages = Math.max(1, pagination.total_pages);
-const safeCurrentPage = Math.min(Math.max(1, pagination.current_page), totalPages);
+const safeCurrentPage = Math.min(
+	Math.max(1, pagination.current_page),
+	totalPages,
+);
 const canPrevPage = safeCurrentPage > 1;
 const canNextPage = safeCurrentPage < totalPages;
 
 const toPageHref = (page: number) => {
 	const nextUrl = new URL(Astro.url);
-	nextUrl.searchParams.set('page', String(page));
-	nextUrl.searchParams.delete('flash_message');
-	nextUrl.searchParams.delete('flash_type');
+	nextUrl.searchParams.set("page", String(page));
+	nextUrl.searchParams.delete("flash_message");
+	nextUrl.searchParams.delete("flash_type");
 	return `${nextUrl.pathname}${nextUrl.search}`;
 };
 
@@ -62,7 +69,7 @@ const pageWindowStart = Math.max(1, safeCurrentPage - 1);
 const pageWindowEnd = Math.min(totalPages, safeCurrentPage + 1);
 const visiblePages = Array.from(
 	{ length: pageWindowEnd - pageWindowStart + 1 },
-	(_, index) => pageWindowStart + index
+	(_, index) => pageWindowStart + index,
 );
 ---
 
@@ -79,27 +86,48 @@ const visiblePages = Array.from(
 				<div class="grid min-h-full grid-rows-[auto_1fr]">
 					<TopBar />
 
-					<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
+					<main
+						class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7"
+					>
 						<section class="grid gap-6">
 							{
 								flashMessage ? (
 									<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
-										<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
+										<FlashMessage
+											message={flashMessage}
+											type={flashType}
+											autoHideMs={4200}
+										/>
 									</div>
 								) : null
 							}
 
 							{
 								loadError ? (
-									<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
+									<FlashMessage
+										message={loadError}
+										type="error"
+										expand={true}
+										dismissible={false}
+									/>
 								) : (
 									<div class="grid gap-5">
-										<ServicesGrid services={services} showCreateAction={true} />
+										<ServicesGrid
+											services={services}
+											showCreateAction={true}
+										/>
 
 										<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
 											<p class="text-sm text-[color:var(--on-surface-variant)]">
-												Pagina <span class="font-semibold text-[color:var(--on-surface)]">{safeCurrentPage}</span> de
-												<span class="font-semibold text-[color:var(--on-surface)]"> {totalPages}</span>
+												Pagina{" "}
+												<span class="font-semibold text-[color:var(--on-surface)]">
+													{safeCurrentPage}
+												</span>{" "}
+												de
+												<span class="font-semibold text-[color:var(--on-surface)]">
+													{" "}
+													{totalPages}
+												</span>
 												<span class="mx-2">-</span>
 												Total de
 												<span class="font-semibold text-[color:var(--on-surface)]">
@@ -108,53 +136,56 @@ const visiblePages = Array.from(
 												servicios
 											</p>
 
-											<nav class="flex items-center gap-2" aria-label="Paginacion servicios">
-												{
-													canPrevPage ? (
+											<nav
+												class="flex items-center gap-2"
+												aria-label="Paginacion servicios"
+											>
+												{canPrevPage ? (
+													<a
+														href={toPageHref(
+															safeCurrentPage - 1,
+														)}
+														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+													>
+														Anterior
+													</a>
+												) : (
+													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
+														Anterior
+													</span>
+												)}
+
+												{visiblePages.map((page) =>
+													page === safeCurrentPage ? (
+														<span class="rounded-lg border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-sm font-bold text-[color:var(--primary)]">
+															{page}
+														</span>
+													) : (
 														<a
-															href={toPageHref(safeCurrentPage - 1)}
+															href={toPageHref(
+																page,
+															)}
 															class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
 														>
-															Anterior
+															{page}
 														</a>
-													) : (
-														<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
-															Anterior
-														</span>
-													)
-												}
+													),
+												)}
 
-												{
-													visiblePages.map((page) =>
-														page === safeCurrentPage ? (
-															<span class="rounded-lg border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-sm font-bold text-[color:var(--primary)]">
-																{page}
-															</span>
-														) : (
-															<a
-																href={toPageHref(page)}
-																class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
-															>
-																{page}
-															</a>
-														)
-													)
-												}
-
-												{
-													canNextPage ? (
-														<a
-															href={toPageHref(safeCurrentPage + 1)}
-															class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
-														>
-															Siguiente
-														</a>
-													) : (
-														<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
-															Siguiente
-														</span>
-													)
-												}
+												{canNextPage ? (
+													<a
+														href={toPageHref(
+															safeCurrentPage + 1,
+														)}
+														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+													>
+														Siguiente
+													</a>
+												) : (
+													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
+														Siguiente
+													</span>
+												)}
 											</nav>
 										</div>
 									</div>
@@ -170,34 +201,73 @@ const visiblePages = Array.from(
 			class="w-[min(34rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
 			data-service-modal
 		>
-			<div class="shrink-0 z-10 shadow-sm border-b border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-6">
-				<div class="flex items-center gap-4">
-					<div class="flex size-12 items-center justify-center rounded-[1rem] bg-[color:var(--primary-soft)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
-						<span class="material-symbols-rounded text-[1.4rem]">design_services</span>
+			<div
+				class="shrink-0 z-10 shadow-sm border-b border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-6"
+			>
+				<div class="flex items-start justify-between gap-4">
+					<div class="flex items-center gap-4">
+						<div
+							class="flex size-12 shrink-0 items-center justify-center rounded-[1rem] bg-[color:var(--primary-soft)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
+						>
+							<span class="material-symbols-rounded text-[1.4rem]"
+								>design_services</span
+							>
+						</div>
+						<div>
+							<h2
+								class="text-[1.2rem] font-extrabold tracking-tight text-[color:var(--on-surface)]"
+								data-service-modal-title
+							>
+								Crear servicio
+							</h2>
+							<p
+								class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)] mt-0.5"
+								data-service-modal-description
+							>
+								Completa los campos para registrar un nuevo
+								servicio.
+							</p>
+						</div>
 					</div>
-					<div>
-						<h2 class="text-[1.2rem] font-extrabold tracking-tight text-[color:var(--on-surface)]" data-service-modal-title>Crear servicio</h2>
-						<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)] mt-0.5" data-service-modal-description>
-							Completa los campos para registrar un nuevo servicio.
-						</p>
-					</div>
+					<button
+						type="button"
+						class="flex size-9 shrink-0 items-center justify-center rounded-full text-[color:var(--on-surface-variant)] transition-colors hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]"
+						data-close-service-modal
+						aria-label="Cerrar modal"
+					>
+						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+					</button>
 				</div>
 			</div>
 
-			<form class="relative grid gap-5 px-7 py-7 bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-service-create-form>
+			<form
+				class="relative grid gap-5 px-7 py-7 bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
+				data-service-create-form
+			>
 				<div
 					class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-[color:var(--surface-bright)]/80 backdrop-blur-[2px] transition-all"
 					data-service-loading
 				>
-					<div class="inline-flex items-center gap-3 rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-3.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
-						<span class="material-symbols-rounded animate-spin text-[1.2rem] text-[color:var(--primary)]">progress_activity</span>
+					<div
+						class="inline-flex items-center gap-3 rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-3.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+					>
+						<span
+							class="material-symbols-rounded animate-spin text-[1.2rem] text-[color:var(--primary)]"
+							>progress_activity</span
+						>
 						Procesando...
 					</div>
 				</div>
 
-				<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
+				<div
+					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
+					data-form-error
+				>
+				</div>
 
-				<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+				<label
+					class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+				>
 					<span class="inline-flex items-center gap-1">
 						Nombre
 						<span class="text-rose-500">*</span>
@@ -210,13 +280,20 @@ const visiblePages = Array.from(
 						class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
 						placeholder="Ej: Corte premium"
 					/>
-					<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="name"></span>
+					<span
+						class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+						data-field-error="name"></span>
 				</label>
 
 				<div class="grid grid-cols-2 gap-5">
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+					<label
+						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+					>
 						<span class="inline-flex items-center gap-1">
-							Duración <span class="text-[color:var(--on-surface-variant)] font-medium">(min)</span>
+							Duración <span
+								class="text-[color:var(--on-surface-variant)] font-medium"
+								>(min)</span
+							>
 							<span class="text-rose-500">*</span>
 						</span>
 						<input
@@ -230,13 +307,17 @@ const visiblePages = Array.from(
 						/>
 						<span
 							class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
-							data-field-error="duration_minutes"
-						></span>
+							data-field-error="duration_minutes"></span>
 					</label>
 
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+					<label
+						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+					>
 						<span class="inline-flex items-center gap-1">
-							Precio <span class="text-[color:var(--on-surface-variant)] font-medium">(Opcional)</span>
+							Precio <span
+								class="text-[color:var(--on-surface-variant)] font-medium"
+								>(Opcional)</span
+							>
 						</span>
 						<input
 							type="text"
@@ -246,38 +327,59 @@ const visiblePages = Array.from(
 							placeholder="Ej: 45.000"
 							data-price-mask
 						/>
-						<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="price"></span>
+						<span
+							class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+							data-field-error="price"></span>
 					</label>
 				</div>
 
-				<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+				<label
+					class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+				>
 					Estado
 					<div class="relative">
 						<select
 							name="is_active"
 							class="w-full appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 font-bold text-[color:var(--on-surface)] cursor-pointer shadow-sm"
 						>
-							<option value="1">Activo (Visible para clientes)</option>
-							<option value="0">Inactivo (Oculto temporalmente)</option>
+							<option value="1"
+								>Activo (Visible para clientes)</option
+							>
+							<option value="0"
+								>Inactivo (Oculto temporalmente)</option
+							>
 						</select>
-						<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]">
-							<span class="material-symbols-rounded">expand_more</span>
+						<span
+							class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]"
+						>
+							<span class="material-symbols-rounded"
+								>expand_more</span
+							>
 						</span>
 					</div>
-					<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="is_active"></span>
+					<span
+						class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+						data-field-error="is_active"></span>
 				</label>
 
-				<div class="mt-3 flex items-center gap-3 pt-5 border-t border-[color:var(--shell-border)]">
+				<div
+					class="mt-3 flex items-center gap-3 pt-5 border-t border-[color:var(--shell-border)]"
+				>
 					<button
 						type="button"
 						class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none"
 						data-delete-service
 					>
-						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
+						<span
+							class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]"
+							>delete</span
+						>
 						Eliminar
 					</button>
 
-					<div class="ml-auto w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
+					<div
+						class="ml-auto w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3"
+					>
 						<button
 							type="button"
 							class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--shell-border)]"
@@ -290,8 +392,12 @@ const visiblePages = Array.from(
 							class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)] disabled:opacity-60 disabled:pointer-events-none"
 							data-submit-service
 						>
-							<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" data-submit-service-icon>check</span>
-							<span data-submit-service-label>Crear servicio</span>
+							<span
+								class="material-symbols-rounded text-[1.2rem] hidden sm:inline"
+								data-submit-service-icon>check</span
+							>
+							<span data-submit-service-label>Crear servicio</span
+							>
 						</button>
 					</div>
 				</div>
@@ -303,9 +409,9 @@ const visiblePages = Array.from(
 </Layout>
 
 <script>
-	import { navigate } from 'astro:transitions/client';
+	import { navigate } from "astro:transitions/client";
 
-	type ServiceMode = 'create' | 'edit';
+	type ServiceMode = "create" | "edit";
 	type ServiceSubmitPayload = {
 		name: string;
 		duration_minutes: number;
@@ -323,31 +429,57 @@ const visiblePages = Array.from(
 	class ServiceManager extends HTMLElement {
 		private abortController: AbortController | null = null;
 		private closeTimer: number | null = null;
-		private mode: ServiceMode = 'create';
+		private mode: ServiceMode = "create";
 		private editingServiceId = 0;
 		private requestSeq = 0;
 
 		// Grouped DOM References
 		private els = {
-			modal: this.querySelector<HTMLDialogElement>('[data-service-modal]'),
-			form: this.querySelector<HTMLFormElement>('[data-service-create-form]'),
-			submitBtn: this.querySelector<HTMLButtonElement>('[data-submit-service]'),
-			submitLabel: this.querySelector<HTMLElement>('[data-submit-service-label]'),
-			submitIcon: this.querySelector<HTMLElement>('[data-submit-service-icon]'),
-			deleteBtn: this.querySelector<HTMLButtonElement>('[data-delete-service]'),
-			errorBox: this.querySelector<HTMLElement>('[data-form-error]'),
-			loading: this.querySelector<HTMLElement>('[data-service-loading]'),
-			modalTitle: this.querySelector<HTMLElement>('[data-service-modal-title]'),
-			modalDesc: this.querySelector<HTMLElement>('[data-service-modal-description]'),
-			priceInput: this.querySelector<HTMLInputElement>('[data-price-mask]'),
+			modal: this.querySelector<HTMLDialogElement>(
+				"[data-service-modal]",
+			),
+			form: this.querySelector<HTMLFormElement>(
+				"[data-service-create-form]",
+			),
+			submitBtn: this.querySelector<HTMLButtonElement>(
+				"[data-submit-service]",
+			),
+			submitLabel: this.querySelector<HTMLElement>(
+				"[data-submit-service-label]",
+			),
+			submitIcon: this.querySelector<HTMLElement>(
+				"[data-submit-service-icon]",
+			),
+			deleteBtn: this.querySelector<HTMLButtonElement>(
+				"[data-delete-service]",
+			),
+			errorBox: this.querySelector<HTMLElement>("[data-form-error]"),
+			loading: this.querySelector<HTMLElement>("[data-service-loading]"),
+			modalTitle: this.querySelector<HTMLElement>(
+				"[data-service-modal-title]",
+			),
+			modalDesc: this.querySelector<HTMLElement>(
+				"[data-service-modal-description]",
+			),
+			priceInput:
+				this.querySelector<HTMLInputElement>("[data-price-mask]"),
 		};
 
 		private formEls = {
-			name: this.els.form?.querySelector<HTMLInputElement>('[name="name"]'),
-			duration: this.els.form?.querySelector<HTMLInputElement>('[name="duration_minutes"]'),
-			status: this.els.form?.querySelector<HTMLSelectElement>('[name="is_active"]'),
-			fields: this.els.form?.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea'),
-			fieldErrors: this.querySelectorAll<HTMLElement>('[data-field-error]')
+			name: this.els.form?.querySelector<HTMLInputElement>(
+				'[name="name"]',
+			),
+			duration: this.els.form?.querySelector<HTMLInputElement>(
+				'[name="duration_minutes"]',
+			),
+			status: this.els.form?.querySelector<HTMLSelectElement>(
+				'[name="is_active"]',
+			),
+			fields: this.els.form?.querySelectorAll<
+				HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+			>("input, select, textarea"),
+			fieldErrors:
+				this.querySelectorAll<HTMLElement>("[data-field-error]"),
 		};
 
 		connectedCallback() {
@@ -356,10 +488,18 @@ const visiblePages = Array.from(
 			const { signal } = this.abortController;
 
 			this.cleanUrlParams();
-			this.addEventListener('click', this.handleRootClick, { signal });
-			this.addEventListener('keydown', this.handleRootKeydown, { signal });
-			this.els.form?.addEventListener('submit', this.handleSubmit, { signal });
-			this.els.priceInput?.addEventListener('input', this.handlePriceInput, { signal });
+			this.addEventListener("click", this.handleRootClick, { signal });
+			this.addEventListener("keydown", this.handleRootKeydown, {
+				signal,
+			});
+			this.els.form?.addEventListener("submit", this.handleSubmit, {
+				signal,
+			});
+			this.els.priceInput?.addEventListener(
+				"input",
+				this.handlePriceInput,
+				{ signal },
+			);
 		}
 
 		disconnectedCallback() {
@@ -370,85 +510,109 @@ const visiblePages = Array.from(
 
 		private cleanUrlParams() {
 			const url = new URL(window.location.href);
-			if (!url.searchParams.has('flash_message')) return;
-			url.searchParams.delete('flash_message');
-			url.searchParams.delete('flash_type');
-			window.history.replaceState({}, '', `${url.pathname}${url.search}${url.hash}`);
+			if (!url.searchParams.has("flash_message")) return;
+			url.searchParams.delete("flash_message");
+			url.searchParams.delete("flash_type");
+			window.history.replaceState(
+				{},
+				"",
+				`${url.pathname}${url.search}${url.hash}`,
+			);
 		}
 
-		private navigateWithFlash(message: string, type = 'success') {
+		private navigateWithFlash(message: string, type = "success") {
 			const url = new URL(window.location.href);
-			url.searchParams.set('flash_message', message);
-			url.searchParams.set('flash_type', type);
+			url.searchParams.set("flash_message", message);
+			url.searchParams.set("flash_type", type);
 			void navigate(`${url.pathname}${url.search}${url.hash}`);
 		}
 
 		private clearErrors() {
 			if (this.els.errorBox) {
-				this.els.errorBox.textContent = '';
-				this.els.errorBox.classList.add('hidden');
+				this.els.errorBox.textContent = "";
+				this.els.errorBox.classList.add("hidden");
 			}
 			this.formEls.fieldErrors.forEach((node) => {
-				node.textContent = '';
-				node.classList.add('hidden');
+				node.textContent = "";
+				node.classList.add("hidden");
 			});
 		}
 
 		private showFormError(message: string) {
 			if (!this.els.errorBox) return;
 			this.els.errorBox.textContent = message;
-			this.els.errorBox.classList.remove('hidden');
+			this.els.errorBox.classList.remove("hidden");
 		}
 
 		private updateUIMode(mode: ServiceMode) {
 			this.mode = mode;
-			const isEdit = mode === 'edit';
-			
-			if (this.els.modalTitle) this.els.modalTitle.textContent = isEdit ? 'Editar servicio' : 'Crear servicio';
+			const isEdit = mode === "edit";
+
+			if (this.els.modalTitle)
+				this.els.modalTitle.textContent = isEdit
+					? "Editar servicio"
+					: "Crear servicio";
 			if (this.els.modalDesc) {
-				this.els.modalDesc.textContent = isEdit 
-					? 'Actualiza la información del servicio.' 
-					: 'Completa los campos para registrar un nuevo servicio.';
+				this.els.modalDesc.textContent = isEdit
+					? "Actualiza la información del servicio."
+					: "Completa los campos para registrar un nuevo servicio.";
 			}
-			
-			if (this.els.submitLabel) this.els.submitLabel.textContent = isEdit ? 'Guardar cambios' : 'Crear servicio';
-			if (this.els.submitIcon) this.els.submitIcon.textContent = isEdit ? 'save' : 'check';
-			
+
+			if (this.els.submitLabel)
+				this.els.submitLabel.textContent = isEdit
+					? "Guardar cambios"
+					: "Crear servicio";
+			if (this.els.submitIcon)
+				this.els.submitIcon.textContent = isEdit ? "save" : "check";
+
 			if (this.els.deleteBtn) {
-				isEdit ? this.els.deleteBtn.classList.remove('hidden') : this.els.deleteBtn.classList.add('hidden');
+				isEdit
+					? this.els.deleteBtn.classList.remove("hidden")
+					: this.els.deleteBtn.classList.add("hidden");
 				this.els.deleteBtn.disabled = !isEdit;
 			}
-			
+
 			if (!isEdit) {
 				this.editingServiceId = 0;
-				this.els.loading?.classList.add('hidden');
+				this.els.loading?.classList.add("hidden");
 			}
 		}
 
 		private toggleFormLoading(isLoading: boolean) {
 			if (this.els.loading) {
-				isLoading ? this.els.loading.classList.replace('hidden', 'flex') : this.els.loading.classList.replace('flex', 'hidden');
+				isLoading
+					? this.els.loading.classList.replace("hidden", "flex")
+					: this.els.loading.classList.replace("flex", "hidden");
 			}
-			this.formEls.fields?.forEach((field) => (field.disabled = isLoading));
+			this.formEls.fields?.forEach(
+				(field) => (field.disabled = isLoading),
+			);
 		}
 
-		private setButtonsProcessing(label = 'Procesando...') {
+		private setButtonsProcessing(label = "Procesando...") {
 			if (this.els.submitBtn) this.els.submitBtn.disabled = true;
-			if (this.els.deleteBtn && this.mode === 'edit') this.els.deleteBtn.disabled = true;
+			if (this.els.deleteBtn && this.mode === "edit")
+				this.els.deleteBtn.disabled = true;
 			if (this.els.submitLabel) this.els.submitLabel.textContent = label;
-			if (this.els.submitIcon) this.els.submitIcon.textContent = 'hourglass_top';
+			if (this.els.submitIcon)
+				this.els.submitIcon.textContent = "hourglass_top";
 		}
 
 		private restoreButtons() {
 			if (this.els.submitBtn) this.els.submitBtn.disabled = false;
-			const isEdit = this.mode === 'edit';
-			if (this.els.submitLabel) this.els.submitLabel.textContent = isEdit ? 'Guardar cambios' : 'Crear servicio';
-			if (this.els.submitIcon) this.els.submitIcon.textContent = isEdit ? 'save' : 'check';
-			if (this.els.deleteBtn && isEdit) this.els.deleteBtn.disabled = false;
+			const isEdit = this.mode === "edit";
+			if (this.els.submitLabel)
+				this.els.submitLabel.textContent = isEdit
+					? "Guardar cambios"
+					: "Crear servicio";
+			if (this.els.submitIcon)
+				this.els.submitIcon.textContent = isEdit ? "save" : "check";
+			if (this.els.deleteBtn && isEdit)
+				this.els.deleteBtn.disabled = false;
 		}
 
 		private openModalShell() {
-			this.els.modal?.classList.remove('is-closing');
+			this.els.modal?.classList.remove("is-closing");
 			if (this.closeTimer) window.clearTimeout(this.closeTimer);
 			if (!this.els.modal?.open) this.els.modal?.showModal();
 		}
@@ -456,13 +620,13 @@ const visiblePages = Array.from(
 		private closeModal() {
 			if (!this.els.modal?.open) return;
 			this.requestSeq++;
-			this.els.modal.classList.add('is-closing');
+			this.els.modal.classList.add("is-closing");
 
 			this.closeTimer = window.setTimeout(() => {
 				this.els.modal?.close();
-				this.els.modal?.classList.remove('is-closing');
+				this.els.modal?.classList.remove("is-closing");
 				this.els.form?.reset();
-				this.updateUIMode('create');
+				this.updateUIMode("create");
 				this.toggleFormLoading(false);
 				this.clearErrors();
 				this.closeTimer = null;
@@ -470,7 +634,7 @@ const visiblePages = Array.from(
 		}
 
 		private openCreateModal() {
-			this.updateUIMode('create');
+			this.updateUIMode("create");
 			this.resetFormValues();
 			this.toggleFormLoading(false);
 			this.clearErrors();
@@ -478,55 +642,78 @@ const visiblePages = Array.from(
 		}
 
 		private formatPrice(val: string | number | null | undefined) {
-			const digits = String(val || '').replace(/\D/g, '');
-			return digits ? Number(digits).toLocaleString('es-PY') : '';
+			const digits = String(val || "").replace(/\D/g, "");
+			return digits ? Number(digits).toLocaleString("es-PY") : "";
 		}
 
 		private fillForm(service: ServiceDetail) {
-			if (this.formEls.name) this.formEls.name.value = String(service?.name || '');
-			if (this.formEls.duration) this.formEls.duration.value = typeof service?.duration_minutes === 'number' ? String(service.duration_minutes) : '';
-			if (this.els.priceInput) this.els.priceInput.value = this.formatPrice(service?.price ?? '');
-			if (this.formEls.status) this.formEls.status.value = String(service?.is_active === 0 ? 0 : 1);
+			if (this.formEls.name)
+				this.formEls.name.value = String(service?.name || "");
+			if (this.formEls.duration)
+				this.formEls.duration.value =
+					typeof service?.duration_minutes === "number"
+						? String(service.duration_minutes)
+						: "";
+			if (this.els.priceInput)
+				this.els.priceInput.value = this.formatPrice(
+					service?.price ?? "",
+				);
+			if (this.formEls.status)
+				this.formEls.status.value = String(
+					service?.is_active === 0 ? 0 : 1,
+				);
 		}
 
 		private resetFormValues() {
-			[this.formEls.name, this.formEls.duration, this.els.priceInput].forEach((el) => el && (el.value = ''));
-			if (this.formEls.status) this.formEls.status.value = '1';
+			[
+				this.formEls.name,
+				this.formEls.duration,
+				this.els.priceInput,
+			].forEach((el) => el && (el.value = ""));
+			if (this.formEls.status) this.formEls.status.value = "1";
 		}
 
 		private async fetchJson(response: Response) {
-			try { 
-				return await response.json(); 
-			} catch { 
-				throw new Error('No fue posible interpretar la respuesta del servidor.'); 
+			try {
+				return await response.json();
+			} catch {
+				throw new Error(
+					"No fue posible interpretar la respuesta del servidor.",
+				);
 			}
 		}
 
 		private async openEditModal(serviceId: number) {
 			if (!serviceId) return;
 			const currentReq = ++this.requestSeq;
-			
+
 			this.editingServiceId = serviceId;
-			this.updateUIMode('edit');
+			this.updateUIMode("edit");
 			this.resetFormValues();
 			this.clearErrors();
 			this.openModalShell();
-			
+
 			this.toggleFormLoading(true);
-			this.setButtonsProcessing('Cargando...');
+			this.setButtonsProcessing("Cargando...");
 
 			try {
-				const res = await fetch(`/api/services/${serviceId}`, { headers: { Accept: 'application/json' } });
+				const res = await fetch(`/api/services/${serviceId}`, {
+					headers: { Accept: "application/json" },
+				});
 				const data = await this.fetchJson(res);
-				
-				if (!res.ok || data?.status !== 'success' || !data?.data) {
-					throw new Error(data?.message || 'Error al obtener el servicio.');
+
+				if (!res.ok || data?.status !== "success" || !data?.data) {
+					throw new Error(
+						data?.message || "Error al obtener el servicio.",
+					);
 				}
 				if (currentReq === this.requestSeq) this.fillForm(data.data);
 			} catch (err) {
 				if (currentReq !== this.requestSeq) return;
-				this.updateUIMode('create');
-				this.showFormError(err instanceof Error ? err.message : 'Error desconocido.');
+				this.updateUIMode("create");
+				this.showFormError(
+					err instanceof Error ? err.message : "Error desconocido.",
+				);
 			} finally {
 				if (currentReq === this.requestSeq) {
 					this.toggleFormLoading(false);
@@ -536,43 +723,51 @@ const visiblePages = Array.from(
 		}
 
 		private handlePriceInput = () => {
-			if (this.els.priceInput) this.els.priceInput.value = this.formatPrice(this.els.priceInput.value);
+			if (this.els.priceInput)
+				this.els.priceInput.value = this.formatPrice(
+					this.els.priceInput.value,
+				);
 		};
 
 		private handleRootClick = (e: MouseEvent) => {
 			const target = e.target as Element;
 			if (!target) return;
 
-			if (this.els.modal && target === this.els.modal) return this.closeModal();
+			if (this.els.modal && target === this.els.modal)
+				return this.closeModal();
 
-			if (target.closest('[data-close-service-modal]')) return this.closeModal();
-			
-			const deleteTrigger = target.closest('[data-delete-service]');
+			if (target.closest("[data-close-service-modal]"))
+				return this.closeModal();
+
+			const deleteTrigger = target.closest("[data-delete-service]");
 			if (deleteTrigger && this.contains(deleteTrigger)) {
 				void this.handleDelete();
 				return;
 			}
 
-			const card = target.closest('[data-service-card]');
+			const card = target.closest("[data-service-card]");
 			if (card && this.contains(card)) {
-				const id = Number(card.getAttribute('data-service-id') || '0');
+				const id = Number(card.getAttribute("data-service-id") || "0");
 				if (id > 0) void this.openEditModal(id);
 				return;
 			}
 
-			if (target.closest('[data-open-service-modal]') && this.contains(target.closest('[data-open-service-modal]'))) {
+			if (
+				target.closest("[data-open-service-modal]") &&
+				this.contains(target.closest("[data-open-service-modal]"))
+			) {
 				this.openCreateModal();
 			}
 		};
 
 		private handleRootKeydown = (e: KeyboardEvent) => {
-			if (e.key !== 'Enter' && e.key !== ' ') return;
+			if (e.key !== "Enter" && e.key !== " ") return;
 			const target = e.target as Element;
-			const card = target?.closest('[data-service-card]');
+			const card = target?.closest("[data-service-card]");
 			if (!card || !this.contains(card)) return;
-			
+
 			e.preventDefault();
-			const id = Number(card.getAttribute('data-service-id') || '0');
+			const id = Number(card.getAttribute("data-service-id") || "0");
 			if (id > 0) void this.openEditModal(id);
 		};
 
@@ -582,38 +777,60 @@ const visiblePages = Array.from(
 			if (!this.els.form) return;
 
 			const formData = new FormData(this.els.form);
-			const name = String(formData.get('name') || '').trim();
-			const duration = Number(formData.get('duration_minutes'));
-			const isActive = String(formData.get('is_active')) === '0' ? 0 : 1;
-			const priceRaw = String(formData.get('price') || '').replace(/\D/g, '');
-			
+			const name = String(formData.get("name") || "").trim();
+			const duration = Number(formData.get("duration_minutes"));
+			const isActive = String(formData.get("is_active")) === "0" ? 0 : 1;
+			const priceRaw = String(formData.get("price") || "").replace(
+				/\D/g,
+				"",
+			);
+
 			if (!name || !duration || !Number.isFinite(duration)) {
-				return this.showFormError('Completa los campos requeridos antes de continuar.');
+				return this.showFormError(
+					"Completa los campos requeridos antes de continuar.",
+				);
 			}
 
-			const payload: ServiceSubmitPayload = { name, duration_minutes: duration, is_active: isActive };
+			const payload: ServiceSubmitPayload = {
+				name,
+				duration_minutes: duration,
+				is_active: isActive,
+			};
 			if (priceRaw) payload.price = Number(priceRaw);
 
-			const isEdit = this.mode === 'edit' && this.editingServiceId > 0;
-			this.setButtonsProcessing(isEdit ? 'Guardando...' : 'Creando...');
+			const isEdit = this.mode === "edit" && this.editingServiceId > 0;
+			this.setButtonsProcessing(isEdit ? "Guardando..." : "Creando...");
 
 			try {
-				const res = await fetch(isEdit ? `/api/services/${this.editingServiceId}` : '/api/services', {
-					method: isEdit ? 'PUT' : 'POST',
-					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-					body: JSON.stringify(payload),
-				});
+				const res = await fetch(
+					isEdit
+						? `/api/services/${this.editingServiceId}`
+						: "/api/services",
+					{
+						method: isEdit ? "PUT" : "POST",
+						headers: {
+							"Content-Type": "application/json",
+							Accept: "application/json",
+						},
+						body: JSON.stringify(payload),
+					},
+				);
 
 				const data = await this.fetchJson(res);
-				if (!res.ok || data?.status !== 'success') {
-					this.showFormError(data?.message || `Error al ${isEdit ? 'actualizar' : 'crear'} el servicio.`);
+				if (!res.ok || data?.status !== "success") {
+					this.showFormError(
+						data?.message ||
+							`Error al ${isEdit ? "actualizar" : "crear"} el servicio.`,
+					);
 					if (Array.isArray(data?.errors)) {
 						data.errors.forEach((err: any) => {
 							if (!err?.field || !err?.message) return;
-							const node = this.querySelector<HTMLElement>(`[data-field-error="${err.field}"]`);
+							const node = this.querySelector<HTMLElement>(
+								`[data-field-error="${err.field}"]`,
+							);
 							if (node) {
 								node.textContent = err.message;
-								node.classList.remove('hidden');
+								node.classList.remove("hidden");
 							}
 						});
 					}
@@ -621,48 +838,72 @@ const visiblePages = Array.from(
 				}
 
 				this.closeModal();
-				this.navigateWithFlash(data?.message || `Servicio ${isEdit ? 'actualizado' : 'creado'} correctamente.`, 'success');
+				this.navigateWithFlash(
+					data?.message ||
+						`Servicio ${isEdit ? "actualizado" : "creado"} correctamente.`,
+					"success",
+				);
 			} catch (err) {
-				this.showFormError(err instanceof Error ? err.message : 'Error inesperado del servidor.');
+				this.showFormError(
+					err instanceof Error
+						? err.message
+						: "Error inesperado del servidor.",
+				);
 			} finally {
 				this.restoreButtons();
 			}
 		};
 
 		private async handleDelete() {
-			if (!this.editingServiceId || this.mode !== 'edit') return;
+			if (!this.editingServiceId || this.mode !== "edit") return;
 
 			const confirmed = await (window as any).BookmateAlert?.confirm?.({
-				type: 'error',
-				title: 'Eliminar servicio',
-				message: 'Esta acción eliminará el servicio de forma permanente. ¿Deseas continuar?',
-				confirmText: 'Eliminar',
-				cancelText: 'Cancelar',
+				type: "error",
+				title: "Eliminar servicio",
+				message:
+					"Esta acción eliminará el servicio de forma permanente. ¿Deseas continuar?",
+				confirmText: "Eliminar",
+				cancelText: "Cancelar",
 			});
 			if (!confirmed) return;
 
 			this.clearErrors();
-			this.setButtonsProcessing('Eliminando...');
+			this.setButtonsProcessing("Eliminando...");
 
 			try {
-				const res = await fetch(`/api/services/${this.editingServiceId}`, { method: 'DELETE', headers: { Accept: 'application/json' } });
+				const res = await fetch(
+					`/api/services/${this.editingServiceId}`,
+					{
+						method: "DELETE",
+						headers: { Accept: "application/json" },
+					},
+				);
 				const data = await this.fetchJson(res);
-				
-				if (!res.ok || data?.status !== 'success') {
-					throw new Error(data?.message || 'Error al eliminar el servicio.');
+
+				if (!res.ok || data?.status !== "success") {
+					throw new Error(
+						data?.message || "Error al eliminar el servicio.",
+					);
 				}
 
 				this.closeModal();
-				this.navigateWithFlash(data?.message || 'Servicio eliminado correctamente.', 'success');
+				this.navigateWithFlash(
+					data?.message || "Servicio eliminado correctamente.",
+					"success",
+				);
 			} catch (err) {
 				this.restoreButtons();
-				this.showFormError(err instanceof Error ? err.message : 'Error al eliminar el servicio.');
+				this.showFormError(
+					err instanceof Error
+						? err.message
+						: "Error al eliminar el servicio.",
+				);
 			}
 		}
 	}
 
-	if (!customElements.get('service-manager')) {
-		customElements.define('service-manager', ServiceManager);
+	if (!customElements.get("service-manager")) {
+		customElements.define("service-manager", ServiceManager);
 	}
 </script>
 
