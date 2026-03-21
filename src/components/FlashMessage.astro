@@ -17,29 +17,33 @@ const {
 	dismissible = true,
 } = Astro.props;
 
-const toneMap: Record<MessageType, { icon: string; title: string; accent: string; iconColor: string }> = {
+const toneMap: Record<MessageType, { icon: string; title: string; border: string; progressBg: string; iconColor: string }> = {
 	success: {
 		icon: 'check_circle',
 		title: 'Éxito',
-		accent: 'bg-emerald-500',
+		border: 'border-l-emerald-500',
+		progressBg: 'bg-emerald-500',
 		iconColor: 'text-emerald-500',
 	},
 	error: {
 		icon: 'error',
 		title: 'Error',
-		accent: 'bg-rose-500',
+		border: 'border-l-rose-500',
+		progressBg: 'bg-rose-500',
 		iconColor: 'text-rose-500',
 	},
 	info: {
 		icon: 'info',
 		title: 'Información',
-		accent: 'bg-sky-500',
+		border: 'border-l-sky-500',
+		progressBg: 'bg-sky-500',
 		iconColor: 'text-sky-500',
 	},
 	warning: {
 		icon: 'warning',
 		title: 'Atención',
-		accent: 'bg-amber-500',
+		border: 'border-l-amber-500',
+		progressBg: 'bg-amber-500',
 		iconColor: 'text-amber-500',
 	},
 };
@@ -53,16 +57,15 @@ const tone = toneMap[type];
 			role="alert"
 			aria-live="polite"
 			class:list={[
-				'group relative overflow-hidden rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out',
+				'group relative overflow-hidden rounded-[1.2rem] border border-[color:var(--shell-border)] border-l-[6px] bg-[color:var(--surface-bright)] shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out',
+				tone.border,
 				expand ? 'w-full' : 'w-[min(100%,26rem)]',
 			]}
 			style="transform: translateY(12px) scale(0.95); opacity: 0; animation: flash-slide-in 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;"
 			data-flash-message
 			data-auto-hide-ms={autoHideMs > 0 ? String(autoHideMs) : undefined}
 		>
-			<div class:list={['absolute bottom-0 left-0 top-0 w-1.5', tone.accent]}></div>
-
-			<div class="flex items-start gap-4 py-4 pl-6 pr-4">
+			<div class="flex items-start gap-4 py-4 pl-5 pr-4">
 				<span class:list={['material-symbols-rounded shrink-0 text-[1.4rem] tracking-normal', tone.iconColor]}>{tone.icon}</span>
 
 				<div class="min-w-0 flex-1 pt-[1.5px]">
@@ -86,9 +89,9 @@ const tone = toneMap[type];
 
 			{
 				autoHideMs > 0 ? (
-					<div class="absolute bottom-0 left-0 right-0 h-[4px] bg-black/5 dark:bg-white/5">
+					<div class="absolute bottom-0 left-0 right-0 h-[4px] overflow-hidden rounded-b-[1.2rem] bg-black/5 dark:bg-white/5">
 						<div
-							class:list={['h-full w-full origin-left opacity-90', tone.accent]}
+							class:list={['h-full w-full origin-left opacity-90', tone.progressBg]}
 							style={`animation: flash-progress-bar ${autoHideMs}ms linear forwards;`}
 						></div>
 					</div>

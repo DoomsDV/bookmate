@@ -6,7 +6,7 @@ interface Props {
 	showCreateAction?: boolean;
 }
 
-const { services, showCreateAction = false } = Astro.props;
+const { services = [], showCreateAction = false } = Astro.props;
 
 const currencyFormatter = new Intl.NumberFormat('es-PY', {
 	style: 'currency',
@@ -14,104 +14,111 @@ const currencyFormatter = new Intl.NumberFormat('es-PY', {
 	maximumFractionDigits: 0,
 });
 
-const SERVICE_ICON = 'sell';
-
-const toDurationLabel = (value: number) => {
-	if (value <= 0) return 'Sin duración';
+const toDurationLabel = (value?: number | null) => {
+	if (!value || value <= 0) return '--';
 	if (value === 60) return '1 hora';
 	if (value > 60 && value % 60 === 0) return `${value / 60} horas`;
 	return `${value} min`;
 };
 
-const cardItems = services.map((service) => ({ service }));
-
-const activeServices = services.filter((item) => item.is_active === 1).length;
+const activeCount = services.filter((s) => s.is_active === 1).length;
+const inactiveCount = services.length - activeCount;
 ---
 
-<section class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<div class="flex flex-wrap justify-start gap-2 text-xs font-semibold">
-			<span class="status-chip-total">
-				Total: {services.length}
+<section class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-6 md:p-8 shadow-[0_6px_30px_rgba(0,0,0,0.03)] dark:shadow-none transition-all">
+	<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-8">
+		<div class="flex flex-wrap items-center gap-2.5 text-[0.82rem] font-bold">
+			<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 transition border border-emerald-500/10">
+				<span class="size-2 rounded-full bg-emerald-500"></span> Activos: {activeCount}
 			</span>
-			<span class="status-chip-success">
-				Activos: {activeServices}
-			</span>
-			<span class="status-chip-danger">
-				Inactivos: {services.length - activeServices}
-			</span>
+			{inactiveCount > 0 && (
+				<span class="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1.5 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 transition border border-rose-500/10">
+					<span class="size-2 rounded-full bg-rose-500"></span> Inactivos: {inactiveCount}
+				</span>
+			)}
 		</div>
 
-		{
-			showCreateAction ? (
-				<button
-					type="button"
-					class="btn-primary-soft inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition"
-					data-open-service-modal
+		{showCreateAction && (
+			<button
+				type="button"
+				class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)] sm:w-auto w-full"
+				data-open-service-modal
+			>
+				<span class="material-symbols-rounded text-[1.2rem]">add</span>
+				Nuevo Servicio
+			</button>
+		)}
+	</header>
+
+	{services.length === 0 ? (
+		<div class="flex flex-col items-center justify-center rounded-[1.6rem] border-2 border-dashed border-[color:var(--shell-border)] bg-[color:var(--surface)]/40 px-6 py-14 text-center transition">
+			<div class="mb-4 flex size-16 items-center justify-center rounded-full bg-[color:var(--surface-variant)] text-[color:var(--on-surface-variant)] ring-[8px] ring-[color:var(--surface-bright)]">
+				<span class="material-symbols-rounded text-[2rem]">inbox</span>
+			</div>
+			<h3 class="text-[1.1rem] font-bold text-[color:var(--on-surface)]">No hay servicios registrados</h3>
+			<p class="mt-1.5 text-[0.95rem] text-[color:var(--on-surface-variant)] max-w-sm leading-relaxed">
+				Aún no has agregado ningún servicio a esta organización. Comienza creando tu primera prestación.
+			</p>
+		</div>
+	) : (
+		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+			{services.map((service) => (
+				<article
+					class="group cursor-pointer relative overflow-hidden rounded-[1.5rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-5.5 transition-all duration-300 hover:-translate-y-1 hover:border-[color:var(--primary)]/40 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] focus-visible:ring-offset-2"
+					data-service-card
+					data-service-id={service.id_service}
+					tabindex="0"
+					role="button"
+					aria-label={`Editar servicio ${service.name || service.id_service}`}
 				>
-					<span class="material-symbols-rounded text-[1.1rem]">add</span>
-					Nuevo servicio
-				</button>
-			) : null
-		}
-	</div>
+					<div class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-[color:var(--primary)]/5 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></div>
 
-	{
-		services.length === 0 ? (
-			<div class="mt-6 rounded-[1.45rem] border border-dashed border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-5 py-7 text-sm text-[color:var(--on-surface-variant)]">
-			No hay servicios registrados para esta organización.
-			</div>
-		) : (
-			<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-				{
-					cardItems.map((item) => (
-						<article
-							class="cursor-pointer rounded-[1.45rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]"
-							data-service-card
-							data-service-id={item.service.id_service}
-							tabindex="0"
-							role="button"
-							aria-label={`Editar servicio ${item.service.name || item.service.id_service}`}
+					<div class="relative flex items-start justify-between gap-4">
+						<div class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[color:var(--primary-soft)] text-[color:var(--primary)] transition-transform duration-300 group-hover:scale-105 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
+							<span class="material-symbols-rounded text-[1.25rem]">design_services</span>
+						</div>
+
+						<span
+							class:list={[
+								'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-widest border',
+								service.is_active === 1
+									? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/10 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/20'
+									: 'bg-[color:var(--surface-variant)] text-[color:var(--on-surface-variant)] border-[color:var(--shell-border)]',
+							]}
 						>
-							<div class="flex items-start justify-between gap-3">
-								<div class="flex size-10 items-center justify-center rounded-xl bg-[color:var(--primary-soft)] text-[color:var(--primary)]">
-									<span class="material-symbols-rounded text-[1rem]">{SERVICE_ICON}</span>
-								</div>
+							<span class:list={["size-1.5 rounded-full", service.is_active === 1 ? "bg-emerald-500" : "bg-[color:var(--on-surface-variant)]"]}></span>
+							{service.is_active === 1 ? 'Activo' : 'Inactivo'}
+						</span>
+					</div>
 
-								<span
-									class:list={[
-										'status-pill',
-										item.service.is_active === 1
-											? 'status-pill-success'
-											: 'status-pill-danger',
-									]}
-								>
-									{item.service.is_active === 1 ? 'Activo' : 'Inactivo'}
-								</span>
+					<div class="relative mt-5">
+						<h3 class="text-[1.1rem] font-extrabold tracking-tight text-[color:var(--on-surface)] line-clamp-1 group-hover:text-[color:var(--primary)] transition-colors">
+							{service.name || `Servicio #${service.id_service}`}
+						</h3>
+
+						<dl class="mt-4 shrink-0 grid gap-2.5">
+							<div class="flex items-center justify-between border-b border-[color:var(--shell-border)] border-dashed pb-2.5 text-[0.9rem]">
+								<dt class="flex items-center gap-1.5 text-[color:var(--on-surface-variant)] font-semibold">
+									<span class="material-symbols-rounded text-[1.1rem] opacity-70">schedule</span>
+									Duración
+								</dt>
+								<dd class="font-bold text-[color:var(--on-surface)]">
+									{toDurationLabel(service.duration_minutes)}
+								</dd>
 							</div>
-
-							<h3 class="mt-4 text-lg font-semibold leading-6 text-[color:var(--on-surface)]">
-								{item.service.name || `Servicio #${item.service.id_service}`}
-							</h3>
-
-							<div class="mt-5 space-y-3 text-sm text-[color:var(--on-surface-variant)]">
-								<div class="flex items-center justify-between">
-									<span>Duracion</span>
-									<span class="font-semibold text-[color:var(--on-surface)]">
-										{toDurationLabel(item.service.duration_minutes)}
-									</span>
-								</div>
-								<div class="flex items-center justify-between">
-									<span>Precio</span>
-									<span class="font-semibold text-[color:var(--on-surface)]">
-										{currencyFormatter.format(item.service.price)}
-									</span>
-								</div>
+							<div class="flex items-center justify-between pt-0.5 text-[0.9rem]">
+								<dt class="flex items-center gap-1.5 text-[color:var(--on-surface-variant)] font-semibold">
+									<span class="material-symbols-rounded text-[1.1rem] opacity-70">payments</span>
+									Precio
+								</dt>
+								<dd class="font-extrabold text-[color:var(--on-surface)]">
+									{service.price ? currencyFormatter.format(service.price) : '--'}
+								</dd>
 							</div>
-						</article>
-					))
-				}
-			</div>
-		)
-	}
+						</dl>
+					</div>
+				</article>
+			))}
+		</div>
+	)}
 </section>
