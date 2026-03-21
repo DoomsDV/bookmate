@@ -192,7 +192,7 @@ const visiblePages = Array.from(
 			</div>
 		</div>
 
-		<form class="relative flex flex-col px-7 py-7 bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-professional-form>
+		<form class="relative flex flex-col bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-professional-form>
 			<div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-[color:var(--surface-bright)]/80 backdrop-blur-[2px] transition-all" data-professional-loading>
 				<div class="inline-flex items-center gap-3 rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-3.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
 					<span class="material-symbols-rounded animate-spin text-[1.2rem] text-[color:var(--primary)]">progress_activity</span>
@@ -200,6 +200,7 @@ const visiblePages = Array.from(
 				</div>
 			</div>
 
+			<div class="flex-1 px-7 py-7">
 			<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 mb-5 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
 
 			<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
@@ -317,18 +318,19 @@ const visiblePages = Array.from(
 					</div>
 				</fieldset>
 			</div>
+			</div>
 			
-			<div class="sticky bottom-0 z-20 -mx-7 -mb-7 mt-8 flex shrink-0 items-center justify-between gap-3 border-t border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-5">
-				<button type="button" class="hidden h-11 items-center justify-center gap-2 rounded-xl bg-red-100 px-5 text-sm font-bold text-red-600 transition hover:bg-red-200 outline-none focus:ring-2 focus:ring-red-500" data-delete-professional>
-					<span class="material-symbols-rounded text-lg">delete</span>
+			<div class="sticky bottom-0 z-20 mt-auto flex shrink-0 items-center gap-3 border-t border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-5">
+				<button type="button" class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none" data-delete-professional>
+					<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
 					Eliminar
 				</button>
-				<div class="flex ml-auto items-center gap-3">
-					<button type="button" class="flex h-11 items-center justify-center rounded-xl bg-[color:var(--control-surface)] px-5 text-sm font-bold text-[color:var(--on-surface)] transition hover:bg-[color:var(--shell-border)] outline-none focus:ring-2 focus:ring-[color:var(--primary)]" data-close-professional-modal>
+				<div class="ml-auto w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
+					<button type="button" class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--shell-border)]" data-close-professional-modal>
 						Cancelar
 					</button>
-					<button type="submit" class="flex h-11 items-center justify-center gap-2 rounded-xl bg-[color:var(--primary)] px-6 text-sm font-bold text-white shadow-sm transition hover:bg-[color:var(--primary-hover)] outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2" data-submit-professional>
-						<span class="material-symbols-rounded text-lg" data-submit-professional-icon>check</span>
+					<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)] disabled:opacity-60 disabled:pointer-events-none" data-submit-professional>
+						<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" data-submit-professional-icon>check</span>
 						<span data-submit-professional-label>Crear personal</span>
 					</button>
 				</div>
@@ -336,6 +338,8 @@ const visiblePages = Array.from(
 		</form>
 	</dialog>
 </professional-manager>
+
+<AppAlert />
 </Layout>
 
 <script>
@@ -1027,8 +1031,16 @@ const visiblePages = Array.from(
 
 		private async handleDelete() {
 			if (!this.editingId) return;
-			if (!confirm('¿Seguro que deseas eliminar permanentemente a este profesional?')) return;
 			
+			const confirmed = await (window as any).BookmateAlert?.confirm?.({
+				type: 'error',
+				title: 'Eliminar personal',
+				message: 'Esta acción eliminará al profesional de forma permanente. ¿Deseas continuar?',
+				confirmText: 'Eliminar',
+				cancelText: 'Cancelar',
+			});
+			if (!confirmed) return;
+
 			this.setLoadingMessage('Eliminando...');
 			this.toggleFormLoading(true);
 			

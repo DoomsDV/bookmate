@@ -245,7 +245,7 @@ const googleMapsApiKey =
 			</div>
 
 			<form
-				class="relative grid gap-5 px-7 py-7 bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
+				class="relative flex flex-col bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
 				data-location-form
 			>
 				<div
@@ -263,6 +263,7 @@ const googleMapsApiKey =
 					</div>
 				</div>
 
+				<div class="flex-1 px-7 py-7 grid gap-5">
 				<div
 					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
 					data-form-error
@@ -453,9 +454,10 @@ const googleMapsApiKey =
 						class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
 						data-field-error="is_active"></span>
 				</label>
+				</div>
 
 				<div
-					class="sticky bottom-0 z-20 -mx-7 -mb-7 mt-5 flex shrink-0 items-center gap-3 border-t border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-5"
+					class="sticky bottom-0 z-20 mt-auto flex shrink-0 items-center gap-3 border-t border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-5"
 				>
 					<button
 						type="button"
