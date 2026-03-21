@@ -167,10 +167,10 @@ const visiblePages = Array.from(
 		</div>
 
 		<dialog
-			class="w-[min(34rem,calc(100vw-2rem))] overflow-hidden rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
+			class="w-[min(34rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
 			data-service-modal
 		>
-			<div class="border-b border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-6">
+			<div class="shrink-0 z-10 shadow-sm border-b border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-6">
 				<div class="flex items-center gap-4">
 					<div class="flex size-12 items-center justify-center rounded-[1rem] bg-[color:var(--primary-soft)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
 						<span class="material-symbols-rounded text-[1.4rem]">design_services</span>
@@ -184,7 +184,7 @@ const visiblePages = Array.from(
 				</div>
 			</div>
 
-			<form class="relative grid gap-5 px-7 py-7 bg-[color:var(--surface)]/30" data-service-create-form>
+			<form class="relative grid gap-5 px-7 py-7 bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-service-create-form>
 				<div
 					class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-[color:var(--surface-bright)]/80 backdrop-blur-[2px] transition-all"
 					data-service-loading
