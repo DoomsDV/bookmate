@@ -196,7 +196,7 @@ const fallbackMessageByStatus = (
 		case 401:
 			return 'Sesion no autorizada. Inicia sesion nuevamente.';
 		case 403:
-			return 'No tienes permisos para realizar esta accion.';
+			return 'No tienes permisos para realizar esta acción.';
 		case 404:
 			return action === 'get'
 				? 'Personal no encontrado.'

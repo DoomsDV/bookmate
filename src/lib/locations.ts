@@ -121,7 +121,7 @@ const fallbackMessageByStatus = (status: number, action: LocationRequestAction) 
 		case 401:
 			return 'Sesion no autorizada. Inicia sesion nuevamente.';
 		case 403:
-			return 'No tienes permisos para realizar esta accion.';
+			return 'No tienes permisos para realizar esta acción.';
 		case 404:
 			return action === 'get' ? 'Sucursal no encontrada.' : 'No se encontro el recurso solicitado.';
 		case 409:

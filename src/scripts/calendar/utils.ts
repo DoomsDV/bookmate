@@ -112,7 +112,7 @@ export const showErrorAlert = async (message: string) => {
 	if (!window.BookmateAlert?.alert) return;
 	await window.BookmateAlert.alert({
 		type: 'error',
-		title: 'No fue posible completar la accion',
+		title: 'No fue posible completar la acción',
 		message,
 		confirmText: 'Aceptar',
 	});

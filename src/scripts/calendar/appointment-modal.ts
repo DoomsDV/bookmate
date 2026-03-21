@@ -634,7 +634,7 @@ class AppointmentModal extends HTMLElement {
 		if (!this.client || this.mode !== 'edit' || !this.editingAppointmentId) return;
 		if (this.isSubmitting || this.isLoading) return;
 
-		const confirmMessage = 'Esta accion eliminara la cita de forma permanente. Deseas continuar?';
+		const confirmMessage = 'Esta acción eliminará la cita de forma permanente. ¿Deseas continuar?';
 		const confirmed = window.BookmateAlert?.confirm
 			? await window.BookmateAlert.confirm({
 					type: 'error',

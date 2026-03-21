@@ -2,44 +2,43 @@
 ---
 
 <dialog
-	class="w-[min(28rem,calc(100vw-2rem))] rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_26px_80px_rgba(15,23,42,0.28)] backdrop:bg-slate-950/45"
+	class="w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.3)] backdrop:bg-slate-950/40 backdrop:backdrop-blur-md"
 	data-app-alert-dialog
 >
-	<div class="border-b border-[color:var(--shell-border)] px-5 py-4">
-		<div class="flex items-start gap-3">
-			<div
-				class="mt-0.5 flex size-8 items-center justify-center rounded-lg bg-sky-500 text-white shadow-[0_8px_18px_rgba(14,116,203,0.28)]"
-				data-app-alert-icon-shell
-			>
-				<span class="material-symbols-rounded text-[1rem]" data-app-alert-icon>info</span>
-			</div>
-
-			<div class="min-w-0 flex-1">
-				<h3 class="text-lg font-bold leading-6" data-app-alert-title>Confirmar acción</h3>
-				<p class="mt-2 text-sm leading-6 text-[color:var(--on-surface-variant)]" data-app-alert-message>
-					¿Estás seguro de continuar?
-				</p>
-			</div>
+	<div class="px-7 pb-6 pt-9 text-center flex flex-col items-center">
+		<div
+			class="mb-5 flex size-14 shrink-0 items-center justify-center rounded-full transition-colors duration-300 ring-[6px]"
+			data-app-alert-icon-shell
+		>
+			<span class="material-symbols-rounded text-[2rem]" data-app-alert-icon>info</span>
 		</div>
+
+		<h3 class="text-[1.35rem] font-extrabold tracking-tight text-[color:var(--on-surface)] leading-snug" data-app-alert-title>
+			Confirmar acción
+		</h3>
+		<p class="mt-3 leading-relaxed text-[color:var(--on-surface-variant)] text-[0.95rem]" data-app-alert-message>
+			¿Estás seguro de continuar?
+		</p>
 	</div>
 
-	<div class="flex items-center justify-end gap-2 px-5 py-4">
+	<div class="flex items-center justify-center gap-3 bg-[color:var(--surface)]/50 px-7 py-5 border-t border-[color:var(--shell-border)]">
 		<button
 			type="button"
-			class="rounded-xl border border-[color:var(--shell-border)] px-4 py-2 text-sm font-semibold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
+			class="flex-1 rounded-2xl border border-[color:var(--shell-border)] bg-transparent px-4 py-3 text-sm font-bold text-[color:var(--on-surface)] shadow-sm transition hover:bg-[color:var(--control-surface-strong)] hover:text-[color:var(--primary)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)]"
 			data-app-alert-cancel
 		>
 			Cancelar
 		</button>
 		<button
 			type="button"
-			class="btn-primary-soft rounded-xl px-4 py-2 text-sm font-semibold transition"
+			class="flex-1 rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-md transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)]"
 			data-app-alert-confirm
 		>
 			Aceptar
 		</button>
 	</div>
 </dialog>
+
 
 <script>
 	type AlertDialogMode = 'alert' | 'confirm';
@@ -61,32 +60,34 @@
 		let resolver: ((value: boolean) => void) | null = null;
 		let closingTimer: number | null = null;
 
-		const toneMap: Record<AlertDialogType, { icon: string; iconShell: string }> = {
+		const toneClasses: Record<AlertDialogType, { icon: string; iconClasses: string[]; btnClasses: string[] }> = {
 			info: {
 				icon: 'info',
-				iconShell: 'alert-tone-info',
+				iconClasses: ['bg-sky-100', 'text-sky-600', 'ring-sky-50', 'dark:bg-sky-500/10', 'dark:text-sky-400', 'dark:ring-sky-500/10'],
+				btnClasses: ['bg-sky-600', 'hover:bg-sky-700', 'focus:ring-sky-600', 'shadow-[0_8px_20px_rgba(2,132,199,0.25)]']
 			},
 			success: {
 				icon: 'check_circle',
-				iconShell: 'alert-tone-success',
+				iconClasses: ['bg-teal-100', 'text-teal-600', 'ring-teal-50', 'dark:bg-teal-500/10', 'dark:text-teal-400', 'dark:ring-teal-500/10'],
+				btnClasses: ['bg-teal-600', 'hover:bg-teal-700', 'focus:ring-teal-600', 'shadow-[0_8px_20px_rgba(13,148,136,0.25)]']
 			},
 			warning: {
 				icon: 'warning',
-				iconShell: 'alert-tone-warning',
+				iconClasses: ['bg-amber-100', 'text-amber-600', 'ring-amber-50', 'dark:bg-amber-500/10', 'dark:text-amber-400', 'dark:ring-amber-500/10'],
+				btnClasses: ['bg-amber-500', 'hover:bg-amber-600', 'focus:ring-amber-500', 'text-white', 'shadow-[0_8px_20px_rgba(245,158,11,0.25)]']
 			},
 			error: {
 				icon: 'delete',
-				iconShell: 'alert-tone-danger',
+				iconClasses: ['bg-red-100', 'text-red-600', 'ring-red-50', 'dark:bg-red-500/10', 'dark:text-red-400', 'dark:ring-red-500/10'],
+				btnClasses: ['bg-red-600', 'hover:bg-red-700', 'focus:ring-red-600', 'shadow-[0_8px_20px_rgba(220,38,38,0.25)]']
 			},
 		};
 
 		const clearToneClasses = () => {
-			iconShellNode?.classList.remove(
-				'alert-tone-info',
-				'alert-tone-success',
-				'alert-tone-warning',
-				'alert-tone-danger'
-			);
+			for (const tone of Object.values(toneClasses)) {
+				if (iconShellNode) iconShellNode.classList.remove(...tone.iconClasses);
+				if (confirmButton) confirmButton.classList.remove(...tone.btnClasses);
+			}
 		};
 
 		const resolveAndClose = (value: boolean) => {
@@ -109,7 +110,7 @@
 		const showDialog = (options: AlertDialogOptions = {}): Promise<boolean> => {
 			const mode: AlertDialogMode = options.mode === 'alert' ? 'alert' : 'confirm';
 			const toneKey: AlertDialogType = options.type ?? 'info';
-			const tone = toneMap[toneKey];
+			const tone = toneClasses[toneKey];
 
 			if (titleNode) {
 				titleNode.textContent =
@@ -125,15 +126,17 @@
 						? options.message
 						: '¿Deseas continuar?';
 			}
+			
 			if (iconNode) iconNode.textContent = tone.icon;
+			
 			clearToneClasses();
+			
 			if (iconShellNode) {
-				for (const className of tone.iconShell.split(' ')) {
-					iconShellNode.classList.add(className);
-				}
+				iconShellNode.classList.add(...tone.iconClasses);
 			}
 
 			if (confirmButton) {
+				confirmButton.classList.add(...tone.btnClasses);
 				confirmButton.textContent =
 					typeof options.confirmText === 'string' && options.confirmText.trim()
 						? options.confirmText
