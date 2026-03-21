@@ -18,6 +18,10 @@ const toDurationLabel = (value?: number | null) => {
 	if (!value || value <= 0) return '--';
 	if (value === 60) return '1 hora';
 	if (value > 60 && value % 60 === 0) return `${value / 60} horas`;
+	
+	const hours = Math.floor(value / 60);
+	const mins = value % 60;
+	if (hours > 0) return `${hours} h ${mins} min`;
 	return `${value} min`;
 };
 
