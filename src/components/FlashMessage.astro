@@ -21,26 +21,26 @@ const toneMap: Record<MessageType, { icon: string; title: string; accent: string
 	success: {
 		icon: 'check_circle',
 		title: 'Éxito',
-		accent: 'flash-accent-success',
-		iconColor: 'flash-icon-success',
+		accent: 'bg-emerald-500',
+		iconColor: 'text-emerald-500',
 	},
 	error: {
 		icon: 'error',
 		title: 'Error',
-		accent: 'flash-accent-danger',
-		iconColor: 'flash-icon-danger',
+		accent: 'bg-rose-500',
+		iconColor: 'text-rose-500',
 	},
 	info: {
 		icon: 'info',
 		title: 'Información',
 		accent: 'bg-sky-500',
-		iconColor: 'text-sky-600 dark:text-sky-300',
+		iconColor: 'text-sky-500',
 	},
 	warning: {
 		icon: 'warning',
 		title: 'Atención',
 		accent: 'bg-amber-500',
-		iconColor: 'text-amber-600 dark:text-amber-300',
+		iconColor: 'text-amber-500',
 	},
 };
 
@@ -53,48 +53,85 @@ const tone = toneMap[type];
 			role="alert"
 			aria-live="polite"
 			class:list={[
-				'group relative overflow-hidden rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-4 text-[color:var(--on-surface)] shadow-[0_12px_28px_rgba(15,23,42,0.12)] transition duration-200 ease-out',
-				expand ? 'w-full' : 'w-[min(100%,32rem)]',
+				'group relative overflow-hidden rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out',
+				expand ? 'w-full' : 'w-[min(100%,26rem)]',
 			]}
+			style="transform: translateY(12px) scale(0.95); opacity: 0; animation: flash-slide-in 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;"
 			data-flash-message
 			data-auto-hide-ms={autoHideMs > 0 ? String(autoHideMs) : undefined}
 		>
-			<span class:list={['absolute inset-y-0 left-0 w-1.5', tone.accent]}></span>
+			<div class:list={['absolute bottom-0 left-0 top-0 w-1.5', tone.accent]}></div>
 
-			<div class="flex items-start gap-3 pl-1">
-				<span class:list={['material-symbols-rounded text-[1.1rem]', tone.iconColor]}>{tone.icon}</span>
+			<div class="flex items-start gap-4 py-4 pl-6 pr-4">
+				<span class:list={['material-symbols-rounded shrink-0 text-[1.4rem] tracking-normal', tone.iconColor]}>{tone.icon}</span>
 
-				<div class="min-w-0 flex-1">
-					<p class="text-sm font-bold leading-5">{tone.title}</p>
-					<p class="mt-1 text-sm leading-6 text-[color:var(--on-surface-variant)]">{message}</p>
+				<div class="min-w-0 flex-1 pt-[1.5px]">
+					<p class="text-[0.95rem] font-extrabold tracking-tight text-[color:var(--on-surface)]">{tone.title}</p>
+					<p class="mt-1 text-[0.9rem] font-medium leading-relaxed text-[color:var(--on-surface)]/80 dark:text-[color:var(--on-surface)]/90">{message}</p>
 				</div>
 
 				{
 					dismissible ? (
 						<button
 							type="button"
-							class="rounded-lg p-1 text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--control-surface)] hover:text-[color:var(--on-surface)]"
+							class="shrink-0 -mr-1 rounded-full p-1.5 text-[color:var(--on-surface-variant)]/70 transition hover:bg-[color:var(--shell-border)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/30"
 							aria-label="Cerrar mensaje"
 							data-flash-close
 						>
-							<span class="material-symbols-rounded text-[1rem]">close</span>
+							<span class="material-symbols-rounded text-[1.2rem]">close</span>
 						</button>
 					) : null
 				}
 			</div>
+
+			{
+				autoHideMs > 0 ? (
+					<div class="absolute bottom-0 left-0 right-0 h-[4px] bg-black/5 dark:bg-white/5">
+						<div
+							class:list={['h-full w-full origin-left opacity-90', tone.accent]}
+							style={`animation: flash-progress-bar ${autoHideMs}ms linear forwards;`}
+						></div>
+					</div>
+				) : null
+			}
 		</div>
 	) : null
 }
 
+<style is:global>
+	@keyframes flash-slide-in {
+		0% {
+			transform: translateY(12px) scale(0.95);
+			opacity: 0;
+		}
+		100% {
+			transform: translateY(0) scale(1);
+			opacity: 1;
+		}
+	}
+
+	@keyframes flash-progress-bar {
+		0% {
+			transform: scaleX(1);
+		}
+		100% {
+			transform: scaleX(0);
+		}
+	}
+</style>
+
 <script>
-	const hideMessage = (node:any) => {
+	const hideMessage = (node: any) => {
 		if (!node || node.dataset.isClosing === '1') return;
 		node.dataset.isClosing = '1';
-		node.classList.add('pointer-events-none', 'translate-y-2', 'scale-[0.98]', 'opacity-0');
-		window.setTimeout(() => node.remove(), 180);
+		node.classList.add('pointer-events-none');
+		node.style.animation = 'none';
+		node.style.transform = 'translateY(10px) scale(0.95)';
+		node.style.opacity = '0';
+		window.setTimeout(() => node.remove(), 250);
 	};
 
-	const initMessage = (node:any) => {
+	const initMessage = (node: any) => {
 		if (!node || node.dataset.flashBound === '1') return;
 		node.dataset.flashBound = '1';
 
@@ -110,4 +147,11 @@ const tone = toneMap[type];
 	for (const node of document.querySelectorAll('[data-flash-message]')) {
 		initMessage(node);
 	}
+
+	// Integración con View Transitions
+	document.addEventListener('astro:page-load', () => {
+		for (const node of document.querySelectorAll('[data-flash-message]')) {
+			initMessage(node);
+		}
+	});
 </script>
