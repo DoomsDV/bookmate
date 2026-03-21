@@ -4,6 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { type EventResizeDoneArg } from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import timeGridPlugin from '@fullcalendar/timegrid';
+import { navigate } from 'astro:transitions/client';
 import { AppointmentsClient } from './appointments-client';
 import type { AppointmentModalConfig, OpenCreateContext } from './appointment-modal';
 import type { AppointmentFormPayload, Option } from './types';
@@ -274,10 +275,14 @@ class CalendarManager extends HTMLElement {
 	private initializeCalendar(requiredNodes: RequiredNodes) {
 		this.destroyCalendar();
 
+		const savedDate = localStorage.getItem('bookmate-calendar-default-date');
+		if (savedDate) localStorage.removeItem('bookmate-calendar-default-date');
+
 		this.calendar = new Calendar(requiredNodes.calendarEl, {
 			plugins: [interactionPlugin, dayGridPlugin, timeGridPlugin, listPlugin],
 			locale: esLocale,
 			initialView: this.getPreferredView(),
+			initialDate: savedDate || undefined,
 			editable: true,
 			selectable: true,
 			selectMirror: true,
@@ -481,12 +486,23 @@ class CalendarManager extends HTMLElement {
 		this.reloadCalendarEvents();
 	};
 
+	private navigateWithFlash(message: string, type = 'success') {
+		const nextUrl = new URL(window.location.href);
+		nextUrl.searchParams.set('flash_message', message);
+		nextUrl.searchParams.set('flash_type', type);
+		if (this.calendar) {
+			localStorage.setItem('bookmate-calendar-default-date', this.calendar.getDate().toISOString());
+		}
+		void navigate(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
+	}
+
 	private handleAppointmentChanged = (event: Event) => {
 		const customEvent = event as CustomEvent<{ message?: string }>;
 		if (customEvent.detail?.message) {
-			// El feedback al usuario se maneja dentro del modal con alertas.
+			this.navigateWithFlash(customEvent.detail.message, 'success');
+		} else {
+			this.reloadCalendarEvents();
 		}
-		this.reloadCalendarEvents();
 	};
 
 	private async bootstrap() {

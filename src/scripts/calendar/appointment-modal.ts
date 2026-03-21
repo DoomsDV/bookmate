@@ -9,7 +9,6 @@ import {
 	formatDateTimeLocal,
 	isAppointmentStatus,
 	parseIsoToLocalInput,
-	showSuccessAlert,
 	toIsoWithOffset,
 	toPositiveInt,
 } from './utils';
@@ -612,7 +611,6 @@ class AppointmentModal extends HTMLElement {
 					},
 				})
 			);
-			await showSuccessAlert(response.message);
 		} catch (error) {
 			if (error instanceof ApiClientError) {
 				this.applyFieldErrors(error.fieldErrors);
@@ -661,7 +659,6 @@ class AppointmentModal extends HTMLElement {
 					},
 				})
 			);
-			await showSuccessAlert(response.message);
 		} catch (error) {
 			this.showFormError(error instanceof Error ? error.message : 'No fue posible eliminar la cita.');
 			this.setSubmittingState(false);
