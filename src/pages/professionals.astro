@@ -72,6 +72,7 @@ const visiblePages = Array.from(
 ---
 
 <Layout>
+	<professional-manager>
 	<div class="min-h-screen">
 		<div
 			class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
@@ -164,1333 +165,888 @@ const visiblePages = Array.from(
 								</div>
 							)
 						}
-					</section>
-				</main>
-			</div>
-		</div>
-	</div>
-
-	<dialog
-		class="w-[min(46rem,calc(100vw-2rem))] rounded-[1.25rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_26px_80px_rgba(15,23,42,0.28)] backdrop:bg-slate-950/40"
-		data-professional-modal
-	>
-		<div class="border-b border-[color:var(--shell-border)] px-5 py-4">
-			<h2 class="text-lg font-bold" data-professional-modal-title>Crear personal</h2>
-			<p class="mt-1 text-sm text-[color:var(--on-surface-variant)]" data-professional-modal-description>
-				Completa los datos para registrar profesional y cuenta en una sola operación.
-			</p>
-		</div>
-
-		<form class="relative grid gap-3 px-5 py-5" data-professional-form>
-			<div
-				class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center rounded-b-[1.25rem] bg-[color:var(--surface-bright)]/78 backdrop-blur-[1px]"
-				data-professional-loading
-			>
-				<div class="inline-flex items-center gap-2 rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] shadow-[0_10px_24px_rgba(15,23,42,0.12)]">
-					<span class="material-symbols-rounded animate-spin text-[1rem]">progress_activity</span>
-					Procesando...
-				</div>
-			</div>
-
-			<div class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/25 dark:text-rose-300" data-form-error></div>
-
-			<div class="mt-1 border-b border-[color:var(--shell-border)] pb-1">
-				<p class="text-xs font-bold uppercase tracking-[0.08em] text-[color:var(--on-surface-variant)]">
-					Datos personales y acceso
-				</p>
-			</div>
-
-			<div class="grid gap-3 sm:grid-cols-2">
-				<label class="grid gap-1 text-sm font-semibold">
-					<span class="inline-flex items-center gap-1">
-						Nombre
-						<span class="text-rose-600">*</span>
-					</span>
-					<input
-						type="text"
-						name="first_name"
-						required
-						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-						placeholder="Ej: Maria"
-					/>
-					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="first_name"></span>
-				</label>
-
-				<label class="grid gap-1 text-sm font-semibold">
-					<span class="inline-flex items-center gap-1">
-						Apellido
-						<span class="text-rose-600">*</span>
-					</span>
-					<input
-						type="text"
-						name="last_name"
-						required
-						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-						placeholder="Ej: Lopez"
-					/>
-					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="last_name"></span>
-				</label>
-			</div>
-
-			<div class="grid gap-3 sm:grid-cols-2">
-				<label class="grid gap-1 text-sm font-semibold">
-					Email (opcional)
-					<input
-						type="email"
-						name="email"
-						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-						placeholder="correo@dominio.com"
-					/>
-					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="email"></span>
-				</label>
-
-				<label class="grid gap-1 text-sm font-semibold">
-					<span class="inline-flex items-center gap-1">
-						Telefono
-						<span class="text-rose-600">*</span>
-					</span>
-					<input
-						type="text"
-						name="phone_number"
-						required
-						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-						placeholder="Ej: +595981000000"
-					/>
-					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="phone_number"></span>
-				</label>
-			</div>
-
-			<div class="grid gap-3 sm:grid-cols-2">
-				<label class="grid gap-1 text-sm font-semibold">
-					<span class="inline-flex items-center gap-1">
-						Usuario
-						<span class="text-rose-600">*</span>
-					</span>
-					<input
-						type="text"
-						name="apex_user_name"
-						required
-						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-						placeholder="Ej: mlopez"
-					/>
-					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="apex_user_name"></span>
-				</label>
-
-				<label class="grid gap-1 text-sm font-semibold">
-					<span class="inline-flex items-center gap-1">
-						Contraseña
-						<span data-password-required-indicator class="text-rose-600">*</span>
-					</span>
-					<input
-						type="password"
-						name="password"
-						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-						placeholder="********"
-					/>
-					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="password"></span>
-				</label>
-			</div>
-
-			<div class="grid gap-3 sm:grid-cols-2">
-				<label class="grid gap-1 text-sm font-semibold">
-					<span class="inline-flex items-center gap-1">
-						Rol
-						<span class="text-rose-600">*</span>
-					</span>
-					<select
-						name="rol_id_role"
-						required
-						data-role-select
-						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-					>
-						<option value="">Selecciona un rol</option>
-					</select>
-					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="rol_id_role"></span>
-				</label>
-
-				<label class="grid gap-1 text-sm font-semibold">
-					Estado de usuario
-					<select
-						name="user_is_active"
-						class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-					>
-						<option value="1">Activo</option>
-						<option value="0">Inactivo</option>
-					</select>
-					<span class="text-xs font-normal text-[color:var(--on-surface-variant)]">
-						Permite iniciar sesion.
-					</span>
-					<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="user_is_active"></span>
-				</label>
-			</div>
-
-			<div class="mt-6 border-b border-[color:var(--shell-border)] pb-1">
-				<p class="text-xs font-bold uppercase tracking-[0.08em] text-[color:var(--on-surface-variant)]">
-					Perfil público (agenda)
-				</p>
-			</div>
-
-			<label class="grid gap-1 text-sm font-semibold">
-				Especialidad (opcional)
-				<select
-					name="spe_id_specialty"
-					data-specialty-select
-					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-				>
-					<option value="">Sin especialidad</option>
-				</select>
-				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="spe_id_specialty"></span>
-			</label>
-
-			<label class="mt-2 grid gap-1 text-sm font-semibold">
-				URL del perfil público (opcional)
-				<div class="flex items-stretch overflow-hidden rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] transition focus-within:border-[color:var(--primary)]">
-					<span class="inline-flex items-center border-r border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-3 text-xs font-semibold text-[color:var(--on-surface-variant)] sm:text-sm">
-						{publicProfileDomain}/p/
-					</span>
-					<input
-						type="text"
-						name="profile_slug"
-						class="min-w-0 flex-1 bg-transparent px-3 py-2.5 text-sm outline-none"
-						placeholder="maria-lopez"
-					/>
-				</div>
-				<span class="text-xs font-normal text-[color:var(--on-surface-variant)]">
-					Este será el enlace directo para que los clientes agenden con este profesional.
-				</span>
-				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="profile_slug"></span>
-			</label>
-
-			<label class="mt-2 grid gap-1 text-sm font-semibold">
-				Imagen (opcional)
-				<input type="file" name="profile_image" accept="image/*" class="sr-only" />
-				<div
-					data-image-dropzone
-					role="button"
-					tabindex="0"
-					aria-label="Seleccionar imagen de perfil"
-					class="flex items-center gap-3 rounded-xl border border-dashed border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-3 transition"
-				>
-					<span class="material-symbols-rounded text-[1.15rem] text-[color:var(--primary)]">upload</span>
-					<div class="min-w-0">
-						<p class="text-sm font-semibold text-[color:var(--on-surface)]">
-							Arrastra una imagen o haz click para elegir.
-						</p>
-						<p
-							data-image-file-name
-							class="truncate text-xs font-normal text-[color:var(--on-surface-variant)]"
-						>
-							No se eligio ningun archivo
-						</p>
+							</section>
+						</main>
 					</div>
 				</div>
-				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="image_base64"></span>
-			</label>
+			</div>
 
-			<label class="mt-2 grid gap-1 text-sm font-semibold">
-				Servicios (opcional)
-				<select
-					name="services"
-					multiple
-					data-services-select
-					data-placeholder="Busca o selecciona servicios..."
-					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-				></select>
-				<span class="text-xs font-normal text-[color:var(--on-surface-variant)]">
-					Selecciona uno o varios servicios activos.
-				</span>
-				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="services"></span>
-			</label>
+	<dialog
+		class="w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
+		data-professional-modal
+	>
+		<div class="shrink-0 z-10 shadow-sm border-b border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-6">
+			<div class="flex items-start justify-between gap-4">
+				<div class="flex items-center gap-4">
+					<div class="flex size-12 shrink-0 items-center justify-center rounded-[1rem] bg-[color:var(--primary-soft)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
+						<span class="material-symbols-rounded text-[1.4rem]">badge</span>
+					</div>
+					<div>
+						<h2 class="text-[1.2rem] font-extrabold tracking-tight text-[color:var(--on-surface)]" data-professional-modal-title>Crear personal</h2>
+						<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)] mt-0.5" data-professional-modal-description>Completa los datos para registrar profesional y cuenta en una sola operación.</p>
+					</div>
+				</div>
+				<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-[color:var(--on-surface-variant)] transition-colors hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]" data-close-professional-modal aria-label="Cerrar modal">
+					<span class="material-symbols-rounded text-[1.3rem]">close</span>
+				</button>
+			</div>
+		</div>
 
-			<label class="mt-2 grid max-w-sm gap-1 text-sm font-semibold">
-				Estado de profesional
-				<select
-					name="prof_is_active"
-					class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-				>
-					<option value="1">Activo</option>
-					<option value="0">Inactivo</option>
-				</select>
-				<span class="text-xs font-normal text-[color:var(--on-surface-variant)]">
-					Recibe reservas de clientes.
-				</span>
-				<span class="hidden text-xs text-rose-600 dark:text-rose-300" data-field-error="prof_is_active"></span>
-			</label>
+		<form class="relative flex flex-col px-7 py-7 bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-professional-form>
+			<div class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-[color:var(--surface-bright)]/80 backdrop-blur-[2px] transition-all" data-professional-loading>
+				<div class="inline-flex items-center gap-3 rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-3.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
+					<span class="material-symbols-rounded animate-spin text-[1.2rem] text-[color:var(--primary)]">progress_activity</span>
+					<div>Procesando...</div>
+				</div>
+			</div>
 
-			<div class="mt-6 flex items-center justify-between gap-2">
-				<button
-					type="button"
-					class="hidden rounded-xl border border-rose-500/30 bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-60"
-					data-delete-professional
-				>
-					<span class="material-symbols-rounded mr-1 align-[-0.2em] text-[1rem]">delete</span>
+			<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 mb-5 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
+
+			<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+				<!-- Primera columna -->
+				<fieldset class="flex flex-col gap-4 border-0 p-0 m-0">
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<span class="inline-flex items-center gap-1">Nombre(s) <span class="text-rose-500">*</span></span>
+						<input type="text" name="first_name" maxlength="150" required autocomplete="off" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" placeholder="Ej: Dra. Sarah"/>
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="first_name"></span>
+					</label>
+					
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<span class="inline-flex items-center gap-1">Apellido(s) <span class="text-rose-500">*</span></span>
+						<input type="text" name="last_name" maxlength="150" required autocomplete="off" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" placeholder="Ej: Gómez"/>
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="last_name"></span>
+					</label>
+
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<span class="inline-flex items-center gap-1">Teléfono <span class="text-rose-500">*</span></span>
+						<input type="tel" name="phone_number" maxlength="20" required autocomplete="off" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" placeholder="Ej: 5512345678" oninput="this.value = this.value.replace(/\\D/g, '').slice(0, 10);" />
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="phone_number"></span>
+					</label>
+					
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<span class="inline-flex items-center gap-1">Nombre de usuario <span class="text-rose-500">*</span></span>
+						<input type="text" name="apex_user_name" maxlength="150" required autocomplete="off" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" placeholder="Ej: sarahg"/>
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="apex_user_name"></span>
+					</label>
+
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<span class="inline-flex items-center gap-1">Correo electrónico <span class="text-rose-500">*</span></span>
+						<input type="email" name="email" maxlength="255" required autocomplete="off" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" placeholder="Ej: sarah@clinica.com"/>
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="email"></span>
+					</label>
+					
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)] relative">
+						<span class="inline-flex items-center gap-1">Contraseña <span class="text-rose-500" data-password-required-indicator>*</span></span>
+						<input type="password" name="password" minlength="8" maxlength="20" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm pr-10" placeholder="********" autocomplete="new-password"/>
+						<button type="button" class="absolute right-2 bottom-1.5 p-1 text-[color:var(--on-surface-variant)] hover:text-[color:var(--on-surface)] bg-transparent border-0" onclick="const i = this.previousElementSibling; const isPwd = i.type === 'password'; i.type = isPwd ? 'text' : 'password'; this.querySelector('span').textContent = isPwd ? 'visibility_off' : 'visibility';" aria-label="Alternar visibilidad de contraseña">
+							<span class="material-symbols-rounded text-lg pointer-events-none">visibility</span>
+						</button>
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="password"></span>
+					</label>
+
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<span class="inline-flex items-center gap-1">Rol de cuenta <span class="text-rose-500">*</span></span>
+						<select name="rol_id_role" required class="cursor-pointer appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2.5 text-[0.95rem] font-semibold flex items-center justify-between outline-none transition hover:border-[color:var(--on-surface-variant)] hover:bg-[color:var(--surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+							<option value="">Cargando roles...</option>
+						</select>
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="rol_id_role"></span>
+					</label>
+					
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<span class="inline-flex items-center gap-1">Cuenta Activa</span>
+						<select name="user_is_active" class="cursor-pointer appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2.5 text-[0.95rem] font-semibold flex items-center justify-between outline-none transition hover:border-[color:var(--on-surface-variant)] hover:bg-[color:var(--surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+							<option value="1">Sí (Activo)</option>
+							<option value="0">No (Inactivo)</option>
+						</select>
+					</label>
+				</fieldset>
+				
+				<!-- Segunda columna -->
+				<fieldset class="flex flex-col gap-4 border-0 p-0 m-0">
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<span class="inline-flex items-center gap-1">Especialidad Principal</span>
+						<select name="spe_id_specialty" class="cursor-pointer appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2.5 text-[0.95rem] font-semibold flex items-center justify-between outline-none transition hover:border-[color:var(--on-surface-variant)] hover:bg-[color:var(--surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+							<option value="">Cargando especialidades...</option>
+						</select>
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="spe_id_specialty"></span>
+					</label>
+
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<span class="inline-flex items-center gap-1">URL del Perfil Público (Opcional)</span>
+						<div class="flex">
+							<span class="inline-flex items-center rounded-l-2xl border border-r-0 border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-3 text-sm text-[color:var(--on-surface-variant)] shadow-sm">
+								bookmate.com/
+							</span>
+							<input type="text" name="profile_slug" maxlength="80" class="block w-full min-w-0 flex-1 rounded-none rounded-r-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" placeholder="sarah-gomez"/>
+						</div>
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_slug"></span>
+					</label>
+					
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<span class="inline-flex items-center gap-1">Servicios Asignados</span>
+						<div class="relative w-full">
+							<select name="services" multiple class="w-full"></select>
+						</div>
+						<p class="mt-1 text-xs text-[color:var(--on-surface-variant)]">Cargando servicios disponibles...</p>
+					</label>
+
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<span class="inline-flex items-center gap-1">Profesional Visible para Agendas</span>
+						<select name="prof_is_active" class="cursor-pointer appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-2.5 text-[0.95rem] font-semibold flex items-center justify-between outline-none transition hover:border-[color:var(--on-surface-variant)] hover:bg-[color:var(--surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+							<option value="1">Sí (Visible en app)</option>
+							<option value="0">No (Oculto)</option>
+						</select>
+					</label>
+					
+					<div class="grid gap-1.5 mt-2">
+						<span class="text-[0.95rem] font-bold text-[color:var(--on-surface)]">Avatar del Profesional</span>
+						<div class="mt-2 flex justify-center rounded-2xl border border-dashed border-[color:var(--shell-border)] px-6 py-6 transition-all hover:border-[color:var(--primary)] hover:bg-[color:var(--primary-soft)]" data-image-dropzone>
+							<div class="text-center cursor-pointer pointer-events-none">
+								<span class="material-symbols-rounded mx-auto text-3xl text-[color:var(--on-surface-variant)]">image</span>
+								<div class="mt-3 flex text-sm leading-6 text-[color:var(--on-surface-variant)]">
+									<label for="file-upload" class="cursor-pointer pointer-events-auto rounded-md font-semibold text-[color:var(--primary)] focus-within:outline-none focus-within:ring-2 focus-within:ring-[color:var(--primary)] focus-within:ring-offset-2 hover:text-[color:var(--primary-hover)]">
+										<span>Sube un archivo</span>
+										<input id="file-upload" name="profile_image" type="file" class="sr-only" accept="image/*" />
+									</label>
+									<p class="pl-1">o arrastra y suelta</p>
+								</div>
+								<p class="text-xs leading-5 text-[color:var(--on-surface-variant)]" data-image-file-name>PNG, JPG, GIF hasta 5MB</p>
+							</div>
+						</div>
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_image"></span>
+					</div>
+				</fieldset>
+			</div>
+			
+			<div class="sticky bottom-0 -mx-7 -mb-7 mt-8 flex shrink-0 items-center justify-between gap-3 border-t border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-5">
+				<button type="button" class="hidden h-11 items-center justify-center gap-2 rounded-xl bg-red-100 px-5 text-sm font-bold text-red-600 transition hover:bg-red-200 outline-none focus:ring-2 focus:ring-red-500" data-delete-professional>
+					<span class="material-symbols-rounded text-lg">delete</span>
 					Eliminar
 				</button>
-
-				<div class="ml-auto flex items-center justify-end gap-2">
-					<button
-						type="button"
-						class="rounded-xl border border-[color:var(--shell-border)] px-4 py-2 text-sm font-semibold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
-						data-close-professional-modal
-					>
+				<div class="flex ml-auto items-center gap-3">
+					<button type="button" class="flex h-11 items-center justify-center rounded-xl bg-[color:var(--control-surface)] px-5 text-sm font-bold text-[color:var(--on-surface)] transition hover:bg-[color:var(--shell-border)] outline-none focus:ring-2 focus:ring-[color:var(--primary)]" data-close-professional-modal>
 						Cancelar
 					</button>
-					<button
-						type="submit"
-						class="btn-primary-soft inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-						data-submit-professional
-					>
-						<span class="material-symbols-rounded text-[1rem]" data-submit-professional-icon>check</span>
+					<button type="submit" class="flex h-11 items-center justify-center gap-2 rounded-xl bg-[color:var(--primary)] px-6 text-sm font-bold text-white shadow-sm transition hover:bg-[color:var(--primary-hover)] outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2" data-submit-professional>
+						<span class="material-symbols-rounded text-lg" data-submit-professional-icon>check</span>
 						<span data-submit-professional-label>Crear personal</span>
 					</button>
 				</div>
 			</div>
 		</form>
 	</dialog>
-
-	<AppAlert />
+</professional-manager>
 </Layout>
 
 <script>
 	import TomSelect from 'tom-select';
 
-	const initializeProfessionalsPage = () => {
-	const modal = document.querySelector<HTMLDialogElement>('[data-professional-modal]');
-	if (!modal || modal.dataset.bound === 'true') return;
-	modal.dataset.bound = 'true';
-	const openButton = document.querySelector<HTMLButtonElement>('[data-open-professional-modal]');
-	const closeButton = document.querySelector<HTMLButtonElement>('[data-close-professional-modal]');
-	const deleteButton = document.querySelector<HTMLButtonElement>('[data-delete-professional]');
-	const form = document.querySelector<HTMLFormElement>('[data-professional-form]');
-	const submitButton = document.querySelector<HTMLButtonElement>('[data-submit-professional]');
-	const submitLabel = document.querySelector<HTMLElement>('[data-submit-professional-label]');
-	const submitIcon = document.querySelector<HTMLElement>('[data-submit-professional-icon]');
-	const formErrorNode = document.querySelector<HTMLElement>('[data-form-error]');
-	const fieldErrorNodes = document.querySelectorAll<HTMLElement>('[data-field-error]');
-	const loadingNode = document.querySelector<HTMLElement>('[data-professional-loading]');
-	const modalTitle = document.querySelector<HTMLElement>('[data-professional-modal-title]');
-	const modalDescription = document.querySelector<HTMLElement>('[data-professional-modal-description]');
-	const professionalCards = document.querySelectorAll<HTMLElement>('[data-professional-card]');
-	const formFields =
-		form?.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(
-			'input, select, textarea'
-		);
-	const specialtySelect = form?.querySelector<HTMLSelectElement>('[data-specialty-select]');
-	const roleSelect = form?.querySelector<HTMLSelectElement>('[data-role-select]');
-	const servicesSelect = form?.querySelector<HTMLSelectElement>('[data-services-select]');
-	const imageInput = form?.querySelector<HTMLInputElement>('[name="profile_image"]');
-	const imageDropzone = form?.querySelector<HTMLElement>('[data-image-dropzone]');
-	const imageFileNameNode = form?.querySelector<HTMLElement>('[data-image-file-name]');
-	const passwordRequiredIndicator = form?.querySelector<HTMLElement>('[data-password-required-indicator]');
-	const usernameInput = form?.querySelector<HTMLInputElement>('[name="apex_user_name"]');
-	const emailInput = form?.querySelector<HTMLInputElement>('[name="email"]');
-	const firstNameInput = form?.querySelector<HTMLInputElement>('[name="first_name"]');
-	const lastNameInput = form?.querySelector<HTMLInputElement>('[name="last_name"]');
-	const passwordInput = form?.querySelector<HTMLInputElement>('[name="password"]');
-	const phoneInput = form?.querySelector<HTMLInputElement>('[name="phone_number"]');
-	const profileSlugInput = form?.querySelector<HTMLInputElement>('[name="profile_slug"]');
-	const userStatusInput = form?.querySelector<HTMLSelectElement>('[name="user_is_active"]');
-	const profStatusInput = form?.querySelector<HTMLSelectElement>('[name="prof_is_active"]');
-	let closeTimer: number | null = null;
-	let mode = 'create';
-	let editingProfessionalId = 0;
-	let professionalReadRequestSeq = 0;
-	let specialtiesLoadPromise: Promise<void> | null = null;
-	let specialtiesLoaded = false;
-	let rolesLoadPromise: Promise<void> | null = null;
-	let rolesLoaded = false;
-	let servicesLoadPromise: Promise<void> | null = null;
-	let servicesLoaded = false;
-	let servicesTom: TomSelect | null = null;
-	let servicesTouched = false;
-	let suppressServicesTouched = false;
-	let editServicesAvailable = false;
-	let slugSuggestTimer: number | null = null;
-	let slugRequestSeq = 0;
-	let slugManuallyEdited = false;
-	let suppressSlugManualTracking = false;
+	type ProfessionalMode = 'create' | 'edit';
 
-	const currentUrl = new URL(window.location.href);
-	if (currentUrl.searchParams.has('flash_message')) {
-		currentUrl.searchParams.delete('flash_message');
-		currentUrl.searchParams.delete('flash_type');
-		window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
-	}
+	class ProfessionalManager extends HTMLElement {
+		private els: {
+			modal: HTMLDialogElement | null;
+			form: HTMLFormElement | null;
+			deleteBtn: HTMLButtonElement | null;
+			loading: HTMLElement | null;
+			error: HTMLElement | null;
+			title: HTMLElement | null;
+			description: HTMLElement | null;
+			submitIcon: HTMLElement | null;
+			submitLabel: HTMLElement | null;
+			imageDropzone: HTMLElement | null;
+			imageFileName: HTMLElement | null;
+		};
 
-	const redirectWithFlash = (message: string, type = 'success') => {
-		const nextUrl = new URL(window.location.href);
-		nextUrl.searchParams.set('flash_message', message);
-		nextUrl.searchParams.set('flash_type', type);
-		window.location.assign(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
-	};
+		private formEls: {
+			username: HTMLInputElement | null;
+			email: HTMLInputElement | null;
+			firstName: HTMLInputElement | null;
+			lastName: HTMLInputElement | null;
+			password: HTMLInputElement | null;
+			role: HTMLSelectElement | null;
+			phone: HTMLInputElement | null;
+			specialty: HTMLSelectElement | null;
+			userActive: HTMLSelectElement | null;
+			profActive: HTMLSelectElement | null;
+			slug: HTMLInputElement | null;
+			image: HTMLInputElement | null;
+			services: HTMLSelectElement | null;
+			fields: (HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement)[];
+			fieldErrors: HTMLElement[];
+		};
 
-	const clearErrors = () => {
-		if (formErrorNode) {
-			formErrorNode.textContent = '';
-			formErrorNode.classList.add('hidden');
+		private bound = false;
+		private mode: ProfessionalMode = 'create';
+		private editingId: number | null = null;
+		private closeTimer: number | null = null;
+		private slugSuggestTimer: number | null = null;
+		private slugRequestSeq = 0;
+		private slugManuallyEdited = false;
+		private suppressSlugManualTracking = false;
+		
+		private rolesLoaded = false;
+		private rolesLoadPromise: Promise<void> | null = null;
+		
+		private specialtiesLoaded = false;
+		private specialtiesLoadPromise: Promise<void> | null = null;
+		
+		private servicesLoaded = false;
+		private servicesLoadPromise: Promise<void> | null = null;
+		private servicesTom: TomSelect | null = null;
+		private servicesTouched = false;
+		private editServicesAvailable = false;
+		private suppressServicesTouched = false;
+
+		private professionalReadRequestSeq = 0;
+
+		constructor() {
+			super();
+
+			this.els = {
+				modal: this.querySelector<HTMLDialogElement>('[data-professional-modal]'),
+				form: this.querySelector<HTMLFormElement>('[data-professional-form]'),
+				deleteBtn: this.querySelector<HTMLButtonElement>('[data-delete-professional]'),
+				loading: this.querySelector<HTMLElement>('[data-professional-loading]'),
+				error: this.querySelector<HTMLElement>('[data-form-error]'),
+				title: this.querySelector<HTMLElement>('[data-professional-modal-title]'),
+				description: this.querySelector<HTMLElement>('[data-professional-modal-description]'),
+				submitIcon: this.querySelector<HTMLElement>('[data-submit-professional-icon]'),
+				submitLabel: this.querySelector<HTMLElement>('[data-submit-professional-label]'),
+				imageDropzone: this.querySelector<HTMLElement>('[data-image-dropzone]'),
+				imageFileName: this.querySelector<HTMLElement>('[data-image-file-name]'),
+			};
+
+			const formNode = this.els.form;
+			this.formEls = {
+				username: formNode?.querySelector<HTMLInputElement>('input[name="apex_user_name"]') || null,
+				email: formNode?.querySelector<HTMLInputElement>('input[name="email"]') || null,
+				firstName: formNode?.querySelector<HTMLInputElement>('input[name="first_name"]') || null,
+				lastName: formNode?.querySelector<HTMLInputElement>('input[name="last_name"]') || null,
+				password: formNode?.querySelector<HTMLInputElement>('input[name="password"]') || null,
+				role: formNode?.querySelector<HTMLSelectElement>('select[name="rol_id_role"]') || null,
+				phone: formNode?.querySelector<HTMLInputElement>('input[name="phone_number"]') || null,
+				specialty: formNode?.querySelector<HTMLSelectElement>('select[name="spe_id_specialty"]') || null,
+				userActive: formNode?.querySelector<HTMLSelectElement>('select[name="user_is_active"]') || null,
+				profActive: formNode?.querySelector<HTMLSelectElement>('select[name="prof_is_active"]') || null,
+				slug: formNode?.querySelector<HTMLInputElement>('input[name="profile_slug"]') || null,
+				image: formNode?.querySelector<HTMLInputElement>('input[name="profile_image"]') || null,
+				services: formNode?.querySelector<HTMLSelectElement>('select[name="services"]') || null,
+				fields: formNode 
+					? Array.from(formNode.querySelectorAll<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>('input, select, textarea')) 
+					: [],
+				fieldErrors: Array.from(this.querySelectorAll<HTMLElement>('[data-field-error]')),
+			};
 		}
 
-		for (const node of fieldErrorNodes) {
-			node.textContent = '';
-			node.classList.add('hidden');
+		connectedCallback() {
+			if (this.bound) return;
+			this.bound = true;
+			this.addEventListener('click', this.handleRootClick);
+			this.addEventListener('keydown', this.handleRootKeydown);
+			this.els.form?.addEventListener('submit', this.handleSubmit);
+			
+			// Drag and drop image
+			['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+				this.els.imageDropzone?.addEventListener(eventName, (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+				});
+			});
+			this.els.imageDropzone?.addEventListener('dragenter', () => {
+				if (!this.formEls.image?.disabled) this.els.imageDropzone?.classList.add('is-dragover');
+			});
+			this.els.imageDropzone?.addEventListener('dragover', () => {
+				if (!this.formEls.image?.disabled) this.els.imageDropzone?.classList.add('is-dragover');
+			});
+			this.els.imageDropzone?.addEventListener('dragleave', () => {
+				this.els.imageDropzone?.classList.remove('is-dragover');
+			});
+			this.els.imageDropzone?.addEventListener('drop', (e) => {
+				this.els.imageDropzone?.classList.remove('is-dragover');
+				if (!this.formEls.image || this.formEls.image.disabled) return;
+				const dragEvent = e as DragEvent;
+				const files = dragEvent.dataTransfer?.files;
+				if (!files || files.length === 0) return;
+				const droppedFile = Array.from(files).find(f => f.type.startsWith('image/')) || files[0];
+				const transfer = new DataTransfer();
+				transfer.items.add(droppedFile);
+				this.formEls.image.files = transfer.files;
+				this.setImageFileNameLabel();
+			});
+			this.formEls.image?.addEventListener('change', () => this.setImageFileNameLabel());
+
+			// Slug events
+			this.formEls.slug?.addEventListener('input', () => {
+				if (this.suppressSlugManualTracking) return;
+				const val = String(this.formEls.slug?.value || '').trim();
+				this.slugManuallyEdited = val !== '';
+				if (!this.slugManuallyEdited) this.queueSlugSuggestion();
+			});
+			this.formEls.firstName?.addEventListener('input', () => this.queueSlugSuggestion());
+			this.formEls.lastName?.addEventListener('input', () => this.queueSlugSuggestion());
 		}
-	};
 
-	const showFormError = (message: string) => {
-		if (!formErrorNode) return;
-		formErrorNode.textContent = message;
-		formErrorNode.classList.remove('hidden');
-	};
+		disconnectedCallback() {
+			this.bound = false;
+			this.removeEventListener('click', this.handleRootClick);
+			this.removeEventListener('keydown', this.handleRootKeydown);
+			this.els.form?.removeEventListener('submit', this.handleSubmit);
+			if (this.closeTimer) window.clearTimeout(this.closeTimer);
+			this.clearSlugSuggestTimer();
+		}
 
-	const setSuggestedSlug = (slug: string) => {
-		if (!profileSlugInput) return;
-		suppressSlugManualTracking = true;
-		profileSlugInput.value = slug;
-		suppressSlugManualTracking = false;
-	};
+		private handleRootClick = (event: MouseEvent) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
 
-	const clearSlugSuggestTimer = () => {
-		if (!slugSuggestTimer) return;
-		window.clearTimeout(slugSuggestTimer);
-		slugSuggestTimer = null;
-	};
+			if (this.els.modal && target === this.els.modal) {
+				this.closeModal();
+				return;
+			}
 
-	const getSlugSourceName = () =>
-		`${String(firstNameInput?.value || '').trim()} ${String(lastNameInput?.value || '').trim()}`.trim();
+			const closeTrigger = target.closest('[data-close-professional-modal]');
+			if (closeTrigger && this.contains(closeTrigger)) {
+				this.closeModal();
+				return;
+			}
 
-	const queueSlugSuggestion = () => {
-		if (!profileSlugInput) return;
+			const deleteTrigger = target.closest('[data-delete-professional]');
+			if (deleteTrigger && this.contains(deleteTrigger)) {
+				void this.handleDelete();
+				return;
+			}
 
-		const fullName = getSlugSourceName();
-		if (!fullName) return;
+			const dropzoneTrigger = target.closest('[data-image-dropzone]');
+			if (dropzoneTrigger && this.contains(dropzoneTrigger)) {
+				this.handleDropzoneClick();
+				return;
+			}
 
-		if (slugManuallyEdited && profileSlugInput.value.trim() !== '') return;
+			const openTrigger = target.closest('[data-open-professional-modal], [data-professional-card]');
+			if (!openTrigger || !this.contains(openTrigger)) return;
 
-		clearSlugSuggestTimer();
-		const currentRequest = ++slugRequestSeq;
-		slugSuggestTimer = window.setTimeout(async () => {
-			try {
-				const response = await fetch(
-					`/api/professionals/slug/suggest?name=${encodeURIComponent(fullName)}`,
-					{
-						method: 'GET',
-						headers: { Accept: 'application/json' },
-					}
-				);
+			const card = openTrigger.closest('[data-professional-card]');
+			if (card) {
+				const id = Number(card.getAttribute('data-professional-id') || '0');
+				if (id > 0) void this.openEditModal(id);
+				return;
+			}
 
-				let data = null;
+			void this.openCreateModal();
+		};
+
+		private handleRootKeydown = (event: KeyboardEvent) => {
+			if (event.key !== 'Enter' && event.key !== ' ') return;
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+
+			const card = target.closest('[data-professional-card]');
+			if (card && this.contains(card)) {
+				event.preventDefault();
+				const id = Number(card.getAttribute('data-professional-id') || '0');
+				if (id > 0) void this.openEditModal(id);
+				return;
+			}
+
+			const dropzone = target.closest('[data-image-dropzone]');
+			if (dropzone && this.contains(dropzone)) {
+				event.preventDefault();
+				this.handleDropzoneClick();
+				return;
+			}
+		};
+
+		private updateUIMode(newMode: ProfessionalMode) {
+			this.mode = newMode;
+			const isEdit = this.mode === 'edit';
+
+			if (this.els.title) this.els.title.textContent = isEdit ? 'Editar personal' : 'Crear personal';
+			if (this.els.description) {
+				this.els.description.textContent = isEdit 
+					? 'Modifica los datos del profesional y su cuenta.' 
+					: 'Completa los datos para registrar profesional y cuenta en una sola operación.';
+			}
+			if (this.els.submitLabel) this.els.submitLabel.textContent = isEdit ? 'Guardar cambios' : 'Crear personal';
+			if (this.els.submitIcon) this.els.submitIcon.textContent = isEdit ? 'save' : 'check';
+			
+			if (this.els.deleteBtn) {
+				if (isEdit) {
+					this.els.deleteBtn.classList.remove('hidden');
+					this.els.deleteBtn.classList.add('inline-flex');
+					this.els.deleteBtn.disabled = false;
+				} else {
+					this.els.deleteBtn.classList.add('hidden');
+					this.els.deleteBtn.classList.remove('inline-flex');
+					this.els.deleteBtn.disabled = true;
+				}
+			}
+
+			if (this.formEls.password) {
+				const requiredIndicator = this.querySelector('[data-password-required-indicator]');
+				if (isEdit) {
+					this.formEls.password.required = false;
+					this.formEls.password.placeholder = 'Dejar en blanco para mantener';
+					if (requiredIndicator) requiredIndicator.classList.add('hidden');
+				} else {
+					this.formEls.password.required = true;
+					this.formEls.password.placeholder = '********';
+					if (requiredIndicator) requiredIndicator.classList.remove('hidden');
+				}
+			}
+		}
+
+		private toggleFormLoading(isLoading: boolean) {
+			if (this.els.loading) {
+				isLoading
+					? this.els.loading.classList.replace('hidden', 'flex')
+					: this.els.loading.classList.replace('flex', 'hidden');
+			}
+			for (const field of this.formEls.fields) {
+				field.disabled = isLoading;
+			}
+			if (this.els.deleteBtn) this.els.deleteBtn.disabled = isLoading;
+			const submitBtn = this.els.form?.querySelector<HTMLButtonElement>('[data-submit-professional]');
+			if (submitBtn) submitBtn.disabled = isLoading;
+			
+			if (this.servicesTom) {
+				isLoading ? this.servicesTom.disable() : this.servicesTom.enable();
+			}
+
+			if (this.els.imageDropzone) {
+				this.els.imageDropzone.classList.toggle('opacity-60', isLoading);
+				this.els.imageDropzone.classList.toggle('cursor-not-allowed', isLoading);
+			}
+		}
+
+		private setLoadingMessage(message: string) {
+			if (!this.els.loading) return;
+			const textNode = this.els.loading.querySelector('div')?.lastChild;
+			if (textNode) textNode.textContent = ` ${message}`;
+		}
+
+		private showFormError(message: string) {
+			if (!this.els.error) return;
+			this.els.error.textContent = message;
+			this.els.error.classList.remove('hidden');
+		}
+
+		private clearErrors() {
+			if (this.els.error) {
+				this.els.error.textContent = '';
+				this.els.error.classList.add('hidden');
+			}
+			for (const node of this.formEls.fieldErrors) {
+				node.textContent = '';
+				node.classList.add('hidden');
+			}
+		}
+
+		private renderFieldErrors(errors: unknown, fallbackMessage = '') {
+			let rendered = false;
+			const items = Array.isArray(errors) ? errors : [];
+
+			for (const err of items) {
+				if (!err || typeof err !== 'object') continue;
+				const field = 'field' in err ? String(err.field || '') : '';
+				const messageText = 'message' in err ? String(err.message || '') : '';
+				if (!field || !messageText) continue;
+
+				const fieldNode = this.formEls.fieldErrors.find((el) => el.getAttribute('data-field-error') === field);
+				if (!fieldNode) continue;
+				fieldNode.textContent = messageText;
+				fieldNode.classList.remove('hidden');
+				rendered = true;
+			}
+
+			if (rendered) return true;
+
+			if (typeof fallbackMessage === 'string' && /slug|perfil/i.test(fallbackMessage)) {
+				const slugFieldNode = this.formEls.fieldErrors.find((el) => el.getAttribute('data-field-error') === 'profile_slug');
+				if (slugFieldNode) {
+					slugFieldNode.textContent = fallbackMessage;
+					slugFieldNode.classList.remove('hidden');
+					return true;
+				}
+			}
+
+			return false;
+		}
+
+		private resetFormValues() {
+			if (this.els.form) this.els.form.reset();
+			this.setImageFileNameLabel();
+			this.setSelectedServices([]);
+			this.servicesTouched = false;
+			this.editServicesAvailable = false;
+			this.slugManuallyEdited = false;
+			this.clearSlugSuggestTimer();
+			this.slugRequestSeq += 1;
+		}
+
+		private setImageFileNameLabel() {
+			if (!this.els.imageFileName) return;
+			const file = this.formEls.image?.files?.[0];
+			this.els.imageFileName.textContent = file ? file.name : 'No se eligio ningun archivo';
+		}
+
+		private handleDropzoneClick() {
+			if (!this.formEls.image || this.formEls.image.disabled) return;
+			this.formEls.image.click();
+		}
+
+		private clearSlugSuggestTimer() {
+			if (this.slugSuggestTimer) {
+				window.clearTimeout(this.slugSuggestTimer);
+				this.slugSuggestTimer = null;
+			}
+		}
+
+		private queueSlugSuggestion() {
+			if (!this.formEls.slug) return;
+			const first = String(this.formEls.firstName?.value || '').trim();
+			const last = String(this.formEls.lastName?.value || '').trim();
+			const fullName = `${first} ${last}`.trim();
+			
+			if (!fullName) return;
+			if (this.slugManuallyEdited && this.formEls.slug.value.trim() !== '') return;
+
+			this.clearSlugSuggestTimer();
+			const currentRequest = ++this.slugRequestSeq;
+			
+			this.slugSuggestTimer = window.setTimeout(async () => {
 				try {
-					data = await response.json();
-				} catch {
+					const response = await fetch(`/api/professionals/slug/suggest?name=${encodeURIComponent(fullName)}`, {
+						headers: { Accept: 'application/json' },
+					});
+					const data = await response.json();
+					if (currentRequest !== this.slugRequestSeq || !response.ok || data.status !== 'success' || !data.slug) return;
+					if (this.slugManuallyEdited && this.formEls.slug!.value.trim() !== '') return;
+					
+					this.suppressSlugManualTracking = true;
+					this.formEls.slug!.value = data.slug.trim();
+					this.suppressSlugManualTracking = false;
+				} catch {}
+			}, 350);
+		}
+
+		private async ensureSpecialtiesLoaded() {
+			if (this.specialtiesLoaded) return;
+			if (this.specialtiesLoadPromise) return this.specialtiesLoadPromise;
+
+			if (this.formEls.specialty) this.formEls.specialty.disabled = true;
+			
+			this.specialtiesLoadPromise = (async () => {
+				const response = await fetch('/api/specialties?page=1&limit=100');
+				const data = await response.json();
+				if (!response.ok || data.status !== 'success' || !Array.isArray(data.data)) throw new Error('Error al cargar especialidades');
+				
+				if (this.formEls.specialty) {
+					this.formEls.specialty.innerHTML = '<option value="">Sin especialidad</option>';
+					data.data.forEach((s: any) => {
+						const option = document.createElement('option');
+						option.value = String(s.id_specialty);
+						option.textContent = s.name;
+						this.formEls.specialty?.appendChild(option);
+					});
+				}
+				this.specialtiesLoaded = true;
+			})().finally(() => {
+				if (this.formEls.specialty) this.formEls.specialty.disabled = false;
+				this.specialtiesLoadPromise = null;
+			});
+			return this.specialtiesLoadPromise;
+		}
+
+		private async ensureRolesLoaded() {
+			if (this.rolesLoaded) return;
+			if (this.rolesLoadPromise) return this.rolesLoadPromise;
+
+			if (this.formEls.role) this.formEls.role.disabled = true;
+			
+			this.rolesLoadPromise = (async () => {
+				const response = await fetch('/api/roles');
+				const data = await response.json();
+				if (!response.ok || data.status !== 'success' || !Array.isArray(data.data)) throw new Error('Error al cargar roles');
+				
+				if (this.formEls.role) {
+					this.formEls.role.innerHTML = '<option value="">Selecciona un rol</option>';
+					data.data.forEach((r: any) => {
+						const option = document.createElement('option');
+						option.value = String(r.id_role);
+						option.textContent = r.name;
+						this.formEls.role?.appendChild(option);
+					});
+				}
+				this.rolesLoaded = true;
+			})().finally(() => {
+				if (this.formEls.role) this.formEls.role.disabled = false;
+				this.rolesLoadPromise = null;
+			});
+			return this.rolesLoadPromise;
+		}
+
+		private ensureServicesControl() {
+			if (!this.formEls.services || this.servicesTom) return;
+			
+			this.servicesTom = new TomSelect(this.formEls.services, {
+				plugins: { remove_button: { title: 'Quitar' } },
+				placeholder: 'Busca o selecciona servicios...',
+				create: false,
+				persist: false,
+				maxOptions: 200,
+				closeAfterSelect: false,
+				hideSelected: true,
+			});
+			
+			this.servicesTom.on('change', () => {
+				if (!this.suppressServicesTouched) this.servicesTouched = true;
+			});
+		}
+
+		private async ensureServicesLoaded() {
+			this.ensureServicesControl();
+			if (this.servicesLoaded) return;
+			if (this.servicesLoadPromise) return this.servicesLoadPromise;
+
+			this.servicesTom?.disable();
+			
+			this.servicesLoadPromise = (async () => {
+				const response = await fetch('/api/services/lov');
+				const data = await response.json();
+				if (!response.ok || data.status !== 'success' || !Array.isArray(data.data)) throw new Error('Error al cargar servicios');
+				
+				this.servicesTom?.clear(true);
+				this.servicesTom?.clearOptions();
+				data.data.forEach((s: any) => {
+					this.servicesTom?.addOption({ value: String(s.id_service), text: s.name });
+				});
+				this.servicesTom?.refreshOptions(false);
+				
+				this.servicesLoaded = true;
+			})().finally(() => {
+				this.servicesTom?.enable();
+				this.servicesLoadPromise = null;
+			});
+			return this.servicesLoadPromise;
+		}
+
+		private setSelectedServices(serviceIds: number[]) {
+			if (!this.servicesTom) return;
+			this.suppressServicesTouched = true;
+			this.servicesTom.setValue(serviceIds.map(String) as any, true);
+			this.suppressServicesTouched = false;
+		}
+
+		private getSelectedServiceIds(): number[] {
+			if (!this.servicesTom) return [];
+			const val = this.servicesTom.getValue();
+			const arr = Array.isArray(val) ? val : String(val || '').split(',');
+			return arr.map(Number).filter(n => Number.isInteger(n) && n > 0);
+		}
+
+		private async openCreateModal() {
+			this.updateUIMode('create');
+			this.editingId = null;
+			this.resetFormValues();
+			this.clearErrors();
+			this.toggleFormLoading(false);
+			
+			this.els.modal?.classList.remove('is-closing');
+			if (this.closeTimer) window.clearTimeout(this.closeTimer);
+			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
+			
+			try {
+				await Promise.all([this.ensureSpecialtiesLoaded(), this.ensureRolesLoaded(), this.ensureServicesLoaded()]);
+			} catch (err) {
+				this.showFormError(err instanceof Error ? err.message : 'Error al cargar catálogos.');
+			}
+		}
+
+		private async openEditModal(id: number) {
+			const reqId = ++this.professionalReadRequestSeq;
+			this.updateUIMode('edit');
+			this.editingId = id;
+			this.resetFormValues();
+			this.clearErrors();
+			
+			this.els.modal?.classList.remove('is-closing');
+			if (this.closeTimer) window.clearTimeout(this.closeTimer);
+			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
+			this.setLoadingMessage('Cargando...');
+			this.toggleFormLoading(true);
+
+			try {
+				const res = await fetch(`/api/professionals/${id}`);
+				const data = await res.json();
+				if (reqId !== this.professionalReadRequestSeq) return;
+				
+				if (!res.ok || data.status !== 'success' || !data.data) throw new Error('No fue posible obtener el personal seleccionado');
+				
+				await Promise.all([this.ensureSpecialtiesLoaded(), this.ensureRolesLoaded(), this.ensureServicesLoaded()]);
+				if (reqId !== this.professionalReadRequestSeq) return;
+				
+				const prof = data.data;
+				const user = prof.user || {};
+				
+				const { formEls } = this;
+				if (formEls.username) formEls.username.value = user.apex_user_name || '';
+				if (formEls.email) formEls.email.value = user.email || '';
+				if (formEls.firstName) formEls.firstName.value = user.first_name || '';
+				if (formEls.lastName) formEls.lastName.value = user.last_name || '';
+				if (formEls.role) formEls.role.value = user.rol_id_role || '';
+				if (formEls.phone) formEls.phone.value = prof.phone_number || '';
+				if (formEls.slug) formEls.slug.value = prof.profile_slug || '';
+				if (formEls.userActive) formEls.userActive.value = user.is_active === 0 ? '0' : '1';
+				if (formEls.profActive) formEls.profActive.value = prof.is_active === 0 ? '0' : '1';
+				
+				const sId = prof.specialty?.id_specialty;
+				if (formEls.specialty && sId) formEls.specialty.value = String(sId);
+				
+				const services = Array.isArray(prof.services) ? prof.services : [];
+				this.editServicesAvailable = Array.isArray(prof.services);
+				this.setSelectedServices(services);
+				this.servicesTouched = false;
+				this.slugManuallyEdited = false;
+			} catch (err) {
+				if (reqId !== this.professionalReadRequestSeq) return;
+				this.updateUIMode('create');
+				this.showFormError(err instanceof Error ? err.message : 'Error de carga.');
+			} finally {
+				if (reqId === this.professionalReadRequestSeq) {
+					this.toggleFormLoading(false);
+				}
+			}
+		}
+
+		private closeModal() {
+			if (!this.els.modal?.open) return;
+			this.professionalReadRequestSeq++;
+			this.els.modal.classList.add('is-closing');
+			this.clearSlugSuggestTimer();
+			
+			this.closeTimer = window.setTimeout(() => {
+				this.els.modal?.close();
+				this.els.modal?.classList.remove('is-closing');
+				if (this.els.form) this.els.form.reset();
+				this.resetFormValues();
+				this.updateUIMode('create');
+				this.toggleFormLoading(false);
+				this.clearErrors();
+				this.closeTimer = null;
+			}, 160);
+		}
+
+		private async fileToBase64(file: File): Promise<string> {
+			return new Promise((resolve, reject) => {
+				const r = new FileReader();
+				r.onload = () => {
+					const res = String(r.result || '');
+					resolve(res.includes(',') ? res.split(',')[1] : res);
+				};
+				r.onerror = () => reject(new Error('No se pudo procesar la imagen'));
+				r.readAsDataURL(file);
+			});
+		}
+
+		private handleSubmit = async (event: SubmitEvent) => {
+			event.preventDefault();
+			this.clearErrors();
+			if (!this.els.form) return;
+			
+			const fd = new FormData(this.els.form);
+			const roleRaw = String(fd.get('rol_id_role') || '').trim();
+			const pass = String(fd.get('password') || '');
+			
+			if (this.mode === 'create' && !pass) {
+				this.showFormError('La contraseña es obligatoria para nuevos registros.');
+				return;
+			}
+			
+			const payload: any = {
+				rol_id_role: Number(roleRaw),
+				apex_user_name: String(fd.get('apex_user_name') || '').trim(),
+				first_name: String(fd.get('first_name') || '').trim(),
+				last_name: String(fd.get('last_name') || '').trim(),
+				email: String(fd.get('email') || '').trim(),
+				phone_number: String(fd.get('phone_number') || '').trim(),
+				user_is_active: fd.get('user_is_active') === '0' ? 0 : 1,
+				prof_is_active: fd.get('prof_is_active') === '0' ? 0 : 1,
+			};
+			
+			if (this.mode === 'create' || pass) payload.password = pass;
+			
+			const slug = String(fd.get('profile_slug') || '').trim();
+			if (slug) payload.profile_slug = slug;
+			
+			const sId = Number(fd.get('spe_id_specialty'));
+			if (sId > 0) payload.spe_id_specialty = sId;
+			
+			if (this.mode === 'create' || this.editServicesAvailable || this.servicesTouched) {
+				payload.services = this.getSelectedServiceIds();
+			}
+			
+			const imgFile = this.formEls.image?.files?.[0];
+			if (imgFile) {
+				payload.image_base64 = await this.fileToBase64(imgFile);
+				payload.image_name = imgFile.name;
+				payload.image_mime = imgFile.type;
+			}
+			
+			const method = this.mode === 'edit' ? 'PUT' : 'POST';
+			const url = this.mode === 'edit' ? `/api/professionals/${this.editingId}` : '/api/professionals';
+			
+			this.setLoadingMessage(this.mode === 'edit' ? 'Guardando...' : 'Creando...');
+			this.toggleFormLoading(true);
+			
+			try {
+				const response = await fetch(url, {
+					method,
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+					body: JSON.stringify(payload)
+				});
+				const data = await response.json();
+				
+				if (!response.ok || data.status !== 'success') {
+					const msg = data.message || 'Error al guardar.';
+					const hasFieldErrors = this.renderFieldErrors(data.errors, msg);
+					if (!hasFieldErrors || !msg.includes('verificar los campos')) {
+						this.showFormError(msg);
+					}
 					return;
 				}
-
-				if (currentRequest !== slugRequestSeq) return;
-				if (!response.ok || !data || data.status !== 'success' || typeof data.slug !== 'string') return;
-				if (slugManuallyEdited && profileSlugInput.value.trim() !== '') return;
-
-				const suggestedSlug = String(data.slug || '').trim();
-				if (!suggestedSlug) return;
-				setSuggestedSlug(suggestedSlug);
-			} catch {
-				// Ignoramos errores de red para no bloquear la edición.
+				
+				this.closeModal();
+				window.location.reload();
+			} catch (err) {
+				this.showFormError(err instanceof Error ? err.message : 'Error inesperado.');
+			} finally {
+				this.toggleFormLoading(false);
 			}
-		}, 350);
-	};
+		};
 
-	const setImageFileNameLabel = () => {
-		if (!imageFileNameNode) return;
-		const selectedFile = imageInput?.files?.[0];
-		imageFileNameNode.textContent = selectedFile ? selectedFile.name : 'No se eligio ningun archivo';
-	};
-
-	const setImageDropzoneState = (isDisabled: boolean) => {
-		if (!imageDropzone) return;
-		imageDropzone.classList.toggle('is-disabled', isDisabled);
-	};
-
-	const renderFieldErrors = (errors: unknown, fallbackMessage = '') => {
-		let rendered = false;
-		const items = Array.isArray(errors) ? errors : [];
-
-		for (const error of items) {
-			if (!error || typeof error !== 'object') continue;
-			const field = 'field' in error ? String(error.field || '') : '';
-			const messageText = 'message' in error ? String(error.message || '') : '';
-			if (!field || !messageText) continue;
-
-			const fieldNode = document.querySelector(`[data-field-error="${field}"]`);
-			if (!fieldNode) continue;
-			fieldNode.textContent = messageText;
-			fieldNode.classList.remove('hidden');
-			rendered = true;
-		}
-
-		if (rendered) return true;
-
-		if (typeof fallbackMessage === 'string' && /slug|perfil/i.test(fallbackMessage)) {
-			const slugFieldNode = document.querySelector('[data-field-error="profile_slug"]');
-			if (slugFieldNode) {
-				slugFieldNode.textContent = fallbackMessage;
-				slugFieldNode.classList.remove('hidden');
-				return true;
-			}
-		}
-
-		return false;
-	};
-
-	const isGenericValidationMessage = (message: string) => {
-		const normalized = String(message || '')
-			.trim()
-			.toLowerCase();
-		return (
-			normalized === 'errores de validacion.' ||
-			normalized === 'errores de validacion' ||
-			normalized === 'errores de validación.' ||
-			normalized === 'errores de validación'
-		);
-	};
-
-	const setCreateMode = () => {
-		mode = 'create';
-		editingProfessionalId = 0;
-		if (modalTitle) modalTitle.textContent = 'Crear personal';
-		if (modalDescription) {
-			modalDescription.textContent =
-				'Completa los datos para registrar profesional y cuenta en una sola operacion.';
-		}
-		if (passwordInput) {
-			passwordInput.required = true;
-			passwordInput.placeholder = '********';
-		}
-		passwordRequiredIndicator?.classList.remove('hidden');
-		if (submitLabel) submitLabel.textContent = 'Crear personal';
-		if (submitIcon) submitIcon.textContent = 'check';
-		deleteButton?.classList.add('hidden');
-		deleteButton?.setAttribute('disabled', 'true');
-		loadingNode?.classList.add('hidden');
-		slugManuallyEdited = false;
-		clearSlugSuggestTimer();
-		slugRequestSeq += 1;
-	};
-
-	const setEditMode = (professionalId: number) => {
-		mode = 'edit';
-		editingProfessionalId = professionalId;
-		if (modalTitle) modalTitle.textContent = 'Editar personal';
-		if (modalDescription) {
-			modalDescription.textContent = 'Actualiza los datos del profesional y su cuenta asociada.';
-		}
-		if (passwordInput) {
-			passwordInput.required = false;
-			passwordInput.placeholder = 'Dejar vacia para no cambiar';
-		}
-		passwordRequiredIndicator?.classList.add('hidden');
-		if (submitLabel) submitLabel.textContent = 'Guardar cambios';
-		if (submitIcon) submitIcon.textContent = 'save';
-		deleteButton?.classList.remove('hidden');
-		deleteButton?.removeAttribute('disabled');
-		slugManuallyEdited = false;
-		clearSlugSuggestTimer();
-		slugRequestSeq += 1;
-	};
-
-	const setFormLoadingState = (isLoading: boolean) => {
-		if (isLoading) {
-			loadingNode?.classList.add('flex');
-			loadingNode?.classList.remove('hidden');
-		} else {
-			loadingNode?.classList.add('hidden');
-			loadingNode?.classList.remove('flex');
-		}
-
-		for (const field of formFields ?? []) {
-			field.disabled = isLoading;
-		}
-		setImageDropzoneState(isLoading);
-
-		if (servicesTom) {
-			if (isLoading) {
-				servicesTom.disable();
-			} else {
-				servicesTom.enable();
-			}
-		}
-	};
-
-	const setLoadingMode = (label = 'Procesando...') => {
-		if (submitButton) submitButton.disabled = true;
-		if (deleteButton && mode === 'edit') deleteButton.disabled = true;
-		if (submitLabel) submitLabel.textContent = label;
-		if (submitIcon) submitIcon.textContent = 'hourglass_top';
-	};
-
-	const restoreButtons = () => {
-		if (submitButton) submitButton.disabled = false;
-		if (mode === 'create') {
-			if (submitLabel) submitLabel.textContent = 'Crear personal';
-			if (submitIcon) submitIcon.textContent = 'check';
-			return;
-		}
-
-		if (submitLabel) submitLabel.textContent = 'Guardar cambios';
-		if (submitIcon) submitIcon.textContent = 'save';
-		if (deleteButton) deleteButton.disabled = false;
-	};
-
-	const openModalShell = () => {
-		modal?.classList.remove('is-closing');
-		if (closeTimer) {
-			window.clearTimeout(closeTimer);
-			closeTimer = null;
-		}
-		if (!modal?.open) modal?.showModal();
-	};
-
-	const closeModal = () => {
-		if (!modal?.open) return;
-		professionalReadRequestSeq += 1;
-		clearSlugSuggestTimer();
-		slugRequestSeq += 1;
-		modal.classList.add('is-closing');
-
-		closeTimer = window.setTimeout(() => {
-			modal.close();
-			modal.classList.remove('is-closing');
-			form?.reset();
-			resetFormValues();
-			setCreateMode();
-			setFormLoadingState(false);
-			clearErrors();
-			closeTimer = null;
-		}, 160);
-	};
-
-	const renderSpecialties = (items: unknown[], selectedSpecialtyId = 0) => {
-		if (!specialtySelect) return;
-		specialtySelect.innerHTML = '';
-
-		const emptyOption = document.createElement('option');
-		emptyOption.value = '';
-		emptyOption.textContent = 'Sin especialidad';
-		specialtySelect.appendChild(emptyOption);
-
-		for (const specialty of items) {
-			if (!specialty || typeof specialty !== 'object') continue;
-			const id = Number('id_specialty' in specialty ? specialty.id_specialty : 0);
-			const name =
-				'name' in specialty ? String(specialty.name || '').trim() : '';
-			if (!Number.isInteger(id) || id <= 0) continue;
-
-			const option = document.createElement('option');
-			option.value = String(id);
-			option.textContent = name || `Especialidad #${id}`;
-			specialtySelect.appendChild(option);
-		}
-
-		const selectedValue = selectedSpecialtyId > 0 ? String(selectedSpecialtyId) : '';
-		const hasOption = Array.from(specialtySelect.options).some(
-			(option) => option.value === selectedValue
-		);
-		specialtySelect.value = hasOption ? selectedValue : '';
-	};
-
-	const ensureSpecialtiesLoaded = async () => {
-		if (specialtiesLoaded) return;
-		if (specialtiesLoadPromise) return specialtiesLoadPromise;
-
-		if (specialtySelect) specialtySelect.disabled = true;
-		specialtiesLoadPromise = (async () => {
-			const response = await fetch('/api/specialties?page=1&limit=100', {
-				method: 'GET',
-				headers: { Accept: 'application/json' },
-			});
-
-			let data = null;
+		private async handleDelete() {
+			if (!this.editingId) return;
+			if (!confirm('¿Seguro que deseas eliminar permanentemente a este profesional?')) return;
+			
+			this.setLoadingMessage('Eliminando...');
+			this.toggleFormLoading(true);
+			
 			try {
-				data = await response.json();
-			} catch {
-				throw new Error('No fue posible interpretar la lista de especialidades.');
+				const response = await fetch(`/api/professionals/${this.editingId}`, { method: 'DELETE' });
+				if (!response.ok) throw new Error('Error al eliminar');
+				window.location.reload();
+			} catch (err) {
+				this.showFormError(err instanceof Error ? err.message : 'Error al eliminar');
+				this.toggleFormLoading(false);
 			}
-
-			if (!response.ok || !data || data.status !== 'success' || !Array.isArray(data.data)) {
-				throw new Error(data?.message || 'No fue posible cargar especialidades.');
-			}
-
-			renderSpecialties(data.data, 0);
-			specialtiesLoaded = true;
-		})()
-			.catch((error) => {
-				if (specialtySelect) {
-					specialtySelect.innerHTML = '<option value="">Sin especialidad</option>';
-				}
-				throw error;
-			})
-			.finally(() => {
-				if (specialtySelect) specialtySelect.disabled = false;
-				specialtiesLoadPromise = null;
-			});
-
-		return specialtiesLoadPromise;
-	};
-
-	const renderRoles = (items: unknown[], selectedRoleId = 0) => {
-		if (!roleSelect) return;
-		roleSelect.innerHTML = '';
-
-		const emptyOption = document.createElement('option');
-		emptyOption.value = '';
-		emptyOption.textContent = 'Selecciona un rol';
-		roleSelect.appendChild(emptyOption);
-
-		for (const role of items) {
-			if (!role || typeof role !== 'object') continue;
-			const id = Number('id_role' in role ? role.id_role : 0);
-			const name = 'name' in role ? String(role.name || '').trim() : '';
-			if (!Number.isInteger(id) || id <= 0) continue;
-
-			const option = document.createElement('option');
-			option.value = String(id);
-			option.textContent = name || `Rol #${id}`;
-			roleSelect.appendChild(option);
 		}
-
-		const selectedValue = selectedRoleId > 0 ? String(selectedRoleId) : '';
-		const hasOption = Array.from(roleSelect.options).some((option) => option.value === selectedValue);
-		roleSelect.value = hasOption ? selectedValue : '';
-	};
-
-	const ensureRolesLoaded = async () => {
-		if (rolesLoaded) return;
-		if (rolesLoadPromise) return rolesLoadPromise;
-
-		if (roleSelect) roleSelect.disabled = true;
-		rolesLoadPromise = (async () => {
-			const response = await fetch('/api/roles', {
-				method: 'GET',
-				headers: { Accept: 'application/json' },
-			});
-
-			let data = null;
-			try {
-				data = await response.json();
-			} catch {
-				throw new Error('No fue posible interpretar la lista de roles.');
-			}
-
-			if (!response.ok || !data || data.status !== 'success' || !Array.isArray(data.data)) {
-				throw new Error(data?.message || 'No fue posible cargar los roles.');
-			}
-
-			renderRoles(data.data, 0);
-			rolesLoaded = true;
-		})()
-			.catch((error) => {
-				if (roleSelect) {
-					roleSelect.innerHTML = '<option value="">No fue posible cargar roles</option>';
-				}
-				throw error;
-			})
-			.finally(() => {
-				if (roleSelect) roleSelect.disabled = false;
-				rolesLoadPromise = null;
-			});
-
-		return rolesLoadPromise;
-	};
-
-	const ensureServicesControl = () => {
-		if (!servicesSelect || servicesTom) return;
-
-		servicesTom = new TomSelect(servicesSelect, {
-			plugins: {
-				remove_button: {
-					title: 'Quitar',
-				},
-			},
-			placeholder:
-				servicesSelect.dataset.placeholder?.trim() || 'Busca o selecciona servicios...',
-			create: false,
-			persist: false,
-			maxOptions: 200,
-			closeAfterSelect: false,
-			hideSelected: true,
-		});
-
-		servicesTom.on('change', () => {
-			if (!suppressServicesTouched) {
-				servicesTouched = true;
-			}
-		});
-	};
-
-	const renderServices = (items: unknown[]) => {
-		if (!servicesSelect) return;
-
-		ensureServicesControl();
-
-		if (!servicesTom) {
-			servicesSelect.innerHTML = '';
-			for (const item of items) {
-				if (!item || typeof item !== 'object') continue;
-				const id = Number('id_service' in item ? item.id_service : 0);
-				const name = 'name' in item ? String(item.name || '').trim() : '';
-				if (!Number.isInteger(id) || id <= 0) continue;
-
-				const option = document.createElement('option');
-				option.value = String(id);
-				option.textContent = name || `Servicio #${id}`;
-				servicesSelect.appendChild(option);
-			}
-			return;
-		}
-
-		servicesTom.clear(true);
-		servicesTom.clearOptions();
-
-		for (const item of items) {
-			if (!item || typeof item !== 'object') continue;
-			const id = Number('id_service' in item ? item.id_service : 0);
-			const name = 'name' in item ? String(item.name || '').trim() : '';
-			if (!Number.isInteger(id) || id <= 0) continue;
-
-			servicesTom.addOption({
-				value: String(id),
-				text: name || `Servicio #${id}`,
-			});
-		}
-
-		servicesTom.refreshOptions(false);
-	};
-
-	const setSelectedServices = (serviceIds: number[] = []) => {
-		const normalized = serviceIds
-			.map((serviceId) => Number(serviceId))
-			.filter((serviceId) => Number.isInteger(serviceId) && serviceId > 0);
-		const values = normalized.map((serviceId) => String(serviceId));
-
-		if (servicesTom) {
-			suppressServicesTouched = true;
-			servicesTom.setValue(values, true);
-			suppressServicesTouched = false;
-			return;
-		}
-
-		if (!servicesSelect) return;
-		const selectedSet = new Set(values);
-		for (const option of Array.from(servicesSelect.options)) {
-			option.selected = selectedSet.has(option.value);
-		}
-	};
-
-	const getSelectedServiceIds = () => {
-		if (servicesTom) {
-			const selectedValue = servicesTom.getValue();
-			const rawValues = Array.isArray(selectedValue)
-				? selectedValue
-				: String(selectedValue || '')
-						.split(',')
-						.map((value) => value.trim())
-						.filter((value) => value !== '');
-
-			return rawValues
-				.map((value) => Number(value))
-				.filter((serviceId) => Number.isInteger(serviceId) && serviceId > 0);
-		}
-
-		if (!servicesSelect) return [];
-		return Array.from(servicesSelect.selectedOptions)
-			.map((option) => Number(option.value))
-			.filter((serviceId) => Number.isInteger(serviceId) && serviceId > 0);
-	};
-
-	const ensureServicesLoaded = async () => {
-		ensureServicesControl();
-
-		if (servicesLoaded) return;
-		if (servicesLoadPromise) return servicesLoadPromise;
-
-		if (servicesTom) {
-			servicesTom.disable();
-		} else if (servicesSelect) {
-			servicesSelect.disabled = true;
-		}
-
-		servicesLoadPromise = (async () => {
-			const response = await fetch('/api/services/lov', {
-				method: 'GET',
-				headers: { Accept: 'application/json' },
-			});
-
-			let data = null;
-			try {
-				data = await response.json();
-			} catch {
-				throw new Error('No fue posible interpretar la lista de servicios.');
-			}
-
-			if (!response.ok || !data || data.status !== 'success' || !Array.isArray(data.data)) {
-				throw new Error(data?.message || 'No fue posible cargar servicios activos.');
-			}
-
-			renderServices(data.data);
-			servicesLoaded = true;
-		})()
-			.catch((error) => {
-				renderServices([]);
-				throw error;
-			})
-			.finally(() => {
-				if (servicesTom) {
-					servicesTom.enable();
-				} else if (servicesSelect) {
-					servicesSelect.disabled = false;
-				}
-				servicesLoadPromise = null;
-			});
-
-		return servicesLoadPromise;
-	};
-
-	const resetFormValues = () => {
-		if (usernameInput) usernameInput.value = '';
-		if (emailInput) emailInput.value = '';
-		if (firstNameInput) firstNameInput.value = '';
-		if (lastNameInput) lastNameInput.value = '';
-		if (passwordInput) passwordInput.value = '';
-		if (roleSelect) roleSelect.value = '';
-		if (phoneInput) phoneInput.value = '';
-		if (profileSlugInput) profileSlugInput.value = '';
-		if (specialtySelect) specialtySelect.value = '';
-		if (userStatusInput) userStatusInput.value = '1';
-		if (profStatusInput) profStatusInput.value = '1';
-		if (imageInput) imageInput.value = '';
-		setImageFileNameLabel();
-		setSelectedServices([]);
-		servicesTouched = false;
-		editServicesAvailable = false;
-		slugManuallyEdited = false;
-		clearSlugSuggestTimer();
-		slugRequestSeq += 1;
-	};
-
-	const openCreateModal = async () => {
-		setCreateMode();
-		resetFormValues();
-		setFormLoadingState(false);
-		clearErrors();
-		openModalShell();
-		try {
-			await Promise.all([ensureSpecialtiesLoaded(), ensureRolesLoaded(), ensureServicesLoaded()]);
-		} catch (error) {
-			showFormError(
-				error instanceof Error
-					? error.message
-					: 'No fue posible cargar catalogos para el formulario.'
-			);
-		}
-	};
-
-	const fillFormWithProfessional = (professional: any) => {
-		const user = professional?.user && typeof professional.user === 'object' ? professional.user : {};
-
-		if (usernameInput) usernameInput.value = String(user.apex_user_name || '');
-		if (emailInput) emailInput.value = String(user.email || '');
-		if (firstNameInput) firstNameInput.value = String(user.first_name || '');
-		if (lastNameInput) lastNameInput.value = String(user.last_name || '');
-		if (passwordInput) passwordInput.value = '';
-		if (roleSelect) {
-			const roleId = Number(user.rol_id_role || 0);
-			roleSelect.value = Number.isInteger(roleId) && roleId > 0 ? String(roleId) : '';
-		}
-		if (phoneInput) phoneInput.value = String(professional?.phone_number || '');
-		if (profileSlugInput) profileSlugInput.value = String(professional?.profile_slug || '');
-		slugManuallyEdited = false;
-		if (userStatusInput) {
-			userStatusInput.value = String(user.is_active === 0 || user.is_active === '0' ? 0 : 1);
-		}
-		if (profStatusInput) {
-			profStatusInput.value = String(
-				professional?.is_active === 0 || professional?.is_active === '0' ? 0 : 1
-			);
-		}
-		if (imageInput) imageInput.value = '';
-		setImageFileNameLabel();
-
-		const specialtyId =
-			professional?.specialty &&
-			typeof professional.specialty === 'object' &&
-			Number.isInteger(Number(professional.specialty.id_specialty)) &&
-			Number(professional.specialty.id_specialty) > 0
-				? Number(professional.specialty.id_specialty)
-				: 0;
-
-		if (specialtySelect) {
-			specialtySelect.value = specialtyId > 0 ? String(specialtyId) : '';
-		}
-
-		const assignedServices = Array.isArray(professional?.services)
-			? professional.services
-					.map((value: unknown) => Number(value))
-					.filter((serviceId: number) => Number.isInteger(serviceId) && serviceId > 0)
-			: [];
-
-		editServicesAvailable = Array.isArray(professional?.services);
-		setSelectedServices(assignedServices);
-		servicesTouched = false;
-	};
-
-	const openEditModal = async (professionalId: number) => {
-		if (!professionalId) return;
-		const requestId = ++professionalReadRequestSeq;
-		setEditMode(professionalId);
-		resetFormValues();
-		clearErrors();
-		openModalShell();
-		setFormLoadingState(true);
-		setLoadingMode('Cargando...');
-
-		try {
-			const response = await fetch(`/api/professionals/${professionalId}`, {
-				method: 'GET',
-				headers: { Accept: 'application/json' },
-			});
-
-			let data = null;
-			try {
-				data = await response.json();
-			} catch {
-				throw new Error('No fue posible interpretar la respuesta del servidor.');
-			}
-
-			if (!response.ok || !data || data.status !== 'success' || !data.data) {
-				throw new Error(data?.message || 'No fue posible obtener el personal seleccionado.');
-			}
-
-			if (requestId !== professionalReadRequestSeq) return;
-			await Promise.all([ensureSpecialtiesLoaded(), ensureRolesLoaded(), ensureServicesLoaded()]);
-			if (requestId !== professionalReadRequestSeq) return;
-			fillFormWithProfessional(data.data);
-		} catch (error) {
-			if (requestId !== professionalReadRequestSeq) return;
-			setCreateMode();
-			showFormError(error instanceof Error ? error.message : 'No fue posible obtener el personal.');
-		} finally {
-			if (requestId !== professionalReadRequestSeq) return;
-			setFormLoadingState(false);
-			restoreButtons();
-		}
-	};
-
-	const fileToBase64 = (file: File): Promise<string> =>
-		new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => {
-				const result = String(reader.result || '');
-				const base64 = result.includes(',') ? result.split(',')[1] : result;
-				resolve(base64);
-			};
-			reader.onerror = () => reject(new Error('No fue posible leer la imagen seleccionada.'));
-			reader.readAsDataURL(file);
-		});
-
-	const onImageDropzoneClick = () => {
-		if (!imageInput || imageInput.disabled) return;
-		imageInput.click();
-	};
-
-	imageDropzone?.addEventListener('click', onImageDropzoneClick);
-	imageDropzone?.addEventListener('keydown', (event) => {
-		if (event.key !== 'Enter' && event.key !== ' ') return;
-		event.preventDefault();
-		onImageDropzoneClick();
-	});
-
-	const stopDropDefaults = (event: Event) => {
-		event.preventDefault();
-		event.stopPropagation();
-	};
-
-	for (const eventName of ['dragenter', 'dragover', 'dragleave', 'drop']) {
-		imageDropzone?.addEventListener(eventName, stopDropDefaults);
 	}
 
-	imageDropzone?.addEventListener('dragenter', () => {
-		if (!imageInput?.disabled) imageDropzone.classList.add('is-dragover');
-	});
-	imageDropzone?.addEventListener('dragover', () => {
-		if (!imageInput?.disabled) imageDropzone.classList.add('is-dragover');
-	});
-	imageDropzone?.addEventListener('dragleave', () => {
-		imageDropzone.classList.remove('is-dragover');
-	});
-	imageDropzone?.addEventListener('drop', (event) => {
-		imageDropzone.classList.remove('is-dragover');
-		if (!imageInput || imageInput.disabled) return;
-
-		const files = event instanceof DragEvent ? event.dataTransfer?.files : null;
-		if (!files || files.length === 0) return;
-
-		const droppedFile = Array.from(files).find((file) => file.type.startsWith('image/')) || files[0];
-		const transfer = new DataTransfer();
-		transfer.items.add(droppedFile);
-		imageInput.files = transfer.files;
-		setImageFileNameLabel();
-	});
-
-	imageInput?.addEventListener('change', setImageFileNameLabel);
-	setImageFileNameLabel();
-
-	openButton?.addEventListener('click', openCreateModal);
-	closeButton?.addEventListener('click', closeModal);
-
-	profileSlugInput?.addEventListener('input', () => {
-		if (suppressSlugManualTracking) return;
-		const currentValue = String(profileSlugInput.value || '').trim();
-		slugManuallyEdited = currentValue !== '';
-		if (!slugManuallyEdited) {
-			queueSlugSuggestion();
-		}
-	});
-
-	firstNameInput?.addEventListener('input', () => {
-		queueSlugSuggestion();
-	});
-
-	lastNameInput?.addEventListener('input', () => {
-		queueSlugSuggestion();
-	});
-
-	modal?.addEventListener('click', (event) => {
-		const target = event.target;
-		if (target instanceof HTMLDialogElement) closeModal();
-	});
-
-	for (const card of professionalCards) {
-		const openFromCard = () => {
-			const professionalId = Number(card.getAttribute('data-professional-id') || '0');
-			if (professionalId > 0) openEditModal(professionalId);
-		};
-
-		card.addEventListener('click', openFromCard);
-		card.addEventListener('keydown', (event) => {
-			if (event.key !== 'Enter' && event.key !== ' ') return;
-			event.preventDefault();
-			openFromCard();
-		});
+	if (!customElements.get('professional-manager')) {
+		customElements.define('professional-manager', ProfessionalManager);
 	}
-
-	form?.addEventListener('submit', async (event) => {
-		event.preventDefault();
-		clearErrors();
-
-		if (!form) return;
-		const formData = new FormData(form);
-
-		const username = String(formData.get('apex_user_name') || '').trim();
-		const firstName = String(formData.get('first_name') || '').trim();
-		const lastName = String(formData.get('last_name') || '').trim();
-		const password = String(formData.get('password') || '');
-		const roleRaw = String(formData.get('rol_id_role') || '').trim();
-		const phone = String(formData.get('phone_number') || '').trim();
-		const email = String(formData.get('email') || '').trim();
-		const specialtyRaw = String(formData.get('spe_id_specialty') || '').trim();
-		const profileSlug = String(formData.get('profile_slug') || '').trim();
-		const userActiveRaw = String(formData.get('user_is_active') || '1').trim();
-		const profActiveRaw = String(formData.get('prof_is_active') || '1').trim();
-		const roleId = Number(roleRaw);
-
-		if (
-			!username ||
-			!firstName ||
-			!lastName ||
-			!phone ||
-			!Number.isInteger(roleId) ||
-			roleId <= 0 ||
-			(mode === 'create' && password.trim() === '')
-		) {
-			showFormError('Completa los campos requeridos antes de continuar.');
-			return;
-		}
-
-		type ProfessionalSubmitPayload = {
-			rol_id_role: number;
-			apex_user_name: string;
-			first_name: string;
-			last_name: string;
-			email: string;
-			phone_number: string;
-			user_is_active: 0 | 1;
-			prof_is_active: 0 | 1;
-			password?: string;
-			profile_slug?: string;
-			spe_id_specialty?: number;
-			image_base64?: string;
-			image_name?: string;
-			image_mime?: string;
-			services?: number[];
-		};
-
-		const payload: ProfessionalSubmitPayload = {
-			rol_id_role: roleId,
-			apex_user_name: username,
-			first_name: firstName,
-			last_name: lastName,
-			email,
-			phone_number: phone,
-			user_is_active: (userActiveRaw === '0' ? 0 : 1) as 0 | 1,
-			prof_is_active: (profActiveRaw === '0' ? 0 : 1) as 0 | 1,
-		};
-
-		if (mode === 'create' || password.trim() !== '') payload.password = password;
-		if (profileSlug) payload.profile_slug = profileSlug;
-
-		const specialtyId = Number(specialtyRaw);
-		if (specialtyRaw && Number.isInteger(specialtyId) && specialtyId > 0) {
-			payload.spe_id_specialty = specialtyId;
-		}
-
-		const selectedServices = getSelectedServiceIds();
-		if (mode === 'create' || editServicesAvailable || servicesTouched) {
-			payload.services = selectedServices;
-		}
-
-		const imageFile = imageInput?.files?.[0];
-		if (imageFile) {
-			try {
-				const base64 = await fileToBase64(imageFile);
-				payload.image_base64 = base64;
-				payload.image_name = imageFile.name;
-				payload.image_mime = imageFile.type || 'application/octet-stream';
-			} catch (error) {
-				showFormError(
-					error instanceof Error ? error.message : 'No fue posible procesar la imagen.'
-				);
-				return;
-			}
-		}
-
-		const endpoint =
-			mode === 'edit' && editingProfessionalId
-				? `/api/professionals/${editingProfessionalId}`
-				: '/api/professionals';
-		const httpMethod = mode === 'edit' && editingProfessionalId ? 'PUT' : 'POST';
-		setLoadingMode(mode === 'edit' ? 'Guardando...' : 'Creando...');
-		setFormLoadingState(true);
-
-		try {
-			const response = await fetch(endpoint, {
-				method: httpMethod,
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-				},
-				body: JSON.stringify(payload),
-			});
-
-			let data = null;
-			try {
-				data = await response.json();
-			} catch {
-				throw new Error('No fue posible interpretar la respuesta del servidor.');
-			}
-
-			if (!response.ok || !data || data.status !== 'success') {
-				const message = data?.message || 'No fue posible crear el personal.';
-				const hasFieldErrors = renderFieldErrors(data?.errors, message);
-
-				if (hasFieldErrors && isGenericValidationMessage(message)) {
-					if (formErrorNode) {
-						formErrorNode.textContent = '';
-						formErrorNode.classList.add('hidden');
-					}
-				} else {
-					showFormError(message);
-				}
-
-				if (hasFieldErrors && /slug|perfil/i.test(message)) {
-					profileSlugInput?.focus();
-				}
-				return;
-			}
-
-			const successMessage =
-				typeof data?.message === 'string' && data.message.trim()
-					? data.message
-					: mode === 'edit'
-						? 'Personal actualizado correctamente.'
-						: 'Personal creado correctamente.';
-
-			closeModal();
-			redirectWithFlash(successMessage, 'success');
-		} catch (error) {
-			const message =
-				error instanceof Error
-					? error.message
-					: mode === 'edit'
-						? 'No fue posible actualizar el personal.'
-						: 'No fue posible crear el personal.';
-			showFormError(message);
-		} finally {
-			setFormLoadingState(false);
-			restoreButtons();
-		}
-	});
-
-	deleteButton?.addEventListener('click', async () => {
-		if (!editingProfessionalId || mode !== 'edit') return;
-
-		const confirmed = await window.BookmateAlert?.confirm({
-			type: 'error',
-			title: 'Eliminar personal',
-			message:
-				'Esta acción eliminará al profesional y su cuenta de forma permanente. ¿Deseas continuar?',
-			confirmText: 'Eliminar',
-			cancelText: 'Cancelar',
-		});
-		if (!confirmed) return;
-
-		clearErrors();
-		setLoadingMode('Eliminando...');
-		setFormLoadingState(true);
-
-		try {
-			const response = await fetch(`/api/professionals/${editingProfessionalId}`, {
-				method: 'DELETE',
-				headers: { Accept: 'application/json' },
-			});
-
-			let data = null;
-			try {
-				data = await response.json();
-			} catch {
-				throw new Error('No fue posible interpretar la respuesta del servidor.');
-			}
-
-			if (!response.ok || !data || data.status !== 'success') {
-				throw new Error(data?.message || 'No fue posible eliminar el personal.');
-			}
-
-			const successMessage =
-				typeof data?.message === 'string' && data.message.trim()
-					? data.message
-					: 'Personal eliminado correctamente.';
-
-			closeModal();
-			redirectWithFlash(successMessage, 'success');
-		} catch (error) {
-			showFormError(error instanceof Error ? error.message : 'No fue posible eliminar el personal.');
-			setFormLoadingState(false);
-			restoreButtons();
-		}
-	});
-	};
-
-	initializeProfessionalsPage();
-	document.addEventListener('astro:page-load', initializeProfessionalsPage);
 </script>
-
 <style is:global>
 	dialog[data-professional-modal] {
 		position: fixed;

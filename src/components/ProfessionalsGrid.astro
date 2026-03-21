@@ -6,7 +6,7 @@ interface Props {
 	showCreateAction?: boolean;
 }
 
-const { professionals, showCreateAction = false } = Astro.props;
+const { professionals = [], showCreateAction = false } = Astro.props;
 
 const PROFESSIONAL_ICON = 'badge';
 
@@ -31,114 +31,117 @@ const cardItems = professionals.map((professional) => ({
 	profileImageUrl: toProfileImageUrl(professional),
 }));
 
-const activeProfessionals = professionals.filter((item) => item.is_active === 1).length;
+const activeCount = professionals.filter((item) => item.is_active === 1).length;
+const inactiveCount = professionals.length - activeCount;
 ---
 
-<section class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
-	<div class="flex flex-wrap items-center justify-between gap-3">
-		<div class="flex flex-wrap justify-start gap-2 text-xs font-semibold">
-			<span class="status-chip-total">
-				Total: {professionals.length}
+<section class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-6 md:p-8 shadow-[0_6px_30px_rgba(0,0,0,0.03)] dark:shadow-none transition-all">
+	<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-8">
+		<div class="flex flex-wrap items-center gap-2.5 text-[0.82rem] font-bold">
+			<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 transition border border-emerald-500/10">
+				<span class="size-2 rounded-full bg-emerald-500"></span> Activos: {activeCount}
 			</span>
-			<span class="status-chip-success">
-				Activos: {activeProfessionals}
-			</span>
-			<span class="status-chip-danger">
-				Inactivos: {professionals.length - activeProfessionals}
-			</span>
+			{inactiveCount > 0 && (
+				<span class="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1.5 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 transition border border-rose-500/10">
+					<span class="size-2 rounded-full bg-rose-500"></span> Inactivos: {inactiveCount}
+				</span>
+			)}
 		</div>
 
-		{
-			showCreateAction ? (
-				<button
-					type="button"
-					class="btn-primary-soft inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition"
-					data-open-professional-modal
+		{showCreateAction && (
+			<button
+				type="button"
+				class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)] sm:w-auto w-full"
+				data-open-professional-modal
+			>
+				<span class="material-symbols-rounded text-[1.2rem]">add</span>
+				Nuevo personal
+			</button>
+		)}
+	</header>
+
+	{professionals.length === 0 ? (
+		<div class="flex flex-col items-center justify-center rounded-[1.6rem] border-2 border-dashed border-[color:var(--shell-border)] bg-[color:var(--surface)]/40 px-6 py-14 text-center transition">
+			<div class="mb-4 flex size-16 items-center justify-center rounded-full bg-[color:var(--surface-variant)] text-[color:var(--on-surface-variant)] ring-[8px] ring-[color:var(--surface-bright)]">
+				<span class="material-symbols-rounded text-[2rem]">badge</span>
+			</div>
+			<h3 class="text-[1.1rem] font-bold text-[color:var(--on-surface)]">No hay profesionales registrados</h3>
+			<p class="mt-1.5 text-[0.95rem] text-[color:var(--on-surface-variant)] max-w-sm leading-relaxed">
+				Aún no has agregado a ningún profesional a esta organización. Comienza creando tu primer registro de personal.
+			</p>
+		</div>
+	) : (
+		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+			{cardItems.map((item) => (
+				<article
+					class="group cursor-pointer relative overflow-hidden rounded-[1.5rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-5.5 transition-all duration-300 hover:-translate-y-1 hover:border-[color:var(--primary)]/40 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] focus-visible:ring-offset-2"
+					data-professional-card
+					data-professional-id={item.professional.id_professional}
+					tabindex="0"
+					role="button"
+					aria-label={`Editar personal ${toDisplayName(item.professional)}`}
 				>
-					<span class="material-symbols-rounded text-[1.1rem]">add</span>
-					Nuevo personal
-				</button>
-			) : null
-		}
-	</div>
+					<div class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-[color:var(--primary)]/5 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></div>
 
-	{
-		professionals.length === 0 ? (
-			<div class="mt-6 rounded-[1.45rem] border border-dashed border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-5 py-7 text-sm text-[color:var(--on-surface-variant)]">
-			No hay profesionales registrados para esta organización.
-			</div>
-		) : (
-			<div class="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-				{
-					cardItems.map((item) => (
-						<article
-							class="cursor-pointer rounded-[1.45rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.6)] transition duration-200 hover:-translate-y-0.5 hover:shadow-[0_16px_30px_rgba(15,23,42,0.12)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)]"
-							data-professional-card
-							data-professional-id={item.professional.id_professional}
-							tabindex="0"
-							role="button"
-							aria-label={`Editar personal ${toDisplayName(item.professional)}`}
+					<div class="relative flex items-start justify-between gap-4">
+						<div class="relative flex size-12 shrink-0 items-center justify-center rounded-xl bg-[color:var(--primary-soft)] text-[color:var(--primary)] transition-transform duration-300 group-hover:scale-105 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] overflow-hidden">
+							{item.profileImageUrl ? (
+								<img
+									src={item.profileImageUrl}
+									alt={`Foto de perfil de ${toDisplayName(item.professional)}`}
+									class="h-full w-full object-cover"
+									loading="lazy"
+									decoding="async"
+								/>
+							) : (
+								<span class="material-symbols-rounded text-[1.4rem]">{PROFESSIONAL_ICON}</span>
+							)}
+						</div>
+
+						<span
+							class:list={[
+								'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-widest border',
+								item.professional.is_active === 1
+									? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/10 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/20'
+									: 'bg-[color:var(--surface-variant)] text-[color:var(--on-surface-variant)] border-[color:var(--shell-border)]',
+							]}
 						>
-							<div class="flex items-start gap-4">
-								{
-									item.profileImageUrl ? (
-										<img
-											src={item.profileImageUrl}
-											alt={`Foto de perfil de ${toDisplayName(item.professional)}`}
-											class="size-20 shrink-0 rounded-3xl border border-[color:var(--shell-border)] object-cover shadow-[0_12px_24px_rgba(15,23,42,0.16)]"
-											loading="lazy"
-											decoding="async"
-										/>
-									) : (
-										<div class="flex size-20 shrink-0 items-center justify-center rounded-3xl bg-[color:var(--primary-soft)] text-[color:var(--primary)] shadow-[0_12px_24px_rgba(15,23,42,0.16)]">
-											<span class="material-symbols-rounded text-[1.45rem]">{PROFESSIONAL_ICON}</span>
-										</div>
-									)
-								}
+							<span class:list={["size-1.5 rounded-full", item.professional.is_active === 1 ? "bg-emerald-500" : "bg-[color:var(--on-surface-variant)]"]}></span>
+							{item.professional.is_active === 1 ? 'Activo' : 'Inactivo'}
+						</span>
+					</div>
 
-								<div class="min-w-0 flex-1">
-									<div class="flex items-start justify-between gap-3">
-										<div class="min-w-0">
-											<h3 class="text-lg font-semibold leading-6 text-[color:var(--on-surface)]">
-												{toDisplayName(item.professional)}
-											</h3>
-											<p class="mt-1 truncate text-sm text-[color:var(--on-surface-variant)]">
-												@{item.professional.user.apex_user_name || '-'}
-											</p>
-										</div>
+					<div class="relative mt-5">
+						<h3 class="text-[1.1rem] font-extrabold tracking-tight text-[color:var(--on-surface)] line-clamp-1 group-hover:text-[color:var(--primary)] transition-colors">
+							{toDisplayName(item.professional)}
+						</h3>
+						<p class="mt-0.5 truncate text-[0.85rem] font-semibold text-[color:var(--on-surface-variant)]">
+							@{item.professional.user.apex_user_name || '-'}
+						</p>
 
-										<span
-											class:list={[
-												'status-pill',
-												item.professional.is_active === 1
-													? 'status-pill-success'
-													: 'status-pill-danger',
-											]}
-										>
-											{item.professional.is_active === 1 ? 'Activo' : 'Inactivo'}
-										</span>
-									</div>
-								</div>
+						<dl class="mt-4 shrink-0 grid gap-2.5">
+							<div class="flex items-center justify-between border-b border-[color:var(--shell-border)] border-dashed pb-2.5 text-[0.9rem]">
+								<dt class="flex items-center gap-1.5 text-[color:var(--on-surface-variant)] font-semibold">
+									<span class="material-symbols-rounded text-[1.1rem] opacity-70">workspace_premium</span>
+									Especialidad
+								</dt>
+								<dd class="font-bold text-[color:var(--on-surface)]">
+									{toSpecialtyName(item.professional)}
+								</dd>
 							</div>
-
-							<div class="mt-4 space-y-3 text-sm text-[color:var(--on-surface-variant)]">
-								<div class="flex items-center justify-between gap-3">
-								<span>Teléfono</span>
-									<span class="text-right font-semibold text-[color:var(--on-surface)]">
-										{item.professional.phone_number || '-'}
-									</span>
-								</div>
-								<div class="flex items-center justify-between gap-3">
-									<span>Especialidad</span>
-									<span class="text-right font-semibold text-[color:var(--on-surface)]">
-										{toSpecialtyName(item.professional)}
-									</span>
-								</div>
+							<div class="flex items-center justify-between pt-0.5 text-[0.9rem]">
+								<dt class="flex items-center gap-1.5 text-[color:var(--on-surface-variant)] font-semibold">
+									<span class="material-symbols-rounded text-[1.1rem] opacity-70">call</span>
+									Teléfono
+								</dt>
+								<dd class="font-bold text-[color:var(--on-surface)]">
+									{item.professional.phone_number || '-'}
+								</dd>
 							</div>
-						</article>
-					))
-				}
-			</div>
-		)
-	}
+						</dl>
+					</div>
+				</article>
+			))}
+		</div>
+	)}
 </section>
