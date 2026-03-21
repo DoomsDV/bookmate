@@ -1,4 +1,4 @@
-import { Calendar, type DateSelectArg, type EventDropArg } from '@fullcalendar/core';
+import { Calendar, type DateSelectArg, type EventDropArg, type EventInput } from '@fullcalendar/core';
 import esLocale from '@fullcalendar/core/locales/es';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { type EventResizeDoneArg } from '@fullcalendar/interaction';
@@ -35,9 +35,18 @@ type AppointmentModalApi = {
 	openEdit: (appointmentId: number) => Promise<void> | void;
 };
 
+interface ApiCalendarEvent {
+	id?: string | number;
+	extendedProps?: Record<string, unknown> & {
+		pro_id_professional?: string | number;
+	};
+	resourceId?: string | number;
+	[key: string]: unknown;
+}
+
 const hasAppointmentModalApi = (value: unknown): value is AppointmentModalApi => {
 	if (!value || typeof value !== 'object') return false;
-	const source = value as Record<string, unknown>;
+	const source = value as AppointmentModalApi;
 	return (
 		typeof source.setClient === 'function' &&
 		typeof source.configure === 'function' &&
@@ -52,23 +61,23 @@ class CalendarManager extends HTMLElement {
 	#bindRetryTimer: number | null = null;
 	#bindRetryAttempts = 0;
 
-	client = new AppointmentsClient();
-	calendar: Calendar | null = null;
+	private client = new AppointmentsClient();
+	private calendar: Calendar | null = null;
 
-	roleId = 0;
-	currentProfessionalId = 0;
-	professionals: Option[] = [];
-	locations: Option[] = [];
-	services: Option[] = [];
+	private roleId = 0;
+	private currentProfessionalId = 0;
+	private professionals: Option[] = [];
+	private locations: Option[] = [];
+	private services: Option[] = [];
 
-	calendarEl: HTMLElement | null = null;
-	loadingNode: HTMLElement | null = null;
-	pageErrorNode: HTMLElement | null = null;
-	openModalButton: HTMLButtonElement | null = null;
-	professionalFilterWrap: HTMLElement | null = null;
-	professionalFilter: HTMLSelectElement | null = null;
-	locationFilter: HTMLSelectElement | null = null;
-	appointmentModal: HTMLElement | null = null;
+	private calendarEl: HTMLElement | null = null;
+	private loadingNode: HTMLElement | null = null;
+	private pageErrorNode: HTMLElement | null = null;
+	private openModalButton: HTMLButtonElement | null = null;
+	private professionalFilterWrap: HTMLElement | null = null;
+	private professionalFilter: HTMLSelectElement | null = null;
+	private locationFilter: HTMLSelectElement | null = null;
+	private appointmentModal: HTMLElement | null = null;
 
 	connectedCallback() {
 		if (this.#bound) return;
@@ -125,7 +134,7 @@ class CalendarManager extends HTMLElement {
 		this.destroyCalendar();
 	}
 
-	getRequiredNodes(): RequiredNodes | null {
+	private getRequiredNodes(): RequiredNodes | null {
 		if (!this.calendarEl || !this.openModalButton || !this.professionalFilter || !this.locationFilter) {
 			return null;
 		}
@@ -145,7 +154,7 @@ class CalendarManager extends HTMLElement {
 		};
 	}
 
-	scheduleBindRetry() {
+	private scheduleBindRetry() {
 		if (!this.isConnected) return;
 		this.#bindRetryAttempts += 1;
 		if (this.#bindRetryAttempts > 10) {
@@ -164,19 +173,19 @@ class CalendarManager extends HTMLElement {
 		}, 50);
 	}
 
-	clearPageError() {
+	private clearPageError() {
 		if (!this.pageErrorNode) return;
 		this.pageErrorNode.textContent = '';
 		this.pageErrorNode.classList.add('hidden');
 	}
 
-	showPageError(message: string) {
+	private showPageError(message: string) {
 		if (!this.pageErrorNode) return;
 		this.pageErrorNode.textContent = message;
 		this.pageErrorNode.classList.remove('hidden');
 	}
 
-	setCalendarLoading(value: boolean) {
+	private setCalendarLoading(value: boolean) {
 		if (this.loadingNode) this.loadingNode.classList.toggle('hidden', !value);
 		if (this.professionalFilter) {
 			this.professionalFilter.disabled = value || this.roleId === 3;
@@ -185,7 +194,7 @@ class CalendarManager extends HTMLElement {
 		if (this.openModalButton) this.openModalButton.disabled = value;
 	}
 
-	renderOptions(
+	private renderOptions(
 		select: HTMLSelectElement,
 		items: Option[],
 		emptyLabel: string,
@@ -207,22 +216,22 @@ class CalendarManager extends HTMLElement {
 		}
 	}
 
-	destroyCalendar() {
+	private destroyCalendar() {
 		if (this.calendar) {
 			this.calendar.destroy();
 			this.calendar = null;
 		}
 	}
 
-	getPreferredView() {
+	private getPreferredView() {
 		const allowedViews = new Set(['timeGridDay', 'timeGridWeek', 'dayGridMonth', 'listWeek']);
 		const saved = String(localStorage.getItem('bookmate-calendar-default-view') || 'timeGridWeek');
 		return allowedViews.has(saved) ? saved : 'timeGridWeek';
 	}
 
-	buildEventSource = (
+	private buildEventSource = (
 		info: { startStr: string; endStr: string },
-		successCallback: (eventInputs: any[]) => void,
+		successCallback: (eventInputs: EventInput[]) => void,
 		failureCallback: (error: Error) => void
 	) => {
 		void (async () => {
@@ -237,13 +246,13 @@ class CalendarManager extends HTMLElement {
 					end: info.endStr,
 					pro_id: professionalId > 0 ? professionalId : undefined,
 					loc_id: locationId > 0 ? locationId : undefined,
-				});
+				}) as ApiCalendarEvent[];
 
-				const normalizedEvents = events.map((event: any) => ({
+				const normalizedEvents: EventInput[] = events.map((event) => ({
 					...event,
 					id: String(event?.id ?? ''),
 					extendedProps: {
-						...(event?.extendedProps || {}),
+						...(event?.extendedProps ?? {}),
 						pro_id_professional: toPositiveInt(
 							event?.extendedProps?.pro_id_professional ?? event?.resourceId,
 							0
@@ -262,7 +271,7 @@ class CalendarManager extends HTMLElement {
 		})();
 	};
 
-	initializeCalendar(requiredNodes: RequiredNodes) {
+	private initializeCalendar(requiredNodes: RequiredNodes) {
 		this.destroyCalendar();
 
 		this.calendar = new Calendar(requiredNodes.calendarEl, {
@@ -317,13 +326,13 @@ class CalendarManager extends HTMLElement {
 		this.calendar.render();
 	}
 
-	reloadCalendarEvents() {
+	private reloadCalendarEvents() {
 		if (this.calendar) {
 			this.calendar.refetchEvents();
 		}
 	}
 
-	async handleEventReschedule(info: EventDropArg | EventResizeDoneArg) {
+	private async handleEventReschedule(info: EventDropArg | EventResizeDoneArg) {
 		const appointmentId = toPositiveInt(info.event.id, 0);
 		if (!appointmentId) {
 			info.revert();
@@ -373,7 +382,7 @@ class CalendarManager extends HTMLElement {
 		}
 	}
 
-	async loadMeta(requiredNodes: RequiredNodes) {
+	private async loadMeta(requiredNodes: RequiredNodes) {
 		this.setCalendarLoading(true);
 		this.clearPageError();
 
@@ -450,7 +459,7 @@ class CalendarManager extends HTMLElement {
 		}
 	}
 
-	handleOpenCreateModal = () => {
+	private handleOpenCreateModal = () => {
 		const now = new Date();
 		now.setSeconds(0, 0);
 		const next = new Date(now.getTime() + 60 * 60 * 1000);
@@ -463,16 +472,16 @@ class CalendarManager extends HTMLElement {
 		});
 	};
 
-	handleProfessionalFilterChange = () => {
+	private handleProfessionalFilterChange = () => {
 		if (this.roleId === 3) return;
 		this.reloadCalendarEvents();
 	};
 
-	handleLocationFilterChange = () => {
+	private handleLocationFilterChange = () => {
 		this.reloadCalendarEvents();
 	};
 
-	handleAppointmentChanged = (event: Event) => {
+	private handleAppointmentChanged = (event: Event) => {
 		const customEvent = event as CustomEvent<{ message?: string }>;
 		if (customEvent.detail?.message) {
 			// El feedback al usuario se maneja dentro del modal con alertas.
@@ -480,7 +489,7 @@ class CalendarManager extends HTMLElement {
 		this.reloadCalendarEvents();
 	};
 
-	async bootstrap() {
+	private async bootstrap() {
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return;
 
