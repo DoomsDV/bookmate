@@ -56,3 +56,13 @@ export const toErrorResponse = <TError extends ApiErrorLike>(
 		{ status: resolvedError.status }
 	);
 };
+
+export const toPositiveInt = (value: unknown, fallback = 0) => {
+	const parsed = Number(value);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+export const toOptionalPositiveInt = (value: unknown) => {
+	const parsed = Number(value);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
+};

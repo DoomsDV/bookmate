@@ -1,33 +1,23 @@
 import type { APIRoute } from 'astro';
 
 import { AppointmentsApiError, listAppointmentsForCalendarWithOrds } from '../../../lib/appointments';
+import {
+	requireToken as requireApiToken,
+	toErrorResponse as toApiErrorResponse,
+	toOptionalPositiveInt,
+} from '../../../utils/api-helpers';
 
-const requireToken = (token: string | undefined) => {
-	if (!token) {
-		throw new AppointmentsApiError('No hay sesion valida para consultar citas.', 401);
-	}
-	return token;
-};
+const createAppointmentsError = (message: string, status = 400) =>
+	new AppointmentsApiError(message, status);
 
-const toErrorResponse = (error: unknown, fallbackMessage: string) => {
-	const appointmentError =
-		error instanceof AppointmentsApiError ? error : new AppointmentsApiError(fallbackMessage, 500);
+const requireToken = (token: string | undefined) =>
+	requireApiToken(token, createAppointmentsError, 'No hay sesion valida para consultar citas.');
 
-	return Response.json(
-		{
-			status: 'error',
-			message: appointmentError.message,
-			details: appointmentError.details,
-			errors: appointmentError.fieldErrors,
-		},
-		{ status: appointmentError.status }
-	);
-};
-
-const toPositiveInt = (value: unknown) => {
-	const parsed = Number(value);
-	return Number.isInteger(parsed) && parsed > 0 ? parsed : undefined;
-};
+const toErrorResponse = (error: unknown, fallbackMessage: string) =>
+	toApiErrorResponse(error, fallbackMessage, {
+		isKnownError: (value): value is AppointmentsApiError => value instanceof AppointmentsApiError,
+		createError: createAppointmentsError,
+	});
 
 export const GET: APIRoute = async ({ request, locals }) => {
 	try {
@@ -35,8 +25,8 @@ export const GET: APIRoute = async ({ request, locals }) => {
 		const url = new URL(request.url);
 		const start = String(url.searchParams.get('start') || '').trim();
 		const end = String(url.searchParams.get('end') || '').trim();
-		const proId = toPositiveInt(url.searchParams.get('pro_id'));
-		const locId = toPositiveInt(url.searchParams.get('loc_id'));
+		const proId = toOptionalPositiveInt(url.searchParams.get('pro_id'));
+		const locId = toOptionalPositiveInt(url.searchParams.get('loc_id'));
 		console.info('[appointments-calendar] request:start', {
 			start,
 			end,

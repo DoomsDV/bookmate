@@ -4,50 +4,32 @@ import {
 	AppointmentsApiError,
 	deleteAppointmentWithOrds,
 	getAppointmentByIdWithOrds,
-	type AppointmentUpdatePayload,
 	updateAppointmentWithOrds,
 } from '../../../lib/appointments';
+import { parseUpdateAppointmentPayload } from './schemas';
+import {
+	parseRequestBody,
+	requireToken as requireApiToken,
+	toErrorResponse as toApiErrorResponse,
+	toPositiveInt,
+} from '../../../utils/api-helpers';
 
-const requireToken = (token: string | undefined) => {
-	if (!token) {
-		throw new AppointmentsApiError('No hay sesion valida para procesar citas.', 401);
-	}
-	return token;
-};
+const createAppointmentsError = (message: string, status = 400) =>
+	new AppointmentsApiError(message, status);
 
-const toErrorResponse = (error: unknown, fallbackMessage: string) => {
-	const appointmentError =
-		error instanceof AppointmentsApiError ? error : new AppointmentsApiError(fallbackMessage, 500);
+const requireToken = (token: string | undefined) =>
+	requireApiToken(token, createAppointmentsError, 'No hay sesion valida para procesar citas.');
 
-	return Response.json(
-		{
-			status: 'error',
-			message: appointmentError.message,
-			details: appointmentError.details,
-			errors: appointmentError.fieldErrors,
-		},
-		{ status: appointmentError.status }
-	);
-};
+const toErrorResponse = (error: unknown, fallbackMessage: string) =>
+	toApiErrorResponse(error, fallbackMessage, {
+		isKnownError: (value): value is AppointmentsApiError => value instanceof AppointmentsApiError,
+		createError: createAppointmentsError,
+	});
 
-const parseAppointmentId = (value: string | undefined) => {
-	const parsed = Number(value);
-	return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
-};
+const parseAppointmentId = (value: string | undefined) => toPositiveInt(value, 0);
 
-const toPositiveInt = (value: unknown) => {
-	const parsed = Number(value);
-	return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
-};
-
-const parseBody = async (request: Request) => {
-	const contentType = request.headers.get('content-type') || '';
-	if (contentType.includes('application/json')) {
-		return request.json();
-	}
-
-	const formData = await request.formData();
-	return {
+const parseBody = (request: Request) =>
+	parseRequestBody(request, (formData) => ({
 		loc_id_location: formData.get('loc_id_location'),
 		pro_id_professional: formData.get('pro_id_professional'),
 		ser_id_service: formData.get('ser_id_service'),
@@ -56,41 +38,7 @@ const parseBody = async (request: Request) => {
 		start_time: formData.get('start_time'),
 		end_time: formData.get('end_time'),
 		status: formData.get('status'),
-	};
-};
-
-const parseUpdatePayload = (source: any): AppointmentUpdatePayload => {
-	const status = String(source?.status || '').trim().toUpperCase();
-	if (!['PENDIENTE', 'CONFIRMADO', 'COMPLETADO', 'CANCELADO'].includes(status)) {
-		throw new AppointmentsApiError('El estado de la cita es invalido.', 400);
-	}
-
-	const payload: AppointmentUpdatePayload = {
-		loc_id_location: toPositiveInt(source?.loc_id_location),
-		pro_id_professional: toPositiveInt(source?.pro_id_professional),
-		ser_id_service: toPositiveInt(source?.ser_id_service),
-		customer_name: String(source?.customer_name || '').trim(),
-		customer_phone: String(source?.customer_phone || '').trim(),
-		start_time: String(source?.start_time || '').trim(),
-		end_time: String(source?.end_time || '').trim(),
-		status: status as AppointmentUpdatePayload['status'],
-	};
-
-	if (!payload.loc_id_location || !payload.pro_id_professional || !payload.ser_id_service) {
-		throw new AppointmentsApiError(
-			'Sucursal, profesional y servicio son obligatorios para actualizar una cita.',
-			400
-		);
-	}
-	if (!payload.customer_name) {
-		throw new AppointmentsApiError('El nombre del cliente es obligatorio.', 400);
-	}
-	if (!payload.start_time || !payload.end_time) {
-		throw new AppointmentsApiError('La fecha y hora de inicio/fin son obligatorias.', 400);
-	}
-
-	return payload;
-};
+	}));
 
 export const GET: APIRoute = async ({ params, locals }) => {
 	try {
@@ -122,7 +70,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 		}
 
 		const body = await parseBody(request);
-		const payload = parseUpdatePayload(body);
+		const payload = parseUpdateAppointmentPayload(body);
 		const updated = await updateAppointmentWithOrds(token, appointmentId, payload);
 
 		return Response.json(

@@ -1,0 +1,495 @@
+import { Calendar, type DateSelectArg, type EventDropArg } from '@fullcalendar/core';
+import esLocale from '@fullcalendar/core/locales/es';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin, { type EventResizeDoneArg } from '@fullcalendar/interaction';
+import listPlugin from '@fullcalendar/list';
+import timeGridPlugin from '@fullcalendar/timegrid';
+import { AppointmentsClient } from './appointments-client';
+import type { AppointmentModalConfig, OpenCreateContext } from './appointment-modal';
+import type { AppointmentFormPayload, Option } from './types';
+import {
+	cleanFlashUrl,
+	formatDateTimeLocal,
+	isAppointmentStatus,
+	showErrorAlert,
+	toInt,
+	toIsoWithOffset,
+	toPositiveInt,
+} from './utils';
+
+type RequiredNodes = {
+	calendarEl: HTMLElement;
+	loadingNode: HTMLElement | null;
+	pageErrorNode: HTMLElement | null;
+	openModalButton: HTMLButtonElement;
+	professionalFilterWrap: HTMLElement | null;
+	professionalFilter: HTMLSelectElement;
+	locationFilter: HTMLSelectElement;
+	appointmentModal: AppointmentModalApi;
+};
+
+type AppointmentModalApi = {
+	setClient: (client: AppointmentsClient) => void;
+	configure: (config: AppointmentModalConfig) => void;
+	openCreate: (context?: OpenCreateContext) => void;
+	openEdit: (appointmentId: number) => Promise<void> | void;
+};
+
+const hasAppointmentModalApi = (value: unknown): value is AppointmentModalApi => {
+	if (!value || typeof value !== 'object') return false;
+	const source = value as Record<string, unknown>;
+	return (
+		typeof source.setClient === 'function' &&
+		typeof source.configure === 'function' &&
+		typeof source.openCreate === 'function' &&
+		typeof source.openEdit === 'function'
+	);
+};
+
+class CalendarManager extends HTMLElement {
+	#bound = false;
+	#listeners: AbortController | null = null;
+	#bindRetryTimer: number | null = null;
+	#bindRetryAttempts = 0;
+
+	client = new AppointmentsClient();
+	calendar: Calendar | null = null;
+
+	roleId = 0;
+	currentProfessionalId = 0;
+	professionals: Option[] = [];
+	locations: Option[] = [];
+	services: Option[] = [];
+
+	calendarEl: HTMLElement | null = null;
+	loadingNode: HTMLElement | null = null;
+	pageErrorNode: HTMLElement | null = null;
+	openModalButton: HTMLButtonElement | null = null;
+	professionalFilterWrap: HTMLElement | null = null;
+	professionalFilter: HTMLSelectElement | null = null;
+	locationFilter: HTMLSelectElement | null = null;
+	appointmentModal: HTMLElement | null = null;
+
+	connectedCallback() {
+		if (this.#bound) return;
+
+		this.calendarEl = this.querySelector<HTMLElement>('[data-calendar-el]');
+		this.loadingNode = this.querySelector<HTMLElement>('[data-calendar-loading]');
+		this.pageErrorNode = this.querySelector<HTMLElement>('[data-calendar-error]');
+		this.openModalButton = this.querySelector<HTMLButtonElement>('[data-open-appointment-modal]');
+		this.professionalFilterWrap = this.querySelector<HTMLElement>('[data-professional-filter-wrap]');
+		this.professionalFilter = this.querySelector<HTMLSelectElement>('[data-professional-filter]');
+		this.locationFilter = this.querySelector<HTMLSelectElement>('[data-location-filter]');
+		this.appointmentModal =
+			this.querySelector<HTMLElement>('appointment-modal') ??
+			document.querySelector<HTMLElement>('appointment-modal');
+
+		const requiredNodes = this.getRequiredNodes();
+		if (!requiredNodes) {
+			this.scheduleBindRetry();
+			return;
+		}
+
+		this.#bound = true;
+		this.#bindRetryAttempts = 0;
+		if (this.#bindRetryTimer) {
+			window.clearTimeout(this.#bindRetryTimer);
+			this.#bindRetryTimer = null;
+		}
+		this.#listeners = new AbortController();
+		const signal = this.#listeners.signal;
+
+		requiredNodes.appointmentModal.setClient(this.client);
+		requiredNodes.openModalButton.addEventListener('click', this.handleOpenCreateModal, { signal });
+		requiredNodes.professionalFilter.addEventListener('change', this.handleProfessionalFilterChange, {
+			signal,
+		});
+		requiredNodes.locationFilter.addEventListener('change', this.handleLocationFilterChange, { signal });
+		this.addEventListener('appointment:changed', this.handleAppointmentChanged as EventListener, {
+			signal,
+		});
+
+		cleanFlashUrl();
+		void this.bootstrap();
+	}
+
+	disconnectedCallback() {
+		this.#bound = false;
+		this.#listeners?.abort();
+		this.#listeners = null;
+		if (this.#bindRetryTimer) {
+			window.clearTimeout(this.#bindRetryTimer);
+			this.#bindRetryTimer = null;
+		}
+		this.#bindRetryAttempts = 0;
+		this.destroyCalendar();
+	}
+
+	getRequiredNodes(): RequiredNodes | null {
+		if (!this.calendarEl || !this.openModalButton || !this.professionalFilter || !this.locationFilter) {
+			return null;
+		}
+		if (!hasAppointmentModalApi(this.appointmentModal)) {
+			return null;
+		}
+
+		return {
+			calendarEl: this.calendarEl,
+			loadingNode: this.loadingNode,
+			pageErrorNode: this.pageErrorNode,
+			openModalButton: this.openModalButton,
+			professionalFilterWrap: this.professionalFilterWrap,
+			professionalFilter: this.professionalFilter,
+			locationFilter: this.locationFilter,
+			appointmentModal: this.appointmentModal,
+		};
+	}
+
+	scheduleBindRetry() {
+		if (!this.isConnected) return;
+		this.#bindRetryAttempts += 1;
+		if (this.#bindRetryAttempts > 10) {
+			console.error('[calendar-manager] required DOM nodes were not found during initialization.');
+			return;
+		}
+		if (this.#bindRetryTimer) {
+			window.clearTimeout(this.#bindRetryTimer);
+		}
+		void customElements.whenDefined('appointment-modal').then(() => {
+			if (!this.isConnected || this.#bound) return;
+			this.connectedCallback();
+		});
+		this.#bindRetryTimer = window.setTimeout(() => {
+			this.connectedCallback();
+		}, 50);
+	}
+
+	clearPageError() {
+		if (!this.pageErrorNode) return;
+		this.pageErrorNode.textContent = '';
+		this.pageErrorNode.classList.add('hidden');
+	}
+
+	showPageError(message: string) {
+		if (!this.pageErrorNode) return;
+		this.pageErrorNode.textContent = message;
+		this.pageErrorNode.classList.remove('hidden');
+	}
+
+	setCalendarLoading(value: boolean) {
+		if (this.loadingNode) this.loadingNode.classList.toggle('hidden', !value);
+		if (this.professionalFilter) {
+			this.professionalFilter.disabled = value || this.roleId === 3;
+		}
+		if (this.locationFilter) this.locationFilter.disabled = value;
+		if (this.openModalButton) this.openModalButton.disabled = value;
+	}
+
+	renderOptions(
+		select: HTMLSelectElement,
+		items: Option[],
+		emptyLabel: string,
+		includeAllOption = false
+	) {
+		select.innerHTML = '';
+		const emptyOption = document.createElement('option');
+		emptyOption.value = '';
+		emptyOption.textContent = emptyLabel;
+		select.appendChild(emptyOption);
+		if (includeAllOption) {
+			emptyOption.value = '';
+		}
+		for (const item of items) {
+			const option = document.createElement('option');
+			option.value = String(item.id);
+			option.textContent = item.name;
+			select.appendChild(option);
+		}
+	}
+
+	destroyCalendar() {
+		if (this.calendar) {
+			this.calendar.destroy();
+			this.calendar = null;
+		}
+	}
+
+	getPreferredView() {
+		const allowedViews = new Set(['timeGridDay', 'timeGridWeek', 'dayGridMonth', 'listWeek']);
+		const saved = String(localStorage.getItem('bookmate-calendar-default-view') || 'timeGridWeek');
+		return allowedViews.has(saved) ? saved : 'timeGridWeek';
+	}
+
+	buildEventSource = (
+		info: { startStr: string; endStr: string },
+		successCallback: (eventInputs: any[]) => void,
+		failureCallback: (error: Error) => void
+	) => {
+		void (async () => {
+			this.setCalendarLoading(true);
+			this.clearPageError();
+
+			try {
+				const professionalId = toPositiveInt(this.professionalFilter?.value, 0);
+				const locationId = toPositiveInt(this.locationFilter?.value, 0);
+				const events = await this.client.getCalendarEvents({
+					start: info.startStr,
+					end: info.endStr,
+					pro_id: professionalId > 0 ? professionalId : undefined,
+					loc_id: locationId > 0 ? locationId : undefined,
+				});
+
+				const normalizedEvents = events.map((event: any) => ({
+					...event,
+					id: String(event?.id ?? ''),
+					extendedProps: {
+						...(event?.extendedProps || {}),
+						pro_id_professional: toPositiveInt(
+							event?.extendedProps?.pro_id_professional ?? event?.resourceId,
+							0
+						),
+					},
+				}));
+				successCallback(normalizedEvents);
+			} catch (error) {
+				const message =
+					error instanceof Error ? error.message : 'No fue posible cargar el calendario.';
+				this.showPageError(message);
+				failureCallback(error instanceof Error ? error : new Error(message));
+			} finally {
+				this.setCalendarLoading(false);
+			}
+		})();
+	};
+
+	initializeCalendar(requiredNodes: RequiredNodes) {
+		this.destroyCalendar();
+
+		this.calendar = new Calendar(requiredNodes.calendarEl, {
+			plugins: [interactionPlugin, dayGridPlugin, timeGridPlugin, listPlugin],
+			locale: esLocale,
+			initialView: this.getPreferredView(),
+			editable: true,
+			selectable: true,
+			selectMirror: true,
+			nowIndicator: true,
+			allDaySlot: false,
+			height: 'auto',
+			slotMinTime: '06:00:00',
+			slotMaxTime: '22:00:00',
+			headerToolbar: {
+				left: 'prev,next today',
+				center: 'title',
+				right: 'timeGridDay,timeGridWeek,dayGridMonth,listWeek',
+			},
+			buttonText: {
+				today: 'Hoy',
+				week: 'Semana',
+				day: 'Dia',
+				month: 'Mes',
+				list: 'Lista',
+			},
+			events: this.buildEventSource,
+			select: (info: DateSelectArg) => {
+				const modal = hasAppointmentModalApi(this.appointmentModal) ? this.appointmentModal : null;
+				modal?.openCreate({
+					start: info.start,
+					end: info.end,
+					professionalId: toPositiveInt(this.professionalFilter?.value, 0),
+					locationId: toPositiveInt(this.locationFilter?.value, 0),
+				});
+			},
+			eventClick: (info) => {
+				const appointmentId = toPositiveInt(info.event.id, 0);
+				if (appointmentId > 0) {
+					const modal = hasAppointmentModalApi(this.appointmentModal) ? this.appointmentModal : null;
+					void modal?.openEdit(appointmentId);
+				}
+			},
+			eventDrop: (info) => {
+				void this.handleEventReschedule(info);
+			},
+			eventResize: (info) => {
+				void this.handleEventReschedule(info);
+			},
+		});
+
+		this.calendar.render();
+	}
+
+	reloadCalendarEvents() {
+		if (this.calendar) {
+			this.calendar.refetchEvents();
+		}
+	}
+
+	async handleEventReschedule(info: EventDropArg | EventResizeDoneArg) {
+		const appointmentId = toPositiveInt(info.event.id, 0);
+		if (!appointmentId) {
+			info.revert();
+			return;
+		}
+
+		const eventStart = info.event.start;
+		const eventEnd = info.event.end ?? (eventStart ? new Date(eventStart.getTime() + 60 * 60 * 1000) : null);
+		if (!eventStart || !eventEnd) {
+			info.revert();
+			return;
+		}
+
+		this.setCalendarLoading(true);
+		this.clearPageError();
+
+		try {
+			const detail = await this.client.getAppointment(appointmentId);
+			const statusRaw = String(detail.status || 'CONFIRMADO').trim().toUpperCase();
+			const status = isAppointmentStatus(statusRaw) ? statusRaw : 'CONFIRMADO';
+
+			const payload: AppointmentFormPayload = {
+				loc_id_location: toPositiveInt(detail.loc_id_location, 0),
+				pro_id_professional:
+					this.roleId === 3 && this.currentProfessionalId > 0
+						? this.currentProfessionalId
+						: toPositiveInt(detail.pro_id_professional, 0),
+				ser_id_service: toPositiveInt(detail.ser_id_service, 0),
+				customer_name: String(detail.customer_name || '').trim(),
+				customer_phone: String(detail.customer_phone || '').trim(),
+				start_time: toIsoWithOffset(formatDateTimeLocal(eventStart)),
+				end_time: toIsoWithOffset(formatDateTimeLocal(eventEnd)),
+				status,
+			};
+
+			await this.client.updateAppointment(appointmentId, payload);
+		} catch (error) {
+			info.revert();
+			const message =
+				error instanceof Error
+					? error.message
+					: 'No fue posible reprogramar la cita seleccionada.';
+			this.showPageError(message);
+			await showErrorAlert(message);
+		} finally {
+			this.setCalendarLoading(false);
+		}
+	}
+
+	async loadMeta(requiredNodes: RequiredNodes) {
+		this.setCalendarLoading(true);
+		this.clearPageError();
+
+		try {
+			const data = await this.client.getMeta();
+			this.roleId = toInt(data.session?.role_id, 0);
+			this.currentProfessionalId = toPositiveInt(data.session?.professional_id, 0);
+
+			this.professionals = Array.isArray(data.professionals)
+				? data.professionals
+						.map((item) => ({
+							id: toPositiveInt(item?.id_professional, 0),
+							name: String(item?.display_name || '').trim(),
+						}))
+						.filter((item) => item.id > 0 && item.name)
+				: [];
+
+			this.locations = Array.isArray(data.locations)
+				? data.locations
+						.map((item) => ({
+							id: toPositiveInt(item?.id_location, 0),
+							name: String(item?.name || '').trim(),
+						}))
+						.filter((item) => item.id > 0 && item.name)
+				: [];
+
+			this.services = Array.isArray(data.services)
+				? data.services
+						.map((item) => ({
+							id: toPositiveInt(item?.id_service, 0),
+							name: String(item?.name || '').trim(),
+						}))
+						.filter((item) => item.id > 0 && item.name)
+				: [];
+
+			this.renderOptions(requiredNodes.professionalFilter, this.professionals, 'Todos los profesionales', true);
+			this.renderOptions(requiredNodes.locationFilter, this.locations, 'Todas las sucursales', true);
+
+			if (this.roleId === 3) {
+				requiredNodes.professionalFilterWrap?.classList.add('hidden');
+				requiredNodes.professionalFilter.disabled = true;
+
+				if (this.currentProfessionalId <= 0 && this.professionals.length === 1) {
+					this.currentProfessionalId = this.professionals[0].id;
+				}
+
+				if (this.currentProfessionalId > 0) {
+					requiredNodes.professionalFilter.value = String(this.currentProfessionalId);
+				} else {
+					this.showPageError(
+						'No fue posible determinar el perfil profesional de tu sesion. Contacta al administrador.'
+					);
+				}
+			} else {
+				requiredNodes.professionalFilterWrap?.classList.remove('hidden');
+				requiredNodes.professionalFilter.disabled = false;
+			}
+
+			requiredNodes.appointmentModal.configure({
+				roleId: this.roleId,
+				currentProfessionalId: this.currentProfessionalId,
+				professionals: this.professionals,
+				locations: this.locations,
+				services: this.services,
+			});
+		} catch (error) {
+			this.showPageError(
+				error instanceof Error
+					? error.message
+					: 'No fue posible cargar los catalogos del calendario.'
+			);
+		} finally {
+			this.setCalendarLoading(false);
+		}
+	}
+
+	handleOpenCreateModal = () => {
+		const now = new Date();
+		now.setSeconds(0, 0);
+		const next = new Date(now.getTime() + 60 * 60 * 1000);
+		const modal = hasAppointmentModalApi(this.appointmentModal) ? this.appointmentModal : null;
+		modal?.openCreate({
+			start: now,
+			end: next,
+			professionalId: toPositiveInt(this.professionalFilter?.value, 0),
+			locationId: toPositiveInt(this.locationFilter?.value, 0),
+		});
+	};
+
+	handleProfessionalFilterChange = () => {
+		if (this.roleId === 3) return;
+		this.reloadCalendarEvents();
+	};
+
+	handleLocationFilterChange = () => {
+		this.reloadCalendarEvents();
+	};
+
+	handleAppointmentChanged = (event: Event) => {
+		const customEvent = event as CustomEvent<{ message?: string }>;
+		if (customEvent.detail?.message) {
+			// El feedback al usuario se maneja dentro del modal con alertas.
+		}
+		this.reloadCalendarEvents();
+	};
+
+	async bootstrap() {
+		const requiredNodes = this.getRequiredNodes();
+		if (!requiredNodes) return;
+
+		await this.loadMeta(requiredNodes);
+		if (!this.isConnected) return;
+		this.initializeCalendar(requiredNodes);
+	}
+}
+
+if (!customElements.get('calendar-manager')) {
+	customElements.define('calendar-manager', CalendarManager);
+}

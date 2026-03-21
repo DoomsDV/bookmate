@@ -8,28 +8,21 @@ import {
 	listScheduleDaysWithOrds,
 } from '../../../lib/schedules';
 import { parseTokenClaims } from '../../../lib/token-claims';
+import {
+	requireToken as requireApiToken,
+	toErrorResponse as toApiErrorResponse,
+} from '../../../utils/api-helpers';
 
-const requireToken = (token: string | undefined) => {
-	if (!token) {
-		throw new SchedulesApiError('No hay sesion valida para consultar horarios.', 401);
-	}
-	return token;
-};
+const createSchedulesError = (message: string, status = 400) => new SchedulesApiError(message, status);
 
-const toErrorResponse = (error: unknown, fallbackMessage: string) => {
-	const schedulesError =
-		error instanceof SchedulesApiError ? error : new SchedulesApiError(fallbackMessage, 500);
+const requireToken = (token: string | undefined) =>
+	requireApiToken(token, createSchedulesError, 'No hay sesion valida para consultar horarios.');
 
-	return Response.json(
-		{
-			status: 'error',
-			message: schedulesError.message,
-			details: schedulesError.details,
-			errors: schedulesError.fieldErrors,
-		},
-		{ status: schedulesError.status }
-	);
-};
+const toErrorResponse = (error: unknown, fallbackMessage: string) =>
+	toApiErrorResponse(error, fallbackMessage, {
+		isKnownError: (value): value is SchedulesApiError => value instanceof SchedulesApiError,
+		createError: createSchedulesError,
+	});
 
 export const GET: APIRoute = async ({ locals }) => {
 	try {

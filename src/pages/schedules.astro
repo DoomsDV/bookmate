@@ -17,819 +17,111 @@ type FlashType = (typeof validFlashTypes)[number];
 const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
 	? (flashTypeRaw as FlashType)
 	: 'info';
-const initialLoadError = token ? '' : 'No hay sesión válida para configurar horarios.';
+const initialLoadError = token ? '' : 'No hay sesion valida para configurar horarios.';
 ---
 
 <Layout>
-	<div class="min-h-screen">
-		<div
-			class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
-			data-app-shell
-			data-sidebar-state="expanded"
-		>
-			<SideNav currentPath={Astro.url.pathname} />
+	<schedule-manager data-can-edit={!isProfessional ? 'true' : 'false'}>
+		<div class="min-h-screen">
+			<div
+				class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+				data-app-shell
+				data-sidebar-state="expanded"
+			>
+				<SideNav currentPath={Astro.url.pathname} />
 
-			<div class="grid min-h-full grid-rows-[auto_1fr]">
-				<TopBar />
+				<div class="grid min-h-full grid-rows-[auto_1fr]">
+					<TopBar />
 
-				<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
-					<section class="grid gap-6" data-schedules-root data-can-edit={!isProfessional ? 'true' : 'false'}>
-						{
-							flashMessage ? (
-								<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
-									<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
-								</div>
-							) : null
-						}
+					<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
+						<section class="grid gap-6">
+							{
+								flashMessage ? (
+									<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
+										<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
+									</div>
+								) : null
+							}
 
-						{
-							initialLoadError ? (
-								<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
-							) : (
-								<div class="grid gap-4">
-									<div class="rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-5 py-4">
-										<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-											<div class="grid gap-1">
-												<h1 class="text-lg font-bold text-[color:var(--on-surface)]">
-													Horarios semanales
-												</h1>
-												<p class="text-sm text-[color:var(--on-surface-variant)]">
-													Configura la disponibilidad por profesional con turnos por sucursal.
-												</p>
+							{
+								initialLoadError ? (
+									<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
+								) : (
+									<div class="grid gap-4">
+										<div class="rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-5 py-4">
+											<div class="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+												<div class="grid gap-1">
+													<h1 class="text-lg font-bold text-[color:var(--on-surface)]">
+														Horarios semanales
+													</h1>
+													<p class="text-sm text-[color:var(--on-surface-variant)]">
+														Configura la disponibilidad por profesional con turnos por sucursal.
+													</p>
+												</div>
+
+												{
+													!isProfessional && (
+														<button
+															type="button"
+															class="btn-primary-soft inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
+															data-save-schedule
+														>
+															<span class="material-symbols-rounded text-[1rem]">save</span>
+															<span data-save-schedule-label>Guardar horarios</span>
+														</button>
+													)
+												}
 											</div>
 
-											{
-												!isProfessional && (
-													<button
-														type="button"
-														class="btn-primary-soft inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-60"
-														data-save-schedule
-													>
-														<span class="material-symbols-rounded text-[1rem]">save</span>
-														<span data-save-schedule-label>Guardar horarios</span>
-													</button>
-												)
-											}
+											<label class="mt-4 grid max-w-xl gap-1 text-sm font-semibold">
+												<span class="inline-flex items-center gap-1">
+													Profesional
+													<span class="text-rose-600">*</span>
+												</span>
+												<select
+													data-professional-select
+													class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
+												>
+													<option value="">Selecciona un profesional</option>
+												</select>
+												<span class="text-xs font-normal text-[color:var(--on-surface-variant)]" data-professional-hint>
+													Selecciona una persona para ver o editar su agenda semanal.
+												</span>
+											</label>
 										</div>
 
-										<label class="mt-4 grid max-w-xl gap-1 text-sm font-semibold">
-											<span class="inline-flex items-center gap-1">
-												Profesional
-												<span class="text-rose-600">*</span>
-											</span>
-											<select
-												data-professional-select
-												class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm outline-none transition focus:border-[color:var(--primary)]"
-											>
-												<option value="">Selecciona un profesional</option>
-											</select>
-											<span class="text-xs font-normal text-[color:var(--on-surface-variant)]" data-professional-hint>
-												Selecciona una persona para ver o editar su agenda semanal.
-											</span>
-										</label>
+										<div
+											class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400"
+											data-schedule-error
+										></div>
+
+										<div
+											class="hidden rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 text-sm text-[color:var(--on-surface-variant)]"
+											data-schedule-loading
+										>
+											Cargando configuracion de horarios...
+										</div>
+
+										<div class="grid gap-3" data-weekly-planner></div>
 									</div>
-
-									<div
-										class="hidden rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-800 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-400"
-										data-schedule-error
-									></div>
-
-									<div
-										class="hidden rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 text-sm text-[color:var(--on-surface-variant)]"
-										data-schedule-loading
-									>
-											Cargando configuración de horarios...
-									</div>
-
-									<div class="grid gap-3" data-weekly-planner></div>
-								</div>
-							)
-						}
-					</section>
-				</main>
+								)
+							}
+						</section>
+					</main>
+				</div>
 			</div>
 		</div>
-	</div>
+	</schedule-manager>
 
 	<AppAlert />
 </Layout>
 
 <script>
-	const initializeSchedulesPage = () => {
-		const root = document.querySelector<HTMLElement>('[data-schedules-root]');
-		if (!root || root.dataset.bound === 'true') return;
-		root.dataset.bound = 'true';
-		const canEdit = root.dataset.canEdit === 'true';
-
-		const professionalSelect = root.querySelector<HTMLSelectElement>('[data-professional-select]');
-		const plannerNode = root.querySelector<HTMLElement>('[data-weekly-planner]');
-		const saveButton = root.querySelector<HTMLButtonElement>('[data-save-schedule]');
-		const saveLabel = root.querySelector<HTMLElement>('[data-save-schedule-label]');
-		const hintNode = root.querySelector<HTMLElement>('[data-professional-hint]');
-		const errorNode = root.querySelector<HTMLElement>('[data-schedule-error]');
-		const loadingNode = root.querySelector<HTMLElement>('[data-schedule-loading]');
-
-		if (!professionalSelect || !plannerNode) return;
-
-		type ProfessionalLov = { id_professional: number; display_name: string };
-		type LocationLov = { id_location: number; name: string };
-		type Day = { day_of_week: number; name: string };
-		type ScheduleItem = {
-			id_professional_schedule?: number;
-			loc_id_location: number;
-			day_of_week: number;
-			start_time: string;
-			end_time: string;
-		};
-		type SlotDraft = {
-			uid: string;
-			loc_id_location: string;
-			start_time: string;
-			end_time: string;
-			id_professional_schedule?: number;
-		};
-		type DayState = {
-			day_of_week: number;
-			name: string;
-			enabled: boolean;
-			slots: SlotDraft[];
-		};
-
-		let professionals: ProfessionalLov[] = [];
-		let locations: LocationLov[] = [];
-		let days: Day[] = [];
-		let dayStates: DayState[] = [];
-		let selectedProfessionalId = 0;
-		let slotCounter = 0;
-		let isMetaLoading = false;
-		let isScheduleLoading = false;
-		let isSaving = false;
-		let isDirty = false;
-
-		const currentUrl = new URL(window.location.href);
-		if (currentUrl.searchParams.has('flash_message')) {
-			currentUrl.searchParams.delete('flash_message');
-			currentUrl.searchParams.delete('flash_type');
-			window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
-		}
-
-		const redirectWithFlash = (message: string, type = 'success') => {
-			const nextUrl = new URL(window.location.href);
-			nextUrl.searchParams.set('flash_message', message);
-			nextUrl.searchParams.set('flash_type', type);
-			window.location.assign(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
-		};
-
-		const escapeHtml = (value: string) =>
-			String(value || '')
-				.replace(/&/g, '&amp;')
-				.replace(/</g, '&lt;')
-				.replace(/>/g, '&gt;')
-				.replace(/"/g, '&quot;')
-				.replace(/'/g, '&#39;');
-
-		const toMinutes = (timeValue: string) => {
-			const [hours, minutes] = timeValue.split(':').map((part) => Number(part));
-			return hours * 60 + minutes;
-		};
-
-		const normalizeTime = (value: unknown) => {
-			const text = String(value || '').trim();
-			const match = text.match(/^([01]\d|2[0-3]):([0-5]\d)/);
-			return match ? `${match[1]}:${match[2]}` : '';
-		};
-
-		const makeSlotUid = () => {
-			slotCounter += 1;
-			return `slot-${Date.now()}-${slotCounter}`;
-		};
-
-		const getDefaultLocationId = () =>
-			locations.length > 0 ? String(locations[0].id_location) : '';
-
-		const createDefaultSlot = (): SlotDraft => ({
-			uid: makeSlotUid(),
-			loc_id_location: getDefaultLocationId(),
-			start_time: '08:00',
-			end_time: '12:00',
-		});
-
-		const buildEmptyDayStates = (): DayState[] =>
-			days
-				.slice()
-				.sort((a, b) => a.day_of_week - b.day_of_week)
-				.map((day) => ({
-					day_of_week: day.day_of_week,
-					name: day.name,
-					enabled: false,
-					slots: [],
-				}));
-
-		const clearMessages = () => {
-			if (errorNode) {
-				errorNode.textContent = '';
-				errorNode.classList.add('hidden');
-			}
-		};
-
-		const showError = (message: string) => {
-			if (!errorNode) return;
-			errorNode.textContent = message;
-			errorNode.classList.remove('hidden');
-		};
-
-		const toBackendErrorMessage = (data: any, fallbackMessage: string) => {
-			const mainMessage = typeof data?.message === 'string' ? data.message.trim() : '';
-			if (mainMessage) return mainMessage;
-
-			if (Array.isArray(data?.errors)) {
-				const detailMessages = data.errors
-					.filter((item: any) => item && typeof item === 'object')
-					.map((item: any) => String(item.message || '').trim())
-					.filter((message: string) => message.length > 0);
-				if (detailMessages.length > 0) {
-					return detailMessages.join(' | ');
-				}
-			}
-
-			return fallbackMessage;
-		};
-
-		const setDirty = (value: boolean) => {
-			isDirty = value;
-			updateControlsState();
-		};
-
-			const updateControlsState = () => {
-				const blocked = isMetaLoading || isScheduleLoading || isSaving || !canEdit;
-				if (saveButton) {
-					saveButton.disabled = blocked || selectedProfessionalId <= 0;
-				}
-				professionalSelect.disabled = blocked || professionals.length === 0;
-				if (saveLabel) {
-					saveLabel.textContent = isSaving
-						? 'Guardando...'
-						: isDirty
-							? 'Guardar cambios'
-							: 'Guardar horarios';
-				}
-				if (loadingNode) {
-					const showLoading = isMetaLoading || isScheduleLoading;
-					loadingNode.classList.toggle('hidden', !showLoading);
-					loadingNode.textContent = isMetaLoading
-							? 'Cargando configuración de horarios...'
-						: 'Cargando agenda del profesional...';
-				}
-			if (hintNode) {
-				if (!canEdit) {
-					hintNode.textContent = '';
-					hintNode.classList.add('hidden');
-				} else {
-					hintNode.classList.remove('hidden');
-					hintNode.textContent =
-						selectedProfessionalId > 0
-							? isDirty
-								? 'Hay cambios pendientes por guardar.'
-								: 'Selecciona turnos por día y guarda para sincronizar.'
-							: 'Selecciona una persona para ver o editar su agenda semanal.';
-				}
-			}
-		};
-
-		const renderProfessionalOptions = () => {
-			professionalSelect.innerHTML = '<option value="">Selecciona un profesional</option>';
-
-			for (const professional of professionals) {
-				const option = document.createElement('option');
-				option.value = String(professional.id_professional);
-				option.textContent = professional.display_name;
-				professionalSelect.appendChild(option);
-			}
-
-			if (selectedProfessionalId > 0) {
-				professionalSelect.value = String(selectedProfessionalId);
-			}
-		};
-
-		const findDayState = (dayOfWeek: number) =>
-			dayStates.find((day) => day.day_of_week === dayOfWeek) || null;
-
-		const renderPlanner = () => {
-			const blocked = isMetaLoading || isScheduleLoading || isSaving || !canEdit;
-
-			if (selectedProfessionalId <= 0) {
-				plannerNode.innerHTML = `
-					<div class="rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-5 text-sm text-[color:var(--on-surface-variant)]">
-						Selecciona un profesional para configurar sus horarios.
-					</div>
-				`;
-				return;
-			}
-
-			if (days.length === 0) {
-				plannerNode.innerHTML = `
-					<div class="rounded-[1.2rem] border border-rose-200 bg-rose-50 px-4 py-5 text-sm text-rose-700">
-						No hay dias disponibles para construir la agenda semanal.
-					</div>
-				`;
-				return;
-			}
-
-			const rowsHtml = dayStates
-				.map((dayState) => {
-					const slotsHtml = dayState.slots
-						.map((slot, index) => {
-							const locationOptions = locations
-								.map((location) => {
-									const selected =
-										String(location.id_location) === String(slot.loc_id_location)
-											? ' selected'
-											: '';
-									return `<option value="${location.id_location}"${selected}>${escapeHtml(location.name)}</option>`;
-								})
-								.join('');
-
-							return `
-								<div class="grid gap-2 lg:grid-cols-[minmax(0,1fr)_9rem_9rem_auto] lg:items-end" data-slot-row>
-									<label class="grid gap-1 text-xs font-semibold text-[color:var(--on-surface-variant)]">
-										Sucursal
-										<select
-											data-slot-location
-											data-day-of-week="${dayState.day_of_week}"
-											data-slot-uid="${slot.uid}"
-											${blocked ? 'disabled' : ''}
-											class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm font-semibold text-[color:var(--on-surface)] outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60"
-										>
-											<option value="">Selecciona sucursal</option>
-											${locationOptions}
-										</select>
-									</label>
-
-									<label class="grid gap-1 text-xs font-semibold text-[color:var(--on-surface-variant)]">
-										Inicio
-										<input
-											type="time"
-											value="${escapeHtml(slot.start_time)}"
-											data-slot-start
-											data-day-of-week="${dayState.day_of_week}"
-											data-slot-uid="${slot.uid}"
-											${blocked ? 'disabled' : ''}
-											class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm font-semibold text-[color:var(--on-surface)] outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60"
-										/>
-									</label>
-
-									<label class="grid gap-1 text-xs font-semibold text-[color:var(--on-surface-variant)]">
-										Fin
-										<input
-											type="time"
-											value="${escapeHtml(slot.end_time)}"
-											data-slot-end
-											data-day-of-week="${dayState.day_of_week}"
-											data-slot-uid="${slot.uid}"
-											${blocked ? 'disabled' : ''}
-											class="rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm font-semibold text-[color:var(--on-surface)] outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60"
-										/>
-									</label>
-
-									<div class="flex justify-end lg:justify-start">
-										<button
-											type="button"
-											data-slot-remove
-											data-day-of-week="${dayState.day_of_week}"
-											data-slot-uid="${slot.uid}"
-											${blocked || dayState.slots.length <= 1 ? 'disabled' : ''}
-											class="rounded-xl border border-[color:var(--shell-border)] px-3 py-2 text-xs font-semibold text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--control-surface)] disabled:cursor-not-allowed disabled:opacity-50"
-											aria-label="Eliminar turno ${index + 1} de ${escapeHtml(dayState.name)}"
-										>
-											Quitar
-										</button>
-									</div>
-								</div>
-							`;
-						})
-						.join('');
-
-					return `
-						<article class="rounded-[1.1rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-4">
-							<div class="flex flex-wrap items-center justify-between gap-3">
-								<div>
-									<h3 class="text-sm font-bold text-[color:var(--on-surface)]">${escapeHtml(dayState.name)}</h3>
-									<p class="text-xs text-[color:var(--on-surface-variant)]">
-										${dayState.enabled ? `${dayState.slots.length} turno(s) configurado(s)` : 'Dia libre'}
-									</p>
-								</div>
-
-								<label class="inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--on-surface-variant)]">
-									<input
-										type="checkbox"
-										data-day-toggle
-										data-day-of-week="${dayState.day_of_week}"
-										${dayState.enabled ? 'checked' : ''}
-										${blocked ? 'disabled' : ''}
-										class="size-4 accent-[color:var(--primary)] disabled:cursor-not-allowed"
-									/>
-									Habilitado
-								</label>
-							</div>
-
-							${
-								dayState.enabled
-									? `
-								<div class="mt-4 grid gap-3">
-									${slotsHtml}
-									${
-										canEdit
-											? `<div>
-												<button
-													type="button"
-													data-slot-add
-													data-day-of-week="${dayState.day_of_week}"
-													${blocked ? 'disabled' : ''}
-													class="rounded-xl border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-xs font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--primary-soft-hover)] disabled:cursor-not-allowed disabled:opacity-60"
-												>
-													+ Agregar turno
-												</button>
-											</div>`
-											: ''
-									}
-								</div>
-							`
-									: ''
-							}
-						</article>
-					`;
-				})
-				.join('');
-
-			plannerNode.innerHTML = rowsHtml;
-		};
-
-		const applySchedule = (scheduleItems: ScheduleItem[]) => {
-			const nextDayStates = buildEmptyDayStates();
-			const rowsByDay = new Map<number, DayState>(nextDayStates.map((row) => [row.day_of_week, row]));
-
-			for (const item of scheduleItems) {
-				const dayState = rowsByDay.get(Number(item.day_of_week));
-				if (!dayState) continue;
-				dayState.enabled = true;
-				dayState.slots.push({
-					uid: makeSlotUid(),
-					loc_id_location: String(item.loc_id_location || ''),
-					start_time: normalizeTime(item.start_time),
-					end_time: normalizeTime(item.end_time),
-					id_professional_schedule: Number(item.id_professional_schedule || 0),
-				});
-			}
-
-			for (const dayState of nextDayStates) {
-				if (dayState.enabled && dayState.slots.length === 0) {
-					dayState.slots.push(createDefaultSlot());
-				}
-			}
-
-			dayStates = nextDayStates;
-		};
-
-		const confirmDiscardChanges = async () => {
-			const message = 'Tienes cambios sin guardar. Deseas descartarlos y continuar?';
-			const alertApi = window.BookmateAlert;
-			if (alertApi?.confirm) {
-				return alertApi.confirm({
-					type: 'warning',
-					title: 'Cambios sin guardar',
-					message,
-					confirmText: 'Descartar',
-					cancelText: 'Cancelar',
-				});
-			}
-			return window.confirm(message);
-		};
-
-		const loadScheduleByProfessional = async (professionalId: number) => {
-			isScheduleLoading = true;
-			updateControlsState();
-			clearMessages();
-			renderPlanner();
-
-			try {
-				const response = await fetch(`/api/schedules/${professionalId}`, {
-					method: 'GET',
-					headers: { Accept: 'application/json' },
-				});
-
-				let data = null;
-				try {
-					data = await response.json();
-				} catch {
-					throw new Error('No fue posible interpretar la respuesta del servidor.');
-				}
-
-				if (!response.ok || !data || data.status !== 'success' || !Array.isArray(data.data)) {
-					throw new Error(
-						toBackendErrorMessage(data, 'No fue posible cargar la agenda del profesional.')
-					);
-				}
-
-				applySchedule(data.data);
-				setDirty(false);
-			} catch (error) {
-				applySchedule([]);
-				showError(error instanceof Error ? error.message : 'No fue posible cargar la agenda.');
-			} finally {
-				isScheduleLoading = false;
-				updateControlsState();
-				renderPlanner();
-			}
-		};
-
-		const validateAndBuildPayload = () => {
-			const payload: Array<{
-				loc_id_location: number;
-				day_of_week: number;
-				start_time: string;
-				end_time: string;
-			}> = [];
-			const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-			for (const dayState of dayStates) {
-				if (!dayState.enabled) continue;
-				if (dayState.slots.length === 0) {
-					return { error: `Debes agregar al menos un turno para ${dayState.name}.` };
-				}
-
-				const intervals: Array<{ start: number; end: number }> = [];
-				for (const slot of dayState.slots) {
-					const locationId = Number(slot.loc_id_location);
-					if (!Number.isInteger(locationId) || locationId <= 0) {
-						return { error: `Selecciona una sucursal valida para ${dayState.name}.` };
-					}
-
-					const startTime = normalizeTime(slot.start_time);
-					const endTime = normalizeTime(slot.end_time);
-					if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
-						return { error: `Las horas en ${dayState.name} deben tener formato HH:MM.` };
-					}
-
-					const startMinutes = toMinutes(startTime);
-					const endMinutes = toMinutes(endTime);
-					if (startMinutes >= endMinutes) {
-						return {
-							error: `En ${dayState.name}, la hora de inicio debe ser menor que la hora de fin.`,
-						};
-					}
-
-					intervals.push({ start: startMinutes, end: endMinutes });
-					payload.push({
-						loc_id_location: locationId,
-						day_of_week: dayState.day_of_week,
-						start_time: startTime,
-						end_time: endTime,
-					});
-				}
-
-				intervals.sort((a, b) => a.start - b.start);
-				for (let i = 1; i < intervals.length; i += 1) {
-					if (intervals[i].start < intervals[i - 1].end) {
-						return { error: `Hay turnos solapados en ${dayState.name}.` };
-					}
-				}
-			}
-
-			return { payload };
-		};
-
-		const saveSchedule = async () => {
-			if (!canEdit) {
-				showError('No tienes permisos para guardar horarios.');
-				return;
-			}
-
-			if (selectedProfessionalId <= 0) {
-				showError('Selecciona un profesional antes de guardar.');
-				return;
-			}
-
-			const result = validateAndBuildPayload();
-			if ('error' in result) {
-				showError(result.error ?? 'No fue posible validar los horarios.');
-				return;
-			}
-
-			isSaving = true;
-			updateControlsState();
-			clearMessages();
-
-			try {
-				const response = await fetch(`/api/schedules/${selectedProfessionalId}`, {
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Accept: 'application/json',
-					},
-					body: JSON.stringify({ schedules: result.payload }),
-				});
-
-				let data = null;
-				try {
-					data = await response.json();
-				} catch {
-					throw new Error('No fue posible interpretar la respuesta del servidor.');
-				}
-
-				if (!response.ok || !data || data.status !== 'success') {
-					throw new Error(toBackendErrorMessage(data, 'No fue posible guardar los horarios.'));
-				}
-
-				const successMessage =
-					typeof data.message === 'string' && data.message.trim()
-						? data.message
-						: 'Horarios guardados correctamente.';
-				setDirty(false);
-				redirectWithFlash(successMessage, 'success');
-			} catch (error) {
-				showError(error instanceof Error ? error.message : 'No fue posible guardar los horarios.');
-			} finally {
-				isSaving = false;
-				updateControlsState();
-				renderPlanner();
-			}
-		};
-
-		const loadMeta = async () => {
-			isMetaLoading = true;
-			updateControlsState();
-			renderPlanner();
-
-			try {
-				const response = await fetch('/api/schedules/meta', {
-					method: 'GET',
-					headers: { Accept: 'application/json' },
-				});
-
-				let data = null;
-				try {
-					data = await response.json();
-				} catch {
-					throw new Error('No fue posible interpretar la respuesta del servidor.');
-				}
-
-				if (!response.ok || !data || data.status !== 'success' || !data.data) {
-					throw new Error(
-						toBackendErrorMessage(data, 'No fue posible obtener catalogos de horarios.')
-					);
-				}
-
-				professionals = Array.isArray(data.data.professionals) ? data.data.professionals : [];
-				locations = Array.isArray(data.data.locations) ? data.data.locations : [];
-				days = Array.isArray(data.data.days) ? data.data.days : [];
-
-				dayStates = buildEmptyDayStates();
-				renderProfessionalOptions();
-				renderPlanner();
-
-				if (professionals.length === 0) {
-					showError('No hay profesionales disponibles para configurar horarios.');
-					return;
-				}
-
-				selectedProfessionalId = Number(professionals[0].id_professional);
-				professionalSelect.value = String(selectedProfessionalId);
-				await loadScheduleByProfessional(selectedProfessionalId);
-			} catch (error) {
-				showError(
-					error instanceof Error
-						? error.message
-						: 'No fue posible obtener la configuracion inicial de horarios.'
-				);
-				dayStates = [];
-				renderPlanner();
-			} finally {
-				isMetaLoading = false;
-				updateControlsState();
-				renderPlanner();
-			}
-		};
-
-		professionalSelect.addEventListener('change', async () => {
-			const nextProfessionalId = Number(professionalSelect.value || 0);
-			if (!Number.isInteger(nextProfessionalId) || nextProfessionalId <= 0) {
-				professionalSelect.value = selectedProfessionalId > 0 ? String(selectedProfessionalId) : '';
-				return;
-			}
-			if (nextProfessionalId === selectedProfessionalId) return;
-
-			if (isDirty) {
-				const canContinue = await confirmDiscardChanges();
-				if (!canContinue) {
-					professionalSelect.value = selectedProfessionalId > 0 ? String(selectedProfessionalId) : '';
-					return;
-				}
-			}
-
-			selectedProfessionalId = nextProfessionalId;
-			setDirty(false);
-			await loadScheduleByProfessional(selectedProfessionalId);
-		});
-
-		if (saveButton && canEdit) {
-			saveButton.addEventListener('click', saveSchedule);
-		}
-
-		plannerNode.addEventListener('change', (event) => {
-			if (!canEdit) return;
-
-			const target = event.target;
-			if (!(target instanceof HTMLElement)) return;
-
-			if (target instanceof HTMLInputElement && target.matches('[data-day-toggle]')) {
-				const dayOfWeek = Number(target.getAttribute('data-day-of-week') || '0');
-				const dayState = findDayState(dayOfWeek);
-				if (!dayState) return;
-
-				dayState.enabled = target.checked;
-				if (dayState.enabled && dayState.slots.length === 0) {
-					dayState.slots.push(createDefaultSlot());
-				}
-				if (!dayState.enabled) {
-					dayState.slots = [];
-				}
-				setDirty(true);
-				renderPlanner();
-				return;
-			}
-
-			if (target instanceof HTMLSelectElement && target.matches('[data-slot-location]')) {
-				const dayOfWeek = Number(target.getAttribute('data-day-of-week') || '0');
-				const slotUid = String(target.getAttribute('data-slot-uid') || '');
-				const dayState = findDayState(dayOfWeek);
-				if (!dayState) return;
-				const slot = dayState.slots.find((item) => item.uid === slotUid);
-				if (!slot) return;
-				slot.loc_id_location = String(target.value || '');
-				setDirty(true);
-				return;
-			}
-
-			if (target instanceof HTMLInputElement && target.matches('[data-slot-start]')) {
-				const dayOfWeek = Number(target.getAttribute('data-day-of-week') || '0');
-				const slotUid = String(target.getAttribute('data-slot-uid') || '');
-				const dayState = findDayState(dayOfWeek);
-				if (!dayState) return;
-				const slot = dayState.slots.find((item) => item.uid === slotUid);
-				if (!slot) return;
-				slot.start_time = normalizeTime(target.value);
-				setDirty(true);
-				return;
-			}
-
-			if (target instanceof HTMLInputElement && target.matches('[data-slot-end]')) {
-				const dayOfWeek = Number(target.getAttribute('data-day-of-week') || '0');
-				const slotUid = String(target.getAttribute('data-slot-uid') || '');
-				const dayState = findDayState(dayOfWeek);
-				if (!dayState) return;
-				const slot = dayState.slots.find((item) => item.uid === slotUid);
-				if (!slot) return;
-				slot.end_time = normalizeTime(target.value);
-				setDirty(true);
-			}
-		});
-
-		plannerNode.addEventListener('click', (event) => {
-			if (!canEdit) return;
-
-			const target = event.target;
-			if (!(target instanceof HTMLElement)) return;
-
-			const addButton = target.closest<HTMLElement>('[data-slot-add]');
-			if (addButton) {
-				const dayOfWeek = Number(addButton.getAttribute('data-day-of-week') || '0');
-				const dayState = findDayState(dayOfWeek);
-				if (!dayState) return;
-				dayState.enabled = true;
-				dayState.slots.push(createDefaultSlot());
-				setDirty(true);
-				renderPlanner();
-				return;
-			}
-
-			const removeButton = target.closest<HTMLElement>('[data-slot-remove]');
-			if (removeButton) {
-				const dayOfWeek = Number(removeButton.getAttribute('data-day-of-week') || '0');
-				const slotUid = String(removeButton.getAttribute('data-slot-uid') || '');
-				const dayState = findDayState(dayOfWeek);
-				if (!dayState) return;
-				dayState.slots = dayState.slots.filter((slot) => slot.uid !== slotUid);
-				if (dayState.slots.length === 0) {
-					dayState.enabled = false;
-				}
-				setDirty(true);
-				renderPlanner();
-			}
-		});
-
-		loadMeta();
-	};
-
-	initializeSchedulesPage();
-	document.addEventListener('astro:page-load', initializeSchedulesPage);
+	import '../scripts/schedule-manager';
 </script>
+
+<style is:global>
+	schedule-manager {
+		display: block;
+	}
+</style>

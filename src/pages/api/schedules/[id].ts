@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { z } from 'zod';
 
 import { ROLES } from '../../../config/roles';
 import {
@@ -8,90 +9,113 @@ import {
 	updateProfessionalScheduleWithOrds,
 } from '../../../lib/schedules';
 import { parseTokenClaims } from '../../../lib/token-claims';
+import {
+	parseRequestBody,
+	requireToken as requireApiToken,
+	toErrorResponse as toApiErrorResponse,
+} from '../../../utils/api-helpers';
 
 const parseProfessionalId = (value: string | undefined) => {
 	const parsed = Number(value);
 	return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
 };
 
-const requireToken = (token: string | undefined) => {
-	if (!token) {
-		throw new SchedulesApiError('No hay sesion valida para procesar horarios.', 401);
-	}
-	return token;
-};
+const createSchedulesError = (message: string, status = 400) => new SchedulesApiError(message, status);
+
+const requireToken = (token: string | undefined) =>
+	requireApiToken(token, createSchedulesError, 'No hay sesion valida para procesar horarios.');
 
 const toErrorResponse = (error: unknown, fallbackMessage: string) => {
-	const schedulesError =
-		error instanceof SchedulesApiError ? error : new SchedulesApiError(fallbackMessage, 500);
-
-	return Response.json(
-		{
-			status: 'error',
-			message: schedulesError.message,
-			details: schedulesError.details,
-			errors: schedulesError.fieldErrors,
-		},
-		{ status: schedulesError.status }
-	);
+	return toApiErrorResponse(error, fallbackMessage, {
+		isKnownError: (value): value is SchedulesApiError => value instanceof SchedulesApiError,
+		createError: createSchedulesError,
+	});
 };
 
-const normalizeTime = (value: unknown) => String(value || '').trim();
-
-const parseBody = async (request: Request) => {
-	const contentType = request.headers.get('content-type') || '';
-	if (contentType.includes('application/json')) {
-		return request.json();
-	}
-
-	const formData = await request.formData();
-	const schedulesRaw = formData.get('schedules');
-	if (typeof schedulesRaw !== 'string') return { schedules: [] };
-
-	try {
-		return JSON.parse(schedulesRaw);
-	} catch {
-		throw new SchedulesApiError('JSON invalido para horarios.', 400);
-	}
+const toMinutes = (timeValue: string) => {
+	const [hours, minutes] = timeValue.split(':').map((part) => Number(part));
+	return hours * 60 + minutes;
 };
 
-const parseUpdatePayload = (body: any): ScheduleUpdatePayload => {
-	if (!body || typeof body !== 'object' || !Array.isArray(body.schedules)) {
-		throw new SchedulesApiError('Debe enviar un arreglo "schedules".', 400);
-	}
+const scheduleItemSchema = z.object({
+	loc_id_location: z.coerce.number().int().positive(),
+	day_of_week: z.coerce.number().int().min(1).max(7),
+	start_time: z.string().trim().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora de inicio invalida.'),
+	end_time: z.string().trim().regex(/^([01]\d|2[0-3]):[0-5]\d$/, 'Hora de fin invalida.'),
+});
 
-	const schedules = body.schedules.map((item: any, index: number) => {
-		if (!item || typeof item !== 'object') {
-			throw new SchedulesApiError(`El item #${index + 1} de schedules no es valido.`, 400);
-		}
+const scheduleUpdateSchema = z
+	.object({
+		schedules: z.array(scheduleItemSchema),
+	})
+	.superRefine((payload, ctx) => {
+		const intervalsByDay = new Map<number, Array<{ index: number; start: number; end: number }>>();
 
-		const locId = Number(item.loc_id_location);
-		const dayOfWeek = Number(item.day_of_week);
-		const startTime = normalizeTime(item.start_time);
-		const endTime = normalizeTime(item.end_time);
+		payload.schedules.forEach((slot, index) => {
+			const start = toMinutes(slot.start_time);
+			const end = toMinutes(slot.end_time);
+			if (start >= end) {
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ['schedules', index, 'end_time'],
+					message: 'La hora de fin debe ser mayor que la hora de inicio.',
+				});
+				return;
+			}
 
-		if (!Number.isInteger(locId) || locId <= 0) {
-			throw new SchedulesApiError(`La sucursal del item #${index + 1} es invalida.`, 400);
-		}
-		if (!Number.isInteger(dayOfWeek) || dayOfWeek < 1 || dayOfWeek > 7) {
-			throw new SchedulesApiError(`El dia de semana del item #${index + 1} es invalido.`, 400);
-		}
-		if (!startTime || !endTime) {
-			throw new SchedulesApiError(
-				`Las horas de inicio y fin del item #${index + 1} son obligatorias.`,
-				400
-			);
-		}
+			const intervals = intervalsByDay.get(slot.day_of_week) ?? [];
+			intervals.push({ index, start, end });
+			intervalsByDay.set(slot.day_of_week, intervals);
+		});
 
-		return {
-			loc_id_location: locId,
-			day_of_week: dayOfWeek,
-			start_time: startTime,
-			end_time: endTime,
-		};
+		for (const intervals of intervalsByDay.values()) {
+			const ordered = intervals.slice().sort((a, b) => a.start - b.start);
+			for (let index = 1; index < ordered.length; index += 1) {
+				if (ordered[index].start >= ordered[index - 1].end) continue;
+				ctx.addIssue({
+					code: z.ZodIssueCode.custom,
+					path: ['schedules', ordered[index].index, 'start_time'],
+					message: 'El turno se solapa con otro horario del mismo dia.',
+				});
+			}
+		}
 	});
 
-	return { schedules };
+const toFieldErrors = (error: z.ZodError) =>
+	error.issues.map((issue) => ({
+		field:
+			issue.path.length > 0
+				? issue.path
+						.map((part) => String(part))
+						.join('.')
+						.trim()
+				: 'schedules',
+		message: issue.message,
+	}));
+
+const parseBody = async (request: Request) => {
+	return parseRequestBody(request, (formData) => {
+		const schedulesRaw = formData.get('schedules');
+		if (typeof schedulesRaw !== 'string') return { schedules: [] };
+		try {
+			return JSON.parse(schedulesRaw);
+		} catch {
+			throw new SchedulesApiError('JSON invalido para horarios.', 400);
+		}
+	});
+};
+
+const parseUpdatePayload = (body: unknown): ScheduleUpdatePayload => {
+	const parsed = scheduleUpdateSchema.safeParse(body);
+	if (!parsed.success) {
+		throw new SchedulesApiError(
+			'Payload de horarios invalido.',
+			400,
+			parsed.error.flatten(),
+			toFieldErrors(parsed.error)
+		);
+	}
+	return parsed.data;
 };
 
 export const GET: APIRoute = async ({ params, locals }) => {
