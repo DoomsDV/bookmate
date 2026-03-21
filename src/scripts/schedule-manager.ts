@@ -31,31 +31,42 @@ type DayNodeRefs = {
 	addButton: HTMLButtonElement | null;
 };
 
+interface ApiErrorDetail {
+	message?: string;
+}
+
+interface ApiResponse<T = unknown> {
+	status?: string;
+	message?: string;
+	data?: T;
+	errors?: ApiErrorDetail[];
+}
+
 class ScheduleManager extends HTMLElement {
 	#bound = false;
 	#listenerController: AbortController | null = null;
 
-	canEdit = false;
-	professionalSelect: HTMLSelectElement | null = null;
-	plannerNode: HTMLElement | null = null;
-	saveButton: HTMLButtonElement | null = null;
-	saveLabel: HTMLElement | null = null;
-	hintNode: HTMLElement | null = null;
-	errorNode: HTMLElement | null = null;
-	loadingNode: HTMLElement | null = null;
+	private canEdit = false;
+	private professionalSelect: HTMLSelectElement | null = null;
+	private plannerNode: HTMLElement | null = null;
+	private saveButton: HTMLButtonElement | null = null;
+	private saveLabel: HTMLElement | null = null;
+	private hintNode: HTMLElement | null = null;
+	private errorNode: HTMLElement | null = null;
+	private loadingNode: HTMLElement | null = null;
 
-	professionals: ProfessionalLov[] = [];
-	locations: LocationLov[] = [];
-	days: Day[] = [];
-	dayStates: DayState[] = [];
-	dayNodes = new Map<number, DayNodeRefs>();
+	private professionals: ProfessionalLov[] = [];
+	private locations: LocationLov[] = [];
+	private days: Day[] = [];
+	private dayStates: DayState[] = [];
+	private dayNodes = new Map<number, DayNodeRefs>();
 
-	selectedProfessionalId = 0;
-	slotCounter = 0;
-	isMetaLoading = false;
-	isScheduleLoading = false;
-	isSaving = false;
-	isDirty = false;
+	private selectedProfessionalId = 0;
+	private slotCounter = 0;
+	private isMetaLoading = false;
+	private isScheduleLoading = false;
+	private isSaving = false;
+	private isDirty = false;
 
 	connectedCallback() {
 		if (this.#bound) return;
@@ -98,11 +109,11 @@ class ScheduleManager extends HTMLElement {
 		this.dayNodes.clear();
 	}
 
-	handleSaveClick = () => {
+	private handleSaveClick = (): void => {
 		void this.saveSchedule();
 	};
 
-	handleProfessionalChange = async () => {
+	private handleProfessionalChange = async (): Promise<void> => {
 		if (!this.professionalSelect) return;
 
 		const nextProfessionalId = Number(this.professionalSelect.value || 0);
@@ -129,7 +140,7 @@ class ScheduleManager extends HTMLElement {
 		await this.loadScheduleByProfessional(this.selectedProfessionalId);
 	};
 
-	handlePlannerChange = (event: Event) => {
+	private handlePlannerChange = (event: Event): void => {
 		if (!this.canEdit) return;
 		const target = event.target;
 		if (!(target instanceof HTMLElement)) return;
@@ -182,7 +193,7 @@ class ScheduleManager extends HTMLElement {
 		}
 	};
 
-	handlePlannerClick = (event: MouseEvent) => {
+	private handlePlannerClick = (event: MouseEvent): void => {
 		if (!this.canEdit) return;
 		const target = event.target;
 		if (!(target instanceof HTMLElement)) return;
@@ -216,7 +227,7 @@ class ScheduleManager extends HTMLElement {
 		}
 	};
 
-	cleanFlashUrl() {
+	private cleanFlashUrl(): void {
 		const currentUrl = new URL(window.location.href);
 		if (!currentUrl.searchParams.has('flash_message')) return;
 		currentUrl.searchParams.delete('flash_message');
@@ -224,22 +235,22 @@ class ScheduleManager extends HTMLElement {
 		window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
 	}
 
-	navigateWithFlash(message: string, type = 'success') {
+	private navigateWithFlash(message: string, type = 'success'): void {
 		const nextUrl = new URL(window.location.href);
 		nextUrl.searchParams.set('flash_message', message);
 		nextUrl.searchParams.set('flash_type', type);
 		void navigate(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
 	}
 
-	toBackendErrorMessage(data: any, fallbackMessage: string) {
+	private toBackendErrorMessage(data: ApiResponse, fallbackMessage: string): string {
 		const mainMessage = typeof data?.message === 'string' ? data.message.trim() : '';
 		if (mainMessage) return mainMessage;
 
 		if (Array.isArray(data?.errors)) {
 			const detailMessages = data.errors
-				.filter((item: any) => item && typeof item === 'object')
-				.map((item: any) => String(item.message || '').trim())
-				.filter((message: string) => message.length > 0);
+				.filter((item): item is ApiErrorDetail => item !== null && typeof item === 'object')
+				.map((item) => item.message?.trim() ?? '')
+				.filter((message) => message.length > 0);
 			if (detailMessages.length > 0) {
 				return detailMessages.join(' | ');
 			}
@@ -248,20 +259,20 @@ class ScheduleManager extends HTMLElement {
 		return fallbackMessage;
 	}
 
-	clearNode(node: Element) {
+	private clearNode(node: Element): void {
 		while (node.firstChild) {
 			node.removeChild(node.firstChild);
 		}
 	}
 
-	createOption(value: string, label: string) {
+	private createOption(value: string, label: string): HTMLOptionElement {
 		const option = document.createElement('option');
 		option.value = value;
 		option.textContent = label;
 		return option;
 	}
 
-	renderProfessionalOptions() {
+	private renderProfessionalOptions(): void {
 		if (!this.professionalSelect) return;
 		this.clearNode(this.professionalSelect);
 		this.professionalSelect.appendChild(this.createOption('', 'Selecciona un profesional'));
@@ -277,7 +288,7 @@ class ScheduleManager extends HTMLElement {
 		}
 	}
 
-	renderPlannerMessage(message: string, tone: 'info' | 'error') {
+	private renderPlannerMessage(message: string, tone: 'info' | 'error'): void {
 		if (!this.plannerNode) return;
 		this.dayNodes.clear();
 		this.clearNode(this.plannerNode);
@@ -291,7 +302,7 @@ class ScheduleManager extends HTMLElement {
 		this.plannerNode.appendChild(messageNode);
 	}
 
-	renderPlanner() {
+	private renderPlanner(): void {
 		if (!this.plannerNode) return;
 
 		if (this.selectedProfessionalId <= 0) {
@@ -308,10 +319,12 @@ class ScheduleManager extends HTMLElement {
 		this.updatePlannerInteractivity();
 	}
 
-	renderAllDays() {
+	private renderAllDays(): void {
 		if (!this.plannerNode) return;
 		this.dayNodes.clear();
 		this.clearNode(this.plannerNode);
+
+		const fragment = document.createDocumentFragment();
 
 		for (const dayState of this.dayStates) {
 			const article = document.createElement('article');
@@ -367,7 +380,7 @@ class ScheduleManager extends HTMLElement {
 			}
 
 			article.append(topRow, slotSection);
-			this.plannerNode.appendChild(article);
+			fragment.appendChild(article);
 
 			this.dayNodes.set(dayState.day_of_week, {
 				summaryNode: summary,
@@ -376,12 +389,16 @@ class ScheduleManager extends HTMLElement {
 				slotsContainer,
 				addButton,
 			});
+		}
 
+		this.plannerNode.appendChild(fragment);
+
+		for (const dayState of this.dayStates) {
 			this.renderDayState(dayState.day_of_week);
 		}
 	}
 
-	renderDayState(dayOfWeek: number) {
+	private renderDayState(dayOfWeek: number): void {
 		const dayState = this.findDayState(dayOfWeek);
 		const refs = this.dayNodes.get(dayOfWeek);
 		if (!dayState || !refs) return;
@@ -401,8 +418,9 @@ class ScheduleManager extends HTMLElement {
 		this.renderSlots(dayState, refs.slotsContainer);
 	}
 
-	renderSlots(dayState: DayState, container: HTMLElement) {
+	private renderSlots(dayState: DayState, container: HTMLElement): void {
 		this.clearNode(container);
+		const fragment = document.createDocumentFragment();
 
 		for (let index = 0; index < dayState.slots.length; index += 1) {
 			const slot = dayState.slots[index];
@@ -472,11 +490,13 @@ class ScheduleManager extends HTMLElement {
 			removeWrap.appendChild(removeButton);
 
 			row.append(locationLabel, startLabel, endLabel, removeWrap);
-			container.appendChild(row);
+			fragment.appendChild(row);
 		}
+		
+		container.appendChild(fragment);
 	}
 
-	updatePlannerInteractivity() {
+	private updatePlannerInteractivity(): void {
 		if (!this.plannerNode) return;
 		const blocked = this.isMetaLoading || this.isScheduleLoading || this.isSaving || !this.canEdit;
 
@@ -504,7 +524,7 @@ class ScheduleManager extends HTMLElement {
 		}
 	}
 
-	updateControlsState() {
+	private updateControlsState(): void {
 		if (!this.professionalSelect) return;
 		const blocked = this.isMetaLoading || this.isScheduleLoading || this.isSaving || !this.canEdit;
 
@@ -547,44 +567,44 @@ class ScheduleManager extends HTMLElement {
 		this.updatePlannerInteractivity();
 	}
 
-	clearMessages() {
+	private clearMessages(): void {
 		if (!this.errorNode) return;
 		this.errorNode.textContent = '';
 		this.errorNode.classList.add('hidden');
 	}
 
-	showError(message: string) {
+	private showError(message: string): void {
 		if (!this.errorNode) return;
 		this.errorNode.textContent = message;
 		this.errorNode.classList.remove('hidden');
 	}
 
-	setDirty(value: boolean) {
+	private setDirty(value: boolean): void {
 		this.isDirty = value;
 		this.updateControlsState();
 	}
 
-	normalizeTime(value: unknown) {
+	private normalizeTime(value: unknown): string {
 		const text = String(value || '').trim();
 		const match = text.match(/^([01]\d|2[0-3]):([0-5]\d)$/);
 		return match ? `${match[1]}:${match[2]}` : '';
 	}
 
-	toMinutes(timeValue: string) {
+	private toMinutes(timeValue: string): number {
 		const [hours, minutes] = timeValue.split(':').map((part) => Number(part));
 		return hours * 60 + minutes;
 	}
 
-	makeSlotUid() {
+	private makeSlotUid(): string {
 		this.slotCounter += 1;
 		return `slot-${Date.now()}-${this.slotCounter}`;
 	}
 
-	getDefaultLocationId() {
+	private getDefaultLocationId(): string {
 		return this.locations.length > 0 ? String(this.locations[0].id_location) : '';
 	}
 
-	createDefaultSlot(): SlotDraft {
+	private createDefaultSlot(): SlotDraft {
 		return {
 			uid: this.makeSlotUid(),
 			loc_id_location: this.getDefaultLocationId(),
@@ -593,7 +613,7 @@ class ScheduleManager extends HTMLElement {
 		};
 	}
 
-	buildEmptyDayStates() {
+	private buildEmptyDayStates(): DayState[] {
 		return this.days
 			.slice()
 			.sort((a, b) => a.day_of_week - b.day_of_week)
@@ -605,17 +625,17 @@ class ScheduleManager extends HTMLElement {
 			}));
 	}
 
-	findDayState(dayOfWeek: number) {
+	private findDayState(dayOfWeek: number): DayState | null {
 		return this.dayStates.find((day) => day.day_of_week === dayOfWeek) || null;
 	}
 
-	findSlot(dayOfWeek: number, slotUid: string) {
+	private findSlot(dayOfWeek: number, slotUid: string): SlotDraft | null {
 		const dayState = this.findDayState(dayOfWeek);
 		if (!dayState) return null;
 		return dayState.slots.find((slot) => slot.uid === slotUid) || null;
 	}
 
-	applySchedule(scheduleItems: ScheduleItem[]) {
+	private applySchedule(scheduleItems: ScheduleItem[]): void {
 		const nextDayStates = this.buildEmptyDayStates();
 		const rowsByDay = new Map<number, DayState>(nextDayStates.map((row) => [row.day_of_week, row]));
 
@@ -641,20 +661,18 @@ class ScheduleManager extends HTMLElement {
 		this.dayStates = nextDayStates;
 	}
 
-	async parseJson(response: Response) {
+	private async parseJson<T = unknown>(response: Response): Promise<ApiResponse<T>> {
 		try {
-			return await response.json();
+			return (await response.json()) as ApiResponse<T>;
 		} catch {
 			throw new Error('No fue posible interpretar la respuesta del servidor.');
 		}
 	}
 
-	async confirmDiscardChanges() {
+	private async confirmDiscardChanges(): Promise<boolean> {
 		const message = 'Tienes cambios sin guardar. Deseas descartarlos y continuar?';
-		const alertApi = (window as Window & { BookmateAlert?: { confirm?: (config: Record<string, unknown>) => Promise<boolean> } })
-			.BookmateAlert;
-		if (alertApi?.confirm) {
-			return alertApi.confirm({
+		if (window.BookmateAlert?.confirm) {
+			return window.BookmateAlert.confirm({
 				type: 'warning',
 				title: 'Cambios sin guardar',
 				message,
@@ -665,7 +683,7 @@ class ScheduleManager extends HTMLElement {
 		return window.confirm(message);
 	}
 
-	async loadScheduleByProfessional(professionalId: number) {
+	private async loadScheduleByProfessional(professionalId: number): Promise<void> {
 		this.isScheduleLoading = true;
 		this.updateControlsState();
 		this.clearMessages();
@@ -675,7 +693,7 @@ class ScheduleManager extends HTMLElement {
 				method: 'GET',
 				headers: { Accept: 'application/json' },
 			});
-			const data = await this.parseJson(response);
+			const data = await this.parseJson<ScheduleItem[]>(response);
 
 			if (!response.ok || !data || data.status !== 'success' || !Array.isArray(data.data)) {
 				throw new Error(this.toBackendErrorMessage(data, 'No fue posible cargar la agenda del profesional.'));
@@ -694,7 +712,7 @@ class ScheduleManager extends HTMLElement {
 		}
 	}
 
-	validateAndBuildPayload() {
+	private validateAndBuildPayload(): { payload?: ScheduleItem[]; error?: string } {
 		const payload: Array<{
 			loc_id_location: number;
 			day_of_week: number;
@@ -748,7 +766,7 @@ class ScheduleManager extends HTMLElement {
 		return { payload };
 	}
 
-	async saveSchedule() {
+	private async saveSchedule(): Promise<void> {
 		if (!this.canEdit) {
 			this.showError('No tienes permisos para guardar horarios.');
 			return;
@@ -798,7 +816,7 @@ class ScheduleManager extends HTMLElement {
 		}
 	}
 
-	async loadMeta() {
+	private async loadMeta(): Promise<void> {
 		this.isMetaLoading = true;
 		this.updateControlsState();
 
@@ -807,7 +825,11 @@ class ScheduleManager extends HTMLElement {
 				method: 'GET',
 				headers: { Accept: 'application/json' },
 			});
-			const data = await this.parseJson(response);
+			const data = await this.parseJson<{
+				professionals: ProfessionalLov[];
+				locations: LocationLov[];
+				days: Day[];
+			}>(response);
 
 			if (!response.ok || !data || data.status !== 'success' || !data.data) {
 				throw new Error(this.toBackendErrorMessage(data, 'No fue posible obtener catalogos de horarios.'));
