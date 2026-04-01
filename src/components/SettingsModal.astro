@@ -14,31 +14,30 @@ const publicProfileDomain =
 	rawPublicProfileDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '') || Astro.url.host;
 ---
 
+<settings-manager data-role-id={String(roleId)} data-public-profile-domain={publicProfileDomain}>
 <dialog
 	data-settings-modal
-	data-role-id={String(roleId)}
-	data-public-profile-domain={publicProfileDomain}
 	class="w-[min(54rem,calc(100vw-2rem))] h-[min(94vh,48rem)] sm:h-[min(90vh,48rem)] open:flex open:flex-col overflow-hidden rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
 >
-	<div class="shrink-0 z-10 shadow-sm border-b border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-6">
+	<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-7 py-6">
 		<div class="flex items-start justify-between gap-4">
 			<div class="flex items-center gap-4">
-				<div class="flex size-12 shrink-0 items-center justify-center rounded-[1rem] bg-[color:var(--primary-soft)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
+				<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary) shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
 					<span class="material-symbols-rounded text-[1.4rem]">settings</span>
 				</div>
 				<div>
-					<h2 class="text-[1.2rem] font-extrabold tracking-tight text-[color:var(--on-surface)]">Ajustes</h2>
-					<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)] mt-0.5">Perfil y preferencias de la cuenta.</p>
+					<h2 class="text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)">Ajustes</h2>
+					<p class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5">Perfil y preferencias de la cuenta.</p>
 				</div>
 			</div>
-			<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-[color:var(--on-surface-variant)] transition-colors hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]" data-settings-close aria-label="Cerrar modal">
+			<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]" data-settings-close aria-label="Cerrar modal">
 				<span class="material-symbols-rounded text-[1.3rem]">close</span>
 			</button>
 		</div>
 	</div>
 
-	<div class="flex flex-col md:flex-row flex-1 overflow-hidden bg-[color:var(--surface)]/30 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]">
-		<nav class="shrink-0 md:w-[15rem] overflow-x-auto md:overflow-y-auto border-b md:border-b-0 md:border-r border-[color:var(--shell-border)] bg-[color:var(--surface-bright)]/50 p-4 sm:p-5">
+	<div class="flex flex-col md:flex-row flex-1 overflow-hidden bg-(--surface)/30 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]">
+		<nav class="shrink-0 md:w-60 overflow-x-auto md:overflow-y-auto border-b md:border-b-0 md:border-r border-(--shell-border) bg-(--surface-bright)/50 p-4 sm:p-5">
 			<div class="flex min-w-max gap-2 md:grid md:gap-1.5">
 				<button type="button" data-settings-tab-trigger data-settings-tab="profile" class="settings-tab is-active">
 					<span class="material-symbols-rounded">person</span>Mi perfil
@@ -70,54 +69,54 @@ const publicProfileDomain =
 				<form data-settings-profile-form class="grid gap-8">
 					<div class="grid gap-5">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-[color:var(--on-surface)]">Información personal</h3>
-							<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)]">Solo para tu cuenta y acceso interno.</p>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información personal</h3>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Solo para tu cuenta y acceso interno.</p>
 						</div>
 						<div class="grid gap-5 sm:grid-cols-2">
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">Nombre<input name="first_name" required class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">Apellido<input name="last_name" required class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre<input name="first_name" required class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Apellido<input name="last_name" required class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
 						</div>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">Correo electrónico<input name="email" readonly class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-4 py-3 text-[0.95rem] outline-none text-[color:var(--on-surface-variant)] cursor-not-allowed shadow-sm" /></label>
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electrónico<input name="email" readonly class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-4 py-3 text-[0.95rem] outline-none text-[color:var(--on-surface-variant)] cursor-not-allowed shadow-sm" /></label>
 					</div>
 
-					<div data-settings-prof-fields class="hidden grid gap-5 border-t border-[color:var(--shell-border)] border-dashed pt-6">
+					<div data-settings-prof-fields class="hidden grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-[color:var(--on-surface)]">Avatar público</h3>
-							<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)]">Se mostrará en tu perfil público.</p>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Avatar público</h3>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Se mostrará en tu perfil público.</p>
 						</div>
 						<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-							<img data-settings-profile-preview class="hidden h-24 w-24 rounded-[1.25rem] border border-[color:var(--shell-border)] object-cover shadow-sm bg-[color:var(--surface-bright)]" alt="Foto de perfil" />
+							<img data-settings-profile-preview class="hidden h-24 w-24 rounded-[1.25rem] border border-(--shell-border) object-cover shadow-sm bg-[color:var(--surface-bright)]" alt="Foto de perfil" />
 							<div class="grid gap-2">
 								<input id="settings-profile-image-input" type="file" name="profile_image" accept="image/*" class="sr-only" />
-								<label for="settings-profile-image-input" class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-2.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] transition hover:bg-[color:var(--surface-variant)] shadow-sm focus-within:ring-2 focus-within:ring-[color:var(--primary)] focus-within:ring-offset-2">
+								<label for="settings-profile-image-input" class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-(--shell-border) bg-[color:var(--surface-bright)] px-5 py-2.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] transition hover:bg-[color:var(--surface-variant)] shadow-sm focus-within:ring-2 focus-within:ring-[color:var(--primary)] focus-within:ring-offset-2">
 									<span class="material-symbols-rounded mr-2 text-[1.2rem]">photo_camera</span>
 									Cambiar foto
 								</label>
-								<p class="text-[0.85rem] font-medium text-[color:var(--on-surface-variant)]">JPG o PNG. Se mostrará en tu perfil público.</p>
+								<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">JPG o PNG. Se mostrará en tu perfil público.</p>
 							</div>
 						</div>
 					</div>
 
-					<div data-settings-prof-fields class="hidden grid gap-5 border-t border-[color:var(--shell-border)] border-dashed pt-6">
+					<div data-settings-prof-fields class="hidden grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-[color:var(--on-surface)]">Perfil público</h3>
-							<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)]">Estos datos se muestran a tus clientes en internet.</p>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Perfil público</h3>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Estos datos se muestran a tus clientes en internet.</p>
 						</div>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">Teléfono público<input name="phone_number" placeholder="Ej: 0981 123 456" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
-							URL del perfil público <span class="text-[color:var(--on-surface-variant)] font-medium">(Opcional)</span>
-							<div class="flex shadow-sm rounded-2xl transition-shadow focus-within:ring-4 focus-within:ring-[color:var(--primary)]/10">
-								<span data-settings-profile-slug-prefix class="inline-flex items-center rounded-l-2xl border border-r-0 border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-4 text-[0.95rem] font-medium text-[color:var(--on-surface-variant)]">
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Teléfono público<input name="phone_number" placeholder="Ej: 0981 123 456" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							URL del perfil público <span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
+							<div class="flex shadow-sm rounded-2xl transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
+								<span data-settings-profile-slug-prefix class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-[color:var(--control-surface)] px-4 text-[0.95rem] font-medium text-[color:var(--on-surface-variant)]">
 									{publicProfileDomain}/p/
 								</span>
 								<input
 									type="text"
 									name="profile_slug"
-									class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition focus:border-[color:var(--primary)]"
+									class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition focus:border-[color:var(--primary)]"
 									placeholder="maria-lopez"
 								/>
 							</div>
-							<span class="text-[0.85rem] font-medium text-[color:var(--on-surface-variant)] mt-0.5">
+							<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
 								Este será el enlace directo para que los clientes agenden contigo.
 							</span>
 							<span data-settings-profile-field-error="profile_slug" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
@@ -140,21 +139,21 @@ const publicProfileDomain =
 				<form data-settings-security-form class="grid gap-8">
 					<div class="grid gap-5">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-[color:var(--on-surface)]">Cambio de contraseña</h3>
-							<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)]">Asegúrate de usar una contraseña fuerte y segura.</p>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cambio de contraseña</h3>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Asegúrate de usar una contraseña fuerte y segura.</p>
 						</div>
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						Contraseña actual
 						<input
 							type="password"
 							name="current_password"
 							autocomplete="current-password"
 							required
-							class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
 						/>
 					</label>
 					<div class="grid gap-5 sm:grid-cols-2">
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						Nueva contraseña
 						<input
 							type="password"
@@ -162,10 +161,10 @@ const publicProfileDomain =
 							autocomplete="new-password"
 							required
 							minlength="8"
-							class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
 						/>
 					</label>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						Confirmar nueva contraseña
 						<input
 							type="password"
@@ -173,15 +172,15 @@ const publicProfileDomain =
 							autocomplete="new-password"
 							required
 							minlength="8"
-							class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
 						/>
 					</label>
 					</div>
-					<p class="text-[0.85rem] font-medium text-[color:var(--on-surface-variant)] -mt-2">
+					<p class="text-[0.85rem] font-medium text-(--on-surface-variant) -mt-2">
 						La nueva contraseña debe tener al menos 8 caracteres.
 					</p>
 					</div>
-					<div class="flex justify-end pt-2 border-t border-[color:var(--shell-border)] border-dashed">
+					<div class="flex justify-end pt-2 border-t border-(--shell-border) border-dashed">
 						<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)]">
 							<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">key</span>
 							Actualizar contraseña
@@ -194,21 +193,21 @@ const publicProfileDomain =
 				<p data-settings-feedback="preferences" class="hidden settings-feedback"></p>
 				<form data-settings-preferences-form class="grid gap-6">
 					<div class="grid gap-1">
-						<h3 class="text-[1.05rem] font-bold text-[color:var(--on-surface)]">Tu panel de control</h3>
-						<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)]">Personaliza la apariencia y el comportamiento de tu vista.</p>
+						<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Tu panel de control</h3>
+						<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Personaliza la apariencia y el comportamiento de tu vista.</p>
 					</div>
 					<div class="grid gap-5 sm:grid-cols-2">
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">Tema del panel
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Tema del panel
 							<div class="relative">
-								<select name="panel_theme" class="w-full cursor-pointer appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+								<select name="panel_theme" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
 							<option value="light">Claro</option>
 							<option value="dark">Oscuro</option>
 						</select>
 							</div>
 					</label>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">Vista inicial calendario
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Vista inicial calendario
 							<div class="relative">
-								<select name="calendar_view" class="w-full cursor-pointer appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+								<select name="calendar_view" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
 							<option value="timeGridDay">Diaria</option>
 							<option value="timeGridWeek">Semanal</option>
 							<option value="dayGridMonth">Mensual</option>
@@ -228,15 +227,15 @@ const publicProfileDomain =
 					isAdmin ? (
 						<>
 							<p data-settings-feedback="branding" class="hidden settings-feedback"></p>
-							<form data-settings-branding-form class="grid gap-6 border-t border-[color:var(--shell-border)] border-dashed pt-8">
+							<form data-settings-branding-form class="grid gap-6 border-t border-(--shell-border) border-dashed pt-8">
 								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-[color:var(--on-surface)]">Página pública de reservas</h3>
-									<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)]">Personaliza cómo te ven los clientes.</p>
+									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Página pública de reservas</h3>
+									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Personaliza cómo te ven los clientes.</p>
 								</div>
 								<div class="grid gap-5 sm:grid-cols-2">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">Tema página pública
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Tema página pública
 										<div class="relative">
-											<select name="theme_pref" class="w-full cursor-pointer appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+											<select name="theme_pref" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
 										<option value="light">Claro</option>
 										<option value="dark">Oscuro</option>
 									</select>
@@ -245,9 +244,9 @@ const publicProfileDomain =
 								</div>
 								
 								<div class="grid gap-1.5 mt-2">
-									<span class="text-[0.95rem] font-bold text-[color:var(--on-surface)]">Logo negocio</span>
+									<span class="text-[0.95rem] font-bold text-(--on-surface)">Logo negocio</span>
 									<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center mt-1">
-										<img data-settings-logo-preview class="hidden h-16 w-16 rounded-[1rem] border border-[color:var(--shell-border)] object-cover shadow-sm bg-[color:var(--surface-bright)] p-1" alt="logo" />
+										<img data-settings-logo-preview class="hidden h-16 w-16 rounded-2xl border border-(--shell-border) object-cover shadow-sm bg-(--surface-bright) p-1" alt="logo" />
 										<div class="grid gap-2">
 											<input id="settings-branding-logo-input" type="file" name="logo_file" accept="image/*" class="sr-only" />
 											<label for="settings-branding-logo-input" class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-2.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] transition hover:bg-[color:var(--surface-variant)] shadow-sm focus-within:ring-2 focus-within:ring-[color:var(--primary)] focus-within:ring-offset-2">
@@ -275,16 +274,16 @@ const publicProfileDomain =
 							<p data-settings-feedback="workspace" class="hidden settings-feedback"></p>
 							<form data-settings-workspace-form class="grid gap-6">
 								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-[color:var(--on-surface)]">Información del Negocio</h3>
-									<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)]">Detalles principales de tu organización.</p>
+									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información del Negocio</h3>
+									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Detalles principales de tu organización.</p>
 								</div>
 								<div class="grid gap-5 sm:grid-cols-2">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">Nombre del negocio<input name="name" required class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">WhatsApp público<input name="public_whatsapp" placeholder="Ej: 595981123456" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre del negocio<input name="name" required class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">WhatsApp público<input name="public_whatsapp" placeholder="Ej: 595981123456" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
 								</div>
 								<input type="hidden" name="profile_slug" />
-								<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">Descripción<textarea name="description" rows="4" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm resize-y"></textarea></label>
-								<div class="flex justify-end pt-4 border-t border-[color:var(--shell-border)] border-dashed">
+								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripción<textarea name="description" rows="4" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm resize-y"></textarea></label>
+								<div class="flex justify-end pt-4 border-t border-(--shell-border) border-dashed">
 									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)]"><span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">store</span>Guardar negocio</button>
 								</div>
 							</form>
@@ -294,21 +293,21 @@ const publicProfileDomain =
 							<p data-settings-feedback="system" class="hidden settings-feedback"></p>
 							<form data-settings-system-form class="grid gap-6">
 								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-[color:var(--on-surface)]">Configuración del Sistema</h3>
-									<p class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)]">Ajustes regionales y de tiempo.</p>
+									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Configuración del Sistema</h3>
+									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Ajustes regionales y de tiempo.</p>
 								</div>
 								<div class="grid gap-5 sm:grid-cols-2">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">Zona horaria<input name="timezone" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">Formato de hora
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Zona horaria<input name="timezone" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Formato de hora
 										<div class="relative">
-											<select name="time_format" class="w-full cursor-pointer appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+											<select name="time_format" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
 										<option value="24H">24 horas</option>
 										<option value="12H">12 horas</option>
 									</select>
 										</div>
 								</label>
 								</div>
-								<div class="flex justify-end pt-4 border-t border-[color:var(--shell-border)] border-dashed">
+								<div class="flex justify-end pt-4 border-t border-(--shell-border) border-dashed">
 									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)]">Guardar sistema</button>
 								</div>
 							</form>
@@ -319,160 +318,289 @@ const publicProfileDomain =
 		</div>
 	</div>
 </dialog>
+</settings-manager>
 
 <script>
-	const readApiMessage = (data, fallback) =>
-		typeof data?.message === 'string' && data.message.trim() ? data.message.trim() : fallback;
+	interface ApiErrorDetail {
+		field?: string;
+		message?: string;
+	}
 
-	const fileToBase64 = (file) =>
-		new Promise((resolve, reject) => {
-			const reader = new FileReader();
-			reader.onload = () => {
-				const result = String(reader.result || '');
-				resolve(result.includes(',') ? result.split(',')[1] : result);
-			};
-			reader.onerror = () => reject(new Error('No fue posible leer el archivo.'));
-			reader.readAsDataURL(file);
-		});
+	interface ApiResponse<T = unknown> {
+		status?: string;
+		message?: string;
+		data?: T;
+		errors?: ApiErrorDetail[];
+		details?: unknown;
+		slug?: string;
+	}
 
 	class SettingsApiError extends Error {
-		constructor(message, status = 400, errors = [], details = null) {
+		status: number;
+		errors: ApiErrorDetail[];
+		details: unknown;
+
+		constructor(message: string, status = 400, errors: ApiErrorDetail[] = [], details: unknown = null) {
 			super(message);
 			this.name = 'SettingsApiError';
 			this.status = status;
-			this.errors = Array.isArray(errors) ? errors : [];
+			this.errors = errors;
 			this.details = details;
 		}
 	}
 
-	const initializeSettingsModal = () => {
-		const modal = document.querySelector('[data-settings-modal]');
-		if (!modal || modal.dataset.bound === 'true') return;
-		modal.dataset.bound = 'true';
+	class SettingsManager extends HTMLElement {
+		private abortController: AbortController | null = null;
+		private isAdmin = false;
+		private publicProfileDomain = '';
 
-		const roleId = Number(modal.dataset.roleId || '0');
-		const isAdmin = roleId === 1;
-		const openBtn = document.querySelector('[data-open-settings-modal]');
-		const closeBtn = modal.querySelector('[data-settings-close]'); // Target changed to header close btn
-		const tabButtons = modal.querySelectorAll('[data-settings-tab-trigger]');
-		const panels = modal.querySelectorAll('[data-settings-panel]');
-		const profileForm = modal.querySelector('[data-settings-profile-form]');
-		const securityForm = modal.querySelector('[data-settings-security-form]');
-		const preferencesForm = modal.querySelector('[data-settings-preferences-form]');
-		const workspaceForm = modal.querySelector('[data-settings-workspace-form]');
-		const brandingForm = modal.querySelector('[data-settings-branding-form]');
-		const systemForm = modal.querySelector('[data-settings-system-form]');
-		const profilePreview = modal.querySelector('[data-settings-profile-preview]');
-		const logoPreview = modal.querySelector('[data-settings-logo-preview]');
-		const profFields = modal.querySelectorAll('[data-settings-prof-fields]');
-		const profileNote = modal.querySelector('[data-settings-profile-note]');
-
-		if (!openBtn || !closeBtn || !profileForm || !securityForm || !preferencesForm) return;
-		const firstNameInput = profileForm.querySelector('[name="first_name"]');
-		const lastNameInput = profileForm.querySelector('[name="last_name"]');
-		const profileSlugInput = profileForm.querySelector('[name="profile_slug"]');
-		const profileSlugPrefix = profileForm.querySelector('[data-settings-profile-slug-prefix]');
-		const profileSlugError = profileForm.querySelector('[data-settings-profile-field-error="profile_slug"]');
-		const profileImageInput = profileForm.querySelector('[name="profile_image"]');
-		let profilePreviewObjectUrl = '';
-		let slugSuggestTimer = null;
-		let slugRequestSeq = 0;
-		let slugManuallyEdited = false;
-		let suppressSlugManualTracking = false;
-
-		const releaseProfilePreviewObjectUrl = () => {
-			if (!profilePreviewObjectUrl) return;
-			URL.revokeObjectURL(profilePreviewObjectUrl);
-			profilePreviewObjectUrl = '';
+		private els!: {
+			modal: HTMLDialogElement | null;
+			closeBtn: HTMLButtonElement | null;
+			tabButtons: NodeListOf<HTMLElement>;
+			panels: NodeListOf<HTMLElement>;
+			profileForm: HTMLFormElement | null;
+			securityForm: HTMLFormElement | null;
+			preferencesForm: HTMLFormElement | null;
+			workspaceForm: HTMLFormElement | null;
+			brandingForm: HTMLFormElement | null;
+			systemForm: HTMLFormElement | null;
+			profilePreview: HTMLImageElement | null;
+			logoPreview: HTMLImageElement | null;
+			profFields: NodeListOf<HTMLElement>;
+			profileNote: HTMLElement | null;
 		};
 
-		const clearSlugSuggestTimer = () => {
-			if (!slugSuggestTimer) return;
-			window.clearTimeout(slugSuggestTimer);
-			slugSuggestTimer = null;
+		private formEls!: {
+			firstNameInput: HTMLInputElement | null;
+			lastNameInput: HTMLInputElement | null;
+			profileSlugInput: HTMLInputElement | null;
+			profileSlugPrefix: HTMLElement | null;
+			profileSlugError: HTMLElement | null;
+			profileImageInput: HTMLInputElement | null;
 		};
 
-		const getPublicProfilePrefix = () => {
-			const configuredDomain = String(modal.dataset.publicProfileDomain || '')
+		private profilePreviewObjectUrl = '';
+		private slugSuggestTimer: number | null = null;
+		private slugRequestSeq = 0;
+		private slugManuallyEdited = false;
+		private suppressSlugManualTracking = false;
+		private closingTimer: number | null = null;
+
+		connectedCallback() {
+			const roleId = Number(this.dataset.roleId || '0');
+			this.isAdmin = roleId === 1;
+			this.publicProfileDomain = String(this.dataset.publicProfileDomain || '');
+
+			this.els = {
+				modal: this.querySelector<HTMLDialogElement>('[data-settings-modal]'),
+				closeBtn: this.querySelector<HTMLButtonElement>('[data-settings-close]'),
+				tabButtons: this.querySelectorAll<HTMLElement>('[data-settings-tab-trigger]'),
+				panels: this.querySelectorAll<HTMLElement>('[data-settings-panel]'),
+				profileForm: this.querySelector<HTMLFormElement>('[data-settings-profile-form]'),
+				securityForm: this.querySelector<HTMLFormElement>('[data-settings-security-form]'),
+				preferencesForm: this.querySelector<HTMLFormElement>('[data-settings-preferences-form]'),
+				workspaceForm: this.querySelector<HTMLFormElement>('[data-settings-workspace-form]'),
+				brandingForm: this.querySelector<HTMLFormElement>('[data-settings-branding-form]'),
+				systemForm: this.querySelector<HTMLFormElement>('[data-settings-system-form]'),
+				profilePreview: this.querySelector<HTMLImageElement>('[data-settings-profile-preview]'),
+				logoPreview: this.querySelector<HTMLImageElement>('[data-settings-logo-preview]'),
+				profFields: this.querySelectorAll<HTMLElement>('[data-settings-prof-fields]'),
+				profileNote: this.querySelector<HTMLElement>('[data-settings-profile-note]'),
+			};
+
+			this.formEls = {
+				firstNameInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="first_name"]') ?? null,
+				lastNameInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="last_name"]') ?? null,
+				profileSlugInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="profile_slug"]') ?? null,
+				profileSlugPrefix: this.els.profileForm?.querySelector<HTMLElement>('[data-settings-profile-slug-prefix]') ?? null,
+				profileSlugError: this.els.profileForm?.querySelector<HTMLElement>('[data-settings-profile-field-error="profile_slug"]') ?? null,
+				profileImageInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="profile_image"]') ?? null,
+			};
+
+			if (!this.abortController) {
+				this.abortController = new AbortController();
+			}
+			const { signal } = this.abortController;
+
+			document.addEventListener('click', this.handleDocumentClick, { signal });
+			this.els.closeBtn?.addEventListener('click', this.closeModal, { signal });
+			this.els.modal?.addEventListener('click', this.handleBackdropClick, { signal });
+			
+			this.els.tabButtons.forEach(btn => 
+				btn.addEventListener('click', () => this.setActiveTab(btn.dataset.settingsTab || 'profile'), { signal })
+			);
+
+			this.formEls.profileSlugInput?.addEventListener('input', this.handleSlugInput, { signal });
+			this.formEls.firstNameInput?.addEventListener('input', this.queueSlugSuggestion, { signal });
+			this.formEls.lastNameInput?.addEventListener('input', this.queueSlugSuggestion, { signal });
+			this.formEls.profileImageInput?.addEventListener('change', this.handleProfileImageChange, { signal });
+
+			this.els.profileForm?.addEventListener('submit', this.handleProfileSubmit, { signal });
+			this.els.securityForm?.addEventListener('submit', this.handleSecuritySubmit, { signal });
+			this.els.preferencesForm?.addEventListener('submit', this.handlePreferencesSubmit, { signal });
+			this.els.workspaceForm?.addEventListener('submit', this.handleWorkspaceSubmit, { signal });
+			this.els.brandingForm?.addEventListener('submit', this.handleBrandingSubmit, { signal });
+			this.els.systemForm?.addEventListener('submit', this.handleSystemSubmit, { signal });
+		}
+
+		disconnectedCallback() {
+			this.abortController?.abort();
+			this.abortController = null;
+			this.clearSlugSuggestTimer();
+			this.releaseProfilePreviewObjectUrl();
+			if (this.closingTimer) window.clearTimeout(this.closingTimer);
+		}
+
+		private handleDocumentClick = (event: MouseEvent) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+
+			const openBtn = target.closest('[data-open-settings-modal]');
+			if (openBtn) {
+				event.preventDefault();
+				openBtn.closest('details')?.removeAttribute('open');
+				this.openModal();
+			}
+		};
+
+		private openModal = () => {
+			this.setActiveTab('profile');
+			this.clearFeedback();
+			this.resetSecurityForm();
+			this.els.modal?.classList.remove('is-closing');
+			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
+			void this.loadData();
+		};
+
+		private handleBackdropClick = (event: MouseEvent) => {
+			if (event.target instanceof HTMLDialogElement) {
+				this.closeModal();
+			}
+		};
+
+		private closeModal = () => {
+			if (!this.els.modal?.open) return;
+			this.els.modal.classList.add('is-closing');
+			this.closingTimer = window.setTimeout(() => {
+				this.els.modal?.close();
+				this.els.modal?.classList.remove('is-closing');
+				this.resetSecurityForm();
+				this.releaseProfilePreviewObjectUrl();
+				this.clearSlugSuggestTimer();
+				this.slugRequestSeq += 1;
+				this.closingTimer = null;
+			}, 160);
+		};
+
+		private readApiMessage(data: ApiResponse | null, fallback: string): string {
+			return typeof data?.message === 'string' && data.message.trim() ? data.message.trim() : fallback;
+		}
+
+		private async fileToBase64(file: File): Promise<string> {
+			return new Promise((resolve, reject) => {
+				const reader = new FileReader();
+				reader.onload = () => {
+					const result = String(reader.result || '');
+					resolve(result.includes(',') ? result.split(',')[1] : result);
+				};
+				reader.onerror = () => reject(new Error('No fue posible leer el archivo.'));
+				reader.readAsDataURL(file);
+			});
+		}
+
+		private releaseProfilePreviewObjectUrl() {
+			if (!this.profilePreviewObjectUrl) return;
+			URL.revokeObjectURL(this.profilePreviewObjectUrl);
+			this.profilePreviewObjectUrl = '';
+		}
+
+		private clearSlugSuggestTimer() {
+			if (!this.slugSuggestTimer) return;
+			window.clearTimeout(this.slugSuggestTimer);
+			this.slugSuggestTimer = null;
+		}
+
+		private getPublicProfilePrefix() {
+			const configuredDomain = String(this.publicProfileDomain || '')
 				.replace(/^https?:\/\//i, '')
 				.replace(/\/+$/, '')
 				.trim();
 			if (configuredDomain) return `${configuredDomain}/p/`;
 			const origin = String(window.location?.origin || '').replace(/\/$/, '');
 			return `${origin}/p/`;
-		};
+		}
 
-		const getSlugSourceName = () =>
-			`${String(firstNameInput?.value || '').trim()} ${String(lastNameInput?.value || '').trim()}`.trim();
+		private getSlugSourceName() {
+			return `${String(this.formEls.firstNameInput?.value || '').trim()} ${String(this.formEls.lastNameInput?.value || '').trim()}`.trim();
+		}
 
-		const setSuggestedSlug = (slug) => {
-			if (!profileSlugInput) return;
-			suppressSlugManualTracking = true;
-			profileSlugInput.value = slug;
-			suppressSlugManualTracking = false;
-		};
+		private setSuggestedSlug(slug: string) {
+			if (!this.formEls.profileSlugInput) return;
+			this.suppressSlugManualTracking = true;
+			this.formEls.profileSlugInput.value = slug;
+			this.suppressSlugManualTracking = false;
+		}
 
-		const clearProfileFieldErrors = () => {
-			if (!profileSlugError) return;
-			profileSlugError.textContent = '';
-			profileSlugError.classList.add('hidden');
-		};
+		private clearProfileFieldErrors() {
+			if (!this.formEls.profileSlugError) return;
+			this.formEls.profileSlugError.textContent = '';
+			this.formEls.profileSlugError.classList.add('hidden');
+		}
 
-		const isGenericValidationMessage = (message) => {
-			const normalized = String(message || '')
-				.trim()
-				.toLowerCase();
+		private isGenericValidationMessage(message: unknown): boolean {
+			const normalized = String(message || '').trim().toLowerCase();
 			return (
 				normalized === 'errores de validacion.' ||
 				normalized === 'errores de validacion' ||
-				normalized === 'errores de validaciÃ³n.' ||
-				normalized === 'errores de validaciÃ³n'
+				normalized === 'errores de validación.' ||
+				normalized === 'errores de validación'
 			);
-		};
+		}
 
-		const renderProfileFieldErrors = (errors, fallbackMessage = '') => {
+		private renderProfileFieldErrors(errors: unknown, fallbackMessage = ''): boolean {
 			let rendered = false;
 			const items = Array.isArray(errors) ? errors : [];
 			for (const item of items) {
 				if (!item || typeof item !== 'object') continue;
-				const field = 'field' in item ? String(item.field || '').trim() : '';
-				const message = 'message' in item ? String(item.message || '').trim() : '';
+				const field = 'field' in item ? String((item as Record<string, unknown>).field || '').trim() : '';
+				const message = 'message' in item ? String((item as Record<string, unknown>).message || '').trim() : '';
 				if (!field || !message) continue;
-				if (field === 'profile_slug' && profileSlugError) {
-					profileSlugError.textContent = message;
-					profileSlugError.classList.remove('hidden');
+				if (field === 'profile_slug' && this.formEls.profileSlugError) {
+					this.formEls.profileSlugError.textContent = message;
+					this.formEls.profileSlugError.classList.remove('hidden');
 					rendered = true;
 				}
 			}
 			if (rendered) return true;
-			if (typeof fallbackMessage === 'string' && /slug|perfil/i.test(fallbackMessage) && profileSlugError) {
-				profileSlugError.textContent = fallbackMessage;
-				profileSlugError.classList.remove('hidden');
+			if (typeof fallbackMessage === 'string' && /slug|perfil/i.test(fallbackMessage) && this.formEls.profileSlugError) {
+				this.formEls.profileSlugError.textContent = fallbackMessage;
+				this.formEls.profileSlugError.classList.remove('hidden');
 				return true;
 			}
 			return false;
-		};
+		}
 
-		const getFeedback = (key) => modal.querySelector(`[data-settings-feedback="${key}"]`);
-		const showFeedback = (key, message, kind = 'success') => {
-			const node = getFeedback(key);
+		private showFeedback(key: string, message: string, kind: 'success' | 'error' = 'success') {
+			const node = this.querySelector(`[data-settings-feedback="${key}"]`);
 			if (!node) return;
 			node.textContent = message;
 			node.classList.remove('hidden', 'is-success', 'is-error');
 			node.classList.add(kind === 'success' ? 'is-success' : 'is-error');
-		};
-		const clearFeedback = () => {
-			modal.querySelectorAll('.settings-feedback').forEach((node) => {
+		}
+
+		private clearFeedback() {
+			this.querySelectorAll('.settings-feedback').forEach((node) => {
 				node.textContent = '';
 				node.classList.add('hidden');
 				node.classList.remove('is-success', 'is-error');
 			});
-			clearProfileFieldErrors();
-		};
+			this.clearProfileFieldErrors();
+		}
 
-		const requestApi = async (url, options, fallbackMessage) => {
+		private async requestApi<T = unknown>(url: string, options: RequestInit, fallbackMessage: string): Promise<ApiResponse<T>> {
 			const response = await fetch(url, options);
-			let data = null;
+			let data: ApiResponse<T> | null = null;
 			try {
 				data = await response.json();
 			} catch {
@@ -480,112 +608,130 @@ const publicProfileDomain =
 			}
 			if (!response.ok || !data || data.status !== 'success') {
 				throw new SettingsApiError(
-					readApiMessage(data, fallbackMessage),
+					this.readApiMessage(data, fallbackMessage),
 					response.status || 400,
 					data?.errors,
 					data?.details
 				);
 			}
 			return data;
+		}
+
+		private handleSlugInput = () => {
+			if (this.suppressSlugManualTracking) return;
+			const currentValue = String(this.formEls.profileSlugInput?.value || '').trim();
+			this.slugManuallyEdited = currentValue !== '';
+			this.clearProfileFieldErrors();
+			if (!this.slugManuallyEdited) this.queueSlugSuggestion();
 		};
 
-		const queueSlugSuggestion = () => {
-			if (!profileSlugInput) return;
-			const profVisible = !profFields[0]?.classList.contains('hidden');
+		private queueSlugSuggestion = () => {
+			if (!this.formEls.profileSlugInput) return;
+			const profVisible = !this.els.profFields[0]?.classList.contains('hidden');
 			if (!profVisible) return;
-			const fullName = getSlugSourceName();
+			const fullName = this.getSlugSourceName();
 			if (!fullName) return;
-			if (slugManuallyEdited && profileSlugInput.value.trim() !== '') return;
-			clearSlugSuggestTimer();
-			const currentRequest = ++slugRequestSeq;
-			slugSuggestTimer = window.setTimeout(async () => {
+			if (this.slugManuallyEdited && this.formEls.profileSlugInput.value.trim() !== '') return;
+			
+			this.clearSlugSuggestTimer();
+			const currentRequest = ++this.slugRequestSeq;
+			this.slugSuggestTimer = window.setTimeout(async () => {
 				try {
 					const response = await fetch(
 						`/api/professionals/slug/suggest?name=${encodeURIComponent(fullName)}`,
-						{
-							method: 'GET',
-							headers: { Accept: 'application/json' },
-						}
+						{ method: 'GET', headers: { Accept: 'application/json' } }
 					);
-					let data = null;
+					let data: ApiResponse | null = null;
 					try {
 						data = await response.json();
 					} catch {
 						return;
 					}
-					if (currentRequest !== slugRequestSeq) return;
+					if (currentRequest !== this.slugRequestSeq) return;
 					if (!response.ok || !data || data.status !== 'success' || typeof data.slug !== 'string') return;
-					if (slugManuallyEdited && profileSlugInput.value.trim() !== '') return;
+					if (this.slugManuallyEdited && this.formEls.profileSlugInput!.value.trim() !== '') return;
 					const suggestedSlug = String(data.slug || '').trim();
 					if (!suggestedSlug) return;
-					setSuggestedSlug(suggestedSlug);
+					this.setSuggestedSlug(suggestedSlug);
 				} catch {
-					// Ignoramos errores de red para no bloquear la edicion.
+					// Ignoramos errores de red
 				}
 			}, 350);
 		};
 
-		const setActiveTab = (tabId) => {
-			tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.settingsTab === tabId));
-			panels.forEach((panel) => panel.classList.toggle('hidden', panel.dataset.settingsPanel !== tabId));
+		private handleProfileImageChange = () => {
+			const imageFile = this.formEls.profileImageInput?.files?.[0];
+			if (!imageFile || !this.els.profilePreview) return;
+			this.releaseProfilePreviewObjectUrl();
+			this.profilePreviewObjectUrl = URL.createObjectURL(imageFile);
+			this.els.profilePreview.src = this.profilePreviewObjectUrl;
+			this.els.profilePreview.classList.remove('hidden');
 		};
 
-		const resetSecurityForm = () => {
-			const current = securityForm.querySelector('[name="current_password"]');
-			const next = securityForm.querySelector('[name="new_password"]');
-			const confirm = securityForm.querySelector('[name="confirm_password"]');
+		private setActiveTab(tabId: string) {
+			this.els.tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.settingsTab === tabId));
+			this.els.panels.forEach((panel) => panel.classList.toggle('hidden', panel.dataset.settingsPanel !== tabId));
+		}
+
+		private resetSecurityForm() {
+			if (!this.els.securityForm) return;
+			const current = this.els.securityForm.querySelector<HTMLInputElement>('[name="current_password"]');
+			const next = this.els.securityForm.querySelector<HTMLInputElement>('[name="new_password"]');
+			const confirm = this.els.securityForm.querySelector<HTMLInputElement>('[name="confirm_password"]');
 			if (current) current.value = '';
 			if (next) next.value = '';
 			if (confirm) confirm.value = '';
-		};
+		}
 
-		const fillProfile = (profile) => {
-			const email = profileForm.querySelector('[name="email"]');
-			const phone = profileForm.querySelector('[name="phone_number"]');
+		private fillProfile(profile: any) {
+			if (!this.els.profileForm) return;
+			const email = this.els.profileForm.querySelector<HTMLInputElement>('[name="email"]');
+			const phone = this.els.profileForm.querySelector<HTMLInputElement>('[name="phone_number"]');
 
-			if (firstNameInput) firstNameInput.value = profile?.first_name || '';
-			if (lastNameInput) lastNameInput.value = profile?.last_name || '';
+			if (this.formEls.firstNameInput) this.formEls.firstNameInput.value = profile?.first_name || '';
+			if (this.formEls.lastNameInput) this.formEls.lastNameInput.value = profile?.last_name || '';
 			if (email) email.value = profile?.email || '';
-			if (profileImageInput) profileImageInput.value = '';
-			if (profileSlugPrefix) profileSlugPrefix.textContent = getPublicProfilePrefix();
-			clearSlugSuggestTimer();
-			slugRequestSeq += 1;
-			slugManuallyEdited = false;
-			releaseProfilePreviewObjectUrl();
+			if (this.formEls.profileImageInput) this.formEls.profileImageInput.value = '';
+			if (this.formEls.profileSlugPrefix) this.formEls.profileSlugPrefix.textContent = this.getPublicProfilePrefix();
+			
+			this.clearSlugSuggestTimer();
+			this.slugRequestSeq += 1;
+			this.slugManuallyEdited = false;
+			this.releaseProfilePreviewObjectUrl();
 
 			const prof = profile?.professional_profile;
 			if (prof) {
-				profFields.forEach((el) => el.classList.remove('hidden'));
+				this.els.profFields.forEach((el) => el.classList.remove('hidden'));
 				if (phone) phone.value = prof.phone_number || '';
-				if (profileSlugInput) {
-					setSuggestedSlug(String(prof.profile_slug || '').trim());
-					if (profileSlugInput.value.trim() === '') queueSlugSuggestion();
+				if (this.formEls.profileSlugInput) {
+					this.setSuggestedSlug(String(prof.profile_slug || '').trim());
+					if (this.formEls.profileSlugInput.value.trim() === '') this.queueSlugSuggestion();
 				}
-				if (profilePreview && prof.image_url) {
-					profilePreview.src = prof.image_url;
-					profilePreview.classList.remove('hidden');
+				if (this.els.profilePreview && prof.image_url) {
+					this.els.profilePreview.src = prof.image_url;
+					this.els.profilePreview.classList.remove('hidden');
 				} else {
-					profilePreview?.classList.add('hidden');
+					this.els.profilePreview?.classList.add('hidden');
 				}
-				if (profileNote) {
-					profileNote.classList.add('hidden');
-					profileNote.textContent = '';
+				if (this.els.profileNote) {
+					this.els.profileNote.classList.add('hidden');
+					this.els.profileNote.textContent = '';
 				}
 			} else {
-				profFields.forEach((el) => el.classList.add('hidden'));
+				this.els.profFields.forEach((el) => el.classList.add('hidden'));
 				if (phone) phone.value = '';
-				if (profileSlugInput) setSuggestedSlug('');
-				profilePreview?.classList.add('hidden');
-				if (profileNote) {
-					profileNote.textContent = 'Esta cuenta no tiene perfil profesional público. Solo se guarda nombre y apellido.';
-					profileNote.classList.remove('hidden');
+				if (this.formEls.profileSlugInput) this.setSuggestedSlug('');
+				this.els.profilePreview?.classList.add('hidden');
+				if (this.els.profileNote) {
+					this.els.profileNote.textContent = 'Esta cuenta no tiene perfil profesional público. Solo se guarda nombre y apellido.';
+					this.els.profileNote.classList.remove('hidden');
 				}
 			}
-		};
+		}
 
-		const fillWorkspace = (workspace) => {
-			const setValue = (selector, value) => {
-				const input = modal.querySelector(selector);
+		private fillWorkspace(workspace: any) {
+			const setValue = (selector: string, value: string) => {
+				const input = this.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(selector);
 				if (input) input.value = value || '';
 			};
 			setValue('[data-settings-workspace-form] [name="name"]', workspace?.name);
@@ -595,288 +741,223 @@ const publicProfileDomain =
 			setValue('[data-settings-branding-form] [name="theme_pref"]', workspace?.theme_pref === 'dark' ? 'dark' : 'light');
 			setValue('[data-settings-system-form] [name="timezone"]', workspace?.timezone || 'America/Asuncion');
 			setValue('[data-settings-system-form] [name="time_format"]', workspace?.time_format === '12H' ? '12H' : '24H');
-			if (logoPreview && workspace?.logo_url) {
-				logoPreview.src = workspace.logo_url;
-				logoPreview.classList.remove('hidden');
+			
+			if (this.els.logoPreview && workspace?.logo_url) {
+				this.els.logoPreview.src = workspace.logo_url;
+				this.els.logoPreview.classList.remove('hidden');
 			} else {
-				logoPreview?.classList.add('hidden');
+				this.els.logoPreview?.classList.add('hidden');
 			}
-			const logoFile = brandingForm?.querySelector('[name="logo_file"]');
+			const logoFile = this.els.brandingForm?.querySelector<HTMLInputElement>('[name="logo_file"]');
 			if (logoFile) logoFile.value = '';
-		};
+		}
 
-		const getWorkspacePayload = () => ({
-			name: String(modal.querySelector('[data-settings-workspace-form] [name="name"]')?.value || '').trim(),
-			profile_slug: String(modal.querySelector('[data-settings-workspace-form] [name="profile_slug"]')?.value || '').trim(),
-			description: String(modal.querySelector('[data-settings-workspace-form] [name="description"]')?.value || '').trim(),
-			public_whatsapp: String(modal.querySelector('[data-settings-workspace-form] [name="public_whatsapp"]')?.value || '').trim(),
-			timezone: String(modal.querySelector('[data-settings-system-form] [name="timezone"]')?.value || '').trim(),
-			time_format: String(modal.querySelector('[data-settings-system-form] [name="time_format"]')?.value || '').trim(),
-			theme_pref: String(modal.querySelector('[data-settings-branding-form] [name="theme_pref"]')?.value || '').trim(),
-		});
+		private getWorkspacePayload() {
+			return {
+				name: String(this.querySelector<HTMLInputElement>('[data-settings-workspace-form] [name="name"]')?.value || '').trim(),
+				profile_slug: String(this.querySelector<HTMLInputElement>('[data-settings-workspace-form] [name="profile_slug"]')?.value || '').trim(),
+				description: String(this.querySelector<HTMLTextAreaElement>('[data-settings-workspace-form] [name="description"]')?.value || '').trim(),
+				public_whatsapp: String(this.querySelector<HTMLInputElement>('[data-settings-workspace-form] [name="public_whatsapp"]')?.value || '').trim(),
+				timezone: String(this.querySelector<HTMLInputElement>('[data-settings-system-form] [name="timezone"]')?.value || '').trim(),
+				time_format: String(this.querySelector<HTMLSelectElement>('[data-settings-system-form] [name="time_format"]')?.value || '').trim(),
+				theme_pref: String(this.querySelector<HTMLSelectElement>('[data-settings-branding-form] [name="theme_pref"]')?.value || '').trim(),
+			};
+		}
 
-		const loadData = async () => {
+		private async loadData() {
 			try {
-				const profileRes = await requestApi('/api/profile/me', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar perfil.');
-				fillProfile(profileRes.data || {});
+				const profileRes = await this.requestApi('/api/profile/me', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar perfil.');
+				this.fillProfile(profileRes.data || {});
 
-				const panelTheme = preferencesForm.querySelector('[name="panel_theme"]');
-				const calendarView = preferencesForm.querySelector('[name="calendar_view"]');
-				if (panelTheme) panelTheme.value = localStorage.getItem('bookmate-theme') === 'dark' ? 'dark' : 'light';
-				if (calendarView) calendarView.value = localStorage.getItem('bookmate-calendar-default-view') || 'timeGridWeek';
+				if (this.els.preferencesForm) {
+					const panelTheme = this.els.preferencesForm.querySelector<HTMLSelectElement>('[name="panel_theme"]');
+					const calendarView = this.els.preferencesForm.querySelector<HTMLSelectElement>('[name="calendar_view"]');
+					if (panelTheme) panelTheme.value = localStorage.getItem('bookmate-theme') === 'dark' ? 'dark' : 'light';
+					if (calendarView) calendarView.value = localStorage.getItem('bookmate-calendar-default-view') || 'timeGridWeek';
+				}
 
-				if (isAdmin) {
-					const workspaceRes = await requestApi('/api/workspace', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar negocio.');
-					fillWorkspace(workspaceRes.data || null);
+				if (this.isAdmin) {
+					const workspaceRes = await this.requestApi('/api/workspace', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar negocio.');
+					this.fillWorkspace(workspaceRes.data || null);
 				}
 			} catch (error) {
-				showFeedback('profile', error instanceof Error ? error.message : 'No fue posible cargar ajustes.', 'error');
+				this.showFeedback('profile', error instanceof Error ? error.message : 'No fue posible cargar ajustes.', 'error');
 			}
-		};
+		}
 
-		let closingTimer = null;
-		const closeModal = () => {
-			if (!modal.open) return;
-			modal.classList.add('is-closing');
-			closingTimer = window.setTimeout(() => {
-				modal.close();
-				modal.classList.remove('is-closing');
-				resetSecurityForm();
-				releaseProfilePreviewObjectUrl();
-				clearSlugSuggestTimer();
-				slugRequestSeq += 1;
-				closingTimer = null;
-			}, 160);
-		};
-
-		openBtn.addEventListener('click', (event) => {
+		private handleProfileSubmit = async (event: SubmitEvent) => {
 			event.preventDefault();
-			openBtn.closest('details')?.removeAttribute('open');
-			setActiveTab('profile');
-			clearFeedback();
-			resetSecurityForm();
-			modal.classList.remove('is-closing');
-			if (!modal.open) modal.showModal();
-			void loadData();
-		});
-		closeBtn?.addEventListener('click', closeModal);
-		modal.addEventListener('click', (event) => {
-			if (event.target instanceof HTMLDialogElement) {
-				closeModal();
-			}
-		});
-		tabButtons.forEach((btn) => btn.addEventListener('click', () => setActiveTab(btn.dataset.settingsTab || 'profile')));
-		profileSlugInput?.addEventListener('input', () => {
-			if (suppressSlugManualTracking) return;
-			const currentValue = String(profileSlugInput.value || '').trim();
-			slugManuallyEdited = currentValue !== '';
-			clearProfileFieldErrors();
-			if (!slugManuallyEdited) queueSlugSuggestion();
-		});
-		firstNameInput?.addEventListener('input', () => {
-			queueSlugSuggestion();
-		});
-		lastNameInput?.addEventListener('input', () => {
-			queueSlugSuggestion();
-		});
-		profileImageInput?.addEventListener('change', () => {
-			const imageFile = profileImageInput.files?.[0];
-			if (!imageFile || !profilePreview) return;
-			releaseProfilePreviewObjectUrl();
-			profilePreviewObjectUrl = URL.createObjectURL(imageFile);
-			profilePreview.src = profilePreviewObjectUrl;
-			profilePreview.classList.remove('hidden');
-		});
+			this.clearFeedback();
+			if (!this.els.profileForm) return;
 
-		profileForm.addEventListener('submit', async (event) => {
-			event.preventDefault();
-			clearFeedback();
-
-			const first = String(profileForm.querySelector('[name="first_name"]')?.value || '').trim();
-			const last = String(profileForm.querySelector('[name="last_name"]')?.value || '').trim();
+			const first = String(this.els.profileForm.querySelector<HTMLInputElement>('[name="first_name"]')?.value || '').trim();
+			const last = String(this.els.profileForm.querySelector<HTMLInputElement>('[name="last_name"]')?.value || '').trim();
 			if (!first || !last) {
-				showFeedback('profile', 'Nombre y apellido son obligatorios.', 'error');
+				this.showFeedback('profile', 'Nombre y apellido son obligatorios.', 'error');
 				return;
 			}
 
-			const payload = { first_name: first, last_name: last };
-			const profVisible = !profFields[0]?.classList.contains('hidden');
+			const payload: Record<string, string | number> = { first_name: first, last_name: last };
+			const profVisible = !this.els.profFields[0]?.classList.contains('hidden');
+			
 			if (profVisible) {
-				payload.phone_number = String(profileForm.querySelector('[name="phone_number"]')?.value || '').trim();
-				const profileSlug = String(profileSlugInput?.value || '').trim();
+				payload.phone_number = String(this.els.profileForm.querySelector<HTMLInputElement>('[name="phone_number"]')?.value || '').trim();
+				const profileSlug = String(this.formEls.profileSlugInput?.value || '').trim();
 				if (profileSlug) payload.profile_slug = profileSlug;
 
-				const imageFile = profileForm.querySelector('[name="profile_image"]')?.files?.[0];
+				const imageFile = this.els.profileForm.querySelector<HTMLInputElement>('[name="profile_image"]')?.files?.[0];
 				if (imageFile) {
-					payload.image_base64 = await fileToBase64(imageFile);
+					payload.image_base64 = await this.fileToBase64(imageFile);
 					payload.image_name = imageFile.name;
 					payload.image_mime = imageFile.type || 'application/octet-stream';
 				}
 			}
 
 			try {
-				const data = await requestApi('/api/profile/me', {
+				const data = await this.requestApi('/api/profile/me', {
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 					body: JSON.stringify(payload),
 				}, 'No fue posible guardar perfil.');
-				showFeedback('profile', readApiMessage(data, 'Perfil actualizado correctamente.'), 'success');
-				await loadData();
+				this.showFeedback('profile', this.readApiMessage(data, 'Perfil actualizado correctamente.'), 'success');
+				await this.loadData();
 			} catch (error) {
 				const message = error instanceof Error ? error.message : 'No fue posible guardar perfil.';
-				const hasFieldErrors = renderProfileFieldErrors(
+				const hasFieldErrors = this.renderProfileFieldErrors(
 					error instanceof SettingsApiError ? error.errors : [],
 					message
 				);
-				if (!hasFieldErrors || !isGenericValidationMessage(message)) {
-					showFeedback('profile', message, 'error');
+				if (!hasFieldErrors || !this.isGenericValidationMessage(message)) {
+					this.showFeedback('profile', message, 'error');
 				}
 			}
-		});
+		};
 
-		securityForm.addEventListener('submit', async (event) => {
+		private handleSecuritySubmit = async (event: SubmitEvent) => {
 			event.preventDefault();
-			clearFeedback();
+			this.clearFeedback();
+			if (!this.els.securityForm) return;
 
-			const currentPassword = String(
-				securityForm.querySelector('[name="current_password"]')?.value || ''
-			).trim();
-			const newPassword = String(
-				securityForm.querySelector('[name="new_password"]')?.value || ''
-			).trim();
-			const confirmPassword = String(
-				securityForm.querySelector('[name="confirm_password"]')?.value || ''
-			).trim();
+			const currentPassword = String(this.els.securityForm.querySelector<HTMLInputElement>('[name="current_password"]')?.value || '').trim();
+			const newPassword = String(this.els.securityForm.querySelector<HTMLInputElement>('[name="new_password"]')?.value || '').trim();
+			const confirmPassword = String(this.els.securityForm.querySelector<HTMLInputElement>('[name="confirm_password"]')?.value || '').trim();
 
 			if (!currentPassword || !newPassword || !confirmPassword) {
-				showFeedback('security', 'Completa los tres campos de contrasena.', 'error');
+				this.showFeedback('security', 'Completa los tres campos de contraseña.', 'error');
 				return;
 			}
 
 			if (newPassword.length < 8) {
-				showFeedback('security', 'La nueva contrasena debe tener al menos 8 caracteres.', 'error');
+				this.showFeedback('security', 'La nueva contraseña debe tener al menos 8 caracteres.', 'error');
 				return;
 			}
 
 			if (newPassword !== confirmPassword) {
-				showFeedback('security', 'La confirmacion no coincide con la nueva contrasena.', 'error');
+				this.showFeedback('security', 'La confirmación no coincide con la nueva contraseña.', 'error');
 				return;
 			}
 
 			if (newPassword === currentPassword) {
-				showFeedback('security', 'La nueva contrasena debe ser distinta a la actual.', 'error');
+				this.showFeedback('security', 'La nueva contraseña debe ser distinta a la actual.', 'error');
 				return;
 			}
 
 			try {
-				const data = await requestApi(
+				const data = await this.requestApi(
 					'/api/profile/change-password',
 					{
 						method: 'PUT',
 						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-						body: JSON.stringify({
-							current_password: currentPassword,
-							new_password: newPassword,
-						}),
+						body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
 					},
-					'No fue posible actualizar la contrasena.'
+					'No fue posible actualizar la contraseña.'
 				);
-				showFeedback(
-					'security',
-					readApiMessage(data, 'Contrasena actualizada correctamente.'),
-					'success'
-				);
-				resetSecurityForm();
+				this.showFeedback('security', this.readApiMessage(data, 'Contraseña actualizada correctamente.'), 'success');
+				this.resetSecurityForm();
 			} catch (error) {
-				showFeedback(
-					'security',
-					error instanceof Error ? error.message : 'No fue posible actualizar la contrasena.',
-					'error'
-				);
+				this.showFeedback('security', error instanceof Error ? error.message : 'No fue posible actualizar la contraseña.', 'error');
 			}
-		});
+		};
 
-		preferencesForm.addEventListener('submit', (event) => {
+		private handlePreferencesSubmit = (event: SubmitEvent) => {
 			event.preventDefault();
-			clearFeedback();
-			const theme = preferencesForm.querySelector('[name="panel_theme"]')?.value === 'dark' ? 'dark' : 'light';
-			const view = String(preferencesForm.querySelector('[name="calendar_view"]')?.value || 'timeGridWeek');
+			this.clearFeedback();
+			if (!this.els.preferencesForm) return;
+			const theme = this.els.preferencesForm.querySelector<HTMLSelectElement>('[name="panel_theme"]')?.value === 'dark' ? 'dark' : 'light';
+			const view = String(this.els.preferencesForm.querySelector<HTMLSelectElement>('[name="calendar_view"]')?.value || 'timeGridWeek');
 			document.documentElement.dataset.theme = theme;
 			localStorage.setItem('bookmate-theme', theme);
 			localStorage.setItem('bookmate-calendar-default-view', view);
-			showFeedback('preferences', 'Preferencias guardadas correctamente.', 'success');
-		});
+			this.showFeedback('preferences', 'Preferencias guardadas correctamente.', 'success');
+		};
 
-		if (workspaceForm) {
-			workspaceForm.addEventListener('submit', async (event) => {
-				event.preventDefault();
-				clearFeedback();
-				try {
-					const data = await requestApi('/api/workspace', {
-						method: 'PUT',
-						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-						body: JSON.stringify(getWorkspacePayload()),
-					}, 'No fue posible guardar negocio.');
-					showFeedback('workspace', readApiMessage(data, 'Negocio actualizado correctamente.'), 'success');
-					await loadData();
-				} catch (error) {
-					showFeedback('workspace', error instanceof Error ? error.message : 'No fue posible guardar negocio.', 'error');
+		private handleWorkspaceSubmit = async (event: SubmitEvent) => {
+			event.preventDefault();
+			this.clearFeedback();
+			try {
+				const data = await this.requestApi('/api/workspace', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+					body: JSON.stringify(this.getWorkspacePayload()),
+				}, 'No fue posible guardar negocio.');
+				this.showFeedback('workspace', this.readApiMessage(data, 'Negocio actualizado correctamente.'), 'success');
+				await this.loadData();
+			} catch (error) {
+				this.showFeedback('workspace', error instanceof Error ? error.message : 'No fue posible guardar negocio.', 'error');
+			}
+		};
+
+		private handleBrandingSubmit = async (event: SubmitEvent) => {
+			event.preventDefault();
+			this.clearFeedback();
+			if (!this.els.brandingForm) return;
+			try {
+				const payload: Record<string, string> = this.getWorkspacePayload();
+				const logoFile = this.els.brandingForm.querySelector<HTMLInputElement>('[name="logo_file"]')?.files?.[0];
+				if (logoFile) {
+					payload.logo_base64 = await this.fileToBase64(logoFile);
+					payload.logo_name = logoFile.name;
+					payload.logo_mime = logoFile.type || 'application/octet-stream';
 				}
-			});
-		}
+				const data = await this.requestApi('/api/workspace', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+					body: JSON.stringify(payload),
+				}, 'No fue posible guardar personalización.');
+				this.showFeedback('branding', this.readApiMessage(data, 'Personalización guardada correctamente.'), 'success');
+				await this.loadData();
+			} catch (error) {
+				this.showFeedback('branding', error instanceof Error ? error.message : 'No fue posible guardar personalización.', 'error');
+			}
+		};
 
-		if (brandingForm) {
-			brandingForm.addEventListener('submit', async (event) => {
-				event.preventDefault();
-				clearFeedback();
-				try {
-					const payload = getWorkspacePayload();
-					const logoFile = brandingForm.querySelector('[name="logo_file"]')?.files?.[0];
-					if (logoFile) {
-						payload.logo_base64 = await fileToBase64(logoFile);
-						payload.logo_name = logoFile.name;
-						payload.logo_mime = logoFile.type || 'application/octet-stream';
-					}
-					const data = await requestApi('/api/workspace', {
-						method: 'PUT',
-						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-						body: JSON.stringify(payload),
-					}, 'No fue posible guardar personalizaciÃ³n.');
-					showFeedback('branding', readApiMessage(data, 'PersonalizaciÃ³n guardada correctamente.'), 'success');
-					await loadData();
-				} catch (error) {
-					showFeedback('branding', error instanceof Error ? error.message : 'No fue posible guardar personalizaciÃ³n.', 'error');
-				}
-			});
-		}
+		private handleSystemSubmit = async (event: SubmitEvent) => {
+			event.preventDefault();
+			this.clearFeedback();
+			try {
+				const data = await this.requestApi('/api/workspace', {
+					method: 'PUT',
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+					body: JSON.stringify(this.getWorkspacePayload()),
+				}, 'No fue posible guardar sistema.');
+				this.showFeedback('system', this.readApiMessage(data, 'Sistema actualizado correctamente.'), 'success');
+				await this.loadData();
+			} catch (error) {
+				this.showFeedback('system', error instanceof Error ? error.message : 'No fue posible guardar sistema.', 'error');
+			}
+		};
+	}
 
-		if (systemForm) {
-			systemForm.addEventListener('submit', async (event) => {
-				event.preventDefault();
-				clearFeedback();
-				try {
-					const data = await requestApi('/api/workspace', {
-						method: 'PUT',
-						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-						body: JSON.stringify(getWorkspacePayload()),
-					}, 'No fue posible guardar sistema.');
-					showFeedback('system', readApiMessage(data, 'Sistema actualizado correctamente.'), 'success');
-					await loadData();
-				} catch (error) {
-					showFeedback('system', error instanceof Error ? error.message : 'No fue posible guardar sistema.', 'error');
-				}
-			});
-		}
-	};
-
-	initializeSettingsModal();
-	if (!(window).__bookmateSettingsModalPageLoadBound) {
-		document.addEventListener('astro:page-load', initializeSettingsModal);
-		(window).__bookmateSettingsModalPageLoadBound = true;
+	if (!customElements.get('settings-manager')) {
+		customElements.define('settings-manager', SettingsManager);
 	}
 </script>
 
 <style is:global>
+	settings-manager {
+		display: contents;
+	}
+
 	[data-settings-modal]:not([open]) {
 		display: none;
 	}
