@@ -17,7 +17,7 @@ const publicProfileDomain =
 <settings-manager data-role-id={String(roleId)} data-public-profile-domain={publicProfileDomain}>
 <dialog
 	data-settings-modal
-	class="w-[min(54rem,calc(100vw-2rem))] h-[min(94vh,48rem)] sm:h-[min(90vh,48rem)] open:flex open:flex-col overflow-hidden rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
+	class="w-[min(54rem,calc(100vw-2rem))] h-[min(94vh,48rem)] sm:h-[min(90vh,48rem)] open:flex open:flex-col overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
 >
 	<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-7 py-6">
 		<div class="flex items-start justify-between gap-4">
@@ -30,7 +30,7 @@ const publicProfileDomain =
 					<p class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5">Perfil y preferencias de la cuenta.</p>
 				</div>
 			</div>
-			<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]" data-settings-close aria-label="Cerrar modal">
+			<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-settings-close aria-label="Cerrar modal">
 				<span class="material-symbols-rounded text-[1.3rem]">close</span>
 			</button>
 		</div>
@@ -73,10 +73,10 @@ const publicProfileDomain =
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Solo para tu cuenta y acceso interno.</p>
 						</div>
 						<div class="grid gap-5 sm:grid-cols-2">
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre<input name="first_name" required class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Apellido<input name="last_name" required class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre<input name="first_name" required class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Apellido<input name="last_name" required class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
 						</div>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electrónico<input name="email" readonly class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-4 py-3 text-[0.95rem] outline-none text-[color:var(--on-surface-variant)] cursor-not-allowed shadow-sm" /></label>
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electrónico<input name="email" readonly class="rounded-2xl border border-(--shell-border) bg-(--control-surface) px-4 py-3 text-[0.95rem] outline-none text-(--on-surface-variant) cursor-not-allowed shadow-sm" /></label>
 					</div>
 
 					<div data-settings-prof-fields class="hidden grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
@@ -85,10 +85,10 @@ const publicProfileDomain =
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Se mostrará en tu perfil público.</p>
 						</div>
 						<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-							<img data-settings-profile-preview class="hidden h-24 w-24 rounded-[1.25rem] border border-(--shell-border) object-cover shadow-sm bg-[color:var(--surface-bright)]" alt="Foto de perfil" />
+							<img data-settings-profile-preview class="hidden h-24 w-24 rounded-[1.25rem] border border-(--shell-border) object-cover shadow-sm bg-(--surface-bright)" alt="Foto de perfil" />
 							<div class="grid gap-2">
 								<input id="settings-profile-image-input" type="file" name="profile_image" accept="image/*" class="sr-only" />
-								<label for="settings-profile-image-input" class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-(--shell-border) bg-[color:var(--surface-bright)] px-5 py-2.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] transition hover:bg-[color:var(--surface-variant)] shadow-sm focus-within:ring-2 focus-within:ring-[color:var(--primary)] focus-within:ring-offset-2">
+								<label for="settings-profile-image-input" class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-2.5 text-[0.95rem] font-extrabold text-(--on-surface) transition hover:bg-(--surface-variant) shadow-sm focus-within:ring-2 focus-within:ring-(--primary) focus-within:ring-offset-2">
 									<span class="material-symbols-rounded mr-2 text-[1.2rem]">photo_camera</span>
 									Cambiar foto
 								</label>
@@ -102,17 +102,17 @@ const publicProfileDomain =
 							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Perfil público</h3>
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Estos datos se muestran a tus clientes en internet.</p>
 						</div>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Teléfono público<input name="phone_number" placeholder="Ej: 0981 123 456" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Teléfono público<input name="phone_number" placeholder="Ej: 0981 123 456" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							URL del perfil público <span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
 							<div class="flex shadow-sm rounded-2xl transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
-								<span data-settings-profile-slug-prefix class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-[color:var(--control-surface)] px-4 text-[0.95rem] font-medium text-[color:var(--on-surface-variant)]">
+								<span data-settings-profile-slug-prefix class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-medium text-(--on-surface-variant)">
 									{publicProfileDomain}/p/
 								</span>
 								<input
 									type="text"
 									name="profile_slug"
-									class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition focus:border-[color:var(--primary)]"
+									class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition focus:border-(--primary)"
 									placeholder="maria-lopez"
 								/>
 							</div>
@@ -126,7 +126,7 @@ const publicProfileDomain =
 					<div data-settings-profile-note class="hidden rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-[0.9rem] font-medium text-amber-700 dark:text-amber-400 shadow-sm"></div>
 					
 					<div class="flex justify-end pt-2">
-						<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)]">
+						<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">
 							<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">save</span>
 							Guardar perfil
 						</button>
@@ -149,7 +149,7 @@ const publicProfileDomain =
 							name="current_password"
 							autocomplete="current-password"
 							required
-							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 						/>
 					</label>
 					<div class="grid gap-5 sm:grid-cols-2">
@@ -161,7 +161,7 @@ const publicProfileDomain =
 							autocomplete="new-password"
 							required
 							minlength="8"
-							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 						/>
 					</label>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
@@ -172,7 +172,7 @@ const publicProfileDomain =
 							autocomplete="new-password"
 							required
 							minlength="8"
-							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 						/>
 					</label>
 					</div>
@@ -181,7 +181,7 @@ const publicProfileDomain =
 					</p>
 					</div>
 					<div class="flex justify-end pt-2 border-t border-(--shell-border) border-dashed">
-						<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)]">
+						<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">
 							<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">key</span>
 							Actualizar contraseña
 						</button>
@@ -199,7 +199,7 @@ const publicProfileDomain =
 					<div class="grid gap-5 sm:grid-cols-2">
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Tema del panel
 							<div class="relative">
-								<select name="panel_theme" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+								<select name="panel_theme" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 							<option value="light">Claro</option>
 							<option value="dark">Oscuro</option>
 						</select>
@@ -207,7 +207,7 @@ const publicProfileDomain =
 					</label>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Vista inicial calendario
 							<div class="relative">
-								<select name="calendar_view" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+								<select name="calendar_view" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 							<option value="timeGridDay">Diaria</option>
 							<option value="timeGridWeek">Semanal</option>
 							<option value="dayGridMonth">Mensual</option>
@@ -217,7 +217,7 @@ const publicProfileDomain =
 					</label>
 					</div>
 					<div class="flex justify-end pt-1">
-						<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)]">
+						<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">
 							Guardar panel
 						</button>
 					</div>
@@ -235,7 +235,7 @@ const publicProfileDomain =
 								<div class="grid gap-5 sm:grid-cols-2">
 									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Tema página pública
 										<div class="relative">
-											<select name="theme_pref" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+											<select name="theme_pref" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 										<option value="light">Claro</option>
 										<option value="dark">Oscuro</option>
 									</select>
@@ -249,7 +249,7 @@ const publicProfileDomain =
 										<img data-settings-logo-preview class="hidden h-16 w-16 rounded-2xl border border-(--shell-border) object-cover shadow-sm bg-(--surface-bright) p-1" alt="logo" />
 										<div class="grid gap-2">
 											<input id="settings-branding-logo-input" type="file" name="logo_file" accept="image/*" class="sr-only" />
-											<label for="settings-branding-logo-input" class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-2.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] transition hover:bg-[color:var(--surface-variant)] shadow-sm focus-within:ring-2 focus-within:ring-[color:var(--primary)] focus-within:ring-offset-2">
+											<label for="settings-branding-logo-input" class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-2.5 text-[0.95rem] font-extrabold text-(--on-surface) transition hover:bg-(--surface-variant) shadow-sm focus-within:ring-2 focus-within:ring-(--primary) focus-within:ring-offset-2">
 												<span class="material-symbols-rounded mr-2 text-[1.2rem]">image</span>
 												Subir logo
 											</label>
@@ -257,7 +257,7 @@ const publicProfileDomain =
 									</div>
 								</div>
 								<div class="flex justify-end pt-1">
-									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)]">
+									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">
 										Guardar página pública
 									</button>
 								</div>
@@ -278,13 +278,13 @@ const publicProfileDomain =
 									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Detalles principales de tu organización.</p>
 								</div>
 								<div class="grid gap-5 sm:grid-cols-2">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre del negocio<input name="name" required class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">WhatsApp público<input name="public_whatsapp" placeholder="Ej: 595981123456" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre del negocio<input name="name" required class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">WhatsApp público<input name="public_whatsapp" placeholder="Ej: 595981123456" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
 								</div>
 								<input type="hidden" name="profile_slug" />
-								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripción<textarea name="description" rows="4" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm resize-y"></textarea></label>
+								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripción<textarea name="description" rows="4" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm resize-y"></textarea></label>
 								<div class="flex justify-end pt-4 border-t border-(--shell-border) border-dashed">
-									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)]"><span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">store</span>Guardar negocio</button>
+									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)"><span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">store</span>Guardar negocio</button>
 								</div>
 							</form>
 						</section>
@@ -297,10 +297,10 @@ const publicProfileDomain =
 									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Ajustes regionales y de tiempo.</p>
 								</div>
 								<div class="grid gap-5 sm:grid-cols-2">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Zona horaria<input name="timezone" class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Zona horaria<input name="timezone" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
 									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Formato de hora
 										<div class="relative">
-											<select name="time_format" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10">
+											<select name="time_format" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 										<option value="24H">24 horas</option>
 										<option value="12H">12 horas</option>
 									</select>
@@ -308,7 +308,7 @@ const publicProfileDomain =
 								</label>
 								</div>
 								<div class="flex justify-end pt-4 border-t border-(--shell-border) border-dashed">
-									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)]">Guardar sistema</button>
+									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">Guardar sistema</button>
 								</div>
 							</form>
 						</section>
