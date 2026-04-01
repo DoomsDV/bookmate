@@ -198,7 +198,7 @@ const visiblePages = Array.from(
 		</div>
 
 		<dialog
-			class="w-[min(34rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
+			class="w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
 			data-service-modal
 		>
 			<div
@@ -278,7 +278,7 @@ const visiblePages = Array.from(
 						name="name"
 						maxlength="100"
 						required
-						class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+						class="w-full min-w-0 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 						placeholder="Ej: Corte premium"
 					/>
 					<span
@@ -303,7 +303,7 @@ const visiblePages = Array.from(
 							min="1"
 							step="1"
 							required
-							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							class="w-full min-w-0 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 							placeholder="Ej: 45"
 						/>
 						<span
@@ -324,7 +324,7 @@ const visiblePages = Array.from(
 							type="text"
 							name="price"
 							inputmode="numeric"
-							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							class="w-full min-w-0 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 							placeholder="Ej: 45.000"
 							data-price-mask
 						/>
@@ -364,11 +364,11 @@ const visiblePages = Array.from(
 				</label>
 
 				<div
-					class="sticky bottom-0 z-20 -mx-7 -mb-7 mt-5 flex flex-col-reverse sm:flex-row shrink-0 sm:items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
+					class="sticky bottom-0 z-20 mt-auto flex flex-col-reverse sm:flex-row shrink-0 sm:items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
 				>
 					<button
 						type="button"
-						class="hidden w-full sm:w-auto rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none"
+						class="hidden w-full sm:w-auto sm:mr-auto rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none"
 						data-delete-service
 					>
 						<span
@@ -378,29 +378,25 @@ const visiblePages = Array.from(
 						Eliminar
 					</button>
 
-					<div
-						class="sm:ml-auto w-full sm:w-auto grid grid-cols-2 sm:flex sm:flex-row items-center gap-3"
+					<button
+						type="button"
+						class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border)"
+						data-close-service-modal
 					>
-						<button
-							type="button"
-							class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border)"
-							data-close-service-modal
+						Cancelar
+					</button>
+					<button
+						type="submit"
+						class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none"
+						data-submit-service
+					>
+						<span
+							class="material-symbols-rounded text-[1.2rem] hidden sm:inline"
+							data-submit-service-icon>check</span
 						>
-							Cancelar
-						</button>
-						<button
-							type="submit"
-							class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none"
-							data-submit-service
+						<span data-submit-service-label>Crear servicio</span
 						>
-							<span
-								class="material-symbols-rounded text-[1.2rem] hidden sm:inline"
-								data-submit-service-icon>check</span
-							>
-							<span data-submit-service-label>Crear servicio</span
-							>
-						</button>
-					</div>
+					</button>
 				</div>
 				</fieldset>
 			</form>
