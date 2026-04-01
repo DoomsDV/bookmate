@@ -61,18 +61,18 @@ const visibleTeamItems = teamItems.filter((item) =>
 
 	<aside
 		id="app-side-nav"
-		class="relative h-full w-[min(20rem,100vw)] -translate-x-full overflow-y-auto border-r border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-6 transition duration-300"
+		class="relative h-full w-[min(20rem,100vw)] -translate-x-full overflow-y-auto border-r border-(--shell-border) bg-(--surface-bright) px-5 py-6 transition duration-300"
 		data-side-nav
 	>
 		<div class="mb-8 flex items-center justify-between">
 			<div>
 				<p
-					class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-[color:var(--on-surface-variant)]/75"
+					class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-(--on-surface-variant)/75"
 				>
 					Navegacion
 				</p>
 				<p
-					class="mt-2 [font-family:var(--font-logo)] text-[1.35rem] font-extrabold uppercase tracking-[0.08em] leading-none text-[color:var(--primary)]"
+					class="mt-2 [font-family:var(--font-logo)] text-[1.35rem] font-extrabold uppercase tracking-[0.08em] leading-none text-(--primary)"
 				>
 					Bookmate
 				</p>
@@ -80,7 +80,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 
 			<button
 				type="button"
-				class="flex size-10 items-center justify-center rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] text-[color:var(--on-surface-variant)] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-[color:var(--control-surface-strong)]"
+				class="flex size-10 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-[color:var(--control-surface-strong)]"
 				aria-label="Cerrar menú lateral"
 				data-side-nav-close
 			>
@@ -99,8 +99,8 @@ const visibleTeamItems = teamItems.filter((item) =>
 								class:list={[
 									"flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold no-underline transition",
 									isItemActive(item)
-										? "bg-[color:var(--primary-container)] text-[color:var(--primary)]"
-										: "text-[color:var(--on-surface)] hover:bg-[color:var(--sidebar-hover)]",
+										? "bg-(--primary-container) text-(--primary)"
+										: "text-(--on-surface) hover:bg-(--sidebar-hover)",
 								]}
 								data-side-nav-close
 							>
@@ -129,7 +129,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 									</span>
 								</summary>
 
-								<div class="ml-5 mt-1 border-l border-[color:var(--shell-border)] pl-4">
+								<div class="ml-5 mt-1 border-l border-(--shell-border) pl-4">
 									<ul class="space-y-1">
 										{visibleTeamItems.map((item) => (
 											<li>
@@ -138,8 +138,8 @@ const visibleTeamItems = teamItems.filter((item) =>
 													class:list={[
 														"flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition",
 														isItemActive(item)
-															? "bg-[color:var(--primary-container)] text-[color:var(--primary)]"
-															: "text-[color:var(--on-surface)] hover:bg-[color:var(--sidebar-hover)]",
+															? "bg-(--primary-container) text-(--primary)"
+															: "text-(--on-surface) hover:bg-(--sidebar-hover)",
 													]}
 													data-side-nav-close
 												>
@@ -159,7 +159,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 </div>
 
 <aside
-	class="hidden h-full border-r border-[color:var(--shell-border)]/85 bg-[color:var(--sidebar-surface)] transition-[width] duration-300 lg:block"
+	class="hidden h-full border-r border-(--shell-border)/85 bg-(--sidebar-surface) transition-[width] duration-300 lg:block"
 	data-desktop-sidebar
 >
 	<div
@@ -169,13 +169,13 @@ const visibleTeamItems = teamItems.filter((item) =>
 		<div class="flex items-center gap-3" data-sidebar-brand>
 			<div data-sidebar-brand-text>
 				<p
-					class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-[color:var(--on-surface-variant)]/75"
+					class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-(--on-surface-variant)/75"
 					data-sidebar-caption
 				>
 					Navegación
 				</p>
 				<p
-					class="mt-3 [font-family:var(--font-logo)] text-[1.45rem] font-extrabold uppercase tracking-[0.08em] leading-none text-[color:var(--primary)]"
+					class="mt-3 [font-family:var(--font-logo)] text-[1.45rem] font-extrabold uppercase tracking-[0.08em] leading-none text-(--primary)"
 					data-sidebar-title
 				>
 					Bookmate
@@ -194,8 +194,8 @@ const visibleTeamItems = teamItems.filter((item) =>
 								class:list={[
 									"flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold no-underline transition",
 									isItemActive(item)
-										? "bg-[color:var(--primary-container)] text-[color:var(--primary)]"
-										: "text-[color:var(--on-surface)] hover:bg-[color:var(--sidebar-hover)]",
+										? "bg-(--primary-container) text-(--primary)"
+										: "text-(--on-surface) hover:bg-(--sidebar-hover)",
 								]}
 							>
 								<span class="material-symbols-rounded shrink-0 text-[1.1rem]">
@@ -212,7 +212,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 						<li class="pt-2">
 							<details open class="group">
 								<summary
-									class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--sidebar-hover)]"
+									class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-(--primary) transition hover:bg-(--sidebar-hover)"
 									data-sidebar-summary
 								>
 									<span class="flex items-center gap-3">
@@ -230,7 +230,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 								</summary>
 
 								<div
-									class="ml-5 mt-1 border-l border-[color:var(--shell-border)] pl-4"
+									class="ml-5 mt-1 border-l border-(--shell-border) pl-4"
 									data-team-submenu
 								>
 									<ul class="space-y-1">
@@ -242,8 +242,8 @@ const visibleTeamItems = teamItems.filter((item) =>
 													class:list={[
 														"flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition",
 														isItemActive(item)
-															? "bg-[color:var(--control-surface-strong)] text-[color:var(--primary)]"
-															: "text-[color:var(--on-surface)] hover:bg-[color:var(--sidebar-hover)]",
+															? "bg-(--control-surface-strong) text-(--primary)"
+															: "text-(--on-surface) hover:bg-(--sidebar-hover)",
 													]}
 												>
 													<span data-sidebar-label>
@@ -262,16 +262,16 @@ const visibleTeamItems = teamItems.filter((item) =>
 		</nav>
 
 		<div
-			class="mt-auto rounded-[1.45rem] border border-[color:var(--shell-border)] bg-[color:var(--sidebar-card-surface)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
+			class="mt-auto rounded-[1.45rem] border border-(--shell-border) bg-(--sidebar-card-surface) p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
 			data-sidebar-footer
 		>
 			<p
-				class="text-xs font-bold uppercase tracking-[0.22em] text-[color:var(--on-surface-variant)]/75"
+				class="text-xs font-bold uppercase tracking-[0.22em] text-(--on-surface-variant)/75"
 			>
 				Estado
 			</p>
 			<p
-				class="mt-3 text-sm font-semibold text-[color:var(--on-surface)]"
+				class="mt-3 text-sm font-semibold text-(--on-surface)"
 				data-time-greeting
 			>
 				Buenos días
