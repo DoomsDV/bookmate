@@ -278,10 +278,12 @@ class CalendarManager extends HTMLElement {
 		const savedDate = localStorage.getItem('bookmate-calendar-default-date');
 		if (savedDate) localStorage.removeItem('bookmate-calendar-default-date');
 
+		const isMobile = window.innerWidth < 768;
+
 		this.calendar = new Calendar(requiredNodes.calendarEl, {
 			plugins: [interactionPlugin, dayGridPlugin, timeGridPlugin, listPlugin],
 			locale: esLocale,
-			initialView: this.getPreferredView(),
+			initialView: isMobile ? 'timeGridDay' : this.getPreferredView(),
 			initialDate: savedDate || undefined,
 			editable: true,
 			selectable: true,
@@ -291,10 +293,22 @@ class CalendarManager extends HTMLElement {
 			height: 'auto',
 			slotMinTime: '06:00:00',
 			slotMaxTime: '22:00:00',
-			headerToolbar: {
-				left: 'prev,next today',
-				center: 'title',
-				right: 'timeGridDay,timeGridWeek,dayGridMonth,listWeek',
+			headerToolbar: isMobile
+				? {
+						left: 'prev,next',
+						center: 'title',
+						right: 'today timeGridDay,listWeek',
+					}
+				: {
+						left: 'prev,next today',
+						center: 'title',
+						right: 'timeGridDay,timeGridWeek,dayGridMonth,listWeek',
+					},
+			views: {
+				timeGridWeek: {
+					type: 'timeGrid',
+					duration: { days: isMobile ? 3 : 7 },
+				},
 			},
 			buttonText: {
 				today: 'Hoy',
