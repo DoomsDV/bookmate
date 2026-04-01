@@ -264,9 +264,7 @@ class AppointmentModal extends HTMLElement {
 			const appointment = await this.client.getAppointment(appointmentId);
 			this.fillFormByAppointment(appointment);
 		} catch (error) {
-			this.showFormError(
-				error instanceof Error ? error.message : 'No fue posible cargar la cita seleccionada.'
-			);
+			this.handleApiError(error, 'No fue posible cargar la cita seleccionada.');
 			this.setCreateMode();
 		} finally {
 			this.setModalLoading(false);
@@ -363,6 +361,15 @@ class AppointmentModal extends HTMLElement {
 		}
 	}
 
+	private handleApiError(error: unknown, fallbackMessage: string) {
+		if (error instanceof ApiClientError) {
+			this.applyFieldErrors(error.fieldErrors);
+			this.showFormError(error.message);
+		} else {
+			this.showFormError(error instanceof Error ? error.message : fallbackMessage);
+		}
+	}
+
 	setModalLoading(value: boolean) {
 		this.isLoading = value;
 		this.modalLoadingNode?.classList.toggle('hidden', !value);
@@ -424,6 +431,7 @@ class AppointmentModal extends HTMLElement {
 
 		requiredNodes.modal.classList.add('is-closing');
 		this.closeTimer = window.setTimeout(() => {
+			if (!this.isConnected) return;
 			requiredNodes.modal.close();
 			requiredNodes.modal.classList.remove('is-closing');
 			this.closeTimer = null;
@@ -612,18 +620,12 @@ class AppointmentModal extends HTMLElement {
 				})
 			);
 		} catch (error) {
-			if (error instanceof ApiClientError) {
-				this.applyFieldErrors(error.fieldErrors);
-				this.showFormError(error.message);
-			} else {
-				this.showFormError(
-					error instanceof Error
-						? error.message
-						: this.mode === 'edit'
-							? 'No fue posible actualizar la cita.'
-							: 'No fue posible crear la cita.'
-				);
-			}
+			this.handleApiError(
+				error,
+				this.mode === 'edit'
+					? 'No fue posible actualizar la cita.'
+					: 'No fue posible crear la cita.'
+			);
 			this.setSubmittingState(false);
 		}
 	};
@@ -660,7 +662,7 @@ class AppointmentModal extends HTMLElement {
 				})
 			);
 		} catch (error) {
-			this.showFormError(error instanceof Error ? error.message : 'No fue posible eliminar la cita.');
+			this.handleApiError(error, 'No fue posible eliminar la cita.');
 			this.setSubmittingState(false);
 		}
 	};
