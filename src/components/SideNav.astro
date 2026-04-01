@@ -80,7 +80,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 
 			<button
 				type="button"
-				class="flex size-10 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-[color:var(--control-surface-strong)]"
+				class="flex size-10 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-(--control-surface-strong)"
 				aria-label="Cerrar menú lateral"
 				data-side-nav-close
 			>
@@ -117,7 +117,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 					visibleTeamItems.length > 0 && (
 						<li class="pt-2">
 							<details open class="group">
-								<summary class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-[color:var(--primary)] transition hover:bg-[color:var(--sidebar-hover)]">
+								<summary class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-(--primary) transition hover:bg-(--sidebar-hover)">
 									<span class="flex items-center gap-3">
 										<span class="material-symbols-rounded text-[1.1rem]">
 											groups
