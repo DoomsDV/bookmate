@@ -77,7 +77,7 @@ const visiblePages = Array.from(
 	<service-manager>
 		<div class="min-h-screen">
 			<div
-				class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+				class="app-shell grid min-h-screen overflow-hidden border border-(--shell-border) bg-(--shell-surface) shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
 				data-app-shell
 				data-sidebar-state="expanded"
 			>
@@ -87,12 +87,12 @@ const visiblePages = Array.from(
 					<TopBar />
 
 					<main
-						class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7"
+						class="bg-(--content-surface) px-5 py-5 sm:px-7 sm:py-7"
 					>
 						<section class="grid gap-6">
 							{
 								flashMessage ? (
-									<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
+									<div class="pointer-events-auto fixed right-4 top-24 z-70 w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
 										<FlashMessage
 											message={flashMessage}
 											type={flashType}
@@ -117,20 +117,20 @@ const visiblePages = Array.from(
 											showCreateAction={true}
 										/>
 
-										<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-											<p class="text-sm text-[color:var(--on-surface-variant)]">
+										<div class="flex flex-col gap-3 rounded-[1.2rem] border border-(--shell-border) bg-(--card-surface) px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p class="text-sm text-(--on-surface-variant)">
 												Pagina{" "}
-												<span class="font-semibold text-[color:var(--on-surface)]">
+												<span class="font-semibold text-(--on-surface)">
 													{safeCurrentPage}
 												</span>{" "}
 												de
-												<span class="font-semibold text-[color:var(--on-surface)]">
+												<span class="font-semibold text-(--on-surface)">
 													{" "}
 													{totalPages}
 												</span>
 												<span class="mx-2">-</span>
 												Total de
-												<span class="font-semibold text-[color:var(--on-surface)]">
+												<span class="font-semibold text-(--on-surface)">
 													{` ${pagination.total_records} `}
 												</span>
 												servicios
@@ -145,19 +145,19 @@ const visiblePages = Array.from(
 														href={toPageHref(
 															safeCurrentPage - 1,
 														)}
-														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+														class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
 													>
 														Anterior
 													</a>
 												) : (
-													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
+													<span class="cursor-not-allowed rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface-variant)/60">
 														Anterior
 													</span>
 												)}
 
 												{visiblePages.map((page) =>
 													page === safeCurrentPage ? (
-														<span class="rounded-lg border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-sm font-bold text-[color:var(--primary)]">
+														<span class="rounded-lg border border-(--primary-container) bg-(--primary-soft) px-3 py-1.5 text-sm font-bold text-(--primary)">
 															{page}
 														</span>
 													) : (
@@ -165,7 +165,7 @@ const visiblePages = Array.from(
 															href={toPageHref(
 																page,
 															)}
-															class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+															class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
 														>
 															{page}
 														</a>
@@ -177,12 +177,12 @@ const visiblePages = Array.from(
 														href={toPageHref(
 															safeCurrentPage + 1,
 														)}
-														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+														class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
 													>
 														Siguiente
 													</a>
 												) : (
-													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
+													<span class="cursor-not-allowed rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface-variant)/60">
 														Siguiente
 													</span>
 												)}
@@ -198,16 +198,16 @@ const visiblePages = Array.from(
 		</div>
 
 		<dialog
-			class="w-[min(34rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
+			class="w-[min(34rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
 			data-service-modal
 		>
 			<div
-				class="shrink-0 z-10 shadow-sm border-b border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-6"
+				class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-7 py-6"
 			>
 				<div class="flex items-start justify-between gap-4">
 					<div class="flex items-center gap-4">
 						<div
-							class="flex size-12 shrink-0 items-center justify-center rounded-[1rem] bg-[color:var(--primary-soft)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
+							class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary) shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
 						>
 							<span class="material-symbols-rounded text-[1.4rem]"
 								>design_services</span
@@ -215,13 +215,13 @@ const visiblePages = Array.from(
 						</div>
 						<div>
 							<h2
-								class="text-[1.2rem] font-extrabold tracking-tight text-[color:var(--on-surface)]"
+								class="text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)"
 								data-service-modal-title
 							>
 								Crear servicio
 							</h2>
 							<p
-								class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)] mt-0.5"
+								class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5"
 								data-service-modal-description
 							>
 								Completa los campos para registrar un nuevo
@@ -231,7 +231,7 @@ const visiblePages = Array.from(
 					</div>
 					<button
 						type="button"
-						class="flex size-9 shrink-0 items-center justify-center rounded-full text-[color:var(--on-surface-variant)] transition-colors hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]"
+						class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)"
 						data-close-service-modal
 						aria-label="Cerrar modal"
 					>
@@ -241,18 +241,18 @@ const visiblePages = Array.from(
 			</div>
 
 			<form
-				class="relative grid gap-5 px-7 py-7 bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
+				class="relative grid gap-5 px-7 py-7 bg-(--surface)/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
 				data-service-create-form
 			>
 				<div
-					class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-[color:var(--surface-bright)]/80 backdrop-blur-[2px] transition-all"
+					class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
 					data-service-loading
 				>
 					<div
-						class="inline-flex items-center gap-3 rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-3.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+						class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
 					>
 						<span
-							class="material-symbols-rounded animate-spin text-[1.2rem] text-[color:var(--primary)]"
+							class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)"
 							>progress_activity</span
 						>
 						Procesando...
@@ -264,9 +264,10 @@ const visiblePages = Array.from(
 					data-form-error
 				>
 				</div>
+				<fieldset data-form-fieldset class="contents">
 
 				<label
-					class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 				>
 					<span class="inline-flex items-center gap-1">
 						Nombre
@@ -277,7 +278,7 @@ const visiblePages = Array.from(
 						name="name"
 						maxlength="100"
 						required
-						class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+						class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 						placeholder="Ej: Corte premium"
 					/>
 					<span
@@ -287,11 +288,11 @@ const visiblePages = Array.from(
 
 				<div class="grid grid-cols-2 gap-5">
 					<label
-						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+						class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 					>
 						<span class="inline-flex items-center gap-1">
 							Duración <span
-								class="text-[color:var(--on-surface-variant)] font-medium"
+								class="text-(--on-surface-variant) font-medium"
 								>(min)</span
 							>
 							<span class="text-rose-500">*</span>
@@ -302,7 +303,7 @@ const visiblePages = Array.from(
 							min="1"
 							step="1"
 							required
-							class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 							placeholder="Ej: 45"
 						/>
 						<span
@@ -311,11 +312,11 @@ const visiblePages = Array.from(
 					</label>
 
 					<label
-						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+						class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 					>
 						<span class="inline-flex items-center gap-1">
 							Precio <span
-								class="text-[color:var(--on-surface-variant)] font-medium"
+								class="text-(--on-surface-variant) font-medium"
 								>(Opcional)</span
 							>
 						</span>
@@ -323,7 +324,7 @@ const visiblePages = Array.from(
 							type="text"
 							name="price"
 							inputmode="numeric"
-							class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 							placeholder="Ej: 45.000"
 							data-price-mask
 						/>
@@ -334,13 +335,13 @@ const visiblePages = Array.from(
 				</div>
 
 				<label
-					class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 				>
 					Estado
 					<div class="relative">
 						<select
 							name="is_active"
-							class="w-full appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 font-bold text-[color:var(--on-surface)] cursor-pointer shadow-sm"
+							class="w-full appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer shadow-sm"
 						>
 							<option value="1"
 								>Activo (Visible para clientes)</option
@@ -350,7 +351,7 @@ const visiblePages = Array.from(
 							>
 						</select>
 						<span
-							class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]"
+							class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)"
 						>
 							<span class="material-symbols-rounded"
 								>expand_more</span
@@ -363,7 +364,7 @@ const visiblePages = Array.from(
 				</label>
 
 				<div
-					class="sticky bottom-0 z-20 -mx-7 -mb-7 mt-5 flex shrink-0 items-center gap-3 border-t border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-5"
+					class="sticky bottom-0 z-20 -mx-7 -mb-7 mt-5 flex shrink-0 items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
 				>
 					<button
 						type="button"
@@ -382,14 +383,14 @@ const visiblePages = Array.from(
 					>
 						<button
 							type="button"
-							class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--shell-border)]"
+							class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border)"
 							data-close-service-modal
 						>
 							Cancelar
 						</button>
 						<button
 							type="submit"
-							class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)] disabled:opacity-60 disabled:pointer-events-none"
+							class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none"
 							data-submit-service
 						>
 							<span
@@ -401,6 +402,7 @@ const visiblePages = Array.from(
 						</button>
 					</div>
 				</div>
+				</fieldset>
 			</form>
 		</dialog>
 	</service-manager>
@@ -434,55 +436,78 @@ const visiblePages = Array.from(
 		private requestSeq = 0;
 
 		// Grouped DOM References
-		private els = {
-			modal: this.querySelector<HTMLDialogElement>(
-				"[data-service-modal]",
-			),
-			form: this.querySelector<HTMLFormElement>(
-				"[data-service-create-form]",
-			),
-			submitBtn: this.querySelector<HTMLButtonElement>(
-				"[data-submit-service]",
-			),
-			submitLabel: this.querySelector<HTMLElement>(
-				"[data-submit-service-label]",
-			),
-			submitIcon: this.querySelector<HTMLElement>(
-				"[data-submit-service-icon]",
-			),
-			deleteBtn: this.querySelector<HTMLButtonElement>(
-				"[data-delete-service]",
-			),
-			errorBox: this.querySelector<HTMLElement>("[data-form-error]"),
-			loading: this.querySelector<HTMLElement>("[data-service-loading]"),
-			modalTitle: this.querySelector<HTMLElement>(
-				"[data-service-modal-title]",
-			),
-			modalDesc: this.querySelector<HTMLElement>(
-				"[data-service-modal-description]",
-			),
-			priceInput:
-				this.querySelector<HTMLInputElement>("[data-price-mask]"),
+		private els!: {
+			modal: HTMLDialogElement | null;
+			form: HTMLFormElement | null;
+			submitBtn: HTMLButtonElement | null;
+			submitLabel: HTMLElement | null;
+			submitIcon: HTMLElement | null;
+			deleteBtn: HTMLButtonElement | null;
+			errorBox: HTMLElement | null;
+			loading: HTMLElement | null;
+			modalTitle: HTMLElement | null;
+			modalDesc: HTMLElement | null;
+			priceInput: HTMLInputElement | null;
 		};
 
-		private formEls = {
-			name: this.els.form?.querySelector<HTMLInputElement>(
-				'[name="name"]',
-			),
-			duration: this.els.form?.querySelector<HTMLInputElement>(
-				'[name="duration_minutes"]',
-			),
-			status: this.els.form?.querySelector<HTMLSelectElement>(
-				'[name="is_active"]',
-			),
-			fields: this.els.form?.querySelectorAll<
-				HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-			>("input, select, textarea"),
-			fieldErrors:
-				this.querySelectorAll<HTMLElement>("[data-field-error]"),
+		private formEls!: {
+			fieldset: HTMLFieldSetElement | null;
+			name: HTMLInputElement | null;
+			duration: HTMLInputElement | null;
+			status: HTMLSelectElement | null;
+			fieldErrors: HTMLElement[];
 		};
 
 		connectedCallback() {
+			this.els = {
+				modal: this.querySelector<HTMLDialogElement>(
+					"[data-service-modal]",
+				),
+				form: this.querySelector<HTMLFormElement>(
+					"[data-service-create-form]",
+				),
+				submitBtn: this.querySelector<HTMLButtonElement>(
+					"[data-submit-service]",
+				),
+				submitLabel: this.querySelector<HTMLElement>(
+					"[data-submit-service-label]",
+				),
+				submitIcon: this.querySelector<HTMLElement>(
+					"[data-submit-service-icon]",
+				),
+				deleteBtn: this.querySelector<HTMLButtonElement>(
+					"[data-delete-service]",
+				),
+				errorBox: this.querySelector<HTMLElement>("[data-form-error]"),
+				loading: this.querySelector<HTMLElement>("[data-service-loading]"),
+				modalTitle: this.querySelector<HTMLElement>(
+					"[data-service-modal-title]",
+				),
+				modalDesc: this.querySelector<HTMLElement>(
+					"[data-service-modal-description]",
+				),
+				priceInput:
+					this.querySelector<HTMLInputElement>("[data-price-mask]"),
+			};
+
+			this.formEls = {
+				fieldset: this.els.form?.querySelector<HTMLFieldSetElement>(
+					"[data-form-fieldset]"
+				) || null,
+				name: this.els.form?.querySelector<HTMLInputElement>(
+					'[name="name"]',
+				) || null,
+				duration: this.els.form?.querySelector<HTMLInputElement>(
+					'[name="duration_minutes"]',
+				) || null,
+				status: this.els.form?.querySelector<HTMLSelectElement>(
+					'[name="is_active"]',
+				) || null,
+				fieldErrors: Array.from(
+					this.querySelectorAll<HTMLElement>("[data-field-error]"),
+				),
+			};
+
 			if (this.abortController) return;
 			this.abortController = new AbortController();
 			const { signal } = this.abortController;
@@ -584,9 +609,9 @@ const visiblePages = Array.from(
 					? this.els.loading.classList.replace("hidden", "flex")
 					: this.els.loading.classList.replace("flex", "hidden");
 			}
-			this.formEls.fields?.forEach(
-				(field) => (field.disabled = isLoading),
-			);
+			if (this.formEls.fieldset) {
+				this.formEls.fieldset.disabled = isLoading;
+			}
 		}
 
 		private setButtonsProcessing(label = "Procesando...") {
@@ -673,14 +698,16 @@ const visiblePages = Array.from(
 			if (this.formEls.status) this.formEls.status.value = "1";
 		}
 
-		private async fetchJson(response: Response) {
-			try {
-				return await response.json();
-			} catch {
-				throw new Error(
-					"No fue posible interpretar la respuesta del servidor.",
-				);
+		private async requestApi<T = any>(url: string, options?: RequestInit): Promise<any> {
+			const response = await fetch(url, options);
+			let data = null;
+			try { data = await response.json(); } catch { throw new Error("No fue posible interpretar la respuesta del servidor."); }
+			if (!response.ok || !data || data.status !== "success") {
+				const error = new Error(data?.message || "Error en la petición.");
+				(error as any).apiData = data;
+				throw error;
 			}
+			return data;
 		}
 
 		private async openEditModal(serviceId: number) {
@@ -697,16 +724,9 @@ const visiblePages = Array.from(
 			this.setButtonsProcessing("Cargando...");
 
 			try {
-				const res = await fetch(`/api/services/${serviceId}`, {
+				const data = await this.requestApi(`/api/services/${serviceId}`, {
 					headers: { Accept: "application/json" },
 				});
-				const data = await this.fetchJson(res);
-
-				if (!res.ok || data?.status !== "success" || !data?.data) {
-					throw new Error(
-						data?.message || "Error al obtener el servicio.",
-					);
-				}
 				if (currentReq === this.requestSeq) this.fillForm(data.data);
 			} catch (err) {
 				if (currentReq !== this.requestSeq) return;
@@ -802,7 +822,7 @@ const visiblePages = Array.from(
 			this.setButtonsProcessing(isEdit ? "Guardando..." : "Creando...");
 
 			try {
-				const res = await fetch(
+				const data = await this.requestApi(
 					isEdit
 						? `/api/services/${this.editingServiceId}`
 						: "/api/services",
@@ -816,39 +836,30 @@ const visiblePages = Array.from(
 					},
 				);
 
-				const data = await this.fetchJson(res);
-				if (!res.ok || data?.status !== "success") {
-					this.showFormError(
-						data?.message ||
-							`Error al ${isEdit ? "actualizar" : "crear"} el servicio.`,
-					);
-					if (Array.isArray(data?.errors)) {
-						data.errors.forEach((err: any) => {
-							if (!err?.field || !err?.message) return;
-							const node = this.querySelector<HTMLElement>(
-								`[data-field-error="${err.field}"]`,
-							);
-							if (node) {
-								node.textContent = err.message;
-								node.classList.remove("hidden");
-							}
-						});
-					}
-					return;
-				}
-
 				this.closeModal();
 				this.navigateWithFlash(
 					data?.message ||
 						`Servicio ${isEdit ? "actualizado" : "creado"} correctamente.`,
 					"success",
 				);
-			} catch (err) {
+			} catch (err: any) {
 				this.showFormError(
 					err instanceof Error
 						? err.message
 						: "Error inesperado del servidor.",
 				);
+				if (err.apiData && Array.isArray(err.apiData.errors)) {
+					err.apiData.errors.forEach((errorItem: any) => {
+						if (!errorItem?.field || !errorItem?.message) return;
+						const node = this.querySelector<HTMLElement>(
+							`[data-field-error="${errorItem.field}"]`,
+						);
+						if (node) {
+							node.textContent = errorItem.message;
+							node.classList.remove("hidden");
+						}
+					});
+				}
 			} finally {
 				this.restoreButtons();
 			}
@@ -871,20 +882,13 @@ const visiblePages = Array.from(
 			this.setButtonsProcessing("Eliminando...");
 
 			try {
-				const res = await fetch(
+				const data = await this.requestApi(
 					`/api/services/${this.editingServiceId}`,
 					{
 						method: "DELETE",
 						headers: { Accept: "application/json" },
 					},
 				);
-				const data = await this.fetchJson(res);
-
-				if (!res.ok || data?.status !== "success") {
-					throw new Error(
-						data?.message || "Error al eliminar el servicio.",
-					);
-				}
 
 				this.closeModal();
 				this.navigateWithFlash(

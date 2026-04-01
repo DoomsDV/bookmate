@@ -24,7 +24,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 	<schedule-manager data-can-edit={!isProfessional ? 'true' : 'false'}>
 		<div class="min-h-screen">
 			<div
-				class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+				class="app-shell grid min-h-screen overflow-hidden border border-(--shell-border) bg-(--shell-surface) shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
 				data-app-shell
 				data-sidebar-state="expanded"
 			>
@@ -33,11 +33,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 				<div class="grid min-h-full grid-rows-[auto_1fr]">
 					<TopBar />
 
-					<main class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7">
-						<section class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-6 md:p-8 shadow-[0_6px_30px_rgba(0,0,0,0.03)] dark:shadow-none transition-all">
+					<main class="bg-(--content-surface) px-5 py-5 sm:px-7 sm:py-7">
+						<section class="rounded-[1.7rem] border border-(--shell-border) bg-(--surface-bright) p-6 md:p-8 shadow-[0_6px_30px_rgba(0,0,0,0.03)] dark:shadow-none transition-all">
 							{
 								flashMessage ? (
-									<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
+									<div class="pointer-events-auto fixed right-4 top-24 z-70 w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
 										<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
 									</div>
 								) : null
@@ -50,10 +50,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 									<div class="grid gap-6">
 										<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
 											<div class="grid gap-1">
-												<h1 class="text-[1.3rem] font-extrabold text-[color:var(--on-surface)]">
+												<h1 class="text-[1.3rem] font-extrabold text-(--on-surface)">
 													Horarios semanales
 												</h1>
-												<p class="text-[0.95rem] text-[color:var(--on-surface-variant)] leading-relaxed">
+												<p class="text-[0.95rem] text-(--on-surface-variant) leading-relaxed">
 													Configura la disponibilidad por profesional con turnos por sucursal.
 												</p>
 											</div>
@@ -62,7 +62,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 												!isProfessional && (
 													<button
 														type="button"
-														class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)] sm:w-auto w-full disabled:opacity-60 disabled:pointer-events-none"
+														class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) sm:w-auto w-full disabled:opacity-60 disabled:pointer-events-none"
 														data-save-schedule
 													>
 														<span class="material-symbols-rounded text-[1.2rem]">save</span>
@@ -73,18 +73,18 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 										</header>
 
 										<div class="grid gap-5 sm:grid-cols-2">
-											<label class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]">
+											<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 												<span class="inline-flex items-center gap-1">
 													Profesional
 													<span class="text-rose-500">*</span>
 												</span>
 												<select
 													data-professional-select
-													class="cursor-pointer appearance-none w-full rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-[color:var(--on-surface-variant)] focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-[position:calc(100%-12px)_center] bg-no-repeat pr-10"
+													class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
 												>
 													<option value="">Selecciona un profesional</option>
 												</select>
-												<span class="text-[0.85rem] font-medium text-[color:var(--on-surface-variant)] mt-1" data-professional-hint>
+												<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-1" data-professional-hint>
 													Selecciona una persona para ver o editar su agenda semanal.
 												</span>
 											</label>
@@ -95,9 +95,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 											data-schedule-error
 										></div>
 
-										<div class="mt-2 border-t border-[color:var(--shell-border)] border-dashed pt-6">
+										<div class="mt-2 border-t border-(--shell-border) border-dashed pt-6">
 											<div
-												class="mb-3 hidden rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-3 py-2 text-[0.9rem] font-medium text-[color:var(--on-surface-variant)]"
+												class="mb-3 hidden rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-medium text-(--on-surface-variant)"
 												data-schedule-loading
 											>
 												Cargando configuración de horarios...
