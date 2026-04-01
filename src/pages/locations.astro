@@ -263,6 +263,7 @@ const googleMapsApiKey =
 					</div>
 				</div>
 
+				<fieldset data-form-fieldset class="contents">
 				<div class="flex-1 px-7 py-7 grid gap-5">
 				<div
 					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
@@ -455,6 +456,7 @@ const googleMapsApiKey =
 						data-field-error="is_active"></span>
 				</label>
 				</div>
+				</fieldset>
 
 				<div
 					class="sticky bottom-0 z-20 mt-auto flex shrink-0 items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
@@ -566,6 +568,7 @@ const googleMapsApiKey =
 		private els!: {
 			modal: HTMLDialogElement | null;
 			form: HTMLFormElement | null;
+			fieldset: HTMLFieldSetElement | null;
 			submitBtn: HTMLButtonElement | null;
 			submitLabel: HTMLElement | null;
 			submitIcon: HTMLElement | null;
@@ -587,9 +590,6 @@ const googleMapsApiKey =
 			latitude: HTMLInputElement | null;
 			longitude: HTMLInputElement | null;
 			status: HTMLSelectElement | null;
-			fields: NodeListOf<
-				HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-			> | null;
 			fieldErrors: NodeListOf<HTMLElement>;
 		};
 
@@ -604,6 +604,9 @@ const googleMapsApiKey =
 				),
 				form: this.querySelector<HTMLFormElement>(
 					"[data-location-form]",
+				),
+				fieldset: this.querySelector<HTMLFieldSetElement>(
+					"[data-form-fieldset]",
 				),
 				submitBtn: this.querySelector<HTMLButtonElement>(
 					"[data-submit-location]",
@@ -667,12 +670,6 @@ const googleMapsApiKey =
 					this.els.form?.querySelector<HTMLSelectElement>(
 						'[name="is_active"]',
 					) ?? null,
-				fields:
-					this.els.form?.querySelectorAll<
-						| HTMLInputElement
-						| HTMLSelectElement
-						| HTMLTextAreaElement
-					>("input, select, textarea") ?? null,
 				fieldErrors:
 					this.querySelectorAll<HTMLElement>("[data-field-error]"),
 			};
@@ -1050,34 +1047,25 @@ const googleMapsApiKey =
 			}
 		};
 
+		private async requestApi<T = any>(url: string, options: RequestInit, fallbackError: string): Promise<any> {
+			const response = await fetch(url, options);
+			let data = null;
+			try { data = await response.json(); } catch { throw new Error("Error al interpretar respuesta del servidor."); }
+			if (!response.ok || !data || data.status !== "success") {
+				const error = new Error(data?.message || fallbackError);
+				(error as any).apiData = data; 
+				throw error;
+			}
+			return data;
+		}
+
 		private fetchCatalogResource = async <T = unknown,>(
 			url: string,
 		): Promise<T[]> => {
-			const response = await fetch(url, {
+			const data = await this.requestApi(url, {
 				method: "GET",
 				headers: { Accept: "application/json" },
-			});
-
-			let data = null;
-			try {
-				data = await response.json();
-			} catch {
-				throw new Error(
-					"No fue posible interpretar la respuesta de catálogos.",
-				);
-			}
-
-			if (
-				!response.ok ||
-				!data ||
-				data.status !== "success" ||
-				!Array.isArray(data.data)
-			) {
-				throw new Error(
-					data?.message || "No fue posible cargar catálogos.",
-				);
-			}
-
+			}, "No fue posible cargar catálogos.");
 			return data.data as T[];
 		};
 
@@ -1239,10 +1227,8 @@ const googleMapsApiKey =
 				}
 			}
 
-			if (this.formEls.fields) {
-				for (const field of this.formEls.fields) {
-					field.disabled = isLoading;
-				}
+			if (this.els.fieldset) {
+				this.els.fieldset.disabled = isLoading;
 			}
 			if (this.els.clearMapBtn) this.els.clearMapBtn.disabled = isLoading;
 			if (this.els.mapContainer)
@@ -1383,31 +1369,14 @@ const googleMapsApiKey =
 			this.setLoadingMode("Cargando...");
 
 			try {
-				const response = await fetch(`/api/locations/${locationId}`, {
-					method: "GET",
-					headers: { Accept: "application/json" },
-				});
-
-				let data = null;
-				try {
-					data = await response.json();
-				} catch {
-					throw new Error(
-						"Error al interpretar respuesta del servidor.",
-					);
-				}
-
-				if (
-					!response.ok ||
-					!data ||
-					data.status !== "success" ||
-					!data.data
-				) {
-					throw new Error(
-						data?.message ||
-							"No fue posible obtener la sucursal seleccionada.",
-					);
-				}
+				const data = await this.requestApi(
+					`/api/locations/${locationId}`,
+					{
+						method: "GET",
+						headers: { Accept: "application/json" },
+					},
+					"No fue posible obtener la sucursal seleccionada."
+				);
 
 				if (requestId !== this.locationReadRequestSeq) return;
 				const loc = data.data;
@@ -1488,26 +1457,14 @@ const googleMapsApiKey =
 			this.setLoadingMode("Eliminando...");
 
 			try {
-				const response = await fetch(
+				const data = await this.requestApi(
 					`/api/locations/${this.editingLocationId}`,
 					{
 						method: "DELETE",
 						headers: { Accept: "application/json" },
 					},
+					"No fue posible eliminar la sucursal."
 				);
-
-				let data = null;
-				try {
-					data = await response.json();
-				} catch {
-					throw new Error("Error al conectar con el servidor.");
-				}
-
-				if (!response.ok || !data || data.status !== "success") {
-					throw new Error(
-						data?.message || "No fue posible eliminar la sucursal.",
-					);
-				}
 
 				this.closeModal();
 				this.redirectWithFlash(
@@ -1530,16 +1487,14 @@ const googleMapsApiKey =
 			this.clearErrors();
 			if (!this.els.form) return;
 
-			const formData = new FormData(this.els.form);
-			const name = String(formData.get("name") || "").trim();
-			const address = String(formData.get("address") || "").trim();
-			const cityRaw = String(formData.get("cit_id_city") || "").trim();
-			const departmentRaw = String(
-				formData.get("dep_id_department") || "",
-			).trim();
-			const latitudeRaw = String(formData.get("latitude") || "").trim();
-			const longitudeRaw = String(formData.get("longitude") || "").trim();
-			const isActiveRaw = String(formData.get("is_active") || "1").trim();
+			const rawData = Object.fromEntries(new FormData(this.els.form).entries());
+			const name = String(rawData.name || "").trim();
+			const address = String(rawData.address || "").trim();
+			const cityRaw = String(rawData.cit_id_city || "").trim();
+			const departmentRaw = String(rawData.dep_id_department || "").trim();
+			const latitudeRaw = String(rawData.latitude || "").trim();
+			const longitudeRaw = String(rawData.longitude || "").trim();
+			const isActiveRaw = String(rawData.is_active || "1").trim();
 
 			const cityId = Number(cityRaw);
 			const departmentId = Number(departmentRaw);
@@ -1589,49 +1544,18 @@ const googleMapsApiKey =
 			);
 
 			try {
-				const response = await fetch(endpoint, {
-					method: httpMethod,
-					headers: {
-						"Content-Type": "application/json",
-						Accept: "application/json",
+				const data = await this.requestApi(
+					endpoint,
+					{
+						method: httpMethod,
+						headers: {
+							"Content-Type": "application/json",
+							Accept: "application/json",
+						},
+						body: JSON.stringify(payload),
 					},
-					body: JSON.stringify(payload),
-				});
-
-				let data = null;
-				try {
-					data = await response.json();
-				} catch {
-					throw new Error("Error al interpretar respuesta.");
-				}
-
-				if (!response.ok || !data || data.status !== "success") {
-					this.showFormError(
-						data?.message || "No fue posible guardar la sucursal.",
-					);
-					if (Array.isArray(data?.errors)) {
-						for (const error of data.errors) {
-							if (!error || typeof error !== "object") continue;
-							const field =
-								"field" in error
-									? String(error.field || "")
-									: "";
-							const messageText =
-								"message" in error
-									? String(error.message || "")
-									: "";
-							if (!field || !messageText) continue;
-							const fieldNode = this.querySelector(
-								`[data-field-error="${field}"]`,
-							);
-							if (fieldNode) {
-								fieldNode.textContent = messageText;
-								fieldNode.classList.remove("hidden");
-							}
-						}
-					}
-					return;
-				}
+					"No fue posible guardar la sucursal."
+				);
 
 				this.closeModal();
 				this.redirectWithFlash(
@@ -1641,12 +1565,25 @@ const googleMapsApiKey =
 							: "Sucursal creada."),
 					"success",
 				);
-			} catch (error) {
+			} catch (error: any) {
 				this.showFormError(
 					error instanceof Error
 						? error.message
 						: "No fue posible guardar la sucursal.",
 				);
+				if (error.apiData && Array.isArray(error.apiData.errors)) {
+					for (const err of error.apiData.errors) {
+						if (!err || typeof err !== "object") continue;
+						const field = "field" in err ? String(err.field || "") : "";
+						const messageText = "message" in err ? String(err.message || "") : "";
+						if (!field || !messageText) continue;
+						const fieldNode = this.querySelector(`[data-field-error="${field}"]`);
+						if (fieldNode) {
+							fieldNode.textContent = messageText;
+							fieldNode.classList.remove("hidden");
+						}
+					}
+				}
 			} finally {
 				this.restoreButtons();
 			}
