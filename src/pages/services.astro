@@ -364,11 +364,11 @@ const visiblePages = Array.from(
 				</label>
 
 				<div
-					class="sticky bottom-0 z-20 -mx-7 -mb-7 mt-5 flex shrink-0 items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
+					class="sticky bottom-0 z-20 -mx-7 -mb-7 mt-5 flex flex-col-reverse sm:flex-row shrink-0 sm:items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
 				>
 					<button
 						type="button"
-						class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none"
+						class="hidden w-full sm:w-auto rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none"
 						data-delete-service
 					>
 						<span
@@ -379,7 +379,7 @@ const visiblePages = Array.from(
 					</button>
 
 					<div
-						class="ml-auto w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3"
+						class="sm:ml-auto w-full sm:w-auto grid grid-cols-2 sm:flex sm:flex-row items-center gap-3"
 					>
 						<button
 							type="button"
