@@ -752,16 +752,20 @@ const publicProfileDomain =
 			if (logoFile) logoFile.value = '';
 		}
 
-		private getWorkspacePayload() {
-			return {
-				name: String(this.querySelector<HTMLInputElement>('[data-settings-workspace-form] [name="name"]')?.value || '').trim(),
-				profile_slug: String(this.querySelector<HTMLInputElement>('[data-settings-workspace-form] [name="profile_slug"]')?.value || '').trim(),
-				description: String(this.querySelector<HTMLTextAreaElement>('[data-settings-workspace-form] [name="description"]')?.value || '').trim(),
-				public_whatsapp: String(this.querySelector<HTMLInputElement>('[data-settings-workspace-form] [name="public_whatsapp"]')?.value || '').trim(),
-				timezone: String(this.querySelector<HTMLInputElement>('[data-settings-system-form] [name="timezone"]')?.value || '').trim(),
-				time_format: String(this.querySelector<HTMLSelectElement>('[data-settings-system-form] [name="time_format"]')?.value || '').trim(),
-				theme_pref: String(this.querySelector<HTMLSelectElement>('[data-settings-branding-form] [name="theme_pref"]')?.value || '').trim(),
-			};
+		private getWorkspacePayload(): Record<string, string> {
+			const payload: Record<string, string> = {};
+			const forms = [this.els.workspaceForm, this.els.systemForm, this.els.brandingForm];
+
+			for (const form of forms) {
+				if (!form) continue;
+				const formData = new FormData(form);
+				for (const [key, value] of formData.entries()) {
+					if (typeof value === 'string') {
+						payload[key] = value.trim();
+					}
+				}
+			}
+			return payload;
 		}
 
 		private async loadData() {
@@ -891,60 +895,55 @@ const publicProfileDomain =
 			this.showFeedback('preferences', 'Preferencias guardadas correctamente.', 'success');
 		};
 
-		private handleWorkspaceSubmit = async (event: SubmitEvent) => {
-			event.preventDefault();
+		private async saveWorkspaceSettings(panel: string, extraPayload: Record<string, string> = {}) {
 			this.clearFeedback();
 			try {
-				const data = await this.requestApi('/api/workspace', {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-					body: JSON.stringify(this.getWorkspacePayload()),
-				}, 'No fue posible guardar negocio.');
-				this.showFeedback('workspace', this.readApiMessage(data, 'Negocio actualizado correctamente.'), 'success');
-				await this.loadData();
-			} catch (error) {
-				this.showFeedback('workspace', error instanceof Error ? error.message : 'No fue posible guardar negocio.', 'error');
-			}
-		};
-
-		private handleBrandingSubmit = async (event: SubmitEvent) => {
-			event.preventDefault();
-			this.clearFeedback();
-			if (!this.els.brandingForm) return;
-			try {
-				const payload: Record<string, string> = this.getWorkspacePayload();
-				const logoFile = this.els.brandingForm.querySelector<HTMLInputElement>('[name="logo_file"]')?.files?.[0];
-				if (logoFile) {
-					payload.logo_base64 = await this.fileToBase64(logoFile);
-					payload.logo_name = logoFile.name;
-					payload.logo_mime = logoFile.type || 'application/octet-stream';
-				}
+				const payload = { ...this.getWorkspacePayload(), ...extraPayload };
 				const data = await this.requestApi('/api/workspace', {
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 					body: JSON.stringify(payload),
-				}, 'No fue posible guardar personalización.');
-				this.showFeedback('branding', this.readApiMessage(data, 'Personalización guardada correctamente.'), 'success');
+				}, 'No fue posible guardar la configuración.');
+
+				let successMessage = 'Configuración guardada correctamente.';
+				if (panel === 'workspace') successMessage = 'Negocio actualizado correctamente.';
+				if (panel === 'branding') successMessage = 'Personalización guardada correctamente.';
+				if (panel === 'system') successMessage = 'Sistema actualizado correctamente.';
+
+				this.showFeedback(panel, this.readApiMessage(data, successMessage), 'success');
 				await this.loadData();
 			} catch (error) {
-				this.showFeedback('branding', error instanceof Error ? error.message : 'No fue posible guardar personalización.', 'error');
+				let errorMessage = 'No fue posible guardar la configuración.';
+				if (panel === 'workspace') errorMessage = 'No fue posible guardar negocio.';
+				if (panel === 'branding') errorMessage = 'No fue posible guardar personalización.';
+				if (panel === 'system') errorMessage = 'No fue posible guardar sistema.';
+
+				this.showFeedback(panel, error instanceof Error ? error.message : errorMessage, 'error');
 			}
+		}
+
+		private handleWorkspaceSubmit = async (event: SubmitEvent) => {
+			event.preventDefault();
+			await this.saveWorkspaceSettings('workspace');
+		};
+
+		private handleBrandingSubmit = async (event: SubmitEvent) => {
+			event.preventDefault();
+			const extraPayload: Record<string, string> = {};
+			if (this.els.brandingForm) {
+				const logoFile = this.els.brandingForm.querySelector<HTMLInputElement>('[name="logo_file"]')?.files?.[0];
+				if (logoFile) {
+					extraPayload.logo_base64 = await this.fileToBase64(logoFile);
+					extraPayload.logo_name = logoFile.name;
+					extraPayload.logo_mime = logoFile.type || 'application/octet-stream';
+				}
+			}
+			await this.saveWorkspaceSettings('branding', extraPayload);
 		};
 
 		private handleSystemSubmit = async (event: SubmitEvent) => {
 			event.preventDefault();
-			this.clearFeedback();
-			try {
-				const data = await this.requestApi('/api/workspace', {
-					method: 'PUT',
-					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-					body: JSON.stringify(this.getWorkspacePayload()),
-				}, 'No fue posible guardar sistema.');
-				this.showFeedback('system', this.readApiMessage(data, 'Sistema actualizado correctamente.'), 'success');
-				await this.loadData();
-			} catch (error) {
-				this.showFeedback('system', error instanceof Error ? error.message : 'No fue posible guardar sistema.', 'error');
-			}
+			await this.saveWorkspaceSettings('system');
 		};
 	}
 
