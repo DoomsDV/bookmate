@@ -13,12 +13,12 @@ const workspaceName = cachedOrganizationName || 'Bookmate';
 const roleId = Number(Astro.locals.roleId ?? 0);
 ---
 
-<header class="relative z-40 border-b border-[color:var(--shell-border)]/80 px-5 py-5 sm:px-7">
+<header class="relative z-40 border-b border-(--shell-border)/80 px-5 py-5 sm:px-7">
 	<div class="flex items-center justify-between gap-4">
 		<div class="flex items-center gap-3">
 			<button
 				type="button"
-				class="flex size-11 items-center justify-center rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] text-[color:var(--on-surface-variant)] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-[color:var(--control-surface-strong)]"
+				class="flex size-11 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-(--control-surface-strong)"
 					aria-label="Alternar menú lateral"
 				aria-controls="app-side-nav"
 				aria-expanded="false"
@@ -28,12 +28,12 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 			</button>
 
 			<div>
-				<p class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-[color:var(--on-surface-variant)]/80">
+				<p class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-(--on-surface-variant)/80">
 					{workspaceName} workspace
 				</p>
 				<a href="/" class="mt-1 block no-underline">
 					<span
-						class="[font-family:var(--font-logo)] text-[1.55rem] font-extrabold uppercase leading-none tracking-[0.08em] text-[color:var(--primary)]"
+						class="[font-family:var(--font-logo)] text-[1.55rem] font-extrabold uppercase leading-none tracking-[0.08em] text-(--primary)"
 					>
 						{workspaceName}
 					</span>
@@ -44,7 +44,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 		<div class="flex items-center gap-3">
 			<button
 				type="button"
-				class="flex size-11 items-center justify-center rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] text-[color:var(--on-surface-variant)] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-[color:var(--control-surface-strong)] sm:hidden"
+				class="flex size-11 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-(--control-surface-strong) sm:hidden"
 				aria-label="Cambiar tema"
 				aria-pressed="false"
 				data-theme-toggle-mobile
@@ -54,7 +54,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 
 			<button
 				type="button"
-				class="hidden items-center gap-2 rounded-full border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-4 py-2 text-sm text-[color:var(--on-surface-variant)] shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-[color:var(--control-surface-strong)] sm:flex"
+				class="hidden items-center gap-2 rounded-full border border-(--shell-border) bg-(--control-surface) px-4 py-2 text-sm text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-(--control-surface-strong) sm:flex"
 				aria-label="Cambiar tema"
 				aria-pressed="false"
 				data-theme-toggle
@@ -65,26 +65,26 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 
 			<details class="group relative" data-profile-menu>
 				<summary
-					class="flex size-11 cursor-pointer list-none items-center justify-center rounded-2xl border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] text-sm font-bold tracking-[0.08em] text-[color:var(--primary)] outline-none transition duration-200 hover:bg-[color:var(--primary-soft-hover)] focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+					class="flex size-11 cursor-pointer list-none items-center justify-center rounded-2xl border border-(--primary-container) bg-(--primary-soft) text-sm font-bold tracking-[0.08em] text-(--primary) outline-none transition duration-200 hover:bg-(--primary-soft-hover) focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
 					aria-label={`Abrir menu de ${userName}`}
 				>
 					BM
 				</summary>
 
 				<div
-					class="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-[min(15rem,calc(100vw-3rem))] overflow-hidden rounded-[1.35rem] border border-[color:var(--shell-border)] bg-[color:var(--menu-surface)] py-2 shadow-[0_22px_60px_rgba(15,23,42,0.16)] backdrop-blur sm:min-w-52 sm:w-auto"
+					class="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-[min(15rem,calc(100vw-3rem))] overflow-hidden rounded-[1.35rem] border border-(--shell-border) bg-(--menu-surface) py-2 shadow-[0_22px_60px_rgba(15,23,42,0.16)] backdrop-blur sm:min-w-52 sm:w-auto"
 				>
 					<div class="border-b border-black/5 px-4 py-3">
-						<p class="text-sm font-semibold text-[color:var(--on-surface)]">{userName}</p>
-						<p class="text-xs text-[color:var(--on-surface-variant)]">Menú de cuenta</p>
+						<p class="text-sm font-semibold text-(--on-surface)">{userName}</p>
+						<p class="text-xs text-(--on-surface-variant)">Menú de cuenta</p>
 					</div>
 
 					<button
 						type="button"
-						class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-[color:var(--on-surface)] transition hover:bg-[color:var(--primary-container)]/45"
+						class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-(--on-surface) transition hover:bg-(--primary-container)/45"
 						data-open-settings-modal
 					>
-						<span class="material-symbols-rounded text-[1.15rem] text-[color:var(--on-surface-variant)]">
+						<span class="material-symbols-rounded text-[1.15rem] text-(--on-surface-variant)">
 							settings
 						</span>
 						Ajustes
