@@ -57,7 +57,7 @@ const tone = toneMap[type];
 			role="alert"
 			aria-live="polite"
 			class:list={[
-				'group relative overflow-hidden rounded-[1.2rem] border border-[color:var(--shell-border)] border-l-[6px] bg-[color:var(--surface-bright)] shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out',
+				'group relative overflow-hidden rounded-[1.2rem] border border-(--shell-border) border-l-[6px] bg-(--surface-bright) shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out',
 				tone.border,
 				expand ? 'w-full' : 'w-[min(100%,26rem)]',
 			]}
@@ -69,15 +69,15 @@ const tone = toneMap[type];
 				<span class:list={['material-symbols-rounded shrink-0 text-[1.4rem] tracking-normal', tone.iconColor]}>{tone.icon}</span>
 
 				<div class="min-w-0 flex-1 pt-[1.5px]">
-					<p class="text-[0.95rem] font-extrabold tracking-tight text-[color:var(--on-surface)]">{tone.title}</p>
-					<p class="mt-1 text-[0.9rem] font-medium leading-relaxed text-[color:var(--on-surface)]/80 dark:text-[color:var(--on-surface)]/90">{message}</p>
+					<p class="text-[0.95rem] font-extrabold tracking-tight text-(--on-surface)">{tone.title}</p>
+					<p class="mt-1 text-[0.9rem] font-medium leading-relaxed text-(--on-surface)/80 dark:text-(--on-surface)/90">{message}</p>
 				</div>
 
 				{
 					dismissible ? (
 						<button
 							type="button"
-							class="shrink-0 -mr-1 rounded-full p-1.5 text-[color:var(--on-surface-variant)]/70 transition hover:bg-[color:var(--shell-border)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/30"
+							class="shrink-0 -mr-1 rounded-full p-1.5 text-(--on-surface-variant)/70 transition hover:bg-(--shell-border) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)/30"
 							aria-label="Cerrar mensaje"
 							data-flash-close
 						>
@@ -89,7 +89,7 @@ const tone = toneMap[type];
 
 			{
 				autoHideMs > 0 ? (
-					<div class="absolute bottom-0 left-0 right-0 h-[4px] overflow-hidden rounded-b-[1.2rem] bg-black/5 dark:bg-white/5">
+					<div class="absolute bottom-0 left-0 right-0 h-1 overflow-hidden rounded-b-[1.2rem] bg-black/5 dark:bg-white/5">
 						<div
 							class:list={['h-full w-full origin-left opacity-90', tone.progressBg]}
 							style={`animation: flash-progress-bar ${autoHideMs}ms linear forwards;`}
