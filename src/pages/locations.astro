@@ -81,7 +81,7 @@ const googleMapsApiKey =
 	<location-manager data-google-maps-api-key={googleMapsApiKey}>
 		<div class="min-h-screen">
 			<div
-				class="app-shell grid min-h-screen overflow-hidden border border-[color:var(--shell-border)] bg-[color:var(--shell-surface)] shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+				class="app-shell grid min-h-screen overflow-hidden border border-(--shell-border) bg-(--shell-surface) shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
 				data-app-shell
 				data-sidebar-state="expanded"
 			>
@@ -91,12 +91,12 @@ const googleMapsApiKey =
 					<TopBar />
 
 					<main
-						class="bg-[color:var(--content-surface)] px-5 py-5 sm:px-7 sm:py-7"
+						class="bg-(--content-surface) px-5 py-5 sm:px-7 sm:py-7"
 					>
 						<section class="grid gap-6">
 							{
 								flashMessage ? (
-									<div class="pointer-events-auto fixed right-4 top-24 z-[70] w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
+									<div class="pointer-events-auto fixed right-4 top-24 z-70 w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
 										<FlashMessage
 											message={flashMessage}
 											type={flashType}
@@ -121,20 +121,20 @@ const googleMapsApiKey =
 											showCreateAction={true}
 										/>
 
-										<div class="flex flex-col gap-3 rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-											<p class="text-sm text-[color:var(--on-surface-variant)]">
+										<div class="flex flex-col gap-3 rounded-[1.2rem] border border-(--shell-border) bg-(--card-surface) px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+											<p class="text-sm text-(--on-surface-variant)">
 												Pagina{" "}
-												<span class="font-semibold text-[color:var(--on-surface)]">
+												<span class="font-semibold text-(--on-surface)">
 													{safeCurrentPage}
 												</span>{" "}
 												de
-												<span class="font-semibold text-[color:var(--on-surface)]">
+												<span class="font-semibold text-(--on-surface)">
 													{" "}
 													{totalPages}
 												</span>
 												<span class="mx-2">-</span>
 												Total de
-												<span class="font-semibold text-[color:var(--on-surface)]">
+												<span class="font-semibold text-(--on-surface)">
 													{` ${pagination.total_records} `}
 												</span>
 												sucursales
@@ -149,19 +149,19 @@ const googleMapsApiKey =
 														href={toPageHref(
 															safeCurrentPage - 1,
 														)}
-														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+														class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
 													>
 														Anterior
 													</a>
 												) : (
-													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
+													<span class="cursor-not-allowed rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface-variant)/60">
 														Anterior
 													</span>
 												)}
 
 												{visiblePages.map((page) =>
 													page === safeCurrentPage ? (
-														<span class="rounded-lg border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3 py-1.5 text-sm font-bold text-[color:var(--primary)]">
+														<span class="rounded-lg border border-(--primary-container) bg-(--primary-soft) px-3 py-1.5 text-sm font-bold text-(--primary)">
 															{page}
 														</span>
 													) : (
@@ -169,7 +169,7 @@ const googleMapsApiKey =
 															href={toPageHref(
 																page,
 															)}
-															class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+															class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
 														>
 															{page}
 														</a>
@@ -181,12 +181,12 @@ const googleMapsApiKey =
 														href={toPageHref(
 															safeCurrentPage + 1,
 														)}
-														class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface)] no-underline transition hover:bg-[color:var(--control-surface)]"
+														class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
 													>
 														Siguiente
 													</a>
 												) : (
-													<span class="cursor-not-allowed rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-sm font-semibold text-[color:var(--on-surface-variant)]/60">
+													<span class="cursor-not-allowed rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface-variant)/60">
 														Siguiente
 													</span>
 												)}
@@ -202,16 +202,16 @@ const googleMapsApiKey =
 		</div>
 
 		<dialog
-			class="w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-0 text-[color:var(--on-surface)] shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
+			class="w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
 			data-location-modal
 		>
 			<div
-				class="shrink-0 border-b border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-6 z-10 shadow-sm"
+				class="shrink-0 border-b border-(--shell-border) bg-(--surface-bright) px-7 py-6 z-10 shadow-sm"
 			>
 				<div class="flex items-start justify-between gap-4">
 					<div class="flex items-center gap-4">
 						<div
-							class="flex size-12 shrink-0 items-center justify-center rounded-[1rem] bg-[color:var(--primary-soft)] text-[color:var(--primary)] shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
+							class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary) shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
 						>
 							<span class="material-symbols-rounded text-[1.4rem]"
 								>storefront</span
@@ -219,13 +219,13 @@ const googleMapsApiKey =
 						</div>
 						<div>
 							<h2
-								class="text-[1.2rem] font-extrabold tracking-tight text-[color:var(--on-surface)]"
+								class="text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)"
 								data-location-modal-title
 							>
 								Crear sucursal
 							</h2>
 							<p
-								class="text-[0.9rem] font-medium text-[color:var(--on-surface-variant)] mt-0.5"
+								class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5"
 								data-location-modal-description
 							>
 								Completa los campos para registrar una nueva
@@ -235,7 +235,7 @@ const googleMapsApiKey =
 					</div>
 					<button
 						type="button"
-						class="flex size-9 shrink-0 items-center justify-center rounded-full text-[color:var(--on-surface-variant)] transition-colors hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]"
+						class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)"
 						data-close-location-modal
 						aria-label="Cerrar modal"
 					>
@@ -245,18 +245,18 @@ const googleMapsApiKey =
 			</div>
 
 			<form
-				class="relative flex flex-col bg-[color:var(--surface)]/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
+				class="relative flex flex-col bg-(--surface)/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
 				data-location-form
 			>
 				<div
-					class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center bg-[color:var(--surface-bright)]/80 backdrop-blur-[2px] transition-all"
+					class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
 					data-location-loading
 				>
 					<div
-						class="inline-flex items-center gap-3 rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-5 py-3.5 text-[0.95rem] font-extrabold text-[color:var(--on-surface)] shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+						class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
 					>
 						<span
-							class="material-symbols-rounded animate-spin text-[1.2rem] text-[color:var(--primary)]"
+							class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)"
 							>progress_activity</span
 						>
 						Procesando...
@@ -272,7 +272,7 @@ const googleMapsApiKey =
 
 				<div class="grid gap-5 sm:grid-cols-2">
 					<label
-						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+						class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 					>
 						<span class="inline-flex items-center gap-1">
 							Nombre
@@ -283,7 +283,7 @@ const googleMapsApiKey =
 							name="name"
 							maxlength="100"
 							required
-							class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 							placeholder="Ej: Casa Central"
 						/>
 						<span
@@ -292,7 +292,7 @@ const googleMapsApiKey =
 					</label>
 
 					<label
-						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+						class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 					>
 						<span class="inline-flex items-center gap-1">
 							Dirección
@@ -303,7 +303,7 @@ const googleMapsApiKey =
 							name="address"
 							maxlength="255"
 							required
-							class="rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 shadow-sm"
+							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 							placeholder="Ej: Av. Principal 123"
 						/>
 						<span
@@ -314,7 +314,7 @@ const googleMapsApiKey =
 
 				<div class="grid gap-5 sm:grid-cols-2">
 					<label
-						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+						class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 					>
 						<span class="inline-flex items-center gap-1">
 							Departamento
@@ -325,14 +325,14 @@ const googleMapsApiKey =
 								name="dep_id_department"
 								required
 								data-department-select
-								class="w-full appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 font-bold text-[color:var(--on-surface)] cursor-pointer shadow-sm"
+								class="w-full appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer shadow-sm"
 							>
 								<option value=""
 									>Selecciona un departamento</option
 								>
 							</select>
 							<span
-								class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]"
+								class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)"
 							>
 								<span class="material-symbols-rounded"
 									>expand_more</span
@@ -345,7 +345,7 @@ const googleMapsApiKey =
 					</label>
 
 					<label
-						class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+						class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 					>
 						<span class="inline-flex items-center gap-1">
 							Ciudad
@@ -357,14 +357,14 @@ const googleMapsApiKey =
 								required
 								disabled
 								data-city-select
-								class="w-full appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 font-bold text-[color:var(--on-surface)] cursor-pointer shadow-sm disabled:cursor-not-allowed disabled:opacity-70"
+								class="w-full appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer shadow-sm disabled:cursor-not-allowed disabled:opacity-70"
 							>
 								<option value=""
 									>Selecciona un departamento primero</option
 								>
 							</select>
 							<span
-								class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]"
+								class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)"
 							>
 								<span class="material-symbols-rounded"
 									>expand_more</span
@@ -380,15 +380,15 @@ const googleMapsApiKey =
 				<div class="grid gap-2">
 					<div class="flex items-center justify-between gap-2">
 						<p
-							class="text-[0.95rem] font-bold text-[color:var(--on-surface)]"
+							class="text-[0.95rem] font-bold text-(--on-surface)"
 						>
 							Ubicación en mapa <span
-								class="text-[color:var(--on-surface-variant)] font-medium"
+								class="text-(--on-surface-variant) font-medium"
 								>(Opcional)</span>
 						</p>
 						<button
 							type="button"
-							class="rounded-[0.8rem] border border-[color:var(--shell-border)] px-3 py-1.5 text-[0.8rem] font-extrabold text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--surface-variant)] disabled:cursor-not-allowed disabled:opacity-60"
+							class="rounded-[0.8rem] border border-(--shell-border) px-3 py-1.5 text-[0.8rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) disabled:cursor-not-allowed disabled:opacity-60"
 							data-clear-location-point
 						>
 							Limpiar punto
@@ -396,13 +396,13 @@ const googleMapsApiKey =
 					</div>
 
 					<div
-						class="overflow-hidden rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] shadow-sm"
+						class="overflow-hidden rounded-2xl border border-(--shell-border) bg-(--control-surface) shadow-sm"
 					>
-						<div class="h-[260px] w-full" data-location-map></div>
+						<div class="h-65 w-full" data-location-map></div>
 					</div>
 
 					<p
-						class="text-[0.85rem] font-medium text-[color:var(--on-surface-variant)] mt-1"
+						class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-1"
 						data-location-map-status
 					>
 						Haz clic en el mapa para registrar coordenadas exactas.
@@ -427,13 +427,13 @@ const googleMapsApiKey =
 				</div>
 
 				<label
-					class="grid gap-1.5 text-[0.95rem] font-bold text-[color:var(--on-surface)] pt-1"
+					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface) pt-1"
 				>
 					Estado
 					<div class="relative">
 						<select
 							name="is_active"
-							class="w-full appearance-none rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-4 py-3 text-[0.95rem] outline-none transition hover:border-[color:var(--on-surface-variant)]/40 focus:border-[color:var(--primary)] focus:ring-4 focus:ring-[color:var(--primary)]/10 font-bold text-[color:var(--on-surface)] cursor-pointer shadow-sm"
+							class="w-full appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer shadow-sm"
 						>
 							<option value="1"
 								>Activa (Visible para clientes)</option
@@ -443,7 +443,7 @@ const googleMapsApiKey =
 							>
 						</select>
 						<span
-							class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-[color:var(--on-surface-variant)]"
+							class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)"
 						>
 							<span class="material-symbols-rounded"
 								>expand_more</span
@@ -457,7 +457,7 @@ const googleMapsApiKey =
 				</div>
 
 				<div
-					class="sticky bottom-0 z-20 mt-auto flex shrink-0 items-center gap-3 border-t border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-7 py-5"
+					class="sticky bottom-0 z-20 mt-auto flex shrink-0 items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
 				>
 					<button
 						type="button"
@@ -476,14 +476,14 @@ const googleMapsApiKey =
 					>
 						<button
 							type="button"
-							class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-[color:var(--on-surface-variant)] transition hover:bg-[color:var(--surface-variant)] hover:text-[color:var(--on-surface)] focus:outline-none focus:ring-2 focus:ring-[color:var(--shell-border)]"
+							class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border)"
 							data-close-location-modal
 						>
 							Cancelar
 						</button>
 						<button
 							type="submit"
-							class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)] disabled:opacity-60 disabled:pointer-events-none"
+							class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none"
 							data-submit-location
 						>
 							<span
