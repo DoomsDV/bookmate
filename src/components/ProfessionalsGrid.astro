@@ -35,7 +35,7 @@ const activeCount = professionals.filter((item) => item.is_active === 1).length;
 const inactiveCount = professionals.length - activeCount;
 ---
 
-<section class="rounded-[1.7rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-6 md:p-8 shadow-[0_6px_30px_rgba(0,0,0,0.03)] dark:shadow-none transition-all">
+<section class="rounded-[1.7rem] border border-(--shell-border) bg-(--surface-bright) p-6 md:p-8 shadow-[0_6px_30px_rgba(0,0,0,0.03)] dark:shadow-none transition-all">
 	<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-8">
 		<div class="flex flex-wrap items-center gap-2.5 text-[0.82rem] font-bold">
 			<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 transition border border-emerald-500/10">
@@ -51,7 +51,7 @@ const inactiveCount = professionals.length - activeCount;
 		{showCreateAction && (
 			<button
 				type="button"
-				class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)] focus:ring-offset-2 focus:ring-offset-[color:var(--surface-bright)] sm:w-auto w-full"
+				class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) sm:w-auto w-full"
 				data-open-professional-modal
 			>
 				<span class="material-symbols-rounded text-[1.2rem]">add</span>
@@ -61,12 +61,12 @@ const inactiveCount = professionals.length - activeCount;
 	</header>
 
 	{professionals.length === 0 ? (
-		<div class="flex flex-col items-center justify-center rounded-[1.6rem] border-2 border-dashed border-[color:var(--shell-border)] bg-[color:var(--surface)]/40 px-6 py-14 text-center transition">
-			<div class="mb-4 flex size-16 items-center justify-center rounded-full bg-[color:var(--surface-variant)] text-[color:var(--on-surface-variant)] ring-[8px] ring-[color:var(--surface-bright)]">
+		<div class="flex flex-col items-center justify-center rounded-[1.6rem] border-2 border-dashed border-(--shell-border) bg-(--surface)/40 px-6 py-14 text-center transition">
+			<div class="mb-4 flex size-16 items-center justify-center rounded-full bg-(--surface-variant) text-(--on-surface-variant) ring-8 ring-(--surface-bright)">
 				<span class="material-symbols-rounded text-[2rem]">badge</span>
 			</div>
-			<h3 class="text-[1.1rem] font-bold text-[color:var(--on-surface)]">No hay profesionales registrados</h3>
-			<p class="mt-1.5 text-[0.95rem] text-[color:var(--on-surface-variant)] max-w-sm leading-relaxed">
+			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">No hay profesionales registrados</h3>
+			<p class="mt-1.5 text-[0.95rem] text-(--on-surface-variant) max-w-sm leading-relaxed">
 				Aún no has agregado a ningún profesional a esta organización. Comienza creando tu primer registro de personal.
 			</p>
 		</div>
@@ -74,17 +74,17 @@ const inactiveCount = professionals.length - activeCount;
 		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
 			{cardItems.map((item) => (
 				<article
-					class="group cursor-pointer relative overflow-hidden rounded-[1.5rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface-strong)] p-5.5 transition-all duration-300 hover:-translate-y-1 hover:border-[color:var(--primary)]/40 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--primary)] focus-visible:ring-offset-2"
+					class="group cursor-pointer relative overflow-hidden rounded-3xl border border-(--shell-border) bg-(--card-surface-strong) p-5.5 transition-all duration-300 hover:-translate-y-1 hover:border-(--primary)/40 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
 					data-professional-card
 					data-professional-id={item.professional.id_professional}
 					tabindex="0"
 					role="button"
 					aria-label={`Editar personal ${toDisplayName(item.professional)}`}
 				>
-					<div class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-[color:var(--primary)]/5 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></div>
+					<div class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-(--primary)/5 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></div>
 
 					<div class="relative flex items-start justify-between gap-4">
-						<div class="relative flex size-12 shrink-0 items-center justify-center rounded-xl bg-[color:var(--primary-soft)] text-[color:var(--primary)] transition-transform duration-300 group-hover:scale-105 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] overflow-hidden">
+						<div class="relative flex size-12 shrink-0 items-center justify-center rounded-xl bg-(--primary-soft) text-(--primary) transition-transform duration-300 group-hover:scale-105 shadow-[inset_0_1px_0_rgba(255,255,255,0.4)] overflow-hidden">
 							{item.profileImageUrl ? (
 								<img
 									src={item.profileImageUrl}
@@ -103,38 +103,38 @@ const inactiveCount = professionals.length - activeCount;
 								'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-widest border',
 								item.professional.is_active === 1
 									? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/10 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/20'
-									: 'bg-[color:var(--surface-variant)] text-[color:var(--on-surface-variant)] border-[color:var(--shell-border)]',
+									: 'bg-(--surface-variant) text-(--on-surface-variant) border-(--shell-border)',
 							]}
 						>
-							<span class:list={["size-1.5 rounded-full", item.professional.is_active === 1 ? "bg-emerald-500" : "bg-[color:var(--on-surface-variant)]"]}></span>
+							<span class:list={["size-1.5 rounded-full", item.professional.is_active === 1 ? "bg-emerald-500" : "bg-(--on-surface-variant)"]}></span>
 							{item.professional.is_active === 1 ? 'Activo' : 'Inactivo'}
 						</span>
 					</div>
 
 					<div class="relative mt-5">
-						<h3 class="text-[1.1rem] font-extrabold tracking-tight text-[color:var(--on-surface)] line-clamp-1 group-hover:text-[color:var(--primary)] transition-colors">
+						<h3 class="text-[1.1rem] font-extrabold tracking-tight text-(--on-surface) line-clamp-1 group-hover:text-(--primary) transition-colors">
 							{toDisplayName(item.professional)}
 						</h3>
-						<p class="mt-0.5 truncate text-[0.85rem] font-semibold text-[color:var(--on-surface-variant)]">
+						<p class="mt-0.5 truncate text-[0.85rem] font-semibold text-(--on-surface-variant)">
 							@{item.professional.user.apex_user_name || '-'}
 						</p>
 
 						<dl class="mt-4 shrink-0 grid gap-2.5">
-							<div class="flex items-center justify-between border-b border-[color:var(--shell-border)] border-dashed pb-2.5 text-[0.9rem]">
-								<dt class="flex items-center gap-1.5 text-[color:var(--on-surface-variant)] font-semibold">
+							<div class="flex items-center justify-between border-b border-(--shell-border) border-dashed pb-2.5 text-[0.9rem]">
+								<dt class="flex items-center gap-1.5 text-(--on-surface-variant) font-semibold">
 									<span class="material-symbols-rounded text-[1.1rem] opacity-70">workspace_premium</span>
 									Especialidad
 								</dt>
-								<dd class="font-bold text-[color:var(--on-surface)]">
+								<dd class="font-bold text-(--on-surface)">
 									{toSpecialtyName(item.professional)}
 								</dd>
 							</div>
 							<div class="flex items-center justify-between pt-0.5 text-[0.9rem]">
-								<dt class="flex items-center gap-1.5 text-[color:var(--on-surface-variant)] font-semibold">
+								<dt class="flex items-center gap-1.5 text-(--on-surface-variant) font-semibold">
 									<span class="material-symbols-rounded text-[1.1rem] opacity-70">call</span>
 									Teléfono
 								</dt>
-								<dd class="font-bold text-[color:var(--on-surface)]">
+								<dd class="font-bold text-(--on-surface)">
 									{item.professional.phone_number || '-'}
 								</dd>
 							</div>
