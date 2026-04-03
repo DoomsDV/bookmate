@@ -85,6 +85,7 @@ class AppointmentModal extends HTMLElement {
 	startInput: HTMLInputElement | null = null;
 	endInput: HTMLInputElement | null = null;
 	statusInput: HTMLSelectElement | null = null;
+	modalStatusWrap: HTMLElement | null = null;
 	modalProfessionalWrap: HTMLElement | null = null;
 	modalProfessional: HTMLSelectElement | null = null;
 	modalLocation: HTMLSelectElement | null = null;
@@ -119,6 +120,8 @@ class AppointmentModal extends HTMLElement {
 		this.startInput = this.form?.querySelector<HTMLInputElement>('[name="start_time"]') ?? null;
 		this.endInput = this.form?.querySelector<HTMLInputElement>('[name="end_time"]') ?? null;
 		this.statusInput = this.form?.querySelector<HTMLSelectElement>('[data-modal-status]') ?? null;
+		this.modalStatusWrap =
+			this.form?.querySelector<HTMLElement>('[data-modal-status-wrap]') ?? null;
 		this.modalProfessionalWrap =
 			this.form?.querySelector<HTMLElement>('[data-modal-professional-wrap]') ?? null;
 		this.modalProfessional =
@@ -472,6 +475,7 @@ class AppointmentModal extends HTMLElement {
 			this.statusInput.value = 'CONFIRMADO';
 			this.statusInput.disabled = true;
 		}
+		this.modalStatusWrap?.setAttribute('hidden', '');
 	}
 
 	setEditMode(appointmentId: number) {
@@ -486,6 +490,7 @@ class AppointmentModal extends HTMLElement {
 		this.deleteButton?.classList.remove('hidden');
 		if (this.deleteButton) this.deleteButton.disabled = false;
 		if (this.statusInput) this.statusInput.disabled = false;
+		this.modalStatusWrap?.removeAttribute('hidden');
 	}
 
 	fillFormByAppointment(appointment: AppointmentDetail) {

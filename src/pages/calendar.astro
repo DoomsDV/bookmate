@@ -115,10 +115,10 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 			class="w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
 			data-appointment-modal
 		>
-			<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-7 py-6">
+			<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6 ">
 				<div class="flex items-start justify-between gap-4">
 					<div class="flex items-center gap-4">
-						<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary) shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
+						<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
 							<span class="material-symbols-rounded text-[1.4rem]">calendar_add_on</span>
 						</div>
 						<div>
@@ -166,7 +166,10 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 						</label>
 
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-							Teléfono
+								<span class="inline-flex items-center gap-1">
+									Teléfono
+									<span class="text-rose-500">*</span>
+								</span>
 							<input
 								type="tel"
 								name="customer_phone"
@@ -230,7 +233,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="ser_id_service"></span>
 						</label>
 
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-modal-status-wrap hidden>
 							Estado
 							<select
 								name="status"
@@ -277,17 +280,17 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 					</div>
 				</div>
 
-				<div class="sticky bottom-0 z-20 mt-auto flex shrink-0 items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
+				<div class="sticky bottom-0 z-20 mt-auto flex flex-col-reverse sm:flex-row shrink-0 sm:items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
 					<button
 						type="button"
-						class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none"
+						class="hidden w-full sm:w-auto sm:mr-auto rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none"
 						data-delete-appointment
 					>
 						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
 						Eliminar
 					</button>
 
-					<div class="ml-auto w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
+					<div class="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
 						<button
 							type="button"
 							class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border) hidden sm:block"
@@ -355,6 +358,10 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 		color: var(--on-surface);
 	}
 
+	[data-calendar-root] .fc .fc-toolbar {
+		gap: 0.6rem;
+	}
+
 	[data-calendar-root] .fc .fc-button {
 		border-color: var(--shell-border);
 		background: var(--control-surface);
@@ -405,6 +412,66 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 
 	[data-calendar-root] .fc .fc-event-title {
 		font-weight: 700;
+	}
+
+	@media (max-width: 767px) {
+		[data-calendar-root] .fc .fc-toolbar.fc-header-toolbar {
+			margin-bottom: 0.9rem;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar {
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.65rem;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: 0.45rem;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk:first-child,
+		[data-calendar-root] .fc .fc-toolbar-chunk:nth-child(2) {
+			justify-content: flex-start;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk:last-child {
+			width: 100%;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk:last-child .fc-button-group {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			width: 100%;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk:last-child .fc-button {
+			width: 100%;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-title {
+			font-size: 1.22rem;
+			line-height: 1.2;
+			margin: 0;
+		}
+
+		[data-calendar-root] .fc .fc-button {
+			min-height: 2.45rem;
+			padding-inline: 0.8rem;
+			font-size: 0.92rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-slot-label-cushion,
+		[data-calendar-root] .fc .fc-timegrid-axis-cushion {
+			font-size: 0.78rem;
+		}
+
+		[data-calendar-root] .fc .fc-event {
+			border-radius: 0.5rem;
+			padding: 0.1rem 0.15rem;
+		}
 	}
 
 	@keyframes appointment-modal-in {

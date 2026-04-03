@@ -70,6 +70,7 @@ class CalendarManager extends HTMLElement {
 	private professionals: Option[] = [];
 	private locations: Option[] = [];
 	private services: Option[] = [];
+	private isMobileLayout = false;
 
 	private calendarEl: HTMLElement | null = null;
 	private loadingNode: HTMLElement | null = null;
@@ -115,6 +116,7 @@ class CalendarManager extends HTMLElement {
 			signal,
 		});
 		requiredNodes.locationFilter.addEventListener('change', this.handleLocationFilterChange, { signal });
+		window.addEventListener('resize', this.handleViewportResize, { signal });
 		this.addEventListener('appointment:changed', this.handleAppointmentChanged as EventListener, {
 			signal,
 		});
@@ -230,6 +232,64 @@ class CalendarManager extends HTMLElement {
 		return allowedViews.has(saved) ? saved : 'timeGridWeek';
 	}
 
+	private isMobileViewport() {
+		return window.innerWidth < 768;
+	}
+
+	private getHeaderToolbar(isMobile: boolean) {
+		return isMobile
+			? {
+					left: 'title',
+					center: 'prev,next today',
+					right: 'timeGridDay,listWeek',
+				}
+			: {
+					left: 'prev,next today',
+					center: 'title',
+					right: 'timeGridDay,timeGridWeek,dayGridMonth,listWeek',
+				};
+	}
+
+	private applyResponsiveCalendarLayout(force = false) {
+		if (!this.calendar) return;
+
+		const isMobile = this.isMobileViewport();
+		if (!force && this.isMobileLayout === isMobile) {
+			this.calendar.updateSize();
+			return;
+		}
+
+		this.isMobileLayout = isMobile;
+		this.calendar.setOption('headerToolbar', this.getHeaderToolbar(isMobile));
+		this.calendar.setOption('titleFormat',
+			isMobile
+				? {
+						year: 'numeric',
+						month: 'short',
+						day: 'numeric',
+					}
+				: {
+						year: 'numeric',
+						month: 'long',
+					}
+		);
+		this.calendar.setOption('views', {
+			timeGridWeek: {
+				type: 'timeGrid',
+				duration: { days: isMobile ? 3 : 7 },
+			},
+		});
+
+		if (isMobile) {
+			const currentView = this.calendar.view.type;
+			if (!['timeGridDay', 'listWeek'].includes(currentView)) {
+				this.calendar.changeView('timeGridDay');
+			}
+		}
+
+		this.calendar.updateSize();
+	}
+
 	private buildEventSource = (
 		info: { startStr: string; endStr: string },
 		successCallback: (eventInputs: EventInput[]) => void,
@@ -278,7 +338,8 @@ class CalendarManager extends HTMLElement {
 		const savedDate = localStorage.getItem('bookmate-calendar-default-date');
 		if (savedDate) localStorage.removeItem('bookmate-calendar-default-date');
 
-		const isMobile = window.innerWidth < 768;
+		const isMobile = this.isMobileViewport();
+		this.isMobileLayout = isMobile;
 
 		this.calendar = new Calendar(requiredNodes.calendarEl, {
 			plugins: [interactionPlugin, dayGridPlugin, timeGridPlugin, listPlugin],
@@ -293,23 +354,23 @@ class CalendarManager extends HTMLElement {
 			height: 'auto',
 			slotMinTime: '06:00:00',
 			slotMaxTime: '22:00:00',
-			headerToolbar: isMobile
-				? {
-						left: 'prev,next',
-						center: 'title',
-						right: 'today timeGridDay,listWeek',
-					}
-				: {
-						left: 'prev,next today',
-						center: 'title',
-						right: 'timeGridDay,timeGridWeek,dayGridMonth,listWeek',
-					},
+			headerToolbar: this.getHeaderToolbar(isMobile),
 			views: {
 				timeGridWeek: {
 					type: 'timeGrid',
 					duration: { days: isMobile ? 3 : 7 },
 				},
 			},
+			titleFormat: isMobile
+				? {
+						year: 'numeric',
+						month: 'short',
+						day: 'numeric',
+				  }
+				: {
+						year: 'numeric',
+						month: 'long',
+				  },
 			buttonText: {
 				today: 'Hoy',
 				week: 'Semana',
@@ -343,7 +404,12 @@ class CalendarManager extends HTMLElement {
 		});
 
 		this.calendar.render();
+		this.applyResponsiveCalendarLayout(true);
 	}
+
+	private handleViewportResize = () => {
+		this.applyResponsiveCalendarLayout();
+	};
 
 	private reloadCalendarEvents() {
 		if (this.calendar) {
