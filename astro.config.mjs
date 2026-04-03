@@ -24,9 +24,9 @@ export default defineConfig({
   
   // 3. ¡VOLVEMOS A PRENDER LA SEGURIDAD!
   security: {
-    checkOrigin: true
+    checkOrigin: false
   },
-
+  
   adapter: vercel(),
   integrations: [preact()],
 
