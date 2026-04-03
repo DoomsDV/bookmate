@@ -75,7 +75,7 @@ class AppointmentModal extends HTMLElement {
 	form: HTMLFormElement | null = null;
 	formErrorNode: HTMLElement | null = null;
 	modalLoadingNode: HTMLElement | null = null;
-	closeModalButton: HTMLButtonElement | null = null;
+	closeModalButtons: NodeListOf<HTMLButtonElement> | null = null;
 	submitButton: HTMLButtonElement | null = null;
 	submitLabel: HTMLElement | null = null;
 	submitIcon: HTMLElement | null = null;
@@ -103,8 +103,8 @@ class AppointmentModal extends HTMLElement {
 		this.fieldErrorNodes = this.form?.querySelectorAll<HTMLElement>('[data-field-error]') ?? null;
 		this.modalLoadingNode =
 			this.form?.querySelector<HTMLElement>('[data-appointment-loading]') ?? null;
-		this.closeModalButton =
-			this.form?.querySelector<HTMLButtonElement>('[data-close-appointment-modal]') ?? null;
+		this.closeModalButtons =
+			this.querySelectorAll<HTMLButtonElement>('[data-close-appointment-modal]');
 		this.submitButton =
 			this.form?.querySelector<HTMLButtonElement>('[data-submit-appointment]') ?? null;
 		this.submitLabel =
@@ -144,7 +144,9 @@ class AppointmentModal extends HTMLElement {
 
 		requiredNodes.form.addEventListener('submit', this.handleSubmit, { signal });
 		requiredNodes.modal.addEventListener('click', this.handleBackdropClick, { signal });
-		this.closeModalButton?.addEventListener('click', this.closeModal, { signal });
+		for (const closeButton of this.closeModalButtons ?? []) {
+			closeButton.addEventListener('click', this.closeModal, { signal });
+		}
 		requiredNodes.deleteButton.addEventListener('click', this.handleDelete, { signal });
 		requiredNodes.customerPhoneInput.addEventListener('input', this.handlePhoneInput, { signal });
 		requiredNodes.customerPhoneInput.addEventListener('blur', this.handlePhoneBlur, { signal });
