@@ -209,7 +209,7 @@ const visiblePages = Array.from(
 			</div>
 
 			<form
-				class="relative grid gap-5 px-7 py-7 bg-(--surface)/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
+				class="relative flex flex-col bg-(--surface)/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
 				data-specialty-form
 			>
 				<div
@@ -222,82 +222,69 @@ const visiblePages = Array.from(
 					</div>
 				</div>
 
-				<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
+				<div class="flex-1 px-7 py-7 grid gap-5">
+					<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
 
-				<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-					<span class="inline-flex items-center gap-1">
-						Nombre
-						<span class="text-rose-500">*</span>
-					</span>
-					<input
-						type="text"
-						name="name"
-						maxlength="100"
-						required
-						class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
-						placeholder="Ej: Colorimetría"
-					/>
-					<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="name"></span>
-				</label>
-
-				<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-					<span class="inline-flex items-center gap-1">
-						Descripción <span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
-					</span>
-					<textarea
-						name="description"
-						maxlength="255"
-						rows="3"
-						class="resize-y rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
-						placeholder="Describe brevemente la especialidad"
-					></textarea>
-					<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="description"></span>
-				</label>
-
-				<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-					Estado
-					<div class="relative">
-						<select
-							name="is_active"
-							class="w-full appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer shadow-sm"
-						>
-							<option value="1">Activa (Visible para todos)</option>
-							<option value="0">Inactiva (Oculta temporalmente)</option>
-						</select>
-						<span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-(--on-surface-variant) flex items-center">
-							<span class="material-symbols-rounded text-[1.2rem]">expand_more</span>
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+						<span class="inline-flex items-center gap-1">
+							Nombre
+							<span class="text-rose-500">*</span>
 						</span>
-					</div>
-					<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="is_active"></span>
-				</label>
+						<input
+							type="text"
+							name="name"
+							maxlength="100"
+							required
+							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							placeholder="Ej: Colorimetría"
+						/>
+						<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="name"></span>
+					</label>
 
-				<div class="mt-4 flex flex-col-reverse justify-between gap-3 pt-6 border-t border-(--shell-border)/50 sm:flex-row sm:items-center disabled-inside:opacity-60 disabled-inside:pointer-events-none">
-					<button
-						type="button"
-						class="hidden inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-bold text-rose-600 transition hover:bg-rose-500/20 focus:outline-none focus:ring-4 focus:ring-rose-500/10 sm:w-auto"
-						data-delete-specialty
-					>
-						<span class="material-symbols-rounded text-[1.1rem]">delete</span>
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+						<span class="inline-flex items-center gap-1">
+							Descripción <span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
+						</span>
+						<textarea
+							name="description"
+							maxlength="255"
+							rows="3"
+							class="resize-y rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							placeholder="Describe brevemente la especialidad"
+						></textarea>
+						<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="description"></span>
+					</label>
+
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+						Estado
+						<div class="relative">
+							<select
+								name="is_active"
+								class="w-full appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer shadow-sm"
+							>
+								<option value="1">Activa (Visible para todos)</option>
+								<option value="0">Inactiva (Oculta temporalmente)</option>
+							</select>
+							<span class="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-(--on-surface-variant) flex items-center">
+								<span class="material-symbols-rounded text-[1.2rem]">expand_more</span>
+							</span>
+						</div>
+						<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="is_active"></span>
+					</label>
+				</div>
+
+				<div class="sticky bottom-0 z-20 mt-auto flex flex-col-reverse sm:flex-row shrink-0 sm:items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
+					<button type="button" class="hidden items-center justify-center w-full sm:w-auto sm:mr-auto rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none" data-delete-specialty>
+						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
 						Eliminar
 					</button>
-
-					<div class="ml-auto flex w-full flex-col-reverse gap-3 sm:w-auto sm:flex-row sm:items-center">
-						<button
-							type="button"
-							class="inline-flex items-center justify-center gap-2 rounded-2xl border border-(--shell-border) bg-transparent px-5 py-3 text-[0.95rem] font-bold text-(--on-surface) transition hover:bg-(--surface-variant)/50 focus:outline-none focus:ring-4 focus:ring-(--surface-variant) sm:w-auto w-full"
-							data-close-specialty-modal
-						>
-							Cancelar
-						</button>
-						<button
-							type="submit"
-							class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-4 focus:ring-(--primary)/20 sm:w-auto w-full"
-							data-submit-specialty
-						>
-							<span class="material-symbols-rounded text-[1.2rem]" data-submit-specialty-icon>check</span>
-							<span data-submit-specialty-label>Crear especialidad</span>
-						</button>
-					</div>
+					<button type="button" class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border)" data-close-specialty-modal>
+						Cancelar
+					</button>
+					<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none" data-submit-specialty>
+						<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" data-submit-specialty-icon>check</span>
+						<span data-submit-specialty-label>Crear especialidad</span>
+					</button>
 				</div>
 			</form>
 		</dialog>

@@ -307,6 +307,19 @@ const publicProfileDomain =
 										</div>
 								</label>
 								</div>
+								
+								<div class="grid gap-5">
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Alertas de citas no respondidas
+										<div class="relative">
+											<select name="unanswered_alert_action" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
+												<option value="KEEP">Mantener la cita (Ignorar)</option>
+												<option value="CANCEL">Cancelar la cita automáticamente</option>
+											</select>
+										</div>
+										<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">Acción a tomar cuando un cliente no responde al recordatorio.</span>
+									</label>
+								</div>
+
 								<div class="flex justify-end pt-4 border-t border-(--shell-border) border-dashed">
 									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">Guardar sistema</button>
 								</div>
@@ -734,6 +747,7 @@ const publicProfileDomain =
 				const input = this.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(selector);
 				if (input) input.value = value || '';
 			};
+			
 			setValue('[data-settings-workspace-form] [name="name"]', workspace?.name);
 			setValue('[data-settings-workspace-form] [name="profile_slug"]', workspace?.profile_slug);
 			setValue('[data-settings-workspace-form] [name="public_whatsapp"]', workspace?.public_whatsapp);
@@ -741,6 +755,9 @@ const publicProfileDomain =
 			setValue('[data-settings-branding-form] [name="theme_pref"]', workspace?.theme_pref === 'dark' ? 'dark' : 'light');
 			setValue('[data-settings-system-form] [name="timezone"]', workspace?.timezone || 'America/Asuncion');
 			setValue('[data-settings-system-form] [name="time_format"]', workspace?.time_format === '12H' ? '12H' : '24H');
+			
+			// Aquí está la línea ya corregida apuntando al formulario correcto de sistema:
+			setValue('[data-settings-system-form] [name="unanswered_alert_action"]', workspace?.unanswered_alert_action === 'CANCEL' ? 'CANCEL' : 'KEEP');
 			
 			if (this.els.logoPreview && workspace?.logo_url) {
 				this.els.logoPreview.src = workspace.logo_url;
@@ -751,6 +768,7 @@ const publicProfileDomain =
 			const logoFile = this.els.brandingForm?.querySelector<HTMLInputElement>('[name="logo_file"]');
 			if (logoFile) logoFile.value = '';
 		}
+
 
 		private getWorkspacePayload(): Record<string, string> {
 			const payload: Record<string, string> = {};
@@ -943,7 +961,16 @@ const publicProfileDomain =
 
 		private handleSystemSubmit = async (event: SubmitEvent) => {
 			event.preventDefault();
-			await this.saveWorkspaceSettings('system');
+			
+			const extraPayload: Record<string, string> = {};
+			
+			// Extraemos y aseguramos explícitamente el campo para el JSON
+			const actionSelect = this.els.systemForm?.querySelector<HTMLSelectElement>('[name="unanswered_alert_action"]');
+			if (actionSelect) {
+				extraPayload.unanswered_alert_action = actionSelect.value;
+			}
+			
+			await this.saveWorkspaceSettings('system', extraPayload);
 		};
 	}
 
