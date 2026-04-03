@@ -8,6 +8,7 @@ import tailwindcss from '@tailwindcss/vite';
 
 // https://astro.build/config
 export default defineConfig({
+  site: 'https://bookmate-hazel.vercel.app',
   output: 'server',
   adapter: vercel(),
   integrations: [preact()],
