@@ -203,8 +203,28 @@ const visiblePages = Array.from(
 			<div class="flex-1 px-7 py-7">
 			<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 mb-5 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
 
+			<!-- Sección del Avatar Superior -->
+			<div class="mb-7 flex flex-col sm:flex-row items-center sm:items-start gap-6 rounded-[1.4rem] border border-(--shell-border) bg-(--surface) p-5 shadow-sm">
+				<div class="relative shrink-0 size-24 rounded-full overflow-hidden border-4 border-(--surface-bright) shadow-[0_4px_12px_rgba(0,0,0,0.08)] bg-(--surface-variant) flex items-center justify-center">
+					<img src="" alt="Vista previa" class="hidden size-full object-cover" data-profile-preview />
+					<span class="material-symbols-rounded text-[2.5rem] text-(--on-surface-variant)" data-profile-placeholder>account_circle</span>
+				</div>
+				<div class="flex-1 text-center sm:text-left flex flex-col justify-center h-full pt-1">
+					<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Foto de perfil</h3>
+					<p class="text-[0.85rem] text-(--on-surface-variant) mt-0.5 mb-3 leading-snug">Sube una imagen representativa. Solo formatos JPG o PNG.</p>
+					<div>
+						<label for="file-upload" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-(--surface-bright) border border-(--shell-border) px-4 py-2 text-sm font-bold text-(--on-surface) shadow-sm transition hover:bg-(--surface-variant) focus-within:ring-2 focus-within:ring-(--primary) focus-within:ring-offset-2 focus-within:ring-offset-(--surface)">
+							<span class="material-symbols-rounded text-[1.2rem] text-(--primary)">upload</span>
+							<span data-image-file-name>Cambiar foto</span>
+							<input id="file-upload" name="profile_image" type="file" class="sr-only" accept=".jpg,.jpeg,.png" />
+						</label>
+					</div>
+					<span class="hidden block mt-2 text-xs font-semibold text-rose-600" data-field-error="profile_image"></span>
+				</div>
+			</div>
+
 			<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-				<!-- Primera columna -->
+				<!-- Primera columna: Datos Personales y de Usuario -->
 				<fieldset class="flex flex-col gap-4 border-0 p-0 m-0">
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Nombre(s) <span class="text-rose-500">*</span></span>
@@ -247,30 +267,33 @@ const visiblePages = Array.from(
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="password"></span>
 					</label>
 
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">Rol de cuenta <span class="text-rose-500">*</span></span>
-						<select name="rol_id_role" required class="cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-semibold flex items-center justify-between outline-none transition hover:border-(--on-surface-variant) hover:bg-(--surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
-							<option value="">Cargando roles...</option>
-						</select>
-						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="rol_id_role"></span>
-					</label>
-					
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">Cuenta Activa</span>
-						<select name="user_is_active" class="cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-semibold flex items-center justify-between outline-none transition hover:border-(--on-surface-variant) hover:bg-(--surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
-							<option value="1">Sí (Activo)</option>
-							<option value="0">No (Inactivo)</option>
-						</select>
-					</label>
 				</fieldset>
 				
-				<!-- Segunda columna -->
+				<!-- Segunda columna: App, Roles y Configuración -->
 				<fieldset class="flex flex-col gap-4 border-0 p-0 m-0">
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+						<span class="inline-flex items-center gap-1">Rol de cuenta <span class="text-rose-500">*</span></span>
+						<div class="relative">
+							<select name="rol_id_role" required class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm">
+								<option value="">Cargando roles...</option>
+							</select>
+							<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)">
+								<span class="material-symbols-rounded">expand_more</span>
+							</span>
+						</div>
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="rol_id_role"></span>
+					</label>
+
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Especialidad Principal</span>
-						<select name="spe_id_specialty" class="cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-semibold flex items-center justify-between outline-none transition hover:border-(--on-surface-variant) hover:bg-(--surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
-							<option value="">Cargando especialidades...</option>
-						</select>
+						<div class="relative">
+							<select name="spe_id_specialty" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm">
+								<option value="">Cargando especialidades...</option>
+							</select>
+							<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)">
+								<span class="material-symbols-rounded">expand_more</span>
+							</span>
+						</div>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="spe_id_specialty"></span>
 					</label>
 
@@ -293,30 +316,32 @@ const visiblePages = Array.from(
 						<p class="mt-1 text-xs text-(--on-surface-variant)">Cargando servicios disponibles...</p>
 					</label>
 
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">Profesional Visible para Agendas</span>
-						<select name="prof_is_active" class="cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-semibold flex items-center justify-between outline-none transition hover:border-(--on-surface-variant) hover:bg-(--surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
-							<option value="1">Sí (Visible en app)</option>
-							<option value="0">No (Oculto)</option>
-						</select>
-					</label>
-					
-					<div class="grid gap-1.5 mt-2">
-						<span class="text-[0.95rem] font-bold text-(--on-surface)">Avatar del Profesional</span>
-						<div class="mt-2 flex justify-center rounded-2xl border border-dashed border-(--shell-border) px-6 py-6 transition-all hover:border-(--primary) hover:bg-(--primary-soft)" data-image-dropzone>
-							<div class="text-center cursor-pointer pointer-events-none">
-								<span class="material-symbols-rounded mx-auto text-3xl text-(--on-surface-variant)">image</span>
-								<div class="mt-3 flex text-sm leading-6 text-(--on-surface-variant)">
-									<label for="file-upload" class="cursor-pointer pointer-events-auto rounded-md font-semibold text-(--primary) focus-within:outline-none focus-within:ring-2 focus-within:ring-(--primary) focus-within:ring-offset-2 hover:text-(--primary-hover)">
-										<span>Sube un archivo</span>
-										<input id="file-upload" name="profile_image" type="file" class="sr-only" accept="image/*" />
-									</label>
-									<p class="pl-1">o arrastra y suelta</p>
-								</div>
-								<p class="text-xs leading-5 text-(--on-surface-variant)" data-image-file-name>PNG, JPG, GIF hasta 5MB</p>
+					<div class="grid grid-cols-2 gap-4">
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span class="inline-flex items-center gap-1">Visible en app</span>
+							<div class="relative">
+								<select name="prof_is_active" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm">
+									<option value="1">Sí</option>
+									<option value="0">No</option>
+								</select>
+								<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)">
+									<span class="material-symbols-rounded">expand_more</span>
+								</span>
 							</div>
-						</div>
-						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_image"></span>
+						</label>
+						
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span class="inline-flex items-center gap-1">Acceso activo</span>
+							<div class="relative">
+								<select name="user_is_active" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm">
+									<option value="1">Sí</option>
+									<option value="0">No</option>
+								</select>
+								<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)">
+									<span class="material-symbols-rounded">expand_more</span>
+								</span>
+							</div>
+						</label>
 					</div>
 				</fieldset>
 			</div>
@@ -358,8 +383,9 @@ const visiblePages = Array.from(
 			description: HTMLElement | null;
 			submitIcon: HTMLElement | null;
 			submitLabel: HTMLElement | null;
-			imageDropzone: HTMLElement | null;
 			imageFileName: HTMLElement | null;
+			previewImg: HTMLImageElement | null;
+			previewPlaceholder: HTMLElement | null;
 		};
 
 		private formEls!: {
@@ -419,8 +445,9 @@ const visiblePages = Array.from(
 				description: this.querySelector<HTMLElement>('[data-professional-modal-description]'),
 				submitIcon: this.querySelector<HTMLElement>('[data-submit-professional-icon]'),
 				submitLabel: this.querySelector<HTMLElement>('[data-submit-professional-label]'),
-				imageDropzone: this.querySelector<HTMLElement>('[data-image-dropzone]'),
 				imageFileName: this.querySelector<HTMLElement>('[data-image-file-name]'),
+				previewImg: this.querySelector<HTMLImageElement>('[data-profile-preview]'),
+				previewPlaceholder: this.querySelector<HTMLElement>('[data-profile-placeholder]'),
 			};
 
 			const formNode = this.els.form;
@@ -447,35 +474,7 @@ const visiblePages = Array.from(
 			this.addEventListener('click', this.handleRootClick, { signal });
 			this.addEventListener('keydown', this.handleRootKeydown, { signal });
 			this.els.form?.addEventListener('submit', this.handleSubmit, { signal });
-			
-			// Drag and drop image
-			['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-				this.els.imageDropzone?.addEventListener(eventName, (e) => {
-					e.preventDefault();
-					e.stopPropagation();
-				}, { signal });
-			});
-			this.els.imageDropzone?.addEventListener('dragenter', () => {
-				if (!this.formEls.image?.disabled) this.els.imageDropzone?.classList.add('is-dragover');
-			}, { signal });
-			this.els.imageDropzone?.addEventListener('dragover', () => {
-				if (!this.formEls.image?.disabled) this.els.imageDropzone?.classList.add('is-dragover');
-			}, { signal });
-			this.els.imageDropzone?.addEventListener('dragleave', () => {
-				this.els.imageDropzone?.classList.remove('is-dragover');
-			}, { signal });
-			this.els.imageDropzone?.addEventListener('drop', (e) => {
-				this.els.imageDropzone?.classList.remove('is-dragover');
-				if (!this.formEls.image || this.formEls.image.disabled) return;
-				const dragEvent = e as DragEvent;
-				const files = dragEvent.dataTransfer?.files;
-				if (!files || files.length === 0) return;
-				const droppedFile = Array.from(files).find(f => f.type.startsWith('image/')) || files[0];
-				const transfer = new DataTransfer();
-				transfer.items.add(droppedFile);
-				if (this.formEls.image) this.formEls.image.files = transfer.files;
-				this.setImageFileNameLabel();
-			}, { signal });
+
 			this.formEls.image?.addEventListener('change', () => this.setImageFileNameLabel(), { signal });
 
 			// Slug events
@@ -533,12 +532,6 @@ const visiblePages = Array.from(
 				return;
 			}
 
-			const dropzoneTrigger = target.closest('[data-image-dropzone]');
-			if (dropzoneTrigger && this.contains(dropzoneTrigger)) {
-				this.handleDropzoneClick();
-				return;
-			}
-
 			const openTrigger = target.closest('[data-open-professional-modal], [data-professional-card]');
 			if (!openTrigger || !this.contains(openTrigger)) return;
 
@@ -562,13 +555,6 @@ const visiblePages = Array.from(
 				event.preventDefault();
 				const id = Number(card.getAttribute('data-professional-id') || '0');
 				if (id > 0) void this.openEditModal(id);
-				return;
-			}
-
-			const dropzone = target.closest('[data-image-dropzone]');
-			if (dropzone && this.contains(dropzone)) {
-				event.preventDefault();
-				this.handleDropzoneClick();
 				return;
 			}
 		};
@@ -629,10 +615,6 @@ const visiblePages = Array.from(
 				isLoading ? this.servicesTom.disable() : this.servicesTom.enable();
 			}
 
-			if (this.els.imageDropzone) {
-				this.els.imageDropzone.classList.toggle('opacity-60', isLoading);
-				this.els.imageDropzone.classList.toggle('cursor-not-allowed', isLoading);
-			}
 		}
 
 		private setLoadingMessage(message: string) {
@@ -704,11 +686,24 @@ const visiblePages = Array.from(
 			if (!this.els.imageFileName) return;
 			const file = this.formEls.image?.files?.[0];
 			this.els.imageFileName.textContent = file ? file.name : 'No se eligio ningun archivo';
-		}
 
-		private handleDropzoneClick() {
-			if (!this.formEls.image || this.formEls.image.disabled) return;
-			this.formEls.image.click();
+			if (file) {
+				const reader = new FileReader();
+				reader.onload = (e) => {
+					if (this.els.previewImg) {
+						this.els.previewImg.src = e.target?.result as string;
+						this.els.previewImg.classList.remove('hidden');
+					}
+					if (this.els.previewPlaceholder) this.els.previewPlaceholder.classList.add('hidden');
+				};
+				reader.readAsDataURL(file);
+			} else if (this.mode === 'create') {
+				if (this.els.previewImg) {
+					this.els.previewImg.src = '';
+					this.els.previewImg.classList.add('hidden');
+				}
+				if (this.els.previewPlaceholder) this.els.previewPlaceholder.classList.remove('hidden');
+			}
 		}
 
 		private clearSlugSuggestTimer() {
@@ -907,6 +902,17 @@ const visiblePages = Array.from(
 				if (formEls.userActive) formEls.userActive.value = user.is_active === 0 ? '0' : '1';
 				if (formEls.profActive) formEls.profActive.value = prof.is_active === 0 ? '0' : '1';
 				
+				if (prof.profile_image_url) {
+					if (this.els.previewImg) {
+						this.els.previewImg.src = prof.profile_image_url;
+						this.els.previewImg.classList.remove('hidden');
+					}
+					if (this.els.previewPlaceholder) this.els.previewPlaceholder.classList.add('hidden');
+				} else {
+					if (this.els.previewImg) this.els.previewImg.classList.add('hidden');
+					if (this.els.previewPlaceholder) this.els.previewPlaceholder.classList.remove('hidden');
+				}
+
 				const sId = prof.specialty?.id_specialty;
 				if (formEls.specialty && sId) formEls.specialty.value = String(sId);
 				
@@ -1121,16 +1127,6 @@ const visiblePages = Array.from(
 		to {
 			opacity: 0;
 		}
-	}
-
-	dialog[data-professional-modal] [data-image-dropzone].is-dragover {
-		border-color: var(--primary);
-		background: var(--primary-soft);
-	}
-
-	dialog[data-professional-modal] [data-image-dropzone].is-disabled {
-		opacity: 0.6;
-		cursor: not-allowed;
 	}
 
 	dialog[data-professional-modal] .ts-wrapper {

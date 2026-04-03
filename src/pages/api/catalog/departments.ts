@@ -25,7 +25,10 @@ export const GET: APIRoute = async () => {
 				status: 'success',
 				data: departments,
 			},
-			{ status: 200 }
+			{ status: 200, headers:{
+				'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+				'Content-Type': 'application/json'
+			}}
 		);
 	} catch (error) {
 		return toErrorResponse(error, 'No fue posible obtener los departamentos.');

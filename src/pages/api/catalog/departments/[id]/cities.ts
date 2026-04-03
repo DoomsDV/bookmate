@@ -35,7 +35,10 @@ export const GET: APIRoute = async ({ params }) => {
 				status: 'success',
 				data: cities,
 			},
-			{ status: 200 }
+			{ status: 200, headers:{
+				'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+				'Content-Type': 'application/json'
+			}}
 		);
 	} catch (error) {
 		return toErrorResponse(
