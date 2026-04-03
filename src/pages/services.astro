@@ -198,16 +198,16 @@ const visiblePages = Array.from(
 		</div>
 
 		<dialog
-			class="w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
+			class="w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
 			data-service-modal
 		>
 			<div
-				class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-7 py-6"
+				class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6"
 			>
 				<div class="flex items-start justify-between gap-4">
 					<div class="flex items-center gap-4">
 						<div
-							class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary) shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]"
+							class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)"
 						>
 							<span class="material-symbols-rounded text-[1.4rem]"
 								>design_services</span
@@ -221,7 +221,7 @@ const visiblePages = Array.from(
 								Crear servicio
 							</h2>
 							<p
-								class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5"
+								class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5 hidden sm:block"
 								data-service-modal-description
 							>
 								Completa los campos para registrar un nuevo
@@ -241,7 +241,7 @@ const visiblePages = Array.from(
 			</div>
 
 			<form
-				class="relative grid gap-5 px-7 py-7 bg-(--surface)/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
+				class="relative flex flex-col bg-(--surface)/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
 				data-service-create-form
 			>
 				<div
@@ -259,12 +259,13 @@ const visiblePages = Array.from(
 					</div>
 				</div>
 
+				<fieldset data-form-fieldset class="flex flex-1 flex-col min-h-0">
+				<div class="flex-1 px-7 py-7 grid gap-5">
 				<div
 					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
 					data-form-error
 				>
 				</div>
-				<fieldset data-form-fieldset class="contents">
 
 				<label
 					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
@@ -363,6 +364,7 @@ const visiblePages = Array.from(
 						data-field-error="is_active"></span>
 				</label>
 
+				</div>
 				<div
 					class="sticky bottom-0 z-20 mt-auto flex flex-col-reverse sm:flex-row shrink-0 sm:items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
 				>
@@ -378,25 +380,27 @@ const visiblePages = Array.from(
 						Eliminar
 					</button>
 
-					<button
-						type="button"
-						class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border)"
-						data-close-service-modal
-					>
-						Cancelar
-					</button>
-					<button
-						type="submit"
-						class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none"
-						data-submit-service
-					>
-						<span
-							class="material-symbols-rounded text-[1.2rem] hidden sm:inline"
-							data-submit-service-icon>check</span
+					<div class="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
+						<button
+							type="button"
+							class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border) hidden sm:block"
+							data-close-service-modal
 						>
-						<span data-submit-service-label>Crear servicio</span
+							Cancelar
+						</button>
+						<button
+							type="submit"
+							class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none"
+							data-submit-service
 						>
-					</button>
+							<span
+								class="material-symbols-rounded text-[1.2rem] hidden sm:inline"
+								data-submit-service-icon>check</span
+							>
+							<span data-submit-service-label>Crear servicio</span
+							>
+						</button>
+					</div>
 				</div>
 				</fieldset>
 			</form>
