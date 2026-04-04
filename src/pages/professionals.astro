@@ -20,11 +20,10 @@ type FlashType = (typeof validFlashTypes)[number];
 const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
 	? (flashTypeRaw as FlashType)
 	: 'info';
-const rawPublicProfileDomain = String(
-	import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? Astro.url.origin
-).trim();
-const publicProfileDomain =
-	rawPublicProfileDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '') || Astro.url.host;
+const rawPublicProfilePrefix = String(import.meta.env.PUBLIC_PROFILE_DOMAIN ?? '').trim();
+const publicProfilePrefix = rawPublicProfilePrefix
+	? `${rawPublicProfilePrefix.replace(/\/+$/, '')}/`
+	: `${Astro.url.origin.replace(/\/+$/, '')}/p/`;
 
 let professionals: Professional[] = [];
 let loadError = '';
@@ -84,8 +83,8 @@ const visiblePages = Array.from(
 			<div class="grid min-h-full grid-rows-[auto_1fr]">
 				<TopBar />
 
-				<main class="bg-(--content-surface) px-5 py-5 sm:px-7 sm:py-7">
-					<section class="grid gap-6">
+				<main class="bg-(--content-surface) px-4 py-4 sm:px-6 sm:py-6">
+					<section class="grid gap-4 sm:gap-5">
 						{
 							flashMessage ? (
 								<div class="pointer-events-auto fixed right-4 top-24 z-70 w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
@@ -98,7 +97,7 @@ const visiblePages = Array.from(
 							loadError ? (
 								<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
 							) : (
-								<div class="grid gap-5">
+								<div class="grid gap-4">
 									<ProfessionalsGrid professionals={professionals} showCreateAction={true} />
 
 									<div class="flex flex-col gap-3 rounded-[1.2rem] border border-(--shell-border) bg-(--card-surface) px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
@@ -172,18 +171,18 @@ const visiblePages = Array.from(
 			</div>
 
 	<dialog
-		class="w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
+		class="w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
 		data-professional-modal
 	>
-		<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-7 py-6">
+		<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6">
 			<div class="flex items-start justify-between gap-4">
 				<div class="flex items-center gap-4">
-					<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary) shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
+					<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
 						<span class="material-symbols-rounded text-[1.4rem]">badge</span>
 					</div>
 					<div>
 						<h2 class="text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)" data-professional-modal-title>Crear personal</h2>
-						<p class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5" data-professional-modal-description>Completa los datos para registrar profesional y cuenta en una sola operación.</p>
+						<p class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5 hidden sm:block" data-professional-modal-description>Completa los datos para registrar profesional y cuenta en una sola operación.</p>
 					</div>
 				</div>
 				<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-close-professional-modal aria-label="Cerrar modal">
@@ -204,22 +203,22 @@ const visiblePages = Array.from(
 			<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 mb-5 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
 
 			<!-- Sección del Avatar Superior -->
-			<div class="mb-7 flex flex-col sm:flex-row items-center sm:items-start gap-6 rounded-[1.4rem] border border-(--shell-border) bg-(--surface) p-5 shadow-sm">
-				<div class="relative shrink-0 size-24 rounded-full overflow-hidden border-4 border-(--surface-bright) shadow-[0_4px_12px_rgba(0,0,0,0.08)] bg-(--surface-variant) flex items-center justify-center">
+			<div class="mb-5 sm:mb-7 flex flex-col sm:flex-row items-center sm:items-start gap-3.5 sm:gap-6 rounded-[1.2rem] sm:rounded-[1.4rem] border border-(--shell-border) bg-(--surface) p-3.5 sm:p-5 shadow-sm">
+				<div class="relative shrink-0 size-18 sm:size-24 rounded-full overflow-hidden border-2 sm:border-4 border-(--surface-bright) shadow-[0_3px_10px_rgba(0,0,0,0.08)] bg-(--surface-variant) flex items-center justify-center">
 					<img src="" alt="Vista previa" class="hidden size-full object-cover" data-profile-preview />
-					<span class="material-symbols-rounded text-[2.5rem] text-(--on-surface-variant)" data-profile-placeholder>account_circle</span>
+					<span class="material-symbols-rounded text-[2rem] sm:text-[2.5rem] text-(--on-surface-variant)" data-profile-placeholder>account_circle</span>
 				</div>
-				<div class="flex-1 text-center sm:text-left flex flex-col justify-center h-full pt-1">
-					<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Foto de perfil</h3>
-					<p class="text-[0.85rem] text-(--on-surface-variant) mt-0.5 mb-3 leading-snug">Sube una imagen representativa. Solo formatos JPG o PNG.</p>
+				<div class="flex-1 text-center sm:text-left flex flex-col justify-center h-full pt-0 sm:pt-1">
+					<h3 class="text-[1rem] sm:text-[1.05rem] font-bold text-(--on-surface)">Foto de perfil</h3>
+					<p class="text-[0.82rem] sm:text-[0.85rem] text-(--on-surface-variant) mt-0.5 mb-2.5 sm:mb-3 leading-snug">Sube una imagen representativa. Solo formatos JPG o PNG.</p>
 					<div>
-						<label for="file-upload" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-(--surface-bright) border border-(--shell-border) px-4 py-2 text-sm font-bold text-(--on-surface) shadow-sm transition hover:bg-(--surface-variant) focus-within:ring-2 focus-within:ring-(--primary) focus-within:ring-offset-2 focus-within:ring-offset-(--surface)">
+						<label for="file-upload" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-(--surface-bright) border border-(--shell-border) px-3.5 sm:px-4 py-2 text-sm font-bold text-(--on-surface) shadow-sm transition hover:bg-(--surface-variant) focus-within:ring-2 focus-within:ring-(--primary) focus-within:ring-offset-2 focus-within:ring-offset-(--surface)">
 							<span class="material-symbols-rounded text-[1.2rem] text-(--primary)">upload</span>
 							<span data-image-file-name>Cambiar foto</span>
 							<input id="file-upload" name="profile_image" type="file" class="sr-only" accept=".jpg,.jpeg,.png" />
 						</label>
 					</div>
-					<span class="hidden block mt-2 text-xs font-semibold text-rose-600" data-field-error="profile_image"></span>
+					<div class="hidden mt-2 text-xs font-semibold text-rose-600" data-field-error="profile_image"></div>
 				</div>
 			</div>
 
@@ -272,7 +271,7 @@ const visiblePages = Array.from(
 				<!-- Segunda columna: App, Roles y Configuración -->
 				<fieldset class="flex flex-col gap-4 border-0 p-0 m-0">
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">Rol de cuenta <span class="text-rose-500">*</span></span>
+						<span class="inline-flex items-center gap-1">Rol principal <span class="text-rose-500">*</span></span>
 						<div class="relative">
 							<select name="rol_id_role" required class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm">
 								<option value="">Cargando roles...</option>
@@ -285,7 +284,7 @@ const visiblePages = Array.from(
 					</label>
 
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">Especialidad Principal</span>
+						<span class="inline-flex items-center gap-1">Especialidad</span>
 						<div class="relative">
 							<select name="spe_id_specialty" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm">
 								<option value="">Cargando especialidades...</option>
@@ -300,8 +299,8 @@ const visiblePages = Array.from(
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">URL del Perfil Público (Opcional)</span>
 						<div class="flex">
-							<span class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-sm text-(--on-surface-variant) shadow-sm">
-								bookmate.com/
+							<span class="inline-flex max-w-[55%] sm:max-w-[65%] items-center truncate rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-xs sm:text-sm text-(--on-surface-variant) shadow-sm" title={publicProfilePrefix}>
+								{publicProfilePrefix}
 							</span>
 							<input type="text" name="profile_slug" maxlength="80" class="block w-full min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" placeholder="sarah-gomez"/>
 						</div>
@@ -352,7 +351,7 @@ const visiblePages = Array.from(
 					<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
 					Eliminar
 				</button>
-				<button type="button" class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border)" data-close-professional-modal>
+				<button type="button" class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border) hidden sm:block" data-close-professional-modal>
 					Cancelar
 				</button>
 				<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none" data-submit-professional>
