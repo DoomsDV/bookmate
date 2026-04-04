@@ -13,12 +13,12 @@ const workspaceName = cachedOrganizationName || 'Bookmate';
 const roleId = Number(Astro.locals.roleId ?? 0);
 ---
 
-<header class="relative z-40 border-b border-(--shell-border)/80 px-5 py-5 sm:px-7">
-	<div class="flex items-center justify-between gap-4">
-		<div class="flex items-center gap-3">
+<header class="relative z-40 border-b border-(--shell-border)/80 px-4 py-4 sm:px-6 sm:py-5">
+	<div class="flex items-center justify-between gap-3 sm:gap-4">
+		<div class="flex min-w-0 items-center gap-3">
 			<button
 				type="button"
-				class="flex size-11 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-(--control-surface-strong)"
+				class="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-(--control-surface-strong) sm:size-11"
 					aria-label="Alternar menú lateral"
 				aria-controls="app-side-nav"
 				aria-expanded="false"
@@ -27,13 +27,13 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 				<span class="material-symbols-rounded text-[1.2rem]">menu</span>
 			</button>
 
-			<div>
-				<p class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-(--on-surface-variant)/80">
+			<div class="min-w-0">
+				<p class="hidden text-[0.68rem] font-bold uppercase tracking-[0.28em] text-(--on-surface-variant)/80 sm:block">
 					{workspaceName} workspace
 				</p>
-				<a href="/" class="mt-1 block no-underline">
+				<a href="/" class="block no-underline sm:mt-1">
 					<span
-						class="[font-family:var(--font-logo)] text-[1.55rem] font-extrabold uppercase leading-none tracking-[0.08em] text-(--primary)"
+						class="[font-family:var(--font-logo)] block max-w-[9.5rem] truncate text-[1.22rem] font-extrabold uppercase leading-none tracking-[0.06em] text-(--primary) sm:max-w-[16rem] sm:text-[1.55rem] sm:tracking-[0.08em]"
 					>
 						{workspaceName}
 					</span>
@@ -41,7 +41,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 			</div>
 		</div>
 
-		<div class="flex items-center gap-3">
+		<div class="flex shrink-0 items-center gap-2 sm:gap-3">
 			<button
 				type="button"
 				class="flex size-11 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-(--control-surface-strong) sm:hidden"

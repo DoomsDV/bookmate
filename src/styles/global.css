@@ -30,6 +30,8 @@
 	--menu-surface: rgba(255, 255, 255, 0.96);
 	--card-surface: rgba(255, 255, 255, 0.82);
 	--card-surface-strong: rgba(255, 255, 255, 0.84);
+	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.36);
+	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.5);
 	--sidebar-card-surface: rgba(255, 255, 255, 0.72);
 	--sidebar-hover: rgba(47, 111, 221, 0.1);
 	--status-total-bg: #dbe7f3;
@@ -38,6 +40,9 @@
 	--status-success-bg: #047857;
 	--status-success-text: #ffffff;
 	--status-success-border: rgba(4, 120, 87, 0.32);
+	--status-pending-bg: #fffbeb;
+	--status-pending-text: #b45309;
+	--status-pending-border: #fcd34d;
 	--status-danger-bg: #be123c;
 	--status-danger-text: #ffffff;
 	--status-danger-border: rgba(190, 18, 60, 0.3);
@@ -80,6 +85,8 @@ html[data-theme='dark'] {
 	--menu-surface: rgba(20, 20, 23, 0.98);
 	--card-surface: rgba(24, 24, 27, 0.9);
 	--card-surface-strong: rgba(30, 30, 34, 0.96);
+	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 	--sidebar-card-surface: rgba(24, 24, 28, 0.9);
 	--sidebar-hover: rgba(255, 255, 255, 0.06);
 	--status-total-bg: rgba(113, 113, 122, 0.2);
@@ -88,6 +95,9 @@ html[data-theme='dark'] {
 	--status-success-bg: rgba(16, 185, 129, 0.2);
 	--status-success-text: #34d399;
 	--status-success-border: rgba(52, 211, 153, 0.34);
+	--status-pending-bg: rgba(245, 158, 11, 0.16);
+	--status-pending-text: #fbbf24;
+	--status-pending-border: rgba(245, 158, 11, 0.4);
 	--status-danger-bg: rgba(244, 63, 94, 0.18);
 	--status-danger-text: #fda4af;
 	--status-danger-border: rgba(251, 113, 133, 0.34);
@@ -288,8 +298,12 @@ button {
 	border-radius: 1.5rem;
 	border: 1px solid var(--shell-border);
 	background: var(--surface-bright);
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
 	padding: var(--md-space-4);
-	box-shadow: 0 6px 24px rgba(0, 0, 0, 0.03);
+	box-shadow: var(--region-inset-highlight), 0 6px 24px rgba(0, 0, 0, 0.03);
 	transition: all 180ms ease;
 }
 
@@ -307,6 +321,9 @@ button {
 
 .material-cards-grid {
 	display: grid;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
 	gap: var(--md-space-4);
 }
 
@@ -314,8 +331,12 @@ button {
 	border-radius: 1.25rem;
 	border: 1px solid var(--shell-border);
 	background: var(--card-surface-strong);
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
 	padding: var(--md-space-4);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
+	box-shadow: var(--card-inset-highlight);
 	transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 	display: flex;
 	flex-direction: column;
@@ -333,5 +354,9 @@ button {
 	border-radius: 1rem;
 	border: 1px solid var(--shell-border);
 	background: var(--card-surface);
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
 	padding: 0.875rem var(--md-space-4);
 }
