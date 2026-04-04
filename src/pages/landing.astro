@@ -1,0 +1,753 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+
+const features = [
+	{
+		title: 'Agenda inteligente',
+		description: 'Centraliza citas, bloqueos y disponibilidad en tiempo real para cada profesional.',
+		icon: 'calendar_month',
+	},
+	{
+		title: 'Equipo sincronizado',
+		description: 'Roles, permisos y operaciones clave en una interfaz pensada para trabajo colaborativo.',
+		icon: 'groups',
+	},
+	{
+		title: 'Métricas accionables',
+		description: 'Visualiza volumen de citas, pendientes y rendimiento diario sin cambiar de pantalla.',
+		icon: 'monitoring',
+	},
+];
+
+const steps = [
+	{
+		step: '01',
+		title: 'Configura tu espacio',
+		text: 'Registra servicios, sucursales y equipo en minutos con formularios guiados.',
+		icon: 'settings_suggest',
+	},
+	{
+		step: '02',
+		title: 'Publica tu agenda',
+		text: 'Comparte perfiles públicos y habilita reservas con reglas claras por horario.',
+		icon: 'public',
+	},
+	{
+		step: '03',
+		title: 'Mide y optimiza',
+		text: 'Toma decisiones con paneles diarios y estados de cita siempre actualizados.',
+		icon: 'insights',
+	},
+];
+---
+
+<Layout>
+	<main class="landing-root">
+		<!-- Blurred orbs for an expressive modern look -->
+		<div class="landing-orb landing-orb-a"></div>
+		<div class="landing-orb landing-orb-b"></div>
+		<div class="landing-orb landing-orb-c"></div>
+
+		<div class="landing-shell">
+			<header class="m3-navbar">
+				<a href="/landing" class="brand no-underline">
+					<span class="brand-mark"><span class="material-symbols-rounded">spa</span></span>
+					<span class="brand-text">Bookmate</span>
+				</a>
+
+				<nav class="nav-links" aria-label="Navegación principal landing">
+					<a href="#beneficios" class="nav-link">Beneficios</a>
+					<a href="#flujo" class="nav-link">Flujo</a>
+				</nav>
+
+				<div class="nav-actions">
+					<a href="/login" class="m3-btn m3-btn-subtle no-underline">Iniciar sesión</a>
+					<a href="/login" class="m3-btn m3-btn-primary no-underline">Empezar gratis</a>
+				</div>
+			</header>
+
+			<section class="m3-hero">
+				<div class="m3-hero-content">
+					<div class="m3-chip m3-chip-primary">
+						<span class="material-symbols-rounded">auto_awesome</span>
+						<span>Plataforma Todo-en-uno</span>
+					</div>
+					<h1 class="m3-display">Orquestación de citas y equipo líder en su clase</h1>
+					<p class="m3-body-large">
+						Bookmate unifica operación, agenda y visibilidad de tu negocio en una plataforma
+						clara, moderna y pensada para crecer sin límites de TI.
+					</p>
+
+					<div class="hero-actions">
+						<a href="/login" class="m3-btn m3-btn-primary m3-btn-large no-underline">
+							Crear mi espacio
+							<span class="material-symbols-rounded">arrow_forward</span>
+						</a>
+						<a href="#beneficios" class="m3-btn m3-btn-tonal m3-btn-large no-underline">Ver más</a>
+					</div>
+				</div>
+
+				<div class="m3-hero-visuals">
+					<div class="visual-card visual-card-1">
+						<div class="visual-header">
+							<div class="visual-avatar">
+								<span class="material-symbols-rounded">person</span>
+							</div>
+							<div class="visual-info">
+								<strong>Nuevo Cliente</strong>
+								<span>Hoy, 10:00 AM</span>
+							</div>
+							<div class="visual-badge visual-badge-success">Confirmada</div>
+						</div>
+					</div>
+
+					<div class="visual-card visual-card-2">
+						<div class="visual-icon-box">
+							<span class="material-symbols-rounded">insert_chart</span>
+						</div>
+						<div class="visual-info">
+							<strong>Crecimiento</strong>
+							<span>+24% este mes</span>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section id="beneficios" class="m3-section">
+				<div class="section-header center">
+					<h2 class="m3-headline">Beneficios clave</h2>
+					<p class="m3-body">Diseñado para simplificar tu día a día operativo.</p>
+				</div>
+				<div class="m3-feature-grid">
+					{
+						features.map((feature) => (
+							<article class="m3-card m3-feature-card">
+								<div class="m3-icon-container">
+									<span class="material-symbols-rounded">{feature.icon}</span>
+								</div>
+								<h3 class="m3-title">{feature.title}</h3>
+								<p class="m3-body">{feature.description}</p>
+							</article>
+						))
+					}
+				</div>
+			</section>
+
+			<section id="flujo" class="m3-section m3-section-tonal">
+				<div class="m3-workflow-layout">
+					<div class="workflow-content">
+						<div class="m3-chip m3-chip-secondary">
+							<span class="material-symbols-rounded">bolt</span>
+							<span>Rápida implementación</span>
+						</div>
+						<h2 class="m3-headline">Un flujo claro para arrancar en minutos</h2>
+						<p class="m3-body-large">
+							Construye y lanza tus flujos de reserva sin cuellos de botella. 
+							Tu equipo estará operando el mismo día.
+						</p>
+					</div>
+
+					<div class="m3-workflow-steps">
+						{
+							steps.map((item) => (
+								<article class="m3-step-card">
+									<div class="step-icon-wrap">
+										<span class="material-symbols-rounded">{item.icon}</span>
+									</div>
+									<div class="step-content">
+										<span class="step-label">Paso {item.step}</span>
+										<h3 class="m3-title">{item.title}</h3>
+										<p class="m3-body">{item.text}</p>
+									</div>
+								</article>
+							))
+						}
+					</div>
+				</div>
+			</section>
+
+			<section id="contacto" class="m3-cta-card">
+				<div class="cta-content">
+					<h2 class="m3-headline">Lleva Bookmate a tu equipo hoy</h2>
+					<p class="m3-body-large">Empieza con tu flujo actual y escala operaciones sin fricción.</p>
+				</div>
+				<a href="/login" class="m3-btn m3-btn-primary m3-btn-large no-underline">
+					Solicitar acceso
+				</a>
+			</section>
+			
+			<footer class="m3-footer">
+				<p>© {new Date().getFullYear()} Bookmate. Plataforma de agenda inteligente.</p>
+			</footer>
+		</div>
+	</main>
+</Layout>
+
+<style>
+	/* MATERIAL 3 GOOGLE INSPIRED THEME */
+	:root {
+		--m3-sys-light-primary: #0b57d0;
+		--m3-sys-light-on-primary: #ffffff;
+		--m3-sys-light-primary-container: #d3e3fd;
+		--m3-sys-light-on-primary-container: #041e49;
+		
+		--m3-sys-light-secondary: #00639b;
+		--m3-sys-light-secondary-container: #c2e7ff;
+		--m3-sys-light-on-secondary-container: #001d35;
+
+		--m3-sys-light-surface: #f8fafd;
+		--m3-sys-light-surface-container: #edf2fa;
+		--m3-sys-light-on-surface: #1f1f1f;
+		--m3-sys-light-on-surface-variant: #444746;
+		
+		--m3-sys-light-outline: #74777f;
+		--m3-sys-light-outline-variant: #c4c6d0;
+	}
+
+	html[data-theme='dark'] {
+		--m3-sys-light-primary: #a8c7fa;
+		--m3-sys-light-on-primary: #062e6f;
+		--m3-sys-light-primary-container: #0842a0;
+		--m3-sys-light-on-primary-container: #d3e3fd;
+		
+		--m3-sys-light-secondary: #7fcfff;
+		--m3-sys-light-secondary-container: #004a77;
+		--m3-sys-light-on-secondary-container: #c2e7ff;
+
+		--m3-sys-light-surface: #0e1114;
+		--m3-sys-light-surface-container: #1e252d;
+		--m3-sys-light-on-surface: #e3e2e6;
+		--m3-sys-light-on-surface-variant: #c4c6d0;
+
+		--m3-sys-light-outline: #8e9099;
+		--m3-sys-light-outline-variant: #444746;
+	}
+
+	.landing-root {
+		position: relative;
+		overflow: hidden;
+		min-height: 100vh;
+		background-color: var(--m3-sys-light-surface);
+		color: var(--m3-sys-light-on-surface);
+		font-family: 'Inter', system-ui, sans-serif;
+	}
+
+	/* Expressive gradient orbs */
+	.landing-orb {
+		position: absolute;
+		border-radius: 9999px;
+		filter: blur(80px);
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.landing-orb-a {
+		top: -10%;
+		left: -5%;
+		width: 50vw;
+		height: 50vw;
+		background: radial-gradient(circle, rgba(11, 87, 208, 0.15), transparent 70%);
+	}
+
+	.landing-orb-b {
+		bottom: -10%;
+		right: -10%;
+		width: 60vw;
+		height: 60vw;
+		background: radial-gradient(circle, rgba(0, 99, 155, 0.15), transparent 70%);
+	}
+
+	.landing-orb-c {
+		top: 40%;
+		left: 20%;
+		width: 30vw;
+		height: 30vw;
+		background: radial-gradient(circle, rgba(168, 199, 250, 0.1), transparent 70%);
+	}
+
+	.landing-shell {
+		position: relative;
+		z-index: 1;
+		width: min(1200px, 100%);
+		margin: 0 auto;
+		padding: 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+
+	/* Navbar */
+	.m3-navbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.75rem 1.5rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.6);
+		backdrop-filter: blur(20px);
+		border: 1px solid var(--m3-sys-light-outline-variant);
+		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+		position: sticky;
+		top: 1rem;
+		z-index: 50;
+	}
+
+	html[data-theme='dark'] .m3-navbar {
+		background: rgba(30, 37, 45, 0.7);
+		box-shadow: 0 4px 24px rgba(0, 0, 0, 0.2);
+	}
+
+	.brand {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: var(--m3-sys-light-on-surface);
+	}
+
+	.brand-mark {
+		display: grid;
+		place-items: center;
+		color: var(--m3-sys-light-on-primary);
+		background-color: var(--m3-sys-light-primary);
+		border-radius: 50%;
+		width: 2.25rem;
+		height: 2.25rem;
+	}
+
+	.brand-mark .material-symbols-rounded {
+		font-size: 1.25rem;
+	}
+
+	.brand-text {
+		font-weight: 700;
+		font-size: 1.25rem;
+		letter-spacing: -0.02em;
+	}
+
+	.nav-links {
+		display: none;
+		align-items: center;
+		gap: 1.5rem;
+	}
+
+	.nav-link {
+		color: var(--m3-sys-light-on-surface-variant);
+		text-decoration: none;
+		font-weight: 500;
+		font-size: 0.95rem;
+		transition: color 0.2s;
+	}
+
+	.nav-link:hover {
+		color: var(--m3-sys-light-on-surface);
+	}
+
+	.nav-actions {
+		display: none;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	@media (min-width: 768px) {
+		.landing-shell { padding: 1.5rem; gap: 4rem; }
+		.nav-links, .nav-actions { display: flex; }
+	}
+
+	/* Buttons */
+	.m3-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		border-radius: 999px;
+		font-weight: 500;
+		font-size: 0.95rem;
+		padding: 0.625rem 1.5rem;
+		transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+		cursor: pointer;
+		border: none;
+		text-decoration: none;
+	}
+
+	.m3-btn:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	}
+
+	.m3-btn:active {
+		transform: translateY(0);
+	}
+
+	.m3-btn-large {
+		padding: 0.875rem 2rem;
+		font-size: 1.05rem;
+	}
+
+	.m3-btn-primary {
+		background-color: var(--m3-sys-light-primary);
+		color: var(--m3-sys-light-on-primary);
+	}
+
+	.m3-btn-tonal {
+		background-color: var(--m3-sys-light-secondary-container);
+		color: var(--m3-sys-light-on-secondary-container);
+	}
+
+	.m3-btn-subtle {
+		background-color: transparent;
+		color: var(--m3-sys-light-primary);
+	}
+	
+	.m3-btn-subtle:hover {
+		background-color: var(--m3-sys-light-surface-container);
+		box-shadow: none;
+	}
+
+	/* Chips */
+	.m3-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		border-radius: 999px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		background: var(--m3-sys-light-surface-container);
+		color: var(--m3-sys-light-on-surface);
+		border: 1px solid var(--m3-sys-light-outline-variant);
+	}
+
+	.m3-chip-primary {
+		background: var(--m3-sys-light-primary-container);
+		color: var(--m3-sys-light-on-primary-container);
+		border-color: transparent;
+	}
+
+	.m3-chip-secondary {
+		background: var(--m3-sys-light-secondary-container);
+		color: var(--m3-sys-light-on-secondary-container);
+		border-color: transparent;
+	}
+
+	.m3-chip .material-symbols-rounded {
+		font-size: 1.125rem;
+	}
+
+	/* Hero */
+	.m3-hero {
+		display: grid;
+		gap: 3rem;
+		padding: 3rem 1rem;
+		align-items: center;
+	}
+
+	.m3-hero-content {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1.5rem;
+	}
+
+	.m3-display {
+		font-size: clamp(2.5rem, 6vw, 4.5rem);
+		font-weight: 700;
+		line-height: 1.05;
+		letter-spacing: -0.03em;
+		color: var(--m3-sys-light-on-surface);
+		margin: 0;
+	}
+
+	.m3-body-large {
+		font-size: clamp(1rem, 2vw, 1.25rem);
+		line-height: 1.6;
+		color: var(--m3-sys-light-on-surface-variant);
+		max-width: 54ch;
+		margin: 0;
+	}
+
+	.hero-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+		margin-top: 1rem;
+	}
+
+	/* Hero Visuals */
+	.m3-hero-visuals {
+		position: relative;
+		height: 100%;
+		min-height: 300px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.visual-card {
+		background: var(--m3-sys-light-surface);
+		border: 1px solid var(--m3-sys-light-outline-variant);
+		border-radius: 1.5rem;
+		padding: 1.25rem;
+		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08);
+		position: absolute;
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		animation: float 6s ease-in-out infinite;
+	}
+
+	html[data-theme='dark'] .visual-card {
+		background: var(--m3-sys-light-surface-container);
+		box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+	}
+
+	.visual-card-1 {
+		top: 10%;
+		left: 0;
+		z-index: 2;
+	}
+
+	.visual-card-2 {
+		bottom: 10%;
+		right: 0;
+		animation-delay: -3s;
+		z-index: 1;
+	}
+
+	.visual-header {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.visual-avatar, .visual-icon-box {
+		width: 3rem;
+		height: 3rem;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+	}
+
+	.visual-avatar {
+		background: #e8def8;
+		color: #4a4458;
+	}
+
+	.visual-icon-box {
+		background: #d3e3fd;
+		color: #041e49;
+	}
+
+	.visual-info {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.visual-info strong {
+		font-size: 0.95rem;
+		color: var(--m3-sys-light-on-surface);
+	}
+
+	.visual-info span {
+		font-size: 0.85rem;
+		color: var(--m3-sys-light-on-surface-variant);
+	}
+
+	.visual-badge {
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+	}
+
+	.visual-badge-success {
+		background: #dcfce7;
+		color: #166534;
+	}
+
+	html[data-theme='dark'] .visual-badge-success {
+		background: #14532d;
+		color: #86efac;
+	}
+
+	@keyframes float {
+		0%, 100% { transform: translateY(0); }
+		50% { transform: translateY(-10px); }
+	}
+
+	@media (min-width: 1024px) {
+		.m3-hero {
+			grid-template-columns: 1fr 1fr;
+			padding: 4rem 2rem;
+		}
+	}
+
+	/* Section Commons */
+	.m3-section {
+		padding: 4rem 1.5rem;
+		display: flex;
+		flex-direction: column;
+		gap: 3rem;
+	}
+
+	.m3-section-tonal {
+		background: var(--m3-sys-light-surface-container);
+		border-radius: 2rem;
+	}
+
+	.section-header.center {
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.m3-headline {
+		font-size: clamp(2rem, 4vw, 3rem);
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		margin: 0 0 1rem 0;
+		color: var(--m3-sys-light-on-surface);
+	}
+
+	.m3-body {
+		font-size: 1rem;
+		line-height: 1.5;
+		color: var(--m3-sys-light-on-surface-variant);
+		margin: 0;
+	}
+
+	/* Features Grid */
+	.m3-feature-grid {
+		display: grid;
+		gap: 1.5rem;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	}
+
+	.m3-card {
+		background: var(--m3-sys-light-surface);
+		border: 1px solid var(--m3-sys-light-outline-variant);
+		border-radius: 1.5rem;
+		padding: 2rem;
+		transition: background-color 0.2s;
+	}
+
+	.m3-card:hover {
+		background: var(--m3-sys-light-surface-container);
+	}
+
+	.m3-icon-container {
+		width: 3.5rem;
+		height: 3.5rem;
+		background: var(--m3-sys-light-primary-container);
+		color: var(--m3-sys-light-on-primary-container);
+		border-radius: 1rem;
+		display: grid;
+		place-items: center;
+		margin-bottom: 1.5rem;
+	}
+
+	.m3-icon-container .material-symbols-rounded {
+		font-size: 1.75rem;
+	}
+
+	.m3-title {
+		font-size: 1.25rem;
+		font-weight: 600;
+		margin: 0 0 0.5rem 0;
+		color: var(--m3-sys-light-on-surface);
+	}
+
+	/* Workflow layout */
+	.m3-workflow-layout {
+		display: grid;
+		gap: 3rem;
+		align-items: center;
+	}
+
+	.workflow-content {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1.25rem;
+	}
+
+	.m3-workflow-steps {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.m3-step-card {
+		display: flex;
+		gap: 1.5rem;
+		padding: 1.5rem;
+		background: var(--m3-sys-light-surface);
+		border-radius: 1.25rem;
+		border: 1px solid var(--m3-sys-light-outline-variant);
+	}
+
+	.step-icon-wrap {
+		width: 3rem;
+		height: 3rem;
+		border-radius: 50%;
+		background: var(--m3-sys-light-secondary-container);
+		color: var(--m3-sys-light-on-secondary-container);
+		display: grid;
+		place-items: center;
+		flex-shrink: 0;
+	}
+
+	.step-content {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.step-label {
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: var(--m3-sys-light-primary);
+	}
+
+	@media (min-width: 1024px) {
+		.m3-workflow-layout {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	/* CTA */
+	.m3-cta-card {
+		background: var(--m3-sys-light-primary-container);
+		color: var(--m3-sys-light-on-primary-container);
+		border-radius: 2rem;
+		padding: 4rem 2rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 2rem;
+	}
+
+	.cta-content {
+		max-width: 600px;
+	}
+
+	.m3-cta-card .m3-headline {
+		color: var(--m3-sys-light-on-primary-container);
+	}
+	
+	.m3-cta-card .m3-body-large {
+		color: var(--m3-sys-light-on-primary-container);
+		opacity: 0.9;
+	}
+
+	/* Footer */
+	.m3-footer {
+		text-align: center;
+		padding: 2rem 1rem;
+		color: var(--m3-sys-light-on-surface-variant);
+		font-size: 0.9rem;
+	}
+</style>
