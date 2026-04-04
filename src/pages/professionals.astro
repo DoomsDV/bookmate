@@ -204,9 +204,11 @@ const visiblePages = Array.from(
 
 			<!-- Sección del Avatar Superior -->
 			<div class="mb-5 sm:mb-7 flex flex-col sm:flex-row items-center sm:items-start gap-3.5 sm:gap-6 rounded-[1.2rem] sm:rounded-[1.4rem] border border-(--shell-border) bg-(--surface) p-3.5 sm:p-5 shadow-sm">
-				<div class="relative shrink-0 size-18 sm:size-24 rounded-full overflow-hidden border-2 sm:border-4 border-(--surface-bright) shadow-[0_3px_10px_rgba(0,0,0,0.08)] bg-(--surface-variant) flex items-center justify-center">
-					<img src="" alt="Vista previa" class="hidden size-full object-cover" data-profile-preview />
-					<span class="material-symbols-rounded text-[2rem] sm:text-[2.5rem] text-(--on-surface-variant)" data-profile-placeholder>account_circle</span>
+				<div class="relative shrink-0 size-18 sm:size-24 rounded-full overflow-hidden border-2 sm:border-4 border-(--surface-bright) shadow-[0_3px_10px_rgba(0,0,0,0.08)] bg-(--surface-variant)">
+					<img src="" alt="Vista previa" class="absolute inset-0 hidden h-full w-full rounded-full object-cover object-center" data-profile-preview />
+					<div class="absolute inset-0 grid place-items-center" data-profile-placeholder>
+						<span class="material-symbols-rounded text-[2rem] sm:text-[2.5rem] text-(--on-surface-variant)">account_circle</span>
+					</div>
 				</div>
 				<div class="flex-1 text-center sm:text-left flex flex-col justify-center h-full pt-0 sm:pt-1">
 					<h3 class="text-[1rem] sm:text-[1.05rem] font-bold text-(--on-surface)">Foto de perfil</h3>
@@ -670,8 +672,31 @@ const visiblePages = Array.from(
 			return false;
 		}
 
+		private setPreviewImage(url?: string | null) {
+			const raw = String(url || '').trim();
+			const normalized = ['null', 'undefined'].includes(raw.toLowerCase()) ? '' : raw;
+			const hasImage = normalized.length > 0;
+
+			if (this.els.previewImg) {
+				this.els.previewImg.dataset.originalSrc = normalized;
+				this.els.previewImg.onerror = () => this.setPreviewImage(null);
+				if (hasImage) {
+					this.els.previewImg.src = normalized;
+					this.els.previewImg.classList.remove('hidden');
+				} else {
+					this.els.previewImg.src = '';
+					this.els.previewImg.classList.add('hidden');
+				}
+			}
+
+			if (this.els.previewPlaceholder) {
+				this.els.previewPlaceholder.classList.toggle('hidden', hasImage);
+			}
+		}
+
 		private resetFormValues() {
 			if (this.els.form) this.els.form.reset();
+			this.setPreviewImage(null);
 			this.setImageFileNameLabel();
 			this.setSelectedServices([]);
 			this.servicesTouched = false;
@@ -689,19 +714,16 @@ const visiblePages = Array.from(
 			if (file) {
 				const reader = new FileReader();
 				reader.onload = (e) => {
-					if (this.els.previewImg) {
-						this.els.previewImg.src = e.target?.result as string;
-						this.els.previewImg.classList.remove('hidden');
-					}
-					if (this.els.previewPlaceholder) this.els.previewPlaceholder.classList.add('hidden');
+					this.setPreviewImage(String(e.target?.result || ''));
 				};
 				reader.readAsDataURL(file);
-			} else if (this.mode === 'create') {
-				if (this.els.previewImg) {
-					this.els.previewImg.src = '';
-					this.els.previewImg.classList.add('hidden');
+			} else {
+				const persistedImage = String(this.els.previewImg?.dataset.originalSrc || '').trim();
+				if (this.mode === 'edit' && persistedImage) {
+					this.setPreviewImage(persistedImage);
+				} else {
+					this.setPreviewImage(null);
 				}
-				if (this.els.previewPlaceholder) this.els.previewPlaceholder.classList.remove('hidden');
 			}
 		}
 
@@ -901,16 +923,7 @@ const visiblePages = Array.from(
 				if (formEls.userActive) formEls.userActive.value = user.is_active === 0 ? '0' : '1';
 				if (formEls.profActive) formEls.profActive.value = prof.is_active === 0 ? '0' : '1';
 				
-				if (prof.profile_image_url) {
-					if (this.els.previewImg) {
-						this.els.previewImg.src = prof.profile_image_url;
-						this.els.previewImg.classList.remove('hidden');
-					}
-					if (this.els.previewPlaceholder) this.els.previewPlaceholder.classList.add('hidden');
-				} else {
-					if (this.els.previewImg) this.els.previewImg.classList.add('hidden');
-					if (this.els.previewPlaceholder) this.els.previewPlaceholder.classList.remove('hidden');
-				}
+				this.setPreviewImage(prof.profile_image_url);
 
 				const sId = prof.specialty?.id_specialty;
 				if (formEls.specialty && sId) formEls.specialty.value = String(sId);
