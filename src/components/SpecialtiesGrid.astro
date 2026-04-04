@@ -19,8 +19,8 @@ const activeCount = specialties.filter((item) => item.is_active === 1).length;
 const inactiveCount = specialties.length - activeCount;
 ---
 
-<section class="rounded-[1.7rem] border border-(--shell-border) bg-(--surface-bright) p-6 md:p-8 shadow-[0_6px_30px_rgba(0,0,0,0.03)] dark:shadow-none transition-all">
-	<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-5 mb-8">
+<section class="rounded-[1.45rem] border border-(--shell-border) bg-(--surface-bright) p-4 sm:p-5 md:p-6 shadow-[0_6px_24px_rgba(0,0,0,0.03)] dark:shadow-none transition-all">
+	<header class="mb-5 flex flex-col justify-between gap-3 sm:mb-6 sm:flex-row sm:items-center">
 		<div class="flex flex-wrap items-center gap-2.5 text-[0.82rem] font-bold">
 			<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 transition border border-emerald-500/10">
 				<span class="size-2 rounded-full bg-emerald-500"></span> Activas: {activeCount}
@@ -45,7 +45,7 @@ const inactiveCount = specialties.length - activeCount;
 	</header>
 
 	{specialties.length === 0 ? (
-		<div class="flex flex-col items-center justify-center rounded-[1.6rem] border-2 border-dashed border-(--shell-border) bg-(--surface)/40 px-6 py-14 text-center transition">
+		<div class="flex flex-col items-center justify-center rounded-[1.35rem] border-2 border-dashed border-(--shell-border) bg-(--surface)/40 px-5 py-10 text-center transition">
 			<div class="mb-4 flex size-16 items-center justify-center rounded-full bg-(--surface-variant) text-(--on-surface-variant) ring-8 ring-(--surface-bright)">
 				<span class="material-symbols-rounded text-[2rem]">inbox</span>
 			</div>
@@ -55,10 +55,10 @@ const inactiveCount = specialties.length - activeCount;
 			</p>
 		</div>
 	) : (
-		<div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+		<div class="grid gap-3.5 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
 			{specialties.map((specialty) => (
 				<article
-					class="group cursor-pointer relative overflow-hidden rounded-3xl border border-(--shell-border) bg-(--card-surface-strong) p-5.5 transition-all duration-300 hover:-translate-y-1 hover:border-(--primary)/40 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+					class="group cursor-pointer relative overflow-hidden rounded-[1.3rem] border border-(--shell-border) bg-(--card-surface-strong) p-4.5 sm:p-5 transition-all duration-300 hover:-translate-y-0.5 hover:border-(--primary)/40 hover:shadow-[0_14px_30px_-18px_rgba(0,0,0,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
 					data-specialty-card
 					data-specialty-id={specialty.id_specialty}
 					tabindex="0"
@@ -85,12 +85,12 @@ const inactiveCount = specialties.length - activeCount;
 						</span>
 					</div>
 
-					<div class="relative mt-5">
+					<div class="relative mt-3.5">
 						<h3 class="text-[1.1rem] font-extrabold tracking-tight text-(--on-surface) line-clamp-1 group-hover:text-(--primary) transition-colors">
 							{specialty.name || `Especialidad #${specialty.id_specialty}`}
 						</h3>
 
-						<p class="mt-2 text-sm text-(--on-surface-variant) line-clamp-2 leading-relaxed">
+						<p class="mt-1.5 text-sm text-(--on-surface-variant) line-clamp-2 leading-relaxed">
 							{toDescriptionLabel(specialty.description)}
 						</p>
 					</div>
