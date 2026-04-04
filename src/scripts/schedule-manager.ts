@@ -296,8 +296,8 @@ class ScheduleManager extends HTMLElement {
 		const messageNode = document.createElement('div');
 		messageNode.className =
 			tone === 'error'
-				? 'rounded-[1.2rem] border border-rose-200 bg-rose-50 px-4 py-5 text-sm text-rose-700'
-				: 'rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-5 text-sm text-[color:var(--on-surface-variant)]';
+				? 'rounded-[1rem] border border-rose-200 bg-rose-50 px-3.5 py-4 text-sm text-rose-700'
+				: 'rounded-[1rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3.5 py-4 text-sm text-[color:var(--on-surface-variant)]';
 		messageNode.textContent = message;
 		this.plannerNode.appendChild(messageNode);
 	}
@@ -329,11 +329,11 @@ class ScheduleManager extends HTMLElement {
 		for (const dayState of this.dayStates) {
 			const article = document.createElement('article');
 			article.className =
-				'rounded-[1.1rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-4';
+				'rounded-[1rem] border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3.5 py-3.5 sm:px-4 sm:py-4';
 			article.dataset.dayCard = String(dayState.day_of_week);
 
 			const topRow = document.createElement('div');
-			topRow.className = 'flex flex-wrap items-center justify-between gap-3';
+			topRow.className = 'flex flex-wrap items-start justify-between gap-2.5';
 
 			const titleWrap = document.createElement('div');
 			const title = document.createElement('h3');
@@ -359,10 +359,10 @@ class ScheduleManager extends HTMLElement {
 			topRow.append(titleWrap, toggleLabel);
 
 			const slotSection = document.createElement('div');
-			slotSection.className = 'mt-4 grid gap-3';
+			slotSection.className = 'mt-3 grid gap-2.5';
 
 			const slotsContainer = document.createElement('div');
-			slotsContainer.className = 'grid gap-3';
+			slotsContainer.className = 'grid gap-2.5';
 			slotSection.appendChild(slotsContainer);
 
 			let addButton: HTMLButtonElement | null = null;
@@ -425,11 +425,11 @@ class ScheduleManager extends HTMLElement {
 		for (let index = 0; index < dayState.slots.length; index += 1) {
 			const slot = dayState.slots[index];
 			const row = document.createElement('div');
-			row.className = 'grid gap-2 lg:grid-cols-[minmax(0,1fr)_9rem_9rem_auto] lg:items-end';
+			row.className = 'grid grid-cols-2 gap-2.5 lg:grid-cols-[minmax(0,1fr)_8rem_8rem_auto] lg:items-end';
 			row.dataset.slotRow = 'true';
 
 			const locationLabel = document.createElement('label');
-			locationLabel.className = 'grid gap-1 text-xs font-semibold text-[color:var(--on-surface-variant)]';
+			locationLabel.className = 'col-span-2 grid gap-1 text-xs font-semibold text-[color:var(--on-surface-variant)] lg:col-span-1';
 			locationLabel.append('Sucursal');
 
 			const locationSelect = document.createElement('select');
@@ -437,7 +437,7 @@ class ScheduleManager extends HTMLElement {
 			locationSelect.dataset.dayOfWeek = String(dayState.day_of_week);
 			locationSelect.dataset.slotUid = slot.uid;
 			locationSelect.className =
-				'rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm font-semibold text-[color:var(--on-surface)] outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60';
+				'rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60';
 			locationSelect.appendChild(this.createOption('', 'Selecciona sucursal'));
 			for (const location of this.locations) {
 				locationSelect.appendChild(
@@ -458,7 +458,7 @@ class ScheduleManager extends HTMLElement {
 			startInput.dataset.dayOfWeek = String(dayState.day_of_week);
 			startInput.dataset.slotUid = slot.uid;
 			startInput.className =
-				'rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm font-semibold text-[color:var(--on-surface)] outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60';
+				'rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60';
 			startLabel.appendChild(startInput);
 
 			const endLabel = document.createElement('label');
@@ -472,11 +472,11 @@ class ScheduleManager extends HTMLElement {
 			endInput.dataset.dayOfWeek = String(dayState.day_of_week);
 			endInput.dataset.slotUid = slot.uid;
 			endInput.className =
-				'rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2.5 text-sm font-semibold text-[color:var(--on-surface)] outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60';
+				'rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60';
 			endLabel.appendChild(endInput);
 
 			const removeWrap = document.createElement('div');
-			removeWrap.className = 'flex justify-end lg:justify-start';
+			removeWrap.className = 'col-span-2 flex justify-end lg:col-span-1 lg:justify-start';
 
 			const removeButton = document.createElement('button');
 			removeButton.type = 'button';

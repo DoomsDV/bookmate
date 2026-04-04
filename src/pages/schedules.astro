@@ -33,8 +33,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 				<div class="grid min-h-full grid-rows-[auto_1fr]">
 					<TopBar />
 
-					<main class="bg-(--content-surface) px-5 py-5 sm:px-7 sm:py-7">
-						<section class="rounded-[1.7rem] border border-(--shell-border) bg-(--surface-bright) p-6 md:p-8 shadow-[0_6px_30px_rgba(0,0,0,0.03)] dark:shadow-none transition-all">
+					<main class="bg-(--content-surface) px-4 py-4 sm:px-6 sm:py-6">
+						<section class="rounded-[1.45rem] border border-(--shell-border) bg-(--surface-bright) p-4 sm:p-5 md:p-6 shadow-[0_6px_24px_rgba(0,0,0,0.03)] dark:shadow-none transition-all">
 							{
 								flashMessage ? (
 									<div class="pointer-events-auto fixed right-4 top-24 z-70 w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
@@ -47,8 +47,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 								initialLoadError ? (
 									<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
 								) : (
-									<div class="grid gap-6">
-										<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+									<div class="grid gap-4 sm:gap-5">
+										<header class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
 											<div class="grid gap-1">
 												<h1 class="text-[1.3rem] font-extrabold text-(--on-surface)">
 													Horarios semanales
@@ -72,7 +72,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 											}
 										</header>
 
-										<div class="grid gap-5 sm:grid-cols-2">
+										<div class="grid gap-3 sm:gap-4 sm:grid-cols-2">
 											<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 												<span class="inline-flex items-center gap-1">
 													Profesional
@@ -95,9 +95,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 											data-schedule-error
 										></div>
 
-										<div class="mt-2 border-t border-(--shell-border) border-dashed pt-6">
+										<div class="mt-1.5 border-t border-(--shell-border) border-dashed pt-4">
 											<div
-												class="mb-3 hidden rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-medium text-(--on-surface-variant)"
+												class="mb-2 hidden rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-medium text-(--on-surface-variant)"
 												data-schedule-loading
 											>
 												Cargando configuración de horarios...
