@@ -91,9 +91,9 @@ const googleMapsApiKey =
 					<TopBar />
 
 					<main
-						class="bg-(--content-surface) px-5 py-5 sm:px-7 sm:py-7"
+						class="bg-(--content-surface) px-4 py-4 sm:px-6 sm:py-6"
 					>
-						<section class="grid gap-6">
+						<section class="grid gap-4 sm:gap-5">
 							{
 								flashMessage ? (
 									<div class="pointer-events-auto fixed right-4 top-24 z-70 w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
@@ -115,7 +115,7 @@ const googleMapsApiKey =
 										dismissible={false}
 									/>
 								) : (
-									<div class="grid gap-5">
+									<div class="grid gap-4">
 										<LocationsGrid
 											locations={locations}
 											showCreateAction={true}
@@ -202,11 +202,11 @@ const googleMapsApiKey =
 		</div>
 
 		<dialog
-			class="w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[94vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
+			class="w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] backdrop:bg-slate-950/50 backdrop:backdrop-blur-sm transition-all"
 			data-location-modal
 		>
 			<div
-				class="shrink-0 border-b border-(--shell-border) bg-(--surface-bright) px-7 py-6 z-10 shadow-sm"
+				class="shrink-0 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6 z-10 shadow-sm"
 			>
 				<div class="flex items-start justify-between gap-4">
 					<div class="flex items-center gap-4">
@@ -225,7 +225,7 @@ const googleMapsApiKey =
 								Crear sucursal
 							</h2>
 							<p
-								class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5"
+								class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5 hidden sm:block"
 								data-location-modal-description
 							>
 								Completa los campos para registrar una nueva
@@ -406,7 +406,7 @@ const googleMapsApiKey =
 						class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-1"
 						data-location-map-status
 					>
-						Haz clic en el mapa para registrar coordenadas exactas.
+						Haz clic en el mapa para registrar coordenadas exactas. En móvil, usa dos dedos para mover o hacer zoom.
 					</p>
 
 					<input
@@ -429,6 +429,8 @@ const googleMapsApiKey =
 
 				<label
 					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface) pt-1"
+					data-location-status-wrap
+					hidden
 				>
 					Estado
 					<div class="relative">
@@ -475,7 +477,7 @@ const googleMapsApiKey =
 
 					<button
 						type="button"
-						class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border)"
+						class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border) hidden sm:block"
 						data-close-location-modal
 					>
 						Cancelar
@@ -557,6 +559,8 @@ const googleMapsApiKey =
 			lat: -25.28646,
 			lng: -57.647,
 		};
+		private readonly mapIdleMessage =
+			"Haz clic en el mapa para registrar coordenadas exactas. En móvil, usa dos dedos para mover o hacer zoom.";
 		private selectedCoordinates: Coordinates | null = null;
 		private mapInstance: any = null;
 		private mapMarker: any = null;
@@ -576,6 +580,7 @@ const googleMapsApiKey =
 			mapContainer: HTMLElement | null;
 			mapStatus: HTMLElement | null;
 			clearMapBtn: HTMLButtonElement | null;
+			statusWrap: HTMLElement | null;
 		};
 
 		private formEls!: {
@@ -634,6 +639,9 @@ const googleMapsApiKey =
 				),
 				clearMapBtn: this.querySelector<HTMLButtonElement>(
 					"[data-clear-location-point]",
+				),
+				statusWrap: this.querySelector<HTMLElement>(
+					"[data-location-status-wrap]",
 				),
 			};
 
@@ -835,9 +843,7 @@ const googleMapsApiKey =
 				this.selectedCoordinates = null;
 				if (this.formEls.latitude) this.formEls.latitude.value = "";
 				if (this.formEls.longitude) this.formEls.longitude.value = "";
-				this.setMapStatus(
-					"Haz clic en el mapa para registrar coordenadas exactas.",
-				);
+				this.setMapStatus(this.mapIdleMessage);
 				if (this.mapMarker) this.mapMarker.setMap(null);
 				this.mapMarker = null;
 				return;
@@ -955,13 +961,18 @@ const googleMapsApiKey =
 
 			const maps = await this.loadGoogleMaps();
 			if (!this.mapInstance) {
+				const isCoarsePointer = window.matchMedia(
+					"(pointer: coarse)",
+				).matches;
 				this.mapInstance = new maps.Map(this.els.mapContainer, {
 					center: this.defaultMapCenter,
 					zoom: 12,
 					mapTypeControl: false,
 					streetViewControl: false,
 					fullscreenControl: false,
-					gestureHandling: "greedy",
+					gestureHandling: isCoarsePointer
+						? "cooperative"
+						: "greedy",
 				});
 
 				this.mapInstance.addListener("click", (event: unknown) => {
@@ -1002,9 +1013,7 @@ const googleMapsApiKey =
 				return;
 			}
 
-			this.setMapStatus(
-				"Haz clic en el mapa para registrar coordenadas exactas.",
-			);
+			this.setMapStatus(this.mapIdleMessage);
 		};
 
 		private setSelectOptions = <T,>(
@@ -1312,6 +1321,11 @@ const googleMapsApiKey =
 			if (this.els.submitIcon) this.els.submitIcon.textContent = "check";
 			this.els.deleteBtn?.classList.add("hidden");
 			this.els.deleteBtn?.setAttribute("disabled", "true");
+			this.els.statusWrap?.setAttribute("hidden", "");
+			if (this.formEls.status) {
+				this.formEls.status.value = "1";
+				this.formEls.status.disabled = true;
+			}
 			if (this.els.loading) this.els.loading.classList.add("hidden");
 		};
 
@@ -1328,6 +1342,8 @@ const googleMapsApiKey =
 			if (this.els.submitIcon) this.els.submitIcon.textContent = "save";
 			this.els.deleteBtn?.classList.remove("hidden");
 			this.els.deleteBtn?.removeAttribute("disabled");
+			this.els.statusWrap?.removeAttribute("hidden");
+			if (this.formEls.status) this.formEls.status.disabled = false;
 		};
 
 		private openCreateModal = async () => {

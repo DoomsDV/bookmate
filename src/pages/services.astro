@@ -87,9 +87,9 @@ const visiblePages = Array.from(
 					<TopBar />
 
 					<main
-						class="bg-(--content-surface) px-5 py-5 sm:px-7 sm:py-7"
+						class="bg-(--content-surface) px-4 py-4 sm:px-6 sm:py-6"
 					>
-						<section class="grid gap-6">
+						<section class="grid gap-4 sm:gap-5">
 							{
 								flashMessage ? (
 									<div class="pointer-events-auto fixed right-4 top-24 z-70 w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
@@ -111,7 +111,7 @@ const visiblePages = Array.from(
 										dismissible={false}
 									/>
 								) : (
-									<div class="grid gap-5">
+									<div class="grid gap-4">
 										<ServicesGrid
 											services={services}
 											showCreateAction={true}
