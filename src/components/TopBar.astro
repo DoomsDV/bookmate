@@ -43,6 +43,31 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 
 		<div class="flex shrink-0 items-center gap-2 sm:gap-3">
 			<button
+				id="pwa-install-btn"
+				type="button"
+				class="hidden items-center gap-2 rounded-full border border-(--primary) bg-(--primary-container) px-4 py-2 text-sm font-semibold text-[var(--on-primary-container)] transition hover:bg-[var(--primary)] hover:text-[var(--on-primary)]"
+				aria-label="Instalar App"
+			>
+				<span class="material-symbols-rounded text-[1rem]">download</span>
+				<span class="hidden sm:inline">Instalar App</span>
+			</button>
+
+			<script is:inline>
+				window.addEventListener('beforeinstallprompt', (e) => {
+					// Prevenir automáticamente el prompt nativo
+					e.preventDefault();
+					// Guardarlo para que pueda ser invocado por el botón
+					window.deferredPrompt = e;
+					// Mostrar el botón en el DOM
+					const installBtn = document.getElementById('pwa-install-btn');
+					if (installBtn) {
+						installBtn.classList.remove('hidden');
+						installBtn.classList.add('flex');
+					}
+				});
+			</script>
+
+			<button
 				type="button"
 				class="flex size-11 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-(--control-surface-strong) sm:hidden"
 				aria-label="Cambiar tema"
@@ -109,6 +134,27 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 
 <script>
 	const initializeTopBar = () => {
+		// PWA Install Button Handler for SPA transitions (Astro View Transitions)
+		const installBtn = document.getElementById('pwa-install-btn');
+		const deferredPrompt = (window as any).deferredPrompt;
+		if (installBtn && deferredPrompt) {
+			installBtn.classList.remove('hidden');
+			installBtn.classList.add('flex');
+		}
+		
+		if (installBtn) {
+			installBtn.addEventListener('click', async () => {
+				const currentPrompt = (window as any).deferredPrompt;
+				if (currentPrompt) {
+					currentPrompt.prompt();
+					const { outcome } = await currentPrompt.userChoice;
+					(window as any).deferredPrompt = null;
+					installBtn.classList.remove('flex');
+					installBtn.classList.add('hidden');
+				}
+			});
+		}
+
 		// Cleanup previous initialization using AbortController for better performance and memory management
 		if ((window as any).__bookmateTopBarAbort) {
 			(window as any).__bookmateTopBarAbort.abort();
