@@ -54,16 +54,16 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 ---
 
 <Layout>
-	<main class="public-booking-shell relative z-10 mx-auto min-h-screen w-full max-w-5xl px-2 py-8 sm:px-4 md:px-8 lg:py-12">
-		<div aria-hidden="true" class="pointer-events-none fixed inset-0 z-[-1] bg-[#0a0a0a]"></div>
+	<main class="public-booking-shell relative z-10 mx-auto min-h-screen w-full max-w-4xl px-2 py-8 sm:px-4 md:px-8 lg:py-12 md:max-w-5xl">
+		<div aria-hidden="true" class="pointer-events-none fixed inset-0 z-[-1] bg-(--surface-background)"></div>
 		{
 			loadError || !profile ? (
-				<section class="rounded-[1.2rem] border border-rose-200 bg-rose-50 px-6 py-8 text-rose-900 shadow-[0_24px_65px_rgba(190,24,93,0.12)]">
-					<h1 class="text-2xl font-extrabold tracking-tight">No fue posible abrir esta agenda</h1>
-					<p class="mt-2 text-sm font-semibold text-rose-800">{loadError || 'Perfil no disponible.'}</p>
+				<section class="rounded-3xl border border-rose-200 bg-rose-50 px-8 py-10 text-rose-900 shadow-sm">
+					<h1 class="text-3xl font-semibold tracking-tight">No fue posible abrir esta agenda</h1>
+					<p class="mt-3 text-base font-medium text-rose-800">{loadError || 'Perfil no disponible.'}</p>
 					<a
 						href="/"
-						class="mt-5 inline-flex rounded-xl border border-rose-300 px-4 py-2 text-sm font-semibold text-rose-800 no-underline transition hover:bg-rose-100"
+						class="mt-6 inline-flex rounded-full bg-rose-100 px-6 py-2.5 text-sm font-medium text-rose-900 no-underline transition hover:bg-rose-200"
 					>
 						Volver al inicio
 					</a>
@@ -77,26 +77,22 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 					<script type="application/json" id="public-booking-profile-json" set:html={serializedProfile}></script>
 
 					<div class="relative">
-						<div
-							aria-hidden="true"
-							class="pointer-events-none absolute -right-8 -top-6 h-44 w-44 rounded-full bg-sky-500 blur-3xl opacity-20"
-						></div>
-						<header class="relative overflow-hidden rounded-[1.4rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-5 shadow-[0_28px_80px_rgba(2,6,23,0.5)]">
-							<div class="relative grid justify-items-center gap-3 text-center sm:grid-cols-[auto_1fr] sm:items-center sm:justify-items-start sm:gap-4 sm:text-left">
+						<header class="relative overflow-hidden rounded-[28px] bg-(--surface-container) p-6 sm:p-8 shadow-sm transition-shadow">
+							<div class="relative grid justify-items-center gap-4 text-center sm:grid-cols-[auto_1fr] sm:items-center sm:justify-items-start sm:gap-6 sm:text-left">
 							<img
 								src={profile.image_url || profilePlaceholderImageUrl}
 								alt={`Foto de ${profile.full_name}`}
 								loading="lazy"
-								class="h-20 w-20 rounded-2xl border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] object-cover sm:h-28 sm:w-28"
+								class="h-24 w-24 rounded-full border border-(--outline-variant) bg-(--surface-container-high) object-cover sm:h-32 sm:w-32"
 							/>
 							<div class="grid gap-1">
-								<p class="text-xs font-bold uppercase tracking-[0.18em] text-[color:var(--on-surface-variant)]">
+								<p class="text-xs font-medium uppercase tracking-widest text-(--primary)">
 									{profileTopLabel}
 								</p>
-								<h1 class="text-2xl font-extrabold leading-tight text-[color:var(--on-surface)] sm:text-3xl">
+								<h1 class="text-3xl font-normal tracking-tight text-(--on-surface) sm:text-4xl">
 									{profile.full_name}
 								</h1>
-								<p class="text-sm font-semibold text-[color:var(--on-surface-variant)]">
+								<p class="mt-1 text-base font-medium text-(--on-surface-variant)">
 									{profile.specialty || 'Sin especialidad'}
 								</p>
 							</div>
@@ -104,24 +100,24 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 						</header>
 					</div>
 
-					<div class="rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-3 shadow-[0_18px_46px_rgba(15,23,42,0.08)] sm:p-5">
-						<div class="flex items-center gap-3 md:hidden">
+					<div class="rounded-3xl bg-(--surface-container) p-4 sm:p-6 shadow-sm">
+						<div class="flex items-center gap-4 md:hidden">
 							<p
-								class="text-xs font-bold uppercase tracking-[0.08em] text-[color:var(--on-surface-variant)]"
+								class="text-sm font-medium tracking-wide text-(--on-surface)"
 								data-step-compact-label
 								aria-live="polite"
 							>
 								Paso 1 de 4: Servicio
 							</p>
-							<div class="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10" aria-hidden="true">
+							<div class="h-2 flex-1 overflow-hidden rounded-full bg-(--surface-container-highest)" aria-hidden="true">
 								<div
-									class="h-full rounded-full bg-[color:var(--primary)] transition-[width] duration-300"
+									class="h-full rounded-full bg-(--primary) transition-[width] duration-500 ease-out"
 									data-step-progress-bar
 									style="width:25%"
 								></div>
 							</div>
 						</div>
-						<ol class="hidden gap-2 text-sm md:grid md:grid-cols-4" data-step-indicator>
+						<ol class="hidden gap-3 md:grid md:grid-cols-4" data-step-indicator>
 							<li data-step-item="1" class="step-item-current">1. Servicio</li>
 							<li data-step-item="2" class="step-item-default">2. Fecha</li>
 							<li data-step-item="3" class="step-item-default">3. Horario</li>
@@ -129,60 +125,54 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 						</ol>
 					</div>
 
-					<div class="hidden rounded-xl border border-transparent px-4 py-3 text-sm font-semibold" data-booking-toast></div>
+					<div class="hidden rounded-2xl px-5 py-4 text-sm font-medium shadow-sm transition-all" data-booking-toast></div>
 
 					<section
 						data-step-panel="1"
-						class="rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-4 shadow-[0_22px_58px_rgba(15,23,42,0.1)] sm:p-5"
+						class="rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8"
 					>
-						<div class="flex items-center justify-between gap-3">
-							<h2 class="text-lg font-extrabold text-[color:var(--on-surface)]">Selecciona un servicio</h2>
-							<span class="rounded-full border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-3 py-1 text-xs font-bold text-[color:var(--on-surface-variant)]">
-								Paso 1
-							</span>
+						<div class="flex items-center justify-between gap-4">
+							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona un servicio</h2>
 						</div>
-						<p class="mt-1 text-sm text-[color:var(--on-surface-variant)]">
+						<p class="mt-2 text-base text-(--on-surface-variant)">
 							Elige el tipo de cita para continuar con la agenda.
 						</p>
-						<div class="mt-4 grid gap-3 sm:grid-cols-2" data-services-grid></div>
+						<div class="mt-6 grid gap-4 sm:grid-cols-2" data-services-grid></div>
 					</section>
 
 					<section
 						data-step-panel="2"
-						class="hidden rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-4 shadow-[0_22px_58px_rgba(15,23,42,0.1)] sm:p-5"
+						class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8"
 					>
-						<div class="flex flex-wrap items-center justify-between gap-3">
+						<div class="flex flex-wrap items-center justify-between gap-4">
 							<div>
-								<h2 class="text-lg font-extrabold text-[color:var(--on-surface)]">Selecciona una fecha</h2>
-								<p class="text-sm text-[color:var(--on-surface-variant)]">
+								<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona una fecha</h2>
+								<p class="mt-1 text-base text-(--on-surface-variant)">
 									Servicio:
-									<span class="font-semibold text-[color:var(--on-surface)]" data-summary-service-inline></span>
+									<span class="font-medium text-(--on-surface)" data-summary-service-inline></span>
 								</p>
 							</div>
-							<span class="rounded-full border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-3 py-1 text-xs font-bold text-[color:var(--on-surface-variant)]">
-								Paso 2
-							</span>
 						</div>
 
-						<div class="mt-4 rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] p-3">
-							<div class="mb-3 flex items-center justify-between gap-2">
+						<div class="mt-6 rounded-3xl border border-(--outline-variant) bg-(--surface-container-low) p-4 sm:p-6">
+							<div class="mb-5 flex items-center justify-between gap-3">
 								<button
 									type="button"
 									data-calendar-prev
-									class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-xs font-bold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
+									class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
 								>
 									Anterior
 								</button>
-								<p class="text-sm font-bold capitalize text-[color:var(--on-surface)]" data-calendar-month></p>
+								<p class="text-base font-medium capitalize tracking-wide text-(--on-surface)" data-calendar-month></p>
 								<button
 									type="button"
 									data-calendar-next
-									class="rounded-lg border border-[color:var(--shell-border)] px-3 py-1.5 text-xs font-bold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
+									class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
 								>
 									Siguiente
 								</button>
 							</div>
-							<div class="mb-2 grid grid-cols-7 gap-1 text-center text-[0.69rem] font-bold uppercase tracking-[0.08em] text-[color:var(--on-surface-variant)] sm:text-xs">
+							<div class="mb-3 grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase tracking-wider text-(--on-surface-variant) sm:text-sm">
 								<span>Lun</span>
 								<span>Mar</span>
 								<span>Mie</span>
@@ -191,14 +181,14 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 								<span>Sab</span>
 								<span>Dom</span>
 							</div>
-							<div class="grid grid-cols-7 gap-1" data-calendar-grid></div>
+							<div class="grid grid-cols-7 gap-1 sm:gap-2" data-calendar-grid></div>
 						</div>
 
-						<div class="mt-4">
+						<div class="mt-6">
 							<button
 								type="button"
 								data-back-to-services
-								class="rounded-lg border border-[color:var(--shell-border)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
+								class="inline-flex h-11 items-center justify-center rounded-full border border-(--outline) px-6 text-sm font-medium text-(--on-surface) transition hover:bg-(--surface-container-highest)"
 							>
 								Volver a servicios
 							</button>
@@ -207,41 +197,38 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 
 					<section
 						data-step-panel="3"
-						class="hidden rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-4 shadow-[0_22px_58px_rgba(15,23,42,0.1)] sm:p-5"
+						class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8"
 					>
-						<div class="flex flex-wrap items-center justify-between gap-3">
+						<div class="flex flex-wrap items-center justify-between gap-4">
 							<div>
-								<h2 class="text-lg font-extrabold text-[color:var(--on-surface)]">Selecciona un horario</h2>
-								<p class="text-sm text-[color:var(--on-surface-variant)]">
-									<span class="font-semibold text-[color:var(--on-surface)]" data-summary-date-inline></span>
+								<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona un horario</h2>
+								<p class="mt-1 text-base text-(--on-surface-variant)">
+									<span class="font-medium text-(--on-surface)" data-summary-date-inline></span>
 								</p>
 							</div>
-							<span class="rounded-full border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-3 py-1 text-xs font-bold text-[color:var(--on-surface-variant)]">
-								Paso 3
-							</span>
 						</div>
 
 						<div
 							data-slots-loading
-							class="mt-4 hidden rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--card-surface)] px-4 py-3 text-sm font-semibold text-[color:var(--on-surface-variant)]"
+							class="mt-6 hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)"
 						>
 							Consultando horarios disponibles...
 						</div>
 
-						<div class="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4" data-slots-grid></div>
+						<div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4" data-slots-grid></div>
 
 						<p
 							data-no-slots
-							class="mt-4 hidden rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800"
+							class="mt-6 hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-5 py-4 text-base font-medium text-(--on-error-container)"
 						>
 							No hay horarios disponibles para este día.
 						</p>
 
-						<div class="mt-4">
+						<div class="mt-6">
 							<button
 								type="button"
 								data-back-to-calendar
-								class="rounded-lg border border-[color:var(--shell-border)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] transition hover:bg-[color:var(--control-surface)]"
+								class="inline-flex h-11 items-center justify-center rounded-full border border-(--outline) px-6 text-sm font-medium text-(--on-surface) transition hover:bg-(--surface-container-highest)"
 							>
 								Volver al calendario
 							</button>
@@ -250,30 +237,27 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 
 					<section
 						data-step-panel="4"
-						class="hidden rounded-[1.2rem] border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] p-4 shadow-[0_22px_58px_rgba(15,23,42,0.1)] sm:p-5"
+						class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8"
 					>
-						<div class="flex flex-wrap items-center justify-between gap-3">
-							<h2 class="text-lg font-extrabold text-[color:var(--on-surface)]">Confirma tus datos</h2>
-							<span class="rounded-full border border-[color:var(--shell-border)] bg-[color:var(--control-surface)] px-3 py-1 text-xs font-bold text-[color:var(--on-surface-variant)]">
-								Paso 4
-							</span>
+						<div class="flex flex-wrap items-center justify-between gap-4">
+							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Confirma tus datos</h2>
 						</div>
 
-						<div class="mt-4 grid gap-4 lg:grid-cols-[1fr_20rem]">
-							<form class="grid gap-3" data-customer-form>
-								<label class="grid gap-1 text-sm font-semibold text-neutral-300">
+						<div class="mt-6 grid gap-8 lg:grid-cols-[1fr_22rem]">
+							<form class="grid gap-5" data-customer-form>
+								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
 									Nombre completo
 									<input
 										type="text"
 										name="customer_name"
 										maxlength="100"
 										required
-										class="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 outline-none transition focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/50"
+										class="rounded-xl border border-(--outline) bg-(--surface-container-lowest) px-4 py-3 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none transition focus:border-(--primary) focus:ring-1 focus:ring-(--primary)"
 										placeholder="Ej: Juan Perez"
 									/>
 								</label>
 
-								<label class="grid gap-1 text-sm font-semibold text-neutral-300">
+								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
 									Telefono (WhatsApp)
 									<input
 										type="tel"
@@ -281,55 +265,55 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 										maxlength="25"
 										required
 										inputmode="tel"
-										class="rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm text-neutral-100 placeholder-neutral-500 outline-none transition focus:border-blue-400/60 focus:ring-2 focus:ring-blue-500/50"
+										class="rounded-xl border border-(--outline) bg-(--surface-container-lowest) px-4 py-3 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none transition focus:border-(--primary) focus:ring-1 focus:ring-(--primary)"
 										placeholder="Ej: 0981 123 456"
 									/>
-									<span class="hidden text-xs font-semibold text-rose-400" data-field-error="customer_phone"></span>
+									<span class="hidden text-xs font-medium text-(--error)" data-field-error="customer_phone"></span>
 								</label>
 
 								<p
 									data-submit-error
-									class="hidden rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-semibold text-rose-800"
+									class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
 								></p>
 
-								<div class="mt-1 grid gap-2 sm:flex sm:flex-wrap sm:items-center">
+								<div class="mt-3 grid gap-3 sm:flex sm:flex-wrap sm:items-center">
 									<button
 										type="submit"
 										data-submit-booking
-										class="btn-primary-soft w-full rounded-lg px-4 py-2.5 text-sm font-bold transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+										class="inline-flex h-12 w-full items-center justify-center rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary) transition hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
 									>
 										Confirmar reserva
 									</button>
 									<button
 										type="button"
 										data-back-to-slots
-										class="w-full rounded-lg border border-[color:var(--shell-border)] px-3 py-2 text-sm font-semibold text-neutral-300 transition hover:bg-[color:var(--control-surface)] sm:w-auto"
+										class="inline-flex h-12 w-full items-center justify-center rounded-full border border-(--outline) bg-transparent px-8 text-base font-medium text-(--on-surface) transition hover:bg-(--surface-container-highest) sm:w-auto"
 									>
 										Volver a horarios
 									</button>
 								</div>
 							</form>
 
-							<aside class="rounded-xl border border-[color:var(--shell-border)] bg-neutral-900 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
-								<h3 class="text-sm font-bold uppercase tracking-[0.08em] text-[color:var(--on-surface-variant)]">
+							<aside class="rounded-[24px] bg-(--surface-container-highest) p-6 shadow-sm">
+								<h3 class="text-xs font-bold uppercase tracking-widest text-(--primary)">
 									Resumen
 								</h3>
-								<ul class="mt-2 grid gap-2 text-sm">
-									<li>
-										<span class="text-[color:var(--on-surface-variant)]">Profesional:</span>
-										<span class="font-bold text-[color:var(--on-surface)]" data-summary-professional></span>
+								<ul class="mt-4 grid gap-4 text-base">
+									<li class="grid">
+										<span class="text-sm font-medium text-(--on-surface-variant)">Profesional</span>
+										<span class="font-normal text-(--on-surface)" data-summary-professional></span>
 									</li>
-									<li>
-										<span class="text-[color:var(--on-surface-variant)]">Servicio:</span>
-										<span class="font-bold text-[color:var(--on-surface)]" data-summary-service></span>
+									<li class="grid">
+										<span class="text-sm font-medium text-(--on-surface-variant)">Servicio</span>
+										<span class="font-normal text-(--on-surface)" data-summary-service></span>
 									</li>
-									<li>
-										<span class="text-[color:var(--on-surface-variant)]">Fecha:</span>
-										<span class="font-bold text-[color:var(--on-surface)]" data-summary-date></span>
+									<li class="grid">
+										<span class="text-sm font-medium text-(--on-surface-variant)">Fecha</span>
+										<span class="font-normal text-(--on-surface)" data-summary-date></span>
 									</li>
-									<li>
-										<span class="text-[color:var(--on-surface-variant)]">Hora:</span>
-										<span class="font-bold text-[color:var(--on-surface)]" data-summary-time></span>
+									<li class="grid">
+										<span class="text-sm font-medium text-(--on-surface-variant)">Hora</span>
+										<span class="font-normal text-(--on-surface)" data-summary-time></span>
 									</li>
 								</ul>
 							</aside>
@@ -338,24 +322,24 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 
 					<section
 						data-step-panel="5"
-						class="hidden rounded-[1.2rem] border border-emerald-200 bg-emerald-50 p-5 text-emerald-900 shadow-[0_22px_58px_rgba(5,150,105,0.15)]"
+						class="hidden rounded-[28px] bg-(--tertiary-container) p-6 text-(--on-tertiary-container) shadow-sm sm:p-8"
 					>
-						<h2 class="text-xl font-extrabold">Reserva confirmada</h2>
-						<p class="mt-1 text-sm font-semibold text-emerald-800">
+						<h2 class="text-3xl font-normal tracking-tight">Reserva confirmada</h2>
+						<p class="mt-2 text-base font-medium text-(--on-tertiary-container) opacity-90">
 							Tu cita ha sido registrada correctamente.
 						</p>
-						<div class="mt-4 rounded-xl border border-emerald-200 bg-white/70 p-4">
-							<ul class="grid gap-2 text-sm">
-								<li><span class="font-semibold">Profesional:</span> <span data-ticket-professional></span></li>
-								<li><span class="font-semibold">Servicio:</span> <span data-ticket-service></span></li>
-								<li><span class="font-semibold">Fecha:</span> <span data-ticket-date></span></li>
-								<li><span class="font-semibold">Hora:</span> <span data-ticket-time></span></li>
+						<div class="mt-6 rounded-3xl bg-(--surface-container-lowest) p-6 shadow-sm">
+							<ul class="grid gap-4 text-base">
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Profesional</span> <span class="font-normal text-(--on-surface)" data-ticket-professional></span></li>
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Servicio</span> <span class="font-normal text-(--on-surface)" data-ticket-service></span></li>
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Fecha</span> <span class="font-normal text-(--on-surface)" data-ticket-date></span></li>
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Hora</span> <span class="font-normal text-(--on-surface)" data-ticket-time></span></li>
 							</ul>
 						</div>
 						<button
 							type="button"
 							data-restart-booking
-							class="mt-4 rounded-lg border border-emerald-300 bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-900 transition hover:bg-emerald-200"
+							class="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-(--tertiary) px-8 text-base font-medium text-(--on-tertiary) transition hover:opacity-90"
 						>
 							Reservar otra cita
 						</button>
@@ -375,67 +359,97 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 
 <style is:global>
 	.public-booking-shell {
-		--surface-bright: #111318;
-		--card-surface: rgba(20, 24, 31, 0.92);
-		--control-surface: rgba(28, 33, 43, 0.92);
-		--shell-border: rgba(255, 255, 255, 0.1);
-		--on-surface: #f4f4f5;
-		--on-surface-variant: #a1a1aa;
-		--primary: #60a5fa;
-		--primary-soft: rgba(96, 165, 250, 0.16);
-		--primary-container: rgba(96, 165, 250, 0.32);
-		--primary-soft-hover: rgba(96, 165, 250, 0.24);
+		/* Material 3 Dark Theme Colors */
+		--surface-background: #111318;
+		--surface-container-lowest: #0f1115;
+		--surface-container-low: #191b20;
+		--surface-container: #1d2025;
+		--surface-container-high: #282a2f;
+		--surface-container-highest: #33353a;
+		
+		--outline: #44474e;
+		--outline-variant: #44474e;
+
+		--on-surface: #e2e2e9;
+		--on-surface-variant: #c4c6d0;
+		
+		/* Primary */
+		--primary: #a8c7fa;
+		--on-primary: #062e6f;
+		--primary-container: #0842a0;
+		--on-primary-container: #d3e3fd;
+		--primary-hover: #b9d4fa;
+		
+		/* Tertiary */
+		--tertiary: #c7eccb;
+		--on-tertiary: #0c381c;
+		--tertiary-container: #225031;
+		--on-tertiary-container: #e3ffe6;
+		
+		/* Error */
+		--error: #ffb4ab;
+		--error-container: #93000a;
+		--on-error-container: #ffdad6;
 	}
 
 	.step-item-default,
 	.step-item-current,
 	.step-item-done {
-		border-radius: 0.8rem;
-		padding: 0.55rem 0.7rem;
-		font-weight: 700;
-		border: 1px solid transparent;
+		border-radius: 100px;
+		padding: 0.5rem 1rem;
+		font-weight: 500;
+		text-align: center;
+		transition: all 0.2s ease-in-out;
+		cursor: default;
 	}
 
 	.step-item-default {
-		background: rgba(24, 24, 27, 0.82);
-		color: rgb(115 115 115);
-		border-color: var(--shell-border);
+		background: transparent;
+		color: var(--on-surface-variant);
 	}
 
 	.step-item-current {
-		background: var(--primary-soft);
-		color: var(--primary);
-		border-color: var(--primary-container);
+		background: var(--primary-container);
+		color: var(--on-primary-container);
 	}
 
 	.step-item-done {
-		background: rgba(39, 39, 42, 0.9);
-		color: rgb(229 229 229);
-		border-color: var(--shell-border);
+		background: var(--surface-container-highest);
+		color: var(--on-surface);
 	}
 
 	.step-item-done::before {
 		content: '\2713';
 		display: inline-block;
 		margin-right: 0.4rem;
-		color: rgb(212 212 216);
+		color: var(--primary);
 	}
 
 	[data-booking-toast].is-error {
-		border-color: rgba(225, 29, 72, 0.35);
-		background: rgba(255, 228, 230, 0.8);
-		color: #be123c;
+		border: 1px solid var(--error-container);
+		background: var(--error-container);
+		color: var(--on-error-container);
 	}
 
 	[data-booking-toast].is-success {
-		border-color: rgba(5, 150, 105, 0.35);
-		background: rgba(220, 252, 231, 0.78);
-		color: #047857;
+		border: 1px solid var(--tertiary-container);
+		background: var(--tertiary-container);
+		color: var(--on-tertiary-container);
 	}
 
 	[data-calendar-grid] > button[disabled] {
 		cursor: not-allowed;
-		opacity: 0.45;
+		opacity: 0.25;
+	}
+
+	/* Utility styling for nested dynamic content if needed */
+	.btn-primary-soft {
+		background: var(--primary-container);
+		color: var(--on-primary-container);
+	}
+	.btn-primary-soft:hover {
+		background: var(--primary);
+		color: var(--on-primary);
 	}
 </style>
 

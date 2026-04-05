@@ -273,7 +273,7 @@ export const initializePublicBookingPage = () => {
 		if (profile.services.length === 0) {
 			const emptyState = document.createElement('p');
 			emptyState.className =
-				'rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800';
+				'rounded-2xl bg-[var(--surface-container-high)] px-5 py-4 text-base font-medium text-[var(--on-surface-variant)]';
 			emptyState.textContent = 'Este profesional no tiene servicios disponibles actualmente.';
 			servicesGrid.appendChild(emptyState);
 			return;
@@ -283,14 +283,14 @@ export const initializePublicBookingPage = () => {
 			const button = document.createElement('button');
 			button.type = 'button';
 			button.className =
-				'group grid gap-2 rounded-xl border px-4 py-3 text-left transition ' +
+				'group grid gap-2 rounded-2xl border px-5 py-4 text-left transition ' +
 				(selectedService?.id_service === service.id_service
-					? 'border-[color:var(--primary-container)] bg-[color:var(--primary-soft)]'
-					: 'border-[color:var(--shell-border)] bg-[color:var(--card-surface)] hover:bg-[color:var(--control-surface)]');
+					? 'border-[var(--primary)] bg-[var(--primary-container)]'
+					: 'border-[var(--outline-variant)] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container-high)]');
 
 			button.innerHTML = `
-				<span class="text-base font-bold text-[color:var(--on-surface)]">${service.name}</span>
-				<div class="flex items-center justify-between gap-2 text-xs font-semibold text-[color:var(--on-surface-variant)]">
+				<span class="text-lg font-medium text-[var(--on-surface)]">${service.name}</span>
+				<div class="flex items-center justify-between gap-2 text-sm font-medium text-[var(--on-surface-variant)]">
 					<span>${service.duration_minutes} min</span>
 					<span>${formatCurrency(service.price)}</span>
 				</div>
@@ -326,7 +326,7 @@ export const initializePublicBookingPage = () => {
 
 		for (let blank = 0; blank < firstWeekday; blank += 1) {
 			const placeholder = document.createElement('span');
-			placeholder.className = 'h-10 rounded-lg';
+			placeholder.className = 'empty-hidden';
 			calendarGrid.appendChild(placeholder);
 		}
 
@@ -343,12 +343,12 @@ export const initializePublicBookingPage = () => {
 			dayButton.textContent = String(day);
 			dayButton.disabled = isPast || !selectedService;
 			dayButton.className =
-				'h-10 rounded-lg border text-sm font-semibold transition ' +
+				'flex h-10 w-10 mx-auto items-center justify-center rounded-full border text-sm font-medium transition ' +
 				(isSelected
-					? 'border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] text-[color:var(--primary)]'
+					? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--on-primary)]'
 					: isToday
-						? 'border-[color:var(--primary-container)] bg-[color:var(--control-surface)] text-[color:var(--on-surface)]'
-						: 'border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] text-[color:var(--on-surface)] hover:bg-[color:var(--control-surface)]');
+						? 'border-[var(--primary)] bg-transparent text-[var(--primary)]'
+						: 'border-transparent bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
 
 			dayButton.addEventListener('click', () => {
 				if (!selectedService) {
@@ -378,10 +378,10 @@ export const initializePublicBookingPage = () => {
 			slotButton.type = 'button';
 			slotButton.textContent = slot;
 			slotButton.className =
-				'h-11 rounded-full border px-2 text-center text-sm font-bold transition ' +
+				'flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium transition ' +
 				(selectedTime === slot
-					? 'border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] text-[color:var(--primary)]'
-					: 'border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] text-[color:var(--on-surface)] hover:bg-white/5');
+					? 'border-[var(--primary)] bg-[var(--primary-container)] text-[var(--on-primary-container)]'
+					: 'border-[var(--outline)] bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
 
 			slotButton.addEventListener('click', () => {
 				selectedTime = slot;
