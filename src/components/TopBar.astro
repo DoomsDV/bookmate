@@ -6,10 +6,6 @@ interface Props {
 }
 
 const { userName = 'Perfil' } = Astro.props;
-const cachedOrganizationName = String(
-	Astro.locals.organizationName || Astro.cookies.get('org_name')?.value || ''
-).trim();
-const workspaceName = cachedOrganizationName || 'Bookmate';
 const roleId = Number(Astro.locals.roleId ?? 0);
 ---
 
@@ -28,12 +24,8 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 			</button>
 
 			<div class="min-w-0">
-				<a href="/" class="block no-underline sm:mt-1">
-					<span
-						class="[font-family:var(--font-logo)] block max-w-38 truncate text-[1.22rem] font-extrabold uppercase leading-none tracking-[0.06em] text-(--primary) sm:max-w-[16rem] sm:text-[1.55rem] sm:tracking-[0.08em]"
-					>
-						HASEL
-					</span>
+				<a href="/" class="topbar-brand-link no-underline" aria-label="Ir al inicio">
+					<span class="topbar-brand-mark">hasel</span>
 				</a>
 			</div>
 		</div>
