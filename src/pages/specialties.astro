@@ -12,13 +12,6 @@ const token = Astro.locals.token ?? '';
 const PAGE_SIZE = 9;
 const rawPage = Number(Astro.url.searchParams.get('page') || '1');
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
-const flashMessage = Astro.url.searchParams.get('flash_message') ?? '';
-const flashTypeRaw = Astro.url.searchParams.get('flash_type') ?? 'success';
-const validFlashTypes = ['success', 'error', 'info', 'warning'] as const;
-type FlashType = (typeof validFlashTypes)[number];
-const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
-	? (flashTypeRaw as FlashType)
-	: 'info';
 
 let specialties: Specialty[] = [];
 let loadError = '';
@@ -81,14 +74,6 @@ const visiblePages = Array.from(
 
 					<main class="bg-(--content-surface) px-4 py-4 sm:px-6 sm:py-6">
 						<section class="grid gap-4 sm:gap-5">
-							{
-								flashMessage ? (
-									<div class="pointer-events-none fixed bottom-6 left-1/2 z-70 -translate-x-1/2 w-max max-w-[calc(100vw-2rem)]">
-										<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
-									</div>
-								) : null
-							}
-
 							{
 								loadError ? (
 									<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />

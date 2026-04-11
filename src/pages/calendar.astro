@@ -7,13 +7,6 @@ import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
 
 const token = Astro.locals.token ?? '';
-const flashMessage = Astro.url.searchParams.get('flash_message') ?? '';
-const flashTypeRaw = Astro.url.searchParams.get('flash_type') ?? 'success';
-const validFlashTypes = ['success', 'error', 'info', 'warning'] as const;
-type FlashType = (typeof validFlashTypes)[number];
-const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
-	? (flashTypeRaw as FlashType)
-	: 'info';
 const initialLoadError = token ? '' : 'No hay sesión válida para consultar el calendario.';
 ---
 
@@ -32,14 +25,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 
 				<main class="bg-(--content-surface) px-4 py-4 sm:px-6 sm:py-6">
 					<section class="material-region dark:shadow-none" data-calendar-root>
-						{
-							flashMessage ? (
-								<div class="pointer-events-none fixed bottom-6 left-1/2 z-70 -translate-x-1/2 w-max max-w-[calc(100vw-2rem)]">
-									<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
-								</div>
-							) : null
-						}
-
 						{
 							initialLoadError ? (
 								<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />

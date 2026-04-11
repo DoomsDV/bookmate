@@ -20,19 +20,19 @@ const {
 const toneMap: Record<MessageType, { icon: string; iconColor: string }> = {
 	success: {
 		icon: 'check_circle',
-		iconColor: 'text-(--flash-success-text)',
+		iconColor: 'text-emerald-300 dark:text-emerald-700',
 	},
 	error: {
 		icon: 'error',
-		iconColor: 'text-(--flash-danger-text)',
+		iconColor: 'text-rose-300 dark:text-rose-700',
 	},
 	info: {
 		icon: 'info',
-		iconColor: 'text-(--primary)',
+		iconColor: 'text-sky-300 dark:text-sky-700',
 	},
 	warning: {
 		icon: 'warning',
-		iconColor: 'text-(--status-pending-text)',
+		iconColor: 'text-amber-300 dark:text-amber-700',
 	},
 };
 
@@ -45,21 +45,21 @@ const tone = toneMap[type];
 			role="alert"
 			aria-live="polite"
 			class:list={[
-				'pointer-events-auto group relative flex items-center gap-3 rounded-full border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-(--on-surface) shadow-lg',
-				expand ? 'w-full max-w-full rounded-2xl' : 'w-max max-w-[calc(100vw-2rem)]',
+				'pointer-events-auto group relative flex items-center gap-3 rounded-full bg-slate-800 px-4 py-3 text-slate-50 shadow-xl dark:bg-slate-100 dark:text-slate-900',
+				expand ? 'w-full max-w-full rounded-2xl' : 'w-auto max-w-[calc(100vw-2rem)]',
 			]}
 			style="transform: translateY(20px); opacity: 0; animation: flash-slide-in 260ms cubic-bezier(0.16, 1, 0.3, 1) forwards;"
 			data-flash-message
 			data-auto-hide-ms={autoHideMs > 0 ? String(autoHideMs) : undefined}
 		>
 			<span class:list={['material-symbols-rounded shrink-0 text-[1.22rem] tracking-normal', tone.iconColor]}>{tone.icon}</span>
-			<p class="min-w-0 flex-1 truncate text-sm font-medium leading-5">{message}</p>
+			<p class="min-w-0 flex-1 text-sm font-medium leading-5">{message}</p>
 
 			{
 				dismissible ? (
 					<button
 						type="button"
-						class="shrink-0 -mr-1 rounded-full p-1.5 text-(--on-surface-variant) transition hover:bg-(--primary-soft) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)/30"
+						class="shrink-0 -mr-1 rounded-full p-1.5 text-slate-300 transition hover:bg-white/10 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-white/35 dark:text-slate-500 dark:hover:bg-slate-200 dark:hover:text-slate-900 dark:focus:ring-slate-300"
 						aria-label="Cerrar mensaje"
 						data-flash-close
 					>

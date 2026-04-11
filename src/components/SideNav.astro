@@ -34,6 +34,11 @@ const isItemActive = (item: NavItem) => {
 	return normalizePath(item.href) === activePath;
 };
 
+const prefetchViewports = new Set(["/calendar", "/services", "/locations"]);
+
+const getPrefetchMode = (item: NavItem) =>
+	prefetchViewports.has(normalizePath(item.href)) ? "viewport" : undefined;
+
 const primaryItems: NavItem[] = [
 	{ label: "Dashboard", icon: "space_dashboard", href: "/" },
 	{ label: "Calendario", icon: "calendar_month", href: "/calendar" },
@@ -104,6 +109,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 						<li>
 							<a
 								href={item.href}
+								data-astro-prefetch={getPrefetchMode(item)}
 								class:list={[
 									"flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold no-underline transition",
 									isItemActive(item)
@@ -199,6 +205,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 						<li>
 							<a
 								href={item.href}
+								data-astro-prefetch={getPrefetchMode(item)}
 								data-sidebar-item
 								class:list={[
 									"flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold no-underline transition",

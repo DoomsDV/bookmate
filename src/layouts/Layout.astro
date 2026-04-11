@@ -1,7 +1,16 @@
 ---
 import { ClientRouter } from 'astro:transitions';
+import FlashMessage from '../components/FlashMessage.astro';
 // 1. Importamos la información de la PWA
 import { pwaInfo } from 'virtual:pwa-info';
+
+const flashMessage = Astro.url.searchParams.get('flash_message') ?? '';
+const flashTypeRaw = Astro.url.searchParams.get('flash_type') ?? 'success';
+const validFlashTypes = ['success', 'error', 'info', 'warning'] as const;
+type FlashType = (typeof validFlashTypes)[number];
+const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
+    ? (flashTypeRaw as FlashType)
+    : 'info';
 ---
 
 <!doctype html>
@@ -52,6 +61,15 @@ import { pwaInfo } from 'virtual:pwa-info';
     <body>
         <ClientRouter />
         <slot />
+        {flashMessage && (
+            <div class="pointer-events-none fixed bottom-8 left-1/2 z-[100] flex w-full -translate-x-1/2 justify-center px-4 sm:bottom-10">
+                <FlashMessage
+                    message={flashMessage}
+                    type={flashType}
+                    autoHideMs={4000}
+                />
+            </div>
+        )}
     </body>
 </html>
 
