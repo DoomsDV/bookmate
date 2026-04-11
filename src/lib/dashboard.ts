@@ -6,6 +6,12 @@ export const DASHBOARD_URL = resolveOrdsApiUrl(
 	'/dashboard'
 );
 
+export const DASHBOARD_AI_SUMMARY_URL = resolveOrdsApiUrl(
+	import.meta.env.AI_SUMMARIZATION_URL,
+	'AI_SUMMARIZATION_URL',
+	'/dashboard/ai-summary'
+);
+
 export interface DashboardKpis {
 	today_appointments: number;
 	pending_appointments: number;
@@ -24,6 +30,9 @@ export interface DashboardUpcomingAppointment {
 export interface DashboardMainData {
 	kpis: DashboardKpis;
 	upcoming_appointments: DashboardUpcomingAppointment[];
+}
+
+export interface DashboardAiSummaryData {
 	ai_summary: string;
 }
 
@@ -97,7 +106,6 @@ const normalizeMainData = (value: unknown): DashboardMainData => {
 		return {
 			kpis: normalizeKpis(null),
 			upcoming_appointments: [],
-			ai_summary: '',
 		};
 	}
 
@@ -110,6 +118,16 @@ const normalizeMainData = (value: unknown): DashboardMainData => {
 	return {
 		kpis: normalizeKpis(source.kpis),
 		upcoming_appointments: upcoming,
+	};
+};
+
+const normalizeAiSummaryData = (value: unknown): DashboardAiSummaryData => {
+	if (!value || typeof value !== 'object') {
+		return { ai_summary: '' };
+	}
+
+	const source = value as Record<string, unknown>;
+	return {
 		ai_summary: toText(source.ai_summary),
 	};
 };
@@ -147,4 +165,41 @@ export const getMainDashboardWithOrds = async (token: string): Promise<Dashboard
 	}
 
 	return normalizeMainData(data.data);
+};
+
+export const getDashboardAiSummaryWithOrds = async (
+	token: string
+): Promise<DashboardAiSummaryData> => {
+	if (!token) {
+		throw new DashboardApiError('Token de acceso requerido.', 401);
+	}
+
+	const response = await fetch(DASHBOARD_AI_SUMMARY_URL, {
+		method: 'GET',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	let data: DashboardSuccessResponse | DashboardFailureResponse | null = null;
+	try {
+		data = await response.json();
+	} catch {
+		throw new DashboardApiError(
+			'No fue posible interpretar la respuesta del resumen IA.',
+			502
+		);
+	}
+
+	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
+		const failureData = (data ?? {}) as DashboardFailureResponse;
+		throw new DashboardApiError(
+			toText(failureData.message) || 'No fue posible obtener el resumen IA.',
+			response.status || 400,
+			failureData.details
+		);
+	}
+
+	return normalizeAiSummaryData(data.data);
 };

@@ -15,7 +15,6 @@ let dashboard: DashboardMainData = {
 		total_customers: 0,
 	},
 	upcoming_appointments: [],
-	ai_summary: '',
 };
 let loadError = '';
 
@@ -136,11 +135,12 @@ const getStatusTone = (status: string) => {
 								</div>
 							) : (
 								<>
-									{dashboard.ai_summary ? (
-										<div class="ai-card">
-											<p>{dashboard.ai_summary}</p>
-										</div>
-									) : null}
+									<div class="ai-card material-region bg-(--card-surface)" data-ai-summary-card>
+										<p class="text-sm leading-relaxed text-(--on-surface-variant)" data-ai-summary-state>
+											Generando resumen IA...
+										</p>
+										<p class="hidden text-sm leading-relaxed text-(--on-surface)" data-ai-summary-text></p>
+									</div>
 
 									<div class="material-cards-grid md:grid-cols-3">
 										{
@@ -232,3 +232,46 @@ const getStatusTone = (status: string) => {
 		</div>
 	</div>
 </Layout>
+
+<script>
+	const loadAiSummary = async () => {
+		const card = document.querySelector('[data-ai-summary-card]');
+		if (!card) return;
+
+		if (card.getAttribute('data-ai-summary-loaded') === '1') return;
+		card.setAttribute('data-ai-summary-loaded', '1');
+
+		const stateNode = card.querySelector('[data-ai-summary-state]');
+		const textNode = card.querySelector('[data-ai-summary-text]');
+
+		if (!stateNode || !textNode) return;
+
+		try {
+			const response = await fetch('/api/dashboard/ai-summary', {
+				headers: { Accept: 'application/json' },
+			});
+			const payload = await response.json();
+
+			if (!response.ok || payload?.status !== 'success') {
+				throw new Error(payload?.message || 'No fue posible recuperar el resumen IA.');
+			}
+
+			const summary = String(payload?.data?.ai_summary ?? '').trim();
+			if (!summary) {
+				throw new Error('El resumen IA no está disponible en este momento.');
+			}
+
+			textNode.textContent = summary;
+			textNode.classList.remove('hidden');
+			stateNode.classList.add('hidden');
+		} catch (error) {
+			stateNode.textContent =
+				error instanceof Error
+					? error.message
+					: 'No fue posible recuperar el resumen IA.';
+		}
+	};
+
+	loadAiSummary();
+	document.addEventListener('astro:page-load', loadAiSummary);
+</script>

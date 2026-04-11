@@ -38,6 +38,7 @@ interface ImportMetaEnv {
     readonly ORDS_AUTH_CHANGE_PASSWORD_URL?: string;
 
     readonly ORDS_DASHBOARD_URL?: string;
+    readonly AI_SUMMARIZATION_URL?: string;
     readonly ORDS_PROFILE_ME_URL?: string;
     readonly ORDS_WORKSPACE_URL?: string;
     readonly ORDS_DEPARTMENTS_URL?: string;
