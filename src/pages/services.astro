@@ -1,4 +1,4 @@
----
+﻿---
 import AppAlert from "../components/AppAlert.astro";
 import FlashMessage from "../components/FlashMessage.astro";
 import ServicesGrid from "../components/ServicesGrid.astro";
@@ -279,7 +279,7 @@ const visiblePages = Array.from(
 						name="name"
 						maxlength="100"
 						required
-						class="w-full min-w-0 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+						class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 						placeholder="Ej: Corte premium"
 					/>
 					<span
@@ -304,7 +304,7 @@ const visiblePages = Array.from(
 							min="1"
 							step="1"
 							required
-							class="w-full min-w-0 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 							placeholder="Ej: 45"
 						/>
 						<span
@@ -325,7 +325,7 @@ const visiblePages = Array.from(
 							type="text"
 							name="price"
 							inputmode="numeric"
-							class="w-full min-w-0 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 							placeholder="Ej: 45.000"
 							data-price-mask
 						/>
@@ -342,7 +342,7 @@ const visiblePages = Array.from(
 					<div class="relative">
 						<select
 							name="is_active"
-							class="w-full appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer shadow-sm"
+							class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer"
 						>
 							<option value="1"
 								>Activo (Visible para clientes)</option
@@ -979,3 +979,5 @@ const visiblePages = Array.from(
 		}
 	}
 </style>
+
+

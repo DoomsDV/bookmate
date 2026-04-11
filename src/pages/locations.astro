@@ -1,4 +1,4 @@
----
+﻿---
 import AppAlert from "../components/AppAlert.astro";
 import FlashMessage from "../components/FlashMessage.astro";
 import LocationsGrid from "../components/LocationsGrid.astro";
@@ -284,7 +284,7 @@ const googleMapsApiKey =
 							name="name"
 							maxlength="100"
 							required
-							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 							placeholder="Ej: Casa Central"
 						/>
 						<span
@@ -304,7 +304,7 @@ const googleMapsApiKey =
 							name="address"
 							maxlength="255"
 							required
-							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 							placeholder="Ej: Av. Principal 123"
 						/>
 						<span
@@ -326,7 +326,7 @@ const googleMapsApiKey =
 								name="dep_id_department"
 								required
 								data-department-select
-								class="w-full appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer shadow-sm"
+								class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer"
 							>
 								<option value=""
 									>Selecciona un departamento</option
@@ -358,7 +358,7 @@ const googleMapsApiKey =
 								required
 								disabled
 								data-city-select
-								class="w-full appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer shadow-sm disabled:cursor-not-allowed disabled:opacity-70"
+								class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer disabled:cursor-not-allowed disabled:opacity-70"
 							>
 								<option value=""
 									>Selecciona un departamento primero</option
@@ -436,7 +436,7 @@ const googleMapsApiKey =
 					<div class="relative">
 						<select
 							name="is_active"
-							class="w-full appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer shadow-sm"
+							class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer"
 						>
 							<option value="1"
 								>Activa (Visible para clientes)</option
@@ -1675,3 +1675,5 @@ const googleMapsApiKey =
 		}
 	}
 </style>
+
+

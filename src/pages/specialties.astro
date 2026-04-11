@@ -1,4 +1,4 @@
----
+﻿---
 import AppAlert from '../components/AppAlert.astro';
 import FlashMessage from '../components/FlashMessage.astro';
 import SideNav from '../components/SideNav.astro';
@@ -235,7 +235,7 @@ const visiblePages = Array.from(
 							name="name"
 							maxlength="100"
 							required
-							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 							placeholder="Ej: Colorimetría"
 						/>
 						<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="name"></span>
@@ -249,7 +249,7 @@ const visiblePages = Array.from(
 							name="description"
 							maxlength="255"
 							rows="3"
-							class="resize-y rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							class="resize-y rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 							placeholder="Describe brevemente la especialidad"
 						></textarea>
 						<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="description"></span>
@@ -260,7 +260,7 @@ const visiblePages = Array.from(
 						<div class="relative">
 							<select
 								name="is_active"
-								class="w-full appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer shadow-sm"
+								class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer"
 							>
 								<option value="1">Activa (Visible para todos)</option>
 								<option value="0">Inactiva (Oculta temporalmente)</option>
@@ -843,3 +843,5 @@ const visiblePages = Array.from(
 		}
 	}
 </style>
+
+

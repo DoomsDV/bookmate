@@ -69,20 +69,20 @@ const publicProfileDomain =
 				<form data-settings-profile-form class="grid gap-8">
 					<div class="grid gap-5">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información personal</h3>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Informacion personal</h3>
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Solo para tu cuenta y acceso interno.</p>
 						</div>
 						<div class="grid gap-5 sm:grid-cols-2">
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre<input name="first_name" required class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Apellido<input name="last_name" required class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre<input name="first_name" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Apellido<input name="last_name" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 						</div>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electrónico<input name="email" readonly class="rounded-2xl border border-(--shell-border) bg-(--control-surface) px-4 py-3 text-[0.95rem] outline-none text-(--on-surface-variant) cursor-not-allowed shadow-sm" /></label>
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electronico<input name="email" readonly class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-4 py-3 text-[0.95rem] outline-none text-(--on-surface-variant) cursor-not-allowed" /></label>
 					</div>
 
 					<div data-settings-prof-fields class="hidden grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Avatar público</h3>
-							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Se mostrará en tu perfil público.</p>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Avatar publico</h3>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Se mostrara en tu perfil publico.</p>
 						</div>
 						<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
 							<img data-settings-profile-preview class="hidden h-24 w-24 rounded-[1.25rem] border border-(--shell-border) object-cover shadow-sm bg-(--surface-bright)" alt="Foto de perfil" />
@@ -92,19 +92,19 @@ const publicProfileDomain =
 									<span class="material-symbols-rounded mr-2 text-[1.2rem]">photo_camera</span>
 									Cambiar foto
 								</label>
-								<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">JPG o PNG. Se mostrará en tu perfil público.</p>
+								<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">JPG o PNG. Se mostrara en tu perfil publico.</p>
 							</div>
 						</div>
 					</div>
 
 					<div data-settings-prof-fields class="hidden grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Perfil público</h3>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Perfil publico</h3>
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Estos datos se muestran a tus clientes en internet.</p>
 						</div>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Teléfono público<input name="phone_number" placeholder="Ej: 0981 123 456" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Telefono publico<input name="phone_number" placeholder="Ej: 0981 123 456" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-							URL del perfil público <span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
+							URL del perfil publico <span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
 							<div class="flex shadow-sm rounded-2xl transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
 								<span data-settings-profile-slug-prefix class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-medium text-(--on-surface-variant)">
 									{publicProfileDomain}/p/
@@ -117,7 +117,7 @@ const publicProfileDomain =
 								/>
 							</div>
 							<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
-								Este será el enlace directo para que los clientes agenden contigo.
+								Este sera el enlace directo para que los clientes agenden contigo.
 							</span>
 							<span data-settings-profile-field-error="profile_slug" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
@@ -139,51 +139,51 @@ const publicProfileDomain =
 				<form data-settings-security-form class="grid gap-8">
 					<div class="grid gap-5">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cambio de contraseña</h3>
-							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Asegúrate de usar una contraseña fuerte y segura.</p>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cambio de contrasena</h3>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Asegurate de usar una contrasena fuerte y segura.</p>
 						</div>
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						Contraseña actual
+						Contrasena actual
 						<input
 							type="password"
 							name="current_password"
 							autocomplete="current-password"
 							required
-							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 						/>
 					</label>
 					<div class="grid gap-5 sm:grid-cols-2">
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						Nueva contraseña
+						Nueva contrasena
 						<input
 							type="password"
 							name="new_password"
 							autocomplete="new-password"
 							required
 							minlength="8"
-							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 						/>
 					</label>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						Confirmar nueva contraseña
+						Confirmar nueva contrasena
 						<input
 							type="password"
 							name="confirm_password"
 							autocomplete="new-password"
 							required
 							minlength="8"
-							class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+							class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 						/>
 					</label>
 					</div>
 					<p class="text-[0.85rem] font-medium text-(--on-surface-variant) -mt-2">
-						La nueva contraseña debe tener al menos 8 caracteres.
+						La nueva contrasena debe tener al menos 8 caracteres.
 					</p>
 					</div>
 					<div class="flex justify-end pt-2 border-t border-(--shell-border) border-dashed">
 						<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">
 							<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">key</span>
-							Actualizar contraseña
+							Actualizar contrasena
 						</button>
 					</div>
 				</form>
@@ -199,7 +199,7 @@ const publicProfileDomain =
 					<div class="grid gap-5 sm:grid-cols-2">
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Tema del panel
 							<div class="relative">
-								<select name="panel_theme" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
+								<select name="panel_theme" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 							<option value="light">Claro</option>
 							<option value="dark">Oscuro</option>
 						</select>
@@ -207,7 +207,7 @@ const publicProfileDomain =
 					</label>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Vista inicial calendario
 							<div class="relative">
-								<select name="calendar_view" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
+								<select name="calendar_view" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 							<option value="timeGridDay">Diaria</option>
 							<option value="timeGridWeek">Semanal</option>
 							<option value="dayGridMonth">Mensual</option>
@@ -229,13 +229,13 @@ const publicProfileDomain =
 							<p data-settings-feedback="branding" class="hidden settings-feedback"></p>
 							<form data-settings-branding-form class="grid gap-6 border-t border-(--shell-border) border-dashed pt-8">
 								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Página pública de reservas</h3>
-									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Personaliza cómo te ven los clientes.</p>
+									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Pagina publica de reservas</h3>
+									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Personaliza como te ven los clientes.</p>
 								</div>
 								<div class="grid gap-5 sm:grid-cols-2">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Tema página pública
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Tema pagina publica
 										<div class="relative">
-											<select name="theme_pref" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
+											<select name="theme_pref" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 										<option value="light">Claro</option>
 										<option value="dark">Oscuro</option>
 									</select>
@@ -258,7 +258,7 @@ const publicProfileDomain =
 								</div>
 								<div class="flex justify-end pt-1">
 									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">
-										Guardar página pública
+										Guardar pagina publica
 									</button>
 								</div>
 							</form>
@@ -274,15 +274,15 @@ const publicProfileDomain =
 							<p data-settings-feedback="workspace" class="hidden settings-feedback"></p>
 							<form data-settings-workspace-form class="grid gap-6">
 								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información del Negocio</h3>
-									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Detalles principales de tu organización.</p>
+									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Informacion del Negocio</h3>
+									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Detalles principales de tu organizacion.</p>
 								</div>
 								<div class="grid gap-5 sm:grid-cols-2">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre del negocio<input name="name" required class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">WhatsApp público<input name="public_whatsapp" placeholder="Ej: 595981123456" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre del negocio<input name="name" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">WhatsApp publico<input name="public_whatsapp" placeholder="Ej: 595981123456" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 								</div>
 								<input type="hidden" name="profile_slug" />
-								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripción<textarea name="description" rows="4" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm resize-y"></textarea></label>
+								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripcion<textarea name="description" rows="4" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 resize-y"></textarea></label>
 								<div class="flex justify-end pt-4 border-t border-(--shell-border) border-dashed">
 									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)"><span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">store</span>Guardar negocio</button>
 								</div>
@@ -293,14 +293,14 @@ const publicProfileDomain =
 							<p data-settings-feedback="system" class="hidden settings-feedback"></p>
 							<form data-settings-system-form class="grid gap-6">
 								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Configuración del Sistema</h3>
+									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Configuracion del Sistema</h3>
 									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Ajustes regionales y de tiempo.</p>
 								</div>
 								<div class="grid gap-5 sm:grid-cols-2">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Zona horaria<input name="timezone" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Zona horaria<input name="timezone" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Formato de hora
 										<div class="relative">
-											<select name="time_format" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
+											<select name="time_format" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 										<option value="24H">24 horas</option>
 										<option value="12H">12 horas</option>
 									</select>
@@ -311,12 +311,12 @@ const publicProfileDomain =
 								<div class="grid gap-5">
 									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Alertas de citas no respondidas
 										<div class="relative">
-											<select name="unanswered_alert_action" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
+											<select name="unanswered_alert_action" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 												<option value="KEEP">Mantener la cita (Ignorar)</option>
-												<option value="CANCEL">Cancelar la cita automáticamente</option>
+												<option value="CANCEL">Cancelar la cita automaticamente</option>
 											</select>
 										</div>
-										<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">Acción a tomar cuando un cliente no responde al recordatorio.</span>
+										<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">Accion a tomar cuando un cliente no responde al recordatorio.</span>
 									</label>
 								</div>
 
@@ -566,8 +566,8 @@ const publicProfileDomain =
 			return (
 				normalized === 'errores de validacion.' ||
 				normalized === 'errores de validacion' ||
-				normalized === 'errores de validación.' ||
-				normalized === 'errores de validación'
+				normalized === 'errores de validacion.' ||
+				normalized === 'errores de validacion'
 			);
 		}
 
@@ -736,7 +736,7 @@ const publicProfileDomain =
 				if (this.formEls.profileSlugInput) this.setSuggestedSlug('');
 				this.els.profilePreview?.classList.add('hidden');
 				if (this.els.profileNote) {
-					this.els.profileNote.textContent = 'Esta cuenta no tiene perfil profesional público. Solo se guarda nombre y apellido.';
+					this.els.profileNote.textContent = 'Esta cuenta no tiene perfil profesional publico. Solo se guarda nombre y apellido.';
 					this.els.profileNote.classList.remove('hidden');
 				}
 			}
@@ -756,7 +756,7 @@ const publicProfileDomain =
 			setValue('[data-settings-system-form] [name="timezone"]', workspace?.timezone || 'America/Asuncion');
 			setValue('[data-settings-system-form] [name="time_format"]', workspace?.time_format === '12H' ? '12H' : '24H');
 			
-			// Aquí está la línea ya corregida apuntando al formulario correcto de sistema:
+			// Aqui esta la linea ya corregida apuntando al formulario correcto de sistema:
 			setValue('[data-settings-system-form] [name="unanswered_alert_action"]', workspace?.unanswered_alert_action === 'CANCEL' ? 'CANCEL' : 'KEEP');
 			
 			if (this.els.logoPreview && workspace?.logo_url) {
@@ -865,22 +865,22 @@ const publicProfileDomain =
 			const confirmPassword = String(this.els.securityForm.querySelector<HTMLInputElement>('[name="confirm_password"]')?.value || '').trim();
 
 			if (!currentPassword || !newPassword || !confirmPassword) {
-				this.showFeedback('security', 'Completa los tres campos de contraseña.', 'error');
+				this.showFeedback('security', 'Completa los tres campos de contrasena.', 'error');
 				return;
 			}
 
 			if (newPassword.length < 8) {
-				this.showFeedback('security', 'La nueva contraseña debe tener al menos 8 caracteres.', 'error');
+				this.showFeedback('security', 'La nueva contrasena debe tener al menos 8 caracteres.', 'error');
 				return;
 			}
 
 			if (newPassword !== confirmPassword) {
-				this.showFeedback('security', 'La confirmación no coincide con la nueva contraseña.', 'error');
+				this.showFeedback('security', 'La confirmacion no coincide con la nueva contrasena.', 'error');
 				return;
 			}
 
 			if (newPassword === currentPassword) {
-				this.showFeedback('security', 'La nueva contraseña debe ser distinta a la actual.', 'error');
+				this.showFeedback('security', 'La nueva contrasena debe ser distinta a la actual.', 'error');
 				return;
 			}
 
@@ -892,12 +892,12 @@ const publicProfileDomain =
 						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 						body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
 					},
-					'No fue posible actualizar la contraseña.'
+					'No fue posible actualizar la contrasena.'
 				);
-				this.showFeedback('security', this.readApiMessage(data, 'Contraseña actualizada correctamente.'), 'success');
+				this.showFeedback('security', this.readApiMessage(data, 'Contrasena actualizada correctamente.'), 'success');
 				this.resetSecurityForm();
 			} catch (error) {
-				this.showFeedback('security', error instanceof Error ? error.message : 'No fue posible actualizar la contraseña.', 'error');
+				this.showFeedback('security', error instanceof Error ? error.message : 'No fue posible actualizar la contrasena.', 'error');
 			}
 		};
 
@@ -921,19 +921,19 @@ const publicProfileDomain =
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 					body: JSON.stringify(payload),
-				}, 'No fue posible guardar la configuración.');
+				}, 'No fue posible guardar la configuracion.');
 
-				let successMessage = 'Configuración guardada correctamente.';
+				let successMessage = 'Configuracion guardada correctamente.';
 				if (panel === 'workspace') successMessage = 'Negocio actualizado correctamente.';
-				if (panel === 'branding') successMessage = 'Personalización guardada correctamente.';
+				if (panel === 'branding') successMessage = 'Personalizacion guardada correctamente.';
 				if (panel === 'system') successMessage = 'Sistema actualizado correctamente.';
 
 				this.showFeedback(panel, this.readApiMessage(data, successMessage), 'success');
 				await this.loadData();
 			} catch (error) {
-				let errorMessage = 'No fue posible guardar la configuración.';
+				let errorMessage = 'No fue posible guardar la configuracion.';
 				if (panel === 'workspace') errorMessage = 'No fue posible guardar negocio.';
-				if (panel === 'branding') errorMessage = 'No fue posible guardar personalización.';
+				if (panel === 'branding') errorMessage = 'No fue posible guardar personalizacion.';
 				if (panel === 'system') errorMessage = 'No fue posible guardar sistema.';
 
 				this.showFeedback(panel, error instanceof Error ? error.message : errorMessage, 'error');
@@ -964,7 +964,7 @@ const publicProfileDomain =
 			
 			const extraPayload: Record<string, string> = {};
 			
-			// Extraemos y aseguramos explícitamente el campo para el JSON
+			// Extraemos y aseguramos explicitamente el campo para el JSON
 			const actionSelect = this.els.systemForm?.querySelector<HTMLSelectElement>('[name="unanswered_alert_action"]');
 			if (actionSelect) {
 				extraPayload.unanswered_alert_action = actionSelect.value;
@@ -1083,3 +1083,7 @@ const publicProfileDomain =
 		color: #be123c;
 	}
 </style>
+
+
+
+

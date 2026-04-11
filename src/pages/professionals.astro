@@ -1,4 +1,4 @@
----
+﻿---
 import AppAlert from '../components/AppAlert.astro';
 import FlashMessage from '../components/FlashMessage.astro';
 import ProfessionalsGrid from '../components/ProfessionalsGrid.astro';
@@ -229,38 +229,38 @@ const visiblePages = Array.from(
 				<fieldset class="flex flex-col gap-4 border-0 p-0 m-0">
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Nombre(s) <span class="text-rose-500">*</span></span>
-						<input type="text" name="first_name" maxlength="150" required autocomplete="off" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" placeholder="Ej: Dra. Sarah"/>
+						<input type="text" name="first_name" maxlength="150" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Dra. Sarah"/>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="first_name"></span>
 					</label>
 					
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Apellido(s) <span class="text-rose-500">*</span></span>
-						<input type="text" name="last_name" maxlength="150" required autocomplete="off" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" placeholder="Ej: Gómez"/>
+						<input type="text" name="last_name" maxlength="150" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Gómez"/>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="last_name"></span>
 					</label>
 
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Teléfono <span class="text-rose-500">*</span></span>
-						<input type="tel" name="phone_number" maxlength="20" required autocomplete="off" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" placeholder="Ej: 5512345678" oninput="this.value = this.value.replace(/\\D/g, '').slice(0, 10);" />
+						<input type="tel" name="phone_number" maxlength="20" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: 5512345678" oninput="this.value = this.value.replace(/\\D/g, '').slice(0, 10);" />
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="phone_number"></span>
 					</label>
 					
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Nombre de usuario <span class="text-rose-500">*</span></span>
-						<input type="text" name="apex_user_name" maxlength="150" required autocomplete="off" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" placeholder="Ej: sarahg"/>
+						<input type="text" name="apex_user_name" maxlength="150" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: sarahg"/>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="apex_user_name"></span>
 					</label>
 
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Correo electrónico <span class="text-rose-500">*</span></span>
-						<input type="email" name="email" maxlength="255" required autocomplete="off" class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" placeholder="Ej: sarah@clinica.com"/>
+						<input type="email" name="email" maxlength="255" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: sarah@clinica.com"/>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="email"></span>
 					</label>
 					
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Contraseña <span class="text-rose-500" data-password-required-indicator>*</span></span>
 						<div class="relative">
-							<input type="password" name="password" minlength="8" maxlength="20" class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm pr-10" placeholder="********" autocomplete="new-password"/>
+							<input type="password" name="password" minlength="8" maxlength="20" class="w-full rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 pr-10" placeholder="********" autocomplete="new-password"/>
 							<button type="button" class="absolute inset-y-0 right-2 flex items-center p-1 text-(--on-surface-variant) hover:text-(--on-surface) bg-transparent border-0" onclick="const i = this.previousElementSibling; const isPwd = i.type === 'password'; i.type = isPwd ? 'text' : 'password'; this.querySelector('span').textContent = isPwd ? 'visibility_off' : 'visibility';" aria-label="Alternar visibilidad de contraseña">
 								<span class="material-symbols-rounded text-lg pointer-events-none">visibility</span>
 							</button>
@@ -275,7 +275,7 @@ const visiblePages = Array.from(
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Rol principal <span class="text-rose-500">*</span></span>
 						<div class="relative">
-							<select name="rol_id_role" required class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm">
+							<select name="rol_id_role" required class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10">
 								<option value="">Cargando roles...</option>
 							</select>
 							<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)">
@@ -288,7 +288,7 @@ const visiblePages = Array.from(
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Especialidad</span>
 						<div class="relative">
-							<select name="spe_id_specialty" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm">
+							<select name="spe_id_specialty" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10">
 								<option value="">Cargando especialidades...</option>
 							</select>
 							<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)">
@@ -304,7 +304,7 @@ const visiblePages = Array.from(
 							<span class="inline-flex max-w-[55%] sm:max-w-[65%] items-center truncate rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-xs sm:text-sm text-(--on-surface-variant) shadow-sm" title={publicProfilePrefix}>
 								{publicProfilePrefix}
 							</span>
-							<input type="text" name="profile_slug" maxlength="80" class="block w-full min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm" placeholder="sarah-gomez"/>
+							<input type="text" name="profile_slug" maxlength="80" class="block w-full min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
 						</div>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_slug"></span>
 					</label>
@@ -321,7 +321,7 @@ const visiblePages = Array.from(
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span class="inline-flex items-center gap-1">Visible en app</span>
 							<div class="relative">
-								<select name="prof_is_active" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm">
+								<select name="prof_is_active" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10">
 									<option value="1">Sí</option>
 									<option value="0">No</option>
 								</select>
@@ -334,7 +334,7 @@ const visiblePages = Array.from(
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span class="inline-flex items-center gap-1">Acceso activo</span>
 							<div class="relative">
-								<select name="user_is_active" class="w-full cursor-pointer appearance-none rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm">
+								<select name="user_is_active" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10">
 									<option value="1">Sí</option>
 									<option value="0">No</option>
 								</select>
@@ -1185,3 +1185,5 @@ const visiblePages = Array.from(
 		color: var(--primary);
 	}
 </style>
+
+
