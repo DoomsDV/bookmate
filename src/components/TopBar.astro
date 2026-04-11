@@ -87,10 +87,10 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 
 			<details class="group relative" data-profile-menu>
 				<summary
-					class="flex size-11 cursor-pointer list-none items-center justify-center rounded-2xl border border-(--primary-container) bg-(--primary-soft) text-sm font-bold tracking-[0.08em] text-(--primary) outline-none transition duration-200 hover:bg-(--primary-soft-hover) focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+					class="flex size-11 cursor-pointer list-none items-center justify-center rounded-2xl border border-(--primary-container) bg-(--primary-soft) text-(--primary) outline-none transition duration-200 hover:bg-(--primary-soft-hover) focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
 					aria-label={`Abrir menu de ${userName}`}
 				>
-					BM
+					<span class="material-symbols-rounded text-[1.2rem]">settings</span>
 				</summary>
 
 				<div
