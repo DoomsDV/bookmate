@@ -22,7 +22,7 @@ const normalizePath = (path: string) => {
 const cachedOrganizationName = String(
 	Astro.locals.organizationName || Astro.cookies.get("org_name")?.value || "",
 ).trim();
-const workspaceName = cachedOrganizationName || "Hasel Workspace";
+const workspaceName = cachedOrganizationName || "Workspace";
 const workspaceInitial = workspaceName.charAt(0).toUpperCase();
 
 const activePath = normalizePath(currentPath);
@@ -75,9 +75,12 @@ const visibleTeamItems = teamItems.filter((item) =>
 				<div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-(--shell-border) text-sm font-bold text-(--on-surface)">
 					{workspaceInitial}
 				</div>
-				<p class="truncate text-sm font-semibold text-(--on-surface) max-w-[8rem]">
-					{workspaceName}
-				</p>
+				<div class="flex min-w-0 flex-1 items-center gap-2">
+					<p class="truncate text-sm font-semibold text-(--on-surface) max-w-32">
+						{workspaceName}
+					</p>
+					
+				</div>
 			</div>
 
 			<button
@@ -179,6 +182,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 				>
 					{workspaceName}
 				</p>
+				
 			</div>
 		</div>
 

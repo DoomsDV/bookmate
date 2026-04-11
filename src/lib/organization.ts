@@ -2,9 +2,9 @@ import { resolveOrdsApiUrl } from './env-urls';
 
 export const ORGANIZATION_CURRENT_URL =
 	resolveOrdsApiUrl(
-		import.meta.env.ORDS_ORGANIZATION_CURRENT_URL,
-		'ORDS_ORGANIZATION_CURRENT_URL',
-		'/organization/current'
+		import.meta.env.ORDS_WORKSPACE_URL,
+		'ORDS_WORKSPACE_URL',
+		'/workspace'
 	);
 
 export interface OrganizationCurrent {
@@ -45,9 +45,10 @@ const toNumber = (value: unknown, fallback = 0) => {
 };
 
 const normalizeOrganization = (value: unknown): OrganizationCurrent | null => {
-	if (!value || typeof value !== 'object') return null;
+	const candidate = Array.isArray(value) ? value[0] : value;
+	if (!candidate || typeof candidate !== 'object') return null;
 
-	const source = value as Record<string, unknown>;
+	const source = candidate as Record<string, unknown>;
 	const idOrganization = toNumber(source.id_organization, NaN);
 	if (!Number.isFinite(idOrganization)) return null;
 

@@ -40,7 +40,6 @@ interface ImportMetaEnv {
     readonly ORDS_DASHBOARD_URL?: string;
     readonly ORDS_PROFILE_ME_URL?: string;
     readonly ORDS_WORKSPACE_URL?: string;
-    readonly ORDS_ORGANIZATION_CURRENT_URL?: string;
     readonly ORDS_DEPARTMENTS_URL?: string;
     readonly ORDS_ROLES_URL?: string;
     readonly ORDS_SPECIALTIES_URL?: string;
