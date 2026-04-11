@@ -87,7 +87,7 @@ const visiblePages = Array.from(
 					<section class="grid gap-4 sm:gap-5">
 						{
 							flashMessage ? (
-								<div class="pointer-events-auto fixed right-4 top-24 z-70 w-[min(calc(100vw-2rem),30rem)] sm:right-6 sm:top-28">
+								<div class="pointer-events-none fixed bottom-6 left-1/2 z-70 -translate-x-1/2 w-max max-w-[calc(100vw-2rem)]">
 									<FlashMessage message={flashMessage} type={flashType} autoHideMs={4200} />
 								</div>
 							) : null

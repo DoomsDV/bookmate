@@ -17,34 +17,22 @@ const {
 	dismissible = true,
 } = Astro.props;
 
-const toneMap: Record<MessageType, { icon: string; title: string; border: string; progressBg: string; iconColor: string }> = {
+const toneMap: Record<MessageType, { icon: string; iconColor: string }> = {
 	success: {
 		icon: 'check_circle',
-		title: 'Éxito',
-		border: 'border-l-emerald-500',
-		progressBg: 'bg-emerald-500',
-		iconColor: 'text-emerald-500',
+		iconColor: 'text-emerald-300 dark:text-emerald-600',
 	},
 	error: {
 		icon: 'error',
-		title: 'Error',
-		border: 'border-l-rose-500',
-		progressBg: 'bg-rose-500',
-		iconColor: 'text-rose-500',
+		iconColor: 'text-rose-300 dark:text-rose-600',
 	},
 	info: {
 		icon: 'info',
-		title: 'Información',
-		border: 'border-l-sky-500',
-		progressBg: 'bg-sky-500',
-		iconColor: 'text-sky-500',
+		iconColor: 'text-sky-300 dark:text-sky-600',
 	},
 	warning: {
 		icon: 'warning',
-		title: 'Atención',
-		border: 'border-l-amber-500',
-		progressBg: 'bg-amber-500',
-		iconColor: 'text-amber-500',
+		iconColor: 'text-amber-300 dark:text-amber-600',
 	},
 };
 
@@ -57,44 +45,26 @@ const tone = toneMap[type];
 			role="alert"
 			aria-live="polite"
 			class:list={[
-				'group relative overflow-hidden rounded-[1.2rem] border border-(--shell-border) border-l-[6px] bg-(--surface-bright) shadow-[0_12px_40px_rgba(0,0,0,0.12)] transition-all duration-300 ease-out',
-				tone.border,
-				expand ? 'w-full' : 'w-[min(100%,26rem)]',
+				'pointer-events-auto group relative flex items-center gap-3 rounded-full bg-slate-800 px-4 py-3 text-white shadow-lg dark:bg-slate-100 dark:text-slate-900',
+				expand ? 'w-full max-w-full rounded-2xl' : 'w-max max-w-[calc(100vw-2rem)]',
 			]}
-			style="transform: translateY(12px) scale(0.95); opacity: 0; animation: flash-slide-in 400ms cubic-bezier(0.16, 1, 0.3, 1) forwards;"
+			style="transform: translateY(20px); opacity: 0; animation: flash-slide-in 260ms cubic-bezier(0.16, 1, 0.3, 1) forwards;"
 			data-flash-message
 			data-auto-hide-ms={autoHideMs > 0 ? String(autoHideMs) : undefined}
 		>
-			<div class="flex items-start gap-4 py-4 pl-5 pr-4">
-				<span class:list={['material-symbols-rounded shrink-0 text-[1.4rem] tracking-normal', tone.iconColor]}>{tone.icon}</span>
-
-				<div class="min-w-0 flex-1 pt-[1.5px]">
-					<p class="text-[0.95rem] font-extrabold tracking-tight text-(--on-surface)">{tone.title}</p>
-					<p class="mt-1 text-[0.9rem] font-medium leading-relaxed text-(--on-surface)/80 dark:text-(--on-surface)/90">{message}</p>
-				</div>
-
-				{
-					dismissible ? (
-						<button
-							type="button"
-							class="shrink-0 -mr-1 rounded-full p-1.5 text-(--on-surface-variant)/70 transition hover:bg-(--shell-border) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)/30"
-							aria-label="Cerrar mensaje"
-							data-flash-close
-						>
-							<span class="material-symbols-rounded text-[1.2rem]">close</span>
-						</button>
-					) : null
-				}
-			</div>
+			<span class:list={['material-symbols-rounded shrink-0 text-[1.22rem] tracking-normal', tone.iconColor]}>{tone.icon}</span>
+			<p class="min-w-0 flex-1 truncate text-sm font-medium leading-5">{message}</p>
 
 			{
-				autoHideMs > 0 ? (
-					<div class="absolute bottom-0 left-0 right-0 h-1 overflow-hidden rounded-b-[1.2rem] bg-black/5 dark:bg-white/5">
-						<div
-							class:list={['h-full w-full origin-left opacity-90', tone.progressBg]}
-							style={`animation: flash-progress-bar ${autoHideMs}ms linear forwards;`}
-						></div>
-					</div>
+				dismissible ? (
+					<button
+						type="button"
+						class="shrink-0 -mr-1 rounded-full p-1.5 text-white/70 transition hover:bg-white/10 hover:text-white focus:outline-none focus:ring-2 focus:ring-white/35 dark:text-slate-500 dark:hover:bg-slate-200 dark:hover:text-slate-900 dark:focus:ring-slate-300"
+						aria-label="Cerrar mensaje"
+						data-flash-close
+					>
+						<span class="material-symbols-rounded text-[1.1rem]">close</span>
+					</button>
 				) : null
 			}
 		</div>
@@ -104,21 +74,12 @@ const tone = toneMap[type];
 <style is:global>
 	@keyframes flash-slide-in {
 		0% {
-			transform: translateY(12px) scale(0.95);
+			transform: translateY(20px);
 			opacity: 0;
 		}
 		100% {
-			transform: translateY(0) scale(1);
+			transform: translateY(0);
 			opacity: 1;
-		}
-	}
-
-	@keyframes flash-progress-bar {
-		0% {
-			transform: scaleX(1);
-		}
-		100% {
-			transform: scaleX(0);
 		}
 	}
 </style>
@@ -128,10 +89,17 @@ const tone = toneMap[type];
 		if (!node || node.dataset.isClosing === '1') return;
 		node.dataset.isClosing = '1';
 		node.classList.add('pointer-events-none');
-		node.style.animation = 'none';
-		node.style.transform = 'translateY(10px) scale(0.95)';
-		node.style.opacity = '0';
-		window.setTimeout(() => node.remove(), 250);
+		node.animate(
+			[
+				{ transform: 'translateY(0)', opacity: 1 },
+				{ transform: 'translateY(16px)', opacity: 0 },
+			],
+			{
+				duration: 220,
+				easing: 'cubic-bezier(0.4, 0, 1, 1)',
+				fill: 'forwards',
+			}
+		).onfinish = () => node.remove();
 	};
 
 	const initMessage = (node: any) => {
