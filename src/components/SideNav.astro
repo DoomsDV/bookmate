@@ -19,6 +19,12 @@ const normalizePath = (path: string) => {
 	return path.endsWith("/") ? path.slice(0, -1) : path;
 };
 
+const cachedOrganizationName = String(
+	Astro.locals.organizationName || Astro.cookies.get("org_name")?.value || "",
+).trim();
+const workspaceName = cachedOrganizationName || "Hasel Workspace";
+const workspaceInitial = workspaceName.charAt(0).toUpperCase();
+
 const activePath = normalizePath(currentPath);
 const currentRoleId = Number(Astro.locals.roleId ?? 0);
 
@@ -65,16 +71,12 @@ const visibleTeamItems = teamItems.filter((item) =>
 		data-side-nav
 	>
 		<div class="mb-8 flex items-center justify-between">
-			<div>
-				<p
-					class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-(--on-surface-variant)/75"
-				>
-					Navegacion
-				</p>
-				<p
-					class="mt-2 [font-family:var(--font-logo)] text-[1.35rem] font-extrabold uppercase tracking-[0.08em] leading-none text-(--primary)"
-				>
-					Bookmate
+			<div class="flex items-center gap-2.5 rounded-2xl px-2 py-1.5 -ml-2">
+				<div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-(--shell-border) text-sm font-bold text-(--on-surface)">
+					{workspaceInitial}
+				</div>
+				<p class="truncate text-sm font-semibold text-(--on-surface) max-w-[8rem]">
+					{workspaceName}
 				</p>
 			</div>
 
@@ -166,19 +168,16 @@ const visibleTeamItems = teamItems.filter((item) =>
 		class="flex h-full flex-col px-6 py-7 transition-all duration-300"
 		data-sidebar-desktop-inner
 	>
-		<div class="flex items-center gap-3" data-sidebar-brand>
-			<div data-sidebar-brand-text>
+		<div class="flex items-center gap-2.5 rounded-2xl px-2 py-1.5 -ml-2" data-sidebar-brand>
+			<div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-(--shell-border) text-sm font-bold text-(--on-surface)">
+				{workspaceInitial}
+			</div>
+			<div class="flex min-w-0 flex-1 items-center gap-2" data-sidebar-brand-text>
 				<p
-					class="text-[0.68rem] font-bold uppercase tracking-[0.28em] text-(--on-surface-variant)/75"
-					data-sidebar-caption
-				>
-					Navegación
-				</p>
-				<p
-					class="mt-3 [font-family:var(--font-logo)] text-[1.45rem] font-extrabold uppercase tracking-[0.08em] leading-none text-(--primary)"
+					class="truncate text-sm font-semibold text-(--on-surface)"
 					data-sidebar-title
 				>
-					Bookmate
+					{workspaceName}
 				</p>
 			</div>
 		</div>
