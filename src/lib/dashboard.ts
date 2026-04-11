@@ -15,7 +15,8 @@ export const DASHBOARD_AI_SUMMARY_URL = resolveOrdsApiUrl(
 export interface DashboardKpis {
 	today_appointments: number;
 	pending_appointments: number;
-	total_customers: number;
+	my_customers: number;
+	total_customers: number | null;
 }
 
 export interface DashboardUpcomingAppointment {
@@ -72,15 +73,23 @@ const normalizeKpis = (value: unknown): DashboardKpis => {
 		return {
 			today_appointments: 0,
 			pending_appointments: 0,
-			total_customers: 0,
+			my_customers: 0,
+			total_customers: null,
 		};
 	}
 
 	const source = value as Record<string, unknown>;
+	const totalCustomersRaw = source.total_customers;
+	const totalCustomers =
+		totalCustomersRaw === null || typeof totalCustomersRaw === 'undefined'
+			? null
+			: Math.max(0, Math.floor(toNumber(totalCustomersRaw, 0)));
+
 	return {
 		today_appointments: Math.max(0, Math.floor(toNumber(source.today_appointments, 0))),
 		pending_appointments: Math.max(0, Math.floor(toNumber(source.pending_appointments, 0))),
-		total_customers: Math.max(0, Math.floor(toNumber(source.total_customers, 0))),
+		my_customers: Math.max(0, Math.floor(toNumber(source.my_customers, 0))),
+		total_customers: totalCustomers,
 	};
 };
 

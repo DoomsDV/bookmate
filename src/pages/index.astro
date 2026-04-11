@@ -12,7 +12,8 @@ let dashboard: DashboardMainData = {
 	kpis: {
 		today_appointments: 0,
 		pending_appointments: 0,
-		total_customers: 0,
+		my_customers: 0,
+		total_customers: null,
 	},
 	upcoming_appointments: [],
 };
@@ -52,11 +53,21 @@ const metrics = [
 		icon: 'schedule',
 	},
 	{
-		label: 'Clientes unicos',
-		value: dashboard.kpis.total_customers,
-		description: 'Cantidad acumulada de clientes con historial.',
-		icon: 'groups',
+		label: 'Mis clientes',
+		value: dashboard.kpis.my_customers,
+		description: 'Clientes únicos que has atendido personalmente.',
+		icon: 'group',
 	},
+	...(dashboard.kpis.total_customers !== null
+		? [
+				{
+					label: 'Total de clientes',
+					value: dashboard.kpis.total_customers,
+					description: 'Base total de clientes de la sucursal.',
+					icon: 'hub',
+				},
+			]
+		: []),
 ];
 
 const getStatusLabel = (status: string) => {
@@ -144,7 +155,7 @@ const getStatusTone = (status: string) => {
 												auto_awesome
 											</span>
 											<p class="text-xs font-bold uppercase tracking-widest text-indigo-700 dark:text-indigo-300">
-												Resumen Inteligente
+												Resumen Inteligente del día
 											</p>
 										</div>
 										<p
@@ -162,7 +173,7 @@ const getStatusTone = (status: string) => {
 										></p>
 									</div>
 
-									<div class="material-cards-grid md:grid-cols-3">
+									<div class="material-cards-grid md:grid-cols-4">
 										{
 											metrics.map((metric) => (
 												<article class="material-data-card rounded-3xl border border-(--shell-border) bg-(--card-surface) shadow-sm">

@@ -226,30 +226,45 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 	if (!value || typeof value !== 'object') return null;
 
 	const source = value as Record<string, unknown>;
-	const appointmentId = toNumber(source.id_appointment, NaN);
-	const locationId = toNumber(source.loc_id_location, NaN);
-	const professionalId = toNumber(source.pro_id_professional, NaN);
-	const serviceId = toNumber(source.ser_id_service, NaN);
-	const startTime = String(source.start_time || '').trim();
-	const endTime = String(source.end_time || '').trim();
+	const appointmentId = toNumber(source.id_appointment ?? source.id, NaN);
+	const locationId = toNumber(
+		source.loc_id_location ?? source.id_location ?? source.loc_id,
+		0
+	);
+	const professionalId = toNumber(
+		source.pro_id_professional ?? source.id_professional ?? source.pro_id,
+		0
+	);
+	const serviceId = toNumber(
+		source.ser_id_service ?? source.id_service ?? source.ser_id,
+		0
+	);
+	const startTime = String(source.start_time ?? source.start ?? '').trim();
+	const endTime = String(source.end_time ?? source.end ?? '').trim();
+	const statusRaw = String(source.status || '').trim().toUpperCase();
+	const status =
+		statusRaw === 'PENDIENTE' ||
+		statusRaw === 'CONFIRMADO' ||
+		statusRaw === 'COMPLETADO' ||
+		statusRaw === 'CANCELADO'
+			? statusRaw
+			: 'CONFIRMADO';
 
 	if (!Number.isInteger(appointmentId) || appointmentId <= 0) return null;
-	if (!Number.isInteger(locationId) || locationId <= 0) return null;
-	if (!Number.isInteger(professionalId) || professionalId <= 0) return null;
-	if (!Number.isInteger(serviceId) || serviceId <= 0) return null;
 	if (!startTime || !endTime) return null;
 
 	return {
 		id_appointment: appointmentId,
-		loc_id_location: locationId,
+		loc_id_location: Number.isInteger(locationId) && locationId > 0 ? locationId : 0,
 		location_name: String(source.location_name || '').trim(),
-		pro_id_professional: professionalId,
+		pro_id_professional:
+			Number.isInteger(professionalId) && professionalId > 0 ? professionalId : 0,
 		professional_name: String(source.professional_name || '').trim(),
-		ser_id_service: serviceId,
+		ser_id_service: Number.isInteger(serviceId) && serviceId > 0 ? serviceId : 0,
 		service_name: String(source.service_name || '').trim(),
-		customer_name: String(source.customer_name || '').trim(),
-		customer_phone: String(source.customer_phone || '').trim(),
-		status: String(source.status || '').trim(),
+		customer_name: String(source.customer_name ?? source.full_name ?? '').trim(),
+		customer_phone: String(source.customer_phone ?? source.phone_number ?? '').trim(),
+		status,
 		start_time: startTime,
 		end_time: endTime,
 	};
