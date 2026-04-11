@@ -50,6 +50,8 @@
 	--flash-danger-accent: #f43f5e;
 	--flash-success-text: #047857;
 	--flash-danger-text: #be123c;
+	--workspace-avatar-outline: rgba(47, 111, 221, 0.26);
+	--workspace-avatar-outline-soft: rgba(47, 111, 221, 0.1);
 	--md-space-2: 0.5rem;
 	--md-space-3: 0.75rem;
 	--md-space-4: 1rem;
@@ -105,6 +107,8 @@ html[data-theme='dark'] {
 	--flash-danger-accent: #fda4af;
 	--flash-success-text: #6ee7b7;
 	--flash-danger-text: #fda4af;
+	--workspace-avatar-outline: rgba(96, 165, 250, 0.34);
+	--workspace-avatar-outline-soft: rgba(59, 130, 246, 0.2);
 }
 
 html {
@@ -476,4 +480,36 @@ button {
 	min-width: 0;
 	box-sizing: border-box;
 	padding: 0.875rem var(--md-space-4);
+}
+
+.sidebar-account-header {
+	padding-bottom: 0.95rem;
+}
+
+.workspace-account-name {
+	font-weight: 600;
+	letter-spacing: 0.01em;
+}
+
+.workspace-account-subtitle {
+	color: color-mix(in srgb, var(--on-surface-variant) 88%, white 12%);
+	font-size: 0.72rem;
+	font-weight: 500;
+	letter-spacing: 0.02em;
+}
+
+.workspace-account-chevron {
+	color: color-mix(in srgb, var(--on-surface-variant) 84%, transparent);
+	opacity: 0.92;
+}
+
+.workspace-avatar {
+	border: 1px solid var(--workspace-avatar-outline);
+	box-shadow:
+		0 0 0 1px var(--workspace-avatar-outline-soft),
+		inset 0 1px 0 rgba(255, 255, 255, 0.45);
+}
+
+html[data-theme='dark'] .workspace-account-subtitle {
+	color: color-mix(in srgb, var(--on-surface-variant) 90%, white 10%);
 }

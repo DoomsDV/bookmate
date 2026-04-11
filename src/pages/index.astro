@@ -265,14 +265,6 @@ const getStatusTone = (status: string) => {
 </Layout>
 
 <script>
-	const escapeHtml = (value: string): string =>
-		String(value)
-			.replaceAll('&', '&amp;')
-			.replaceAll('<', '&lt;')
-			.replaceAll('>', '&gt;')
-			.replaceAll('"', '&quot;')
-			.replaceAll("'", '&#039;');
-
 	const sanitizeAiSummary = (value: unknown): string =>
 		String(value ?? '')
 			.replace(/\*+/g, '')
@@ -291,25 +283,33 @@ const getStatusTone = (status: string) => {
 		return `hasel:dashboard-ai-summary:${today}`;
 	};
 
-	const typewriteSummary = (node: HTMLElement, text: string): Promise<void> =>
-		new Promise((resolve) => {
-			const fullText = String(text || '');
-			let index = 0;
-			const delayMs = 20;
-			const cursor = '<span class="animate-pulse">|</span>';
+	const splitSummaryIntoTokens = (text: string): string[] =>
+		String(text || '')
+			.split(/(\s+)/)
+			.filter((token) => token.length > 0);
 
-			const timer = window.setInterval(() => {
-				index += 1;
-				const chunk = escapeHtml(fullText.slice(0, index));
-				node.innerHTML = `${chunk}${cursor}`;
+	const wait = (ms: number): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, ms));
 
-				if (index >= fullText.length) {
-					window.clearInterval(timer);
-					node.innerHTML = escapeHtml(fullText);
-					resolve();
-				}
-			}, delayMs);
-		});
+	const getTokenDelayMs = () => 28 + Math.floor(Math.random() * 53);
+
+	const streamSummaryTokens = async (node: HTMLElement, text: string): Promise<void> => {
+		node.replaceChildren();
+
+		const tokens = splitSummaryIntoTokens(text);
+		for (const token of tokens) {
+			if (/^\s+$/.test(token)) {
+				node.appendChild(document.createTextNode(token));
+				continue;
+			}
+
+			const tokenNode = document.createElement('span');
+			tokenNode.className = 'ai-summary-token';
+			tokenNode.textContent = token;
+			node.appendChild(tokenNode);
+
+			await wait(getTokenDelayMs());
+		}
+	};
 
 	const loadAiSummary = async () => {
 		const card = document.querySelector<HTMLElement>('[data-ai-summary-card]');
@@ -329,8 +329,7 @@ const getStatusTone = (status: string) => {
 			stateNode.style.display = 'none';
 			textNode.classList.remove('hidden');
 			textNode.style.display = 'block';
-			textNode.innerHTML = '';
-			await typewriteSummary(textNode, summaryText);
+			await streamSummaryTokens(textNode, summaryText);
 		};
 
 		try {
@@ -379,3 +378,30 @@ const getStatusTone = (status: string) => {
 	loadAiSummary();
 	document.addEventListener('astro:page-load', loadAiSummary);
 </script>
+
+<style>
+	@keyframes ai-token-reveal {
+		from {
+			opacity: 0;
+			transform: translateY(3px);
+			filter: blur(2px);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+			filter: blur(0);
+		}
+	}
+
+	.ai-summary-token {
+		display: inline-block;
+		animation: ai-token-reveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.ai-summary-token {
+			animation: none;
+		}
+	}
+</style>

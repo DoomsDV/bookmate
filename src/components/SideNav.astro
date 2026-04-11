@@ -75,31 +75,38 @@ const visibleTeamItems = teamItems.filter((item) =>
 		class="relative h-full w-[min(20rem,100vw)] -translate-x-full overflow-y-auto border-r border-(--shell-border) bg-(--surface-bright) px-5 py-6 transform-gpu"
 		data-side-nav
 	>
-		<div class="mb-8 flex items-center justify-between">
-			<div class="flex items-center gap-2.5 rounded-2xl px-1.5 py-1">
+		<div class="sidebar-account-header mb-6 border-b border-(--shell-border)/75 pb-4">
+			<div class="flex items-center justify-between gap-3">
+				<div class="flex min-w-0 items-center gap-3 rounded-2xl px-1.5 py-1">
 				<div
-					class="flex size-14 shrink-0 items-center justify-center rounded-full border border-(--primary-container) bg-(--primary-soft) text-lg font-bold text-(--primary)"
+					class="workspace-avatar flex size-14 shrink-0 items-center justify-center rounded-full bg-(--primary-soft) text-lg font-bold text-(--primary)"
 					data-workspace-avatar
 				>
 					{workspaceInitial}
 				</div>
-				<div class="flex min-w-0 flex-1 items-center gap-2">
-					<p class="truncate text-sm font-semibold text-(--on-surface) max-w-32">
-						{workspaceName}
+				<div class="min-w-0 flex-1">
+					<div class="flex items-center gap-1.5">
+						<p class="workspace-account-name max-w-32 truncate text-sm text-(--on-surface)">
+							{workspaceName}
+						</p>
+						
+					</div>
+					<p class="workspace-account-subtitle mt-0.5 truncate text-xs">
+						Administrador - Plan Pro
 					</p>
-					
 				</div>
-			</div>
+				</div>
 
-			<button
-				type="button"
-				class="flex size-10 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-(--control-surface-strong)"
-				aria-label="Cerrar menú lateral"
-				data-side-nav-close
-			>
-				<span class="material-symbols-rounded text-[1.2rem]">close</span
+				<button
+					type="button"
+					class="flex size-10 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-(--control-surface-strong)"
+					aria-label="Cerrar menú lateral"
+					data-side-nav-close
 				>
-			</button>
+					<span class="material-symbols-rounded text-[1.2rem]">close</span
+					>
+				</button>
+			</div>
 		</div>
 
 		<nav aria-label="Side navigation móvil">
@@ -180,25 +187,32 @@ const visibleTeamItems = teamItems.filter((item) =>
 		class="flex h-full flex-col px-6 py-7 transition-[padding] duration-200"
 		data-sidebar-desktop-inner
 	>
-		<div class="flex items-center gap-2.5 rounded-2xl px-1.5 py-1" data-sidebar-brand>
+		<div class="sidebar-account-header mb-6 border-b border-(--shell-border)/75 pb-4" data-sidebar-brand-block>
+			<div class="flex items-center gap-3 rounded-2xl px-1.5 py-1" data-sidebar-brand>
 			<div
-				class="flex size-14 shrink-0 items-center justify-center rounded-full border border-(--primary-container) bg-(--primary-soft) text-lg font-bold text-(--primary)"
+				class="workspace-avatar flex size-14 shrink-0 items-center justify-center rounded-full bg-(--primary-soft) text-lg font-bold text-(--primary)"
 				data-workspace-avatar
 			>
 				{workspaceInitial}
 			</div>
-			<div class="flex min-w-0 flex-1 items-center gap-2" data-sidebar-brand-text>
-				<p
-					class="truncate text-sm font-semibold text-(--on-surface)"
-					data-sidebar-title
-				>
-					{workspaceName}
+			<div class="min-w-0 flex-1" data-sidebar-brand-text>
+				<div class="flex items-center gap-1.5">
+					<p
+						class="workspace-account-name truncate text-sm text-(--on-surface)"
+						data-sidebar-title
+					>
+						{workspaceName}
+					</p>
+					
+				</div>
+				<p class="workspace-account-subtitle mt-0.5 truncate text-xs">
+					Administrador - Plan Pro
 				</p>
-				
+			</div>
 			</div>
 		</div>
 
-		<nav class="mt-10" aria-label="Side navigation desktop">
+		<nav class="mt-6" aria-label="Side navigation desktop">
 			<ul class="space-y-2">
 				{
 					visiblePrimaryItems.map((item) => (
