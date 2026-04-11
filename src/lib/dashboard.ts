@@ -24,6 +24,7 @@ export interface DashboardUpcomingAppointment {
 export interface DashboardMainData {
 	kpis: DashboardKpis;
 	upcoming_appointments: DashboardUpcomingAppointment[];
+	ai_summary: string;
 }
 
 interface DashboardSuccessResponse {
@@ -96,6 +97,7 @@ const normalizeMainData = (value: unknown): DashboardMainData => {
 		return {
 			kpis: normalizeKpis(null),
 			upcoming_appointments: [],
+			ai_summary: '',
 		};
 	}
 
@@ -108,6 +110,7 @@ const normalizeMainData = (value: unknown): DashboardMainData => {
 	return {
 		kpis: normalizeKpis(source.kpis),
 		upcoming_appointments: upcoming,
+		ai_summary: toText(source.ai_summary),
 	};
 };
 

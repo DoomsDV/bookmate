@@ -15,6 +15,7 @@ let dashboard: DashboardMainData = {
 		total_customers: 0,
 	},
 	upcoming_appointments: [],
+	ai_summary: '',
 };
 let loadError = '';
 
@@ -135,6 +136,12 @@ const getStatusTone = (status: string) => {
 								</div>
 							) : (
 								<>
+									{dashboard.ai_summary ? (
+										<div class="ai-card">
+											<p>{dashboard.ai_summary}</p>
+										</div>
+									) : null}
+
 									<div class="material-cards-grid md:grid-cols-3">
 										{
 											metrics.map((metric) => (
