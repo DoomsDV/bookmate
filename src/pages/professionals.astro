@@ -171,7 +171,7 @@ const visiblePages = Array.from(
 			</div>
 
 	<dialog
-		class="w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] transition-all"
+		class="m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] transition-all"
 		data-professional-modal
 	>
 		<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6">
@@ -1081,7 +1081,6 @@ const visiblePages = Array.from(
 	dialog[data-professional-modal] {
 		position: fixed;
 		inset: 0;
-		margin: auto;
 		animation: professional-modal-in 180ms ease-out;
 	}
 
@@ -1100,24 +1099,50 @@ const visiblePages = Array.from(
 	@keyframes professional-modal-in {
 		from {
 			opacity: 0;
-			transform: translateY(10px) scale(0.98);
+			transform: translateY(100%);
 		}
 
 		to {
 			opacity: 1;
-			transform: translateY(0) scale(1);
+			transform: translateY(0);
 		}
 	}
 
 	@keyframes professional-modal-out {
 		from {
 			opacity: 1;
-			transform: translateY(0) scale(1);
+			transform: translateY(0);
 		}
 
 		to {
 			opacity: 0;
-			transform: translateY(8px) scale(0.98);
+			transform: translateY(100%);
+		}
+	}
+
+	@media (min-width: 640px) {
+		@keyframes professional-modal-in {
+			from {
+				opacity: 0;
+				transform: translateY(10px) scale(0.98);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		@keyframes professional-modal-out {
+			from {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+
+			to {
+				opacity: 0;
+				transform: translateY(8px) scale(0.98);
+			}
 		}
 	}
 
