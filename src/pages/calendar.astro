@@ -112,7 +112,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 
 		<appointment-modal>
 		<dialog
-			class="w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] transition-all"
+			class="m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] transition-all"
 			data-appointment-modal
 		>
 			<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6 ">
@@ -329,7 +329,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 	dialog[data-appointment-modal] {
 		position: fixed;
 		inset: 0;
-		margin: auto;
 		animation: appointment-modal-in 180ms ease-out;
 	}
 
@@ -384,6 +383,50 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 		color: var(--primary);
 	}
 
+	[data-calendar-root] .fc .fc-col-header-cell-cushion {
+		display: block !important;
+		padding: 8px 4px !important;
+		text-decoration: none !important;
+	}
+
+	[data-calendar-root] .custom-cal-header {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 4px;
+	}
+
+	[data-calendar-root] .cal-day-name {
+		text-transform: capitalize;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	[data-calendar-root] .cal-day-number {
+		font-size: 1.4rem;
+		font-weight: 400;
+		color: var(--on-surface);
+		width: 40px;
+		height: 40px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		transition: background-color 0.2s ease;
+	}
+
+	[data-calendar-root] .fc-day-today .cal-day-name {
+		color: var(--primary);
+	}
+
+	[data-calendar-root] .fc-day-today .cal-day-number {
+		background-color: var(--primary);
+		color: #ffffff;
+		font-weight: 700;
+		box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+	}
+
 	[data-calendar-root] .fc .fc-timegrid-slot-label,
 	[data-calendar-root] .fc .fc-col-header-cell-cushion,
 	[data-calendar-root] .fc .fc-daygrid-day-number,
@@ -400,6 +443,24 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 
 	html[data-theme='dark'] [data-calendar-root] .fc .fc-scrollgrid-section-sticky > *,
 	html[data-theme='dark'] [data-calendar-root] .fc .fc-col-header-cell {
+		background: var(--surface-container);
+	}
+
+	html[data-theme='dark'] [data-calendar-root] .fc {
+		--fc-page-bg-color: var(--content-surface);
+		--fc-neutral-bg-color: var(--surface-container);
+		--fc-list-event-hover-bg-color: var(--control-surface);
+	}
+
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-list,
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-list-table,
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-list-table th,
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-list-table td {
+		background: var(--content-surface);
+		color: var(--on-surface);
+	}
+
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-list-day-cushion {
 		background: var(--surface-container);
 	}
 
@@ -477,22 +538,46 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 	@keyframes appointment-modal-in {
 		from {
 			opacity: 0;
-			transform: translateY(10px) scale(0.98);
+			transform: translateY(100%);
 		}
 		to {
 			opacity: 1;
-			transform: translateY(0) scale(1);
+			transform: translateY(0);
 		}
 	}
 
 	@keyframes appointment-modal-out {
 		from {
 			opacity: 1;
-			transform: translateY(0) scale(1);
+			transform: translateY(0);
 		}
 		to {
 			opacity: 0;
-			transform: translateY(8px) scale(0.98);
+			transform: translateY(100%);
+		}
+	}
+
+	@media (min-width: 640px) {
+		@keyframes appointment-modal-in {
+			from {
+				opacity: 0;
+				transform: translateY(10px) scale(0.98);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		@keyframes appointment-modal-out {
+			from {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+			to {
+				opacity: 0;
+				transform: translateY(8px) scale(0.98);
+			}
 		}
 	}
 

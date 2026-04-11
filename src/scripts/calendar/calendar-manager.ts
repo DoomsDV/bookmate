@@ -239,9 +239,9 @@ class CalendarManager extends HTMLElement {
 	private getHeaderToolbar(isMobile: boolean) {
 		return isMobile
 			? {
-					left: 'title',
-					center: 'prev,next today',
-					right: 'timeGridDay,listWeek',
+					left: 'prev,next today',
+					center: 'title',
+					right: 'timeGridDay,timeGridThreeDay,listWeek',
 				}
 			: {
 					left: 'prev,next today',
@@ -273,18 +273,14 @@ class CalendarManager extends HTMLElement {
 						month: 'long',
 					}
 		);
-		this.calendar.setOption('views', {
-			timeGridWeek: {
-				type: 'timeGrid',
-				duration: { days: isMobile ? 3 : 7 },
-			},
-		});
 
 		if (isMobile) {
 			const currentView = this.calendar.view.type;
-			if (!['timeGridDay', 'listWeek'].includes(currentView)) {
+			if (!['timeGridDay', 'timeGridThreeDay', 'listWeek'].includes(currentView)) {
 				this.calendar.changeView('timeGridDay');
 			}
+		} else if (this.calendar.view.type === 'timeGridThreeDay') {
+			this.calendar.changeView('timeGridWeek');
 		}
 
 		this.calendar.updateSize();
@@ -356,9 +352,10 @@ class CalendarManager extends HTMLElement {
 			slotMaxTime: '22:00:00',
 			headerToolbar: this.getHeaderToolbar(isMobile),
 			views: {
-				timeGridWeek: {
+				timeGridThreeDay: {
 					type: 'timeGrid',
-					duration: { days: isMobile ? 3 : 7 },
+					duration: { days: 3 },
+					buttonText: '3 Días',
 				},
 			},
 			titleFormat: isMobile
@@ -373,10 +370,25 @@ class CalendarManager extends HTMLElement {
 				  },
 			buttonText: {
 				today: 'Hoy',
-				week: 'Semana',
-				day: 'Dia',
 				month: 'Mes',
+				week: 'Semana',
+				day: 'Día',
 				list: 'Lista',
+			},
+			dayHeaderContent: (args) => {
+				const dayName = new Intl.DateTimeFormat('es-ES', { weekday: 'short' })
+					.format(args.date)
+					.replace('.', '');
+				const dayNumber = args.date.getDate();
+
+				return {
+					html: `
+						<div class="custom-cal-header">
+							<span class="cal-day-name">${dayName}</span>
+							<span class="cal-day-number">${dayNumber}</span>
+						</div>
+					`,
+				};
 			},
 			events: this.buildEventSource,
 			select: (info: DateSelectArg) => {

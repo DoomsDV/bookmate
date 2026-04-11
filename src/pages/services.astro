@@ -198,7 +198,7 @@ const visiblePages = Array.from(
 		</div>
 
 		<dialog
-			class="w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] transition-all"
+			class="m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] transition-all"
 			data-service-modal
 		>
 			<div
@@ -337,6 +337,8 @@ const visiblePages = Array.from(
 
 				<label
 					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
+					data-service-status-wrap
+					hidden
 				>
 					Estado
 					<div class="relative">
@@ -447,6 +449,7 @@ const visiblePages = Array.from(
 			loading: HTMLElement | null;
 			modalTitle: HTMLElement | null;
 			modalDesc: HTMLElement | null;
+			statusWrap: HTMLElement | null;
 			priceInput: HTMLInputElement | null;
 		};
 
@@ -485,6 +488,9 @@ const visiblePages = Array.from(
 				),
 				modalDesc: this.querySelector<HTMLElement>(
 					"[data-service-modal-description]",
+				),
+				statusWrap: this.querySelector<HTMLElement>(
+					"[data-service-status-wrap]",
 				),
 				priceInput:
 					this.querySelector<HTMLInputElement>("[data-price-mask]"),
@@ -595,6 +601,23 @@ const visiblePages = Array.from(
 					? this.els.deleteBtn.classList.remove("hidden")
 					: this.els.deleteBtn.classList.add("hidden");
 				this.els.deleteBtn.disabled = !isEdit;
+			}
+
+			if (this.els.statusWrap) {
+				if (isEdit) {
+					this.els.statusWrap.removeAttribute("hidden");
+				} else {
+					this.els.statusWrap.setAttribute("hidden", "");
+				}
+			}
+
+			if (this.formEls.status) {
+				if (isEdit) {
+					this.formEls.status.disabled = false;
+				} else {
+					this.formEls.status.value = "1";
+					this.formEls.status.disabled = true;
+				}
 			}
 
 			if (!isEdit) {
@@ -919,7 +942,6 @@ const visiblePages = Array.from(
 	dialog[data-service-modal] {
 		position: fixed;
 		inset: 0;
-		margin: auto;
 		animation: service-modal-in 180ms ease-out;
 	}
 
@@ -938,24 +960,50 @@ const visiblePages = Array.from(
 	@keyframes service-modal-in {
 		from {
 			opacity: 0;
-			transform: translateY(10px) scale(0.98);
+			transform: translateY(100%);
 		}
 
 		to {
 			opacity: 1;
-			transform: translateY(0) scale(1);
+			transform: translateY(0);
 		}
 	}
 
 	@keyframes service-modal-out {
 		from {
 			opacity: 1;
-			transform: translateY(0) scale(1);
+			transform: translateY(0);
 		}
 
 		to {
 			opacity: 0;
-			transform: translateY(8px) scale(0.98);
+			transform: translateY(100%);
+		}
+	}
+
+	@media (min-width: 640px) {
+		@keyframes service-modal-in {
+			from {
+				opacity: 0;
+				transform: translateY(10px) scale(0.98);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		@keyframes service-modal-out {
+			from {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+
+			to {
+				opacity: 0;
+				transform: translateY(8px) scale(0.98);
+			}
 		}
 	}
 
