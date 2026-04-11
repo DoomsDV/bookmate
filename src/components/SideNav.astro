@@ -71,8 +71,11 @@ const visibleTeamItems = teamItems.filter((item) =>
 		data-side-nav
 	>
 		<div class="mb-8 flex items-center justify-between">
-			<div class="flex items-center gap-2.5 rounded-2xl px-2 py-1.5 -ml-2">
-				<div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-(--shell-border) text-sm font-bold text-(--on-surface)">
+			<div class="flex items-center gap-2.5 rounded-2xl px-1.5 py-1">
+				<div
+					class="flex size-14 shrink-0 items-center justify-center rounded-full bg-(--shell-border) text-lg font-bold text-(--on-surface)"
+					data-workspace-avatar
+				>
 					{workspaceInitial}
 				</div>
 				<div class="flex min-w-0 flex-1 items-center gap-2">
@@ -171,8 +174,11 @@ const visibleTeamItems = teamItems.filter((item) =>
 		class="flex h-full flex-col px-6 py-7 transition-all duration-300"
 		data-sidebar-desktop-inner
 	>
-		<div class="flex items-center gap-2.5 rounded-2xl px-2 py-1.5 -ml-2" data-sidebar-brand>
-			<div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-(--shell-border) text-sm font-bold text-(--on-surface)">
+		<div class="flex items-center gap-2.5 rounded-2xl px-1.5 py-1" data-sidebar-brand>
+			<div
+				class="flex size-14 shrink-0 items-center justify-center rounded-full bg-(--shell-border) text-lg font-bold text-(--on-surface)"
+				data-workspace-avatar
+			>
 				{workspaceInitial}
 			</div>
 			<div class="flex min-w-0 flex-1 items-center gap-2" data-sidebar-brand-text>
