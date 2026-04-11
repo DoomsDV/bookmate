@@ -77,29 +77,28 @@ const visibleTeamItems = teamItems.filter((item) =>
 	>
 		<div class="sidebar-account-header mb-6 border-b border-(--shell-border)/75 pb-4">
 			<div class="flex items-center justify-between gap-3">
-				<div class="flex min-w-0 items-center gap-3 rounded-2xl px-1.5 py-1">
-				<div
-					class="workspace-avatar flex size-14 shrink-0 items-center justify-center rounded-full bg-(--primary-soft) text-lg font-bold text-(--primary)"
-					data-workspace-avatar
-				>
-					{workspaceInitial}
-				</div>
-				<div class="min-w-0 flex-1">
-					<div class="flex items-center gap-1.5">
-						<p class="workspace-account-name max-w-32 truncate text-sm text-(--on-surface)">
-							{workspaceName}
-						</p>
-						
+				<div class="sidebar-account-row">
+					<div
+						class="workspace-avatar flex size-14 shrink-0 items-center justify-center rounded-full text-lg font-bold"
+						data-workspace-avatar
+					>
+						{workspaceInitial}
 					</div>
-					<p class="workspace-account-subtitle mt-0.5 truncate text-xs">
-						Administrador - Plan Pro
-					</p>
-				</div>
+					<div class="sidebar-account-meta" data-sidebar-brand-text>
+						<div class="sidebar-account-title-row">
+							<p class="workspace-account-name max-w-32 truncate">
+								{workspaceName}
+							</p>
+						</div>
+						<p class="workspace-account-subtitle truncate">
+							Plan Pro
+						</p>
+					</div>
 				</div>
 
 				<button
 					type="button"
-					class="flex size-10 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] transition hover:bg-(--control-surface-strong)"
+					class="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong)"
 					aria-label="Cerrar menú lateral"
 					data-side-nav-close
 				>
@@ -188,27 +187,26 @@ const visibleTeamItems = teamItems.filter((item) =>
 		data-sidebar-desktop-inner
 	>
 		<div class="sidebar-account-header mb-6 border-b border-(--shell-border)/75 pb-4" data-sidebar-brand-block>
-			<div class="flex items-center gap-3 rounded-2xl px-1.5 py-1" data-sidebar-brand>
-			<div
-				class="workspace-avatar flex size-14 shrink-0 items-center justify-center rounded-full bg-(--primary-soft) text-lg font-bold text-(--primary)"
-				data-workspace-avatar
-			>
-				{workspaceInitial}
-			</div>
-			<div class="min-w-0 flex-1" data-sidebar-brand-text>
-				<div class="flex items-center gap-1.5">
-					<p
-						class="workspace-account-name truncate text-sm text-(--on-surface)"
-						data-sidebar-title
-					>
-						{workspaceName}
-					</p>
-					
+			<div class="sidebar-account-row" data-sidebar-brand>
+				<div
+					class="workspace-avatar flex size-14 shrink-0 items-center justify-center rounded-full text-lg font-bold"
+					data-workspace-avatar
+				>
+					{workspaceInitial}
 				</div>
-				<p class="workspace-account-subtitle mt-0.5 truncate text-xs">
-					Administrador - Plan Pro
-				</p>
-			</div>
+				<div class="sidebar-account-meta" data-sidebar-brand-text>
+					<div class="sidebar-account-title-row">
+						<p
+							class="workspace-account-name truncate"
+							data-sidebar-title
+						>
+							{workspaceName}
+						</p>
+					</div>
+					<p class="workspace-account-subtitle truncate">
+						Plan Pro
+					</p>
+				</div>
 			</div>
 		</div>
 
@@ -291,36 +289,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 			</ul>
 		</nav>
 
-		<div
-			class="mt-auto rounded-[1.45rem] border border-(--shell-border) bg-(--sidebar-card-surface) p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]"
-			data-sidebar-footer
-		>
-			<p
-				class="text-xs font-bold uppercase tracking-[0.22em] text-(--on-surface-variant)/75"
-			>
-				Estado
-			</p>
-			<p
-				class="mt-3 text-sm font-semibold text-(--on-surface)"
-				data-time-greeting
-			>
-				Buenos días
-			</p>
-		</div>
+		
 	</div>
 </aside>
 
-<script>
-	const greetingNodes = document.querySelectorAll("[data-time-greeting]");
-	const hour = new Date().getHours();
-	const greeting =
-		hour < 12
-			? "Buenos días"
-			: hour < 19
-				? "Buenas tardes"
-				: "Buenas noches";
-
-	for (const node of greetingNodes) {
-		node.textContent = greeting;
-	}
-</script>
