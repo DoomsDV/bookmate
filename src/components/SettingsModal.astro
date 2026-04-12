@@ -17,12 +17,12 @@ const publicProfileDomain =
 <settings-manager data-role-id={String(roleId)} data-public-profile-domain={publicProfileDomain}>
 <dialog
 	data-settings-modal
-		class="w-[min(54rem,calc(100vw-2rem))] h-[min(94vh,48rem)] sm:h-[min(90vh,48rem)] open:flex open:flex-col overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+		class="m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(54rem,calc(100vw-2rem))] sm:max-w-[min(54rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[84vh] sm:h-[min(90vh,48rem)] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
 >
-	<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-7 py-6">
+	<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6">
 		<div class="flex items-start justify-between gap-4">
 			<div class="flex items-center gap-4">
-				<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary) shadow-[inset_0_1px_0_rgba(255,255,255,0.4)]">
+				<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
 					<span class="material-symbols-rounded text-[1.4rem]">settings</span>
 				</div>
 				<div>
@@ -36,7 +36,7 @@ const publicProfileDomain =
 		</div>
 	</div>
 
-	<div class="flex flex-col md:flex-row flex-1 overflow-hidden bg-(--surface)/30 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]">
+	<div class="flex min-h-0 flex-1 flex-col overflow-hidden bg-(--surface)/30 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)] md:flex-row">
 		<nav class="shrink-0 md:w-60 overflow-x-auto md:overflow-y-auto border-b md:border-b-0 md:border-r border-(--shell-border) bg-(--surface-bright)/50 p-4 sm:p-5">
 			<div class="flex min-w-max gap-2 md:grid md:gap-1.5">
 				<button type="button" data-settings-tab-trigger data-settings-tab="profile" class="settings-tab is-active">
@@ -63,26 +63,26 @@ const publicProfileDomain =
 			</div>
 		</nav>
 
-		<div class="flex-1 overflow-y-auto p-5 sm:p-8 overscroll-contain">
+		<div class="flex-1 min-h-0 overflow-y-auto p-5 sm:p-8 overscroll-contain">
 			<section data-settings-panel="profile" class="grid gap-6">
 				<p data-settings-feedback="profile" class="hidden settings-feedback"></p>
 				<form data-settings-profile-form class="grid gap-8">
 					<div class="grid gap-5">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Informacion personal</h3>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información personal</h3>
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Solo para tu cuenta y acceso interno.</p>
 						</div>
 						<div class="grid gap-5 sm:grid-cols-2">
 							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre<input name="first_name" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Apellido<input name="last_name" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 						</div>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electronico<input name="email" readonly class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-4 py-3 text-[0.95rem] outline-none text-(--on-surface-variant) cursor-not-allowed" /></label>
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electrónico<input name="email" readonly class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-4 py-3 text-[0.95rem] outline-none text-(--on-surface-variant) cursor-not-allowed" /></label>
 					</div>
 
-					<div data-settings-prof-fields class="hidden grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
+					<div data-settings-prof-fields class="settings-prof-section hidden gap-5 border-t border-(--shell-border) border-dashed pt-6">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Avatar publico</h3>
-							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Se mostrara en tu perfil publico.</p>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Avatar público</h3>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Se mostrará en tu perfil público.</p>
 						</div>
 						<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
 							<img data-settings-profile-preview class="hidden h-24 w-24 rounded-[1.25rem] border border-(--shell-border) object-cover shadow-sm bg-(--surface-bright)" alt="Foto de perfil" />
@@ -92,19 +92,37 @@ const publicProfileDomain =
 									<span class="material-symbols-rounded mr-2 text-[1.2rem]">photo_camera</span>
 									Cambiar foto
 								</label>
-								<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">JPG o PNG. Se mostrara en tu perfil publico.</p>
+								<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">JPG o PNG. Se mostrará en tu perfil público.</p>
 							</div>
 						</div>
 					</div>
 
-					<div data-settings-prof-fields class="hidden grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
+					<div data-settings-prof-fields class="settings-prof-section hidden gap-5 border-t border-(--shell-border) border-dashed pt-6">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Perfil publico</h3>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Perfil público</h3>
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Estos datos se muestran a tus clientes en internet.</p>
 						</div>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Telefono publico<input name="phone_number" placeholder="Ej: 0981 123 456" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-							URL del perfil publico <span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
+							Teléfono público
+							<div class="flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
+								<span class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
+									+595
+								</span>
+								<input
+									type="tel"
+									name="phone_number"
+									inputmode="numeric"
+									autocomplete="tel-national"
+									maxlength="11"
+									placeholder="981 123 456"
+									class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
+								/>
+							</div>
+							<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">Se guardará como número paraguayo con prefijo internacional.</span>
+							<span data-settings-profile-field-error="phone_number" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
+						</label>
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							URL del perfil público <span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
 							<div class="flex shadow-sm rounded-2xl transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
 								<span data-settings-profile-slug-prefix class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-medium text-(--on-surface-variant)">
 									{publicProfileDomain}/p/
@@ -117,7 +135,7 @@ const publicProfileDomain =
 								/>
 							</div>
 							<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
-								Este sera el enlace directo para que los clientes agenden contigo.
+								Este será el enlace directo para que los clientes agenden contigo.
 							</span>
 							<span data-settings-profile-field-error="profile_slug" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
@@ -134,16 +152,16 @@ const publicProfileDomain =
 				</form>
 			</section>
 
-			<section data-settings-panel="security" class="hidden grid gap-6">
+			<section data-settings-panel="security" class="settings-panel hidden gap-6">
 				<p data-settings-feedback="security" class="hidden settings-feedback"></p>
 				<form data-settings-security-form class="grid gap-8">
 					<div class="grid gap-5">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cambio de contrasena</h3>
-							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Asegurate de usar una contrasena fuerte y segura.</p>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cambio de contraseña</h3>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Asegúrate de usar una contraseña fuerte y segura.</p>
 						</div>
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						Contrasena actual
+						Contraseña actual
 						<input
 							type="password"
 							name="current_password"
@@ -154,7 +172,7 @@ const publicProfileDomain =
 					</label>
 					<div class="grid gap-5 sm:grid-cols-2">
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						Nueva contrasena
+						Nueva contraseña
 						<input
 							type="password"
 							name="new_password"
@@ -165,7 +183,7 @@ const publicProfileDomain =
 						/>
 					</label>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						Confirmar nueva contrasena
+						Confirmar nueva contraseña
 						<input
 							type="password"
 							name="confirm_password"
@@ -177,19 +195,19 @@ const publicProfileDomain =
 					</label>
 					</div>
 					<p class="text-[0.85rem] font-medium text-(--on-surface-variant) -mt-2">
-						La nueva contrasena debe tener al menos 8 caracteres.
+						La nueva contraseña debe tener al menos 8 caracteres.
 					</p>
 					</div>
 					<div class="flex justify-end pt-2 border-t border-(--shell-border) border-dashed">
 						<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">
 							<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">key</span>
-							Actualizar contrasena
+							Actualizar contraseña
 						</button>
 					</div>
 				</form>
 			</section>
 
-			<section data-settings-panel="preferences" class="hidden grid gap-8">
+			<section data-settings-panel="preferences" class="settings-panel hidden gap-8">
 				<p data-settings-feedback="preferences" class="hidden settings-feedback"></p>
 				<form data-settings-preferences-form class="grid gap-6">
 					<div class="grid gap-1">
@@ -216,84 +234,69 @@ const publicProfileDomain =
 							</div>
 					</label>
 					</div>
-					<div class="flex justify-end pt-1">
-						<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">
-							Guardar panel
-						</button>
-					</div>
 				</form>
 
 				{
 					isAdmin ? (
 						<>
-							<p data-settings-feedback="branding" class="hidden settings-feedback"></p>
 							<form data-settings-branding-form class="grid gap-6 border-t border-(--shell-border) border-dashed pt-8">
 								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Pagina publica de reservas</h3>
+									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Página pública de reservas</h3>
 									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Personaliza como te ven los clientes.</p>
-								</div>
-								<div class="grid gap-5 sm:grid-cols-2">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Tema pagina publica
-										<div class="relative">
-											<select name="theme_pref" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
-										<option value="light">Claro</option>
-										<option value="dark">Oscuro</option>
-									</select>
-										</div>
-								</label>
 								</div>
 								
 								<div class="grid gap-1.5 mt-2">
 									<span class="text-[0.95rem] font-bold text-(--on-surface)">Logo negocio</span>
 									<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center mt-1">
-										<img data-settings-logo-preview class="hidden h-16 w-16 rounded-2xl border border-(--shell-border) object-cover shadow-sm bg-(--surface-bright) p-1" alt="logo" />
+										<img data-settings-logo-preview class="hidden h-20 w-20 rounded-2xl border border-(--shell-border) object-contain shadow-sm bg-(--surface-bright) p-2" alt="Vista previa del logo" />
 										<div class="grid gap-2">
 											<input id="settings-branding-logo-input" type="file" name="logo_file" accept="image/*" class="sr-only" />
 											<label for="settings-branding-logo-input" class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-2.5 text-[0.95rem] font-extrabold text-(--on-surface) transition hover:bg-(--surface-variant) shadow-sm focus-within:ring-2 focus-within:ring-(--primary) focus-within:ring-offset-2">
 												<span class="material-symbols-rounded mr-2 text-[1.2rem]">image</span>
 												Subir logo
 											</label>
+											<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">Se mostrará una vista previa antes de guardar.</p>
 										</div>
 									</div>
-								</div>
-								<div class="flex justify-end pt-1">
-									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">
-										Guardar pagina publica
-									</button>
 								</div>
 							</form>
 						</>
 					) : null
 				}
+				<div class="flex justify-end border-t border-(--shell-border) border-dashed pt-2">
+					<button type="button" data-settings-appearance-save class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)">
+						<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">save</span>
+						Guardar apariencia
+					</button>
+				</div>
 			</section>
 
 			{
 				isAdmin ? (
 					<>
-						<section data-settings-panel="workspace" class="hidden grid gap-6">
+						<section data-settings-panel="workspace" class="settings-panel hidden gap-6">
 							<p data-settings-feedback="workspace" class="hidden settings-feedback"></p>
 							<form data-settings-workspace-form class="grid gap-6">
 								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Informacion del Negocio</h3>
-									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Detalles principales de tu organizacion.</p>
+									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información del negocio</h3>
+									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Detalles principales de tu organización.</p>
 								</div>
-								<div class="grid gap-5 sm:grid-cols-2">
+								<div class="grid gap-5">
 									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre del negocio<input name="name" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">WhatsApp publico<input name="public_whatsapp" placeholder="Ej: 595981123456" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 								</div>
 								<input type="hidden" name="profile_slug" />
-								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripcion<textarea name="description" rows="4" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 resize-y"></textarea></label>
+								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripción<textarea name="description" rows="4" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 resize-y"></textarea></label>
 								<div class="flex justify-end pt-4 border-t border-(--shell-border) border-dashed">
 									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)"><span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">store</span>Guardar negocio</button>
 								</div>
 							</form>
 						</section>
 
-						<section data-settings-panel="system" class="hidden grid gap-6">
+						<section data-settings-panel="system" class="settings-panel hidden gap-6">
 							<p data-settings-feedback="system" class="hidden settings-feedback"></p>
 							<form data-settings-system-form class="grid gap-6">
 								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Configuracion del Sistema</h3>
+									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Configuración del sistema</h3>
 									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Ajustes regionales y de tiempo.</p>
 								</div>
 								<div class="grid gap-5 sm:grid-cols-2">
@@ -313,10 +316,10 @@ const publicProfileDomain =
 										<div class="relative">
 											<select name="unanswered_alert_action" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 												<option value="KEEP">Mantener la cita (Ignorar)</option>
-												<option value="CANCEL">Cancelar la cita automaticamente</option>
+												<option value="CANCEL">Cancelar la cita automáticamente</option>
 											</select>
 										</div>
-										<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">Accion a tomar cuando un cliente no responde al recordatorio.</span>
+										<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">Acción a tomar cuando un cliente no responde al recordatorio.</span>
 									</label>
 								</div>
 
@@ -334,6 +337,11 @@ const publicProfileDomain =
 </settings-manager>
 
 <script>
+	import {
+		PARAGUAY_MOBILE_PHONE_ERROR,
+		parseParaguayMobilePhone,
+	} from '../lib/paraguay-phone';
+
 	interface ApiErrorDetail {
 		field?: string;
 		message?: string;
@@ -370,6 +378,7 @@ const publicProfileDomain =
 		private els!: {
 			modal: HTMLDialogElement | null;
 			closeBtn: HTMLButtonElement | null;
+			appearanceSaveBtn: HTMLButtonElement | null;
 			tabButtons: NodeListOf<HTMLElement>;
 			panels: NodeListOf<HTMLElement>;
 			profileForm: HTMLFormElement | null;
@@ -387,18 +396,23 @@ const publicProfileDomain =
 		private formEls!: {
 			firstNameInput: HTMLInputElement | null;
 			lastNameInput: HTMLInputElement | null;
+			phoneInput: HTMLInputElement | null;
 			profileSlugInput: HTMLInputElement | null;
 			profileSlugPrefix: HTMLElement | null;
+			phoneError: HTMLElement | null;
 			profileSlugError: HTMLElement | null;
 			profileImageInput: HTMLInputElement | null;
+			brandingLogoInput: HTMLInputElement | null;
 		};
 
 		private profilePreviewObjectUrl = '';
+		private logoPreviewObjectUrl = '';
 		private slugSuggestTimer: number | null = null;
 		private slugRequestSeq = 0;
 		private slugManuallyEdited = false;
 		private suppressSlugManualTracking = false;
 		private closingTimer: number | null = null;
+		private feedbackHideTimer: number | null = null;
 
 		connectedCallback() {
 			const roleId = Number(this.dataset.roleId || '0');
@@ -408,6 +422,7 @@ const publicProfileDomain =
 			this.els = {
 				modal: this.querySelector<HTMLDialogElement>('[data-settings-modal]'),
 				closeBtn: this.querySelector<HTMLButtonElement>('[data-settings-close]'),
+				appearanceSaveBtn: this.querySelector<HTMLButtonElement>('[data-settings-appearance-save]'),
 				tabButtons: this.querySelectorAll<HTMLElement>('[data-settings-tab-trigger]'),
 				panels: this.querySelectorAll<HTMLElement>('[data-settings-panel]'),
 				profileForm: this.querySelector<HTMLFormElement>('[data-settings-profile-form]'),
@@ -425,10 +440,13 @@ const publicProfileDomain =
 			this.formEls = {
 				firstNameInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="first_name"]') ?? null,
 				lastNameInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="last_name"]') ?? null,
+				phoneInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="phone_number"]') ?? null,
 				profileSlugInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="profile_slug"]') ?? null,
 				profileSlugPrefix: this.els.profileForm?.querySelector<HTMLElement>('[data-settings-profile-slug-prefix]') ?? null,
+				phoneError: this.els.profileForm?.querySelector<HTMLElement>('[data-settings-profile-field-error="phone_number"]') ?? null,
 				profileSlugError: this.els.profileForm?.querySelector<HTMLElement>('[data-settings-profile-field-error="profile_slug"]') ?? null,
 				profileImageInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="profile_image"]') ?? null,
+				brandingLogoInput: this.els.brandingForm?.querySelector<HTMLInputElement>('[name="logo_file"]') ?? null,
 			};
 
 			if (!this.abortController) {
@@ -447,13 +465,14 @@ const publicProfileDomain =
 			this.formEls.profileSlugInput?.addEventListener('input', this.handleSlugInput, { signal });
 			this.formEls.firstNameInput?.addEventListener('input', this.queueSlugSuggestion, { signal });
 			this.formEls.lastNameInput?.addEventListener('input', this.queueSlugSuggestion, { signal });
+			this.formEls.phoneInput?.addEventListener('input', this.handlePhoneInput, { signal });
 			this.formEls.profileImageInput?.addEventListener('change', this.handleProfileImageChange, { signal });
+			this.formEls.brandingLogoInput?.addEventListener('change', this.handleLogoImageChange, { signal });
 
 			this.els.profileForm?.addEventListener('submit', this.handleProfileSubmit, { signal });
 			this.els.securityForm?.addEventListener('submit', this.handleSecuritySubmit, { signal });
-			this.els.preferencesForm?.addEventListener('submit', this.handlePreferencesSubmit, { signal });
+			this.els.appearanceSaveBtn?.addEventListener('click', this.handleAppearanceSave, { signal });
 			this.els.workspaceForm?.addEventListener('submit', this.handleWorkspaceSubmit, { signal });
-			this.els.brandingForm?.addEventListener('submit', this.handleBrandingSubmit, { signal });
 			this.els.systemForm?.addEventListener('submit', this.handleSystemSubmit, { signal });
 		}
 
@@ -462,7 +481,9 @@ const publicProfileDomain =
 			this.abortController = null;
 			this.clearSlugSuggestTimer();
 			this.releaseProfilePreviewObjectUrl();
+			this.releaseLogoPreviewObjectUrl();
 			if (this.closingTimer) window.clearTimeout(this.closingTimer);
+			if (this.feedbackHideTimer) window.clearTimeout(this.feedbackHideTimer);
 		}
 
 		private handleDocumentClick = (event: MouseEvent) => {
@@ -500,6 +521,7 @@ const publicProfileDomain =
 				this.els.modal?.classList.remove('is-closing');
 				this.resetSecurityForm();
 				this.releaseProfilePreviewObjectUrl();
+				this.releaseLogoPreviewObjectUrl();
 				this.clearSlugSuggestTimer();
 				this.slugRequestSeq += 1;
 				this.closingTimer = null;
@@ -508,6 +530,36 @@ const publicProfileDomain =
 
 		private readApiMessage(data: ApiResponse | null, fallback: string): string {
 			return typeof data?.message === 'string' && data.message.trim() ? data.message.trim() : fallback;
+		}
+
+		private normalizeSecurityMessage(message: string, kind: 'success' | 'error') {
+			const raw = String(message || '').trim();
+			if (!raw) {
+				return kind === 'success'
+					? 'Tu contraseña se actualizó correctamente.'
+					: 'No pudimos actualizar tu contraseña. Intenta nuevamente.';
+			}
+
+			const normalized = raw
+				.normalize('NFD')
+				.replace(/[\u0300-\u036f]/g, '')
+				.toLowerCase();
+
+			if (kind === 'success') {
+				if (normalized.includes('contrasena actualizada correctamente')) {
+					return 'Tu contraseña se actualizó correctamente.';
+				}
+				return raw;
+			}
+
+			if (normalized.includes('debes completar') || normalized.includes('contrasena actual y la nueva')) {
+				return 'Ingresa tu contraseña actual y la nueva contraseña.';
+			}
+			if (normalized.includes('no fue posible actualizar la contrasena')) {
+				return 'No pudimos actualizar tu contraseña. Intenta nuevamente.';
+			}
+
+			return raw;
 		}
 
 		private async fileToBase64(file: File): Promise<string> {
@@ -526,6 +578,12 @@ const publicProfileDomain =
 			if (!this.profilePreviewObjectUrl) return;
 			URL.revokeObjectURL(this.profilePreviewObjectUrl);
 			this.profilePreviewObjectUrl = '';
+		}
+
+		private releaseLogoPreviewObjectUrl() {
+			if (!this.logoPreviewObjectUrl) return;
+			URL.revokeObjectURL(this.logoPreviewObjectUrl);
+			this.logoPreviewObjectUrl = '';
 		}
 
 		private clearSlugSuggestTimer() {
@@ -555,10 +613,40 @@ const publicProfileDomain =
 			this.suppressSlugManualTracking = false;
 		}
 
+		private toParaguayPhoneLocalDigits(rawValue: string) {
+			const parsedPhone = parseParaguayMobilePhone(rawValue);
+			if (parsedPhone.isValid) return parsedPhone.e164.slice(4);
+
+			let digits = String(rawValue || '').replace(/\D/g, '');
+			if (digits.startsWith('00595')) digits = digits.slice(5);
+			if (digits.startsWith('595')) digits = digits.slice(3);
+			if (digits.startsWith('0')) digits = digits.slice(1);
+			return digits.slice(0, 9);
+		}
+
+		private formatParaguayPhoneLocal(rawValue: string) {
+			const digits = this.toParaguayPhoneLocalDigits(rawValue);
+			if (!digits) return '';
+			if (digits.length <= 3) return digits;
+			if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+			return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)}`;
+		}
+
+		private setPhoneFieldError(message: string) {
+			if (!this.formEls.phoneError) return;
+			this.formEls.phoneError.textContent = message;
+			this.formEls.phoneError.classList.remove('hidden');
+		}
+
 		private clearProfileFieldErrors() {
-			if (!this.formEls.profileSlugError) return;
-			this.formEls.profileSlugError.textContent = '';
-			this.formEls.profileSlugError.classList.add('hidden');
+			if (this.formEls.profileSlugError) {
+				this.formEls.profileSlugError.textContent = '';
+				this.formEls.profileSlugError.classList.add('hidden');
+			}
+			if (this.formEls.phoneError) {
+				this.formEls.phoneError.textContent = '';
+				this.formEls.phoneError.classList.add('hidden');
+			}
 		}
 
 		private isGenericValidationMessage(message: unknown): boolean {
@@ -579,6 +667,11 @@ const publicProfileDomain =
 				const field = 'field' in item ? String((item as Record<string, unknown>).field || '').trim() : '';
 				const message = 'message' in item ? String((item as Record<string, unknown>).message || '').trim() : '';
 				if (!field || !message) continue;
+				if (field === 'phone_number' && this.formEls.phoneError) {
+					this.formEls.phoneError.textContent = message;
+					this.formEls.phoneError.classList.remove('hidden');
+					rendered = true;
+				}
 				if (field === 'profile_slug' && this.formEls.profileSlugError) {
 					this.formEls.profileSlugError.textContent = message;
 					this.formEls.profileSlugError.classList.remove('hidden');
@@ -597,12 +690,32 @@ const publicProfileDomain =
 		private showFeedback(key: string, message: string, kind: 'success' | 'error' = 'success') {
 			const node = this.querySelector(`[data-settings-feedback="${key}"]`);
 			if (!node) return;
+			if (this.feedbackHideTimer) {
+				window.clearTimeout(this.feedbackHideTimer);
+				this.feedbackHideTimer = null;
+			}
 			node.textContent = message;
 			node.classList.remove('hidden', 'is-success', 'is-error');
 			node.classList.add(kind === 'success' ? 'is-success' : 'is-error');
+
+			// Keep feedback visible even when the user is scrolled down in the panel.
+			node.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
+			if (kind === 'success') {
+				this.feedbackHideTimer = window.setTimeout(() => {
+					node.classList.add('hidden');
+					node.classList.remove('is-success', 'is-error');
+					node.textContent = '';
+					this.feedbackHideTimer = null;
+				}, 3200);
+			}
 		}
 
 		private clearFeedback() {
+			if (this.feedbackHideTimer) {
+				window.clearTimeout(this.feedbackHideTimer);
+				this.feedbackHideTimer = null;
+			}
 			this.querySelectorAll('.settings-feedback').forEach((node) => {
 				node.textContent = '';
 				node.classList.add('hidden');
@@ -672,6 +785,12 @@ const publicProfileDomain =
 			}, 350);
 		};
 
+		private handlePhoneInput = () => {
+			if (!this.formEls.phoneInput) return;
+			this.formEls.phoneInput.value = this.formatParaguayPhoneLocal(this.formEls.phoneInput.value);
+			this.clearProfileFieldErrors();
+		};
+
 		private handleProfileImageChange = () => {
 			const imageFile = this.formEls.profileImageInput?.files?.[0];
 			if (!imageFile || !this.els.profilePreview) return;
@@ -679,6 +798,15 @@ const publicProfileDomain =
 			this.profilePreviewObjectUrl = URL.createObjectURL(imageFile);
 			this.els.profilePreview.src = this.profilePreviewObjectUrl;
 			this.els.profilePreview.classList.remove('hidden');
+		};
+
+		private handleLogoImageChange = () => {
+			const logoFile = this.formEls.brandingLogoInput?.files?.[0];
+			if (!logoFile || !this.els.logoPreview) return;
+			this.releaseLogoPreviewObjectUrl();
+			this.logoPreviewObjectUrl = URL.createObjectURL(logoFile);
+			this.els.logoPreview.src = this.logoPreviewObjectUrl;
+			this.els.logoPreview.classList.remove('hidden');
 		};
 
 		private setActiveTab(tabId: string) {
@@ -715,7 +843,7 @@ const publicProfileDomain =
 			const prof = profile?.professional_profile;
 			if (prof) {
 				this.els.profFields.forEach((el) => el.classList.remove('hidden'));
-				if (phone) phone.value = prof.phone_number || '';
+				if (phone) phone.value = this.formatParaguayPhoneLocal(prof.phone_number || '');
 				if (this.formEls.profileSlugInput) {
 					this.setSuggestedSlug(String(prof.profile_slug || '').trim());
 					if (this.formEls.profileSlugInput.value.trim() === '') this.queueSlugSuggestion();
@@ -736,7 +864,7 @@ const publicProfileDomain =
 				if (this.formEls.profileSlugInput) this.setSuggestedSlug('');
 				this.els.profilePreview?.classList.add('hidden');
 				if (this.els.profileNote) {
-					this.els.profileNote.textContent = 'Esta cuenta no tiene perfil profesional publico. Solo se guarda nombre y apellido.';
+					this.els.profileNote.textContent = 'Esta cuenta no tiene perfil profesional público. Solo se guarda nombre y apellido.';
 					this.els.profileNote.classList.remove('hidden');
 				}
 			}
@@ -750,23 +878,64 @@ const publicProfileDomain =
 			
 			setValue('[data-settings-workspace-form] [name="name"]', workspace?.name);
 			setValue('[data-settings-workspace-form] [name="profile_slug"]', workspace?.profile_slug);
-			setValue('[data-settings-workspace-form] [name="public_whatsapp"]', workspace?.public_whatsapp);
 			setValue('[data-settings-workspace-form] [name="description"]', workspace?.description);
-			setValue('[data-settings-branding-form] [name="theme_pref"]', workspace?.theme_pref === 'dark' ? 'dark' : 'light');
 			setValue('[data-settings-system-form] [name="timezone"]', workspace?.timezone || 'America/Asuncion');
 			setValue('[data-settings-system-form] [name="time_format"]', workspace?.time_format === '12H' ? '12H' : '24H');
 			
-			// Aqui esta la linea ya corregida apuntando al formulario correcto de sistema:
+			// Aquí está la línea ya corregida apuntando al formulario correcto de sistema.
 			setValue('[data-settings-system-form] [name="unanswered_alert_action"]', workspace?.unanswered_alert_action === 'CANCEL' ? 'CANCEL' : 'KEEP');
 			
+			this.releaseLogoPreviewObjectUrl();
+
 			if (this.els.logoPreview && workspace?.logo_url) {
 				this.els.logoPreview.src = workspace.logo_url;
 				this.els.logoPreview.classList.remove('hidden');
 			} else {
 				this.els.logoPreview?.classList.add('hidden');
 			}
-			const logoFile = this.els.brandingForm?.querySelector<HTMLInputElement>('[name="logo_file"]');
+			const logoFile = this.formEls.brandingLogoInput;
 			if (logoFile) logoFile.value = '';
+		}
+
+		private getPanelAppearanceValues(): { theme: 'light' | 'dark'; view: string } {
+			const theme: 'light' | 'dark' =
+				this.els.preferencesForm?.querySelector<HTMLSelectElement>('[name="panel_theme"]')?.value === 'dark'
+					? 'dark'
+					: 'light';
+			const view = String(
+				this.els.preferencesForm?.querySelector<HTMLSelectElement>('[name="calendar_view"]')?.value ||
+					'timeGridWeek'
+			);
+			return { theme, view };
+		}
+
+		private persistPanelAppearance(theme: string, view: string) {
+			const safeTheme = theme === 'dark' ? 'dark' : 'light';
+			document.documentElement.dataset.theme = safeTheme;
+			localStorage.setItem('bookmate-theme', safeTheme);
+			localStorage.setItem('bookmate-calendar-default-view', view);
+		}
+
+		private getFormPayload(form: HTMLFormElement | null): Record<string, string> {
+			const payload: Record<string, string> = {};
+			if (!form) return payload;
+
+			const formData = new FormData(form);
+			for (const [key, value] of formData.entries()) {
+				if (typeof value === 'string') {
+					payload[key] = value.trim();
+				}
+			}
+
+			return payload;
+		}
+
+		private getAppearancePayload(): Record<string, string> {
+			const payload = this.getFormPayload(this.els.preferencesForm);
+			if (this.els.brandingForm) {
+				Object.assign(payload, this.getFormPayload(this.els.brandingForm));
+			}
+			return payload;
 		}
 
 
@@ -775,13 +944,7 @@ const publicProfileDomain =
 			const forms = [this.els.workspaceForm, this.els.systemForm, this.els.brandingForm];
 
 			for (const form of forms) {
-				if (!form) continue;
-				const formData = new FormData(form);
-				for (const [key, value] of formData.entries()) {
-					if (typeof value === 'string') {
-						payload[key] = value.trim();
-					}
-				}
+				Object.assign(payload, this.getFormPayload(form));
 			}
 			return payload;
 		}
@@ -823,7 +986,17 @@ const publicProfileDomain =
 			const profVisible = !this.els.profFields[0]?.classList.contains('hidden');
 			
 			if (profVisible) {
-				payload.phone_number = String(this.els.profileForm.querySelector<HTMLInputElement>('[name="phone_number"]')?.value || '').trim();
+				const rawPhone = String(this.formEls.phoneInput?.value || '').trim();
+				if (rawPhone !== '') {
+					const parsedPhone = parseParaguayMobilePhone(rawPhone);
+					if (!parsedPhone.isValid) {
+						this.setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
+						return;
+					}
+					payload.phone_number = parsedPhone.e164;
+				} else {
+					payload.phone_number = '';
+				}
 				const profileSlug = String(this.formEls.profileSlugInput?.value || '').trim();
 				if (profileSlug) payload.profile_slug = profileSlug;
 
@@ -865,22 +1038,22 @@ const publicProfileDomain =
 			const confirmPassword = String(this.els.securityForm.querySelector<HTMLInputElement>('[name="confirm_password"]')?.value || '').trim();
 
 			if (!currentPassword || !newPassword || !confirmPassword) {
-				this.showFeedback('security', 'Completa los tres campos de contrasena.', 'error');
+				this.showFeedback('security', 'Ingresa la contraseña actual, la nueva y su confirmación.', 'error');
 				return;
 			}
 
 			if (newPassword.length < 8) {
-				this.showFeedback('security', 'La nueva contrasena debe tener al menos 8 caracteres.', 'error');
+				this.showFeedback('security', 'La nueva contraseña debe tener al menos 8 caracteres.', 'error');
 				return;
 			}
 
 			if (newPassword !== confirmPassword) {
-				this.showFeedback('security', 'La confirmacion no coincide con la nueva contrasena.', 'error');
+				this.showFeedback('security', 'La confirmación no coincide. Verifica ambos campos.', 'error');
 				return;
 			}
 
 			if (newPassword === currentPassword) {
-				this.showFeedback('security', 'La nueva contrasena debe ser distinta a la actual.', 'error');
+				this.showFeedback('security', 'La nueva contraseña no puede ser igual a la actual.', 'error');
 				return;
 			}
 
@@ -892,25 +1065,77 @@ const publicProfileDomain =
 						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 						body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
 					},
-					'No fue posible actualizar la contrasena.'
+					'No pudimos actualizar tu contraseña. Intenta nuevamente.'
 				);
-				this.showFeedback('security', this.readApiMessage(data, 'Contrasena actualizada correctamente.'), 'success');
+				this.showFeedback(
+					'security',
+					this.normalizeSecurityMessage(
+						this.readApiMessage(data, 'Tu contraseña se actualizó correctamente.'),
+						'success'
+					),
+					'success'
+				);
 				this.resetSecurityForm();
 			} catch (error) {
-				this.showFeedback('security', error instanceof Error ? error.message : 'No fue posible actualizar la contrasena.', 'error');
+				this.showFeedback(
+					'security',
+					this.normalizeSecurityMessage(
+						error instanceof Error
+							? error.message
+							: 'No pudimos actualizar tu contraseña. Intenta nuevamente.',
+						'error'
+					),
+					'error'
+				);
 			}
 		};
 
-		private handlePreferencesSubmit = (event: SubmitEvent) => {
+		private handleAppearanceSave = async (event: Event) => {
 			event.preventDefault();
 			this.clearFeedback();
 			if (!this.els.preferencesForm) return;
-			const theme = this.els.preferencesForm.querySelector<HTMLSelectElement>('[name="panel_theme"]')?.value === 'dark' ? 'dark' : 'light';
-			const view = String(this.els.preferencesForm.querySelector<HTMLSelectElement>('[name="calendar_view"]')?.value || 'timeGridWeek');
-			document.documentElement.dataset.theme = theme;
-			localStorage.setItem('bookmate-theme', theme);
-			localStorage.setItem('bookmate-calendar-default-view', view);
-			this.showFeedback('preferences', 'Preferencias guardadas correctamente.', 'success');
+
+			const { theme, view } = this.getPanelAppearanceValues();
+
+			if (!this.isAdmin) {
+				this.persistPanelAppearance(theme, view);
+				this.showFeedback('preferences', 'Apariencia guardada correctamente.', 'success');
+				return;
+			}
+
+			const payload = this.getAppearancePayload();
+			payload.panel_theme = theme;
+			payload.calendar_view = view;
+			if (!payload.theme_pref) {
+				payload.theme_pref = theme;
+			}
+
+			if (this.els.brandingForm) {
+				const logoFile = this.els.brandingForm.querySelector<HTMLInputElement>('[name="logo_file"]')?.files?.[0];
+				if (logoFile) {
+					payload.logo_base64 = await this.fileToBase64(logoFile);
+					payload.logo_name = logoFile.name;
+					payload.logo_mime = logoFile.type || 'application/octet-stream';
+				}
+			}
+
+			try {
+				const data = await this.requestApi(
+					'/api/workspace',
+					{
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+						body: JSON.stringify(payload),
+					},
+					'No fue posible guardar la apariencia.'
+				);
+
+				this.persistPanelAppearance(theme, view);
+				this.showFeedback('preferences', this.readApiMessage(data, 'Apariencia guardada correctamente.'), 'success');
+				await this.loadData();
+			} catch (error) {
+				this.showFeedback('preferences', error instanceof Error ? error.message : 'No fue posible guardar la apariencia.', 'error');
+			}
 		};
 
 		private async saveWorkspaceSettings(panel: string, extraPayload: Record<string, string> = {}) {
@@ -921,19 +1146,19 @@ const publicProfileDomain =
 					method: 'PUT',
 					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 					body: JSON.stringify(payload),
-				}, 'No fue posible guardar la configuracion.');
+				}, 'No fue posible guardar la configuración.');
 
-				let successMessage = 'Configuracion guardada correctamente.';
+				let successMessage = 'Configuración guardada correctamente.';
 				if (panel === 'workspace') successMessage = 'Negocio actualizado correctamente.';
-				if (panel === 'branding') successMessage = 'Personalizacion guardada correctamente.';
+				if (panel === 'branding') successMessage = 'Personalización guardada correctamente.';
 				if (panel === 'system') successMessage = 'Sistema actualizado correctamente.';
 
 				this.showFeedback(panel, this.readApiMessage(data, successMessage), 'success');
 				await this.loadData();
 			} catch (error) {
-				let errorMessage = 'No fue posible guardar la configuracion.';
+				let errorMessage = 'No fue posible guardar la configuración.';
 				if (panel === 'workspace') errorMessage = 'No fue posible guardar negocio.';
-				if (panel === 'branding') errorMessage = 'No fue posible guardar personalizacion.';
+				if (panel === 'branding') errorMessage = 'No fue posible guardar personalización.';
 				if (panel === 'system') errorMessage = 'No fue posible guardar sistema.';
 
 				this.showFeedback(panel, error instanceof Error ? error.message : errorMessage, 'error');
@@ -945,26 +1170,12 @@ const publicProfileDomain =
 			await this.saveWorkspaceSettings('workspace');
 		};
 
-		private handleBrandingSubmit = async (event: SubmitEvent) => {
-			event.preventDefault();
-			const extraPayload: Record<string, string> = {};
-			if (this.els.brandingForm) {
-				const logoFile = this.els.brandingForm.querySelector<HTMLInputElement>('[name="logo_file"]')?.files?.[0];
-				if (logoFile) {
-					extraPayload.logo_base64 = await this.fileToBase64(logoFile);
-					extraPayload.logo_name = logoFile.name;
-					extraPayload.logo_mime = logoFile.type || 'application/octet-stream';
-				}
-			}
-			await this.saveWorkspaceSettings('branding', extraPayload);
-		};
-
 		private handleSystemSubmit = async (event: SubmitEvent) => {
 			event.preventDefault();
 			
 			const extraPayload: Record<string, string> = {};
 			
-			// Extraemos y aseguramos explicitamente el campo para el JSON
+			// Extraemos y aseguramos explícitamente el campo para el JSON.
 			const actionSelect = this.els.systemForm?.querySelector<HTMLSelectElement>('[name="unanswered_alert_action"]');
 			if (actionSelect) {
 				extraPayload.unanswered_alert_action = actionSelect.value;
@@ -995,14 +1206,15 @@ const publicProfileDomain =
 	[data-settings-modal] {
 		position: fixed;
 		inset: 0;
-		margin: auto;
 		z-index: 1200;
 		animation: settings-modal-in 180ms ease-out;
 	}
 
 	[data-settings-modal]::backdrop {
 		z-index: 1190;
-		background: rgba(2, 6, 23, 0.42);
+		background: rgba(15, 17, 21, 0.6);
+		backdrop-filter: blur(1px);
+		-webkit-backdrop-filter: blur(1px);
 		animation: settings-backdrop-in 180ms ease-out;
 	}
 
@@ -1015,13 +1227,25 @@ const publicProfileDomain =
 	}
 
 	@keyframes settings-modal-in {
-		from { opacity: 0; transform: translateY(10px) scale(0.98); }
-		to { opacity: 1; transform: translateY(0) scale(1); }
+		from { opacity: 0; transform: translateY(100%); }
+		to { opacity: 1; transform: translateY(0); }
 	}
 
 	@keyframes settings-modal-out {
-		from { opacity: 1; transform: translateY(0) scale(1); }
-		to { opacity: 0; transform: translateY(8px) scale(0.98); }
+		from { opacity: 1; transform: translateY(0); }
+		to { opacity: 0; transform: translateY(100%); }
+	}
+
+	@media (min-width: 640px) {
+		@keyframes settings-modal-in {
+			from { opacity: 0; transform: translateY(10px) scale(0.98); }
+			to { opacity: 1; transform: translateY(0) scale(1); }
+		}
+
+		@keyframes settings-modal-out {
+			from { opacity: 1; transform: translateY(0) scale(1); }
+			to { opacity: 0; transform: translateY(8px) scale(0.98); }
+		}
 	}
 
 	@keyframes settings-backdrop-in {
@@ -1063,12 +1287,28 @@ const publicProfileDomain =
 		font-size: 1.25rem;
 	}
 
+	.settings-panel,
+	.settings-prof-section {
+		display: grid;
+	}
+
+	.settings-panel.hidden,
+	.settings-prof-section.hidden {
+		display: none;
+	}
+
 	.settings-feedback {
+		position: sticky;
+		top: 0.35rem;
+		z-index: 12;
 		border-radius: 1.2rem;
 		border: 1px solid transparent;
 		padding: 0.75rem 1rem;
 		font-size: 0.9rem;
 		font-weight: 700;
+		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+		backdrop-filter: blur(6px);
+		-webkit-backdrop-filter: blur(6px);
 	}
 
 	.settings-feedback.is-success {

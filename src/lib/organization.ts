@@ -12,8 +12,12 @@ export interface OrganizationCurrent {
 	name: string;
 	profile_slug: string;
 	description: string;
-	phone_number: string;
-	created_at: string;
+	public_whatsapp: string;
+	logo_url: string;
+	timezone: string;
+	time_format: string;
+	theme_pref: string;
+	unanswered_alert_action: string;
 }
 
 interface OrganizationSuccessResponse {
@@ -57,8 +61,12 @@ const normalizeOrganization = (value: unknown): OrganizationCurrent | null => {
 		name: String(source.name || '').trim(),
 		profile_slug: String(source.profile_slug || '').trim(),
 		description: String(source.description || '').trim(),
-		phone_number: String(source.phone_number || '').trim(),
-		created_at: String(source.created_at || '').trim(),
+		public_whatsapp: String(source.public_whatsapp || '').trim(),
+		logo_url: String(source.logo_url || '').trim(),
+		timezone: String(source.timezone || '').trim(),
+		time_format: String(source.time_format || '').trim(),
+		theme_pref: String(source.theme_pref || '').trim(),
+		unanswered_alert_action: String(source.unanswered_alert_action || '').trim(),
 	};
 };
 

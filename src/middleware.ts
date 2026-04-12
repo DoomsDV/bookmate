@@ -57,11 +57,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	}
 
 	let organizationName = String(cookies.get('org_name')?.value || '').trim();
-	if (!organizationName && accessToken) {
+	let organizationLogoUrl = String(cookies.get('org_logo_url')?.value || '').trim();
+	if ((!organizationName || !organizationLogoUrl) && accessToken) {
 		try {
 			const organization = await getCurrentOrganizationWithOrds(accessToken);
 			setOrganizationCacheCookies(cookies, url, organization);
 			organizationName = String(organization.name || '').trim();
+			organizationLogoUrl = String(organization.logo_url || '').trim();
 		} catch {
 			// Si falla, seguimos sin bloquear navegación.
 		}
@@ -71,5 +73,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	context.locals.roleId = claims.role_id;
 	context.locals.userId = claims.user_id;
 	context.locals.organizationName = organizationName;
+	context.locals.organizationLogoUrl = organizationLogoUrl;
 	return next();
 });

@@ -59,6 +59,9 @@ const parseBody = async (request: Request) => {
 		timezone: formData.get('timezone'),
 		time_format: formData.get('time_format'),
 		theme_pref: formData.get('theme_pref'),
+		unanswered_alert_action: formData.get('unanswered_alert_action'),
+		panel_theme: formData.get('panel_theme'),
+		calendar_view: formData.get('calendar_view'),
 		logo_base64: formData.get('logo_base64'),
 		logo_name: formData.get('logo_name'),
 		logo_mime: formData.get('logo_mime'),
@@ -88,6 +91,15 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 
 	const themePref = String(source?.theme_pref ?? '').trim();
 	if (themePref !== '') payload.theme_pref = themePref;
+
+	const unansweredAlertAction = String(source?.unanswered_alert_action ?? '').trim();
+	if (unansweredAlertAction !== '') payload.unanswered_alert_action = unansweredAlertAction;
+
+	const panelTheme = String(source?.panel_theme ?? '').trim();
+	if (panelTheme !== '') payload.panel_theme = panelTheme;
+
+	const calendarView = String(source?.calendar_view ?? '').trim();
+	if (calendarView !== '') payload.calendar_view = calendarView;
 
 	const logoBase64 = String(source?.logo_base64 ?? '').trim();
 	if (logoBase64 !== '') {

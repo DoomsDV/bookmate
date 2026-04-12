@@ -9,6 +9,7 @@ declare namespace App {
         roleId?: number;
         userId?: number;
         organizationName?: string;
+        organizationLogoUrl?: string;
     }
 }
 

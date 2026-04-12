@@ -16,6 +16,7 @@ export interface WorkspaceSettingsData {
 	timezone: string;
 	time_format: string;
 	theme_pref: string;
+	unanswered_alert_action: string;
 }
 
 export interface UpdateWorkspacePayload {
@@ -26,6 +27,9 @@ export interface UpdateWorkspacePayload {
 	timezone?: string;
 	time_format?: string;
 	theme_pref?: string;
+	unanswered_alert_action?: string;
+	panel_theme?: string;
+	calendar_view?: string;
 	logo_base64?: string;
 	logo_name?: string;
 	logo_mime?: string;
@@ -102,6 +106,7 @@ const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | nul
 		timezone: String(source.timezone || '').trim(),
 		time_format: String(source.time_format || '').trim(),
 		theme_pref: String(source.theme_pref || '').trim(),
+		unanswered_alert_action: String(source.unanswered_alert_action || '').trim(),
 	};
 };
 

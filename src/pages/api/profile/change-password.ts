@@ -4,7 +4,7 @@ import { AuthApiError, changePasswordWithOrds, type ChangePasswordPayload } from
 
 const requireToken = (token: string | undefined) => {
 	if (!token) {
-		throw new AuthApiError('No hay sesion valida para cambiar la contrasena.', 401);
+		throw new AuthApiError('No hay una sesión válida para cambiar tu contraseña.', 401);
 	}
 	return token;
 };
@@ -41,7 +41,7 @@ const parseChangePasswordPayload = (source: any): ChangePasswordPayload => {
 	const newPassword = String(source?.new_password ?? '').trim();
 
 	if (!currentPassword || !newPassword) {
-		throw new AuthApiError('Debes completar la contrasena actual y la nueva.', 400);
+		throw new AuthApiError('Ingresa tu contraseña actual y la nueva contraseña.', 400);
 	}
 
 	return {
@@ -65,7 +65,7 @@ export const PUT: APIRoute = async ({ request, locals }) => {
 			{ status: 200 }
 		);
 	} catch (error) {
-		return toErrorResponse(error, 'No fue posible actualizar la contrasena.');
+		return toErrorResponse(error, 'No pudimos actualizar tu contraseña. Intenta nuevamente.');
 	}
 };
 

@@ -22,8 +22,12 @@ const normalizePath = (path: string) => {
 const cachedOrganizationName = String(
 	Astro.locals.organizationName || Astro.cookies.get("org_name")?.value || "",
 ).trim();
+const cachedOrganizationLogoUrl = String(
+	Astro.locals.organizationLogoUrl || Astro.cookies.get("org_logo_url")?.value || "",
+).trim();
 const workspaceName = cachedOrganizationName || "Workspace";
 const workspaceInitial = workspaceName.charAt(0).toUpperCase();
+const workspaceLogoUrl = cachedOrganizationLogoUrl;
 
 const activePath = normalizePath(currentPath);
 const currentRoleId = Number(Astro.locals.roleId ?? 0);
@@ -79,10 +83,21 @@ const visibleTeamItems = teamItems.filter((item) =>
 			<div class="flex items-center justify-between gap-3">
 				<div class="sidebar-account-row">
 					<div
-						class="workspace-avatar flex size-14 shrink-0 items-center justify-center rounded-full text-lg font-bold"
+						class="workspace-avatar flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-bold"
 						data-workspace-avatar
 					>
-						{workspaceInitial}
+						{
+							workspaceLogoUrl ? (
+								<img
+									src={workspaceLogoUrl}
+									alt={`Logo de ${workspaceName}`}
+									class="size-full object-cover"
+									loading="eager"
+								/>
+							) : (
+								workspaceInitial
+							)
+						}
 					</div>
 					<div class="sidebar-account-meta" data-sidebar-brand-text>
 						<div class="sidebar-account-title-row">
@@ -189,10 +204,21 @@ const visibleTeamItems = teamItems.filter((item) =>
 		<div class="sidebar-account-header mb-6 border-b border-(--shell-border)/75 pb-4" data-sidebar-brand-block>
 			<div class="sidebar-account-row" data-sidebar-brand>
 				<div
-					class="workspace-avatar flex size-14 shrink-0 items-center justify-center rounded-full text-lg font-bold"
+					class="workspace-avatar flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-bold"
 					data-workspace-avatar
 				>
-					{workspaceInitial}
+					{
+						workspaceLogoUrl ? (
+							<img
+								src={workspaceLogoUrl}
+								alt={`Logo de ${workspaceName}`}
+								class="size-full object-cover"
+								loading="eager"
+							/>
+						) : (
+							workspaceInitial
+						)
+					}
 				</div>
 				<div class="sidebar-account-meta" data-sidebar-brand-text>
 					<div class="sidebar-account-title-row">

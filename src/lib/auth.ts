@@ -26,6 +26,7 @@ const ORGANIZATION_CACHE_COOKIE_KEYS = {
 	id: 'org_id',
 	name: 'org_name',
 	slug: 'org_slug',
+	logoUrl: 'org_logo_url',
 } as const;
 
 export interface AuthSuccessResponse {
@@ -204,7 +205,7 @@ export const changePasswordWithOrds = async (token: string, payload: ChangePassw
 		message:
 			typeof data.message === 'string' && data.message.trim()
 				? data.message
-				: 'Contrasena actualizada correctamente.',
+				: 'Tu contraseña se actualizó correctamente.',
 	};
 };
 
@@ -238,15 +239,22 @@ export const setSessionCookies = (
 export const setOrganizationCacheCookies = (
 	cookies: { set: (name: string, value: string, options: Record<string, unknown>) => void },
 	url: URL,
-	organization: { id_organization: number; name: string; profile_slug?: string | null }
+	organization: {
+		id_organization: number;
+		name: string;
+		profile_slug?: string | null;
+		logo_url?: string | null;
+	}
 ) => {
 	const baseOptions = getCookieBaseOptions(url);
 	const safeName = String(organization.name || '').trim();
 	const safeSlug = String(organization.profile_slug || '').trim();
+	const safeLogoUrl = String(organization.logo_url || '').trim();
 
 	cookies.set(ORGANIZATION_CACHE_COOKIE_KEYS.id, String(organization.id_organization || 0), baseOptions);
 	cookies.set(ORGANIZATION_CACHE_COOKIE_KEYS.name, safeName, baseOptions);
 	cookies.set(ORGANIZATION_CACHE_COOKIE_KEYS.slug, safeSlug, baseOptions);
+	cookies.set(ORGANIZATION_CACHE_COOKIE_KEYS.logoUrl, safeLogoUrl, baseOptions);
 };
 
 export const clearSessionCookies = (
@@ -257,6 +265,7 @@ export const clearSessionCookies = (
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.id, { path: '/' });
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.name, { path: '/' });
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.slug, { path: '/' });
+	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.logoUrl, { path: '/' });
 };
 
 export const isPublicPath = (pathname: string) => {
