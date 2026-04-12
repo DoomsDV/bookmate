@@ -633,39 +633,22 @@ const getStatusTone = (status: string) => {
 		animation: ai-token-reveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
 	}
 
-	@keyframes ai-sparkle-glow {
-		0%,
-		100% {
-			filter: drop-shadow(0 0 0 rgba(127, 207, 255, 0.1));
-		}
-		50% {
-			filter: drop-shadow(0 0 10px rgba(127, 207, 255, 0.48));
-		}
-	}
-
 	html[data-theme='dark'] .dashboard-ai-card {
-		border: 1px solid rgba(11, 87, 208, 0.2);
-		background:
-			radial-gradient(120% 160% at 0% 0%, rgba(11, 87, 208, 0.14) 0%, transparent 44%),
-			linear-gradient(135deg, rgba(11, 87, 208, 0.1) 0%, rgba(14, 17, 20, 1) 100%);
-		box-shadow:
-			inset 0 1px 0 rgba(180, 215, 255, 0.09),
-			0 16px 36px rgba(2, 6, 23, 0.34);
+		border: 1px solid rgba(11, 87, 208, 0.3);
+		background: #18181b;
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .ai-card-sparkle {
-		color: #7fcfff;
-		animation: ai-sparkle-glow 2.8s ease-in-out infinite;
+		color: #60a5fa;
+		animation: none;
+		filter: none;
 	}
 
 	html[data-theme='dark'] .dashboard-metric-card {
-		border-color: rgba(63, 63, 70, 0.9);
-		background:
-			radial-gradient(120% 90% at 100% 0%, rgba(59, 130, 246, 0.06) 0%, transparent 50%),
-			linear-gradient(180deg, rgba(24, 24, 27, 0.94), rgba(14, 16, 20, 0.96));
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.03),
-			0 10px 22px rgba(2, 6, 23, 0.2);
+		border-color: #27272a;
+		background: #18181b;
+		box-shadow: none;
 	}
 
 	.metric-icon-badge {
@@ -677,25 +660,41 @@ const getStatusTone = (status: string) => {
 		flex-shrink: 0;
 		font-size: 1.2rem;
 		background-color: rgba(11, 87, 208, 0.15);
-		color: #7fcfff;
-		border: 1px solid rgba(127, 207, 255, 0.2);
+		color: #60a5fa;
+		border: 1px solid rgba(59, 130, 246, 0.26);
+	}
+
+	html[data-theme='dark'] .dashboard-metric-card[data-metric-index='0'] .metric-icon-badge {
+		background-color: rgba(59, 130, 246, 0.15);
+		color: #60a5fa;
+		border-color: rgba(96, 165, 250, 0.24);
+		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .dashboard-metric-card[data-metric-index='1'] .metric-icon-badge {
+		background-color: rgba(245, 158, 11, 0.15);
+		color: #f59e0b;
+		border-color: rgba(245, 158, 11, 0.25);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-metric-card[data-metric-index='2'] .metric-icon-badge {
-		background-color: rgba(16, 185, 129, 0.16);
-		color: #7df4c4;
-		border-color: rgba(52, 211, 153, 0.26);
+		background-color: rgba(34, 197, 94, 0.15);
+		color: #22c55e;
+		border-color: rgba(34, 197, 94, 0.25);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-metric-card[data-metric-index='3'] .metric-icon-badge {
-		background-color: rgba(96, 165, 250, 0.14);
-		color: #93c5fd;
-		border-color: rgba(147, 197, 253, 0.24);
+		background-color: rgba(34, 197, 94, 0.15);
+		color: #22c55e;
+		border-color: rgba(34, 197, 94, 0.25);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .metric-value {
 		color: #ffffff;
-		text-shadow: 0 4px 14px rgba(255, 255, 255, 0.08);
+		text-shadow: none;
 	}
 
 	@media (max-width: 768px) {
@@ -722,52 +721,38 @@ const getStatusTone = (status: string) => {
 		}
 
 		html[data-theme='dark'] .dashboard-metric-card {
-			border-color: rgba(51, 65, 85, 0.55);
-			background:
-				radial-gradient(120% 95% at 100% 0%, rgba(59, 130, 246, 0.08) 0%, transparent 48%),
-				linear-gradient(180deg, rgba(17, 24, 39, 0.94), rgba(11, 15, 23, 0.97));
-			box-shadow:
-				inset 0 1px 0 rgba(148, 163, 184, 0.08),
-				0 12px 26px rgba(2, 6, 23, 0.24);
+			border-color: #27272a;
+			background: #18181b;
+			box-shadow: none;
 		}
 
 		html[data-theme='dark'] .dashboard-metric-card[data-metric-index='0'] .metric-icon-badge {
-			background-color: rgba(11, 87, 208, 0.2);
-			color: #66c3ff;
-			border-color: rgba(96, 165, 250, 0.35);
-			box-shadow:
-				0 0 0 1px rgba(30, 64, 175, 0.24),
-				0 10px 18px rgba(30, 64, 175, 0.2);
+			background-color: rgba(59, 130, 246, 0.15);
+			color: #60a5fa;
+			border-color: rgba(96, 165, 250, 0.24);
+			box-shadow: none;
 		}
 
 		html[data-theme='dark'] .dashboard-metric-card[data-metric-index='1'] .metric-icon-badge {
-			background-color: rgba(245, 158, 11, 0.2);
-			color: #ffb84d;
-			border-color: rgba(251, 191, 36, 0.4);
-			box-shadow:
-				0 0 0 1px rgba(146, 64, 14, 0.24),
-				0 10px 18px rgba(217, 119, 6, 0.22);
+			background-color: rgba(245, 158, 11, 0.15);
+			color: #f59e0b;
+			border-color: rgba(245, 158, 11, 0.25);
+			box-shadow: none;
 		}
 
 		html[data-theme='dark'] .dashboard-metric-card[data-metric-index='2'] .metric-icon-badge,
 		html[data-theme='dark'] .dashboard-metric-card[data-metric-index='3'] .metric-icon-badge {
-			background-color: rgba(16, 185, 129, 0.2);
-			color: #5cf5b0;
-			border-color: rgba(52, 211, 153, 0.4);
-			box-shadow:
-				0 0 0 1px rgba(6, 95, 70, 0.24),
-				0 10px 18px rgba(5, 150, 105, 0.2);
+			background-color: rgba(34, 197, 94, 0.15);
+			color: #22c55e;
+			border-color: rgba(34, 197, 94, 0.25);
+			box-shadow: none;
 		}
 
 		html[data-theme='dark'] .dashboard-ai-card {
 			width: 100%;
 			border: 1px solid rgba(11, 87, 208, 0.3);
-			background:
-				radial-gradient(120% 160% at 0% 0%, rgba(11, 87, 208, 0.18) 0%, transparent 46%),
-				linear-gradient(135deg, rgba(11, 87, 208, 0.12) 0%, rgba(14, 17, 20, 0.99) 100%);
-			box-shadow:
-				inset 0 1px 0 rgba(191, 219, 254, 0.11),
-				0 20px 36px rgba(2, 6, 23, 0.34);
+			background: #18181b;
+			box-shadow: none;
 		}
 	}
 
@@ -793,21 +778,9 @@ const getStatusTone = (status: string) => {
 	}
 
 	html[data-theme='dark'] .m3-card {
-		border: 1px solid color-mix(in srgb, var(--shell-border) 84%, transparent);
-		background:
-			radial-gradient(
-				110% 135% at 100% 0%,
-				color-mix(in srgb, var(--primary) 14%, transparent) 0%,
-				transparent 56%
-			),
-			linear-gradient(
-				145deg,
-				color-mix(in srgb, #18181b 88%, var(--card-surface) 12%) 0%,
-				color-mix(in srgb, #18181b 94%, var(--surface-container) 6%) 100%
-			);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.04),
-			0 14px 32px rgba(2, 6, 23, 0.22);
+		border: 1px solid #27272a;
+		background: #18181b;
+		box-shadow: none;
 	}
 
 	.team-overview-card {
