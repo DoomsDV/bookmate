@@ -26,13 +26,19 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 			<div class="min-w-0">
 				<a href="/panel/dashboard" class="topbar-brand-link no-underline" aria-label="Ir al dashboard">
 					<img
-						src="/icon-192x192.png"
-						alt="Logo Hasel"
-						class="topbar-brand-logo h-10 w-10 shrink-0 rounded-full object-contain sm:h-12 sm:w-12 -mx-2"
+						src="/hasel-light.png"
+						alt="Hasel"
+						class="topbar-brand-wordmark topbar-brand-wordmark-dark"
 						loading="eager"
 						decoding="async"
 					/>
-					<span class="topbar-brand-mark">HASEL</span>
+					<img
+						src="/hasel-dark.png"
+						alt="Hasel"
+						class="topbar-brand-wordmark topbar-brand-wordmark-light"
+						loading="eager"
+						decoding="async"
+					/>
 				</a>
 			</div>
 		</div>
