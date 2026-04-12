@@ -52,6 +52,7 @@ const steps = [
 		<div class="landing-shell">
 			<header class="m3-navbar">
 				<a href="/landing" class="brand no-underline">
+					<img src="/icon-512x512.png" alt="Logo Hasel" class="brand-logo" loading="eager" decoding="async" />
 					<span class="brand-text">Hasel</span>
 				</a>
 
@@ -282,6 +283,14 @@ const steps = [
 		align-items: center;
 		gap: 0.5rem;
 		color: var(--m3-sys-light-on-surface);
+	}
+
+	.brand-logo {
+		height: 2rem;
+		width: 2rem;
+		flex-shrink: 0;
+		object-fit: contain;
+		border-radius: 999px;
 	}
 
 	.brand-mark {

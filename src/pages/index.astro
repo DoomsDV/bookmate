@@ -278,11 +278,6 @@ const getStatusTone = (status: string) => {
 			.replace(/["'`]\s*$/, '')
 			.trim();
 
-	const getAiSummaryCacheKey = () => {
-		const today = new Date().toISOString().slice(0, 10);
-		return `hasel:dashboard-ai-summary:${today}`;
-	};
-
 	const splitSummaryIntoTokens = (text: string): string[] =>
 		String(text || '')
 			.split(/(\s+)/)
@@ -333,19 +328,6 @@ const getStatusTone = (status: string) => {
 		};
 
 		try {
-			const cached = window.sessionStorage.getItem(getAiSummaryCacheKey());
-			if (cached) {
-				const summary = sanitizeAiSummary(cached);
-				if (summary) {
-					await revealSummary(summary);
-					return;
-				}
-			}
-		} catch {
-			// Si sessionStorage falla, continuamos con la llamada de red.
-		}
-
-		try {
 			const response = await fetch('/api/dashboard/ai-summary', {
 				headers: { Accept: 'application/json' },
 			});
@@ -358,12 +340,6 @@ const getStatusTone = (status: string) => {
 			const summary = sanitizeAiSummary(payload?.data?.ai_summary);
 			if (!summary) {
 				throw new Error('El resumen IA no está disponible en este momento.');
-			}
-
-			try {
-				window.sessionStorage.setItem(getAiSummaryCacheKey(), summary);
-			} catch {
-				// No bloqueamos UI si no se puede cachear.
 			}
 
 			await revealSummary(summary);

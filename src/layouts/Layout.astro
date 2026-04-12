@@ -18,8 +18,10 @@ const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width" />
-        <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" type="image/x-icon" href="/hasel.ico" />
+        <link rel="shortcut icon" href="/hasel.ico" />
+        <link rel="icon" type="image/png" href="/icon-512x512.png" />
+        <link rel="apple-touch-icon" href="/icon-512x512.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
@@ -62,7 +64,7 @@ const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
         <ClientRouter />
         <slot />
         {flashMessage && (
-            <div class="pointer-events-none fixed bottom-8 left-1/2 z-[100] flex w-full -translate-x-1/2 justify-center px-4 sm:bottom-10">
+            <div class="pointer-events-none fixed bottom-8 left-1/2 z-100 flex w-full -translate-x-1/2 justify-center px-4 sm:bottom-10">
                 <FlashMessage
                     message={flashMessage}
                     type={flashType}
