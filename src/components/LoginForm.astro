@@ -1,4 +1,4 @@
----
+﻿---
 interface Props {
 	error?: string;
 	identifier?: string;
@@ -7,149 +7,700 @@ interface Props {
 }
 
 const { error = '', identifier = '', identifierError = '', passwordError = '' } = Astro.props;
+const identifierInputId = 'identifier';
+const passwordInputId = 'password';
 ---
 
-<section class="grid min-h-screen bg-(--page-background) lg:grid-cols-2">
-	<div class="relative hidden overflow-hidden border-b border-(--shell-border) bg-(--shell-surface) lg:block lg:border-b-0 lg:border-r">
-		<div class="absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(102,167,255,0.12),transparent_34%),radial-gradient(circle_at_bottom_right,rgba(47,111,221,0.08),transparent_30%)]"></div>
-
-		<div class="relative flex h-full items-center px-5 py-10 sm:px-8 lg:px-12 xl:px-16">
-			<div class="max-w-2xl">
-				<p class="text-[0.72rem] font-bold uppercase tracking-[0.3em] text-(--on-surface-variant)/80">
-					Plataforma Bookmate
-				</p>
-				<h1 class="mt-5 text-4xl font-extrabold tracking-[-0.05em] text-(--on-surface) sm:text-5xl xl:text-6xl">
-					Acceso al Portal Empresarial
-				</h1>
-				<p class="mt-6 max-w-xl text-base leading-8 text-(--on-surface-variant) sm:text-lg">
-					El acceso a la plataforma está restringido a usuarios autorizados. 
+<section class="login-shell">
+	<div class="login-layout">
+		<aside class="login-left">
+			<div class="login-left-inner">
+				
+				<h1 class="login-heading">Acceso al Portal Empresarial</h1>
+				<p class="login-subtext">
+					El acceso a la plataforma está restringido a usuarios autorizados.
 					Utilice sus credenciales corporativas para ingresar al sistema.
 				</p>
-
-				<div class="mt-10 max-w-xl rounded-[1.8rem] border border-(--shell-border) bg-(--card-surface) p-6 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)]">
-					<p class="text-xs font-bold uppercase tracking-[0.22em] text-(--on-surface-variant)/75">
-						Uso Exclusivo
-					</p>
-					<p class="mt-4 text-xl font-semibold text-(--on-surface)">
-						Entorno Corporativo Seguro
-					</p>
-					<p class="mt-3 text-sm leading-7 text-(--on-surface-variant)">
-						Las credenciales de acceso son administradas de forma centralizada. 
-						Contacte al administrador del sistema para gestionar su cuenta.
-					</p>
+				<div class="hasel-secure-card">
+					<div class="hasel-lock-icon">
+						<span class="material-symbols-rounded" aria-hidden="true">lock</span>
+					</div>
+					<div>
+						<h3>Entorno Corporativo Seguro</h3>
+						<p>Las credenciales de acceso son administradas de forma centralizada. Contacte al administrador del sistema para gestionar su cuenta.</p>
+					</div>
 				</div>
 			</div>
-		</div>
-	</div>
+		</aside>
 
-	<div class="flex items-center justify-center px-5 py-8 sm:px-8 lg:px-10 xl:px-14">
-		<div class="w-full rounded-4xl border border-(--shell-border) bg-(--card-surface-strong) p-6 shadow-[0_24px_60px_rgba(15,23,42,0.12)] sm:p-8 lg:max-w-none">
-			<div class="mb-8">
-				<a
-					href="/"
-					class="inline-flex items-center gap-2 text-sm font-semibold text-(--on-surface-variant) no-underline"
-				>
-					<span class="material-symbols-rounded text-[1rem]">west</span>
+		<main class="login-right">
+			<div class="hasel-form-card">
+				<a href="/" class="hasel-back-link">
+					<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
 					Volver
 				</a>
 
-				<p class="mt-6 text-[0.72rem] font-bold uppercase tracking-[0.3em] text-(--on-surface-variant)/80">
-					Bookmate
-				</p>
-				<h2 class="mt-3 text-3xl font-extrabold tracking-[-0.04em] text-(--on-surface) sm:text-4xl">
-					Iniciar sesión
-				</h2>
-				<p class="mt-3 max-w-xl text-sm leading-7 text-(--on-surface-variant) sm:text-base">
-					Ingrese sus credenciales de acceso proporcionadas por su administrador.
-				</p>
-			</div>
-
-			<form class="grid gap-5" method="post" action="/api/auth/login" data-astro-reload>
-				{
-					error && (
-						<div class="rounded-[1.25rem] border border-red-300/70 bg-red-50 px-4 py-3 text-sm text-red-700">
-							{error}
-						</div>
-					)
-				}
-
-				<label class="grid gap-2">
-					<span class="text-sm font-semibold text-(--on-surface)">Correo electrónico o usuario</span>
-					<input
-						type="text"
-						name="identifier"
-						value={identifier}
-						placeholder="usuario@empresa.com"
-						class:list={[
-							'rounded-2xl border bg-(--control-surface) px-4 py-3 text-sm text-(--on-surface) outline-none transition placeholder:text-(--on-surface-variant)/70 focus:ring-2 focus:ring-(--primary)/15',
-							identifierError
-								? 'border-red-300 focus:border-red-400'
-								: 'border-(--shell-border) focus:border-(--primary)',
-						]}
-					/>
-					{
-						identifierError && (
-							<span class="text-sm text-red-600">
-								{identifierError}
-							</span>
-						)
-					}
-				</label>
-
-				<label class="grid gap-2">
-					<span class="text-sm font-semibold text-(--on-surface)">Contraseña</span>
-					<input
-						type="password"
-						name="password"
-						placeholder="********"
-						class:list={[
-							'rounded-2xl border bg-(--control-surface) px-4 py-3 text-sm text-(--on-surface) outline-none transition placeholder:text-(--on-surface-variant)/70 focus:ring-2 focus:ring-(--primary)/15',
-							passwordError
-								? 'border-red-300 focus:border-red-400'
-								: 'border-(--shell-border) focus:border-(--primary)',
-						]}
-					/>
-					{
-						passwordError && (
-							<span class="text-sm text-red-600">
-								{passwordError}
-							</span>
-						)
-					}
-				</label>
-
-				<div class="flex items-center justify-between gap-3">
-					<label class="inline-flex items-center gap-3 text-sm text-(--on-surface-variant)">
-						<input
-							type="checkbox"
-							name="remember"
-							class="size-4 rounded border border-(--shell-border) text-(--primary) focus:ring-(--primary)"
-						/>
-						Recordar credenciales
-					</label>
-
-					<a href="#" class="text-sm font-semibold text-(--primary) no-underline">
-						Soporte técnico
-					</a>
+				<div class="hasel-brand">
+					<img src="/icon-192x192.png" alt="Logo Hasel" />
+					<span>Hasel</span>
 				</div>
 
-				<button
-					type="submit"
-					class="btn-primary-soft mt-2 rounded-2xl px-4 py-3 text-sm font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
-				>
-					Acceder al sistema
-				</button>
-			</form>
+				<h2 class="hasel-form-title">Iniciar sesión</h2>
+				<p class="hasel-form-subtitle">
+					Ingrese sus credenciales de acceso proporcionadas por su administrador.
+				</p>
 
-			<div class="mt-6 rounded-[1.4rem] border border-(--shell-border) bg-(--control-surface) px-4 py-4">
-				<p class="text-sm font-semibold text-(--on-surface)">
-					¿No cuenta con credenciales?
-				</p>
-				<p class="mt-2 text-sm leading-6 text-(--on-surface-variant)">
-					Póngase en contacto con el administrador del sistema de su organización 
-					para solicitar acceso a la plataforma.
-				</p>
+				<form method="post" action="/api/auth/login" data-astro-reload data-login-form>
+					{
+						error && (
+							<div class="hasel-error-banner">{error}</div>
+						)
+					}
+
+					<div class="hasel-field-wrap">
+						<div class:list={['hasel-input-group', identifierError && 'is-error']}>
+							<span class="material-symbols-rounded hasel-input-icon" aria-hidden="true">person</span>
+							<input
+								id={identifierInputId}
+								type="text"
+								name="identifier"
+								value={identifier}
+								placeholder=" "
+								autocomplete="username"
+								class="hasel-input peer"
+							/>
+							<label for={identifierInputId} class="hasel-label">Correo electrónico o usuario</label>
+						</div>
+						{identifierError && <span class="hasel-field-error">{identifierError}</span>}
+					</div>
+
+					<div class="hasel-field-wrap">
+						<div class:list={['hasel-input-group', passwordError && 'is-error']}>
+							<span class="material-symbols-rounded hasel-input-icon" aria-hidden="true">lock</span>
+							<input
+								id={passwordInputId}
+								type="password"
+								name="password"
+								placeholder=" "
+								autocomplete="current-password"
+								class="hasel-input hasel-input-pw peer"
+							/>
+							<label for={passwordInputId} class="hasel-label">Contraseña</label>
+							<button
+								type="button"
+								class="hasel-pw-toggle"
+								data-password-toggle
+								aria-label="Mostrar contraseña"
+							>
+								<span class="material-symbols-rounded" data-password-icon>visibility</span>
+							</button>
+						</div>
+						{passwordError && <span class="hasel-field-error">{passwordError}</span>}
+					</div>
+
+					<div class="hasel-actions-row">
+						<label class="hasel-remember">
+							<input type="checkbox" name="remember" />
+							<div class="hasel-checkbox" aria-hidden="true">
+								<svg viewBox="0 0 14 14" fill="none">
+									<path d="M3 7.5L5.5 10L11 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+								</svg>
+							</div>
+							<span>Recordar credenciales</span>
+						</label>
+						<a href="#" class="hasel-link">Soporte técnico</a>
+					</div>
+
+					<button type="submit" class="hasel-btn-primary">Acceder al sistema</button>
+				</form>
+
+				<div class="hasel-register-row">
+					<span>¿No tienes una cuenta?</span>
+					<a href="/auth/register" class="hasel-btn-outline">Crear cuenta</a>
+				</div>
 			</div>
-		</div>
+		</main>
 	</div>
 </section>
+
+<script is:inline>
+	const setupLoginFormInteractions = () => {
+		const forms = document.querySelectorAll('[data-login-form]');
+
+		forms.forEach((form) => {
+			if (!(form instanceof HTMLFormElement) || form.dataset.enhanced === 'true') {
+				return;
+			}
+
+			form.dataset.enhanced = 'true';
+
+			const passwordInput = form.querySelector('input[name="password"]');
+			const passwordToggle = form.querySelector('[data-password-toggle]');
+			const passwordIcon = form.querySelector('[data-password-icon]');
+
+			if (
+				passwordInput instanceof HTMLInputElement &&
+				passwordToggle instanceof HTMLButtonElement &&
+				passwordIcon instanceof HTMLElement
+			) {
+				passwordToggle.addEventListener('click', () => {
+					const isHidden = passwordInput.type === 'password';
+					passwordInput.type = isHidden ? 'text' : 'password';
+					passwordIcon.textContent = isHidden ? 'visibility_off' : 'visibility';
+					passwordToggle.setAttribute('aria-label', isHidden ? 'Ocultar contraseña' : 'Mostrar contraseña');
+				});
+			}
+		});
+	};
+
+	if (typeof window !== 'undefined') {
+		setupLoginFormInteractions();
+		document.addEventListener('astro:page-load', setupLoginFormInteractions);
+	}
+</script>
+
+<style>
+	/* ── Shell & Layout ──────────────────────────────── */
+	.login-shell {
+		font-family: 'Inter', 'Roboto', 'Nunito Sans', sans-serif;
+		background-color: #080b14;
+		color: #cbd5e1;
+		min-height: 100svh;
+	}
+
+	.login-layout {
+		display: grid;
+		grid-template-columns: 1fr;
+		min-height: 100svh;
+	}
+
+	@media (min-width: 1024px) {
+		.login-shell {
+			height: 100svh;
+			overflow: hidden;
+		}
+		.login-layout {
+			grid-template-columns: 1fr 1fr;
+			height: 100svh;
+			overflow: hidden;
+		}
+	}
+
+	/* ── Left Panel ──────────────────────────────────── */
+	.login-left {
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-start;
+		padding: 2.5rem 1.5rem 1rem;
+	}
+
+	@media (min-width: 640px) {
+		.login-left {
+			padding: 3rem 2.5rem 1.5rem;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.login-left {
+			justify-content: center;
+			padding: 3rem 4rem;
+			overflow-y: auto;
+		}
+	}
+
+	@media (min-width: 1280px) {
+		.login-left {
+			padding: 3rem 5rem;
+		}
+	}
+
+	.login-left-inner {
+		max-width: 34rem;
+	}
+
+	.hasel-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		border-radius: 9999px;
+		background: #121a2f;
+		border: 1px solid rgba(255, 255, 255, 0.05);
+		padding: 0.375rem 1rem;
+	}
+
+	.hasel-pill > span:first-child {
+		font-size: 0.8rem;
+	}
+
+	.hasel-pill > span:last-child {
+		font-size: 0.7rem;
+		font-weight: 600;
+		letter-spacing: 0.25em;
+		text-transform: uppercase;
+		color: #94a3b8;
+	}
+
+	.login-heading {
+		margin-top: 1.5rem;
+		font-size: 2.25rem;
+		font-weight: 700;
+		letter-spacing: -0.03em;
+		line-height: 1.12;
+		color: #ffffff;
+	}
+
+	@media (min-width: 640px) {
+		.login-heading { font-size: 3rem; }
+	}
+
+	@media (min-width: 1024px) {
+		.login-heading {
+			margin-top: 2rem;
+			font-size: 3.25rem;
+		}
+	}
+
+	@media (min-width: 1280px) {
+		.login-heading { font-size: 3.75rem; }
+	}
+
+	.login-subtext {
+		margin-top: 1.25rem;
+		font-size: 0.9375rem;
+		line-height: 1.7;
+		color: #64748b;
+		max-width: 28rem;
+	}
+
+	/* Security card: hidden on mobile, visible on desktop */
+	.hasel-secure-card {
+		display: none;
+	}
+
+	@media (min-width: 1024px) {
+		.hasel-secure-card {
+			display: flex;
+			align-items: flex-start;
+			gap: 1rem;
+			margin-top: 2.5rem;
+			background: rgba(17, 22, 35, 0.75);
+			border: 1px solid rgba(255, 255, 255, 0.04);
+			border-radius: 1.5rem;
+			padding: 1.25rem 1.5rem;
+		}
+
+		.hasel-secure-card h3 {
+			font-size: 0.9375rem;
+			font-weight: 600;
+			color: #ffffff;
+		}
+
+		.hasel-secure-card p {
+			margin-top: 0.375rem;
+			font-size: 0.8125rem;
+			line-height: 1.6;
+			color: #64748b;
+		}
+	}
+
+	.hasel-lock-icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: 0.75rem;
+		background: #1a2235;
+		color: #64748b;
+	}
+
+	.hasel-lock-icon .material-symbols-rounded {
+		font-size: 1.2rem;
+	}
+
+	/* ── Right Panel ─────────────────────────────────── */
+	.login-right {
+		display: flex;
+		align-items: flex-start;
+		justify-content: center;
+		padding: 1rem 1rem 2.5rem;
+	}
+
+	@media (min-width: 640px) {
+		.login-right {
+			align-items: center;
+			padding: 2rem 1.5rem 3rem;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.login-right {
+			align-items: center;
+			padding: 2rem 2.5rem;
+			overflow-y: auto;
+		}
+	}
+
+	@media (min-width: 1280px) {
+		.login-right {
+			padding: 2rem 3.5rem;
+		}
+	}
+
+	/* ── Form Card ───────────────────────────────────── */
+	.hasel-form-card {
+		width: 100%;
+		max-width: 30rem;
+		background: rgba(17, 22, 35, 0.92);
+		border: 1px solid rgba(255, 255, 255, 0.04);
+		border-radius: 2rem;
+		padding: 2rem 1.5rem;
+	}
+
+	@media (min-width: 640px) {
+		.hasel-form-card {
+			padding: 2.25rem 2rem;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.hasel-form-card {
+			max-width: 34rem;
+			padding: 2.5rem;
+		}
+	}
+
+	/* ── Card Header ─────────────────────────────────── */
+	.hasel-back-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.375rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #475569;
+		text-decoration: none;
+		transition: color 160ms ease;
+	}
+
+	.hasel-back-link:hover { color: #e2e8f0; }
+
+	.hasel-back-link .material-symbols-rounded { font-size: 1.1rem; }
+
+	.hasel-brand {
+		display: flex;
+		align-items: center;
+		gap: 0.625rem;
+		margin-top: 1.75rem;
+	}
+
+	.hasel-brand img {
+		height: 2.25rem;
+		width: 2.25rem;
+		object-fit: contain;
+	}
+
+	.hasel-brand span {
+		font-size: 1.5rem;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		color: #ffffff;
+	}
+
+	.hasel-form-title {
+		margin-top: 1.5rem;
+		font-size: 1.5rem;
+		font-weight: 600;
+		letter-spacing: -0.015em;
+		color: #ffffff;
+	}
+
+	.hasel-form-subtitle {
+		margin-top: 0.375rem;
+		font-size: 0.875rem;
+		line-height: 1.6;
+		color: #64748b;
+	}
+
+	/* ── Form ────────────────────────────────────────── */
+	[data-login-form] {
+		display: grid;
+		gap: 1.125rem;
+		margin-top: 1.75rem;
+	}
+
+	.hasel-error-banner {
+		border-radius: 0.875rem;
+		border: 1px solid rgba(244, 63, 94, 0.2);
+		background: rgba(244, 63, 94, 0.08);
+		padding: 0.75rem 1rem;
+		font-size: 0.875rem;
+		color: #fda4af;
+	}
+
+	.hasel-field-wrap {
+		display: grid;
+		gap: 0.3rem;
+	}
+
+	.hasel-field-error {
+		font-size: 0.75rem;
+		color: #fb7185;
+		padding-left: 0.25rem;
+	}
+
+	/* ── Input Group ─────────────────────────────────── */
+	.hasel-input-group {
+		position: relative;
+		display: flex;
+		align-items: center;
+		border-radius: 0.875rem;
+		background: #0a0d17;
+		border: 1px solid transparent;
+		min-height: 3.375rem;
+		padding: 0 0.875rem;
+		transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+	}
+
+	.hasel-input-group:focus-within {
+		background: #0c101e;
+		border-color: #2563eb;
+		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+	}
+
+	.hasel-input-group.is-error {
+		border-color: #f43f5e;
+		box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.09);
+	}
+
+	.hasel-input-icon {
+		font-size: 1.15rem;
+		color: #3d485a;
+		margin-right: 0.625rem;
+		flex-shrink: 0;
+		transition: color 180ms ease;
+	}
+
+	.hasel-input-group:focus-within .hasel-input-icon { color: #3b82f6; }
+
+	.hasel-input {
+		width: 100%;
+		border: none;
+		background: transparent;
+		color: #f1f5f9;
+		font-size: 0.9rem;
+		outline: none;
+		padding: 0.875rem 0 0.25rem;
+		font-family: inherit;
+	}
+
+	.hasel-input-pw { padding-right: 2.5rem; }
+
+	.hasel-label {
+		position: absolute;
+		left: 2.75rem;
+		top: 50%;
+		transform: translateY(-50%);
+		font-size: 0.9rem;
+		color: #3d485a;
+		pointer-events: none;
+		transition: top 140ms ease, font-size 140ms ease, color 140ms ease;
+		white-space: nowrap;
+		overflow: hidden;
+		max-width: calc(100% - 3.5rem);
+		text-overflow: ellipsis;
+	}
+
+	.hasel-input:focus ~ .hasel-label,
+	.hasel-input:not(:placeholder-shown) ~ .hasel-label {
+		top: 0.75rem;
+		font-size: 0.68rem;
+		color: #475569;
+	}
+
+	.hasel-input-group:focus-within .hasel-label { color: #60a5fa; }
+
+	/* ── Password Toggle ─────────────────────────────── */
+	.hasel-pw-toggle {
+		position: absolute;
+		right: 0.25rem;
+		top: 50%;
+		transform: translateY(-50%);
+		border: none;
+		border-radius: 999px;
+		width: 2.25rem;
+		height: 2.25rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		color: #3d485a;
+		background: transparent;
+		cursor: pointer;
+		transition: color 140ms ease, background-color 140ms ease;
+	}
+
+	.hasel-pw-toggle .material-symbols-rounded { font-size: 1.1rem; }
+
+	.hasel-pw-toggle:hover {
+		color: #94a3b8;
+		background: rgba(255, 255, 255, 0.04);
+	}
+
+	.hasel-pw-toggle:focus-visible {
+		outline: 2px solid rgba(59, 130, 246, 0.45);
+		outline-offset: 2px;
+	}
+
+	/* ── Actions Row ─────────────────────────────────── */
+	.hasel-actions-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-top: 0.25rem;
+	}
+
+	.hasel-remember {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.875rem;
+		color: #475569;
+		cursor: pointer;
+		transition: color 140ms ease;
+	}
+
+	.hasel-remember:hover { color: #94a3b8; }
+
+	/* Visually hide native checkbox */
+	.hasel-remember input[type="checkbox"] {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border-width: 0;
+	}
+
+	.hasel-checkbox {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1rem;
+		height: 1rem;
+		flex-shrink: 0;
+		border-radius: 0.2rem;
+		border: 1px solid #2a3347;
+		background: #0a0d14;
+		transition: background-color 140ms ease, border-color 140ms ease;
+	}
+
+	.hasel-checkbox svg {
+		width: 0.7rem;
+		height: 0.7rem;
+		color: #ffffff;
+		opacity: 0;
+		transition: opacity 100ms ease;
+	}
+
+	.hasel-remember:has(input:checked) .hasel-checkbox {
+		background: #2563eb;
+		border-color: #2563eb;
+	}
+
+	.hasel-remember:has(input:checked) .hasel-checkbox svg { opacity: 1; }
+
+	.hasel-remember input[type="checkbox"]:focus-visible ~ .hasel-checkbox {
+		outline: 2px solid rgba(59, 130, 246, 0.5);
+		outline-offset: 2px;
+	}
+
+	.hasel-link {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: #3b82f6;
+		text-decoration: none;
+		white-space: nowrap;
+		transition: color 140ms ease;
+	}
+
+	.hasel-link:hover { color: #60a5fa; }
+
+	/* ── Primary Button (zero glow, flat corporate) ── */
+	.hasel-btn-primary {
+		width: 100%;
+		border: none;
+		border-radius: 9999px;
+		padding: 0.875rem 1.5rem;
+		margin-top: 0.5rem;
+		color: #ffffff;
+		font-size: 0.925rem;
+		font-weight: 600;
+		background: #2563eb;
+		cursor: pointer;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-family: inherit;
+		transition: background-color 160ms ease, transform 120ms ease;
+	}
+
+	.hasel-btn-primary:hover {
+		background: #1d4ed8;
+		transform: translateY(-1px);
+	}
+
+	.hasel-btn-primary:active { transform: translateY(0); }
+
+	.hasel-btn-primary:focus-visible {
+		outline: 2px solid rgba(59, 130, 246, 0.55);
+		outline-offset: 2px;
+	}
+
+	/* ── Register Row ────────────────────────────────── */
+	.hasel-register-row {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-wrap: wrap;
+		gap: 0.625rem;
+		margin-top: 1.75rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid rgba(255, 255, 255, 0.04);
+	}
+
+	.hasel-register-row > span {
+		font-size: 0.875rem;
+		color: #475569;
+	}
+
+	.hasel-btn-outline {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border: 1px solid #2a3347;
+		border-radius: 9999px;
+		background: transparent;
+		color: #cbd5e1;
+		font-size: 0.875rem;
+		font-weight: 500;
+		padding: 0.4375rem 1.25rem;
+		text-decoration: none;
+		font-family: inherit;
+		transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+	}
+
+	.hasel-btn-outline:hover {
+		background: rgba(255, 255, 255, 0.04);
+		border-color: #3d485a;
+		color: #ffffff;
+	}
+
+	.hasel-btn-outline:focus-visible {
+		outline: 2px solid rgba(59, 130, 246, 0.5);
+		outline-offset: 2px;
+	}
+</style>
