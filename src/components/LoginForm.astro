@@ -188,7 +188,7 @@ const passwordInputId = 'password';
 
 	/* ── Left Panel ──────────────────────────────────── */
 	.login-left {
-		display: flex;
+		display: none;
 		flex-direction: column;
 		justify-content: flex-start;
 		padding: 2.5rem 1.5rem 1rem;
@@ -202,6 +202,7 @@ const passwordInputId = 'password';
 
 	@media (min-width: 1024px) {
 		.login-left {
+			display: flex;
 			justify-content: center;
 			padding: 3rem 4rem;
 			overflow-y: auto;
