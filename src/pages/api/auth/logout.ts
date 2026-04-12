@@ -24,12 +24,12 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 		return new Response(null, {
 			status: 302,
 			headers: {
-				Location: '/login',
+				Location: '/auth/login',
 			},
 		});
 	}
 
-	return Response.json({ success: true, redirect: '/login' });
+	return Response.json({ success: true, redirect: '/auth/login' });
 };
 
 export const GET: APIRoute = async ({ request, cookies }) => {
@@ -47,10 +47,10 @@ export const GET: APIRoute = async ({ request, cookies }) => {
 		return new Response(null, {
 			status: 302,
 			headers: {
-				Location: '/login',
+				Location: '/auth/login',
 			},
 		});
 	}
 
-	return Response.json({ success: true, redirect: '/login' });
+	return Response.json({ success: true, redirect: '/auth/login' });
 };

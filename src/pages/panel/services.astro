@@ -1,16 +1,16 @@
 ﻿---
-import AppAlert from "../components/AppAlert.astro";
-import FlashMessage from "../components/FlashMessage.astro";
-import ServicesGrid from "../components/ServicesGrid.astro";
-import SideNav from "../components/SideNav.astro";
-import TopBar from "../components/TopBar.astro";
+import AppAlert from "../../components/AppAlert.astro";
+import FlashMessage from "../../components/FlashMessage.astro";
+import ServicesGrid from "../../components/ServicesGrid.astro";
+import SideNav from "../../components/SideNav.astro";
+import TopBar from "../../components/TopBar.astro";
 import {
 	ServicesApiError,
 	ServicesClient,
 	type Service,
-} from "../lib/services";
-import Layout from "../layouts/Layout.astro";
-import "../styles/global.css";
+} from "../../lib/services";
+import Layout from "../../layouts/Layout.astro";
+import "../../styles/global.css";
 
 const token = Astro.locals.token ?? "";
 const PAGE_SIZE = 9;

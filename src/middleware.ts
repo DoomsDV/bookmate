@@ -28,18 +28,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
 			accessToken = session.access_token;
 		} catch {
 			clearSessionCookies(cookies);
-			return redirect('/login');
+			return redirect('/auth/login');
 		}
 	}
 
 	if (!accessToken) {
-		return redirect('/login');
+		return redirect('/auth/login');
 	}
 
 	const claims = parseTokenClaims(accessToken);
 	if (!isKnownRoleId(claims.role_id)) {
 		clearSessionCookies(cookies);
-		return redirect('/login');
+		return redirect('/auth/login');
 	}
 
 	if (!canAccessPath(url.pathname, claims.role_id)) {
@@ -53,7 +53,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 			);
 		}
 
-		return redirect('/');
+		return redirect('/panel/dashboard');
 	}
 
 	let organizationName = String(cookies.get('org_name')?.value || '').trim();

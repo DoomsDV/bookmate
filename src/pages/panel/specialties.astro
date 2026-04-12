@@ -1,12 +1,12 @@
 ﻿---
-import AppAlert from '../components/AppAlert.astro';
-import FlashMessage from '../components/FlashMessage.astro';
-import SideNav from '../components/SideNav.astro';
-import SpecialtiesGrid from '../components/SpecialtiesGrid.astro';
-import TopBar from '../components/TopBar.astro';
-import { SpecialtiesApiError, SpecialtiesClient, type Specialty } from '../lib/specialties';
-import Layout from '../layouts/Layout.astro';
-import '../styles/global.css';
+import AppAlert from '../../components/AppAlert.astro';
+import FlashMessage from '../../components/FlashMessage.astro';
+import SideNav from '../../components/SideNav.astro';
+import SpecialtiesGrid from '../../components/SpecialtiesGrid.astro';
+import TopBar from '../../components/TopBar.astro';
+import { SpecialtiesApiError, SpecialtiesClient, type Specialty } from '../../lib/specialties';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
 
 const token = Astro.locals.token ?? '';
 const PAGE_SIZE = 9;

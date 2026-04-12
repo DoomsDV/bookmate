@@ -38,22 +38,22 @@ const isItemActive = (item: NavItem) => {
 	return normalizePath(item.href) === activePath;
 };
 
-const prefetchViewports = new Set(["/calendar", "/services", "/locations"]);
+const prefetchViewports = new Set(["/panel/calendar", "/panel/services", "/panel/locations"]);
 
 const getPrefetchMode = (item: NavItem) =>
 	prefetchViewports.has(normalizePath(item.href)) ? "viewport" : undefined;
 
 const primaryItems: NavItem[] = [
-	{ label: "Dashboard", icon: "space_dashboard", href: "/" },
-	{ label: "Calendario", icon: "calendar_month", href: "/calendar" },
-	{ label: "Servicios", icon: "inventory_2", href: "/services" },
-	{ label: "Sucursales", icon: "storefront", href: "/locations" },
+	{ label: "Dashboard", icon: "space_dashboard", href: "/panel/dashboard" },
+	{ label: "Calendario", icon: "calendar_month", href: "/panel/calendar" },
+	{ label: "Servicios", icon: "inventory_2", href: "/panel/services" },
+	{ label: "Sucursales", icon: "storefront", href: "/panel/locations" },
 ];
 
 const teamItems: NavItem[] = [
-	{ label: "Especialidades", href: "/specialties" },
-	{ label: "Personal", href: "/professionals" },
-	{ label: "Horarios", href: "/schedules" },
+	{ label: "Especialidades", href: "/panel/specialties" },
+	{ label: "Personal", href: "/panel/professionals" },
+	{ label: "Horarios", href: "/panel/schedules" },
 ];
 
 const visiblePrimaryItems = primaryItems.filter((item) =>

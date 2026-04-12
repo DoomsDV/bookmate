@@ -60,12 +60,12 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 			return new Response(null, {
 				status: 302,
 				headers: {
-					Location: '/',
+					Location: '/panel/dashboard',
 				},
 			});
 		}
 
-		return Response.json({ success: true, redirect: '/' });
+		return Response.json({ success: true, redirect: '/panel/dashboard' });
 	} catch (error) {
 		const authError =
 			error instanceof AuthApiError
@@ -74,7 +74,7 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 		const fieldErrors = authError.fieldErrors;
 
 		if (wantsHtml(request)) {
-			const redirectUrl = new URL('/login', url);
+			const redirectUrl = new URL('/auth/login', url);
 			redirectUrl.searchParams.set(
 				'error',
 				typeof authError.details === 'string' && authError.details.trim()
@@ -118,7 +118,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 		return new Response(null, {
 			status: 302,
 			headers: {
-				Location: '/login',
+				Location: '/auth/login',
 			},
 		});
 	}
@@ -126,7 +126,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 	return Response.json(
 		{
 			error: 'Metodo no permitido para este endpoint.',
-			redirect: '/login',
+			redirect: '/auth/login',
 		},
 		{ status: 405 }
 	);

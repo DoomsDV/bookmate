@@ -1,929 +1,781 @@
-﻿---
-import SideNav from '../components/SideNav.astro';
-import TopBar from '../components/TopBar.astro';
-import { DashboardApiError, getMainDashboardWithOrds, type DashboardMainData } from '../lib/dashboard';
+---
 import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
 
-const token = Astro.locals.token ?? '';
-const organizationName = String(Astro.locals.organizationName || 'Workspace').trim() || 'Workspace';
-
-let dashboard: DashboardMainData = {
-	kpis: {
-		today_appointments: 0,
-		pending_appointments: 0,
-		my_customers: 0,
-		total_customers: null,
-	},
-	upcoming_appointments: [],
-};
-let loadError = '';
-
-if (!token) {
-	loadError = 'No hay sesion valida para consultar el dashboard.';
-} else {
-	try {
-		dashboard = await getMainDashboardWithOrds(token);
-	} catch (error) {
-		loadError =
-			error instanceof DashboardApiError
-				? error.message
-				: 'No fue posible cargar los datos del dashboard.';
-	}
-}
-
-const dashboardDate = new Intl.DateTimeFormat('es-PY', {
-	weekday: 'long',
-	year: 'numeric',
-	month: 'long',
-	day: 'numeric',
-}).format(new Date());
-
-const metrics = [
+const features = [
 	{
-		label: 'Citas de hoy',
-		value: dashboard.kpis.today_appointments,
-		description: 'Turnos no cancelados para la jornada actual.',
-		icon: 'today',
+		title: 'Agenda inteligente',
+		description: 'Centraliza citas, bloqueos y disponibilidad en tiempo real para cada profesional.',
+		icon: 'calendar_month',
 	},
 	{
-		label: 'Citas pendientes',
-		value: dashboard.kpis.pending_appointments,
-		description: 'Turnos por atender desde este momento en adelante.',
-		icon: 'schedule',
+		title: 'Equipo sincronizado',
+		description: 'Roles, permisos y operaciones clave en una interfaz pensada para trabajo colaborativo.',
+		icon: 'groups',
 	},
 	{
-		label: 'Mis clientes',
-		value: dashboard.kpis.my_customers,
-		description: 'Clientes únicos que has atendido personalmente.',
-		icon: 'group',
+		title: 'Métricas accionables',
+		description: 'Visualiza volumen de citas, pendientes y rendimiento diario sin cambiar de pantalla.',
+		icon: 'monitoring',
 	},
-	...(dashboard.kpis.total_customers !== null
-		? [
-				{
-					label: 'Total de clientes',
-					value: dashboard.kpis.total_customers,
-					description: 'Base total de clientes registrados.',
-					icon: 'hub',
-				},
-			]
-		: []),
 ];
 
-const getStatusLabel = (status: string) => {
-	switch (status) {
-		case 'CONFIRMADO':
-			return 'Confirmado';
-		case 'PENDIENTE':
-			return 'Pendiente';
-		case 'COMPLETADO':
-			return 'Completado';
-		case 'CANCELADO':
-			return 'Cancelado';
-		default:
-			return status || 'Estado';
-	}
-};
-
-const getStatusTone = (status: string) => {
-	switch (status) {
-		case 'CONFIRMADO':
-			return 'border-emerald-200 bg-emerald-50 text-emerald-700';
-		case 'PENDIENTE':
-				return 'border-[color:var(--status-pending-border)] bg-[color:var(--status-pending-bg)] text-[color:var(--status-pending-text)]';
-		case 'COMPLETADO':
-			return 'border-sky-200 bg-sky-50 text-sky-700';
-		case 'CANCELADO':
-			return 'border-rose-200 bg-rose-50 text-rose-700';
-		default:
-			return 'border-[color:var(--shell-border)] bg-[color:var(--control-surface)] text-[color:var(--on-surface-variant)]';
-	}
-};
+const steps = [
+	{
+		step: '01',
+		title: 'Configura tu espacio',
+		text: 'Registra servicios, sucursales y equipo en minutos con formularios guiados.',
+		icon: 'settings_suggest',
+	},
+	{
+		step: '02',
+		title: 'Publica tu agenda',
+		text: 'Comparte perfiles públicos y habilita reservas con reglas claras por horario.',
+		icon: 'public',
+	},
+	{
+		step: '03',
+		title: 'Mide y optimiza',
+		text: 'Toma decisiones con paneles diarios y estados de cita siempre actualizados.',
+		icon: 'insights',
+	},
+];
 ---
 
 <Layout>
-	<div class="min-h-screen w-full max-w-full overflow-x-hidden">
-		<div
-			class="app-shell grid min-h-screen overflow-hidden border border-(--shell-border) bg-(--shell-surface) shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
-			data-app-shell
-			data-sidebar-state="expanded"
-		>
-			<SideNav currentPath={Astro.url.pathname} />
+	<main class="landing-root">
+		<!-- Blurred orbs for an expressive modern look -->
+		<div class="landing-orb landing-orb-a"></div>
+		<div class="landing-orb landing-orb-b"></div>
+		<div class="landing-orb landing-orb-c"></div>
 
-			<div class="grid min-h-full grid-rows-[auto_1fr]">
-				<TopBar />
+		<div class="landing-shell">
+			<header class="m3-navbar">
+				<a href="/" class="brand no-underline">
+					<img src="/icon-512x512.png" alt="Logo Hasel" class="brand-logo" loading="eager" decoding="async" />
+					<span class="brand-text">Hasel</span>
+				</a>
 
-				<main class="w-full max-w-full overflow-x-hidden bg-(--content-surface) px-4 py-4 sm:px-6 sm:py-6">
-					<section class="grid w-full max-w-full min-w-0 gap-4 sm:gap-5">
-						<section class="material-region rounded-3xl bg-(--surface-container) p-5 sm:p-6">
-							<div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
-								<div class="grid gap-1">
-									<p class="text-xs font-bold uppercase tracking-[0.2em] text-(--on-surface-variant)">
-										Dashboard
-									</p>
-									<h1 class="text-2xl font-extrabold text-(--on-surface) sm:text-3xl">
-										Resumen diario
-									</h1>
-									<p class="text-sm leading-relaxed text-(--on-surface-variant)">
-										{organizationName} - {dashboardDate}
-									</p>
-								</div>
+				<div class="nav-actions">
+					<a href="/auth/login" class="m3-btn m3-btn-primary no-underline">Iniciar sesión</a>
+				</div>
+			</header>
 
-								<a
-									href="/calendar"
-									class="btn-primary-soft inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold no-underline transition sm:w-auto"
-								>
-									<span class="material-symbols-rounded text-[1rem]">calendar_month</span>
-									Ir al calendario
-								</a>
+			<section class="m3-hero">
+				<div class="m3-hero-content">
+					<div class="m3-chip m3-chip-primary">
+						<span class="material-symbols-rounded">auto_awesome</span>
+						<span>Plataforma Todo-en-uno</span>
+					</div>
+					<h1 class="m3-display">Orquestación de citas y equipo líder en su clase</h1>
+					<p class="m3-body-large">
+						Hasel unifica operación, agenda y visibilidad de tu negocio en una plataforma
+						clara, moderna y pensada para crecer sin límites de TI.
+					</p>
+
+					<div class="hero-actions">
+						<a href="/auth/login" class="m3-btn m3-btn-primary m3-btn-large no-underline">
+							Crear mi espacio
+							<span class="material-symbols-rounded">arrow_forward</span>
+						</a>
+						<a href="#beneficios" class="m3-btn m3-btn-tonal m3-btn-large no-underline">Ver más</a>
+					</div>
+				</div>
+
+				<div class="m3-hero-visuals">
+					<div class="visual-card visual-card-1">
+						<div class="visual-header">
+							<div class="visual-avatar">
+								<span class="material-symbols-rounded">person</span>
 							</div>
-
-							<div class="mt-4 border-t border-(--shell-border)/70 pt-4 sm:mt-5 sm:pt-5">
-								<div
-									class="ai-card dashboard-ai-card rounded-2xl border border-(--shell-border)/60 bg-(--secondary-container) p-4"
-									data-ai-summary-card
-								>
-									<div class="mb-2.5 inline-flex items-center gap-2">
-										<span class="material-symbols-rounded ai-card-sparkle text-(--primary)">auto_awesome</span>
-										<p class="text-xs font-bold uppercase tracking-widest text-(--on-surface-variant)">
-											Resumen Inteligente del dia
-										</p>
-									</div>
-									<p
-										class="inline-flex items-center gap-2 text-sm leading-relaxed text-(--on-surface-variant)"
-										data-ai-summary-state
-									>
-										<span class="material-symbols-rounded animate-spin text-base text-(--primary)">
-											autorenew
-										</span>
-										Cargando resumen inteligente...
-									</p>
-									<p
-										class="hidden whitespace-pre-line text-[1.05rem] leading-relaxed text-(--on-surface)"
-										data-ai-summary-text
-									></p>
-								</div>
+							<div class="visual-info">
+								<strong>Nuevo Cliente</strong>
+								<span>Hoy, 10:00 AM</span>
 							</div>
-						</section>
+							<div class="visual-badge visual-badge-success">Confirmada</div>
+						</div>
+					</div>
 
+					<div class="visual-card visual-card-2">
+						<div class="visual-icon-box">
+							<span class="material-symbols-rounded">insert_chart</span>
+						</div>
+						<div class="visual-info">
+							<strong>Crecimiento</strong>
+							<span>+24% este mes</span>
+						</div>
+					</div>
+
+					<div class="visual-card visual-card-3">
+						<div class="visual-icon-box visual-icon-ai">
+							<span class="material-symbols-rounded">auto_awesome</span>
+						</div>
+						<div class="visual-info">
+							<strong>Asistente IA</strong>
+							<span>Resumen del día generado</span>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<section id="beneficios" class="m3-section">
+				<div class="section-header center">
+					<h2 class="m3-headline">Beneficios clave</h2>
+					<p class="m3-body">Diseñado para simplificar tu día a día operativo.</p>
+				</div>
+				<div class="m3-feature-grid">
+					{
+						features.map((feature) => (
+							<article class="m3-card m3-feature-card">
+								<div class="m3-icon-container">
+									<span class="material-symbols-rounded">{feature.icon}</span>
+								</div>
+								<h3 class="m3-title">{feature.title}</h3>
+								<p class="m3-body">{feature.description}</p>
+							</article>
+						))
+					}
+				</div>
+			</section>
+
+			<section id="flujo" class="m3-section m3-section-tonal">
+				<div class="m3-workflow-layout">
+					<div class="workflow-content">
+						<div class="m3-chip m3-chip-secondary">
+							<span class="material-symbols-rounded">bolt</span>
+							<span>Rápida implementación</span>
+						</div>
+						<h2 class="m3-headline">Un flujo claro para arrancar en minutos</h2>
+						<p class="m3-body-large">
+							Construye y lanza tus flujos de reserva sin cuellos de botella. 
+							Tu equipo estará operando el mismo día.
+						</p>
+					</div>
+
+					<div class="m3-workflow-steps">
 						{
-							loadError ? (
-								<div class="rounded-[1.2rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-									{loadError}
-								</div>
-							) : (
-								<>
-									<div class="material-cards-grid md:grid-cols-4 dashboard-metrics-grid">
-										{
-											metrics.map((metric, metricIndex) => (
-												<article class="material-data-card dashboard-metric-card rounded-3xl border border-(--shell-border) bg-(--card-surface) shadow-sm" data-metric-index={metricIndex}>
-													<div class="flex items-start justify-between gap-3">
-														<div>
-															<p class="text-xs font-bold uppercase tracking-[0.16em] text-(--on-surface-variant)">
-																{metric.label}
-															</p>
-															<p class="mt-2 text-3xl font-extrabold leading-none text-(--on-surface) metric-value">
-																{metric.value}
-															</p>
-														</div>
-														<span class="material-symbols-rounded metric-icon-badge">
-															{metric.icon}
-														</span>
-													</div>
-													<p class="mt-auto text-sm text-(--on-surface-variant) metric-description">
-														{metric.description}
-													</p>
-												</article>
-											))
-										}
+							steps.map((item) => (
+								<article class="m3-step-card">
+									<div class="step-icon-wrap">
+										<span class="material-symbols-rounded">{item.icon}</span>
 									</div>
-
-										<section class="m3-card team-overview-card" aria-labelledby="team-overview-title" data-team-card>
-											<div class="team-overview-head">
-												<h2 id="team-overview-title" class="team-overview-title">Equipo de trabajo</h2>
-												<a href="/professionals" class="team-overview-link-minimal">
-													Ver todos
-												</a>
-											</div>
-
-											<div class="team-overview-body">
-												<div class="avatar-stack" data-team-avatar-stack aria-label="Vista previa del equipo">
-													<span class="team-avatar team-avatar--placeholder"></span>
-													<span class="team-avatar team-avatar--placeholder"></span>
-													<span class="team-avatar team-avatar--placeholder"></span>
-												</div>
-												<p class="team-overview-summary-text" data-team-summary>
-													Cargando equipo...
-												</p>
-											</div>
-											<p class="team-overview-state hidden" data-team-state></p>
-										</section>
-
-									<div class="material-region bg-(--card-surface)">
-										<div class="mb-4 flex items-center justify-between gap-3">
-											<h2 class="text-lg font-bold text-(--on-surface)">Próximas citas del dia</h2>
-											<span class="rounded-full border border-(--shell-border) bg-(--control-surface) px-3 py-1 text-xs font-semibold text-(--on-surface-variant)">
-												{dashboard.upcoming_appointments.length} registro(s)
-											</span>
-										</div>
-
-										{
-											dashboard.upcoming_appointments.length === 0 ? (
-												<div class="rounded-xl border border-dashed border-(--shell-border) bg-(--control-surface) px-4 py-6 text-sm text-(--on-surface-variant)">
-													No hay citas próximas para mostrar en este momento.
-												</div>
-											) : (
-												<div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-													<table class="w-full min-w-full border-collapse text-sm">
-														<thead>
-															<tr class="border-b border-(--shell-border) text-left text-xs uppercase tracking-[0.12em] text-(--on-surface-variant)">
-																<th class="px-3 py-2 font-semibold">Cliente</th>
-																<th class="px-3 py-2 font-semibold">Hora</th>
-																<th class="px-3 py-2 font-semibold">Servicio</th>
-																<th class="px-3 py-2 font-semibold">Estado</th>
-															</tr>
-														</thead>
-														<tbody>
-															{
-																dashboard.upcoming_appointments.map((appointment) => (
-																	<tr class="border-b border-(--shell-border)/70 last:border-none">
-																		<td class="px-3 py-3 font-semibold text-(--on-surface)">
-																			{appointment.customer_name}
-																		</td>
-																		<td class="px-3 py-3 text-(--on-surface-variant)">
-																			{appointment.time_start} - {appointment.time_end}
-																		</td>
-																		<td class="px-3 py-3 text-(--on-surface)">
-																			{appointment.service_name}
-																		</td>
-																		<td class="px-3 py-3">
-																			<span
-																				class:list={[
-																					'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold',
-																					getStatusTone(appointment.status),
-																				]}
-																			>
-																				{getStatusLabel(appointment.status)}
-																			</span>
-																		</td>
-																	</tr>
-																))
-															}
-														</tbody>
-													</table>
-												</div>
-											)
-										}
+									<div class="step-content">
+										<span class="step-label">Paso {item.step}</span>
+										<h3 class="m3-title">{item.title}</h3>
+										<p class="m3-body">{item.text}</p>
 									</div>
-								</>
-							)
+								</article>
+							))
 						}
-					</section>
-				</main>
-			</div>
+					</div>
+				</div>
+			</section>
+
+			<section id="contacto" class="m3-cta-card">
+				<div class="cta-content">
+					<h2 class="m3-headline">Lleva Hasel a tu equipo hoy</h2>
+					<p class="m3-body-large">Empieza con tu flujo actual y escala operaciones sin fricción.</p>
+				</div>
+			</section>
+			
+			<footer class="m3-footer">
+				<p>© {new Date().getFullYear()} Hasel. Plataforma de agenda inteligente.</p>
+			</footer>
 		</div>
-	</div>
+	</main>
 </Layout>
 
-<script>
-	const sanitizeAiSummary = (value: unknown): string =>
-		String(value ?? '')
-			.replace(/\*+/g, '')
-			.replace(/\\r\\n|\\n|\\r/g, '\n')
-			.replace(/\r\n|\r/g, '\n')
-			.replace(/\t/g, ' ')
-			.replace(/\u0000/g, '')
-			.replace(/[ ]{2,}/g, ' ')
-			.replace(/\n{3,}/g, '\n\n')
-			.replace(/^\s*["'`]/, '')
-			.replace(/["'`]\s*$/, '')
-			.trim();
-
-	const splitSummaryIntoTokens = (text: string): string[] =>
-		String(text || '')
-			.split(/(\s+)/)
-			.filter((token) => token.length > 0);
-
-	const wait = (ms: number): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, ms));
-
-	const getTokenDelayMs = () => 28 + Math.floor(Math.random() * 53);
-
-	const streamSummaryTokens = async (node: HTMLElement, text: string): Promise<void> => {
-		node.replaceChildren();
-
-		const tokens = splitSummaryIntoTokens(text);
-		for (const token of tokens) {
-			if (/^\s+$/.test(token)) {
-				node.appendChild(document.createTextNode(token));
-				continue;
-			}
-
-			const tokenNode = document.createElement('span');
-			tokenNode.className = 'ai-summary-token';
-			tokenNode.textContent = token;
-			node.appendChild(tokenNode);
-
-			await wait(getTokenDelayMs());
-		}
-	};
-
-	interface TeamMemberPreview {
-		avatarUrl: string;
-		label: string;
-	}
-
-	interface TeamOverviewPayload {
-		totalRecords: number;
-		members: TeamMemberPreview[];
-	}
-
-	interface TeamOverviewCache {
-		expiresAt: number;
-		payload: TeamOverviewPayload;
-	}
-
-	const TEAM_OVERVIEW_CACHE_KEY = 'hasel:dashboard-team-overview:v1';
-	const TEAM_OVERVIEW_TTL_MS = 120000;
-	const TEAM_OVERVIEW_LIMIT = 4;
-	const TEAM_AVATAR_FALLBACK_PALETTE = ['#2563eb', '#0f766e', '#be185d', '#7c3aed'];
-
-	const toRecord = (value: unknown): Record<string, unknown> =>
-		typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
-
-	const toNonNegativeInt = (value: unknown, fallback = 0): number => {
-		const parsed = Number(value);
-		if (!Number.isFinite(parsed) || parsed < 0) return fallback;
-		return Math.floor(parsed);
-	};
-
-	const getTeamMemberLabel = (member: Record<string, unknown>, index: number): string => {
-		const user = toRecord(member.user);
-		const firstName = String(user.first_name ?? '').trim();
-		const lastName = String(user.last_name ?? '').trim();
-		const fullName = `${firstName} ${lastName}`.trim();
-		const apexUserName = String(user.apex_user_name ?? '').trim();
-		return fullName || apexUserName || `Miembro ${index + 1}`;
-	};
-
-	const normalizeTeamPayload = (value: unknown): TeamOverviewPayload => {
-		const source = toRecord(value);
-		const rawMembers = Array.isArray(source.members) ? source.members : [];
-
-		const members = rawMembers.slice(0, TEAM_OVERVIEW_LIMIT).map((entry, index) => {
-			const sourceMember = toRecord(entry);
-			return {
-				avatarUrl: String(sourceMember.avatarUrl ?? '').trim(),
-				label: String(sourceMember.label ?? '').trim() || `Miembro ${index + 1}`,
-			};
-		});
-
-		const totalRecords = Math.max(
-			members.length,
-			toNonNegativeInt(source.totalRecords, members.length)
-		);
-
-		return { totalRecords, members };
-	};
-
-	const parseTeamOverviewResponse = (value: unknown): TeamOverviewPayload => {
-		const source = toRecord(value);
-		const data = Array.isArray(source.data) ? source.data : [];
-		const meta = toRecord(source.meta);
-
-		const members: TeamMemberPreview[] = data.slice(0, TEAM_OVERVIEW_LIMIT).map((entry, index) => {
-			const member = toRecord(entry);
-			return {
-				avatarUrl: String(
-					member.avatar_url ?? member.profile_image_url ?? member.avatarUrl ?? ''
-				).trim(),
-				label: getTeamMemberLabel(member, index),
-			};
-		});
-
-		const totalRecords = Math.max(
-			members.length,
-			toNonNegativeInt(meta.total_records, data.length)
-		);
-
-		return { totalRecords, members };
-	};
-
-	const readTeamOverviewCache = (): TeamOverviewPayload | null => {
-		try {
-			const rawCache = window.sessionStorage.getItem(TEAM_OVERVIEW_CACHE_KEY);
-			if (!rawCache) return null;
-
-			const parsed = JSON.parse(rawCache) as TeamOverviewCache;
-			const expiresAt = Number(parsed?.expiresAt ?? 0);
-
-			if (!Number.isFinite(expiresAt) || expiresAt <= Date.now()) {
-				window.sessionStorage.removeItem(TEAM_OVERVIEW_CACHE_KEY);
-				return null;
-			}
-
-			return normalizeTeamPayload(parsed?.payload);
-		} catch {
-			return null;
-		}
-	};
-
-	const saveTeamOverviewCache = (payload: TeamOverviewPayload) => {
-		try {
-			const cacheEntry: TeamOverviewCache = {
-				expiresAt: Date.now() + TEAM_OVERVIEW_TTL_MS,
-				payload,
-			};
-			window.sessionStorage.setItem(TEAM_OVERVIEW_CACHE_KEY, JSON.stringify(cacheEntry));
-		} catch {
-			// Ignore storage errors (private mode, quota, or blocked storage).
-		}
-	};
-
-	const getTeamSummaryText = (totalRecords: number): string => {
-		const extraMembers = Math.max(0, totalRecords - 1);
-		return `Tú y ${extraMembers} ${extraMembers === 1 ? 'miembro más' : 'miembros más'}`;
-	};
-
-	const getMemberInitials = (label: string): string => {
-		const tokens = String(label || '')
-			.split(/\s+/)
-			.filter(Boolean);
-		if (tokens.length === 0) return 'TM';
-		if (tokens.length === 1) return tokens[0].slice(0, 2).toUpperCase();
-		return `${tokens[0][0] || ''}${tokens[1][0] || ''}`.toUpperCase();
-	};
-
-	const renderAvatarStack = (stackNode: HTMLElement, payload: TeamOverviewPayload) => {
-		stackNode.replaceChildren();
-
-		const visibleMembers = payload.members.slice(0, TEAM_OVERVIEW_LIMIT);
-		for (const [index, member] of visibleMembers.entries()) {
-			const avatar = document.createElement('span');
-			avatar.className = 'team-avatar';
-			avatar.title = member.label;
-			avatar.setAttribute('aria-label', member.label);
-
-			if (member.avatarUrl) {
-				const image = document.createElement('img');
-				image.src = member.avatarUrl;
-				image.alt = member.label;
-				image.loading = 'lazy';
-				image.decoding = 'async';
-				avatar.appendChild(image);
-			} else {
-				avatar.classList.add('team-avatar--fallback');
-				avatar.style.background =
-					TEAM_AVATAR_FALLBACK_PALETTE[index % TEAM_AVATAR_FALLBACK_PALETTE.length];
-				avatar.textContent = getMemberInitials(member.label);
-			}
-
-			stackNode.appendChild(avatar);
-		}
-
-		const extraCount = Math.max(0, payload.totalRecords - visibleMembers.length);
-		if (extraCount > 0) {
-			const more = document.createElement('span');
-			more.className = 'team-avatar team-avatar--more';
-			more.textContent = `+${extraCount}`;
-			more.setAttribute('aria-label', `${extraCount} miembros mas`);
-			stackNode.appendChild(more);
-		}
-
-		if (stackNode.childElementCount === 0) {
-			const placeholder = document.createElement('span');
-			placeholder.className = 'team-avatar team-avatar--placeholder';
-			stackNode.appendChild(placeholder);
-		}
-	};
-
-	const renderTeamOverview = (
-		card: HTMLElement,
-		payload: TeamOverviewPayload,
-		source: 'cache' | 'network'
-	) => {
-		const summaryNode = card.querySelector<HTMLElement>('[data-team-summary]');
-		const stateNode = card.querySelector<HTMLElement>('[data-team-state]');
-		const avatarStackNode = card.querySelector<HTMLElement>('[data-team-avatar-stack]');
-
-		if (!summaryNode || !stateNode || !avatarStackNode) return;
-
-		summaryNode.textContent = getTeamSummaryText(payload.totalRecords);
-		renderAvatarStack(avatarStackNode, payload);
-		stateNode.classList.remove('team-overview-state--error');
-
-		if (payload.totalRecords === 0) {
-			stateNode.textContent = 'Aún no hay profesionales registrados.';
-			stateNode.classList.remove('hidden');
-			stateNode.classList.add('team-overview-state--empty');
-			return;
-		}
-
-		stateNode.classList.add('hidden');
-		stateNode.classList.remove('team-overview-state--empty');
-		stateNode.textContent = '';
-	};
-
-	const fetchTeamOverview = async (): Promise<TeamOverviewPayload> => {
-		const response = await fetch(`/api/professionals?page=1&limit=${TEAM_OVERVIEW_LIMIT}`, {
-			headers: { Accept: 'application/json' },
-		});
-		const payload = await response.json();
-
-		if (!response.ok || payload?.status !== 'success') {
-			throw new Error(payload?.message || 'No fue posible cargar el equipo.');
-		}
-
-		return parseTeamOverviewResponse(payload);
-	};
-
-	const loadTeamOverview = async () => {
-		const card = document.querySelector<HTMLElement>('[data-team-card]');
-		if (!card) return;
-
-		const stateNode = card.querySelector<HTMLElement>('[data-team-state]');
-		if (!stateNode) return;
-
-		const cachedPayload = readTeamOverviewCache();
-		if (cachedPayload) {
-			renderTeamOverview(card, cachedPayload, 'cache');
-			return;
-		}
-
-		try {
-			const teamPayload = await fetchTeamOverview();
-			saveTeamOverviewCache(teamPayload);
-			renderTeamOverview(card, teamPayload, 'network');
-		} catch (error) {
-			stateNode.classList.remove('team-overview-state--empty');
-			stateNode.classList.remove('hidden');
-			stateNode.textContent =
-				error instanceof Error ? error.message : 'No fue posible cargar el equipo de trabajo.';
-			stateNode.classList.add('team-overview-state--error');
-		}
-	};
-
-	const loadAiSummary = async () => {
-		const card = document.querySelector<HTMLElement>('[data-ai-summary-card]');
-		if (!card) return;
-
-		if (card.getAttribute('data-ai-summary-loaded') === '1') return;
-		card.setAttribute('data-ai-summary-loaded', '1');
-
-		const stateNode = card.querySelector<HTMLElement>('[data-ai-summary-state]');
-		const textNode = card.querySelector<HTMLElement>('[data-ai-summary-text]');
-
-		if (!stateNode || !textNode) return;
-
-		const revealSummary = async (summaryText: string) => {
-			stateNode.classList.add('hidden');
-			stateNode.setAttribute('aria-hidden', 'true');
-			stateNode.style.display = 'none';
-			textNode.classList.remove('hidden');
-			textNode.style.display = 'block';
-			await streamSummaryTokens(textNode, summaryText);
-		};
-
-		try {
-			const response = await fetch('/api/dashboard/ai-summary', {
-				headers: { Accept: 'application/json' },
-			});
-			const payload = await response.json();
-
-			if (!response.ok || payload?.status !== 'success') {
-				throw new Error(payload?.message || 'No fue posible recuperar el resumen IA.');
-			}
-
-			const summary = sanitizeAiSummary(payload?.data?.ai_summary);
-			if (!summary) {
-				throw new Error('El resumen IA no está disponible en este momento.');
-			}
-
-			await revealSummary(summary);
-		} catch (error) {
-			stateNode.textContent =
-				error instanceof Error
-					? error.message
-					: 'No fue posible recuperar el resumen IA.';
-		}
-	};
-
-	loadAiSummary();
-	loadTeamOverview();
-	document.addEventListener('astro:page-load', loadAiSummary);
-	document.addEventListener('astro:page-load', loadTeamOverview);
-</script>
-
 <style>
-	@keyframes ai-token-reveal {
-		from {
-			opacity: 0;
-			transform: translateY(3px);
-			filter: blur(2px);
-		}
+	/* PREMIUM DARK — single palette, no light/dark duality */
+	:root {
+		--m3-sys-light-primary: #3b82f6;
+		--m3-sys-light-on-primary: #ffffff;
+		--m3-sys-light-primary-container: rgba(59, 130, 246, 0.18);
+		--m3-sys-light-on-primary-container: #93c5fd;
 
-		to {
-			opacity: 1;
-			transform: translateY(0);
-			filter: blur(0);
-		}
+		--m3-sys-light-secondary: #38bdf8;
+		--m3-sys-light-secondary-container: rgba(56, 189, 248, 0.14);
+		--m3-sys-light-on-secondary-container: #7dd3fc;
+
+		--m3-sys-light-surface: #09090b;
+		--m3-sys-light-surface-container: rgba(255, 255, 255, 0.04);
+		--m3-sys-light-on-surface: #ffffff;
+		--m3-sys-light-on-surface-variant: #a1a1aa;
+
+		--m3-sys-light-outline: #3f3f46;
+		--m3-sys-light-outline-variant: rgba(255, 255, 255, 0.1);
 	}
 
-	.ai-summary-token {
-		display: inline-block;
-		animation: ai-token-reveal 280ms cubic-bezier(0.16, 1, 0.3, 1) both;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-card {
-		border: 1px solid rgba(11, 87, 208, 0.3);
-		background: #18181b;
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .ai-card-sparkle {
-		color: #60a5fa;
-		animation: none;
-		filter: none;
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card {
-		border-color: #27272a;
-		background: #18181b;
-		box-shadow: none;
-	}
-
-	.metric-icon-badge {
-		display: grid;
-		place-items: center;
-		width: 40px;
-		height: 40px;
-		border-radius: 999px;
-		flex-shrink: 0;
-		font-size: 1.2rem;
-		background-color: rgba(11, 87, 208, 0.15);
-		color: #60a5fa;
-		border: 1px solid rgba(59, 130, 246, 0.26);
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card[data-metric-index='0'] .metric-icon-badge {
-		background-color: rgba(59, 130, 246, 0.15);
-		color: #60a5fa;
-		border-color: rgba(96, 165, 250, 0.24);
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card[data-metric-index='1'] .metric-icon-badge {
-		background-color: rgba(245, 158, 11, 0.15);
-		color: #f59e0b;
-		border-color: rgba(245, 158, 11, 0.25);
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card[data-metric-index='2'] .metric-icon-badge {
-		background-color: rgba(34, 197, 94, 0.15);
-		color: #22c55e;
-		border-color: rgba(34, 197, 94, 0.25);
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card[data-metric-index='3'] .metric-icon-badge {
-		background-color: rgba(34, 197, 94, 0.15);
-		color: #22c55e;
-		border-color: rgba(34, 197, 94, 0.25);
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .metric-value {
-		color: #ffffff;
-		text-shadow: none;
-	}
-
-	@media (max-width: 768px) {
-		.dashboard-metrics-grid {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 1rem;
-		}
-
-		.dashboard-metric-card {
-			padding: 1rem 0.95rem;
-			border-radius: 1.05rem;
-			gap: 0.8rem;
-		}
-
-		.dashboard-metric-card .metric-value {
-			font-size: clamp(1.95rem, 8vw, 2.25rem);
-			line-height: 1;
-		}
-
-		.dashboard-metric-card .metric-description {
-			font-size: 0.88rem;
-			line-height: 1.35;
-		}
-
-		html[data-theme='dark'] .dashboard-metric-card {
-			border-color: #27272a;
-			background: #18181b;
-			box-shadow: none;
-		}
-
-		html[data-theme='dark'] .dashboard-metric-card[data-metric-index='0'] .metric-icon-badge {
-			background-color: rgba(59, 130, 246, 0.15);
-			color: #60a5fa;
-			border-color: rgba(96, 165, 250, 0.24);
-			box-shadow: none;
-		}
-
-		html[data-theme='dark'] .dashboard-metric-card[data-metric-index='1'] .metric-icon-badge {
-			background-color: rgba(245, 158, 11, 0.15);
-			color: #f59e0b;
-			border-color: rgba(245, 158, 11, 0.25);
-			box-shadow: none;
-		}
-
-		html[data-theme='dark'] .dashboard-metric-card[data-metric-index='2'] .metric-icon-badge,
-		html[data-theme='dark'] .dashboard-metric-card[data-metric-index='3'] .metric-icon-badge {
-			background-color: rgba(34, 197, 94, 0.15);
-			color: #22c55e;
-			border-color: rgba(34, 197, 94, 0.25);
-			box-shadow: none;
-		}
-
-		html[data-theme='dark'] .dashboard-ai-card {
-			width: 100%;
-			border: 1px solid rgba(11, 87, 208, 0.3);
-			background: #18181b;
-			box-shadow: none;
-		}
-	}
-
-	.m3-card {
+	.landing-root {
 		position: relative;
 		overflow: hidden;
-		border-radius: 1.25rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 82%, white 18%);
-		background:
-			radial-gradient(
-				110% 135% at 100% 0%,
-				color-mix(in srgb, var(--primary) 10%, white 90%) 0%,
-				transparent 56%
-			),
-			linear-gradient(
-				145deg,
-				color-mix(in srgb, #f8fbff 90%, var(--card-surface) 10%) 0%,
-				color-mix(in srgb, #eff5ff 86%, var(--surface-container) 14%) 100%
-			);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.75),
-			0 10px 28px rgba(15, 23, 42, 0.08);
+		min-height: 100vh;
+		background-color: var(--m3-sys-light-surface);
+		color: var(--m3-sys-light-on-surface);
+		font-family: 'Inter', system-ui, sans-serif;
 	}
 
-	html[data-theme='dark'] .m3-card {
-		border: 1px solid #27272a;
-		background: #18181b;
-		box-shadow: none;
+	/* Expressive gradient orbs — electric neon light sources */
+	.landing-orb {
+		position: absolute;
+		border-radius: 9999px;
+		filter: blur(100px);
+		pointer-events: none;
+		z-index: 0;
 	}
 
-	.team-overview-card {
+	.landing-orb-a {
+		top: -15%;
+		left: -10%;
+		width: 55vw;
+		height: 55vw;
+		background: radial-gradient(circle, rgba(59, 130, 246, 0.28), transparent 65%);
+	}
+
+	.landing-orb-b {
+		bottom: -15%;
+		right: -10%;
+		width: 65vw;
+		height: 65vw;
+		background: radial-gradient(circle, rgba(14, 165, 233, 0.22), transparent 65%);
+	}
+
+	.landing-orb-c {
+		top: 38%;
+		left: 18%;
+		width: 35vw;
+		height: 35vw;
+		background: radial-gradient(circle, rgba(99, 102, 241, 0.18), transparent 65%);
+	}
+
+	.landing-shell {
+		position: relative;
+		z-index: 1;
+		width: min(1200px, 100%);
+		margin: 0 auto;
+		padding: 1rem;
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-		padding: 1.25rem;
-	}
-
-	.team-overview-head {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
 		gap: 0.75rem;
 	}
 
-	.team-overview-title {
-		margin: 0;
-		font-size: 1.1rem;
+	/* Navbar — floating pill with dark glassmorphism */
+	.m3-navbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.75rem 1.25rem;
+		border-radius: 999px;
+		background: rgba(9, 9, 11, 0.72);
+		backdrop-filter: blur(24px);
+		-webkit-backdrop-filter: blur(24px);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+		position: sticky;
+		top: 1.25rem;
+		z-index: 50;
+		margin: 1.5rem 0 0;
+		width: 100%;
+	}
+
+	.brand {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: var(--m3-sys-light-on-surface);
+	}
+
+	.brand-logo {
+		height: 2rem;
+		width: 2rem;
+		flex-shrink: 0;
+		object-fit: contain;
+		border-radius: 999px;
+	}
+
+	.brand-mark {
+		display: grid;
+		place-items: center;
+		color: var(--m3-sys-light-on-primary);
+		background-color: var(--m3-sys-light-primary);
+		border-radius: 50%;
+		width: 2.25rem;
+		height: 2.25rem;
+	}
+
+	.brand-mark .material-symbols-rounded {
+		font-size: 1.25rem;
+	}
+
+	.brand-text {
 		font-weight: 700;
-		letter-spacing: 0.01em;
-		color: var(--on-surface);
+		font-size: 1.25rem;
+		letter-spacing: -0.02em;
 	}
 
-	.team-overview-link-minimal {
-		font-size: 0.85rem;
-		font-weight: 600;
-		color: var(--primary);
+	.nav-links {
+		display: none;
+		align-items: center;
+		gap: 1.5rem;
+	}
+
+	.nav-link {
+		color: var(--m3-sys-light-on-surface-variant);
 		text-decoration: none;
-		transition: opacity 150ms ease;
-	}
-
-	.team-overview-link-minimal:hover {
-		opacity: 0.8;
-	}
-
-	.team-overview-body {
-		display: flex;
-		align-items: center;
-		gap: 0.8rem;
-		margin-top: 0.2rem;
-	}
-
-	.team-overview-summary-text {
-		margin: 0;
-		font-size: 0.88rem;
 		font-weight: 500;
-		color: var(--on-surface-variant);
+		font-size: 0.95rem;
+		transition: color 0.2s;
 	}
 
-	:global(.avatar-stack) {
+	.nav-link:hover {
+		color: var(--m3-sys-light-on-surface);
+	}
+
+	.nav-actions {
 		display: flex;
 		align-items: center;
+		gap: 0.5rem;
 	}
 
-	:global(.team-avatar) {
-		position: relative;
+	@media (min-width: 768px) {
+		.landing-shell { padding: 1.5rem; gap: 1.5rem; }
+		.m3-navbar { margin: 1.5rem 0 0; width: 100%; }
+		.nav-links, .nav-actions { display: flex; }
+	}
+
+	/* Buttons */
+	.m3-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 36px;
-		height: 36px;
-		flex: 0 0 auto;
-		margin-left: -12px;
+		gap: 0.5rem;
 		border-radius: 999px;
-		border: 3px solid var(--card-surface);
-		background: var(--surface-container);
-		color: var(--on-surface);
-		font-size: 0.75rem;
+		font-weight: 500;
+		font-size: 0.95rem;
+		padding: 0.625rem 1.5rem;
+		transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+		cursor: pointer;
+		border: none;
+		text-decoration: none;
+	}
+
+	.m3-btn:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+	}
+
+	.m3-btn:active {
+		transform: translateY(0);
+	}
+
+	.m3-btn-large {
+		padding: 0.875rem 2rem;
+		font-size: 1.05rem;
+	}
+
+	.m3-btn-primary {
+		background-color: var(--m3-sys-light-primary);
+		color: var(--m3-sys-light-on-primary);
+	}
+
+	.m3-btn-tonal {
+		background-color: var(--m3-sys-light-secondary-container);
+		color: var(--m3-sys-light-on-secondary-container);
+	}
+
+	.m3-btn-subtle {
+		background-color: transparent;
+		color: var(--m3-sys-light-primary);
+	}
+	
+	.m3-btn-subtle:hover {
+		background-color: var(--m3-sys-light-surface-container);
+		box-shadow: none;
+	}
+
+	/* Chips */
+	.m3-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		border-radius: 999px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		background: var(--m3-sys-light-surface-container);
+		color: var(--m3-sys-light-on-surface);
+		border: 1px solid var(--m3-sys-light-outline-variant);
+	}
+
+	.m3-chip-primary {
+		background: var(--m3-sys-light-primary-container);
+		color: var(--m3-sys-light-on-primary-container);
+		border-color: transparent;
+	}
+
+	.m3-chip-secondary {
+		background: var(--m3-sys-light-secondary-container);
+		color: var(--m3-sys-light-on-secondary-container);
+		border-color: transparent;
+	}
+
+	.m3-chip .material-symbols-rounded {
+		font-size: 1.125rem;
+	}
+
+	/* Hero */
+	.m3-hero {
+		display: grid;
+		gap: 3rem;
+		padding: 1rem 1rem 2rem;
+		align-items: center;
+	}
+
+	.m3-hero-content {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1.5rem;
+	}
+
+	.m3-display {
+		font-size: clamp(2.5rem, 6vw, 4.5rem);
 		font-weight: 700;
-		letter-spacing: 0.02em;
-		overflow: hidden;
-		box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
-		z-index: 1;
-	}
-
-	:global(.team-avatar:first-child) {
-		margin-left: 0;
-		z-index: 4;
-	}
-	:global(.team-avatar:nth-child(2)) { z-index: 3; }
-	:global(.team-avatar:nth-child(3)) { z-index: 2; }
-	:global(.team-avatar:nth-child(4)) { z-index: 1; }
-
-	:global(.team-avatar img) {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	:global(.team-avatar--placeholder) {
-		background: linear-gradient(120deg, #d9e7f8, #b9cde8);
-	}
-
-	html[data-theme='dark'] :global(.team-avatar--placeholder) {
-		background: linear-gradient(120deg, #27272a, #3f3f46);
-	}
-
-	:global(.team-avatar--more) {
-		background: color-mix(in srgb, var(--primary) 16%, white 84%);
-		color: color-mix(in srgb, var(--primary) 84%, #173b73 16%);
-		font-size: 0.7rem;
-	}
-
-	html[data-theme='dark'] :global(.team-avatar--more) {
-		background: color-mix(in srgb, var(--primary) 24%, #18181b 76%);
-		color: color-mix(in srgb, var(--on-primary) 84%, white 16%);
-	}
-
-	.team-overview-state {
+		line-height: 1.05;
+		letter-spacing: -0.03em;
+		color: var(--m3-sys-light-on-surface);
 		margin: 0;
-		font-size: 0.8rem;
-		color: var(--on-surface-variant);
 	}
 
-	.team-overview-state--empty {
-		color: color-mix(in srgb, var(--on-surface-variant) 88%, #fef3c7 12%);
+	.m3-body-large {
+		font-size: clamp(1rem, 2vw, 1.25rem);
+		line-height: 1.6;
+		color: var(--m3-sys-light-on-surface-variant);
+		max-width: 54ch;
+		margin: 0;
 	}
 
-	.team-overview-state--error {
-		color: #fb7185;
+	.hero-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+		margin-top: 1rem;
+	}
+
+	/* Hero Visuals */
+	.m3-hero-visuals {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		width: 100%;
+	}
+
+	.visual-card {
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 1.25rem;
+		padding: 0.875rem 1rem;
+		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		position: static;
+		display: flex;
+		align-items: center;
+		gap: 0.875rem;
+		animation: float 6s ease-in-out infinite;
+		width: 100%;
+	}
+
+	.visual-card-2 { animation-delay: -3s; }
+	.visual-card-3 { animation-delay: -1.5s; }
+
+	@media (min-width: 1024px) {
+		.m3-hero-visuals {
+			position: relative;
+			height: 360px;
+			display: block;
+			width: auto;
+		}
+
+		.visual-card {
+			position: absolute;
+			width: auto;
+			padding: 1.25rem;
+			border-radius: 1.5rem;
+		}
+
+		.visual-card-1 { top: 5%; left: 0; z-index: 2; }
+		.visual-card-2 { bottom: 5%; left: 0; z-index: 1; }
+		.visual-card-3 { top: 38%; right: 0; z-index: 3; }
+	}
+
+	.visual-icon-ai {
+		background: rgba(99, 102, 241, 0.2);
+		color: #a5b4fc;
+	}
+
+	.visual-header {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+	}
+
+	.visual-avatar, .visual-icon-box {
+		width: 3rem;
+		height: 3rem;
+		border-radius: 50%;
+		display: grid;
+		place-items: center;
+	}
+
+	.visual-avatar {
+		background: #e8def8;
+		color: #4a4458;
+	}
+
+	.visual-icon-box {
+		background: #d3e3fd;
+		color: #041e49;
+	}
+
+	.visual-info {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.visual-info strong {
+		font-size: 0.95rem;
+		color: var(--m3-sys-light-on-surface);
+	}
+
+	.visual-info span {
+		font-size: 0.85rem;
+		color: var(--m3-sys-light-on-surface-variant);
+	}
+
+	.visual-badge {
+		padding: 0.25rem 0.5rem;
+		border-radius: 0.5rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+	}
+
+	.visual-badge-success {
+		background: #dcfce7;
+		color: #166534;
+	}
+
+	html[data-theme='dark'] .visual-badge-success {
+		background: #14532d;
+		color: #86efac;
+	}
+
+	@keyframes float {
+		0%, 100% { transform: translateY(0); }
+		50% { transform: translateY(-10px); }
+	}
+
+	@media (min-width: 1024px) {
+		.m3-hero {
+			grid-template-columns: 1fr 1fr;
+			padding: 2rem 2rem 3rem;
+		}
+	}
+
+	/* Section Commons */
+	.m3-section {
+		padding: 2rem 1rem;
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+
+	@media (min-width: 768px) {
+		.m3-section { padding: 4rem 1.5rem; gap: 3rem; }
+	}
+
+	.m3-section-tonal {
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		border-radius: 2rem;
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+	}
+
+	.section-header.center {
+		text-align: center;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.m3-headline {
+		font-size: clamp(2rem, 4vw, 3rem);
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		margin: 0 0 1rem 0;
+		color: var(--m3-sys-light-on-surface);
+	}
+
+	.m3-body {
+		font-size: 1rem;
+		line-height: 1.5;
+		color: var(--m3-sys-light-on-surface-variant);
+		margin: 0;
+	}
+
+	/* Features Grid */
+	.m3-feature-grid {
+		display: grid;
+		gap: 1.5rem;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	}
+
+	.m3-card {
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 1.5rem;
+		padding: 1.25rem;
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		transition: background-color 0.2s, border-color 0.2s;
 	}
 
 	@media (min-width: 640px) {
-		.team-overview-card {
-			padding: 1.3rem 1.4rem;
-		}
+		.m3-card { padding: 1.75rem; }
+	}
 
-		.team-overview-title {
-			font-size: 1.15rem;
+	.m3-card:hover {
+		background: rgba(255, 255, 255, 0.08);
+		border-color: rgba(255, 255, 255, 0.16);
+	}
+
+	.m3-icon-container {
+		width: 3.5rem;
+		height: 3.5rem;
+		background: var(--m3-sys-light-primary-container);
+		color: var(--m3-sys-light-on-primary-container);
+		border-radius: 1rem;
+		display: grid;
+		place-items: center;
+		margin-bottom: 1.5rem;
+	}
+
+	.m3-icon-container .material-symbols-rounded {
+		font-size: 1.75rem;
+	}
+
+	.m3-title {
+		font-size: 1.25rem;
+		font-weight: 600;
+		margin: 0 0 0.5rem 0;
+		color: var(--m3-sys-light-on-surface);
+	}
+
+	/* Workflow layout */
+	.m3-workflow-layout {
+		display: grid;
+		gap: 3rem;
+		align-items: center;
+	}
+
+	.workflow-content {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1.25rem;
+	}
+
+	.m3-workflow-steps {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.m3-step-card {
+		display: flex;
+		gap: 1rem;
+		padding: 1rem;
+		background: rgba(255, 255, 255, 0.03);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		border-radius: 1.25rem;
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		transition: background-color 0.2s, border-color 0.2s;
+	}
+
+	.m3-step-card:hover {
+		background: rgba(255, 255, 255, 0.07);
+		border-color: rgba(255, 255, 255, 0.14);
+	}
+
+	.step-icon-wrap {
+		width: 3rem;
+		height: 3rem;
+		border-radius: 50%;
+		background: var(--m3-sys-light-secondary-container);
+		color: var(--m3-sys-light-on-secondary-container);
+		display: grid;
+		place-items: center;
+		flex-shrink: 0;
+	}
+
+	.step-content {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.step-label {
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+		color: var(--m3-sys-light-primary);
+	}
+
+	@media (min-width: 1024px) {
+		.m3-workflow-layout {
+			grid-template-columns: 1fr 1fr;
 		}
 	}
 
-	@media (prefers-reduced-motion: reduce) {
-		.ai-summary-token {
-			animation: none;
-		}
+	/* CTA */
+	.m3-cta-card {
+		background: rgba(59, 130, 246, 0.1);
+		border: 1px solid rgba(59, 130, 246, 0.3);
+		border-radius: 2rem;
+		padding: 4rem 2rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 2rem;
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		box-shadow: 0 0 80px rgba(59, 130, 246, 0.12), inset 0 1px 0 rgba(147, 197, 253, 0.1);
+	}
 
-		html[data-theme='dark'] .ai-card-sparkle {
-			animation: none;
-		}
+	.cta-content {
+		max-width: 600px;
+	}
+
+	.m3-cta-card .m3-headline {
+		color: #ffffff;
+	}
+	
+	.m3-cta-card .m3-body-large {
+		color: #a1a1aa;
+		opacity: 1;
+	}
+
+	/* Footer */
+	.m3-footer {
+		text-align: center;
+		padding: 2rem 1rem;
+		color: var(--m3-sys-light-on-surface-variant);
+		font-size: 0.9rem;
 	}
 </style>

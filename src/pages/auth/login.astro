@@ -1,7 +1,7 @@
 ---
-import LoginForm from '../components/LoginForm.astro';
-import Layout from '../layouts/Layout.astro';
-import '../styles/global.css';
+import LoginForm from '../../components/LoginForm.astro';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
 
 const error = Astro.url.searchParams.get('error') ?? '';
 const identifier = Astro.url.searchParams.get('identifier') ?? '';

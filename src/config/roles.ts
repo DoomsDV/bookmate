@@ -18,13 +18,14 @@ type RoutePermission = {
 };
 
 export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
-	{ path: '/', roles: ALL_ROLES },
-	{ path: '/calendar', roles: ALL_ROLES },
-	{ path: '/services', roles: MANAGER_ROLES },
-	{ path: '/locations', roles: MANAGER_ROLES },
-	{ path: '/specialties', roles: MANAGER_ROLES },
-	{ path: '/professionals', roles: MANAGER_ROLES },
-	{ path: '/schedules', roles: ALL_ROLES },
+	{ path: '/panel', roles: ALL_ROLES },
+	{ path: '/panel/dashboard', roles: ALL_ROLES },
+	{ path: '/panel/calendar', roles: ALL_ROLES },
+	{ path: '/panel/services', roles: MANAGER_ROLES },
+	{ path: '/panel/locations', roles: MANAGER_ROLES },
+	{ path: '/panel/specialties', roles: MANAGER_ROLES },
+	{ path: '/panel/professionals', roles: MANAGER_ROLES },
+	{ path: '/panel/schedules', roles: ALL_ROLES },
 
 	{ path: '/api/appointments', roles: ALL_ROLES, match: 'prefix' },
 	{ path: '/api/schedules', roles: ALL_ROLES, match: 'prefix' },

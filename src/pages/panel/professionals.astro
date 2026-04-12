@@ -1,12 +1,12 @@
 ﻿---
-import AppAlert from '../components/AppAlert.astro';
-import FlashMessage from '../components/FlashMessage.astro';
-import ProfessionalsGrid from '../components/ProfessionalsGrid.astro';
-import SideNav from '../components/SideNav.astro';
-import TopBar from '../components/TopBar.astro';
-import { ProfessionalsApiError, listProfessionals, type Professional } from '../lib/professionals';
-import Layout from '../layouts/Layout.astro';
-import '../styles/global.css';
+import AppAlert from '../../components/AppAlert.astro';
+import FlashMessage from '../../components/FlashMessage.astro';
+import ProfessionalsGrid from '../../components/ProfessionalsGrid.astro';
+import SideNav from '../../components/SideNav.astro';
+import TopBar from '../../components/TopBar.astro';
+import { ProfessionalsApiError, listProfessionals, type Professional } from '../../lib/professionals';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
 import 'tom-select/dist/css/tom-select.css';
 
 const token = Astro.locals.token ?? '';
@@ -373,7 +373,7 @@ const visiblePages = Array.from(
 	import {
 		PARAGUAY_MOBILE_PHONE_ERROR,
 		parseParaguayMobilePhone,
-	} from '../lib/paraguay-phone';
+	} from '../../lib/paraguay-phone';
 
 	type ProfessionalMode = 'create' | 'edit';
 

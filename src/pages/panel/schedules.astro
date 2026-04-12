@@ -1,11 +1,11 @@
 ---
-import AppAlert from '../components/AppAlert.astro';
-import FlashMessage from '../components/FlashMessage.astro';
-import SideNav from '../components/SideNav.astro';
-import TopBar from '../components/TopBar.astro';
-import { ROLES } from '../config/roles';
-import Layout from '../layouts/Layout.astro';
-import '../styles/global.css';
+import AppAlert from '../../components/AppAlert.astro';
+import FlashMessage from '../../components/FlashMessage.astro';
+import SideNav from '../../components/SideNav.astro';
+import TopBar from '../../components/TopBar.astro';
+import { ROLES } from '../../config/roles';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
 
 const token = Astro.locals.token ?? '';
 const roleId = Number(Astro.locals.roleId ?? 0);
@@ -104,7 +104,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 </Layout>
 
 <script>
-	import '../scripts/schedule-manager';
+	import '../../scripts/schedule-manager';
 </script>
 
 <style is:global>
