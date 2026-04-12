@@ -61,55 +61,55 @@
 }
 
 html[data-theme='dark'] {
-	--background: #0f1115;
-	--background-accent: #13161c;
-	--page-background: #0f1115;
-	--surface: rgba(22, 24, 29, 0.92);
-	--surface-container: #16181d;
-	--surface-bright: #16181d;
-	--bar-outline: rgba(255, 255, 255, 0.08);
-	--shell-surface: rgba(22, 24, 29, 0.95);
-	--sidebar-surface: rgba(22, 24, 29, 0.97);
-	--content-surface: rgba(22, 24, 29, 0.72);
-	--shell-border: #2d3139;
+	--background: #09090b;
+	--background-accent: #18181b;
+	--page-background: #09090b;
+	--surface: rgba(24, 24, 27, 0.92);
+	--surface-container: #18181b;
+	--surface-bright: #18181b;
+	--bar-outline: #27272a;
+	--shell-surface: rgba(24, 24, 27, 0.95);
+	--sidebar-surface: rgba(24, 24, 27, 0.97);
+	--content-surface: rgba(24, 24, 27, 0.72);
+	--shell-border: #27272a;
 	--primary: #3b82f6;
-	--primary-soft: rgba(59, 130, 246, 0.14);
-	--primary-soft-hover: rgba(59, 130, 246, 0.22);
-	--primary-container: rgba(59, 130, 246, 0.22);
-	--secondary: #cbd5e1;
-	--secondary-container: rgba(148, 163, 184, 0.2);
-	--on-surface: #e2e8f0;
-	--on-surface-variant: #94a3b8;
-	--hero-gradient: linear-gradient(135deg, #16181d 0%, #11141a 62%, #1a2230 100%);
-	--hero-shadow: rgba(0, 0, 0, 0.36);
-	--hero-glow: radial-gradient(circle at center, rgba(59, 130, 246, 0.08), transparent 60%);
-	--control-surface: rgba(34, 37, 42, 0.92);
-	--control-surface-strong: rgba(41, 45, 52, 0.98);
-	--menu-surface: rgba(22, 24, 29, 0.98);
-	--card-surface: rgba(22, 24, 29, 0.93);
-	--card-surface-strong: rgba(22, 24, 29, 0.97);
+	--primary-soft: rgba(59, 130, 246, 0.12);
+	--primary-soft-hover: rgba(59, 130, 246, 0.18);
+	--primary-container: rgba(59, 130, 246, 0.18);
+	--secondary: #a1a1aa;
+	--secondary-container: rgba(161, 161, 170, 0.15);
+	--on-surface: #fafafa;
+	--on-surface-variant: #a1a1aa;
+	--hero-gradient: linear-gradient(135deg, #18181b 0%, #09090b 62%, #09090b 100%);
+	--hero-shadow: rgba(0, 0, 0, 0.5);
+	--hero-glow: radial-gradient(circle at center, rgba(59, 130, 246, 0.06), transparent 60%);
+	--control-surface: #09090b;
+	--control-surface-strong: #09090b;
+	--menu-surface: rgba(24, 24, 27, 0.98);
+	--card-surface: rgba(24, 24, 27, 0.93);
+	--card-surface-strong: rgba(24, 24, 27, 0.97);
 	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-	--sidebar-card-surface: rgba(22, 24, 29, 0.94);
+	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	--sidebar-card-surface: rgba(24, 24, 27, 0.94);
 	--sidebar-hover: rgba(255, 255, 255, 0.06);
-	--status-total-bg: rgba(113, 113, 122, 0.2);
-	--status-total-text: #d4d4d8;
-	--status-total-border: rgba(161, 161, 170, 0.28);
-	--status-success-bg: rgba(16, 185, 129, 0.2);
+	--status-total-bg: rgba(161, 161, 170, 0.15);
+	--status-total-text: #e4e4e7;
+	--status-total-border: rgba(161, 161, 170, 0.22);
+	--status-success-bg: rgba(16, 185, 129, 0.15);
 	--status-success-text: #34d399;
-	--status-success-border: rgba(52, 211, 153, 0.34);
-	--status-pending-bg: rgba(245, 158, 11, 0.16);
+	--status-success-border: rgba(52, 211, 153, 0.28);
+	--status-pending-bg: rgba(245, 158, 11, 0.14);
 	--status-pending-text: #fbbf24;
-	--status-pending-border: rgba(245, 158, 11, 0.4);
-	--status-danger-bg: rgba(244, 63, 94, 0.18);
+	--status-pending-border: rgba(245, 158, 11, 0.3);
+	--status-danger-bg: rgba(244, 63, 94, 0.14);
 	--status-danger-text: #fda4af;
-	--status-danger-border: rgba(251, 113, 133, 0.34);
+	--status-danger-border: rgba(251, 113, 133, 0.28);
 	--flash-success-accent: #34d399;
 	--flash-danger-accent: #fda4af;
 	--flash-success-text: #6ee7b7;
 	--flash-danger-text: #fda4af;
-	--workspace-avatar-outline: rgba(96, 165, 250, 0.34);
-	--workspace-avatar-outline-soft: rgba(59, 130, 246, 0.2);
+	--workspace-avatar-outline: rgba(161, 161, 170, 0.28);
+	--workspace-avatar-outline-soft: rgba(161, 161, 170, 0.1);
 }
 
 html {
@@ -130,8 +130,8 @@ body {
 
 html[data-theme='dark'] body {
 	background:
-		linear-gradient(135deg, rgba(45, 49, 57, 0.2), rgba(15, 17, 21, 0)),
-		linear-gradient(180deg, transparent, rgba(15, 17, 21, 0.34));
+		linear-gradient(135deg, rgba(39, 39, 42, 0.14), rgba(9, 9, 11, 0)),
+		linear-gradient(180deg, transparent, rgba(9, 9, 11, 0.4));
 }
 
 dialog::backdrop {
@@ -566,4 +566,25 @@ html[data-theme='dark'] .topbar-brand-mark {
 
 html[data-theme='dark'] .workspace-account-subtitle {
 	color: color-mix(in srgb, var(--on-surface-variant) 90%, white 10%);
+}
+
+/* ── Secondary controls (dark mode) ─────────────────────────────────
+   Hamburger, theme toggle, calendar nav/view buttons.
+   These use --control-surface which is set to the page black (#09090b)
+   in dark mode; we override them here to zinc-800/700 so they stand
+   out as distinct interactive elements.
+─────────────────────────────────────────────────────────────────── */
+html[data-theme='dark'] [data-nav-toggle],
+html[data-theme='dark'] [data-theme-toggle],
+html[data-theme='dark'] [data-theme-toggle-mobile] {
+	background-color: #27272a;
+	border-color: #3f3f46;
+	color: #e4e4e7;
+}
+
+html[data-theme='dark'] [data-nav-toggle]:hover,
+html[data-theme='dark'] [data-theme-toggle]:hover,
+html[data-theme='dark'] [data-theme-toggle-mobile]:hover {
+	background-color: #3f3f46;
+	color: #e4e4e7;
 }

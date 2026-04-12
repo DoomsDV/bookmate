@@ -435,6 +435,29 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 		--fc-page-bg-color: var(--content-surface);
 		--fc-neutral-bg-color: var(--surface-container);
 		--fc-list-event-hover-bg-color: var(--control-surface);
+		--fc-today-bg-color: rgba(255, 255, 255, 0.04);
+	}
+
+	/* Secondary calendar controls: nav arrows, Today, view switcher */
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-button {
+		background-color: #27272a;
+		border-color: #3f3f46;
+		color: #e4e4e7;
+	}
+
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-button:hover,
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-button:focus {
+		background-color: #3f3f46;
+		border-color: #52525b;
+		color: #e4e4e7;
+		box-shadow: none;
+	}
+
+	/* Active view button keeps its blue accent — do not override */
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-button.fc-button-active {
+		background: var(--primary-soft);
+		border-color: var(--primary-container);
+		color: var(--primary);
 	}
 
 	html[data-theme='dark'] [data-calendar-root] .fc .fc-list,
