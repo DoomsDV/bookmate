@@ -366,6 +366,25 @@ class AppointmentModal extends HTMLElement {
 		}
 	}
 
+	toParaguayPhoneLocalDigits(rawValue: string) {
+		const parsedPhone = parseParaguayMobilePhone(rawValue);
+		if (parsedPhone.isValid) return parsedPhone.e164.slice(4);
+
+		let digits = String(rawValue || '').replace(/\D/g, '');
+		if (digits.startsWith('00595')) digits = digits.slice(5);
+		if (digits.startsWith('595')) digits = digits.slice(3);
+		if (digits.startsWith('0')) digits = digits.slice(1);
+		return digits.slice(0, 9);
+	}
+
+	formatParaguayPhoneLocal(rawValue: string) {
+		const digits = this.toParaguayPhoneLocalDigits(rawValue);
+		if (!digits) return '';
+		if (digits.length <= 3) return digits;
+		if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+		return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)}`;
+	}
+
 	private handleApiError(error: unknown, fallbackMessage: string) {
 		if (error instanceof ApiClientError) {
 			this.applyFieldErrors(error.fieldErrors);
@@ -498,7 +517,9 @@ class AppointmentModal extends HTMLElement {
 		if (!requiredNodes) return;
 
 		requiredNodes.customerNameInput.value = String(appointment.customer_name || '');
-		requiredNodes.customerPhoneInput.value = String(appointment.customer_phone || '');
+		requiredNodes.customerPhoneInput.value = this.formatParaguayPhoneLocal(
+			String(appointment.customer_phone || '')
+		);
 		requiredNodes.modalProfessional.value = String(appointment.pro_id_professional || '');
 		requiredNodes.modalLocation.value = String(appointment.loc_id_location || '');
 		requiredNodes.modalService.value = String(appointment.ser_id_service || '');
@@ -533,7 +554,7 @@ class AppointmentModal extends HTMLElement {
 				return { error: 'Revisa los campos marcados.' };
 			}
 			customerPhone = parsedPhone.e164;
-			requiredNodes.customerPhoneInput.value = parsedPhone.pretty;
+			requiredNodes.customerPhoneInput.value = this.formatParaguayPhoneLocal(parsedPhone.e164);
 		}
 
 		if (!locId || !serviceId || !professionalId) {
@@ -564,6 +585,8 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	handlePhoneInput = () => {
+		if (!this.customerPhoneInput) return;
+		this.customerPhoneInput.value = this.formatParaguayPhoneLocal(this.customerPhoneInput.value);
 		this.setFieldError('customer_phone', '');
 	};
 
@@ -578,7 +601,9 @@ class AppointmentModal extends HTMLElement {
 			this.setFieldError('customer_phone', PARAGUAY_MOBILE_PHONE_ERROR);
 			return;
 		}
-		if (this.customerPhoneInput) this.customerPhoneInput.value = parsedPhone.pretty;
+		if (this.customerPhoneInput) {
+			this.customerPhoneInput.value = this.formatParaguayPhoneLocal(parsedPhone.e164);
+		}
 		this.setFieldError('customer_phone', '');
 	};
 
