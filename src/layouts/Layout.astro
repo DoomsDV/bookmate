@@ -44,8 +44,7 @@ const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
             // Agrupamos la lógica en una función
             const setBookmateTheme = () => {
                 const storedTheme = localStorage.getItem('bookmate-theme');
-                const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-                const theme = storedTheme || (prefersDark ? 'dark' : 'light');
+                const theme = storedTheme === 'dark' || storedTheme === 'light' ? storedTheme : 'dark';
                 document.documentElement.dataset.theme = theme;
             };
 

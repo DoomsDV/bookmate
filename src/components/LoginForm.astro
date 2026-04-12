@@ -41,8 +41,20 @@ const passwordInputId = 'password';
 				</a>
 
 				<div class="hasel-brand">
-					<img src="/icon-192x192.png" alt="Logo Hasel" />
-					<span>Hasel</span>
+					<img
+						src="/hasel-light.png"
+						alt="Hasel"
+						class="hasel-brand-wordmark hasel-brand-wordmark-dark"
+						loading="eager"
+						decoding="async"
+					/>
+					<img
+						src="/hasel-dark.png"
+						alt="Hasel"
+						class="hasel-brand-wordmark hasel-brand-wordmark-light"
+						loading="eager"
+						decoding="async"
+					/>
 				</div>
 
 				<h2 class="hasel-form-title">Iniciar sesión</h2>
@@ -108,7 +120,7 @@ const passwordInputId = 'password';
 							</div>
 							<span>Recordar credenciales</span>
 						</label>
-						<a href="#" class="hasel-link">Soporte técnico</a>
+						<a href="#" class="hasel-link">Cambiar contraseña</a>
 					</div>
 
 					<button type="submit" class="hasel-btn-primary">Acceder al sistema</button>
@@ -391,21 +403,30 @@ const passwordInputId = 'password';
 	.hasel-brand {
 		display: flex;
 		align-items: center;
+		justify-content: flex-start;
 		gap: 0.625rem;
 		margin-top: 1.75rem;
+		width: 100%;
 	}
 
-	.hasel-brand img {
-		height: 2.25rem;
-		width: 2.25rem;
+	.hasel-brand-wordmark {
+		display: block;
+		height: 25px;
+		width: auto;
+		max-width: min(12rem, 64vw);
 		object-fit: contain;
 	}
 
-	.hasel-brand span {
-		font-size: 1.5rem;
-		font-weight: 700;
-		letter-spacing: -0.02em;
-		color: #ffffff;
+	.hasel-brand-wordmark-light {
+		display: none;
+	}
+
+	html[data-theme='light'] .hasel-brand-wordmark-dark {
+		display: none;
+	}
+
+	html[data-theme='light'] .hasel-brand-wordmark-light {
+		display: block;
 	}
 
 	.hasel-form-title {
@@ -703,5 +724,158 @@ const passwordInputId = 'password';
 	.hasel-btn-outline:focus-visible {
 		outline: 2px solid rgba(59, 130, 246, 0.5);
 		outline-offset: 2px;
+	}
+
+	/* ── Light Theme Overrides ───────────────────────── */
+	html[data-theme='light'] .login-shell {
+		background-color: #edf3f9;
+		color: #58708b;
+	}
+
+	html[data-theme='light'] .login-heading {
+		color: #15202b;
+	}
+
+	html[data-theme='light'] .login-subtext {
+		color: #58708b;
+	}
+
+	html[data-theme='light'] .hasel-secure-card {
+		background: rgba(255, 255, 255, 0.76);
+		border-color: #d7e0ea;
+	}
+
+	html[data-theme='light'] .hasel-secure-card h3 {
+		color: #15202b;
+	}
+
+	html[data-theme='light'] .hasel-secure-card p {
+		color: #58708b;
+	}
+
+	html[data-theme='light'] .hasel-lock-icon {
+		background: #dcebff;
+		color: #2f6fdd;
+	}
+
+	html[data-theme='light'] .hasel-form-card {
+		background: rgba(255, 255, 255, 0.92);
+		border-color: #d7e0ea;
+		box-shadow: 0 10px 30px rgba(47, 111, 221, 0.08);
+	}
+
+	html[data-theme='light'] .hasel-back-link {
+		color: #58708b;
+	}
+
+	html[data-theme='light'] .hasel-back-link:hover {
+		color: #15202b;
+	}
+
+	html[data-theme='light'] .hasel-form-title {
+		color: #15202b;
+	}
+
+	html[data-theme='light'] .hasel-form-subtitle {
+		color: #58708b;
+	}
+
+	html[data-theme='light'] .hasel-error-banner {
+		border-color: rgba(190, 18, 60, 0.2);
+		background: rgba(190, 18, 60, 0.06);
+		color: #be123c;
+	}
+
+	html[data-theme='light'] .hasel-input-group {
+		background: #f4f8fd;
+		border-color: #d7e0ea;
+	}
+
+	html[data-theme='light'] .hasel-input-group:focus-within {
+		background: #ffffff;
+		border-color: #2f6fdd;
+		box-shadow: 0 0 0 3px rgba(47, 111, 221, 0.12);
+	}
+
+	html[data-theme='light'] .hasel-input-icon {
+		color: #7b8fa7;
+	}
+
+	html[data-theme='light'] .hasel-input-group:focus-within .hasel-input-icon {
+		color: #2f6fdd;
+	}
+
+	html[data-theme='light'] .hasel-input {
+		color: #15202b;
+	}
+
+	html[data-theme='light'] .hasel-label {
+		color: #7b8fa7;
+	}
+
+	html[data-theme='light'] .hasel-input:focus ~ .hasel-label,
+	html[data-theme='light'] .hasel-input:not(:placeholder-shown) ~ .hasel-label {
+		color: #58708b;
+	}
+
+	html[data-theme='light'] .hasel-input-group:focus-within .hasel-label {
+		color: #2f6fdd;
+	}
+
+	html[data-theme='light'] .hasel-pw-toggle {
+		color: #7b8fa7;
+	}
+
+	html[data-theme='light'] .hasel-pw-toggle:hover {
+		color: #35506f;
+		background: rgba(47, 111, 221, 0.08);
+	}
+
+	html[data-theme='light'] .hasel-remember {
+		color: #58708b;
+	}
+
+	html[data-theme='light'] .hasel-remember:hover {
+		color: #35506f;
+	}
+
+	html[data-theme='light'] .hasel-checkbox {
+		border-color: #b8c8dc;
+		background: #ffffff;
+	}
+
+	html[data-theme='light'] .hasel-link {
+		color: #2f6fdd;
+	}
+
+	html[data-theme='light'] .hasel-link:hover {
+		color: #2559c8;
+	}
+
+	html[data-theme='light'] .hasel-btn-primary {
+		background: #2f6fdd;
+	}
+
+	html[data-theme='light'] .hasel-btn-primary:hover {
+		background: #2559c8;
+	}
+
+	html[data-theme='light'] .hasel-register-row {
+		border-top-color: #d7e0ea;
+	}
+
+	html[data-theme='light'] .hasel-register-row > span {
+		color: #58708b;
+	}
+
+	html[data-theme='light'] .hasel-btn-outline {
+		border-color: #bfd0e4;
+		color: #35506f;
+	}
+
+	html[data-theme='light'] .hasel-btn-outline:hover {
+		background: rgba(47, 111, 221, 0.08);
+		border-color: #9fb5d0;
+		color: #15202b;
 	}
 </style>

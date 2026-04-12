@@ -943,7 +943,10 @@ const publicProfileDomain =
 
 				if (this.els.preferencesForm) {
 					const panelTheme = this.els.preferencesForm.querySelector<HTMLSelectElement>('[name="panel_theme"]');
-					if (panelTheme) panelTheme.value = localStorage.getItem('bookmate-theme') === 'dark' ? 'dark' : 'light';
+					if (panelTheme) {
+						const storedTheme = localStorage.getItem('bookmate-theme');
+						panelTheme.value = storedTheme === 'dark' || storedTheme === 'light' ? storedTheme : 'dark';
+					}
 				}
 
 				if (this.isAdmin) {

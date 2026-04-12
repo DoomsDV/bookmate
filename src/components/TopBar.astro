@@ -290,7 +290,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 		const resolveInitialTheme = (): 'light' | 'dark' => {
 			const storedTheme = localStorage.getItem('bookmate-theme');
 			if (storedTheme === 'dark' || storedTheme === 'light') return storedTheme;
-			return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+			return 'dark';
 		};
 
 		const toggleTheme = () => {
