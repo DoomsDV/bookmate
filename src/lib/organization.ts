@@ -14,7 +14,6 @@ export interface OrganizationCurrent {
 	description: string;
 	public_whatsapp: string;
 	logo_url: string;
-	timezone: string;
 	time_format: string;
 	theme_pref: string;
 	unanswered_alert_action: string;
@@ -48,6 +47,11 @@ const toNumber = (value: unknown, fallback = 0) => {
 	return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const normalizeTimeFormat = (value: unknown): '12H' | '24H' => {
+	const normalized = String(value || '').trim().toLowerCase();
+	return normalized === '12h' ? '12H' : '24H';
+};
+
 const normalizeOrganization = (value: unknown): OrganizationCurrent | null => {
 	const candidate = Array.isArray(value) ? value[0] : value;
 	if (!candidate || typeof candidate !== 'object') return null;
@@ -63,8 +67,7 @@ const normalizeOrganization = (value: unknown): OrganizationCurrent | null => {
 		description: String(source.description || '').trim(),
 		public_whatsapp: String(source.public_whatsapp || '').trim(),
 		logo_url: String(source.logo_url || '').trim(),
-		timezone: String(source.timezone || '').trim(),
-		time_format: String(source.time_format || '').trim(),
+		time_format: normalizeTimeFormat(source.time_format),
 		theme_pref: String(source.theme_pref || '').trim(),
 		unanswered_alert_action: String(source.unanswered_alert_action || '').trim(),
 	};

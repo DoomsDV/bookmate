@@ -13,7 +13,6 @@ export interface WorkspaceSettingsData {
 	description: string;
 	public_whatsapp: string;
 	logo_url: string;
-	timezone: string;
 	time_format: string;
 	theme_pref: string;
 	unanswered_alert_action: string;
@@ -24,12 +23,10 @@ export interface UpdateWorkspacePayload {
 	profile_slug?: string;
 	description?: string;
 	public_whatsapp?: string;
-	timezone?: string;
 	time_format?: string;
 	theme_pref?: string;
 	unanswered_alert_action?: string;
 	panel_theme?: string;
-	calendar_view?: string;
 	logo_base64?: string;
 	logo_name?: string;
 	logo_mime?: string;
@@ -77,6 +74,11 @@ const toNumber = (value: unknown, fallback = 0) => {
 	return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const normalizeTimeFormat = (value: unknown): '12H' | '24H' => {
+	const normalized = String(value || '').trim().toLowerCase();
+	return normalized === '12h' ? '12H' : '24H';
+};
+
 const parseFieldErrors = (value: unknown): WorkspaceFieldError[] => {
 	if (!Array.isArray(value)) return [];
 
@@ -103,8 +105,7 @@ const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | nul
 		description: String(source.description || '').trim(),
 		public_whatsapp: String(source.public_whatsapp || '').trim(),
 		logo_url: String(source.logo_url || '').trim(),
-		timezone: String(source.timezone || '').trim(),
-		time_format: String(source.time_format || '').trim(),
+		time_format: normalizeTimeFormat(source.time_format),
 		theme_pref: String(source.theme_pref || '').trim(),
 		unanswered_alert_action: String(source.unanswered_alert_action || '').trim(),
 	};
