@@ -289,8 +289,8 @@ export const initializePublicBookingPage = () => {
 					: 'border-[var(--outline-variant)] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container-high)]');
 
 			button.innerHTML = `
-				<span class="text-lg font-medium text-[var(--on-surface)]">${service.name}</span>
-				<div class="flex items-center justify-between gap-2 text-sm font-medium text-[var(--on-surface-variant)]">
+				<span class="text-lg font-medium text-(--on-surface)">${service.name}</span>
+				<div class="flex items-center justify-between gap-2 text-sm font-medium text-(--on-surface-variant)">
 					<span>${service.duration_minutes} min</span>
 					<span>${formatCurrency(service.price)}</span>
 				</div>
