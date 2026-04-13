@@ -11,6 +11,13 @@ const HANDLE_ATTR = 'data-bottom-sheet-handle';
 const SCROLL_ATTR = 'data-bottom-sheet-scroll';
 const ENHANCED_ATTR = 'data-bottom-sheet-enhanced';
 
+const SHEET_ENTER_DURATION_MS = 200;
+const SHEET_EXIT_DURATION_MS = 150;
+const HANDLE_DRAG_ACTIVATION_DISTANCE_PX = 10;
+const CONTENT_DRAG_ACTIVATION_DISTANCE_PX = 14;
+const HANDLE_FLING_MIN_DISTANCE_PX = 18;
+const CONTENT_FLING_MIN_DISTANCE_PX = 28;
+
 type DragState = {
 	pointerId: number;
 	startY: number;
@@ -22,6 +29,9 @@ type DragState = {
 };
 
 const dragStateByDialog = new WeakMap<HTMLDialogElement, DragState>();
+const openStateByDialog = new WeakMap<HTMLDialogElement, boolean>();
+const closingStateByDialog = new WeakMap<HTMLDialogElement, boolean>();
+const willChangeReleaseTimerByDialog = new WeakMap<HTMLDialogElement, number>();
 
 const isMobileViewport = () => window.matchMedia('(max-width: 1023px)').matches;
 
@@ -40,15 +50,33 @@ const isCloseControlAttribute = (attributeName: string) => {
 	);
 };
 
+const isVisibleCloseControl = (candidate: HTMLElement) => {
+	if (candidate.hasAttribute('disabled')) return false;
+	if (candidate.getAttribute('aria-hidden') === 'true') return false;
+	if (candidate.getClientRects().length === 0) return false;
+
+	const style = window.getComputedStyle(candidate);
+	if (style.display === 'none') return false;
+	if (style.visibility === 'hidden') return false;
+
+	return true;
+};
+
 const findCloseTrigger = (dialog: HTMLDialogElement) => {
 	const candidates = dialog.querySelectorAll<HTMLElement>('button, a, [role="button"]');
+	let fallback: HTMLElement | null = null;
+
 	for (const candidate of candidates) {
 		const hasCloseAttribute = Array.from(candidate.attributes).some((attribute) =>
 			isCloseControlAttribute(attribute.name)
 		);
-		if (hasCloseAttribute) return candidate;
+		if (!hasCloseAttribute) continue;
+
+		if (!fallback) fallback = candidate;
+		if (isVisibleCloseControl(candidate)) return candidate;
 	}
-	return null;
+
+	return fallback;
 };
 
 const closeWithFallback = (dialog: HTMLDialogElement) => {
@@ -72,11 +100,48 @@ const closeSheet = (dialog: HTMLDialogElement) => {
 	closeWithFallback(dialog);
 };
 
+const setDynamicWillChange = (dialog: HTMLDialogElement, enabled: boolean) => {
+	if (enabled) {
+		dialog.style.willChange = 'transform';
+		return;
+	}
+
+	dialog.style.removeProperty('will-change');
+};
+
+const clearMotionStyle = (dialog: HTMLDialogElement) => {
+	if (dialog.classList.contains('is-bottom-sheet-dragging')) return;
+	dialog.style.removeProperty('transition');
+	dialog.style.removeProperty('transform');
+};
+
+const clearWillChangeReleaseTimer = (dialog: HTMLDialogElement) => {
+	const timerId = willChangeReleaseTimerByDialog.get(dialog);
+	if (!timerId) return;
+
+	window.clearTimeout(timerId);
+	willChangeReleaseTimerByDialog.delete(dialog);
+};
+
+const scheduleWillChangeRelease = (dialog: HTMLDialogElement, delayMs: number) => {
+	clearWillChangeReleaseTimer(dialog);
+
+	const timerId = window.setTimeout(() => {
+		willChangeReleaseTimerByDialog.delete(dialog);
+		if (!dialog.open) return;
+		if (dialog.classList.contains('is-closing')) return;
+		if (dialog.classList.contains('is-bottom-sheet-dragging')) return;
+
+		setDynamicWillChange(dialog, false);
+	}, delayMs);
+
+	willChangeReleaseTimerByDialog.set(dialog, timerId);
+};
+
 const clearDragStyle = (dialog: HTMLDialogElement) => {
 	dragStateByDialog.delete(dialog);
 	dialog.classList.remove('is-bottom-sheet-dragging');
-	dialog.style.removeProperty('transition');
-	dialog.style.removeProperty('transform');
+	clearMotionStyle(dialog);
 	dialog.style.setProperty('--md3-sheet-drag-progress', '0');
 };
 
@@ -166,9 +231,11 @@ const shouldStartDragFromTarget = (
 };
 
 const enhanceBottomSheet = (dialog: HTMLDialogElement) => {
-	if (dialog.dataset[ENHANCED_ATTR] === 'true') return;
-	dialog.dataset[ENHANCED_ATTR] = 'true';
+	if (dialog.getAttribute(ENHANCED_ATTR) === 'true') return;
+	dialog.setAttribute(ENHANCED_ATTR, 'true');
 	dialog.style.setProperty('--md3-sheet-drag-progress', '0');
+	openStateByDialog.set(dialog, dialog.open);
+	closingStateByDialog.set(dialog, dialog.classList.contains('is-closing'));
 
 	ensureDragHandle(dialog);
 
@@ -179,7 +246,69 @@ const enhanceBottomSheet = (dialog: HTMLDialogElement) => {
 
 	dialog.addEventListener('close', () => {
 		clearDragStyle(dialog);
+		clearWillChangeReleaseTimer(dialog);
+		setDynamicWillChange(dialog, false);
+		openStateByDialog.set(dialog, false);
+		closingStateByDialog.set(dialog, false);
 	});
+
+	const syncAnimationState = () => {
+		const wasOpen = openStateByDialog.get(dialog) ?? false;
+		const isOpenNow = dialog.open;
+
+		if (!wasOpen && isOpenNow) {
+			if (isMobileViewport()) {
+				setDynamicWillChange(dialog, true);
+				scheduleWillChangeRelease(dialog, SHEET_ENTER_DURATION_MS + 100);
+			}
+		}
+
+		if (wasOpen && !isOpenNow) {
+			clearWillChangeReleaseTimer(dialog);
+			setDynamicWillChange(dialog, false);
+			clearMotionStyle(dialog);
+		}
+
+		openStateByDialog.set(dialog, isOpenNow);
+
+		const wasClosing = closingStateByDialog.get(dialog) ?? false;
+		const isClosingNow = dialog.classList.contains('is-closing');
+
+		if (!wasClosing && isClosingNow) {
+			if (isMobileViewport()) {
+				clearWillChangeReleaseTimer(dialog);
+				setDynamicWillChange(dialog, true);
+			}
+		}
+
+		if (wasClosing && !isClosingNow) {
+			if (!isOpenNow) {
+				clearWillChangeReleaseTimer(dialog);
+				setDynamicWillChange(dialog, false);
+				clearMotionStyle(dialog);
+			} else if (isMobileViewport()) {
+				scheduleWillChangeRelease(dialog, SHEET_EXIT_DURATION_MS + 80);
+			}
+		}
+
+		closingStateByDialog.set(dialog, isClosingNow);
+	};
+
+	const stateObserver = new MutationObserver((mutations) => {
+		for (const mutation of mutations) {
+			if (mutation.type === 'attributes') {
+				syncAnimationState();
+				return;
+			}
+		}
+	});
+
+	stateObserver.observe(dialog, {
+		attributes: true,
+		attributeFilter: ['open', 'class'],
+	});
+
+	syncAnimationState();
 
 	dialog.addEventListener('pointerdown', (event) => {
 		if (!dialog.open || !isMobileViewport()) return;
@@ -206,8 +335,6 @@ const enhanceBottomSheet = (dialog: HTMLDialogElement) => {
 			scrollContainer: activeScrollContainer,
 		});
 
-		dialog.classList.add('is-bottom-sheet-dragging');
-		dialog.style.transition = 'none';
 		try {
 			dialog.setPointerCapture(event.pointerId);
 		} catch {
@@ -234,22 +361,59 @@ const enhanceBottomSheet = (dialog: HTMLDialogElement) => {
 			return;
 		}
 
-		dragState.dragging = true;
+		const dragActivationDistance =
+			dragState.source === 'handle'
+				? HANDLE_DRAG_ACTIVATION_DISTANCE_PX
+				: CONTENT_DRAG_ACTIVATION_DISTANCE_PX;
+
+		if (!dragState.dragging && deltaY < dragActivationDistance) {
+			return;
+		}
+
+		if (!dragState.dragging) {
+			dragState.dragging = true;
+			dialog.classList.add('is-bottom-sheet-dragging');
+			dialog.style.transition = 'none';
+		}
+
 		dialog.style.transform = `translateY(${deltaY}px)`;
 		const progress = Math.min(deltaY / Math.max(dialog.clientHeight * 0.5, 220), 1);
 		dialog.style.setProperty('--md3-sheet-drag-progress', progress.toFixed(3));
-		event.preventDefault();
-	});
+		
+		if (event.cancelable) {
+			event.preventDefault();
+		}
+	}, { passive: false });
 
 	const finishGesture = (event: PointerEvent) => {
 		const dragState = dragStateByDialog.get(dialog);
 		if (!dragState || dragState.pointerId !== event.pointerId) return;
 
+		if (dragState.dragging && event.cancelable) {
+			event.preventDefault();
+		}
+
+		dragState.lastY = event.clientY;
 		const deltaY = dragState.lastY - dragState.startY;
 		const elapsed = Math.max(1, performance.now() - dragState.startAt);
 		const velocity = deltaY / elapsed;
-		const distanceThreshold = Math.max(120, dialog.clientHeight * 0.22);
-		const shouldDismiss = dragState.dragging && (deltaY > distanceThreshold || velocity > 0.75);
+		const isHandleGesture = dragState.source === 'handle';
+		const distanceThreshold = isHandleGesture
+			? Math.max(34, dialog.clientHeight * 0.08)
+			: Math.max(80, dialog.clientHeight * 0.15);
+		const velocityThreshold = isHandleGesture ? 0.3 : 0.48;
+		const flingMinDistance = isHandleGesture
+			? HANDLE_FLING_MIN_DISTANCE_PX
+			: CONTENT_FLING_MIN_DISTANCE_PX;
+
+		if (!dragState.dragging) {
+			clearDragStyle(dialog);
+			return;
+		}
+
+		const hasDistanceDismiss = deltaY > distanceThreshold;
+		const hasFlingDismiss = deltaY > flingMinDistance && velocity > velocityThreshold;
+		const shouldDismiss = deltaY > 0 && (hasDistanceDismiss || hasFlingDismiss);
 
 		try {
 			dialog.releasePointerCapture(event.pointerId);
