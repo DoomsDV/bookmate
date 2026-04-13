@@ -663,7 +663,7 @@ const visiblePages = Array.from(
 				this.toggleFormLoading(false);
 				this.clearErrors();
 				this.closeTimer = null;
-			}, 160);
+			}, 140);
 		}
 		private openCreateModal() {
 			this.updateUIMode("create");
@@ -926,19 +926,19 @@ const visiblePages = Array.from(
 	dialog[data-service-modal] {
 		position: fixed;
 		inset: 0;
-		animation: service-modal-in 180ms ease-out;
+		animation: service-modal-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-service-modal]::backdrop {
-		animation: service-backdrop-in 180ms ease-out;
+		animation: service-backdrop-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-service-modal].is-closing {
-		animation: service-modal-out 160ms ease-in forwards;
+		animation: service-modal-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	dialog[data-service-modal].is-closing::backdrop {
-		animation: service-backdrop-out 160ms ease-in forwards;
+		animation: service-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	@keyframes service-modal-in {

@@ -522,7 +522,7 @@ const publicProfileDomain =
 				this.clearSlugSuggestTimer();
 				this.slugRequestSeq += 1;
 				this.closingTimer = null;
-			}, 160);
+			}, 140);
 		};
 
 		private readApiMessage(data: ApiResponse | null, fallback: string): string {
@@ -1199,23 +1199,21 @@ const publicProfileDomain =
 		position: fixed;
 		inset: 0;
 		z-index: 1200;
-		animation: settings-modal-in 180ms ease-out;
+		animation: settings-modal-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	[data-settings-modal]::backdrop {
 		z-index: 1190;
 		background: rgba(15, 17, 21, 0.6);
-		backdrop-filter: blur(1px);
-		-webkit-backdrop-filter: blur(1px);
-		animation: settings-backdrop-in 180ms ease-out;
+		animation: settings-backdrop-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	[data-settings-modal].is-closing {
-		animation: settings-modal-out 160ms ease-in forwards;
+		animation: settings-modal-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	[data-settings-modal].is-closing::backdrop {
-		animation: settings-backdrop-out 160ms ease-in forwards;
+		animation: settings-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	@keyframes settings-modal-in {

@@ -104,7 +104,7 @@
 				resolver = null;
 				if (!resolve) return;
 				resolve(value);
-			}, 160);
+			}, 140);
 		};
 
 		const showDialog = (options: AlertDialogOptions = {}): Promise<boolean> => {
@@ -193,19 +193,19 @@
 		position: fixed;
 		inset: 0;
 		margin: auto;
-		animation: app-alert-in 180ms ease-out;
+		animation: app-alert-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-app-alert-dialog]::backdrop {
-		animation: app-alert-backdrop-in 180ms ease-out;
+		animation: app-alert-backdrop-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-app-alert-dialog].is-closing {
-		animation: app-alert-out 160ms ease-in forwards;
+		animation: app-alert-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	dialog[data-app-alert-dialog].is-closing::backdrop {
-		animation: app-alert-backdrop-out 160ms ease-in forwards;
+		animation: app-alert-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	@keyframes app-alert-in {

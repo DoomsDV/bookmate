@@ -52,6 +52,9 @@
 	--flash-danger-text: #be123c;
 	--workspace-avatar-outline: rgba(47, 111, 221, 0.26);
 	--workspace-avatar-outline-soft: rgba(47, 111, 221, 0.1);
+	--modal-easing: cubic-bezier(0.4, 0, 0.2, 1);
+	--modal-open-duration: 150ms;
+	--modal-close-duration: 140ms;
 	--md-space-2: 0.5rem;
 	--md-space-3: 0.75rem;
 	--md-space-4: 1rem;
@@ -135,8 +138,28 @@ html[data-theme='dark'] body {
 
 dialog::backdrop {
 	background-color: rgba(15, 17, 21, 0.6);
-	backdrop-filter: blur(1px);
-	-webkit-backdrop-filter: blur(1px);
+}
+
+dialog[data-service-modal],
+dialog[data-professional-modal],
+dialog[data-location-modal],
+dialog[data-specialty-modal],
+dialog[data-appointment-modal],
+dialog[data-app-alert-dialog],
+[data-settings-modal] {
+	will-change: transform, opacity;
+	backface-visibility: hidden;
+	transform: translateZ(0);
+}
+
+dialog[data-service-modal]::backdrop,
+dialog[data-professional-modal]::backdrop,
+dialog[data-location-modal]::backdrop,
+dialog[data-specialty-modal]::backdrop,
+dialog[data-appointment-modal]::backdrop,
+dialog[data-app-alert-dialog]::backdrop,
+[data-settings-modal]::backdrop {
+	will-change: opacity;
 }
 
 [data-side-nav] {

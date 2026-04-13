@@ -320,19 +320,19 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 	dialog[data-appointment-modal] {
 		position: fixed;
 		inset: 0;
-		animation: appointment-modal-in 180ms ease-out;
+		animation: appointment-modal-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-appointment-modal]::backdrop {
-		animation: appointment-backdrop-in 180ms ease-out;
+		animation: appointment-backdrop-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-appointment-modal].is-closing {
-		animation: appointment-modal-out 160ms ease-in forwards;
+		animation: appointment-modal-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	dialog[data-appointment-modal].is-closing::backdrop {
-		animation: appointment-backdrop-out 160ms ease-in forwards;
+		animation: appointment-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	[data-calendar-root] .fc-theme-standard .fc-scrollgrid,

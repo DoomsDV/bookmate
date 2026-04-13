@@ -1010,7 +1010,7 @@ const visiblePages = Array.from(
 				this.toggleFormLoading(false);
 				this.clearErrors();
 				this.closeTimer = null;
-			}, 160);
+			}, 140);
 		}
 
 		private async fileToBase64(file: File): Promise<string> {
@@ -1139,19 +1139,19 @@ const visiblePages = Array.from(
 	dialog[data-professional-modal] {
 		position: fixed;
 		inset: 0;
-		animation: professional-modal-in 180ms ease-out;
+		animation: professional-modal-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-professional-modal]::backdrop {
-		animation: professional-backdrop-in 180ms ease-out;
+		animation: professional-backdrop-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-professional-modal].is-closing {
-		animation: professional-modal-out 160ms ease-in forwards;
+		animation: professional-modal-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	dialog[data-professional-modal].is-closing::backdrop {
-		animation: professional-backdrop-out 160ms ease-in forwards;
+		animation: professional-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	@keyframes professional-modal-in {

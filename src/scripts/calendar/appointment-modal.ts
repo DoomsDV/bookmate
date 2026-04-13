@@ -466,7 +466,7 @@ class AppointmentModal extends HTMLElement {
 			this.resetFormValues();
 			this.mode = 'create';
 			this.editingAppointmentId = 0;
-		}, 160);
+		}, 140);
 	};
 
 	getSelectedProfessionalId() {

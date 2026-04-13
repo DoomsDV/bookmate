@@ -1270,7 +1270,7 @@ const googleMapsApiKey =
 				this.setFormLoadingState(false);
 				this.clearErrors();
 				this.closeTimer = null;
-			}, 160);
+			}, 140);
 		};
 
 		private resetFormValues = () => {
@@ -1596,19 +1596,19 @@ const googleMapsApiKey =
 	dialog[data-location-modal] {
 		position: fixed;
 		inset: 0;
-		animation: location-modal-in 180ms ease-out;
+		animation: location-modal-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-location-modal]::backdrop {
-		animation: location-backdrop-in 180ms ease-out;
+		animation: location-backdrop-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-location-modal].is-closing {
-		animation: location-modal-out 160ms ease-in forwards;
+		animation: location-modal-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	dialog[data-location-modal].is-closing::backdrop {
-		animation: location-backdrop-out 160ms ease-in forwards;
+		animation: location-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	@keyframes location-modal-in {
