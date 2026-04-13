@@ -643,11 +643,19 @@ const visiblePages = Array.from(
 		private openModalShell() {
 			this.els.modal?.classList.remove("is-closing");
 			this.els.modal?.removeAttribute("data-bottom-sheet-swipe-dismiss");
+			
 			if (this.closeTimer) {
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
 			}
-			if (!this.els.modal?.open) this.els.modal?.showModal();
+			
+			if (!this.els.modal?.open) {
+				// Truco: Forzar un "reflow" leyendo el offsetWidth. 
+				// Obliga al navegador a limpiar cualquier estado de transición trabado del cierre anterior.
+				void this.els.modal?.offsetWidth; 
+				
+				this.els.modal?.showModal();
+			}
 		}
 
 		private closeModal() {
@@ -658,16 +666,16 @@ const visiblePages = Array.from(
 			this.els.modal.classList.add("is-closing");
 
 			if (swipeDismiss) {
-				this.els.modal.close();
-				this.els.modal.classList.remove("is-closing");
-				this.els.modal.removeAttribute("data-bottom-sheet-swipe-dismiss");
 				this.closeTimer = window.setTimeout(() => {
+					this.els.modal?.close();
+					this.els.modal?.classList.remove("is-closing");
+					this.els.modal?.removeAttribute("data-bottom-sheet-swipe-dismiss");
 					this.els.form?.reset();
 					this.updateUIMode("create");
 					this.toggleFormLoading(false);
 					this.clearErrors();
 					this.closeTimer = null;
-				}, 0);
+				}, 40); 
 				return;
 			}
 
