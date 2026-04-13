@@ -76,14 +76,14 @@ const visibleTeamItems = teamItems.filter((item) =>
 
 	<aside
 		id="app-side-nav"
-		class="relative h-full w-[min(20rem,100vw)] -translate-x-full overflow-y-auto border-r border-(--shell-border) bg-(--surface-bright) px-5 py-6 transform-gpu"
+		class="relative h-full w-[min(20rem,100vw)] -translate-x-full overflow-y-auto border-r border-(--shell-border) bg-(--surface-bright) p-6 transform-gpu"
 		data-side-nav
 	>
-		<div class="sidebar-account-header mb-6 border-b border-(--shell-border)/75 pb-4">
+		<div class="sidebar-account-header mb-7 border-b border-(--shell-border)/75 pb-5">
 			<div class="flex items-center justify-between gap-3">
 				<div class="sidebar-account-row">
 					<div
-						class="workspace-avatar flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-bold"
+						class="workspace-avatar flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full text-xl font-bold"
 						data-workspace-avatar
 					>
 						{
@@ -101,7 +101,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 					</div>
 					<div class="sidebar-account-meta" data-sidebar-brand-text>
 						<div class="sidebar-account-title-row">
-							<p class="workspace-account-name max-w-32 truncate">
+							<p class="workspace-account-name max-w-40 truncate text-[1.1rem] leading-tight font-bold">
 								{workspaceName}
 							</p>
 						</div>
@@ -113,18 +113,18 @@ const visibleTeamItems = teamItems.filter((item) =>
 
 				<button
 					type="button"
-					class="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong)"
+					class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong)"
 					aria-label="Cerrar menú lateral"
 					data-side-nav-close
 				>
-					<span class="material-symbols-rounded text-[1.2rem]">close</span
+					<span class="material-symbols-rounded text-[1.35rem]">close</span
 					>
 				</button>
 			</div>
 		</div>
 
 		<nav aria-label="Side navigation móvil">
-			<ul class="space-y-2">
+			<ul class="space-y-2.5">
 				{
 					visiblePrimaryItems.map((item) => (
 						<li>
@@ -132,14 +132,14 @@ const visibleTeamItems = teamItems.filter((item) =>
 								href={item.href}
 								data-astro-prefetch={getPrefetchMode(item)}
 								class:list={[
-									"flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold no-underline transition",
+									"flex min-h-12 items-center gap-3.5 rounded-2xl px-4 py-3.5 text-[1.02rem] font-semibold no-underline transition lg:gap-3 lg:py-2.5 lg:text-[0.9rem]",
 									isItemActive(item)
-										? "bg-(--primary-container) text-(--primary)"
-										: "text-(--on-surface) hover:bg-(--sidebar-hover)",
+										? "bg-(--primary-container) text-(--primary) font-extrabold"
+										: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
 								]}
 								data-side-nav-close
 							>
-								<span class="material-symbols-rounded text-[1.1rem]">
+								<span class="material-symbols-rounded text-[1.55rem] leading-none lg:text-[1.25rem]">
 									{item.icon}
 								</span>
 								<span>{item.label}</span>
@@ -152,14 +152,14 @@ const visibleTeamItems = teamItems.filter((item) =>
 					visibleTeamItems.length > 0 && (
 						<li class="pt-2">
 							<details open class="group">
-								<summary class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-(--primary) transition hover:bg-(--sidebar-hover)">
-									<span class="flex items-center gap-3">
-										<span class="material-symbols-rounded text-[1.1rem]">
+								<summary class="flex min-h-12 cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3.5 text-[1.02rem] font-bold text-(--primary) transition hover:bg-(--sidebar-hover) lg:py-2.5 lg:text-[0.9rem]">
+									<span class="flex items-center gap-3.5 lg:gap-3">
+										<span class="material-symbols-rounded text-[1.55rem] leading-none lg:text-[1.25rem]">
 											groups
 										</span>
 										<span>Equipo</span>
 									</span>
-									<span class="material-symbols-rounded text-[1rem] transition group-open:rotate-180">
+									<span class="material-symbols-rounded text-[1.25rem] leading-none transition group-open:rotate-180 lg:text-[1rem]">
 										expand_more
 									</span>
 								</summary>
@@ -171,10 +171,10 @@ const visibleTeamItems = teamItems.filter((item) =>
 												<a
 													href={item.href}
 													class:list={[
-														"flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition",
+														"flex min-h-12 rounded-2xl px-4 py-3.5 text-[0.98rem] font-semibold no-underline transition lg:py-2.5 lg:text-[0.88rem]",
 														isItemActive(item)
-															? "bg-(--primary-container) text-(--primary)"
-															: "text-(--on-surface) hover:bg-(--sidebar-hover)",
+															? "bg-(--primary-container) text-(--primary) font-bold"
+															: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
 													]}
 													data-side-nav-close
 												>
@@ -223,7 +223,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 				<div class="sidebar-account-meta" data-sidebar-brand-text>
 					<div class="sidebar-account-title-row">
 						<p
-							class="workspace-account-name truncate"
+							class="workspace-account-name truncate text-[1.02rem] font-bold lg:text-[0.95rem]"
 							data-sidebar-title
 						>
 							{workspaceName}
@@ -246,13 +246,13 @@ const visibleTeamItems = teamItems.filter((item) =>
 								data-astro-prefetch={getPrefetchMode(item)}
 								data-sidebar-item
 								class:list={[
-									"flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold no-underline transition",
+									"flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
 									isItemActive(item)
-										? "bg-(--primary-container) text-(--primary)"
-										: "text-(--on-surface) hover:bg-(--sidebar-hover)",
+										? "bg-(--primary-container) text-(--primary) font-bold"
+										: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
 								]}
 							>
-								<span class="material-symbols-rounded shrink-0 text-[1.1rem]">
+								<span class="material-symbols-rounded shrink-0 text-[1.25rem] leading-none">
 									{item.icon}
 								</span>
 								<span data-sidebar-label>{item.label}</span>
@@ -266,17 +266,17 @@ const visibleTeamItems = teamItems.filter((item) =>
 						<li class="pt-2">
 							<details open class="group">
 								<summary
-									class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3 text-sm font-semibold text-(--primary) transition hover:bg-(--sidebar-hover)"
+									class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-2.5 text-[0.9rem] font-semibold text-(--primary) transition hover:bg-(--sidebar-hover)"
 									data-sidebar-summary
 								>
 									<span class="flex items-center gap-3">
-										<span class="material-symbols-rounded shrink-0 text-[1.1rem]">
+										<span class="material-symbols-rounded shrink-0 text-[1.25rem] leading-none">
 											groups
 										</span>
 										<span data-sidebar-label>Equipo</span>
 									</span>
 									<span
-										class="material-symbols-rounded text-[1rem] transition group-open:rotate-180"
+										class="material-symbols-rounded text-[1.05rem] leading-none transition group-open:rotate-180"
 										data-sidebar-trailing
 									>
 										expand_more
@@ -294,9 +294,9 @@ const visibleTeamItems = teamItems.filter((item) =>
 													href={item.href}
 													data-sidebar-item
 													class:list={[
-														"flex rounded-2xl px-4 py-3 text-sm font-medium no-underline transition",
+														"flex rounded-2xl px-4 py-2.5 text-[0.88rem] font-medium no-underline transition",
 														isItemActive(item)
-															? "bg-(--control-surface-strong) text-(--primary)"
+															? "bg-(--control-surface-strong) text-(--primary) font-semibold"
 															: "text-(--on-surface) hover:bg-(--sidebar-hover)",
 													]}
 												>
