@@ -1254,6 +1254,7 @@ const googleMapsApiKey =
 
 		private openModalShell = () => {
 			this.els.modal?.classList.remove("is-closing");
+			this.els.modal?.removeAttribute("data-bottom-sheet-swipe-dismiss");
 			if (this.closeTimer) {
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
@@ -1265,17 +1266,21 @@ const googleMapsApiKey =
 			if (!this.els.modal?.open) return;
 			this.locationReadRequestSeq += 1;
 			this.citiesRequestSeq += 1;
+			const swipeDismiss =
+				this.els.modal.hasAttribute("data-bottom-sheet-swipe-dismiss");
+			const closeDelay = swipeDismiss ? 0 : 160;
 			this.els.modal.classList.add("is-closing");
 
 			this.closeTimer = window.setTimeout(() => {
 				this.els.modal?.close();
 				this.els.modal?.classList.remove("is-closing");
+				this.els.modal?.removeAttribute("data-bottom-sheet-swipe-dismiss");
 				this.els.form?.reset();
 				this.setCreateMode();
 				this.setFormLoadingState(false);
 				this.clearErrors();
 				this.closeTimer = null;
-			}, 160);
+			}, closeDelay);
 		};
 
 		private resetFormValues = () => {

@@ -442,6 +442,7 @@ class AppointmentModal extends HTMLElement {
 		if (!requiredNodes) return;
 
 		requiredNodes.modal.classList.remove('is-closing');
+		requiredNodes.modal.removeAttribute('data-bottom-sheet-swipe-dismiss');
 		if (this.closeTimer) {
 			window.clearTimeout(this.closeTimer);
 			this.closeTimer = null;
@@ -453,11 +454,16 @@ class AppointmentModal extends HTMLElement {
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes || !requiredNodes.modal.open) return;
 
+		const swipeDismiss =
+			requiredNodes.modal.hasAttribute('data-bottom-sheet-swipe-dismiss');
+		const closeDelay = swipeDismiss ? 0 : 160;
+
 		requiredNodes.modal.classList.add('is-closing');
 		this.closeTimer = window.setTimeout(() => {
 			if (!this.isConnected) return;
 			requiredNodes.modal.close();
 			requiredNodes.modal.classList.remove('is-closing');
+			requiredNodes.modal.removeAttribute('data-bottom-sheet-swipe-dismiss');
 			this.closeTimer = null;
 			this.clearFormErrors();
 			this.setModalLoading(false);
@@ -465,7 +471,7 @@ class AppointmentModal extends HTMLElement {
 			this.resetFormValues();
 			this.mode = 'create';
 			this.editingAppointmentId = 0;
-		}, 160);
+		}, closeDelay);
 	};
 
 	getSelectedProfessionalId() {

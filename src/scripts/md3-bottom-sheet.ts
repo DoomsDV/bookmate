@@ -10,6 +10,7 @@ const BOTTOM_SHEET_SELECTOR = [
 const HANDLE_ATTR = 'data-bottom-sheet-handle';
 const SCROLL_ATTR = 'data-bottom-sheet-scroll';
 const ENHANCED_ATTR = 'data-bottom-sheet-enhanced';
+const SWIPE_DISMISS_ATTR = 'data-bottom-sheet-swipe-dismiss';
 
 const SHEET_ENTER_DURATION_MS = 200;
 const SHEET_EXIT_DURATION_MS = 150;
@@ -87,10 +88,13 @@ const closeWithFallback = (dialog: HTMLDialogElement) => {
 	window.setTimeout(() => {
 		dialog.close();
 		dialog.classList.remove('is-closing');
+		dialog.removeAttribute(SWIPE_DISMISS_ATTR);
 	}, 170);
 };
 
 const closeSheet = (dialog: HTMLDialogElement) => {
+	dialog.setAttribute(SWIPE_DISMISS_ATTR, 'true');
+
 	const closeTrigger = findCloseTrigger(dialog);
 	if (closeTrigger) {
 		closeTrigger.click();
@@ -248,6 +252,7 @@ const enhanceBottomSheet = (dialog: HTMLDialogElement) => {
 		clearDragStyle(dialog);
 		clearWillChangeReleaseTimer(dialog);
 		setDynamicWillChange(dialog, false);
+		dialog.removeAttribute(SWIPE_DISMISS_ATTR);
 		openStateByDialog.set(dialog, false);
 		closingStateByDialog.set(dialog, false);
 	});

@@ -929,7 +929,11 @@ const visiblePages = Array.from(
 			this.toggleFormLoading(false);
 			
 			this.els.modal?.classList.remove('is-closing');
-			if (this.closeTimer) window.clearTimeout(this.closeTimer);
+			this.els.modal?.removeAttribute('data-bottom-sheet-swipe-dismiss');
+			if (this.closeTimer) {
+				window.clearTimeout(this.closeTimer);
+				this.closeTimer = null;
+			}
 			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
 			
 			try {
@@ -947,7 +951,11 @@ const visiblePages = Array.from(
 			this.clearErrors();
 			
 			this.els.modal?.classList.remove('is-closing');
-			if (this.closeTimer) window.clearTimeout(this.closeTimer);
+			this.els.modal?.removeAttribute('data-bottom-sheet-swipe-dismiss');
+			if (this.closeTimer) {
+				window.clearTimeout(this.closeTimer);
+				this.closeTimer = null;
+			}
 			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
 			this.setLoadingMessage('Cargando...');
 			this.toggleFormLoading(true);
@@ -997,19 +1005,23 @@ const visiblePages = Array.from(
 		private closeModal() {
 			if (!this.els.modal?.open) return;
 			this.professionalReadRequestSeq++;
+			const swipeDismiss =
+				this.els.modal.hasAttribute('data-bottom-sheet-swipe-dismiss');
+			const closeDelay = swipeDismiss ? 0 : 160;
 			this.els.modal.classList.add('is-closing');
 			this.clearSlugSuggestTimer();
 			
 			this.closeTimer = window.setTimeout(() => {
 				this.els.modal?.close();
 				this.els.modal?.classList.remove('is-closing');
+				this.els.modal?.removeAttribute('data-bottom-sheet-swipe-dismiss');
 				if (this.els.form) this.els.form.reset();
 				this.resetFormValues();
 				this.updateUIMode('create');
 				this.toggleFormLoading(false);
 				this.clearErrors();
 				this.closeTimer = null;
-			}, 160);
+			}, closeDelay);
 		}
 
 		private async fileToBase64(file: File): Promise<string> {
