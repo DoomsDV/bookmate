@@ -4,9 +4,10 @@ interface Props {
 	identifier?: string;
 	identifierError?: string;
 	passwordError?: string;
+	redirectTo?: string;
 }
 
-const { error = '', identifier = '', identifierError = '', passwordError = '' } = Astro.props;
+const { error = '', identifier = '', identifierError = '', passwordError = '', redirectTo = '' } = Astro.props;
 const identifierInputId = 'identifier';
 const passwordInputId = 'password';
 ---
@@ -63,6 +64,7 @@ const passwordInputId = 'password';
 				</p>
 
 				<form method="post" action="/api/auth/login" data-astro-reload data-login-form>
+					{redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
 					{
 						error && (
 							<div class="hasel-error-banner">{error}</div>

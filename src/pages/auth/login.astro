@@ -7,6 +7,7 @@ const error = Astro.url.searchParams.get('error') ?? '';
 const identifier = Astro.url.searchParams.get('identifier') ?? '';
 const identifierError = Astro.url.searchParams.get('identifier_error') ?? '';
 const passwordError = Astro.url.searchParams.get('password_error') ?? '';
+const redirectTo = Astro.url.searchParams.get('redirectTo') ?? '';
 ---
 
 <Layout>
@@ -15,6 +16,7 @@ const passwordError = Astro.url.searchParams.get('password_error') ?? '';
 		identifier={identifier}
 		identifierError={identifierError}
 		passwordError={passwordError}
+		redirectTo={redirectTo}
 	/>
 </Layout>
 

@@ -16,6 +16,24 @@ const wantsHtml = (request: Request) => {
 	return accept.includes('text/html') || contentType.includes('application/x-www-form-urlencoded');
 };
 
+const sanitizeRedirectTo = (value: unknown) => {
+	const redirectTo = String(value || '').trim();
+
+	if (!redirectTo || !redirectTo.startsWith('/') || redirectTo.startsWith('//')) {
+		return '';
+	}
+
+	if (redirectTo.includes('\r') || redirectTo.includes('\n')) {
+		return '';
+	}
+
+	if (redirectTo.startsWith('/auth/login') || redirectTo.startsWith('/api/')) {
+		return '';
+	}
+
+	return redirectTo;
+};
+
 const parseBody = async (request: Request) => {
 	const contentType = request.headers.get('content-type') || '';
 
@@ -24,6 +42,7 @@ const parseBody = async (request: Request) => {
 		return {
 			identifier: String(body.identifier || body.email || body.username || '').trim(),
 			password: String(body.password || ''),
+			redirectTo: sanitizeRedirectTo(body.redirectTo),
 		};
 	}
 
@@ -31,16 +50,20 @@ const parseBody = async (request: Request) => {
 	return {
 		identifier: String(formData.get('identifier') || formData.get('email') || '').trim(),
 		password: String(formData.get('password') || ''),
+		redirectTo: sanitizeRedirectTo(formData.get('redirectTo')),
 	};
 };
 
 export const POST: APIRoute = async ({ request, cookies, url }) => {
 	let identifier = '';
+	let redirectTo = '';
 
 	try {
 		const parsedBody = await parseBody(request);
 		identifier = parsedBody.identifier;
+		redirectTo = parsedBody.redirectTo;
 		const { password } = parsedBody;
+		const postLoginRedirect = redirectTo || '/panel/dashboard';
 
 		if (!identifier || !password) {
 			throw new AuthApiError('Debes completar correo y contrasena.', 400);
@@ -60,12 +83,12 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 			return new Response(null, {
 				status: 302,
 				headers: {
-					Location: '/panel/dashboard',
+					Location: postLoginRedirect,
 				},
 			});
 		}
 
-		return Response.json({ success: true, redirect: '/panel/dashboard' });
+		return Response.json({ success: true, redirect: postLoginRedirect });
 	} catch (error) {
 		const authError =
 			error instanceof AuthApiError
@@ -75,6 +98,11 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 
 		if (wantsHtml(request)) {
 			const redirectUrl = new URL('/auth/login', url);
+
+			if (redirectTo) {
+				redirectUrl.searchParams.set('redirectTo', redirectTo);
+			}
+
 			redirectUrl.searchParams.set(
 				'error',
 				typeof authError.details === 'string' && authError.details.trim()

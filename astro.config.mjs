@@ -3,7 +3,7 @@ import { defineConfig } from 'astro/config';
 import vercel from '@astrojs/vercel';
 import preact from '@astrojs/preact';
 import tailwindcss from '@tailwindcss/vite';
-import AstroPWA from '@vite-pwa/astro'; // <-- Importamos la PWA
+import AstroPWA from '@vite-pwa/astro';
 
 // 1. Obtenemos la URL dinámica de Vercel si existe, si no, usamos la oficial o localhost.
 const getSiteUrl = () => {
@@ -36,8 +36,9 @@ export default defineConfig({
     AstroPWA({
       registerType: 'autoUpdate',
       manifest: {
-        name: 'Bookmate',
-        short_name: 'Bookmate',
+        name: 'Hasel',
+        short_name: 'Hasel',
+        start_url: '/panel/dashboard',
         description: 'Aplicación de reservas con Astro, Preact y Tailwind',
         theme_color: '#ffffff',
         background_color: '#ffffff',

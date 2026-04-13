@@ -13,10 +13,25 @@ import { parseTokenClaims } from './lib/token-claims';
 
 export const onRequest = defineMiddleware(async (context, next) => {
 	const { cookies, redirect, url } = context;
-/*  */
+
 	if (isPublicPath(url.pathname)) {
+		const tempToken = cookies.get('access_token')?.value;
+
+		if (tempToken && (url.pathname === '/auth' || url.pathname.startsWith('/auth/'))) {
+			const tempClaims = parseTokenClaims(tempToken);
+
+			if (isKnownRoleId(tempClaims.role_id)) {
+				return redirect('/panel/dashboard');
+			}
+		}
+
 		return next();
 	}
+
+	const redirectToLogin = () => {
+		const redirectPath = `${url.pathname}${url.search}`;
+		return redirect(`/auth/login?redirectTo=${encodeURIComponent(redirectPath)}`);
+	};
 
 	let accessToken = cookies.get('access_token')?.value;
 	const refreshToken = cookies.get('refresh_token')?.value;
@@ -28,18 +43,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
 			accessToken = session.access_token;
 		} catch {
 			clearSessionCookies(cookies);
-			return redirect('/auth/login');
+			return redirectToLogin();
 		}
 	}
 
 	if (!accessToken) {
-		return redirect('/auth/login');
+		return redirectToLogin();
 	}
 
 	const claims = parseTokenClaims(accessToken);
 	if (!isKnownRoleId(claims.role_id)) {
 		clearSessionCookies(cookies);
-		return redirect('/auth/login');
+		return redirectToLogin();
 	}
 
 	if (!canAccessPath(url.pathname, claims.role_id)) {
