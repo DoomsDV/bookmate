@@ -33,6 +33,7 @@ const dragStateByDialog = new WeakMap<HTMLDialogElement, DragState>();
 const openStateByDialog = new WeakMap<HTMLDialogElement, boolean>();
 const closingStateByDialog = new WeakMap<HTMLDialogElement, boolean>();
 const willChangeReleaseTimerByDialog = new WeakMap<HTMLDialogElement, number>();
+const fallbackCloseTimers = new WeakMap<HTMLDialogElement, number>();
 
 const isMobileViewport = () => window.matchMedia('(max-width: 1023px)').matches;
 
@@ -85,11 +86,14 @@ const closeWithFallback = (dialog: HTMLDialogElement) => {
 	if (dialog.classList.contains('is-closing')) return;
 
 	dialog.classList.add('is-closing');
-	window.setTimeout(() => {
+	const timerId = window.setTimeout(() => {
 		dialog.close();
 		dialog.classList.remove('is-closing');
 		dialog.removeAttribute(SWIPE_DISMISS_ATTR);
+		fallbackCloseTimers.delete(dialog);
 	}, 170);
+
+	fallbackCloseTimers.set(dialog, timerId);
 };
 
 const closeSheet = (dialog: HTMLDialogElement) => {
@@ -100,14 +104,6 @@ const closeSheet = (dialog: HTMLDialogElement) => {
 		closeTrigger.click();
 	} else {
 		closeWithFallback(dialog);
-	}
-
-	// Force-close synchronously so the dialog exits the top layer immediately.
-	// Without this, the controller's setTimeout(0) leaves the dialog modal for
-	// one tick, which can swallow the user's next tap on the reopen button.
-	if (dialog.open) {
-		dialog.close();
-		dialog.classList.remove('is-closing');
 	}
 };
 
@@ -242,6 +238,31 @@ const shouldStartDragFromTarget = (
 };
 
 const enhanceBottomSheet = (dialog: HTMLDialogElement) => {
+	if (!dialog.dataset.patchedModal) {
+		const originalShowModal = dialog.showModal;
+		dialog.showModal = function (this: HTMLDialogElement) {
+			if (this.classList.contains('is-closing')) {
+				this.classList.remove('is-closing');
+				this.removeAttribute(SWIPE_DISMISS_ATTR);
+
+				const timerId = fallbackCloseTimers.get(this);
+				if (timerId) {
+					window.clearTimeout(timerId);
+					fallbackCloseTimers.delete(this);
+				}
+			}
+
+			if (this.open) {
+				clearDragStyle(this);
+				return;
+			}
+
+			originalShowModal.call(this);
+		};
+
+		dialog.dataset.patchedModal = 'true';
+	}
+
 	if (dialog.getAttribute(ENHANCED_ATTR) === 'true') return;
 	dialog.setAttribute(ENHANCED_ATTR, 'true');
 	dialog.style.setProperty('--md3-sheet-drag-progress', '0');
@@ -256,6 +277,12 @@ const enhanceBottomSheet = (dialog: HTMLDialogElement) => {
 	}
 
 	dialog.addEventListener('close', () => {
+		const timerId = fallbackCloseTimers.get(dialog);
+		if (timerId) {
+			window.clearTimeout(timerId);
+			fallbackCloseTimers.delete(dialog);
+		}
+
 		clearDragStyle(dialog);
 		clearWillChangeReleaseTimer(dialog);
 		setDynamicWillChange(dialog, false);
@@ -446,6 +473,17 @@ const enhanceBottomSheet = (dialog: HTMLDialogElement) => {
 	dialog.addEventListener('pointerup', finishGesture);
 	dialog.addEventListener('pointercancel', (event) => {
 		finishGesture(event);
+	});
+
+	dialog.addEventListener('click', (event) => {
+		if (!dialog.open || !isMobileViewport()) return;
+		if (!(event.target instanceof HTMLElement)) return;
+
+		const handle = dialog.querySelector<HTMLElement>(`[${HANDLE_ATTR}]`);
+		if (!handle?.contains(event.target)) return;
+		if (dialog.classList.contains('is-bottom-sheet-dragging')) return;
+
+		closeSheet(dialog);
 	});
 };
 

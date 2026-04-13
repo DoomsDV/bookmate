@@ -456,9 +456,26 @@ class AppointmentModal extends HTMLElement {
 
 		const swipeDismiss =
 			requiredNodes.modal.hasAttribute('data-bottom-sheet-swipe-dismiss');
-		const closeDelay = swipeDismiss ? 0 : 160;
 
 		requiredNodes.modal.classList.add('is-closing');
+
+		if (swipeDismiss) {
+			requiredNodes.modal.close();
+			requiredNodes.modal.classList.remove('is-closing');
+			requiredNodes.modal.removeAttribute('data-bottom-sheet-swipe-dismiss');
+			this.closeTimer = window.setTimeout(() => {
+				if (!this.isConnected) return;
+				this.closeTimer = null;
+				this.clearFormErrors();
+				this.setModalLoading(false);
+				this.setSubmittingState(false);
+				this.resetFormValues();
+				this.mode = 'create';
+				this.editingAppointmentId = 0;
+			}, 0);
+			return;
+		}
+
 		this.closeTimer = window.setTimeout(() => {
 			if (!this.isConnected) return;
 			requiredNodes.modal.close();
@@ -471,7 +488,7 @@ class AppointmentModal extends HTMLElement {
 			this.resetFormValues();
 			this.mode = 'create';
 			this.editingAppointmentId = 0;
-		}, closeDelay);
+		}, 160);
 	};
 
 	getSelectedProfessionalId() {

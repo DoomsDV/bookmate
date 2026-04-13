@@ -344,7 +344,21 @@ dialog::backdrop {
 		dialog[data-settings-modal]
 	).is-bottom-sheet-dragging::backdrop {
 		animation: none !important;
-		opacity: calc(1 - (var(--md3-sheet-drag-progress, 0) * 0.55));
+		opacity: 1;
+		transition: none !important;
+	}
+
+	:is(
+		dialog[data-specialty-modal],
+		dialog[data-service-modal],
+		dialog[data-location-modal],
+		dialog[data-professional-modal],
+		dialog[data-appointment-modal],
+		dialog[data-settings-modal]
+	)[data-bottom-sheet-swipe-dismiss='true']::backdrop {
+		animation: none !important;
+		opacity: 0 !important;
+		transition: none !important;
 	}
 
 	:is(

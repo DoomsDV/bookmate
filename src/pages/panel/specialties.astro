@@ -511,8 +511,21 @@ const visiblePages = Array.from(
 			this.requestSeq++;
 			const swipeDismiss =
 				this.els.modal.hasAttribute('data-bottom-sheet-swipe-dismiss');
-			const closeDelay = swipeDismiss ? 0 : 160;
 			this.els.modal.classList.add('is-closing');
+
+			if (swipeDismiss) {
+				this.els.modal.close();
+				this.els.modal.classList.remove('is-closing');
+				this.els.modal.removeAttribute('data-bottom-sheet-swipe-dismiss');
+				this.closeTimer = window.setTimeout(() => {
+					this.els.form?.reset();
+					this.updateUIMode('create');
+					this.toggleFormLoading(false);
+					this.clearErrors();
+					this.closeTimer = null;
+				}, 0);
+				return;
+			}
 
 			this.closeTimer = window.setTimeout(() => {
 				this.els.modal?.close();
@@ -523,7 +536,7 @@ const visiblePages = Array.from(
 				this.toggleFormLoading(false);
 				this.clearErrors();
 				this.closeTimer = null;
-			}, closeDelay);
+			}, 160);
 		}
 
 		private openCreateModal() {

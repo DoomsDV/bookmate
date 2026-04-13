@@ -514,8 +514,23 @@ const publicProfileDomain =
 			if (!this.els.modal?.open) return;
 			const swipeDismiss =
 				this.els.modal.hasAttribute('data-bottom-sheet-swipe-dismiss');
-			const closeDelay = swipeDismiss ? 0 : 160;
 			this.els.modal.classList.add('is-closing');
+
+			if (swipeDismiss) {
+				this.els.modal.close();
+				this.els.modal.classList.remove('is-closing');
+				this.els.modal.removeAttribute('data-bottom-sheet-swipe-dismiss');
+				this.closingTimer = window.setTimeout(() => {
+					this.resetSecurityForm();
+					this.releaseProfilePreviewObjectUrl();
+					this.releaseLogoPreviewObjectUrl();
+					this.clearSlugSuggestTimer();
+					this.slugRequestSeq += 1;
+					this.closingTimer = null;
+				}, 0);
+				return;
+			}
+
 			this.closingTimer = window.setTimeout(() => {
 				this.els.modal?.close();
 				this.els.modal?.classList.remove('is-closing');
@@ -526,7 +541,7 @@ const publicProfileDomain =
 				this.clearSlugSuggestTimer();
 				this.slugRequestSeq += 1;
 				this.closingTimer = null;
-			}, closeDelay);
+			}, 160);
 		};
 
 		private readApiMessage(data: ApiResponse | null, fallback: string): string {

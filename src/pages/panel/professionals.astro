@@ -1007,10 +1007,24 @@ const visiblePages = Array.from(
 			this.professionalReadRequestSeq++;
 			const swipeDismiss =
 				this.els.modal.hasAttribute('data-bottom-sheet-swipe-dismiss');
-			const closeDelay = swipeDismiss ? 0 : 160;
 			this.els.modal.classList.add('is-closing');
 			this.clearSlugSuggestTimer();
-			
+
+			if (swipeDismiss) {
+				this.els.modal.close();
+				this.els.modal.classList.remove('is-closing');
+				this.els.modal.removeAttribute('data-bottom-sheet-swipe-dismiss');
+				this.closeTimer = window.setTimeout(() => {
+					if (this.els.form) this.els.form.reset();
+					this.resetFormValues();
+					this.updateUIMode('create');
+					this.toggleFormLoading(false);
+					this.clearErrors();
+					this.closeTimer = null;
+				}, 0);
+				return;
+			}
+
 			this.closeTimer = window.setTimeout(() => {
 				this.els.modal?.close();
 				this.els.modal?.classList.remove('is-closing');
@@ -1021,7 +1035,7 @@ const visiblePages = Array.from(
 				this.toggleFormLoading(false);
 				this.clearErrors();
 				this.closeTimer = null;
-			}, closeDelay);
+			}, 160);
 		}
 
 		private async fileToBase64(file: File): Promise<string> {
