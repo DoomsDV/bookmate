@@ -159,11 +159,6 @@ const visiblePages = Array.from(
 		class="m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
 		data-professional-modal
 	>
-		<!-- Drag handle para mobile -->
-		<div class="w-full pt-3 pb-1 sm:hidden flex justify-center bg-(--surface-bright) cursor-grab active:cursor-grabbing shrink-0" data-bottom-sheet-handle="true" style="touch-action: none;">
-			<div class="h-1.5 w-12 rounded-full bg-(--on-surface-variant)/30"></div>
-		</div>
-
 		<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6">
 			<div class="flex items-start justify-between gap-4">
 				<div class="flex items-center gap-4">
@@ -929,7 +924,6 @@ const visiblePages = Array.from(
 			this.toggleFormLoading(false);
 			
 			this.els.modal?.classList.remove('is-closing');
-			this.els.modal?.removeAttribute('data-bottom-sheet-swipe-dismiss');
 			if (this.closeTimer) {
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
@@ -951,7 +945,6 @@ const visiblePages = Array.from(
 			this.clearErrors();
 			
 			this.els.modal?.classList.remove('is-closing');
-			this.els.modal?.removeAttribute('data-bottom-sheet-swipe-dismiss');
 			if (this.closeTimer) {
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
@@ -1005,30 +998,12 @@ const visiblePages = Array.from(
 		private closeModal() {
 			if (!this.els.modal?.open) return;
 			this.professionalReadRequestSeq++;
-			const swipeDismiss =
-				this.els.modal.hasAttribute('data-bottom-sheet-swipe-dismiss');
 			this.els.modal.classList.add('is-closing');
 			this.clearSlugSuggestTimer();
-
-			if (swipeDismiss) {
-				this.els.modal.close();
-				this.els.modal.classList.remove('is-closing');
-				this.els.modal.removeAttribute('data-bottom-sheet-swipe-dismiss');
-				this.closeTimer = window.setTimeout(() => {
-					if (this.els.form) this.els.form.reset();
-					this.resetFormValues();
-					this.updateUIMode('create');
-					this.toggleFormLoading(false);
-					this.clearErrors();
-					this.closeTimer = null;
-				}, 0);
-				return;
-			}
 
 			this.closeTimer = window.setTimeout(() => {
 				this.els.modal?.close();
 				this.els.modal?.classList.remove('is-closing');
-				this.els.modal?.removeAttribute('data-bottom-sheet-swipe-dismiss');
 				if (this.els.form) this.els.form.reset();
 				this.resetFormValues();
 				this.updateUIMode('create');
