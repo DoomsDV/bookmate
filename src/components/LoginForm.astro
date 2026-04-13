@@ -1,4 +1,4 @@
-﻿---
+---
 interface Props {
 	error?: string;
 	identifier?: string;
@@ -8,906 +8,551 @@ interface Props {
 }
 
 const { error = '', identifier = '', identifierError = '', passwordError = '', redirectTo = '' } = Astro.props;
-const identifierInputId = 'identifier';
-const passwordInputId = 'password';
 ---
 
-<section class="login-shell">
-	<div class="login-layout">
-		<aside class="login-left">
-			<div class="login-left-inner">
-				
-				<h1 class="login-heading">Acceso al Portal Empresarial</h1>
-				<p class="login-subtext">
-					El acceso a la plataforma está restringido a usuarios autorizados.
-					Utilice sus credenciales corporativas para ingresar al sistema.
+<section class="m3-container">
+	<aside class="m3-sidebar">
+		<div class="m3-sidebar-inner">
+			<div class="m3-brand">
+				<img src="/icon-512x512.png" alt="Hasel Logo" class="m3-logo" />
+				<span class="m3-brand-name">Hasel</span>
+			</div>
+
+			<div class="m3-stepper-header">
+				<h2 class="m3-step-maintitle">Bienvenido de nuevo</h2>
+				<p class="m3-step-maindesc">
+					Accede a tu portal empresarial para gestionar tus recursos, personal y configuración corporativa desde un solo lugar.
 				</p>
-				<div class="hasel-secure-card">
-					<div class="hasel-lock-icon">
-						<span class="material-symbols-rounded" aria-hidden="true">lock</span>
-					</div>
-					<div>
-						<h3>Entorno Corporativo Seguro</h3>
-						<p>Las credenciales de acceso son administradas de forma centralizada. Contacte al administrador del sistema para gestionar su cuenta.</p>
-					</div>
+			</div>
+
+			<div class="m3-features-list">
+				<div class="m3-feature-item">
+					<span class="material-symbols-rounded">verified_user</span>
+					<span>Entorno Corporativo Seguro</span>
+				</div>
+				<div class="m3-feature-item">
+					<span class="material-symbols-rounded">speed</span>
+					<span>Gestión centralizada fluida</span>
+				</div>
+                <div class="m3-feature-item">
+					<span class="material-symbols-rounded">lock_person</span>
+					<span>Acceso restringido autorizado</span>
 				</div>
 			</div>
-		</aside>
+		</div>
+	</aside>
 
-		<main class="login-right">
-			<div class="hasel-form-card">
-				<a href="/" class="hasel-back-link">
-					<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
-					Volver
-				</a>
-
-				<div class="hasel-brand">
-					<img
-						src="/icon-512x512.png"
-						alt="Hasel"
-						class="hasel-brand-logo"
-						loading="eager"
-						decoding="async"
-					/>
+	<main class="m3-content">
+		<div class="m3-form-wrapper">
+			<div class="m3-form-header">
+				<div class="m3-panel-icon">
+					<span class="material-symbols-rounded">lock</span>
 				</div>
+				<div class="m3-panel-titles">
+					<h3 class="m3-panel-title">Iniciar sesión</h3>
+					<p class="m3-panel-subtitle">Ingresa tus credenciales de acceso</p>
+				</div>
+			</div>
 
-				<h2 class="hasel-form-title">Iniciar sesión</h2>
-				<p class="hasel-form-subtitle">
-					Ingrese sus credenciales de acceso proporcionadas por su administrador.
-				</p>
+			{error && (
+				<div class="m3-error-banner">
+					<span class="material-symbols-rounded">error</span>
+					{error}
+				</div>
+			)}
 
-				<form method="post" action="/api/auth/login" data-astro-reload data-login-form>
-					{redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
-					{
-						error && (
-							<div class="hasel-error-banner">{error}</div>
-						)
-					}
+			<form method="post" action="/api/auth/login" data-astro-reload data-login-form>
+				<input type="hidden" name="redirectTo" value={redirectTo} />
 
-					<div class="hasel-field-wrap">
-						<div class:list={['hasel-input-group', identifierError && 'is-error']}>
-							<span class="material-symbols-rounded hasel-input-icon" aria-hidden="true">person</span>
-							<input
-								id={identifierInputId}
-								type="text"
-								name="identifier"
-								value={identifier}
-								placeholder=" "
-								autocomplete="username"
-								class="hasel-input peer"
-							/>
-							<label for={identifierInputId} class="hasel-label">Correo electrónico o usuario</label>
-						</div>
-						{identifierError && <span class="hasel-field-error">{identifierError}</span>}
+				<div class="m3-panel">
+					<div class="m3-field">
+						<label class="m3-label" for="identifier">Correo electrónico o usuario</label>
+						<input 
+                            type="text" 
+                            id="identifier" 
+                            name="identifier" 
+                            class:list={['m3-input', identifierError && 'is-invalid']} 
+                            placeholder="Ej: admin@empresa.com" 
+                            value={identifier} 
+                            required 
+                        />
+						{identifierError && <span class="m3-field-error">{identifierError}</span>}
 					</div>
 
-					<div class="hasel-field-wrap">
-						<div class:list={['hasel-input-group', passwordError && 'is-error']}>
-							<span class="material-symbols-rounded hasel-input-icon" aria-hidden="true">lock</span>
-							<input
-								id={passwordInputId}
-								type="password"
-								name="password"
-								placeholder=" "
-								autocomplete="current-password"
-								class="hasel-input hasel-input-pw peer"
-							/>
-							<label for={passwordInputId} class="hasel-label">Contraseña</label>
-							<button
-								type="button"
-								class="hasel-pw-toggle"
-								data-password-toggle
-								aria-label="Mostrar contraseña"
-							>
-								<span class="material-symbols-rounded" data-password-icon>visibility</span>
+					<div class="m3-field" style="margin-top: 1.5rem;">
+						<label class="m3-label" for="password">Contraseña</label>
+						<div class="m3-input-affix">
+							<input 
+                                type="password" 
+                                id="password" 
+                                name="password" 
+                                class:list={['m3-input', passwordError && 'is-invalid']} 
+                                placeholder="Tu contraseña" 
+                                required 
+                            />
+							<button type="button" class="m3-icon-btn" data-password-toggle aria-label="Mostrar contraseña">
+								<span class="material-symbols-rounded" data-password-icon>visibility_off</span>
 							</button>
 						</div>
-						{passwordError && <span class="hasel-field-error">{passwordError}</span>}
+						{passwordError && <span class="m3-field-error">{passwordError}</span>}
 					</div>
 
-					<div class="hasel-actions-row">
-						<label class="hasel-remember">
-							<input type="checkbox" name="remember" />
-							<div class="hasel-checkbox" aria-hidden="true">
-								<svg viewBox="0 0 14 14" fill="none">
-									<path d="M3 7.5L5.5 10L11 4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-								</svg>
-							</div>
-							<span>Recordar credenciales</span>
-						</label>
-						<a href="#" class="hasel-link">Cambiar contraseña</a>
+                    <div class="m3-actions-row">
+                        <label class="m3-checkbox-label">
+                            <input type="checkbox" name="remember" value="true" />
+                            <div class="m3-checkbox-box">
+                                <span class="material-symbols-rounded">check</span>
+                            </div>
+                            Recordar credenciales
+                        </label>
+                        <a href="#" class="m3-link">Cambiar contraseña</a>
+                    </div>
+
+					<div class="m3-actions">
+						<button type="submit" class="m3-btn-primary" style="width: 100%; justify-content: center;">
+							Acceder al sistema
+                            <span class="material-symbols-rounded" style="margin-left: 0.5rem; font-size: 1.25rem;">login</span>
+						</button>
 					</div>
-
-					<button type="submit" class="hasel-btn-primary">Acceder al sistema</button>
-				</form>
-
-				<div class="hasel-register-row">
-					<span>¿No tienes una cuenta?</span>
-					<a href="/auth/register" class="hasel-btn-outline">Crear cuenta</a>
 				</div>
-			</div>
-		</main>
-	</div>
+			</form>
+
+            <div class="m3-card-footer">
+                <div class="m3-footer-divider"></div>
+                <a href="/auth/register" class="m3-link-accent">¿No tienes una cuenta? <strong>Crear cuenta</strong></a>
+            </div>
+		</div>
+	</main>
 </section>
 
 <script is:inline>
-	const setupLoginFormInteractions = () => {
-		const forms = document.querySelectorAll('[data-login-form]');
+	function setupLoginForm() {
+		const form = document.querySelector('[data-login-form]');
+		if (!form || form.dataset.enhanced) return;
+		form.dataset.enhanced = 'true';
 
-		forms.forEach((form) => {
-			if (!(form instanceof HTMLFormElement) || form.dataset.enhanced === 'true') {
-				return;
-			}
-
-			form.dataset.enhanced = 'true';
-
-			const passwordInput = form.querySelector('input[name="password"]');
-			const passwordToggle = form.querySelector('[data-password-toggle]');
-			const passwordIcon = form.querySelector('[data-password-icon]');
-
-			if (
-				passwordInput instanceof HTMLInputElement &&
-				passwordToggle instanceof HTMLButtonElement &&
-				passwordIcon instanceof HTMLElement
-			) {
-				passwordToggle.addEventListener('click', () => {
-					const isHidden = passwordInput.type === 'password';
-					passwordInput.type = isHidden ? 'text' : 'password';
-					passwordIcon.textContent = isHidden ? 'visibility_off' : 'visibility';
-					passwordToggle.setAttribute('aria-label', isHidden ? 'Ocultar contraseña' : 'Mostrar contraseña');
-				});
+		const pwToggle = form.querySelector('[data-password-toggle]');
+		const pwIcon = form.querySelector('[data-password-icon]');
+		pwToggle?.addEventListener('click', () => {
+			const input = form.querySelector('input[name="password"]');
+			if (input) {
+				const isPw = input.type === 'password';
+				input.type = isPw ? 'text' : 'password';
+				if (pwIcon) pwIcon.textContent = isPw ? 'visibility' : 'visibility_off';
 			}
 		});
-	};
+	}
 
 	if (typeof window !== 'undefined') {
-		setupLoginFormInteractions();
-		document.addEventListener('astro:page-load', setupLoginFormInteractions);
+		setupLoginForm();
+		document.addEventListener('astro:page-load', setupLoginForm);
 	}
 </script>
 
 <style>
-	/* ── Shell & Layout ──────────────────────────────── */
-	.login-shell {
-		font-family: 'Inter', 'Roboto', 'Nunito Sans', sans-serif;
-		background-color: #080b14;
-		color: #cbd5e1;
-		min-height: 100svh;
-	}
+/* Material 3 Design System - Split Screen Layout */
+.m3-container {
+	display: flex;
+	flex-direction: column;
+	min-height: 100svh;
+	font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
+	background-color: #f8fafc;
+}
 
-	.login-layout {
-		display: grid;
-		grid-template-columns: 1fr;
-		min-height: 100svh;
+@media (min-width: 1024px) {
+	.m3-container {
+		flex-direction: row;
+		height: 100svh;
+		overflow: hidden;
 	}
+}
 
-	@media (min-width: 1024px) {
-		.login-shell {
-			height: 100svh;
-			overflow: hidden;
-		}
-		.login-layout {
-			grid-template-columns: 1fr 1fr;
-			height: 100svh;
-			overflow: hidden;
-		}
-	}
+/* Left Sidebar - Dark/Premium Theme */
+.m3-sidebar {
+	background-color: #0f172a; /* Deep elegant slate */
+	color: #f8fafc;
+	padding: 2.5rem 1.5rem;
+	position: relative;
+	overflow: hidden;
+}
 
-	/* ── Left Panel ──────────────────────────────────── */
-	.login-left {
-		display: none;
-		flex-direction: column;
-		justify-content: flex-start;
-		padding: 2.5rem 1.5rem 1rem;
-	}
+.m3-sidebar::before {
+	content: '';
+	position: absolute;
+	top: 0; left: 0; right: 0; bottom: 0;
+	background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 60%);
+	pointer-events: none;
+}
 
-	@media (min-width: 640px) {
-		.login-left {
-			padding: 3rem 2.5rem 1.5rem;
-		}
-	}
-
-	@media (min-width: 1024px) {
-		.login-left {
-			display: flex;
-			justify-content: center;
-			padding: 3rem 4rem;
-			overflow-y: auto;
-		}
-	}
-
-	@media (min-width: 1280px) {
-		.login-left {
-			padding: 3rem 5rem;
-		}
-	}
-
-	.login-left-inner {
-		max-width: 34rem;
-	}
-
-	.hasel-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		border-radius: 9999px;
-		background: #121a2f;
-		border: 1px solid rgba(255, 255, 255, 0.05);
-		padding: 0.375rem 1rem;
-	}
-
-	.hasel-pill > span:first-child {
-		font-size: 0.8rem;
-	}
-
-	.hasel-pill > span:last-child {
-		font-size: 0.7rem;
-		font-weight: 600;
-		letter-spacing: 0.25em;
-		text-transform: uppercase;
-		color: #94a3b8;
-	}
-
-	.login-heading {
-		margin-top: 1.5rem;
-		font-size: 2.25rem;
-		font-weight: 700;
-		letter-spacing: -0.03em;
-		line-height: 1.12;
-		color: #ffffff;
-	}
-
-	@media (min-width: 640px) {
-		.login-heading { font-size: 3rem; }
-	}
-
-	@media (min-width: 1024px) {
-		.login-heading {
-			margin-top: 2rem;
-			font-size: 3.25rem;
-		}
-	}
-
-	@media (min-width: 1280px) {
-		.login-heading { font-size: 3.75rem; }
-	}
-
-	.login-subtext {
-		margin-top: 1.25rem;
-		font-size: 0.9375rem;
-		line-height: 1.7;
-		color: #64748b;
+@media (min-width: 1024px) {
+	.m3-sidebar {
+		width: 40%;
 		max-width: 28rem;
-	}
-
-	/* Security card: hidden on mobile, visible on desktop */
-	.hasel-secure-card {
-		display: none;
-	}
-
-	@media (min-width: 1024px) {
-		.hasel-secure-card {
-			display: flex;
-			align-items: flex-start;
-			gap: 1rem;
-			margin-top: 2.5rem;
-			background: rgba(17, 22, 35, 0.75);
-			border: 1px solid rgba(255, 255, 255, 0.04);
-			border-radius: 1.5rem;
-			padding: 1.25rem 1.5rem;
-		}
-
-		.hasel-secure-card h3 {
-			font-size: 0.9375rem;
-			font-weight: 600;
-			color: #ffffff;
-		}
-
-		.hasel-secure-card p {
-			margin-top: 0.375rem;
-			font-size: 0.8125rem;
-			line-height: 1.6;
-			color: #64748b;
-		}
-	}
-
-	.hasel-lock-icon {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-		width: 2.75rem;
-		height: 2.75rem;
-		border-radius: 0.75rem;
-		background: #1a2235;
-		color: #64748b;
-	}
-
-	.hasel-lock-icon .material-symbols-rounded {
-		font-size: 1.2rem;
-	}
-
-	/* ── Right Panel ─────────────────────────────────── */
-	.login-right {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 100svh;
-		min-height: 100dvh;
-		padding: clamp(0.75rem, 2.5vh, 1rem);
-		overflow: hidden;
-	}
-
-	@media (min-width: 640px) {
-		.login-right {
-			align-items: center;
-			padding: 1.25rem;
-		}
-	}
-
-	@media (min-width: 1024px) {
-		.login-right {
-			align-items: center;
-			padding: 2rem 2.5rem;
-			overflow-y: auto;
-		}
-	}
-
-	@media (min-width: 1280px) {
-		.login-right {
-			padding: 2rem 3.5rem;
-		}
-	}
-
-	/* ── Form Card ───────────────────────────────────── */
-	.hasel-form-card {
-		width: 100%;
-		max-width: 27.5rem;
-		background: rgba(17, 22, 35, 0.92);
-		border: 1px solid rgba(255, 255, 255, 0.04);
-		border-radius: 2rem;
-		padding: 1.25rem 1rem;
-		max-height: calc(100dvh - 1.5rem);
+		padding: 3.5rem 4rem;
 		display: flex;
 		flex-direction: column;
 	}
-
-	@media (min-width: 640px) {
-		.hasel-form-card {
-			max-width: 29rem;
-			padding: 1.5rem 1.5rem;
-		}
-	}
-
-	@media (min-width: 1024px) {
-		.hasel-form-card {
-			max-width: 34rem;
-			padding: 2.5rem;
-			max-height: none;
-		}
-	}
-
-	/* ── Card Header ─────────────────────────────────── */
-	.hasel-back-link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.375rem;
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: #475569;
-		text-decoration: none;
-		transition: color 160ms ease;
-	}
-
-	.hasel-back-link:hover { color: #e2e8f0; }
-
-	.hasel-back-link .material-symbols-rounded { font-size: 1.1rem; }
-
-	.hasel-brand {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		margin-top: 0.5rem;
-		width: 100%;
-	}
-
-	.hasel-brand-logo {
-		display: block;
-		width: clamp(3.75rem, 20vw, 4.75rem);
-		height: clamp(3.75rem, 20vw, 4.75rem);
-		object-fit: contain;
-	}
-
-	.hasel-form-title {
-		margin-top: 0.75rem;
-		font-size: 1.4rem;
-		font-weight: 600;
-		letter-spacing: -0.015em;
-		color: #ffffff;
-		text-align: center;
-	}
-
-	.hasel-form-subtitle {
-		margin-top: 0.25rem;
-		font-size: 0.8125rem;
-		line-height: 1.5;
-		color: #64748b;
-		text-align: center;
-		max-width: 22rem;
-		margin-inline: auto;
-	}
-
-	/* ── Form ────────────────────────────────────────── */
-	[data-login-form] {
-		display: grid;
-		gap: 0.85rem;
-		margin-top: 1rem;
-	}
-
-	.hasel-error-banner {
-		border-radius: 0.875rem;
-		border: 1px solid rgba(244, 63, 94, 0.2);
-		background: rgba(244, 63, 94, 0.08);
-		padding: 0.75rem 1rem;
-		font-size: 0.875rem;
-		color: #fda4af;
-	}
-
-	.hasel-field-wrap {
-		display: grid;
-		gap: 0.25rem;
-	}
-
-	.hasel-field-error {
-		font-size: 0.75rem;
-		color: #fb7185;
-		padding-left: 0.25rem;
-	}
-
-	/* ── Input Group ─────────────────────────────────── */
-	.hasel-input-group {
-		position: relative;
-		display: flex;
-		align-items: center;
-		border-radius: 0.8125rem;
-		background: #0a0d17;
-		border: 1px solid transparent;
-		min-height: 3.1rem;
-		padding: 0 0.75rem;
-		transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-	}
-
-	.hasel-input-group:focus-within {
-		background: #0c101e;
-		border-color: #2563eb;
-		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-	}
-
-	.hasel-input-group.is-error {
-		border-color: #f43f5e;
-		box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.09);
-	}
-
-	.hasel-input-icon {
-		font-size: 1.05rem;
-		color: #3d485a;
-		margin-right: 0.5rem;
-		flex-shrink: 0;
-		transition: color 180ms ease;
-	}
-
-	.hasel-input-group:focus-within .hasel-input-icon { color: #3b82f6; }
-
-	.hasel-input {
-		width: 100%;
-		border: none;
-		background: transparent;
-		color: #f1f5f9;
-		font-size: 0.875rem;
-		outline: none;
-		padding: 0.75rem 0 0.2rem;
-		font-family: inherit;
-	}
-
-	.hasel-input-pw { padding-right: 2.5rem; }
-
-	.hasel-label {
-		position: absolute;
-		left: 2.45rem;
-		top: 50%;
-		transform: translateY(-50%);
-		font-size: 0.85rem;
-		color: #3d485a;
-		pointer-events: none;
-		transition: top 140ms ease, font-size 140ms ease, color 140ms ease;
-		white-space: nowrap;
-		overflow: hidden;
-		max-width: calc(100% - 3.5rem);
-		text-overflow: ellipsis;
-	}
-
-	.hasel-input:focus ~ .hasel-label,
-	.hasel-input:not(:placeholder-shown) ~ .hasel-label {
-		top: 0.68rem;
-		font-size: 0.64rem;
-		color: #475569;
-	}
-
-	.hasel-input-group:focus-within .hasel-label { color: #60a5fa; }
-
-	/* ── Password Toggle ─────────────────────────────── */
-	.hasel-pw-toggle {
-		position: absolute;
-		right: 0.25rem;
-		top: 50%;
-		transform: translateY(-50%);
-		border: none;
-		border-radius: 999px;
-		width: 2rem;
-		height: 2rem;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		color: #3d485a;
-		background: transparent;
-		cursor: pointer;
-		transition: color 140ms ease, background-color 140ms ease;
-	}
-
-	.hasel-pw-toggle .material-symbols-rounded { font-size: 1.1rem; }
-
-	.hasel-pw-toggle:hover {
-		color: #94a3b8;
-		background: rgba(255, 255, 255, 0.04);
-	}
-
-	.hasel-pw-toggle:focus-visible {
-		outline: 2px solid rgba(59, 130, 246, 0.45);
-		outline-offset: 2px;
-	}
-
-	/* ── Actions Row ─────────────────────────────────── */
-	.hasel-actions-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		margin-top: 0;
-	}
-
-	.hasel-remember {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.5rem;
-		font-size: 0.8125rem;
-		color: #475569;
-		cursor: pointer;
-		transition: color 140ms ease;
-	}
-
-	.hasel-remember:hover { color: #94a3b8; }
-
-	/* Visually hide native checkbox */
-	.hasel-remember input[type="checkbox"] {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border-width: 0;
-	}
-
-	.hasel-checkbox {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 1rem;
-		height: 1rem;
-		flex-shrink: 0;
-		border-radius: 0.2rem;
-		border: 1px solid #2a3347;
-		background: #0a0d14;
-		transition: background-color 140ms ease, border-color 140ms ease;
-	}
-
-	.hasel-checkbox svg {
-		width: 0.7rem;
-		height: 0.7rem;
-		color: #ffffff;
-		opacity: 0;
-		transition: opacity 100ms ease;
-	}
-
-	.hasel-remember:has(input:checked) .hasel-checkbox {
-		background: #2563eb;
-		border-color: #2563eb;
-	}
-
-	.hasel-remember:has(input:checked) .hasel-checkbox svg { opacity: 1; }
-
-	.hasel-remember input[type="checkbox"]:focus-visible ~ .hasel-checkbox {
-		outline: 2px solid rgba(59, 130, 246, 0.5);
-		outline-offset: 2px;
-	}
-
-	.hasel-link {
-		font-size: 0.8125rem;
-		font-weight: 500;
-		color: #3b82f6;
-		text-decoration: none;
-		white-space: nowrap;
-		transition: color 140ms ease;
-	}
-
-	.hasel-link:hover { color: #60a5fa; }
-
-	/* ── Primary Button (zero glow, flat corporate) ── */
-	.hasel-btn-primary {
-		width: 100%;
-		border: none;
-		border-radius: 9999px;
-		padding: 0.8125rem 1.25rem;
-		margin-top: 0.25rem;
-		color: #ffffff;
-		font-size: 0.89rem;
-		font-weight: 600;
-		background: #2563eb;
-		cursor: pointer;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-family: inherit;
-		transition: background-color 160ms ease, transform 120ms ease;
-	}
-
-	.hasel-btn-primary:hover {
-		background: #1d4ed8;
-		transform: translateY(-1px);
-	}
-
-	.hasel-btn-primary:active { transform: translateY(0); }
-
-	.hasel-btn-primary:focus-visible {
-		outline: 2px solid rgba(59, 130, 246, 0.55);
-		outline-offset: 2px;
-	}
-
-	/* ── Register Row ────────────────────────────────── */
-	.hasel-register-row {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		flex-wrap: wrap;
-		gap: 0.5rem;
-		margin-top: 0.95rem;
-		padding-top: 0.9rem;
-		border-top: 1px solid rgba(255, 255, 255, 0.04);
-	}
-
-	.hasel-register-row > span {
-		font-size: 0.8125rem;
-		color: #475569;
-	}
-
-	.hasel-btn-outline {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		border: 1px solid #2a3347;
-		border-radius: 9999px;
-		background: transparent;
-		color: #cbd5e1;
-		font-size: 0.8125rem;
-		font-weight: 500;
-		padding: 0.375rem 1rem;
-		text-decoration: none;
-		font-family: inherit;
-		transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease;
-	}
-
-	@media (max-width: 767px) and (max-height: 740px) {
-		.login-right {
-			padding: 0.625rem;
-		}
-
-		.hasel-form-card {
-			padding: 1rem 0.9rem;
-			border-radius: 1.5rem;
-		}
-
-		.hasel-brand-logo {
-			width: 3.5rem;
-			height: 3.5rem;
-		}
-
-		.hasel-form-title {
-			margin-top: 0.55rem;
-			font-size: 1.25rem;
-		}
-
-		.hasel-form-subtitle {
-			font-size: 0.78rem;
-		}
-
-		[data-login-form] {
-			margin-top: 0.85rem;
-			gap: 0.7rem;
-		}
-
-		.hasel-input-group {
-			min-height: 2.95rem;
-		}
-
-		.hasel-register-row {
-			margin-top: 0.75rem;
-			padding-top: 0.75rem;
-		}
-	}
-
-	.hasel-btn-outline:hover {
-		background: rgba(255, 255, 255, 0.04);
-		border-color: #3d485a;
-		color: #ffffff;
-	}
-
-	.hasel-btn-outline:focus-visible {
-		outline: 2px solid rgba(59, 130, 246, 0.5);
-		outline-offset: 2px;
-	}
-
-	/* ── Light Theme Overrides ───────────────────────── */
-	html[data-theme='light'] .login-shell {
-		background-color: #edf3f9;
-		color: #58708b;
-	}
-
-	html[data-theme='light'] .login-heading {
-		color: #15202b;
-	}
-
-	html[data-theme='light'] .login-subtext {
-		color: #58708b;
-	}
-
-	html[data-theme='light'] .hasel-secure-card {
-		background: rgba(255, 255, 255, 0.76);
-		border-color: #d7e0ea;
-	}
-
-	html[data-theme='light'] .hasel-secure-card h3 {
-		color: #15202b;
-	}
-
-	html[data-theme='light'] .hasel-secure-card p {
-		color: #58708b;
-	}
-
-	html[data-theme='light'] .hasel-lock-icon {
-		background: #dcebff;
-		color: #2f6fdd;
-	}
-
-	html[data-theme='light'] .hasel-form-card {
-		background: rgba(255, 255, 255, 0.92);
-		border-color: #d7e0ea;
-		box-shadow: 0 10px 30px rgba(47, 111, 221, 0.08);
-	}
-
-	html[data-theme='light'] .hasel-back-link {
-		color: #58708b;
-	}
-
-	html[data-theme='light'] .hasel-back-link:hover {
-		color: #15202b;
-	}
-
-	html[data-theme='light'] .hasel-form-title {
-		color: #15202b;
-	}
-
-	html[data-theme='light'] .hasel-form-subtitle {
-		color: #58708b;
-	}
-
-	html[data-theme='light'] .hasel-error-banner {
-		border-color: rgba(190, 18, 60, 0.2);
-		background: rgba(190, 18, 60, 0.06);
-		color: #be123c;
-	}
-
-	html[data-theme='light'] .hasel-input-group {
-		background: #f4f8fd;
-		border-color: #d7e0ea;
-	}
-
-	html[data-theme='light'] .hasel-input-group:focus-within {
-		background: #ffffff;
-		border-color: #2f6fdd;
-		box-shadow: 0 0 0 3px rgba(47, 111, 221, 0.12);
-	}
-
-	html[data-theme='light'] .hasel-input-icon {
-		color: #7b8fa7;
-	}
-
-	html[data-theme='light'] .hasel-input-group:focus-within .hasel-input-icon {
-		color: #2f6fdd;
-	}
-
-	html[data-theme='light'] .hasel-input {
-		color: #15202b;
-	}
-
-	html[data-theme='light'] .hasel-label {
-		color: #7b8fa7;
-	}
-
-	html[data-theme='light'] .hasel-input:focus ~ .hasel-label,
-	html[data-theme='light'] .hasel-input:not(:placeholder-shown) ~ .hasel-label {
-		color: #58708b;
-	}
-
-	html[data-theme='light'] .hasel-input-group:focus-within .hasel-label {
-		color: #2f6fdd;
-	}
-
-	html[data-theme='light'] .hasel-pw-toggle {
-		color: #7b8fa7;
-	}
-
-	html[data-theme='light'] .hasel-pw-toggle:hover {
-		color: #35506f;
-		background: rgba(47, 111, 221, 0.08);
-	}
-
-	html[data-theme='light'] .hasel-remember {
-		color: #58708b;
-	}
-
-	html[data-theme='light'] .hasel-remember:hover {
-		color: #35506f;
-	}
-
-	html[data-theme='light'] .hasel-checkbox {
-		border-color: #b8c8dc;
-		background: #ffffff;
-	}
-
-	html[data-theme='light'] .hasel-link {
-		color: #2f6fdd;
-	}
-
-	html[data-theme='light'] .hasel-link:hover {
-		color: #2559c8;
-	}
-
-	html[data-theme='light'] .hasel-btn-primary {
-		background: #2f6fdd;
-	}
-
-	html[data-theme='light'] .hasel-btn-primary:hover {
-		background: #2559c8;
-	}
-
-	html[data-theme='light'] .hasel-register-row {
-		border-top-color: #d7e0ea;
-	}
-
-	html[data-theme='light'] .hasel-register-row > span {
-		color: #58708b;
-	}
-
-	html[data-theme='light'] .hasel-btn-outline {
-		border-color: #bfd0e4;
-		color: #35506f;
-	}
-
-	html[data-theme='light'] .hasel-btn-outline:hover {
-		background: rgba(47, 111, 221, 0.08);
-		border-color: #9fb5d0;
-		color: #15202b;
-	}
+}
+
+.m3-sidebar-inner {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.m3-brand {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 4rem;
+}
+
+.m3-logo {
+	height: 2.5rem;
+	width: auto;
+	object-fit: contain;
+}
+
+.m3-brand-name {
+	font-size: 1.5rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	color: #ffffff;
+}
+
+.m3-stepper-header {
+	margin-bottom: 3rem;
+}
+
+.m3-step-maintitle {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-bottom: 1rem;
+	color: #ffffff;
+    line-height: 1.1;
+}
+
+.m3-step-maindesc {
+	font-size: 1.05rem;
+	line-height: 1.6;
+	color: #94a3b8;
+}
+
+.m3-features-list {
+    margin-top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.m3-feature-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    color: #cbd5e1;
+    font-size: 1rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.9;
+}
+
+.m3-feature-item .material-symbols-rounded {
+    color: #3b82f6;
+    font-size: 1.5rem;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+}
+
+/* Right Content - Clean Material 3 Surface */
+.m3-content {
+	flex: 1;
+	background-color: #ffffff;
+	padding: 2.5rem 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+@media (min-width: 1024px) {
+	.m3-content {
+		padding: 3rem 4rem;
+		overflow-y: auto;
+		border-top-left-radius: 2rem;
+		border-bottom-left-radius: 2rem;
+		box-shadow: -10px 0 30px rgba(0,0,0,0.03);
+	}
+}
+
+.m3-form-wrapper {
+	width: 100%;
+	max-width: 28rem;
+}
+
+.m3-form-header {
+	display: flex;
+	align-items: center;
+	gap: 1.25rem;
+	margin-bottom: 2.5rem;
+}
+
+.m3-panel-icon {
+	width: 3.5rem;
+	height: 3.5rem;
+	background-color: #eff6ff;
+	color: #2563eb;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.m3-panel-icon .material-symbols-rounded {
+	font-size: 1.75rem;
+}
+
+.m3-panel-title {
+	font-size: 1.75rem;
+	font-weight: 700;
+	color: #0f172a;
+	margin: 0 0 0.25rem 0;
+}
+
+.m3-panel-subtitle {
+	font-size: 1rem;
+	color: #64748b;
+	margin: 0;
+}
+
+/* Material 3 Form Elements */
+.m3-panel {
+	animation: m3fade 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes m3fade {
+	from { opacity: 0; transform: translateY(10px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+.m3-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.m3-label {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: #334155;
+	margin-left: 0.25rem;
+}
+
+.m3-input {
+	width: 100%;
+	background-color: #f8fafc;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.75rem;
+	padding: 0.875rem 1rem;
+	font-size: 1rem;
+	color: #0f172a;
+	font-family: inherit;
+	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+	outline: none;
+}
+
+.m3-input:focus {
+	background-color: #ffffff;
+	border-color: #2563eb;
+	box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.m3-input.is-invalid {
+	border-color: #e11d48;
+	background-color: #fff1f2;
+}
+
+.m3-input.is-invalid:focus {
+	box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.1);
+}
+
+.m3-input-affix {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.m3-input-affix .m3-input {
+	padding-right: 3rem;
+}
+
+.m3-icon-btn {
+	position: absolute;
+	right: 0.5rem;
+	background: none;
+	border: none;
+	color: #64748b;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background-color 0.2s;
+}
+
+.m3-icon-btn:hover {
+	background-color: #e2e8f0;
+	color: #0f172a;
+}
+
+.m3-field-error {
+	font-size: 0.85rem;
+	color: #e11d48;
+	font-weight: 500;
+	margin-left: 0.25rem;
+}
+
+.m3-error-banner {
+	background-color: #fff1f2;
+	border: 1px solid #fecdd3;
+	color: #be123c;
+	padding: 1rem 1.25rem;
+	border-radius: 0.75rem;
+	margin-bottom: 2rem;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	font-weight: 600;
+}
+
+.m3-actions-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 1.5rem;
+}
+
+.m3-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: #475569;
+    font-weight: 500;
+}
+
+.m3-checkbox-label input {
+    display: none;
+}
+
+.m3-checkbox-box {
+    width: 1.25rem;
+    height: 1.25rem;
+    border-radius: 0.25rem;
+    border: 2px solid #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.m3-checkbox-box .material-symbols-rounded {
+    font-size: 1rem;
+    color: white;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.m3-checkbox-label input:checked + .m3-checkbox-box {
+    background-color: #2563eb;
+    border-color: #2563eb;
+}
+
+.m3-checkbox-label input:checked + .m3-checkbox-box .material-symbols-rounded {
+    opacity: 1;
+}
+
+.m3-link {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #2563eb;
+    text-decoration: none;
+    transition: color 0.2s ease;
+}
+
+.m3-link:hover {
+    color: #1d4ed8;
+}
+
+.m3-actions {
+	display: flex;
+	align-items: center;
+	margin-top: 2rem;
+}
+
+/* Material 3 Buttons */
+.m3-btn-primary {
+	background-color: #2563eb;
+	color: #ffffff;
+	border: none;
+	border-radius: 9999px; /* Fully rounded capsule */
+	padding: 0.875rem 2rem;
+	font-size: 1rem;
+	font-weight: 600;
+	font-family: inherit;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+	box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.m3-btn-primary:hover {
+	background-color: #1d4ed8;
+	box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+	transform: translateY(-1px);
+}
+
+.m3-card-footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.m3-footer-divider {
+    width: 40px;
+    height: 2px;
+    background: #e2e8f0;
+    border-radius: 1px;
+}
+
+.m3-link-accent {
+    color: #475569;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.m3-link-accent strong {
+    color: #2563eb;
+    transition: color 0.2s;
+}
+
+.m3-link-accent:hover strong {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
+@media (max-width: 640px) {
+	.m3-actions-row {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1rem;
+	}
+}
 </style>

@@ -1,0 +1,681 @@
+---
+interface Props {
+	error?: string;
+	step?: string;
+	firstName?: string;
+	lastName?: string;
+	email?: string;
+	businessName?: string;
+	phone?: string;
+	firstNameError?: string;
+	lastNameError?: string;
+	emailError?: string;
+	passwordError?: string;
+	businessNameError?: string;
+	phoneError?: string;
+}
+
+const {
+	error = '',
+	step = 'admin',
+	firstName = '',
+	lastName = '',
+	email = '',
+	businessName = '',
+	phone = '',
+	firstNameError = '',
+	lastNameError = '',
+	emailError = '',
+	passwordError = '',
+	businessNameError = '',
+	phoneError = '',
+} = Astro.props;
+
+const normalizeStep = (value: string) =>
+	String(value || '').trim().toLowerCase() === 'organization' ? 'organization' : 'admin';
+
+const currentStep = normalizeStep(step);
+---
+
+<section class="m3-container">
+	<aside class="m3-sidebar">
+		<div class="m3-sidebar-inner">
+			<div class="m3-brand">
+				<img src="/icon-512x512.png" alt="Hasel Logo" class="m3-logo" />
+				<span class="m3-brand-name">Hasel</span>
+			</div>
+
+			<div class="m3-stepper-header">
+				<h2 class="m3-step-maintitle" data-sidebar-title>Paso 1</h2>
+				<p class="m3-step-maindesc" data-sidebar-desc>
+					Ingresa tu información personal para comenzar con la configuración de tu espacio.
+				</p>
+			</div>
+
+			<div class="m3-vertical-stepper">
+				<div class="m3-step" data-step-indicator="admin" class:list={[{ 'is-active': currentStep === 'admin' }]}>
+					<div class="m3-step-node">1</div>
+					<div class="m3-step-content">
+						<span class="m3-step-label">Datos del Administrador</span>
+					</div>
+					<div class="m3-step-line"></div>
+				</div>
+
+				<div class="m3-step" data-step-indicator="organization" class:list={[{ 'is-active': currentStep === 'organization' }]}>
+					<div class="m3-step-node">2</div>
+					<div class="m3-step-content">
+						<span class="m3-step-label">Datos de Organización</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	</aside>
+
+	<main class="m3-content">
+		<div class="m3-form-wrapper">
+			<a href="/auth/login" class="m3-back-btn">
+				<span class="material-symbols-rounded">arrow_back</span>
+				Volver a iniciar sesión
+			</a>
+
+			<div class="m3-form-header">
+				<div class="m3-panel-icon" data-panel-icon>
+					<span class="material-symbols-rounded">person</span>
+				</div>
+				<div class="m3-panel-titles">
+					<h3 class="m3-panel-title" data-panel-title>Tus datos personales</h3>
+					<p class="m3-panel-subtitle" data-panel-desc>Ingresa tu nombre y credenciales de acceso</p>
+				</div>
+			</div>
+
+			{error && (
+				<div class="m3-error-banner">
+					<span class="material-symbols-rounded">error</span>
+					{error}
+				</div>
+			)}
+
+			<form method="post" action="/api/auth/register" data-astro-reload data-register-form data-initial-step={currentStep}>
+				<input type="hidden" name="step" value={currentStep} data-step-input />
+
+				<!-- PANEL: ADMIN -->
+				<div data-step-panel="admin" class:list={['m3-panel', currentStep !== 'admin' && 'is-hidden']}>
+					<div class="m3-grid-2">
+						<div class="m3-field">
+							<label class="m3-label" for="first_name">Nombres</label>
+							<input type="text" id="first_name" name="first_name" class:list={['m3-input', firstNameError && 'is-invalid']} placeholder="Ej: Juan" value={firstName} />
+							{firstNameError && <span class="m3-field-error">{firstNameError}</span>}
+						</div>
+						<div class="m3-field">
+							<label class="m3-label" for="last_name">Apellidos</label>
+							<input type="text" id="last_name" name="last_name" class:list={['m3-input', lastNameError && 'is-invalid']} placeholder="Ej: Pérez" value={lastName} />
+							{lastNameError && <span class="m3-field-error">{lastNameError}</span>}
+						</div>
+					</div>
+
+					<div class="m3-grid-2">
+						<div class="m3-field">
+							<label class="m3-label" for="email">Correo electrónico</label>
+							<input type="email" id="email" name="email" class:list={['m3-input', emailError && 'is-invalid']} placeholder="Ej: juan@empresa.com" value={email} />
+							{emailError && <span class="m3-field-error">{emailError}</span>}
+						</div>
+						<div class="m3-field">
+							<label class="m3-label" for="password">Contraseña</label>
+							<div class="m3-input-affix">
+								<input type="password" id="password" name="password" class:list={['m3-input', passwordError && 'is-invalid']} placeholder="Tu contraseña" />
+								<button type="button" class="m3-icon-btn" data-password-toggle aria-label="Mostrar contraseña">
+									<span class="material-symbols-rounded" data-password-icon>visibility_off</span>
+								</button>
+							</div>
+							{passwordError && <span class="m3-field-error">{passwordError}</span>}
+						</div>
+					</div>
+
+					<div class="m3-actions m3-actions--end">
+						<button type="button" data-next-step class="m3-btn-primary">
+							Siguiente Paso
+						</button>
+					</div>
+				</div>
+
+				<!-- PANEL: ORGANIZATION -->
+				<div data-step-panel="organization" class:list={['m3-panel', currentStep !== 'organization' && 'is-hidden']}>
+					<div class="m3-grid-2">
+						<div class="m3-field">
+							<label class="m3-label" for="business_name">Nombre de la Organización</label>
+							<input type="text" id="business_name" name="business_name" class:list={['m3-input', businessNameError && 'is-invalid']} placeholder="Ej: Clínica Dental San José" value={businessName} />
+							{businessNameError && <span class="m3-field-error">{businessNameError}</span>}
+						</div>
+						<div class="m3-field">
+							<label class="m3-label" for="phone">Teléfono de corporativo</label>
+							<input type="tel" id="phone" name="phone" class:list={['m3-input', phoneError && 'is-invalid']} placeholder="Ej: 0981 123 456" value={phone} />
+							{phoneError && <span class="m3-field-error">{phoneError}</span>}
+						</div>
+					</div>
+
+					<div class="m3-actions m3-actions--between">
+						<button type="button" data-prev-step class="m3-btn-tonal">
+							Atrás
+						</button>
+						<button type="submit" class="m3-btn-primary">
+							Finalizar Registro
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</main>
+</section>
+
+<script is:inline>
+	function setupRegisterForm() {
+		const form = document.querySelector('[data-register-form]');
+		if (!form || form.dataset.enhanced) return;
+		form.dataset.enhanced = 'true';
+
+		const stepInput = form.querySelector('[data-step-input]');
+		const panels = {
+			admin: form.querySelector('[data-step-panel="admin"]'),
+			organization: form.querySelector('[data-step-panel="organization"]')
+		};
+		const indicators = form.closest('.m3-container').querySelectorAll('[data-step-indicator]');
+		
+		// DOM Texts to update
+		const sidebarTitle = document.querySelector('[data-sidebar-title]');
+		const sidebarDesc = document.querySelector('[data-sidebar-desc]');
+		const panelIcon = document.querySelector('[data-panel-icon] span');
+		const panelTitle = document.querySelector('[data-panel-title]');
+		const panelDesc = document.querySelector('[data-panel-desc]');
+
+		let currentStep = stepInput?.value || 'admin';
+
+		const textMap = {
+			admin: {
+				sbt: 'Paso 1',
+				sbd: 'Ingresa tu información personal para comenzar con la configuración de tu espacio.',
+				pi: 'person',
+				pt: 'Tus datos personales',
+				pd: 'Ingresa tu nombre y credenciales de acceso'
+			},
+			organization: {
+				sbt: 'Paso 2',
+				sbd: 'Configuremos los detalles de tu organización y tu espacio de trabajo principal.',
+				pi: 'domain',
+				pt: 'Datos de Organización',
+				pd: 'Información general de tu empresa o consultorio'
+			}
+		};
+
+		const updateUI = () => {
+			Object.entries(panels).forEach(([key, panel]) => {
+				panel?.classList.toggle('is-hidden', key !== currentStep);
+			});
+
+			indicators.forEach(ind => {
+				ind.classList.toggle('is-active', ind.dataset.stepIndicator === currentStep);
+			});
+
+			if (stepInput) stepInput.value = currentStep;
+
+			const txt = textMap[currentStep];
+			if (sidebarTitle) sidebarTitle.textContent = txt.sbt;
+			if (sidebarDesc) sidebarDesc.textContent = txt.sbd;
+			if (panelIcon) panelIcon.textContent = txt.pi;
+			if (panelTitle) panelTitle.textContent = txt.pt;
+			if (panelDesc) panelDesc.textContent = txt.pd;
+		};
+
+		form.querySelector('[data-next-step]')?.addEventListener('click', () => {
+			const fn = form.querySelector('[name="first_name"]')?.value.trim();
+			const ln = form.querySelector('[name="last_name"]')?.value.trim();
+			const em = form.querySelector('[name="email"]')?.value.trim();
+			const pw = form.querySelector('[name="password"]')?.value;
+
+			if (!fn || !ln || !em || !pw) {
+				form.reportValidity();
+				return;
+			}
+			currentStep = 'organization';
+			updateUI();
+		});
+
+		form.querySelector('[data-prev-step]')?.addEventListener('click', () => {
+			currentStep = 'admin';
+			updateUI();
+		});
+
+		const pwToggle = form.querySelector('[data-password-toggle]');
+		const pwIcon = form.querySelector('[data-password-icon]');
+		pwToggle?.addEventListener('click', () => {
+			const input = form.querySelector('[name="password"]');
+			const isPw = input?.type === 'password';
+			if (input) input.type = isPw ? 'text' : 'password';
+			if (pwIcon) pwIcon.textContent = isPw ? 'visibility' : 'visibility_off';
+		});
+
+		updateUI();
+	}
+
+	if (typeof window !== 'undefined') {
+		setupRegisterForm();
+		document.addEventListener('astro:page-load', setupRegisterForm);
+	}
+</script>
+
+<style>
+/* Material 3 Design System - Split Screen Layout */
+.m3-container {
+	display: flex;
+	flex-direction: column;
+	min-height: 100svh;
+	font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
+	background-color: #f8fafc;
+}
+
+@media (min-width: 1024px) {
+	.m3-container {
+		flex-direction: row;
+		height: 100svh;
+		overflow: hidden;
+	}
+}
+
+/* Left Sidebar - Dark/Premium Theme */
+.m3-sidebar {
+	background-color: #0f172a; /* Deep elegant slate */
+	color: #f8fafc;
+	padding: 2.5rem 1.5rem;
+	position: relative;
+	overflow: hidden;
+}
+
+.m3-sidebar::before {
+	content: '';
+	position: absolute;
+	top: 0; left: 0; right: 0; bottom: 0;
+	background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 60%);
+	pointer-events: none;
+}
+
+@media (min-width: 1024px) {
+	.m3-sidebar {
+		width: 40%;
+		max-width: 28rem;
+		padding: 3.5rem 4rem;
+		display: flex;
+		flex-direction: column;
+	}
+}
+
+.m3-sidebar-inner {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+}
+
+.m3-brand {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 4rem;
+}
+
+.m3-logo {
+	height: 2.5rem;
+	width: auto;
+	object-fit: contain;
+}
+
+.m3-brand-name {
+	font-size: 1.5rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	color: #ffffff;
+}
+
+.m3-stepper-header {
+	margin-bottom: 3rem;
+}
+
+.m3-step-maintitle {
+	font-size: 2.5rem;
+	font-weight: 700;
+	margin-bottom: 1rem;
+	color: #ffffff;
+}
+
+.m3-step-maindesc {
+	font-size: 1.05rem;
+	line-height: 1.6;
+	color: #94a3b8;
+}
+
+.m3-vertical-stepper {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.m3-step {
+	display: flex;
+	align-items: flex-start;
+	position: relative;
+	padding-bottom: 2.5rem;
+	opacity: 0.6;
+	transition: opacity 0.3s ease;
+}
+
+.m3-step:last-child {
+	padding-bottom: 0;
+}
+
+.m3-step.is-active {
+	opacity: 1;
+}
+
+.m3-step-node {
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	background-color: transparent;
+	border: 2px solid #475569;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 700;
+	font-size: 1rem;
+	color: #94a3b8;
+	z-index: 2;
+	transition: all 0.3s ease;
+}
+
+.m3-step.is-active .m3-step-node {
+	background-color: #3b82f6; /* Primary blue */
+	border-color: #3b82f6;
+	color: #ffffff;
+	box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+}
+
+.m3-step-content {
+	margin-left: 1.5rem;
+	padding-top: 0.4rem;
+}
+
+.m3-step-label {
+	font-size: 1.1rem;
+	font-weight: 600;
+	color: inherit;
+}
+
+.m3-step-line {
+	position: absolute;
+	top: 2.5rem;
+	left: 1.25rem; /* center of node */
+	bottom: 0;
+	width: 2px;
+	background-color: #334155;
+	transform: translateX(-50%);
+	z-index: 1;
+}
+
+/* Right Content - Clean Material 3 Surface */
+.m3-content {
+	flex: 1;
+	background-color: #ffffff;
+	padding: 2.5rem 1.5rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+@media (min-width: 1024px) {
+	.m3-content {
+		padding: 3rem 4rem;
+		overflow-y: auto;
+		border-top-left-radius: 2rem;
+		border-bottom-left-radius: 2rem;
+		box-shadow: -10px 0 30px rgba(0,0,0,0.03);
+	}
+}
+
+.m3-form-wrapper {
+	width: 100%;
+	max-width: 40rem;
+}
+
+.m3-back-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	color: #64748b;
+	text-decoration: none;
+	font-weight: 600;
+	font-size: 0.95rem;
+	margin-bottom: 2rem;
+	transition: color 0.2s;
+}
+
+.m3-back-btn:hover {
+	color: #1e293b;
+}
+
+.m3-form-header {
+	display: flex;
+	align-items: center;
+	gap: 1.25rem;
+	margin-bottom: 2.5rem;
+}
+
+.m3-panel-icon {
+	width: 3.5rem;
+	height: 3.5rem;
+	background-color: #eff6ff;
+	color: #2563eb;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.m3-panel-icon .material-symbols-rounded {
+	font-size: 1.75rem;
+}
+
+.m3-panel-title {
+	font-size: 1.75rem;
+	font-weight: 700;
+	color: #0f172a;
+	margin: 0 0 0.25rem 0;
+}
+
+.m3-panel-subtitle {
+	font-size: 1rem;
+	color: #64748b;
+	margin: 0;
+}
+
+/* Material 3 Form Elements */
+.is-hidden { display: none !important; }
+
+.m3-panel {
+	animation: m3fade 0.3s cubic-bezier(0.2, 0, 0, 1);
+}
+
+@keyframes m3fade {
+	from { opacity: 0; transform: translateY(10px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+.m3-grid-2 {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1.5rem;
+	margin-bottom: 1.5rem;
+}
+
+@media (min-width: 640px) {
+	.m3-grid-2 {
+		grid-template-columns: 1fr 1fr;
+	}
+}
+
+.m3-field {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.m3-label {
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: #334155;
+	margin-left: 0.25rem;
+}
+
+.m3-input {
+	width: 100%;
+	background-color: #f8fafc;
+	border: 1px solid #cbd5e1;
+	border-radius: 0.75rem;
+	padding: 0.875rem 1rem;
+	font-size: 1rem;
+	color: #0f172a;
+	font-family: inherit;
+	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+	outline: none;
+}
+
+.m3-input:focus {
+	background-color: #ffffff;
+	border-color: #2563eb;
+	box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+}
+
+.m3-input.is-invalid {
+	border-color: #e11d48;
+	background-color: #fff1f2;
+}
+
+.m3-input.is-invalid:focus {
+	box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.1);
+}
+
+.m3-input-affix {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.m3-input-affix .m3-input {
+	padding-right: 3rem;
+}
+
+.m3-icon-btn {
+	position: absolute;
+	right: 0.5rem;
+	background: none;
+	border: none;
+	color: #64748b;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background-color 0.2s;
+}
+
+.m3-icon-btn:hover {
+	background-color: #e2e8f0;
+	color: #0f172a;
+}
+
+.m3-field-error {
+	font-size: 0.85rem;
+	color: #e11d48;
+	font-weight: 500;
+	margin-left: 0.25rem;
+}
+
+.m3-error-banner {
+	background-color: #fff1f2;
+	border: 1px solid #fecdd3;
+	color: #be123c;
+	padding: 1rem 1.25rem;
+	border-radius: 0.75rem;
+	margin-bottom: 2rem;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	font-weight: 600;
+}
+
+.m3-actions {
+	display: flex;
+	align-items: center;
+	margin-top: 2.5rem;
+	padding-top: 2rem;
+	border-top: 1px solid #f1f5f9;
+}
+
+.m3-actions--end {
+	justify-content: flex-end;
+}
+
+.m3-actions--between {
+	justify-content: space-between;
+}
+
+/* Material 3 Buttons */
+.m3-btn-primary {
+	background-color: #2563eb;
+	color: #ffffff;
+	border: none;
+	border-radius: 9999px; /* Fully rounded capsule */
+	padding: 0.875rem 2rem;
+	font-size: 1rem;
+	font-weight: 600;
+	font-family: inherit;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+	box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+}
+
+.m3-btn-primary:hover {
+	background-color: #1d4ed8;
+	box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+	transform: translateY(-1px);
+}
+
+.m3-btn-tonal {
+	background-color: #f1f5f9;
+	color: #0f172a;
+	border: none;
+	border-radius: 9999px;
+	padding: 0.875rem 2rem;
+	font-size: 1rem;
+	font-weight: 600;
+	font-family: inherit;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.m3-btn-tonal:hover {
+	background-color: #e2e8f0;
+}
+
+@media (max-width: 640px) {
+	.m3-btn-primary, .m3-btn-tonal {
+		width: 100%;
+		justify-content: center;
+		padding: 1rem;
+	}
+	.m3-actions--between {
+		flex-direction: column-reverse;
+		gap: 1rem;
+	}
+}
+</style>

@@ -1,0 +1,72 @@
+---
+import RegisterForm from '../../components/RegisterForm.astro';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
+
+const error = Astro.url.searchParams.get('error') ?? '';
+const step = Astro.url.searchParams.get('step') ?? 'admin';
+const firstName = Astro.url.searchParams.get('first_name') ?? '';
+const lastName = Astro.url.searchParams.get('last_name') ?? '';
+const email = Astro.url.searchParams.get('email') ?? '';
+const businessName = Astro.url.searchParams.get('business_name') ?? '';
+const phone = Astro.url.searchParams.get('phone') ?? '';
+
+const firstNameError = Astro.url.searchParams.get('first_name_error') ?? '';
+const lastNameError = Astro.url.searchParams.get('last_name_error') ?? '';
+const emailError = Astro.url.searchParams.get('email_error') ?? '';
+const passwordError = Astro.url.searchParams.get('password_error') ?? '';
+const businessNameError = Astro.url.searchParams.get('business_name_error') ?? '';
+const phoneError = Astro.url.searchParams.get('phone_error') ?? '';
+---
+
+<Layout>
+	<RegisterForm
+		error={error}
+		step={step}
+		firstName={firstName}
+		lastName={lastName}
+		email={email}
+		businessName={businessName}
+		phone={phone}
+		firstNameError={firstNameError}
+		lastNameError={lastNameError}
+		emailError={emailError}
+		passwordError={passwordError}
+		businessNameError={businessNameError}
+		phoneError={phoneError}
+	/>
+</Layout>
+
+<script is:inline>
+	if (typeof window !== 'undefined') {
+		const currentUrl = new URL(window.location.href);
+		const transientParams = [
+			'error',
+			'step',
+			'first_name',
+			'last_name',
+			'email',
+			'business_name',
+			'phone',
+			'first_name_error',
+			'last_name_error',
+			'email_error',
+			'password_error',
+			'business_name_error',
+			'phone_error',
+		];
+
+		let hasTransientParams = false;
+
+		for (const param of transientParams) {
+			if (currentUrl.searchParams.has(param)) {
+				currentUrl.searchParams.delete(param);
+				hasTransientParams = true;
+			}
+		}
+
+		if (hasTransientParams) {
+			window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+		}
+	}
+</script>

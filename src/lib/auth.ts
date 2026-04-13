@@ -21,6 +21,11 @@ export const CHANGE_PASSWORD_URL =
 		'ORDS_AUTH_CHANGE_PASSWORD_URL',
 		'/auth/change-password'
 	);
+export const REGISTER_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_REGISTER_URL,
+	'ORDS_AUTH_REGISTER_URL',
+	'/auth/register'
+);
 
 const ORGANIZATION_CACHE_COOKIE_KEYS = {
 	id: 'org_id',
@@ -43,6 +48,23 @@ export interface AuthSuccessResponse {
 export interface AuthFieldError {
 	field: string;
 	message: string;
+}
+
+export interface RegisterPayload {
+	business_name: string;
+	phone?: string;
+	email: string;
+	password: string;
+	first_name: string;
+	last_name: string;
+}
+
+export interface RegisterSuccessResponse {
+	status: 'success';
+	message: string;
+	organization_id?: number;
+	user_id?: number;
+	professional_id?: number;
 }
 
 interface AuthFailureResponse {
@@ -126,6 +148,29 @@ const parseAuthResponse = async (response: Response) => {
 	return data;
 };
 
+const parseRegisterResponse = async (response: Response) => {
+	let data: RegisterSuccessResponse | AuthFailureResponse | null = null;
+
+	try {
+		data = await response.json();
+	} catch {
+		throw new AuthApiError('No fue posible interpretar la respuesta del servidor de registro.', 502);
+	}
+
+	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
+		const failureData = (data ?? {}) as AuthFailureResponse;
+		const fieldErrors = parseFieldErrors(failureData.errors);
+		throw new AuthApiError(
+			failureData.message || 'No fue posible completar el registro.',
+			response.status || 400,
+			failureData.details,
+			fieldErrors
+		);
+	}
+
+	return data as RegisterSuccessResponse;
+};
+
 const parseBasicResponse = async (response: Response) => {
 	let data: BasicSuccessResponse | AuthFailureResponse | null = null;
 
@@ -207,6 +252,19 @@ export const changePasswordWithOrds = async (token: string, payload: ChangePassw
 				? data.message
 				: 'Tu contraseña se actualizó correctamente.',
 	};
+};
+
+export const registerWithOrds = async (payload: RegisterPayload) => {
+	const response = await fetch(REGISTER_URL, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	return parseRegisterResponse(response);
 };
 
 const ACCESS_TOKEN_MAX_AGE_SECONDS = 60 * 60;
