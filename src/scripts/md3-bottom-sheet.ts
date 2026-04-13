@@ -98,10 +98,17 @@ const closeSheet = (dialog: HTMLDialogElement) => {
 	const closeTrigger = findCloseTrigger(dialog);
 	if (closeTrigger) {
 		closeTrigger.click();
-		return;
+	} else {
+		closeWithFallback(dialog);
 	}
 
-	closeWithFallback(dialog);
+	// Force-close synchronously so the dialog exits the top layer immediately.
+	// Without this, the controller's setTimeout(0) leaves the dialog modal for
+	// one tick, which can swallow the user's next tap on the reopen button.
+	if (dialog.open) {
+		dialog.close();
+		dialog.classList.remove('is-closing');
+	}
 };
 
 const setDynamicWillChange = (dialog: HTMLDialogElement, enabled: boolean) => {
