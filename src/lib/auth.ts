@@ -209,36 +209,48 @@ export const changePasswordWithOrds = async (token: string, payload: ChangePassw
 	};
 };
 
-const isSecureRequest = (url: URL) => url.protocol === 'https:' || url.hostname !== 'localhost';
+const ACCESS_TOKEN_MAX_AGE_SECONDS = 60 * 60;
+const REFRESH_TOKEN_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
+const UI_CACHE_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
-const getCookieBaseOptions = (url: URL) => ({
+const isProduction = import.meta.env.PROD;
+
+const getSessionCookieBaseOptions = () => ({
 	httpOnly: true,
-	secure: isSecureRequest(url),
-	sameSite: 'strict' as const,
+	secure: isProduction,
+	sameSite: 'lax' as const,
 	path: '/',
+});
+
+const getUiCacheCookieBaseOptions = () => ({
+	httpOnly: false,
+	secure: isProduction,
+	sameSite: 'lax' as const,
+	path: '/',
+	maxAge: UI_CACHE_COOKIE_MAX_AGE_SECONDS,
 });
 
 export const setSessionCookies = (
 	cookies: { set: (name: string, value: string, options: Record<string, unknown>) => void },
-	url: URL,
+	_url: URL,
 	session: AuthSuccessResponse
 ) => {
-	const baseOptions = getCookieBaseOptions(url);
+	const baseOptions = getSessionCookieBaseOptions();
 
 	cookies.set('access_token', session.access_token, {
 		...baseOptions,
-		maxAge: session.expires_in,
+		maxAge: ACCESS_TOKEN_MAX_AGE_SECONDS,
 	});
 
 	cookies.set('refresh_token', session.refresh_token, {
 		...baseOptions,
-		maxAge: 60 * 60 * 24 * 30,
+		maxAge: REFRESH_TOKEN_MAX_AGE_SECONDS,
 	});
 };
 
 export const setOrganizationCacheCookies = (
 	cookies: { set: (name: string, value: string, options: Record<string, unknown>) => void },
-	url: URL,
+	_url: URL,
 	organization: {
 		id_organization: number;
 		name: string;
@@ -246,7 +258,7 @@ export const setOrganizationCacheCookies = (
 		logo_url?: string | null;
 	}
 ) => {
-	const baseOptions = getCookieBaseOptions(url);
+	const baseOptions = getUiCacheCookieBaseOptions();
 	const safeName = String(organization.name || '').trim();
 	const safeSlug = String(organization.profile_slug || '').trim();
 	const safeLogoUrl = String(organization.logo_url || '').trim();
