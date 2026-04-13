@@ -6,6 +6,11 @@ import {
 	type PublicCreateAppointmentPayload,
 } from '../../../lib/public-booking';
 
+const toSafeApiStatus = (value: number) => {
+	if (value === 555) return 502;
+	return Number.isInteger(value) && value >= 400 && value <= 599 ? value : 500;
+};
+
 const toErrorResponse = (error: unknown, fallbackMessage: string) => {
 	const bookingError =
 		error instanceof PublicBookingApiError
@@ -18,7 +23,7 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) => {
 			message: bookingError.message,
 			details: bookingError.details,
 		},
-		{ status: bookingError.status }
+		{ status: toSafeApiStatus(bookingError.status) }
 	);
 };
 

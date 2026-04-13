@@ -72,6 +72,39 @@ interface PublicApiFailureResponse {
 	details?: unknown;
 }
 
+const isOrdsResourceError = (message: string) =>
+	/user defined resource|not found/i.test(String(message || ''));
+
+const normalizePublicApiMessage = (message: unknown, fallbackMessage: string) => {
+	const parsedMessage = typeof message === 'string' ? message.trim() : '';
+	if (!parsedMessage) return fallbackMessage;
+
+	if (isOrdsResourceError(parsedMessage)) {
+		return 'No encontramos esta agenda publica. Verifica el enlace e intenta nuevamente.';
+	}
+
+	return parsedMessage;
+};
+
+const normalizePublicApiStatus = (
+	status: unknown,
+	message: string,
+	fallbackStatus: number
+) => {
+	const parsedStatus = Number(status);
+	if (!Number.isInteger(parsedStatus)) return fallbackStatus;
+
+	if (parsedStatus === 555) {
+		return isOrdsResourceError(message) ? 404 : 502;
+	}
+
+	if (parsedStatus < 400 || parsedStatus > 599) {
+		return fallbackStatus;
+	}
+
+	return parsedStatus;
+};
+
 export class PublicBookingApiError extends Error {
 	status: number;
 	details?: unknown;
@@ -99,9 +132,19 @@ const parseApiResponse = async (response: Response, fallbackMessage: string) => 
 	const data = await parseJsonBody(response);
 	if (!response.ok || data.status !== 'success') {
 		const failureData = data as PublicApiFailureResponse;
+		const resolvedMessage = normalizePublicApiMessage(
+			failureData.message,
+			fallbackMessage
+		);
+		const resolvedStatus = normalizePublicApiStatus(
+			response.status,
+			resolvedMessage,
+			response.ok ? 500 : 502
+		);
+
 		throw new PublicBookingApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) || fallbackMessage,
-			response.status || 500,
+			resolvedMessage,
+			resolvedStatus,
 			failureData.details
 		);
 	}
