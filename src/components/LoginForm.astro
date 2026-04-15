@@ -15,7 +15,7 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 		<div class="m3-sidebar-inner">
 			<div class="m3-brand">
 				<img src="/icon-512x512.png" alt="Hasel Logo" class="m3-logo" />
-				<span class="m3-brand-name">Hasel</span>
+				
 			</div>
 
 			<div class="m3-stepper-header">
@@ -46,7 +46,7 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 		<div class="m3-form-wrapper">
 			<div class="m3-mobile-brand">
 				<img src="/icon-512x512.png" alt="Hasel Logo" class="m3-logo" />
-				<span class="m3-brand-name-dark">Hasel</span>
+				
 			</div>
 
 			<div class="m3-form-header">
@@ -108,7 +108,7 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
                             <div class="m3-checkbox-box">
                                 <span class="material-symbols-rounded">check</span>
                             </div>
-                            Recordar credenciales
+                            Recordarme
                         </label>
                         <a href="#" class="m3-link">Cambiar contraseña</a>
                     </div>
@@ -555,9 +555,10 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 
 @media (max-width: 640px) {
 	.m3-actions-row {
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 1rem;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
 	}
 }
 
@@ -572,21 +573,25 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 	.m3-mobile-brand {
 		display: flex;
 		align-items: center;
+		justify-content: center;
 		gap: 0.75rem;
-		margin-bottom: 2rem;
+		margin-bottom: 2.5rem;
+	}
+	.m3-mobile-brand .m3-logo {
+		height: 3.5rem;
 	}
 	.m3-brand-name-dark {
-		font-size: 1.5rem;
+		font-size: 2rem;
 		font-weight: 800;
 		letter-spacing: -0.02em;
 		color: #0f172a;
 	}
 	.m3-content {
 		padding: 2rem 1.5rem;
-		align-items: flex-start;
+		align-items: center;
 	}
 	.m3-form-wrapper {
-		margin-top: 1rem;
+		margin-top: 0;
 	}
 }
 </style>
