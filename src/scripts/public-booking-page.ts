@@ -39,6 +39,27 @@ const parseYmdDate = (value: string) => {
 	return new Date(year, month - 1, day);
 };
 
+const toParaguayLocalPhoneDigits = (rawValue: string) => {
+	let digits = String(rawValue || '').replace(/\D/g, '');
+	if (digits.startsWith('00595')) digits = digits.slice(5);
+	if (digits.startsWith('595')) digits = digits.slice(3);
+	if (digits.startsWith('0')) digits = digits.slice(1);
+	return digits.slice(0, 9);
+};
+
+const formatParaguayLocalPhone = (rawValue: string) => {
+	const digits = toParaguayLocalPhoneDigits(rawValue);
+	if (!digits) return '';
+	if (digits.length <= 3) return digits;
+	if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+	return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)}`;
+};
+
+const toParaguayE164Phone = (rawValue: string) => {
+	const digits = toParaguayLocalPhoneDigits(rawValue);
+	return digits ? `+595${digits}` : '';
+};
+
 const formatCurrency = (value: number) =>
 	new Intl.NumberFormat('es-PY', {
 		style: 'currency',
@@ -467,7 +488,11 @@ export const initializePublicBookingPage = () => {
 	backToCalendar.addEventListener('click', () => setStep(2));
 	backToSlots.addEventListener('click', () => setStep(3));
 	restartButton.addEventListener('click', resetFlow);
-	customerPhoneInput.addEventListener('input', () => setPhoneFieldError(''));
+	customerPhoneInput.value = formatParaguayLocalPhone(customerPhoneInput.value);
+	customerPhoneInput.addEventListener('input', () => {
+		customerPhoneInput.value = formatParaguayLocalPhone(customerPhoneInput.value);
+		setPhoneFieldError('');
+	});
 	customerPhoneInput.addEventListener('blur', () => {
 		const rawPhone = customerPhoneInput.value.trim();
 		if (!rawPhone) {
@@ -475,13 +500,13 @@ export const initializePublicBookingPage = () => {
 			return;
 		}
 
-		const parsedPhone = parseParaguayMobilePhone(rawPhone);
+		const parsedPhone = parseParaguayMobilePhone(toParaguayE164Phone(rawPhone));
 		if (!parsedPhone.isValid) {
 			setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
 			return;
 		}
 
-		customerPhoneInput.value = parsedPhone.pretty;
+		customerPhoneInput.value = formatParaguayLocalPhone(rawPhone);
 		setPhoneFieldError('');
 	});
 
@@ -506,7 +531,7 @@ export const initializePublicBookingPage = () => {
 			return;
 		}
 
-		const parsedPhone = parseParaguayMobilePhone(rawCustomerPhone);
+		const parsedPhone = parseParaguayMobilePhone(toParaguayE164Phone(rawCustomerPhone));
 		if (!parsedPhone.isValid) {
 			setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
 			setSubmitError('Revisa el telefono antes de continuar.');
@@ -514,7 +539,7 @@ export const initializePublicBookingPage = () => {
 		}
 
 		const customerPhone = parsedPhone.e164;
-		customerPhoneInput.value = parsedPhone.pretty;
+		customerPhoneInput.value = formatParaguayLocalPhone(rawCustomerPhone);
 
 		const startDate = new Date(`${selectedDate}T${selectedTime}:00`);
 		if (Number.isNaN(startDate.getTime())) {

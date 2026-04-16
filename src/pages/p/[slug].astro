@@ -269,15 +269,19 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 
 								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
 									Telefono (WhatsApp)
-									<input
-										type="tel"
-										name="customer_phone"
-										maxlength="25"
-										required
-										inputmode="tel"
-										class="rounded-xl border border-(--outline) bg-(--surface-container-lowest) px-4 py-3 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none transition focus:border-(--primary) focus:ring-1 focus:ring-(--primary)"
-										placeholder="Ej: 0981 123 456"
-									/>
+									<div class="flex w-full overflow-hidden rounded-xl border border-(--outline) bg-(--surface-container-lowest) transition focus-within:border-(--primary) focus-within:ring-1 focus-within:ring-(--primary)">
+										<span class="inline-flex items-center border-r border-(--outline) bg-(--surface-container-high) px-3 text-sm font-semibold text-(--on-surface-variant)">+595</span>
+										<input
+											type="tel"
+											name="customer_phone"
+											maxlength="11"
+											required
+											inputmode="numeric"
+											autocomplete="tel-national"
+											class="min-w-0 flex-1 border-0 bg-transparent px-4 py-3 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none"
+											placeholder="Ej: 981 123 456"
+										/>
+									</div>
 									<span class="hidden text-xs font-medium text-(--error)" data-field-error="customer_phone"></span>
 								</label>
 
