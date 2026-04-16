@@ -26,6 +26,16 @@ export const REGISTER_URL = resolveOrdsApiUrl(
 	'ORDS_AUTH_REGISTER_URL',
 	'/auth/register'
 );
+export const FORGOT_PASSWORD_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_FORGOT_PASSWORD_URL,
+	'ORDS_FORGOT_PASSWORD_URL',
+	'/auth/forgot-password'
+);
+export const RESET_PASSWORD_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_RESET_PASSWORD_URL,
+	'ORDS_RESET_PASSWORD_URL',
+	'/auth/reset-password'
+);
 export const ORG_SPECIALTIES_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_ORG_SPECIALTIES_URL,
 	'ORDS_ORG_SPECIALTIES_URL',
@@ -80,6 +90,15 @@ export interface RegisterSuccessResponse {
 	professional_id?: number;
 }
 
+export interface ForgotPasswordPayload {
+	email: string;
+}
+
+export interface ResetPasswordPayload {
+	token: string;
+	new_password: string;
+}
+
 interface AuthFailureResponse {
 	status?: string;
 	message?: string;
@@ -122,7 +141,7 @@ const parseFieldErrors = (value: unknown): AuthFieldError[] => {
 	return value.flatMap((item) => {
 		if (!item || typeof item !== 'object') return [];
 
-		const field = 'field' in item ? String(item.field || '').trim() : '';
+		const field = 'field' in item ? String(item.field || '').trim().toLowerCase() : '';
 		const message = 'message' in item ? String(item.message || '').trim() : '';
 
 		if (!field || !message) return [];
@@ -210,6 +229,36 @@ const parseBasicResponse = async (response: Response) => {
 	return data;
 };
 
+const parseStatusResponseWithFields = async (
+	response: Response,
+	fallbackMessage: string
+): Promise<{ message: string }> => {
+	let data: BasicSuccessResponse | AuthFailureResponse | null = null;
+
+	try {
+		data = await response.json();
+	} catch {
+		throw new AuthApiError('No fue posible interpretar la respuesta del servidor.', 502);
+	}
+
+	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
+		const failureData = (data ?? {}) as AuthFailureResponse;
+		throw new AuthApiError(
+			failureData.message || fallbackMessage,
+			response.status || 400,
+			failureData.details,
+			parseFieldErrors(failureData.errors)
+		);
+	}
+
+	return {
+		message:
+			typeof data.message === 'string' && data.message.trim()
+				? data.message
+				: fallbackMessage,
+	};
+};
+
 export const loginWithOrds = async (payload: { email: string; password: string }) => {
 	const response = await fetch(LOGIN_URL, {
 		method: 'POST',
@@ -283,6 +332,32 @@ export const registerWithOrds = async (payload: RegisterPayload) => {
 	});
 
 	return parseRegisterResponse(response);
+};
+
+export const forgotPasswordWithOrds = async (payload: ForgotPasswordPayload) => {
+	const response = await fetch(FORGOT_PASSWORD_URL, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	return parseStatusResponseWithFields(response, 'No fue posible iniciar la recuperación de contraseña.');
+};
+
+export const resetPasswordWithOrds = async (payload: ResetPasswordPayload) => {
+	const response = await fetch(RESET_PASSWORD_URL, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	return parseStatusResponseWithFields(response, 'No fue posible actualizar tu contraseña.');
 };
 
 const normalizeOrgSpecialty = (value: unknown): OrgSpecialtyOption | null => {

@@ -11,14 +11,15 @@ const ADMIN_FIELDS = new Set(['first_name', 'last_name', 'email', 'password']);
 const ORGANIZATION_FIELDS = new Set(['business_name', 'phone', 'company_email', 'id_org_specialty']);
 
 const mapFieldParamName = (field: string) => {
-	if (field === 'first_name') return 'first_name_error';
-	if (field === 'last_name') return 'last_name_error';
-	if (field === 'email') return 'email_error';
-	if (field === 'password') return 'password_error';
-	if (field === 'business_name') return 'business_name_error';
-	if (field === 'phone') return 'phone_error';
-	if (field === 'company_email') return 'company_email_error';
-	if (field === 'id_org_specialty') return 'id_org_specialty_error';
+	const normalizedField = String(field || '').trim().toLowerCase();
+	if (normalizedField === 'first_name') return 'first_name_error';
+	if (normalizedField === 'last_name') return 'last_name_error';
+	if (normalizedField === 'email') return 'email_error';
+	if (normalizedField === 'password') return 'password_error';
+	if (normalizedField === 'business_name') return 'business_name_error';
+	if (normalizedField === 'phone') return 'phone_error';
+	if (normalizedField === 'company_email') return 'company_email_error';
+	if (normalizedField === 'id_org_specialty') return 'id_org_specialty_error';
 	return '';
 };
 
@@ -77,11 +78,13 @@ const resolveStepFromErrors = (
 	fallbackStep: RegisterStep,
 	message = ''
 ): RegisterStep => {
-	const hasAdminFieldError = fieldErrors.some((item) => ADMIN_FIELDS.has(String(item.field || '').trim()));
+	const hasAdminFieldError = fieldErrors.some((item) =>
+		ADMIN_FIELDS.has(String(item.field || '').trim().toLowerCase())
+	);
 	if (hasAdminFieldError) return ADMIN_STEP;
 
 	const hasOrganizationFieldError = fieldErrors.some((item) =>
-		ORGANIZATION_FIELDS.has(String(item.field || '').trim())
+		ORGANIZATION_FIELDS.has(String(item.field || '').trim().toLowerCase())
 	);
 	if (hasOrganizationFieldError) return ORGANIZATION_STEP;
 
