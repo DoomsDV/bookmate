@@ -1,6 +1,7 @@
 ---
 import RegisterForm from '../../components/RegisterForm.astro';
 import Layout from '../../layouts/Layout.astro';
+import { listOrgSpecialtiesWithOrds, type OrgSpecialtyOption } from '../../lib/auth';
 import '../../styles/global.css';
 
 const error = Astro.url.searchParams.get('error') ?? '';
@@ -10,6 +11,8 @@ const lastName = Astro.url.searchParams.get('last_name') ?? '';
 const email = Astro.url.searchParams.get('email') ?? '';
 const businessName = Astro.url.searchParams.get('business_name') ?? '';
 const phone = Astro.url.searchParams.get('phone') ?? '';
+const companyEmail = Astro.url.searchParams.get('company_email') ?? '';
+const orgSpecialtyId = Astro.url.searchParams.get('id_org_specialty') ?? '';
 
 const firstNameError = Astro.url.searchParams.get('first_name_error') ?? '';
 const lastNameError = Astro.url.searchParams.get('last_name_error') ?? '';
@@ -17,6 +20,17 @@ const emailError = Astro.url.searchParams.get('email_error') ?? '';
 const passwordError = Astro.url.searchParams.get('password_error') ?? '';
 const businessNameError = Astro.url.searchParams.get('business_name_error') ?? '';
 const phoneError = Astro.url.searchParams.get('phone_error') ?? '';
+const companyEmailError = Astro.url.searchParams.get('company_email_error') ?? '';
+const orgSpecialtyIdError = Astro.url.searchParams.get('id_org_specialty_error') ?? '';
+
+let orgSpecialties: OrgSpecialtyOption[] = [];
+let specialtiesLoadError = '';
+
+try {
+	orgSpecialties = await listOrgSpecialtiesWithOrds();
+} catch {
+	specialtiesLoadError = 'No pudimos cargar las especialidades de organización. Recarga la página para intentarlo de nuevo.';
+}
 ---
 
 <Layout>
@@ -28,12 +42,18 @@ const phoneError = Astro.url.searchParams.get('phone_error') ?? '';
 		email={email}
 		businessName={businessName}
 		phone={phone}
+		companyEmail={companyEmail}
+		orgSpecialtyId={orgSpecialtyId}
+		orgSpecialties={orgSpecialties}
+		specialtiesLoadError={specialtiesLoadError}
 		firstNameError={firstNameError}
 		lastNameError={lastNameError}
 		emailError={emailError}
 		passwordError={passwordError}
 		businessNameError={businessNameError}
 		phoneError={phoneError}
+		companyEmailError={companyEmailError}
+		orgSpecialtyIdError={orgSpecialtyIdError}
 	/>
 </Layout>
 
@@ -48,12 +68,16 @@ const phoneError = Astro.url.searchParams.get('phone_error') ?? '';
 			'email',
 			'business_name',
 			'phone',
+			'company_email',
+			'id_org_specialty',
 			'first_name_error',
 			'last_name_error',
 			'email_error',
 			'password_error',
 			'business_name_error',
 			'phone_error',
+			'company_email_error',
+			'id_org_specialty_error',
 		];
 
 		let hasTransientParams = false;

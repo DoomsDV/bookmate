@@ -8,7 +8,7 @@ const ORGANIZATION_STEP = 'organization';
 type RegisterStep = typeof ADMIN_STEP | typeof ORGANIZATION_STEP;
 
 const ADMIN_FIELDS = new Set(['first_name', 'last_name', 'email', 'password']);
-const ORGANIZATION_FIELDS = new Set(['business_name', 'phone']);
+const ORGANIZATION_FIELDS = new Set(['business_name', 'phone', 'company_email', 'id_org_specialty']);
 
 const mapFieldParamName = (field: string) => {
 	if (field === 'first_name') return 'first_name_error';
@@ -17,6 +17,8 @@ const mapFieldParamName = (field: string) => {
 	if (field === 'password') return 'password_error';
 	if (field === 'business_name') return 'business_name_error';
 	if (field === 'phone') return 'phone_error';
+	if (field === 'company_email') return 'company_email_error';
+	if (field === 'id_org_specialty') return 'id_org_specialty_error';
 	return '';
 };
 
@@ -31,6 +33,12 @@ const normalizeStep = (value: unknown): RegisterStep =>
 	String(value || '').trim().toLowerCase() === ORGANIZATION_STEP ? ORGANIZATION_STEP : ADMIN_STEP;
 
 const sanitizeText = (value: unknown) => String(value || '').trim();
+const parseSpecialtyId = (value: unknown) => {
+	const raw = String(value ?? '').trim();
+	if (!raw) return NaN;
+	const parsed = Number(raw);
+	return Number.isFinite(parsed) ? parsed : NaN;
+};
 
 const parseBody = async (request: Request) => {
 	const contentType = request.headers.get('content-type') || '';
@@ -44,6 +52,8 @@ const parseBody = async (request: Request) => {
 			password: String(body.password || ''),
 			business_name: sanitizeText(body.business_name),
 			phone: sanitizeText(body.phone),
+			company_email: sanitizeText(body.company_email),
+			id_org_specialty: parseSpecialtyId(body.id_org_specialty),
 			step: normalizeStep(body.step),
 		};
 	}
@@ -56,6 +66,8 @@ const parseBody = async (request: Request) => {
 		password: String(formData.get('password') || ''),
 		business_name: sanitizeText(formData.get('business_name')),
 		phone: sanitizeText(formData.get('phone')),
+		company_email: sanitizeText(formData.get('company_email')),
+		id_org_specialty: parseSpecialtyId(formData.get('id_org_specialty')),
 		step: normalizeStep(formData.get('step')),
 	};
 };
@@ -73,7 +85,11 @@ const resolveStepFromErrors = (
 	);
 	if (hasOrganizationFieldError) return ORGANIZATION_STEP;
 
-	if (String(message || '').toLowerCase().includes('correo')) return ADMIN_STEP;
+	const normalizedMessage = String(message || '').toLowerCase();
+	if (normalizedMessage.includes('especialidad') || normalizedMessage.includes('compania')) {
+		return ORGANIZATION_STEP;
+	}
+	if (normalizedMessage.includes('correo')) return ADMIN_STEP;
 	return fallbackStep;
 };
 
@@ -85,6 +101,8 @@ export const POST: APIRoute = async ({ request, url }) => {
 		password: '',
 		business_name: '',
 		phone: '',
+		company_email: '',
+		id_org_specialty: NaN,
 		step: ADMIN_STEP as RegisterStep,
 	};
 
@@ -108,6 +126,15 @@ export const POST: APIRoute = async ({ request, url }) => {
 		if (!body.business_name) {
 			localFieldErrors.push({ field: 'business_name', message: 'El nombre de la empresa es obligatorio.' });
 		}
+		if (!body.company_email) {
+			localFieldErrors.push({ field: 'company_email', message: 'El correo de la compania es obligatorio.' });
+		}
+		if (!body.phone) {
+			localFieldErrors.push({ field: 'phone', message: 'El telefono corporativo es obligatorio.' });
+		}
+		if (!Number.isInteger(body.id_org_specialty) || body.id_org_specialty <= 0) {
+			localFieldErrors.push({ field: 'id_org_specialty', message: 'Selecciona una especialidad valida.' });
+		}
 
 		if (localFieldErrors.length > 0) {
 			throw new AuthApiError(
@@ -125,6 +152,8 @@ export const POST: APIRoute = async ({ request, url }) => {
 			password: body.password,
 			business_name: body.business_name,
 			phone: body.phone,
+			company_email: body.company_email,
+			id_org_specialty: body.id_org_specialty,
 		});
 
 		const redirectTo = `/auth/login?identifier=${encodeURIComponent(body.email)}&registered=1`;
@@ -164,6 +193,10 @@ export const POST: APIRoute = async ({ request, url }) => {
 			if (body.email) redirectUrl.searchParams.set('email', body.email);
 			if (body.business_name) redirectUrl.searchParams.set('business_name', body.business_name);
 			if (body.phone) redirectUrl.searchParams.set('phone', body.phone);
+			if (body.company_email) redirectUrl.searchParams.set('company_email', body.company_email);
+			if (Number.isFinite(body.id_org_specialty) && body.id_org_specialty > 0) {
+				redirectUrl.searchParams.set('id_org_specialty', String(body.id_org_specialty));
+			}
 
 			for (const fieldError of fieldErrors) {
 				const fieldName = mapFieldParamName(fieldError.field);

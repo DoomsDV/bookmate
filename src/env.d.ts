@@ -37,6 +37,7 @@ interface ImportMetaEnv {
     readonly ORDS_AUTH_REFRESH_URL?: string;
     readonly ORDS_AUTH_LOGOUT_URL?: string;
     readonly ORDS_AUTH_CHANGE_PASSWORD_URL?: string;
+    readonly ORDS_AUTH_REGISTER_URL?: string;
 
     readonly ORDS_DASHBOARD_URL?: string;
     readonly AI_SUMMARIZATION_URL?: string;
@@ -45,6 +46,7 @@ interface ImportMetaEnv {
     readonly ORDS_DEPARTMENTS_URL?: string;
     readonly ORDS_ROLES_URL?: string;
     readonly ORDS_SPECIALTIES_URL?: string;
+    readonly ORDS_ORG_SPECIALTIES_URL?: string;
     readonly ORDS_SERVICES_URL?: string;
     readonly ORDS_SERVICES_LOV_URL?: string;
     readonly ORDS_LOCATIONS_URL?: string;

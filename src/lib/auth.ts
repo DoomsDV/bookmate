@@ -26,6 +26,11 @@ export const REGISTER_URL = resolveOrdsApiUrl(
 	'ORDS_AUTH_REGISTER_URL',
 	'/auth/register'
 );
+export const ORG_SPECIALTIES_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_ORG_SPECIALTIES_URL,
+	'ORDS_ORG_SPECIALTIES_URL',
+	'/organization/specialties'
+);
 
 const ORGANIZATION_CACHE_COOKIE_KEYS = {
 	id: 'org_id',
@@ -57,6 +62,14 @@ export interface RegisterPayload {
 	password: string;
 	first_name: string;
 	last_name: string;
+	company_email: string;
+	id_org_specialty: number;
+}
+
+export interface OrgSpecialtyOption {
+	id_org_specialty: number;
+	name: string;
+	description: string;
 }
 
 export interface RegisterSuccessResponse {
@@ -72,6 +85,11 @@ interface AuthFailureResponse {
 	message?: string;
 	details?: unknown;
 	errors?: unknown;
+}
+
+interface OrgSpecialtiesSuccessResponse {
+	status: 'success';
+	data?: unknown;
 }
 
 interface BasicSuccessResponse {
@@ -265,6 +283,55 @@ export const registerWithOrds = async (payload: RegisterPayload) => {
 	});
 
 	return parseRegisterResponse(response);
+};
+
+const normalizeOrgSpecialty = (value: unknown): OrgSpecialtyOption | null => {
+	if (!value || typeof value !== 'object') return null;
+
+	const source = value as Record<string, unknown>;
+	const specialtyId = Number(source.id_org_specialty);
+	if (!Number.isFinite(specialtyId) || specialtyId <= 0) return null;
+
+	const name = String(source.name || '').trim();
+	if (!name) return null;
+
+	return {
+		id_org_specialty: specialtyId,
+		name,
+		description: String(source.description || '').trim(),
+	};
+};
+
+export const listOrgSpecialtiesWithOrds = async (): Promise<OrgSpecialtyOption[]> => {
+	const response = await fetch(ORG_SPECIALTIES_URL, {
+		method: 'GET',
+		headers: {
+			Accept: 'application/json',
+		},
+	});
+
+	let data: OrgSpecialtiesSuccessResponse | AuthFailureResponse | null = null;
+
+	try {
+		data = await response.json();
+	} catch {
+		throw new AuthApiError('No fue posible interpretar la respuesta del catalogo de especialidades.', 502);
+	}
+
+	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
+		const failureData = (data ?? {}) as AuthFailureResponse;
+		throw new AuthApiError(
+			failureData.message || 'No fue posible obtener las especialidades de la organizacion.',
+			response.status || 400,
+			failureData.details,
+			parseFieldErrors(failureData.errors)
+		);
+	}
+
+	const rawItems = Array.isArray(data.data) ? data.data : [];
+	return rawItems
+		.map(normalizeOrgSpecialty)
+		.filter((specialty): specialty is OrgSpecialtyOption => specialty !== null);
 };
 
 const ACCESS_TOKEN_MAX_AGE_SECONDS = 60 * 60;

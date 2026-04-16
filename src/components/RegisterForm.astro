@@ -1,4 +1,6 @@
 ---
+import type { OrgSpecialtyOption } from '../lib/auth';
+
 interface Props {
 	error?: string;
 	step?: string;
@@ -7,12 +9,18 @@ interface Props {
 	email?: string;
 	businessName?: string;
 	phone?: string;
+	companyEmail?: string;
+	orgSpecialtyId?: string;
+	orgSpecialties?: OrgSpecialtyOption[];
+	specialtiesLoadError?: string;
 	firstNameError?: string;
 	lastNameError?: string;
 	emailError?: string;
 	passwordError?: string;
 	businessNameError?: string;
 	phoneError?: string;
+	companyEmailError?: string;
+	orgSpecialtyIdError?: string;
 }
 
 const {
@@ -23,12 +31,18 @@ const {
 	email = '',
 	businessName = '',
 	phone = '',
+	companyEmail = '',
+	orgSpecialtyId = '',
+	orgSpecialties = [],
+	specialtiesLoadError = '',
 	firstNameError = '',
 	lastNameError = '',
 	emailError = '',
 	passwordError = '',
 	businessNameError = '',
 	phoneError = '',
+	companyEmailError = '',
+	orgSpecialtyIdError = '',
 } = Astro.props;
 
 const normalizeStep = (value: string) =>
@@ -42,7 +56,6 @@ const currentStep = normalizeStep(step);
 		<div class="m3-sidebar-inner">
 			<div class="m3-brand">
 				<img src="/icon-512x512.png" alt="Hasel Logo" class="m3-logo" />
-				<span class="m3-brand-name">Hasel</span>
 			</div>
 
 			<div class="m3-stepper-header">
@@ -75,13 +88,7 @@ const currentStep = normalizeStep(step);
 		<div class="m3-form-wrapper">
 			<div class="m3-mobile-brand">
 				<img src="/icon-512x512.png" alt="Hasel Logo" class="m3-logo" />
-				<span class="m3-brand-name-dark">Hasel</span>
 			</div>
-
-			<a href="/auth/login" class="m3-back-btn">
-				<span class="material-symbols-rounded">arrow_back</span>
-				Volver a iniciar sesión
-			</a>
 
 			<div class="m3-form-header">
 				<div class="m3-panel-icon" data-panel-icon>
@@ -89,7 +96,7 @@ const currentStep = normalizeStep(step);
 				</div>
 				<div class="m3-panel-titles">
 					<h3 class="m3-panel-title" data-panel-title>Tus datos personales</h3>
-					<p class="m3-panel-subtitle" data-panel-desc>Ingresa tu nombre y credenciales de acceso</p>
+					<p class="m3-panel-subtitle" data-panel-desc>Al crear el espacio, se te asignará el rol de administrador de la organización</p>
 				</div>
 			</div>
 
@@ -107,27 +114,27 @@ const currentStep = normalizeStep(step);
 				<div data-step-panel="admin" class:list={['m3-panel', currentStep !== 'admin' && 'is-hidden']}>
 					<div class="m3-grid-2">
 						<div class="m3-field">
-							<label class="m3-label" for="first_name">Nombres</label>
-							<input type="text" id="first_name" name="first_name" class:list={['m3-input', firstNameError && 'is-invalid']} placeholder="Ej: Juan" value={firstName} />
+							<label class="m3-label" for="first_name">Nombres <span class="m3-label-required">*</span></label>
+							<input type="text" id="first_name" name="first_name" class:list={['m3-input', firstNameError && 'is-invalid']} placeholder="Ej: Juan" value={firstName} required />
 							{firstNameError && <span class="m3-field-error">{firstNameError}</span>}
 						</div>
 						<div class="m3-field">
-							<label class="m3-label" for="last_name">Apellidos</label>
-							<input type="text" id="last_name" name="last_name" class:list={['m3-input', lastNameError && 'is-invalid']} placeholder="Ej: Pérez" value={lastName} />
+							<label class="m3-label" for="last_name">Apellidos <span class="m3-label-required">*</span></label>
+							<input type="text" id="last_name" name="last_name" class:list={['m3-input', lastNameError && 'is-invalid']} placeholder="Ej: Pérez" value={lastName} required />
 							{lastNameError && <span class="m3-field-error">{lastNameError}</span>}
 						</div>
 					</div>
 
 					<div class="m3-grid-2">
 						<div class="m3-field">
-							<label class="m3-label" for="email">Correo electrónico</label>
-							<input type="email" id="email" name="email" class:list={['m3-input', emailError && 'is-invalid']} placeholder="Ej: juan@empresa.com" value={email} />
+							<label class="m3-label" for="email">Correo electrónico <span class="m3-label-required">*</span></label>
+							<input type="email" id="email" name="email" class:list={['m3-input', emailError && 'is-invalid']} placeholder="Ej: juan@empresa.com" value={email} required />
 							{emailError && <span class="m3-field-error">{emailError}</span>}
 						</div>
 						<div class="m3-field">
-							<label class="m3-label" for="password">Contraseña</label>
+							<label class="m3-label" for="password">Contraseña <span class="m3-label-required">*</span></label>
 							<div class="m3-input-affix">
-								<input type="password" id="password" name="password" class:list={['m3-input', passwordError && 'is-invalid']} placeholder="Tu contraseña" />
+								<input type="password" id="password" name="password" class:list={['m3-input', passwordError && 'is-invalid']} placeholder="Tu contraseña" required />
 								<button type="button" class="m3-icon-btn" data-password-toggle aria-label="Mostrar contraseña">
 									<span class="material-symbols-rounded" data-password-icon>visibility_off</span>
 								</button>
@@ -147,14 +154,58 @@ const currentStep = normalizeStep(step);
 				<div data-step-panel="organization" class:list={['m3-panel', currentStep !== 'organization' && 'is-hidden']}>
 					<div class="m3-grid-2">
 						<div class="m3-field">
-							<label class="m3-label" for="business_name">Nombre de la Organización</label>
-							<input type="text" id="business_name" name="business_name" class:list={['m3-input', businessNameError && 'is-invalid']} placeholder="Ej: Clínica Dental San José" value={businessName} />
+							<label class="m3-label" for="business_name">Nombre de la Organización <span class="m3-label-required">*</span></label>
+							<input type="text" id="business_name" name="business_name" class:list={['m3-input', businessNameError && 'is-invalid']} placeholder="Ej: Clínica Dental San José" value={businessName} required />
 							{businessNameError && <span class="m3-field-error">{businessNameError}</span>}
 						</div>
 						<div class="m3-field">
-							<label class="m3-label" for="phone">Teléfono de corporativo</label>
-							<input type="tel" id="phone" name="phone" class:list={['m3-input', phoneError && 'is-invalid']} placeholder="Ej: 0981 123 456" value={phone} />
+							<label class="m3-label" for="company_email">Correo de la compañía <span class="m3-label-required">*</span></label>
+							<input type="email" id="company_email" name="company_email" class:list={['m3-input', companyEmailError && 'is-invalid']} placeholder="Ej: contacto@tuempresa.com" value={companyEmail} required />
+							<p class="m3-field-help">Este correo será el contacto principal de tu organización para notificaciones y comunicación institucional.</p>
+							{companyEmailError && <span class="m3-field-error">{companyEmailError}</span>}
+						</div>
+					</div>
+
+					<div class="m3-grid-2">
+						<div class="m3-field">
+							<label class="m3-label" for="phone">Teléfono de corporativo <span class="m3-label-required">*</span></label>
+							<div class:list={['m3-phone-group', phoneError && 'is-invalid']}>
+								<span class="m3-phone-prefix">+595</span>
+								<input
+									type="tel"
+									id="phone"
+									name="phone"
+									inputmode="numeric"
+									autocomplete="tel-national"
+									maxlength="11"
+									class:list={['m3-input', 'm3-phone-input', phoneError && 'is-invalid']}
+									placeholder="981 123 456"
+									value={phone}
+									required
+								/>
+							</div>
 							{phoneError && <span class="m3-field-error">{phoneError}</span>}
+						</div>
+						<div class="m3-field">
+							<label class="m3-label" for="id_org_specialty">Especialidad de la organización <span class="m3-label-required">*</span></label>
+							<select
+								id="id_org_specialty"
+								name="id_org_specialty"
+								class:list={['m3-input', 'm3-select', orgSpecialtyIdError && 'is-invalid']}
+								required
+								disabled={orgSpecialties.length === 0}
+							>
+								<option value="" selected={orgSpecialtyId === ''}>
+									{orgSpecialties.length > 0 ? 'Selecciona una especialidad' : 'No hay especialidades disponibles'}
+								</option>
+								{orgSpecialties.map((specialty) => (
+									<option value={String(specialty.id_org_specialty)} selected={String(specialty.id_org_specialty) === orgSpecialtyId}>
+										{specialty.name}
+									</option>
+								))}
+							</select>
+							{specialtiesLoadError && <span class="m3-field-error">{specialtiesLoadError}</span>}
+							{orgSpecialtyIdError && <span class="m3-field-error">{orgSpecialtyIdError}</span>}
 						</div>
 					</div>
 
@@ -162,12 +213,17 @@ const currentStep = normalizeStep(step);
 						<button type="button" data-prev-step class="m3-btn-tonal">
 							Atrás
 						</button>
-						<button type="submit" class="m3-btn-primary">
+						<button type="submit" class="m3-btn-primary" disabled={orgSpecialties.length === 0}>
 							Finalizar Registro
 						</button>
 					</div>
 				</div>
 			</form>
+
+			<div class="m3-card-footer">
+				<div class="m3-footer-divider"></div>
+				<a href="/auth/login" class="m3-link-accent">¿Ya tienes una cuenta? <strong>Iniciar sesión</strong></a>
+			</div>
 		</div>
 	</main>
 </section>
@@ -179,6 +235,7 @@ const currentStep = normalizeStep(step);
 		form.dataset.enhanced = 'true';
 
 		const stepInput = form.querySelector('[data-step-input]');
+		const orgPhoneInput = form.querySelector('[name="phone"]');
 		const panels = {
 			admin: form.querySelector('[data-step-panel="admin"]'),
 			organization: form.querySelector('[data-step-panel="organization"]')
@@ -200,15 +257,36 @@ const currentStep = normalizeStep(step);
 				sbd: 'Ingresa tu información personal para comenzar con la configuración de tu espacio.',
 				pi: 'person',
 				pt: 'Tus datos personales',
-				pd: 'Ingresa tu nombre y credenciales de acceso'
+				pd: 'Al crear el espacio, se te asignará el rol de administrador de la organización'
 			},
 			organization: {
 				sbt: 'Paso 2',
 				sbd: 'Configuremos los detalles de tu organización y tu espacio de trabajo principal.',
 				pi: 'domain',
 				pt: 'Datos de Organización',
-				pd: 'Información general de tu empresa o consultorio'
+				pd: 'Completa el contacto corporativo y la especialidad principal de tu organización'
 			}
+		};
+
+		const toParaguayLocalPhoneDigits = (rawValue) => {
+			let digits = String(rawValue || '').replace(/\D/g, '');
+			if (digits.startsWith('00595')) digits = digits.slice(5);
+			if (digits.startsWith('595')) digits = digits.slice(3);
+			if (digits.startsWith('0')) digits = digits.slice(1);
+			return digits.slice(0, 9);
+		};
+
+		const formatParaguayLocalPhone = (rawValue) => {
+			const digits = toParaguayLocalPhoneDigits(rawValue);
+			if (!digits) return '';
+			if (digits.length <= 3) return digits;
+			if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+			return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)}`;
+		};
+
+		const toParaguayE164Phone = (rawValue) => {
+			const digits = toParaguayLocalPhoneDigits(rawValue);
+			return digits ? `+595${digits}` : '';
 		};
 
 		const updateUI = () => {
@@ -256,6 +334,19 @@ const currentStep = normalizeStep(step);
 			const isPw = input?.type === 'password';
 			if (input) input.type = isPw ? 'text' : 'password';
 			if (pwIcon) pwIcon.textContent = isPw ? 'visibility' : 'visibility_off';
+		});
+
+		if (orgPhoneInput instanceof HTMLInputElement) {
+			orgPhoneInput.value = formatParaguayLocalPhone(orgPhoneInput.value);
+			orgPhoneInput.addEventListener('input', () => {
+				orgPhoneInput.value = formatParaguayLocalPhone(orgPhoneInput.value);
+			});
+		}
+
+		form.addEventListener('submit', () => {
+			if (orgPhoneInput instanceof HTMLInputElement) {
+				orgPhoneInput.value = toParaguayE164Phone(orgPhoneInput.value);
+			}
 		});
 
 		updateUI();
@@ -324,13 +415,20 @@ const currentStep = normalizeStep(step);
 	display: flex;
 	align-items: center;
 	gap: 0.75rem;
-	margin-bottom: 4rem;
+	margin-bottom: 3.25rem;
 }
 
 .m3-logo {
-	height: 2.5rem;
+	height: 3rem;
 	width: auto;
 	object-fit: contain;
+}
+
+@media (min-width: 1024px) {
+	.m3-brand .m3-logo {
+		height: 3.85rem;
+		filter: drop-shadow(0 8px 20px rgba(59, 130, 246, 0.25));
+	}
 }
 
 .m3-brand-name {
@@ -476,12 +574,19 @@ const currentStep = normalizeStep(step);
 .m3-panel-icon {
 	width: 3.5rem;
 	height: 3.5rem;
+	min-width: 3.5rem;
+	min-height: 3.5rem;
+	flex: 0 0 3.5rem;
 	background-color: #eff6ff;
 	color: #2563eb;
 	border-radius: 50%;
 	display: flex;
 	align-items: center;
 	justify-content: center;
+}
+
+.m3-panel-titles {
+	min-width: 0;
 }
 
 .m3-panel-icon .material-symbols-rounded {
@@ -532,11 +637,24 @@ const currentStep = normalizeStep(step);
 	gap: 0.5rem;
 }
 
+.m3-field-help {
+	font-size: 0.8rem;
+	line-height: 1.35;
+	color: #64748b;
+	margin: 0.1rem 0 0;
+	margin-left: 0.25rem;
+}
+
 .m3-label {
 	font-size: 0.9rem;
 	font-weight: 600;
 	color: #334155;
 	margin-left: 0.25rem;
+}
+
+.m3-label-required {
+	color: #e11d48;
+	font-weight: 800;
 }
 
 .m3-input {
@@ -575,6 +693,63 @@ const currentStep = normalizeStep(step);
 
 .m3-input-affix .m3-input {
 	padding-right: 3rem;
+}
+
+.m3-phone-group {
+	display: flex;
+	width: 100%;
+	border-radius: 0.75rem;
+}
+
+.m3-phone-prefix {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 0.95rem;
+	border: 1px solid #cbd5e1;
+	border-right: 0;
+	border-radius: 0.75rem 0 0 0.75rem;
+	background-color: #f1f5f9;
+	color: #64748b;
+	font-size: 0.95rem;
+	font-weight: 700;
+	white-space: nowrap;
+	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+
+.m3-phone-input {
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+.m3-phone-input:focus {
+	box-shadow: none;
+}
+
+.m3-phone-group:focus-within .m3-phone-prefix,
+.m3-phone-group:focus-within .m3-phone-input {
+	border-color: #2563eb;
+}
+
+.m3-phone-group:focus-within {
+	box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
+	border-radius: 0.75rem;
+}
+
+.m3-phone-group.is-invalid .m3-phone-prefix {
+	border-color: #e11d48;
+	background-color: #fff1f2;
+	color: #be123c;
+}
+
+.m3-phone-group.is-invalid:focus-within {
+	box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.1);
+}
+
+.m3-select:disabled {
+	background-color: #f1f5f9;
+	color: #94a3b8;
+	cursor: not-allowed;
 }
 
 .m3-icon-btn {
@@ -655,6 +830,20 @@ const currentStep = normalizeStep(step);
 	transform: translateY(-1px);
 }
 
+.m3-btn-primary:disabled,
+.m3-btn-tonal:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	transform: none;
+	box-shadow: none;
+}
+
+.m3-btn-primary:disabled:hover {
+	background-color: #2563eb;
+	transform: none;
+	box-shadow: none;
+}
+
 .m3-btn-tonal {
 	background-color: #f1f5f9;
 	color: #0f172a;
@@ -672,7 +861,43 @@ const currentStep = normalizeStep(step);
 	background-color: #e2e8f0;
 }
 
+.m3-card-footer {
+    margin-top: 2.5rem;
+    padding-top: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.m3-footer-divider {
+    width: 40px;
+    height: 2px;
+    background: #e2e8f0;
+    border-radius: 1px;
+}
+
+.m3-link-accent {
+    color: #475569;
+    text-decoration: none;
+    font-size: 0.95rem;
+}
+
+.m3-link-accent strong {
+    color: #2563eb;
+    transition: color 0.2s;
+}
+
+.m3-link-accent:hover strong {
+    color: #1d4ed8;
+    text-decoration: underline;
+}
+
 @media (max-width: 640px) {
+	.m3-grid-2 {
+		gap: 1rem;
+		margin-bottom: 1rem;
+	}
 	.m3-btn-primary, .m3-btn-tonal {
 		width: 100%;
 		justify-content: center;
@@ -697,10 +922,13 @@ const currentStep = normalizeStep(step);
 		align-items: center;
 		justify-content: center;
 		gap: 0.75rem;
-		margin-bottom: 2rem;
+		margin-bottom: 2.5rem;
+	}
+	.m3-mobile-brand .m3-logo {
+		height: 3.5rem;
 	}
 	.m3-brand-name-dark {
-		font-size: 1.5rem;
+		font-size: 2rem;
 		font-weight: 800;
 		letter-spacing: -0.02em;
 		color: #0f172a;
