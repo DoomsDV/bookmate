@@ -29,14 +29,14 @@ const activeCount = services.filter((s) => s.is_active === 1).length;
 const inactiveCount = services.length - activeCount;
 ---
 
-<section class="material-region dark:shadow-none">
+<section class="rounded-4xl bg-white dark:bg-[#1F2023] p-5 sm:p-6 shadow-[0_10px_26px_rgba(15,23,42,0.06)] dark:shadow-[0_10px_26px_rgba(0,0,0,0.3)] transition-colors duration-300">
 	<header class="mb-4 flex flex-col justify-between gap-3 sm:mb-5 sm:flex-row sm:items-center">
 		<div class="flex flex-wrap items-center gap-2.5 text-[0.82rem] font-bold">
-			<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 transition border border-emerald-500/10">
+			<span class="inline-flex items-center gap-1.5 rounded-full bg-[#EAF2EA] px-3.5 py-1.5 text-[#285437] dark:bg-[#233128] dark:text-[#A7C9B3] transition-colors duration-300">
 				<span class="size-2 rounded-full bg-emerald-500"></span> Activos: {activeCount}
 			</span>
 			{inactiveCount > 0 && (
-				<span class="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1.5 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 transition border border-rose-500/10">
+				<span class="inline-flex items-center gap-1.5 rounded-full bg-[#F4E9EB] px-3.5 py-1.5 text-[#6B2D35] dark:bg-[#322529] dark:text-[#D0B0B7] transition-colors duration-300">
 					<span class="size-2 rounded-full bg-rose-500"></span> Inactivos: {inactiveCount}
 				</span>
 			)}
@@ -45,7 +45,7 @@ const inactiveCount = services.length - activeCount;
 		{showCreateAction && (
 			<button
 				type="button"
-				class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) sm:w-auto w-full"
+				class="inline-flex items-center justify-center gap-2 rounded-full bg-[#1967D2] px-6 py-3 text-[0.95rem] font-extrabold text-white transition-colors hover:bg-[#1558B7] focus:outline-none focus:ring-2 focus:ring-[#1967D2] focus:ring-offset-2 focus:ring-offset-[#F1F3F4] dark:bg-[#5D83BF] dark:text-[#F4F8FF] dark:hover:bg-[#6A90CC] dark:focus:ring-[#8AB4F8] dark:focus:ring-offset-[#1F2023] sm:w-auto w-full"
 				data-open-service-modal
 			>
 				<span class="material-symbols-rounded text-[1.2rem]">add</span>
@@ -55,8 +55,8 @@ const inactiveCount = services.length - activeCount;
 	</header>
 
 	{services.length === 0 ? (
-		<div class="flex flex-col items-center justify-center rounded-[1.35rem] border-2 border-dashed border-(--shell-border) bg-(--surface)/40 px-5 py-10 text-center transition">
-			<div class="mb-4 flex size-16 items-center justify-center rounded-full bg-(--surface-variant) text-(--on-surface-variant) ring-8 ring-(--surface-bright)">
+		<div class="flex flex-col items-center justify-center rounded-[1.6rem] bg-[#F6F8FC] dark:bg-[#25262A] px-5 py-10 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.28)] dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] transition-colors duration-300">
+			<div class="mb-4 flex size-16 items-center justify-center rounded-full bg-[#E9EEF6] dark:bg-[#2F3136] text-(--on-surface-variant)">
 				<span class="material-symbols-rounded text-[2rem]">inbox</span>
 			</div>
 			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">No hay servicios registrados</h3>
@@ -65,57 +65,53 @@ const inactiveCount = services.length - activeCount;
 			</p>
 		</div>
 	) : (
-		<div class="material-cards-grid sm:grid-cols-2 lg:grid-cols-3">
+		<div class="material-cards-grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6">
 			{services.map((service) => (
 				<article
-					class="material-data-card group cursor-pointer relative overflow-hidden hover:-translate-y-0.5 hover:border-(--primary)/40 hover:shadow-[0_14px_30px_-18px_rgba(0,0,0,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+					class="group cursor-pointer relative overflow-hidden rounded-[1.7rem] bg-[#F6F8FB] dark:bg-[#2A2C30] p-5 sm:p-6 shadow-[0_4px_12px_rgba(15,23,42,0.06)] dark:shadow-[0_6px_14px_rgba(0,0,0,0.24)] transition-all duration-300 hover:shadow-[0_8px_16px_rgba(15,23,42,0.08)] dark:hover:shadow-[0_10px_18px_rgba(0,0,0,0.28)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-[#FFFFFF] dark:focus-visible:ring-offset-[#1F2023]"
 					data-service-card
 					data-service-id={service.id_service}
 					tabindex="0"
 					role="button"
 					aria-label={`Editar servicio ${service.name || service.id_service}`}
 				>
-					<div class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-(--primary)/5 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></div>
-
 					<div class="relative flex items-start justify-between gap-4">
-						<div class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-(--primary-soft) text-(--primary) transition-transform duration-300 group-hover:scale-105">
+						<div class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#E8F0FE] text-[#1967D2] dark:bg-[#25314A] dark:text-[#A8C7FA] transition-transform duration-300 group-hover:scale-105">
 							<span class="material-symbols-rounded text-[1.25rem]">design_services</span>
 						</div>
 
 						<span
 							class:list={[
-								'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-widest border',
+								'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-widest',
 								service.is_active === 1
-									? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/10 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/20'
-									: 'bg-(--surface-variant) text-(--on-surface-variant) border-(--shell-border)',
+									? 'bg-[#EAF2EA] text-[#285437] dark:bg-[#233128] dark:text-[#A7C9B3]'
+									: 'bg-[#F4E9EB] text-[#6B2D35] dark:bg-[#322529] dark:text-[#D0B0B7]',
 							]}
 						>
-							<span class:list={["size-1.5 rounded-full", service.is_active === 1 ? "bg-emerald-500" : "bg-(--on-surface-variant)"]}></span>
+							<span class:list={["size-1.5 rounded-full", service.is_active === 1 ? "bg-emerald-500" : "bg-rose-500"]}></span>
 							{service.is_active === 1 ? 'Activo' : 'Inactivo'}
 						</span>
 					</div>
 
-					<div class="relative flex flex-1 flex-col gap-3">
-						<h3 class="text-[1.1rem] font-extrabold tracking-tight text-(--on-surface) line-clamp-1 group-hover:text-(--primary) transition-colors">
+					<div class="relative flex flex-1 flex-col gap-4">
+						<h3 class="text-[1.25rem] font-extrabold tracking-tight text-(--on-surface) line-clamp-1 group-hover:text-(--primary) transition-colors">
 							{service.name || `Servicio #${service.id_service}`}
 						</h3>
 
-						<dl class="mt-auto shrink-0 grid gap-2">
-							<div class="flex items-center justify-between border-b border-(--shell-border) border-dashed pb-2 text-[0.9rem]">
-								<dt class="flex items-center gap-1.5 text-(--on-surface-variant) font-semibold">
-									<span class="material-symbols-rounded text-[1.1rem] opacity-70">schedule</span>
+						<dl class="mt-auto shrink-0 grid gap-3">
+							<div class="flex items-center justify-between text-[0.92rem]">
+								<dt class="text-(--on-surface-variant) font-normal">
 									Duración
 								</dt>
-								<dd class="font-bold text-(--on-surface)">
+								<dd class="font-bold text-(--on-surface) text-right">
 									{toDurationLabel(service.duration_minutes)}
 								</dd>
 							</div>
-							<div class="flex items-center justify-between pt-0.5 text-[0.9rem]">
-								<dt class="flex items-center gap-1.5 text-(--on-surface-variant) font-semibold">
-									<span class="material-symbols-rounded text-[1.1rem] opacity-70">payments</span>
+							<div class="flex items-center justify-between text-[0.92rem]">
+								<dt class="text-(--on-surface-variant) font-normal">
 									Precio
 								</dt>
-								<dd class="font-extrabold text-(--on-surface)">
+								<dd class="font-bold text-(--on-surface) text-right">
 									{service.price ? currencyFormatter.format(service.price) : '--'}
 								</dd>
 							</div>
