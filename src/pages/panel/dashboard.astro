@@ -102,183 +102,209 @@ const getStatusTone = (status: string) => {
 ---
 
 <Layout>
-	<div class="min-h-screen w-full max-w-full overflow-x-hidden">
+	<div class="min-h-screen w-full max-w-full overflow-x-hidden bg-[#F8F9FA] dark:bg-[#131314] transition-colors duration-300">
 		<div
-			class="app-shell grid min-h-screen overflow-hidden border border-(--shell-border) bg-(--shell-surface) shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+			class="app-shell grid min-h-screen overflow-hidden bg-transparent"
 			data-app-shell
 			data-sidebar-state="expanded"
 		>
 			<SideNav currentPath={Astro.url.pathname} />
 
-			<div class="grid min-h-full grid-rows-[auto_1fr]">
+			<div class="grid min-h-full grid-rows-[auto_1fr] bg-[#F8F9FA] dark:bg-[#131314] transition-colors duration-300">
 				<TopBar />
 
-				<main class="w-full max-w-full overflow-x-hidden bg-(--content-surface) px-4 py-4 sm:px-6 sm:py-6">
-					<section class="grid w-full max-w-full min-w-0 gap-4 sm:gap-5">
-						<section class="material-region rounded-3xl bg-(--surface-container) p-5 sm:p-6">
-							<div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
-								<div class="grid gap-1">
-									<p class="text-xs font-bold uppercase tracking-[0.2em] text-(--on-surface-variant)">
-										Dashboard
-									</p>
-									<h1 class="text-2xl font-extrabold text-(--on-surface) sm:text-3xl">
-										Resumen diario
-									</h1>
-									<p class="text-sm leading-relaxed text-(--on-surface-variant)">
-										{organizationName} - {dashboardDate}
-									</p>
-								</div>
-
-								<a
-									href="/panel/calendar"
-									class="btn-primary-soft inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold no-underline transition sm:w-auto"
-								>
-									<span class="material-symbols-rounded text-[1rem]">calendar_month</span>
-									Ir al calendario
-								</a>
-							</div>
-
-							<div class="mt-4 border-t border-(--shell-border)/70 pt-4 sm:mt-5 sm:pt-5">
-								<div
-									class="ai-card dashboard-ai-card rounded-2xl border border-(--shell-border)/60 bg-(--secondary-container) p-4"
-									data-ai-summary-card
-								>
-									<div class="mb-2.5 inline-flex items-center gap-2">
-										<span class="material-symbols-rounded ai-card-sparkle text-(--primary)">auto_awesome</span>
-										<p class="text-[0.8rem] font-bold uppercase tracking-wider text-(--on-surface-variant) sm:text-xs">
-											Resumen Inteligente del dia
+				<main class="w-full max-w-full overflow-x-hidden px-4 py-4 sm:px-8 sm:py-8 lg:px-10">
+					<div class="mx-auto max-w-7xl">
+						<section class="grid w-full min-w-0 gap-6 sm:gap-8">
+							<section class="rounded-[2rem] bg-white dark:bg-[#1E1F22] p-6 sm:p-8 shadow-[0_8px_30px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.4)] transition-all duration-300">
+								<div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+									<div class="grid gap-1">
+										<p class="text-xs font-bold uppercase tracking-[0.2em] text-[#5f6368] dark:text-[#C4C7C5]">
+											Dashboard
+										</p>
+										<h1 class="text-3xl font-extrabold text-[#202124] dark:text-[#E3E3E3] tracking-tight sm:text-4xl">
+											Resumen diario
+										</h1>
+										<p class="text-[0.95rem] font-medium text-[#5f6368] dark:text-[#C4C7C5]">
+											{organizationName} - {dashboardDate}
 										</p>
 									</div>
-									<p
-										class="inline-flex items-center gap-2 text-base leading-relaxed text-(--on-surface-variant) sm:text-[0.95rem]"
-										data-ai-summary-state
+
+									<a
+										href="/panel/calendar"
+										class="inline-flex w-full items-center justify-center gap-2 rounded-full bg-[#E8F0FE] hover:bg-[#D2E3FC] text-[#1967D2] dark:bg-[#1A2D42] dark:text-[#A8C7FA] px-6 py-3 text-sm font-bold no-underline transition dark:hover:bg-[#152538] sm:w-auto shadow-sm"
 									>
-										<span class="material-symbols-rounded animate-spin text-base text-(--primary)">
-											autorenew
-										</span>
-										Cargando resumen inteligente...
-									</p>
-									<p
-										class="hidden whitespace-pre-line text-base leading-relaxed text-(--on-surface) sm:text-[0.95rem]"
-										data-ai-summary-text
-									></p>
+										<span class="material-symbols-rounded text-lg">calendar_month</span>
+										Ir al calendario
+									</a>
 								</div>
-							</div>
-						</section>
 
-						{
-							loadError ? (
-								<div class="rounded-[1.2rem] border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
-									{loadError}
-								</div>
-							) : (
-								<>
-									<div class="material-cards-grid md:grid-cols-4 dashboard-metrics-grid">
-										{
-											metrics.map((metric, metricIndex) => (
-												<article class="material-data-card dashboard-metric-card rounded-3xl border border-(--shell-border) bg-(--card-surface) shadow-sm" data-metric-index={metricIndex}>
-													<div class="flex items-start justify-between gap-3">
-														<div>
-															<p class="text-[0.8rem] font-bold uppercase tracking-wider text-(--on-surface-variant) sm:text-xs">
-																{metric.label}
-															</p>
-															<p class="mt-2 text-3xl font-extrabold leading-none text-(--on-surface) metric-value">
-																{metric.value}
-															</p>
-														</div>
-														<span class="material-symbols-rounded metric-icon-badge">
-															{metric.icon}
-														</span>
-													</div>
-													<p class="mt-auto text-[0.95rem] leading-relaxed text-(--on-surface-variant) sm:text-sm metric-description">
-														{metric.description}
-													</p>
-												</article>
-											))
-										}
+								<div class="mt-6 pt-6">
+									<div
+										class="rounded-[2rem] bg-[#EEF2F6] dark:bg-[#161C24] p-6 shadow-none transition-all duration-300"
+										data-ai-summary-card
+									>
+										<div class="mb-3 inline-flex items-center gap-1.5 opacity-80 mix-blend-multiply dark:mix-blend-normal dark:opacity-90">
+											<span class="material-symbols-rounded text-[#1967D2] dark:text-[#A8C7FA] text-[1.1rem]">auto_awesome</span>
+											<h2 class="text-xs text-[#1967D2] dark:text-[#A8C7FA] font-bold uppercase tracking-wider">
+												Resumen de IA
+											</h2>
+										</div>
+										<p
+											class="inline-flex items-center gap-2 text-[0.95rem] font-medium leading-relaxed text-[#5f6368] dark:text-[#C4C7C5] sm:text-base mt-1"
+											data-ai-summary-state
+										>
+											<span class="material-symbols-rounded animate-spin text-base text-[#1967D2] dark:text-[#A8C7FA]">
+												autorenew
+											</span>
+											Cargando resumen inteligente...
+										</p>
+										<p
+											class="hidden whitespace-pre-line text-[0.95rem] font-medium leading-relaxed text-[#202124] dark:text-[#E3E3E3] sm:text-base max-w-4xl mt-1"
+											data-ai-summary-text
+										></p>
 									</div>
+								</div>
+							</section>
 
-										<section class="m3-card team-overview-card" aria-labelledby="team-overview-title" data-team-card>
-											<div class="team-overview-head">
-												<h2 id="team-overview-title" class="team-overview-title">Equipo de trabajo</h2>
-												<a href="/panel/professionals" class="team-overview-link-minimal">
+							{
+								loadError ? (
+									<div class="rounded-[1.5rem] bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 dark:bg-[#3B191E] dark:text-[#FFB4AB] shadow-sm">
+										{loadError}
+									</div>
+								) : (
+									<>
+										<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+											{
+												metrics.map((metric, metricIndex) => {
+													const tones = [
+														'bg-[#F3E8FF] text-[#4A154B] dark:bg-[#231F2A] dark:text-[#D0BCFF]', 
+														'bg-[#E0F2F1] text-[#006064] dark:bg-[#1C2526] dark:text-[#80DEEA]', 
+														'bg-[#E8F5E9] text-[#1B5E20] dark:bg-[#1D2521] dark:text-[#81C995]', 
+														'bg-[#FBE9E7] text-[#BF360C] dark:bg-[#2A1F1D] dark:text-[#FFB4A2]'  
+													];
+													const iconTones = [
+														'text-[#4A154B] dark:text-[#D0BCFF]', 
+														'text-[#006064] dark:text-[#80DEEA]', 
+														'text-[#1B5E20] dark:text-[#81C995]', 
+														'text-[#BF360C] dark:text-[#FFB4A2]'  
+													];
+													const tone = tones[metricIndex % tones.length];
+													const iconTone = iconTones[metricIndex % iconTones.length];
+
+													return (
+														<article class={`rounded-[2rem] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.15)] transition-all duration-300 hover:-translate-y-1 ${tone}`} data-metric-index={metricIndex}>
+															<div class="flex items-start justify-between gap-3 mb-6">
+																<p class="text-[0.75rem] font-extrabold uppercase tracking-widest opacity-90 sm:text-[0.8rem] leading-tight max-w-25 text-[#5f6368] dark:text-[#C4C7C5]">
+																	{metric.label}
+																</p>
+																<span class={`material-symbols-rounded text-3xl opacity-80 dark:opacity-90 ${iconTone}`}>
+																	{metric.icon}
+																</span>
+															</div>
+															<div class="mt-auto">
+																<p class="text-5xl sm:text-[3.5rem] font-black leading-none tracking-tighter mb-2">
+																	{metric.value}
+																</p>
+																<p class="text-[0.85rem] font-medium opacity-60 mix-blend-multiply dark:opacity-70 dark:mix-blend-normal leading-snug sm:text-[0.9rem] text-[#5f6368] dark:text-[#C4C7C5]">
+																	{metric.description}
+																</p>
+															</div>
+														</article>
+													);
+												})
+											}
+										</div>
+
+									<div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+										<section class="rounded-[2rem] bg-white dark:bg-[#1E1F22] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.2)] flex flex-col gap-4 transition-colors duration-300" aria-labelledby="team-overview-title" data-team-card>
+											<div class="flex items-center justify-between gap-3">
+												<h2 id="team-overview-title" class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Equipo de trabajo</h2>
+												<a href="/panel/professionals" class="text-[0.8rem] font-bold text-[#1A73E8] bg-[#E8F0FE] hover:bg-[#D2E3FC] dark:text-[#A8C7FA] dark:bg-[#1A2D42] px-4 py-1.5 rounded-full dark:hover:bg-[#152538] transition">
 													Ver todos
 												</a>
 											</div>
 
-											<div class="team-overview-body">
-												<div class="avatar-stack" data-team-avatar-stack aria-label="Vista previa del equipo">
-													<span class="team-avatar team-avatar--placeholder"></span>
-													<span class="team-avatar team-avatar--placeholder"></span>
-													<span class="team-avatar team-avatar--placeholder"></span>
+											<div class="flex items-center gap-3 mt-2 bg-[#F8F9FA] dark:bg-[#2B2D31] p-3 pr-5 rounded-full shadow-[0_2px_10px_rgba(0,0,0,0.02)] dark:shadow-[0_2px_10px_rgba(0,0,0,0.2)] self-start transition-colors duration-300">
+												<div class="flex -space-x-3" data-team-avatar-stack aria-label="Vista previa del equipo">
+													<span class="w-10 h-10 rounded-full bg-[#E8EAED] dark:bg-[#444746] border-2 border-white dark:border-[#1E1F22] shrink-0 z-30 shadow-sm transition-colors duration-300"></span>
+													<span class="w-10 h-10 rounded-full bg-[#DADCE0] dark:bg-[#5F6368] border-2 border-white dark:border-[#1E1F22] shrink-0 z-20 shadow-sm transition-colors duration-300"></span>
+													<span class="w-10 h-10 rounded-full bg-[#BDC1C6] dark:bg-[#747775] border-2 border-white dark:border-[#1E1F22] shrink-0 z-10 shadow-sm transition-colors duration-300"></span>
 												</div>
-												<p class="team-overview-summary-text" data-team-summary>
+												<p class="text-[0.9rem] font-bold text-[#3c4043] dark:text-[#E3E3E3]" data-team-summary>
 													Cargando equipo...
 												</p>
 											</div>
-											<p class="team-overview-state hidden" data-team-state></p>
+											<p class="text-sm font-medium text-rose-500 hidden mt-2 dark:text-[#FFB4AB]" data-team-state></p>
 										</section>
 
-									<div class="material-region bg-(--card-surface)">
-										<div class="mb-4 flex items-center justify-between gap-3">
-											<h2 class="text-lg font-bold text-(--on-surface)">Próximas citas del dia</h2>
-											<span class="rounded-full border border-(--shell-border) bg-(--control-surface) px-3 py-1 text-xs font-semibold text-(--on-surface-variant)">
-												{dashboard.upcoming_appointments.length} registro(s)
-											</span>
-										</div>
+										<div class="xl:col-span-2 rounded-[2rem] bg-white dark:bg-[#1E1F22] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-colors duration-300">
+											<div class="mb-6 flex items-center justify-between gap-3">
+												<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Próximas citas del dia</h2>
+												<span class="rounded-full bg-[#E8EAED] dark:bg-[#2B2D31] px-4 py-1.5 text-[0.8rem] font-black text-[#5f6368] dark:text-[#C4C7C5] tracking-wide shadow-sm transition-colors duration-300">
+													{dashboard.upcoming_appointments.length} registro(s)
+												</span>
+											</div>
 
-										{
-											dashboard.upcoming_appointments.length === 0 ? (
-												<div class="rounded-xl border border-dashed border-(--shell-border) bg-(--control-surface) px-4 py-6 text-sm text-(--on-surface-variant)">
-													No hay citas próximas para mostrar en este momento.
-												</div>
-											) : (
-												<div class="w-full max-w-full overflow-x-auto overscroll-x-contain">
-													<table class="w-full min-w-full border-collapse text-sm">
-														<thead>
-															<tr class="border-b border-(--shell-border) text-left text-xs uppercase tracking-[0.12em] text-(--on-surface-variant)">
-																<th class="px-3 py-2 font-semibold">Cliente</th>
-																<th class="px-3 py-2 font-semibold">Hora</th>
-																<th class="px-3 py-2 font-semibold">Servicio</th>
-																<th class="px-3 py-2 font-semibold">Estado</th>
-															</tr>
-														</thead>
-														<tbody>
-															{
-																dashboard.upcoming_appointments.map((appointment) => (
-																	<tr class="border-b border-(--shell-border)/70 last:border-none">
-																		<td class="px-3 py-3 font-semibold text-(--on-surface)">
-																			{appointment.customer_name}
-																		</td>
-																		<td class="px-3 py-3 text-(--on-surface-variant)">
-																			{appointment.time_start} - {appointment.time_end}
-																		</td>
-																		<td class="px-3 py-3 text-(--on-surface)">
-																			{appointment.service_name}
-																		</td>
-																		<td class="px-3 py-3">
-																			<span
-																				class:list={[
-																					'inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold',
-																					getStatusTone(appointment.status),
-																				]}
-																			>
-																				{getStatusLabel(appointment.status)}
-																			</span>
-																		</td>
-																	</tr>
-																))
-															}
-														</tbody>
-													</table>
-												</div>
-											)
-										}
+											{
+												dashboard.upcoming_appointments.length === 0 ? (
+													<div class="rounded-[1.5rem] bg-[#F8F9FA] dark:bg-[#131314] px-6 py-8 text-center transition-colors duration-300">
+														<div class="w-14 h-14 bg-white dark:bg-[#2B2D31] rounded-full flex items-center justify-center mx-auto mb-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] transition-colors duration-300">
+															<span class="material-symbols-rounded text-[#BDC1C6] dark:text-[#C4C7C5] text-2xl">event_busy</span>
+														</div>
+														<p class="text-base font-bold text-[#5f6368] dark:text-[#C4C7C5]">No hay citas próximas para mostrar en este momento.</p>
+													</div>
+												) : (
+													<div class="w-full max-w-full overflow-x-auto">
+														<table class="w-full min-w-full">
+															<thead>
+																<tr class="border-b-2 border-[#F1F3F4] dark:border-[#2B2D31] text-left text-[0.75rem] font-extrabold uppercase tracking-widest text-[#80868B] dark:text-[#8E918F] transition-colors duration-300">
+																	<th class="px-4 py-3">Cliente</th>
+																	<th class="px-4 py-3">Hora</th>
+																	<th class="px-4 py-3">Servicio</th>
+																	<th class="px-4 py-3">Estado</th>
+																</tr>
+															</thead>
+															<tbody>
+																{
+																	dashboard.upcoming_appointments.map((appointment) => (
+																		<tr class="border-b border-[#F8F9FA] dark:border-[#2B2D31] transition-colors hover:bg-[#F8F9FA] dark:hover:bg-[#2B2D31] last:border-none">
+																			<td class="px-4 py-4">
+																				<div class="font-bold text-[#202124] dark:text-[#E3E3E3] text-[0.95rem]">{appointment.customer_name}</div>
+																			</td>
+																			<td class="px-4 py-4 text-[0.95rem] font-bold text-[#5f6368] dark:text-[#C4C7C5]">
+																				{appointment.time_start} - {appointment.time_end}
+																			</td>
+																			<td class="px-4 py-4 text-[0.95rem] font-medium text-[#3c4043] dark:text-[#C4C7C5]">
+																				{appointment.service_name}
+																			</td>
+																			<td class="px-4 py-4">
+																				<span
+																					class:list={[
+																						'inline-flex rounded-full px-3 py-1 text-[0.75rem] font-bold uppercase tracking-wider shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.2)] transition-colors duration-300',
+																						appointment.status === 'CONFIRMADO' ? 'bg-[#E6F4EA] text-[#137333] dark:bg-[#0F5223] dark:text-[#6DD58C]' : 
+																						appointment.status === 'PENDIENTE' ? 'bg-[#FEF7E0] text-[#E37400] dark:bg-[#4D2E00] dark:text-[#FFB74D]' : 
+																						appointment.status === 'CANCELADO' ? 'bg-[#FCE8E6] text-[#C5221F] dark:bg-[#5C1A16] dark:text-[#FFB4AB]' :
+																						'bg-[#F1F3F4] text-[#5F6368] dark:bg-[#2B2D31] dark:text-[#C4C7C5]'
+																					]}
+																				>
+																					{getStatusLabel(appointment.status)}
+																				</span>
+																			</td>
+																		</tr>
+																	))
+																}
+															</tbody>
+														</table>
+													</div>
+												)
+											}
+										</div>
 									</div>
 								</>
 							)
 						}
-					</section>
+					</div>
 				</main>
 			</div>
 		</div>

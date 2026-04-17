@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
 :root {
 	--font-body: "Nunito Sans", sans-serif;
 	--font-logo: "Nunito Sans", sans-serif;
