@@ -37,10 +37,18 @@ const inactiveCount = services.length - activeCount;
 			{showCreateAction && (
 				<button
 					type="button"
-					class="services-create-btn"
+					class="services-create-btn flex items-center justify-center gap-2"
 					data-open-service-modal
 				>
-					+ Nuevo Servicio
+					<svg
+						class="services-create-btn-icon w-[18px] h-[18px]"
+						viewBox="0 0 24 24"
+						fill="none"
+						aria-hidden="true"
+					>
+						<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+					</svg>
+					<span>Nuevo Servicio</span>
 				</button>
 			)}
 		</div>
@@ -198,9 +206,6 @@ const inactiveCount = services.length - activeCount;
 	}
 
 	.services-create-btn {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
 		border-radius: 999px;
 		border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
 		background: var(--primary);
@@ -210,6 +215,10 @@ const inactiveCount = services.length - activeCount;
 		color: #f8fbff;
 		box-shadow: none;
 		transition: filter 140ms ease, border-color 140ms ease;
+	}
+
+	.services-create-btn-icon {
+		flex-shrink: 0;
 	}
 
 	.services-create-btn:hover {
@@ -357,8 +366,8 @@ const inactiveCount = services.length - activeCount;
 		border-color: rgba(255, 255, 255, 0.08);
 		background: color-mix(
 			in srgb,
-			var(--surface-container-low, #1e1e1e) 85%,
-			var(--surface-container, #22252b) 15%
+			var(--surface-container-low, #171d28) 82%,
+			var(--surface-container, #141923) 18%
 		);
 	}
 
@@ -368,14 +377,14 @@ const inactiveCount = services.length - activeCount;
 	}
 
 	html[data-theme='dark'] .services-card {
-		border: 1px solid rgba(255, 255, 255, 0.03);
-		background: color-mix(in srgb, #1e1e1e 88%, #23262d 12%);
-		box-shadow: none;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 86%, transparent);
+		background: color-mix(in srgb, var(--surface-container-low, #171d28) 78%, var(--surface-container, #141923) 22%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 	}
 
 	html[data-theme='dark'] .services-card:hover {
-		border-color: rgba(255, 255, 255, 0.06);
-		background: color-mix(in srgb, #21242b 90%, #272b34 10%);
+		border-color: color-mix(in srgb, var(--shell-border) 96%, transparent);
+		background: color-mix(in srgb, var(--surface-container-low, #171d28) 70%, var(--surface-container, #141923) 30%);
 	}
 
 	html[data-theme='dark'] .services-card-status--active {

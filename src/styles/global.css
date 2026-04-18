@@ -68,20 +68,20 @@
 }
 
 html[data-theme='dark'] {
-	--background: #0f1115;
-	--background-accent: #131720;
-	--page-background: #0f1115;
-	--surface: rgba(19, 23, 31, 0.94);
-	--surface-container: #141923;
-	--surface-container-low: #171d28;
-	--surface-container-high: #1e2531;
-	--surface-container-highest: #252f3c;
-	--surface-bright: #171d28;
-	--bar-outline: #212a36;
-	--shell-surface: rgba(17, 21, 29, 0.96);
-	--sidebar-surface: rgba(16, 20, 28, 0.97);
-	--content-surface: rgba(20, 24, 33, 0.74);
-	--shell-border: #212a36;
+	--background: #020617;
+	--background-accent: #0f172a;
+	--page-background: #020617;
+	--surface: rgba(15, 23, 42, 0.94);
+	--surface-container: #0f172a;
+	--surface-container-low: #020617;
+	--surface-container-high: #1e293b;
+	--surface-container-highest: #334155;
+	--surface-bright: #0f172a;
+	--bar-outline: #1e293b;
+	--shell-surface: rgba(2, 6, 23, 0.96);
+	--sidebar-surface: rgba(2, 6, 23, 0.97);
+	--content-surface: rgba(15, 23, 42, 0.74);
+	--shell-border: #1e293b;
 	--primary: #3b82f6;
 	--primary-soft: rgba(59, 130, 246, 0.12);
 	--primary-soft-hover: rgba(59, 130, 246, 0.18);
@@ -90,17 +90,17 @@ html[data-theme='dark'] {
 	--secondary-container: rgba(161, 161, 170, 0.15);
 	--on-surface: #fafafa;
 	--on-surface-variant: #a1a1aa;
-	--hero-gradient: linear-gradient(135deg, #151a23 0%, #10141c 62%, #0f1115 100%);
+	--hero-gradient: linear-gradient(135deg, #0f172a 0%, #020617 100%);
 	--hero-shadow: rgba(0, 0, 0, 0.5);
 	--hero-glow: radial-gradient(circle at center, rgba(59, 130, 246, 0.03), transparent 60%);
-	--control-surface: #10141c;
-	--control-surface-strong: #121823;
-	--menu-surface: rgba(16, 20, 28, 0.98);
-	--card-surface: #141923;
-	--card-surface-strong: #171d28;
+	--control-surface: #0f172a;
+	--control-surface-strong: #1e293b;
+	--menu-surface: rgba(15, 23, 42, 0.98);
+	--card-surface: #0f172a;
+	--card-surface-strong: #1e293b;
 	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-	--sidebar-card-surface: rgba(20, 24, 33, 0.95);
+	--sidebar-card-surface: rgba(15, 23, 42, 0.95);
 	--sidebar-hover: rgba(255, 255, 255, 0.06);
 	--status-total-bg: rgba(161, 161, 170, 0.15);
 	--status-total-text: #e4e4e7;
@@ -131,9 +131,9 @@ html {
 
 html[data-theme='dark'] {
 	background:
-		radial-gradient(circle at top left, rgba(45, 62, 88, 0.2), transparent 34%),
-		radial-gradient(circle at top right, rgba(27, 38, 55, 0.16), transparent 28%),
-		linear-gradient(180deg, #0f1115 0%, #0f1115 100%);
+		radial-gradient(circle at top left, rgba(15, 23, 42, 0.4), transparent 34%),
+		radial-gradient(circle at top right, rgba(2, 6, 23, 0.4), transparent 28%),
+		linear-gradient(180deg, #020617 0%, #020617 100%);
 }
 
 body {
@@ -147,8 +147,8 @@ body {
 
 html[data-theme='dark'] body {
 	background:
-		linear-gradient(135deg, rgba(30, 40, 56, 0.1), rgba(9, 11, 15, 0)),
-		linear-gradient(180deg, transparent, rgba(8, 10, 14, 0.48));
+		linear-gradient(135deg, rgba(15, 23, 42, 0.2), transparent),
+		linear-gradient(180deg, transparent, rgba(2, 6, 23, 0.6));
 }
 
 dialog::backdrop {
