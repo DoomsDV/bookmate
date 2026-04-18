@@ -209,13 +209,13 @@ const visiblePages = Array.from(
 				<fieldset class="flex flex-col gap-4 border-0 p-0 m-0">
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Nombre(s) <span class="text-rose-500">*</span></span>
-						<input type="text" name="first_name" maxlength="150" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Dra. Sarah"/>
+						<input type="text" name="first_name" maxlength="50" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Dra. Sarah"/>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="first_name"></span>
 					</label>
 					
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Apellido(s) <span class="text-rose-500">*</span></span>
-						<input type="text" name="last_name" maxlength="150" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Gómez"/>
+						<input type="text" name="last_name" maxlength="50" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Gómez"/>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="last_name"></span>
 					</label>
 
@@ -230,7 +230,7 @@ const visiblePages = Array.from(
 								name="phone_number"
 								inputmode="numeric"
 								autocomplete="tel-national"
-								maxlength="11"
+								maxlength="20"
 								required
 								placeholder="981 123 456"
 								class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
@@ -242,13 +242,13 @@ const visiblePages = Array.from(
 					
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Nombre de usuario <span class="text-rose-500">*</span></span>
-						<input type="text" name="apex_user_name" maxlength="150" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: sarahg"/>
+						<input type="text" name="apex_user_name" maxlength="100" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: sarahg"/>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="apex_user_name"></span>
 					</label>
 
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Correo electrónico <span class="text-rose-500">*</span></span>
-						<input type="email" name="email" maxlength="255" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: sarah@clinica.com"/>
+						<input type="email" name="email" maxlength="150" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: sarah@clinica.com"/>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="email"></span>
 					</label>
 					
@@ -299,7 +299,7 @@ const visiblePages = Array.from(
 							<span class="inline-flex max-w-[55%] sm:max-w-[65%] items-center truncate rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-xs sm:text-sm text-(--on-surface-variant) shadow-sm" title={publicProfilePrefix}>
 								{publicProfilePrefix}
 							</span>
-							<input type="text" name="profile_slug" maxlength="80" class="block w-full min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
+							<input type="text" name="profile_slug" maxlength="100" class="block w-full min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
 						</div>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_slug"></span>
 					</label>

@@ -73,8 +73,8 @@ const publicProfileDomain =
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Solo para tu cuenta y acceso interno.</p>
 						</div>
 						<div class="grid gap-5 sm:grid-cols-2">
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre<input name="first_name" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Apellido<input name="last_name" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre<input name="first_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Apellido<input name="last_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 						</div>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electrónico<input name="email" readonly class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-4 py-3 text-[0.95rem] outline-none text-(--on-surface-variant) cursor-not-allowed" /></label>
 					</div>
@@ -113,7 +113,7 @@ const publicProfileDomain =
 									name="phone_number"
 									inputmode="numeric"
 									autocomplete="tel-national"
-									maxlength="11"
+									maxlength="20"
 									placeholder="981 123 456"
 									class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
 								/>
@@ -130,6 +130,7 @@ const publicProfileDomain =
 								<input
 									type="text"
 									name="profile_slug"
+									maxlength="100"
 									class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition focus:border-(--primary)"
 									placeholder="maria-lopez"
 								/>
@@ -272,10 +273,10 @@ const publicProfileDomain =
 									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Detalles principales de tu organización.</p>
 								</div>
 								<div class="grid gap-5">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre del negocio<input name="name" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre del negocio<input name="name" maxlength="100" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 								</div>
 								<input type="hidden" name="profile_slug" />
-								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripción<textarea name="description" rows="4" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 resize-y"></textarea></label>
+								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripción<textarea name="description" maxlength="1000" rows="4" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 resize-y"></textarea></label>
 								<div class="flex justify-end pt-4 border-t border-(--shell-border) border-dashed">
 									<button type="submit" class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)"><span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">store</span>Guardar negocio</button>
 								</div>

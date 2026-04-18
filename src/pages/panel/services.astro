@@ -270,6 +270,7 @@ const visiblePages = Array.from(
 							type="number"
 							name="duration_minutes"
 							min="1"
+							max="999"
 							step="1"
 							required
 							class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
@@ -293,6 +294,7 @@ const visiblePages = Array.from(
 							type="text"
 							name="price"
 							inputmode="numeric"
+							maxlength="8"
 							class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 							placeholder="Ej: 45.000"
 							data-price-mask
@@ -660,7 +662,7 @@ const visiblePages = Array.from(
 		}
 
 		private formatPrice(val: string | number | null | undefined) {
-			const digits = String(val || "").replace(/\D/g, "");
+			const digits = String(val || "").replace(/\D/g, "").slice(0, 8);
 			return digits ? Number(digits).toLocaleString("es-PY") : "";
 		}
 
@@ -791,12 +793,15 @@ const visiblePages = Array.from(
 
 			const formData = new FormData(this.els.form);
 			const name = String(formData.get("name") || "").trim();
-			const duration = Number(formData.get("duration_minutes"));
+			const durationRaw = String(formData.get("duration_minutes") || "")
+				.replace(/\D/g, "")
+				.slice(0, 3);
+			const duration = Number(durationRaw);
 			const isActive = String(formData.get("is_active")) === "0" ? 0 : 1;
 			const priceRaw = String(formData.get("price") || "").replace(
 				/\D/g,
 				"",
-			);
+			).slice(0, 8);
 
 			if (!name || !duration || !Number.isFinite(duration)) {
 				return this.showFormError(

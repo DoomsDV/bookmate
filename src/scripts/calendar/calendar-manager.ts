@@ -45,6 +45,10 @@ interface ApiCalendarEvent {
 	[key: string]: unknown;
 }
 
+const DESKTOP_DEFAULT_VIEW = 'timeGridWeek';
+const MOBILE_DEFAULT_VIEW = 'timeGridThreeDay';
+const MOBILE_ALLOWED_VIEWS = new Set(['timeGridDay', 'timeGridThreeDay', 'listWeek']);
+
 const hasAppointmentModalApi = (value: unknown): value is AppointmentModalApi => {
 	if (!value || typeof value !== 'object') return false;
 	const source = value as AppointmentModalApi;
@@ -226,12 +230,6 @@ class CalendarManager extends HTMLElement {
 		}
 	}
 
-	private getPreferredView() {
-		const allowedViews = new Set(['timeGridDay', 'timeGridWeek', 'dayGridMonth', 'listWeek']);
-		const saved = String(localStorage.getItem('bookmate-calendar-default-view') || 'timeGridWeek');
-		return allowedViews.has(saved) ? saved : 'timeGridWeek';
-	}
-
 	private isMobileViewport() {
 		return window.innerWidth < 768;
 	}
@@ -241,7 +239,7 @@ class CalendarManager extends HTMLElement {
 			? {
 					left: 'prev,next today',
 					center: 'title',
-					right: 'timeGridDay,timeGridThreeDay,listWeek',
+					right: 'timeGridThreeDay,timeGridDay,listWeek',
 				}
 			: {
 					left: 'prev,next today',
@@ -276,11 +274,11 @@ class CalendarManager extends HTMLElement {
 
 		if (isMobile) {
 			const currentView = this.calendar.view.type;
-			if (!['timeGridDay', 'timeGridThreeDay', 'listWeek'].includes(currentView)) {
-				this.calendar.changeView('timeGridDay');
+			if (!MOBILE_ALLOWED_VIEWS.has(currentView)) {
+				this.calendar.changeView(MOBILE_DEFAULT_VIEW);
 			}
 		} else if (this.calendar.view.type === 'timeGridThreeDay') {
-			this.calendar.changeView('timeGridWeek');
+			this.calendar.changeView(DESKTOP_DEFAULT_VIEW);
 		}
 
 		this.calendar.updateSize();
@@ -340,7 +338,7 @@ class CalendarManager extends HTMLElement {
 		this.calendar = new Calendar(requiredNodes.calendarEl, {
 			plugins: [interactionPlugin, dayGridPlugin, timeGridPlugin, listPlugin],
 			locale: esLocale,
-			initialView: isMobile ? 'timeGridDay' : this.getPreferredView(),
+			initialView: isMobile ? MOBILE_DEFAULT_VIEW : DESKTOP_DEFAULT_VIEW,
 			initialDate: savedDate || undefined,
 			editable: true,
 			selectable: true,
@@ -355,7 +353,7 @@ class CalendarManager extends HTMLElement {
 				timeGridThreeDay: {
 					type: 'timeGrid',
 					duration: { days: 3 },
-					buttonText: '3 Días',
+					buttonText: '3 dias',
 				},
 			},
 			titleFormat: isMobile
@@ -372,7 +370,7 @@ class CalendarManager extends HTMLElement {
 				today: 'Hoy',
 				month: 'Mes',
 				week: 'Semana',
-				day: 'Día',
+				day: 'Dia',
 				list: 'Lista',
 			},
 			dayHeaderContent: (args) => {
