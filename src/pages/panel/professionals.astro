@@ -1,4 +1,4 @@
-﻿---
+﻿﻿---
 import AppAlert from '../../components/AppAlert.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import ProfessionalsGrid from '../../components/ProfessionalsGrid.astro';
@@ -65,9 +65,9 @@ const visiblePages = Array.from(
 
 <Layout>
 	<professional-manager>
-	<div class="min-h-screen">
+	<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 		<div
-			class="app-shell grid min-h-screen overflow-hidden border border-(--shell-border) bg-(--shell-surface) shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+			class="app-shell grid min-h-screen overflow-hidden bg-transparent"
 			data-app-shell
 			data-sidebar-state="expanded"
 		>
@@ -76,7 +76,7 @@ const visiblePages = Array.from(
 			<div class="grid min-h-full grid-rows-[auto_1fr]">
 				<TopBar />
 
-				<main class="bg-(--content-surface) px-4 py-4 sm:px-6 sm:py-6">
+				<main class="px-4 py-4 sm:px-6 sm:py-6">
 					<section class="grid gap-4 sm:gap-5">
 						{
 							loadError ? (
@@ -85,29 +85,24 @@ const visiblePages = Array.from(
 								<div class="grid gap-4">
 									<ProfessionalsGrid professionals={professionals} showCreateAction={true} />
 
-									<div class="material-inline-panel flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-										<p class="text-sm text-(--on-surface-variant)">
-											Página <span class="font-semibold text-(--on-surface)">{safeCurrentPage}</span> de
-											<span class="font-semibold text-(--on-surface)"> {totalPages}</span>
-											<span class="mx-2">-</span>
-											Total de
-											<span class="font-semibold text-(--on-surface)">
-												{` ${pagination.total_records} `}
-											</span>
-											profesionales
+									<div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-transparent border-0">
+										<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
+											Página <span class="font-bold text-(--on-surface)">{safeCurrentPage}</span> de <span class="font-bold text-(--on-surface)">{totalPages}</span>
+											<span class="mx-2 opacity-50">-</span>
+											Total: <span class="font-bold text-(--on-surface)">{pagination.total_records}</span> profesionales
 										</p>
 
-										<nav class="flex items-center gap-2" aria-label="Paginación personal">
+										<nav class="flex items-center gap-1.5" aria-label="Paginación personal">
 											{
 												canPrevPage ? (
 													<a
 														href={toPageHref(safeCurrentPage - 1)}
-														class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
+														class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
 													>
 														Anterior
 													</a>
 												) : (
-													<span class="cursor-not-allowed rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface-variant)/60">
+													<span class="cursor-not-allowed px-3 py-1.5 text-[0.85rem] font-semibold text-gray-400 dark:text-gray-600 opacity-60">
 														Anterior
 													</span>
 												)
@@ -116,13 +111,13 @@ const visiblePages = Array.from(
 											{
 												visiblePages.map((page) =>
 													page === safeCurrentPage ? (
-														<span class="rounded-lg border border-(--primary-container) bg-(--primary-soft) px-3 py-1.5 text-sm font-bold text-(--primary)">
+														<span class="px-3 py-1.5 text-[0.85rem] font-bold text-(--primary)">
 															{page}
 														</span>
 													) : (
 														<a
 															href={toPageHref(page)}
-															class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
+															class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
 														>
 															{page}
 														</a>
@@ -134,12 +129,12 @@ const visiblePages = Array.from(
 												canNextPage ? (
 													<a
 														href={toPageHref(safeCurrentPage + 1)}
-														class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
+														class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
 													>
 														Siguiente
 													</a>
 												) : (
-													<span class="cursor-not-allowed rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface-variant)/60">
+													<span class="cursor-not-allowed px-3 py-1.5 text-[0.85rem] font-semibold text-gray-400 dark:text-gray-600 opacity-60">
 														Siguiente
 													</span>
 												)
@@ -1268,5 +1263,3 @@ const visiblePages = Array.from(
 		color: var(--primary);
 	}
 </style>
-
-

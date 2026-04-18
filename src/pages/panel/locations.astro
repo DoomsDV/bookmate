@@ -1,4 +1,4 @@
-﻿﻿---
+﻿﻿﻿﻿---
 import AppAlert from "../../components/AppAlert.astro";
 import FlashMessage from "../../components/FlashMessage.astro";
 import LocationsGrid from "../../components/LocationsGrid.astro";
@@ -72,9 +72,9 @@ const googleMapsApiKey =
 
 <Layout>
 	<location-manager data-google-maps-api-key={googleMapsApiKey}>
-		<div class="min-h-screen">
+		<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 			<div
-				class="app-shell grid min-h-screen overflow-hidden border border-(--shell-border) bg-(--shell-surface) shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
 				data-app-shell
 				data-sidebar-state="expanded"
 			>

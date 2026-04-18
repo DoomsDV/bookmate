@@ -1,4 +1,4 @@
-﻿---
+﻿﻿---
 import AppAlert from '../../components/AppAlert.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
@@ -407,6 +407,11 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 		transition: background-color 0.2s ease;
 	}
 
+	[data-calendar-root] .fc-theme-standard .fc-col-header-cell.fc-day-today,
+	[data-calendar-root] .fc-day-today {
+		background-color: transparent !important;
+	}
+
 	[data-calendar-root] .fc-day-today .cal-day-name {
 		color: var(--primary);
 	}
@@ -479,10 +484,10 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 	}
 
 	[data-calendar-root] .fc .fc-event {
-		border: 0;
-		border-radius: 0.6rem;
-		padding: 0.15rem 0.2rem;
-		box-shadow: 0 10px 20px rgba(15, 23, 42, 0.14);
+		background-color: transparent !important;
+		border: none !important;
+		padding: 0 !important;
+		box-shadow: none !important;
 	}
 
 	[data-calendar-root] .fc .fc-event-title {
@@ -613,5 +618,3 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 		}
 	}
 </style>
-
-

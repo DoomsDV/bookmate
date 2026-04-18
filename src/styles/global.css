@@ -531,3 +531,68 @@ html[data-theme='dark'] [data-theme-toggle-mobile]:hover {
 	background-color: #303236;
 	color: #e4e4e7;
 }
+
+/* ── FullCalendar Soft UI / MD3 Overrides ───────────────────────── */
+.fc-theme-standard td,
+.fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid {
+	border-color: #e2e8f0;
+}
+html[data-theme='dark'] .fc-theme-standard td,
+html[data-theme='dark'] .fc-theme-standard th,
+html[data-theme='dark'] .fc-theme-standard .fc-scrollgrid {
+	border-color: rgba(255, 255, 255, 0.08);
+}
+
+.fc-theme-standard .fc-col-header-cell.fc-day-today,
+.fc-theme-standard td.fc-day-today {
+	background-color: transparent !important;
+}
+
+/* Limpieza del lienzo: Fondos transparentes */
+.fc .fc-timegrid-col,
+.fc .fc-timegrid-slot,
+.fc .fc-daygrid-day {
+	background-color: transparent !important;
+}
+
+/* Highlight del Día Actual (Solo en la cabecera) */
+.fc .fc-day-today {
+	background-color: transparent !important;
+}
+.fc .fc-col-header-cell.fc-day-today .fc-col-header-cell-cushion {
+	background-color: var(--primary);
+	color: #ffffff;
+	border-radius: 9999px;
+	padding: 4px 12px;
+	display: inline-block;
+	margin-top: 4px;
+	margin-bottom: 4px;
+}
+
+/* Diseño de Eventos (Event Cards) */
+.fc-v-event,
+.fc-event {
+	background-color: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+	margin: 1px 2px !important;
+}
+.fc-v-event:hover,
+.fc-event:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Wrapper del contenido inyectado */
+.fc-event-main {
+	color: var(--on-surface);
+	font-family: var(--font-body);
+	height: 100%;
+}
+
+/* Altura mínima de los slots para que entren las tarjetas */
+.fc .fc-timegrid-slot {
+	height: 4.5em !important;
+}
