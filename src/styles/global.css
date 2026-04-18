@@ -10,6 +10,9 @@
 	--page-background: #edf3f9;
 	--surface: rgba(255, 251, 254, 0.72);
 	--surface-container: #edf5ff;
+	--surface-container-low: #f4f8fe;
+	--surface-container-high: #e3ecf7;
+	--surface-container-highest: #dce5f0;
 	--surface-bright: #ffffff;
 	--bar-outline: #d7e0ea;
 	--shell-surface: rgba(255, 255, 255, 0.9);
@@ -65,17 +68,20 @@
 }
 
 html[data-theme='dark'] {
-	--background: #09090b;
-	--background-accent: #18181b;
-	--page-background: #09090b;
-	--surface: rgba(24, 24, 27, 0.92);
-	--surface-container: #18181b;
-	--surface-bright: #18181b;
-	--bar-outline: #27272a;
-	--shell-surface: rgba(24, 24, 27, 0.95);
-	--sidebar-surface: rgba(24, 24, 27, 0.97);
-	--content-surface: rgba(24, 24, 27, 0.72);
-	--shell-border: #27272a;
+	--background: #0f1115;
+	--background-accent: #131720;
+	--page-background: #0f1115;
+	--surface: rgba(19, 23, 31, 0.94);
+	--surface-container: #141923;
+	--surface-container-low: #171d28;
+	--surface-container-high: #1e2531;
+	--surface-container-highest: #252f3c;
+	--surface-bright: #171d28;
+	--bar-outline: #212a36;
+	--shell-surface: rgba(17, 21, 29, 0.96);
+	--sidebar-surface: rgba(16, 20, 28, 0.97);
+	--content-surface: rgba(20, 24, 33, 0.74);
+	--shell-border: #212a36;
 	--primary: #3b82f6;
 	--primary-soft: rgba(59, 130, 246, 0.12);
 	--primary-soft-hover: rgba(59, 130, 246, 0.18);
@@ -84,17 +90,17 @@ html[data-theme='dark'] {
 	--secondary-container: rgba(161, 161, 170, 0.15);
 	--on-surface: #fafafa;
 	--on-surface-variant: #a1a1aa;
-	--hero-gradient: linear-gradient(135deg, #18181b 0%, #09090b 62%, #09090b 100%);
+	--hero-gradient: linear-gradient(135deg, #151a23 0%, #10141c 62%, #0f1115 100%);
 	--hero-shadow: rgba(0, 0, 0, 0.5);
-	--hero-glow: radial-gradient(circle at center, rgba(59, 130, 246, 0.06), transparent 60%);
-	--control-surface: #09090b;
-	--control-surface-strong: #09090b;
-	--menu-surface: rgba(24, 24, 27, 0.98);
-	--card-surface: #18181b;
-	--card-surface-strong: #18181b;
+	--hero-glow: radial-gradient(circle at center, rgba(59, 130, 246, 0.03), transparent 60%);
+	--control-surface: #10141c;
+	--control-surface-strong: #121823;
+	--menu-surface: rgba(16, 20, 28, 0.98);
+	--card-surface: #141923;
+	--card-surface-strong: #171d28;
 	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-	--sidebar-card-surface: rgba(24, 24, 27, 0.94);
+	--sidebar-card-surface: rgba(20, 24, 33, 0.95);
 	--sidebar-hover: rgba(255, 255, 255, 0.06);
 	--status-total-bg: rgba(161, 161, 170, 0.15);
 	--status-total-text: #e4e4e7;
@@ -123,6 +129,13 @@ html {
 		linear-gradient(180deg, #f8fbfe 0%, var(--background) 52%, #edf3f9 100%);
 }
 
+html[data-theme='dark'] {
+	background:
+		radial-gradient(circle at top left, rgba(45, 62, 88, 0.2), transparent 34%),
+		radial-gradient(circle at top right, rgba(27, 38, 55, 0.16), transparent 28%),
+		linear-gradient(180deg, #0f1115 0%, #0f1115 100%);
+}
+
 body {
 	font-family: var(--font-body);
 	background-color: var(--page-background);
@@ -134,8 +147,8 @@ body {
 
 html[data-theme='dark'] body {
 	background:
-		linear-gradient(135deg, rgba(39, 39, 42, 0.14), rgba(9, 9, 11, 0)),
-		linear-gradient(180deg, transparent, rgba(9, 9, 11, 0.4));
+		linear-gradient(135deg, rgba(30, 40, 56, 0.1), rgba(9, 11, 15, 0)),
+		linear-gradient(180deg, transparent, rgba(8, 10, 14, 0.48));
 }
 
 dialog::backdrop {

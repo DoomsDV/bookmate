@@ -132,9 +132,9 @@ const visibleTeamItems = teamItems.filter((item) =>
 								href={item.href}
 								data-astro-prefetch={getPrefetchMode(item)}
 								class:list={[
-									"flex min-h-12 items-center gap-3.5 rounded-2xl px-4 py-3.5 text-[1.02rem] font-semibold no-underline transition lg:gap-3 lg:py-2.5 lg:text-[0.9rem]",
+									"mx-1 flex min-h-12 items-center gap-3.5 rounded-full px-4 py-3.5 text-[1.02rem] font-semibold no-underline transition lg:gap-3 lg:py-2.5 lg:text-[0.9rem]",
 									isItemActive(item)
-										? "bg-(--primary-container) text-(--primary) font-extrabold"
+										? "bg-(--primary-container) text-(--primary) font-extrabold shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
 										: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
 								]}
 								data-side-nav-close
@@ -171,9 +171,9 @@ const visibleTeamItems = teamItems.filter((item) =>
 												<a
 													href={item.href}
 													class:list={[
-														"flex min-h-12 rounded-2xl px-4 py-3.5 text-[0.98rem] font-semibold no-underline transition lg:py-2.5 lg:text-[0.88rem]",
+														"mx-1 flex min-h-12 rounded-full px-4 py-3.5 text-[0.98rem] font-semibold no-underline transition lg:py-2.5 lg:text-[0.88rem]",
 														isItemActive(item)
-															? "bg-(--primary-container) text-(--primary) font-bold"
+															? "bg-(--primary-container) text-(--primary) font-bold shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
 															: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
 													]}
 													data-side-nav-close
@@ -246,9 +246,9 @@ const visibleTeamItems = teamItems.filter((item) =>
 								data-astro-prefetch={getPrefetchMode(item)}
 								data-sidebar-item
 								class:list={[
-									"flex items-center gap-3 rounded-2xl px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
+									"mx-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
 									isItemActive(item)
-										? "bg-(--primary-container) text-(--primary) font-bold"
+										? "bg-(--primary-container) text-(--primary) font-bold shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
 										: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
 								]}
 							>
@@ -266,7 +266,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 						<li class="pt-2">
 							<details open class="group">
 								<summary
-									class="flex cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-2.5 text-[0.9rem] font-semibold text-(--primary) transition hover:bg-(--sidebar-hover)"
+									class="mx-1 flex cursor-pointer list-none items-center justify-between rounded-full px-4 py-2.5 text-[0.9rem] font-semibold text-(--primary) transition hover:bg-(--sidebar-hover)"
 									data-sidebar-summary
 								>
 									<span class="flex items-center gap-3">
@@ -294,9 +294,9 @@ const visibleTeamItems = teamItems.filter((item) =>
 													href={item.href}
 													data-sidebar-item
 													class:list={[
-														"flex rounded-2xl px-4 py-2.5 text-[0.88rem] font-medium no-underline transition",
+														"mx-1 flex rounded-full px-4 py-2.5 text-[0.88rem] font-medium no-underline transition",
 														isItemActive(item)
-															? "bg-(--control-surface-strong) text-(--primary) font-semibold"
+															? "bg-(--control-surface-strong) text-(--primary) font-semibold shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
 															: "text-(--on-surface) hover:bg-(--sidebar-hover)",
 													]}
 												>

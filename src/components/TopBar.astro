@@ -74,13 +74,14 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 
 			<button
 				type="button"
-				class="hidden items-center gap-2 rounded-full border border-(--shell-border) bg-(--control-surface) px-4 py-2 text-sm text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:flex"
+				class="hidden size-11 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:flex"
 				aria-label="Cambiar tema"
+				title="Cambiar tema"
 				aria-pressed="false"
 				data-theme-toggle
 			>
 				<span class="material-symbols-rounded text-[1rem]" data-theme-icon>dark_mode</span>
-				<span data-theme-label>Modo Oscuro</span>
+				<span class="sr-only" data-theme-label>Modo Oscuro</span>
 			</button>
 
 			<details class="group relative" data-profile-menu>
@@ -274,8 +275,13 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 			const isDark = theme === 'dark';
 			document.documentElement.dataset.theme = theme;
 			localStorage.setItem('bookmate-theme', theme);
+			const nextThemeLabel = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
 			
-			[themeToggle, themeToggleMobile].forEach(t => t?.setAttribute('aria-pressed', String(isDark)));
+			[themeToggle, themeToggleMobile].forEach(t => {
+				t?.setAttribute('aria-pressed', String(isDark));
+				t?.setAttribute('aria-label', nextThemeLabel);
+				t?.setAttribute('title', nextThemeLabel);
+			});
 			[themeIcon, themeIconMobile].forEach(i => { if (i) i.textContent = isDark ? 'light_mode' : 'dark_mode'; });
 			if (themeLabel) themeLabel.textContent = isDark ? 'Modo Claro' : 'Modo Oscuro';
 		};
