@@ -458,18 +458,18 @@ button {
 	align-items: center;
 	justify-content: center;
 	border-radius: 1rem;
-	border: 1px solid rgba(239, 68, 68, 0.28);
-	background: rgba(239, 68, 68, 0.08);
+	border: 1px solid rgba(239, 68, 68, 0.55);
+	background: transparent;
 	padding: 0.72rem 1.15rem;
 	font-size: 0.92rem;
 	font-weight: 800;
-	color: #dc2626;
+	color: #ef4444;
 	transition: background-color 140ms ease, border-color 140ms ease;
 }
 
 .modal-action-danger:hover {
-	border-color: rgba(239, 68, 68, 0.38);
-	background: rgba(239, 68, 68, 0.13);
+	border-color: rgba(239, 68, 68, 0.72);
+	background: rgba(239, 68, 68, 0.1);
 }
 
 .modal-action-primary:disabled,
@@ -500,19 +500,37 @@ html[data-theme='dark'] .modal-action-secondary:hover {
 }
 
 html[data-theme='dark'] .modal-action-danger {
-	border-color: rgba(251, 113, 133, 0.35);
-	background: rgba(251, 113, 133, 0.12);
-	color: #fecdd3;
+	border-color: rgba(251, 113, 133, 0.68);
+	background: transparent;
+	color: #fda4af;
+}
+
+html[data-theme='dark'] .modal-action-danger:hover {
+	background: rgba(251, 113, 133, 0.18);
 }
 
 @media (max-width: 767px) {
 	.modal-footer {
-		flex-wrap: wrap;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.65rem;
 	}
 
 	.modal-footer-actions {
+		margin-left: 0;
 		width: 100%;
-		justify-content: flex-end;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.65rem;
+	}
+
+	.modal-action-secondary {
+		display: none;
+	}
+
+	.modal-action-primary,
+	.modal-action-danger {
+		width: 100%;
 	}
 }
 

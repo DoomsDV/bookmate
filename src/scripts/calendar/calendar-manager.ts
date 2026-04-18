@@ -282,6 +282,28 @@ class CalendarManager extends HTMLElement {
 		}
 
 		this.calendar.updateSize();
+		window.requestAnimationFrame(() => this.syncToolbarButtonGroupClasses());
+	}
+
+	private syncToolbarButtonGroupClasses() {
+		if (!this.calendarEl) return;
+		const toolbar = this.calendarEl.querySelector<HTMLElement>('.fc-header-toolbar');
+		if (!toolbar) return;
+
+		const chunks = Array.from(toolbar.querySelectorAll<HTMLElement>('.fc-toolbar-chunk'));
+		for (const chunk of chunks) {
+			chunk.classList.remove('fc-toolbar-chunk--view-switch');
+			for (const group of chunk.querySelectorAll<HTMLElement>('.fc-button-group')) {
+				group.classList.remove('fc-button-group--segmented');
+			}
+		}
+
+		const viewChunk = chunks[chunks.length - 1];
+		if (!viewChunk) return;
+		viewChunk.classList.add('fc-toolbar-chunk--view-switch');
+		for (const group of viewChunk.querySelectorAll<HTMLElement>('.fc-button-group')) {
+			group.classList.add('fc-button-group--segmented');
+		}
 	}
 
 	private buildEventSource = (
@@ -414,6 +436,7 @@ class CalendarManager extends HTMLElement {
 		});
 
 		this.calendar.render();
+		this.syncToolbarButtonGroupClasses();
 		this.applyResponsiveCalendarLayout(true);
 	}
 

@@ -1,4 +1,4 @@
----
+﻿---
 import AppAlert from '../../components/AppAlert.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
@@ -15,9 +15,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 
 <Layout>
 	<schedule-manager data-can-edit={!isProfessional ? 'true' : 'false'}>
-		<div class="min-h-screen">
+		<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 			<div
-				class="app-shell grid min-h-screen overflow-hidden border border-(--shell-border) bg-(--shell-surface) shadow-[0_30px_80px_rgba(15,23,42,0.12)] backdrop-blur-xl"
+				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
 				data-app-shell
 				data-sidebar-state="expanded"
 			>
@@ -26,13 +26,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 				<div class="grid min-h-full grid-rows-[auto_1fr]">
 					<TopBar />
 
-					<main class="bg-(--content-surface) px-4 py-4 sm:px-6 sm:py-6">
-						<section class="material-region dark:shadow-none">
+					<main class="px-4 py-4 sm:px-6 sm:py-6">
+						<section class="grid gap-4 sm:gap-5">
 							{
 								initialLoadError ? (
 									<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
 								) : (
-									<div class="grid gap-4 sm:gap-5">
+									<div class="grid gap-4 sm:gap-6">
 										<header class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
 											<div class="grid gap-1">
 												<h1 class="text-[1.3rem] font-extrabold text-(--on-surface)">
@@ -43,21 +43,21 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 												</p>
 											</div>
 
-											{
-												!isProfessional && (
-													<button
-														type="button"
-														class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) sm:w-auto w-full disabled:opacity-60 disabled:pointer-events-none"
-														data-save-schedule
-													>
-														<span class="material-symbols-rounded text-[1.2rem]">save</span>
-														<span data-save-schedule-label>Guardar horarios</span>
-													</button>
+												{
+													!isProfessional && (
+														<button
+															type="button"
+															class="schedule-save-btn inline-flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold transition focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) sm:w-auto disabled:opacity-60 disabled:pointer-events-none"
+															data-save-schedule
+														>
+															<span class="material-symbols-rounded text-[1.2rem]">save</span>
+															<span data-save-schedule-label>Guardar horarios</span>
+														</button>
 												)
 											}
 										</header>
 
-										<div class="grid gap-3 sm:gap-4 sm:grid-cols-2">
+										<div class="grid gap-3 sm:gap-4 sm:max-w-2xl">
 											<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 												<span class="inline-flex items-center gap-1">
 													Profesional
@@ -80,16 +80,16 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 											data-schedule-error
 										></div>
 
-										<div class="mt-1.5 border-t border-(--shell-border) border-dashed pt-4">
-											<div
-												class="mb-2 hidden rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-medium text-(--on-surface-variant)"
-												data-schedule-loading
-											>
-												Cargando configuración de horarios...
-											</div>
+										<div class="mt-0.5">
+												<div
+													class="mb-2 hidden rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-medium text-(--on-surface-variant)"
+													data-schedule-loading
+												>
+													Cargando configuración de horarios...
+												</div>
 
-											<div class="grid gap-3" data-weekly-planner></div>
-										</div>
+												<div class="grid gap-4 sm:gap-5" data-weekly-planner></div>
+											</div>
 									</div>
 								)
 							}
@@ -110,5 +110,154 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 <style is:global>
 	schedule-manager {
 		display: block;
+	}
+
+	.schedule-save-btn {
+		border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
+		background: var(--primary);
+		color: #f8fbff;
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.12);
+	}
+
+	.schedule-save-btn:hover {
+		filter: brightness(1.04);
+	}
+
+	html[data-theme='dark'] .schedule-save-btn {
+		border-color: color-mix(in srgb, var(--primary) 58%, #131314 42%);
+		background: color-mix(in srgb, var(--primary) 78%, #131314 22%);
+	}
+
+	html[data-theme='dark'] .schedule-save-btn:hover {
+		filter: brightness(1.08);
+	}
+
+	.schedule-day-card {
+		background: #ffffff;
+		border: 1px solid #cbd5e1;
+		border-radius: 1rem;
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	}
+
+	.schedule-day-toggle {
+		width: 1.05rem;
+		height: 1.05rem;
+		accent-color: var(--primary);
+	}
+
+	.schedule-slot-row {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+		gap: 0.65rem 0.75rem;
+		padding: 0.35rem 0;
+		border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+	}
+
+	.schedule-slot-row:last-child {
+		border-bottom: 0;
+		padding-bottom: 0.1rem;
+	}
+
+	.schedule-slot-field {
+		display: grid;
+		gap: 0.25rem;
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	.schedule-slot-field--location {
+		grid-column: 1 / 3;
+		grid-row: 1 / 2;
+	}
+
+	.schedule-slot-field--start {
+		grid-column: 1 / 2;
+		grid-row: 2 / 3;
+	}
+
+	.schedule-slot-field--end {
+		grid-column: 2 / 3;
+		grid-row: 2 / 3;
+	}
+
+	.schedule-slot-remove-wrap {
+		grid-column: 3 / 4;
+		grid-row: 1 / 2;
+		display: flex;
+		align-items: flex-end;
+		justify-content: flex-end;
+		padding-bottom: 0.2rem;
+	}
+
+	.schedule-slot-remove-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.9rem;
+		height: 1.9rem;
+		border-radius: 999px;
+		border: 0;
+		color: color-mix(in srgb, var(--on-surface-variant) 58%, #dc2626 42%);
+		background: transparent;
+		transition: background-color 140ms ease, color 140ms ease;
+	}
+
+	.schedule-slot-remove-btn:hover {
+		color: #dc2626;
+		background: rgba(239, 68, 68, 0.12);
+	}
+
+	.schedule-slot-remove-btn:disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+	}
+
+	html[data-theme='dark'] .schedule-day-card {
+		background: color-mix(in srgb, #2a2d32 78%, #1e1f22 22%);
+		border-color: rgba(148, 163, 184, 0.24);
+		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .schedule-slot-row {
+		border-bottom-color: rgba(148, 163, 184, 0.24);
+	}
+
+	html[data-theme='dark'] .schedule-slot-remove-btn {
+		color: color-mix(in srgb, var(--on-surface-variant) 58%, #fecdd3 42%);
+	}
+
+	html[data-theme='dark'] .schedule-slot-remove-btn:hover {
+		background: rgba(251, 113, 133, 0.2);
+		color: #fecdd3;
+	}
+
+	@media (min-width: 1024px) {
+		.schedule-slot-row {
+			grid-template-columns: minmax(0, 1fr) 10.5rem 10.5rem auto;
+			align-items: end;
+			column-gap: 0.75rem;
+		}
+
+		.schedule-slot-field--location {
+			grid-column: 1 / 2;
+			grid-row: 1 / 2;
+		}
+
+		.schedule-slot-field--start {
+			grid-column: 2 / 3;
+			grid-row: 1 / 2;
+		}
+
+		.schedule-slot-field--end {
+			grid-column: 3 / 4;
+			grid-row: 1 / 2;
+		}
+
+		.schedule-slot-remove-wrap {
+			grid-column: 4 / 5;
+			grid-row: 1 / 2;
+			padding-bottom: 0;
+		}
 	}
 </style>

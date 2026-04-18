@@ -163,15 +163,6 @@ const getStatusLabel = (status: string) => {
 													Resumen inteligente del día
 												</h2>
 											</div>
-											<button
-												type="button"
-												class="dashboard-ai-action-btn inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2"
-												aria-label="Asistente IA (próximamente)"
-												title="Próximamente"
-											>
-												<span class="dashboard-ai-action-icon material-symbols-rounded text-[1.05rem]">auto_awesome</span>
-												<span class="dashboard-ai-action-label text-sm font-semibold">Asistente IA</span>
-											</button>
 										</div>
 										<p
 											class="dashboard-ai-state inline-flex items-center gap-2 text-[0.95rem] font-semibold leading-relaxed sm:text-base mt-1"
@@ -186,6 +177,17 @@ const getStatusLabel = (status: string) => {
 											class="dashboard-ai-text hidden whitespace-pre-line text-[0.95rem] font-medium leading-relaxed sm:text-base max-w-4xl mt-1"
 											data-ai-summary-text
 										>{defaultAiSummaryText}</p>
+										<div class="dashboard-ai-footer">
+											<button
+												type="button"
+												class="dashboard-ai-action-btn inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2"
+												aria-label="Asistente IA (próximamente)"
+												title="Próximamente"
+											>
+												<span class="dashboard-ai-action-icon material-symbols-rounded text-[1.05rem]">auto_awesome</span>
+												<span class="dashboard-ai-action-label text-sm font-semibold">Asistente IA</span>
+											</button>
+										</div>
 									</div>
 								</div>
 							</section>
@@ -742,8 +744,13 @@ const getStatusLabel = (status: string) => {
 	.dashboard-ai-header {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
 		gap: 0.75rem;
+	}
+
+	.dashboard-ai-footer {
+		display: flex;
+		justify-content: flex-end;
+		margin-top: 0.9rem;
 	}
 
 	.dashboard-ai-action-btn {
@@ -822,6 +829,13 @@ const getStatusLabel = (status: string) => {
 
 	html[data-theme='dark'] .dashboard-ai-text {
 		color: color-mix(in srgb, var(--on-surface) 90%, white 10%);
+	}
+
+	@media (max-width: 767px) {
+		.dashboard-ai-footer {
+			justify-content: flex-start;
+			margin-top: 1rem;
+		}
 	}
 
 	.dashboard-metric-card {
