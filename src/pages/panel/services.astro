@@ -58,12 +58,6 @@ const toPageHref = (page: number) => {
 	return `${nextUrl.pathname}${nextUrl.search}`;
 };
 
-const pageWindowStart = Math.max(1, safeCurrentPage - 1);
-const pageWindowEnd = Math.min(totalPages, safeCurrentPage + 1);
-const visiblePages = Array.from(
-	{ length: pageWindowEnd - pageWindowStart + 1 },
-	(_, index) => pageWindowStart + index,
-);
 ---
 
 <Layout>
@@ -96,61 +90,49 @@ const visiblePages = Array.from(
 											showCreateAction={true}
 										/>
 
-										<div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-transparent border-0">
-											<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
-												Página <span class="font-bold text-(--on-surface)">{safeCurrentPage}</span> de <span class="font-bold text-(--on-surface)">{totalPages}</span>
-												<span class="mx-2 opacity-50">-</span>
-												Total: <span class="font-bold text-(--on-surface)">{pagination.total_records}</span> servicios
+										<div class="app-pagination">
+											<p class="app-pagination__summary">
+												Página <strong>{safeCurrentPage}</strong> de <strong>{totalPages}</strong>
+												<span aria-hidden="true">-</span>
+												Total: <strong>{pagination.total_records}</strong> servicios
 											</p>
 
-											<nav
-												class="flex items-center gap-1.5"
-												aria-label="Paginacion servicios"
-											>
+											<nav class="app-pagination__controls" aria-label="Paginacion servicios">
 												{canPrevPage ? (
 													<a
-														href={toPageHref(
-															safeCurrentPage - 1,
-														)}
-														class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
+														href={toPageHref(safeCurrentPage - 1)}
+														class="app-pagination__icon-button"
+														aria-label="Página anterior"
 													>
-														Anterior
+														<svg viewBox="0 0 24 24" aria-hidden="true">
+															<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
+														</svg>
 													</a>
 												) : (
-													<span class="cursor-not-allowed px-3 py-1.5 text-[0.85rem] font-semibold text-gray-400 dark:text-gray-600 opacity-60">
-														Anterior
+													<span class="app-pagination__icon-button is-disabled" aria-disabled="true">
+														<svg viewBox="0 0 24 24" aria-hidden="true">
+															<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
+														</svg>
 													</span>
 												)}
 
-												{visiblePages.map((page) =>
-													page === safeCurrentPage ? (
-														<span class="px-3 py-1.5 text-[0.85rem] font-bold text-(--primary)">
-															{page}
-														</span>
-													) : (
-														<a
-															href={toPageHref(
-																page,
-															)}
-															class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
-														>
-															{page}
-														</a>
-													),
-												)}
+												<span class="app-pagination__current" aria-current="page">{safeCurrentPage}</span>
 
 												{canNextPage ? (
 													<a
-														href={toPageHref(
-															safeCurrentPage + 1,
-														)}
-														class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
+														href={toPageHref(safeCurrentPage + 1)}
+														class="app-pagination__icon-button"
+														aria-label="Página siguiente"
 													>
-														Siguiente
+														<svg viewBox="0 0 24 24" aria-hidden="true">
+															<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
+														</svg>
 													</a>
 												) : (
-													<span class="cursor-not-allowed px-3 py-1.5 text-[0.85rem] font-semibold text-gray-400 dark:text-gray-600 opacity-60">
-														Siguiente
+													<span class="app-pagination__icon-button is-disabled" aria-disabled="true">
+														<svg viewBox="0 0 24 24" aria-hidden="true">
+															<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
+														</svg>
 													</span>
 												)}
 											</nav>
@@ -272,6 +254,7 @@ const visiblePages = Array.from(
 							min="1"
 							max="999"
 							step="1"
+							inputmode="numeric"
 							required
 							class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 							placeholder="Ej: 45"
@@ -338,40 +321,42 @@ const visiblePages = Array.from(
 
 				</div>
 				<div
-					class="sticky bottom-0 z-20 mt-auto flex flex-col-reverse sm:flex-row shrink-0 sm:items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
+					class="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
 				>
-					<button
-						type="button"
-						class="hidden w-full sm:w-auto sm:mr-auto rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none"
-						data-delete-service
-					>
-						<span
-							class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]"
-							>delete</span
-						>
-						Eliminar
-					</button>
-
-					<div class="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
+					<div class="modal-footer">
 						<button
 							type="button"
-							class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border) hidden sm:block"
-							data-close-service-modal
-						>
-							Cancelar
-						</button>
-						<button
-							type="submit"
-							class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none"
-							data-submit-service
+							class="hidden modal-action-danger"
+							data-delete-service
 						>
 							<span
-								class="material-symbols-rounded text-[1.2rem] hidden sm:inline"
-								data-submit-service-icon>check</span
+								class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]"
+								>delete</span
 							>
-							<span data-submit-service-label>Crear servicio</span
-							>
+							Eliminar
 						</button>
+
+						<div class="modal-footer-actions">
+							<button
+								type="button"
+								class="modal-action-secondary"
+								data-close-service-modal
+							>
+								Cancelar
+							</button>
+							<button
+								type="submit"
+								class="modal-action-primary"
+								data-submit-service
+							>
+								<span
+									class="material-symbols-rounded text-[1.2rem]"
+									data-submit-service-icon>check</span
+								>
+								<span data-submit-service-label>Crear servicio</span
+								>
+							</button>
+						</div>
 					</div>
 				</div>
 				</fieldset>
@@ -499,6 +484,11 @@ const visiblePages = Array.from(
 			this.els.priceInput?.addEventListener(
 				"input",
 				this.handlePriceInput,
+				{ signal },
+			);
+			this.formEls.duration?.addEventListener(
+				"input",
+				this.handleDurationInput,
 				{ signal },
 			);
 		}
@@ -666,13 +656,17 @@ const visiblePages = Array.from(
 			return digits ? Number(digits).toLocaleString("es-PY") : "";
 		}
 
+		private sanitizeDuration(raw: string | number | null | undefined) {
+			return String(raw || "").replace(/\D/g, "").slice(0, 3);
+		}
+
 		private fillForm(service: ServiceDetail) {
 			if (this.formEls.name)
 				this.formEls.name.value = String(service?.name || "");
 			if (this.formEls.duration)
 				this.formEls.duration.value =
 					typeof service?.duration_minutes === "number"
-						? String(service.duration_minutes)
+						? this.sanitizeDuration(service.duration_minutes)
 						: "";
 			if (this.els.priceInput)
 				this.els.priceInput.value = this.formatPrice(
@@ -744,6 +738,13 @@ const visiblePages = Array.from(
 				);
 		};
 
+		private handleDurationInput = () => {
+			if (!this.formEls.duration) return;
+			this.formEls.duration.value = this.sanitizeDuration(
+				this.formEls.duration.value,
+			);
+		};
+
 		private handleRootClick = (e: MouseEvent) => {
 			const target = e.target as Element;
 			if (!target) return;
@@ -793,9 +794,9 @@ const visiblePages = Array.from(
 
 			const formData = new FormData(this.els.form);
 			const name = String(formData.get("name") || "").trim();
-			const durationRaw = String(formData.get("duration_minutes") || "")
-				.replace(/\D/g, "")
-				.slice(0, 3);
+			const durationRaw = this.sanitizeDuration(
+				String(formData.get("duration_minutes") || ""),
+			);
 			const duration = Number(durationRaw);
 			const isActive = String(formData.get("is_active")) === "0" ? 0 : 1;
 			const priceRaw = String(formData.get("price") || "").replace(

@@ -42,10 +42,17 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 
 										<button
 											type="button"
-											class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) sm:w-auto w-full"
+											class="calendar-create-btn w-full sm:w-auto inline-flex items-center justify-center gap-2"
 											data-open-appointment-modal
 										>
-											<span class="material-symbols-rounded text-[1.2rem]">add</span>
+											<svg
+												class="calendar-create-btn-icon w-[18px] h-[18px]"
+												viewBox="0 0 24 24"
+												fill="none"
+												aria-hidden="true"
+											>
+												<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+											</svg>
 											<span>Nueva cita</span>
 										</button>
 									</header>
@@ -247,8 +254,12 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 								<span class="text-rose-500">*</span>
 							</span>
 							<input
-								type="datetime-local"
+								type="text"
 								name="start_time"
+								inputmode="numeric"
+								maxlength="16"
+								pattern="\d{2}-\d{2}-\d{4}\s\d{2}:\d{2}"
+								placeholder="DD-MM-YYYY HH:mm"
 								required
 								class="w-full rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 							/>
@@ -261,8 +272,12 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 								<span class="text-rose-500">*</span>
 							</span>
 							<input
-								type="datetime-local"
+								type="text"
 								name="end_time"
+								inputmode="numeric"
+								maxlength="16"
+								pattern="\d{2}-\d{2}-\d{4}\s\d{2}:\d{2}"
+								placeholder="DD-MM-YYYY HH:mm"
 								required
 								class="w-full rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 							/>
@@ -271,33 +286,35 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 					</div>
 				</div>
 
-				<div class="sticky bottom-0 z-20 mt-auto flex flex-col-reverse sm:flex-row shrink-0 sm:items-center gap-3 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
+				<div class="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
+					<div class="appointment-modal-footer">
 					<button
 						type="button"
-						class="hidden w-full sm:w-auto sm:mr-auto rounded-2xl border border-rose-500/20 bg-rose-500/10 px-5 py-3 text-[0.95rem] font-extrabold text-rose-500 transition hover:bg-rose-500/20 hover:border-rose-500/30 disabled:opacity-50 disabled:pointer-events-none"
+						class="hidden appointment-delete-btn"
 						data-delete-appointment
 					>
 						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
 						Eliminar
 					</button>
 
-					<div class="w-full sm:w-auto flex flex-col sm:flex-row items-center gap-3">
+					<div class="appointment-modal-footer-actions">
 						<button
 							type="button"
-							class="w-full sm:w-auto rounded-2xl border border-transparent px-5 py-3 text-[0.95rem] font-extrabold text-(--on-surface-variant) transition hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--shell-border) hidden sm:block"
+							class="appointment-cancel-btn"
 							data-close-appointment-modal
 						>
 							Cancelar
 						</button>
 						<button
 							type="submit"
-							class="btn-primary-soft w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-2xl px-6 py-3 text-[0.95rem] font-extrabold transition shadow-sm hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none"
+							class="appointment-submit-btn"
 							data-submit-appointment
 						>
-							<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" data-submit-appointment-icon>check</span>
+							<span class="material-symbols-rounded text-[1.2rem]" data-submit-appointment-icon>check</span>
 							<span data-submit-appointment-label>Crear cita</span>
 						</button>
 					</div>
+				</div>
 				</div>
 			</form>
 		</dialog>
@@ -570,7 +587,152 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 		background: var(--calendar-toolbar-surface);
 	}
 
+	.calendar-create-btn {
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
+		background: var(--primary);
+		padding: 0.72rem 1.15rem;
+		font-size: 0.92rem;
+		font-weight: 780;
+		color: #f8fbff;
+		box-shadow: none;
+		transition: filter 140ms ease, border-color 140ms ease;
+	}
+
+	.calendar-create-btn-icon {
+		flex-shrink: 0;
+	}
+
+	.calendar-create-btn:hover {
+		filter: brightness(1.04);
+	}
+
+	.calendar-create-btn:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+		outline-offset: 3px;
+	}
+
+	html[data-theme='dark'] .calendar-create-btn {
+		border-color: color-mix(in srgb, var(--primary) 58%, #131314 42%);
+		background: color-mix(in srgb, var(--primary) 78%, #131314 22%);
+	}
+
+	html[data-theme='dark'] .calendar-create-btn:hover {
+		filter: brightness(1.08);
+	}
+
+	.appointment-modal-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.appointment-modal-footer-actions {
+		margin-left: auto;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.appointment-delete-btn {
+		border-radius: 1rem;
+		border: 1px solid rgba(239, 68, 68, 0.28);
+		background: rgba(239, 68, 68, 0.08);
+		padding: 0.72rem 1.15rem;
+		font-size: 0.92rem;
+		font-weight: 800;
+		color: #dc2626;
+		transition: background-color 140ms ease, border-color 140ms ease;
+	}
+
+	.appointment-delete-btn:hover {
+		border-color: rgba(239, 68, 68, 0.38);
+		background: rgba(239, 68, 68, 0.13);
+	}
+
+	.appointment-cancel-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.72rem 1.15rem;
+		font-size: 0.92rem;
+		font-weight: 800;
+		color: var(--on-surface-variant);
+		transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+	}
+
+	.appointment-cancel-btn:hover {
+		background: var(--surface-container-low);
+		border-color: color-mix(in srgb, var(--shell-border) 74%, var(--on-surface-variant) 26%);
+		color: var(--on-surface);
+	}
+
+	.appointment-submit-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		border-radius: 1rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
+		background: var(--primary);
+		padding: 0.72rem 1.2rem;
+		font-size: 0.92rem;
+		font-weight: 800;
+		color: #f8fbff;
+		transition: filter 140ms ease, border-color 140ms ease;
+	}
+
+	.appointment-submit-btn:hover {
+		filter: brightness(1.04);
+	}
+
+	.appointment-submit-btn:disabled,
+	.appointment-delete-btn:disabled {
+		opacity: 0.6;
+		pointer-events: none;
+	}
+
+	html[data-theme='dark'] .appointment-delete-btn {
+		border-color: rgba(251, 113, 133, 0.35);
+		background: rgba(251, 113, 133, 0.12);
+		color: #fecdd3;
+	}
+
+	html[data-theme='dark'] .appointment-cancel-btn {
+		background: var(--surface-container, #1e1f22);
+		border-color: rgba(255, 255, 255, 0.14);
+		color: var(--on-surface-variant);
+	}
+
+	html[data-theme='dark'] .appointment-cancel-btn:hover {
+		background: var(--surface-container-high, #282a2c);
+		border-color: rgba(255, 255, 255, 0.22);
+		color: var(--on-surface);
+	}
+
+	html[data-theme='dark'] .appointment-submit-btn {
+		border-color: color-mix(in srgb, var(--primary) 58%, #131314 42%);
+		background: color-mix(in srgb, var(--primary) 78%, #131314 22%);
+	}
+
+	html[data-theme='dark'] .appointment-submit-btn:hover {
+		filter: brightness(1.08);
+	}
+
 	@media (max-width: 767px) {
+		.appointment-modal-footer {
+			flex-wrap: wrap;
+		}
+
+		.appointment-modal-footer-actions {
+			width: 100%;
+			justify-content: flex-end;
+		}
+
 		[data-calendar-root] .fc .fc-toolbar.fc-header-toolbar {
 			padding: 0.45rem;
 		}

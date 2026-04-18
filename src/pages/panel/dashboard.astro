@@ -165,11 +165,12 @@ const getStatusLabel = (status: string) => {
 											</div>
 											<button
 												type="button"
-												class="dashboard-ai-action-btn inline-flex size-10 shrink-0 items-center justify-center rounded-full"
+												class="dashboard-ai-action-btn inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2"
 												aria-label="Asistente IA (próximamente)"
 												title="Próximamente"
 											>
-												<span class="material-symbols-rounded text-[1.05rem]">auto_awesome</span>
+												<span class="dashboard-ai-action-icon material-symbols-rounded text-[1.05rem]">auto_awesome</span>
+												<span class="dashboard-ai-action-label text-sm font-semibold">Asistente IA</span>
 											</button>
 										</div>
 										<p
@@ -746,27 +747,34 @@ const getStatusLabel = (status: string) => {
 	}
 
 	.dashboard-ai-action-btn {
-		color: color-mix(in srgb, var(--on-surface-variant) 66%, #334155 34%);
-		background: color-mix(in srgb, var(--surface-bright) 64%, var(--surface-container-high) 36%);
-		border: 1px solid color-mix(in srgb, var(--shell-border) 85%, #cfd6df 15%);
+		position: relative;
+		overflow: hidden;
+		background: #ffffff;
+		border: 1px solid rgba(167, 139, 250, 0.38);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.6),
-			0 4px 10px rgba(15, 23, 42, 0.08);
+			0 0 15px rgba(139, 92, 246, 0.15),
+			0 6px 14px rgba(15, 23, 42, 0.08);
 		transition:
-			background-color 160ms ease,
-			border-color 160ms ease,
-			color 160ms ease,
-			transform 160ms ease,
-			box-shadow 160ms ease;
+			transform 180ms ease,
+			box-shadow 180ms ease,
+			border-color 180ms ease;
+	}
+
+	.dashboard-ai-action-icon,
+	.dashboard-ai-action-label {
+		background: linear-gradient(90deg, #2563eb 0%, #8b5cf6 100%);
+		background-clip: text;
+		-webkit-background-clip: text;
+		color: transparent;
+		-webkit-text-fill-color: transparent;
 	}
 
 	.dashboard-ai-action-btn:hover {
-		transform: translateY(-1px);
-		background: color-mix(in srgb, var(--surface-bright) 52%, var(--surface-container-high) 48%);
-		border-color: color-mix(in srgb, var(--shell-border) 72%, #b6beca 28%);
+		transform: scale(1.05);
+		border-color: rgba(139, 92, 246, 0.52);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.7),
-			0 6px 14px rgba(15, 23, 42, 0.11);
+			0 0 20px rgba(139, 92, 246, 0.24),
+			0 8px 18px rgba(15, 23, 42, 0.12);
 	}
 
 	.dashboard-ai-state {
@@ -784,18 +792,28 @@ const getStatusLabel = (status: string) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-action-btn {
-		color: color-mix(in srgb, var(--on-surface-variant) 28%, white 72%);
-		background: color-mix(in srgb, #282a2c 70%, #1e1f22 30%);
-		border-color: rgba(255, 255, 255, 0.1);
+		background: #131314;
+		border-color: rgba(129, 140, 248, 0.45);
 		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.08),
-			0 6px 12px rgba(2, 6, 23, 0.36);
+			0 0 20px rgba(99, 102, 241, 0.2),
+			0 6px 14px rgba(2, 6, 23, 0.4);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-action-icon,
+	html[data-theme='dark'] .dashboard-ai-action-label {
+		background: linear-gradient(90deg, #60a5fa 0%, #a78bfa 100%);
+		background-clip: text;
+		-webkit-background-clip: text;
+		color: transparent;
+		-webkit-text-fill-color: transparent;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-action-btn:hover {
-		transform: translateY(-1px);
-		background: color-mix(in srgb, #303236 70%, #1e1f22 30%);
-		border-color: rgba(255, 255, 255, 0.15);
+		transform: scale(1.05);
+		border-color: rgba(129, 140, 248, 0.65);
+		box-shadow:
+			0 0 24px rgba(99, 102, 241, 0.3),
+			0 10px 20px rgba(2, 6, 23, 0.45);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-state {

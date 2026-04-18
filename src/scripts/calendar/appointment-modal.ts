@@ -6,9 +6,11 @@ import { AppointmentsClient } from './appointments-client';
 import type { ApiFieldError, AppointmentDetail, AppointmentFormPayload, Option } from './types';
 import {
 	ApiClientError,
-	formatDateTimeLocal,
+	formatDateTimeDisplay,
 	isAppointmentStatus,
-	parseIsoToLocalInput,
+	normalizeDateTimeDisplay,
+	parseDisplayDateTime,
+	parseIsoToDisplayInput,
 	toIsoWithOffset,
 	toPositiveInt,
 } from './utils';
@@ -153,6 +155,8 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.deleteButton.addEventListener('click', this.handleDelete, { signal });
 		requiredNodes.customerPhoneInput.addEventListener('input', this.handlePhoneInput, { signal });
 		requiredNodes.customerPhoneInput.addEventListener('blur', this.handlePhoneBlur, { signal });
+		requiredNodes.startInput.addEventListener('input', this.handleDateInput, { signal });
+		requiredNodes.endInput.addEventListener('input', this.handleDateInput, { signal });
 
 		this.setCreateMode();
 		this.resetFormValues();
@@ -231,8 +235,8 @@ class AppointmentModal extends HTMLElement {
 
 		const initialStart = context.start ?? new Date();
 		const initialEnd = context.end ?? new Date(initialStart.getTime() + 60 * 60 * 1000);
-		requiredNodes.startInput.value = formatDateTimeLocal(initialStart);
-		requiredNodes.endInput.value = formatDateTimeLocal(initialEnd);
+		requiredNodes.startInput.value = formatDateTimeDisplay(initialStart);
+		requiredNodes.endInput.value = formatDateTimeDisplay(initialEnd);
 
 		if (this.roleId === 3 && this.currentProfessionalId > 0) {
 			requiredNodes.modalProfessional.value = String(this.currentProfessionalId);
@@ -525,8 +529,8 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.modalLocation.value = String(appointment.loc_id_location || '');
 		requiredNodes.modalService.value = String(appointment.ser_id_service || '');
 		requiredNodes.statusInput.value = String(appointment.status || 'CONFIRMADO');
-		requiredNodes.startInput.value = parseIsoToLocalInput(String(appointment.start_time || ''));
-		requiredNodes.endInput.value = parseIsoToLocalInput(String(appointment.end_time || ''));
+		requiredNodes.startInput.value = parseIsoToDisplayInput(String(appointment.start_time || ''));
+		requiredNodes.endInput.value = parseIsoToDisplayInput(String(appointment.end_time || ''));
 		this.ensureModalProfessionalValue();
 	}
 
@@ -540,10 +544,15 @@ class AppointmentModal extends HTMLElement {
 		const serviceId = toPositiveInt(requiredNodes.modalService.value, 0);
 		const professionalId = this.getSelectedProfessionalId();
 		const statusRaw = String(requiredNodes.statusInput.value || '').trim().toUpperCase();
-		const startIso = toIsoWithOffset(requiredNodes.startInput.value);
-		const endIso = toIsoWithOffset(requiredNodes.endInput.value);
-		const startDate = new Date(requiredNodes.startInput.value);
-		const endDate = new Date(requiredNodes.endInput.value);
+		const startRaw = normalizeDateTimeDisplay(requiredNodes.startInput.value).trim();
+		const endRaw = normalizeDateTimeDisplay(requiredNodes.endInput.value).trim();
+		requiredNodes.startInput.value = startRaw;
+		requiredNodes.endInput.value = endRaw;
+
+		const startDate = parseDisplayDateTime(startRaw);
+		const endDate = parseDisplayDateTime(endRaw);
+		const startIso = startDate ? toIsoWithOffset(startDate) : '';
+		const endIso = endDate ? toIsoWithOffset(endDate) : '';
 
 		if (!customerName) return { error: 'El nombre del cliente es obligatorio.' };
 
@@ -561,7 +570,13 @@ class AppointmentModal extends HTMLElement {
 		if (!locId || !serviceId || !professionalId) {
 			return { error: 'Profesional, sucursal y servicio son obligatorios.' };
 		}
-		if (!startIso || !endIso || Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+		if (!startDate || !endDate || !startIso || !endIso) {
+			if (!startDate || !startIso) {
+				this.setFieldError('start_time', 'Usa formato DD-MM-YYYY HH:mm.');
+			}
+			if (!endDate || !endIso) {
+				this.setFieldError('end_time', 'Usa formato DD-MM-YYYY HH:mm.');
+			}
 			return { error: 'La fecha y hora de inicio/fin son obligatorias.' };
 		}
 		if (startDate >= endDate) {
@@ -589,6 +604,15 @@ class AppointmentModal extends HTMLElement {
 		if (!this.customerPhoneInput) return;
 		this.customerPhoneInput.value = this.formatParaguayPhoneLocal(this.customerPhoneInput.value);
 		this.setFieldError('customer_phone', '');
+	};
+
+	handleDateInput = (event: Event) => {
+		const target = event.target;
+		if (!(target instanceof HTMLInputElement)) return;
+		target.value = normalizeDateTimeDisplay(target.value);
+		if (target.name === 'start_time' || target.name === 'end_time') {
+			this.setFieldError(target.name, '');
+		}
 	};
 
 	handlePhoneBlur = () => {

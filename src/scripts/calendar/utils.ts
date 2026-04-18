@@ -15,14 +15,72 @@ export const formatDateTimeLocal = (date: Date) => {
 	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
-export const parseIsoToLocalInput = (value: string) => {
-	const date = new Date(value);
-	if (Number.isNaN(date.getTime())) return '';
-	return formatDateTimeLocal(date);
+export const formatDateTimeDisplay = (date: Date) => {
+	const pad = (value: number) => String(value).padStart(2, '0');
+	return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
-export const toIsoWithOffset = (value: string) => {
+export const normalizeDateTimeDisplay = (value: string) => {
+	return String(value || '')
+		.replace(/\//g, '-')
+		.replace(/\s+/g, ' ')
+		.trimStart();
+};
+
+export const parseDisplayDateTime = (value: string) => {
+	const normalized = normalizeDateTimeDisplay(value).trim();
+	const match = normalized.match(/^(\d{2})-(\d{2})-(\d{4})\s(\d{2}):(\d{2})$/);
+	if (!match) return null;
+
+	const [, dayRaw, monthRaw, yearRaw, hourRaw, minuteRaw] = match;
+	const day = Number(dayRaw);
+	const month = Number(monthRaw);
+	const year = Number(yearRaw);
+	const hour = Number(hourRaw);
+	const minute = Number(minuteRaw);
+
+	if (
+		!Number.isInteger(day) ||
+		!Number.isInteger(month) ||
+		!Number.isInteger(year) ||
+		!Number.isInteger(hour) ||
+		!Number.isInteger(minute)
+	) {
+		return null;
+	}
+	if (month < 1 || month > 12 || day < 1 || day > 31 || hour > 23 || minute > 59) {
+		return null;
+	}
+
+	const date = new Date(year, month - 1, day, hour, minute, 0, 0);
+	if (
+		date.getFullYear() !== year ||
+		date.getMonth() !== month - 1 ||
+		date.getDate() !== day ||
+		date.getHours() !== hour ||
+		date.getMinutes() !== minute
+	) {
+		return null;
+	}
+
+	return date;
+};
+
+export const parseIsoToDisplayInput = (value: string) => {
 	const date = new Date(value);
+	if (Number.isNaN(date.getTime())) return '';
+	return formatDateTimeDisplay(date);
+};
+
+export const toIsoWithOffset = (value: string | Date) => {
+	let date: Date;
+	if (value instanceof Date) {
+		date = value;
+	} else {
+		const displayDate = parseDisplayDateTime(value);
+		date = displayDate || new Date(value);
+	}
+
 	if (Number.isNaN(date.getTime())) return '';
 
 	const pad = (num: number) => String(num).padStart(2, '0');
