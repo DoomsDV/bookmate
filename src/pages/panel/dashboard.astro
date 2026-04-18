@@ -241,7 +241,7 @@ const getStatusLabel = (status: string) => {
 										</div>
 
 									<div class="grid grid-cols-1 gap-6">
-										<div class="rounded-4xl bg-white dark:bg-[#1E1F22] p-6 shadow-[0_8px_30px_rgba(0,0,0,0.03)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.2)] transition-colors duration-300">
+										<div class="dashboard-report-shell rounded-4xl p-6 transition-colors duration-300">
 											<div class="mb-6 flex items-center justify-between gap-3">
 												<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Próximas citas del día</h2>
 												<span class="whitespace-nowrap rounded-full bg-[#E8EAED] dark:bg-[#2B2D31] px-4 py-1.5 text-[0.8rem] font-black text-[#5f6368] dark:text-[#C4C7C5] tracking-wide shadow-sm transition-colors duration-300">
@@ -272,10 +272,10 @@ const getStatusLabel = (status: string) => {
 																		<span
 																			class:list={[
 																				'dashboard-report-status',
-																				appointment.status === 'CONFIRMADO' ? 'bg-[#E6F4EA] text-[#137333] border-[#B7DFC5] dark:bg-[#0F5223] dark:text-[#6DD58C] dark:border-[#2A6A3B]' :
-																				appointment.status === 'PENDIENTE' ? 'bg-[#FEF7E0] text-[#E37400] border-[#F2D39A] dark:bg-[#4D2E00] dark:text-[#FFB74D] dark:border-[#6A4310]' :
-																				appointment.status === 'CANCELADO' ? 'bg-[#FCE8E6] text-[#C5221F] border-[#F1C3BF] dark:bg-[#5C1A16] dark:text-[#FFB4AB] dark:border-[#7A2D28]' :
-																				'bg-[#F1F3F4] text-[#5F6368] border-[#DDE3EA] dark:bg-[#2B2D31] dark:text-[#C4C7C5] dark:border-[#394250]'
+																				appointment.status === 'CONFIRMADO' ? 'dashboard-report-status--confirmed' :
+																				appointment.status === 'PENDIENTE' ? 'dashboard-report-status--pending' :
+																				appointment.status === 'CANCELADO' ? 'dashboard-report-status--canceled' :
+																				'dashboard-report-status--default'
 																			]}
 																		>
 																			{getStatusLabel(appointment.status)}
@@ -984,6 +984,18 @@ const getStatusLabel = (status: string) => {
 		max-width: 100%;
 	}
 
+	.dashboard-report-shell {
+		border: 1px solid rgba(148, 163, 184, 0.24);
+		background: #ffffff;
+		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+	}
+
+	html[data-theme='dark'] .dashboard-report-shell {
+		background: var(--surface, #111318);
+		border-color: color-mix(in srgb, var(--outline-variant, #8a9099) 36%, transparent);
+		box-shadow: none;
+	}
+
 	.dashboard-report-card {
 		display: flex;
 		flex-direction: column;
@@ -1033,7 +1045,7 @@ const getStatusLabel = (status: string) => {
 		font-size: 0.86rem;
 		font-weight: 500;
 		line-height: 1.4;
-		color: #3c4043;
+		color: #5f6368;
 		word-break: break-word;
 	}
 
@@ -1054,25 +1066,75 @@ const getStatusLabel = (status: string) => {
 		box-shadow: none;
 	}
 
+	.dashboard-report-status--confirmed {
+		background: #e6f4ea;
+		color: #137333;
+		border-color: #b7dfc5;
+	}
+
+	.dashboard-report-status--pending {
+		background: #fef7e0;
+		color: #e37400;
+		border-color: #f2d39a;
+	}
+
+	.dashboard-report-status--canceled {
+		background: #fce8e6;
+		color: #c5221f;
+		border-color: #f1c3bf;
+	}
+
+	.dashboard-report-status--default {
+		background: #f1f3f4;
+		color: #5f6368;
+		border-color: #dde3ea;
+	}
+
 	html[data-theme='dark'] .dashboard-report-card {
-		border-color: #343a44;
-		background: linear-gradient(175deg, #20242b 0%, #1a1e24 100%);
-		box-shadow:
-			inset 0 1px 0 rgba(255, 255, 255, 0.04),
-			0 8px 16px rgba(0, 0, 0, 0.24);
+		border-color: rgba(255, 255, 255, 0.08);
+		background: color-mix(
+			in srgb,
+			var(--surface-container-low, #1d2024) 82%,
+			var(--surface-container, #21252b) 18%
+		);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-report-title {
-		color: #e3e3e3;
+		color: var(--on-surface, #e3e3e3);
 	}
 
 	html[data-theme='dark'] .dashboard-report-meta,
 	html[data-theme='dark'] .dashboard-report-service {
-		color: #c4c7c5;
+		color: var(--on-surface-variant, #a7aaa8);
 	}
 
 	html[data-theme='dark'] .dashboard-report-status {
 		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .dashboard-report-status--confirmed {
+		background: rgba(61, 166, 98, 0.18);
+		color: #baf7c8;
+		border-color: rgba(109, 213, 140, 0.32);
+	}
+
+	html[data-theme='dark'] .dashboard-report-status--pending {
+		background: rgba(255, 183, 77, 0.16);
+		color: #ffd9a0;
+		border-color: rgba(255, 183, 77, 0.28);
+	}
+
+	html[data-theme='dark'] .dashboard-report-status--canceled {
+		background: rgba(255, 180, 171, 0.14);
+		color: #ffcdc7;
+		border-color: rgba(255, 180, 171, 0.28);
+	}
+
+	html[data-theme='dark'] .dashboard-report-status--default {
+		background: rgba(196, 199, 197, 0.14);
+		color: #d2d5d3;
+		border-color: rgba(196, 199, 197, 0.22);
 	}
 
 	@media (min-width: 640px) {
