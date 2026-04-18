@@ -108,7 +108,7 @@ const getStatusLabel = (status: string) => {
 				<main class="w-full max-w-full overflow-x-hidden px-4 py-4 sm:px-8 sm:py-8 lg:px-10">
 					<div class="mx-auto max-w-7xl">
 						<section class="grid w-full min-w-0 gap-6 sm:gap-8">
-							<section class="dashboard-summary-card mb-8 sm:mb-12 transition-all duration-300">
+							<section class="dashboard-summary-card mb-0 transition-all duration-300">
 								<div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
 									<div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center">
 										<div class="grid gap-1">
@@ -655,7 +655,7 @@ const getStatusLabel = (status: string) => {
 
 	.dashboard-canvas,
 	.dashboard-content-canvas {
-		background: #f8fafc;
+		background: #eef1f5;
 	}
 
 	html[data-theme='dark'] .dashboard-canvas,
@@ -833,7 +833,7 @@ const getStatusLabel = (status: string) => {
 
 	@media (max-width: 767px) {
 		.dashboard-ai-footer {
-			justify-content: flex-start;
+			justify-content: flex-end;
 			margin-top: 1rem;
 		}
 	}

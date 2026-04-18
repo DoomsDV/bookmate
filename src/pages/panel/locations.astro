@@ -500,6 +500,7 @@ const googleMapsApiKey =
 	class LocationManager extends HTMLElement {
 		private abortController: AbortController | null = null;
 		private closeTimer: number | null = null;
+		private themeObserver: MutationObserver | null = null;
 		private mode: LocationMode = "create";
 		private editingLocationId = 0;
 		private locationReadRequestSeq = 0;
@@ -516,6 +517,79 @@ const googleMapsApiKey =
 		};
 		private readonly mapIdleMessage =
 			"Haz clic en el mapa para registrar coordenadas exactas. En móvil, usa dos dedos para mover o hacer zoom.";
+		private readonly darkMapStyles = [
+			{ elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+			{
+				elementType: "labels.text.stroke",
+				stylers: [{ color: "#242f3e" }],
+			},
+			{ elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
+			{
+				featureType: "administrative.locality",
+				elementType: "labels.text.fill",
+				stylers: [{ color: "#d59563" }],
+			},
+			{
+				featureType: "poi",
+				elementType: "labels.text.fill",
+				stylers: [{ color: "#d59563" }],
+			},
+			{
+				featureType: "poi.park",
+				elementType: "geometry",
+				stylers: [{ color: "#263c3f" }],
+			},
+			{
+				featureType: "poi.park",
+				elementType: "labels.text.fill",
+				stylers: [{ color: "#6b9a76" }],
+			},
+			{
+				featureType: "road",
+				elementType: "geometry",
+				stylers: [{ color: "#38414e" }],
+			},
+			{
+				featureType: "road",
+				elementType: "geometry.stroke",
+				stylers: [{ color: "#212a37" }],
+			},
+			{
+				featureType: "road",
+				elementType: "labels.text.fill",
+				stylers: [{ color: "#9ca5b3" }],
+			},
+			{
+				featureType: "road.highway",
+				elementType: "geometry",
+				stylers: [{ color: "#746855" }],
+			},
+			{
+				featureType: "road.highway",
+				elementType: "geometry.stroke",
+				stylers: [{ color: "#1f2835" }],
+			},
+			{
+				featureType: "road.highway",
+				elementType: "labels.text.fill",
+				stylers: [{ color: "#f3d19c" }],
+			},
+			{
+				featureType: "water",
+				elementType: "geometry",
+				stylers: [{ color: "#17263c" }],
+			},
+			{
+				featureType: "water",
+				elementType: "labels.text.fill",
+				stylers: [{ color: "#515c6d" }],
+			},
+			{
+				featureType: "water",
+				elementType: "labels.text.stroke",
+				stylers: [{ color: "#17263c" }],
+			},
+		];
 		private selectedCoordinates: Coordinates | null = null;
 		private mapInstance: any = null;
 		private mapMarker: any = null;
@@ -660,13 +734,34 @@ const googleMapsApiKey =
 					{ signal },
 				);
 			}
+
+			this.themeObserver = new MutationObserver(() => {
+				this.syncMapTheme();
+			});
+			this.themeObserver.observe(document.documentElement, {
+				attributes: true,
+				attributeFilter: ["data-theme"],
+			});
 		}
 
 		disconnectedCallback() {
 			this.abortController?.abort();
 			this.abortController = null;
+			this.themeObserver?.disconnect();
+			this.themeObserver = null;
 			if (this.closeTimer) window.clearTimeout(this.closeTimer);
 		}
+
+		private isDarkTheme = () =>
+			document.documentElement.dataset.theme === "dark";
+
+		private getMapStyles = () =>
+			this.isDarkTheme() ? this.darkMapStyles : [];
+
+		private syncMapTheme = () => {
+			if (!this.mapInstance?.setOptions) return;
+			this.mapInstance.setOptions({ styles: this.getMapStyles() });
+		};
 
 		private cleanUrlParams = () => {
 			const currentUrl = new URL(window.location.href);
@@ -922,6 +1017,7 @@ const googleMapsApiKey =
 				this.mapInstance = new maps.Map(this.els.mapContainer, {
 					center: this.defaultMapCenter,
 					zoom: 12,
+					styles: this.getMapStyles(),
 					mapTypeControl: false,
 					streetViewControl: false,
 					fullscreenControl: false,
@@ -951,6 +1047,7 @@ const googleMapsApiKey =
 
 			window.setTimeout(() => {
 				if (!this.mapInstance) return;
+				this.syncMapTheme();
 				if (maps.event?.trigger)
 					maps.event.trigger(this.mapInstance, "resize");
 				this.mapInstance.setCenter(

@@ -84,9 +84,9 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 										data-calendar-error
 									></div>
 
-									<div class="mt-1.5 rounded-[1.45rem] border border-(--calendar-outline) bg-(--calendar-surface) p-3 sm:p-4">
+									<div class="mt-1.5 rounded-[1.3rem] bg-(--calendar-surface) p-2.5 sm:rounded-[1.45rem] sm:border sm:border-(--calendar-outline) sm:p-4">
 										<div
-											class="mb-3 hidden rounded-xl border border-(--calendar-outline-strong) bg-(--calendar-toolbar-surface) px-3 py-2.5 text-[0.86rem] font-semibold text-(--on-surface-variant)"
+											class="mb-3 hidden rounded-xl bg-(--calendar-toolbar-surface) px-3 py-2.5 text-[0.86rem] font-semibold text-(--on-surface-variant) sm:border sm:border-(--calendar-outline-strong)"
 											data-calendar-loading
 										>
 											Cargando calendario...
@@ -383,12 +383,13 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 	}
 
 	[data-calendar-root] .fc .fc-toolbar.fc-header-toolbar {
-		margin-bottom: 0.95rem;
-		border: 1px solid var(--calendar-outline);
-		background: var(--calendar-toolbar-surface);
-		border-radius: 0.95rem;
-		padding: 0.5rem;
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.2);
+		margin-bottom: 0.8rem;
+		border: 0;
+		border-bottom: 1px solid color-mix(in srgb, var(--calendar-outline) 76%, transparent);
+		background: transparent;
+		border-radius: 0;
+		padding: 0 0 0.52rem;
+		box-shadow: none;
 	}
 
 	[data-calendar-root] .fc .fc-toolbar {
@@ -415,12 +416,12 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 	}
 
 	[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented {
-		background: var(--calendar-segmented-surface);
-		border: 1px solid var(--calendar-outline-strong);
+		background: transparent;
+		border: 0;
 		border-radius: 999px;
-		padding: 0.22rem;
+		padding: 0;
 		gap: 0;
-		overflow: hidden;
+		overflow: visible;
 	}
 
 	[data-calendar-root] .fc .fc-button {
@@ -452,9 +453,9 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 	}
 
 	[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button {
-		border: 0;
+		border: 1px solid var(--calendar-outline-strong);
 		border-radius: 0;
-		background: transparent;
+		background: var(--calendar-segmented-surface);
 		height: 2.28rem;
 		padding-inline: 0.82rem;
 	}
@@ -465,7 +466,8 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 		.fc-button-group--segmented
 		.fc-button
 		+ .fc-button {
-		border-left: 1px solid color-mix(in srgb, var(--calendar-outline-strong) 76%, transparent);
+		margin-left: -1px;
+		border-left: 1px solid color-mix(in srgb, var(--calendar-outline-strong) 72%, transparent);
 	}
 
 	[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button:first-child {
@@ -482,8 +484,8 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 	}
 
 	html[data-theme='dark'] [data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented {
-		background: color-mix(in srgb, #303743 84%, #282a2c 16%);
-		border-color: rgba(129, 140, 158, 0.66);
+		background: transparent;
+		border-color: transparent;
 	}
 
 	html[data-theme='dark']
@@ -493,7 +495,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 		.fc-button-group--segmented
 		.fc-button
 		+ .fc-button {
-		border-left-color: rgba(129, 140, 158, 0.5);
+		border-left-color: rgba(129, 140, 158, 0.46);
 	}
 
 	[data-calendar-root] .fc .fc-button:disabled {
@@ -798,7 +800,9 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 		}
 
 		[data-calendar-root] .fc .fc-toolbar.fc-header-toolbar {
-			padding: 0.45rem;
+			padding: 0 0 0.45rem;
+			border-bottom: 0;
+			margin-bottom: 0.55rem;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar {
@@ -820,14 +824,18 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 			width: 100%;
 			display: grid;
 			grid-template-columns: repeat(3, minmax(0, 1fr));
-			border-radius: 1rem;
-			gap: 0;
+			border-radius: 0.92rem;
+			gap: 0.34rem;
+			border: 0;
+			padding: 0;
+			background: transparent;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button {
 			width: 100%;
-			border-radius: 0;
+			border-radius: 0.82rem;
 			padding-inline: 0.6rem;
+			margin-left: 0;
 		}
 		
 		[data-calendar-root] .fc .fc-toolbar-title {

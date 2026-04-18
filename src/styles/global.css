@@ -73,19 +73,19 @@
 }
 
 html[data-theme='dark'] {
-	--background: #131314;
-	--background-accent: #1e1f22;
-	--page-background: #131314;
-	--surface: rgba(30, 31, 34, 0.94);
-	--surface-container: #1e1f22;
-	--surface-container-low: #131314;
-	--surface-container-high: #282a2c;
-	--surface-container-highest: #303236;
-	--surface-bright: #282a2c;
+	--background: #141414;
+	--background-accent: #1b1b1a;
+	--page-background: #141414;
+	--surface: rgba(27, 27, 27, 0.94);
+	--surface-container: #1b1b1b;
+	--surface-container-low: #1b1b1b;
+	--surface-container-high: #1b1b1b;
+	--surface-container-highest: #1f1f1f;
+	--surface-bright: #1b1b1b;
 	--bar-outline: rgba(255, 255, 255, 0.1);
-	--shell-surface: #131314;
-	--sidebar-surface: #131314;
-	--content-surface: rgba(30, 31, 34, 0.74);
+	--shell-surface: #141414;
+	--sidebar-surface: #1b1b1b;
+	--content-surface: rgba(27, 27, 27, 0.72);
 	--shell-border: rgba(255, 255, 255, 0.1);
 	--primary: #1a73e8;
 	--primary-soft: rgba(26, 115, 232, 0.12);
@@ -95,17 +95,17 @@ html[data-theme='dark'] {
 	--secondary-container: rgba(161, 161, 170, 0.15);
 	--on-surface: #fafafa;
 	--on-surface-variant: #a1a1aa;
-	--hero-gradient: linear-gradient(135deg, #1e1f22 0%, #131314 100%);
+	--hero-gradient: linear-gradient(135deg, #1f1f1f 0%, #141414 100%);
 	--hero-shadow: rgba(0, 0, 0, 0.5);
 	--hero-glow: radial-gradient(circle at center, rgba(26, 115, 232, 0.03), transparent 60%);
-	--control-surface: #1e1f22;
-	--control-surface-strong: #282a2c;
-	--menu-surface: rgba(30, 31, 34, 0.98);
-	--card-surface: #1e1f22;
-	--card-surface-strong: #282a2c;
+	--control-surface: #1b1b1b;
+	--control-surface-strong: #202020;
+	--menu-surface: rgba(27, 27, 27, 0.98);
+	--card-surface: #1b1b1b;
+	--card-surface-strong: #1f1f1f;
 	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-	--sidebar-card-surface: rgba(30, 31, 34, 0.95);
+	--sidebar-card-surface: rgba(27, 27, 27, 0.95);
 	--sidebar-hover: rgba(255, 255, 255, 0.06);
 	--status-total-bg: rgba(161, 161, 170, 0.15);
 	--status-total-text: #e4e4e7;
@@ -180,6 +180,17 @@ dialog[data-appointment-modal]::backdrop,
 dialog[data-app-alert-dialog]::backdrop,
 [data-settings-modal]::backdrop {
 	will-change: opacity;
+}
+
+html[data-theme='dark'] dialog[data-service-modal],
+html[data-theme='dark'] dialog[data-professional-modal],
+html[data-theme='dark'] dialog[data-location-modal],
+html[data-theme='dark'] dialog[data-specialty-modal],
+html[data-theme='dark'] dialog[data-appointment-modal],
+html[data-theme='dark'] [data-settings-modal] {
+	/* Lower contrast in modal text to reduce visual glare */
+	--on-surface: #e5e8ed;
+	--on-surface-variant: #aeb5c0;
 }
 
 [data-side-nav] {
