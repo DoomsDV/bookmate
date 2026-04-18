@@ -32,6 +32,7 @@ interface ImportMetaEnv {
     readonly ORDS_API_BASE_URL?: string;
     readonly ORDS_PUBLIC_API_BASE_URL?: string;
     readonly ORDS_PUBLIC_BOOKING_URL?: string;
+    readonly PUBLIC_VALIDATE_CUSTOMER_URL?: string;
 
     readonly ORDS_AUTH_LOGIN_URL?: string;
     readonly ORDS_AUTH_REFRESH_URL?: string;

@@ -21,6 +21,18 @@ type BookingProfile = {
 	services: BookingService[];
 };
 
+type ValidateCustomerApiData = {
+	id_customer?: number;
+	full_name?: string;
+};
+
+type ValidateCustomerApiResponse = {
+	status?: string;
+	message?: string;
+	exists?: boolean;
+	data?: ValidateCustomerApiData | null;
+};
+
 const toPositiveInt = (value: unknown, fallback = 1) => {
 	const parsed = Number(value);
 	return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
@@ -123,9 +135,17 @@ export const initializePublicBookingPage = () => {
 	const noSlotsNode = root.querySelector<HTMLElement>('[data-no-slots]');
 	const slotsLoadingNode = root.querySelector<HTMLElement>('[data-slots-loading]');
 	const customerForm = root.querySelector<HTMLFormElement>('[data-customer-form]');
+	const customerNameWrapper = customerForm?.querySelector<HTMLElement>('[data-customer-name-wrapper]');
+	const customerNameInput = customerForm?.querySelector<HTMLInputElement>('[name="customer_name"]');
+	const customerNameFieldError = customerForm?.querySelector<HTMLElement>(
+		'[data-field-error="customer_name"]'
+	);
 	const customerPhoneInput = customerForm?.querySelector<HTMLInputElement>('[name="customer_phone"]');
 	const customerPhoneFieldError = customerForm?.querySelector<HTMLElement>(
 		'[data-field-error="customer_phone"]'
+	);
+	const customerLookupStatus = customerForm?.querySelector<HTMLElement>(
+		'[data-customer-lookup-status]'
 	);
 	const submitButton = root.querySelector<HTMLButtonElement>('[data-submit-booking]');
 	const submitErrorNode = root.querySelector<HTMLElement>('[data-submit-error]');
@@ -161,6 +181,8 @@ export const initializePublicBookingPage = () => {
 		!noSlotsNode ||
 		!slotsLoadingNode ||
 		!customerForm ||
+		!customerNameWrapper ||
+		!customerNameInput ||
 		!customerPhoneInput ||
 		!submitButton ||
 		!summaryServiceInline ||
@@ -194,6 +216,9 @@ export const initializePublicBookingPage = () => {
 	let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 	let isLoadingSlots = false;
 	let isSubmitting = false;
+	let isValidatingCustomer = false;
+	let customerValidationSeq = 0;
+	let validatedCustomerPhoneE164 = '';
 
 	let toastTimer: number | null = null;
 	const stepLabelByNumber: Record<1 | 2 | 3 | 4, string> = {
@@ -236,6 +261,116 @@ export const initializePublicBookingPage = () => {
 		}
 		customerPhoneFieldError.textContent = message;
 		customerPhoneFieldError.classList.remove('hidden');
+	};
+
+	const setNameFieldError = (message: string) => {
+		if (!customerNameFieldError) return;
+		if (!message) {
+			customerNameFieldError.textContent = '';
+			customerNameFieldError.classList.add('hidden');
+			return;
+		}
+		customerNameFieldError.textContent = message;
+		customerNameFieldError.classList.remove('hidden');
+	};
+
+	const setCustomerLookupStatus = (message: string) => {
+		if (!customerLookupStatus) return;
+		customerLookupStatus.textContent =
+			message || 'Ingresa tu número de celular.';
+	};
+
+	const setCustomerNameVisibility = (visible: boolean) => {
+		customerNameWrapper.classList.toggle('hidden', !visible);
+		customerNameInput.required = visible;
+	};
+
+	const setCustomerNameLocked = (locked: boolean) => {
+		customerNameInput.disabled = locked;
+	};
+
+	const resetCustomerLookupState = (clearPhone = false) => {
+		customerValidationSeq += 1;
+		isValidatingCustomer = false;
+		validatedCustomerPhoneE164 = '';
+		customerNameInput.value = '';
+		setCustomerNameLocked(false);
+		if (clearPhone) customerPhoneInput.value = '';
+		setCustomerNameVisibility(false);
+		setNameFieldError('');
+		setCustomerLookupStatus('');
+	};
+
+	const validateCustomerPhone = async (customerPhoneE164: string) => {
+		if (!customerPhoneE164) return false;
+		if (validatedCustomerPhoneE164 === customerPhoneE164 && !customerNameWrapper.classList.contains('hidden')) {
+			return true;
+		}
+
+		const currentValidationSeq = ++customerValidationSeq;
+		isValidatingCustomer = true;
+		setSubmitError('');
+		setNameFieldError('');
+		setCustomerNameVisibility(false);
+		setCustomerLookupStatus('Validando cliente...');
+
+		try {
+			const response = await fetch('/api/public/validate-customer', {
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+				body: JSON.stringify({
+					org_id_organization: profile.org_id_organization,
+					customer_phone: customerPhoneE164,
+				}),
+			});
+			const data = (await response.json()) as ValidateCustomerApiResponse;
+
+			if (currentValidationSeq !== customerValidationSeq) return false;
+
+			if (
+				!response.ok ||
+				!data ||
+				data.status !== 'success' ||
+				typeof data.exists !== 'boolean'
+			) {
+				throw new Error(readApiMessage(data, 'No fue posible validar el cliente.'));
+			}
+
+			validatedCustomerPhoneE164 = customerPhoneE164;
+			setCustomerNameVisibility(true);
+
+			if (data.exists) {
+				const fullName = String(data.data?.full_name || '').trim();
+				if (!fullName) {
+					throw new Error('No fue posible recuperar el nombre del cliente.');
+				}
+				customerNameInput.value = fullName;
+				setCustomerNameLocked(true);
+				setCustomerLookupStatus('Cliente encontrado. Nombre cargado automaticamente.');
+			} else {
+				customerNameInput.value = '';
+				setCustomerNameLocked(false);
+				setCustomerLookupStatus(
+					readApiMessage(data, 'Cliente nuevo. Ingresa tu nombre completo para continuar.')
+				);
+			}
+
+			return true;
+		} catch (error) {
+			if (currentValidationSeq !== customerValidationSeq) return false;
+			resetCustomerLookupState();
+			setSubmitError(
+				error instanceof Error ? error.message : 'No fue posible validar el cliente.'
+			);
+			return false;
+		} finally {
+			if (currentValidationSeq === customerValidationSeq) {
+				isValidatingCustomer = false;
+			}
+		}
 	};
 
 	const setStep = (nextStep: WizardStep) => {
@@ -465,6 +600,7 @@ export const initializePublicBookingPage = () => {
 		availableSlots = [];
 		isLoadingSlots = false;
 		customerForm.reset();
+		resetCustomerLookupState(true);
 		setPhoneFieldError('');
 		setSubmitError('');
 		refreshSummary();
@@ -488,44 +624,70 @@ export const initializePublicBookingPage = () => {
 	backToCalendar.addEventListener('click', () => setStep(2));
 	backToSlots.addEventListener('click', () => setStep(3));
 	restartButton.addEventListener('click', resetFlow);
+	setCustomerNameLocked(false);
+	setCustomerNameVisibility(false);
+	setCustomerLookupStatus('');
 	customerPhoneInput.value = formatParaguayLocalPhone(customerPhoneInput.value);
+	customerNameInput.addEventListener('input', () => {
+		setNameFieldError('');
+		setSubmitError('');
+	});
+
 	customerPhoneInput.addEventListener('input', () => {
 		customerPhoneInput.value = formatParaguayLocalPhone(customerPhoneInput.value);
 		setPhoneFieldError('');
+		setSubmitError('');
+		if (isValidatingCustomer) resetCustomerLookupState();
+
+		const parsedPhone = parseParaguayMobilePhone(toParaguayE164Phone(customerPhoneInput.value));
+		if (!parsedPhone.isValid) {
+			if (validatedCustomerPhoneE164) resetCustomerLookupState();
+			return;
+		}
+
+		if (validatedCustomerPhoneE164 && parsedPhone.e164 !== validatedCustomerPhoneE164) {
+			resetCustomerLookupState();
+		}
 	});
-	customerPhoneInput.addEventListener('blur', () => {
+	customerPhoneInput.addEventListener('blur', async () => {
 		const rawPhone = customerPhoneInput.value.trim();
 		if (!rawPhone) {
 			setPhoneFieldError('');
+			resetCustomerLookupState();
 			return;
 		}
 
 		const parsedPhone = parseParaguayMobilePhone(toParaguayE164Phone(rawPhone));
 		if (!parsedPhone.isValid) {
 			setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
+			resetCustomerLookupState();
 			return;
 		}
 
 		customerPhoneInput.value = formatParaguayLocalPhone(rawPhone);
 		setPhoneFieldError('');
+		await validateCustomerPhone(parsedPhone.e164);
 	});
 
 	customerForm.addEventListener('submit', async (event) => {
 		event.preventDefault();
 		if (isSubmitting) return;
+		if (isValidatingCustomer) {
+			setSubmitError('Estamos validando tu telefono. Espera un momento.');
+			return;
+		}
 		setSubmitError('');
 		setPhoneFieldError('');
+		setNameFieldError('');
 
 		if (!selectedService || !selectedDate || !selectedTime) {
 			setSubmitError('Selecciona servicio, fecha y horario antes de confirmar.');
 			return;
 		}
 
-		const formData = new FormData(customerForm);
-		const customerName = String(formData.get('customer_name') || '').trim();
 		const rawCustomerPhone = customerPhoneInput.value.trim();
 
-		if (!customerName || !rawCustomerPhone) {
+		if (!rawCustomerPhone) {
 			if (!rawCustomerPhone) setPhoneFieldError('El telefono es obligatorio.');
 			setSubmitError('Nombre y telefono son obligatorios.');
 			return;
@@ -540,6 +702,17 @@ export const initializePublicBookingPage = () => {
 
 		const customerPhone = parsedPhone.e164;
 		customerPhoneInput.value = formatParaguayLocalPhone(rawCustomerPhone);
+		if (validatedCustomerPhoneE164 !== customerPhone || customerNameWrapper.classList.contains('hidden')) {
+			const isCustomerValidated = await validateCustomerPhone(customerPhone);
+			if (!isCustomerValidated) return;
+		}
+
+		const customerName = String(customerNameInput.value || '').trim();
+		if (!customerName) {
+			setNameFieldError('El nombre completo es obligatorio.');
+			setSubmitError('Nombre y telefono son obligatorios.');
+			return;
+		}
 
 		const startDate = new Date(`${selectedDate}T${selectedTime}:00`);
 		if (Number.isNaN(startDate.getTime())) {

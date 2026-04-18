@@ -22,6 +22,11 @@ export const PUBLIC_BOOKING_API_BASE_URL = resolveOrdsPublicApiUrl(
 	'ORDS_PUBLIC_BOOKING_URL',
 	''
 );
+export const PUBLIC_VALIDATE_CUSTOMER_API_URL = resolveOrdsPublicApiUrl(
+	import.meta.env.PUBLIC_VALIDATE_CUSTOMER_URL,
+	'PUBLIC_VALIDATE_CUSTOMER_URL',
+	'validate-customer'
+);
 
 const resolvePublicDomainOrigin = () => {
 	const fromPublicDomain = normalizePublicDomainOrigin(
@@ -64,6 +69,22 @@ export interface PublicCreateAppointmentPayload {
 	customer_phone: string;
 	start_time: string;
 	end_time: string;
+}
+
+export interface PublicValidateCustomerPayload {
+	org_id_organization: number;
+	customer_phone: string;
+}
+
+export interface PublicValidatedCustomer {
+	id_customer: number;
+	full_name: string;
+}
+
+export interface PublicValidateCustomerResult {
+	exists: boolean;
+	message: string;
+	customer: PublicValidatedCustomer | null;
 }
 
 interface PublicApiFailureResponse {
@@ -277,5 +298,58 @@ export const createPublicAppointmentWithOrds = async (payload: PublicCreateAppoi
 	return {
 		statusCode: response.status || 201,
 		message: successMessage || 'Cita confirmada!',
+	};
+};
+
+const normalizeValidatedCustomer = (value: unknown): PublicValidatedCustomer | null => {
+	if (!value || typeof value !== 'object') return null;
+
+	const source = value as Record<string, unknown>;
+	const idCustomer = toPositiveInt(source.id_customer, 0);
+	const fullName = String(source.full_name || '').trim();
+	if (!idCustomer || !fullName) return null;
+
+	return {
+		id_customer: idCustomer,
+		full_name: fullName,
+	};
+};
+
+export const validatePublicCustomerWithOrds = async (
+	payload: PublicValidateCustomerPayload
+): Promise<PublicValidateCustomerResult> => {
+	const response = await fetch(PUBLIC_VALIDATE_CUSTOMER_API_URL, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible validar el cliente.');
+	const exists = data.exists === true;
+	const message = String(data.message || '').trim();
+
+	if (!exists) {
+		return {
+			exists: false,
+			message: message || 'Cliente nuevo, se requiere nombre.',
+			customer: null,
+		};
+	}
+
+	const customer = normalizeValidatedCustomer(data.data);
+	if (!customer) {
+		throw new PublicBookingApiError(
+			'No fue posible interpretar los datos del cliente existente.',
+			502
+		);
+	}
+
+	return {
+		exists: true,
+		message: message || 'Cliente existente.',
+		customer,
 	};
 };

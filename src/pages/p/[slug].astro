@@ -256,18 +256,6 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 						<div class="mt-6 grid gap-8 lg:grid-cols-[1fr_22rem]">
 							<form class="grid gap-5" data-customer-form>
 								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
-									Nombre completo
-									<input
-										type="text"
-										name="customer_name"
-										maxlength="100"
-										required
-										class="rounded-xl border border-(--outline) bg-(--surface-container-lowest) px-4 py-3 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none transition focus:border-(--primary) focus:ring-1 focus:ring-(--primary)"
-										placeholder="Ej: Juan Perez"
-									/>
-								</label>
-
-								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
 									Telefono (WhatsApp)
 									<div class="flex w-full overflow-hidden rounded-xl border border-(--outline) bg-(--surface-container-lowest) transition focus-within:border-(--primary) focus-within:ring-1 focus-within:ring-(--primary)">
 										<span class="inline-flex items-center border-r border-(--outline) bg-(--surface-container-high) px-3 text-sm font-semibold text-(--on-surface-variant)">+595</span>
@@ -284,6 +272,25 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 									</div>
 									<span class="hidden text-xs font-medium text-(--error)" data-field-error="customer_phone"></span>
 								</label>
+								<p class="text-xs font-medium text-(--on-surface-variant)" data-customer-lookup-status>
+									Ingresa tu número de celular.
+								</p>
+
+								<label
+									class="hidden grid gap-1.5 text-sm font-medium text-(--on-surface)"
+									data-customer-name-wrapper
+								>
+									Nombre completo
+									<input
+										type="text"
+										name="customer_name"
+										maxlength="100"
+										autocomplete="name"
+										class="rounded-xl border border-(--outline) bg-(--surface-container-lowest) px-4 py-3 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none transition focus:border-(--primary) focus:ring-1 focus:ring-(--primary)"
+										placeholder="Ej: Juan Perez"
+									/>
+								</label>
+								<span class="hidden text-xs font-medium text-(--error)" data-field-error="customer_name"></span>
 
 								<p
 									data-submit-error
@@ -374,12 +381,12 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 <style is:global>
 	.public-booking-shell {
 		/* Material 3 Dark Theme Colors */
-		--surface-background: #111318;
-		--surface-container-lowest: #0f1115;
-		--surface-container-low: #191b20;
-		--surface-container: #1d2025;
-		--surface-container-high: #282a2f;
-		--surface-container-highest: #33353a;
+		--surface-background: #141414;
+		--surface-container-lowest: #1b1b1b;
+		--surface-container-low: #1b1b1b;
+		--surface-container: #1b1b1b;
+		--surface-container-high: #1b1b1b;
+		--surface-container-highest: #1b1b1b;
 		
 		--outline: #44474e;
 		--outline-variant: #44474e;
