@@ -17,85 +17,316 @@ const toDescriptionLabel = (value?: string | null) => {
 
 const activeCount = specialties.filter((item) => item.is_active === 1).length;
 const inactiveCount = specialties.length - activeCount;
+
+const formatStrictDate = (dateString?: string) => {
+	if (!dateString) return '--';
+	const d = new Date(dateString);
+	if (isNaN(d.getTime())) return '--';
+	const day = String(d.getDate()).padStart(2, '0');
+	const month = String(d.getMonth() + 1).padStart(2, '0');
+	const year = String(d.getFullYear()).slice(-2);
+	return `${day}-${month}-${year}`;
+};
 ---
 
-<section class="material-region dark:shadow-none">
-	<header class="mb-4 flex flex-col justify-between gap-3 sm:mb-5 sm:flex-row sm:items-center">
-		<div class="flex flex-wrap items-center gap-2.5 text-[0.82rem] font-bold">
-			<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 transition border border-emerald-500/10">
-				<span class="size-2 rounded-full bg-emerald-500"></span> Activas: {activeCount}
-			</span>
-			{inactiveCount > 0 && (
-				<span class="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1.5 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 transition border border-rose-500/10">
-					<span class="size-2 rounded-full bg-rose-500"></span> Inactivas: {inactiveCount}
+<section class="specialties-view">
+	<header class="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+		<div class="flex flex-col gap-2.5">
+			<h2 class="text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none m-0">Especialidades</h2>
+			<div class="flex flex-wrap items-center gap-2">
+				<span class="specialties-summary-pill specialties-summary-pill--active">
+					<span class="size-2 rounded-full specialties-summary-dot specialties-summary-dot--active"></span>
+					Activas: {activeCount}
 				</span>
-			)}
+				{inactiveCount > 0 && (
+					<span class="specialties-summary-pill specialties-summary-pill--inactive">
+						<span class="size-2 rounded-full specialties-summary-dot specialties-summary-dot--inactive"></span>
+						Inactivas: {inactiveCount}
+					</span>
+				)}
+			</div>
 		</div>
 
-		{showCreateAction && (
-			<button
-				type="button"
-				class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) sm:w-auto w-full"
-				data-open-specialty-modal
-			>
-				<span class="material-symbols-rounded text-[1.2rem]">add</span>
-				Nueva Especialidad
-			</button>
-		)}
+		<div class="shrink-0 sm:mt-0">
+			{showCreateAction && (
+				<button
+					type="button"
+					class="specialties-create-btn flex items-center justify-center gap-2"
+					data-open-specialty-modal
+				>
+					<svg class="specialties-create-btn-icon w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+						<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+					</svg>
+					<span>Nueva Especialidad</span>
+				</button>
+			)}
+		</div>
 	</header>
 
 	{specialties.length === 0 ? (
-		<div class="flex flex-col items-center justify-center rounded-[1.35rem] border-2 border-dashed border-(--shell-border) bg-(--surface)/40 px-5 py-10 text-center transition">
-			<div class="mb-4 flex size-16 items-center justify-center rounded-full bg-(--surface-variant) text-(--on-surface-variant) ring-8 ring-(--surface-bright)">
+		<div class="specialties-empty-state">
+			<div class="specialties-empty-icon">
 				<span class="material-symbols-rounded text-[2rem]">inbox</span>
 			</div>
 			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">No hay especialidades registradas</h3>
-			<p class="mt-1.5 text-[0.95rem] text-(--on-surface-variant) max-w-sm leading-relaxed">
+			<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
 				Aún no has agregado ninguna especialidad a esta organización. Comienza creando tu primera especialidad.
 			</p>
 		</div>
 	) : (
-		<div class="material-cards-grid sm:grid-cols-2 lg:grid-cols-3">
+		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
 			{specialties.map((specialty) => (
 				<article
-					class="material-data-card group cursor-pointer relative overflow-hidden hover:-translate-y-0.5 hover:border-(--primary)/40 hover:shadow-[0_14px_30px_-18px_rgba(0,0,0,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+					class="specialties-card group cursor-pointer relative overflow-hidden"
 					data-specialty-card
 					data-specialty-id={specialty.id_specialty}
 					tabindex="0"
 					role="button"
 					aria-label={`Editar especialidad ${specialty.name || specialty.id_specialty}`}
 				>
-					<div class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-(--primary)/5 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></div>
-
 					<div class="relative flex items-start justify-between gap-4">
-						<div class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-(--primary-soft) text-(--primary) transition-transform duration-300 group-hover:scale-105">
+						<div class="relative flex size-[2.75rem] shrink-0 items-center justify-center rounded-[0.85rem] bg-(--primary-soft) text-(--primary)">
 							<span class="material-symbols-rounded text-[1.25rem]">{SPECIALTY_ICON}</span>
 						</div>
 
 						<span
 							class:list={[
-								'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-widest border',
+								'specialties-card-status',
 								specialty.is_active === 1
-									? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/10 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/20'
-									: 'bg-(--surface-variant) text-(--on-surface-variant) border-(--shell-border)',
+									? 'specialties-card-status--active'
+									: 'specialties-card-status--inactive',
 							]}
 						>
-							<span class:list={["size-1.5 rounded-full", specialty.is_active === 1 ? "bg-emerald-500" : "bg-(--on-surface-variant)"]}></span>
+							<span
+								class:list={[
+									'size-1.5 rounded-full',
+									specialty.is_active === 1
+										? 'specialties-summary-dot--active'
+										: 'specialties-summary-dot--inactive',
+								]}
+							></span>
 							{specialty.is_active === 1 ? 'Activa' : 'Inactiva'}
 						</span>
 					</div>
 
-					<div class="relative flex flex-1 flex-col gap-3">
-						<h3 class="text-[1.1rem] font-extrabold tracking-tight text-(--on-surface) line-clamp-1 group-hover:text-(--primary) transition-colors">
-							{specialty.name || `Especialidad #${specialty.id_specialty}`}
-						</h3>
-
-						<p class="text-sm text-(--on-surface-variant) line-clamp-2 leading-relaxed">
-							{toDescriptionLabel(specialty.description)}
-						</p>
+					<div class="relative flex flex-1 flex-col gap-[0.85rem]">
+						<div>
+							<h3 class="specialties-card-title line-clamp-1">
+								{specialty.name || `Especialidad #${specialty.id_specialty}`}
+							</h3>
+							<p class="mt-1 text-[0.9rem] text-(--on-surface-variant) line-clamp-2 leading-relaxed">
+								{toDescriptionLabel(specialty.description)}
+							</p>
+						</div>
+						
+						<dl class="mt-auto shrink-0 grid gap-0.5">
+							<div class="flex items-center justify-between text-[0.92rem] pt-1">
+								<dt class="specialties-card-term text-[0.82rem]">Registro</dt>
+								<dd class="specialties-card-value text-[0.82rem] font-bold">{formatStrictDate(specialty.created_at)}</dd>
+							</div>
+						</dl>
 					</div>
 				</article>
 			))}
 		</div>
 	)}
 </section>
+
+<style>
+	.specialties-view {
+		display: grid;
+		gap: 1.2rem;
+	}
+
+	.specialties-summary-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		border-radius: 999px;
+		border: 0;
+		padding: 0.33rem 0.78rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+	}
+
+	.specialties-summary-pill--active {
+		background: rgba(16, 185, 129, 0.12);
+		color: #0f6d4a;
+	}
+
+	.specialties-summary-pill--inactive {
+		background: rgba(244, 63, 94, 0.11);
+		color: #8d3e4a;
+	}
+
+	.specialties-summary-dot {
+		display: inline-block;
+	}
+
+	.specialties-summary-dot--active {
+		background: #22c55e;
+	}
+
+	.specialties-summary-dot--inactive {
+		background: #fb7185;
+	}
+
+	.specialties-create-btn {
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
+		background: var(--primary);
+		padding: 0.72rem 1.15rem;
+		font-size: 0.92rem;
+		font-weight: 780;
+		color: #f8fbff;
+		box-shadow: none;
+		transition: filter 140ms ease, border-color 140ms ease;
+	}
+
+	.specialties-create-btn-icon {
+		flex-shrink: 0;
+	}
+
+	.specialties-create-btn:hover {
+		filter: brightness(1.04);
+	}
+
+	.specialties-empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		border-radius: 1.35rem;
+		border: 1px solid rgba(148, 163, 184, 0.24);
+		background: color-mix(in srgb, var(--surface-container-low) 72%, var(--surface-bright) 28%);
+		padding: 2.5rem 1.25rem;
+		text-align: center;
+	}
+
+	.specialties-empty-icon {
+		margin-bottom: 1rem;
+		display: flex;
+		height: 4rem;
+		width: 4rem;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+		color: var(--on-surface-variant);
+	}
+
+	.specialties-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.95rem;
+		border-radius: 1.2rem;
+		border: 0;
+		background: color-mix(in srgb, var(--surface-container-low) 76%, var(--surface-bright) 24%);
+		padding: 1.45rem 1.5rem 1.55rem;
+		box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+		transition: transform 170ms ease, box-shadow 170ms ease, background-color 170ms ease;
+	}
+
+	.specialties-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 14px 44px -12px rgba(0, 0, 0, 0.1);
+	}
+
+	.specialties-card-status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		border-radius: 999px;
+		border: 0;
+		padding: 0.24rem 0.6rem;
+		font-size: 0.66rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+
+	.specialties-card-status--active {
+		background: rgba(16, 185, 129, 0.12);
+		color: #0f6d4a;
+	}
+
+	.specialties-card-status--inactive {
+		background: rgba(244, 63, 94, 0.11);
+		color: #8d3e4a;
+	}
+
+	.specialties-card-title {
+		margin: 0;
+		font-size: 1.1rem;
+		font-weight: 760;
+		line-height: 1.3;
+		letter-spacing: -0.01em;
+		color: var(--on-surface);
+	}
+
+	.specialties-card-term {
+		color: var(--on-surface-variant);
+		font-weight: 500;
+	}
+
+	.specialties-card-value {
+		font-weight: 700;
+		color: color-mix(in srgb, var(--on-surface-variant) 74%, var(--on-surface) 26%);
+		text-align: right;
+	}
+
+	html[data-theme='dark'] .specialties-summary-pill--active {
+		background: rgba(110, 231, 183, 0.16);
+		color: #b8f5d5;
+	}
+
+	html[data-theme='dark'] .specialties-summary-pill--inactive {
+		background: rgba(255, 182, 193, 0.12);
+		color: #ffc8d2;
+	}
+
+	html[data-theme='dark'] .specialties-create-btn {
+		border-color: color-mix(in srgb, var(--primary) 58%, #131314 42%);
+		background: color-mix(in srgb, var(--primary) 78%, #131314 22%);
+	}
+
+	html[data-theme='dark'] .specialties-create-btn:hover {
+		filter: brightness(1.08);
+	}
+
+	html[data-theme='dark'] .specialties-empty-state {
+		border-color: rgba(255, 255, 255, 0.08);
+		background: color-mix(
+			in srgb,
+			var(--surface-container-low, #1e1f22) 82%,
+			var(--surface-container, #131314) 18%
+		);
+	}
+
+	html[data-theme='dark'] .specialties-card {
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		background: var(--surface-container, #1e1f22);
+		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .specialties-card:hover {
+		border-color: rgba(255, 255, 255, 0.15);
+		background: var(--surface-container-high, #282a2c);
+	}
+
+	html[data-theme='dark'] .specialties-card-status--active {
+		background: rgba(110, 231, 183, 0.16);
+		color: #b8f5d5;
+	}
+
+	html[data-theme='dark'] .specialties-card-status--inactive {
+		background: rgba(255, 182, 193, 0.12);
+		color: #ffc8d2;
+	}
+
+	html[data-theme='dark'] .specialties-card-value {
+		color: color-mix(in srgb, var(--on-surface-variant) 86%, #d1d5db 14%);
+	}
+</style>

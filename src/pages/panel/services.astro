@@ -1,4 +1,4 @@
-﻿---
+﻿﻿---
 import AppAlert from "../../components/AppAlert.astro";
 import FlashMessage from "../../components/FlashMessage.astro";
 import ServicesGrid from "../../components/ServicesGrid.astro";
@@ -96,27 +96,15 @@ const visiblePages = Array.from(
 											showCreateAction={true}
 										/>
 
-										<div class="flex flex-col gap-3 rounded-[1.35rem] bg-white/88 dark:bg-(--surface-container-low) px-4 py-3 shadow-[0_10px_28px_rgba(15,23,42,0.08)] dark:shadow-none backdrop-blur sm:flex-row sm:items-center sm:justify-between transition-colors duration-300">
-											<p class="text-sm text-(--on-surface-variant)">
-												Pagina{" "}
-												<span class="font-semibold text-(--on-surface)">
-													{safeCurrentPage}
-												</span>{" "}
-												de
-												<span class="font-semibold text-(--on-surface)">
-													{" "}
-													{totalPages}
-												</span>
-												<span class="mx-2">-</span>
-												Total de
-												<span class="font-semibold text-(--on-surface)">
-													{` ${pagination.total_records} `}
-												</span>
-												servicios
+										<div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-transparent border-0">
+											<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
+												Página <span class="font-bold text-(--on-surface)">{safeCurrentPage}</span> de <span class="font-bold text-(--on-surface)">{totalPages}</span>
+												<span class="mx-2 opacity-50">-</span>
+												Total: <span class="font-bold text-(--on-surface)">{pagination.total_records}</span> servicios
 											</p>
 
 											<nav
-												class="flex items-center gap-2"
+												class="flex items-center gap-1.5"
 												aria-label="Paginacion servicios"
 											>
 												{canPrevPage ? (
@@ -124,19 +112,19 @@ const visiblePages = Array.from(
 														href={toPageHref(
 															safeCurrentPage - 1,
 														)}
-														class="rounded-full bg-[#E8EAED] dark:bg-(--surface-container) px-3.5 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-[#DCE1E7] dark:hover:bg-(--surface-container-high)"
+														class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
 													>
 														Anterior
 													</a>
 												) : (
-													<span class="cursor-not-allowed rounded-full bg-[#EEF1F5] dark:bg-(--surface-container) px-3.5 py-1.5 text-sm font-semibold text-(--on-surface-variant)/65">
+													<span class="cursor-not-allowed px-3 py-1.5 text-[0.85rem] font-semibold text-gray-400 dark:text-gray-600 opacity-60">
 														Anterior
 													</span>
 												)}
 
 												{visiblePages.map((page) =>
 													page === safeCurrentPage ? (
-														<span class="rounded-full bg-[#1967D2] dark:bg-[#8AB4F8]/25 px-3.5 py-1.5 text-sm font-bold text-white dark:text-[#A8C7FA] shadow-[0_6px_14px_rgba(25,103,210,0.24)] dark:shadow-none">
+														<span class="px-3 py-1.5 text-[0.85rem] font-bold text-(--primary)">
 															{page}
 														</span>
 													) : (
@@ -144,7 +132,7 @@ const visiblePages = Array.from(
 															href={toPageHref(
 																page,
 															)}
-															class="rounded-full bg-[#E8EAED] dark:bg-(--surface-container) px-3.5 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-[#DCE1E7] dark:hover:bg-(--surface-container-high)"
+															class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
 														>
 															{page}
 														</a>
@@ -156,12 +144,12 @@ const visiblePages = Array.from(
 														href={toPageHref(
 															safeCurrentPage + 1,
 														)}
-														class="rounded-full bg-[#E8EAED] dark:bg-(--surface-container) px-3.5 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-[#DCE1E7] dark:hover:bg-(--surface-container-high)"
+														class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
 													>
 														Siguiente
 													</a>
 												) : (
-													<span class="cursor-not-allowed rounded-full bg-[#EEF1F5] dark:bg-(--surface-container) px-3.5 py-1.5 text-sm font-semibold text-(--on-surface-variant)/65">
+													<span class="cursor-not-allowed px-3 py-1.5 text-[0.85rem] font-semibold text-gray-400 dark:text-gray-600 opacity-60">
 														Siguiente
 													</span>
 												)}
@@ -1010,5 +998,3 @@ const visiblePages = Array.from(
 	}
 
 </style>
-
-

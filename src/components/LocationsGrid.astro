@@ -12,99 +12,109 @@ const activeCount = locations.filter((item) => item.is_active === 1).length;
 const inactiveCount = locations.length - activeCount;
 ---
 
-<section class="material-region dark:shadow-none">
-	<header class="mb-4 flex flex-col justify-between gap-3 sm:mb-5 sm:flex-row sm:items-center">
-		<div class="flex flex-wrap items-center gap-2.5 text-[0.82rem] font-bold">
-			<span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1.5 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-400 transition border border-emerald-500/10">
-				<span class="size-2 rounded-full bg-emerald-500"></span> Activas: {activeCount}
-			</span>
-			{inactiveCount > 0 && (
-				<span class="inline-flex items-center gap-1.5 rounded-full bg-rose-500/10 px-3 py-1.5 text-rose-700 dark:bg-rose-500/20 dark:text-rose-300 transition border border-rose-500/10">
-					<span class="size-2 rounded-full bg-rose-500"></span> Inactivas: {inactiveCount}
+<section class="locations-view">
+	<header class="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+		<div class="flex flex-col gap-2.5">
+			<h2 class="text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none m-0">Sucursales</h2>
+			<div class="flex flex-wrap items-center gap-2">
+				<span class="locations-summary-pill locations-summary-pill--active">
+					<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--active"></span>
+					Activas: {activeCount}
 				</span>
-			)}
+				{inactiveCount > 0 && (
+					<span class="locations-summary-pill locations-summary-pill--inactive">
+						<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--inactive"></span>
+						Inactivas: {inactiveCount}
+					</span>
+				)}
+			</div>
 		</div>
 
-		{showCreateAction && (
-			<button
-				type="button"
-				class="btn-primary-soft inline-flex items-center justify-center gap-2 rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold shadow-sm transition hover:shadow-md focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) sm:w-auto w-full"
-				data-open-location-modal
-			>
-				<span class="material-symbols-rounded text-[1.2rem]">add</span>
-				Nueva Sucursal
-			</button>
-		)}
+		<div class="shrink-0 sm:mt-0">
+			{showCreateAction && (
+				<button
+					type="button"
+					class="locations-create-btn flex items-center justify-center gap-2"
+					data-open-location-modal
+				>
+					<svg
+						class="locations-create-btn-icon w-[18px] h-[18px]"
+						viewBox="0 0 24 24"
+						fill="none"
+						aria-hidden="true"
+					>
+						<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+					</svg>
+					<span>Nueva Sucursal</span>
+				</button>
+			)}
+		</div>
 	</header>
 
 	{locations.length === 0 ? (
-		<div class="flex flex-col items-center justify-center rounded-[1.35rem] border-2 border-dashed border-(--shell-border) bg-(--surface)/40 px-5 py-10 text-center transition">
-			<div class="mb-4 flex size-16 items-center justify-center rounded-full bg-(--surface-variant) text-(--on-surface-variant) ring-8 ring-(--surface-bright)">
+		<div class="locations-empty-state">
+			<div class="locations-empty-icon">
 				<span class="material-symbols-rounded text-[2rem]">domain</span>
 			</div>
 			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">No hay sucursales registradas</h3>
-			<p class="mt-1.5 text-[0.95rem] text-(--on-surface-variant) max-w-sm leading-relaxed">
-				Aún no has agregado ninguna sucursal a esta organización. Comienza registrando tu primer local.
+			<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
+				Aún no has agregado ninguna sucursal a esta organización. Comienza creando tu primer local.
 			</p>
 		</div>
 	) : (
-		<div class="material-cards-grid sm:grid-cols-2 lg:grid-cols-3">
+		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
 			{locations.map((location) => (
 				<article
-					class="material-data-card group cursor-pointer relative overflow-hidden hover:-translate-y-0.5 hover:border-(--primary)/40 hover:shadow-[0_14px_30px_-18px_rgba(0,0,0,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2"
+					class="locations-card group cursor-pointer"
 					data-location-card
 					data-location-id={location.id_location}
 					tabindex="0"
 					role="button"
 					aria-label={`Editar sucursal ${location.name || location.id_location}`}
 				>
-					<div class="absolute right-0 top-0 h-32 w-32 -translate-y-16 translate-x-16 rounded-full bg-(--primary)/5 opacity-0 blur-2xl transition-opacity duration-300 group-hover:opacity-100"></div>
-
-					<div class="relative flex items-start justify-between gap-4">
-						<div class="flex size-11 shrink-0 items-center justify-center rounded-xl bg-(--primary-soft) text-(--primary) transition-transform duration-300 group-hover:scale-105">
+					<div class="flex items-start justify-between gap-4">
+						<div class="locations-card-icon">
 							<span class="material-symbols-rounded text-[1.25rem]">storefront</span>
 						</div>
 
 						<span
 							class:list={[
-								'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[0.7rem] font-extrabold uppercase tracking-widest border',
+								'locations-card-status',
 								location.is_active === 1
-									? 'bg-emerald-500/10 text-emerald-700 border-emerald-500/10 dark:bg-emerald-500/20 dark:text-emerald-400 dark:border-emerald-500/20'
-									: 'bg-(--surface-variant) text-(--on-surface-variant) border-(--shell-border)',
+									? 'locations-card-status--active'
+									: 'locations-card-status--inactive',
 							]}
 						>
-							<span class:list={["size-1.5 rounded-full", location.is_active === 1 ? "bg-emerald-500" : "bg-(--on-surface-variant)"]}></span>
+							<span
+								class:list={[
+									'size-1.5 rounded-full',
+									location.is_active === 1
+										? 'locations-summary-dot--active'
+										: 'locations-summary-dot--inactive',
+								]}
+							></span>
 							{location.is_active === 1 ? 'Activa' : 'Inactiva'}
 						</span>
 					</div>
 
-					<div class="relative flex flex-1 flex-col gap-3">
-						<h3 class="text-[1.1rem] font-extrabold tracking-tight text-(--on-surface) line-clamp-1 group-hover:text-(--primary) transition-colors">
-							{location.name || `Sucursal #${location.id_location}`}
-						</h3>
-						
-						<p class="text-[0.9rem] text-(--on-surface-variant) line-clamp-1">
-							{location.address || 'Dirección no disponible'}
-						</p>
+					<div class="locations-card-body">
+						<div>
+							<h3 class="locations-card-title line-clamp-1">
+								{location.name || `Sucursal #${location.id_location}`}
+							</h3>
+							<p class="mt-1 text-[0.9rem] text-(--on-surface-variant) line-clamp-1">
+								{location.address || 'Dirección no disponible'}
+							</p>
+						</div>
 
-						<dl class="mt-auto shrink-0 grid gap-2">
-							<div class="flex items-center justify-between border-b border-(--shell-border) border-dashed pb-2 text-[0.9rem]">
-								<dt class="flex items-center gap-1.5 text-(--on-surface-variant) font-semibold">
-									<span class="material-symbols-rounded text-[1.1rem] opacity-70">location_city</span>
-									Ciudad
-								</dt>
-								<dd class="font-bold text-(--on-surface) text-right">
-									{location.city?.name || '-'}
-								</dd>
+						<dl class="locations-card-metrics mt-1">
+							<div class="flex items-center justify-between text-[0.92rem]">
+								<dt class="locations-card-term">Ciudad</dt>
+								<dd class="locations-card-value">{location.city?.name || '-'}</dd>
 							</div>
-							<div class="flex items-center justify-between pt-0.5 text-[0.9rem]">
-								<dt class="flex items-center gap-1.5 text-(--on-surface-variant) font-semibold">
-									<span class="material-symbols-rounded text-[1.1rem] opacity-70">map</span>
-									Depto.
-								</dt>
-								<dd class="font-extrabold text-(--on-surface) text-right">
-									{location.department?.name || '-'}
-								</dd>
+							<div class="flex items-center justify-between text-[0.92rem]">
+								<dt class="locations-card-term">Depto.</dt>
+								<dd class="locations-card-value">{location.department?.name || '-'}</dd>
 							</div>
 						</dl>
 					</div>
@@ -113,3 +123,240 @@ const inactiveCount = locations.length - activeCount;
 		</div>
 	)}
 </section>
+
+<style>
+	.locations-view {
+		display: grid;
+		gap: 1.2rem;
+	}
+
+	.locations-summary-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		border-radius: 999px;
+		border: 0;
+		padding: 0.33rem 0.78rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+	}
+
+	.locations-summary-pill--active {
+		background: rgba(16, 185, 129, 0.12);
+		color: #0f6d4a;
+	}
+
+	.locations-summary-pill--inactive {
+		background: rgba(244, 63, 94, 0.11);
+		color: #8d3e4a;
+	}
+
+	.locations-summary-dot {
+		display: inline-block;
+	}
+
+	.locations-summary-dot--active {
+		background: #22c55e;
+	}
+
+	.locations-summary-dot--inactive {
+		background: #fb7185;
+	}
+
+	.locations-create-btn {
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
+		background: var(--primary);
+		padding: 0.72rem 1.15rem;
+		font-size: 0.92rem;
+		font-weight: 780;
+		color: #f8fbff;
+		box-shadow: none;
+		transition: filter 140ms ease, border-color 140ms ease;
+	}
+
+	.locations-create-btn-icon {
+		flex-shrink: 0;
+	}
+
+	.locations-create-btn:hover {
+		filter: brightness(1.04);
+	}
+
+	.locations-create-btn:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+		outline-offset: 3px;
+	}
+
+	.locations-empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		border-radius: 1.35rem;
+		border: 1px solid rgba(148, 163, 184, 0.24);
+		background: color-mix(in srgb, var(--surface-container-low) 72%, var(--surface-bright) 28%);
+		padding: 2.5rem 1.25rem;
+		text-align: center;
+	}
+
+	.locations-empty-icon {
+		margin-bottom: 1rem;
+		display: flex;
+		height: 4rem;
+		width: 4rem;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+		color: var(--on-surface-variant);
+	}
+
+	.locations-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.95rem;
+		border-radius: 1.2rem;
+		border: 0;
+		background: color-mix(in srgb, var(--surface-container-low) 76%, var(--surface-bright) 24%);
+		padding: 1.45rem 1.5rem 1.55rem;
+		box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+		transition: transform 170ms ease, box-shadow 170ms ease, background-color 170ms ease;
+	}
+
+	.locations-card:hover {
+		transform: translateY(-2px);
+		box-shadow: 0 14px 44px -12px rgba(0, 0, 0, 0.1);
+	}
+
+	.locations-card:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 55%, #ffffff 45%);
+		outline-offset: 2px;
+	}
+
+	.locations-card-icon {
+		display: inline-flex;
+		height: 2.75rem;
+		width: 2.75rem;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		border-radius: 0.85rem;
+		background: color-mix(in srgb, var(--primary) 15%, transparent);
+		color: var(--primary);
+	}
+
+	.locations-card-status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		border-radius: 999px;
+		border: 0;
+		padding: 0.24rem 0.6rem;
+		font-size: 0.66rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		white-space: nowrap;
+	}
+
+	.locations-card-status--active {
+		background: rgba(16, 185, 129, 0.12);
+		color: #0f6d4a;
+	}
+
+	.locations-card-status--inactive {
+		background: rgba(244, 63, 94, 0.11);
+		color: #8d3e4a;
+	}
+
+	.locations-card-body {
+		display: grid;
+		gap: 0.85rem;
+	}
+
+	.locations-card-title {
+		margin: 0;
+		font-size: 1.1rem;
+		font-weight: 760;
+		line-height: 1.3;
+		letter-spacing: -0.01em;
+		color: var(--on-surface);
+	}
+
+	.locations-card-metrics {
+		margin: 0;
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.locations-card-term {
+		color: var(--on-surface-variant);
+		font-weight: 500;
+	}
+
+	.locations-card-value {
+		font-weight: 700;
+		color: color-mix(in srgb, var(--on-surface-variant) 74%, var(--on-surface) 26%);
+		text-align: right;
+	}
+
+	html[data-theme='dark'] .locations-summary-pill--active {
+		background: rgba(110, 231, 183, 0.16);
+		color: #b8f5d5;
+	}
+
+	html[data-theme='dark'] .locations-summary-pill--inactive {
+		background: rgba(255, 182, 193, 0.12);
+		color: #ffc8d2;
+	}
+
+	html[data-theme='dark'] .locations-create-btn {
+		border-color: color-mix(in srgb, var(--primary) 58%, #131314 42%);
+		background: color-mix(in srgb, var(--primary) 78%, #131314 22%);
+	}
+
+	html[data-theme='dark'] .locations-create-btn:hover {
+		filter: brightness(1.08);
+	}
+
+	html[data-theme='dark'] .locations-empty-state {
+		border-color: rgba(255, 255, 255, 0.08);
+		background: color-mix(
+			in srgb,
+			var(--surface-container-low, #1e1f22) 82%,
+			var(--surface-container, #131314) 18%
+		);
+	}
+
+	html[data-theme='dark'] .locations-empty-icon {
+		background: rgba(255, 255, 255, 0.05);
+		color: var(--on-surface-variant);
+	}
+
+	html[data-theme='dark'] .locations-card {
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		background: var(--surface-container, #1e1f22);
+		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .locations-card:hover {
+		border-color: rgba(255, 255, 255, 0.15);
+		background: var(--surface-container-high, #282a2c);
+	}
+
+	html[data-theme='dark'] .locations-card-status--active {
+		background: rgba(110, 231, 183, 0.16);
+		color: #b8f5d5;
+	}
+
+	html[data-theme='dark'] .locations-card-status--inactive {
+		background: rgba(255, 182, 193, 0.12);
+		color: #ffc8d2;
+	}
+
+	html[data-theme='dark'] .locations-card-value {
+		color: color-mix(in srgb, var(--on-surface-variant) 86%, #d1d5db 14%);
+	}
+</style>

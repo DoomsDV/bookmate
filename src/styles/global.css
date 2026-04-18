@@ -68,39 +68,39 @@
 }
 
 html[data-theme='dark'] {
-	--background: #020617;
-	--background-accent: #0f172a;
-	--page-background: #020617;
-	--surface: rgba(15, 23, 42, 0.94);
-	--surface-container: #0f172a;
-	--surface-container-low: #020617;
-	--surface-container-high: #1e293b;
-	--surface-container-highest: #334155;
-	--surface-bright: #0f172a;
-	--bar-outline: #1e293b;
-	--shell-surface: rgba(2, 6, 23, 0.96);
-	--sidebar-surface: rgba(2, 6, 23, 0.97);
-	--content-surface: rgba(15, 23, 42, 0.74);
-	--shell-border: #1e293b;
-	--primary: #3b82f6;
-	--primary-soft: rgba(59, 130, 246, 0.12);
-	--primary-soft-hover: rgba(59, 130, 246, 0.18);
-	--primary-container: rgba(59, 130, 246, 0.18);
+	--background: #131314;
+	--background-accent: #1e1f22;
+	--page-background: #131314;
+	--surface: rgba(30, 31, 34, 0.94);
+	--surface-container: #1e1f22;
+	--surface-container-low: #131314;
+	--surface-container-high: #282a2c;
+	--surface-container-highest: #303236;
+	--surface-bright: #282a2c;
+	--bar-outline: rgba(255, 255, 255, 0.1);
+	--shell-surface: #131314;
+	--sidebar-surface: #131314;
+	--content-surface: rgba(30, 31, 34, 0.74);
+	--shell-border: rgba(255, 255, 255, 0.1);
+	--primary: #1a73e8;
+	--primary-soft: rgba(26, 115, 232, 0.12);
+	--primary-soft-hover: rgba(26, 115, 232, 0.18);
+	--primary-container: rgba(26, 115, 232, 0.18);
 	--secondary: #a1a1aa;
 	--secondary-container: rgba(161, 161, 170, 0.15);
 	--on-surface: #fafafa;
 	--on-surface-variant: #a1a1aa;
-	--hero-gradient: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+	--hero-gradient: linear-gradient(135deg, #1e1f22 0%, #131314 100%);
 	--hero-shadow: rgba(0, 0, 0, 0.5);
-	--hero-glow: radial-gradient(circle at center, rgba(59, 130, 246, 0.03), transparent 60%);
-	--control-surface: #0f172a;
-	--control-surface-strong: #1e293b;
-	--menu-surface: rgba(15, 23, 42, 0.98);
-	--card-surface: #0f172a;
-	--card-surface-strong: #1e293b;
+	--hero-glow: radial-gradient(circle at center, rgba(26, 115, 232, 0.03), transparent 60%);
+	--control-surface: #1e1f22;
+	--control-surface-strong: #282a2c;
+	--menu-surface: rgba(30, 31, 34, 0.98);
+	--card-surface: #1e1f22;
+	--card-surface-strong: #282a2c;
 	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-	--sidebar-card-surface: rgba(15, 23, 42, 0.95);
+	--sidebar-card-surface: rgba(30, 31, 34, 0.95);
 	--sidebar-hover: rgba(255, 255, 255, 0.06);
 	--status-total-bg: rgba(161, 161, 170, 0.15);
 	--status-total-text: #e4e4e7;
@@ -130,10 +130,7 @@ html {
 }
 
 html[data-theme='dark'] {
-	background:
-		radial-gradient(circle at top left, rgba(15, 23, 42, 0.4), transparent 34%),
-		radial-gradient(circle at top right, rgba(2, 6, 23, 0.4), transparent 28%),
-		linear-gradient(180deg, #020617 0%, #020617 100%);
+	background: var(--background);
 }
 
 body {
@@ -146,9 +143,7 @@ body {
 }
 
 html[data-theme='dark'] body {
-	background:
-		linear-gradient(135deg, rgba(15, 23, 42, 0.2), transparent),
-		linear-gradient(180deg, transparent, rgba(2, 6, 23, 0.6));
+	background: var(--page-background);
 }
 
 dialog::backdrop {
@@ -525,14 +520,14 @@ html[data-theme='dark'] .workspace-account-subtitle {
 html[data-theme='dark'] [data-nav-toggle],
 html[data-theme='dark'] [data-theme-toggle],
 html[data-theme='dark'] [data-theme-toggle-mobile] {
-	background-color: #27272a;
-	border-color: #3f3f46;
+	background-color: #282a2c;
+	border-color: rgba(255, 255, 255, 0.1);
 	color: #e4e4e7;
 }
 
 html[data-theme='dark'] [data-nav-toggle]:hover,
 html[data-theme='dark'] [data-theme-toggle]:hover,
 html[data-theme='dark'] [data-theme-toggle-mobile]:hover {
-	background-color: #3f3f46;
+	background-color: #303236;
 	color: #e4e4e7;
 }

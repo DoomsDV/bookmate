@@ -1,4 +1,4 @@
-﻿---
+﻿﻿---
 import AppAlert from "../../components/AppAlert.astro";
 import FlashMessage from "../../components/FlashMessage.astro";
 import LocationsGrid from "../../components/LocationsGrid.astro";
@@ -84,7 +84,7 @@ const googleMapsApiKey =
 					<TopBar />
 
 					<main
-						class="bg-(--content-surface) px-4 py-4 sm:px-6 sm:py-6"
+						class="px-4 py-4 sm:px-6 sm:py-6"
 					>
 						<section class="grid gap-4 sm:gap-5">
 							{
@@ -102,27 +102,15 @@ const googleMapsApiKey =
 											showCreateAction={true}
 										/>
 
-										<div class="material-inline-panel flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-											<p class="text-sm text-(--on-surface-variant)">
-												Pagina{" "}
-												<span class="font-semibold text-(--on-surface)">
-													{safeCurrentPage}
-												</span>{" "}
-												de
-												<span class="font-semibold text-(--on-surface)">
-													{" "}
-													{totalPages}
-												</span>
-												<span class="mx-2">-</span>
-												Total de
-												<span class="font-semibold text-(--on-surface)">
-													{` ${pagination.total_records} `}
-												</span>
-												sucursales
+										<div class="mt-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between bg-transparent border-0">
+											<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
+												Página <span class="font-bold text-(--on-surface)">{safeCurrentPage}</span> de <span class="font-bold text-(--on-surface)">{totalPages}</span>
+												<span class="mx-2 opacity-50">-</span>
+												Total: <span class="font-bold text-(--on-surface)">{pagination.total_records}</span> sucursales
 											</p>
 
 											<nav
-												class="flex items-center gap-2"
+												class="flex items-center gap-1.5"
 												aria-label="Paginación sucursales"
 											>
 												{canPrevPage ? (
@@ -130,19 +118,19 @@ const googleMapsApiKey =
 														href={toPageHref(
 															safeCurrentPage - 1,
 														)}
-														class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
+														class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
 													>
 														Anterior
 													</a>
 												) : (
-													<span class="cursor-not-allowed rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface-variant)/60">
+													<span class="cursor-not-allowed px-3 py-1.5 text-[0.85rem] font-semibold text-gray-400 dark:text-gray-600 opacity-60">
 														Anterior
 													</span>
 												)}
 
 												{visiblePages.map((page) =>
 													page === safeCurrentPage ? (
-														<span class="rounded-lg border border-(--primary-container) bg-(--primary-soft) px-3 py-1.5 text-sm font-bold text-(--primary)">
+														<span class="px-3 py-1.5 text-[0.85rem] font-bold text-(--primary)">
 															{page}
 														</span>
 													) : (
@@ -150,7 +138,7 @@ const googleMapsApiKey =
 															href={toPageHref(
 																page,
 															)}
-															class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
+															class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
 														>
 															{page}
 														</a>
@@ -162,12 +150,12 @@ const googleMapsApiKey =
 														href={toPageHref(
 															safeCurrentPage + 1,
 														)}
-														class="rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface) no-underline transition hover:bg-(--control-surface)"
+														class="px-3 py-1.5 text-[0.85rem] font-semibold text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors no-underline"
 													>
 														Siguiente
 													</a>
 												) : (
-													<span class="cursor-not-allowed rounded-lg border border-(--shell-border) px-3 py-1.5 text-sm font-semibold text-(--on-surface-variant)/60">
+													<span class="cursor-not-allowed px-3 py-1.5 text-[0.85rem] font-semibold text-gray-400 dark:text-gray-600 opacity-60">
 														Siguiente
 													</span>
 												)}
@@ -1681,5 +1669,3 @@ const googleMapsApiKey =
 		}
 	}
 </style>
-
-
