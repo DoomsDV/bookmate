@@ -48,13 +48,50 @@ const buildFirebaseMessagingSwUrl = () => {
 	return swUrl.toString();
 };
 
+const waitForServiceWorkerActivation = async (registration: ServiceWorkerRegistration) => {
+	if (registration.active) return registration;
+
+	const pendingWorker = registration.installing || registration.waiting;
+	if (!pendingWorker) return registration;
+
+	await new Promise<void>((resolve, reject) => {
+		const timeoutId = window.setTimeout(() => {
+			reject(new Error('No se pudo activar el Service Worker de Firebase a tiempo.'));
+		}, 12000);
+
+		const cleanup = () => {
+			window.clearTimeout(timeoutId);
+			pendingWorker.removeEventListener('statechange', onStateChange);
+		};
+
+		const onStateChange = () => {
+			if (pendingWorker.state === 'activated') {
+				cleanup();
+				resolve();
+				return;
+			}
+
+			if (pendingWorker.state === 'redundant') {
+				cleanup();
+				reject(new Error('El Service Worker de Firebase quedó redundante.'));
+			}
+		};
+
+		pendingWorker.addEventListener('statechange', onStateChange);
+		onStateChange();
+	});
+
+	return registration;
+};
+
 const getFirebaseMessagingServiceWorkerRegistration = async () => {
 	const swUrl = buildFirebaseMessagingSwUrl();
 	try {
-		return await navigator.serviceWorker.register(swUrl, {
+		const registration = await navigator.serviceWorker.register(swUrl, {
 			scope: FIREBASE_MESSAGING_SW_SCOPE,
 			updateViaCache: 'none',
 		});
+		return waitForServiceWorkerActivation(registration);
 	} catch {
 		return navigator.serviceWorker.ready;
 	}
