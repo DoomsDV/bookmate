@@ -111,7 +111,8 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 						Ajustes
 					</button>
 
-					<form method="post" action="/api/auth/logout" class="border-t border-black/5">
+					<form method="post" action="/api/auth/logout" class="border-t border-black/5" data-logout-form>
+						<input type="hidden" name="fcm_token" value="" data-logout-fcm-token />
 						<button
 							type="submit"
 							class="flex w-full items-center gap-3 px-4 py-3 text-left text-sm font-medium text-red-600 transition hover:bg-red-50/80 dark:hover:bg-red-950/20"
@@ -129,6 +130,9 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 <SettingsModal roleId={roleId} />
 
 <script>
+	const FCM_DEVICE_TOKEN_STORAGE_KEY = 'hasel:fcm:device-token';
+	const FCM_PROMPT_SHOWN_SESSION_KEY = 'hasel:fcm:prompt-shown';
+
 	const initializeTopBar = () => {
 		// PWA Install Button Handler for SPA transitions (Astro View Transitions)
 		const installBtn = document.getElementById('pwa-install-btn');
@@ -177,6 +181,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 		const themeLabel = document.querySelector<HTMLElement>('[data-theme-label]');
 		const themeToggleMobile = document.querySelector<HTMLElement>('[data-theme-toggle-mobile]');
 		const themeIconMobile = document.querySelector<HTMLElement>('[data-theme-icon-mobile]');
+		const logoutForms = document.querySelectorAll<HTMLFormElement>('[data-logout-form]');
 		
 		const desktopBreakpoint = window.matchMedia('(min-width: 1024px)');
 
@@ -319,6 +324,18 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 			}
 		};
 
+		const enrichLogoutForms = () => {
+			logoutForms.forEach((form) => {
+				const tokenInput = form.querySelector<HTMLInputElement>('[data-logout-fcm-token]');
+				on(form, 'submit', () => {
+					const localToken = String(localStorage.getItem(FCM_DEVICE_TOKEN_STORAGE_KEY) || '').trim();
+					if (tokenInput) tokenInput.value = localToken;
+					localStorage.removeItem(FCM_DEVICE_TOKEN_STORAGE_KEY);
+					sessionStorage.removeItem(FCM_PROMPT_SHOWN_SESSION_KEY);
+				});
+			});
+		};
+
 		// Attach Listeners
 		on(navToggle, 'click', toggleSideNav);
 		on(themeToggle, 'click', toggleTheme);
@@ -334,6 +351,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 		on(desktopBreakpoint, 'change', syncOnResize);
 
 		// Initialization logic wrapper
+		enrichLogoutForms();
 		applyTheme(resolveInitialTheme());
 		syncOnResize();
 	};

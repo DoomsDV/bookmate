@@ -71,6 +71,13 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 
 		const session = await loginWithOrds({ email: identifier, password });
 		setSessionCookies(cookies, url, session);
+		cookies.set('fcm_prompt_pending', '1', {
+			httpOnly: false,
+			secure: import.meta.env.PROD,
+			sameSite: 'lax',
+			path: '/',
+			maxAge: 60 * 10,
+		});
 
 		try {
 			const organization = await getCurrentOrganizationWithOrds(session.access_token);

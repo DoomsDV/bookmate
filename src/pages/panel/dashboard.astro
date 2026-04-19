@@ -1,5 +1,6 @@
 ﻿---
 import SideNav from '../../components/SideNav.astro';
+import AppAlert from '../../components/AppAlert.astro';
 import TopBar from '../../components/TopBar.astro';
 import { DashboardApiError, getMainDashboardWithOrds, type DashboardMainData } from '../../lib/dashboard';
 import Layout from '../../layouts/Layout.astro';
@@ -323,9 +324,12 @@ const formatUpcomingAppointmentDate = (value: string) => {
 			</div>
 		</div>
 	</div>
+	<AppAlert />
 </Layout>
 
 <script>
+	import { getFcmTokenFromFirebase } from '../../scripts/firebase-messaging';
+
 	const sanitizeAiSummary = (value: unknown): string =>
 		String(value ?? '')
 			.replace(/\*+/g, '')
@@ -387,6 +391,9 @@ const formatUpcomingAppointmentDate = (value: string) => {
 	const TEAM_OVERVIEW_LIMIT = 4;
 	const TEAM_AVATAR_FALLBACK_PALETTE = ['#2563eb', '#0f766e', '#be185d', '#7c3aed'];
 	const DEFAULT_AI_SUMMARY_TEXT = '¡Buen día! Preparate para una excelente jornada de trabajo.';
+	const FCM_PROMPT_COOKIE_KEY = 'fcm_prompt_pending';
+	const FCM_DEVICE_TOKEN_STORAGE_KEY = 'hasel:fcm:device-token';
+	const FCM_PROMPT_SHOWN_SESSION_KEY = 'hasel:fcm:prompt-shown';
 
 	const toRecord = (value: unknown): Record<string, unknown> =>
 		typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
@@ -605,6 +612,137 @@ const formatUpcomingAppointmentDate = (value: string) => {
 		}
 	};
 
+	const readCookie = (name: string) => {
+		const pattern = new RegExp(`(?:^|; )${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}=([^;]*)`);
+		const match = document.cookie.match(pattern);
+		return match ? decodeURIComponent(match[1]) : '';
+	};
+
+	const clearCookie = (name: string) => {
+		document.cookie = `${name}=; Max-Age=0; path=/; SameSite=Lax`;
+	};
+
+	const showNotificationAlert = async (title: string, message: string) => {
+		if (window.BookmateAlert?.alert) {
+			await window.BookmateAlert.alert({
+				type: 'info',
+				title,
+				message,
+				confirmText: 'Entendido',
+			});
+			return;
+		}
+
+		window.alert(message);
+	};
+
+	const askNotificationConsent = async () => {
+		const message =
+			'¿Querés activar notificaciones para recibir avisos de nuevas citas y recordatorios en este dispositivo?';
+		if (window.BookmateAlert?.confirm) {
+			return window.BookmateAlert.confirm({
+				type: 'info',
+				title: 'Activar notificaciones',
+				message,
+				confirmText: 'Activar',
+				cancelText: 'Ahora no',
+			});
+		}
+		return window.confirm(message);
+	};
+
+	const inferPlatform = () => {
+		const userAgent = window.navigator.userAgent.toLowerCase();
+		if (userAgent.includes('android')) return 'android';
+		if (userAgent.includes('iphone') || userAgent.includes('ipad') || userAgent.includes('ios')) {
+			return 'ios';
+		}
+		return 'web';
+	};
+
+	const resolveDeviceToken = async () => {
+		const storedToken = String(localStorage.getItem(FCM_DEVICE_TOKEN_STORAGE_KEY) || '').trim();
+
+		try {
+			const firebaseToken = await getFcmTokenFromFirebase();
+			if (firebaseToken) {
+				localStorage.setItem(FCM_DEVICE_TOKEN_STORAGE_KEY, firebaseToken);
+				return firebaseToken;
+			}
+		} catch (error) {
+			if (storedToken) return storedToken;
+			throw error;
+		}
+
+		return storedToken;
+	};
+
+	const subscribeCurrentDevice = async (fcmToken: string) => {
+		const response = await fetch('/api/fcm/subscribe', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+			},
+			body: JSON.stringify({
+				fcm_token: fcmToken,
+				platform: inferPlatform(),
+			}),
+		});
+
+		const payload = await response.json().catch(() => ({}));
+		if (!response.ok || payload?.status !== 'success') {
+			throw new Error(payload?.message || 'No fue posible activar las notificaciones.');
+		}
+	};
+
+	const requestNotificationPermission = async () => {
+		if (!('Notification' in window)) {
+			await showNotificationAlert(
+				'Notificaciones no disponibles',
+				'Este navegador no soporta notificaciones push.'
+			);
+			return 'unsupported';
+		}
+
+		if (Notification.permission === 'granted') return 'granted';
+
+		const accepted = await askNotificationConsent();
+		if (!accepted) return 'rejected';
+
+		return Notification.requestPermission();
+	};
+
+	const initializeNotificationSubscription = async () => {
+		const promptPending = readCookie(FCM_PROMPT_COOKIE_KEY) === '1';
+		if (!promptPending) return;
+
+		if (sessionStorage.getItem(FCM_PROMPT_SHOWN_SESSION_KEY) === '1') return;
+		sessionStorage.setItem(FCM_PROMPT_SHOWN_SESSION_KEY, '1');
+
+		try {
+			const permission = await requestNotificationPermission();
+			if (permission !== 'granted') return;
+
+			const deviceToken = await resolveDeviceToken();
+			if (!deviceToken) {
+				await showNotificationAlert(
+					'No se pudo suscribir',
+					'No se obtuvo el token FCM de Firebase para este dispositivo.'
+				);
+				return;
+			}
+
+			await subscribeCurrentDevice(deviceToken);
+		} catch (error) {
+			const message =
+				error instanceof Error ? error.message : 'No fue posible activar las notificaciones.';
+			await showNotificationAlert('Notificaciones', message);
+		} finally {
+			clearCookie(FCM_PROMPT_COOKIE_KEY);
+		}
+	};
+
 	const loadAiSummary = async () => {
 		const card = document.querySelector<HTMLElement>('[data-ai-summary-card]');
 		if (!card) return;
@@ -649,10 +787,14 @@ const formatUpcomingAppointmentDate = (value: string) => {
 		}
 	};
 
-	loadAiSummary();
-	loadTeamOverview();
-	document.addEventListener('astro:page-load', loadAiSummary);
-	document.addEventListener('astro:page-load', loadTeamOverview);
+	const initializeDashboardPage = () => {
+		loadAiSummary();
+		loadTeamOverview();
+		void initializeNotificationSubscription();
+	};
+
+	initializeDashboardPage();
+	document.addEventListener('astro:page-load', initializeDashboardPage);
 </script>
 
 <style>

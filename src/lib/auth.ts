@@ -474,6 +474,8 @@ export const clearSessionCookies = (
 ) => {
 	cookies.delete('access_token', { path: '/' });
 	cookies.delete('refresh_token', { path: '/' });
+	cookies.delete('fcm_prompt_pending', { path: '/' });
+	cookies.delete('fcm_device_token', { path: '/' });
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.id, { path: '/' });
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.name, { path: '/' });
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.slug, { path: '/' });
