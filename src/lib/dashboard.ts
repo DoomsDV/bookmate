@@ -22,6 +22,7 @@ export interface DashboardKpis {
 export interface DashboardUpcomingAppointment {
 	id: number;
 	customer_name: string;
+	appointment_date?: string;
 	time_start: string;
 	time_end: string;
 	service_name: string;
@@ -103,6 +104,7 @@ const normalizeUpcomingAppointment = (value: unknown): DashboardUpcomingAppointm
 	return {
 		id: appointmentId,
 		customer_name: toText(source.customer_name) || 'Cliente',
+		appointment_date: toText(source.appointment_date) || '',
 		time_start: toText(source.time_start) || '--:--',
 		time_end: toText(source.time_end) || '--:--',
 		service_name: toText(source.service_name) || 'Servicio',

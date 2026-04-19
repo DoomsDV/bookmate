@@ -91,6 +91,20 @@ const getStatusLabel = (status: string) => {
 	}
 };
 
+const formatUpcomingAppointmentDate = (value: string) => {
+	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(value || '').trim());
+	if (!match) return '';
+
+	const year = Number(match[1]);
+	const month = Number(match[2]);
+	const day = Number(match[3]);
+	const date = new Date(year, month - 1, day);
+	if (Number.isNaN(date.getTime())) return '';
+
+	const weekDays = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+	return `${weekDays[date.getDay()]} ${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
+};
+
 ---
 
 <Layout>
@@ -246,7 +260,7 @@ const getStatusLabel = (status: string) => {
 									<div class="grid grid-cols-1 gap-6">
 										<div class="dashboard-report-shell rounded-4xl p-6 transition-colors duration-300">
 											<div class="mb-6 flex items-center justify-between gap-3">
-												<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Próximas citas del día</h2>
+												<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Próximas citas de los siguientes 7 días</h2>
 												<span class="whitespace-nowrap rounded-full bg-[#E8EAED] dark:bg-[#2B2D31] px-4 py-1.5 text-[0.8rem] font-black text-[#5f6368] dark:text-[#C4C7C5] tracking-wide shadow-sm transition-colors duration-300">
 													{dashboard.upcoming_appointments.length} citas
 												</span>
@@ -258,35 +272,43 @@ const getStatusLabel = (status: string) => {
 														<div class="w-14 h-14 bg-white dark:bg-[#2B2D31] rounded-full flex items-center justify-center mx-auto mb-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] transition-colors duration-300">
 															<span class="material-symbols-rounded text-[#BDC1C6] dark:text-[#C4C7C5] text-2xl">event_busy</span>
 														</div>
-														<p class="text-base font-bold text-[#5f6368] dark:text-[#C4C7C5]">No hay citas próximas para mostrar en este momento.</p>
+														<p class="text-base font-bold text-[#5f6368] dark:text-[#C4C7C5]">No hay citas programadas para los siguientes 7 días.</p>
 													</div>
 												) : (
 													<div class="dashboard-report-list">
 														{
-															dashboard.upcoming_appointments.map((appointment) => (
-																<article class="dashboard-report-card">
-																	<div class="dashboard-report-row">
-																		<div class="dashboard-report-main">
-																			<h3 class="dashboard-report-title">{appointment.customer_name}</h3>
-																			<p class="dashboard-report-meta">
-																				{appointment.time_start} - {appointment.time_end}
-																			</p>
+															dashboard.upcoming_appointments.map((appointment) => {
+																const appointmentDateLabel = formatUpcomingAppointmentDate(
+																	appointment.appointment_date || ''
+																);
+
+																return (
+																	<article class="dashboard-report-card">
+																		<div class="dashboard-report-row">
+																			<div class="dashboard-report-main">
+																				<h3 class="dashboard-report-title">{appointment.customer_name}</h3>
+																				<p class="dashboard-report-meta">
+																					{appointmentDateLabel}
+																					{appointmentDateLabel ? ' · ' : ''}
+																					{appointment.time_start} - {appointment.time_end}
+																				</p>
+																			</div>
+																			<span
+																				class:list={[
+																					'dashboard-report-status',
+																					appointment.status === 'CONFIRMADO' ? 'dashboard-report-status--confirmed' :
+																					appointment.status === 'PENDIENTE' ? 'dashboard-report-status--pending' :
+																					appointment.status === 'CANCELADO' ? 'dashboard-report-status--canceled' :
+																					'dashboard-report-status--default'
+																				]}
+																			>
+																				{getStatusLabel(appointment.status)}
+																			</span>
 																		</div>
-																		<span
-																			class:list={[
-																				'dashboard-report-status',
-																				appointment.status === 'CONFIRMADO' ? 'dashboard-report-status--confirmed' :
-																				appointment.status === 'PENDIENTE' ? 'dashboard-report-status--pending' :
-																				appointment.status === 'CANCELADO' ? 'dashboard-report-status--canceled' :
-																				'dashboard-report-status--default'
-																			]}
-																		>
-																			{getStatusLabel(appointment.status)}
-																		</span>
-																	</div>
-																	<p class="dashboard-report-service">{appointment.service_name}</p>
-																</article>
-															))
+																		<p class="dashboard-report-service">{appointment.service_name}</p>
+																	</article>
+																);
+															})
 														}
 													</div>
 												)

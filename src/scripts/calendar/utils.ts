@@ -20,25 +20,22 @@ export const formatDateTimeDisplay = (date: Date) => {
 	return `${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 };
 
-export const normalizeDateTimeDisplay = (value: string) => {
+export const normalizeDateTimeInput = (value: string) => {
 	return String(value || '')
 		.replace(/\//g, '-')
 		.replace(/\s+/g, ' ')
 		.trimStart();
 };
 
-export const parseDisplayDateTime = (value: string) => {
-	const normalized = normalizeDateTimeDisplay(value).trim();
-	const match = normalized.match(/^(\d{2})-(\d{2})-(\d{4})\s(\d{2}):(\d{2})$/);
-	if (!match) return null;
+export const normalizeDateTimeDisplay = (value: string) => normalizeDateTimeInput(value);
 
-	const [, dayRaw, monthRaw, yearRaw, hourRaw, minuteRaw] = match;
-	const day = Number(dayRaw);
-	const month = Number(monthRaw);
-	const year = Number(yearRaw);
-	const hour = Number(hourRaw);
-	const minute = Number(minuteRaw);
-
+const buildLocalDateTime = (
+	year: number,
+	month: number,
+	day: number,
+	hour: number,
+	minute: number
+) => {
 	if (
 		!Number.isInteger(day) ||
 		!Number.isInteger(month) ||
@@ -66,10 +63,58 @@ export const parseDisplayDateTime = (value: string) => {
 	return date;
 };
 
-export const parseIsoToDisplayInput = (value: string) => {
+export const parseLocalDateTime = (value: string) => {
+	const normalized = normalizeDateTimeInput(value).trim();
+	if (!normalized) return null;
+
+	const isoLocalMatch = normalized.match(/^(\d{4})-(\d{2})-(\d{2})[T\s](\d{2}):(\d{2})(?::\d{2})?$/);
+	if (isoLocalMatch) {
+		const [, yearRaw, monthRaw, dayRaw, hourRaw, minuteRaw] = isoLocalMatch;
+		return buildLocalDateTime(
+			Number(yearRaw),
+			Number(monthRaw),
+			Number(dayRaw),
+			Number(hourRaw),
+			Number(minuteRaw)
+		);
+	}
+
+	const displayMatch = normalized.match(/^(\d{2})-(\d{2})-(\d{4})\s(\d{2}):(\d{2})$/);
+	if (!displayMatch) return null;
+
+	const [, dayRaw, monthRaw, yearRaw, hourRaw, minuteRaw] = displayMatch;
+	return buildLocalDateTime(
+		Number(yearRaw),
+		Number(monthRaw),
+		Number(dayRaw),
+		Number(hourRaw),
+		Number(minuteRaw)
+	);
+};
+
+export const parseDisplayDateTime = (value: string) => {
+	const normalized = normalizeDateTimeInput(value).trim();
+	const match = normalized.match(/^(\d{2})-(\d{2})-(\d{4})\s(\d{2}):(\d{2})$/);
+	if (!match) return null;
+
+	const [, dayRaw, monthRaw, yearRaw, hourRaw, minuteRaw] = match;
+	const day = Number(dayRaw);
+	const month = Number(monthRaw);
+	const year = Number(yearRaw);
+	const hour = Number(hourRaw);
+	const minute = Number(minuteRaw);
+
+	return buildLocalDateTime(year, month, day, hour, minute);
+};
+
+export const parseIsoToLocalInput = (value: string) => {
 	const date = new Date(value);
 	if (Number.isNaN(date.getTime())) return '';
-	return formatDateTimeDisplay(date);
+	return formatDateTimeLocal(date);
+};
+
+export const parseIsoToDisplayInput = (value: string) => {
+	return parseIsoToLocalInput(value);
 };
 
 export const toIsoWithOffset = (value: string | Date) => {
@@ -77,8 +122,8 @@ export const toIsoWithOffset = (value: string | Date) => {
 	if (value instanceof Date) {
 		date = value;
 	} else {
-		const displayDate = parseDisplayDateTime(value);
-		date = displayDate || new Date(value);
+		const localDate = parseLocalDateTime(value);
+		date = localDate || new Date(value);
 	}
 
 	if (Number.isNaN(date.getTime())) return '';

@@ -57,7 +57,7 @@ const steps = [
 				</a>
 
 				<div class="nav-actions">
-					<a href="/auth/login" class="m3-btn m3-btn-primary no-underline">Iniciar sesión</a>
+					<a href="/auth/login" class="m3-btn m3-btn-primary m3-btn-nav no-underline">Iniciar sesión</a>
 				</div>
 			</header>
 
@@ -67,7 +67,7 @@ const steps = [
 						<span class="material-symbols-rounded">auto_awesome</span>
 						<span>Plataforma Todo-en-uno</span>
 					</div>
-					<h1 class="m3-display">Orquestación de citas y equipo líder en su clase</h1>
+					<h1 class="m3-display">Orquestación de citas para equipos en crecimiento</h1>
 					<p class="m3-body-large">
 						Hasel unifica operación, agenda y visibilidad de tu negocio en una plataforma
 						clara, moderna y pensada para crecer sin límites de TI.
@@ -79,25 +79,27 @@ const steps = [
 							<span class="material-symbols-rounded">arrow_forward</span>
 						</a>
 						<a href="#beneficios" class="m3-btn m3-btn-tonal m3-btn-large no-underline">Ver más</a>
-					</div>
-				</div>
-
-				<div class="m3-hero-visuals">
-					<div class="visual-card visual-card-1">
-						<div class="visual-header">
-							<div class="visual-avatar">
-								<span class="material-symbols-rounded">person</span>
-							</div>
-							<div class="visual-info">
-								<strong>Nuevo Cliente</strong>
-								<span>Hoy, 10:00 AM</span>
-							</div>
-							<div class="visual-badge visual-badge-success">Confirmada</div>
 						</div>
 					</div>
 
-					<div class="visual-card visual-card-2">
-						<div class="visual-icon-box">
+				<div class="m3-hero-visuals">
+					<div class="visual-story-shell">
+						<div class="visual-card visual-card-main">
+							<div class="visual-header">
+								<div class="visual-avatar">
+								<span class="material-symbols-rounded">person</span>
+								</div>
+								<div class="visual-info">
+								<strong>Nuevo cliente</strong>
+								<span>Hoy, 10:00 AM</span>
+								</div>
+								<div class="visual-badge visual-badge-success">Confirmada</div>
+							</div>
+						</div>
+
+						<div class="visual-metrics-grid">
+							<div class="visual-card visual-card-2">
+								<div class="visual-icon-box">
 							<span class="material-symbols-rounded">insert_chart</span>
 						</div>
 						<div class="visual-info">
@@ -115,6 +117,8 @@ const steps = [
 							<span>Resumen del día generado</span>
 						</div>
 					</div>
+					</div>
+				</div>
 				</div>
 			</section>
 
@@ -182,20 +186,57 @@ const steps = [
 				<p>© {new Date().getFullYear()} Hasel. Plataforma de agenda inteligente.</p>
 			</footer>
 		</div>
-	</main>
+</main>
 </Layout>
+
+<script is:inline>
+	(() => {
+		if (typeof window === 'undefined') return;
+
+		const nav = document.querySelector('.m3-navbar');
+		const getOffset = () => {
+			const navHeight = nav instanceof HTMLElement ? nav.getBoundingClientRect().height : 0;
+			return navHeight + 24;
+		};
+
+		const scrollToHash = (hash, behavior = 'smooth') => {
+			if (!hash || !hash.startsWith('#')) return;
+			const id = decodeURIComponent(hash.slice(1));
+			if (!id) return;
+			const target = document.getElementById(id);
+			if (!target) return;
+
+			const top = target.getBoundingClientRect().top + window.scrollY - getOffset();
+			window.scrollTo({ top: Math.max(0, top), behavior });
+		};
+
+		document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+			anchor.addEventListener('click', (event) => {
+				const href = anchor.getAttribute('href');
+				if (!href) return;
+				event.preventDefault();
+				history.pushState(null, '', href);
+				scrollToHash(href, 'smooth');
+			});
+		});
+
+		if (window.location.hash) {
+			requestAnimationFrame(() => scrollToHash(window.location.hash, 'auto'));
+		}
+	})();
+</script>
 
 <style>
 	/* PREMIUM DARK — single palette, no light/dark duality */
 	:root {
-		--m3-sys-light-primary: #3b82f6;
+		--m3-sys-light-primary: #3a6fd7;
 		--m3-sys-light-on-primary: #ffffff;
-		--m3-sys-light-primary-container: rgba(59, 130, 246, 0.18);
-		--m3-sys-light-on-primary-container: #93c5fd;
+		--m3-sys-light-primary-container: rgba(58, 111, 215, 0.2);
+		--m3-sys-light-on-primary-container: #bfd6ff;
 
-		--m3-sys-light-secondary: #38bdf8;
-		--m3-sys-light-secondary-container: rgba(56, 189, 248, 0.14);
-		--m3-sys-light-on-secondary-container: #7dd3fc;
+		--m3-sys-light-secondary: #6b8ecf;
+		--m3-sys-light-secondary-container: rgba(148, 163, 184, 0.12);
+		--m3-sys-light-on-secondary-container: #dbe7ff;
 
 		--m3-sys-light-surface: #09090b;
 		--m3-sys-light-surface-container: rgba(255, 255, 255, 0.04);
@@ -213,6 +254,12 @@ const steps = [
 		background-color: var(--m3-sys-light-surface);
 		color: var(--m3-sys-light-on-surface);
 		font-family: 'Inter', system-ui, sans-serif;
+	}
+
+	html { scroll-padding-top: 7.5rem; }
+
+	.landing-root [id] {
+		scroll-margin-top: 7.5rem;
 	}
 
 	/* Expressive gradient orbs — electric neon light sources */
@@ -264,18 +311,34 @@ const steps = [
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		padding: 0.75rem 1.25rem;
+		padding: 0.62rem 0.9rem 0.62rem 1.05rem;
 		border-radius: 999px;
-		background: rgba(9, 9, 11, 0.72);
-		backdrop-filter: blur(24px);
-		-webkit-backdrop-filter: blur(24px);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+		background: linear-gradient(115deg, rgba(2, 6, 23, 0.72), rgba(15, 23, 42, 0.48));
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		border: 1px solid rgba(148, 163, 184, 0.24);
+		box-shadow: 0 12px 28px rgba(2, 6, 23, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 		position: sticky;
 		top: 1.25rem;
 		z-index: 50;
 		margin: 1.5rem 0 0;
 		width: 100%;
+		overflow: hidden;
+		isolation: isolate;
+	}
+
+	.m3-navbar::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: linear-gradient(
+			90deg,
+			rgba(148, 163, 184, 0.08) 0%,
+			transparent 30%,
+			transparent 68%,
+			rgba(148, 163, 184, 0.06) 100%
+		);
 	}
 
 	.brand {
@@ -355,13 +418,13 @@ const steps = [
 		padding: 0.625rem 1.5rem;
 		transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
 		cursor: pointer;
-		border: none;
+		border: 1px solid transparent;
 		text-decoration: none;
 	}
 
 	.m3-btn:hover {
 		transform: translateY(-1px);
-		box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		box-shadow: 0 4px 10px rgba(2, 6, 23, 0.22);
 	}
 
 	.m3-btn:active {
@@ -374,13 +437,36 @@ const steps = [
 	}
 
 	.m3-btn-primary {
-		background-color: var(--m3-sys-light-primary);
+		background: #3c6fc8;
 		color: var(--m3-sys-light-on-primary);
+		border-color: rgba(147, 197, 253, 0.24);
+		box-shadow: none;
+	}
+
+	.m3-btn-primary:hover {
+		background: #335fa9;
 	}
 
 	.m3-btn-tonal {
-		background-color: var(--m3-sys-light-secondary-container);
+		background-color: rgba(30, 41, 59, 0.42);
 		color: var(--m3-sys-light-on-secondary-container);
+		border-color: rgba(148, 163, 184, 0.32);
+	}
+
+	.m3-btn-tonal:hover {
+		background-color: rgba(51, 65, 85, 0.56);
+		border-color: rgba(203, 213, 225, 0.36);
+	}
+
+	.m3-btn-nav {
+		padding: 0.62rem 1.85rem;
+		font-weight: 600;
+		letter-spacing: 0.01em;
+		box-shadow: none;
+	}
+
+	.m3-btn-nav:hover {
+		box-shadow: none;
 	}
 
 	.m3-btn-subtle {
@@ -471,6 +557,22 @@ const steps = [
 		width: 100%;
 	}
 
+	.visual-story-shell {
+		display: contents;
+	}
+
+	.visual-story-head {
+		display: none;
+	}
+
+	.visual-story-kicker {
+		display: none;
+	}
+
+	.visual-story-head strong {
+		display: none;
+	}
+
 	.visual-card {
 		background: rgba(255, 255, 255, 0.04);
 		border: 1px solid rgba(255, 255, 255, 0.1);
@@ -479,16 +581,32 @@ const steps = [
 		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
 		backdrop-filter: blur(12px);
 		-webkit-backdrop-filter: blur(12px);
-		position: static;
 		display: flex;
 		align-items: center;
 		gap: 0.875rem;
-		animation: float 6s ease-in-out infinite;
 		width: 100%;
+		animation: float 7s ease-in-out infinite;
 	}
 
-	.visual-card-2 { animation-delay: -3s; }
-	.visual-card-3 { animation-delay: -1.5s; }
+	.visual-card-main {
+		animation-delay: 0s;
+	}
+
+	.visual-flow-note {
+		display: none;
+	}
+
+	.visual-metrics-grid {
+		display: contents;
+	}
+
+	.visual-card-2 {
+		animation-delay: -2.4s;
+	}
+
+	.visual-card-3 {
+		animation-delay: -4.2s;
+	}
 
 	@media (min-width: 1024px) {
 		.m3-hero-visuals {
@@ -496,6 +614,7 @@ const steps = [
 			height: 360px;
 			display: block;
 			width: auto;
+			justify-content: flex-end;
 		}
 
 		.visual-card {
@@ -505,20 +624,26 @@ const steps = [
 			border-radius: 1.5rem;
 		}
 
-		.visual-card-1 { top: 5%; left: 0; z-index: 2; }
+		.visual-card-main { top: 5%; left: 0; z-index: 2; }
 		.visual-card-2 { bottom: 5%; left: 0; z-index: 1; }
 		.visual-card-3 { top: 38%; right: 0; z-index: 3; }
 	}
 
+	@keyframes float {
+		0%, 100% { transform: translateY(0); }
+		50% { transform: translateY(-9px); }
+	}
+
 	.visual-icon-ai {
-		background: rgba(99, 102, 241, 0.2);
-		color: #a5b4fc;
+		background: rgba(148, 163, 184, 0.22);
+		color: #dbeafe;
 	}
 
 	.visual-header {
 		display: flex;
 		align-items: center;
 		gap: 1rem;
+		justify-content: space-between;
 	}
 
 	.visual-avatar, .visual-icon-box {
@@ -530,13 +655,13 @@ const steps = [
 	}
 
 	.visual-avatar {
-		background: #e8def8;
-		color: #4a4458;
+		background: rgba(226, 232, 240, 0.9);
+		color: #1e293b;
 	}
 
 	.visual-icon-box {
-		background: #d3e3fd;
-		color: #041e49;
+		background: rgba(191, 219, 254, 0.9);
+		color: #1e3a8a;
 	}
 
 	.visual-info {
@@ -555,25 +680,21 @@ const steps = [
 	}
 
 	.visual-badge {
-		padding: 0.25rem 0.5rem;
-		border-radius: 0.5rem;
-		font-size: 0.75rem;
-		font-weight: 600;
+		padding: 0.25rem 0.65rem;
+		border-radius: 999px;
+		font-size: 0.74rem;
+		font-weight: 700;
 	}
 
 	.visual-badge-success {
-		background: #dcfce7;
-		color: #166534;
+		background: rgba(34, 197, 94, 0.24);
+		border: 1px solid rgba(74, 222, 128, 0.3);
+		color: #bbf7d0;
 	}
 
 	html[data-theme='dark'] .visual-badge-success {
 		background: #14532d;
 		color: #86efac;
-	}
-
-	@keyframes float {
-		0%, 100% { transform: translateY(0); }
-		50% { transform: translateY(-10px); }
 	}
 
 	@media (min-width: 1024px) {
