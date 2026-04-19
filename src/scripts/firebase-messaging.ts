@@ -12,6 +12,8 @@ const firebaseConfig: FirebaseOptions = {
 };
 
 const vapidKey = String(import.meta.env.PUBLIC_FIREBASE_VAPID_KEY || '').trim();
+const FIREBASE_MESSAGING_SW_PATH = '/firebase-messaging-sw.js';
+const FIREBASE_MESSAGING_SW_SCOPE = '/firebase-cloud-messaging-push-scope';
 
 const getMissingFirebaseVars = () => {
 	const missing: string[] = [];
@@ -34,6 +36,30 @@ const getClientFirebaseApp = () => {
 	return initializeApp(firebaseConfig);
 };
 
+const buildFirebaseMessagingSwUrl = () => {
+	const swUrl = new URL(FIREBASE_MESSAGING_SW_PATH, window.location.origin);
+	swUrl.searchParams.set('apiKey', firebaseConfig.apiKey || '');
+	swUrl.searchParams.set('authDomain', firebaseConfig.authDomain || '');
+	swUrl.searchParams.set('projectId', firebaseConfig.projectId || '');
+	swUrl.searchParams.set('storageBucket', firebaseConfig.storageBucket || '');
+	swUrl.searchParams.set('messagingSenderId', firebaseConfig.messagingSenderId || '');
+	swUrl.searchParams.set('appId', firebaseConfig.appId || '');
+	swUrl.searchParams.set('measurementId', firebaseConfig.measurementId || '');
+	return swUrl.toString();
+};
+
+const getFirebaseMessagingServiceWorkerRegistration = async () => {
+	const swUrl = buildFirebaseMessagingSwUrl();
+	try {
+		return await navigator.serviceWorker.register(swUrl, {
+			scope: FIREBASE_MESSAGING_SW_SCOPE,
+			updateViaCache: 'none',
+		});
+	} catch {
+		return navigator.serviceWorker.ready;
+	}
+};
+
 export const getFcmTokenFromFirebase = async (): Promise<string> => {
 	ensureFirebaseConfig();
 
@@ -52,7 +78,8 @@ export const getFcmTokenFromFirebase = async (): Promise<string> => {
 
 	const app = getClientFirebaseApp();
 	const messaging = getMessaging(app);
-	const serviceWorkerRegistration = await navigator.serviceWorker.ready;
+	const serviceWorkerRegistration =
+		await getFirebaseMessagingServiceWorkerRegistration();
 
 	const token = await getToken(messaging, {
 		vapidKey,

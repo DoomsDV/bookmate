@@ -1,6 +1,7 @@
 ---
 import { ClientRouter } from 'astro:transitions';
 import FlashMessage from '../components/FlashMessage.astro';
+import FcmManager from '../components/FcmManager.astro';
 // 1. Importamos la información de la PWA
 import { pwaInfo } from 'virtual:pwa-info';
 
@@ -11,6 +12,7 @@ type FlashType = (typeof validFlashTypes)[number];
 const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
     ? (flashTypeRaw as FlashType)
     : 'info';
+const hasSession = Boolean(Astro.locals.token ?? '');
 ---
 
 <!doctype html>
@@ -61,6 +63,7 @@ const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
     <body>
         <ClientRouter />
         <slot />
+        {hasSession && <FcmManager />}
         {flashMessage && (
             <div class="pointer-events-none fixed bottom-8 left-1/2 z-100 flex w-full -translate-x-1/2 justify-center px-4 sm:bottom-10">
                 <FlashMessage
