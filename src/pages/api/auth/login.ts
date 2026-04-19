@@ -76,7 +76,7 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 			secure: import.meta.env.PROD,
 			sameSite: 'lax',
 			path: '/',
-			maxAge: 60 * 10,
+			maxAge: 60 * 60 * 24 * 30,
 		});
 
 		try {

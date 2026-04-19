@@ -11,6 +11,22 @@ const hasSession = Boolean(Astro.locals.token ?? '');
 			const FCM_DEVICE_TOKEN_STORAGE_KEY = 'hasel:fcm:device-token';
 			const FCM_PROMPT_SHOWN_SESSION_KEY = 'hasel:fcm:prompt-shown';
 
+			const isInstalledPwaContext = () => {
+				const isStandaloneDisplayMode = window.matchMedia(
+					'(display-mode: standalone)'
+				).matches;
+				const isIosStandalone = Boolean(
+					(
+						window.navigator as Navigator & {
+							standalone?: boolean;
+						}
+					).standalone
+				);
+				const isAndroidTwa = document.referrer.startsWith('android-app://');
+
+				return isStandaloneDisplayMode || isIosStandalone || isAndroidTwa;
+			};
+
 			const readCookie = (name: string) => {
 				const pattern = new RegExp(
 					`(?:^|; )${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}=([^;]*)`
@@ -180,6 +196,8 @@ const hasSession = Boolean(Astro.locals.token ?? '');
 				(window as any).__bookmateFcmManagerRunning = true;
 
 				try {
+					if (!isInstalledPwaContext()) return;
+
 					const handledPrompt = await initializeNotificationSubscription();
 					if (!handledPrompt) {
 						await refreshRotatedTokenSilently();
