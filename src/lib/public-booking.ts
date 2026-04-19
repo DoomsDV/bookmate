@@ -138,13 +138,144 @@ export class PublicBookingApiError extends Error {
 	}
 }
 
+const extractJsonCandidates = (rawBody: string) => {
+	const candidates: string[] = [];
+	const source = String(rawBody || '');
+	let depth = 0;
+	let startIndex = -1;
+	let inString = false;
+	let escaped = false;
+
+	for (let index = 0; index < source.length; index += 1) {
+		const char = source[index];
+
+		if (inString) {
+			if (escaped) {
+				escaped = false;
+				continue;
+			}
+			if (char === '\\') {
+				escaped = true;
+				continue;
+			}
+			if (char === '"') {
+				inString = false;
+			}
+			continue;
+		}
+
+		if (char === '"') {
+			inString = true;
+			continue;
+		}
+
+		if (char === '{' || char === '[') {
+			if (depth === 0) startIndex = index;
+			depth += 1;
+			continue;
+		}
+
+		if (char === '}' || char === ']') {
+			if (depth === 0) continue;
+			depth -= 1;
+			if (depth === 0 && startIndex >= 0) {
+				const snippet = source.slice(startIndex, index + 1).trim();
+				if (snippet) candidates.push(snippet);
+				startIndex = -1;
+			}
+		}
+	}
+
+	return candidates;
+};
+
+const selectRecoveredJsonData = (
+	rawBody: string,
+	responseOk: boolean
+): Record<string, unknown> | null => {
+	const parsedCandidates = extractJsonCandidates(rawBody)
+		.map((snippet) => {
+			try {
+				return JSON.parse(snippet) as unknown;
+			} catch {
+				return null;
+			}
+		})
+		.filter((candidate): candidate is Record<string, unknown> => {
+			return Boolean(candidate) && typeof candidate === 'object' && !Array.isArray(candidate);
+		});
+
+	if (parsedCandidates.length === 0) return null;
+
+	if (responseOk) {
+		const successCandidate = [...parsedCandidates].reverse().find((candidate) => {
+			return String(candidate.status || '').toLowerCase() === 'success';
+		});
+		if (successCandidate) return successCandidate;
+	}
+
+	const errorCandidate = parsedCandidates.find(
+		(candidate) => String(candidate.status || '').toLowerCase() === 'error'
+	);
+	if (errorCandidate) return errorCandidate;
+
+	return parsedCandidates[parsedCandidates.length - 1] || null;
+};
+
 const parseJsonBody = async (response: Response) => {
+	const rawBody = await response.text();
+	const normalizedPreview = String(rawBody || '')
+		.replace(/\s+/g, ' ')
+		.trim()
+		.slice(0, 420);
+
+	if (!rawBody.trim()) {
+		throw new PublicBookingApiError(
+			'El servidor devolvio una respuesta vacia en reservas.',
+			502,
+			{
+				url: response.url,
+				status: response.status,
+				status_text: response.statusText,
+				response_body_preview: '',
+			}
+		);
+	}
+
 	try {
-		return (await response.json()) as Record<string, unknown>;
+		return JSON.parse(rawBody) as Record<string, unknown>;
 	} catch {
+		const recoveredData = selectRecoveredJsonData(rawBody, response.ok);
+		if (recoveredData) {
+			if (import.meta.env.DEV) {
+				console.warn('[public-booking] Respuesta JSON recuperada desde body mixto', {
+					url: response.url,
+					status: response.status,
+					statusText: response.statusText,
+					responseBodyPreview: normalizedPreview,
+				});
+			}
+			return recoveredData;
+		}
+
+		if (import.meta.env.DEV) {
+			console.error('[public-booking] Respuesta no JSON del servidor', {
+				url: response.url,
+				status: response.status,
+				statusText: response.statusText,
+				responseBodyPreview: normalizedPreview,
+			});
+		}
+
 		throw new PublicBookingApiError(
 			'No fue posible interpretar la respuesta del servicio de reservas.',
-			502
+			502,
+			{
+				url: response.url,
+				status: response.status,
+				status_text: response.statusText,
+				response_body_preview: normalizedPreview,
+			}
 		);
 	}
 };
