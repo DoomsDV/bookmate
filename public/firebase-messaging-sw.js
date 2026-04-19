@@ -38,21 +38,37 @@
 
 	const messaging = firebase.messaging();
 	messaging.onBackgroundMessage((payload) => {
-		const notification = payload && payload.notification ? payload.notification : {};
+		const notification = payload && payload.notification ? payload.notification : null;
+		const hasNativeNotificationPayload = Boolean(
+			notification &&
+			(
+				(typeof notification.title === 'string' && notification.title.trim()) ||
+				(typeof notification.body === 'string' && notification.body.trim())
+			)
+		);
+		if (hasNativeNotificationPayload) {
+			// If FCM already sends a `notification` payload, browser/SDK typically displays it.
+			// Returning here avoids rendering a duplicated notification.
+			return;
+		}
+
+		const data = payload && payload.data ? payload.data : {};
 		const title =
-			typeof notification.title === 'string' && notification.title.trim()
-				? notification.title
+			typeof data.title === 'string' && data.title.trim()
+				? data.title
 				: 'Nueva notificacion';
 		const body =
-			typeof notification.body === 'string' && notification.body.trim()
-				? notification.body
+			typeof data.body === 'string' && data.body.trim()
+				? data.body
 				: '';
+
+		if (!title && !body) return;
 
 		self.registration.showNotification(title, {
 			body,
 			icon: '/icon-192x192.png',
 			badge: '/icon-192x192.png',
-			data: (payload && payload.data) || {},
+			data,
 		});
 	});
 })();

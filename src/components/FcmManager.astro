@@ -191,6 +191,34 @@ const hasSession = Boolean(Astro.locals.token ?? '');
 				}
 			};
 
+			const logoutAfterAppInstalled = async () => {
+				if ((window as any).__bookmateInstallLogoutRunning) return;
+				(window as any).__bookmateInstallLogoutRunning = true;
+
+				const localToken = String(
+					localStorage.getItem(FCM_DEVICE_TOKEN_STORAGE_KEY) || ''
+				).trim();
+
+				try {
+					await fetch('/api/auth/logout', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							Accept: 'application/json',
+						},
+						body: JSON.stringify({
+							fcm_token: localToken,
+						}),
+					});
+				} catch {
+					// Even if API logout fails, force local cleanup and redirect.
+				} finally {
+					localStorage.removeItem(FCM_DEVICE_TOKEN_STORAGE_KEY);
+					sessionStorage.removeItem(FCM_PROMPT_SHOWN_SESSION_KEY);
+					window.location.assign('/auth/login');
+				}
+			};
+
 			const initializeFcmManager = async () => {
 				if ((window as any).__bookmateFcmManagerRunning) return;
 				(window as any).__bookmateFcmManagerRunning = true;
@@ -208,6 +236,13 @@ const hasSession = Boolean(Astro.locals.token ?? '');
 			};
 
 			void initializeFcmManager();
+
+			if (!(window as any).__bookmateAppInstalledLogoutBound) {
+				window.addEventListener('appinstalled', () => {
+					void logoutAfterAppInstalled();
+				});
+				(window as any).__bookmateAppInstalledLogoutBound = true;
+			}
 
 			if (!(window as any).__bookmateFcmManagerBound) {
 				document.addEventListener('astro:page-load', () => {
