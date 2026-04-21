@@ -6,8 +6,80 @@ import TopBar from '../../components/TopBar.astro';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
 
+const GOOGLE_PROVIDER = 'google_calendar';
 const token = Astro.locals.token ?? '';
 const initialLoadError = token ? '' : 'No hay sesión válida para consultar el calendario.';
+const googleSuccessFlag = String(Astro.url.searchParams.get('success') || '').trim();
+const googleErrorFlag = String(Astro.url.searchParams.get('error') || '').trim();
+
+let isGoogleConnected = false;
+let googleStatusMessage = '';
+
+const getIntegrationUrl = () => {
+	const baseUrl = String(import.meta.env.ORDS_INTEGRATIONS_URL || '').trim();
+	if (!baseUrl) return '';
+	return `${baseUrl.replace(/\/+$/, '')}/${GOOGLE_PROVIDER}`;
+};
+
+const parseMessageFromResponse = async (response: Response) => {
+	try {
+		const payload = await response.json();
+		if (payload && typeof payload === 'object' && 'message' in payload) {
+			const message = String(payload.message || '').trim();
+			if (message) return message;
+		}
+	} catch {
+		// Ignore parse errors and fallback below.
+	}
+	return `Request failed with status ${response.status}.`;
+};
+
+if (!initialLoadError) {
+	const integrationUrl = getIntegrationUrl();
+	if (!integrationUrl) {
+		googleStatusMessage = 'Falta configurar ORDS_INTEGRATIONS_URL para integrar Google Calendar.';
+	} else {
+		try {
+			const response = await fetch(integrationUrl, {
+				method: 'GET',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					Accept: 'application/json',
+				},
+			});
+
+			if (response.status === 200) {
+				isGoogleConnected = true;
+			} else if (response.status === 404) {
+				isGoogleConnected = false;
+			} else {
+				googleStatusMessage = await parseMessageFromResponse(response);
+			}
+		} catch (error) {
+			console.error('[panel-calendar] google integration status error', error);
+			googleStatusMessage = 'No fue posible consultar el estado de Google Calendar.';
+		}
+	}
+}
+
+const hasGoogleSuccess = googleSuccessFlag === 'google_connected' || googleSuccessFlag === 'google_disconnected';
+const googleSuccessMessage =
+	googleSuccessFlag === 'google_connected'
+		? 'Google Calendar se conectó correctamente.'
+		: googleSuccessFlag === 'google_disconnected'
+			? 'Google Calendar se desconectó correctamente.'
+			: '';
+
+const hasGoogleError = Boolean(googleErrorFlag);
+const googleErrorMessageMap: Record<string, string> = {
+	google_connect_failed: 'No fue posible iniciar la conexión con Google.',
+	google_missing_code: 'Google no envió el código de autorización.',
+	google_callback_failed: 'No fue posible completar la conexión con Google Calendar.',
+	google_disconnect_failed: 'No fue posible desconectar Google Calendar.',
+};
+const googleErrorMessage = hasGoogleError
+	? (googleErrorMessageMap[googleErrorFlag] || 'Ocurrió un error con la integración de Google Calendar.')
+	: '';
 ---
 
 <Layout>
@@ -40,22 +112,78 @@ const initialLoadError = token ? '' : 'No hay sesión válida para consultar el 
 											</p>
 										</div>
 
-										<button
-											type="button"
-											class="calendar-create-btn w-full sm:w-auto inline-flex items-center justify-center gap-2"
-											data-open-appointment-modal
-										>
-											<svg
-												class="calendar-create-btn-icon w-[18px] h-[18px]"
-												viewBox="0 0 24 24"
-												fill="none"
-												aria-hidden="true"
-											>
-												<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
-											</svg>
-											<span>Nueva cita</span>
-										</button>
+										<div class="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
+											<div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+												{
+													isGoogleConnected ? (
+														<form method="post" action="/api/google/disconnect" class="w-full sm:w-auto">
+															<button
+																type="submit"
+																class="inline-flex w-full items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/12 px-5 py-3 text-sm font-extrabold text-rose-600 transition hover:bg-rose-500/18 sm:w-auto"
+															>
+																Desconectar Google
+															</button>
+														</form>
+													) : (
+														<a
+															href="/api/google/connect"
+															class="inline-flex w-full items-center justify-center rounded-full border border-(--shell-border) bg-(--surface-bright) px-5 py-3 text-sm font-extrabold text-(--on-surface) no-underline transition hover:bg-(--surface-container-high) sm:w-auto"
+														>
+															Conectar Google
+														</a>
+													)
+												}
+
+												<button
+													type="button"
+													class="calendar-create-btn w-full sm:w-auto inline-flex items-center justify-center gap-2"
+													data-open-appointment-modal
+												>
+													<svg
+														class="calendar-create-btn-icon w-[18px] h-[18px]"
+														viewBox="0 0 24 24"
+														fill="none"
+														aria-hidden="true"
+													>
+														<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+													</svg>
+													<span>Nueva cita</span>
+												</button>
+											</div>
+
+											<div class="inline-flex items-center gap-2 rounded-full px-3 py-1 text-[0.73rem] font-bold uppercase tracking-[0.08em] sm:self-end bg-(--surface-container-high) text-(--on-surface-variant)">
+												<span class:list={[
+													'inline-block size-2 rounded-full',
+													isGoogleConnected ? 'bg-emerald-500' : 'bg-zinc-400'
+												]}></span>
+												{isGoogleConnected ? 'Google sincronizado' : 'Google no conectado'}
+											</div>
+										</div>
 									</header>
+
+									{
+										hasGoogleSuccess && (
+											<div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-[0.9rem] font-semibold text-emerald-700 dark:text-emerald-300">
+												{googleSuccessMessage}
+											</div>
+										)
+									}
+
+									{
+										hasGoogleError && (
+											<div class="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-semibold text-rose-700 dark:text-rose-300">
+												{googleErrorMessage}
+											</div>
+										)
+									}
+
+									{
+										googleStatusMessage && (
+											<div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-[0.9rem] font-semibold text-amber-700 dark:text-amber-300">
+												{googleStatusMessage}
+											</div>
+										)
+									}
 
 									<div class="grid gap-3 sm:gap-4 sm:grid-cols-2">
 										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-professional-filter-wrap>

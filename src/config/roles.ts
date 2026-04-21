@@ -21,6 +21,7 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/panel', roles: ALL_ROLES },
 	{ path: '/panel/dashboard', roles: ALL_ROLES },
 	{ path: '/panel/calendar', roles: ALL_ROLES },
+	{ path: '/calendar', roles: ALL_ROLES },
 	{ path: '/panel/services', roles: MANAGER_ROLES },
 	{ path: '/panel/locations', roles: MANAGER_ROLES },
 	{ path: '/panel/specialties', roles: MANAGER_ROLES },
@@ -37,6 +38,7 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/api/workspace', roles: [ROLES.ADMIN], match: 'prefix' },
 	{ path: '/api/roles', roles: MANAGER_ROLES, match: 'prefix' },
 	{ path: '/api/catalog', roles: MANAGER_ROLES, match: 'prefix' },
+	{ path: '/api/google', roles: ALL_ROLES, match: 'prefix' },
 ];
 
 const normalizePath = (path: string) => {

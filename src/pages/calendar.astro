@@ -1,0 +1,348 @@
+---
+import Layout from '../layouts/Layout.astro';
+import { google } from 'googleapis';
+import '../styles/global.css';
+
+const PROVIDER = 'google_calendar';
+const token = String(Astro.locals.token || '').trim();
+const successFlag = String(Astro.url.searchParams.get('success') || '').trim();
+const errorFlag = String(Astro.url.searchParams.get('error') || '').trim();
+
+let isConnected = false;
+let statusMessage = '';
+let updatedAt = '';
+let eventsMessage = '';
+let upcomingEvents: Array<{
+	id: string;
+	summary: string;
+	startLabel: string;
+	endLabel: string;
+}> = [];
+
+const getIntegrationUrl = () => {
+	const baseUrl = String(import.meta.env.ORDS_INTEGRATIONS_URL || '').trim();
+	if (!baseUrl) return '';
+	return `${baseUrl.replace(/\/+$/, '')}/${PROVIDER}`;
+};
+
+const parseMessageFromResponse = async (response: Response) => {
+	try {
+		const payload = await response.json();
+		if (payload && typeof payload === 'object' && 'message' in payload) {
+			const message = String(payload.message || '').trim();
+			if (message) return message;
+		}
+	} catch {
+		// Ignore parse errors and fallback below.
+	}
+	return `Request failed with status ${response.status}.`;
+};
+
+const formatEventDate = (rawValue: string, allDay = false) => {
+	const parsedDate = new Date(rawValue);
+	if (Number.isNaN(parsedDate.getTime())) return rawValue;
+
+	if (allDay) {
+		return parsedDate.toLocaleDateString('es-PY', {
+			dateStyle: 'medium',
+			timeZone: 'America/Asuncion',
+		});
+	}
+
+	return parsedDate.toLocaleString('es-PY', {
+		dateStyle: 'medium',
+		timeStyle: 'short',
+		timeZone: 'America/Asuncion',
+	});
+};
+
+if (!token) {
+	statusMessage = 'No hay sesión válida para consultar el estado de Google Calendar.';
+} else {
+	const integrationUrl = getIntegrationUrl();
+	if (!integrationUrl) {
+		statusMessage = 'Falta configurar ORDS_INTEGRATIONS_URL en el entorno.';
+	} else {
+		try {
+			const response = await fetch(integrationUrl, {
+				method: 'GET',
+				headers: {
+					Authorization: `Bearer ${token}`,
+					Accept: 'application/json',
+				},
+			});
+
+			if (response.status === 200) {
+				isConnected = true;
+
+				try {
+					const payload = await response.json();
+					const data =
+						payload && typeof payload === 'object' && 'data' in payload
+							? (payload.data as Record<string, unknown>)
+							: null;
+					if (data && typeof data.updated_at === 'string') {
+						updatedAt = data.updated_at;
+					}
+
+					const accessToken =
+						data && typeof data.access_token === 'string' ? data.access_token.trim() : '';
+					const refreshToken =
+						data && typeof data.refresh_token === 'string' ? data.refresh_token.trim() : '';
+
+					if (!accessToken) {
+						eventsMessage = 'No se encontró access token para consultar eventos de Google Calendar.';
+					} else {
+						const clientId = String(import.meta.env.GOOGLE_CLIENT_ID || '').trim();
+						const clientSecret = String(import.meta.env.GOOGLE_CLIENT_SECRET || '').trim();
+						const redirectUri = String(import.meta.env.GOOGLE_REDIRECT_URI || '').trim();
+
+						if (!clientId || !clientSecret || !redirectUri) {
+							eventsMessage =
+								'No se pudieron consultar eventos porque faltan variables de entorno de Google OAuth.';
+						} else {
+							const oauth2Client = new google.auth.OAuth2(clientId, clientSecret, redirectUri);
+							oauth2Client.setCredentials({
+								access_token: accessToken,
+								refresh_token: refreshToken || undefined,
+							});
+
+							const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
+							const eventsResponse = await calendar.events.list({
+								calendarId: 'primary',
+								timeMin: new Date().toISOString(),
+								maxResults: 10,
+								singleEvents: true,
+								orderBy: 'startTime',
+							});
+
+							const items = Array.isArray(eventsResponse.data.items)
+								? eventsResponse.data.items
+								: [];
+							upcomingEvents = items
+								.map((item, index) => {
+									const startDateTime = String(item.start?.dateTime || '').trim();
+									const startDate = String(item.start?.date || '').trim();
+									const endDateTime = String(item.end?.dateTime || '').trim();
+									const endDate = String(item.end?.date || '').trim();
+									const allDay = Boolean(startDate && !startDateTime);
+									const startRaw = startDateTime || startDate;
+									const endRaw = endDateTime || endDate;
+
+									if (!startRaw) return null;
+
+									return {
+										id: String(item.id || `${index}-${startRaw}`),
+										summary: String(item.summary || 'Evento sin título'),
+										startLabel: formatEventDate(startRaw, allDay),
+										endLabel: endRaw ? formatEventDate(endRaw, allDay) : '',
+									};
+								})
+								.filter(
+									(event): event is {
+										id: string;
+										summary: string;
+										startLabel: string;
+										endLabel: string;
+									} => event !== null
+								);
+
+							if (upcomingEvents.length === 0) {
+								eventsMessage = 'No hay eventos próximos en tu calendario principal de Google.';
+							}
+						}
+					}
+				} catch {
+					eventsMessage = 'No fue posible cargar eventos de Google Calendar para esta sesión.';
+				}
+			} else if (response.status === 404) {
+				isConnected = false;
+			} else if (response.status === 401) {
+				statusMessage = 'La sesión expiró. Inicia sesión de nuevo para conectar Google Calendar.';
+			} else {
+				statusMessage = await parseMessageFromResponse(response);
+			}
+		} catch (error) {
+			console.error('[calendar-page] integration status error', error);
+			statusMessage = 'No fue posible consultar la integración con Google Calendar.';
+		}
+	}
+}
+
+const hasSuccess = successFlag === 'google_connected' || successFlag === 'google_disconnected';
+const successMessage =
+	successFlag === 'google_connected'
+		? 'Google Calendar se conectó correctamente.'
+		: successFlag === 'google_disconnected'
+			? 'Google Calendar se desconectó correctamente.'
+			: '';
+
+const hasError = Boolean(errorFlag);
+const errorMessageMap: Record<string, string> = {
+	google_connect_failed: 'No fue posible iniciar la conexión con Google.',
+	google_missing_code: 'Google no envió el código de autorización.',
+	google_callback_failed: 'No fue posible completar la conexión con Google Calendar.',
+	google_disconnect_failed: 'No fue posible desconectar Google Calendar.',
+};
+const uiErrorMessage = hasError
+	? (errorMessageMap[errorFlag] || 'Ocurrió un error al procesar la integración de Google Calendar.')
+	: '';
+---
+
+<Layout>
+	<main class="min-h-screen bg-(--page-background) px-4 py-6 sm:px-6 sm:py-10">
+		<section class="mx-auto grid w-full max-w-3xl gap-5 rounded-3xl border border-(--shell-border) bg-(--surface-bright) p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] sm:p-8">
+			<header class="grid gap-2">
+				<p class="text-xs font-bold uppercase tracking-[0.18em] text-(--primary)">Integraciones</p>
+				<h1 class="text-3xl font-extrabold tracking-tight text-(--on-surface)">Google Calendar</h1>
+				<p class="text-[0.95rem] font-medium text-(--on-surface-variant)">
+					Conecta tu cuenta para sincronizar eventos en tu calendario.
+				</p>
+			</header>
+
+			{
+				hasSuccess && (
+					<div class="rounded-2xl border border-emerald-500/20 bg-emerald-500/10 px-4 py-3 text-sm font-semibold text-emerald-700">
+						{successMessage}
+					</div>
+				)
+			}
+
+			{
+				hasError && (
+					<div class="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-sm font-semibold text-rose-700">
+						{uiErrorMessage}
+					</div>
+				)
+			}
+
+			{
+				statusMessage && (
+					<div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-sm font-semibold text-amber-700">
+						{statusMessage}
+					</div>
+				)
+			}
+
+			<div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-(--shell-border) bg-(--surface) px-4 py-3">
+				<div class="grid gap-1">
+					<p class="text-xs font-bold uppercase tracking-[0.12em] text-(--on-surface-variant)">Estado actual</p>
+					<p class="text-[1rem] font-bold text-(--on-surface)">{isConnected ? 'Sincronizado' : 'No conectado'}</p>
+				</div>
+				<span
+					class:list={[
+						'inline-flex items-center rounded-full px-3 py-1.5 text-xs font-extrabold uppercase tracking-[0.08em]',
+						isConnected
+							? 'bg-emerald-500 text-white'
+							: 'bg-(--surface-container-high) text-(--on-surface-variant)',
+					]}
+				>
+					{isConnected ? 'Activo' : 'Inactivo'}
+				</span>
+			</div>
+
+			{
+				updatedAt && (
+					<p class="text-sm font-medium text-(--on-surface-variant)">
+						Última sincronización registrada: <span class="font-semibold text-(--on-surface)">{updatedAt}</span>
+					</p>
+				)
+			}
+
+			<div class="flex flex-wrap items-center gap-3">
+				{
+					isConnected ? (
+						<button
+							type="button"
+							data-google-disconnect
+							class="inline-flex items-center justify-center rounded-2xl bg-rose-600 px-5 py-3 text-sm font-extrabold text-white shadow-[0_10px_24px_rgba(190,18,60,0.35)] transition hover:bg-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
+						>
+							Desconectar Google Calendar
+						</button>
+					) : (
+						<a
+							href="/api/google/connect"
+							class="inline-flex items-center justify-center rounded-2xl bg-(--primary) px-5 py-3 text-sm font-extrabold text-white no-underline shadow-[0_10px_24px_rgba(47,111,221,0.35)] transition hover:opacity-90"
+						>
+							Conectar Google Calendar
+						</a>
+					)
+				}
+
+				<a
+					href="/panel/calendar"
+					class="inline-flex items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3 text-sm font-bold text-(--on-surface) no-underline transition hover:bg-(--surface-container-high)"
+				>
+					Volver al calendario interno
+				</a>
+			</div>
+
+			{
+				isConnected && (
+					<section class="grid gap-3 rounded-2xl border border-(--shell-border) bg-(--surface) px-4 py-4">
+						<h2 class="text-[1.05rem] font-extrabold text-(--on-surface)">Próximos eventos de Google Calendar</h2>
+						{
+							eventsMessage ? (
+								<p class="text-sm font-medium text-(--on-surface-variant)">{eventsMessage}</p>
+							) : (
+								<ul class="grid gap-2">
+									{
+										upcomingEvents.map((event) => (
+											<li class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-3 py-2.5" key={event.id}>
+												<p class="text-sm font-bold text-(--on-surface)">{event.summary}</p>
+												<p class="mt-0.5 text-xs font-medium text-(--on-surface-variant)">
+													Inicio: {event.startLabel}
+													{event.endLabel ? ` · Fin: ${event.endLabel}` : ''}
+												</p>
+											</li>
+										))
+									}
+								</ul>
+							)
+						}
+					</section>
+				)
+			}
+		</section>
+	</main>
+
+	{
+		isConnected && (
+			<script is:inline>
+				(() => {
+					const button = document.querySelector('[data-google-disconnect]');
+					if (!(button instanceof HTMLButtonElement)) return;
+
+					button.addEventListener('click', async () => {
+						const confirmed = window.confirm('¿Quieres desconectar Google Calendar de tu cuenta?');
+						if (!confirmed) return;
+
+						const originalLabel = button.textContent || 'Desconectar Google Calendar';
+						button.disabled = true;
+						button.textContent = 'Desconectando...';
+
+						try {
+							const response = await fetch('/api/google/disconnect', {
+								method: 'DELETE',
+								headers: {
+									Accept: 'application/json',
+								},
+							});
+
+							if (!response.ok) {
+								throw new Error('Disconnect request failed');
+							}
+
+							window.location.href = '/calendar?success=google_disconnected';
+						} catch (error) {
+							console.error('[calendar-page] disconnect error', error);
+							button.disabled = false;
+							button.textContent = originalLabel;
+							window.location.href = '/calendar?error=google_disconnect_failed';
+						}
+					});
+				})();
+			</script>
+		)
+	}
+</Layout>

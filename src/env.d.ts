@@ -60,8 +60,12 @@ interface ImportMetaEnv {
     readonly ORDS_DAYS_URL?: string;
     readonly ORDS_PROFESSIONALS_LOV_URL?: string;
     readonly ORDS_LOCATIONS_LOV_URL?: string;
+    readonly ORDS_INTEGRATIONS_URL?: string;
     readonly FCM_SUSCRIBE_URL?: string;
     readonly FCM_UNSUSCRIBE_URL?: string;
+    readonly GOOGLE_CLIENT_ID?: string;
+    readonly GOOGLE_CLIENT_SECRET?: string;
+    readonly GOOGLE_REDIRECT_URI?: string;
 
     readonly PUBLIC_BOOKMATE_PUBLIC_DOMAIN?: string;
     readonly PUBLIC_BOOKMATE_DEFAULT_LOCATION_ID?: string;
