@@ -2,6 +2,54 @@
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
+@font-face {
+	font-family: "Nunito Sans";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("/fonts/nunito-sans-v19-latin-regular.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Nunito Sans";
+	font-style: normal;
+	font-weight: 500;
+	font-display: swap;
+	src: url("/fonts/nunito-sans-v19-latin-500.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Nunito Sans";
+	font-style: normal;
+	font-weight: 600;
+	font-display: swap;
+	src: url("/fonts/nunito-sans-v19-latin-600.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Nunito Sans";
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url("/fonts/nunito-sans-v19-latin-700.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Nunito Sans";
+	font-style: normal;
+	font-weight: 800;
+	font-display: swap;
+	src: url("/fonts/nunito-sans-v19-latin-800.woff2") format("woff2");
+}
+
+@font-face {
+	font-family: "Nunito Sans";
+	font-style: normal;
+	font-weight: 900;
+	font-display: swap;
+	src: url("/fonts/nunito-sans-v19-latin-900.woff2") format("woff2");
+}
+
 :root {
 	--font-body: "Nunito Sans", sans-serif;
 	--font-logo: "Nunito Sans", sans-serif;
