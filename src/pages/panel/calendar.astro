@@ -11,6 +11,8 @@ const token = Astro.locals.token ?? '';
 const initialLoadError = token ? '' : 'No hay sesión válida para consultar el calendario.';
 const googleSuccessFlag = String(Astro.url.searchParams.get('success') || '').trim();
 const googleErrorFlag = String(Astro.url.searchParams.get('error') || '').trim();
+const googleDebugParam = String(Astro.url.searchParams.get('debug') || '').trim();
+const showGoogleDebug = import.meta.env.DEV && Boolean(googleDebugParam);
 
 let isGoogleConnected = false;
 let googleStatusMessage = '';
@@ -73,7 +75,11 @@ const googleSuccessMessage =
 const hasGoogleError = Boolean(googleErrorFlag);
 const googleErrorMessageMap: Record<string, string> = {
 	google_connect_failed: 'No fue posible iniciar la conexión con Google.',
+	google_oauth_error: 'Google devolvió un error durante la autorización OAuth.',
 	google_missing_code: 'Google no envió el código de autorización.',
+	google_token_exchange_failed: 'Google no devolvió tokens válidos al canjear el código.',
+	google_ords_payload_invalid: 'No se pudo construir el body JSON para guardar la integración.',
+	google_ords_save_failed: 'Google respondió, pero no se pudieron guardar los tokens en ORDS.',
 	google_callback_failed: 'No fue posible completar la conexión con Google Calendar.',
 	google_disconnect_failed: 'No fue posible desconectar Google Calendar.',
 };
@@ -173,6 +179,13 @@ const googleErrorMessage = hasGoogleError
 										hasGoogleError && (
 											<div class="rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-semibold text-rose-700 dark:text-rose-300">
 												{googleErrorMessage}
+												{
+													showGoogleDebug && (
+														<p class="mt-2 rounded-lg border border-rose-500/25 bg-black/20 px-2.5 py-2 font-mono text-[0.74rem] leading-snug text-rose-100/90">
+															[{googleErrorFlag || 'google_error'}] {googleDebugParam}
+														</p>
+													)
+												}
 											</div>
 										)
 									}

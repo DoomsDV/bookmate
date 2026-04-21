@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
 const PROVIDER = 'google_calendar';
+const PANEL_CALENDAR_PATH = '/panel/calendar';
 
 const toRedirectResponse = (location: string, status = 302) =>
 	new Response(null, {
@@ -42,8 +43,21 @@ const getErrorMessageFromResponse = async (response: Response) => {
 	return `Request failed with status ${response.status}.`;
 };
 
+const toErrorRedirect = (reason: string, debugDetail?: string) => {
+	const params = new URLSearchParams({ error: reason });
+	const debug = String(debugDetail || '').trim();
+	if (debug) {
+		params.set('debug', debug.slice(0, 250));
+	}
+	return toRedirectResponse(`${PANEL_CALENDAR_PATH}?${params.toString()}`);
+};
+
 const handleDisconnect = async (request: Request, token: string | undefined) => {
 	const htmlMode = wantsHtml(request);
+	console.info('[google-disconnect] start', {
+		htmlMode,
+		hasSessionToken: Boolean(token),
+	});
 
 	if (!token) {
 		if (htmlMode) {
@@ -61,12 +75,19 @@ const handleDisconnect = async (request: Request, token: string | undefined) => 
 
 	try {
 		const integrationUrl = buildIntegrationUrl();
+		console.info('[google-disconnect] ords request', {
+			integrationUrl,
+		});
 		const ordsResponse = await fetch(integrationUrl, {
 			method: 'DELETE',
 			headers: {
 				Authorization: `Bearer ${token}`,
 				Accept: 'application/json',
 			},
+		});
+		console.info('[google-disconnect] ords response', {
+			status: ordsResponse.status,
+			ok: ordsResponse.ok,
 		});
 
 		if (ordsResponse.status !== 200 && ordsResponse.status !== 404) {
@@ -87,9 +108,10 @@ const handleDisconnect = async (request: Request, token: string | undefined) => 
 		);
 	} catch (error) {
 		console.error('[google-disconnect] error', error);
+		const debugMessage = error instanceof Error ? error.message : String(error || 'Unknown error');
 
 		if (htmlMode) {
-			return toRedirectResponse('/panel/calendar?error=google_disconnect_failed');
+			return toErrorRedirect('google_disconnect_failed', debugMessage);
 		}
 
 		return Response.json(
