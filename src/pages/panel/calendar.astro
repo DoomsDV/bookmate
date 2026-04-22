@@ -89,7 +89,7 @@ const googleErrorMessage = hasGoogleError
 ---
 
 <Layout>
-	<calendar-manager>
+	<calendar-manager data-google-connected={isGoogleConnected ? 'true' : 'false'}>
 		<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 			<div
 				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -139,6 +139,15 @@ const googleErrorMessage = hasGoogleError
 														</a>
 													)
 												}
+
+												<button
+													type="button"
+													class="calendar-refresh-btn w-full sm:w-auto inline-flex items-center justify-center gap-2"
+													data-refresh-calendar
+												>
+													<span class="material-symbols-rounded text-[1.12rem]">refresh</span>
+													<span>Refrescar</span>
+												</button>
 
 												<button
 													type="button"
@@ -611,6 +620,25 @@ const googleErrorMessage = hasGoogleError
 		--calendar-outline-strong: color-mix(in srgb, var(--shell-border) 70%, var(--on-surface-variant) 30%);
 		--calendar-toolbar-surface: color-mix(in srgb, var(--surface-container) 90%, var(--surface-bright) 10%);
 		--calendar-segmented-surface: color-mix(in srgb, var(--surface-container) 92%, var(--surface-bright) 8%);
+		--calendar-google-bg: #e1e2ec;
+		--calendar-google-fg: #44474e;
+		--calendar-google-time: color-mix(in srgb, #44474e 82%, var(--on-surface-variant) 18%);
+		--calendar-google-border: color-mix(in srgb, #7e8694 40%, var(--calendar-outline-strong) 60%);
+		--calendar-google-accent: color-mix(in srgb, #5e6a7c 76%, #9ea8b8 24%);
+		--calendar-google-dot: color-mix(in srgb, #4f5b6b 84%, #aeb7c6 16%);
+		--calendar-google-stripe: color-mix(in srgb, #7f8896 45%, transparent);
+		--calendar-google-description: color-mix(in srgb, #4f5b6b 80%, var(--on-surface-variant) 20%);
+	}
+
+	html[data-theme='dark'] [data-calendar-root] {
+		--calendar-google-bg: #44474e;
+		--calendar-google-fg: #e1e2ec;
+		--calendar-google-time: color-mix(in srgb, #d4d9e4 86%, var(--on-surface-variant) 14%);
+		--calendar-google-border: color-mix(in srgb, #6c7380 44%, var(--calendar-outline-strong) 56%);
+		--calendar-google-accent: color-mix(in srgb, #a6b0c0 58%, #7f8898 42%);
+		--calendar-google-dot: color-mix(in srgb, #c4cede 76%, #9da6b5 24%);
+		--calendar-google-stripe: color-mix(in srgb, #aeb7c7 24%, transparent);
+		--calendar-google-description: color-mix(in srgb, #d4d9e4 76%, var(--on-surface-variant) 24%);
 	}
 
 	[data-calendar-root] .calendar-host {
@@ -876,6 +904,61 @@ const googleErrorMessage = hasGoogleError
 		line-height: 1.2;
 	}
 
+	[data-calendar-root] .fc .fc-event.fc-event-google {
+		background-color: var(--calendar-google-bg);
+		background-image: repeating-linear-gradient(
+			-45deg,
+			color-mix(in srgb, var(--calendar-google-stripe) 9%, transparent) 0 2px,
+			transparent 2px 7px
+		);
+		border: 1px solid var(--calendar-google-border);
+		border-left-width: 4px;
+		border-left-color: var(--calendar-google-accent);
+		color: var(--calendar-google-fg);
+		filter: saturate(0.76);
+	}
+
+	[data-calendar-root] .fc .fc-event.fc-event-google:hover {
+		background-color: color-mix(in srgb, var(--calendar-google-bg) 92%, var(--surface-bright) 8%);
+		filter: saturate(0.8);
+	}
+
+	[data-calendar-root] .fc .fc-event.fc-event-google .fc-event-time {
+		color: var(--calendar-google-time);
+	}
+
+	[data-calendar-root] .fc .fc-event.fc-event-google .fc-event-title {
+		color: var(--calendar-google-fg);
+		font-weight: 720;
+	}
+
+	[data-calendar-root] .fc .fc-event.fc-event-google .fc-event-main-frame,
+	[data-calendar-root] .fc .fc-event.fc-event-google .fc-event-title-container {
+		position: relative;
+		padding-right: 0.78rem;
+	}
+
+	[data-calendar-root] .fc .fc-event.fc-event-google .fc-event-google-origin {
+		position: absolute;
+		top: 0.18rem;
+		right: 0.16rem;
+		display: inline-flex;
+		inline-size: 0.38rem;
+		block-size: 0.38rem;
+		border-radius: 999px;
+		background: var(--calendar-google-dot);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--calendar-google-bg) 88%, transparent);
+		opacity: 0.92;
+	}
+
+	[data-calendar-root] .fc .fc-event.fc-event-google .fc-event-description {
+		margin-top: 0.12rem;
+		font-size: 0.7rem;
+		line-height: 1.22;
+		color: var(--calendar-google-description);
+		opacity: 0.92;
+	}
+
 	[data-calendar-root] .fc .fc-list {
 		border-radius: var(--calendar-radius);
 		overflow: hidden;
@@ -897,6 +980,34 @@ const googleErrorMessage = hasGoogleError
 		color: #f8fbff;
 		box-shadow: none;
 		transition: filter 140ms ease, border-color 140ms ease;
+	}
+
+	.calendar-refresh-btn {
+		border-radius: 999px;
+		border: 1px solid var(--calendar-outline-strong);
+		background: var(--calendar-toolbar-surface);
+		padding: 0.72rem 1.05rem;
+		font-size: 0.9rem;
+		font-weight: 760;
+		color: var(--on-surface);
+		box-shadow: none;
+		transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+	}
+
+	.calendar-refresh-btn:hover {
+		background: color-mix(in srgb, var(--calendar-toolbar-surface) 88%, var(--surface-bright) 12%);
+		border-color: var(--calendar-outline-strong);
+		color: var(--on-surface);
+	}
+
+	.calendar-refresh-btn:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+		outline-offset: 3px;
+	}
+
+	.calendar-refresh-btn:disabled {
+		opacity: 0.58;
+		cursor: not-allowed;
 	}
 
 	.calendar-create-btn-icon {

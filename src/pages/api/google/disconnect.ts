@@ -11,6 +11,14 @@ const toRedirectResponse = (location: string, status = 302) =>
 		},
 	});
 
+const toPanelCalendarSuccessRedirect = () => {
+	const params = new URLSearchParams({
+		flash_message: 'Google Calendar se desconecto correctamente.',
+		flash_type: 'success',
+	});
+	return toRedirectResponse(`${PANEL_CALENDAR_PATH}?${params.toString()}`);
+};
+
 const wantsHtml = (request: Request) => {
 	const accept = request.headers.get('accept') || '';
 	const contentType = request.headers.get('content-type') || '';
@@ -95,9 +103,7 @@ const handleDisconnect = async (request: Request, token: string | undefined) => 
 			throw new Error(message);
 		}
 
-		if (htmlMode) {
-			return toRedirectResponse('/panel/calendar?success=google_disconnected');
-		}
+		if (htmlMode) return toPanelCalendarSuccessRedirect();
 
 		return Response.json(
 			{
@@ -127,3 +133,5 @@ const handleDisconnect = async (request: Request, token: string | undefined) => 
 export const DELETE: APIRoute = async ({ request, locals }) => handleDisconnect(request, locals.token);
 
 export const POST: APIRoute = async ({ request, locals }) => handleDisconnect(request, locals.token);
+
+export const GET: APIRoute = async ({ request, locals }) => handleDisconnect(request, locals.token);

@@ -19,6 +19,11 @@ type ApiFailure = {
 	errors?: unknown;
 };
 
+type GoogleCalendarEventsPayload = {
+	connected: boolean;
+	events: unknown[];
+};
+
 const parseJsonResponse = async (response: Response) => {
 	try {
 		return (await response.json()) as ApiSuccess | ApiFailure;
@@ -70,6 +75,31 @@ export class AppointmentsClient {
 
 		const events = (data as ApiSuccess<unknown>).data;
 		return Array.isArray(events) ? events : [];
+	}
+
+	async getGoogleCalendarEvents(params: { start: string; end: string }): Promise<GoogleCalendarEventsPayload> {
+		const query = new URLSearchParams({
+			start: params.start,
+			end: params.end,
+		});
+
+		const response = await fetch(`/api/google/events?${query.toString()}`, {
+			method: 'GET',
+			headers: { Accept: 'application/json' },
+		});
+		const data = await parseJsonResponse(response);
+		ensureSuccess(response, data, 'No fue posible cargar eventos de Google Calendar.');
+
+		const payload = (data as ApiSuccess<unknown>).data;
+		if (!payload || typeof payload !== 'object') {
+			return { connected: false, events: [] };
+		}
+
+		const source = payload as Record<string, unknown>;
+		return {
+			connected: Boolean(source.connected),
+			events: Array.isArray(source.events) ? source.events : [],
+		};
 	}
 
 	async getAppointment(appointmentId: number) {

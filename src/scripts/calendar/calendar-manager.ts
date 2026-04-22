@@ -40,6 +40,8 @@ interface ApiCalendarEvent {
 	id?: string | number;
 	extendedProps?: Record<string, unknown> & {
 		pro_id_professional?: string | number;
+		source?: string;
+		description?: string;
 	};
 	resourceId?: string | number;
 	[key: string]: unknown;
@@ -60,6 +62,9 @@ const hasAppointmentModalApi = (value: unknown): value is AppointmentModalApi =>
 	);
 };
 
+const isGoogleEvent = (event: ApiCalendarEvent) =>
+	String(event?.extendedProps?.source || '').trim().toLowerCase() === 'google';
+
 class CalendarManager extends HTMLElement {
 	#bound = false;
 	#listeners: AbortController | null = null;
@@ -75,11 +80,13 @@ class CalendarManager extends HTMLElement {
 	private locations: Option[] = [];
 	private services: Option[] = [];
 	private isMobileLayout = false;
+	private isGoogleConnected = false;
 
 	private calendarEl: HTMLElement | null = null;
 	private loadingNode: HTMLElement | null = null;
 	private pageErrorNode: HTMLElement | null = null;
 	private openModalButton: HTMLButtonElement | null = null;
+	private refreshCalendarButton: HTMLButtonElement | null = null;
 	private professionalFilterWrap: HTMLElement | null = null;
 	private professionalFilter: HTMLSelectElement | null = null;
 	private locationFilter: HTMLSelectElement | null = null;
@@ -87,11 +94,13 @@ class CalendarManager extends HTMLElement {
 
 	connectedCallback() {
 		if (this.#bound) return;
+		this.isGoogleConnected = this.dataset.googleConnected === 'true';
 
 		this.calendarEl = this.querySelector<HTMLElement>('[data-calendar-el]');
 		this.loadingNode = this.querySelector<HTMLElement>('[data-calendar-loading]');
 		this.pageErrorNode = this.querySelector<HTMLElement>('[data-calendar-error]');
 		this.openModalButton = this.querySelector<HTMLButtonElement>('[data-open-appointment-modal]');
+		this.refreshCalendarButton = this.querySelector<HTMLButtonElement>('[data-refresh-calendar]');
 		this.professionalFilterWrap = this.querySelector<HTMLElement>('[data-professional-filter-wrap]');
 		this.professionalFilter = this.querySelector<HTMLSelectElement>('[data-professional-filter]');
 		this.locationFilter = this.querySelector<HTMLSelectElement>('[data-location-filter]');
@@ -116,6 +125,7 @@ class CalendarManager extends HTMLElement {
 
 		requiredNodes.appointmentModal.setClient(this.client);
 		requiredNodes.openModalButton.addEventListener('click', this.handleOpenCreateModal, { signal });
+		this.refreshCalendarButton?.addEventListener('click', this.handleRefreshCalendar, { signal });
 		requiredNodes.professionalFilter.addEventListener('change', this.handleProfessionalFilterChange, {
 			signal,
 		});
@@ -199,6 +209,7 @@ class CalendarManager extends HTMLElement {
 		}
 		if (this.locationFilter) this.locationFilter.disabled = value;
 		if (this.openModalButton) this.openModalButton.disabled = value;
+		if (this.refreshCalendarButton) this.refreshCalendarButton.disabled = value;
 	}
 
 	private renderOptions(
@@ -318,14 +329,30 @@ class CalendarManager extends HTMLElement {
 			try {
 				const professionalId = toPositiveInt(this.professionalFilter?.value, 0);
 				const locationId = toPositiveInt(this.locationFilter?.value, 0);
-				const events = await this.client.getCalendarEvents({
+				const appointmentEvents = (await this.client.getCalendarEvents({
 					start: info.startStr,
 					end: info.endStr,
 					pro_id: professionalId > 0 ? professionalId : undefined,
 					loc_id: locationId > 0 ? locationId : undefined,
-				}) as ApiCalendarEvent[];
+				})) as ApiCalendarEvent[];
 
-				const normalizedEvents: EventInput[] = events.map((event) => ({
+				let googleEvents: ApiCalendarEvent[] = [];
+				if (this.isGoogleConnected) {
+					try {
+						const googlePayload = await this.client.getGoogleCalendarEvents({
+							start: info.startStr,
+							end: info.endStr,
+						});
+						googleEvents = googlePayload.connected
+							? (googlePayload.events as ApiCalendarEvent[])
+							: [];
+					} catch (error) {
+						console.error('[calendar-manager] google events error', error);
+					}
+				}
+
+				const allEvents = [...appointmentEvents, ...googleEvents];
+				const normalizedEvents: EventInput[] = allEvents.map((event) => ({
 					...event,
 					id: String(event?.id ?? ''),
 					extendedProps: {
@@ -335,6 +362,13 @@ class CalendarManager extends HTMLElement {
 							0
 						),
 					},
+					...(isGoogleEvent(event)
+						? {
+								editable: false,
+								startEditable: false,
+								durationEditable: false,
+							}
+						: {}),
 				}));
 				successCallback(normalizedEvents);
 			} catch (error) {
@@ -432,6 +466,45 @@ class CalendarManager extends HTMLElement {
 			},
 			eventResize: (info) => {
 				void this.handleEventReschedule(info);
+			},
+			eventDidMount: (arg) => {
+				const source = String(arg.event.extendedProps?.source || '').trim().toLowerCase();
+				if (source !== 'google') return;
+
+				const originExists = arg.el.querySelector('.fc-event-google-origin');
+				if (!originExists) {
+					const originContainer =
+						arg.el.querySelector('.fc-event-main-frame') ??
+						arg.el.querySelector('.fc-event-title-container') ??
+						arg.el.querySelector('.fc-event-main') ??
+						arg.el.querySelector('.fc-list-event-title') ??
+						arg.el;
+
+					if (originContainer instanceof HTMLElement) {
+						const originNode = document.createElement('span');
+						originNode.className = 'fc-event-google-origin';
+						originNode.title = 'Google Calendar';
+						originNode.setAttribute('aria-hidden', 'true');
+						originContainer.prepend(originNode);
+					}
+				}
+
+				const description = String(arg.event.extendedProps?.description || '').trim();
+				if (!description) return;
+
+				const existing = arg.el.querySelector('.fc-event-description');
+				if (existing) return;
+
+				const container =
+					arg.el.querySelector('.fc-event-title-container') ??
+					arg.el.querySelector('.fc-event-main-frame') ??
+					arg.el.querySelector('.fc-event-main');
+				if (!(container instanceof HTMLElement)) return;
+
+				const descriptionNode = document.createElement('div');
+				descriptionNode.className = 'fc-event-description';
+				descriptionNode.textContent = description;
+				container.appendChild(descriptionNode);
 			},
 		});
 
@@ -596,6 +669,12 @@ class CalendarManager extends HTMLElement {
 	};
 
 	private handleLocationFilterChange = () => {
+		this.reloadCalendarEvents();
+	};
+
+	private handleRefreshCalendar = () => {
+		if (!this.calendar) return;
+		this.clearPageError();
 		this.reloadCalendarEvents();
 	};
 
