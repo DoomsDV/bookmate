@@ -377,6 +377,10 @@ const normalizeOrgSpecialty = (value: unknown): OrgSpecialtyOption | null => {
 	};
 };
 
+const isOrgSpecialtiesSuccessResponse = (value: unknown): value is OrgSpecialtiesSuccessResponse => {
+	return Boolean(value && typeof value === 'object' && 'status' in value && value.status === 'success');
+};
+
 export const listOrgSpecialtiesWithOrds = async (): Promise<OrgSpecialtyOption[]> => {
 	const response = await fetch(ORG_SPECIALTIES_URL, {
 		method: 'GET',
@@ -393,7 +397,7 @@ export const listOrgSpecialtiesWithOrds = async (): Promise<OrgSpecialtyOption[]
 		throw new AuthApiError('No fue posible interpretar la respuesta del catalogo de especialidades.', 502);
 	}
 
-	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
+	if (!response.ok || !isOrgSpecialtiesSuccessResponse(data)) {
 		const failureData = (data ?? {}) as AuthFailureResponse;
 		throw new AuthApiError(
 			failureData.message || 'No fue posible obtener las especialidades de la organizacion.',

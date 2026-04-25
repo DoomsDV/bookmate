@@ -677,6 +677,136 @@ html[data-theme='dark'] .modal-action-danger:hover {
 	cursor: not-allowed;
 }
 
+/* Auth dark mode overrides.
+   Keeps the existing split layout, only replacing the light form surface. */
+.m3-container.auth-dark {
+	background-color: #0f172a;
+}
+
+.m3-container.auth-dark .m3-content {
+	background:
+		radial-gradient(circle at 50% 18%, rgba(37, 99, 235, 0.11), transparent 34%),
+		#0b1120;
+}
+
+@media (min-width: 1024px) {
+	.m3-container.auth-dark .m3-content {
+		box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2);
+	}
+}
+
+.m3-container.auth-dark .m3-panel-icon {
+	background-color: rgba(37, 99, 235, 0.14);
+	color: #60a5fa;
+	border: 1px solid rgba(96, 165, 250, 0.18);
+}
+
+.m3-container.auth-dark .m3-panel-title {
+	color: #f8fafc;
+}
+
+.m3-container.auth-dark .m3-panel-subtitle,
+.m3-container.auth-dark .m3-field-help,
+.m3-container.auth-dark .m3-password-strength-text {
+	color: #94a3b8;
+}
+
+.m3-container.auth-dark .m3-label {
+	color: #e2e8f0;
+}
+
+.m3-container.auth-dark .m3-input,
+.m3-container.auth-dark .m3-select {
+	background-color: #111827;
+	border-color: #334155;
+	color: #f8fafc;
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.m3-container.auth-dark .m3-input::placeholder {
+	color: #77859a;
+}
+
+.m3-container.auth-dark .m3-input:focus,
+.m3-container.auth-dark .m3-select:focus {
+	background-color: #0f172a;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
+}
+
+.m3-container.auth-dark .m3-input.is-invalid {
+	background-color: rgba(127, 29, 29, 0.22);
+	border-color: #fb7185;
+}
+
+.m3-container.auth-dark .m3-input.is-invalid:focus {
+	box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14);
+}
+
+.m3-container.auth-dark .m3-icon-btn {
+	color: #94a3b8;
+}
+
+.m3-container.auth-dark .m3-icon-btn:hover {
+	background-color: #1e293b;
+	color: #e2e8f0;
+}
+
+.m3-container.auth-dark .m3-checkbox-label,
+.m3-container.auth-dark .m3-link-accent {
+	color: #cbd5e1;
+}
+
+.m3-container.auth-dark .m3-checkbox-box {
+	background-color: #111827;
+	border-color: #475569;
+}
+
+.m3-container.auth-dark .m3-footer-divider,
+.m3-container.auth-dark .m3-password-strength-segment {
+	background: #334155;
+}
+
+.m3-container.auth-dark .m3-actions {
+	border-top-color: rgba(148, 163, 184, 0.16);
+}
+
+.m3-container.auth-dark .m3-phone-prefix {
+	background-color: #0f172a;
+	border-color: #334155;
+	color: #cbd5e1;
+}
+
+.m3-container.auth-dark .m3-phone-group:focus-within .m3-phone-prefix,
+.m3-container.auth-dark .m3-phone-group:focus-within .m3-phone-input {
+	border-color: #3b82f6;
+}
+
+.m3-container.auth-dark .m3-phone-group:focus-within {
+	box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
+}
+
+.m3-container.auth-dark .m3-phone-group.is-invalid .m3-phone-prefix {
+	background-color: rgba(127, 29, 29, 0.22);
+	border-color: #fb7185;
+	color: #fecdd3;
+}
+
+.m3-container.auth-dark .m3-select:disabled {
+	background-color: #111827;
+	color: #64748b;
+}
+
+.m3-container.auth-dark .m3-error-banner {
+	background-color: rgba(127, 29, 29, 0.22);
+	border-color: rgba(251, 113, 133, 0.35);
+	color: #fecdd3;
+}
+
+.m3-container.auth-dark .m3-mobile-brand .m3-logo {
+	filter: drop-shadow(0 8px 20px rgba(59, 130, 246, 0.28));
+}
+
 @media (min-width: 640px) {
 	.app-pagination {
 		align-items: stretch;
