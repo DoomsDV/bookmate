@@ -17,7 +17,7 @@ const publicProfileDomain =
 <settings-manager data-role-id={String(roleId)} data-public-profile-domain={publicProfileDomain}>
 <dialog
 	data-settings-modal
-		class="m-0 mt-auto mb-0 max-h-[92dvh] w-screen max-w-none sm:m-auto sm:w-[min(54rem,calc(100vw-2rem))] sm:max-w-[min(54rem,calc(100vw-2rem))] open:flex open:flex-col sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+		class="m-0 mt-auto mb-0 h-[92dvh] w-screen max-w-none sm:m-auto sm:h-[min(46rem,90vh)] sm:w-[min(54rem,calc(100vw-2rem))] sm:max-w-[min(54rem,calc(100vw-2rem))] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
 >
 	<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6">
 		<div class="flex items-start justify-between gap-4">
@@ -63,7 +63,13 @@ const publicProfileDomain =
 			</div>
 		</nav>
 
-		<div class="settings-content flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 overscroll-contain">
+		<div class="settings-content relative flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 overscroll-contain">
+			<div class="settings-loading-overlay hidden" data-settings-loading aria-live="polite" aria-busy="true">
+				<div class="settings-loading-card">
+					<span class="material-symbols-rounded animate-spin">progress_activity</span>
+					<span>Cargando ajustes...</span>
+				</div>
+			</div>
 			<section data-settings-panel="profile" class="grid gap-6">
 				<p data-settings-feedback="profile" class="hidden settings-feedback"></p>
 				<form data-settings-profile-form class="grid gap-8">
@@ -73,26 +79,33 @@ const publicProfileDomain =
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Solo para tu cuenta y acceso interno.</p>
 						</div>
 						<div class="grid gap-5 sm:grid-cols-2">
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre<input name="first_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Apellido<input name="last_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre <span class="text-rose-500">*</span></span><input name="first_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Apellido <span class="text-rose-500">*</span></span><input name="last_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 						</div>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electrónico<input name="email" readonly class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-4 py-3 text-[0.95rem] outline-none text-(--on-surface-variant) cursor-not-allowed" /></label>
 					</div>
 
 					<div data-settings-prof-fields class="settings-prof-section hidden gap-5 border-t border-(--shell-border) border-dashed pt-6">
-						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Avatar público</h3>
-							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Se mostrará en tu perfil público.</p>
-						</div>
-						<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
-							<img data-settings-profile-preview class="hidden h-24 w-24 rounded-[1.25rem] border border-(--shell-border) object-cover shadow-sm bg-(--surface-bright)" alt="Foto de perfil" />
-							<div class="grid gap-2">
-								<input id="settings-profile-image-input" type="file" name="profile_image" accept="image/*" class="sr-only" />
-								<label for="settings-profile-image-input" class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-2.5 text-[0.95rem] font-extrabold text-(--on-surface) transition hover:bg-(--surface-variant) shadow-sm focus-within:ring-2 focus-within:ring-(--primary) focus-within:ring-offset-2">
-									<span class="material-symbols-rounded mr-2 text-[1.2rem]">photo_camera</span>
-									Cambiar foto
-								</label>
-								<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">JPG o PNG. Se mostrará en tu perfil público.</p>
+						<div class="settings-upload-card" data-settings-profile-dropzone>
+							<div class="settings-upload-card__preview settings-upload-card__preview--avatar">
+								<img data-settings-profile-preview class="hidden" alt="Foto de perfil" />
+								<div data-settings-profile-placeholder class="settings-upload-card__placeholder">
+									<span class="material-symbols-rounded">account_circle</span>
+								</div>
+							</div>
+							<div class="settings-upload-card__content">
+								<div class="settings-upload-card__copy">
+									<h3>Avatar público <span class="text-rose-500">*</span></h3>
+									<p>Arrastra una imagen o selecciona un archivo JPG o PNG.</p>
+								</div>
+								<div class="settings-upload-card__actions">
+									<label for="settings-profile-image-input" class="settings-upload-card__button">
+										<span class="material-symbols-rounded">add_photo_alternate</span>
+										<span data-settings-profile-file-name>Cambiar foto</span>
+										<input id="settings-profile-image-input" type="file" name="profile_image" accept=".jpg,.jpeg,.png" class="sr-only" />
+									</label>
+									<span class="settings-upload-card__meta">Se mostrará en tu perfil público.</span>
+								</div>
 							</div>
 						</div>
 					</div>
@@ -103,7 +116,7 @@ const publicProfileDomain =
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Estos datos se muestran a tus clientes en internet.</p>
 						</div>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-							Teléfono público
+							<span>Teléfono público <span class="text-rose-500">*</span></span>
 							<div class="flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
 								<span class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
 									+595
@@ -122,7 +135,7 @@ const publicProfileDomain =
 							<span data-settings-profile-field-error="phone_number" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-							URL del perfil público <span class="text-(--on-surface-variant) font-medium">(Opcional)</span>
+							<span>URL del perfil público <span class="text-rose-500">*</span></span>
 							<div class="flex shadow-sm rounded-2xl transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
 								<span data-settings-profile-slug-prefix class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-medium text-(--on-surface-variant)">
 									{publicProfileDomain}/p/
@@ -169,7 +182,7 @@ const publicProfileDomain =
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Asegúrate de usar una contraseña fuerte y segura.</p>
 						</div>
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						Contraseña actual
+						<span>Contraseña actual <span class="text-rose-500">*</span></span>
 						<input
 							type="password"
 							name="current_password"
@@ -180,7 +193,7 @@ const publicProfileDomain =
 					</label>
 					<div class="grid gap-5 sm:grid-cols-2">
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						Nueva contraseña
+						<span>Nueva contraseña <span class="text-rose-500">*</span></span>
 						<input
 							type="password"
 							name="new_password"
@@ -191,7 +204,7 @@ const publicProfileDomain =
 						/>
 					</label>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						Confirmar nueva contraseña
+						<span>Confirmar nueva contraseña <span class="text-rose-500">*</span></span>
 						<input
 							type="password"
 							name="confirm_password"
@@ -230,7 +243,7 @@ const publicProfileDomain =
 						<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Personaliza la apariencia y el comportamiento de tu vista.</p>
 					</div>
 					<div class="grid gap-5">
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Tema del panel
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Tema del panel <span class="text-rose-500">*</span></span>
 							<div class="relative">
 								<select name="panel_theme" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 							<option value="light">Claro</option>
@@ -251,16 +264,26 @@ const publicProfileDomain =
 								</div>
 								
 								<div class="grid gap-1.5 mt-2">
-									<span class="text-[0.95rem] font-bold text-(--on-surface)">Logo negocio</span>
-									<div class="flex flex-col items-start gap-4 sm:flex-row sm:items-center mt-1">
-										<img data-settings-logo-preview class="hidden h-20 w-20 rounded-2xl border border-(--shell-border) object-contain shadow-sm bg-(--surface-bright) p-2" alt="Vista previa del logo" />
-										<div class="grid gap-2">
-											<input id="settings-branding-logo-input" type="file" name="logo_file" accept="image/*" class="sr-only" />
-											<label for="settings-branding-logo-input" class="inline-flex cursor-pointer items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-2.5 text-[0.95rem] font-extrabold text-(--on-surface) transition hover:bg-(--surface-variant) shadow-sm focus-within:ring-2 focus-within:ring-(--primary) focus-within:ring-offset-2">
-												<span class="material-symbols-rounded mr-2 text-[1.2rem]">image</span>
-												Subir logo
-											</label>
-											<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">Se mostrará una vista previa antes de guardar.</p>
+									<div class="settings-upload-card" data-settings-logo-dropzone>
+										<div class="settings-upload-card__preview settings-upload-card__preview--logo">
+											<img data-settings-logo-preview class="hidden" alt="Vista previa del logo" />
+											<div data-settings-logo-placeholder class="settings-upload-card__placeholder">
+												<span class="material-symbols-rounded">image</span>
+											</div>
+										</div>
+										<div class="settings-upload-card__content">
+											<div class="settings-upload-card__copy">
+												<h3>Logo negocio <span class="text-rose-500">*</span></h3>
+												<p>Arrastra tu logo o selecciona un archivo JPG o PNG.</p>
+											</div>
+											<div class="settings-upload-card__actions">
+												<label for="settings-branding-logo-input" class="settings-upload-card__button">
+													<span class="material-symbols-rounded">add_photo_alternate</span>
+													<span data-settings-logo-file-name>Subir logo</span>
+													<input id="settings-branding-logo-input" type="file" name="logo_file" accept=".jpg,.jpeg,.png" class="sr-only" />
+												</label>
+												<span class="settings-upload-card__meta">Se mostrará una vista previa antes de guardar.</span>
+											</div>
 										</div>
 									</div>
 								</div>
@@ -294,7 +317,7 @@ const publicProfileDomain =
 									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Detalles principales de tu organización.</p>
 								</div>
 								<div class="grid gap-5">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Nombre del negocio<input name="name" maxlength="100" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre del negocio <span class="text-rose-500">*</span></span><input name="name" maxlength="100" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 								</div>
 								<input type="hidden" name="profile_slug" />
 								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripción<textarea name="description" maxlength="1000" rows="4" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 resize-y"></textarea></label>
@@ -319,7 +342,7 @@ const publicProfileDomain =
 									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Ajustes regionales y de tiempo.</p>
 								</div>
 								<div class="grid gap-5">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Formato de hora
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Formato de hora <span class="text-rose-500">*</span></span>
 										<div class="relative">
 											<select name="time_format" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 										<option value="24H">24 horas</option>
@@ -330,7 +353,7 @@ const publicProfileDomain =
 								</div>
 								
 								<div class="grid gap-5">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Alertas de citas no respondidas
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Alertas de citas no respondidas <span class="text-rose-500">*</span></span>
 										<div class="relative">
 											<select name="unanswered_alert_action" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 												<option value="KEEP">Mantener la cita (Ignorar)</option>
@@ -415,8 +438,15 @@ const publicProfileDomain =
 			workspaceForm: HTMLFormElement | null;
 			brandingForm: HTMLFormElement | null;
 			systemForm: HTMLFormElement | null;
+			loadingOverlay: HTMLElement | null;
 			profilePreview: HTMLImageElement | null;
+			profilePlaceholder: HTMLElement | null;
+			profileDropzone: HTMLElement | null;
+			profileFileName: HTMLElement | null;
 			logoPreview: HTMLImageElement | null;
+			logoPlaceholder: HTMLElement | null;
+			logoDropzone: HTMLElement | null;
+			logoFileName: HTMLElement | null;
 			profFields: NodeListOf<HTMLElement>;
 			profileNote: HTMLElement | null;
 		};
@@ -459,8 +489,15 @@ const publicProfileDomain =
 				workspaceForm: this.querySelector<HTMLFormElement>('[data-settings-workspace-form]'),
 				brandingForm: this.querySelector<HTMLFormElement>('[data-settings-branding-form]'),
 				systemForm: this.querySelector<HTMLFormElement>('[data-settings-system-form]'),
+				loadingOverlay: this.querySelector<HTMLElement>('[data-settings-loading]'),
 				profilePreview: this.querySelector<HTMLImageElement>('[data-settings-profile-preview]'),
+				profilePlaceholder: this.querySelector<HTMLElement>('[data-settings-profile-placeholder]'),
+				profileDropzone: this.querySelector<HTMLElement>('[data-settings-profile-dropzone]'),
+				profileFileName: this.querySelector<HTMLElement>('[data-settings-profile-file-name]'),
 				logoPreview: this.querySelector<HTMLImageElement>('[data-settings-logo-preview]'),
+				logoPlaceholder: this.querySelector<HTMLElement>('[data-settings-logo-placeholder]'),
+				logoDropzone: this.querySelector<HTMLElement>('[data-settings-logo-dropzone]'),
+				logoFileName: this.querySelector<HTMLElement>('[data-settings-logo-file-name]'),
 				profFields: this.querySelectorAll<HTMLElement>('[data-settings-prof-fields]'),
 				profileNote: this.querySelector<HTMLElement>('[data-settings-profile-note]'),
 			};
@@ -496,6 +533,8 @@ const publicProfileDomain =
 			this.formEls.phoneInput?.addEventListener('input', this.handlePhoneInput, { signal });
 			this.formEls.profileImageInput?.addEventListener('change', this.handleProfileImageChange, { signal });
 			this.formEls.brandingLogoInput?.addEventListener('change', this.handleLogoImageChange, { signal });
+			this.bindUploadDropzone(this.els.profileDropzone, 'profile', signal);
+			this.bindUploadDropzone(this.els.logoDropzone, 'logo', signal);
 
 			this.els.profileForm?.addEventListener('submit', this.handleProfileSubmit, { signal });
 			this.els.securityForm?.addEventListener('submit', this.handleSecuritySubmit, { signal });
@@ -563,6 +602,7 @@ const publicProfileDomain =
 				this.releaseProfilePreviewObjectUrl();
 				this.releaseLogoPreviewObjectUrl();
 				this.clearSlugSuggestTimer();
+				this.setLoadingState(false);
 				this.slugRequestSeq += 1;
 				this.closingTimer = null;
 			}, 140);
@@ -612,6 +652,79 @@ const publicProfileDomain =
 				reader.onerror = () => reject(new Error('No fue posible leer el archivo.'));
 				reader.readAsDataURL(file);
 			});
+		}
+
+		private setLoadingState(isLoading: boolean) {
+			this.els.loadingOverlay?.classList.toggle('hidden', !isLoading);
+			this.els.loadingOverlay?.classList.toggle('flex', isLoading);
+			this.els.tabButtons.forEach((button) => {
+				if (button instanceof HTMLButtonElement) button.disabled = isLoading;
+			});
+		}
+
+		private isAllowedImageFile(file: File): boolean {
+			return ['image/jpeg', 'image/png'].includes(file.type);
+		}
+
+		private bindUploadDropzone(
+			dropzone: HTMLElement | null,
+			target: 'profile' | 'logo',
+			signal: AbortSignal
+		) {
+			if (!dropzone) return;
+			dropzone.addEventListener('dragover', (event) => {
+				event.preventDefault();
+				dropzone.classList.add('is-dragover');
+			}, { signal });
+			dropzone.addEventListener('dragleave', (event) => {
+				if (event.relatedTarget instanceof Node && dropzone.contains(event.relatedTarget)) return;
+				dropzone.classList.remove('is-dragover');
+			}, { signal });
+			dropzone.addEventListener('drop', (event) => {
+				event.preventDefault();
+				dropzone.classList.remove('is-dragover');
+				const file = Array.from(event.dataTransfer?.files ?? []).find((item) =>
+					this.isAllowedImageFile(item)
+				);
+				if (!file) {
+					this.showFeedback(
+						target === 'profile' ? 'profile' : 'preferences',
+						'Selecciona una imagen JPG o PNG.',
+						'error'
+					);
+					return;
+				}
+				this.setUploadFile(target, file);
+			}, { signal });
+		}
+
+		private setUploadFile(target: 'profile' | 'logo', file: File) {
+			const input = target === 'profile' ? this.formEls.profileImageInput : this.formEls.brandingLogoInput;
+			if (!input) return;
+			const dataTransfer = new DataTransfer();
+			dataTransfer.items.add(file);
+			input.files = dataTransfer.files;
+			target === 'profile' ? this.handleProfileImageChange() : this.handleLogoImageChange();
+		}
+
+		private setProfilePreview(src: string) {
+			const cleanSrc = String(src || '').trim();
+			const hasImage = cleanSrc.length > 0;
+			if (this.els.profilePreview) {
+				this.els.profilePreview.src = hasImage ? cleanSrc : '';
+				this.els.profilePreview.classList.toggle('hidden', !hasImage);
+			}
+			this.els.profilePlaceholder?.classList.toggle('hidden', hasImage);
+		}
+
+		private setLogoPreview(src: string) {
+			const cleanSrc = String(src || '').trim();
+			const hasImage = cleanSrc.length > 0;
+			if (this.els.logoPreview) {
+				this.els.logoPreview.src = hasImage ? cleanSrc : '';
+				this.els.logoPreview.classList.toggle('hidden', !hasImage);
+			}
+			this.els.logoPlaceholder?.classList.toggle('hidden', hasImage);
 		}
 
 		private releaseProfilePreviewObjectUrl() {
@@ -833,20 +946,30 @@ const publicProfileDomain =
 
 		private handleProfileImageChange = () => {
 			const imageFile = this.formEls.profileImageInput?.files?.[0];
-			if (!imageFile || !this.els.profilePreview) return;
+			if (!imageFile) return;
+			if (!this.isAllowedImageFile(imageFile)) {
+				if (this.formEls.profileImageInput) this.formEls.profileImageInput.value = '';
+				this.showFeedback('profile', 'Selecciona una imagen JPG o PNG.', 'error');
+				return;
+			}
 			this.releaseProfilePreviewObjectUrl();
 			this.profilePreviewObjectUrl = URL.createObjectURL(imageFile);
-			this.els.profilePreview.src = this.profilePreviewObjectUrl;
-			this.els.profilePreview.classList.remove('hidden');
+			this.setProfilePreview(this.profilePreviewObjectUrl);
+			if (this.els.profileFileName) this.els.profileFileName.textContent = imageFile.name;
 		};
 
 		private handleLogoImageChange = () => {
 			const logoFile = this.formEls.brandingLogoInput?.files?.[0];
-			if (!logoFile || !this.els.logoPreview) return;
+			if (!logoFile) return;
+			if (!this.isAllowedImageFile(logoFile)) {
+				if (this.formEls.brandingLogoInput) this.formEls.brandingLogoInput.value = '';
+				this.showFeedback('preferences', 'Selecciona una imagen JPG o PNG.', 'error');
+				return;
+			}
 			this.releaseLogoPreviewObjectUrl();
 			this.logoPreviewObjectUrl = URL.createObjectURL(logoFile);
-			this.els.logoPreview.src = this.logoPreviewObjectUrl;
-			this.els.logoPreview.classList.remove('hidden');
+			this.setLogoPreview(this.logoPreviewObjectUrl);
+			if (this.els.logoFileName) this.els.logoFileName.textContent = logoFile.name;
 		};
 
 		private setActiveTab(tabId: string) {
@@ -888,12 +1011,8 @@ const publicProfileDomain =
 					this.setSuggestedSlug(String(prof.profile_slug || '').trim());
 					if (this.formEls.profileSlugInput.value.trim() === '') this.queueSlugSuggestion();
 				}
-				if (this.els.profilePreview && prof.image_url) {
-					this.els.profilePreview.src = prof.image_url;
-					this.els.profilePreview.classList.remove('hidden');
-				} else {
-					this.els.profilePreview?.classList.add('hidden');
-				}
+				this.setProfilePreview(prof.image_url || '');
+				if (this.els.profileFileName) this.els.profileFileName.textContent = 'Cambiar foto';
 				if (this.els.profileNote) {
 					this.els.profileNote.classList.add('hidden');
 					this.els.profileNote.textContent = '';
@@ -902,7 +1021,8 @@ const publicProfileDomain =
 				this.els.profFields.forEach((el) => el.classList.add('hidden'));
 				if (phone) phone.value = '';
 				if (this.formEls.profileSlugInput) this.setSuggestedSlug('');
-				this.els.profilePreview?.classList.add('hidden');
+				this.setProfilePreview('');
+				if (this.els.profileFileName) this.els.profileFileName.textContent = 'Cambiar foto';
 				if (this.els.profileNote) {
 					this.els.profileNote.textContent = 'Esta cuenta no tiene perfil profesional público. Solo se guarda nombre y apellido.';
 					this.els.profileNote.classList.remove('hidden');
@@ -927,12 +1047,8 @@ const publicProfileDomain =
 			
 			this.releaseLogoPreviewObjectUrl();
 
-			if (this.els.logoPreview && workspace?.logo_url) {
-				this.els.logoPreview.src = workspace.logo_url;
-				this.els.logoPreview.classList.remove('hidden');
-			} else {
-				this.els.logoPreview?.classList.add('hidden');
-			}
+			this.setLogoPreview(workspace?.logo_url || '');
+			if (this.els.logoFileName) this.els.logoFileName.textContent = 'Subir logo';
 			const logoFile = this.formEls.brandingLogoInput;
 			if (logoFile) logoFile.value = '';
 		}
@@ -985,6 +1101,7 @@ const publicProfileDomain =
 		}
 
 		private async loadData() {
+			this.setLoadingState(true);
 			try {
 				const profileRes = await this.requestApi('/api/profile/me', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar perfil.');
 				this.fillProfile(profileRes.data || {});
@@ -1003,6 +1120,8 @@ const publicProfileDomain =
 				}
 			} catch (error) {
 				this.showFeedback('profile', error instanceof Error ? error.message : 'No fue posible cargar ajustes.', 'error');
+			} finally {
+				this.setLoadingState(false);
 			}
 		}
 
@@ -1406,6 +1525,203 @@ const publicProfileDomain =
 	.settings-panel.hidden,
 	.settings-prof-section.hidden {
 		display: none;
+	}
+
+	.settings-loading-overlay {
+		position: absolute;
+		inset: 0;
+		z-index: 30;
+		align-items: center;
+		justify-content: center;
+		background: color-mix(in srgb, var(--surface-bright) 78%, transparent);
+		backdrop-filter: blur(3px);
+		-webkit-backdrop-filter: blur(3px);
+	}
+
+	.settings-loading-card {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.75rem;
+		border-radius: 1.25rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.9rem 1.1rem;
+		color: var(--on-surface);
+		font-size: 0.95rem;
+		font-weight: 800;
+		box-shadow: 0 18px 42px rgba(15, 23, 42, 0.16);
+	}
+
+	.settings-loading-card .material-symbols-rounded {
+		color: var(--primary);
+		font-size: 1.35rem;
+	}
+
+	.settings-upload-card {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		border-radius: 1.35rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 82%, var(--primary) 18%);
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 42%, transparent), transparent 46%),
+			var(--surface-bright);
+		padding: 1rem;
+		box-shadow: var(--card-inset-highlight), 0 10px 28px rgba(15, 23, 42, 0.06);
+		transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+	}
+
+	.settings-upload-card.is-dragover {
+		border-color: var(--primary);
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 72%, transparent), transparent 54%),
+			var(--surface-bright);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent), 0 14px 36px rgba(15, 23, 42, 0.1);
+	}
+
+	.settings-upload-card__preview {
+		position: relative;
+		width: 5.75rem;
+		height: 5.75rem;
+		flex: 0 0 auto;
+		overflow: hidden;
+		border: 4px solid var(--surface-bright);
+		background: color-mix(in srgb, var(--primary-soft) 70%, var(--surface-container) 30%);
+		color: var(--primary);
+		box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+	}
+
+	.settings-upload-card__preview--avatar {
+		border-radius: 999px;
+	}
+
+	.settings-upload-card__preview--logo {
+		border-radius: 1.15rem;
+	}
+
+	.settings-upload-card__preview img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-position: center;
+	}
+
+	.settings-upload-card__preview img.hidden {
+		display: none;
+	}
+
+	.settings-upload-card__preview--avatar img {
+		object-fit: cover;
+	}
+
+	.settings-upload-card__preview--logo img {
+		object-fit: contain;
+		background: var(--surface-bright);
+		padding: 0.65rem;
+	}
+
+	.settings-upload-card__placeholder {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+	}
+
+	.settings-upload-card__placeholder.hidden {
+		display: none;
+	}
+
+	.settings-upload-card__placeholder .material-symbols-rounded {
+		font-size: 2.25rem;
+	}
+
+	.settings-upload-card__content {
+		display: grid;
+		width: 100%;
+		gap: 0.85rem;
+		text-align: center;
+	}
+
+	.settings-upload-card__copy {
+		display: grid;
+		gap: 0.25rem;
+	}
+
+	.settings-upload-card__copy h3 {
+		margin: 0;
+		font-size: 1.02rem;
+		font-weight: 850;
+		color: var(--on-surface);
+	}
+
+	.settings-upload-card__copy p {
+		margin: 0;
+		color: var(--on-surface-variant);
+		font-size: 0.88rem;
+		font-weight: 650;
+		line-height: 1.35;
+	}
+
+	.settings-upload-card__actions {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.45rem;
+	}
+
+	.settings-upload-card__button {
+		display: inline-flex;
+		min-width: 10.75rem;
+		min-height: 2.65rem;
+		cursor: pointer;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		border-radius: 999px;
+		border: 1px solid var(--primary-container);
+		background: var(--primary-soft);
+		padding: 0.65rem 1rem;
+		color: var(--primary);
+		font-size: 0.9rem;
+		font-weight: 850;
+		transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+	}
+
+	.settings-upload-card__button:hover {
+		background: var(--primary-soft-hover);
+		border-color: color-mix(in srgb, var(--primary) 44%, var(--primary-container) 56%);
+	}
+
+	.settings-upload-card__button:active {
+		transform: scale(0.98);
+	}
+
+	.settings-upload-card__meta {
+		color: var(--on-surface-variant);
+		font-size: 0.78rem;
+		font-weight: 700;
+	}
+
+	@media (min-width: 640px) {
+		.settings-upload-card {
+			flex-direction: row;
+			align-items: center;
+			gap: 1.25rem;
+			padding: 1.15rem;
+		}
+
+		.settings-upload-card__content {
+			text-align: left;
+		}
+
+		.settings-upload-card__actions {
+			flex-direction: row;
+			align-items: center;
+			justify-content: flex-start;
+		}
 	}
 
 	.settings-feedback {

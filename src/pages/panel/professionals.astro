@@ -58,7 +58,7 @@ const toPageHref = (page: number) => {
 ---
 
 <Layout>
-	<professional-manager>
+	<professional-manager data-public-profile-prefix={publicProfilePrefix}>
 	<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 		<div
 			class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -217,7 +217,16 @@ const toPageHref = (page: number) => {
 							<span class="inline-flex max-w-[55%] sm:max-w-[65%] items-center truncate rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-xs sm:text-sm text-(--on-surface-variant) shadow-sm" title={publicProfilePrefix}>
 								{publicProfilePrefix}
 							</span>
-							<input type="text" name="profile_slug" maxlength="100" class="block w-full min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
+							<input type="text" name="profile_slug" maxlength="100" class="block w-full min-w-0 flex-1 rounded-none border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
+							<button
+								type="button"
+								class="inline-flex w-12 shrink-0 items-center justify-center rounded-r-2xl border border-l-0 border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--surface-container-high) hover:text-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+								data-copy-professional-profile-url
+								aria-label="Copiar URL del perfil público"
+								title="Copiar URL"
+							>
+								<span class="material-symbols-rounded text-[1.1rem]" data-copy-professional-profile-url-icon>content_copy</span>
+							</button>
 						</div>
 						<span class="text-[0.84rem] font-semibold text-(--on-surface-variant)">Este enlace es el perfil público que tus clientes usarán para reservar contigo.</span>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_slug"></span>
@@ -409,6 +418,7 @@ const toPageHref = (page: number) => {
 
 		private abortController: AbortController | null = null;
 		private mode: ProfessionalMode = 'create';
+		private publicProfilePrefix = '';
 		private editingId: number | null = null;
 		private closeTimer: number | null = null;
 		private slugSuggestTimer: number | null = null;
@@ -434,6 +444,7 @@ const toPageHref = (page: number) => {
 		connectedCallback() {
 			if (this.abortController) return;
 			this.abortController = new AbortController();
+			this.publicProfilePrefix = String(this.dataset.publicProfilePrefix || '').trim();
 			const { signal } = this.abortController;
 
 			this.els = {
@@ -538,6 +549,13 @@ const toPageHref = (page: number) => {
 				return;
 			}
 
+			const copyUrlTrigger = target.closest<HTMLButtonElement>('[data-copy-professional-profile-url]');
+			if (copyUrlTrigger && this.contains(copyUrlTrigger)) {
+				event.preventDefault();
+				void this.copyPublicProfileUrl(copyUrlTrigger);
+				return;
+			}
+
 			const openTrigger = target.closest('[data-open-professional-modal], [data-professional-card]');
 			if (!openTrigger || !this.contains(openTrigger)) return;
 
@@ -638,6 +656,51 @@ const toPageHref = (page: number) => {
 			if (!this.els.error) return;
 			this.els.error.textContent = message;
 			this.els.error.classList.remove('hidden');
+		}
+
+		private getPublicProfileUrl(): string {
+			const slug = String(this.formEls.slug?.value || '').trim().replace(/^\/+/, '');
+			if (!slug) return '';
+			const prefix = this.publicProfilePrefix || 'hasel.app/p/';
+			return `${prefix}${slug}`;
+		}
+
+		private async writeClipboardText(value: string) {
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(value);
+				return;
+			}
+
+			const textarea = document.createElement('textarea');
+			textarea.value = value;
+			textarea.setAttribute('readonly', '');
+			textarea.style.position = 'fixed';
+			textarea.style.opacity = '0';
+			document.body.appendChild(textarea);
+			textarea.select();
+			document.execCommand('copy');
+			textarea.remove();
+		}
+
+		private async copyPublicProfileUrl(button: HTMLButtonElement) {
+			const url = this.getPublicProfileUrl();
+			if (!url) {
+				this.showFormError('Ingresa una URL de perfil público antes de copiar.');
+				return;
+			}
+
+			const icon = button.querySelector<HTMLElement>('[data-copy-professional-profile-url-icon]');
+			try {
+				await this.writeClipboardText(url);
+				if (icon) icon.textContent = 'check';
+				button.classList.add('text-emerald-500');
+				window.setTimeout(() => {
+					if (icon) icon.textContent = 'content_copy';
+					button.classList.remove('text-emerald-500');
+				}, 1400);
+			} catch {
+				this.showFormError('No fue posible copiar la URL. Intenta nuevamente.');
+			}
 		}
 
 		private clearErrors() {

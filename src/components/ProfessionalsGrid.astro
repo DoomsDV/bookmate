@@ -33,16 +33,6 @@ const cardItems = professionals.map((professional) => ({
 
 const activeCount = professionals.filter((item) => item.is_active === 1).length;
 const inactiveCount = professionals.length - activeCount;
-
-const formatStrictDate = (dateString?: string) => {
-	if (!dateString) return '--';
-	const d = new Date(dateString);
-	if (isNaN(d.getTime())) return '--';
-	const day = String(d.getDate()).padStart(2, '0');
-	const month = String(d.getMonth() + 1).padStart(2, '0');
-	const year = String(d.getFullYear()).slice(-2);
-	return `${day}-${month}-${year}`;
-};
 ---
 
 <section class="professionals-view">
@@ -153,10 +143,6 @@ const formatStrictDate = (dateString?: string) => {
 							<div class="flex items-center justify-between text-[0.92rem]">
 								<dt class="professionals-card-term">Teléfono</dt>
 								<dd class="professionals-card-value">{item.professional.phone_number || '-'}</dd>
-							</div>
-							<div class="flex items-center justify-between text-[0.92rem] mt-1">
-								<dt class="professionals-card-term text-[0.82rem]">Registro</dt>
-								<dd class="professionals-card-value text-[0.82rem] font-bold">{formatStrictDate(item.professional.created_at)}</dd>
 							</div>
 						</dl>
 					</div>
