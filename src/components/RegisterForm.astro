@@ -169,6 +169,7 @@ const currentStep = normalizeStep(step);
 						<div class="m3-field">
 							<label class="m3-label" for="business_name">Nombre de la Organización <span class="m3-label-required">*</span></label>
 							<input type="text" id="business_name" name="business_name" class:list={['m3-input', businessNameError && 'is-invalid']} placeholder="Ej: Clínica Dental San José" value={businessName} required />
+							<p class="m3-field-help">Este será el nombre de tu organización o como te verán las personas.</p>
 							{businessNameError && <span class="m3-field-error">{businessNameError}</span>}
 						</div>
 						<div class="m3-field">
@@ -199,24 +200,40 @@ const currentStep = normalizeStep(step);
 							</div>
 							{phoneError && <span class="m3-field-error">{phoneError}</span>}
 						</div>
-						<div class="m3-field">
+						<div class="m3-field" style="position: relative;">
 							<label class="m3-label" for="id_org_specialty">Especialidad de la organización <span class="m3-label-required">*</span></label>
-							<select
-								id="id_org_specialty"
-								name="id_org_specialty"
-								class:list={['m3-input', 'm3-select', orgSpecialtyIdError && 'is-invalid']}
-								required
-								disabled={orgSpecialties.length === 0}
-							>
-								<option value="" selected={orgSpecialtyId === ''}>
-									{orgSpecialties.length > 0 ? 'Selecciona una especialidad' : 'No hay especialidades disponibles'}
-								</option>
-								{orgSpecialties.map((specialty) => (
-									<option value={String(specialty.id_org_specialty)} selected={String(specialty.id_org_specialty) === orgSpecialtyId}>
-										{specialty.name}
-									</option>
-								))}
-							</select>
+							
+							<div class="m3-searchable-select" data-searchable-select>
+								<input type="hidden" name="id_org_specialty" id="id_org_specialty" value={orgSpecialtyId} required />
+								
+								<div class:list={['m3-input m3-select-trigger', orgSpecialtyIdError && 'is-invalid', orgSpecialties.length === 0 && 'is-disabled']} tabindex="0" data-select-trigger>
+									<span data-select-label>
+										{orgSpecialtyId 
+											? orgSpecialties.find(s => String(s.id_org_specialty) === orgSpecialtyId)?.name || 'Selecciona una especialidad'
+											: (orgSpecialties.length > 0 ? 'Selecciona una especialidad' : 'No hay especialidades disponibles')
+										}
+									</span>
+									<span class="material-symbols-rounded">expand_more</span>
+								</div>
+
+								<div class="m3-select-dropdown is-hidden" data-select-dropdown>
+									<div class="m3-select-search-box">
+										<span class="material-symbols-rounded">search</span>
+										<input type="text" class="m3-select-search" placeholder="Buscar especialidad..." data-select-search autocomplete="off" />
+									</div>
+									<ul class="m3-select-options" data-select-options>
+										<li class="m3-select-option" data-value="" data-selected={orgSpecialtyId === '' ? 'true' : 'false'}>
+											Selecciona una especialidad
+										</li>
+										{orgSpecialties.map((specialty) => (
+											<li class="m3-select-option" data-value={String(specialty.id_org_specialty)} data-selected={String(specialty.id_org_specialty) === orgSpecialtyId ? 'true' : 'false'}>
+												{specialty.name}
+											</li>
+										))}
+									</ul>
+								</div>
+							</div>
+
 							{specialtiesLoadError && <span class="m3-field-error">{specialtiesLoadError}</span>}
 							{orgSpecialtyIdError && <span class="m3-field-error">{orgSpecialtyIdError}</span>}
 						</div>
@@ -417,6 +434,92 @@ const currentStep = normalizeStep(step);
 			});
 		}
 
+		// Searchable Select Logic
+		const searchableSelects = form.querySelectorAll('[data-searchable-select]');
+		searchableSelects.forEach(selectContainer => {
+			const trigger = selectContainer.querySelector('[data-select-trigger]');
+			const dropdown = selectContainer.querySelector('[data-select-dropdown]');
+			const searchInput = selectContainer.querySelector('[data-select-search]');
+			const options = selectContainer.querySelectorAll('[data-select-options] .m3-select-option');
+			const hiddenInput = selectContainer.querySelector('input[type="hidden"]');
+			const label = selectContainer.querySelector('[data-select-label]');
+
+			const closeDropdown = () => {
+				dropdown.classList.add('is-hidden');
+				trigger.classList.remove('is-active');
+			};
+
+			const openDropdown = () => {
+				dropdown.classList.remove('is-hidden');
+				trigger.classList.add('is-active');
+				if (searchInput) {
+					searchInput.value = '';
+					searchInput.focus();
+					filterOptions('');
+				}
+			};
+
+			const filterOptions = (term) => {
+				const lowerTerm = term.toLowerCase();
+				options.forEach(opt => {
+					const text = opt.textContent.trim().toLowerCase();
+					if (text.includes(lowerTerm)) {
+						opt.style.display = 'block';
+					} else {
+						opt.style.display = 'none';
+					}
+				});
+			};
+
+			trigger?.addEventListener('click', (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				if (dropdown.classList.contains('is-hidden')) {
+					// Close any other open dropdowns
+					document.querySelectorAll('[data-select-dropdown]:not(.is-hidden)').forEach(d => d.classList.add('is-hidden'));
+					openDropdown();
+				} else {
+					closeDropdown();
+				}
+			});
+
+			searchInput?.addEventListener('input', (e) => {
+				filterOptions(e.target.value);
+			});
+
+			options.forEach(opt => {
+				opt.addEventListener('click', (e) => {
+					e.stopPropagation();
+					const value = opt.dataset.value;
+					const text = opt.textContent.trim();
+					
+					options.forEach(o => o.dataset.selected = 'false');
+					opt.dataset.selected = 'true';
+					
+					if (hiddenInput) hiddenInput.value = value;
+					if (label) label.textContent = text;
+					
+					closeDropdown();
+					
+					// Re-evaluate form validity
+					if (hiddenInput) {
+					    const event = new Event('change', { bubbles: true });
+					    hiddenInput.dispatchEvent(event);
+					}
+					
+					// Enable/disable finish button if needed
+					const submitBtn = form.querySelector('button[type="submit"]');
+					if (submitBtn) submitBtn.disabled = value === '';
+				});
+			});
+
+			document.addEventListener('click', (e) => {
+				if (!selectContainer.contains(e.target)) {
+					closeDropdown();
+				}
+			});
+		});
+
 		form.addEventListener('submit', () => {
 			if (orgPhoneInput instanceof HTMLInputElement) {
 				orgPhoneInput.value = toParaguayE164Phone(orgPhoneInput.value);
@@ -440,7 +543,7 @@ const currentStep = normalizeStep(step);
 	flex-direction: column;
 	min-height: 100svh;
 	font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
-	background-color: #f8fafc;
+	background-color: #050505;
 }
 
 @media (min-width: 1024px) {
@@ -453,7 +556,7 @@ const currentStep = normalizeStep(step);
 
 /* Left Sidebar - Dark/Premium Theme */
 .m3-sidebar {
-	background-color: #0f172a; /* Deep elegant slate */
+	background-color: #050505; /* Deep elegant slate */
 	color: #f8fafc;
 	padding: 2.5rem 1.5rem;
 	position: relative;
@@ -607,7 +710,7 @@ const currentStep = normalizeStep(step);
 /* Right Content - Clean Material 3 Surface */
 .m3-content {
 	flex: 1;
-	background-color: #ffffff;
+	background-color: #0a0a0a;
 	padding: 2.5rem 1.5rem;
 	display: flex;
 	align-items: center;
@@ -815,6 +918,95 @@ const currentStep = normalizeStep(step);
 
 .m3-input.is-invalid:focus {
 	box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.1);
+}
+
+.m3-searchable-select {
+	position: relative;
+	width: 100%;
+}
+
+.m3-select-trigger {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	cursor: pointer;
+	user-select: none;
+}
+
+.m3-select-trigger.is-disabled {
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+.m3-select-dropdown {
+	position: absolute;
+	top: calc(100% + 0.5rem);
+	left: 0;
+	right: 0;
+	background-color: #121212;
+	border: 1px solid #262626;
+	border-radius: 0.75rem;
+	z-index: 100;
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	max-height: 250px;
+}
+
+.m3-select-dropdown.is-hidden {
+	display: none;
+}
+
+.m3-select-search-box {
+	display: flex;
+	align-items: center;
+	padding: 0.75rem;
+	border-bottom: 1px solid #262626;
+	background-color: #0a0a0a;
+}
+
+.m3-select-search-box .material-symbols-rounded {
+	color: #64748b;
+	font-size: 1.25rem;
+	margin-right: 0.5rem;
+}
+
+.m3-select-search {
+	flex: 1;
+	background: transparent;
+	border: none;
+	color: #f8fafc;
+	font-size: 0.95rem;
+	outline: none;
+	font-family: inherit;
+}
+
+.m3-select-options {
+	list-style: none;
+	margin: 0;
+	padding: 0.5rem;
+	overflow-y: auto;
+}
+
+.m3-select-option {
+	padding: 0.65rem 1rem;
+	border-radius: 0.5rem;
+	cursor: pointer;
+	color: #cbd5e1;
+	font-size: 0.95rem;
+	transition: background-color 0.2s, color 0.2s;
+}
+
+.m3-select-option:hover {
+	background-color: #1e293b;
+	color: #f8fafc;
+}
+
+.m3-select-option[data-selected="true"] {
+	background-color: rgba(37, 99, 235, 0.15);
+	color: #3b82f6;
+	font-weight: 600;
 }
 
 .m3-input-affix {

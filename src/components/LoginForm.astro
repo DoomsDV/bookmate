@@ -53,8 +53,8 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 				
 			</div>
 
-			<div class="m3-form-header">
-				<div class="m3-panel-icon">
+			<div class="m3-form-header" style="flex-direction: column; text-align: center; gap: 1rem;">
+				<div class="m3-panel-icon" style="margin: 0 auto;">
 					<span class="material-symbols-rounded">lock</span>
 				</div>
 				<div class="m3-panel-titles">
@@ -81,7 +81,7 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
                             id="identifier" 
                             name="identifier" 
                             class:list={['m3-input', identifierError && 'is-invalid']} 
-                            placeholder="Ej: admin@empresa.com" 
+                            placeholder="Ej: admin o juan@correo.com" 
                             value={identifier} 
                             required 
                         />
@@ -165,7 +165,7 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 	flex-direction: column;
 	min-height: 100svh;
 	font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
-	background-color: #f8fafc;
+	background-color: #050505;
 }
 
 @media (min-width: 1024px) {
@@ -178,7 +178,7 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 
 /* Left Sidebar - Dark/Premium Theme */
 .m3-sidebar {
-	background-color: #0f172a; /* Deep elegant slate */
+	background-color: #050505; /* Deep elegant slate */
 	color: #f8fafc;
 	padding: 2.5rem 1.5rem;
 	position: relative;
@@ -290,7 +290,7 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 /* Right Content - Clean Material 3 Surface */
 .m3-content {
 	flex: 1;
-	background-color: #ffffff;
+	background-color: #0a0a0a;
 	padding: 2.5rem 1.5rem;
 	display: flex;
 	align-items: center;

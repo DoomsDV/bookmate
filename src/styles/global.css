@@ -680,18 +680,18 @@ html[data-theme='dark'] .modal-action-danger:hover {
 /* Auth dark mode overrides.
    Keeps the existing split layout, only replacing the light form surface. */
 .m3-container.auth-dark {
-	background-color: #0f172a;
+	background-color: #050505;
 }
 
 .m3-container.auth-dark .m3-content {
 	background:
-		radial-gradient(circle at 50% 18%, rgba(37, 99, 235, 0.11), transparent 34%),
-		#0b1120;
+		radial-gradient(circle at 50% 18%, rgba(37, 99, 235, 0.08), transparent 34%),
+		#0a0a0a;
 }
 
 @media (min-width: 1024px) {
 	.m3-container.auth-dark .m3-content {
-		box-shadow: -10px 0 30px rgba(0, 0, 0, 0.2);
+		box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4);
 	}
 }
 
@@ -717,10 +717,10 @@ html[data-theme='dark'] .modal-action-danger:hover {
 
 .m3-container.auth-dark .m3-input,
 .m3-container.auth-dark .m3-select {
-	background-color: #111827;
-	border-color: #334155;
+	background-color: #121212;
+	border-color: #262626;
 	color: #f8fafc;
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
 }
 
 .m3-container.auth-dark .m3-input::placeholder {
@@ -729,7 +729,7 @@ html[data-theme='dark'] .modal-action-danger:hover {
 
 .m3-container.auth-dark .m3-input:focus,
 .m3-container.auth-dark .m3-select:focus {
-	background-color: #0f172a;
+	background-color: #0a0a0a;
 	border-color: #3b82f6;
 	box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
 }
@@ -758,13 +758,13 @@ html[data-theme='dark'] .modal-action-danger:hover {
 }
 
 .m3-container.auth-dark .m3-checkbox-box {
-	background-color: #111827;
-	border-color: #475569;
+	background-color: #121212;
+	border-color: #334155;
 }
 
 .m3-container.auth-dark .m3-footer-divider,
 .m3-container.auth-dark .m3-password-strength-segment {
-	background: #334155;
+	background: #262626;
 }
 
 .m3-container.auth-dark .m3-actions {
@@ -772,8 +772,8 @@ html[data-theme='dark'] .modal-action-danger:hover {
 }
 
 .m3-container.auth-dark .m3-phone-prefix {
-	background-color: #0f172a;
-	border-color: #334155;
+	background-color: #121212;
+	border-color: #262626;
 	color: #cbd5e1;
 }
 
@@ -793,7 +793,7 @@ html[data-theme='dark'] .modal-action-danger:hover {
 }
 
 .m3-container.auth-dark .m3-select:disabled {
-	background-color: #111827;
+	background-color: #121212;
 	color: #64748b;
 }
 
