@@ -31,8 +31,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 								) : (
 									<div class="grid gap-4 sm:gap-5">
 										<header class="flex flex-col justify-between gap-3 sm:flex-row sm:items-end sm:gap-4">
-											<div class="grid gap-1">
-												<h1 class="text-[1.3rem] font-extrabold text-(--on-surface)">
+											<div class="grid gap-2">
+												<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
 													Clientes
 												</h1>
 												<p class="text-[0.95rem] text-(--on-surface-variant) leading-relaxed">
@@ -70,29 +70,42 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 										</div>
 
 										<div
-											class="hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-8 text-center text-[0.95rem] font-semibold text-(--on-surface-variant)"
+											class="hidden customers-empty-state"
 											data-customers-empty
 										>
-											No hay clientes para mostrar con el filtro seleccionado.
+											<div class="customers-empty-icon">
+												<span class="material-symbols-rounded text-[2rem]">inbox</span>
+											</div>
+											<h2 class="text-[1.1rem] font-bold text-(--on-surface)">No hay clientes registrados</h2>
+											<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
+												No hay clientes para mostrar con el filtro seleccionado.
+											</p>
 										</div>
 
-										<div class="customers-grid" data-customers-grid></div>
+										<div class="customers-grid material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-customers-grid></div>
 
-										<div class="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
-											<p class="text-center text-[0.88rem] font-bold text-(--on-surface-variant) sm:text-left" data-customers-page-label>
-												Pagina 1 de 1
+										<div class="app-pagination">
+											<p class="app-pagination__summary" data-customers-page-label>
+												Pagina <strong>1</strong> de <strong>1</strong>
+												<span aria-hidden="true">-</span>
+												Total: <strong>0</strong> clientes
 											</p>
 
-											<div class="grid grid-cols-2 gap-2 sm:flex sm:items-center">
-												<button type="button" class="customers-page-btn" data-customers-prev>
-													<span class="material-symbols-rounded text-[1.1rem]">chevron_left</span>
-													Anterior
+											<nav class="app-pagination__controls" aria-label="Paginacion clientes">
+												<button type="button" class="app-pagination__icon-button" data-customers-prev aria-label="Pagina anterior">
+													<svg viewBox="0 0 24 24" aria-hidden="true">
+														<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
+													</svg>
 												</button>
-												<button type="button" class="customers-page-btn" data-customers-next>
-													Siguiente
-													<span class="material-symbols-rounded text-[1.1rem]">chevron_right</span>
+
+												<span class="app-pagination__current" aria-current="page" data-customers-current-page>1</span>
+
+												<button type="button" class="app-pagination__icon-button" data-customers-next aria-label="Pagina siguiente">
+													<svg viewBox="0 0 24 24" aria-hidden="true">
+														<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
+													</svg>
 												</button>
-											</div>
+											</nav>
 										</div>
 									</div>
 								)
@@ -117,115 +130,117 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	.customers-grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
-		gap: 1rem;
+		align-items: stretch;
+	}
+
+	.customers-empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		border-radius: 1.35rem;
+		border: 1px solid rgba(148, 163, 184, 0.24);
+		background: color-mix(in srgb, var(--surface-container-low) 72%, var(--surface-bright) 28%);
+		padding: 2.5rem 1.25rem;
+		text-align: center;
+	}
+
+	.customers-empty-state.hidden {
+		display: none;
+	}
+
+	.customers-empty-icon {
+		margin-bottom: 1rem;
+		display: flex;
+		height: 4rem;
+		width: 4rem;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+		color: var(--on-surface-variant);
 	}
 
 	.customer-card {
-		position: relative;
 		display: flex;
-		min-width: 0;
-		gap: 0.9rem;
-		border: 1px solid #cbd5e1;
-		border-radius: 1rem;
-		background: #ffffff;
-		padding: 1rem;
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+		flex-direction: column;
+		gap: 0.95rem;
+		border-radius: 1.2rem;
+		border: 0;
+		background: color-mix(in srgb, var(--surface-container-low) 76%, var(--surface-bright) 24%);
+		padding: 1.45rem 1.5rem 1.55rem;
+		box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
 	}
 
 	.customer-card-icon {
 		display: inline-flex;
-		width: 2.75rem;
 		height: 2.75rem;
+		width: 2.75rem;
 		flex-shrink: 0;
 		align-items: center;
 		justify-content: center;
-		border-radius: 999px;
-		background: var(--primary-soft);
+		border-radius: 0.85rem;
+		background: color-mix(in srgb, var(--primary) 15%, transparent);
 		color: var(--primary);
+	}
+
+	.customer-card-body {
+		display: grid;
+		gap: 0.85rem;
+		min-width: 0;
 	}
 
 	.customer-card-title {
 		margin: 0;
-		max-width: calc(100% - 3.6rem);
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
-		font-size: 1rem;
-		font-weight: 850;
-		line-height: 1.25;
+		font-size: 1.1rem;
+		font-weight: 760;
+		line-height: 1.3;
 		color: var(--on-surface);
 	}
 
-	.customer-card-badge {
-		position: absolute;
-		right: 0.85rem;
-		top: 0.85rem;
-		border-radius: 999px;
-		background: var(--surface-container-high);
-		padding: 0.2rem 0.5rem;
-		font-size: 0.72rem;
-		font-weight: 800;
-		color: var(--on-surface-variant);
-	}
-
-	.customer-card-details {
-		margin: 0.85rem 0 0;
-		display: grid;
-		gap: 0.55rem;
-	}
-
-	.customer-card-detail {
-		display: grid;
-		gap: 0.15rem;
-	}
-
-	.customer-card-detail dt {
-		font-size: 0.72rem;
-		font-weight: 800;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		color: var(--on-surface-variant);
-	}
-
-	.customer-card-detail dd {
+	.customer-card-metrics {
 		margin: 0;
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.customer-card-term {
+		color: var(--on-surface-variant);
+		font-weight: 500;
+	}
+
+	.customer-card-value {
+		min-width: 0;
 		overflow-wrap: anywhere;
-		font-size: 0.92rem;
+		text-align: right;
 		font-weight: 700;
-		color: var(--on-surface);
+		color: color-mix(in srgb, var(--on-surface-variant) 74%, var(--on-surface) 26%);
 	}
 
-	.customers-page-btn {
-		display: inline-flex;
-		min-height: 2.65rem;
-		align-items: center;
-		justify-content: center;
-		gap: 0.35rem;
-		border-radius: 999px;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright);
-		padding: 0.65rem 1rem;
-		font-size: 0.88rem;
-		font-weight: 800;
-		color: var(--on-surface);
-		transition: background-color 140ms ease, border-color 140ms ease, opacity 140ms ease;
+	html[data-theme='dark'] .customers-empty-state {
+		border-color: rgba(255, 255, 255, 0.08);
+		background: color-mix(
+			in srgb,
+			var(--surface-container-low, #1e1f22) 82%,
+			var(--surface-container, #131314) 18%
+		);
 	}
 
-	.customers-page-btn:hover {
-		background: var(--surface-container-high);
-		border-color: color-mix(in srgb, var(--shell-border) 70%, var(--on-surface-variant) 30%);
-	}
-
-	.customers-page-btn:disabled {
-		cursor: not-allowed;
-		opacity: 0.55;
+	html[data-theme='dark'] .customers-empty-icon {
+		background: rgba(255, 255, 255, 0.05);
+		color: var(--on-surface-variant);
 	}
 
 	html[data-theme='dark'] .customer-card {
-		border-color: var(--shell-border);
-		background: var(--sidebar-surface);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		background: var(--surface-container, #1e1f22);
 		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .customer-card-value {
+		color: color-mix(in srgb, var(--on-surface-variant) 86%, #d1d5db 14%);
 	}
 </style>

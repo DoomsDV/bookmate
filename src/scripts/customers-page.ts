@@ -46,6 +46,7 @@ class CustomerManager extends HTMLElement {
 	private gridNode: HTMLElement | null = null;
 	private emptyNode: HTMLElement | null = null;
 	private pageLabelNode: HTMLElement | null = null;
+	private currentPageNode: HTMLElement | null = null;
 	private prevButton: HTMLButtonElement | null = null;
 	private nextButton: HTMLButtonElement | null = null;
 
@@ -61,6 +62,7 @@ class CustomerManager extends HTMLElement {
 		this.gridNode = this.querySelector<HTMLElement>('[data-customers-grid]');
 		this.emptyNode = this.querySelector<HTMLElement>('[data-customers-empty]');
 		this.pageLabelNode = this.querySelector<HTMLElement>('[data-customers-page-label]');
+		this.currentPageNode = this.querySelector<HTMLElement>('[data-customers-current-page]');
 		this.prevButton = this.querySelector<HTMLButtonElement>('[data-customers-prev]');
 		this.nextButton = this.querySelector<HTMLButtonElement>('[data-customers-next]');
 
@@ -162,11 +164,14 @@ class CustomerManager extends HTMLElement {
 			this.nextButton.disabled =
 				this.isLoading || this.totalRecords === 0 || this.page >= this.totalPages;
 		}
+		this.prevButton?.classList.toggle('is-disabled', Boolean(this.prevButton.disabled));
+		this.nextButton?.classList.toggle('is-disabled', Boolean(this.nextButton.disabled));
 
 		if (this.pageLabelNode) {
 			const totalPages = Math.max(1, this.totalPages);
-			this.pageLabelNode.textContent = `Pagina ${this.page} de ${totalPages}`;
+			this.pageLabelNode.innerHTML = `Pagina <strong>${this.page}</strong> de <strong>${totalPages}</strong> <span aria-hidden="true">-</span> Total: <strong>${this.totalRecords}</strong> clientes`;
 		}
+		if (this.currentPageNode) this.currentPageNode.textContent = String(this.page);
 	}
 
 	private renderProfessionalOptions() {
@@ -216,51 +221,53 @@ class CustomerManager extends HTMLElement {
 		const fragment = document.createDocumentFragment();
 		for (const customer of customers) {
 			const article = document.createElement('article');
-			article.className = 'customer-card';
+			article.className = 'customer-card group';
+
+			const topRow = document.createElement('div');
+			topRow.className = 'flex items-start';
 
 			const iconWrap = document.createElement('div');
 			iconWrap.className = 'customer-card-icon';
-			iconWrap.innerHTML = '<span class="material-symbols-rounded">person</span>';
+			iconWrap.innerHTML = '<span class="material-symbols-rounded text-[1.25rem]">person</span>';
+
+			topRow.append(iconWrap);
 
 			const body = document.createElement('div');
-			body.className = 'min-w-0 flex-1';
+			body.className = 'customer-card-body';
 
-			const name = document.createElement('h2');
+			const name = document.createElement('h3');
 			name.className = 'customer-card-title';
 			name.textContent = customer.full_name || `Cliente #${customer.id_customer}`;
 
-			const details = document.createElement('dl');
-			details.className = 'customer-card-details';
-			details.append(
-				this.createDetail('Telefono', customer.phone_number || '-'),
-				this.createDetail('Registrado', this.formatDate(customer.created_at))
+			const metrics = document.createElement('dl');
+			metrics.className = 'customer-card-metrics';
+			metrics.append(
+				this.createMetricRow('Telefono', customer.phone_number || '-'),
+				this.createMetricRow('Registrado', this.formatDate(customer.created_at))
 			);
 
-			body.append(name, details);
-
-			const badge = document.createElement('span');
-			badge.className = 'customer-card-badge';
-			badge.textContent = `#${customer.id_customer}`;
-
-			article.append(iconWrap, body, badge);
+			body.append(name, metrics);
+			article.append(topRow, body);
 			fragment.appendChild(article);
 		}
 
 		this.gridNode.appendChild(fragment);
 	}
 
-	private createDetail(label: string, value: string) {
-		const wrap = document.createElement('div');
-		wrap.className = 'customer-card-detail';
+	private createMetricRow(label: string, value: string) {
+		const row = document.createElement('div');
+		row.className = 'flex items-center justify-between text-[0.92rem]';
 
 		const term = document.createElement('dt');
+		term.className = 'customer-card-term';
 		term.textContent = label;
 
 		const description = document.createElement('dd');
+		description.className = 'customer-card-value';
 		description.textContent = value;
 
-		wrap.append(term, description);
-		return wrap;
+		row.append(term, description);
+		return row;
 	}
 
 	private renderSummary() {
