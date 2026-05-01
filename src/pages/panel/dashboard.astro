@@ -1,6 +1,7 @@
 ﻿---
 import SideNav from '../../components/SideNav.astro';
 import AppAlert from '../../components/AppAlert.astro';
+import AiChatPanel from '../../components/AiChatPanel.astro';
 import TopBar from '../../components/TopBar.astro';
 import { DashboardApiError, getMainDashboardWithOrds, type DashboardMainData } from '../../lib/dashboard';
 import Layout from '../../layouts/Layout.astro';
@@ -196,8 +197,8 @@ const formatUpcomingAppointmentDate = (value: string) => {
 											<button
 												type="button"
 												class="dashboard-ai-action-btn inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2"
-												aria-label="Asistente IA (próximamente)"
-												title="Próximamente"
+												aria-label="Abrir Asistente IA"
+												data-open-ai-chat
 											>
 												<span class="dashboard-ai-action-icon material-symbols-rounded text-[1.05rem]">auto_awesome</span>
 												<span class="dashboard-ai-action-label text-sm font-semibold">Asistente IA</span>
@@ -324,6 +325,7 @@ const formatUpcomingAppointmentDate = (value: string) => {
 			</div>
 		</div>
 	</div>
+	<AiChatPanel />
 	<AppAlert />
 </Layout>
 
