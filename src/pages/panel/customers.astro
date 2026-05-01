@@ -1,0 +1,231 @@
+---
+import AppAlert from '../../components/AppAlert.astro';
+import FlashMessage from '../../components/FlashMessage.astro';
+import SideNav from '../../components/SideNav.astro';
+import TopBar from '../../components/TopBar.astro';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
+
+const token = Astro.locals.token ?? '';
+const initialLoadError = token ? '' : 'No hay sesion valida para consultar clientes.';
+---
+
+<Layout>
+	<customer-manager>
+		<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
+			<div
+				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
+				data-app-shell
+				data-sidebar-state="expanded"
+			>
+				<SideNav currentPath={Astro.url.pathname} />
+
+				<div class="grid min-h-full grid-rows-[auto_1fr]">
+					<TopBar />
+
+					<main class="px-4 py-4 sm:px-6 sm:py-6">
+						<section class="grid gap-4 sm:gap-5">
+							{
+								initialLoadError ? (
+									<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
+								) : (
+									<div class="grid gap-4 sm:gap-5">
+										<header class="flex flex-col justify-between gap-3 sm:flex-row sm:items-end sm:gap-4">
+											<div class="grid gap-1">
+												<h1 class="text-[1.3rem] font-extrabold text-(--on-surface)">
+													Clientes
+												</h1>
+												<p class="text-[0.95rem] text-(--on-surface-variant) leading-relaxed">
+													Consulta los clientes registrados y filtralos por profesional.
+												</p>
+											</div>
+
+											<div class="rounded-full border border-(--shell-border) bg-(--surface-bright) px-4 py-2 text-[0.88rem] font-extrabold text-(--on-surface)">
+												<span data-customers-summary>0 clientes</span>
+											</div>
+										</header>
+
+										<div class="grid gap-3 sm:max-w-xl">
+											<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+												Profesional
+												<select
+													data-professional-filter
+													class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+												>
+													<option value="">Todos los profesionales</option>
+												</select>
+											</label>
+										</div>
+
+										<div
+											class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
+											data-customers-error
+										></div>
+
+										<div
+											class="hidden rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-medium text-(--on-surface-variant)"
+											data-customers-loading
+										>
+											Cargando clientes...
+										</div>
+
+										<div
+											class="hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-8 text-center text-[0.95rem] font-semibold text-(--on-surface-variant)"
+											data-customers-empty
+										>
+											No hay clientes para mostrar con el filtro seleccionado.
+										</div>
+
+										<div class="customers-grid" data-customers-grid></div>
+
+										<div class="flex flex-col items-stretch justify-between gap-3 sm:flex-row sm:items-center">
+											<p class="text-center text-[0.88rem] font-bold text-(--on-surface-variant) sm:text-left" data-customers-page-label>
+												Pagina 1 de 1
+											</p>
+
+											<div class="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+												<button type="button" class="customers-page-btn" data-customers-prev>
+													<span class="material-symbols-rounded text-[1.1rem]">chevron_left</span>
+													Anterior
+												</button>
+												<button type="button" class="customers-page-btn" data-customers-next>
+													Siguiente
+													<span class="material-symbols-rounded text-[1.1rem]">chevron_right</span>
+												</button>
+											</div>
+										</div>
+									</div>
+								)
+							}
+						</section>
+					</main>
+				</div>
+			</div>
+		</div>
+	</customer-manager>
+
+	<AppAlert />
+</Layout>
+
+<script>
+	import '../../scripts/customers-page';
+</script>
+
+<style is:global>
+	customer-manager {
+		display: block;
+	}
+
+	.customers-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(min(100%, 18rem), 1fr));
+		gap: 1rem;
+	}
+
+	.customer-card {
+		position: relative;
+		display: flex;
+		min-width: 0;
+		gap: 0.9rem;
+		border: 1px solid #cbd5e1;
+		border-radius: 1rem;
+		background: #ffffff;
+		padding: 1rem;
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+	}
+
+	.customer-card-icon {
+		display: inline-flex;
+		width: 2.75rem;
+		height: 2.75rem;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		background: var(--primary-soft);
+		color: var(--primary);
+	}
+
+	.customer-card-title {
+		margin: 0;
+		max-width: calc(100% - 3.6rem);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 1rem;
+		font-weight: 850;
+		line-height: 1.25;
+		color: var(--on-surface);
+	}
+
+	.customer-card-badge {
+		position: absolute;
+		right: 0.85rem;
+		top: 0.85rem;
+		border-radius: 999px;
+		background: var(--surface-container-high);
+		padding: 0.2rem 0.5rem;
+		font-size: 0.72rem;
+		font-weight: 800;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-card-details {
+		margin: 0.85rem 0 0;
+		display: grid;
+		gap: 0.55rem;
+	}
+
+	.customer-card-detail {
+		display: grid;
+		gap: 0.15rem;
+	}
+
+	.customer-card-detail dt {
+		font-size: 0.72rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-card-detail dd {
+		margin: 0;
+		overflow-wrap: anywhere;
+		font-size: 0.92rem;
+		font-weight: 700;
+		color: var(--on-surface);
+	}
+
+	.customers-page-btn {
+		display: inline-flex;
+		min-height: 2.65rem;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.65rem 1rem;
+		font-size: 0.88rem;
+		font-weight: 800;
+		color: var(--on-surface);
+		transition: background-color 140ms ease, border-color 140ms ease, opacity 140ms ease;
+	}
+
+	.customers-page-btn:hover {
+		background: var(--surface-container-high);
+		border-color: color-mix(in srgb, var(--shell-border) 70%, var(--on-surface-variant) 30%);
+	}
+
+	.customers-page-btn:disabled {
+		cursor: not-allowed;
+		opacity: 0.55;
+	}
+
+	html[data-theme='dark'] .customer-card {
+		border-color: var(--shell-border);
+		background: var(--sidebar-surface);
+		box-shadow: none;
+	}
+</style>

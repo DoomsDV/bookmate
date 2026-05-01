@@ -57,6 +57,7 @@ interface ImportMetaEnv {
     readonly ORDS_PROFESSIONALS_SLUG_SUGGEST_URL?: string;
     readonly ORDS_APPOINTMENTS_URL?: string;
     readonly ORDS_APPOINTMENTS_CALENDAR_URL?: string;
+    readonly ORDS_CUSTOMERS_URL?: string;
     readonly ORDS_DAYS_URL?: string;
     readonly ORDS_PROFESSIONALS_LOV_URL?: string;
     readonly ORDS_LOCATIONS_LOV_URL?: string;

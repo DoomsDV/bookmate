@@ -8,6 +8,7 @@ export type RoleId = (typeof ROLES)[keyof typeof ROLES];
 
 const ALL_ROLES: readonly RoleId[] = [ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.PROFESIONAL];
 const MANAGER_ROLES: readonly RoleId[] = [ROLES.ADMIN, ROLES.RECEPCIONISTA];
+const CUSTOMER_ROLES: readonly RoleId[] = [ROLES.ADMIN, ROLES.PROFESIONAL];
 
 type RouteMatchType = 'exact' | 'prefix';
 
@@ -21,6 +22,7 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/panel', roles: ALL_ROLES },
 	{ path: '/panel/dashboard', roles: ALL_ROLES },
 	{ path: '/panel/calendar', roles: ALL_ROLES },
+	{ path: '/panel/customers', roles: CUSTOMER_ROLES },
 	{ path: '/calendar', roles: ALL_ROLES },
 	{ path: '/panel/services', roles: MANAGER_ROLES },
 	{ path: '/panel/locations', roles: MANAGER_ROLES },
@@ -29,6 +31,7 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/panel/schedules', roles: ALL_ROLES },
 
 	{ path: '/api/appointments', roles: ALL_ROLES, match: 'prefix' },
+	{ path: '/api/customers', roles: CUSTOMER_ROLES, match: 'prefix' },
 	{ path: '/api/schedules', roles: ALL_ROLES, match: 'prefix' },
 	{ path: '/api/services', roles: MANAGER_ROLES, match: 'prefix' },
 	{ path: '/api/locations', roles: MANAGER_ROLES, match: 'prefix' },
