@@ -384,14 +384,67 @@ const formatUpcomingAppointmentDate = (value: string) => {
 		payload: TeamOverviewPayload;
 	}
 
+	type AiSummarySlot = 'morning' | 'evening';
+
+	interface AiSummaryCache {
+		dateKey: string;
+		slot: AiSummarySlot;
+		summary: string;
+		savedAt: number;
+	}
+
 	const TEAM_OVERVIEW_CACHE_KEY = 'hasel:dashboard-team-overview:v1';
 	const TEAM_OVERVIEW_TTL_MS = 120000;
 	const TEAM_OVERVIEW_LIMIT = 4;
 	const TEAM_AVATAR_FALLBACK_PALETTE = ['#2563eb', '#0f766e', '#be185d', '#7c3aed'];
+	const AI_SUMMARY_CACHE_KEY = 'hasel:dashboard-ai-summary:v1';
+	const AI_SUMMARY_EVENING_HOUR = 17;
 	const DEFAULT_AI_SUMMARY_TEXT = '¡Buen día! Preparate para una excelente jornada de trabajo.';
 
 	const toRecord = (value: unknown): Record<string, unknown> =>
 		typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
+
+	const padDatePart = (value: number): string => String(value).padStart(2, '0');
+
+	const getLocalDateKey = (date = new Date()): string =>
+		`${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`;
+
+	const getAiSummarySlot = (date = new Date()): AiSummarySlot =>
+		date.getHours() >= AI_SUMMARY_EVENING_HOUR ? 'evening' : 'morning';
+
+	const readAiSummaryCache = (dateKey: string, slot: AiSummarySlot): string | null => {
+		try {
+			const rawCache = window.localStorage.getItem(AI_SUMMARY_CACHE_KEY);
+			if (!rawCache) return null;
+
+			const parsed = JSON.parse(rawCache) as Partial<AiSummaryCache>;
+			if (parsed?.dateKey !== dateKey || parsed?.slot !== slot) {
+				return null;
+			}
+
+			const summary = sanitizeAiSummary(parsed?.summary);
+			return summary || null;
+		} catch {
+			return null;
+		}
+	};
+
+	const saveAiSummaryCache = (dateKey: string, slot: AiSummarySlot, summary: string) => {
+		const cleanSummary = sanitizeAiSummary(summary);
+		if (!cleanSummary) return;
+
+		try {
+			const cacheEntry: AiSummaryCache = {
+				dateKey,
+				slot,
+				summary: cleanSummary,
+				savedAt: Date.now(),
+			};
+			window.localStorage.setItem(AI_SUMMARY_CACHE_KEY, JSON.stringify(cacheEntry));
+		} catch {
+			// Ignore storage errors (private mode, quota, or blocked storage).
+		}
+	};
 
 	const toNonNegativeInt = (value: unknown, fallback = 0): number => {
 		const parsed = Number(value);
@@ -630,6 +683,15 @@ const formatUpcomingAppointmentDate = (value: string) => {
 			await streamSummaryTokens(textNode, summaryText);
 		};
 
+		const todayKey = getLocalDateKey();
+		const currentSlot = getAiSummarySlot();
+		const cachedSummary = readAiSummaryCache(todayKey, currentSlot);
+
+		if (cachedSummary) {
+			await revealSummary(cachedSummary);
+			return;
+		}
+
 		try {
 			const response = await fetch('/api/dashboard/ai-summary', {
 				headers: { Accept: 'application/json' },
@@ -645,8 +707,10 @@ const formatUpcomingAppointmentDate = (value: string) => {
 				throw new Error('El resumen IA no está disponible en este momento.');
 			}
 
+			saveAiSummaryCache(todayKey, currentSlot, summary);
 			await revealSummary(summary);
 		} catch {
+			saveAiSummaryCache(todayKey, currentSlot, fallbackSummary);
 			await revealSummary(fallbackSummary);
 		}
 	};

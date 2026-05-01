@@ -62,6 +62,7 @@ type RequiredNodes = {
 	pickerYearSelect: HTMLSelectElement;
 	pickerPrevMonthButton: HTMLButtonElement;
 	pickerNextMonthButton: HTMLButtonElement;
+	pickerCloseButton: HTMLButtonElement;
 	pickerDaysGrid: HTMLElement;
 	pickerHourSelect: HTMLSelectElement;
 	pickerMinuteSelect: HTMLSelectElement;
@@ -119,6 +120,7 @@ class AppointmentModal extends HTMLElement {
 	pickerYearSelect: HTMLSelectElement | null = null;
 	pickerPrevMonthButton: HTMLButtonElement | null = null;
 	pickerNextMonthButton: HTMLButtonElement | null = null;
+	pickerCloseButton: HTMLButtonElement | null = null;
 	pickerDaysGrid: HTMLElement | null = null;
 	pickerHourSelect: HTMLSelectElement | null = null;
 	pickerMinuteSelect: HTMLSelectElement | null = null;
@@ -184,6 +186,8 @@ class AppointmentModal extends HTMLElement {
 			this.form?.querySelector<HTMLButtonElement>('[data-picker-prev-month]') ?? null;
 		this.pickerNextMonthButton =
 			this.form?.querySelector<HTMLButtonElement>('[data-picker-next-month]') ?? null;
+		this.pickerCloseButton =
+			this.form?.querySelector<HTMLButtonElement>('[data-picker-close]') ?? null;
 		this.pickerDaysGrid = this.form?.querySelector<HTMLElement>('[data-picker-days-grid]') ?? null;
 		this.pickerHourSelect =
 			this.form?.querySelector<HTMLSelectElement>('[data-picker-hour-select]') ?? null;
@@ -230,6 +234,7 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.pickerYearSelect.addEventListener('change', this.handlePickerYearChange, { signal });
 		requiredNodes.pickerPrevMonthButton.addEventListener('click', this.handlePrevMonth, { signal });
 		requiredNodes.pickerNextMonthButton.addEventListener('click', this.handleNextMonth, { signal });
+		requiredNodes.pickerCloseButton.addEventListener('click', this.closeDateTimePicker, { signal });
 		requiredNodes.pickerHourSelect.addEventListener('change', this.handlePickerTimeChange, { signal });
 		requiredNodes.pickerMinuteSelect.addEventListener('change', this.handlePickerTimeChange, { signal });
 		requiredNodes.pickerCancelButton.addEventListener('click', this.handlePickerToday, { signal });
@@ -391,6 +396,7 @@ class AppointmentModal extends HTMLElement {
 			!this.pickerYearSelect ||
 			!this.pickerPrevMonthButton ||
 			!this.pickerNextMonthButton ||
+			!this.pickerCloseButton ||
 			!this.pickerDaysGrid ||
 			!this.pickerHourSelect ||
 			!this.pickerMinuteSelect ||
@@ -426,6 +432,7 @@ class AppointmentModal extends HTMLElement {
 			pickerYearSelect: this.pickerYearSelect,
 			pickerPrevMonthButton: this.pickerPrevMonthButton,
 			pickerNextMonthButton: this.pickerNextMonthButton,
+			pickerCloseButton: this.pickerCloseButton,
 			pickerDaysGrid: this.pickerDaysGrid,
 			pickerHourSelect: this.pickerHourSelect,
 			pickerMinuteSelect: this.pickerMinuteSelect,

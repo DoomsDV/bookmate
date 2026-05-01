@@ -171,43 +171,60 @@ const toPageHref = (page: number) => {
 			<div class="flex-1 px-7 py-7">
 			<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 mb-5 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
 
-			<!-- Sección del Avatar Superior -->
-			<div class="mb-5 sm:mb-7 flex flex-col sm:flex-row items-center sm:items-start gap-3.5 sm:gap-6 rounded-[1.2rem] sm:rounded-[1.4rem] border border-(--shell-border) bg-(--surface) p-3.5 sm:p-5 shadow-sm">
-				<div class="relative shrink-0 size-18 sm:size-24 rounded-full overflow-hidden border-2 sm:border-4 border-(--surface-bright) shadow-[0_3px_10px_rgba(0,0,0,0.08)] bg-(--surface-variant)">
+			<div class="profile-photo-uploader mb-5 sm:mb-7" data-profile-upload-dropzone>
+				<div class="profile-photo-uploader__avatar">
 					<img src="" alt="Vista previa" class="absolute inset-0 hidden h-full w-full rounded-full object-cover object-center" data-profile-preview />
 					<div class="absolute inset-0 grid place-items-center" data-profile-placeholder>
-						<span class="material-symbols-rounded text-[2rem] sm:text-[2.5rem] text-(--on-surface-variant)">account_circle</span>
+						<span class="material-symbols-rounded text-[2rem] sm:text-[2.5rem]">account_circle</span>
 					</div>
 				</div>
-				<div class="flex-1 text-center sm:text-left flex flex-col justify-center h-full pt-0 sm:pt-1">
-					<h3 class="text-[1rem] sm:text-[1.05rem] font-bold text-(--on-surface)">Foto de perfil</h3>
-					<p class="text-[0.82rem] sm:text-[0.85rem] text-(--on-surface-variant) mt-0.5 mb-2.5 sm:mb-3 leading-snug">Sube una imagen representativa. Solo formatos JPG o PNG.</p>
-					<div>
-						<label for="file-upload" class="inline-flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-(--surface-bright) border border-(--shell-border) px-3.5 sm:px-4 py-2 text-sm font-bold text-(--on-surface) shadow-sm transition hover:bg-(--surface-variant) focus-within:ring-2 focus-within:ring-(--primary) focus-within:ring-offset-2 focus-within:ring-offset-(--surface)">
-							<span class="material-symbols-rounded text-[1.2rem] text-(--primary)">upload</span>
+				<div class="profile-photo-uploader__content">
+					<div class="profile-photo-uploader__copy">
+						<h3>Foto de perfil</h3>
+						<p>Arrastra una imagen o selecciona un archivo JPG o PNG.</p>
+					</div>
+					<div class="profile-photo-uploader__actions">
+						<label for="file-upload" class="profile-photo-uploader__button">
+							<span class="material-symbols-rounded text-[1.2rem]">add_photo_alternate</span>
 							<span data-image-file-name>Cambiar foto</span>
 							<input id="file-upload" name="profile_image" type="file" class="sr-only" accept=".jpg,.jpeg,.png" />
 						</label>
+						<span class="profile-photo-uploader__meta">Máximo recomendado: 2 MB.</span>
 					</div>
-					<div class="hidden mt-2 text-xs font-semibold text-rose-600" data-field-error="profile_image"></div>
+					<div class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_image"></div>
 				</div>
 			</div>
 
 			<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-				<!-- Primera columna: Datos Personales y de Usuario -->
-				<fieldset class="flex flex-col gap-4 border-0 p-0 m-0">
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">Nombre(s) <span class="text-rose-500">*</span></span>
-						<input type="text" name="first_name" maxlength="50" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Dra. Sarah"/>
-						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="first_name"></span>
-					</label>
-					
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">Apellido(s) <span class="text-rose-500">*</span></span>
-						<input type="text" name="last_name" maxlength="50" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Gómez"/>
-						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="last_name"></span>
-					</label>
+				<div class="sm:col-span-2 grid gap-5">
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span class="inline-flex items-center gap-1">Nombre <span class="text-rose-500">*</span></span>
+							<input type="text" name="first_name" maxlength="50" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Sarah"/>
+							<span class="hidden text-xs font-semibold text-rose-600" data-field-error="first_name"></span>
+						</label>
 
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span class="inline-flex items-center gap-1">Apellido <span class="text-rose-500">*</span></span>
+							<input type="text" name="last_name" maxlength="50" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Gómez"/>
+							<span class="hidden text-xs font-semibold text-rose-600" data-field-error="last_name"></span>
+						</label>
+					</div>
+
+					<label class="professional-public-profile-field">
+						<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">URL del perfil público <span class="font-semibold text-(--on-surface-variant)">(Opcional)</span></span>
+						<div class="flex">
+							<span class="inline-flex max-w-[55%] sm:max-w-[65%] items-center truncate rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-xs sm:text-sm text-(--on-surface-variant) shadow-sm" title={publicProfilePrefix}>
+								{publicProfilePrefix}
+							</span>
+							<input type="text" name="profile_slug" maxlength="100" class="block w-full min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
+						</div>
+						<span class="text-[0.84rem] font-semibold text-(--on-surface-variant)">Este enlace es el perfil público que tus clientes usarán para reservar contigo.</span>
+						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_slug"></span>
+					</label>
+				</div>
+
+				<fieldset class="flex flex-col gap-4 border-0 p-0 m-0">
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Teléfono <span class="text-rose-500">*</span></span>
 						<div class="flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
@@ -282,17 +299,6 @@ const toPageHref = (page: number) => {
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="spe_id_specialty"></span>
 					</label>
 
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">URL del Perfil Público (Opcional)</span>
-						<div class="flex">
-							<span class="inline-flex max-w-[55%] sm:max-w-[65%] items-center truncate rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-xs sm:text-sm text-(--on-surface-variant) shadow-sm" title={publicProfilePrefix}>
-								{publicProfilePrefix}
-							</span>
-							<input type="text" name="profile_slug" maxlength="100" class="block w-full min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
-						</div>
-						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_slug"></span>
-					</label>
-					
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Servicios Asignados</span>
 						<div class="relative w-full">
@@ -380,6 +386,7 @@ const toPageHref = (page: number) => {
 			imageFileName: HTMLElement | null;
 			previewImg: HTMLImageElement | null;
 			previewPlaceholder: HTMLElement | null;
+			photoDropzone: HTMLElement | null;
 		};
 
 		private formEls!: {
@@ -442,6 +449,7 @@ const toPageHref = (page: number) => {
 				imageFileName: this.querySelector<HTMLElement>('[data-image-file-name]'),
 				previewImg: this.querySelector<HTMLImageElement>('[data-profile-preview]'),
 				previewPlaceholder: this.querySelector<HTMLElement>('[data-profile-placeholder]'),
+				photoDropzone: this.querySelector<HTMLElement>('[data-profile-upload-dropzone]'),
 			};
 
 			const formNode = this.els.form;
@@ -470,6 +478,9 @@ const toPageHref = (page: number) => {
 			this.els.form?.addEventListener('submit', this.handleSubmit, { signal });
 
 			this.formEls.image?.addEventListener('change', () => this.setImageFileNameLabel(), { signal });
+			this.els.photoDropzone?.addEventListener('dragover', this.handlePhotoDragOver, { signal });
+			this.els.photoDropzone?.addEventListener('dragleave', this.handlePhotoDragLeave, { signal });
+			this.els.photoDropzone?.addEventListener('drop', this.handlePhotoDrop, { signal });
 			this.formEls.phone?.addEventListener('input', this.handlePhoneInput, { signal });
 
 			// Slug events
@@ -601,6 +612,11 @@ const toPageHref = (page: number) => {
 			}
 			for (const fieldset of this.formEls.fieldsets) {
 				fieldset.disabled = isLoading;
+			}
+			for (const field of this.els.form?.querySelectorAll<HTMLInputElement>(
+				'[name="first_name"], [name="last_name"], [name="profile_slug"], [name="profile_image"]'
+			) ?? []) {
+				field.disabled = isLoading;
 			}
 			if (this.els.deleteBtn) this.els.deleteBtn.disabled = isLoading;
 			const submitBtn = this.els.form?.querySelector<HTMLButtonElement>('[data-submit-professional]');
@@ -744,6 +760,13 @@ const toPageHref = (page: number) => {
 			if (!this.els.imageFileName) return;
 			const file = this.formEls.image?.files?.[0];
 			this.els.imageFileName.textContent = file ? file.name : 'No se eligio ningun archivo';
+			const imageFieldNode = this.formEls.fieldErrors.find(
+				(el) => el.getAttribute('data-field-error') === 'profile_image'
+			);
+			if (imageFieldNode) {
+				imageFieldNode.textContent = '';
+				imageFieldNode.classList.add('hidden');
+			}
 
 			if (file) {
 				const reader = new FileReader();
@@ -759,6 +782,53 @@ const toPageHref = (page: number) => {
 					this.setPreviewImage(null);
 				}
 			}
+		}
+
+		private setProfileImageFieldError(message: string) {
+			const imageFieldNode = this.formEls.fieldErrors.find(
+				(el) => el.getAttribute('data-field-error') === 'profile_image'
+			);
+			if (!imageFieldNode) return;
+			imageFieldNode.textContent = message;
+			imageFieldNode.classList.toggle('hidden', message.trim() === '');
+		}
+
+		private setProfileImageFile(file: File) {
+			if (!this.formEls.image) return;
+			const dataTransfer = new DataTransfer();
+			dataTransfer.items.add(file);
+			this.formEls.image.files = dataTransfer.files;
+			this.setImageFileNameLabel();
+		}
+
+		private handlePhotoDragOver = (event: DragEvent) => {
+			if (this.formEls.image?.disabled) return;
+			event.preventDefault();
+			this.els.photoDropzone?.classList.add('is-dragover');
+		}
+
+		private handlePhotoDragLeave = (event: DragEvent) => {
+			if (
+				event.relatedTarget instanceof Node &&
+				this.els.photoDropzone?.contains(event.relatedTarget)
+			) {
+				return;
+			}
+			this.els.photoDropzone?.classList.remove('is-dragover');
+		}
+
+		private handlePhotoDrop = (event: DragEvent) => {
+			if (this.formEls.image?.disabled) return;
+			event.preventDefault();
+			this.els.photoDropzone?.classList.remove('is-dragover');
+			const file = Array.from(event.dataTransfer?.files ?? []).find((item) =>
+				['image/jpeg', 'image/png'].includes(item.type)
+			);
+			if (!file) {
+				this.setProfileImageFieldError('Selecciona una imagen JPG o PNG.');
+				return;
+			}
+			this.setProfileImageFile(file);
 		}
 
 		private clearSlugSuggestTimer() {
@@ -1143,6 +1213,138 @@ const toPageHref = (page: number) => {
 		animation: professional-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
+	.profile-photo-uploader {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		border-radius: 1.35rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 82%, var(--primary) 18%);
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 42%, transparent), transparent 46%),
+			var(--surface-bright);
+		padding: 1rem;
+		box-shadow: var(--card-inset-highlight), 0 10px 28px rgba(15, 23, 42, 0.06);
+		transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+	}
+
+	.profile-photo-uploader.is-dragover {
+		border-color: var(--primary);
+		background:
+			linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 72%, transparent), transparent 54%),
+			var(--surface-bright);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent), 0 14px 36px rgba(15, 23, 42, 0.1);
+	}
+
+	.profile-photo-uploader__avatar {
+		position: relative;
+		width: 5.75rem;
+		height: 5.75rem;
+		flex: 0 0 auto;
+		overflow: hidden;
+		border-radius: 999px;
+		border: 4px solid var(--surface-bright);
+		background: color-mix(in srgb, var(--primary-soft) 70%, var(--surface-container) 30%);
+		color: var(--primary);
+		box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+	}
+
+	.profile-photo-uploader__content {
+		display: grid;
+		width: 100%;
+		gap: 0.85rem;
+		text-align: center;
+	}
+
+	.profile-photo-uploader__copy {
+		display: grid;
+		gap: 0.25rem;
+	}
+
+	.profile-photo-uploader__copy h3 {
+		margin: 0;
+		font-size: 1.02rem;
+		font-weight: 850;
+		color: var(--on-surface);
+	}
+
+	.profile-photo-uploader__copy p {
+		margin: 0;
+		color: var(--on-surface-variant);
+		font-size: 0.88rem;
+		font-weight: 650;
+		line-height: 1.35;
+	}
+
+	.profile-photo-uploader__actions {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.45rem;
+	}
+
+	.profile-photo-uploader__button {
+		display: inline-flex;
+		min-height: 2.65rem;
+		cursor: pointer;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		border-radius: 999px;
+		border: 1px solid var(--primary-container);
+		background: var(--primary-soft);
+		padding: 0.65rem 1rem;
+		color: var(--primary);
+		font-size: 0.9rem;
+		font-weight: 850;
+		transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+	}
+
+	.profile-photo-uploader__button:hover {
+		background: var(--primary-soft-hover);
+		border-color: color-mix(in srgb, var(--primary) 44%, var(--primary-container) 56%);
+	}
+
+	.profile-photo-uploader__button:active {
+		transform: scale(0.98);
+	}
+
+	.profile-photo-uploader__meta {
+		color: var(--on-surface-variant);
+		font-size: 0.78rem;
+		font-weight: 700;
+	}
+
+	.professional-public-profile-field {
+		display: grid;
+		gap: 0.55rem;
+		border-radius: 1.15rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 80%, var(--primary) 20%);
+		background: color-mix(in srgb, var(--primary-soft) 28%, var(--surface-bright) 72%);
+		padding: 1rem;
+		box-shadow: var(--card-inset-highlight);
+	}
+
+	@media (min-width: 640px) {
+		.profile-photo-uploader {
+			flex-direction: row;
+			align-items: center;
+			gap: 1.25rem;
+			padding: 1.15rem;
+		}
+
+		.profile-photo-uploader__content {
+			text-align: left;
+		}
+
+		.profile-photo-uploader__actions {
+			flex-direction: row;
+			align-items: center;
+			justify-content: flex-start;
+		}
+	}
+
 	@keyframes professional-modal-in {
 		from {
 			opacity: 0;
@@ -1214,14 +1416,15 @@ const toPageHref = (page: number) => {
 	}
 
 	dialog[data-professional-modal] .ts-wrapper {
-		font-size: 0.875rem;
+		font-size: 0.95rem;
 	}
 
 	dialog[data-professional-modal] .ts-wrapper.multi .ts-control {
-		border-radius: 0.75rem;
+		min-height: 3.35rem;
+		border-radius: 1rem;
 		border: 1px solid var(--shell-border);
 		background: var(--card-surface);
-		padding: 0.35rem 0.55rem 0.3rem;
+		padding: 0.55rem 0.75rem;
 		box-shadow: none;
 	}
 
@@ -1231,7 +1434,7 @@ const toPageHref = (page: number) => {
 	}
 
 	dialog[data-professional-modal] .ts-wrapper .ts-control > input {
-		font-size: 0.875rem;
+		font-size: 0.95rem;
 		color: var(--on-surface);
 	}
 

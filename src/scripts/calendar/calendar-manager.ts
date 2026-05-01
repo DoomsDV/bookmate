@@ -7,6 +7,13 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { navigate } from 'astro:transitions/client';
 import { AppointmentsClient } from './appointments-client';
 import type { AppointmentModalConfig, OpenCreateContext } from './appointment-modal';
+import {
+	destroySearchableSelect,
+	ensureSearchableSelect,
+	setSearchableSelectDisabled,
+	setSearchableSelectValue,
+	syncSearchableSelect,
+} from '../searchable-select';
 import type { AppointmentFormPayload, Option } from './types';
 import {
 	cleanFlashUrl,
@@ -123,6 +130,13 @@ class CalendarManager extends HTMLElement {
 		this.#listeners = new AbortController();
 		const signal = this.#listeners.signal;
 
+		ensureSearchableSelect(requiredNodes.professionalFilter, {
+			placeholder: 'Buscar profesional...',
+		});
+		ensureSearchableSelect(requiredNodes.locationFilter, {
+			placeholder: 'Buscar sucursal...',
+		});
+
 		requiredNodes.appointmentModal.setClient(this.client);
 		requiredNodes.openModalButton.addEventListener('click', this.handleOpenCreateModal, { signal });
 		this.refreshCalendarButton?.addEventListener('click', this.handleRefreshCalendar, { signal });
@@ -148,6 +162,8 @@ class CalendarManager extends HTMLElement {
 			this.#bindRetryTimer = null;
 		}
 		this.#bindRetryAttempts = 0;
+		destroySearchableSelect(this.professionalFilter);
+		destroySearchableSelect(this.locationFilter);
 		this.destroyCalendar();
 	}
 
@@ -204,10 +220,8 @@ class CalendarManager extends HTMLElement {
 
 	private setCalendarLoading(value: boolean) {
 		if (this.loadingNode) this.loadingNode.classList.toggle('hidden', !value);
-		if (this.professionalFilter) {
-			this.professionalFilter.disabled = value || this.roleId === 3;
-		}
-		if (this.locationFilter) this.locationFilter.disabled = value;
+		setSearchableSelectDisabled(this.professionalFilter, value || this.roleId === 3);
+		setSearchableSelectDisabled(this.locationFilter, value);
 		if (this.openModalButton) this.openModalButton.disabled = value;
 		if (this.refreshCalendarButton) this.refreshCalendarButton.disabled = value;
 	}
@@ -232,6 +246,7 @@ class CalendarManager extends HTMLElement {
 			option.textContent = item.name;
 			select.appendChild(option);
 		}
+		syncSearchableSelect(select);
 	}
 
 	private destroyCalendar() {
@@ -614,14 +629,14 @@ class CalendarManager extends HTMLElement {
 
 			if (this.roleId === 3) {
 				requiredNodes.professionalFilterWrap?.classList.add('hidden');
-				requiredNodes.professionalFilter.disabled = true;
+				setSearchableSelectDisabled(requiredNodes.professionalFilter, true);
 
 				if (this.currentProfessionalId <= 0 && this.professionals.length === 1) {
 					this.currentProfessionalId = this.professionals[0].id;
 				}
 
 				if (this.currentProfessionalId > 0) {
-					requiredNodes.professionalFilter.value = String(this.currentProfessionalId);
+					setSearchableSelectValue(requiredNodes.professionalFilter, this.currentProfessionalId);
 				} else {
 					this.showPageError(
 						'No fue posible determinar el perfil profesional de tu sesion. Contacta al administrador.'
@@ -629,7 +644,7 @@ class CalendarManager extends HTMLElement {
 				}
 			} else {
 				requiredNodes.professionalFilterWrap?.classList.remove('hidden');
-				requiredNodes.professionalFilter.disabled = false;
+				setSearchableSelectDisabled(requiredNodes.professionalFilter, false);
 			}
 
 			requiredNodes.appointmentModal.configure({

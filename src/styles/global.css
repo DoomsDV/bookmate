@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tom-select/dist/css/tom-select.css";
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 
@@ -312,9 +313,9 @@ button {
 .topbar-brand-link {
 	display: inline-flex;
 	align-items: center;
-	justify-content: center;
-	gap: 0;
-	width: 2.5rem;
+	justify-content: flex-start;
+	gap: 0.65rem;
+	width: auto;
 	height: 2.5rem;
 	padding: 0.1rem 0;
 	transform: none;
@@ -322,7 +323,6 @@ button {
 
 @media (min-width: 640px) {
 	.topbar-brand-link {
-		width: 2.75rem;
 		height: 2.75rem;
 		padding: 0;
 	}
@@ -330,11 +330,29 @@ button {
 
 .topbar-brand-logo {
 	display: block;
-	width: 100%;
-	height: 100%;
+	width: 2.5rem;
+	height: 2.5rem;
+	flex: 0 0 auto;
 	object-fit: contain;
 	transform: translateY(0);
 	filter: drop-shadow(0 2px 5px rgba(47, 111, 221, 0.28));
+}
+
+@media (min-width: 640px) {
+	.topbar-brand-logo {
+		width: 2.75rem;
+		height: 2.75rem;
+	}
+}
+
+.topbar-brand-wordmark {
+	color: var(--on-surface);
+	font-size: 0.95rem;
+	font-weight: 900;
+	letter-spacing: 0.24em;
+	line-height: 1;
+	text-transform: uppercase;
+	text-shadow: 0 0 18px color-mix(in srgb, var(--primary) 32%, transparent);
 }
 
 .material-symbols-rounded {
@@ -962,6 +980,226 @@ html[data-theme='dark'] .modal-action-danger:hover {
 
 html[data-theme='dark'] .workspace-account-subtitle {
 	color: color-mix(in srgb, var(--on-surface-variant) 90%, white 10%);
+}
+
+.bookmate-searchable-select.ts-wrapper {
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	border: 0 !important;
+	background: transparent !important;
+	padding: 0 !important;
+	box-shadow: none !important;
+}
+
+.bookmate-searchable-select.ts-wrapper.single .ts-control {
+	display: flex;
+	align-items: center;
+	min-height: 3rem;
+	height: 3rem;
+	border-radius: 0.75rem;
+	border: 1px solid var(--shell-border);
+	background: var(--surface-bright);
+	padding: 0 2.75rem 0 1rem;
+	color: var(--on-surface);
+	box-shadow: none;
+	font-size: 0.95rem;
+	font-weight: 800;
+	line-height: 1.25;
+	cursor: pointer;
+	transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+}
+
+.bookmate-searchable-select.ts-wrapper.single .ts-control > input.items-placeholder {
+	align-self: center;
+	width: 100%;
+	min-width: 0;
+	height: auto;
+	margin: 0;
+	padding: 0;
+	color: var(--on-surface);
+	font: inherit;
+	font-weight: 800;
+	cursor: pointer;
+}
+
+.bookmate-searchable-select.ts-wrapper.single .ts-control > input.items-placeholder::placeholder {
+	color: var(--on-surface);
+	opacity: 1;
+}
+
+.bookmate-searchable-select.ts-wrapper.single.has-items .ts-control > input.items-placeholder {
+	display: none;
+}
+
+.bookmate-searchable-select.ts-wrapper.single .item {
+	display: flex;
+	align-items: center;
+	max-width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	line-height: 1.25;
+}
+
+.bookmate-searchable-select.ts-wrapper.single .ts-control::after {
+	content: "expand_more";
+	position: absolute;
+	right: 0.85rem;
+	top: 50%;
+	width: auto;
+	height: auto;
+	margin: 0;
+	border: 0;
+	transform: translateY(-50%);
+	font-family: "Material Symbols Rounded";
+	font-size: 1.35rem;
+	line-height: 1;
+	color: var(--on-surface-variant);
+	pointer-events: none;
+}
+
+.bookmate-searchable-select.ts-wrapper.focus .ts-control,
+.bookmate-searchable-select.ts-wrapper.dropdown-active .ts-control {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent);
+}
+
+.bookmate-searchable-select.ts-wrapper.disabled .ts-control {
+	cursor: not-allowed;
+	opacity: 0.64;
+	background: var(--control-surface);
+}
+
+.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .ts-dropdown {
+	z-index: 80;
+	margin-top: 0.6rem;
+	border: 1px solid var(--shell-border);
+	border-radius: 0.75rem;
+	background: var(--surface-bright);
+	color: var(--on-surface);
+	box-shadow: 0 16px 34px rgba(15, 23, 42, 0.16);
+	overflow: hidden;
+	font-size: 0.95rem;
+	font-weight: 700;
+}
+
+.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input-wrap {
+	position: relative;
+	display: flex;
+	align-items: center;
+	border-bottom: 1px solid var(--shell-border);
+	background: var(--surface-bright);
+	padding: 0.65rem 0.75rem 0.65rem 2.65rem;
+}
+
+.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input-wrap::before {
+	content: "search";
+	position: absolute;
+	left: 0.9rem;
+	top: 50%;
+	transform: translateY(-50%);
+	font-family: "Material Symbols Rounded";
+	font-size: 1.2rem;
+	line-height: 1;
+	color: var(--on-surface-variant);
+	pointer-events: none;
+}
+
+.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input {
+	width: 100% !important;
+	min-width: 0;
+	border: 0;
+	background: transparent;
+	color: var(--on-surface);
+	font: inherit;
+	font-weight: 700;
+	outline: none;
+}
+
+.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input::placeholder {
+	color: var(--on-surface-variant);
+	opacity: 0.9;
+}
+
+.bookmate-searchable-select.ts-wrapper .ts-dropdown-content {
+	display: grid;
+	gap: 0.25rem;
+	background: var(--surface-bright);
+	padding: 0.5rem;
+	max-height: 16rem;
+}
+
+.bookmate-searchable-select.ts-wrapper .ts-dropdown .option,
+.bookmate-searchable-select.ts-wrapper .ts-dropdown .no-results {
+	display: block;
+	border-radius: 0.5rem;
+	padding: 0.65rem 1rem;
+	background: transparent;
+	background-clip: padding-box;
+	color: var(--on-surface);
+	transition: background-color 140ms ease, color 140ms ease;
+}
+
+.bookmate-searchable-select.ts-wrapper .ts-dropdown .option.active {
+	background: color-mix(in srgb, var(--primary-soft) 74%, transparent);
+	color: var(--primary);
+}
+
+.bookmate-searchable-select.ts-wrapper .ts-dropdown .option.selected {
+	background: color-mix(in srgb, var(--primary-soft) 88%, transparent);
+	color: var(--primary);
+	font-weight: 800;
+}
+
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.single .ts-control {
+	background: var(--surface-bright);
+	border-color: var(--shell-border);
+	color: var(--on-surface);
+	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
+}
+
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.focus .ts-control,
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.dropdown-active .ts-control {
+	background: var(--surface-bright);
+	border-color: var(--primary);
+	box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
+}
+
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .ts-dropdown {
+	background: var(--surface-bright);
+	border-color: var(--shell-border);
+	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+}
+
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input-wrap {
+	background: var(--surface-bright);
+	border-bottom-color: var(--shell-border);
+}
+
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown-content {
+	background: var(--surface-bright);
+}
+
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input {
+	color: var(--on-surface);
+}
+
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown .option {
+	color: var(--on-surface);
+}
+
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown .option.active {
+	background: color-mix(in srgb, var(--primary-soft) 74%, transparent);
+	color: var(--primary);
+}
+
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown .option.selected {
+	background: color-mix(in srgb, var(--primary-soft) 88%, transparent);
+	color: var(--primary);
 }
 
 /* Secondary controls (dark mode):

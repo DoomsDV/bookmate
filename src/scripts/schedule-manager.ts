@@ -1,4 +1,11 @@
 import { navigate } from 'astro:transitions/client';
+import {
+	destroySearchableSelect,
+	ensureSearchableSelect,
+	setSearchableSelectDisabled,
+	setSearchableSelectValue,
+	syncSearchableSelect,
+} from './searchable-select';
 
 type ProfessionalLov = { id_professional: number; display_name: string };
 type LocationLov = { id_location: number; name: string };
@@ -90,6 +97,9 @@ class ScheduleManager extends HTMLElement {
 		const signal = this.#listenerController.signal;
 
 		this.cleanFlashUrl();
+		ensureSearchableSelect(this.professionalSelect, {
+			placeholder: 'Buscar profesional...',
+		});
 		this.professionalSelect.addEventListener('change', this.handleProfessionalChange, { signal });
 		this.plannerNode.addEventListener('change', this.handlePlannerChange, { signal });
 		this.plannerNode.addEventListener('click', this.handlePlannerClick, { signal });
@@ -106,6 +116,7 @@ class ScheduleManager extends HTMLElement {
 		this.#bound = false;
 		this.#listenerController?.abort();
 		this.#listenerController = null;
+		destroySearchableSelect(this.professionalSelect);
 		this.dayNodes.clear();
 	}
 
@@ -118,8 +129,10 @@ class ScheduleManager extends HTMLElement {
 
 		const nextProfessionalId = Number(this.professionalSelect.value || 0);
 		if (!Number.isInteger(nextProfessionalId) || nextProfessionalId <= 0) {
-			this.professionalSelect.value =
-				this.selectedProfessionalId > 0 ? String(this.selectedProfessionalId) : '';
+			setSearchableSelectValue(
+				this.professionalSelect,
+				this.selectedProfessionalId > 0 ? this.selectedProfessionalId : ''
+			);
 			return;
 		}
 		if (nextProfessionalId === this.selectedProfessionalId) return;
@@ -127,8 +140,10 @@ class ScheduleManager extends HTMLElement {
 		if (this.isDirty) {
 			const canContinue = await this.confirmDiscardChanges();
 			if (!canContinue) {
-				this.professionalSelect.value =
-					this.selectedProfessionalId > 0 ? String(this.selectedProfessionalId) : '';
+				setSearchableSelectValue(
+					this.professionalSelect,
+					this.selectedProfessionalId > 0 ? this.selectedProfessionalId : ''
+				);
 				return;
 			}
 		}
@@ -284,8 +299,9 @@ class ScheduleManager extends HTMLElement {
 		}
 
 		if (this.selectedProfessionalId > 0) {
-			this.professionalSelect.value = String(this.selectedProfessionalId);
+			setSearchableSelectValue(this.professionalSelect, this.selectedProfessionalId);
 		}
+		syncSearchableSelect(this.professionalSelect);
 	}
 
 	private renderPlannerMessage(message: string, tone: 'info' | 'error'): void {
@@ -532,7 +548,7 @@ class ScheduleManager extends HTMLElement {
 		if (this.saveButton) {
 			this.saveButton.disabled = blocked || this.selectedProfessionalId <= 0;
 		}
-		this.professionalSelect.disabled = blocked || this.professionals.length === 0;
+		setSearchableSelectDisabled(this.professionalSelect, blocked || this.professionals.length === 0);
 
 		if (this.saveLabel) {
 			this.saveLabel.textContent = this.isSaving
@@ -852,7 +868,7 @@ class ScheduleManager extends HTMLElement {
 
 			this.selectedProfessionalId = Number(this.professionals[0]?.id_professional || 0);
 			if (this.professionalSelect) {
-				this.professionalSelect.value = String(this.selectedProfessionalId);
+				setSearchableSelectValue(this.professionalSelect, this.selectedProfessionalId);
 			}
 			this.renderPlanner();
 			await this.loadScheduleByProfessional(this.selectedProfessionalId);
