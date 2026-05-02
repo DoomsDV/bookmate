@@ -1,3 +1,5 @@
+import { marked } from 'marked';
+
 type ChatSession = {
 	id_session: number;
 	title: string;
@@ -16,6 +18,36 @@ type ApiResponse<TData = unknown> = {
 	message?: string;
 	data?: TData;
 };
+
+const ALLOWED_MARKDOWN_TAGS = new Set([
+	'a',
+	'blockquote',
+	'br',
+	'code',
+	'del',
+	'em',
+	'h1',
+	'h2',
+	'h3',
+	'h4',
+	'h5',
+	'h6',
+	'hr',
+	'li',
+	'ol',
+	'p',
+	'pre',
+	'strong',
+	'table',
+	'tbody',
+	'td',
+	'th',
+	'thead',
+	'tr',
+	'ul',
+]);
+
+const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
 class AiChatPanel extends HTMLElement {
 	#bound = false;
@@ -164,6 +196,59 @@ class AiChatPanel extends HTMLElement {
 		this.errorNode.classList.remove('hidden');
 	}
 
+	private isSafeUrl(value: string) {
+		const url = value.trim();
+		if (!url || url.startsWith('#')) return Boolean(url);
+
+		try {
+			const parsed = new URL(url, window.location.origin);
+			return ALLOWED_LINK_PROTOCOLS.has(parsed.protocol);
+		} catch {
+			return false;
+		}
+	}
+
+	private sanitizeMarkdownHtml(html: string) {
+		const template = document.createElement('template');
+		template.innerHTML = html;
+
+		const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ELEMENT);
+		const elements: Element[] = [];
+		while (walker.nextNode()) {
+			elements.push(walker.currentNode as Element);
+		}
+
+		for (const element of elements) {
+			const tagName = element.tagName.toLowerCase();
+			if (!ALLOWED_MARKDOWN_TAGS.has(tagName)) {
+				element.replaceWith(...Array.from(element.childNodes));
+				continue;
+			}
+
+			const href = element.getAttribute('href') || '';
+			for (const attribute of Array.from(element.attributes)) {
+				element.removeAttribute(attribute.name);
+			}
+
+			if (tagName === 'a' && this.isSafeUrl(href)) {
+				element.setAttribute('href', href.trim());
+				element.setAttribute('target', '_blank');
+				element.setAttribute('rel', 'noreferrer');
+			}
+		}
+
+		return template.innerHTML;
+	}
+
+	private renderMarkdown(content: string) {
+		const html = marked.parse(content, {
+			async: false,
+			breaks: true,
+			gfm: true,
+		});
+		return this.sanitizeMarkdownHtml(html);
+	}
+
 	private updateControls() {
 		const busy = this.isLoadingSessions || this.isLoadingMessages || this.isSending;
 		if (this.sendButton) this.sendButton.disabled = busy || !String(this.input?.value || '').trim();
@@ -253,7 +338,11 @@ class AiChatPanel extends HTMLElement {
 
 		const bubble = document.createElement('div');
 		bubble.className = 'ai-chat-bubble';
-		bubble.textContent = message.content;
+		if (message.role === 'assistant') {
+			bubble.innerHTML = this.renderMarkdown(message.content);
+		} else {
+			bubble.textContent = message.content;
+		}
 
 		wrapper.appendChild(bubble);
 		this.messagesNode.appendChild(wrapper);
@@ -370,7 +459,7 @@ class AiChatPanel extends HTMLElement {
 			}
 
 			this.activeSessionId = Number(data.data.session_id || this.activeSessionId);
-			if (pendingNode) pendingNode.textContent = String(data.data.response || '').trim() || 'Sin respuesta.';
+			if (pendingNode) pendingNode.innerHTML = this.renderMarkdown(String(data.data.response || '').trim() || 'Sin respuesta.');
 			await this.loadSessions();
 		} catch (error) {
 			if (pendingNode) pendingNode.textContent = 'No pude responder en este momento.';
