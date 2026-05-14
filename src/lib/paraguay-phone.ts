@@ -59,3 +59,25 @@ export const parseParaguayMobilePhone = (rawValue: string): ParaguayMobilePhoneP
 
 export const isParaguayMobilePhone = (rawValue: string) =>
 	parseParaguayMobilePhone(rawValue).isValid;
+
+export const formatParaguayMobilePhoneInput = (rawValue: string) => {
+	let digits = toDigitsOnly(rawValue);
+	if (digits.startsWith('00595')) digits = digits.slice(5);
+	if (digits.startsWith('595')) digits = digits.slice(3);
+	if (digits.startsWith('0')) digits = digits.slice(1);
+
+	const local = digits.slice(0, 9);
+	if (!local) return '';
+	if (local.length <= 3) return local;
+	if (local.length <= 6) return `${local.slice(0, 3)} ${local.slice(3)}`;
+	return `${local.slice(0, 3)} ${local.slice(3, 6)} ${local.slice(6, 9)}`;
+};
+
+export const toParaguayMobileE164FromInput = (rawValue: string) => {
+	const digits = toDigitsOnly(rawValue);
+	const normalized = parseParaguayMobilePhone(digits);
+	if (normalized.isValid) return normalized.e164;
+
+	const local = formatParaguayMobilePhoneInput(rawValue).replace(/\D/g, '');
+	return local ? `+595${local}` : '';
+};

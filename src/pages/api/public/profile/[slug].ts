@@ -1,27 +1,7 @@
 import type { APIRoute } from 'astro';
 
 import { getPublicProfileWithOrds, PublicBookingApiError } from '../../../../lib/public-booking';
-
-const toSafeApiStatus = (value: number) => {
-	if (value === 555) return 502;
-	return Number.isInteger(value) && value >= 400 && value <= 599 ? value : 500;
-};
-
-const toErrorResponse = (error: unknown, fallbackMessage: string) => {
-	const bookingError =
-		error instanceof PublicBookingApiError
-			? error
-			: new PublicBookingApiError(fallbackMessage, 500);
-
-	return Response.json(
-		{
-			status: 'error',
-			message: bookingError.message,
-			details: bookingError.details,
-		},
-		{ status: toSafeApiStatus(bookingError.status) }
-	);
-};
+import { publicBookingErrorResponse } from '../../../../lib/public-api-handlers';
 
 export const GET: APIRoute = async ({ params }) => {
 	try {
@@ -39,6 +19,6 @@ export const GET: APIRoute = async ({ params }) => {
 			{ status: 200 }
 		);
 	} catch (error) {
-		return toErrorResponse(error, 'No fue posible cargar el perfil del profesional.');
+		return publicBookingErrorResponse(error, 'No fue posible cargar el perfil del profesional.');
 	}
 };

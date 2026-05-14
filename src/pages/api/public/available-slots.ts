@@ -2,34 +2,11 @@ import type { APIRoute } from 'astro';
 
 import {
 	getPublicAvailableSlotsWithOrds,
-	PublicBookingApiError,
 } from '../../../lib/public-booking';
-
-const toSafeApiStatus = (value: number) => {
-	if (value === 555) return 502;
-	return Number.isInteger(value) && value >= 400 && value <= 599 ? value : 500;
-};
-
-const toErrorResponse = (error: unknown, fallbackMessage: string) => {
-	const bookingError =
-		error instanceof PublicBookingApiError
-			? error
-			: new PublicBookingApiError(fallbackMessage, 500);
-
-	return Response.json(
-		{
-			status: 'error',
-			message: bookingError.message,
-			details: bookingError.details,
-		},
-		{ status: toSafeApiStatus(bookingError.status) }
-	);
-};
-
-const toPositiveInt = (value: string | null) => {
-	const parsed = Number(value);
-	return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
-};
+import {
+	publicBookingErrorResponse,
+	toPositiveInt,
+} from '../../../lib/public-api-handlers';
 
 export const GET: APIRoute = async ({ request }) => {
 	try {
@@ -54,6 +31,6 @@ export const GET: APIRoute = async ({ request }) => {
 			{ status: 200 }
 		);
 	} catch (error) {
-		return toErrorResponse(error, 'No fue posible cargar horarios disponibles.');
+		return publicBookingErrorResponse(error, 'No fue posible cargar horarios disponibles.');
 	}
 };

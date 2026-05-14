@@ -10,19 +10,6 @@ type RegisterStep = typeof ADMIN_STEP | typeof ORGANIZATION_STEP;
 const ADMIN_FIELDS = new Set(['first_name', 'last_name', 'email', 'password']);
 const ORGANIZATION_FIELDS = new Set(['business_name', 'phone', 'company_email', 'id_org_specialty']);
 
-const mapFieldParamName = (field: string) => {
-	const normalizedField = String(field || '').trim().toLowerCase();
-	if (normalizedField === 'first_name') return 'first_name_error';
-	if (normalizedField === 'last_name') return 'last_name_error';
-	if (normalizedField === 'email') return 'email_error';
-	if (normalizedField === 'password') return 'password_error';
-	if (normalizedField === 'business_name') return 'business_name_error';
-	if (normalizedField === 'phone') return 'phone_error';
-	if (normalizedField === 'company_email') return 'company_email_error';
-	if (normalizedField === 'id_org_specialty') return 'id_org_specialty_error';
-	return '';
-};
-
 const wantsHtml = (request: Request) => {
 	const accept = request.headers.get('accept') || '';
 	const contentType = request.headers.get('content-type') || '';
@@ -96,7 +83,22 @@ const resolveStepFromErrors = (
 	return fallbackStep;
 };
 
-export const POST: APIRoute = async ({ request, url }) => {
+const getClientErrorMessage = (error: AuthApiError) => {
+	const message = String(error.message || '').trim();
+	const details = typeof error.details === 'string' ? error.details.trim() : '';
+
+	if (message && message !== 'No fue posible completar el registro.') {
+		return message;
+	}
+
+	if (details && /especialidad/i.test(details)) {
+		return details;
+	}
+
+	return message || 'No fue posible completar el registro.';
+};
+
+export const POST: APIRoute = async ({ request }) => {
 	let body = {
 		first_name: '',
 		last_name: '',
@@ -172,6 +174,10 @@ export const POST: APIRoute = async ({ request, url }) => {
 
 		return Response.json({ success: true, redirect: redirectTo });
 	} catch (error) {
+		if (!(error instanceof AuthApiError)) {
+			console.error('[api/auth/register] Unexpected registration error', error);
+		}
+
 		const authError =
 			error instanceof AuthApiError
 				? error
@@ -179,48 +185,16 @@ export const POST: APIRoute = async ({ request, url }) => {
 
 		const fieldErrors = authError.fieldErrors;
 		const resolvedStep = resolveStepFromErrors(fieldErrors, body.step, authError.message);
-
-		if (wantsHtml(request)) {
-			const redirectUrl = new URL('/auth/register', url);
-
-			redirectUrl.searchParams.set('step', resolvedStep);
-			redirectUrl.searchParams.set(
-				'error',
-				typeof authError.details === 'string' && authError.details.trim()
-					? authError.details
-					: authError.message
-			);
-
-			if (body.first_name) redirectUrl.searchParams.set('first_name', body.first_name);
-			if (body.last_name) redirectUrl.searchParams.set('last_name', body.last_name);
-			if (body.email) redirectUrl.searchParams.set('email', body.email);
-			if (body.business_name) redirectUrl.searchParams.set('business_name', body.business_name);
-			if (body.phone) redirectUrl.searchParams.set('phone', body.phone);
-			if (body.company_email) redirectUrl.searchParams.set('company_email', body.company_email);
-			if (Number.isFinite(body.id_org_specialty) && body.id_org_specialty > 0) {
-				redirectUrl.searchParams.set('id_org_specialty', String(body.id_org_specialty));
-			}
-
-			for (const fieldError of fieldErrors) {
-				const fieldName = mapFieldParamName(fieldError.field);
-				if (fieldName) {
-					redirectUrl.searchParams.set(fieldName, fieldError.message);
-				}
-			}
-
-			return new Response(null, {
-				status: 302,
-				headers: {
-					Location: redirectUrl.toString(),
-				},
-			});
-		}
+		const errorDetail = getClientErrorMessage(authError);
 
 		return Response.json(
 			{
-				error: authError.message,
+				error: errorDetail,
+				message: authError.message,
 				details: authError.details,
 				fieldErrors,
+				errors: fieldErrors,
+				step: resolvedStep,
 			},
 			{ status: authError.status }
 		);

@@ -5,45 +5,11 @@ import {
 	validatePublicCustomerWithOrds,
 	type PublicValidateCustomerPayload,
 } from '../../../lib/public-booking';
-
-const toSafeApiStatus = (value: number) => {
-	if (value === 555) return 502;
-	return Number.isInteger(value) && value >= 400 && value <= 599 ? value : 500;
-};
-
-const toErrorResponse = (error: unknown, fallbackMessage: string) => {
-	const bookingError =
-		error instanceof PublicBookingApiError
-			? error
-			: new PublicBookingApiError(fallbackMessage, 500);
-
-	return Response.json(
-		{
-			status: 'error',
-			message: bookingError.message,
-			details: bookingError.details,
-		},
-		{ status: toSafeApiStatus(bookingError.status) }
-	);
-};
-
-const toPositiveInt = (value: unknown) => {
-	const parsed = Number(value);
-	return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
-};
-
-const parseRequestBody = async (request: Request) => {
-	const contentType = request.headers.get('content-type') || '';
-	if (contentType.includes('application/json')) {
-		return request.json();
-	}
-
-	const formData = await request.formData();
-	return {
-		org_id_organization: formData.get('org_id_organization'),
-		customer_phone: formData.get('customer_phone'),
-	};
-};
+import {
+	parseRequestBody,
+	publicBookingErrorResponse,
+	toPositiveInt,
+} from '../../../lib/public-api-handlers';
 
 const parsePayload = (source: any): PublicValidateCustomerPayload => {
 	const payload: PublicValidateCustomerPayload = {
@@ -82,6 +48,6 @@ export const POST: APIRoute = async ({ request }) => {
 			{ status: 200 }
 		);
 	} catch (error) {
-		return toErrorResponse(error, 'No fue posible validar el cliente.');
+		return publicBookingErrorResponse(error, 'No fue posible validar el cliente.');
 	}
 };

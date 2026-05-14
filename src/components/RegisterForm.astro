@@ -104,14 +104,17 @@ const currentStep = normalizeStep(step);
 				</div>
 			</div>
 
-			{error && (
-				<div class="m3-error-banner">
-					<span class="material-symbols-rounded">error</span>
-					{error}
-				</div>
-			)}
+			<div
+				class:list={['m3-error-banner', !error && 'is-hidden']}
+				data-error-banner
+				role="alert"
+				aria-live="polite"
+			>
+				<span class="material-symbols-rounded">error</span>
+				<span data-error-text>{error}</span>
+			</div>
 
-			<form method="post" action="/api/auth/register" data-astro-reload data-register-form data-initial-step={currentStep}>
+			<form method="post" action="/api/auth/register" data-register-form data-initial-step={currentStep}>
 				<input type="hidden" name="step" value={currentStep} data-step-input />
 
 				<!-- PANEL: ADMIN -->
@@ -200,39 +203,22 @@ const currentStep = normalizeStep(step);
 							</div>
 							{phoneError && <span class="m3-field-error">{phoneError}</span>}
 						</div>
-						<div class="m3-field" style="position: relative;">
+						<div class="m3-field">
 							<label class="m3-label" for="id_org_specialty">Especialidad de la organización <span class="m3-label-required">*</span></label>
-							
-							<div class="m3-searchable-select" data-searchable-select>
-								<input type="hidden" name="id_org_specialty" id="id_org_specialty" value={orgSpecialtyId} required />
-								
-								<div class:list={['m3-input m3-select-trigger', orgSpecialtyIdError && 'is-invalid', orgSpecialties.length === 0 && 'is-disabled']} tabindex="0" data-select-trigger>
-									<span data-select-label>
-										{orgSpecialtyId 
-											? orgSpecialties.find(s => String(s.id_org_specialty) === orgSpecialtyId)?.name || 'Selecciona una especialidad'
-											: (orgSpecialties.length > 0 ? 'Selecciona una especialidad' : 'No hay especialidades disponibles')
-										}
-									</span>
-									<span class="material-symbols-rounded">expand_more</span>
-								</div>
-
-								<div class="m3-select-dropdown is-hidden" data-select-dropdown>
-									<div class="m3-select-search-box">
-										<span class="material-symbols-rounded">search</span>
-										<input type="text" class="m3-select-search" placeholder="Buscar especialidad..." data-select-search autocomplete="off" />
-									</div>
-									<ul class="m3-select-options" data-select-options>
-										<li class="m3-select-option" data-value="" data-selected={orgSpecialtyId === '' ? 'true' : 'false'}>
-											Selecciona una especialidad
-										</li>
-										{orgSpecialties.map((specialty) => (
-											<li class="m3-select-option" data-value={String(specialty.id_org_specialty)} data-selected={String(specialty.id_org_specialty) === orgSpecialtyId ? 'true' : 'false'}>
-												{specialty.name}
-											</li>
-										))}
-									</ul>
-								</div>
-							</div>
+							<select
+								id="id_org_specialty"
+								name="id_org_specialty"
+								class:list={['m3-input', 'm3-select', orgSpecialtyIdError && 'is-invalid']}
+								required
+								disabled={orgSpecialties.length === 0}
+							>
+								<option value="">Selecciona una especialidad</option>
+								{orgSpecialties.map((specialty) => (
+									<option value={String(specialty.id_org_specialty)} selected={String(specialty.id_org_specialty) === orgSpecialtyId}>
+										{specialty.name}
+									</option>
+								))}
+							</select>
 
 							{specialtiesLoadError && <span class="m3-field-error">{specialtiesLoadError}</span>}
 							{orgSpecialtyIdError && <span class="m3-field-error">{orgSpecialtyIdError}</span>}
@@ -264,12 +250,16 @@ const currentStep = normalizeStep(step);
 		if (!form || form.dataset.enhanced) return;
 		form.dataset.enhanced = 'true';
 
+		const formWrapper = form.closest('.m3-form-wrapper');
+		const errorBanner = formWrapper?.querySelector('[data-error-banner]');
+		const errorText = formWrapper?.querySelector('[data-error-text]');
 		const stepInput = form.querySelector('[data-step-input]');
 		const orgPhoneInput = form.querySelector('[name="phone"]');
 		const passwordInput = form.querySelector('input[name="password"]');
 		const passwordStrength = form.querySelector('[data-password-strength]');
 		const passwordStrengthText = form.querySelector('[data-password-strength-text]');
 		const passwordSegments = form.querySelectorAll('[data-password-segment]');
+		const submitButton = form.querySelector('button[type="submit"]');
 		const panels = {
 			admin: form.querySelector('[data-step-panel="admin"]'),
 			organization: form.querySelector('[data-step-panel="organization"]')
@@ -321,6 +311,52 @@ const currentStep = normalizeStep(step);
 		const toParaguayE164Phone = (rawValue) => {
 			const digits = toParaguayLocalPhoneDigits(rawValue);
 			return digits ? `+595${digits}` : '';
+		};
+
+		const setErrorMessage = (message) => {
+			const cleanMessage = String(message || '').trim() || 'No fue posible completar el registro.';
+			if (errorText) errorText.textContent = cleanMessage;
+			errorBanner?.classList.remove('is-hidden');
+		};
+
+		const clearErrorMessage = () => {
+			if (errorText) errorText.textContent = '';
+			errorBanner?.classList.add('is-hidden');
+		};
+
+		const normalizeErrorText = (value) => {
+			if (typeof value === 'string' && value.trim()) return value.trim();
+			if (!value || typeof value !== 'object') return '';
+			if (typeof value.message === 'string' && value.message.trim()) return value.message.trim();
+			if (typeof value.error === 'string' && value.error.trim()) return value.error.trim();
+			try {
+				return JSON.stringify(value);
+			} catch {
+				return '';
+			}
+		};
+
+		const getServerErrorMessage = (data) => {
+			const fieldErrors = Array.isArray(data?.fieldErrors)
+				? data.fieldErrors
+				: (Array.isArray(data?.errors) ? data.errors : []);
+			return (
+				normalizeErrorText(data?.error) ||
+				normalizeErrorText(data?.message) ||
+				normalizeErrorText(fieldErrors[0]?.message) ||
+				normalizeErrorText(data?.details) ||
+				'No fue posible completar el registro.'
+			);
+		};
+
+		const readJsonResponse = async (response) => {
+			const responseText = await response.text();
+			if (!responseText.trim()) return {};
+			try {
+				return JSON.parse(responseText);
+			} catch {
+				return { error: responseText };
+			}
 		};
 
 		const getPasswordValidationMessage = (rawPassword) => {
@@ -434,97 +470,71 @@ const currentStep = normalizeStep(step);
 			});
 		}
 
-		// Searchable Select Logic
-		const searchableSelects = form.querySelectorAll('[data-searchable-select]');
-		searchableSelects.forEach(selectContainer => {
-			const trigger = selectContainer.querySelector('[data-select-trigger]');
-			const dropdown = selectContainer.querySelector('[data-select-dropdown]');
-			const searchInput = selectContainer.querySelector('[data-select-search]');
-			const options = selectContainer.querySelectorAll('[data-select-options] .m3-select-option');
-			const hiddenInput = selectContainer.querySelector('input[type="hidden"]');
-			const label = selectContainer.querySelector('[data-select-label]');
-
-			const closeDropdown = () => {
-				dropdown.classList.add('is-hidden');
-				trigger.classList.remove('is-active');
-			};
-
-			const openDropdown = () => {
-				dropdown.classList.remove('is-hidden');
-				trigger.classList.add('is-active');
-				if (searchInput) {
-					searchInput.value = '';
-					searchInput.focus();
-					filterOptions('');
-				}
-			};
-
-			const filterOptions = (term) => {
-				const lowerTerm = term.toLowerCase();
-				options.forEach(opt => {
-					const text = opt.textContent.trim().toLowerCase();
-					if (text.includes(lowerTerm)) {
-						opt.style.display = 'block';
-					} else {
-						opt.style.display = 'none';
-					}
-				});
-			};
-
-			trigger?.addEventListener('click', (e) => {
-				e.preventDefault();
-				e.stopPropagation();
-				if (dropdown.classList.contains('is-hidden')) {
-					// Close any other open dropdowns
-					document.querySelectorAll('[data-select-dropdown]:not(.is-hidden)').forEach(d => d.classList.add('is-hidden'));
-					openDropdown();
-				} else {
-					closeDropdown();
-				}
-			});
-
-			searchInput?.addEventListener('input', (e) => {
-				filterOptions(e.target.value);
-			});
-
-			options.forEach(opt => {
-				opt.addEventListener('click', (e) => {
-					e.stopPropagation();
-					const value = opt.dataset.value;
-					const text = opt.textContent.trim();
-					
-					options.forEach(o => o.dataset.selected = 'false');
-					opt.dataset.selected = 'true';
-					
-					if (hiddenInput) hiddenInput.value = value;
-					if (label) label.textContent = text;
-					
-					closeDropdown();
-					
-					// Re-evaluate form validity
-					if (hiddenInput) {
-					    const event = new Event('change', { bubbles: true });
-					    hiddenInput.dispatchEvent(event);
-					}
-					
-					// Enable/disable finish button if needed
-					const submitBtn = form.querySelector('button[type="submit"]');
-					if (submitBtn) submitBtn.disabled = value === '';
-				});
-			});
-
-			document.addEventListener('click', (e) => {
-				if (!selectContainer.contains(e.target)) {
-					closeDropdown();
-				}
-			});
-		});
-
-		form.addEventListener('submit', () => {
-			if (orgPhoneInput instanceof HTMLInputElement) {
-				orgPhoneInput.value = toParaguayE164Phone(orgPhoneInput.value);
-			}
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			clearErrorMessage();
 			validatePasswordField();
+
+			if (!form.reportValidity()) return;
+
+			const formData = new FormData(form);
+			const payload = {
+				first_name: String(formData.get('first_name') || '').trim(),
+				last_name: String(formData.get('last_name') || '').trim(),
+				email: String(formData.get('email') || '').trim(),
+				password: String(formData.get('password') || ''),
+				business_name: String(formData.get('business_name') || '').trim(),
+				phone: orgPhoneInput instanceof HTMLInputElement
+					? toParaguayE164Phone(orgPhoneInput.value)
+					: String(formData.get('phone') || '').trim(),
+				company_email: String(formData.get('company_email') || '').trim(),
+				id_org_specialty: Number(String(formData.get('id_org_specialty') || '').trim()),
+				step: currentStep,
+			};
+
+			const previousSubmitText = submitButton?.textContent || '';
+			const wasSubmitDisabled = Boolean(submitButton?.disabled);
+
+			if (submitButton) {
+				submitButton.disabled = true;
+				submitButton.textContent = 'Registrando...';
+			}
+
+			try {
+				const response = await fetch(form.action, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+					},
+					body: JSON.stringify(payload),
+				});
+				const data = await readJsonResponse(response);
+
+				if (!response.ok) {
+					if (data?.step === 'admin' || data?.step === 'organization') {
+						currentStep = data.step;
+						updateUI();
+					}
+					setErrorMessage(getServerErrorMessage(data));
+					return;
+				}
+
+				if (typeof data?.redirect === 'string' && data.redirect.trim()) {
+					window.location.assign(data.redirect);
+					return;
+				}
+
+				setErrorMessage('El registro se completó, pero no recibimos la ruta de inicio de sesión.');
+			} catch (error) {
+				console.error('[RegisterForm] Registration request failed', error);
+				setErrorMessage('No pudimos comunicarnos con el servidor. Inténtalo de nuevo.');
+			} finally {
+				if (submitButton) {
+					submitButton.disabled = wasSubmitDisabled;
+					submitButton.textContent = previousSubmitText;
+				}
+			}
 		});
 
 		updateUI();
@@ -920,93 +930,8 @@ const currentStep = normalizeStep(step);
 	box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.1);
 }
 
-.m3-searchable-select {
-	position: relative;
-	width: 100%;
-}
-
-.m3-select-trigger {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
+.m3-select {
 	cursor: pointer;
-	user-select: none;
-}
-
-.m3-select-trigger.is-disabled {
-	opacity: 0.6;
-	pointer-events: none;
-}
-
-.m3-select-dropdown {
-	position: absolute;
-	top: calc(100% + 0.5rem);
-	left: 0;
-	right: 0;
-	background-color: #121212;
-	border: 1px solid #262626;
-	border-radius: 0.75rem;
-	z-index: 100;
-	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
-	overflow: hidden;
-	display: flex;
-	flex-direction: column;
-	max-height: 250px;
-}
-
-.m3-select-dropdown.is-hidden {
-	display: none;
-}
-
-.m3-select-search-box {
-	display: flex;
-	align-items: center;
-	padding: 0.75rem;
-	border-bottom: 1px solid #262626;
-	background-color: #0a0a0a;
-}
-
-.m3-select-search-box .material-symbols-rounded {
-	color: #64748b;
-	font-size: 1.25rem;
-	margin-right: 0.5rem;
-}
-
-.m3-select-search {
-	flex: 1;
-	background: transparent;
-	border: none;
-	color: #f8fafc;
-	font-size: 0.95rem;
-	outline: none;
-	font-family: inherit;
-}
-
-.m3-select-options {
-	list-style: none;
-	margin: 0;
-	padding: 0.5rem;
-	overflow-y: auto;
-}
-
-.m3-select-option {
-	padding: 0.65rem 1rem;
-	border-radius: 0.5rem;
-	cursor: pointer;
-	color: #cbd5e1;
-	font-size: 0.95rem;
-	transition: background-color 0.2s, color 0.2s;
-}
-
-.m3-select-option:hover {
-	background-color: #1e293b;
-	color: #f8fafc;
-}
-
-.m3-select-option[data-selected="true"] {
-	background-color: rgba(37, 99, 235, 0.15);
-	color: #3b82f6;
-	font-weight: 600;
 }
 
 .m3-input-affix {

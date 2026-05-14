@@ -50,6 +50,14 @@ export interface PublicBookingService {
 	price: number;
 }
 
+export interface PublicBookingLocation {
+	id_location: number;
+	name: string;
+	address: string;
+	latitude?: number;
+	longitude?: number;
+}
+
 export interface PublicBookingProfile {
 	id_professional: number;
 	org_id_organization: number;
@@ -58,6 +66,7 @@ export interface PublicBookingProfile {
 	specialty: string;
 	image_url: string;
 	services: PublicBookingService[];
+	locations: PublicBookingLocation[];
 }
 
 export interface PublicCreateAppointmentPayload {
@@ -69,6 +78,12 @@ export interface PublicCreateAppointmentPayload {
 	customer_phone: string;
 	start_time: string;
 	end_time: string;
+}
+
+export interface PublicCreatedAppointmentData {
+	appointment_id?: number;
+	start_time?: string;
+	end_time?: string;
 }
 
 export interface PublicValidateCustomerPayload {
@@ -304,6 +319,19 @@ const parseApiResponse = async (response: Response, fallbackMessage: string) => 
 	return data;
 };
 
+const normalizeCreatedAppointmentData = (value: unknown): PublicCreatedAppointmentData | null => {
+	if (!value || typeof value !== 'object') return null;
+
+	const source = value as Record<string, unknown>;
+	const appointmentId = toPositiveInt(source.appointment_id, 0);
+
+	return {
+		appointment_id: appointmentId || undefined,
+		start_time: String(source.start_time || '').trim() || undefined,
+		end_time: String(source.end_time || '').trim() || undefined,
+	};
+};
+
 const normalizeService = (value: unknown): PublicBookingService | null => {
 	if (!value || typeof value !== 'object') return null;
 
@@ -321,6 +349,27 @@ const normalizeService = (value: unknown): PublicBookingService | null => {
 	};
 };
 
+const normalizeLocation = (value: unknown): PublicBookingLocation | null => {
+	if (!value || typeof value !== 'object') return null;
+
+	const source = value as Record<string, unknown>;
+	const idLocation = toPositiveInt(source.id_location, 0);
+	const name = String(source.name || '').trim();
+	const address = String(source.address || '').trim();
+	if (!idLocation || !address) return null;
+
+	const latitude = Number(source.latitude);
+	const longitude = Number(source.longitude);
+
+	return {
+		id_location: idLocation,
+		name,
+		address,
+		latitude: Number.isFinite(latitude) ? latitude : undefined,
+		longitude: Number.isFinite(longitude) ? longitude : undefined,
+	};
+};
+
 const normalizeProfile = (value: unknown): PublicBookingProfile | null => {
 	if (!value || typeof value !== 'object') return null;
 
@@ -335,6 +384,11 @@ const normalizeProfile = (value: unknown): PublicBookingProfile | null => {
 				.map(normalizeService)
 				.filter((service): service is PublicBookingService => service !== null)
 		: [];
+	const locations = Array.isArray(source.locations)
+		? source.locations
+				.map(normalizeLocation)
+				.filter((location): location is PublicBookingLocation => location !== null)
+		: [];
 
 	return {
 		id_professional: professionalId,
@@ -346,6 +400,7 @@ const normalizeProfile = (value: unknown): PublicBookingProfile | null => {
 		specialty: String(source.specialty || '').trim() || 'Sin especialidad',
 		image_url: String(source.image_url || '').trim(),
 		services,
+		locations,
 	};
 };
 
@@ -429,6 +484,7 @@ export const createPublicAppointmentWithOrds = async (payload: PublicCreateAppoi
 	return {
 		statusCode: response.status || 201,
 		message: successMessage || 'Cita confirmada!',
+		data: normalizeCreatedAppointmentData(data.data),
 	};
 };
 

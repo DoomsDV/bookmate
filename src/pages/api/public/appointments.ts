@@ -5,51 +5,11 @@ import {
 	PublicBookingApiError,
 	type PublicCreateAppointmentPayload,
 } from '../../../lib/public-booking';
-
-const toSafeApiStatus = (value: number) => {
-	if (value === 555) return 502;
-	return Number.isInteger(value) && value >= 400 && value <= 599 ? value : 500;
-};
-
-const toErrorResponse = (error: unknown, fallbackMessage: string) => {
-	const bookingError =
-		error instanceof PublicBookingApiError
-			? error
-			: new PublicBookingApiError(fallbackMessage, 500);
-
-	return Response.json(
-		{
-			status: 'error',
-			message: bookingError.message,
-			details: bookingError.details,
-		},
-		{ status: toSafeApiStatus(bookingError.status) }
-	);
-};
-
-const toPositiveInt = (value: unknown) => {
-	const parsed = Number(value);
-	return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
-};
-
-const parseRequestBody = async (request: Request) => {
-	const contentType = request.headers.get('content-type') || '';
-	if (contentType.includes('application/json')) {
-		return request.json();
-	}
-
-	const formData = await request.formData();
-	return {
-		org_id_organization: formData.get('org_id_organization'),
-		loc_id_location: formData.get('loc_id_location'),
-		pro_id_professional: formData.get('pro_id_professional'),
-		ser_id_service: formData.get('ser_id_service'),
-		customer_name: formData.get('customer_name'),
-		customer_phone: formData.get('customer_phone'),
-		start_time: formData.get('start_time'),
-		end_time: formData.get('end_time'),
-	};
-};
+import {
+	parseRequestBody,
+	publicBookingErrorResponse,
+	toPositiveInt,
+} from '../../../lib/public-api-handlers';
 
 const parsePayload = (source: any): PublicCreateAppointmentPayload => {
 	const payload: PublicCreateAppointmentPayload = {
@@ -96,10 +56,11 @@ export const POST: APIRoute = async ({ request }) => {
 			{
 				status: 'success',
 				message: created.message,
+				data: created.data,
 			},
 			{ status: created.statusCode === 200 ? 201 : created.statusCode }
 		);
 	} catch (error) {
-		return toErrorResponse(error, 'No fue posible confirmar la cita.');
+		return publicBookingErrorResponse(error, 'No fue posible confirmar la cita.');
 	}
 };

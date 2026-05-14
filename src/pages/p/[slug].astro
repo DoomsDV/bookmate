@@ -31,9 +31,10 @@ const envDefaultLocationId = parseLocationId(
 	String(import.meta.env.PUBLIC_BOOKMATE_DEFAULT_LOCATION_ID ?? '')
 );
 const initialLocationId = queryLocationId || envDefaultLocationId || 0;
-const profilePlaceholderImageUrl = String(
-	import.meta.env.PUBLIC_BOOKMATE_PROFILE_PLACEHOLDER_IMAGE_URL ?? '/favicon.svg'
-).trim();
+const googleMapsApiKey =
+	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
+	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
+	'';
 
 let profile: PublicBookingProfile | null = null;
 let loadError = '';
@@ -83,18 +84,25 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 					class="grid gap-6"
 					data-public-booking-root
 					data-location-id={String(initialLocationId)}
+					data-google-maps-api-key={googleMapsApiKey}
 				>
 					<script type="application/json" id="public-booking-profile-json" set:html={serializedProfile}></script>
 
 					<div class="relative">
 						<header class="relative overflow-hidden rounded-[28px] bg-(--surface-container) p-6 sm:p-8 shadow-sm transition-shadow">
 							<div class="relative grid justify-items-center gap-4 text-center sm:grid-cols-[auto_1fr] sm:items-center sm:justify-items-start sm:gap-6 sm:text-left">
-							<img
-								src={profile.image_url || profilePlaceholderImageUrl}
-								alt={`Foto de ${profile.full_name}`}
-								loading="lazy"
-								class="h-24 w-24 rounded-full border border-(--outline-variant) bg-(--surface-container-high) object-cover sm:h-32 sm:w-32"
-							/>
+							{profile.image_url ? (
+								<img
+									src={profile.image_url}
+									alt={`Foto de ${profile.full_name}`}
+									loading="lazy"
+									class="public-booking-avatar h-24 w-24 rounded-full border border-(--outline-variant) bg-(--surface-container-high) object-cover sm:h-32 sm:w-32"
+								/>
+							) : (
+								<div class="public-booking-avatar public-booking-avatar--empty h-24 w-24 sm:h-32 sm:w-32" aria-label={`Sin foto de ${profile.full_name}`} role="img">
+									<span class="material-symbols-rounded">account_circle</span>
+								</div>
+							)}
 							<div class="grid gap-1">
 								<p class="text-xs font-medium uppercase tracking-widest text-(--primary)">
 									{profileTopLabel}
@@ -253,10 +261,10 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Confirma tus datos</h2>
 						</div>
 
-						<div class="mt-6 grid gap-8 lg:grid-cols-[1fr_22rem]">
-							<form class="grid gap-5" data-customer-form>
+						<div class="mt-6 grid gap-5 lg:grid-cols-[1fr_22rem] lg:gap-8">
+							<form class="contents lg:grid lg:gap-5" data-customer-form>
 								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
-									Telefono (WhatsApp)
+									<span>Teléfono (WhatsApp) <span class="text-(--error)" aria-hidden="true">*</span></span>
 									<div class="flex w-full overflow-hidden rounded-xl border border-(--outline) bg-(--surface-container-lowest) transition focus-within:border-(--primary) focus-within:ring-1 focus-within:ring-(--primary)">
 										<span class="inline-flex items-center border-r border-(--outline) bg-(--surface-container-high) px-3 text-sm font-semibold text-(--on-surface-variant)">+595</span>
 										<input
@@ -272,15 +280,11 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 									</div>
 									<span class="hidden text-xs font-medium text-(--error)" data-field-error="customer_phone"></span>
 								</label>
-								<p class="text-xs font-medium text-(--on-surface-variant)" data-customer-lookup-status>
-									Ingresa tu número de celular.
-								</p>
-
 								<label
 									class="hidden grid gap-1.5 text-sm font-medium text-(--on-surface)"
 									data-customer-name-wrapper
 								>
-									Nombre completo
+									<span>Nombre completo <span class="text-(--error)" aria-hidden="true">*</span></span>
 									<input
 										type="text"
 										name="customer_name"
@@ -297,7 +301,7 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 									class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
 								></p>
 
-								<div class="mt-3 grid gap-3 sm:flex sm:flex-wrap sm:items-center">
+								<div class="order-3 grid gap-3 sm:flex sm:flex-wrap sm:items-center lg:order-none lg:mt-3">
 									<button
 										type="submit"
 										data-submit-booking
@@ -315,7 +319,7 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 								</div>
 							</form>
 
-							<aside class="rounded-3xl bg-(--surface-container-highest) p-6 shadow-sm">
+							<aside class="order-2 rounded-3xl bg-(--surface-container-highest) p-6 shadow-sm lg:order-none">
 								<h3 class="text-xs font-bold uppercase tracking-widest text-(--primary)">
 									Resumen
 								</h3>
@@ -336,6 +340,16 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 										<span class="text-sm font-medium text-(--on-surface-variant)">Hora</span>
 										<span class="font-normal text-(--on-surface)" data-summary-time></span>
 									</li>
+									<li class="grid">
+										<span class="text-sm font-medium text-(--on-surface-variant)">Ubicación</span>
+										<button
+											type="button"
+											class="mt-1 cursor-pointer text-left font-normal text-(--primary) underline-offset-4 transition hover:underline disabled:cursor-not-allowed disabled:text-(--on-surface-variant) disabled:no-underline"
+											data-summary-location
+										>
+											Ubicación no disponible
+										</button>
+									</li>
 								</ul>
 							</aside>
 						</div>
@@ -347,7 +361,7 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 					>
 						<h2 class="text-3xl font-normal tracking-tight">Reserva confirmada</h2>
 						<p class="mt-2 text-base font-medium text-(--on-tertiary-container) opacity-90">
-							Tu cita ha sido registrada correctamente.
+							¡Todo listo! Tu cita está confirmada. Te enviamos los detalles y la ubicación del local directamente a tu WhatsApp.
 						</p>
 						<div class="mt-6 rounded-3xl bg-(--surface-container-lowest) p-6 shadow-sm">
 							<ul class="grid gap-4 text-base">
@@ -365,6 +379,27 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 							Reservar otra cita
 						</button>
 					</section>
+
+					<dialog class="public-map-modal rounded-[28px] border border-(--outline-variant) bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70" data-public-map-modal>
+						<div class="grid gap-4 p-5 sm:p-6">
+							<div class="flex items-start justify-between gap-4">
+								<div>
+									<h2 class="text-xl font-semibold tracking-tight">Ubicación</h2>
+									<p class="mt-1 text-sm text-(--on-surface-variant)" data-public-map-address></p>
+								</div>
+								<button
+									type="button"
+									class="grid h-10 w-10 place-items-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-highest) hover:text-(--on-surface)"
+									data-public-map-close
+									aria-label="Cerrar mapa"
+								>
+									<span class="material-symbols-rounded">close</span>
+								</button>
+							</div>
+							<div class="h-80 overflow-hidden rounded-3xl border border-(--outline-variant) bg-(--surface-container-high)" data-public-map-canvas></div>
+							<p class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)" data-public-map-status></p>
+						</div>
+					</dialog>
 				</section>
 			)
 		}
@@ -411,6 +446,41 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 		--error: #ffb4ab;
 		--error-container: #93000a;
 		--on-error-container: #ffdad6;
+	}
+
+	.public-booking-avatar {
+		flex: 0 0 auto;
+	}
+
+	.public-booking-avatar--empty {
+		display: grid;
+		place-items: center;
+		border-radius: 9999px;
+		border: 4px solid rgba(255, 255, 255, 0.9);
+		background: #eef5ff;
+		color: var(--primary);
+		box-shadow: 0 0 0 1px rgba(168, 199, 250, 0.28);
+	}
+
+	.public-booking-avatar--empty .material-symbols-rounded {
+		font-size: 2.25rem;
+		line-height: 1;
+	}
+
+	.public-map-modal {
+		width: min(92vw, 44rem);
+		max-height: min(90vh, 42rem);
+		margin: auto;
+	}
+
+	.public-booking-shell button:not([disabled]),
+	.public-booking-shell [role='button']:not([aria-disabled='true']),
+	.public-booking-shell a[href] {
+		cursor: pointer;
+	}
+
+	.public-booking-shell button[disabled] {
+		cursor: not-allowed;
 	}
 
 	.step-item-default,

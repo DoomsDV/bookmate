@@ -101,9 +101,11 @@ export interface ResetPasswordPayload {
 
 interface AuthFailureResponse {
 	status?: string;
+	error?: unknown;
 	message?: string;
 	details?: unknown;
 	errors?: unknown;
+	fieldErrors?: unknown;
 }
 
 interface OrgSpecialtiesSuccessResponse {
@@ -150,6 +152,22 @@ const parseFieldErrors = (value: unknown): AuthFieldError[] => {
 	});
 };
 
+const getFailureMessage = (failureData: AuthFailureResponse, fallbackMessage: string) => {
+	const candidates = [failureData.message, failureData.error];
+
+	for (const candidate of candidates) {
+		if (typeof candidate === 'string' && candidate.trim()) return candidate.trim();
+	}
+
+	return fallbackMessage;
+};
+
+const getFailureDetails = (failureData: AuthFailureResponse, fallbackDetails?: unknown) =>
+	failureData.details ?? fallbackDetails;
+
+const getFailureFieldErrors = (failureData: AuthFailureResponse) =>
+	parseFieldErrors(failureData.errors ?? failureData.fieldErrors);
+
 const isSuccessResponse = (value: unknown): value is AuthSuccessResponse => {
 	if (!value || typeof value !== 'object') return false;
 
@@ -173,11 +191,11 @@ const parseAuthResponse = async (response: Response) => {
 
 	if (!response.ok || !isSuccessResponse(data)) {
 		const failureData = (data ?? {}) as AuthFailureResponse;
-		const fieldErrors = parseFieldErrors(failureData.errors);
+		const fieldErrors = getFailureFieldErrors(failureData);
 		throw new AuthApiError(
-			failureData.message || 'No fue posible autenticar la solicitud.',
+			getFailureMessage(failureData, 'No fue posible autenticar la solicitud.'),
 			response.status || 400,
-			failureData.details,
+			getFailureDetails(failureData),
 			fieldErrors
 		);
 	}
@@ -185,24 +203,51 @@ const parseAuthResponse = async (response: Response) => {
 	return data;
 };
 
-const parseRegisterResponse = async (response: Response) => {
-	let data: RegisterSuccessResponse | AuthFailureResponse | null = null;
+const parseRegisterResponseText = (responseText: string) => {
+	const trimmedBody = responseText.trim();
+	if (!trimmedBody) return null;
 
 	try {
-		data = await response.json();
+		return JSON.parse(trimmedBody) as RegisterSuccessResponse | AuthFailureResponse;
 	} catch {
-		throw new AuthApiError('No fue posible interpretar la respuesta del servidor de registro.', 502);
+		return null;
+	}
+};
+
+const getRegisterErrorStatus = (response: Response, fallbackStatus: number) =>
+	!response.ok && response.status ? response.status : fallbackStatus;
+
+const buildRegisterError = (
+	response: Response,
+	responseText: string,
+	data: RegisterSuccessResponse | AuthFailureResponse | null
+) => {
+	const failureData = data && typeof data === 'object' ? (data as AuthFailureResponse) : {};
+	const rawDetails = responseText.trim();
+	const fieldErrors = getFailureFieldErrors(failureData);
+	const message = getFailureMessage(
+		failureData,
+		rawDetails || 'No fue posible completar el registro.'
+	);
+	const details = getFailureDetails(failureData, rawDetails ? rawDetails : undefined);
+
+	return new AuthApiError(message, getRegisterErrorStatus(response, 400), details, fieldErrors);
+};
+
+const parseRegisterResponse = (response: Response, responseText: string) => {
+	const data = parseRegisterResponseText(responseText);
+
+	if (!data) {
+		const rawDetails = responseText.trim();
+		throw new AuthApiError(
+			rawDetails || 'No fue posible interpretar la respuesta del servidor de registro.',
+			getRegisterErrorStatus(response, 502),
+			rawDetails || undefined
+		);
 	}
 
 	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
-		const failureData = (data ?? {}) as AuthFailureResponse;
-		const fieldErrors = parseFieldErrors(failureData.errors);
-		throw new AuthApiError(
-			failureData.message || 'No fue posible completar el registro.',
-			response.status || 400,
-			failureData.details,
-			fieldErrors
-		);
+		throw buildRegisterError(response, responseText, data);
 	}
 
 	return data as RegisterSuccessResponse;
@@ -220,9 +265,9 @@ const parseBasicResponse = async (response: Response) => {
 	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
 		const failureData = (data ?? {}) as AuthFailureResponse;
 		throw new AuthApiError(
-			failureData.message || 'No fue posible completar la solicitud.',
+			getFailureMessage(failureData, 'No fue posible completar la solicitud.'),
 			response.status || 400,
-			failureData.details
+			getFailureDetails(failureData)
 		);
 	}
 
@@ -244,10 +289,10 @@ const parseStatusResponseWithFields = async (
 	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
 		const failureData = (data ?? {}) as AuthFailureResponse;
 		throw new AuthApiError(
-			failureData.message || fallbackMessage,
+			getFailureMessage(failureData, fallbackMessage),
 			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
+			getFailureDetails(failureData),
+			getFailureFieldErrors(failureData)
 		);
 	}
 
@@ -330,8 +375,16 @@ export const registerWithOrds = async (payload: RegisterPayload) => {
 		},
 		body: JSON.stringify(payload),
 	});
+	const responseText = await response.text();
 
-	return parseRegisterResponse(response);
+	if (!response.ok) {
+		console.error('[ORDS register] Backend error', {
+			status: response.status,
+			body: responseText,
+		});
+	}
+
+	return parseRegisterResponse(response, responseText);
 };
 
 export const forgotPasswordWithOrds = async (payload: ForgotPasswordPayload) => {
@@ -400,10 +453,10 @@ export const listOrgSpecialtiesWithOrds = async (): Promise<OrgSpecialtyOption[]
 	if (!response.ok || !isOrgSpecialtiesSuccessResponse(data)) {
 		const failureData = (data ?? {}) as AuthFailureResponse;
 		throw new AuthApiError(
-			failureData.message || 'No fue posible obtener las especialidades de la organizacion.',
+			getFailureMessage(failureData, 'No fue posible obtener las especialidades de la organizacion.'),
 			response.status || 400,
-			failureData.details,
-			parseFieldErrors(failureData.errors)
+			getFailureDetails(failureData),
+			getFailureFieldErrors(failureData)
 		);
 	}
 

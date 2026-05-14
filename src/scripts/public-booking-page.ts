@@ -1,6 +1,8 @@
 import {
+	formatParaguayMobilePhoneInput,
 	PARAGUAY_MOBILE_PHONE_ERROR,
 	parseParaguayMobilePhone,
+	toParaguayMobileE164FromInput,
 } from '../lib/paraguay-phone';
 
 type WizardStep = 1 | 2 | 3 | 4 | 5;
@@ -12,6 +14,14 @@ type BookingService = {
 	price: number;
 };
 
+type BookingLocation = {
+	id_location: number;
+	name?: string;
+	address: string;
+	latitude?: number;
+	longitude?: number;
+};
+
 type BookingProfile = {
 	id_professional: number;
 	org_id_organization: number;
@@ -19,6 +29,7 @@ type BookingProfile = {
 	specialty: string;
 	image_url: string;
 	services: BookingService[];
+	locations?: BookingLocation[];
 };
 
 type ValidateCustomerApiData = {
@@ -31,6 +42,25 @@ type ValidateCustomerApiResponse = {
 	message?: string;
 	exists?: boolean;
 	data?: ValidateCustomerApiData | null;
+};
+
+type CreatedAppointmentApiData = {
+	appointment_id?: number;
+	start_time?: string;
+	end_time?: string;
+};
+
+type Coordinates = { lat: number; lng: number };
+
+type GoogleMapsNamespace = {
+	Map: new (container: HTMLElement, options: Record<string, unknown>) => any;
+	Marker: new (options: Record<string, unknown>) => any;
+	event?: { trigger?: (instance: unknown, eventName: string) => void };
+};
+
+type WindowWithGoogleMaps = Window & {
+	google?: { maps?: GoogleMapsNamespace };
+	__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
 };
 
 const toPositiveInt = (value: unknown, fallback = 1) => {
@@ -49,27 +79,6 @@ const parseYmdDate = (value: string) => {
 	const [year, month, day] = value.split('-').map((part) => Number(part));
 	if (!year || !month || !day) return null;
 	return new Date(year, month - 1, day);
-};
-
-const toParaguayLocalPhoneDigits = (rawValue: string) => {
-	let digits = String(rawValue || '').replace(/\D/g, '');
-	if (digits.startsWith('00595')) digits = digits.slice(5);
-	if (digits.startsWith('595')) digits = digits.slice(3);
-	if (digits.startsWith('0')) digits = digits.slice(1);
-	return digits.slice(0, 9);
-};
-
-const formatParaguayLocalPhone = (rawValue: string) => {
-	const digits = toParaguayLocalPhoneDigits(rawValue);
-	if (!digits) return '';
-	if (digits.length <= 3) return digits;
-	if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
-	return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)}`;
-};
-
-const toParaguayE164Phone = (rawValue: string) => {
-	const digits = toParaguayLocalPhoneDigits(rawValue);
-	return digits ? `+595${digits}` : '';
 };
 
 const formatCurrency = (value: number) =>
@@ -109,6 +118,7 @@ const parseProfileFromDom = () => {
 		const parsed = JSON.parse(profileNode.textContent || '{}') as BookingProfile;
 		if (!parsed || typeof parsed !== 'object') return null;
 		if (!Array.isArray(parsed.services)) parsed.services = [];
+		if (!Array.isArray(parsed.locations)) parsed.locations = [];
 		return parsed;
 	} catch {
 		return null;
@@ -118,6 +128,27 @@ const parseProfileFromDom = () => {
 const readApiMessage = (data: any, fallbackMessage: string) => {
 	const message = typeof data?.message === 'string' ? data.message.trim() : '';
 	return message || fallbackMessage;
+};
+
+class PublicBookingClientError extends Error {
+	status: number;
+
+	constructor(message: string, status: number) {
+		super(message);
+		this.name = 'PublicBookingClientError';
+		this.status = status;
+	}
+}
+
+const fetchJson = async <T>(url: string, init: RequestInit, fallbackMessage: string) => {
+	const response = await fetch(url, init);
+	const data = await response.json().catch(() => null) as T & { status?: string; message?: string };
+
+	if (!response.ok || !data || data.status !== 'success') {
+		throw new PublicBookingClientError(readApiMessage(data, fallbackMessage), response.status || 500);
+	}
+
+	return { response, data };
 };
 
 export const initializePublicBookingPage = () => {
@@ -144,9 +175,6 @@ export const initializePublicBookingPage = () => {
 	const customerPhoneFieldError = customerForm?.querySelector<HTMLElement>(
 		'[data-field-error="customer_phone"]'
 	);
-	const customerLookupStatus = customerForm?.querySelector<HTMLElement>(
-		'[data-customer-lookup-status]'
-	);
 	const submitButton = root.querySelector<HTMLButtonElement>('[data-submit-booking]');
 	const submitErrorNode = root.querySelector<HTMLElement>('[data-submit-error]');
 	const toastNode = root.querySelector<HTMLElement>('[data-booking-toast]');
@@ -157,12 +185,18 @@ export const initializePublicBookingPage = () => {
 	const summaryService = root.querySelector<HTMLElement>('[data-summary-service]');
 	const summaryDate = root.querySelector<HTMLElement>('[data-summary-date]');
 	const summaryTime = root.querySelector<HTMLElement>('[data-summary-time]');
+	const summaryLocation = root.querySelector<HTMLButtonElement>('[data-summary-location]');
 	const ticketProfessional = root.querySelector<HTMLElement>('[data-ticket-professional]');
 	const ticketService = root.querySelector<HTMLElement>('[data-ticket-service]');
 	const ticketDate = root.querySelector<HTMLElement>('[data-ticket-date]');
 	const ticketTime = root.querySelector<HTMLElement>('[data-ticket-time]');
 	const stepCompactLabel = root.querySelector<HTMLElement>('[data-step-compact-label]');
 	const stepProgressBar = root.querySelector<HTMLElement>('[data-step-progress-bar]');
+	const mapModal = root.querySelector<HTMLDialogElement>('[data-public-map-modal]');
+	const mapCanvas = root.querySelector<HTMLElement>('[data-public-map-canvas]');
+	const mapAddress = root.querySelector<HTMLElement>('[data-public-map-address]');
+	const mapStatus = root.querySelector<HTMLElement>('[data-public-map-status]');
+	const mapCloseButton = root.querySelector<HTMLButtonElement>('[data-public-map-close]');
 
 	const stepItems = root.querySelectorAll<HTMLElement>('[data-step-item]');
 	const stepPanels = root.querySelectorAll<HTMLElement>('[data-step-panel]');
@@ -191,10 +225,14 @@ export const initializePublicBookingPage = () => {
 		!summaryService ||
 		!summaryDate ||
 		!summaryTime ||
+		!summaryLocation ||
 		!ticketProfessional ||
 		!ticketService ||
 		!ticketDate ||
 		!ticketTime ||
+		!mapModal ||
+		!mapCanvas ||
+		!mapCloseButton ||
 		!prevMonthButton ||
 		!nextMonthButton ||
 		!backToServices ||
@@ -205,7 +243,14 @@ export const initializePublicBookingPage = () => {
 		return;
 	}
 
-	const locationId = toPositiveInt(root.dataset.locationId, 1);
+	const configuredLocationId = toPositiveInt(root.dataset.locationId, 0);
+	const locations = Array.isArray(profile.locations) ? profile.locations : [];
+	const selectedLocation =
+		locations.find((location) => location.id_location === configuredLocationId) ??
+		locations[0] ??
+		null;
+	const locationId = selectedLocation?.id_location || configuredLocationId || 1;
+	const mapsApiKey = String(root.dataset.googleMapsApiKey || '').trim();
 	const today = toDateStart(new Date());
 
 	let step: WizardStep = 1;
@@ -219,6 +264,8 @@ export const initializePublicBookingPage = () => {
 	let isValidatingCustomer = false;
 	let customerValidationSeq = 0;
 	let validatedCustomerPhoneE164 = '';
+	let mapInstance: any = null;
+	let mapMarker: any = null;
 
 	let toastTimer: number | null = null;
 	const stepLabelByNumber: Record<1 | 2 | 3 | 4, string> = {
@@ -228,7 +275,7 @@ export const initializePublicBookingPage = () => {
 		4: 'Datos',
 	};
 
-	const showToast = (message: string, kind: 'success' | 'error' = 'error') => {
+	const showToast = (message: string, kind: 'success' | 'error' = 'error', durationMs = 3600) => {
 		if (!toastNode) return;
 		toastNode.textContent = message;
 		toastNode.classList.remove('hidden', 'is-success', 'is-error');
@@ -238,7 +285,102 @@ export const initializePublicBookingPage = () => {
 		toastTimer = window.setTimeout(() => {
 			toastNode.classList.add('hidden');
 			toastNode.classList.remove('is-success', 'is-error');
-		}, 3600);
+		}, durationMs);
+	};
+
+	const setMapStatus = (message: string) => {
+		if (!mapStatus) return;
+		mapStatus.textContent = message;
+		mapStatus.classList.toggle('hidden', !message.trim());
+	};
+
+	const getLocationCoordinates = (): Coordinates | null => {
+		const lat = Number(selectedLocation?.latitude);
+		const lng = Number(selectedLocation?.longitude);
+		return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+	};
+
+	const loadGoogleMaps = async (): Promise<GoogleMapsNamespace> => {
+		if (!mapsApiKey) {
+			throw new Error('No se encontró la API key de Google Maps para mostrar la ubicación.');
+		}
+
+		const win = window as WindowWithGoogleMaps;
+		if (win.google?.maps) return win.google.maps;
+		if (win.__bookmateGoogleMapsLoader) return win.__bookmateGoogleMapsLoader;
+
+		win.__bookmateGoogleMapsLoader = new Promise<GoogleMapsNamespace>((resolve, reject) => {
+			const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-maps-loader]');
+			if (existingScript) {
+				existingScript.addEventListener('load', () => {
+					const maps = (window as WindowWithGoogleMaps).google?.maps;
+					maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
+				}, { once: true });
+				existingScript.addEventListener('error', () => reject(new Error('No fue posible cargar Google Maps.')), { once: true });
+				return;
+			}
+
+			const script = document.createElement('script');
+			script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsApiKey)}&v=weekly`;
+			script.async = true;
+			script.defer = true;
+			script.dataset.googleMapsLoader = 'true';
+			script.addEventListener('load', () => {
+				const maps = (window as WindowWithGoogleMaps).google?.maps;
+				maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
+			}, { once: true });
+			script.addEventListener('error', () => reject(new Error('No fue posible cargar Google Maps.')), { once: true });
+			document.head.appendChild(script);
+		});
+
+		try {
+			return await win.__bookmateGoogleMapsLoader;
+		} catch (error) {
+			win.__bookmateGoogleMapsLoader = null;
+			throw error;
+		}
+	};
+
+	const openLocationMap = async () => {
+		const coords = getLocationCoordinates();
+		if (!coords) {
+			setMapStatus('Esta sucursal no tiene coordenadas cargadas.');
+			return;
+		}
+
+		if (mapAddress) mapAddress.textContent = selectedLocation?.address || '';
+		setMapStatus('');
+		if (!mapModal.open) mapModal.showModal();
+
+		try {
+			const maps = await loadGoogleMaps();
+			if (!mapInstance) {
+				mapInstance = new maps.Map(mapCanvas, {
+					center: coords,
+					zoom: 16,
+					disableDefaultUI: false,
+					mapTypeControl: false,
+					streetViewControl: false,
+					fullscreenControl: true,
+				});
+				mapMarker = new maps.Marker({
+					map: mapInstance,
+					position: coords,
+					title: selectedLocation?.name || 'Ubicación',
+				});
+			} else {
+				mapInstance.setCenter(coords);
+				mapInstance.setZoom(16);
+				mapMarker?.setPosition?.(coords);
+			}
+
+			window.setTimeout(() => {
+				maps.event?.trigger?.(mapInstance, 'resize');
+				mapInstance?.setCenter?.(coords);
+			}, 80);
+		} catch (error) {
+			setMapStatus(error instanceof Error ? error.message : 'No fue posible mostrar el mapa.');
+		}
 	};
 
 	const setSubmitError = (message: string) => {
@@ -274,12 +416,6 @@ export const initializePublicBookingPage = () => {
 		customerNameFieldError.classList.remove('hidden');
 	};
 
-	const setCustomerLookupStatus = (message: string) => {
-		if (!customerLookupStatus) return;
-		customerLookupStatus.textContent =
-			message || 'Ingresa tu número de celular.';
-	};
-
 	const setCustomerNameVisibility = (visible: boolean) => {
 		customerNameWrapper.classList.toggle('hidden', !visible);
 		customerNameInput.required = visible;
@@ -298,7 +434,6 @@ export const initializePublicBookingPage = () => {
 		if (clearPhone) customerPhoneInput.value = '';
 		setCustomerNameVisibility(false);
 		setNameFieldError('');
-		setCustomerLookupStatus('');
 	};
 
 	const validateCustomerPhone = async (customerPhoneE164: string) => {
@@ -312,31 +447,28 @@ export const initializePublicBookingPage = () => {
 		setSubmitError('');
 		setNameFieldError('');
 		setCustomerNameVisibility(false);
-		setCustomerLookupStatus('Validando cliente...');
 
 		try {
-			const response = await fetch('/api/public/validate-customer', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
+			const { data } = await fetchJson<ValidateCustomerApiResponse>(
+				'/api/public/validate-customer',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+					},
+					body: JSON.stringify({
+						org_id_organization: profile.org_id_organization,
+						customer_phone: customerPhoneE164,
+					}),
 				},
-				body: JSON.stringify({
-					org_id_organization: profile.org_id_organization,
-					customer_phone: customerPhoneE164,
-				}),
-			});
-			const data = (await response.json()) as ValidateCustomerApiResponse;
+				'No fue posible validar el cliente.'
+			);
 
 			if (currentValidationSeq !== customerValidationSeq) return false;
 
-			if (
-				!response.ok ||
-				!data ||
-				data.status !== 'success' ||
-				typeof data.exists !== 'boolean'
-			) {
-				throw new Error(readApiMessage(data, 'No fue posible validar el cliente.'));
+			if (typeof data.exists !== 'boolean') {
+				throw new Error('No fue posible validar el cliente.');
 			}
 
 			validatedCustomerPhoneE164 = customerPhoneE164;
@@ -349,13 +481,9 @@ export const initializePublicBookingPage = () => {
 				}
 				customerNameInput.value = fullName;
 				setCustomerNameLocked(true);
-				setCustomerLookupStatus('Cliente encontrado. Nombre cargado automaticamente.');
 			} else {
 				customerNameInput.value = '';
 				setCustomerNameLocked(false);
-				setCustomerLookupStatus(
-					readApiMessage(data, 'Cliente nuevo. Ingresa tu nombre completo para continuar.')
-				);
 			}
 
 			return true;
@@ -422,6 +550,8 @@ export const initializePublicBookingPage = () => {
 		summaryService.textContent = serviceLabel;
 		summaryDate.textContent = formattedDate || '-';
 		summaryTime.textContent = timeLabel;
+		summaryLocation.textContent = selectedLocation?.address || 'Ubicación no disponible';
+		summaryLocation.disabled = !getLocationCoordinates();
 	};
 
 	const renderServices = () => {
@@ -439,7 +569,7 @@ export const initializePublicBookingPage = () => {
 			const button = document.createElement('button');
 			button.type = 'button';
 			button.className =
-				'group grid gap-2 rounded-2xl border px-5 py-4 text-left transition ' +
+				'group grid gap-2 rounded-2xl border px-5 py-4 text-left cursor-pointer transition ' +
 				(selectedService?.id_service === service.id_service
 					? 'border-[var(--primary)] bg-[var(--primary-container)]'
 					: 'border-[var(--outline-variant)] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container-high)]');
@@ -499,7 +629,7 @@ export const initializePublicBookingPage = () => {
 			dayButton.textContent = String(day);
 			dayButton.disabled = isPast || !selectedService;
 			dayButton.className =
-				'flex h-10 w-10 mx-auto items-center justify-center rounded-full border text-sm font-medium transition ' +
+				'flex h-10 w-10 mx-auto items-center justify-center rounded-full border text-sm font-medium cursor-pointer transition disabled:cursor-not-allowed ' +
 				(isSelected
 					? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--on-primary)]'
 					: isToday
@@ -534,7 +664,7 @@ export const initializePublicBookingPage = () => {
 			slotButton.type = 'button';
 			slotButton.textContent = slot;
 			slotButton.className =
-				'flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium transition ' +
+				'flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition ' +
 				(selectedTime === slot
 					? 'border-[var(--primary)] bg-[var(--primary-container)] text-[var(--on-primary-container)]'
 					: 'border-[var(--outline)] bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
@@ -566,14 +696,17 @@ export const initializePublicBookingPage = () => {
 				target_date: targetDate,
 			});
 
-			const response = await fetch(`/api/public/available-slots?${params.toString()}`, {
-				method: 'GET',
-				headers: { Accept: 'application/json' },
-			});
-			const data = await response.json();
+			const { data } = await fetchJson<{ data?: unknown[] }>(
+				`/api/public/available-slots?${params.toString()}`,
+				{
+					method: 'GET',
+					headers: { Accept: 'application/json' },
+				},
+				'No fue posible consultar horarios disponibles.'
+			);
 
-			if (!response.ok || !data || data.status !== 'success' || !Array.isArray(data.data)) {
-				throw new Error(readApiMessage(data, 'No fue posible consultar horarios disponibles.'));
+			if (!Array.isArray(data.data)) {
+				throw new Error('No fue posible consultar horarios disponibles.');
 			}
 
 			availableSlots = data.data
@@ -624,22 +757,30 @@ export const initializePublicBookingPage = () => {
 	backToCalendar.addEventListener('click', () => setStep(2));
 	backToSlots.addEventListener('click', () => setStep(3));
 	restartButton.addEventListener('click', resetFlow);
+	summaryLocation.addEventListener('click', () => {
+		void openLocationMap();
+	});
+	mapCloseButton.addEventListener('click', () => {
+		mapModal.close();
+	});
+	mapModal.addEventListener('click', (event) => {
+		if (event.target === mapModal) mapModal.close();
+	});
 	setCustomerNameLocked(false);
 	setCustomerNameVisibility(false);
-	setCustomerLookupStatus('');
-	customerPhoneInput.value = formatParaguayLocalPhone(customerPhoneInput.value);
+	customerPhoneInput.value = formatParaguayMobilePhoneInput(customerPhoneInput.value);
 	customerNameInput.addEventListener('input', () => {
 		setNameFieldError('');
 		setSubmitError('');
 	});
 
 	customerPhoneInput.addEventListener('input', () => {
-		customerPhoneInput.value = formatParaguayLocalPhone(customerPhoneInput.value);
+		customerPhoneInput.value = formatParaguayMobilePhoneInput(customerPhoneInput.value);
 		setPhoneFieldError('');
 		setSubmitError('');
 		if (isValidatingCustomer) resetCustomerLookupState();
 
-		const parsedPhone = parseParaguayMobilePhone(toParaguayE164Phone(customerPhoneInput.value));
+		const parsedPhone = parseParaguayMobilePhone(toParaguayMobileE164FromInput(customerPhoneInput.value));
 		if (!parsedPhone.isValid) {
 			if (validatedCustomerPhoneE164) resetCustomerLookupState();
 			return;
@@ -657,14 +798,14 @@ export const initializePublicBookingPage = () => {
 			return;
 		}
 
-		const parsedPhone = parseParaguayMobilePhone(toParaguayE164Phone(rawPhone));
+		const parsedPhone = parseParaguayMobilePhone(toParaguayMobileE164FromInput(rawPhone));
 		if (!parsedPhone.isValid) {
 			setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
 			resetCustomerLookupState();
 			return;
 		}
 
-		customerPhoneInput.value = formatParaguayLocalPhone(rawPhone);
+		customerPhoneInput.value = formatParaguayMobilePhoneInput(rawPhone);
 		setPhoneFieldError('');
 		await validateCustomerPhone(parsedPhone.e164);
 	});
@@ -686,14 +827,19 @@ export const initializePublicBookingPage = () => {
 		}
 
 		const rawCustomerPhone = customerPhoneInput.value.trim();
+		const rawCustomerName = String(customerNameInput.value || '').trim();
+		const isCustomerNameVisible = !customerNameWrapper.classList.contains('hidden');
 
 		if (!rawCustomerPhone) {
-			if (!rawCustomerPhone) setPhoneFieldError('El telefono es obligatorio.');
-			setSubmitError('Nombre y telefono son obligatorios.');
+			setPhoneFieldError('El teléfono es obligatorio.');
+			if (isCustomerNameVisible && !rawCustomerName) {
+				setNameFieldError('El nombre completo es obligatorio.');
+			}
+			setSubmitError('Teléfono y nombre completo son obligatorios.');
 			return;
 		}
 
-		const parsedPhone = parseParaguayMobilePhone(toParaguayE164Phone(rawCustomerPhone));
+		const parsedPhone = parseParaguayMobilePhone(toParaguayMobileE164FromInput(rawCustomerPhone));
 		if (!parsedPhone.isValid) {
 			setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
 			setSubmitError('Revisa el telefono antes de continuar.');
@@ -701,7 +847,7 @@ export const initializePublicBookingPage = () => {
 		}
 
 		const customerPhone = parsedPhone.e164;
-		customerPhoneInput.value = formatParaguayLocalPhone(rawCustomerPhone);
+		customerPhoneInput.value = formatParaguayMobilePhoneInput(rawCustomerPhone);
 		if (validatedCustomerPhoneE164 !== customerPhone || customerNameWrapper.classList.contains('hidden')) {
 			const isCustomerValidated = await validateCustomerPhone(customerPhone);
 			if (!isCustomerValidated) return;
@@ -710,7 +856,7 @@ export const initializePublicBookingPage = () => {
 		const customerName = String(customerNameInput.value || '').trim();
 		if (!customerName) {
 			setNameFieldError('El nombre completo es obligatorio.');
-			setSubmitError('Nombre y telefono son obligatorios.');
+			setSubmitError('Teléfono y nombre completo son obligatorios.');
 			return;
 		}
 
@@ -737,38 +883,33 @@ export const initializePublicBookingPage = () => {
 		submitButton.textContent = 'Confirmando...';
 
 		try {
-			const response = await fetch('/api/public/appointments', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
+			await fetchJson<{ message?: string; data?: CreatedAppointmentApiData | null }>(
+				'/api/public/appointments',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+					},
+					body: JSON.stringify(payload),
 				},
-				body: JSON.stringify(payload),
-			});
-			const data = await response.json();
-
-			if (!response.ok || !data || data.status !== 'success') {
-				const apiMessage = readApiMessage(data, 'No fue posible confirmar tu reserva.');
-
-				if (response.status === 409) {
-					showToast(apiMessage, 'error');
-					await loadAvailableSlots(selectedDate);
-					setStep(3);
-					return;
-				}
-
-				setSubmitError(apiMessage);
-				return;
-			}
+				'No fue posible confirmar tu reserva.'
+			);
 
 			ticketProfessional.textContent = profile.full_name;
 			ticketService.textContent = selectedService.name;
 			ticketDate.textContent = formatLongDate(selectedDate);
 			ticketTime.textContent = selectedTime;
 
-			showToast(readApiMessage(data, 'Cita confirmada!'), 'success');
 			setStep(5);
 		} catch (error) {
+			if (error instanceof PublicBookingClientError && error.status === 409) {
+				showToast(error.message, 'error');
+				await loadAvailableSlots(selectedDate);
+				setStep(3);
+				return;
+			}
+
 			setSubmitError(
 				error instanceof Error ? error.message : 'No fue posible confirmar tu reserva.'
 			);
