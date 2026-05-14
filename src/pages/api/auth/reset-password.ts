@@ -2,6 +2,11 @@ import type { APIRoute } from 'astro';
 
 import { AuthApiError, resetPasswordWithOrds } from '../../../lib/auth';
 
+const withQuery = (path: string, params: URLSearchParams) => {
+	const queryString = params.toString();
+	return queryString ? `${path}?${queryString}` : path;
+};
+
 const mapFieldParamName = (field: string) => {
 	const normalizedField = String(field || '').trim().toLowerCase();
 	if (normalizedField === 'new_password') return 'new_password_error';
@@ -52,7 +57,7 @@ const getPasswordValidationMessage = (rawPassword: string) => {
 	return '';
 };
 
-export const POST: APIRoute = async ({ request, url }) => {
+export const POST: APIRoute = async ({ request }) => {
 	let token = '';
 
 	try {
@@ -91,14 +96,14 @@ export const POST: APIRoute = async ({ request, url }) => {
 		});
 
 		if (wantsHtml(request)) {
-			const redirectUrl = new URL('/auth/login', url);
-			redirectUrl.searchParams.set('flash_message', response.message);
-			redirectUrl.searchParams.set('flash_type', 'success');
+			const redirectParams = new URLSearchParams();
+			redirectParams.set('flash_message', response.message);
+			redirectParams.set('flash_type', 'success');
 
 			return new Response(null, {
 				status: 302,
 				headers: {
-					Location: redirectUrl.toString(),
+					Location: withQuery('/auth/login', redirectParams),
 				},
 			});
 		}
@@ -117,12 +122,12 @@ export const POST: APIRoute = async ({ request, url }) => {
 				: new AuthApiError('No fue posible actualizar la contraseña.', 500);
 
 		if (wantsHtml(request)) {
-			const redirectUrl = new URL('/auth/reset-password', url);
+			const redirectParams = new URLSearchParams();
 			if (token) {
-				redirectUrl.searchParams.set('token', token);
+				redirectParams.set('token', token);
 			}
 
-			redirectUrl.searchParams.set(
+			redirectParams.set(
 				'error',
 				typeof authError.details === 'string' && authError.details.trim()
 					? authError.details
@@ -132,14 +137,14 @@ export const POST: APIRoute = async ({ request, url }) => {
 			for (const fieldError of authError.fieldErrors) {
 				const fieldName = mapFieldParamName(fieldError.field);
 				if (fieldName) {
-					redirectUrl.searchParams.set(fieldName, fieldError.message);
+					redirectParams.set(fieldName, fieldError.message);
 				}
 			}
 
 			return new Response(null, {
 				status: 302,
 				headers: {
-					Location: redirectUrl.toString(),
+					Location: withQuery('/auth/reset-password', redirectParams),
 				},
 			});
 		}
@@ -156,18 +161,18 @@ export const POST: APIRoute = async ({ request, url }) => {
 	}
 };
 
-export const GET: APIRoute = async ({ request, url }) => {
+export const GET: APIRoute = async ({ request }) => {
 	if (wantsHtml(request)) {
-		const nextUrl = new URL('/auth/reset-password', url);
+		const redirectParams = new URLSearchParams();
 		const token = new URL(request.url).searchParams.get('token') || '';
 		if (token) {
-			nextUrl.searchParams.set('token', token);
+			redirectParams.set('token', token);
 		}
 
 		return new Response(null, {
 			status: 302,
 			headers: {
-				Location: nextUrl.toString(),
+				Location: withQuery('/auth/reset-password', redirectParams),
 			},
 		});
 	}

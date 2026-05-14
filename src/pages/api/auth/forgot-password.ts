@@ -20,6 +20,11 @@ const toSafeStatus = (status: number) =>
 const buildFlashCookie = (name: string, value: string) =>
 	`${name}=${encodeURIComponent(value)}; Path=/; Max-Age=60; SameSite=Lax; HttpOnly`;
 
+const withQuery = (path: string, params: URLSearchParams) => {
+	const queryString = params.toString();
+	return queryString ? `${path}?${queryString}` : path;
+};
+
 const wantsHtml = (request: Request) => {
 	const accept = request.headers.get('accept') || '';
 	const contentType = request.headers.get('content-type') || '';
@@ -52,7 +57,7 @@ const parseBody = async (request: Request) => {
 	}
 };
 
-export const POST: APIRoute = async ({ request, url }) => {
+export const POST: APIRoute = async ({ request }) => {
 	let email = '';
 
 	try {
@@ -80,9 +85,8 @@ export const POST: APIRoute = async ({ request, url }) => {
 		await forgotPasswordWithOrds({ email });
 
 		if (wantsHtml(request)) {
-			const redirectUrl = new URL('/auth/login', url);
 			const headers = new Headers({
-				Location: redirectUrl.toString(),
+				Location: '/auth/login',
 			});
 			headers.append(
 				'Set-Cookie',
@@ -117,24 +121,24 @@ export const POST: APIRoute = async ({ request, url }) => {
 		});
 
 		if (wantsHtml(request)) {
-			const redirectUrl = new URL('/auth/forgot-password', url);
-			redirectUrl.searchParams.set('error', authError.message);
+			const redirectParams = new URLSearchParams();
+			redirectParams.set('error', authError.message);
 
 			if (email) {
-				redirectUrl.searchParams.set('email', email);
+				redirectParams.set('email', email);
 			}
 
 			for (const fieldError of authError.fieldErrors) {
 				const fieldName = mapFieldParamName(fieldError.field);
 				if (fieldName) {
-					redirectUrl.searchParams.set(fieldName, fieldError.message);
+					redirectParams.set(fieldName, fieldError.message);
 				}
 			}
 
 			return new Response(null, {
 				status: 302,
 				headers: {
-					Location: redirectUrl.toString(),
+					Location: withQuery('/auth/forgot-password', redirectParams),
 				},
 			});
 		}
