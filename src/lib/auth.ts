@@ -276,18 +276,40 @@ const parseBasicResponse = async (response: Response) => {
 
 const parseStatusResponseWithFields = async (
 	response: Response,
-	fallbackMessage: string
+	fallbackMessage: string,
+	debugLabel = 'ORDS auth status'
 ): Promise<{ message: string }> => {
 	let data: BasicSuccessResponse | AuthFailureResponse | null = null;
+	const responseText = await response.text();
 
 	try {
-		data = await response.json();
+		data = responseText.trim()
+			? (JSON.parse(responseText) as BasicSuccessResponse | AuthFailureResponse)
+			: null;
 	} catch {
-		throw new AuthApiError('No fue posible interpretar la respuesta del servidor.', 502);
+		console.error(`[${debugLabel}] Respuesta no JSON`, {
+			status: response.status,
+			statusText: response.statusText,
+			url: response.url,
+			contentType: response.headers.get('content-type'),
+			body: responseText,
+		});
+		throw new AuthApiError(
+			'No fue posible interpretar la respuesta del servidor.',
+			502,
+			responseText || undefined
+		);
 	}
 
 	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
 		const failureData = (data ?? {}) as AuthFailureResponse;
+		console.error(`[${debugLabel}] Error del backend`, {
+			status: response.status,
+			statusText: response.statusText,
+			url: response.url,
+			contentType: response.headers.get('content-type'),
+			body: responseText,
+		});
 		throw new AuthApiError(
 			getFailureMessage(failureData, fallbackMessage),
 			response.status || 400,
@@ -397,7 +419,11 @@ export const forgotPasswordWithOrds = async (payload: ForgotPasswordPayload) => 
 		body: JSON.stringify(payload),
 	});
 
-	return parseStatusResponseWithFields(response, 'No fue posible iniciar la recuperación de contraseña.');
+	return parseStatusResponseWithFields(
+		response,
+		'No fue posible iniciar la recuperación de contraseña.',
+		'ORDS forgot-password'
+	);
 };
 
 export const resetPasswordWithOrds = async (payload: ResetPasswordPayload) => {
@@ -410,7 +436,11 @@ export const resetPasswordWithOrds = async (payload: ResetPasswordPayload) => {
 		body: JSON.stringify(payload),
 	});
 
-	return parseStatusResponseWithFields(response, 'No fue posible actualizar tu contraseña.');
+	return parseStatusResponseWithFields(
+		response,
+		'No fue posible actualizar tu contraseña.',
+		'ORDS reset-password'
+	);
 };
 
 const normalizeOrgSpecialty = (value: unknown): OrgSpecialtyOption | null => {

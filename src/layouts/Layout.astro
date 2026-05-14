@@ -5,14 +5,36 @@ import FcmManager from '../components/FcmManager.astro';
 // 1. Importamos la información de la PWA
 import { pwaInfo } from 'virtual:pwa-info';
 
-const flashMessage = Astro.url.searchParams.get('flash_message') ?? '';
-const flashTypeRaw = Astro.url.searchParams.get('flash_type') ?? 'success';
+const FLASH_MESSAGE_COOKIE = 'bookmate_flash_message';
+const FLASH_TYPE_COOKIE = 'bookmate_flash_type';
+const decodeCookieValue = (value: string) => {
+    try {
+        return decodeURIComponent(value);
+    } catch {
+        return value;
+    }
+};
+
+const flashMessageFromQuery = Astro.url.searchParams.get('flash_message') ?? '';
+const flashTypeFromQuery = Astro.url.searchParams.get('flash_type') ?? '';
+const flashMessageFromCookie = Astro.cookies.get(FLASH_MESSAGE_COOKIE)?.value ?? '';
+const flashTypeFromCookie = Astro.cookies.get(FLASH_TYPE_COOKIE)?.value ?? '';
+const flashMessage = flashMessageFromQuery || decodeCookieValue(flashMessageFromCookie);
+const flashTypeRaw = flashTypeFromQuery || decodeCookieValue(flashTypeFromCookie) || 'success';
 const validFlashTypes = ['success', 'error', 'info', 'warning'] as const;
 type FlashType = (typeof validFlashTypes)[number];
 const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
     ? (flashTypeRaw as FlashType)
     : 'info';
 const hasSession = Boolean(Astro.locals.token ?? '');
+
+if (flashMessageFromCookie) {
+    Astro.cookies.delete(FLASH_MESSAGE_COOKIE, { path: '/' });
+}
+
+if (flashTypeFromCookie) {
+    Astro.cookies.delete(FLASH_TYPE_COOKIE, { path: '/' });
+}
 ---
 
 <!doctype html>

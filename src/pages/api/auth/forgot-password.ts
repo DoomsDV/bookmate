@@ -2,11 +2,23 @@ import type { APIRoute } from 'astro';
 
 import { AuthApiError, forgotPasswordWithOrds } from '../../../lib/auth';
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const FLASH_MESSAGE_COOKIE = 'bookmate_flash_message';
+const FLASH_TYPE_COOKIE = 'bookmate_flash_type';
+const FORGOT_PASSWORD_SUCCESS_MESSAGE =
+	'Revisa tu bandeja de entrada. Encontrarás un enlace seguro con las instrucciones para crear tu nueva contraseña.';
+
 const mapFieldParamName = (field: string) => {
 	const normalizedField = String(field || '').trim().toLowerCase();
 	if (normalizedField === 'email') return 'email_error';
 	return '';
 };
+
+const toSafeStatus = (status: number) =>
+	Number.isInteger(status) && status >= 400 && status <= 599 ? status : 500;
+
+const buildFlashCookie = (name: string, value: string) =>
+	`${name}=${encodeURIComponent(value)}; Path=/; Max-Age=60; SameSite=Lax; HttpOnly`;
 
 const wantsHtml = (request: Request) => {
 	const accept = request.headers.get('accept') || '';
@@ -19,16 +31,25 @@ const parseBody = async (request: Request) => {
 	const contentType = request.headers.get('content-type') || '';
 
 	if (contentType.includes('application/json')) {
-		const body = await request.json();
-		return {
-			email: String(body.email || '').trim(),
-		};
+		try {
+			const body = await request.json();
+			const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+			return {
+				email: String(payload.email || '').trim(),
+			};
+		} catch {
+			throw new AuthApiError('JSON inválido o malformado.', 400);
+		}
 	}
 
-	const formData = await request.formData();
-	return {
-		email: String(formData.get('email') || '').trim(),
-	};
+	try {
+		const formData = await request.formData();
+		return {
+			email: String(formData.get('email') || '').trim(),
+		};
+	} catch {
+		throw new AuthApiError('No fue posible leer los datos enviados.', 400);
+	}
 };
 
 export const POST: APIRoute = async ({ request, url }) => {
@@ -47,25 +68,38 @@ export const POST: APIRoute = async ({ request, url }) => {
 			);
 		}
 
-		const response = await forgotPasswordWithOrds({ email });
+		if (!EMAIL_PATTERN.test(email)) {
+			throw new AuthApiError(
+				'Ingresa un correo electrónico válido.',
+				400,
+				undefined,
+				[{ field: 'email', message: 'Ingresa un correo electrónico válido.' }]
+			);
+		}
+
+		await forgotPasswordWithOrds({ email });
 
 		if (wantsHtml(request)) {
 			const redirectUrl = new URL('/auth/login', url);
-			redirectUrl.searchParams.set('flash_message', response.message);
-			redirectUrl.searchParams.set('flash_type', 'info');
+			const headers = new Headers({
+				Location: redirectUrl.toString(),
+			});
+			headers.append(
+				'Set-Cookie',
+				buildFlashCookie(FLASH_MESSAGE_COOKIE, FORGOT_PASSWORD_SUCCESS_MESSAGE)
+			);
+			headers.append('Set-Cookie', buildFlashCookie(FLASH_TYPE_COOKIE, 'info'));
 
 			return new Response(null, {
 				status: 302,
-				headers: {
-					Location: redirectUrl.toString(),
-				},
+				headers,
 			});
 		}
 
 		return Response.json(
 			{
 				status: 'success',
-				message: response.message,
+				message: FORGOT_PASSWORD_SUCCESS_MESSAGE,
 			},
 			{ status: 200 }
 		);
@@ -75,14 +109,16 @@ export const POST: APIRoute = async ({ request, url }) => {
 				? error
 				: new AuthApiError('No fue posible iniciar la recuperación de contraseña.', 500);
 
+		console.error('[API forgot-password] Error procesando solicitud', {
+			status: authError.status,
+			message: authError.message,
+			details: authError.details,
+			fieldErrors: authError.fieldErrors,
+		});
+
 		if (wantsHtml(request)) {
 			const redirectUrl = new URL('/auth/forgot-password', url);
-			redirectUrl.searchParams.set(
-				'error',
-				typeof authError.details === 'string' && authError.details.trim()
-					? authError.details
-					: authError.message
-			);
+			redirectUrl.searchParams.set('error', authError.message);
 
 			if (email) {
 				redirectUrl.searchParams.set('email', email);
@@ -110,7 +146,7 @@ export const POST: APIRoute = async ({ request, url }) => {
 				details: authError.details,
 				errors: authError.fieldErrors,
 			},
-			{ status: authError.status }
+			{ status: toSafeStatus(authError.status) }
 		);
 	}
 };
