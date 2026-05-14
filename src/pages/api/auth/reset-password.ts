@@ -2,10 +2,19 @@ import type { APIRoute } from 'astro';
 
 import { AuthApiError, resetPasswordWithOrds } from '../../../lib/auth';
 
+const FLASH_MESSAGE_COOKIE = 'bookmate_flash_message';
+const FLASH_TYPE_COOKIE = 'bookmate_flash_type';
+
 const withQuery = (path: string, params: URLSearchParams) => {
 	const queryString = params.toString();
 	return queryString ? `${path}?${queryString}` : path;
 };
+
+const buildFlashCookie = (name: string, value: string) =>
+	`${name}=${encodeURIComponent(value)}; Path=/; Max-Age=60; SameSite=Lax; HttpOnly`;
+
+const toSafeStatus = (status: number) =>
+	Number.isInteger(status) && status >= 400 && status <= 599 ? status : 500;
 
 const mapFieldParamName = (field: string) => {
 	const normalizedField = String(field || '').trim().toLowerCase();
@@ -27,20 +36,29 @@ const parseBody = async (request: Request) => {
 	const contentType = request.headers.get('content-type') || '';
 
 	if (contentType.includes('application/json')) {
-		const body = await request.json();
-		return {
-			token: String(body.token || '').trim(),
-			new_password: String(body.new_password || ''),
-			confirm_password: String(body.confirm_password || ''),
-		};
+		try {
+			const body = await request.json();
+			const payload = body && typeof body === 'object' ? (body as Record<string, unknown>) : {};
+			return {
+				token: String(payload.token || '').trim(),
+				new_password: String(payload.new_password || ''),
+				confirm_password: String(payload.confirm_password || ''),
+			};
+		} catch {
+			throw new AuthApiError('JSON inválido o malformado.', 400);
+		}
 	}
 
-	const formData = await request.formData();
-	return {
-		token: String(formData.get('token') || '').trim(),
-		new_password: String(formData.get('new_password') || ''),
-		confirm_password: String(formData.get('confirm_password') || ''),
-	};
+	try {
+		const formData = await request.formData();
+		return {
+			token: String(formData.get('token') || '').trim(),
+			new_password: String(formData.get('new_password') || ''),
+			confirm_password: String(formData.get('confirm_password') || ''),
+		};
+	} catch {
+		throw new AuthApiError('No fue posible leer los datos enviados.', 400);
+	}
 };
 
 const getPasswordValidationMessage = (rawPassword: string) => {
@@ -96,15 +114,15 @@ export const POST: APIRoute = async ({ request }) => {
 		});
 
 		if (wantsHtml(request)) {
-			const redirectParams = new URLSearchParams();
-			redirectParams.set('flash_message', response.message);
-			redirectParams.set('flash_type', 'success');
+			const headers = new Headers({
+				Location: '/auth/login',
+			});
+			headers.append('Set-Cookie', buildFlashCookie(FLASH_MESSAGE_COOKIE, response.message));
+			headers.append('Set-Cookie', buildFlashCookie(FLASH_TYPE_COOKIE, 'success'));
 
 			return new Response(null, {
 				status: 302,
-				headers: {
-					Location: withQuery('/auth/login', redirectParams),
-				},
+				headers,
 			});
 		}
 
@@ -127,12 +145,7 @@ export const POST: APIRoute = async ({ request }) => {
 				redirectParams.set('token', token);
 			}
 
-			redirectParams.set(
-				'error',
-				typeof authError.details === 'string' && authError.details.trim()
-					? authError.details
-					: authError.message
-			);
+			redirectParams.set('error', authError.message);
 
 			for (const fieldError of authError.fieldErrors) {
 				const fieldName = mapFieldParamName(fieldError.field);
@@ -156,7 +169,7 @@ export const POST: APIRoute = async ({ request }) => {
 				details: authError.details,
 				errors: authError.fieldErrors,
 			},
-			{ status: authError.status }
+			{ status: toSafeStatus(authError.status) }
 		);
 	}
 };
