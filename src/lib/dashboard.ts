@@ -19,6 +19,13 @@ export interface DashboardKpis {
 	total_customers: number | null;
 }
 
+export interface DashboardPaginationMeta {
+	current_page: number;
+	per_page: number;
+	total_records: number;
+	total_pages: number;
+}
+
 export interface DashboardUpcomingAppointment {
 	id: number;
 	customer_name: string;
@@ -32,6 +39,7 @@ export interface DashboardUpcomingAppointment {
 export interface DashboardMainData {
 	kpis: DashboardKpis;
 	upcoming_appointments: DashboardUpcomingAppointment[];
+	pagination: DashboardPaginationMeta;
 }
 
 export interface DashboardAiSummaryData {
@@ -41,6 +49,7 @@ export interface DashboardAiSummaryData {
 interface DashboardSuccessResponse {
 	status: 'success';
 	data?: unknown;
+	meta?: unknown;
 }
 
 interface DashboardFailureResponse {
@@ -68,6 +77,36 @@ const toNumber = (value: unknown, fallback = 0) => {
 };
 
 const toText = (value: unknown) => String(value ?? '').trim();
+
+const normalizePaginationMeta = (
+	value: unknown,
+	fallback: { page: number; limit: number; totalRecords: number }
+): DashboardPaginationMeta => {
+	if (!value || typeof value !== 'object') {
+		return {
+			current_page: fallback.page,
+			per_page: fallback.limit,
+			total_records: fallback.totalRecords,
+			total_pages: Math.max(1, Math.ceil(fallback.totalRecords / fallback.limit)),
+		};
+	}
+
+	const source = value as Record<string, unknown>;
+	const currentPage = toNumber(source.current_page, fallback.page);
+	const perPage = toNumber(source.per_page, fallback.limit);
+	const totalRecords = toNumber(source.total_records, fallback.totalRecords);
+	const totalPages = toNumber(
+		source.total_pages,
+		Math.max(1, Math.ceil(Math.max(0, totalRecords) / Math.max(1, perPage)))
+	);
+
+	return {
+		current_page: Math.max(1, Math.floor(currentPage)),
+		per_page: Math.max(1, Math.floor(perPage)),
+		total_records: Math.max(0, Math.floor(totalRecords)),
+		total_pages: Math.max(1, Math.floor(totalPages)),
+	};
+};
 
 const normalizeKpis = (value: unknown): DashboardKpis => {
 	if (!value || typeof value !== 'object') {
@@ -112,11 +151,20 @@ const normalizeUpcomingAppointment = (value: unknown): DashboardUpcomingAppointm
 	};
 };
 
-const normalizeMainData = (value: unknown): DashboardMainData => {
+const normalizeMainData = (
+	value: unknown,
+	paginationMeta: unknown,
+	fallbackPagination: { page: number; limit: number }
+): DashboardMainData => {
 	if (!value || typeof value !== 'object') {
 		return {
 			kpis: normalizeKpis(null),
 			upcoming_appointments: [],
+			pagination: normalizePaginationMeta(paginationMeta, {
+				page: fallbackPagination.page,
+				limit: fallbackPagination.limit,
+				totalRecords: 0,
+			}),
 		};
 	}
 
@@ -129,6 +177,11 @@ const normalizeMainData = (value: unknown): DashboardMainData => {
 	return {
 		kpis: normalizeKpis(source.kpis),
 		upcoming_appointments: upcoming,
+		pagination: normalizePaginationMeta(paginationMeta, {
+			page: fallbackPagination.page,
+			limit: fallbackPagination.limit,
+			totalRecords: upcoming.length,
+		}),
 	};
 };
 
@@ -143,12 +196,23 @@ const normalizeAiSummaryData = (value: unknown): DashboardAiSummaryData => {
 	};
 };
 
-export const getMainDashboardWithOrds = async (token: string): Promise<DashboardMainData> => {
+export const getMainDashboardWithOrds = async (
+	token: string,
+	options: { page?: number; limit?: number } = {}
+): Promise<DashboardMainData> => {
 	if (!token) {
 		throw new DashboardApiError('Token de acceso requerido.', 401);
 	}
 
-	const response = await fetch(DASHBOARD_URL, {
+	const page = Number.isInteger(options.page) && Number(options.page) > 0 ? Number(options.page) : 1;
+	const limit =
+		Number.isInteger(options.limit) && Number(options.limit) > 0 ? Number(options.limit) : 9;
+
+	const dashboardUrl = new URL(DASHBOARD_URL);
+	dashboardUrl.searchParams.set('page', String(page));
+	dashboardUrl.searchParams.set('limit', String(limit));
+
+	const response = await fetch(dashboardUrl.toString(), {
 		method: 'GET',
 		headers: {
 			Authorization: `Bearer ${token}`,
@@ -175,7 +239,7 @@ export const getMainDashboardWithOrds = async (token: string): Promise<Dashboard
 		);
 	}
 
-	return normalizeMainData(data.data);
+	return normalizeMainData(data.data, data.meta, { page, limit });
 };
 
 export const getDashboardAiSummaryWithOrds = async (

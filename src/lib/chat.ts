@@ -16,6 +16,40 @@ export interface SendChatMessageResult {
 	response: string;
 }
 
+export interface AiChatQuickAction {
+	label: string;
+	message: string;
+	icon: string;
+}
+
+export const AI_CHAT_QUICK_ACTIONS: AiChatQuickAction[] = [
+	{
+		label: 'Citas de hoy',
+		message: 'Mostrame mis citas de hoy.',
+		icon: 'today',
+	},
+	{
+		label: 'Próximos días',
+		message: 'Listame mis próximas citas de los próximos 7 días desde hoy.',
+		icon: 'date_range',
+	},
+	{
+		label: 'Buscar horario',
+		message: 'Quiero buscar disponibilidad para crear una cita.',
+		icon: 'event_available',
+	},
+	{
+		label: 'Crear cita',
+		message: 'Quiero crear una cita nueva.',
+		icon: 'add_circle',
+	},
+	{
+		label: 'Cancelar cita',
+		message: 'Necesito cancelar una cita.',
+		icon: 'event_busy',
+	},
+];
+
 interface ChatSuccessResponse {
 	status: 'success';
 	data?: unknown;
@@ -75,6 +109,17 @@ const getMessagesUrl = (sessionId: number) => {
 	}
 
 	return `${trimmed}/${encodedId}/messages`;
+};
+
+const getDeleteSessionUrl = (sessionId: number) => {
+	const rawUrl = getEnvUrl('ORDS_AI_DELETE_CHAT_SESSION');
+	const encodedId = encodeURIComponent(String(sessionId));
+
+	if (rawUrl.includes(':id')) return rawUrl.replace(':id', encodedId);
+	if (rawUrl.includes('{id}')) return rawUrl.replace('{id}', encodedId);
+	if (rawUrl.includes('/id')) return rawUrl.replace(/\/id\/?$/i, `/${encodedId}`);
+
+	return `${rawUrl.replace(/\/+$/, '')}/${encodedId}`;
 };
 
 const ensureToken = (token: string) => {
@@ -207,4 +252,28 @@ export const getChatMessagesWithOrds = async (
 	return rows
 		.map(normalizeMessage)
 		.filter((message): message is ChatMessage => message !== null);
+};
+
+export const deleteChatSessionWithOrds = async (
+	token: string,
+	sessionId: number
+): Promise<{ id_session: number }> => {
+	ensureToken(token);
+	if (!Number.isInteger(sessionId) || sessionId <= 0) {
+		throw new ChatApiError('ID de sesion invalido.', 400);
+	}
+
+	const response = await fetch(getDeleteSessionUrl(sessionId), {
+		method: 'DELETE',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	const data = await parseJsonResponse(response);
+	const source = data && typeof data === 'object' ? (data as Record<string, unknown>) : {};
+	return {
+		id_session: toNumber(source.id_session, sessionId),
+	};
 };
