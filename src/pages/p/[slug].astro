@@ -266,7 +266,7 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 								<input type="hidden" name="utm_source" data-booking-source />
 								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
 									<span>Teléfono (WhatsApp) <span class="text-(--error)" aria-hidden="true">*</span></span>
-									<div class="flex w-full overflow-hidden rounded-xl border border-(--outline) bg-(--surface-container-lowest) transition focus-within:border-(--primary) focus-within:ring-1 focus-within:ring-(--primary)">
+									<div class="flex h-14 w-full overflow-hidden rounded-xl border border-(--outline) bg-(--surface-container-lowest) transition focus-within:border-(--primary) focus-within:ring-1 focus-within:ring-(--primary)">
 										<span class="inline-flex items-center border-r border-(--outline) bg-(--surface-container-high) px-3 text-sm font-semibold text-(--on-surface-variant) lg:px-2.5">+595</span>
 										<input
 											type="tel"
@@ -275,7 +275,7 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 											required
 											inputmode="numeric"
 											autocomplete="tel-national"
-											class="min-w-0 flex-1 border-0 bg-transparent px-4 py-3 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none lg:px-4 lg:py-2"
+											class="min-w-0 flex-1 border-0 bg-transparent px-4 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none"
 											placeholder="Ej: 981 123 456"
 										/>
 									</div>
@@ -291,7 +291,7 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 										name="customer_name"
 										maxlength="100"
 										autocomplete="name"
-										class="rounded-xl border border-(--outline) bg-(--surface-container-lowest) px-4 py-3 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none transition focus:border-(--primary) focus:ring-1 focus:ring-(--primary)"
+										class="h-14 rounded-xl border border-(--outline) bg-(--surface-container-lowest) px-4 py-0 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none transition focus:border-(--primary) focus:ring-1 focus:ring-(--primary)"
 										placeholder="Ej: Juan Perez"
 									/>
 								</label>
