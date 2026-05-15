@@ -1,0 +1,321 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+
+const updatedAt = '15 de mayo de 2026';
+---
+
+<Layout>
+	<main class="privacy-root">
+		<div class="privacy-orb privacy-orb-a"></div>
+		<div class="privacy-orb privacy-orb-b"></div>
+
+		<div class="privacy-shell">
+			<header class="privacy-navbar">
+				<a href="/" class="privacy-brand no-underline">
+					<img src="/icon-512x512.png" alt="Logo Hasel" class="privacy-brand-logo" loading="eager" decoding="async" />
+					<span>Hasel</span>
+				</a>
+				<a href="/" class="privacy-home-link no-underline">Volver al inicio</a>
+			</header>
+
+			<section class="privacy-hero">
+				<div class="privacy-chip">
+					<span class="material-symbols-rounded" aria-hidden="true">verified_user</span>
+					<span>Información legal y privacidad</span>
+				</div>
+				<h1>Políticas y privacidad de Hasel</h1>
+				<p>
+					En Hasel cuidamos la información de los negocios que usan la plataforma para organizar
+					servicios, clientes, equipos, horarios y citas. Esta página explica de forma simple qué
+					datos tratamos, para qué los usamos y cómo se administran dentro del proyecto.
+				</p>
+				<span class="privacy-updated">Última actualización: {updatedAt}</span>
+			</section>
+
+			<section class="privacy-card">
+				<h2>Responsable del sitio y la aplicación</h2>
+				<p>
+					Este sitio web y la aplicación Hasel son operados y administrados por Daniel Ramon
+					Villasanti Vergara, responsable principal del proyecto y CEO de Hasel.
+				</p>
+			</section>
+
+			<section class="privacy-grid">
+				<article class="privacy-card">
+					<h2>Datos que podemos tratar</h2>
+					<p>
+						Hasel puede procesar datos necesarios para operar la agenda y el panel administrativo,
+						incluyendo información de cuentas, negocios, sucursales, servicios, especialidades,
+						profesionales, horarios, clientes, citas y estados operativos.
+					</p>
+					<p>
+						También podemos registrar información técnica básica, como fecha y hora de acceso,
+						identificadores de sesión, preferencias de la aplicación, notificaciones y datos mínimos
+						para seguridad, soporte y mejora del servicio.
+					</p>
+				</article>
+
+				<article class="privacy-card">
+					<h2>Finalidad del tratamiento</h2>
+					<p>
+						Usamos la información para permitir el funcionamiento de Hasel: gestionar reservas,
+						mostrar disponibilidad, organizar equipos, consultar el estado del negocio, enviar
+						notificaciones relevantes y mantener la seguridad de la cuenta.
+					</p>
+					<p>
+						Cuando se usan funciones de asistencia inteligente, la información enviada al asistente
+						se utiliza para responder consultas sobre agenda, clientes, turnos o disponibilidad
+						dentro del contexto autorizado por el usuario.
+					</p>
+				</article>
+
+				<article class="privacy-card">
+					<h2>Cómo se maneja la información en el proyecto</h2>
+					<p>
+						Los datos se organizan por módulos funcionales de la plataforma, como panel,
+						calendario, clientes, servicios, sucursales, equipo, horarios y herramientas de IA.
+						El acceso se limita a usuarios autenticados y a los permisos necesarios para operar
+						cada espacio de trabajo.
+					</p>
+					<p>
+						No vendemos información personal. Los datos se usan para prestar el servicio,
+						cumplir solicitudes del usuario, mantener continuidad operativa y mejorar la
+						experiencia de la aplicación.
+					</p>
+				</article>
+
+				<article class="privacy-card">
+					<h2>Seguridad y conservación</h2>
+					<p>
+						Aplicamos controles razonables de acceso, autenticación y separación lógica de datos
+						para reducir riesgos de acceso no autorizado. La información se conserva mientras sea
+						necesaria para operar el servicio, cumplir obligaciones aplicables o atender solicitudes
+						del usuario.
+					</p>
+				</article>
+
+				<article class="privacy-card">
+					<h2>Servicios externos</h2>
+					<p>
+						Hasel puede apoyarse en proveedores tecnológicos para infraestructura, autenticación,
+						notificaciones, hosting, análisis operativo o funciones de inteligencia artificial.
+						Estos servicios se utilizan únicamente para habilitar funcionalidades del producto.
+					</p>
+				</article>
+
+				<article class="privacy-card">
+					<h2>Derechos y consultas</h2>
+					<p>
+						Los usuarios pueden solicitar revisión, actualización o eliminación de información
+						asociada a su cuenta o negocio, según corresponda al uso de la plataforma y a las
+						obligaciones operativas vigentes.
+					</p>
+					<p>
+						Para consultas sobre privacidad o tratamiento de datos, el usuario puede comunicarse
+						por los canales oficiales habilitados por Hasel.
+					</p>
+				</article>
+			</section>
+		</div>
+	</main>
+</Layout>
+
+<style>
+	:root {
+		--privacy-bg: #09090b;
+		--privacy-surface: rgba(255, 255, 255, 0.04);
+		--privacy-surface-strong: rgba(255, 255, 255, 0.07);
+		--privacy-text: #ffffff;
+		--privacy-muted: #a1a1aa;
+		--privacy-primary: #3a6fd7;
+		--privacy-primary-soft: rgba(58, 111, 215, 0.18);
+		--privacy-border: rgba(255, 255, 255, 0.1);
+	}
+
+	.privacy-root {
+		position: relative;
+		min-height: 100vh;
+		overflow: hidden;
+		background: var(--privacy-bg);
+		color: var(--privacy-text);
+		font-family: 'Inter', system-ui, sans-serif;
+	}
+
+	.privacy-orb {
+		position: absolute;
+		z-index: 0;
+		border-radius: 999px;
+		filter: blur(100px);
+		pointer-events: none;
+	}
+
+	.privacy-orb-a {
+		top: -12rem;
+		left: -10rem;
+		width: 34rem;
+		height: 34rem;
+		background: radial-gradient(circle, rgba(59, 130, 246, 0.28), transparent 68%);
+	}
+
+	.privacy-orb-b {
+		right: -12rem;
+		bottom: -16rem;
+		width: 40rem;
+		height: 40rem;
+		background: radial-gradient(circle, rgba(99, 102, 241, 0.2), transparent 68%);
+	}
+
+	.privacy-shell {
+		position: relative;
+		z-index: 1;
+		width: min(1080px, 100%);
+		margin: 0 auto;
+		padding: 1rem;
+	}
+
+	.privacy-navbar {
+		position: sticky;
+		top: 1rem;
+		z-index: 10;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		margin: 1rem 0 2rem;
+		border: 1px solid rgba(148, 163, 184, 0.24);
+		border-radius: 999px;
+		background: linear-gradient(115deg, rgba(2, 6, 23, 0.72), rgba(15, 23, 42, 0.48));
+		padding: 0.65rem 0.9rem;
+		backdrop-filter: blur(14px);
+		box-shadow: 0 12px 28px rgba(2, 6, 23, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	}
+
+	.privacy-brand,
+	.privacy-home-link {
+		display: inline-flex;
+		align-items: center;
+		color: var(--privacy-text);
+	}
+
+	.privacy-brand {
+		gap: 0.55rem;
+		font-size: 1.12rem;
+		font-weight: 800;
+	}
+
+	.privacy-brand-logo {
+		width: 2rem;
+		height: 2rem;
+		border-radius: 999px;
+		object-fit: contain;
+	}
+
+	.privacy-home-link {
+		border-radius: 999px;
+		background: var(--privacy-primary);
+		padding: 0.58rem 1rem;
+		font-size: 0.9rem;
+		font-weight: 750;
+	}
+
+	.privacy-hero {
+		display: grid;
+		gap: 1.25rem;
+		padding: 3rem 0 2rem;
+	}
+
+	.privacy-chip {
+		display: inline-flex;
+		width: fit-content;
+		align-items: center;
+		gap: 0.5rem;
+		border-radius: 999px;
+		background: var(--privacy-primary-soft);
+		padding: 0.5rem 1rem;
+		color: #bfd6ff;
+		font-size: 0.88rem;
+		font-weight: 750;
+	}
+
+	.privacy-chip .material-symbols-rounded {
+		font-size: 1.12rem;
+	}
+
+	.privacy-hero h1 {
+		max-width: 12ch;
+		margin: 0;
+		color: var(--privacy-text);
+		font-size: clamp(2.6rem, 8vw, 5rem);
+		font-weight: 850;
+		letter-spacing: -0.05em;
+		line-height: 0.98;
+	}
+
+	.privacy-hero p {
+		max-width: 68ch;
+		margin: 0;
+		color: var(--privacy-muted);
+		font-size: clamp(1rem, 2vw, 1.18rem);
+		line-height: 1.7;
+	}
+
+	.privacy-updated {
+		color: #bfd6ff;
+		font-size: 0.92rem;
+		font-weight: 750;
+	}
+
+	.privacy-grid {
+		display: grid;
+		gap: 1rem;
+		margin-top: 1rem;
+		padding-bottom: 3rem;
+	}
+
+	.privacy-card {
+		border: 1px solid var(--privacy-border);
+		border-radius: 1.5rem;
+		background: var(--privacy-surface);
+		padding: 1.25rem;
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		backdrop-filter: blur(10px);
+	}
+
+	.privacy-card h2 {
+		margin: 0 0 0.75rem;
+		color: var(--privacy-text);
+		font-size: 1.22rem;
+		font-weight: 800;
+	}
+
+	.privacy-card p {
+		margin: 0;
+		color: var(--privacy-muted);
+		font-size: 0.98rem;
+		line-height: 1.65;
+	}
+
+	.privacy-card p + p {
+		margin-top: 0.8rem;
+	}
+
+	@media (min-width: 760px) {
+		.privacy-shell {
+			padding: 1.5rem;
+		}
+
+		.privacy-hero {
+			padding: 5rem 0 3rem;
+		}
+
+		.privacy-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 1.25rem;
+		}
+
+		.privacy-card {
+			padding: 1.5rem;
+		}
+	}
+</style>

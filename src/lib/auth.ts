@@ -572,6 +572,7 @@ export const clearSessionCookies = (
 export const isPublicPath = (pathname: string) => {
 	return (
 		pathname === '/' ||
+		pathname === '/politicas-y-privacidad' ||
 		pathname.startsWith('/auth') ||
 		pathname.startsWith('/api/auth') ||
 		pathname.startsWith('/api/public') ||
