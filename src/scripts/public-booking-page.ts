@@ -110,25 +110,6 @@ const formatIsoWithOffset = (date: Date) => {
 	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00${sign}${offsetHour}:${offsetMinute}`;
 };
 
-const sourceFromReferrer = (referrer: string) => {
-	if (!referrer) return '';
-
-	try {
-		const host = new URL(referrer).hostname.toLowerCase();
-		if (host.includes('instagram.com')) return 'instagram';
-		if (host.includes('whatsapp.com') || host.includes('wa.me')) return 'whatsapp';
-		if (host.includes('facebook.com') || host.includes('fb.com') || host.includes('l.facebook.com')) return 'facebook';
-		if (host.includes('tiktok.com')) return 'tiktok';
-		if (host.includes('google.')) return 'google';
-	} catch {
-		return '';
-	}
-
-	return '';
-};
-
-const detectBookingSource = () => sourceFromReferrer(document.referrer) || 'web';
-
 const parseProfileFromDom = () => {
 	const profileNode = document.getElementById('public-booking-profile-json');
 	if (!profileNode) return null;
@@ -208,7 +189,6 @@ export const initializePublicBookingPage = () => {
 	const customerPhoneFieldError = customerForm?.querySelector<HTMLElement>(
 		'[data-field-error="customer_phone"]'
 	);
-	const bookingSourceInput = customerForm?.querySelector<HTMLInputElement>('[data-booking-source]');
 	const submitButton = root.querySelector<HTMLButtonElement>('[data-submit-booking]');
 	const submitErrorNode = root.querySelector<HTMLElement>('[data-submit-error]');
 	const toastNode = root.querySelector<HTMLElement>('[data-booking-toast]');
@@ -285,8 +265,6 @@ export const initializePublicBookingPage = () => {
 		null;
 	const locationId = selectedLocation?.id_location || configuredLocationId || 1;
 	const mapsApiKey = String(root.dataset.googleMapsApiKey || '').trim();
-	const bookingSource = detectBookingSource();
-	if (bookingSourceInput) bookingSourceInput.value = bookingSource;
 	const today = toDateStart(new Date());
 
 	let step: WizardStep = 1;
@@ -914,7 +892,6 @@ export const initializePublicBookingPage = () => {
 			customer_phone: customerPhone,
 			start_time: formatIsoWithOffset(startDate),
 			end_time: formatIsoWithOffset(endDate),
-			utm_source: bookingSourceInput?.value || bookingSource,
 		};
 
 		isSubmitting = true;

@@ -78,7 +78,6 @@ export interface PublicCreateAppointmentPayload {
 	customer_phone: string;
 	start_time: string;
 	end_time: string;
-	utm_source?: string;
 }
 
 export interface PublicCreatedAppointmentData {
