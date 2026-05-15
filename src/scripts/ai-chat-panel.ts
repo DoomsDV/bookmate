@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import { AI_CHAT_QUICK_ACTIONS } from '../lib/chat';
+import { AI_CHAT_QUICK_ACTIONS, AI_CHAT_SUGGESTED_QUESTIONS } from '../lib/chat';
 
 type ChatSession = {
 	id_session: number;
@@ -66,6 +66,7 @@ class AiChatPanel extends HTMLElement {
 	private sendButton: HTMLButtonElement | null = null;
 	private historyToggleButton: HTMLButtonElement | null = null;
 	private toolsToggleButton: HTMLButtonElement | null = null;
+	private toolsPopover: HTMLElement | null = null;
 
 	private sessions: ChatSession[] = [];
 	private activeSessionId = 0;
@@ -87,6 +88,7 @@ class AiChatPanel extends HTMLElement {
 		this.sendButton = this.querySelector<HTMLButtonElement>('[data-ai-chat-send]');
 		this.historyToggleButton = this.querySelector<HTMLButtonElement>('[data-ai-chat-history-toggle]');
 		this.toolsToggleButton = this.querySelector<HTMLButtonElement>('[data-ai-chat-tools-toggle]');
+		this.toolsPopover = this.querySelector<HTMLElement>('#ai-chat-tools-popover');
 
 		if (!this.shell || !this.messagesNode || !this.form || !this.input) return;
 
@@ -101,6 +103,7 @@ class AiChatPanel extends HTMLElement {
 		this.input.addEventListener('input', this.handleInput, { signal });
 
 		this.renderQuickActions();
+		this.renderSuggestedQuestions();
 		this.updateControls();
 	}
 
@@ -182,6 +185,12 @@ class AiChatPanel extends HTMLElement {
 			return;
 		}
 
+		const suggestionButton = target.closest<HTMLButtonElement>('[data-ai-chat-suggestion]');
+		if (suggestionButton) {
+			this.handleSuggestedQuestion(suggestionButton);
+			return;
+		}
+
 		const sessionButton = target.closest<HTMLElement>('[data-ai-chat-session-id]');
 		if (sessionButton) {
 			const sessionId = Number(sessionButton.dataset.aiChatSessionId || 0);
@@ -225,6 +234,7 @@ class AiChatPanel extends HTMLElement {
 		if (!this.shell) return;
 		this.shell.classList.toggle('is-history-open', open);
 		this.historyToggleButton?.setAttribute('aria-expanded', String(open));
+		this.historyToggleButton?.setAttribute('aria-label', open ? 'Cerrar historial' : 'Abrir historial');
 		if (open) this.setToolsOpen(false);
 	}
 
@@ -232,6 +242,7 @@ class AiChatPanel extends HTMLElement {
 		if (!this.shell) return;
 		this.shell.classList.toggle('is-tools-open', open);
 		this.toolsToggleButton?.setAttribute('aria-expanded', String(open));
+		this.toolsPopover?.setAttribute('aria-hidden', String(!open));
 		if (open) this.setHistoryOpen(false);
 	}
 
@@ -351,6 +362,9 @@ class AiChatPanel extends HTMLElement {
 			.forEach((button) => {
 				button.disabled = busy;
 			});
+		this.messagesNode?.querySelectorAll<HTMLButtonElement>('[data-ai-chat-suggestion]').forEach((button) => {
+			button.disabled = busy;
+		});
 	}
 
 	private async parseJson<TData>(response: Response): Promise<ApiResponse<TData>> {
@@ -424,6 +438,34 @@ class AiChatPanel extends HTMLElement {
 		}
 
 		this.quickActionsNode.appendChild(fragment);
+	}
+
+	private renderSuggestedQuestions() {
+		const suggestionsNode = this.messagesNode?.querySelector<HTMLElement>('[data-ai-chat-suggestions]');
+		if (!suggestionsNode) return;
+		this.clearNode(suggestionsNode);
+
+		const fragment = document.createDocumentFragment();
+		for (const suggestion of AI_CHAT_SUGGESTED_QUESTIONS) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'ai-chat-suggestion-btn';
+			button.dataset.aiChatSuggestion = suggestion.message;
+			button.setAttribute('aria-label', suggestion.message);
+
+			const icon = document.createElement('span');
+			icon.className = 'material-symbols-rounded';
+			icon.setAttribute('aria-hidden', 'true');
+			icon.textContent = suggestion.icon;
+
+			const label = document.createElement('span');
+			label.textContent = suggestion.label;
+
+			button.append(icon, label);
+			fragment.appendChild(button);
+		}
+
+		suggestionsNode.appendChild(fragment);
 	}
 
 	private renderSessions() {
@@ -543,8 +585,10 @@ class AiChatPanel extends HTMLElement {
 				</div>
 				<h3>Consulta tu agenda</h3>
 				<p>Haz preguntas sobre clientes, turnos, disponibilidad o el estado del negocio.</p>
+				<div class="ai-chat-suggestions" data-ai-chat-suggestions aria-label="Preguntas sugeridas"></div>
 			</div>
 		`;
+		this.renderSuggestedQuestions();
 	}
 
 	private handleQuickAction(button: HTMLButtonElement) {
@@ -552,6 +596,19 @@ class AiChatPanel extends HTMLElement {
 		if (!message || this.isSending) return;
 		this.clearError();
 		this.setToolsOpen(false);
+
+		if (this.input) {
+			this.input.value = message;
+			this.handleInput();
+		}
+
+		void this.sendMessage(message);
+	}
+
+	private handleSuggestedQuestion(button: HTMLButtonElement) {
+		const message = String(button.dataset.aiChatSuggestion || '').trim();
+		if (!message || this.isSending) return;
+		this.clearError();
 
 		if (this.input) {
 			this.input.value = message;
