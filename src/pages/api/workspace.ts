@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 
 import { ROLES } from '../../config/roles';
+import { setOrganizationCacheCookies } from '../../lib/auth';
 import {
 	getWorkspaceSettingsWithOrds,
 	type UpdateWorkspacePayload,
@@ -108,11 +109,12 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 	return payload;
 };
 
-export const GET: APIRoute = async ({ locals }) => {
+export const GET: APIRoute = async ({ cookies, locals, url }) => {
 	try {
 		const token = requireToken(locals.token);
 		requireAdminRole(locals.roleId);
 		const workspace = await getWorkspaceSettingsWithOrds(token);
+		setOrganizationCacheCookies(cookies, url, workspace);
 
 		return Response.json(
 			{
@@ -126,18 +128,21 @@ export const GET: APIRoute = async ({ locals }) => {
 	}
 };
 
-export const PUT: APIRoute = async ({ request, locals }) => {
+export const PUT: APIRoute = async ({ cookies, request, locals, url }) => {
 	try {
 		const token = requireToken(locals.token);
 		requireAdminRole(locals.roleId);
 		const body = await parseBody(request);
 		const payload = parseUpdatePayload(body);
 		const updated = await updateWorkspaceSettingsWithOrds(token, payload);
+		const workspace = await getWorkspaceSettingsWithOrds(token);
+		setOrganizationCacheCookies(cookies, url, workspace);
 
 		return Response.json(
 			{
 				status: 'success',
 				message: updated.message,
+				data: workspace,
 			},
 			{ status: 200 }
 		);

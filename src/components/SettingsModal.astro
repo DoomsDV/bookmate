@@ -134,21 +134,30 @@ const publicProfileDomain =
 							<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">Se guardará como número paraguayo con prefijo internacional.</span>
 							<span data-settings-profile-field-error="phone_number" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-							<span>URL del perfil público <span class="text-rose-500">*</span></span>
-							<div class="flex shadow-sm rounded-2xl transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
-								<span data-settings-profile-slug-prefix class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-medium text-(--on-surface-variant)">
+						<label class="settings-public-profile-field">
+							<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">URL del perfil público <span class="text-rose-500">*</span></span>
+							<div class="flex">
+								<span data-settings-profile-slug-prefix class="inline-flex max-w-[55%] items-center truncate rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-xs font-medium text-(--on-surface-variant) shadow-sm sm:max-w-[65%] sm:px-4 sm:text-sm">
 									{publicProfileDomain}/p/
 								</span>
 								<input
 									type="text"
 									name="profile_slug"
 									maxlength="100"
-									class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition focus:border-(--primary)"
+									class="block w-full min-w-0 flex-1 rounded-none border border-l-0 border-r-0 border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 									placeholder="maria-lopez"
 								/>
+								<button
+									type="button"
+									class="inline-flex w-12 shrink-0 items-center justify-center rounded-r-2xl border border-l border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--surface-container-high) hover:text-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+									data-copy-settings-profile-url
+									aria-label="Copiar URL del perfil público"
+									title="Copiar URL"
+								>
+									<span class="material-symbols-rounded text-[1.1rem]" data-copy-settings-profile-url-icon>content_copy</span>
+								</button>
 							</div>
-							<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
+							<span class="text-[0.84rem] font-semibold text-(--on-surface-variant)">
 								Este será el enlace directo para que los clientes agenden contigo.
 							</span>
 							<span data-settings-profile-field-error="profile_slug" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
@@ -564,6 +573,13 @@ const publicProfileDomain =
 				return;
 			}
 
+			const copyUrlBtn = target.closest<HTMLButtonElement>('[data-copy-settings-profile-url]');
+			if (copyUrlBtn && this.contains(copyUrlBtn)) {
+				event.preventDefault();
+				void this.copyPublicProfileUrl(copyUrlBtn);
+				return;
+			}
+
 			const openBtn = target.closest('[data-open-settings-modal]');
 			if (openBtn) {
 				event.preventDefault();
@@ -610,6 +626,52 @@ const publicProfileDomain =
 
 		private readApiMessage(data: ApiResponse | null, fallback: string): string {
 			return typeof data?.message === 'string' && data.message.trim() ? data.message.trim() : fallback;
+		}
+
+		private getPublicProfileUrl() {
+			const slug = String(this.formEls.profileSlugInput?.value || '').trim().replace(/^\/+/, '');
+			if (!slug) return '';
+			const prefix = String(this.publicProfileDomain || '').trim() || String(window.location?.host || '');
+			return `${prefix.replace(/\/+$/, '')}/p/${slug}`;
+		}
+
+		private async writeClipboardText(value: string) {
+			if (navigator.clipboard?.writeText) {
+				await navigator.clipboard.writeText(value);
+				return;
+			}
+
+			const textarea = document.createElement('textarea');
+			textarea.value = value;
+			textarea.setAttribute('readonly', '');
+			textarea.style.position = 'fixed';
+			textarea.style.opacity = '0';
+			document.body.appendChild(textarea);
+			textarea.select();
+			document.execCommand('copy');
+			textarea.remove();
+		}
+
+		private async copyPublicProfileUrl(button: HTMLButtonElement) {
+			const url = this.getPublicProfileUrl();
+			if (!url) {
+				this.showFeedback('profile', 'Ingresa una URL de perfil público antes de copiar.', 'error');
+				return;
+			}
+
+			const icon = button.querySelector<HTMLElement>('[data-copy-settings-profile-url-icon]');
+			try {
+				await this.writeClipboardText(url);
+				if (icon) icon.textContent = 'check';
+				button.classList.add('text-emerald-500');
+				this.showFeedback('profile', 'URL copiada al portapapeles.', 'success');
+				window.setTimeout(() => {
+					if (icon) icon.textContent = 'content_copy';
+					button.classList.remove('text-emerald-500');
+				}, 1400);
+			} catch {
+				this.showFeedback('profile', 'No fue posible copiar la URL. Intenta nuevamente.', 'error');
+			}
 		}
 
 		private normalizeSecurityMessage(message: string, kind: 'success' | 'error') {
@@ -1067,6 +1129,12 @@ const publicProfileDomain =
 			localStorage.setItem('bookmate-theme', safeTheme);
 		}
 
+		private reloadAfterWorkspaceSave() {
+			window.setTimeout(() => {
+				window.location.reload();
+			}, 650);
+		}
+
 		private getFormPayload(form: HTMLFormElement | null): Record<string, string> {
 			const payload: Record<string, string> = {};
 			if (!form) return payload;
@@ -1286,7 +1354,7 @@ const publicProfileDomain =
 
 				this.persistPanelAppearance(theme);
 				this.showFeedback('preferences', this.readApiMessage(data, 'Apariencia guardada correctamente.'), 'success');
-				await this.loadData();
+				this.reloadAfterWorkspaceSave();
 			} catch (error) {
 				this.showFeedback('preferences', error instanceof Error ? error.message : 'No fue posible guardar la apariencia.', 'error');
 			}
@@ -1308,7 +1376,7 @@ const publicProfileDomain =
 				if (panel === 'system') successMessage = 'Sistema actualizado correctamente.';
 
 				this.showFeedback(panel, this.readApiMessage(data, successMessage), 'success');
-				await this.loadData();
+				this.reloadAfterWorkspaceSave();
 			} catch (error) {
 				let errorMessage = 'No fue posible guardar la configuración.';
 				if (panel === 'workspace') errorMessage = 'No fue posible guardar negocio.';
@@ -1703,6 +1771,16 @@ const publicProfileDomain =
 		color: var(--on-surface-variant);
 		font-size: 0.78rem;
 		font-weight: 700;
+	}
+
+	.settings-public-profile-field {
+		display: grid;
+		gap: 0.55rem;
+		border-radius: 1.15rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 80%, var(--primary) 20%);
+		background: color-mix(in srgb, var(--primary-soft) 28%, var(--surface-bright) 72%);
+		padding: 1rem;
+		box-shadow: var(--card-inset-highlight);
 	}
 
 	@media (min-width: 640px) {
