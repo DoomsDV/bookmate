@@ -189,15 +189,6 @@ const toPageHref = (page: number) => {
 									</div>
 
 									<div class="dashboard-header-actions">
-										<button
-											type="button"
-											class="dashboard-ai-chat-cta dashboard-header-cta"
-											data-open-ai-chat
-										>
-											<span class="material-symbols-rounded text-lg">auto_awesome</span>
-											Abrir Hasel IA
-										</button>
-
 										<a
 											href="/panel/calendar"
 											class="dashboard-primary-cta dashboard-header-cta inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold no-underline transition sm:w-auto"
@@ -417,7 +408,8 @@ const toPageHref = (page: number) => {
 			.replace(/\t/g, ' ')
 			.replace(/\u0000/g, '')
 			.replace(/[ ]{2,}/g, ' ')
-			.replace(/\n{3,}/g, '\n\n')
+			.replace(/[ \t]*\n[ \t]*/g, '\n')
+			.replace(/\n{2,}/g, '\n')
 			.replace(/^\s*["'`]/, '')
 			.replace(/["'`]\s*$/, '')
 			.trim();
@@ -769,12 +761,14 @@ const toPageHref = (page: number) => {
 		};
 
 		const todayKey = getLocalDateKey();
-		const cachedSummary = readAiSummaryCache(todayKey);
-
-		if (cachedSummary) {
-			await revealSummary(cachedSummary);
-			return;
-		}
+		// const cachedSummary = readAiSummaryCache(todayKey);
+		//
+		// if (cachedSummary) {
+		// 	await revealSummary(cachedSummary);
+		// 	return;
+		// }
+		void todayKey;
+		void readAiSummaryCache;
 
 		try {
 			const response = await fetch('/api/dashboard/ai-summary', {
@@ -791,7 +785,8 @@ const toPageHref = (page: number) => {
 				throw new Error('El resumen IA no está disponible en este momento.');
 			}
 
-			saveAiSummaryCache(todayKey, summary);
+			// saveAiSummaryCache(todayKey, summary);
+			void saveAiSummaryCache;
 			await revealSummary(summary);
 		} catch {
 			await revealSummary(fallbackSummary);
