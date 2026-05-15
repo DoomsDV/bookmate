@@ -76,6 +76,9 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
                             class:list={['m3-input', identifierError && 'is-invalid']} 
                             placeholder="Ej: admin o juan@correo.com" 
                             value={identifier} 
+                            autocomplete="username"
+                            autocapitalize="none"
+                            spellcheck="false"
                             required 
                         />
 						{identifierError && <span class="m3-field-error">{identifierError}</span>}
@@ -90,6 +93,7 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
                                 name="password" 
                                 class:list={['m3-input', passwordError && 'is-invalid']} 
                                 placeholder="Tu contraseña" 
+                                autocomplete="current-password"
                                 required 
                             />
 							<button type="button" class="m3-icon-btn" data-password-toggle aria-label="Mostrar contraseña">
@@ -156,6 +160,7 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 .m3-container {
 	display: flex;
 	flex-direction: column;
+	min-height: 100vh;
 	min-height: 100svh;
 	font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
 	background-color: #050505;
@@ -164,6 +169,7 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 @media (min-width: 1024px) {
 	.m3-container {
 		flex-direction: row;
+		height: 100vh;
 		height: 100svh;
 		overflow: hidden;
 	}
@@ -364,15 +370,19 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 }
 
 .m3-input {
+	box-sizing: border-box;
 	width: 100%;
 	background-color: #f8fafc;
 	border: 1px solid #cbd5e1;
 	border-radius: 0.75rem;
 	padding: 0.875rem 1rem;
 	font-size: 1rem;
+	line-height: 1.4;
 	color: #0f172a;
+	caret-color: #2563eb;
+	-webkit-text-fill-color: currentColor;
 	font-family: inherit;
-	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+	transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 	outline: none;
 }
 

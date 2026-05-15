@@ -242,7 +242,7 @@ class CustomerManager extends HTMLElement {
 			const metrics = document.createElement('dl');
 			metrics.className = 'customer-card-metrics';
 			metrics.append(
-				this.createMetricRow('Telefono', customer.phone_number || '-'),
+				this.createMetricRow('Teléfono', customer.phone_number || '-'),
 				this.createMetricRow('Registrado', this.formatDate(customer.created_at))
 			);
 

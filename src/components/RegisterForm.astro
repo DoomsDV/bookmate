@@ -116,12 +116,12 @@ const currentStep = normalizeStep(step);
 					<div class="m3-grid-2">
 						<div class="m3-field">
 							<label class="m3-label" for="first_name">Nombres <span class="m3-label-required">*</span></label>
-							<input type="text" id="first_name" name="first_name" class:list={['m3-input', firstNameError && 'is-invalid']} placeholder="Ej: Juan" value={firstName} required />
+							<input type="text" id="first_name" name="first_name" class:list={['m3-input', firstNameError && 'is-invalid']} placeholder="Ej: Juan" value={firstName} autocomplete="given-name" required />
 							{firstNameError && <span class="m3-field-error">{firstNameError}</span>}
 						</div>
 						<div class="m3-field">
 							<label class="m3-label" for="last_name">Apellidos <span class="m3-label-required">*</span></label>
-							<input type="text" id="last_name" name="last_name" class:list={['m3-input', lastNameError && 'is-invalid']} placeholder="Ej: Pérez" value={lastName} required />
+							<input type="text" id="last_name" name="last_name" class:list={['m3-input', lastNameError && 'is-invalid']} placeholder="Ej: Pérez" value={lastName} autocomplete="family-name" required />
 							{lastNameError && <span class="m3-field-error">{lastNameError}</span>}
 						</div>
 					</div>
@@ -129,13 +129,13 @@ const currentStep = normalizeStep(step);
 					<div class="m3-grid-2">
 						<div class="m3-field">
 							<label class="m3-label" for="email">Correo electrónico <span class="m3-label-required">*</span></label>
-							<input type="email" id="email" name="email" class:list={['m3-input', emailError && 'is-invalid']} placeholder="Ej: juan@empresa.com" value={email} required />
+							<input type="email" id="email" name="email" class:list={['m3-input', emailError && 'is-invalid']} placeholder="Ej: juan@empresa.com" value={email} autocomplete="email" autocapitalize="none" spellcheck="false" required />
 							{emailError && <span class="m3-field-error">{emailError}</span>}
 						</div>
 						<div class="m3-field">
 							<label class="m3-label" for="password">Contraseña <span class="m3-label-required">*</span></label>
 							<div class="m3-input-affix">
-								<input type="password" id="password" name="password" class:list={['m3-input', passwordError && 'is-invalid']} placeholder="Tu contraseña" required />
+								<input type="password" id="password" name="password" class:list={['m3-input', passwordError && 'is-invalid']} placeholder="Tu contraseña" autocomplete="new-password" required />
 								<button type="button" class="m3-icon-btn" data-password-toggle aria-label="Mostrar contraseña">
 									<span class="material-symbols-rounded" data-password-icon>visibility_off</span>
 								</button>
@@ -165,13 +165,13 @@ const currentStep = normalizeStep(step);
 					<div class="m3-grid-2">
 						<div class="m3-field">
 							<label class="m3-label" for="business_name">Nombre de la Organización <span class="m3-label-required">*</span></label>
-							<input type="text" id="business_name" name="business_name" class:list={['m3-input', businessNameError && 'is-invalid']} placeholder="Ej: Clínica Dental San José" value={businessName} required />
+							<input type="text" id="business_name" name="business_name" class:list={['m3-input', businessNameError && 'is-invalid']} placeholder="Ej: Clínica Dental San José" value={businessName} autocomplete="organization" required />
 							<p class="m3-field-help">Este será el nombre de tu organización o como te verán las personas.</p>
 							{businessNameError && <span class="m3-field-error">{businessNameError}</span>}
 						</div>
 						<div class="m3-field">
 							<label class="m3-label" for="company_email">Correo de la compañía <span class="m3-label-required">*</span></label>
-							<input type="email" id="company_email" name="company_email" class:list={['m3-input', companyEmailError && 'is-invalid']} placeholder="Ej: contacto@tuempresa.com" value={companyEmail} required />
+							<input type="email" id="company_email" name="company_email" class:list={['m3-input', companyEmailError && 'is-invalid']} placeholder="Ej: contacto@tuempresa.com" value={companyEmail} autocomplete="email" autocapitalize="none" spellcheck="false" required />
 							<p class="m3-field-help">Este correo será el contacto principal de tu organización para notificaciones y comunicación institucional.</p>
 							{companyEmailError && <span class="m3-field-error">{companyEmailError}</span>}
 						</div>
@@ -192,6 +192,8 @@ const currentStep = normalizeStep(step);
 									class:list={['m3-input', 'm3-phone-input', phoneError && 'is-invalid']}
 									placeholder="981 123 456"
 									value={phone}
+									autocapitalize="none"
+									spellcheck="false"
 									required
 								/>
 							</div>
@@ -545,6 +547,7 @@ const currentStep = normalizeStep(step);
 .m3-container {
 	display: flex;
 	flex-direction: column;
+	min-height: 100vh;
 	min-height: 100svh;
 	font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
 	background-color: #050505;
@@ -553,6 +556,7 @@ const currentStep = normalizeStep(step);
 @media (min-width: 1024px) {
 	.m3-container {
 		flex-direction: row;
+		height: 100vh;
 		height: 100svh;
 		overflow: hidden;
 	}
@@ -897,15 +901,19 @@ const currentStep = normalizeStep(step);
 }
 
 .m3-input {
+	box-sizing: border-box;
 	width: 100%;
 	background-color: #f8fafc;
 	border: 1px solid #cbd5e1;
 	border-radius: 0.75rem;
 	padding: 0.875rem 1rem;
 	font-size: 1rem;
+	line-height: 1.4;
 	color: #0f172a;
+	caret-color: #2563eb;
+	-webkit-text-fill-color: currentColor;
 	font-family: inherit;
-	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+	transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 	outline: none;
 }
 
@@ -1177,25 +1185,23 @@ const currentStep = normalizeStep(step);
 
 @media (max-width: 1023px) {
 	.m3-container {
-		height: 100svh;
-		min-height: 100svh;
-		max-height: 100svh;
-		overflow: hidden;
+		min-height: 100vh;
+		min-height: 100dvh;
 	}
 	.m3-sidebar {
 		display: none;
 	}
 	.m3-content {
-		min-height: 100svh;
-		max-height: 100svh;
+		min-height: 100vh;
+		min-height: 100dvh;
 		padding: clamp(0.9rem, 2.6vh, 1.5rem) 1rem;
 		align-items: center;
-		overflow: hidden;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 	.m3-form-wrapper {
 		margin-top: 0;
-		height: 100%;
-		max-height: 100%;
+		width: 100%;
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
