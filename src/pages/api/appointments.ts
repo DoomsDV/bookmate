@@ -25,6 +25,7 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) =>
 
 const parseBody = (request: Request) =>
 	parseRequestBody(request, (formData) => ({
+		id_customer: formData.get('id_customer'),
 		loc_id_location: formData.get('loc_id_location'),
 		pro_id_professional: formData.get('pro_id_professional'),
 		ser_id_service: formData.get('ser_id_service'),

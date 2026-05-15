@@ -9,18 +9,47 @@ import {
 const appointmentStatusSchema = z.enum(['PENDIENTE', 'CONFIRMADO', 'COMPLETADO', 'CANCELADO']);
 
 const isoDateTimeSchema = z.string().trim().datetime({ offset: true });
+const optionalPositiveIntSchema = z.preprocess(
+	(value) => (value === null || value === undefined || value === '' ? undefined : value),
+	z.coerce.number().int().positive().optional()
+);
 
 const baseAppointmentSchema = z.object({
+	id_customer: optionalPositiveIntSchema,
 	loc_id_location: z.coerce.number().int().positive('Sucursal requerida.'),
 	pro_id_professional: z.coerce.number().int().positive('Profesional requerido.'),
 	ser_id_service: z.coerce.number().int().positive('Servicio requerido.'),
-	customer_name: z.string().trim().min(1, 'El nombre del cliente es obligatorio.').max(100),
+	customer_name: z.string().trim().max(100).optional(),
 	customer_phone: z.string().trim().max(20).optional(),
 	start_time: isoDateTimeSchema,
 	end_time: isoDateTimeSchema,
 });
 
+const validateCustomerIdentity = (
+	payload: z.infer<typeof baseAppointmentSchema>,
+	ctx: z.RefinementCtx
+) => {
+	if (payload.id_customer) return;
+
+	if (!payload.customer_name?.trim()) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ['customer_name'],
+			message: 'El nombre del cliente es obligatorio.',
+		});
+	}
+
+	if (!payload.customer_phone?.trim()) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ['customer_phone'],
+			message: 'El teléfono del cliente es obligatorio.',
+		});
+	}
+};
+
 const appointmentCreateSchema = baseAppointmentSchema.superRefine((payload, ctx) => {
+	validateCustomerIdentity(payload, ctx);
 	const start = new Date(payload.start_time);
 	const end = new Date(payload.end_time);
 	if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
@@ -37,6 +66,7 @@ const appointmentUpdateSchema = baseAppointmentSchema
 		status: appointmentStatusSchema,
 	})
 	.superRefine((payload, ctx) => {
+		validateCustomerIdentity(payload, ctx);
 		const start = new Date(payload.start_time);
 		const end = new Date(payload.end_time);
 		if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
@@ -70,6 +100,7 @@ export const parseCreateAppointmentPayload = (source: unknown): AppointmentCreat
 	}
 	return {
 		...parsed.data,
+		customer_name: parsed.data.customer_name || '',
 		customer_phone: parsed.data.customer_phone || '',
 	};
 };
@@ -81,6 +112,7 @@ export const parseUpdateAppointmentPayload = (source: unknown): AppointmentUpdat
 	}
 	return {
 		...parsed.data,
+		customer_name: parsed.data.customer_name || '',
 		customer_phone: parsed.data.customer_phone || '',
 	};
 };

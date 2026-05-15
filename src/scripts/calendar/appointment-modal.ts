@@ -3,7 +3,13 @@ import {
 	parseParaguayMobilePhone,
 } from '../../lib/paraguay-phone';
 import { AppointmentsClient } from './appointments-client';
-import type { ApiFieldError, AppointmentDetail, AppointmentFormPayload, Option } from './types';
+import type {
+	ApiFieldError,
+	AppointmentDetail,
+	AppointmentFormPayload,
+	CustomerOption,
+	Option,
+} from './types';
 import {
 	ApiClientError,
 	formatDateTimeDisplay,
@@ -43,8 +49,12 @@ type RequiredNodes = {
 	submitLabel: HTMLElement;
 	submitIcon: HTMLElement;
 	deleteButton: HTMLButtonElement;
+	customerIdInput: HTMLInputElement;
 	customerNameInput: HTMLInputElement;
 	customerPhoneInput: HTMLInputElement;
+	customerLov: HTMLElement;
+	customerResults: HTMLElement;
+	clearCustomerButton: HTMLButtonElement;
 	startInput: HTMLInputElement;
 	startDisplayInput: HTMLInputElement;
 	openStartPickerButton: HTMLButtonElement;
@@ -82,11 +92,15 @@ class AppointmentModal extends HTMLElement {
 	professionals: Option[] = [];
 	locations: Option[] = [];
 	services: Option[] = [];
+	customers: CustomerOption[] = [];
 
 	mode: ModalMode = 'create';
 	isSubmitting = false;
 	isLoading = false;
+	isLoadingCustomers = false;
 	editingAppointmentId = 0;
+	selectedCustomer: CustomerOption | null = null;
+	lastLoadedCustomerProfessionalId = 0;
 	closeTimer: number | null = null;
 
 	modal: HTMLDialogElement | null = null;
@@ -100,8 +114,12 @@ class AppointmentModal extends HTMLElement {
 	submitLabel: HTMLElement | null = null;
 	submitIcon: HTMLElement | null = null;
 	deleteButton: HTMLButtonElement | null = null;
+	customerIdInput: HTMLInputElement | null = null;
 	customerNameInput: HTMLInputElement | null = null;
 	customerPhoneInput: HTMLInputElement | null = null;
+	customerLov: HTMLElement | null = null;
+	customerResults: HTMLElement | null = null;
+	clearCustomerButton: HTMLButtonElement | null = null;
 	startInput: HTMLInputElement | null = null;
 	startDisplayInput: HTMLInputElement | null = null;
 	openStartPickerButton: HTMLButtonElement | null = null;
@@ -154,9 +172,14 @@ class AppointmentModal extends HTMLElement {
 			this.form?.querySelector<HTMLElement>('[data-submit-appointment-icon]') ?? null;
 		this.deleteButton =
 			this.form?.querySelector<HTMLButtonElement>('[data-delete-appointment]') ?? null;
+		this.customerIdInput = this.form?.querySelector<HTMLInputElement>('[data-customer-id]') ?? null;
 		this.customerNameInput = this.form?.querySelector<HTMLInputElement>('[name="customer_name"]') ?? null;
 		this.customerPhoneInput =
 			this.form?.querySelector<HTMLInputElement>('[name="customer_phone"]') ?? null;
+		this.customerLov = this.form?.querySelector<HTMLElement>('[data-customer-lov]') ?? null;
+		this.customerResults = this.form?.querySelector<HTMLElement>('[data-customer-results]') ?? null;
+		this.clearCustomerButton =
+			this.form?.querySelector<HTMLButtonElement>('[data-clear-customer]') ?? null;
 		this.startInput = this.form?.querySelector<HTMLInputElement>('[name="start_time"]') ?? null;
 		this.startDisplayInput = this.form?.querySelector<HTMLInputElement>('[data-start-display]') ?? null;
 		this.openStartPickerButton =
@@ -220,8 +243,13 @@ class AppointmentModal extends HTMLElement {
 			closeButton.addEventListener('click', this.closeModal, { signal });
 		}
 		requiredNodes.deleteButton.addEventListener('click', this.handleDelete, { signal });
+		requiredNodes.customerNameInput.addEventListener('focus', this.handleCustomerFocus, { signal });
+		requiredNodes.customerNameInput.addEventListener('input', this.handleCustomerInput, { signal });
+		requiredNodes.customerNameInput.addEventListener('blur', this.handleCustomerBlur, { signal });
+		requiredNodes.clearCustomerButton.addEventListener('click', this.handleCustomerClear, { signal });
 		requiredNodes.customerPhoneInput.addEventListener('input', this.handlePhoneInput, { signal });
 		requiredNodes.customerPhoneInput.addEventListener('blur', this.handlePhoneBlur, { signal });
+		requiredNodes.modalProfessional.addEventListener('change', this.handleProfessionalChange, { signal });
 		requiredNodes.openStartPickerButton.addEventListener('click', this.handleOpenStartPicker, {
 			signal,
 		});
@@ -345,6 +373,7 @@ class AppointmentModal extends HTMLElement {
 		}
 
 		this.ensureModalProfessionalValue();
+		void this.loadCustomersForCurrentProfessional(true);
 		this.openModalShell();
 	}
 
@@ -377,8 +406,12 @@ class AppointmentModal extends HTMLElement {
 			!this.submitLabel ||
 			!this.submitIcon ||
 			!this.deleteButton ||
+			!this.customerIdInput ||
 			!this.customerNameInput ||
 			!this.customerPhoneInput ||
+			!this.customerLov ||
+			!this.customerResults ||
+			!this.clearCustomerButton ||
 			!this.startInput ||
 			!this.startDisplayInput ||
 			!this.openStartPickerButton ||
@@ -413,8 +446,12 @@ class AppointmentModal extends HTMLElement {
 			submitLabel: this.submitLabel,
 			submitIcon: this.submitIcon,
 			deleteButton: this.deleteButton,
+			customerIdInput: this.customerIdInput,
 			customerNameInput: this.customerNameInput,
 			customerPhoneInput: this.customerPhoneInput,
+			customerLov: this.customerLov,
+			customerResults: this.customerResults,
+			clearCustomerButton: this.clearCustomerButton,
 			startInput: this.startInput,
 			startDisplayInput: this.startDisplayInput,
 			openStartPickerButton: this.openStartPickerButton,
@@ -452,6 +489,124 @@ class AppointmentModal extends HTMLElement {
 			option.value = String(item.id);
 			option.textContent = item.name;
 			select.appendChild(option);
+		}
+	}
+
+	private hideCustomerResults() {
+		this.customerResults?.classList.add('hidden');
+	}
+
+	private showCustomerResults() {
+		this.customerResults?.classList.remove('hidden');
+	}
+
+	private setSelectedCustomer(customer: CustomerOption) {
+		const requiredNodes = this.getRequiredNodes();
+		if (!requiredNodes) return;
+
+		this.selectedCustomer = customer;
+		requiredNodes.customerIdInput.value = String(customer.id_customer);
+		requiredNodes.customerNameInput.value = customer.full_name;
+		requiredNodes.customerPhoneInput.value = this.formatParaguayPhoneLocal(customer.phone_number);
+		requiredNodes.customerPhoneInput.readOnly = true;
+		requiredNodes.clearCustomerButton.classList.remove('hidden');
+		this.setFieldError('customer_name', '');
+		this.setFieldError('customer_phone', '');
+		this.hideCustomerResults();
+	}
+
+	private clearSelectedCustomer(options: { clearFields?: boolean } = {}) {
+		const requiredNodes = this.getRequiredNodes();
+		if (!requiredNodes) return;
+
+		this.selectedCustomer = null;
+		requiredNodes.customerIdInput.value = '';
+		requiredNodes.customerPhoneInput.readOnly = false;
+		requiredNodes.clearCustomerButton.classList.add('hidden');
+		if (options.clearFields) {
+			requiredNodes.customerNameInput.value = '';
+			requiredNodes.customerPhoneInput.value = '';
+		}
+	}
+
+	private renderCustomerResults() {
+		const requiredNodes = this.getRequiredNodes();
+		if (!requiredNodes) return;
+
+		const query = requiredNodes.customerNameInput.value.trim().toLowerCase();
+		const matches = this.customers
+			.filter((customer) => {
+				if (!query) return true;
+				return `${customer.full_name} ${customer.phone_number}`.toLowerCase().includes(query);
+			})
+			.slice(0, 8);
+
+		requiredNodes.customerResults.replaceChildren();
+
+		if (matches.length === 0) {
+			const empty = document.createElement('div');
+			empty.className = 'appointment-customer-empty';
+			empty.textContent = query
+				? 'No existe. Completa el teléfono para crear este cliente.'
+				: 'No hay clientes para este profesional.';
+			requiredNodes.customerResults.appendChild(empty);
+			this.showCustomerResults();
+			return;
+		}
+
+		for (const customer of matches) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'appointment-customer-option';
+			button.innerHTML = `
+				<span class="appointment-customer-option-name"></span>
+				<span class="appointment-customer-option-phone"></span>
+			`;
+			button.querySelector('.appointment-customer-option-name')!.textContent = customer.full_name;
+			button.querySelector('.appointment-customer-option-phone')!.textContent =
+				this.formatParaguayPhoneLocal(customer.phone_number) || customer.phone_number || 'Sin teléfono';
+			button.addEventListener('mousedown', (event) => event.preventDefault());
+			button.addEventListener('click', () => this.setSelectedCustomer(customer));
+			requiredNodes.customerResults.appendChild(button);
+		}
+
+		this.showCustomerResults();
+	}
+
+	private async loadCustomersForCurrentProfessional(force = false) {
+		if (!this.client || this.isLoadingCustomers) return;
+		const shouldShowResults = () => document.activeElement === this.customerNameInput;
+		const shouldFilterByProfessional = this.roleId === 3;
+		const professionalId = shouldFilterByProfessional ? this.getSelectedProfessionalId() : 0;
+		if (shouldFilterByProfessional && !professionalId) {
+			this.customers = [];
+			this.lastLoadedCustomerProfessionalId = 0;
+			if (shouldShowResults()) this.renderCustomerResults();
+			else this.hideCustomerResults();
+			return;
+		}
+
+		if (!force && this.lastLoadedCustomerProfessionalId === professionalId) {
+			if (shouldShowResults()) this.renderCustomerResults();
+			return;
+		}
+
+		this.isLoadingCustomers = true;
+		try {
+			this.customers = await this.client.getCustomers({
+				...(shouldFilterByProfessional ? { pro_id: professionalId } : {}),
+				limit: 50,
+			});
+			this.lastLoadedCustomerProfessionalId = professionalId;
+			if (shouldShowResults()) this.renderCustomerResults();
+			else this.hideCustomerResults();
+		} catch {
+			this.customers = [];
+			this.lastLoadedCustomerProfessionalId = professionalId;
+			if (shouldShowResults()) this.renderCustomerResults();
+			else this.hideCustomerResults();
+		} finally {
+			this.isLoadingCustomers = false;
 		}
 	}
 
@@ -562,8 +717,11 @@ class AppointmentModal extends HTMLElement {
 		if (!requiredNodes) return;
 
 		requiredNodes.form.reset();
+		requiredNodes.customerIdInput.value = '';
 		requiredNodes.customerNameInput.value = '';
 		requiredNodes.customerPhoneInput.value = '';
+		requiredNodes.customerPhoneInput.readOnly = false;
+		requiredNodes.clearCustomerButton.classList.add('hidden');
 		requiredNodes.startInput.value = '';
 		requiredNodes.startDisplayInput.value = '';
 		requiredNodes.endInput.value = '';
@@ -572,6 +730,8 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.endInput.min = '';
 		requiredNodes.statusInput.value = 'CONFIRMADO';
 		requiredNodes.statusInput.disabled = true;
+		this.selectedCustomer = null;
+		this.hideCustomerResults();
 		this.closeDateTimePicker();
 	}
 
@@ -655,10 +815,23 @@ class AppointmentModal extends HTMLElement {
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return;
 
+		requiredNodes.customerIdInput.value = String(appointment.id_customer || '');
 		requiredNodes.customerNameInput.value = String(appointment.customer_name || '');
 		requiredNodes.customerPhoneInput.value = this.formatParaguayPhoneLocal(
 			String(appointment.customer_phone || '')
 		);
+		requiredNodes.customerPhoneInput.readOnly = Number(appointment.id_customer || 0) > 0;
+		requiredNodes.clearCustomerButton.classList.toggle(
+			'hidden',
+			Number(appointment.id_customer || 0) <= 0
+		);
+		this.selectedCustomer = Number(appointment.id_customer || 0) > 0
+			? {
+					id_customer: Number(appointment.id_customer),
+					full_name: String(appointment.customer_name || ''),
+					phone_number: String(appointment.customer_phone || ''),
+				}
+			: null;
 		requiredNodes.modalProfessional.value = String(appointment.pro_id_professional || '');
 		requiredNodes.modalLocation.value = String(appointment.loc_id_location || '');
 		requiredNodes.modalService.value = String(appointment.ser_id_service || '');
@@ -668,6 +841,7 @@ class AppointmentModal extends HTMLElement {
 		this.syncDateBounds();
 		this.syncDateDisplayInputs();
 		this.ensureModalProfessionalValue();
+		void this.loadCustomersForCurrentProfessional();
 	}
 
 	buildPayloadFromForm(): BuildPayloadResult {
@@ -675,6 +849,7 @@ class AppointmentModal extends HTMLElement {
 		if (!requiredNodes) return { error: 'No fue posible acceder al formulario de citas.' };
 
 		const customerName = requiredNodes.customerNameInput.value.trim();
+		const customerId = toPositiveInt(requiredNodes.customerIdInput.value, 0);
 		const rawCustomerPhone = requiredNodes.customerPhoneInput.value.trim();
 		const locId = toPositiveInt(requiredNodes.modalLocation.value, 0);
 		const serviceId = toPositiveInt(requiredNodes.modalService.value, 0);
@@ -693,17 +868,25 @@ class AppointmentModal extends HTMLElement {
 		const startIso = startDate ? toIsoWithOffset(startDate) : '';
 		const endIso = endDate ? toIsoWithOffset(endDate) : '';
 
-		if (!customerName) return { error: 'El nombre del cliente es obligatorio.' };
+		if (!customerId && !customerName) return { error: 'El nombre del cliente es obligatorio.' };
 
 		let customerPhone = '';
+		if (!customerId && !rawCustomerPhone) {
+			this.setFieldError('customer_phone', 'El teléfono del cliente es obligatorio.');
+			return { error: 'Revisa los campos marcados.' };
+		}
+
 		if (rawCustomerPhone) {
 			const parsedPhone = parseParaguayMobilePhone(rawCustomerPhone);
 			if (!parsedPhone.isValid) {
-				this.setFieldError('customer_phone', PARAGUAY_MOBILE_PHONE_ERROR);
-				return { error: 'Revisa los campos marcados.' };
+				if (!customerId) {
+					this.setFieldError('customer_phone', PARAGUAY_MOBILE_PHONE_ERROR);
+					return { error: 'Revisa los campos marcados.' };
+				}
+			} else {
+				customerPhone = parsedPhone.e164;
+				requiredNodes.customerPhoneInput.value = this.formatParaguayPhoneLocal(parsedPhone.e164);
 			}
-			customerPhone = parsedPhone.e164;
-			requiredNodes.customerPhoneInput.value = this.formatParaguayPhoneLocal(parsedPhone.e164);
 		}
 
 		if (!locId || !serviceId || !professionalId) {
@@ -727,6 +910,7 @@ class AppointmentModal extends HTMLElement {
 
 		return {
 			payload: {
+				...(customerId > 0 ? { id_customer: customerId } : {}),
 				loc_id_location: locId,
 				pro_id_professional: professionalId,
 				ser_id_service: serviceId,
@@ -743,6 +927,39 @@ class AppointmentModal extends HTMLElement {
 		if (!this.customerPhoneInput) return;
 		this.customerPhoneInput.value = this.formatParaguayPhoneLocal(this.customerPhoneInput.value);
 		this.setFieldError('customer_phone', '');
+	};
+
+	handleCustomerFocus = () => {
+		void this.loadCustomersForCurrentProfessional();
+	};
+
+	handleCustomerInput = () => {
+		if (
+			this.selectedCustomer &&
+			this.customerNameInput?.value.trim() !== this.selectedCustomer.full_name
+		) {
+			this.clearSelectedCustomer();
+		}
+		this.setFieldError('customer_name', '');
+		this.renderCustomerResults();
+	};
+
+	handleCustomerBlur = () => {
+		window.setTimeout(() => this.hideCustomerResults(), 120);
+	};
+
+	handleCustomerClear = () => {
+		this.clearSelectedCustomer({ clearFields: true });
+		this.customerNameInput?.focus();
+		void this.loadCustomersForCurrentProfessional();
+	};
+
+	handleProfessionalChange = () => {
+		if (this.roleId !== 3) return;
+		if (this.selectedCustomer) this.clearSelectedCustomer({ clearFields: true });
+		this.customers = [];
+		this.lastLoadedCustomerProfessionalId = 0;
+		void this.loadCustomersForCurrentProfessional(true);
 	};
 
 	syncDateBounds() {
@@ -1137,6 +1354,7 @@ class AppointmentModal extends HTMLElement {
 				this.mode === 'edit' && this.editingAppointmentId > 0
 					? await this.client.updateAppointment(this.editingAppointmentId, payload)
 					: await this.client.createAppointment({
+							id_customer: payload.id_customer,
 							loc_id_location: payload.loc_id_location,
 							pro_id_professional: payload.pro_id_professional,
 							ser_id_service: payload.ser_id_service,

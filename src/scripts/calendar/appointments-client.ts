@@ -3,6 +3,7 @@ import type {
 	AppointmentDetail,
 	AppointmentFormPayload,
 	CalendarMetaResponse,
+	CustomerOption,
 } from './types';
 import { ApiClientError, parseApiFieldErrors, readApiError } from './utils';
 
@@ -100,6 +101,37 @@ export class AppointmentsClient {
 			connected: Boolean(source.connected),
 			events: Array.isArray(source.events) ? source.events : [],
 		};
+	}
+
+	async getCustomers(params: { pro_id?: number; limit?: number } = {}): Promise<CustomerOption[]> {
+		const query = new URLSearchParams({
+			page: '1',
+			limit: String(params.limit && params.limit > 0 ? params.limit : 50),
+		});
+		if (params.pro_id && params.pro_id > 0) query.set('pro_id', String(params.pro_id));
+
+		const response = await fetch(`/api/customers?${query.toString()}`, {
+			method: 'GET',
+			headers: { Accept: 'application/json' },
+		});
+		const data = await parseJsonResponse(response);
+		ensureSuccess(response, data, 'No fue posible cargar clientes.');
+
+		const customers = (data as ApiSuccess<unknown>).data;
+		if (!Array.isArray(customers)) return [];
+
+		return customers.flatMap((entry) => {
+			if (!entry || typeof entry !== 'object') return [];
+			const source = entry as Record<string, unknown>;
+			const customerId = Number(source.id_customer);
+			const fullName = String(source.full_name || '').trim();
+			if (!Number.isInteger(customerId) || customerId <= 0 || !fullName) return [];
+			return [{
+				id_customer: customerId,
+				full_name: fullName,
+				phone_number: String(source.phone_number || '').trim(),
+			}];
+		});
 	}
 
 	async getAppointment(appointmentId: number) {

@@ -1,4 +1,4 @@
-﻿﻿---
+﻿---
 import AppAlert from '../../components/AppAlert.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
@@ -292,14 +292,28 @@ const googleErrorMessage = hasGoogleError
 								Cliente
 								<span class="text-rose-500">*</span>
 							</span>
-							<input
-								type="text"
-								name="customer_name"
-								required
-								maxlength="100"
-								class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-								placeholder="Ej: Carlos Gomez"
-							/>
+							<div class="appointment-customer-lov" data-customer-lov>
+								<input type="hidden" name="id_customer" data-customer-id />
+								<input
+									type="text"
+									name="customer_name"
+									required
+									maxlength="100"
+									autocomplete="off"
+									class="appointment-customer-input rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+									placeholder="Buscar o crear cliente"
+									data-customer-name-input
+								/>
+								<button
+									type="button"
+									class="appointment-customer-clear hidden"
+									data-clear-customer
+									aria-label="Limpiar cliente seleccionado"
+								>
+									<span class="material-symbols-rounded text-[1rem]">close</span>
+								</button>
+								<div class="appointment-customer-results hidden" data-customer-results></div>
+							</div>
 							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="customer_name"></span>
 						</label>
 
@@ -308,8 +322,8 @@ const googleErrorMessage = hasGoogleError
 								Teléfono
 								<span class="text-rose-500">*</span>
 							</span>
-							<div class="flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
-								<span class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
+							<div class="flex h-[3.25rem] rounded-xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
+								<span class="inline-flex items-center rounded-l-xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
 									+595
 								</span>
 								<input
@@ -318,7 +332,7 @@ const googleErrorMessage = hasGoogleError
 									maxlength="11"
 									inputmode="numeric"
 									autocomplete="tel-national"
-									class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
+									class="min-w-0 flex-1 rounded-none rounded-r-xl border border-(--shell-border) bg-(--surface-bright) px-4 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
 									placeholder="981 123 456"
 								/>
 							</div>
@@ -1050,6 +1064,103 @@ const googleErrorMessage = hasGoogleError
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
+	}
+
+	.appointment-customer-lov {
+		position: relative;
+	}
+
+	.appointment-customer-input {
+		width: 100%;
+		padding-right: 2.75rem;
+	}
+
+	.appointment-customer-clear {
+		position: absolute;
+		right: 0.65rem;
+		top: 0.63rem;
+		display: inline-flex;
+		width: 2rem;
+		height: 2rem;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--on-surface-variant);
+		transition: background-color 140ms ease, color 140ms ease;
+	}
+
+	.appointment-customer-clear.hidden,
+	.appointment-customer-results.hidden {
+		display: none;
+	}
+
+	.appointment-customer-clear:hover {
+		background: var(--surface-container-low);
+		color: var(--on-surface);
+	}
+
+	.appointment-customer-results {
+		position: absolute;
+		z-index: 50;
+		top: calc(100% + 0.45rem);
+		left: 0;
+		right: 0;
+		max-height: 15rem;
+		overflow-y: auto;
+		border: 1px solid var(--shell-border);
+		border-radius: 1rem;
+		background: var(--surface-bright);
+		box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+		padding: 0.35rem;
+	}
+
+	.appointment-customer-option,
+	.appointment-customer-empty {
+		width: 100%;
+		border: 0;
+		border-radius: 0.8rem;
+		background: transparent;
+		padding: 0.72rem 0.85rem;
+		text-align: left;
+	}
+
+	.appointment-customer-option {
+		display: grid;
+		gap: 0.2rem;
+		color: var(--on-surface);
+		cursor: pointer;
+		transition:
+			background-color 140ms ease,
+			color 140ms ease,
+			transform 140ms ease,
+			box-shadow 140ms ease;
+	}
+
+	.appointment-customer-option:hover,
+	.appointment-customer-option:focus-visible {
+		background: color-mix(in srgb, var(--primary) 10%, var(--surface-container-low) 90%);
+		box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+		transform: translateY(-1px);
+		outline: none;
+	}
+
+	.appointment-customer-option-name {
+		font-size: 0.92rem;
+		font-weight: 800;
+	}
+
+	.appointment-customer-option-phone,
+	.appointment-customer-empty {
+		color: var(--on-surface-variant);
+		font-size: 0.82rem;
+		font-weight: 600;
+	}
+
+	html[data-theme='dark'] .appointment-customer-results {
+		border-color: rgba(255, 255, 255, 0.14);
+		background: var(--surface-container, #1e1f22);
 	}
 
 	.appointment-delete-btn {

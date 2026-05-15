@@ -561,6 +561,7 @@ class CalendarManager extends HTMLElement {
 			const status = isAppointmentStatus(statusRaw) ? statusRaw : 'CONFIRMADO';
 
 			const payload: AppointmentFormPayload = {
+				id_customer: toPositiveInt(detail.id_customer, 0) || undefined,
 				loc_id_location: toPositiveInt(detail.loc_id_location, 0),
 				pro_id_professional:
 					this.roleId === 3 && this.currentProfessionalId > 0

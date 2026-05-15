@@ -21,6 +21,7 @@ const parsePayload = (source: any): PublicCreateAppointmentPayload => {
 		customer_phone: String(source?.customer_phone || '').trim(),
 		start_time: String(source?.start_time || '').trim(),
 		end_time: String(source?.end_time || '').trim(),
+		utm_source: String(source?.utm_source || source?.booking_source || '').trim().slice(0, 50),
 	};
 
 	if (

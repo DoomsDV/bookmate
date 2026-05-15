@@ -38,6 +38,7 @@ export interface AppointmentCalendarEvent {
 
 export interface AppointmentDetail {
 	id_appointment: number;
+	id_customer: number;
 	loc_id_location: number;
 	location_name: string;
 	pro_id_professional: number;
@@ -59,6 +60,7 @@ export interface AppointmentCalendarFilters {
 }
 
 export interface AppointmentCreatePayload {
+	id_customer?: number;
 	loc_id_location: number;
 	pro_id_professional: number;
 	ser_id_service: number;
@@ -255,6 +257,7 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 
 	return {
 		id_appointment: appointmentId,
+		id_customer: toNumber(source.id_customer ?? source.cus_id_customer, 0),
 		loc_id_location: Number.isInteger(locationId) && locationId > 0 ? locationId : 0,
 		location_name: String(source.location_name || '').trim(),
 		pro_id_professional:

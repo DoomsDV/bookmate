@@ -263,10 +263,11 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 
 						<div class="mt-6 grid gap-5 lg:grid-cols-[1fr_22rem] lg:gap-8">
 							<form class="contents lg:grid lg:gap-5" data-customer-form>
+								<input type="hidden" name="utm_source" data-booking-source />
 								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
 									<span>Teléfono (WhatsApp) <span class="text-(--error)" aria-hidden="true">*</span></span>
 									<div class="flex w-full overflow-hidden rounded-xl border border-(--outline) bg-(--surface-container-lowest) transition focus-within:border-(--primary) focus-within:ring-1 focus-within:ring-(--primary)">
-										<span class="inline-flex items-center border-r border-(--outline) bg-(--surface-container-high) px-3 text-sm font-semibold text-(--on-surface-variant)">+595</span>
+										<span class="inline-flex items-center border-r border-(--outline) bg-(--surface-container-high) px-3 text-sm font-semibold text-(--on-surface-variant) lg:px-2.5">+595</span>
 										<input
 											type="tel"
 											name="customer_phone"
@@ -274,7 +275,7 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 											required
 											inputmode="numeric"
 											autocomplete="tel-national"
-											class="min-w-0 flex-1 border-0 bg-transparent px-4 py-3 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none"
+											class="min-w-0 flex-1 border-0 bg-transparent px-4 py-3 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none lg:px-4 lg:py-2"
 											placeholder="Ej: 981 123 456"
 										/>
 									</div>
@@ -396,6 +397,7 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 									<span class="material-symbols-rounded">close</span>
 								</button>
 							</div>
+								<div class="public-map-modal-divider"></div>
 							<div class="h-80 overflow-hidden rounded-3xl border border-(--outline-variant) bg-(--surface-container-high)" data-public-map-canvas></div>
 							<p class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)" data-public-map-status></p>
 						</div>
@@ -471,6 +473,14 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 		width: min(92vw, 44rem);
 		max-height: min(90vh, 42rem);
 		margin: auto;
+	}
+
+	.public-map-modal-divider {
+		height: 1px;
+		width: 100%;
+		border-radius: 999px;
+		background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--outline-variant) 72%, white 28%), transparent);
+		opacity: 0.9;
 	}
 
 	.public-booking-shell button:not([disabled]),
