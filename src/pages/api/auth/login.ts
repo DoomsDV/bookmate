@@ -16,6 +16,11 @@ const wantsHtml = (request: Request) => {
 	return accept.includes('text/html') || contentType.includes('application/x-www-form-urlencoded');
 };
 
+const withQuery = (path: string, params: URLSearchParams) => {
+	const queryString = params.toString();
+	return queryString ? `${path}?${queryString}` : path;
+};
+
 const sanitizeRedirectTo = (value: unknown) => {
 	const redirectTo = String(value || '').trim();
 
@@ -104,13 +109,13 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 		const fieldErrors = authError.fieldErrors;
 
 		if (wantsHtml(request)) {
-			const redirectUrl = new URL('/auth/login', url);
+			const redirectParams = new URLSearchParams();
 
 			if (redirectTo) {
-				redirectUrl.searchParams.set('redirectTo', redirectTo);
+				redirectParams.set('redirectTo', redirectTo);
 			}
 
-			redirectUrl.searchParams.set(
+			redirectParams.set(
 				'error',
 				typeof authError.details === 'string' && authError.details.trim()
 					? authError.details
@@ -118,21 +123,21 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 			);
 
 			if (identifier) {
-				redirectUrl.searchParams.set('identifier', identifier);
+				redirectParams.set('identifier', identifier);
 			}
 
 			for (const fieldError of fieldErrors) {
 				const fieldName = mapFieldParamName(fieldError.field);
 
 				if (fieldName) {
-					redirectUrl.searchParams.set(fieldName, fieldError.message);
+					redirectParams.set(fieldName, fieldError.message);
 				}
 			}
 
 			return new Response(null, {
 				status: 302,
 				headers: {
-					Location: redirectUrl.toString(),
+					Location: withQuery('/auth/login', redirectParams),
 				},
 			});
 		}

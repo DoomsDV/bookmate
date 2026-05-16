@@ -7,14 +7,17 @@ import AstroPWA from '@vite-pwa/astro';
 
 // 1. Obtenemos la URL dinámica de Vercel si existe, si no, usamos la oficial o localhost.
 const getSiteUrl = () => {
+  const siteUrl = String(process.env.SITE_URL || process.env.PUBLIC_SITE_URL || '').trim();
+  if (siteUrl) {
+    return siteUrl.replace(/\/+$/, '');
+  }
   if (process.env.VERCEL_PROJECT_PRODUCTION_URL) {
     return `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`;
   }
   if (process.env.VERCEL_URL) {
     return `https://${process.env.VERCEL_URL}`;
   }
-  // Fallback para tu entorno local
-  return 'http://localhost:4321'; 
+  return 'http://localhost:4321';
 };
 
 // https://astro.build/config
