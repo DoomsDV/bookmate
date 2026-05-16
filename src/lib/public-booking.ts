@@ -27,6 +27,11 @@ export const PUBLIC_VALIDATE_CUSTOMER_API_URL = resolveOrdsPublicApiUrl(
 	'PUBLIC_VALIDATE_CUSTOMER_URL',
 	'validate-customer'
 );
+export const PUBLIC_RESERVATION_API_URL = resolveOrdsPublicApiUrl(
+	import.meta.env.ORDS_PUBLIC_RESERVATION_URL,
+	'ORDS_PUBLIC_RESERVATION_URL',
+	'reservations/:token'
+);
 
 const resolvePublicDomainOrigin = () => {
 	const fromPublicDomain = normalizePublicDomainOrigin(
@@ -42,6 +47,13 @@ const resolvePublicDomainOrigin = () => {
 };
 
 export const PUBLIC_BOOKMATE_DOMAIN_ORIGIN = resolvePublicDomainOrigin();
+
+const resolvePublicReservationApiUrl = (token: string) => {
+	const safeToken = encodeURIComponent(String(token || '').trim());
+	return PUBLIC_RESERVATION_API_URL.includes(':token')
+		? PUBLIC_RESERVATION_API_URL.replace(':token', safeToken)
+		: `${PUBLIC_RESERVATION_API_URL.replace(/\/+$/, '')}/${safeToken}`;
+};
 
 export interface PublicBookingService {
 	id_service: number;
@@ -100,6 +112,29 @@ export interface PublicValidateCustomerResult {
 	exists: boolean;
 	message: string;
 	customer: PublicValidatedCustomer | null;
+}
+
+export interface PublicReservationDetail {
+	id_appointment: number;
+	org_id_organization: number;
+	loc_id_location: number;
+	location_name: string;
+	location_address: string;
+	pro_id_professional: number;
+	professional_name: string;
+	ser_id_service: number;
+	service_name: string;
+	duration_minutes: number;
+	customer_name: string;
+	customer_phone: string;
+	status: string;
+	start_time: string;
+	end_time: string;
+}
+
+export interface PublicReservationUpdatePayload {
+	start_time: string;
+	end_time: string;
 }
 
 interface PublicApiFailureResponse {
@@ -499,6 +534,103 @@ const normalizeValidatedCustomer = (value: unknown): PublicValidatedCustomer | n
 	return {
 		id_customer: idCustomer,
 		full_name: fullName,
+	};
+};
+
+const normalizeReservationDetail = (value: unknown): PublicReservationDetail | null => {
+	if (!value || typeof value !== 'object') return null;
+
+	const source = value as Record<string, unknown>;
+	const appointmentId = toPositiveInt(source.id_appointment, 0);
+	const orgId = toPositiveInt(source.org_id_organization, 0);
+	const locationId = toPositiveInt(source.loc_id_location, 0);
+	const professionalId = toPositiveInt(source.pro_id_professional, 0);
+	const serviceId = toPositiveInt(source.ser_id_service, 0);
+	const durationMinutes = toPositiveInt(source.duration_minutes, 0);
+	const startTime = String(source.start_time || '').trim();
+	const endTime = String(source.end_time || '').trim();
+
+	if (!appointmentId || !orgId || !locationId || !professionalId || !serviceId || !startTime || !endTime) {
+		return null;
+	}
+
+	return {
+		id_appointment: appointmentId,
+		org_id_organization: orgId,
+		loc_id_location: locationId,
+		location_name: String(source.location_name || '').trim(),
+		location_address: String(source.location_address || '').trim(),
+		pro_id_professional: professionalId,
+		professional_name: String(source.professional_name || '').trim(),
+		ser_id_service: serviceId,
+		service_name: String(source.service_name || '').trim(),
+		duration_minutes: durationMinutes,
+		customer_name: String(source.customer_name || '').trim(),
+		customer_phone: String(source.customer_phone || '').trim(),
+		status: String(source.status || '').trim().toUpperCase(),
+		start_time: startTime,
+		end_time: endTime,
+	};
+};
+
+export const getPublicReservationWithOrds = async (token: string): Promise<PublicReservationDetail> => {
+	const safeToken = String(token || '').trim();
+	if (!safeToken) {
+		throw new PublicBookingApiError('Token de reserva requerido.', 400);
+	}
+
+	const response = await fetch(resolvePublicReservationApiUrl(safeToken), {
+		method: 'GET',
+		headers: { Accept: 'application/json' },
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible cargar la reserva.');
+	const reservation = normalizeReservationDetail(data.data);
+	if (!reservation) {
+		throw new PublicBookingApiError('No fue posible interpretar la reserva.', 502);
+	}
+
+	return reservation;
+};
+
+export const updatePublicReservationWithOrds = async (
+	token: string,
+	payload: PublicReservationUpdatePayload
+) => {
+	const safeToken = String(token || '').trim();
+	if (!safeToken) {
+		throw new PublicBookingApiError('Token de reserva requerido.', 400);
+	}
+
+	const response = await fetch(resolvePublicReservationApiUrl(safeToken), {
+		method: 'PUT',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible actualizar la reserva.');
+	return {
+		message: String(data.message || '').trim() || 'Reserva actualizada correctamente.',
+	};
+};
+
+export const cancelPublicReservationWithOrds = async (token: string) => {
+	const safeToken = String(token || '').trim();
+	if (!safeToken) {
+		throw new PublicBookingApiError('Token de reserva requerido.', 400);
+	}
+
+	const response = await fetch(resolvePublicReservationApiUrl(safeToken), {
+		method: 'DELETE',
+		headers: { Accept: 'application/json' },
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible cancelar la reserva.');
+	return {
+		message: String(data.message || '').trim() || 'Reserva cancelada correctamente.',
 	};
 };
 

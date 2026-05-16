@@ -631,6 +631,8 @@ export const isPublicPath = (pathname: string) => {
 		pathname.startsWith('/api/public') ||
 		pathname === '/p' ||
 		pathname.startsWith('/p/') ||
+		pathname === '/r' ||
+		pathname.startsWith('/r/') ||
 		pathname.startsWith('/_astro') ||
 		pathname === '/favicon.ico' ||
 		pathname === '/favicon.svg'

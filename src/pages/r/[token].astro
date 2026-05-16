@@ -1,0 +1,473 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import AppAlert from '../../components/AppAlert.astro';
+import {
+	getPublicReservationWithOrds,
+	PublicBookingApiError,
+	type PublicReservationDetail,
+} from '../../lib/public-booking';
+import '../../styles/global.css';
+
+const token = String(Astro.params.token || '').trim();
+
+let reservation: PublicReservationDetail | null = null;
+let loadError = '';
+
+try {
+	reservation = await getPublicReservationWithOrds(token);
+} catch (error) {
+	const bookingError =
+		error instanceof PublicBookingApiError
+			? error
+			: new PublicBookingApiError('No fue posible cargar esta reserva.', 500);
+	loadError = bookingError.message;
+	Astro.response.status = bookingError.status >= 400 && bookingError.status < 500 ? bookingError.status : 200;
+}
+
+const serializedReservation = reservation
+	? JSON.stringify(reservation).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
+	: '';
+---
+
+<Layout>
+	<main class="public-booking-shell reservation-shell relative z-10 mx-auto min-h-screen w-full max-w-4xl px-2 py-6 sm:px-4 md:px-6 lg:py-8">
+		<div aria-hidden="true" class="pointer-events-none fixed inset-0 z-[-1] bg-(--surface-background)"></div>
+		<section class="reservation-card grid gap-4" data-reservation-root data-token={token}>
+			{loadError || !reservation ? (
+				<div class="reservation-state rounded-[28px] bg-(--surface-container) p-6 shadow-sm">
+					<span class="material-symbols-rounded">event_busy</span>
+					<h1>No encontramos esta reserva</h1>
+					<p>{loadError || 'El enlace puede haber expirado o no existe.'}</p>
+					<a href="/" class="reservation-link">Volver al inicio</a>
+				</div>
+			) : (
+				<>
+					<script type="application/json" id="reservation-json" set:html={serializedReservation}></script>
+
+					<header class="reservation-header rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6">
+						<div class="reservation-header-content">
+							<div class="grid gap-1">
+								<p class="reservation-eyebrow">Gestionar reserva</p>
+								<h1>Tu reserva en Hasel</h1>
+								<p>Revisa los datos, cambia la fecha o cancela tu turno si ya no puedes asistir.</p>
+							</div>
+						</div>
+					</header>
+
+					<div class="reservation-summary rounded-[28px] bg-(--surface-container) p-4 shadow-sm sm:p-5">
+						<div>
+							<span>Cliente</span>
+							<strong>{reservation.customer_name}</strong>
+						</div>
+						<div>
+							<span>Servicio</span>
+							<strong>{reservation.service_name}</strong>
+						</div>
+						<div>
+							<span>Profesional</span>
+							<strong>{reservation.professional_name}</strong>
+						</div>
+						<div>
+							<span>Sucursal</span>
+							<strong>{reservation.location_name}</strong>
+						</div>
+						<div>
+							<span>Estado</span>
+							<strong data-status-text>{reservation.status}</strong>
+						</div>
+						<div>
+							<span>Horario actual</span>
+							<strong data-current-date></strong>
+						</div>
+					</div>
+
+					<div class="reservation-toast is-hidden rounded-2xl px-4 py-3 text-sm font-medium shadow-sm transition-all" data-reservation-toast></div>
+
+					<form class="reservation-form rounded-[28px] bg-(--surface-container) p-4 shadow-sm sm:p-5" data-reservation-form>
+						<div class="reservation-field">
+							<label for="reservation_date">Nueva fecha</label>
+							<input id="reservation_date" name="date" type="date" required data-reservation-date />
+						</div>
+						<div class="reservation-field">
+							<label for="reservation_slot">Horario disponible</label>
+							<div class="reservation-slots-grid mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" data-reservation-slots></div>
+							<input type="hidden" id="reservation_slot" name="slot" required data-reservation-slot />
+							<p data-no-reservation-slots class="mt-3 hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)">
+								No hay horarios disponibles para este día.
+							</p>
+						</div>
+
+						<div class="reservation-actions">
+							<button type="button" class="reservation-danger" data-cancel-reservation>
+								<span class="material-symbols-rounded">event_busy</span>
+								Cancelar reserva
+							</button>
+							<button type="submit" class="reservation-primary">
+								<span class="material-symbols-rounded">save</span>
+								Guardar cambios
+							</button>
+						</div>
+					</form>
+				</>
+			)}
+		</section>
+	</main>
+	<AppAlert />
+</Layout>
+
+<script is:inline>
+	(() => {
+		const root = document.querySelector('[data-reservation-root]');
+		const jsonScript = document.getElementById('reservation-json');
+		if (!root || !jsonScript?.textContent) return;
+
+		const reservation = JSON.parse(jsonScript.textContent);
+		const token = root.dataset.token || '';
+		const form = root.querySelector('[data-reservation-form]');
+		const dateInput = root.querySelector('[data-reservation-date]');
+		const slotSelect = root.querySelector('[data-reservation-slot]');
+		const slotsGrid = root.querySelector('[data-reservation-slots]');
+		const noSlots = root.querySelector('[data-no-reservation-slots]');
+		const toast = root.querySelector('[data-reservation-toast]');
+		const cancelButton = root.querySelector('[data-cancel-reservation]');
+		const currentDate = root.querySelector('[data-current-date]');
+		const statusText = root.querySelector('[data-status-text]');
+
+		const pad = (value) => String(value).padStart(2, '0');
+		const parseLocalDate = (value) => new Date(String(value || '').replace('T', ' '));
+		const start = parseLocalDate(reservation.start_time);
+		const durationMinutes = Number(reservation.duration_minutes || 30);
+
+		const formatHumanDate = (date) =>
+			`${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+
+		const toDateInputValue = (date) =>
+			`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+
+		const showToast = (message, type = 'info') => {
+			if (!toast) return;
+			toast.textContent = message;
+			toast.dataset.type = type;
+			toast.classList.remove('is-hidden');
+		};
+
+		if (currentDate) currentDate.textContent = formatHumanDate(start);
+		if (dateInput instanceof HTMLInputElement) dateInput.value = toDateInputValue(start);
+
+		const setSlotOptions = (slots, selectedSlot = '') => {
+			if (!(slotSelect instanceof HTMLInputElement) || !(slotsGrid instanceof HTMLElement)) return;
+			slotsGrid.innerHTML = '';
+			slotSelect.value = selectedSlot;
+			if (noSlots instanceof HTMLElement) {
+				noSlots.classList.toggle('hidden', slots.length > 0);
+			}
+
+			for (const slot of slots) {
+				const button = document.createElement('button');
+				button.type = 'button';
+				button.textContent = slot;
+				button.dataset.slotValue = slot;
+				button.className =
+					'reservation-slot-chip inline-flex h-10 items-center justify-center rounded-full border px-5 text-sm font-medium transition';
+				if (slot === selectedSlot) {
+					button.classList.add('reservation-slot-chip--active');
+				}
+				button.addEventListener('click', () => {
+					slotSelect.value = slot;
+					slotsGrid.querySelectorAll('[data-slot-value]').forEach((item) => {
+						item.classList.remove('reservation-slot-chip--active');
+					});
+					button.classList.add('reservation-slot-chip--active');
+				});
+				slotsGrid.appendChild(button);
+			}
+		};
+
+		const loadSlots = async () => {
+			if (!(dateInput instanceof HTMLInputElement)) return;
+			const targetDate = dateInput.value;
+			if (!targetDate) return;
+			setSlotOptions([]);
+			const params = new URLSearchParams({
+				pro_id: String(reservation.pro_id_professional),
+				loc_id: String(reservation.loc_id_location),
+				ser_id: String(reservation.ser_id_service),
+				target_date: targetDate,
+			});
+			const response = await fetch(`/api/public/available-slots?${params.toString()}`);
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok || data.status !== 'success' || !Array.isArray(data.data)) {
+				showToast(data.message || 'No fue posible cargar horarios.', 'error');
+				return;
+			}
+			const currentSlot = targetDate === toDateInputValue(start)
+				? `${pad(start.getHours())}:${pad(start.getMinutes())}`
+				: '';
+			const slots = currentSlot && !data.data.includes(currentSlot)
+				? [currentSlot, ...data.data]
+				: data.data;
+			setSlotOptions(slots, currentSlot);
+		};
+
+		dateInput?.addEventListener('change', loadSlots);
+		loadSlots();
+
+		form?.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			if (!(dateInput instanceof HTMLInputElement) || !(slotSelect instanceof HTMLInputElement)) return;
+			if (!dateInput.value || !slotSelect.value) {
+				showToast('Selecciona fecha y horario.', 'error');
+				return;
+			}
+
+			const startTime = new Date(`${dateInput.value}T${slotSelect.value}:00`);
+			const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
+			const body = {
+				start_time: `${dateInput.value}T${slotSelect.value}:00`,
+				end_time: `${toDateInputValue(endTime)}T${pad(endTime.getHours())}:${pad(endTime.getMinutes())}:00`,
+			};
+
+			const response = await fetch(`/api/public/reservations/${encodeURIComponent(token)}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+				body: JSON.stringify(body),
+			});
+			const data = await response.json().catch(() => ({}));
+			showToast(data.message || (response.ok ? 'Reserva actualizada.' : 'No fue posible actualizar.'), response.ok ? 'success' : 'error');
+		});
+
+		cancelButton?.addEventListener('click', async () => {
+			const confirmed = window.BookmateAlert?.confirm
+				? await window.BookmateAlert.confirm({
+						type: 'warning',
+						title: 'Cancelar reserva',
+						message: 'Esta acción cancelará tu reserva. ¿Deseas continuar?',
+						confirmText: 'Sí, cancelar',
+						cancelText: 'Volver',
+					})
+				: window.confirm('¿Quieres cancelar esta reserva?');
+			if (!confirmed) return;
+			const response = await fetch(`/api/public/reservations/${encodeURIComponent(token)}`, {
+				method: 'DELETE',
+				headers: { Accept: 'application/json' },
+			});
+			const data = await response.json().catch(() => ({}));
+			if (response.ok && statusText) statusText.textContent = 'CANCELADO';
+			showToast(data.message || (response.ok ? 'Reserva cancelada.' : 'No fue posible cancelar.'), response.ok ? 'success' : 'error');
+		});
+	})();
+</script>
+
+<style>
+.reservation-shell {
+	font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
+}
+
+.reservation-card {
+	width: 100%;
+}
+
+.reservation-header-content {
+	display: flex;
+	align-items: center;
+	gap: 0.9rem;
+}
+
+.reservation-header h1,
+.reservation-state h1 {
+	margin: 0;
+	font-size: clamp(1.75rem, 3.4vw, 2.2rem);
+	line-height: 1.05;
+	letter-spacing: -0.03em;
+	color: var(--on-surface);
+}
+
+.reservation-header p,
+.reservation-state p {
+	margin: 0.3rem 0 0;
+	color: var(--on-surface-variant);
+	line-height: 1.45;
+}
+
+.reservation-eyebrow {
+	color: var(--primary) !important;
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+}
+
+.reservation-summary {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.55rem;
+}
+
+.reservation-summary div {
+	border-radius: 0.8rem;
+	background: var(--surface-container-high);
+	padding: 0.65rem 0.75rem;
+}
+
+.reservation-summary span,
+.reservation-field label {
+	display: block;
+	color: var(--on-surface-variant);
+	font-size: 0.72rem;
+	font-weight: 700;
+	margin-bottom: 0.28rem;
+}
+
+.reservation-summary strong {
+	display: block;
+	color: var(--on-surface);
+	font-size: 0.96rem;
+	line-height: 1.25;
+}
+
+.reservation-form {
+	display: grid;
+	gap: 0.85rem;
+}
+
+.reservation-field input {
+	box-sizing: border-box;
+	width: 100%;
+	border: 1px solid var(--outline);
+	border-radius: 0.85rem;
+	background: var(--surface-container-lowest);
+	color: var(--on-surface);
+	font: inherit;
+	padding: 0.75rem 0.9rem;
+	outline: none;
+}
+
+.reservation-field input:focus {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 1px var(--primary);
+}
+
+.reservation-slots-grid {
+	margin-top: 0.7rem;
+}
+
+.reservation-slot-chip {
+	border-color: var(--outline);
+	background: transparent;
+	color: var(--on-surface);
+}
+
+.reservation-slot-chip:hover {
+	border-color: var(--primary);
+	background: color-mix(in srgb, var(--primary-container) 60%, transparent);
+}
+
+.reservation-slot-chip--active {
+	border-color: var(--primary);
+	background: var(--primary);
+	color: var(--on-primary);
+	box-shadow: 0 10px 24px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+
+.reservation-actions {
+	display: flex;
+	gap: 0.8rem;
+	justify-content: space-between;
+	margin-top: 0.75rem;
+}
+
+.reservation-primary,
+.reservation-danger,
+.reservation-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	border: 0;
+	border-radius: 999px;
+	font: inherit;
+	font-weight: 800;
+	padding: 0.78rem 1.25rem;
+	cursor: pointer;
+	text-decoration: none;
+}
+
+.reservation-primary {
+	background: var(--primary);
+	color: var(--on-primary);
+}
+
+.reservation-danger {
+	background: rgba(127, 29, 29, 0.18);
+	color: #fca5a5;
+	border: 1px solid rgba(248, 113, 113, 0.28);
+	box-shadow: none;
+}
+
+.reservation-danger:hover {
+	background: rgba(127, 29, 29, 0.28);
+	border-color: rgba(248, 113, 113, 0.42);
+}
+
+.reservation-link {
+	margin-top: 1.3rem;
+	background: var(--primary);
+	color: var(--on-primary);
+}
+
+.reservation-toast {
+	background: var(--surface-container-high);
+	color: var(--on-surface-variant);
+	border: 1px solid var(--outline-variant);
+}
+
+.reservation-toast[data-type='error'] {
+	background: var(--error-container);
+	color: var(--on-error-container);
+	border-color: var(--error-container);
+}
+
+.reservation-toast[data-type='success'] {
+	background: var(--tertiary-container);
+	color: var(--on-tertiary-container);
+	border-color: var(--tertiary-container);
+}
+
+.is-hidden {
+	display: none;
+}
+
+.reservation-state {
+	text-align: center;
+}
+
+.reservation-state .material-symbols-rounded {
+	color: var(--primary);
+	font-size: 3rem;
+}
+
+@media (max-width: 640px) {
+	.reservation-header-content,
+	.reservation-actions {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.reservation-summary {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 0.5rem;
+	}
+
+	.reservation-summary div {
+		padding: 0.62rem 0.7rem;
+	}
+}
+
+@media (min-width: 768px) {
+	.reservation-summary {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 0.65rem;
+	}
+}
+</style>
+
