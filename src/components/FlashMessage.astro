@@ -20,19 +20,19 @@ const {
 const toneMap: Record<MessageType, { icon: string; iconColor: string }> = {
 	success: {
 		icon: 'check_circle',
-		iconColor: 'text-emerald-300 dark:text-emerald-700',
+		iconColor: 'text-emerald-300',
 	},
 	error: {
 		icon: 'error',
-		iconColor: 'text-rose-300 dark:text-rose-700',
+		iconColor: 'text-rose-300',
 	},
 	info: {
 		icon: 'info',
-		iconColor: 'text-sky-300 dark:text-sky-700',
+		iconColor: 'text-sky-300',
 	},
 	warning: {
 		icon: 'warning',
-		iconColor: 'text-amber-300 dark:text-amber-700',
+		iconColor: 'text-amber-300',
 	},
 };
 
@@ -45,7 +45,7 @@ const tone = toneMap[type];
 			role="alert"
 			aria-live="polite"
 			class:list={[
-				'pointer-events-auto group relative flex items-center gap-3 rounded-full bg-slate-800 px-4 py-3 text-slate-50 shadow-xl dark:bg-slate-100 dark:text-slate-900',
+				'pointer-events-auto group relative flex items-center gap-3 rounded-full bg-slate-800 px-4 py-3 text-slate-50 shadow-xl',
 				expand ? 'w-full max-w-full rounded-2xl' : 'w-auto max-w-[calc(100vw-2rem)]',
 			]}
 			style="transform: translateY(20px); opacity: 0; animation: flash-slide-in 260ms cubic-bezier(0.16, 1, 0.3, 1) forwards;"
@@ -59,7 +59,7 @@ const tone = toneMap[type];
 				dismissible ? (
 					<button
 						type="button"
-						class="shrink-0 -mr-1 rounded-full p-1.5 text-slate-300 transition hover:bg-white/10 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-white/35 dark:text-slate-500 dark:hover:bg-slate-200 dark:hover:text-slate-900 dark:focus:ring-slate-300"
+						class="shrink-0 -mr-1 rounded-full p-1.5 text-slate-300 transition hover:bg-white/10 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-white/35"
 						aria-label="Cerrar mensaje"
 						data-flash-close
 					>

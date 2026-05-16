@@ -1,0 +1,43 @@
+---
+import VerifyEmailForm from '../../components/VerifyEmailForm.astro';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
+
+const error = Astro.url.searchParams.get('error') ?? '';
+const email = Astro.url.searchParams.get('email') ?? '';
+const emailError = Astro.url.searchParams.get('email_error') ?? '';
+const codeError = Astro.url.searchParams.get('code_error') ?? '';
+const registered = Astro.url.searchParams.get('registered') === '1';
+const resent = Astro.url.searchParams.get('resent') === '1';
+---
+
+<Layout>
+	<VerifyEmailForm
+		error={error}
+		email={email}
+		emailError={emailError}
+		codeError={codeError}
+		registered={registered}
+		resent={resent}
+	/>
+</Layout>
+
+<script is:inline>
+	if (typeof window !== 'undefined') {
+		const currentUrl = new URL(window.location.href);
+		const transientParams = ['error', 'email_error', 'code_error', 'registered', 'resent'];
+		let hasTransientParams = false;
+
+		for (const param of transientParams) {
+			if (currentUrl.searchParams.has(param)) {
+				currentUrl.searchParams.delete(param);
+				hasTransientParams = true;
+			}
+		}
+
+		if (hasTransientParams) {
+			window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
+		}
+	}
+</script>
+

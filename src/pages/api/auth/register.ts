@@ -161,7 +161,7 @@ export const POST: APIRoute = async ({ request }) => {
 			id_org_specialty: body.id_org_specialty,
 		});
 
-		const redirectTo = `/auth/login?identifier=${encodeURIComponent(body.email)}&registered=1`;
+		const redirectTo = `/auth/verify-email?email=${encodeURIComponent(body.email)}&registered=1`;
 
 		if (wantsHtml(request)) {
 			return new Response(null, {

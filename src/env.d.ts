@@ -41,6 +41,8 @@ interface ImportMetaEnv {
     readonly ORDS_AUTH_REGISTER_URL?: string;
     readonly ORDS_FORGOT_PASSWORD_URL?: string;
     readonly ORDS_RESET_PASSWORD_URL?: string;
+    readonly ORDS_VERIFY_EMAIL_URL?: string;
+    readonly ORDS_RESEND_VERIFICATION_CODE_URL?: string;
 
     readonly ORDS_DASHBOARD_URL?: string;
     readonly AI_SUMMARIZATION_URL?: string;

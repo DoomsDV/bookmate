@@ -36,6 +36,16 @@ export const RESET_PASSWORD_URL = resolveOrdsApiUrl(
 	'ORDS_RESET_PASSWORD_URL',
 	'/auth/reset-password'
 );
+export const VERIFY_EMAIL_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_VERIFY_EMAIL_URL,
+	'ORDS_VERIFY_EMAIL_URL',
+	'/auth/verify-email'
+);
+export const RESEND_VERIFICATION_CODE_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_RESEND_VERIFICATION_CODE_URL,
+	'ORDS_RESEND_VERIFICATION_CODE_URL',
+	'/auth/resend-verification-code'
+);
 export const ORG_SPECIALTIES_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_ORG_SPECIALTIES_URL,
 	'ORDS_ORG_SPECIALTIES_URL',
@@ -97,6 +107,15 @@ export interface ForgotPasswordPayload {
 export interface ResetPasswordPayload {
 	token: string;
 	new_password: string;
+}
+
+export interface VerifyEmailPayload {
+	email: string;
+	code: string;
+}
+
+export interface ResendVerificationCodePayload {
+	email: string;
 }
 
 interface AuthFailureResponse {
@@ -440,6 +459,40 @@ export const resetPasswordWithOrds = async (payload: ResetPasswordPayload) => {
 		response,
 		'No fue posible actualizar tu contraseña.',
 		'ORDS reset-password'
+	);
+};
+
+export const verifyEmailWithOrds = async (payload: VerifyEmailPayload) => {
+	const response = await fetch(VERIFY_EMAIL_URL, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	return parseStatusResponseWithFields(
+		response,
+		'No fue posible verificar tu correo electrónico.',
+		'ORDS verify-email'
+	);
+};
+
+export const resendVerificationCodeWithOrds = async (payload: ResendVerificationCodePayload) => {
+	const response = await fetch(RESEND_VERIFICATION_CODE_URL, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	return parseStatusResponseWithFields(
+		response,
+		'No fue posible reenviar el código de verificación.',
+		'ORDS resend-verification-code'
 	);
 };
 
