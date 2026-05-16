@@ -84,7 +84,10 @@ const visibleTeamItems = teamItems.filter((item) =>
 			<div class="flex items-center justify-between gap-3">
 				<div class="sidebar-account-row">
 					<div
-						class="workspace-avatar flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full text-xl font-bold"
+						class:list={[
+							"workspace-avatar flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full text-xl font-bold",
+							workspaceLogoUrl ? "workspace-avatar--has-logo" : "workspace-avatar--empty",
+						]}
 						data-workspace-avatar
 					>
 						<span class="workspace-logo-placeholder" aria-hidden="true">
@@ -207,7 +210,10 @@ const visibleTeamItems = teamItems.filter((item) =>
 		<div class="sidebar-account-header mb-6 border-b border-(--shell-border)/75 pb-4" data-sidebar-brand-block>
 			<div class="sidebar-account-row" data-sidebar-brand>
 				<div
-					class="workspace-avatar flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-bold"
+					class:list={[
+						"workspace-avatar flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-bold",
+						workspaceLogoUrl ? "workspace-avatar--has-logo" : "workspace-avatar--empty",
+					]}
 					data-workspace-avatar
 				>
 					<span class="workspace-logo-placeholder" aria-hidden="true">
@@ -327,12 +333,21 @@ const visibleTeamItems = teamItems.filter((item) =>
 <style>
 	.workspace-avatar {
 		position: relative;
-		border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--shell-border) 72%);
-		background:
-			radial-gradient(circle at 28% 24%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 34%),
-			linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 82%, var(--surface-bright) 18%), var(--surface-container));
 		color: var(--primary);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 10px 26px rgba(15, 23, 42, 0.12);
+		border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--shell-border) 76%);
+		background: var(--surface-container);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 26px rgba(15, 23, 42, 0.12);
+	}
+
+	.workspace-avatar--empty {
+		background: var(--surface-container-high);
+		box-shadow: none;
+	}
+
+	:global(html[data-theme='dark']) .workspace-avatar--empty {
+		border-color: var(--shell-border);
+		background: var(--surface-container-highest);
+		box-shadow: none;
 	}
 
 	.workspace-logo-placeholder {

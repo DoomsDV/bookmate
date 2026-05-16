@@ -1115,36 +1115,39 @@ class AppointmentModal extends HTMLElement {
 				date.getMonth() === selectedDate.getMonth() &&
 				date.getDate() === selectedDate.getDate();
 			const isToday = date.getTime() === today.getTime();
+			const isPast = date.getTime() < today.getTime();
 
 			const button = document.createElement('button');
 			button.type = 'button';
 			button.textContent = String(date.getDate());
 			button.className = [
-				'inline-flex h-10 w-10 items-center justify-center rounded-full text-[1.02rem] font-semibold transition',
-				inCurrentMonth
-					? 'text-stone-700 hover:bg-stone-200'
-					: 'text-stone-400 hover:bg-stone-200/70',
-				isToday ? 'ring-1 ring-stone-400/70' : '',
-				isSelected
-					? 'bg-stone-300 text-stone-900 hover:bg-stone-400'
-					: '',
+				'dtp-day',
+				!inCurrentMonth ? 'dtp-day--out' : '',
+				isToday ? 'dtp-day--today' : '',
+				isSelected ? 'dtp-day--selected' : '',
+				isPast ? 'dtp-day--disabled' : '',
 			]
 				.filter(Boolean)
 				.join(' ');
 
-			button.addEventListener('click', () => {
-				if (!this.pickerDraftDate) return;
-				this.pickerDraftDate = new Date(
-					date.getFullYear(),
-					date.getMonth(),
-					date.getDate(),
-					this.pickerDraftDate.getHours(),
-					this.pickerDraftDate.getMinutes(),
-					0,
-					0
-				);
-				this.renderDateTimePicker();
-			});
+			if (isPast) {
+				button.disabled = true;
+				button.setAttribute('aria-disabled', 'true');
+			} else {
+				button.addEventListener('click', () => {
+					if (!this.pickerDraftDate) return;
+					this.pickerDraftDate = new Date(
+						date.getFullYear(),
+						date.getMonth(),
+						date.getDate(),
+						this.pickerDraftDate.getHours(),
+						this.pickerDraftDate.getMinutes(),
+						0,
+						0
+					);
+					this.renderDateTimePicker();
+				});
+			}
 
 			grid.appendChild(button);
 		}
@@ -1330,7 +1333,7 @@ class AppointmentModal extends HTMLElement {
 	};
 
 	handleBackdropClick = (event: MouseEvent) => {
-		if (event.target instanceof HTMLDialogElement) {
+		if (event.target === this.modal) {
 			this.closeModal();
 		}
 	};

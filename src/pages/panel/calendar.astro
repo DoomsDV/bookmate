@@ -466,102 +466,85 @@ const googleErrorMessage = hasGoogleError
 							class="fixed inset-0 z-[9999] m-0 h-screen w-screen max-h-none max-w-none border-0 bg-transparent p-4 outline-none backdrop:bg-transparent open:grid open:place-items-center"
 							data-datetime-picker
 						>
-							<div class="w-[390px] max-w-[calc(100vw-2rem)] overflow-hidden rounded-[1.75rem] border border-stone-300 bg-stone-100 text-stone-800 shadow-[0_18px_45px_rgba(15,23,42,0.16)]">
-							<div class="px-4 pb-3 pt-4">
-							<div class="flex items-start justify-between gap-3">
-								<p
-									class="text-[0.68rem] font-black uppercase tracking-[0.15em] text-stone-500"
-									data-picker-target-label
-								>
-									Seleccionando fecha y hora
-								</p>
-								<button
-									type="button"
-									data-picker-close
-									class="-mr-1 -mt-1 inline-flex size-8 shrink-0 items-center justify-center rounded-full text-stone-500 transition hover:bg-stone-200 hover:text-stone-900 focus:outline-none focus:ring-2 focus:ring-stone-400/50"
-									aria-label="Cerrar selector de fecha y hora"
-								>
-									<span class="material-symbols-rounded text-[1.1rem]">close</span>
-								</button>
-							</div>
-
-							<div class="mt-2.5 flex items-center justify-between gap-2">
-								<div class="inline-flex items-center gap-1.5">
-									<select
-										data-picker-month-select
-										class="cursor-pointer appearance-none rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[1.02rem] font-bold text-stone-800 outline-none transition hover:border-stone-300 hover:bg-stone-200 focus:border-stone-400"
-										aria-label="Seleccionar mes"
-									></select>
-									<select
-										data-picker-year-select
-										class="w-[5.35rem] cursor-pointer appearance-none rounded-md border border-transparent bg-transparent px-1.5 py-1 text-[1.02rem] font-bold text-stone-800 outline-none transition hover:border-stone-300 hover:bg-stone-200 focus:border-stone-400"
-										aria-label="Seleccionar año"
-									></select>
-								</div>
-								<div class="inline-flex items-center gap-1">
-									<button
-										type="button"
-										data-picker-prev-month
-										class="inline-flex size-8 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-200 hover:text-stone-900"
-										aria-label="Mes anterior"
-									>
-										<span class="material-symbols-rounded text-[1.05rem]">chevron_left</span>
-									</button>
-									<button
-										type="button"
-										data-picker-next-month
-										class="inline-flex size-8 items-center justify-center rounded-full text-stone-600 transition hover:bg-stone-200 hover:text-stone-900"
-										aria-label="Mes siguiente"
-									>
-										<span class="material-symbols-rounded text-[1.05rem]">chevron_right</span>
-									</button>
-								</div>
-							</div>
-
-							<div class="mt-3 grid grid-cols-7 gap-1 text-center text-[0.74rem] font-bold text-stone-500">
-								<span>Lun</span>
-								<span>Mar</span>
-								<span>Mié</span>
-								<span>Jue</span>
-								<span>Vie</span>
-								<span>Sáb</span>
-								<span>Dom</span>
-							</div>
-							<div class="mt-2 grid grid-cols-7 gap-1" data-picker-days-grid></div>
-							</div>
-
-							<div class="border-t border-stone-300 px-4 py-3">
-								<div class="flex items-center justify-between gap-3">
-									<div class="inline-flex items-center gap-2.5">
-										<span class="material-symbols-rounded text-[1.2rem] text-stone-500">schedule</span>
-										<select
-											data-picker-hour-select
-											class="w-[4.2rem] cursor-pointer appearance-none rounded-md border border-transparent bg-transparent px-2 py-1.5 text-[1.02rem] font-semibold text-stone-700 outline-none transition hover:border-stone-300 hover:bg-stone-200 focus:border-stone-400"
-										></select>
-										<select
-											data-picker-minute-select
-											class="w-[4.2rem] cursor-pointer appearance-none rounded-md border border-transparent bg-transparent px-2 py-1.5 text-[1.02rem] font-semibold text-stone-700 outline-none transition hover:border-stone-300 hover:bg-stone-200 focus:border-stone-400"
-										></select>
-									</div>
-
-									<div class="inline-flex items-center gap-2">
+							<div class="dtp-card">
+								<div class="dtp-head">
+									<div class="dtp-head-row">
+										<p class="dtp-target-label" data-picker-target-label>
+											Seleccionando fecha y hora
+										</p>
 										<button
 											type="button"
-											data-picker-cancel
-											class="inline-flex items-center justify-center rounded-lg px-2.5 py-1.5 text-[0.9rem] font-semibold text-stone-600 transition hover:bg-stone-200 hover:text-stone-800"
+											data-picker-close
+											class="dtp-icon-btn"
+											aria-label="Cerrar selector de fecha y hora"
 										>
-											Hoy
-										</button>
-										<button
-											type="button"
-											data-picker-apply
-											class="inline-flex items-center justify-center rounded-xl border border-stone-300 bg-stone-50 px-3 py-1.5 text-[0.95rem] font-semibold text-stone-700 transition hover:bg-stone-200 hover:text-stone-900"
-										>
-											Hecho
+											<span class="material-symbols-rounded text-[1.1rem]">close</span>
 										</button>
 									</div>
+
+									<div class="dtp-nav-row">
+										<div class="inline-flex items-center gap-1.5">
+											<select
+												data-picker-month-select
+												class="dtp-select"
+												aria-label="Seleccionar mes"
+											></select>
+											<select
+												data-picker-year-select
+												class="dtp-select dtp-select--year"
+												aria-label="Seleccionar año"
+											></select>
+										</div>
+										<div class="inline-flex items-center gap-1">
+											<button
+												type="button"
+												data-picker-prev-month
+												class="dtp-icon-btn"
+												aria-label="Mes anterior"
+											>
+												<span class="material-symbols-rounded text-[1.05rem]">chevron_left</span>
+											</button>
+											<button
+												type="button"
+												data-picker-next-month
+												class="dtp-icon-btn"
+												aria-label="Mes siguiente"
+											>
+												<span class="material-symbols-rounded text-[1.05rem]">chevron_right</span>
+											</button>
+										</div>
+									</div>
+
+									<div class="dtp-weekdays">
+										<span>Lun</span>
+										<span>Mar</span>
+										<span>Mié</span>
+										<span>Jue</span>
+										<span>Vie</span>
+										<span>Sáb</span>
+										<span>Dom</span>
+									</div>
+									<div class="dtp-days-grid" data-picker-days-grid></div>
 								</div>
-							</div>
+
+								<div class="dtp-foot">
+									<div class="dtp-foot-row">
+										<div class="inline-flex items-center gap-2.5">
+											<span class="material-symbols-rounded dtp-clock-icon">schedule</span>
+											<select data-picker-hour-select class="dtp-select dtp-select--time"></select>
+											<select data-picker-minute-select class="dtp-select dtp-select--time"></select>
+										</div>
+
+										<div class="inline-flex items-center gap-2">
+											<button type="button" data-picker-cancel class="dtp-action-btn">
+												Hoy
+											</button>
+											<button type="button" data-picker-apply class="dtp-action-btn dtp-action-btn--primary">
+												Hecho
+											</button>
+										</div>
+									</div>
+								</div>
 							</div>
 						</dialog>
 					</div>

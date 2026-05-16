@@ -1226,3 +1226,257 @@ html[data-theme='dark'] [data-theme-toggle-mobile]:hover {
 	font-family: var(--font-body);
 }
 
+/* ============================================================
+   Date/Time picker popup (shared between appointment modal and
+   public reservation page). Uses theme-aware tokens so the same
+   markup adapts automatically to light/dark mode.
+   ============================================================ */
+
+.dtp-card {
+	width: 390px;
+	max-width: calc(100vw - 2rem);
+	overflow: hidden;
+	border-radius: 1.75rem;
+	border: 1px solid var(--shell-border);
+	background: var(--surface-bright);
+	color: var(--on-surface);
+	box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
+}
+
+html[data-theme='dark'] .dtp-card {
+	background: var(--surface-container, #1b1b1b);
+	border-color: rgba(255, 255, 255, 0.14);
+	box-shadow: 0 18px 45px rgba(0, 0, 0, 0.45);
+}
+
+.dtp-head {
+	padding: 1rem 1rem 0.75rem;
+}
+
+.dtp-head-row {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.dtp-target-label {
+	margin: 0;
+	font-size: 0.68rem;
+	font-weight: 900;
+	letter-spacing: 0.15em;
+	text-transform: uppercase;
+	color: var(--on-surface-variant);
+}
+
+.dtp-icon-btn {
+	display: inline-flex;
+	width: 2rem;
+	height: 2rem;
+	align-items: center;
+	justify-content: center;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--on-surface-variant);
+	cursor: pointer;
+	transition: background-color 140ms ease, color 140ms ease;
+}
+
+.dtp-icon-btn:hover,
+.dtp-icon-btn:focus-visible {
+	background: var(--surface-container-low);
+	color: var(--on-surface);
+	outline: none;
+}
+
+html[data-theme='dark'] .dtp-icon-btn:hover,
+html[data-theme='dark'] .dtp-icon-btn:focus-visible {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.dtp-nav-row {
+	margin-top: 0.625rem;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.dtp-select {
+	cursor: pointer;
+	appearance: none;
+	border: 1px solid transparent;
+	border-radius: 0.4rem;
+	background: transparent;
+	padding: 0.25rem 0.5rem;
+	font-size: 1.02rem;
+	font-weight: 700;
+	color: var(--on-surface);
+	outline: none;
+	transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.dtp-select:hover {
+	background: var(--surface-container-low);
+	border-color: var(--shell-border);
+}
+
+html[data-theme='dark'] .dtp-select:hover {
+	background: rgba(255, 255, 255, 0.08);
+	border-color: rgba(255, 255, 255, 0.18);
+}
+
+.dtp-select option {
+	color: var(--on-surface);
+	background: var(--surface-bright);
+}
+
+html[data-theme='dark'] .dtp-select option {
+	background: var(--surface-container, #1b1b1b);
+}
+
+.dtp-select--year {
+	width: 5.35rem;
+}
+
+.dtp-select--time {
+	width: 4.2rem;
+	font-weight: 600;
+}
+
+.dtp-weekdays {
+	margin-top: 0.75rem;
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 0.25rem;
+	text-align: center;
+	font-size: 0.74rem;
+	font-weight: 700;
+	color: var(--on-surface-variant);
+}
+
+.dtp-days-grid {
+	margin-top: 0.5rem;
+	display: grid;
+	grid-template-columns: repeat(7, minmax(0, 1fr));
+	gap: 0.25rem;
+}
+
+.dtp-day {
+	display: inline-flex;
+	width: 2.5rem;
+	height: 2.5rem;
+	margin: 0 auto;
+	align-items: center;
+	justify-content: center;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--on-surface);
+	font-size: 1.02rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background-color 140ms ease, color 140ms ease;
+}
+
+.dtp-day:hover {
+	background: var(--surface-container-low);
+}
+
+html[data-theme='dark'] .dtp-day:hover {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.dtp-day--out {
+	color: color-mix(in srgb, var(--on-surface-variant) 55%, transparent);
+}
+
+.dtp-day--today {
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-surface-variant) 50%, transparent);
+}
+
+.dtp-day--selected,
+.dtp-day--selected:hover {
+	background: var(--primary);
+	color: #ffffff;
+}
+
+.dtp-day--disabled,
+.dtp-day--disabled:hover {
+	color: color-mix(in srgb, var(--on-surface-variant) 35%, transparent);
+	background: transparent;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+.dtp-foot {
+	border-top: 1px solid var(--shell-border);
+	padding: 0.75rem 1rem;
+}
+
+html[data-theme='dark'] .dtp-foot {
+	border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+.dtp-foot-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.dtp-clock-icon {
+	color: var(--on-surface-variant);
+	font-size: 1.2rem;
+}
+
+.dtp-action-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 0;
+	border-radius: 0.5rem;
+	background: transparent;
+	padding: 0.4rem 0.6rem;
+	font-size: 0.9rem;
+	font-weight: 600;
+	color: var(--on-surface-variant);
+	cursor: pointer;
+	transition: background-color 140ms ease, color 140ms ease;
+}
+
+.dtp-action-btn:hover {
+	background: var(--surface-container-low);
+	color: var(--on-surface);
+}
+
+html[data-theme='dark'] .dtp-action-btn:hover {
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.dtp-action-btn--primary {
+	border: 1px solid var(--shell-border);
+	border-radius: 0.75rem;
+	background: var(--surface-container-low);
+	padding: 0.4rem 0.75rem;
+	font-size: 0.95rem;
+	color: var(--on-surface);
+}
+
+.dtp-action-btn--primary:hover {
+	background: var(--surface-container-high);
+	border-color: color-mix(in srgb, var(--shell-border) 70%, var(--on-surface-variant) 30%);
+	color: var(--on-surface);
+}
+
+html[data-theme='dark'] .dtp-action-btn--primary {
+	background: rgba(255, 255, 255, 0.06);
+	border-color: rgba(255, 255, 255, 0.14);
+}
+
+html[data-theme='dark'] .dtp-action-btn--primary:hover {
+	background: rgba(255, 255, 255, 0.12);
+	border-color: rgba(255, 255, 255, 0.22);
+}
+
