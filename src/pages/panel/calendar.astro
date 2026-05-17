@@ -1,4 +1,4 @@
-﻿---
+---
 import AppAlert from '../../components/AppAlert.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
@@ -6,9 +6,11 @@ import TopBar from '../../components/TopBar.astro';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
 
+const ENABLE_GOOGLE_CALENDAR = false;
+
 const GOOGLE_PROVIDER = 'google_calendar';
 const token = Astro.locals.token ?? '';
-const initialLoadError = token ? '' : 'No hay sesión válida para consultar el calendario.';
+const initialLoadError = token ? '' : 'No hay sesi�n v�lida para consultar el calendario.';
 const googleSuccessFlag = String(Astro.url.searchParams.get('success') || '').trim();
 const googleErrorFlag = String(Astro.url.searchParams.get('error') || '').trim();
 const googleDebugParam = String(Astro.url.searchParams.get('debug') || '').trim();
@@ -36,7 +38,7 @@ const parseMessageFromResponse = async (response: Response) => {
 	return `Request failed with status ${response.status}.`;
 };
 
-if (!initialLoadError) {
+if (ENABLE_GOOGLE_CALENDAR && !initialLoadError) {
 	const integrationUrl = getIntegrationUrl();
 	if (!integrationUrl) {
 		googleStatusMessage = 'Falta configurar ORDS_INTEGRATIONS_URL para integrar Google Calendar.';
@@ -64,32 +66,34 @@ if (!initialLoadError) {
 	}
 }
 
-const hasGoogleSuccess = googleSuccessFlag === 'google_connected' || googleSuccessFlag === 'google_disconnected';
+const hasGoogleSuccess =
+	ENABLE_GOOGLE_CALENDAR &&
+	(googleSuccessFlag === 'google_connected' || googleSuccessFlag === 'google_disconnected');
 const googleSuccessMessage =
 	googleSuccessFlag === 'google_connected'
-		? 'Google Calendar se conectó correctamente.'
+		? 'Google Calendar se conect� correctamente.'
 		: googleSuccessFlag === 'google_disconnected'
-			? 'Google Calendar se desconectó correctamente.'
+			? 'Google Calendar se desconect� correctamente.'
 			: '';
 
-const hasGoogleError = Boolean(googleErrorFlag);
+const hasGoogleError = ENABLE_GOOGLE_CALENDAR && Boolean(googleErrorFlag);
 const googleErrorMessageMap: Record<string, string> = {
-	google_connect_failed: 'No fue posible iniciar la conexión con Google.',
-	google_oauth_error: 'Google devolvió un error durante la autorización OAuth.',
-	google_missing_code: 'Google no envió el código de autorización.',
-	google_token_exchange_failed: 'Google no devolvió tokens válidos al canjear el código.',
-	google_ords_payload_invalid: 'No se pudo construir el body JSON para guardar la integración.',
-	google_ords_save_failed: 'Google respondió, pero no se pudieron guardar los tokens en ORDS.',
-	google_callback_failed: 'No fue posible completar la conexión con Google Calendar.',
+	google_connect_failed: 'No fue posible iniciar la conexi�n con Google.',
+	google_oauth_error: 'Google devolvi� un error durante la autorizaci�n OAuth.',
+	google_missing_code: 'Google no envi� el c�digo de autorizaci�n.',
+	google_token_exchange_failed: 'Google no devolvi� tokens v�lidos al canjear el c�digo.',
+	google_ords_payload_invalid: 'No se pudo construir el body JSON para guardar la integraci�n.',
+	google_ords_save_failed: 'Google respondi�, pero no se pudieron guardar los tokens en ORDS.',
+	google_callback_failed: 'No fue posible completar la conexi�n con Google Calendar.',
 	google_disconnect_failed: 'No fue posible desconectar Google Calendar.',
 };
 const googleErrorMessage = hasGoogleError
-	? (googleErrorMessageMap[googleErrorFlag] || 'Ocurrió un error con la integración de Google Calendar.')
+	? (googleErrorMessageMap[googleErrorFlag] || 'Ocurri� un error con la integraci�n de Google Calendar.')
 	: '';
 ---
 
 <Layout>
-	<calendar-manager data-google-connected={isGoogleConnected ? 'true' : 'false'}>
+	<calendar-manager data-google-connected={ENABLE_GOOGLE_CALENDAR && isGoogleConnected ? 'true' : 'false'}>
 		<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 			<div
 				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -113,34 +117,40 @@ const googleErrorMessage = hasGoogleError
 											<h1 class="text-[1.3rem] font-extrabold text-(--on-surface)">
 												Calendario de citas
 											</h1>
-											<div class="mt-1 inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[0.73rem] font-bold uppercase tracking-[0.08em] bg-(--surface-container-high) text-(--on-surface-variant)">
-												<span class:list={[
-													'inline-block size-2 rounded-full',
-													isGoogleConnected ? 'bg-emerald-500' : 'bg-zinc-400'
-												]}></span>
-												{isGoogleConnected ? 'Google sincronizado' : 'Google no conectado'}
-											</div>
+											{
+												ENABLE_GOOGLE_CALENDAR && (
+													<div class="mt-1 inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[0.73rem] font-bold uppercase tracking-[0.08em] bg-(--surface-container-high) text-(--on-surface-variant)">
+														<span class:list={[
+															'inline-block size-2 rounded-full',
+															isGoogleConnected ? 'bg-emerald-500' : 'bg-zinc-400'
+														]}></span>
+														{isGoogleConnected ? 'Google sincronizado' : 'Google no conectado'}
+													</div>
+												)
+											}
 										</div>
 
 										<div class="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
 											<div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
 												{
-													isGoogleConnected ? (
-														<form method="post" action="/api/google/disconnect" class="w-full sm:w-auto">
-															<button
-																type="submit"
-																class="inline-flex w-full items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/12 px-5 py-3 text-sm font-extrabold text-rose-600 transition hover:bg-rose-500/18 sm:w-auto"
+													ENABLE_GOOGLE_CALENDAR && (
+														isGoogleConnected ? (
+															<form method="post" action="/api/google/disconnect" class="w-full sm:w-auto">
+																<button
+																	type="submit"
+																	class="inline-flex w-full items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/12 px-5 py-3 text-sm font-extrabold text-rose-600 transition hover:bg-rose-500/18 sm:w-auto"
+																>
+																	Desconectar Google
+																</button>
+															</form>
+														) : (
+															<a
+																href="/api/google/connect"
+																class="inline-flex w-full items-center justify-center rounded-full border border-(--shell-border) bg-(--surface-bright) px-5 py-3 text-sm font-extrabold text-(--on-surface) no-underline transition hover:bg-(--surface-container-high) sm:w-auto"
 															>
-																Desconectar Google
-															</button>
-														</form>
-													) : (
-														<a
-															href="/api/google/connect"
-															class="inline-flex w-full items-center justify-center rounded-full border border-(--shell-border) bg-(--surface-bright) px-5 py-3 text-sm font-extrabold text-(--on-surface) no-underline transition hover:bg-(--surface-container-high) sm:w-auto"
-														>
-															Conectar Google
-														</a>
+																Conectar Google
+															</a>
+														)
 													)
 												}
 
@@ -196,7 +206,7 @@ const googleErrorMessage = hasGoogleError
 									}
 
 									{
-										googleStatusMessage && (
+										ENABLE_GOOGLE_CALENDAR && googleStatusMessage && (
 											<div class="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-[0.9rem] font-semibold text-amber-700 dark:text-amber-300">
 												{googleStatusMessage}
 											</div>
@@ -319,7 +329,7 @@ const googleErrorMessage = hasGoogleError
 
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span class="inline-flex items-center gap-1">
-								Teléfono
+								Tel�fono
 								<span class="text-rose-500">*</span>
 							</span>
 							<div class="flex h-[3.25rem] rounded-xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
@@ -492,7 +502,7 @@ const googleErrorMessage = hasGoogleError
 											<select
 												data-picker-year-select
 												class="dtp-select dtp-select--year"
-												aria-label="Seleccionar año"
+												aria-label="Seleccionar a�o"
 											></select>
 										</div>
 										<div class="inline-flex items-center gap-1">
@@ -518,10 +528,10 @@ const googleErrorMessage = hasGoogleError
 									<div class="dtp-weekdays">
 										<span>Lun</span>
 										<span>Mar</span>
-										<span>Mié</span>
+										<span>Mi�</span>
 										<span>Jue</span>
 										<span>Vie</span>
-										<span>Sáb</span>
+										<span>S�b</span>
 										<span>Dom</span>
 									</div>
 									<div class="dtp-days-grid" data-picker-days-grid></div>
