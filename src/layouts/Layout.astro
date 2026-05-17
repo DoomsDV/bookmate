@@ -28,6 +28,29 @@ const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
     : 'info';
 const hasSession = Boolean(Astro.locals.token ?? '');
 
+interface Props {
+    pageTitle?: string;
+    metaDescription?: string;
+    canonicalPath?: string;
+    ogImage?: string;
+    ogType?: string;
+    robots?: string;
+    jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const {
+    pageTitle = 'Hasel',
+    metaDescription,
+    canonicalPath,
+    ogImage = '/icon-512x512.png',
+    ogType = 'website',
+    robots = 'index, follow',
+    jsonLd,
+} = Astro.props as Props;
+
+const siteOrigin = Astro.site ?? Astro.url;
+const canonicalUrl = new URL(canonicalPath ?? Astro.url.pathname, siteOrigin).href;
+const ogImageUrl = new URL(ogImage, siteOrigin).href;
 if (flashMessageFromCookie) {
     Astro.cookies.delete(FLASH_MESSAGE_COOKIE, { path: '/' });
 }
@@ -79,7 +102,31 @@ if (flashTypeFromCookie) {
         </script>
         
         <meta name="generator" content={Astro.generator} />
-        <title>Hasel</title>
+        <title>{pageTitle}</title>
+        {metaDescription && (
+            <>
+                <meta name="description" content={metaDescription} />
+                <meta name="robots" content={robots} />
+                <link rel="canonical" href={canonicalUrl} />
+                <meta property="og:locale" content="es_ES" />
+                <meta property="og:site_name" content="Hasel" />
+                <meta property="og:type" content={ogType} />
+                <meta property="og:title" content={pageTitle} />
+                <meta property="og:description" content={metaDescription} />
+                <meta property="og:url" content={canonicalUrl} />
+                <meta property="og:image" content={ogImageUrl} />
+                <meta name="twitter:card" content="summary_large_image" />
+                <meta name="twitter:title" content={pageTitle} />
+                <meta name="twitter:description" content={metaDescription} />
+                <meta name="twitter:image" content={ogImageUrl} />
+            </>
+        )}
+        {jsonLd && (
+            <script
+                type="application/ld+json"
+                set:html={JSON.stringify(jsonLd)}
+            />
+        )}
     </head>
     <body>
         <ClientRouter />

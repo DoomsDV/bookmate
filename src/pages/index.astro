@@ -2,137 +2,206 @@
 import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
 
+const siteOrigin = String(Astro.site ?? Astro.url.origin).replace(/\/+$/, '');
+const pageTitle = 'Hasel — Software de citas, agenda y reservas online para tu negocio';
+const metaDescription =
+	'Gestiona calendario, sucursales, clientes, horarios y tu equipo sin límite de personas. Ofrece reservas por enlace público personalizado en minutos.';
+
 const features = [
 	{
-		title: 'Agenda inteligente',
-		description: 'Centraliza citas, bloqueos y disponibilidad en tiempo real para cada profesional.',
+		title: 'Calendario centralizado',
+		description:
+			'Visualiza y administra todas las citas del equipo en un solo calendario, con estados claros y actualización en tiempo real.',
 		icon: 'calendar_month',
 	},
 	{
-		title: 'Equipo sincronizado',
-		description: 'Roles, permisos y operaciones clave en una interfaz pensada para trabajo colaborativo.',
+		title: 'Reserva pública por enlace',
+		description:
+			'Comparte tu página personalizada (tu-marca/p/nombre) para que tus clientes agenden solos, rápido y sin llamadas.',
+		icon: 'link',
+	},
+	{
+		title: 'Sucursales y ubicaciones',
+		description:
+			'Organiza múltiples locales, direcciones y disponibilidad por sede desde un mismo panel.',
+		icon: 'storefront',
+	},
+	{
+		title: 'Base de clientes',
+		description:
+			'Registra, consulta y reutiliza datos de clientes en cada nueva cita sin perder historial.',
+		icon: 'contacts',
+	},
+	{
+		title: 'Equipo sin límites',
+		description:
+			'Agrega todos los profesionales que necesites, con perfiles, servicios y permisos por rol.',
 		icon: 'groups',
 	},
 	{
-		title: 'Métricas accionables',
-		description: 'Visualiza volumen de citas, pendientes y rendimiento diario sin cambiar de pantalla.',
-		icon: 'monitoring',
+		title: 'Horarios flexibles',
+		description:
+			'Define disponibilidad por profesional, sucursal y servicio para que solo se reserven slots válidos.',
+		icon: 'schedule',
 	},
 ];
 
 const steps = [
 	{
 		step: '01',
-		title: 'Configura tu espacio',
-		text: 'Registra servicios, sucursales y equipo en minutos con formularios guiados.',
+		title: 'Configura tu negocio',
+		text: 'Carga sucursales, servicios, horarios y profesionales. Tu espacio queda listo en pocos minutos.',
 		icon: 'settings_suggest',
 	},
 	{
 		step: '02',
-		title: 'Publica tu agenda',
-		text: 'Comparte perfiles públicos y habilita reservas con reglas claras por horario.',
+		title: 'Publica tu enlace de reserva',
+		text: 'Comparte tu agenda pública personalizada. Tus clientes eligen día, hora y confirman solos.',
 		icon: 'public',
 	},
 	{
 		step: '03',
-		title: 'Mide y optimiza',
-		text: 'Toma decisiones con paneles diarios y estados de cita siempre actualizados.',
-		icon: 'insights',
+		title: 'Gestiona desde el calendario',
+		text: 'Recibe reservas, revisa clientes, ajusta citas y mantén el día bajo control desde un solo lugar.',
+		icon: 'event_available',
+	},
+];
+
+const jsonLd = [
+	{
+		'@context': 'https://schema.org',
+		'@type': 'WebSite',
+		name: 'Hasel',
+		url: siteOrigin,
+		description: metaDescription,
+		inLanguage: 'es',
+	},
+	{
+		'@context': 'https://schema.org',
+		'@type': 'SoftwareApplication',
+		name: 'Hasel',
+		applicationCategory: 'BusinessApplication',
+		operatingSystem: 'Web',
+		url: siteOrigin,
+		description: metaDescription,
+		offers: {
+			'@type': 'Offer',
+			price: '0',
+			priceCurrency: 'USD',
+			description: 'Registro y configuración inicial',
+		},
+		featureList: features.map((feature) => feature.title).join(', '),
 	},
 ];
 ---
 
-<Layout>
+<Layout
+	pageTitle={pageTitle}
+	metaDescription={metaDescription}
+	canonicalPath="/"
+	ogImage="/icon-512x512.png"
+	jsonLd={jsonLd}
+>
 	<main class="landing-root">
-		<!-- Blurred orbs for an expressive modern look -->
-		<div class="landing-orb landing-orb-a"></div>
-		<div class="landing-orb landing-orb-b"></div>
-		<div class="landing-orb landing-orb-c"></div>
+		<div class="landing-orb landing-orb-a" aria-hidden="true"></div>
+		<div class="landing-orb landing-orb-b" aria-hidden="true"></div>
+		<div class="landing-orb landing-orb-c" aria-hidden="true"></div>
 
 		<div class="landing-shell">
 			<header class="m3-navbar">
-				<a href="/" class="brand no-underline">
-					<img src="/icon-512x512.png" alt="Logo Hasel" class="brand-logo" loading="eager" decoding="async" />
+				<a href="/" class="brand no-underline" aria-label="Hasel — Inicio">
+					<img src="/icon-512x512.png" alt="" class="brand-logo" width="32" height="32" loading="eager" decoding="async" />
 					<span class="brand-text">Hasel</span>
 				</a>
+
+				<nav class="nav-links" aria-label="Secciones principales">
+					<a href="#funciones" class="nav-link no-underline">Funciones</a>
+					<a href="#como-funciona" class="nav-link no-underline">Cómo funciona</a>
+				</nav>
 
 				<div class="nav-actions">
 					<a href="/auth/login" class="m3-btn m3-btn-primary m3-btn-nav no-underline">Iniciar sesión</a>
 				</div>
 			</header>
 
-			<section class="m3-hero">
+			<section class="m3-hero" aria-labelledby="hero-heading">
 				<div class="m3-hero-content">
-					<div class="m3-chip m3-chip-primary">
-						<span class="material-symbols-rounded">auto_awesome</span>
-						<span>Plataforma Todo-en-uno</span>
-					</div>
-					<h1 class="m3-display">Orquestación de citas para equipos en crecimiento</h1>
+					<p class="m3-chip m3-chip-primary">
+						<span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>
+						<span>Agenda y reservas online</span>
+					</p>
+					<h1 id="hero-heading" class="m3-display">
+						Tu calendario, equipo y reservas públicas en una sola plataforma
+					</h1>
 					<p class="m3-body-large">
-						Hasel unifica operación, agenda y visibilidad de tu negocio en una plataforma
-						clara, moderna y pensada para crecer sin límites de TI.
+						Hasel ayuda a barberías, salones, consultorios y negocios de servicios a organizar citas,
+						gestionar sucursales y clientes, y recibir reservas 24/7 con un enlace personalizado.
 					</p>
 
 					<div class="hero-actions">
 						<a href="/auth/login" class="m3-btn m3-btn-primary m3-btn-large no-underline">
-							Crear mi espacio
-							<span class="material-symbols-rounded">arrow_forward</span>
+							Crear mi espacio gratis
+							<span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
 						</a>
-						<a href="#beneficios" class="m3-btn m3-btn-tonal m3-btn-large no-underline">Ver más</a>
-						</div>
+						<a href="#funciones" class="m3-btn m3-btn-tonal m3-btn-large no-underline">Ver funciones</a>
 					</div>
+				</div>
 
-				<div class="m3-hero-visuals">
+				<div class="m3-hero-visuals" aria-hidden="true">
 					<div class="visual-story-shell">
 						<div class="visual-card visual-card-main">
 							<div class="visual-header">
 								<div class="visual-avatar">
-								<span class="material-symbols-rounded">person</span>
+									<span class="material-symbols-rounded">event</span>
 								</div>
 								<div class="visual-info">
-								<strong>Nuevo cliente</strong>
-								<span>Hoy, 10:00 AM</span>
+									<strong>Reserva confirmada</strong>
+									<span>Cliente desde tu enlace público</span>
 								</div>
-								<div class="visual-badge visual-badge-success">Confirmada</div>
+								<div class="visual-badge visual-badge-success">Nueva cita</div>
 							</div>
 						</div>
 
 						<div class="visual-metrics-grid">
 							<div class="visual-card visual-card-2">
 								<div class="visual-icon-box">
-							<span class="material-symbols-rounded">insert_chart</span>
-						</div>
-						<div class="visual-info">
-							<strong>Crecimiento</strong>
-							<span>+24% este mes</span>
-						</div>
-					</div>
+									<span class="material-symbols-rounded">link</span>
+								</div>
+								<div class="visual-info">
+									<strong>Agenda pública</strong>
+									<span>hasel.app/p/tu-perfil</span>
+								</div>
+							</div>
 
-					<div class="visual-card visual-card-3">
-						<div class="visual-icon-box visual-icon-ai">
-							<span class="material-symbols-rounded">auto_awesome</span>
-						</div>
-						<div class="visual-info">
-							<strong>Asistente IA</strong>
-							<span>Resumen del día generado</span>
+							<div class="visual-card visual-card-3">
+								<div class="visual-icon-box visual-icon-ai">
+									<span class="material-symbols-rounded">groups</span>
+								</div>
+								<div class="visual-info">
+									<strong>Equipo completo</strong>
+									<span>Sin límite de profesionales</span>
+								</div>
+							</div>
 						</div>
 					</div>
-					</div>
-				</div>
 				</div>
 			</section>
 
-			<section id="beneficios" class="m3-section">
+			<section id="funciones" class="m3-section" aria-labelledby="funciones-heading">
 				<div class="section-header center">
-					<h2 class="m3-headline">Beneficios clave</h2>
-					<p class="m3-body">Diseñado para simplificar tu día a día operativo.</p>
+					<h2 id="funciones-heading" class="m3-headline">Todo lo que necesitas para operar tu agenda</h2>
+					<p class="m3-body section-lead">
+						Desde el calendario diario hasta la reserva pública: herramientas pensadas para equipos
+						que atienden clientes todos los días.
+					</p>
 				</div>
+
 				<div class="m3-feature-grid">
 					{
 						features.map((feature) => (
 							<article class="m3-card m3-feature-card">
 								<div class="m3-icon-container">
-									<span class="material-symbols-rounded">{feature.icon}</span>
+									<span class="material-symbols-rounded" aria-hidden="true">{feature.icon}</span>
 								</div>
 								<h3 class="m3-title">{feature.title}</h3>
 								<p class="m3-body">{feature.description}</p>
@@ -142,63 +211,65 @@ const steps = [
 				</div>
 			</section>
 
-			<section id="flujo" class="m3-section m3-section-tonal">
+			<section id="como-funciona" class="m3-section m3-section-tonal" aria-labelledby="como-funciona-heading">
 				<div class="m3-workflow-layout">
 					<div class="workflow-content">
-						<div class="m3-chip m3-chip-secondary">
-							<span class="material-symbols-rounded">bolt</span>
-							<span>Rápida implementación</span>
-						</div>
-						<h2 class="m3-headline">Un flujo claro para arrancar en minutos</h2>
+						<p class="m3-chip m3-chip-secondary">
+							<span class="material-symbols-rounded" aria-hidden="true">bolt</span>
+							<span>En minutos, no en semanas</span>
+						</p>
+						<h2 id="como-funciona-heading" class="m3-headline">Cómo funciona Hasel</h2>
 						<p class="m3-body-large">
-							Construye y lanza tus flujos de reserva sin cuellos de botella. 
-							Tu equipo estará operando el mismo día.
+							Configura tu negocio, comparte tu enlace de reserva y empieza a recibir citas el mismo
+							día. Sin instalaciones complejas: funciona en navegador y como app en el móvil.
 						</p>
 					</div>
 
-					<div class="m3-workflow-steps">
+					<ol class="m3-workflow-steps">
 						{
 							steps.map((item) => (
-								<article class="m3-step-card">
-									<div class="step-icon-wrap">
-										<span class="material-symbols-rounded">{item.icon}</span>
-									</div>
-									<div class="step-content">
-										<span class="step-label">Paso {item.step}</span>
-										<h3 class="m3-title">{item.title}</h3>
-										<p class="m3-body">{item.text}</p>
-									</div>
-								</article>
+								<li>
+									<article class="m3-step-card">
+										<div class="step-icon-wrap">
+											<span class="material-symbols-rounded" aria-hidden="true">{item.icon}</span>
+										</div>
+										<div class="step-content">
+											<span class="step-label">Paso {item.step}</span>
+											<h3 class="m3-title">{item.title}</h3>
+											<p class="m3-body">{item.text}</p>
+										</div>
+									</article>
+								</li>
 							))
 						}
-					</div>
+					</ol>
 				</div>
 			</section>
 
-			<section id="contacto" class="m3-cta-card">
+			<section class="m3-cta-card" aria-labelledby="cta-heading">
 				<div class="cta-content">
-					<h2 class="m3-headline">Lleva Hasel a tu equipo hoy</h2>
-					<p class="m3-body-large">Empieza con tu flujo actual y escala operaciones sin fricción.</p>
+					<h2 id="cta-heading" class="m3-headline">Empieza a recibir reservas con tu enlace hoy</h2>
+					<p class="m3-body-large">
+						Crea tu espacio, configura horarios y comparte tu página pública. Tus clientes reservan;
+						tú controlas todo desde el calendario.
+					</p>
+					<a href="/auth/login" class="m3-btn m3-btn-primary m3-btn-large no-underline cta-btn">
+						Crear mi espacio
+						<span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
+					</a>
 				</div>
 			</section>
 
-			<section id="acerca-de" class="m3-section">
-				<div class="section-header center">
-					<h2 class="m3-headline">Acerca de</h2>
-					<p class="m3-body">
-						Este sitio web es operado y administrado por Daniel Ramon Villasanti Vergara.
-					</p>
-				</div>
-			</section>
-			
 			<footer class="m3-footer">
-				<p>© {new Date().getFullYear()} Hasel. Plataforma de agenda inteligente.</p>
-				<a href="/politicas-y-privacidad" class="m3-footer-link no-underline">
-					Políticas y privacidad
-				</a>
+				<p>© {new Date().getFullYear()} Hasel — Software de citas y reservas online.</p>
+				<nav class="m3-footer-nav" aria-label="Enlaces legales">
+					<a href="/politicas-y-privacidad" class="m3-footer-link no-underline">
+						Políticas y privacidad
+					</a>
+				</nav>
 			</footer>
 		</div>
-</main>
+	</main>
 </Layout>
 
 <script is:inline>
@@ -268,13 +339,14 @@ const steps = [
 		font-family: 'Inter', system-ui, sans-serif;
 	}
 
-	html { scroll-padding-top: 7.5rem; }
+	html {
+		scroll-padding-top: 7.5rem;
+	}
 
 	.landing-root [id] {
 		scroll-margin-top: 7.5rem;
 	}
 
-	/* Expressive gradient orbs — electric neon light sources */
 	.landing-orb {
 		position: absolute;
 		border-radius: 9999px;
@@ -325,11 +397,11 @@ const steps = [
 		gap: 0.75rem;
 	}
 
-	/* Navbar — floating pill with dark glassmorphism */
 	.m3-navbar {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
+		gap: 1rem;
 		padding: 0.62rem 0.9rem 0.62rem 1.05rem;
 		border-radius: 999px;
 		background: linear-gradient(115deg, rgba(2, 6, 23, 0.72), rgba(15, 23, 42, 0.48));
@@ -375,20 +447,6 @@ const steps = [
 		border-radius: 999px;
 	}
 
-	.brand-mark {
-		display: grid;
-		place-items: center;
-		color: var(--m3-sys-light-on-primary);
-		background-color: var(--m3-sys-light-primary);
-		border-radius: 50%;
-		width: 2.25rem;
-		height: 2.25rem;
-	}
-
-	.brand-mark .material-symbols-rounded {
-		font-size: 1.25rem;
-	}
-
 	.brand-text {
 		font-weight: 700;
 		font-size: 1.25rem;
@@ -399,6 +457,7 @@ const steps = [
 		display: none;
 		align-items: center;
 		gap: 1.5rem;
+		margin-inline: auto;
 	}
 
 	.nav-link {
@@ -417,15 +476,25 @@ const steps = [
 		display: flex;
 		align-items: center;
 		gap: 0.5rem;
+		flex-shrink: 0;
 	}
 
 	@media (min-width: 768px) {
-		.landing-shell { padding: 1.5rem; gap: 1.5rem; }
-		.m3-navbar { margin: 1.5rem 0 0; width: 100%; }
-		.nav-links, .nav-actions { display: flex; }
+		.landing-shell {
+			padding: 1.5rem;
+			gap: 1.5rem;
+		}
+
+		.m3-navbar {
+			margin: 1.5rem 0 0;
+			width: 100%;
+		}
+
+		.nav-links {
+			display: flex;
+		}
 	}
 
-	/* Buttons */
 	.m3-btn {
 		display: inline-flex;
 		align-items: center;
@@ -488,17 +557,6 @@ const steps = [
 		box-shadow: none;
 	}
 
-	.m3-btn-subtle {
-		background-color: transparent;
-		color: var(--m3-sys-light-primary);
-	}
-	
-	.m3-btn-subtle:hover {
-		background-color: var(--m3-sys-light-surface-container);
-		box-shadow: none;
-	}
-
-	/* Chips */
 	.m3-chip {
 		display: inline-flex;
 		align-items: center;
@@ -510,6 +568,7 @@ const steps = [
 		background: var(--m3-sys-light-surface-container);
 		color: var(--m3-sys-light-on-surface);
 		border: 1px solid var(--m3-sys-light-outline-variant);
+		margin: 0;
 	}
 
 	.m3-chip-primary {
@@ -528,7 +587,6 @@ const steps = [
 		font-size: 1.125rem;
 	}
 
-	/* Hero */
 	.m3-hero {
 		display: grid;
 		gap: 3rem;
@@ -564,10 +622,9 @@ const steps = [
 		display: flex;
 		flex-wrap: wrap;
 		gap: 1rem;
-		margin-top: 1rem;
+		margin-top: 0.25rem;
 	}
 
-	/* Hero Visuals */
 	.m3-hero-visuals {
 		position: relative;
 		display: flex;
@@ -578,18 +635,6 @@ const steps = [
 
 	.visual-story-shell {
 		display: contents;
-	}
-
-	.visual-story-head {
-		display: none;
-	}
-
-	.visual-story-kicker {
-		display: none;
-	}
-
-	.visual-story-head strong {
-		display: none;
 	}
 
 	.visual-card {
@@ -611,10 +656,6 @@ const steps = [
 		animation-delay: 0s;
 	}
 
-	.visual-flow-note {
-		display: none;
-	}
-
 	.visual-metrics-grid {
 		display: contents;
 	}
@@ -633,7 +674,6 @@ const steps = [
 			height: 360px;
 			display: block;
 			width: auto;
-			justify-content: flex-end;
 		}
 
 		.visual-card {
@@ -643,18 +683,43 @@ const steps = [
 			border-radius: 1.5rem;
 		}
 
-		.visual-card-main { top: 5%; left: 0; z-index: 2; }
-		.visual-card-2 { bottom: 5%; left: 0; z-index: 1; }
-		.visual-card-3 { top: 38%; right: 0; z-index: 3; }
+		.visual-card-main {
+			top: 5%;
+			left: 0;
+			z-index: 2;
+		}
+
+		.visual-card-2 {
+			bottom: 5%;
+			left: 0;
+			z-index: 1;
+		}
+
+		.visual-card-3 {
+			top: 38%;
+			right: 0;
+			z-index: 3;
+		}
+
+		.m3-hero {
+			grid-template-columns: 1fr 1fr;
+			padding: 2rem 2rem 3rem;
+		}
 	}
 
 	@keyframes float {
-		0%, 100% { transform: translateY(0); }
-		50% { transform: translateY(-9px); }
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+		50% {
+			transform: translateY(-9px);
+		}
 	}
 
 	@keyframes landing-orb-drift {
-		0%, 100% {
+		0%,
+		100% {
 			transform: translate3d(0, 0, 0) scale(1);
 			opacity: 0.82;
 		}
@@ -682,14 +747,17 @@ const steps = [
 		align-items: center;
 		gap: 1rem;
 		justify-content: space-between;
+		width: 100%;
 	}
 
-	.visual-avatar, .visual-icon-box {
+	.visual-avatar,
+	.visual-icon-box {
 		width: 3rem;
 		height: 3rem;
 		border-radius: 50%;
 		display: grid;
 		place-items: center;
+		flex-shrink: 0;
 	}
 
 	.visual-avatar {
@@ -705,6 +773,7 @@ const steps = [
 	.visual-info {
 		display: flex;
 		flex-direction: column;
+		min-width: 0;
 	}
 
 	.visual-info strong {
@@ -722,6 +791,7 @@ const steps = [
 		border-radius: 999px;
 		font-size: 0.74rem;
 		font-weight: 700;
+		flex-shrink: 0;
 	}
 
 	.visual-badge-success {
@@ -730,19 +800,6 @@ const steps = [
 		color: #bbf7d0;
 	}
 
-	html[data-theme='dark'] .visual-badge-success {
-		background: #14532d;
-		color: #86efac;
-	}
-
-	@media (min-width: 1024px) {
-		.m3-hero {
-			grid-template-columns: 1fr 1fr;
-			padding: 2rem 2rem 3rem;
-		}
-	}
-
-	/* Section Commons */
 	.m3-section {
 		padding: 2rem 1rem;
 		display: flex;
@@ -751,7 +808,10 @@ const steps = [
 	}
 
 	@media (min-width: 768px) {
-		.m3-section { padding: 4rem 1.5rem; gap: 3rem; }
+		.m3-section {
+			padding: 4rem 1.5rem;
+			gap: 3rem;
+		}
 	}
 
 	.m3-section-tonal {
@@ -767,13 +827,18 @@ const steps = [
 		display: flex;
 		flex-direction: column;
 		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.section-lead {
+		max-width: 62ch;
 	}
 
 	.m3-headline {
 		font-size: clamp(2rem, 4vw, 3rem);
 		font-weight: 700;
 		letter-spacing: -0.02em;
-		margin: 0 0 1rem 0;
+		margin: 0;
 		color: var(--m3-sys-light-on-surface);
 	}
 
@@ -784,11 +849,10 @@ const steps = [
 		margin: 0;
 	}
 
-	/* Features Grid */
 	.m3-feature-grid {
 		display: grid;
 		gap: 1.5rem;
-		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 	}
 
 	.m3-card {
@@ -803,7 +867,9 @@ const steps = [
 	}
 
 	@media (min-width: 640px) {
-		.m3-card { padding: 1.75rem; }
+		.m3-card {
+			padding: 1.75rem;
+		}
 	}
 
 	.m3-card:hover {
@@ -833,7 +899,6 @@ const steps = [
 		color: var(--m3-sys-light-on-surface);
 	}
 
-	/* Workflow layout */
 	.m3-workflow-layout {
 		display: grid;
 		gap: 3rem;
@@ -850,6 +915,9 @@ const steps = [
 	.m3-workflow-steps {
 		display: grid;
 		gap: 1rem;
+		list-style: none;
+		margin: 0;
+		padding: 0;
 	}
 
 	.m3-step-card {
@@ -863,6 +931,7 @@ const steps = [
 		-webkit-backdrop-filter: blur(8px);
 		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 		transition: background-color 0.2s, border-color 0.2s;
+		height: 100%;
 	}
 
 	.m3-step-card:hover {
@@ -901,46 +970,66 @@ const steps = [
 		}
 	}
 
-	/* CTA */
 	.m3-cta-card {
 		background: rgba(59, 130, 246, 0.1);
 		border: 1px solid rgba(59, 130, 246, 0.3);
 		border-radius: 2rem;
-		padding: 4rem 2rem;
+		padding: 3rem 1.5rem;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
-		gap: 2rem;
+		gap: 1.5rem;
 		backdrop-filter: blur(12px);
 		-webkit-backdrop-filter: blur(12px);
 		box-shadow: 0 0 80px rgba(59, 130, 246, 0.12), inset 0 1px 0 rgba(147, 197, 253, 0.1);
 	}
 
+	@media (min-width: 640px) {
+		.m3-cta-card {
+			padding: 4rem 2rem;
+		}
+	}
+
 	.cta-content {
-		max-width: 600px;
+		max-width: 640px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.25rem;
+	}
+
+	.cta-btn {
+		margin-top: 0.5rem;
 	}
 
 	.m3-cta-card .m3-headline {
 		color: #ffffff;
 	}
-	
+
 	.m3-cta-card .m3-body-large {
 		color: #a1a1aa;
-		opacity: 1;
 	}
 
-	/* Footer */
 	.m3-footer {
 		text-align: center;
-		padding: 2rem 1rem;
+		padding: 2rem 1rem 3rem;
 		color: var(--m3-sys-light-on-surface-variant);
 		font-size: 0.9rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.m3-footer-nav {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: center;
+		gap: 1rem;
 	}
 
 	.m3-footer-link {
-		display: inline-flex;
-		margin-top: 0.65rem;
 		color: #bfd6ff;
 		font-weight: 650;
 	}
