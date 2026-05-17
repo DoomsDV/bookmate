@@ -58,6 +58,8 @@ interface ApiCalendarEvent {
 const DESKTOP_DEFAULT_VIEW = 'timeGridWeek';
 const MOBILE_DEFAULT_VIEW = 'timeGridThreeDay';
 const MOBILE_ALLOWED_VIEWS = new Set(['timeGridDay', 'timeGridThreeDay', 'listWeek']);
+const MOBILE_SWIPE_MIN_DISTANCE_PX = 48;
+const MOBILE_SWIPE_HORIZONTAL_RATIO = 1.25;
 
 const hasAppointmentModalApi = (value: unknown): value is AppointmentModalApi => {
 	if (!value || typeof value !== 'object') return false;
@@ -89,6 +91,7 @@ class CalendarManager extends HTMLElement {
 	private services: Option[] = [];
 	private isMobileLayout = false;
 	private isGoogleConnected = false;
+	private swipeTouchStart: { x: number; y: number } | null = null;
 
 	private calendarEl: HTMLElement | null = null;
 	private loadingNode: HTMLElement | null = null;
@@ -531,6 +534,68 @@ class CalendarManager extends HTMLElement {
 		this.calendar.render();
 		this.syncToolbarButtonGroupClasses();
 		this.applyResponsiveCalendarLayout(true);
+		this.bindMobileThreeDaySwipe(requiredNodes.calendarEl, this.#listeners?.signal);
+	}
+
+	private isMobileSwipeEnabled() {
+		return this.isMobileViewport();
+	}
+
+	private canSwipeThreeDayView() {
+		return (
+			this.isMobileSwipeEnabled() &&
+			Boolean(this.calendar) &&
+			this.calendar.view.type === 'timeGridThreeDay'
+		);
+	}
+
+	private bindMobileThreeDaySwipe(calendarEl: HTMLElement, signal?: AbortSignal) {
+		if (!signal || !this.isMobileSwipeEnabled()) return;
+
+		const swipeSurface =
+			calendarEl.querySelector<HTMLElement>('.fc-view-harness') ?? calendarEl;
+
+		const resetSwipe = () => {
+			this.swipeTouchStart = null;
+		};
+
+		const handleTouchStart = (event: TouchEvent) => {
+			if (!this.canSwipeThreeDayView() || event.touches.length !== 1) {
+				resetSwipe();
+				return;
+			}
+
+			const touch = event.touches[0];
+			this.swipeTouchStart = { x: touch.clientX, y: touch.clientY };
+		};
+
+		const handleTouchEnd = (event: TouchEvent) => {
+			if (!this.swipeTouchStart || !this.canSwipeThreeDayView()) {
+				resetSwipe();
+				return;
+			}
+
+			const touch = event.changedTouches[0];
+			const deltaX = touch.clientX - this.swipeTouchStart.x;
+			const deltaY = touch.clientY - this.swipeTouchStart.y;
+			resetSwipe();
+
+			if (Math.abs(deltaX) < MOBILE_SWIPE_MIN_DISTANCE_PX) return;
+			if (Math.abs(deltaY) * MOBILE_SWIPE_HORIZONTAL_RATIO > Math.abs(deltaX)) return;
+
+			if (deltaX < 0) {
+				this.calendar?.next();
+			} else {
+				this.calendar?.prev();
+			}
+		};
+
+		swipeSurface.addEventListener('touchstart', handleTouchStart, {
+			signal,
+			passive: true,
+		});
+		swipeSurface.addEventListener('touchcancel', resetSwipe, { signal, passive: true });
+		swipeSurface.addEventListener('touchend', handleTouchEnd, { signal, passive: true });
 	}
 
 	private handleViewportResize = () => {

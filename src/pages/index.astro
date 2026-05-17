@@ -15,12 +15,6 @@ const features = [
 		icon: 'calendar_month',
 	},
 	{
-		title: 'Reserva pública por enlace',
-		description:
-			'Comparte tu página personalizada (tu-marca/p/nombre) para que tus clientes agenden solos, rápido y sin llamadas.',
-		icon: 'link',
-	},
-	{
 		title: 'Sucursales y ubicaciones',
 		description:
 			'Organiza múltiples locales, direcciones y disponibilidad por sede desde un mismo panel.',
@@ -114,11 +108,6 @@ const jsonLd = [
 					<span class="brand-text">Hasel</span>
 				</a>
 
-				<nav class="nav-links" aria-label="Secciones principales">
-					<a href="#funciones" class="nav-link no-underline">Funciones</a>
-					<a href="#como-funciona" class="nav-link no-underline">Cómo funciona</a>
-				</nav>
-
 				<div class="nav-actions">
 					<a href="/auth/login" class="m3-btn m3-btn-primary m3-btn-nav no-underline">Iniciar sesión</a>
 				</div>
@@ -163,16 +152,6 @@ const jsonLd = [
 						</div>
 
 						<div class="visual-metrics-grid">
-							<div class="visual-card visual-card-2">
-								<div class="visual-icon-box">
-									<span class="material-symbols-rounded">link</span>
-								</div>
-								<div class="visual-info">
-									<strong>Agenda pública</strong>
-									<span>hasel.app/p/tu-perfil</span>
-								</div>
-							</div>
-
 							<div class="visual-card visual-card-3">
 								<div class="visual-icon-box visual-icon-ai">
 									<span class="material-symbols-rounded">groups</span>
@@ -453,25 +432,6 @@ const jsonLd = [
 		letter-spacing: -0.02em;
 	}
 
-	.nav-links {
-		display: none;
-		align-items: center;
-		gap: 1.5rem;
-		margin-inline: auto;
-	}
-
-	.nav-link {
-		color: var(--m3-sys-light-on-surface-variant);
-		text-decoration: none;
-		font-weight: 500;
-		font-size: 0.95rem;
-		transition: color 0.2s;
-	}
-
-	.nav-link:hover {
-		color: var(--m3-sys-light-on-surface);
-	}
-
 	.nav-actions {
 		display: flex;
 		align-items: center;
@@ -490,9 +450,6 @@ const jsonLd = [
 			width: 100%;
 		}
 
-		.nav-links {
-			display: flex;
-		}
 	}
 
 	.m3-btn {
