@@ -87,8 +87,12 @@ class CustomerManager extends HTMLElement {
 		destroySearchableSelect(this.professionalSelect);
 	}
 
+	private canFilterByProfessional() {
+		return this.roleId === ROLES.ADMIN || this.roleId === ROLES.RECEPCIONISTA;
+	}
+
 	private handleProfessionalChange = () => {
-		if (!this.professionalSelect || this.roleId === ROLES.PROFESIONAL) return;
+		if (!this.professionalSelect || !this.canFilterByProfessional()) return;
 		this.selectedProfessionalId = Number(this.professionalSelect.value || 0);
 		this.page = 1;
 		void this.loadCustomers();
@@ -150,7 +154,7 @@ class CustomerManager extends HTMLElement {
 	private updateControls() {
 		if (this.loadingNode) this.loadingNode.classList.toggle('hidden', !this.isLoading);
 
-		if (this.roleId !== ROLES.PROFESIONAL) {
+		if (this.canFilterByProfessional()) {
 			setSearchableSelectDisabled(
 				this.professionalSelect,
 				this.isLoading || this.professionals.length === 0
@@ -178,7 +182,7 @@ class CustomerManager extends HTMLElement {
 		destroySearchableSelect(this.professionalSelect);
 		this.clearNode(this.professionalSelect);
 
-		if (this.roleId !== ROLES.PROFESIONAL) {
+		if (this.canFilterByProfessional()) {
 			this.professionalSelect.appendChild(this.createOption('', 'Todos los profesionales'));
 		}
 
@@ -200,7 +204,7 @@ class CustomerManager extends HTMLElement {
 			this.professionalSelect.value = String(targetProfessionalId);
 		}
 
-		if (this.roleId === ROLES.PROFESIONAL) {
+		if (!this.canFilterByProfessional()) {
 			return;
 		}
 
@@ -325,10 +329,7 @@ class CustomerManager extends HTMLElement {
 
 			const sessionRoleId = Number(data.data.session?.role_id || 0);
 			const datasetRoleId = Number(this.dataset.roleId || 0);
-			this.roleId =
-				sessionRoleId === ROLES.PROFESIONAL || sessionRoleId === ROLES.RECEPCIONISTA
-					? sessionRoleId
-					: datasetRoleId;
+			this.roleId = sessionRoleId > 0 ? sessionRoleId : datasetRoleId;
 			this.currentProfessionalId = Number(data.data.session?.professional_id || 0);
 			this.professionals = Array.isArray(data.data.professionals) ? data.data.professionals : [];
 

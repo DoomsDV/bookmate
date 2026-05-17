@@ -10,6 +10,8 @@ import '../../styles/global.css';
 const token = Astro.locals.token ?? '';
 const roleId = Number(Astro.locals.roleId ?? 0);
 const isProfessional = roleId === ROLES.PROFESIONAL;
+const canFilterByProfessional =
+	roleId === ROLES.ADMIN || roleId === ROLES.RECEPCIONISTA;
 const initialLoadError = token ? '' : 'No hay sesion valida para consultar clientes.';
 ---
 
@@ -42,7 +44,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 													{
 														isProfessional
 															? 'Consulta los clientes registrados en tu agenda.'
-															: 'Consulta los clientes registrados y filtralos por profesional.'
+															: canFilterByProfessional
+																? 'Consulta los clientes registrados y filtralos por profesional.'
+																: 'Consulta los clientes registrados.'
 													}
 												</p>
 											</div>
@@ -53,7 +57,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 										</header>
 
 										{
-											isProfessional ? (
+											!canFilterByProfessional ? (
 												<select data-professional-filter hidden class="hidden" aria-hidden="true" tabindex="-1"></select>
 											) : (
 												<div class="grid gap-3 sm:max-w-xl">
