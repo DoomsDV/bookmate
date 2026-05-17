@@ -1,14 +1,16 @@
-﻿﻿---
+﻿---
 import AppAlert from '../../components/AppAlert.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
 import SpecialtiesGrid from '../../components/SpecialtiesGrid.astro';
 import TopBar from '../../components/TopBar.astro';
+import { ROLES } from '../../config/roles';
 import { SpecialtiesApiError, SpecialtiesClient, type Specialty } from '../../lib/specialties';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
 
 const token = Astro.locals.token ?? '';
+const canManageSpecialties = Number(Astro.locals.roleId ?? 0) === ROLES.ADMIN;
 const PAGE_SIZE = 9;
 const rawPage = Number(Astro.url.searchParams.get('page') || '1');
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
@@ -54,7 +56,7 @@ const toPageHref = (page: number) => {
 ---
 
 <Layout>
-	<specialty-manager>
+	<specialty-manager data-can-manage={canManageSpecialties ? 'true' : 'false'}>
 		<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 			<div
 				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -73,7 +75,7 @@ const toPageHref = (page: number) => {
 									<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
 								) : (
 									<div class="grid gap-4">
-										<SpecialtiesGrid specialties={specialties} showCreateAction={true} />
+										<SpecialtiesGrid specialties={specialties} showCreateAction={canManageSpecialties} />
 
 										<div class="app-pagination">
 											<p class="app-pagination__summary">
@@ -182,7 +184,7 @@ const toPageHref = (page: number) => {
 				data-specialty-form
 			>
 				<div
-					class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
+					class="pointer-events-none fixed inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
 					data-specialty-loading
 				>
 					<div class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
@@ -284,6 +286,10 @@ const toPageHref = (page: number) => {
 	};
 
 	class SpecialtyManager extends HTMLElement {
+		private get canManage() {
+			return this.dataset.canManage === 'true';
+		}
+
 		private els = {
 			modal: null as HTMLDialogElement | null,
 			form: null as HTMLFormElement | null,
@@ -597,7 +603,7 @@ const toPageHref = (page: number) => {
 			}
 
 			const openTrigger = target.closest('[data-open-specialty-modal], [data-specialty-card]');
-			if (!openTrigger || !this.contains(openTrigger)) return;
+			if (!openTrigger || !this.contains(openTrigger) || !this.canManage) return;
 
 			const card = openTrigger.closest('[data-specialty-card]');
 			if (card) {
@@ -616,7 +622,7 @@ const toPageHref = (page: number) => {
 			const target = event.target;
 			if (!(target instanceof Element)) return;
 			const card = target.closest('[data-specialty-card]');
-			if (!card || !this.contains(card)) return;
+			if (!card || !this.contains(card) || !this.canManage) return;
 			event.preventDefault();
 			const specialtyId = Number(card.getAttribute('data-specialty-id') || '0');
 			if (specialtyId > 0) {
@@ -626,6 +632,7 @@ const toPageHref = (page: number) => {
 
 		private handleSubmit = async (event: SubmitEvent) => {
 			event.preventDefault();
+			if (!this.canManage) return;
 			this.clearErrors();
 
 			if (!this.els.form) return;

@@ -1,9 +1,9 @@
+import { ROLES } from '../config/roles';
 import {
 	destroySearchableSelect,
 	ensureSearchableSelect,
 	setSearchableSelectDisabled,
 	setSearchableSelectValue,
-	syncSearchableSelect,
 } from './searchable-select';
 
 type ProfessionalLov = { id_professional: number; display_name: string };
@@ -72,10 +72,6 @@ class CustomerManager extends HTMLElement {
 		this.#listeners = new AbortController();
 		const signal = this.#listeners.signal;
 
-		ensureSearchableSelect(this.professionalSelect, {
-			placeholder: 'Buscar profesional...',
-		});
-
 		this.professionalSelect.addEventListener('change', this.handleProfessionalChange, { signal });
 		this.prevButton?.addEventListener('click', this.handlePrevPage, { signal });
 		this.nextButton?.addEventListener('click', this.handleNextPage, { signal });
@@ -92,7 +88,7 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private handleProfessionalChange = () => {
-		if (!this.professionalSelect || this.roleId === 3) return;
+		if (!this.professionalSelect || this.roleId === ROLES.PROFESIONAL) return;
 		this.selectedProfessionalId = Number(this.professionalSelect.value || 0);
 		this.page = 1;
 		void this.loadCustomers();
@@ -154,10 +150,12 @@ class CustomerManager extends HTMLElement {
 	private updateControls() {
 		if (this.loadingNode) this.loadingNode.classList.toggle('hidden', !this.isLoading);
 
-		setSearchableSelectDisabled(
-			this.professionalSelect,
-			this.isLoading || this.roleId === 3 || this.professionals.length === 0
-		);
+		if (this.roleId !== ROLES.PROFESIONAL) {
+			setSearchableSelectDisabled(
+				this.professionalSelect,
+				this.isLoading || this.professionals.length === 0
+			);
+		}
 
 		if (this.prevButton) this.prevButton.disabled = this.isLoading || this.page <= 1;
 		if (this.nextButton) {
@@ -177,10 +175,10 @@ class CustomerManager extends HTMLElement {
 	private renderProfessionalOptions() {
 		if (!this.professionalSelect) return;
 
+		destroySearchableSelect(this.professionalSelect);
 		this.clearNode(this.professionalSelect);
-		if (this.roleId === 3) {
-			this.professionalSelect.appendChild(this.createOption('', 'Mi perfil profesional'));
-		} else {
+
+		if (this.roleId !== ROLES.PROFESIONAL) {
 			this.professionalSelect.appendChild(this.createOption('', 'Todos los profesionales'));
 		}
 
@@ -190,11 +188,34 @@ class CustomerManager extends HTMLElement {
 			);
 		}
 
-		if (this.selectedProfessionalId > 0) {
-			setSearchableSelectValue(this.professionalSelect, this.selectedProfessionalId);
+		const targetProfessionalId =
+			this.selectedProfessionalId > 0
+				? this.selectedProfessionalId
+				: this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0
+					? this.currentProfessionalId
+					: 0;
+
+		if (targetProfessionalId > 0) {
+			this.selectedProfessionalId = targetProfessionalId;
+			this.professionalSelect.value = String(targetProfessionalId);
 		}
 
-		syncSearchableSelect(this.professionalSelect);
+		if (this.roleId === ROLES.PROFESIONAL) {
+			return;
+		}
+
+		ensureSearchableSelect(this.professionalSelect, {
+			placeholder: 'Buscar profesional...',
+		});
+
+		if (targetProfessionalId > 0) {
+			setSearchableSelectValue(this.professionalSelect, targetProfessionalId);
+		}
+
+		setSearchableSelectDisabled(
+			this.professionalSelect,
+			this.isLoading || this.professionals.length === 0
+		);
 	}
 
 	private formatDate(value: string) {
@@ -302,10 +323,23 @@ class CustomerManager extends HTMLElement {
 				throw new Error(this.getBackendMessage(data, 'No fue posible cargar los catalogos.'));
 			}
 
-			this.roleId = Number(data.data.session?.role_id || 0);
+			const sessionRoleId = Number(data.data.session?.role_id || 0);
+			const datasetRoleId = Number(this.dataset.roleId || 0);
+			this.roleId =
+				sessionRoleId === ROLES.PROFESIONAL || sessionRoleId === ROLES.RECEPCIONISTA
+					? sessionRoleId
+					: datasetRoleId;
 			this.currentProfessionalId = Number(data.data.session?.professional_id || 0);
 			this.professionals = Array.isArray(data.data.professionals) ? data.data.professionals : [];
-			this.selectedProfessionalId = this.roleId === 3 ? this.currentProfessionalId : 0;
+
+			if (this.roleId === ROLES.PROFESIONAL) {
+				this.selectedProfessionalId =
+					this.currentProfessionalId > 0
+						? this.currentProfessionalId
+						: Number(this.professionals[0]?.id_professional || 0);
+			} else {
+				this.selectedProfessionalId = 0;
+			}
 
 			this.renderProfessionalOptions();
 			await this.loadCustomers();

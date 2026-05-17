@@ -1,4 +1,5 @@
 ﻿---
+import { ROLES } from '../../config/roles';
 import SideNav from '../../components/SideNav.astro';
 import AppAlert from '../../components/AppAlert.astro';
 import AiChatPanel from '../../components/AiChatPanel.astro';
@@ -8,6 +9,8 @@ import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
 
 const token = Astro.locals.token ?? '';
+const roleId = Number(Astro.locals.roleId ?? 0);
+const showTeamOverview = roleId !== ROLES.PROFESIONAL;
 const organizationName = String(Astro.locals.organizationName || 'Workspace').trim() || 'Workspace';
 const PAGE_SIZE = 5;
 const rawPage = Number(Astro.url.searchParams.get('page') || '1');
@@ -68,13 +71,17 @@ const metrics = [
 		icon: 'schedule',
 		accent: 'green',
 	},
-	{
-		label: 'Mis clientes',
-		value: dashboard.kpis.my_customers,
-		description: 'Clientes únicos que has atendido personalmente.',
-		icon: 'groups',
-		accent: 'green',
-	},
+	...(roleId !== ROLES.RECEPCIONISTA
+		? [
+				{
+					label: 'Mis clientes',
+					value: dashboard.kpis.my_customers,
+					description: 'Clientes únicos que has atendido personalmente.',
+					icon: 'groups',
+					accent: 'green',
+				},
+			]
+		: []),
 	...(dashboard.kpis.total_customers !== null
 		? [
 				{
@@ -170,6 +177,7 @@ const toPageHref = (page: number) => {
 											</p>
 										</div>
 
+										{showTeamOverview && (
 										<div
 											class="dashboard-team-chip h-fit lg:ml-8"
 											data-team-card
@@ -186,6 +194,7 @@ const toPageHref = (page: number) => {
 											</div>
 											<p class="team-overview-state text-[0.75rem] font-medium hidden mt-1" data-team-state></p>
 										</div>
+										)}
 									</div>
 
 									<div class="dashboard-header-actions">

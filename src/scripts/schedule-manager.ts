@@ -1,10 +1,10 @@
 import { navigate } from 'astro:transitions/client';
+import { ROLES } from '../config/roles';
 import {
 	destroySearchableSelect,
 	ensureSearchableSelect,
 	setSearchableSelectDisabled,
 	setSearchableSelectValue,
-	syncSearchableSelect,
 } from './searchable-select';
 
 type ProfessionalLov = { id_professional: number; display_name: string };
@@ -68,6 +68,8 @@ class ScheduleManager extends HTMLElement {
 	private dayStates: DayState[] = [];
 	private dayNodes = new Map<number, DayNodeRefs>();
 
+	private roleId = 0;
+	private currentProfessionalId = 0;
 	private selectedProfessionalId = 0;
 	private slotCounter = 0;
 	private isMetaLoading = false;
@@ -97,9 +99,6 @@ class ScheduleManager extends HTMLElement {
 		const signal = this.#listenerController.signal;
 
 		this.cleanFlashUrl();
-		ensureSearchableSelect(this.professionalSelect, {
-			placeholder: 'Buscar profesional...',
-		});
 		this.professionalSelect.addEventListener('change', this.handleProfessionalChange, { signal });
 		this.plannerNode.addEventListener('change', this.handlePlannerChange, { signal });
 		this.plannerNode.addEventListener('click', this.handlePlannerClick, { signal });
@@ -125,7 +124,7 @@ class ScheduleManager extends HTMLElement {
 	};
 
 	private handleProfessionalChange = async (): Promise<void> => {
-		if (!this.professionalSelect) return;
+		if (!this.professionalSelect || this.roleId === ROLES.PROFESIONAL) return;
 
 		const nextProfessionalId = Number(this.professionalSelect.value || 0);
 		if (!Number.isInteger(nextProfessionalId) || nextProfessionalId <= 0) {
@@ -289,8 +288,13 @@ class ScheduleManager extends HTMLElement {
 
 	private renderProfessionalOptions(): void {
 		if (!this.professionalSelect) return;
+
+		destroySearchableSelect(this.professionalSelect);
 		this.clearNode(this.professionalSelect);
-		this.professionalSelect.appendChild(this.createOption('', 'Selecciona un profesional'));
+
+		if (this.roleId !== ROLES.PROFESIONAL) {
+			this.professionalSelect.appendChild(this.createOption('', 'Selecciona un profesional'));
+		}
 
 		for (const professional of this.professionals) {
 			this.professionalSelect.appendChild(
@@ -299,9 +303,29 @@ class ScheduleManager extends HTMLElement {
 		}
 
 		if (this.selectedProfessionalId > 0) {
+			this.professionalSelect.value = String(this.selectedProfessionalId);
+		}
+
+		if (this.roleId === ROLES.PROFESIONAL) {
+			return;
+		}
+
+		ensureSearchableSelect(this.professionalSelect, {
+			placeholder: 'Buscar profesional...',
+		});
+
+		if (this.selectedProfessionalId > 0) {
 			setSearchableSelectValue(this.professionalSelect, this.selectedProfessionalId);
 		}
-		syncSearchableSelect(this.professionalSelect);
+
+		setSearchableSelectDisabled(
+			this.professionalSelect,
+			this.isMetaLoading ||
+				this.isScheduleLoading ||
+				this.isSaving ||
+				!this.canEdit ||
+				this.professionals.length === 0
+		);
 	}
 
 	private renderPlannerMessage(message: string, tone: 'info' | 'error'): void {
@@ -548,7 +572,12 @@ class ScheduleManager extends HTMLElement {
 		if (this.saveButton) {
 			this.saveButton.disabled = blocked || this.selectedProfessionalId <= 0;
 		}
-		setSearchableSelectDisabled(this.professionalSelect, blocked || this.professionals.length === 0);
+		if (this.roleId !== ROLES.PROFESIONAL) {
+			setSearchableSelectDisabled(
+				this.professionalSelect,
+				blocked || this.professionals.length === 0
+			);
+		}
 
 		if (this.saveLabel) {
 			this.saveLabel.textContent = this.isSaving
@@ -846,30 +875,44 @@ class ScheduleManager extends HTMLElement {
 				professionals: ProfessionalLov[];
 				locations: LocationLov[];
 				days: Day[];
+				session?: { role_id?: number; professional_id?: number };
 			}>(response);
 
 			if (!response.ok || !data || data.status !== 'success' || !data.data) {
 				throw new Error(this.toBackendErrorMessage(data, 'No fue posible obtener catalogos de horarios.'));
 			}
 
+			const sessionRoleId = Number(data.data.session?.role_id || 0);
+			const datasetRoleId = Number(this.dataset.roleId || 0);
+			this.roleId =
+				sessionRoleId === ROLES.PROFESIONAL || sessionRoleId === ROLES.RECEPCIONISTA
+					? sessionRoleId
+					: datasetRoleId;
+			this.currentProfessionalId = Number(data.data.session?.professional_id || 0);
 			this.professionals = Array.isArray(data.data.professionals) ? data.data.professionals : [];
 			this.locations = Array.isArray(data.data.locations) ? data.data.locations : [];
 			this.days = Array.isArray(data.data.days) ? data.data.days : [];
 
 			this.dayStates = this.buildEmptyDayStates();
-			this.renderProfessionalOptions();
 
 			if (this.professionals.length === 0) {
 				this.selectedProfessionalId = 0;
+				this.renderProfessionalOptions();
 				this.renderPlanner();
 				this.showError('No hay profesionales disponibles para configurar horarios.');
 				return;
 			}
 
-			this.selectedProfessionalId = Number(this.professionals[0]?.id_professional || 0);
-			if (this.professionalSelect) {
-				setSearchableSelectValue(this.professionalSelect, this.selectedProfessionalId);
+			if (this.roleId === ROLES.PROFESIONAL) {
+				this.selectedProfessionalId =
+					this.currentProfessionalId > 0
+						? this.currentProfessionalId
+						: Number(this.professionals[0]?.id_professional || 0);
+			} else {
+				this.selectedProfessionalId = Number(this.professionals[0]?.id_professional || 0);
 			}
+
+			this.renderProfessionalOptions();
 			this.renderPlanner();
 			await this.loadScheduleByProfessional(this.selectedProfessionalId);
 		} catch (error) {

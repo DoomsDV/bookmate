@@ -1,9 +1,10 @@
-﻿﻿﻿﻿---
+﻿---
 import AppAlert from "../../components/AppAlert.astro";
 import FlashMessage from "../../components/FlashMessage.astro";
 import LocationsGrid from "../../components/LocationsGrid.astro";
 import SideNav from "../../components/SideNav.astro";
 import TopBar from "../../components/TopBar.astro";
+import { ROLES } from "../../config/roles";
 import {
 	LocationsApiError,
 	LocationsClient,
@@ -13,6 +14,7 @@ import Layout from "../../layouts/Layout.astro";
 import "../../styles/global.css";
 
 const token = Astro.locals.token ?? "";
+const canManageLocations = Number(Astro.locals.roleId ?? 0) === ROLES.ADMIN;
 const PAGE_SIZE = 9;
 const rawPage = Number(Astro.url.searchParams.get("page") || "1");
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
@@ -65,7 +67,7 @@ const googleMapsApiKey =
 ---
 
 <Layout>
-	<location-manager data-google-maps-api-key={googleMapsApiKey}>
+	<location-manager data-google-maps-api-key={googleMapsApiKey} data-can-manage={canManageLocations ? "true" : "false"}>
 		<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 			<div
 				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -93,7 +95,7 @@ const googleMapsApiKey =
 									<div class="grid gap-4">
 										<LocationsGrid
 											locations={locations}
-											showCreateAction={true}
+											showCreateAction={canManageLocations}
 										/>
 
 										<div class="app-pagination">
@@ -200,7 +202,7 @@ const googleMapsApiKey =
 				data-location-form
 			>
 				<div
-					class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
+					class="pointer-events-none fixed inset-0 z-20 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
 					data-location-loading
 				>
 					<div
@@ -491,6 +493,10 @@ const googleMapsApiKey =
 	};
 
 	class LocationManager extends HTMLElement {
+		private get canManage() {
+			return this.dataset.canManage === "true";
+		}
+
 		private abortController: AbortController | null = null;
 		private closeTimer: number | null = null;
 		private themeObserver: MutationObserver | null = null;
@@ -795,7 +801,7 @@ const googleMapsApiKey =
 			}
 
 			const openBtn = target.closest("[data-open-location-modal]");
-			if (openBtn) {
+			if (openBtn && this.canManage) {
 				void this.openCreateModal();
 				return;
 			}
@@ -813,7 +819,7 @@ const googleMapsApiKey =
 			}
 
 			const card = target.closest("[data-location-card]");
-			if (card) {
+			if (card && this.canManage) {
 				const locationId = Number(
 					card.getAttribute("data-location-id") || "0",
 				);
@@ -825,7 +831,7 @@ const googleMapsApiKey =
 			if (event.key !== "Enter" && event.key !== " ") return;
 			const target = event.target as HTMLElement;
 			const card = target.closest("[data-location-card]");
-			if (card) {
+			if (card && this.canManage) {
 				event.preventDefault();
 				const locationId = Number(
 					card.getAttribute("data-location-id") || "0",
@@ -1548,6 +1554,7 @@ const googleMapsApiKey =
 
 		private handleSubmit = async (event: SubmitEvent) => {
 			event.preventDefault();
+			if (!this.canManage) return;
 			this.clearErrors();
 			if (!this.els.form) return;
 

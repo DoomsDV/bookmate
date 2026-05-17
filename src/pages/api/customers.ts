@@ -52,6 +52,8 @@ export const GET: APIRoute = async ({ locals, url }) => {
 			}
 
 			professionalId = currentProfessionalId;
+		} else if (roleId === ROLES.RECEPCIONISTA) {
+			professionalId = undefined;
 		}
 
 		const result = await listCustomersWithOrds(token, {

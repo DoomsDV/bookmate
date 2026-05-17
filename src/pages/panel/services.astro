@@ -1,9 +1,10 @@
-﻿﻿---
+﻿---
 import AppAlert from "../../components/AppAlert.astro";
 import FlashMessage from "../../components/FlashMessage.astro";
 import ServicesGrid from "../../components/ServicesGrid.astro";
 import SideNav from "../../components/SideNav.astro";
 import TopBar from "../../components/TopBar.astro";
+import { ROLES } from "../../config/roles";
 import {
 	ServicesApiError,
 	ServicesClient,
@@ -13,6 +14,7 @@ import Layout from "../../layouts/Layout.astro";
 import "../../styles/global.css";
 
 const token = Astro.locals.token ?? "";
+const canManageServices = Number(Astro.locals.roleId ?? 0) === ROLES.ADMIN;
 const PAGE_SIZE = 9;
 const rawPage = Number(Astro.url.searchParams.get("page") || "1");
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
@@ -61,7 +63,7 @@ const toPageHref = (page: number) => {
 ---
 
 <Layout>
-	<service-manager>
+	<service-manager data-can-manage={canManageServices ? "true" : "false"}>
 		<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 			<div
 				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -87,7 +89,7 @@ const toPageHref = (page: number) => {
 									<div class="grid gap-4">
 										<ServicesGrid
 											services={services}
-											showCreateAction={true}
+											showCreateAction={canManageServices}
 										/>
 
 										<div class="app-pagination">
@@ -195,7 +197,7 @@ const toPageHref = (page: number) => {
 				data-service-create-form
 			>
 				<div
-					class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
+					class="pointer-events-none fixed inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
 					data-service-loading
 				>
 					<div
@@ -386,6 +388,10 @@ const toPageHref = (page: number) => {
 	};
 
 	class ServiceManager extends HTMLElement {
+		private get canManage() {
+			return this.dataset.canManage === "true";
+		}
+
 		private abortController: AbortController | null = null;
 		private closeTimer: number | null = null;
 		private mode: ServiceMode = "create";
@@ -762,13 +768,14 @@ const toPageHref = (page: number) => {
 			}
 
 			const card = target.closest("[data-service-card]");
-			if (card && this.contains(card)) {
+			if (card && this.contains(card) && this.canManage) {
 				const id = Number(card.getAttribute("data-service-id") || "0");
 				if (id > 0) void this.openEditModal(id);
 				return;
 			}
 
 			if (
+				this.canManage &&
 				target.closest("[data-open-service-modal]") &&
 				this.contains(target.closest("[data-open-service-modal]"))
 			) {
@@ -780,7 +787,7 @@ const toPageHref = (page: number) => {
 			if (e.key !== "Enter" && e.key !== " ") return;
 			const target = e.target as Element;
 			const card = target?.closest("[data-service-card]");
-			if (!card || !this.contains(card)) return;
+			if (!card || !this.contains(card) || !this.canManage) return;
 
 			e.preventDefault();
 			const id = Number(card.getAttribute("data-service-id") || "0");
@@ -789,6 +796,7 @@ const toPageHref = (page: number) => {
 
 		private handleSubmit = async (e: SubmitEvent) => {
 			e.preventDefault();
+			if (!this.canManage) return;
 			this.clearErrors();
 			if (!this.els.form) return;
 

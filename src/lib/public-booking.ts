@@ -122,6 +122,7 @@ export interface PublicReservationDetail {
 	location_address: string;
 	pro_id_professional: number;
 	professional_name: string;
+	professional_slug?: string;
 	ser_id_service: number;
 	service_name: string;
 	duration_minutes: number;
@@ -562,6 +563,7 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 		location_address: String(source.location_address || '').trim(),
 		pro_id_professional: professionalId,
 		professional_name: String(source.professional_name || '').trim(),
+		professional_slug: String(source.professional_slug || '').trim() || undefined,
 		ser_id_service: serviceId,
 		service_name: String(source.service_name || '').trim(),
 		duration_minutes: durationMinutes,

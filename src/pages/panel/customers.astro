@@ -3,15 +3,18 @@ import AppAlert from '../../components/AppAlert.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
+import { ROLES } from '../../config/roles';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
 
 const token = Astro.locals.token ?? '';
+const roleId = Number(Astro.locals.roleId ?? 0);
+const isProfessional = roleId === ROLES.PROFESIONAL;
 const initialLoadError = token ? '' : 'No hay sesion valida para consultar clientes.';
 ---
 
 <Layout>
-	<customer-manager>
+	<customer-manager data-role-id={String(roleId)}>
 		<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 			<div
 				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -36,7 +39,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 													Clientes
 												</h1>
 												<p class="text-[0.95rem] text-(--on-surface-variant) leading-relaxed">
-													Consulta los clientes registrados y filtralos por profesional.
+													{
+														isProfessional
+															? 'Consulta los clientes registrados en tu agenda.'
+															: 'Consulta los clientes registrados y filtralos por profesional.'
+													}
 												</p>
 											</div>
 
@@ -45,17 +52,23 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 											</div>
 										</header>
 
-										<div class="grid gap-3 sm:max-w-xl">
-											<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-												Profesional
-												<select
-													data-professional-filter
-													class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
-												>
-													<option value="">Todos los profesionales</option>
-												</select>
-											</label>
-										</div>
+										{
+											isProfessional ? (
+												<select data-professional-filter hidden class="hidden" aria-hidden="true" tabindex="-1"></select>
+											) : (
+												<div class="grid gap-3 sm:max-w-xl">
+													<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+														Profesional
+														<select
+															data-professional-filter
+															class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+														>
+															<option value="">Todos los profesionales</option>
+														</select>
+													</label>
+												</div>
+											)
+										}
 
 										<div
 											class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"

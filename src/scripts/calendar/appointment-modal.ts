@@ -1,3 +1,4 @@
+import { ROLES } from '../../config/roles';
 import {
 	PARAGUAY_MOBILE_PHONE_ERROR,
 	parseParaguayMobilePhone,
@@ -327,7 +328,7 @@ class AppointmentModal extends HTMLElement {
 		this.renderOptions(requiredNodes.modalLocation, this.locations, 'Selecciona una sucursal');
 		this.renderOptions(requiredNodes.modalService, this.services, 'Selecciona un servicio');
 
-		if (this.roleId === 3) {
+		if (this.roleId === ROLES.PROFESIONAL) {
 			requiredNodes.modalProfessionalWrap.classList.add('hidden');
 			requiredNodes.modalProfessional.disabled = true;
 			if (this.currentProfessionalId > 0) {
@@ -354,7 +355,7 @@ class AppointmentModal extends HTMLElement {
 		this.syncDateBounds();
 		this.syncDateDisplayInputs();
 
-		if (this.roleId === 3 && this.currentProfessionalId > 0) {
+		if (this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0) {
 			requiredNodes.modalProfessional.value = String(this.currentProfessionalId);
 		} else if (context.professionalId && context.professionalId > 0) {
 			requiredNodes.modalProfessional.value = String(context.professionalId);
@@ -548,7 +549,9 @@ class AppointmentModal extends HTMLElement {
 			empty.className = 'appointment-customer-empty';
 			empty.textContent = query
 				? 'No existe. Completa el teléfono para crear este cliente.'
-				: 'No hay clientes para este profesional.';
+				: this.roleId === ROLES.PROFESIONAL
+					? 'No hay clientes para este profesional.'
+					: 'No hay clientes registrados en la organización.';
 			requiredNodes.customerResults.appendChild(empty);
 			this.showCustomerResults();
 			return;
@@ -576,7 +579,7 @@ class AppointmentModal extends HTMLElement {
 	private async loadCustomersForCurrentProfessional(force = false) {
 		if (!this.client || this.isLoadingCustomers) return;
 		const shouldShowResults = () => document.activeElement === this.customerNameInput;
-		const shouldFilterByProfessional = this.roleId === 3;
+		const shouldFilterByProfessional = this.roleId === ROLES.PROFESIONAL;
 		const professionalId = shouldFilterByProfessional ? this.getSelectedProfessionalId() : 0;
 		if (shouldFilterByProfessional && !professionalId) {
 			this.customers = [];
@@ -768,12 +771,12 @@ class AppointmentModal extends HTMLElement {
 	};
 
 	getSelectedProfessionalId() {
-		if (this.roleId === 3 && this.currentProfessionalId > 0) return this.currentProfessionalId;
+		if (this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0) return this.currentProfessionalId;
 		return toPositiveInt(this.modalProfessional?.value, 0);
 	}
 
 	ensureModalProfessionalValue() {
-		if (this.roleId === 3 && this.currentProfessionalId > 0 && this.modalProfessional) {
+		if (this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0 && this.modalProfessional) {
 			this.modalProfessional.value = String(this.currentProfessionalId);
 		}
 	}
@@ -955,11 +958,17 @@ class AppointmentModal extends HTMLElement {
 	};
 
 	handleProfessionalChange = () => {
-		if (this.roleId !== 3) return;
-		if (this.selectedCustomer) this.clearSelectedCustomer({ clearFields: true });
-		this.customers = [];
-		this.lastLoadedCustomerProfessionalId = 0;
-		void this.loadCustomersForCurrentProfessional(true);
+		if (this.roleId === ROLES.PROFESIONAL) {
+			if (this.selectedCustomer) this.clearSelectedCustomer({ clearFields: true });
+			this.customers = [];
+			this.lastLoadedCustomerProfessionalId = 0;
+			void this.loadCustomersForCurrentProfessional(true);
+			return;
+		}
+
+		if (this.roleId === ROLES.RECEPCIONISTA) {
+			void this.loadCustomersForCurrentProfessional(true);
+		}
 	};
 
 	syncDateBounds() {

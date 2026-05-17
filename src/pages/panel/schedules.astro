@@ -14,7 +14,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 ---
 
 <Layout>
-	<schedule-manager data-can-edit={!isProfessional ? 'true' : 'false'}>
+	<schedule-manager data-can-edit={!isProfessional ? 'true' : 'false'} data-role-id={String(roleId)}>
 		<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 			<div
 				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -39,7 +39,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 													Horarios semanales
 												</h1>
 												<p class="text-[0.95rem] text-(--on-surface-variant) leading-relaxed">
-													Configura la disponibilidad por profesional con turnos por sucursal.
+													{
+														isProfessional
+															? 'Consulta tu disponibilidad semanal por sucursal.'
+															: 'Configura la disponibilidad por profesional con turnos por sucursal.'
+													}
 												</p>
 											</div>
 
@@ -57,23 +61,29 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 											}
 										</header>
 
-										<div class="grid gap-3 sm:gap-4 sm:max-w-2xl">
-											<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-												<span class="inline-flex items-center gap-1">
-													Profesional
-													<span class="text-rose-500">*</span>
-												</span>
-												<select
-													data-professional-select
-													class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
-												>
-													<option value="">Selecciona un profesional</option>
-												</select>
-												<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-1" data-professional-hint>
-													Selecciona una persona para ver o editar su agenda semanal.
-												</span>
-											</label>
-										</div>
+										{
+											isProfessional ? (
+												<select data-professional-select hidden class="hidden" aria-hidden="true" tabindex="-1"></select>
+											) : (
+												<div class="grid gap-3 sm:gap-4 sm:max-w-2xl">
+													<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+														<span class="inline-flex items-center gap-1">
+															Profesional
+															<span class="text-rose-500">*</span>
+														</span>
+														<select
+															data-professional-select
+															class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+														>
+															<option value="">Selecciona un profesional</option>
+														</select>
+														<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-1" data-professional-hint>
+															Selecciona una persona para ver o editar su agenda semanal.
+														</span>
+													</label>
+												</div>
+											)
+										}
 
 										<div
 											class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"

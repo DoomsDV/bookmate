@@ -5,6 +5,7 @@ import interactionPlugin, { type EventResizeDoneArg } from '@fullcalendar/intera
 import listPlugin from '@fullcalendar/list';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import { navigate } from 'astro:transitions/client';
+import { ROLES } from '../../config/roles';
 import { AppointmentsClient } from './appointments-client';
 import type { AppointmentModalConfig, OpenCreateContext } from './appointment-modal';
 import {
@@ -220,7 +221,7 @@ class CalendarManager extends HTMLElement {
 
 	private setCalendarLoading(value: boolean) {
 		if (this.loadingNode) this.loadingNode.classList.toggle('hidden', !value);
-		setSearchableSelectDisabled(this.professionalFilter, value || this.roleId === 3);
+		setSearchableSelectDisabled(this.professionalFilter, value || this.roleId === ROLES.PROFESIONAL);
 		setSearchableSelectDisabled(this.locationFilter, value);
 		if (this.openModalButton) this.openModalButton.disabled = value;
 		if (this.refreshCalendarButton) this.refreshCalendarButton.disabled = value;
@@ -342,7 +343,11 @@ class CalendarManager extends HTMLElement {
 			this.clearPageError();
 
 			try {
-				const professionalId = toPositiveInt(this.professionalFilter?.value, 0);
+				const filterProfessionalId = toPositiveInt(this.professionalFilter?.value, 0);
+				const professionalId =
+					this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0
+						? this.currentProfessionalId
+						: filterProfessionalId;
 				const locationId = toPositiveInt(this.locationFilter?.value, 0);
 				const appointmentEvents = (await this.client.getCalendarEvents({
 					start: info.startStr,
@@ -564,7 +569,7 @@ class CalendarManager extends HTMLElement {
 				id_customer: toPositiveInt(detail.id_customer, 0) || undefined,
 				loc_id_location: toPositiveInt(detail.loc_id_location, 0),
 				pro_id_professional:
-					this.roleId === 3 && this.currentProfessionalId > 0
+					this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0
 						? this.currentProfessionalId
 						: toPositiveInt(detail.pro_id_professional, 0),
 				ser_id_service: toPositiveInt(detail.ser_id_service, 0),
@@ -628,7 +633,7 @@ class CalendarManager extends HTMLElement {
 			this.renderOptions(requiredNodes.professionalFilter, this.professionals, 'Todos los profesionales', true);
 			this.renderOptions(requiredNodes.locationFilter, this.locations, 'Todas las sucursales', true);
 
-			if (this.roleId === 3) {
+			if (this.roleId === ROLES.PROFESIONAL) {
 				requiredNodes.professionalFilterWrap?.classList.add('hidden');
 				setSearchableSelectDisabled(requiredNodes.professionalFilter, true);
 
@@ -680,7 +685,7 @@ class CalendarManager extends HTMLElement {
 	};
 
 	private handleProfessionalFilterChange = () => {
-		if (this.roleId === 3) return;
+		if (this.roleId === ROLES.PROFESIONAL) return;
 		this.reloadCalendarEvents();
 	};
 

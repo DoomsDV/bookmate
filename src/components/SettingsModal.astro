@@ -7,6 +7,7 @@ interface Props {
 
 const { roleId = 0 } = Astro.props;
 const isAdmin = Number(roleId) === ROLES.ADMIN;
+const canEditAppearance = isAdmin;
 const rawPublicProfileDomain = String(
 	import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? Astro.url.origin
 ).trim();
@@ -45,9 +46,13 @@ const publicProfileDomain =
 				<button type="button" data-settings-tab-trigger data-settings-tab="security" class="settings-tab">
 					<span class="material-symbols-rounded">lock</span>Seguridad
 				</button>
-				<button type="button" data-settings-tab-trigger data-settings-tab="preferences" class="settings-tab">
-					<span class="material-symbols-rounded">palette</span>Apariencia
-				</button>
+				{
+					canEditAppearance ? (
+						<button type="button" data-settings-tab-trigger data-settings-tab="preferences" class="settings-tab">
+							<span class="material-symbols-rounded">palette</span>Apariencia
+						</button>
+					) : null
+				}
 				{
 					isAdmin ? (
 						<>
@@ -1596,7 +1601,7 @@ const publicProfileDomain =
 	}
 
 	.settings-loading-overlay {
-		position: absolute;
+		position: fixed;
 		inset: 0;
 		z-index: 30;
 		align-items: center;

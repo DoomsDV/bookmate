@@ -28,6 +28,11 @@ try {
 const serializedReservation = reservation
 	? JSON.stringify(reservation).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
 	: '';
+
+const isCancelled =
+	Boolean(reservation) && String(reservation?.status || '').trim().toUpperCase() === 'CANCELADO';
+const professionalSlug = String(reservation?.professional_slug || '').trim();
+const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
 ---
 
 <Layout>
@@ -81,6 +86,14 @@ const serializedReservation = reservation
 							<strong data-current-date></strong>
 						</div>
 					</div>
+					{isCancelled ? (
+						<div class="reservation-cancelled rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6" data-reservation-cancelled>
+							<p class="reservation-cancelled-text">
+								Esta reserva se encuentra cancelada. Si deseas, puedes agendar un nuevo turno con el profesional.
+							</p>
+							<a href={rebookHref} class="reservation-link">Volver a reservar</a>
+						</div>
+					) : (
 					<form class="reservation-form rounded-[28px] bg-(--surface-container) p-4 shadow-sm sm:p-5" data-reservation-form>
 						<div class="reservation-field">
 							<label for="reservation_date_display">Nueva fecha</label>
@@ -125,6 +138,7 @@ const serializedReservation = reservation
 							</button>
 						</div>
 					</form>
+					)}
 
 					<dialog
 						class="fixed inset-0 z-[9999] m-0 h-screen w-screen max-h-none max-w-none border-0 bg-transparent p-4 outline-none backdrop:bg-transparent open:grid open:place-items-center"
@@ -190,6 +204,8 @@ const serializedReservation = reservation
 
 		const reservation = JSON.parse(jsonScript.textContent);
 		const token = root.dataset.token || '';
+		const isCancelledReservation =
+			String(reservation.status || '').trim().toUpperCase() === 'CANCELADO';
 		const form = root.querySelector('[data-reservation-form]');
 		const dateInput = root.querySelector('[data-reservation-date]');
 		const dateDisplay = root.querySelector('[data-reservation-date-display]');
@@ -464,7 +480,30 @@ const serializedReservation = reservation
 			if (event.target === pickerDialog) closePicker();
 		});
 
-		loadSlots();
+		const refreshReservationSummary = async () => {
+			const response = await fetch(`/api/public/reservations/${encodeURIComponent(token)}`, {
+				headers: { Accept: 'application/json' },
+			});
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok || data.status !== 'success' || !data.data) return false;
+
+			const updated = data.data;
+			reservation.start_time = updated.start_time;
+			reservation.end_time = updated.end_time;
+			reservation.status = updated.status;
+			reservation.duration_minutes = updated.duration_minutes || reservation.duration_minutes;
+
+			const nextStart = parseLocalDate(updated.start_time);
+			if (statusText) statusText.textContent = String(updated.status || reservation.status || '');
+			if (currentDate) currentDate.textContent = formatHumanDate(nextStart);
+			setSelectedDate(startOfDay(nextStart) >= today ? startOfDay(nextStart) : today);
+			await loadSlots();
+			return true;
+		};
+
+		if (!isCancelledReservation) {
+			loadSlots();
+		}
 
 		form?.addEventListener('submit', async (event) => {
 			event.preventDefault();
@@ -487,7 +526,12 @@ const serializedReservation = reservation
 				body: JSON.stringify(body),
 			});
 			const data = await response.json().catch(() => ({}));
-			showToast(response.ok ? 'Tu cita se modificó correctamente.' : (data.message || 'No fue posible actualizar tu cita.'), response.ok ? 'success' : 'error');
+			if (response.ok) {
+				await refreshReservationSummary();
+				showToast('Tu cita se modificó correctamente.', 'success');
+				return;
+			}
+			showToast(data.message || 'No fue posible actualizar tu cita.', 'error');
 		});
 
 		cancelButton?.addEventListener('click', async () => {
@@ -506,8 +550,11 @@ const serializedReservation = reservation
 				headers: { Accept: 'application/json' },
 			});
 			const data = await response.json().catch(() => ({}));
-			if (response.ok && statusText) statusText.textContent = 'CANCELADO';
-			showToast(response.ok ? 'Tu cita se canceló correctamente.' : (data.message || 'No fue posible cancelar tu cita.'), response.ok ? 'success' : 'error');
+			if (response.ok) {
+				window.location.reload();
+				return;
+			}
+			showToast(data.message || 'No fue posible cancelar tu cita.', 'error');
 		});
 	})();
 </script>
@@ -701,10 +748,23 @@ const serializedReservation = reservation
 	border-color: rgba(248, 113, 113, 0.42);
 }
 
+.reservation-cancelled {
+	display: grid;
+	gap: 1rem;
+}
+
+.reservation-cancelled-text {
+	margin: 0;
+	color: var(--on-surface-variant);
+	line-height: 1.5;
+	font-size: 0.98rem;
+}
+
 .reservation-link {
-	margin-top: 1.3rem;
+	margin-top: 0;
 	background: var(--primary);
 	color: var(--on-primary);
+	justify-self: start;
 }
 
 .is-hidden {
