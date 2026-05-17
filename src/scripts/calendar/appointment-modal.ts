@@ -101,7 +101,7 @@ class AppointmentModal extends HTMLElement {
 	isLoadingCustomers = false;
 	editingAppointmentId = 0;
 	selectedCustomer: CustomerOption | null = null;
-	lastLoadedCustomerProfessionalId = 0;
+	lastLoadedCustomerProfessionalId: number | null = null;
 	closeTimer: number | null = null;
 
 	modal: HTMLDialogElement | null = null;
@@ -583,13 +583,17 @@ class AppointmentModal extends HTMLElement {
 		const professionalId = shouldFilterByProfessional ? this.getSelectedProfessionalId() : 0;
 		if (shouldFilterByProfessional && !professionalId) {
 			this.customers = [];
-			this.lastLoadedCustomerProfessionalId = 0;
+			this.lastLoadedCustomerProfessionalId = null;
 			if (shouldShowResults()) this.renderCustomerResults();
 			else this.hideCustomerResults();
 			return;
 		}
 
-		if (!force && this.lastLoadedCustomerProfessionalId === professionalId) {
+		if (
+			!force &&
+			this.lastLoadedCustomerProfessionalId !== null &&
+			this.lastLoadedCustomerProfessionalId === professionalId
+		) {
 			if (shouldShowResults()) this.renderCustomerResults();
 			return;
 		}
@@ -734,6 +738,8 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.statusInput.value = 'CONFIRMADO';
 		requiredNodes.statusInput.disabled = true;
 		this.selectedCustomer = null;
+		this.customers = [];
+		this.lastLoadedCustomerProfessionalId = null;
 		this.hideCustomerResults();
 		this.closeDateTimePicker();
 	}
@@ -844,7 +850,7 @@ class AppointmentModal extends HTMLElement {
 		this.syncDateBounds();
 		this.syncDateDisplayInputs();
 		this.ensureModalProfessionalValue();
-		void this.loadCustomersForCurrentProfessional();
+		void this.loadCustomersForCurrentProfessional(true);
 	}
 
 	buildPayloadFromForm(): BuildPayloadResult {
@@ -954,14 +960,14 @@ class AppointmentModal extends HTMLElement {
 	handleCustomerClear = () => {
 		this.clearSelectedCustomer({ clearFields: true });
 		this.customerNameInput?.focus();
-		void this.loadCustomersForCurrentProfessional();
+		void this.loadCustomersForCurrentProfessional(true);
 	};
 
 	handleProfessionalChange = () => {
 		if (this.roleId === ROLES.PROFESIONAL) {
 			if (this.selectedCustomer) this.clearSelectedCustomer({ clearFields: true });
 			this.customers = [];
-			this.lastLoadedCustomerProfessionalId = 0;
+			this.lastLoadedCustomerProfessionalId = null;
 			void this.loadCustomersForCurrentProfessional(true);
 			return;
 		}

@@ -1,0 +1,342 @@
+---
+import Layout from '../layouts/Layout.astro';
+import '../styles/global.css';
+
+Astro.response.status = 404;
+
+const pageTitle = 'Página no encontrada | Hasel';
+const metaDescription =
+	'No encontramos la página que buscas. Vuelve al inicio de Hasel.';
+---
+
+<Layout
+	pageTitle={pageTitle}
+	metaDescription={metaDescription}
+	robots="noindex, nofollow"
+>
+	<main class="landing-root">
+		<div class="landing-orb landing-orb-a" aria-hidden="true"></div>
+		<div class="landing-orb landing-orb-b" aria-hidden="true"></div>
+		<div class="landing-orb landing-orb-c" aria-hidden="true"></div>
+
+		<div class="landing-shell">
+			<header class="m3-navbar">
+				<a href="/" class="brand no-underline" aria-label="Hasel — Inicio">
+					<img
+						src="/icon-512x512.png"
+						alt=""
+						class="brand-logo"
+						width="32"
+						height="32"
+						loading="eager"
+						decoding="async"
+					/>
+					<span class="brand-text">Hasel</span>
+				</a>
+
+				<div class="nav-actions">
+					<a href="/auth/login" class="m3-btn m3-btn-primary m3-btn-nav no-underline">
+						Iniciar sesión
+					</a>
+				</div>
+			</header>
+
+			<section class="not-found-hero" aria-labelledby="not-found-heading">
+				<div class="not-found-content">
+					<p class="m3-chip m3-chip-primary">
+						<span class="material-symbols-rounded" aria-hidden="true">search_off</span>
+						<span>Error 404</span>
+					</p>
+
+					<p class="not-found-code" aria-hidden="true">404</p>
+
+					<h1 id="not-found-heading" class="m3-display">
+						Esta página no existe
+					</h1>
+
+					<p class="m3-body-large">
+						El enlace puede estar roto, haber expirado o la ruta ya no está disponible.
+						Puedes volver al inicio cuando quieras.
+					</p>
+
+					<div class="hero-actions">
+						<a href="/" class="m3-btn m3-btn-primary m3-btn-large no-underline">
+							<span class="material-symbols-rounded" aria-hidden="true">home</span>
+							Volver al inicio
+						</a>
+					</div>
+				</div>
+
+			</section>
+
+			<footer class="m3-footer">
+				<p>© {new Date().getFullYear()} Hasel — Software de citas y reservas online.</p>
+				<nav class="m3-footer-nav" aria-label="Enlaces legales">
+					<a href="/politicas-y-privacidad" class="m3-footer-link no-underline">
+						Políticas y privacidad
+					</a>
+				</nav>
+			</footer>
+		</div>
+	</main>
+</Layout>
+
+<style>
+	:root {
+		--m3-sys-light-primary: #3a6fd7;
+		--m3-sys-light-on-primary: #ffffff;
+		--m3-sys-light-primary-container: rgba(58, 111, 215, 0.2);
+		--m3-sys-light-on-primary-container: #bfd6ff;
+		--m3-sys-light-secondary-container: rgba(148, 163, 184, 0.12);
+		--m3-sys-light-on-secondary-container: #dbe7ff;
+		--m3-sys-light-surface: #09090b;
+		--m3-sys-light-on-surface: #ffffff;
+		--m3-sys-light-on-surface-variant: #a1a1aa;
+		--m3-sys-light-outline-variant: rgba(255, 255, 255, 0.1);
+	}
+
+	.landing-root {
+		position: relative;
+		overflow: hidden;
+		min-height: 100vh;
+		background-color: var(--m3-sys-light-surface);
+		color: var(--m3-sys-light-on-surface);
+		font-family: 'Inter', system-ui, sans-serif;
+	}
+
+	.landing-orb {
+		position: absolute;
+		border-radius: 9999px;
+		filter: blur(92px);
+		pointer-events: none;
+		z-index: 0;
+		animation: landing-orb-drift 16s ease-in-out infinite;
+	}
+
+	.landing-orb-a {
+		top: -15%;
+		left: -10%;
+		width: 55vw;
+		height: 55vw;
+		background: radial-gradient(circle, rgba(59, 130, 246, 0.28), transparent 65%);
+	}
+
+	.landing-orb-b {
+		bottom: -15%;
+		right: -10%;
+		width: 65vw;
+		height: 65vw;
+		background: radial-gradient(circle, rgba(14, 165, 233, 0.22), transparent 65%);
+		animation-direction: reverse;
+	}
+
+	.landing-orb-c {
+		top: 38%;
+		left: 18%;
+		width: 35vw;
+		height: 35vw;
+		background: radial-gradient(circle, rgba(99, 102, 241, 0.18), transparent 65%);
+		animation-delay: -4s;
+	}
+
+	.landing-shell {
+		position: relative;
+		z-index: 1;
+		width: min(1200px, 100%);
+		margin: 0 auto;
+		padding: 1rem;
+		display: flex;
+		flex-direction: column;
+		min-height: 100vh;
+	}
+
+	.m3-navbar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.62rem 0.9rem 0.62rem 1.05rem;
+		border-radius: 999px;
+		background: linear-gradient(115deg, rgba(2, 6, 23, 0.72), rgba(15, 23, 42, 0.48));
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		border: 1px solid rgba(148, 163, 184, 0.24);
+		box-shadow: 0 12px 28px rgba(2, 6, 23, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		position: sticky;
+		top: 1.25rem;
+		z-index: 50;
+		margin: 1.5rem 0 0;
+	}
+
+	.brand {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		color: var(--m3-sys-light-on-surface);
+	}
+
+	.brand-logo {
+		height: 2rem;
+		width: 2rem;
+		border-radius: 999px;
+		object-fit: contain;
+	}
+
+	.brand-text {
+		font-weight: 700;
+		font-size: 1.25rem;
+		letter-spacing: -0.02em;
+	}
+
+	.nav-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.m3-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		border-radius: 999px;
+		font-weight: 500;
+		font-size: 0.95rem;
+		padding: 0.625rem 1.5rem;
+		transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+		border: 1px solid transparent;
+		text-decoration: none;
+	}
+
+	.m3-btn:hover {
+		transform: translateY(-1px);
+		box-shadow: 0 4px 10px rgba(2, 6, 23, 0.22);
+	}
+
+	.m3-btn-large {
+		padding: 0.875rem 2rem;
+		font-size: 1.05rem;
+	}
+
+	.m3-btn-primary {
+		background: #3c6fc8;
+		color: var(--m3-sys-light-on-primary);
+		border-color: rgba(147, 197, 253, 0.24);
+	}
+
+	.m3-btn-primary:hover {
+		background: #335fa9;
+	}
+
+	.m3-btn-nav {
+		padding: 0.62rem 1.85rem;
+		font-weight: 600;
+	}
+
+	.m3-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.5rem 1rem;
+		border-radius: 999px;
+		font-size: 0.875rem;
+		font-weight: 600;
+		margin: 0;
+	}
+
+	.m3-chip-primary {
+		background: var(--m3-sys-light-primary-container);
+		color: var(--m3-sys-light-on-primary-container);
+		border: 1px solid transparent;
+	}
+
+	.m3-chip .material-symbols-rounded {
+		font-size: 1.125rem;
+	}
+
+	.not-found-hero {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		padding: 2rem 0.5rem 3rem;
+	}
+
+	.not-found-content {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 1.25rem;
+	}
+
+	.not-found-code {
+		margin: 0;
+		font-size: clamp(4.5rem, 16vw, 8rem);
+		font-weight: 800;
+		line-height: 0.9;
+		letter-spacing: -0.06em;
+		background: linear-gradient(135deg, #ffffff 0%, #93c5fd 45%, #3b82f6 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+		opacity: 0.92;
+	}
+
+	.m3-display {
+		font-size: clamp(2rem, 5vw, 3.25rem);
+		font-weight: 700;
+		line-height: 1.08;
+		letter-spacing: -0.03em;
+		margin: 0;
+	}
+
+	.m3-body-large {
+		font-size: clamp(1rem, 2vw, 1.2rem);
+		line-height: 1.6;
+		color: var(--m3-sys-light-on-surface-variant);
+		max-width: 52ch;
+		margin: 0;
+	}
+
+	.hero-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+		margin-top: 0.5rem;
+	}
+
+	.m3-footer {
+		text-align: center;
+		padding: 2rem 1rem;
+		color: var(--m3-sys-light-on-surface-variant);
+		font-size: 0.9rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+	}
+
+	.m3-footer-link {
+		color: #bfd6ff;
+		font-weight: 650;
+	}
+
+	@keyframes landing-orb-drift {
+		0%,
+		100% {
+			transform: translate3d(0, 0, 0) scale(1);
+		}
+		50% {
+			transform: translate3d(12%, 2%, 0) scale(1.08);
+		}
+	}
+
+	@media (min-width: 768px) {
+		.landing-shell {
+			padding: 1.5rem;
+		}
+
+		.not-found-hero {
+			padding: 3rem 1rem 4rem;
+		}
+	}
+</style>
