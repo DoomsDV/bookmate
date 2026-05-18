@@ -81,6 +81,21 @@ const parseYmdDate = (value: string) => {
 	return new Date(year, month - 1, day);
 };
 
+const formatDuration = (totalMinutes: number) => {
+	if (totalMinutes < 60) {
+		return `${totalMinutes} min`;
+	}
+	
+	const hours = Math.floor(totalMinutes / 60);
+	const minutes = totalMinutes % 60;
+	
+	if (minutes === 0) {
+		return `${hours} h`;
+	}
+	
+	return `${hours} h ${minutes} min`;
+};
+
 const formatCurrency = (value: number) =>
 	new Intl.NumberFormat('es-PY', {
 		style: 'currency',
@@ -593,7 +608,7 @@ export const initializePublicBookingPage = () => {
 			button.innerHTML = `
 				<span class="text-lg font-medium text-(--on-surface)">${service.name}</span>
 				<div class="flex items-center justify-between gap-2 text-sm font-medium text-(--on-surface-variant)">
-					<span>${service.duration_minutes} min</span>
+					<span>${formatDuration(service.duration_minutes)}</span>
 					<span>${formatCurrency(service.price)}</span>
 				</div>
 			`;
