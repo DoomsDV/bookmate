@@ -1,4 +1,12 @@
 import {
+	buildApiAppointmentTimes,
+	formatApiDate,
+	formatLongDateFromApiDate,
+	getTodayStart,
+	sortTimeSlotsChronologically,
+	toDateStart,
+} from '../lib/booking-datetime';
+import {
 	formatParaguayMobilePhoneInput,
 	PARAGUAY_MOBILE_PHONE_ERROR,
 	parseParaguayMobilePhone,
@@ -68,47 +76,12 @@ const toPositiveInt = (value: unknown, fallback = 1) => {
 	return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 };
 
-const toDateStart = (date: Date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-
-const formatYmd = (date: Date) => {
-	const pad = (value: number) => String(value).padStart(2, '0');
-	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-};
-
-const parseYmdDate = (value: string) => {
-	const [year, month, day] = value.split('-').map((part) => Number(part));
-	if (!year || !month || !day) return null;
-	return new Date(year, month - 1, day);
-};
-
 const formatCurrency = (value: number) =>
 	new Intl.NumberFormat('es-PY', {
 		style: 'currency',
 		currency: 'PYG',
 		maximumFractionDigits: 0,
 	}).format(Number.isFinite(value) ? value : 0);
-
-const formatLongDate = (value: string) => {
-	const parsed = parseYmdDate(value);
-	if (!parsed) return '';
-	return new Intl.DateTimeFormat('es-PY', {
-		weekday: 'long',
-		day: '2-digit',
-		month: 'long',
-		year: 'numeric',
-	}).format(parsed);
-};
-
-const formatIsoWithOffset = (date: Date) => {
-	const pad = (value: number) => String(value).padStart(2, '0');
-	const offsetMinutes = -date.getTimezoneOffset();
-	const sign = offsetMinutes >= 0 ? '+' : '-';
-	const absoluteOffset = Math.abs(offsetMinutes);
-	const offsetHour = pad(Math.floor(absoluteOffset / 60));
-	const offsetMinute = pad(absoluteOffset % 60);
-
-	return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}:00${sign}${offsetHour}:${offsetMinute}`;
-};
 
 const parseProfileFromDom = () => {
 	const profileNode = document.getElementById('public-booking-profile-json');
@@ -265,7 +238,7 @@ export const initializePublicBookingPage = () => {
 		null;
 	const locationId = selectedLocation?.id_location || configuredLocationId || 1;
 	const mapsApiKey = String(root.dataset.googleMapsApiKey || '').trim();
-	const today = toDateStart(new Date());
+	const today = getTodayStart();
 
 	let step: WizardStep = 1;
 	let selectedService: BookingService | null = null;
@@ -556,7 +529,7 @@ export const initializePublicBookingPage = () => {
 	};
 
 	const refreshSummary = () => {
-		const formattedDate = selectedDate ? formatLongDate(selectedDate) : '-';
+		const formattedDate = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
 		const serviceLabel = selectedService ? selectedService.name : '-';
 		const timeLabel = selectedTime || '-';
 
@@ -634,7 +607,7 @@ export const initializePublicBookingPage = () => {
 
 		for (let day = 1; day <= daysInMonth; day += 1) {
 			const dateValue = new Date(year, month, day);
-			const dateKey = formatYmd(dateValue);
+			const dateKey = formatApiDate(dateValue);
 			const dateStart = toDateStart(dateValue);
 			const isPast = dateStart.getTime() < today.getTime();
 			const isToday = dateStart.getTime() === today.getTime();
@@ -725,9 +698,9 @@ export const initializePublicBookingPage = () => {
 				throw new Error('No fue posible consultar horarios disponibles.');
 			}
 
-			availableSlots = data.data
-				.map((value: unknown) => String(value || '').trim())
-				.filter((slot: string) => /^\d{2}:\d{2}$/.test(slot));
+			availableSlots = sortTimeSlotsChronologically(
+				data.data.map((value: unknown) => String(value || '').trim())
+			);
 		} catch (error) {
 			availableSlots = [];
 			showToast(
@@ -876,13 +849,16 @@ export const initializePublicBookingPage = () => {
 			return;
 		}
 
-		const startDate = new Date(`${selectedDate}T${selectedTime}:00`);
-		if (Number.isNaN(startDate.getTime())) {
+		const appointmentTimes = buildApiAppointmentTimes(
+			selectedDate,
+			selectedTime,
+			selectedService.duration_minutes
+		);
+		if (!appointmentTimes) {
 			setSubmitError('No fue posible interpretar la fecha y hora seleccionada.');
 			return;
 		}
 
-		const endDate = new Date(startDate.getTime() + selectedService.duration_minutes * 60 * 1000);
 		const payload = {
 			org_id_organization: profile.org_id_organization,
 			loc_id_location: locationId,
@@ -890,8 +866,8 @@ export const initializePublicBookingPage = () => {
 			ser_id_service: selectedService.id_service,
 			customer_name: customerName,
 			customer_phone: customerPhone,
-			start_time: formatIsoWithOffset(startDate),
-			end_time: formatIsoWithOffset(endDate),
+			start_time: appointmentTimes.start_time,
+			end_time: appointmentTimes.end_time,
 		};
 
 		isSubmitting = true;
@@ -914,7 +890,7 @@ export const initializePublicBookingPage = () => {
 
 			ticketProfessional.textContent = profile.full_name;
 			ticketService.textContent = selectedService.name;
-			ticketDate.textContent = formatLongDate(selectedDate);
+			ticketDate.textContent = formatLongDateFromApiDate(selectedDate);
 			ticketTime.textContent = selectedTime;
 
 			setStep(5);

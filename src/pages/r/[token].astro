@@ -1,4 +1,4 @@
----
+﻿---
 import Layout from '../../layouts/Layout.astro';
 import AppAlert from '../../components/AppAlert.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
@@ -95,32 +95,62 @@ const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
 						</div>
 					) : (
 					<form class="reservation-form rounded-[28px] bg-(--surface-container) p-4 shadow-sm sm:p-5" data-reservation-form>
-						<div class="reservation-field">
-							<label for="reservation_date_display">Nueva fecha</label>
-							<div class="reservation-date-wrap">
-								<input
-									id="reservation_date_display"
-									type="text"
-									readonly
-									placeholder="Selecciona una fecha"
-									data-reservation-date-display
-								/>
-								<input type="hidden" name="date" required data-reservation-date />
+						<div>
+							<h2 class="text-xl font-normal tracking-tight text-(--on-surface) sm:text-2xl">Selecciona una nueva fecha</h2>
+							<p class="mt-1 text-sm text-(--on-surface-variant) sm:text-base">
+								Elige el día en el calendario para ver los horarios disponibles.
+							</p>
+						</div>
+
+						<div class="mt-4 rounded-3xl border border-(--outline-variant) bg-(--surface-container-low) p-4 sm:mt-6 sm:p-6">
+							<div class="mb-5 flex items-center justify-between gap-3">
 								<button
 									type="button"
-									class="reservation-date-btn"
-									data-open-reservation-picker
-									aria-label="Abrir calendario"
+									data-calendar-prev
+									class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
 								>
-									<span class="material-symbols-rounded">calendar_month</span>
+									Anterior
+								</button>
+								<p class="text-base font-medium capitalize tracking-wide text-(--on-surface)" data-calendar-month></p>
+								<button
+									type="button"
+									data-calendar-next
+									class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
+								>
+									Siguiente
 								</button>
 							</div>
+							<div class="mb-3 grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase tracking-wider text-(--on-surface-variant) sm:text-sm">
+								<span>Lun</span>
+								<span>Mar</span>
+								<span>Mie</span>
+								<span>Jue</span>
+								<span>Vie</span>
+								<span>Sab</span>
+								<span>Dom</span>
+							</div>
+							<div class="grid grid-cols-7 gap-1 sm:gap-2" data-calendar-grid></div>
 						</div>
-						<div class="reservation-field">
-							<label for="reservation_slot">Horario disponible</label>
-							<div class="reservation-slots-grid mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" data-reservation-slots></div>
+
+						<input type="hidden" name="date" required data-reservation-date />
+						<div class="hidden grid gap-3" data-reservation-slots-panel>
+							<div>
+								<h2 class="text-xl font-normal tracking-tight text-(--on-surface) sm:text-2xl">Selecciona un horario</h2>
+								<p class="mt-1 text-sm text-(--on-surface-variant) sm:text-base">
+									<span class="font-medium text-(--on-surface)" data-reservation-selected-date></span>
+								</p>
+							</div>
+
+							<div
+								data-reservation-slots-loading
+								class="hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)"
+							>
+								Consultando horarios disponibles...
+							</div>
+
+							<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" data-reservation-slots></div>
 							<input type="hidden" id="reservation_slot" name="slot" required data-reservation-slot />
-							<p data-no-reservation-slots class="mt-3 hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)">
+							<p data-no-reservation-slots class="hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)">
 								No hay horarios disponibles para este día.
 							</p>
 						</div>
@@ -140,54 +170,6 @@ const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
 					</form>
 					)}
 
-					<dialog
-						class="fixed inset-0 z-[9999] m-0 h-screen w-screen max-h-none max-w-none border-0 bg-transparent p-4 outline-none backdrop:bg-transparent open:grid open:place-items-center"
-						data-reservation-picker
-					>
-						<div class="dtp-card">
-							<div class="dtp-head">
-								<div class="dtp-head-row">
-									<p class="dtp-target-label">Seleccionando fecha</p>
-									<button type="button" class="dtp-icon-btn" data-picker-close aria-label="Cerrar calendario">
-										<span class="material-symbols-rounded text-[1.1rem]">close</span>
-									</button>
-								</div>
-
-								<div class="dtp-nav-row">
-									<div class="inline-flex items-center gap-1.5">
-										<select data-picker-month-select class="dtp-select" aria-label="Seleccionar mes"></select>
-										<select data-picker-year-select class="dtp-select dtp-select--year" aria-label="Seleccionar año"></select>
-									</div>
-									<div class="inline-flex items-center gap-1">
-										<button type="button" class="dtp-icon-btn" data-picker-prev-month aria-label="Mes anterior">
-											<span class="material-symbols-rounded text-[1.05rem]">chevron_left</span>
-										</button>
-										<button type="button" class="dtp-icon-btn" data-picker-next-month aria-label="Mes siguiente">
-											<span class="material-symbols-rounded text-[1.05rem]">chevron_right</span>
-										</button>
-									</div>
-								</div>
-
-								<div class="dtp-weekdays">
-									<span>Lun</span>
-									<span>Mar</span>
-									<span>Mié</span>
-									<span>Jue</span>
-									<span>Vie</span>
-									<span>Sáb</span>
-									<span>Dom</span>
-								</div>
-								<div class="dtp-days-grid" data-picker-days-grid></div>
-							</div>
-
-							<div class="dtp-foot">
-								<div class="dtp-foot-row">
-									<button type="button" class="dtp-action-btn" data-picker-today>Hoy</button>
-									<button type="button" class="dtp-action-btn dtp-action-btn--primary" data-picker-apply>Hecho</button>
-								</div>
-							</div>
-						</div>
-					</dialog>
 				</>
 			)}
 		</section>
@@ -196,368 +178,13 @@ const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
 	<FlashMessage message="" />
 </Layout>
 
-<script is:inline>
-	(() => {
-		const root = document.querySelector('[data-reservation-root]');
-		const jsonScript = document.getElementById('reservation-json');
-		if (!root || !jsonScript?.textContent) return;
+<script>
+	import { initializePublicReservationPage } from '../../scripts/public-reservation-page';
 
-		const reservation = JSON.parse(jsonScript.textContent);
-		const token = root.dataset.token || '';
-		const isCancelledReservation =
-			String(reservation.status || '').trim().toUpperCase() === 'CANCELADO';
-		const form = root.querySelector('[data-reservation-form]');
-		const dateInput = root.querySelector('[data-reservation-date]');
-		const dateDisplay = root.querySelector('[data-reservation-date-display]');
-		const openPickerButton = root.querySelector('[data-open-reservation-picker]');
-		const slotSelect = root.querySelector('[data-reservation-slot]');
-		const slotsGrid = root.querySelector('[data-reservation-slots]');
-		const noSlots = root.querySelector('[data-no-reservation-slots]');
-		const cancelButton = root.querySelector('[data-cancel-reservation]');
-		const currentDate = root.querySelector('[data-current-date]');
-		const statusText = root.querySelector('[data-status-text]');
-		const pickerDialog = root.querySelector('[data-reservation-picker]');
-		const pickerMonthSelect = pickerDialog?.querySelector('[data-picker-month-select]');
-		const pickerYearSelect = pickerDialog?.querySelector('[data-picker-year-select]');
-		const pickerPrevButton = pickerDialog?.querySelector('[data-picker-prev-month]');
-		const pickerNextButton = pickerDialog?.querySelector('[data-picker-next-month]');
-		const pickerCloseButton = pickerDialog?.querySelector('[data-picker-close]');
-		const pickerTodayButton = pickerDialog?.querySelector('[data-picker-today]');
-		const pickerApplyButton = pickerDialog?.querySelector('[data-picker-apply]');
-		const pickerDaysGrid = pickerDialog?.querySelector('[data-picker-days-grid]');
-
-		const pad = (value) => String(value).padStart(2, '0');
-		const parseLocalDate = (value) => new Date(String(value || '').replace('T', ' '));
-		const start = parseLocalDate(reservation.start_time);
-		const durationMinutes = Number(reservation.duration_minutes || 30);
-
-		const formatHumanDate = (date) =>
-			`${pad(date.getDate())}-${pad(date.getMonth() + 1)}-${date.getFullYear()} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
-
-		const toDateInputValue = (date) =>
-			`${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-
-		const formatDisplayDate = (date) =>
-			`${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
-
-		const startOfDay = (date) => {
-			const copy = new Date(date.getTime());
-			copy.setHours(0, 0, 0, 0);
-			return copy;
-		};
-
-		const showToast = (message, type = 'info') => {
-			const detail = {
-				message,
-				type,
-				autoHideMs: type === 'success' ? 5000 : 6500,
-			};
-			if (window.BookmateFlash?.show) {
-				window.BookmateFlash.show(detail);
-				return;
-			}
-			document.dispatchEvent(new CustomEvent('bookmate:flash', { detail }));
-		};
-
-		const today = startOfDay(new Date());
-		const initialDate = startOfDay(start) >= today ? startOfDay(start) : today;
-
-		const setSelectedDate = (date) => {
-			if (!(dateInput instanceof HTMLInputElement)) return;
-			dateInput.value = toDateInputValue(date);
-			if (dateDisplay instanceof HTMLInputElement) {
-				dateDisplay.value = formatDisplayDate(date);
-			}
-		};
-
-		setSelectedDate(initialDate);
-		if (currentDate) currentDate.textContent = formatHumanDate(start);
-
-		let availableSlots = [];
-
-		const renderSlotButtons = () => {
-			if (!(slotSelect instanceof HTMLInputElement) || !(slotsGrid instanceof HTMLElement)) return;
-			slotsGrid.innerHTML = '';
-			if (noSlots instanceof HTMLElement) {
-				noSlots.classList.toggle('hidden', availableSlots.length > 0);
-			}
-			const selected = slotSelect.value;
-			for (const slot of availableSlots) {
-				const button = document.createElement('button');
-				button.type = 'button';
-				button.textContent = slot;
-				button.dataset.slotValue = slot;
-				button.className =
-					'flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition ' +
-					(selected === slot
-						? 'border-[var(--primary)] bg-[var(--primary-container)] text-[var(--on-primary-container)]'
-						: 'border-[var(--outline)] bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
-				button.addEventListener('click', () => {
-					slotSelect.value = slot;
-					renderSlotButtons();
-				});
-				slotsGrid.appendChild(button);
-			}
-		};
-
-		const setSlotOptions = (slots, selectedSlot = '') => {
-			if (!(slotSelect instanceof HTMLInputElement)) return;
-			availableSlots = slots;
-			slotSelect.value = selectedSlot;
-			renderSlotButtons();
-		};
-
-		const loadSlots = async () => {
-			if (!(dateInput instanceof HTMLInputElement)) return;
-			const targetDate = dateInput.value;
-			if (!targetDate) return;
-			setSlotOptions([]);
-			const params = new URLSearchParams({
-				pro_id: String(reservation.pro_id_professional),
-				loc_id: String(reservation.loc_id_location),
-				ser_id: String(reservation.ser_id_service),
-				target_date: targetDate,
-			});
-			const response = await fetch(`/api/public/available-slots?${params.toString()}`);
-			const data = await response.json().catch(() => ({}));
-			if (!response.ok || data.status !== 'success' || !Array.isArray(data.data)) {
-				showToast(data.message || 'No fue posible cargar horarios.', 'error');
-				return;
-			}
-			const currentSlot = targetDate === toDateInputValue(start)
-				? `${pad(start.getHours())}:${pad(start.getMinutes())}`
-				: '';
-			const slots = currentSlot && !data.data.includes(currentSlot)
-				? [currentSlot, ...data.data]
-				: data.data;
-			setSlotOptions(slots, currentSlot);
-		};
-
-		const MONTH_NAMES = [
-			'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-			'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
-		];
-
-		let draftDate = new Date(initialDate.getTime());
-		let viewDate = new Date(draftDate.getFullYear(), draftDate.getMonth(), 1);
-
-		const renderMonthYearSelects = () => {
-			if (!(pickerMonthSelect instanceof HTMLSelectElement) || !(pickerYearSelect instanceof HTMLSelectElement)) return;
-			if (pickerMonthSelect.options.length === 0) {
-				for (let month = 0; month < 12; month += 1) {
-					const option = document.createElement('option');
-					option.value = String(month);
-					option.textContent = MONTH_NAMES[month];
-					pickerMonthSelect.appendChild(option);
-				}
-			}
-			pickerMonthSelect.value = String(viewDate.getMonth());
-
-			const viewYear = viewDate.getFullYear();
-			const minYear = today.getFullYear();
-			const maxYear = viewYear + 12;
-			const firstYear = Number(pickerYearSelect.options[0]?.value ?? Number.NaN);
-			const lastYear = Number(pickerYearSelect.options[pickerYearSelect.options.length - 1]?.value ?? Number.NaN);
-			if (pickerYearSelect.options.length === 0 || firstYear !== minYear || lastYear !== maxYear) {
-				pickerYearSelect.innerHTML = '';
-				for (let year = minYear; year <= maxYear; year += 1) {
-					const option = document.createElement('option');
-					option.value = String(year);
-					option.textContent = String(year);
-					pickerYearSelect.appendChild(option);
-				}
-			}
-			pickerYearSelect.value = String(viewYear);
-		};
-
-		const renderDays = () => {
-			if (!(pickerDaysGrid instanceof HTMLElement)) return;
-			pickerDaysGrid.innerHTML = '';
-
-			const viewYear = viewDate.getFullYear();
-			const viewMonth = viewDate.getMonth();
-			const firstDay = new Date(viewYear, viewMonth, 1);
-			const firstWeekdayMondayBased = (firstDay.getDay() + 6) % 7;
-			const gridStart = new Date(viewYear, viewMonth, 1 - firstWeekdayMondayBased);
-
-			for (let index = 0; index < 42; index += 1) {
-				const date = new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate() + index);
-				const inCurrentMonth = date.getMonth() === viewMonth;
-				const isToday = date.getTime() === today.getTime();
-				const isSelected =
-					date.getFullYear() === draftDate.getFullYear() &&
-					date.getMonth() === draftDate.getMonth() &&
-					date.getDate() === draftDate.getDate();
-				const isPast = date < today;
-
-				const button = document.createElement('button');
-				button.type = 'button';
-				button.textContent = String(date.getDate());
-				button.className = [
-					'dtp-day',
-					!inCurrentMonth ? 'dtp-day--out' : '',
-					isToday ? 'dtp-day--today' : '',
-					isSelected ? 'dtp-day--selected' : '',
-					isPast ? 'dtp-day--disabled' : '',
-				]
-					.filter(Boolean)
-					.join(' ');
-
-				if (isPast) {
-					button.disabled = true;
-					button.setAttribute('aria-disabled', 'true');
-				} else {
-					button.addEventListener('click', () => {
-						draftDate = new Date(date.getTime());
-						renderPicker();
-					});
-				}
-
-				pickerDaysGrid.appendChild(button);
-			}
-		};
-
-		const renderPicker = () => {
-			renderMonthYearSelects();
-			renderDays();
-		};
-
-		const openPicker = () => {
-			if (!(pickerDialog instanceof HTMLDialogElement)) return;
-			const currentValue = dateInput instanceof HTMLInputElement && dateInput.value
-				? parseLocalDate(dateInput.value)
-				: new Date(initialDate.getTime());
-			draftDate = startOfDay(currentValue) < today ? new Date(today.getTime()) : startOfDay(currentValue);
-			viewDate = new Date(draftDate.getFullYear(), draftDate.getMonth(), 1);
-			if (!pickerDialog.open) pickerDialog.showModal();
-			renderPicker();
-		};
-
-		const closePicker = () => {
-			if (pickerDialog instanceof HTMLDialogElement && pickerDialog.open) pickerDialog.close();
-		};
-
-		const commitPicker = () => {
-			setSelectedDate(draftDate);
-			closePicker();
-			loadSlots();
-		};
-
-		openPickerButton?.addEventListener('click', openPicker);
-		dateDisplay?.addEventListener('click', openPicker);
-		pickerCloseButton?.addEventListener('click', closePicker);
-		pickerApplyButton?.addEventListener('click', commitPicker);
-		pickerTodayButton?.addEventListener('click', () => {
-			draftDate = new Date(today.getTime());
-			viewDate = new Date(today.getFullYear(), today.getMonth(), 1);
-			renderPicker();
-		});
-		pickerPrevButton?.addEventListener('click', () => {
-			viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() - 1, 1);
-			renderPicker();
-		});
-		pickerNextButton?.addEventListener('click', () => {
-			viewDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 1);
-			renderPicker();
-		});
-		pickerMonthSelect?.addEventListener('change', () => {
-			if (!(pickerMonthSelect instanceof HTMLSelectElement)) return;
-			const selectedMonth = Number(pickerMonthSelect.value);
-			if (Number.isInteger(selectedMonth) && selectedMonth >= 0 && selectedMonth <= 11) {
-				viewDate = new Date(viewDate.getFullYear(), selectedMonth, 1);
-				renderPicker();
-			}
-		});
-		pickerYearSelect?.addEventListener('change', () => {
-			if (!(pickerYearSelect instanceof HTMLSelectElement)) return;
-			const selectedYear = Number(pickerYearSelect.value);
-			if (Number.isInteger(selectedYear)) {
-				viewDate = new Date(selectedYear, viewDate.getMonth(), 1);
-				renderPicker();
-			}
-		});
-		pickerDialog?.addEventListener('click', (event) => {
-			if (event.target === pickerDialog) closePicker();
-		});
-
-		const refreshReservationSummary = async () => {
-			const response = await fetch(`/api/public/reservations/${encodeURIComponent(token)}`, {
-				headers: { Accept: 'application/json' },
-			});
-			const data = await response.json().catch(() => ({}));
-			if (!response.ok || data.status !== 'success' || !data.data) return false;
-
-			const updated = data.data;
-			reservation.start_time = updated.start_time;
-			reservation.end_time = updated.end_time;
-			reservation.status = updated.status;
-			reservation.duration_minutes = updated.duration_minutes || reservation.duration_minutes;
-
-			const nextStart = parseLocalDate(updated.start_time);
-			if (statusText) statusText.textContent = String(updated.status || reservation.status || '');
-			if (currentDate) currentDate.textContent = formatHumanDate(nextStart);
-			setSelectedDate(startOfDay(nextStart) >= today ? startOfDay(nextStart) : today);
-			await loadSlots();
-			return true;
-		};
-
-		if (!isCancelledReservation) {
-			loadSlots();
-		}
-
-		form?.addEventListener('submit', async (event) => {
-			event.preventDefault();
-			if (!(dateInput instanceof HTMLInputElement) || !(slotSelect instanceof HTMLInputElement)) return;
-			if (!dateInput.value || !slotSelect.value) {
-				showToast('Selecciona fecha y horario.', 'error');
-				return;
-			}
-
-			const startTime = new Date(`${dateInput.value}T${slotSelect.value}:00`);
-			const endTime = new Date(startTime.getTime() + durationMinutes * 60000);
-			const body = {
-				start_time: `${dateInput.value}T${slotSelect.value}:00`,
-				end_time: `${toDateInputValue(endTime)}T${pad(endTime.getHours())}:${pad(endTime.getMinutes())}:00`,
-			};
-
-			const response = await fetch(`/api/public/reservations/${encodeURIComponent(token)}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-				body: JSON.stringify(body),
-			});
-			const data = await response.json().catch(() => ({}));
-			if (response.ok) {
-				await refreshReservationSummary();
-				showToast('Tu cita se modificó correctamente.', 'success');
-				return;
-			}
-			showToast(data.message || 'No fue posible actualizar tu cita.', 'error');
-		});
-
-		cancelButton?.addEventListener('click', async () => {
-			const confirmed = window.BookmateAlert?.confirm
-				? await window.BookmateAlert.confirm({
-						type: 'warning',
-						title: 'Cancelar reserva',
-						message: 'Esta acción cancelará tu reserva. ¿Deseas continuar?',
-						confirmText: 'Sí, cancelar',
-						cancelText: 'Volver',
-					})
-				: window.confirm('¿Quieres cancelar esta reserva?');
-			if (!confirmed) return;
-			const response = await fetch(`/api/public/reservations/${encodeURIComponent(token)}`, {
-				method: 'DELETE',
-				headers: { Accept: 'application/json' },
-			});
-			const data = await response.json().catch(() => ({}));
-			if (response.ok) {
-				window.location.reload();
-				return;
-			}
-			showToast(data.message || 'No fue posible cancelar tu cita.', 'error');
-		});
-	})();
+	initializePublicReservationPage();
+	document.addEventListener('astro:page-load', initializePublicReservationPage);
 </script>
+
 
 <style is:global>
 .reservation-shell {
@@ -632,8 +259,7 @@ const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
 	padding: 0.65rem 0.75rem;
 }
 
-.reservation-summary span,
-.reservation-field label {
+.reservation-summary span {
 	display: block;
 	color: var(--on-surface-variant);
 	font-size: 0.72rem;
@@ -650,67 +276,7 @@ const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
 
 .reservation-form {
 	display: grid;
-	gap: 0.85rem;
-}
-
-.reservation-field input {
-	box-sizing: border-box;
-	width: 100%;
-	border: 1px solid var(--outline);
-	border-radius: 0.85rem;
-	background: var(--surface-container-lowest);
-	color: var(--on-surface);
-	font: inherit;
-	padding: 0.75rem 0.9rem;
-	outline: none;
-}
-
-.reservation-field input:focus {
-	border-color: var(--primary);
-	box-shadow: 0 0 0 1px var(--primary);
-}
-
-.reservation-date-wrap {
-	position: relative;
-}
-
-.reservation-date-wrap input[type='text'] {
-	padding-right: 2.85rem;
-	cursor: pointer;
-	caret-color: transparent;
-}
-
-.reservation-date-btn {
-	position: absolute;
-	top: 50%;
-	right: 0.45rem;
-	transform: translateY(-50%);
-	display: inline-flex;
-	width: 2.1rem;
-	height: 2.1rem;
-	align-items: center;
-	justify-content: center;
-	border: 0;
-	border-radius: 999px;
-	background: transparent;
-	color: var(--on-surface-variant);
-	cursor: pointer;
-	transition: background-color 140ms ease, color 140ms ease;
-}
-
-.reservation-date-btn:hover,
-.reservation-date-btn:focus-visible {
-	background: rgba(255, 255, 255, 0.08);
-	color: var(--on-surface);
-	outline: none;
-}
-
-.reservation-date-btn .material-symbols-rounded {
-	font-size: 1.2rem;
-}
-
-.reservation-slots-grid {
-	margin-top: 0.7rem;
+	gap: 1rem;
 }
 
 .reservation-actions {

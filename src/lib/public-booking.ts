@@ -468,10 +468,13 @@ export const getPublicAvailableSlotsWithOrds = async (params: {
 	loc_id: number;
 	ser_id: number;
 	target_date: string;
+	/** Al reprogramar: excluye el bloqueo de esta cita en Oracle. */
+	exclude_app_id?: number;
 }) => {
 	const proId = toPositiveInt(params.pro_id, 0);
 	const locId = toPositiveInt(params.loc_id, 0);
 	const serId = toPositiveInt(params.ser_id, 0);
+	const excludeAppId = toPositiveInt(params.exclude_app_id, 0);
 	const targetDate = String(params.target_date || '').trim();
 	if (!proId || !locId || !serId || !/^\d{4}-\d{2}-\d{2}$/.test(targetDate)) {
 		throw new PublicBookingApiError(
@@ -485,6 +488,9 @@ export const getPublicAvailableSlotsWithOrds = async (params: {
 	slotsUrl.searchParams.set('loc_id', String(locId));
 	slotsUrl.searchParams.set('ser_id', String(serId));
 	slotsUrl.searchParams.set('target_date', targetDate);
+	if (excludeAppId > 0) {
+		slotsUrl.searchParams.set('exclude_app_id', String(excludeAppId));
+	}
 
 	const response = await fetch(slotsUrl.toString(), {
 		method: 'GET',

@@ -15,12 +15,14 @@ export const GET: APIRoute = async ({ request }) => {
 		const locId = toPositiveInt(url.searchParams.get('loc_id'));
 		const serId = toPositiveInt(url.searchParams.get('ser_id'));
 		const targetDate = String(url.searchParams.get('target_date') || '').trim();
+		const excludeAppId = toPositiveInt(url.searchParams.get('exclude_app_id'));
 
 		const slots = await getPublicAvailableSlotsWithOrds({
 			pro_id: proId,
 			loc_id: locId,
 			ser_id: serId,
 			target_date: targetDate,
+			exclude_app_id: excludeAppId > 0 ? excludeAppId : undefined,
 		});
 
 		return Response.json(

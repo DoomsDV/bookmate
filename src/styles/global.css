@@ -1480,3 +1480,18 @@ html[data-theme='dark'] .dtp-action-btn--primary:hover {
 	border-color: rgba(255, 255, 255, 0.22);
 }
 
+/* Public booking & reservation pages — inline calendar */
+.public-booking-shell button:not([disabled]),
+.public-booking-shell [role='button']:not([aria-disabled='true']),
+.public-booking-shell a[href] {
+	cursor: pointer;
+}
+
+.public-booking-shell button[disabled] {
+	cursor: not-allowed;
+}
+
+.public-booking-shell [data-calendar-grid] > button[disabled] {
+	opacity: 0.25;
+}
+
