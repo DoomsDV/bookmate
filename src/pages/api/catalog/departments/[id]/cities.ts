@@ -36,7 +36,7 @@ export const GET: APIRoute = async ({ params }) => {
 				data: cities,
 			},
 			{ status: 200, headers:{
-				'Cache-Control': 'public, max-age=3600', // Cache for 1 hour
+				'Cache-Control': 'private, no-store',
 				'Content-Type': 'application/json'
 			}}
 		);

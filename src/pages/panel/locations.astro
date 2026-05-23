@@ -450,10 +450,8 @@ const googleMapsApiKey =
 	import { navigate } from "astro:transitions/client";
 	import {
 		destroySearchableSelect,
-		ensureSearchableSelect,
+		rebuildSearchableSelect,
 		setSearchableSelectDisabled,
-		setSearchableSelectValue,
-		syncSearchableSelect,
 	} from "../../scripts/searchable-select";
 
 	type LocationMode = "create" | "edit";
@@ -506,6 +504,7 @@ const googleMapsApiKey =
 		private citiesRequestSeq = 0;
 
 		private departmentsLoaded = false;
+		private departmentsCache: DepartmentOption[] = [];
 		private departmentsLoadPromise: Promise<void> | null = null;
 		private citiesByDepartment = new Map<number, CityOption[]>();
 
@@ -711,12 +710,6 @@ const googleMapsApiKey =
 			).trim();
 
 			this.cleanUrlParams();
-			ensureSearchableSelect(this.formEls.department, {
-				placeholder: "Buscar departamento...",
-			});
-			ensureSearchableSelect(this.formEls.city, {
-				placeholder: "Buscar ciudad...",
-			});
 			this.addEventListener("click", this.handleRootClick, { signal });
 			this.addEventListener("keydown", this.handleRootKeydown, {
 				signal,
@@ -1074,6 +1067,18 @@ const googleMapsApiKey =
 			this.setMapStatus(this.mapIdleMessage);
 		};
 
+		private getSelectSearchPlaceholder = (
+			selectNode: HTMLSelectElement | null | undefined,
+		) => {
+			if (selectNode === this.formEls.department) {
+				return "Buscar departamento...";
+			}
+			if (selectNode === this.formEls.city) {
+				return "Buscar ciudad...";
+			}
+			return "Buscar...";
+		};
+
 		private setSelectOptions = <T,>(
 			selectNode: HTMLSelectElement | null | undefined,
 			items: T[],
@@ -1081,38 +1086,33 @@ const googleMapsApiKey =
 		) => {
 			if (!selectNode) return;
 
-			selectNode.innerHTML = "";
-			const placeholderOption = document.createElement("option");
-			placeholderOption.value = "";
-			placeholderOption.textContent = config.placeholder;
-			selectNode.appendChild(placeholderOption);
-
-			for (const item of items) {
-				const option = document.createElement("option");
-				option.value = String(config.getValue(item));
-				option.textContent = config.getLabel(item);
-				selectNode.appendChild(option);
-			}
+			const options = [
+				{ value: "", label: config.placeholder },
+				...items.map((item) => ({
+					value: String(config.getValue(item)),
+					label: config.getLabel(item),
+				})),
+			];
 
 			const hasSelectedValue =
 				config.selectedValue !== undefined &&
 				config.selectedValue !== null &&
 				String(config.selectedValue).trim() !== "";
 
-			if (hasSelectedValue) {
-				const candidate = String(config.selectedValue);
-				const hasOption = Array.from(selectNode.options).some(
-					(option) => option.value === candidate,
-				);
-				selectNode.value = hasOption ? candidate : "";
-			} else {
-				selectNode.value = "";
-			}
-			syncSearchableSelect(selectNode);
+			rebuildSearchableSelect(
+				selectNode,
+				options,
+				{ placeholder: this.getSelectSearchPlaceholder(selectNode) },
+				hasSelectedValue ? String(config.selectedValue) : "",
+			);
 		};
 
 		private async requestApi<T = any>(url: string, options: RequestInit, fallbackError: string): Promise<any> {
-			const response = await fetch(url, options);
+			const response = await fetch(url, {
+				credentials: "same-origin",
+				cache: "no-store",
+				...options,
+			});
 			let data = null;
 			try { data = await response.json(); } catch { throw new Error("Error al interpretar respuesta del servidor."); }
 			if (!response.ok || !data || data.status !== "success") {
@@ -1133,14 +1133,31 @@ const googleMapsApiKey =
 			return data.data as T[];
 		};
 
+		private applyDepartmentsToSelect = (
+			departments: DepartmentOption[],
+			selectedValue: string | number | "" = "",
+		) => {
+			this.setSelectOptions(this.formEls.department, departments, {
+				placeholder: "Selecciona un departamento",
+				selectedValue,
+				getValue: (item) => item.id_department,
+				getLabel: (item) =>
+					item.description || `Departamento #${item.id_department}`,
+			});
+		};
+
 		private ensureDepartmentsLoaded = async () => {
-			if (this.departmentsLoaded || this.departmentsLoadPromise)
-				return this.departmentsLoadPromise;
+			if (this.departmentsLoadPromise) return this.departmentsLoadPromise;
+
+			if (this.departmentsLoaded && this.departmentsCache.length > 0) {
+				this.applyDepartmentsToSelect(this.departmentsCache);
+				return;
+			}
 
 			this.setSelectOptions(this.formEls.department, [], {
 				placeholder: "Cargando departamentos...",
-				getValue: (i: any) => i.id_department,
-				getLabel: (i: any) => i.description,
+				getValue: (i: DepartmentOption) => i.id_department,
+				getLabel: (i: DepartmentOption) => i.description ?? "",
 			});
 			setSearchableSelectDisabled(this.formEls.department, true);
 
@@ -1149,15 +1166,9 @@ const googleMapsApiKey =
 					await this.fetchCatalogResource<DepartmentOption>(
 						"/api/catalog/departments",
 					);
+				this.departmentsCache = departments;
 				this.departmentsLoaded = true;
-				this.setSelectOptions(this.formEls.department, departments, {
-					placeholder: "Selecciona un departamento",
-					selectedValue: "",
-					getValue: (item) => item.id_department,
-					getLabel: (item) =>
-						item.description ||
-						`Departamento #${item.id_department}`,
-				});
+				this.applyDepartmentsToSelect(departments);
 			})()
 				.catch((error) => {
 					this.setSelectOptions(this.formEls.department, [], {
@@ -1342,6 +1353,8 @@ const googleMapsApiKey =
 				this.els.modal?.close();
 				this.els.modal?.classList.remove("is-closing");
 				this.els.form?.reset();
+				destroySearchableSelect(this.formEls?.department);
+				destroySearchableSelect(this.formEls?.city);
 				this.setCreateMode();
 				this.setFormLoadingState(false);
 				this.clearErrors();
@@ -1352,13 +1365,17 @@ const googleMapsApiKey =
 		private resetFormValues = () => {
 			if (this.formEls.name) this.formEls.name.value = "";
 			if (this.formEls.address) this.formEls.address.value = "";
-			setSearchableSelectValue(this.formEls.department, "");
+			destroySearchableSelect(this.formEls.department);
+			destroySearchableSelect(this.formEls.city);
+			if (this.formEls.department) {
+				this.formEls.department.disabled = false;
+			}
 			if (this.formEls.city) {
-				setSearchableSelectDisabled(this.formEls.city, true);
+				this.formEls.city.disabled = true;
 				this.setSelectOptions(this.formEls.city, [], {
 					placeholder: "Selecciona un departamento primero",
-					getValue: (i: any) => i.id_city,
-					getLabel: (i: any) => i.description,
+					getValue: (i: CityOption) => i.id_city,
+					getLabel: (i: CityOption) => i.description ?? "",
 				});
 			}
 			this.setSelectedCoordinates(null, null);
@@ -1410,10 +1427,8 @@ const googleMapsApiKey =
 			this.clearErrors();
 			this.openModalShell();
 			try {
-				await Promise.all([
-					this.ensureDepartmentsLoaded(),
-					this.ensureMapReady(),
-				]);
+				await this.ensureDepartmentsLoaded();
+				await this.ensureMapReady();
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error
@@ -1476,14 +1491,12 @@ const googleMapsApiKey =
 						? loc.city.id_city
 						: 0;
 
-				await Promise.all([
-					this.ensureDepartmentsLoaded(),
-					this.ensureMapReady(),
-				]);
+				await this.ensureDepartmentsLoaded();
+				await this.ensureMapReady();
 				if (requestId !== this.locationReadRequestSeq) return;
 
-				setSearchableSelectValue(
-					this.formEls.department,
+				this.applyDepartmentsToSelect(
+					this.departmentsCache,
 					departmentId > 0 ? departmentId : "",
 				);
 				await this.loadCitiesByDepartment(departmentId, {

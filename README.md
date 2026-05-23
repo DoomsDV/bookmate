@@ -47,11 +47,24 @@ Feel free to check [our documentation](https://docs.astro.build) or jump into ou
 
 ## Environment Variables
 
-Create a local `.env` file from `.env.example`:
+Astro/Vite loads env files **by mode**, not a generic `.env`:
+
+| Command | Mode | File loaded |
+| :------ | :--- | :---------- |
+| `npm run dev` | `development` | `.env.development` |
+| `npm run build` | `production` | `.env.production` |
+
+Create the file you need from `.env.example`:
 
 ```sh
-cp .env.example .env
+# Local development (localhost, dev API)
+cp .env.example .env.development
+
+# Local production build (optional; Vercel uses dashboard env vars)
+cp .env.example .env.production
 ```
+
+Do **not** use a root `.env` file — it is loaded in every mode and can override the wrong values.
 
 Minimum required values:
 

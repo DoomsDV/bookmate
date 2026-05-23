@@ -29,7 +29,7 @@ export const ensureSearchableSelect = (
 		create: false,
 		persist: false,
 		plugins: ['dropdown_input'],
-		maxOptions: options.maxOptions ?? 200,
+		maxOptions: options.maxOptions ?? 500,
 		closeAfterSelect: options.closeAfterSelect ?? true,
 		placeholder: options.placeholder,
 		controlInput: '<input type="text" autocomplete="off" />',
@@ -39,6 +39,52 @@ export const ensureSearchableSelect = (
 	if (select.disabled) instance.disable();
 	return instance;
 };
+
+export type SearchableSelectOption = {
+	value: string;
+	label: string;
+};
+
+export const rebuildSearchableSelect = (
+	select: HTMLSelectElement | null | undefined,
+	options: SearchableSelectOption[],
+	widgetOptions: SearchableSelectOptions = {},
+	selectedValue = '',
+) => {
+	if (!select) return null;
+
+	destroySearchableSelect(select);
+
+	select.innerHTML = '';
+	for (const option of options) {
+		const element = document.createElement('option');
+		element.value = option.value;
+		element.textContent = option.label;
+		select.appendChild(element);
+	}
+
+	const nextValue =
+		selectedValue !== '' && options.some((option) => option.value === selectedValue)
+			? selectedValue
+			: '';
+	select.value = nextValue;
+
+	const instance = ensureSearchableSelect(select, widgetOptions);
+	if (!instance) return null;
+
+	instance.setValue(nextValue, true);
+	if (select.disabled) instance.disable();
+	else instance.enable();
+
+	return instance;
+};
+
+export const setSearchableSelectOptions = (
+	select: HTMLSelectElement | null | undefined,
+	options: SearchableSelectOption[],
+	widgetOptions: SearchableSelectOptions = {},
+	selectedValue = '',
+) => rebuildSearchableSelect(select, options, widgetOptions, selectedValue);
 
 export const syncSearchableSelect = (select: HTMLSelectElement | null | undefined) => {
 	if (!select) return;
@@ -83,4 +129,8 @@ export const destroySearchableSelect = (select: HTMLSelectElement | null | undef
 	if (!instance) return;
 	instance.destroy();
 	instances.delete(select);
+	select.className = select.className
+		.replace(/\bbookmate-searchable-select\b/g, '')
+		.replace(/\bts-hidden-accessible\b/g, '')
+		.trim();
 };
