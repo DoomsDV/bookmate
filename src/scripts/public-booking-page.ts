@@ -313,6 +313,7 @@ export const initializePublicBookingPage = () => {
 	let validatedCustomerPhoneE164 = '';
 	let mapInstance: any = null;
 	let mapMarker: any = null;
+	let mapOpenSeq = 0;
 
 	let toastTimer: number | null = null;
 	const stepLabelByNumber: Record<1 | 2 | 3 | 4, string> = {
@@ -382,6 +383,40 @@ export const initializePublicBookingPage = () => {
 		};
 	};
 
+	const applyLocationUpdate = (updated: BookingLocation) => {
+		const locationId = toPositiveInt(updated.id_location, 0);
+		if (!locationId) return;
+
+		if (selectedLocation?.id_location === locationId) {
+			selectedLocation = updated;
+		}
+
+		bookingLocations = bookingLocations.map((location) =>
+			location.id_location === locationId ? updated : location
+		);
+
+		for (const group of availableSlotGroups) {
+			if (group.location.id_location === locationId) {
+				group.location = updated;
+			}
+		}
+	};
+
+	const resolveLocationForSelectedSlot = (): BookingLocation | null => {
+		if (!selectedLocation) return null;
+
+		const locationId = toPositiveInt(selectedLocation.id_location, 0);
+		if (!locationId || !selectedTime) return selectedLocation;
+
+		const matchedGroup = availableSlotGroups.find(
+			(group) =>
+				toPositiveInt(group.location.id_location, 0) === locationId &&
+				group.slots.includes(selectedTime)
+		);
+
+		return matchedGroup?.location ?? selectedLocation;
+	};
+
 	const loadGoogleMaps = async (): Promise<GoogleMapsNamespace> => {
 		if (!mapsApiKey) {
 			throw new Error('No se encontró la API key de Google Maps para mostrar la ubicación.');
@@ -423,8 +458,18 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
-	const openLocationMap = async (location: BookingLocation | null = selectedLocation) => {
+	type OpenLocationMapOptions = {
+		fetchCoordinates?: boolean;
+	};
+
+	const openLocationMap = async (
+		location: BookingLocation | null = selectedLocation,
+		options: OpenLocationMapOptions = {}
+	) => {
 		if (!canShowLocationMap(location)) return;
+
+		const openSeq = ++mapOpenSeq;
+		const shouldFetchCoordinates = options.fetchCoordinates === true;
 
 		setMapStatus('');
 		if (mapAddress) mapAddress.textContent = location?.address || '';
@@ -433,11 +478,15 @@ export const initializePublicBookingPage = () => {
 		let mapLocation = location!;
 		let coords = getLocationCoordinatesFrom(mapLocation);
 
-		if (!coords) {
+		if (shouldFetchCoordinates || !coords) {
 			try {
 				mapLocation = await fetchPublicLocationDetails(mapLocation);
+				if (openSeq !== mapOpenSeq) return;
+
+				applyLocationUpdate(mapLocation);
 				coords = getLocationCoordinatesFrom(mapLocation);
 			} catch (error) {
+				if (openSeq !== mapOpenSeq) return;
 				setMapStatus(
 					error instanceof PublicBookingClientError
 						? error.message
@@ -461,6 +510,8 @@ export const initializePublicBookingPage = () => {
 
 		try {
 			const maps = await loadGoogleMaps();
+			if (openSeq !== mapOpenSeq) return;
+
 			if (!mapInstance) {
 				mapInstance = new maps.Map(mapCanvas, {
 					center: coords,
@@ -485,10 +536,12 @@ export const initializePublicBookingPage = () => {
 			}
 
 			window.setTimeout(() => {
+				if (openSeq !== mapOpenSeq) return;
 				maps.event?.trigger?.(mapInstance, 'resize');
 				mapInstance?.setCenter?.(coords);
 			}, 80);
 		} catch (error) {
+			if (openSeq !== mapOpenSeq) return;
 			setMapStatus(error instanceof Error ? error.message : 'No fue posible mostrar el mapa.');
 		}
 	};
@@ -1010,7 +1063,9 @@ export const initializePublicBookingPage = () => {
 	backToSlots.addEventListener('click', () => setStep(3));
 	restartButton.addEventListener('click', resetFlow);
 	summaryLocation.addEventListener('click', () => {
-		void openLocationMap(selectedLocation);
+		const location = resolveLocationForSelectedSlot();
+		if (!location) return;
+		void openLocationMap(location, { fetchCoordinates: true });
 	});
 	mapCloseButton.addEventListener('click', () => {
 		mapModal.close();
