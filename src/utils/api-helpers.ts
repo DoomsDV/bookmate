@@ -1,3 +1,5 @@
+import { SESSION_EXPIRED_API_CODE } from '../lib/session-auth-messages';
+
 type ApiErrorLike = {
 	message: string;
 	status: number;
@@ -46,15 +48,18 @@ export const toErrorResponse = <TError extends ApiErrorLike>(
 		? error
 		: options.createError(fallbackMessage, 500);
 
-	return Response.json(
-		{
-			status: 'error',
-			message: resolvedError.message,
-			details: resolvedError.details,
-			errors: resolvedError.fieldErrors,
-		},
-		{ status: resolvedError.status }
-	);
+	const payload: Record<string, unknown> = {
+		status: 'error',
+		message: resolvedError.message,
+		details: resolvedError.details,
+		errors: resolvedError.fieldErrors,
+	};
+
+	if (resolvedError.status === 401) {
+		payload.code = SESSION_EXPIRED_API_CODE;
+	}
+
+	return Response.json(payload, { status: resolvedError.status });
 };
 
 export const toPositiveInt = (value: unknown, fallback = 0) => {

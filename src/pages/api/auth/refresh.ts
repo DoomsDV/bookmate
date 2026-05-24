@@ -5,8 +5,16 @@ import { getCurrentOrganizationWithOrds } from '../../../lib/organization';
 
 export const POST: APIRoute = async ({ request, cookies, url }) => {
 	try {
-		const body = await request.json();
-		const refreshToken = String(body.refresh_token || '').trim();
+		let body: Record<string, unknown> = {};
+		try {
+			body = (await request.json()) as Record<string, unknown>;
+		} catch {
+			body = {};
+		}
+
+		const refreshToken = String(
+			body.refresh_token ?? cookies.get('refresh_token')?.value ?? ''
+		).trim();
 
 		if (!refreshToken) {
 			throw new AuthApiError('Refresh token requerido.', 400);
@@ -31,6 +39,9 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 
 		return Response.json(
 			{
+				status: 'error',
+				code: authError.status === 401 ? 'SESSION_EXPIRED' : undefined,
+				message: authError.message,
 				error: authError.message,
 				details: authError.details,
 			},

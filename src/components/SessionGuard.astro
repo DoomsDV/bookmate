@@ -1,0 +1,10 @@
+<script>
+	import { installSessionFetchGuard } from '../lib/session-fetch-guard';
+
+	const bootSessionGuard = () => {
+		installSessionFetchGuard();
+	};
+
+	bootSessionGuard();
+	document.addEventListener('astro:page-load', bootSessionGuard);
+</script>

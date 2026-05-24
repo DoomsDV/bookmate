@@ -2,6 +2,7 @@
 import { ClientRouter } from 'astro:transitions';
 import FlashMessage from '../components/FlashMessage.astro';
 import FcmManager from '../components/FcmManager.astro';
+import SessionGuard from '../components/SessionGuard.astro';
 // 1. Importamos la información de la PWA
 import { pwaInfo } from 'virtual:pwa-info';
 
@@ -131,7 +132,12 @@ if (flashTypeFromCookie) {
     <body>
         <ClientRouter />
         <slot />
-        {hasSession && <FcmManager />}
+        {hasSession && (
+            <>
+                <SessionGuard />
+                <FcmManager />
+            </>
+        )}
         {flashMessage && (
             <div class="pointer-events-none fixed bottom-8 left-1/2 z-100 flex w-full -translate-x-1/2 justify-center px-4 sm:bottom-10">
                 <FlashMessage
