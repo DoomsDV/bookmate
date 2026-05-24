@@ -24,13 +24,9 @@ const toSafePageStatus = (status: number, hasProfile: boolean) => {
 	return 200;
 };
 
-const queryLocationId = parseLocationId(
+const initialLocationId = parseLocationId(
 	Astro.url.searchParams.get('loc_id') ?? Astro.url.searchParams.get('loc')
 );
-const envDefaultLocationId = parseLocationId(
-	String(import.meta.env.PUBLIC_BOOKMATE_DEFAULT_LOCATION_ID ?? '')
-);
-const initialLocationId = queryLocationId || envDefaultLocationId || 0;
 const googleMapsApiKey =
 	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
 	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??

@@ -77,7 +77,6 @@ interface ImportMetaEnv {
     readonly GOOGLE_REDIRECT_URI?: string;
 
     readonly PUBLIC_BOOKMATE_PUBLIC_DOMAIN?: string;
-    readonly PUBLIC_BOOKMATE_DEFAULT_LOCATION_ID?: string;
     readonly PUBLIC_BOOKMATE_PROFILE_PLACEHOLDER_IMAGE_URL?: string;
     readonly PUBLIC_G_MAPS_API_KEY?: string;
     readonly PUBLIC_G_MAPS_API_KEYS?: string;
