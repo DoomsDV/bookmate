@@ -15,13 +15,18 @@ import {
 const parseToken = (value: string | undefined) => String(value || '').trim();
 
 const parseUpdatePayload = (source: any): PublicReservationUpdatePayload => {
-	const payload = {
+	const payload: PublicReservationUpdatePayload = {
 		start_time: String(source?.start_time || '').trim(),
 		end_time: String(source?.end_time || '').trim(),
 	};
 
 	if (!payload.start_time || !payload.end_time) {
 		throw new PublicBookingApiError('start_time y end_time son obligatorios.', 400);
+	}
+
+	const locationId = Number(source?.loc_id_location);
+	if (Number.isInteger(locationId) && locationId > 0) {
+		payload.loc_id_location = locationId;
 	}
 
 	return payload;

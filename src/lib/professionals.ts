@@ -1,4 +1,5 @@
 import { resolveOrdsApiUrl } from './env-urls';
+import { ROLES } from '../config/roles';
 
 export const PROFESSIONALS_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_PROFESSIONALS_URL,
@@ -55,6 +56,27 @@ export interface ProfessionalFieldError {
 	field: string;
 	message: string;
 }
+
+export const PROFESSIONAL_SELF_ADMIN_ROLE_MESSAGE =
+	'No puedes modificar tu propio rol de administrador.';
+
+export const PROFESSIONAL_SELF_ADMIN_DELETE_MESSAGE =
+	'No puedes eliminar tu propia cuenta de administrador.';
+
+export const PROFESSIONAL_SELF_ADMIN_STATUS_MESSAGE =
+	'No puedes modificar tu propio estado como administrador.';
+
+export const isAdminRoleId = (roleId: number) => roleId === ROLES.ADMIN;
+
+const isSelfAdminContext = (params: {
+	targetUserId: number;
+	callerUserId: number;
+	currentRoleId: number;
+}) =>
+	params.targetUserId > 0 &&
+	params.callerUserId > 0 &&
+	params.targetUserId === params.callerUserId &&
+	isAdminRoleId(params.currentRoleId);
 
 export interface CreateProfessionalWithUserPayload {
 	rol_id_role: number;
@@ -145,6 +167,74 @@ export class ProfessionalsApiError extends Error {
 		this.fieldErrors = fieldErrors;
 	}
 }
+
+export const assertProfessionalSelfAdminRoleChange = (params: {
+	targetUserId: number;
+	callerUserId: number;
+	currentRoleId: number;
+	nextRoleId: number;
+}) => {
+	if (
+		isSelfAdminContext(params) &&
+		params.nextRoleId !== params.currentRoleId
+	) {
+		throw new ProfessionalsApiError(
+			PROFESSIONAL_SELF_ADMIN_ROLE_MESSAGE,
+			409,
+			undefined,
+			[{ field: 'rol_id_role', message: PROFESSIONAL_SELF_ADMIN_ROLE_MESSAGE }]
+		);
+	}
+};
+
+export const assertProfessionalSelfAdminUpdate = (params: {
+	targetUserId: number;
+	callerUserId: number;
+	currentRoleId: number;
+	nextRoleId: number;
+	currentUserIsActive: 0 | 1;
+	nextUserIsActive?: 0 | 1;
+	currentProfIsActive: 0 | 1;
+	nextProfIsActive?: 0 | 1;
+}) => {
+	if (!isSelfAdminContext(params)) return;
+
+	assertProfessionalSelfAdminRoleChange(params);
+
+	if (
+		params.nextUserIsActive !== undefined &&
+		params.nextUserIsActive !== params.currentUserIsActive
+	) {
+		throw new ProfessionalsApiError(
+			PROFESSIONAL_SELF_ADMIN_STATUS_MESSAGE,
+			409,
+			undefined,
+			[{ field: 'user_is_active', message: PROFESSIONAL_SELF_ADMIN_STATUS_MESSAGE }]
+		);
+	}
+
+	if (
+		params.nextProfIsActive !== undefined &&
+		params.nextProfIsActive !== params.currentProfIsActive
+	) {
+		throw new ProfessionalsApiError(
+			PROFESSIONAL_SELF_ADMIN_STATUS_MESSAGE,
+			409,
+			undefined,
+			[{ field: 'prof_is_active', message: PROFESSIONAL_SELF_ADMIN_STATUS_MESSAGE }]
+		);
+	}
+};
+
+export const assertProfessionalSelfAdminDelete = (params: {
+	targetUserId: number;
+	callerUserId: number;
+	currentRoleId: number;
+}) => {
+	if (isSelfAdminContext(params)) {
+		throw new ProfessionalsApiError(PROFESSIONAL_SELF_ADMIN_DELETE_MESSAGE, 409);
+	}
+};
 
 const toNumber = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);

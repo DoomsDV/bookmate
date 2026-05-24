@@ -3,8 +3,10 @@ import Layout from '../../layouts/Layout.astro';
 import AppAlert from '../../components/AppAlert.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import {
+	getPublicProfileWithOrds,
 	getPublicReservationWithOrds,
 	PublicBookingApiError,
+	type PublicBookingLocation,
 	type PublicReservationDetail,
 } from '../../lib/public-booking';
 import '../../styles/global.css';
@@ -33,12 +35,46 @@ const isCancelled =
 	Boolean(reservation) && String(reservation?.status || '').trim().toUpperCase() === 'CANCELADO';
 const professionalSlug = String(reservation?.professional_slug || '').trim();
 const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
+const googleMapsApiKey =
+	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
+	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
+	'';
+
+let reservationLocations: PublicBookingLocation[] = [];
+
+if (reservation && professionalSlug) {
+	try {
+		const profile = await getPublicProfileWithOrds(professionalSlug);
+		reservationLocations = Array.isArray(profile.locations) ? profile.locations : [];
+	} catch {
+		reservationLocations = [];
+	}
+}
+
+if (reservation && reservationLocations.length === 0) {
+	reservationLocations = [
+		{
+			id_location: reservation.loc_id_location,
+			name: reservation.location_name,
+			address: reservation.location_address,
+		},
+	];
+}
+
+const serializedLocations = reservation
+	? JSON.stringify(reservationLocations).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
+	: '';
 ---
 
 <Layout>
 	<main class="public-booking-shell reservation-shell relative z-10 mx-auto min-h-screen w-full max-w-4xl px-2 py-6 sm:px-4 md:px-6 lg:py-8">
 		<div aria-hidden="true" class="pointer-events-none fixed inset-0 z-[-1] bg-(--surface-background)"></div>
-		<section class="reservation-card grid gap-4" data-reservation-root data-token={token}>
+		<section
+			class="reservation-card grid gap-4"
+			data-reservation-root
+			data-token={token}
+			data-google-maps-api-key={googleMapsApiKey}
+		>
 			{loadError || !reservation ? (
 				<div class="reservation-state rounded-[28px] bg-(--surface-container) p-6 shadow-sm">
 					<span class="material-symbols-rounded">event_busy</span>
@@ -49,6 +85,7 @@ const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
 			) : (
 				<>
 					<script type="application/json" id="reservation-json" set:html={serializedReservation}></script>
+					<script type="application/json" id="reservation-locations-json" set:html={serializedLocations}></script>
 
 					<header class="reservation-header rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6">
 						<div class="reservation-header-content">
@@ -75,7 +112,7 @@ const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
 						</div>
 						<div>
 							<span>Sucursal</span>
-							<strong>{reservation.location_name}</strong>
+							<strong data-location-name>{reservation.location_name}</strong>
 						</div>
 						<div>
 							<span>Estado</span>
@@ -148,8 +185,9 @@ const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
 								Consultando horarios disponibles...
 							</div>
 
-							<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4" data-reservation-slots></div>
+							<div class="grid gap-6" data-reservation-slots-container></div>
 							<input type="hidden" id="reservation_slot" name="slot" required data-reservation-slot />
+							<input type="hidden" name="loc_id_location" data-reservation-location />
 							<p data-no-reservation-slots class="hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)">
 								No hay horarios disponibles para este día.
 							</p>
@@ -168,6 +206,37 @@ const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
 							</button>
 						</div>
 					</form>
+
+					<dialog
+						class="public-map-modal rounded-[28px] border border-(--outline-variant) bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70"
+						data-public-map-modal
+					>
+						<div class="grid gap-4 p-5 sm:p-6">
+							<div class="flex items-start justify-between gap-4">
+								<div>
+									<h2 class="text-xl font-semibold tracking-tight">Ubicación</h2>
+									<p class="mt-1 text-sm text-(--on-surface-variant)" data-public-map-address></p>
+								</div>
+								<button
+									type="button"
+									class="grid h-10 w-10 place-items-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-highest) hover:text-(--on-surface)"
+									data-public-map-close
+									aria-label="Cerrar mapa"
+								>
+									<span class="material-symbols-rounded">close</span>
+								</button>
+							</div>
+							<div class="public-map-modal-divider"></div>
+							<div
+								class="h-80 overflow-hidden rounded-3xl border border-(--outline-variant) bg-(--surface-container-high)"
+								data-public-map-canvas
+							></div>
+							<p
+								class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
+								data-public-map-status
+							></p>
+						</div>
+					</dialog>
 					)}
 
 				</>
@@ -368,6 +437,40 @@ const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 		gap: 0.65rem;
 	}
+}
+
+.public-map-modal {
+	width: min(92vw, 44rem);
+	max-height: min(90vh, 42rem);
+	margin: auto;
+}
+
+.public-map-modal-divider {
+	height: 1px;
+	width: 100%;
+	border-radius: 999px;
+	background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--outline-variant) 72%, white 28%), transparent);
+	opacity: 0.9;
+}
+
+.public-location-link {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	width: fit-content;
+	border: 0;
+	background: transparent;
+	padding: 0;
+	font: inherit;
+	color: var(--primary);
+	text-decoration: none;
+	transition: color 0.15s ease;
+	cursor: pointer;
+}
+
+.public-location-link:hover .public-location-link__label {
+	text-decoration: underline;
+	text-underline-offset: 0.2em;
 }
 </style>
 

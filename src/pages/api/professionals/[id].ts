@@ -2,6 +2,8 @@ import type { APIRoute } from 'astro';
 
 import {
 	ProfessionalsApiError,
+	assertProfessionalSelfAdminDelete,
+	assertProfessionalSelfAdminUpdate,
 	deleteProfessionalWithUserWithOrds,
 	getProfessionalByIdWithOrds,
 	updateProfessionalWithUserWithOrds,
@@ -128,6 +130,11 @@ const requireToken = (token: string | undefined) =>
 		'No hay sesion valida para procesar personal.'
 	);
 
+const parseCallerUserId = (value: unknown) => {
+	const parsed = Number(value);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
+};
+
 export const GET: APIRoute = async ({ params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
@@ -162,6 +169,21 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 
 		const body = await parseBody(request);
 		const payload = parseUpdatePayload(body);
+		const professional = await getProfessionalByIdWithOrds(token, professionalId);
+		const targetUserId = Number(professional.user?.id_user ?? 0);
+		const currentRoleId = Number(professional.user?.rol_id_role ?? 0);
+
+		assertProfessionalSelfAdminUpdate({
+			targetUserId,
+			callerUserId: parseCallerUserId(locals.userId),
+			currentRoleId,
+			nextRoleId: payload.rol_id_role,
+			currentUserIsActive: (professional.user?.is_active === 0 ? 0 : 1) as 0 | 1,
+			nextUserIsActive: payload.user_is_active,
+			currentProfIsActive: (professional.is_active === 0 ? 0 : 1) as 0 | 1,
+			nextProfIsActive: payload.prof_is_active,
+		});
+
 		const updated = await updateProfessionalWithUserWithOrds(token, professionalId, payload);
 
 		return Response.json(
@@ -184,6 +206,13 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 		if (!professionalId) {
 			throw new ProfessionalsApiError('ID de personal invalido.', 400);
 		}
+
+		const professional = await getProfessionalByIdWithOrds(token, professionalId);
+		assertProfessionalSelfAdminDelete({
+			targetUserId: Number(professional.user?.id_user ?? 0),
+			callerUserId: parseCallerUserId(locals.userId),
+			currentRoleId: Number(professional.user?.rol_id_role ?? 0),
+		});
 
 		const deleted = await deleteProfessionalWithUserWithOrds(token, professionalId);
 

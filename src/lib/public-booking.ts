@@ -146,6 +146,7 @@ export interface PublicReservationDetail {
 export interface PublicReservationUpdatePayload {
 	start_time: string;
 	end_time: string;
+	loc_id_location?: number;
 }
 
 interface PublicApiFailureResponse {
