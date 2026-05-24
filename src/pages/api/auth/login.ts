@@ -1,6 +1,13 @@
 import type { APIRoute } from 'astro';
 
-import { AuthApiError, loginWithOrds, setOrganizationCacheCookies, setSessionCookies } from '../../../lib/auth';
+import {
+	AuthApiError,
+	isEmailVerificationRequiredError,
+	loginWithOrds,
+	resolveVerificationEmailFromAuthError,
+	setOrganizationCacheCookies,
+	setSessionCookies,
+} from '../../../lib/auth';
 import { getCurrentOrganizationWithOrds } from '../../../lib/organization';
 
 const mapFieldParamName = (field: string) => {
@@ -19,6 +26,17 @@ const wantsHtml = (request: Request) => {
 const withQuery = (path: string, params: URLSearchParams) => {
 	const queryString = params.toString();
 	return queryString ? `${path}?${queryString}` : path;
+};
+
+const buildVerifyEmailRedirect = (verificationEmail: string) => {
+	const verifyParams = new URLSearchParams();
+	verifyParams.set('pending_login', '1');
+
+	if (verificationEmail) {
+		verifyParams.set('email', verificationEmail);
+	}
+
+	return withQuery('/auth/verify-email', verifyParams);
 };
 
 const sanitizeRedirectTo = (value: unknown) => {
@@ -107,6 +125,32 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 				? error
 				: new AuthApiError('Ocurrio un error inesperado al iniciar sesion.', 500);
 		const fieldErrors = authError.fieldErrors;
+
+		if (isEmailVerificationRequiredError(authError)) {
+			const verificationEmail = resolveVerificationEmailFromAuthError(authError, identifier);
+			const verifyRedirect = buildVerifyEmailRedirect(verificationEmail);
+
+			if (wantsHtml(request)) {
+				return new Response(null, {
+					status: 302,
+					headers: {
+						Location: verifyRedirect,
+					},
+				});
+			}
+
+			return Response.json(
+				{
+					error:
+						typeof authError.details === 'string' && authError.details.trim()
+							? authError.details
+							: authError.message,
+					emailVerificationRequired: true,
+					redirect: verifyRedirect,
+				},
+				{ status: authError.status }
+			);
+		}
 
 		if (wantsHtml(request)) {
 			const redirectParams = new URLSearchParams();

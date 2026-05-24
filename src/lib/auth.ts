@@ -125,7 +125,15 @@ interface AuthFailureResponse {
 	details?: unknown;
 	errors?: unknown;
 	fieldErrors?: unknown;
+	email_verification_required?: number | boolean;
+	email?: string;
+	error_code?: string;
 }
+
+export type AuthApiErrorOptions = {
+	emailVerificationRequired?: boolean;
+	verificationEmail?: string;
+};
 
 interface OrgSpecialtiesSuccessResponse {
 	status: 'success';
@@ -146,13 +154,23 @@ export class AuthApiError extends Error {
 	status: number;
 	details?: unknown;
 	fieldErrors: AuthFieldError[];
+	emailVerificationRequired: boolean;
+	verificationEmail: string;
 
-	constructor(message: string, status = 400, details?: unknown, fieldErrors: AuthFieldError[] = []) {
+	constructor(
+		message: string,
+		status = 400,
+		details?: unknown,
+		fieldErrors: AuthFieldError[] = [],
+		options: AuthApiErrorOptions = {}
+	) {
 		super(message);
 		this.name = 'AuthApiError';
 		this.status = status;
 		this.details = details;
 		this.fieldErrors = fieldErrors;
+		this.emailVerificationRequired = Boolean(options.emailVerificationRequired);
+		this.verificationEmail = String(options.verificationEmail || '').trim();
 	}
 }
 
@@ -187,6 +205,44 @@ const getFailureDetails = (failureData: AuthFailureResponse, fallbackDetails?: u
 const getFailureFieldErrors = (failureData: AuthFailureResponse) =>
 	parseFieldErrors(failureData.errors ?? failureData.fieldErrors);
 
+const isEmailVerificationDetails = (details: unknown) => {
+	const text = String(details || '').toLowerCase();
+	return text.includes('verificar tu correo') || text.includes('verificar tu correo electr');
+};
+
+const getEmailVerificationFailureOptions = (
+	failureData: AuthFailureResponse
+): AuthApiErrorOptions => {
+	const emailVerificationRequired =
+		failureData.email_verification_required === 1 ||
+		failureData.email_verification_required === true ||
+		failureData.error_code === 'EMAIL_NOT_VERIFIED' ||
+		isEmailVerificationDetails(failureData.details);
+
+	if (!emailVerificationRequired) {
+		return { emailVerificationRequired: false, verificationEmail: '' };
+	}
+
+	const verificationEmail =
+		typeof failureData.email === 'string' && failureData.email.trim()
+			? failureData.email.trim()
+			: '';
+
+	return { emailVerificationRequired: true, verificationEmail };
+};
+
+export const isEmailVerificationRequiredError = (error: unknown) =>
+	error instanceof AuthApiError && error.emailVerificationRequired;
+
+export const resolveVerificationEmailFromAuthError = (error: AuthApiError, identifier = '') => {
+	if (error.verificationEmail) return error.verificationEmail;
+
+	const identifierValue = String(identifier || '').trim();
+	if (identifierValue.includes('@')) return identifierValue;
+
+	return '';
+};
+
 const isSuccessResponse = (value: unknown): value is AuthSuccessResponse => {
 	if (!value || typeof value !== 'object') return false;
 
@@ -215,7 +271,8 @@ const parseAuthResponse = async (response: Response) => {
 			getFailureMessage(failureData, 'No fue posible autenticar la solicitud.'),
 			response.status || 400,
 			getFailureDetails(failureData),
-			fieldErrors
+			fieldErrors,
+			getEmailVerificationFailureOptions(failureData)
 		);
 	}
 
