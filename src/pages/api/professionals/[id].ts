@@ -173,15 +173,18 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 		const targetUserId = Number(professional.user?.id_user ?? 0);
 		const currentRoleId = Number(professional.user?.rol_id_role ?? 0);
 
+		const currentUserIsActive = (professional.user?.is_active === 0 ? 0 : 1) as 0 | 1;
+		const currentProfIsActive = (professional.is_active === 0 ? 0 : 1) as 0 | 1;
+
 		assertProfessionalSelfAdminUpdate({
 			targetUserId,
 			callerUserId: parseCallerUserId(locals.userId),
 			currentRoleId,
-			nextRoleId: payload.rol_id_role,
-			currentUserIsActive: (professional.user?.is_active === 0 ? 0 : 1) as 0 | 1,
-			nextUserIsActive: payload.user_is_active,
-			currentProfIsActive: (professional.is_active === 0 ? 0 : 1) as 0 | 1,
-			nextProfIsActive: payload.prof_is_active,
+			nextRoleId: payload.rol_id_role > 0 ? payload.rol_id_role : currentRoleId,
+			currentUserIsActive,
+			nextUserIsActive: payload.user_is_active ?? currentUserIsActive,
+			currentProfIsActive,
+			nextProfIsActive: payload.prof_is_active ?? currentProfIsActive,
 		});
 
 		const updated = await updateProfessionalWithUserWithOrds(token, professionalId, payload);

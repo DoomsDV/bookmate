@@ -209,7 +209,7 @@ const toPageHref = (page: number) => {
 				<div class="profile-photo-uploader__content">
 					<div class="profile-photo-uploader__copy">
 						<h3>Foto de perfil</h3>
-						<p>Arrastra una imagen o selecciona un archivo JPG o PNG.</p>
+						<p>Arrastra una imagen o selecciona un archivo JPG o PNG. Podrás recortarla y centrarla antes de guardar.</p>
 					</div>
 					<div class="profile-photo-uploader__actions">
 						<label for="file-upload" class="profile-photo-uploader__button">
@@ -398,6 +398,40 @@ const toPageHref = (page: number) => {
 			</div>
 		</form>
 	</dialog>
+
+	<dialog
+		class="profile-crop-modal w-[min(24rem,calc(100vw-1.5rem))] max-w-[min(24rem,calc(100vw-1.5rem))] rounded-[1.35rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_20px_60px_rgba(0,0,0,0.28)]"
+		data-profile-crop-modal
+	>
+		<div class="flex flex-col">
+			<div class="flex items-start justify-between gap-3 border-b border-(--shell-border) px-5 py-4">
+				<div>
+					<h3 class="m-0 text-[1.05rem] font-extrabold tracking-tight text-(--on-surface)">Recortar foto</h3>
+					<p class="mt-1 mb-0 text-[0.84rem] font-medium text-(--on-surface-variant)">Arrastra para centrar la imagen.</p>
+				</div>
+				<button
+					type="button"
+					class="flex size-8 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface)"
+					data-close-profile-crop
+					aria-label="Cerrar recorte"
+				>
+					<span class="material-symbols-rounded text-[1.2rem]">close</span>
+				</button>
+			</div>
+
+			<div class="flex justify-center px-4 py-5">
+				<div class="profile-crop-modal__mount" data-profile-crop-mount></div>
+			</div>
+
+			<div class="flex justify-end gap-2 border-t border-(--shell-border) px-5 py-4">
+				<button type="button" class="modal-action-secondary" data-close-profile-crop>Cancelar</button>
+				<button type="button" class="modal-action-primary" data-confirm-profile-crop>
+					<span class="material-symbols-rounded text-[1.1rem]">check</span>
+					Usar foto
+				</button>
+			</div>
+		</div>
+	</dialog>
 </professional-manager>
 
 <AppAlert />
@@ -405,6 +439,10 @@ const toPageHref = (page: number) => {
 
 <script>
 	import TomSelect from 'tom-select';
+	import {
+		isAcceptedProfileImage,
+		ProfileImageCropper,
+	} from '../../lib/profile-image-crop';
 	import {
 		PARAGUAY_MOBILE_PHONE_ERROR,
 		parseParaguayMobilePhone,
@@ -430,6 +468,9 @@ const toPageHref = (page: number) => {
 			previewPlaceholder: HTMLElement | null;
 			photoDropzone: HTMLElement | null;
 			roleSelfAdminHint: HTMLElement | null;
+			cropModal: HTMLDialogElement | null;
+			cropMount: HTMLElement | null;
+			confirmCropBtn: HTMLButtonElement | null;
 		};
 
 		private formEls!: {
@@ -458,6 +499,8 @@ const toPageHref = (page: number) => {
 		private editingId: number | null = null;
 		private editingUserId: number | null = null;
 		private editingRoleId: number | null = null;
+		private editingUserIsActive: 0 | 1 | null = null;
+		private editingProfIsActive: 0 | 1 | null = null;
 		private closeTimer: number | null = null;
 		private slugSuggestTimer: number | null = null;
 		private slugRequestSeq = 0;
@@ -478,6 +521,9 @@ const toPageHref = (page: number) => {
 		private suppressServicesTouched = false;
 
 		private professionalReadRequestSeq = 0;
+		private profileImageCropper: ProfileImageCropper | null = null;
+		private pendingCropSource: File | null = null;
+		private cropBusy = false;
 
 		connectedCallback() {
 			if (this.abortController) return;
@@ -504,6 +550,9 @@ const toPageHref = (page: number) => {
 				previewPlaceholder: this.querySelector<HTMLElement>('[data-profile-placeholder]'),
 				photoDropzone: this.querySelector<HTMLElement>('[data-profile-upload-dropzone]'),
 				roleSelfAdminHint: this.querySelector<HTMLElement>('[data-role-self-admin-hint]'),
+				cropModal: this.querySelector<HTMLDialogElement>('[data-profile-crop-modal]'),
+				cropMount: this.querySelector<HTMLElement>('[data-profile-crop-mount]'),
+				confirmCropBtn: this.querySelector<HTMLButtonElement>('[data-confirm-profile-crop]'),
 			};
 
 			const formNode = this.els.form;
@@ -531,7 +580,7 @@ const toPageHref = (page: number) => {
 			this.addEventListener('keydown', this.handleRootKeydown, { signal });
 			this.els.form?.addEventListener('submit', this.handleSubmit, { signal });
 
-			this.formEls.image?.addEventListener('change', () => this.setImageFileNameLabel(), { signal });
+			this.formEls.image?.addEventListener('change', () => this.handleProfileImageInputChange(), { signal });
 			this.els.photoDropzone?.addEventListener('dragover', this.handlePhotoDragOver, { signal });
 			this.els.photoDropzone?.addEventListener('dragleave', this.handlePhotoDragLeave, { signal });
 			this.els.photoDropzone?.addEventListener('drop', this.handlePhotoDrop, { signal });
@@ -557,6 +606,7 @@ const toPageHref = (page: number) => {
 				this.servicesTom.destroy();
 				this.servicesTom = null;
 			}
+			this.closeProfileImageCrop(true);
 		}
 
 		private async requestApi<T = any>(url: string, options?: RequestInit): Promise<any> {
@@ -574,6 +624,23 @@ const toPageHref = (page: number) => {
 		private handleRootClick = (event: MouseEvent) => {
 			const target = event.target;
 			if (!(target instanceof Element)) return;
+
+			if (this.els.cropModal?.open && this.els.cropModal === target) {
+				this.closeProfileImageCrop(true);
+				return;
+			}
+
+			const closeCropTrigger = target.closest('[data-close-profile-crop]');
+			if (closeCropTrigger && this.contains(closeCropTrigger)) {
+				this.closeProfileImageCrop(true);
+				return;
+			}
+
+			const confirmCropTrigger = target.closest('[data-confirm-profile-crop]');
+			if (confirmCropTrigger && this.contains(confirmCropTrigger)) {
+				void this.confirmProfileImageCrop();
+				return;
+			}
 
 			if (this.els.modal && target === this.els.modal) {
 				this.closeModal();
@@ -693,6 +760,8 @@ const toPageHref = (page: number) => {
 			if (!isEdit) {
 				this.editingUserId = null;
 				this.editingRoleId = null;
+				this.editingUserIsActive = null;
+				this.editingProfIsActive = null;
 			}
 
 			this.applySelfAdminFieldRestrictions();
@@ -960,6 +1029,91 @@ const toPageHref = (page: number) => {
 			this.setImageFileNameLabel();
 		}
 
+		private resetProfileImageInput() {
+			if (this.formEls.image) {
+				this.formEls.image.value = '';
+			}
+		}
+
+		private handleProfileImageInputChange() {
+			const file = this.formEls.image?.files?.[0] ?? null;
+			this.resetProfileImageInput();
+			if (!file) return;
+			void this.openProfileImageCrop(file);
+		}
+
+		private async openProfileImageCrop(file: File) {
+			if (this.formEls.image?.disabled) return;
+			if (!isAcceptedProfileImage(file)) {
+				this.setProfileImageFieldError('Selecciona una imagen JPG o PNG.');
+				return;
+			}
+
+			if (!this.els.cropModal || !this.els.cropMount) {
+				this.setProfileImageFile(file);
+				return;
+			}
+
+			this.setProfileImageFieldError('');
+			this.pendingCropSource = file;
+			this.cropBusy = true;
+			this.setCropModalBusy(true);
+
+			if (!this.profileImageCropper) {
+				this.profileImageCropper = new ProfileImageCropper(this.els.cropMount);
+			}
+
+			try {
+				if (!this.els.cropModal.open) {
+					this.els.cropModal.showModal();
+				}
+				await this.profileImageCropper.bindFile(file);
+			} catch {
+				this.setProfileImageFieldError('No se pudo preparar la imagen para recortar.');
+				this.closeProfileImageCrop(true);
+			} finally {
+				this.cropBusy = false;
+				this.setCropModalBusy(false);
+			}
+		}
+
+		private setCropModalBusy(busy: boolean) {
+			if (this.els.confirmCropBtn) {
+				this.els.confirmCropBtn.disabled = busy;
+			}
+		}
+
+		private closeProfileImageCrop(cancelled: boolean) {
+			if (this.els.cropModal?.open) {
+				this.els.cropModal.close();
+			}
+			this.profileImageCropper?.destroy();
+			this.pendingCropSource = null;
+			this.cropBusy = false;
+			this.setCropModalBusy(false);
+			if (cancelled) {
+				this.resetProfileImageInput();
+			}
+		}
+
+		private async confirmProfileImageCrop() {
+			if (this.cropBusy || !this.pendingCropSource || !this.profileImageCropper) return;
+
+			this.cropBusy = true;
+			this.setCropModalBusy(true);
+
+			try {
+				const cropped = await this.profileImageCropper.exportJpeg(this.pendingCropSource.name);
+				this.setProfileImageFile(cropped);
+				this.closeProfileImageCrop(false);
+			} catch {
+				this.setProfileImageFieldError('No se pudo recortar la imagen. Intenta de nuevo.');
+			} finally {
+				this.cropBusy = false;
+				this.setCropModalBusy(false);
+			}
+		}
+
 		private handlePhotoDragOver = (event: DragEvent) => {
 			if (this.formEls.image?.disabled) return;
 			event.preventDefault();
@@ -987,7 +1141,7 @@ const toPageHref = (page: number) => {
 				this.setProfileImageFieldError('Selecciona una imagen JPG o PNG.');
 				return;
 			}
-			this.setProfileImageFile(file);
+			void this.openProfileImageCrop(file);
 		}
 
 		private clearSlugSuggestTimer() {
@@ -1189,11 +1343,13 @@ const toPageHref = (page: number) => {
 				if (formEls.role) formEls.role.value = user.rol_id_role || '';
 				this.editingUserId = Number(user.id_user || 0) || null;
 				this.editingRoleId = Number(user.rol_id_role || 0) || null;
+				this.editingUserIsActive = user.is_active === 0 ? 0 : 1;
+				this.editingProfIsActive = prof.is_active === 0 ? 0 : 1;
 				this.applySelfAdminFieldRestrictions();
 				if (formEls.phone) formEls.phone.value = this.formatParaguayPhoneLocal(prof.phone_number || '');
 				if (formEls.slug) formEls.slug.value = prof.profile_slug || '';
-				if (formEls.userActive) formEls.userActive.value = user.is_active === 0 ? '0' : '1';
-				if (formEls.profActive) formEls.profActive.value = prof.is_active === 0 ? '0' : '1';
+				if (formEls.userActive) formEls.userActive.value = String(this.editingUserIsActive);
+				if (formEls.profActive) formEls.profActive.value = String(this.editingProfIsActive);
 				
 				this.setPreviewImage(prof.profile_image_url);
 
@@ -1218,6 +1374,7 @@ const toPageHref = (page: number) => {
 
 		private closeModal() {
 			if (!this.els.modal?.open) return;
+			this.closeProfileImageCrop(true);
 			this.professionalReadRequestSeq++;
 			this.els.modal.classList.add('is-closing');
 			this.clearSlugSuggestTimer();
@@ -1252,7 +1409,10 @@ const toPageHref = (page: number) => {
 			if (!this.els.form) return;
 			
 			const fd = new FormData(this.els.form);
-			const roleRaw = String(fd.get('rol_id_role') || '').trim();
+			const isSelfAdmin = this.isEditingSelfAdmin();
+			const roleRaw = isSelfAdmin && this.editingRoleId
+				? String(this.editingRoleId)
+				: String(fd.get('rol_id_role') || '').trim();
 			const pass = String(fd.get('password') || '');
 			
 			if (this.mode === 'create' && !pass) {
@@ -1267,6 +1427,19 @@ const toPageHref = (page: number) => {
 				return;
 			}
 			
+			const userIsActive: 0 | 1 =
+				isSelfAdmin && this.editingUserIsActive !== null
+					? this.editingUserIsActive
+					: fd.get('user_is_active') === '0'
+						? 0
+						: 1;
+			const profIsActive: 0 | 1 =
+				isSelfAdmin && this.editingProfIsActive !== null
+					? this.editingProfIsActive
+					: fd.get('prof_is_active') === '0'
+						? 0
+						: 1;
+
 			const payload: any = {
 				rol_id_role: Number(roleRaw),
 				apex_user_name: String(fd.get('apex_user_name') || '').trim(),
@@ -1274,8 +1447,8 @@ const toPageHref = (page: number) => {
 				last_name: String(fd.get('last_name') || '').trim(),
 				email: String(fd.get('email') || '').trim(),
 				phone_number: parsedPhone.e164,
-				user_is_active: fd.get('user_is_active') === '0' ? 0 : 1,
-				prof_is_active: fd.get('prof_is_active') === '0' ? 0 : 1,
+				user_is_active: userIsActive,
+				prof_is_active: profIsActive,
 			};
 			
 			if (this.mode === 'create' || pass) payload.password = pass;
@@ -1677,5 +1850,44 @@ const toPageHref = (page: number) => {
 	dialog[data-professional-modal] .ts-wrapper .ts-dropdown .option.active {
 		background: var(--primary-soft);
 		color: var(--primary);
+	}
+
+	dialog[data-profile-crop-modal] {
+		position: fixed;
+		inset: 0;
+		margin: auto;
+		max-height: calc(100vh - 2rem);
+		overflow: hidden;
+	}
+
+	dialog[data-profile-crop-modal]::backdrop {
+		background: rgba(0, 0, 0, 0.55);
+	}
+
+	.profile-crop-modal__mount {
+		width: min(100%, 18.5rem);
+		min-height: 18.5rem;
+	}
+
+	.profile-crop-modal__mount .cr-boundary {
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--surface-container-high) 88%, #0f172a 12%);
+	}
+
+	.profile-crop-modal__mount .cr-viewport {
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 55%, white 45%);
+	}
+
+	.profile-crop-modal__mount .cr-slider-wrap {
+		margin-top: 0.85rem;
+	}
+
+	.profile-crop-modal__mount .cr-slider {
+		background: var(--shell-border);
+	}
+
+	.profile-crop-modal__mount .cr-slider::-webkit-slider-thumb,
+	.profile-crop-modal__mount .cr-slider::-moz-range-thumb {
+		background: var(--primary);
 	}
 </style>

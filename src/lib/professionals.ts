@@ -90,6 +90,7 @@ export interface CreateProfessionalWithUserPayload {
 	spe_id_specialty?: number;
 	profile_slug?: string;
 	prof_is_active?: 0 | 1;
+	/** JPEG recortado en cliente (p. ej. 512×512) codificado en base64 sin prefijo data URL. */
 	image_base64?: string;
 	image_name?: string;
 	image_mime?: string;
@@ -108,11 +109,19 @@ export interface UpdateProfessionalWithUserPayload {
 	spe_id_specialty?: number;
 	profile_slug?: string;
 	prof_is_active?: 0 | 1;
+	/** JPEG recortado en cliente (p. ej. 512×512) codificado en base64 sin prefijo data URL. */
 	image_base64?: string;
 	image_name?: string;
 	image_mime?: string;
 	services?: number[];
 }
+
+export {
+	PROFILE_IMAGE_ACCEPT_MIME,
+	PROFILE_IMAGE_OUTPUT_SIZE,
+	PROFILE_IMAGE_RECOMMENDED_MAX_BYTES,
+	isAcceptedProfileImage,
+} from './profile-image-crop';
 
 interface CreateProfessionalSuccessResponse {
 	status: 'success';
@@ -174,9 +183,12 @@ export const assertProfessionalSelfAdminRoleChange = (params: {
 	currentRoleId: number;
 	nextRoleId: number;
 }) => {
+	const effectiveNextRoleId =
+		params.nextRoleId > 0 ? params.nextRoleId : params.currentRoleId;
+
 	if (
 		isSelfAdminContext(params) &&
-		params.nextRoleId !== params.currentRoleId
+		effectiveNextRoleId !== params.currentRoleId
 	) {
 		throw new ProfessionalsApiError(
 			PROFESSIONAL_SELF_ADMIN_ROLE_MESSAGE,
