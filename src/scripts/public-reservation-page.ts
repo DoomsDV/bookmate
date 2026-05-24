@@ -133,7 +133,9 @@ export const initializePublicReservationPage = () => {
 	const prevMonthButton = root.querySelector<HTMLButtonElement>('[data-calendar-prev]');
 	const nextMonthButton = root.querySelector<HTMLButtonElement>('[data-calendar-next]');
 	const mapModal = root.querySelector<HTMLDialogElement>('[data-public-map-modal]');
+	const mapCanvasWrap = root.querySelector<HTMLElement>('.public-map-canvas-wrap');
 	const mapCanvas = root.querySelector<HTMLElement>('[data-public-map-canvas]');
+	const mapLoading = root.querySelector<HTMLElement>('[data-public-map-loading]');
 	const mapAddress = root.querySelector<HTMLElement>('[data-public-map-address]');
 	const mapStatus = root.querySelector<HTMLElement>('[data-public-map-status]');
 	const mapCloseButton = root.querySelector<HTMLButtonElement>('[data-public-map-close]');
@@ -196,6 +198,14 @@ export const initializePublicReservationPage = () => {
 		if (!mapStatus) return;
 		mapStatus.textContent = message;
 		mapStatus.classList.toggle('hidden', !message.trim());
+	};
+
+	const setMapLoading = (isLoading: boolean) => {
+		if (mapLoading) {
+			mapLoading.classList.toggle('hidden', !isLoading);
+			mapLoading.setAttribute('aria-hidden', isLoading ? 'false' : 'true');
+		}
+		mapCanvasWrap?.classList.toggle('is-loading', isLoading);
 	};
 
 	const getLocationCoordinatesFrom = (
@@ -299,33 +309,37 @@ export const initializePublicReservationPage = () => {
 		if (mapAddress) mapAddress.textContent = location.address || '';
 		if (!mapModal.open) mapModal.showModal();
 
-		let mapLocation = location;
-		let coords = getLocationCoordinatesFrom(mapLocation);
-
-		if (!coords) {
-			try {
-				mapLocation = await fetchPublicLocationDetails(mapLocation);
-				coords = getLocationCoordinatesFrom(mapLocation);
-			} catch (error) {
-				setMapStatus(
-					error instanceof Error ? error.message : 'No fue posible obtener la ubicación.'
-				);
-				return;
-			}
-		}
-
-		if (!coords) {
-			setMapStatus('Esta sucursal no tiene coordenadas cargadas.');
-			return;
-		}
-
-		if (mapAddress) {
-			mapAddress.textContent = mapLocation.address || location.address || '';
-		}
-
-		const locationTitle = getLocationLabel(mapLocation);
+		setMapLoading(true);
 
 		try {
+			let mapLocation = location;
+			let coords = getLocationCoordinatesFrom(mapLocation);
+
+			if (!coords) {
+				try {
+					mapLocation = await fetchPublicLocationDetails(mapLocation);
+					coords = getLocationCoordinatesFrom(mapLocation);
+				} catch (error) {
+					setMapStatus(
+						error instanceof Error ? error.message : 'No fue posible obtener la ubicación.'
+					);
+					setMapLoading(false);
+					return;
+				}
+			}
+
+			if (!coords) {
+				setMapStatus('Esta sucursal no tiene coordenadas cargadas.');
+				setMapLoading(false);
+				return;
+			}
+
+			if (mapAddress) {
+				mapAddress.textContent = mapLocation.address || location.address || '';
+			}
+
+			const locationTitle = getLocationLabel(mapLocation);
+
 			const maps = await loadGoogleMaps();
 			if (!mapInstance) {
 				mapInstance = new maps.Map(mapCanvas, {
@@ -353,9 +367,11 @@ export const initializePublicReservationPage = () => {
 			window.setTimeout(() => {
 				maps.event?.trigger?.(mapInstance, 'resize');
 				mapInstance?.setCenter?.(coords);
+				setMapLoading(false);
 			}, 80);
 		} catch (error) {
 			setMapStatus(error instanceof Error ? error.message : 'No fue posible mostrar el mapa.');
+			setMapLoading(false);
 		}
 	};
 

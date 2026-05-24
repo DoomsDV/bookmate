@@ -241,7 +241,9 @@ export const initializePublicBookingPage = () => {
 	const stepCompactLabel = root.querySelector<HTMLElement>('[data-step-compact-label]');
 	const stepProgressBar = root.querySelector<HTMLElement>('[data-step-progress-bar]');
 	const mapModal = root.querySelector<HTMLDialogElement>('[data-public-map-modal]');
+	const mapCanvasWrap = root.querySelector<HTMLElement>('.public-map-canvas-wrap');
 	const mapCanvas = root.querySelector<HTMLElement>('[data-public-map-canvas]');
+	const mapLoading = root.querySelector<HTMLElement>('[data-public-map-loading]');
 	const mapAddress = root.querySelector<HTMLElement>('[data-public-map-address]');
 	const mapStatus = root.querySelector<HTMLElement>('[data-public-map-status]');
 	const mapCloseButton = root.querySelector<HTMLButtonElement>('[data-public-map-close]');
@@ -347,6 +349,14 @@ export const initializePublicBookingPage = () => {
 		if (!mapStatus) return;
 		mapStatus.textContent = message;
 		mapStatus.classList.toggle('hidden', !message.trim());
+	};
+
+	const setMapLoading = (isLoading: boolean) => {
+		if (mapLoading) {
+			mapLoading.classList.toggle('hidden', !isLoading);
+			mapLoading.setAttribute('aria-hidden', isLoading ? 'false' : 'true');
+		}
+		mapCanvasWrap?.classList.toggle('is-loading', isLoading);
 	};
 
 	const getLocationCoordinatesFrom = (
@@ -485,42 +495,50 @@ export const initializePublicBookingPage = () => {
 		if (mapAddress) mapAddress.textContent = location?.address || '';
 		if (!mapModal.open) mapModal.showModal();
 
-		let mapLocation = location!;
-		let coords = getLocationCoordinatesFrom(mapLocation);
-
-		if (shouldFetchCoordinates || !coords) {
-			try {
-				mapLocation = await fetchPublicLocationDetails(mapLocation);
-				if (!isActiveMapOpen(mapLocation.id_location)) return;
-
-				applyLocationUpdate(mapLocation);
-				coords = getLocationCoordinatesFrom(mapLocation);
-			} catch (error) {
-				if (!isActiveMapOpen()) return;
-				setMapStatus(
-					error instanceof PublicBookingClientError
-						? error.message
-						: 'No fue posible obtener la ubicación.'
-				);
-				return;
-			}
-		}
-
-		if (!isActiveMapOpen(mapLocation.id_location)) return;
-
-		if (!coords) {
-			setMapStatus('Esta sucursal no tiene coordenadas cargadas.');
-			return;
-		}
-
-		if (mapAddress) {
-			mapAddress.textContent = mapLocation.address || location?.address || '';
-		}
-
-		const locationTitle =
-			String(mapLocation.name || location?.name || '').trim() || 'Ubicación';
+		setMapLoading(true);
 
 		try {
+			let mapLocation = location!;
+			let coords = getLocationCoordinatesFrom(mapLocation);
+
+			if (shouldFetchCoordinates || !coords) {
+				try {
+					mapLocation = await fetchPublicLocationDetails(mapLocation);
+					if (!isActiveMapOpen(mapLocation.id_location)) return;
+
+					applyLocationUpdate(mapLocation);
+					coords = getLocationCoordinatesFrom(mapLocation);
+				} catch (error) {
+					if (!isActiveMapOpen()) return;
+					setMapStatus(
+						error instanceof PublicBookingClientError
+							? error.message
+							: 'No fue posible obtener la ubicación.'
+					);
+					if (openSeq === mapOpenSeq) {
+						setMapLoading(false);
+					}
+					return;
+				}
+			}
+
+			if (!isActiveMapOpen(mapLocation.id_location)) return;
+
+			if (!coords) {
+				setMapStatus('Esta sucursal no tiene coordenadas cargadas.');
+				if (openSeq === mapOpenSeq) {
+					setMapLoading(false);
+				}
+				return;
+			}
+
+			if (mapAddress) {
+				mapAddress.textContent = mapLocation.address || location?.address || '';
+			}
+
+			const locationTitle =
+				String(mapLocation.name || location?.name || '').trim() || 'Ubicación';
+
 			const maps = await loadGoogleMaps();
 			if (!isActiveMapOpen(mapLocation.id_location)) return;
 
@@ -551,10 +569,16 @@ export const initializePublicBookingPage = () => {
 				if (!isActiveMapOpen(mapLocation.id_location)) return;
 				maps.event?.trigger?.(mapInstance, 'resize');
 				mapInstance?.setCenter?.(coords);
+				if (openSeq === mapOpenSeq) {
+					setMapLoading(false);
+				}
 			}, 80);
 		} catch (error) {
-			if (!isActiveMapOpen(mapLocation.id_location)) return;
+			if (!isActiveMapOpen()) return;
 			setMapStatus(error instanceof Error ? error.message : 'No fue posible mostrar el mapa.');
+			if (openSeq === mapOpenSeq) {
+				setMapLoading(false);
+			}
 		}
 	};
 

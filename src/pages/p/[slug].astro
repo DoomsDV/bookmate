@@ -398,7 +398,18 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 								</button>
 							</div>
 								<div class="public-map-modal-divider"></div>
-							<div class="h-80 overflow-hidden rounded-3xl border border-(--outline-variant) bg-(--surface-container-high)" data-public-map-canvas></div>
+							<div class="public-map-canvas-wrap relative h-80 overflow-hidden rounded-3xl border border-(--outline-variant) bg-(--surface-container-high)">
+								<div class="h-full w-full" data-public-map-canvas></div>
+								<div
+									class="public-map-loading absolute inset-0 z-10 hidden place-items-center bg-(--surface-container-high)/85 backdrop-blur-[2px]"
+									data-public-map-loading
+									aria-hidden="true"
+									aria-live="polite"
+									aria-label="Cargando mapa"
+								>
+									<span class="material-symbols-rounded animate-spin text-[1.75rem] text-(--primary)" aria-hidden="true">progress_activity</span>
+								</div>
+							</div>
 							<p class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)" data-public-map-status></p>
 						</div>
 					</dialog>
@@ -485,6 +496,18 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 		border-radius: 999px;
 		background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--outline-variant) 72%, white 28%), transparent);
 		opacity: 0.9;
+	}
+
+	.public-map-canvas-wrap.is-loading [data-public-map-canvas] {
+		visibility: hidden;
+	}
+
+	.public-map-loading {
+		display: grid;
+	}
+
+	.public-map-loading.hidden {
+		display: none;
 	}
 
 	.public-location-link {
