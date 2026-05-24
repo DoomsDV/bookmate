@@ -77,12 +77,12 @@ const visibleTeamItems = teamItems.filter((item) =>
 
 	<aside
 		id="app-side-nav"
-		class="relative h-full w-[min(20rem,100vw)] -translate-x-full overflow-y-auto border-r border-(--shell-border) bg-(--sidebar-surface) p-6 transform-gpu"
+		class="relative flex h-full w-[min(20rem,100vw)] -translate-x-full flex-col overflow-y-auto border-r border-(--shell-border) bg-(--sidebar-surface) transform-gpu"
 		data-side-nav
 	>
-		<div class="sidebar-account-header mb-7 border-b border-(--shell-border)/75 pb-5">
-			<div class="flex items-center justify-between gap-3">
-				<div class="sidebar-account-row">
+		<div class="shell-header-zone sidebar-account-header mb-7 shrink-0 px-6 pt-6">
+			<div class="flex w-full items-center justify-between gap-3">
+				<div class="sidebar-account-row min-w-0 flex-1">
 					<div
 						class:list={[
 							"workspace-avatar flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full text-xl font-bold",
@@ -107,7 +107,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 					</div>
 					<div class="sidebar-account-meta" data-sidebar-brand-text>
 						<div class="sidebar-account-title-row">
-							<p class="workspace-account-name max-w-40 truncate text-[1.1rem] leading-tight font-bold">
+							<p class="workspace-account-name text-[1.1rem] leading-snug font-bold">
 								{workspaceName}
 							</p>
 						</div>
@@ -129,6 +129,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 			</div>
 		</div>
 
+		<div class="flex-1 px-6 pb-6">
 		<nav aria-label="Side navigation móvil">
 			<ul class="space-y-2.5">
 				{
@@ -196,58 +197,62 @@ const visibleTeamItems = teamItems.filter((item) =>
 				}
 			</ul>
 		</nav>
+		</div>
 	</aside>
 </div>
 
 <aside
-	class="hidden h-full border-r border-(--shell-border)/85 bg-(--sidebar-surface) transition-[width] duration-200 lg:block"
+	class="hidden h-full flex-col border-r border-(--shell-border)/85 bg-(--sidebar-surface) transition-[width] duration-200 lg:flex"
 	data-desktop-sidebar
 >
 	<div
-		class="flex h-full flex-col px-6 py-7 transition-[padding] duration-200"
-		data-sidebar-desktop-inner
+		class="shell-header-zone sidebar-account-header mb-6 shrink-0 px-6"
+		data-sidebar-brand-block
 	>
-		<div class="sidebar-account-header mb-6 border-b border-(--shell-border)/75 pb-4" data-sidebar-brand-block>
-			<div class="sidebar-account-row" data-sidebar-brand>
-				<div
-					class:list={[
-						"workspace-avatar flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-bold",
-						workspaceLogoUrl ? "workspace-avatar--has-logo" : "workspace-avatar--empty",
-					]}
-					data-workspace-avatar
-				>
-					<span class="workspace-logo-placeholder" aria-hidden="true">
-						<span class="material-symbols-rounded">storefront</span>
-					</span>
-					{
-						workspaceLogoUrl ? (
-							<img
-								src={workspaceLogoUrl}
-								alt={`Logo de ${workspaceName}`}
-								class="workspace-logo-image size-full object-cover"
-								loading="eager"
-								onerror="this.classList.add('is-hidden'); this.removeAttribute('src');"
-							/>
-						) : null
-					}
-				</div>
-				<div class="sidebar-account-meta" data-sidebar-brand-text>
-					<div class="sidebar-account-title-row">
-						<p
-							class="workspace-account-name truncate text-[1.02rem] font-bold lg:text-[0.95rem]"
-							data-sidebar-title
-						>
-							{workspaceName}
-						</p>
-					</div>
-					<p class="workspace-account-subtitle truncate">
-						Plan Pro
+		<div class="sidebar-account-row w-full" data-sidebar-brand>
+			<div
+				class:list={[
+					"workspace-avatar flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-bold",
+					workspaceLogoUrl ? "workspace-avatar--has-logo" : "workspace-avatar--empty",
+				]}
+				data-workspace-avatar
+			>
+				<span class="workspace-logo-placeholder" aria-hidden="true">
+					<span class="material-symbols-rounded">storefront</span>
+				</span>
+				{
+					workspaceLogoUrl ? (
+						<img
+							src={workspaceLogoUrl}
+							alt={`Logo de ${workspaceName}`}
+							class="workspace-logo-image size-full object-cover"
+							loading="eager"
+							onerror="this.classList.add('is-hidden'); this.removeAttribute('src');"
+						/>
+					) : null
+				}
+			</div>
+			<div class="sidebar-account-meta" data-sidebar-brand-text>
+				<div class="sidebar-account-title-row">
+					<p
+						class="workspace-account-name text-[1.02rem] font-bold leading-snug lg:text-[0.95rem]"
+						data-sidebar-title
+					>
+						{workspaceName}
 					</p>
 				</div>
+				<p class="workspace-account-subtitle truncate">
+					Plan Pro
+				</p>
 			</div>
 		</div>
+	</div>
 
-		<nav class="mt-6" aria-label="Side navigation desktop">
+	<div
+		class="flex min-h-0 flex-1 flex-col px-6 pb-7 transition-[padding] duration-200"
+		data-sidebar-desktop-inner
+	>
+		<nav aria-label="Side navigation desktop">
 			<ul class="space-y-2">
 				{
 					visiblePrimaryItems.map((item) => (

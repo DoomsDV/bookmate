@@ -68,6 +68,7 @@
 	--sidebar-surface: #f4f9ff;
 	--content-surface: rgba(255, 255, 255, 0.36);
 	--shell-border: rgba(201, 214, 228, 0.95);
+	--shell-header-height: 4.5rem;
 	--primary: #2f6fdd;
 	--primary-soft: rgba(47, 111, 221, 0.15);
 	--primary-soft-hover: rgba(47, 111, 221, 0.22);
@@ -271,13 +272,17 @@ html[data-theme='dark'] [data-settings-modal] {
 		padding-right: 0.875rem;
 	}
 
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand-block] {
+		justify-content: center;
+		padding-inline: 0.875rem;
+	}
+
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand] {
 		justify-content: center;
+		width: 100%;
 		gap: 0;
-		padding-left: 0;
-		padding-right: 0;
-		margin-left: auto;
-		margin-right: auto;
+		padding: 0;
+		margin: 0;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-workspace-avatar] {
@@ -308,6 +313,29 @@ html[data-theme='dark'] [data-settings-modal] {
 a,
 button {
 	-webkit-tap-highlight-color: transparent;
+}
+
+@media (min-width: 640px) {
+	:root {
+		--shell-header-height: 5.25rem;
+	}
+}
+
+.shell-header-zone {
+	box-sizing: border-box;
+	height: var(--shell-header-height);
+	min-height: var(--shell-header-height);
+	display: flex;
+	align-items: center;
+	flex-shrink: 0;
+	border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+}
+
+.shell-header-zone.sidebar-account-header {
+	height: auto;
+	width: 100%;
+	padding-block: 0.65rem;
+	box-sizing: border-box;
 }
 
 .topbar-brand-link {
@@ -929,7 +957,7 @@ html[data-theme='dark'] .modal-action-danger:hover {
 }
 
 .sidebar-account-header {
-	padding-bottom: 0.95rem;
+	width: 100%;
 }
 
 .sidebar-account-row {
@@ -944,7 +972,7 @@ html[data-theme='dark'] .modal-action-danger:hover {
 
 .sidebar-account-title-row {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	min-width: 0;
 }
 
@@ -959,8 +987,10 @@ html[data-theme='dark'] .modal-action-danger:hover {
 	font-weight: 600;
 	letter-spacing: 0.01em;
 	font-size: 0.95rem;
-	line-height: 1.2;
+	line-height: 1.25;
 	color: var(--on-surface);
+	overflow-wrap: break-word;
+	word-break: break-word;
 }
 
 .workspace-account-subtitle {

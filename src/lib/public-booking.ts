@@ -33,6 +33,16 @@ export const PUBLIC_RESERVATION_API_URL = resolveOrdsPublicApiUrl(
 	'reservations/:token'
 );
 
+const resolvePublicLocationApiUrl = (locationId: number) => {
+	const safeId = encodeURIComponent(String(locationId));
+	const template = String(import.meta.env.ORDS_PUBLIC_LOCATION_URL || '').trim();
+	if (template) {
+		return template.replace(':id', safeId);
+	}
+
+	return `${PUBLIC_BOOKING_API_BASE_URL.replace(/\/+$/, '')}/locations/${safeId}`;
+};
+
 const resolvePublicDomainOrigin = () => {
 	const fromPublicDomain = normalizePublicDomainOrigin(
 		String(import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? '')
@@ -406,6 +416,25 @@ const normalizeLocation = (value: unknown): PublicBookingLocation | null => {
 	};
 };
 
+const normalizePublicLocationDetail = (value: unknown): PublicBookingLocation | null => {
+	if (!value || typeof value !== 'object') return null;
+
+	const source = value as Record<string, unknown>;
+	const idLocation = toPositiveInt(source.id_location, 0);
+	if (!idLocation) return null;
+
+	const latitude = Number(source.latitude);
+	const longitude = Number(source.longitude);
+
+	return {
+		id_location: idLocation,
+		name: String(source.name || '').trim(),
+		address: String(source.address || '').trim(),
+		latitude: Number.isFinite(latitude) ? latitude : undefined,
+		longitude: Number.isFinite(longitude) ? longitude : undefined,
+	};
+};
+
 const normalizeProfile = (value: unknown): PublicBookingProfile | null => {
 	if (!value || typeof value !== 'object') return null;
 
@@ -508,6 +537,27 @@ export const getPublicAvailableSlotsWithOrds = async (params: {
 	return data.data
 		.map((slot) => String(slot || '').trim())
 		.filter((slot) => /^\d{2}:\d{2}$/.test(slot));
+};
+
+export const getPublicLocationWithOrds = async (locationId: number): Promise<PublicBookingLocation> => {
+	const safeLocationId = toPositiveInt(locationId, 0);
+	if (!safeLocationId) {
+		throw new PublicBookingApiError('id de ubicación requerido.', 400);
+	}
+
+	const response = await fetch(resolvePublicLocationApiUrl(safeLocationId), {
+		method: 'GET',
+		headers: { Accept: 'application/json' },
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible cargar la ubicación.');
+	const rawLocation = Array.isArray(data.data) ? data.data[0] : data.data;
+	const location = normalizePublicLocationDetail(rawLocation);
+	if (!location) {
+		throw new PublicBookingApiError('No fue posible interpretar la ubicación.', 502);
+	}
+
+	return location;
 };
 
 export const createPublicAppointmentWithOrds = async (payload: PublicCreateAppointmentPayload) => {

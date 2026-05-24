@@ -160,7 +160,7 @@ const toPageHref = (page: number) => {
 			</div>
 		</div>
 
-		<form class="relative flex flex-col bg-(--surface)/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-professional-form>
+		<form class="relative flex flex-col overflow-hidden bg-(--surface)/30 min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-professional-form>
 			<div class="pointer-events-none fixed inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all" data-professional-loading>
 				<div class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
 					<span class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)">progress_activity</span>
@@ -168,8 +168,29 @@ const toPageHref = (page: number) => {
 				</div>
 			</div>
 
-			<div class="flex-1 px-7 py-7">
-			<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 mb-5 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
+			<div
+				class="professional-modal-feedback absolute top-0 z-20 flex justify-end"
+				data-professional-form-feedback
+			>
+				<div
+					class="professional-modal-feedback__alert hidden ml-auto max-w-md items-center gap-2 rounded-2xl border border-rose-500/25 px-4 py-2 text-[0.9rem] font-bold text-rose-600 shadow-sm dark:border-rose-400/30 dark:text-rose-300"
+					data-form-error
+					role="alert"
+					aria-live="polite"
+				>
+					<p class="m-0 min-w-0 flex-1 leading-snug font-bold" data-form-error-message></p>
+					<button
+						type="button"
+						class="professional-modal-feedback__close shrink-0 rounded-full p-0.5 text-rose-500 transition hover:bg-rose-500/10 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-400/10 dark:hover:text-rose-100"
+						data-dismiss-form-error
+						aria-label="Cerrar mensaje de error"
+					>
+						<span class="material-symbols-rounded block text-[1.15rem] leading-none">close</span>
+					</button>
+				</div>
+			</div>
+
+			<div class="flex-1 overflow-y-auto overscroll-contain px-7 py-7">
 
 			<div class="profile-photo-uploader mb-5 sm:mb-7" data-profile-upload-dropzone>
 				<div class="profile-photo-uploader__avatar">
@@ -347,7 +368,7 @@ const toPageHref = (page: number) => {
 			</div>
 			</div>
 			
-			<div class="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
+			<div class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
 				<div class="modal-footer">
 				<button type="button" class="hidden modal-action-danger" data-delete-professional>
 					<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
@@ -388,6 +409,8 @@ const toPageHref = (page: number) => {
 			deleteBtn: HTMLButtonElement | null;
 			loading: HTMLElement | null;
 			error: HTMLElement | null;
+			errorMessage: HTMLElement | null;
+			errorFeedback: HTMLElement | null;
 			title: HTMLElement | null;
 			description: HTMLElement | null;
 			submitIcon: HTMLElement | null;
@@ -453,6 +476,8 @@ const toPageHref = (page: number) => {
 				deleteBtn: this.querySelector<HTMLButtonElement>('[data-delete-professional]'),
 				loading: this.querySelector<HTMLElement>('[data-professional-loading]'),
 				error: this.querySelector<HTMLElement>('[data-form-error]'),
+				errorMessage: this.querySelector<HTMLElement>('[data-form-error-message]'),
+				errorFeedback: this.querySelector<HTMLElement>('[data-professional-form-feedback]'),
 				title: this.querySelector<HTMLElement>('[data-professional-modal-title]'),
 				description: this.querySelector<HTMLElement>('[data-professional-modal-description]'),
 				submitIcon: this.querySelector<HTMLElement>('[data-submit-professional-icon]'),
@@ -556,6 +581,13 @@ const toPageHref = (page: number) => {
 				return;
 			}
 
+			const dismissErrorTrigger = target.closest('[data-dismiss-form-error]');
+			if (dismissErrorTrigger && this.contains(dismissErrorTrigger)) {
+				event.preventDefault();
+				this.clearFormError();
+				return;
+			}
+
 			const openTrigger = target.closest('[data-open-professional-modal], [data-professional-card]');
 			if (!openTrigger || !this.contains(openTrigger)) return;
 
@@ -653,9 +685,16 @@ const toPageHref = (page: number) => {
 		}
 
 		private showFormError(message: string) {
-			if (!this.els.error) return;
-			this.els.error.textContent = message;
+			if (!this.els.error || !this.els.errorMessage) return;
+			this.els.errorMessage.textContent = message;
 			this.els.error.classList.remove('hidden');
+			this.els.errorFeedback?.classList.add('is-visible');
+		}
+
+		private clearFormError() {
+			if (this.els.errorMessage) this.els.errorMessage.textContent = '';
+			this.els.error?.classList.add('hidden');
+			this.els.errorFeedback?.classList.remove('is-visible');
 		}
 
 		private getPublicProfileUrl(): string {
@@ -704,10 +743,7 @@ const toPageHref = (page: number) => {
 		}
 
 		private clearErrors() {
-			if (this.els.error) {
-				this.els.error.textContent = '';
-				this.els.error.classList.add('hidden');
-			}
+			this.clearFormError();
 			for (const node of this.formEls.fieldErrors) {
 				node.textContent = '';
 				node.classList.add('hidden');
@@ -1274,6 +1310,52 @@ const toPageHref = (page: number) => {
 
 	dialog[data-professional-modal].is-closing::backdrop {
 		animation: professional-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
+	}
+
+	.professional-modal-feedback {
+		position: absolute;
+		top: 0;
+		left: 1.75rem;
+		right: calc(1.75rem + var(--professional-modal-scrollbar-size, 1rem));
+		display: none;
+		justify-content: flex-end;
+		padding: 0;
+		background: transparent;
+		pointer-events: none;
+	}
+
+	.professional-modal-feedback.is-visible {
+		display: flex;
+		margin-top: 0.5rem;
+	}
+
+	dialog[data-professional-modal] [data-professional-form] > .overflow-y-auto {
+		--professional-modal-scrollbar-size: 1rem;
+		scrollbar-gutter: stable;
+	}
+
+	.professional-modal-feedback__alert:not(.hidden) {
+		display: flex;
+		align-items: center;
+	}
+
+	.professional-modal-feedback__alert {
+		pointer-events: auto;
+		background: #ffe4e6;
+	}
+
+	.professional-modal-feedback__alert [data-form-error-message] {
+		margin: 0;
+	}
+
+	.professional-modal-feedback__close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	html[data-theme='dark'] .professional-modal-feedback__alert {
+		background: #3b1219;
 	}
 
 	.profile-photo-uploader {

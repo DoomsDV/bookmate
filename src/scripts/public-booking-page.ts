@@ -30,6 +30,11 @@ type BookingLocation = {
 	longitude?: number;
 };
 
+type LocationSlotGroup = {
+	location: BookingLocation;
+	slots: string[];
+};
+
 type BookingProfile = {
 	id_professional: number;
 	org_id_organization: number;
@@ -164,7 +169,7 @@ export const initializePublicBookingPage = () => {
 	const servicesGrid = root.querySelector<HTMLElement>('[data-services-grid]');
 	const calendarMonth = root.querySelector<HTMLElement>('[data-calendar-month]');
 	const calendarGrid = root.querySelector<HTMLElement>('[data-calendar-grid]');
-	const slotsGrid = root.querySelector<HTMLElement>('[data-slots-grid]');
+	const slotsContainer = root.querySelector<HTMLElement>('[data-slots-container]');
 	const noSlotsNode = root.querySelector<HTMLElement>('[data-no-slots]');
 	const slotsLoadingNode = root.querySelector<HTMLElement>('[data-slots-loading]');
 	const customerForm = root.querySelector<HTMLFormElement>('[data-customer-form]');
@@ -213,7 +218,7 @@ export const initializePublicBookingPage = () => {
 		!servicesGrid ||
 		!calendarMonth ||
 		!calendarGrid ||
-		!slotsGrid ||
+		!slotsContainer ||
 		!noSlotsNode ||
 		!slotsLoadingNode ||
 		!customerForm ||
@@ -247,11 +252,10 @@ export const initializePublicBookingPage = () => {
 
 	const configuredLocationId = toPositiveInt(root.dataset.locationId, 0);
 	const locations = Array.isArray(profile.locations) ? profile.locations : [];
-	const selectedLocation =
+	const defaultLocation =
 		locations.find((location) => location.id_location === configuredLocationId) ??
 		locations[0] ??
 		null;
-	const locationId = selectedLocation?.id_location || configuredLocationId || 1;
 	const mapsApiKey = String(root.dataset.googleMapsApiKey || '').trim();
 	const today = getTodayStart();
 
@@ -259,7 +263,8 @@ export const initializePublicBookingPage = () => {
 	let selectedService: BookingService | null = null;
 	let selectedDate = '';
 	let selectedTime = '';
-	let availableSlots: string[] = [];
+	let selectedLocation: BookingLocation | null = defaultLocation;
+	let availableSlotGroups: LocationSlotGroup[] = [];
 	let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 	let isLoadingSlots = false;
 	let isSubmitting = false;
@@ -296,10 +301,45 @@ export const initializePublicBookingPage = () => {
 		mapStatus.classList.toggle('hidden', !message.trim());
 	};
 
-	const getLocationCoordinates = (): Coordinates | null => {
-		const lat = Number(selectedLocation?.latitude);
-		const lng = Number(selectedLocation?.longitude);
+	const getLocationCoordinatesFrom = (
+		location: BookingLocation | null | undefined
+	): Coordinates | null => {
+		const lat = Number(location?.latitude);
+		const lng = Number(location?.longitude);
 		return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+	};
+
+	const getLocationCoordinates = () => getLocationCoordinatesFrom(selectedLocation);
+
+	const canShowLocationMap = (location: BookingLocation | null | undefined) =>
+		Boolean(location && toPositiveInt(location.id_location, 0));
+
+	const fetchPublicLocationDetails = async (location: BookingLocation): Promise<BookingLocation> => {
+		const { data } = await fetchJson<{ data?: unknown[] }>(
+			`/api/public/locations/${location.id_location}`,
+			{
+				method: 'GET',
+				headers: { Accept: 'application/json' },
+				cache: 'no-store',
+			},
+			'No fue posible obtener la ubicación.'
+		);
+
+		const item = Array.isArray(data.data) ? data.data[0] : data.data;
+		if (!item || typeof item !== 'object') {
+			throw new PublicBookingClientError('No fue posible obtener la ubicación.', 502);
+		}
+
+		const source = item as Record<string, unknown>;
+		const latitude = Number(source.latitude);
+		const longitude = Number(source.longitude);
+
+		return {
+			...location,
+			address: String(source.address || location.address || '').trim(),
+			latitude: Number.isFinite(latitude) ? latitude : location.latitude,
+			longitude: Number.isFinite(longitude) ? longitude : location.longitude,
+		};
 	};
 
 	const loadGoogleMaps = async (): Promise<GoogleMapsNamespace> => {
@@ -343,16 +383,41 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
-	const openLocationMap = async () => {
-		const coords = getLocationCoordinates();
+	const openLocationMap = async (location: BookingLocation | null = selectedLocation) => {
+		if (!canShowLocationMap(location)) return;
+
+		setMapStatus('');
+		if (mapAddress) mapAddress.textContent = location?.address || '';
+		if (!mapModal.open) mapModal.showModal();
+
+		let mapLocation = location!;
+		let coords = getLocationCoordinatesFrom(mapLocation);
+
+		if (!coords) {
+			try {
+				mapLocation = await fetchPublicLocationDetails(mapLocation);
+				coords = getLocationCoordinatesFrom(mapLocation);
+			} catch (error) {
+				setMapStatus(
+					error instanceof PublicBookingClientError
+						? error.message
+						: 'No fue posible obtener la ubicación.'
+				);
+				return;
+			}
+		}
+
 		if (!coords) {
 			setMapStatus('Esta sucursal no tiene coordenadas cargadas.');
 			return;
 		}
 
-		if (mapAddress) mapAddress.textContent = selectedLocation?.address || '';
-		setMapStatus('');
-		if (!mapModal.open) mapModal.showModal();
+		if (mapAddress) {
+			mapAddress.textContent = mapLocation.address || location?.address || '';
+		}
+
+		const locationTitle =
+			String(mapLocation.name || location?.name || '').trim() || 'Ubicación';
 
 		try {
 			const maps = await loadGoogleMaps();
@@ -369,13 +434,14 @@ export const initializePublicBookingPage = () => {
 				mapMarker = new maps.Marker({
 					map: mapInstance,
 					position: coords,
-					title: selectedLocation?.name || 'Ubicación',
+					title: locationTitle,
 				});
 			} else {
 				mapInstance.setOptions?.({ styles: darkMapStyles });
 				mapInstance.setCenter(coords);
 				mapInstance.setZoom(16);
 				mapMarker?.setPosition?.(coords);
+				mapMarker?.setTitle?.(locationTitle);
 			}
 
 			window.setTimeout(() => {
@@ -543,6 +609,19 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
+	const getSelectedSlotKey = () =>
+		selectedLocation && selectedTime
+			? `${selectedLocation.id_location}:${selectedTime}`
+			: '';
+
+	const formatLocationLabel = (location: BookingLocation | null) => {
+		if (!location) return 'Ubicación no disponible';
+		const name = String(location.name || '').trim();
+		const address = String(location.address || '').trim();
+		if (name && address) return `${name} · ${address}`;
+		return name || address || 'Ubicación no disponible';
+	};
+
 	const refreshSummary = () => {
 		const formattedDate = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
 		const serviceLabel = selectedService ? selectedService.name : '-';
@@ -554,8 +633,8 @@ export const initializePublicBookingPage = () => {
 		summaryService.textContent = serviceLabel;
 		summaryDate.textContent = formattedDate || '-';
 		summaryTime.textContent = timeLabel;
-		summaryLocation.textContent = selectedLocation?.address || 'Ubicación no disponible';
-		summaryLocation.disabled = !getLocationCoordinates();
+		summaryLocation.textContent = formatLocationLabel(selectedLocation);
+		summaryLocation.disabled = !canShowLocationMap(selectedLocation);
 	};
 
 	const renderServices = () => {
@@ -590,7 +669,8 @@ export const initializePublicBookingPage = () => {
 				selectedService = service;
 				selectedDate = '';
 				selectedTime = '';
-				availableSlots = [];
+				selectedLocation = defaultLocation;
+				availableSlotGroups = [];
 				refreshSummary();
 				renderServices();
 				renderCalendar();
@@ -647,6 +727,7 @@ export const initializePublicBookingPage = () => {
 				}
 				selectedDate = dateKey;
 				selectedTime = '';
+				selectedLocation = defaultLocation;
 				refreshSummary();
 				renderCalendar();
 				void loadAvailableSlots(dateKey);
@@ -657,67 +738,144 @@ export const initializePublicBookingPage = () => {
 	};
 
 	const renderSlots = () => {
-		slotsGrid.innerHTML = '';
+		slotsContainer.innerHTML = '';
 		slotsLoadingNode.classList.toggle('hidden', !isLoadingSlots);
-		noSlotsNode.classList.toggle('hidden', isLoadingSlots || availableSlots.length > 0);
+
+		const totalSlots = availableSlotGroups.reduce(
+			(count, group) => count + group.slots.length,
+			0
+		);
+		noSlotsNode.classList.toggle('hidden', isLoadingSlots || totalSlots > 0);
 
 		if (isLoadingSlots) return;
 
-		for (const slot of availableSlots) {
-			const slotButton = document.createElement('button');
-			slotButton.type = 'button';
-			slotButton.textContent = slot;
-			slotButton.className =
-				'flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition ' +
-				(selectedTime === slot
-					? 'border-[var(--primary)] bg-[var(--primary-container)] text-[var(--on-primary-container)]'
-					: 'border-[var(--outline)] bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
+		const selectedSlotKey = getSelectedSlotKey();
 
-			slotButton.addEventListener('click', () => {
-				selectedTime = slot;
-				refreshSummary();
-				renderSlots();
-				setStep(4);
+		for (const group of availableSlotGroups) {
+			if (group.slots.length === 0) continue;
+
+			const section = document.createElement('section');
+			section.className = 'grid gap-3';
+
+			const headerRow = document.createElement('div');
+			headerRow.className = 'flex flex-wrap items-center justify-between gap-2';
+
+			const heading = document.createElement('h3');
+			heading.className = 'text-sm font-semibold uppercase tracking-wide text-[var(--primary)]';
+			heading.textContent =
+				String(group.location.name || '').trim() ||
+				group.location.address ||
+				`Sucursal #${group.location.id_location}`;
+
+			const locationButton = document.createElement('button');
+			locationButton.type = 'button';
+			locationButton.className = 'public-location-link text-sm font-medium';
+			locationButton.innerHTML =
+				'<span class="material-symbols-rounded text-base leading-none">location_on</span><span class="public-location-link__label">Ver ubicación</span>';
+			locationButton.addEventListener('click', () => {
+				void openLocationMap(group.location);
 			});
 
-			slotsGrid.appendChild(slotButton);
+			headerRow.appendChild(heading);
+			headerRow.appendChild(locationButton);
+			section.appendChild(headerRow);
+
+			const grid = document.createElement('div');
+			grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
+
+			for (const slot of group.slots) {
+				const slotKey = `${group.location.id_location}:${slot}`;
+				const slotButton = document.createElement('button');
+				slotButton.type = 'button';
+				slotButton.textContent = slot;
+				slotButton.className =
+					'flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition ' +
+					(selectedSlotKey === slotKey
+						? 'border-[var(--primary)] bg-[var(--primary-container)] text-[var(--on-primary-container)]'
+						: 'border-[var(--outline)] bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
+
+				slotButton.addEventListener('click', () => {
+					selectedTime = slot;
+					selectedLocation = group.location;
+					refreshSummary();
+					renderSlots();
+					setStep(4);
+				});
+
+				grid.appendChild(slotButton);
+			}
+
+			section.appendChild(grid);
+			slotsContainer.appendChild(section);
 		}
+	};
+
+	const fetchAvailableSlotsForLocation = async (
+		location: BookingLocation,
+		targetDate: string
+	) => {
+		const params = new URLSearchParams({
+			pro_id: String(profile.id_professional),
+			loc_id: String(location.id_location),
+			ser_id: String(selectedService!.id_service),
+			target_date: targetDate,
+		});
+
+		const { data } = await fetchJson<{ data?: unknown[] }>(
+			`/api/public/available-slots?${params.toString()}`,
+			{
+				method: 'GET',
+				headers: { Accept: 'application/json' },
+				cache: 'no-store',
+			},
+			'No fue posible consultar horarios disponibles.'
+		);
+
+		if (!Array.isArray(data.data)) {
+			throw new Error('No fue posible consultar horarios disponibles.');
+		}
+
+		return {
+			location,
+			slots: sortTimeSlotsChronologically(
+				data.data.map((value: unknown) => String(value || '').trim())
+			),
+		} satisfies LocationSlotGroup;
 	};
 
 	const loadAvailableSlots = async (targetDate: string) => {
 		if (!selectedService) return;
 
 		isLoadingSlots = true;
-		availableSlots = [];
+		availableSlotGroups = [];
+		selectedTime = '';
+		selectedLocation = defaultLocation;
 		renderSlots();
 		setStep(3);
 
 		try {
-			const params = new URLSearchParams({
-				pro_id: String(profile.id_professional),
-				loc_id: String(locationId),
-				ser_id: String(selectedService.id_service),
-				target_date: targetDate,
-			});
+			const locationTargets =
+				locations.length > 0
+					? locations
+					: defaultLocation
+						? [defaultLocation]
+						: [{ id_location: configuredLocationId || 1, address: '' }];
 
-			const { data } = await fetchJson<{ data?: unknown[] }>(
-				`/api/public/available-slots?${params.toString()}`,
-				{
-					method: 'GET',
-					headers: { Accept: 'application/json' },
-				},
-				'No fue posible consultar horarios disponibles.'
+			const groups = await Promise.all(
+				locationTargets.map((location) =>
+					fetchAvailableSlotsForLocation(location, targetDate)
+				)
 			);
 
-			if (!Array.isArray(data.data)) {
-				throw new Error('No fue posible consultar horarios disponibles.');
-			}
-
-			availableSlots = sortTimeSlotsChronologically(
-				data.data.map((value: unknown) => String(value || '').trim())
-			);
+			availableSlotGroups = groups
+				.filter((group) => group.slots.length > 0)
+				.sort((left, right) => {
+					const leftLabel = String(left.location.name || left.location.address || '');
+					const rightLabel = String(right.location.name || right.location.address || '');
+					return leftLabel.localeCompare(rightLabel, 'es');
+				});
 		} catch (error) {
-			availableSlots = [];
+			availableSlotGroups = [];
 			showToast(
 				error instanceof Error
 					? error.message
@@ -734,7 +892,8 @@ export const initializePublicBookingPage = () => {
 		selectedService = null;
 		selectedDate = '';
 		selectedTime = '';
-		availableSlots = [];
+		selectedLocation = defaultLocation;
+		availableSlotGroups = [];
 		isLoadingSlots = false;
 		customerForm.reset();
 		resetCustomerLookupState(true);
@@ -762,7 +921,7 @@ export const initializePublicBookingPage = () => {
 	backToSlots.addEventListener('click', () => setStep(3));
 	restartButton.addEventListener('click', resetFlow);
 	summaryLocation.addEventListener('click', () => {
-		void openLocationMap();
+		void openLocationMap(selectedLocation);
 	});
 	mapCloseButton.addEventListener('click', () => {
 		mapModal.close();
@@ -825,7 +984,7 @@ export const initializePublicBookingPage = () => {
 		setPhoneFieldError('');
 		setNameFieldError('');
 
-		if (!selectedService || !selectedDate || !selectedTime) {
+		if (!selectedService || !selectedDate || !selectedTime || !selectedLocation) {
 			setSubmitError('Selecciona servicio, fecha y horario antes de confirmar.');
 			return;
 		}
@@ -876,7 +1035,7 @@ export const initializePublicBookingPage = () => {
 
 		const payload = {
 			org_id_organization: profile.org_id_organization,
-			loc_id_location: locationId,
+			loc_id_location: selectedLocation.id_location,
 			pro_id_professional: profile.id_professional,
 			ser_id_service: selectedService.id_service,
 			customer_name: customerName,

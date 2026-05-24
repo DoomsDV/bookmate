@@ -233,7 +233,7 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 							Consultando horarios disponibles...
 						</div>
 
-						<div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4" data-slots-grid></div>
+						<div class="mt-6 grid gap-6" data-slots-container></div>
 
 						<p
 							data-no-slots
@@ -344,7 +344,7 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 										<span class="text-sm font-medium text-(--on-surface-variant)">Ubicación</span>
 										<button
 											type="button"
-											class="mt-1 cursor-pointer text-left font-normal text-(--primary) underline-offset-4 transition hover:underline disabled:cursor-not-allowed disabled:text-(--on-surface-variant) disabled:no-underline"
+											class="public-location-link mt-1 cursor-pointer text-left font-normal disabled:cursor-not-allowed disabled:text-(--on-surface-variant)"
 											data-summary-location
 										>
 											Ubicación no disponible
@@ -480,6 +480,46 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 		border-radius: 999px;
 		background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--outline-variant) 72%, white 28%), transparent);
 		opacity: 0.9;
+	}
+
+	.public-location-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		width: fit-content;
+		border: 0;
+		background: transparent;
+		padding: 0;
+		font: inherit;
+		color: var(--primary);
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.public-location-link:hover:not(:disabled) {
+		color: var(--primary-hover);
+	}
+
+	.public-location-link:hover:not(:disabled) .public-location-link__label {
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.public-location-link:hover:not(:disabled):not(:has(.public-location-link__label)) {
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.public-location-link:disabled {
+		color: var(--on-surface-variant);
+		text-decoration: none;
+	}
+
+	.public-location-link .material-symbols-rounded {
+		font-size: 1rem;
+		line-height: 1;
 	}
 
 	.public-booking-shell button:not([disabled]),
