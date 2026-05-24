@@ -1,4 +1,7 @@
 import { resolveOrdsPublicApiUrl } from './env-urls';
+import { normalizePublicBookingLocations } from './public-booking-locations';
+
+export { normalizePublicBookingLocations } from './public-booking-locations';
 
 const toPositiveInt = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);
@@ -396,27 +399,6 @@ const normalizeService = (value: unknown): PublicBookingService | null => {
 	};
 };
 
-const normalizeLocation = (value: unknown): PublicBookingLocation | null => {
-	if (!value || typeof value !== 'object') return null;
-
-	const source = value as Record<string, unknown>;
-	const idLocation = toPositiveInt(source.id_location, 0);
-	const name = String(source.name || '').trim();
-	const address = String(source.address || '').trim();
-	if (!idLocation || !address) return null;
-
-	const latitude = Number(source.latitude);
-	const longitude = Number(source.longitude);
-
-	return {
-		id_location: idLocation,
-		name,
-		address,
-		latitude: Number.isFinite(latitude) ? latitude : undefined,
-		longitude: Number.isFinite(longitude) ? longitude : undefined,
-	};
-};
-
 const normalizePublicLocationDetail = (value: unknown): PublicBookingLocation | null => {
 	if (!value || typeof value !== 'object') return null;
 
@@ -429,8 +411,8 @@ const normalizePublicLocationDetail = (value: unknown): PublicBookingLocation | 
 
 	return {
 		id_location: idLocation,
-		name: String(source.name || '').trim(),
-		address: String(source.address || '').trim(),
+		name: String(source.name || '').trim() || `Sucursal #${idLocation}`,
+		address: String(source.address || source.name || '').trim(),
 		latitude: Number.isFinite(latitude) ? latitude : undefined,
 		longitude: Number.isFinite(longitude) ? longitude : undefined,
 	};
@@ -450,11 +432,7 @@ const normalizeProfile = (value: unknown): PublicBookingProfile | null => {
 				.map(normalizeService)
 				.filter((service): service is PublicBookingService => service !== null)
 		: [];
-	const locations = Array.isArray(source.locations)
-		? source.locations
-				.map(normalizeLocation)
-				.filter((location): location is PublicBookingLocation => location !== null)
-		: [];
+	const locations = normalizePublicBookingLocations(source.locations) as PublicBookingLocation[];
 
 	return {
 		id_professional: professionalId,
@@ -558,7 +536,10 @@ export const getPublicLocationWithOrds = async (locationId: number): Promise<Pub
 		throw new PublicBookingApiError('No fue posible interpretar la ubicación.', 502);
 	}
 
-	return location;
+	return {
+		...location,
+		name: location.name || `Sucursal #${location.id_location}`,
+	} satisfies PublicBookingLocation;
 };
 
 export const createPublicAppointmentWithOrds = async (payload: PublicCreateAppointmentPayload) => {

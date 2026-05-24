@@ -5,6 +5,7 @@ import FlashMessage from '../../components/FlashMessage.astro';
 import {
 	getPublicProfileWithOrds,
 	getPublicReservationWithOrds,
+	normalizePublicBookingLocations,
 	PublicBookingApiError,
 	type PublicBookingLocation,
 	type PublicReservationDetail,
@@ -45,7 +46,7 @@ let reservationLocations: PublicBookingLocation[] = [];
 if (reservation && professionalSlug) {
 	try {
 		const profile = await getPublicProfileWithOrds(professionalSlug);
-		reservationLocations = Array.isArray(profile.locations) ? profile.locations : [];
+		reservationLocations = normalizePublicBookingLocations(profile.locations);
 	} catch {
 		reservationLocations = [];
 	}

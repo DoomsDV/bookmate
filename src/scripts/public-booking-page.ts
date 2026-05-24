@@ -3,9 +3,14 @@ import {
 	formatApiDate,
 	formatLongDateFromApiDate,
 	getTodayStart,
+	isValidApiTimeSlot,
 	sortTimeSlotsChronologically,
 	toDateStart,
 } from '../lib/booking-datetime';
+import {
+	mergePublicBookingLocations,
+	normalizePublicBookingLocations,
+} from '../lib/public-booking-locations';
 import {
 	formatParaguayMobilePhoneInput,
 	PARAGUAY_MOBILE_PHONE_ERROR,
@@ -103,20 +108,50 @@ const formatCurrency = (value: number) =>
 		maximumFractionDigits: 0,
 	}).format(Number.isFinite(value) ? value : 0);
 
-const parseProfileFromDom = () => {
-	const profileNode = document.getElementById('public-booking-profile-json');
+const getBookingRoot = (): HTMLElement | null => {
+	const slug = window.location.pathname.match(/\/p\/([^/?#]+)/)?.[1]?.trim();
+	if (slug) {
+		const escapedSlug =
+			typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+				? CSS.escape(slug)
+				: slug.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+		const scopedRoot = document.querySelector<HTMLElement>(
+			`[data-public-booking-root][data-professional-slug="${escapedSlug}"]`
+		);
+		if (scopedRoot) return scopedRoot;
+	}
+
+	const roots = document.querySelectorAll<HTMLElement>('[data-public-booking-root]');
+	return roots.length ? roots[roots.length - 1] : null;
+};
+
+const parseProfileFromDom = (root: HTMLElement) => {
+	const profileNode = root.querySelector<HTMLElement>('#public-booking-profile-json');
 	if (!profileNode) return null;
 
 	try {
 		const parsed = JSON.parse(profileNode.textContent || '{}') as BookingProfile;
 		if (!parsed || typeof parsed !== 'object') return null;
 		if (!Array.isArray(parsed.services)) parsed.services = [];
-		if (!Array.isArray(parsed.locations)) parsed.locations = [];
+		parsed.locations = normalizePublicBookingLocations(parsed.locations);
 		return parsed;
 	} catch {
 		return null;
 	}
 };
+
+const parseJsonScript = <T>(root: HTMLElement, id: string): T | null => {
+	const node = root.querySelector<HTMLElement>(`#${id}`);
+	if (!node?.textContent) return null;
+
+	try {
+		return JSON.parse(node.textContent) as T;
+	} catch {
+		return null;
+	}
+};
+
+const mergeBookingLocations = mergePublicBookingLocations;
 
 const readApiMessage = (data: any, fallbackMessage: string) => {
 	const message = typeof data?.message === 'string' ? data.message.trim() : '';
@@ -159,11 +194,10 @@ const fetchJson = async <T>(url: string, init: RequestInit, fallbackMessage: str
 };
 
 export const initializePublicBookingPage = () => {
-	const root = document.querySelector<HTMLElement>('[data-public-booking-root]');
+	const root = getBookingRoot();
 	if (!root || root.dataset.bound === 'true') return;
-	root.dataset.bound = 'true';
 
-	const profile = parseProfileFromDom();
+	const profile = parseProfileFromDom(root);
 	if (!profile) return;
 
 	const servicesGrid = root.querySelector<HTMLElement>('[data-services-grid]');
@@ -251,10 +285,16 @@ export const initializePublicBookingPage = () => {
 	}
 
 	const configuredLocationId = toPositiveInt(root.dataset.locationId, 0);
-	const locations = Array.isArray(profile.locations) ? profile.locations : [];
+	const professionalSlug = String(root.dataset.professionalSlug || '').trim();
+	let bookingLocations = mergeBookingLocations(
+		normalizePublicBookingLocations(
+			parseJsonScript<unknown[]>(root, 'public-booking-locations-json')
+		),
+		normalizePublicBookingLocations(profile.locations)
+	);
 	const defaultLocation =
-		locations.find((location) => location.id_location === configuredLocationId) ??
-		locations[0] ??
+		bookingLocations.find((location) => location.id_location === configuredLocationId) ??
+		bookingLocations[0] ??
 		null;
 	const mapsApiKey = String(root.dataset.googleMapsApiKey || '').trim();
 	const today = getTodayStart();
@@ -810,6 +850,38 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
+	const readLocationsFromDom = () =>
+		mergeBookingLocations(
+			normalizePublicBookingLocations(
+				parseJsonScript<unknown[]>(root, 'public-booking-locations-json')
+			),
+			normalizePublicBookingLocations(parseProfileFromDom(root)?.locations)
+		);
+
+	const fetchProfileLocations = async () => {
+		const fromDom = readLocationsFromDom();
+		if (!professionalSlug) return fromDom.length > 0 ? fromDom : bookingLocations;
+
+		try {
+			const { data } = await fetchJson<{ data?: { locations?: unknown[] } }>(
+				`/api/public/profile/${encodeURIComponent(professionalSlug)}`,
+				{
+					method: 'GET',
+					headers: { Accept: 'application/json' },
+					cache: 'no-store',
+				},
+				'No fue posible cargar las sucursales.'
+			);
+
+			const fromApi = normalizePublicBookingLocations(data.data?.locations);
+			if (fromApi.length > 0) return fromApi;
+
+			return fromDom.length > 0 ? fromDom : bookingLocations;
+		} catch {
+			return fromDom.length > 0 ? fromDom : bookingLocations;
+		}
+	};
+
 	const fetchAvailableSlotsForLocation = async (
 		location: BookingLocation,
 		targetDate: string
@@ -838,7 +910,9 @@ export const initializePublicBookingPage = () => {
 		return {
 			location,
 			slots: sortTimeSlotsChronologically(
-				data.data.map((value: unknown) => String(value || '').trim())
+				data.data
+					.map((value: unknown) => String(value || '').trim())
+					.filter(isValidApiTimeSlot)
 			),
 		} satisfies LocationSlotGroup;
 	};
@@ -854,20 +928,35 @@ export const initializePublicBookingPage = () => {
 		setStep(3);
 
 		try {
+			bookingLocations = await fetchProfileLocations();
 			const locationTargets =
-				locations.length > 0
-					? locations
+				bookingLocations.length > 0
+					? bookingLocations
 					: defaultLocation
 						? [defaultLocation]
-						: [{ id_location: configuredLocationId || 1, address: '' }];
+						: configuredLocationId
+							? [{ id_location: configuredLocationId, address: '' }]
+							: [];
 
-			const groups = await Promise.all(
+			const results = await Promise.allSettled(
 				locationTargets.map((location) =>
 					fetchAvailableSlotsForLocation(location, targetDate)
 				)
 			);
 
-			availableSlotGroups = groups
+			const rejected = results.find(
+				(result): result is PromiseRejectedResult => result.status === 'rejected'
+			);
+			if (rejected && results.every((result) => result.status === 'rejected')) {
+				throw rejected.reason;
+			}
+
+			availableSlotGroups = results
+				.filter(
+					(result): result is PromiseFulfilledResult<LocationSlotGroup> =>
+						result.status === 'fulfilled'
+				)
+				.map((result) => result.value)
 				.filter((group) => group.slots.length > 0)
 				.sort((left, right) => {
 					const leftLabel = String(left.location.name || left.location.address || '');
@@ -1091,4 +1180,5 @@ export const initializePublicBookingPage = () => {
 	renderCalendar();
 	renderSlots();
 	setStep(1);
+	root.dataset.bound = 'true';
 };

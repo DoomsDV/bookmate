@@ -11,6 +11,10 @@ import {
 	sortTimeSlotsChronologically,
 	toDateStart,
 } from '../lib/booking-datetime';
+import {
+	mergePublicBookingLocations,
+	normalizePublicBookingLocations,
+} from '../lib/public-booking-locations';
 
 type BookingLocation = {
 	id_location: number;
@@ -106,8 +110,8 @@ export const initializePublicReservationPage = () => {
 		String(reservation.status || '').trim().toUpperCase() === 'CANCELADO';
 	if (isCancelledReservation) return;
 
-	const locations = (parseJsonScript<BookingLocation[]>('reservation-locations-json') || []).filter(
-		(location) => toPositiveInt(location.id_location, 0) > 0
+	const locations = normalizePublicBookingLocations(
+		parseJsonScript<unknown[]>('reservation-locations-json') || []
 	);
 	const mapsApiKey = String(root.dataset.googleMapsApiKey || '').trim();
 
@@ -490,9 +494,23 @@ export const initializePublicReservationPage = () => {
 						? [defaultLocation]
 						: [];
 
-			const groups = await Promise.all(
+			const slotResults = await Promise.allSettled(
 				locationTargets.map((location) => fetchAvailableSlotsForLocation(location, targetDate))
 			);
+
+			const groups = slotResults
+				.filter(
+					(result): result is PromiseFulfilledResult<LocationSlotGroup> =>
+						result.status === 'fulfilled'
+				)
+				.map((result) => result.value);
+
+			const rejected = slotResults.find(
+				(result): result is PromiseRejectedResult => result.status === 'rejected'
+			);
+			if (rejected && groups.length === 0) {
+				throw rejected.reason;
+			}
 
 			const reservationStart = parseApiDateTime(reservation.start_time);
 			const currentSlot =

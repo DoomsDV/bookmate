@@ -61,6 +61,9 @@ Astro.response.status = toSafePageStatus(statusCode, Boolean(profile));
 const serializedProfile = profile
 	? JSON.stringify(profile).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
 	: '';
+const serializedLocations = profile
+	? JSON.stringify(profile.locations || []).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
+	: '';
 const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON';
 ---
 
@@ -83,10 +86,12 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 				<section
 					class="grid gap-6"
 					data-public-booking-root
+					data-professional-slug={slug}
 					data-location-id={String(initialLocationId)}
 					data-google-maps-api-key={googleMapsApiKey}
 				>
 					<script type="application/json" id="public-booking-profile-json" set:html={serializedProfile}></script>
+					<script type="application/json" id="public-booking-locations-json" set:html={serializedLocations}></script>
 
 					<div class="relative">
 						<header class="relative overflow-hidden rounded-[28px] bg-(--surface-container) p-6 sm:p-8 shadow-sm transition-shadow">
@@ -410,8 +415,15 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 <script>
 	import { initializePublicBookingPage } from '../../scripts/public-booking-page';
 
-	initializePublicBookingPage();
-	document.addEventListener('astro:page-load', initializePublicBookingPage);
+	const bootPublicBookingPage = () => {
+		document.querySelectorAll<HTMLElement>('[data-public-booking-root]').forEach((node) => {
+			delete node.dataset.bound;
+		});
+		initializePublicBookingPage();
+	};
+
+	bootPublicBookingPage();
+	document.addEventListener('astro:page-load', bootPublicBookingPage);
 </script>
 
 <style is:global>
