@@ -10,11 +10,15 @@ import '../../styles/global.css';
 const token = Astro.locals.token ?? '';
 const roleId = Number(Astro.locals.roleId ?? 0);
 const isProfessional = roleId === ROLES.PROFESIONAL;
-const initialLoadError = token ? '' : 'No hay sesion valida para configurar horarios.';
+const canManageSchedules = !isProfessional;
+const initialLoadError = token ? '' : 'No hay sesión válida para configurar horarios.';
 ---
 
 <Layout>
-	<schedule-manager data-can-edit={!isProfessional ? 'true' : 'false'} data-role-id={String(roleId)}>
+	<schedule-manager
+		data-can-edit={canManageSchedules ? 'true' : 'false'}
+		data-role-id={String(roleId)}
+	>
 		<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
 			<div
 				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -36,13 +40,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 										<header class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
 											<div class="grid gap-1">
 												<h1 class="text-[1.3rem] font-extrabold text-(--on-surface)">
-													Horarios semanales
+													Horarios y disponibilidad
 												</h1>
 												<p class="text-[0.95rem] text-(--on-surface-variant) leading-relaxed">
 													{
 														isProfessional
-															? 'Consulta tu disponibilidad semanal por sucursal.'
-															: 'Configura la disponibilidad por profesional con turnos por sucursal.'
+															? 'Consulta la plantilla semanal y las excepciones del calendario.'
+															: 'Plantilla semanal recurrente y excepciones puntuales por fecha.'
 													}
 												</p>
 											</div>
@@ -90,6 +94,27 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 											data-schedule-error
 										></div>
 
+										<div class="flex flex-wrap gap-2" data-schedule-tabs role="tablist">
+											<button
+												type="button"
+												class="schedule-tab schedule-tab--active"
+												data-schedule-tab="template"
+												role="tab"
+												aria-selected="true"
+											>
+												Plantilla semanal
+											</button>
+											<button
+												type="button"
+												class="schedule-tab"
+												data-schedule-tab="exceptions"
+												role="tab"
+												aria-selected="false"
+											>
+												Excepciones del calendario
+											</button>
+										</div>
+
 										<div class="mt-0.5">
 												<div
 													class="mb-2 hidden rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-medium text-(--on-surface-variant)"
@@ -98,8 +123,115 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 													Cargando configuración de horarios...
 												</div>
 
-												<div class="grid gap-4 sm:gap-5" data-weekly-planner></div>
+												<div data-schedule-view-template>
+													<p class="mb-3 text-[0.88rem] font-medium text-(--on-surface-variant)">
+														Horario habitual que se repite cada semana.
+													</p>
+													<div class="grid gap-4 sm:gap-5" data-weekly-planner></div>
+												</div>
+
+												<div class="hidden" data-schedule-view-exceptions>
+													<p class="mb-3 text-[0.88rem] font-medium text-(--on-surface-variant)">
+														Cambios puntuales por fecha. La excepción reemplaza la plantilla solo ese día.
+													</p>
+
+													<div
+														class="mb-3 flex flex-wrap gap-3 text-[0.82rem] font-semibold text-(--on-surface-variant)"
+														data-exception-legend
+													>
+														<span class="inline-flex items-center gap-1.5">
+															<span class="schedule-cal-dot schedule-cal-dot--normal"></span>
+															Usa plantilla
+														</span>
+														<span class="inline-flex items-center gap-1.5">
+															<span class="schedule-cal-dot schedule-cal-dot--blocked"></span>
+															Bloqueado
+														</span>
+														<span class="inline-flex items-center gap-1.5">
+															<span class="schedule-cal-dot schedule-cal-dot--override"></span>
+															Horario especial
+														</span>
+													</div>
+
+													<div
+														class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-3 sm:p-4"
+														data-exception-calendar-panel
+													>
+														<div class="mb-3 flex items-center justify-between gap-2">
+															<button
+																type="button"
+																class="schedule-cal-nav"
+																data-exception-cal-prev
+																aria-label="Mes anterior"
+															>
+																<span class="material-symbols-rounded text-[1.2rem]">chevron_left</span>
+															</button>
+															<p
+																class="text-[1rem] font-extrabold text-(--on-surface)"
+																data-exception-cal-month
+															></p>
+															<button
+																type="button"
+																class="schedule-cal-nav"
+																data-exception-cal-next
+																aria-label="Mes siguiente"
+															>
+																<span class="material-symbols-rounded text-[1.2rem]">chevron_right</span>
+															</button>
+														</div>
+														<div
+															class="mb-1 grid grid-cols-7 gap-1 text-center text-[0.72rem] font-bold uppercase tracking-wide text-(--on-surface-variant)"
+														>
+															<span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span>
+															<span>Vie</span><span>Sáb</span><span>Dom</span>
+														</div>
+														<div class="grid grid-cols-7 gap-1" data-exception-cal-grid></div>
+													</div>
+												</div>
 											</div>
+
+										<div
+											class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4"
+											data-exception-modal
+											role="dialog"
+											aria-modal="true"
+											aria-labelledby="exception-modal-title"
+										>
+											<div
+												class="schedule-exception-modal max-h-[90vh] w-full max-w-[min(42rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 shadow-xl sm:max-w-[min(48rem,calc(100vw-2rem))] sm:p-5 md:max-w-[min(52rem,calc(100vw-2rem))]"
+											>
+												<div class="mb-4 flex items-start justify-between gap-3">
+													<div>
+														<h2
+															id="exception-modal-title"
+															class="text-[1.1rem] font-extrabold text-(--on-surface)"
+															data-exception-modal-title
+														>
+															Excepción
+														</h2>
+														<p
+															class="mt-0.5 text-[0.85rem] font-medium text-(--on-surface-variant)"
+															data-exception-modal-subtitle
+														></p>
+													</div>
+													<button
+														type="button"
+														class="schedule-modal-close"
+														data-exception-modal-close
+														aria-label="Cerrar"
+													>
+														<span class="material-symbols-rounded">close</span>
+													</button>
+												</div>
+
+												<div class="grid gap-4" data-exception-modal-body></div>
+
+												<div
+													class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"
+													data-exception-modal-actions
+												></div>
+											</div>
+										</div>
 									</div>
 								)
 							}
@@ -240,6 +372,246 @@ const initialLoadError = token ? '' : 'No hay sesion valida para configurar hora
 	html[data-theme='dark'] .schedule-slot-remove-btn:hover {
 		background: rgba(251, 113, 133, 0.2);
 		color: #fecdd3;
+	}
+
+	.schedule-tab {
+		border: 1px solid var(--shell-border);
+		background: var(--control-surface);
+		color: var(--on-surface-variant);
+		border-radius: 999px;
+		padding: 0.45rem 1rem;
+		font-size: 0.88rem;
+		font-weight: 700;
+		transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+	}
+
+	.schedule-tab--active {
+		border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border) 45%);
+		background: var(--primary-soft);
+		color: var(--primary);
+	}
+
+	.schedule-cal-dot {
+		width: 0.65rem;
+		height: 0.65rem;
+		border-radius: 999px;
+		display: inline-block;
+	}
+
+	.schedule-cal-dot--normal {
+		background: #94a3b8;
+	}
+
+	.schedule-cal-dot--blocked {
+		background: #ef4444;
+	}
+
+	.schedule-cal-dot--override {
+		background: #f59e0b;
+	}
+
+	.schedule-cal-nav {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: var(--control-surface);
+		color: var(--on-surface);
+	}
+
+	.schedule-cal-day {
+		min-height: 2.75rem;
+		border-radius: 0.75rem;
+		border: 1px solid #cbd5e1;
+		background: #ffffff;
+		color: #0f172a;
+		font-size: 0.82rem;
+		font-weight: 700;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition:
+			background-color 140ms ease,
+			border-color 140ms ease,
+			color 140ms ease,
+			box-shadow 140ms ease;
+	}
+
+	.schedule-cal-day--empty {
+		visibility: hidden;
+		pointer-events: none;
+		border-color: transparent;
+		background: transparent;
+	}
+
+	.schedule-cal-day--normal {
+		background: #ffffff;
+		border-color: #cbd5e1;
+		color: #0f172a;
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+	}
+
+	.schedule-cal-day--blocked {
+		background: #fef2f2;
+		border-color: #fca5a5;
+		color: #b91c1c;
+	}
+
+	.schedule-cal-day--override {
+		background: #fffbeb;
+		border-color: #fcd34d;
+		color: #b45309;
+	}
+
+	.schedule-cal-day--past {
+		background: #f1f5f9;
+		border-color: #e2e8f0;
+		color: #64748b;
+		box-shadow: none;
+	}
+
+	.schedule-cal-day--past.schedule-cal-day--blocked {
+		background: #fee2e2;
+		border-color: #f87171;
+		color: #991b1b;
+	}
+
+	.schedule-cal-day--past.schedule-cal-day--override {
+		background: #fef3c7;
+		border-color: #fbbf24;
+		color: #92400e;
+	}
+
+	.schedule-cal-day:not(.schedule-cal-day--empty):hover {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent 82%);
+	}
+
+	html[data-theme='dark'] .schedule-cal-day {
+		border-color: #3f3f46;
+		background: #3f3f46;
+		color: #f8fafc;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+	}
+
+	html[data-theme='dark'] .schedule-cal-day--normal:not(.schedule-cal-day--past) {
+		background: #45454d;
+		border-color: #71717a;
+		color: #fafafa;
+	}
+
+	html[data-theme='dark'] .schedule-cal-day--blocked:not(.schedule-cal-day--past) {
+		background: rgba(185, 28, 28, 0.55);
+		border-color: #f87171;
+		color: #fee2e2;
+	}
+
+	html[data-theme='dark'] .schedule-cal-day--override:not(.schedule-cal-day--past) {
+		background: rgba(180, 83, 9, 0.55);
+		border-color: #fbbf24;
+		color: #fef3c7;
+	}
+
+	html[data-theme='dark'] .schedule-cal-day--past {
+		background: #1a1a1a;
+		border-color: #2a2a2a;
+		color: #6b7280;
+		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .schedule-cal-day--past.schedule-cal-day--blocked {
+		background: rgba(69, 10, 10, 0.65);
+		border-color: #7f1d1d;
+		color: #9ca3af;
+	}
+
+	html[data-theme='dark'] .schedule-cal-day--past.schedule-cal-day--override {
+		background: rgba(69, 45, 10, 0.65);
+		border-color: #78350f;
+		color: #9ca3af;
+	}
+
+	.schedule-modal-close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 999px;
+		border: 0;
+		background: transparent;
+		color: var(--on-surface-variant);
+	}
+
+	.schedule-modal-close:hover {
+		background: var(--control-surface);
+	}
+
+	/* Modal de excepciones: turnos en movil 50% inicio / 50% fin */
+	.schedule-exception-modal .schedule-slot-row {
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	}
+
+	.schedule-exception-modal .schedule-slot-field--location {
+		grid-column: 1 / 2;
+		grid-row: 1 / 2;
+	}
+
+	.schedule-exception-modal .schedule-slot-remove-wrap {
+		grid-column: 2 / 3;
+		grid-row: 1 / 2;
+		align-items: flex-end;
+		padding-bottom: 0.2rem;
+	}
+
+	.schedule-exception-modal .schedule-slot-field--start {
+		grid-column: 1 / 2;
+		grid-row: 2 / 3;
+	}
+
+	.schedule-exception-modal .schedule-slot-field--end {
+		grid-column: 2 / 3;
+		grid-row: 2 / 3;
+	}
+
+	.schedule-exception-modal .schedule-slot-field input,
+	.schedule-exception-modal .schedule-slot-field select {
+		width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+	}
+
+	@media (min-width: 640px) {
+		.schedule-exception-modal .schedule-slot-row {
+			grid-template-columns: minmax(0, 1fr) 10.5rem 10.5rem auto;
+			align-items: end;
+			column-gap: 0.75rem;
+		}
+
+		.schedule-exception-modal .schedule-slot-field--location {
+			grid-column: 1 / 2;
+			grid-row: 1 / 2;
+		}
+
+		.schedule-exception-modal .schedule-slot-field--start {
+			grid-column: 2 / 3;
+			grid-row: 1 / 2;
+		}
+
+		.schedule-exception-modal .schedule-slot-field--end {
+			grid-column: 3 / 4;
+			grid-row: 1 / 2;
+		}
+
+		.schedule-exception-modal .schedule-slot-remove-wrap {
+			grid-column: 4 / 5;
+			grid-row: 1 / 2;
+			padding-bottom: 0;
+		}
 	}
 
 	@media (min-width: 1024px) {

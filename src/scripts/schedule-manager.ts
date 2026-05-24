@@ -1,5 +1,18 @@
 import { navigate } from 'astro:transitions/client';
 import { ROLES } from '../config/roles';
+import type { ScheduleExceptionType } from '../lib/schedules';
+import {
+	buildExceptionSummaryMap,
+	formatDateKey,
+	formatMonthLabel,
+	getIsoDayOfWeek,
+	getMonthRangeKeys,
+	isPastDateKey,
+	parseDateKey,
+	resolveCalendarDayTone,
+	type ExceptionSlotDraft,
+	type ExceptionSummaryMap,
+} from './schedule-exception-ui';
 import {
 	destroySearchableSelect,
 	ensureSearchableSelect,
@@ -77,6 +90,31 @@ class ScheduleManager extends HTMLElement {
 	private isSaving = false;
 	private isDirty = false;
 
+	private activeView: 'template' | 'exceptions' = 'template';
+	private exceptionCalendarCursor = new Date();
+	private exceptionSummaryMap: ExceptionSummaryMap = new Map();
+	private isExceptionsLoading = false;
+	private exceptionModalDateKey = '';
+	private exceptionModalReadOnly = false;
+	private exceptionModalType: ScheduleExceptionType | 'INHERIT' = 'INHERIT';
+	private exceptionModalNote = '';
+	private exceptionModalSlots: ExceptionSlotDraft[] = [];
+	private exceptionModalDirty = false;
+
+	private templateViewNode: HTMLElement | null = null;
+	private exceptionsViewNode: HTMLElement | null = null;
+	private tabButtons: NodeListOf<HTMLButtonElement> | null = null;
+	private exceptionCalMonthNode: HTMLElement | null = null;
+	private exceptionCalGridNode: HTMLElement | null = null;
+	private exceptionCalPrevButton: HTMLButtonElement | null = null;
+	private exceptionCalNextButton: HTMLButtonElement | null = null;
+	private exceptionModalNode: HTMLElement | null = null;
+	private exceptionModalTitleNode: HTMLElement | null = null;
+	private exceptionModalSubtitleNode: HTMLElement | null = null;
+	private exceptionModalBodyNode: HTMLElement | null = null;
+	private exceptionModalActionsNode: HTMLElement | null = null;
+	private exceptionModalCloseButton: HTMLButtonElement | null = null;
+
 	connectedCallback() {
 		if (this.#bound) return;
 		this.#bound = true;
@@ -89,6 +127,19 @@ class ScheduleManager extends HTMLElement {
 		this.hintNode = this.querySelector<HTMLElement>('[data-professional-hint]');
 		this.errorNode = this.querySelector<HTMLElement>('[data-schedule-error]');
 		this.loadingNode = this.querySelector<HTMLElement>('[data-schedule-loading]');
+		this.templateViewNode = this.querySelector<HTMLElement>('[data-schedule-view-template]');
+		this.exceptionsViewNode = this.querySelector<HTMLElement>('[data-schedule-view-exceptions]');
+		this.tabButtons = this.querySelectorAll<HTMLButtonElement>('[data-schedule-tab]');
+		this.exceptionCalMonthNode = this.querySelector<HTMLElement>('[data-exception-cal-month]');
+		this.exceptionCalGridNode = this.querySelector<HTMLElement>('[data-exception-cal-grid]');
+		this.exceptionCalPrevButton = this.querySelector<HTMLButtonElement>('[data-exception-cal-prev]');
+		this.exceptionCalNextButton = this.querySelector<HTMLButtonElement>('[data-exception-cal-next]');
+		this.exceptionModalNode = this.querySelector<HTMLElement>('[data-exception-modal]');
+		this.exceptionModalTitleNode = this.querySelector<HTMLElement>('[data-exception-modal-title]');
+		this.exceptionModalSubtitleNode = this.querySelector<HTMLElement>('[data-exception-modal-subtitle]');
+		this.exceptionModalBodyNode = this.querySelector<HTMLElement>('[data-exception-modal-body]');
+		this.exceptionModalActionsNode = this.querySelector<HTMLElement>('[data-exception-modal-actions]');
+		this.exceptionModalCloseButton = this.querySelector<HTMLButtonElement>('[data-exception-modal-close]');
 
 		if (!this.professionalSelect || !this.plannerNode) {
 			this.#bound = false;
@@ -106,6 +157,18 @@ class ScheduleManager extends HTMLElement {
 			this.saveButton.addEventListener('click', this.handleSaveClick, { signal });
 		}
 
+		for (const tabButton of this.tabButtons ?? []) {
+			tabButton.addEventListener('click', this.handleTabClick, { signal });
+		}
+		this.exceptionCalPrevButton?.addEventListener('click', this.handleExceptionMonthPrev, { signal });
+		this.exceptionCalNextButton?.addEventListener('click', this.handleExceptionMonthNext, { signal });
+		this.exceptionCalGridNode?.addEventListener('click', this.handleExceptionCalendarClick, { signal });
+		this.exceptionModalCloseButton?.addEventListener('click', this.closeExceptionModal, { signal });
+		this.exceptionModalNode?.addEventListener('click', this.handleExceptionModalBackdrop, { signal });
+		this.exceptionModalBodyNode?.addEventListener('change', this.handleExceptionModalChange, { signal });
+		this.exceptionModalBodyNode?.addEventListener('click', this.handleExceptionModalClick, { signal });
+		this.exceptionModalActionsNode?.addEventListener('click', this.handleExceptionModalActions, { signal });
+
 		this.updateControlsState();
 		this.renderPlanner();
 		void this.loadMeta();
@@ -121,6 +184,120 @@ class ScheduleManager extends HTMLElement {
 
 	private handleSaveClick = (): void => {
 		void this.saveSchedule();
+	};
+
+	private handleTabClick = (event: Event): void => {
+		const target = event.currentTarget;
+		if (!(target instanceof HTMLButtonElement)) return;
+		const nextView = target.dataset.scheduleTab === 'exceptions' ? 'exceptions' : 'template';
+		void this.switchView(nextView);
+	};
+
+	private handleExceptionMonthPrev = (): void => {
+		const cursor = this.exceptionCalendarCursor;
+		this.exceptionCalendarCursor = new Date(cursor.getFullYear(), cursor.getMonth() - 1, 1);
+		void this.loadExceptionsForVisibleMonth().then(() => this.renderExceptionCalendar());
+	};
+
+	private handleExceptionMonthNext = (): void => {
+		const cursor = this.exceptionCalendarCursor;
+		this.exceptionCalendarCursor = new Date(cursor.getFullYear(), cursor.getMonth() + 1, 1);
+		void this.loadExceptionsForVisibleMonth().then(() => this.renderExceptionCalendar());
+	};
+
+	private handleExceptionCalendarClick = (event: MouseEvent): void => {
+		const target = event.target;
+		if (!(target instanceof HTMLElement)) return;
+		const dayButton = target.closest<HTMLButtonElement>('[data-exception-date]');
+		if (!dayButton || dayButton.disabled) return;
+		const dateKey = String(dayButton.dataset.exceptionDate || '');
+		if (!dateKey) return;
+		void this.openExceptionModal(dateKey);
+	};
+
+	private handleExceptionModalBackdrop = (event: MouseEvent): void => {
+		if (event.target === this.exceptionModalNode) {
+			this.closeExceptionModal();
+		}
+	};
+
+	private handleExceptionModalChange = (event: Event): void => {
+		if (this.exceptionModalReadOnly) return;
+		const target = event.target;
+		if (!(target instanceof HTMLElement)) return;
+
+		if (target instanceof HTMLSelectElement && target.matches('[data-exc-slot-location]')) {
+			const uid = String(target.dataset.slotUid || '');
+			const slot = this.exceptionModalSlots.find((item) => item.uid === uid);
+			if (!slot) return;
+			slot.loc_id_location = String(target.value || '');
+			this.exceptionModalDirty = true;
+			return;
+		}
+
+		if (target instanceof HTMLInputElement && target.matches('[data-exc-slot-start], [data-exc-slot-end]')) {
+			const uid = String(target.dataset.slotUid || '');
+			const slot = this.exceptionModalSlots.find((item) => item.uid === uid);
+			if (!slot) return;
+			if (target.matches('[data-exc-slot-start]')) {
+				slot.start_time = this.normalizeTime(target.value);
+			} else {
+				slot.end_time = this.normalizeTime(target.value);
+			}
+			this.exceptionModalDirty = true;
+			return;
+		}
+
+		if (target instanceof HTMLInputElement && target.matches('[data-exc-note]')) {
+			this.exceptionModalNote = String(target.value || '');
+			this.exceptionModalDirty = true;
+			return;
+		}
+
+		if (target instanceof HTMLInputElement && target.type === 'radio' && target.matches('[data-exc-type]')) {
+			this.exceptionModalType = (target.value as ScheduleExceptionType | 'INHERIT') || 'INHERIT';
+			this.exceptionModalDirty = true;
+			this.renderExceptionModalBody();
+		}
+	};
+
+	private handleExceptionModalClick = (event: MouseEvent): void => {
+		if (this.exceptionModalReadOnly) return;
+		const target = event.target;
+		if (!(target instanceof HTMLElement)) return;
+
+		const addButton = target.closest<HTMLButtonElement>('[data-exc-slot-add]');
+		if (addButton) {
+			this.exceptionModalSlots.push(this.createDefaultExceptionSlot());
+			this.exceptionModalDirty = true;
+			this.renderExceptionModalBody();
+			return;
+		}
+
+		const removeButton = target.closest<HTMLButtonElement>('[data-exc-slot-remove]');
+		if (removeButton) {
+			const uid = String(removeButton.dataset.slotUid || '');
+			this.exceptionModalSlots = this.exceptionModalSlots.filter((slot) => slot.uid !== uid);
+			this.exceptionModalDirty = true;
+			this.renderExceptionModalBody();
+		}
+	};
+
+	private handleExceptionModalActions = (event: MouseEvent): void => {
+		const target = event.target;
+		if (!(target instanceof HTMLElement)) return;
+
+		if (target.closest('[data-exc-action="close"]')) {
+			this.closeExceptionModal();
+			return;
+		}
+		if (target.closest('[data-exc-action="delete"]')) {
+			void this.deleteExceptionFromModal();
+			return;
+		}
+		if (target.closest('[data-exc-action="save"]')) {
+			void this.saveExceptionFromModal();
+		}
 	};
 
 	private handleProfessionalChange = async (): Promise<void> => {
@@ -149,9 +326,14 @@ class ScheduleManager extends HTMLElement {
 
 		this.selectedProfessionalId = nextProfessionalId;
 		this.dayStates = this.buildEmptyDayStates();
+		this.exceptionSummaryMap = new Map();
 		this.renderPlanner();
 		this.setDirty(false);
 		await this.loadScheduleByProfessional(this.selectedProfessionalId);
+		if (this.activeView === 'exceptions') {
+			await this.loadExceptionsForVisibleMonth();
+			this.renderExceptionCalendar();
+		}
 	};
 
 	private handlePlannerChange = (event: Event): void => {
@@ -567,7 +749,12 @@ class ScheduleManager extends HTMLElement {
 
 	private updateControlsState(): void {
 		if (!this.professionalSelect) return;
-		const blocked = this.isMetaLoading || this.isScheduleLoading || this.isSaving || !this.canEdit;
+		const blocked =
+			this.isMetaLoading ||
+			this.isScheduleLoading ||
+			this.isExceptionsLoading ||
+			this.isSaving ||
+			!this.canEdit;
 
 		if (this.saveButton) {
 			this.saveButton.disabled = blocked || this.selectedProfessionalId <= 0;
@@ -587,13 +774,7 @@ class ScheduleManager extends HTMLElement {
 					: 'Guardar horarios';
 		}
 
-		if (this.loadingNode) {
-			const showLoading = this.isMetaLoading || this.isScheduleLoading;
-			this.loadingNode.classList.toggle('hidden', !showLoading);
-			this.loadingNode.textContent = this.isMetaLoading
-				? 'Cargando configuracion de horarios...'
-				: 'Cargando agenda del profesional...';
-		}
+		this.updateViewVisibility();
 
 		if (this.hintNode) {
 			if (!this.canEdit) {
@@ -859,6 +1040,585 @@ class ScheduleManager extends HTMLElement {
 		} finally {
 			this.isSaving = false;
 			this.updateControlsState();
+		}
+	}
+
+	private switchView = async (view: 'template' | 'exceptions'): Promise<void> => {
+		if (view === this.activeView) return;
+
+		if (view === 'exceptions' && this.isDirty) {
+			const canContinue = await this.confirmDiscardChanges();
+			if (!canContinue) return;
+			this.setDirty(false);
+		}
+
+		this.activeView = view;
+		this.updateViewVisibility();
+
+		if (view === 'exceptions' && this.selectedProfessionalId > 0) {
+			await this.loadExceptionsForVisibleMonth();
+			this.renderExceptionCalendar();
+		}
+	};
+
+	private updateViewVisibility(): void {
+		for (const tabButton of this.tabButtons ?? []) {
+			const isActive = tabButton.dataset.scheduleTab === this.activeView;
+			tabButton.classList.toggle('schedule-tab--active', isActive);
+			tabButton.setAttribute('aria-selected', isActive ? 'true' : 'false');
+		}
+
+		this.templateViewNode?.classList.toggle('hidden', this.activeView !== 'template');
+		this.exceptionsViewNode?.classList.toggle('hidden', this.activeView !== 'exceptions');
+		this.saveButton?.classList.toggle('hidden', this.activeView !== 'template');
+
+		if (this.loadingNode) {
+			const showLoading =
+				this.activeView === 'template'
+					? this.isMetaLoading || this.isScheduleLoading
+					: this.isMetaLoading || this.isExceptionsLoading;
+			this.loadingNode.classList.toggle('hidden', !showLoading);
+			this.loadingNode.textContent =
+				this.activeView === 'template'
+					? this.isMetaLoading
+						? 'Cargando configuracion de horarios...'
+						: 'Cargando agenda del profesional...'
+					: this.isExceptionsLoading
+						? 'Cargando excepciones del calendario...'
+						: 'Cargando configuracion de horarios...';
+		}
+	}
+
+	private createDefaultExceptionSlot(): ExceptionSlotDraft {
+		return {
+			uid: this.makeSlotUid(),
+			loc_id_location: this.getDefaultLocationId(),
+			start_time: '08:00',
+			end_time: '12:00',
+		};
+	};
+
+	private buildTemplateSlotsForDate(dateKey: string): ExceptionSlotDraft[] {
+		const date = parseDateKey(dateKey);
+		const dayOfWeek = getIsoDayOfWeek(date);
+		const dayState = this.dayStates.find((day) => day.day_of_week === dayOfWeek);
+		if (!dayState?.enabled || dayState.slots.length === 0) return [];
+
+		return dayState.slots.map((slot) => ({
+			uid: this.makeSlotUid(),
+			loc_id_location: slot.loc_id_location,
+			start_time: this.normalizeTime(slot.start_time),
+			end_time: this.normalizeTime(slot.end_time),
+		}));
+	};
+
+	private async loadExceptionsForVisibleMonth(): Promise<void> {
+		if (this.selectedProfessionalId <= 0) {
+			this.exceptionSummaryMap = new Map();
+			return;
+		}
+
+		const { from, to } = getMonthRangeKeys(this.exceptionCalendarCursor);
+		this.isExceptionsLoading = true;
+		this.updateViewVisibility();
+
+		try {
+			const response = await fetch(
+				`/api/schedules/${this.selectedProfessionalId}/exceptions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+				{
+					method: 'GET',
+					headers: { Accept: 'application/json' },
+				}
+			);
+			const data = await this.parseJson<
+				Array<{
+					exception_date: string;
+					exception_type: ScheduleExceptionType;
+					is_past: boolean;
+				}>
+			>(response);
+
+			if (!response.ok || !data || data.status !== 'success' || !Array.isArray(data.data)) {
+				throw new Error(
+					this.toBackendErrorMessage(data, 'No fue posible cargar las excepciones del calendario.')
+				);
+			}
+
+			this.exceptionSummaryMap = buildExceptionSummaryMap(data.data);
+		} catch (error) {
+			this.exceptionSummaryMap = new Map();
+			this.showError(
+				error instanceof Error ? error.message : 'No fue posible cargar las excepciones.'
+			);
+		} finally {
+			this.isExceptionsLoading = false;
+			this.updateViewVisibility();
+		}
+	}
+
+	private renderExceptionCalendar(): void {
+		if (!this.exceptionCalGridNode || !this.exceptionCalMonthNode) return;
+
+		if (this.selectedProfessionalId <= 0) {
+			this.exceptionCalGridNode.innerHTML = '';
+			this.exceptionCalMonthNode.textContent = formatMonthLabel(this.exceptionCalendarCursor);
+			return;
+		}
+
+		this.exceptionCalMonthNode.textContent = formatMonthLabel(this.exceptionCalendarCursor);
+		this.exceptionCalGridNode.innerHTML = '';
+
+		const cursor = this.exceptionCalendarCursor;
+		const year = cursor.getFullYear();
+		const month = cursor.getMonth();
+		const firstWeekday = (new Date(year, month, 1).getDay() + 6) % 7;
+		const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+		for (let index = 0; index < firstWeekday; index += 1) {
+			const placeholder = document.createElement('span');
+			placeholder.className = 'schedule-cal-day schedule-cal-day--empty';
+			this.exceptionCalGridNode.appendChild(placeholder);
+		}
+
+		for (let day = 1; day <= daysInMonth; day += 1) {
+			const date = new Date(year, month, day);
+			const dateKey = formatDateKey(date);
+			const tone = resolveCalendarDayTone(dateKey, this.exceptionSummaryMap);
+			const isPast = isPastDateKey(dateKey);
+			const dayButton = document.createElement('button');
+			dayButton.type = 'button';
+			dayButton.dataset.exceptionDate = dateKey;
+			dayButton.textContent = String(day);
+			dayButton.className = `schedule-cal-day schedule-cal-day--${tone}${isPast ? ' schedule-cal-day--past' : ''}`;
+			this.exceptionCalGridNode.appendChild(dayButton);
+		}
+	}
+
+	private async openExceptionModal(dateKey: string): Promise<void> {
+		if (!this.exceptionModalNode || this.selectedProfessionalId <= 0) return;
+
+		this.exceptionModalDateKey = dateKey;
+		this.exceptionModalReadOnly = isPastDateKey(dateKey) || !this.canEdit;
+		this.exceptionModalDirty = false;
+
+		try {
+			const response = await fetch(
+				`/api/schedules/${this.selectedProfessionalId}/exceptions/${dateKey}`,
+				{
+					method: 'GET',
+					headers: { Accept: 'application/json' },
+				}
+			);
+			const data = await this.parseJson<{
+				exception_type: ScheduleExceptionType | null;
+				note: string | null;
+				slots: Array<{
+					loc_id_location: number;
+					start_time: string;
+					end_time: string;
+				}>;
+				inherits_template: boolean;
+				is_past: boolean;
+			}>(response);
+
+			if (!response.ok || !data || data.status !== 'success' || !data.data) {
+				throw new Error(this.toBackendErrorMessage(data, 'No fue posible cargar la excepción.'));
+			}
+
+			const detail = data.data;
+			this.exceptionModalReadOnly = Boolean(detail.is_past) || !this.canEdit;
+
+			if (detail.inherits_template || !detail.exception_type) {
+				this.exceptionModalType = 'OVERRIDE';
+				this.exceptionModalNote = '';
+				this.exceptionModalSlots = this.buildTemplateSlotsForDate(dateKey);
+			} else if (detail.exception_type === 'BLOCKED') {
+				this.exceptionModalType = 'BLOCKED';
+				this.exceptionModalNote = detail.note || '';
+				this.exceptionModalSlots = [];
+			} else {
+				this.exceptionModalType = 'OVERRIDE';
+				this.exceptionModalNote = detail.note || '';
+				this.exceptionModalSlots = detail.slots.map((slot) => ({
+					uid: this.makeSlotUid(),
+					loc_id_location: String(slot.loc_id_location || ''),
+					start_time: this.normalizeTime(slot.start_time),
+					end_time: this.normalizeTime(slot.end_time),
+				}));
+			}
+		} catch (error) {
+			this.showError(error instanceof Error ? error.message : 'No fue posible abrir la excepción.');
+			return;
+		}
+
+		if (this.exceptionModalTitleNode) {
+			this.exceptionModalTitleNode.textContent = this.exceptionModalReadOnly
+				? 'Detalle del día'
+				: 'Excepción de horario';
+		}
+		if (this.exceptionModalSubtitleNode) {
+			const label = new Intl.DateTimeFormat('es-PY', {
+				weekday: 'long',
+				day: 'numeric',
+				month: 'long',
+				year: 'numeric',
+			}).format(parseDateKey(dateKey));
+			this.exceptionModalSubtitleNode.textContent = label;
+		}
+
+		this.renderExceptionModalBody();
+		this.renderExceptionModalActions();
+		this.exceptionModalNode.classList.remove('hidden');
+		this.exceptionModalNode.classList.add('flex');
+	}
+
+	private closeExceptionModal = (): void => {
+		if (!this.exceptionModalNode) return;
+		this.exceptionModalNode.classList.add('hidden');
+		this.exceptionModalNode.classList.remove('flex');
+		this.exceptionModalDateKey = '';
+	};
+
+	private renderExceptionModalBody(): void {
+		if (!this.exceptionModalBodyNode) return;
+		this.clearNode(this.exceptionModalBodyNode);
+
+		if (this.exceptionModalReadOnly) {
+			const readOnly = document.createElement('div');
+			readOnly.className = 'grid gap-2 text-[0.9rem] text-(--on-surface-variant)';
+			if (this.exceptionModalType === 'BLOCKED') {
+				readOnly.textContent = 'Este día está bloqueado (sin turnos disponibles).';
+			} else if (this.exceptionModalSlots.length === 0) {
+				readOnly.textContent = 'Sin turnos configurados para este día.';
+			} else {
+				const list = document.createElement('ul');
+				list.className = 'grid gap-1';
+				for (const slot of this.exceptionModalSlots) {
+					const item = document.createElement('li');
+					const location = this.locations.find(
+						(loc) => loc.id_location === Number(slot.loc_id_location)
+					);
+					item.textContent = `${location?.name || 'Sucursal'}: ${slot.start_time} - ${slot.end_time}`;
+					list.appendChild(item);
+				}
+				readOnly.appendChild(list);
+			}
+			this.exceptionModalBodyNode.appendChild(readOnly);
+			return;
+		}
+
+		const typeFieldset = document.createElement('fieldset');
+		typeFieldset.className = 'grid gap-2';
+		const typeLegend = document.createElement('legend');
+		typeLegend.className = 'text-[0.88rem] font-bold text-(--on-surface)';
+		typeLegend.textContent = 'Tipo de excepción';
+		typeFieldset.appendChild(typeLegend);
+
+		const typeOptions: Array<{ value: ScheduleExceptionType | 'INHERIT'; label: string }> = [
+			{ value: 'OVERRIDE', label: 'Horario especial (reemplaza la plantilla)' },
+			{ value: 'BLOCKED', label: 'Bloquear día completo' },
+		];
+
+		for (const option of typeOptions) {
+			const label = document.createElement('label');
+			label.className =
+				'inline-flex items-center gap-2 rounded-xl border border-(--shell-border) px-3 py-2 text-[0.88rem] font-semibold';
+			const input = document.createElement('input');
+			input.type = 'radio';
+			input.name = 'exception_type';
+			input.value = option.value;
+			input.dataset.excType = 'true';
+			input.checked = this.exceptionModalType === option.value;
+			label.append(input, document.createTextNode(option.label));
+			typeFieldset.appendChild(label);
+		}
+		this.exceptionModalBodyNode.appendChild(typeFieldset);
+
+		const noteLabel = document.createElement('label');
+		noteLabel.className = 'grid gap-1 text-[0.88rem] font-bold text-(--on-surface)';
+		noteLabel.append('Nota (opcional)');
+		const noteInput = document.createElement('input');
+		noteInput.type = 'text';
+		noteInput.maxLength = 500;
+		noteInput.value = this.exceptionModalNote;
+		noteInput.dataset.excNote = 'true';
+		noteInput.className =
+			'rounded-xl border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-[0.9rem] font-medium';
+		noteInput.disabled = this.exceptionModalType === 'BLOCKED';
+		noteLabel.appendChild(noteInput);
+		this.exceptionModalBodyNode.appendChild(noteLabel);
+
+		if (this.exceptionModalType === 'BLOCKED') {
+			const blockedHint = document.createElement('p');
+			blockedHint.className = 'text-[0.85rem] font-medium text-(--on-surface-variant)';
+			blockedHint.textContent = 'No se ofrecerán turnos este día.';
+			this.exceptionModalBodyNode.appendChild(blockedHint);
+			return;
+		}
+
+		const slotsWrap = document.createElement('div');
+		slotsWrap.className = 'grid gap-3';
+		const slotsTitle = document.createElement('p');
+		slotsTitle.className = 'text-[0.88rem] font-bold text-(--on-surface)';
+		slotsTitle.textContent = 'Turnos del día';
+		slotsWrap.appendChild(slotsTitle);
+
+		if (this.exceptionModalSlots.length === 0) {
+			const empty = document.createElement('p');
+			empty.className = 'text-[0.85rem] text-(--on-surface-variant)';
+			empty.textContent = 'Sin turnos. Agrega al menos uno o bloquea el día.';
+			slotsWrap.appendChild(empty);
+		}
+
+		for (const slot of this.exceptionModalSlots) {
+			const row = document.createElement('div');
+			row.className = 'schedule-slot-row';
+
+			const locationLabel = document.createElement('label');
+			locationLabel.className = 'schedule-slot-field schedule-slot-field--location';
+			locationLabel.append('Sucursal');
+			const locationSelect = document.createElement('select');
+			locationSelect.dataset.excSlotLocation = 'true';
+			locationSelect.dataset.slotUid = slot.uid;
+			locationSelect.className =
+				'rounded-xl border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-sm font-semibold';
+			locationSelect.appendChild(this.createOption('', 'Selecciona sucursal'));
+			for (const location of this.locations) {
+				locationSelect.appendChild(
+					this.createOption(String(location.id_location), String(location.name || ''))
+				);
+			}
+			locationSelect.value = slot.loc_id_location || '';
+			locationLabel.appendChild(locationSelect);
+
+			const startLabel = document.createElement('label');
+			startLabel.className = 'schedule-slot-field schedule-slot-field--start';
+			startLabel.append('Inicio');
+			const startInput = document.createElement('input');
+			startInput.type = 'time';
+			startInput.value = slot.start_time;
+			startInput.dataset.excSlotStart = 'true';
+			startInput.dataset.slotUid = slot.uid;
+			startInput.className =
+				'rounded-xl border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-sm font-semibold';
+			startLabel.appendChild(startInput);
+
+			const endLabel = document.createElement('label');
+			endLabel.className = 'schedule-slot-field schedule-slot-field--end';
+			endLabel.append('Fin');
+			const endInput = document.createElement('input');
+			endInput.type = 'time';
+			endInput.value = slot.end_time;
+			endInput.dataset.excSlotEnd = 'true';
+			endInput.dataset.slotUid = slot.uid;
+			endInput.className =
+				'rounded-xl border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-sm font-semibold';
+			endLabel.appendChild(endInput);
+
+			const removeWrap = document.createElement('div');
+			removeWrap.className = 'schedule-slot-remove-wrap';
+			const removeButton = document.createElement('button');
+			removeButton.type = 'button';
+			removeButton.dataset.excSlotRemove = 'true';
+			removeButton.dataset.slotUid = slot.uid;
+			removeButton.className = 'schedule-slot-remove-btn';
+			removeButton.innerHTML =
+				'<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">close</span>';
+			removeWrap.appendChild(removeButton);
+
+			row.append(locationLabel, startLabel, endLabel, removeWrap);
+			slotsWrap.appendChild(row);
+		}
+
+		const addButton = document.createElement('button');
+		addButton.type = 'button';
+		addButton.dataset.excSlotAdd = 'true';
+		addButton.className =
+			'inline-flex h-9 items-center justify-center rounded-xl border border-(--primary-container) bg-(--primary-soft) px-3.5 text-[0.9rem] font-bold text-(--primary)';
+		addButton.textContent = '+ Agregar turno';
+		slotsWrap.appendChild(addButton);
+
+		this.exceptionModalBodyNode.appendChild(slotsWrap);
+	}
+
+	private renderExceptionModalActions(): void {
+		if (!this.exceptionModalActionsNode) return;
+		this.clearNode(this.exceptionModalActionsNode);
+
+		const closeButton = document.createElement('button');
+		closeButton.type = 'button';
+		closeButton.dataset.excAction = 'close';
+		closeButton.className =
+			'inline-flex items-center justify-center rounded-xl border border-(--shell-border) px-4 py-2 text-[0.9rem] font-bold';
+		closeButton.textContent = 'Cerrar';
+
+		this.exceptionModalActionsNode.appendChild(closeButton);
+
+		if (this.exceptionModalReadOnly) return;
+
+		const hasExisting = this.exceptionSummaryMap.has(this.exceptionModalDateKey);
+		if (hasExisting) {
+			const deleteButton = document.createElement('button');
+			deleteButton.type = 'button';
+			deleteButton.dataset.excAction = 'delete';
+			deleteButton.className =
+				'inline-flex items-center justify-center rounded-xl border border-rose-300 px-4 py-2 text-[0.9rem] font-bold text-rose-600';
+			deleteButton.textContent = 'Usar plantilla';
+			this.exceptionModalActionsNode.appendChild(deleteButton);
+		}
+
+		const saveButton = document.createElement('button');
+		saveButton.type = 'button';
+		saveButton.dataset.excAction = 'save';
+		saveButton.className =
+			'schedule-save-btn inline-flex items-center justify-center rounded-xl px-4 py-2 text-[0.9rem] font-bold';
+		saveButton.textContent = 'Guardar excepción';
+		this.exceptionModalActionsNode.appendChild(saveButton);
+	}
+
+	private validateExceptionModalPayload(): {
+		payload?: {
+			exception_type: ScheduleExceptionType;
+			note: string | null;
+			slots: Array<{ loc_id_location: number; start_time: string; end_time: string }>;
+		};
+		error?: string;
+	} {
+		if (this.exceptionModalType === 'BLOCKED') {
+			return {
+				payload: {
+					exception_type: 'BLOCKED',
+					note: this.exceptionModalNote.trim() || null,
+					slots: [],
+				},
+			};
+		}
+
+		const slots: Array<{ loc_id_location: number; start_time: string; end_time: string }> = [];
+		const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+		const intervals: Array<{ start: number; end: number }> = [];
+
+		for (const slot of this.exceptionModalSlots) {
+			const locationId = Number(slot.loc_id_location);
+			const startTime = this.normalizeTime(slot.start_time);
+			const endTime = this.normalizeTime(slot.end_time);
+
+			if (!Number.isInteger(locationId) || locationId <= 0) {
+				return { error: 'Selecciona una sucursal válida en cada turno.' };
+			}
+			if (!timeRegex.test(startTime) || !timeRegex.test(endTime)) {
+				return { error: 'Las horas deben tener formato HH:MM.' };
+			}
+
+			const startMinutes = this.toMinutes(startTime);
+			const endMinutes = this.toMinutes(endTime);
+			if (startMinutes >= endMinutes) {
+				return { error: 'La hora de inicio debe ser menor que la hora de fin.' };
+			}
+
+			intervals.push({ start: startMinutes, end: endMinutes });
+			slots.push({
+				loc_id_location: locationId,
+				start_time: startTime,
+				end_time: endTime,
+			});
+		}
+
+		intervals.sort((a, b) => a.start - b.start);
+		for (let index = 1; index < intervals.length; index += 1) {
+			if (intervals[index].start < intervals[index - 1].end) {
+				return { error: 'Hay turnos solapados en la excepción.' };
+			}
+		}
+
+		return {
+			payload: {
+				exception_type: 'OVERRIDE',
+				note: this.exceptionModalNote.trim() || null,
+				slots,
+			},
+		};
+	}
+
+	private async saveExceptionFromModal(): Promise<void> {
+		if (!this.canEdit || !this.exceptionModalDateKey || this.exceptionModalReadOnly) return;
+
+		const result = this.validateExceptionModalPayload();
+		if ('error' in result) {
+			this.showError(result.error ?? 'No fue posible validar la excepción.');
+			return;
+		}
+
+		try {
+			const response = await fetch(
+				`/api/schedules/${this.selectedProfessionalId}/exceptions/${this.exceptionModalDateKey}`,
+				{
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+					},
+					body: JSON.stringify(result.payload),
+				}
+			);
+			const data = await this.parseJson(response);
+			if (!response.ok || !data || data.status !== 'success') {
+				throw new Error(this.toBackendErrorMessage(data, 'No fue posible guardar la excepción.'));
+			}
+
+			this.closeExceptionModal();
+			await this.loadExceptionsForVisibleMonth();
+			this.renderExceptionCalendar();
+			this.navigateWithFlash(
+				typeof data.message === 'string' && data.message.trim()
+					? data.message
+					: 'Excepción guardada correctamente.',
+				'success'
+			);
+		} catch (error) {
+			this.showError(error instanceof Error ? error.message : 'No fue posible guardar la excepción.');
+		}
+	}
+
+	private async deleteExceptionFromModal(): Promise<void> {
+		if (!this.canEdit || !this.exceptionModalDateKey || this.exceptionModalReadOnly) return;
+
+		const confirmed = window.BookmateAlert?.confirm
+			? await window.BookmateAlert.confirm({
+					type: 'warning',
+					title: 'Volver a plantilla',
+					message: 'Este día volverá a usar el horario semanal habitual.',
+					confirmText: 'Confirmar',
+					cancelText: 'Cancelar',
+				})
+			: window.confirm('Este día volverá a usar el horario semanal habitual.');
+
+		if (!confirmed) return;
+
+		try {
+			const response = await fetch(
+				`/api/schedules/${this.selectedProfessionalId}/exceptions/${this.exceptionModalDateKey}`,
+				{
+					method: 'DELETE',
+					headers: { Accept: 'application/json' },
+				}
+			);
+			const data = await this.parseJson(response);
+			if (!response.ok || !data || data.status !== 'success') {
+				throw new Error(this.toBackendErrorMessage(data, 'No fue posible eliminar la excepción.'));
+			}
+
+			this.closeExceptionModal();
+			await this.loadExceptionsForVisibleMonth();
+			this.renderExceptionCalendar();
+			this.navigateWithFlash(
+				typeof data.message === 'string' && data.message.trim()
+					? data.message
+					: 'Excepción eliminada.',
+				'success'
+			);
+		} catch (error) {
+			this.showError(error instanceof Error ? error.message : 'No fue posible eliminar la excepción.');
 		}
 	}
 

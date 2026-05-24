@@ -149,7 +149,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 		if (!professionalId) {
 			throw new SchedulesApiError('ID de profesional invalido.', 400);
 		}
-		if (claims.role_id === ROLES.PROFESIONAL) {
+		if (claims.role_id !== ROLES.ADMIN && claims.role_id !== ROLES.RECEPCIONISTA) {
 			throw new SchedulesApiError('No tienes permisos para modificar horarios.', 403);
 		}
 

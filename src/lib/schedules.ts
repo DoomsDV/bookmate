@@ -53,6 +53,47 @@ export interface ScheduleUpdatePayload {
 	schedules: ScheduleUpdateItem[];
 }
 
+export type ScheduleExceptionType = 'BLOCKED' | 'OVERRIDE';
+
+export interface ScheduleExceptionSummary {
+	id_schedule_exception: number;
+	exception_date: string;
+	exception_type: ScheduleExceptionType;
+	note: string | null;
+	slot_count: number;
+	is_past: boolean;
+}
+
+export interface ScheduleExceptionSlot {
+	id_exception_slot?: number;
+	loc_id_location: number;
+	location_name?: string;
+	start_time: string;
+	end_time: string;
+}
+
+export interface ScheduleExceptionDetail {
+	id_schedule_exception?: number;
+	exception_date: string;
+	exception_type: ScheduleExceptionType | null;
+	note: string | null;
+	slots: ScheduleExceptionSlot[];
+	is_past: boolean;
+	inherits_template: boolean;
+}
+
+export interface ScheduleExceptionSlotInput {
+	loc_id_location: number;
+	start_time: string;
+	end_time: string;
+}
+
+export interface ScheduleExceptionUpsertPayload {
+	exception_type: ScheduleExceptionType;
+	note?: string | null;
+	slots: ScheduleExceptionSlotInput[];
+}
+
 interface ApiSuccessResponse {
 	status: 'success';
 	data?: unknown;
@@ -282,6 +323,96 @@ const normalizeScheduleItem = (value: unknown): ProfessionalScheduleItem | null 
 const getScheduleUrlByProfessionalId = (professionalId: number) =>
 	`${trimTrailingSlash(PROFESSIONALS_URL)}/${professionalId}/schedule`;
 
+const getScheduleExceptionsUrlByProfessionalId = (professionalId: number) =>
+	`${trimTrailingSlash(PROFESSIONALS_URL)}/${professionalId}/schedule-exceptions`;
+
+const DATE_KEY_REGEX = /^\d{4}-\d{2}-\d{2}$/;
+
+const parseDataObjectResponse = async (response: Response, fallbackMessage: string) => {
+	let data: ApiSuccessResponse | ApiFailureResponse | null = null;
+
+	try {
+		data = await response.json();
+	} catch {
+		throw new SchedulesApiError('No fue posible interpretar la respuesta del servidor de horarios.', 502);
+	}
+
+	if (
+		!response.ok ||
+		!data ||
+		typeof data !== 'object' ||
+		data.status !== 'success' ||
+		!('data' in data) ||
+		!data.data ||
+		typeof data.data !== 'object'
+	) {
+		const failureData = (data ?? {}) as ApiFailureResponse;
+		throw new SchedulesApiError(
+			(typeof failureData.message === 'string' && failureData.message.trim()) || fallbackMessage,
+			response.status || 400,
+			failureData.details,
+			parseFieldErrors(failureData.errors)
+		);
+	}
+
+	return data.data as Record<string, unknown>;
+};
+
+const normalizeExceptionSummary = (value: unknown): ScheduleExceptionSummary | null => {
+	if (!value || typeof value !== 'object') return null;
+	const source = value as Record<string, unknown>;
+	const exceptionDate = firstString(source, ['exception_date']);
+	const exceptionType = firstString(source, ['exception_type']).toUpperCase();
+	if (!DATE_KEY_REGEX.test(exceptionDate)) return null;
+	if (exceptionType !== 'BLOCKED' && exceptionType !== 'OVERRIDE') return null;
+
+	return {
+		id_schedule_exception: toNumber(source.id_schedule_exception, 0),
+		exception_date: exceptionDate,
+		exception_type: exceptionType as ScheduleExceptionType,
+		note: firstString(source, ['note']) || null,
+		slot_count: toNumber(source.slot_count, 0),
+		is_past: toNumber(source.is_past, 0) === 1,
+	};
+};
+
+const normalizeExceptionSlot = (value: unknown): ScheduleExceptionSlot | null => {
+	if (!value || typeof value !== 'object') return null;
+	const source = value as Record<string, unknown>;
+	const locId = firstNumber(source, ['loc_id_location', 'id_location']);
+	const startTime = firstString(source, ['start_time']);
+	const endTime = firstString(source, ['end_time']);
+	if (!Number.isInteger(locId) || locId <= 0 || !startTime || !endTime) return null;
+
+	return {
+		id_exception_slot: toNumber(source.id_exception_slot, 0) || undefined,
+		loc_id_location: locId,
+		location_name: firstString(source, ['location_name', 'name']),
+		start_time: startTime,
+		end_time: endTime,
+	};
+};
+
+const normalizeExceptionDetail = (value: Record<string, unknown>): ScheduleExceptionDetail => {
+	const exceptionDate = firstString(value, ['exception_date']);
+	const rawType = firstString(value, ['exception_type']).toUpperCase();
+	const exceptionType =
+		rawType === 'BLOCKED' || rawType === 'OVERRIDE' ? (rawType as ScheduleExceptionType) : null;
+	const slotsRaw = Array.isArray(value.slots) ? value.slots : [];
+
+	return {
+		id_schedule_exception: toNumber(value.id_schedule_exception, 0) || undefined,
+		exception_date: exceptionDate,
+		exception_type: exceptionType,
+		note: firstString(value, ['note']) || null,
+		slots: slotsRaw
+			.map(normalizeExceptionSlot)
+			.filter((item): item is ScheduleExceptionSlot => item !== null),
+		is_past: toNumber(value.is_past, 0) === 1,
+		inherits_template: toNumber(value.inherits_template, 0) === 1,
+	};
+};
+
 const ensureToken = (token: string) => {
 	if (!token) throw new SchedulesApiError('Token de acceso requerido.', 401);
 };
@@ -402,4 +533,127 @@ export const updateProfessionalScheduleWithOrds = async (
 	});
 
 	return parseActionResponse(response, 'No fue posible guardar los horarios del profesional.');
+};
+
+export const listScheduleExceptionsWithOrds = async (
+	token: string,
+	professionalId: number,
+	fromDate: string,
+	toDate: string
+): Promise<ScheduleExceptionSummary[]> => {
+	ensureToken(token);
+	if (!Number.isInteger(professionalId) || professionalId <= 0) {
+		throw new SchedulesApiError('ID de profesional invalido.', 400);
+	}
+	if (!DATE_KEY_REGEX.test(fromDate) || !DATE_KEY_REGEX.test(toDate)) {
+		throw new SchedulesApiError('Rango de fechas invalido. Use YYYY-MM-DD.', 400);
+	}
+
+	const endpoint = new URL(getScheduleExceptionsUrlByProfessionalId(professionalId));
+	endpoint.searchParams.set('from', fromDate);
+	endpoint.searchParams.set('to', toDate);
+
+	const response = await fetch(endpoint.toString(), {
+		method: 'GET',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	const rows = await parseArrayResponse(
+		response,
+		'No fue posible obtener las excepciones del calendario.'
+	);
+	return rows
+		.map(normalizeExceptionSummary)
+		.filter((item): item is ScheduleExceptionSummary => item !== null);
+};
+
+export const getScheduleExceptionWithOrds = async (
+	token: string,
+	professionalId: number,
+	exceptionDate: string
+): Promise<ScheduleExceptionDetail> => {
+	ensureToken(token);
+	if (!Number.isInteger(professionalId) || professionalId <= 0) {
+		throw new SchedulesApiError('ID de profesional invalido.', 400);
+	}
+	if (!DATE_KEY_REGEX.test(exceptionDate)) {
+		throw new SchedulesApiError('Fecha invalida. Use YYYY-MM-DD.', 400);
+	}
+
+	const response = await fetch(
+		`${getScheduleExceptionsUrlByProfessionalId(professionalId)}/${exceptionDate}`,
+		{
+			method: 'GET',
+			headers: {
+				Authorization: `Bearer ${token}`,
+				Accept: 'application/json',
+			},
+		}
+	);
+
+	const data = await parseDataObjectResponse(
+		response,
+		'No fue posible obtener el detalle de la excepcion.'
+	);
+	return normalizeExceptionDetail(data);
+};
+
+export const upsertScheduleExceptionWithOrds = async (
+	token: string,
+	professionalId: number,
+	exceptionDate: string,
+	payload: ScheduleExceptionUpsertPayload
+) => {
+	ensureToken(token);
+	if (!Number.isInteger(professionalId) || professionalId <= 0) {
+		throw new SchedulesApiError('ID de profesional invalido.', 400);
+	}
+	if (!DATE_KEY_REGEX.test(exceptionDate)) {
+		throw new SchedulesApiError('Fecha invalida. Use YYYY-MM-DD.', 400);
+	}
+
+	const response = await fetch(
+		`${getScheduleExceptionsUrlByProfessionalId(professionalId)}/${exceptionDate}`,
+		{
+			method: 'PUT',
+			headers: {
+				Authorization: `Bearer ${token}`,
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+			},
+			body: JSON.stringify(payload),
+		}
+	);
+
+	return parseActionResponse(response, 'No fue posible guardar la excepcion.');
+};
+
+export const deleteScheduleExceptionWithOrds = async (
+	token: string,
+	professionalId: number,
+	exceptionDate: string
+) => {
+	ensureToken(token);
+	if (!Number.isInteger(professionalId) || professionalId <= 0) {
+		throw new SchedulesApiError('ID de profesional invalido.', 400);
+	}
+	if (!DATE_KEY_REGEX.test(exceptionDate)) {
+		throw new SchedulesApiError('Fecha invalida. Use YYYY-MM-DD.', 400);
+	}
+
+	const response = await fetch(
+		`${getScheduleExceptionsUrlByProfessionalId(professionalId)}/${exceptionDate}`,
+		{
+			method: 'DELETE',
+			headers: {
+				Authorization: `Bearer ${token}`,
+				Accept: 'application/json',
+			},
+		}
+	);
+
+	return parseActionResponse(response, 'No fue posible eliminar la excepcion.');
 };
