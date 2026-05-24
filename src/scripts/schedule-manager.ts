@@ -115,6 +115,9 @@ class ScheduleManager extends HTMLElement {
 	private exceptionModalBodyNode: HTMLElement | null = null;
 	private exceptionModalActionsNode: HTMLElement | null = null;
 	private exceptionModalCloseButton: HTMLButtonElement | null = null;
+	private exceptionModalErrorNode: HTMLElement | null = null;
+	private exceptionModalErrorMessageNode: HTMLElement | null = null;
+	private exceptionModalErrorFeedbackNode: HTMLElement | null = null;
 
 	connectedCallback() {
 		if (this.#bound) return;
@@ -141,6 +144,13 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionModalBodyNode = this.querySelector<HTMLElement>('[data-exception-modal-body]');
 		this.exceptionModalActionsNode = this.querySelector<HTMLElement>('[data-exception-modal-actions]');
 		this.exceptionModalCloseButton = this.querySelector<HTMLButtonElement>('[data-exception-modal-close]');
+		this.exceptionModalErrorNode = this.querySelector<HTMLElement>('[data-exception-modal-error]');
+		this.exceptionModalErrorMessageNode = this.querySelector<HTMLElement>(
+			'[data-exception-modal-error-message]'
+		);
+		this.exceptionModalErrorFeedbackNode = this.querySelector<HTMLElement>(
+			'[data-exception-modal-feedback]'
+		);
 
 		if (!this.professionalSelect || !this.plannerNode) {
 			this.#bound = false;
@@ -165,7 +175,7 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionCalNextButton?.addEventListener('click', this.handleExceptionMonthNext, { signal });
 		this.exceptionCalGridNode?.addEventListener('click', this.handleExceptionCalendarClick, { signal });
 		this.exceptionModalCloseButton?.addEventListener('click', this.closeExceptionModal, { signal });
-		this.exceptionModalNode?.addEventListener('click', this.handleExceptionModalBackdrop, { signal });
+		this.exceptionModalNode?.addEventListener('click', this.handleExceptionModalClickRoot, { signal });
 		this.exceptionModalBodyNode?.addEventListener('change', this.handleExceptionModalChange, { signal });
 		this.exceptionModalBodyNode?.addEventListener('click', this.handleExceptionModalClick, { signal });
 		this.exceptionModalActionsNode?.addEventListener('click', this.handleExceptionModalActions, { signal });
@@ -216,7 +226,15 @@ class ScheduleManager extends HTMLElement {
 		void this.openExceptionModal(dateKey);
 	};
 
-	private handleExceptionModalBackdrop = (event: MouseEvent): void => {
+	private handleExceptionModalClickRoot = (event: MouseEvent): void => {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+
+		if (target.closest('[data-dismiss-exception-modal-error]')) {
+			this.clearExceptionModalError();
+			return;
+		}
+
 		if (event.target === this.exceptionModalNode) {
 			this.closeExceptionModal();
 		}
@@ -224,6 +242,7 @@ class ScheduleManager extends HTMLElement {
 
 	private handleExceptionModalChange = (event: Event): void => {
 		if (this.exceptionModalReadOnly) return;
+		this.clearExceptionModalError();
 		const target = event.target;
 		if (!(target instanceof HTMLElement)) return;
 
@@ -264,6 +283,7 @@ class ScheduleManager extends HTMLElement {
 
 	private handleExceptionModalClick = (event: MouseEvent): void => {
 		if (this.exceptionModalReadOnly) return;
+		this.clearExceptionModalError();
 		const target = event.target;
 		if (!(target instanceof HTMLElement)) return;
 
@@ -807,6 +827,22 @@ class ScheduleManager extends HTMLElement {
 		this.errorNode.classList.remove('hidden');
 	}
 
+	private clearExceptionModalError(): void {
+		if (this.exceptionModalErrorMessageNode) {
+			this.exceptionModalErrorMessageNode.textContent = '';
+		}
+		this.exceptionModalErrorNode?.classList.add('hidden');
+		this.exceptionModalErrorFeedbackNode?.classList.remove('is-visible');
+	}
+
+	private showExceptionModalError(message: string): void {
+		if (!this.exceptionModalErrorNode || !this.exceptionModalErrorMessageNode) return;
+		this.clearMessages();
+		this.exceptionModalErrorMessageNode.textContent = message;
+		this.exceptionModalErrorNode.classList.remove('hidden');
+		this.exceptionModalErrorFeedbackNode?.classList.add('is-visible');
+	}
+
 	private setDirty(value: boolean): void {
 		this.isDirty = value;
 		this.updateControlsState();
@@ -1267,6 +1303,7 @@ class ScheduleManager extends HTMLElement {
 			this.exceptionModalSubtitleNode.textContent = label;
 		}
 
+		this.clearExceptionModalError();
 		this.renderExceptionModalBody();
 		this.renderExceptionModalActions();
 		this.exceptionModalNode.classList.remove('hidden');
@@ -1275,6 +1312,7 @@ class ScheduleManager extends HTMLElement {
 
 	private closeExceptionModal = (): void => {
 		if (!this.exceptionModalNode) return;
+		this.clearExceptionModalError();
 		this.exceptionModalNode.classList.add('hidden');
 		this.exceptionModalNode.classList.remove('flex');
 		this.exceptionModalDateKey = '';
@@ -1457,36 +1495,47 @@ class ScheduleManager extends HTMLElement {
 	private renderExceptionModalActions(): void {
 		if (!this.exceptionModalActionsNode) return;
 		this.clearNode(this.exceptionModalActionsNode);
+		this.exceptionModalActionsNode.classList.remove('max-sm:hidden');
 
-		const closeButton = document.createElement('button');
-		closeButton.type = 'button';
-		closeButton.dataset.excAction = 'close';
-		closeButton.className =
-			'inline-flex items-center justify-center rounded-xl border border-(--shell-border) px-4 py-2 text-[0.9rem] font-bold';
-		closeButton.textContent = 'Cerrar';
+		if (!this.exceptionModalReadOnly && this.exceptionSummaryMap.has(this.exceptionModalDateKey)) {
+			const startActions = document.createElement('div');
+			startActions.className = 'schedule-exception-modal-footer__start';
 
-		this.exceptionModalActionsNode.appendChild(closeButton);
-
-		if (this.exceptionModalReadOnly) return;
-
-		const hasExisting = this.exceptionSummaryMap.has(this.exceptionModalDateKey);
-		if (hasExisting) {
 			const deleteButton = document.createElement('button');
 			deleteButton.type = 'button';
 			deleteButton.dataset.excAction = 'delete';
-			deleteButton.className =
-				'inline-flex items-center justify-center rounded-xl border border-rose-300 px-4 py-2 text-[0.9rem] font-bold text-rose-600';
+			deleteButton.className = 'modal-action-danger';
 			deleteButton.textContent = 'Usar plantilla';
-			this.exceptionModalActionsNode.appendChild(deleteButton);
+			startActions.appendChild(deleteButton);
+
+			this.exceptionModalActionsNode.appendChild(startActions);
 		}
 
-		const saveButton = document.createElement('button');
-		saveButton.type = 'button';
-		saveButton.dataset.excAction = 'save';
-		saveButton.className =
-			'schedule-save-btn inline-flex items-center justify-center rounded-xl px-4 py-2 text-[0.9rem] font-bold';
-		saveButton.textContent = 'Guardar excepción';
-		this.exceptionModalActionsNode.appendChild(saveButton);
+		const primaryActions = document.createElement('div');
+		primaryActions.className =
+			'modal-footer-actions schedule-exception-modal-footer__primary';
+
+		const cancelButton = document.createElement('button');
+		cancelButton.type = 'button';
+		cancelButton.dataset.excAction = 'close';
+		cancelButton.className = 'modal-action-secondary';
+		cancelButton.textContent = 'Cancelar';
+		primaryActions.appendChild(cancelButton);
+
+		if (!this.exceptionModalReadOnly) {
+			const saveButton = document.createElement('button');
+			saveButton.type = 'button';
+			saveButton.dataset.excAction = 'save';
+			saveButton.className = 'modal-action-primary';
+			saveButton.textContent = 'Guardar excepción';
+			primaryActions.appendChild(saveButton);
+		}
+
+		this.exceptionModalActionsNode.appendChild(primaryActions);
+
+		if (this.exceptionModalReadOnly) {
+			this.exceptionModalActionsNode.classList.add('max-sm:hidden');
+		}
 	}
 
 	private validateExceptionModalPayload(): {
@@ -1558,7 +1607,7 @@ class ScheduleManager extends HTMLElement {
 
 		const result = this.validateExceptionModalPayload();
 		if ('error' in result) {
-			this.showError(result.error ?? 'No fue posible validar la excepción.');
+			this.showExceptionModalError(result.error ?? 'No fue posible validar la excepción.');
 			return;
 		}
 
@@ -1589,7 +1638,9 @@ class ScheduleManager extends HTMLElement {
 				'success'
 			);
 		} catch (error) {
-			this.showError(error instanceof Error ? error.message : 'No fue posible guardar la excepción.');
+			this.showExceptionModalError(
+				error instanceof Error ? error.message : 'No fue posible guardar la excepción.'
+			);
 		}
 	}
 
@@ -1631,7 +1682,9 @@ class ScheduleManager extends HTMLElement {
 				'success'
 			);
 		} catch (error) {
-			this.showError(error instanceof Error ? error.message : 'No fue posible eliminar la excepción.');
+			this.showExceptionModalError(
+				error instanceof Error ? error.message : 'No fue posible eliminar la excepción.'
+			);
 		}
 	}
 
