@@ -478,7 +478,7 @@ const toPageHref = (page: number) => {
 	const TEAM_OVERVIEW_LIMIT = 4;
 	const TEAM_AVATAR_FALLBACK_PALETTE = ['#2563eb', '#0f766e', '#be185d', '#7c3aed'];
 	const AI_SUMMARY_CACHE_KEY = 'hasel:dashboard-ai-summary:v1';
-	const AI_SUMMARY_TTL_MS = 60 * 60 * 1000;
+	const AI_SUMMARY_TTL_MS = 10 * 60 * 1000;
 	const DEFAULT_AI_SUMMARY_TEXT = '¡Buen día! Preparate para una excelente jornada de trabajo.';
 
 	const toRecord = (value: unknown): Record<string, unknown> =>
@@ -770,14 +770,12 @@ const toPageHref = (page: number) => {
 		};
 
 		const todayKey = getLocalDateKey();
-		// const cachedSummary = readAiSummaryCache(todayKey);
-		//
-		// if (cachedSummary) {
-		// 	await revealSummary(cachedSummary);
-		// 	return;
-		// }
-		void todayKey;
-		void readAiSummaryCache;
+		const cachedSummary = readAiSummaryCache(todayKey);
+
+		if (cachedSummary) {
+			await revealSummary(cachedSummary);
+			return;
+		}
 
 		try {
 			const response = await fetch('/api/dashboard/ai-summary', {
@@ -794,8 +792,7 @@ const toPageHref = (page: number) => {
 				throw new Error('El resumen IA no está disponible en este momento.');
 			}
 
-			// saveAiSummaryCache(todayKey, summary);
-			void saveAiSummaryCache;
+			saveAiSummaryCache(todayKey, summary);
 			await revealSummary(summary);
 		} catch {
 			await revealSummary(fallbackSummary);
