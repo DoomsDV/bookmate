@@ -7,6 +7,12 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import { navigate } from 'astro:transitions/client';
 import { ROLES } from '../../config/roles';
 import { AppointmentsClient } from './appointments-client';
+import {
+	isAttendanceAwaitingReconfirmation,
+	isAttendanceDeclined,
+	isAttendanceReconfirmed,
+} from '../../lib/attendance';
+import { formatDateKey } from '../schedule-exception-ui';
 import type { AppointmentModalConfig, OpenCreateContext } from './appointment-modal';
 import {
 	destroySearchableSelect,
@@ -91,6 +97,7 @@ class CalendarManager extends HTMLElement {
 	private services: Option[] = [];
 	private isMobileLayout = false;
 	private isGoogleConnected = false;
+	private blockedDays = new Set<string>();
 	private swipeTouchStart: { x: number; y: number } | null = null;
 
 	private calendarEl: HTMLElement | null = null;
@@ -468,12 +475,23 @@ class CalendarManager extends HTMLElement {
 				};
 			},
 			events: this.buildEventSource,
+			datesSet: (arg) => {
+				void this.loadBlockedDays(arg.start, arg.end);
+			},
+			dayCellClassNames: (arg) => (this.isDateBlocked(arg.date) ? ['fc-day-blocked'] : []),
+			dayHeaderClassNames: (arg) => (this.isDateBlocked(arg.date) ? ['fc-day-blocked'] : []),
+			selectAllow: (selectInfo) =>
+				!this.isSelectionOnBlockedDays(selectInfo.start, selectInfo.end),
 			select: (info: DateSelectArg) => {
+				if (this.isSelectionOnBlockedDays(info.start, info.end)) {
+					this.warnBlockedDaySelection();
+					return;
+				}
 				const modal = hasAppointmentModalApi(this.appointmentModal) ? this.appointmentModal : null;
 				modal?.openCreate({
 					start: info.start,
 					end: info.end,
-					professionalId: toPositiveInt(this.professionalFilter?.value, 0),
+					professionalId: this.getScheduleProfessionalId(),
 					locationId: toPositiveInt(this.locationFilter?.value, 0),
 				});
 			},
@@ -492,42 +510,88 @@ class CalendarManager extends HTMLElement {
 			},
 			eventDidMount: (arg) => {
 				const source = String(arg.event.extendedProps?.source || '').trim().toLowerCase();
-				if (source !== 'google') return;
 
-				const originExists = arg.el.querySelector('.fc-event-google-origin');
-				if (!originExists) {
-					const originContainer =
-						arg.el.querySelector('.fc-event-main-frame') ??
-						arg.el.querySelector('.fc-event-title-container') ??
-						arg.el.querySelector('.fc-event-main') ??
-						arg.el.querySelector('.fc-list-event-title') ??
-						arg.el;
+				if (source === 'google') {
+					const originExists = arg.el.querySelector('.fc-event-google-origin');
+					if (!originExists) {
+						const originContainer =
+							arg.el.querySelector('.fc-event-main-frame') ??
+							arg.el.querySelector('.fc-event-title-container') ??
+							arg.el.querySelector('.fc-event-main') ??
+							arg.el.querySelector('.fc-list-event-title') ??
+							arg.el;
 
-					if (originContainer instanceof HTMLElement) {
-						const originNode = document.createElement('span');
-						originNode.className = 'fc-event-google-origin';
-						originNode.title = 'Google Calendar';
-						originNode.setAttribute('aria-hidden', 'true');
-						originContainer.prepend(originNode);
+						if (originContainer instanceof HTMLElement) {
+							const originNode = document.createElement('span');
+							originNode.className = 'fc-event-google-origin';
+							originNode.title = 'Google Calendar';
+							originNode.setAttribute('aria-hidden', 'true');
+							originContainer.prepend(originNode);
+						}
 					}
+
+					const description = String(arg.event.extendedProps?.description || '').trim();
+					if (!description) return;
+
+					const existing = arg.el.querySelector('.fc-event-description');
+					if (existing) return;
+
+					const container =
+						arg.el.querySelector('.fc-event-title-container') ??
+						arg.el.querySelector('.fc-event-main-frame') ??
+						arg.el.querySelector('.fc-event-main');
+					if (!(container instanceof HTMLElement)) return;
+
+					const descriptionNode = document.createElement('div');
+					descriptionNode.className = 'fc-event-description';
+					descriptionNode.textContent = description;
+					container.appendChild(descriptionNode);
+					return;
 				}
 
-				const description = String(arg.event.extendedProps?.description || '').trim();
-				if (!description) return;
-
-				const existing = arg.el.querySelector('.fc-event-description');
-				if (existing) return;
-
-				const container =
-					arg.el.querySelector('.fc-event-title-container') ??
+				const badgeContainer =
 					arg.el.querySelector('.fc-event-main-frame') ??
-					arg.el.querySelector('.fc-event-main');
-				if (!(container instanceof HTMLElement)) return;
+					arg.el.querySelector('.fc-event-title-container') ??
+					arg.el.querySelector('.fc-event-main') ??
+					arg.el.querySelector('.fc-list-event-title') ??
+					arg.el;
 
-				const descriptionNode = document.createElement('div');
-				descriptionNode.className = 'fc-event-description';
-				descriptionNode.textContent = description;
-				container.appendChild(descriptionNode);
+				if (!(badgeContainer instanceof HTMLElement)) return;
+
+				if (isAttendanceReconfirmed(arg.event.extendedProps)) {
+					arg.el.classList.add('fc-event-attendance-confirmed');
+					if (arg.el.querySelector('.fc-event-attendance-badge')) return;
+
+					const badgeNode = document.createElement('span');
+					badgeNode.className = 'fc-event-attendance-badge fc-event-attendance-badge--confirmed';
+					badgeNode.title = 'Asistencia reconfirmada';
+					badgeNode.setAttribute('aria-hidden', 'true');
+					badgeContainer.prepend(badgeNode);
+					return;
+				}
+
+				if (isAttendanceAwaitingReconfirmation(arg.event.extendedProps)) {
+					arg.el.classList.add('fc-event-attendance-pending');
+					if (arg.el.querySelector('.fc-event-attendance-badge')) return;
+
+					const badgeNode = document.createElement('span');
+					badgeNode.className = 'fc-event-attendance-badge fc-event-attendance-badge--pending';
+					badgeNode.title = 'Pendiente de reconfirmación';
+					badgeNode.setAttribute('aria-hidden', 'true');
+					badgeContainer.prepend(badgeNode);
+					return;
+				}
+
+				if (isAttendanceDeclined(arg.event.extendedProps)) {
+					arg.el.classList.add('fc-event-attendance-declined');
+					if (arg.el.querySelector('.fc-event-attendance-badge')) return;
+
+					const badgeNode = document.createElement('span');
+					badgeNode.className = 'fc-event-attendance-badge fc-event-attendance-badge--declined';
+					badgeNode.title = 'Asistencia rechazada';
+					badgeNode.setAttribute('aria-hidden', 'true');
+					badgeContainer.prepend(badgeNode);
+				}
 			},
 		});
 
@@ -740,18 +804,100 @@ class CalendarManager extends HTMLElement {
 		const now = new Date();
 		now.setSeconds(0, 0);
 		const next = new Date(now.getTime() + 60 * 60 * 1000);
+		if (this.isSelectionOnBlockedDays(now, next)) {
+			this.warnBlockedDaySelection();
+			return;
+		}
 		const modal = hasAppointmentModalApi(this.appointmentModal) ? this.appointmentModal : null;
 		modal?.openCreate({
 			start: now,
 			end: next,
-			professionalId: toPositiveInt(this.professionalFilter?.value, 0),
+			professionalId: this.getScheduleProfessionalId(),
 			locationId: toPositiveInt(this.locationFilter?.value, 0),
 		});
 	};
 
+	private getScheduleProfessionalId() {
+		if (this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0) {
+			return this.currentProfessionalId;
+		}
+		return toPositiveInt(this.professionalFilter?.value, 0);
+	}
+
+	private isDateBlocked(date: Date) {
+		return this.blockedDays.has(formatDateKey(date));
+	}
+
+	private isSelectionOnBlockedDays(start: Date, end: Date) {
+		const cursor = new Date(start);
+		cursor.setHours(0, 0, 0, 0);
+
+		const lastDay = new Date(end);
+		if (
+			end.getHours() === 0 &&
+			end.getMinutes() === 0 &&
+			end.getSeconds() === 0 &&
+			end.getMilliseconds() === 0 &&
+			end > start
+		) {
+			lastDay.setDate(lastDay.getDate() - 1);
+		}
+		lastDay.setHours(0, 0, 0, 0);
+
+		while (cursor <= lastDay) {
+			if (this.isDateBlocked(cursor)) return true;
+			cursor.setDate(cursor.getDate() + 1);
+		}
+		return false;
+	}
+
+	private async loadBlockedDays(rangeStart: Date, rangeEnd: Date) {
+		const professionalId = this.getScheduleProfessionalId();
+		this.blockedDays.clear();
+
+		if (professionalId <= 0 || !this.calendar) return;
+
+		const from = formatDateKey(rangeStart);
+		const inclusiveEnd = new Date(rangeEnd);
+		inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
+		const to = formatDateKey(inclusiveEnd);
+
+		try {
+			const response = await fetch(
+				`/api/schedules/${professionalId}/exceptions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
+				{ headers: { Accept: 'application/json' } }
+			);
+			const data = (await response.json()) as {
+				status?: string;
+				data?: Array<{ exception_date?: string; exception_type?: string }>;
+			};
+			if (!response.ok || data.status !== 'success' || !Array.isArray(data.data)) return;
+
+			for (const item of data.data) {
+				if (String(item.exception_type || '').toUpperCase() === 'BLOCKED' && item.exception_date) {
+					this.blockedDays.add(item.exception_date);
+				}
+			}
+		} catch (error) {
+			console.error('[calendar-manager] blocked days load error', error);
+		} finally {
+			this.calendar?.render();
+		}
+	}
+
+	private warnBlockedDaySelection() {
+		void showErrorAlert(
+			'Este día está bloqueado para el profesional seleccionado. No puedes agendar citas nuevas; reprograma o cancela las existentes desde el calendario.'
+		);
+	}
+
 	private handleProfessionalFilterChange = () => {
 		if (this.roleId === ROLES.PROFESIONAL) return;
 		this.reloadCalendarEvents();
+		if (this.calendar) {
+			const view = this.calendar.view;
+			void this.loadBlockedDays(view.activeStart, view.activeEnd);
+		}
 	};
 
 	private handleLocationFilterChange = () => {

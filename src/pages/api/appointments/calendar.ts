@@ -27,22 +27,12 @@ export const GET: APIRoute = async ({ request, locals }) => {
 		const end = String(url.searchParams.get('end') || '').trim();
 		const proId = toOptionalPositiveInt(url.searchParams.get('pro_id'));
 		const locId = toOptionalPositiveInt(url.searchParams.get('loc_id'));
-		console.info('[appointments-calendar] request:start', {
-			start,
-			end,
-			proId: proId ?? null,
-			locId: locId ?? null,
-			hasToken: Boolean(token),
-		});
 
 		const events = await listAppointmentsForCalendarWithOrds(token, {
 			start,
 			end,
 			pro_id: proId,
 			loc_id: locId,
-		});
-		console.info('[appointments-calendar] request:success', {
-			totalEvents: events.length,
 		});
 
 		return Response.json(

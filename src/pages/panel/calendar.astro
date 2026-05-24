@@ -560,6 +560,61 @@ const googleErrorMessage = hasGoogleError
 					</div>
 				</div>
 
+				<div
+					class="mx-7 mb-4 hidden rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3.5 dark:border-amber-900/60 dark:bg-amber-950/35"
+					data-appointment-attendance-pending-wrap
+					hidden
+				>
+					<div class="flex items-start gap-3">
+						<span
+							class="material-symbols-rounded mt-0.5 shrink-0 text-[1.35rem] text-amber-600 dark:text-amber-400"
+							aria-hidden="true"
+						>
+							schedule
+						</span>
+						<span class="grid gap-1">
+							<span class="text-[0.95rem] font-bold text-(--on-surface)">
+								Pendiente de reconfirmación
+							</span>
+							<span class="text-[0.85rem] font-medium leading-snug text-(--on-surface-variant)">
+								El cliente aún no confirmó su asistencia por WhatsApp. Este dato es solo informativo.
+							</span>
+						</span>
+					</div>
+				</div>
+
+				<div
+					class="mx-7 mb-4 hidden rounded-2xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3.5 dark:border-emerald-900/60 dark:bg-emerald-950/35"
+					data-appointment-attendance-wrap
+					hidden
+				>
+					<label class="flex cursor-default items-start gap-3">
+						<input
+							type="checkbox"
+							class="appointment-attendance-checkbox mt-0.5 size-4 shrink-0 accent-emerald-600"
+							data-appointment-attendance-checkbox
+							checked
+							disabled
+							tabindex="-1"
+						/>
+						<span class="grid gap-1">
+							<span class="text-[0.95rem] font-bold text-(--on-surface)">
+								Asistencia reconfirmada
+							</span>
+							<span class="text-[0.85rem] font-medium leading-snug text-(--on-surface-variant)">
+								El cliente confirmó su asistencia por WhatsApp. Este dato es solo informativo.
+							</span>
+							<span
+								class="hidden text-[0.82rem] font-semibold text-emerald-800 dark:text-emerald-300"
+								data-appointment-attendance-reply
+							>
+								Confirmado el
+								<span data-appointment-attendance-reply-at></span>
+							</span>
+						</span>
+					</label>
+				</div>
+
 				<div class="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
 					<div class="appointment-modal-footer">
 					<button
@@ -970,6 +1025,81 @@ const googleErrorMessage = hasGoogleError
 		line-height: 1.22;
 		color: var(--calendar-google-description);
 		opacity: 0.92;
+	}
+
+	[data-calendar-root] .fc .fc-day.fc-day-blocked,
+	[data-calendar-root] .fc .fc-timegrid-col.fc-day-blocked {
+		background: color-mix(in srgb, #fecaca 38%, var(--calendar-surface) 62%);
+	}
+
+	[data-calendar-root] .fc .fc-timegrid-col.fc-day-blocked .fc-timegrid-col-frame {
+		background: color-mix(in srgb, #fecaca 22%, transparent);
+	}
+
+	[data-calendar-root] .fc .fc-col-header-cell.fc-day-blocked {
+		background: color-mix(in srgb, #fecaca 48%, var(--calendar-toolbar-surface) 52%);
+	}
+
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-day.fc-day-blocked,
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-timegrid-col.fc-day-blocked {
+		background: color-mix(in srgb, #7f1d1d 32%, var(--calendar-surface) 68%);
+	}
+
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-col-header-cell.fc-day-blocked {
+		background: color-mix(in srgb, #991b1b 40%, var(--calendar-toolbar-surface) 60%);
+	}
+
+	[data-calendar-root] .fc .fc-event.fc-event-attendance-confirmed .fc-event-main-frame,
+	[data-calendar-root] .fc .fc-event.fc-event-attendance-confirmed .fc-event-title-container,
+	[data-calendar-root] .fc .fc-event.fc-event-attendance-pending .fc-event-main-frame,
+	[data-calendar-root] .fc .fc-event.fc-event-attendance-pending .fc-event-title-container,
+	[data-calendar-root] .fc .fc-event.fc-event-attendance-declined .fc-event-main-frame,
+	[data-calendar-root] .fc .fc-event.fc-event-attendance-declined .fc-event-title-container {
+		position: relative;
+		padding-right: 0.9rem;
+	}
+
+	[data-calendar-root] .fc .fc-event .fc-event-attendance-badge {
+		position: absolute;
+		top: 0.14rem;
+		right: 0.12rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		inline-size: 0.78rem;
+		block-size: 0.78rem;
+		border-radius: 999px;
+		box-shadow: 0 0 0 2px color-mix(in srgb, currentColor 12%, transparent);
+		color: #ffffff;
+		font-family: 'Material Symbols Rounded', sans-serif;
+		font-size: 0.58rem;
+		font-weight: 600;
+		line-height: 1;
+		font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20;
+	}
+
+	[data-calendar-root] .fc .fc-event .fc-event-attendance-badge--confirmed {
+		background: color-mix(in srgb, #059669 88%, #ffffff 12%);
+	}
+
+	[data-calendar-root] .fc .fc-event .fc-event-attendance-badge--confirmed::before {
+		content: 'check';
+	}
+
+	[data-calendar-root] .fc .fc-event .fc-event-attendance-badge--pending {
+		background: color-mix(in srgb, #d97706 90%, #ffffff 10%);
+	}
+
+	[data-calendar-root] .fc .fc-event .fc-event-attendance-badge--pending::before {
+		content: 'schedule';
+	}
+
+	[data-calendar-root] .fc .fc-event .fc-event-attendance-badge--declined {
+		background: color-mix(in srgb, #dc2626 88%, #ffffff 12%);
+	}
+
+	[data-calendar-root] .fc .fc-event .fc-event-attendance-badge--declined::before {
+		content: 'close';
 	}
 
 	[data-calendar-root] .fc .fc-list {

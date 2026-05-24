@@ -92,6 +92,7 @@ export interface ScheduleExceptionUpsertPayload {
 	exception_type: ScheduleExceptionType;
 	note?: string | null;
 	slots: ScheduleExceptionSlotInput[];
+	acknowledge_existing_appointments?: boolean;
 }
 
 interface ApiSuccessResponse {
@@ -123,6 +124,18 @@ export class SchedulesApiError extends Error {
 		this.status = status;
 		this.details = details;
 		this.fieldErrors = fieldErrors;
+	}
+}
+
+export class ScheduleExceptionConflictError extends SchedulesApiError {
+	code: string;
+	appointmentCount: number;
+
+	constructor(message: string, appointmentCount: number, details?: unknown) {
+		super(message, 409, details);
+		this.name = 'ScheduleExceptionConflictError';
+		this.code = 'EXISTING_APPOINTMENTS';
+		this.appointmentCount = appointmentCount;
 	}
 }
 
@@ -211,9 +224,24 @@ const parseActionResponse = async (response: Response, fallbackMessage: string) 
 	}
 
 	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
-		const failureData = (data ?? {}) as ApiFailureResponse;
+		const failureData = (data ?? {}) as ApiFailureResponse & {
+			code?: string;
+			appointment_count?: number;
+		};
+		const message =
+			(typeof failureData.message === 'string' && failureData.message.trim()) || fallbackMessage;
+		if (
+			response.status === 409 &&
+			String(failureData.code || '').trim() === 'EXISTING_APPOINTMENTS'
+		) {
+			throw new ScheduleExceptionConflictError(
+				message,
+				Number(failureData.appointment_count ?? 0),
+				failureData.details
+			);
+		}
 		throw new SchedulesApiError(
-			(typeof failureData.message === 'string' && failureData.message.trim()) || fallbackMessage,
+			message,
 			response.status || 400,
 			failureData.details,
 			parseFieldErrors(failureData.errors)

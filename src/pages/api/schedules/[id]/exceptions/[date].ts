@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { ROLES } from '../../../../../config/roles';
 import {
 	SchedulesApiError,
+	ScheduleExceptionConflictError,
 	deleteScheduleExceptionWithOrds,
 	getScheduleExceptionWithOrds,
 	type ScheduleExceptionUpsertPayload,
@@ -73,6 +74,7 @@ const exceptionUpsertSchema = z
 		exception_type: z.enum(['BLOCKED', 'OVERRIDE']),
 		note: z.string().trim().max(500).optional().nullable(),
 		slots: z.array(exceptionSlotSchema).default([]),
+		acknowledge_existing_appointments: z.boolean().optional(),
 	})
 	.superRefine((payload, ctx) => {
 		if (payload.exception_type === 'BLOCKED') return;
@@ -182,6 +184,7 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 			exception_type: parsed.data.exception_type,
 			note: parsed.data.note ?? null,
 			slots: parsed.data.slots,
+			acknowledge_existing_appointments: parsed.data.acknowledge_existing_appointments,
 		};
 
 		const updated = await upsertScheduleExceptionWithOrds(
@@ -199,6 +202,17 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 			{ status: 200 }
 		);
 	} catch (error) {
+		if (error instanceof ScheduleExceptionConflictError) {
+			return Response.json(
+				{
+					status: 'error',
+					code: error.code,
+					message: error.message,
+					appointment_count: error.appointmentCount,
+				},
+				{ status: 409 }
+			);
+		}
 		return toErrorResponse(error, 'No fue posible guardar la excepcion.');
 	}
 };

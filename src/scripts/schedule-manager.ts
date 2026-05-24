@@ -1602,6 +1602,25 @@ class ScheduleManager extends HTMLElement {
 		};
 	}
 
+	private buildBlockDayConfirmMessage(appointmentCount: number) {
+		const label = appointmentCount === 1 ? 'cita agendada' : 'citas agendadas';
+		return `Atención: Tienes ${appointmentCount} ${label} para este día. Si bloqueas el día, no se recibirán reservas nuevas, pero deberás reprogramar o cancelar las citas existentes manualmente para no perjudicar a tus clientes. ¿Deseas continuar?`;
+	}
+
+	private async confirmBlockDayWithAppointments(appointmentCount: number) {
+		const message = this.buildBlockDayConfirmMessage(appointmentCount);
+		if (window.BookmateAlert?.confirm) {
+			return window.BookmateAlert.confirm({
+				type: 'warning',
+				title: 'Bloquear día con citas existentes',
+				message,
+				confirmText: 'Sí, bloquear día',
+				cancelText: 'Cancelar',
+			});
+		}
+		return window.confirm(message);
+	}
+
 	private async saveExceptionFromModal(): Promise<void> {
 		if (!this.canEdit || !this.exceptionModalDateKey || this.exceptionModalReadOnly) return;
 
@@ -1611,32 +1630,58 @@ class ScheduleManager extends HTMLElement {
 			return;
 		}
 
-		try {
-			const response = await fetch(
-				`/api/schedules/${this.selectedProfessionalId}/exceptions/${this.exceptionModalDateKey}`,
-				{
-					method: 'PUT',
-					headers: {
-						'Content-Type': 'application/json',
-						Accept: 'application/json',
-					},
-					body: JSON.stringify(result.payload),
-				}
-			);
-			const data = await this.parseJson(response);
-			if (!response.ok || !data || data.status !== 'success') {
-				throw new Error(this.toBackendErrorMessage(data, 'No fue posible guardar la excepción.'));
-			}
+		let acknowledgeExistingAppointments = false;
 
-			this.closeExceptionModal();
-			await this.loadExceptionsForVisibleMonth();
-			this.renderExceptionCalendar();
-			this.navigateWithFlash(
-				typeof data.message === 'string' && data.message.trim()
-					? data.message
-					: 'Excepción guardada correctamente.',
-				'success'
-			);
+		try {
+			for (;;) {
+				const response = await fetch(
+					`/api/schedules/${this.selectedProfessionalId}/exceptions/${this.exceptionModalDateKey}`,
+					{
+						method: 'PUT',
+						headers: {
+							'Content-Type': 'application/json',
+							Accept: 'application/json',
+						},
+						body: JSON.stringify({
+							...result.payload,
+							...(acknowledgeExistingAppointments
+								? { acknowledge_existing_appointments: true }
+								: {}),
+						}),
+					}
+				);
+				const data = await this.parseJson(response);
+
+				if (
+					response.status === 409 &&
+					data &&
+					typeof data === 'object' &&
+					String((data as Record<string, unknown>).code || '') === 'EXISTING_APPOINTMENTS'
+				) {
+					const appointmentCount = Number(
+						(data as Record<string, unknown>).appointment_count ?? 0
+					);
+					const confirmed = await this.confirmBlockDayWithAppointments(appointmentCount);
+					if (!confirmed) return;
+					acknowledgeExistingAppointments = true;
+					continue;
+				}
+
+				if (!response.ok || !data || data.status !== 'success') {
+					throw new Error(this.toBackendErrorMessage(data, 'No fue posible guardar la excepción.'));
+				}
+
+				this.closeExceptionModal();
+				await this.loadExceptionsForVisibleMonth();
+				this.renderExceptionCalendar();
+				this.navigateWithFlash(
+					typeof data.message === 'string' && data.message.trim()
+						? data.message
+						: 'Excepción guardada correctamente.',
+					'success'
+				);
+				return;
+			}
 		} catch (error) {
 			this.showExceptionModalError(
 				error instanceof Error ? error.message : 'No fue posible guardar la excepción.'

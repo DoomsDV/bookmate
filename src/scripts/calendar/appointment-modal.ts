@@ -13,9 +13,12 @@ import type {
 } from './types';
 import {
 	ApiClientError,
+	formatAttendanceReplyAt,
 	formatDateTimeDisplay,
 	formatDateTimeLocal,
 	isAppointmentStatus,
+	isAttendanceAwaitingReconfirmation,
+	isAttendanceReconfirmed,
 	normalizeDateTimeInput,
 	parseIsoToLocalInput,
 	parseLocalDateTime,
@@ -129,6 +132,10 @@ class AppointmentModal extends HTMLElement {
 	openEndPickerButton: HTMLButtonElement | null = null;
 	statusInput: HTMLSelectElement | null = null;
 	modalStatusWrap: HTMLElement | null = null;
+	attendanceWrap: HTMLElement | null = null;
+	attendancePendingWrap: HTMLElement | null = null;
+	attendanceReplyRow: HTMLElement | null = null;
+	attendanceReplyAt: HTMLElement | null = null;
 	modalProfessionalWrap: HTMLElement | null = null;
 	modalProfessional: HTMLSelectElement | null = null;
 	modalLocation: HTMLSelectElement | null = null;
@@ -192,6 +199,14 @@ class AppointmentModal extends HTMLElement {
 		this.statusInput = this.form?.querySelector<HTMLSelectElement>('[data-modal-status]') ?? null;
 		this.modalStatusWrap =
 			this.form?.querySelector<HTMLElement>('[data-modal-status-wrap]') ?? null;
+		this.attendanceWrap =
+			this.form?.querySelector<HTMLElement>('[data-appointment-attendance-wrap]') ?? null;
+		this.attendancePendingWrap =
+			this.form?.querySelector<HTMLElement>('[data-appointment-attendance-pending-wrap]') ?? null;
+		this.attendanceReplyRow =
+			this.form?.querySelector<HTMLElement>('[data-appointment-attendance-reply]') ?? null;
+		this.attendanceReplyAt =
+			this.form?.querySelector<HTMLElement>('[data-appointment-attendance-reply-at]') ?? null;
 		this.modalProfessionalWrap =
 			this.form?.querySelector<HTMLElement>('[data-modal-professional-wrap]') ?? null;
 		this.modalProfessional =
@@ -742,6 +757,37 @@ class AppointmentModal extends HTMLElement {
 		this.lastLoadedCustomerProfessionalId = null;
 		this.hideCustomerResults();
 		this.closeDateTimePicker();
+		this.hideAttendanceBlock();
+	}
+
+	hideAttendanceBlock() {
+		this.attendanceWrap?.setAttribute('hidden', '');
+		this.attendanceWrap?.classList.add('hidden');
+		this.attendancePendingWrap?.setAttribute('hidden', '');
+		this.attendancePendingWrap?.classList.add('hidden');
+		this.attendanceReplyRow?.setAttribute('hidden', '');
+		if (this.attendanceReplyAt) this.attendanceReplyAt.textContent = '';
+	}
+
+	showAttendanceBlock(appointment: AppointmentDetail) {
+		this.hideAttendanceBlock();
+
+		if (isAttendanceReconfirmed(appointment)) {
+			this.attendanceWrap?.removeAttribute('hidden');
+			this.attendanceWrap?.classList.remove('hidden');
+
+			const replyLabel = formatAttendanceReplyAt(appointment.attendance_reply_at);
+			if (replyLabel && this.attendanceReplyAt) {
+				this.attendanceReplyAt.textContent = replyLabel;
+				this.attendanceReplyRow?.removeAttribute('hidden');
+			}
+			return;
+		}
+
+		if (isAttendanceAwaitingReconfirmation(appointment)) {
+			this.attendancePendingWrap?.removeAttribute('hidden');
+			this.attendancePendingWrap?.classList.remove('hidden');
+		}
 	}
 
 	openModalShell() {
@@ -803,6 +849,7 @@ class AppointmentModal extends HTMLElement {
 			this.statusInput.disabled = true;
 		}
 		this.modalStatusWrap?.setAttribute('hidden', '');
+		this.hideAttendanceBlock();
 	}
 
 	setEditMode(appointmentId: number) {
@@ -818,6 +865,7 @@ class AppointmentModal extends HTMLElement {
 		if (this.deleteButton) this.deleteButton.disabled = false;
 		if (this.statusInput) this.statusInput.disabled = false;
 		this.modalStatusWrap?.removeAttribute('hidden');
+		this.hideAttendanceBlock();
 	}
 
 	fillFormByAppointment(appointment: AppointmentDetail) {
@@ -851,6 +899,7 @@ class AppointmentModal extends HTMLElement {
 		this.syncDateDisplayInputs();
 		this.ensureModalProfessionalValue();
 		void this.loadCustomersForCurrentProfessional(true);
+		this.showAttendanceBlock(appointment);
 	}
 
 	buildPayloadFromForm(): BuildPayloadResult {

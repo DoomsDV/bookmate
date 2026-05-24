@@ -201,6 +201,23 @@ export const isAppointmentStatus = (
 	return ['PENDIENTE', 'CONFIRMADO', 'COMPLETADO', 'CANCELADO'].includes(value);
 };
 
+export {
+	isAttendanceAwaitingReconfirmation,
+	isAttendanceDeclined,
+	isAttendanceReconfirmed,
+	normalizeAttendanceStatus,
+	type AttendanceStatus,
+} from '../../lib/attendance';
+
+export const formatAttendanceReplyAt = (value?: string) => {
+	const normalized = String(value || '').trim();
+	if (!normalized) return null;
+
+	const date = new Date(normalized);
+	if (Number.isNaN(date.getTime())) return null;
+	return formatDateTimeDisplay(date);
+};
+
 export const showSuccessAlert = async (message: string) => {
 	if (!window.BookmateAlert?.alert) return;
 	await window.BookmateAlert.alert({

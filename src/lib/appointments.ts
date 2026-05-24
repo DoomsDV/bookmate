@@ -1,4 +1,14 @@
+import {
+	type AttendanceStatus,
+	isAttendanceReconfirmed,
+	normalizeAttendanceConfirmed,
+	normalizeAttendanceReplyAt,
+	normalizeAttendanceStatus,
+} from './attendance';
 import { resolveOrdsApiUrl } from './env-urls';
+
+export type { AttendanceStatus };
+export { isAttendanceReconfirmed, normalizeAttendanceStatus };
 
 export const APPOINTMENTS_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_APPOINTMENTS_URL,
@@ -20,6 +30,9 @@ export interface AppointmentFieldError {
 export interface AppointmentCalendarEventExtendedProps {
 	customer_phone: string;
 	status: string;
+	attendance_status: AttendanceStatus;
+	attendance_confirmed: boolean;
+	attendance_reply_at?: string;
 	professional_name: string;
 	service_name: string;
 	location_name: string;
@@ -48,6 +61,9 @@ export interface AppointmentDetail {
 	customer_name: string;
 	customer_phone: string;
 	status: string;
+	attendance_status: AttendanceStatus;
+	attendance_confirmed: boolean;
+	attendance_reply_at?: string;
 	start_time: string;
 	end_time: string;
 }
@@ -170,6 +186,8 @@ const normalizeExtendedProps = (value: unknown, resourceId: number) => {
 		return {
 			customer_phone: '',
 			status: '',
+			attendance_status: 'NOT_REQUESTED' as AttendanceStatus,
+			attendance_confirmed: false,
 			professional_name: '',
 			service_name: '',
 			location_name: '',
@@ -179,10 +197,17 @@ const normalizeExtendedProps = (value: unknown, resourceId: number) => {
 
 	const source = value as Record<string, unknown>;
 	const explicitProfessionalId = toNumber(source.pro_id_professional, resourceId);
+	const attendanceStatus = normalizeAttendanceStatus(source.attendance_status);
 
 	return {
 		customer_phone: String(source.customer_phone || '').trim(),
 		status: String(source.status || '').trim(),
+		attendance_status: attendanceStatus,
+		attendance_confirmed: normalizeAttendanceConfirmed(
+			source.attendance_confirmed,
+			attendanceStatus
+		),
+		attendance_reply_at: normalizeAttendanceReplyAt(source.attendance_reply_at),
 		professional_name: String(source.professional_name || '').trim(),
 		service_name: String(source.service_name || '').trim(),
 		location_name: String(source.location_name || '').trim(),
@@ -255,6 +280,8 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 	if (!Number.isInteger(appointmentId) || appointmentId <= 0) return null;
 	if (!startTime || !endTime) return null;
 
+	const attendanceStatus = normalizeAttendanceStatus(source.attendance_status);
+
 	return {
 		id_appointment: appointmentId,
 		id_customer: toNumber(source.id_customer ?? source.cus_id_customer, 0),
@@ -268,6 +295,12 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 		customer_name: String(source.customer_name ?? source.full_name ?? '').trim(),
 		customer_phone: String(source.customer_phone ?? source.phone_number ?? '').trim(),
 		status,
+		attendance_status: attendanceStatus,
+		attendance_confirmed: normalizeAttendanceConfirmed(
+			source.attendance_confirmed,
+			attendanceStatus
+		),
+		attendance_reply_at: normalizeAttendanceReplyAt(source.attendance_reply_at),
 		start_time: startTime,
 		end_time: endTime,
 	};
@@ -281,12 +314,6 @@ export const listAppointmentsForCalendarWithOrds = async (
 
 	const start = String(filters.start || '').trim();
 	const end = String(filters.end || '').trim();
-	console.info('[appointments-lib] listAppointmentsForCalendarWithOrds:start', {
-		start,
-		end,
-		pro_id: filters.pro_id ?? null,
-		loc_id: filters.loc_id ?? null,
-	});
 	if (!start || !end) {
 		throw new AppointmentsApiError('Las fechas de inicio y fin son obligatorias.', 400);
 	}
@@ -309,11 +336,6 @@ export const listAppointmentsForCalendarWithOrds = async (
 			Accept: 'application/json',
 		},
 	});
-	console.info('[appointments-lib] ords-calendar-response', {
-		status: response.status,
-		ok: response.ok,
-		url: calendarUrl.toString(),
-	});
 
 	const { data } = await parseJsonResponse(response);
 
@@ -331,10 +353,6 @@ export const listAppointmentsForCalendarWithOrds = async (
 	const normalizedEvents = data.data
 		.map(normalizeCalendarEvent)
 		.filter((item): item is AppointmentCalendarEvent => item !== null);
-	console.info('[appointments-lib] normalized-calendar-events', {
-		rawTotal: data.data.length,
-		normalizedTotal: normalizedEvents.length,
-	});
 
 	return normalizedEvents;
 };
