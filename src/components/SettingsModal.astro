@@ -351,31 +351,117 @@ const publicProfileDomain =
 						<section data-settings-panel="system" class="settings-panel hidden gap-6">
 							<p data-settings-feedback="system" class="hidden settings-feedback"></p>
 							<form data-settings-system-form class="grid gap-6">
-								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Configuración del sistema</h3>
-									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Ajustes regionales y de tiempo.</p>
-								</div>
-								<div class="grid gap-5">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Formato de hora <span class="text-rose-500">*</span></span>
-										<div class="relative">
-											<select name="time_format" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
-										<option value="24H">24 horas</option>
-										<option value="12H">12 horas</option>
-									</select>
+								<div class="grid gap-8">
+									<div class="grid gap-5">
+										<div class="grid gap-1">
+											<h4 class="text-[0.98rem] font-bold text-(--on-surface)">
+												Visualización y Calendario
+											</h4>
+											<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+												Cómo se muestra el tiempo en el panel y en la página pública.
+											</p>
 										</div>
-								</label>
-								</div>
-								
-								<div class="grid gap-5">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Alertas de citas no respondidas <span class="text-rose-500">*</span></span>
-										<div class="relative">
-											<select name="unanswered_alert_action" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
-												<option value="KEEP">Mantener la cita (Ignorar)</option>
-												<option value="CANCEL">Cancelar la cita automáticamente</option>
-											</select>
+
+										<label class="hidden grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+											<span>Formato de hora <span class="text-rose-500">*</span></span>
+											<div class="relative">
+												<select name="time_format" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
+													<option value="24H">24 horas</option>
+													<option value="12H">12 horas</option>
+												</select>
+											</div>
+										</label>
+
+										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+											<span>Intervalo de reserva (slots) <span class="text-rose-500">*</span></span>
+											<div class="relative">
+												<select
+													name="rsi_id_slot_interval"
+													data-settings-system-slot-interval
+													class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+												></select>
+											</div>
+											<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
+												Frecuencia con la que se muestran horarios en la página pública.
+											</span>
+										</label>
+
+										<div data-settings-system-slot-preview class="grid gap-2">
+											<p class="text-[0.85rem] font-semibold text-(--on-surface-variant)">
+												Ejemplo en la página pública
+											</p>
+											<div
+												data-settings-system-slot-preview-chips
+												class="settings-slot-preview-chips"
+												aria-live="polite"
+											></div>
 										</div>
-										<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">Acción a tomar cuando un cliente no responde al recordatorio.</span>
-									</label>
+									</div>
+
+									<div
+										class="border-t border-(--shell-border) border-dashed"
+										role="separator"
+										aria-hidden="true"
+									></div>
+
+									<div class="grid gap-5">
+										<div class="grid gap-1">
+											<h4 class="text-[0.98rem] font-bold text-(--on-surface)">
+												Recordatorios y Automatizaciones
+											</h4>
+											<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+												Confirmación de citas: envío, espera y acción si no hay respuesta.
+											</p>
+										</div>
+
+										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+											<span>Tiempo de recordatorio <span class="text-rose-500">*</span></span>
+											<div class="relative">
+												<select
+													name="rh_id_reminder_hours"
+													data-settings-system-reminder-hours
+													class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+												></select>
+											</div>
+											<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
+												Cuándo se envía el mensaje de reconfirmación al cliente.
+											</span>
+										</label>
+
+										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+											<span>Alertas de citas no respondidas <span class="text-rose-500">*</span></span>
+											<div class="relative">
+												<select
+													name="unanswered_alert_action"
+													data-settings-system-alert-action
+													class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+												>
+													<option value="KEEP">Mantener la cita (Ignorar)</option>
+													<option value="CANCEL">Cancelar la cita automáticamente</option>
+												</select>
+											</div>
+											<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
+												Acción cuando el cliente no responde al recordatorio.
+											</span>
+										</label>
+
+										<label
+											class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface) hidden"
+											data-settings-system-cancel-wait-field
+										>
+											<span>Tiempo límite de espera <span class="text-rose-500">*</span></span>
+											<div class="relative">
+												<select
+													name="cwh_id_cancel_wait_hours"
+													data-settings-system-cancel-wait
+													class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+												></select>
+											</div>
+											<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
+												Es el tiempo que se da al cliente de reconfirmar antes de la cancelación automática.
+											</span>
+										</label>
+									</div>
 								</div>
 
 								<div class="pt-4 border-t border-(--shell-border) border-dashed">
@@ -406,6 +492,12 @@ const publicProfileDomain =
 		PARAGUAY_MOBILE_PHONE_ERROR,
 		parseParaguayMobilePhone,
 	} from '../lib/paraguay-phone';
+	import {
+		getCancelWaitOptionsForReminder,
+		getReminderHoursValue,
+		type WorkspaceCatalogs,
+		type WorkspaceSettingsData,
+	} from '../lib/workspace-settings-shared';
 
 	interface ApiErrorDetail {
 		field?: string;
@@ -485,6 +577,7 @@ const publicProfileDomain =
 		private suppressSlugManualTracking = false;
 		private closingTimer: number | null = null;
 		private feedbackHideTimer: number | null = null;
+		private systemCatalogs: WorkspaceCatalogs | null = null;
 
 		connectedCallback() {
 			const roleId = Number(this.dataset.roleId || '0');
@@ -555,6 +648,7 @@ const publicProfileDomain =
 			this.els.appearanceSaveBtn?.addEventListener('click', this.handleAppearanceSave, { signal });
 			this.els.workspaceForm?.addEventListener('submit', this.handleWorkspaceSubmit, { signal });
 			this.els.systemForm?.addEventListener('submit', this.handleSystemSubmit, { signal });
+			this.els.systemForm?.addEventListener('change', this.handleSystemFormChange, { signal });
 		}
 
 		disconnectedCallback() {
@@ -1097,20 +1191,189 @@ const publicProfileDomain =
 			}
 		}
 
-		private fillWorkspace(workspace: any) {
+		private populateSystemSelect(
+			select: HTMLSelectElement | null,
+			options: Array<{ id: number; label: string }>,
+			selectedId: number | null
+		) {
+			if (!select) return;
+			select.replaceChildren();
+			for (const option of options) {
+				const node = document.createElement('option');
+				node.value = String(option.id);
+				node.textContent = option.label;
+				select.appendChild(node);
+			}
+			if (selectedId && options.some((item) => item.id === selectedId)) {
+				select.value = String(selectedId);
+			} else if (options[0]) {
+				select.value = String(options[0].id);
+			}
+		}
+
+		private getSystemSelectValue(selector: string) {
+			const select = this.querySelector<HTMLSelectElement>(selector);
+			const parsed = Number(select?.value || 0);
+			return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+		}
+
+		private fillSystemSettings(workspace: WorkspaceSettingsData | null) {
+			if (!this.els.systemForm || !workspace) return;
+
+			this.systemCatalogs = workspace.catalogs ?? null;
+
+			this.populateSystemSelect(
+				this.querySelector<HTMLSelectElement>('[data-settings-system-slot-interval]'),
+				this.systemCatalogs?.slot_intervals ?? [],
+				workspace.rsi_id_slot_interval
+			);
+			this.renderSystemSlotPreview();
+			this.populateSystemSelect(
+				this.querySelector<HTMLSelectElement>('[data-settings-system-reminder-hours]'),
+				this.systemCatalogs?.reminder_hours ?? [],
+				workspace.rh_id_reminder_hours
+			);
+
+			const timeFormat = String(workspace.time_format || '24H').trim().toLowerCase();
+			const timeFormatSelect = this.els.systemForm.querySelector<HTMLSelectElement>('[name="time_format"]');
+			if (timeFormatSelect) timeFormatSelect.value = timeFormat === '12h' ? '12H' : '24H';
+
+			const alertSelect = this.querySelector<HTMLSelectElement>('[data-settings-system-alert-action]');
+			if (alertSelect) {
+				alertSelect.value = workspace.unanswered_alert_action === 'CANCEL' ? 'CANCEL' : 'KEEP';
+			}
+
+			this.refreshSystemCancelWaitField(workspace.cwh_id_cancel_wait_hours);
+		}
+
+		private getSelectedSlotIntervalMinutes() {
+			const slotId = this.getSystemSelectValue('[data-settings-system-slot-interval]');
+			const match = this.systemCatalogs?.slot_intervals.find((item) => item.id === slotId);
+			const minutes = Number(match?.minutes ?? 0);
+			return Number.isInteger(minutes) && minutes > 0 ? minutes : 30;
+		}
+
+		private buildExampleSlotTimes(minutes: number, count = 5) {
+			let totalMinutes = 9 * 60;
+			const times: string[] = [];
+			for (let index = 0; index < count; index += 1) {
+				const hours = Math.floor(totalMinutes / 60) % 24;
+				const mins = totalMinutes % 60;
+				times.push(`${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}`);
+				totalMinutes += minutes;
+			}
+			return times;
+		}
+
+		private renderSystemSlotPreview() {
+			const chipsHost = this.querySelector<HTMLElement>(
+				'[data-settings-system-slot-preview-chips]'
+			);
+			if (!chipsHost) return;
+
+			const minutes = this.getSelectedSlotIntervalMinutes();
+			const exampleTimes = this.buildExampleSlotTimes(minutes);
+			chipsHost.replaceChildren();
+
+			for (const time of exampleTimes) {
+				const chip = document.createElement('span');
+				chip.className = 'settings-slot-preview-chip';
+				chip.textContent = time;
+				chipsHost.appendChild(chip);
+			}
+		}
+
+		private refreshSystemCancelWaitField(preferredCancelWaitId: number | null = null) {
+			const alertAction =
+				this.querySelector<HTMLSelectElement>('[data-settings-system-alert-action]')?.value || 'KEEP';
+			const cancelField = this.querySelector<HTMLElement>('[data-settings-system-cancel-wait-field]');
+			const cancelSelect = this.querySelector<HTMLSelectElement>('[data-settings-system-cancel-wait]');
+			const reminderId = this.getSystemSelectValue('[data-settings-system-reminder-hours]');
+			const showCancel = alertAction === 'CANCEL';
+
+			cancelField?.classList.toggle('hidden', !showCancel);
+			if (!showCancel) {
+				if (cancelSelect) cancelSelect.value = '';
+				return;
+			}
+
+			const options = getCancelWaitOptionsForReminder(this.systemCatalogs ?? undefined, reminderId);
+			this.populateSystemSelect(cancelSelect, options, preferredCancelWaitId);
+		}
+
+		private validateSystemFormPayload() {
+			if (!this.els.systemForm) return { ok: false, message: 'Formulario de sistema no disponible.' };
+
+			const slotId = this.getSystemSelectValue('[data-settings-system-slot-interval]');
+			const reminderId = this.getSystemSelectValue('[data-settings-system-reminder-hours]');
+			const alertAction =
+				this.querySelector<HTMLSelectElement>('[data-settings-system-alert-action]')?.value || 'KEEP';
+			const cancelId =
+				alertAction === 'CANCEL'
+					? this.getSystemSelectValue('[data-settings-system-cancel-wait]')
+					: null;
+
+			if (!slotId) return { ok: false, message: 'Selecciona un intervalo de reserva.' };
+			if (!reminderId) return { ok: false, message: 'Selecciona un tiempo de recordatorio.' };
+			if (alertAction === 'CANCEL' && !cancelId) {
+				return { ok: false, message: 'Selecciona el tiempo límite de espera para cancelar.' };
+			}
+
+			const reminderHours = getReminderHoursValue(this.systemCatalogs ?? undefined, reminderId);
+			const cancelHours =
+				cancelId && this.systemCatalogs
+					? this.systemCatalogs.cancel_wait_hours.find((item) => item.id === cancelId)?.hours ?? 0
+					: 0;
+
+			if (alertAction === 'CANCEL' && cancelHours >= reminderHours) {
+				return {
+					ok: false,
+					message: 'El tiempo de espera debe ser menor que el tiempo de recordatorio.',
+				};
+			}
+
+			return {
+				ok: true,
+				payload: {
+					rsi_id_slot_interval: slotId,
+					rh_id_reminder_hours: reminderId,
+					unanswered_alert_action: alertAction,
+					cwh_id_cancel_wait_hours: alertAction === 'CANCEL' ? cancelId : null,
+				},
+			};
+		}
+
+		private handleSystemFormChange = (event: Event) => {
+			const target = event.target;
+			if (
+				target instanceof HTMLSelectElement &&
+				target.matches('[data-settings-system-slot-interval]')
+			) {
+				this.renderSystemSlotPreview();
+				return;
+			}
+
+			if (
+				target instanceof HTMLSelectElement &&
+				target.matches('[data-settings-system-cancel-wait]')
+			) {
+				return;
+			}
+
+			const preserveCancelWaitId = this.getSystemSelectValue('[data-settings-system-cancel-wait]');
+			this.refreshSystemCancelWaitField(preserveCancelWaitId);
+		};
+
+		private fillWorkspace(workspace: WorkspaceSettingsData | null) {
 			const setValue = (selector: string, value: string) => {
 				const input = this.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(selector);
 				if (input) input.value = value || '';
 			};
 			
-			setValue('[data-settings-workspace-form] [name="name"]', workspace?.name);
-			setValue('[data-settings-workspace-form] [name="profile_slug"]', workspace?.profile_slug);
-			setValue('[data-settings-workspace-form] [name="description"]', workspace?.description);
-			const workspaceTimeFormat = String(workspace?.time_format || '').trim().toLowerCase();
-			setValue('[data-settings-system-form] [name="time_format"]', workspaceTimeFormat === '12h' ? '12H' : '24H');
-			
-			// Aquí está la línea ya corregida apuntando al formulario correcto de sistema.
-			setValue('[data-settings-system-form] [name="unanswered_alert_action"]', workspace?.unanswered_alert_action === 'CANCEL' ? 'CANCEL' : 'KEEP');
+			setValue('[data-settings-workspace-form] [name="name"]', String(workspace?.name ?? ''));
+			setValue('[data-settings-workspace-form] [name="profile_slug"]', String(workspace?.profile_slug ?? ''));
+			setValue('[data-settings-workspace-form] [name="description"]', String(workspace?.description ?? ''));
+			this.fillSystemSettings(workspace);
 			
 			this.releaseLogoPreviewObjectUrl();
 
@@ -1189,7 +1452,7 @@ const publicProfileDomain =
 
 				if (this.isAdmin) {
 					const workspaceRes = await this.requestApi('/api/workspace', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar negocio.');
-					this.fillWorkspace(workspaceRes.data || null);
+					this.fillWorkspace((workspaceRes.data as unknown as WorkspaceSettingsData | null) ?? null);
 				}
 			} catch (error) {
 				this.showFeedback('profile', error instanceof Error ? error.message : 'No fue posible cargar ajustes.', 'error');
@@ -1365,7 +1628,10 @@ const publicProfileDomain =
 			}
 		};
 
-		private async saveWorkspaceSettings(panel: string, extraPayload: Record<string, string> = {}) {
+		private async saveWorkspaceSettings(
+			panel: string,
+			extraPayload: Record<string, string | number | null> = {}
+		) {
 			this.clearFeedback();
 			try {
 				const payload = { ...this.getWorkspacePayload(), ...extraPayload };
@@ -1399,16 +1665,15 @@ const publicProfileDomain =
 
 		private handleSystemSubmit = async (event: SubmitEvent) => {
 			event.preventDefault();
-			
-			const extraPayload: Record<string, string> = {};
-			
-			// Extraemos y aseguramos explícitamente el campo para el JSON.
-			const actionSelect = this.els.systemForm?.querySelector<HTMLSelectElement>('[name="unanswered_alert_action"]');
-			if (actionSelect) {
-				extraPayload.unanswered_alert_action = actionSelect.value;
+			this.clearFeedback();
+
+			const validation = this.validateSystemFormPayload();
+			if (!validation.ok || !validation.payload) {
+				this.showFeedback('system', validation.message || 'Revisa la configuración del sistema.', 'error');
+				return;
 			}
-			
-			await this.saveWorkspaceSettings('system', extraPayload);
+
+			await this.saveWorkspaceSettings('system', validation.payload);
 		};
 	}
 
@@ -1628,6 +1893,34 @@ const publicProfileDomain =
 	.settings-loading-card .material-symbols-rounded {
 		color: var(--primary);
 		font-size: 1.35rem;
+	}
+
+	.settings-slot-preview-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.settings-slot-preview-chip {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 4.5rem;
+		height: 2.5rem;
+		padding: 0 0.9rem;
+		border-radius: 999px;
+		border: 1px solid var(--outline, var(--shell-border));
+		background: transparent;
+		color: var(--on-surface);
+		font-size: 0.875rem;
+		font-weight: 600;
+		line-height: 1;
+	}
+
+	.settings-slot-preview-chip:first-child {
+		border-color: var(--primary);
+		background: color-mix(in srgb, var(--primary-container, var(--primary-soft)) 88%, transparent);
+		color: var(--on-primary-container, var(--primary));
 	}
 
 	.settings-upload-card {

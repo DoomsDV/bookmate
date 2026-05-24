@@ -96,6 +96,22 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 	const unansweredAlertAction = String(source?.unanswered_alert_action ?? '').trim();
 	if (unansweredAlertAction !== '') payload.unanswered_alert_action = unansweredAlertAction;
 
+	const slotIntervalId = Number(source?.rsi_id_slot_interval ?? 0);
+	if (Number.isInteger(slotIntervalId) && slotIntervalId > 0) {
+		payload.rsi_id_slot_interval = slotIntervalId;
+	}
+
+	const reminderHoursId = Number(source?.rh_id_reminder_hours ?? 0);
+	if (Number.isInteger(reminderHoursId) && reminderHoursId > 0) {
+		payload.rh_id_reminder_hours = reminderHoursId;
+	}
+
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'cwh_id_cancel_wait_hours')) {
+		const cancelWaitId = Number(source?.cwh_id_cancel_wait_hours ?? 0);
+		payload.cwh_id_cancel_wait_hours =
+			Number.isInteger(cancelWaitId) && cancelWaitId > 0 ? cancelWaitId : null;
+	}
+
 	const panelTheme = String(source?.panel_theme ?? '').trim();
 	if (panelTheme !== '') payload.panel_theme = panelTheme;
 

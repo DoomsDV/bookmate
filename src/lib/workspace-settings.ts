@@ -1,54 +1,31 @@
 import { resolveOrdsApiUrl } from './env-urls';
 
+import type {
+	UpdateWorkspacePayload,
+	WorkspaceCatalogOption,
+	WorkspaceCatalogs,
+	WorkspaceFieldError,
+	WorkspaceSettingsData,
+} from './workspace-settings-shared';
+
+export type {
+	UpdateWorkspacePayload,
+	WorkspaceCatalogOption,
+	WorkspaceCatalogs,
+	WorkspaceFieldError,
+	WorkspaceSettingsData,
+} from './workspace-settings-shared';
+
+export {
+	getCancelWaitOptionsForReminder,
+	getReminderHoursValue,
+} from './workspace-settings-shared';
+
 export const WORKSPACE_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_WORKSPACE_URL,
 	'ORDS_WORKSPACE_URL',
 	'/workspace'
 );
-
-export interface WorkspaceSettingsData {
-	id_organization: number;
-	name: string;
-	profile_slug: string;
-	description: string;
-	public_whatsapp: string;
-	logo_url: string;
-	time_format: string;
-	theme_pref: string;
-	unanswered_alert_action: string;
-}
-
-export interface UpdateWorkspacePayload {
-	name?: string;
-	profile_slug?: string;
-	description?: string;
-	public_whatsapp?: string;
-	time_format?: string;
-	theme_pref?: string;
-	unanswered_alert_action?: string;
-	panel_theme?: string;
-	logo_base64?: string;
-	logo_name?: string;
-	logo_mime?: string;
-}
-
-export interface WorkspaceFieldError {
-	field: string;
-	message: string;
-}
-
-interface WorkspaceSuccessResponse {
-	status: 'success';
-	data?: unknown;
-	message?: string;
-}
-
-interface WorkspaceFailureResponse {
-	status?: string;
-	message?: string;
-	details?: unknown;
-	errors?: unknown;
-}
 
 export class WorkspaceSettingsApiError extends Error {
 	status: number;
@@ -69,14 +46,61 @@ export class WorkspaceSettingsApiError extends Error {
 	}
 }
 
+interface WorkspaceSuccessResponse {
+	status: 'success';
+	data?: unknown;
+	message?: string;
+}
+
+interface WorkspaceFailureResponse {
+	status?: string;
+	message?: string;
+	details?: unknown;
+	errors?: unknown;
+}
+
 const toNumber = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);
 	return Number.isFinite(parsed) ? parsed : fallback;
 };
 
+const toOptionalPositiveInt = (value: unknown): number | null => {
+	const parsed = Number(value);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+};
+
 const normalizeTimeFormat = (value: unknown): '12H' | '24H' => {
 	const normalized = String(value || '').trim().toLowerCase();
 	return normalized === '12h' ? '12H' : '24H';
+};
+
+const parseCatalogOptions = (value: unknown): WorkspaceCatalogOption[] => {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((item) => {
+		if (!item || typeof item !== 'object') return [];
+		const source = item as Record<string, unknown>;
+		const id = toOptionalPositiveInt(source.id);
+		const label = String(source.label || '').trim();
+		if (!id || !label) return [];
+		return [
+			{
+				id,
+				label,
+				minutes: toOptionalPositiveInt(source.minutes) ?? undefined,
+				hours: toOptionalPositiveInt(source.hours) ?? undefined,
+			},
+		];
+	});
+};
+
+const parseCatalogs = (value: unknown): WorkspaceCatalogs | undefined => {
+	if (!value || typeof value !== 'object') return undefined;
+	const source = value as Record<string, unknown>;
+	return {
+		slot_intervals: parseCatalogOptions(source.slot_intervals),
+		reminder_hours: parseCatalogOptions(source.reminder_hours),
+		cancel_wait_hours: parseCatalogOptions(source.cancel_wait_hours),
+	};
 };
 
 const parseFieldErrors = (value: unknown): WorkspaceFieldError[] => {
@@ -98,6 +122,12 @@ const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | nul
 	const idOrganization = toNumber(source.id_organization, 0);
 	if (!idOrganization) return null;
 
+	const cancelWaitRaw = source.cancel_wait_hours;
+	const cancelWaitHours =
+		cancelWaitRaw === null || cancelWaitRaw === undefined || cancelWaitRaw === ''
+			? null
+			: toNumber(cancelWaitRaw, 0) || null;
+
 	return {
 		id_organization: idOrganization,
 		name: String(source.name || '').trim(),
@@ -107,7 +137,14 @@ const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | nul
 		logo_url: String(source.logo_url || '').trim(),
 		time_format: normalizeTimeFormat(source.time_format),
 		theme_pref: String(source.theme_pref || '').trim(),
-		unanswered_alert_action: String(source.unanswered_alert_action || '').trim(),
+		unanswered_alert_action: String(source.unanswered_alert_action || 'KEEP').trim().toUpperCase(),
+		rsi_id_slot_interval: toOptionalPositiveInt(source.rsi_id_slot_interval),
+		rh_id_reminder_hours: toOptionalPositiveInt(source.rh_id_reminder_hours),
+		cwh_id_cancel_wait_hours: toOptionalPositiveInt(source.cwh_id_cancel_wait_hours),
+		booking_slot_interval_minutes: toNumber(source.booking_slot_interval_minutes, 30) || 30,
+		reminder_hours_before: toNumber(source.reminder_hours_before, 24) || 24,
+		cancel_wait_hours: cancelWaitHours,
+		catalogs: parseCatalogs(source.catalogs),
 	};
 };
 
