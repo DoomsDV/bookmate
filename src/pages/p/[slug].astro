@@ -412,9 +412,6 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 	import { initializePublicBookingPage } from '../../scripts/public-booking-page';
 
 	const bootPublicBookingPage = () => {
-		document.querySelectorAll<HTMLElement>('[data-public-booking-root]').forEach((node) => {
-			delete node.dataset.bound;
-		});
 		initializePublicBookingPage();
 	};
 

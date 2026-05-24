@@ -193,9 +193,16 @@ const fetchJson = async <T>(url: string, init: RequestInit, fallbackMessage: str
 	return { response, data };
 };
 
+const bookingPageControllers = new WeakMap<HTMLElement, AbortController>();
+
 export const initializePublicBookingPage = () => {
 	const root = getBookingRoot();
-	if (!root || root.dataset.bound === 'true') return;
+	if (!root) return;
+
+	bookingPageControllers.get(root)?.abort();
+	const pageController = new AbortController();
+	bookingPageControllers.set(root, pageController);
+	const { signal } = pageController;
 
 	const profile = parseProfileFromDom(root);
 	if (!profile) return;
@@ -468,8 +475,11 @@ export const initializePublicBookingPage = () => {
 	) => {
 		if (!canShowLocationMap(location)) return;
 
+		const requestedLocationId = toPositiveInt(location!.id_location, 0);
 		const openSeq = ++mapOpenSeq;
 		const shouldFetchCoordinates = options.fetchCoordinates === true;
+		const isActiveMapOpen = (locationId = requestedLocationId) =>
+			openSeq === mapOpenSeq && toPositiveInt(locationId, 0) === requestedLocationId;
 
 		setMapStatus('');
 		if (mapAddress) mapAddress.textContent = location?.address || '';
@@ -481,12 +491,12 @@ export const initializePublicBookingPage = () => {
 		if (shouldFetchCoordinates || !coords) {
 			try {
 				mapLocation = await fetchPublicLocationDetails(mapLocation);
-				if (openSeq !== mapOpenSeq) return;
+				if (!isActiveMapOpen(mapLocation.id_location)) return;
 
 				applyLocationUpdate(mapLocation);
 				coords = getLocationCoordinatesFrom(mapLocation);
 			} catch (error) {
-				if (openSeq !== mapOpenSeq) return;
+				if (!isActiveMapOpen()) return;
 				setMapStatus(
 					error instanceof PublicBookingClientError
 						? error.message
@@ -495,6 +505,8 @@ export const initializePublicBookingPage = () => {
 				return;
 			}
 		}
+
+		if (!isActiveMapOpen(mapLocation.id_location)) return;
 
 		if (!coords) {
 			setMapStatus('Esta sucursal no tiene coordenadas cargadas.');
@@ -510,7 +522,7 @@ export const initializePublicBookingPage = () => {
 
 		try {
 			const maps = await loadGoogleMaps();
-			if (openSeq !== mapOpenSeq) return;
+			if (!isActiveMapOpen(mapLocation.id_location)) return;
 
 			if (!mapInstance) {
 				mapInstance = new maps.Map(mapCanvas, {
@@ -536,12 +548,12 @@ export const initializePublicBookingPage = () => {
 			}
 
 			window.setTimeout(() => {
-				if (openSeq !== mapOpenSeq) return;
+				if (!isActiveMapOpen(mapLocation.id_location)) return;
 				maps.event?.trigger?.(mapInstance, 'resize');
 				mapInstance?.setCenter?.(coords);
 			}, 80);
 		} catch (error) {
-			if (openSeq !== mapOpenSeq) return;
+			if (!isActiveMapOpen(mapLocation.id_location)) return;
 			setMapStatus(error instanceof Error ? error.message : 'No fue posible mostrar el mapa.');
 		}
 	};
@@ -1048,55 +1060,81 @@ export const initializePublicBookingPage = () => {
 		setStep(1);
 	};
 
-	prevMonthButton.addEventListener('click', () => {
-		visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
-		renderCalendar();
-	});
+	prevMonthButton.addEventListener(
+		'click',
+		() => {
+			visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
+			renderCalendar();
+		},
+		{ signal }
+	);
 
-	nextMonthButton.addEventListener('click', () => {
-		visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
-		renderCalendar();
-	});
+	nextMonthButton.addEventListener(
+		'click',
+		() => {
+			visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
+			renderCalendar();
+		},
+		{ signal }
+	);
 
-	backToServices.addEventListener('click', () => setStep(1));
-	backToCalendar.addEventListener('click', () => setStep(2));
-	backToSlots.addEventListener('click', () => setStep(3));
-	restartButton.addEventListener('click', resetFlow);
-	summaryLocation.addEventListener('click', () => {
-		const location = resolveLocationForSelectedSlot();
-		if (!location) return;
-		void openLocationMap(location, { fetchCoordinates: true });
-	});
-	mapCloseButton.addEventListener('click', () => {
-		mapModal.close();
-	});
-	mapModal.addEventListener('click', (event) => {
-		if (event.target === mapModal) mapModal.close();
-	});
+	backToServices.addEventListener('click', () => setStep(1), { signal });
+	backToCalendar.addEventListener('click', () => setStep(2), { signal });
+	backToSlots.addEventListener('click', () => setStep(3), { signal });
+	restartButton.addEventListener('click', resetFlow, { signal });
+	summaryLocation.addEventListener(
+		'click',
+		(event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			const location = resolveLocationForSelectedSlot();
+			if (!location) return;
+			void openLocationMap(location, { fetchCoordinates: true });
+		},
+		{ signal }
+	);
+	mapCloseButton.addEventListener('click', () => mapModal.close(), { signal });
+	mapModal.addEventListener(
+		'click',
+		(event) => {
+			if (event.target === mapModal) mapModal.close();
+		},
+		{ signal }
+	);
 	setCustomerNameLocked(false);
 	setCustomerNameVisibility(false);
 	customerPhoneInput.value = formatParaguayMobilePhoneInput(customerPhoneInput.value);
-	customerNameInput.addEventListener('input', () => {
-		setNameFieldError('');
-		setSubmitError('');
-	});
+	customerNameInput.addEventListener(
+		'input',
+		() => {
+			setNameFieldError('');
+			setSubmitError('');
+		},
+		{ signal }
+	);
 
-	customerPhoneInput.addEventListener('input', () => {
-		customerPhoneInput.value = formatParaguayMobilePhoneInput(customerPhoneInput.value);
-		setPhoneFieldError('');
-		setSubmitError('');
-		if (isValidatingCustomer) resetCustomerLookupState();
+	customerPhoneInput.addEventListener(
+		'input',
+		() => {
+			customerPhoneInput.value = formatParaguayMobilePhoneInput(customerPhoneInput.value);
+			setPhoneFieldError('');
+			setSubmitError('');
+			if (isValidatingCustomer) resetCustomerLookupState();
 
-		const parsedPhone = parseParaguayMobilePhone(toParaguayMobileE164FromInput(customerPhoneInput.value));
-		if (!parsedPhone.isValid) {
-			if (validatedCustomerPhoneE164) resetCustomerLookupState();
-			return;
-		}
+			const parsedPhone = parseParaguayMobilePhone(
+				toParaguayMobileE164FromInput(customerPhoneInput.value)
+			);
+			if (!parsedPhone.isValid) {
+				if (validatedCustomerPhoneE164) resetCustomerLookupState();
+				return;
+			}
 
-		if (validatedCustomerPhoneE164 && parsedPhone.e164 !== validatedCustomerPhoneE164) {
-			resetCustomerLookupState();
-		}
-	});
+			if (validatedCustomerPhoneE164 && parsedPhone.e164 !== validatedCustomerPhoneE164) {
+				resetCustomerLookupState();
+			}
+		},
+		{ signal }
+	);
 	customerPhoneInput.addEventListener('blur', async () => {
 		const rawPhone = customerPhoneInput.value.trim();
 		if (!rawPhone) {
@@ -1115,7 +1153,7 @@ export const initializePublicBookingPage = () => {
 		customerPhoneInput.value = formatParaguayMobilePhoneInput(rawPhone);
 		setPhoneFieldError('');
 		await validateCustomerPhone(parsedPhone.e164);
-	});
+	}, { signal });
 
 	customerForm.addEventListener('submit', async (event) => {
 		event.preventDefault();
@@ -1228,7 +1266,9 @@ export const initializePublicBookingPage = () => {
 			submitButton.disabled = false;
 			submitButton.textContent = 'Confirmar reserva';
 		}
-	});
+	}, { signal });
+
+	if (signal.aborted) return;
 
 	refreshSummary();
 	renderServices();
