@@ -587,16 +587,16 @@ const googleErrorMessage = hasGoogleError
 					class="mx-7 mb-4 hidden rounded-2xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3.5 dark:border-emerald-900/60 dark:bg-emerald-950/35"
 					data-appointment-attendance-wrap
 					hidden
+					role="status"
+					aria-live="polite"
 				>
-					<label class="flex cursor-default items-start gap-3">
-						<input
-							type="checkbox"
-							class="appointment-attendance-checkbox mt-0.5 size-4 shrink-0 accent-emerald-600"
-							data-appointment-attendance-checkbox
-							checked
-							disabled
-							tabindex="-1"
-						/>
+					<div class="flex pointer-events-none select-none items-start gap-3">
+						<span
+							class="material-symbols-rounded mt-0.5 shrink-0 text-[1.35rem] text-emerald-600 dark:text-emerald-400"
+							aria-hidden="true"
+						>
+							check_circle
+						</span>
 						<span class="grid gap-1">
 							<span class="text-[0.95rem] font-bold text-(--on-surface)">
 								Asistencia reconfirmada
@@ -612,7 +612,7 @@ const googleErrorMessage = hasGoogleError
 								<span data-appointment-attendance-reply-at></span>
 							</span>
 						</span>
-					</label>
+					</div>
 				</div>
 
 				<div class="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
