@@ -5,6 +5,8 @@ interface Props {
 	emailError?: string;
 	codeError?: string;
 	registered?: boolean;
+	pendingLogin?: boolean;
+	resent?: boolean;
 }
 
 const {
@@ -13,11 +15,17 @@ const {
 	emailError = '',
 	codeError = '',
 	registered = false,
+	pendingLogin = false,
+	resent = false,
 } = Astro.props;
 
 const notice = registered
 	? 'Te enviamos un código de 6 dígitos. Revisa tu bandeja de entrada para activar tu cuenta.'
-	: '';
+	: resent
+		? 'Te enviamos un nuevo código de verificación. Revisa tu bandeja de entrada.'
+		: pendingLogin
+			? 'Debes verificar tu correo antes de iniciar sesión. Ingresa el código de 6 dígitos o solicita uno nuevo con "Reenviar código".'
+			: '';
 ---
 
 <section class="m3-container auth-dark">
