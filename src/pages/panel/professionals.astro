@@ -611,10 +611,26 @@ const toPageHref = (page: number) => {
 
 		private async requestApi<T = any>(url: string, options?: RequestInit): Promise<any> {
 			const response = await fetch(url, options);
-			let data = null;
-			try { data = await response.json(); } catch { throw new Error("Error al interpretar respuesta del servidor."); }
+			const contentType = response.headers.get('content-type') || '';
+			let data: Record<string, unknown> | null = null;
+
+			if (contentType.includes('application/json')) {
+				try {
+					data = await response.json();
+				} catch {
+					throw new Error('Error al interpretar respuesta del servidor.');
+				}
+			} else if (!response.ok) {
+				throw new Error(
+					response.status === 401
+						? 'Tu sesión ha finalizado. Vuelve a iniciar sesión.'
+						: `Error en la petición (${response.status}).`
+				);
+			}
+
 			if (!response.ok || !data || data.status !== 'success') {
-				const error = new Error(data?.message || "Error en la petición.");
+				if (data?.code === 'SESSION_EXPIRED') return null;
+				const error = new Error(String(data?.message || 'Error en la petición.'));
 				(error as any).apiData = data;
 				throw error;
 			}
@@ -1477,12 +1493,13 @@ const toPageHref = (page: number) => {
 			this.toggleFormLoading(true);
 			
 			try {
-				await this.requestApi(url, {
+				const result = await this.requestApi(url, {
 					method,
 					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 					body: JSON.stringify(payload)
 				});
-				
+				if (!result) return;
+
 				this.closeModal();
 				window.location.reload();
 			} catch (err: any) {

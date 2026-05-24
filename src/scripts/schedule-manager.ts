@@ -3,6 +3,7 @@ import { ROLES } from '../config/roles';
 import type { ScheduleExceptionType } from '../lib/schedules';
 import {
 	buildExceptionSummaryMap,
+	EXCEPTION_NOTE_HELP_TEXT,
 	formatDateKey,
 	formatMonthLabel,
 	getIsoDayOfWeek,
@@ -1334,19 +1335,31 @@ class ScheduleManager extends HTMLElement {
 		}
 		this.exceptionModalBodyNode.appendChild(typeFieldset);
 
+		const noteField = document.createElement('div');
+		noteField.className = 'grid gap-1';
+
 		const noteLabel = document.createElement('label');
 		noteLabel.className = 'grid gap-1 text-[0.88rem] font-bold text-(--on-surface)';
 		noteLabel.append('Nota (opcional)');
+
 		const noteInput = document.createElement('input');
 		noteInput.type = 'text';
 		noteInput.maxLength = 500;
 		noteInput.value = this.exceptionModalNote;
 		noteInput.dataset.excNote = 'true';
+		noteInput.id = 'exception-modal-note';
 		noteInput.className =
 			'rounded-xl border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-[0.9rem] font-medium';
-		noteInput.disabled = this.exceptionModalType === 'BLOCKED';
+		noteInput.setAttribute('aria-describedby', 'exception-modal-note-help');
 		noteLabel.appendChild(noteInput);
-		this.exceptionModalBodyNode.appendChild(noteLabel);
+
+		const noteHelp = document.createElement('p');
+		noteHelp.id = 'exception-modal-note-help';
+		noteHelp.className = 'schedule-field-hint';
+		noteHelp.textContent = EXCEPTION_NOTE_HELP_TEXT;
+
+		noteField.append(noteLabel, noteHelp);
+		this.exceptionModalBodyNode.appendChild(noteField);
 
 		if (this.exceptionModalType === 'BLOCKED') {
 			const blockedHint = document.createElement('p');

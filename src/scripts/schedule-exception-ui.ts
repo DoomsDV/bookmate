@@ -58,6 +58,9 @@ export const buildExceptionSummaryMap = (
 	return map;
 };
 
+export const EXCEPTION_NOTE_HELP_TEXT =
+	'Solo para auditoría o mensaje interno: ayuda a recordar el motivo de esta modificación. No la ven los clientes.';
+
 export type CalendarDayTone = 'normal' | 'blocked' | 'override';
 
 export const resolveCalendarDayTone = (

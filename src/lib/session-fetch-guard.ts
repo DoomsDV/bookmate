@@ -147,10 +147,27 @@ const guardedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promi
 		return fetchImpl(input, init);
 	}
 
-	const requestUrl = getRequestUrl(input);
 	const isRetry = new Headers(init?.headers).get(SESSION_RETRY_HEADER) === '1';
 
-	let response = await fetchImpl(input, init);
+	const fetchInit: RequestInit = {
+		...init,
+		redirect: init?.redirect ?? 'manual',
+	};
+
+	let response = await fetchImpl(input, fetchInit);
+
+	if (
+		!sessionLogoutInProgress &&
+		(response.type === 'opaqueredirect' ||
+			response.status === 301 ||
+			response.status === 302 ||
+			response.status === 303 ||
+			response.status === 307 ||
+			response.status === 308)
+	) {
+		await handleSessionExpired();
+		return response;
+	}
 
 	if (response.status !== 401 || sessionLogoutInProgress) {
 		return response;

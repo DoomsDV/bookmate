@@ -9,6 +9,7 @@ import {
 	setSessionCookies,
 } from './lib/auth';
 import { getCurrentOrganizationWithOrds } from './lib/organization';
+import { SESSION_EXPIRED_API_CODE } from './lib/session-auth-messages';
 import { parseTokenClaims } from './lib/token-claims';
 
 export const onRequest = defineMiddleware(async (context, next) => {
@@ -29,6 +30,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	}
 
 	const redirectToLogin = () => {
+		if (url.pathname.startsWith('/api/')) {
+			return Response.json(
+				{
+					status: 'error',
+					code: SESSION_EXPIRED_API_CODE,
+					message: 'No hay sesión activa. Vuelve a iniciar sesión.',
+				},
+				{ status: 401 }
+			);
+		}
+
 		const redirectPath = `${url.pathname}${url.search}`;
 		return redirect(`/auth/login?redirectTo=${encodeURIComponent(redirectPath)}`);
 	};

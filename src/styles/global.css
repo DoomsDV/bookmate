@@ -260,10 +260,70 @@ html[data-theme='dark'] [data-settings-modal] {
 	transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.app-shell {
+	height: 100dvh;
+	max-height: 100dvh;
+	overflow: hidden;
+}
+
+body:has(.app-shell) {
+	height: 100dvh;
+	overflow: hidden;
+}
+
+.min-h-screen:has(> .app-shell),
+.dashboard-canvas:has(> .app-shell) {
+	height: 100dvh;
+	max-height: 100dvh;
+	overflow: hidden;
+}
+
+schedule-manager:has(.app-shell),
+calendar-manager:has(.app-shell),
+customer-manager:has(.app-shell),
+location-manager:has(.app-shell),
+specialty-manager:has(.app-shell),
+service-manager:has(.app-shell),
+professional-manager:has(.app-shell) {
+	display: block;
+	height: 100dvh;
+	max-height: 100dvh;
+	overflow: hidden;
+}
+
+.app-shell > :last-child {
+	min-height: 0;
+	min-width: 0;
+	height: 100dvh;
+	max-height: 100dvh;
+	overflow: hidden;
+}
+
+.app-shell > :last-child > main {
+	min-height: 0;
+	overflow-y: auto;
+	overscroll-behavior: contain;
+}
+
 @media (min-width: 1024px) {
 	.app-shell {
 		grid-template-columns: 17.5rem minmax(0, 1fr);
 		transition: grid-template-columns 170ms ease;
+	}
+
+	[data-desktop-sidebar] {
+		position: sticky;
+		top: 0;
+		align-self: start;
+		height: 100dvh;
+		max-height: 100dvh;
+		min-height: 0;
+		overflow: hidden;
+	}
+
+	[data-sidebar-desktop-inner] {
+		overflow-y: auto;
+		overscroll-behavior: contain;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] {

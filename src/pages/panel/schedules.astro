@@ -94,7 +94,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 											data-schedule-error
 										></div>
 
-										<div class="flex flex-wrap gap-2" data-schedule-tabs role="tablist">
+										<div data-schedule-tabs role="tablist">
 											<button
 												type="button"
 												class="schedule-tab schedule-tab--active"
@@ -191,14 +191,14 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 											</div>
 
 										<div
-											class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4"
+											class="schedule-exception-modal-backdrop fixed inset-0 z-50 hidden items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
 											data-exception-modal
 											role="dialog"
 											aria-modal="true"
 											aria-labelledby="exception-modal-title"
 										>
 											<div
-												class="schedule-exception-modal max-h-[90vh] w-full max-w-[min(42rem,calc(100vw-2rem))] overflow-y-auto rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 shadow-xl sm:max-w-[min(48rem,calc(100vw-2rem))] sm:p-5 md:max-w-[min(52rem,calc(100vw-2rem))]"
+												class="schedule-exception-modal w-full max-w-none max-h-[92dvh] overflow-y-auto rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) border-b-0 bg-(--surface-bright) p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-12px_40px_rgba(0,0,0,0.18)] sm:max-h-[90vh] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-[1.8rem] sm:border-b sm:pb-5 sm:shadow-xl md:max-w-[min(52rem,calc(100vw-2rem))]"
 											>
 												<div class="mb-4 flex items-start justify-between gap-3">
 													<div>
@@ -374,15 +374,47 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		color: #fecdd3;
 	}
 
+	[data-schedule-tabs] {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 0.5rem;
+		width: 100%;
+	}
+
 	.schedule-tab {
 		border: 1px solid var(--shell-border);
 		background: var(--control-surface);
 		color: var(--on-surface-variant);
-		border-radius: 999px;
-		padding: 0.45rem 1rem;
-		font-size: 0.88rem;
+		border-radius: 1rem;
+		width: 100%;
+		padding: 0.6rem 0.5rem;
+		font-size: 0.78rem;
 		font-weight: 700;
+		line-height: 1.25;
+		text-align: center;
+		text-wrap: balance;
 		transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+	}
+
+	@media (min-width: 640px) {
+		[data-schedule-tabs] {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.5rem;
+			width: auto;
+		}
+
+		.schedule-tab {
+			width: auto;
+			border-radius: 999px;
+			padding: 0.45rem 1rem;
+			font-size: 0.88rem;
+			text-wrap: nowrap;
+		}
+	}
+
+	.schedule-exception-modal-backdrop.flex {
+		display: flex;
 	}
 
 	.schedule-tab--active {
@@ -549,6 +581,14 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	.schedule-modal-close:hover {
 		background: var(--control-surface);
+	}
+
+	.schedule-exception-modal .schedule-field-hint {
+		margin: 0;
+		font-size: 0.85rem;
+		font-weight: 500;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
 	}
 
 	/* Modal de excepciones: turnos en movil 50% inicio / 50% fin */
