@@ -350,6 +350,31 @@ const publicProfileDomain =
 
 						<section data-settings-panel="system" class="settings-panel hidden gap-6">
 							<p data-settings-feedback="system" class="hidden settings-feedback"></p>
+							<details class="settings-system-notice">
+								<summary class="settings-system-notice__summary">
+									<span class="settings-system-notice__summary-main">
+										<span
+											class="material-symbols-rounded settings-system-notice__icon"
+											aria-hidden="true"
+										>
+											info
+										</span>
+										<span class="settings-system-notice__title">Importante</span>
+									</span>
+									<span
+										class="material-symbols-rounded settings-system-notice__chevron"
+										aria-hidden="true"
+									>
+										expand_more
+									</span>
+								</summary>
+								<p class="settings-system-notice__text">
+									Los cambios se aplican según el tipo de ajuste. El intervalo de horarios en la página
+									pública se actualiza al guardar. Los recordatorios por WhatsApp usan la nueva
+									configuración solo en citas que aún no hayan recibido el mensaje. Si ya se envió un
+									recordatorio, el plazo de respuesta de esa cita no se modifica.
+								</p>
+							</details>
 							<form data-settings-system-form class="grid gap-6">
 								<div class="grid gap-8">
 									<div class="grid gap-5">
@@ -2124,6 +2149,83 @@ const publicProfileDomain =
 		border-color: rgba(225, 29, 72, 0.35);
 		background: rgba(255, 228, 230, 0.8);
 		color: #be123c;
+	}
+
+	.settings-system-notice {
+		overflow: hidden;
+		border-radius: 1rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--shell-border));
+		background:
+			linear-gradient(
+				135deg,
+				color-mix(in srgb, var(--primary) 22%, transparent) 0%,
+				color-mix(in srgb, var(--primary-container, var(--primary-soft)) 48%, var(--surface-bright)) 52%,
+				color-mix(in srgb, var(--surface-bright) 94%, transparent) 100%
+			),
+			var(--surface-bright);
+		box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
+	}
+
+	.settings-system-notice__summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.85rem 1rem;
+		cursor: pointer;
+		list-style: none;
+		user-select: none;
+	}
+
+	.settings-system-notice__summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.settings-system-notice__summary-main {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		min-width: 0;
+	}
+
+	.settings-system-notice__icon {
+		flex-shrink: 0;
+		font-size: 1.35rem;
+		line-height: 1;
+		color: var(--primary);
+	}
+
+	.settings-system-notice__title {
+		margin: 0;
+		font-size: 0.9rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.settings-system-notice__chevron {
+		flex-shrink: 0;
+		font-size: 1.35rem;
+		line-height: 1;
+		color: var(--on-surface-variant);
+		transition: transform 160ms ease;
+	}
+
+	.settings-system-notice[open] .settings-system-notice__chevron {
+		transform: rotate(180deg);
+	}
+
+	.settings-system-notice__summary:hover .settings-system-notice__title {
+		color: var(--primary);
+	}
+
+	.settings-system-notice__text {
+		margin: 0 1rem 0.95rem;
+		padding-top: 0.75rem;
+		border-top: 1px solid color-mix(in srgb, var(--primary) 14%, var(--shell-border));
+		font-size: 0.85rem;
+		font-weight: 500;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
 	}
 </style>
 
