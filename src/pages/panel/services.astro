@@ -55,8 +55,6 @@ const canNextPage = safeCurrentPage < totalPages;
 const toPageHref = (page: number) => {
 	const nextUrl = new URL(Astro.url);
 	nextUrl.searchParams.set("page", String(page));
-	nextUrl.searchParams.delete("flash_message");
-	nextUrl.searchParams.delete("flash_type");
 	return `${nextUrl.pathname}${nextUrl.search}`;
 };
 
@@ -370,7 +368,7 @@ const toPageHref = (page: number) => {
 </Layout>
 
 <script>
-	import { navigate } from "astro:transitions/client";
+	import { reloadPageWithFlash } from "../../lib/flash";
 
 	type ServiceMode = "create" | "edit";
 	type ServiceSubmitPayload = {
@@ -479,7 +477,6 @@ const toPageHref = (page: number) => {
 			this.abortController = new AbortController();
 			const { signal } = this.abortController;
 
-			this.cleanUrlParams();
 			this.addEventListener("click", this.handleRootClick, { signal });
 			this.addEventListener("keydown", this.handleRootKeydown, {
 				signal,
@@ -503,25 +500,6 @@ const toPageHref = (page: number) => {
 			this.abortController?.abort();
 			this.abortController = null;
 			if (this.closeTimer) window.clearTimeout(this.closeTimer);
-		}
-
-		private cleanUrlParams() {
-			const url = new URL(window.location.href);
-			if (!url.searchParams.has("flash_message")) return;
-			url.searchParams.delete("flash_message");
-			url.searchParams.delete("flash_type");
-			window.history.replaceState(
-				{},
-				"",
-				`${url.pathname}${url.search}${url.hash}`,
-			);
-		}
-
-		private navigateWithFlash(message: string, type = "success") {
-			const url = new URL(window.location.href);
-			url.searchParams.set("flash_message", message);
-			url.searchParams.set("flash_type", type);
-			void navigate(`${url.pathname}${url.search}${url.hash}`);
 		}
 
 		private clearErrors() {
@@ -844,11 +822,12 @@ const toPageHref = (page: number) => {
 				);
 
 				this.closeModal();
-				this.navigateWithFlash(
-					data?.message ||
+				void reloadPageWithFlash({
+					message:
+						data?.message ||
 						`Servicio ${isEdit ? "actualizado" : "creado"} correctamente.`,
-					"success",
-				);
+					type: "success",
+				});
 			} catch (err: any) {
 				this.showFormError(
 					err instanceof Error
@@ -898,10 +877,10 @@ const toPageHref = (page: number) => {
 				);
 
 				this.closeModal();
-				this.navigateWithFlash(
-					data?.message || "Servicio eliminado correctamente.",
-					"success",
-				);
+				void reloadPageWithFlash({
+					message: data?.message || "Servicio eliminado correctamente.",
+					type: "success",
+				});
 			} catch (err) {
 				this.restoreButtons();
 				this.showFormError(

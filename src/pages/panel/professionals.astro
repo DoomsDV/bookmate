@@ -53,8 +53,6 @@ const canNextPage = safeCurrentPage < totalPages;
 const toPageHref = (page: number) => {
 	const nextUrl = new URL(Astro.url);
 	nextUrl.searchParams.set('page', String(page));
-	nextUrl.searchParams.delete('flash_message');
-	nextUrl.searchParams.delete('flash_type');
 	return `${nextUrl.pathname}${nextUrl.search}`;
 };
 
@@ -447,6 +445,7 @@ const toPageHref = (page: number) => {
 		PARAGUAY_MOBILE_PHONE_ERROR,
 		parseParaguayMobilePhone,
 	} from '../../lib/paraguay-phone';
+	import { reloadPageWithFlash } from '../../lib/flash';
 
 	type ProfessionalMode = 'create' | 'edit';
 
@@ -1501,7 +1500,14 @@ const toPageHref = (page: number) => {
 				if (!result) return;
 
 				this.closeModal();
-				window.location.reload();
+				void reloadPageWithFlash({
+					message:
+						String(result.message || '').trim() ||
+						(this.mode === 'edit'
+							? 'Profesional actualizado correctamente.'
+							: 'Profesional creado correctamente.'),
+					type: 'success',
+				});
 			} catch (err: any) {
 				if (err.apiData && err.apiData.errors) {
 					const msg = err.message || 'Error al guardar.';
@@ -1533,8 +1539,11 @@ const toPageHref = (page: number) => {
 			this.toggleFormLoading(true);
 			
 			try {
-				await this.requestApi(`/api/professionals/${this.editingId}`, { method: 'DELETE' });
-				window.location.reload();
+				const result = await this.requestApi(`/api/professionals/${this.editingId}`, { method: 'DELETE' });
+				void reloadPageWithFlash({
+					message: String(result?.message || '').trim() || 'Profesional eliminado correctamente.',
+					type: 'success',
+				});
 			} catch (err) {
 				this.showFormError(err instanceof Error ? err.message : 'Error al eliminar');
 				this.toggleFormLoading(false);

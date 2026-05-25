@@ -140,8 +140,6 @@ const appointmentsCountText =
 const toPageHref = (page: number) => {
 	const nextUrl = new URL(Astro.url);
 	nextUrl.searchParams.set('page', String(page));
-	nextUrl.searchParams.delete('flash_message');
-	nextUrl.searchParams.delete('flash_type');
 	return `${nextUrl.pathname}${nextUrl.search}`;
 };
 

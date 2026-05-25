@@ -21,10 +21,19 @@ interface BookmateAlertOptions {
     cancelText?: string;
 }
 
+interface BookmateFlashDetail {
+    message: string;
+    type?: 'success' | 'error' | 'info' | 'warning';
+    autoHideMs?: number;
+}
+
 interface Window {
     BookmateAlert?: {
         alert: (options?: BookmateAlertOptions) => Promise<boolean>;
         confirm: (options?: BookmateAlertOptions) => Promise<boolean>;
+    };
+    BookmateFlash?: {
+        show: (detail: BookmateFlashDetail) => void;
     };
 }
 

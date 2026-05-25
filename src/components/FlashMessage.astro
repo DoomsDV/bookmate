@@ -89,6 +89,12 @@ const flashBaseClass =
 </style>
 
 <script>
+	import {
+		consumeStashedFlash,
+		drainPendingFlashMessages,
+		stripFlashParamsFromUrl,
+	} from '../lib/flash';
+
 	const flashToneMap = {
 		success: {
 			icon: 'check_circle',
@@ -202,11 +208,21 @@ const flashBaseClass =
 		initMessage(node);
 	};
 
-	for (const node of document.querySelectorAll<HTMLElement>('[data-flash-message]')) {
-		initMessage(node);
-	}
+	const bootstrapFlashHost = () => {
+		stripFlashParamsFromUrl();
+		ensureFlashStack();
 
-	(window as any).BookmateFlash = {
+		for (const node of document.querySelectorAll<HTMLElement>('[data-flash-message]')) {
+			initMessage(node);
+		}
+
+		const stashed = consumeStashedFlash();
+		if (stashed) showFlashMessage(stashed);
+
+		drainPendingFlashMessages();
+	};
+
+	window.BookmateFlash = {
 		show: showFlashMessage,
 	};
 
@@ -214,9 +230,7 @@ const flashBaseClass =
 		showFlashMessage(event.detail || {});
 	}) as EventListener);
 
-	document.addEventListener('astro:page-load', () => {
-		for (const node of document.querySelectorAll<HTMLElement>('[data-flash-message]')) {
-			initMessage(node);
-		}
-	});
+	bootstrapFlashHost();
+
+	document.addEventListener('astro:page-load', bootstrapFlashHost);
 </script>

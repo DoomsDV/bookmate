@@ -1,4 +1,4 @@
-import { navigate } from 'astro:transitions/client';
+import { showFlashMessage } from '../lib/flash';
 import { ROLES } from '../config/roles';
 import type { ScheduleExceptionType } from '../lib/schedules';
 import {
@@ -160,7 +160,6 @@ class ScheduleManager extends HTMLElement {
 		this.#listenerController = new AbortController();
 		const signal = this.#listenerController.signal;
 
-		this.cleanFlashUrl();
 		this.professionalSelect.addEventListener('change', this.handleProfessionalChange, { signal });
 		this.plannerNode.addEventListener('change', this.handlePlannerChange, { signal });
 		this.plannerNode.addEventListener('click', this.handlePlannerClick, { signal });
@@ -443,21 +442,6 @@ class ScheduleManager extends HTMLElement {
 			this.updatePlannerInteractivity();
 		}
 	};
-
-	private cleanFlashUrl(): void {
-		const currentUrl = new URL(window.location.href);
-		if (!currentUrl.searchParams.has('flash_message')) return;
-		currentUrl.searchParams.delete('flash_message');
-		currentUrl.searchParams.delete('flash_type');
-		window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
-	}
-
-	private navigateWithFlash(message: string, type = 'success'): void {
-		const nextUrl = new URL(window.location.href);
-		nextUrl.searchParams.set('flash_message', message);
-		nextUrl.searchParams.set('flash_type', type);
-		void navigate(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
-	}
 
 	private toBackendErrorMessage(data: ApiResponse, fallbackMessage: string): string {
 		const mainMessage = typeof data?.message === 'string' ? data.message.trim() : '';
@@ -1071,7 +1055,7 @@ class ScheduleManager extends HTMLElement {
 					? data.message
 					: 'Horarios guardados correctamente.';
 			this.setDirty(false);
-			this.navigateWithFlash(successMessage, 'success');
+			showFlashMessage({ message: successMessage, type: 'success' });
 		} catch (error) {
 			this.showError(error instanceof Error ? error.message : 'No fue posible guardar los horarios.');
 		} finally {
@@ -1674,12 +1658,13 @@ class ScheduleManager extends HTMLElement {
 				this.closeExceptionModal();
 				await this.loadExceptionsForVisibleMonth();
 				this.renderExceptionCalendar();
-				this.navigateWithFlash(
-					typeof data.message === 'string' && data.message.trim()
-						? data.message
-						: 'Excepción guardada correctamente.',
-					'success'
-				);
+				showFlashMessage({
+					message:
+						typeof data.message === 'string' && data.message.trim()
+							? data.message
+							: 'Excepción guardada correctamente.',
+					type: 'success',
+				});
 				return;
 			}
 		} catch (error) {
@@ -1720,12 +1705,13 @@ class ScheduleManager extends HTMLElement {
 			this.closeExceptionModal();
 			await this.loadExceptionsForVisibleMonth();
 			this.renderExceptionCalendar();
-			this.navigateWithFlash(
-				typeof data.message === 'string' && data.message.trim()
-					? data.message
-					: 'Excepción eliminada.',
-				'success'
-			);
+			showFlashMessage({
+				message:
+					typeof data.message === 'string' && data.message.trim()
+						? data.message
+						: 'Excepción eliminada.',
+				type: 'success',
+			});
 		} catch (error) {
 			this.showExceptionModalError(
 				error instanceof Error ? error.message : 'No fue posible eliminar la excepción.'

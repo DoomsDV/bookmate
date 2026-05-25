@@ -48,8 +48,6 @@ const canNextPage = safeCurrentPage < totalPages;
 const toPageHref = (page: number) => {
 	const nextUrl = new URL(Astro.url);
 	nextUrl.searchParams.set('page', String(page));
-	nextUrl.searchParams.delete('flash_message');
-	nextUrl.searchParams.delete('flash_type');
 	return `${nextUrl.pathname}${nextUrl.search}`;
 };
 
@@ -270,7 +268,7 @@ const toPageHref = (page: number) => {
 </Layout>
 
 <script>
-	import { navigate } from 'astro:transitions/client';
+	import { reloadPageWithFlash } from '../../lib/flash';
 
 	type SpecialtyMode = 'create' | 'edit';
 	type SpecialtySubmitPayload = {
@@ -349,7 +347,6 @@ const toPageHref = (page: number) => {
 		connectedCallback() {
 			if (this.bound) return;
 			this.bound = true;
-			this.cleanFlashUrl();
 			this.addEventListener('click', this.handleRootClick);
 			this.addEventListener('keydown', this.handleRootKeydown);
 			this.els.form?.addEventListener('submit', this.handleSubmit);
@@ -364,21 +361,6 @@ const toPageHref = (page: number) => {
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
 			}
-		}
-
-		private cleanFlashUrl() {
-			const currentUrl = new URL(window.location.href);
-			if (!currentUrl.searchParams.has('flash_message')) return;
-			currentUrl.searchParams.delete('flash_message');
-			currentUrl.searchParams.delete('flash_type');
-			window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
-		}
-
-		private navigateWithFlash(message: string, type = 'success') {
-			const nextUrl = new URL(window.location.href);
-			nextUrl.searchParams.set('flash_message', message);
-			nextUrl.searchParams.set('flash_type', type);
-			void navigate(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
 		}
 
 		private clearErrors() {
@@ -703,7 +685,7 @@ const toPageHref = (page: number) => {
 							: 'Especialidad creada correctamente.';
 
 				this.closeModal();
-				this.navigateWithFlash(successMessage, 'success');
+				void reloadPageWithFlash({ message: successMessage, type: 'success' });
 			} catch (error) {
 				const message = error instanceof Error ? error.message : 'No fue posible guardar la especialidad.';
 				this.showFormError(message);
@@ -744,7 +726,7 @@ const toPageHref = (page: number) => {
 						: 'Especialidad eliminada correctamente.';
 
 				this.closeModal();
-				this.navigateWithFlash(successMessage, 'success');
+				void reloadPageWithFlash({ message: successMessage, type: 'success' });
 			} catch (error) {
 				this.showFormError(
 					error instanceof Error ? error.message : 'No fue posible eliminar la especialidad.'

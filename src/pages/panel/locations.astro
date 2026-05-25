@@ -55,8 +55,6 @@ const canNextPage = safeCurrentPage < totalPages;
 const toPageHref = (page: number) => {
 	const nextUrl = new URL(Astro.url);
 	nextUrl.searchParams.set("page", String(page));
-	nextUrl.searchParams.delete("flash_message");
-	nextUrl.searchParams.delete("flash_type");
 	return `${nextUrl.pathname}${nextUrl.search}`;
 };
 
@@ -447,7 +445,7 @@ const googleMapsApiKey =
 </Layout>
 
 <script>
-	import { navigate } from "astro:transitions/client";
+	import { reloadPageWithFlash } from "../../lib/flash";
 	import {
 		destroySearchableSelect,
 		rebuildSearchableSelect,
@@ -709,7 +707,6 @@ const googleMapsApiKey =
 				this.dataset.googleMapsApiKey || "",
 			).trim();
 
-			this.cleanUrlParams();
 			this.addEventListener("click", this.handleRootClick, { signal });
 			this.addEventListener("keydown", this.handleRootKeydown, {
 				signal,
@@ -761,28 +758,6 @@ const googleMapsApiKey =
 		private syncMapTheme = () => {
 			if (!this.mapInstance?.setOptions) return;
 			this.mapInstance.setOptions({ styles: this.getMapStyles() });
-		};
-
-		private cleanUrlParams = () => {
-			const currentUrl = new URL(window.location.href);
-			if (currentUrl.searchParams.has("flash_message")) {
-				currentUrl.searchParams.delete("flash_message");
-				currentUrl.searchParams.delete("flash_type");
-				window.history.replaceState(
-					{},
-					"",
-					`${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`,
-				);
-			}
-		};
-
-		private redirectWithFlash = (message: string, type = "success") => {
-			const nextUrl = new URL(window.location.href);
-			nextUrl.searchParams.set("flash_message", message);
-			nextUrl.searchParams.set("flash_type", type);
-			void navigate(
-				`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`,
-			);
 		};
 
 		private handleRootClick = (event: MouseEvent) => {
@@ -1550,11 +1525,11 @@ const googleMapsApiKey =
 				);
 
 				this.closeModal();
-				this.redirectWithFlash(
-					data?.message?.trim() ||
-						"Sucursal eliminada correctamente.",
-					"success",
-				);
+				void reloadPageWithFlash({
+					message:
+						data?.message?.trim() || "Sucursal eliminada correctamente.",
+					type: "success",
+				});
 			} catch (error) {
 				this.showFormError(
 					error instanceof Error
@@ -1642,13 +1617,12 @@ const googleMapsApiKey =
 				);
 
 				this.closeModal();
-				this.redirectWithFlash(
-					data?.message?.trim() ||
-						(this.mode === "edit"
-							? "Sucursal actualizada."
-							: "Sucursal creada."),
-					"success",
-				);
+				void reloadPageWithFlash({
+					message:
+						data?.message?.trim() ||
+						(this.mode === "edit" ? "Sucursal actualizada." : "Sucursal creada."),
+					type: "success",
+				});
 			} catch (error: any) {
 				this.showFormError(
 					error instanceof Error

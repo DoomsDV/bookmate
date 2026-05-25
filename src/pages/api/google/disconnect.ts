@@ -1,5 +1,7 @@
 import type { APIRoute } from 'astro';
 
+import { redirectWithFlashCookies } from '../../../lib/flash-server';
+
 const PROVIDER = 'google_calendar';
 const PANEL_CALENDAR_PATH = '/panel/calendar';
 
@@ -11,13 +13,12 @@ const toRedirectResponse = (location: string, status = 302) =>
 		},
 	});
 
-const toPanelCalendarSuccessRedirect = () => {
-	const params = new URLSearchParams({
-		flash_message: 'Google Calendar se desconecto correctamente.',
-		flash_type: 'success',
-	});
-	return toRedirectResponse(`${PANEL_CALENDAR_PATH}?${params.toString()}`);
-};
+const toPanelCalendarSuccessRedirect = () =>
+	redirectWithFlashCookies(
+		PANEL_CALENDAR_PATH,
+		'Google Calendar se desconecto correctamente.',
+		'success'
+	);
 
 const wantsHtml = (request: Request) => {
 	const accept = request.headers.get('accept') || '';

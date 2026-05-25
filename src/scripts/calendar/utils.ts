@@ -143,14 +143,6 @@ export const toIsoWithOffset = (value: string | Date) => {
 	return `${year}-${month}-${day}T${hour}:${minute}:00${sign}${tzHour}:${tzMinute}`;
 };
 
-export const cleanFlashUrl = () => {
-	const currentUrl = new URL(window.location.href);
-	if (!currentUrl.searchParams.has('flash_message')) return;
-	currentUrl.searchParams.delete('flash_message');
-	currentUrl.searchParams.delete('flash_type');
-	window.history.replaceState({}, '', `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`);
-};
-
 export class ApiClientError extends Error {
 	status: number;
 	fieldErrors: ApiFieldError[];

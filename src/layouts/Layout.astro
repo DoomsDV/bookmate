@@ -3,11 +3,13 @@ import { ClientRouter } from 'astro:transitions';
 import FlashMessage from '../components/FlashMessage.astro';
 import FcmManager from '../components/FcmManager.astro';
 import SessionGuard from '../components/SessionGuard.astro';
+import {
+    FLASH_MESSAGE_COOKIE,
+    FLASH_TYPE_COOKIE,
+} from '../lib/flash-server';
 // 1. Importamos la información de la PWA
 import { pwaInfo } from 'virtual:pwa-info';
 
-const FLASH_MESSAGE_COOKIE = 'bookmate_flash_message';
-const FLASH_TYPE_COOKIE = 'bookmate_flash_type';
 const decodeCookieValue = (value: string) => {
     try {
         return decodeURIComponent(value);
@@ -16,12 +18,10 @@ const decodeCookieValue = (value: string) => {
     }
 };
 
-const flashMessageFromQuery = Astro.url.searchParams.get('flash_message') ?? '';
-const flashTypeFromQuery = Astro.url.searchParams.get('flash_type') ?? '';
 const flashMessageFromCookie = Astro.cookies.get(FLASH_MESSAGE_COOKIE)?.value ?? '';
 const flashTypeFromCookie = Astro.cookies.get(FLASH_TYPE_COOKIE)?.value ?? '';
-const flashMessage = flashMessageFromQuery || decodeCookieValue(flashMessageFromCookie);
-const flashTypeRaw = flashTypeFromQuery || decodeCookieValue(flashTypeFromCookie) || 'success';
+const flashMessage = decodeCookieValue(flashMessageFromCookie);
+const flashTypeRaw = decodeCookieValue(flashTypeFromCookie) || 'success';
 const validFlashTypes = ['success', 'error', 'info', 'warning'] as const;
 type FlashType = (typeof validFlashTypes)[number];
 const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
@@ -138,15 +138,19 @@ if (flashTypeFromCookie) {
                 <FcmManager />
             </>
         )}
-        {flashMessage && (
-            <div class="pointer-events-none fixed bottom-8 left-1/2 z-100 flex w-full -translate-x-1/2 justify-center px-4 sm:bottom-10">
-                <FlashMessage
-                    message={flashMessage}
-                    type={flashType}
-                    autoHideMs={4000}
-                />
-            </div>
-        )}
+        {
+            flashMessage ? (
+                <div class="pointer-events-none fixed bottom-8 left-1/2 z-[10000] flex w-full -translate-x-1/2 justify-center px-4 sm:bottom-10">
+                    <FlashMessage
+                        message={flashMessage}
+                        type={flashType}
+                        autoHideMs={4000}
+                    />
+                </div>
+            ) : (
+                <FlashMessage message="" />
+            )
+        }
     </body>
 </html>
 

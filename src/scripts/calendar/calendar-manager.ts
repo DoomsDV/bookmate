@@ -26,9 +26,9 @@ import {
 	setSearchableSelectValue,
 	syncSearchableSelect,
 } from '../searchable-select';
+import { showFlashMessage } from '../../lib/flash';
 import type { AppointmentFormPayload, Option } from './types';
 import {
-	cleanFlashUrl,
 	formatDateTimeLocal,
 	isAppointmentStatus,
 	showErrorAlert,
@@ -197,7 +197,6 @@ class CalendarManager extends HTMLElement {
 			signal,
 		});
 
-		cleanFlashUrl();
 		void this.bootstrap();
 	}
 
@@ -899,23 +898,12 @@ class CalendarManager extends HTMLElement {
 		this.reloadCalendarEvents();
 	};
 
-	private navigateWithFlash(message: string, type = 'success') {
-		const nextUrl = new URL(window.location.href);
-		nextUrl.searchParams.set('flash_message', message);
-		nextUrl.searchParams.set('flash_type', type);
-		if (this.calendar) {
-			localStorage.setItem('bookmate-calendar-default-date', this.calendar.getDate().toISOString());
-		}
-		void navigate(`${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`);
-	}
-
 	private handleAppointmentChanged = (event: Event) => {
 		const customEvent = event as CustomEvent<{ message?: string }>;
 		if (customEvent.detail?.message) {
-			this.navigateWithFlash(customEvent.detail.message, 'success');
-		} else {
-			this.reloadCalendarEvents();
+			showFlashMessage({ message: customEvent.detail.message, type: 'success' });
 		}
+		this.reloadCalendarEvents();
 	};
 
 	private async bootstrap() {
