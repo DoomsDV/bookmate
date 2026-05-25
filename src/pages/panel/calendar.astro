@@ -415,6 +415,21 @@ const googleErrorMessage = hasGoogleError
 							</select>
 							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="status"></span>
 						</label>
+
+						<div
+							class="hidden grid w-full min-w-0 gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
+							data-modal-status-readonly-wrap
+							hidden
+						>
+							Estado
+							<div
+								class="flex w-full min-h-[3.25rem] items-center gap-2 rounded-xl border px-4 py-3 text-[0.95rem] font-bold"
+								data-modal-status-readonly-badge
+							>
+								<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true" data-modal-status-readonly-icon>cancel</span>
+								<span data-modal-status-readonly-label>Cancelado</span>
+							</div>
+						</div>
 					</div>
 
 					<div class="relative">
@@ -615,8 +630,11 @@ const googleErrorMessage = hasGoogleError
 					</div>
 				</div>
 
-				<div class="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
-					<div class="appointment-modal-footer">
+				<div
+					class="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
+					data-appointment-modal-footer-wrap
+				>
+					<div class="appointment-modal-footer" data-appointment-modal-footer>
 					<button
 						type="button"
 						class="hidden appointment-delete-btn"
@@ -960,6 +978,18 @@ const googleErrorMessage = hasGoogleError
 		filter: saturate(0.72);
 	}
 
+	[data-calendar-root] .fc .fc-event.fc-event-locked {
+		cursor: default;
+	}
+
+	[data-calendar-root] .fc .fc-event.fc-event-locked .fc-event-resizer {
+		display: none;
+	}
+
+	[data-calendar-root] .fc .fc-event.fc-event-locked:hover {
+		filter: saturate(0.78);
+	}
+
 	[data-calendar-root] .fc .fc-event-time {
 		font-size: 0.72rem;
 		font-weight: 700;
@@ -1187,6 +1217,19 @@ const googleErrorMessage = hasGoogleError
 		display: flex;
 		align-items: center;
 		gap: 0.75rem;
+	}
+
+	.appointment-modal-footer--readonly {
+		justify-content: flex-start;
+	}
+
+	.appointment-modal-footer--readonly .appointment-modal-footer-actions {
+		margin-left: 0;
+		justify-content: flex-start;
+	}
+
+	.appointment-modal-footer--readonly [data-submit-appointment] {
+		display: none !important;
 	}
 
 	.appointment-customer-lov {

@@ -103,6 +103,9 @@ class AppointmentModal extends HTMLElement {
 	isLoading = false;
 	isLoadingCustomers = false;
 	editingAppointmentId = 0;
+	isImmutableReadOnly = false;
+	/** Estado bloqueado en solo lectura (cancelada o completada). */
+	immutableReadOnlyStatus: 'CANCELADO' | 'COMPLETADO' | null = null;
 	selectedCustomer: CustomerOption | null = null;
 	lastLoadedCustomerProfessionalId: number | null = null;
 	closeTimer: number | null = null;
@@ -132,6 +135,12 @@ class AppointmentModal extends HTMLElement {
 	openEndPickerButton: HTMLButtonElement | null = null;
 	statusInput: HTMLSelectElement | null = null;
 	modalStatusWrap: HTMLElement | null = null;
+	modalStatusReadonlyWrap: HTMLElement | null = null;
+	modalStatusReadonlyBadge: HTMLElement | null = null;
+	modalStatusReadonlyIcon: HTMLElement | null = null;
+	modalStatusReadonlyLabel: HTMLElement | null = null;
+	modalFooter: HTMLElement | null = null;
+	modalFooterWrap: HTMLElement | null = null;
 	attendanceWrap: HTMLElement | null = null;
 	attendancePendingWrap: HTMLElement | null = null;
 	attendanceReplyRow: HTMLElement | null = null;
@@ -199,6 +208,17 @@ class AppointmentModal extends HTMLElement {
 		this.statusInput = this.form?.querySelector<HTMLSelectElement>('[data-modal-status]') ?? null;
 		this.modalStatusWrap =
 			this.form?.querySelector<HTMLElement>('[data-modal-status-wrap]') ?? null;
+		this.modalStatusReadonlyWrap =
+			this.form?.querySelector<HTMLElement>('[data-modal-status-readonly-wrap]') ?? null;
+		this.modalStatusReadonlyBadge =
+			this.form?.querySelector<HTMLElement>('[data-modal-status-readonly-badge]') ?? null;
+		this.modalStatusReadonlyIcon =
+			this.form?.querySelector<HTMLElement>('[data-modal-status-readonly-icon]') ?? null;
+		this.modalStatusReadonlyLabel =
+			this.form?.querySelector<HTMLElement>('[data-modal-status-readonly-label]') ?? null;
+		this.modalFooter = this.querySelector<HTMLElement>('[data-appointment-modal-footer]') ?? null;
+		this.modalFooterWrap =
+			this.querySelector<HTMLElement>('[data-appointment-modal-footer-wrap]') ?? null;
 		this.attendanceWrap =
 			this.form?.querySelector<HTMLElement>('[data-appointment-attendance-wrap]') ?? null;
 		this.attendancePendingWrap =
@@ -399,8 +419,8 @@ class AppointmentModal extends HTMLElement {
 
 		this.clearFormErrors();
 		this.setEditMode(appointmentId);
-		this.openModalShell();
 		this.setModalLoading(true);
+		this.openModalShell();
 
 		try {
 			const appointment = await this.client.getAppointment(appointmentId);
@@ -695,10 +715,16 @@ class AppointmentModal extends HTMLElement {
 		}
 	}
 
+	setModalFooterVisible(value: boolean) {
+		if (!this.modalFooterWrap) return;
+		this.modalFooterWrap.classList.toggle('hidden', !value);
+	}
+
 	setModalLoading(value: boolean) {
 		this.isLoading = value;
 		this.modalLoadingNode?.classList.toggle('hidden', !value);
 		this.modalLoadingNode?.classList.toggle('flex', value);
+		this.setModalFooterVisible(!value);
 
 		for (const field of this.formFields ?? []) {
 			field.disabled = value;
@@ -728,10 +754,14 @@ class AppointmentModal extends HTMLElement {
 			return;
 		}
 
-		this.submitButton.disabled = false;
-		this.submitIcon.textContent = this.mode === 'edit' ? 'save' : 'check';
-		this.submitLabel.textContent = this.mode === 'edit' ? 'Guardar cambios' : 'Crear cita';
-		if (this.mode === 'edit' && this.deleteButton) this.deleteButton.disabled = false;
+		if (!this.isImmutableReadOnly) {
+			this.submitButton.disabled = false;
+			this.submitIcon.textContent = this.mode === 'edit' ? 'save' : 'check';
+			this.submitLabel.textContent = this.mode === 'edit' ? 'Guardar cambios' : 'Crear cita';
+		}
+		if (this.mode === 'edit' && this.deleteButton && !this.isImmutableReadOnly) {
+			this.deleteButton.disabled = false;
+		}
 	}
 
 	resetFormValues() {
@@ -758,6 +788,7 @@ class AppointmentModal extends HTMLElement {
 		this.hideCustomerResults();
 		this.closeDateTimePicker();
 		this.hideAttendanceBlock();
+		this.clearImmutableReadOnlyMode();
 	}
 
 	hideAttendanceBlock() {
@@ -815,6 +846,7 @@ class AppointmentModal extends HTMLElement {
 			this.closeTimer = null;
 			this.clearFormErrors();
 			this.setModalLoading(false);
+			this.setModalFooterVisible(true);
 			this.setSubmittingState(false);
 			this.resetFormValues();
 			this.mode = 'create';
@@ -833,7 +865,85 @@ class AppointmentModal extends HTMLElement {
 		}
 	}
 
+	clearImmutableReadOnlyMode() {
+		this.isImmutableReadOnly = false;
+		this.immutableReadOnlyStatus = null;
+		this.modalFooter?.classList.remove('appointment-modal-footer--readonly');
+		this.modalStatusReadonlyWrap?.setAttribute('hidden', '');
+		this.modalStatusReadonlyWrap?.classList.add('hidden');
+		this.submitButton?.classList.remove('hidden');
+		if (this.submitButton) this.submitButton.disabled = false;
+		this.deleteButton?.classList.remove('hidden');
+
+		const requiredNodes = this.getRequiredNodes();
+		if (!requiredNodes) return;
+
+		for (const field of this.formFields ?? []) {
+			field.disabled = false;
+		}
+		requiredNodes.customerPhoneInput.readOnly = Number(requiredNodes.customerIdInput.value || 0) > 0;
+		requiredNodes.openStartPickerButton.disabled = false;
+		requiredNodes.openEndPickerButton.disabled = false;
+		requiredNodes.clearCustomerButton.disabled = false;
+	}
+
+	private applyImmutableStatusBadge(status: 'CANCELADO' | 'COMPLETADO') {
+		const isCancelled = status === 'CANCELADO';
+
+		if (this.modalTitle) {
+			this.modalTitle.textContent = isCancelled ? 'Cita cancelada' : 'Cita completada';
+		}
+		if (this.modalDescription) {
+			this.modalDescription.textContent = isCancelled
+				? 'Registro histórico: no se puede modificar esta reserva.'
+				: 'Esta cita ya finalizó y no se puede modificar.';
+		}
+
+		if (this.modalStatusReadonlyIcon) {
+			this.modalStatusReadonlyIcon.textContent = isCancelled ? 'cancel' : 'task_alt';
+		}
+		if (this.modalStatusReadonlyLabel) {
+			this.modalStatusReadonlyLabel.textContent = isCancelled ? 'Cancelado' : 'Completado';
+		}
+		if (this.modalStatusReadonlyBadge) {
+			this.modalStatusReadonlyBadge.className = [
+				'flex w-full min-h-[3.25rem] items-center gap-2 rounded-xl border px-4 py-3 text-[0.95rem] font-bold',
+				isCancelled
+					? 'border-rose-200/80 bg-rose-50 text-rose-700 dark:border-rose-900/60 dark:bg-rose-950/50 dark:text-rose-300'
+					: 'border-blue-200/80 bg-blue-50 text-blue-700 dark:border-blue-900/60 dark:bg-blue-950/50 dark:text-blue-300',
+			].join(' ');
+		}
+	}
+
+	setImmutableReadOnlyMode(status: 'CANCELADO' | 'COMPLETADO') {
+		this.isImmutableReadOnly = true;
+		this.immutableReadOnlyStatus = status;
+		this.applyImmutableStatusBadge(status);
+		this.modalFooter?.classList.add('appointment-modal-footer--readonly');
+		this.modalStatusWrap?.setAttribute('hidden', '');
+		this.modalStatusWrap?.classList.add('hidden');
+		this.modalStatusReadonlyWrap?.removeAttribute('hidden');
+		this.modalStatusReadonlyWrap?.classList.remove('hidden');
+		this.submitButton?.classList.add('hidden');
+		if (this.submitButton) this.submitButton.disabled = true;
+		this.deleteButton?.classList.add('hidden');
+		if (this.deleteButton) this.deleteButton.disabled = true;
+
+		const requiredNodes = this.getRequiredNodes();
+		if (!requiredNodes) return;
+
+		for (const field of this.formFields ?? []) {
+			field.disabled = true;
+		}
+		requiredNodes.customerPhoneInput.readOnly = true;
+		requiredNodes.openStartPickerButton.disabled = true;
+		requiredNodes.openEndPickerButton.disabled = true;
+		requiredNodes.clearCustomerButton.disabled = true;
+		this.hideAttendanceBlock();
+	}
+
 	setCreateMode() {
+		this.clearImmutableReadOnlyMode();
 		this.mode = 'create';
 		this.editingAppointmentId = 0;
 		if (this.modalTitle) this.modalTitle.textContent = 'Crear cita';
@@ -853,6 +963,7 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	setEditMode(appointmentId: number) {
+		this.clearImmutableReadOnlyMode();
 		this.mode = 'edit';
 		this.editingAppointmentId = appointmentId;
 		if (this.modalTitle) this.modalTitle.textContent = 'Editar cita';
@@ -865,6 +976,7 @@ class AppointmentModal extends HTMLElement {
 		if (this.deleteButton) this.deleteButton.disabled = false;
 		if (this.statusInput) this.statusInput.disabled = false;
 		this.modalStatusWrap?.removeAttribute('hidden');
+		this.modalStatusWrap?.classList.remove('hidden');
 		this.hideAttendanceBlock();
 	}
 
@@ -900,9 +1012,22 @@ class AppointmentModal extends HTMLElement {
 		this.ensureModalProfessionalValue();
 		void this.loadCustomersForCurrentProfessional(true);
 		this.showAttendanceBlock(appointment);
+
+		const status = String(appointment.status || '').trim().toUpperCase();
+		if (status === 'CANCELADO' || status === 'COMPLETADO') {
+			this.setImmutableReadOnlyMode(status);
+		}
 	}
 
 	buildPayloadFromForm(): BuildPayloadResult {
+		if (this.isImmutableReadOnly) {
+			return {
+				error:
+					this.immutableReadOnlyStatus === 'COMPLETADO'
+						? 'Las citas completadas no se pueden modificar.'
+						: 'Las citas canceladas no se pueden modificar.',
+			};
+		}
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return { error: 'No fue posible acceder al formulario de citas.' };
 
@@ -1404,7 +1529,7 @@ class AppointmentModal extends HTMLElement {
 
 	handleSubmit = async (event: SubmitEvent) => {
 		event.preventDefault();
-		if (!this.client || this.isSubmitting || this.isLoading) return;
+		if (!this.client || this.isSubmitting || this.isLoading || this.isImmutableReadOnly) return;
 
 		this.clearFormErrors();
 		const result = this.buildPayloadFromForm();
@@ -1454,7 +1579,7 @@ class AppointmentModal extends HTMLElement {
 
 	handleDelete = async () => {
 		if (!this.client || this.mode !== 'edit' || !this.editingAppointmentId) return;
-		if (this.isSubmitting || this.isLoading) return;
+		if (this.isSubmitting || this.isLoading || this.isImmutableReadOnly) return;
 
 		const confirmMessage = 'Esta acción eliminará la cita de forma permanente. ¿Deseas continuar?';
 		const confirmed = window.BookmateAlert?.confirm

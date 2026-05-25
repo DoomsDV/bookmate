@@ -1,4 +1,10 @@
-import { Calendar, type DateSelectArg, type EventDropArg, type EventInput } from '@fullcalendar/core';
+import {
+	Calendar,
+	type DateSelectArg,
+	type EventApi,
+	type EventDropArg,
+	type EventInput,
+} from '@fullcalendar/core';
 import esLocale from '@fullcalendar/core/locales/es';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { type EventResizeDoneArg } from '@fullcalendar/interaction';
@@ -80,6 +86,39 @@ const hasAppointmentModalApi = (value: unknown): value is AppointmentModalApi =>
 
 const isGoogleEvent = (event: ApiCalendarEvent) =>
 	String(event?.extendedProps?.source || '').trim().toLowerCase() === 'google';
+
+const getAppointmentStatus = (event: {
+	extendedProps?: Record<string, unknown>;
+	status?: unknown;
+	[key: string]: unknown;
+}) => {
+	const fromExtended = String(event?.extendedProps?.status ?? '').trim().toUpperCase();
+	if (fromExtended) return fromExtended;
+	return String(event?.status ?? '').trim().toUpperCase();
+};
+
+const isImmutableAppointmentStatus = (status: string) =>
+	status === 'CANCELADO' || status === 'COMPLETADO';
+
+const isImmutableAppointmentEvent = (event: ApiCalendarEvent | EventApi) =>
+	isImmutableAppointmentStatus(getAppointmentStatus(event));
+
+const immutableAppointmentMoveMessage = (event: ApiCalendarEvent | EventApi) => {
+	const status = getAppointmentStatus(event);
+	if (status === 'CANCELADO') return 'Las citas canceladas no se pueden mover ni reprogramar.';
+	if (status === 'COMPLETADO') return 'Las citas completadas no se pueden mover ni reprogramar.';
+	return 'Esta cita no se puede mover ni reprogramar.';
+};
+
+const immutableAppointmentResizeMessage = (event: ApiCalendarEvent | EventApi) => {
+	const status = getAppointmentStatus(event);
+	if (status === 'CANCELADO') return 'Las citas canceladas no se pueden redimensionar.';
+	if (status === 'COMPLETADO') return 'Las citas completadas no se pueden redimensionar.';
+	return 'Esta cita no se puede redimensionar.';
+};
+
+const isCalendarEventLocked = (event: ApiCalendarEvent | EventApi) =>
+	isGoogleEvent(event) || isImmutableAppointmentEvent(event);
 
 class CalendarManager extends HTMLElement {
 	#bound = false;
@@ -382,24 +421,30 @@ class CalendarManager extends HTMLElement {
 				}
 
 				const allEvents = [...appointmentEvents, ...googleEvents];
-				const normalizedEvents: EventInput[] = allEvents.map((event) => ({
-					...event,
-					id: String(event?.id ?? ''),
-					extendedProps: {
-						...(event?.extendedProps ?? {}),
-						pro_id_professional: toPositiveInt(
-							event?.extendedProps?.pro_id_professional ?? event?.resourceId,
-							0
-						),
-					},
-					...(isGoogleEvent(event)
-						? {
-								editable: false,
-								startEditable: false,
-								durationEditable: false,
-							}
-						: {}),
-				}));
+				const normalizedEvents: EventInput[] = allEvents.map((event) => {
+					const appointmentStatus = getAppointmentStatus(event);
+					const locked = isCalendarEventLocked(event);
+
+					return {
+						...event,
+						id: String(event?.id ?? ''),
+						extendedProps: {
+							...(event?.extendedProps ?? {}),
+							...(appointmentStatus ? { status: appointmentStatus } : {}),
+							pro_id_professional: toPositiveInt(
+								event?.extendedProps?.pro_id_professional ?? event?.resourceId,
+								0
+							),
+						},
+						...(locked
+							? {
+									editable: false,
+									startEditable: false,
+									durationEditable: false,
+								}
+							: {}),
+					};
+				});
 				successCallback(normalizedEvents);
 			} catch (error) {
 				const message =
@@ -427,6 +472,8 @@ class CalendarManager extends HTMLElement {
 			initialView: isMobile ? MOBILE_DEFAULT_VIEW : DESKTOP_DEFAULT_VIEW,
 			initialDate: savedDate || undefined,
 			editable: true,
+			eventStartEditable: (info) => !isCalendarEventLocked(info.event),
+			eventDurationEditable: (info) => !isCalendarEventLocked(info.event),
 			selectable: true,
 			selectMirror: true,
 			nowIndicator: true,
@@ -503,13 +550,27 @@ class CalendarManager extends HTMLElement {
 				}
 			},
 			eventDrop: (info) => {
+				if (isImmutableAppointmentEvent(info.event)) {
+					info.revert();
+					void showErrorAlert(immutableAppointmentMoveMessage(info.event));
+					return;
+				}
 				void this.handleEventReschedule(info);
 			},
 			eventResize: (info) => {
+				if (isImmutableAppointmentEvent(info.event)) {
+					info.revert();
+					void showErrorAlert(immutableAppointmentResizeMessage(info.event));
+					return;
+				}
 				void this.handleEventReschedule(info);
 			},
 			eventDidMount: (arg) => {
 				const source = String(arg.event.extendedProps?.source || '').trim().toLowerCase();
+
+				if (isImmutableAppointmentEvent(arg.event)) {
+					arg.el.classList.add('fc-event-locked');
+				}
 
 				if (source === 'google') {
 					const originExists = arg.el.querySelector('.fc-event-google-origin');
@@ -679,6 +740,12 @@ class CalendarManager extends HTMLElement {
 			return;
 		}
 
+		if (isImmutableAppointmentEvent(info.event)) {
+			info.revert();
+			await showErrorAlert(immutableAppointmentMoveMessage(info.event));
+			return;
+		}
+
 		const eventStart = info.event.start;
 		const eventEnd = info.event.end ?? (eventStart ? new Date(eventStart.getTime() + 60 * 60 * 1000) : null);
 		if (!eventStart || !eventEnd) {
@@ -693,6 +760,16 @@ class CalendarManager extends HTMLElement {
 			const detail = await this.client.getAppointment(appointmentId);
 			const statusRaw = String(detail.status || 'CONFIRMADO').trim().toUpperCase();
 			const status = isAppointmentStatus(statusRaw) ? statusRaw : 'CONFIRMADO';
+
+			if (isImmutableAppointmentStatus(status)) {
+				info.revert();
+				await showErrorAlert(
+					status === 'CANCELADO'
+						? 'Las citas canceladas no se pueden mover ni reprogramar.'
+						: 'Las citas completadas no se pueden mover ni reprogramar.'
+				);
+				return;
+			}
 
 			const payload: AppointmentFormPayload = {
 				id_customer: toPositiveInt(detail.id_customer, 0) || undefined,
