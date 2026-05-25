@@ -115,6 +115,8 @@ class AppointmentModal extends HTMLElement {
 	modalDescription: HTMLElement | null = null;
 	form: HTMLFormElement | null = null;
 	formErrorNode: HTMLElement | null = null;
+	formErrorMessage: HTMLElement | null = null;
+	formErrorFeedback: HTMLElement | null = null;
 	modalLoadingNode: HTMLElement | null = null;
 	closeModalButtons: NodeListOf<HTMLButtonElement> | null = null;
 	submitButton: HTMLButtonElement | null = null;
@@ -176,6 +178,10 @@ class AppointmentModal extends HTMLElement {
 		this.modalDescription = this.querySelector<HTMLElement>('[data-appointment-modal-description]');
 		this.form = this.querySelector<HTMLFormElement>('[data-appointment-form]');
 		this.formErrorNode = this.form?.querySelector<HTMLElement>('[data-form-error]') ?? null;
+		this.formErrorMessage =
+			this.form?.querySelector<HTMLElement>('[data-form-error-message]') ?? null;
+		this.formErrorFeedback =
+			this.form?.querySelector<HTMLElement>('[data-appointment-form-feedback]') ?? null;
 		this.fieldErrorNodes = this.form?.querySelectorAll<HTMLElement>('[data-field-error]') ?? null;
 		this.modalLoadingNode =
 			this.form?.querySelector<HTMLElement>('[data-appointment-loading]') ?? null;
@@ -653,10 +659,9 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	clearFormErrors() {
-		if (this.formErrorNode) {
-			this.formErrorNode.textContent = '';
-			this.formErrorNode.classList.add('hidden');
-		}
+		if (this.formErrorMessage) this.formErrorMessage.textContent = '';
+		this.formErrorNode?.classList.add('hidden');
+		this.formErrorFeedback?.classList.remove('is-visible');
 		for (const node of this.fieldErrorNodes ?? []) {
 			node.textContent = '';
 			node.classList.add('hidden');
@@ -664,9 +669,10 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	showFormError(message: string) {
-		if (!this.formErrorNode) return;
-		this.formErrorNode.textContent = message;
+		if (!this.formErrorNode || !this.formErrorMessage) return;
+		this.formErrorMessage.textContent = message;
 		this.formErrorNode.classList.remove('hidden');
+		this.formErrorFeedback?.classList.add('is-visible');
 	}
 
 	setFieldError(field: string, message: string) {
@@ -1522,6 +1528,12 @@ class AppointmentModal extends HTMLElement {
 	};
 
 	handleBackdropClick = (event: MouseEvent) => {
+		const target = event.target;
+		if (target instanceof Element && target.closest('[data-dismiss-form-error]')) {
+			event.preventDefault();
+			this.clearFormErrors();
+			return;
+		}
 		if (event.target === this.modal) {
 			this.closeModal();
 		}

@@ -18,7 +18,6 @@ import {
 	isAttendanceDeclined,
 	isAttendanceReconfirmed,
 } from '../../lib/attendance';
-import { formatDateKey } from '../schedule-exception-ui';
 import type { AppointmentModalConfig, OpenCreateContext } from './appointment-modal';
 import {
 	destroySearchableSelect,
@@ -136,7 +135,6 @@ class CalendarManager extends HTMLElement {
 	private services: Option[] = [];
 	private isMobileLayout = false;
 	private isGoogleConnected = false;
-	private blockedDays = new Set<string>();
 	private swipeTouchStart: { x: number; y: number } | null = null;
 
 	private calendarEl: HTMLElement | null = null;
@@ -522,18 +520,7 @@ class CalendarManager extends HTMLElement {
 				};
 			},
 			events: this.buildEventSource,
-			datesSet: (arg) => {
-				void this.loadBlockedDays(arg.start, arg.end);
-			},
-			dayCellClassNames: (arg) => (this.isDateBlocked(arg.date) ? ['fc-day-blocked'] : []),
-			dayHeaderClassNames: (arg) => (this.isDateBlocked(arg.date) ? ['fc-day-blocked'] : []),
-			selectAllow: (selectInfo) =>
-				!this.isSelectionOnBlockedDays(selectInfo.start, selectInfo.end),
 			select: (info: DateSelectArg) => {
-				if (this.isSelectionOnBlockedDays(info.start, info.end)) {
-					this.warnBlockedDaySelection();
-					return;
-				}
 				const modal = hasAppointmentModalApi(this.appointmentModal) ? this.appointmentModal : null;
 				modal?.openCreate({
 					start: info.start,
@@ -881,10 +868,6 @@ class CalendarManager extends HTMLElement {
 		const now = new Date();
 		now.setSeconds(0, 0);
 		const next = new Date(now.getTime() + 60 * 60 * 1000);
-		if (this.isSelectionOnBlockedDays(now, next)) {
-			this.warnBlockedDaySelection();
-			return;
-		}
 		const modal = hasAppointmentModalApi(this.appointmentModal) ? this.appointmentModal : null;
 		modal?.openCreate({
 			start: now,
@@ -901,80 +884,9 @@ class CalendarManager extends HTMLElement {
 		return toPositiveInt(this.professionalFilter?.value, 0);
 	}
 
-	private isDateBlocked(date: Date) {
-		return this.blockedDays.has(formatDateKey(date));
-	}
-
-	private isSelectionOnBlockedDays(start: Date, end: Date) {
-		const cursor = new Date(start);
-		cursor.setHours(0, 0, 0, 0);
-
-		const lastDay = new Date(end);
-		if (
-			end.getHours() === 0 &&
-			end.getMinutes() === 0 &&
-			end.getSeconds() === 0 &&
-			end.getMilliseconds() === 0 &&
-			end > start
-		) {
-			lastDay.setDate(lastDay.getDate() - 1);
-		}
-		lastDay.setHours(0, 0, 0, 0);
-
-		while (cursor <= lastDay) {
-			if (this.isDateBlocked(cursor)) return true;
-			cursor.setDate(cursor.getDate() + 1);
-		}
-		return false;
-	}
-
-	private async loadBlockedDays(rangeStart: Date, rangeEnd: Date) {
-		const professionalId = this.getScheduleProfessionalId();
-		this.blockedDays.clear();
-
-		if (professionalId <= 0 || !this.calendar) return;
-
-		const from = formatDateKey(rangeStart);
-		const inclusiveEnd = new Date(rangeEnd);
-		inclusiveEnd.setDate(inclusiveEnd.getDate() - 1);
-		const to = formatDateKey(inclusiveEnd);
-
-		try {
-			const response = await fetch(
-				`/api/schedules/${professionalId}/exceptions?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`,
-				{ headers: { Accept: 'application/json' } }
-			);
-			const data = (await response.json()) as {
-				status?: string;
-				data?: Array<{ exception_date?: string; exception_type?: string }>;
-			};
-			if (!response.ok || data.status !== 'success' || !Array.isArray(data.data)) return;
-
-			for (const item of data.data) {
-				if (String(item.exception_type || '').toUpperCase() === 'BLOCKED' && item.exception_date) {
-					this.blockedDays.add(item.exception_date);
-				}
-			}
-		} catch (error) {
-			console.error('[calendar-manager] blocked days load error', error);
-		} finally {
-			this.calendar?.render();
-		}
-	}
-
-	private warnBlockedDaySelection() {
-		void showErrorAlert(
-			'Este día está bloqueado para el profesional seleccionado. No puedes agendar citas nuevas; reprograma o cancela las existentes desde el calendario.'
-		);
-	}
-
 	private handleProfessionalFilterChange = () => {
 		if (this.roleId === ROLES.PROFESIONAL) return;
 		this.reloadCalendarEvents();
-		if (this.calendar) {
-			const view = this.calendar.view;
-			void this.loadBlockedDays(view.activeStart, view.activeEnd);
-		}
 	};
 
 	private handleLocationFilterChange = () => {

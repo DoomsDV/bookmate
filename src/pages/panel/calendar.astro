@@ -282,7 +282,7 @@ const googleErrorMessage = hasGoogleError
 				</div>
 			</div>
 
-			<form class="relative flex flex-col bg-(--surface)/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-appointment-form>
+			<form class="relative flex flex-col overflow-hidden bg-(--surface)/30 min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-appointment-form>
 				<div
 					class="pointer-events-none fixed inset-0 z-20 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
 					data-appointment-loading
@@ -293,9 +293,33 @@ const googleErrorMessage = hasGoogleError
 					</div>
 				</div>
 
-				<div class="flex-1 px-7 py-7 grid gap-5">
-					<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
+				<div
+					class="appointment-modal-feedback absolute top-0 z-20 flex justify-end"
+					data-appointment-form-feedback
+				>
+					<div
+						class="appointment-modal-feedback__alert hidden ml-auto max-w-md items-center gap-2 rounded-2xl border border-rose-500/25 px-4 py-2 text-[0.9rem] font-bold text-rose-600 shadow-sm dark:border-rose-400/30 dark:text-rose-300"
+						data-form-error
+						role="alert"
+						aria-live="polite"
+					>
+						<p class="m-0 min-w-0 flex-1 leading-snug font-bold" data-form-error-message></p>
+						<button
+							type="button"
+							class="appointment-modal-feedback__close shrink-0 rounded-full p-0.5 text-rose-500 transition hover:bg-rose-500/10 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-400/10 dark:hover:text-rose-100"
+							data-dismiss-form-error
+							aria-label="Cerrar mensaje de error"
+						>
+							<span class="material-symbols-rounded block text-[1.15rem] leading-none">close</span>
+						</button>
+					</div>
+				</div>
 
+				<div
+					class="flex-1 overflow-y-auto overscroll-contain min-h-0"
+					data-appointment-form-scroll
+				>
+				<div class="px-7 py-7 grid gap-5">
 					<div class="grid gap-5 sm:grid-cols-2">
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span class="inline-flex items-center gap-1">
@@ -629,9 +653,10 @@ const googleErrorMessage = hasGoogleError
 						</span>
 					</div>
 				</div>
+				</div>
 
 				<div
-					class="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
+					class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
 					data-appointment-modal-footer-wrap
 				>
 					<div class="appointment-modal-footer" data-appointment-modal-footer>
@@ -1057,28 +1082,6 @@ const googleErrorMessage = hasGoogleError
 		opacity: 0.92;
 	}
 
-	[data-calendar-root] .fc .fc-day.fc-day-blocked,
-	[data-calendar-root] .fc .fc-timegrid-col.fc-day-blocked {
-		background: color-mix(in srgb, #fecaca 38%, var(--calendar-surface) 62%);
-	}
-
-	[data-calendar-root] .fc .fc-timegrid-col.fc-day-blocked .fc-timegrid-col-frame {
-		background: color-mix(in srgb, #fecaca 22%, transparent);
-	}
-
-	[data-calendar-root] .fc .fc-col-header-cell.fc-day-blocked {
-		background: color-mix(in srgb, #fecaca 48%, var(--calendar-toolbar-surface) 52%);
-	}
-
-	html[data-theme='dark'] [data-calendar-root] .fc .fc-day.fc-day-blocked,
-	html[data-theme='dark'] [data-calendar-root] .fc .fc-timegrid-col.fc-day-blocked {
-		background: color-mix(in srgb, #7f1d1d 32%, var(--calendar-surface) 68%);
-	}
-
-	html[data-theme='dark'] [data-calendar-root] .fc .fc-col-header-cell.fc-day-blocked {
-		background: color-mix(in srgb, #991b1b 40%, var(--calendar-toolbar-surface) 60%);
-	}
-
 	[data-calendar-root] .fc .fc-event.fc-event-attendance-confirmed .fc-event-main-frame,
 	[data-calendar-root] .fc .fc-event.fc-event-attendance-confirmed .fc-event-title-container,
 	[data-calendar-root] .fc .fc-event.fc-event-attendance-pending .fc-event-main-frame,
@@ -1203,6 +1206,52 @@ const googleErrorMessage = hasGoogleError
 
 	html[data-theme='dark'] .calendar-create-btn:hover {
 		filter: brightness(1.08);
+	}
+
+	.appointment-modal-feedback {
+		position: absolute;
+		top: 0;
+		left: 1.75rem;
+		right: calc(1.75rem + var(--appointment-modal-scrollbar-size, 1rem));
+		display: none;
+		justify-content: flex-end;
+		padding: 0;
+		background: transparent;
+		pointer-events: none;
+	}
+
+	.appointment-modal-feedback.is-visible {
+		display: flex;
+		margin-top: 0.5rem;
+	}
+
+	dialog[data-appointment-modal] [data-appointment-form] > [data-appointment-form-scroll] {
+		--appointment-modal-scrollbar-size: 1rem;
+		scrollbar-gutter: stable;
+	}
+
+	.appointment-modal-feedback__alert:not(.hidden) {
+		display: flex;
+		align-items: center;
+	}
+
+	.appointment-modal-feedback__alert {
+		pointer-events: auto;
+		background: #ffe4e6;
+	}
+
+	.appointment-modal-feedback__alert [data-form-error-message] {
+		margin: 0;
+	}
+
+	.appointment-modal-feedback__close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	html[data-theme='dark'] .appointment-modal-feedback__alert {
+		background: #3b1219;
 	}
 
 	.appointment-modal-footer {

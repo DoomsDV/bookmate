@@ -17,26 +17,28 @@ const {
 	dismissible = true,
 } = Astro.props;
 
-const toneMap: Record<MessageType, { icon: string; iconColor: string }> = {
+const toneMap: Record<MessageType, { icon: string; iconClass: string }> = {
 	success: {
 		icon: 'check_circle',
-		iconColor: 'text-emerald-300',
+		iconClass: 'flash-message__icon--success',
 	},
 	error: {
 		icon: 'error',
-		iconColor: 'text-rose-300',
+		iconClass: 'flash-message__icon--error',
 	},
 	info: {
 		icon: 'info',
-		iconColor: 'text-sky-300',
+		iconClass: 'flash-message__icon--info',
 	},
 	warning: {
 		icon: 'warning',
-		iconColor: 'text-amber-300',
+		iconClass: 'flash-message__icon--warning',
 	},
 };
 
 const tone = toneMap[type];
+const flashBaseClass =
+	'flash-message pointer-events-auto group relative flex items-center gap-3 rounded-full px-4 py-3 text-sm font-medium leading-5';
 ---
 
 {
@@ -45,21 +47,23 @@ const tone = toneMap[type];
 			role="alert"
 			aria-live="polite"
 			class:list={[
-				'pointer-events-auto group relative flex items-center gap-3 rounded-full bg-slate-800 px-4 py-3 text-slate-50 shadow-xl',
+				flashBaseClass,
 				expand ? 'w-full max-w-full rounded-2xl' : 'w-auto max-w-[calc(100vw-2rem)]',
 			]}
 			style="transform: translateY(20px); opacity: 0; animation: flash-slide-in 260ms cubic-bezier(0.16, 1, 0.3, 1) forwards;"
 			data-flash-message
 			data-auto-hide-ms={autoHideMs > 0 ? String(autoHideMs) : undefined}
 		>
-			<span class:list={['material-symbols-rounded shrink-0 text-[1.22rem] tracking-normal', tone.iconColor]}>{tone.icon}</span>
-			<p class="min-w-0 flex-1 text-sm font-medium leading-5">{message}</p>
+			<span class:list={['material-symbols-rounded shrink-0 text-[1.22rem] tracking-normal', tone.iconClass]}>
+				{tone.icon}
+			</span>
+			<p class="min-w-0 flex-1">{message}</p>
 
 			{
 				dismissible ? (
 					<button
 						type="button"
-						class="shrink-0 -mr-1 rounded-full p-1.5 text-slate-300 transition hover:bg-white/10 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-white/35"
+						class="flash-message__close shrink-0 -mr-1 rounded-full p-1.5 transition focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--flash-fg)_35%,transparent)]"
 						aria-label="Cerrar mensaje"
 						data-flash-close
 					>
@@ -88,23 +92,23 @@ const tone = toneMap[type];
 	const flashToneMap = {
 		success: {
 			icon: 'check_circle',
-			iconColor: 'text-emerald-300',
+			iconClass: 'flash-message__icon--success',
 		},
 		error: {
 			icon: 'error',
-			iconColor: 'text-rose-300',
+			iconClass: 'flash-message__icon--error',
 		},
 		info: {
 			icon: 'info',
-			iconColor: 'text-sky-300',
+			iconClass: 'flash-message__icon--info',
 		},
 		warning: {
 			icon: 'warning',
-			iconColor: 'text-amber-300',
+			iconClass: 'flash-message__icon--warning',
 		},
 	};
 
-	const hideMessage = (node: any) => {
+	const hideMessage = (node: HTMLElement) => {
 		if (!node || node.dataset.isClosing === '1') return;
 		node.dataset.isClosing = '1';
 		node.classList.add('pointer-events-none');
@@ -121,7 +125,7 @@ const tone = toneMap[type];
 		).onfinish = () => node.remove();
 	};
 
-	const initMessage = (node: any) => {
+	const initMessage = (node: HTMLElement) => {
 		if (!node || node.dataset.flashBound === '1') return;
 		node.dataset.flashBound = '1';
 
@@ -146,27 +150,35 @@ const tone = toneMap[type];
 		return stack;
 	};
 
-	const createDynamicMessage = ({ message, type = 'info', autoHideMs = 5000 }: any) => {
+	const createDynamicMessage = ({
+		message,
+		type = 'info',
+		autoHideMs = 5000,
+	}: {
+		message?: string;
+		type?: keyof typeof flashToneMap;
+		autoHideMs?: number;
+	}) => {
 		const cleanMessage = String(message || '').trim();
 		if (!cleanMessage) return null;
 
-		const tone = flashToneMap[type as keyof typeof flashToneMap] || flashToneMap.info;
+		const tone = flashToneMap[type] || flashToneMap.info;
 		const node = document.createElement('div');
 		node.setAttribute('role', 'alert');
 		node.setAttribute('aria-live', 'polite');
 		node.setAttribute('data-flash-message', 'true');
 		node.dataset.autoHideMs = String(autoHideMs);
 		node.className =
-			'pointer-events-auto group relative flex w-auto max-w-[calc(100vw-2rem)] items-center gap-3 rounded-full bg-slate-800 px-4 py-3 text-slate-50 shadow-xl';
+			'flash-message pointer-events-auto group relative flex w-auto max-w-[calc(100vw-2rem)] items-center gap-3 rounded-full px-4 py-3 text-sm font-medium leading-5';
 		node.style.transform = 'translateY(20px)';
 		node.style.opacity = '0';
 		node.style.animation = 'flash-slide-in 260ms cubic-bezier(0.16, 1, 0.3, 1) forwards';
 		node.innerHTML = `
-			<span class="material-symbols-rounded shrink-0 text-[1.22rem] tracking-normal ${tone.iconColor}">${tone.icon}</span>
-			<p class="min-w-0 flex-1 text-sm font-medium leading-5"></p>
+			<span class="material-symbols-rounded shrink-0 text-[1.22rem] tracking-normal ${tone.iconClass}">${tone.icon}</span>
+			<p class="min-w-0 flex-1"></p>
 			<button
 				type="button"
-				class="shrink-0 -mr-1 rounded-full p-1.5 text-slate-300 transition hover:bg-white/10 hover:text-slate-50 focus:outline-none focus:ring-2 focus:ring-white/35"
+				class="flash-message__close shrink-0 -mr-1 rounded-full p-1.5 transition focus:outline-none focus:ring-2 focus:ring-[color-mix(in_srgb,var(--flash-fg)_35%,transparent)]"
 				aria-label="Cerrar mensaje"
 				data-flash-close
 			>
@@ -178,7 +190,11 @@ const tone = toneMap[type];
 		return node;
 	};
 
-	const showFlashMessage = (detail: any) => {
+	const showFlashMessage = (detail: {
+		message?: string;
+		type?: keyof typeof flashToneMap;
+		autoHideMs?: number;
+	}) => {
 		const node = createDynamicMessage(detail);
 		if (!node) return;
 		const stack = ensureFlashStack();
@@ -186,7 +202,7 @@ const tone = toneMap[type];
 		initMessage(node);
 	};
 
-	for (const node of document.querySelectorAll('[data-flash-message]')) {
+	for (const node of document.querySelectorAll<HTMLElement>('[data-flash-message]')) {
 		initMessage(node);
 	}
 
@@ -198,9 +214,8 @@ const tone = toneMap[type];
 		showFlashMessage(event.detail || {});
 	}) as EventListener);
 
-	// Integración con View Transitions
 	document.addEventListener('astro:page-load', () => {
-		for (const node of document.querySelectorAll('[data-flash-message]')) {
+		for (const node of document.querySelectorAll<HTMLElement>('[data-flash-message]')) {
 			initMessage(node);
 		}
 	});

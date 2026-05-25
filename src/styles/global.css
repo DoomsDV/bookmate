@@ -105,6 +105,16 @@
 	--flash-danger-accent: #f43f5e;
 	--flash-success-text: #047857;
 	--flash-danger-text: #be123c;
+	--flash-bg: #1e293b;
+	--flash-fg: #f8fafc;
+	--flash-fg-muted: #cbd5e1;
+	--flash-border: rgba(148, 163, 184, 0.28);
+	--flash-shadow: 0 14px 36px rgba(15, 23, 42, 0.28);
+	--flash-icon-success: #6ee7b7;
+	--flash-icon-error: #fda4af;
+	--flash-icon-info: #7dd3fc;
+	--flash-icon-warning: #fcd34d;
+	--flash-close-hover: rgba(255, 255, 255, 0.1);
 	--workspace-avatar-outline: rgba(47, 111, 221, 0.26);
 	--workspace-avatar-outline-soft: rgba(47, 111, 221, 0.1);
 	--calendar-surface: #f8fbff;
@@ -173,6 +183,16 @@ html[data-theme='dark'] {
 	--flash-danger-accent: #fda4af;
 	--flash-success-text: #6ee7b7;
 	--flash-danger-text: #fda4af;
+	--flash-bg: #262b34;
+	--flash-fg: #e5e8ed;
+	--flash-fg-muted: #aeb5c0;
+	--flash-border: rgba(255, 255, 255, 0.12);
+	--flash-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+	--flash-icon-success: #34d399;
+	--flash-icon-error: #fda4af;
+	--flash-icon-info: #60a5fa;
+	--flash-icon-warning: #fbbf24;
+	--flash-close-hover: rgba(255, 255, 255, 0.08);
 	--workspace-avatar-outline: rgba(161, 161, 170, 0.28);
 	--workspace-avatar-outline-soft: rgba(161, 161, 170, 0.1);
 	--calendar-surface: #1f2228;
@@ -525,6 +545,38 @@ button {
 
 .flash-icon-danger {
 	color: var(--flash-danger-text);
+}
+
+.flash-message {
+	background: var(--flash-bg);
+	color: var(--flash-fg);
+	border: 1px solid var(--flash-border);
+	box-shadow: var(--flash-shadow);
+}
+
+.flash-message__icon--success {
+	color: var(--flash-icon-success);
+}
+
+.flash-message__icon--error {
+	color: var(--flash-icon-error);
+}
+
+.flash-message__icon--info {
+	color: var(--flash-icon-info);
+}
+
+.flash-message__icon--warning {
+	color: var(--flash-icon-warning);
+}
+
+.flash-message__close {
+	color: var(--flash-fg-muted);
+}
+
+.flash-message__close:hover {
+	background: var(--flash-close-hover);
+	color: var(--flash-fg);
 }
 
 .alert-tone-info,
