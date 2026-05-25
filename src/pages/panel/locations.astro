@@ -334,9 +334,27 @@ const googleMapsApiKey =
 					</div>
 
 					<div
-						class="overflow-hidden rounded-2xl border border-(--shell-border) bg-(--control-surface) shadow-sm"
+						class="location-map-shell relative overflow-hidden rounded-2xl border border-(--shell-border) bg-(--control-surface) shadow-sm"
 					>
 						<div class="h-65 w-full" data-location-map></div>
+						<div
+							class="location-map-geoloading pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/82 backdrop-blur-[2px]"
+							data-location-map-geoloading
+							aria-hidden="true"
+							aria-live="polite"
+						>
+							<div
+								class="pointer-events-auto inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.9rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+							>
+								<span
+									class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)"
+									>progress_activity</span
+								>
+								<span data-location-map-geoloading-label
+									>Obteniendo ubicación...</span
+								>
+							</div>
+						</div>
 					</div>
 
 					<p
@@ -446,6 +464,7 @@ const googleMapsApiKey =
 
 <script>
 	import { reloadPageWithFlash } from "../../lib/flash";
+	import { getBrowserGeolocation } from "../../lib/geolocation-browser";
 	import {
 		destroySearchableSelect,
 		rebuildSearchableSelect,
@@ -500,6 +519,7 @@ const googleMapsApiKey =
 		private editingLocationId = 0;
 		private locationReadRequestSeq = 0;
 		private citiesRequestSeq = 0;
+		private geolocationRequestSeq = 0;
 
 		private departmentsLoaded = false;
 		private departmentsCache: DepartmentOption[] = [];
@@ -603,6 +623,7 @@ const googleMapsApiKey =
 			modalTitle: HTMLElement | null;
 			modalDesc: HTMLElement | null;
 			mapContainer: HTMLElement | null;
+			mapGeolocationLoading: HTMLElement | null;
 			mapStatus: HTMLElement | null;
 			clearMapBtn: HTMLButtonElement | null;
 			statusWrap: HTMLElement | null;
@@ -658,6 +679,9 @@ const googleMapsApiKey =
 				),
 				mapContainer: this.querySelector<HTMLElement>(
 					"[data-location-map]",
+				),
+				mapGeolocationLoading: this.querySelector<HTMLElement>(
+					"[data-location-map-geoloading]",
 				),
 				mapStatus: this.querySelector<HTMLElement>(
 					"[data-location-map-status]",
@@ -838,6 +862,70 @@ const googleMapsApiKey =
 				selectedCityId: 0,
 				showErrors: true,
 			});
+		};
+
+		private setMapGeolocationLoading = (isLoading: boolean) => {
+			const overlay = this.els.mapGeolocationLoading;
+			if (!overlay) return;
+			overlay.classList.toggle("hidden", !isLoading);
+			overlay.classList.toggle("flex", isLoading);
+			overlay.setAttribute("aria-hidden", isLoading ? "false" : "true");
+			if (this.els.mapContainer) {
+				this.els.mapContainer.style.pointerEvents = isLoading
+					? "none"
+					: "auto";
+			}
+		};
+
+		private getGeolocationPermissionState = async (): Promise<
+			"granted" | "denied" | "prompt" | "unknown"
+		> => {
+			if (
+				typeof navigator === "undefined" ||
+				!("geolocation" in navigator)
+			) {
+				return "unknown";
+			}
+			if (!navigator.permissions?.query) return "unknown";
+
+			try {
+				const status = await navigator.permissions.query({
+					name: "geolocation",
+				});
+				if (status.state === "granted") return "granted";
+				if (status.state === "denied") return "denied";
+				return "prompt";
+			} catch {
+				return "unknown";
+			}
+		};
+
+		private watchGeolocationPermissionGranted = (
+			onGranted: () => void,
+			requestId: number,
+		) => {
+			if (!navigator.permissions?.query) {
+				if (requestId === this.geolocationRequestSeq) onGranted();
+				return;
+			}
+
+			void navigator.permissions
+				.query({ name: "geolocation" })
+				.then((status) => {
+					if (status.state === "granted") {
+						if (requestId === this.geolocationRequestSeq) onGranted();
+						return;
+					}
+					if (status.state === "denied") return;
+
+					const onChange = () => {
+						if (status.state !== "granted") return;
+						status.removeEventListener("change", onChange);
+						if (requestId === this.geolocationRequestSeq) onGranted();
+					};
+					status.addEventListener("change", onChange);
+				})
+				.catch(() => undefined);
 		};
 
 		private setMapStatus = (message: string, isError = false) => {
@@ -1322,6 +1410,8 @@ const googleMapsApiKey =
 			if (!this.els.modal?.open) return;
 			this.locationReadRequestSeq += 1;
 			this.citiesRequestSeq += 1;
+			this.geolocationRequestSeq += 1;
+			this.setMapGeolocationLoading(false);
 			this.els.modal.classList.add("is-closing");
 
 			this.closeTimer = window.setTimeout(() => {
@@ -1395,6 +1485,62 @@ const googleMapsApiKey =
 			if (this.formEls.status) this.formEls.status.disabled = false;
 		};
 
+		private tryApplyCurrentGeolocation = async () => {
+			if (this.mode !== "create") return;
+
+			const requestId = ++this.geolocationRequestSeq;
+			const startMapSpinner = () => {
+				if (requestId !== this.geolocationRequestSeq) return;
+				this.setMapGeolocationLoading(true);
+				this.setMapStatus("Obteniendo tu ubicación...");
+			};
+
+			try {
+				const permission = await this.getGeolocationPermissionState();
+				if (permission === "denied") {
+					this.setMapStatus(this.mapIdleMessage);
+					return;
+				}
+				if (permission === "granted") {
+					startMapSpinner();
+				} else {
+					this.setMapStatus(
+						"Permite el acceso a tu ubicación para ubicar la sucursal en el mapa.",
+					);
+					this.watchGeolocationPermissionGranted(
+						startMapSpinner,
+						requestId,
+					);
+				}
+
+				const point = await getBrowserGeolocation();
+				if (
+					requestId !== this.geolocationRequestSeq ||
+					this.mode !== "create"
+				) {
+					return;
+				}
+				if (!point || this.selectedCoordinates) {
+					if (!this.selectedCoordinates) {
+						this.setMapStatus(this.mapIdleMessage);
+					}
+					return;
+				}
+
+				this.setSelectedCoordinates(point.latitude, point.longitude, {
+					center: true,
+					zoom: 16,
+				});
+				this.setMapStatus(
+					"Ubicación actual detectada. Puedes ajustar el punto haciendo clic en el mapa.",
+				);
+			} finally {
+				if (requestId === this.geolocationRequestSeq) {
+					this.setMapGeolocationLoading(false);
+				}
+			}
+		};
+
 		private openCreateModal = async () => {
 			this.setCreateMode();
 			this.resetFormValues();
@@ -1404,6 +1550,7 @@ const googleMapsApiKey =
 			try {
 				await this.ensureDepartmentsLoaded();
 				await this.ensureMapReady();
+				void this.tryApplyCurrentGeolocation();
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error

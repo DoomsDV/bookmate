@@ -1,0 +1,148 @@
+.bookmate-driver-popover.driver-popover {
+	background: var(--surface-bright);
+	color: var(--on-surface);
+	border: 1px solid var(--shell-border);
+	border-radius: 1rem;
+	box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
+	max-width: min(22rem, calc(100vw - 2rem));
+	padding: 1rem 1.1rem;
+}
+
+.bookmate-driver-popover .driver-popover-title {
+	font-size: 1rem;
+	font-weight: 800;
+	color: var(--on-surface);
+	letter-spacing: -0.02em;
+}
+
+.bookmate-driver-popover .driver-popover-description {
+	font-size: 0.9rem;
+	line-height: 1.5;
+	color: var(--on-surface-variant);
+	margin-top: 0.35rem;
+}
+
+.bookmate-driver-popover .driver-popover-close-btn {
+	color: var(--on-surface-variant);
+}
+
+.bookmate-driver-popover .driver-popover-close-btn:hover,
+.bookmate-driver-popover .driver-popover-close-btn:focus {
+	color: var(--on-surface);
+}
+
+.bookmate-driver-popover .driver-popover-footer {
+	margin-top: 0.85rem;
+}
+
+.bookmate-driver-popover .driver-popover-navigation-btns {
+	flex-grow: 0;
+	justify-content: flex-end;
+	gap: 0.5rem;
+}
+
+.bookmate-driver-popover .driver-popover-navigation-btns button + button {
+	margin-left: 0;
+}
+
+.bookmate-driver-popover .driver-popover-footer button {
+	text-shadow: none !important;
+	box-shadow: none !important;
+	zoom: 1;
+}
+
+.bookmate-driver-popover .driver-popover-progress-text {
+	font-size: 0.78rem;
+	font-weight: 600;
+	color: var(--on-surface-variant);
+}
+
+.bookmate-driver-popover .driver-popover-prev-btn {
+	background: transparent !important;
+	color: var(--on-surface-variant) !important;
+	border: 1px solid var(--shell-border) !important;
+	border-radius: 999px;
+	padding: 0.45rem 0.95rem;
+	font-size: 0.85rem;
+	font-weight: 700;
+	line-height: 1.2;
+	min-width: auto;
+}
+
+.bookmate-driver-popover .driver-popover-prev-btn:hover,
+.bookmate-driver-popover .driver-popover-prev-btn:focus {
+	background: var(--control-surface) !important;
+	color: var(--on-surface) !important;
+	filter: none;
+}
+
+.bookmate-driver-popover .driver-popover-prev-btn.driver-popover-btn-disabled {
+	visibility: hidden;
+	width: 0;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0 !important;
+	overflow: hidden;
+}
+
+.bookmate-driver-popover .driver-popover-next-btn {
+	background: var(--primary) !important;
+	color: #f8fbff !important;
+	border: 0 !important;
+	border-radius: 999px;
+	padding: 0.45rem 1.1rem;
+	font-size: 0.85rem;
+	font-weight: 700;
+	line-height: 1.2;
+	min-width: 6.5rem;
+}
+
+.bookmate-driver-popover .driver-popover-next-btn:hover,
+.bookmate-driver-popover .driver-popover-next-btn:focus {
+	filter: brightness(1.05);
+	background: var(--primary) !important;
+	color: #f8fbff !important;
+}
+
+.bookmate-driver-popover .driver-popover-arrow-side-bottom {
+	border-top-color: var(--surface-bright);
+}
+
+.bookmate-driver-popover .driver-popover-arrow-side-top {
+	border-bottom-color: var(--surface-bright);
+}
+
+html[data-theme='dark'] .bookmate-driver-popover.driver-popover {
+	box-shadow: 0 18px 44px rgba(0, 0, 0, 0.45);
+}
+
+.driver-active .schedule-tab.driver-active-element,
+.driver-active .fc-button.driver-active-element {
+	box-shadow: none;
+}
+
+/* Capa transparente sobre modales nativos (showModal) para que driver.js quede visible */
+dialog[data-bookmate-tour-shell] {
+	position: fixed;
+	inset: 0;
+	margin: 0;
+	padding: 0;
+	border: none;
+	width: 100%;
+	max-width: none;
+	height: 100%;
+	max-height: none;
+	background: transparent;
+	overflow: visible;
+	pointer-events: none;
+}
+
+dialog[data-bookmate-tour-shell]::backdrop {
+	background: transparent;
+}
+
+dialog[data-bookmate-tour-shell] .driver-overlay,
+dialog[data-bookmate-tour-shell] .driver-popover {
+	pointer-events: auto;
+}

@@ -1,4 +1,9 @@
 import { showFlashMessage } from '../lib/flash';
+import { showScheduleExceptionModalTour } from '../lib/schedule-exception-modal-tour';
+import {
+	maybeShowScheduleExceptionsTour,
+	showScheduleExceptionsTour,
+} from '../lib/schedule-exceptions-tour';
 import { ROLES } from '../config/roles';
 import type { ScheduleExceptionType } from '../lib/schedules';
 import {
@@ -118,6 +123,8 @@ class ScheduleManager extends HTMLElement {
 	private exceptionModalErrorNode: HTMLElement | null = null;
 	private exceptionModalErrorMessageNode: HTMLElement | null = null;
 	private exceptionModalErrorFeedbackNode: HTMLElement | null = null;
+	private exceptionsHelpButton: HTMLButtonElement | null = null;
+	private exceptionModalTourHelpButton: HTMLButtonElement | null = null;
 
 	connectedCallback() {
 		if (this.#bound) return;
@@ -151,6 +158,12 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionModalErrorFeedbackNode = this.querySelector<HTMLElement>(
 			'[data-exception-modal-feedback]'
 		);
+		this.exceptionsHelpButton = this.querySelector<HTMLButtonElement>(
+			'[data-schedule-exceptions-help]'
+		);
+		this.exceptionModalTourHelpButton = this.querySelector<HTMLButtonElement>(
+			'[data-exception-modal-tour-help]'
+		);
 
 		if (!this.professionalSelect || !this.plannerNode) {
 			this.#bound = false;
@@ -170,6 +183,16 @@ class ScheduleManager extends HTMLElement {
 		for (const tabButton of this.tabButtons ?? []) {
 			tabButton.addEventListener('click', this.handleTabClick, { signal });
 		}
+		this.exceptionsHelpButton?.addEventListener(
+			'click',
+			() => showScheduleExceptionsTour({ force: true }),
+			{ signal }
+		);
+		this.exceptionModalTourHelpButton?.addEventListener(
+			'click',
+			() => showScheduleExceptionModalTour(),
+			{ signal }
+		);
 		this.exceptionCalPrevButton?.addEventListener('click', this.handleExceptionMonthPrev, { signal });
 		this.exceptionCalNextButton?.addEventListener('click', this.handleExceptionMonthNext, { signal });
 		this.exceptionCalGridNode?.addEventListener('click', this.handleExceptionCalendarClick, { signal });
@@ -1290,8 +1313,16 @@ class ScheduleManager extends HTMLElement {
 		this.clearExceptionModalError();
 		this.renderExceptionModalBody();
 		this.renderExceptionModalActions();
+		this.updateExceptionModalTourHelpVisibility();
 		this.exceptionModalNode.classList.remove('hidden');
 		this.exceptionModalNode.classList.add('flex');
+	}
+
+	private updateExceptionModalTourHelpVisibility(): void {
+		if (!this.exceptionModalTourHelpButton) return;
+		const showHelp = !this.exceptionModalReadOnly && this.canEdit;
+		this.exceptionModalTourHelpButton.classList.toggle('hidden', !showHelp);
+		this.exceptionModalTourHelpButton.classList.toggle('inline-flex', showHelp);
 	}
 
 	private closeExceptionModal = (): void => {
@@ -1300,6 +1331,7 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionModalNode.classList.add('hidden');
 		this.exceptionModalNode.classList.remove('flex');
 		this.exceptionModalDateKey = '';
+		this.updateExceptionModalTourHelpVisibility();
 	};
 
 	private renderExceptionModalBody(): void {
@@ -1346,6 +1378,7 @@ class ScheduleManager extends HTMLElement {
 			const label = document.createElement('label');
 			label.className =
 				'inline-flex items-center gap-2 rounded-xl border border-(--shell-border) px-3 py-2 text-[0.88rem] font-semibold';
+			label.dataset.excTypeOption = option.value;
 			const input = document.createElement('input');
 			input.type = 'radio';
 			input.name = 'exception_type';
@@ -1488,6 +1521,7 @@ class ScheduleManager extends HTMLElement {
 			const deleteButton = document.createElement('button');
 			deleteButton.type = 'button';
 			deleteButton.dataset.excAction = 'delete';
+			deleteButton.dataset.excUseTemplate = 'true';
 			deleteButton.className = 'modal-action-danger';
 			deleteButton.textContent = 'Usar plantilla';
 			startActions.appendChild(deleteButton);
@@ -1784,6 +1818,9 @@ class ScheduleManager extends HTMLElement {
 		} finally {
 			this.isMetaLoading = false;
 			this.updateControlsState();
+			if (this.professionals.length > 0) {
+				maybeShowScheduleExceptionsTour();
+			}
 		}
 	}
 }

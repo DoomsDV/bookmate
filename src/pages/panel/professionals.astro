@@ -159,9 +159,20 @@ const toPageHref = (page: number) => {
 						<p class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5 hidden sm:block" data-professional-modal-description>Completa los datos para registrar profesional y cuenta en una sola operación.</p>
 					</div>
 				</div>
-				<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-close-professional-modal aria-label="Cerrar modal">
-					<span class="material-symbols-rounded text-[1.3rem]">close</span>
-				</button>
+				<div class="flex shrink-0 items-center gap-2">
+					<button
+						type="button"
+						class="schedule-exceptions-help inline-flex shrink-0 items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-[0.82rem] font-bold text-(--on-surface-variant) transition hover:border-(--primary)/35 hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
+						data-professional-profile-url-tour-help
+						aria-label="Guía de URL del perfil público"
+					>
+						<span class="material-symbols-rounded text-[1.1rem]">help</span>
+						<span class="hidden sm:inline">Guía</span>
+					</button>
+					<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-close-professional-modal aria-label="Cerrar modal">
+						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+					</button>
+				</div>
 			</div>
 		</div>
 
@@ -237,7 +248,7 @@ const toPageHref = (page: number) => {
 						</label>
 					</div>
 
-					<label class="professional-public-profile-field">
+					<label class="professional-public-profile-field" data-professional-public-profile-field>
 						<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">URL del perfil público <span class="font-semibold text-(--on-surface-variant)">(Opcional)</span></span>
 						<div class="flex">
 							<span class="inline-flex max-w-[55%] sm:max-w-[65%] items-center truncate rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-xs sm:text-sm text-(--on-surface-variant) shadow-sm" title={publicProfilePrefix}>
@@ -446,6 +457,7 @@ const toPageHref = (page: number) => {
 		parseParaguayMobilePhone,
 	} from '../../lib/paraguay-phone';
 	import { reloadPageWithFlash } from '../../lib/flash';
+	import { showProfessionalProfileUrlTour } from '../../lib/professional-profile-url-tour';
 
 	type ProfessionalMode = 'create' | 'edit';
 
@@ -594,6 +606,12 @@ const toPageHref = (page: number) => {
 			}, { signal });
 			this.formEls.firstName?.addEventListener('input', () => this.queueSlugSuggestion(), { signal });
 			this.formEls.lastName?.addEventListener('input', () => this.queueSlugSuggestion(), { signal });
+
+			this.querySelector<HTMLButtonElement>('[data-professional-profile-url-tour-help]')?.addEventListener(
+				'click',
+				() => showProfessionalProfileUrlTour(),
+				{ signal }
+			);
 		}
 
 		disconnectedCallback() {

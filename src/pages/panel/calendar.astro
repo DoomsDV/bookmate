@@ -156,6 +156,16 @@ const googleErrorMessage = hasGoogleError
 
 												<button
 													type="button"
+													class="calendar-tour-help inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 py-2.5 text-[0.82rem] font-bold text-(--on-surface-variant) transition hover:border-(--primary)/35 hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary)/25 sm:w-auto"
+													data-calendar-tour-help
+													aria-label="Guía del calendario de citas"
+												>
+													<span class="material-symbols-rounded text-[1.1rem]">help</span>
+													<span class="hidden sm:inline">Guía</span>
+												</button>
+
+												<button
+													type="button"
 													class="calendar-refresh-btn w-full sm:w-auto inline-flex items-center justify-center gap-2"
 													data-refresh-calendar
 												>
@@ -213,7 +223,7 @@ const googleErrorMessage = hasGoogleError
 										)
 									}
 
-									<div class="grid gap-3 sm:gap-4 sm:grid-cols-2">
+									<div class="grid gap-3 sm:gap-4 sm:grid-cols-2" data-calendar-filters>
 										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-professional-filter-wrap>
 											Profesional
 											<select
@@ -233,6 +243,37 @@ const googleErrorMessage = hasGoogleError
 												<option value="">Todas las sucursales</option>
 											</select>
 										</label>
+									</div>
+
+									<div
+										class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.82rem] font-semibold text-(--on-surface-variant)"
+										data-calendar-status-legend
+										aria-label="Leyenda de estados de citas"
+									>
+										<span class="inline-flex items-center gap-1.5">
+											<span class="calendar-legend-dot calendar-legend-dot--pending"></span>
+											Pendiente
+										</span>
+										<span class="inline-flex items-center gap-1.5">
+											<span class="calendar-legend-dot calendar-legend-dot--confirmed"></span>
+											Confirmado
+										</span>
+										<span class="inline-flex items-center gap-1.5">
+											<span class="calendar-legend-dot calendar-legend-dot--completed"></span>
+											Completado
+										</span>
+										<span class="inline-flex items-center gap-1.5">
+											<span class="calendar-legend-dot calendar-legend-dot--cancelled"></span>
+											Cancelado
+										</span>
+										{
+											ENABLE_GOOGLE_CALENDAR && (
+												<span class="inline-flex items-center gap-1.5">
+													<span class="calendar-legend-dot calendar-legend-dot--google"></span>
+													Google Calendar
+												</span>
+											)
+										}
 									</div>
 
 									<div
@@ -722,6 +763,35 @@ const googleErrorMessage = hasGoogleError
 
 	dialog[data-appointment-modal].is-closing::backdrop {
 		animation: appointment-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
+	}
+
+	.calendar-legend-dot {
+		width: 0.65rem;
+		height: 0.65rem;
+		border-radius: 999px;
+		display: inline-block;
+		flex-shrink: 0;
+	}
+
+	.calendar-legend-dot--pending {
+		background: #f59e0b;
+	}
+
+	.calendar-legend-dot--confirmed {
+		background: #10b981;
+	}
+
+	.calendar-legend-dot--completed {
+		background: #3b82f6;
+	}
+
+	.calendar-legend-dot--cancelled {
+		background: #ef4444;
+	}
+
+	.calendar-legend-dot--google {
+		background: var(--calendar-google-dot, #6b7280);
+		box-shadow: inset 0 0 0 1px var(--calendar-google-border, #7e8694);
 	}
 
 	[data-calendar-root] {

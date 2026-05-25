@@ -69,7 +69,10 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 											isProfessional ? (
 												<select data-professional-select hidden class="hidden" aria-hidden="true" tabindex="-1"></select>
 											) : (
-												<div class="grid gap-3 sm:gap-4 sm:max-w-2xl">
+												<div
+													class="grid gap-3 sm:gap-4 sm:max-w-2xl"
+													data-schedule-professional-field
+												>
 													<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 														<span class="inline-flex items-center gap-1">
 															Profesional
@@ -94,24 +97,35 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 											data-schedule-error
 										></div>
 
-										<div data-schedule-tabs role="tablist">
+										<div class="flex flex-wrap items-center gap-2 sm:gap-3">
+											<div data-schedule-tabs role="tablist" class="min-w-0 flex-1">
+												<button
+													type="button"
+													class="schedule-tab schedule-tab--active"
+													data-schedule-tab="template"
+													role="tab"
+													aria-selected="true"
+												>
+													Plantilla semanal
+												</button>
+												<button
+													type="button"
+													class="schedule-tab"
+													data-schedule-tab="exceptions"
+													role="tab"
+													aria-selected="false"
+												>
+													Excepciones del calendario
+												</button>
+											</div>
 											<button
 												type="button"
-												class="schedule-tab schedule-tab--active"
-												data-schedule-tab="template"
-												role="tab"
-												aria-selected="true"
+												class="schedule-exceptions-help inline-flex shrink-0 items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-[0.82rem] font-bold text-(--on-surface-variant) transition hover:border-(--primary)/35 hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
+												data-schedule-exceptions-help
+												aria-label="Guía de profesional, plantilla semanal y excepciones del calendario"
 											>
-												Plantilla semanal
-											</button>
-											<button
-												type="button"
-												class="schedule-tab"
-												data-schedule-tab="exceptions"
-												role="tab"
-												aria-selected="false"
-											>
-												Excepciones del calendario
+												<span class="material-symbols-rounded text-[1.1rem]">help</span>
+												<span class="hidden sm:inline">Guía</span>
 											</button>
 										</div>
 
@@ -226,16 +240,27 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 																></p>
 															</div>
 														</div>
-														<button
-															type="button"
-															class="schedule-modal-close hidden shrink-0 sm:inline-flex"
-															data-exception-modal-close
-															aria-label="Cerrar"
-														>
-															<span class="material-symbols-rounded text-[1.3rem]"
-																>close</span
+														<div class="flex shrink-0 items-center gap-2">
+															<button
+																type="button"
+																class="schedule-exceptions-help hidden inline-flex shrink-0 items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-[0.82rem] font-bold text-(--on-surface-variant) transition hover:border-(--primary)/35 hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
+																data-exception-modal-tour-help
+																aria-label="Guía del modal de excepción de horario"
 															>
-														</button>
+																<span class="material-symbols-rounded text-[1.1rem]">help</span>
+																<span class="hidden sm:inline">Guía</span>
+															</button>
+															<button
+																type="button"
+																class="schedule-modal-close hidden shrink-0 sm:inline-flex"
+																data-exception-modal-close
+																aria-label="Cerrar"
+															>
+																<span class="material-symbols-rounded text-[1.3rem]"
+																	>close</span
+																>
+															</button>
+														</div>
 													</div>
 												</div>
 

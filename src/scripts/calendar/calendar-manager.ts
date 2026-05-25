@@ -26,6 +26,7 @@ import {
 	setSearchableSelectValue,
 	syncSearchableSelect,
 } from '../searchable-select';
+import { maybeShowCalendarTour, showCalendarTour } from '../../lib/calendar-tour';
 import { showFlashMessage } from '../../lib/flash';
 import type { AppointmentFormPayload, Option } from './types';
 import {
@@ -142,6 +143,7 @@ class CalendarManager extends HTMLElement {
 	private pageErrorNode: HTMLElement | null = null;
 	private openModalButton: HTMLButtonElement | null = null;
 	private refreshCalendarButton: HTMLButtonElement | null = null;
+	private calendarTourHelpButton: HTMLButtonElement | null = null;
 	private professionalFilterWrap: HTMLElement | null = null;
 	private professionalFilter: HTMLSelectElement | null = null;
 	private locationFilter: HTMLSelectElement | null = null;
@@ -156,6 +158,7 @@ class CalendarManager extends HTMLElement {
 		this.pageErrorNode = this.querySelector<HTMLElement>('[data-calendar-error]');
 		this.openModalButton = this.querySelector<HTMLButtonElement>('[data-open-appointment-modal]');
 		this.refreshCalendarButton = this.querySelector<HTMLButtonElement>('[data-refresh-calendar]');
+		this.calendarTourHelpButton = this.querySelector<HTMLButtonElement>('[data-calendar-tour-help]');
 		this.professionalFilterWrap = this.querySelector<HTMLElement>('[data-professional-filter-wrap]');
 		this.professionalFilter = this.querySelector<HTMLSelectElement>('[data-professional-filter]');
 		this.locationFilter = this.querySelector<HTMLSelectElement>('[data-location-filter]');
@@ -188,6 +191,11 @@ class CalendarManager extends HTMLElement {
 		requiredNodes.appointmentModal.setClient(this.client);
 		requiredNodes.openModalButton.addEventListener('click', this.handleOpenCreateModal, { signal });
 		this.refreshCalendarButton?.addEventListener('click', this.handleRefreshCalendar, { signal });
+		this.calendarTourHelpButton?.addEventListener(
+			'click',
+			() => showCalendarTour({ force: true }),
+			{ signal }
+		);
 		requiredNodes.professionalFilter.addEventListener('change', this.handleProfessionalFilterChange, {
 			signal,
 		});
@@ -366,14 +374,22 @@ class CalendarManager extends HTMLElement {
 		const chunks = Array.from(toolbar.querySelectorAll<HTMLElement>('.fc-toolbar-chunk'));
 		for (const chunk of chunks) {
 			chunk.classList.remove('fc-toolbar-chunk--view-switch');
+			chunk.removeAttribute('data-calendar-nav');
+			chunk.removeAttribute('data-calendar-view-switch');
 			for (const group of chunk.querySelectorAll<HTMLElement>('.fc-button-group')) {
 				group.classList.remove('fc-button-group--segmented');
 			}
 		}
 
+		const navChunk = chunks.find((chunk) =>
+			chunk.querySelector('.fc-prev-button, .fc-next-button, .fc-today-button')
+		);
+		navChunk?.setAttribute('data-calendar-nav', 'true');
+
 		const viewChunk = chunks[chunks.length - 1];
 		if (!viewChunk) return;
 		viewChunk.classList.add('fc-toolbar-chunk--view-switch');
+		viewChunk.setAttribute('data-calendar-view-switch', 'true');
 		for (const group of viewChunk.querySelectorAll<HTMLElement>('.fc-button-group')) {
 			group.classList.add('fc-button-group--segmented');
 		}
@@ -913,6 +929,7 @@ class CalendarManager extends HTMLElement {
 		await this.loadMeta(requiredNodes);
 		if (!this.isConnected) return;
 		this.initializeCalendar(requiredNodes);
+		maybeShowCalendarTour();
 	}
 }
 

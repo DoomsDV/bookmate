@@ -41,8 +41,9 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 			<button
 				id="pwa-install-btn"
 				type="button"
+				data-pwa-install-trigger
 				class="hidden items-center gap-2 rounded-full border border-(--primary) bg-(--primary-container) px-4 py-2 text-sm font-semibold text-(--on-primary-container) transition hover:bg-(--primary) hover:text-(--on-primary)"
-				aria-label="Instalar App"
+				aria-label="Instalar aplicación para recibir notificaciones"
 			>
 				<span class="material-symbols-rounded text-[1rem]">download</span>
 				<span class="hidden sm:inline">Instalar App</span>
@@ -89,6 +90,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 				<summary
 					class="flex size-11 cursor-pointer list-none items-center justify-center rounded-2xl border border-(--primary-container) bg-(--primary-soft) text-(--primary) outline-none transition duration-200 hover:bg-(--primary-soft-hover) focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
 					aria-label={`Abrir menu de ${userName}`}
+					data-settings-menu-trigger
 				>
 					<span class="material-symbols-rounded text-[1.2rem]">settings</span>
 				</summary>
@@ -131,6 +133,8 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 <SettingsModal roleId={roleId} />
 
 <script>
+	import { maybeShowSettingsMenuTour } from '../lib/settings-menu-tour';
+
 	const FCM_DEVICE_TOKEN_STORAGE_KEY = 'hasel:fcm:device-token';
 	const FCM_PROMPT_SHOWN_SESSION_KEY = 'hasel:fcm:prompt-shown';
 
@@ -355,6 +359,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 		enrichLogoutForms();
 		applyTheme(resolveInitialTheme());
 		syncOnResize();
+		maybeShowSettingsMenuTour();
 	};
 
 	initializeTopBar();
