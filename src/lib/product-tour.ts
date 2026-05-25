@@ -14,6 +14,8 @@ export type BookmateTourRunOptions = {
 	 * con `showModal()` (top layer). Sin esto, la guía queda detrás del modal.
 	 */
 	useTopLayerShell?: boolean;
+	stagePadding?: number;
+	stageRadius?: number;
 };
 
 function ensureTourShell(): HTMLDialogElement {
@@ -71,8 +73,8 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 		prevBtnText: 'Atrás',
 		doneBtnText: 'Entendido',
 		overlayOpacity: 0.55,
-		stagePadding: 4,
-		stageRadius: 16,
+		stagePadding: options.stagePadding ?? 4,
+		stageRadius: options.stageRadius ?? 16,
 		popoverClass: 'bookmate-driver-popover',
 		steps,
 		onPopoverRender: useShell ? () => scheduleMountDriverUiInTourShell() : undefined,

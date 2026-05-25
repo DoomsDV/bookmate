@@ -31,9 +31,20 @@ const publicProfileDomain =
 					<p class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5 hidden sm:block">Perfil y preferencias de la cuenta.</p>
 				</div>
 			</div>
-			<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-settings-close aria-label="Cerrar modal">
-				<span class="material-symbols-rounded text-[1.3rem]">close</span>
-			</button>
+			<div class="flex shrink-0 items-center gap-2">
+				<button
+					type="button"
+					class="schedule-exceptions-help inline-flex shrink-0 items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-[0.82rem] font-bold text-(--on-surface-variant) transition hover:border-(--primary)/35 hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
+					data-settings-modal-tour-help
+					aria-label="Guía de URL del perfil público"
+				>
+					<span class="material-symbols-rounded text-[1.1rem]">help</span>
+					<span class="hidden sm:inline">Guía</span>
+				</button>
+				<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-settings-close aria-label="Cerrar modal">
+					<span class="material-symbols-rounded text-[1.3rem]">close</span>
+				</button>
+			</div>
 		</div>
 	</div>
 
@@ -139,7 +150,7 @@ const publicProfileDomain =
 							<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">Se guardará como número paraguayo con prefijo internacional.</span>
 							<span data-settings-profile-field-error="phone_number" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
-						<label class="settings-public-profile-field">
+						<label class="settings-public-profile-field" data-settings-public-profile-field>
 							<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">URL del perfil público <span class="text-rose-500">*</span></span>
 							<div class="flex">
 								<span data-settings-profile-slug-prefix class="inline-flex max-w-[55%] items-center truncate rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-xs font-medium text-(--on-surface-variant) shadow-sm sm:max-w-[65%] sm:px-4 sm:text-sm">
@@ -523,6 +534,7 @@ const publicProfileDomain =
 		type WorkspaceCatalogs,
 		type WorkspaceSettingsData,
 	} from '../lib/workspace-settings-shared';
+	import { showSettingsModalTour } from '../lib/settings-modal-tour';
 
 	interface ApiErrorDetail {
 		field?: string;
@@ -654,6 +666,11 @@ const publicProfileDomain =
 			document.addEventListener('click', this.handleDocumentClick, { signal });
 			this.els.closeBtn?.addEventListener('click', this.closeModal, { signal });
 			this.els.modal?.addEventListener('click', this.handleBackdropClick, { signal });
+			this.querySelector<HTMLButtonElement>('[data-settings-modal-tour-help]')?.addEventListener(
+				'click',
+				this.handleSettingsModalTourHelp,
+				{ signal },
+			);
 			
 			this.els.tabButtons.forEach(btn => 
 				btn.addEventListener('click', () => this.setActiveTab(btn.dataset.settingsTab || 'profile'), { signal })
@@ -710,6 +727,13 @@ const publicProfileDomain =
 				openBtn.closest('details')?.removeAttribute('open');
 				this.openModal();
 			}
+		};
+
+		private handleSettingsModalTourHelp = () => {
+			if (!this.els.modal?.open) return;
+			showSettingsModalTour({
+				activateProfileTab: () => this.setActiveTab('profile'),
+			});
 		};
 
 		private openModal = () => {
