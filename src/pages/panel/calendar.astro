@@ -112,8 +112,8 @@ const googleErrorMessage = hasGoogleError
 								<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
 							) : (
 								<div class="grid gap-4 sm:gap-5">
-									<header class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center sm:gap-4">
-										<div class="grid gap-1">
+									<header class="calendar-page-header">
+										<div class="calendar-page-header__intro grid gap-1 min-w-0">
 											<h1 class="text-[1.3rem] font-extrabold text-(--on-surface)">
 												Calendario de citas
 											</h1>
@@ -130,65 +130,67 @@ const googleErrorMessage = hasGoogleError
 											}
 										</div>
 
-										<div class="flex w-full flex-col gap-2 sm:w-auto sm:items-end">
-											<div class="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-												{
-													ENABLE_GOOGLE_CALENDAR && (
-														isGoogleConnected ? (
-															<form method="post" action="/api/google/disconnect" class="w-full sm:w-auto">
-																<button
-																	type="submit"
-																	class="inline-flex w-full items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/12 px-5 py-3 text-sm font-extrabold text-rose-600 transition hover:bg-rose-500/18 sm:w-auto"
-																>
-																	Desconectar Google
-																</button>
-															</form>
-														) : (
-															<a
-																href="/api/google/connect"
-																class="inline-flex w-full items-center justify-center rounded-full border border-(--shell-border) bg-(--surface-bright) px-5 py-3 text-sm font-extrabold text-(--on-surface) no-underline transition hover:bg-(--surface-container-high) sm:w-auto"
+										<div class="calendar-header-toolbar">
+											{
+												ENABLE_GOOGLE_CALENDAR && (
+													isGoogleConnected ? (
+														<form
+															method="post"
+															action="/api/google/disconnect"
+															class="calendar-header-toolbar__google w-full sm:w-auto"
+														>
+															<button
+																type="submit"
+																class="inline-flex w-full items-center justify-center rounded-full border border-rose-500/30 bg-rose-500/12 px-5 py-3 text-sm font-extrabold text-rose-600 transition hover:bg-rose-500/18 sm:w-auto"
 															>
-																Conectar Google
-															</a>
-														)
+																Desconectar Google
+															</button>
+														</form>
+													) : (
+														<a
+															href="/api/google/connect"
+															class="calendar-header-toolbar__google inline-flex w-full items-center justify-center rounded-full border border-(--shell-border) bg-(--surface-bright) px-5 py-3 text-sm font-extrabold text-(--on-surface) no-underline transition hover:bg-(--surface-container-high) sm:w-auto"
+														>
+															Conectar Google
+														</a>
 													)
-												}
+												)
+											}
 
-												<button
-													type="button"
-													class="calendar-tour-help inline-flex w-full shrink-0 items-center justify-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 py-2.5 text-[0.82rem] font-bold text-(--on-surface-variant) transition hover:border-(--primary)/35 hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary)/25 sm:w-auto"
-													data-calendar-tour-help
-													aria-label="Guía del calendario de citas"
-												>
-													<span class="material-symbols-rounded text-[1.1rem]">help</span>
-													<span class="hidden sm:inline">Guía</span>
-												</button>
+											<button
+												type="button"
+												class="calendar-tour-help calendar-header-toolbar__guide inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) text-[0.82rem] font-bold text-(--on-surface-variant) transition hover:border-(--primary)/35 hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
+												data-calendar-tour-help
+												aria-label="Guía del calendario de citas"
+											>
+												<span class="material-symbols-rounded text-[1.1rem]">help</span>
+												<span class="calendar-tour-help__label hidden sm:inline">Guía</span>
+											</button>
 
-												<button
-													type="button"
-													class="calendar-refresh-btn w-full sm:w-auto inline-flex items-center justify-center gap-2"
-													data-refresh-calendar
-												>
-													<span class="material-symbols-rounded text-[1.12rem]">refresh</span>
-													<span>Refrescar</span>
-												</button>
+											<button
+												type="button"
+												class="calendar-refresh-btn calendar-header-toolbar__refresh w-full sm:w-auto inline-flex items-center justify-center gap-2"
+												data-refresh-calendar
+											>
+												<span class="material-symbols-rounded text-[1.12rem]">refresh</span>
+												<span>Refrescar</span>
+											</button>
 
-												<button
-													type="button"
-													class="calendar-create-btn w-full sm:w-auto inline-flex items-center justify-center gap-2"
-													data-open-appointment-modal
+											<button
+												type="button"
+												class="calendar-create-btn calendar-header-toolbar__create w-full sm:w-auto inline-flex items-center justify-center gap-2"
+												data-open-appointment-modal
+											>
+												<svg
+													class="calendar-create-btn-icon w-[18px] h-[18px]"
+													viewBox="0 0 24 24"
+													fill="none"
+													aria-hidden="true"
 												>
-													<svg
-														class="calendar-create-btn-icon w-[18px] h-[18px]"
-														viewBox="0 0 24 24"
-														fill="none"
-														aria-hidden="true"
-													>
-														<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
-													</svg>
-													<span>Nueva cita</span>
-												</button>
-											</div>
+													<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+												</svg>
+												<span>Nueva cita</span>
+											</button>
 										</div>
 									</header>
 
@@ -1335,6 +1337,82 @@ const googleErrorMessage = hasGoogleError
 
 	[data-calendar-root] .fc .fc-list-day-cushion {
 		background: var(--calendar-toolbar-surface);
+	}
+
+	.calendar-page-header {
+		display: grid;
+		gap: 0.65rem 0.75rem;
+		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-areas:
+			'intro guide'
+			'create create'
+			'refresh refresh'
+			'google google';
+		align-items: start;
+	}
+
+	.calendar-page-header__intro {
+		grid-area: intro;
+	}
+
+	.calendar-header-toolbar {
+		display: contents;
+	}
+
+	.calendar-header-toolbar__create {
+		grid-area: create;
+	}
+
+	.calendar-header-toolbar__refresh {
+		grid-area: refresh;
+	}
+
+	.calendar-header-toolbar__google {
+		grid-area: google;
+	}
+
+	.calendar-header-toolbar__guide {
+		grid-area: guide;
+		align-self: start;
+		justify-self: end;
+		width: 2.5rem;
+		height: 2.5rem;
+		padding: 0;
+	}
+
+	.calendar-header-toolbar__guide .material-symbols-rounded {
+		font-size: 1.25rem;
+	}
+
+	@media (min-width: 640px) {
+		.calendar-page-header {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: space-between;
+			gap: 1rem;
+		}
+
+		.calendar-page-header__intro {
+			flex: 1 1 12rem;
+			min-width: min(100%, 12rem);
+		}
+
+		.calendar-header-toolbar {
+			display: flex;
+			flex: 0 1 auto;
+			flex-wrap: wrap;
+			align-items: center;
+			justify-content: flex-end;
+			gap: 0.5rem;
+		}
+
+		.calendar-header-toolbar__guide {
+			width: auto;
+			height: auto;
+			padding: 0.62rem 0.85rem;
+			justify-self: auto;
+		}
 	}
 
 	.calendar-create-btn {
