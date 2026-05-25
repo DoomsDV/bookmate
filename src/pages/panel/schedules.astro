@@ -493,6 +493,34 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		border-bottom-color: rgba(148, 163, 184, 0.24);
 	}
 
+	@media (max-width: 1023px) {
+		[data-weekly-planner] .schedule-slot-row {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+
+		[data-weekly-planner] .schedule-slot-field--location {
+			grid-column: 1 / -1;
+			grid-row: 1 / 2;
+			padding-right: 2.35rem;
+		}
+
+		[data-weekly-planner] .schedule-slot-remove-wrap {
+			grid-column: 2 / 3;
+			grid-row: 1 / 2;
+			align-self: end;
+			justify-self: end;
+			padding-bottom: 0.2rem;
+			z-index: 1;
+		}
+
+		[data-weekly-planner] .schedule-slot-field input,
+		[data-weekly-planner] .schedule-slot-field select {
+			width: 100%;
+			min-width: 0;
+			box-sizing: border-box;
+		}
+	}
+
 	@media (max-width: 639px) {
 		[data-weekly-planner] .schedule-slot-row {
 			margin-bottom: 0.65rem;
@@ -814,21 +842,24 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		color: var(--on-surface-variant);
 	}
 
-	/* Modal de excepciones: turnos en movil 50% inicio / 50% fin */
+	/* Modal de excepciones: sucursal a ancho completo; inicio/fin 50% / 50% */
 	.schedule-exception-modal .schedule-slot-row {
 		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 	}
 
 	.schedule-exception-modal .schedule-slot-field--location {
-		grid-column: 1 / 2;
+		grid-column: 1 / -1;
 		grid-row: 1 / 2;
+		padding-right: 2.35rem;
 	}
 
 	.schedule-exception-modal .schedule-slot-remove-wrap {
 		grid-column: 2 / 3;
 		grid-row: 1 / 2;
-		align-items: flex-end;
+		align-self: end;
+		justify-self: end;
 		padding-bottom: 0.2rem;
+		z-index: 1;
 	}
 
 	.schedule-exception-modal .schedule-slot-field--start {
@@ -873,6 +904,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		.schedule-exception-modal .schedule-slot-remove-wrap {
 			grid-column: 4 / 5;
 			grid-row: 1 / 2;
+			align-self: end;
 			padding-bottom: 0;
 		}
 	}
