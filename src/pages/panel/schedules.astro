@@ -138,9 +138,23 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 												</div>
 
 												<div data-schedule-view-template>
-													<p class="mb-3 text-[0.88rem] font-medium text-(--on-surface-variant)">
+													<p class="mb-2 text-[0.88rem] font-medium text-(--on-surface-variant)">
 														Horario habitual que se repite cada semana.
 													</p>
+													<ul
+														class="mb-3 list-disc space-y-1 pl-5 text-[0.82rem] font-medium text-(--on-surface-variant)"
+														data-schedule-template-notes
+													>
+														<li>
+															Al guardar la plantilla, las citas ya agendadas no se mueven solas.
+														</li>
+														<li>
+															Si hay citas futuras desalineadas, el sistema te avisará antes de guardar.
+														</li>
+														<li>
+															Revisa el calendario y reprograma manualmente; avisa al cliente si cambias fecha u hora.
+														</li>
+													</ul>
 													<div class="grid gap-4 sm:gap-5" data-weekly-planner></div>
 												</div>
 

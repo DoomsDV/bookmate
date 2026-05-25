@@ -3,6 +3,12 @@ import {
 	PARAGUAY_MOBILE_PHONE_ERROR,
 	parseParaguayMobilePhone,
 } from '../../lib/paraguay-phone';
+import {
+	getScheduleMisalignedMessage,
+	getScheduleMisalignedTitle,
+	isScheduleMisalignedFlag,
+	normalizeScheduleMisalignedReason,
+} from '../../lib/schedule-misaligned';
 import { AppointmentsClient } from './appointments-client';
 import type {
 	ApiFieldError,
@@ -147,6 +153,10 @@ class AppointmentModal extends HTMLElement {
 	attendancePendingWrap: HTMLElement | null = null;
 	attendanceReplyRow: HTMLElement | null = null;
 	attendanceReplyAt: HTMLElement | null = null;
+	scheduleMisalignedWrap: HTMLElement | null = null;
+	scheduleMisalignedTitle: HTMLElement | null = null;
+	scheduleMisalignedMessage: HTMLElement | null = null;
+	scheduleMisalignedLink: HTMLAnchorElement | null = null;
 	modalProfessionalWrap: HTMLElement | null = null;
 	modalProfessional: HTMLSelectElement | null = null;
 	modalLocation: HTMLSelectElement | null = null;
@@ -233,6 +243,18 @@ class AppointmentModal extends HTMLElement {
 			this.form?.querySelector<HTMLElement>('[data-appointment-attendance-reply]') ?? null;
 		this.attendanceReplyAt =
 			this.form?.querySelector<HTMLElement>('[data-appointment-attendance-reply-at]') ?? null;
+		this.scheduleMisalignedWrap =
+			this.form?.querySelector<HTMLElement>('[data-appointment-schedule-misaligned-wrap]') ??
+			null;
+		this.scheduleMisalignedTitle =
+			this.form?.querySelector<HTMLElement>('[data-appointment-schedule-misaligned-title]') ??
+			null;
+		this.scheduleMisalignedMessage =
+			this.form?.querySelector<HTMLElement>('[data-appointment-schedule-misaligned-message]') ??
+			null;
+		this.scheduleMisalignedLink =
+			this.form?.querySelector<HTMLAnchorElement>('[data-appointment-schedule-misaligned-link]') ??
+			null;
 		this.modalProfessionalWrap =
 			this.form?.querySelector<HTMLElement>('[data-modal-professional-wrap]') ?? null;
 		this.modalProfessional =
@@ -794,6 +816,7 @@ class AppointmentModal extends HTMLElement {
 		this.hideCustomerResults();
 		this.closeDateTimePicker();
 		this.hideAttendanceBlock();
+		this.hideScheduleMisalignedBlock();
 		this.clearImmutableReadOnlyMode();
 	}
 
@@ -804,6 +827,45 @@ class AppointmentModal extends HTMLElement {
 		this.attendancePendingWrap?.classList.add('hidden');
 		this.attendanceReplyRow?.setAttribute('hidden', '');
 		if (this.attendanceReplyAt) this.attendanceReplyAt.textContent = '';
+	}
+
+	hideScheduleMisalignedBlock() {
+		this.scheduleMisalignedWrap?.setAttribute('hidden', '');
+		this.scheduleMisalignedWrap?.classList.add('hidden');
+		if (this.scheduleMisalignedTitle) {
+			this.scheduleMisalignedTitle.textContent = 'Cita fuera de la agenda actual';
+		}
+		if (this.scheduleMisalignedMessage) this.scheduleMisalignedMessage.textContent = '';
+		if (this.scheduleMisalignedLink) {
+			this.scheduleMisalignedLink.href = '/panel/schedules';
+		}
+	}
+
+	showScheduleMisalignedBlock(appointment: AppointmentDetail) {
+		this.hideScheduleMisalignedBlock();
+
+		const misaligned =
+			isScheduleMisalignedFlag(appointment.schedule_misaligned) ||
+			Boolean(appointment.schedule_misaligned_reason);
+		if (!misaligned) return;
+
+		const reason = normalizeScheduleMisalignedReason(appointment.schedule_misaligned_reason);
+		if (this.scheduleMisalignedTitle) {
+			this.scheduleMisalignedTitle.textContent = getScheduleMisalignedTitle(reason);
+		}
+		if (this.scheduleMisalignedMessage) {
+			this.scheduleMisalignedMessage.textContent = getScheduleMisalignedMessage(reason, {
+				locationName: appointment.location_name,
+			});
+		}
+		if (this.scheduleMisalignedLink && appointment.pro_id_professional > 0) {
+			const schedulesUrl = new URL('/panel/schedules', window.location.origin);
+			schedulesUrl.searchParams.set('pro_id', String(appointment.pro_id_professional));
+			this.scheduleMisalignedLink.href = `${schedulesUrl.pathname}${schedulesUrl.search}`;
+		}
+
+		this.scheduleMisalignedWrap?.removeAttribute('hidden');
+		this.scheduleMisalignedWrap?.classList.remove('hidden');
 	}
 
 	showAttendanceBlock(appointment: AppointmentDetail) {
@@ -946,6 +1008,7 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.openEndPickerButton.disabled = true;
 		requiredNodes.clearCustomerButton.disabled = true;
 		this.hideAttendanceBlock();
+		this.hideScheduleMisalignedBlock();
 	}
 
 	setCreateMode() {
@@ -966,6 +1029,7 @@ class AppointmentModal extends HTMLElement {
 		}
 		this.modalStatusWrap?.setAttribute('hidden', '');
 		this.hideAttendanceBlock();
+		this.hideScheduleMisalignedBlock();
 	}
 
 	setEditMode(appointmentId: number) {
@@ -984,6 +1048,7 @@ class AppointmentModal extends HTMLElement {
 		this.modalStatusWrap?.removeAttribute('hidden');
 		this.modalStatusWrap?.classList.remove('hidden');
 		this.hideAttendanceBlock();
+		this.hideScheduleMisalignedBlock();
 	}
 
 	fillFormByAppointment(appointment: AppointmentDetail) {
@@ -1018,6 +1083,7 @@ class AppointmentModal extends HTMLElement {
 		this.ensureModalProfessionalValue();
 		void this.loadCustomersForCurrentProfessional(true);
 		this.showAttendanceBlock(appointment);
+		this.showScheduleMisalignedBlock(appointment);
 
 		const status = String(appointment.status || '').trim().toUpperCase();
 		if (status === 'CANCELADO' || status === 'COMPLETADO') {

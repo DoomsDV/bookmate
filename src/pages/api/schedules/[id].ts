@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { ROLES } from '../../../config/roles';
 import {
 	SchedulesApiError,
+	ScheduleTemplateConflictError,
 	getProfessionalScheduleWithOrds,
 	type ScheduleUpdatePayload,
 	updateProfessionalScheduleWithOrds,
@@ -47,6 +48,7 @@ const scheduleItemSchema = z.object({
 const scheduleUpdateSchema = z
 	.object({
 		schedules: z.array(scheduleItemSchema),
+		acknowledge_schedule_impact: z.boolean().optional(),
 	})
 	.superRefine((payload, ctx) => {
 		const intervalsByDay = new Map<number, Array<{ index: number; start: number; end: number }>>();
@@ -165,6 +167,17 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 			{ status: 200 }
 		);
 	} catch (error) {
+		if (error instanceof ScheduleTemplateConflictError) {
+			return Response.json(
+				{
+					status: 'error',
+					code: error.code,
+					message: error.message,
+					appointment_count: error.appointmentCount,
+				},
+				{ status: 409 }
+			);
+		}
 		return toErrorResponse(error, 'No fue posible guardar los horarios del profesional.');
 	}
 };

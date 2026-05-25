@@ -1058,27 +1058,81 @@ class ScheduleManager extends HTMLElement {
 		this.updateControlsState();
 		this.clearMessages();
 
+		let acknowledgeScheduleImpact = false;
+		let savedWithScheduleImpact = false;
+
 		try {
-			const response = await fetch(`/api/schedules/${this.selectedProfessionalId}`, {
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-				},
-				body: JSON.stringify({ schedules: result.payload }),
-			});
-			const data = await this.parseJson(response);
+			for (;;) {
+				const response = await fetch(`/api/schedules/${this.selectedProfessionalId}`, {
+					method: 'PUT',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+					},
+					body: JSON.stringify({
+						schedules: result.payload,
+						...(acknowledgeScheduleImpact
+							? { acknowledge_schedule_impact: true }
+							: {}),
+					}),
+				});
+				const data = await this.parseJson(response);
 
-			if (!response.ok || !data || data.status !== 'success') {
-				throw new Error(this.toBackendErrorMessage(data, 'No fue posible guardar los horarios.'));
+				if (
+					response.status === 409 &&
+					data &&
+					typeof data === 'object' &&
+					String((data as Record<string, unknown>).code || '') ===
+						'SCHEDULE_IMPACT_APPOINTMENTS'
+				) {
+					const appointmentCount = Number(
+						(data as Record<string, unknown>).appointment_count ?? 0
+					);
+					const confirmed = await this.confirmTemplateImpactWithAppointments(appointmentCount);
+					if (!confirmed) return;
+					acknowledgeScheduleImpact = true;
+					savedWithScheduleImpact = true;
+					continue;
+				}
+
+				if (!response.ok || !data || data.status !== 'success') {
+					throw new Error(this.toBackendErrorMessage(data, 'No fue posible guardar los horarios.'));
+				}
+
+				const successMessage =
+					typeof data.message === 'string' && data.message.trim()
+						? data.message
+						: 'Horarios guardados correctamente.';
+				this.setDirty(false);
+				showFlashMessage({ message: successMessage, type: 'success' });
+
+				if (savedWithScheduleImpact && this.selectedProfessionalId > 0) {
+					sessionStorage.setItem(
+						`bookmate:schedule-review:${this.selectedProfessionalId}`,
+						'1'
+					);
+					showFlashMessage({
+						message:
+							'Revisa el calendario: hay citas que no coinciden con la nueva plantilla. Debes reprogramarlas manualmente.',
+						type: 'warning',
+					});
+					const reviewUrl = this.buildCalendarReviewUrl(this.selectedProfessionalId);
+					if (window.BookmateAlert?.confirm) {
+						const openCalendar = await window.BookmateAlert.confirm({
+							type: 'info',
+							title: 'Ir al calendario',
+							message:
+								'¿Quieres abrir el calendario ahora para revisar las citas afectadas?',
+							confirmText: 'Abrir calendario',
+							cancelText: 'Quedarme aquí',
+						});
+						if (openCalendar) {
+							window.location.assign(reviewUrl);
+						}
+					}
+				}
+				return;
 			}
-
-			const successMessage =
-				typeof data.message === 'string' && data.message.trim()
-					? data.message
-					: 'Horarios guardados correctamente.';
-			this.setDirty(false);
-			showFlashMessage({ message: successMessage, type: 'success' });
 		} catch (error) {
 			this.showError(error instanceof Error ? error.message : 'No fue posible guardar los horarios.');
 		} finally {
@@ -1623,6 +1677,32 @@ class ScheduleManager extends HTMLElement {
 	private buildBlockDayConfirmMessage(appointmentCount: number) {
 		const label = appointmentCount === 1 ? 'cita agendada' : 'citas agendadas';
 		return `Atención: Tienes ${appointmentCount} ${label} para este día. Si bloqueas el día, no se recibirán reservas nuevas, pero deberás reprogramar o cancelar las citas existentes manualmente para no perjudicar a tus clientes. ¿Deseas continuar?`;
+	}
+
+	private buildTemplateImpactConfirmMessage(appointmentCount: number) {
+		const label = appointmentCount === 1 ? 'cita futura' : 'citas futuras';
+		return `Hay ${appointmentCount} ${label} que no coinciden con la nueva plantilla (horario o sucursal). Las citas no se mueven solas: deberás revisarlas en el calendario y reprogramarlas manualmente, avisando al cliente si cambias fecha u hora. ¿Deseas guardar la plantilla de todos modos?`;
+	}
+
+	private async confirmTemplateImpactWithAppointments(appointmentCount: number) {
+		const message = this.buildTemplateImpactConfirmMessage(appointmentCount);
+		if (window.BookmateAlert?.confirm) {
+			return window.BookmateAlert.confirm({
+				type: 'warning',
+				title: 'Citas afectadas por el cambio de horario',
+				message,
+				confirmText: 'Sí, guardar plantilla',
+				cancelText: 'Cancelar',
+			});
+		}
+		return window.confirm(message);
+	}
+
+	private buildCalendarReviewUrl(professionalId: number) {
+		const url = new URL('/panel/calendar', window.location.origin);
+		url.searchParams.set('schedule_review', '1');
+		url.searchParams.set('pro_id', String(professionalId));
+		return `${url.pathname}${url.search}`;
 	}
 
 	private async confirmBlockDayWithAppointments(appointmentCount: number) {

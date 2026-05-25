@@ -6,8 +6,13 @@ import {
 	normalizeAttendanceStatus,
 } from './attendance';
 import { resolveOrdsApiUrl } from './env-urls';
+import {
+	isScheduleMisalignedFlag,
+	normalizeScheduleMisalignedReason,
+	type ScheduleMisalignedReason,
+} from './schedule-misaligned';
 
-export type { AttendanceStatus };
+export type { AttendanceStatus, ScheduleMisalignedReason };
 export { isAttendanceReconfirmed, normalizeAttendanceStatus };
 
 export const APPOINTMENTS_URL = resolveOrdsApiUrl(
@@ -37,6 +42,8 @@ export interface AppointmentCalendarEventExtendedProps {
 	service_name: string;
 	location_name: string;
 	pro_id_professional: number;
+	schedule_misaligned?: boolean;
+	schedule_misaligned_reason?: ScheduleMisalignedReason | null;
 }
 
 export interface AppointmentCalendarEvent {
@@ -66,6 +73,8 @@ export interface AppointmentDetail {
 	attendance_reply_at?: string;
 	start_time: string;
 	end_time: string;
+	schedule_misaligned?: boolean;
+	schedule_misaligned_reason?: ScheduleMisalignedReason | null;
 }
 
 export interface AppointmentCalendarFilters {
@@ -199,6 +208,11 @@ const normalizeExtendedProps = (value: unknown, resourceId: number) => {
 	const explicitProfessionalId = toNumber(source.pro_id_professional, resourceId);
 	const attendanceStatus = normalizeAttendanceStatus(source.attendance_status);
 
+	const scheduleMisaligned = isScheduleMisalignedFlag(source.schedule_misaligned);
+	const scheduleMisalignedReason = scheduleMisaligned
+		? normalizeScheduleMisalignedReason(source.schedule_misaligned_reason)
+		: null;
+
 	return {
 		customer_phone: String(source.customer_phone || '').trim(),
 		status: String(source.status || '').trim(),
@@ -214,7 +228,37 @@ const normalizeExtendedProps = (value: unknown, resourceId: number) => {
 		pro_id_professional: Number.isInteger(explicitProfessionalId)
 			? explicitProfessionalId
 			: resourceId,
+		schedule_misaligned: scheduleMisaligned,
+		schedule_misaligned_reason: scheduleMisalignedReason,
 	};
+};
+
+const applyScheduleMisalignedFields = (
+	target: {
+		schedule_misaligned?: boolean;
+		schedule_misaligned_reason?: ScheduleMisalignedReason | null;
+	},
+	source: Record<string, unknown>,
+	status: string,
+	startTime: string
+) => {
+	const statusUpper = status.trim().toUpperCase();
+	const startDate = new Date(startTime);
+	const isActiveStatus = statusUpper === 'PENDIENTE' || statusUpper === 'CONFIRMADO';
+	const isFutureOrToday =
+		!Number.isNaN(startDate.getTime()) &&
+		startDate.setHours(0, 0, 0, 0) >= new Date().setHours(0, 0, 0, 0);
+
+	if (!isActiveStatus || !isFutureOrToday) {
+		target.schedule_misaligned = false;
+		target.schedule_misaligned_reason = null;
+		return;
+	}
+
+	target.schedule_misaligned = isScheduleMisalignedFlag(source.schedule_misaligned);
+	target.schedule_misaligned_reason = target.schedule_misaligned
+		? normalizeScheduleMisalignedReason(source.schedule_misaligned_reason)
+		: null;
 };
 
 const normalizeCalendarEvent = (value: unknown): AppointmentCalendarEvent | null => {
@@ -282,7 +326,7 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 
 	const attendanceStatus = normalizeAttendanceStatus(source.attendance_status);
 
-	return {
+	const detail: AppointmentDetail = {
 		id_appointment: appointmentId,
 		id_customer: toNumber(source.id_customer ?? source.cus_id_customer, 0),
 		loc_id_location: Number.isInteger(locationId) && locationId > 0 ? locationId : 0,
@@ -304,6 +348,10 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 		start_time: startTime,
 		end_time: endTime,
 	};
+
+	applyScheduleMisalignedFields(detail, source, status, startTime);
+
+	return detail;
 };
 
 export const listAppointmentsForCalendarWithOrds = async (

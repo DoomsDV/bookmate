@@ -28,6 +28,11 @@ import {
 } from '../searchable-select';
 import { maybeShowCalendarTour, showCalendarTour } from '../../lib/calendar-tour';
 import { showFlashMessage } from '../../lib/flash';
+import {
+	getScheduleMisalignedListSuffix,
+	isScheduleMisalignedFlag,
+	normalizeScheduleMisalignedReason,
+} from '../../lib/schedule-misaligned';
 import type { AppointmentFormPayload, Option } from './types';
 import {
 	formatDateTimeLocal,
@@ -87,6 +92,42 @@ const hasAppointmentModalApi = (value: unknown): value is AppointmentModalApi =>
 const isGoogleEvent = (event: ApiCalendarEvent) =>
 	String(event?.extendedProps?.source || '').trim().toLowerCase() === 'google';
 
+const isScheduleMisalignedEvent = (event: ApiCalendarEvent | EventApi) =>
+	isScheduleMisalignedFlag(event?.extendedProps?.schedule_misaligned);
+
+const getEventScheduleMisalignedReason = (event: ApiCalendarEvent | EventApi) =>
+	normalizeScheduleMisalignedReason(event?.extendedProps?.schedule_misaligned_reason);
+
+const SCHEDULE_REVIEW_STORAGE_PREFIX = 'bookmate:schedule-review:';
+const MISALIGNED_TITLE_PREFIX = '⚠ ';
+
+const formatMisalignedWhenLabel = (startRaw: unknown, endRaw: unknown) => {
+	const startText = String(startRaw || '').trim();
+	if (!startText) return 'fecha por confirmar';
+
+	const startDate = new Date(startText);
+	if (Number.isNaN(startDate.getTime())) return startText;
+
+	const endText = String(endRaw || '').trim();
+	const endDate = endText ? new Date(endText) : null;
+	const datePart = new Intl.DateTimeFormat('es-ES', {
+		weekday: 'short',
+		day: 'numeric',
+		month: 'short',
+	}).format(startDate);
+	const startTime = new Intl.DateTimeFormat('es-ES', {
+		hour: '2-digit',
+		minute: '2-digit',
+	}).format(startDate);
+	if (!endDate || Number.isNaN(endDate.getTime())) return `${datePart} ${startTime}`;
+
+	const endTime = new Intl.DateTimeFormat('es-ES', {
+		hour: '2-digit',
+		minute: '2-digit',
+	}).format(endDate);
+	return `${datePart} ${startTime}–${endTime}`;
+};
+
 const getAppointmentStatus = (event: {
 	extendedProps?: Record<string, unknown>;
 	status?: unknown;
@@ -137,6 +178,9 @@ class CalendarManager extends HTMLElement {
 	private isMobileLayout = false;
 	private isGoogleConnected = false;
 	private swipeTouchStart: { x: number; y: number } | null = null;
+	private pendingFocusAppointmentId: number | null = null;
+	private pendingFocusScrollTime: { hours: number; minutes: number } | null = null;
+	private pendingFocusRetryTimer: number | null = null;
 
 	private calendarEl: HTMLElement | null = null;
 	private loadingNode: HTMLElement | null = null;
@@ -147,6 +191,7 @@ class CalendarManager extends HTMLElement {
 	private professionalFilterWrap: HTMLElement | null = null;
 	private professionalFilter: HTMLSelectElement | null = null;
 	private locationFilter: HTMLSelectElement | null = null;
+	private scheduleMisalignedBanner: HTMLElement | null = null;
 	private appointmentModal: HTMLElement | null = null;
 
 	connectedCallback() {
@@ -162,6 +207,9 @@ class CalendarManager extends HTMLElement {
 		this.professionalFilterWrap = this.querySelector<HTMLElement>('[data-professional-filter-wrap]');
 		this.professionalFilter = this.querySelector<HTMLSelectElement>('[data-professional-filter]');
 		this.locationFilter = this.querySelector<HTMLSelectElement>('[data-location-filter]');
+		this.scheduleMisalignedBanner = this.querySelector<HTMLElement>(
+			'[data-schedule-misaligned-banner]'
+		);
 		this.appointmentModal =
 			this.querySelector<HTMLElement>('appointment-modal') ??
 			document.querySelector<HTMLElement>('appointment-modal');
@@ -305,10 +353,191 @@ class CalendarManager extends HTMLElement {
 	}
 
 	private destroyCalendar() {
+		this.clearPendingFocusState();
 		if (this.calendar) {
 			this.calendar.destroy();
 			this.calendar = null;
 		}
+	}
+
+	private clearPendingFocusRetry() {
+		if (this.pendingFocusRetryTimer) {
+			window.clearTimeout(this.pendingFocusRetryTimer);
+			this.pendingFocusRetryTimer = null;
+		}
+	}
+
+	private clearPendingFocusState() {
+		this.clearPendingFocusRetry();
+		this.pendingFocusAppointmentId = null;
+		this.pendingFocusScrollTime = null;
+	}
+
+	private getFocusTargetViewType(currentViewType: string) {
+		if (currentViewType.startsWith('list')) return 'listWeek';
+		return this.isMobileLayout ? 'timeGridThreeDay' : 'timeGridWeek';
+	}
+
+	private isTimeGridView(viewType: string) {
+		return viewType.includes('timeGrid');
+	}
+
+	private schedulePendingFocusRetry(attempt: number) {
+		this.clearPendingFocusRetry();
+		if (this.pendingFocusAppointmentId === null) return;
+		if (attempt >= 20) {
+			this.clearPendingFocusState();
+			return;
+		}
+
+		this.pendingFocusRetryTimer = window.setTimeout(() => {
+			void this.applyPendingFocus(attempt + 1);
+		}, 120);
+	}
+
+	private getPendingFocusEvent(): EventApi | null {
+		if (!this.calendar || this.pendingFocusAppointmentId === null) return null;
+
+		const eventId = String(this.pendingFocusAppointmentId);
+		const byId = this.calendar.getEventById(eventId);
+		if (byId) return byId;
+
+		return (
+			this.calendar
+				.getEvents()
+				.find((item) => toPositiveInt(item.id, 0) === this.pendingFocusAppointmentId) ?? null
+		);
+	}
+
+	private scrollScrollableAncestorsToElement(element: HTMLElement) {
+		let parent = element.parentElement;
+		while (parent && parent !== document.documentElement) {
+			const style = window.getComputedStyle(parent);
+			const scrollableY =
+				(style.overflowY === 'auto' ||
+					style.overflowY === 'scroll' ||
+					style.overflowY === 'overlay') &&
+				parent.scrollHeight > parent.clientHeight + 2;
+
+			if (scrollableY) {
+				const parentRect = parent.getBoundingClientRect();
+				const elementRect = element.getBoundingClientRect();
+				const delta =
+					elementRect.top -
+					parentRect.top -
+					parentRect.height / 2 +
+					elementRect.height / 2;
+				parent.scrollBy({ top: delta, behavior: 'smooth' });
+			}
+
+			parent = parent.parentElement;
+		}
+	}
+
+	private scrollEventIntoView(event: EventApi) {
+		const element = event.el;
+		if (!(element instanceof HTMLElement)) return false;
+
+		const scroller =
+			(element.closest('.fc-timegrid-body .fc-scroller') as HTMLElement | null) ??
+			(element.closest('.fc-scroller') as HTMLElement | null);
+
+		if (scroller) {
+			const scrollerRect = scroller.getBoundingClientRect();
+			const elementRect = element.getBoundingClientRect();
+			const delta =
+				elementRect.top - scrollerRect.top - scrollerRect.height / 2 + elementRect.height / 2;
+			scroller.scrollBy({ top: delta, behavior: 'smooth' });
+		}
+
+		element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+		this.scrollScrollableAncestorsToElement(element);
+		return true;
+	}
+
+	private applyPendingFocusScrollTime() {
+		if (!this.calendar || !this.pendingFocusScrollTime) return;
+		if (!this.isTimeGridView(this.calendar.view.type)) return;
+
+		// Con height: 'auto' scrollToTime suele quedar corto; el scroll real va al elemento del evento.
+		this.calendar.scrollToTime({
+			hours: this.pendingFocusScrollTime.hours,
+			minutes: this.pendingFocusScrollTime.minutes,
+		});
+	}
+
+	private highlightFocusedEvent(event: EventApi) {
+		event.setProp('borderColor', '#d97706');
+		if (event.el instanceof HTMLElement) {
+			event.el.classList.add('fc-event-focus-highlight');
+			window.setTimeout(() => {
+				event.el?.classList.remove('fc-event-focus-highlight');
+			}, 2400);
+		}
+	}
+
+	private completePendingFocusForEvent(event: EventApi) {
+		if (this.pendingFocusAppointmentId === null) return;
+		if (toPositiveInt(event.id, 0) !== this.pendingFocusAppointmentId) return;
+
+		const run = () => {
+			const freshEvent = this.getPendingFocusEvent();
+			const target = freshEvent?.el ? freshEvent : event;
+			if (!(target.el instanceof HTMLElement)) {
+				this.schedulePendingFocusRetry(0);
+				return;
+			}
+
+			if (this.calendar && this.isTimeGridView(this.calendar.view.type)) {
+				this.applyPendingFocusScrollTime();
+			}
+
+			this.scrollEventIntoView(target);
+			this.highlightFocusedEvent(target);
+			this.clearPendingFocusState();
+		};
+
+		window.requestAnimationFrame(() => {
+			window.requestAnimationFrame(() => {
+				window.setTimeout(run, 60);
+			});
+		});
+	}
+
+	private tryCompletePendingFocus(event: EventApi) {
+		this.completePendingFocusForEvent(event);
+	}
+
+	private applyPendingFocus(attempt = 0) {
+		if (!this.calendar || this.pendingFocusAppointmentId === null) return;
+
+		const targetEvent = this.getPendingFocusEvent();
+		if (!targetEvent?.start) {
+			this.schedulePendingFocusRetry(attempt);
+			return;
+		}
+
+		const viewType = this.calendar.view.type;
+
+		if (viewType.startsWith('list')) {
+			if (targetEvent.el) {
+				this.completePendingFocusForEvent(targetEvent);
+				return;
+			}
+			this.schedulePendingFocusRetry(attempt);
+			return;
+		}
+
+		if (this.isTimeGridView(viewType)) {
+			if (targetEvent.el) {
+				this.completePendingFocusForEvent(targetEvent);
+				return;
+			}
+			this.schedulePendingFocusRetry(attempt);
+			return;
+		}
+
+		this.schedulePendingFocusRetry(attempt);
 	}
 
 	private isMobileViewport() {
@@ -437,10 +666,18 @@ class CalendarManager extends HTMLElement {
 				const normalizedEvents: EventInput[] = allEvents.map((event) => {
 					const appointmentStatus = getAppointmentStatus(event);
 					const locked = isCalendarEventLocked(event);
+					const misaligned = isScheduleMisalignedEvent(event);
+					const baseTitle = String(event?.title || '').trim();
+					const displayTitle =
+						misaligned && !baseTitle.startsWith(MISALIGNED_TITLE_PREFIX)
+							? `${MISALIGNED_TITLE_PREFIX}${baseTitle}`
+							: baseTitle;
 
 					return {
 						...event,
 						id: String(event?.id ?? ''),
+						title: displayTitle,
+						classNames: misaligned ? ['fc-event-schedule-misaligned'] : undefined,
 						extendedProps: {
 							...(event?.extendedProps ?? {}),
 							...(appointmentStatus ? { status: appointmentStatus } : {}),
@@ -458,6 +695,7 @@ class CalendarManager extends HTMLElement {
 							: {}),
 					};
 				});
+				this.updateScheduleMisalignedBanner(appointmentEvents);
 				successCallback(normalizedEvents);
 			} catch (error) {
 				const message =
@@ -492,6 +730,7 @@ class CalendarManager extends HTMLElement {
 			nowIndicator: true,
 			allDaySlot: false,
 			height: 'auto',
+			scrollTimeReset: false,
 			slotMinTime: '06:00:00',
 			slotMaxTime: '22:00:00',
 			headerToolbar: this.getHeaderToolbar(isMobile),
@@ -535,6 +774,12 @@ class CalendarManager extends HTMLElement {
 				};
 			},
 			events: this.buildEventSource,
+			datesSet: () => {
+				void this.applyPendingFocus(0);
+			},
+			eventsSet: () => {
+				void this.applyPendingFocus(0);
+			},
 			select: (info: DateSelectArg) => {
 				const modal = hasAppointmentModalApi(this.appointmentModal) ? this.appointmentModal : null;
 				modal?.openCreate({
@@ -569,6 +814,8 @@ class CalendarManager extends HTMLElement {
 			},
 			eventDidMount: (arg) => {
 				const source = String(arg.event.extendedProps?.source || '').trim().toLowerCase();
+
+				this.tryCompletePendingFocus(arg.event);
 
 				if (isImmutableAppointmentEvent(arg.event)) {
 					arg.el.classList.add('fc-event-locked');
@@ -621,39 +868,35 @@ class CalendarManager extends HTMLElement {
 
 				if (!(badgeContainer instanceof HTMLElement)) return;
 
+				this.mountScheduleMisalignedVisual(arg);
+
 				if (isAttendanceReconfirmed(arg.event.extendedProps)) {
 					arg.el.classList.add('fc-event-attendance-confirmed');
-					if (arg.el.querySelector('.fc-event-attendance-badge')) return;
-
-					const badgeNode = document.createElement('span');
-					badgeNode.className = 'fc-event-attendance-badge fc-event-attendance-badge--confirmed';
-					badgeNode.title = 'Asistencia reconfirmada';
-					badgeNode.setAttribute('aria-hidden', 'true');
-					badgeContainer.prepend(badgeNode);
-					return;
-				}
-
-				if (isAttendanceAwaitingReconfirmation(arg.event.extendedProps)) {
+					if (!arg.el.querySelector('.fc-event-attendance-badge')) {
+						const badgeNode = document.createElement('span');
+						badgeNode.className = 'fc-event-attendance-badge fc-event-attendance-badge--confirmed';
+						badgeNode.title = 'Asistencia reconfirmada';
+						badgeNode.setAttribute('aria-hidden', 'true');
+						badgeContainer.prepend(badgeNode);
+					}
+				} else if (isAttendanceAwaitingReconfirmation(arg.event.extendedProps)) {
 					arg.el.classList.add('fc-event-attendance-pending');
-					if (arg.el.querySelector('.fc-event-attendance-badge')) return;
-
-					const badgeNode = document.createElement('span');
-					badgeNode.className = 'fc-event-attendance-badge fc-event-attendance-badge--pending';
-					badgeNode.title = 'Pendiente de reconfirmación';
-					badgeNode.setAttribute('aria-hidden', 'true');
-					badgeContainer.prepend(badgeNode);
-					return;
-				}
-
-				if (isAttendanceDeclined(arg.event.extendedProps)) {
+					if (!arg.el.querySelector('.fc-event-attendance-badge')) {
+						const badgeNode = document.createElement('span');
+						badgeNode.className = 'fc-event-attendance-badge fc-event-attendance-badge--pending';
+						badgeNode.title = 'Pendiente de reconfirmación';
+						badgeNode.setAttribute('aria-hidden', 'true');
+						badgeContainer.prepend(badgeNode);
+					}
+				} else if (isAttendanceDeclined(arg.event.extendedProps)) {
 					arg.el.classList.add('fc-event-attendance-declined');
-					if (arg.el.querySelector('.fc-event-attendance-badge')) return;
-
-					const badgeNode = document.createElement('span');
-					badgeNode.className = 'fc-event-attendance-badge fc-event-attendance-badge--declined';
-					badgeNode.title = 'Asistencia rechazada';
-					badgeNode.setAttribute('aria-hidden', 'true');
-					badgeContainer.prepend(badgeNode);
+					if (!arg.el.querySelector('.fc-event-attendance-badge')) {
+						const badgeNode = document.createElement('span');
+						badgeNode.className = 'fc-event-attendance-badge fc-event-attendance-badge--declined';
+						badgeNode.title = 'Asistencia rechazada';
+						badgeNode.setAttribute('aria-hidden', 'true');
+						badgeContainer.prepend(badgeNode);
+					}
 				}
 			},
 		});
@@ -922,12 +1165,169 @@ class CalendarManager extends HTMLElement {
 		this.reloadCalendarEvents();
 	};
 
+	private getMisalignedAppointments(events: ApiCalendarEvent[]) {
+		return events
+			.filter((event) => !isGoogleEvent(event) && isScheduleMisalignedEvent(event))
+			.map((event) => {
+				const appointmentId = toPositiveInt(event.id, 0);
+				const rawTitle = String(event.title || '')
+					.trim()
+					.replace(/^⚠\s*/, '');
+				const whenLabel = formatMisalignedWhenLabel(event.start, event.end);
+				const reasonSuffix = getScheduleMisalignedListSuffix(
+					getEventScheduleMisalignedReason(event)
+				);
+				const coreLabel = rawTitle ? `${rawTitle} (${whenLabel})` : whenLabel;
+				return {
+					id: appointmentId,
+					label: `${coreLabel} ${reasonSuffix}`,
+				};
+			})
+			.filter((item) => item.id > 0);
+	}
+
+	private mountScheduleMisalignedVisual(arg: { el: HTMLElement; event: EventApi }) {
+		if (isGoogleEvent(arg.event)) return;
+		if (!isScheduleMisalignedEvent(arg.event)) return;
+
+		arg.el.classList.add('fc-event-schedule-misaligned');
+		if (arg.el.querySelector('.fc-event-schedule-misaligned-badge')) return;
+
+		const badgeNode = document.createElement('span');
+		badgeNode.className = 'fc-event-schedule-misaligned-badge';
+		badgeNode.title =
+			'Cita fuera del horario o sucursal actual. Reprograma manualmente y avisa al cliente.';
+		badgeNode.setAttribute('aria-label', 'Fuera de horario');
+		arg.el.appendChild(badgeNode);
+	}
+
+	private focusMisalignedAppointment(appointmentId: number) {
+		if (!this.calendar || appointmentId <= 0) return;
+
+		this.calendarEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
+		const targetEvent = this.calendar
+			.getEvents()
+			.find((item) => toPositiveInt(item.id, 0) === appointmentId);
+		if (!targetEvent?.start) return;
+
+		this.clearPendingFocusState();
+		this.pendingFocusAppointmentId = appointmentId;
+		this.pendingFocusScrollTime = {
+			hours: targetEvent.start.getHours(),
+			minutes: Math.max(0, targetEvent.start.getMinutes() - 15),
+		};
+
+		const viewType = this.calendar.view.type;
+		const targetViewType = this.getFocusTargetViewType(viewType);
+		const alreadyOnTargetView =
+			viewType === targetViewType ||
+			(this.isTimeGridView(viewType) && this.isTimeGridView(targetViewType));
+
+		if (!alreadyOnTargetView || viewType === 'dayGridMonth' || viewType === 'dayGridDay') {
+			this.calendar.changeView(targetViewType, targetEvent.start);
+			return;
+		}
+
+		void this.applyPendingFocus(0);
+	}
+
+	private updateScheduleMisalignedBanner(events: ApiCalendarEvent[]) {
+		if (!this.scheduleMisalignedBanner) return;
+
+		const misaligned = this.getMisalignedAppointments(events);
+
+		if (misaligned.length <= 0) {
+			this.scheduleMisalignedBanner.classList.add('hidden');
+			this.scheduleMisalignedBanner.replaceChildren();
+			return;
+		}
+
+		const label = misaligned.length === 1 ? 'cita' : 'citas';
+		this.scheduleMisalignedBanner.classList.remove('hidden');
+		this.scheduleMisalignedBanner.replaceChildren();
+
+		const intro = document.createElement('p');
+		intro.className = 'calendar-misaligned-banner__intro';
+		intro.textContent = `${misaligned.length} ${label} en este rango no coinciden con la agenda actual. Cada una indica el motivo (día bloqueado, horario o sucursal). Están marcadas con ⚠ en el calendario:`;
+
+		const list = document.createElement('ul');
+		list.className = 'calendar-misaligned-banner__list';
+
+		for (const item of misaligned) {
+			const listItem = document.createElement('li');
+			const labelNode = document.createElement('span');
+			labelNode.className = 'calendar-misaligned-banner__item';
+			labelNode.textContent = item.label;
+			listItem.appendChild(labelNode);
+			list.appendChild(listItem);
+		}
+
+		const hint = document.createElement('p');
+		hint.className = 'calendar-misaligned-banner__hint';
+		hint.textContent =
+			'Reprograma manualmente y avisa al cliente si cambias fecha u hora. En el calendario, búscalas por el prefijo ⚠ y el borde naranja.';
+
+		this.scheduleMisalignedBanner.append(intro, list, hint);
+	}
+
+	private applyScheduleReviewFromUrl(requiredNodes: RequiredNodes) {
+		if (typeof window === 'undefined') return;
+
+		const params = new URLSearchParams(window.location.search);
+		const scheduleReview = params.get('schedule_review') === '1';
+		const reviewProfessionalId = toPositiveInt(params.get('pro_id'), 0);
+
+		if (reviewProfessionalId > 0 && this.roleId !== ROLES.PROFESIONAL) {
+			setSearchableSelectValue(requiredNodes.professionalFilter, reviewProfessionalId);
+		}
+
+		if (scheduleReview) {
+			showFlashMessage({
+				message:
+					'Revisa las citas marcadas como fuera de horario: no se actualizan solas al cambiar la plantilla.',
+				type: 'warning',
+			});
+		}
+
+		if (!scheduleReview && reviewProfessionalId <= 0) return;
+
+		params.delete('schedule_review');
+		params.delete('pro_id');
+		const nextQuery = params.toString();
+		const nextUrl = `${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash}`;
+		window.history.replaceState({}, '', nextUrl);
+	}
+
+	private consumeScheduleReviewStorageFlag(professionalId: number) {
+		if (professionalId <= 0 || typeof window === 'undefined') return false;
+		const storageKey = `${SCHEDULE_REVIEW_STORAGE_PREFIX}${professionalId}`;
+		const hasFlag = sessionStorage.getItem(storageKey) === '1';
+		if (hasFlag) sessionStorage.removeItem(storageKey);
+		return hasFlag;
+	}
+
 	private async bootstrap() {
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return;
 
 		await this.loadMeta(requiredNodes);
 		if (!this.isConnected) return;
+
+		this.applyScheduleReviewFromUrl(requiredNodes);
+
+		const reviewProfessionalId =
+			this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0
+				? this.currentProfessionalId
+				: toPositiveInt(requiredNodes.professionalFilter.value, 0);
+		if (this.consumeScheduleReviewStorageFlag(reviewProfessionalId)) {
+			showFlashMessage({
+				message:
+					'Acabas de guardar una plantilla con citas afectadas. Revisa las marcadas como fuera de horario.',
+				type: 'warning',
+			});
+		}
+
 		this.initializeCalendar(requiredNodes);
 		maybeShowCalendarTour();
 	}

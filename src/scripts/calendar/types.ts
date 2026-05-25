@@ -17,6 +17,11 @@ export type AttendanceStatus =
 	| 'DECLINED'
 	| 'EXPIRED';
 
+export type ScheduleMisalignedReason =
+	| 'DAY_BLOCKED'
+	| 'TIME_OUTSIDE_SCHEDULE'
+	| 'WRONG_LOCATION';
+
 export type AppointmentDetail = {
 	id_appointment: number;
 	id_customer: number;
@@ -34,6 +39,8 @@ export type AppointmentDetail = {
 	attendance_reply_at?: string;
 	start_time: string;
 	end_time: string;
+	schedule_misaligned?: boolean;
+	schedule_misaligned_reason?: ScheduleMisalignedReason | null;
 };
 
 export type AppointmentFormPayload = {

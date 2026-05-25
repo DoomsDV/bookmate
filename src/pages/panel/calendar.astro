@@ -246,6 +246,12 @@ const googleErrorMessage = hasGoogleError
 									</div>
 
 									<div
+										class="hidden rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-[0.88rem] font-semibold text-amber-800 dark:text-amber-200"
+										data-schedule-misaligned-banner
+										role="status"
+									></div>
+
+									<div
 										class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.82rem] font-semibold text-(--on-surface-variant)"
 										data-calendar-status-legend
 										aria-label="Leyenda de estados de citas"
@@ -265,6 +271,10 @@ const googleErrorMessage = hasGoogleError
 										<span class="inline-flex items-center gap-1.5">
 											<span class="calendar-legend-dot calendar-legend-dot--cancelled"></span>
 											Cancelado
+										</span>
+										<span class="inline-flex items-center gap-1.5">
+											<span class="calendar-legend-dot calendar-legend-dot--misaligned"></span>
+											Fuera de horario (⚠)
 										</span>
 										{
 											ENABLE_GOOGLE_CALENDAR && (
@@ -641,6 +651,41 @@ const googleErrorMessage = hasGoogleError
 				</div>
 
 				<div
+					class="mx-7 mb-4 hidden rounded-2xl border border-orange-300/80 bg-orange-50/95 px-4 py-3.5 dark:border-orange-800/70 dark:bg-orange-950/40"
+					data-appointment-schedule-misaligned-wrap
+					hidden
+					role="alert"
+				>
+					<div class="flex items-start gap-3">
+						<span
+							class="material-symbols-rounded mt-0.5 shrink-0 text-[1.35rem] text-orange-600 dark:text-orange-400"
+							aria-hidden="true"
+						>
+							event_busy
+						</span>
+						<span class="grid gap-1.5 min-w-0 flex-1">
+							<span
+								class="text-[0.95rem] font-bold text-(--on-surface)"
+								data-appointment-schedule-misaligned-title
+							>
+								Cita fuera de la agenda actual
+							</span>
+							<span
+								class="text-[0.85rem] font-medium leading-snug text-(--on-surface-variant)"
+								data-appointment-schedule-misaligned-message
+							></span>
+							<a
+								href="/panel/schedules"
+								class="inline-flex w-fit text-[0.84rem] font-bold text-orange-700 underline underline-offset-2 dark:text-orange-300"
+								data-appointment-schedule-misaligned-link
+							>
+								Revisar horarios y excepciones
+							</a>
+						</span>
+					</div>
+				</div>
+
+				<div
 					class="mx-7 mb-4 hidden rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3.5 dark:border-amber-900/60 dark:bg-amber-950/35"
 					data-appointment-attendance-pending-wrap
 					hidden
@@ -792,6 +837,12 @@ const googleErrorMessage = hasGoogleError
 	.calendar-legend-dot--google {
 		background: var(--calendar-google-dot, #6b7280);
 		box-shadow: inset 0 0 0 1px var(--calendar-google-border, #7e8694);
+	}
+
+	.calendar-legend-dot--misaligned {
+		background: transparent;
+		border: 2px dashed #d97706;
+		box-shadow: inset 0 0 0 1px rgb(217 119 6 / 35%);
 	}
 
 	[data-calendar-root] {
@@ -1203,6 +1254,76 @@ const googleErrorMessage = hasGoogleError
 
 	[data-calendar-root] .fc .fc-event .fc-event-attendance-badge--declined::before {
 		content: 'close';
+	}
+
+	.calendar-misaligned-banner__intro {
+		margin: 0 0 0.5rem;
+	}
+
+	.calendar-misaligned-banner__list {
+		margin: 0 0 0.55rem;
+		padding-left: 1.15rem;
+		list-style: disc;
+	}
+
+	.calendar-misaligned-banner__item {
+		display: inline;
+		font-weight: 700;
+		color: inherit;
+	}
+
+	.calendar-misaligned-banner__hint {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 600;
+		opacity: 0.92;
+	}
+
+	[data-calendar-root] .fc .fc-event.fc-event-schedule-misaligned {
+		position: relative;
+		box-shadow: inset 0 0 0 2px rgb(217 119 6 / 85%);
+		outline: 2px dashed rgb(217 119 6 / 75%);
+		outline-offset: -1px;
+	}
+
+	[data-calendar-root] .fc .fc-event.fc-event-focus-highlight {
+		box-shadow:
+			inset 0 0 0 2px rgb(217 119 6 / 95%),
+			0 0 0 3px rgb(217 119 6 / 35%);
+		z-index: 6;
+	}
+
+	[data-calendar-root] .fc .fc-list-event.fc-event-schedule-misaligned {
+		border-left: 3px solid #d97706;
+	}
+
+	[data-calendar-root] .fc .fc-event .fc-event-schedule-misaligned-badge {
+		position: absolute;
+		top: 2px;
+		right: 2px;
+		z-index: 4;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.1rem;
+		height: 1.1rem;
+		border-radius: 999px;
+		background: rgb(217 119 6 / 95%);
+		color: #fff;
+		font-size: 0.65rem;
+		font-weight: 800;
+		line-height: 1;
+		flex-shrink: 0;
+		pointer-events: none;
+	}
+
+	[data-calendar-root] .fc .fc-list-event .fc-event-schedule-misaligned-badge {
+		position: static;
+		margin-left: 0.45rem;
+	}
+
+	[data-calendar-root] .fc .fc-event .fc-event-schedule-misaligned-badge::before {
+		content: '!';
 	}
 
 	[data-calendar-root] .fc .fc-list {

@@ -51,6 +51,7 @@ export interface ScheduleUpdateItem {
 
 export interface ScheduleUpdatePayload {
 	schedules: ScheduleUpdateItem[];
+	acknowledge_schedule_impact?: boolean;
 }
 
 export type ScheduleExceptionType = 'BLOCKED' | 'OVERRIDE';
@@ -135,6 +136,18 @@ export class ScheduleExceptionConflictError extends SchedulesApiError {
 		super(message, 409, details);
 		this.name = 'ScheduleExceptionConflictError';
 		this.code = 'EXISTING_APPOINTMENTS';
+		this.appointmentCount = appointmentCount;
+	}
+}
+
+export class ScheduleTemplateConflictError extends SchedulesApiError {
+	code: string;
+	appointmentCount: number;
+
+	constructor(message: string, appointmentCount: number, details?: unknown) {
+		super(message, 409, details);
+		this.name = 'ScheduleTemplateConflictError';
+		this.code = 'SCHEDULE_IMPACT_APPOINTMENTS';
 		this.appointmentCount = appointmentCount;
 	}
 }
@@ -230,11 +243,16 @@ const parseActionResponse = async (response: Response, fallbackMessage: string) 
 		};
 		const message =
 			(typeof failureData.message === 'string' && failureData.message.trim()) || fallbackMessage;
-		if (
-			response.status === 409 &&
-			String(failureData.code || '').trim() === 'EXISTING_APPOINTMENTS'
-		) {
+		const failureCode = String(failureData.code || '').trim();
+		if (response.status === 409 && failureCode === 'EXISTING_APPOINTMENTS') {
 			throw new ScheduleExceptionConflictError(
+				message,
+				Number(failureData.appointment_count ?? 0),
+				failureData.details
+			);
+		}
+		if (response.status === 409 && failureCode === 'SCHEDULE_IMPACT_APPOINTMENTS') {
+			throw new ScheduleTemplateConflictError(
 				message,
 				Number(failureData.appointment_count ?? 0),
 				failureData.details
