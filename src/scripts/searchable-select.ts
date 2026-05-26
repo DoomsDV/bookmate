@@ -8,7 +8,6 @@ type SearchableSelectOptions = {
 	placeholder?: string;
 	maxOptions?: number;
 	closeAfterSelect?: boolean;
-	autoFocusSearchOnOpen?: boolean;
 };
 
 export const getSearchableSelect = (select: HTMLSelectElement | null | undefined) =>
@@ -35,20 +34,6 @@ export const ensureSearchableSelect = (
 		placeholder: options.placeholder,
 		controlInput: '<input type="text" autocomplete="off" />',
 	});
-
-	if (options.autoFocusSearchOnOpen === false) {
-		const controlInput = instance.control_input;
-		if (controlInput instanceof HTMLInputElement) {
-			const isCoarsePointer =
-				typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
-
-			if (isCoarsePointer) {
-				// En mobile evitamos teclado virtual sin forzar blur (que cerraba el dropdown).
-				controlInput.readOnly = true;
-				controlInput.setAttribute('inputmode', 'none');
-			}
-		}
-	}
 
 	instances.set(select, instance);
 	if (select.disabled) instance.disable();
