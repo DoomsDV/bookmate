@@ -1,6 +1,14 @@
 import type { APIRoute } from 'astro';
 
-import { AuthApiError, acceptInvitationWithOrds } from '../../../lib/auth';
+import {
+	AuthApiError,
+	acceptInvitationWithOrds,
+	clearSessionCookies,
+	isLoginSelectionResult,
+	setOrganizationCacheCookies,
+	setSessionCookies,
+} from '../../../lib/auth';
+import { getCurrentOrganizationWithOrds } from '../../../lib/organization';
 
 const parseBody = async (request: Request) => {
 	const contentType = request.headers.get('content-type') || '';
@@ -24,25 +32,56 @@ const parseBody = async (request: Request) => {
 	};
 };
 
-export const POST: APIRoute = async ({ request, cookies }) => {
+export const POST: APIRoute = async ({ request, cookies, url }) => {
 	try {
 		const body = await parseBody(request);
 		if (!body.token) {
 			throw new AuthApiError('El token de invitación es obligatorio.', 400);
 		}
 
-		const accessToken = cookies.get('access_token')?.value;
-		const payload = {
-			token: body.token,
-			...(body.password ? { password: body.password } : {}),
-			...(body.first_name ? { first_name: body.first_name } : {}),
-			...(body.last_name ? { last_name: body.last_name } : {}),
-		};
+		const isNewAccountSignup = body.password.trim().length >= 8;
+		const accessToken = isNewAccountSignup ? undefined : cookies.get('access_token')?.value;
 
-		await acceptInvitationWithOrds(
+		const result = await acceptInvitationWithOrds(
 			accessToken ? `Bearer ${accessToken}` : undefined,
-			payload
+			{
+				token: body.token,
+				...(body.password ? { password: body.password } : {}),
+				...(body.first_name ? { first_name: body.first_name } : {}),
+				...(body.last_name ? { last_name: body.last_name } : {}),
+			}
 		);
+
+		clearSessionCookies(cookies);
+
+		if (
+			result &&
+			typeof result === 'object' &&
+			'access_token' in result &&
+			'refresh_token' in result &&
+			!isLoginSelectionResult(result)
+		) {
+			setSessionCookies(cookies, url, result);
+			cookies.set('fcm_prompt_pending', '1', {
+				httpOnly: false,
+				secure: import.meta.env.PROD,
+				sameSite: 'lax',
+				path: '/',
+				maxAge: 60 * 60 * 24 * 30,
+			});
+
+			try {
+				const organization = await getCurrentOrganizationWithOrds(result.access_token);
+				setOrganizationCacheCookies(cookies, url, organization);
+			} catch {
+				// Si falla la cache de organización, no bloqueamos el acceso.
+			}
+
+			return Response.json({
+				success: true,
+				redirect: '/panel/dashboard',
+			});
+		}
 
 		return Response.json({
 			success: true,

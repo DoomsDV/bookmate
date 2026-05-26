@@ -153,7 +153,13 @@ const currentStep = normalizeStep(step);
 						</div>
 					</div>
 
-					<div class="m3-actions m3-actions--end">
+					<div class="m3-actions m3-actions--between">
+						<a
+							href="/auth/login?redirectTo=%2Fauth%2Fcreate-organization"
+							class="m3-link-accent m3-link-accent--inline"
+						>
+							¿Ya tienes una cuenta? <strong>Crea tu organización</strong>
+						</a>
 						<button type="button" data-next-step class="m3-btn-primary">
 							Siguiente Paso
 						</button>
@@ -234,7 +240,9 @@ const currentStep = normalizeStep(step);
 
 			<div class="m3-card-footer">
 				<div class="m3-footer-divider"></div>
-				<a href="/auth/login" class="m3-link-accent">¿Ya tienes una cuenta? <strong>Iniciar sesión</strong></a>
+				<a href="/auth/login" class="m3-link-accent">
+					¿Solo quieres entrar? <strong>Iniciar sesión</strong>
+				</a>
 			</div>
 		</div>
 	</main>
@@ -1144,6 +1152,14 @@ const currentStep = normalizeStep(step);
     text-decoration: underline;
 }
 
+.m3-link-accent--inline {
+	flex: 1;
+	min-width: 0;
+	padding-right: 1rem;
+	text-align: left;
+	line-height: 1.4;
+}
+
 @media (max-width: 640px) {
 	.m3-grid-2 {
 		gap: 0.75rem;
@@ -1176,6 +1192,10 @@ const currentStep = normalizeStep(step);
 	.m3-actions--between {
 		flex-direction: column-reverse;
 		gap: 0.75rem;
+	}
+	.m3-link-accent--inline {
+		padding-right: 0;
+		text-align: center;
 	}
 }
 

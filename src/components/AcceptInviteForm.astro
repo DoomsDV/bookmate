@@ -176,17 +176,17 @@ const safeToken = String(token || '').trim();
 					try {
 						const acceptResponse = await fetch('/api/auth/accept-invitation', {
 							method: 'POST',
-							credentials: 'include',
+							credentials: 'same-origin',
 							headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 							body: JSON.stringify({ token }),
 						});
 						const acceptData = await acceptResponse.json();
 						if (acceptResponse.ok) {
-							window.location.assign(acceptData?.redirect || '/auth/login?invitationAccepted=1');
+							window.location.assign(acceptData?.redirect || '/panel/dashboard');
 							return;
 						}
 					} catch {
-						// Si no hay sesión válida, mostramos el flujo de login.
+						// Sin sesión válida o correo distinto: pedir login con la cuenta invitada.
 					}
 
 					const redirectTo = `/auth/accept-invite?token=${encodeURIComponent(token)}`;
@@ -225,6 +225,7 @@ const safeToken = String(token || '').trim();
 			try {
 				const response = await fetch(form.action, {
 					method: 'POST',
+					credentials: 'same-origin',
 					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 					body: JSON.stringify(payload),
 				});

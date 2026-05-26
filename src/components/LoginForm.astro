@@ -1,13 +1,21 @@
 ---
 interface Props {
 	error?: string;
+	successMessage?: string;
 	identifier?: string;
 	identifierError?: string;
 	passwordError?: string;
 	redirectTo?: string;
 }
 
-const { error = '', identifier = '', identifierError = '', passwordError = '', redirectTo = '' } = Astro.props;
+const {
+	error = '',
+	successMessage = '',
+	identifier = '',
+	identifierError = '',
+	passwordError = '',
+	redirectTo = '',
+} = Astro.props;
 ---
 
 <section class="m3-container auth-dark">
@@ -60,6 +68,13 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 				<div class="m3-error-banner">
 					<span class="material-symbols-rounded">error</span>
 					{error}
+				</div>
+			)}
+
+			{successMessage && (
+				<div class="m3-success-banner" role="status">
+					<span class="material-symbols-rounded">check_circle</span>
+					{successMessage}
 				</div>
 			)}
 
@@ -443,6 +458,19 @@ const { error = '', identifier = '', identifierError = '', passwordError = '', r
 	background-color: #fff1f2;
 	border: 1px solid #fecdd3;
 	color: #be123c;
+	padding: 1rem 1.25rem;
+	border-radius: 0.75rem;
+	margin-bottom: 2rem;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	font-weight: 600;
+}
+
+.m3-success-banner {
+	background-color: rgba(6, 78, 59, 0.35);
+	border: 1px solid rgba(52, 211, 153, 0.45);
+	color: #a7f3d0;
 	padding: 1rem 1.25rem;
 	border-radius: 0.75rem;
 	margin-bottom: 2rem;

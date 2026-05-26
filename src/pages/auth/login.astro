@@ -8,11 +8,16 @@ const identifier = Astro.url.searchParams.get('identifier') ?? '';
 const identifierError = Astro.url.searchParams.get('identifier_error') ?? '';
 const passwordError = Astro.url.searchParams.get('password_error') ?? '';
 const redirectTo = Astro.url.searchParams.get('redirectTo') ?? '';
+const invitationAccepted = Astro.url.searchParams.get('invitationAccepted') === '1';
+const successMessage = invitationAccepted
+	? 'Cuenta creada. Inicia sesión con el correo y la contraseña que acabas de definir.'
+	: '';
 ---
 
 <Layout>
 	<LoginForm
 		error={error}
+		successMessage={successMessage}
 		identifier={identifier}
 		identifierError={identifierError}
 		passwordError={passwordError}

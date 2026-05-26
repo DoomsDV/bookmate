@@ -14,7 +14,7 @@ const organizations = selectionContext.organizations;
 ---
 
 <Layout>
-	<section class="m3-container auth-dark">
+	<section class="m3-container auth-dark" data-select-org-root>
 		<aside class="m3-sidebar">
 			<div class="m3-sidebar-inner">
 				<div class="m3-brand">
@@ -33,26 +33,28 @@ const organizations = selectionContext.organizations;
 
 		<main class="m3-content">
 			<div class="m3-form-wrapper">
-				<div class="m3-form-header" style="flex-direction: column; text-align: center; gap: 1rem;">
-					<div class="m3-panel-icon" style="margin: 0 auto;">
+				<div class="m3-form-header">
+					<div class="m3-panel-icon">
 						<span class="material-symbols-rounded">domain</span>
 					</div>
 					<div class="m3-panel-titles">
-						<h3 class="m3-panel-title">Seleccionar organización</h3>
-						<p class="m3-panel-subtitle">Podrás cambiar de organización cuando habilitemos el conmutador en el panel.</p>
+						<h1 class="m3-panel-title">Seleccionar organización</h1>
+						<p class="m3-panel-subtitle">
+							Elegí con cuál organización trabajar en esta sesión. Luego podés cambiar desde el panel.
+						</p>
 					</div>
 				</div>
 
 				{error && (
-					<div class="m3-error-banner">
+					<div class="m3-error-banner" role="alert">
 						<span class="material-symbols-rounded">error</span>
-						{error}
+						<span>{error}</span>
 					</div>
 				)}
 
 				<form method="post" action="/api/auth/select-org" class="org-select-form">
 					<div class="org-select-list">
-						{organizations.map((org) => (
+						{organizations.map((org, index) => (
 							<label class="org-select-card">
 								<input
 									type="radio"
@@ -60,19 +62,22 @@ const organizations = selectionContext.organizations;
 									value={String(org.org_member_id)}
 									required
 									class="org-select-radio"
+									checked={index === 0}
 								/>
 								<span class="org-select-card-body">
 									<span class="org-select-card-title">{org.organization_name}</span>
 									<span class="org-select-card-meta">{org.role_name}</span>
 								</span>
-								<span class="material-symbols-rounded org-select-card-icon">chevron_right</span>
+								<span class="material-symbols-rounded org-select-card-icon" aria-hidden="true">
+									chevron_right
+								</span>
 							</label>
 						))}
 					</div>
 
 					<div class="org-select-actions">
-						<a href="/auth/login" class="m3-btn m3-btn-secondary">Volver al login</a>
-						<button type="submit" class="m3-btn m3-btn-primary">Continuar</button>
+						<a href="/auth/login" class="m3-btn-tonal">Volver al login</a>
+						<button type="submit" class="m3-btn-primary">Continuar</button>
 					</div>
 				</form>
 			</div>
@@ -80,7 +85,172 @@ const organizations = selectionContext.organizations;
 	</section>
 </Layout>
 
+<script is:inline>
+	function setupSelectOrgForm() {
+		const root = document.querySelector('[data-select-org-root]');
+		if (!root || root.dataset.enhanced) return;
+		root.dataset.enhanced = 'true';
+
+		const cards = root.querySelectorAll('.org-select-card');
+		const syncSelected = () => {
+			cards.forEach((card) => {
+				const input = card.querySelector('input[type="radio"]');
+				card.classList.toggle(
+					'is-selected',
+					input instanceof HTMLInputElement && input.checked
+				);
+			});
+		};
+
+		cards.forEach((card) => {
+			card.addEventListener('click', () => {
+				const input = card.querySelector('input[type="radio"]');
+				if (input instanceof HTMLInputElement) {
+					input.checked = true;
+					syncSelected();
+				}
+			});
+		});
+
+		root.querySelectorAll('.org-select-radio').forEach((input) => {
+			input.addEventListener('change', syncSelected);
+		});
+
+		syncSelected();
+	}
+
+	if (typeof window !== 'undefined') {
+		setupSelectOrgForm();
+		document.addEventListener('astro:page-load', setupSelectOrgForm);
+	}
+</script>
+
 <style>
+	.m3-container {
+		display: flex;
+		flex-direction: column;
+		min-height: 100svh;
+		background-color: #050505;
+		font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
+	}
+
+	.m3-sidebar {
+		position: relative;
+		display: none;
+		overflow: hidden;
+		background-color: #050505;
+		color: #f8fafc;
+		padding: 3.5rem 4rem;
+	}
+
+	.m3-sidebar::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 60%);
+		pointer-events: none;
+	}
+
+	.m3-sidebar-inner {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		height: 100%;
+		flex-direction: column;
+	}
+
+	.m3-brand {
+		margin-bottom: 3.25rem;
+	}
+
+	.m3-brand-link {
+		display: inline-flex;
+		align-items: center;
+		line-height: 0;
+	}
+
+	.m3-logo {
+		height: 3.5rem;
+		width: auto;
+		object-fit: contain;
+	}
+
+	.m3-step-maintitle {
+		margin: 0 0 1rem;
+		color: #fff;
+		font-size: clamp(2rem, 5vw, 2.5rem);
+		font-weight: 700;
+		line-height: 1.1;
+	}
+
+	.m3-step-maindesc {
+		margin: 0;
+		color: #94a3b8;
+		font-size: 1.05rem;
+		line-height: 1.6;
+	}
+
+	.m3-content {
+		display: flex;
+		flex: 1;
+		align-items: center;
+		justify-content: center;
+		padding: 2rem 1.5rem;
+	}
+
+	.m3-form-wrapper {
+		width: 100%;
+		max-width: 32rem;
+	}
+
+	.m3-form-header {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		margin-bottom: 2rem;
+		text-align: center;
+	}
+
+	.m3-panel-icon {
+		display: flex;
+		width: 3.5rem;
+		height: 3.5rem;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		background: rgba(37, 99, 235, 0.14);
+		color: #60a5fa;
+		border: 1px solid rgba(96, 165, 250, 0.18);
+	}
+
+	.m3-panel-title {
+		margin: 0;
+		color: #f8fafc;
+		font-size: 1.75rem;
+		font-weight: 700;
+	}
+
+	.m3-panel-subtitle {
+		margin: 0;
+		color: #94a3b8;
+		font-size: 1rem;
+		line-height: 1.45;
+	}
+
+	.m3-error-banner {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 1.5rem;
+		border-radius: 0.75rem;
+		padding: 1rem 1.25rem;
+		font-weight: 600;
+		border: 1px solid rgba(251, 113, 133, 0.38);
+		background: rgba(127, 29, 29, 0.26);
+		color: #fecdd3;
+	}
+
 	.org-select-list {
 		display: grid;
 		gap: 0.75rem;
@@ -90,18 +260,20 @@ const organizations = selectionContext.organizations;
 	.org-select-card {
 		display: flex;
 		align-items: center;
-		gap: 0.75rem;
+		gap: 0.85rem;
 		padding: 1rem 1.1rem;
-		border: 1px solid rgba(148, 163, 184, 0.35);
-		border-radius: 14px;
-		background: rgba(15, 23, 42, 0.55);
+		border: 1px solid #262626;
+		border-radius: 1rem;
+		background: #121212;
 		cursor: pointer;
-		transition: border-color 0.15s ease, background 0.15s ease;
+		transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 	}
 
-	.org-select-card:hover {
+	.org-select-card:hover,
+	.org-select-card.is-selected {
 		border-color: rgba(96, 165, 250, 0.65);
-		background: rgba(30, 41, 59, 0.75);
+		background: rgba(37, 99, 235, 0.12);
+		box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
 	}
 
 	.org-select-radio {
@@ -109,6 +281,7 @@ const organizations = selectionContext.organizations;
 		width: 1.1rem;
 		height: 1.1rem;
 		flex-shrink: 0;
+		cursor: pointer;
 	}
 
 	.org-select-card-body {
@@ -117,11 +290,13 @@ const organizations = selectionContext.organizations;
 		gap: 0.2rem;
 		flex: 1;
 		min-width: 0;
+		text-align: left;
 	}
 
 	.org-select-card-title {
-		font-weight: 600;
+		font-weight: 700;
 		color: #f8fafc;
+		font-size: 1rem;
 	}
 
 	.org-select-card-meta {
@@ -132,12 +307,90 @@ const organizations = selectionContext.organizations;
 
 	.org-select-card-icon {
 		color: #64748b;
+		flex-shrink: 0;
+	}
+
+	.org-select-card.is-selected .org-select-card-icon {
+		color: #60a5fa;
 	}
 
 	.org-select-actions {
 		display: flex;
 		justify-content: space-between;
+		align-items: center;
 		gap: 0.75rem;
 		flex-wrap: wrap;
+		padding-top: 0.5rem;
+	}
+
+	.m3-btn-primary {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 9999px;
+		background: #2563eb;
+		color: #fff;
+		padding: 0.875rem 1.75rem;
+		font: inherit;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.15s ease;
+	}
+
+	.m3-btn-primary:hover {
+		background: #1d4ed8;
+	}
+
+	.m3-btn-tonal {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 9999px;
+		background: #1e293b;
+		color: #e2e8f0;
+		padding: 0.875rem 1.5rem;
+		font: inherit;
+		font-weight: 600;
+		text-decoration: none;
+		cursor: pointer;
+		transition: background 0.15s ease;
+	}
+
+	.m3-btn-tonal:hover {
+		background: #334155;
+	}
+
+	@media (min-width: 1024px) {
+		.m3-container {
+			flex-direction: row;
+			height: 100svh;
+			overflow: hidden;
+		}
+
+		.m3-sidebar {
+			display: flex;
+			width: 40%;
+			max-width: 28rem;
+		}
+
+		.m3-content {
+			border-top-left-radius: 2rem;
+			border-bottom-left-radius: 2rem;
+			background: radial-gradient(circle at 50% 18%, rgba(37, 99, 235, 0.08), transparent 34%), #0a0a0a;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.org-select-actions {
+			flex-direction: column-reverse;
+		}
+
+		.m3-btn-primary,
+		.m3-btn-tonal {
+			width: 100%;
+			justify-content: center;
+		}
 	}
 </style>

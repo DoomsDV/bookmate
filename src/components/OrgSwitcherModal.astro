@@ -1,0 +1,529 @@
+---
+interface Props {
+	currentOrgMemberId?: number;
+}
+
+const { currentOrgMemberId = 0 } = Astro.props;
+---
+
+<dialog
+	class="org-switcher-dialog"
+	data-org-switcher-dialog
+	aria-labelledby="org-switcher-title"
+>
+	<div class="org-switcher-panel">
+		<button
+			type="button"
+			class="org-switcher-close"
+			data-org-switcher-close
+			aria-label="Cerrar"
+		>
+			<span class="material-symbols-rounded">close</span>
+		</button>
+
+		<header class="org-switcher-header">
+			<div class="m3-panel-icon">
+				<span class="material-symbols-rounded">domain</span>
+			</div>
+			<div class="m3-panel-titles">
+				<h2 id="org-switcher-title" class="m3-panel-title">Cambiar organización</h2>
+				<p class="m3-panel-subtitle">
+					Elegí el espacio de trabajo para esta sesión.
+				</p>
+			</div>
+		</header>
+
+		<div class="org-switcher-body">
+			<div class="org-switcher-loading is-hidden" data-org-switcher-loading>
+				<span class="material-symbols-rounded org-switcher-loading-icon">hourglass_top</span>
+				<span>Cargando organizaciones…</span>
+			</div>
+
+			<div class="m3-error-banner is-hidden" data-org-switcher-error role="alert"></div>
+
+			<p class="org-switcher-empty is-hidden" data-org-switcher-empty>
+				Solo tenés acceso a una organización en esta cuenta.
+			</p>
+
+			<ul class="org-select-list is-hidden" data-org-switcher-list></ul>
+		</div>
+
+		<footer class="org-switcher-footer">
+			<a href="/auth/create-organization" class="m3-btn-tonal org-switcher-create-link">
+				<span class="material-symbols-rounded">add</span>
+				Crear nueva organización
+			</a>
+		</footer>
+	</div>
+</dialog>
+
+<script is:inline define:vars={{ currentOrgMemberId }}>
+	function setupOrgSwitcherModal() {
+		const dialog = document.querySelector('[data-org-switcher-dialog]');
+		if (!dialog || dialog.dataset.enhanced) return;
+		dialog.dataset.enhanced = 'true';
+
+		const loadingEl = dialog.querySelector('[data-org-switcher-loading]');
+		const errorEl = dialog.querySelector('[data-org-switcher-error]');
+		const emptyEl = dialog.querySelector('[data-org-switcher-empty]');
+		const listEl = dialog.querySelector('[data-org-switcher-list]');
+		const closeButtons = dialog.querySelectorAll('[data-org-switcher-close]');
+		const triggers = document.querySelectorAll('[data-org-switcher-trigger]');
+
+		const currentMemberId = Number(currentOrgMemberId || 0);
+		let organizationsCache = null;
+
+		const setVisible = (element, visible) => {
+			element?.classList.toggle('is-hidden', !visible);
+		};
+
+		const clearError = () => {
+			if (errorEl) errorEl.textContent = '';
+			setVisible(errorEl, false);
+		};
+
+		const showError = (message) => {
+			if (errorEl) {
+				errorEl.innerHTML = `<span class="material-symbols-rounded">error</span><span></span>`;
+				errorEl.querySelector('span:last-child').textContent = message;
+			}
+			setVisible(errorEl, true);
+			setVisible(loadingEl, false);
+			setVisible(emptyEl, false);
+			setVisible(listEl, false);
+		};
+
+		const escapeHtml = (value) =>
+			String(value ?? '')
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;');
+
+		const renderList = (organizations) => {
+			if (!listEl) return;
+			listEl.innerHTML = '';
+
+			organizations.forEach((org) => {
+				const isCurrent =
+					Number(org.org_member_id) === currentMemberId || Boolean(org.is_current);
+				const item = document.createElement('li');
+				item.innerHTML = `
+					<button
+						type="button"
+						class="org-select-card${isCurrent ? ' is-selected' : ''}"
+						data-org-member-id="${org.org_member_id}"
+						${isCurrent ? 'disabled aria-current="true"' : ''}
+					>
+						<span class="org-select-radio-faux${isCurrent ? ' is-checked' : ''}" aria-hidden="true"></span>
+						<span class="org-select-card-body">
+							<span class="org-select-card-title">${escapeHtml(org.organization_name)}</span>
+							<span class="org-select-card-meta">${escapeHtml(org.role_name)}</span>
+						</span>
+						<span class="material-symbols-rounded org-select-card-icon" aria-hidden="true">
+							chevron_right
+						</span>
+					</button>
+				`;
+				listEl.appendChild(item);
+			});
+
+			listEl.querySelectorAll('[data-org-member-id]').forEach((button) => {
+				button.addEventListener('click', async () => {
+					const orgMemberId = Number(button.getAttribute('data-org-member-id') || 0);
+					if (!orgMemberId || button.disabled) return;
+
+					listEl.querySelectorAll('.org-select-card').forEach((card) => {
+						card.classList.remove('is-selected');
+						card.querySelector('.org-select-radio-faux')?.classList.remove('is-checked');
+					});
+					button.classList.add('is-selected');
+					button.querySelector('.org-select-radio-faux')?.classList.add('is-checked');
+
+					button.disabled = true;
+					clearError();
+					setVisible(loadingEl, true);
+
+					try {
+						const response = await fetch('/api/session/switch-organization', {
+							method: 'POST',
+							credentials: 'same-origin',
+							headers: {
+								'Content-Type': 'application/json',
+								Accept: 'application/json',
+							},
+							body: JSON.stringify({ org_member_id: orgMemberId }),
+						});
+						const data = await response.json();
+
+						if (!response.ok) {
+							showError(data?.message || 'No fue posible cambiar de organización.');
+							button.disabled = false;
+							button.classList.remove('is-selected');
+							button.querySelector('.org-select-radio-faux')?.classList.remove('is-checked');
+							return;
+						}
+
+						window.location.assign(data?.redirect || '/panel/dashboard');
+					} catch {
+						showError('No pudimos comunicarnos con el servidor.');
+						button.disabled = false;
+						button.classList.remove('is-selected');
+						button.querySelector('.org-select-radio-faux')?.classList.remove('is-checked');
+					} finally {
+						setVisible(loadingEl, false);
+					}
+				});
+			});
+		};
+
+		const loadOrganizations = async () => {
+			if (organizationsCache) {
+				return organizationsCache;
+			}
+
+			const response = await fetch('/api/session/organizations', {
+				credentials: 'same-origin',
+				headers: { Accept: 'application/json' },
+			});
+			const data = await response.json();
+
+			if (!response.ok) {
+				throw new Error(data?.message || 'No fue posible cargar tus organizaciones.');
+			}
+
+			organizationsCache = Array.isArray(data.organizations) ? data.organizations : [];
+			return organizationsCache;
+		};
+
+		const openDialog = async () => {
+			clearError();
+			setVisible(loadingEl, true);
+			setVisible(emptyEl, false);
+			setVisible(listEl, false);
+			dialog.showModal();
+
+			try {
+				const organizations = await loadOrganizations();
+
+				if (organizations.length <= 1) {
+					setVisible(loadingEl, false);
+					setVisible(emptyEl, true);
+					return;
+				}
+
+				renderList(organizations);
+				setVisible(loadingEl, false);
+				setVisible(listEl, true);
+			} catch (error) {
+				showError(error?.message || 'No fue posible cargar tus organizaciones.');
+			}
+		};
+
+		triggers.forEach((trigger) => {
+			trigger.addEventListener('click', (event) => {
+				event.preventDefault();
+				void openDialog();
+			});
+		});
+
+		closeButtons.forEach((button) => {
+			button.addEventListener('click', () => dialog.close());
+		});
+
+		dialog.addEventListener('click', (event) => {
+			if (event.target === dialog) dialog.close();
+		});
+
+		dialog.addEventListener('close', () => {
+			setVisible(loadingEl, false);
+			clearError();
+		});
+	}
+
+	if (typeof window !== 'undefined') {
+		setupOrgSwitcherModal();
+		document.addEventListener('astro:page-load', setupOrgSwitcherModal);
+	}
+</script>
+
+<style is:global>
+	/* is:global — las tarjetas se renderizan con JS y no reciben el scope de Astro */
+	.org-switcher-dialog {
+		position: fixed;
+		inset: 0;
+		z-index: 80;
+		margin: auto;
+		width: min(100vw - 2rem, 32rem);
+		max-height: calc(100vh - 2rem);
+		padding: 0;
+		border: 0;
+		background: transparent;
+		overflow: visible;
+		font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
+	}
+
+	.org-switcher-dialog::backdrop {
+		background: rgba(2, 6, 23, 0.72);
+		backdrop-filter: blur(4px);
+	}
+
+	.org-switcher-panel {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		max-height: calc(100vh - 2rem);
+		border: 1px solid #262626;
+		border-radius: 1.5rem;
+		background:
+			radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.12), transparent 42%),
+			#0a0a0a;
+		box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+		overflow: hidden;
+	}
+
+	.org-switcher-close {
+		position: absolute;
+		top: 1rem;
+		right: 1rem;
+		z-index: 2;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border: 1px solid #334155;
+		border-radius: 0.75rem;
+		background: #1e293b;
+		color: #94a3b8;
+		cursor: pointer;
+		transition: background 0.15s ease, color 0.15s ease;
+	}
+
+	.org-switcher-close:hover {
+		background: #334155;
+		color: #e2e8f0;
+	}
+
+	.org-switcher-header {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		padding: 2rem 2.75rem 1.25rem 1.5rem;
+		text-align: center;
+	}
+
+	.org-switcher-dialog .m3-panel-icon {
+		display: flex;
+		width: 3.5rem;
+		height: 3.5rem;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		background: rgba(37, 99, 235, 0.14);
+		color: #60a5fa;
+		border: 1px solid rgba(96, 165, 250, 0.18);
+	}
+
+	.org-switcher-dialog .m3-panel-title {
+		margin: 0;
+		color: #f8fafc;
+		font-size: 1.75rem;
+		font-weight: 700;
+		line-height: 1.2;
+	}
+
+	.org-switcher-dialog .m3-panel-subtitle {
+		margin: 0.35rem 0 0;
+		color: #94a3b8;
+		font-size: 1rem;
+		line-height: 1.45;
+	}
+
+	.org-switcher-body {
+		flex: 1;
+		min-height: 0;
+		overflow-y: auto;
+		padding: 0 1.5rem;
+	}
+
+	.org-switcher-loading {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.65rem;
+		margin-bottom: 1rem;
+		padding: 1rem;
+		border-radius: 0.85rem;
+		font-size: 0.95rem;
+		font-weight: 600;
+		color: #94a3b8;
+		background: #121212;
+		border: 1px solid #262626;
+	}
+
+	.org-switcher-loading-icon {
+		animation: org-switcher-spin 1s linear infinite;
+	}
+
+	@keyframes org-switcher-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.org-switcher-dialog .m3-error-banner {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 1rem;
+		border-radius: 0.75rem;
+		padding: 1rem 1.25rem;
+		font-weight: 600;
+		border: 1px solid rgba(251, 113, 133, 0.38);
+		background: rgba(127, 29, 29, 0.26);
+		color: #fecdd3;
+	}
+
+	.org-switcher-empty {
+		margin: 0 0 1rem;
+		padding: 1rem 1.1rem;
+		border-radius: 1rem;
+		font-size: 0.95rem;
+		font-weight: 600;
+		line-height: 1.45;
+		color: #94a3b8;
+		background: #121212;
+		border: 1px solid #262626;
+		text-align: center;
+	}
+
+	.org-switcher-dialog .org-select-list {
+		display: grid;
+		gap: 0.75rem;
+		margin: 0 0 1.25rem;
+		padding: 0;
+		list-style: none;
+	}
+
+	.org-switcher-dialog .org-select-card {
+		display: flex;
+		width: 100%;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 1rem 1.1rem;
+		border: 1px solid #262626;
+		border-radius: 1rem;
+		background: #121212;
+		color: #f8fafc;
+		font: inherit;
+		text-align: left;
+		cursor: pointer;
+		transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+	}
+
+	.org-switcher-dialog .org-select-card:hover:not(:disabled),
+	.org-switcher-dialog .org-select-card.is-selected {
+		border-color: rgba(96, 165, 250, 0.65);
+		background: rgba(37, 99, 235, 0.12);
+		box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+	}
+
+	.org-switcher-dialog .org-select-card:disabled {
+		cursor: default;
+		opacity: 1;
+	}
+
+	.org-switcher-dialog .org-select-radio-faux {
+		position: relative;
+		width: 1.1rem;
+		height: 1.1rem;
+		flex-shrink: 0;
+		border: 2px solid #64748b;
+		border-radius: 50%;
+		background: transparent;
+	}
+
+	.org-switcher-dialog .org-select-radio-faux.is-checked {
+		border-color: #3b82f6;
+		background: #3b82f6;
+	}
+
+	.org-switcher-dialog .org-select-radio-faux.is-checked::after {
+		content: '';
+		position: absolute;
+		inset: 50% auto auto 50%;
+		width: 0.35rem;
+		height: 0.35rem;
+		border-radius: 50%;
+		background: #fff;
+		transform: translate(-50%, -50%);
+	}
+
+	.org-switcher-dialog .org-select-card-body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.org-switcher-dialog .org-select-card-title {
+		display: block;
+		font-weight: 700;
+		color: #f8fafc;
+		font-size: 1rem;
+	}
+
+	.org-switcher-dialog .org-select-card-meta {
+		display: block;
+		font-size: 0.85rem;
+		color: #94a3b8;
+		text-transform: capitalize;
+	}
+
+	.org-switcher-dialog .org-select-card-icon {
+		color: #64748b;
+		flex-shrink: 0;
+	}
+
+	.org-switcher-dialog .org-select-card.is-selected .org-select-card-icon,
+	.org-switcher-dialog .org-select-card:hover:not(:disabled) .org-select-card-icon {
+		color: #60a5fa;
+	}
+
+	.org-switcher-footer {
+		padding: 0 1.5rem 1.5rem;
+	}
+
+	.org-switcher-create-link {
+		width: 100%;
+		gap: 0.4rem;
+		text-decoration: none;
+	}
+
+	.org-switcher-dialog .m3-btn-tonal {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 9999px;
+		background: #1e293b;
+		color: #e2e8f0;
+		padding: 0.875rem 1.5rem;
+		font: inherit;
+		font-weight: 600;
+		cursor: pointer;
+		transition: background 0.15s ease;
+	}
+
+	.org-switcher-dialog .m3-btn-tonal:hover {
+		background: #334155;
+		color: #f8fafc;
+	}
+
+	.org-switcher-dialog .is-hidden {
+		display: none !important;
+	}
+</style>

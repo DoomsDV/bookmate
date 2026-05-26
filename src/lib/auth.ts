@@ -31,6 +31,21 @@ export const REGISTER_URL = resolveOrdsApiUrl(
 	'ORDS_AUTH_REGISTER_URL',
 	'/auth/register'
 );
+export const CREATE_ORGANIZATION_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_CREATE_ORGANIZATION_URL,
+	'ORDS_AUTH_CREATE_ORGANIZATION_URL',
+	'/auth/create-organization'
+);
+export const MY_ORGANIZATIONS_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_MY_ORGANIZATIONS_URL,
+	'ORDS_AUTH_MY_ORGANIZATIONS_URL',
+	'/auth/my-organizations'
+);
+export const SWITCH_ORGANIZATION_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_SWITCH_ORGANIZATION_URL,
+	'ORDS_AUTH_SWITCH_ORGANIZATION_URL',
+	'/auth/switch-organization'
+);
 export const FORGOT_PASSWORD_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_FORGOT_PASSWORD_URL,
 	'ORDS_FORGOT_PASSWORD_URL',
@@ -92,6 +107,13 @@ export interface OrganizationLoginOption {
 	organization_name: string;
 	role_id: number;
 	role_name: string;
+	is_current?: boolean;
+}
+
+export interface MyOrganizationsResponse {
+	organizations: OrganizationLoginOption[];
+	current_org_member_id: number;
+	membership_count: number;
 }
 
 export interface LoginSelectionResponse {
@@ -119,6 +141,13 @@ export interface RegisterPayload {
 	password: string;
 	first_name: string;
 	last_name: string;
+	company_email: string;
+	id_org_specialty: number;
+}
+
+export interface CreateOrganizationPayload {
+	business_name: string;
+	phone: string;
 	company_email: string;
 	id_org_specialty: number;
 }
@@ -337,6 +366,10 @@ const normalizeOrganizationOption = (value: unknown): OrganizationLoginOption | 
 		organization_name: organizationName,
 		role_id: roleId,
 		role_name: roleName,
+		is_current:
+			source.is_current === 1 ||
+			source.is_current === true ||
+			source.is_current === '1',
 	};
 };
 
@@ -693,6 +726,117 @@ export const registerWithOrds = async (payload: RegisterPayload) => {
 	return parseRegisterResponse(response, responseText);
 };
 
+export const createOrganizationWithOrds = async (
+	token: string,
+	payload: CreateOrganizationPayload
+) => {
+	if (!token) {
+		throw new AuthApiError('Token de acceso requerido.', 401);
+	}
+
+	const response = await fetch(CREATE_ORGANIZATION_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	return parseAuthResponse(response);
+};
+
+const parseMyOrganizationsResponse = async (response: Response): Promise<MyOrganizationsResponse> => {
+	let data: Record<string, unknown> | null = null;
+	try {
+		data = await response.json();
+	} catch {
+		throw new AuthApiError('No fue posible interpretar la respuesta del servidor.', 502);
+	}
+
+	if (!response.ok || !data || data.status !== 'success') {
+		const failureData = (data ?? {}) as AuthFailureResponse;
+		throw new AuthApiError(
+			getFailureMessage(failureData, 'No fue posible obtener tus organizaciones.'),
+			response.status || 400,
+			getFailureDetails(failureData)
+		);
+	}
+
+	const organizations = Array.isArray(data.organizations)
+		? data.organizations
+				.map(normalizeOrganizationOption)
+				.filter((item): item is OrganizationLoginOption => item !== null)
+		: [];
+
+	return {
+		organizations,
+		current_org_member_id: Number(data.current_org_member_id ?? 0),
+		membership_count: Number(data.membership_count ?? organizations.length),
+	};
+};
+
+export const listMyOrganizationsWithOrds = async (token: string) => {
+	if (!token) {
+		throw new AuthApiError('Token de acceso requerido.', 401);
+	}
+
+	const response = await fetch(MY_ORGANIZATIONS_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({}),
+	});
+
+	return parseMyOrganizationsResponse(response);
+};
+
+export const switchOrganizationWithOrds = async (token: string, orgMemberId: number) => {
+	if (!token) {
+		throw new AuthApiError('Token de acceso requerido.', 401);
+	}
+
+	const response = await fetch(SWITCH_ORGANIZATION_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({ org_member_id: orgMemberId }),
+	});
+
+	let data: AuthSuccessResponse | AuthFailureResponse | null = null;
+	try {
+		data = await response.json();
+	} catch {
+		throw new AuthApiError('No fue posible interpretar la respuesta del servidor.', 502);
+	}
+
+	if (!response.ok) {
+		const failureData = (data ?? {}) as AuthFailureResponse;
+		throw new AuthApiError(
+			getFailureMessage(failureData, 'No fue posible cambiar de organización.'),
+			response.status || 400,
+			getFailureDetails(failureData)
+		);
+	}
+
+	if (isSuccessResponse(data)) {
+		return data;
+	}
+
+	if (data && data.status === 'success') {
+		return data as AuthSuccessResponse;
+	}
+
+	throw new AuthApiError('No fue posible cambiar de organización.', 502);
+};
+
 export const forgotPasswordWithOrds = async (payload: ForgotPasswordPayload) => {
 	const response = await fetch(FORGOT_PASSWORD_URL, {
 		method: 'POST',
@@ -819,7 +963,15 @@ export const acceptInvitationWithOrds = async (
 		});
 	}
 
-	return data;
+	if (isSuccessResponse(data)) {
+		return data;
+	}
+
+	if (data && data.status === 'success') {
+		return data as AuthSuccessResponse;
+	}
+
+	throw new AuthApiError('No fue posible completar la aceptación de la invitación.', 502);
 };
 
 export const resendVerificationCodeWithOrds = async (payload: ResendVerificationCodePayload) => {

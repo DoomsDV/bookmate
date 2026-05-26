@@ -1,0 +1,674 @@
+---
+import type { OrgSpecialtyOption } from '../lib/auth';
+
+interface Props {
+	error?: string;
+	businessName?: string;
+	phone?: string;
+	companyEmail?: string;
+	orgSpecialtyId?: string;
+	orgSpecialties?: OrgSpecialtyOption[];
+	specialtiesLoadError?: string;
+	businessNameError?: string;
+	phoneError?: string;
+	companyEmailError?: string;
+	orgSpecialtyIdError?: string;
+}
+
+const {
+	error = '',
+	businessName = '',
+	phone = '',
+	companyEmail = '',
+	orgSpecialtyId = '',
+	orgSpecialties = [],
+	specialtiesLoadError = '',
+	businessNameError = '',
+	phoneError = '',
+	companyEmailError = '',
+	orgSpecialtyIdError = '',
+} = Astro.props;
+---
+
+<section class="m3-container auth-dark" data-create-org-root>
+	<aside class="m3-sidebar">
+		<div class="m3-sidebar-inner">
+			<div class="m3-brand">
+				<a href="/" class="m3-brand-link" aria-label="Ir al inicio">
+					<img src="/icon-512x512.png" alt="Hasel Logo" class="m3-logo" />
+				</a>
+			</div>
+			<div class="m3-stepper-header">
+				<h2 class="m3-step-maintitle">Tu nuevo espacio</h2>
+				<p class="m3-step-maindesc">
+					Configura una organización adicional con tu cuenta existente. Serás administrador y entrarás al panel al finalizar.
+				</p>
+			</div>
+			<div class="m3-features-list">
+				<div class="m3-feature-item">
+					<span class="material-symbols-rounded">domain_add</span>
+					<span>Organización independiente</span>
+				</div>
+				<div class="m3-feature-item">
+					<span class="material-symbols-rounded">admin_panel_settings</span>
+					<span>Rol de administrador</span>
+				</div>
+				<div class="m3-feature-item">
+					<span class="material-symbols-rounded">rocket_launch</span>
+					<span>Acceso inmediato al panel</span>
+				</div>
+			</div>
+		</div>
+	</aside>
+
+	<main class="m3-content">
+		<div class="m3-form-wrapper">
+			<div class="m3-form-header">
+				<div class="m3-panel-icon">
+					<span class="material-symbols-rounded">domain</span>
+				</div>
+				<div class="m3-panel-titles">
+					<h1 class="m3-panel-title">Crear tu organización</h1>
+					<p class="m3-panel-subtitle">
+						Completa los datos de tu nuevo espacio de trabajo.
+					</p>
+				</div>
+			</div>
+
+			<div class:list={['m3-error-banner', !error && 'is-hidden']} data-error-banner role="alert">
+				<span class="material-symbols-rounded">error</span>
+				<span data-error-text>{error}</span>
+			</div>
+
+			<form method="post" action="/api/organization/create" data-create-org-form novalidate>
+				<div class="m3-panel">
+					<div class="m3-grid-2">
+						<div class="m3-field">
+							<label class="m3-label" for="business_name">
+								Nombre de la organización <span class="m3-label-required">*</span>
+							</label>
+							<input
+								type="text"
+								id="business_name"
+								name="business_name"
+								class:list={['m3-input', businessNameError && 'is-invalid']}
+								placeholder="Ej: Clínica Dental San José"
+								value={businessName}
+								autocomplete="organization"
+								required
+							/>
+							<p class="m3-field-help">Así te verán tus clientes y tu equipo.</p>
+							{businessNameError && <span class="m3-field-error">{businessNameError}</span>}
+						</div>
+
+						<div class="m3-field">
+							<label class="m3-label" for="company_email">
+								Correo de la compañía <span class="m3-label-required">*</span>
+							</label>
+							<input
+								type="email"
+								id="company_email"
+								name="company_email"
+								class:list={['m3-input', companyEmailError && 'is-invalid']}
+								placeholder="Ej: contacto@tuempresa.com"
+								value={companyEmail}
+								autocomplete="email"
+								spellcheck="false"
+								required
+							/>
+							<p class="m3-field-help">Contacto principal para notificaciones institucionales.</p>
+							{companyEmailError && <span class="m3-field-error">{companyEmailError}</span>}
+						</div>
+					</div>
+
+					<div class="m3-grid-2">
+						<div class="m3-field">
+							<label class="m3-label" for="phone">
+								Teléfono corporativo <span class="m3-label-required">*</span>
+							</label>
+							<div class:list={['m3-phone-group', phoneError && 'is-invalid']}>
+								<span class="m3-phone-prefix">+595</span>
+								<input
+									type="tel"
+									id="phone"
+									name="phone"
+									inputmode="numeric"
+									autocomplete="tel-national"
+									maxlength="11"
+									class:list={['m3-input', 'm3-phone-input', phoneError && 'is-invalid']}
+									placeholder="981 123 456"
+									value={phone}
+									spellcheck="false"
+									required
+								/>
+							</div>
+							{phoneError && <span class="m3-field-error">{phoneError}</span>}
+						</div>
+
+						<div class="m3-field">
+							<label class="m3-label" for="id_org_specialty">
+								Especialidad de la organización <span class="m3-label-required">*</span>
+							</label>
+							<select
+								id="id_org_specialty"
+								name="id_org_specialty"
+								class:list={['m3-input', 'm3-select', orgSpecialtyIdError && 'is-invalid']}
+								required
+								disabled={orgSpecialties.length === 0}
+							>
+								<option value="">Selecciona una especialidad</option>
+								{orgSpecialties.map((specialty) => (
+									<option
+										value={String(specialty.id_org_specialty)}
+										selected={String(specialty.id_org_specialty) === orgSpecialtyId}
+									>
+										{specialty.name}
+									</option>
+								))}
+							</select>
+							{specialtiesLoadError && <span class="m3-field-error">{specialtiesLoadError}</span>}
+							{orgSpecialtyIdError && <span class="m3-field-error">{orgSpecialtyIdError}</span>}
+						</div>
+					</div>
+
+					<div class="m3-actions m3-actions--between">
+						<a href="/panel/dashboard" class="m3-btn-tonal">Volver al panel</a>
+						<button type="submit" class="m3-btn-primary" disabled={orgSpecialties.length === 0}>
+							Crear organización
+						</button>
+					</div>
+				</div>
+			</form>
+		</div>
+	</main>
+</section>
+
+<script is:inline>
+	function setupCreateOrganizationForm() {
+		const root = document.querySelector('[data-create-org-root]');
+		const form = root?.querySelector('[data-create-org-form]');
+		if (!form || form.dataset.enhanced) return;
+		form.dataset.enhanced = 'true';
+
+		const errorBanner = root.querySelector('[data-error-banner]');
+		const errorText = root.querySelector('[data-error-text]');
+		const phoneInput = form.querySelector('[name="phone"]');
+		const submitButton = form.querySelector('button[type="submit"]');
+
+		const toParaguayLocalPhoneDigits = (rawValue) => {
+			let digits = String(rawValue || '').replace(/\D/g, '');
+			if (digits.startsWith('00595')) digits = digits.slice(5);
+			if (digits.startsWith('595')) digits = digits.slice(3);
+			if (digits.startsWith('0')) digits = digits.slice(1);
+			return digits.slice(0, 9);
+		};
+
+		const formatParaguayLocalPhone = (rawValue) => {
+			const digits = toParaguayLocalPhoneDigits(rawValue);
+			if (!digits) return '';
+			if (digits.length <= 3) return digits;
+			if (digits.length <= 6) return `${digits.slice(0, 3)} ${digits.slice(3)}`;
+			return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 9)}`;
+		};
+
+		const toParaguayE164Phone = (rawValue) => {
+			const digits = toParaguayLocalPhoneDigits(rawValue);
+			return digits ? `+595${digits}` : '';
+		};
+
+		const setErrorMessage = (message) => {
+			const cleanMessage = String(message || '').trim() || 'No fue posible crear la organización.';
+			if (errorText) errorText.textContent = cleanMessage;
+			errorBanner?.classList.remove('is-hidden');
+		};
+
+		const clearErrorMessage = () => {
+			if (errorText) errorText.textContent = '';
+			errorBanner?.classList.add('is-hidden');
+		};
+
+		if (phoneInput instanceof HTMLInputElement) {
+			phoneInput.value = formatParaguayLocalPhone(phoneInput.value);
+			phoneInput.addEventListener('input', () => {
+				phoneInput.value = formatParaguayLocalPhone(phoneInput.value);
+			});
+		}
+
+		form.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			clearErrorMessage();
+
+			if (!form.reportValidity()) return;
+
+			const formData = new FormData(form);
+			const payload = {
+				business_name: String(formData.get('business_name') || '').trim(),
+				company_email: String(formData.get('company_email') || '').trim(),
+				phone:
+					phoneInput instanceof HTMLInputElement
+						? toParaguayE164Phone(phoneInput.value)
+						: String(formData.get('phone') || '').trim(),
+				id_org_specialty: Number(String(formData.get('id_org_specialty') || '').trim()),
+			};
+
+			const previousText = submitButton?.textContent || '';
+			if (submitButton) {
+				submitButton.disabled = true;
+				submitButton.textContent = 'Creando...';
+			}
+
+			try {
+				const response = await fetch(form.action, {
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+					},
+					credentials: 'same-origin',
+					body: JSON.stringify(payload),
+				});
+
+				let data = null;
+				try {
+					data = await response.json();
+				} catch {
+					data = null;
+				}
+
+				if (!response.ok) {
+					if (data?.emailVerificationRequired && typeof data.redirect === 'string') {
+						window.location.assign(data.redirect);
+						return;
+					}
+					const fieldMessage = Array.isArray(data?.errors)
+						? data.errors.find((item) => item?.message)?.message
+						: '';
+					setErrorMessage(data?.message || fieldMessage || 'No fue posible crear la organización.');
+					return;
+				}
+
+				if (typeof data?.redirect === 'string' && data.redirect.trim()) {
+					window.location.assign(data.redirect);
+					return;
+				}
+
+				window.location.assign('/panel/dashboard');
+			} catch {
+				setErrorMessage('No pudimos comunicarnos con el servidor. Inténtalo de nuevo.');
+			} finally {
+				if (submitButton) {
+					submitButton.disabled = false;
+					submitButton.textContent = previousText;
+				}
+			}
+		});
+	}
+
+	if (typeof window !== 'undefined') {
+		setupCreateOrganizationForm();
+		document.addEventListener('astro:page-load', setupCreateOrganizationForm);
+	}
+</script>
+
+<style>
+	.is-hidden {
+		display: none !important;
+	}
+
+	.m3-container {
+		display: flex;
+		flex-direction: column;
+		min-height: 100svh;
+		background-color: #050505;
+		font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
+	}
+
+	.m3-sidebar {
+		position: relative;
+		display: none;
+		overflow: hidden;
+		background-color: #050505;
+		color: #f8fafc;
+		padding: 3.5rem 4rem;
+	}
+
+	.m3-sidebar::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 60%);
+		pointer-events: none;
+	}
+
+	.m3-sidebar-inner {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		height: 100%;
+		flex-direction: column;
+	}
+
+	.m3-brand {
+		margin-bottom: 3.25rem;
+	}
+
+	.m3-brand-link {
+		display: inline-flex;
+		align-items: center;
+		line-height: 0;
+	}
+
+	.m3-logo {
+		height: 3.5rem;
+		width: auto;
+		object-fit: contain;
+	}
+
+	.m3-step-maintitle {
+		margin: 0 0 1rem;
+		color: #fff;
+		font-size: clamp(2rem, 5vw, 2.5rem);
+		font-weight: 700;
+		line-height: 1.1;
+	}
+
+	.m3-step-maindesc {
+		margin: 0;
+		color: #94a3b8;
+		font-size: 1.05rem;
+		line-height: 1.6;
+	}
+
+	.m3-features-list {
+		margin-top: 2rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.m3-feature-item {
+		display: flex;
+		align-items: center;
+		gap: 1rem;
+		color: #cbd5e1;
+		font-size: 1rem;
+		margin-bottom: 1rem;
+	}
+
+	.m3-feature-item .material-symbols-rounded {
+		color: #3b82f6;
+		font-size: 1.5rem;
+		background: rgba(59, 130, 246, 0.1);
+		padding: 0.5rem;
+		border-radius: 0.5rem;
+	}
+
+	.m3-content {
+		display: flex;
+		flex: 1;
+		align-items: center;
+		justify-content: center;
+		padding: 2rem 1.5rem;
+	}
+
+	.m3-form-wrapper {
+		width: 100%;
+		max-width: 40rem;
+	}
+
+	.m3-form-header {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1rem;
+		margin-bottom: 2rem;
+		text-align: center;
+	}
+
+	.m3-panel-icon {
+		display: flex;
+		width: 3.5rem;
+		height: 3.5rem;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		background: rgba(37, 99, 235, 0.14);
+		color: #60a5fa;
+	}
+
+	.m3-panel-title {
+		margin: 0;
+		color: #f8fafc;
+		font-size: 1.75rem;
+		font-weight: 700;
+	}
+
+	.m3-panel-subtitle {
+		margin: 0;
+		color: #94a3b8;
+	}
+
+	.m3-error-banner {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin-bottom: 1.5rem;
+		border-radius: 0.75rem;
+		padding: 1rem 1.25rem;
+		font-weight: 600;
+		border: 1px solid rgba(251, 113, 133, 0.38);
+		background: rgba(127, 29, 29, 0.26);
+		color: #fecdd3;
+	}
+
+	.m3-panel {
+		display: grid;
+		gap: 0.25rem;
+	}
+
+	.m3-grid-2 {
+		display: grid;
+		gap: 1.25rem;
+		grid-template-columns: 1fr;
+		margin-bottom: 1.25rem;
+	}
+
+	.m3-field {
+		display: grid;
+		gap: 0.5rem;
+	}
+
+	.m3-field-help {
+		margin: 0;
+		font-size: 0.8rem;
+		line-height: 1.35;
+		color: #64748b;
+	}
+
+	.m3-label {
+		color: #e2e8f0;
+		font-size: 0.9rem;
+		font-weight: 600;
+	}
+
+	.m3-label-required {
+		color: #e11d48;
+	}
+
+	.m3-input {
+		width: 100%;
+		box-sizing: border-box;
+		border: 1px solid #262626;
+		border-radius: 0.75rem;
+		background: #121212;
+		color: #f8fafc;
+		padding: 0.875rem 1rem;
+		font: inherit;
+	}
+
+	.m3-input:focus {
+		outline: none;
+		border-color: #3b82f6;
+		box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
+	}
+
+	.m3-input.is-invalid {
+		border-color: #e11d48;
+		background: rgba(127, 29, 29, 0.12);
+	}
+
+	.m3-select {
+		cursor: pointer;
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%2394a3b8'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 0.65rem center;
+		padding-right: 2.25rem;
+	}
+
+	.m3-select:disabled {
+		opacity: 0.65;
+		cursor: not-allowed;
+	}
+
+	.m3-phone-group {
+		display: flex;
+		width: 100%;
+		border-radius: 0.75rem;
+	}
+
+	.m3-phone-prefix {
+		display: inline-flex;
+		align-items: center;
+		padding: 0 0.95rem;
+		border: 1px solid #262626;
+		border-right: 0;
+		border-radius: 0.75rem 0 0 0.75rem;
+		background: #1a1a1a;
+		color: #94a3b8;
+		font-size: 0.95rem;
+		font-weight: 700;
+	}
+
+	.m3-phone-input {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+
+	.m3-phone-input:focus {
+		box-shadow: none;
+	}
+
+	.m3-phone-group:focus-within .m3-phone-prefix,
+	.m3-phone-group:focus-within .m3-phone-input {
+		border-color: #3b82f6;
+	}
+
+	.m3-phone-group:focus-within {
+		box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
+		border-radius: 0.75rem;
+	}
+
+	.m3-phone-group.is-invalid .m3-phone-prefix {
+		border-color: #e11d48;
+	}
+
+	.m3-field-error {
+		font-size: 0.85rem;
+		color: #fecdd3;
+		font-weight: 500;
+	}
+
+	.m3-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		margin-top: 1.5rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid #262626;
+	}
+
+	.m3-actions--between {
+		justify-content: space-between;
+		flex-wrap: wrap;
+	}
+
+	.m3-btn-primary {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 9999px;
+		background: #2563eb;
+		color: #fff;
+		padding: 0.875rem 1.75rem;
+		font: inherit;
+		font-weight: 600;
+		cursor: pointer;
+	}
+
+	.m3-btn-primary:hover {
+		background: #1d4ed8;
+	}
+
+	.m3-btn-primary:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
+	}
+
+	.m3-btn-tonal {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 9999px;
+		background: #1e293b;
+		color: #e2e8f0;
+		padding: 0.875rem 1.5rem;
+		font: inherit;
+		font-weight: 600;
+		text-decoration: none;
+		cursor: pointer;
+	}
+
+	.m3-btn-tonal:hover {
+		background: #334155;
+	}
+
+	@media (min-width: 640px) {
+		.m3-grid-2 {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.m3-container {
+			flex-direction: row;
+			height: 100svh;
+			overflow: hidden;
+		}
+
+		.m3-sidebar {
+			display: flex;
+			width: 40%;
+			max-width: 28rem;
+		}
+
+		.m3-content {
+			border-top-left-radius: 2rem;
+			border-bottom-left-radius: 2rem;
+			background: radial-gradient(circle at 50% 18%, rgba(37, 99, 235, 0.08), transparent 34%), #0a0a0a;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.m3-actions--between {
+			flex-direction: column-reverse;
+		}
+
+		.m3-btn-primary,
+		.m3-btn-tonal {
+			width: 100%;
+		}
+	}
+</style>

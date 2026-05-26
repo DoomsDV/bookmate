@@ -1,0 +1,28 @@
+---
+import CreateOrganizationForm from '../../components/CreateOrganizationForm.astro';
+import Layout from '../../layouts/Layout.astro';
+import { listOrgSpecialtiesWithOrds } from '../../lib/auth';
+import '../../styles/global.css';
+
+const token = Astro.cookies.get('access_token')?.value ?? '';
+
+if (!token) {
+	return Astro.redirect(
+		`/auth/login?redirectTo=${encodeURIComponent('/auth/create-organization')}`
+	);
+}
+
+let orgSpecialties: Awaited<ReturnType<typeof listOrgSpecialtiesWithOrds>> = [];
+let specialtiesLoadError = '';
+
+try {
+	orgSpecialties = await listOrgSpecialtiesWithOrds();
+} catch {
+	specialtiesLoadError =
+		'No pudimos cargar las especialidades de organización. Recarga la página para intentarlo de nuevo.';
+}
+---
+
+<Layout>
+	<CreateOrganizationForm orgSpecialties={orgSpecialties} specialtiesLoadError={specialtiesLoadError} />
+</Layout>

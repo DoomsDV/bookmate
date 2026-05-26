@@ -12,6 +12,10 @@ import { getCurrentOrganizationWithOrds } from './lib/organization';
 import { SESSION_EXPIRED_API_CODE } from './lib/session-auth-messages';
 import { parseTokenClaims } from './lib/token-claims';
 
+const isInvitationLoginLanding = (pathname: string, searchParams: URLSearchParams) =>
+	pathname === '/auth/login' &&
+	(searchParams.get('invitationAccepted') === '1' || searchParams.has('invitationAccepted'));
+
 export const onRequest = defineMiddleware(async (context, next) => {
 	const { cookies, redirect, url } = context;
 
@@ -19,7 +23,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		const tempToken = cookies.get('access_token')?.value;
 
 		if (tempToken && (url.pathname === '/auth' || url.pathname.startsWith('/auth/'))) {
-			if (url.pathname.startsWith('/auth/accept-invite')) {
+			if (
+				url.pathname.startsWith('/auth/accept-invite') ||
+				url.pathname === '/auth/create-organization' ||
+				url.pathname === '/auth/select-org' ||
+				isInvitationLoginLanding(url.pathname, url.searchParams)
+			) {
+				if (isInvitationLoginLanding(url.pathname, url.searchParams)) {
+					clearSessionCookies(cookies);
+				}
 				return next();
 			}
 
