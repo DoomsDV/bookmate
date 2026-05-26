@@ -1,4 +1,5 @@
 ﻿---
+import { FEATURE_FLAGS } from '../config/feature-flags';
 import { ROLES } from '../config/roles';
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 const { roleId = 0 } = Astro.props;
 const isAdmin = Number(roleId) === ROLES.ADMIN;
 const canEditAppearance = isAdmin;
+const showIntegrationsTab = isAdmin && FEATURE_FLAGS.INTEGRATIONS_SETTINGS;
 const rawPublicProfileDomain = String(
 	import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? Astro.url.origin
 ).trim();
@@ -70,9 +72,13 @@ const publicProfileDomain =
 							<button type="button" data-settings-tab-trigger data-settings-tab="workspace" class="settings-tab">
 								<span class="material-symbols-rounded">storefront</span>Negocio
 							</button>
-							<button type="button" data-settings-tab-trigger data-settings-tab="integrations" class="settings-tab">
-								<span class="material-symbols-rounded">credit_card</span>Integraciones
-							</button>
+							{
+								showIntegrationsTab ? (
+									<button type="button" data-settings-tab-trigger data-settings-tab="integrations" class="settings-tab">
+										<span class="material-symbols-rounded">credit_card</span>Integraciones
+									</button>
+								) : null
+							}
 							<button type="button" data-settings-tab-trigger data-settings-tab="system" class="settings-tab">
 								<span class="material-symbols-rounded">settings_applications</span>Sistema
 							</button>
@@ -362,56 +368,60 @@ const publicProfileDomain =
 							</form>
 						</section>
 
-						<section data-settings-panel="integrations" class="settings-panel hidden gap-6">
-							<p data-settings-feedback="integrations" class="hidden settings-feedback"></p>
-							<form data-settings-integrations-form class="grid gap-6">
-								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Pagopar</h3>
-									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
-										Configura las claves del negocio para cobrar señas en la reserva pública.
-									</p>
-								</div>
-
-								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-									<span>Clave pública <span class="text-rose-500">*</span></span>
-									<input
-										name="public_key"
-										autocomplete="off"
-										spellcheck="false"
-										class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-										placeholder="Public key de Pagopar"
-										required
-									/>
-								</label>
-
-								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-									<span>Clave privada <span class="text-rose-500">*</span></span>
-									<input
-										name="private_key"
-										type="password"
-										autocomplete="new-password"
-										spellcheck="false"
-										class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-										placeholder="Private key de Pagopar"
-										required
-									/>
-								</label>
-
-								<div class="pt-4 border-t border-(--shell-border) border-dashed">
-									<div class="modal-footer">
-										<div class="modal-footer-actions">
-											<button type="button" class="modal-action-secondary" data-settings-close-action>
-												Cancelar
-											</button>
-											<button type="submit" class="modal-action-primary">
-												<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">save</span>
-												Guardar Pagopar
-											</button>
+						{
+							showIntegrationsTab ? (
+								<section data-settings-panel="integrations" class="settings-panel hidden gap-6">
+									<p data-settings-feedback="integrations" class="hidden settings-feedback"></p>
+									<form data-settings-integrations-form class="grid gap-6">
+										<div class="grid gap-1">
+											<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Pagopar</h3>
+											<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
+												Configura las claves del negocio para cobrar señas en la reserva pública.
+											</p>
 										</div>
-									</div>
-								</div>
-							</form>
-						</section>
+
+										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+											<span>Clave pública <span class="text-rose-500">*</span></span>
+											<input
+												name="public_key"
+												autocomplete="off"
+												spellcheck="false"
+												class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+												placeholder="Public key de Pagopar"
+												required
+											/>
+										</label>
+
+										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+											<span>Clave privada <span class="text-rose-500">*</span></span>
+											<input
+												name="private_key"
+												type="password"
+												autocomplete="new-password"
+												spellcheck="false"
+												class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+												placeholder="Private key de Pagopar"
+												required
+											/>
+										</label>
+
+										<div class="pt-4 border-t border-(--shell-border) border-dashed">
+											<div class="modal-footer">
+												<div class="modal-footer-actions">
+													<button type="button" class="modal-action-secondary" data-settings-close-action>
+														Cancelar
+													</button>
+													<button type="submit" class="modal-action-primary">
+														<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">save</span>
+														Guardar Pagopar
+													</button>
+												</div>
+											</div>
+										</div>
+									</form>
+								</section>
+							) : null
+						}
 
 						<section data-settings-panel="system" class="settings-panel hidden gap-6">
 							<p data-settings-feedback="system" class="hidden settings-feedback"></p>
@@ -578,6 +588,7 @@ const publicProfileDomain =
 </settings-manager>
 
 <script>
+	import { FEATURE_FLAGS } from '../config/feature-flags';
 	import {
 		PARAGUAY_MOBILE_PHONE_ERROR,
 		parseParaguayMobilePhone,
@@ -1559,7 +1570,9 @@ const publicProfileDomain =
 				if (this.isAdmin) {
 					const workspaceRes = await this.requestApi('/api/workspace', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar negocio.');
 					this.fillWorkspace((workspaceRes.data as unknown as WorkspaceSettingsData | null) ?? null);
-					await this.loadIntegrations();
+					if (FEATURE_FLAGS.INTEGRATIONS_SETTINGS) {
+						await this.loadIntegrations();
+					}
 				}
 			} catch (error) {
 				this.showFeedback('profile', error instanceof Error ? error.message : 'No fue posible cargar ajustes.', 'error');
