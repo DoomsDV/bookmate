@@ -114,10 +114,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
 		const payload: CreateProfessionalWithUserPayload = {
 			rol_id_role: roleId,
-			apex_user_name: String(body?.apex_user_name || '').trim(),
 			first_name: String(body?.first_name || '').trim(),
 			last_name: String(body?.last_name || '').trim(),
-			password: String(body?.password || ''),
 			phone_number: String(body?.phone_number || '').trim(),
 			user_is_active:
 				userIsActiveRaw === ''
@@ -131,6 +129,9 @@ export const POST: APIRoute = async ({ request, locals }) => {
 
 		const email = String(body?.email ?? '').trim();
 		if (email !== '') payload.email = email;
+
+		const apexUserName = String(body?.apex_user_name ?? '').trim();
+		if (apexUserName !== '') payload.apex_user_name = apexUserName;
 
 		const profileSlug = String(body?.profile_slug ?? '').trim();
 		if (profileSlug !== '') payload.profile_slug = profileSlug;

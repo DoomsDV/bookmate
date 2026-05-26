@@ -18,6 +18,8 @@ const EXCLUDED_API_PREFIXES = [
 	'/api/auth/reset-password',
 	'/api/auth/verify-email',
 	'/api/auth/resend-verification-code',
+	'/api/auth/invitation',
+	'/api/auth/accept-invitation',
 	'/api/auth/session',
 	REFRESH_PATH,
 	LOGOUT_PATH,

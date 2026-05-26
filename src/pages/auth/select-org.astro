@@ -1,0 +1,143 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
+import { getOrgSelectionCookie } from '../../lib/auth';
+
+const selectionContext = getOrgSelectionCookie(Astro.cookies);
+const error = Astro.url.searchParams.get('error') ?? '';
+
+if (!selectionContext) {
+	return Astro.redirect('/auth/login?error=' + encodeURIComponent('Tu sesión expiró. Vuelve a iniciar sesión.'));
+}
+
+const organizations = selectionContext.organizations;
+---
+
+<Layout>
+	<section class="m3-container auth-dark">
+		<aside class="m3-sidebar">
+			<div class="m3-sidebar-inner">
+				<div class="m3-brand">
+					<a href="/" class="m3-brand-link" aria-label="Ir al inicio">
+						<img src="/icon-512x512.png" alt="Hasel Logo" class="m3-logo" />
+					</a>
+				</div>
+				<div class="m3-stepper-header">
+					<h2 class="m3-step-maintitle">Elegí tu espacio de trabajo</h2>
+					<p class="m3-step-maindesc">
+						Tu cuenta tiene acceso a más de una organización. Seleccioná a cuál querés ingresar en esta sesión.
+					</p>
+				</div>
+			</div>
+		</aside>
+
+		<main class="m3-content">
+			<div class="m3-form-wrapper">
+				<div class="m3-form-header" style="flex-direction: column; text-align: center; gap: 1rem;">
+					<div class="m3-panel-icon" style="margin: 0 auto;">
+						<span class="material-symbols-rounded">domain</span>
+					</div>
+					<div class="m3-panel-titles">
+						<h3 class="m3-panel-title">Seleccionar organización</h3>
+						<p class="m3-panel-subtitle">Podrás cambiar de organización cuando habilitemos el conmutador en el panel.</p>
+					</div>
+				</div>
+
+				{error && (
+					<div class="m3-error-banner">
+						<span class="material-symbols-rounded">error</span>
+						{error}
+					</div>
+				)}
+
+				<form method="post" action="/api/auth/select-org" class="org-select-form">
+					<div class="org-select-list">
+						{organizations.map((org) => (
+							<label class="org-select-card">
+								<input
+									type="radio"
+									name="org_member_id"
+									value={String(org.org_member_id)}
+									required
+									class="org-select-radio"
+								/>
+								<span class="org-select-card-body">
+									<span class="org-select-card-title">{org.organization_name}</span>
+									<span class="org-select-card-meta">{org.role_name}</span>
+								</span>
+								<span class="material-symbols-rounded org-select-card-icon">chevron_right</span>
+							</label>
+						))}
+					</div>
+
+					<div class="org-select-actions">
+						<a href="/auth/login" class="m3-btn m3-btn-secondary">Volver al login</a>
+						<button type="submit" class="m3-btn m3-btn-primary">Continuar</button>
+					</div>
+				</form>
+			</div>
+		</main>
+	</section>
+</Layout>
+
+<style>
+	.org-select-list {
+		display: grid;
+		gap: 0.75rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.org-select-card {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 1rem 1.1rem;
+		border: 1px solid rgba(148, 163, 184, 0.35);
+		border-radius: 14px;
+		background: rgba(15, 23, 42, 0.55);
+		cursor: pointer;
+		transition: border-color 0.15s ease, background 0.15s ease;
+	}
+
+	.org-select-card:hover {
+		border-color: rgba(96, 165, 250, 0.65);
+		background: rgba(30, 41, 59, 0.75);
+	}
+
+	.org-select-radio {
+		accent-color: #3b82f6;
+		width: 1.1rem;
+		height: 1.1rem;
+		flex-shrink: 0;
+	}
+
+	.org-select-card-body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.org-select-card-title {
+		font-weight: 600;
+		color: #f8fafc;
+	}
+
+	.org-select-card-meta {
+		font-size: 0.85rem;
+		color: #94a3b8;
+		text-transform: capitalize;
+	}
+
+	.org-select-card-icon {
+		color: #64748b;
+	}
+
+	.org-select-actions {
+		display: flex;
+		justify-content: space-between;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+</style>

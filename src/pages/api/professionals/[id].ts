@@ -170,11 +170,18 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 		const body = await parseBody(request);
 		const payload = parseUpdatePayload(body);
 		const professional = await getProfessionalByIdWithOrds(token, professionalId);
+		const isActiveMember = professional.membership_status !== 'pending_invite';
 		const targetUserId = Number(professional.user?.id_user ?? 0);
 		const currentRoleId = Number(professional.user?.rol_id_role ?? 0);
 
 		const currentUserIsActive = (professional.user?.is_active === 0 ? 0 : 1) as 0 | 1;
 		const currentProfIsActive = (professional.is_active === 0 ? 0 : 1) as 0 | 1;
+
+		if (isActiveMember) {
+			delete payload.password;
+			delete payload.apex_user_name;
+			delete payload.email;
+		}
 
 		assertProfessionalSelfAdminUpdate({
 			targetUserId,

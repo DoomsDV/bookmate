@@ -19,6 +19,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		const tempToken = cookies.get('access_token')?.value;
 
 		if (tempToken && (url.pathname === '/auth' || url.pathname.startsWith('/auth/'))) {
+			if (url.pathname.startsWith('/auth/accept-invite')) {
+				return next();
+			}
+
 			const tempClaims = parseTokenClaims(tempToken);
 
 			if (isKnownRoleId(tempClaims.role_id)) {

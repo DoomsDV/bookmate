@@ -1,0 +1,359 @@
+---
+interface Props {
+	token?: string;
+	error?: string;
+}
+
+const { token = '', error = '' } = Astro.props;
+const safeToken = String(token || '').trim();
+---
+
+<section class="m3-container auth-dark" data-accept-invite-root data-token={safeToken}>
+	<aside class="m3-sidebar">
+		<div class="m3-sidebar-inner">
+			<div class="m3-brand">
+				<a href="/" class="m3-brand-link" aria-label="Ir al inicio">
+					<img src="/icon-512x512.png" alt="Hasel Logo" class="m3-logo" />
+				</a>
+			</div>
+			<div class="m3-stepper-header">
+				<h2 class="m3-step-maintitle" data-invite-title>Invitación al equipo</h2>
+				<p class="m3-step-maindesc" data-invite-desc>
+					Estamos validando tu enlace de invitación…
+				</p>
+			</div>
+		</div>
+	</aside>
+
+	<main class="m3-content">
+		<div class="m3-form-wrapper">
+			<div class="m3-form-header">
+				<div class="m3-panel-icon">
+					<span class="material-symbols-rounded">mail</span>
+				</div>
+				<div class="m3-panel-titles">
+					<h1 class="m3-panel-title">Aceptar invitación</h1>
+					<p class="m3-panel-subtitle" data-invite-org-label>Organización</p>
+				</div>
+			</div>
+
+			{error && (
+				<div class="m3-error-banner" role="alert">
+					<span class="material-symbols-rounded">error</span>
+					<span>{error}</span>
+				</div>
+			)}
+
+			<div class="m3-error-banner is-hidden" data-invite-error role="alert">
+				<span class="material-symbols-rounded">error</span>
+				<span data-invite-error-text></span>
+			</div>
+
+			<div class="m3-warning-banner is-hidden" data-invite-loading>
+				<span class="material-symbols-rounded">hourglass_top</span>
+				<span>Cargando invitación…</span>
+			</div>
+
+			<div class="is-hidden" data-invite-login-panel>
+				<p class="text-[0.95rem] text-(--on-surface-variant) mb-4">
+					Ya tienes una cuenta con este correo. Inicia sesión para unirte a la organización.
+				</p>
+				<a class="m3-btn-primary inline-flex no-underline" data-invite-login-link href="/auth/login">
+					Iniciar sesión y aceptar
+				</a>
+			</div>
+
+			<form class="is-hidden" method="post" action="/api/auth/accept-invitation" data-accept-invite-form>
+				<input type="hidden" name="token" value={safeToken} data-invite-token-input />
+
+				<div class="m3-panel">
+					<div class="m3-grid-2">
+						<div class="m3-field">
+							<label class="m3-label" for="invite_first_name">Nombres</label>
+							<input type="text" id="invite_first_name" name="first_name" class="m3-input" required />
+						</div>
+						<div class="m3-field">
+							<label class="m3-label" for="invite_last_name">Apellidos</label>
+							<input type="text" id="invite_last_name" name="last_name" class="m3-input" required />
+						</div>
+					</div>
+
+					<div class="m3-field">
+						<label class="m3-label" for="invite_email">Correo</label>
+						<input type="email" id="invite_email" name="email" class="m3-input" readonly />
+					</div>
+
+					<div class="m3-field">
+						<label class="m3-label" for="invite_password">Contraseña <span class="m3-label-required">*</span></label>
+						<input
+							type="password"
+							id="invite_password"
+							name="password"
+							class="m3-input"
+							minlength="8"
+							autocomplete="new-password"
+							required
+						/>
+					</div>
+
+					<div class="m3-actions">
+						<button type="submit" class="m3-btn-primary" data-invite-submit>
+							Crear cuenta y unirme
+						</button>
+					</div>
+				</div>
+			</form>
+
+			<div class="m3-card-footer">
+				<a href="/auth/login" class="m3-link-accent">¿Ya tienes cuenta? <strong>Iniciar sesión</strong></a>
+			</div>
+		</div>
+	</main>
+</section>
+
+<script is:inline>
+	function setupAcceptInviteForm() {
+		const root = document.querySelector('[data-accept-invite-root]');
+		if (!root || root.dataset.enhanced) return;
+		root.dataset.enhanced = 'true';
+
+		const token = String(root.dataset.token || '').trim();
+		const errorBox = root.querySelector('[data-invite-error]');
+		const errorText = root.querySelector('[data-invite-error-text]');
+		const loadingBox = root.querySelector('[data-invite-loading]');
+		const loginPanel = root.querySelector('[data-invite-login-panel]');
+		const loginLink = root.querySelector('[data-invite-login-link]');
+		const form = root.querySelector('[data-accept-invite-form]');
+		const submitBtn = root.querySelector('[data-invite-submit]');
+		const orgLabel = root.querySelector('[data-invite-org-label]');
+		const desc = root.querySelector('[data-invite-desc]');
+
+		const showError = (message) => {
+			if (errorText) errorText.textContent = message;
+			errorBox?.classList.remove('is-hidden');
+		};
+
+		const hideError = () => {
+			errorBox?.classList.add('is-hidden');
+			if (errorText) errorText.textContent = '';
+		};
+
+		if (!token) {
+			showError('No encontramos un enlace de invitación válido.');
+			loadingBox?.classList.add('is-hidden');
+			return;
+		}
+
+		const loadPreview = async () => {
+			try {
+				const response = await fetch(`/api/auth/invitation?token=${encodeURIComponent(token)}`, {
+					headers: { Accept: 'application/json' },
+				});
+				const data = await response.json();
+				loadingBox?.classList.add('is-hidden');
+
+				if (!response.ok) {
+					showError(data?.message || data?.error || 'La invitación no es válida o expiró.');
+					return;
+				}
+
+				const orgName = String(data.organization_name || '').trim();
+				if (orgLabel) orgLabel.textContent = orgName ? `Te invitaron a ${orgName}` : 'Te invitaron a una organización';
+				if (desc) {
+					desc.textContent = orgName
+						? `Completa tu acceso para unirte a ${orgName}.`
+						: 'Completa tu acceso para unirte al equipo.';
+				}
+
+				const emailInput = form?.querySelector('#invite_email');
+				const firstNameInput = form?.querySelector('#invite_first_name');
+				const lastNameInput = form?.querySelector('#invite_last_name');
+				if (emailInput instanceof HTMLInputElement) emailInput.value = String(data.email || '');
+				if (firstNameInput instanceof HTMLInputElement) firstNameInput.value = String(data.first_name || '');
+				if (lastNameInput instanceof HTMLInputElement) lastNameInput.value = String(data.last_name || '');
+
+				if (data.login_required) {
+					try {
+						const acceptResponse = await fetch('/api/auth/accept-invitation', {
+							method: 'POST',
+							credentials: 'include',
+							headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+							body: JSON.stringify({ token }),
+						});
+						const acceptData = await acceptResponse.json();
+						if (acceptResponse.ok) {
+							window.location.assign(acceptData?.redirect || '/auth/login?invitationAccepted=1');
+							return;
+						}
+					} catch {
+						// Si no hay sesión válida, mostramos el flujo de login.
+					}
+
+					const redirectTo = `/auth/accept-invite?token=${encodeURIComponent(token)}`;
+					if (loginLink instanceof HTMLAnchorElement) {
+						loginLink.href = `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+					}
+					loginPanel?.classList.remove('is-hidden');
+					return;
+				}
+
+				form?.classList.remove('is-hidden');
+			} catch {
+				loadingBox?.classList.add('is-hidden');
+				showError('No pudimos cargar la invitación. Intenta de nuevo.');
+			}
+		};
+
+		form?.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			hideError();
+			if (!(form instanceof HTMLFormElement)) return;
+
+			const formData = new FormData(form);
+			const payload = {
+				token,
+				password: String(formData.get('password') || ''),
+				first_name: String(formData.get('first_name') || '').trim(),
+				last_name: String(formData.get('last_name') || '').trim(),
+			};
+
+			if (submitBtn instanceof HTMLButtonElement) {
+				submitBtn.disabled = true;
+				submitBtn.textContent = 'Procesando…';
+			}
+
+			try {
+				const response = await fetch(form.action, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+					body: JSON.stringify(payload),
+				});
+				const data = await response.json();
+
+				if (!response.ok) {
+					if (data?.login_required) {
+						loginPanel?.classList.remove('is-hidden');
+						form.classList.add('is-hidden');
+						const redirectTo = `/auth/accept-invite?token=${encodeURIComponent(token)}`;
+						if (loginLink instanceof HTMLAnchorElement) {
+							loginLink.href = `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+						}
+						return;
+					}
+					showError(data?.message || data?.error || 'No fue posible aceptar la invitación.');
+					return;
+				}
+
+				window.location.assign(data?.redirect || '/auth/login?invitationAccepted=1');
+			} catch {
+				showError('No pudimos comunicarnos con el servidor.');
+			} finally {
+				if (submitBtn instanceof HTMLButtonElement) {
+					submitBtn.disabled = false;
+					submitBtn.textContent = 'Crear cuenta y unirme';
+				}
+			}
+		});
+
+		void loadPreview();
+	}
+
+	if (typeof window !== 'undefined') {
+		setupAcceptInviteForm();
+		document.addEventListener('astro:page-load', setupAcceptInviteForm);
+	}
+</script>
+
+<style>
+	.is-hidden { display: none !important; }
+
+	.m3-container {
+		display: flex;
+		flex-direction: column;
+		min-height: 100svh;
+		background-color: #050505;
+		font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
+	}
+
+	.m3-sidebar {
+		position: relative;
+		display: none;
+		overflow: hidden;
+		background-color: #050505;
+		color: #f8fafc;
+		padding: 3.5rem 4rem;
+	}
+
+	.m3-sidebar::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 60%);
+		pointer-events: none;
+	}
+
+	.m3-sidebar-inner { position: relative; z-index: 1; display: flex; height: 100%; flex-direction: column; }
+	.m3-brand { margin-bottom: 3.25rem; }
+	.m3-brand-link { display: inline-flex; align-items: center; line-height: 0; }
+	.m3-logo { height: 3.5rem; width: auto; object-fit: contain; }
+	.m3-step-maintitle { margin: 0 0 1rem; color: #fff; font-size: clamp(2rem, 5vw, 2.5rem); font-weight: 700; }
+	.m3-step-maindesc { margin: 0; color: #94a3b8; font-size: 1.05rem; line-height: 1.6; }
+
+	.m3-content {
+		display: flex;
+		flex: 1;
+		align-items: center;
+		justify-content: center;
+		padding: 2rem 1.5rem;
+	}
+
+	.m3-form-wrapper { width: 100%; max-width: 28rem; }
+	.m3-form-header { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-bottom: 2rem; text-align: center; }
+	.m3-panel-icon {
+		display: flex; width: 3.5rem; height: 3.5rem; align-items: center; justify-content: center;
+		border-radius: 50%; background: rgba(37, 99, 235, 0.14); color: #60a5fa;
+	}
+	.m3-panel-title { margin: 0; color: #f8fafc; font-size: 1.75rem; font-weight: 700; }
+	.m3-panel-subtitle { margin: 0; color: #94a3b8; }
+
+	.m3-warning-banner, .m3-error-banner {
+		display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.5rem;
+		border-radius: 0.75rem; padding: 1rem 1.25rem; font-weight: 600;
+	}
+	.m3-warning-banner { border: 1px solid rgba(251, 191, 36, 0.38); background: rgba(120, 53, 15, 0.24); color: #fbbf24; }
+	.m3-error-banner { border: 1px solid rgba(251, 113, 133, 0.38); background: rgba(127, 29, 29, 0.26); color: #fecdd3; }
+
+	.m3-panel { display: grid; gap: 1.25rem; }
+	.m3-grid-2 { display: grid; gap: 1rem; grid-template-columns: 1fr 1fr; }
+	.m3-field { display: grid; gap: 0.5rem; }
+	.m3-label { color: #e2e8f0; font-size: 0.9rem; font-weight: 600; }
+	.m3-label-required { color: #e11d48; }
+	.m3-input {
+		width: 100%; box-sizing: border-box; border: 1px solid #262626; border-radius: 0.75rem;
+		background: #121212; color: #f8fafc; padding: 0.875rem 1rem; font: inherit;
+	}
+	.m3-input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16); }
+	.m3-actions { margin-top: 0.5rem; }
+	.m3-btn-primary {
+		display: inline-flex; align-items: center; justify-content: center; width: 100%;
+		border: 0; border-radius: 9999px; background: #2563eb; color: #fff;
+		padding: 0.875rem 1.5rem; font: inherit; font-weight: 600; cursor: pointer;
+	}
+	.m3-btn-primary:hover { background: #1d4ed8; }
+	.m3-card-footer { margin-top: 1.5rem; text-align: center; }
+	.m3-link-accent { color: #94a3b8; text-decoration: none; }
+	.m3-link-accent strong { color: #60a5fa; }
+
+	@media (min-width: 1024px) {
+		.m3-container { flex-direction: row; height: 100svh; overflow: hidden; }
+		.m3-sidebar { display: flex; width: 40%; max-width: 28rem; }
+		.m3-content {
+			border-top-left-radius: 2rem; border-bottom-left-radius: 2rem;
+			background: radial-gradient(circle at 50% 18%, rgba(37, 99, 235, 0.08), transparent 34%), #0a0a0a;
+		}
+	}
+
+	@media (max-width: 640px) {
+		.m3-grid-2 { grid-template-columns: 1fr; }
+	}
+</style>

@@ -108,20 +108,28 @@ const inactiveCount = professionals.length - activeCount;
 						<span
 							class:list={[
 								'professionals-card-status',
-								item.professional.is_active === 1
-									? 'professionals-card-status--active'
-									: 'professionals-card-status--inactive',
+								item.professional.membership_status === 'pending_invite'
+									? 'professionals-card-status--pending'
+									: item.professional.is_active === 1
+										? 'professionals-card-status--active'
+										: 'professionals-card-status--inactive',
 							]}
 						>
 							<span
 								class:list={[
 									'size-1.5 rounded-full',
-									item.professional.is_active === 1
-										? 'professionals-summary-dot--active'
-										: 'professionals-summary-dot--inactive',
+									item.professional.membership_status === 'pending_invite'
+										? 'professionals-summary-dot--pending'
+										: item.professional.is_active === 1
+											? 'professionals-summary-dot--active'
+											: 'professionals-summary-dot--inactive',
 								]}
 							></span>
-							{item.professional.is_active === 1 ? 'Activo' : 'Inactivo'}
+							{item.professional.membership_status === 'pending_invite'
+								? 'Invitación pendiente'
+								: item.professional.is_active === 1
+									? 'Activo'
+									: 'Inactivo'}
 						</span>
 					</div>
 
@@ -277,6 +285,15 @@ const inactiveCount = professionals.length - activeCount;
 		color: #8d3e4a;
 	}
 
+	.professionals-card-status--pending {
+		background: rgba(245, 158, 11, 0.14);
+		color: #9a6700;
+	}
+
+	.professionals-summary-dot--pending {
+		background: #f59e0b;
+	}
+
 	.professionals-card-title {
 		margin: 0;
 		font-size: 1.1rem;
@@ -344,6 +361,11 @@ const inactiveCount = professionals.length - activeCount;
 	html[data-theme='dark'] .professionals-card-status--inactive {
 		background: rgba(255, 182, 193, 0.12);
 		color: #ffc8d2;
+	}
+
+	html[data-theme='dark'] .professionals-card-status--pending {
+		background: rgba(251, 191, 36, 0.16);
+		color: #fcd34d;
 	}
 
 	html[data-theme='dark'] .professionals-card-value {

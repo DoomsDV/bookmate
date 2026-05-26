@@ -1,0 +1,12 @@
+---
+import AcceptInviteForm from '../../components/AcceptInviteForm.astro';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
+
+const token = Astro.url.searchParams.get('token') ?? '';
+const error = Astro.url.searchParams.get('error') ?? '';
+---
+
+<Layout>
+	<AcceptInviteForm token={token} error={error} />
+</Layout>

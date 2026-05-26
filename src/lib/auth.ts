@@ -5,6 +5,11 @@ export const LOGIN_URL = resolveOrdsApiUrl(
 	'ORDS_AUTH_LOGIN_URL',
 	'/auth/login'
 );
+export const SELECT_ORGANIZATION_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_SELECT_ORG_URL,
+	'ORDS_AUTH_SELECT_ORG_URL',
+	'/auth/select-organization'
+);
 export const REFRESH_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_AUTH_REFRESH_URL,
 	'ORDS_AUTH_REFRESH_URL',
@@ -41,6 +46,16 @@ export const VERIFY_EMAIL_URL = resolveOrdsApiUrl(
 	'ORDS_VERIFY_EMAIL_URL',
 	'/auth/verify-email'
 );
+export const GET_INVITATION_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_GET_INVITATION_URL,
+	'ORDS_AUTH_GET_INVITATION_URL',
+	'/auth/invitation'
+);
+export const ACCEPT_INVITATION_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_AUTH_ACCEPT_INVITATION_URL,
+	'ORDS_AUTH_ACCEPT_INVITATION_URL',
+	'/auth/accept-invitation'
+);
 export const RESEND_VERIFICATION_CODE_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_RESEND_VERIFICATION_CODE_URL,
 	'ORDS_RESEND_VERIFICATION_CODE_URL',
@@ -64,11 +79,33 @@ export interface AuthSuccessResponse {
 	message: string;
 	user_id: number;
 	organization_id: number;
-	role: string;
+	role?: string;
 	access_token: string;
 	refresh_token: string;
 	expires_in: number;
+	selection_required?: number;
 }
+
+export interface OrganizationLoginOption {
+	org_member_id: number;
+	organization_id: number;
+	organization_name: string;
+	role_id: number;
+	role_name: string;
+}
+
+export interface LoginSelectionResponse {
+	status: 'success';
+	message: string;
+	selection_required: 1;
+	selection_token: string;
+	organizations: OrganizationLoginOption[];
+}
+
+export type LoginResult = AuthSuccessResponse | LoginSelectionResponse;
+
+export const ORG_SELECTION_COOKIE = 'org_selection_ctx';
+const ORG_SELECTION_MAX_AGE_SECONDS = 60 * 10;
 
 export interface AuthFieldError {
 	field: string;
@@ -109,6 +146,22 @@ export interface ResetPasswordPayload {
 	new_password: string;
 }
 
+export interface InvitationPreview {
+	organization_name: string;
+	email: string;
+	first_name: string;
+	last_name: string;
+	expires_at_label: string;
+	login_required: boolean;
+}
+
+export interface AcceptInvitationPayload {
+	token: string;
+	password?: string;
+	first_name?: string;
+	last_name?: string;
+}
+
 export interface VerifyEmailPayload {
 	email: string;
 	code: string;
@@ -133,6 +186,7 @@ interface AuthFailureResponse {
 export type AuthApiErrorOptions = {
 	emailVerificationRequired?: boolean;
 	verificationEmail?: string;
+	loginRequired?: boolean;
 };
 
 interface OrgSpecialtiesSuccessResponse {
@@ -156,6 +210,7 @@ export class AuthApiError extends Error {
 	fieldErrors: AuthFieldError[];
 	emailVerificationRequired: boolean;
 	verificationEmail: string;
+	loginRequired: boolean;
 
 	constructor(
 		message: string,
@@ -171,6 +226,7 @@ export class AuthApiError extends Error {
 		this.fieldErrors = fieldErrors;
 		this.emailVerificationRequired = Boolean(options.emailVerificationRequired);
 		this.verificationEmail = String(options.verificationEmail || '').trim();
+		this.loginRequired = Boolean(options.loginRequired);
 	}
 }
 
@@ -253,6 +309,35 @@ const isSuccessResponse = (value: unknown): value is AuthSuccessResponse => {
 		'refresh_token' in value &&
 		'expires_in' in value
 	);
+};
+
+const isLoginSelectionResponse = (value: unknown): value is LoginSelectionResponse => {
+	if (!value || typeof value !== 'object') return false;
+	const record = value as Record<string, unknown>;
+	return (
+		record.status === 'success' &&
+		(record.selection_required === 1 || record.selection_required === true) &&
+		typeof record.selection_token === 'string' &&
+		Array.isArray(record.organizations)
+	);
+};
+
+const normalizeOrganizationOption = (value: unknown): OrganizationLoginOption | null => {
+	if (!value || typeof value !== 'object') return null;
+	const source = value as Record<string, unknown>;
+	const orgMemberId = Number(source.org_member_id ?? 0);
+	const organizationId = Number(source.organization_id ?? 0);
+	const organizationName = String(source.organization_name || '').trim();
+	const roleId = Number(source.role_id ?? 0);
+	const roleName = String(source.role_name || '').trim();
+	if (!orgMemberId || !organizationId || !organizationName) return null;
+	return {
+		org_member_id: orgMemberId,
+		organization_id: organizationId,
+		organization_name: organizationName,
+		role_id: roleId,
+		role_name: roleName,
+	};
 };
 
 const parseAuthResponse = async (response: Response) => {
@@ -402,8 +487,83 @@ const parseStatusResponseWithFields = async (
 	};
 };
 
-export const loginWithOrds = async (payload: { email: string; password: string }) => {
+const parseLoginResponse = async (response: Response): Promise<LoginResult> => {
+	let data: AuthSuccessResponse | LoginSelectionResponse | AuthFailureResponse | null = null;
+
+	try {
+		data = await response.json();
+	} catch {
+		throw new AuthApiError('No fue posible interpretar la respuesta del servidor de autenticacion.', 502);
+	}
+
+	if (!response.ok) {
+		const failureData = (data ?? {}) as AuthFailureResponse;
+		const fieldErrors = getFailureFieldErrors(failureData);
+		throw new AuthApiError(
+			getFailureMessage(failureData, 'No fue posible autenticar la solicitud.'),
+			response.status || 400,
+			getFailureDetails(failureData),
+			fieldErrors,
+			getEmailVerificationFailureOptions(failureData)
+		);
+	}
+
+	if (isLoginSelectionResponse(data)) {
+		const organizations = data.organizations
+			.map(normalizeOrganizationOption)
+			.filter((item): item is OrganizationLoginOption => item !== null);
+		if (organizations.length < 2) {
+			throw new AuthApiError('No fue posible obtener las organizaciones disponibles.', 502);
+		}
+		return {
+			...data,
+			organizations,
+		};
+	}
+
+	if (!isSuccessResponse(data)) {
+		const failureData = (data ?? {}) as AuthFailureResponse;
+		throw new AuthApiError(
+			getFailureMessage(failureData, 'No fue posible autenticar la solicitud.'),
+			response.status || 400,
+			getFailureDetails(failureData),
+			getFailureFieldErrors(failureData),
+			getEmailVerificationFailureOptions(failureData)
+		);
+	}
+
+	return data;
+};
+
+export const isLoginSelectionResult = (value: LoginResult): value is LoginSelectionResponse =>
+	isLoginSelectionResponse(value);
+
+export const loginWithOrds = async (payload: {
+	email: string;
+	password: string;
+	org_member_id?: number;
+}) => {
 	const response = await fetch(LOGIN_URL, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({
+			username: payload.email,
+			email: payload.email,
+			password: payload.password,
+			...(payload.org_member_id ? { org_member_id: payload.org_member_id } : {}),
+		}),
+	});
+
+	return parseLoginResponse(response);
+};
+
+export const selectOrganizationWithOrds = async (payload: {
+	selection_token: string;
+	org_member_id: number;
+}) => {
+	const response = await fetch(SELECT_ORGANIZATION_URL, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -412,6 +572,54 @@ export const loginWithOrds = async (payload: { email: string; password: string }
 	});
 
 	return parseAuthResponse(response);
+};
+
+export type OrgSelectionContext = {
+	selection_token: string;
+	organizations: OrganizationLoginOption[];
+	redirectTo: string;
+};
+
+export const setOrgSelectionCookie = (
+	cookies: { set: (name: string, value: string, options: Record<string, unknown>) => void },
+	context: OrgSelectionContext
+) => {
+	cookies.set(ORG_SELECTION_COOKIE, JSON.stringify(context), {
+		...getSessionCookieBaseOptions(),
+		maxAge: ORG_SELECTION_MAX_AGE_SECONDS,
+	});
+};
+
+export const getOrgSelectionCookie = (
+	cookies: { get: (name: string) => { value?: string } | undefined }
+): OrgSelectionContext | null => {
+	const raw = String(cookies.get(ORG_SELECTION_COOKIE)?.value || '').trim();
+	if (!raw) return null;
+
+	try {
+		const parsed = JSON.parse(raw) as Partial<OrgSelectionContext>;
+		const selectionToken = String(parsed.selection_token || '').trim();
+		const redirectTo = String(parsed.redirectTo || '').trim();
+		const organizations = Array.isArray(parsed.organizations)
+			? parsed.organizations
+					.map(normalizeOrganizationOption)
+					.filter((item): item is OrganizationLoginOption => item !== null)
+			: [];
+		if (!selectionToken || organizations.length < 2) return null;
+		return {
+			selection_token: selectionToken,
+			organizations,
+			redirectTo,
+		};
+	} catch {
+		return null;
+	}
+};
+
+export const clearOrgSelectionCookie = (
+	cookies: { delete: (name: string, options?: Record<string, unknown>) => void }
+) => {
+	cookies.delete(ORG_SELECTION_COOKIE, { path: '/' });
 };
 
 export const refreshWithOrds = async (refreshToken: string) => {
@@ -534,6 +742,84 @@ export const verifyEmailWithOrds = async (payload: VerifyEmailPayload) => {
 		'No fue posible verificar tu correo electrónico.',
 		'ORDS verify-email'
 	);
+};
+
+export const getInvitationWithOrds = async (token: string): Promise<InvitationPreview> => {
+	const response = await fetch(GET_INVITATION_URL, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({ token }),
+	});
+
+	const responseText = await response.text();
+	let data: Record<string, unknown> | null = null;
+	try {
+		data = responseText.trim() ? (JSON.parse(responseText) as Record<string, unknown>) : null;
+	} catch {
+		throw new AuthApiError('No fue posible interpretar la respuesta del servidor.', 502, responseText);
+	}
+
+	if (!response.ok || !data || data.status !== 'success') {
+		const message =
+			String(data?.message || data?.error || '').trim() ||
+			'No fue posible cargar la invitación.';
+		throw new AuthApiError(message, response.status || 400);
+	}
+
+	return {
+		organization_name: String(data.organization_name || '').trim(),
+		email: String(data.email || '').trim(),
+		first_name: String(data.first_name || '').trim(),
+		last_name: String(data.last_name || '').trim(),
+		expires_at_label: String(data.expires_at_label || '').trim(),
+		login_required:
+			data.login_required === 1 || data.login_required === true || data.login_required === '1',
+	};
+};
+
+export const acceptInvitationWithOrds = async (
+	authHeader: string | undefined,
+	payload: AcceptInvitationPayload
+) => {
+	const headers: Record<string, string> = {
+		'Content-Type': 'application/json',
+		Accept: 'application/json',
+	};
+	if (authHeader?.trim()) {
+		headers.Authorization = authHeader.startsWith('Bearer ')
+			? authHeader.trim()
+			: `Bearer ${authHeader.trim()}`;
+	}
+
+	const response = await fetch(ACCEPT_INVITATION_URL, {
+		method: 'POST',
+		headers,
+		body: JSON.stringify(payload),
+	});
+
+	const responseText = await response.text();
+	let data: Record<string, unknown> | null = null;
+	try {
+		data = responseText.trim() ? (JSON.parse(responseText) as Record<string, unknown>) : null;
+	} catch {
+		data = null;
+	}
+
+	if (!response.ok) {
+		const loginRequired =
+			data?.login_required === 1 || data?.login_required === true || data?.login_required === '1';
+		const message =
+			String(data?.message || data?.error || '').trim() ||
+			'No fue posible aceptar la invitación.';
+		throw new AuthApiError(message, response.status, undefined, [], {
+			loginRequired,
+		});
+	}
+
+	return data;
 };
 
 export const resendVerificationCodeWithOrds = async (payload: ResendVerificationCodePayload) => {
@@ -677,6 +963,7 @@ export const clearSessionCookies = (
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.name, { path: '/' });
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.slug, { path: '/' });
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.logoUrl, { path: '/' });
+	clearOrgSelectionCookie(cookies);
 };
 
 export const isPublicPath = (pathname: string) => {

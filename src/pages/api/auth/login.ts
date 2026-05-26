@@ -3,8 +3,11 @@ import type { APIRoute } from 'astro';
 import {
 	AuthApiError,
 	isEmailVerificationRequiredError,
+	isLoginSelectionResult,
 	loginWithOrds,
 	resolveVerificationEmailFromAuthError,
+	clearOrgSelectionCookie,
+	setOrgSelectionCookie,
 	setOrganizationCacheCookies,
 	setSessionCookies,
 } from '../../../lib/auth';
@@ -92,7 +95,34 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 			throw new AuthApiError('Debes completar correo y contrasena.', 400);
 		}
 
-		const session = await loginWithOrds({ email: identifier, password });
+		const loginResult = await loginWithOrds({ email: identifier, password });
+
+		if (isLoginSelectionResult(loginResult)) {
+			setOrgSelectionCookie(cookies, {
+				selection_token: loginResult.selection_token,
+				organizations: loginResult.organizations,
+				redirectTo: postLoginRedirect,
+			});
+
+			const selectOrgPath = withQuery('/auth/select-org', new URLSearchParams());
+
+			if (wantsHtml(request)) {
+				return new Response(null, {
+					status: 302,
+					headers: { Location: selectOrgPath },
+				});
+			}
+
+			return Response.json({
+				success: true,
+				selectionRequired: true,
+				redirect: selectOrgPath,
+				organizations: loginResult.organizations,
+			});
+		}
+
+		const session = loginResult;
+		clearOrgSelectionCookie(cookies);
 		setSessionCookies(cookies, url, session);
 		cookies.set('fcm_prompt_pending', '1', {
 			httpOnly: false,

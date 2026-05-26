@@ -35,6 +35,8 @@ export interface Professional {
 	phone_number: string;
 	is_active: 0 | 1;
 	created_at: string;
+	membership_status?: 'active' | 'pending_invite';
+	invitation_status?: string;
 	user: ProfessionalUser;
 	specialty: ProfessionalSpecialty | null;
 	services: number[];
@@ -80,11 +82,11 @@ const isSelfAdminContext = (params: {
 
 export interface CreateProfessionalWithUserPayload {
 	rol_id_role: number;
-	apex_user_name: string;
+	apex_user_name?: string;
 	first_name: string;
 	last_name: string;
 	email?: string;
-	password: string;
+	password?: string;
 	user_is_active?: 0 | 1;
 	phone_number: string;
 	spe_id_specialty?: number;
@@ -99,10 +101,13 @@ export interface CreateProfessionalWithUserPayload {
 
 export interface UpdateProfessionalWithUserPayload {
 	rol_id_role: number;
-	apex_user_name: string;
+	/** Solo invitación pendiente; ignorado en backend para miembros activos. */
+	apex_user_name?: string;
 	first_name: string;
 	last_name: string;
+	/** Solo invitación pendiente; ignorado en backend para miembros activos. */
 	email?: string;
+	/** No permitido: el backend rechaza cambios de contraseña por admin. */
 	password?: string;
 	user_is_active?: 0 | 1;
 	phone_number: string;
@@ -126,8 +131,10 @@ export {
 interface CreateProfessionalSuccessResponse {
 	status: 'success';
 	message?: string;
-	id_user: number;
+	id_user?: number;
 	id_professional: number;
+	invitation_sent?: number | boolean;
+	email_sent?: number;
 }
 
 interface ProfessionalsSuccessResponse {
@@ -373,6 +380,7 @@ const normalizeProfessional = (value: unknown): Professional | null => {
 	const idProfessional = toNumber(source.id_professional, NaN);
 	if (!Number.isFinite(idProfessional)) return null;
 
+	const membershipStatus = String(source.membership_status || '').trim();
 	return {
 		id_professional: idProfessional,
 		profile_slug: String(source.profile_slug || '').trim(),
@@ -381,6 +389,9 @@ const normalizeProfessional = (value: unknown): Professional | null => {
 		is_active:
 			source.is_active === 1 || source.is_active === '1' || source.is_active === true ? 1 : 0,
 		created_at: String(source.created_at || ''),
+		membership_status:
+			membershipStatus === 'pending_invite' ? 'pending_invite' : 'active',
+		invitation_status: String(source.invitation_status || '').trim() || undefined,
 		user: normalizeProfessionalUser(source.user),
 		specialty: normalizeProfessionalSpecialty(source.specialty),
 		services: normalizeProfessionalServices(source.services),
@@ -583,7 +594,6 @@ const parseCreateProfessionalResponse = async (response: Response) => {
 		!data ||
 		typeof data !== 'object' ||
 		data.status !== 'success' ||
-		!('id_user' in data) ||
 		!('id_professional' in data)
 	) {
 		const failureData = (data ?? {}) as ProfessionalsFailureResponse;
@@ -599,10 +609,12 @@ const parseCreateProfessionalResponse = async (response: Response) => {
 	return {
 		id_user: toNumber(data.id_user, 0),
 		id_professional: toNumber(data.id_professional, 0),
+		invitation_sent: data.invitation_sent === 1 || data.invitation_sent === true,
+		email_sent: toNumber(data.email_sent, 0),
 		message:
 			typeof data.message === 'string' && data.message.trim()
 				? data.message
-				: 'Personal creado correctamente.',
+				: 'Invitación enviada correctamente.',
 	};
 };
 
