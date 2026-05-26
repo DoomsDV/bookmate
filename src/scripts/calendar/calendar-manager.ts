@@ -231,9 +231,11 @@ class CalendarManager extends HTMLElement {
 
 		ensureSearchableSelect(requiredNodes.professionalFilter, {
 			placeholder: 'Buscar profesional...',
+			autoFocusSearchOnOpen: false,
 		});
 		ensureSearchableSelect(requiredNodes.locationFilter, {
 			placeholder: 'Buscar sucursal...',
+			autoFocusSearchOnOpen: false,
 		});
 
 		requiredNodes.appointmentModal.setClient(this.client);

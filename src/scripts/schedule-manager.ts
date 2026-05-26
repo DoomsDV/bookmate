@@ -522,6 +522,7 @@ class ScheduleManager extends HTMLElement {
 
 		ensureSearchableSelect(this.professionalSelect, {
 			placeholder: 'Buscar profesional...',
+			autoFocusSearchOnOpen: false,
 		});
 
 		if (this.selectedProfessionalId > 0) {

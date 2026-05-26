@@ -8,6 +8,7 @@ type SearchableSelectOptions = {
 	placeholder?: string;
 	maxOptions?: number;
 	closeAfterSelect?: boolean;
+	autoFocusSearchOnOpen?: boolean;
 };
 
 export const getSearchableSelect = (select: HTMLSelectElement | null | undefined) =>
@@ -34,6 +35,15 @@ export const ensureSearchableSelect = (
 		placeholder: options.placeholder,
 		controlInput: '<input type="text" autocomplete="off" />',
 	});
+
+	if (options.autoFocusSearchOnOpen === false) {
+		instance.on('dropdown_open', () => {
+			const controlInput = instance.control_input;
+			if (controlInput instanceof HTMLInputElement) {
+				controlInput.blur();
+			}
+		});
+	}
 
 	instances.set(select, instance);
 	if (select.disabled) instance.disable();
