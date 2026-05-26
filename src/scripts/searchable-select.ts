@@ -35,6 +35,17 @@ export const ensureSearchableSelect = (
 		controlInput: '<input type="text" autocomplete="off" />',
 	});
 
+	instance.on('dropdown_open', () => {
+		const controlInput = instance.control_input;
+		if (!(controlInput instanceof HTMLInputElement)) return;
+		if (instance.isDisabled) return;
+
+		// En mobile algunos navegadores no enfocan automaticamente el input del dropdown.
+		window.requestAnimationFrame(() => {
+			controlInput.focus({ preventScroll: true });
+		});
+	});
+
 	instances.set(select, instance);
 	if (select.disabled) instance.disable();
 	return instance;
