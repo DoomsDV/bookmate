@@ -70,6 +70,9 @@ const publicProfileDomain =
 							<button type="button" data-settings-tab-trigger data-settings-tab="workspace" class="settings-tab">
 								<span class="material-symbols-rounded">storefront</span>Negocio
 							</button>
+							<button type="button" data-settings-tab-trigger data-settings-tab="integrations" class="settings-tab">
+								<span class="material-symbols-rounded">credit_card</span>Integraciones
+							</button>
 							<button type="button" data-settings-tab-trigger data-settings-tab="system" class="settings-tab">
 								<span class="material-symbols-rounded">settings_applications</span>Sistema
 							</button>
@@ -359,6 +362,57 @@ const publicProfileDomain =
 							</form>
 						</section>
 
+						<section data-settings-panel="integrations" class="settings-panel hidden gap-6">
+							<p data-settings-feedback="integrations" class="hidden settings-feedback"></p>
+							<form data-settings-integrations-form class="grid gap-6">
+								<div class="grid gap-1">
+									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Pagopar</h3>
+									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
+										Configura las claves del negocio para cobrar señas en la reserva pública.
+									</p>
+								</div>
+
+								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+									<span>Clave pública <span class="text-rose-500">*</span></span>
+									<input
+										name="public_key"
+										autocomplete="off"
+										spellcheck="false"
+										class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+										placeholder="Public key de Pagopar"
+										required
+									/>
+								</label>
+
+								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+									<span>Clave privada <span class="text-rose-500">*</span></span>
+									<input
+										name="private_key"
+										type="password"
+										autocomplete="new-password"
+										spellcheck="false"
+										class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+										placeholder="Private key de Pagopar"
+										required
+									/>
+								</label>
+
+								<div class="pt-4 border-t border-(--shell-border) border-dashed">
+									<div class="modal-footer">
+										<div class="modal-footer-actions">
+											<button type="button" class="modal-action-secondary" data-settings-close-action>
+												Cancelar
+											</button>
+											<button type="submit" class="modal-action-primary">
+												<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">save</span>
+												Guardar Pagopar
+											</button>
+										</div>
+									</div>
+								</div>
+							</form>
+						</section>
+
 						<section data-settings-panel="system" class="settings-panel hidden gap-6">
 							<p data-settings-feedback="system" class="hidden settings-feedback"></p>
 							<details class="settings-system-notice">
@@ -581,6 +635,7 @@ const publicProfileDomain =
 			workspaceForm: HTMLFormElement | null;
 			brandingForm: HTMLFormElement | null;
 			systemForm: HTMLFormElement | null;
+			integrationsForm: HTMLFormElement | null;
 			loadingOverlay: HTMLElement | null;
 			profilePreview: HTMLImageElement | null;
 			profilePlaceholder: HTMLElement | null;
@@ -633,6 +688,7 @@ const publicProfileDomain =
 				workspaceForm: this.querySelector<HTMLFormElement>('[data-settings-workspace-form]'),
 				brandingForm: this.querySelector<HTMLFormElement>('[data-settings-branding-form]'),
 				systemForm: this.querySelector<HTMLFormElement>('[data-settings-system-form]'),
+				integrationsForm: this.querySelector<HTMLFormElement>('[data-settings-integrations-form]'),
 				loadingOverlay: this.querySelector<HTMLElement>('[data-settings-loading]'),
 				profilePreview: this.querySelector<HTMLImageElement>('[data-settings-profile-preview]'),
 				profilePlaceholder: this.querySelector<HTMLElement>('[data-settings-profile-placeholder]'),
@@ -691,6 +747,7 @@ const publicProfileDomain =
 			this.els.workspaceForm?.addEventListener('submit', this.handleWorkspaceSubmit, { signal });
 			this.els.systemForm?.addEventListener('submit', this.handleSystemSubmit, { signal });
 			this.els.systemForm?.addEventListener('change', this.handleSystemFormChange, { signal });
+			this.els.integrationsForm?.addEventListener('submit', this.handleIntegrationsSubmit, { signal });
 		}
 
 		disconnectedCallback() {
@@ -1502,6 +1559,7 @@ const publicProfileDomain =
 				if (this.isAdmin) {
 					const workspaceRes = await this.requestApi('/api/workspace', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar negocio.');
 					this.fillWorkspace((workspaceRes.data as unknown as WorkspaceSettingsData | null) ?? null);
+					await this.loadIntegrations();
 				}
 			} catch (error) {
 				this.showFeedback('profile', error instanceof Error ? error.message : 'No fue posible cargar ajustes.', 'error');
@@ -1509,6 +1567,71 @@ const publicProfileDomain =
 				this.setLoadingState(false);
 			}
 		}
+
+		private async loadIntegrations() {
+			if (!this.isAdmin || !this.els.integrationsForm) return;
+
+			try {
+				const data = await this.requestApi(
+					'/api/org-integrations/pagopar',
+					{ method: 'GET', headers: { Accept: 'application/json' } },
+					'No fue posible cargar Pagopar.'
+				);
+
+				const raw = (data as any)?.data ?? {};
+				const publicKey = String(raw?.public_key || '').trim();
+				const privateConfigured = Boolean(raw?.private_key_configured);
+
+				const publicKeyInput = this.els.integrationsForm.querySelector<HTMLInputElement>('[name="public_key"]');
+				const privateKeyInput = this.els.integrationsForm.querySelector<HTMLInputElement>('[name="private_key"]');
+
+				if (publicKeyInput) publicKeyInput.value = publicKey;
+				if (privateKeyInput) privateKeyInput.value = '';
+
+				if (privateConfigured) {
+					privateKeyInput?.setAttribute('placeholder', 'Clave privada configurada (reemplaza para actualizar)');
+				}
+			} catch (error) {
+				// 404: integración no configurada aún → no es error para UI.
+				const status = error instanceof SettingsApiError ? error.status : 0;
+				if (status === 404) return;
+				this.showFeedback('integrations', error instanceof Error ? error.message : 'No fue posible cargar Pagopar.', 'error');
+			}
+		}
+
+		private handleIntegrationsSubmit = async (event: SubmitEvent) => {
+			event.preventDefault();
+			this.clearFeedback();
+			if (!this.els.integrationsForm) return;
+
+			const publicKey = String(
+				this.els.integrationsForm.querySelector<HTMLInputElement>('[name="public_key"]')?.value || ''
+			).trim();
+			const privateKey = String(
+				this.els.integrationsForm.querySelector<HTMLInputElement>('[name="private_key"]')?.value || ''
+			).trim();
+
+			if (!publicKey || !privateKey) {
+				this.showFeedback('integrations', 'Clave pública y clave privada son obligatorias.', 'error');
+				return;
+			}
+
+			try {
+				const data = await this.requestApi(
+					'/api/org-integrations/pagopar',
+					{
+						method: 'PUT',
+						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+						body: JSON.stringify({ provider: 'pagopar', public_key: publicKey, private_key: privateKey }),
+					},
+					'No fue posible guardar Pagopar.'
+				);
+				this.showFeedback('integrations', this.readApiMessage(data, 'Pagopar configurado correctamente.'), 'success');
+				await this.loadIntegrations();
+			} catch (error) {
+				this.showFeedback('integrations', error instanceof Error ? error.message : 'No fue posible guardar Pagopar.', 'error');
+			}
+		};
 
 		private handleProfileSubmit = async (event: SubmitEvent) => {
 			event.preventDefault();

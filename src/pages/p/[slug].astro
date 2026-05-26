@@ -306,9 +306,20 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 									<button
 										type="submit"
 										data-submit-booking
-										class="inline-flex h-12 w-full items-center justify-center rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary) transition hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+										data-submit-confirm
+										data-booking-primary-action
+										class="booking-primary-action inline-flex h-12 w-full items-center justify-center rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary) transition hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
 									>
 										Confirmar reserva
+									</button>
+									<button
+										type="button"
+										data-pay-deposit-submit
+										data-booking-primary-action
+										class="booking-primary-action is-hidden inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary) transition hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+									>
+										<span>Pagar Seña para Confirmar</span>
+										<span aria-hidden="true">🔒</span>
 									</button>
 									<button
 										type="button"
@@ -332,6 +343,10 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 									<li class="grid">
 										<span class="text-sm font-medium text-(--on-surface-variant)">Servicio</span>
 										<span class="font-normal text-(--on-surface)" data-summary-service></span>
+									</li>
+									<li class="hidden grid" data-summary-deposit-wrap>
+										<span class="text-sm font-medium text-(--on-surface-variant)">Seña requerida</span>
+										<span class="font-semibold text-(--primary)" data-summary-deposit></span>
 									</li>
 									<li class="grid">
 										<span class="text-sm font-medium text-(--on-surface-variant)">Fecha</span>
@@ -380,6 +395,64 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 							Reservar otra cita
 						</button>
 					</section>
+
+					<dialog
+						class="public-payment-modal rounded-[28px] border border-(--outline-variant) bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70"
+						data-payment-modal
+					>
+						<div class="grid gap-5 p-5 sm:p-6">
+							<div class="flex items-start justify-between gap-4">
+								<div>
+									<h2 class="text-xl font-semibold tracking-tight">Medio de pago</h2>
+									<p class="mt-1 text-sm text-(--on-surface-variant)">
+										Elegí cómo abonar la seña para confirmar tu reserva.
+									</p>
+								</div>
+								<button
+									type="button"
+									class="grid h-10 w-10 place-items-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-highest) hover:text-(--on-surface)"
+									data-payment-modal-close
+									aria-label="Cerrar"
+								>
+									<span class="material-symbols-rounded">close</span>
+								</button>
+							</div>
+
+							<p
+								class="rounded-2xl bg-(--primary-container) px-4 py-3 text-sm font-medium text-(--on-primary-container)"
+								data-payment-modal-deposit
+							>
+								Seña requerida: —
+							</p>
+
+							<!-- Oculto por ahora: el checkout de Pagopar muestra tarjeta/QR. Reactivar para elegir medio en Hasel. -->
+							<div class="hidden grid gap-3 sm:grid-cols-2" data-payment-methods-panel role="group" aria-label="Opciones de pago">
+								<button
+									type="button"
+									class="public-payment-method"
+									data-pay-method="9"
+								>
+									<span class="material-symbols-rounded public-payment-method__icon" aria-hidden="true">credit_card</span>
+									<span class="public-payment-method__title">Tarjeta</span>
+									<span class="public-payment-method__hint">Débito o crédito</span>
+								</button>
+								<button
+									type="button"
+									class="public-payment-method"
+									data-pay-method="24"
+								>
+									<span class="material-symbols-rounded public-payment-method__icon" aria-hidden="true">qr_code_2</span>
+									<span class="public-payment-method__title">QR</span>
+									<span class="public-payment-method__hint">Pagá con tu app</span>
+								</button>
+							</div>
+
+							<p
+								class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
+								data-payment-modal-error
+							></p>
+						</div>
+					</dialog>
 
 					<dialog class="public-map-modal rounded-[28px] border border-(--outline-variant) bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70" data-public-map-modal>
 						<div class="grid gap-4 p-5 sm:p-6">
@@ -618,6 +691,70 @@ const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON'
 	.btn-primary-soft:hover {
 		background: var(--primary);
 		color: var(--on-primary);
+	}
+
+	.public-payment-modal {
+		width: min(92vw, 28rem);
+		margin: auto;
+	}
+
+	.public-payment-methods {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.public-payment-method {
+		display: grid;
+		justify-items: center;
+		gap: 0.35rem;
+		width: 100%;
+		padding: 1.1rem 1rem;
+		border-radius: 1rem;
+		border: 1.5px solid var(--outline-variant);
+		background: var(--surface-container-lowest);
+		color: var(--on-surface);
+		transition:
+			border-color 0.15s ease,
+			background 0.15s ease,
+			box-shadow 0.15s ease,
+			transform 0.15s ease;
+	}
+
+	.public-payment-method:hover:not(:disabled) {
+		border-color: color-mix(in srgb, var(--primary) 55%, var(--outline-variant));
+		background: var(--surface-container-high);
+		transform: translateY(-1px);
+	}
+
+	.public-payment-method:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 2px;
+	}
+
+	.public-payment-method.is-loading,
+	.public-payment-method:disabled {
+		opacity: 0.65;
+		cursor: not-allowed;
+		transform: none;
+	}
+
+	.public-payment-method__icon {
+		font-size: 1.75rem;
+		color: var(--primary);
+	}
+
+	.public-payment-method__title {
+		font-size: 1rem;
+		font-weight: 600;
+	}
+
+	.public-payment-method__hint {
+		font-size: 0.8rem;
+		color: var(--on-surface-variant);
+	}
+
+	.booking-primary-action.is-hidden {
+		display: none !important;
 	}
 </style>
 

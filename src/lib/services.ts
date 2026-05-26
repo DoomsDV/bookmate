@@ -17,6 +17,9 @@ export interface Service {
 	duration_minutes: number;
 	price: number;
 	is_active: 0 | 1;
+	requires_deposit?: 0 | 1;
+	deposit_type?: 'PERCENT' | 'FIXED' | null;
+	deposit_value?: number | null;
 	created_at: string;
 }
 
@@ -25,6 +28,9 @@ export interface ServiceLov {
 	name: string;
 	duration_minutes: number;
 	price: number;
+	requires_deposit?: 0 | 1;
+	deposit_type?: 'PERCENT' | 'FIXED' | null;
+	deposit_value?: number | null;
 }
 
 export interface ServicesListMeta {
@@ -49,6 +55,9 @@ export interface CreateServicePayload {
 	duration_minutes: number;
 	price?: number;
 	is_active?: 0 | 1;
+	requires_deposit?: 0 | 1;
+	deposit_type?: 'PERCENT' | 'FIXED';
+	deposit_value?: number;
 }
 
 interface ServicesFailureResponse {
@@ -87,6 +96,23 @@ export class ServicesApiError extends Error {
 const toNumber = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);
 	return Number.isFinite(parsed) ? parsed : fallback;
+};
+
+const normalizeRequiresDeposit = (value: unknown): 0 | 1 => {
+	if (value === 1 || value === '1' || value === true) return 1;
+	return 0;
+};
+
+const normalizeDepositType = (value: unknown): 'PERCENT' | 'FIXED' | null => {
+	const raw = String(value ?? '').trim().toUpperCase();
+	if (raw === 'PERCENT' || raw === 'FIXED') return raw;
+	return null;
+};
+
+const normalizeDepositValue = (value: unknown): number | null => {
+	if (value === null || value === undefined || value === '') return null;
+	const parsed = Number(value);
+	return Number.isFinite(parsed) ? parsed : null;
 };
 
 const parseFieldErrors = (value: unknown): ServiceFieldError[] => {
@@ -146,6 +172,9 @@ const normalizeService = (value: unknown): Service | null => {
 		duration_minutes: toNumber(source.duration_minutes),
 		price: toNumber(source.price),
 		is_active: source.is_active === 1 || source.is_active === '1' || source.is_active === true ? 1 : 0,
+		requires_deposit: normalizeRequiresDeposit(source.requires_deposit),
+		deposit_type: normalizeDepositType(source.deposit_type),
+		deposit_value: normalizeDepositValue(source.deposit_value),
 		created_at: String(source.created_at || ''),
 	};
 };
@@ -162,6 +191,9 @@ const normalizeServiceLov = (value: unknown): ServiceLov | null => {
 		name: String(source.name || '').trim(),
 		duration_minutes: toNumber(source.duration_minutes),
 		price: toNumber(source.price),
+		requires_deposit: normalizeRequiresDeposit(source.requires_deposit),
+		deposit_type: normalizeDepositType(source.deposit_type),
+		deposit_value: normalizeDepositValue(source.deposit_value),
 	};
 };
 

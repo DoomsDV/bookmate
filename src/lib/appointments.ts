@@ -93,6 +93,7 @@ export interface AppointmentCreatePayload {
 	customer_phone?: string;
 	start_time: string;
 	end_time: string;
+	payment_status?: 'NONE' | 'PENDING' | 'PAID' | 'PAID_TRANSFER' | 'PAID_CASH' | 'EXEMPT';
 }
 
 export interface AppointmentUpdatePayload extends AppointmentCreatePayload {

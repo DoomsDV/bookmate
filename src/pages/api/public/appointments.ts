@@ -23,6 +23,10 @@ const parsePayload = (source: any): PublicCreateAppointmentPayload => {
 		end_time: String(source?.end_time || '').trim(),
 	};
 
+	if (source?.reserve_for_deposit === true || source?.reserve_for_deposit === 1 || source?.reserve_for_deposit === '1') {
+		payload.reserve_for_deposit = true;
+	}
+
 	if (
 		!payload.org_id_organization ||
 		!payload.loc_id_location ||
@@ -57,6 +61,7 @@ export const POST: APIRoute = async ({ request }) => {
 				status: 'success',
 				message: created.message,
 				data: created.data,
+				appointment_id: created.data?.appointment_id,
 			},
 			{ status: created.statusCode === 200 ? 201 : created.statusCode }
 		);

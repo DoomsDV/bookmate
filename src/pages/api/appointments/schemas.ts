@@ -23,6 +23,9 @@ const baseAppointmentSchema = z.object({
 	customer_phone: z.string().trim().max(20).optional(),
 	start_time: isoDateTimeSchema,
 	end_time: isoDateTimeSchema,
+	payment_status: z
+		.enum(['NONE', 'PENDING', 'PAID', 'PAID_TRANSFER', 'PAID_CASH', 'EXEMPT'])
+		.optional(),
 });
 
 const validateCustomerIdentity = (

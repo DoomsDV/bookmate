@@ -43,6 +43,8 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/api/roles', roles: MANAGER_ROLES, match: 'prefix' },
 	{ path: '/api/catalog', roles: MANAGER_ROLES, match: 'prefix' },
 	{ path: '/api/google', roles: ALL_ROLES, match: 'prefix' },
+	{ path: '/api/org-integrations', roles: [ROLES.ADMIN], match: 'prefix' },
+	{ path: '/api/public/payments', roles: ALL_ROLES, match: 'prefix' },
 ];
 
 const normalizePath = (path: string) => {

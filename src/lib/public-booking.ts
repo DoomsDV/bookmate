@@ -36,6 +36,18 @@ export const PUBLIC_RESERVATION_API_URL = resolveOrdsPublicApiUrl(
 	'reservations/:token'
 );
 
+export const PUBLIC_PAYMENTS_API_URL = resolveOrdsPublicApiUrl(
+	import.meta.env.ORDS_PUBLIC_PAYMENTS_URL,
+	'ORDS_PUBLIC_PAYMENTS_URL',
+	'payments'
+);
+
+export const PUBLIC_PAYMENTS_STATUS_API_URL = resolveOrdsPublicApiUrl(
+	import.meta.env.ORDS_PUBLIC_PAYMENTS_STATUS_URL,
+	'ORDS_PUBLIC_PAYMENTS_STATUS_URL',
+	'payments/:hash'
+);
+
 const resolvePublicLocationApiUrl = (locationId: number) => {
 	const safeId = encodeURIComponent(String(locationId));
 	const template = String(import.meta.env.ORDS_PUBLIC_LOCATION_URL || '').trim();
@@ -73,6 +85,10 @@ export interface PublicBookingService {
 	name: string;
 	duration_minutes: number;
 	price: number;
+	requires_deposit?: 0 | 1;
+	deposit_type?: 'PERCENT' | 'FIXED' | null;
+	deposit_value?: number | null;
+	deposit_amount?: number | null;
 }
 
 export interface PublicBookingLocation {
@@ -103,7 +119,47 @@ export interface PublicCreateAppointmentPayload {
 	customer_phone: string;
 	start_time: string;
 	end_time: string;
+	reserve_for_deposit?: boolean;
 }
+
+export interface PublicCreatePaymentPayload {
+	forma_pago: 9 | 24;
+	id_appointment?: number;
+	org_id_organization?: number;
+	loc_id_location?: number;
+	pro_id_professional?: number;
+	ser_id_service?: number;
+	customer_name?: string;
+	customer_phone?: string;
+	start_time?: string;
+	end_time?: string;
+	customer_email?: string;
+}
+
+export interface PublicPaymentStatus {
+	hash: string;
+	appointment_id: number;
+	status: string;
+	payment_status: string;
+	deposit_amount?: number;
+	service_name?: string;
+	customer_name?: string;
+	start_time?: string;
+	end_time?: string;
+	paid_at?: string | null;
+	forma_pago_confirmed?: number | null;
+	forma_pago_label?: string | null;
+	forma_pago_requested?: number | null;
+}
+
+const resolvePublicPaymentsUrl = () => `${PUBLIC_PAYMENTS_API_URL.replace(/\/+$/, '')}`;
+
+const resolvePublicPaymentStatusUrl = (hash: string) => {
+	const safeHash = encodeURIComponent(String(hash || '').trim());
+	return PUBLIC_PAYMENTS_STATUS_API_URL.includes(':hash')
+		? PUBLIC_PAYMENTS_STATUS_API_URL.replace(':hash', safeHash)
+		: `${PUBLIC_PAYMENTS_STATUS_API_URL.replace(/\/+$/, '')}/${safeHash}`;
+};
 
 export interface PublicCreatedAppointmentData {
 	appointment_id?: number;
@@ -391,11 +447,27 @@ const normalizeService = (value: unknown): PublicBookingService | null => {
 	const name = String(source.name || '').trim();
 	if (!idService || !durationMinutes || !name) return null;
 
+	const requiresDeposit =
+		source.requires_deposit === 1 ||
+		source.requires_deposit === '1' ||
+		source.requires_deposit === true
+			? 1
+			: 0;
+	const depositTypeRaw = String(source.deposit_type ?? '').trim().toUpperCase();
+	const depositType =
+		depositTypeRaw === 'PERCENT' || depositTypeRaw === 'FIXED' ? depositTypeRaw : null;
+	const depositValueRaw = Number(source.deposit_value ?? NaN);
+	const depositAmountRaw = Number(source.deposit_amount ?? NaN);
+
 	return {
 		id_service: idService,
 		name,
 		duration_minutes: durationMinutes,
 		price: Number(source.price ?? 0),
+		requires_deposit: requiresDeposit,
+		deposit_type: depositType,
+		deposit_value: Number.isFinite(depositValueRaw) ? depositValueRaw : null,
+		deposit_amount: Number.isFinite(depositAmountRaw) ? depositAmountRaw : null,
 	};
 };
 
@@ -554,11 +626,87 @@ export const createPublicAppointmentWithOrds = async (payload: PublicCreateAppoi
 
 	const data = await parseApiResponse(response, 'No fue posible confirmar la cita.');
 	const successMessage = String(data.message || '').trim();
+	const appointmentId = toPositiveInt(
+		(data as any).appointment_id ?? (data as any).data?.appointment_id,
+		0
+	);
 
 	return {
 		statusCode: response.status || 201,
 		message: successMessage || 'Cita confirmada!',
-		data: normalizeCreatedAppointmentData(data.data),
+		data: {
+			...(normalizeCreatedAppointmentData(data.data) || {}),
+			appointment_id: appointmentId || normalizeCreatedAppointmentData(data.data)?.appointment_id,
+		},
+	};
+};
+
+export const createPublicPaymentOrderWithOrds = async (payload: PublicCreatePaymentPayload) => {
+	const response = await fetch(resolvePublicPaymentsUrl(), {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible iniciar el pago.');
+	const rawData = (data.data ?? null) as any;
+	const hash = String(rawData?.hash || '').trim();
+	const checkoutUrl = String(rawData?.checkout_url || '').trim();
+	const appointmentId = toPositiveInt(rawData?.appointment_id, 0);
+
+	if (!hash || !checkoutUrl || !appointmentId) {
+		throw new PublicBookingApiError('No fue posible interpretar la respuesta de pago.', 502, {
+			response_body: data,
+		});
+	}
+
+	return {
+		hash,
+		checkout_url: checkoutUrl,
+		appointment_id: appointmentId,
+		deposit_amount: toPositiveInt(rawData?.deposit_amount, 0),
+	};
+};
+
+export const getPublicPaymentStatusWithOrds = async (hash: string): Promise<PublicPaymentStatus> => {
+	const safeHash = String(hash || '').trim();
+	if (!safeHash) {
+		throw new PublicBookingApiError('Hash de pago requerido.', 400);
+	}
+
+	const response = await fetch(resolvePublicPaymentStatusUrl(safeHash), {
+		method: 'GET',
+		headers: { Accept: 'application/json' },
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible consultar el estado del pago.');
+	const raw = (data.data ?? null) as any;
+	const appointmentId = toPositiveInt(raw?.appointment_id ?? raw?.appointmentId ?? raw?.appointment_id, 0);
+	const paymentStatus = String(raw?.payment_status || '').trim();
+
+	if (!appointmentId || !paymentStatus) {
+		throw new PublicBookingApiError('No fue posible interpretar el estado del pago.', 502, {
+			response_body: data,
+		});
+	}
+
+	return {
+		hash: safeHash,
+		appointment_id: appointmentId,
+		status: String(raw?.status || '').trim(),
+		payment_status: paymentStatus,
+		deposit_amount: Number(raw?.deposit_amount ?? raw?.depositAmount ?? raw?.deposit_amount) || undefined,
+		service_name: String(raw?.service_name || '').trim() || undefined,
+		customer_name: String(raw?.customer_name || '').trim() || undefined,
+		start_time: String(raw?.start_time || '').trim() || undefined,
+		end_time: String(raw?.end_time || '').trim() || undefined,
+		paid_at: raw?.paid_at ? String(raw.paid_at) : null,
+		forma_pago_confirmed: raw?.forma_pago_confirmed ? Number(raw.forma_pago_confirmed) : null,
+		forma_pago_label: raw?.forma_pago_label ? String(raw.forma_pago_label) : null,
+		forma_pago_requested: raw?.forma_pago_requested ? Number(raw.forma_pago_requested) : null,
 	};
 };
 

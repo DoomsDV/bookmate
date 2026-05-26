@@ -15,6 +15,9 @@ const parseBody = async (request: Request) => {
 		duration_minutes: formData.get('duration_minutes'),
 		price: formData.get('price'),
 		is_active: formData.get('is_active'),
+		requires_deposit: formData.get('requires_deposit'),
+		deposit_type: formData.get('deposit_type'),
+		deposit_value: formData.get('deposit_value'),
 	};
 };
 
@@ -47,6 +50,23 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			if (Number.isFinite(price)) {
 				payload.price = price;
 			}
+		}
+
+		if (Object.prototype.hasOwnProperty.call(body ?? {}, 'requires_deposit')) {
+			const requires = Number(String(body?.requires_deposit ?? '').trim());
+			if (requires === 1) payload.requires_deposit = 1;
+			else if (requires === 0) payload.requires_deposit = 0;
+		}
+
+		const depositType = String(body?.deposit_type ?? '').trim().toUpperCase();
+		if (depositType === 'PERCENT' || depositType === 'FIXED') {
+			payload.deposit_type = depositType as 'PERCENT' | 'FIXED';
+		}
+
+		const depositValueRaw = String(body?.deposit_value ?? '').trim();
+		if (depositValueRaw !== '') {
+			const depositValue = Number(depositValueRaw);
+			if (Number.isFinite(depositValue)) payload.deposit_value = depositValue;
 		}
 
 		const created = await createServiceWithOrds(token, payload);

@@ -72,6 +72,7 @@ type RequiredNodes = {
 	endDisplayInput: HTMLInputElement;
 	openEndPickerButton: HTMLButtonElement;
 	statusInput: HTMLSelectElement;
+	paymentStatusInput: HTMLSelectElement;
 	modalProfessionalWrap: HTMLElement;
 	modalProfessional: HTMLSelectElement;
 	modalLocation: HTMLSelectElement;
@@ -142,6 +143,7 @@ class AppointmentModal extends HTMLElement {
 	endDisplayInput: HTMLInputElement | null = null;
 	openEndPickerButton: HTMLButtonElement | null = null;
 	statusInput: HTMLSelectElement | null = null;
+	paymentStatusInput: HTMLSelectElement | null = null;
 	modalStatusWrap: HTMLElement | null = null;
 	modalStatusReadonlyWrap: HTMLElement | null = null;
 	modalStatusReadonlyBadge: HTMLElement | null = null;
@@ -222,6 +224,8 @@ class AppointmentModal extends HTMLElement {
 		this.openEndPickerButton =
 			this.form?.querySelector<HTMLButtonElement>('[data-open-end-picker]') ?? null;
 		this.statusInput = this.form?.querySelector<HTMLSelectElement>('[data-modal-status]') ?? null;
+		this.paymentStatusInput =
+			this.form?.querySelector<HTMLSelectElement>('[data-modal-payment-status]') ?? null;
 		this.modalStatusWrap =
 			this.form?.querySelector<HTMLElement>('[data-modal-status-wrap]') ?? null;
 		this.modalStatusReadonlyWrap =
@@ -483,6 +487,7 @@ class AppointmentModal extends HTMLElement {
 			!this.endDisplayInput ||
 			!this.openEndPickerButton ||
 			!this.statusInput ||
+			!this.paymentStatusInput ||
 			!this.modalProfessionalWrap ||
 			!this.modalProfessional ||
 			!this.modalLocation ||
@@ -523,6 +528,7 @@ class AppointmentModal extends HTMLElement {
 			endDisplayInput: this.endDisplayInput,
 			openEndPickerButton: this.openEndPickerButton,
 			statusInput: this.statusInput,
+			paymentStatusInput: this.paymentStatusInput,
 			modalProfessionalWrap: this.modalProfessionalWrap,
 			modalProfessional: this.modalProfessional,
 			modalLocation: this.modalLocation,
@@ -1110,6 +1116,9 @@ class AppointmentModal extends HTMLElement {
 		const serviceId = toPositiveInt(requiredNodes.modalService.value, 0);
 		const professionalId = this.getSelectedProfessionalId();
 		const statusRaw = String(requiredNodes.statusInput.value || '').trim().toUpperCase();
+		const paymentStatusRaw = String(requiredNodes.paymentStatusInput.value || '')
+			.trim()
+			.toUpperCase();
 		const startRaw = normalizeDateTimeInput(requiredNodes.startInput.value).trim();
 		const endRaw = normalizeDateTimeInput(requiredNodes.endInput.value).trim();
 		requiredNodes.startInput.value = startRaw;
@@ -1163,6 +1172,18 @@ class AppointmentModal extends HTMLElement {
 			return { error: 'El estado de la cita es invalido.' };
 		}
 
+		const allowedPaymentStatuses = new Set([
+			'NONE',
+			'PENDING',
+			'PAID',
+			'PAID_TRANSFER',
+			'PAID_CASH',
+			'EXEMPT',
+		]);
+		const paymentStatus = allowedPaymentStatuses.has(paymentStatusRaw)
+			? (paymentStatusRaw as any)
+			: 'NONE';
+
 		return {
 			payload: {
 				...(customerId > 0 ? { id_customer: customerId } : {}),
@@ -1174,6 +1195,7 @@ class AppointmentModal extends HTMLElement {
 				start_time: startIso,
 				end_time: endIso,
 				status: statusRaw,
+				payment_status: paymentStatus,
 			},
 		};
 	}
@@ -1632,6 +1654,7 @@ class AppointmentModal extends HTMLElement {
 							customer_phone: payload.customer_phone,
 							start_time: payload.start_time,
 							end_time: payload.end_time,
+							payment_status: (payload as any).payment_status,
 						});
 
 			this.closeModal();

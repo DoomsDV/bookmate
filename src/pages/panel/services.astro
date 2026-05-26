@@ -288,6 +288,55 @@ const toPageHref = (page: number) => {
 					</label>
 				</div>
 
+				<div class="grid gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright)/40 p-4">
+					<label class="flex items-center justify-between gap-4 text-[0.95rem] font-bold text-(--on-surface)">
+						<span class="grid gap-1">
+							<span>Requiere seña para reservar</span>
+							<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+								Si lo activas, el cliente deberá pagar una seña en la web para confirmar.
+							</span>
+						</span>
+						<input type="checkbox" name="requires_deposit" value="1" data-requires-deposit-toggle class="size-5 accent-(--primary)" />
+					</label>
+
+					<div class="grid gap-4 hidden" data-deposit-fields>
+						<div class="grid grid-cols-2 gap-5">
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+								<span>Tipo de seña <span class="text-rose-500">*</span></span>
+								<div class="relative">
+									<select
+										name="deposit_type"
+										data-deposit-type
+										class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer"
+									>
+										<option value="PERCENT">Porcentaje (%)</option>
+										<option value="FIXED">Monto fijo (Gs)</option>
+									</select>
+									<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)">
+										<span class="material-symbols-rounded">expand_more</span>
+									</span>
+								</div>
+								<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_type"></span>
+							</label>
+
+							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+								<span>Valor <span class="text-rose-500">*</span></span>
+								<input
+									type="number"
+									name="deposit_value"
+									data-deposit-value
+									min="1"
+									step="1"
+									inputmode="numeric"
+									class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+									placeholder="Ej: 30 o 50000"
+								/>
+								<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_value"></span>
+							</label>
+						</div>
+					</div>
+				</div>
+
 				<label
 					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 					data-service-status-wrap
@@ -376,6 +425,9 @@ const toPageHref = (page: number) => {
 		duration_minutes: number;
 		is_active: 0 | 1;
 		price?: number;
+		requires_deposit?: 0 | 1;
+		deposit_type?: "PERCENT" | "FIXED";
+		deposit_value?: number;
 	};
 
 	type ServiceDetail = {
@@ -383,6 +435,9 @@ const toPageHref = (page: number) => {
 		duration_minutes?: number | null;
 		price?: number | null;
 		is_active?: 0 | 1 | boolean | null;
+		requires_deposit?: 0 | 1 | boolean | null;
+		deposit_type?: "PERCENT" | "FIXED" | string | null;
+		deposit_value?: number | null;
 	};
 
 	class ServiceManager extends HTMLElement {
@@ -410,6 +465,10 @@ const toPageHref = (page: number) => {
 			modalDesc: HTMLElement | null;
 			statusWrap: HTMLElement | null;
 			priceInput: HTMLInputElement | null;
+			requiresDepositToggle: HTMLInputElement | null;
+			depositFields: HTMLElement | null;
+			depositType: HTMLSelectElement | null;
+			depositValue: HTMLInputElement | null;
 		};
 
 		private formEls!: {
@@ -453,6 +512,12 @@ const toPageHref = (page: number) => {
 				),
 				priceInput:
 					this.querySelector<HTMLInputElement>("[data-price-mask]"),
+				requiresDepositToggle: this.querySelector<HTMLInputElement>(
+					"[data-requires-deposit-toggle]",
+				),
+				depositFields: this.querySelector<HTMLElement>("[data-deposit-fields]"),
+				depositType: this.querySelector<HTMLSelectElement>("[data-deposit-type]"),
+				depositValue: this.querySelector<HTMLInputElement>("[data-deposit-value]"),
 			};
 
 			this.formEls = {
@@ -487,6 +552,11 @@ const toPageHref = (page: number) => {
 			this.els.priceInput?.addEventListener(
 				"input",
 				this.handlePriceInput,
+				{ signal },
+			);
+			this.els.requiresDepositToggle?.addEventListener(
+				"change",
+				this.handleRequiresDepositToggle,
 				{ signal },
 			);
 			this.formEls.duration?.addEventListener(
@@ -656,6 +726,22 @@ const toPageHref = (page: number) => {
 				this.els.priceInput.value = this.formatPrice(
 					service?.price ?? "",
 				);
+			const requiresDeposit =
+				String(service?.requires_deposit ?? "0") === "1" ||
+				service?.requires_deposit === true;
+			if (this.els.requiresDepositToggle) {
+				this.els.requiresDepositToggle.checked = requiresDeposit;
+			}
+			this.toggleDepositFields(requiresDeposit);
+			if (this.els.depositType) {
+				const type = String(service?.deposit_type || "PERCENT").toUpperCase();
+				this.els.depositType.value = type === "FIXED" ? "FIXED" : "PERCENT";
+			}
+			if (this.els.depositValue) {
+				this.els.depositValue.value = service?.deposit_value
+					? String(service.deposit_value)
+					: "";
+			}
 			if (this.formEls.status)
 				this.formEls.status.value = String(
 					service?.is_active === 0 ? 0 : 1,
@@ -669,7 +755,23 @@ const toPageHref = (page: number) => {
 				this.els.priceInput,
 			].forEach((el) => el && (el.value = ""));
 			if (this.formEls.status) this.formEls.status.value = "1";
+			if (this.els.requiresDepositToggle) this.els.requiresDepositToggle.checked = false;
+			this.toggleDepositFields(false);
+			if (this.els.depositType) this.els.depositType.value = "PERCENT";
+			if (this.els.depositValue) this.els.depositValue.value = "";
 		}
+
+		private toggleDepositFields(isEnabled: boolean) {
+			this.els.depositFields?.classList.toggle("hidden", !isEnabled);
+			if (!isEnabled) {
+				if (this.els.depositValue) this.els.depositValue.value = "";
+			}
+		}
+
+		private handleRequiresDepositToggle = () => {
+			const enabled = Boolean(this.els.requiresDepositToggle?.checked);
+			this.toggleDepositFields(enabled);
+		};
 
 		private async requestApi<T = any>(url: string, options?: RequestInit): Promise<any> {
 			const response = await fetch(url, options);
@@ -789,6 +891,13 @@ const toPageHref = (page: number) => {
 				/\D/g,
 				"",
 			).slice(0, 8);
+			const requiresDeposit = formData.get("requires_deposit") ? 1 : 0;
+			const depositType = String(formData.get("deposit_type") || "")
+				.trim()
+				.toUpperCase();
+			const depositValueRaw = String(formData.get("deposit_value") || "")
+				.trim()
+				.replace(/\D/g, "");
 
 			if (!name || !duration || !Number.isFinite(duration)) {
 				return this.showFormError(
@@ -802,6 +911,17 @@ const toPageHref = (page: number) => {
 				is_active: isActive,
 			};
 			if (priceRaw) payload.price = Number(priceRaw);
+			payload.requires_deposit = requiresDeposit as 0 | 1;
+
+			if (requiresDeposit === 1) {
+				payload.deposit_type = depositType === "FIXED" ? "FIXED" : "PERCENT";
+				if (!depositValueRaw) {
+					return this.showFormError(
+						"Ingresa el valor de la seña antes de continuar.",
+					);
+				}
+				payload.deposit_value = Number(depositValueRaw);
+			}
 
 			const isEdit = this.mode === "edit" && this.editingServiceId > 0;
 			this.setButtonsProcessing(isEdit ? "Guardando..." : "Creando...");

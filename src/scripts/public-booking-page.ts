@@ -25,6 +25,10 @@ type BookingService = {
 	name: string;
 	duration_minutes: number;
 	price: number;
+	requires_deposit?: 0 | 1;
+	deposit_type?: 'PERCENT' | 'FIXED' | null;
+	deposit_value?: number | null;
+	deposit_amount?: number | null;
 };
 
 type BookingLocation = {
@@ -100,6 +104,30 @@ const formatDuration = (totalMinutes: number) => {
 	
 	return `${hours} h ${minutes} min`;
 };
+
+const calculateDepositAmount = (service: BookingService | null) => {
+	if (!service || Number(service.requires_deposit || 0) !== 1) return 0;
+
+	const fromApi = Number(service.deposit_amount ?? NaN);
+	if (Number.isFinite(fromApi) && fromApi > 0) return fromApi;
+
+	const depositType = String(service.deposit_type || '').trim().toUpperCase();
+	const depositValue = Number(service.deposit_value || 0);
+	const price = Number(service.price || 0);
+
+	if (depositType === 'PERCENT') {
+		return Math.round((price * depositValue) / 100);
+	}
+	if (depositType === 'FIXED') {
+		return depositValue;
+	}
+	return 0;
+};
+
+/** Redirige al checkout hospedado de Pagopar (sin elegir tarjeta/QR en Hasel). */
+const USE_DIRECT_PAGOPAR_CHECKOUT = true;
+/** Forma de pago por defecto al iniciar transacción (9 = tarjeta; Pagopar muestra el resto en su UI). */
+const DEFAULT_PAGOPAR_FORMA_PAGO = 9 as const;
 
 const formatCurrency = (value: number) =>
 	new Intl.NumberFormat('es-PY', {
@@ -224,6 +252,12 @@ export const initializePublicBookingPage = () => {
 		'[data-field-error="customer_phone"]'
 	);
 	const submitButton = root.querySelector<HTMLButtonElement>('[data-submit-booking]');
+	const payDepositButton = root.querySelector<HTMLButtonElement>('[data-pay-deposit-submit]');
+	const paymentModal = root.querySelector<HTMLDialogElement>('[data-payment-modal]');
+	const paymentModalClose = root.querySelector<HTMLButtonElement>('[data-payment-modal-close]');
+	const paymentModalDeposit = root.querySelector<HTMLElement>('[data-payment-modal-deposit]');
+	const paymentModalError = root.querySelector<HTMLElement>('[data-payment-modal-error]');
+	const payMethodButtons = root.querySelectorAll<HTMLButtonElement>('[data-pay-method]');
 	const submitErrorNode = root.querySelector<HTMLElement>('[data-submit-error]');
 	const toastNode = root.querySelector<HTMLElement>('[data-booking-toast]');
 
@@ -231,6 +265,8 @@ export const initializePublicBookingPage = () => {
 	const summaryDateInline = root.querySelector<HTMLElement>('[data-summary-date-inline]');
 	const summaryProfessional = root.querySelector<HTMLElement>('[data-summary-professional]');
 	const summaryService = root.querySelector<HTMLElement>('[data-summary-service]');
+	const summaryDepositWrap = root.querySelector<HTMLElement>('[data-summary-deposit-wrap]');
+	const summaryDeposit = root.querySelector<HTMLElement>('[data-summary-deposit]');
 	const summaryDate = root.querySelector<HTMLElement>('[data-summary-date]');
 	const summaryTime = root.querySelector<HTMLElement>('[data-summary-time]');
 	const summaryLocation = root.querySelector<HTMLButtonElement>('[data-summary-location]');
@@ -269,10 +305,17 @@ export const initializePublicBookingPage = () => {
 		!customerNameInput ||
 		!customerPhoneInput ||
 		!submitButton ||
+		!payDepositButton ||
+		!paymentModal ||
+		!paymentModalClose ||
+		!paymentModalDeposit ||
+		!paymentModalError ||
 		!summaryServiceInline ||
 		!summaryDateInline ||
 		!summaryProfessional ||
 		!summaryService ||
+		!summaryDepositWrap ||
+		!summaryDeposit ||
 		!summaryDate ||
 		!summaryTime ||
 		!summaryLocation ||
@@ -318,6 +361,7 @@ export const initializePublicBookingPage = () => {
 	let isLoadingSlots = false;
 	let isSubmitting = false;
 	let isValidatingCustomer = false;
+	let pendingAppointmentId = 0;
 	let customerValidationSeq = 0;
 	let validatedCustomerPhoneE164 = '';
 	let mapInstance: any = null;
@@ -764,6 +808,29 @@ export const initializePublicBookingPage = () => {
 		summaryTime.textContent = timeLabel;
 		summaryLocation.textContent = formatLocationLabel(selectedLocation);
 		summaryLocation.disabled = !canShowLocationMap(selectedLocation);
+
+		const depositAmount = calculateDepositAmount(selectedService);
+		const requiresDeposit = depositAmount > 0;
+
+		summaryDepositWrap.classList.toggle('hidden', !requiresDeposit);
+		if (requiresDeposit) {
+			summaryDeposit.textContent = formatCurrency(depositAmount);
+		} else {
+			summaryDeposit.textContent = '';
+		}
+
+		submitButton.classList.toggle('is-hidden', requiresDeposit);
+		payDepositButton.classList.toggle('is-hidden', !requiresDeposit);
+	};
+
+	const resetPendingAppointment = () => {
+		pendingAppointmentId = 0;
+	};
+
+	const syncPendingAppointmentContext = () => {
+		if (calculateDepositAmount(selectedService) <= 0) {
+			resetPendingAppointment();
+		}
 	};
 
 	const renderServices = () => {
@@ -800,6 +867,7 @@ export const initializePublicBookingPage = () => {
 				selectedTime = '';
 				selectedLocation = defaultLocation;
 				availableSlotGroups = [];
+				resetPendingAppointment();
 				refreshSummary();
 				renderServices();
 				renderCalendar();
@@ -857,6 +925,7 @@ export const initializePublicBookingPage = () => {
 				selectedDate = dateKey;
 				selectedTime = '';
 				selectedLocation = defaultLocation;
+				resetPendingAppointment();
 				refreshSummary();
 				renderCalendar();
 				void loadAvailableSlots(dateKey);
@@ -926,6 +995,7 @@ export const initializePublicBookingPage = () => {
 				slotButton.addEventListener('click', () => {
 					selectedTime = slot;
 					selectedLocation = group.location;
+					resetPendingAppointment();
 					refreshSummary();
 					renderSlots();
 					setStep(4);
@@ -1073,6 +1143,7 @@ export const initializePublicBookingPage = () => {
 		selectedLocation = defaultLocation;
 		availableSlotGroups = [];
 		isLoadingSlots = false;
+		resetPendingAppointment();
 		customerForm.reset();
 		resetCustomerLookupState(true);
 		setPhoneFieldError('');
@@ -1179,9 +1250,237 @@ export const initializePublicBookingPage = () => {
 		await validateCustomerPhone(parsedPhone.e164);
 	}, { signal });
 
+	const setPaymentModalError = (message: string) => {
+		if (!message) {
+			paymentModalError.textContent = '';
+			paymentModalError.classList.add('hidden');
+			return;
+		}
+		paymentModalError.textContent = message;
+		paymentModalError.classList.remove('hidden');
+	};
+
+	const setPaymentMethodsLoading = (isLoading: boolean) => {
+		for (const button of payMethodButtons) {
+			button.disabled = isLoading;
+			button.classList.toggle('is-loading', isLoading);
+		}
+	};
+
+	const closePaymentModal = () => {
+		if (!paymentModal.open) return;
+		paymentModal.close();
+		setPaymentModalError('');
+		setPaymentMethodsLoading(false);
+		syncPendingAppointmentContext();
+	};
+
+	const buildAppointmentHoldPayload = async () => {
+		if (isValidatingCustomer) {
+			setSubmitError('Estamos validando tu telefono. Espera un momento.');
+			return null;
+		}
+		setSubmitError('');
+		setPhoneFieldError('');
+		setNameFieldError('');
+
+		if (!selectedService || !selectedDate || !selectedTime || !selectedLocation) {
+			setSubmitError('Selecciona servicio, fecha y horario antes de continuar.');
+			return null;
+		}
+
+		const rawCustomerPhone = customerPhoneInput.value.trim();
+		const rawCustomerName = String(customerNameInput.value || '').trim();
+		const isCustomerNameVisible = !customerNameWrapper.classList.contains('hidden');
+
+		if (!rawCustomerPhone) {
+			setPhoneFieldError('El teléfono es obligatorio.');
+			if (isCustomerNameVisible && !rawCustomerName) {
+				setNameFieldError('El nombre completo es obligatorio.');
+			}
+			setSubmitError('Teléfono y nombre completo son obligatorios.');
+			return null;
+		}
+
+		const parsedPhone = parseParaguayMobilePhone(toParaguayMobileE164FromInput(rawCustomerPhone));
+		if (!parsedPhone.isValid) {
+			setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
+			setSubmitError('Revisa el telefono antes de continuar.');
+			return null;
+		}
+
+		const customerPhone = parsedPhone.e164;
+		customerPhoneInput.value = formatParaguayMobilePhoneInput(rawCustomerPhone);
+
+		if (validatedCustomerPhoneE164 !== customerPhone || customerNameWrapper.classList.contains('hidden')) {
+			const isCustomerValidated = await validateCustomerPhone(customerPhone);
+			if (!isCustomerValidated) return null;
+		}
+
+		const customerName = String(customerNameInput.value || '').trim();
+		if (!customerName) {
+			setNameFieldError('El nombre completo es obligatorio.');
+			setSubmitError('Teléfono y nombre completo son obligatorios.');
+			return null;
+		}
+
+		const appointmentTimes = buildApiAppointmentTimes(
+			selectedDate,
+			selectedTime,
+			selectedService.duration_minutes
+		);
+		if (!appointmentTimes) {
+			setSubmitError('No fue posible interpretar la fecha y hora seleccionada.');
+			return null;
+		}
+
+		return {
+			org_id_organization: profile.org_id_organization,
+			loc_id_location: selectedLocation.id_location,
+			pro_id_professional: profile.id_professional,
+			ser_id_service: selectedService.id_service,
+			customer_name: customerName,
+			customer_phone: customerPhone,
+			start_time: appointmentTimes.start_time,
+			end_time: appointmentTimes.end_time,
+			reserve_for_deposit: true as const,
+		};
+	};
+
+	const setPayDepositButtonDefaultLabel = () => {
+		payDepositButton.innerHTML =
+			'<span>Pagar Seña para Confirmar</span><span aria-hidden="true">🔒</span>';
+	};
+
+	const setPayDepositButtonLoadingLabel = (label: string) => {
+		payDepositButton.textContent = label;
+	};
+
+	const ensurePendingAppointment = async () => {
+		const holdPayload = await buildAppointmentHoldPayload();
+		if (!holdPayload) return false;
+
+		if (pendingAppointmentId) return true;
+
+		const created = await fetchJson<{ data?: { appointment_id?: number } }>(
+			'/api/public/appointments',
+			{
+				method: 'POST',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+				body: JSON.stringify(holdPayload),
+			},
+			'No fue posible reservar el turno para el pago.'
+		);
+		const appointmentId = Number(
+			(created as any)?.data?.appointment_id || (created as any)?.appointment_id || 0
+		);
+		if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
+			throw new Error('No fue posible obtener la reserva pendiente.');
+		}
+		pendingAppointmentId = appointmentId;
+		return true;
+	};
+
+	const openPaymentModal = async () => {
+		if (USE_DIRECT_PAGOPAR_CHECKOUT) {
+			await startDepositCheckout(DEFAULT_PAGOPAR_FORMA_PAGO);
+			return;
+		}
+
+		const depositAmount = calculateDepositAmount(selectedService);
+		if (depositAmount <= 0) {
+			setSubmitError('Este servicio no requiere seña.');
+			return;
+		}
+
+		const reserved = await ensurePendingAppointment();
+		if (!reserved) return;
+
+		paymentModalDeposit.textContent = `Seña requerida: ${formatCurrency(depositAmount)}`;
+		setPaymentModalError('');
+		setPaymentMethodsLoading(false);
+		if (!paymentModal.open) paymentModal.showModal();
+	};
+
+	const startDepositCheckout = async (formaPago: 9 | 24 = DEFAULT_PAGOPAR_FORMA_PAGO) => {
+		if (isSubmitting) return;
+
+		const depositAmount = calculateDepositAmount(selectedService);
+		if (depositAmount <= 0) {
+			setSubmitError('Este servicio no requiere seña.');
+			return;
+		}
+
+		isSubmitting = true;
+		payDepositButton.disabled = true;
+		submitButton.disabled = true;
+		setPayDepositButtonLoadingLabel('Preparando pago...');
+		setSubmitError('');
+		setPaymentModalError('');
+
+		try {
+			setPayDepositButtonLoadingLabel('Reservando turno...');
+			const reserved = await ensurePendingAppointment();
+			if (!reserved) return;
+
+			setPayDepositButtonLoadingLabel('Redirigiendo a Pagopar...');
+			const result = await fetchJson<{ data?: { checkout_url?: string } }>(
+				'/api/public/payments',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+					},
+					body: JSON.stringify({
+						id_appointment: pendingAppointmentId,
+						forma_pago: formaPago,
+					}),
+				},
+				'No fue posible iniciar el pago.'
+			);
+			const checkoutUrl = String((result as any)?.data?.checkout_url || '').trim();
+			if (!checkoutUrl) {
+				throw new Error('No fue posible obtener la URL de pago.');
+			}
+			window.location.href = checkoutUrl;
+		} catch (error) {
+			if (error instanceof PublicBookingClientError && error.status === 409) {
+				showToast(error.message, 'error');
+				resetPendingAppointment();
+				await loadAvailableSlots(selectedDate);
+				setStep(3);
+				return;
+			}
+			const message =
+				error instanceof Error ? error.message : 'No fue posible iniciar el pago.';
+			setSubmitError(message);
+		} finally {
+			isSubmitting = false;
+			payDepositButton.disabled = false;
+			submitButton.disabled = false;
+			setPayDepositButtonDefaultLabel();
+		}
+	};
+
+	const beginDepositFlow = async () => {
+		if (USE_DIRECT_PAGOPAR_CHECKOUT) {
+			await startDepositCheckout(DEFAULT_PAGOPAR_FORMA_PAGO);
+			return;
+		}
+		await openPaymentModal();
+	};
+
 	customerForm.addEventListener('submit', async (event) => {
 		event.preventDefault();
 		if (isSubmitting) return;
+		if (calculateDepositAmount(selectedService) > 0) {
+			await beginDepositFlow();
+			return;
+		}
 		if (isValidatingCustomer) {
 			setSubmitError('Estamos validando tu telefono. Espera un momento.');
 			return;
@@ -1291,6 +1590,72 @@ export const initializePublicBookingPage = () => {
 			submitButton.textContent = 'Confirmar reserva';
 		}
 	}, { signal });
+
+	const handlePayClick = async (formaPago: 9 | 24) => {
+		if (!pendingAppointmentId) {
+			setPaymentModalError('Primero debés reservar el turno. Cerrá el modal e intentá de nuevo.');
+			return;
+		}
+
+		isSubmitting = true;
+		setPaymentMethodsLoading(true);
+		setPaymentModalError('');
+		payDepositButton.disabled = true;
+
+		try {
+			const result = await fetchJson<{ data?: { checkout_url?: string } }>(
+				'/api/public/payments',
+				{
+					method: 'POST',
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+					},
+					body: JSON.stringify({
+						id_appointment: pendingAppointmentId,
+						forma_pago: formaPago,
+					}),
+				},
+				'No fue posible iniciar el pago.'
+			);
+			const checkoutUrl = String((result as any)?.data?.checkout_url || '').trim();
+			if (!checkoutUrl) {
+				throw new Error('No fue posible obtener la URL de pago.');
+			}
+			window.location.href = checkoutUrl;
+		} catch (error) {
+			const message =
+				error instanceof Error ? error.message : 'No fue posible iniciar el pago.';
+			if (paymentModal.open) {
+				setPaymentModalError(message);
+			} else {
+				setSubmitError(message);
+			}
+		} finally {
+			isSubmitting = false;
+			setPaymentMethodsLoading(false);
+			payDepositButton.disabled = false;
+		}
+	};
+
+	payDepositButton.addEventListener('click', () => void beginDepositFlow(), { signal });
+	paymentModalClose.addEventListener('click', closePaymentModal, { signal });
+	paymentModal.addEventListener('cancel', closePaymentModal, { signal });
+	paymentModal.addEventListener('click', (event) => {
+		if (event.target === paymentModal) closePaymentModal();
+	}, { signal });
+
+	for (const button of payMethodButtons) {
+		button.addEventListener(
+			'click',
+			() => {
+				const formaPago = Number(button.dataset.payMethod || '0');
+				if (formaPago !== 9 && formaPago !== 24) return;
+				void handlePayClick(formaPago as 9 | 24);
+			},
+			{ signal }
+		);
+	}
 
 	if (signal.aborted) return;
 
