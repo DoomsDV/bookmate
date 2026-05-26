@@ -37,12 +37,17 @@ export const ensureSearchableSelect = (
 	});
 
 	if (options.autoFocusSearchOnOpen === false) {
-		instance.on('dropdown_open', () => {
-			const controlInput = instance.control_input;
-			if (controlInput instanceof HTMLInputElement) {
-				controlInput.blur();
+		const controlInput = instance.control_input;
+		if (controlInput instanceof HTMLInputElement) {
+			const isCoarsePointer =
+				typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
+
+			if (isCoarsePointer) {
+				// En mobile evitamos teclado virtual sin forzar blur (que cerraba el dropdown).
+				controlInput.readOnly = true;
+				controlInput.setAttribute('inputmode', 'none');
 			}
-		});
+		}
 	}
 
 	instances.set(select, instance);
