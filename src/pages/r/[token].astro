@@ -9,6 +9,7 @@ import {
 	type PublicBookingLocation,
 	type PublicReservationDetail,
 } from '../../lib/public-booking';
+import { buildPublicProfilePath } from '../../lib/public-profile-url';
 import '../../styles/global.css';
 
 const token = String(Astro.params.token || '').trim();
@@ -34,7 +35,13 @@ const serializedReservation = reservation
 const isCancelled =
 	Boolean(reservation) && String(reservation?.status || '').trim().toUpperCase() === 'CANCELADO';
 const professionalSlug = String(reservation?.professional_slug || '').trim();
-const rebookHref = professionalSlug ? `/p/${professionalSlug}` : '/';
+const organizationSlug = String(reservation?.organization_slug || '').trim();
+const rebookHref =
+	organizationSlug && professionalSlug
+		? buildPublicProfilePath(organizationSlug, professionalSlug)
+		: professionalSlug
+			? `/p/${professionalSlug}`
+			: '/';
 const googleMapsApiKey =
 	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
 	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
@@ -42,9 +49,9 @@ const googleMapsApiKey =
 
 let reservationLocations: PublicBookingLocation[] = [];
 
-if (reservation && professionalSlug) {
+if (reservation && organizationSlug && professionalSlug) {
 	try {
-		const profile = await getPublicProfileWithOrds(professionalSlug);
+		const profile = await getPublicProfileWithOrds(organizationSlug, professionalSlug);
 		reservationLocations = normalizePublicBookingLocations(profile.locations);
 	} catch {
 		reservationLocations = [];

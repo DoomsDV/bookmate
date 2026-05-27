@@ -3,6 +3,8 @@ import type { OrgSpecialtyOption } from '../lib/auth';
 
 interface Props {
 	error?: string;
+	fromMultiOrgSelection?: boolean;
+	organizationCount?: number;
 	businessName?: string;
 	phone?: string;
 	companyEmail?: string;
@@ -17,6 +19,8 @@ interface Props {
 
 const {
 	error = '',
+	fromMultiOrgSelection = false,
+	organizationCount = 0,
 	businessName = '',
 	phone = '',
 	companyEmail = '',
@@ -28,6 +32,15 @@ const {
 	companyEmailError = '',
 	orgSpecialtyIdError = '',
 } = Astro.props;
+
+const selectionNotice = fromMultiOrgSelection
+	? organizationCount > 0
+		? `Estás usando tu cuenta actual (ya tienes acceso a ${organizationCount} organizaciones). Al finalizar, entrarás directamente al panel de tu nuevo negocio.`
+		: 'Estás usando tu cuenta actual. Al finalizar, entrarás directamente al panel de tu nuevo negocio.'
+	: '';
+
+const backHref = fromMultiOrgSelection ? '/auth/select-org' : '/panel/dashboard';
+const backLabel = fromMultiOrgSelection ? 'Elegir otra organización' : 'Volver al panel';
 ---
 
 <section class="m3-container auth-dark" data-create-org-root>
@@ -74,6 +87,13 @@ const {
 					</p>
 				</div>
 			</div>
+
+			{selectionNotice && (
+				<div class="m3-info-banner" role="status">
+					<span class="material-symbols-rounded" aria-hidden="true">verified_user</span>
+					<span>{selectionNotice}</span>
+				</div>
+			)}
 
 			<div class:list={['m3-error-banner', !error && 'is-hidden']} data-error-banner role="alert">
 				<span class="material-symbols-rounded">error</span>
@@ -172,7 +192,7 @@ const {
 					</div>
 
 					<div class="m3-actions m3-actions--between">
-						<a href="/panel/dashboard" class="m3-btn-tonal">Volver al panel</a>
+						<a href={backHref} class="m3-btn-tonal">{backLabel}</a>
 						<button type="submit" class="m3-btn-primary" disabled={orgSpecialties.length === 0}>
 							Crear organización
 						</button>
@@ -448,6 +468,27 @@ const {
 		color: #94a3b8;
 	}
 
+	.m3-info-banner {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		margin-bottom: 1.25rem;
+		border-radius: 0.75rem;
+		padding: 1rem 1.25rem;
+		font-size: 0.9rem;
+		line-height: 1.45;
+		font-weight: 500;
+		border: 1px solid rgba(96, 165, 250, 0.35);
+		background: rgba(30, 58, 138, 0.28);
+		color: #bfdbfe;
+	}
+
+	.m3-info-banner .material-symbols-rounded {
+		flex-shrink: 0;
+		font-size: 1.35rem;
+		color: #60a5fa;
+	}
+
 	.m3-error-banner {
 		display: flex;
 		align-items: center;
@@ -459,6 +500,10 @@ const {
 		border: 1px solid rgba(251, 113, 133, 0.38);
 		background: rgba(127, 29, 29, 0.26);
 		color: #fecdd3;
+	}
+
+	.m3-error-banner.is-hidden {
+		display: none;
 	}
 
 	.m3-panel {

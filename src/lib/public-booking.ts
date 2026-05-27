@@ -103,11 +103,18 @@ export interface PublicBookingProfile {
 	id_professional: number;
 	org_id_organization: number;
 	organization_name?: string;
+	organization_slug?: string;
+	profile_slug?: string;
 	full_name: string;
 	specialty: string;
 	image_url: string;
 	services: PublicBookingService[];
 	locations: PublicBookingLocation[];
+}
+
+export interface ResolvedPublicProfileSlug {
+	organization_slug: string;
+	profile_slug: string;
 }
 
 export interface PublicCreateAppointmentPayload {
@@ -192,6 +199,7 @@ export interface PublicReservationDetail {
 	pro_id_professional: number;
 	professional_name: string;
 	professional_slug?: string;
+	organization_slug?: string;
 	ser_id_service: number;
 	service_name: string;
 	duration_minutes: number;
@@ -512,6 +520,10 @@ const normalizeProfile = (value: unknown): PublicBookingProfile | null => {
 		organization_name: String(
 			source.organization_name || source.org_name || source.business_name || ''
 		).trim(),
+		organization_slug: String(
+			source.organization_slug || source.org_slug || ''
+		).trim(),
+		profile_slug: String(source.profile_slug || source.professional_slug || '').trim(),
 		full_name: fullName,
 		specialty: String(source.specialty || '').trim() || 'Sin especialidad',
 		image_url: String(source.image_url || '').trim(),
@@ -520,14 +532,52 @@ const normalizeProfile = (value: unknown): PublicBookingProfile | null => {
 	};
 };
 
-export const getPublicProfileWithOrds = async (slug: string): Promise<PublicBookingProfile> => {
-	const safeSlug = String(slug || '').trim();
+const normalizeResolvedProfileSlug = (value: unknown): ResolvedPublicProfileSlug | null => {
+	if (!value || typeof value !== 'object') return null;
+	const source = value as Record<string, unknown>;
+	const organizationSlug = String(source.organization_slug || source.org_slug || '').trim();
+	const profileSlug = String(source.profile_slug || source.professional_slug || '').trim();
+	if (!organizationSlug || !profileSlug) return null;
+	return { organization_slug: organizationSlug, profile_slug: profileSlug };
+};
+
+export const resolvePublicProfileSlugWithOrds = async (
+	professionalSlug: string
+): Promise<ResolvedPublicProfileSlug> => {
+	const safeSlug = String(professionalSlug || '').trim();
 	if (!safeSlug) {
 		throw new PublicBookingApiError('Slug de profesional requerido.', 400);
 	}
 
 	const response = await fetch(
-		`${PUBLIC_BOOKING_API_BASE_URL}/profile/${encodeURIComponent(safeSlug)}`,
+		`${PUBLIC_BOOKING_API_BASE_URL}/profile/resolve/${encodeURIComponent(safeSlug)}`,
+		{
+			method: 'GET',
+			headers: { Accept: 'application/json' },
+		}
+	);
+
+	const data = await parseApiResponse(response, 'No fue posible resolver el enlace del perfil.');
+	const resolved = normalizeResolvedProfileSlug(data.data);
+	if (!resolved) {
+		throw new PublicBookingApiError('No fue posible interpretar el enlace del perfil.', 502);
+	}
+
+	return resolved;
+};
+
+export const getPublicProfileWithOrds = async (
+	organizationSlug: string,
+	professionalSlug: string
+): Promise<PublicBookingProfile> => {
+	const safeOrgSlug = String(organizationSlug || '').trim();
+	const safeProSlug = String(professionalSlug || '').trim();
+	if (!safeOrgSlug || !safeProSlug) {
+		throw new PublicBookingApiError('Slug de organización y profesional requeridos.', 400);
+	}
+
+	const response = await fetch(
+		`${PUBLIC_BOOKING_API_BASE_URL}/profile/${encodeURIComponent(safeOrgSlug)}/${encodeURIComponent(safeProSlug)}`,
 		{
 			method: 'GET',
 			headers: { Accept: 'application/json' },
@@ -541,6 +591,14 @@ export const getPublicProfileWithOrds = async (slug: string): Promise<PublicBook
 	}
 
 	return profile;
+};
+
+/** Compatibilidad con enlaces legacy `/p/{slug}` (solo si hay una sola coincidencia). */
+export const getPublicProfileWithOrdsLegacy = async (
+	professionalSlug: string
+): Promise<PublicBookingProfile> => {
+	const resolved = await resolvePublicProfileSlugWithOrds(professionalSlug);
+	return getPublicProfileWithOrds(resolved.organization_slug, resolved.profile_slug);
 };
 
 export const getPublicAvailableSlotsWithOrds = async (params: {
@@ -750,6 +808,7 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 		pro_id_professional: professionalId,
 		professional_name: String(source.professional_name || '').trim(),
 		professional_slug: String(source.professional_slug || '').trim() || undefined,
+		organization_slug: String(source.organization_slug || source.org_slug || '').trim() || undefined,
 		ser_id_service: serviceId,
 		service_name: String(source.service_name || '').trim(),
 		duration_minutes: durationMinutes,

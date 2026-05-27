@@ -137,12 +137,28 @@ const formatCurrency = (value: number) =>
 	}).format(Number.isFinite(value) ? value : 0);
 
 const getBookingRoot = (): HTMLElement | null => {
-	const slug = window.location.pathname.match(/\/p\/([^/?#]+)/)?.[1]?.trim();
-	if (slug) {
+	const scopedMatch = window.location.pathname.match(/\/([^/?#]+)\/p\/([^/?#]+)/);
+	const orgSlug = scopedMatch?.[1]?.trim() || '';
+	const proSlug = scopedMatch?.[2]?.trim() || '';
+
+	if (orgSlug && proSlug) {
+		const escapeAttr = (value: string) =>
+			typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+				? CSS.escape(value)
+				: value.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+		const scopedRoot = document.querySelector<HTMLElement>(
+			`[data-public-booking-root][data-organization-slug="${escapeAttr(orgSlug)}"][data-professional-slug="${escapeAttr(proSlug)}"]`
+		);
+		if (scopedRoot) return scopedRoot;
+	}
+
+	const legacySlug = window.location.pathname.match(/\/p\/([^/?#]+)/)?.[1]?.trim();
+	if (legacySlug) {
 		const escapedSlug =
 			typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
-				? CSS.escape(slug)
-				: slug.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+				? CSS.escape(legacySlug)
+				: legacySlug.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
 		const scopedRoot = document.querySelector<HTMLElement>(
 			`[data-public-booking-root][data-professional-slug="${escapedSlug}"]`
 		);
@@ -337,6 +353,7 @@ export const initializePublicBookingPage = () => {
 	}
 
 	const configuredLocationId = toPositiveInt(root.dataset.locationId, 0);
+	const organizationSlug = String(root.dataset.organizationSlug || '').trim();
 	const professionalSlug = String(root.dataset.professionalSlug || '').trim();
 	let bookingLocations = mergeBookingLocations(
 		normalizePublicBookingLocations(
@@ -1021,9 +1038,13 @@ export const initializePublicBookingPage = () => {
 		const fromDom = readLocationsFromDom();
 		if (!professionalSlug) return fromDom.length > 0 ? fromDom : bookingLocations;
 
+		const profileApiPath = organizationSlug
+			? `/api/public/profile/${encodeURIComponent(organizationSlug)}/${encodeURIComponent(professionalSlug)}`
+			: `/api/public/profile/${encodeURIComponent(professionalSlug)}`;
+
 		try {
 			const { data } = await fetchJson<{ data?: { locations?: unknown[] } }>(
-				`/api/public/profile/${encodeURIComponent(professionalSlug)}`,
+				profileApiPath,
 				{
 					method: 'GET',
 					headers: { Accept: 'application/json' },

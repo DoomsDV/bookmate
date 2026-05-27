@@ -84,12 +84,16 @@ const organizations = selectionContext.organizations;
 				<div class="org-select-secondary">
 					<p class="org-select-secondary__text">¿Querés registrar un espacio de trabajo nuevo?</p>
 					<a
-						href={`/auth/login?redirectTo=${encodeURIComponent(CREATE_ORGANIZATION_PATH)}`}
+						href={CREATE_ORGANIZATION_PATH}
 						class="org-select-create-link"
+						title="Registrá un espacio nuevo con el acceso que acabas de iniciar"
 					>
 						<span class="material-symbols-rounded" aria-hidden="true">domain_add</span>
 						Crear organización
 					</a>
+					<p class="org-select-secondary__hint">
+						Usás el mismo acceso; no hace falta volver a iniciar sesión.
+					</p>
 				</div>
 			</div>
 		</main>
@@ -366,6 +370,13 @@ const organizations = selectionContext.organizations;
 	.org-select-create-link:hover {
 		background: rgba(37, 99, 235, 0.18);
 		border-color: rgba(147, 197, 253, 0.55);
+	}
+
+	.org-select-secondary__hint {
+		margin: 0.65rem 0 0;
+		color: #64748b;
+		font-size: 0.78rem;
+		line-height: 1.35;
 	}
 
 	.m3-btn-primary {

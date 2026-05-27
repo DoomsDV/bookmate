@@ -1,6 +1,9 @@
 import type { APIRoute } from 'astro';
 
-import { getPublicProfileWithOrds, PublicBookingApiError } from '../../../../lib/public-booking';
+import {
+	getPublicProfileWithOrdsLegacy,
+	PublicBookingApiError,
+} from '../../../../lib/public-booking';
 import { publicBookingErrorResponse } from '../../../../lib/public-api-handlers';
 
 export const GET: APIRoute = async ({ params }) => {
@@ -10,7 +13,7 @@ export const GET: APIRoute = async ({ params }) => {
 			throw new PublicBookingApiError('Slug de profesional requerido.', 400);
 		}
 
-		const profile = await getPublicProfileWithOrds(slug);
+		const profile = await getPublicProfileWithOrdsLegacy(slug);
 		return Response.json(
 			{
 				status: 'success',

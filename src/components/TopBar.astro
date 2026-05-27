@@ -7,6 +7,7 @@ interface Props {
 
 const { userName = 'Perfil' } = Astro.props;
 const roleId = Number(Astro.locals.roleId ?? 0);
+const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim();
 ---
 
 <header class="shell-header-zone relative z-40 px-4 sm:px-6">
@@ -130,7 +131,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 	</div>
 </header>
 
-<SettingsModal roleId={roleId} />
+<SettingsModal roleId={roleId} organizationSlug={organizationSlug} />
 
 <script>
 	import { maybeShowSettingsMenuTour } from '../lib/settings-menu-tour';

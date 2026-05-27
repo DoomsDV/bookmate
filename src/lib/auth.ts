@@ -128,6 +128,9 @@ export type LoginResult = AuthSuccessResponse | LoginSelectionResponse;
 
 export const ORG_SELECTION_COOKIE = 'org_selection_ctx';
 export const CREATE_ORGANIZATION_PATH = '/auth/create-organization';
+
+export const CREATE_ORG_SELECTION_EXPIRED_MESSAGE =
+	'Tu sesión de selección expiró. Volvé a iniciar sesión para crear una organización.';
 const ORG_SELECTION_MAX_AGE_SECONDS = 60 * 10;
 
 export interface AuthFieldError {
@@ -698,6 +701,33 @@ export const getCreateOrganizationAuthToken = (
 	cookies: { get: (name: string) => { value?: string } | undefined }
 ): string => getPendingSelectionAuthToken(cookies);
 
+/** Marca en la cookie que el usuario viene a crear org; devuelve contexto para la UI. */
+export const ensureOrgSelectionIntentCreateOrganization = (
+	cookies: {
+		get: (name: string) => { value?: string } | undefined;
+		set: (name: string, value: string, options: Record<string, unknown>) => void;
+	}
+): { fromMultiOrgSelection: boolean; organizationCount: number } => {
+	const context = parseOrgSelectionCookieRaw(cookies);
+	if (!context?.selection_token) {
+		return { fromMultiOrgSelection: false, organizationCount: 0 };
+	}
+
+	const fromMultiOrgSelection = context.organizations.length >= 2;
+
+	if (context.redirectTo !== CREATE_ORGANIZATION_PATH) {
+		setOrgSelectionCookie(cookies, {
+			...context,
+			redirectTo: CREATE_ORGANIZATION_PATH,
+		});
+	}
+
+	return {
+		fromMultiOrgSelection,
+		organizationCount: context.organizations.length,
+	};
+};
+
 export const clearOrgSelectionCookie = (
 	cookies: { delete: (name: string, options?: Record<string, unknown>) => void }
 ) => {
@@ -1206,6 +1236,7 @@ export const isPublicPath = (pathname: string) => {
 		pathname.startsWith('/api/public') ||
 		pathname === '/p' ||
 		pathname.startsWith('/p/') ||
+		/^\/[^/]+\/p(\/|$)/.test(pathname) ||
 		pathname === '/r' ||
 		pathname.startsWith('/r/') ||
 		pathname.startsWith('/_astro') ||

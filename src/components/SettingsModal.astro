@@ -2,11 +2,14 @@
 import { FEATURE_FLAGS } from '../config/feature-flags';
 import { ROLES } from '../config/roles';
 
+import { buildPublicProfilePrefix } from '../lib/public-profile-url';
+
 interface Props {
 	roleId?: number;
+	organizationSlug?: string;
 }
 
-const { roleId = 0 } = Astro.props;
+const { roleId = 0, organizationSlug = '' } = Astro.props;
 const isAdmin = Number(roleId) === ROLES.ADMIN;
 const canEditAppearance = isAdmin;
 const showIntegrationsTab = isAdmin && FEATURE_FLAGS.INTEGRATIONS_SETTINGS;
@@ -15,9 +18,18 @@ const rawPublicProfileDomain = String(
 ).trim();
 const publicProfileDomain =
 	rawPublicProfileDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '') || Astro.url.host;
+const publicProfileSlugPrefix = buildPublicProfilePrefix(
+	rawPublicProfileDomain || Astro.url.origin,
+	organizationSlug
+);
 ---
 
-<settings-manager data-role-id={String(roleId)} data-public-profile-domain={publicProfileDomain}>
+<settings-manager
+	data-role-id={String(roleId)}
+	data-public-profile-domain={publicProfileDomain}
+	data-organization-slug={organizationSlug}
+	data-public-profile-prefix={publicProfileSlugPrefix}
+>
 <dialog
 	data-settings-modal
 		class="m-0 mt-auto mb-0 h-[92dvh] w-screen max-w-none sm:m-auto sm:h-[min(46rem,90vh)] sm:w-[min(54rem,calc(100vw-2rem))] sm:max-w-[min(54rem,calc(100vw-2rem))] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
@@ -163,7 +175,7 @@ const publicProfileDomain =
 							<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">URL del perfil público <span class="text-rose-500">*</span></span>
 							<div class="flex">
 								<span data-settings-profile-slug-prefix class="inline-flex max-w-[55%] items-center truncate rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-xs font-medium text-(--on-surface-variant) shadow-sm sm:max-w-[65%] sm:px-4 sm:text-sm">
-									{publicProfileDomain}/p/
+									{publicProfileSlugPrefix}
 								</span>
 								<input
 									type="text"
@@ -663,6 +675,8 @@ const publicProfileDomain =
 		private abortController: AbortController | null = null;
 		private isAdmin = false;
 		private publicProfileDomain = '';
+		private organizationSlug = '';
+		private publicProfilePrefix = '';
 
 		private els!: {
 			modal: HTMLDialogElement | null;
@@ -723,6 +737,8 @@ const publicProfileDomain =
 			const roleId = Number(this.dataset.roleId || '0');
 			this.isAdmin = roleId === 1;
 			this.publicProfileDomain = String(this.dataset.publicProfileDomain || '');
+			this.organizationSlug = String(this.dataset.organizationSlug || '').trim();
+			this.publicProfilePrefix = String(this.dataset.publicProfilePrefix || '').trim();
 
 			this.els = {
 				modal: this.querySelector<HTMLDialogElement>('[data-settings-modal]'),
@@ -908,8 +924,9 @@ const publicProfileDomain =
 		private getPublicProfileUrl() {
 			const slug = String(this.formEls.profileSlugInput?.value || '').trim().replace(/^\/+/, '');
 			if (!slug) return '';
-			const prefix = String(this.publicProfileDomain || '').trim() || String(window.location?.host || '');
-			return `${prefix.replace(/\/+$/, '')}/p/${slug}`;
+			const prefix = String(this.publicProfilePrefix || this.getPublicProfilePrefix()).trim();
+			if (!prefix) return `/${slug}`;
+			return `${prefix.replace(/\/+$/, '')}/${slug.replace(/^\/+/, '')}`;
 		}
 
 		private async writeClipboardText(value: string) {
@@ -1204,13 +1221,16 @@ const publicProfileDomain =
 		}
 
 		private getPublicProfilePrefix() {
+			if (this.publicProfilePrefix) return this.publicProfilePrefix;
+			const orgSlug = String(this.organizationSlug || '').trim();
 			const configuredDomain = String(this.publicProfileDomain || '')
 				.replace(/^https?:\/\//i, '')
 				.replace(/\/+$/, '')
 				.trim();
-			if (configuredDomain) return `${configuredDomain}/p/`;
-			const origin = String(window.location?.origin || '').replace(/\/$/, '');
-			return `${origin}/p/`;
+			const host = configuredDomain || String(window.location?.host || '').trim();
+			const pathSuffix = orgSlug ? `/${encodeURIComponent(orgSlug)}/p/` : '/p/';
+			if (!host) return pathSuffix;
+			return `https://${host}${pathSuffix}`;
 		}
 
 		private getSlugSourceName() {

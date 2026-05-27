@@ -5,6 +5,7 @@ import ProfessionalsGrid from '../../components/ProfessionalsGrid.astro';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
 import { ProfessionalsApiError, listProfessionals, type Professional } from '../../lib/professionals';
+import { buildPublicProfilePrefix } from '../../lib/public-profile-url';
 import { ROLES } from '../../config/roles';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
@@ -16,10 +17,16 @@ const adminRoleId = ROLES.ADMIN;
 const PAGE_SIZE = 9;
 const rawPage = Number(Astro.url.searchParams.get('page') || '1');
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
-const rawPublicProfilePrefix = String(import.meta.env.PUBLIC_PROFILE_DOMAIN ?? '').trim();
-const publicProfilePrefix = rawPublicProfilePrefix
-	? `${rawPublicProfilePrefix.replace(/\/+$/, '')}/`
-	: `${Astro.url.origin.replace(/\/+$/, '')}/p/`;
+
+const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim();
+const rawPublicProfileDomain = String(import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? '').trim();
+const publicProfileDomain =
+	rawPublicProfileDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '') ||
+	Astro.url.host;
+const publicProfilePrefix = buildPublicProfilePrefix(
+	rawPublicProfileDomain || Astro.url.origin,
+	organizationSlug
+);
 
 let professionals: Professional[] = [];
 let loadError = '';
@@ -877,8 +884,9 @@ const toPageHref = (page: number) => {
 		private getPublicProfileUrl(): string {
 			const slug = String(this.formEls.slug?.value || '').trim().replace(/^\/+/, '');
 			if (!slug) return '';
-			const prefix = this.publicProfilePrefix || 'hasel.app/p/';
-			return `${prefix}${slug}`;
+			const prefix = String(this.publicProfilePrefix || '').trim();
+			if (!prefix) return `/${slug}`;
+			return `${prefix.replace(/\/+$/, '')}/${slug.replace(/^\/+/, '')}`;
 		}
 
 		private async writeClipboardText(value: string) {

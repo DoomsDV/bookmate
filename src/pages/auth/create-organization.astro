@@ -3,17 +3,23 @@ import CreateOrganizationForm from '../../components/CreateOrganizationForm.astr
 import Layout from '../../layouts/Layout.astro';
 import {
 	CREATE_ORGANIZATION_PATH,
+	CREATE_ORG_SELECTION_EXPIRED_MESSAGE,
+	ensureOrgSelectionIntentCreateOrganization,
 	getCreateOrganizationAuthToken,
 	listOrgSpecialtiesWithOrds,
 } from '../../lib/auth';
 import '../../styles/global.css';
 
+const selectionMeta = ensureOrgSelectionIntentCreateOrganization(Astro.cookies);
 const authToken = getCreateOrganizationAuthToken(Astro.cookies);
+const pageError = Astro.url.searchParams.get('error') ?? '';
 
 if (!authToken) {
-	return Astro.redirect(
-		`/auth/login?redirectTo=${encodeURIComponent(CREATE_ORGANIZATION_PATH)}`
-	);
+	const loginParams = new URLSearchParams({
+		redirectTo: CREATE_ORGANIZATION_PATH,
+		error: CREATE_ORG_SELECTION_EXPIRED_MESSAGE,
+	});
+	return Astro.redirect(`/auth/login?${loginParams.toString()}`);
 }
 
 let orgSpecialties: Awaited<ReturnType<typeof listOrgSpecialtiesWithOrds>> = [];
@@ -28,5 +34,11 @@ try {
 ---
 
 <Layout>
-	<CreateOrganizationForm orgSpecialties={orgSpecialties} specialtiesLoadError={specialtiesLoadError} />
+	<CreateOrganizationForm
+		orgSpecialties={orgSpecialties}
+		specialtiesLoadError={specialtiesLoadError}
+		error={pageError}
+		fromMultiOrgSelection={selectionMeta.fromMultiOrgSelection}
+		organizationCount={selectionMeta.organizationCount}
+	/>
 </Layout>

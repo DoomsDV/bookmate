@@ -33,7 +33,9 @@ interface Props {
     pageTitle?: string;
     metaDescription?: string;
     canonicalPath?: string;
+    siteOrigin?: string;
     ogImage?: string;
+    ogImageAlt?: string;
     ogType?: string;
     robots?: string;
     jsonLd?: Record<string, unknown> | Record<string, unknown>[];
@@ -43,15 +45,19 @@ const {
     pageTitle = 'Hasel',
     metaDescription,
     canonicalPath,
+    siteOrigin: siteOriginProp,
     ogImage = '/icon-512x512.png',
+    ogImageAlt,
     ogType = 'website',
     robots = 'index, follow',
     jsonLd,
 } = Astro.props as Props;
 
-const siteOrigin = Astro.site ?? Astro.url;
+const siteOrigin = siteOriginProp || Astro.site || Astro.url;
 const canonicalUrl = new URL(canonicalPath ?? Astro.url.pathname, siteOrigin).href;
-const ogImageUrl = new URL(ogImage, siteOrigin).href;
+const ogImageUrl = /^https?:\/\//i.test(String(ogImage || '').trim())
+    ? String(ogImage).trim()
+    : new URL(ogImage, siteOrigin).href;
 if (flashMessageFromCookie) {
     Astro.cookies.delete(FLASH_MESSAGE_COOKIE, { path: '/' });
 }
@@ -116,6 +122,7 @@ if (flashTypeFromCookie) {
                 <meta property="og:description" content={metaDescription} />
                 <meta property="og:url" content={canonicalUrl} />
                 <meta property="og:image" content={ogImageUrl} />
+                {ogImageAlt && <meta property="og:image:alt" content={ogImageAlt} />}
                 <meta name="twitter:card" content="summary_large_image" />
                 <meta name="twitter:title" content={pageTitle} />
                 <meta name="twitter:description" content={metaDescription} />

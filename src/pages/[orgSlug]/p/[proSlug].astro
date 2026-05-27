@@ -1,0 +1,794 @@
+---
+import Layout from '../../../layouts/Layout.astro';
+import {
+	getPublicProfileWithOrds,
+	PublicBookingApiError,
+	type PublicBookingProfile,
+} from '../../../lib/public-booking';
+import {
+	buildPublicProfilePath,
+	resolveOgImageUrl,
+	resolvePublicSiteOrigin,
+} from '../../../lib/public-profile-url';
+import '../../../styles/global.css';
+
+const organizationSlug = String(Astro.params.orgSlug || '').trim();
+const professionalSlug = String(Astro.params.proSlug || '').trim();
+
+const parseLocationId = (value: string | null) => {
+	const parsed = Number(value);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
+};
+
+const toSafePageStatus = (status: number, hasProfile: boolean) => {
+	if (hasProfile) return 200;
+	const parsed = Number(status);
+	if (!Number.isInteger(parsed)) return 200;
+
+	// Keep explicit client errors, but avoid surfacing upstream server failures as document failures.
+	if (parsed >= 400 && parsed < 500) return parsed;
+	return 200;
+};
+
+const initialLocationId = parseLocationId(
+	Astro.url.searchParams.get('loc_id') ?? Astro.url.searchParams.get('loc')
+);
+const googleMapsApiKey =
+	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
+	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
+	'';
+
+let profile: PublicBookingProfile | null = null;
+let loadError = '';
+let statusCode = 500;
+
+if (!organizationSlug || !professionalSlug) {
+	loadError = 'Enlace de agenda inválido.';
+	statusCode = 404;
+} else {
+	try {
+		profile = await getPublicProfileWithOrds(organizationSlug, professionalSlug);
+		statusCode = 200;
+	} catch (error) {
+		const bookingError =
+			error instanceof PublicBookingApiError
+				? error
+				: new PublicBookingApiError('No fue posible cargar esta agenda pública.', 500);
+		loadError = bookingError.message;
+		statusCode = bookingError.status || 500;
+	}
+}
+
+Astro.response.status = toSafePageStatus(statusCode, Boolean(profile));
+const serializedProfile = profile
+	? JSON.stringify(profile).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
+	: '';
+const serializedLocations = profile
+	? JSON.stringify(profile.locations || []).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
+	: '';
+const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON';
+
+const siteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
+const canonicalPath = buildPublicProfilePath(organizationSlug, professionalSlug) || Astro.url.pathname;
+
+const organizationName = profile?.organization_name?.trim() || organizationSlug;
+const professionalName = profile?.full_name?.trim() || professionalSlug;
+const specialtyLabel = profile?.specialty?.trim() || 'Profesional de la salud';
+
+const pageTitle = profile
+	? `Agendá con ${professionalName} | ${organizationName}`
+	: 'Reserva online | Hasel';
+const metaDescription = profile
+	? `Reservá tu turno con ${professionalName} (${specialtyLabel}) en ${organizationName}. Elegí horario y confirmá online en segundos.`
+	: 'Reservá turnos online con profesionales de la salud en Hasel.';
+const ogImageAlt = profile
+	? `Foto de perfil de ${professionalName} — ${organizationName}`
+	: 'Hasel — reservas online';
+const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : resolveOgImageUrl('', siteOrigin);
+---
+
+<Layout
+	pageTitle={pageTitle}
+	metaDescription={metaDescription}
+	canonicalPath={canonicalPath}
+	siteOrigin={siteOrigin}
+	ogImage={ogImage}
+	ogImageAlt={ogImageAlt}
+	ogType="website"
+	robots={profile ? 'index, follow' : 'noindex, nofollow'}
+>
+	<main class="public-booking-shell relative z-10 mx-auto min-h-screen w-full max-w-4xl px-2 py-8 sm:px-4 md:px-8 lg:py-12 md:max-w-5xl">
+		<div aria-hidden="true" class="pointer-events-none fixed inset-0 z-[-1] bg-(--surface-background)"></div>
+		{
+			loadError || !profile ? (
+				<section class="rounded-3xl border border-rose-200 bg-rose-50 px-8 py-10 text-rose-900 shadow-sm">
+					<h1 class="text-3xl font-semibold tracking-tight">No fue posible abrir esta agenda</h1>
+					<p class="mt-3 text-base font-medium text-rose-800">{loadError || 'Perfil no disponible.'}</p>
+					<a
+						href="/"
+						class="mt-6 inline-flex rounded-full bg-rose-100 px-6 py-2.5 text-sm font-medium text-rose-900 no-underline transition hover:bg-rose-200"
+					>
+						Volver al inicio
+					</a>
+				</section>
+			) : (
+				<section
+					class="grid gap-6"
+					data-public-booking-root
+					data-organization-slug={organizationSlug}
+					data-professional-slug={professionalSlug}
+					data-location-id={String(initialLocationId)}
+					data-google-maps-api-key={googleMapsApiKey}
+				>
+					<script type="application/json" id="public-booking-profile-json" set:html={serializedProfile}></script>
+					<script type="application/json" id="public-booking-locations-json" set:html={serializedLocations}></script>
+
+					<div class="relative">
+						<header class="relative overflow-hidden rounded-[28px] bg-(--surface-container) p-6 sm:p-8 shadow-sm transition-shadow">
+							<div class="relative grid justify-items-center gap-4 text-center sm:grid-cols-[auto_1fr] sm:items-center sm:justify-items-start sm:gap-6 sm:text-left">
+							{profile.image_url ? (
+								<img
+									src={profile.image_url}
+									alt={`Foto de ${profile.full_name}`}
+									loading="lazy"
+									class="public-booking-avatar h-24 w-24 rounded-full border border-(--outline-variant) bg-(--surface-container-high) object-cover sm:h-32 sm:w-32"
+								/>
+							) : (
+								<div class="public-booking-avatar public-booking-avatar--empty h-24 w-24 sm:h-32 sm:w-32" aria-label={`Sin foto de ${profile.full_name}`} role="img">
+									<span class="material-symbols-rounded">account_circle</span>
+								</div>
+							)}
+							<div class="grid gap-1">
+								<p class="text-xs font-medium uppercase tracking-widest text-(--primary)">
+									{profileTopLabel}
+								</p>
+								<h1 class="text-3xl font-normal tracking-tight text-(--on-surface) sm:text-4xl">
+									{profile.full_name}
+								</h1>
+								<p class="mt-1 text-base font-medium text-(--on-surface-variant)">
+									{profile.specialty || 'Sin especialidad'}
+								</p>
+							</div>
+						</div>
+						</header>
+					</div>
+
+					<div class="rounded-3xl bg-(--surface-container) p-4 sm:p-6 shadow-sm">
+						<div class="flex items-center gap-4 md:hidden">
+							<p
+								class="text-sm font-medium tracking-wide text-(--on-surface)"
+								data-step-compact-label
+								aria-live="polite"
+							>
+								Paso 1 de 4: Servicio
+							</p>
+							<div class="h-2 flex-1 overflow-hidden rounded-full bg-(--surface-container-highest)" aria-hidden="true">
+								<div
+									class="h-full rounded-full bg-(--primary) transition-[width] duration-500 ease-out"
+									data-step-progress-bar
+									style="width:25%"
+								></div>
+							</div>
+						</div>
+						<ol class="hidden gap-3 md:grid md:grid-cols-4" data-step-indicator>
+							<li data-step-item="1" class="step-item-current">1. Servicio</li>
+							<li data-step-item="2" class="step-item-default">2. Fecha</li>
+							<li data-step-item="3" class="step-item-default">3. Horario</li>
+							<li data-step-item="4" class="step-item-default">4. Datos</li>
+						</ol>
+					</div>
+
+					<div class="hidden rounded-2xl px-5 py-4 text-sm font-medium shadow-sm transition-all" data-booking-toast></div>
+
+					<section
+						data-step-panel="1"
+						class="rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8"
+					>
+						<div class="flex items-center justify-between gap-4">
+							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona un servicio</h2>
+						</div>
+						<p class="mt-2 text-base text-(--on-surface-variant)">
+							Elige el tipo de cita para continuar con la agenda.
+						</p>
+						<div class="mt-6 grid gap-4 sm:grid-cols-2" data-services-grid></div>
+					</section>
+
+					<section
+						data-step-panel="2"
+						class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8"
+					>
+						<div class="flex flex-wrap items-center justify-between gap-4">
+							<div>
+								<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona una fecha</h2>
+								<p class="mt-1 text-base text-(--on-surface-variant)">
+									Servicio:
+									<span class="font-medium text-(--on-surface)" data-summary-service-inline></span>
+								</p>
+							</div>
+						</div>
+
+						<div class="mt-6 rounded-3xl border border-(--outline-variant) bg-(--surface-container-low) p-4 sm:p-6">
+							<div class="mb-5 flex items-center justify-between gap-3">
+								<button
+									type="button"
+									data-calendar-prev
+									class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
+								>
+									Anterior
+								</button>
+								<p class="text-base font-medium capitalize tracking-wide text-(--on-surface)" data-calendar-month></p>
+								<button
+									type="button"
+									data-calendar-next
+									class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
+								>
+									Siguiente
+								</button>
+							</div>
+							<div class="mb-3 grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase tracking-wider text-(--on-surface-variant) sm:text-sm">
+								<span>Lun</span>
+								<span>Mar</span>
+								<span>Mie</span>
+								<span>Jue</span>
+								<span>Vie</span>
+								<span>Sab</span>
+								<span>Dom</span>
+							</div>
+							<div class="grid grid-cols-7 gap-1 sm:gap-2" data-calendar-grid></div>
+						</div>
+
+						<div class="mt-6">
+							<button
+								type="button"
+								data-back-to-services
+								class="inline-flex h-11 items-center justify-center rounded-full border border-(--outline) px-6 text-sm font-medium text-(--on-surface) transition hover:bg-(--surface-container-highest)"
+							>
+								Volver a servicios
+							</button>
+						</div>
+					</section>
+
+					<section
+						data-step-panel="3"
+						class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8"
+					>
+						<div class="flex flex-wrap items-center justify-between gap-4">
+							<div>
+								<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona un horario</h2>
+								<p class="mt-1 text-base text-(--on-surface-variant)">
+									<span class="font-medium text-(--on-surface)" data-summary-date-inline></span>
+								</p>
+							</div>
+						</div>
+
+						<div
+							data-slots-loading
+							class="mt-6 hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)"
+						>
+							Consultando horarios disponibles...
+						</div>
+
+						<div class="mt-6 grid gap-6" data-slots-container></div>
+
+						<p
+							data-no-slots
+							class="mt-6 hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-5 py-4 text-base font-medium text-(--on-error-container)"
+						>
+							No hay horarios disponibles para este día.
+						</p>
+
+						<div class="mt-6">
+							<button
+								type="button"
+								data-back-to-calendar
+								class="inline-flex h-11 items-center justify-center rounded-full border border-(--outline) px-6 text-sm font-medium text-(--on-surface) transition hover:bg-(--surface-container-highest)"
+							>
+								Volver al calendario
+							</button>
+						</div>
+					</section>
+
+					<section
+						data-step-panel="4"
+						class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8"
+					>
+						<div class="flex flex-wrap items-center justify-between gap-4">
+							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Confirma tus datos</h2>
+						</div>
+
+						<div class="mt-6 grid gap-5 lg:grid-cols-[1fr_22rem] lg:gap-8">
+							<form class="contents lg:grid lg:gap-5" data-customer-form>
+								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
+									<span>Teléfono (WhatsApp) <span class="text-(--error)" aria-hidden="true">*</span></span>
+									<div class="flex h-14 w-full overflow-hidden rounded-xl border border-(--outline) bg-(--surface-container-lowest) transition focus-within:border-(--primary) focus-within:ring-1 focus-within:ring-(--primary)">
+										<span class="inline-flex items-center border-r border-(--outline) bg-(--surface-container-high) px-3 text-sm font-semibold text-(--on-surface-variant) lg:px-2.5">+595</span>
+										<input
+											type="tel"
+											name="customer_phone"
+											maxlength="11"
+											required
+											inputmode="numeric"
+											autocomplete="tel-national"
+											class="min-w-0 flex-1 border-0 bg-transparent px-4 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none"
+											placeholder="Ej: 981 123 456"
+										/>
+									</div>
+									<span class="hidden text-xs font-medium text-(--error)" data-field-error="customer_phone"></span>
+								</label>
+								<label
+									class="hidden grid gap-1.5 text-sm font-medium text-(--on-surface)"
+									data-customer-name-wrapper
+								>
+									<span>Nombre completo <span class="text-(--error)" aria-hidden="true">*</span></span>
+									<input
+										type="text"
+										name="customer_name"
+										maxlength="100"
+										autocomplete="name"
+										class="h-14 rounded-xl border border-(--outline) bg-(--surface-container-lowest) px-4 py-0 text-base text-(--on-surface) placeholder-(--on-surface-variant) outline-none transition focus:border-(--primary) focus:ring-1 focus:ring-(--primary)"
+										placeholder="Ej: Juan Perez"
+									/>
+								</label>
+								<span class="hidden text-xs font-medium text-(--error)" data-field-error="customer_name"></span>
+
+								<p
+									data-submit-error
+									class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
+								></p>
+
+								<div class="order-3 grid gap-3 sm:flex sm:flex-wrap sm:items-center lg:order-none lg:mt-3">
+									<button
+										type="submit"
+										data-submit-booking
+										data-submit-confirm
+										data-booking-primary-action
+										class="booking-primary-action inline-flex h-12 w-full items-center justify-center rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary) transition hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+									>
+										Confirmar reserva
+									</button>
+									<button
+										type="button"
+										data-pay-deposit-submit
+										data-booking-primary-action
+										class="booking-primary-action is-hidden inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary) transition hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+									>
+										<span>Pagar Seña para Confirmar</span>
+										<span aria-hidden="true">🔒</span>
+									</button>
+									<button
+										type="button"
+										data-back-to-slots
+										class="inline-flex h-12 w-full items-center justify-center rounded-full border border-(--outline) bg-transparent px-8 text-base font-medium text-(--on-surface) transition hover:bg-(--surface-container-highest) sm:w-auto"
+									>
+										Volver a horarios
+									</button>
+								</div>
+							</form>
+
+							<aside class="order-2 rounded-3xl bg-(--surface-container-highest) p-6 shadow-sm lg:order-none">
+								<h3 class="text-xs font-bold uppercase tracking-widest text-(--primary)">
+									Resumen
+								</h3>
+								<ul class="mt-4 grid gap-4 text-base">
+									<li class="grid">
+										<span class="text-sm font-medium text-(--on-surface-variant)">Profesional</span>
+										<span class="font-normal text-(--on-surface)" data-summary-professional></span>
+									</li>
+									<li class="grid">
+										<span class="text-sm font-medium text-(--on-surface-variant)">Servicio</span>
+										<span class="font-normal text-(--on-surface)" data-summary-service></span>
+									</li>
+									<li class="hidden grid" data-summary-deposit-wrap>
+										<span class="text-sm font-medium text-(--on-surface-variant)">Seña requerida</span>
+										<span class="font-semibold text-(--primary)" data-summary-deposit></span>
+									</li>
+									<li class="grid">
+										<span class="text-sm font-medium text-(--on-surface-variant)">Fecha</span>
+										<span class="font-normal text-(--on-surface)" data-summary-date></span>
+									</li>
+									<li class="grid">
+										<span class="text-sm font-medium text-(--on-surface-variant)">Hora</span>
+										<span class="font-normal text-(--on-surface)" data-summary-time></span>
+									</li>
+									<li class="grid">
+										<span class="text-sm font-medium text-(--on-surface-variant)">Ubicación</span>
+										<button
+											type="button"
+											class="public-location-link mt-1 cursor-pointer text-left font-normal disabled:cursor-not-allowed disabled:text-(--on-surface-variant)"
+											data-summary-location
+										>
+											Ubicación no disponible
+										</button>
+									</li>
+								</ul>
+							</aside>
+						</div>
+					</section>
+
+					<section
+						data-step-panel="5"
+						class="hidden rounded-[28px] bg-(--tertiary-container) p-6 text-(--on-tertiary-container) shadow-sm sm:p-8"
+					>
+						<h2 class="text-3xl font-normal tracking-tight">Reserva confirmada</h2>
+						<p class="mt-2 text-base font-medium text-(--on-tertiary-container) opacity-90">
+							¡Todo listo! Tu cita está confirmada. Te enviamos los detalles y la ubicación del local directamente a tu WhatsApp.
+						</p>
+						<div class="mt-6 rounded-3xl bg-(--surface-container-lowest) p-6 shadow-sm">
+							<ul class="grid gap-4 text-base">
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Profesional</span> <span class="font-normal text-(--on-surface)" data-ticket-professional></span></li>
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Servicio</span> <span class="font-normal text-(--on-surface)" data-ticket-service></span></li>
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Fecha</span> <span class="font-normal text-(--on-surface)" data-ticket-date></span></li>
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Hora</span> <span class="font-normal text-(--on-surface)" data-ticket-time></span></li>
+							</ul>
+						</div>
+						<button
+							type="button"
+							data-restart-booking
+							class="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-(--tertiary) px-8 text-base font-medium text-(--on-tertiary) transition hover:opacity-90"
+						>
+							Reservar otra cita
+						</button>
+					</section>
+
+					<dialog
+						class="public-payment-modal rounded-[28px] border border-(--outline-variant) bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70"
+						data-payment-modal
+					>
+						<div class="grid gap-5 p-5 sm:p-6">
+							<div class="flex items-start justify-between gap-4">
+								<div>
+									<h2 class="text-xl font-semibold tracking-tight">Medio de pago</h2>
+									<p class="mt-1 text-sm text-(--on-surface-variant)">
+										Elegí cómo abonar la seña para confirmar tu reserva.
+									</p>
+								</div>
+								<button
+									type="button"
+									class="grid h-10 w-10 place-items-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-highest) hover:text-(--on-surface)"
+									data-payment-modal-close
+									aria-label="Cerrar"
+								>
+									<span class="material-symbols-rounded">close</span>
+								</button>
+							</div>
+
+							<p
+								class="rounded-2xl bg-(--primary-container) px-4 py-3 text-sm font-medium text-(--on-primary-container)"
+								data-payment-modal-deposit
+							>
+								Seña requerida: —
+							</p>
+
+							<!-- Oculto por ahora: el checkout de Pagopar muestra tarjeta/QR. Reactivar para elegir medio en Hasel. -->
+							<div class="hidden grid gap-3 sm:grid-cols-2" data-payment-methods-panel role="group" aria-label="Opciones de pago">
+								<button
+									type="button"
+									class="public-payment-method"
+									data-pay-method="9"
+								>
+									<span class="material-symbols-rounded public-payment-method__icon" aria-hidden="true">credit_card</span>
+									<span class="public-payment-method__title">Tarjeta</span>
+									<span class="public-payment-method__hint">Débito o crédito</span>
+								</button>
+								<button
+									type="button"
+									class="public-payment-method"
+									data-pay-method="24"
+								>
+									<span class="material-symbols-rounded public-payment-method__icon" aria-hidden="true">qr_code_2</span>
+									<span class="public-payment-method__title">QR</span>
+									<span class="public-payment-method__hint">Pagá con tu app</span>
+								</button>
+							</div>
+
+							<p
+								class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
+								data-payment-modal-error
+							></p>
+						</div>
+					</dialog>
+
+					<dialog class="public-map-modal rounded-[28px] border border-(--outline-variant) bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70" data-public-map-modal>
+						<div class="grid gap-4 p-5 sm:p-6">
+							<div class="flex items-start justify-between gap-4">
+								<div>
+									<h2 class="text-xl font-semibold tracking-tight">Ubicación</h2>
+									<p class="mt-1 text-sm text-(--on-surface-variant)" data-public-map-address></p>
+								</div>
+								<button
+									type="button"
+									class="grid h-10 w-10 place-items-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-highest) hover:text-(--on-surface)"
+									data-public-map-close
+									aria-label="Cerrar mapa"
+								>
+									<span class="material-symbols-rounded">close</span>
+								</button>
+							</div>
+								<div class="public-map-modal-divider"></div>
+							<div class="public-map-canvas-wrap relative h-80 overflow-hidden rounded-3xl border border-(--outline-variant) bg-(--surface-container-high)">
+								<div class="h-full w-full" data-public-map-canvas></div>
+								<div
+									class="public-map-loading absolute inset-0 z-10 hidden place-items-center bg-(--surface-container-high)/85 backdrop-blur-[2px]"
+									data-public-map-loading
+									aria-hidden="true"
+									aria-live="polite"
+									aria-label="Cargando mapa"
+								>
+									<span class="material-symbols-rounded animate-spin text-[1.75rem] text-(--primary)" aria-hidden="true">progress_activity</span>
+								</div>
+							</div>
+							<p class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)" data-public-map-status></p>
+						</div>
+					</dialog>
+				</section>
+			)
+		}
+	</main>
+</Layout>
+
+<script>
+	import { initializePublicBookingPage } from '../../../scripts/public-booking-page';
+
+	const bootPublicBookingPage = () => {
+		initializePublicBookingPage();
+	};
+
+	bootPublicBookingPage();
+	document.addEventListener('astro:page-load', bootPublicBookingPage);
+</script>
+
+<style is:global>
+	.public-booking-shell {
+		/* Material 3 Dark Theme Colors */
+		--surface-background: #141414;
+		--surface-container-lowest: #1b1b1b;
+		--surface-container-low: #1b1b1b;
+		--surface-container: #1b1b1b;
+		--surface-container-high: #1b1b1b;
+		--surface-container-highest: #1b1b1b;
+		
+		--outline: #44474e;
+		--outline-variant: #44474e;
+
+		--on-surface: #e2e2e9;
+		--on-surface-variant: #c4c6d0;
+		
+		/* Primary */
+		--primary: #a8c7fa;
+		--on-primary: #062e6f;
+		--primary-container: #0842a0;
+		--on-primary-container: #d3e3fd;
+		--primary-hover: #b9d4fa;
+		
+		/* Tertiary */
+		--tertiary: #c7eccb;
+		--on-tertiary: #0c381c;
+		--tertiary-container: #225031;
+		--on-tertiary-container: #e3ffe6;
+		
+		/* Error */
+		--error: #ffb4ab;
+		--error-container: #93000a;
+		--on-error-container: #ffdad6;
+	}
+
+	.public-booking-avatar {
+		flex: 0 0 auto;
+	}
+
+	.public-booking-avatar--empty {
+		display: grid;
+		place-items: center;
+		border-radius: 9999px;
+		border: 1px solid var(--outline-variant);
+		background: var(--surface-background);
+		color: var(--on-surface-variant);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--outline-variant) 30%, transparent);
+	}
+
+	.public-booking-avatar--empty .material-symbols-rounded {
+		font-size: 2.25rem;
+		line-height: 1;
+	}
+
+	.public-map-modal {
+		width: min(92vw, 44rem);
+		max-height: min(90vh, 42rem);
+		margin: auto;
+	}
+
+	.public-map-modal-divider {
+		height: 1px;
+		width: 100%;
+		border-radius: 999px;
+		background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--outline-variant) 72%, white 28%), transparent);
+		opacity: 0.9;
+	}
+
+	.public-map-canvas-wrap.is-loading [data-public-map-canvas] {
+		visibility: hidden;
+	}
+
+	.public-map-loading {
+		display: grid;
+	}
+
+	.public-map-loading.hidden {
+		display: none;
+	}
+
+	.public-location-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		width: fit-content;
+		border: 0;
+		background: transparent;
+		padding: 0;
+		font: inherit;
+		color: var(--primary);
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.public-location-link:hover:not(:disabled) {
+		color: var(--primary-hover);
+	}
+
+	.public-location-link:hover:not(:disabled) .public-location-link__label {
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.public-location-link:hover:not(:disabled):not(:has(.public-location-link__label)) {
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.public-location-link:disabled {
+		color: var(--on-surface-variant);
+		text-decoration: none;
+	}
+
+	.public-location-link .material-symbols-rounded {
+		font-size: 1rem;
+		line-height: 1;
+	}
+
+	.public-booking-shell button:not([disabled]),
+	.public-booking-shell [role='button']:not([aria-disabled='true']),
+	.public-booking-shell a[href] {
+		cursor: pointer;
+	}
+
+	.public-booking-shell button[disabled] {
+		cursor: not-allowed;
+	}
+
+	.step-item-default,
+	.step-item-current,
+	.step-item-done {
+		border-radius: 100px;
+		padding: 0.5rem 1rem;
+		font-weight: 500;
+		text-align: center;
+		transition: all 0.2s ease-in-out;
+		cursor: default;
+	}
+
+	.step-item-default {
+		background: transparent;
+		color: var(--on-surface-variant);
+	}
+
+	.step-item-current {
+		background: var(--primary-container);
+		color: var(--on-primary-container);
+	}
+
+	.step-item-done {
+		background: var(--surface-container-highest);
+		color: var(--on-surface);
+	}
+
+	.step-item-done::before {
+		content: '\2713';
+		display: inline-block;
+		margin-right: 0.4rem;
+		color: var(--primary);
+	}
+
+	[data-booking-toast].is-error {
+		border: 1px solid var(--error-container);
+		background: var(--error-container);
+		color: var(--on-error-container);
+	}
+
+	[data-booking-toast].is-success {
+		border: 1px solid var(--tertiary-container);
+		background: var(--tertiary-container);
+		color: var(--on-tertiary-container);
+	}
+
+	[data-calendar-grid] > button[disabled] {
+		cursor: not-allowed;
+		opacity: 0.25;
+	}
+
+	/* Utility styling for nested dynamic content if needed */
+	.btn-primary-soft {
+		background: var(--primary-container);
+		color: var(--on-primary-container);
+	}
+	.btn-primary-soft:hover {
+		background: var(--primary);
+		color: var(--on-primary);
+	}
+
+	.public-payment-modal {
+		width: min(92vw, 28rem);
+		margin: auto;
+	}
+
+	.public-payment-methods {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.public-payment-method {
+		display: grid;
+		justify-items: center;
+		gap: 0.35rem;
+		width: 100%;
+		padding: 1.1rem 1rem;
+		border-radius: 1rem;
+		border: 1.5px solid var(--outline-variant);
+		background: var(--surface-container-lowest);
+		color: var(--on-surface);
+		transition:
+			border-color 0.15s ease,
+			background 0.15s ease,
+			box-shadow 0.15s ease,
+			transform 0.15s ease;
+	}
+
+	.public-payment-method:hover:not(:disabled) {
+		border-color: color-mix(in srgb, var(--primary) 55%, var(--outline-variant));
+		background: var(--surface-container-high);
+		transform: translateY(-1px);
+	}
+
+	.public-payment-method:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 2px;
+	}
+
+	.public-payment-method.is-loading,
+	.public-payment-method:disabled {
+		opacity: 0.65;
+		cursor: not-allowed;
+		transform: none;
+	}
+
+	.public-payment-method__icon {
+		font-size: 1.75rem;
+		color: var(--primary);
+	}
+
+	.public-payment-method__title {
+		font-size: 1rem;
+		font-weight: 600;
+	}
+
+	.public-payment-method__hint {
+		font-size: 0.8rem;
+		color: var(--on-surface-variant);
+	}
+
+	.booking-primary-action.is-hidden {
+		display: none !important;
+	}
+</style>
+
