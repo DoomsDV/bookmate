@@ -136,18 +136,18 @@
 }
 
 html[data-theme='dark'] {
-	--background: #0a0a0a;
-	--background-accent: #0a0a0a;
-	--page-background: #0a0a0a;
-	--surface: rgba(18, 18, 18, 0.94);
-	--surface-container: #121212;
-	--surface-container-low: #121212;
-	--surface-container-high: #1a1a1a;
-	--surface-container-highest: #222222;
-	--surface-bright: #121212;
+	--background: #141414;
+	--background-accent: #161616;
+	--page-background: #141414;
+	--surface: rgba(26, 26, 26, 0.94);
+	--surface-container: #1a1a1a;
+	--surface-container-low: #1a1a1a;
+	--surface-container-high: #222222;
+	--surface-container-highest: #282828;
+	--surface-bright: #1a1a1a;
 	--bar-outline: rgba(255, 255, 255, 0.1);
-	--shell-surface: #0a0a0a;
-	--sidebar-surface: #121212;
+	--shell-surface: #141414;
+	--sidebar-surface: #1a1a1a;
 	--content-surface: rgba(26, 26, 26, 0.88);
 	--shell-border: rgba(255, 255, 255, 0.1);
 	--primary: #1a73e8;
@@ -954,17 +954,43 @@ html[data-theme='dark'] .app-pagination__current {
 /* Auth dark mode overrides.
    Keeps the existing split layout, only replacing the light form surface. */
 .m3-container.auth-dark {
-	background-color: #050505;
+	background-color: #0a0a0a;
+	border-radius: 0;
+}
+
+.m3-container.auth-dark .m3-sidebar {
+	background-color: #0a0a0a;
+}
+
+.m3-container.auth-dark .m3-sidebar::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 60%);
+	pointer-events: none;
+}
+
+.m3-container.auth-dark .m3-sidebar-inner {
+	justify-content: flex-start;
+}
+
+.m3-container.auth-dark .m3-stepper-header {
+	flex: none;
+	justify-content: flex-start;
 }
 
 .m3-container.auth-dark .m3-content {
 	background:
 		radial-gradient(circle at 50% 18%, rgba(37, 99, 235, 0.08), transparent 34%),
 		#0a0a0a;
+	border-radius: 0;
 }
 
 @media (min-width: 1024px) {
 	.m3-container.auth-dark .m3-content {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+		border-left: 1px solid #262626;
 		box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4);
 	}
 }
