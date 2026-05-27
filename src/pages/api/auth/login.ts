@@ -3,12 +3,14 @@ import type { APIRoute } from 'astro';
 import {
 	AuthApiError,
 	acceptInvitationWithAccessToken,
+	CREATE_ORGANIZATION_PATH,
 	isEmailVerificationRequiredError,
+	parseInvitationTokenFromRedirect,
 	isLoginSelectionResult,
 	loginWithOrds,
-	parseInvitationTokenFromRedirect,
 	resolveVerificationEmailFromAuthError,
 	clearOrgSelectionCookie,
+	clearSessionCookies,
 	setOrgSelectionCookie,
 	setOrganizationCacheCookies,
 	setSessionCookies,
@@ -100,25 +102,33 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 		const loginResult = await loginWithOrds({ email: identifier, password });
 
 		if (isLoginSelectionResult(loginResult)) {
+			clearOrgSelectionCookie(cookies);
+			clearSessionCookies(cookies);
 			setOrgSelectionCookie(cookies, {
 				selection_token: loginResult.selection_token,
 				organizations: loginResult.organizations,
 				redirectTo: postLoginRedirect,
 			});
 
-			const selectOrgPath = withQuery('/auth/select-org', new URLSearchParams());
+			const invitationAcceptPath = parseInvitationTokenFromRedirect(postLoginRedirect)
+				? postLoginRedirect
+				: null;
+			const nextPath =
+				postLoginRedirect === CREATE_ORGANIZATION_PATH
+					? CREATE_ORGANIZATION_PATH
+					: invitationAcceptPath ?? withQuery('/auth/select-org', new URLSearchParams());
 
 			if (wantsHtml(request)) {
 				return new Response(null, {
 					status: 302,
-					headers: { Location: selectOrgPath },
+					headers: { Location: nextPath },
 				});
 			}
 
 			return Response.json({
 				success: true,
 				selectionRequired: true,
-				redirect: selectOrgPath,
+				redirect: nextPath,
 				organizations: loginResult.organizations,
 			});
 		}

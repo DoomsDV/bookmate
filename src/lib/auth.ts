@@ -127,6 +127,7 @@ export interface LoginSelectionResponse {
 export type LoginResult = AuthSuccessResponse | LoginSelectionResponse;
 
 export const ORG_SELECTION_COOKIE = 'org_selection_ctx';
+export const CREATE_ORGANIZATION_PATH = '/auth/create-organization';
 const ORG_SELECTION_MAX_AGE_SECONDS = 60 * 10;
 
 export interface AuthFieldError {
@@ -328,7 +329,7 @@ export const resolveVerificationEmailFromAuthError = (error: AuthApiError, ident
 	return '';
 };
 
-const isSuccessResponse = (value: unknown): value is AuthSuccessResponse => {
+export const isSuccessResponse = (value: unknown): value is AuthSuccessResponse => {
 	if (!value || typeof value !== 'object') return false;
 
 	return (
@@ -623,7 +624,7 @@ export const setOrgSelectionCookie = (
 	});
 };
 
-export const getOrgSelectionCookie = (
+const parseOrgSelectionCookieRaw = (
 	cookies: { get: (name: string) => { value?: string } | undefined }
 ): OrgSelectionContext | null => {
 	const raw = String(cookies.get(ORG_SELECTION_COOKIE)?.value || '').trim();
@@ -638,7 +639,7 @@ export const getOrgSelectionCookie = (
 					.map(normalizeOrganizationOption)
 					.filter((item): item is OrganizationLoginOption => item !== null)
 			: [];
-		if (!selectionToken || organizations.length < 2) return null;
+		if (!selectionToken) return null;
 		return {
 			selection_token: selectionToken,
 			organizations,
@@ -648,6 +649,54 @@ export const getOrgSelectionCookie = (
 		return null;
 	}
 };
+
+export const getOrgSelectionCookie = (
+	cookies: { get: (name: string) => { value?: string } | undefined }
+): OrgSelectionContext | null => {
+	const context = parseOrgSelectionCookieRaw(cookies);
+	if (!context || context.organizations.length < 2) return null;
+	return context;
+};
+
+export const getCreateOrganizationPendingContext = (
+	cookies: { get: (name: string) => { value?: string } | undefined }
+): Pick<OrgSelectionContext, 'selection_token' | 'redirectTo'> | null => {
+	const context = parseOrgSelectionCookieRaw(cookies);
+	if (!context) return null;
+	if (context.redirectTo !== CREATE_ORGANIZATION_PATH) return null;
+	return {
+		selection_token: context.selection_token,
+		redirectTo: context.redirectTo,
+	};
+};
+
+export const getPendingInvitationAcceptContext = (
+	cookies: { get: (name: string) => { value?: string } | undefined }
+): { selection_token: string; invitation_token: string; redirectTo: string } | null => {
+	const context = parseOrgSelectionCookieRaw(cookies);
+	if (!context) return null;
+	const invitationToken = parseInvitationTokenFromRedirect(context.redirectTo);
+	if (!invitationToken) return null;
+	return {
+		selection_token: context.selection_token,
+		invitation_token: invitationToken,
+		redirectTo: context.redirectTo,
+	};
+};
+
+export const getPendingSelectionAuthToken = (
+	cookies: { get: (name: string) => { value?: string } | undefined }
+): string => {
+	const accessToken = String(cookies.get('access_token')?.value || '').trim();
+	if (accessToken) return accessToken;
+
+	const context = parseOrgSelectionCookieRaw(cookies);
+	return context?.selection_token ?? '';
+};
+
+export const getCreateOrganizationAuthToken = (
+	cookies: { get: (name: string) => { value?: string } | undefined }
+): string => getPendingSelectionAuthToken(cookies);
 
 export const clearOrgSelectionCookie = (
 	cookies: { delete: (name: string, options?: Record<string, unknown>) => void }

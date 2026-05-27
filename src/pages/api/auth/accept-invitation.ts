@@ -3,8 +3,11 @@ import type { APIRoute } from 'astro';
 import {
 	AuthApiError,
 	acceptInvitationWithOrds,
+	clearOrgSelectionCookie,
 	clearSessionCookies,
 	isLoginSelectionResult,
+	isSuccessResponse,
+	getPendingSelectionAuthToken,
 	setOrganizationCacheCookies,
 	setSessionCookies,
 } from '../../../lib/auth';
@@ -40,7 +43,11 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 		}
 
 		const isNewAccountSignup = body.password.trim().length >= 8;
-		const accessToken = isNewAccountSignup ? undefined : cookies.get('access_token')?.value;
+		const accessToken = isNewAccountSignup
+			? undefined
+			: String(cookies.get('access_token')?.value || '').trim() ||
+				getPendingSelectionAuthToken(cookies) ||
+				undefined;
 
 		const result = await acceptInvitationWithOrds(
 			accessToken ? `Bearer ${accessToken}` : undefined,
@@ -52,15 +59,10 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 			}
 		);
 
+		clearOrgSelectionCookie(cookies);
 		clearSessionCookies(cookies);
 
-		if (
-			result &&
-			typeof result === 'object' &&
-			'access_token' in result &&
-			'refresh_token' in result &&
-			!isLoginSelectionResult(result)
-		) {
+		if (isSuccessResponse(result) && 'access_token' in result && 'refresh_token' in result) {
 			setSessionCookies(cookies, url, result);
 			cookies.set('fcm_prompt_pending', '1', {
 				httpOnly: false,

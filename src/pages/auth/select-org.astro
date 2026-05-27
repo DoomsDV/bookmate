@@ -1,7 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
-import { getOrgSelectionCookie } from '../../lib/auth';
+import { CREATE_ORGANIZATION_PATH, getOrgSelectionCookie } from '../../lib/auth';
 
 const selectionContext = getOrgSelectionCookie(Astro.cookies);
 const error = Astro.url.searchParams.get('error') ?? '';
@@ -80,6 +80,17 @@ const organizations = selectionContext.organizations;
 						<button type="submit" class="m3-btn-primary">Continuar</button>
 					</div>
 				</form>
+
+				<div class="org-select-secondary">
+					<p class="org-select-secondary__text">¿Querés registrar un espacio de trabajo nuevo?</p>
+					<a
+						href={`/auth/login?redirectTo=${encodeURIComponent(CREATE_ORGANIZATION_PATH)}`}
+						class="org-select-create-link"
+					>
+						<span class="material-symbols-rounded" aria-hidden="true">domain_add</span>
+						Crear organización
+					</a>
+				</div>
 			</div>
 		</main>
 	</section>
@@ -321,6 +332,40 @@ const organizations = selectionContext.organizations;
 		gap: 0.75rem;
 		flex-wrap: wrap;
 		padding-top: 0.5rem;
+	}
+
+	.org-select-secondary {
+		margin-top: 1.25rem;
+		padding-top: 1.25rem;
+		border-top: 1px solid #262626;
+		text-align: center;
+	}
+
+	.org-select-secondary__text {
+		margin: 0 0 0.75rem;
+		color: #94a3b8;
+		font-size: 0.88rem;
+		line-height: 1.4;
+	}
+
+	.org-select-create-link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		border-radius: 9999px;
+		border: 1px solid rgba(96, 165, 250, 0.35);
+		padding: 0.7rem 1.15rem;
+		color: #dbeafe;
+		font-size: 0.9rem;
+		font-weight: 700;
+		text-decoration: none;
+		transition: background 0.15s ease, border-color 0.15s ease;
+	}
+
+	.org-select-create-link:hover {
+		background: rgba(37, 99, 235, 0.18);
+		border-color: rgba(147, 197, 253, 0.55);
 	}
 
 	.m3-btn-primary {

@@ -23,6 +23,24 @@ const withQuery = (path: string, params: URLSearchParams) => {
 	return queryString ? `${path}?${queryString}` : path;
 };
 
+const sanitizeRedirectTo = (value: unknown) => {
+	const redirectTo = String(value || '').trim();
+
+	if (!redirectTo || !redirectTo.startsWith('/') || redirectTo.startsWith('//')) {
+		return '';
+	}
+
+	if (redirectTo.includes('\r') || redirectTo.includes('\n')) {
+		return '';
+	}
+
+	if (redirectTo.startsWith('/auth/login') || redirectTo.startsWith('/api/')) {
+		return '';
+	}
+
+	return redirectTo;
+};
+
 export const POST: APIRoute = async ({ request, cookies, url }) => {
 	let redirectTo = '/panel/dashboard';
 
@@ -32,17 +50,23 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 			throw new AuthApiError('Tu sesión de selección expiró. Vuelve a iniciar sesión.', 401);
 		}
 
-		redirectTo = selectionContext.redirectTo || redirectTo;
-
 		let orgMemberId = 0;
 		const contentType = request.headers.get('content-type') || '';
 
 		if (contentType.includes('application/json')) {
 			const body = await request.json();
 			orgMemberId = Number(body.org_member_id || 0);
+			const bodyRedirect = sanitizeRedirectTo(body.redirectTo);
+			if (bodyRedirect) redirectTo = bodyRedirect;
 		} else {
 			const formData = await request.formData();
 			orgMemberId = Number(formData.get('org_member_id') || 0);
+			const formRedirect = sanitizeRedirectTo(formData.get('redirectTo'));
+			if (formRedirect) redirectTo = formRedirect;
+		}
+
+		if (!redirectTo || redirectTo === '/panel/dashboard') {
+			redirectTo = selectionContext.redirectTo || redirectTo;
 		}
 
 		if (!Number.isInteger(orgMemberId) || orgMemberId <= 0) {

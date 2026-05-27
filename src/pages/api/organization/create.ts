@@ -2,7 +2,9 @@ import type { APIRoute } from 'astro';
 
 import {
 	AuthApiError,
+	clearOrgSelectionCookie,
 	createOrganizationWithOrds,
+	getCreateOrganizationAuthToken,
 	isEmailVerificationRequiredError,
 	resolveVerificationEmailFromAuthError,
 	setOrganizationCacheCookies,
@@ -10,11 +12,7 @@ import {
 	type CreateOrganizationPayload,
 } from '../../../lib/auth';
 import { getCurrentOrganizationWithOrds } from '../../../lib/organization';
-import {
-	parseRequestBody,
-	requireToken,
-	toErrorResponse,
-} from '../../../utils/api-helpers';
+import { parseRequestBody, toErrorResponse } from '../../../utils/api-helpers';
 
 const sanitizeText = (value: unknown) => String(value || '').trim();
 
@@ -55,7 +53,11 @@ const validatePayload = (payload: CreateOrganizationPayload) => {
 
 export const POST: APIRoute = async ({ request, cookies, url, locals }) => {
 	try {
-		const token = requireToken(locals.token, (message, status) => new AuthApiError(message, status));
+		const token =
+			String(locals.token || '').trim() || getCreateOrganizationAuthToken(cookies);
+		if (!token) {
+			throw new AuthApiError('Debes iniciar sesion para crear una organizacion.', 401);
+		}
 		const body = await parseRequestBody<CreateOrganizationPayload>(request, (formData) =>
 			parsePayload({
 				business_name: formData.get('business_name'),
@@ -70,6 +72,7 @@ export const POST: APIRoute = async ({ request, cookies, url, locals }) => {
 
 		const session = await createOrganizationWithOrds(token, payload);
 
+		clearOrgSelectionCookie(cookies);
 		setSessionCookies(cookies, url, session);
 		cookies.set('fcm_prompt_pending', '1', {
 			httpOnly: false,

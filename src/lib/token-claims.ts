@@ -18,18 +18,29 @@ const decodeBase64Url = (value: string) => {
 	return new TextDecoder().decode(bytes);
 };
 
-export const parseTokenClaims = (token: string): SessionClaims => {
+export const parseJwtPayload = (token: string): Record<string, unknown> | null => {
 	try {
 		const parts = token.split('.');
-		if (parts.length < 2) return { user_id: 0, role_id: 0, organization_id: 0 };
-
-		const payload = JSON.parse(decodeBase64Url(parts[1])) as Record<string, unknown>;
-		return {
-			user_id: toInt(payload.user_id ?? payload.id_user ?? 0),
-			role_id: toInt(payload.role_id ?? payload.rol_id_role ?? 0),
-			organization_id: toInt(payload.organization_id ?? payload.org_id_organization ?? 0),
-		};
+		if (parts.length < 2) return null;
+		return JSON.parse(decodeBase64Url(parts[1])) as Record<string, unknown>;
 	} catch {
-		return { user_id: 0, role_id: 0, organization_id: 0 };
+		return null;
 	}
+};
+
+export const isOrgSelectionToken = (token: string): boolean => {
+	const payload = parseJwtPayload(token);
+	if (!payload) return false;
+	return toInt(payload.org_selection) === 1 && toInt(payload.platform_user_id) > 0;
+};
+
+export const parseTokenClaims = (token: string): SessionClaims => {
+	const payload = parseJwtPayload(token);
+	if (!payload) return { user_id: 0, role_id: 0, organization_id: 0 };
+
+	return {
+		user_id: toInt(payload.user_id ?? payload.id_user ?? 0),
+		role_id: toInt(payload.role_id ?? payload.rol_id_role ?? 0),
+		organization_id: toInt(payload.organization_id ?? payload.org_id_organization ?? 0),
+	};
 };

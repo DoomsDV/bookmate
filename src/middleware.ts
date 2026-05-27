@@ -3,6 +3,7 @@ import { defineMiddleware } from 'astro:middleware';
 import { canAccessPath, isKnownRoleId } from './config/roles';
 import {
 	clearSessionCookies,
+	getPendingSelectionAuthToken,
 	isInvitationAcceptRedirect,
 	isPublicPath,
 	refreshWithOrds,
@@ -11,7 +12,7 @@ import {
 } from './lib/auth';
 import { getCurrentOrganizationWithOrds } from './lib/organization';
 import { SESSION_EXPIRED_API_CODE } from './lib/session-auth-messages';
-import { parseTokenClaims } from './lib/token-claims';
+import { isOrgSelectionToken, parseTokenClaims } from './lib/token-claims';
 
 const isInvitationLoginLanding = (pathname: string, searchParams: URLSearchParams) =>
 	pathname === '/auth/login' &&
@@ -70,6 +71,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		const redirectPath = `${url.pathname}${url.search}`;
 		return redirect(`/auth/login?redirectTo=${encodeURIComponent(redirectPath)}`);
 	};
+
+	if (
+		url.pathname === '/api/organization/create' ||
+		url.pathname === '/api/auth/accept-invitation'
+	) {
+		const createAuthToken = getPendingSelectionAuthToken(cookies);
+		if (createAuthToken && isOrgSelectionToken(createAuthToken)) {
+			context.locals.token = createAuthToken;
+			context.locals.roleId = 0;
+			context.locals.userId = 0;
+			context.locals.organizationName = '';
+			context.locals.organizationLogoUrl = '';
+			return next();
+		}
+	}
 
 	let accessToken = cookies.get('access_token')?.value;
 	const refreshToken = cookies.get('refresh_token')?.value;

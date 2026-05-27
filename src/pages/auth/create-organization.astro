@@ -1,14 +1,18 @@
 ---
 import CreateOrganizationForm from '../../components/CreateOrganizationForm.astro';
 import Layout from '../../layouts/Layout.astro';
-import { listOrgSpecialtiesWithOrds } from '../../lib/auth';
+import {
+	CREATE_ORGANIZATION_PATH,
+	getCreateOrganizationAuthToken,
+	listOrgSpecialtiesWithOrds,
+} from '../../lib/auth';
 import '../../styles/global.css';
 
-const token = Astro.cookies.get('access_token')?.value ?? '';
+const authToken = getCreateOrganizationAuthToken(Astro.cookies);
 
-if (!token) {
+if (!authToken) {
 	return Astro.redirect(
-		`/auth/login?redirectTo=${encodeURIComponent('/auth/create-organization')}`
+		`/auth/login?redirectTo=${encodeURIComponent(CREATE_ORGANIZATION_PATH)}`
 	);
 }
 

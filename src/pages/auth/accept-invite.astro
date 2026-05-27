@@ -1,10 +1,56 @@
 ---
 import AcceptInviteForm from '../../components/AcceptInviteForm.astro';
 import Layout from '../../layouts/Layout.astro';
+import {
+	acceptInvitationWithOrds,
+	clearOrgSelectionCookie,
+	clearSessionCookies,
+	getPendingInvitationAcceptContext,
+	getPendingSelectionAuthToken,
+	isSuccessResponse,
+	setOrganizationCacheCookies,
+	setSessionCookies,
+} from '../../lib/auth';
+import { getCurrentOrganizationWithOrds } from '../../lib/organization';
 import '../../styles/global.css';
 
 const token = Astro.url.searchParams.get('token') ?? '';
-const error = Astro.url.searchParams.get('error') ?? '';
+let error = Astro.url.searchParams.get('error') ?? '';
+
+const pendingInvite = getPendingInvitationAcceptContext(Astro.cookies);
+const selectionAuthToken = getPendingSelectionAuthToken(Astro.cookies);
+
+if (
+	token &&
+	pendingInvite &&
+	pendingInvite.invitation_token === token &&
+	selectionAuthToken &&
+	!error
+) {
+	try {
+		const result = await acceptInvitationWithOrds(`Bearer ${selectionAuthToken}`, { token });
+
+		if (isSuccessResponse(result)) {
+			clearOrgSelectionCookie(Astro.cookies);
+			clearSessionCookies(Astro.cookies);
+			setSessionCookies(Astro.cookies, Astro.url, result);
+
+			try {
+				const organization = await getCurrentOrganizationWithOrds(result.access_token);
+				setOrganizationCacheCookies(Astro.cookies, Astro.url, organization);
+			} catch {
+				// Si falla la cache de organización, no bloqueamos el acceso.
+			}
+
+			return Astro.redirect('/panel/dashboard');
+		}
+	} catch (inviteError) {
+		error =
+			inviteError instanceof Error
+				? inviteError.message
+				: 'No fue posible aceptar la invitación. Intenta de nuevo.';
+	}
+}
 ---
 
 <Layout>
