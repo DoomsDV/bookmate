@@ -2,8 +2,10 @@ import type { APIRoute } from 'astro';
 
 import {
 	AuthApiError,
+	acceptInvitationWithAccessToken,
 	clearOrgSelectionCookie,
 	getOrgSelectionCookie,
+	parseInvitationTokenFromRedirect,
 	selectOrganizationWithOrds,
 	setOrganizationCacheCookies,
 	setSessionCookies,
@@ -69,21 +71,50 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 			maxAge: 60 * 60 * 24 * 30,
 		});
 
-		try {
-			const organization = await getCurrentOrganizationWithOrds(session.access_token);
-			setOrganizationCacheCookies(cookies, url, organization);
-		} catch {
-			// No bloqueamos el acceso si falla la carga de branding de la org.
+		let finalRedirect = redirectTo;
+		const invitationToken = parseInvitationTokenFromRedirect(redirectTo);
+
+		if (invitationToken) {
+			try {
+				const acceptedSession = await acceptInvitationWithAccessToken(
+					session.access_token,
+					invitationToken
+				);
+				setSessionCookies(cookies, url, acceptedSession);
+
+				try {
+					const organization = await getCurrentOrganizationWithOrds(acceptedSession.access_token);
+					setOrganizationCacheCookies(cookies, url, organization);
+				} catch {
+					// No bloqueamos el acceso si falla la carga de branding de la org.
+				}
+
+				finalRedirect = '/panel/dashboard';
+			} catch {
+				try {
+					const organization = await getCurrentOrganizationWithOrds(session.access_token);
+					setOrganizationCacheCookies(cookies, url, organization);
+				} catch {
+					// No bloqueamos el acceso si falla la carga de branding de la org.
+				}
+			}
+		} else {
+			try {
+				const organization = await getCurrentOrganizationWithOrds(session.access_token);
+				setOrganizationCacheCookies(cookies, url, organization);
+			} catch {
+				// No bloqueamos el acceso si falla la carga de branding de la org.
+			}
 		}
 
 		if (wantsHtml(request)) {
 			return new Response(null, {
 				status: 302,
-				headers: { Location: redirectTo },
+				headers: { Location: finalRedirect },
 			});
 		}
 
-		return Response.json({ success: true, redirect: redirectTo });
+		return Response.json({ success: true, redirect: finalRedirect });
 	} catch (error) {
 		const authError =
 			error instanceof AuthApiError

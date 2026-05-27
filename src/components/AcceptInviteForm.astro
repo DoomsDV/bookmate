@@ -185,13 +185,26 @@ const safeToken = String(token || '').trim();
 							window.location.assign(acceptData?.redirect || '/panel/dashboard');
 							return;
 						}
+
+						if (acceptResponse.status === 403) {
+							showError(
+								acceptData?.message ||
+									'La sesión activa no corresponde al correo invitado. Cerrá sesión e iniciá con la cuenta correcta.'
+							);
+						} else if (!acceptData?.login_required) {
+							showError(acceptData?.message || 'No fue posible aceptar la invitación con la sesión actual.');
+						}
 					} catch {
-						// Sin sesión válida o correo distinto: pedir login con la cuenta invitada.
+						// Sin sesión válida: pedir login con la cuenta invitada.
 					}
 
 					const redirectTo = `/auth/accept-invite?token=${encodeURIComponent(token)}`;
 					if (loginLink instanceof HTMLAnchorElement) {
 						loginLink.href = `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`;
+					}
+					if (desc) {
+						desc.textContent =
+							'Ya tienes una cuenta con este correo. Iniciá sesión para unirte a la organización.';
 					}
 					loginPanel?.classList.remove('is-hidden');
 					return;

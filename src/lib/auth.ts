@@ -974,6 +974,36 @@ export const acceptInvitationWithOrds = async (
 	throw new AuthApiError('No fue posible completar la aceptación de la invitación.', 502);
 };
 
+/** Token de invitación embebido en redirectTo (/auth/accept-invite?token=...). */
+export const parseInvitationTokenFromRedirect = (redirectTo: string): string | null => {
+	const trimmed = String(redirectTo || '').trim();
+	if (!trimmed.startsWith('/auth/accept-invite')) return null;
+
+	const queryIndex = trimmed.indexOf('?');
+	if (queryIndex < 0) return null;
+
+	const token = new URLSearchParams(trimmed.slice(queryIndex + 1)).get('token');
+	return token?.trim() || null;
+};
+
+export const isInvitationAcceptRedirect = (redirectTo: string) =>
+	parseInvitationTokenFromRedirect(redirectTo) !== null;
+
+/** Acepta invitación con JWT de sesión activa; devuelve tokens de la org invitada. */
+export const acceptInvitationWithAccessToken = async (
+	accessToken: string,
+	invitationToken: string
+): Promise<AuthSuccessResponse> => {
+	const authHeader = accessToken.startsWith('Bearer ') ? accessToken.trim() : `Bearer ${accessToken.trim()}`;
+	const result = await acceptInvitationWithOrds(authHeader, { token: invitationToken });
+
+	if (isSuccessResponse(result) && 'access_token' in result && 'refresh_token' in result) {
+		return result;
+	}
+
+	throw new AuthApiError('No fue posible completar la aceptación de la invitación.', 502);
+};
+
 export const resendVerificationCodeWithOrds = async (payload: ResendVerificationCodePayload) => {
 	const response = await fetch(RESEND_VERIFICATION_CODE_URL, {
 		method: 'POST',

@@ -2,9 +2,11 @@ import type { APIRoute } from 'astro';
 
 import {
 	AuthApiError,
+	acceptInvitationWithAccessToken,
 	isEmailVerificationRequiredError,
 	isLoginSelectionResult,
 	loginWithOrds,
+	parseInvitationTokenFromRedirect,
 	resolveVerificationEmailFromAuthError,
 	clearOrgSelectionCookie,
 	setOrgSelectionCookie,
@@ -132,23 +134,52 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 			maxAge: 60 * 60 * 24 * 30,
 		});
 
-		try {
-			const organization = await getCurrentOrganizationWithOrds(session.access_token);
-			setOrganizationCacheCookies(cookies, url, organization);
-		} catch {
-			// Si falla la cache de organización, no bloqueamos el inicio de sesión.
+		let finalRedirect = postLoginRedirect;
+		const invitationToken = parseInvitationTokenFromRedirect(postLoginRedirect);
+
+		if (invitationToken) {
+			try {
+				const acceptedSession = await acceptInvitationWithAccessToken(
+					session.access_token,
+					invitationToken
+				);
+				setSessionCookies(cookies, url, acceptedSession);
+
+				try {
+					const organization = await getCurrentOrganizationWithOrds(acceptedSession.access_token);
+					setOrganizationCacheCookies(cookies, url, organization);
+				} catch {
+					// Si falla la cache de organización, no bloqueamos el acceso.
+				}
+
+				finalRedirect = '/panel/dashboard';
+			} catch {
+				try {
+					const organization = await getCurrentOrganizationWithOrds(session.access_token);
+					setOrganizationCacheCookies(cookies, url, organization);
+				} catch {
+					// Si falla la cache de organización, no bloqueamos el inicio de sesión.
+				}
+			}
+		} else {
+			try {
+				const organization = await getCurrentOrganizationWithOrds(session.access_token);
+				setOrganizationCacheCookies(cookies, url, organization);
+			} catch {
+				// Si falla la cache de organización, no bloqueamos el inicio de sesión.
+			}
 		}
 
 		if (wantsHtml(request)) {
 			return new Response(null, {
 				status: 302,
 				headers: {
-					Location: postLoginRedirect,
+					Location: finalRedirect,
 				},
 			});
 		}
 
-		return Response.json({ success: true, redirect: postLoginRedirect });
+		return Response.json({ success: true, redirect: finalRedirect });
 	} catch (error) {
 		const authError =
 			error instanceof AuthApiError

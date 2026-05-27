@@ -3,6 +3,7 @@ import { defineMiddleware } from 'astro:middleware';
 import { canAccessPath, isKnownRoleId } from './config/roles';
 import {
 	clearSessionCookies,
+	isInvitationAcceptRedirect,
 	isPublicPath,
 	refreshWithOrds,
 	setOrganizationCacheCookies,
@@ -23,6 +24,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		const tempToken = cookies.get('access_token')?.value;
 
 		if (tempToken && (url.pathname === '/auth' || url.pathname.startsWith('/auth/'))) {
+			const redirectToParam = url.searchParams.get('redirectTo') || '';
+
+			if (
+				url.pathname === '/auth/login' &&
+				isInvitationAcceptRedirect(redirectToParam)
+			) {
+				return redirect(redirectToParam);
+			}
+
 			if (
 				url.pathname.startsWith('/auth/accept-invite') ||
 				url.pathname === '/auth/create-organization' ||
