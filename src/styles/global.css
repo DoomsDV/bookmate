@@ -233,6 +233,7 @@ dialog::backdrop {
 dialog[data-service-modal],
 dialog[data-professional-modal],
 dialog[data-profile-crop-modal],
+dialog[data-settings-profile-crop-modal],
 dialog[data-location-modal],
 dialog[data-specialty-modal],
 dialog[data-appointment-modal],
@@ -246,6 +247,7 @@ dialog[data-app-alert-dialog],
 dialog[data-service-modal]::backdrop,
 dialog[data-professional-modal]::backdrop,
 dialog[data-profile-crop-modal]::backdrop,
+dialog[data-settings-profile-crop-modal]::backdrop,
 dialog[data-location-modal]::backdrop,
 dialog[data-specialty-modal]::backdrop,
 dialog[data-appointment-modal]::backdrop,
@@ -257,6 +259,7 @@ dialog[data-app-alert-dialog]::backdrop,
 html[data-theme='dark'] dialog[data-service-modal],
 html[data-theme='dark'] dialog[data-professional-modal],
 html[data-theme='dark'] dialog[data-profile-crop-modal],
+html[data-theme='dark'] dialog[data-settings-profile-crop-modal],
 html[data-theme='dark'] dialog[data-location-modal],
 html[data-theme='dark'] dialog[data-specialty-modal],
 html[data-theme='dark'] dialog[data-appointment-modal],
@@ -264,6 +267,47 @@ html[data-theme='dark'] [data-settings-modal] {
 	/* Lower contrast in modal text to reduce visual glare */
 	--on-surface: #e5e8ed;
 	--on-surface-variant: #aeb5c0;
+}
+
+dialog[data-profile-crop-modal],
+dialog[data-settings-profile-crop-modal] {
+	position: fixed;
+	inset: 0;
+	margin: auto;
+	max-height: calc(100vh - 2rem);
+	overflow: hidden;
+}
+
+dialog[data-profile-crop-modal]::backdrop,
+dialog[data-settings-profile-crop-modal]::backdrop {
+	background: rgba(0, 0, 0, 0.55);
+}
+
+.profile-crop-modal__mount {
+	width: min(100%, 18.5rem);
+	min-height: 18.5rem;
+}
+
+.profile-crop-modal__mount .cr-boundary {
+	border-radius: 1rem;
+	background: color-mix(in srgb, var(--surface-container-high) 88%, #0f172a 12%);
+}
+
+.profile-crop-modal__mount .cr-viewport {
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 55%, white 45%);
+}
+
+.profile-crop-modal__mount .cr-slider-wrap {
+	margin-top: 0.85rem;
+}
+
+.profile-crop-modal__mount .cr-slider {
+	background: var(--shell-border);
+}
+
+.profile-crop-modal__mount .cr-slider::-webkit-slider-thumb,
+.profile-crop-modal__mount .cr-slider::-moz-range-thumb {
+	background: var(--primary);
 }
 
 [data-side-nav] {
@@ -284,6 +328,7 @@ html[data-theme='dark'] [data-settings-modal] {
 	height: 100dvh;
 	max-height: 100dvh;
 	overflow: hidden;
+	background-color: var(--sidebar-surface);
 }
 
 body:has(.app-shell) {
@@ -317,6 +362,7 @@ professional-manager:has(.app-shell) {
 	height: 100dvh;
 	max-height: 100dvh;
 	overflow: hidden;
+	background-color: var(--surface-bright);
 }
 
 .app-shell > :last-child > main {
@@ -329,6 +375,7 @@ professional-manager:has(.app-shell) {
 	.app-shell {
 		grid-template-columns: 17.5rem minmax(0, 1fr);
 		transition: grid-template-columns 170ms ease;
+		overflow: clip;
 	}
 
 	[data-desktop-sidebar] {
@@ -338,7 +385,13 @@ professional-manager:has(.app-shell) {
 		height: 100dvh;
 		max-height: 100dvh;
 		min-height: 0;
+		min-width: 0;
 		overflow: hidden;
+		overflow-x: clip;
+		background-color: var(--sidebar-surface);
+		contain: paint;
+		isolation: isolate;
+		z-index: 2;
 	}
 
 	[data-sidebar-desktop-inner] {
@@ -348,6 +401,10 @@ professional-manager:has(.app-shell) {
 
 	[data-app-shell][data-sidebar-state="collapsed"] {
 		grid-template-columns: 5.5rem minmax(0, 1fr);
+	}
+
+	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] {
+		width: 5.5rem;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-desktop-inner] {
@@ -377,8 +434,13 @@ professional-manager:has(.app-shell) {
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand-text],
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-label],
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-trailing],
-	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-footer] {
-		display: none;
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-footer],
+	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-account-chevron {
+		opacity: 0;
+		width: 0;
+		overflow: hidden;
+		white-space: nowrap;
+		pointer-events: none;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-team-submenu] {

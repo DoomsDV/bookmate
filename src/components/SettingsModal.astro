@@ -36,11 +36,11 @@ const publicProfileDomain =
 			<div class="flex shrink-0 items-center gap-2">
 				<button
 					type="button"
-					class="schedule-exceptions-help inline-flex shrink-0 items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-[0.82rem] font-bold text-(--on-surface-variant) transition hover:border-(--primary)/35 hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
+					class="settings-toolbar-help inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-(--shell-border) bg-(--surface-bright) px-[1.05rem] py-[0.72rem] text-[0.9rem] font-bold text-(--on-surface) transition focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
 					data-settings-modal-tour-help
 					aria-label="Guía de URL del perfil público"
 				>
-					<span class="material-symbols-rounded text-[1.1rem]">help</span>
+					<span class="material-symbols-rounded text-[1.12rem]">help</span>
 					<span class="hidden sm:inline">Guía</span>
 				</button>
 				<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-settings-close aria-label="Cerrar modal">
@@ -425,23 +425,15 @@ const publicProfileDomain =
 
 						<section data-settings-panel="system" class="settings-panel hidden gap-6">
 							<p data-settings-feedback="system" class="hidden settings-feedback"></p>
-							<details class="settings-system-notice">
+							<details class="settings-system-notice" open>
 								<summary class="settings-system-notice__summary">
-									<span class="settings-system-notice__summary-main">
-										<span
-											class="material-symbols-rounded settings-system-notice__icon"
-											aria-hidden="true"
-										>
-											info
-										</span>
-										<span class="settings-system-notice__title">Importante</span>
+									<div class="settings-system-notice__header">
+									<span class="material-symbols-rounded settings-system-notice__icon" aria-hidden="true">
+										info
 									</span>
-									<span
-										class="material-symbols-rounded settings-system-notice__chevron"
-										aria-hidden="true"
-									>
-										expand_more
-									</span>
+									<p class="settings-system-notice__title">Importante</p>
+									</div>
+									<span class="material-symbols-rounded settings-system-notice__chevron" aria-hidden="true">expand_more</span>
 								</summary>
 								<p class="settings-system-notice__text">
 									Los cambios se aplican según el tipo de ajuste. El intervalo de horarios en la página
@@ -585,6 +577,40 @@ const publicProfileDomain =
 		</div>
 	</div>
 </dialog>
+
+<dialog
+	class="profile-crop-modal w-[min(24rem,calc(100vw-1.5rem))] max-w-[min(24rem,calc(100vw-1.5rem))] rounded-[1.35rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_20px_60px_rgba(0,0,0,0.28)]"
+	data-settings-profile-crop-modal
+>
+	<div class="flex flex-col">
+		<div class="flex items-start justify-between gap-3 border-b border-(--shell-border) px-5 py-4">
+			<div>
+				<h3 class="m-0 text-[1.05rem] font-extrabold tracking-tight text-(--on-surface)">Recortar foto</h3>
+				<p class="mt-1 mb-0 text-[0.84rem] font-medium text-(--on-surface-variant)">Arrastra para centrar la imagen.</p>
+			</div>
+			<button
+				type="button"
+				class="flex size-8 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface)"
+				data-close-settings-profile-crop
+				aria-label="Cerrar recorte"
+			>
+				<span class="material-symbols-rounded text-[1.2rem]">close</span>
+			</button>
+		</div>
+
+		<div class="flex justify-center px-4 py-5">
+			<div class="profile-crop-modal__mount" data-settings-profile-crop-mount></div>
+		</div>
+
+		<div class="flex justify-end gap-2 border-t border-(--shell-border) px-5 py-4">
+			<button type="button" class="modal-action-secondary" data-close-settings-profile-crop>Cancelar</button>
+			<button type="button" class="modal-action-primary" data-confirm-settings-profile-crop>
+				<span class="material-symbols-rounded text-[1.1rem]">check</span>
+				Usar foto
+			</button>
+		</div>
+	</div>
+</dialog>
 </settings-manager>
 
 <script>
@@ -600,6 +626,10 @@ const publicProfileDomain =
 		type WorkspaceSettingsData,
 	} from '../lib/workspace-settings-shared';
 	import { showSettingsModalTour } from '../lib/settings-modal-tour';
+	import {
+		isAcceptedProfileImage,
+		ProfileImageCropper,
+	} from '../lib/profile-image-crop';
 
 	interface ApiErrorDetail {
 		field?: string;
@@ -658,6 +688,9 @@ const publicProfileDomain =
 			logoFileName: HTMLElement | null;
 			profFields: NodeListOf<HTMLElement>;
 			profileNote: HTMLElement | null;
+			cropModal: HTMLDialogElement | null;
+			cropMount: HTMLElement | null;
+			confirmCropBtn: HTMLButtonElement | null;
 		};
 
 		private formEls!: {
@@ -681,6 +714,10 @@ const publicProfileDomain =
 		private closingTimer: number | null = null;
 		private feedbackHideTimer: number | null = null;
 		private systemCatalogs: WorkspaceCatalogs | null = null;
+		private profileImageCropper: ProfileImageCropper | null = null;
+		private pendingCropSource: File | null = null;
+		private pendingCropTarget: 'profile' | 'logo' | null = null;
+		private cropBusy = false;
 
 		connectedCallback() {
 			const roleId = Number(this.dataset.roleId || '0');
@@ -711,6 +748,9 @@ const publicProfileDomain =
 				logoFileName: this.querySelector<HTMLElement>('[data-settings-logo-file-name]'),
 				profFields: this.querySelectorAll<HTMLElement>('[data-settings-prof-fields]'),
 				profileNote: this.querySelector<HTMLElement>('[data-settings-profile-note]'),
+				cropModal: this.querySelector<HTMLDialogElement>('[data-settings-profile-crop-modal]'),
+				cropMount: this.querySelector<HTMLElement>('[data-settings-profile-crop-mount]'),
+				confirmCropBtn: this.querySelector<HTMLButtonElement>('[data-confirm-settings-profile-crop]'),
 			};
 
 			this.formEls = {
@@ -767,6 +807,10 @@ const publicProfileDomain =
 			this.clearSlugSuggestTimer();
 			this.releaseProfilePreviewObjectUrl();
 			this.releaseLogoPreviewObjectUrl();
+			this.profileImageCropper?.destroy();
+			this.profileImageCropper = null;
+			this.pendingCropSource = null;
+			this.pendingCropTarget = null;
 			if (this.closingTimer) window.clearTimeout(this.closingTimer);
 			if (this.feedbackHideTimer) window.clearTimeout(this.feedbackHideTimer);
 		}
@@ -774,6 +818,23 @@ const publicProfileDomain =
 		private handleDocumentClick = (event: MouseEvent) => {
 			const target = event.target;
 			if (!(target instanceof Element)) return;
+
+			if (this.els.cropModal?.open && this.els.cropModal === target) {
+				this.closeProfileImageCrop(true);
+				return;
+			}
+
+			const closeCropTrigger = target.closest('[data-close-settings-profile-crop]');
+			if (closeCropTrigger && this.contains(closeCropTrigger)) {
+				this.closeProfileImageCrop(true);
+				return;
+			}
+
+			const confirmCropTrigger = target.closest('[data-confirm-settings-profile-crop]');
+			if (confirmCropTrigger && this.contains(confirmCropTrigger)) {
+				void this.confirmProfileImageCrop();
+				return;
+			}
 
 			const closeActionBtn = target.closest('[data-settings-close-action]');
 			if (closeActionBtn && this.contains(closeActionBtn)) {
@@ -972,8 +1033,127 @@ const publicProfileDomain =
 					);
 					return;
 				}
-				this.setUploadFile(target, file);
+				void this.openImageCrop(file, target);
 			}, { signal });
+		}
+
+		private resetProfileImageInput() {
+			if (this.formEls.profileImageInput) {
+				this.formEls.profileImageInput.value = '';
+			}
+		}
+
+		private setProfileImageFile(file: File) {
+			if (!this.formEls.profileImageInput) return;
+			const dataTransfer = new DataTransfer();
+			dataTransfer.items.add(file);
+			this.formEls.profileImageInput.files = dataTransfer.files;
+			this.releaseProfilePreviewObjectUrl();
+			this.profilePreviewObjectUrl = URL.createObjectURL(file);
+			this.setProfilePreview(this.profilePreviewObjectUrl);
+			if (this.els.profileFileName) this.els.profileFileName.textContent = file.name;
+		}
+
+		private setLogoImageFile(file: File) {
+			if (!this.formEls.brandingLogoInput) return;
+			const dataTransfer = new DataTransfer();
+			dataTransfer.items.add(file);
+			this.formEls.brandingLogoInput.files = dataTransfer.files;
+			this.releaseLogoPreviewObjectUrl();
+			this.logoPreviewObjectUrl = URL.createObjectURL(file);
+			this.setLogoPreview(this.logoPreviewObjectUrl);
+			if (this.els.logoFileName) this.els.logoFileName.textContent = file.name;
+		}
+
+		private async openImageCrop(file: File, target: 'profile' | 'logo') {
+			if (!isAcceptedProfileImage(file)) {
+				this.showFeedback(target === 'profile' ? 'profile' : 'preferences', 'Selecciona una imagen JPG o PNG.', 'error');
+				return;
+			}
+
+			if (!this.els.cropModal || !this.els.cropMount) {
+				if (target === 'profile') {
+					this.setProfileImageFile(file);
+				} else {
+					this.setLogoImageFile(file);
+				}
+				return;
+			}
+
+			this.pendingCropSource = file;
+			this.pendingCropTarget = target;
+			this.cropBusy = true;
+			this.setCropModalBusy(true);
+
+			if (!this.profileImageCropper) {
+				this.profileImageCropper = new ProfileImageCropper(this.els.cropMount);
+			}
+
+			try {
+				if (!this.els.cropModal.open) {
+					this.els.cropModal.showModal();
+				}
+				await this.profileImageCropper.bindFile(file);
+			} catch {
+				this.showFeedback(target === 'profile' ? 'profile' : 'preferences', 'No se pudo preparar la imagen para recortar.', 'error');
+				this.closeProfileImageCrop(true);
+			} finally {
+				this.cropBusy = false;
+				this.setCropModalBusy(false);
+			}
+		}
+
+		private setCropModalBusy(busy: boolean) {
+			if (this.els.confirmCropBtn) {
+				this.els.confirmCropBtn.disabled = busy;
+			}
+		}
+
+		private closeProfileImageCrop(cancelled: boolean) {
+			const cancelledTarget = this.pendingCropTarget;
+			if (this.els.cropModal?.open) {
+				this.els.cropModal.close();
+			}
+			this.profileImageCropper?.destroy();
+			this.profileImageCropper = null;
+			this.pendingCropSource = null;
+			this.pendingCropTarget = null;
+			this.cropBusy = false;
+			this.setCropModalBusy(false);
+			if (cancelled) {
+				if (cancelledTarget === 'profile') {
+					this.resetProfileImageInput();
+				}
+				if (cancelledTarget === 'logo' && this.formEls.brandingLogoInput) {
+					this.formEls.brandingLogoInput.value = '';
+				}
+			}
+		}
+
+		private async confirmProfileImageCrop() {
+			if (this.cropBusy || !this.pendingCropSource || !this.profileImageCropper || !this.pendingCropTarget) return;
+
+			this.cropBusy = true;
+			this.setCropModalBusy(true);
+
+			try {
+				const cropped = await this.profileImageCropper.exportJpeg(this.pendingCropSource.name);
+				if (this.pendingCropTarget === 'profile') {
+					this.setProfileImageFile(cropped);
+				} else {
+					this.setLogoImageFile(cropped);
+				}
+				this.closeProfileImageCrop(false);
+			} catch {
+				this.showFeedback(
+					this.pendingCropTarget === 'profile' ? 'profile' : 'preferences',
+					'No se pudo recortar la imagen. Intenta de nuevo.',
+					'error'
+				);
+			} finally {
+				this.cropBusy = false;
+				this.setCropModalBusy(false);
+			}
 		}
 
 		private setUploadFile(target: 'profile' | 'logo', file: File) {
@@ -1224,30 +1404,16 @@ const publicProfileDomain =
 
 		private handleProfileImageChange = () => {
 			const imageFile = this.formEls.profileImageInput?.files?.[0];
+			this.resetProfileImageInput();
 			if (!imageFile) return;
-			if (!this.isAllowedImageFile(imageFile)) {
-				if (this.formEls.profileImageInput) this.formEls.profileImageInput.value = '';
-				this.showFeedback('profile', 'Selecciona una imagen JPG o PNG.', 'error');
-				return;
-			}
-			this.releaseProfilePreviewObjectUrl();
-			this.profilePreviewObjectUrl = URL.createObjectURL(imageFile);
-			this.setProfilePreview(this.profilePreviewObjectUrl);
-			if (this.els.profileFileName) this.els.profileFileName.textContent = imageFile.name;
+			void this.openImageCrop(imageFile, 'profile');
 		};
 
 		private handleLogoImageChange = () => {
 			const logoFile = this.formEls.brandingLogoInput?.files?.[0];
 			if (!logoFile) return;
-			if (!this.isAllowedImageFile(logoFile)) {
-				if (this.formEls.brandingLogoInput) this.formEls.brandingLogoInput.value = '';
-				this.showFeedback('preferences', 'Selecciona una imagen JPG o PNG.', 'error');
-				return;
-			}
-			this.releaseLogoPreviewObjectUrl();
-			this.logoPreviewObjectUrl = URL.createObjectURL(logoFile);
-			this.setLogoPreview(this.logoPreviewObjectUrl);
-			if (this.els.logoFileName) this.els.logoFileName.textContent = logoFile.name;
+			if (this.formEls.brandingLogoInput) this.formEls.brandingLogoInput.value = '';
+			void this.openImageCrop(logoFile, 'logo');
 		};
 
 		private setActiveTab(tabId: string) {
@@ -2149,7 +2315,7 @@ const publicProfileDomain =
 	}
 
 	.settings-upload-card__preview--logo {
-		border-radius: 1.15rem;
+		border-radius: 999px;
 	}
 
 	.settings-upload-card__preview img {
@@ -2169,9 +2335,7 @@ const publicProfileDomain =
 	}
 
 	.settings-upload-card__preview--logo img {
-		object-fit: contain;
-		background: var(--surface-bright);
-		padding: 0.65rem;
+		object-fit: cover;
 	}
 
 	.settings-upload-card__placeholder {
@@ -2314,16 +2478,13 @@ const publicProfileDomain =
 	.settings-system-notice {
 		overflow: hidden;
 		border-radius: 1rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--shell-border));
-		background:
-			linear-gradient(
-				135deg,
-				color-mix(in srgb, var(--primary) 22%, transparent) 0%,
-				color-mix(in srgb, var(--primary-container, var(--primary-soft)) 48%, var(--surface-bright)) 52%,
-				color-mix(in srgb, var(--surface-bright) 94%, transparent) 100%
-			),
-			var(--surface-bright);
-		box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent);
+		border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--shell-border));
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--primary) 16%, var(--surface-bright)) 0%,
+			var(--surface-bright) 100%
+		);
+		padding: 0.95rem 1rem;
 	}
 
 	.settings-system-notice__summary {
@@ -2331,26 +2492,27 @@ const publicProfileDomain =
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem;
-		padding: 0.85rem 1rem;
 		cursor: pointer;
 		list-style: none;
-		user-select: none;
 	}
 
 	.settings-system-notice__summary::-webkit-details-marker {
 		display: none;
 	}
 
-	.settings-system-notice__summary-main {
+	.settings-system-notice__header {
 		display: flex;
 		align-items: center;
 		gap: 0.65rem;
-		min-width: 0;
+	}
+
+	.settings-system-notice[open] .settings-system-notice__header {
+		margin-bottom: 0.55rem;
 	}
 
 	.settings-system-notice__icon {
 		flex-shrink: 0;
-		font-size: 1.35rem;
+		font-size: 1.25rem;
 		line-height: 1;
 		color: var(--primary);
 	}
@@ -2363,28 +2525,24 @@ const publicProfileDomain =
 	}
 
 	.settings-system-notice__chevron {
-		flex-shrink: 0;
-		font-size: 1.35rem;
+		font-size: 1.15rem;
 		line-height: 1;
 		color: var(--on-surface-variant);
-		transition: transform 160ms ease;
+		transition: transform 180ms ease;
 	}
 
 	.settings-system-notice[open] .settings-system-notice__chevron {
 		transform: rotate(180deg);
 	}
 
-	.settings-system-notice__summary:hover .settings-system-notice__title {
-		color: var(--primary);
+	.settings-system-notice:not([open]) .settings-system-notice__text {
+		display: none;
 	}
 
 	.settings-system-notice__text {
-		margin: 0 1rem 0.95rem;
-		padding-top: 0.75rem;
-		border-top: 1px solid color-mix(in srgb, var(--primary) 14%, var(--shell-border));
+		margin: 0;
 		font-size: 0.85rem;
-		font-weight: 500;
-		line-height: 1.45;
+		line-height: 1.55;
 		color: var(--on-surface-variant);
 	}
 </style>

@@ -78,7 +78,7 @@ function buildTourSteps(): DriveStep[] {
 		steps.push({
 			element: NEW_APPOINTMENT_SELECTOR,
 			popover: {
-				title: 'Nueva cita',
+				title: 'Crear cita',
 				description:
 					'Crea una cita manualmente indicando fecha, hora, profesional y servicio. Úsalo para agendar fuera del horario habitual, cuando no haya un hueco libre en la grilla o si prefieres no seleccionar directamente en el calendario. También puedes hacer clic o arrastrar sobre un espacio vacío.',
 				side: 'bottom',

@@ -159,11 +159,11 @@ const googleErrorMessage = hasGoogleError
 
 											<button
 												type="button"
-												class="calendar-tour-help calendar-header-toolbar__guide inline-flex shrink-0 items-center justify-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) text-[0.82rem] font-bold text-(--on-surface-variant) transition hover:border-(--primary)/35 hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
+												class="calendar-tour-help calendar-header-toolbar__guide calendar-refresh-btn inline-flex w-full items-center justify-center gap-2 sm:w-auto"
 												data-calendar-tour-help
 												aria-label="Guía del calendario de citas"
 											>
-												<span class="material-symbols-rounded text-[1.1rem]">help</span>
+												<span class="material-symbols-rounded text-[1.12rem]">help</span>
 												<span class="calendar-tour-help__label hidden sm:inline">Guía</span>
 											</button>
 
@@ -189,7 +189,7 @@ const googleErrorMessage = hasGoogleError
 												>
 													<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
 												</svg>
-												<span>Nueva cita</span>
+												<span>Crear cita</span>
 											</button>
 										</div>
 									</header>
@@ -1391,13 +1391,6 @@ const googleErrorMessage = hasGoogleError
 		grid-area: guide;
 		align-self: start;
 		justify-self: end;
-		width: 2.5rem;
-		height: 2.5rem;
-		padding: 0;
-	}
-
-	.calendar-header-toolbar__guide .material-symbols-rounded {
-		font-size: 1.25rem;
 	}
 
 	@media (min-width: 640px) {
@@ -1424,9 +1417,6 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		.calendar-header-toolbar__guide {
-			width: auto;
-			height: auto;
-			padding: 0.62rem 0.85rem;
 			justify-self: auto;
 		}
 	}

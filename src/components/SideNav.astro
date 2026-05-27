@@ -80,7 +80,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 
 	<aside
 		id="app-side-nav"
-		class="relative flex h-full w-[min(20rem,100vw)] -translate-x-full flex-col overflow-y-auto border-r border-(--shell-border) bg-(--sidebar-surface) transform-gpu"
+		class="relative flex h-full w-[min(20rem,100vw)] -translate-x-full flex-col overflow-y-auto border-r border-(--shell-border) bg-(--sidebar-surface)"
 		data-side-nav
 	>
 		<div class="shell-header-zone sidebar-account-header mb-7 shrink-0 px-6 pt-6">
@@ -214,7 +214,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 </div>
 
 <aside
-	class="hidden h-full min-h-0 flex-col overflow-hidden border-r border-(--shell-border)/85 bg-(--sidebar-surface) transition-[width] duration-200 lg:flex"
+	class="hidden h-full min-h-0 flex-col overflow-hidden border-r border-(--shell-border) bg-(--sidebar-surface) transition-[width] duration-200 lg:flex lg:w-[17.5rem]"
 	data-desktop-sidebar
 >
 	<div
