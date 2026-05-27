@@ -284,16 +284,16 @@ const visibleTeamItems = teamItems.filter((item) =>
 								data-astro-prefetch={getPrefetchMode(item)}
 								data-sidebar-item
 								class:list={[
-									"mx-1 flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
+									"sidebar-nav-link flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
 									isItemActive(item)
-										? "bg-(--primary-container) text-(--primary) font-bold shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
+										? "is-active bg-(--primary-container) text-(--primary) font-bold shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
 										: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
 								]}
 							>
-								<span class="material-symbols-rounded shrink-0 text-[1.25rem] leading-none">
+								<span class="sidebar-nav-icon material-symbols-rounded shrink-0 text-[1.25rem] leading-none">
 									{item.icon}
 								</span>
-								<span data-sidebar-label>{item.label}</span>
+								<span class="sidebar-nav-label" data-sidebar-label>{item.label}</span>
 							</a>
 						</li>
 					))
@@ -304,17 +304,17 @@ const visibleTeamItems = teamItems.filter((item) =>
 						<li class="pt-2">
 							<details open class="group">
 								<summary
-									class="mx-1 flex cursor-pointer list-none items-center justify-between rounded-full px-4 py-2.5 text-[0.9rem] font-semibold text-(--primary) transition hover:bg-(--sidebar-hover)"
+									class="sidebar-nav-link sidebar-nav-summary flex cursor-pointer list-none items-center justify-between rounded-full px-4 py-2.5 text-[0.9rem] font-semibold text-(--primary) transition hover:bg-(--sidebar-hover)"
 									data-sidebar-summary
 								>
-									<span class="flex items-center gap-3">
-										<span class="material-symbols-rounded shrink-0 text-[1.25rem] leading-none">
+									<span class="sidebar-nav-summary-main flex min-w-0 items-center gap-3">
+										<span class="sidebar-nav-icon material-symbols-rounded shrink-0 text-[1.25rem] leading-none">
 											groups
 										</span>
-										<span data-sidebar-label>Equipo</span>
+										<span class="sidebar-nav-label" data-sidebar-label>Equipo</span>
 									</span>
 									<span
-										class="material-symbols-rounded text-[1.05rem] leading-none transition group-open:rotate-180"
+										class="sidebar-nav-trailing material-symbols-rounded shrink-0 text-[1.05rem] leading-none transition group-open:rotate-180"
 										data-sidebar-trailing
 									>
 										expand_more
@@ -332,13 +332,13 @@ const visibleTeamItems = teamItems.filter((item) =>
 													href={item.href}
 													data-sidebar-item
 													class:list={[
-														"mx-1 flex rounded-full px-4 py-2.5 text-[0.88rem] font-medium no-underline transition",
+														"sidebar-nav-link sidebar-nav-link--sub flex rounded-full px-4 py-2.5 text-[0.88rem] font-medium no-underline transition",
 														isItemActive(item)
-															? "bg-(--control-surface-strong) text-(--primary) font-semibold shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
+															? "is-active bg-(--control-surface-strong) text-(--primary) font-semibold shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
 															: "text-(--on-surface) hover:bg-(--sidebar-hover)",
 													]}
 												>
-													<span data-sidebar-label>
+													<span class="sidebar-nav-label" data-sidebar-label>
 														{item.label}
 													</span>
 												</a>
@@ -420,6 +420,19 @@ const visibleTeamItems = teamItems.filter((item) =>
 
 	.workspace-logo-image.is-hidden {
 		display: none;
+	}
+
+	.sidebar-nav-icon {
+		display: inline-flex;
+		width: 1.25rem;
+		height: 1.25rem;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.sidebar-nav-label {
+		min-width: 0;
+		line-height: 1.25;
 	}
 </style>
 
