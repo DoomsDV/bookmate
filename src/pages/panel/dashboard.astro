@@ -541,8 +541,8 @@ const toPageHref = (page: number) => {
 		const firstName = String(user.first_name ?? '').trim();
 		const lastName = String(user.last_name ?? '').trim();
 		const fullName = `${firstName} ${lastName}`.trim();
-		const apexUserName = String(user.apex_user_name ?? '').trim();
-		return fullName || apexUserName || `Miembro ${index + 1}`;
+		const email = String(user.email ?? '').trim();
+		return fullName || email || `Miembro ${index + 1}`;
 	};
 
 	const normalizeTeamPayload = (value: unknown): TeamOverviewPayload => {

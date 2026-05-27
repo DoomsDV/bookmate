@@ -264,7 +264,7 @@ const { currentOrgMemberId = 0 } = Astro.props;
 	}
 
 	.org-switcher-dialog::backdrop {
-		background: rgba(2, 6, 23, 0.72);
+		background: color-mix(in srgb, var(--page-background) 35%, #020617 65%);
 		backdrop-filter: blur(4px);
 	}
 
@@ -273,12 +273,10 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		display: flex;
 		flex-direction: column;
 		max-height: calc(100vh - 2rem);
-		border: 1px solid #262626;
+		border: 1px solid var(--shell-border);
 		border-radius: 1.5rem;
-		background:
-			radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.12), transparent 42%),
-			#0a0a0a;
-		box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+		background: var(--sidebar-surface);
+		box-shadow: var(--card-elevation-hover), 0 28px 70px rgba(15, 23, 42, 0.14);
 		overflow: hidden;
 	}
 
@@ -292,17 +290,17 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		justify-content: center;
 		width: 2.25rem;
 		height: 2.25rem;
-		border: 1px solid #334155;
+		border: 1px solid var(--shell-border);
 		border-radius: 0.75rem;
-		background: #1e293b;
-		color: #94a3b8;
+		background: var(--control-surface);
+		color: var(--on-surface-variant);
 		cursor: pointer;
-		transition: background 0.15s ease, color 0.15s ease;
+		transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
 	}
 
 	.org-switcher-close:hover {
-		background: #334155;
-		color: #e2e8f0;
+		background: var(--control-surface-strong);
+		color: var(--on-surface);
 	}
 
 	.org-switcher-header {
@@ -321,14 +319,14 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		align-items: center;
 		justify-content: center;
 		border-radius: 50%;
-		background: rgba(37, 99, 235, 0.14);
-		color: #60a5fa;
-		border: 1px solid rgba(96, 165, 250, 0.18);
+		background: var(--primary-soft);
+		color: var(--primary);
+		border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--shell-border) 78%);
 	}
 
 	.org-switcher-dialog .m3-panel-title {
 		margin: 0;
-		color: #f8fafc;
+		color: var(--on-surface);
 		font-size: 1.75rem;
 		font-weight: 700;
 		line-height: 1.2;
@@ -336,7 +334,7 @@ const { currentOrgMemberId = 0 } = Astro.props;
 
 	.org-switcher-dialog .m3-panel-subtitle {
 		margin: 0.35rem 0 0;
-		color: #94a3b8;
+		color: var(--on-surface-variant);
 		font-size: 1rem;
 		line-height: 1.45;
 	}
@@ -358,9 +356,9 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		border-radius: 0.85rem;
 		font-size: 0.95rem;
 		font-weight: 600;
-		color: #94a3b8;
-		background: #121212;
-		border: 1px solid #262626;
+		color: var(--on-surface-variant);
+		background: var(--surface-container);
+		border: 1px solid var(--shell-border);
 	}
 
 	.org-switcher-loading-icon {
@@ -393,9 +391,9 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		font-size: 0.95rem;
 		font-weight: 600;
 		line-height: 1.45;
-		color: #94a3b8;
-		background: #121212;
-		border: 1px solid #262626;
+		color: var(--on-surface-variant);
+		background: var(--surface-container);
+		border: 1px solid var(--shell-border);
 		text-align: center;
 	}
 
@@ -413,10 +411,10 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		align-items: center;
 		gap: 0.85rem;
 		padding: 1rem 1.1rem;
-		border: 1px solid #262626;
+		border: 1px solid var(--card-border, var(--shell-border));
 		border-radius: 1rem;
-		background: #121212;
-		color: #f8fafc;
+		background: var(--sidebar-surface);
+		color: var(--on-surface);
 		font: inherit;
 		text-align: left;
 		cursor: pointer;
@@ -425,9 +423,9 @@ const { currentOrgMemberId = 0 } = Astro.props;
 
 	.org-switcher-dialog .org-select-card:hover:not(:disabled),
 	.org-switcher-dialog .org-select-card.is-selected {
-		border-color: rgba(96, 165, 250, 0.65);
-		background: rgba(37, 99, 235, 0.12);
-		box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+		border-color: color-mix(in srgb, var(--primary) 45%, var(--shell-border) 55%);
+		background: var(--primary-container);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
 	}
 
 	.org-switcher-dialog .org-select-card:disabled {
@@ -440,14 +438,14 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		width: 1.1rem;
 		height: 1.1rem;
 		flex-shrink: 0;
-		border: 2px solid #64748b;
+		border: 2px solid var(--on-surface-variant);
 		border-radius: 50%;
 		background: transparent;
 	}
 
 	.org-switcher-dialog .org-select-radio-faux.is-checked {
-		border-color: #3b82f6;
-		background: #3b82f6;
+		border-color: var(--primary);
+		background: var(--primary);
 	}
 
 	.org-switcher-dialog .org-select-radio-faux.is-checked::after {
@@ -472,25 +470,25 @@ const { currentOrgMemberId = 0 } = Astro.props;
 	.org-switcher-dialog .org-select-card-title {
 		display: block;
 		font-weight: 700;
-		color: #f8fafc;
+		color: var(--on-surface);
 		font-size: 1rem;
 	}
 
 	.org-switcher-dialog .org-select-card-meta {
 		display: block;
 		font-size: 0.85rem;
-		color: #94a3b8;
+		color: var(--on-surface-variant);
 		text-transform: capitalize;
 	}
 
 	.org-switcher-dialog .org-select-card-icon {
-		color: #64748b;
+		color: var(--on-surface-variant);
 		flex-shrink: 0;
 	}
 
 	.org-switcher-dialog .org-select-card.is-selected .org-select-card-icon,
 	.org-switcher-dialog .org-select-card:hover:not(:disabled) .org-select-card-icon {
-		color: #60a5fa;
+		color: var(--primary);
 	}
 
 	.org-switcher-footer {
@@ -509,18 +507,39 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		justify-content: center;
 		border: 0;
 		border-radius: 9999px;
-		background: #1e293b;
-		color: #e2e8f0;
+		background: var(--primary);
+		color: #ffffff;
 		padding: 0.875rem 1.5rem;
 		font: inherit;
 		font-weight: 600;
 		cursor: pointer;
-		transition: background 0.15s ease;
+		transition: background 0.15s ease, filter 0.15s ease;
 	}
 
 	.org-switcher-dialog .m3-btn-tonal:hover {
-		background: #334155;
-		color: #f8fafc;
+		filter: brightness(1.06);
+		color: #ffffff;
+	}
+
+	html[data-theme='dark'] .org-switcher-dialog::backdrop {
+		background: rgba(2, 6, 23, 0.72);
+	}
+
+	html[data-theme='dark'] .org-switcher-panel {
+		border-color: rgba(255, 255, 255, 0.1);
+		background:
+			radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.12), transparent 42%),
+			var(--sidebar-surface);
+		box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+	}
+
+	html[data-theme='dark'] .org-switcher-close {
+		background: var(--control-surface);
+		border-color: rgba(255, 255, 255, 0.12);
+	}
+
+	html[data-theme='dark'] .org-switcher-dialog .m3-btn-tonal {
+		background: color-mix(in srgb, var(--primary) 82%, #0a0a0a 18%);
 	}
 
 	.org-switcher-dialog .is-hidden {

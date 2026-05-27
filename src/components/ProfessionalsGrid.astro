@@ -15,7 +15,13 @@ const toDisplayName = (professional: Professional) => {
 	const last = String(professional.user.last_name || '').trim();
 	const fullName = `${first} ${last}`.trim();
 	if (fullName) return fullName;
-	return professional.user.apex_user_name || `Personal #${professional.id_professional}`;
+	const email = String(professional.user.email || '').trim();
+	if (email) return email;
+	return `Personal #${professional.id_professional}`;
+};
+
+const toContactEmail = (professional: Professional) => {
+	return String(professional.user.email || '').trim() || '—';
 };
 
 const toSpecialtyName = (professional: Professional) => {
@@ -139,7 +145,7 @@ const inactiveCount = professionals.length - activeCount;
 								{toDisplayName(item.professional)}
 							</h3>
 							<p class="mt-1 text-[0.9rem] text-(--on-surface-variant) line-clamp-1">
-								@{item.professional.user.apex_user_name || '-'}
+								{toContactEmail(item.professional)}
 							</p>
 						</div>
 
@@ -248,17 +254,13 @@ const inactiveCount = professionals.length - activeCount;
 		display: flex;
 		flex-direction: column;
 		gap: 0.95rem;
-		border-radius: 1.2rem;
-		border: 0;
-		background: color-mix(in srgb, var(--surface-container-low) 76%, var(--surface-bright) 24%);
+		border-radius: 1rem;
 		padding: 1.45rem 1.5rem 1.55rem;
-		box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
-		transition: transform 170ms ease, box-shadow 170ms ease, background-color 170ms ease;
+		transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
 	}
 
 	.professionals-card:hover {
 		transform: translateY(-2px);
-		box-shadow: 0 14px 44px -12px rgba(0, 0, 0, 0.1);
 	}
 
 	.professionals-card-status {
@@ -342,16 +344,6 @@ const inactiveCount = professionals.length - activeCount;
 		);
 	}
 
-	html[data-theme='dark'] .professionals-card {
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		background: var(--surface-container, #1e1f22);
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .professionals-card:hover {
-		border-color: rgba(255, 255, 255, 0.15);
-		background: var(--surface-container-high, #282a2c);
-	}
 
 	html[data-theme='dark'] .professionals-card-status--active {
 		background: rgba(110, 231, 183, 0.16);

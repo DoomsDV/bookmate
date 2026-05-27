@@ -231,17 +231,13 @@ const inactiveCount = services.length - activeCount;
 		display: flex;
 		flex-direction: column;
 		gap: 0.95rem;
-		border-radius: 1.2rem;
-		border: 0;
-		background: color-mix(in srgb, var(--surface-container-low) 76%, var(--surface-bright) 24%);
+		border-radius: 1rem;
 		padding: 1.45rem 1.5rem 1.55rem;
-		box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
-		transition: transform 170ms ease, box-shadow 170ms ease, background-color 170ms ease;
+		transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
 	}
 
 	.services-card:hover {
 		transform: translateY(-2px);
-		box-shadow: 0 14px 44px -12px rgba(0, 0, 0, 0.1);
 	}
 
 	.services-card:focus-visible {
@@ -349,16 +345,6 @@ const inactiveCount = services.length - activeCount;
 		color: var(--on-surface-variant);
 	}
 
-	html[data-theme='dark'] .services-card {
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		background: var(--surface-container, #1e1f22);
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .services-card:hover {
-		border-color: rgba(255, 255, 255, 0.15);
-		background: var(--surface-container-high, #282a2c);
-	}
 
 	html[data-theme='dark'] .services-card-status--active {
 		background: rgba(110, 231, 183, 0.16);

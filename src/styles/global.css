@@ -54,41 +54,44 @@
 :root {
 	--font-body: "Nunito Sans", sans-serif;
 	--font-logo: "Nunito Sans", sans-serif;
-	--background: #eef4fa;
-	--background-accent: #d9e8f8;
-	--page-background: #edf3f9;
-	--surface: rgba(255, 251, 254, 0.72);
-	--surface-container: #edf5ff;
-	--surface-container-low: #f4f8fe;
-	--surface-container-high: #e3ecf7;
-	--surface-container-highest: #dce5f0;
+	--background: #f4f7fa;
+	--background-accent: #e8eef4;
+	--page-background: #f4f7fa;
+	--surface: rgba(255, 255, 255, 0.92);
+	--surface-container: #eef2f6;
+	--surface-container-low: #ffffff;
+	--surface-container-high: #e8edf3;
+	--surface-container-highest: #dce3eb;
 	--surface-bright: #ffffff;
-	--bar-outline: #d7e0ea;
-	--shell-surface: rgba(255, 255, 255, 0.9);
-	--sidebar-surface: #f4f9ff;
-	--content-surface: rgba(255, 255, 255, 0.36);
-	--shell-border: rgba(201, 214, 228, 0.95);
+	--bar-outline: #e2e8f0;
+	--shell-surface: #ffffff;
+	--sidebar-surface: #ffffff;
+	--content-surface: rgba(255, 255, 255, 0.72);
+	--shell-border: #e2e8f0;
 	--shell-header-height: 4.5rem;
-	--primary: #2f6fdd;
-	--primary-soft: rgba(47, 111, 221, 0.15);
-	--primary-soft-hover: rgba(47, 111, 221, 0.22);
-	--primary-container: #dcebff;
-	--secondary: #35506f;
-	--secondary-container: #e6f0fb;
-	--on-surface: #15202b;
-	--on-surface-variant: #58708b;
+	--primary: #3b82f6;
+	--primary-soft: rgba(59, 130, 246, 0.12);
+	--primary-soft-hover: rgba(59, 130, 246, 0.18);
+	--primary-container: #eff6ff;
+	--secondary: #475569;
+	--secondary-container: #e8eef4;
+	--on-surface: #1e293b;
+	--on-surface-variant: #64748b;
 	--hero-gradient: linear-gradient(135deg, #2f6fdd 0%, #3b82f6 45%, #6aa7ff 100%);
 	--hero-shadow: rgba(47, 111, 221, 0.24);
 	--hero-glow: radial-gradient(circle at center, rgba(255, 255, 255, 0.18), transparent 55%);
-	--control-surface: rgba(255, 255, 255, 0.76);
-	--control-surface-strong: rgba(255, 255, 255, 0.88);
-	--menu-surface: rgba(255, 255, 255, 0.96);
-	--card-surface: rgba(255, 255, 255, 0.82);
-	--card-surface-strong: rgba(255, 255, 255, 0.84);
-	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.36);
-	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.5);
-	--sidebar-card-surface: rgba(255, 255, 255, 0.72);
-	--sidebar-hover: rgba(47, 111, 221, 0.1);
+	--control-surface: #ffffff;
+	--control-surface-strong: #f8fafc;
+	--menu-surface: #ffffff;
+	--card-surface: var(--sidebar-surface);
+	--card-surface-strong: var(--sidebar-surface);
+	--card-border: #e2e8f0;
+	--card-elevation: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.06);
+	--card-elevation-hover: 0 2px 4px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.08);
+	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+	--sidebar-card-surface: var(--sidebar-surface);
+	--sidebar-hover: rgba(59, 130, 246, 0.08);
 	--status-total-bg: #dbe7f3;
 	--status-total-text: #38506e;
 	--status-total-border: rgba(120, 145, 171, 0.35);
@@ -133,39 +136,42 @@
 }
 
 html[data-theme='dark'] {
-	--background: #141414;
-	--background-accent: #1b1b1a;
-	--page-background: #141414;
-	--surface: rgba(27, 27, 27, 0.94);
-	--surface-container: #1b1b1b;
-	--surface-container-low: #1b1b1b;
-	--surface-container-high: #1b1b1b;
-	--surface-container-highest: #1f1f1f;
-	--surface-bright: #1b1b1b;
+	--background: #0a0a0a;
+	--background-accent: #0a0a0a;
+	--page-background: #0a0a0a;
+	--surface: rgba(18, 18, 18, 0.94);
+	--surface-container: #121212;
+	--surface-container-low: #121212;
+	--surface-container-high: #1a1a1a;
+	--surface-container-highest: #222222;
+	--surface-bright: #121212;
 	--bar-outline: rgba(255, 255, 255, 0.1);
-	--shell-surface: #141414;
-	--sidebar-surface: #1b1b1b;
-	--content-surface: rgba(27, 27, 27, 0.72);
+	--shell-surface: #0a0a0a;
+	--sidebar-surface: #121212;
+	--content-surface: rgba(26, 26, 26, 0.88);
 	--shell-border: rgba(255, 255, 255, 0.1);
 	--primary: #1a73e8;
-	--primary-soft: rgba(26, 115, 232, 0.12);
-	--primary-soft-hover: rgba(26, 115, 232, 0.18);
-	--primary-container: rgba(26, 115, 232, 0.18);
-	--secondary: #a1a1aa;
-	--secondary-container: rgba(161, 161, 170, 0.15);
-	--on-surface: #fafafa;
-	--on-surface-variant: #a1a1aa;
+	--primary-soft: rgba(26, 115, 232, 0.14);
+	--primary-soft-hover: rgba(26, 115, 232, 0.2);
+	--primary-container: rgba(26, 115, 232, 0.16);
+	--secondary: #a0a0a0;
+	--secondary-container: rgba(160, 160, 160, 0.12);
+	--on-surface: #ffffff;
+	--on-surface-variant: #a0a0a0;
 	--hero-gradient: linear-gradient(135deg, #1f1f1f 0%, #141414 100%);
 	--hero-shadow: rgba(0, 0, 0, 0.5);
 	--hero-glow: radial-gradient(circle at center, rgba(26, 115, 232, 0.03), transparent 60%);
-	--control-surface: #1b1b1b;
-	--control-surface-strong: #202020;
+	--control-surface: #222222;
+	--control-surface-strong: #2a2a2a;
 	--menu-surface: rgba(27, 27, 27, 0.98);
-	--card-surface: #1b1b1b;
-	--card-surface-strong: #1f1f1f;
+	--card-surface: var(--sidebar-surface);
+	--card-surface-strong: var(--sidebar-surface);
+	--card-border: rgba(255, 255, 255, 0.08);
+	--card-elevation: none;
+	--card-elevation-hover: none;
 	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.05);
-	--sidebar-card-surface: rgba(27, 27, 27, 0.95);
+	--sidebar-card-surface: var(--sidebar-surface);
 	--sidebar-hover: rgba(255, 255, 255, 0.06);
 	--status-total-bg: rgba(161, 161, 170, 0.15);
 	--status-total-text: #e4e4e7;
@@ -203,22 +209,17 @@ html[data-theme='dark'] {
 }
 
 html {
-	background:
-		radial-gradient(circle at top left, rgba(217, 232, 248, 0.96), transparent 32%),
-		radial-gradient(circle at top right, rgba(229, 240, 252, 0.84), transparent 24%),
-		linear-gradient(180deg, #f8fbfe 0%, var(--background) 52%, #edf3f9 100%);
+	background: var(--page-background);
 }
 
 html[data-theme='dark'] {
-	background: var(--background);
+	background: var(--page-background);
 }
 
 body {
 	font-family: var(--font-body);
 	background-color: var(--page-background);
-	background:
-		linear-gradient(135deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0)),
-		linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.3));
+	background: var(--page-background);
 	color: var(--on-surface);
 }
 
@@ -328,7 +329,7 @@ dialog[data-settings-profile-crop-modal]::backdrop {
 	height: 100dvh;
 	max-height: 100dvh;
 	overflow: hidden;
-	background-color: var(--sidebar-surface);
+	background-color: var(--page-background);
 }
 
 body:has(.app-shell) {
@@ -362,7 +363,7 @@ professional-manager:has(.app-shell) {
 	height: 100dvh;
 	max-height: 100dvh;
 	overflow: hidden;
-	background-color: var(--surface-bright);
+	background-color: var(--page-background);
 }
 
 .app-shell > :last-child > main {
@@ -506,7 +507,13 @@ button {
 	display: flex;
 	align-items: center;
 	flex-shrink: 0;
-	border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+	background-color: var(--sidebar-surface);
+	border-bottom: 1px solid var(--shell-border);
+}
+
+/* TopBar del panel: mismo fondo que el área principal en oscuro */
+html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
+	background-color: var(--page-background);
 }
 
 .shell-header-zone.sidebar-account-header {
@@ -514,6 +521,8 @@ button {
 	width: 100%;
 	padding-block: 0.65rem;
 	box-sizing: border-box;
+	background-color: var(--sidebar-surface);
+	border-bottom-color: transparent;
 }
 
 .topbar-brand-link {
@@ -861,9 +870,9 @@ html[data-theme='dark'] .modal-action-danger:hover {
 	gap: 1rem;
 	padding: 0.9rem 1rem;
 	border-radius: 1rem;
-	border: 1px solid var(--shell-border);
-	background: var(--card-surface);
-	box-shadow: var(--card-inset-highlight);
+	border: 1px solid var(--card-border, var(--shell-border));
+	background: var(--card-surface-strong);
+	box-shadow: var(--card-elevation), var(--card-inset-highlight);
 }
 
 .app-pagination__summary {
@@ -927,6 +936,11 @@ html[data-theme='dark'] .modal-action-danger:hover {
 	border-color: var(--primary-container);
 	color: var(--primary);
 	font-weight: 800;
+}
+
+html[data-theme='dark'] .app-pagination__icon-button,
+html[data-theme='dark'] .app-pagination__current {
+	background: var(--page-background);
 }
 
 .app-pagination__icon-button.is-disabled {
@@ -1105,14 +1119,14 @@ html[data-theme='dark'] .modal-action-danger:hover {
 
 .material-region {
 	border-radius: 1.5rem;
-	border: 1px solid var(--shell-border);
-	background: var(--surface-bright);
+	border: 1px solid var(--card-border, var(--shell-border));
+	background: var(--sidebar-surface);
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
 	box-sizing: border-box;
 	padding: var(--md-space-4);
-	box-shadow: var(--region-inset-highlight), 0 6px 24px rgba(0, 0, 0, 0.03);
+	box-shadow: var(--card-elevation), var(--card-inset-highlight);
 	transition: all 180ms ease;
 }
 
@@ -1138,14 +1152,14 @@ html[data-theme='dark'] .modal-action-danger:hover {
 
 .material-data-card {
 	border-radius: 1.25rem;
-	border: 1px solid var(--shell-border);
+	border: 1px solid var(--card-border, var(--shell-border));
 	background: var(--card-surface-strong);
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
 	box-sizing: border-box;
 	padding: var(--md-space-4);
-	box-shadow: var(--card-inset-highlight);
+	box-shadow: var(--card-elevation), var(--card-inset-highlight);
 	transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 	display: flex;
 	flex-direction: column;
@@ -1161,13 +1175,59 @@ html[data-theme='dark'] .modal-action-danger:hover {
 
 .material-inline-panel {
 	border-radius: 1rem;
-	border: 1px solid var(--shell-border);
-	background: var(--card-surface);
+	border: 1px solid var(--card-border, var(--shell-border));
+	background: var(--card-surface-strong);
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
 	box-sizing: border-box;
 	padding: 0.875rem var(--md-space-4);
+	box-shadow: var(--card-elevation), var(--card-inset-highlight);
+}
+
+/* Cards del panel: misma superficie que el sidenav */
+:is(
+	.locations-card,
+	.services-card,
+	.customer-card,
+	.specialties-card,
+	.professionals-card
+) {
+	border: 1px solid var(--card-border);
+	background: var(--sidebar-surface);
+	box-shadow: var(--card-elevation), var(--card-inset-highlight);
+}
+
+:is(
+	.locations-card,
+	.services-card,
+	.customer-card,
+	.specialties-card,
+	.professionals-card
+):hover {
+	box-shadow: var(--card-elevation-hover), var(--card-inset-highlight);
+}
+
+html[data-theme='dark'] :is(
+	.locations-card,
+	.services-card,
+	.customer-card,
+	.specialties-card,
+	.professionals-card
+) {
+	box-shadow: none;
+}
+
+html[data-theme='dark'] :is(
+	.locations-card,
+	.services-card,
+	.customer-card,
+	.specialties-card,
+	.professionals-card
+):hover {
+	border-color: rgba(255, 255, 255, 0.14);
+	background: var(--sidebar-surface);
+	box-shadow: none;
 }
 
 .sidebar-account-header {

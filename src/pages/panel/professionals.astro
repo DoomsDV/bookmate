@@ -71,7 +71,7 @@ const toPageHref = (page: number) => {
 		data-current-user-id={String(currentUserId)}
 		data-admin-role-id={String(adminRoleId)}
 	>
-	<div class="min-h-screen bg-[#EEF1F5] dark:bg-(--page-background) transition-colors duration-300">
+	<div class="min-h-screen bg-(--page-background) transition-colors duration-300">
 		<div
 			class="app-shell grid min-h-screen overflow-hidden bg-transparent"
 			data-app-shell
@@ -352,7 +352,6 @@ const toPageHref = (page: number) => {
 					<div class="hidden grid gap-1.5 rounded-2xl border border-(--shell-border) bg-(--control-surface) px-4 py-3" data-professional-account-readonly>
 						<span class="text-[0.85rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">Cuenta de acceso (solo lectura)</span>
 						<p class="m-0 text-[0.95rem] font-semibold text-(--on-surface)" data-readonly-account-email>—</p>
-						<p class="m-0 text-[0.85rem] text-(--on-surface-variant)" data-readonly-account-username></p>
 						<p class="m-0 text-[0.82rem] leading-snug text-(--on-surface-variant)">
 							El correo y la contraseña son credenciales globales. La persona los gestiona desde su perfil o recuperación de contraseña.
 						</p>
@@ -1445,18 +1444,7 @@ const toPageHref = (page: number) => {
 				this.applyAccountFieldVisibility();
 
 				const readonlyEmail = this.querySelector('[data-readonly-account-email]');
-				const readonlyUsername = this.querySelector('[data-readonly-account-username]');
 				if (readonlyEmail) readonlyEmail.textContent = user.email || '—';
-				if (readonlyUsername) {
-					const username = String(user.apex_user_name || '').trim();
-					const email = String(user.email || '').trim();
-					const isLegacyUsername =
-						username.length > 0 &&
-						email.length > 0 &&
-						username.toUpperCase() !== email.toUpperCase();
-					readonlyUsername.textContent = isLegacyUsername ? `Usuario legacy: ${username}` : '';
-					readonlyUsername.classList.toggle('hidden', !isLegacyUsername);
-				}
 				
 				const { formEls } = this;
 				if (formEls.email) formEls.email.value = user.email || '';
