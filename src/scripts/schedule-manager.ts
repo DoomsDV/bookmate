@@ -106,6 +106,8 @@ class ScheduleManager extends HTMLElement {
 	private exceptionModalNote = '';
 	private exceptionModalSlots: ExceptionSlotDraft[] = [];
 	private exceptionModalDirty = false;
+	private exceptionModalLoading = false;
+	private exceptionModalLoadSeq = 0;
 
 	private templateViewNode: HTMLElement | null = null;
 	private exceptionsViewNode: HTMLElement | null = null;
@@ -263,7 +265,7 @@ class ScheduleManager extends HTMLElement {
 	};
 
 	private handleExceptionModalChange = (event: Event): void => {
-		if (this.exceptionModalReadOnly) return;
+		if (this.exceptionModalLoading || this.exceptionModalReadOnly) return;
 		this.clearExceptionModalError();
 		const target = event.target;
 		if (!(target instanceof HTMLElement)) return;
@@ -304,7 +306,7 @@ class ScheduleManager extends HTMLElement {
 	};
 
 	private handleExceptionModalClick = (event: MouseEvent): void => {
-		if (this.exceptionModalReadOnly) return;
+		if (this.exceptionModalLoading || this.exceptionModalReadOnly) return;
 		this.clearExceptionModalError();
 		const target = event.target;
 		if (!(target instanceof HTMLElement)) return;
@@ -334,6 +336,7 @@ class ScheduleManager extends HTMLElement {
 			this.closeExceptionModal();
 			return;
 		}
+		if (this.exceptionModalLoading) return;
 		if (target.closest('[data-exc-action="delete"]')) {
 			void this.deleteExceptionFromModal();
 			return;
@@ -1292,13 +1295,122 @@ class ScheduleManager extends HTMLElement {
 		}
 	}
 
-	private async openExceptionModal(dateKey: string): Promise<void> {
-		if (!this.exceptionModalNode || this.selectedProfessionalId <= 0) return;
+	private showExceptionModalShell(dateKey: string): void {
+		if (!this.exceptionModalNode) return;
 
 		this.exceptionModalDateKey = dateKey;
 		this.exceptionModalReadOnly = isPastDateKey(dateKey) || !this.canEdit;
 		this.exceptionModalDirty = false;
+		this.exceptionModalLoading = true;
+		this.exceptionModalType = 'OVERRIDE';
+		this.exceptionModalNote = '';
+		this.exceptionModalSlots = [];
 
+		if (this.exceptionModalTitleNode) {
+			this.exceptionModalTitleNode.textContent = this.exceptionModalReadOnly
+				? 'Detalle del día'
+				: 'Excepción de horario';
+		}
+		if (this.exceptionModalSubtitleNode) {
+			const label = new Intl.DateTimeFormat('es-PY', {
+				weekday: 'long',
+				day: 'numeric',
+				month: 'long',
+				year: 'numeric',
+			}).format(parseDateKey(dateKey));
+			this.exceptionModalSubtitleNode.textContent = label;
+		}
+
+		this.clearExceptionModalError();
+		this.renderExceptionModalLoading();
+		this.renderExceptionModalLoadingActions();
+		this.updateExceptionModalTourHelpVisibility();
+		this.exceptionModalNode.classList.remove('hidden');
+		this.exceptionModalNode.classList.add('flex');
+	}
+
+	private renderExceptionModalLoading(): void {
+		if (!this.exceptionModalBodyNode) return;
+		this.clearNode(this.exceptionModalBodyNode);
+
+		const loading = document.createElement('div');
+		loading.className = 'schedule-exception-modal-loading';
+		loading.setAttribute('aria-live', 'polite');
+		loading.setAttribute('aria-busy', 'true');
+
+		const spinner = document.createElement('span');
+		spinner.className = 'material-symbols-rounded animate-spin';
+		spinner.textContent = 'progress_activity';
+
+		const label = document.createElement('span');
+		label.textContent = 'Cargando excepción del día...';
+
+		loading.append(spinner, label);
+		this.exceptionModalBodyNode.appendChild(loading);
+	}
+
+	private renderExceptionModalLoadingActions(): void {
+		if (!this.exceptionModalActionsNode) return;
+		this.clearNode(this.exceptionModalActionsNode);
+		this.exceptionModalActionsNode.classList.remove('max-sm:hidden');
+
+		const primaryActions = document.createElement('div');
+		primaryActions.className =
+			'modal-footer-actions schedule-exception-modal-footer__primary';
+
+		const cancelButton = document.createElement('button');
+		cancelButton.type = 'button';
+		cancelButton.dataset.excAction = 'close';
+		cancelButton.className = 'modal-action-secondary';
+		cancelButton.textContent = 'Cancelar';
+		primaryActions.appendChild(cancelButton);
+
+		this.exceptionModalActionsNode.appendChild(primaryActions);
+	}
+
+	private applyExceptionModalDetail(
+		dateKey: string,
+		detail: {
+			exception_type: ScheduleExceptionType | null;
+			note: string | null;
+			slots: Array<{
+				loc_id_location: number;
+				start_time: string;
+				end_time: string;
+			}>;
+			inherits_template: boolean;
+			is_past: boolean;
+		}
+	): void {
+		this.exceptionModalReadOnly = Boolean(detail.is_past) || !this.canEdit;
+
+		if (detail.inherits_template || !detail.exception_type) {
+			this.exceptionModalType = 'OVERRIDE';
+			this.exceptionModalNote = '';
+			this.exceptionModalSlots = this.buildTemplateSlotsForDate(dateKey);
+		} else if (detail.exception_type === 'BLOCKED') {
+			this.exceptionModalType = 'BLOCKED';
+			this.exceptionModalNote = detail.note || '';
+			this.exceptionModalSlots = [];
+		} else {
+			this.exceptionModalType = 'OVERRIDE';
+			this.exceptionModalNote = detail.note || '';
+			this.exceptionModalSlots = detail.slots.map((slot) => ({
+				uid: this.makeSlotUid(),
+				loc_id_location: String(slot.loc_id_location || ''),
+				start_time: this.normalizeTime(slot.start_time),
+				end_time: this.normalizeTime(slot.end_time),
+			}));
+		}
+
+		if (this.exceptionModalTitleNode) {
+			this.exceptionModalTitleNode.textContent = this.exceptionModalReadOnly
+				? 'Detalle del día'
+				: 'Excepción de horario';
+		}
+	}
+
+	private async loadExceptionModalDetail(dateKey: string, loadSeq: number): Promise<void> {
 		try {
 			const response = await fetch(
 				`/api/schedules/${this.selectedProfessionalId}/exceptions/${dateKey}`,
@@ -1319,57 +1431,34 @@ class ScheduleManager extends HTMLElement {
 				is_past: boolean;
 			}>(response);
 
+			if (loadSeq !== this.exceptionModalLoadSeq) return;
+
 			if (!response.ok || !data || data.status !== 'success' || !data.data) {
 				throw new Error(this.toBackendErrorMessage(data, 'No fue posible cargar la excepción.'));
 			}
 
-			const detail = data.data;
-			this.exceptionModalReadOnly = Boolean(detail.is_past) || !this.canEdit;
-
-			if (detail.inherits_template || !detail.exception_type) {
-				this.exceptionModalType = 'OVERRIDE';
-				this.exceptionModalNote = '';
-				this.exceptionModalSlots = this.buildTemplateSlotsForDate(dateKey);
-			} else if (detail.exception_type === 'BLOCKED') {
-				this.exceptionModalType = 'BLOCKED';
-				this.exceptionModalNote = detail.note || '';
-				this.exceptionModalSlots = [];
-			} else {
-				this.exceptionModalType = 'OVERRIDE';
-				this.exceptionModalNote = detail.note || '';
-				this.exceptionModalSlots = detail.slots.map((slot) => ({
-					uid: this.makeSlotUid(),
-					loc_id_location: String(slot.loc_id_location || ''),
-					start_time: this.normalizeTime(slot.start_time),
-					end_time: this.normalizeTime(slot.end_time),
-				}));
-			}
+			this.applyExceptionModalDetail(dateKey, data.data);
+			this.exceptionModalLoading = false;
+			this.clearExceptionModalError();
+			this.renderExceptionModalBody();
+			this.renderExceptionModalActions();
+			this.updateExceptionModalTourHelpVisibility();
 		} catch (error) {
-			this.showError(error instanceof Error ? error.message : 'No fue posible abrir la excepción.');
-			return;
+			if (loadSeq !== this.exceptionModalLoadSeq) return;
+			this.exceptionModalLoading = false;
+			const message =
+				error instanceof Error ? error.message : 'No fue posible abrir la excepción.';
+			this.showExceptionModalError(message);
+			this.renderExceptionModalLoadingActions();
 		}
+	}
 
-		if (this.exceptionModalTitleNode) {
-			this.exceptionModalTitleNode.textContent = this.exceptionModalReadOnly
-				? 'Detalle del día'
-				: 'Excepción de horario';
-		}
-		if (this.exceptionModalSubtitleNode) {
-			const label = new Intl.DateTimeFormat('es-PY', {
-				weekday: 'long',
-				day: 'numeric',
-				month: 'long',
-				year: 'numeric',
-			}).format(parseDateKey(dateKey));
-			this.exceptionModalSubtitleNode.textContent = label;
-		}
+	private async openExceptionModal(dateKey: string): Promise<void> {
+		if (!this.exceptionModalNode || this.selectedProfessionalId <= 0) return;
 
-		this.clearExceptionModalError();
-		this.renderExceptionModalBody();
-		this.renderExceptionModalActions();
-		this.updateExceptionModalTourHelpVisibility();
-		this.exceptionModalNode.classList.remove('hidden');
-		this.exceptionModalNode.classList.add('flex');
+		const loadSeq = ++this.exceptionModalLoadSeq;
+		this.showExceptionModalShell(dateKey);
+		await this.loadExceptionModalDetail(dateKey, loadSeq);
 	}
 
 	private updateExceptionModalTourHelpVisibility(): void {
@@ -1381,6 +1470,8 @@ class ScheduleManager extends HTMLElement {
 
 	private closeExceptionModal = (): void => {
 		if (!this.exceptionModalNode) return;
+		this.exceptionModalLoadSeq += 1;
+		this.exceptionModalLoading = false;
 		this.clearExceptionModalError();
 		this.exceptionModalNode.classList.add('hidden');
 		this.exceptionModalNode.classList.remove('flex');
