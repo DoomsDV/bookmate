@@ -1,6 +1,8 @@
 ---
 import Layout from '../../../layouts/Layout.astro';
 import {
+	buildPublicProfileMetaDescription,
+	getPublicProfileSpecialtyLabel,
 	getPublicProfileWithOrds,
 	PublicBookingApiError,
 	type PublicBookingProfile,
@@ -73,13 +75,17 @@ const canonicalPath = buildPublicProfilePath(organizationSlug, professionalSlug)
 
 const organizationName = profile?.organization_name?.trim() || organizationSlug;
 const professionalName = profile?.full_name?.trim() || professionalSlug;
-const specialtyLabel = profile?.specialty?.trim() || 'Profesional de la salud';
+const specialtyLabel = profile ? getPublicProfileSpecialtyLabel(profile.specialty) : null;
 
 const pageTitle = profile
 	? `Agendá con ${professionalName} | ${organizationName}`
 	: 'Reserva online | Hasel';
 const metaDescription = profile
-	? `Reservá tu turno con ${professionalName} (${specialtyLabel}) en ${organizationName}. Elegí horario y confirmá online en segundos.`
+	? buildPublicProfileMetaDescription({
+			professionalName,
+			organizationName,
+			specialty: profile.specialty,
+		})
 	: 'Reservá turnos online con profesionales de la salud en Hasel.';
 const ogImageAlt = profile
 	? `Foto de perfil de ${professionalName} — ${organizationName}`
@@ -145,9 +151,11 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 								<h1 class="text-3xl font-normal tracking-tight text-(--on-surface) sm:text-4xl">
 									{profile.full_name}
 								</h1>
-								<p class="mt-1 text-base font-medium text-(--on-surface-variant)">
-									{profile.specialty || 'Sin especialidad'}
-								</p>
+								{specialtyLabel && (
+									<p class="mt-1 text-base font-medium text-(--on-surface-variant)">
+										{specialtyLabel}
+									</p>
+								)}
 							</div>
 						</div>
 						</header>
