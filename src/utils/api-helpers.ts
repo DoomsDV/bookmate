@@ -1,4 +1,4 @@
-import { SESSION_EXPIRED_API_CODE } from '../lib/session-auth-messages';
+import { readApiErrorCode, SESSION_EXPIRED_API_CODE } from '../lib/api-error-codes';
 
 type ApiErrorLike = {
 	message: string;
@@ -63,13 +63,13 @@ export const toErrorResponse = <TError extends ApiErrorLike>(
 		}
 	}
 
-	if (
-		resolvedError.details &&
-		typeof resolvedError.details === 'object' &&
-		!Array.isArray(resolvedError.details) &&
-		typeof (resolvedError.details as Record<string, unknown>).code === 'string'
-	) {
-		payload.code = (resolvedError.details as Record<string, unknown>).code;
+	const errorCode = readApiErrorCode({
+		code: (resolvedError as { code?: unknown }).code,
+		details: resolvedError.details,
+	});
+
+	if (errorCode) {
+		payload.code = errorCode;
 	} else if (resolvedError.status === 401) {
 		payload.code = SESSION_EXPIRED_API_CODE;
 	}

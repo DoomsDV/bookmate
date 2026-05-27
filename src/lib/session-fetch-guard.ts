@@ -1,8 +1,7 @@
 import {
-	ORG_ACCESS_INACTIVE_CODE,
 	ORG_ACCESS_INACTIVE_MESSAGE,
-	SESSION_EXPIRED_API_CODE,
 	isOrgAccessInactiveResponse,
+	isSessionTerminatingCode,
 	shouldTreatUnauthorizedAsSessionExpired,
 } from './session-auth-messages';
 
@@ -180,14 +179,12 @@ const handleAccessRevokedResponse = async (response: Response) => {
 	const message = readErrorMessage(payload);
 	const code = String(payload?.code || '').trim();
 
-	if (
-		isOrgAccessInactiveResponse({
-			status: response.status,
-			message,
-			code,
-		})
-	) {
-		await handleOrgAccessInactive(message);
+	if (isSessionTerminatingCode(code)) {
+		if (isOrgAccessInactiveResponse({ status: response.status, message, code })) {
+			await handleOrgAccessInactive(message);
+		} else {
+			await handleSessionExpired();
+		}
 		return true;
 	}
 

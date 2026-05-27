@@ -1,3 +1,4 @@
+import { ordsFailureDetails } from './api-error-codes';
 import { resolveOrdsApiUrl } from './env-urls';
 import { ROLES } from '../config/roles';
 
@@ -155,6 +156,7 @@ interface ProfessionalActionSuccessResponse {
 
 interface ProfessionalsFailureResponse {
 	status?: string;
+	code?: string;
 	message?: string;
 	details?: unknown;
 	errors?: unknown;
@@ -459,7 +461,7 @@ const parseProfessionalsResponse = async (
 			(typeof failureData.message === 'string' && failureData.message.trim()) ||
 				fallbackMessageByStatus(response.status || 400, 'list'),
 			response.status || 400,
-			failureData.details,
+			ordsFailureDetails(failureData as Record<string, unknown>),
 			parseFieldErrors(failureData.errors)
 		);
 	}
@@ -529,7 +531,7 @@ const parseProfessionalResponse = async (response: Response) => {
 			(typeof failureData.message === 'string' && failureData.message.trim()) ||
 				fallbackMessageByStatus(response.status || 400, 'get'),
 			response.status || 400,
-			failureData.details,
+			ordsFailureDetails(failureData as Record<string, unknown>),
 			parseFieldErrors(failureData.errors)
 		);
 	}
@@ -567,7 +569,9 @@ const parseProfessionalActionResponse = async (
 			(typeof failureData.message === 'string' && failureData.message.trim()) ||
 				fallbackMessageByStatus(response.status || 400, action),
 			response.status || 400,
-			Object.keys(conflictMeta).length > 0 ? conflictMeta : failureData.details,
+			Object.keys(conflictMeta).length > 0
+				? { ...ordsFailureDetails(failureData as Record<string, unknown>), ...conflictMeta }
+				: ordsFailureDetails(failureData as Record<string, unknown>),
 			parseFieldErrors(failureData.errors)
 		);
 	}
@@ -616,7 +620,9 @@ const parseCreateProfessionalResponse = async (response: Response) => {
 			(typeof failureData.message === 'string' && failureData.message.trim()) ||
 				fallbackMessageByStatus(response.status || 400, 'create'),
 			response.status || 400,
-			Object.keys(conflictMeta).length > 0 ? conflictMeta : failureData.details,
+			Object.keys(conflictMeta).length > 0
+				? { ...ordsFailureDetails(failureData as Record<string, unknown>), ...conflictMeta }
+				: ordsFailureDetails(failureData as Record<string, unknown>),
 			parseFieldErrors(failureData.errors)
 		);
 	}
@@ -765,7 +771,7 @@ export const suggestProfessionalSlugWithOrds = async (token: string, fullName: s
 			(typeof failureData.message === 'string' && failureData.message.trim()) ||
 				'No fue posible sugerir el slug del perfil.',
 			response.status || 400,
-			failureData.details,
+			ordsFailureDetails(failureData as Record<string, unknown>),
 			parseFieldErrors(failureData.errors)
 		);
 	}
