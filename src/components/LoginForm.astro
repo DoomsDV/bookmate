@@ -83,17 +83,18 @@ const {
 
 				<div class="m3-panel">
 					<div class="m3-field">
-						<label class="m3-label" for="identifier">Correo electrónico o usuario</label>
+						<label class="m3-label" for="identifier">Correo electrónico</label>
 						<input 
                             type="text" 
                             id="identifier" 
                             name="identifier" 
                             class:list={['m3-input', identifierError && 'is-invalid']} 
-                            placeholder="Ej: admin o juan@correo.com" 
+                            placeholder="tu@correo.com" 
                             value={identifier} 
-                            autocomplete="username"
+                            autocomplete="email"
                             autocapitalize="none"
                             spellcheck="false"
+                            inputmode="email"
                             required 
                         />
 						{identifierError && <span class="m3-field-error">{identifierError}</span>}

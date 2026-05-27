@@ -64,6 +64,7 @@ const sanitizeRedirectTo = (value: unknown) => {
 	return redirectTo;
 };
 
+/** Acepta correo (flujo principal) o apex_user_name legacy en el mismo campo. */
 const parseBody = async (request: Request) => {
 	const contentType = request.headers.get('content-type') || '';
 

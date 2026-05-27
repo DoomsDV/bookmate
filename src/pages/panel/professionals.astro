@@ -354,7 +354,7 @@ const toPageHref = (page: number) => {
 						<p class="m-0 text-[0.95rem] font-semibold text-(--on-surface)" data-readonly-account-email>—</p>
 						<p class="m-0 text-[0.85rem] text-(--on-surface-variant)" data-readonly-account-username></p>
 						<p class="m-0 text-[0.82rem] leading-snug text-(--on-surface-variant)">
-							El correo, usuario y contraseña son credenciales globales. La persona los gestiona desde su perfil o recuperación de contraseña.
+							El correo y la contraseña son credenciales globales. La persona los gestiona desde su perfil o recuperación de contraseña.
 						</p>
 					</div>
 				</div>
@@ -1449,7 +1449,13 @@ const toPageHref = (page: number) => {
 				if (readonlyEmail) readonlyEmail.textContent = user.email || '—';
 				if (readonlyUsername) {
 					const username = String(user.apex_user_name || '').trim();
-					readonlyUsername.textContent = username ? `Usuario: ${username}` : '';
+					const email = String(user.email || '').trim();
+					const isLegacyUsername =
+						username.length > 0 &&
+						email.length > 0 &&
+						username.toUpperCase() !== email.toUpperCase();
+					readonlyUsername.textContent = isLegacyUsername ? `Usuario legacy: ${username}` : '';
+					readonlyUsername.classList.toggle('hidden', !isLegacyUsername);
 				}
 				
 				const { formEls } = this;
