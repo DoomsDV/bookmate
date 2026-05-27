@@ -97,18 +97,32 @@ const inactiveCount = professionals.length - activeCount;
 					aria-label={`Editar personal ${toDisplayName(item.professional)}`}
 				>
 					<div class="relative flex items-start justify-between gap-4">
-						<div class="relative flex size-[2.75rem] shrink-0 items-center justify-center rounded-[0.85rem] bg-(--primary-soft) text-(--primary) overflow-hidden">
+						<div
+							class:list={[
+								'professionals-card-avatar',
+								!item.profileImageUrl && 'professionals-card-avatar--placeholder',
+							]}
+							data-professional-card-avatar
+						>
 							{item.profileImageUrl ? (
 								<img
 									src={item.profileImageUrl}
 									alt={`Foto de perfil de ${toDisplayName(item.professional)}`}
-									class="h-full w-full object-cover"
+									class="professionals-card-avatar-image"
 									loading="lazy"
 									decoding="async"
+									onerror="this.classList.add('is-hidden'); this.parentElement?.classList.add('professionals-card-avatar--placeholder');"
 								/>
-							) : (
-								<span class="material-symbols-rounded text-[1.25rem]">{PROFESSIONAL_ICON}</span>
-							)}
+							) : null}
+							<span
+								class:list={[
+									'material-symbols-rounded professionals-card-avatar-icon',
+									item.profileImageUrl && 'professionals-card-avatar-icon--fallback',
+								]}
+								aria-hidden="true"
+							>
+								{PROFESSIONAL_ICON}
+							</span>
 						</div>
 
 						<span
@@ -248,6 +262,51 @@ const inactiveCount = professionals.length - activeCount;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
 		color: var(--on-surface-variant);
+	}
+
+	.professionals-card-avatar {
+		position: relative;
+		display: flex;
+		width: 2.75rem;
+		height: 2.75rem;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+		border-radius: 50%;
+		isolation: isolate;
+	}
+
+	.professionals-card-avatar--placeholder {
+		background: var(--primary-soft);
+		color: var(--primary);
+	}
+
+	.professionals-card-avatar-image {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border-radius: 50%;
+		object-fit: cover;
+		object-position: center;
+		background: transparent;
+	}
+
+	.professionals-card-avatar-icon {
+		font-size: 1.25rem;
+		line-height: 1;
+	}
+
+	.professionals-card-avatar-icon--fallback {
+		display: none;
+	}
+
+	.professionals-card-avatar--placeholder .professionals-card-avatar-icon--fallback {
+		display: inline-flex;
+	}
+
+	.professionals-card-avatar-image.is-hidden {
+		display: none;
 	}
 
 	.professionals-card {

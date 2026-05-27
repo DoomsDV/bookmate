@@ -122,6 +122,14 @@ html[data-theme='dark'] .bookmate-driver-popover.driver-popover {
 	box-shadow: none;
 }
 
+/* Avatar circular en grilla de personal (driver.js sigue el bounding box del elemento) */
+.driver-active [data-professional-card-avatar].driver-active-element,
+[data-professional-card-avatar].driver-active-element {
+	border-radius: 50% !important;
+	overflow: hidden;
+	box-shadow: none;
+}
+
 /* Capa transparente sobre modales nativos (showModal) para que driver.js quede visible */
 dialog[data-bookmate-tour-shell] {
 	position: fixed;

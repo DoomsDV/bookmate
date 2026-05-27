@@ -5,7 +5,10 @@ import ProfessionalsGrid from '../../components/ProfessionalsGrid.astro';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
 import { ProfessionalsApiError, listProfessionals, type Professional } from '../../lib/professionals';
-import { buildPublicProfilePrefix } from '../../lib/public-profile-url';
+import {
+	buildPublicProfilePrefix,
+	formatPublicProfilePrefixDisplay,
+} from '../../lib/public-profile-url';
 import { ROLES } from '../../config/roles';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
@@ -27,6 +30,7 @@ const publicProfilePrefix = buildPublicProfilePrefix(
 	rawPublicProfileDomain || Astro.url.origin,
 	organizationSlug
 );
+const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfilePrefix);
 
 let professionals: Professional[] = [];
 let loadError = '';
@@ -223,17 +227,14 @@ const toPageHref = (page: number) => {
 					</div>
 				</div>
 				<div class="profile-photo-uploader__content">
-					<div class="profile-photo-uploader__copy">
-						<h3>Foto de perfil</h3>
-						<p>Arrastra una imagen o selecciona un archivo JPG o PNG. Podrás recortarla y centrarla antes de guardar.</p>
-					</div>
+					<h3 class="profile-photo-uploader__title">Foto de perfil</h3>
 					<div class="profile-photo-uploader__actions">
 						<label for="file-upload" class="profile-photo-uploader__button">
 							<span class="material-symbols-rounded text-[1.2rem]">add_photo_alternate</span>
 							<span data-image-file-name>Cambiar foto</span>
 							<input id="file-upload" name="profile_image" type="file" class="sr-only" accept=".jpg,.jpeg,.png" />
 						</label>
-						<span class="profile-photo-uploader__meta">Máximo recomendado: 2 MB.</span>
+						<span class="profile-photo-uploader__meta">JPG o PNG · máx. 2 MB</span>
 					</div>
 					<div class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_image"></div>
 				</div>
@@ -257,9 +258,12 @@ const toPageHref = (page: number) => {
 
 					<label class="professional-public-profile-field" data-professional-public-profile-field>
 						<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">URL del perfil público <span class="font-semibold text-(--on-surface-variant)">(Opcional)</span></span>
-						<div class="flex">
-							<span class="inline-flex max-w-[55%] sm:max-w-[65%] items-center truncate rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-3 text-xs sm:text-sm text-(--on-surface-variant) shadow-sm" title={publicProfilePrefix}>
-								{publicProfilePrefix}
+						<div class="flex min-w-0">
+							<span
+								class="public-profile-url-prefix inline-flex shrink-0 items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-2.5 text-xs font-semibold text-(--on-surface-variant) shadow-sm sm:px-3 sm:text-sm"
+								title={publicProfilePrefix}
+							>
+								{publicProfilePrefixDisplay}
 							</span>
 							<input type="text" name="profile_slug" maxlength="100" class="block w-full min-w-0 flex-1 rounded-none border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
 							<button
@@ -350,7 +354,7 @@ const toPageHref = (page: number) => {
 					</label>
 
 					<div class="hidden grid gap-1.5 rounded-2xl border border-(--shell-border) bg-(--control-surface) px-4 py-3" data-professional-account-readonly>
-						<span class="text-[0.85rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">Cuenta de acceso (solo lectura)</span>
+						<span class="text-[0.85rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">Cuenta de acceso</span>
 						<p class="m-0 text-[0.95rem] font-semibold text-(--on-surface)" data-readonly-account-email>—</p>
 						<p class="m-0 text-[0.82rem] leading-snug text-(--on-surface-variant)">
 							El correo y la contraseña son credenciales globales. La persona los gestiona desde su perfil o recuperación de contraseña.
@@ -1788,15 +1792,15 @@ const toPageHref = (page: number) => {
 	.profile-photo-uploader {
 		position: relative;
 		display: flex;
-		flex-direction: column;
+		flex-direction: row;
 		align-items: center;
-		gap: 1rem;
+		gap: 0.85rem;
 		border-radius: 1.35rem;
 		border: 1px solid color-mix(in srgb, var(--shell-border) 82%, var(--primary) 18%);
 		background:
 			linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 42%, transparent), transparent 46%),
 			var(--surface-bright);
-		padding: 1rem;
+		padding: 0.85rem;
 		box-shadow: var(--card-inset-highlight), 0 10px 28px rgba(15, 23, 42, 0.06);
 		transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
 	}
@@ -1811,49 +1815,37 @@ const toPageHref = (page: number) => {
 
 	.profile-photo-uploader__avatar {
 		position: relative;
-		width: 5.75rem;
-		height: 5.75rem;
+		width: 4.25rem;
+		height: 4.25rem;
 		flex: 0 0 auto;
 		overflow: hidden;
 		border-radius: 999px;
-		border: 4px solid var(--surface-bright);
+		border: 3px solid var(--surface-bright);
 		background: color-mix(in srgb, var(--primary-soft) 70%, var(--surface-container) 30%);
 		color: var(--primary);
-		box-shadow: 0 10px 26px rgba(15, 23, 42, 0.12);
+		box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
 	}
 
 	.profile-photo-uploader__content {
 		display: grid;
-		width: 100%;
-		gap: 0.85rem;
-		text-align: center;
+		min-width: 0;
+		flex: 1;
+		gap: 0.45rem;
+		text-align: left;
 	}
 
-	.profile-photo-uploader__copy {
-		display: grid;
-		gap: 0.25rem;
-	}
-
-	.profile-photo-uploader__copy h3 {
+	.profile-photo-uploader__title {
 		margin: 0;
-		font-size: 1.02rem;
+		font-size: 0.98rem;
 		font-weight: 850;
 		color: var(--on-surface);
 	}
 
-	.profile-photo-uploader__copy p {
-		margin: 0;
-		color: var(--on-surface-variant);
-		font-size: 0.88rem;
-		font-weight: 650;
-		line-height: 1.35;
-	}
-
 	.profile-photo-uploader__actions {
 		display: flex;
-		flex-direction: column;
+		flex-wrap: wrap;
 		align-items: center;
-		gap: 0.45rem;
+		gap: 0.45rem 0.65rem;
 	}
 
 	.profile-photo-uploader__button {
@@ -1884,8 +1876,14 @@ const toPageHref = (page: number) => {
 
 	.profile-photo-uploader__meta {
 		color: var(--on-surface-variant);
-		font-size: 0.78rem;
+		font-size: 0.75rem;
 		font-weight: 700;
+	}
+
+	.public-profile-url-prefix {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+		letter-spacing: -0.01em;
+		white-space: nowrap;
 	}
 
 	.professional-public-profile-field {
@@ -1900,20 +1898,13 @@ const toPageHref = (page: number) => {
 
 	@media (min-width: 640px) {
 		.profile-photo-uploader {
-			flex-direction: row;
-			align-items: center;
-			gap: 1.25rem;
-			padding: 1.15rem;
+			gap: 1.1rem;
+			padding: 1rem 1.1rem;
 		}
 
-		.profile-photo-uploader__content {
-			text-align: left;
-		}
-
-		.profile-photo-uploader__actions {
-			flex-direction: row;
-			align-items: center;
-			justify-content: flex-start;
+		.profile-photo-uploader__avatar {
+			width: 5rem;
+			height: 5rem;
 		}
 	}
 

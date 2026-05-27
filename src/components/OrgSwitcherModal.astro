@@ -251,21 +251,25 @@ const { currentOrgMemberId = 0 } = Astro.props;
 	/* is:global — las tarjetas se renderizan con JS y no reciben el scope de Astro */
 	.org-switcher-dialog {
 		position: fixed;
-		inset: 0;
+		top: 50%;
+		left: 50%;
 		z-index: 80;
-		margin: auto;
-		width: min(100vw - 2rem, 32rem);
+		margin: 0;
+		width: min(calc(100vw - 2rem), 32rem);
+		max-width: min(calc(100vw - 2rem), 32rem);
 		max-height: calc(100vh - 2rem);
 		padding: 0;
 		border: 0;
 		background: transparent;
 		overflow: visible;
+		transform: translate(-50%, -50%);
 		font-family: 'Nunito Sans', Roboto, system-ui, sans-serif;
 	}
 
 	.org-switcher-dialog::backdrop {
-		background: color-mix(in srgb, var(--page-background) 35%, #020617 65%);
-		backdrop-filter: blur(4px);
+		background: rgba(15, 23, 42, 0.38);
+		backdrop-filter: blur(5px);
+		-webkit-backdrop-filter: blur(5px);
 	}
 
 	.org-switcher-panel {
@@ -421,11 +425,16 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
 	}
 
-	.org-switcher-dialog .org-select-card:hover:not(:disabled),
+	.org-switcher-dialog .org-select-card:hover:not(:disabled):not(.is-selected) {
+		border-color: var(--shell-border);
+		background: var(--sidebar-hover);
+		box-shadow: none;
+	}
+
 	.org-switcher-dialog .org-select-card.is-selected {
-		border-color: color-mix(in srgb, var(--primary) 45%, var(--shell-border) 55%);
-		background: var(--primary-container);
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+		border-color: color-mix(in srgb, var(--shell-border) 72%, var(--on-surface-variant) 28%);
+		background: var(--surface-container);
+		box-shadow: var(--card-inset-highlight);
 	}
 
 	.org-switcher-dialog .org-select-card:disabled {
@@ -486,9 +495,8 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		flex-shrink: 0;
 	}
 
-	.org-switcher-dialog .org-select-card.is-selected .org-select-card-icon,
-	.org-switcher-dialog .org-select-card:hover:not(:disabled) .org-select-card-icon {
-		color: var(--primary);
+	.org-switcher-dialog .org-select-card:hover:not(:disabled):not(.is-selected) .org-select-card-icon {
+		color: var(--on-surface-variant);
 	}
 
 	.org-switcher-footer {
@@ -522,15 +530,24 @@ const { currentOrgMemberId = 0 } = Astro.props;
 	}
 
 	html[data-theme='dark'] .org-switcher-dialog::backdrop {
-		background: rgba(2, 6, 23, 0.72);
+		background: rgba(0, 0, 0, 0.58);
 	}
 
 	html[data-theme='dark'] .org-switcher-panel {
 		border-color: rgba(255, 255, 255, 0.1);
-		background:
-			radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.12), transparent 42%),
-			var(--sidebar-surface);
+		background: var(--sidebar-surface);
 		box-shadow: 0 28px 70px rgba(0, 0, 0, 0.55);
+	}
+
+	html[data-theme='dark'] .org-switcher-dialog .org-select-card.is-selected {
+		border-color: rgba(255, 255, 255, 0.14);
+		background: var(--surface-container-high);
+		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .org-switcher-dialog .org-select-card:hover:not(:disabled):not(.is-selected) {
+		border-color: rgba(255, 255, 255, 0.1);
+		background: var(--sidebar-hover);
 	}
 
 	html[data-theme='dark'] .org-switcher-close {
@@ -539,7 +556,7 @@ const { currentOrgMemberId = 0 } = Astro.props;
 	}
 
 	html[data-theme='dark'] .org-switcher-dialog .m3-btn-tonal {
-		background: color-mix(in srgb, var(--primary) 82%, #0a0a0a 18%);
+		background: var(--primary);
 	}
 
 	.org-switcher-dialog .is-hidden {

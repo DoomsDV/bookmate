@@ -79,3 +79,28 @@ export const buildPublicProfilePrefix = (publicDomain: string, organizationSlug:
 		return `${domain.replace(/\/+$/, '')}${pathSuffix}`;
 	}
 };
+
+const normalizePublicProfilePath = (path: string): string => {
+	let normalized = String(path || '').replace(/\/{2,}/g, '/');
+	if (!normalized.startsWith('/')) normalized = `/${normalized}`;
+	if (!normalized.endsWith('/')) normalized = `${normalized}/`;
+	return normalized;
+};
+
+/** Ruta corta para mostrar en UI (copiar sigue usando la URL completa). */
+export const formatPublicProfilePrefixDisplay = (prefix: string): string => {
+	const trimmed = String(prefix || '').trim();
+	if (!trimmed) return '/p/';
+
+	try {
+		const withScheme = /^https?:\/\//i.test(trimmed)
+			? trimmed
+			: `https://${trimmed.replace(/^\/+/, '')}`;
+		return normalizePublicProfilePath(new URL(withScheme).pathname);
+	} catch {
+		if (trimmed.startsWith('/')) return normalizePublicProfilePath(trimmed);
+		const slashIndex = trimmed.indexOf('/');
+		if (slashIndex >= 0) return normalizePublicProfilePath(trimmed.slice(slashIndex));
+		return '/p/';
+	}
+};

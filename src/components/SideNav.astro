@@ -83,7 +83,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 		class="relative flex h-full w-[min(20rem,100vw)] -translate-x-full flex-col overflow-y-auto border-r border-(--shell-border) bg-(--sidebar-surface)"
 		data-side-nav
 	>
-		<div class="shell-header-zone sidebar-account-header mb-7 shrink-0 px-6 pt-6">
+		<div class="shell-header-zone sidebar-account-header shrink-0 px-6 pt-6 pb-4">
 			<div class="flex w-full items-center justify-between gap-3">
 				<button
 					type="button"
@@ -140,6 +140,8 @@ const visibleTeamItems = teamItems.filter((item) =>
 				</button>
 			</div>
 		</div>
+
+		<div class="sidebar-divider shrink-0" role="presentation" aria-hidden="true"></div>
 
 		<div class="flex-1 px-6 pb-6">
 		<nav aria-label="Side navigation móvil">
@@ -218,7 +220,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 	data-desktop-sidebar
 >
 	<div
-		class="shell-header-zone sidebar-account-header mb-6 shrink-0 px-6"
+		class="shell-header-zone sidebar-account-header shrink-0 px-6 pb-4 pt-5"
 		data-sidebar-brand-block
 	>
 		<button
@@ -269,6 +271,8 @@ const visibleTeamItems = teamItems.filter((item) =>
 			</span>
 		</button>
 	</div>
+
+	<div class="sidebar-divider shrink-0" role="presentation" aria-hidden="true"></div>
 
 	<div
 		class="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-6 pb-7 transition-[padding] duration-200"
@@ -360,6 +364,13 @@ const visibleTeamItems = teamItems.filter((item) =>
 <OrgSwitcherModal currentOrgMemberId={currentOrgMemberId} />
 
 <style>
+	.sidebar-divider {
+		margin: 0 1.5rem 1rem;
+		height: 0;
+		border: 0;
+		border-top: 1px solid var(--shell-border);
+	}
+
 	.sidebar-account-trigger {
 		border: 0;
 		background: transparent;
