@@ -2,6 +2,10 @@ import type { APIRoute } from 'astro';
 
 import { ROLES } from '../../../config/roles';
 import {
+	ORG_ACCESS_INACTIVE_CODE,
+	ORG_ACCESS_INACTIVE_MESSAGE,
+} from '../../../lib/panel-access';
+import {
 	SchedulesApiError,
 	listLocationsLovWithOrds,
 	listProfessionalsLovWithOrds,
@@ -42,10 +46,9 @@ export const GET: APIRoute = async ({ locals }) => {
 			: 0;
 
 		if (isProfessional && currentProfessionalId <= 0) {
-			throw new SchedulesApiError(
-				'No fue posible determinar el perfil profesional de tu sesion.',
-				403
-			);
+			throw new SchedulesApiError(ORG_ACCESS_INACTIVE_MESSAGE, 401, {
+				code: ORG_ACCESS_INACTIVE_CODE,
+			});
 		}
 
 		return Response.json(

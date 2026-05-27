@@ -163,7 +163,19 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 				}
 
 				finalRedirect = '/panel/dashboard';
-			} catch {
+			} catch (inviteError) {
+				const inviteErrorMessage =
+					inviteError instanceof AuthApiError
+						? inviteError.message
+						: inviteError instanceof Error
+							? inviteError.message
+							: 'No fue posible aceptar la invitación.';
+
+				const inviteParams = new URLSearchParams();
+				inviteParams.set('token', invitationToken);
+				inviteParams.set('error', inviteErrorMessage);
+				finalRedirect = withQuery('/auth/accept-invite', inviteParams);
+
 				try {
 					const organization = await getCurrentOrganizationWithOrds(session.access_token);
 					setOrganizationCacheCookies(cookies, url, organization);

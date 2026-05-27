@@ -218,11 +218,22 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 		}
 
 		const professional = await getProfessionalByIdWithOrds(token, professionalId);
-		assertProfessionalSelfAdminDelete({
-			targetUserId: Number(professional.user?.id_user ?? 0),
-			callerUserId: parseCallerUserId(locals.userId),
-			currentRoleId: Number(professional.user?.rol_id_role ?? 0),
-		});
+
+		if (professional.membership_status !== 'pending_invite') {
+			throw new ProfessionalsApiError(
+				'Este profesional ya tiene una cuenta en la organización. Usá «Desactivar» o «Reactivar» desde su ficha en lugar de eliminar.',
+				409
+			);
+		}
+
+		const targetUserId = Number(professional.user?.id_user ?? 0);
+		if (targetUserId > 0) {
+			assertProfessionalSelfAdminDelete({
+				targetUserId,
+				callerUserId: parseCallerUserId(locals.userId),
+				currentRoleId: Number(professional.user?.rol_id_role ?? 0),
+			});
+		}
 
 		const deleted = await deleteProfessionalWithUserWithOrds(token, professionalId);
 

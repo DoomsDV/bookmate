@@ -158,6 +158,9 @@ interface ProfessionalsFailureResponse {
 	message?: string;
 	details?: unknown;
 	errors?: unknown;
+	can_reactivate?: number | boolean;
+	reactivate_professional_id?: number;
+	deactivate?: number | boolean;
 }
 
 interface SlugSuggestSuccessResponse {
@@ -556,11 +559,15 @@ const parseProfessionalActionResponse = async (
 
 	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
 		const failureData = (data ?? {}) as ProfessionalsFailureResponse;
+		const conflictMeta: Record<string, unknown> = {};
+		if (failureData.deactivate === 1 || failureData.deactivate === true) {
+			conflictMeta.deactivate = 1;
+		}
 		throw new ProfessionalsApiError(
 			(typeof failureData.message === 'string' && failureData.message.trim()) ||
 				fallbackMessageByStatus(response.status || 400, action),
 			response.status || 400,
-			failureData.details,
+			Object.keys(conflictMeta).length > 0 ? conflictMeta : failureData.details,
 			parseFieldErrors(failureData.errors)
 		);
 	}
@@ -597,11 +604,19 @@ const parseCreateProfessionalResponse = async (response: Response) => {
 		!('id_professional' in data)
 	) {
 		const failureData = (data ?? {}) as ProfessionalsFailureResponse;
+		const conflictMeta: Record<string, unknown> = {};
+		if (failureData.can_reactivate === 1 || failureData.can_reactivate === true) {
+			conflictMeta.can_reactivate = 1;
+			const reactivateId = Number(failureData.reactivate_professional_id);
+			if (Number.isInteger(reactivateId) && reactivateId > 0) {
+				conflictMeta.reactivate_professional_id = reactivateId;
+			}
+		}
 		throw new ProfessionalsApiError(
 			(typeof failureData.message === 'string' && failureData.message.trim()) ||
 				fallbackMessageByStatus(response.status || 400, 'create'),
 			response.status || 400,
-			failureData.details,
+			Object.keys(conflictMeta).length > 0 ? conflictMeta : failureData.details,
 			parseFieldErrors(failureData.errors)
 		);
 	}

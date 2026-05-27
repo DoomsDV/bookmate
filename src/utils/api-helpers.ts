@@ -55,7 +55,22 @@ export const toErrorResponse = <TError extends ApiErrorLike>(
 		errors: resolvedError.fieldErrors,
 	};
 
-	if (resolvedError.status === 401) {
+	if (resolvedError.details && typeof resolvedError.details === 'object' && !Array.isArray(resolvedError.details)) {
+		for (const [key, value] of Object.entries(resolvedError.details as Record<string, unknown>)) {
+			if (!(key in payload)) {
+				payload[key] = value;
+			}
+		}
+	}
+
+	if (
+		resolvedError.details &&
+		typeof resolvedError.details === 'object' &&
+		!Array.isArray(resolvedError.details) &&
+		typeof (resolvedError.details as Record<string, unknown>).code === 'string'
+	) {
+		payload.code = (resolvedError.details as Record<string, unknown>).code;
+	} else if (resolvedError.status === 401) {
 		payload.code = SESSION_EXPIRED_API_CODE;
 	}
 

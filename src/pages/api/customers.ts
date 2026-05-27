@@ -2,6 +2,10 @@ import type { APIRoute } from 'astro';
 
 import { ROLES } from '../../config/roles';
 import { CustomersApiError, listCustomersWithOrds } from '../../lib/customers';
+import {
+	ORG_ACCESS_INACTIVE_CODE,
+	ORG_ACCESS_INACTIVE_MESSAGE,
+} from '../../lib/panel-access';
 import { listProfessionalsLovWithOrds } from '../../lib/schedules';
 import { parseTokenClaims } from '../../lib/token-claims';
 import {
@@ -41,10 +45,9 @@ export const GET: APIRoute = async ({ locals, url }) => {
 		if (roleId === ROLES.PROFESIONAL) {
 			const currentProfessionalId = await getCurrentProfessionalId(token);
 			if (currentProfessionalId <= 0) {
-				throw new CustomersApiError(
-					'No fue posible determinar el perfil profesional de tu sesion.',
-					403
-				);
+				throw new CustomersApiError(ORG_ACCESS_INACTIVE_MESSAGE, 401, {
+					code: ORG_ACCESS_INACTIVE_CODE,
+				});
 			}
 
 			if (professionalId && professionalId !== currentProfessionalId) {

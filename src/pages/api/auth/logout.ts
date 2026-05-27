@@ -10,6 +10,31 @@ const wantsHtml = (request: Request) => {
 	return accept.includes('text/html') || contentType.includes('application/x-www-form-urlencoded');
 };
 
+const sanitizeRedirectTo = (value: string | null) => {
+	const redirectTo = String(value || '').trim();
+
+	if (!redirectTo || !redirectTo.startsWith('/') || redirectTo.startsWith('//')) {
+		return '';
+	}
+
+	if (redirectTo.includes('\r') || redirectTo.includes('\n')) {
+		return '';
+	}
+
+	if (redirectTo.startsWith('/api/')) {
+		return '';
+	}
+
+	return redirectTo;
+};
+
+const resolveLogoutRedirect = (request: Request) => {
+	const requestUrl = new URL(request.url);
+	const redirectTo = sanitizeRedirectTo(requestUrl.searchParams.get('redirectTo'));
+
+	return redirectTo || '/auth/login';
+};
+
 const parseBodyToken = async (request: Request) => {
 	const contentType = request.headers.get('content-type') || '';
 
@@ -66,30 +91,32 @@ const performLogout = async (
 
 export const POST: APIRoute = async ({ request, cookies }) => {
 	await performLogout(request, cookies);
+	const location = resolveLogoutRedirect(request);
 
 	if (wantsHtml(request)) {
 		return new Response(null, {
 			status: 302,
 			headers: {
-				Location: '/auth/login',
+				Location: location,
 			},
 		});
 	}
 
-	return Response.json({ success: true, redirect: '/auth/login' });
+	return Response.json({ success: true, redirect: location });
 };
 
 export const GET: APIRoute = async ({ request, cookies }) => {
 	await performLogout(request, cookies);
+	const location = resolveLogoutRedirect(request);
 
 	if (wantsHtml(request)) {
 		return new Response(null, {
 			status: 302,
 			headers: {
-				Location: '/auth/login',
+				Location: location,
 			},
 		});
 	}
 
-	return Response.json({ success: true, redirect: '/auth/login' });
+	return Response.json({ success: true, redirect: location });
 };

@@ -27,7 +27,15 @@ const resent = Astro.url.searchParams.get('resent') === '1';
 <script is:inline>
 	if (typeof window !== 'undefined') {
 		const currentUrl = new URL(window.location.href);
-		const transientParams = ['error', 'email_error', 'code_error', 'registered', 'pending_login', 'resent'];
+		const transientParams = [
+			'error',
+			'email',
+			'email_error',
+			'code_error',
+			'registered',
+			'pending_login',
+			'resent',
+		];
 		let hasTransientParams = false;
 
 		for (const param of transientParams) {

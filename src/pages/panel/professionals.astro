@@ -377,7 +377,7 @@ const toPageHref = (page: number) => {
 					</label>
 
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">Acceso activo</span>
+						<span class="inline-flex items-center gap-1">Acceso en esta organización</span>
 						<div class="professional-select-wrap">
 							<select name="user_is_active" class="professional-native-select w-full cursor-pointer rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 pr-11 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10">
 								<option value="1">Sí</option>
@@ -388,9 +388,18 @@ const toPageHref = (page: number) => {
 							</span>
 						</div>
 						<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
-							Si está en "No", la persona no podrá iniciar sesión en la plataforma.
+							Si está en "No", no podrá ingresar al panel de esta organización. Su cuenta global no se elimina.
 						</span>
 					</label>
+				</div>
+
+				<div
+					class="hidden sm:col-span-2 rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-[0.9rem] leading-relaxed text-amber-100"
+					data-professional-inactive-hint
+					role="status"
+				>
+					<span class="font-semibold">Miembro desactivado.</span>
+					Activá «Visible en app» y «Acceso en esta organización» y guardá los cambios para reactivarlo en tu organización.
 				</div>
 			</div>
 			</div>
@@ -398,8 +407,8 @@ const toPageHref = (page: number) => {
 			<div class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
 				<div class="modal-footer">
 				<button type="button" class="hidden modal-action-danger" data-delete-professional>
-					<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
-					Eliminar
+					<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" data-delete-professional-icon>delete</span>
+					<span data-delete-professional-label>Eliminar</span>
 				</button>
 
 				<div class="modal-footer-actions">
@@ -474,6 +483,9 @@ const toPageHref = (page: number) => {
 			modal: HTMLDialogElement | null;
 			form: HTMLFormElement | null;
 			deleteBtn: HTMLButtonElement | null;
+			deleteBtnIcon: HTMLElement | null;
+			deleteBtnLabel: HTMLElement | null;
+			inactiveHint: HTMLElement | null;
 			loading: HTMLElement | null;
 			error: HTMLElement | null;
 			errorMessage: HTMLElement | null;
@@ -557,6 +569,9 @@ const toPageHref = (page: number) => {
 				modal: this.querySelector<HTMLDialogElement>('[data-professional-modal]'),
 				form: this.querySelector<HTMLFormElement>('[data-professional-form]'),
 				deleteBtn: this.querySelector<HTMLButtonElement>('[data-delete-professional]'),
+				deleteBtnIcon: this.querySelector<HTMLElement>('[data-delete-professional-icon]'),
+				deleteBtnLabel: this.querySelector<HTMLElement>('[data-delete-professional-label]'),
+				inactiveHint: this.querySelector<HTMLElement>('[data-professional-inactive-hint]'),
 				loading: this.querySelector<HTMLElement>('[data-professional-loading]'),
 				error: this.querySelector<HTMLElement>('[data-form-error]'),
 				errorMessage: this.querySelector<HTMLElement>('[data-form-error-message]'),
@@ -599,6 +614,8 @@ const toPageHref = (page: number) => {
 			this.addEventListener('click', this.handleRootClick, { signal });
 			this.addEventListener('keydown', this.handleRootKeydown, { signal });
 			this.els.form?.addEventListener('submit', this.handleSubmit, { signal });
+			this.formEls.userActive?.addEventListener('change', () => this.syncActiveStateFromForm(), { signal });
+			this.formEls.profActive?.addEventListener('change', () => this.syncActiveStateFromForm(), { signal });
 
 			this.formEls.image?.addEventListener('change', () => this.handleProfileImageInputChange(), { signal });
 			this.els.photoDropzone?.addEventListener('dragover', this.handlePhotoDragOver, { signal });
@@ -758,6 +775,51 @@ const toPageHref = (page: number) => {
 			field.closest('label')?.classList.toggle('is-locked', locked);
 		}
 
+		private syncActiveStateFromForm() {
+			if (this.formEls.userActive) {
+				this.editingUserIsActive = this.formEls.userActive.value === '0' ? 0 : 1;
+			}
+			if (this.formEls.profActive) {
+				this.editingProfIsActive = this.formEls.profActive.value === '0' ? 0 : 1;
+			}
+			this.applyInactiveMemberHint();
+		}
+
+		private applyInactiveMemberHint() {
+			const isInactiveMember =
+				this.mode === 'edit' &&
+				this.editingMembershipStatus === 'active' &&
+				(this.editingUserIsActive === 0 || this.editingProfIsActive === 0);
+
+			this.els.inactiveHint?.classList.toggle('hidden', !isInactiveMember);
+		}
+
+		private applyDeleteButtonVisibility() {
+			const isPendingInvite =
+				this.mode === 'edit' && this.editingMembershipStatus === 'pending_invite';
+			const isSelfAdmin = this.isEditingSelfAdmin();
+			const showCancelInvite = isPendingInvite && !isSelfAdmin;
+
+			if (this.els.deleteBtnIcon) {
+				this.els.deleteBtnIcon.textContent = showCancelInvite ? 'mail_off' : 'delete';
+			}
+			if (this.els.deleteBtnLabel) {
+				this.els.deleteBtnLabel.textContent = showCancelInvite
+					? 'Cancelar invitación'
+					: 'Eliminar';
+			}
+
+			if (this.els.deleteBtn) {
+				if (showCancelInvite) {
+					this.els.deleteBtn.classList.remove('hidden');
+					this.els.deleteBtn.disabled = false;
+				} else {
+					this.els.deleteBtn.classList.add('hidden');
+					this.els.deleteBtn.disabled = true;
+				}
+			}
+		}
+
 		private applySelfAdminFieldRestrictions() {
 			const isSelfAdmin = this.isEditingSelfAdmin();
 
@@ -769,21 +831,8 @@ const toPageHref = (page: number) => {
 				this.els.roleSelfAdminHint.classList.toggle('hidden', !isSelfAdmin);
 			}
 
-			if (this.els.deleteBtn) {
-				if (isSelfAdmin) {
-					this.els.deleteBtn.classList.add('hidden');
-					this.els.deleteBtn.classList.remove('inline-flex');
-					this.els.deleteBtn.disabled = true;
-				} else if (this.mode === 'edit') {
-					this.els.deleteBtn.classList.remove('hidden');
-					this.els.deleteBtn.classList.add('inline-flex');
-					this.els.deleteBtn.disabled = false;
-				} else {
-					this.els.deleteBtn.classList.add('hidden');
-					this.els.deleteBtn.classList.remove('inline-flex');
-					this.els.deleteBtn.disabled = true;
-				}
-			}
+			this.applyDeleteButtonVisibility();
+			this.applyInactiveMemberHint();
 		}
 
 		private updateUIMode(newMode: ProfessionalMode) {
@@ -812,6 +861,7 @@ const toPageHref = (page: number) => {
 
 			this.applySelfAdminFieldRestrictions();
 			this.applyAccountFieldVisibility();
+			this.applyInactiveMemberHint();
 		}
 
 		private applyAccountFieldVisibility() {
@@ -1416,6 +1466,8 @@ const toPageHref = (page: number) => {
 				if (formEls.slug) formEls.slug.value = prof.profile_slug || '';
 				if (formEls.userActive) formEls.userActive.value = String(this.editingUserIsActive);
 				if (formEls.profActive) formEls.profActive.value = String(this.editingProfIsActive);
+
+				this.applyInactiveMemberHint();
 				
 				this.setPreviewImage(prof.profile_image_url);
 
@@ -1553,9 +1605,22 @@ const toPageHref = (page: number) => {
 					type: 'success',
 				});
 			} catch (err: any) {
-				if (err.apiData && err.apiData.errors) {
+				const apiData = err?.apiData;
+				if (apiData?.can_reactivate === 1 || apiData?.can_reactivate === true) {
+					const reactivateId = Number(apiData?.reactivate_professional_id || 0);
+					const baseMessage = String(
+						apiData?.message ||
+							'Esta persona ya estuvo en tu organización. Reactivala desde su ficha.'
+					);
+					if (reactivateId > 0) {
+						this.showFormError(baseMessage);
+						void this.openEditModal(reactivateId);
+					} else {
+						this.showFormError(baseMessage);
+					}
+				} else if (apiData && apiData.errors) {
 					const msg = err.message || 'Error al guardar.';
-					const hasFieldErrors = this.renderFieldErrors(err.apiData.errors, msg);
+					const hasFieldErrors = this.renderFieldErrors(apiData.errors, msg);
 					if (!hasFieldErrors || !msg.includes('verificar los campos')) {
 						this.showFormError(msg);
 					}
@@ -1569,27 +1634,48 @@ const toPageHref = (page: number) => {
 
 		private async handleDelete() {
 			if (!this.editingId) return;
+
+			const isPendingInvite = this.editingMembershipStatus === 'pending_invite';
+			if (!isPendingInvite) {
+				this.showFormError(
+					'Este profesional ya tiene cuenta en la organización. Usá «Visible en app» y «Acceso en esta organización» para desactivar o reactivar.'
+				);
+				return;
+			}
 			
 			const confirmed = await (window as any).BookmateAlert?.confirm?.({
 				type: 'error',
-				title: 'Eliminar personal',
-				message: 'Esta acción eliminará al profesional de forma permanente. ¿Deseas continuar?',
-				confirmText: 'Eliminar',
-				cancelText: 'Cancelar',
+				title: 'Cancelar invitación',
+				message:
+					'Se eliminará la invitación pendiente y el registro provisional. La persona no habrá ingresado aún a tu organización. ¿Continuar?',
+				confirmText: 'Cancelar invitación',
+				cancelText: 'Volver',
 			});
 			if (!confirmed) return;
 
-			this.setLoadingMessage('Eliminando...');
+			this.setLoadingMessage('Cancelando invitación...');
 			this.toggleFormLoading(true);
 			
 			try {
 				const result = await this.requestApi(`/api/professionals/${this.editingId}`, { method: 'DELETE' });
 				void reloadPageWithFlash({
-					message: String(result?.message || '').trim() || 'Profesional eliminado correctamente.',
+					message:
+						String(result?.message || '').trim() ||
+						'Invitación cancelada correctamente.',
 					type: 'success',
 				});
-			} catch (err) {
-				this.showFormError(err instanceof Error ? err.message : 'Error al eliminar');
+			} catch (err: any) {
+				const apiData = err?.apiData;
+				if (apiData?.deactivate === 1 || apiData?.deactivate === true) {
+					this.showFormError(
+						String(
+							apiData?.message ||
+								'Este profesional ya tiene cuenta. Usá los controles de estado para desactivar o reactivar.'
+						)
+					);
+				} else {
+					this.showFormError(err instanceof Error ? err.message : 'Error al cancelar la invitación');
+				}
 				this.toggleFormLoading(false);
 			}
 		}

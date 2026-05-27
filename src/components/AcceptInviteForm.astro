@@ -55,7 +55,7 @@ const safeToken = String(token || '').trim();
 			</div>
 
 			<div class="is-hidden" data-invite-login-panel>
-				<p class="text-[0.95rem] text-(--on-surface-variant) mb-4">
+				<p class="text-[0.95rem] text-(--on-surface-variant) mb-4" data-invite-login-hint>
 					Ya tienes una cuenta con este correo. Inicia sesión para unirte a la organización.
 				</p>
 				<a class="m3-btn-primary inline-flex no-underline" data-invite-login-link href="/auth/login">
@@ -105,7 +105,9 @@ const safeToken = String(token || '').trim();
 			</form>
 
 			<div class="m3-card-footer">
-				<a href="/auth/login" class="m3-link-accent">¿Ya tienes cuenta? <strong>Iniciar sesión</strong></a>
+				<a href="/auth/login" class="m3-link-accent" data-invite-footer-login>
+					¿Ya tienes cuenta? <strong>Iniciar sesión</strong>
+				</a>
 			</div>
 		</div>
 	</main>
@@ -123,6 +125,34 @@ const safeToken = String(token || '').trim();
 		const loadingBox = root.querySelector('[data-invite-loading]');
 		const loginPanel = root.querySelector('[data-invite-login-panel]');
 		const loginLink = root.querySelector('[data-invite-login-link]');
+		const loginHint = root.querySelector('[data-invite-login-hint]');
+		const footerLoginLink = root.querySelector('[data-invite-footer-login]');
+
+		const buildInviteAcceptPath = () =>
+			`/auth/accept-invite?token=${encodeURIComponent(token)}`;
+
+		const buildLoginAfterLogoutHref = (switchAccount = false) => {
+			const acceptPath = buildInviteAcceptPath();
+			const loginParams = new URLSearchParams();
+			loginParams.set('redirectTo', acceptPath);
+			if (switchAccount) {
+				loginParams.set('switch_account', '1');
+			}
+			const loginPath = `/auth/login?${loginParams.toString()}`;
+			const logoutParams = new URLSearchParams();
+			logoutParams.set('redirectTo', loginPath);
+			return `/api/auth/logout?${logoutParams.toString()}`;
+		};
+
+		const applyLoginLinks = (switchAccount = false) => {
+			const href = buildLoginAfterLogoutHref(switchAccount);
+			if (loginLink instanceof HTMLAnchorElement) {
+				loginLink.href = href;
+			}
+			if (footerLoginLink instanceof HTMLAnchorElement) {
+				footerLoginLink.href = href;
+			}
+		};
 		const form = root.querySelector('[data-accept-invite-form]');
 		const submitBtn = root.querySelector('[data-invite-submit]');
 		const orgLabel = root.querySelector('[data-invite-org-label]');
@@ -187,25 +217,28 @@ const safeToken = String(token || '').trim();
 						}
 
 						if (acceptResponse.status === 403) {
+							if (loginHint) {
+								loginHint.textContent =
+									'Hay otra cuenta iniciada en este navegador. Al continuar cerraremos esa sesión para que puedas ingresar con el correo invitado.';
+							}
 							showError(
 								acceptData?.message ||
-									'La sesión activa no corresponde al correo invitado. Cerrá sesión e iniciá con la cuenta correcta.'
+									'La sesión activa no corresponde al correo invitado.'
 							);
+							applyLoginLinks(true);
 						} else if (!acceptData?.login_required) {
 							showError(acceptData?.message || 'No fue posible aceptar la invitación con la sesión actual.');
+							applyLoginLinks(false);
 						}
 					} catch {
-						// Sin sesión válida: pedir login con la cuenta invitada.
+						applyLoginLinks(false);
 					}
 
-					const redirectTo = `/auth/accept-invite?token=${encodeURIComponent(token)}`;
-					if (loginLink instanceof HTMLAnchorElement) {
-						loginLink.href = `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`;
-					}
 					if (desc) {
 						desc.textContent =
 							'Ya tienes una cuenta con este correo. Iniciá sesión para unirte a la organización.';
 					}
+					applyLoginLinks(false);
 					loginPanel?.classList.remove('is-hidden');
 					return;
 				}
@@ -248,10 +281,7 @@ const safeToken = String(token || '').trim();
 					if (data?.login_required) {
 						loginPanel?.classList.remove('is-hidden');
 						form.classList.add('is-hidden');
-						const redirectTo = `/auth/accept-invite?token=${encodeURIComponent(token)}`;
-						if (loginLink instanceof HTMLAnchorElement) {
-							loginLink.href = `/auth/login?redirectTo=${encodeURIComponent(redirectTo)}`;
-						}
+						applyLoginLinks(false);
 						return;
 					}
 					showError(data?.message || data?.error || 'No fue posible aceptar la invitación.');

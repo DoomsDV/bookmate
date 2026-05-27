@@ -926,6 +926,10 @@ export const forgotPasswordWithOrds = async (payload: ForgotPasswordPayload) => 
 		body: JSON.stringify(payload),
 	});
 
+	if (response.status === 404) {
+		return { message: 'Solicitud procesada.' };
+	}
+
 	return parseStatusResponseWithFields(
 		response,
 		'No fue posible iniciar la recuperación de contraseña.',

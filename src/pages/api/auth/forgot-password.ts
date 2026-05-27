@@ -32,6 +32,35 @@ const wantsHtml = (request: Request) => {
 	return accept.includes('text/html') || contentType.includes('application/x-www-form-urlencoded');
 };
 
+/** 404 del backend indica email inexistente; no debe exponerse al cliente. */
+const isForgotPasswordEnumerationResponse = (error: AuthApiError) => error.status === 404;
+
+const buildForgotPasswordSuccessResponse = (request: Request) => {
+	if (wantsHtml(request)) {
+		const headers = new Headers({
+			Location: '/auth/login',
+		});
+		headers.append(
+			'Set-Cookie',
+			buildFlashCookie(FLASH_MESSAGE_COOKIE, FORGOT_PASSWORD_SUCCESS_MESSAGE)
+		);
+		headers.append('Set-Cookie', buildFlashCookie(FLASH_TYPE_COOKIE, 'info'));
+
+		return new Response(null, {
+			status: 302,
+			headers,
+		});
+	}
+
+	return Response.json(
+		{
+			status: 'success',
+			message: FORGOT_PASSWORD_SUCCESS_MESSAGE,
+		},
+		{ status: 200 }
+	);
+};
+
 const parseBody = async (request: Request) => {
 	const contentType = request.headers.get('content-type') || '';
 
@@ -84,34 +113,16 @@ export const POST: APIRoute = async ({ request }) => {
 
 		await forgotPasswordWithOrds({ email });
 
-		if (wantsHtml(request)) {
-			const headers = new Headers({
-				Location: '/auth/login',
-			});
-			headers.append(
-				'Set-Cookie',
-				buildFlashCookie(FLASH_MESSAGE_COOKIE, FORGOT_PASSWORD_SUCCESS_MESSAGE)
-			);
-			headers.append('Set-Cookie', buildFlashCookie(FLASH_TYPE_COOKIE, 'info'));
-
-			return new Response(null, {
-				status: 302,
-				headers,
-			});
-		}
-
-		return Response.json(
-			{
-				status: 'success',
-				message: FORGOT_PASSWORD_SUCCESS_MESSAGE,
-			},
-			{ status: 200 }
-		);
+		return buildForgotPasswordSuccessResponse(request);
 	} catch (error) {
 		const authError =
 			error instanceof AuthApiError
 				? error
 				: new AuthApiError('No fue posible iniciar la recuperación de contraseña.', 500);
+
+		if (isForgotPasswordEnumerationResponse(authError)) {
+			return buildForgotPasswordSuccessResponse(request);
+		}
 
 		console.error('[API forgot-password] Error procesando solicitud', {
 			status: authError.status,

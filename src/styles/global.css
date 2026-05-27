@@ -793,6 +793,10 @@ button {
 	pointer-events: none;
 }
 
+.modal-action-danger.hidden {
+	display: none !important;
+}
+
 html[data-theme='dark'] .modal-action-primary {
 	border-color: color-mix(in srgb, var(--primary) 58%, #131314 42%);
 	background: color-mix(in srgb, var(--primary) 78%, #131314 22%);

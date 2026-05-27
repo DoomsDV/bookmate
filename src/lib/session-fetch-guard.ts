@@ -1,5 +1,8 @@
 import {
+	ORG_ACCESS_INACTIVE_CODE,
+	ORG_ACCESS_INACTIVE_MESSAGE,
 	SESSION_EXPIRED_API_CODE,
+	isOrgAccessInactiveResponse,
 	shouldTreatUnauthorizedAsSessionExpired,
 } from './session-auth-messages';
 
@@ -132,6 +135,36 @@ const performLogoutRequest = async () => {
 	}
 };
 
+const showOrgAccessInactiveAlert = async (message?: string) => {
+	const text =
+		String(message || '').trim() ||
+		ORG_ACCESS_INACTIVE_MESSAGE;
+
+	if (window.BookmateAlert?.alert) {
+		await window.BookmateAlert.alert({
+			type: 'warning',
+			title: 'Acceso desactivado',
+			message: text,
+			confirmText: 'Ir al login',
+		});
+		return;
+	}
+
+	window.alert(text);
+};
+
+export const handleOrgAccessInactive = async (message?: string) => {
+	if (sessionLogoutInProgress) return;
+	sessionLogoutInProgress = true;
+
+	await showOrgAccessInactiveAlert(message);
+	await performLogoutRequest();
+
+	const params = new URLSearchParams();
+	params.set('error', String(message || '').trim() || ORG_ACCESS_INACTIVE_MESSAGE);
+	window.location.replace(`${LOGIN_PATH}?${params.toString()}`);
+};
+
 export const handleSessionExpired = async () => {
 	if (sessionLogoutInProgress) return;
 	sessionLogoutInProgress = true;
@@ -140,6 +173,37 @@ export const handleSessionExpired = async () => {
 	await performLogoutRequest();
 
 	window.location.replace(buildLoginRedirectUrl());
+};
+
+const handleAccessRevokedResponse = async (response: Response) => {
+	const payload = await parseApiErrorPayload(response);
+	const message = readErrorMessage(payload);
+	const code = String(payload?.code || '').trim();
+
+	if (
+		isOrgAccessInactiveResponse({
+			status: response.status,
+			message,
+			code,
+		})
+	) {
+		await handleOrgAccessInactive(message);
+		return true;
+	}
+
+	if (
+		shouldTreatUnauthorizedAsSessionExpired({
+			status: response.status,
+			message,
+			code,
+			refreshFailed: false,
+		})
+	) {
+		await handleSessionExpired();
+		return true;
+	}
+
+	return false;
 };
 
 const guardedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -171,6 +235,16 @@ const guardedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promi
 		return response;
 	}
 
+	if (
+		(response.status === 403 || response.status === 401) &&
+		!sessionLogoutInProgress &&
+		!isRetry
+	) {
+		if (await handleAccessRevokedResponse(response)) {
+			return response;
+		}
+	}
+
 	if (response.status !== 401 || sessionLogoutInProgress) {
 		return response;
 	}
@@ -190,20 +264,7 @@ const guardedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promi
 		}
 	}
 
-	const payload = await parseApiErrorPayload(response);
-	const message = readErrorMessage(payload);
-	const code = String(payload?.code || '').trim();
-
-	if (
-		shouldTreatUnauthorizedAsSessionExpired({
-			status: 401,
-			message,
-			code,
-			refreshFailed: false,
-		})
-	) {
-		await handleSessionExpired();
-	}
+	await handleAccessRevokedResponse(response);
 
 	return response;
 };

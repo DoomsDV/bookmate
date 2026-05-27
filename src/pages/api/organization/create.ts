@@ -30,6 +30,12 @@ const parsePayload = (body: Record<string, unknown>): CreateOrganizationPayload 
 	id_org_specialty: parseSpecialtyId(body.id_org_specialty),
 });
 
+const wantsHtml = (request: Request) => {
+	const accept = request.headers.get('accept') || '';
+	const contentType = request.headers.get('content-type') || '';
+	return accept.includes('text/html') || contentType.includes('application/x-www-form-urlencoded');
+};
+
 const validatePayload = (payload: CreateOrganizationPayload) => {
 	const fieldErrors: Array<{ field: string; message: string }> = [];
 
@@ -99,13 +105,21 @@ export const POST: APIRoute = async ({ request, cookies, url, locals }) => {
 			const email = resolveVerificationEmailFromAuthError(error);
 			const verifyParams = new URLSearchParams({ pending_login: '1' });
 			if (email) verifyParams.set('email', email);
+			const verifyRedirect = `/auth/verify-email?${verifyParams.toString()}`;
+
+			if (wantsHtml(request)) {
+				return new Response(null, {
+					status: 302,
+					headers: { Location: verifyRedirect },
+				});
+			}
 
 			return Response.json(
 				{
 					status: 'error',
 					message: error.message,
 					emailVerificationRequired: true,
-					redirect: `/auth/verify-email?${verifyParams.toString()}`,
+					redirect: verifyRedirect,
 				},
 				{ status: error.status }
 			);

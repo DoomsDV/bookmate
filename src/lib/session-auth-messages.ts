@@ -4,6 +4,10 @@
  */
 
 export const SESSION_EXPIRED_API_CODE = 'SESSION_EXPIRED';
+export const ORG_ACCESS_INACTIVE_CODE = 'ORG_ACCESS_INACTIVE';
+
+export const ORG_ACCESS_INACTIVE_MESSAGE =
+	'Tu acceso a esta organización fue desactivado. Contactá al administrador si necesitás volver a ingresar.';
 
 /** Subcadenas (texto normalizado) que indican token o sesión inválida. */
 export const SESSION_AUTH_MESSAGE_PATTERNS = [
@@ -66,12 +70,30 @@ export const isPermissionDeniedMessage = (message: unknown) => {
 	return false;
 };
 
+export const isOrgAccessInactiveResponse = (params: {
+	status?: number;
+	message?: unknown;
+	code?: unknown;
+}) => {
+	if (params.code === ORG_ACCESS_INACTIVE_CODE) return true;
+	const normalized = String(params.message || '')
+		.normalize('NFD')
+		.replace(/[\u0300-\u036f]/g, '')
+		.toLowerCase();
+	return (
+		normalized.includes('acceso a esta organizacion fue desactivado') ||
+		normalized.includes('perfil profesional en esta organizacion esta inactivo') ||
+		normalized.includes('acceso a esta organizacion ya no esta disponible')
+	);
+};
+
 export const shouldTreatUnauthorizedAsSessionExpired = (params: {
 	status: number;
 	message?: unknown;
 	code?: unknown;
 	refreshFailed?: boolean;
 }) => {
+	if (isOrgAccessInactiveResponse(params)) return true;
 	if (params.status !== 401) return false;
 	if (params.code === SESSION_EXPIRED_API_CODE) return true;
 	if (params.refreshFailed) return true;

@@ -10,6 +10,7 @@ import {
 	setOrganizationCacheCookies,
 	setSessionCookies,
 } from './lib/auth';
+import { PanelAccessError, validatePanelSessionWithOrds } from './lib/panel-access';
 import { getCurrentOrganizationWithOrds } from './lib/organization';
 import { SESSION_EXPIRED_API_CODE } from './lib/session-auth-messages';
 import { isOrgSelectionToken, parseTokenClaims } from './lib/token-claims';
@@ -29,7 +30,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
 			if (
 				url.pathname === '/auth/login' &&
-				isInvitationAcceptRedirect(redirectToParam)
+				isInvitationAcceptRedirect(redirectToParam) &&
+				url.searchParams.get('switch_account') !== '1'
 			) {
 				return redirect(redirectToParam);
 			}
@@ -123,6 +125,29 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		}
 
 		return redirect('/panel/dashboard');
+	}
+
+	try {
+		await validatePanelSessionWithOrds(accessToken);
+	} catch (error) {
+		if (error instanceof PanelAccessError) {
+			clearSessionCookies(cookies);
+
+			if (url.pathname.startsWith('/api/')) {
+				return Response.json(
+					{
+						status: 'error',
+						code: error.code,
+						message: error.message,
+					},
+					{ status: 401 }
+				);
+			}
+
+			const loginParams = new URLSearchParams();
+			loginParams.set('error', error.message);
+			return redirect(`/auth/login?${loginParams.toString()}`);
+		}
 	}
 
 	let organizationName = String(cookies.get('org_name')?.value || '').trim();
