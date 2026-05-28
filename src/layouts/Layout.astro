@@ -2,6 +2,7 @@
 import { ClientRouter } from 'astro:transitions';
 import FlashMessage from '../components/FlashMessage.astro';
 import FcmManager from '../components/FcmManager.astro';
+import OrgNotificationDeepLink from '../components/OrgNotificationDeepLink.astro';
 import SessionGuard from '../components/SessionGuard.astro';
 import {
     FLASH_MESSAGE_COOKIE,
@@ -143,6 +144,7 @@ if (flashTypeFromCookie) {
             <>
                 <SessionGuard />
                 <FcmManager />
+                <OrgNotificationDeepLink />
             </>
         )}
         {

@@ -9,11 +9,30 @@ import {
 import { getCurrentOrganizationWithOrds } from '../../../lib/organization';
 import { requireToken, toErrorResponse } from '../../../utils/api-helpers';
 
+const sanitizeRedirectTo = (value: unknown) => {
+	const redirectTo = String(value || '').trim();
+
+	if (!redirectTo || !redirectTo.startsWith('/') || redirectTo.startsWith('//')) {
+		return '';
+	}
+
+	if (redirectTo.includes('\r') || redirectTo.includes('\n')) {
+		return '';
+	}
+
+	if (redirectTo.startsWith('/auth/login') || redirectTo.startsWith('/api/')) {
+		return '';
+	}
+
+	return redirectTo;
+};
+
 export const POST: APIRoute = async ({ request, cookies, url, locals }) => {
 	try {
 		const token = requireToken(locals.token, (message, status) => new AuthApiError(message, status));
 		const body = await request.json().catch(() => ({}));
 		const orgMemberId = Number(body?.org_member_id ?? 0);
+		const redirectTo = sanitizeRedirectTo(body?.redirectTo) || '/panel/dashboard';
 
 		if (!Number.isInteger(orgMemberId) || orgMemberId <= 0) {
 			throw new AuthApiError('Debes seleccionar una organización válida.', 400);
@@ -34,7 +53,7 @@ export const POST: APIRoute = async ({ request, cookies, url, locals }) => {
 
 		return Response.json({
 			success: true,
-			redirect: '/panel/dashboard',
+			redirect: redirectTo,
 			organization_id: result.organization_id ?? null,
 			user_id: result.user_id ?? null,
 		});

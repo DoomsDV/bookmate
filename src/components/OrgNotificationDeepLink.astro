@@ -1,0 +1,28 @@
+---
+const currentOrgMemberId = Number(Astro.locals.userId ?? 0);
+const hasSession = Boolean(Astro.locals.token ?? '');
+---
+
+{
+	hasSession && currentOrgMemberId > 0 ? (
+		<script
+			define:vars={{ currentOrgMemberId }}
+			type="module"
+		>
+			import { resolveOrgNotificationDeepLink } from '../lib/org-notification-deep-link';
+
+			const runOrgNotificationDeepLink = async () => {
+				try {
+					await resolveOrgNotificationDeepLink({ currentOrgMemberId });
+				} catch {
+					// No bloquear la navegación del panel si falla el cambio automático.
+				}
+			};
+
+			void runOrgNotificationDeepLink();
+			document.addEventListener('astro:page-load', () => {
+				void runOrgNotificationDeepLink();
+			});
+		</script>
+	) : null
+}

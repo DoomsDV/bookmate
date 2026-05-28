@@ -18,6 +18,24 @@ if (!selectionContext) {
 }
 
 const organizations = selectionContext.organizations;
+const redirectTo = String(selectionContext.redirectTo || '/panel/dashboard').trim();
+const preferredOrgMemberId = (() => {
+	try {
+		const targetUrl = new URL(redirectTo, Astro.url);
+		const raw = String(targetUrl.searchParams.get('org_member_id') || '').trim();
+		const parsed = Number(raw);
+		if (!Number.isInteger(parsed) || parsed <= 0) return 0;
+		return parsed;
+	} catch {
+		return 0;
+	}
+})();
+const preferredOrgIndex =
+	preferredOrgMemberId > 0
+		? organizations.findIndex((org) => Number(org.org_member_id) === preferredOrgMemberId)
+		: -1;
+const autoSubmitPreferredOrg =
+	preferredOrgIndex >= 0 && organizations.length > 1 && !pendingInvitation;
 ---
 
 <Layout>
@@ -69,7 +87,13 @@ const organizations = selectionContext.organizations;
 					</div>
 				)}
 
-				<form method="post" action="/api/auth/select-org" class="org-select-form">
+				<form
+					method="post"
+					action="/api/auth/select-org"
+					class="org-select-form"
+					data-auto-submit-preferred={autoSubmitPreferredOrg ? '1' : '0'}
+				>
+					<input type="hidden" name="redirectTo" value={redirectTo} />
 					<div class="org-select-list">
 						{organizations.map((org, index) => (
 							<label class="org-select-card">
@@ -79,7 +103,11 @@ const organizations = selectionContext.organizations;
 									value={String(org.org_member_id)}
 									required
 									class="org-select-radio"
-									checked={index === 0}
+									checked={
+										preferredOrgIndex >= 0
+											? index === preferredOrgIndex
+											: index === 0
+									}
 								/>
 								<span class="org-select-card-body">
 									<span class="org-select-card-title">{org.organization_name}</span>
@@ -149,6 +177,16 @@ const organizations = selectionContext.organizations;
 		});
 
 		syncSelected();
+
+		const form = root.querySelector('form.org-select-form');
+		if (
+			form instanceof HTMLFormElement &&
+			root.dataset.autoSubmitPreferred === '1' &&
+			!root.dataset.autoSubmitted
+		) {
+			root.dataset.autoSubmitted = '1';
+			form.requestSubmit();
+		}
 	}
 
 	if (typeof window !== 'undefined') {
