@@ -133,13 +133,10 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 								<div class="grid min-w-0 flex-1 gap-1.5">
 									<div class="flex items-center gap-2">
 										<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">notifications_active</span>
-										<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Notificaciones push</h4>
+										<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Notificaciones</h4>
 									</div>
 									<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
 										Recibí avisos de nuevas citas, cambios y cancelaciones en todas tus organizaciones.
-									</p>
-									<p class="text-[0.82rem] font-medium leading-relaxed text-(--on-surface-variant)/90">
-										Para activar o modificar esta opción, la app debe estar instalada en tu dispositivo (PWA). No está disponible desde el navegador normal.
 									</p>
 									<p
 										class="hidden text-[0.82rem] font-semibold text-amber-700 dark:text-amber-400"
@@ -159,7 +156,7 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 								</label>
 							</div>
 							<p id="settings-push-help" class="sr-only">
-								Activa o desactiva las notificaciones push en este dispositivo instalado.
+								Activa o desactiva las notificaciones en este dispositivo.
 							</p>
 						</div>
 					</div>
@@ -968,7 +965,7 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 			let hintMessage = '';
 			if (!state.pwaInstalled) {
 				hintMessage =
-					'Instalá Hasel como app en tu teléfono o computadora para gestionar las notificaciones desde aquí.';
+					'Instalá Hasel en tu dispositivo para gestionar las notificaciones desde aquí.';
 			} else if (!state.browserSupported) {
 				hintMessage = 'Este navegador no admite notificaciones push.';
 			} else if (state.permission === 'denied') {
