@@ -137,7 +137,11 @@ if (flashTypeFromCookie) {
             />
         )}
     </head>
-    <body>
+    <body
+        {...(hasSession
+            ? { 'data-org-member-id': String(Astro.locals.userId ?? 0) }
+            : {})}
+    >
         <ClientRouter />
         <slot />
         {hasSession && (
