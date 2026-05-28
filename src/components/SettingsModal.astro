@@ -124,6 +124,44 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Apellido <span class="text-rose-500">*</span></span><input name="last_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 						</div>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electrónico<input name="email" readonly class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-4 py-3 text-[0.95rem] outline-none text-(--on-surface-variant) cursor-not-allowed" /></label>
+
+						<div
+							class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
+							data-settings-push-notifications
+						>
+							<div class="flex items-start justify-between gap-4">
+								<div class="grid min-w-0 flex-1 gap-1.5">
+									<div class="flex items-center gap-2">
+										<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">notifications_active</span>
+										<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Notificaciones push</h4>
+									</div>
+									<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
+										Recibí avisos de nuevas citas, cambios y cancelaciones en todas tus organizaciones.
+									</p>
+									<p class="text-[0.82rem] font-medium leading-relaxed text-(--on-surface-variant)/90">
+										Para activar o modificar esta opción, la app debe estar instalada en tu dispositivo (PWA). No está disponible desde el navegador normal.
+									</p>
+									<p
+										class="hidden text-[0.82rem] font-semibold text-amber-700 dark:text-amber-400"
+										data-settings-push-hint
+										role="status"
+									></p>
+								</div>
+								<label class="settings-switch shrink-0" data-settings-push-switch-label>
+									<input
+										type="checkbox"
+										role="switch"
+										class="settings-switch__input sr-only"
+										data-settings-push-toggle
+										aria-describedby="settings-push-help"
+									/>
+									<span class="settings-switch__track" aria-hidden="true"></span>
+								</label>
+							</div>
+							<p id="settings-push-help" class="sr-only">
+								Activa o desactiva las notificaciones push en este dispositivo instalado.
+							</p>
+						</div>
 					</div>
 
 					<div data-settings-prof-fields class="settings-prof-section hidden gap-5 border-t border-(--shell-border) border-dashed pt-6">
@@ -645,6 +683,11 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 	} from '../lib/workspace-settings-shared';
 	import { showSettingsModalTour } from '../lib/settings-modal-tour';
 	import {
+		disablePushNotifications,
+		enablePushNotifications,
+		getPushNotificationUiState,
+	} from '../lib/fcm-client';
+	import {
 		isAcceptedProfileImage,
 		ProfileImageCropper,
 	} from '../lib/profile-image-crop';
@@ -711,6 +754,9 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 			cropModal: HTMLDialogElement | null;
 			cropMount: HTMLElement | null;
 			confirmCropBtn: HTMLButtonElement | null;
+			pushToggle: HTMLInputElement | null;
+			pushToggleLabel: HTMLLabelElement | null;
+			pushHint: HTMLElement | null;
 		};
 
 		private formEls!: {
@@ -738,6 +784,7 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 		private pendingCropSource: File | null = null;
 		private pendingCropTarget: 'profile' | 'logo' | null = null;
 		private cropBusy = false;
+		private pushToggleBusy = false;
 
 		connectedCallback() {
 			const roleId = Number(this.dataset.roleId || '0');
@@ -773,6 +820,11 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 				cropModal: this.querySelector<HTMLDialogElement>('[data-settings-profile-crop-modal]'),
 				cropMount: this.querySelector<HTMLElement>('[data-settings-profile-crop-mount]'),
 				confirmCropBtn: this.querySelector<HTMLButtonElement>('[data-confirm-settings-profile-crop]'),
+				pushToggle:
+					this.querySelector<HTMLInputElement>('[data-settings-push-toggle]') ?? null,
+				pushToggleLabel:
+					this.querySelector<HTMLLabelElement>('[data-settings-push-switch-label]') ?? null,
+				pushHint: this.querySelector<HTMLElement>('[data-settings-push-hint]') ?? null,
 			};
 
 			this.formEls = {
@@ -814,6 +866,7 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 			this.bindUploadDropzone(this.els.profileDropzone, 'profile', signal);
 			this.bindUploadDropzone(this.els.logoDropzone, 'logo', signal);
 
+			this.els.pushToggle?.addEventListener('change', this.handlePushToggleChange, { signal });
 			this.els.profileForm?.addEventListener('submit', this.handleProfileSubmit, { signal });
 			this.els.securityForm?.addEventListener('submit', this.handleSecuritySubmit, { signal });
 			this.els.appearanceSaveBtn?.addEventListener('click', this.handleAppearanceSave, { signal });
@@ -891,6 +944,7 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 			this.setActiveTab('profile');
 			this.clearFeedback();
 			this.resetSecurityForm();
+			this.syncPushNotificationToggle();
 			this.els.modal?.classList.remove('is-closing');
 			if (this.closingTimer) {
 				window.clearTimeout(this.closingTimer);
@@ -898,6 +952,78 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 			}
 			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
 			void this.loadData();
+		};
+
+		private syncPushNotificationToggle() {
+			const toggle = this.els.pushToggle;
+			if (!toggle) return;
+
+			const state = getPushNotificationUiState();
+			toggle.checked = state.switchChecked;
+			toggle.disabled = this.pushToggleBusy || !state.switchEnabled;
+
+			const hint = this.els.pushHint;
+			if (!hint) return;
+
+			let hintMessage = '';
+			if (!state.pwaInstalled) {
+				hintMessage =
+					'Instalá Hasel como app en tu teléfono o computadora para gestionar las notificaciones desde aquí.';
+			} else if (!state.browserSupported) {
+				hintMessage = 'Este navegador no admite notificaciones push.';
+			} else if (state.permission === 'denied') {
+				hintMessage =
+					'Las notificaciones están bloqueadas en el sistema. Habilitalas en los ajustes del dispositivo o del navegador.';
+			}
+
+			if (hintMessage) {
+				hint.textContent = hintMessage;
+				hint.classList.remove('hidden');
+			} else {
+				hint.textContent = '';
+				hint.classList.add('hidden');
+			}
+
+			this.els.pushToggleLabel?.classList.toggle('is-disabled', !state.switchEnabled);
+		}
+
+		private handlePushToggleChange = async () => {
+			const toggle = this.els.pushToggle;
+			if (!toggle || this.pushToggleBusy) return;
+
+			const shouldEnable = toggle.checked;
+			const previousChecked = !shouldEnable;
+			this.pushToggleBusy = true;
+			this.syncPushNotificationToggle();
+
+			try {
+				if (shouldEnable) {
+					await enablePushNotifications({ fromSettings: true });
+					this.showFeedback(
+						'profile',
+						'Notificaciones activadas en este dispositivo.',
+						'success'
+					);
+				} else {
+					await disablePushNotifications();
+					this.showFeedback(
+						'profile',
+						'Notificaciones desactivadas en este dispositivo.',
+						'success'
+					);
+				}
+				document.dispatchEvent(new CustomEvent('bookmate:fcm-state-changed'));
+			} catch (error) {
+				toggle.checked = previousChecked;
+				const message =
+					error instanceof Error
+						? error.message
+						: 'No fue posible actualizar las notificaciones.';
+				this.showFeedback('profile', message, 'error');
+			} finally {
+				this.pushToggleBusy = false;
+				this.syncPushNotificationToggle();
+			}
 		};
 
 		private handleBackdropClick = (event: MouseEvent) => {
@@ -1445,6 +1571,7 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 		private setActiveTab(tabId: string) {
 			this.els.tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.settingsTab === tabId));
 			this.els.panels.forEach((panel) => panel.classList.toggle('hidden', panel.dataset.settingsPanel !== tabId));
+			if (tabId === 'profile') this.syncPushNotificationToggle();
 		}
 
 		private resetSecurityForm() {
@@ -2151,6 +2278,63 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 		display: grid;
 		grid-template-columns: 1fr;
 		gap: 0.375rem;
+	}
+
+	.settings-switch {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		cursor: pointer;
+	}
+
+	.settings-switch.is-disabled {
+		cursor: not-allowed;
+		opacity: 0.55;
+	}
+
+	.settings-switch__track {
+		position: relative;
+		display: inline-flex;
+		width: 3rem;
+		height: 1.7rem;
+		border-radius: 999px;
+		background: var(--surface-variant);
+		border: 1px solid var(--shell-border);
+		transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.settings-switch__track::after {
+		content: '';
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 1.25rem;
+		height: 1.25rem;
+		border-radius: 50%;
+		background: #fff;
+		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
+		transition: transform 0.2s ease;
+	}
+
+	.settings-switch__input:focus-visible + .settings-switch__track {
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 28%, transparent);
+	}
+
+	.settings-switch__input:checked + .settings-switch__track {
+		background: var(--primary);
+		border-color: color-mix(in srgb, var(--primary) 70%, var(--shell-border));
+	}
+
+	.settings-switch__input:checked + .settings-switch__track::after {
+		transform: translateX(1.3rem);
+	}
+
+	.settings-switch__input:disabled + .settings-switch__track {
+		opacity: 0.7;
+	}
+
+	.settings-push-card {
+		margin-top: 0.25rem;
 	}
 
 	.settings-tab {
