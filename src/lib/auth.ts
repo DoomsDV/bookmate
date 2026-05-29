@@ -1240,6 +1240,8 @@ export const isPublicPath = (pathname: string) => {
 		pathname.startsWith('/api/public') ||
 		pathname === '/p' ||
 		pathname.startsWith('/p/') ||
+		pathname === '/u' ||
+		pathname.startsWith('/u/') ||
 		/^\/[^/]+\/p(\/|$)/.test(pathname) ||
 		pathname === '/r' ||
 		pathname.startsWith('/r/') ||

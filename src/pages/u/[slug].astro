@@ -1,0 +1,357 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import {
+	buildPublicUserProfileMetaDescription,
+	getPublicUserProfileWithOrds,
+	PublicUserProfileApiError,
+	type PublicUserProfile,
+} from '../../lib/public-user-profile';
+import {
+	buildGlobalPublicProfilePath,
+	resolveOgImageUrl,
+	resolvePublicSiteOrigin,
+} from '../../lib/public-profile-url';
+import '../../styles/global.css';
+
+const publicSlug = String(Astro.params.slug || '').trim();
+
+const toSafePageStatus = (status: number, hasProfile: boolean) => {
+	if (hasProfile) return 200;
+	const parsed = Number(status);
+	if (!Number.isInteger(parsed)) return 200;
+	if (parsed >= 400 && parsed < 500) return parsed;
+	return 200;
+};
+
+let profile: PublicUserProfile | null = null;
+let loadError = '';
+let statusCode = 500;
+
+if (!publicSlug) {
+	loadError = 'Enlace de perfil inválido.';
+	statusCode = 404;
+} else {
+	try {
+		profile = await getPublicUserProfileWithOrds(publicSlug);
+		statusCode = 200;
+	} catch (error) {
+		const profileError =
+			error instanceof PublicUserProfileApiError
+				? error
+				: new PublicUserProfileApiError('No fue posible cargar este perfil público.', 500);
+		loadError = profileError.message;
+		statusCode = profileError.status || 500;
+	}
+}
+
+Astro.response.status = toSafePageStatus(statusCode, Boolean(profile));
+const serializedProfile = profile
+	? JSON.stringify(profile).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
+	: '';
+
+const siteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
+const canonicalPath = buildGlobalPublicProfilePath(publicSlug) || Astro.url.pathname;
+const professionalName = profile?.full_name?.trim() || publicSlug;
+
+const pageTitle = profile ? `Agendá con ${professionalName} | Hasel` : 'Reserva online | Hasel';
+const metaDescription = profile
+	? buildPublicUserProfileMetaDescription({
+			fullName: professionalName,
+			locationCount: profile.locations.length,
+		})
+	: 'Reservá turnos online con profesionales en Hasel.';
+const ogImageAlt = profile ? `Foto de perfil de ${professionalName}` : 'Hasel — reservas online';
+const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : resolveOgImageUrl('', siteOrigin);
+---
+
+<Layout
+	pageTitle={pageTitle}
+	metaDescription={metaDescription}
+	canonicalPath={canonicalPath}
+	siteOrigin={siteOrigin}
+	ogImage={ogImage}
+	ogImageAlt={ogImageAlt}
+	ogType="profile"
+	robots={profile ? 'index, follow' : 'noindex, nofollow'}
+>
+	<main class="public-booking-shell relative z-10 mx-auto min-h-screen w-full max-w-4xl px-2 py-8 sm:px-4 md:px-8 lg:py-12 md:max-w-3xl">
+		<div aria-hidden="true" class="pointer-events-none fixed inset-0 z-[-1] bg-(--surface-background)"></div>
+		{
+			loadError || !profile ? (
+				<section class="rounded-3xl border border-rose-200 bg-rose-50 px-8 py-10 text-rose-900 shadow-sm">
+					<h1 class="text-3xl font-semibold tracking-tight">No fue posible abrir este perfil</h1>
+					<p class="mt-3 text-base font-medium text-rose-800">{loadError || 'Perfil no disponible.'}</p>
+					<a
+						href="/"
+						class="mt-6 inline-flex rounded-full bg-rose-100 px-6 py-2.5 text-sm font-medium text-rose-900 no-underline transition hover:bg-rose-200"
+					>
+						Volver al inicio
+					</a>
+				</section>
+			) : (
+				<section
+					class="grid gap-6"
+					data-public-user-booking-root
+					data-public-slug={publicSlug}
+				>
+					<script type="application/json" id="public-user-profile-json" set:html={serializedProfile}></script>
+
+					<header class="relative overflow-hidden rounded-[28px] bg-(--surface-container) p-6 sm:p-8 shadow-sm">
+						<div class="relative grid justify-items-center gap-4 text-center">
+							{profile.image_url ? (
+								<img
+									src={profile.image_url}
+									alt={`Foto de ${profile.full_name}`}
+									loading="lazy"
+									class="public-booking-avatar h-28 w-28 rounded-full border border-(--outline-variant) bg-(--surface-container-high) object-cover sm:h-32 sm:w-32"
+								/>
+							) : (
+								<div
+									class="public-booking-avatar public-booking-avatar--empty h-28 w-28 sm:h-32 sm:w-32"
+									aria-label={`Sin foto de ${profile.full_name}`}
+									role="img"
+								>
+									<span class="material-symbols-rounded">account_circle</span>
+								</div>
+							)}
+							<div class="grid gap-1">
+								<h1 class="text-3xl font-normal tracking-tight text-(--on-surface) sm:text-4xl">
+									{profile.full_name}
+								</h1>
+								<p class="text-sm font-medium text-(--on-surface-variant)">
+									Elegí dónde atenderte y reservá tu turno
+								</p>
+							</div>
+						</div>
+					</header>
+
+					<div class="rounded-3xl bg-(--surface-container) p-4 sm:p-6 shadow-sm">
+						<div class="flex items-center gap-4 md:hidden">
+							<p class="text-sm font-medium tracking-wide text-(--on-surface)" data-step-compact-label aria-live="polite">
+								Paso 1 de 4: Sucursal y servicio
+							</p>
+							<div class="h-2 flex-1 overflow-hidden rounded-full bg-(--surface-container-highest)" aria-hidden="true">
+								<div
+									class="h-full rounded-full bg-(--primary) transition-[width] duration-500 ease-out"
+									data-step-progress-bar
+									style="width:25%"
+								></div>
+							</div>
+						</div>
+						<ol class="hidden gap-3 md:grid md:grid-cols-4" data-step-indicator>
+							<li data-step-item="1" class="step-item-current">1. Sucursal</li>
+							<li data-step-item="2" class="step-item-default">2. Fecha</li>
+							<li data-step-item="3" class="step-item-default">3. Horario</li>
+							<li data-step-item="4" class="step-item-default">4. Datos</li>
+						</ol>
+					</div>
+
+					<div class="hidden rounded-2xl px-5 py-4 text-sm font-medium shadow-sm transition-all" data-booking-toast></div>
+
+					<section data-step-panel="1" class="rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8">
+						<div class="grid gap-2">
+							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">¿Dónde querés atenderte?</h2>
+							<p class="text-base text-(--on-surface-variant)">
+								Seleccioná una sucursal y el servicio que necesitás.
+							</p>
+						</div>
+						<div class="mt-6 grid gap-4" data-user-locations-root></div>
+					</section>
+
+					<section data-step-panel="2" class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8">
+						<div class="grid gap-2">
+							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Seleccioná una fecha</h2>
+							<p class="text-base text-(--on-surface-variant)">
+								Servicio: <span class="font-medium text-(--on-surface)" data-summary-service-inline></span>
+							</p>
+						</div>
+						<div class="mt-6 rounded-3xl border border-(--outline-variant) bg-(--surface-container-low) p-4 sm:p-6">
+							<div class="mb-5 flex items-center justify-between gap-3">
+								<button type="button" data-calendar-prev class="calendar-nav-btn">Anterior</button>
+								<p class="text-base font-medium capitalize tracking-wide text-(--on-surface)" data-calendar-month></p>
+								<button type="button" data-calendar-next class="calendar-nav-btn">Siguiente</button>
+							</div>
+							<div class="mb-3 grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase tracking-wider text-(--on-surface-variant) sm:text-sm">
+								<span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span><span>Dom</span>
+							</div>
+							<div class="grid grid-cols-7 gap-1 sm:gap-2" data-calendar-grid></div>
+						</div>
+						<div class="mt-6">
+							<button type="button" data-back-to-locations class="secondary-action-btn">Volver a sucursales</button>
+						</div>
+					</section>
+
+					<section data-step-panel="3" class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8">
+						<div class="grid gap-2">
+							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Seleccioná un horario</h2>
+							<p class="text-base text-(--on-surface-variant)">
+								<span class="font-medium text-(--on-surface)" data-summary-date-inline></span>
+							</p>
+						</div>
+						<div data-slots-loading class="mt-6 hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)">
+							Consultando horarios disponibles...
+						</div>
+						<div class="mt-6 grid gap-6" data-slots-container></div>
+						<p data-no-slots class="mt-6 hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-5 py-4 text-base font-medium text-(--on-error-container)">
+							No hay horarios disponibles para este día.
+						</p>
+						<div class="mt-6">
+							<button type="button" data-back-to-calendar class="secondary-action-btn">Volver al calendario</button>
+						</div>
+					</section>
+
+					<section data-step-panel="4" class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8">
+						<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Confirmá tus datos</h2>
+						<div class="mt-6 grid gap-5 lg:grid-cols-[1fr_22rem] lg:gap-8">
+							<form class="contents lg:grid lg:gap-5" data-customer-form>
+								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
+									<span>Teléfono (WhatsApp) <span class="text-(--error)" aria-hidden="true">*</span></span>
+									<div class="flex h-14 w-full overflow-hidden rounded-xl border border-(--outline) bg-(--surface-container-lowest) transition focus-within:border-(--primary) focus-within:ring-1 focus-within:ring-(--primary)">
+										<span class="inline-flex items-center border-r border-(--outline) bg-(--surface-container-high) px-3 text-sm font-semibold text-(--on-surface-variant)">+595</span>
+										<input type="tel" name="customer_phone" maxlength="11" required inputmode="numeric" autocomplete="tel-national" class="min-w-0 flex-1 border-0 bg-transparent px-4 text-base text-(--on-surface) outline-none" placeholder="Ej: 981 123 456" />
+									</div>
+									<span class="hidden text-xs font-medium text-(--error)" data-field-error="customer_phone"></span>
+								</label>
+								<label class="hidden grid gap-1.5 text-sm font-medium text-(--on-surface)" data-customer-name-wrapper>
+									<span>Nombre completo <span class="text-(--error)" aria-hidden="true">*</span></span>
+									<input type="text" name="customer_name" maxlength="100" autocomplete="name" class="h-14 rounded-xl border border-(--outline) bg-(--surface-container-lowest) px-4 text-base outline-none transition focus:border-(--primary) focus:ring-1 focus:ring-(--primary)" placeholder="Ej: Juan Perez" />
+									<span class="hidden text-xs font-medium text-(--error)" data-field-error="customer_name"></span>
+								</label>
+								<p data-submit-error class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"></p>
+								<div class="order-3 grid gap-3 sm:flex sm:flex-wrap sm:items-center lg:order-none lg:mt-3">
+									<button type="submit" data-submit-booking class="booking-primary-action inline-flex h-12 w-full items-center justify-center rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary) transition hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+										Confirmar reserva
+									</button>
+									<button type="button" data-pay-deposit-submit class="booking-primary-action is-hidden inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary) transition hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+										<span>Pagar Seña para Confirmar</span>
+										<span aria-hidden="true">🔒</span>
+									</button>
+									<button type="button" data-back-to-slots class="secondary-action-btn w-full sm:w-auto">Volver a horarios</button>
+								</div>
+							</form>
+							<aside class="order-2 rounded-3xl bg-(--surface-container-highest) p-6 shadow-sm lg:order-none">
+								<h3 class="text-xs font-bold uppercase tracking-widest text-(--primary)">Resumen</h3>
+								<ul class="mt-4 grid gap-4 text-base">
+									<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Profesional</span><span class="font-normal text-(--on-surface)" data-summary-professional></span></li>
+									<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Servicio</span><span class="font-normal text-(--on-surface)" data-summary-service></span></li>
+									<li class="hidden grid" data-summary-deposit-wrap><span class="text-sm font-medium text-(--on-surface-variant)">Seña requerida</span><span class="font-semibold text-(--primary)" data-summary-deposit></span></li>
+									<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Fecha</span><span class="font-normal text-(--on-surface)" data-summary-date></span></li>
+									<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Hora</span><span class="font-normal text-(--on-surface)" data-summary-time></span></li>
+									<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Ubicación</span><span class="font-normal text-(--on-surface)" data-summary-location></span></li>
+								</ul>
+							</aside>
+						</div>
+					</section>
+
+					<section data-step-panel="5" class="hidden rounded-[28px] bg-(--tertiary-container) p-6 text-(--on-tertiary-container) shadow-sm sm:p-8">
+						<h2 class="text-3xl font-normal tracking-tight">Reserva confirmada</h2>
+						<p class="mt-2 text-base font-medium opacity-90">
+							¡Todo listo! Te enviamos los detalles a tu WhatsApp.
+						</p>
+						<div class="mt-6 rounded-3xl bg-(--surface-container-lowest) p-6 shadow-sm">
+							<ul class="grid gap-4 text-base">
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Profesional</span><span class="font-normal text-(--on-surface)" data-ticket-professional></span></li>
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Servicio</span><span class="font-normal text-(--on-surface)" data-ticket-service></span></li>
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Fecha</span><span class="font-normal text-(--on-surface)" data-ticket-date></span></li>
+								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Hora</span><span class="font-normal text-(--on-surface)" data-ticket-time></span></li>
+							</ul>
+						</div>
+						<button type="button" data-restart-booking class="mt-8 booking-primary-action inline-flex h-12 items-center justify-center rounded-full bg-(--tertiary) px-8 text-base font-medium text-(--on-tertiary)">
+							Reservar otra cita
+						</button>
+					</section>
+				</section>
+			)
+		}
+	</main>
+</Layout>
+
+<script>
+	import { initializePublicUserBookingPage } from '../../scripts/public-user-booking/index';
+
+	const boot = () => initializePublicUserBookingPage();
+	boot();
+	document.addEventListener('astro:page-load', boot);
+</script>
+
+<style is:global>
+	.public-booking-shell {
+		--surface-background: #141414;
+		--surface-container-lowest: #1b1b1b;
+		--surface-container-low: #1b1b1b;
+		--surface-container: #1b1b1b;
+		--surface-container-high: #1b1b1b;
+		--surface-container-highest: #1b1b1b;
+		--outline: #44474e;
+		--outline-variant: #44474e;
+		--on-surface: #e2e2e9;
+		--on-surface-variant: #c4c6d0;
+		--primary: #a8c7fa;
+		--on-primary: #062e6f;
+		--primary-container: #0842a0;
+		--on-primary-container: #d3e3fd;
+		--primary-hover: #b9d4fa;
+		--tertiary: #c7eccb;
+		--on-tertiary: #0c381c;
+		--tertiary-container: #225031;
+		--on-tertiary-container: #e3ffe6;
+		--error: #ffb4ab;
+		--error-container: #93000a;
+		--on-error-container: #ffdad6;
+	}
+
+	.public-booking-avatar { flex: 0 0 auto; }
+	.public-booking-avatar--empty {
+		display: grid;
+		place-items: center;
+		border-radius: 9999px;
+		border: 1px solid var(--outline-variant);
+		background: var(--surface-background);
+		color: var(--on-surface-variant);
+	}
+	.public-booking-avatar--empty .material-symbols-rounded { font-size: 2.5rem; line-height: 1; }
+
+	.step-item-default, .step-item-current, .step-item-done {
+		border-radius: 100px;
+		padding: 0.5rem 1rem;
+		font-weight: 500;
+		text-align: center;
+		transition: all 0.2s ease-in-out;
+	}
+	.step-item-default { background: transparent; color: var(--on-surface-variant); }
+	.step-item-current { background: var(--primary-container); color: var(--on-primary-container); }
+	.step-item-done { background: var(--surface-container-highest); color: var(--on-surface); }
+	.step-item-done::before { content: '\2713'; display: inline-block; margin-right: 0.4rem; color: var(--primary); }
+
+	.calendar-nav-btn, .secondary-action-btn {
+		display: inline-flex;
+		height: 2.75rem;
+		align-items: center;
+		justify-content: center;
+		border-radius: 9999px;
+		border: 1px solid var(--outline);
+		background: transparent;
+		padding: 0 1.5rem;
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--on-surface);
+		transition: background 0.15s ease;
+	}
+	.calendar-nav-btn { border: 0; color: var(--primary); }
+	.calendar-nav-btn:hover, .secondary-action-btn:hover { background: var(--surface-container-highest); }
+
+	.booking-primary-action.is-hidden { display: none !important; }
+
+	[data-booking-toast].is-error {
+		border: 1px solid var(--error-container);
+		background: var(--error-container);
+		color: var(--on-error-container);
+	}
+	[data-booking-toast].is-success {
+		border: 1px solid var(--tertiary-container);
+		background: var(--tertiary-container);
+		color: var(--on-tertiary-container);
+	}
+
+	.user-location-card--expanded { border-color: color-mix(in srgb, var(--primary) 35%, white 5%); }
+</style>
