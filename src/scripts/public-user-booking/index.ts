@@ -23,6 +23,7 @@ import {
 	formatDuration,
 	formatLocationCardTitle,
 } from './formatters';
+import { createPublicUserMapController, type MapLocation } from './map';
 import {
 	USER_BOOKING_STEP_LABELS,
 	buildLocationCardKey,
@@ -101,7 +102,7 @@ export const initializePublicUserBookingPage = () => {
 	const summaryDeposit = root.querySelector<HTMLElement>('[data-summary-deposit]');
 	const summaryDate = root.querySelector<HTMLElement>('[data-summary-date]');
 	const summaryTime = root.querySelector<HTMLElement>('[data-summary-time]');
-	const summaryLocation = root.querySelector<HTMLElement>('[data-summary-location]');
+	const summaryLocation = root.querySelector<HTMLButtonElement>('[data-summary-location]');
 	const ticketProfessional = root.querySelector<HTMLElement>('[data-ticket-professional]');
 	const ticketService = root.querySelector<HTMLElement>('[data-ticket-service]');
 	const ticketDate = root.querySelector<HTMLElement>('[data-ticket-date]');
@@ -142,6 +143,34 @@ export const initializePublicUserBookingPage = () => {
 	) {
 		return;
 	}
+
+	const applyLocationUpdate = (updated: MapLocation) => {
+		const locationId = toPositiveInt(updated.id_location, 0);
+		if (!locationId) return;
+
+		profile.locations = profile.locations.map((location) =>
+			location.id_location === locationId ? { ...location, ...updated } : location
+		);
+
+		if (selectedContext?.id_location === locationId) {
+			selectedContext = profile.locations.find((location) => location.id_location === locationId) ?? selectedContext;
+			refreshSummary();
+		}
+	};
+
+	const mapController = createPublicUserMapController({
+		root,
+		signal,
+		onLocationUpdated: applyLocationUpdate,
+	});
+
+	const formatLocationLabel = (location: UserBookingContext | null) => {
+		if (!location) return 'Ubicación no disponible';
+		const title = formatLocationCardTitle(location);
+		const address = String(location.address || '').trim();
+		if (title && address && title !== address) return `${title} · ${address}`;
+		return title || address || 'Ubicación no disponible';
+	};
 
 	const today = getTodayStart();
 	let step: UserBookingWizardStep = 1;
@@ -207,7 +236,7 @@ export const initializePublicUserBookingPage = () => {
 		const serviceLabel = selectedService?.name || '-';
 		const timeLabel = selectedTime || '-';
 		const locationLabel = selectedContext
-			? formatLocationCardTitle(selectedContext)
+			? formatLocationLabel(selectedContext)
 			: 'Ubicación no disponible';
 
 		summaryServiceInline.textContent = serviceLabel;
@@ -217,6 +246,7 @@ export const initializePublicUserBookingPage = () => {
 		summaryDate.textContent = formattedDate;
 		summaryTime.textContent = timeLabel;
 		summaryLocation.textContent = locationLabel;
+		summaryLocation.disabled = !mapController?.canShowLocationMap(selectedContext);
 
 		const depositAmount = calculateDepositAmount(selectedService);
 		summaryDepositWrap.classList.toggle('hidden', depositAmount <= 0);
@@ -245,18 +275,15 @@ export const initializePublicUserBookingPage = () => {
 				'user-location-card overflow-hidden rounded-2xl border border-white/5 bg-[#18181b] transition-shadow' +
 				(isExpanded ? ' user-location-card--expanded shadow-lg' : '');
 
+			const headerWrap = document.createElement('div');
+			headerWrap.className = 'px-5 py-4';
+
 			const header = document.createElement('button');
 			header.type = 'button';
 			header.className =
-				'flex w-full items-start justify-between gap-4 px-5 py-4 text-left transition hover:bg-white/[0.03]';
+				'flex w-full items-center justify-between gap-4 text-left transition hover:opacity-90';
 			header.innerHTML = `
-				<span class="grid gap-1.5">
-					<span class="text-base font-semibold text-[var(--on-surface)]">${formatLocationCardTitle(location)}</span>
-					<span class="inline-flex items-start gap-1.5 text-sm font-medium text-[var(--on-surface-variant)]">
-						<span class="material-symbols-rounded text-base leading-none text-[var(--primary)]">location_on</span>
-						<span>${location.address || 'Dirección no disponible'}</span>
-					</span>
-				</span>
+				<span class="text-base font-semibold text-[var(--on-surface)]">${formatLocationCardTitle(location)}</span>
 				<span class="material-symbols-rounded shrink-0 text-[var(--on-surface-variant)] transition-transform ${isExpanded ? 'rotate-180' : ''}">expand_more</span>
 			`;
 
@@ -269,7 +296,44 @@ export const initializePublicUserBookingPage = () => {
 				{ signal }
 			);
 
-			card.appendChild(header);
+			const addressText = location.address?.trim() || 'Dirección no disponible';
+
+			const addressRow = document.createElement('div');
+			addressRow.className =
+				'mt-1.5 inline-flex items-start gap-1.5 text-sm font-medium text-[var(--on-surface-variant)]';
+
+			const addressIcon = document.createElement('span');
+			addressIcon.className = 'material-symbols-rounded text-base leading-none text-[var(--primary)]';
+			addressIcon.textContent = 'location_on';
+			addressIcon.setAttribute('aria-hidden', 'true');
+
+			if (mapController?.canShowLocationMap(location)) {
+				const addressLink = document.createElement('button');
+				addressLink.type = 'button';
+				addressLink.className = 'public-location-link text-left text-sm font-medium';
+				addressLink.textContent = addressText;
+				addressLink.addEventListener(
+					'click',
+					(event) => {
+						event.preventDefault();
+						event.stopPropagation();
+						void mapController.openLocationMap(location, { fetchCoordinates: true });
+					},
+					{ signal }
+				);
+				addressRow.appendChild(addressIcon);
+				addressRow.appendChild(addressLink);
+			} else {
+				const addressLabel = document.createElement('span');
+				addressLabel.textContent = addressText;
+				addressRow.appendChild(addressIcon);
+				addressRow.appendChild(addressLabel);
+			}
+
+			headerWrap.appendChild(header);
+			headerWrap.appendChild(addressRow);
+
+			card.appendChild(headerWrap);
 
 			if (isExpanded) {
 				const body = document.createElement('div');
@@ -623,6 +687,17 @@ export const initializePublicUserBookingPage = () => {
 	backToCalendar.addEventListener('click', () => setStep(2), { signal });
 	backToSlots.addEventListener('click', () => setStep(3), { signal });
 	restartButton.addEventListener('click', resetFlow, { signal });
+
+	summaryLocation.addEventListener(
+		'click',
+		(event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			if (!selectedContext) return;
+			void mapController?.openLocationMap(selectedContext, { fetchCoordinates: true });
+		},
+		{ signal }
+	);
 
 	customerForm.addEventListener('submit', (event) => {
 		event.preventDefault();

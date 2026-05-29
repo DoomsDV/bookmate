@@ -62,6 +62,10 @@ const metaDescription = profile
 	: 'Reservá turnos online con profesionales en Hasel.';
 const ogImageAlt = profile ? `Foto de perfil de ${professionalName}` : 'Hasel — reservas online';
 const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : resolveOgImageUrl('', siteOrigin);
+const googleMapsApiKey =
+	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
+	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
+	'';
 ---
 
 <Layout
@@ -74,7 +78,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 	ogType="profile"
 	robots={profile ? 'index, follow' : 'noindex, nofollow'}
 >
-	<main class="public-booking-shell relative z-10 mx-auto min-h-screen w-full max-w-4xl px-2 py-8 sm:px-4 md:px-8 lg:py-12 md:max-w-3xl">
+	<main class="public-booking-shell relative z-10 mx-auto min-h-screen w-full max-w-4xl px-2 py-8 sm:px-4 md:px-8 lg:py-12 md:max-w-5xl">
 		<div aria-hidden="true" class="pointer-events-none fixed inset-0 z-[-1] bg-(--surface-background)"></div>
 		{
 			loadError || !profile ? (
@@ -93,6 +97,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 					class="grid gap-6"
 					data-public-user-booking-root
 					data-public-slug={publicSlug}
+					data-google-maps-api-key={googleMapsApiKey}
 				>
 					<script type="application/json" id="public-user-profile-json" set:html={serializedProfile}></script>
 
@@ -237,7 +242,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 									<li class="hidden grid" data-summary-deposit-wrap><span class="text-sm font-medium text-(--on-surface-variant)">Seña requerida</span><span class="font-semibold text-(--primary)" data-summary-deposit></span></li>
 									<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Fecha</span><span class="font-normal text-(--on-surface)" data-summary-date></span></li>
 									<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Hora</span><span class="font-normal text-(--on-surface)" data-summary-time></span></li>
-									<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Ubicación</span><span class="font-normal text-(--on-surface)" data-summary-location></span></li>
+									<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Ubicación</span><button type="button" class="public-location-link mt-1 cursor-pointer text-left font-normal disabled:cursor-not-allowed disabled:text-(--on-surface-variant)" data-summary-location>Ubicación no disponible</button></li>
 								</ul>
 							</aside>
 						</div>
@@ -260,6 +265,39 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 							Reservar otra cita
 						</button>
 					</section>
+
+					<dialog class="public-map-modal rounded-[28px] border border-(--outline-variant) bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70" data-public-map-modal>
+						<div class="grid gap-4 p-5 sm:p-6">
+							<div class="flex items-start justify-between gap-4">
+								<div>
+									<h2 class="text-xl font-semibold tracking-tight">Ubicación</h2>
+									<p class="mt-1 text-sm text-(--on-surface-variant)" data-public-map-address></p>
+								</div>
+								<button
+									type="button"
+									class="grid h-10 w-10 place-items-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-highest) hover:text-(--on-surface)"
+									data-public-map-close
+									aria-label="Cerrar mapa"
+								>
+									<span class="material-symbols-rounded">close</span>
+								</button>
+							</div>
+							<div class="public-map-modal-divider"></div>
+							<div class="public-map-canvas-wrap relative h-80 overflow-hidden rounded-3xl border border-(--outline-variant) bg-(--surface-container-high)">
+								<div class="h-full w-full" data-public-map-canvas></div>
+								<div
+									class="public-map-loading absolute inset-0 z-10 hidden place-items-center bg-(--surface-container-high)/85 backdrop-blur-[2px]"
+									data-public-map-loading
+									aria-hidden="true"
+									aria-live="polite"
+									aria-label="Cargando mapa"
+								>
+									<span class="material-symbols-rounded animate-spin text-[1.75rem] text-(--primary)" aria-hidden="true">progress_activity</span>
+								</div>
+							</div>
+							<p class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)" data-public-map-status></p>
+						</div>
+					</dialog>
 				</section>
 			)
 		}
@@ -354,4 +392,77 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 	}
 
 	.user-location-card--expanded { border-color: color-mix(in srgb, var(--primary) 35%, white 5%); }
+
+	.public-map-modal {
+		width: min(92vw, 44rem);
+		max-height: min(90vh, 42rem);
+		margin: auto;
+	}
+
+	.public-map-modal-divider {
+		height: 1px;
+		width: 100%;
+		border-radius: 999px;
+		background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--outline-variant) 72%, white 28%), transparent);
+		opacity: 0.9;
+	}
+
+	.public-map-canvas-wrap.is-loading [data-public-map-canvas] {
+		visibility: hidden;
+	}
+
+	.public-map-loading {
+		display: grid;
+	}
+
+	.public-map-loading.hidden {
+		display: none;
+	}
+
+	.public-location-link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		width: fit-content;
+		border: 0;
+		background: transparent;
+		padding: 0;
+		font: inherit;
+		color: var(--primary);
+		text-decoration: none;
+		transition: color 0.15s ease;
+	}
+
+	.public-location-link:hover:not(:disabled) {
+		color: var(--primary-hover);
+	}
+
+	.public-location-link:hover:not(:disabled) .public-location-link__label {
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.public-location-link:hover:not(:disabled):not(:has(.public-location-link__label)) {
+		text-decoration: underline;
+		text-decoration-thickness: 1px;
+		text-underline-offset: 0.2em;
+	}
+
+	.public-location-link:disabled {
+		color: var(--on-surface-variant);
+		text-decoration: none;
+		cursor: default;
+	}
+
+	.public-location-link .material-symbols-rounded {
+		font-size: 1rem;
+		line-height: 1;
+	}
+
+	.public-booking-shell button:not([disabled]),
+	.public-booking-shell [role='button']:not([aria-disabled='true']),
+	.public-booking-shell a[href] {
+		cursor: pointer;
+	}
 </style>

@@ -42,6 +42,20 @@ export interface ProfessionalScheduleItem {
 	end_time: string;
 }
 
+export interface CrossOrgScheduleItem {
+	org_id_organization: number;
+	organization_name: string;
+	day_of_week: number;
+	start_time: string;
+	end_time: string;
+	location_name?: string;
+}
+
+export interface ProfessionalScheduleBundle {
+	schedules: ProfessionalScheduleItem[];
+	crossOrgSchedules: CrossOrgScheduleItem[];
+}
+
 export interface ScheduleUpdateItem {
 	loc_id_location: number;
 	day_of_week: number;
@@ -343,6 +357,82 @@ const normalizeDay = (value: unknown): ScheduleDay | null => {
 	};
 };
 
+const normalizeCrossOrgScheduleItem = (value: unknown): CrossOrgScheduleItem | null => {
+	if (!value || typeof value !== 'object') return null;
+	const source = value as Record<string, unknown>;
+
+	const orgId = firstNumber(source, ['org_id_organization', 'organization_id']);
+	const dayOfWeek = firstNumber(source, ['day_of_week']);
+	const startTime = firstString(source, ['start_time']);
+	const endTime = firstString(source, ['end_time']);
+	const organizationName = firstString(source, ['organization_name', 'org_name', 'name']);
+
+	if (!Number.isInteger(orgId) || orgId <= 0) return null;
+	if (!Number.isInteger(dayOfWeek) || dayOfWeek < 1 || dayOfWeek > 7) return null;
+	if (!startTime || !endTime || !organizationName) return null;
+
+	return {
+		org_id_organization: orgId,
+		organization_name: organizationName,
+		day_of_week: dayOfWeek,
+		start_time: startTime,
+		end_time: endTime,
+		location_name: firstString(source, ['location_name']) || undefined,
+	};
+};
+
+const parseScheduleBundleResponse = async (
+	response: Response,
+	fallbackMessage: string
+): Promise<ProfessionalScheduleBundle> => {
+	let data: (ApiSuccessResponse & { cross_org_schedules?: unknown[] }) | ApiFailureResponse | null =
+		null;
+
+	try {
+		data = await response.json();
+	} catch {
+		throw new SchedulesApiError('No fue posible interpretar la respuesta del servidor de horarios.', 502);
+	}
+
+	if (
+		!response.ok ||
+		!data ||
+		typeof data !== 'object' ||
+		data.status !== 'success' ||
+		!('data' in data) ||
+		!Array.isArray(data.data)
+	) {
+		const failureData = (data ?? {}) as ApiFailureResponse;
+		throw new SchedulesApiError(
+			(typeof failureData.message === 'string' && failureData.message.trim()) || fallbackMessage,
+			response.status || 400,
+			failureData.details,
+			parseFieldErrors(failureData.errors)
+		);
+	}
+
+	const schedules = data.data
+		.map(normalizeScheduleItem)
+		.filter((item): item is ProfessionalScheduleItem => item !== null)
+		.sort((a, b) => {
+			if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+			if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
+			return a.end_time.localeCompare(b.end_time);
+		});
+
+	const crossOrgRaw = Array.isArray(data.cross_org_schedules) ? data.cross_org_schedules : [];
+	const crossOrgSchedules = crossOrgRaw
+		.map(normalizeCrossOrgScheduleItem)
+		.filter((item): item is CrossOrgScheduleItem => item !== null)
+		.sort((a, b) => {
+			if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
+			if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
+			return a.end_time.localeCompare(b.end_time);
+		});
+
+	return { schedules, crossOrgSchedules };
+};
+
 const normalizeScheduleItem = (value: unknown): ProfessionalScheduleItem | null => {
 	if (!value || typeof value !== 'object') return null;
 	const source = value as Record<string, unknown>;
@@ -533,7 +623,7 @@ export const listScheduleDaysWithOrds = async (token: string): Promise<ScheduleD
 export const getProfessionalScheduleWithOrds = async (
 	token: string,
 	professionalId: number
-): Promise<ProfessionalScheduleItem[]> => {
+): Promise<ProfessionalScheduleBundle> => {
 	ensureToken(token);
 	if (!Number.isInteger(professionalId) || professionalId <= 0) {
 		throw new SchedulesApiError('ID de profesional invalido.', 400);
@@ -547,15 +637,7 @@ export const getProfessionalScheduleWithOrds = async (
 		},
 	});
 
-	const rows = await parseArrayResponse(response, 'No fue posible obtener los horarios del profesional.');
-	return rows
-		.map(normalizeScheduleItem)
-		.filter((item): item is ProfessionalScheduleItem => item !== null)
-		.sort((a, b) => {
-			if (a.day_of_week !== b.day_of_week) return a.day_of_week - b.day_of_week;
-			if (a.start_time !== b.start_time) return a.start_time.localeCompare(b.start_time);
-			return a.end_time.localeCompare(b.end_time);
-		});
+	return parseScheduleBundleResponse(response, 'No fue posible obtener los horarios del profesional.');
 };
 
 export const updateProfessionalScheduleWithOrds = async (

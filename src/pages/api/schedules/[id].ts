@@ -129,11 +129,12 @@ export const GET: APIRoute = async ({ params, locals }) => {
 			throw new SchedulesApiError('ID de profesional invalido.', 400);
 		}
 
-		const schedule = await getProfessionalScheduleWithOrds(token, professionalId);
+		const bundle = await getProfessionalScheduleWithOrds(token, professionalId);
 		return Response.json(
 			{
 				status: 'success',
-				data: schedule,
+				data: bundle.schedules,
+				cross_org_schedules: bundle.crossOrgSchedules,
 			},
 			{ status: 200 }
 		);

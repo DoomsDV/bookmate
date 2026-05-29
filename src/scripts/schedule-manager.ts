@@ -36,6 +36,14 @@ type ScheduleItem = {
 	start_time: string;
 	end_time: string;
 };
+type CrossOrgScheduleItem = {
+	org_id_organization: number;
+	organization_name: string;
+	day_of_week: number;
+	start_time: string;
+	end_time: string;
+	location_name?: string;
+};
 type SlotDraft = {
 	uid: string;
 	loc_id_location: string;
@@ -57,6 +65,26 @@ type DayNodeRefs = {
 	addButton: HTMLButtonElement | null;
 };
 
+const buildCrossOrgOverlapMessage = (params: {
+	dayName: string;
+	slotStart: string;
+	slotEnd: string;
+	otherOrgName: string;
+	otherStart: string;
+	otherEnd: string;
+	otherLocationName?: string;
+}) => {
+	const locationSuffix = params.otherLocationName?.trim()
+		? ` (${params.otherLocationName.trim()})`
+		: '';
+
+	return (
+		`No se puede guardar el turno del ${params.dayName} de ${params.slotStart} a ${params.slotEnd}: ` +
+		`ya existe un horario de ${params.otherStart} a ${params.otherEnd} en la organización "${params.otherOrgName}"${locationSuffix}. ` +
+		`Revisa los horarios en esa organización o ajusta el turno que intentas guardar aquí.`
+	);
+};
+
 interface ApiErrorDetail {
 	message?: string;
 }
@@ -66,6 +94,7 @@ interface ApiResponse<T = unknown> {
 	message?: string;
 	data?: T;
 	errors?: ApiErrorDetail[];
+	cross_org_schedules?: CrossOrgScheduleItem[];
 }
 
 class ScheduleManager extends HTMLElement {
@@ -85,6 +114,7 @@ class ScheduleManager extends HTMLElement {
 	private locations: LocationLov[] = [];
 	private days: Day[] = [];
 	private dayStates: DayState[] = [];
+	private crossOrgSchedules: CrossOrgScheduleItem[] = [];
 	private dayNodes = new Map<number, DayNodeRefs>();
 
 	private roleId = 0;
@@ -973,10 +1003,12 @@ class ScheduleManager extends HTMLElement {
 				throw new Error(this.toBackendErrorMessage(data, 'No fue posible cargar la agenda del profesional.'));
 			}
 
+			this.crossOrgSchedules = Array.isArray(data.cross_org_schedules) ? data.cross_org_schedules : [];
 			this.applySchedule(data.data);
 			this.renderPlanner();
 			this.setDirty(false);
 		} catch (error) {
+			this.crossOrgSchedules = [];
 			this.applySchedule([]);
 			this.renderPlanner();
 			this.showError(error instanceof Error ? error.message : 'No fue posible cargar la agenda.');
@@ -1040,6 +1072,45 @@ class ScheduleManager extends HTMLElement {
 		return { payload };
 	}
 
+	private validateCrossOrgOverlap(
+		payload: Array<{
+			day_of_week: number;
+			start_time: string;
+			end_time: string;
+		}>
+	): string | null {
+		if (this.crossOrgSchedules.length === 0) return null;
+
+		for (const slot of payload) {
+			const startMinutes = this.toMinutes(slot.start_time);
+			const endMinutes = this.toMinutes(slot.end_time);
+
+			for (const other of this.crossOrgSchedules) {
+				if (other.day_of_week !== slot.day_of_week) continue;
+
+				const otherStart = this.toMinutes(other.start_time);
+				const otherEnd = this.toMinutes(other.end_time);
+				if (startMinutes >= otherEnd || endMinutes <= otherStart) continue;
+
+				const dayName =
+					this.dayStates.find((day) => day.day_of_week === slot.day_of_week)?.name ||
+					`Día ${slot.day_of_week}`;
+
+				return buildCrossOrgOverlapMessage({
+					dayName,
+					slotStart: slot.start_time,
+					slotEnd: slot.end_time,
+					otherOrgName: other.organization_name,
+					otherStart: other.start_time,
+					otherEnd: other.end_time,
+					otherLocationName: other.location_name,
+				});
+			}
+		}
+
+		return null;
+	}
+
 	private async saveSchedule(): Promise<void> {
 		if (!this.canEdit) {
 			this.showError('No tienes permisos para guardar horarios.');
@@ -1054,6 +1125,12 @@ class ScheduleManager extends HTMLElement {
 		const result = this.validateAndBuildPayload();
 		if ('error' in result) {
 			this.showError(result.error ?? 'No fue posible validar los horarios.');
+			return;
+		}
+
+		const crossOrgError = this.validateCrossOrgOverlap(result.payload ?? []);
+		if (crossOrgError) {
+			this.showError(crossOrgError);
 			return;
 		}
 
