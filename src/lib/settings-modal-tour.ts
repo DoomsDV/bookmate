@@ -8,10 +8,7 @@ export type SettingsModalTourContext = {
 };
 
 function isPublicProfileFieldVisible() {
-	const field = document.querySelector(PUBLIC_PROFILE_FIELD_SELECTOR);
-	if (!field) return false;
-	const section = field.closest('[data-settings-prof-fields]');
-	return section ? !section.classList.contains('hidden') : true;
+	return Boolean(document.querySelector(PUBLIC_PROFILE_FIELD_SELECTOR));
 }
 
 function buildTourSteps(): DriveStep[] {
@@ -21,9 +18,9 @@ function buildTourSteps(): DriveStep[] {
 		{
 			element: PUBLIC_PROFILE_FIELD_SELECTOR,
 			popover: {
-				title: 'URL del perfil público',
+				title: 'Enlace personal',
 				description:
-					'Define el enlace que compartirás con tus clientes para reservar en línea. El prefijo es fijo; solo editas la parte final (por ejemplo, tu nombre). Usa el botón copiar para compartir la URL completa.',
+					'Define tu enlace único para compartir en redes (hasel.app/u/tu-nombre). El prefijo es fijo; solo editas la parte final. Usa el botón copiar para compartir la URL completa.',
 				side: 'bottom',
 				align: 'start',
 			},
@@ -31,7 +28,7 @@ function buildTourSteps(): DriveStep[] {
 	];
 }
 
-/** Guía repetible sobre la URL del perfil público (modal de ajustes abierto). */
+/** Guía repetible sobre el enlace personal (modal de ajustes abierto). */
 export function showSettingsModalTour(context: SettingsModalTourContext = {}) {
 	const steps = buildTourSteps();
 	if (steps.length === 0) return;

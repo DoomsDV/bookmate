@@ -64,6 +64,7 @@ interface ImportMetaEnv {
     readonly ORDS_AI_GET_CHAT_MESSAGES?: string;
     readonly ORDS_AI_DELETE_CHAT_SESSION?: string;
     readonly ORDS_PROFILE_ME_URL?: string;
+    readonly ORDS_PROFILE_PUBLIC_SLUG_SUGGEST_URL?: string;
     readonly ORDS_WORKSPACE_URL?: string;
     readonly ORDS_DEPARTMENTS_URL?: string;
     readonly ORDS_ROLES_URL?: string;

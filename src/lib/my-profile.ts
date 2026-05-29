@@ -6,12 +6,21 @@ export const MY_PROFILE_URL = resolveOrdsApiUrl(
 	'/profile/me'
 );
 
+export const MY_PROFILE_PUBLIC_SLUG_SUGGEST_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_PROFILE_PUBLIC_SLUG_SUGGEST_URL,
+	'ORDS_PROFILE_PUBLIC_SLUG_SUGGEST_URL',
+	'/profile/me/public-slug/suggest'
+);
+
+export interface MyPublicProfile {
+	public_slug: string;
+	image_url: string;
+}
+
 export interface MyProfileProfessional {
 	id_professional: number;
-	profile_slug: string;
 	phone_number: string;
 	specialty: string;
-	image_url: string;
 }
 
 export interface MyProfileData {
@@ -21,6 +30,7 @@ export interface MyProfileData {
 	email: string;
 	role_id: number;
 	org_id: number;
+	public_profile?: MyPublicProfile;
 	professional_profile?: MyProfileProfessional;
 }
 
@@ -28,7 +38,7 @@ export interface UpdateMyProfilePayload {
 	first_name?: string;
 	last_name?: string;
 	phone_number?: string;
-	profile_slug?: string;
+	public_slug?: string;
 	image_base64?: string;
 	image_name?: string;
 	image_mime?: string;
@@ -43,6 +53,7 @@ interface MyProfileSuccessResponse {
 	status: 'success';
 	data?: unknown;
 	message?: string;
+	slug?: string;
 }
 
 interface MyProfileFailureResponse {
@@ -89,6 +100,16 @@ const parseFieldErrors = (value: unknown): MyProfileFieldError[] => {
 	});
 };
 
+const normalizePublicProfile = (value: unknown): MyPublicProfile | undefined => {
+	if (!value || typeof value !== 'object') return undefined;
+	const source = value as Record<string, unknown>;
+
+	return {
+		public_slug: String(source.public_slug || '').trim(),
+		image_url: String(source.image_url || '').trim(),
+	};
+};
+
 const normalizeProfessionalProfile = (value: unknown): MyProfileProfessional | undefined => {
 	if (!value || typeof value !== 'object') return undefined;
 	const source = value as Record<string, unknown>;
@@ -97,10 +118,8 @@ const normalizeProfessionalProfile = (value: unknown): MyProfileProfessional | u
 
 	return {
 		id_professional: idProfessional,
-		profile_slug: String(source.profile_slug || '').trim(),
 		phone_number: String(source.phone_number || '').trim(),
 		specialty: String(source.specialty || '').trim(),
-		image_url: String(source.image_url || '').trim(),
 	};
 };
 
@@ -117,6 +136,7 @@ const normalizeMyProfile = (value: unknown): MyProfileData | null => {
 		email: String(source.email || '').trim(),
 		role_id: toNumber(source.role_id, 0),
 		org_id: toNumber(source.org_id, 0),
+		public_profile: normalizePublicProfile(source.public_profile),
 		professional_profile: normalizeProfessionalProfile(source.professional_profile),
 	};
 };
@@ -181,6 +201,33 @@ const parseProfileActionResponse = async (response: Response) => {
 	};
 };
 
+const parseSlugSuggestResponse = async (response: Response) => {
+	let data: MyProfileSuccessResponse | MyProfileFailureResponse | null = null;
+	try {
+		data = await response.json();
+	} catch {
+		throw new MyProfileApiError('No fue posible interpretar la sugerencia de enlace.', 502);
+	}
+
+	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
+		const failureData = (data ?? {}) as MyProfileFailureResponse;
+		throw new MyProfileApiError(
+			(typeof failureData.message === 'string' && failureData.message.trim()) ||
+				'No fue posible sugerir el enlace personal.',
+			response.status || 400,
+			failureData.details,
+			parseFieldErrors(failureData.errors)
+		);
+	}
+
+	const slug = typeof data.slug === 'string' ? data.slug.trim() : '';
+	if (!slug) {
+		throw new MyProfileApiError('No fue posible interpretar la sugerencia de enlace.', 502);
+	}
+
+	return { slug };
+};
+
 export const getMyProfileWithOrds = async (token: string) => {
 	if (!token) throw new MyProfileApiError('Token de acceso requerido.', 401);
 
@@ -209,4 +256,26 @@ export const updateMyProfileWithOrds = async (token: string, payload: UpdateMyPr
 	});
 
 	return parseProfileActionResponse(response);
+};
+
+export const suggestPublicSlugWithOrds = async (token: string, fullName: string) => {
+	if (!token) throw new MyProfileApiError('Token de acceso requerido.', 401);
+
+	const safeName = String(fullName || '').trim();
+	if (!safeName) {
+		throw new MyProfileApiError('Debe proporcionar un nombre para generar el enlace.', 400);
+	}
+
+	const url = new URL(MY_PROFILE_PUBLIC_SLUG_SUGGEST_URL);
+	url.searchParams.set('name', safeName);
+
+	const response = await fetch(url.toString(), {
+		method: 'GET',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	return parseSlugSuggestResponse(response);
 };

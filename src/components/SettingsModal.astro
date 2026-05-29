@@ -3,7 +3,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 import { ROLES } from '../config/roles';
 
 import {
-	buildPublicProfilePrefix,
+	buildGlobalPublicProfilePrefix,
 	formatPublicProfilePrefixDisplay,
 } from '../lib/public-profile-url';
 
@@ -21,18 +21,17 @@ const rawPublicProfileDomain = String(
 ).trim();
 const publicProfileDomain =
 	rawPublicProfileDomain.replace(/^https?:\/\//i, '').replace(/\/+$/, '') || Astro.url.host;
-const publicProfileSlugPrefix = buildPublicProfilePrefix(
-	rawPublicProfileDomain || Astro.url.origin,
-	organizationSlug
+const globalPublicProfilePrefix = buildGlobalPublicProfilePrefix(
+	rawPublicProfileDomain || Astro.url.origin
 );
-const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicProfileSlugPrefix);
+const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(globalPublicProfilePrefix);
 ---
 
 <settings-manager
 	data-role-id={String(roleId)}
 	data-public-profile-domain={publicProfileDomain}
 	data-organization-slug={organizationSlug}
-	data-public-profile-prefix={publicProfileSlugPrefix}
+	data-global-public-profile-prefix={globalPublicProfilePrefix}
 >
 <dialog
 	data-settings-modal
@@ -161,16 +160,23 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 						</div>
 					</div>
 
-					<div data-settings-prof-fields class="settings-prof-section hidden gap-5 border-t border-(--shell-border) border-dashed pt-6">
+					<div class="grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
+						<div class="grid gap-1">
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Perfil público personal</h3>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
+								Tu enlace único y foto para compartir en redes. La foto visible en la agenda de cada negocio la gestiona el administrador.
+							</p>
+						</div>
+
 						<div class="settings-upload-card settings-upload-card--profile" data-settings-profile-dropzone>
 							<div class="settings-upload-card__preview settings-upload-card__preview--avatar">
-								<img data-settings-profile-preview class="hidden" alt="Foto de perfil" />
+								<img data-settings-profile-preview class="hidden" alt="Foto de perfil personal" />
 								<div data-settings-profile-placeholder class="settings-upload-card__placeholder">
 									<span class="material-symbols-rounded">account_circle</span>
 								</div>
 							</div>
 							<div class="settings-upload-card__content">
-								<h3 class="settings-upload-card__title">Avatar público <span class="text-rose-500">*</span></h3>
+								<h3 class="settings-upload-card__title">Foto personal <span class="text-rose-500">*</span></h3>
 								<div class="settings-upload-card__actions">
 									<label for="settings-profile-image-input" class="settings-upload-card__button">
 										<span class="material-symbols-rounded">add_photo_alternate</span>
@@ -181,12 +187,45 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 								</div>
 							</div>
 						</div>
+
+						<label class="settings-public-profile-field" data-settings-public-profile-field>
+							<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">Enlace personal <span class="text-rose-500">*</span></span>
+							<div class="flex min-w-0">
+								<span
+									data-settings-profile-slug-prefix
+									class="public-profile-url-prefix inline-flex shrink-0 items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-2.5 text-xs font-semibold text-(--on-surface-variant) shadow-sm sm:px-3 sm:text-sm"
+									title={globalPublicProfilePrefix}
+								>
+									{globalPublicProfilePrefixDisplay}
+								</span>
+								<input
+									type="text"
+									name="public_slug"
+									maxlength="100"
+									class="block w-full min-w-0 flex-1 rounded-none border border-l-0 border-r-0 border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+									placeholder="maria-lopez"
+								/>
+								<button
+									type="button"
+									class="inline-flex w-12 shrink-0 items-center justify-center rounded-r-2xl border border-l border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--surface-container-high) hover:text-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+									data-copy-settings-profile-url
+									aria-label="Copiar enlace personal"
+									title="Copiar URL"
+								>
+									<span class="material-symbols-rounded text-[1.1rem]" data-copy-settings-profile-url-icon>content_copy</span>
+								</button>
+							</div>
+							<span class="text-[0.84rem] font-semibold text-(--on-surface-variant)">
+								Este será tu enlace directo para que los clientes te encuentren en Hasel.
+							</span>
+							<span data-settings-profile-field-error="public_slug" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
+						</label>
 					</div>
 
 					<div data-settings-prof-fields class="settings-prof-section hidden gap-5 border-t border-(--shell-border) border-dashed pt-6">
 						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Perfil público</h3>
-							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Estos datos se muestran a tus clientes en internet.</p>
+							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Datos profesionales en este negocio</h3>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Información pública asociada a la organización activa.</p>
 						</div>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span>Teléfono público <span class="text-rose-500">*</span></span>
@@ -206,38 +245,6 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 							</div>
 							<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">Se guardará como número paraguayo con prefijo internacional.</span>
 							<span data-settings-profile-field-error="phone_number" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
-						</label>
-						<label class="settings-public-profile-field" data-settings-public-profile-field>
-							<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">URL del perfil público <span class="text-rose-500">*</span></span>
-							<div class="flex min-w-0">
-								<span
-									data-settings-profile-slug-prefix
-									class="public-profile-url-prefix inline-flex shrink-0 items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-2.5 text-xs font-semibold text-(--on-surface-variant) shadow-sm sm:px-3 sm:text-sm"
-									title={publicProfileSlugPrefix}
-								>
-									{publicProfileSlugPrefixDisplay}
-								</span>
-								<input
-									type="text"
-									name="profile_slug"
-									maxlength="100"
-									class="block w-full min-w-0 flex-1 rounded-none border border-l-0 border-r-0 border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-									placeholder="maria-lopez"
-								/>
-								<button
-									type="button"
-									class="inline-flex w-12 shrink-0 items-center justify-center rounded-r-2xl border border-l border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--surface-container-high) hover:text-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
-									data-copy-settings-profile-url
-									aria-label="Copiar URL del perfil público"
-									title="Copiar URL"
-								>
-									<span class="material-symbols-rounded text-[1.1rem]" data-copy-settings-profile-url-icon>content_copy</span>
-								</button>
-							</div>
-							<span class="text-[0.84rem] font-semibold text-(--on-surface-variant)">
-								Este será el enlace directo para que los clientes agenden contigo.
-							</span>
-							<span data-settings-profile-field-error="profile_slug" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
 					</div>
 
@@ -722,7 +729,7 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 		private isAdmin = false;
 		private publicProfileDomain = '';
 		private organizationSlug = '';
-		private publicProfilePrefix = '';
+		private globalPublicProfilePrefix = '';
 
 		private els!: {
 			modal: HTMLDialogElement | null;
@@ -788,7 +795,7 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 			this.isAdmin = roleId === 1;
 			this.publicProfileDomain = String(this.dataset.publicProfileDomain || '');
 			this.organizationSlug = String(this.dataset.organizationSlug || '').trim();
-			this.publicProfilePrefix = String(this.dataset.publicProfilePrefix || '').trim();
+			this.globalPublicProfilePrefix = String(this.dataset.globalPublicProfilePrefix || '').trim();
 
 			this.els = {
 				modal: this.querySelector<HTMLDialogElement>('[data-settings-modal]'),
@@ -828,10 +835,10 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 				firstNameInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="first_name"]') ?? null,
 				lastNameInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="last_name"]') ?? null,
 				phoneInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="phone_number"]') ?? null,
-				profileSlugInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="profile_slug"]') ?? null,
+				profileSlugInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="public_slug"]') ?? null,
 				profileSlugPrefix: this.els.profileForm?.querySelector<HTMLElement>('[data-settings-profile-slug-prefix]') ?? null,
 				phoneError: this.els.profileForm?.querySelector<HTMLElement>('[data-settings-profile-field-error="phone_number"]') ?? null,
-				profileSlugError: this.els.profileForm?.querySelector<HTMLElement>('[data-settings-profile-field-error="profile_slug"]') ?? null,
+				profileSlugError: this.els.profileForm?.querySelector<HTMLElement>('[data-settings-profile-field-error="public_slug"]') ?? null,
 				profileImageInput: this.els.profileForm?.querySelector<HTMLInputElement>('[name="profile_image"]') ?? null,
 				brandingLogoInput: this.els.brandingForm?.querySelector<HTMLInputElement>('[name="logo_file"]') ?? null,
 			};
@@ -1053,7 +1060,7 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 		private getPublicProfileUrl() {
 			const slug = String(this.formEls.profileSlugInput?.value || '').trim().replace(/^\/+/, '');
 			if (!slug) return '';
-			const prefix = String(this.publicProfilePrefix || this.getPublicProfilePrefix()).trim();
+			const prefix = String(this.globalPublicProfilePrefix || this.getPublicProfilePrefix()).trim();
 			if (!prefix) return `/${slug}`;
 			return `${prefix.replace(/\/+$/, '')}/${slug.replace(/^\/+/, '')}`;
 		}
@@ -1350,14 +1357,13 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 		}
 
 		private getPublicProfilePrefix() {
-			if (this.publicProfilePrefix) return this.publicProfilePrefix;
-			const orgSlug = String(this.organizationSlug || '').trim();
+			if (this.globalPublicProfilePrefix) return this.globalPublicProfilePrefix;
 			const configuredDomain = String(this.publicProfileDomain || '')
 				.replace(/^https?:\/\//i, '')
 				.replace(/\/+$/, '')
 				.trim();
 			const host = configuredDomain || String(window.location?.host || '').trim();
-			const pathSuffix = orgSlug ? `/${encodeURIComponent(orgSlug)}/p/` : '/p/';
+			const pathSuffix = '/u/';
 			if (!host) return pathSuffix;
 			return `https://${host}${pathSuffix}`;
 		}
@@ -1432,7 +1438,7 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 					this.formEls.phoneError.classList.remove('hidden');
 					rendered = true;
 				}
-				if (field === 'profile_slug' && this.formEls.profileSlugError) {
+				if (field === 'public_slug' && this.formEls.profileSlugError) {
 					this.formEls.profileSlugError.textContent = message;
 					this.formEls.profileSlugError.classList.remove('hidden');
 					rendered = true;
@@ -1513,8 +1519,6 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 
 		private queueSlugSuggestion = () => {
 			if (!this.formEls.profileSlugInput) return;
-			const profVisible = !this.els.profFields[0]?.classList.contains('hidden');
-			if (!profVisible) return;
 			const fullName = this.getSlugSourceName();
 			if (!fullName) return;
 			if (this.slugManuallyEdited && this.formEls.profileSlugInput.value.trim() !== '') return;
@@ -1524,7 +1528,7 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 			this.slugSuggestTimer = window.setTimeout(async () => {
 				try {
 					const response = await fetch(
-						`/api/professionals/slug/suggest?name=${encodeURIComponent(fullName)}`,
+						`/api/profile/public-slug/suggest?name=${encodeURIComponent(fullName)}`,
 						{ method: 'GET', headers: { Accept: 'application/json' } }
 					);
 					let data: ApiResponse | null = null;
@@ -1601,16 +1605,18 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 			this.slugManuallyEdited = false;
 			this.releaseProfilePreviewObjectUrl();
 
+			const publicProfile = profile?.public_profile;
+			if (this.formEls.profileSlugInput) {
+				this.setSuggestedSlug(String(publicProfile?.public_slug || '').trim());
+				if (this.formEls.profileSlugInput.value.trim() === '') this.queueSlugSuggestion();
+			}
+			this.setProfilePreview(publicProfile?.image_url || '');
+			if (this.els.profileFileName) this.els.profileFileName.textContent = 'Cambiar foto';
+
 			const prof = profile?.professional_profile;
 			if (prof) {
 				this.els.profFields.forEach((el) => el.classList.remove('hidden'));
 				if (phone) phone.value = this.formatParaguayPhoneLocal(prof.phone_number || '');
-				if (this.formEls.profileSlugInput) {
-					this.setSuggestedSlug(String(prof.profile_slug || '').trim());
-					if (this.formEls.profileSlugInput.value.trim() === '') this.queueSlugSuggestion();
-				}
-				this.setProfilePreview(prof.image_url || '');
-				if (this.els.profileFileName) this.els.profileFileName.textContent = 'Cambiar foto';
 				if (this.els.profileNote) {
 					this.els.profileNote.classList.add('hidden');
 					this.els.profileNote.textContent = '';
@@ -1618,11 +1624,9 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 			} else {
 				this.els.profFields.forEach((el) => el.classList.add('hidden'));
 				if (phone) phone.value = '';
-				if (this.formEls.profileSlugInput) this.setSuggestedSlug('');
-				this.setProfilePreview('');
-				if (this.els.profileFileName) this.els.profileFileName.textContent = 'Cambiar foto';
 				if (this.els.profileNote) {
-					this.els.profileNote.textContent = 'Esta cuenta no tiene perfil profesional público. Solo se guarda nombre y apellido.';
+					this.els.profileNote.textContent =
+						'Esta cuenta no tiene ficha profesional en la organización activa. Solo se guardan tus datos personales y enlace global.';
 					this.els.profileNote.classList.remove('hidden');
 				}
 			}
@@ -1980,6 +1984,16 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 
 			const payload: Record<string, string | number> = { first_name: first, last_name: last };
 			const profVisible = !this.els.profFields[0]?.classList.contains('hidden');
+
+			const publicSlug = String(this.formEls.profileSlugInput?.value || '').trim();
+			if (publicSlug) payload.public_slug = publicSlug;
+
+			const imageFile = this.els.profileForm.querySelector<HTMLInputElement>('[name="profile_image"]')?.files?.[0];
+			if (imageFile) {
+				payload.image_base64 = await this.fileToBase64(imageFile);
+				payload.image_name = imageFile.name;
+				payload.image_mime = imageFile.type || 'application/octet-stream';
+			}
 			
 			if (profVisible) {
 				const rawPhone = String(this.formEls.phoneInput?.value || '').trim();
@@ -1992,15 +2006,6 @@ const publicProfileSlugPrefixDisplay = formatPublicProfilePrefixDisplay(publicPr
 					payload.phone_number = parsedPhone.e164;
 				} else {
 					payload.phone_number = '';
-				}
-				const profileSlug = String(this.formEls.profileSlugInput?.value || '').trim();
-				if (profileSlug) payload.profile_slug = profileSlug;
-
-				const imageFile = this.els.profileForm.querySelector<HTMLInputElement>('[name="profile_image"]')?.files?.[0];
-				if (imageFile) {
-					payload.image_base64 = await this.fileToBase64(imageFile);
-					payload.image_name = imageFile.name;
-					payload.image_mime = imageFile.type || 'application/octet-stream';
 				}
 			}
 

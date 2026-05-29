@@ -1,5 +1,40 @@
 const trimSlashes = (value: string) => String(value || '').trim().replace(/^\/+|\/+$/g, '');
 
+export const buildGlobalPublicProfilePath = (publicSlug: string): string => {
+	const slug = trimSlashes(publicSlug);
+	if (!slug) return '';
+	return `/u/${encodeURIComponent(slug)}`;
+};
+
+export const buildGlobalPublicProfileUrl = (publicDomain: string, publicSlug: string): string => {
+	const path = buildGlobalPublicProfilePath(publicSlug);
+	if (!path) return '';
+
+	const domain = String(publicDomain || '').trim();
+	if (!domain) return path;
+
+	const withScheme = /^https?:\/\//i.test(domain) ? domain : `https://${domain}`;
+	try {
+		return `${new URL(withScheme).origin}${path}`;
+	} catch {
+		return `${domain.replace(/\/+$/, '')}${path}`;
+	}
+};
+
+export const buildGlobalPublicProfilePrefix = (publicDomain: string): string => {
+	const domain = String(publicDomain || '').trim();
+	const pathSuffix = '/u/';
+
+	if (!domain) return pathSuffix;
+
+	const withScheme = /^https?:\/\//i.test(domain) ? domain : `https://${domain}`;
+	try {
+		return `${new URL(withScheme).origin}${pathSuffix}`;
+	} catch {
+		return `${domain.replace(/\/+$/, '')}${pathSuffix}`;
+	}
+};
+
 export const buildPublicProfilePath = (organizationSlug: string, professionalSlug: string): string => {
 	const org = trimSlashes(organizationSlug);
 	const pro = trimSlashes(professionalSlug);

@@ -41,6 +41,7 @@ const parseBody = async (request: Request) => {
 		last_name: formData.get('last_name'),
 		phone_number: formData.get('phone_number'),
 		profile_slug: formData.get('profile_slug'),
+		public_slug: formData.get('public_slug'),
 		image_base64: formData.get('image_base64'),
 		image_name: formData.get('image_name'),
 		image_mime: formData.get('image_mime'),
@@ -60,7 +61,10 @@ const parseUpdatePayload = (source: any): UpdateMyProfilePayload => {
 	if (phone !== '') payload.phone_number = phone;
 
 	const profileSlug = String(source?.profile_slug ?? '').trim();
-	if (profileSlug !== '') payload.profile_slug = profileSlug;
+	if (profileSlug !== '') payload.public_slug = profileSlug;
+
+	const publicSlug = String(source?.public_slug ?? '').trim();
+	if (publicSlug !== '') payload.public_slug = publicSlug;
 
 	const imageBase64 = String(source?.image_base64 ?? '').trim();
 	if (imageBase64 !== '') {
