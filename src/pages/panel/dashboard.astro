@@ -437,7 +437,7 @@ const toPageHref = (page: number) => {
 	<AppAlert />
 
 	<dialog
-		class="dashboard-ai-modal m-auto h-[min(78dvh,40rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] max-md:mt-auto max-md:mb-0 max-md:h-[min(78dvh,40rem)] max-md:w-screen max-md:max-w-none max-md:rounded-t-[1.8rem] max-md:rounded-b-none"
+		class="dashboard-ai-modal m-auto h-[min(78dvh,40rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] max-md:mt-auto max-md:mb-0 max-md:w-screen max-md:max-w-none max-md:rounded-t-[1.8rem] max-md:rounded-b-none"
 		data-ai-summary-modal
 	>
 		<div class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-5">
@@ -824,7 +824,7 @@ const toPageHref = (page: number) => {
 	const TEAM_OVERVIEW_TTL_MS = 120000;
 	const TEAM_OVERVIEW_LIMIT = 4;
 	const TEAM_AVATAR_FALLBACK_PALETTE = ['#2563eb', '#0f766e', '#be185d', '#7c3aed'];
-	const AI_SUMMARY_CACHE_KEY = 'hasel:dashboard-ai-summary:v3';
+	const AI_SUMMARY_CACHE_KEY = 'hasel:dashboard-ai-summary:v4';
 	const AI_SUMMARY_TTL_MS = 10 * 60 * 1000;
 	const DEFAULT_AI_SUMMARY_SHORT = '¡Buen día! Preparate para una excelente jornada de trabajo.';
 	const DEFAULT_AI_SUMMARY_FULL = DEFAULT_AI_SUMMARY_SHORT;
@@ -1222,7 +1222,6 @@ const toPageHref = (page: number) => {
 		const stateNode = card.querySelector<HTMLElement>('[data-ai-summary-state]');
 		const bodyNode = card.querySelector<HTMLElement>('[data-ai-summary-body]');
 		const previewNode = card.querySelector<HTMLElement>('[data-ai-summary-preview]');
-		const moreButton = card.querySelector<HTMLButtonElement>('[data-open-ai-summary-modal]');
 		const roleId = Number(card.getAttribute('data-role-id') ?? '0');
 		const fallbackShort =
 			sanitizeAiSummary(card.getAttribute('data-default-summary-short')) || DEFAULT_AI_SUMMARY_SHORT;
