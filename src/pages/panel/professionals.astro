@@ -1638,10 +1638,12 @@ const toPageHref = (page: number) => {
 				if (formEls.role) formEls.role.value = user.rol_id_role || '';
 				this.editingUserId = Number(user.id_user || 0) || null;
 				this.editingRoleId = Number(user.rol_id_role || 0) || null;
-				this.editingUserIsActive = user.is_active === 0 ? 0 : 1;
-				this.editingProfIsActive = prof.is_active === 0 ? 0 : 1;
+				const userIsActive = user.is_active === 0 ? 0 : 1;
+				const profIsActive = prof.is_active === 0 ? 0 : 1;
+				this.editingUserIsActive = userIsActive;
+				this.editingProfIsActive = profIsActive;
+				this.loadMemberStatusFromRecord(userIsActive, profIsActive);
 				this.applySelfAdminFieldRestrictions();
-				this.loadMemberStatusFromRecord(this.editingUserIsActive, this.editingProfIsActive);
 				if (formEls.phone) formEls.phone.value = this.formatParaguayPhoneLocal(prof.phone_number || '');
 				if (formEls.slug) formEls.slug.value = prof.profile_slug || '';
 				

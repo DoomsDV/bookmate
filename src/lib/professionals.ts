@@ -43,6 +43,15 @@ export interface Professional {
 	services: number[];
 }
 
+/** Misma regla que el modal: inactivo solo cuando panel y visibilidad pública están apagados. */
+export const isProfessionalAccountActive = (professional: Professional): boolean => {
+	if (professional.membership_status === 'pending_invite') return false;
+
+	const userActive = professional.user.is_active === 1 ? 1 : 0;
+	const profActive = professional.is_active === 1 ? 1 : 0;
+	return userActive === 1 || profActive === 1;
+};
+
 export interface ProfessionalsListMeta {
 	current_page: number;
 	per_page: number;

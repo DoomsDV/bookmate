@@ -1,5 +1,5 @@
 ---
-import type { Professional } from '../lib/professionals';
+import { isProfessionalAccountActive, type Professional } from '../lib/professionals';
 
 interface Props {
 	professionals: Professional[];
@@ -37,8 +37,14 @@ const cardItems = professionals.map((professional) => ({
 	profileImageUrl: toProfileImageUrl(professional),
 }));
 
-const activeCount = professionals.filter((item) => item.is_active === 1).length;
-const inactiveCount = professionals.length - activeCount;
+const activeCount = professionals.filter(
+	(item) =>
+		item.membership_status !== 'pending_invite' && isProfessionalAccountActive(item)
+).length;
+const inactiveCount = professionals.filter(
+	(item) =>
+		item.membership_status !== 'pending_invite' && !isProfessionalAccountActive(item)
+).length;
 ---
 
 <section class="professionals-view">
@@ -130,7 +136,7 @@ const inactiveCount = professionals.length - activeCount;
 								'professionals-card-status',
 								item.professional.membership_status === 'pending_invite'
 									? 'professionals-card-status--pending'
-									: item.professional.is_active === 1
+									: isProfessionalAccountActive(item.professional)
 										? 'professionals-card-status--active'
 										: 'professionals-card-status--inactive',
 							]}
@@ -140,14 +146,14 @@ const inactiveCount = professionals.length - activeCount;
 									'size-1.5 rounded-full',
 									item.professional.membership_status === 'pending_invite'
 										? 'professionals-summary-dot--pending'
-										: item.professional.is_active === 1
+										: isProfessionalAccountActive(item.professional)
 											? 'professionals-summary-dot--active'
 											: 'professionals-summary-dot--inactive',
 								]}
 							></span>
 							{item.professional.membership_status === 'pending_invite'
 								? 'Invitación pendiente'
-								: item.professional.is_active === 1
+								: isProfessionalAccountActive(item.professional)
 									? 'Activo'
 									: 'Inactivo'}
 						</span>
