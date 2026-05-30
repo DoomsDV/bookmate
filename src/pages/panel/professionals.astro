@@ -156,17 +156,17 @@ const toPageHref = (page: number) => {
 			</div>
 
 	<dialog
-		class="m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+		class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[min(92dvh,100%)] sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:max-h-[90vh] open:flex open:flex-col overflow-hidden rounded-t-[1.35rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
 		data-professional-modal
 	>
-		<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6">
-			<div class="flex items-start justify-between gap-4">
-				<div class="flex items-center gap-4">
-					<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
-						<span class="material-symbols-rounded text-[1.4rem]">badge</span>
+		<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 sm:px-7 sm:py-6">
+			<div class="flex items-start justify-between gap-3 sm:gap-4">
+				<div class="flex min-w-0 items-center gap-3 sm:gap-4">
+					<div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-(--primary-soft) text-(--primary) sm:size-12 sm:rounded-2xl">
+						<span class="material-symbols-rounded text-[1.25rem] sm:text-[1.4rem]">badge</span>
 					</div>
-					<div>
-						<h2 class="text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)" data-professional-modal-title>Crear personal</h2>
+					<div class="min-w-0">
+						<h2 class="text-[1.05rem] font-extrabold tracking-tight text-(--on-surface) sm:text-[1.2rem]" data-professional-modal-title>Crear personal</h2>
 						<p class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5 hidden sm:block" data-professional-modal-description>Completa los datos para registrar profesional y cuenta en una sola operación.</p>
 					</div>
 				</div>
@@ -217,9 +217,9 @@ const toPageHref = (page: number) => {
 				</div>
 			</div>
 
-			<div class="flex-1 overflow-y-auto overscroll-contain px-7 py-7">
+			<div class="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-7 sm:py-7">
 
-			<div class="profile-photo-uploader mb-5 sm:mb-7" data-profile-upload-dropzone>
+			<div class="profile-photo-uploader mb-4 sm:mb-7" data-profile-upload-dropzone>
 				<div class="profile-photo-uploader__avatar">
 					<img src="" alt="Vista previa" class="absolute inset-0 hidden h-full w-full rounded-full object-cover object-center" data-profile-preview />
 					<div class="absolute inset-0 grid place-items-center" data-profile-placeholder>
@@ -240,9 +240,9 @@ const toPageHref = (page: number) => {
 				</div>
 			</div>
 
-			<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
-				<div class="sm:col-span-2 grid gap-5">
-					<div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+			<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+				<div class="sm:col-span-2 grid gap-4 sm:gap-5">
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span class="inline-flex items-center gap-1">Nombre <span class="text-rose-500">*</span></span>
 							<input type="text" name="first_name" maxlength="50" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Sarah"/>
@@ -322,7 +322,7 @@ const toPageHref = (page: number) => {
 					</label>
 				</fieldset>
 
-				<div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-5">
+				<div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Especialidad</span>
 						<div class="professional-select-wrap">
@@ -365,15 +365,15 @@ const toPageHref = (page: number) => {
 				<div class="sm:col-span-2 hidden professional-account-status" data-professional-status-section>
 					<div class="professional-status-stack">
 						<section class="professional-status-card">
-							<div class="flex items-start justify-between gap-4">
+							<div class="professional-status-card__layout">
 								<div class="grid min-w-0 gap-1">
-									<h4 class="m-0 text-[0.98rem] font-bold text-(--on-surface)">Estado de la cuenta</h4>
-									<p class="m-0 text-[0.84rem] font-medium leading-relaxed text-(--on-surface-variant)">
+									<h4 class="m-0 text-[0.95rem] font-bold text-(--on-surface) sm:text-[0.98rem]">Estado de la cuenta</h4>
+									<p class="m-0 text-[0.82rem] font-medium leading-relaxed text-(--on-surface-variant) sm:text-[0.84rem]">
 										Un miembro inactivo no puede ingresar ni aparecer en reservas.
 									</p>
 								</div>
 								<div
-									class="professional-status-segment shrink-0"
+									class="professional-status-segment"
 									role="group"
 									aria-label="Estado de la cuenta"
 									data-member-account-segment
@@ -400,8 +400,8 @@ const toPageHref = (page: number) => {
 
 						<section class="professional-permissions-card" data-professional-permissions-block>
 							<div class="grid gap-1">
-								<h4 class="m-0 text-[0.98rem] font-bold text-(--on-surface)">Permisos</h4>
-								<p class="m-0 text-[0.84rem] font-medium leading-relaxed text-(--on-surface-variant)">
+								<h4 class="m-0 text-[0.95rem] font-bold text-(--on-surface) sm:text-[0.98rem]">Permisos</h4>
+								<p class="m-0 text-[0.82rem] font-medium leading-relaxed text-(--on-surface-variant) sm:text-[0.84rem]">
 									Visibilidad pública y acceso interno son independientes mientras la cuenta esté activa.
 								</p>
 							</div>
@@ -450,7 +450,7 @@ const toPageHref = (page: number) => {
 			</div>
 			</div>
 			
-			<div class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5">
+			<div class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-5">
 				<div class="modal-footer">
 				<button type="button" class="hidden modal-action-danger" data-delete-professional>
 					<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" data-delete-professional-icon>delete</span>
@@ -1914,13 +1914,20 @@ const toPageHref = (page: number) => {
 	.professional-modal-feedback {
 		position: absolute;
 		top: 0;
-		left: 1.75rem;
-		right: calc(1.75rem + var(--professional-modal-scrollbar-size, 1rem));
+		left: 1rem;
+		right: calc(1rem + var(--professional-modal-scrollbar-size, 1rem));
 		display: none;
 		justify-content: flex-end;
 		padding: 0;
 		background: transparent;
 		pointer-events: none;
+	}
+
+	@media (min-width: 640px) {
+		.professional-modal-feedback {
+			left: 1.75rem;
+			right: calc(1.75rem + var(--professional-modal-scrollbar-size, 1rem));
+		}
 	}
 
 	.professional-modal-feedback.is-visible {
@@ -2072,22 +2079,53 @@ const toPageHref = (page: number) => {
 
 	.professional-status-stack {
 		display: grid;
+		gap: 0.75rem;
+	}
+
+	.professional-status-card__layout {
+		display: flex;
+		flex-direction: column;
 		gap: 0.85rem;
 	}
 
 	.professional-status-card,
 	.professional-permissions-card {
-		border-radius: 1.15rem;
+		border-radius: 1rem;
 		border: 1px solid var(--shell-border);
 		background: var(--surface-bright);
-		padding: 1rem 1.05rem;
+		padding: 0.85rem 0.9rem;
 		box-shadow: var(--card-inset-highlight);
+	}
+
+	@media (min-width: 640px) {
+		.professional-status-stack {
+			gap: 0.85rem;
+		}
+
+		.professional-status-card__layout {
+			flex-direction: row;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 1rem;
+		}
+
+		.professional-status-card,
+		.professional-permissions-card {
+			border-radius: 1.15rem;
+			padding: 1rem 1.05rem;
+		}
 	}
 
 	.professional-permissions-card {
 		display: grid;
-		gap: 1rem;
+		gap: 0.85rem;
 		transition: opacity 180ms ease, filter 180ms ease;
+	}
+
+	@media (min-width: 640px) {
+		.professional-permissions-card {
+			gap: 1rem;
+		}
 	}
 
 	.professional-permissions-card.is-disabled {
@@ -2097,7 +2135,8 @@ const toPageHref = (page: number) => {
 	}
 
 	.professional-status-segment {
-		display: inline-flex;
+		display: flex;
+		width: 100%;
 		padding: 0.2rem;
 		border-radius: 999px;
 		border: 1px solid var(--shell-border);
@@ -2105,16 +2144,32 @@ const toPageHref = (page: number) => {
 	}
 
 	.professional-status-segment__btn {
-		min-width: 5.1rem;
+		flex: 1;
+		min-width: 0;
 		border: 1px solid transparent;
 		border-radius: 999px;
 		background: transparent;
-		padding: 0.48rem 0.85rem;
+		padding: 0.55rem 0.75rem;
 		color: var(--on-surface-variant);
-		font-size: 0.84rem;
+		font-size: 0.82rem;
 		font-weight: 800;
 		cursor: pointer;
 		transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+	}
+
+	@media (min-width: 640px) {
+		.professional-status-segment {
+			display: inline-flex;
+			width: auto;
+			flex-shrink: 0;
+		}
+
+		.professional-status-segment__btn {
+			flex: 0 0 auto;
+			min-width: 5.1rem;
+			padding: 0.48rem 0.85rem;
+			font-size: 0.84rem;
+		}
 	}
 
 	.professional-status-segment__btn.is-selected {
@@ -2135,33 +2190,70 @@ const toPageHref = (page: number) => {
 	}
 
 	.professional-permission-row {
-		display: flex;
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-areas:
+			'title switch'
+			'hint hint';
+		gap: 0.35rem 0.75rem;
 		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		border-radius: 0.95rem;
+		border-radius: 0.9rem;
 		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
 		background: var(--control-surface);
-		padding: 0.85rem 0.95rem;
+		padding: 0.75rem 0.85rem;
 	}
 
 	.professional-permission-row__copy {
-		display: grid;
-		gap: 0.2rem;
-		min-width: 0;
+		display: contents;
 	}
 
 	.professional-permission-row__title {
-		font-size: 0.92rem;
+		grid-area: title;
+		font-size: 0.88rem;
 		font-weight: 800;
 		color: var(--on-surface);
 	}
 
 	.professional-permission-row__hint {
-		font-size: 0.8rem;
+		grid-area: hint;
+		font-size: 0.78rem;
 		font-weight: 600;
 		line-height: 1.35;
 		color: var(--on-surface-variant);
+	}
+
+	.professional-permission-row .settings-switch {
+		grid-area: switch;
+		align-self: start;
+	}
+
+	@media (min-width: 640px) {
+		.professional-permission-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 1rem;
+			border-radius: 0.95rem;
+			padding: 0.85rem 0.95rem;
+		}
+
+		.professional-permission-row__copy {
+			display: grid;
+			gap: 0.2rem;
+			min-width: 0;
+		}
+
+		.professional-permission-row__title {
+			font-size: 0.92rem;
+		}
+
+		.professional-permission-row__hint {
+			font-size: 0.8rem;
+		}
+
+		.professional-permission-row .settings-switch {
+			align-self: center;
+		}
 	}
 
 	.settings-switch {
