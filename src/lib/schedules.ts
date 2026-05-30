@@ -724,7 +724,7 @@ export const getScheduleExceptionWithOrds = async (
 
 	const data = await parseDataObjectResponse(
 		response,
-		'No fue posible obtener el detalle de la excepcion.'
+		'No fue posible obtener el detalle de la excepción.'
 	);
 	return normalizeExceptionDetail(data);
 };
@@ -756,7 +756,7 @@ export const upsertScheduleExceptionWithOrds = async (
 		}
 	);
 
-	return parseActionResponse(response, 'No fue posible guardar la excepcion.');
+	return parseActionResponse(response, 'No fue posible guardar la excepción.');
 };
 
 export const deleteScheduleExceptionWithOrds = async (
@@ -783,5 +783,5 @@ export const deleteScheduleExceptionWithOrds = async (
 		}
 	);
 
-	return parseActionResponse(response, 'No fue posible eliminar la excepcion.');
+	return parseActionResponse(response, 'No fue posible eliminar la excepción.');
 };

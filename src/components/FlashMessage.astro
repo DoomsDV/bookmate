@@ -1,4 +1,6 @@
 ---
+import { normalizeFlashMessageText } from '../lib/flash';
+
 type MessageType = 'success' | 'error' | 'info' | 'warning';
 
 interface Props {
@@ -16,6 +18,8 @@ const {
 	expand = false,
 	dismissible = true,
 } = Astro.props;
+
+const displayMessage = normalizeFlashMessageText(message);
 
 const toneMap: Record<MessageType, { icon: string; iconClass: string }> = {
 	success: {
@@ -42,7 +46,7 @@ const flashBaseClass =
 ---
 
 {
-	message ? (
+	displayMessage ? (
 		<div
 			role="alert"
 			aria-live="polite"
@@ -57,7 +61,7 @@ const flashBaseClass =
 			<span class:list={['material-symbols-rounded shrink-0 text-[1.22rem] tracking-normal', tone.iconClass]}>
 				{tone.icon}
 			</span>
-			<p class="min-w-0 flex-1">{message}</p>
+			<p class="min-w-0 flex-1">{displayMessage}</p>
 
 			{
 				dismissible ? (
@@ -92,6 +96,7 @@ const flashBaseClass =
 	import {
 		consumeStashedFlash,
 		drainPendingFlashMessages,
+		normalizeFlashMessageText,
 		stripFlashParamsFromUrl,
 	} from '../lib/flash';
 
@@ -165,7 +170,7 @@ const flashBaseClass =
 		type?: keyof typeof flashToneMap;
 		autoHideMs?: number;
 	}) => {
-		const cleanMessage = String(message || '').trim();
+		const cleanMessage = normalizeFlashMessageText(String(message || '').trim());
 		if (!cleanMessage) return null;
 
 		const tone = flashToneMap[type] || flashToneMap.info;

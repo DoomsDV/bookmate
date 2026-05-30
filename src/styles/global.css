@@ -203,16 +203,6 @@ html[data-theme='dark'] {
 	--flash-danger-accent: #fb7185;
 	--flash-success-text: #6ee7b7;
 	--flash-danger-text: #fda4af;
-	--flash-bg: #222222;
-	--flash-fg: #eceff3;
-	--flash-fg-muted: #a0a0a0;
-	--flash-border: rgba(255, 255, 255, 0.1);
-	--flash-shadow: 0 14px 36px rgba(0, 0, 0, 0.42);
-	--flash-icon-success: #34d399;
-	--flash-icon-error: #fb7185;
-	--flash-icon-info: #60a5fa;
-	--flash-icon-warning: #fbbf24;
-	--flash-close-hover: rgba(255, 255, 255, 0.08);
 	--inline-feedback-success-bg: #163428;
 	--inline-feedback-success-border: #236647;
 	--inline-feedback-success-fg: #a7f3d0;
@@ -680,6 +670,16 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
 }
 
 .flash-message {
+	--flash-bg: #1f2937;
+	--flash-fg: #f3f4f6;
+	--flash-fg-muted: #9ca3af;
+	--flash-border: rgba(156, 163, 175, 0.24);
+	--flash-shadow: 0 12px 32px rgba(15, 23, 42, 0.24);
+	--flash-icon-success: #34d399;
+	--flash-icon-error: #fb7185;
+	--flash-icon-info: #60a5fa;
+	--flash-icon-warning: #fbbf24;
+	--flash-close-hover: rgba(255, 255, 255, 0.08);
 	background: var(--flash-bg);
 	color: var(--flash-fg);
 	border: 1px solid var(--flash-border);

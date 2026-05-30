@@ -10,8 +10,16 @@ const FLASH_NAV_STASH_KEY = 'bookmate_flash_nav_stash';
 
 const pendingFlashMessages: FlashMessageDetail[] = [];
 
+export function normalizeFlashMessageText(message: string): string {
+	return message
+		.replace(/\bExcepcion\b/g, 'Excepción')
+		.replace(/\bexcepcion\b/g, 'excepción')
+		.replace(/\bEl dia\b/g, 'El día')
+		.replace(/\bel dia\b/g, 'el día');
+}
+
 function normalizeFlashDetail(detail: FlashMessageDetail): FlashMessageDetail | null {
-	const message = String(detail.message || '').trim();
+	const message = normalizeFlashMessageText(String(detail.message || '').trim());
 	if (!message) return null;
 
 	return {
