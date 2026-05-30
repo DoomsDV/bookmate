@@ -183,6 +183,7 @@ class CalendarManager extends HTMLElement {
 	private pendingFocusRetryTimer: number | null = null;
 
 	private calendarEl: HTMLElement | null = null;
+	private calendarStageNode: HTMLElement | null = null;
 	private loadingNode: HTMLElement | null = null;
 	private pageErrorNode: HTMLElement | null = null;
 	private openModalButton: HTMLButtonElement | null = null;
@@ -199,6 +200,7 @@ class CalendarManager extends HTMLElement {
 		this.isGoogleConnected = this.dataset.googleConnected === 'true';
 
 		this.calendarEl = this.querySelector<HTMLElement>('[data-calendar-el]');
+		this.calendarStageNode = this.querySelector<HTMLElement>('[data-calendar-stage]');
 		this.loadingNode = this.querySelector<HTMLElement>('[data-calendar-loading]');
 		this.pageErrorNode = this.querySelector<HTMLElement>('[data-calendar-error]');
 		this.openModalButton = this.querySelector<HTMLButtonElement>('[data-open-appointment-modal]');
@@ -322,7 +324,11 @@ class CalendarManager extends HTMLElement {
 	}
 
 	private setCalendarLoading(value: boolean) {
-		if (this.loadingNode) this.loadingNode.classList.toggle('hidden', !value);
+		this.calendarStageNode?.classList.toggle('is-loading', value);
+		if (this.loadingNode) {
+			this.loadingNode.classList.toggle('hidden', !value);
+			this.loadingNode.setAttribute('aria-hidden', value ? 'false' : 'true');
+		}
 		setSearchableSelectDisabled(this.professionalFilter, value || this.roleId === ROLES.PROFESIONAL);
 		setSearchableSelectDisabled(this.locationFilter, value);
 		if (this.openModalButton) this.openModalButton.disabled = value;
