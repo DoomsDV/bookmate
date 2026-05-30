@@ -56,6 +56,16 @@ const readApiMessage = (data: unknown, fallbackMessage: string) => {
 	return message || fallbackMessage;
 };
 
+const isGenericLocationFallbackName = (value: string) => /^Sucursal #\d+$/i.test(String(value || '').trim());
+
+const resolveLocationDisplayName = (fetchedName: string, existingName?: string) => {
+	const fetched = String(fetchedName || '').trim();
+	const existing = String(existingName || '').trim();
+	if (!fetched) return existing;
+	if (isGenericLocationFallbackName(fetched) && existing) return existing;
+	return fetched;
+};
+
 const fetchJson = async <T>(url: string, init: RequestInit, fallbackMessage: string) => {
 	const response = await fetch(url, init);
 	const data = (await response.json().catch(() => null)) as T & { status?: string; message?: string };
@@ -140,7 +150,10 @@ export const createPublicUserMapController = (options: {
 
 		return {
 			...location,
-			name: String(source.name || location.name || '').trim(),
+			name: resolveLocationDisplayName(
+				String(source.name || ''),
+				String(location.name || '')
+			),
 			address: String(source.address || location.address || '').trim(),
 			latitude: Number.isFinite(latitude) ? latitude : location.latitude,
 			longitude: Number.isFinite(longitude) ? longitude : location.longitude,

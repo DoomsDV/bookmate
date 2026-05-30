@@ -21,12 +21,17 @@ import {
 	calculateDepositAmount,
 	formatCurrency,
 	formatDuration,
-	formatLocationCardTitle,
+	formatBranchLabel,
 } from './formatters';
 import { createPublicUserMapController, type MapLocation } from './map';
 import {
+	buildOrganizationGroups,
+	findOrganizationGroup,
+	type LocationSlotGroup,
+	type OrganizationBookingGroup,
+} from './org-groups';
+import {
 	USER_BOOKING_STEP_LABELS,
-	buildLocationCardKey,
 	parseProfileFromDom,
 	type UserBookingContext,
 	type UserBookingService,
@@ -152,10 +157,27 @@ export const initializePublicUserBookingPage = () => {
 			location.id_location === locationId ? { ...location, ...updated } : location
 		);
 
+		const selectedOrgId = selectedOrgGroup?.org_id_organization ?? 0;
+		orgGroups = buildOrganizationGroups(profile.locations);
+		if (selectedOrgId > 0) {
+			selectedOrgGroup = findOrganizationGroup(orgGroups, selectedOrgId);
+		}
+
 		if (selectedContext?.id_location === locationId) {
-			selectedContext = profile.locations.find((location) => location.id_location === locationId) ?? selectedContext;
+			selectedContext =
+				profile.locations.find((location) => location.id_location === locationId) ?? selectedContext;
 			refreshSummary();
 		}
+
+		for (const group of availableSlotGroups) {
+			if (group.location.id_location === locationId) {
+				group.location =
+					profile.locations.find((location) => location.id_location === locationId) ??
+					group.location;
+			}
+		}
+
+		renderOrganizationServices();
 	};
 
 	const mapController = createPublicUserMapController({
@@ -166,20 +188,23 @@ export const initializePublicUserBookingPage = () => {
 
 	const formatLocationLabel = (location: UserBookingContext | null) => {
 		if (!location) return 'Ubicación no disponible';
-		const title = formatLocationCardTitle(location);
-		const address = String(location.address || '').trim();
-		if (title && address && title !== address) return `${title} · ${address}`;
-		return title || address || 'Ubicación no disponible';
+		const branch = formatBranchLabel(location);
+		const org = String(
+			selectedOrgGroup?.organization_name || location.organization_name || ''
+		).trim();
+		if (org && branch) return `${org} · ${branch}`;
+		return branch || org || 'Ubicación no disponible';
 	};
 
 	const today = getTodayStart();
+	let orgGroups = buildOrganizationGroups(profile.locations);
 	let step: UserBookingWizardStep = 1;
-	let expandedLocationKey = '';
+	let selectedOrgGroup: OrganizationBookingGroup | null = null;
 	let selectedContext: UserBookingContext | null = null;
 	let selectedService: UserBookingService | null = null;
 	let selectedDate = '';
 	let selectedTime = '';
-	let availableSlots: string[] = [];
+	let availableSlotGroups: LocationSlotGroup[] = [];
 	let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 	let isLoadingSlots = false;
 	let isSubmitting = false;
@@ -255,133 +280,87 @@ export const initializePublicUserBookingPage = () => {
 		payDepositButton.classList.toggle('is-hidden', depositAmount <= 0);
 	};
 
-	const renderLocations = () => {
+	const renderOrganizationServices = () => {
+		orgGroups = buildOrganizationGroups(profile.locations);
 		locationsRoot.innerHTML = '';
-		if (profile.locations.length === 0) {
+
+		if (orgGroups.length === 0) {
 			const empty = document.createElement('p');
 			empty.className =
 				'rounded-2xl bg-[var(--surface-container-high)] px-5 py-4 text-base font-medium text-[var(--on-surface-variant)]';
-			empty.textContent = 'Este profesional no tiene sucursales disponibles para reservar.';
+			empty.textContent = 'Este profesional no tiene organizaciones disponibles para reservar.';
 			locationsRoot.appendChild(empty);
 			return;
 		}
 
-		for (const location of profile.locations) {
-			const cardKey = buildLocationCardKey(location);
-			const isExpanded = expandedLocationKey === cardKey;
+		for (const group of orgGroups) {
+			const section = document.createElement('article');
+			section.className =
+				'user-org-group overflow-hidden rounded-2xl border border-white/5 bg-[#18181b] p-5 shadow-sm sm:p-6';
 
-			const card = document.createElement('article');
-			card.className =
-				'user-location-card overflow-hidden rounded-2xl border border-white/5 bg-[#18181b] transition-shadow' +
-				(isExpanded ? ' user-location-card--expanded shadow-lg' : '');
-
-			const headerWrap = document.createElement('div');
-			headerWrap.className = 'px-5 py-4';
-
-			const header = document.createElement('button');
-			header.type = 'button';
-			header.className =
-				'flex w-full items-center justify-between gap-4 text-left transition hover:opacity-90';
+			const header = document.createElement('header');
+			header.className = 'grid gap-1.5';
 			header.innerHTML = `
-				<span class="text-base font-semibold text-[var(--on-surface)]">${formatLocationCardTitle(location)}</span>
-				<span class="material-symbols-rounded shrink-0 text-[var(--on-surface-variant)] transition-transform ${isExpanded ? 'rotate-180' : ''}">expand_more</span>
+				<h3 class="text-lg font-semibold text-[var(--on-surface)]">${group.organization_name}</h3>
 			`;
+			section.appendChild(header);
 
-			header.addEventListener(
-				'click',
-				() => {
-					expandedLocationKey = isExpanded ? '' : cardKey;
-					renderLocations();
-				},
-				{ signal }
-			);
+			const servicesGrid = document.createElement('div');
+			servicesGrid.className = 'mt-5 grid gap-3 sm:grid-cols-2';
 
-			const addressText = location.address?.trim() || 'Dirección no disponible';
-
-			const addressRow = document.createElement('div');
-			addressRow.className =
-				'mt-1.5 inline-flex items-start gap-1.5 text-sm font-medium text-[var(--on-surface-variant)]';
-
-			const addressIcon = document.createElement('span');
-			addressIcon.className = 'material-symbols-rounded text-base leading-none text-[var(--primary)]';
-			addressIcon.textContent = 'location_on';
-			addressIcon.setAttribute('aria-hidden', 'true');
-
-			if (mapController?.canShowLocationMap(location)) {
-				const addressLink = document.createElement('button');
-				addressLink.type = 'button';
-				addressLink.className = 'public-location-link text-left text-sm font-medium';
-				addressLink.textContent = addressText;
-				addressLink.addEventListener(
-					'click',
-					(event) => {
-						event.preventDefault();
-						event.stopPropagation();
-						void mapController.openLocationMap(location, { fetchCoordinates: true });
-					},
-					{ signal }
-				);
-				addressRow.appendChild(addressIcon);
-				addressRow.appendChild(addressLink);
+			if (group.services.length === 0) {
+				const emptyServices = document.createElement('p');
+				emptyServices.className = 'text-sm font-medium text-[var(--on-surface-variant)] sm:col-span-2';
+				emptyServices.textContent = 'No hay servicios disponibles en esta organización.';
+				servicesGrid.appendChild(emptyServices);
 			} else {
-				const addressLabel = document.createElement('span');
-				addressLabel.textContent = addressText;
-				addressRow.appendChild(addressIcon);
-				addressRow.appendChild(addressLabel);
-			}
+				for (const service of group.services) {
+					const isSelected =
+						selectedOrgGroup?.org_id_organization === group.org_id_organization &&
+						selectedService?.id_service === service.id_service;
 
-			headerWrap.appendChild(header);
-			headerWrap.appendChild(addressRow);
-
-			card.appendChild(headerWrap);
-
-			if (isExpanded) {
-				const body = document.createElement('div');
-				body.className = 'grid gap-3 border-t border-white/5 px-5 py-4';
-
-				if (location.services.length === 0) {
-					const emptyServices = document.createElement('p');
-					emptyServices.className = 'text-sm font-medium text-[var(--on-surface-variant)]';
-					emptyServices.textContent = 'No hay servicios disponibles en esta sucursal.';
-					body.appendChild(emptyServices);
-				} else {
-					for (const service of location.services) {
-						const serviceButton = document.createElement('button');
-						serviceButton.type = 'button';
-						serviceButton.className =
-							'grid gap-1 rounded-xl border border-[var(--outline-variant)] bg-[var(--surface-container-low)] px-4 py-3 text-left transition hover:border-[var(--primary)] hover:bg-[var(--surface-container-high)]';
-						serviceButton.innerHTML = `
-							<span class="text-base font-medium text-[var(--on-surface)]">${service.name}</span>
-							<span class="flex items-center justify-between gap-2 text-sm font-medium text-[var(--on-surface-variant)]">
-								<span>${formatDuration(service.duration_minutes)}</span>
-								<span>${formatCurrency(service.price)}</span>
-							</span>
-						`;
-						serviceButton.addEventListener(
-							'click',
-							() => {
-								selectedContext = location;
-								selectedService = service;
-								selectedDate = '';
-								selectedTime = '';
-								availableSlots = [];
-								pendingAppointmentId = 0;
-								refreshSummary();
-								renderCalendar();
-								setStep(2);
-							},
-							{ signal }
-						);
-						body.appendChild(serviceButton);
-					}
+					const serviceButton = document.createElement('button');
+					serviceButton.type = 'button';
+					serviceButton.className =
+						'grid gap-1 rounded-xl border px-4 py-3 text-left transition ' +
+						(isSelected
+							? 'border-[var(--primary)] bg-[var(--primary-container)]'
+							: 'border-[var(--outline-variant)] bg-[var(--surface-container-low)] hover:border-[var(--primary)] hover:bg-[var(--surface-container-high)]');
+					serviceButton.innerHTML = `
+						<span class="text-base font-medium text-[var(--on-surface)]">${service.name}</span>
+						<span class="flex items-center justify-between gap-2 text-sm font-medium text-[var(--on-surface-variant)]">
+							<span>${formatDuration(service.duration_minutes)}</span>
+							<span>${formatCurrency(service.price)}</span>
+						</span>
+					`;
+					serviceButton.addEventListener(
+						'click',
+						() => {
+							selectedOrgGroup = group;
+							selectedService = service;
+							selectedContext = null;
+							selectedDate = '';
+							selectedTime = '';
+							availableSlotGroups = [];
+							pendingAppointmentId = 0;
+							refreshSummary();
+							renderOrganizationServices();
+							renderCalendar();
+							setStep(2);
+						},
+						{ signal }
+					);
+					servicesGrid.appendChild(serviceButton);
 				}
-
-				card.appendChild(body);
 			}
 
-			locationsRoot.appendChild(card);
+			section.appendChild(servicesGrid);
+			locationsRoot.appendChild(section);
 		}
 	};
+
+	const getSelectedSlotKey = () =>
+		selectedContext && selectedTime ? `${selectedContext.id_location}:${selectedTime}` : '';
 
 	const renderCalendar = () => {
 		calendarGrid.innerHTML = '';
@@ -406,6 +385,7 @@ export const initializePublicUserBookingPage = () => {
 			const dateKey = formatApiDate(dateValue);
 			const dateStart = toDateStart(dateValue);
 			const isPast = dateStart.getTime() < today.getTime();
+			const isToday = dateStart.getTime() === today.getTime();
 			const isSelected = selectedDate === dateKey;
 
 			const dayButton = document.createElement('button');
@@ -416,14 +396,17 @@ export const initializePublicUserBookingPage = () => {
 				'flex h-10 w-10 mx-auto items-center justify-center rounded-full border text-sm font-medium transition disabled:cursor-not-allowed ' +
 				(isSelected
 					? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--on-primary)]'
-					: 'border-transparent bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
+					: isToday
+						? 'border-[var(--primary)] bg-transparent text-[var(--primary)]'
+						: 'border-transparent bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
 
 			dayButton.addEventListener(
 				'click',
 				() => {
-					if (!selectedService || !selectedContext) return;
+					if (!selectedService || !selectedOrgGroup) return;
 					selectedDate = dateKey;
 					selectedTime = '';
+					selectedContext = null;
 					pendingAppointmentId = 0;
 					refreshSummary();
 					renderCalendar();
@@ -439,56 +422,129 @@ export const initializePublicUserBookingPage = () => {
 	const renderSlots = () => {
 		slotsContainer.innerHTML = '';
 		slotsLoadingNode.classList.toggle('hidden', !isLoadingSlots);
-		noSlotsNode.classList.toggle('hidden', isLoadingSlots || availableSlots.length > 0);
+
+		const totalSlots = availableSlotGroups.reduce(
+			(count, group) => count + group.slots.length,
+			0
+		);
+		noSlotsNode.classList.toggle('hidden', isLoadingSlots || totalSlots > 0);
 		if (isLoadingSlots) return;
 
-		const grid = document.createElement('div');
-		grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
+		const selectedSlotKey = getSelectedSlotKey();
 
-		for (const slot of availableSlots) {
-			const isSelected = selectedTime === slot;
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.textContent = slot;
-			button.className =
-				'rounded-xl border px-4 py-3 text-sm font-semibold transition ' +
-				(isSelected
-					? 'border-[var(--primary)] bg-[var(--primary-container)] text-[var(--on-primary-container)]'
-					: 'border-[var(--outline-variant)] bg-[var(--surface-container-low)] text-[var(--on-surface)] hover:bg-[var(--surface-container-high)]');
-			button.addEventListener(
+		for (const group of availableSlotGroups) {
+			if (group.slots.length === 0) continue;
+
+			const section = document.createElement('section');
+			section.className = 'grid gap-3';
+
+			const headerRow = document.createElement('div');
+			headerRow.className = 'flex flex-wrap items-center justify-between gap-2';
+
+			const heading = document.createElement('h3');
+			heading.className = 'text-sm font-semibold uppercase tracking-wide text-[var(--primary)]';
+			heading.textContent = formatBranchLabel(group.location);
+
+			const locationButton = document.createElement('button');
+			locationButton.type = 'button';
+			locationButton.className = 'public-location-link text-sm font-medium';
+			locationButton.innerHTML =
+				'<span class="material-symbols-rounded text-base leading-none">location_on</span><span class="public-location-link__label">Ver ubicación</span>';
+			locationButton.addEventListener(
 				'click',
 				() => {
-					selectedTime = slot;
-					pendingAppointmentId = 0;
-					refreshSummary();
-					renderSlots();
-					setStep(4);
+					void mapController?.openLocationMap(group.location, { fetchCoordinates: true });
 				},
 				{ signal }
 			);
-			grid.appendChild(button);
-		}
 
-		slotsContainer.appendChild(grid);
+			headerRow.appendChild(heading);
+			if (mapController?.canShowLocationMap(group.location)) {
+				headerRow.appendChild(locationButton);
+			}
+			section.appendChild(headerRow);
+
+			const grid = document.createElement('div');
+			grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
+
+			for (const slot of group.slots) {
+				const slotKey = `${group.location.id_location}:${slot}`;
+				const isSelected = selectedSlotKey === slotKey;
+				const button = document.createElement('button');
+				button.type = 'button';
+				button.textContent = slot;
+				button.className =
+					'rounded-xl border px-4 py-3 text-sm font-semibold transition ' +
+					(isSelected
+						? 'border-[var(--primary)] bg-[var(--primary-container)] text-[var(--on-primary-container)]'
+						: 'border-[var(--outline-variant)] bg-[var(--surface-container-low)] text-[var(--on-surface)] hover:bg-[var(--surface-container-high)]');
+				button.addEventListener(
+					'click',
+					() => {
+						selectedTime = slot;
+						selectedContext = group.location;
+						pendingAppointmentId = 0;
+						refreshSummary();
+						renderSlots();
+						setStep(4);
+					},
+					{ signal }
+				);
+				grid.appendChild(button);
+			}
+
+			section.appendChild(grid);
+			slotsContainer.appendChild(section);
+		}
 	};
 
 	const loadSlots = async (targetDate: string) => {
-		if (!selectedService || !selectedContext) return;
+		const service = selectedService;
+		const orgGroup = selectedOrgGroup;
+		if (!service || !orgGroup) return;
 		isLoadingSlots = true;
-		availableSlots = [];
+		availableSlotGroups = [];
 		selectedTime = '';
+		selectedContext = null;
 		renderSlots();
 		setStep(3);
 
 		try {
-			availableSlots = await fetchAvailableSlots({
-				pro_id: selectedContext.id_professional,
-				loc_id: selectedContext.id_location,
-				ser_id: selectedService.id_service,
-				target_date: targetDate,
-			});
+			const results = await Promise.allSettled(
+				orgGroup.locations.map(async (location) => ({
+					location,
+					slots: await fetchAvailableSlots({
+						pro_id: location.id_professional,
+						loc_id: location.id_location,
+						ser_id: service.id_service,
+						target_date: targetDate,
+					}),
+				}))
+			);
+
+			if (results.every((result) => result.status === 'rejected')) {
+				const firstError = results.find(
+					(result): result is PromiseRejectedResult => result.status === 'rejected'
+				);
+				throw firstError?.reason;
+			}
+
+			availableSlotGroups = results
+				.filter(
+					(result): result is PromiseFulfilledResult<LocationSlotGroup> =>
+						result.status === 'fulfilled'
+				)
+				.map((result) => result.value)
+				.filter((group) => group.slots.length > 0)
+				.sort((left, right) =>
+					formatBranchLabel(left.location).localeCompare(
+						formatBranchLabel(right.location),
+						'es',
+						{ sensitivity: 'base' }
+					)
+				);
 		} catch (error) {
-			availableSlots = [];
+			availableSlotGroups = [];
 			showToast(error instanceof Error ? error.message : 'No fue posible consultar horarios.', 'error');
 		} finally {
 			isLoadingSlots = false;
@@ -529,10 +585,12 @@ export const initializePublicUserBookingPage = () => {
 	};
 
 	const runCustomerValidation = async (phoneE164: string) => {
-		if (!selectedContext) return false;
+		const orgId =
+			selectedContext?.org_id_organization ?? selectedOrgGroup?.org_id_organization ?? 0;
+		if (!orgId) return false;
 		isValidatingCustomer = true;
 		try {
-			const result = await validateCustomerPhone(phoneE164, selectedContext.org_id_organization);
+			const result = await validateCustomerPhone(phoneE164, orgId);
 			validatedCustomerPhoneE164 = phoneE164;
 			if (result.exists && result.fullName) {
 				customerNameInput.value = result.fullName;
@@ -552,7 +610,7 @@ export const initializePublicUserBookingPage = () => {
 
 	const buildAppointmentPayload = async (reserveForDeposit: boolean) => {
 		if (!selectedService || !selectedContext || !selectedDate || !selectedTime) {
-			setSubmitError('Seleccioná sucursal, servicio, fecha y horario.');
+			setSubmitError('Seleccioná servicio, fecha, horario y sucursal.');
 			return null;
 		}
 
@@ -655,19 +713,20 @@ export const initializePublicUserBookingPage = () => {
 	};
 
 	const resetFlow = () => {
-		expandedLocationKey = '';
+		orgGroups = buildOrganizationGroups(profile.locations);
+		selectedOrgGroup = null;
 		selectedContext = null;
 		selectedService = null;
 		selectedDate = '';
 		selectedTime = '';
-		availableSlots = [];
+		availableSlotGroups = [];
 		pendingAppointmentId = 0;
 		isLoadingSlots = false;
 		customerForm.reset();
 		resetCustomerLookupState();
 		setSubmitError('');
 		refreshSummary();
-		renderLocations();
+		renderOrganizationServices();
 		renderCalendar();
 		renderSlots();
 		setStep(1);
@@ -745,7 +804,7 @@ export const initializePublicUserBookingPage = () => {
 	}, { signal });
 
 	refreshSummary();
-	renderLocations();
+	renderOrganizationServices();
 	renderCalendar();
 	renderSlots();
 	setStep(1);

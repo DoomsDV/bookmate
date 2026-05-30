@@ -39,3 +39,9 @@ export const formatLocationCardTitle = (location: {
 	if (org && branch) return `${org} · ${branch}`;
 	return org || branch || 'Sucursal';
 };
+
+export const formatBranchLabel = (location: { name?: string; address?: string }) => {
+	const branch = String(location.name || '').trim();
+	const address = String(location.address || '').trim();
+	return branch || address || 'Sucursal';
+};

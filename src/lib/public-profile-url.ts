@@ -127,15 +127,23 @@ export const formatPublicProfilePrefixDisplay = (prefix: string): string => {
 	const trimmed = String(prefix || '').trim();
 	if (!trimmed) return '/p/';
 
+	let pathname = '';
 	try {
 		const withScheme = /^https?:\/\//i.test(trimmed)
 			? trimmed
 			: `https://${trimmed.replace(/^\/+/, '')}`;
-		return normalizePublicProfilePath(new URL(withScheme).pathname);
+		pathname = new URL(withScheme).pathname;
 	} catch {
-		if (trimmed.startsWith('/')) return normalizePublicProfilePath(trimmed);
-		const slashIndex = trimmed.indexOf('/');
-		if (slashIndex >= 0) return normalizePublicProfilePath(trimmed.slice(slashIndex));
-		return '/p/';
+		if (trimmed.startsWith('/')) {
+			pathname = trimmed;
+		} else {
+			const slashIndex = trimmed.indexOf('/');
+			pathname = slashIndex >= 0 ? trimmed.slice(slashIndex) : '/p/';
+		}
 	}
+
+	const normalized = normalizePublicProfilePath(pathname);
+	if (normalized.includes('/p/')) return '/p/';
+	if (normalized.includes('/u/')) return '/u/';
+	return normalized;
 };

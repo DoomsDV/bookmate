@@ -12,7 +12,7 @@ function buildTourSteps(): DriveStep[] {
 			popover: {
 				title: 'URL del perfil público',
 				description:
-					'Define el enlace que compartirás con tus clientes para reservar en línea. El prefijo es fijo; solo editas la parte final (por ejemplo, tu nombre). Usa el botón copiar para compartir la URL completa.',
+					'Será un enlace único y directo para el profesional en tu negocio. Edita la parte final del enlace y usa el botón copiar para compartir la URL completa con tus clientes.',
 				side: 'bottom',
 				align: 'start',
 			},

@@ -133,7 +133,7 @@ const googleMapsApiKey =
 					<div class="rounded-3xl bg-(--surface-container) p-4 sm:p-6 shadow-sm">
 						<div class="flex items-center gap-4 md:hidden">
 							<p class="text-sm font-medium tracking-wide text-(--on-surface)" data-step-compact-label aria-live="polite">
-								Paso 1 de 4: Sucursal y servicio
+								Paso 1 de 4: Servicio
 							</p>
 							<div class="h-2 flex-1 overflow-hidden rounded-full bg-(--surface-container-highest)" aria-hidden="true">
 								<div
@@ -144,7 +144,7 @@ const googleMapsApiKey =
 							</div>
 						</div>
 						<ol class="hidden gap-3 md:grid md:grid-cols-4" data-step-indicator>
-							<li data-step-item="1" class="step-item-current">1. Sucursal</li>
+							<li data-step-item="1" class="step-item-current">1. Servicio</li>
 							<li data-step-item="2" class="step-item-default">2. Fecha</li>
 							<li data-step-item="3" class="step-item-default">3. Horario</li>
 							<li data-step-item="4" class="step-item-default">4. Datos</li>
@@ -155,9 +155,9 @@ const googleMapsApiKey =
 
 					<section data-step-panel="1" class="rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8">
 						<div class="grid gap-2">
-							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">¿Dónde querés atenderte?</h2>
+							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Seleccioná un servicio</h2>
 							<p class="text-base text-(--on-surface-variant)">
-								Seleccioná una sucursal y el servicio que necesitás.
+								Elegí la organización y el tipo de cita para continuar con la agenda.
 							</p>
 						</div>
 						<div class="mt-6 grid gap-4" data-user-locations-root></div>
@@ -182,7 +182,7 @@ const googleMapsApiKey =
 							<div class="grid grid-cols-7 gap-1 sm:gap-2" data-calendar-grid></div>
 						</div>
 						<div class="mt-6">
-							<button type="button" data-back-to-locations class="secondary-action-btn">Volver a sucursales</button>
+							<button type="button" data-back-to-locations class="secondary-action-btn">Volver a servicios</button>
 						</div>
 					</section>
 
@@ -391,7 +391,13 @@ const googleMapsApiKey =
 		color: var(--on-tertiary-container);
 	}
 
-	.user-location-card--expanded { border-color: color-mix(in srgb, var(--primary) 35%, white 5%); }
+	.user-org-group + .user-org-group {
+		margin-top: 0;
+	}
+
+	.public-booking-shell .grid.gap-4 > .user-org-group {
+		margin-top: 0;
+	}
 
 	.public-map-modal {
 		width: min(92vw, 44rem);

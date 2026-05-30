@@ -229,8 +229,8 @@ const toPageHref = (page: number) => {
 				<div class="profile-photo-uploader__content">
 					<h3 class="profile-photo-uploader__title">Foto de perfil</h3>
 					<div class="profile-photo-uploader__actions">
-						<label for="file-upload" class="profile-photo-uploader__button">
-							<span class="material-symbols-rounded text-[1.2rem]">add_photo_alternate</span>
+						<label for="file-upload" class="profile-photo-uploader__button" data-profile-upload-button>
+							<span class="material-symbols-rounded text-[1.2rem]" data-profile-upload-icon>add_photo_alternate</span>
 							<span data-image-file-name>Cambiar foto</span>
 							<input id="file-upload" name="profile_image" type="file" class="sr-only" accept=".jpg,.jpeg,.png" />
 						</label>
@@ -362,47 +362,90 @@ const toPageHref = (page: number) => {
 					</div>
 				</div>
 
-				<div class="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">Visible en app</span>
-						<div class="professional-select-wrap">
-							<select name="prof_is_active" class="professional-native-select w-full cursor-pointer rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 pr-11 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10">
-								<option value="1">Sí</option>
-								<option value="0">No</option>
-							</select>
-							<span class="professional-select-arrow" aria-hidden="true">
-								<span class="material-symbols-rounded">expand_more</span>
-							</span>
-						</div>
-						<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
-							Si está en "No", este profesional no se mostrará en la app ni en la reserva pública.
-						</span>
-					</label>
+				<div class="sm:col-span-2 hidden professional-account-status" data-professional-status-section>
+					<div class="professional-status-stack">
+						<section class="professional-status-card">
+							<div class="flex items-start justify-between gap-4">
+								<div class="grid min-w-0 gap-1">
+									<h4 class="m-0 text-[0.98rem] font-bold text-(--on-surface)">Estado de la cuenta</h4>
+									<p class="m-0 text-[0.84rem] font-medium leading-relaxed text-(--on-surface-variant)">
+										Un miembro inactivo no puede ingresar ni aparecer en reservas.
+									</p>
+								</div>
+								<div
+									class="professional-status-segment shrink-0"
+									role="group"
+									aria-label="Estado de la cuenta"
+									data-member-account-segment
+								>
+									<button
+										type="button"
+										class="professional-status-segment__btn is-selected"
+										data-member-account-status="1"
+										aria-pressed="true"
+									>
+										Activo
+									</button>
+									<button
+										type="button"
+										class="professional-status-segment__btn"
+										data-member-account-status="0"
+										aria-pressed="false"
+									>
+										Inactivo
+									</button>
+								</div>
+							</div>
+						</section>
 
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">Acceso en esta organización</span>
-						<div class="professional-select-wrap">
-							<select name="user_is_active" class="professional-native-select w-full cursor-pointer rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 pr-11 text-[0.95rem] font-bold text-(--on-surface) outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10">
-								<option value="1">Sí</option>
-								<option value="0">No</option>
-							</select>
-							<span class="professional-select-arrow" aria-hidden="true">
-								<span class="material-symbols-rounded">expand_more</span>
-							</span>
-						</div>
-						<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
-							Si está en "No", no podrá ingresar al panel de esta organización. Su cuenta global no se elimina.
-						</span>
-					</label>
-				</div>
+						<section class="professional-permissions-card" data-professional-permissions-block>
+							<div class="grid gap-1">
+								<h4 class="m-0 text-[0.98rem] font-bold text-(--on-surface)">Permisos</h4>
+								<p class="m-0 text-[0.84rem] font-medium leading-relaxed text-(--on-surface-variant)">
+									Visibilidad pública y acceso interno son independientes mientras la cuenta esté activa.
+								</p>
+							</div>
 
-				<div
-					class="hidden sm:col-span-2 rounded-2xl border border-amber-500/35 bg-amber-500/10 px-4 py-3 text-[0.9rem] leading-relaxed text-amber-100"
-					data-professional-inactive-hint
-					role="status"
-				>
-					<span class="font-semibold">Miembro desactivado.</span>
-					Activá «Visible en app» y «Acceso en esta organización» y guardá los cambios para reactivarlo en tu organización.
+							<div class="professional-permissions-list">
+								<div class="professional-permission-row">
+									<div class="professional-permission-row__copy">
+										<span class="professional-permission-row__title">Acceso al panel administrativo</span>
+										<span class="professional-permission-row__hint">Puede iniciar sesión en esta organización.</span>
+									</div>
+									<label class="settings-switch shrink-0">
+										<input
+											type="checkbox"
+											role="switch"
+											class="settings-switch__input sr-only"
+											data-panel-access-toggle
+											checked
+										/>
+										<span class="settings-switch__track" aria-hidden="true"></span>
+									</label>
+								</div>
+
+								<div class="professional-permission-row">
+									<div class="professional-permission-row__copy">
+										<span class="professional-permission-row__title">Visible en la app pública</span>
+										<span class="professional-permission-row__hint">Los clientes pueden reservar con esta persona.</span>
+									</div>
+									<label class="settings-switch shrink-0">
+										<input
+											type="checkbox"
+											role="switch"
+											class="settings-switch__input sr-only"
+											data-public-visibility-toggle
+											checked
+										/>
+										<span class="settings-switch__track" aria-hidden="true"></span>
+									</label>
+								</div>
+							</div>
+						</section>
+
+						<input type="hidden" name="user_is_active" value="1" />
+						<input type="hidden" name="prof_is_active" value="1" />
+					</div>
 				</div>
 			</div>
 			</div>
@@ -488,7 +531,10 @@ const toPageHref = (page: number) => {
 			deleteBtn: HTMLButtonElement | null;
 			deleteBtnIcon: HTMLElement | null;
 			deleteBtnLabel: HTMLElement | null;
-			inactiveHint: HTMLElement | null;
+			statusSection: HTMLElement | null;
+			permissionsBlock: HTMLElement | null;
+			accountStatusActiveBtn: HTMLButtonElement | null;
+			accountStatusInactiveBtn: HTMLButtonElement | null;
 			loading: HTMLElement | null;
 			error: HTMLElement | null;
 			errorMessage: HTMLElement | null;
@@ -501,6 +547,8 @@ const toPageHref = (page: number) => {
 			previewImg: HTMLImageElement | null;
 			previewPlaceholder: HTMLElement | null;
 			photoDropzone: HTMLElement | null;
+			profileUploadIcon: HTMLElement | null;
+			profileUploadButton: HTMLLabelElement | null;
 			roleSelfAdminHint: HTMLElement | null;
 			cropModal: HTMLDialogElement | null;
 			cropMount: HTMLElement | null;
@@ -516,8 +564,10 @@ const toPageHref = (page: number) => {
 			role: HTMLSelectElement | null;
 			phone: HTMLInputElement | null;
 			specialty: HTMLSelectElement | null;
-			userActive: HTMLSelectElement | null;
-			profActive: HTMLSelectElement | null;
+			userActive: HTMLInputElement | null;
+			profActive: HTMLInputElement | null;
+			panelAccessToggle: HTMLInputElement | null;
+			publicVisibilityToggle: HTMLInputElement | null;
 			slug: HTMLInputElement | null;
 			image: HTMLInputElement | null;
 			services: HTMLSelectElement | null;
@@ -536,6 +586,10 @@ const toPageHref = (page: number) => {
 		private editingRoleId: number | null = null;
 		private editingUserIsActive: 0 | 1 | null = null;
 		private editingProfIsActive: 0 | 1 | null = null;
+		private memberAccountActive: 0 | 1 = 1;
+		private panelAccessEnabled: 0 | 1 = 1;
+		private publicVisibilityEnabled: 0 | 1 = 1;
+		private savedPermissionsBeforeInactive: { panel: 0 | 1; visibility: 0 | 1 } | null = null;
 		private closeTimer: number | null = null;
 		private slugSuggestTimer: number | null = null;
 		private slugRequestSeq = 0;
@@ -574,7 +628,10 @@ const toPageHref = (page: number) => {
 				deleteBtn: this.querySelector<HTMLButtonElement>('[data-delete-professional]'),
 				deleteBtnIcon: this.querySelector<HTMLElement>('[data-delete-professional-icon]'),
 				deleteBtnLabel: this.querySelector<HTMLElement>('[data-delete-professional-label]'),
-				inactiveHint: this.querySelector<HTMLElement>('[data-professional-inactive-hint]'),
+				statusSection: this.querySelector<HTMLElement>('[data-professional-status-section]'),
+				permissionsBlock: this.querySelector<HTMLElement>('[data-professional-permissions-block]'),
+				accountStatusActiveBtn: this.querySelector<HTMLButtonElement>('[data-member-account-status="1"]'),
+				accountStatusInactiveBtn: this.querySelector<HTMLButtonElement>('[data-member-account-status="0"]'),
 				loading: this.querySelector<HTMLElement>('[data-professional-loading]'),
 				error: this.querySelector<HTMLElement>('[data-form-error]'),
 				errorMessage: this.querySelector<HTMLElement>('[data-form-error-message]'),
@@ -587,6 +644,8 @@ const toPageHref = (page: number) => {
 				previewImg: this.querySelector<HTMLImageElement>('[data-profile-preview]'),
 				previewPlaceholder: this.querySelector<HTMLElement>('[data-profile-placeholder]'),
 				photoDropzone: this.querySelector<HTMLElement>('[data-profile-upload-dropzone]'),
+				profileUploadIcon: this.querySelector<HTMLElement>('[data-profile-upload-icon]'),
+				profileUploadButton: this.querySelector<HTMLLabelElement>('[data-profile-upload-button]'),
 				roleSelfAdminHint: this.querySelector<HTMLElement>('[data-role-self-admin-hint]'),
 				cropModal: this.querySelector<HTMLDialogElement>('[data-profile-crop-modal]'),
 				cropMount: this.querySelector<HTMLElement>('[data-profile-crop-mount]'),
@@ -603,8 +662,11 @@ const toPageHref = (page: number) => {
 				role: formNode?.querySelector<HTMLSelectElement>('select[name="rol_id_role"]') || null,
 				phone: formNode?.querySelector<HTMLInputElement>('input[name="phone_number"]') || null,
 				specialty: formNode?.querySelector<HTMLSelectElement>('select[name="spe_id_specialty"]') || null,
-				userActive: formNode?.querySelector<HTMLSelectElement>('select[name="user_is_active"]') || null,
-				profActive: formNode?.querySelector<HTMLSelectElement>('select[name="prof_is_active"]') || null,
+				userActive: formNode?.querySelector<HTMLInputElement>('input[name="user_is_active"]') || null,
+				profActive: formNode?.querySelector<HTMLInputElement>('input[name="prof_is_active"]') || null,
+				panelAccessToggle: formNode?.querySelector<HTMLInputElement>('[data-panel-access-toggle]') || null,
+				publicVisibilityToggle:
+					formNode?.querySelector<HTMLInputElement>('[data-public-visibility-toggle]') || null,
 				slug: formNode?.querySelector<HTMLInputElement>('input[name="profile_slug"]') || null,
 				image: formNode?.querySelector<HTMLInputElement>('input[name="profile_image"]') || null,
 				services: formNode?.querySelector<HTMLSelectElement>('select[name="services"]') || null,
@@ -617,8 +679,20 @@ const toPageHref = (page: number) => {
 			this.addEventListener('click', this.handleRootClick, { signal });
 			this.addEventListener('keydown', this.handleRootKeydown, { signal });
 			this.els.form?.addEventListener('submit', this.handleSubmit, { signal });
-			this.formEls.userActive?.addEventListener('change', () => this.syncActiveStateFromForm(), { signal });
-			this.formEls.profActive?.addEventListener('change', () => this.syncActiveStateFromForm(), { signal });
+			this.els.accountStatusActiveBtn?.addEventListener('click', () => this.setMemberAccountActive(1), {
+				signal,
+			});
+			this.els.accountStatusInactiveBtn?.addEventListener('click', () => this.setMemberAccountActive(0), {
+				signal,
+			});
+			this.formEls.panelAccessToggle?.addEventListener('change', () => this.handlePanelAccessToggle(), {
+				signal,
+			});
+			this.formEls.publicVisibilityToggle?.addEventListener(
+				'change',
+				() => this.handlePublicVisibilityToggle(),
+				{ signal }
+			);
 
 			this.formEls.image?.addEventListener('change', () => this.handleProfileImageInputChange(), { signal });
 			this.els.photoDropzone?.addEventListener('dragover', this.handlePhotoDragOver, { signal });
@@ -771,30 +845,120 @@ const toPageHref = (page: number) => {
 			);
 		}
 
-		private setFieldLocked(field: HTMLSelectElement | null, locked: boolean) {
+		private setFieldLocked(field: HTMLElement | null, locked: boolean) {
 			if (!field) return;
-			field.disabled = locked;
+			if (field instanceof HTMLSelectElement || field instanceof HTMLInputElement) {
+				field.disabled = locked;
+			}
 			field.classList.toggle('is-locked', locked);
 			field.closest('label')?.classList.toggle('is-locked', locked);
 		}
 
-		private syncActiveStateFromForm() {
-			if (this.formEls.userActive) {
-				this.editingUserIsActive = this.formEls.userActive.value === '0' ? 0 : 1;
-			}
-			if (this.formEls.profActive) {
-				this.editingProfIsActive = this.formEls.profActive.value === '0' ? 0 : 1;
-			}
-			this.applyInactiveMemberHint();
+		private resetMemberStatusDefaults() {
+			this.memberAccountActive = 1;
+			this.panelAccessEnabled = 1;
+			this.publicVisibilityEnabled = 1;
+			this.savedPermissionsBeforeInactive = null;
+			this.renderMemberStatusUI();
 		}
 
-		private applyInactiveMemberHint() {
-			const isInactiveMember =
-				this.mode === 'edit' &&
-				this.editingMembershipStatus === 'active' &&
-				(this.editingUserIsActive === 0 || this.editingProfIsActive === 0);
+		private loadMemberStatusFromRecord(userIsActive: 0 | 1, profIsActive: 0 | 1) {
+			const bothOff = userIsActive === 0 && profIsActive === 0;
+			this.memberAccountActive = bothOff ? 0 : 1;
+			this.panelAccessEnabled = userIsActive;
+			this.publicVisibilityEnabled = profIsActive;
+			this.savedPermissionsBeforeInactive = null;
+			this.renderMemberStatusUI();
+		}
 
-			this.els.inactiveHint?.classList.toggle('hidden', !isInactiveMember);
+		private setMemberAccountActive(value: 0 | 1) {
+			if (this.isEditingSelfAdmin()) return;
+
+			if (value === 0) {
+				this.savedPermissionsBeforeInactive = {
+					panel: this.panelAccessEnabled,
+					visibility: this.publicVisibilityEnabled,
+				};
+				this.panelAccessEnabled = 0;
+				this.publicVisibilityEnabled = 0;
+			} else if (this.savedPermissionsBeforeInactive) {
+				this.panelAccessEnabled = this.savedPermissionsBeforeInactive.panel;
+				this.publicVisibilityEnabled = this.savedPermissionsBeforeInactive.visibility;
+				this.savedPermissionsBeforeInactive = null;
+			} else if (this.panelAccessEnabled === 0 && this.publicVisibilityEnabled === 0) {
+				this.panelAccessEnabled = 1;
+				this.publicVisibilityEnabled = 1;
+			}
+
+			this.memberAccountActive = value;
+			this.renderMemberStatusUI();
+		}
+
+		private handlePanelAccessToggle() {
+			if (this.memberAccountActive === 0 || this.isEditingSelfAdmin()) return;
+			this.panelAccessEnabled = this.formEls.panelAccessToggle?.checked ? 1 : 0;
+			this.syncHiddenActiveFields();
+			this.editingUserIsActive = this.panelAccessEnabled;
+		}
+
+		private handlePublicVisibilityToggle() {
+			if (this.memberAccountActive === 0 || this.isEditingSelfAdmin()) return;
+			this.publicVisibilityEnabled = this.formEls.publicVisibilityToggle?.checked ? 1 : 0;
+			this.syncHiddenActiveFields();
+			this.editingProfIsActive = this.publicVisibilityEnabled;
+		}
+
+		private syncHiddenActiveFields() {
+			const userValue = this.memberAccountActive === 1 ? this.panelAccessEnabled : 0;
+			const profValue = this.memberAccountActive === 1 ? this.publicVisibilityEnabled : 0;
+			if (this.formEls.userActive) this.formEls.userActive.value = String(userValue);
+			if (this.formEls.profActive) this.formEls.profActive.value = String(profValue);
+		}
+
+		private renderMemberStatusUI() {
+			const isSelfAdmin = this.isEditingSelfAdmin();
+			const isAccountActive = this.memberAccountActive === 1;
+			const permissionsDisabled = !isAccountActive || isSelfAdmin;
+
+			this.els.accountStatusActiveBtn?.classList.toggle('is-selected', isAccountActive);
+			this.els.accountStatusInactiveBtn?.classList.toggle('is-selected', !isAccountActive);
+			this.els.accountStatusActiveBtn?.setAttribute('aria-pressed', isAccountActive ? 'true' : 'false');
+			this.els.accountStatusInactiveBtn?.setAttribute('aria-pressed', isAccountActive ? 'false' : 'true');
+			this.els.accountStatusActiveBtn?.toggleAttribute('disabled', isSelfAdmin);
+			this.els.accountStatusInactiveBtn?.toggleAttribute('disabled', isSelfAdmin);
+
+			this.els.permissionsBlock?.classList.toggle('is-disabled', !isAccountActive);
+
+			if (this.formEls.panelAccessToggle) {
+				this.formEls.panelAccessToggle.checked = this.panelAccessEnabled === 1;
+				this.formEls.panelAccessToggle.disabled = permissionsDisabled;
+			}
+			if (this.formEls.publicVisibilityToggle) {
+				this.formEls.publicVisibilityToggle.checked = this.publicVisibilityEnabled === 1;
+				this.formEls.publicVisibilityToggle.disabled = permissionsDisabled;
+			}
+
+			this.syncHiddenActiveFields();
+			this.editingUserIsActive = isAccountActive ? this.panelAccessEnabled : 0;
+			this.editingProfIsActive = isAccountActive ? this.publicVisibilityEnabled : 0;
+		}
+
+		private resolveActiveFlagsForSubmit(isSelfAdmin: boolean): { user_is_active: 0 | 1; prof_is_active: 0 | 1 } {
+			if (isSelfAdmin && this.editingUserIsActive !== null && this.editingProfIsActive !== null) {
+				return {
+					user_is_active: this.editingUserIsActive,
+					prof_is_active: this.editingProfIsActive,
+				};
+			}
+
+			if (this.memberAccountActive === 0) {
+				return { user_is_active: 0, prof_is_active: 0 };
+			}
+
+			return {
+				user_is_active: this.panelAccessEnabled,
+				prof_is_active: this.publicVisibilityEnabled,
+			};
 		}
 
 		private applyDeleteButtonVisibility() {
@@ -827,15 +991,13 @@ const toPageHref = (page: number) => {
 			const isSelfAdmin = this.isEditingSelfAdmin();
 
 			this.setFieldLocked(this.formEls.role, isSelfAdmin);
-			this.setFieldLocked(this.formEls.userActive, isSelfAdmin);
-			this.setFieldLocked(this.formEls.profActive, isSelfAdmin);
 
 			if (this.els.roleSelfAdminHint) {
 				this.els.roleSelfAdminHint.classList.toggle('hidden', !isSelfAdmin);
 			}
 
+			this.renderMemberStatusUI();
 			this.applyDeleteButtonVisibility();
-			this.applyInactiveMemberHint();
 		}
 
 		private updateUIMode(newMode: ProfessionalMode) {
@@ -864,19 +1026,20 @@ const toPageHref = (page: number) => {
 
 			this.applySelfAdminFieldRestrictions();
 			this.applyAccountFieldVisibility();
-			this.applyInactiveMemberHint();
 		}
 
 		private applyAccountFieldVisibility() {
 			const isCreate = this.mode === 'create';
 			const isPendingInvite = this.mode === 'edit' && this.editingMembershipStatus === 'pending_invite';
 			const isActiveMember = this.mode === 'edit' && this.editingMembershipStatus === 'active';
+			const showStatusSection = isCreate || isActiveMember;
 
 			const emailEditable = this.querySelector('[data-professional-email-editable]');
 			const accountReadonly = this.querySelector('[data-professional-account-readonly]');
 			const inviteHint = this.querySelector('[data-professional-invite-hint]');
 			const pendingEmailHint = this.querySelector('[data-professional-pending-email-hint]');
 
+			this.els.statusSection?.classList.toggle('hidden', !showStatusSection);
 			emailEditable?.classList.toggle('hidden', isActiveMember);
 			accountReadonly?.classList.toggle('hidden', !isActiveMember);
 			inviteHint?.classList.toggle('hidden', !isCreate);
@@ -1083,6 +1246,7 @@ const toPageHref = (page: number) => {
 
 		private resetFormValues() {
 			if (this.els.form) this.els.form.reset();
+			this.resetMemberStatusDefaults();
 			this.setPreviewImage(null);
 			this.setImageFileNameLabel();
 			this.setSelectedServices([]);
@@ -1096,7 +1260,7 @@ const toPageHref = (page: number) => {
 		private setImageFileNameLabel() {
 			if (!this.els.imageFileName) return;
 			const file = this.formEls.image?.files?.[0];
-			this.els.imageFileName.textContent = file ? file.name : 'No se eligio ningun archivo';
+			this.els.imageFileName.textContent = file ? file.name : 'Cambiar foto';
 			const imageFieldNode = this.formEls.fieldErrors.find(
 				(el) => el.getAttribute('data-field-error') === 'profile_image'
 			);
@@ -1106,12 +1270,14 @@ const toPageHref = (page: number) => {
 			}
 
 			if (file) {
+				this.showPhotoUploadSuccess();
 				const reader = new FileReader();
 				reader.onload = (e) => {
 					this.setPreviewImage(String(e.target?.result || ''));
 				};
 				reader.readAsDataURL(file);
 			} else {
+				this.resetPhotoUploadIcon();
 				const persistedImage = String(this.els.previewImg?.dataset.originalSrc || '').trim();
 				if (this.mode === 'edit' && persistedImage) {
 					this.setPreviewImage(persistedImage);
@@ -1119,6 +1285,21 @@ const toPageHref = (page: number) => {
 					this.setPreviewImage(null);
 				}
 			}
+		}
+
+		private resetPhotoUploadIcon() {
+			if (this.els.profileUploadIcon) {
+				this.els.profileUploadIcon.textContent = 'add_photo_alternate';
+			}
+			this.els.profileUploadButton?.classList.remove('is-success');
+		}
+
+		private showPhotoUploadSuccess() {
+			if (this.els.profileUploadIcon) {
+				this.els.profileUploadIcon.textContent = 'check';
+			}
+			this.els.profileUploadButton?.classList.add('is-success');
+			window.setTimeout(() => this.resetPhotoUploadIcon(), 1400);
 		}
 
 		private setProfileImageFieldError(message: string) {
@@ -1460,12 +1641,9 @@ const toPageHref = (page: number) => {
 				this.editingUserIsActive = user.is_active === 0 ? 0 : 1;
 				this.editingProfIsActive = prof.is_active === 0 ? 0 : 1;
 				this.applySelfAdminFieldRestrictions();
+				this.loadMemberStatusFromRecord(this.editingUserIsActive, this.editingProfIsActive);
 				if (formEls.phone) formEls.phone.value = this.formatParaguayPhoneLocal(prof.phone_number || '');
 				if (formEls.slug) formEls.slug.value = prof.profile_slug || '';
-				if (formEls.userActive) formEls.userActive.value = String(this.editingUserIsActive);
-				if (formEls.profActive) formEls.profActive.value = String(this.editingProfIsActive);
-
-				this.applyInactiveMemberHint();
 				
 				this.setPreviewImage(prof.profile_image_url);
 
@@ -1536,18 +1714,8 @@ const toPageHref = (page: number) => {
 				return;
 			}
 			
-			const userIsActive: 0 | 1 =
-				isSelfAdmin && this.editingUserIsActive !== null
-					? this.editingUserIsActive
-					: fd.get('user_is_active') === '0'
-						? 0
-						: 1;
-			const profIsActive: 0 | 1 =
-				isSelfAdmin && this.editingProfIsActive !== null
-					? this.editingProfIsActive
-					: fd.get('prof_is_active') === '0'
-						? 0
-						: 1;
+			const { user_is_active: userIsActive, prof_is_active: profIsActive } =
+				this.resolveActiveFlagsForSubmit(isSelfAdmin);
 
 			const payload: any = {
 				rol_id_role: Number(roleRaw),
@@ -1636,7 +1804,7 @@ const toPageHref = (page: number) => {
 			const isPendingInvite = this.editingMembershipStatus === 'pending_invite';
 			if (!isPendingInvite) {
 				this.showFormError(
-					'Este profesional ya tiene cuenta en la organización. Usá «Visible en app» y «Acceso en esta organización» para desactivar o reactivar.'
+					'Este profesional ya tiene cuenta en la organización. Abrí su ficha y activá el estado de la cuenta para reactivarlo.'
 				);
 				return;
 			}
@@ -1874,6 +2042,12 @@ const toPageHref = (page: number) => {
 		transform: scale(0.98);
 	}
 
+	.profile-photo-uploader__button.is-success {
+		border-color: color-mix(in srgb, #34d399 42%, var(--primary-container) 58%);
+		background: color-mix(in srgb, #34d399 12%, var(--primary-soft) 88%);
+		color: #34d399;
+	}
+
 	.profile-photo-uploader__meta {
 		color: var(--on-surface-variant);
 		font-size: 0.75rem;
@@ -1894,6 +2068,153 @@ const toPageHref = (page: number) => {
 		background: color-mix(in srgb, var(--primary-soft) 28%, var(--surface-bright) 72%);
 		padding: 1rem;
 		box-shadow: var(--card-inset-highlight);
+	}
+
+	.professional-status-stack {
+		display: grid;
+		gap: 0.85rem;
+	}
+
+	.professional-status-card,
+	.professional-permissions-card {
+		border-radius: 1.15rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 1rem 1.05rem;
+		box-shadow: var(--card-inset-highlight);
+	}
+
+	.professional-permissions-card {
+		display: grid;
+		gap: 1rem;
+		transition: opacity 180ms ease, filter 180ms ease;
+	}
+
+	.professional-permissions-card.is-disabled {
+		opacity: 0.58;
+		filter: grayscale(0.15);
+		pointer-events: none;
+	}
+
+	.professional-status-segment {
+		display: inline-flex;
+		padding: 0.2rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: var(--control-surface);
+	}
+
+	.professional-status-segment__btn {
+		min-width: 5.1rem;
+		border: 1px solid transparent;
+		border-radius: 999px;
+		background: transparent;
+		padding: 0.48rem 0.85rem;
+		color: var(--on-surface-variant);
+		font-size: 0.84rem;
+		font-weight: 800;
+		cursor: pointer;
+		transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+	}
+
+	.professional-status-segment__btn.is-selected {
+		background: color-mix(in srgb, var(--primary) 16%, var(--control-surface));
+		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border));
+		color: var(--primary);
+		box-shadow: none;
+	}
+
+	.professional-status-segment__btn:disabled {
+		cursor: not-allowed;
+		opacity: 0.55;
+	}
+
+	.professional-permissions-list {
+		display: grid;
+		gap: 0.65rem;
+	}
+
+	.professional-permission-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		border-radius: 0.95rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+		background: var(--control-surface);
+		padding: 0.85rem 0.95rem;
+	}
+
+	.professional-permission-row__copy {
+		display: grid;
+		gap: 0.2rem;
+		min-width: 0;
+	}
+
+	.professional-permission-row__title {
+		font-size: 0.92rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.professional-permission-row__hint {
+		font-size: 0.8rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--on-surface-variant);
+	}
+
+	.settings-switch {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		cursor: pointer;
+	}
+
+	.settings-switch.is-disabled {
+		cursor: not-allowed;
+		opacity: 0.55;
+	}
+
+	.settings-switch__track {
+		position: relative;
+		display: inline-flex;
+		width: 3rem;
+		height: 1.7rem;
+		border-radius: 999px;
+		background: var(--surface-variant);
+		border: 1px solid var(--shell-border);
+		transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+
+	.settings-switch__track::after {
+		content: '';
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 1.25rem;
+		height: 1.25rem;
+		border-radius: 50%;
+		background: #fff;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
+		transition: transform 0.2s ease;
+	}
+
+	.settings-switch__input:focus-visible + .settings-switch__track {
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 16%, transparent);
+	}
+
+	.settings-switch__input:checked + .settings-switch__track {
+		background: color-mix(in srgb, var(--primary) 52%, var(--surface-variant));
+		border-color: color-mix(in srgb, var(--primary) 36%, var(--shell-border));
+	}
+
+	.settings-switch__input:checked + .settings-switch__track::after {
+		transform: translateX(1.3rem);
+	}
+
+	.settings-switch__input:disabled + .settings-switch__track {
+		opacity: 0.7;
 	}
 
 	@media (min-width: 640px) {

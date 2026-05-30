@@ -21,7 +21,7 @@ export type UserBookingState = {
 };
 
 export const USER_BOOKING_STEP_LABELS: Record<1 | 2 | 3 | 4, string> = {
-	1: 'Sucursal y servicio',
+	1: 'Servicio',
 	2: 'Fecha',
 	3: 'Horario',
 	4: 'Datos',

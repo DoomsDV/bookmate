@@ -104,6 +104,15 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		</nav>
 
 		<div class="settings-content relative flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 overscroll-contain">
+			<div class="settings-feedback-sticky-wrap">
+				<div
+					data-settings-feedback-host
+					class="settings-feedback-host hidden"
+					role="alert"
+					aria-live="polite"
+					hidden
+				></div>
+			</div>
 			<div class="settings-loading-overlay hidden" data-settings-loading aria-live="polite" aria-busy="true">
 				<div class="settings-loading-card">
 					<span class="material-symbols-rounded animate-spin">progress_activity</span>
@@ -111,7 +120,6 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				</div>
 			</div>
 			<section data-settings-panel="profile" class="grid gap-6">
-				<p data-settings-feedback="profile" class="hidden settings-feedback"></p>
 				<form data-settings-profile-form class="grid gap-8">
 					<div class="grid gap-5">
 						<div class="grid gap-1">
@@ -267,7 +275,6 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			</section>
 
 			<section data-settings-panel="security" class="settings-panel hidden gap-6">
-				<p data-settings-feedback="security" class="hidden settings-feedback"></p>
 				<form data-settings-security-form class="grid gap-8">
 					<div class="grid gap-5">
 						<div class="grid gap-1">
@@ -329,7 +336,6 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			</section>
 
 			<section data-settings-panel="preferences" class="settings-panel hidden gap-8">
-				<p data-settings-feedback="preferences" class="hidden settings-feedback"></p>
 				<form data-settings-preferences-form class="grid gap-6">
 					<div class="grid gap-1">
 						<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Tu panel de control</h3>
@@ -403,7 +409,6 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				isAdmin ? (
 					<>
 						<section data-settings-panel="workspace" class="settings-panel hidden gap-6">
-							<p data-settings-feedback="workspace" class="hidden settings-feedback"></p>
 							<form data-settings-workspace-form class="grid gap-6">
 								<div class="grid gap-1">
 									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información del negocio</h3>
@@ -430,7 +435,6 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 						{
 							showIntegrationsTab ? (
 								<section data-settings-panel="integrations" class="settings-panel hidden gap-6">
-									<p data-settings-feedback="integrations" class="hidden settings-feedback"></p>
 									<form data-settings-integrations-form class="grid gap-6">
 										<div class="grid gap-1">
 											<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Pagopar</h3>
@@ -483,7 +487,6 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 						}
 
 						<section data-settings-panel="system" class="settings-panel hidden gap-6">
-							<p data-settings-feedback="system" class="hidden settings-feedback"></p>
 							<details class="settings-system-notice" open>
 								<summary class="settings-system-notice__summary">
 									<div class="settings-system-notice__header">
@@ -1453,40 +1456,60 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			return false;
 		}
 
-		private showFeedback(key: string, message: string, kind: 'success' | 'error' = 'success') {
-			const node = this.querySelector(`[data-settings-feedback="${key}"]`);
+		private getFeedbackHost(): HTMLElement | null {
+			return this.querySelector<HTMLElement>('[data-settings-feedback-host]');
+		}
+
+		private hideFeedbackNode(node: HTMLElement) {
+			if (this.feedbackHideTimer) {
+				window.clearTimeout(this.feedbackHideTimer);
+				this.feedbackHideTimer = null;
+			}
+			node.className = 'settings-feedback-host hidden';
+			node.hidden = true;
+			node.textContent = '';
+		}
+
+		private showFeedback(_key: string, message: string, kind: 'success' | 'error' = 'success') {
+			const node = this.getFeedbackHost();
 			if (!node) return;
 			if (this.feedbackHideTimer) {
 				window.clearTimeout(this.feedbackHideTimer);
 				this.feedbackHideTimer = null;
 			}
-			node.textContent = message;
-			node.classList.remove('hidden', 'is-success', 'is-error');
-			node.classList.add(kind === 'success' ? 'is-success' : 'is-error');
 
-			// Keep feedback visible even when the user is scrolled down in the panel.
-			node.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+			const tone =
+				kind === 'success'
+					? { icon: 'check_circle', modifier: 'inline-feedback--success' }
+					: { icon: 'error', modifier: 'inline-feedback--error' };
+
+			node.hidden = false;
+			node.className = `settings-feedback-host inline-feedback ${tone.modifier}`;
+			node.innerHTML = `
+				<span class="material-symbols-rounded inline-feedback__icon">${tone.icon}</span>
+				<p class="inline-feedback__text"></p>
+				<button type="button" class="inline-feedback__close" aria-label="Cerrar mensaje" data-inline-feedback-close>
+					<span class="material-symbols-rounded">close</span>
+				</button>
+			`;
+
+			const textNode = node.querySelector('.inline-feedback__text');
+			if (textNode) textNode.textContent = message;
+
+			node.querySelector('[data-inline-feedback-close]')?.addEventListener('click', () => {
+				this.hideFeedbackNode(node);
+			});
 
 			if (kind === 'success') {
 				this.feedbackHideTimer = window.setTimeout(() => {
-					node.classList.add('hidden');
-					node.classList.remove('is-success', 'is-error');
-					node.textContent = '';
-					this.feedbackHideTimer = null;
+					this.hideFeedbackNode(node);
 				}, 3200);
 			}
 		}
 
 		private clearFeedback() {
-			if (this.feedbackHideTimer) {
-				window.clearTimeout(this.feedbackHideTimer);
-				this.feedbackHideTimer = null;
-			}
-			this.querySelectorAll('.settings-feedback').forEach((node) => {
-				node.textContent = '';
-				node.classList.add('hidden');
-				node.classList.remove('is-success', 'is-error');
-			});
+			const node = this.getFeedbackHost();
+			if (node) this.hideFeedbackNode(node);
 			this.clearProfileFieldErrors();
 		}
 
@@ -2422,6 +2445,26 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		}
 	}
 
+	.settings-feedback-sticky-wrap {
+		position: sticky;
+		top: 0;
+		z-index: 24;
+		height: 0;
+		overflow: visible;
+		pointer-events: none;
+	}
+
+	.settings-feedback-host {
+		width: 100%;
+		margin: 0;
+		pointer-events: auto;
+	}
+
+	.settings-feedback-host.hidden,
+	.settings-feedback-host[hidden] {
+		display: none !important;
+	}
+
 	.settings-panel,
 	.settings-prof-section {
 		display: grid;
@@ -2714,32 +2757,6 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			width: 5rem;
 			height: 5rem;
 		}
-	}
-
-	.settings-feedback {
-		position: sticky;
-		top: 0.35rem;
-		z-index: 12;
-		border-radius: 1.2rem;
-		border: 1px solid transparent;
-		padding: 0.75rem 1rem;
-		font-size: 0.9rem;
-		font-weight: 700;
-		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
-		backdrop-filter: blur(6px);
-		-webkit-backdrop-filter: blur(6px);
-	}
-
-	.settings-feedback.is-success {
-		border-color: rgba(5, 150, 105, 0.35);
-		background: rgba(220, 252, 231, 0.78);
-		color: #047857;
-	}
-
-	.settings-feedback.is-error {
-		border-color: rgba(225, 29, 72, 0.35);
-		background: rgba(255, 228, 230, 0.8);
-		color: #be123c;
 	}
 
 	.settings-system-notice {
