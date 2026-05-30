@@ -141,7 +141,8 @@ const appointmentsCountText =
 const toPageHref = (page: number) => {
 	const nextUrl = new URL(Astro.url);
 	nextUrl.searchParams.set('page', String(page));
-	return `${nextUrl.pathname}${nextUrl.search}`;
+	nextUrl.hash = 'dashboard-upcoming-appointments';
+	return `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
 };
 
 ---
@@ -316,7 +317,10 @@ const toPageHref = (page: number) => {
 										</div>
 
 									<div class="grid grid-cols-1 gap-6">
-										<div class="dashboard-report-shell rounded-4xl p-6 transition-colors duration-300">
+										<div
+											id="dashboard-upcoming-appointments"
+											class="dashboard-report-shell rounded-4xl p-6 transition-colors duration-300"
+										>
 											<div class="mb-6 flex items-center justify-between gap-3">
 												<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Próximas citas de los siguientes 7 días</h2>
 												<span class="whitespace-nowrap rounded-full bg-[#E8EAED] dark:bg-[#2B2D31] px-4 py-1.5 text-[0.8rem] font-black text-[#5f6368] dark:text-[#C4C7C5] tracking-wide shadow-sm transition-colors duration-300">
@@ -978,6 +982,51 @@ const toPageHref = (page: number) => {
 	const initializeDashboardPage = () => {
 		loadAiSummary();
 		loadTeamOverview();
+		scrollToUpcomingAppointmentsIfNeeded();
+	};
+
+	const UPCOMING_APPOINTMENTS_ANCHOR_ID = 'dashboard-upcoming-appointments';
+	const UPCOMING_APPOINTMENTS_SCROLL_OFFSET = 12;
+
+	const getDashboardScrollContainer = (): HTMLElement | null =>
+		document.querySelector<HTMLElement>('.app-shell > :last-child > main');
+
+	const shouldScrollToUpcomingAppointments = (): boolean => {
+		const url = new URL(window.location.href);
+		return (
+			url.hash === `#${UPCOMING_APPOINTMENTS_ANCHOR_ID}` ||
+			url.searchParams.has('page')
+		);
+	};
+
+	const scrollToUpcomingAppointments = (behavior: ScrollBehavior = 'smooth') => {
+		const target = document.getElementById(UPCOMING_APPOINTMENTS_ANCHOR_ID);
+		const container = getDashboardScrollContainer();
+		if (!target || !container) return;
+
+		const containerTop = container.getBoundingClientRect().top;
+		const targetTop = target.getBoundingClientRect().top;
+		const nextScrollTop =
+			container.scrollTop + (targetTop - containerTop) - UPCOMING_APPOINTMENTS_SCROLL_OFFSET;
+
+		container.scrollTo({
+			top: Math.max(0, nextScrollTop),
+			behavior,
+		});
+	};
+
+	const scrollToUpcomingAppointmentsIfNeeded = () => {
+		if (!shouldScrollToUpcomingAppointments()) return;
+
+		const behavior: ScrollBehavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+			? 'auto'
+			: 'smooth';
+
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				scrollToUpcomingAppointments(behavior);
+			});
+		});
 	};
 
 	initializeDashboardPage();
@@ -1620,6 +1669,7 @@ const toPageHref = (page: number) => {
 		border: 1px solid rgba(148, 163, 184, 0.24);
 		background: #ffffff;
 		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+		scroll-margin-top: 0.75rem;
 	}
 
 	html[data-theme='dark'] .dashboard-report-shell {

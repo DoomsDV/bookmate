@@ -66,8 +66,8 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 	</div>
 
 	<div class="settings-layout flex min-h-0 flex-1 flex-col overflow-hidden bg-(--surface)/30 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]">
-		<nav class="settings-nav shrink-0 border-b border-(--shell-border) bg-(--surface-bright)/50 px-0 py-3">
-			<div class="settings-tabs-grid">
+		<nav class="settings-nav shrink-0 border-b border-(--shell-border) bg-(--surface-bright)/50 px-0 py-3" data-settings-nav>
+			<div class="settings-tabs-grid" data-settings-tabs-scroll>
 				<button type="button" data-settings-tab-trigger data-settings-tab="profile" class="settings-tab is-active">
 					<span class="material-symbols-rounded">person</span>Mi perfil
 				</button>
@@ -101,9 +101,11 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 					) : null
 				}
 			</div>
+			<div class="settings-tabs-scroll-edge" aria-hidden="true"></div>
 		</nav>
 
-		<div class="settings-content relative flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 overscroll-contain">
+		<div class="settings-content-shell flex min-h-0 flex-1 flex-col" data-settings-content-shell>
+		<div class="settings-content relative flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 overscroll-contain" data-settings-content>
 			<div class="settings-feedback-sticky-wrap">
 				<div
 					data-settings-feedback-host
@@ -637,6 +639,12 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				) : null
 			}
 		</div>
+		<div class="settings-content-scroll-edge" aria-hidden="true"></div>
+		<p class="settings-content-scroll-hint" aria-hidden="true">
+			<span class="material-symbols-rounded">expand_more</span>
+			Deslizá para ver más
+		</p>
+		</div>
 	</div>
 </dialog>
 
@@ -792,6 +800,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		private pendingCropTarget: 'profile' | 'logo' | null = null;
 		private cropBusy = false;
 		private pushToggleBusy = false;
+		private scrollHintsObserver: ResizeObserver | null = null;
 
 		connectedCallback() {
 			const roleId = Number(this.dataset.roleId || '0');
@@ -881,6 +890,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			this.els.systemForm?.addEventListener('submit', this.handleSystemSubmit, { signal });
 			this.els.systemForm?.addEventListener('change', this.handleSystemFormChange, { signal });
 			this.els.integrationsForm?.addEventListener('submit', this.handleIntegrationsSubmit, { signal });
+			this.bindScrollHints(signal);
 		}
 
 		disconnectedCallback() {
@@ -895,6 +905,56 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			this.pendingCropTarget = null;
 			if (this.closingTimer) window.clearTimeout(this.closingTimer);
 			if (this.feedbackHideTimer) window.clearTimeout(this.feedbackHideTimer);
+			this.scrollHintsObserver?.disconnect();
+			this.scrollHintsObserver = null;
+		}
+
+		private updateScrollHints = () => {};
+
+		private bindScrollHints(signal: AbortSignal) {
+			const content = this.querySelector<HTMLElement>('[data-settings-content]');
+			const contentShell = this.querySelector<HTMLElement>('[data-settings-content-shell]');
+			const tabsGrid = this.querySelector<HTMLElement>('[data-settings-tabs-scroll]');
+			const tabsNav = this.querySelector<HTMLElement>('[data-settings-nav]');
+			const scrollHint = this.querySelector<HTMLElement>('.settings-content-scroll-hint');
+
+			if (!content || !contentShell) return;
+
+			const updateContentScrollHint = () => {
+				const hasOverflow = content.scrollHeight - content.clientHeight > 12;
+				const canScrollDown =
+					content.scrollHeight - content.scrollTop - content.clientHeight > 12;
+				const showHint = hasOverflow && canScrollDown;
+
+				contentShell.classList.toggle('has-scroll-below', showHint);
+				scrollHint?.setAttribute('aria-hidden', showHint ? 'false' : 'true');
+			};
+
+			const updateTabsScrollHint = () => {
+				if (!tabsGrid || !tabsNav) return;
+
+				const hasOverflow = tabsGrid.scrollWidth - tabsGrid.clientWidth > 8;
+				const canScrollRight =
+					tabsGrid.scrollWidth - tabsGrid.scrollLeft - tabsGrid.clientWidth > 8;
+
+				tabsNav.classList.toggle('has-tabs-scroll', hasOverflow && canScrollRight);
+			};
+
+			this.updateScrollHints = () => {
+				updateContentScrollHint();
+				updateTabsScrollHint();
+			};
+
+			content.addEventListener('scroll', updateContentScrollHint, { passive: true, signal });
+			tabsGrid?.addEventListener('scroll', updateTabsScrollHint, { passive: true, signal });
+			window.addEventListener('resize', this.updateScrollHints, { signal });
+
+			this.scrollHintsObserver = new ResizeObserver(this.updateScrollHints);
+			this.scrollHintsObserver.observe(content);
+			if (tabsGrid) this.scrollHintsObserver.observe(tabsGrid);
+			this.els.panels.forEach((panel) => this.scrollHintsObserver?.observe(panel));
+
+			requestAnimationFrame(this.updateScrollHints);
 		}
 
 		private handleDocumentClick = (event: MouseEvent) => {
@@ -959,6 +1019,9 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			}
 			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
 			void this.loadData();
+			requestAnimationFrame(() => {
+				requestAnimationFrame(this.updateScrollHints);
+			});
 		};
 
 		private syncPushNotificationToggle() {
@@ -1155,6 +1218,9 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			this.els.tabButtons.forEach((button) => {
 				if (button instanceof HTMLButtonElement) button.disabled = isLoading;
 			});
+			if (!isLoading) {
+				requestAnimationFrame(this.updateScrollHints);
+			}
 		}
 
 		private isAllowedImageFile(file: File): boolean {
@@ -1596,6 +1662,10 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			this.els.tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.settingsTab === tabId));
 			this.els.panels.forEach((panel) => panel.classList.toggle('hidden', panel.dataset.settingsPanel !== tabId));
 			if (tabId === 'profile') this.syncPushNotificationToggle();
+
+			const content = this.querySelector<HTMLElement>('[data-settings-content]');
+			if (content) content.scrollTop = 0;
+			requestAnimationFrame(this.updateScrollHints);
 		}
 
 		private resetSecurityForm() {
@@ -2396,6 +2466,99 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 	}
 
 	@media (max-width: 768px) {
+		.settings-nav {
+			position: relative;
+		}
+
+		.settings-tabs-scroll-edge {
+			display: block;
+			pointer-events: none;
+			position: absolute;
+			top: 0;
+			right: 0;
+			bottom: 0;
+			width: 2.75rem;
+			background: linear-gradient(
+				to left,
+				color-mix(in srgb, var(--surface-bright) 96%, transparent),
+				transparent
+			);
+			opacity: 0;
+			transition: opacity 200ms ease;
+			z-index: 2;
+		}
+
+		.settings-nav.has-tabs-scroll .settings-tabs-scroll-edge {
+			opacity: 1;
+		}
+
+		.settings-content-shell {
+			position: relative;
+			min-height: 0;
+		}
+
+		.settings-content {
+			padding-bottom: 3.75rem;
+		}
+
+		.settings-content-scroll-edge {
+			display: block;
+			pointer-events: none;
+			position: absolute;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			height: 5rem;
+			background: linear-gradient(
+				to bottom,
+				transparent 0%,
+				color-mix(in srgb, var(--surface-bright) 70%, var(--surface) 30%) 42%,
+				color-mix(in srgb, var(--surface-bright) 94%, var(--surface) 6%) 100%
+			);
+			opacity: 0;
+			transition: opacity 220ms ease;
+			z-index: 4;
+		}
+
+		.settings-content-shell.has-scroll-below .settings-content-scroll-edge {
+			opacity: 1;
+		}
+
+		.settings-content-scroll-hint {
+			display: inline-flex;
+			pointer-events: none;
+			position: absolute;
+			left: 50%;
+			bottom: 0.85rem;
+			transform: translateX(-50%);
+			align-items: center;
+			gap: 0.15rem;
+			margin: 0;
+			padding: 0.38rem 0.82rem;
+			border-radius: 999px;
+			font-size: 0.68rem;
+			font-weight: 800;
+			line-height: 1;
+			letter-spacing: 0.06em;
+			text-transform: uppercase;
+			color: var(--primary);
+			background: color-mix(in srgb, var(--surface-bright) 94%, transparent);
+			border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--shell-border) 76%);
+			box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+			opacity: 0;
+			transition: opacity 220ms ease;
+			z-index: 5;
+		}
+
+		.settings-content-shell.has-scroll-below .settings-content-scroll-hint {
+			opacity: 1;
+		}
+
+		.settings-content-scroll-hint .material-symbols-rounded {
+			font-size: 1rem;
+			animation: settings-scroll-hint-bounce 1.55s ease-in-out infinite;
+		}
+
 		.settings-tabs-grid {
 			display: flex;
 			flex-direction: row;
@@ -2442,6 +2605,31 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		.settings-tab .material-symbols-rounded {
 			margin-right: 0.45rem;
 			font-size: 1.15rem;
+		}
+	}
+
+	@keyframes settings-scroll-hint-bounce {
+		0%,
+		100% {
+			transform: translateY(0);
+		}
+
+		50% {
+			transform: translateY(3px);
+		}
+	}
+
+	@media (min-width: 769px) {
+		.settings-tabs-scroll-edge,
+		.settings-content-scroll-edge,
+		.settings-content-scroll-hint {
+			display: none !important;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.settings-content-scroll-hint .material-symbols-rounded {
+			animation: none;
 		}
 	}
 
