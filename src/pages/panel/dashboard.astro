@@ -216,14 +216,10 @@ const toPageHref = (page: number) => {
 										data-default-summary-short={defaultAiSummaryShort}
 										data-default-summary-full={defaultAiSummaryFull}
 									>
-										<div class="dashboard-ai-border-glow" aria-hidden="true"></div>
 										<div class="dashboard-ai-orbs" aria-hidden="true">
 											<span class="dashboard-ai-orb dashboard-ai-orb--1"></span>
 											<span class="dashboard-ai-orb dashboard-ai-orb--2"></span>
 											<span class="dashboard-ai-orb dashboard-ai-orb--3"></span>
-											<span class="dashboard-ai-spark dashboard-ai-spark--1"></span>
-											<span class="dashboard-ai-spark dashboard-ai-spark--2"></span>
-											<span class="dashboard-ai-spark dashboard-ai-spark--3"></span>
 										</div>
 										<div class="dashboard-ai-shimmer-top" aria-hidden="true"></div>
 										<div class="dashboard-ai-header mb-3">
@@ -1724,42 +1720,13 @@ const toPageHref = (page: number) => {
 			border-color 400ms ease;
 	}
 
-	.dashboard-ai-border-glow,
 	.dashboard-ai-orbs {
 		display: none;
 		pointer-events: none;
 	}
 
-	.dashboard-ai-card.is-generating .dashboard-ai-border-glow,
 	.dashboard-ai-card.is-generating .dashboard-ai-orbs {
 		display: block;
-	}
-
-	.dashboard-ai-border-glow {
-		position: absolute;
-		inset: -1px;
-		border-radius: inherit;
-		padding: 1.5px;
-		background: conic-gradient(
-			from 0deg,
-			rgba(0, 119, 255, 0.05) 0deg,
-			rgba(0, 180, 255, 0.92) 72deg,
-			rgba(120, 160, 255, 0.78) 144deg,
-			rgba(0, 119, 255, 0.35) 216deg,
-			rgba(56, 189, 248, 0.88) 288deg,
-			rgba(0, 119, 255, 0.05) 360deg
-		);
-		-webkit-mask:
-			linear-gradient(#000 0 0) content-box,
-			linear-gradient(#000 0 0);
-		-webkit-mask-composite: xor;
-		mask:
-			linear-gradient(#000 0 0) content-box,
-			linear-gradient(#000 0 0);
-		mask-composite: exclude;
-		animation: ai-border-spin 3.6s linear infinite;
-		opacity: 0.95;
-		z-index: 0;
 	}
 
 	.dashboard-ai-orbs {
@@ -1804,58 +1771,6 @@ const toPageHref = (page: number) => {
 		animation-delay: 2.4s;
 	}
 
-	.dashboard-ai-spark {
-		position: absolute;
-		width: 0.55rem;
-		height: 0.55rem;
-		opacity: 0;
-		background: radial-gradient(circle, rgba(186, 230, 253, 0.95) 0%, rgba(186, 230, 253, 0) 72%);
-		filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.75));
-		animation: ai-spark-twinkle 2.8s ease-in-out infinite;
-	}
-
-	.dashboard-ai-spark::before,
-	.dashboard-ai-spark::after {
-		content: '';
-		position: absolute;
-		background: rgba(224, 242, 254, 0.92);
-		border-radius: 999px;
-	}
-
-	.dashboard-ai-spark::before {
-		top: 50%;
-		left: 0;
-		width: 100%;
-		height: 1px;
-		transform: translateY(-50%);
-	}
-
-	.dashboard-ai-spark::after {
-		left: 50%;
-		top: 0;
-		width: 1px;
-		height: 100%;
-		transform: translateX(-50%);
-	}
-
-	.dashboard-ai-spark--1 {
-		top: 22%;
-		left: 18%;
-		animation-delay: 0.35s;
-	}
-
-	.dashboard-ai-spark--2 {
-		top: 58%;
-		right: 16%;
-		animation-delay: 1.05s;
-	}
-
-	.dashboard-ai-spark--3 {
-		bottom: 18%;
-		left: 52%;
-		animation-delay: 1.75s;
-	}
-
 	.dashboard-ai-header,
 	.dashboard-ai-state,
 	.dashboard-ai-body {
@@ -1890,10 +1805,7 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-card.is-generating {
-		border-color: color-mix(in srgb, rgba(59, 130, 246, 0.22) 100%, transparent);
-		box-shadow:
-			inset 0 1px 0 rgba(186, 230, 253, 0.08),
-			0 8px 32px rgba(37, 99, 235, 0.08);
+		animation: ai-card-pulse 2.6s ease-in-out infinite;
 	}
 
 	.dashboard-ai-card.is-generating::after {
@@ -1957,12 +1869,6 @@ const toPageHref = (page: number) => {
 		100% { background-position: -120% 0; }
 	}
 
-	@keyframes ai-border-spin {
-		to {
-			transform: rotate(360deg);
-		}
-	}
-
 	@keyframes ai-orb-drift {
 		0%, 100% {
 			opacity: 0.28;
@@ -1980,20 +1886,60 @@ const toPageHref = (page: number) => {
 		}
 	}
 
-	@keyframes ai-spark-twinkle {
+	@keyframes ai-card-pulse {
 		0%, 100% {
-			opacity: 0;
-			transform: scale(0.65) rotate(0deg);
+			border-color: rgba(59, 130, 246, 0.2);
+			box-shadow:
+				inset 0 1px 0 rgba(186, 230, 253, 0.06),
+				0 4px 20px rgba(37, 99, 235, 0.07);
 		}
 
-		45% {
-			opacity: 0.95;
-			transform: scale(1) rotate(18deg);
+		50% {
+			border-color: rgba(56, 189, 248, 0.38);
+			box-shadow:
+				inset 0 1px 0 rgba(186, 230, 253, 0.11),
+				0 8px 28px rgba(37, 99, 235, 0.13);
+		}
+	}
+
+	@keyframes ai-card-pulse-dark {
+		0%, 100% {
+			border-color: rgba(96, 165, 250, 0.22);
+			box-shadow:
+				inset 0 1px 0 rgba(147, 197, 253, 0.05),
+				0 6px 24px rgba(37, 99, 235, 0.12);
 		}
 
-		70% {
-			opacity: 0.35;
-			transform: scale(0.82) rotate(8deg);
+		50% {
+			border-color: rgba(125, 211, 252, 0.4);
+			box-shadow:
+				inset 0 1px 0 rgba(147, 197, 253, 0.1),
+				0 10px 32px rgba(37, 99, 235, 0.18);
+		}
+	}
+
+	@media (max-width: 639px) {
+		.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top {
+			height: 3px;
+		}
+
+		.dashboard-ai-orb {
+			filter: blur(18px);
+		}
+
+		.dashboard-ai-orb--1 {
+			width: 6.5rem;
+			height: 6.5rem;
+		}
+
+		.dashboard-ai-orb--2 {
+			width: 5.5rem;
+			height: 5.5rem;
+		}
+
+		.dashboard-ai-orb--3 {
+			width: 6rem;
+			height: 6rem;
 		}
 	}
 
@@ -2365,22 +2311,7 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-card.is-generating {
-		border-color: color-mix(in srgb, rgba(96, 165, 250, 0.24) 100%, transparent);
-		box-shadow:
-			inset 0 1px 0 rgba(147, 197, 253, 0.06),
-			0 10px 36px rgba(37, 99, 235, 0.14);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-border-glow {
-		background: conic-gradient(
-			from 0deg,
-			rgba(96, 165, 250, 0.04) 0deg,
-			rgba(56, 189, 248, 0.95) 72deg,
-			rgba(129, 140, 248, 0.82) 144deg,
-			rgba(59, 130, 246, 0.38) 216deg,
-			rgba(125, 211, 252, 0.9) 288deg,
-			rgba(96, 165, 250, 0.04) 360deg
-		);
+		animation-name: ai-card-pulse-dark;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-orb--1 {
@@ -2959,10 +2890,9 @@ const toPageHref = (page: number) => {
 		}
 
 		.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top,
-		.dashboard-ai-card.is-generating .dashboard-ai-border-glow,
 		.dashboard-ai-card.is-generating .dashboard-ai-orb,
-		.dashboard-ai-card.is-generating .dashboard-ai-spark,
 		.dashboard-ai-card.is-generating .dashboard-ai-sparkle,
+		.dashboard-ai-card.is-generating,
 		.dashboard-ai-loading-icon,
 		.dashboard-ai-skeleton-line {
 			animation: none;
@@ -2975,10 +2905,6 @@ const toPageHref = (page: number) => {
 
 		.dashboard-ai-card.is-generating .dashboard-ai-orb {
 			opacity: 0.35;
-		}
-
-		.dashboard-ai-card.is-generating .dashboard-ai-spark {
-			opacity: 0.55;
 		}
 	}
 </style>
