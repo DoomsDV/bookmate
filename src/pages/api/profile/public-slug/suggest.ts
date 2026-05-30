@@ -3,11 +3,11 @@ import type { APIRoute } from 'astro';
 import {
 	MyProfileApiError,
 	suggestPublicSlugWithOrds,
-} from '../../../lib/my-profile';
+} from '../../../../lib/my-profile';
 import {
 	requireToken as requireApiToken,
 	toErrorResponse as toApiErrorResponse,
-} from '../../../utils/api-helpers';
+} from '../../../../utils/api-helpers';
 
 const createProfileError = (message: string, status = 400) =>
 	new MyProfileApiError(message, status);
