@@ -129,18 +129,17 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 					<script type="application/json" id="public-booking-profile-json" set:html={serializedProfile}></script>
 					<script type="application/json" id="public-booking-locations-json" set:html={serializedLocations}></script>
 
-					<div class="relative">
-						<header class="relative overflow-hidden rounded-[28px] bg-(--surface-container) p-6 sm:p-8 shadow-sm transition-shadow">
-							<div class="relative grid justify-items-center gap-4 text-center sm:grid-cols-[auto_1fr] sm:items-center sm:justify-items-start sm:gap-6 sm:text-left">
+					<header class="relative overflow-hidden rounded-[28px] bg-(--surface-container) p-6 sm:p-8 shadow-sm">
+						<div class="relative grid justify-items-center gap-4 text-center">
 							{profile.image_url ? (
 								<img
 									src={profile.image_url}
 									alt={`Foto de ${profile.full_name}`}
 									loading="lazy"
-									class="public-booking-avatar h-24 w-24 rounded-full border border-(--outline-variant) bg-(--surface-container-high) object-cover sm:h-32 sm:w-32"
+									class="public-booking-avatar h-28 w-28 rounded-full border border-(--outline-variant) bg-(--surface-container-high) object-cover sm:h-32 sm:w-32"
 								/>
 							) : (
-								<div class="public-booking-avatar public-booking-avatar--empty h-24 w-24 sm:h-32 sm:w-32" aria-label={`Sin foto de ${profile.full_name}`} role="img">
+								<div class="public-booking-avatar public-booking-avatar--empty h-28 w-28 sm:h-32 sm:w-32" aria-label={`Sin foto de ${profile.full_name}`} role="img">
 									<span class="material-symbols-rounded">account_circle</span>
 								</div>
 							)}
@@ -158,8 +157,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 								)}
 							</div>
 						</div>
-						</header>
-					</div>
+					</header>
 
 					<div class="rounded-3xl bg-(--surface-container) p-4 sm:p-6 shadow-sm">
 						<div class="flex items-center gap-4 md:hidden">

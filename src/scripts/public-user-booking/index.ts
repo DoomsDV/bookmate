@@ -572,31 +572,47 @@ export const initializePublicUserBookingPage = () => {
 		submitErrorNode.classList.toggle('hidden', !message);
 	};
 
-	const resetCustomerLookupState = () => {
-		validatedCustomerPhoneE164 = '';
-		customerNameWrapper.classList.add('hidden');
-		customerNameInput.value = '';
-		customerNameInput.required = false;
-	};
-
 	const setCustomerNameVisibility = (visible: boolean) => {
 		customerNameWrapper.classList.toggle('hidden', !visible);
 		customerNameInput.required = visible;
+	};
+
+	const setCustomerNameLocked = (locked: boolean) => {
+		customerNameInput.disabled = locked;
+	};
+
+	const resetCustomerLookupState = () => {
+		validatedCustomerPhoneE164 = '';
+		customerNameInput.value = '';
+		setCustomerNameLocked(false);
+		setCustomerNameVisibility(false);
 	};
 
 	const runCustomerValidation = async (phoneE164: string) => {
 		const orgId =
 			selectedContext?.org_id_organization ?? selectedOrgGroup?.org_id_organization ?? 0;
 		if (!orgId) return false;
+		if (
+			validatedCustomerPhoneE164 === phoneE164 &&
+			!customerNameWrapper.classList.contains('hidden')
+		) {
+			return true;
+		}
+
 		isValidatingCustomer = true;
+		setNameFieldError('');
+		setCustomerNameVisibility(false);
 		try {
 			const result = await validateCustomerPhone(phoneE164, orgId);
 			validatedCustomerPhoneE164 = phoneE164;
+			setCustomerNameVisibility(true);
+
 			if (result.exists && result.fullName) {
 				customerNameInput.value = result.fullName;
-				setCustomerNameVisibility(false);
+				setCustomerNameLocked(true);
 			} else {
-				setCustomerNameVisibility(true);
+				customerNameInput.value = '';
+				setCustomerNameLocked(false);
 			}
 			return true;
 		} catch (error) {
@@ -627,16 +643,12 @@ export const initializePublicUserBookingPage = () => {
 		}
 
 		customerPhoneInput.value = formatParaguayMobilePhoneInput(rawPhone);
-		if (validatedCustomerPhoneE164 !== parsedPhone.e164) {
+		if (validatedCustomerPhoneE164 !== parsedPhone.e164 || customerNameWrapper.classList.contains('hidden')) {
 			const ok = await runCustomerValidation(parsedPhone.e164);
 			if (!ok) return null;
 		}
 
 		const customerName = String(customerNameInput.value || '').trim();
-		if (customerNameWrapper.classList.contains('hidden') === false && !customerName) {
-			setNameFieldError('El nombre completo es obligatorio.');
-			return null;
-		}
 		if (!customerName) {
 			setNameFieldError('El nombre completo es obligatorio.');
 			return null;
