@@ -243,7 +243,7 @@ const toPageHref = (page: number) => {
 											</div>
 										</div>
 										<div class="dashboard-ai-body hidden mt-1" data-ai-summary-body>
-											<div class="dashboard-ai-preview-wrap md:hidden">
+											<div class="dashboard-ai-preview-wrap">
 												<div
 													class="dashboard-ai-text dashboard-ai-text--preview text-[0.95rem] font-medium leading-relaxed sm:text-base max-w-4xl"
 													data-ai-summary-preview
@@ -251,14 +251,9 @@ const toPageHref = (page: number) => {
 													<p class="dashboard-ai-preview-intro">{defaultAiSummaryShort}</p>
 												</div>
 											</div>
-											<div
-												class="dashboard-ai-sections dashboard-ai-sections--card hidden max-w-4xl md:grid"
-												data-ai-summary-sections
-												aria-live="polite"
-											></div>
 											<button
 												type="button"
-												class="dashboard-ai-more-btn md:hidden"
+												class="dashboard-ai-more-btn"
 												data-open-ai-summary-modal
 												hidden
 											>
@@ -442,7 +437,7 @@ const toPageHref = (page: number) => {
 	<AppAlert />
 
 	<dialog
-		class="dashboard-ai-modal m-0 mt-auto mb-0 h-[min(78dvh,40rem)] w-screen max-w-none md:hidden sm:m-auto sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+		class="dashboard-ai-modal m-auto h-[min(78dvh,40rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] max-md:mt-auto max-md:mb-0 max-md:h-[min(78dvh,40rem)] max-md:w-screen max-md:max-w-none max-md:rounded-t-[1.8rem] max-md:rounded-b-none"
 		data-ai-summary-modal
 	>
 		<div class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-5">
@@ -592,9 +587,6 @@ const toPageHref = (page: number) => {
 			},
 		];
 	};
-
-	const isMobileAiSummaryViewport = (): boolean =>
-		window.matchMedia('(max-width: 768px)').matches;
 
 	const truncatePreviewText = (text: string, maxChars = 320): string => {
 		const clean = sanitizeAiSummary(text);
@@ -841,21 +833,19 @@ const toPageHref = (page: number) => {
 
 	let aiSummaryModalSections: AiSummarySection[] = [];
 	let aiSummaryModalCloseTimer: number | null = null;
-	let lastAiSummaryPayload: AiSummaryPayload | null = null;
 
 	const applyAiSummaryContent = async (payload: AiSummaryPayload) => {
 		const card = document.querySelector<HTMLElement>('[data-ai-summary-card]');
 		if (!card) return;
 
 		const previewNode = card.querySelector<HTMLElement>('[data-ai-summary-preview]');
-		const sectionsNode = card.querySelector<HTMLElement>('[data-ai-summary-sections]');
 		const moreButton = card.querySelector<HTMLButtonElement>('[data-open-ai-summary-modal]');
 		const fallbackShort =
 			sanitizeAiSummary(card.getAttribute('data-default-summary-short')) || DEFAULT_AI_SUMMARY_SHORT;
 		const fallbackFull =
 			sanitizeAiSummary(card.getAttribute('data-default-summary-full')) || fallbackShort;
 
-		if (!previewNode || !sectionsNode) return;
+		if (!previewNode) return;
 
 		const summaryShort = sanitizeAiSummary(payload.summaryShort) || fallbackShort;
 		const summaryFull = sanitizeAiSummary(payload.summaryFull) || summaryShort || fallbackFull;
@@ -864,45 +854,23 @@ const toPageHref = (page: number) => {
 				? payload.sections
 				: buildSectionsFromLegacy(summaryFull || summaryShort);
 
-		lastAiSummaryPayload = { summaryShort, summaryFull, sections };
 		aiSummaryModalSections = sections;
 
-		const isMobile = isMobileAiSummaryViewport();
 		const hasExpandedContent = summaryHasExpandedDetail(summaryShort, summaryFull, sections);
 
 		if (moreButton) {
-			moreButton.hidden = !isMobile || !hasExpandedContent;
+			moreButton.hidden = !hasExpandedContent;
 		}
 
 		const previewWrap = card.querySelector<HTMLElement>('.dashboard-ai-preview-wrap');
 		if (previewWrap) {
-			previewWrap.classList.toggle('has-more', isMobile && hasExpandedContent);
+			previewWrap.classList.toggle('has-more', hasExpandedContent);
 		}
 
-		if (isMobile) {
-			sectionsNode.replaceChildren();
-			renderMobilePreview(
-				previewNode,
-				buildMobilePreviewContent(summaryShort, summaryFull, sections)
-			);
-			return;
-		}
-
-		closeAiSummaryModal();
-		previewNode.replaceChildren();
-		renderAiSummarySections(sectionsNode, sections, 'card');
-	};
-
-	let aiSummaryViewportListenerBound = false;
-
-	const bindAiSummaryViewportListener = () => {
-		if (aiSummaryViewportListenerBound) return;
-		aiSummaryViewportListenerBound = true;
-
-		window.matchMedia('(max-width: 768px)').addEventListener('change', () => {
-			if (!lastAiSummaryPayload) return;
-			void applyAiSummaryContent(lastAiSummaryPayload);
-		});
+		renderMobilePreview(
+			previewNode,
+			buildMobilePreviewContent(summaryShort, summaryFull, sections)
+		);
 	};
 
 	const toRecord = (value: unknown): Record<string, unknown> =>
@@ -1186,8 +1154,6 @@ const toPageHref = (page: number) => {
 	};
 
 	const openAiSummaryModal = () => {
-		if (!isMobileAiSummaryViewport()) return;
-
 		const modal = document.querySelector<HTMLDialogElement>('[data-ai-summary-modal]');
 		const modalSections = document.querySelector<HTMLElement>('[data-ai-summary-modal-sections]');
 		if (!modal || !modalSections) return;
@@ -1240,7 +1206,6 @@ const toPageHref = (page: number) => {
 		document.addEventListener('click', (event) => {
 			const target = event.target;
 			if (!(target instanceof Element)) return;
-			if (!isMobileAiSummaryViewport()) return;
 			if (target.closest('[data-open-ai-summary-modal]')) {
 				openAiSummaryModal();
 			}
@@ -1257,7 +1222,6 @@ const toPageHref = (page: number) => {
 		const stateNode = card.querySelector<HTMLElement>('[data-ai-summary-state]');
 		const bodyNode = card.querySelector<HTMLElement>('[data-ai-summary-body]');
 		const previewNode = card.querySelector<HTMLElement>('[data-ai-summary-preview]');
-		const sectionsNode = card.querySelector<HTMLElement>('[data-ai-summary-sections]');
 		const moreButton = card.querySelector<HTMLButtonElement>('[data-open-ai-summary-modal]');
 		const roleId = Number(card.getAttribute('data-role-id') ?? '0');
 		const fallbackShort =
@@ -1266,10 +1230,9 @@ const toPageHref = (page: number) => {
 			sanitizeAiSummary(card.getAttribute('data-default-summary-full')) || fallbackShort;
 		const fallbackSections = buildSectionsFromLegacy(fallbackFull);
 
-		if (!stateNode || !bodyNode || !previewNode || !sectionsNode) return;
+		if (!stateNode || !bodyNode || !previewNode) return;
 
 		bindAiSummaryModalEvents();
-		bindAiSummaryViewportListener();
 		card.classList.add('is-generating');
 
 		const revealSummary = async (payload: AiSummaryPayload) => {
@@ -1948,21 +1911,6 @@ const toPageHref = (page: number) => {
 		height: 2.75rem;
 		pointer-events: none;
 		background: linear-gradient(to bottom, transparent 0%, var(--ai-card-bg) 88%);
-	}
-
-	@media (min-width: 768px) {
-		[data-ai-summary-preview],
-		[data-open-ai-summary-modal],
-		[data-ai-summary-modal],
-		.dashboard-ai-preview-wrap {
-			display: none !important;
-		}
-	}
-
-	@media (max-width: 767px) {
-		.dashboard-ai-sections--card {
-			display: none !important;
-		}
 	}
 
 	.dashboard-ai-more-btn {
