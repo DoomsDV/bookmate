@@ -32,7 +32,8 @@ let dashboard: DashboardMainData = {
 	},
 };
 let loadError = '';
-const defaultAiSummaryText = '¡Buen día! Preparate para una excelente jornada de trabajo.';
+const defaultAiSummaryShort = '¡Buen día! Preparate para una excelente jornada de trabajo.';
+const defaultAiSummaryFull = defaultAiSummaryShort;
 
 if (!token) {
 	loadError = 'No hay sesion valida para consultar el dashboard.';
@@ -210,29 +211,55 @@ const toPageHref = (page: number) => {
 									<div
 										class="dashboard-ai-card rounded-4xl transition-all duration-300"
 										data-ai-summary-card
-										data-default-summary={defaultAiSummaryText}
+										data-role-id={String(roleId)}
+										data-default-summary-short={defaultAiSummaryShort}
+										data-default-summary-full={defaultAiSummaryFull}
 									>
+										<div class="dashboard-ai-shimmer-top" aria-hidden="true"></div>
 										<div class="dashboard-ai-header mb-3">
 											<div class="inline-flex items-center gap-1.5 opacity-95">
-												<span class="material-symbols-rounded text-[1.1rem] text-(--primary)">auto_awesome</span>
+												<span class="dashboard-ai-sparkle material-symbols-rounded text-[1.1rem] text-(--primary)">auto_awesome</span>
 												<h2 class="text-sm font-semibold tracking-[0.01em] text-(--primary)">
 													Resumen inteligente del día
 												</h2>
 											</div>
 										</div>
-										<p
-											class="dashboard-ai-state inline-flex items-center gap-2 text-[0.95rem] font-semibold leading-relaxed sm:text-base mt-1"
+										<div
+											class="dashboard-ai-state mt-1"
 											data-ai-summary-state
+											aria-live="polite"
 										>
-											<span class="material-symbols-rounded animate-spin text-base text-(--primary)">
-												autorenew
-											</span>
-											Cargando resumen inteligente...
-										</p>
-										<p
-											class="dashboard-ai-text hidden whitespace-pre-line text-[0.95rem] font-medium leading-relaxed sm:text-base max-w-4xl mt-1"
-											data-ai-summary-text
-										>{defaultAiSummaryText}</p>
+											<div class="dashboard-ai-loading">
+												<p class="dashboard-ai-loading-label">
+													<span class="material-symbols-rounded dashboard-ai-loading-icon">auto_awesome</span>
+													Generando resumen inteligente...
+												</p>
+												<div class="dashboard-ai-skeleton" aria-hidden="true">
+													<span class="dashboard-ai-skeleton-line dashboard-ai-skeleton-line--lg"></span>
+													<span class="dashboard-ai-skeleton-line dashboard-ai-skeleton-line--md"></span>
+													<span class="dashboard-ai-skeleton-line dashboard-ai-skeleton-line--sm"></span>
+												</div>
+											</div>
+										</div>
+										<div class="dashboard-ai-body hidden mt-1" data-ai-summary-body>
+											<p
+												class="dashboard-ai-text dashboard-ai-text--preview whitespace-pre-line text-[0.95rem] font-medium leading-relaxed sm:text-base max-w-4xl md:hidden"
+												data-ai-summary-preview
+											>{defaultAiSummaryShort}</p>
+											<p
+												class="dashboard-ai-text dashboard-ai-text--full hidden whitespace-pre-line text-[0.95rem] font-medium leading-relaxed sm:text-base max-w-4xl md:block"
+												data-ai-summary-text
+											>{defaultAiSummaryFull}</p>
+											<button
+												type="button"
+												class="dashboard-ai-more-btn md:hidden"
+												data-open-ai-summary-modal
+												hidden
+											>
+												Ver más
+												<span class="material-symbols-rounded text-[1rem]">unfold_more</span>
+											</button>
+										</div>
 									</div>
 								</div>
 							</section>
@@ -404,6 +431,40 @@ const toPageHref = (page: number) => {
 	</div>
 	<AiChatPanel />
 	<AppAlert />
+
+	<dialog
+		class="dashboard-ai-modal m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+		data-ai-summary-modal
+	>
+		<div class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-5">
+			<div class="flex items-start justify-between gap-4">
+				<div class="flex items-center gap-3">
+					<div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
+						<span class="material-symbols-rounded text-[1.35rem]">auto_awesome</span>
+					</div>
+					<div>
+						<h2 class="text-[1.1rem] font-extrabold tracking-tight text-(--on-surface)">
+							Resumen del día
+						</h2>
+					</div>
+				</div>
+				<button
+					type="button"
+					class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)"
+					data-close-ai-summary-modal
+					aria-label="Cerrar resumen"
+				>
+					<span class="material-symbols-rounded text-[1.3rem]">close</span>
+				</button>
+			</div>
+		</div>
+		<div class="overflow-y-auto overscroll-contain min-h-0 px-4 py-5 sm:px-7 sm:py-6">
+			<p
+				class="dashboard-ai-modal-text whitespace-pre-line text-[0.95rem] font-medium leading-relaxed text-(--on-surface)"
+				data-ai-summary-modal-text
+			></p>
+		</div>
+	</dialog>
 </Layout>
 
 <script>
@@ -466,18 +527,30 @@ const toPageHref = (page: number) => {
 
 	interface AiSummaryCache {
 		dateKey: string;
-		summary: string;
+		roleId: number;
+		summaryShort: string;
+		summaryFull: string;
 		savedAt: number;
 		expiresAt: number;
+	}
+
+	interface AiSummaryPayload {
+		summaryShort: string;
+		summaryFull: string;
 	}
 
 	const TEAM_OVERVIEW_CACHE_KEY = 'hasel:dashboard-team-overview:v1';
 	const TEAM_OVERVIEW_TTL_MS = 120000;
 	const TEAM_OVERVIEW_LIMIT = 4;
 	const TEAM_AVATAR_FALLBACK_PALETTE = ['#2563eb', '#0f766e', '#be185d', '#7c3aed'];
-	const AI_SUMMARY_CACHE_KEY = 'hasel:dashboard-ai-summary:v1';
+	const AI_SUMMARY_CACHE_KEY = 'hasel:dashboard-ai-summary:v2';
 	const AI_SUMMARY_TTL_MS = 10 * 60 * 1000;
-	const DEFAULT_AI_SUMMARY_TEXT = '¡Buen día! Preparate para una excelente jornada de trabajo.';
+	const DEFAULT_AI_SUMMARY_SHORT = '¡Buen día! Preparate para una excelente jornada de trabajo.';
+	const DEFAULT_AI_SUMMARY_FULL = DEFAULT_AI_SUMMARY_SHORT;
+	const AI_MODAL_CLOSE_MS = 140;
+
+	let aiSummaryFullText = '';
+	let aiSummaryModalCloseTimer: number | null = null;
 
 	const toRecord = (value: unknown): Record<string, unknown> =>
 		typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
@@ -487,13 +560,13 @@ const toPageHref = (page: number) => {
 	const getLocalDateKey = (date = new Date()): string =>
 		`${date.getFullYear()}-${padDatePart(date.getMonth() + 1)}-${padDatePart(date.getDate())}`;
 
-	const readAiSummaryCache = (dateKey: string): string | null => {
+	const readAiSummaryCache = (dateKey: string, roleId: number): AiSummaryPayload | null => {
 		try {
 			const rawCache = window.localStorage.getItem(AI_SUMMARY_CACHE_KEY);
 			if (!rawCache) return null;
 
 			const parsed = JSON.parse(rawCache) as Partial<AiSummaryCache>;
-			if (parsed?.dateKey !== dateKey) {
+			if (parsed?.dateKey !== dateKey || Number(parsed?.roleId ?? -1) !== roleId) {
 				window.localStorage.removeItem(AI_SUMMARY_CACHE_KEY);
 				return null;
 			}
@@ -505,22 +578,31 @@ const toPageHref = (page: number) => {
 				return null;
 			}
 
-			const summary = sanitizeAiSummary(parsed?.summary);
-			return summary || null;
+			const summaryShort = sanitizeAiSummary(parsed?.summaryShort);
+			const summaryFull = sanitizeAiSummary(parsed?.summaryFull) || summaryShort;
+			if (!summaryShort && !summaryFull) return null;
+
+			return {
+				summaryShort: summaryShort || summaryFull,
+				summaryFull: summaryFull || summaryShort,
+			};
 		} catch {
 			return null;
 		}
 	};
 
-	const saveAiSummaryCache = (dateKey: string, summary: string) => {
-		const cleanSummary = sanitizeAiSummary(summary);
-		if (!cleanSummary) return;
+	const saveAiSummaryCache = (dateKey: string, roleId: number, payload: AiSummaryPayload) => {
+		const summaryShort = sanitizeAiSummary(payload.summaryShort);
+		const summaryFull = sanitizeAiSummary(payload.summaryFull) || summaryShort;
+		if (!summaryShort && !summaryFull) return;
 
 		try {
 			const savedAt = Date.now();
 			const cacheEntry: AiSummaryCache = {
 				dateKey,
-				summary: cleanSummary,
+				roleId,
+				summaryShort: summaryShort || summaryFull,
+				summaryFull: summaryFull || summaryShort,
 				savedAt,
 				expiresAt: savedAt + AI_SUMMARY_TTL_MS,
 			};
@@ -744,6 +826,65 @@ const toPageHref = (page: number) => {
 		}
 	};
 
+	const openAiSummaryModal = () => {
+		const modal = document.querySelector<HTMLDialogElement>('[data-ai-summary-modal]');
+		const modalText = document.querySelector<HTMLElement>('[data-ai-summary-modal-text]');
+		if (!modal || !modalText) return;
+
+		modalText.textContent = aiSummaryFullText;
+		modal.classList.remove('is-closing');
+
+		if (aiSummaryModalCloseTimer) {
+			window.clearTimeout(aiSummaryModalCloseTimer);
+			aiSummaryModalCloseTimer = null;
+		}
+
+		if (!modal.open) modal.showModal();
+	};
+
+	const closeAiSummaryModal = () => {
+		const modal = document.querySelector<HTMLDialogElement>('[data-ai-summary-modal]');
+		if (!modal?.open) return;
+
+		modal.classList.add('is-closing');
+		if (aiSummaryModalCloseTimer) window.clearTimeout(aiSummaryModalCloseTimer);
+
+		aiSummaryModalCloseTimer = window.setTimeout(() => {
+			modal.close();
+			modal.classList.remove('is-closing');
+			aiSummaryModalCloseTimer = null;
+		}, AI_MODAL_CLOSE_MS);
+	};
+
+	const bindAiSummaryModalEvents = () => {
+		const modal = document.querySelector<HTMLDialogElement>('[data-ai-summary-modal]');
+		if (!modal || modal.dataset.bound === '1') return;
+		modal.dataset.bound = '1';
+
+		modal.addEventListener('click', (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			if (target.closest('[data-close-ai-summary-modal]')) {
+				closeAiSummaryModal();
+				return;
+			}
+			if (target === modal) closeAiSummaryModal();
+		});
+
+		modal.addEventListener('cancel', (event) => {
+			event.preventDefault();
+			closeAiSummaryModal();
+		});
+
+		document.addEventListener('click', (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			if (target.closest('[data-open-ai-summary-modal]')) {
+				openAiSummaryModal();
+			}
+		});
+	};
+
 	const loadAiSummary = async () => {
 		const card = document.querySelector<HTMLElement>('[data-ai-summary-card]');
 		if (!card) return;
@@ -752,23 +893,49 @@ const toPageHref = (page: number) => {
 		card.setAttribute('data-ai-summary-loaded', '1');
 
 		const stateNode = card.querySelector<HTMLElement>('[data-ai-summary-state]');
+		const bodyNode = card.querySelector<HTMLElement>('[data-ai-summary-body]');
+		const previewNode = card.querySelector<HTMLElement>('[data-ai-summary-preview]');
 		const textNode = card.querySelector<HTMLElement>('[data-ai-summary-text]');
-		const fallbackSummary =
-			sanitizeAiSummary(card.getAttribute('data-default-summary')) || DEFAULT_AI_SUMMARY_TEXT;
+		const moreButton = card.querySelector<HTMLButtonElement>('[data-open-ai-summary-modal]');
+		const roleId = Number(card.getAttribute('data-role-id') ?? '0');
+		const fallbackShort =
+			sanitizeAiSummary(card.getAttribute('data-default-summary-short')) || DEFAULT_AI_SUMMARY_SHORT;
+		const fallbackFull =
+			sanitizeAiSummary(card.getAttribute('data-default-summary-full')) || fallbackShort;
 
-		if (!stateNode || !textNode) return;
+		if (!stateNode || !bodyNode || !previewNode || !textNode) return;
 
-		const revealSummary = async (summaryText: string) => {
+		bindAiSummaryModalEvents();
+		card.classList.add('is-generating');
+
+		const revealSummary = async (payload: AiSummaryPayload) => {
+			const summaryShort = sanitizeAiSummary(payload.summaryShort) || fallbackShort;
+			const summaryFull = sanitizeAiSummary(payload.summaryFull) || summaryShort || fallbackFull;
+
+			aiSummaryFullText = summaryFull;
+
+			card.classList.remove('is-generating');
 			stateNode.classList.add('hidden');
 			stateNode.setAttribute('aria-hidden', 'true');
 			stateNode.style.display = 'none';
-			textNode.classList.remove('hidden');
-			textNode.style.display = 'block';
-			await streamSummaryTokens(textNode, summaryText);
+			bodyNode.classList.remove('hidden');
+			bodyNode.style.display = 'block';
+
+			const hasExpandedContent =
+				summaryFull.replace(/\s+/g, ' ').trim() !== summaryShort.replace(/\s+/g, ' ').trim();
+
+			if (moreButton) {
+				moreButton.hidden = !hasExpandedContent;
+			}
+
+			await Promise.all([
+				streamSummaryTokens(previewNode, summaryShort),
+				streamSummaryTokens(textNode, summaryFull),
+			]);
 		};
 
 		const todayKey = getLocalDateKey();
-		const cachedSummary = readAiSummaryCache(todayKey);
+		const cachedSummary = readAiSummaryCache(todayKey, roleId);
 
 		if (cachedSummary) {
 			await revealSummary(cachedSummary);
@@ -785,15 +952,26 @@ const toPageHref = (page: number) => {
 				throw new Error(payload?.message || 'No fue posible recuperar el resumen IA.');
 			}
 
-			const summary = sanitizeAiSummary(payload?.data?.ai_summary);
-			if (!summary) {
+			const summaryShort = sanitizeAiSummary(payload?.data?.ai_summary_short);
+			const summaryFull = sanitizeAiSummary(payload?.data?.ai_summary);
+			if (!summaryShort && !summaryFull) {
 				throw new Error('El resumen IA no está disponible en este momento.');
 			}
 
-			saveAiSummaryCache(todayKey, summary);
-			await revealSummary(summary);
+			const normalizedSummary: AiSummaryPayload = {
+				summaryShort: summaryShort || summaryFull,
+				summaryFull: summaryFull || summaryShort,
+			};
+
+			saveAiSummaryCache(todayKey, roleId, normalizedSummary);
+			await revealSummary(normalizedSummary);
 		} catch {
-			await revealSummary(fallbackSummary);
+			await revealSummary({
+				summaryShort: fallbackShort,
+				summaryFull: fallbackFull,
+			});
+		} finally {
+			card.classList.remove('is-generating');
 		}
 	};
 
@@ -960,11 +1138,140 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-card {
+		position: relative;
+		overflow: hidden;
 		padding-block: 1.5rem;
 		padding-inline: clamp(1.5rem, 1.35rem + 0.45vw, 1.9rem);
 		border: 1px solid rgba(148, 163, 184, 0.24);
 		background: color-mix(in srgb, #f8fafc 72%, #ffffff 28%);
 		box-shadow: none;
+		transition:
+			box-shadow 400ms ease,
+			border-color 400ms ease;
+	}
+
+	.dashboard-ai-shimmer-top {
+		pointer-events: none;
+		position: absolute;
+		top: 0;
+		left: 0;
+		right: 0;
+		height: 3px;
+		opacity: 0;
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			color-mix(in srgb, var(--primary) 70%, #a855f7 30%) 25%,
+			color-mix(in srgb, var(--primary) 50%, #06b6d4 50%) 50%,
+			color-mix(in srgb, var(--primary) 70%, #a855f7 30%) 75%,
+			transparent 100%
+		);
+		background-size: 220% 100%;
+		transition: opacity 280ms ease;
+	}
+
+	.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top {
+		opacity: 1;
+		animation: ai-shimmer-bar 2.2s ease-in-out infinite;
+	}
+
+	.dashboard-ai-card.is-generating {
+		border-color: color-mix(in srgb, var(--primary) 28%, rgba(148, 163, 184, 0.24) 72%);
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--primary) 10%, transparent),
+			0 10px 36px color-mix(in srgb, var(--primary) 14%, transparent);
+	}
+
+	.dashboard-ai-card.is-generating::after {
+		content: '';
+		pointer-events: none;
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(
+			105deg,
+			transparent 38%,
+			color-mix(in srgb, var(--primary) 7%, #ffffff 93%) 48%,
+			color-mix(in srgb, var(--primary) 12%, #ffffff 88%) 52%,
+			transparent 62%
+		);
+		transform: translateX(-120%);
+		animation: ai-card-sweep 2.8s ease-in-out infinite;
+	}
+
+	.dashboard-ai-card.is-generating .dashboard-ai-sparkle {
+		animation: ai-sparkle-pulse 1.6s ease-in-out infinite;
+		filter: drop-shadow(0 0 6px color-mix(in srgb, var(--primary) 55%, transparent));
+	}
+
+	.dashboard-ai-loading {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.dashboard-ai-loading-label {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		margin: 0;
+		font-size: 0.95rem;
+		font-weight: 600;
+		line-height: 1.45;
+		color: color-mix(in srgb, var(--on-surface-variant) 90%, #334155 10%);
+	}
+
+	.dashboard-ai-loading-icon {
+		font-size: 1.05rem;
+		color: var(--primary);
+		animation: ai-sparkle-pulse 1.6s ease-in-out infinite;
+		filter: drop-shadow(0 0 8px color-mix(in srgb, var(--primary) 45%, transparent));
+	}
+
+	.dashboard-ai-skeleton {
+		display: grid;
+		gap: 0.55rem;
+		max-width: 36rem;
+	}
+
+	.dashboard-ai-skeleton-line {
+		display: block;
+		height: 0.72rem;
+		border-radius: 999px;
+		background: linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--on-surface-variant) 10%, #e2e8f0 90%) 0%,
+			color-mix(in srgb, var(--primary) 14%, #f1f5f9 86%) 45%,
+			color-mix(in srgb, var(--on-surface-variant) 10%, #e2e8f0 90%) 90%
+		);
+		background-size: 220% 100%;
+		animation: ai-shimmer-bar 1.8s ease-in-out infinite;
+	}
+
+	.dashboard-ai-skeleton-line--lg { width: 96%; }
+	.dashboard-ai-skeleton-line--md { width: 82%; animation-delay: 120ms; }
+	.dashboard-ai-skeleton-line--sm { width: 64%; animation-delay: 240ms; }
+
+	@keyframes ai-shimmer-bar {
+		0% { background-position: 120% 0; }
+		100% { background-position: -120% 0; }
+	}
+
+	@keyframes ai-card-sweep {
+		0% { transform: translateX(-120%); opacity: 0; }
+		18% { opacity: 1; }
+		55% { transform: translateX(120%); opacity: 1; }
+		100% { transform: translateX(120%); opacity: 0; }
+	}
+
+	@keyframes ai-sparkle-pulse {
+		0%, 100% {
+			opacity: 0.72;
+			transform: scale(1);
+		}
+
+		50% {
+			opacity: 1;
+			transform: scale(1.08);
+		}
 	}
 
 	.dashboard-ai-header {
@@ -981,17 +1288,157 @@ const toPageHref = (page: number) => {
 		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
 	}
 
+	.dashboard-ai-more-btn {
+		margin-top: 0.85rem;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2rem;
+		border: none;
+		background: transparent;
+		padding: 0.35rem 0.15rem;
+		font-size: 0.84rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--primary);
+		cursor: pointer;
+	}
+
+	.dashboard-ai-more-btn .material-symbols-rounded {
+		transform: none;
+	}
+
+	.dashboard-ai-more-btn:focus-visible {
+		outline: 3px solid color-mix(in srgb, var(--primary) 32%, white 68%);
+		outline-offset: 3px;
+		border-radius: 0.45rem;
+	}
+
+	.dashboard-ai-modal-text {
+		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
+	}
+
+	dialog[data-ai-summary-modal] {
+		position: fixed;
+		inset: 0;
+		animation: ai-summary-modal-in var(--modal-open-duration, 220ms) var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
+	}
+
+	dialog[data-ai-summary-modal]::backdrop {
+		animation: ai-summary-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
+	}
+
+	dialog[data-ai-summary-modal].is-closing {
+		animation: ai-summary-modal-out var(--modal-close-duration, 140ms) var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+	}
+
+	dialog[data-ai-summary-modal].is-closing::backdrop {
+		animation: ai-summary-backdrop-out var(--modal-close-duration, 140ms) var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+	}
+
+	@keyframes ai-summary-modal-in {
+		from {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes ai-summary-modal-out {
+		from {
+			opacity: 1;
+			transform: translateY(0);
+		}
+
+		to {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+	}
+
+	@keyframes ai-summary-backdrop-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	@keyframes ai-summary-backdrop-out {
+		from { opacity: 1; }
+		to { opacity: 0; }
+	}
+
+	@media (min-width: 640px) {
+		@keyframes ai-summary-modal-in {
+			from {
+				opacity: 0;
+				transform: translateY(10px) scale(0.98);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		@keyframes ai-summary-modal-out {
+			from {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+
+			to {
+				opacity: 0;
+				transform: translateY(8px) scale(0.98);
+			}
+		}
+	}
+
 	html[data-theme='dark'] .dashboard-ai-card {
 		border-color: rgba(148, 163, 184, 0.18);
 		background: color-mix(in srgb, #282a2c 74%, #1e1f22 26%);
 		box-shadow: none;
 	}
 
+	html[data-theme='dark'] .dashboard-ai-card.is-generating {
+		border-color: color-mix(in srgb, var(--primary) 32%, rgba(148, 163, 184, 0.18) 68%);
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--primary) 14%, transparent),
+			0 12px 40px color-mix(in srgb, var(--primary) 18%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-card.is-generating::after {
+		background: linear-gradient(
+			105deg,
+			transparent 38%,
+			color-mix(in srgb, var(--primary) 10%, #1e1f22 90%) 48%,
+			color-mix(in srgb, var(--primary) 16%, #282a2c 84%) 52%,
+			transparent 62%
+		);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-loading-label {
+		color: color-mix(in srgb, var(--on-surface-variant) 42%, white 58%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-skeleton-line {
+		background: linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--on-surface-variant) 12%, #2b2d31 88%) 0%,
+			color-mix(in srgb, var(--primary) 18%, #3a3d42 82%) 45%,
+			color-mix(in srgb, var(--on-surface-variant) 12%, #2b2d31 88%) 90%
+		);
+		background-size: 220% 100%;
+	}
+
 	html[data-theme='dark'] .dashboard-ai-state {
 		color: color-mix(in srgb, var(--on-surface-variant) 42%, white 58%);
 	}
 
-	html[data-theme='dark'] .dashboard-ai-text {
+	html[data-theme='dark'] .dashboard-ai-text,
+	html[data-theme='dark'] .dashboard-ai-modal-text {
 		color: color-mix(in srgb, var(--on-surface) 90%, white 10%);
 	}
 
@@ -1513,6 +1960,19 @@ const toPageHref = (page: number) => {
 	@media (prefers-reduced-motion: reduce) {
 		.ai-summary-token {
 			animation: none;
+		}
+
+		.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top,
+		.dashboard-ai-card.is-generating::after,
+		.dashboard-ai-card.is-generating .dashboard-ai-sparkle,
+		.dashboard-ai-loading-icon,
+		.dashboard-ai-skeleton-line {
+			animation: none;
+		}
+
+		.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top {
+			opacity: 1;
+			background-position: 50% 0;
 		}
 	}
 </style>

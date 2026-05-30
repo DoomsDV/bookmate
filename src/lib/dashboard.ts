@@ -43,6 +43,7 @@ export interface DashboardMainData {
 }
 
 export interface DashboardAiSummaryData {
+	ai_summary_short: string;
 	ai_summary: string;
 }
 
@@ -187,12 +188,16 @@ const normalizeMainData = (
 
 const normalizeAiSummaryData = (value: unknown): DashboardAiSummaryData => {
 	if (!value || typeof value !== 'object') {
-		return { ai_summary: '' };
+		return { ai_summary_short: '', ai_summary: '' };
 	}
 
 	const source = value as Record<string, unknown>;
+	const fullSummary = toText(source.ai_summary);
+	const shortSummary = toText(source.ai_summary_short) || fullSummary;
+
 	return {
-		ai_summary: toText(source.ai_summary),
+		ai_summary_short: shortSummary,
+		ai_summary: fullSummary || shortSummary,
 	};
 };
 
