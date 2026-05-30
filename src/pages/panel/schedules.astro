@@ -857,16 +857,17 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	html[data-theme='dark'] .schedule-cal-day {
-		border-color: #3f3f46;
-		background: #3f3f46;
-		color: #f8fafc;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+		border-color: var(--shell-border);
+		background: var(--control-surface);
+		color: var(--on-surface);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .schedule-cal-day--normal:not(.schedule-cal-day--past) {
-		background: #45454d;
-		border-color: #71717a;
-		color: #fafafa;
+		background: var(--control-surface);
+		border-color: var(--shell-border);
+		color: var(--on-surface);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .schedule-cal-day--blocked:not(.schedule-cal-day--past) {
@@ -882,9 +883,9 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	html[data-theme='dark'] .schedule-cal-day--past {
-		background: #1a1a1a;
-		border-color: #2a2a2a;
-		color: #6b7280;
+		background: var(--control-surface);
+		border-color: var(--shell-border);
+		color: var(--on-surface-variant);
 		box-shadow: none;
 	}
 
