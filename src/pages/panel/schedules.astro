@@ -30,7 +30,16 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 				<div class="grid min-h-full grid-rows-[auto_1fr]">
 					<TopBar />
 
-					<main class="px-4 py-4 sm:px-6 sm:py-6">
+					<main class="relative px-4 py-4 sm:px-6 sm:py-6">
+						<div class="schedule-error-sticky-wrap">
+							<div
+								data-schedule-error
+								class="schedule-error-banner hidden"
+								role="alert"
+								aria-live="assertive"
+								hidden
+							></div>
+						</div>
 						<section class="grid gap-4 sm:gap-5">
 							{
 								initialLoadError ? (
@@ -97,11 +106,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 												)
 											}
 										</header>
-
-										<div
-											class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
-											data-schedule-error
-										></div>
 
 										<div class="flex flex-wrap items-center gap-2 sm:gap-3">
 											<div data-schedule-tabs role="tablist" class="min-w-0 flex-1">
@@ -343,6 +347,67 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 <style is:global>
 	schedule-manager {
 		display: block;
+	}
+
+	.schedule-error-sticky-wrap {
+		position: sticky;
+		top: 0;
+		z-index: 30;
+		display: flex;
+		justify-content: flex-end;
+		align-items: flex-start;
+		height: 0;
+		overflow: visible;
+		pointer-events: none;
+	}
+
+	.schedule-error-banner {
+		pointer-events: auto;
+		width: fit-content;
+		max-width: min(100%, 42rem);
+		height: auto;
+		min-height: unset;
+		flex-shrink: 0;
+		align-self: flex-start;
+		margin: 0 0 0 auto;
+	}
+
+	.schedule-error-banner.inline-feedback {
+		align-items: center;
+		border-radius: 0.9rem;
+		padding: 0.7rem 0.85rem 0.7rem 1rem;
+		height: auto;
+		min-height: unset;
+		line-height: 1.4;
+	}
+
+	.schedule-error-banner.inline-feedback .inline-feedback__text {
+		line-height: 1.4;
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+
+	.schedule-error-banner.inline-feedback.schedule-error-banner--wrap {
+		align-items: flex-start;
+		padding: 0.85rem 0.95rem 0.85rem 1.05rem;
+		line-height: 1.45;
+	}
+
+	.schedule-error-banner.inline-feedback.schedule-error-banner--wrap .inline-feedback__text {
+		line-height: 1.45;
+	}
+
+	.schedule-error-banner.inline-feedback.schedule-error-banner--wrap .inline-feedback__icon {
+		margin-top: 0.08rem;
+	}
+
+	.schedule-error-banner.inline-feedback.schedule-error-banner--wrap .inline-feedback__close {
+		align-self: flex-start;
+	}
+
+	.schedule-error-banner.hidden,
+	.schedule-error-banner[hidden] {
+		display: none !important;
 	}
 
 	.schedule-page-header {

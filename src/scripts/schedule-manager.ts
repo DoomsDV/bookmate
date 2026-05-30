@@ -81,7 +81,7 @@ const buildCrossOrgOverlapMessage = (params: {
 	return (
 		`No se puede guardar el turno del ${params.dayName} de ${params.slotStart} a ${params.slotEnd}: ` +
 		`ya existe un horario de ${params.otherStart} a ${params.otherEnd} en la organización "${params.otherOrgName}"${locationSuffix}. ` +
-		`Revisa los horarios en esa organización o ajusta el turno que intentas guardar aquí.`
+		`Ajustá las horas aquí o modificalas en la otra sucursal.`
 	);
 };
 
@@ -233,6 +233,7 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionModalBodyNode?.addEventListener('change', this.handleExceptionModalChange, { signal });
 		this.exceptionModalBodyNode?.addEventListener('click', this.handleExceptionModalClick, { signal });
 		this.exceptionModalActionsNode?.addEventListener('click', this.handleExceptionModalActions, { signal });
+		this.addEventListener('click', this.handleScheduleRootClick, { signal });
 
 		this.updateControlsState();
 		this.renderPlanner();
@@ -246,6 +247,14 @@ class ScheduleManager extends HTMLElement {
 		destroySearchableSelect(this.professionalSelect);
 		this.dayNodes.clear();
 	}
+
+	private handleScheduleRootClick = (event: MouseEvent): void => {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		if (target.closest('[data-dismiss-schedule-error]')) {
+			this.clearMessages();
+		}
+	};
 
 	private handleSaveClick = (): void => {
 		void this.saveSchedule();
@@ -857,14 +866,35 @@ class ScheduleManager extends HTMLElement {
 
 	private clearMessages(): void {
 		if (!this.errorNode) return;
+		this.errorNode.hidden = true;
+		this.errorNode.className = 'schedule-error-banner hidden';
 		this.errorNode.textContent = '';
-		this.errorNode.classList.add('hidden');
+	}
+
+	private syncScheduleErrorLayout(): void {
+		if (!this.errorNode) return;
+
+		const textNode = this.errorNode.querySelector('.inline-feedback__text');
+		if (!(textNode instanceof HTMLElement)) return;
+
+		const isMultiline = textNode.getClientRects().length > 1;
+		this.errorNode.classList.toggle('schedule-error-banner--wrap', isMultiline);
 	}
 
 	private showError(message: string): void {
 		if (!this.errorNode) return;
-		this.errorNode.textContent = message;
-		this.errorNode.classList.remove('hidden');
+		this.errorNode.hidden = false;
+		this.errorNode.className = 'schedule-error-banner inline-feedback inline-feedback--error';
+		this.errorNode.innerHTML = `
+			<span class="material-symbols-rounded inline-feedback__icon">error</span>
+			<p class="inline-feedback__text"></p>
+			<button type="button" class="inline-feedback__close" aria-label="Cerrar mensaje" data-dismiss-schedule-error>
+				<span class="material-symbols-rounded">close</span>
+			</button>
+		`;
+		const textNode = this.errorNode.querySelector('.inline-feedback__text');
+		if (textNode) textNode.textContent = message;
+		requestAnimationFrame(() => this.syncScheduleErrorLayout());
 	}
 
 	private clearExceptionModalError(): void {
