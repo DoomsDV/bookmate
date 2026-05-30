@@ -2192,13 +2192,10 @@ const toPageHref = (page: number) => {
 	}
 
 	.professional-permission-row {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		grid-template-areas:
-			'title switch'
-			'hint hint';
-		gap: 0.35rem 0.75rem;
+		display: flex;
 		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
 		border-radius: 0.9rem;
 		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
 		background: var(--control-surface);
@@ -2206,18 +2203,20 @@ const toPageHref = (page: number) => {
 	}
 
 	.professional-permission-row__copy {
-		display: contents;
+		display: grid;
+		gap: 0.2rem;
+		min-width: 0;
+		flex: 1;
 	}
 
 	.professional-permission-row__title {
-		grid-area: title;
 		font-size: 0.88rem;
 		font-weight: 800;
+		line-height: 1.35;
 		color: var(--on-surface);
 	}
 
 	.professional-permission-row__hint {
-		grid-area: hint;
 		font-size: 0.78rem;
 		font-weight: 600;
 		line-height: 1.35;
@@ -2225,24 +2224,15 @@ const toPageHref = (page: number) => {
 	}
 
 	.professional-permission-row .settings-switch {
-		grid-area: switch;
-		align-self: start;
+		flex-shrink: 0;
+		align-self: center;
 	}
 
 	@media (min-width: 640px) {
 		.professional-permission-row {
-			display: flex;
-			align-items: center;
-			justify-content: space-between;
 			gap: 1rem;
 			border-radius: 0.95rem;
 			padding: 0.85rem 0.95rem;
-		}
-
-		.professional-permission-row__copy {
-			display: grid;
-			gap: 0.2rem;
-			min-width: 0;
 		}
 
 		.professional-permission-row__title {
@@ -2251,10 +2241,6 @@ const toPageHref = (page: number) => {
 
 		.professional-permission-row__hint {
 			font-size: 0.8rem;
-		}
-
-		.professional-permission-row .settings-switch {
-			align-self: center;
 		}
 	}
 
