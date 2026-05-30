@@ -66,3 +66,36 @@ export const getScheduleMisalignedListSuffix = (reason: ScheduleMisalignedReason
 			return '· fuera de agenda';
 	}
 };
+
+export const getScheduleMisalignedBannerTitle = (count: number) => {
+	const safeCount = Math.max(0, Math.floor(count));
+	const label = safeCount === 1 ? 'cita' : 'citas';
+	return `${safeCount} ${label} con conflicto de horario`;
+};
+
+export const getScheduleMisalignedBannerCaption = (count: number) => {
+	if (Math.max(0, Math.floor(count)) === 1) {
+		return 'No coincide con la disponibilidad actual de la agenda:';
+	}
+	return 'No coinciden con la disponibilidad actual de la agenda:';
+};
+
+export const getScheduleMisalignedBannerReasonLabel = (reason: ScheduleMisalignedReason | null) => {
+	switch (reason) {
+		case 'DAY_BLOCKED':
+			return 'Día bloqueado';
+		case 'WRONG_LOCATION':
+			return 'Sucursal no disponible';
+		case 'TIME_OUTSIDE_SCHEDULE':
+			return 'Fuera de turno';
+		default:
+			return 'Fuera de agenda';
+	}
+};
+
+export const getScheduleMisalignedBannerAction = (count: number) => {
+	if (Math.max(0, Math.floor(count)) === 1) {
+		return 'Buscá la alerta ⚠ en el calendario para reprogramarla.';
+	}
+	return 'Buscá las alertas ⚠ en el calendario para reprogramarlas.';
+};

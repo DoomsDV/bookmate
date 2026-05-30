@@ -42,9 +42,18 @@ export interface DashboardMainData {
 	pagination: DashboardPaginationMeta;
 }
 
+export type DashboardAiSummarySectionType = 'panorama' | 'contexto' | 'sugerencia';
+
+export interface DashboardAiSummarySection {
+	type: DashboardAiSummarySectionType;
+	text?: string;
+	items?: string[];
+}
+
 export interface DashboardAiSummaryData {
 	ai_summary_short: string;
 	ai_summary: string;
+	ai_summary_sections: DashboardAiSummarySection[];
 }
 
 interface DashboardSuccessResponse {
@@ -186,18 +195,115 @@ const normalizeMainData = (
 	};
 };
 
+const normalizeAiSummarySection = (value: unknown): DashboardAiSummarySection | null => {
+	if (!value || typeof value !== 'object') return null;
+
+	const source = value as Record<string, unknown>;
+	const typeRaw = toText(source.type).toLowerCase();
+	if (typeRaw !== 'panorama' && typeRaw !== 'contexto' && typeRaw !== 'sugerencia') {
+		return null;
+	}
+
+	if (typeRaw === 'contexto') {
+		const itemsRaw = Array.isArray(source.items) ? source.items : [];
+		const items = itemsRaw.map((item) => toText(item)).filter(Boolean).slice(0, 3);
+		return { type: typeRaw, items };
+	}
+
+	const text = toText(source.text);
+	if (!text) return null;
+	return { type: typeRaw, text };
+};
+
+const buildSectionsFromLegacy = (legacyFull: string): DashboardAiSummarySection[] => {
+	const sanitizeLine = (value: string) =>
+		String(value ?? '')
+			.replace(/\*+/g, '')
+			.replace(/\s+/g, ' ')
+			.trim();
+
+	const lines = String(legacyFull || '')
+		.replace(/\r\n|\r/g, '\n')
+		.split('\n')
+		.map((line) => sanitizeLine(line))
+		.filter(Boolean);
+
+	if (lines.length === 0) {
+		return [
+			{ type: 'panorama', text: 'Tu jornada está lista para arrancar con buen pie.' },
+			{ type: 'contexto', items: [] },
+			{
+				type: 'sugerencia',
+				text: 'Conviene revisar tu agenda y confirmar los turnos pendientes.',
+			},
+		];
+	}
+
+	if (lines.length === 1 && lines[0].length > 180) {
+		const sentences =
+			lines[0]
+				.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g)
+				?.map((part) => sanitizeLine(part))
+				.filter(Boolean) ?? [lines[0]];
+
+		if (sentences.length >= 3) {
+			return [
+				{ type: 'panorama', text: sentences[0] },
+				{ type: 'contexto', items: sentences.slice(1, -1).slice(0, 3) },
+				{ type: 'sugerencia', text: sentences[sentences.length - 1] },
+			];
+		}
+
+		if (sentences.length === 2) {
+			return [
+				{ type: 'panorama', text: sentences[0] },
+				{ type: 'contexto', items: [] },
+				{ type: 'sugerencia', text: sentences[1] },
+			];
+		}
+	}
+
+	const panorama = lines[0];
+	const sugerencia =
+		lines.length >= 2
+			? lines[lines.length - 1]
+			: 'Conviene revisar tu agenda y confirmar los turnos pendientes.';
+	const contextoItems = lines.length > 2 ? lines.slice(1, -1) : [];
+
+	return [
+		{ type: 'panorama', text: panorama },
+		{ type: 'contexto', items: contextoItems },
+		{ type: 'sugerencia', text: sugerencia },
+	];
+};
+
+const normalizeAiSummarySections = (
+	value: unknown,
+	legacyFull: string
+): DashboardAiSummarySection[] => {
+	const sectionsRaw = Array.isArray(value) ? value : [];
+	const sections = sectionsRaw
+		.map(normalizeAiSummarySection)
+		.filter((item): item is DashboardAiSummarySection => item !== null);
+
+	if (sections.length > 0) return sections;
+	return buildSectionsFromLegacy(legacyFull);
+};
+
 const normalizeAiSummaryData = (value: unknown): DashboardAiSummaryData => {
 	if (!value || typeof value !== 'object') {
-		return { ai_summary_short: '', ai_summary: '' };
+		return { ai_summary_short: '', ai_summary: '', ai_summary_sections: [] };
 	}
 
 	const source = value as Record<string, unknown>;
 	const fullSummary = toText(source.ai_summary);
 	const shortSummary = toText(source.ai_summary_short) || fullSummary;
+	const sections = normalizeAiSummarySections(source.ai_summary_sections, fullSummary || shortSummary);
 
 	return {
 		ai_summary_short: shortSummary,
 		ai_summary: fullSummary || shortSummary,
+		ai_summary_sections: sections,
 	};
 };
 

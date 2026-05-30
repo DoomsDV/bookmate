@@ -29,7 +29,10 @@ import {
 import { maybeShowCalendarTour, showCalendarTour } from '../../lib/calendar-tour';
 import { showFlashMessage } from '../../lib/flash';
 import {
-	getScheduleMisalignedListSuffix,
+	getScheduleMisalignedBannerAction,
+	getScheduleMisalignedBannerCaption,
+	getScheduleMisalignedBannerReasonLabel,
+	getScheduleMisalignedBannerTitle,
 	isScheduleMisalignedFlag,
 	normalizeScheduleMisalignedReason,
 } from '../../lib/schedule-misaligned';
@@ -101,15 +104,13 @@ const getEventScheduleMisalignedReason = (event: ApiCalendarEvent | EventApi) =>
 const SCHEDULE_REVIEW_STORAGE_PREFIX = 'bookmate:schedule-review:';
 const MISALIGNED_TITLE_PREFIX = '⚠ ';
 
-const formatMisalignedWhenLabel = (startRaw: unknown, endRaw: unknown) => {
+const formatMisalignedWhenLabelCompact = (startRaw: unknown) => {
 	const startText = String(startRaw || '').trim();
 	if (!startText) return 'fecha por confirmar';
 
 	const startDate = new Date(startText);
 	if (Number.isNaN(startDate.getTime())) return startText;
 
-	const endText = String(endRaw || '').trim();
-	const endDate = endText ? new Date(endText) : null;
 	const datePart = new Intl.DateTimeFormat('es-ES', {
 		weekday: 'short',
 		day: 'numeric',
@@ -119,13 +120,8 @@ const formatMisalignedWhenLabel = (startRaw: unknown, endRaw: unknown) => {
 		hour: '2-digit',
 		minute: '2-digit',
 	}).format(startDate);
-	if (!endDate || Number.isNaN(endDate.getTime())) return `${datePart} ${startTime}`;
 
-	const endTime = new Intl.DateTimeFormat('es-ES', {
-		hour: '2-digit',
-		minute: '2-digit',
-	}).format(endDate);
-	return `${datePart} ${startTime}–${endTime}`;
+	return `${datePart} ${startTime}`;
 };
 
 const getAppointmentStatus = (event: {
@@ -1179,14 +1175,16 @@ class CalendarManager extends HTMLElement {
 				const rawTitle = String(event.title || '')
 					.trim()
 					.replace(/^⚠\s*/, '');
-				const whenLabel = formatMisalignedWhenLabel(event.start, event.end);
-				const reasonSuffix = getScheduleMisalignedListSuffix(
-					getEventScheduleMisalignedReason(event)
-				);
-				const coreLabel = rawTitle ? `${rawTitle} (${whenLabel})` : whenLabel;
+				const reason = getEventScheduleMisalignedReason(event);
+				const whenLabel = formatMisalignedWhenLabelCompact(event.start);
+				const reasonLabel = getScheduleMisalignedBannerReasonLabel(reason);
+				const appointmentLabel = rawTitle || 'Cita sin título';
+
 				return {
 					id: appointmentId,
-					label: `${coreLabel} ${reasonSuffix}`,
+					appointmentLabel,
+					whenLabel,
+					reasonLabel,
 				};
 			})
 			.filter((item) => item.id > 0);
@@ -1249,32 +1247,32 @@ class CalendarManager extends HTMLElement {
 			return;
 		}
 
-		const label = misaligned.length === 1 ? 'cita' : 'citas';
 		this.scheduleMisalignedBanner.classList.remove('hidden');
 		this.scheduleMisalignedBanner.replaceChildren();
 
-		const intro = document.createElement('p');
-		intro.className = 'calendar-misaligned-banner__intro';
-		intro.textContent = `${misaligned.length} ${label} en este rango no coinciden con la agenda actual. Cada una indica el motivo (día bloqueado, horario o sucursal). Están marcadas con ⚠ en el calendario:`;
+		const title = document.createElement('p');
+		title.className = 'calendar-misaligned-banner__title';
+		title.textContent = getScheduleMisalignedBannerTitle(misaligned.length);
+
+		const caption = document.createElement('p');
+		caption.className = 'calendar-misaligned-banner__caption';
+		caption.textContent = getScheduleMisalignedBannerCaption(misaligned.length);
 
 		const list = document.createElement('ul');
 		list.className = 'calendar-misaligned-banner__list';
 
 		for (const item of misaligned) {
 			const listItem = document.createElement('li');
-			const labelNode = document.createElement('span');
-			labelNode.className = 'calendar-misaligned-banner__item';
-			labelNode.textContent = item.label;
-			listItem.appendChild(labelNode);
+			listItem.className = 'calendar-misaligned-banner__item';
+			listItem.textContent = `${item.appointmentLabel} (${item.whenLabel}) · ${item.reasonLabel}`;
 			list.appendChild(listItem);
 		}
 
-		const hint = document.createElement('p');
-		hint.className = 'calendar-misaligned-banner__hint';
-		hint.textContent =
-			'Reprograma manualmente y avisa al cliente si cambias fecha u hora. En el calendario, búscalas por el prefijo ⚠ y el borde naranja.';
+		const action = document.createElement('p');
+		action.className = 'calendar-misaligned-banner__action';
+		action.textContent = getScheduleMisalignedBannerAction(misaligned.length);
 
-		this.scheduleMisalignedBanner.append(intro, list, hint);
+		this.scheduleMisalignedBanner.append(title, caption, list, action);
 	}
 
 	private applyScheduleReviewFromUrl(requiredNodes: RequiredNodes) {

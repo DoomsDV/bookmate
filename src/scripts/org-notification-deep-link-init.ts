@@ -1,0 +1,18 @@
+import {
+	bindPushNotificationNavigation,
+	resolveOrgNotificationDeepLink,
+} from '../lib/org-notification-deep-link';
+
+const runOrgNotificationDeepLink = async () => {
+	try {
+		await resolveOrgNotificationDeepLink();
+	} catch {
+		// No bloquear la navegación del panel si falla el cambio automático.
+	}
+};
+
+bindPushNotificationNavigation();
+void runOrgNotificationDeepLink();
+document.addEventListener('astro:page-load', () => {
+	void runOrgNotificationDeepLink();
+});

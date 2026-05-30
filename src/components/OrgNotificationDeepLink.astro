@@ -1,28 +1,3 @@
----
-const hasSession = Boolean(Astro.locals.token ?? '');
----
-
-{
-	hasSession ? (
-		<script type="module">
-			import {
-				bindPushNotificationNavigation,
-				resolveOrgNotificationDeepLink,
-			} from '../lib/org-notification-deep-link';
-
-			const runOrgNotificationDeepLink = async () => {
-				try {
-					await resolveOrgNotificationDeepLink();
-				} catch {
-					// No bloquear la navegación del panel si falla el cambio automático.
-				}
-			};
-
-			bindPushNotificationNavigation();
-			void runOrgNotificationDeepLink();
-			document.addEventListener('astro:page-load', () => {
-				void runOrgNotificationDeepLink();
-			});
-		</script>
-	) : null
-}
+<script>
+	import '../scripts/org-notification-deep-link-init.ts';
+</script>

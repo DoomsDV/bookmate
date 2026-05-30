@@ -243,22 +243,27 @@ const toPageHref = (page: number) => {
 											</div>
 										</div>
 										<div class="dashboard-ai-body hidden mt-1" data-ai-summary-body>
-											<p
-												class="dashboard-ai-text dashboard-ai-text--preview whitespace-pre-line text-[0.95rem] font-medium leading-relaxed sm:text-base max-w-4xl md:hidden"
-												data-ai-summary-preview
-											>{defaultAiSummaryShort}</p>
-											<p
-												class="dashboard-ai-text dashboard-ai-text--full hidden whitespace-pre-line text-[0.95rem] font-medium leading-relaxed sm:text-base max-w-4xl md:block"
-												data-ai-summary-text
-											>{defaultAiSummaryFull}</p>
+											<div class="dashboard-ai-preview-wrap md:hidden">
+												<div
+													class="dashboard-ai-text dashboard-ai-text--preview text-[0.95rem] font-medium leading-relaxed sm:text-base max-w-4xl"
+													data-ai-summary-preview
+												>
+													<p class="dashboard-ai-preview-intro">{defaultAiSummaryShort}</p>
+												</div>
+											</div>
+											<div
+												class="dashboard-ai-sections dashboard-ai-sections--card hidden max-w-4xl md:grid"
+												data-ai-summary-sections
+												aria-live="polite"
+											></div>
 											<button
 												type="button"
 												class="dashboard-ai-more-btn md:hidden"
 												data-open-ai-summary-modal
 												hidden
 											>
-												Ver más
-												<span class="material-symbols-rounded text-[1rem]">unfold_more</span>
+												<span class="dashboard-ai-more-btn__label">Ver análisis completo</span>
+												<span class="material-symbols-rounded dashboard-ai-more-btn__icon">expand_more</span>
 											</button>
 										</div>
 									</div>
@@ -437,7 +442,7 @@ const toPageHref = (page: number) => {
 	<AppAlert />
 
 	<dialog
-		class="dashboard-ai-modal m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+		class="dashboard-ai-modal m-0 mt-auto mb-0 h-[min(78dvh,40rem)] w-screen max-w-none md:hidden sm:m-auto sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
 		data-ai-summary-modal
 	>
 		<div class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-5">
@@ -463,10 +468,11 @@ const toPageHref = (page: number) => {
 			</div>
 		</div>
 		<div class="overflow-y-auto overscroll-contain min-h-0 px-4 py-5 sm:px-7 sm:py-6">
-			<p
-				class="dashboard-ai-modal-text whitespace-pre-line text-[0.95rem] font-medium leading-relaxed text-(--on-surface)"
-				data-ai-summary-modal-text
-			></p>
+			<div
+				class="dashboard-ai-sections dashboard-ai-sections--modal"
+				data-ai-summary-modal-sections
+				aria-live="polite"
+			></div>
 		</div>
 	</dialog>
 </Layout>
@@ -490,6 +496,289 @@ const toPageHref = (page: number) => {
 		String(text || '')
 			.split(/(\s+)/)
 			.filter((token) => token.length > 0);
+
+	type AiSummarySectionType = 'panorama' | 'contexto' | 'sugerencia';
+
+	interface AiSummarySection {
+		type: AiSummarySectionType;
+		text?: string;
+		items?: string[];
+	}
+
+	interface AiSummaryPayload {
+		summaryShort: string;
+		summaryFull: string;
+		sections: AiSummarySection[];
+	}
+
+	const AI_SUMMARY_SECTION_UI: Record<
+		AiSummarySectionType,
+		{ title: string; icon: string }
+	> = {
+		panorama: { title: 'Panorama', icon: 'insights' },
+		contexto: { title: 'Contexto', icon: 'fact_check' },
+		sugerencia: { title: 'Sugerencia', icon: 'tips_and_updates' },
+	};
+
+	const normalizeAiSummarySection = (value: unknown): AiSummarySection | null => {
+		if (!value || typeof value !== 'object') return null;
+
+		const source = value as Record<string, unknown>;
+		const typeRaw = String(source.type ?? '').trim().toLowerCase();
+		if (typeRaw !== 'panorama' && typeRaw !== 'contexto' && typeRaw !== 'sugerencia') {
+			return null;
+		}
+
+		if (typeRaw === 'contexto') {
+			const items = (Array.isArray(source.items) ? source.items : [])
+				.map((item) => sanitizeAiSummary(item))
+				.filter(Boolean)
+				.slice(0, 3);
+			return { type: typeRaw, items };
+		}
+
+		const text = sanitizeAiSummary(source.text);
+		if (!text) return null;
+		return { type: typeRaw, text };
+	};
+
+	const buildSectionsFromLegacy = (legacyFull: string): AiSummarySection[] => {
+		const lines = String(legacyFull || '')
+			.replace(/\r\n|\r/g, '\n')
+			.split('\n')
+			.map((line) => sanitizeAiSummary(line))
+			.filter(Boolean);
+
+		if (lines.length === 0) {
+			return [
+				{ type: 'panorama', text: 'Tu jornada está lista para arrancar con buen pie.' },
+				{ type: 'contexto', items: [] },
+				{
+					type: 'sugerencia',
+					text: 'Conviene revisar tu agenda y confirmar los turnos pendientes.',
+				},
+			];
+		}
+
+		if (lines.length === 1 && lines[0].length > 180) {
+			const sentences =
+				lines[0].match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g)?.map((part) => sanitizeAiSummary(part)).filter(Boolean) ??
+				[lines[0]];
+			if (sentences.length >= 3) {
+				return [
+					{ type: 'panorama', text: sentences[0] },
+					{ type: 'contexto', items: sentences.slice(1, -1).slice(0, 3) },
+					{ type: 'sugerencia', text: sentences[sentences.length - 1] },
+				];
+			}
+			if (sentences.length === 2) {
+				return [
+					{ type: 'panorama', text: sentences[0] },
+					{ type: 'contexto', items: [] },
+					{ type: 'sugerencia', text: sentences[1] },
+				];
+			}
+		}
+
+		return [
+			{ type: 'panorama', text: lines[0] },
+			{ type: 'contexto', items: lines.length > 2 ? lines.slice(1, -1) : [] },
+			{
+				type: 'sugerencia',
+				text:
+					lines.length >= 2
+						? lines[lines.length - 1]
+						: 'Conviene revisar tu agenda y confirmar los turnos pendientes.',
+			},
+		];
+	};
+
+	const isMobileAiSummaryViewport = (): boolean =>
+		window.matchMedia('(max-width: 768px)').matches;
+
+	const truncatePreviewText = (text: string, maxChars = 320): string => {
+		const clean = sanitizeAiSummary(text);
+		if (clean.length <= maxChars) return clean;
+
+		const slice = clean.slice(0, maxChars);
+		const lastSpace = slice.lastIndexOf(' ');
+		const safeCut = lastSpace > 200 ? slice.slice(0, lastSpace) : slice;
+		return `${safeCut.trim()}…`;
+	};
+
+	const normalizeForCompare = (text: string): string =>
+		sanitizeAiSummary(text).toLowerCase().replace(/\s+/g, ' ');
+
+	const textsAreRedundant = (candidate: string, existing: string): boolean => {
+		const c = normalizeForCompare(candidate);
+		const e = normalizeForCompare(existing);
+		if (!c || !e) return true;
+		if (e === c || e.includes(c) || c.includes(e)) return true;
+
+		const cWords = c.split(' ').filter((word) => word.length > 3);
+		const eWords = new Set(e.split(' ').filter((word) => word.length > 3));
+		if (cWords.length === 0) return true;
+
+		const shared = cWords.filter((word) => eWords.has(word)).length;
+		if (shared / cWords.length >= 0.55) return true;
+
+		const greeting = c.match(/^(buenos días|buenas tardes|buenas noches)[,!.\s]+/i);
+		if (greeting && e.includes(greeting[0].toLowerCase().trim())) {
+			const cBody = c.slice(greeting[0].length).trim();
+			const eBody = e.replace(/^(buenos días|buenas tardes|buenas noches)[,!.\s]+/i, '').trim();
+			if (!cBody || eBody.includes(cBody.slice(0, Math.min(cBody.length, 40)))) return true;
+
+			const cBodyWords = cBody.split(' ').filter((word) => word.length > 3);
+			const eBodyWords = new Set(eBody.split(' ').filter((word) => word.length > 3));
+			const bodyShared = cBodyWords.filter((word) => eBodyWords.has(word)).length;
+			if (cBodyWords.length > 0 && bodyShared / cBodyWords.length >= 0.5) return true;
+		}
+
+		return false;
+	};
+
+	const buildMobilePreviewContent = (
+		summaryShort: string,
+		summaryFull: string,
+		sections: AiSummarySection[]
+	): { intro: string; highlights: string[] } => {
+		const short = sanitizeAiSummary(summaryShort);
+		const highlights: string[] = [];
+		const combined = () => [short, ...highlights].filter(Boolean).join(' ');
+
+		const tryAddExtra = (text: string) => {
+			const clean = sanitizeAiSummary(text);
+			if (!clean || textsAreRedundant(clean, combined())) return;
+			highlights.push(clean);
+		};
+
+		for (const item of sections.find((section) => section.type === 'contexto')?.items ?? []) {
+			tryAddExtra(item);
+			if (highlights.length >= 2) break;
+		}
+
+		if (highlights.length < 2) {
+			const sugerencia = sections.find((section) => section.type === 'sugerencia')?.text;
+			if (sugerencia) tryAddExtra(sugerencia);
+		}
+
+		return {
+			intro: truncatePreviewText(short || summaryFull, 220),
+			highlights,
+		};
+	};
+
+	const renderMobilePreview = (
+		container: HTMLElement,
+		content: { intro: string; highlights: string[] }
+	) => {
+		container.replaceChildren();
+
+		if (content.intro) {
+			const intro = document.createElement('p');
+			intro.className = 'dashboard-ai-preview-intro';
+			intro.textContent = content.intro;
+			container.appendChild(intro);
+		}
+
+		if (content.highlights.length === 0) return;
+
+		const list = document.createElement('ul');
+		list.className = 'dashboard-ai-preview-highlights';
+		for (const item of content.highlights) {
+			const listItem = document.createElement('li');
+			listItem.textContent = item;
+			list.appendChild(listItem);
+		}
+		container.appendChild(list);
+	};
+
+	const summaryHasExpandedDetail = (
+		summaryShort: string,
+		summaryFull: string,
+		sections: AiSummarySection[]
+	): boolean => {
+		if (sections.some((section) => sectionHasVisibleContent(section))) {
+			return sections.length > 1 || (sections[0]?.text?.length ?? 0) > summaryShort.length + 24;
+		}
+
+		return summaryFull.replace(/\s+/g, ' ').trim() !== summaryShort.replace(/\s+/g, ' ').trim();
+	};
+
+	const normalizeAiSummarySections = (
+		value: unknown,
+		legacyFull: string
+	): AiSummarySection[] => {
+		const sections = (Array.isArray(value) ? value : [])
+			.map(normalizeAiSummarySection)
+			.filter((item): item is AiSummarySection => item !== null);
+
+		if (sections.length > 0) return sections;
+		return buildSectionsFromLegacy(legacyFull);
+	};
+
+	const sectionHasVisibleContent = (section: AiSummarySection): boolean => {
+		if (section.type === 'contexto') {
+			return (section.items ?? []).some((item) => Boolean(sanitizeAiSummary(item)));
+		}
+		return Boolean(sanitizeAiSummary(section.text));
+	};
+
+	const renderAiSummarySections = (
+		container: HTMLElement,
+		sections: AiSummarySection[],
+		variant: 'card' | 'modal'
+	) => {
+		container.replaceChildren();
+
+		for (const section of sections) {
+			if (!sectionHasVisibleContent(section)) continue;
+
+			const meta = AI_SUMMARY_SECTION_UI[section.type];
+			const article = document.createElement('article');
+			article.className = `dashboard-ai-section dashboard-ai-section--${section.type}`;
+
+			const header = document.createElement('div');
+			header.className = 'dashboard-ai-section__header';
+
+			const iconWrap = document.createElement('span');
+			iconWrap.className = 'dashboard-ai-section__icon';
+			iconWrap.setAttribute('aria-hidden', 'true');
+			const icon = document.createElement('span');
+			icon.className = 'material-symbols-rounded';
+			icon.textContent = meta.icon;
+			iconWrap.appendChild(icon);
+
+			const title = document.createElement('h3');
+			title.className = 'dashboard-ai-section__title';
+			title.textContent = meta.title;
+
+			header.appendChild(iconWrap);
+			header.appendChild(title);
+			article.appendChild(header);
+
+			if (section.type === 'contexto') {
+				const list = document.createElement('ul');
+				list.className = 'dashboard-ai-section__list';
+				for (const item of section.items ?? []) {
+					const cleanItem = sanitizeAiSummary(item);
+					if (!cleanItem) continue;
+					const listItem = document.createElement('li');
+					listItem.textContent = cleanItem;
+					list.appendChild(listItem);
+				}
+				if (list.childElementCount === 0) continue;
+				article.appendChild(list);
+			} else {
+				const body = document.createElement('p');
+				body.className = 'dashboard-ai-section__text';
+				body.textContent = sanitizeAiSummary(section.text);
+				article.appendChild(body);
+			}
+
+			container.appendChild(article);
+		}
+	};
 
 	const wait = (ms: number): Promise<void> => new Promise((resolve) => window.setTimeout(resolve, ms));
 
@@ -534,27 +823,87 @@ const toPageHref = (page: number) => {
 		roleId: number;
 		summaryShort: string;
 		summaryFull: string;
+		sections: AiSummarySection[];
 		savedAt: number;
 		expiresAt: number;
-	}
-
-	interface AiSummaryPayload {
-		summaryShort: string;
-		summaryFull: string;
 	}
 
 	const TEAM_OVERVIEW_CACHE_KEY = 'hasel:dashboard-team-overview:v1';
 	const TEAM_OVERVIEW_TTL_MS = 120000;
 	const TEAM_OVERVIEW_LIMIT = 4;
 	const TEAM_AVATAR_FALLBACK_PALETTE = ['#2563eb', '#0f766e', '#be185d', '#7c3aed'];
-	const AI_SUMMARY_CACHE_KEY = 'hasel:dashboard-ai-summary:v2';
+	const AI_SUMMARY_CACHE_KEY = 'hasel:dashboard-ai-summary:v3';
 	const AI_SUMMARY_TTL_MS = 10 * 60 * 1000;
 	const DEFAULT_AI_SUMMARY_SHORT = '¡Buen día! Preparate para una excelente jornada de trabajo.';
 	const DEFAULT_AI_SUMMARY_FULL = DEFAULT_AI_SUMMARY_SHORT;
+	const DEFAULT_AI_SUMMARY_SECTIONS: AiSummarySection[] = buildSectionsFromLegacy(DEFAULT_AI_SUMMARY_FULL);
 	const AI_MODAL_CLOSE_MS = 140;
 
-	let aiSummaryFullText = '';
+	let aiSummaryModalSections: AiSummarySection[] = [];
 	let aiSummaryModalCloseTimer: number | null = null;
+	let lastAiSummaryPayload: AiSummaryPayload | null = null;
+
+	const applyAiSummaryContent = async (payload: AiSummaryPayload) => {
+		const card = document.querySelector<HTMLElement>('[data-ai-summary-card]');
+		if (!card) return;
+
+		const previewNode = card.querySelector<HTMLElement>('[data-ai-summary-preview]');
+		const sectionsNode = card.querySelector<HTMLElement>('[data-ai-summary-sections]');
+		const moreButton = card.querySelector<HTMLButtonElement>('[data-open-ai-summary-modal]');
+		const fallbackShort =
+			sanitizeAiSummary(card.getAttribute('data-default-summary-short')) || DEFAULT_AI_SUMMARY_SHORT;
+		const fallbackFull =
+			sanitizeAiSummary(card.getAttribute('data-default-summary-full')) || fallbackShort;
+
+		if (!previewNode || !sectionsNode) return;
+
+		const summaryShort = sanitizeAiSummary(payload.summaryShort) || fallbackShort;
+		const summaryFull = sanitizeAiSummary(payload.summaryFull) || summaryShort || fallbackFull;
+		const sections =
+			payload.sections.length > 0
+				? payload.sections
+				: buildSectionsFromLegacy(summaryFull || summaryShort);
+
+		lastAiSummaryPayload = { summaryShort, summaryFull, sections };
+		aiSummaryModalSections = sections;
+
+		const isMobile = isMobileAiSummaryViewport();
+		const hasExpandedContent = summaryHasExpandedDetail(summaryShort, summaryFull, sections);
+
+		if (moreButton) {
+			moreButton.hidden = !isMobile || !hasExpandedContent;
+		}
+
+		const previewWrap = card.querySelector<HTMLElement>('.dashboard-ai-preview-wrap');
+		if (previewWrap) {
+			previewWrap.classList.toggle('has-more', isMobile && hasExpandedContent);
+		}
+
+		if (isMobile) {
+			sectionsNode.replaceChildren();
+			renderMobilePreview(
+				previewNode,
+				buildMobilePreviewContent(summaryShort, summaryFull, sections)
+			);
+			return;
+		}
+
+		closeAiSummaryModal();
+		previewNode.replaceChildren();
+		renderAiSummarySections(sectionsNode, sections, 'card');
+	};
+
+	let aiSummaryViewportListenerBound = false;
+
+	const bindAiSummaryViewportListener = () => {
+		if (aiSummaryViewportListenerBound) return;
+		aiSummaryViewportListenerBound = true;
+
+		window.matchMedia('(max-width: 768px)').addEventListener('change', () => {
+			if (!lastAiSummaryPayload) return;
+			void applyAiSummaryContent(lastAiSummaryPayload);
+		});
+	};
 
 	const toRecord = (value: unknown): Record<string, unknown> =>
 		typeof value === 'object' && value !== null ? (value as Record<string, unknown>) : {};
@@ -584,11 +933,13 @@ const toPageHref = (page: number) => {
 
 			const summaryShort = sanitizeAiSummary(parsed?.summaryShort);
 			const summaryFull = sanitizeAiSummary(parsed?.summaryFull) || summaryShort;
-			if (!summaryShort && !summaryFull) return null;
+			const sections = normalizeAiSummarySections(parsed?.sections, summaryFull || summaryShort);
+			if (!summaryShort && !summaryFull && sections.length === 0) return null;
 
 			return {
 				summaryShort: summaryShort || summaryFull,
 				summaryFull: summaryFull || summaryShort,
+				sections,
 			};
 		} catch {
 			return null;
@@ -598,7 +949,10 @@ const toPageHref = (page: number) => {
 	const saveAiSummaryCache = (dateKey: string, roleId: number, payload: AiSummaryPayload) => {
 		const summaryShort = sanitizeAiSummary(payload.summaryShort);
 		const summaryFull = sanitizeAiSummary(payload.summaryFull) || summaryShort;
-		if (!summaryShort && !summaryFull) return;
+		const sections = payload.sections.length
+			? payload.sections
+			: buildSectionsFromLegacy(summaryFull || summaryShort);
+		if (!summaryShort && !summaryFull && sections.length === 0) return;
 
 		try {
 			const savedAt = Date.now();
@@ -607,6 +961,7 @@ const toPageHref = (page: number) => {
 				roleId,
 				summaryShort: summaryShort || summaryFull,
 				summaryFull: summaryFull || summaryShort,
+				sections,
 				savedAt,
 				expiresAt: savedAt + AI_SUMMARY_TTL_MS,
 			};
@@ -831,11 +1186,13 @@ const toPageHref = (page: number) => {
 	};
 
 	const openAiSummaryModal = () => {
-		const modal = document.querySelector<HTMLDialogElement>('[data-ai-summary-modal]');
-		const modalText = document.querySelector<HTMLElement>('[data-ai-summary-modal-text]');
-		if (!modal || !modalText) return;
+		if (!isMobileAiSummaryViewport()) return;
 
-		modalText.textContent = aiSummaryFullText;
+		const modal = document.querySelector<HTMLDialogElement>('[data-ai-summary-modal]');
+		const modalSections = document.querySelector<HTMLElement>('[data-ai-summary-modal-sections]');
+		if (!modal || !modalSections) return;
+
+		renderAiSummarySections(modalSections, aiSummaryModalSections, 'modal');
 		modal.classList.remove('is-closing');
 
 		if (aiSummaryModalCloseTimer) {
@@ -883,6 +1240,7 @@ const toPageHref = (page: number) => {
 		document.addEventListener('click', (event) => {
 			const target = event.target;
 			if (!(target instanceof Element)) return;
+			if (!isMobileAiSummaryViewport()) return;
 			if (target.closest('[data-open-ai-summary-modal]')) {
 				openAiSummaryModal();
 			}
@@ -899,25 +1257,22 @@ const toPageHref = (page: number) => {
 		const stateNode = card.querySelector<HTMLElement>('[data-ai-summary-state]');
 		const bodyNode = card.querySelector<HTMLElement>('[data-ai-summary-body]');
 		const previewNode = card.querySelector<HTMLElement>('[data-ai-summary-preview]');
-		const textNode = card.querySelector<HTMLElement>('[data-ai-summary-text]');
+		const sectionsNode = card.querySelector<HTMLElement>('[data-ai-summary-sections]');
 		const moreButton = card.querySelector<HTMLButtonElement>('[data-open-ai-summary-modal]');
 		const roleId = Number(card.getAttribute('data-role-id') ?? '0');
 		const fallbackShort =
 			sanitizeAiSummary(card.getAttribute('data-default-summary-short')) || DEFAULT_AI_SUMMARY_SHORT;
 		const fallbackFull =
 			sanitizeAiSummary(card.getAttribute('data-default-summary-full')) || fallbackShort;
+		const fallbackSections = buildSectionsFromLegacy(fallbackFull);
 
-		if (!stateNode || !bodyNode || !previewNode || !textNode) return;
+		if (!stateNode || !bodyNode || !previewNode || !sectionsNode) return;
 
 		bindAiSummaryModalEvents();
+		bindAiSummaryViewportListener();
 		card.classList.add('is-generating');
 
 		const revealSummary = async (payload: AiSummaryPayload) => {
-			const summaryShort = sanitizeAiSummary(payload.summaryShort) || fallbackShort;
-			const summaryFull = sanitizeAiSummary(payload.summaryFull) || summaryShort || fallbackFull;
-
-			aiSummaryFullText = summaryFull;
-
 			card.classList.remove('is-generating');
 			stateNode.classList.add('hidden');
 			stateNode.setAttribute('aria-hidden', 'true');
@@ -925,17 +1280,7 @@ const toPageHref = (page: number) => {
 			bodyNode.classList.remove('hidden');
 			bodyNode.style.display = 'block';
 
-			const hasExpandedContent =
-				summaryFull.replace(/\s+/g, ' ').trim() !== summaryShort.replace(/\s+/g, ' ').trim();
-
-			if (moreButton) {
-				moreButton.hidden = !hasExpandedContent;
-			}
-
-			await Promise.all([
-				streamSummaryTokens(previewNode, summaryShort),
-				streamSummaryTokens(textNode, summaryFull),
-			]);
+			await applyAiSummaryContent(payload);
 		};
 
 		const todayKey = getLocalDateKey();
@@ -958,13 +1303,18 @@ const toPageHref = (page: number) => {
 
 			const summaryShort = sanitizeAiSummary(payload?.data?.ai_summary_short);
 			const summaryFull = sanitizeAiSummary(payload?.data?.ai_summary);
-			if (!summaryShort && !summaryFull) {
+			const sections = normalizeAiSummarySections(
+				payload?.data?.ai_summary_sections,
+				summaryFull || summaryShort
+			);
+			if (!summaryShort && !summaryFull && sections.length === 0) {
 				throw new Error('El resumen IA no está disponible en este momento.');
 			}
 
 			const normalizedSummary: AiSummaryPayload = {
 				summaryShort: summaryShort || summaryFull,
 				summaryFull: summaryFull || summaryShort,
+				sections,
 			};
 
 			saveAiSummaryCache(todayKey, roleId, normalizedSummary);
@@ -973,6 +1323,7 @@ const toPageHref = (page: number) => {
 			await revealSummary({
 				summaryShort: fallbackShort,
 				summaryFull: fallbackFull,
+				sections: fallbackSections,
 			});
 		} finally {
 			card.classList.remove('is-generating');
@@ -1032,6 +1383,208 @@ const toPageHref = (page: number) => {
 	initializeDashboardPage();
 	document.addEventListener('astro:page-load', initializeDashboardPage);
 </script>
+
+<style is:global>
+	.dashboard-ai-sections {
+		display: grid;
+		gap: 0.9rem;
+	}
+
+	.dashboard-ai-sections--modal {
+		gap: 1rem;
+		padding-bottom: 0.35rem;
+	}
+
+	.dashboard-ai-sections--modal .dashboard-ai-section {
+		padding: 1rem 1.05rem;
+		border-radius: 1.15rem;
+	}
+
+	.dashboard-ai-sections--modal .dashboard-ai-section__header {
+		margin-bottom: 0.7rem;
+	}
+
+	.dashboard-ai-sections--modal .dashboard-ai-section__text,
+	.dashboard-ai-sections--modal .dashboard-ai-section__list li {
+		font-size: 0.9rem;
+		line-height: 1.55;
+	}
+
+	.dashboard-ai-section {
+		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+		border-radius: 1.1rem;
+		background: color-mix(in srgb, var(--surface-bright) 88%, var(--surface) 12%);
+		padding: 0.95rem 1.05rem;
+	}
+
+	.dashboard-ai-section--panorama {
+		border-color: color-mix(in srgb, #0ea5e9 28%, var(--shell-border) 72%);
+		background: color-mix(in srgb, #0ea5e9 8%, var(--surface-bright) 92%);
+	}
+
+	.dashboard-ai-section--contexto {
+		border-color: color-mix(in srgb, #d97706 26%, var(--shell-border) 74%);
+		background: color-mix(in srgb, #d97706 7%, var(--surface-bright) 93%);
+	}
+
+	.dashboard-ai-section--sugerencia {
+		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border) 72%);
+		background: color-mix(in srgb, var(--primary) 8%, var(--surface-bright) 92%);
+	}
+
+	.dashboard-ai-section__header {
+		display: flex;
+		align-items: center;
+		gap: 0.65rem;
+		margin-bottom: 0.65rem;
+	}
+
+	.dashboard-ai-section__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.1rem;
+		height: 2.1rem;
+		border-radius: 0.75rem;
+		flex-shrink: 0;
+	}
+
+	.dashboard-ai-section--panorama .dashboard-ai-section__icon {
+		background: color-mix(in srgb, #0ea5e9 18%, transparent);
+		color: #0284c7;
+	}
+
+	.dashboard-ai-section--contexto .dashboard-ai-section__icon {
+		background: color-mix(in srgb, #d97706 18%, transparent);
+		color: #b45309;
+	}
+
+	.dashboard-ai-section--sugerencia .dashboard-ai-section__icon {
+		background: color-mix(in srgb, var(--primary) 18%, transparent);
+		color: var(--primary);
+	}
+
+	.dashboard-ai-section__icon .material-symbols-rounded {
+		font-size: 1.15rem;
+		color: inherit;
+	}
+
+	.dashboard-ai-section__title {
+		margin: 0;
+		font-size: 0.74rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.dashboard-ai-section--panorama .dashboard-ai-section__title {
+		color: #0284c7;
+	}
+
+	.dashboard-ai-section--contexto .dashboard-ai-section__title {
+		color: #b45309;
+	}
+
+	.dashboard-ai-section--sugerencia .dashboard-ai-section__title {
+		color: var(--primary);
+	}
+
+	.dashboard-ai-section__text {
+		margin: 0;
+		font-size: 0.93rem;
+		font-weight: 600;
+		line-height: 1.58;
+		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
+	}
+
+	.dashboard-ai-section__list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.55rem;
+	}
+
+	.dashboard-ai-section__list li {
+		position: relative;
+		padding-left: 1rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		line-height: 1.5;
+		color: color-mix(in srgb, var(--on-surface) 92%, #0f172a 8%);
+	}
+
+	.dashboard-ai-section__list li::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0.58rem;
+		width: 0.35rem;
+		height: 0.35rem;
+		border-radius: 999px;
+		background: currentColor;
+		opacity: 0.72;
+	}
+
+	.dashboard-ai-section--panorama .dashboard-ai-section__list li::before {
+		color: #0284c7;
+	}
+
+	.dashboard-ai-section--contexto .dashboard-ai-section__list li::before {
+		color: #b45309;
+	}
+
+	.dashboard-ai-section--sugerencia .dashboard-ai-section__list li::before {
+		color: var(--primary);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--panorama {
+		background: color-mix(in srgb, #0ea5e9 12%, #1e1f22 88%);
+		border-color: color-mix(in srgb, #0ea5e9 30%, var(--shell-border) 70%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--contexto {
+		background: color-mix(in srgb, #d97706 10%, #1e1f22 90%);
+		border-color: color-mix(in srgb, #d97706 28%, var(--shell-border) 72%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--sugerencia {
+		background: color-mix(in srgb, var(--primary) 14%, #1e1f22 86%);
+		border-color: color-mix(in srgb, var(--primary) 30%, var(--shell-border) 70%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__icon {
+		background: color-mix(in srgb, #38bdf8 22%, transparent);
+		color: #7dd3fc;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--contexto .dashboard-ai-section__icon {
+		background: color-mix(in srgb, #fbbf24 20%, transparent);
+		color: #fcd34d;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--sugerencia .dashboard-ai-section__icon {
+		background: color-mix(in srgb, var(--primary) 22%, transparent);
+		color: color-mix(in srgb, var(--primary) 55%, white 45%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__title {
+		color: #7dd3fc;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--contexto .dashboard-ai-section__title {
+		color: #fcd34d;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--sugerencia .dashboard-ai-section__title {
+		color: color-mix(in srgb, var(--primary) 55%, white 45%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section__text,
+	html[data-theme='dark'] .dashboard-ai-section__list li {
+		color: color-mix(in srgb, var(--on-surface) 90%, white 10%);
+	}
+</style>
 
 <style>
 	@keyframes ai-token-reveal {
@@ -1192,7 +1745,8 @@ const toPageHref = (page: number) => {
 		padding-block: 1.5rem;
 		padding-inline: clamp(1.5rem, 1.35rem + 0.45vw, 1.9rem);
 		border: 1px solid rgba(148, 163, 184, 0.24);
-		background: color-mix(in srgb, #f8fafc 72%, #ffffff 28%);
+		--ai-card-bg: color-mix(in srgb, #f8fafc 72%, #ffffff 28%);
+		background: var(--ai-card-bg);
 		box-shadow: none;
 		transition:
 			box-shadow 400ms ease,
@@ -1337,24 +1891,113 @@ const toPageHref = (page: number) => {
 		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
 	}
 
+	.dashboard-ai-text--preview {
+		display: flex;
+		flex-direction: column;
+		gap: 0.65rem;
+		overflow: hidden;
+		max-height: calc(1.58em * 5 + 0.65rem * 2);
+	}
+
+	.dashboard-ai-preview-intro {
+		margin: 0;
+	}
+
+	.dashboard-ai-preview-highlights {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.35rem;
+	}
+
+	.dashboard-ai-preview-highlights li {
+		position: relative;
+		padding-left: 0.95rem;
+		font-size: 0.88rem;
+		font-weight: 600;
+		line-height: 1.45;
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, #334155 12%);
+	}
+
+	.dashboard-ai-preview-highlights li::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0.52rem;
+		width: 0.32rem;
+		height: 0.32rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 72%, #ffffff 28%);
+	}
+
+	.dashboard-ai-preview-wrap {
+		position: relative;
+	}
+
+	.dashboard-ai-preview-wrap::after {
+		content: none;
+	}
+
+	.dashboard-ai-preview-wrap.has-more::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 2.75rem;
+		pointer-events: none;
+		background: linear-gradient(to bottom, transparent 0%, var(--ai-card-bg) 88%);
+	}
+
+	@media (min-width: 768px) {
+		[data-ai-summary-preview],
+		[data-open-ai-summary-modal],
+		[data-ai-summary-modal],
+		.dashboard-ai-preview-wrap {
+			display: none !important;
+		}
+	}
+
+	@media (max-width: 767px) {
+		.dashboard-ai-sections--card {
+			display: none !important;
+		}
+	}
+
 	.dashboard-ai-more-btn {
-		margin-top: 0.85rem;
+		margin-top: 1rem;
 		display: inline-flex;
+		width: 100%;
 		align-items: center;
-		gap: 0.2rem;
-		border: none;
-		background: transparent;
-		padding: 0.35rem 0.15rem;
-		font-size: 0.84rem;
+		justify-content: center;
+		gap: 0.35rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 24%, transparent);
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 9%, transparent);
+		padding: 0.7rem 1rem;
+		font-size: 0.82rem;
 		font-weight: 800;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		color: var(--primary);
 		cursor: pointer;
+		transition:
+			background 180ms ease,
+			border-color 180ms ease;
 	}
 
-	.dashboard-ai-more-btn .material-symbols-rounded {
-		transform: none;
+	.dashboard-ai-more-btn:hover {
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+	}
+
+	.dashboard-ai-more-btn__label {
+		text-decoration: none;
+	}
+
+	.dashboard-ai-more-btn__icon {
+		font-size: 1.15rem !important;
 	}
 
 	.dashboard-ai-more-btn:focus-visible {
@@ -1365,6 +2008,130 @@ const toPageHref = (page: number) => {
 
 	.dashboard-ai-modal-text {
 		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
+	}
+
+	.dashboard-ai-sections {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.dashboard-ai-sections--modal {
+		gap: 0.65rem;
+	}
+
+	.dashboard-ai-sections--modal .dashboard-ai-section {
+		padding: 0.75rem 0.85rem;
+		border-radius: 1rem;
+	}
+
+	.dashboard-ai-sections--modal .dashboard-ai-section__header {
+		margin-bottom: 0.4rem;
+	}
+
+	.dashboard-ai-sections--modal .dashboard-ai-section__text,
+	.dashboard-ai-sections--modal .dashboard-ai-section__list li {
+		font-size: 0.86rem;
+		line-height: 1.45;
+	}
+
+	.dashboard-ai-section {
+		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+		border-radius: 1.1rem;
+		background: color-mix(in srgb, var(--surface-bright) 88%, var(--surface) 12%);
+		padding: 0.9rem 1rem;
+	}
+
+	.dashboard-ai-section--panorama {
+		border-color: color-mix(in srgb, #0ea5e9 22%, var(--shell-border) 78%);
+		background: color-mix(in srgb, #0ea5e9 6%, var(--surface-bright) 94%);
+	}
+
+	.dashboard-ai-section--sugerencia {
+		border-color: color-mix(in srgb, var(--primary) 24%, var(--shell-border) 76%);
+		background: color-mix(in srgb, var(--primary) 7%, var(--surface-bright) 93%);
+	}
+
+	.dashboard-ai-section__header {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		margin-bottom: 0.55rem;
+	}
+
+	.dashboard-ai-section__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.85rem;
+		height: 1.85rem;
+		border-radius: 0.65rem;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+		flex-shrink: 0;
+	}
+
+	.dashboard-ai-section--panorama .dashboard-ai-section__icon {
+		background: color-mix(in srgb, #0ea5e9 16%, transparent);
+		color: #0284c7;
+	}
+
+	.dashboard-ai-section--contexto .dashboard-ai-section__icon {
+		background: color-mix(in srgb, #d97706 16%, transparent);
+		color: #b45309;
+	}
+
+	.dashboard-ai-section--sugerencia .dashboard-ai-section__icon {
+		background: color-mix(in srgb, var(--primary) 16%, transparent);
+		color: var(--primary);
+	}
+
+	.dashboard-ai-section__icon .material-symbols-rounded {
+		font-size: 1.05rem;
+	}
+
+	.dashboard-ai-section__title {
+		margin: 0;
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, #334155 12%);
+	}
+
+	.dashboard-ai-section__text {
+		margin: 0;
+		font-size: 0.93rem;
+		font-weight: 600;
+		line-height: 1.55;
+		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
+	}
+
+	.dashboard-ai-section__list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.45rem;
+	}
+
+	.dashboard-ai-section__list li {
+		position: relative;
+		padding-left: 1rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		line-height: 1.45;
+		color: color-mix(in srgb, var(--on-surface) 92%, #0f172a 8%);
+	}
+
+	.dashboard-ai-section__list li::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0.58rem;
+		width: 0.35rem;
+		height: 0.35rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 72%, #ffffff 28%);
 	}
 
 	dialog[data-ai-summary-modal] {
@@ -1445,10 +2212,39 @@ const toPageHref = (page: number) => {
 		}
 	}
 
+	html[data-theme='dark'] .dashboard-ai-preview-highlights li {
+		color: color-mix(in srgb, var(--on-surface-variant) 42%, white 58%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-more-btn {
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		border-color: color-mix(in srgb, var(--primary) 28%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-more-btn:hover {
+		background: color-mix(in srgb, var(--primary) 20%, transparent);
+	}
+
 	html[data-theme='dark'] .dashboard-ai-card {
 		border-color: rgba(148, 163, 184, 0.18);
-		background: color-mix(in srgb, #282a2c 74%, #1e1f22 26%);
+		--ai-card-bg: color-mix(in srgb, #282a2c 74%, #1e1f22 26%);
+		background: var(--ai-card-bg);
 		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--panorama {
+		background: color-mix(in srgb, #0ea5e9 10%, #1e1f22 90%);
+		border-color: color-mix(in srgb, #0ea5e9 24%, var(--shell-border) 76%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__icon {
+		background: color-mix(in srgb, #38bdf8 18%, transparent);
+		color: #7dd3fc;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--contexto .dashboard-ai-section__icon {
+		background: color-mix(in srgb, #fbbf24 16%, transparent);
+		color: #fcd34d;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-card.is-generating {
@@ -1487,8 +2283,23 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-text,
-	html[data-theme='dark'] .dashboard-ai-modal-text {
+	html[data-theme='dark'] .dashboard-ai-section__text,
+	html[data-theme='dark'] .dashboard-ai-section__list li {
 		color: color-mix(in srgb, var(--on-surface) 90%, white 10%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section {
+		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--surface-bright) 18%);
+		border-color: color-mix(in srgb, var(--shell-border) 70%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--sugerencia {
+		background: color-mix(in srgb, var(--primary) 14%, #1e1f22 86%);
+		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border) 72%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section__title {
+		color: color-mix(in srgb, var(--on-surface-variant) 42%, white 58%);
 	}
 
 	.dashboard-metric-card {

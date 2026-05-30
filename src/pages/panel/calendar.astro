@@ -248,7 +248,7 @@ const googleErrorMessage = hasGoogleError
 									</div>
 
 									<div
-										class="hidden rounded-2xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-[0.88rem] font-semibold text-amber-800 dark:text-amber-200"
+										class="hidden rounded-2xl border border-amber-500/25 bg-amber-500/10 px-3 py-2.5 text-[0.84rem] font-semibold text-amber-800 sm:px-4 sm:py-3 sm:text-[0.86rem] dark:text-amber-200"
 										data-schedule-misaligned-banner
 										role="status"
 									></div>
@@ -1290,27 +1290,42 @@ const googleErrorMessage = hasGoogleError
 		content: 'close';
 	}
 
-	.calendar-misaligned-banner__intro {
-		margin: 0 0 0.5rem;
+	.calendar-misaligned-banner__title {
+		margin: 0;
+		font-size: 0.92rem;
+		font-weight: 800;
+		line-height: 1.35;
+	}
+
+	.calendar-misaligned-banner__caption {
+		margin: 0.2rem 0 0.45rem;
+		font-size: 0.8rem;
+		font-weight: 600;
+		line-height: 1.4;
+		opacity: 0.92;
 	}
 
 	.calendar-misaligned-banner__list {
-		margin: 0 0 0.55rem;
-		padding-left: 1.15rem;
-		list-style: disc;
+		margin: 0 0 0.45rem;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.28rem;
 	}
 
 	.calendar-misaligned-banner__item {
-		display: inline;
+		font-size: 0.84rem;
 		font-weight: 700;
+		line-height: 1.4;
 		color: inherit;
 	}
 
-	.calendar-misaligned-banner__hint {
+	.calendar-misaligned-banner__action {
 		margin: 0;
-		font-size: 0.82rem;
+		font-size: 0.78rem;
 		font-weight: 600;
-		opacity: 0.92;
+		line-height: 1.4;
+		opacity: 0.9;
 	}
 
 	[data-calendar-root] .fc .fc-event.fc-event-schedule-misaligned {
