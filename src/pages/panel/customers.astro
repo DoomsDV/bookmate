@@ -134,7 +134,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		</div>
 
 		<dialog
-			class="m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+			class="relative m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
 			data-customer-profile-modal
 		>
 			<div
@@ -155,13 +155,19 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 								Cliente
 							</h2>
 							<p
-								class="mt-0.5 truncate text-[0.9rem] font-medium text-(--on-surface-variant)"
-								data-customer-profile-phone
-							></p>
-							<p
-								class="mt-0.5 text-[0.82rem] font-medium text-(--on-surface-variant)"
-								data-customer-profile-registered
-							></p>
+								class="customer-profile-scope hidden"
+								data-customer-profile-scope
+							>
+								<span
+									class="material-symbols-rounded customer-profile-scope-icon"
+									data-customer-profile-scope-icon
+									aria-hidden="true"
+								>public</span>
+								<span
+									class="customer-profile-scope-label"
+									data-customer-profile-scope-label
+								></span>
+							</p>
 						</div>
 					</div>
 					<button
@@ -179,47 +185,48 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 				class="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-(--surface)/30 px-4 py-5 sm:px-7 sm:py-6"
 			>
 				<div
-					class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px]"
-					data-customer-profile-loading
-				>
-					<div
-						class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
-					>
-						<span class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)"
-							>progress_activity</span
-						>
-						Cargando perfil...
-					</div>
-				</div>
-
-				<div
 					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
 					data-customer-profile-error
 				></div>
 
 				<div class="hidden grid gap-5" data-customer-profile-body>
+					<section class="customer-profile-meta">
+						<div class="customer-profile-field-row">
+							<span class="customer-profile-field-term">Teléfono</span>
+							<span
+								class="customer-profile-field-value customer-profile-field-value--emphasize"
+								data-customer-profile-phone
+							>—</span>
+						</div>
+						<div class="customer-profile-field-row">
+							<span class="customer-profile-field-term">Registrado</span>
+							<span
+								class="customer-profile-field-value"
+								data-customer-profile-registered
+							>—</span>
+						</div>
+					</section>
+
 					<section class="customer-profile-metrics">
 						<article class="customer-profile-stat-card">
-							<div class="flex items-center gap-3">
+							<p class="text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
+								Asistencia
+							</p>
+							<div class="mt-1 flex items-center gap-3">
 								<span
 									class="customer-profile-attendance-dot"
 									data-customer-profile-attendance-dot
 									aria-hidden="true"
 								></span>
-								<div>
-									<p class="text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
-										Asistencia
-									</p>
-									<p
-										class="text-[1.35rem] font-extrabold leading-tight text-(--on-surface)"
-										data-customer-profile-attendance-rate
-									>
-										—
-									</p>
-								</div>
+								<p
+									class="text-[1.5rem] font-extrabold leading-tight text-(--on-surface)"
+									data-customer-profile-attendance-rate
+								>
+									—
+								</p>
 							</div>
 							<p
-								class="mt-2 text-[0.88rem] font-medium text-(--on-surface-variant)"
+								class="customer-profile-stat-hint"
 								data-customer-profile-attendance-detail
 							></p>
 						</article>
@@ -270,7 +277,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 				</div>
 			</div>
 
-			<div class="modal-footer shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7">
+			<div
+				class="customer-profile-modal-footer shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7"
+			>
 				<button
 					type="button"
 					class="modal-action-secondary w-full sm:ml-auto sm:w-auto"
@@ -278,6 +287,23 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 				>
 					Cerrar
 				</button>
+			</div>
+
+			<div
+				class="pointer-events-none absolute inset-0 z-20 hidden flex items-center justify-center px-6 py-20 sm:px-8 sm:py-24 bg-(--surface-bright)/82 backdrop-blur-[2px]"
+				data-customer-profile-loading
+				aria-hidden="true"
+			>
+				<div
+					class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+					role="status"
+					aria-live="polite"
+				>
+					<span class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)"
+						>progress_activity</span
+					>
+					Cargando perfil...
+				</div>
 			</div>
 		</dialog>
 	</customer-manager>
@@ -329,9 +355,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	.customer-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.95rem;
 		border-radius: 1rem;
-		padding: 1.45rem 1.5rem 1.55rem;
+		padding: 1rem 1.15rem;
 		cursor: pointer;
 		transition:
 			border-color 0.15s ease,
@@ -346,6 +371,19 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	.customer-card:focus-visible {
 		outline: 2px solid var(--primary);
 		outline-offset: 2px;
+	}
+
+	.customer-profile-modal-footer {
+		display: none;
+	}
+
+	@media (min-width: 768px) {
+		.customer-profile-modal-footer {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 0.75rem;
+		}
 	}
 
 	dialog[data-customer-profile-modal] {
@@ -406,10 +444,63 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 	}
 
+	.customer-profile-scope {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		margin-top: 0.55rem;
+		max-width: 100%;
+		padding: 0.3rem 0.7rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--surface-container-low) 55%, var(--surface-bright) 45%);
+		font-size: 0.76rem;
+		font-weight: 700;
+		line-height: 1.25;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-scope-icon {
+		font-size: 1rem;
+		line-height: 1;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-scope[data-scope='global'] .customer-profile-scope-icon {
+		color: var(--primary);
+	}
+
+	.customer-profile-scope[data-scope='professional'] {
+		background: color-mix(in srgb, var(--primary-soft) 52%, var(--surface-bright) 48%);
+		border-color: color-mix(in srgb, var(--primary) 22%, var(--shell-border) 78%);
+		color: color-mix(in srgb, var(--on-surface) 72%, var(--primary) 28%);
+	}
+
+	.customer-profile-scope[data-scope='professional'] .customer-profile-scope-icon {
+		color: var(--primary);
+	}
+
+	.customer-profile-scope-label {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.customer-profile-meta {
+		display: grid;
+		gap: 0.45rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.85rem 1rem;
+	}
+
 	.customer-profile-metrics {
 		display: grid;
 		gap: 0.85rem;
 		grid-template-columns: 1fr;
+		align-items: stretch;
 	}
 
 	@media (min-width: 520px) {
@@ -419,6 +510,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	.customer-profile-stat-card {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+		height: 100%;
+		min-height: 100%;
 		border-radius: 1rem;
 		border: 1px solid var(--shell-border);
 		background: color-mix(in srgb, var(--surface-bright) 88%, var(--surface-container-low) 12%);

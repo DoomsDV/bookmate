@@ -65,6 +65,9 @@ class CustomerManager extends HTMLElement {
 	private profileNameNode: HTMLElement | null = null;
 	private profilePhoneNode: HTMLElement | null = null;
 	private profileRegisteredNode: HTMLElement | null = null;
+	private profileScopeNode: HTMLElement | null = null;
+	private profileScopeIconNode: HTMLElement | null = null;
+	private profileScopeLabelNode: HTMLElement | null = null;
 	private profileAttendanceDot: HTMLElement | null = null;
 	private profileAttendanceRate: HTMLElement | null = null;
 	private profileAttendanceDetail: HTMLElement | null = null;
@@ -98,6 +101,11 @@ class CustomerManager extends HTMLElement {
 		this.profileNameNode = this.querySelector<HTMLElement>('[data-customer-profile-name]');
 		this.profilePhoneNode = this.querySelector<HTMLElement>('[data-customer-profile-phone]');
 		this.profileRegisteredNode = this.querySelector<HTMLElement>('[data-customer-profile-registered]');
+		this.profileScopeNode = this.querySelector<HTMLElement>('[data-customer-profile-scope]');
+		this.profileScopeIconNode = this.querySelector<HTMLElement>('[data-customer-profile-scope-icon]');
+		this.profileScopeLabelNode = this.querySelector<HTMLElement>(
+			'[data-customer-profile-scope-label]'
+		);
 		this.profileAttendanceDot = this.querySelector<HTMLElement>(
 			'[data-customer-profile-attendance-dot]'
 		);
@@ -246,7 +254,6 @@ class CustomerManager extends HTMLElement {
 		this.isProfileLoading = value;
 		if (this.profileLoadingNode) {
 			this.profileLoadingNode.classList.toggle('hidden', !value);
-			this.profileLoadingNode.classList.toggle('flex', value);
 		}
 	}
 
@@ -280,6 +287,7 @@ class CustomerManager extends HTMLElement {
 		this.#profileCloseTimer = window.setTimeout(() => {
 			this.profileModal?.classList.remove('is-closing');
 			this.profileModal?.close();
+			this.hideProfileScope();
 			this.#profileCloseTimer = null;
 		}, 140);
 	}
@@ -456,20 +464,60 @@ class CustomerManager extends HTMLElement {
 		}
 	}
 
+	private getProfileScopeProfessionalName() {
+		if (this.selectedProfessionalId <= 0) return '';
+		return (
+			this.professionals.find(
+				(professional) => professional.id_professional === this.selectedProfessionalId
+			)?.display_name || ''
+		);
+	}
+
+	private renderProfileScope() {
+		if (!this.profileScopeNode) return;
+
+		const professionalName = this.getProfileScopeProfessionalName();
+		const isProfessionalScope = this.selectedProfessionalId > 0;
+
+		this.profileScopeNode.dataset.scope = isProfessionalScope ? 'professional' : 'global';
+		this.profileScopeNode.classList.remove('hidden');
+
+		if (this.profileScopeIconNode) {
+			this.profileScopeIconNode.textContent = isProfessionalScope ? 'person' : 'public';
+		}
+
+		if (this.profileScopeLabelNode) {
+			const scopeLabel = isProfessionalScope
+				? professionalName
+					? `Resumen con ${professionalName}`
+					: 'Resumen por profesional'
+				: 'Resumen general del cliente';
+			this.profileScopeLabelNode.textContent = scopeLabel;
+			this.profileScopeNode.title = scopeLabel;
+		}
+	}
+
+	private hideProfileScope() {
+		if (!this.profileScopeNode) return;
+		this.profileScopeNode.classList.add('hidden');
+		delete this.profileScopeNode.dataset.scope;
+		if (this.profileScopeLabelNode) this.profileScopeLabelNode.textContent = '';
+	}
+
 	private renderCustomerProfile(profile: CustomerProfile) {
 		const stats = profile.stats;
+
+		this.renderProfileScope();
 
 		if (this.profileNameNode) {
 			this.profileNameNode.textContent =
 				profile.full_name || `Cliente #${profile.id_customer}`;
 		}
 		if (this.profilePhoneNode) {
-			this.profilePhoneNode.textContent = profile.phone_number
-				? `Tel. ${profile.phone_number}`
-				: '';
+			this.profilePhoneNode.textContent = profile.phone_number || '—';
 		}
 		if (this.profileRegisteredNode) {
-			this.profileRegisteredNode.textContent = `Registrado ${this.formatDate(profile.created_at)}`;
+			this.profileRegisteredNode.textContent = this.formatDate(profile.created_at);
 		}
 
 		if (this.profileAttendanceDot) {
@@ -523,8 +571,9 @@ class CustomerManager extends HTMLElement {
 		this.setProfileLoading(true);
 
 		if (this.profileNameNode) this.profileNameNode.textContent = 'Cliente';
-		if (this.profilePhoneNode) this.profilePhoneNode.textContent = '';
-		if (this.profileRegisteredNode) this.profileRegisteredNode.textContent = '';
+		if (this.profilePhoneNode) this.profilePhoneNode.textContent = '—';
+		if (this.profileRegisteredNode) this.profileRegisteredNode.textContent = '—';
+		this.renderProfileScope();
 
 		try {
 			const query = new URLSearchParams();
@@ -624,51 +673,23 @@ class CustomerManager extends HTMLElement {
 			article.dataset.customerCard = 'true';
 			article.dataset.customerId = String(customer.id_customer);
 
-			const topRow = document.createElement('div');
-			topRow.className = 'flex items-start';
+			const row = document.createElement('div');
+			row.className = 'flex min-w-0 items-center gap-3';
 
 			const iconWrap = document.createElement('div');
 			iconWrap.className = 'customer-card-icon';
 			iconWrap.innerHTML = '<span class="material-symbols-rounded text-[1.25rem]">person</span>';
 
-			topRow.append(iconWrap);
-
-			const body = document.createElement('div');
-			body.className = 'customer-card-body';
-
 			const name = document.createElement('h3');
-			name.className = 'customer-card-title';
+			name.className = 'customer-card-title min-w-0 truncate';
 			name.textContent = customer.full_name || `Cliente #${customer.id_customer}`;
 
-			const metrics = document.createElement('dl');
-			metrics.className = 'customer-card-metrics';
-			metrics.append(
-				this.createMetricRow('Teléfono', customer.phone_number || '-'),
-				this.createMetricRow('Registrado', this.formatDate(customer.created_at))
-			);
-
-			body.append(name, metrics);
-			article.append(topRow, body);
+			row.append(iconWrap, name);
+			article.append(row);
 			fragment.appendChild(article);
 		}
 
 		this.gridNode.appendChild(fragment);
-	}
-
-	private createMetricRow(label: string, value: string) {
-		const row = document.createElement('div');
-		row.className = 'flex items-center justify-between text-[0.92rem]';
-
-		const term = document.createElement('dt');
-		term.className = 'customer-card-term';
-		term.textContent = label;
-
-		const description = document.createElement('dd');
-		description.className = 'customer-card-value';
-		description.textContent = value;
-
-		row.append(term, description);
-		return row;
 	}
 
 	private renderSummary() {
