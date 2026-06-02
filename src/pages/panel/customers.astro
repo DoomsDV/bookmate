@@ -132,6 +132,154 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 				</div>
 			</div>
 		</div>
+
+		<dialog
+			class="m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+			data-customer-profile-modal
+		>
+			<div
+				class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6"
+			>
+				<div class="flex items-start justify-between gap-4">
+					<div class="flex min-w-0 items-center gap-4">
+						<div
+							class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)"
+						>
+							<span class="material-symbols-rounded text-[1.4rem]">person</span>
+						</div>
+						<div class="min-w-0">
+							<h2
+								class="truncate text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)"
+								data-customer-profile-name
+							>
+								Cliente
+							</h2>
+							<p
+								class="mt-0.5 truncate text-[0.9rem] font-medium text-(--on-surface-variant)"
+								data-customer-profile-phone
+							></p>
+							<p
+								class="mt-0.5 text-[0.82rem] font-medium text-(--on-surface-variant)"
+								data-customer-profile-registered
+							></p>
+						</div>
+					</div>
+					<button
+						type="button"
+						class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)"
+						data-close-customer-profile-modal
+						aria-label="Cerrar modal"
+					>
+						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+					</button>
+				</div>
+			</div>
+
+			<div
+				class="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-(--surface)/30 px-4 py-5 sm:px-7 sm:py-6"
+			>
+				<div
+					class="pointer-events-none absolute inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px]"
+					data-customer-profile-loading
+				>
+					<div
+						class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]"
+					>
+						<span class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)"
+							>progress_activity</span
+						>
+						Cargando perfil...
+					</div>
+				</div>
+
+				<div
+					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
+					data-customer-profile-error
+				></div>
+
+				<div class="hidden grid gap-5" data-customer-profile-body>
+					<section class="customer-profile-metrics">
+						<article class="customer-profile-stat-card">
+							<div class="flex items-center gap-3">
+								<span
+									class="customer-profile-attendance-dot"
+									data-customer-profile-attendance-dot
+									aria-hidden="true"
+								></span>
+								<div>
+									<p class="text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
+										Asistencia
+									</p>
+									<p
+										class="text-[1.35rem] font-extrabold leading-tight text-(--on-surface)"
+										data-customer-profile-attendance-rate
+									>
+										—
+									</p>
+								</div>
+							</div>
+							<p
+								class="mt-2 text-[0.88rem] font-medium text-(--on-surface-variant)"
+								data-customer-profile-attendance-detail
+							></p>
+						</article>
+
+						<article class="customer-profile-stat-card">
+							<p class="text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
+								Ingresos por citas atendidas
+							</p>
+							<p
+								class="mt-1 text-[1.5rem] font-extrabold leading-tight text-(--on-surface)"
+								data-customer-profile-ltv
+							>
+								Gs. 0
+							</p>
+							<p class="customer-profile-stat-hint">
+								Suma el precio de citas <strong>confirmadas</strong> o
+								<strong>completadas</strong> que ya ocurrieron. No incluye pendientes ni
+								canceladas.
+							</p>
+						</article>
+					</section>
+
+					<section class="customer-profile-section">
+						<h3 class="customer-profile-section-title">Reservas</h3>
+						<div class="grid gap-3">
+							<div class="customer-profile-reservation" data-customer-profile-last-wrap>
+								<p class="customer-profile-reservation-label">Última reserva</p>
+								<div data-customer-profile-last></div>
+							</div>
+							<div class="customer-profile-reservation" data-customer-profile-next-wrap>
+								<p class="customer-profile-reservation-label">Próxima reserva (confirmada)</p>
+								<div data-customer-profile-next></div>
+							</div>
+							<div
+								class="customer-profile-reservation hidden"
+								data-customer-profile-pending-wrap
+							>
+								<p class="customer-profile-reservation-label">Pendientes</p>
+								<div class="grid gap-2" data-customer-profile-pending-list></div>
+							</div>
+						</div>
+					</section>
+
+					<section class="customer-profile-section">
+						<h3 class="customer-profile-section-title">Servicios habituales</h3>
+						<div class="flex flex-wrap gap-2" data-customer-profile-services></div>
+					</section>
+				</div>
+			</div>
+
+			<div class="modal-footer shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7">
+				<button
+					type="button"
+					class="modal-action-secondary w-full sm:ml-auto sm:w-auto"
+					data-close-customer-profile-modal
+				>
+					Cerrar
+				</button>
+			</div>
+		</dialog>
 	</customer-manager>
 
 	<AppAlert />
@@ -184,6 +332,224 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		gap: 0.95rem;
 		border-radius: 1rem;
 		padding: 1.45rem 1.5rem 1.55rem;
+		cursor: pointer;
+		transition:
+			border-color 0.15s ease,
+			box-shadow 0.15s ease,
+			transform 0.15s ease;
+	}
+
+	.customer-card:hover {
+		transform: translateY(-1px);
+	}
+
+	.customer-card:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 2px;
+	}
+
+	dialog[data-customer-profile-modal] {
+		--modal-open-duration: 150ms;
+		animation: customer-profile-modal-in var(--modal-open-duration, 150ms)
+			var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
+	}
+
+	dialog[data-customer-profile-modal]::backdrop {
+		animation: customer-profile-backdrop-in var(--modal-open-duration, 150ms) ease;
+	}
+
+	dialog[data-customer-profile-modal].is-closing {
+		animation: customer-profile-modal-out 140ms ease forwards;
+	}
+
+	dialog[data-customer-profile-modal].is-closing::backdrop {
+		animation: customer-profile-backdrop-out 140ms ease forwards;
+	}
+
+	@keyframes customer-profile-modal-in {
+		from {
+			opacity: 0;
+			transform: translateY(12px) scale(0.98);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes customer-profile-modal-out {
+		from {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(8px) scale(0.98);
+		}
+	}
+
+	@keyframes customer-profile-backdrop-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes customer-profile-backdrop-out {
+		from {
+			opacity: 1;
+		}
+		to {
+			opacity: 0;
+		}
+	}
+
+	.customer-profile-metrics {
+		display: grid;
+		gap: 0.85rem;
+		grid-template-columns: 1fr;
+	}
+
+	@media (min-width: 520px) {
+		.customer-profile-metrics {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
+	.customer-profile-stat-card {
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--surface-bright) 88%, var(--surface-container-low) 12%);
+		padding: 1rem 1.1rem;
+	}
+
+	.customer-profile-stat-hint {
+		margin: 0.55rem 0 0;
+		font-size: 0.78rem;
+		font-weight: 500;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-stat-hint strong {
+		font-weight: 700;
+		color: color-mix(in srgb, var(--on-surface-variant) 82%, var(--on-surface) 18%);
+	}
+
+	.customer-profile-attendance-dot {
+		display: inline-block;
+		height: 0.85rem;
+		width: 0.85rem;
+		border-radius: 999px;
+		background: var(--on-surface-variant);
+		flex-shrink: 0;
+	}
+
+	.customer-profile-attendance-dot.is-good {
+		background: #22c55e;
+	}
+
+	.customer-profile-attendance-dot.is-warn {
+		background: #f59e0b;
+	}
+
+	.customer-profile-attendance-dot.is-bad {
+		background: #ef4444;
+	}
+
+	.customer-profile-section-title {
+		margin: 0 0 0.65rem;
+		font-size: 0.95rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.customer-profile-reservation {
+		border-radius: 0.9rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.85rem 1rem;
+	}
+
+	.customer-profile-reservation-label {
+		margin: 0 0 0.35rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-reservation-empty {
+		margin: 0;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-reservation-detail {
+		margin: 0;
+		display: grid;
+		gap: 0.45rem;
+	}
+
+	.customer-profile-field-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.75rem;
+		font-size: 0.9rem;
+	}
+
+	.customer-profile-field-term {
+		flex-shrink: 0;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-field-value {
+		min-width: 0;
+		text-align: right;
+		font-weight: 700;
+		color: color-mix(in srgb, var(--on-surface-variant) 70%, var(--on-surface) 30%);
+		overflow-wrap: anywhere;
+	}
+
+	.customer-profile-field-value--emphasize {
+		font-size: 0.95rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.customer-profile-pending-item {
+		border-radius: 0.75rem;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--surface-container-low) 55%, var(--surface-bright) 45%);
+		padding: 0.75rem 0.85rem;
+	}
+
+	.customer-profile-service-chip {
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--shell-border));
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
+		padding: 0.35rem 0.75rem;
+		font-size: 0.82rem;
+		font-weight: 700;
+		color: var(--on-surface);
+	}
+
+	.customer-profile-payment-badge {
+		display: inline-flex;
+		border-radius: 999px;
+		background: color-mix(in srgb, #f59e0b 18%, transparent);
+		padding: 0.2rem 0.55rem;
+		font-size: 0.75rem;
+		font-weight: 800;
+		color: #b45309;
 	}
 
 	.customer-card-icon {
