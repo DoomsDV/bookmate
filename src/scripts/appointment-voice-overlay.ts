@@ -24,8 +24,15 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		const signal = this.#listeners.signal;
 
 		document.addEventListener('click', this.handleDocumentClick, { signal });
-		this.querySelector('[data-voice-overlay-close]')?.addEventListener('click', () => this.close(), {
-			signal,
+		this.querySelectorAll('[data-voice-overlay-close]').forEach((button) => {
+			button.addEventListener(
+				'click',
+				(event) => {
+					event.preventDefault();
+					this.close();
+				},
+				{ signal }
+			);
 		});
 		this.querySelector('[data-voice-overlay-record]')?.addEventListener(
 			'click',

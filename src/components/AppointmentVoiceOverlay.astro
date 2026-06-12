@@ -95,8 +95,11 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		position: absolute;
 		inset: 0;
 		border: 0;
-		background: rgba(15, 23, 42, 0.45);
-		backdrop-filter: blur(2px);
+		padding: 0;
+		cursor: pointer;
+		background: rgba(15, 23, 42, 0.38);
+		backdrop-filter: blur(5px);
+		-webkit-backdrop-filter: blur(5px);
 	}
 
 	.appointment-voice-dialog {
@@ -253,17 +256,15 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		font-size: 0.92rem;
 		font-weight: 800;
 		color: #f8fbff;
-		background: linear-gradient(
-			158deg,
-			color-mix(in srgb, var(--primary) 92%, #ffffff 8%) 0%,
-			color-mix(in srgb, var(--primary) 84%, #1e3a8a 16%) 100%
-		);
-		box-shadow: 0 10px 30px color-mix(in srgb, var(--primary) 35%, transparent);
+		background: var(--primary);
+		box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
 		cursor: pointer;
+		transition: background-color 140ms ease, transform 140ms ease, box-shadow 140ms ease;
 	}
 
 	.appointment-voice-continue:hover {
 		transform: translateY(-1px);
+		background: color-mix(in srgb, var(--primary) 92%, #000 8%);
 	}
 
 	.appointment-voice-record {
@@ -274,19 +275,16 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		height: 5rem;
 		border: 0;
 		border-radius: 999px;
-		background: linear-gradient(
-			158deg,
-			color-mix(in srgb, var(--primary) 92%, #ffffff 8%) 0%,
-			color-mix(in srgb, var(--primary) 84%, #1e3a8a 16%) 100%
-		);
+		background: var(--primary);
 		color: #f8fbff;
-		box-shadow: 0 10px 30px color-mix(in srgb, var(--primary) 35%, transparent);
+		box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
 		cursor: pointer;
-		transition: transform 140ms ease, box-shadow 140ms ease;
+		transition: transform 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
 	}
 
 	.appointment-voice-record:hover:not(:disabled) {
 		transform: translateY(-1px);
+		background: color-mix(in srgb, var(--primary) 92%, #000 8%);
 	}
 
 	.appointment-voice-record:disabled {
@@ -295,8 +293,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.appointment-voice-record.is-recording {
-		background: linear-gradient(158deg, #ef4444 0%, #b91c1c 100%);
-		box-shadow: 0 10px 30px rgba(239, 68, 68, 0.35);
+		background: #dc2626;
+		box-shadow: 0 4px 14px rgba(220, 38, 38, 0.18);
 		animation: appointment-voice-pulse 1.2s ease-in-out infinite;
 	}
 
@@ -312,5 +310,9 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		50% {
 			transform: scale(1.04);
 		}
+	}
+
+	html[data-theme='dark'] .appointment-voice-backdrop {
+		background: rgba(0, 0, 0, 0.58);
 	}
 </style>
