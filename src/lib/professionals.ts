@@ -31,6 +31,7 @@ export interface ProfessionalSpecialty {
 
 export interface Professional {
 	id_professional: number;
+	display_name: string;
 	profile_slug: string;
 	profile_image_url: string;
 	phone_number: string;
@@ -90,11 +91,18 @@ const isSelfAdminContext = (params: {
 	params.targetUserId === params.callerUserId &&
 	isAdminRoleId(params.currentRoleId);
 
+export const getProfessionalDisplayName = (professional: Professional): string => {
+	const displayName = String(professional.display_name || '').trim();
+	if (displayName) return displayName;
+	const email = String(professional.user?.email || '').trim();
+	if (email) return email;
+	return `Personal #${professional.id_professional}`;
+};
+
 export interface CreateProfessionalWithUserPayload {
 	rol_id_role: number;
 	apex_user_name?: string;
-	first_name: string;
-	last_name: string;
+	display_name: string;
 	email?: string;
 	password?: string;
 	user_is_active?: 0 | 1;
@@ -113,8 +121,7 @@ export interface UpdateProfessionalWithUserPayload {
 	rol_id_role: number;
 	/** Solo invitación pendiente; ignorado en backend para miembros activos. */
 	apex_user_name?: string;
-	first_name: string;
-	last_name: string;
+	display_name: string;
 	/** Solo invitación pendiente; ignorado en backend para miembros activos. */
 	email?: string;
 	/** No permitido: el backend rechaza cambios de contraseña por admin. */
@@ -397,6 +404,7 @@ const normalizeProfessional = (value: unknown): Professional | null => {
 	const membershipStatus = String(source.membership_status || '').trim();
 	return {
 		id_professional: idProfessional,
+		display_name: String(source.display_name || '').trim(),
 		profile_slug: String(source.profile_slug || '').trim(),
 		profile_image_url: String(source.profile_image_url || '').trim(),
 		phone_number: String(source.phone_number || '').trim(),

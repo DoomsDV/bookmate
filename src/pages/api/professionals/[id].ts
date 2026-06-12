@@ -45,8 +45,7 @@ const parseBody = (request: Request) =>
 	parseRequestBody(request, (formData) => ({
 		rol_id_role: formData.get('rol_id_role'),
 		apex_user_name: formData.get('apex_user_name'),
-		first_name: formData.get('first_name'),
-		last_name: formData.get('last_name'),
+		display_name: formData.get('display_name'),
 		email: formData.get('email'),
 		password: formData.get('password'),
 		user_is_active: formData.get('user_is_active'),
@@ -75,8 +74,7 @@ const parseUpdatePayload = (body: any): UpdateProfessionalWithUserPayload => {
 	const payload: UpdateProfessionalWithUserPayload = {
 		rol_id_role: Number.isFinite(roleId) ? roleId : 0,
 		apex_user_name: String(body?.apex_user_name || '').trim(),
-		first_name: String(body?.first_name || '').trim(),
-		last_name: String(body?.last_name || '').trim(),
+		display_name: String(body?.display_name || '').trim(),
 		email,
 		phone_number: String(body?.phone_number || '').trim(),
 	};

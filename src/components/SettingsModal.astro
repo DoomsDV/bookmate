@@ -238,6 +238,20 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Información pública asociada a la organización activa.</p>
 						</div>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span>Nombre en este negocio <span class="text-rose-500">*</span></span>
+							<input
+								type="text"
+								name="display_name"
+								maxlength="150"
+								required
+								class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+								placeholder="Ej: Dr. Sarah Gómez"
+							/>
+							<span class="text-[0.85rem] font-medium leading-relaxed text-(--on-surface-variant)">
+								Así te verán clientes y equipo en esta organización. No modifica tu nombre de cuenta en Hasel.
+							</span>
+						</label>
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span>Teléfono público <span class="text-rose-500">*</span></span>
 							<div class="flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
 								<span class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
@@ -1711,8 +1725,10 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			if (this.els.profileFileName) this.els.profileFileName.textContent = 'Cambiar foto';
 
 			const prof = profile?.professional_profile;
+			const displayNameInput = this.els.profileForm.querySelector<HTMLInputElement>('[name="display_name"]');
 			if (prof) {
 				this.els.profFields.forEach((el) => el.classList.remove('hidden'));
+				if (displayNameInput) displayNameInput.value = String(prof.display_name || '').trim();
 				if (phone) phone.value = this.formatParaguayPhoneLocal(prof.phone_number || '');
 				if (this.els.profileNote) {
 					this.els.profileNote.classList.add('hidden');
@@ -1720,6 +1736,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				}
 			} else {
 				this.els.profFields.forEach((el) => el.classList.add('hidden'));
+				if (displayNameInput) displayNameInput.value = '';
 				if (phone) phone.value = '';
 				if (this.els.profileNote) {
 					this.els.profileNote.textContent =
@@ -2093,6 +2110,15 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			}
 			
 			if (profVisible) {
+				const displayName = String(
+					this.els.profileForm.querySelector<HTMLInputElement>('[name="display_name"]')?.value || ''
+				).trim();
+				if (!displayName) {
+					this.showFeedback('profile', 'El nombre en este negocio es obligatorio.', 'error');
+					return;
+				}
+				payload.display_name = displayName;
+
 				const rawPhone = String(this.formEls.phoneInput?.value || '').trim();
 				if (rawPhone !== '') {
 					const parsedPhone = parseParaguayMobilePhone(rawPhone);

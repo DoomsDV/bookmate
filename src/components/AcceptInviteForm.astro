@@ -191,16 +191,12 @@ const safeToken = String(token || '').trim();
 				if (orgLabel) orgLabel.textContent = orgName ? `Te invitaron a ${orgName}` : 'Te invitaron a una organización';
 				if (desc) {
 					desc.textContent = orgName
-						? `Completa tu acceso para unirte a ${orgName}.`
-						: 'Completa tu acceso para unirte al equipo.';
+						? `Completá tus datos de cuenta para unirte a ${orgName}.`
+						: 'Completá tus datos de cuenta para unirte al equipo.';
 				}
 
 				const emailInput = form?.querySelector('#invite_email');
-				const firstNameInput = form?.querySelector('#invite_first_name');
-				const lastNameInput = form?.querySelector('#invite_last_name');
 				if (emailInput instanceof HTMLInputElement) emailInput.value = String(data.email || '');
-				if (firstNameInput instanceof HTMLInputElement) firstNameInput.value = String(data.first_name || '');
-				if (lastNameInput instanceof HTMLInputElement) lastNameInput.value = String(data.last_name || '');
 
 				if (data.login_required) {
 					try {

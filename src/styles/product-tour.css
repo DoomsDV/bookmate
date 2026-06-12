@@ -6,6 +6,7 @@
 	box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
 	max-width: min(22rem, calc(100vw - 2rem));
 	padding: 1rem 1.1rem;
+	overflow: visible;
 }
 
 .bookmate-driver-popover .driver-popover-title {
@@ -150,7 +151,25 @@ dialog[data-bookmate-tour-shell]::backdrop {
 	background: transparent;
 }
 
-dialog[data-bookmate-tour-shell] .driver-overlay,
-dialog[data-bookmate-tour-shell] .driver-popover {
+dialog[data-bookmate-tour-shell] .driver-overlay {
 	pointer-events: auto;
+}
+
+dialog[data-bookmate-tour-shell] .driver-popover,
+dialog[data-bookmate-tour-shell] .driver-popover * {
+	pointer-events: auto;
+}
+
+/* Popover siempre visible y por encima del overlay dentro del shell */
+dialog[data-bookmate-tour-shell] .bookmate-driver-popover.driver-popover {
+	position: fixed !important;
+	overflow: visible;
+	max-height: none;
+	z-index: 2147483647;
+	visibility: visible;
+	opacity: 1;
+}
+
+dialog[data-professional-modal] .driver-active-element {
+	box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 28%, transparent);
 }

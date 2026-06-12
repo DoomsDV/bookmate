@@ -1,5 +1,5 @@
 ---
-import { isProfessionalAccountActive, type Professional } from '../lib/professionals';
+import { getProfessionalDisplayName, isProfessionalAccountActive, type Professional } from '../lib/professionals';
 
 interface Props {
 	professionals: Professional[];
@@ -10,15 +10,7 @@ const { professionals = [], showCreateAction = false } = Astro.props;
 
 const PROFESSIONAL_ICON = 'badge';
 
-const toDisplayName = (professional: Professional) => {
-	const first = String(professional.user.first_name || '').trim();
-	const last = String(professional.user.last_name || '').trim();
-	const fullName = `${first} ${last}`.trim();
-	if (fullName) return fullName;
-	const email = String(professional.user.email || '').trim();
-	if (email) return email;
-	return `Personal #${professional.id_professional}`;
-};
+const toDisplayName = (professional: Professional) => getProfessionalDisplayName(professional);
 
 const toContactEmail = (professional: Professional) => {
 	return String(professional.user.email || '').trim() || '—';
