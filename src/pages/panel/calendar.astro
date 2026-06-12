@@ -1,8 +1,10 @@
 ---
 import AppAlert from '../../components/AppAlert.astro';
+import AppointmentVoiceOverlay from '../../components/AppointmentVoiceOverlay.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
+import { FEATURE_FLAGS } from '../../config/feature-flags';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
 
@@ -335,9 +337,23 @@ const googleErrorMessage = hasGoogleError
 							</p>
 						</div>
 					</div>
-					<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-close-appointment-modal aria-label="Cerrar modal">
-						<span class="material-symbols-rounded text-[1.3rem]">close</span>
-					</button>
+					<div class="flex items-center gap-2">
+						{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && (
+							<button
+								type="button"
+								class="appointment-modal-voice-btn flex size-9 shrink-0 items-center justify-center rounded-full text-(--primary) transition-colors hover:bg-(--primary-soft) focus:outline-none focus:ring-2 focus:ring-(--primary)"
+								data-open-appointment-voice
+								data-appointment-voice-mode="inline"
+								aria-label="Completar cita con voz"
+								title="Completar con voz"
+							>
+								<span class="material-symbols-rounded text-[1.25rem]">mic</span>
+							</button>
+						)}
+						<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-close-appointment-modal aria-label="Cerrar modal">
+							<span class="material-symbols-rounded text-[1.3rem]">close</span>
+						</button>
+					</div>
 				</div>
 			</div>
 
@@ -805,6 +821,7 @@ const googleErrorMessage = hasGoogleError
 		</appointment-modal>
 	</calendar-manager>
 
+	{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && <AppointmentVoiceOverlay />}
 	<AppAlert />
 </Layout>
 
@@ -816,6 +833,12 @@ const googleErrorMessage = hasGoogleError
 	calendar-manager,
 	appointment-modal {
 		display: block;
+	}
+
+	[data-appointment-form] [data-ai-draft-highlight] {
+		outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+		outline-offset: 2px;
+		transition: outline-color 240ms ease;
 	}
 
 	dialog[data-appointment-modal] {

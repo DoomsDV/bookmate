@@ -1,4 +1,5 @@
 import { ROLES } from '../../config/roles';
+import type { AppointmentAiDraft } from '../../lib/appointment-ai-types';
 import {
 	PARAGUAY_MOBILE_PHONE_ERROR,
 	parseParaguayMobilePhone,
@@ -1096,6 +1097,85 @@ class AppointmentModal extends HTMLElement {
 		if (status === 'CANCELADO' || status === 'COMPLETADO') {
 			this.setImmutableReadOnlyMode(status);
 		}
+	}
+
+	fillFormFromAiDraft(draft: AppointmentAiDraft) {
+		const requiredNodes = this.getRequiredNodes();
+		if (!requiredNodes) return;
+
+		this.clearFormErrors();
+		this.setCreateMode();
+
+		const customerId = toPositiveInt(draft.id_customer, 0);
+		const customerName = String(draft.customer_name || '').trim();
+		const customerPhone = String(draft.customer_phone || '').trim();
+
+		requiredNodes.customerIdInput.value = customerId > 0 ? String(customerId) : '';
+		requiredNodes.customerNameInput.value = customerName;
+		requiredNodes.customerPhoneInput.value = customerPhone
+			? this.formatParaguayPhoneLocal(customerPhone)
+			: '';
+		requiredNodes.customerPhoneInput.readOnly = customerId > 0;
+		requiredNodes.clearCustomerButton.classList.toggle('hidden', customerId <= 0);
+		this.selectedCustomer =
+			customerId > 0
+				? {
+						id_customer: customerId,
+						full_name: customerName,
+						phone_number: customerPhone,
+					}
+				: null;
+
+		if (toPositiveInt(draft.pro_id_professional, 0) > 0) {
+			requiredNodes.modalProfessional.value = String(draft.pro_id_professional);
+		}
+		if (toPositiveInt(draft.loc_id_location, 0) > 0) {
+			requiredNodes.modalLocation.value = String(draft.loc_id_location);
+		}
+		if (toPositiveInt(draft.ser_id_service, 0) > 0) {
+			requiredNodes.modalService.value = String(draft.ser_id_service);
+		}
+
+		const startLocal = draft.start_time ? parseIsoToLocalInput(String(draft.start_time)) : '';
+		const endLocal = draft.end_time ? parseIsoToLocalInput(String(draft.end_time)) : '';
+
+		if (startLocal) requiredNodes.startInput.value = startLocal;
+		if (endLocal) requiredNodes.endInput.value = endLocal;
+
+		if (!startLocal) {
+			const initialStart = new Date();
+			const initialEnd = new Date(initialStart.getTime() + 60 * 60 * 1000);
+			requiredNodes.startInput.value = formatDateTimeLocal(initialStart);
+			requiredNodes.endInput.value = formatDateTimeLocal(initialEnd);
+		} else if (!endLocal) {
+			const startDate = parseLocalDateTime(startLocal);
+			if (startDate) {
+				requiredNodes.endInput.value = formatDateTimeLocal(
+					new Date(startDate.getTime() + 60 * 60 * 1000)
+				);
+			}
+		}
+
+		this.syncDateBounds();
+		this.syncDateDisplayInputs();
+		this.ensureModalProfessionalValue();
+		void this.loadCustomersForCurrentProfessional(true);
+
+		this.form?.querySelectorAll('[data-ai-draft-highlight]').forEach((node) => {
+			node.removeAttribute('data-ai-draft-highlight');
+		});
+		this.form
+			?.querySelectorAll('input:not([type="hidden"]), select, textarea')
+			.forEach((node) => {
+				if (!(node instanceof HTMLElement)) return;
+				node.setAttribute('data-ai-draft-highlight', 'true');
+				window.setTimeout(() => node.removeAttribute('data-ai-draft-highlight'), 2400);
+			});
+	}
+
+	openCreateWithAiDraft(draft: AppointmentAiDraft, context: OpenCreateContext = {}) {
+		this.openCreate(context);
+		this.fillFormFromAiDraft(draft);
 	}
 
 	buildPayloadFromForm(): BuildPayloadResult {

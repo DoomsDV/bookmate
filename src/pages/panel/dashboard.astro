@@ -1,8 +1,10 @@
 ﻿---
 import { ROLES } from '../../config/roles';
+import { FEATURE_FLAGS } from '../../config/feature-flags';
 import SideNav from '../../components/SideNav.astro';
 import AppAlert from '../../components/AppAlert.astro';
 import AiChatPanel from '../../components/AiChatPanel.astro';
+import AppointmentVoiceOverlay from '../../components/AppointmentVoiceOverlay.astro';
 import TopBar from '../../components/TopBar.astro';
 import { DashboardApiError, getMainDashboardWithOrds, type DashboardMainData } from '../../lib/dashboard';
 import Layout from '../../layouts/Layout.astro';
@@ -198,6 +200,16 @@ const toPageHref = (page: number) => {
 									</div>
 
 									<div class="dashboard-header-actions">
+										{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && (
+											<button
+												type="button"
+												class="dashboard-ai-chat-cta"
+												data-open-appointment-voice
+											>
+												<span class="material-symbols-rounded text-lg">auto_awesome</span>
+												Cita rápida
+											</button>
+										)}
 										<a
 											href="/panel/calendar"
 											class="dashboard-primary-cta dashboard-header-cta inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold no-underline transition sm:w-auto"
@@ -439,6 +451,7 @@ const toPageHref = (page: number) => {
 		</div>
 	</div>
 	<AiChatPanel />
+	{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && <AppointmentVoiceOverlay />}
 	<AppAlert />
 
 	<dialog
@@ -478,6 +491,8 @@ const toPageHref = (page: number) => {
 </Layout>
 
 <script>
+	import '../../scripts/appointment-voice-overlay';
+
 	const sanitizeAiSummary = (value: unknown): string =>
 		String(value ?? '')
 			.replace(/\*+/g, '')

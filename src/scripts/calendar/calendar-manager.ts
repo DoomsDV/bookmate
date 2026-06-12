@@ -27,6 +27,10 @@ import {
 	syncSearchableSelect,
 } from '../searchable-select';
 import { maybeShowCalendarTour, showCalendarTour } from '../../lib/calendar-tour';
+import {
+	APPOINTMENT_AI_DRAFT_STORAGE_KEY,
+	type StoredAppointmentAiDraft,
+} from '../../lib/appointment-ai-types';
 import { showFlashMessage } from '../../lib/flash';
 import {
 	getScheduleMisalignedBannerAction,
@@ -61,6 +65,8 @@ type AppointmentModalApi = {
 	setClient: (client: AppointmentsClient) => void;
 	configure: (config: AppointmentModalConfig) => void;
 	openCreate: (context?: OpenCreateContext) => void;
+	openCreateWithAiDraft: (draft: import('../../lib/appointment-ai-types').AppointmentAiDraft, context?: OpenCreateContext) => void;
+	fillFormFromAiDraft: (draft: import('../../lib/appointment-ai-types').AppointmentAiDraft) => void;
 	openEdit: (appointmentId: number) => Promise<void> | void;
 };
 
@@ -88,6 +94,8 @@ const hasAppointmentModalApi = (value: unknown): value is AppointmentModalApi =>
 		typeof source.setClient === 'function' &&
 		typeof source.configure === 'function' &&
 		typeof source.openCreate === 'function' &&
+		typeof source.openCreateWithAiDraft === 'function' &&
+		typeof source.fillFormFromAiDraft === 'function' &&
 		typeof source.openEdit === 'function'
 	);
 };
@@ -248,6 +256,9 @@ class CalendarManager extends HTMLElement {
 		requiredNodes.locationFilter.addEventListener('change', this.handleLocationFilterChange, { signal });
 		window.addEventListener('resize', this.handleViewportResize, { signal });
 		this.addEventListener('appointment:changed', this.handleAppointmentChanged as EventListener, {
+			signal,
+		});
+		document.addEventListener('appointment-voice:success', this.handleAppointmentVoiceSuccess as EventListener, {
 			signal,
 		});
 
@@ -1333,7 +1344,60 @@ class CalendarManager extends HTMLElement {
 		}
 
 		this.initializeCalendar(requiredNodes);
+		this.applyAiDraftFromStorage(requiredNodes);
 		maybeShowCalendarTour();
+	}
+
+	private handleAppointmentVoiceSuccess = (event: Event) => {
+		const customEvent = event as CustomEvent<StoredAppointmentAiDraft>;
+		const draft = customEvent.detail?.draft;
+		if (!draft) return;
+
+		const requiredNodes = this.getRequiredNodes();
+		if (!requiredNodes) return;
+
+		requiredNodes.appointmentModal.openCreateWithAiDraft(draft, {
+			professionalId: this.getScheduleProfessionalId(),
+			locationId: toPositiveInt(this.locationFilter?.value, 0),
+		});
+	};
+
+	private consumeAiDraftFromStorage(): StoredAppointmentAiDraft | null {
+		const raw = sessionStorage.getItem(APPOINTMENT_AI_DRAFT_STORAGE_KEY);
+		sessionStorage.removeItem(APPOINTMENT_AI_DRAFT_STORAGE_KEY);
+		if (!raw) return null;
+
+		try {
+			const parsed = JSON.parse(raw) as StoredAppointmentAiDraft;
+			if (!parsed?.draft || typeof parsed.draft !== 'object') return null;
+			return parsed;
+		} catch {
+			return null;
+		}
+	}
+
+	private applyAiDraftFromStorage(requiredNodes: RequiredNodes) {
+		const params = new URLSearchParams(window.location.search);
+		if (params.get('ai_draft') !== '1') return;
+
+		params.delete('ai_draft');
+		const nextUrl = `${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}${window.location.hash}`;
+		window.history.replaceState({}, '', nextUrl);
+
+		const stored = this.consumeAiDraftFromStorage();
+		if (!stored?.draft) return;
+
+		requiredNodes.appointmentModal.openCreateWithAiDraft(stored.draft, {
+			professionalId: this.getScheduleProfessionalId(),
+			locationId: toPositiveInt(requiredNodes.locationFilter.value, 0),
+		});
+
+		if (stored.transcript) {
+			showFlashMessage({
+				type: 'info',
+				message: `Cita detectada: “${stored.transcript}”. Revisa los datos antes de guardar.`,
+			});
+		}
 	}
 }
 

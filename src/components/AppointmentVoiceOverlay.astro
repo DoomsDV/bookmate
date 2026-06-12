@@ -1,0 +1,316 @@
+---
+import { FEATURE_FLAGS } from '../config/feature-flags';
+---
+
+{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && (
+	<appointment-voice-overlay>
+		<div
+			class="appointment-voice-shell hidden"
+			data-voice-overlay-shell
+			aria-hidden="true"
+		>
+			<button
+				type="button"
+				class="appointment-voice-backdrop"
+				data-voice-overlay-close
+				aria-label="Cerrar asistente de voz"
+			></button>
+
+			<div
+				class="appointment-voice-dialog"
+				role="dialog"
+				aria-modal="true"
+				aria-label="Cita rápida por voz"
+			>
+				<div class="appointment-voice-header">
+					<div class="appointment-voice-title-wrap">
+						<div class="appointment-voice-mark">
+							<span class="material-symbols-rounded">auto_awesome</span>
+						</div>
+						<div>
+							<h2 class="appointment-voice-title">Cita rápida</h2>
+							<p class="appointment-voice-subtitle">Describe la cita con tu voz</p>
+						</div>
+					</div>
+					<button
+						type="button"
+						class="appointment-voice-close"
+						data-voice-overlay-close
+						aria-label="Cerrar"
+					>
+						<span class="material-symbols-rounded">close</span>
+					</button>
+				</div>
+
+				<div class="appointment-voice-body">
+					<p class="appointment-voice-status" data-voice-overlay-status>
+						Toca el micrófono y describe la cita.
+					</p>
+					<div class="appointment-voice-transcript-wrap hidden" data-voice-overlay-transcript-wrap>
+						<p class="appointment-voice-transcript-label">Escuché</p>
+						<p class="appointment-voice-transcript" data-voice-overlay-transcript></p>
+					</div>
+					<p class="appointment-voice-error hidden" data-voice-overlay-error role="alert"></p>
+
+					<div class="appointment-voice-processing hidden" data-voice-overlay-processing>
+						<span class="material-symbols-rounded animate-spin">progress_activity</span>
+						<span>Transcribiendo y completando datos…</span>
+					</div>
+
+					<button
+						type="button"
+						class="appointment-voice-record"
+						data-voice-overlay-record
+						aria-label="Empezar a grabar"
+					>
+						<span class="material-symbols-rounded" data-voice-overlay-record-icon>mic</span>
+					</button>
+
+					<div class="appointment-voice-actions hidden" data-voice-overlay-actions>
+						<button type="button" class="appointment-voice-continue" data-voice-overlay-continue>
+							Ir al calendario
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</appointment-voice-overlay>
+)}
+
+<style>
+	.appointment-voice-shell {
+		position: fixed;
+		inset: 0;
+		z-index: 120;
+		display: grid;
+		place-items: center;
+		padding: 1rem;
+	}
+
+	.appointment-voice-shell.hidden {
+		display: none;
+	}
+
+	.appointment-voice-backdrop {
+		position: absolute;
+		inset: 0;
+		border: 0;
+		background: rgba(15, 23, 42, 0.45);
+		backdrop-filter: blur(2px);
+	}
+
+	.appointment-voice-dialog {
+		position: relative;
+		z-index: 1;
+		width: min(26rem, calc(100vw - 2rem));
+		border-radius: 1.6rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.22);
+		overflow: hidden;
+	}
+
+	.appointment-voice-header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 1.1rem 1.2rem 0.8rem;
+		border-bottom: 1px solid var(--shell-border);
+	}
+
+	.appointment-voice-title-wrap {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+	}
+
+	.appointment-voice-mark {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: 1rem;
+		background: var(--primary-soft);
+		color: var(--primary);
+	}
+
+	.appointment-voice-title {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.appointment-voice-subtitle {
+		margin: 0.15rem 0 0;
+		font-size: 0.85rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	.appointment-voice-close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+	}
+
+	.appointment-voice-close:hover {
+		background: var(--surface-variant);
+		color: var(--on-surface);
+	}
+
+	.appointment-voice-body {
+		display: grid;
+		justify-items: center;
+		gap: 0.85rem;
+		padding: 1.4rem 1.2rem 1.6rem;
+		text-align: center;
+	}
+
+	.appointment-voice-status {
+		margin: 0;
+		font-size: 0.92rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
+	}
+
+	.appointment-voice-transcript-wrap {
+		width: 100%;
+		padding: 0.85rem 1rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-variant);
+		text-align: left;
+	}
+
+	.appointment-voice-transcript-wrap.hidden {
+		display: none;
+	}
+
+	.appointment-voice-transcript-label {
+		margin: 0 0 0.35rem;
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.appointment-voice-transcript {
+		margin: 0;
+		max-width: 100%;
+		font-size: 0.95rem;
+		font-weight: 600;
+		line-height: 1.45;
+		color: var(--on-surface);
+	}
+
+	.appointment-voice-error {
+		margin: 0;
+		font-size: 0.88rem;
+		font-weight: 700;
+		color: #e11d48;
+	}
+
+	.appointment-voice-processing {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.88rem;
+		font-weight: 700;
+		color: var(--primary);
+	}
+
+	.appointment-voice-processing.hidden,
+	.appointment-voice-transcript-wrap.hidden,
+	.appointment-voice-error.hidden,
+	.appointment-voice-actions.hidden {
+		display: none;
+	}
+
+	.appointment-voice-record[hidden] {
+		display: none;
+	}
+
+	.appointment-voice-actions {
+		width: 100%;
+	}
+
+	.appointment-voice-continue {
+		width: 100%;
+		border: 0;
+		border-radius: 999px;
+		padding: 0.85rem 1.2rem;
+		font-size: 0.92rem;
+		font-weight: 800;
+		color: #f8fbff;
+		background: linear-gradient(
+			158deg,
+			color-mix(in srgb, var(--primary) 92%, #ffffff 8%) 0%,
+			color-mix(in srgb, var(--primary) 84%, #1e3a8a 16%) 100%
+		);
+		box-shadow: 0 10px 30px color-mix(in srgb, var(--primary) 35%, transparent);
+		cursor: pointer;
+	}
+
+	.appointment-voice-continue:hover {
+		transform: translateY(-1px);
+	}
+
+	.appointment-voice-record {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 5rem;
+		height: 5rem;
+		border: 0;
+		border-radius: 999px;
+		background: linear-gradient(
+			158deg,
+			color-mix(in srgb, var(--primary) 92%, #ffffff 8%) 0%,
+			color-mix(in srgb, var(--primary) 84%, #1e3a8a 16%) 100%
+		);
+		color: #f8fbff;
+		box-shadow: 0 10px 30px color-mix(in srgb, var(--primary) 35%, transparent);
+		cursor: pointer;
+		transition: transform 140ms ease, box-shadow 140ms ease;
+	}
+
+	.appointment-voice-record:hover:not(:disabled) {
+		transform: translateY(-1px);
+	}
+
+	.appointment-voice-record:disabled {
+		opacity: 0.65;
+		cursor: not-allowed;
+	}
+
+	.appointment-voice-record.is-recording {
+		background: linear-gradient(158deg, #ef4444 0%, #b91c1c 100%);
+		box-shadow: 0 10px 30px rgba(239, 68, 68, 0.35);
+		animation: appointment-voice-pulse 1.2s ease-in-out infinite;
+	}
+
+	.appointment-voice-record .material-symbols-rounded {
+		font-size: 2rem;
+	}
+
+	@keyframes appointment-voice-pulse {
+		0%,
+		100% {
+			transform: scale(1);
+		}
+		50% {
+			transform: scale(1.04);
+		}
+	}
+</style>
