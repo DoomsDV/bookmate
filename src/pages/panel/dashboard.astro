@@ -5,6 +5,7 @@ import SideNav from '../../components/SideNav.astro';
 import AppAlert from '../../components/AppAlert.astro';
 import AiChatPanel from '../../components/AiChatPanel.astro';
 import AppointmentVoiceOverlay from '../../components/AppointmentVoiceOverlay.astro';
+import AppointmentModalPanel from '../../components/AppointmentModalPanel.astro';
 import TopBar from '../../components/TopBar.astro';
 import { DashboardApiError, getMainDashboardWithOrds, type DashboardMainData } from '../../lib/dashboard';
 import Layout from '../../layouts/Layout.astro';
@@ -205,6 +206,7 @@ const toPageHref = (page: number) => {
 												type="button"
 												class="dashboard-ai-chat-cta"
 												data-open-appointment-voice
+												data-appointment-voice-mode="inline"
 											>
 												<span class="material-symbols-rounded text-lg">auto_awesome</span>
 												Cita rápida
@@ -451,6 +453,9 @@ const toPageHref = (page: number) => {
 		</div>
 	</div>
 	<AiChatPanel />
+	<appointment-voice-host>
+		<AppointmentModalPanel />
+	</appointment-voice-host>
 	{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && <AppointmentVoiceOverlay />}
 	<AppAlert />
 
@@ -492,6 +497,8 @@ const toPageHref = (page: number) => {
 
 <script>
 	import '../../scripts/appointment-voice-overlay';
+	import '../../scripts/calendar/appointment-modal';
+	import '../../scripts/appointment-voice-host';
 
 	const sanitizeAiSummary = (value: unknown): string =>
 		String(value ?? '')

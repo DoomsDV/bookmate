@@ -1,5 +1,21 @@
 export type AppointmentAiConfidence = 'high' | 'medium' | 'low';
 
+export interface AppointmentAiCandidate {
+	entity_id: number;
+	label: string;
+	score: number;
+	distance?: number;
+	source_text?: string;
+	entity_type?: string;
+}
+
+export interface AppointmentAiDraftCandidates {
+	customer?: AppointmentAiCandidate[];
+	professional?: AppointmentAiCandidate[];
+	location?: AppointmentAiCandidate[];
+	service?: AppointmentAiCandidate[];
+}
+
 export interface AppointmentAiDraft {
 	customer_name?: string | null;
 	customer_phone?: string | null;
@@ -12,6 +28,7 @@ export interface AppointmentAiDraft {
 	confidence?: AppointmentAiConfidence;
 	missing_fields?: string[];
 	interpretation?: string | null;
+	candidates?: AppointmentAiDraftCandidates;
 }
 
 export interface AppointmentVoiceDraftResult {

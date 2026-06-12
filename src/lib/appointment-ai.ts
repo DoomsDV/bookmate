@@ -1,5 +1,11 @@
 import { resolveOrdsApiUrl } from './env-urls';
-import type { AppointmentAiDraft, AppointmentVoiceDraftResult } from './appointment-ai-types';
+import { formatPersonName } from './format-person-name';
+import type {
+	AppointmentAiCandidate,
+	AppointmentAiDraft,
+	AppointmentAiDraftCandidates,
+	AppointmentVoiceDraftResult,
+} from './appointment-ai-types';
 
 export const VOICE_APPOINTMENT_DRAFT_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_AI_VOICE_APPOINTMENT_DRAFT,
@@ -46,11 +52,56 @@ const toOptionalPositiveInt = (value: unknown): number | null => {
 	return parsed;
 };
 
+const normalizeCandidate = (value: unknown): AppointmentAiCandidate | null => {
+	if (!value || typeof value !== 'object') return null;
+	const source = value as Record<string, unknown>;
+	const entityId = toOptionalPositiveInt(source.entity_id);
+	if (!entityId) return null;
+	const label = toText(source.label) || toText(source.source_text);
+	if (!label) return null;
+	const score = Number(source.score);
+	return {
+		entity_id: entityId,
+		label,
+		score: Number.isFinite(score) ? score : 0,
+		distance: Number.isFinite(Number(source.distance)) ? Number(source.distance) : undefined,
+		source_text: toText(source.source_text) || undefined,
+		entity_type: toText(source.entity_type) || undefined,
+	};
+};
+
+const normalizeCandidateList = (value: unknown): AppointmentAiCandidate[] | undefined => {
+	if (!Array.isArray(value)) return undefined;
+	const items = value
+		.map((item) => normalizeCandidate(item))
+		.filter((item): item is AppointmentAiCandidate => item !== null);
+	return items.length > 0 ? items : undefined;
+};
+
+const normalizeCandidates = (value: unknown): AppointmentAiDraftCandidates | undefined => {
+	if (!value || typeof value !== 'object') return undefined;
+	const source = value as Record<string, unknown>;
+	const candidates: AppointmentAiDraftCandidates = {
+		customer: normalizeCandidateList(source.customer),
+		professional: normalizeCandidateList(source.professional),
+		location: normalizeCandidateList(source.location),
+		service: normalizeCandidateList(source.service),
+	};
+	const hasAny = Object.values(candidates).some((list) => list && list.length > 0);
+	return hasAny ? candidates : undefined;
+};
+
 const normalizeDraft = (value: unknown): AppointmentAiDraft => {
 	if (!value || typeof value !== 'object') return {};
 	const source = value as Record<string, unknown>;
+	const customerId = toOptionalPositiveInt(source.id_customer);
+	const rawCustomerName = toText(source.customer_name);
 	return {
-		customer_name: toText(source.customer_name) || null,
+		customer_name: rawCustomerName
+			? customerId
+				? rawCustomerName
+				: formatPersonName(rawCustomerName)
+			: null,
 		customer_phone: toText(source.customer_phone) || null,
 		id_customer: toOptionalPositiveInt(source.id_customer),
 		pro_id_professional: toOptionalPositiveInt(source.pro_id_professional),
@@ -66,6 +117,7 @@ const normalizeDraft = (value: unknown): AppointmentAiDraft => {
 			? source.missing_fields.map((item) => toText(item)).filter(Boolean)
 			: [],
 		interpretation: toText(source.interpretation) || null,
+		candidates: normalizeCandidates(source.candidates),
 	};
 };
 

@@ -1,0 +1,425 @@
+appointment-modal,
+appointment-voice-host {
+	display: block;
+}
+
+[data-appointment-form] [data-ai-draft-highlight] {
+	outline: 2px solid color-mix(in srgb, var(--primary) 45%, transparent);
+	outline-offset: 2px;
+	transition: outline-color 240ms ease;
+}
+
+dialog[data-appointment-modal] {
+	position: fixed;
+	inset: 0;
+	animation: appointment-modal-in var(--modal-open-duration) var(--modal-easing);
+}
+
+dialog[data-appointment-modal]::backdrop {
+	animation: appointment-backdrop-in var(--modal-open-duration) var(--modal-easing);
+}
+
+dialog[data-appointment-modal].is-closing {
+	animation: appointment-modal-out var(--modal-close-duration) var(--modal-easing) forwards;
+}
+
+dialog[data-appointment-modal].is-closing::backdrop {
+	animation: appointment-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
+}
+
+.appointment-modal-feedback {
+	position: absolute;
+	top: 0;
+	left: 1.75rem;
+	right: calc(1.75rem + var(--appointment-modal-scrollbar-size, 1rem));
+	display: none;
+	justify-content: flex-end;
+	padding: 0;
+	background: transparent;
+	pointer-events: none;
+}
+
+.appointment-modal-feedback.is-visible {
+	display: flex;
+	margin-top: 0.5rem;
+}
+
+dialog[data-appointment-modal] [data-appointment-form] > [data-appointment-form-scroll] {
+	--appointment-modal-scrollbar-size: 1rem;
+	scrollbar-gutter: stable;
+}
+
+.appointment-modal-feedback__alert:not(.hidden) {
+	display: flex;
+	align-items: center;
+}
+
+.appointment-modal-feedback__alert {
+	pointer-events: auto;
+	background: #ffe4e6;
+}
+
+.appointment-modal-feedback__alert [data-form-error-message] {
+	margin: 0;
+}
+
+.appointment-modal-feedback__close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+html[data-theme='dark'] .appointment-modal-feedback__alert {
+	background: #3b1219;
+}
+
+.appointment-modal-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+}
+
+.appointment-modal-footer-actions {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.appointment-modal-footer--readonly {
+	justify-content: flex-start;
+}
+
+.appointment-modal-footer--readonly .appointment-modal-footer-actions {
+	margin-left: 0;
+	justify-content: flex-start;
+}
+
+.appointment-modal-footer--readonly [data-submit-appointment] {
+	display: none !important;
+}
+
+.appointment-customer-lov {
+	position: relative;
+}
+
+.appointment-customer-input {
+	width: 100%;
+	padding-right: 2.75rem;
+}
+
+.appointment-customer-clear {
+	position: absolute;
+	right: 0.65rem;
+	top: 0.63rem;
+	display: inline-flex;
+	width: 2rem;
+	height: 2rem;
+	align-items: center;
+	justify-content: center;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--on-surface-variant);
+	transition: background-color 140ms ease, color 140ms ease;
+}
+
+.appointment-customer-clear.hidden,
+.appointment-customer-results.hidden {
+	display: none;
+}
+
+.appointment-customer-clear:hover {
+	background: var(--surface-container-low);
+	color: var(--on-surface);
+}
+
+.appointment-customer-results {
+	position: absolute;
+	z-index: 50;
+	top: calc(100% + 0.45rem);
+	left: 0;
+	right: 0;
+	max-height: 15rem;
+	overflow-y: auto;
+	border: 1px solid var(--shell-border);
+	border-radius: 1rem;
+	background: var(--surface-bright);
+	box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+	padding: 0.35rem;
+}
+
+.appointment-customer-option,
+.appointment-customer-empty {
+	width: 100%;
+	border: 0;
+	border-radius: 0.8rem;
+	background: transparent;
+	padding: 0.72rem 0.85rem;
+	text-align: left;
+}
+
+.appointment-customer-option {
+	display: grid;
+	gap: 0.2rem;
+	color: var(--on-surface);
+	cursor: pointer;
+	transition:
+		background-color 140ms ease,
+		color 140ms ease,
+		transform 140ms ease,
+		box-shadow 140ms ease;
+}
+
+.appointment-customer-option:hover,
+.appointment-customer-option:focus-visible {
+	background: color-mix(in srgb, var(--primary) 10%, var(--surface-container-low) 90%);
+	box-shadow: 0 8px 18px rgba(0, 0, 0, 0.08);
+	transform: translateY(-1px);
+	outline: none;
+}
+
+.appointment-customer-option-name {
+	font-size: 0.92rem;
+	font-weight: 800;
+}
+
+.appointment-customer-option-phone,
+.appointment-customer-empty {
+	font-size: 0.82rem;
+	color: var(--on-surface-variant);
+}
+
+html[data-theme='dark'] .appointment-customer-results {
+	border-color: rgba(255, 255, 255, 0.14);
+	background: var(--surface-container, #1e1f22);
+}
+
+.appointment-delete-btn {
+	border-radius: 1rem;
+	border: 1px solid rgba(239, 68, 68, 0.55);
+	background: transparent;
+	padding: 0.72rem 1.15rem;
+	font-size: 0.92rem;
+	font-weight: 800;
+	color: #ef4444;
+	transition: background-color 140ms ease, border-color 140ms ease;
+}
+
+.appointment-delete-btn:hover {
+	border-color: rgba(239, 68, 68, 0.72);
+	background: rgba(239, 68, 68, 0.1);
+}
+
+.appointment-cancel-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 1rem;
+	border: 1px solid var(--shell-border);
+	background: var(--surface-bright);
+	padding: 0.72rem 1.15rem;
+	font-size: 0.92rem;
+	font-weight: 800;
+	color: var(--on-surface-variant);
+	transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+}
+
+.appointment-cancel-btn:hover {
+	background: var(--surface-container-low);
+	border-color: color-mix(in srgb, var(--shell-border) 74%, var(--on-surface-variant) 26%);
+	color: var(--on-surface);
+}
+
+.appointment-submit-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	border-radius: 1rem;
+	border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
+	background: var(--primary);
+	padding: 0.72rem 1.2rem;
+	font-size: 0.92rem;
+	font-weight: 800;
+	color: #f8fbff;
+	transition: filter 140ms ease, border-color 140ms ease;
+}
+
+.appointment-submit-btn:hover {
+	filter: brightness(1.04);
+}
+
+.appointment-submit-btn:disabled,
+.appointment-delete-btn:disabled {
+	opacity: 0.6;
+	pointer-events: none;
+}
+
+html[data-theme='dark'] .appointment-delete-btn {
+	border-color: rgba(251, 113, 133, 0.68);
+	background: transparent;
+	color: #fda4af;
+}
+
+html[data-theme='dark'] .appointment-delete-btn:hover {
+	background: rgba(251, 113, 133, 0.18);
+}
+
+html[data-theme='dark'] .appointment-cancel-btn {
+	background: var(--surface-container, #1e1f22);
+	border-color: rgba(255, 255, 255, 0.14);
+	color: var(--on-surface-variant);
+}
+
+html[data-theme='dark'] .appointment-cancel-btn:hover {
+	background: var(--surface-container-high, #282a2c);
+	border-color: rgba(255, 255, 255, 0.22);
+	color: var(--on-surface);
+}
+
+html[data-theme='dark'] .appointment-submit-btn {
+	border-color: color-mix(in srgb, var(--primary) 58%, #131314 42%);
+	background: color-mix(in srgb, var(--primary) 78%, #131314 22%);
+}
+
+html[data-theme='dark'] .appointment-submit-btn:hover {
+	filter: brightness(1.08);
+}
+
+dialog[data-appointment-modal] input[type='datetime-local'] {
+	color-scheme: light;
+	font-variant-numeric: tabular-nums;
+}
+
+dialog[data-appointment-modal] input[type='datetime-local']::-webkit-datetime-edit {
+	color: inherit;
+}
+
+dialog[data-appointment-modal] input[type='datetime-local']::-webkit-calendar-picker-indicator {
+	cursor: pointer;
+	opacity: 0.82;
+	border-radius: 0.5rem;
+	transition: filter 140ms ease, opacity 140ms ease, background-color 140ms ease;
+}
+
+dialog[data-appointment-modal] input[type='datetime-local']:hover::-webkit-calendar-picker-indicator,
+dialog[data-appointment-modal] input[type='datetime-local']:focus::-webkit-calendar-picker-indicator {
+	opacity: 0.98;
+	background-color: color-mix(in srgb, var(--surface-container-low) 70%, transparent);
+}
+
+html[data-theme='dark'] dialog[data-appointment-modal] input[type='datetime-local'] {
+	color-scheme: dark;
+	background: var(--surface-container, #1e1f22);
+	color: var(--on-surface);
+	border-color: rgba(255, 255, 255, 0.16);
+}
+
+html[data-theme='dark'] dialog[data-appointment-modal] input[type='datetime-local']:hover {
+	border-color: rgba(255, 255, 255, 0.26);
+}
+
+html[data-theme='dark'] dialog[data-appointment-modal] input[type='datetime-local']::-webkit-calendar-picker-indicator {
+	filter: invert(0.92) brightness(0.9);
+	opacity: 0.92;
+}
+
+html[data-theme='dark']
+	dialog[data-appointment-modal]
+	input[type='datetime-local']:hover::-webkit-calendar-picker-indicator,
+html[data-theme='dark']
+	dialog[data-appointment-modal]
+	input[type='datetime-local']:focus::-webkit-calendar-picker-indicator {
+	background-color: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 767px) {
+	.appointment-modal-footer {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.65rem;
+	}
+
+	.appointment-modal-footer-actions {
+		margin-left: 0;
+		width: 100%;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.65rem;
+	}
+
+	.appointment-cancel-btn {
+		display: none;
+	}
+
+	.appointment-delete-btn,
+	.appointment-submit-btn {
+		width: 100%;
+	}
+}
+
+@keyframes appointment-modal-in {
+	from {
+		opacity: 0;
+		transform: translateY(100%);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes appointment-modal-out {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(100%);
+	}
+}
+
+@media (min-width: 640px) {
+	@keyframes appointment-modal-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px) scale(0.98);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@keyframes appointment-modal-out {
+		from {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(8px) scale(0.98);
+		}
+	}
+}
+
+@keyframes appointment-backdrop-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes appointment-backdrop-out {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}

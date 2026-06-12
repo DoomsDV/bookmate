@@ -1,0 +1,510 @@
+---
+import { FEATURE_FLAGS } from '../config/feature-flags';
+import '../styles/appointment-modal.css';
+
+interface Props {
+	showVoiceButton?: boolean;
+}
+
+const { showVoiceButton = false }: Props = Astro.props;
+---
+		<appointment-modal>
+		<dialog
+			class="m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+			data-appointment-modal
+		>
+			<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6 ">
+				<div class="flex items-start justify-between gap-4">
+					<div class="flex items-center gap-4">
+						<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
+							<span class="material-symbols-rounded text-[1.4rem]">calendar_add_on</span>
+						</div>
+						<div>
+							<h2 class="text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)" data-appointment-modal-title>Crear cita</h2>
+							<p class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5 hidden sm:block" data-appointment-modal-description>
+								Completa los datos para registrar una nueva reserva.
+							</p>
+						</div>
+					</div>
+					<div class="flex items-center gap-2">
+						{showVoiceButton && FEATURE_FLAGS.APPOINTMENT_AI_VOICE && (
+							<button
+								type="button"
+								class="appointment-modal-voice-btn flex size-9 shrink-0 items-center justify-center rounded-full text-(--primary) transition-colors hover:bg-(--primary-soft) focus:outline-none focus:ring-2 focus:ring-(--primary)"
+								data-open-appointment-voice
+								data-appointment-voice-mode="inline"
+								aria-label="Completar cita con voz"
+								title="Completar con voz"
+							>
+								<span class="material-symbols-rounded text-[1.25rem]">mic</span>
+							</button>
+						)}
+						<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-close-appointment-modal aria-label="Cerrar modal">
+							<span class="material-symbols-rounded text-[1.3rem]">close</span>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<form class="relative flex flex-col overflow-hidden bg-(--surface)/30 min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-appointment-form>
+				<div
+					class="pointer-events-none fixed inset-0 z-20 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
+					data-appointment-loading
+				>
+					<div class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
+						<span class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)">progress_activity</span>
+						Procesando...
+					</div>
+				</div>
+
+				<div
+					class="appointment-modal-feedback absolute top-0 z-20 flex justify-end"
+					data-appointment-form-feedback
+				>
+					<div
+						class="appointment-modal-feedback__alert hidden ml-auto max-w-md items-center gap-2 rounded-2xl border border-rose-500/25 px-4 py-2 text-[0.9rem] font-bold text-rose-600 shadow-sm dark:border-rose-400/30 dark:text-rose-300"
+						data-form-error
+						role="alert"
+						aria-live="polite"
+					>
+						<p class="m-0 min-w-0 flex-1 leading-snug font-bold" data-form-error-message></p>
+						<button
+							type="button"
+							class="appointment-modal-feedback__close shrink-0 rounded-full p-0.5 text-rose-500 transition hover:bg-rose-500/10 hover:text-rose-700 dark:text-rose-300 dark:hover:bg-rose-400/10 dark:hover:text-rose-100"
+							data-dismiss-form-error
+							aria-label="Cerrar mensaje de error"
+						>
+							<span class="material-symbols-rounded block text-[1.15rem] leading-none">close</span>
+						</button>
+					</div>
+				</div>
+
+				<div
+					class="flex-1 overflow-y-auto overscroll-contain min-h-0"
+					data-appointment-form-scroll
+				>
+				<div class="px-7 py-7 grid gap-5">
+					<div class="grid gap-5 sm:grid-cols-2">
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span class="inline-flex items-center gap-1">
+								Cliente
+								<span class="text-rose-500">*</span>
+							</span>
+							<div class="appointment-customer-lov" data-customer-lov>
+								<input type="hidden" name="id_customer" data-customer-id />
+								<input
+									type="text"
+									name="customer_name"
+									required
+									maxlength="100"
+									autocomplete="off"
+									class="appointment-customer-input rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+									placeholder="Buscar o crear cliente"
+									data-customer-name-input
+								/>
+								<button
+									type="button"
+									class="appointment-customer-clear hidden"
+									data-clear-customer
+									aria-label="Limpiar cliente seleccionado"
+								>
+									<span class="material-symbols-rounded text-[1rem]">close</span>
+								</button>
+								<div class="appointment-customer-results hidden" data-customer-results></div>
+							</div>
+							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="customer_name"></span>
+						</label>
+
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span class="inline-flex items-center gap-1">
+								Teléfono
+								<span class="text-rose-500">*</span>
+							</span>
+							<div class="flex h-[3.25rem] rounded-xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
+								<span class="inline-flex items-center rounded-l-xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
+									+595
+								</span>
+								<input
+									type="tel"
+									name="customer_phone"
+									maxlength="11"
+									inputmode="numeric"
+									autocomplete="tel-national"
+									class="min-w-0 flex-1 rounded-none rounded-r-xl border border-(--shell-border) bg-(--surface-bright) px-4 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
+									placeholder="981 123 456"
+								/>
+							</div>
+							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="customer_phone"></span>
+						</label>
+					</div>
+
+					<div class="grid gap-5 sm:grid-cols-2">
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-modal-professional-wrap>
+							<span class="inline-flex items-center gap-1">
+								Profesional
+								<span class="text-rose-500">*</span>
+							</span>
+							<select
+								name="pro_id_professional"
+								data-modal-professional
+								required
+								class="cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+							>
+								<option value="">Selecciona un profesional</option>
+							</select>
+							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="pro_id_professional"></span>
+						</label>
+
+						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span class="inline-flex items-center gap-1">
+								Sucursal
+								<span class="text-rose-500">*</span>
+							</span>
+							<select
+								name="loc_id_location"
+								data-modal-location
+								required
+								class="cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+							>
+								<option value="">Selecciona una sucursal</option>
+							</select>
+							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="loc_id_location"></span>
+						</label>
+					</div>
+
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+						<span class="inline-flex items-center gap-1">
+							Servicio
+							<span class="text-rose-500">*</span>
+						</span>
+						<select
+							name="ser_id_service"
+							data-modal-service
+							required
+							class="cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+						>
+							<option value="">Selecciona un servicio</option>
+						</select>
+						<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="ser_id_service"></span>
+					</label>
+
+					<div
+						class="rounded-xl border border-(--shell-border)/80 bg-(--surface-variant)/20 px-3.5 py-2.5"
+						data-modal-payment-status-wrap
+					>
+						<div class="flex flex-wrap items-center gap-x-2 gap-y-1.5">
+							<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">Estado de pago</span>
+							<span
+								class="inline-flex items-center gap-1 rounded-full border border-(--shell-border) bg-(--surface-bright)/80 px-2.5 py-0.5 text-[0.82rem] font-semibold text-(--on-surface-variant)"
+								data-modal-payment-status-readonly
+							>
+								<span class="material-symbols-rounded text-[0.95rem]" aria-hidden="true">payments</span>
+								<span data-modal-payment-status-label>No aplica</span>
+							</span>
+							<span class="text-[0.8rem] font-medium leading-snug text-(--on-surface-variant)">
+								La gestión de pagos estará disponible en una próxima versión.
+							</span>
+						</div>
+						<input type="hidden" name="payment_status" value="NONE" data-modal-payment-status />
+					</div>
+
+					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-modal-status-wrap hidden>
+							Estado
+							<select
+								name="status"
+								data-modal-status
+								class="cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+							>
+								<option value="PENDIENTE">Pendiente</option>
+								<option value="CONFIRMADO">Confirmado</option>
+								<option value="COMPLETADO">Completado</option>
+								<option value="CANCELADO">Cancelado</option>
+							</select>
+							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="status"></span>
+						</label>
+
+						<div
+							class="hidden grid w-full min-w-0 gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
+							data-modal-status-readonly-wrap
+							hidden
+						>
+							Estado
+							<div
+								class="flex w-full min-h-[3.25rem] items-center gap-2 rounded-xl border px-4 py-3 text-[0.95rem] font-bold"
+								data-modal-status-readonly-badge
+							>
+								<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true" data-modal-status-readonly-icon>cancel</span>
+							<span data-modal-status-readonly-label>Cancelado</span>
+						</div>
+					</div>
+
+					<div class="relative">
+						<div class="grid w-full gap-5 sm:grid-cols-2">
+							<label class="grid w-full gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span class="inline-flex items-center gap-1">
+								Inicio
+								<span class="text-rose-500">*</span>
+							</span>
+							<div class="relative">
+								<input
+									type="text"
+									data-start-display
+									readonly
+									placeholder="Selecciona fecha y hora"
+									class="w-full rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 pr-11 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+								/>
+								<input type="hidden" name="start_time" />
+								<button
+									type="button"
+									data-open-start-picker
+									class="absolute right-2.5 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-low) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)/35"
+									aria-label="Seleccionar fecha y hora de inicio"
+								>
+									<span class="material-symbols-rounded text-[1.05rem]">calendar_month</span>
+								</button>
+							</div>
+							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="start_time"></span>
+							</label>
+
+							<label class="grid w-full gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+							<span class="inline-flex items-center gap-1">
+								Fin
+								<span class="text-rose-500">*</span>
+							</span>
+							<div class="relative">
+								<input
+									type="text"
+									data-end-display
+									readonly
+									placeholder="Selecciona fecha y hora"
+									class="w-full rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 pr-11 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+								/>
+								<input type="hidden" name="end_time" />
+								<button
+									type="button"
+									data-open-end-picker
+									class="absolute right-2.5 top-1/2 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-low) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)/35"
+									aria-label="Seleccionar fecha y hora de fin"
+								>
+									<span class="material-symbols-rounded text-[1.05rem]">calendar_month</span>
+								</button>
+							</div>
+							<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="end_time"></span>
+							</label>
+						</div>
+
+						<dialog
+							class="fixed inset-0 z-[9999] m-0 h-screen w-screen max-h-none max-w-none border-0 bg-transparent p-4 outline-none backdrop:bg-transparent open:grid open:place-items-center"
+							data-datetime-picker
+						>
+							<div class="dtp-card">
+								<div class="dtp-head">
+									<div class="dtp-head-row">
+										<p class="dtp-target-label" data-picker-target-label>
+											Seleccionando fecha y hora
+										</p>
+										<button
+											type="button"
+											data-picker-close
+											class="dtp-icon-btn"
+											aria-label="Cerrar selector de fecha y hora"
+										>
+											<span class="material-symbols-rounded text-[1.1rem]">close</span>
+										</button>
+									</div>
+
+									<div class="dtp-nav-row">
+										<div class="inline-flex items-center gap-1.5">
+											<select
+												data-picker-month-select
+												class="dtp-select"
+												aria-label="Seleccionar mes"
+											></select>
+											<select
+												data-picker-year-select
+												class="dtp-select dtp-select--year"
+												aria-label="Seleccionar a�o"
+											></select>
+										</div>
+										<div class="inline-flex items-center gap-1">
+											<button
+												type="button"
+												data-picker-prev-month
+												class="dtp-icon-btn"
+												aria-label="Mes anterior"
+											>
+												<span class="material-symbols-rounded text-[1.05rem]">chevron_left</span>
+											</button>
+											<button
+												type="button"
+												data-picker-next-month
+												class="dtp-icon-btn"
+												aria-label="Mes siguiente"
+											>
+												<span class="material-symbols-rounded text-[1.05rem]">chevron_right</span>
+											</button>
+										</div>
+									</div>
+
+									<div class="dtp-weekdays">
+										<span>Lun</span>
+										<span>Mar</span>
+										<span>Mi�</span>
+										<span>Jue</span>
+										<span>Vie</span>
+										<span>S�b</span>
+										<span>Dom</span>
+									</div>
+									<div class="dtp-days-grid" data-picker-days-grid></div>
+								</div>
+
+								<div class="dtp-foot">
+									<div class="dtp-foot-row">
+										<div class="inline-flex items-center gap-2.5">
+											<span class="material-symbols-rounded dtp-clock-icon">schedule</span>
+											<select data-picker-hour-select class="dtp-select dtp-select--time"></select>
+											<select data-picker-minute-select class="dtp-select dtp-select--time"></select>
+										</div>
+
+										<div class="inline-flex items-center gap-2">
+											<button type="button" data-picker-cancel class="dtp-action-btn">
+												Hoy
+											</button>
+											<button type="button" data-picker-apply class="dtp-action-btn dtp-action-btn--primary">
+												Hecho
+											</button>
+										</div>
+									</div>
+								</div>
+							</div>
+						</dialog>
+					</div>
+				</div>
+
+				<div
+					class="mx-7 mb-4 hidden rounded-2xl border border-orange-300/80 bg-orange-50/95 px-4 py-3.5 dark:border-orange-800/70 dark:bg-orange-950/40"
+					data-appointment-schedule-misaligned-wrap
+					hidden
+					role="alert"
+				>
+					<div class="flex items-start gap-3">
+						<span
+							class="material-symbols-rounded mt-0.5 shrink-0 text-[1.35rem] text-orange-600 dark:text-orange-400"
+							aria-hidden="true"
+						>
+							event_busy
+						</span>
+						<span class="grid gap-1.5 min-w-0 flex-1">
+							<span
+								class="text-[0.95rem] font-bold text-(--on-surface)"
+								data-appointment-schedule-misaligned-title
+							>
+								Cita fuera de la agenda actual
+							</span>
+							<span
+								class="text-[0.85rem] font-medium leading-snug text-(--on-surface-variant)"
+								data-appointment-schedule-misaligned-message
+							></span>
+							<a
+								href="/panel/schedules"
+								class="inline-flex w-fit text-[0.84rem] font-bold text-orange-700 underline underline-offset-2 dark:text-orange-300"
+								data-appointment-schedule-misaligned-link
+							>
+								Revisar horarios y excepciones
+							</a>
+						</span>
+					</div>
+				</div>
+
+				<div
+					class="mx-7 mb-4 hidden rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3.5 dark:border-amber-900/60 dark:bg-amber-950/35"
+					data-appointment-attendance-pending-wrap
+					hidden
+				>
+					<div class="flex items-start gap-3">
+						<span
+							class="material-symbols-rounded mt-0.5 shrink-0 text-[1.35rem] text-amber-600 dark:text-amber-400"
+							aria-hidden="true"
+						>
+							schedule
+						</span>
+						<span class="grid gap-1">
+							<span class="text-[0.95rem] font-bold text-(--on-surface)">
+								Pendiente de reconfirmación
+							</span>
+							<span class="text-[0.85rem] font-medium leading-snug text-(--on-surface-variant)">
+								El cliente aún no confirmó su asistencia por WhatsApp. Este dato es solo informativo.
+							</span>
+						</span>
+					</div>
+				</div>
+
+				<div
+					class="mx-7 mb-4 hidden rounded-2xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3.5 dark:border-emerald-900/60 dark:bg-emerald-950/35"
+					data-appointment-attendance-wrap
+					hidden
+					role="status"
+					aria-live="polite"
+				>
+					<div class="flex pointer-events-none select-none items-start gap-3">
+						<span
+							class="material-symbols-rounded mt-0.5 shrink-0 text-[1.35rem] text-emerald-600 dark:text-emerald-400"
+							aria-hidden="true"
+						>
+							check_circle
+						</span>
+						<span class="grid gap-1">
+							<span class="text-[0.95rem] font-bold text-(--on-surface)">
+								Asistencia reconfirmada
+							</span>
+							<span class="text-[0.85rem] font-medium leading-snug text-(--on-surface-variant)">
+								El cliente confirmó su asistencia por WhatsApp. Este dato es solo informativo.
+							</span>
+							<span
+								class="hidden text-[0.82rem] font-semibold text-emerald-800 dark:text-emerald-300"
+								data-appointment-attendance-reply
+							>
+								Confirmado el
+								<span data-appointment-attendance-reply-at></span>
+							</span>
+						</span>
+					</div>
+				</div>
+				</div>
+
+				<div
+					class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
+					data-appointment-modal-footer-wrap
+				>
+					<div class="appointment-modal-footer" data-appointment-modal-footer>
+					<button
+						type="button"
+						class="hidden appointment-delete-btn"
+						data-delete-appointment
+					>
+						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
+						Eliminar
+					</button>
+
+					<div class="appointment-modal-footer-actions">
+						<button
+							type="button"
+							class="appointment-cancel-btn"
+							data-close-appointment-modal
+						>
+							Cancelar
+						</button>
+						<button
+							type="submit"
+							class="appointment-submit-btn"
+							data-submit-appointment
+						>
+							<span class="material-symbols-rounded text-[1.2rem]" data-submit-appointment-icon>check</span>
+							<span data-submit-appointment-label>Crear cita</span>
+						</button>
+					</div>
+				</div>
+				</div>
+			</form>
+		</dialog>
+		</appointment-modal>

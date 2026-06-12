@@ -1,5 +1,6 @@
 import { ROLES } from '../../config/roles';
 import type { AppointmentAiDraft } from '../../lib/appointment-ai-types';
+import { formatPersonName } from '../../lib/format-person-name';
 import {
 	PARAGUAY_MOBILE_PHONE_ERROR,
 	parseParaguayMobilePhone,
@@ -1103,11 +1104,9 @@ class AppointmentModal extends HTMLElement {
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return;
 
-		this.clearFormErrors();
-		this.setCreateMode();
-
 		const customerId = toPositiveInt(draft.id_customer, 0);
-		const customerName = String(draft.customer_name || '').trim();
+		const customerNameRaw = String(draft.customer_name || '').trim();
+		const customerName = customerId > 0 ? customerNameRaw : formatPersonName(customerNameRaw);
 		const customerPhone = String(draft.customer_phone || '').trim();
 
 		requiredNodes.customerIdInput.value = customerId > 0 ? String(customerId) : '';
@@ -1174,7 +1173,13 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	openCreateWithAiDraft(draft: AppointmentAiDraft, context: OpenCreateContext = {}) {
-		this.openCreate(context);
+		const requiredNodes = this.getRequiredNodes();
+		if (!requiredNodes) return;
+
+		this.clearFormErrors();
+		this.setCreateMode();
+		this.resetFormValues();
+		this.openModalShell();
 		this.fillFormFromAiDraft(draft);
 	}
 

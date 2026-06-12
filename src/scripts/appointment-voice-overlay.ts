@@ -3,8 +3,10 @@ import {
 	type AppointmentAiDraft,
 	type StoredAppointmentAiDraft,
 } from '../lib/appointment-ai-types';
+import { AppointmentVoiceVisualizer } from './appointment-voice-visualizer';
 
 type VoiceOverlayMode = 'navigate' | 'inline';
+type VoiceUiState = 'idle' | 'recording' | 'collapsing' | 'processing' | 'success';
 
 const MAX_RECORDING_MS = 60_000;
 
@@ -16,12 +18,21 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#audioChunks: Blob[] = [];
 	#recordingTimer: number | null = null;
 	#mode: VoiceOverlayMode = 'navigate';
+	#visualizer: AppointmentVoiceVisualizer | null = null;
+	#audioContext: AudioContext | null = null;
+	#analyser: AnalyserNode | null = null;
 
 	connectedCallback() {
 		if (this.#bound) return;
 		this.#bound = true;
 		this.#listeners = new AbortController();
 		const signal = this.#listeners.signal;
+
+		const canvas = this.querySelector<HTMLCanvasElement>('[data-voice-overlay-waveform]');
+		if (canvas) {
+			this.#visualizer = new AppointmentVoiceVisualizer(canvas);
+			this.#visualizer.setMode('idle');
+		}
 
 		document.addEventListener('click', this.handleDocumentClick, { signal });
 		this.querySelectorAll('[data-voice-overlay-close]').forEach((button) => {
@@ -51,6 +62,9 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.#listeners?.abort();
 		this.#listeners = null;
 		this.stopRecording(false);
+		this.teardownAudioAnalysis();
+		this.#visualizer?.destroy();
+		this.#visualizer = null;
 	}
 
 	open(options: { mode?: VoiceOverlayMode } = {}) {
@@ -58,11 +72,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.setState('idle');
 		this.setError('');
 		this.setTranscript('');
-		const continueButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-continue]');
-		if (continueButton) {
-			continueButton.textContent =
-				this.#mode === 'inline' ? 'Ver formulario precargado' : 'Ir al calendario';
-		}
+		this.#visualizer?.setMode('idle');
 		const shell = this.querySelector<HTMLElement>('[data-voice-overlay-shell]');
 		shell?.classList.remove('hidden');
 		shell?.setAttribute('aria-hidden', 'false');
@@ -70,6 +80,8 @@ class AppointmentVoiceOverlay extends HTMLElement {
 
 	close() {
 		this.stopRecording(false);
+		this.teardownAudioAnalysis();
+		this.#visualizer?.setMode('off');
 		const shell = this.querySelector<HTMLElement>('[data-voice-overlay-shell]');
 		shell?.classList.add('hidden');
 		shell?.setAttribute('aria-hidden', 'true');
@@ -89,22 +101,23 @@ class AppointmentVoiceOverlay extends HTMLElement {
 
 	private handleRecordToggle = () => {
 		if (this.#mediaRecorder?.state === 'recording') {
-			this.stopRecording(true);
+			void this.stopRecording(true);
 			return;
 		}
 		void this.startRecording();
 	};
 
-	private setState(state: 'idle' | 'recording' | 'processing' | 'success') {
+	private setState(state: VoiceUiState) {
 		this.dataset.voiceState = state;
 		const recordButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-record]');
 		const actionsNode = this.querySelector<HTMLElement>('[data-voice-overlay-actions]');
 		const statusNode = this.querySelector<HTMLElement>('[data-voice-overlay-status]');
 		const processingNode = this.querySelector<HTMLElement>('[data-voice-overlay-processing]');
+		const stageNode = this.querySelector<HTMLElement>('[data-voice-overlay-stage]');
 
 		if (recordButton) {
-			recordButton.disabled = state === 'processing';
-			recordButton.hidden = state === 'success';
+			recordButton.disabled = state === 'processing' || state === 'collapsing';
+			recordButton.hidden = state === 'success' || state === 'processing' || state === 'collapsing';
 			const icon = recordButton.querySelector<HTMLElement>('[data-voice-overlay-record-icon]');
 			if (icon) {
 				icon.textContent = state === 'recording' ? 'stop_circle' : 'mic';
@@ -115,20 +128,61 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			);
 		}
 
-		actionsNode?.classList.toggle('hidden', state !== 'success');
+		stageNode?.classList.toggle('is-collapsing', state === 'collapsing');
+
+		actionsNode?.classList.add('hidden');
 
 		if (statusNode) {
-			const labels: Record<typeof state, string> = {
+			const labels: Record<VoiceUiState, string> = {
 				idle: 'Toca el micrófono y describe la cita.',
-				recording: 'Grabando… Toca de nuevo para enviar.',
-				processing: 'Procesando tu cita…',
-				success: 'Revisá lo que escuché antes de continuar.',
+				recording: 'Escuchando… describe la cita.',
+				collapsing: '',
+				processing: '',
+				success: 'Formulario listo. Revisá los datos precargados.',
 			};
 			statusNode.textContent = labels[state];
+			statusNode.classList.toggle('hidden', state === 'collapsing' || state === 'processing');
 		}
 
 		processingNode?.classList.toggle('hidden', state !== 'processing');
-		recordButton?.classList.toggle('is-recording', state === 'recording');
+
+		if (state === 'idle') {
+			this.#visualizer?.setAnalyser(null);
+			this.#visualizer?.setMode('idle');
+		} else if (state === 'recording') {
+			this.#visualizer?.setMode('live');
+		} else if (state === 'processing' || state === 'collapsing') {
+			this.#visualizer?.setAnalyser(null);
+		} else if (state === 'success') {
+			this.#visualizer?.setMode('off');
+		}
+	}
+
+	private async playCollapseTransition() {
+		this.setState('collapsing');
+		this.teardownAudioAnalysis();
+		await this.#visualizer?.playCollapse();
+		this.setState('processing');
+	}
+
+	private teardownAudioAnalysis() {
+		this.#analyser = null;
+		this.#visualizer?.setAnalyser(null);
+		void this.#audioContext?.close().catch(() => undefined);
+		this.#audioContext = null;
+	}
+
+	private setupAudioAnalysis(stream: MediaStream) {
+		if (typeof AudioContext === 'undefined') return;
+
+		this.teardownAudioAnalysis();
+		this.#audioContext = new AudioContext();
+		const source = this.#audioContext.createMediaStreamSource(stream);
+		this.#analyser = this.#audioContext.createAnalyser();
+		this.#analyser.fftSize = 512;
+		this.#analyser.smoothingTimeConstant = 0.82;
+		source.connect(this.#analyser);
+		this.#visualizer?.setAnalyser(this.#analyser);
 	}
 
 	private setError(message: string) {
@@ -157,12 +211,6 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	}
 
 	private handleContinue = () => {
-		if (this.#mode === 'navigate') {
-			this.close();
-			window.location.href = '/panel/calendar?ai_draft=1';
-			return;
-		}
-
 		this.close();
 	};
 
@@ -203,10 +251,11 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			};
 
 			this.#mediaRecorder.start();
+			this.setupAudioAnalysis(this.#mediaStream);
 			this.setState('recording');
 
 			this.#recordingTimer = window.setTimeout(() => {
-				this.stopRecording(true);
+				void this.stopRecording(true);
 			}, MAX_RECORDING_MS);
 		} catch {
 			this.setError('No fue posible acceder al micrófono.');
@@ -214,7 +263,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		}
 	}
 
-	private stopRecording(process: boolean) {
+	private async stopRecording(process: boolean) {
 		if (this.#recordingTimer) {
 			window.clearTimeout(this.#recordingTimer);
 			this.#recordingTimer = null;
@@ -238,6 +287,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.#mediaStream = null;
 
 		if (!process) {
+			this.teardownAudioAnalysis();
 			this.#audioChunks = [];
 			this.setState('idle');
 		}
@@ -253,7 +303,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			return;
 		}
 
-		this.setState('processing');
+		await this.playCollapseTransition();
 
 		try {
 			const extension = mimeType.includes('mp4') ? 'cita.mp4' : 'cita.webm';
@@ -294,6 +344,8 @@ class AppointmentVoiceOverlay extends HTMLElement {
 					detail: stored,
 				})
 			);
+
+			window.setTimeout(() => this.close(), 400);
 		} catch (error) {
 			this.setError(
 				error instanceof Error ? error.message : 'No fue posible procesar la cita por voz.'
