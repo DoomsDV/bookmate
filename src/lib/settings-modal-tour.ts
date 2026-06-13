@@ -2,6 +2,7 @@ import type { DriveStep } from 'driver.js';
 import { runBookmateTour } from './product-tour';
 
 const PUBLIC_PROFILE_FIELD_SELECTOR = '[data-settings-public-profile-field]';
+const SETTINGS_MODAL_SELECTOR = '[data-settings-modal]';
 
 export type SettingsModalTourContext = {
 	activateProfileTab?: () => void;
@@ -40,5 +41,7 @@ export function showSettingsModalTour(context: SettingsModalTourContext = {}) {
 		storageKey: 'bookmate_settings_modal_tour',
 		persistCompletion: false,
 		useTopLayerShell: true,
+		hostSelector: SETTINGS_MODAL_SELECTOR,
+		scrollIntoView: { rootSelector: '[data-settings-content]' },
 	});
 }

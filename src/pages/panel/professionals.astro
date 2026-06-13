@@ -2258,8 +2258,8 @@ const toPageHref = (page: number) => {
 		width: 3rem;
 		height: 1.7rem;
 		border-radius: 999px;
-		background: var(--surface-variant);
-		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--on-surface-variant) 11%, var(--surface-container-low));
+		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 20%, var(--shell-border));
 		transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 	}
 
@@ -2271,9 +2271,14 @@ const toPageHref = (page: number) => {
 		width: 1.25rem;
 		height: 1.25rem;
 		border-radius: 50%;
-		background: #fff;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14);
-		transition: transform 0.2s ease;
+		background: color-mix(in srgb, var(--surface-bright) 78%, var(--on-surface-variant) 22%);
+		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 18%, var(--shell-border));
+		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.14);
+		transition:
+			transform 0.2s ease,
+			background 0.2s ease,
+			border-color 0.2s ease,
+			box-shadow 0.2s ease;
 	}
 
 	.settings-switch__input:focus-visible + .settings-switch__track {
@@ -2287,6 +2292,9 @@ const toPageHref = (page: number) => {
 
 	.settings-switch__input:checked + .settings-switch__track::after {
 		transform: translateX(1.3rem);
+		background: #fff;
+		border-color: color-mix(in srgb, var(--primary) 24%, transparent);
+		box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
 	}
 
 	.settings-switch__input:disabled + .settings-switch__track {

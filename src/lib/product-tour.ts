@@ -30,7 +30,9 @@ function ensureTourShell(): HTMLDialogElement {
 		shell.setAttribute('aria-hidden', 'true');
 		document.body.appendChild(shell);
 	}
-	if (!shell.open) shell.showModal();
+	// Reabrir siempre para quedar encima de otros `<dialog>` del top layer (p. ej. Ajustes z-index 1200).
+	if (shell.open) shell.close();
+	shell.showModal();
 	return shell;
 }
 
@@ -42,9 +44,12 @@ function closeTourShell() {
 }
 
 function forceCleanupDriverDom() {
-	document.querySelectorAll('.driver-overlay, .driver-popover').forEach((node) => node.remove());
+	document
+		.querySelectorAll('.driver-overlay, .driver-popover, .bookmate-driver-popover')
+		.forEach((node) => node.remove());
 	document.getElementById('driver-popover-content')?.remove();
 	document.getElementById('driver-dummy-element')?.remove();
+	document.querySelectorAll('[id^="driver-popover"]').forEach((node) => node.remove());
 	document.querySelectorAll('.driver-active-element').forEach((el) => {
 		el.classList.remove('driver-active-element', 'driver-no-interaction');
 		el.removeAttribute('aria-haspopup');
@@ -73,9 +78,13 @@ function bindTourHostClose(hostSelector: string) {
 /** driver.js hace body.removeChild al cambiar de paso; hay que devolver el popover a body antes. */
 function reparentTourPopoverToBody(popover?: HTMLElement | null) {
 	const node = popover ?? document.getElementById('driver-popover-content');
-	if (node instanceof HTMLElement && node.parentElement !== document.body) {
+	if (!(node instanceof HTMLElement)) return;
+	if (node.parentElement !== document.body) {
 		document.body.appendChild(node);
 	}
+	// Ocultar mientras driver.js cambia de paso: en body queda detrás de modales nativos.
+	node.style.display = 'none';
+	node.style.visibility = 'hidden';
 }
 
 function mountDriverOverlayInTourShell() {
@@ -98,6 +107,10 @@ function mountPopoverInTourShell(popoverWrapper: HTMLElement) {
 	if (popoverWrapper.parentElement !== shell) {
 		shell.appendChild(popoverWrapper);
 	}
+
+	popoverWrapper.style.display = 'block';
+	popoverWrapper.style.visibility = 'visible';
+	popoverWrapper.style.opacity = '1';
 
 	const overlay = shell.querySelector('.driver-overlay');
 	if (overlay && popoverWrapper.previousElementSibling !== overlay) {

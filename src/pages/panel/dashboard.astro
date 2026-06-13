@@ -302,12 +302,12 @@ const toPageHref = (page: number) => {
 															: metric.description;
 
 													return (
-														<article class="dashboard-metric-card flex h-full flex-col rounded-4xl p-6 pb-7 transition-all duration-300" data-metric-accent={metric.accent}>
-															<div class="mb-6 flex items-start justify-between gap-3">
-																<p class="dashboard-metric-label text-[0.75rem] font-extrabold uppercase tracking-widest sm:text-[0.8rem] leading-tight max-w-25">
+														<article class="dashboard-metric-card flex h-full min-w-0 flex-col rounded-4xl p-6 pb-7 transition-all duration-300" data-metric-accent={metric.accent}>
+															<div class="dashboard-metric-head mb-4 sm:mb-6">
+																<p class="dashboard-metric-label text-[0.75rem] font-extrabold uppercase tracking-widest sm:text-[0.8rem] leading-tight">
 																	{metric.label}
 																</p>
-																<span class="dashboard-metric-icon material-symbols-rounded text-[1.5rem]">
+																<span class="dashboard-metric-icon material-symbols-rounded">
 																	{metric.icon}
 																</span>
 															</div>
@@ -466,8 +466,8 @@ const toPageHref = (page: number) => {
 		<div class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-5">
 			<div class="flex items-start justify-between gap-4">
 				<div class="flex items-center gap-3">
-					<div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
-						<span class="material-symbols-rounded text-[1.35rem]">auto_awesome</span>
+					<div class="dashboard-ai-modal-mark flex size-11 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
+						<span class="material-symbols-rounded dashboard-ai-modal-mark__icon text-[1.35rem]">auto_awesome</span>
 					</div>
 					<div>
 						<h2 class="text-[1.1rem] font-extrabold tracking-tight text-(--on-surface)">
@@ -500,19 +500,73 @@ const toPageHref = (page: number) => {
 	import '../../scripts/calendar/appointment-modal';
 	import '../../scripts/appointment-voice-host';
 
-	const sanitizeAiSummary = (value: unknown): string =>
+	const normalizeAiSummaryBase = (value: unknown): string =>
 		String(value ?? '')
-			.replace(/\*+/g, '')
 			.replace(/\\r\\n|\\n|\\r/g, '\n')
 			.replace(/\r\n|\r/g, '\n')
 			.replace(/\t/g, ' ')
 			.replace(/\u0000/g, '')
 			.replace(/[ ]{2,}/g, ' ')
-			.replace(/[ \t]*\n[ \t]*/g, '\n')
-			.replace(/\n{2,}/g, '\n')
+			.replace(/[ \t]*\n[ \t]*/g, ' ')
+			.replace(/\n{2,}/g, ' ')
 			.replace(/^\s*["'`]/, '')
 			.replace(/["'`]\s*$/, '')
 			.trim();
+
+	const sanitizeAiSummary = (value: unknown): string =>
+		normalizeAiSummaryBase(value).replace(/\*\*/g, '').replace(/\*/g, '');
+
+	const SUMMARY_HIGHLIGHT_NUMERIC = new RegExp(
+		String.raw`\d+(?:[.,]\d+)?(?:\s+(?:%|por ciento|clientes?(?:\s+activos?)?|citas?(?:\s+(?:pendientes?|confirmadas?|activas?))?|pacientes?|días?|horas?|servicios?|activos?|pendientes?|confirmadas?)){0,2}`,
+		'giu'
+	);
+
+	const appendAiSummaryHighlight = (
+		parent: HTMLElement,
+		text: string,
+		sectionType: AiSummarySectionType
+	) => {
+		const strong = document.createElement('strong');
+		strong.className = `dashboard-ai-highlight dashboard-ai-highlight--${sectionType}`;
+		strong.textContent = text;
+		parent.appendChild(strong);
+	};
+
+	const appendEnrichedSummaryText = (
+		parent: HTMLElement,
+		rawText: string,
+		sectionType: AiSummarySectionType
+	) => {
+		const text = normalizeAiSummaryBase(rawText);
+		if (!text) return;
+
+		const parts = text.split(/(\*\*[^*]+\*\*)/g);
+		for (const part of parts) {
+			if (!part) continue;
+
+			const boldMatch = /^\*\*(.+)\*\*$/.exec(part);
+			if (boldMatch) {
+				appendAiSummaryHighlight(parent, boldMatch[1], sectionType);
+				continue;
+			}
+
+			SUMMARY_HIGHLIGHT_NUMERIC.lastIndex = 0;
+			let lastIndex = 0;
+			let match: RegExpExecArray | null;
+
+			while ((match = SUMMARY_HIGHLIGHT_NUMERIC.exec(part)) !== null) {
+				if (match.index > lastIndex) {
+					parent.appendChild(document.createTextNode(part.slice(lastIndex, match.index)));
+				}
+				appendAiSummaryHighlight(parent, match[0].trim(), sectionType);
+				lastIndex = match.index + match[0].length;
+			}
+
+			if (lastIndex < part.length) {
+				parent.appendChild(document.createTextNode(part.slice(lastIndex)));
+			}
+		}
+	};
 
 	const splitSummaryIntoTokens = (text: string): string[] =>
 		String(text || '')
@@ -553,13 +607,13 @@ const toPageHref = (page: number) => {
 
 		if (typeRaw === 'contexto') {
 			const items = (Array.isArray(source.items) ? source.items : [])
-				.map((item) => sanitizeAiSummary(item))
+				.map((item) => normalizeAiSummaryBase(item))
 				.filter(Boolean)
 				.slice(0, 3);
 			return { type: typeRaw, items };
 		}
 
-		const text = sanitizeAiSummary(source.text);
+		const text = normalizeAiSummaryBase(source.text);
 		if (!text) return null;
 		return { type: typeRaw, text };
 	};
@@ -749,6 +803,9 @@ const toPageHref = (page: number) => {
 		variant: 'card' | 'modal'
 	) => {
 		container.replaceChildren();
+		container.classList.remove('dashboard-ai-sections--animate');
+
+		let staggerIndex = 0;
 
 		for (const section of sections) {
 			if (!sectionHasVisibleContent(section)) continue;
@@ -756,6 +813,12 @@ const toPageHref = (page: number) => {
 			const meta = AI_SUMMARY_SECTION_UI[section.type];
 			const article = document.createElement('article');
 			article.className = `dashboard-ai-section dashboard-ai-section--${section.type}`;
+
+			if (variant === 'modal') {
+				article.classList.add('dashboard-ai-section--stagger');
+				article.style.setProperty('--ai-section-index', String(staggerIndex));
+				staggerIndex += 1;
+			}
 
 			const header = document.createElement('div');
 			header.className = 'dashboard-ai-section__header';
@@ -780,10 +843,10 @@ const toPageHref = (page: number) => {
 				const list = document.createElement('ul');
 				list.className = 'dashboard-ai-section__list';
 				for (const item of section.items ?? []) {
-					const cleanItem = sanitizeAiSummary(item);
+					const cleanItem = normalizeAiSummaryBase(item);
 					if (!cleanItem) continue;
 					const listItem = document.createElement('li');
-					listItem.textContent = cleanItem;
+					appendEnrichedSummaryText(listItem, cleanItem, section.type);
 					list.appendChild(listItem);
 				}
 				if (list.childElementCount === 0) continue;
@@ -791,7 +854,7 @@ const toPageHref = (page: number) => {
 			} else {
 				const body = document.createElement('p');
 				body.className = 'dashboard-ai-section__text';
-				body.textContent = sanitizeAiSummary(section.text);
+				appendEnrichedSummaryText(body, section.text ?? '', section.type);
 				article.appendChild(body);
 			}
 
@@ -1186,6 +1249,9 @@ const toPageHref = (page: number) => {
 		if (!modal || !modalSections) return;
 
 		renderAiSummarySections(modalSections, aiSummaryModalSections, 'modal');
+		modalSections.classList.remove('dashboard-ai-sections--animate');
+		void modalSections.offsetWidth;
+		modalSections.classList.add('dashboard-ai-sections--animate');
 		modal.classList.remove('is-closing');
 
 		if (aiSummaryModalCloseTimer) {
@@ -1384,6 +1450,77 @@ const toPageHref = (page: number) => {
 		padding-bottom: 0.35rem;
 	}
 
+	.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger {
+		opacity: 0;
+		transform: translateY(10px);
+		animation: dashboard-ai-section-enter 460ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+		animation-delay: calc(var(--ai-section-index, 0) * 150ms);
+	}
+
+	@keyframes dashboard-ai-section-enter {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.dashboard-ai-modal-mark {
+		position: relative;
+		overflow: visible;
+	}
+
+	.dashboard-ai-modal-mark::before {
+		content: '';
+		position: absolute;
+		inset: -0.2rem;
+		border-radius: inherit;
+		background: radial-gradient(
+			circle,
+			color-mix(in srgb, var(--primary) 34%, transparent) 0%,
+			transparent 72%
+		);
+		opacity: 0.55;
+		animation: dashboard-ai-mark-glow 2.8s ease-in-out infinite;
+		pointer-events: none;
+	}
+
+	.dashboard-ai-modal-mark__icon {
+		position: relative;
+		z-index: 1;
+		animation: dashboard-ai-mark-sparkle 4.5s ease-in-out infinite;
+	}
+
+	@keyframes dashboard-ai-mark-glow {
+		0%,
+		100% {
+			opacity: 0.35;
+			transform: scale(0.94);
+		}
+
+		50% {
+			opacity: 0.85;
+			transform: scale(1.08);
+		}
+	}
+
+	@keyframes dashboard-ai-mark-sparkle {
+		0%,
+		100% {
+			transform: scale(1) rotate(0deg);
+			filter: drop-shadow(0 0 0 transparent);
+		}
+
+		50% {
+			transform: scale(1.06) rotate(8deg);
+			filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 42%, transparent));
+		}
+	}
+
 	.dashboard-ai-sections--modal .dashboard-ai-section {
 		padding: 1rem 1.05rem;
 		border-radius: 1.15rem;
@@ -1400,25 +1537,43 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-section {
-		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+		position: relative;
+		overflow: hidden;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 55%, transparent);
 		border-radius: 1.1rem;
 		background: color-mix(in srgb, var(--surface-bright) 88%, var(--surface) 12%);
 		padding: 0.95rem 1.05rem;
+		box-shadow: inset 0 1px 0 color-mix(in srgb, white 40%, transparent);
 	}
 
 	.dashboard-ai-section--panorama {
-		border-color: color-mix(in srgb, #0ea5e9 28%, var(--shell-border) 72%);
-		background: color-mix(in srgb, #0ea5e9 8%, var(--surface-bright) 92%);
+		border-color: color-mix(in srgb, #0ea5e9 18%, transparent);
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, #0ea5e9 16%, transparent), transparent 58%),
+			color-mix(in srgb, var(--surface-bright) 90%, #0ea5e9 10%);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #38bdf8 14%, transparent),
+			0 0 28px color-mix(in srgb, #0ea5e9 10%, transparent);
 	}
 
 	.dashboard-ai-section--contexto {
-		border-color: color-mix(in srgb, #d97706 26%, var(--shell-border) 74%);
-		background: color-mix(in srgb, #d97706 7%, var(--surface-bright) 93%);
+		border-color: color-mix(in srgb, #d97706 18%, transparent);
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, #d97706 14%, transparent), transparent 58%),
+			color-mix(in srgb, var(--surface-bright) 91%, #d97706 9%);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #fbbf24 12%, transparent),
+			0 0 28px color-mix(in srgb, #d97706 9%, transparent);
 	}
 
 	.dashboard-ai-section--sugerencia {
-		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border) 72%);
-		background: color-mix(in srgb, var(--primary) 8%, var(--surface-bright) 92%);
+		border-color: color-mix(in srgb, var(--primary) 18%, transparent);
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary) 15%, transparent), transparent 58%),
+			color-mix(in srgb, var(--surface-bright) 90%, var(--primary) 10%);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, var(--primary) 12%, transparent),
+			0 0 28px color-mix(in srgb, var(--primary) 10%, transparent);
 	}
 
 	.dashboard-ai-section__header {
@@ -1486,6 +1641,22 @@ const toPageHref = (page: number) => {
 		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
 	}
 
+	.dashboard-ai-highlight {
+		font-weight: 800;
+	}
+
+	.dashboard-ai-highlight--panorama {
+		color: #0284c7;
+	}
+
+	.dashboard-ai-highlight--contexto {
+		color: #b45309;
+	}
+
+	.dashboard-ai-highlight--sugerencia {
+		color: var(--primary);
+	}
+
 	.dashboard-ai-section__list {
 		margin: 0;
 		padding: 0;
@@ -1528,18 +1699,33 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--panorama {
-		background: color-mix(in srgb, #0ea5e9 12%, #1e1f22 88%);
-		border-color: color-mix(in srgb, #0ea5e9 30%, var(--shell-border) 70%);
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, #0ea5e9 22%, transparent), transparent 58%),
+			color-mix(in srgb, #0ea5e9 10%, #1e1f22 90%);
+		border-color: color-mix(in srgb, #0ea5e9 22%, transparent);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #38bdf8 10%, transparent),
+			0 0 32px color-mix(in srgb, #0ea5e9 12%, transparent);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--contexto {
-		background: color-mix(in srgb, #d97706 10%, #1e1f22 90%);
-		border-color: color-mix(in srgb, #d97706 28%, var(--shell-border) 72%);
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, #d97706 18%, transparent), transparent 58%),
+			color-mix(in srgb, #d97706 8%, #1e1f22 92%);
+		border-color: color-mix(in srgb, #d97706 20%, transparent);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #fbbf24 8%, transparent),
+			0 0 32px color-mix(in srgb, #d97706 10%, transparent);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--sugerencia {
-		background: color-mix(in srgb, var(--primary) 14%, #1e1f22 86%);
-		border-color: color-mix(in srgb, var(--primary) 30%, var(--shell-border) 70%);
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 58%),
+			color-mix(in srgb, var(--primary) 12%, #1e1f22 88%);
+		border-color: color-mix(in srgb, var(--primary) 22%, transparent);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, var(--primary) 10%, transparent),
+			0 0 32px color-mix(in srgb, var(--primary) 12%, transparent);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__icon {
@@ -1572,6 +1758,28 @@ const toPageHref = (page: number) => {
 	html[data-theme='dark'] .dashboard-ai-section__text,
 	html[data-theme='dark'] .dashboard-ai-section__list li {
 		color: color-mix(in srgb, var(--on-surface) 90%, white 10%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-highlight--panorama {
+		color: #7dd3fc;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-highlight--contexto {
+		color: #fcd34d;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-highlight--sugerencia {
+		color: color-mix(in srgb, var(--primary) 55%, white 45%);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger,
+		.dashboard-ai-modal-mark::before,
+		.dashboard-ai-modal-mark__icon {
+			animation: none !important;
+			opacity: 1;
+			transform: none;
+		}
 	}
 </style>
 
@@ -2104,6 +2312,77 @@ const toPageHref = (page: number) => {
 		gap: 0.65rem;
 	}
 
+	.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger {
+		opacity: 0;
+		transform: translateY(10px);
+		animation: dashboard-ai-section-enter 460ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+		animation-delay: calc(var(--ai-section-index, 0) * 150ms);
+	}
+
+	@keyframes dashboard-ai-section-enter {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.dashboard-ai-modal-mark {
+		position: relative;
+		overflow: visible;
+	}
+
+	.dashboard-ai-modal-mark::before {
+		content: '';
+		position: absolute;
+		inset: -0.2rem;
+		border-radius: inherit;
+		background: radial-gradient(
+			circle,
+			color-mix(in srgb, var(--primary) 34%, transparent) 0%,
+			transparent 72%
+		);
+		opacity: 0.55;
+		animation: dashboard-ai-mark-glow 2.8s ease-in-out infinite;
+		pointer-events: none;
+	}
+
+	.dashboard-ai-modal-mark__icon {
+		position: relative;
+		z-index: 1;
+		animation: dashboard-ai-mark-sparkle 4.5s ease-in-out infinite;
+	}
+
+	@keyframes dashboard-ai-mark-glow {
+		0%,
+		100% {
+			opacity: 0.35;
+			transform: scale(0.94);
+		}
+
+		50% {
+			opacity: 0.85;
+			transform: scale(1.08);
+		}
+	}
+
+	@keyframes dashboard-ai-mark-sparkle {
+		0%,
+		100% {
+			transform: scale(1) rotate(0deg);
+			filter: drop-shadow(0 0 0 transparent);
+		}
+
+		50% {
+			transform: scale(1.06) rotate(8deg);
+			filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 42%, transparent));
+		}
+	}
+
 	.dashboard-ai-sections--modal .dashboard-ai-section {
 		padding: 0.75rem 0.85rem;
 		border-radius: 1rem;
@@ -2120,20 +2399,43 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-section {
-		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+		position: relative;
+		overflow: hidden;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 55%, transparent);
 		border-radius: 1.1rem;
 		background: color-mix(in srgb, var(--surface-bright) 88%, var(--surface) 12%);
 		padding: 0.9rem 1rem;
+		box-shadow: inset 0 1px 0 color-mix(in srgb, white 40%, transparent);
 	}
 
 	.dashboard-ai-section--panorama {
-		border-color: color-mix(in srgb, #0ea5e9 22%, var(--shell-border) 78%);
-		background: color-mix(in srgb, #0ea5e9 6%, var(--surface-bright) 94%);
+		border-color: color-mix(in srgb, #0ea5e9 18%, transparent);
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, #0ea5e9 16%, transparent), transparent 58%),
+			color-mix(in srgb, var(--surface-bright) 90%, #0ea5e9 10%);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #38bdf8 14%, transparent),
+			0 0 28px color-mix(in srgb, #0ea5e9 10%, transparent);
+	}
+
+	.dashboard-ai-section--contexto {
+		border-color: color-mix(in srgb, #d97706 18%, transparent);
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, #d97706 14%, transparent), transparent 58%),
+			color-mix(in srgb, var(--surface-bright) 91%, #d97706 9%);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #fbbf24 12%, transparent),
+			0 0 28px color-mix(in srgb, #d97706 9%, transparent);
 	}
 
 	.dashboard-ai-section--sugerencia {
-		border-color: color-mix(in srgb, var(--primary) 24%, var(--shell-border) 76%);
-		background: color-mix(in srgb, var(--primary) 7%, var(--surface-bright) 93%);
+		border-color: color-mix(in srgb, var(--primary) 18%, transparent);
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary) 15%, transparent), transparent 58%),
+			color-mix(in srgb, var(--surface-bright) 90%, var(--primary) 10%);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, var(--primary) 12%, transparent),
+			0 0 28px color-mix(in srgb, var(--primary) 10%, transparent);
 	}
 
 	.dashboard-ai-section__header {
@@ -2189,6 +2491,22 @@ const toPageHref = (page: number) => {
 		font-weight: 600;
 		line-height: 1.55;
 		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
+	}
+
+	.dashboard-ai-highlight {
+		font-weight: 800;
+	}
+
+	.dashboard-ai-highlight--panorama {
+		color: #0284c7;
+	}
+
+	.dashboard-ai-highlight--contexto {
+		color: #b45309;
+	}
+
+	.dashboard-ai-highlight--sugerencia {
+		color: var(--primary);
 	}
 
 	.dashboard-ai-section__list {
@@ -2318,8 +2636,23 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--panorama {
-		background: color-mix(in srgb, #0ea5e9 10%, #1e1f22 90%);
-		border-color: color-mix(in srgb, #0ea5e9 24%, var(--shell-border) 76%);
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, #0ea5e9 22%, transparent), transparent 58%),
+			color-mix(in srgb, #0ea5e9 10%, #1e1f22 90%);
+		border-color: color-mix(in srgb, #0ea5e9 22%, transparent);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #38bdf8 10%, transparent),
+			0 0 32px color-mix(in srgb, #0ea5e9 12%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--contexto {
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, #d97706 18%, transparent), transparent 58%),
+			color-mix(in srgb, #d97706 8%, #1e1f22 92%);
+		border-color: color-mix(in srgb, #d97706 20%, transparent);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #fbbf24 8%, transparent),
+			0 0 32px color-mix(in srgb, #d97706 10%, transparent);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__icon {
@@ -2377,13 +2710,39 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section {
-		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--surface-bright) 18%);
-		border-color: color-mix(in srgb, var(--shell-border) 70%, transparent);
+		border-color: color-mix(in srgb, var(--shell-border) 45%, transparent);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--sugerencia {
-		background: color-mix(in srgb, var(--primary) 14%, #1e1f22 86%);
-		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border) 72%);
+		background:
+			radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 58%),
+			color-mix(in srgb, var(--primary) 12%, #1e1f22 88%);
+		border-color: color-mix(in srgb, var(--primary) 22%, transparent);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, var(--primary) 10%, transparent),
+			0 0 32px color-mix(in srgb, var(--primary) 12%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-highlight--panorama {
+		color: #7dd3fc;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-highlight--contexto {
+		color: #fcd34d;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-highlight--sugerencia {
+		color: color-mix(in srgb, var(--primary) 55%, white 45%);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger,
+		.dashboard-ai-modal-mark::before,
+		.dashboard-ai-modal-mark__icon {
+			animation: none !important;
+			opacity: 1;
+			transform: none;
+		}
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section__title {
@@ -2393,6 +2752,8 @@ const toPageHref = (page: number) => {
 	.dashboard-metric-card {
 		--metric-accent: #2f6fdd;
 		--metric-accent-soft: rgba(47, 111, 221, 0.12);
+		min-width: 0;
+		overflow: hidden;
 		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, white 12%);
 		background: linear-gradient(
 			175deg,
@@ -2417,6 +2778,16 @@ const toPageHref = (page: number) => {
 
 	.dashboard-metric-label {
 		color: color-mix(in srgb, var(--on-surface-variant) 86%, #516b85 14%);
+		min-width: 0;
+		margin: 0;
+		overflow-wrap: anywhere;
+	}
+
+	.dashboard-metric-head {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		column-gap: 0.5rem;
+		align-items: start;
 	}
 
 	.dashboard-metric-icon {
@@ -2433,6 +2804,8 @@ const toPageHref = (page: number) => {
 		background: var(--metric-accent-soft);
 		color: var(--metric-accent);
 		border: 1px solid color-mix(in srgb, var(--metric-accent) 34%, transparent);
+		font-size: 1.35rem;
+		line-height: 1;
 	}
 
 	.dashboard-metric-value {
@@ -2734,9 +3107,39 @@ const toPageHref = (page: number) => {
 			gap: 1rem;
 		}
 
+		.dashboard-metrics-grid > * {
+			min-width: 0;
+		}
+
 		.dashboard-metric-card {
-			padding: 1rem 1rem 1.5rem;
+			padding: 1rem 0.85rem 1.35rem;
 			border-radius: 1.15rem;
+		}
+
+		.dashboard-metric-head {
+			display: flex;
+			align-items: center;
+			justify-content: flex-start;
+			gap: 0.5rem;
+			margin-bottom: 0.75rem;
+		}
+
+		.dashboard-metric-icon {
+			order: -1;
+			width: 2rem;
+			height: 2rem;
+			min-width: 2rem;
+			min-height: 2rem;
+			font-size: 1.05rem;
+		}
+
+		.dashboard-metric-label {
+			flex: 1;
+			min-width: 0;
+			font-size: 0.68rem;
+			letter-spacing: 0.05em;
+			line-height: 1.25;
+			padding-right: 0;
 		}
 
 		.dashboard-metric-value {
@@ -2748,12 +3151,51 @@ const toPageHref = (page: number) => {
 			font-size: 0.86rem;
 			line-height: 1.45;
 		}
+	}
+
+	@media (max-width: 380px) {
+		.dashboard-metrics-grid {
+			gap: 0.65rem;
+		}
+
+		.dashboard-metric-card {
+			padding: 0.75rem 0.65rem 1rem;
+			border-radius: 1rem;
+		}
+
+		.dashboard-metric-head {
+			gap: 0.4rem;
+			margin-bottom: 0.55rem;
+		}
 
 		.dashboard-metric-icon {
-			width: 2.5rem;
-			height: 2.5rem;
-			min-width: 2.5rem;
-			min-height: 2.5rem;
+			width: 1.75rem;
+			height: 1.75rem;
+			min-width: 1.75rem;
+			min-height: 1.75rem;
+			font-size: 0.95rem;
+		}
+
+		.dashboard-metric-label {
+			font-size: 0.62rem;
+			letter-spacing: 0.03em;
+			line-height: 1.2;
+		}
+
+		.dashboard-metric-value {
+			font-size: clamp(1.75rem, 7.2vw, 2rem);
+			margin-bottom: 0.15rem;
+		}
+
+		.dashboard-metric-description {
+			font-size: 0.78rem;
+			line-height: 1.35;
+		}
+
+		.dashboard-metric-zero-link {
+			min-height: 2.35rem;
+			padding: 0.35rem 0.45rem;
+			font-size: 0.68rem;
 		}
 	}
 

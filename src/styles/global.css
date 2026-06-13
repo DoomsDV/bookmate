@@ -547,7 +547,6 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
 	display: inline-flex;
 	align-items: center;
 	justify-content: flex-start;
-	gap: 0.65rem;
 	width: auto;
 	height: 2.5rem;
 	padding: 0.1rem 0;
@@ -558,23 +557,6 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
 	.topbar-brand-link {
 		height: 2.75rem;
 		padding: 0;
-	}
-}
-
-.topbar-brand-logo {
-	display: block;
-	width: 2.5rem;
-	height: 2.5rem;
-	flex: 0 0 auto;
-	object-fit: contain;
-	transform: translateY(0);
-	filter: drop-shadow(0 2px 5px rgba(47, 111, 221, 0.28));
-}
-
-@media (min-width: 640px) {
-	.topbar-brand-logo {
-		width: 2.75rem;
-		height: 2.75rem;
 	}
 }
 

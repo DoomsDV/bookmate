@@ -4,24 +4,12 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 {FEATURE_FLAGS.APPOINTMENT_AI_VOICE && (
 	<appointment-voice-overlay>
-		<div
-			class="appointment-voice-shell hidden"
+		<dialog
+			class="appointment-voice-shell"
 			data-voice-overlay-shell
-			aria-hidden="true"
+			aria-label="Cita rápida por voz"
 		>
-			<button
-				type="button"
-				class="appointment-voice-backdrop"
-				data-voice-overlay-close
-				aria-label="Cerrar asistente de voz"
-			></button>
-
-			<div
-				class="appointment-voice-dialog"
-				role="dialog"
-				aria-modal="true"
-				aria-label="Cita rápida por voz"
-			>
+			<div class="appointment-voice-dialog">
 				<div class="appointment-voice-header">
 					<div class="appointment-voice-title-wrap">
 						<div class="appointment-voice-mark">
@@ -81,10 +69,21 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 							data-voice-overlay-record
 							aria-label="Empezar a grabar"
 						>
+							<span class="appointment-voice-record__pulse" aria-hidden="true"></span>
 							<span class="appointment-voice-record__halo" aria-hidden="true"></span>
 							<span class="material-symbols-rounded" data-voice-overlay-record-icon>mic</span>
 						</button>
 					</div>
+
+					<button
+						type="button"
+						class="appointment-voice-discard hidden"
+						data-voice-overlay-discard
+						aria-label="Descartar grabación"
+					>
+						<span class="material-symbols-rounded">delete</span>
+						Descartar
+					</button>
 
 					<div class="appointment-voice-actions hidden" data-voice-overlay-actions>
 						<button type="button" class="appointment-voice-continue" data-voice-overlay-continue>
@@ -93,30 +92,29 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 					</div>
 				</div>
 			</div>
-		</div>
+		</dialog>
 	</appointment-voice-overlay>
 )}
 
 <style>
 	.appointment-voice-shell {
-		position: fixed;
-		inset: 0;
-		z-index: 120;
+		margin: 0;
+		padding: 1rem;
+		border: 0;
+		background: transparent;
+		max-width: none;
+		max-height: none;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+	}
+
+	.appointment-voice-shell[open] {
 		display: grid;
 		place-items: center;
-		padding: 1rem;
 	}
 
-	.appointment-voice-shell.hidden {
-		display: none;
-	}
-
-	.appointment-voice-backdrop {
-		position: absolute;
-		inset: 0;
-		border: 0;
-		padding: 0;
-		cursor: pointer;
+	.appointment-voice-shell::backdrop {
 		background: rgba(15, 23, 42, 0.38);
 		backdrop-filter: blur(5px);
 		-webkit-backdrop-filter: blur(5px);
@@ -214,9 +212,25 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 	.appointment-voice-status {
 		margin: 0;
+		min-height: 1.35em;
 		font-size: 0.92rem;
 		font-weight: 700;
 		color: var(--on-surface-variant);
+		opacity: 1;
+		transform: translateY(0);
+		transition:
+			opacity 180ms ease,
+			transform 180ms ease;
+	}
+
+	.appointment-voice-status.is-leaving {
+		opacity: 0;
+		transform: translateY(-4px);
+	}
+
+	.appointment-voice-status.is-entering {
+		opacity: 0;
+		transform: translateY(4px);
 	}
 
 	.appointment-voice-transcript-wrap {
@@ -346,7 +360,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	.appointment-voice-processing.hidden,
 	.appointment-voice-transcript-wrap.hidden,
 	.appointment-voice-error.hidden,
-	.appointment-voice-actions.hidden {
+	.appointment-voice-actions.hidden,
+	.appointment-voice-discard.hidden {
 		display: none;
 	}
 
@@ -375,6 +390,41 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	.appointment-voice-continue:hover {
 		transform: translateY(-1px);
 		background: color-mix(in srgb, var(--primary) 92%, #000 8%);
+	}
+
+	.appointment-voice-discard {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		margin-top: -0.15rem;
+		padding: 0.45rem 0.75rem;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--on-surface-variant);
+		font-size: 0.82rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition:
+			color 140ms ease,
+			background-color 140ms ease,
+			opacity 180ms ease,
+			transform 180ms ease;
+	}
+
+	.appointment-voice-discard .material-symbols-rounded {
+		font-size: 1.05rem;
+	}
+
+	.appointment-voice-discard:hover {
+		color: #e11d48;
+		background: color-mix(in srgb, #e11d48 10%, transparent);
+	}
+
+	.appointment-voice-discard:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+		outline-offset: 3px;
 	}
 
 	.appointment-voice-stage {
@@ -502,16 +552,27 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		transition: opacity 220ms ease, transform 220ms ease;
 	}
 
+	.appointment-voice-record__pulse {
+		position: absolute;
+		inset: -0.35rem;
+		border-radius: inherit;
+		border: 2px solid color-mix(in srgb, var(--primary) 40%, #67e8f9 60%);
+		opacity: 0;
+		pointer-events: none;
+	}
+
 	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record {
-		animation: appointment-voice-glow-pulse 2.4s ease-in-out infinite;
 		box-shadow:
 			0 4px 18px rgba(15, 23, 42, 0.14),
 			0 0 calc(22px + var(--voice-level, 0.2) * 32px) color-mix(in srgb, var(--primary) 42%, #38bdf8 58%);
 	}
 
 	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record__halo {
-		opacity: calc(0.5 + var(--voice-level, 0.2) * 0.5);
-		transform: scale(calc(1 + var(--voice-level, 0.2) * 0.28));
+		animation: appointment-voice-halo-pulse 1.5s ease-in-out infinite;
+	}
+
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record__pulse {
+		animation: appointment-voice-record-ring-pulse 1.5s ease-out infinite;
 	}
 
 	.appointment-voice-stage.is-collapsing .appointment-voice-record {
@@ -540,6 +601,29 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 	appointment-voice-overlay[data-voice-state='success'] .appointment-voice-stage {
 		display: none;
+	}
+
+	@keyframes appointment-voice-halo-pulse {
+		0%,
+		100% {
+			opacity: 0.45;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 0.9;
+			transform: scale(1.28);
+		}
+	}
+
+	@keyframes appointment-voice-record-ring-pulse {
+		0% {
+			opacity: 0.55;
+			transform: scale(0.92);
+		}
+		100% {
+			opacity: 0;
+			transform: scale(1.55);
+		}
 	}
 
 	@keyframes appointment-voice-glow-pulse {
@@ -607,7 +691,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		opacity: 0.72;
 	}
 
-	html[data-theme='dark'] .appointment-voice-backdrop {
+	html[data-theme='dark'] .appointment-voice-shell::backdrop {
 		background: rgba(0, 0, 0, 0.58);
 	}
 </style>

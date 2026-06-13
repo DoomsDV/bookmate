@@ -618,6 +618,7 @@ class CalendarManager extends HTMLElement {
 			chunk.classList.remove('fc-toolbar-chunk--view-switch');
 			chunk.removeAttribute('data-calendar-nav');
 			chunk.removeAttribute('data-calendar-view-switch');
+			chunk.removeAttribute('data-calendar-title');
 			for (const group of chunk.querySelectorAll<HTMLElement>('.fc-button-group')) {
 				group.classList.remove('fc-button-group--segmented');
 			}
@@ -627,6 +628,9 @@ class CalendarManager extends HTMLElement {
 			chunk.querySelector('.fc-prev-button, .fc-next-button, .fc-today-button')
 		);
 		navChunk?.setAttribute('data-calendar-nav', 'true');
+
+		const titleChunk = chunks.find((chunk) => chunk.querySelector('.fc-toolbar-title'));
+		titleChunk?.setAttribute('data-calendar-title', 'true');
 
 		const viewChunk = chunks[chunks.length - 1];
 		if (!viewChunk) return;
@@ -1350,13 +1354,18 @@ class CalendarManager extends HTMLElement {
 
 	private handleAppointmentVoiceSuccess = (event: Event) => {
 		const customEvent = event as CustomEvent<StoredAppointmentAiDraft>;
-		const draft = customEvent.detail?.draft;
-		if (!draft) return;
+		const stored = customEvent.detail;
+		if (!stored?.draft) return;
 
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return;
 
-		requiredNodes.appointmentModal.openCreateWithAiDraft(draft, {
+		if (stored.inlineFill && Boolean(document.querySelector<HTMLDialogElement>('[data-appointment-modal]')?.open)) {
+			requiredNodes.appointmentModal.fillFormFromAiDraft(stored.draft);
+			return;
+		}
+
+		requiredNodes.appointmentModal.openCreateWithAiDraft(stored.draft, {
 			professionalId: this.getScheduleProfessionalId(),
 			locationId: toPositiveInt(this.locationFilter?.value, 0),
 		});

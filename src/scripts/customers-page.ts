@@ -4,6 +4,7 @@ import type {
 	CustomerProfile,
 	CustomerTopService,
 } from '../lib/customers';
+import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 import {
 	destroySearchableSelect,
 	ensureSearchableSelect,
@@ -657,6 +658,16 @@ class CustomerManager extends HTMLElement {
 		);
 	}
 
+	private formatCustomerPhone(rawValue: string) {
+		const value = String(rawValue || '').trim();
+		if (!value) return 'Sin teléfono';
+
+		const parsed = parseParaguayMobilePhone(value);
+		if (parsed.isValid) return parsed.pretty;
+
+		return value;
+	}
+
 	private renderCustomers(customers: Customer[]) {
 		if (!this.gridNode) return;
 
@@ -680,11 +691,19 @@ class CustomerManager extends HTMLElement {
 			iconWrap.className = 'customer-card-icon';
 			iconWrap.innerHTML = '<span class="material-symbols-rounded text-[1.25rem]">person</span>';
 
+			const body = document.createElement('div');
+			body.className = 'customer-card-body min-w-0';
+
 			const name = document.createElement('h3');
 			name.className = 'customer-card-title min-w-0 truncate';
 			name.textContent = customer.full_name || `Cliente #${customer.id_customer}`;
 
-			row.append(iconWrap, name);
+			const phone = document.createElement('p');
+			phone.className = 'customer-card-phone min-w-0 truncate';
+			phone.textContent = this.formatCustomerPhone(customer.phone_number);
+
+			body.append(name, phone);
+			row.append(iconWrap, body);
 			article.append(row);
 			fragment.appendChild(article);
 		}

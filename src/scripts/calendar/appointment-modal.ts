@@ -928,6 +928,7 @@ class AppointmentModal extends HTMLElement {
 			this.resetFormValues();
 			this.mode = 'create';
 			this.editingAppointmentId = 0;
+			this.syncDeleteButtonVisibility();
 		}, 140);
 	};
 
@@ -950,7 +951,6 @@ class AppointmentModal extends HTMLElement {
 		this.modalStatusReadonlyWrap?.classList.add('hidden');
 		this.submitButton?.classList.remove('hidden');
 		if (this.submitButton) this.submitButton.disabled = false;
-		this.deleteButton?.classList.remove('hidden');
 
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return;
@@ -1003,8 +1003,7 @@ class AppointmentModal extends HTMLElement {
 		this.modalStatusReadonlyWrap?.classList.remove('hidden');
 		this.submitButton?.classList.add('hidden');
 		if (this.submitButton) this.submitButton.disabled = true;
-		this.deleteButton?.classList.add('hidden');
-		if (this.deleteButton) this.deleteButton.disabled = true;
+		this.syncDeleteButtonVisibility();
 
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return;
@@ -1020,6 +1019,15 @@ class AppointmentModal extends HTMLElement {
 		this.hideScheduleMisalignedBlock();
 	}
 
+	private syncDeleteButtonVisibility() {
+		if (!this.deleteButton) return;
+
+		const showDelete = this.mode === 'edit' && !this.isImmutableReadOnly;
+		this.deleteButton.classList.toggle('hidden', !showDelete);
+		this.deleteButton.disabled = !showDelete;
+		this.modalFooter?.setAttribute('data-mode', this.mode);
+	}
+
 	setCreateMode() {
 		this.clearImmutableReadOnlyMode();
 		this.mode = 'create';
@@ -1030,8 +1038,7 @@ class AppointmentModal extends HTMLElement {
 		}
 		if (this.submitLabel) this.submitLabel.textContent = 'Crear cita';
 		if (this.submitIcon) this.submitIcon.textContent = 'check';
-		this.deleteButton?.classList.add('hidden');
-		if (this.deleteButton) this.deleteButton.disabled = true;
+		this.syncDeleteButtonVisibility();
 		if (this.statusInput) {
 			this.statusInput.value = 'CONFIRMADO';
 			this.statusInput.disabled = true;
@@ -1051,8 +1058,7 @@ class AppointmentModal extends HTMLElement {
 		}
 		if (this.submitLabel) this.submitLabel.textContent = 'Guardar cambios';
 		if (this.submitIcon) this.submitIcon.textContent = 'save';
-		this.deleteButton?.classList.remove('hidden');
-		if (this.deleteButton) this.deleteButton.disabled = false;
+		this.syncDeleteButtonVisibility();
 		if (this.statusInput) this.statusInput.disabled = false;
 		this.modalStatusWrap?.removeAttribute('hidden');
 		this.modalStatusWrap?.classList.remove('hidden');

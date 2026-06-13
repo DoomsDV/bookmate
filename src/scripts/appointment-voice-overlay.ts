@@ -21,6 +21,15 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#visualizer: AppointmentVoiceVisualizer | null = null;
 	#audioContext: AudioContext | null = null;
 	#analyser: AnalyserNode | null = null;
+	#statusFadeTimer: number | null = null;
+
+	private static readonly STATUS_LABELS: Record<VoiceUiState, string> = {
+		idle: 'Toca el micrófono y describe la cita.',
+		recording: 'Escuchando… describe la cita.',
+		collapsing: '',
+		processing: '',
+		success: 'Formulario listo. Revisá los datos precargados.',
+	};
 
 	connectedCallback() {
 		if (this.#bound) return;
@@ -55,12 +64,38 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			this.handleContinue,
 			{ signal }
 		);
+		this.querySelector('[data-voice-overlay-discard]')?.addEventListener(
+			'click',
+			this.handleDiscardRecording,
+			{ signal }
+		);
+
+		const shell = this.querySelector<HTMLDialogElement>('[data-voice-overlay-shell]');
+		shell?.addEventListener(
+			'click',
+			(event) => {
+				if (event.target === shell) this.close();
+			},
+			{ signal }
+		);
+		shell?.addEventListener(
+			'cancel',
+			(event) => {
+				event.preventDefault();
+				this.close();
+			},
+			{ signal }
+		);
 	}
 
 	disconnectedCallback() {
 		this.#bound = false;
 		this.#listeners?.abort();
 		this.#listeners = null;
+		if (this.#statusFadeTimer) {
+			window.clearTimeout(this.#statusFadeTimer);
+			this.#statusFadeTimer = null;
+		}
 		this.stopRecording(false);
 		this.teardownAudioAnalysis();
 		this.#visualizer?.destroy();
@@ -73,18 +108,16 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.setError('');
 		this.setTranscript('');
 		this.#visualizer?.setMode('idle');
-		const shell = this.querySelector<HTMLElement>('[data-voice-overlay-shell]');
-		shell?.classList.remove('hidden');
-		shell?.setAttribute('aria-hidden', 'false');
+		const shell = this.querySelector<HTMLDialogElement>('[data-voice-overlay-shell]');
+		if (shell && !shell.open) shell.showModal();
 	}
 
 	close() {
 		this.stopRecording(false);
 		this.teardownAudioAnalysis();
 		this.#visualizer?.setMode('off');
-		const shell = this.querySelector<HTMLElement>('[data-voice-overlay-shell]');
-		shell?.classList.add('hidden');
-		shell?.setAttribute('aria-hidden', 'true');
+		const shell = this.querySelector<HTMLDialogElement>('[data-voice-overlay-shell]');
+		if (shell?.open) shell.close();
 	}
 
 	private handleDocumentClick = (event: Event) => {
@@ -107,11 +140,58 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		void this.startRecording();
 	};
 
+	private handleDiscardRecording = () => {
+		void this.stopRecording(false);
+	};
+
+	private updateStatus(state: VoiceUiState) {
+		const statusNode = this.querySelector<HTMLElement>('[data-voice-overlay-status]');
+		if (!statusNode) return;
+
+		const nextText = AppointmentVoiceOverlay.STATUS_LABELS[state];
+		const shouldHide = state === 'collapsing' || state === 'processing';
+
+		if (this.#statusFadeTimer) {
+			window.clearTimeout(this.#statusFadeTimer);
+			this.#statusFadeTimer = null;
+		}
+
+		if (shouldHide) {
+			if (statusNode.classList.contains('hidden')) return;
+			statusNode.classList.add('is-leaving');
+			this.#statusFadeTimer = window.setTimeout(() => {
+				statusNode.classList.add('hidden');
+				statusNode.classList.remove('is-leaving', 'is-entering');
+				this.#statusFadeTimer = null;
+			}, 180);
+			return;
+		}
+
+		statusNode.classList.remove('hidden');
+
+		if (statusNode.textContent === nextText && !statusNode.classList.contains('is-leaving')) {
+			return;
+		}
+
+		statusNode.classList.add('is-leaving');
+		this.#statusFadeTimer = window.setTimeout(() => {
+			statusNode.textContent = nextText;
+			statusNode.classList.remove('is-leaving');
+			statusNode.classList.add('is-entering');
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => {
+					statusNode.classList.remove('is-entering');
+					this.#statusFadeTimer = null;
+				});
+			});
+		}, 180);
+	}
+
 	private setState(state: VoiceUiState) {
 		this.dataset.voiceState = state;
 		const recordButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-record]');
+		const discardButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-discard]');
 		const actionsNode = this.querySelector<HTMLElement>('[data-voice-overlay-actions]');
-		const statusNode = this.querySelector<HTMLElement>('[data-voice-overlay-status]');
 		const processingNode = this.querySelector<HTMLElement>('[data-voice-overlay-processing]');
 		const stageNode = this.querySelector<HTMLElement>('[data-voice-overlay-stage]');
 
@@ -128,21 +208,13 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			);
 		}
 
+		discardButton?.classList.toggle('hidden', state !== 'recording');
+
 		stageNode?.classList.toggle('is-collapsing', state === 'collapsing');
 
 		actionsNode?.classList.add('hidden');
 
-		if (statusNode) {
-			const labels: Record<VoiceUiState, string> = {
-				idle: 'Toca el micrófono y describe la cita.',
-				recording: 'Escuchando… describe la cita.',
-				collapsing: '',
-				processing: '',
-				success: 'Formulario listo. Revisá los datos precargados.',
-			};
-			statusNode.textContent = labels[state];
-			statusNode.classList.toggle('hidden', state === 'collapsing' || state === 'processing');
-		}
+		this.updateStatus(state);
 
 		processingNode?.classList.toggle('hidden', state !== 'processing');
 
@@ -328,13 +400,15 @@ class AppointmentVoiceOverlay extends HTMLElement {
 
 			const transcript = String(payload.data.transcript || '').trim();
 			const draft = payload.data.draft;
-			this.setTranscript(transcript);
-			this.setState('success');
+			const inlineFill =
+				this.#mode === 'inline' &&
+				Boolean(document.querySelector<HTMLDialogElement>('[data-appointment-modal]')?.open);
 
 			const stored: StoredAppointmentAiDraft = {
 				draft,
 				transcript,
 				ts: Date.now(),
+				inlineFill,
 			};
 			sessionStorage.setItem(APPOINTMENT_AI_DRAFT_STORAGE_KEY, JSON.stringify(stored));
 
@@ -345,6 +419,13 @@ class AppointmentVoiceOverlay extends HTMLElement {
 				})
 			);
 
+			if (inlineFill) {
+				this.close();
+				return;
+			}
+
+			this.setTranscript(transcript);
+			this.setState('success');
 			window.setTimeout(() => this.close(), 400);
 		} catch (error) {
 			this.setError(
