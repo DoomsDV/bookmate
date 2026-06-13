@@ -663,8 +663,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 	.customer-card-body {
 		display: grid;
-		gap: 0.85rem;
+		gap: 0.15rem;
 		min-width: 0;
+		flex: 1;
 	}
 
 	.customer-card-title {
@@ -676,6 +677,17 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		font-weight: 760;
 		line-height: 1.3;
 		color: var(--on-surface);
+	}
+
+	.customer-card-phone {
+		margin: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.84rem;
+		font-weight: 600;
+		line-height: 1.25;
+		color: var(--on-surface-variant);
 	}
 
 	.customer-card-metrics {

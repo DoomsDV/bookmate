@@ -11,6 +11,7 @@ type AppointmentModalApi = {
 		draft: import('../lib/appointment-ai-types').AppointmentAiDraft,
 		context?: import('./calendar/appointment-modal').OpenCreateContext
 	) => void;
+	fillFormFromAiDraft: (draft: import('../lib/appointment-ai-types').AppointmentAiDraft) => void;
 };
 
 const hasAppointmentModalApi = (value: unknown): value is AppointmentModalApi => {
@@ -19,7 +20,8 @@ const hasAppointmentModalApi = (value: unknown): value is AppointmentModalApi =>
 	return (
 		typeof source.setClient === 'function' &&
 		typeof source.configure === 'function' &&
-		typeof source.openCreateWithAiDraft === 'function'
+		typeof source.openCreateWithAiDraft === 'function' &&
+		typeof source.fillFormFromAiDraft === 'function'
 	);
 };
 
@@ -149,7 +151,7 @@ class AppointmentVoiceHost extends HTMLElement {
 
 			this.#ready = true;
 			if (this.#pendingDraft?.draft) {
-				this.openDraftModal(modal, this.#pendingDraft);
+				this.applyVoiceDraft(modal, this.#pendingDraft);
 				this.#pendingDraft = null;
 			}
 		} catch (error) {
@@ -157,7 +159,16 @@ class AppointmentVoiceHost extends HTMLElement {
 		}
 	}
 
-	private openDraftModal(modal: AppointmentModalApi, stored: StoredAppointmentAiDraft) {
+	private isAppointmentModalOpen() {
+		return Boolean(document.querySelector<HTMLDialogElement>('[data-appointment-modal]')?.open);
+	}
+
+	private applyVoiceDraft(modal: AppointmentModalApi, stored: StoredAppointmentAiDraft) {
+		if (stored.inlineFill && this.isAppointmentModalOpen()) {
+			modal.fillFormFromAiDraft(stored.draft);
+			return;
+		}
+
 		this.#redirectAfterCreate = true;
 		modal.openCreateWithAiDraft(stored.draft);
 	}
@@ -175,7 +186,7 @@ class AppointmentVoiceHost extends HTMLElement {
 			return;
 		}
 
-		this.openDraftModal(modal, stored);
+		this.applyVoiceDraft(modal, stored);
 	};
 
 	private handleAppointmentChanged = (event: Event) => {

@@ -42,4 +42,6 @@ export interface StoredAppointmentAiDraft {
 	draft: AppointmentAiDraft;
 	transcript: string;
 	ts: number;
+	/** Cuando true, el borrador se aplica al modal de cita ya abierto (sin pantalla de resumen). */
+	inlineFill?: boolean;
 }

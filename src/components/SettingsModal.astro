@@ -715,6 +715,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		type WorkspaceSettingsData,
 	} from '../lib/workspace-settings-shared';
 	import { showSettingsModalTour } from '../lib/settings-modal-tour';
+	import { destroyActiveBookmateTour } from '../lib/product-tour';
 	import {
 		disablePushNotifications,
 		enablePushNotifications,
@@ -881,6 +882,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			document.addEventListener('click', this.handleDocumentClick, { signal });
 			this.els.closeBtn?.addEventListener('click', this.closeModal, { signal });
 			this.els.modal?.addEventListener('click', this.handleBackdropClick, { signal });
+			this.els.modal?.addEventListener('close', () => destroyActiveBookmateTour(), { signal });
 			this.querySelector<HTMLButtonElement>('[data-settings-modal-tour-help]')?.addEventListener(
 				'click',
 				this.handleSettingsModalTourHelp,
@@ -1026,6 +1028,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		};
 
 		private openModal = () => {
+			destroyActiveBookmateTour();
 			this.setActiveTab('profile');
 			this.clearFeedback();
 			this.resetSecurityForm();
@@ -1122,6 +1125,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 
 		private closeModal = () => {
 			if (!this.els.modal?.open) return;
+			destroyActiveBookmateTour();
 			this.els.modal.classList.add('is-closing');
 
 			this.closingTimer = window.setTimeout(() => {
@@ -2423,8 +2427,8 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		width: 3rem;
 		height: 1.7rem;
 		border-radius: 999px;
-		background: var(--surface-variant);
-		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--on-surface-variant) 11%, var(--surface-container-low));
+		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 20%, var(--shell-border));
 		transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 	}
 
@@ -2436,9 +2440,14 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		width: 1.25rem;
 		height: 1.25rem;
 		border-radius: 50%;
-		background: #fff;
-		box-shadow: 0 1px 4px rgba(0, 0, 0, 0.22);
-		transition: transform 0.2s ease;
+		background: color-mix(in srgb, var(--surface-bright) 78%, var(--on-surface-variant) 22%);
+		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 18%, var(--shell-border));
+		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.14);
+		transition:
+			transform 0.2s ease,
+			background 0.2s ease,
+			border-color 0.2s ease,
+			box-shadow 0.2s ease;
 	}
 
 	.settings-switch__input:focus-visible + .settings-switch__track {
@@ -2452,6 +2461,9 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 
 	.settings-switch__input:checked + .settings-switch__track::after {
 		transform: translateX(1.3rem);
+		background: #fff;
+		border-color: color-mix(in srgb, var(--primary) 24%, transparent);
+		box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
 	}
 
 	.settings-switch__input:disabled + .settings-switch__track {

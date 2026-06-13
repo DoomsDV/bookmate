@@ -106,7 +106,6 @@ class ScheduleManager extends HTMLElement {
 	private plannerNode: HTMLElement | null = null;
 	private saveButton: HTMLButtonElement | null = null;
 	private saveLabel: HTMLElement | null = null;
-	private hintNode: HTMLElement | null = null;
 	private errorNode: HTMLElement | null = null;
 	private loadingNode: HTMLElement | null = null;
 
@@ -157,6 +156,14 @@ class ScheduleManager extends HTMLElement {
 	private exceptionModalErrorFeedbackNode: HTMLElement | null = null;
 	private exceptionsHelpButton: HTMLButtonElement | null = null;
 	private exceptionModalTourHelpButton: HTMLButtonElement | null = null;
+	private headerScrollRoot: HTMLElement | null = null;
+	private headerScrollHeader: HTMLElement | null = null;
+	private headerScrollHero: HTMLElement | null = null;
+	private headerCollapseThreshold = 0;
+	private headerIsCompact = false;
+	private headerScrollRaf = 0;
+	private readonly headerCompactEnterGap = 8;
+	private readonly headerCompactExitGap = 24;
 
 	connectedCallback() {
 		if (this.#bound) return;
@@ -167,7 +174,6 @@ class ScheduleManager extends HTMLElement {
 		this.plannerNode = this.querySelector<HTMLElement>('[data-weekly-planner]');
 		this.saveButton = this.querySelector<HTMLButtonElement>('[data-save-schedule]');
 		this.saveLabel = this.querySelector<HTMLElement>('[data-save-schedule-label]');
-		this.hintNode = this.querySelector<HTMLElement>('[data-professional-hint]');
 		this.errorNode = this.querySelector<HTMLElement>('[data-schedule-error]');
 		this.loadingNode = this.querySelector<HTMLElement>('[data-schedule-loading]');
 		this.templateViewNode = this.querySelector<HTMLElement>('[data-schedule-view-template]');
@@ -234,6 +240,7 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionModalBodyNode?.addEventListener('click', this.handleExceptionModalClick, { signal });
 		this.exceptionModalActionsNode?.addEventListener('click', this.handleExceptionModalActions, { signal });
 		this.addEventListener('click', this.handleScheduleRootClick, { signal });
+		this.bindHeaderScrollCompact(signal);
 
 		this.updateControlsState();
 		this.renderPlanner();
@@ -242,11 +249,108 @@ class ScheduleManager extends HTMLElement {
 
 	disconnectedCallback() {
 		this.#bound = false;
+		if (this.headerScrollRaf) {
+			cancelAnimationFrame(this.headerScrollRaf);
+			this.headerScrollRaf = 0;
+		}
 		this.#listenerController?.abort();
 		this.#listenerController = null;
 		destroySearchableSelect(this.professionalSelect);
 		this.dayNodes.clear();
 	}
+
+	private bindHeaderScrollCompact(signal: AbortSignal): void {
+		this.headerScrollHeader = this.querySelector<HTMLElement>('[data-schedule-page-header]');
+		this.headerScrollHero = this.querySelector<HTMLElement>('[data-schedule-header-hero]');
+		this.headerScrollRoot = this.querySelector('main');
+		const toolbar = this.querySelector('[data-schedule-header-toolbar]');
+		if (!this.headerScrollHeader || !this.headerScrollHero || !this.headerScrollRoot || !toolbar) return;
+
+		this.measureHeaderScrollThreshold();
+		this.headerScrollRoot.addEventListener('scroll', this.syncHeaderScrollState, { passive: true, signal });
+		window.addEventListener('resize', this.handleHeaderScrollResize, { signal });
+		signal.addEventListener('abort', () => {
+			this.setHeaderCompact(false, { compensate: false });
+		});
+	}
+
+	private handleHeaderScrollResize = (): void => {
+		this.measureHeaderScrollThreshold();
+		this.syncHeaderScrollState();
+	};
+
+	private measureHeaderScrollThreshold(): void {
+		const header = this.headerScrollHeader;
+		const hero = this.headerScrollHero;
+		const scrollRoot = this.headerScrollRoot;
+		if (!header || !hero || !scrollRoot) return;
+
+		const wasCompact = this.headerIsCompact;
+		if (wasCompact) {
+			this.setHeaderCompact(false, { compensate: false });
+		}
+
+		this.headerCollapseThreshold = Math.max(
+			0,
+			hero.getBoundingClientRect().bottom -
+				scrollRoot.getBoundingClientRect().top +
+				scrollRoot.scrollTop,
+		);
+
+		if (wasCompact && scrollRoot.scrollTop > this.headerCollapseThreshold + this.headerCompactEnterGap) {
+			this.setHeaderCompact(true, { compensate: false });
+		}
+	}
+
+	private setScrollTopInstant(root: HTMLElement, top: number): void {
+		const previous = root.style.scrollBehavior;
+		root.style.scrollBehavior = 'auto';
+		root.scrollTop = Math.max(0, top);
+		root.style.scrollBehavior = previous;
+	}
+
+	private setHeaderCompact(compact: boolean, options: { compensate?: boolean } = {}): void {
+		const header = this.headerScrollHeader;
+		const scrollRoot = this.headerScrollRoot;
+		if (!header || !scrollRoot || compact === this.headerIsCompact) return;
+
+		const compensate = options.compensate === true;
+		const heightBefore = compensate ? header.offsetHeight : 0;
+
+		header.classList.toggle('is-scrolled', compact);
+		this.headerIsCompact = compact;
+
+		if (!compensate) return;
+
+		const heightAfter = header.offsetHeight;
+		const delta = heightBefore - heightAfter;
+		if (delta !== 0) {
+			this.setScrollTopInstant(scrollRoot, scrollRoot.scrollTop - delta);
+		}
+	}
+
+	private applyHeaderScrollState = (): void => {
+		const scrollRoot = this.headerScrollRoot;
+		if (!scrollRoot) return;
+
+		const scrollTop = scrollRoot.scrollTop;
+		const enterAt = this.headerCollapseThreshold + this.headerCompactEnterGap;
+		const exitAt = Math.max(0, this.headerCollapseThreshold - this.headerCompactExitGap);
+
+		if (!this.headerIsCompact && scrollTop > enterAt) {
+			this.setHeaderCompact(true);
+		} else if (this.headerIsCompact && scrollTop <= exitAt) {
+			this.setHeaderCompact(false);
+		}
+	};
+
+	private syncHeaderScrollState = (): void => {
+		if (this.headerScrollRaf) return;
+		this.headerScrollRaf = requestAnimationFrame(() => {
+			this.headerScrollRaf = 0;
+			this.applyHeaderScrollState();
+		});
+	};
 
 	private handleScheduleRootClick = (event: MouseEvent): void => {
 		const target = event.target;
@@ -624,31 +728,38 @@ class ScheduleManager extends HTMLElement {
 				'schedule-day-card px-3.5 py-3.5 sm:px-4 sm:py-4';
 			article.dataset.dayCard = String(dayState.day_of_week);
 
-			const topRow = document.createElement('div');
-			topRow.className = 'flex items-start justify-between gap-3';
-
 			const titleWrap = document.createElement('div');
+			titleWrap.className = 'min-w-0';
+
+			const headLine = document.createElement('div');
+			headLine.className = 'schedule-day-card__headline';
+
 			const title = document.createElement('h3');
-			title.className = 'text-[1.08rem] font-extrabold leading-tight text-[color:var(--on-surface)]';
+			title.className =
+				'schedule-day-card__title text-[1.08rem] font-extrabold leading-tight text-[color:var(--on-surface)]';
 			title.textContent = dayState.name;
 
 			const summary = document.createElement('p');
 			summary.className = 'mt-0.5 text-xs font-medium text-[color:var(--on-surface-variant)]';
-			titleWrap.append(title, summary);
 
 			const toggleLabel = document.createElement('label');
-			toggleLabel.className =
-				'inline-flex items-center gap-2 text-sm font-semibold text-[color:var(--on-surface-variant)]';
+			toggleLabel.className = 'settings-switch schedule-day-switch shrink-0 inline-flex items-center gap-2';
 			const toggleInput = document.createElement('input');
 			toggleInput.type = 'checkbox';
 			toggleInput.dataset.dayToggle = 'true';
 			toggleInput.dataset.dayOfWeek = String(dayState.day_of_week);
-			toggleInput.className = 'schedule-day-toggle disabled:cursor-not-allowed';
+			toggleInput.className = 'settings-switch__input sr-only schedule-day-toggle';
+			const toggleTrack = document.createElement('span');
+			toggleTrack.className = 'settings-switch__track';
+			toggleTrack.setAttribute('aria-hidden', 'true');
 			const toggleText = document.createElement('span');
+			toggleText.className =
+				'schedule-day-switch__label text-[0.82rem] font-bold text-[color:var(--on-surface-variant)]';
 			toggleText.textContent = 'Habilitado';
-			toggleLabel.append(toggleInput, toggleText);
+			toggleLabel.append(toggleInput, toggleTrack, toggleText);
 
-			topRow.append(titleWrap, toggleLabel);
+			headLine.append(title, toggleLabel);
+			titleWrap.append(headLine, summary);
 
 			const slotSection = document.createElement('div');
 			slotSection.className = 'mt-3 grid gap-3';
@@ -671,7 +782,7 @@ class ScheduleManager extends HTMLElement {
 				slotSection.appendChild(addWrap);
 			}
 
-			article.append(topRow, slotSection);
+			article.append(titleWrap, slotSection);
 			fragment.appendChild(article);
 
 			this.dayNodes.set(dayState.day_of_week, {
@@ -795,6 +906,7 @@ class ScheduleManager extends HTMLElement {
 
 		for (const toggleInput of this.plannerNode.querySelectorAll<HTMLInputElement>('[data-day-toggle]')) {
 			toggleInput.disabled = blocked;
+			toggleInput.closest('.settings-switch')?.classList.toggle('is-disabled', blocked);
 		}
 
 		for (const select of this.plannerNode.querySelectorAll<HTMLSelectElement>('[data-slot-location]')) {
@@ -845,21 +957,6 @@ class ScheduleManager extends HTMLElement {
 		}
 
 		this.updateViewVisibility();
-
-		if (this.hintNode) {
-			if (!this.canEdit) {
-				this.hintNode.textContent = '';
-				this.hintNode.classList.add('hidden');
-			} else {
-				this.hintNode.classList.remove('hidden');
-				this.hintNode.textContent =
-					this.selectedProfessionalId > 0
-						? this.isDirty
-							? 'Hay cambios pendientes por guardar.'
-							: 'Selecciona turnos por dia y guarda para sincronizar.'
-						: 'Selecciona una persona para ver o editar su agenda semanal.';
-			}
-		}
 
 		this.updatePlannerInteractivity();
 	}
@@ -1279,6 +1376,8 @@ class ScheduleManager extends HTMLElement {
 		this.templateViewNode?.classList.toggle('hidden', this.activeView !== 'template');
 		this.exceptionsViewNode?.classList.toggle('hidden', this.activeView !== 'exceptions');
 		this.saveButton?.classList.toggle('hidden', this.activeView !== 'template');
+
+		requestAnimationFrame(() => this.measureHeaderScrollThreshold());
 
 		if (this.loadingNode) {
 			const showLoading =

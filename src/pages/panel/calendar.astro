@@ -160,40 +160,42 @@ const googleErrorMessage = hasGoogleError
 												)
 											}
 
-											<button
-												type="button"
-												class="calendar-tour-help calendar-header-toolbar__guide calendar-refresh-btn inline-flex w-full items-center justify-center gap-2 sm:w-auto"
-												data-calendar-tour-help
-												aria-label="Guía del calendario de citas"
-											>
-												<span class="material-symbols-rounded text-[1.12rem]">help</span>
-												<span class="calendar-tour-help__label hidden sm:inline">Guía</span>
-											</button>
-
-											<button
-												type="button"
-												class="calendar-refresh-btn calendar-header-toolbar__refresh w-full sm:w-auto inline-flex items-center justify-center gap-2"
-												data-refresh-calendar
-											>
-												<span class="material-symbols-rounded text-[1.12rem]">refresh</span>
-												<span>Refrescar</span>
-											</button>
-
-											<button
-												type="button"
-												class="calendar-create-btn calendar-header-toolbar__create w-full sm:w-auto inline-flex items-center justify-center gap-2"
-												data-open-appointment-modal
-											>
-												<svg
-													class="calendar-create-btn-icon w-[18px] h-[18px]"
-													viewBox="0 0 24 24"
-													fill="none"
-													aria-hidden="true"
+											<div class="calendar-header-toolbar__actions">
+												<button
+													type="button"
+													class="calendar-refresh-btn calendar-header-toolbar__refresh inline-flex items-center justify-center gap-2"
+													data-refresh-calendar
 												>
-													<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
-												</svg>
-												<span>Crear cita</span>
-											</button>
+													<span class="material-symbols-rounded text-[1.12rem]">refresh</span>
+													<span class="calendar-refresh-btn__label">Refrescar</span>
+												</button>
+
+												<button
+													type="button"
+													class="calendar-tour-help calendar-header-toolbar__guide inline-flex shrink-0 items-center justify-center gap-2"
+													data-calendar-tour-help
+													aria-label="Guía del calendario de citas"
+												>
+													<span class="material-symbols-rounded text-[1.12rem]">help</span>
+													<span class="calendar-tour-help__label hidden sm:inline">Guía</span>
+												</button>
+
+												<button
+													type="button"
+													class="calendar-create-btn calendar-header-toolbar__create inline-flex items-center justify-center gap-2"
+													data-open-appointment-modal
+												>
+													<svg
+														class="calendar-create-btn-icon w-[18px] h-[18px]"
+														viewBox="0 0 24 24"
+														fill="none"
+														aria-hidden="true"
+													>
+														<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+													</svg>
+													<span class="calendar-create-btn__label">Crear cita</span>
+												</button>
+											</div>
 										</div>
 									</header>
 
@@ -913,14 +915,12 @@ const googleErrorMessage = hasGoogleError
 
 	.calendar-page-header {
 		display: grid;
-		gap: 0.65rem 0.75rem;
-		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0.65rem;
 		grid-template-areas:
-			'intro guide'
-			'create create'
-			'refresh refresh'
-			'google google';
-		align-items: start;
+			'intro'
+			'actions'
+			'google';
+		align-items: stretch;
 	}
 
 	.calendar-page-header__intro {
@@ -931,22 +931,91 @@ const googleErrorMessage = hasGoogleError
 		display: contents;
 	}
 
-	.calendar-header-toolbar__create {
-		grid-area: create;
+	.calendar-header-toolbar__actions {
+		grid-area: actions;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: stretch;
+		gap: 0.5rem;
+		min-width: 0;
 	}
 
+	.calendar-header-toolbar__create,
 	.calendar-header-toolbar__refresh {
-		grid-area: refresh;
+		flex: 1 1 calc(50% - 1.4rem);
+		min-width: 0;
+	}
+
+	.calendar-header-toolbar__guide {
+		flex: 0 0 auto;
+		align-self: stretch;
 	}
 
 	.calendar-header-toolbar__google {
 		grid-area: google;
 	}
 
-	.calendar-header-toolbar__guide {
-		grid-area: guide;
-		align-self: start;
-		justify-self: end;
+	.calendar-tour-help {
+		width: 2.35rem;
+		height: 2.35rem;
+		padding: 0;
+		border-radius: 999px;
+		border: 1px solid var(--calendar-outline-strong);
+		background: var(--calendar-toolbar-surface);
+		color: var(--on-surface-variant);
+		transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+	}
+
+	.calendar-tour-help:hover {
+		background: color-mix(in srgb, var(--calendar-toolbar-surface) 88%, var(--surface-bright) 12%);
+		color: var(--on-surface);
+	}
+
+	.calendar-tour-help:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+		outline-offset: 3px;
+	}
+
+	@media (max-width: 639px) {
+		.calendar-header-toolbar__create {
+			order: -1;
+			flex: 1 1 100%;
+		}
+
+		.calendar-header-toolbar__refresh {
+			flex: 1 1 0;
+		}
+
+		.calendar-create-btn,
+		.calendar-refresh-btn {
+			width: 100%;
+			min-height: 2.75rem;
+			padding: 0.62rem 0.85rem;
+			font-size: 0.84rem;
+			line-height: 1.15;
+			white-space: nowrap;
+		}
+
+		.calendar-create-btn-icon,
+		.calendar-refresh-btn .material-symbols-rounded {
+			flex-shrink: 0;
+		}
+
+		.calendar-tour-help {
+			align-self: center;
+			width: 2.75rem;
+			height: 2.75rem;
+		}
+	}
+
+	@media (max-width: 380px) {
+		.calendar-refresh-btn__label {
+			display: none;
+		}
+
+		.calendar-refresh-btn {
+			padding-inline: 0.75rem;
+		}
 	}
 
 	@media (min-width: 640px) {
@@ -972,8 +1041,31 @@ const googleErrorMessage = hasGoogleError
 			gap: 0.5rem;
 		}
 
+		.calendar-header-toolbar__actions {
+			display: flex;
+			flex-wrap: wrap;
+			align-items: center;
+			gap: 0.5rem;
+		}
+
+		.calendar-header-toolbar__create,
+		.calendar-header-toolbar__refresh {
+			flex: 0 1 auto;
+			min-width: auto;
+			order: unset;
+		}
+
 		.calendar-header-toolbar__guide {
-			justify-self: auto;
+			align-self: auto;
+		}
+
+		.calendar-tour-help {
+			width: auto;
+			height: auto;
+			padding: 0.72rem 1.05rem;
+			font-size: 0.9rem;
+			font-weight: 760;
+			color: var(--on-surface);
 		}
 	}
 
@@ -1219,6 +1311,11 @@ const googleErrorMessage = hasGoogleError
 		transition: background-color 140ms ease, border-color 140ms ease;
 	}
 
+	.appointment-delete-btn.hidden,
+	[data-appointment-modal-footer][data-mode='create'] .appointment-delete-btn {
+		display: none !important;
+	}
+
 	.appointment-delete-btn:hover {
 		border-color: rgba(239, 68, 68, 0.72);
 		background: rgba(239, 68, 68, 0.1);
@@ -1410,10 +1507,17 @@ const googleErrorMessage = hasGoogleError
 			margin-left: 0;
 		}
 		
+		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title] {
+			justify-content: center;
+			width: 100%;
+		}
+
 		[data-calendar-root] .fc .fc-toolbar-title {
+			width: 100%;
 			font-size: 1.06rem;
 			line-height: 1.2;
 			margin: 0;
+			text-align: center;
 		}
 
 		[data-calendar-root] .fc .fc-button {
@@ -1421,14 +1525,39 @@ const googleErrorMessage = hasGoogleError
 			font-size: 0.83rem;
 		}
 
+		[data-calendar-root] .fc .fc-col-header-cell-cushion {
+			padding: 0.25rem 0.1rem !important;
+			text-align: center;
+		}
+
+		[data-calendar-root] .custom-cal-header {
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 0.06rem;
+			line-height: 1.05;
+		}
+
 		[data-calendar-root] .cal-day-name {
-			font-size: 0.7rem;
+			font-size: 0.62rem;
+			font-weight: 700;
+			letter-spacing: 0.01em;
 		}
 
 		[data-calendar-root] .cal-day-number {
-			width: 2rem;
-			height: 2rem;
-			font-size: 1rem;
+			width: 1.3rem;
+			height: 1.3rem;
+			font-size: 0.74rem;
+			font-weight: 800;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+		}
+
+		[data-calendar-root] .fc-day-today .cal-day-number {
+			width: 1.3rem;
+			height: 1.3rem;
+			font-size: 0.72rem;
 		}
 
 		[data-calendar-root] .fc .fc-event {
