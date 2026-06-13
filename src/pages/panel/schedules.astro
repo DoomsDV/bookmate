@@ -36,80 +36,83 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 								initialLoadError ? (
 									<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
 								) : (
-									<div class="grid gap-4 sm:gap-6">
-										<header class="schedule-page-header" data-schedule-page-header>
-											<div class="schedule-page-header__hero" data-schedule-header-hero>
-												<div class="schedule-page-header__intro grid gap-1">
-													<h1 class="text-[1.3rem] font-extrabold text-(--on-surface)">
-														Horarios y disponibilidad
-													</h1>
-													<p class="text-[0.95rem] text-(--on-surface-variant) leading-relaxed">
-														{
-															isProfessional
-																? 'Consulta la plantilla semanal y las excepciones del calendario.'
-																: 'Plantilla semanal recurrente y excepciones puntuales por fecha.'
-														}
-													</p>
-												</div>
+									<div class="grid gap-4 sm:gap-6" data-schedule-page-header>
+										<div class="schedule-page-header__hero" data-schedule-header-hero>
+											<div class="schedule-page-header__intro grid gap-1">
+												<h1 class="text-[1.3rem] font-extrabold text-(--on-surface)">
+													Horarios y disponibilidad
+												</h1>
+												<p class="text-[0.95rem] text-(--on-surface-variant) leading-relaxed">
+													{
+														isProfessional
+															? 'Consulta la plantilla semanal y las excepciones del calendario.'
+															: 'Plantilla semanal recurrente y excepciones puntuales por fecha.'
+													}
+												</p>
 											</div>
+										</div>
 
-											{
-												isProfessional ? (
-													<select
-														data-professional-select
-														hidden
-														class="hidden"
-														aria-hidden="true"
-														tabindex="-1"
-													></select>
-												) : (
-													<div
-														class="schedule-page-header__toolbar"
-														data-schedule-header-toolbar
-													>
-														<div
-															class="schedule-page-header__professional grid min-w-0 flex-1 gap-3 sm:gap-4"
-															data-schedule-professional-field
-														>
-															<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-																<span class="inline-flex items-center gap-1">
-																	Profesional
-																	<span class="text-rose-500">*</span>
-																</span>
-																<select
-																	data-professional-select
-																	class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
-																>
-																	<option value="">Selecciona un profesional</option>
-																</select>
-															</label>
-														</div>
-														{
-															canManageSchedules && (
-																<button
-																	type="button"
-																	class="schedule-save-btn schedule-page-header__save inline-flex shrink-0 items-center justify-center gap-2 self-end rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold transition focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none"
-																	data-save-schedule
-																>
-																	<span class="material-symbols-rounded text-[1.2rem]">save</span>
-																	<span data-save-schedule-label>Guardar horarios</span>
-																</button>
-															)
-														}
-													</div>
-												)
-											}
-
-											<div class="schedule-error-anchor" data-schedule-error-anchor>
-												<div
-													data-schedule-error
-													class="schedule-error-banner hidden"
-													role="alert"
-													aria-live="assertive"
+										<div
+											class="schedule-page-header__sticky-bar"
+											data-schedule-header-sticky
+										>
+										{
+											isProfessional ? (
+												<select
+													data-professional-select
 													hidden
-												></div>
-											</div>
-										</header>
+													class="hidden"
+													aria-hidden="true"
+													tabindex="-1"
+												></select>
+											) : (
+												<div
+													class="schedule-page-header__toolbar"
+													data-schedule-header-toolbar
+												>
+													<div
+														class="schedule-page-header__professional relative grid min-w-0 flex-1 gap-3 sm:gap-4"
+														data-schedule-professional-field
+													>
+														<label class="schedule-professional-select-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+															<span class="inline-flex items-center gap-1">
+																Profesional
+																<span class="text-rose-500">*</span>
+															</span>
+															<select
+																data-professional-select
+																class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+															>
+																<option value="">Selecciona un profesional</option>
+															</select>
+														</label>
+													</div>
+													{
+														canManageSchedules && (
+															<button
+																type="button"
+																class="schedule-save-btn schedule-page-header__save inline-flex shrink-0 items-center justify-center gap-2 self-end rounded-2xl px-5 py-3 text-[0.95rem] font-extrabold transition focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright) disabled:opacity-60 disabled:pointer-events-none"
+																data-save-schedule
+															>
+																<span class="material-symbols-rounded text-[1.2rem]">save</span>
+																<span data-save-schedule-label>Guardar horarios</span>
+															</button>
+														)
+													}
+												</div>
+											)
+										}
+
+										<div class="schedule-error-anchor" data-schedule-error-anchor>
+											<div
+												data-schedule-error
+												class="schedule-error-banner hidden"
+												role="alert"
+												aria-live="assertive"
+												hidden
+											></div>
+										</div>
+										</div>
 
 										<div class="flex flex-wrap items-center gap-2 sm:gap-3">
 											<div data-schedule-tabs role="tablist" class="min-w-0 flex-1">
@@ -435,48 +438,60 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		display: none !important;
 	}
 
-	.schedule-page-header {
-		position: relative;
-		display: grid;
-		grid-template-areas:
-			'hero'
-			'toolbar';
-		gap: 0.75rem;
-		margin: 0 -0.25rem;
-		padding: 0.75rem 0.25rem 0.65rem;
-		transition:
-			gap 240ms ease,
-			padding 240ms ease,
-			box-shadow 240ms ease;
-	}
-
 	.schedule-page-header__hero {
-		grid-area: hero;
 		min-width: 0;
-		overflow: hidden;
-		max-height: 8rem;
-		opacity: 1;
-		transform: translateY(0);
-		transition:
-			max-height 260ms ease,
-			opacity 220ms ease,
-			transform 220ms ease;
+		padding: 0.75rem 0.25rem 0;
+		margin: 0 -0.25rem;
 	}
 
 	.schedule-page-header__intro {
 		min-width: 0;
 	}
 
+	.schedule-page-header__sticky-bar {
+		position: sticky;
+		top: 0;
+		z-index: 20;
+		margin: 0 -0.25rem;
+		padding: 0 0.25rem 0.65rem;
+		background: var(--page-background);
+		transition: box-shadow 240ms ease;
+	}
+
+	.schedule-page-header__sticky-bar.is-scrolled {
+		box-shadow: 0 1px 0 color-mix(in srgb, var(--shell-border) 45%, transparent);
+	}
+
 	.schedule-page-header__toolbar {
-		grid-area: toolbar;
 		display: flex;
 		align-items: end;
 		gap: 0.75rem;
 		min-width: 0;
+		overflow: visible;
 	}
 
 	.schedule-page-header__professional {
 		min-width: 0;
+		overflow: visible;
+	}
+
+	.schedule-professional-select-field {
+		position: relative;
+		min-width: 0;
+	}
+
+	.schedule-page-header__professional .bookmate-searchable-select.ts-wrapper {
+		position: relative;
+		width: 100%;
+	}
+
+	.schedule-page-header__professional .bookmate-searchable-select.ts-wrapper .ts-dropdown {
+		position: absolute;
+		top: calc(100% + 0.25rem);
+		left: 0;
+		right: 0;
+		width: 100%;
+		z-index: 60;
 	}
 
 	.schedule-page-header__save {
@@ -487,25 +502,8 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		display: none !important;
 	}
 
-	.schedule-page-header.is-scrolled {
-		position: sticky;
-		top: 0;
-		z-index: 20;
-		gap: 0;
-		background: var(--page-background);
-		box-shadow: 0 1px 0 color-mix(in srgb, var(--shell-border) 45%, transparent);
-	}
-
-	.schedule-page-header.is-scrolled .schedule-page-header__hero {
-		max-height: 0;
-		opacity: 0;
-		transform: translateY(-0.35rem);
-		pointer-events: none;
-	}
-
 	@media (prefers-reduced-motion: reduce) {
-		.schedule-page-header,
-		.schedule-page-header__hero {
+		.schedule-page-header__sticky-bar {
 			transition: none;
 		}
 	}
@@ -521,17 +519,12 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	@media (min-width: 640px) {
-		.schedule-page-header {
-			gap: 1rem;
+		.schedule-page-header__hero {
 			padding-top: 1rem;
-		}
-
-		.schedule-page-header.is-scrolled {
-			padding-top: 0.75rem;
 		}
 	}
 
-	html[data-theme='dark'] .schedule-page-header.is-scrolled {
+	html[data-theme='dark'] .schedule-page-header__sticky-bar.is-scrolled {
 		background: var(--page-background);
 		box-shadow: 0 1px 0 color-mix(in srgb, var(--shell-border) 65%, transparent);
 	}

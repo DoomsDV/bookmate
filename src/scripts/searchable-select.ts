@@ -8,6 +8,7 @@ type SearchableSelectOptions = {
 	placeholder?: string;
 	maxOptions?: number;
 	closeAfterSelect?: boolean;
+	dropdownParent?: 'body' | HTMLElement;
 };
 
 export const getSearchableSelect = (select: HTMLSelectElement | null | undefined) =>
@@ -33,6 +34,8 @@ export const ensureSearchableSelect = (
 		closeAfterSelect: options.closeAfterSelect ?? true,
 		placeholder: options.placeholder,
 		controlInput: '<input type="text" autocomplete="off" />',
+		dropdownParent: options.dropdownParent ?? null,
+		dropdownClass: 'bookmate-searchable-select-dropdown',
 	});
 
 	instance.on('dropdown_open', () => {

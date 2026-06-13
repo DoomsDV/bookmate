@@ -157,13 +157,10 @@ class ScheduleManager extends HTMLElement {
 	private exceptionsHelpButton: HTMLButtonElement | null = null;
 	private exceptionModalTourHelpButton: HTMLButtonElement | null = null;
 	private headerScrollRoot: HTMLElement | null = null;
-	private headerScrollHeader: HTMLElement | null = null;
 	private headerScrollHero: HTMLElement | null = null;
-	private headerCollapseThreshold = 0;
+	private headerStickyBar: HTMLElement | null = null;
+	private headerHeroObserver: IntersectionObserver | null = null;
 	private headerIsCompact = false;
-	private headerScrollRaf = 0;
-	private readonly headerCompactEnterGap = 8;
-	private readonly headerCompactExitGap = 24;
 
 	connectedCallback() {
 		if (this.#bound) return;
@@ -249,10 +246,8 @@ class ScheduleManager extends HTMLElement {
 
 	disconnectedCallback() {
 		this.#bound = false;
-		if (this.headerScrollRaf) {
-			cancelAnimationFrame(this.headerScrollRaf);
-			this.headerScrollRaf = 0;
-		}
+		this.headerHeroObserver?.disconnect();
+		this.headerHeroObserver = null;
 		this.#listenerController?.abort();
 		this.#listenerController = null;
 		destroySearchableSelect(this.professionalSelect);
@@ -260,97 +255,38 @@ class ScheduleManager extends HTMLElement {
 	}
 
 	private bindHeaderScrollCompact(signal: AbortSignal): void {
-		this.headerScrollHeader = this.querySelector<HTMLElement>('[data-schedule-page-header]');
 		this.headerScrollHero = this.querySelector<HTMLElement>('[data-schedule-header-hero]');
+		this.headerStickyBar = this.querySelector<HTMLElement>('[data-schedule-header-sticky]');
 		this.headerScrollRoot = this.querySelector('main');
 		const toolbar = this.querySelector('[data-schedule-header-toolbar]');
-		if (!this.headerScrollHeader || !this.headerScrollHero || !this.headerScrollRoot || !toolbar) return;
+		if (!this.headerScrollHero || !this.headerStickyBar || !this.headerScrollRoot || !toolbar) return;
 
-		this.measureHeaderScrollThreshold();
-		this.headerScrollRoot.addEventListener('scroll', this.syncHeaderScrollState, { passive: true, signal });
-		window.addEventListener('resize', this.handleHeaderScrollResize, { signal });
-		signal.addEventListener('abort', () => {
-			this.setHeaderCompact(false, { compensate: false });
-		});
-	}
-
-	private handleHeaderScrollResize = (): void => {
-		this.measureHeaderScrollThreshold();
-		this.syncHeaderScrollState();
-	};
-
-	private measureHeaderScrollThreshold(): void {
-		const header = this.headerScrollHeader;
-		const hero = this.headerScrollHero;
-		const scrollRoot = this.headerScrollRoot;
-		if (!header || !hero || !scrollRoot) return;
-
-		const wasCompact = this.headerIsCompact;
-		if (wasCompact) {
-			this.setHeaderCompact(false, { compensate: false });
-		}
-
-		this.headerCollapseThreshold = Math.max(
-			0,
-			hero.getBoundingClientRect().bottom -
-				scrollRoot.getBoundingClientRect().top +
-				scrollRoot.scrollTop,
+		this.headerHeroObserver = new IntersectionObserver(
+			(entries) => {
+				const entry = entries[0];
+				if (!entry) return;
+				this.setHeaderStickyPinned(!entry.isIntersecting);
+			},
+			{
+				root: this.headerScrollRoot,
+				threshold: 0,
+				rootMargin: '0px',
+			},
 		);
 
-		if (wasCompact && scrollRoot.scrollTop > this.headerCollapseThreshold + this.headerCompactEnterGap) {
-			this.setHeaderCompact(true, { compensate: false });
-		}
-	}
-
-	private setScrollTopInstant(root: HTMLElement, top: number): void {
-		const previous = root.style.scrollBehavior;
-		root.style.scrollBehavior = 'auto';
-		root.scrollTop = Math.max(0, top);
-		root.style.scrollBehavior = previous;
-	}
-
-	private setHeaderCompact(compact: boolean, options: { compensate?: boolean } = {}): void {
-		const header = this.headerScrollHeader;
-		const scrollRoot = this.headerScrollRoot;
-		if (!header || !scrollRoot || compact === this.headerIsCompact) return;
-
-		const compensate = options.compensate === true;
-		const heightBefore = compensate ? header.offsetHeight : 0;
-
-		header.classList.toggle('is-scrolled', compact);
-		this.headerIsCompact = compact;
-
-		if (!compensate) return;
-
-		const heightAfter = header.offsetHeight;
-		const delta = heightBefore - heightAfter;
-		if (delta !== 0) {
-			this.setScrollTopInstant(scrollRoot, scrollRoot.scrollTop - delta);
-		}
-	}
-
-	private applyHeaderScrollState = (): void => {
-		const scrollRoot = this.headerScrollRoot;
-		if (!scrollRoot) return;
-
-		const scrollTop = scrollRoot.scrollTop;
-		const enterAt = this.headerCollapseThreshold + this.headerCompactEnterGap;
-		const exitAt = Math.max(0, this.headerCollapseThreshold - this.headerCompactExitGap);
-
-		if (!this.headerIsCompact && scrollTop > enterAt) {
-			this.setHeaderCompact(true);
-		} else if (this.headerIsCompact && scrollTop <= exitAt) {
-			this.setHeaderCompact(false);
-		}
-	};
-
-	private syncHeaderScrollState = (): void => {
-		if (this.headerScrollRaf) return;
-		this.headerScrollRaf = requestAnimationFrame(() => {
-			this.headerScrollRaf = 0;
-			this.applyHeaderScrollState();
+		this.headerHeroObserver.observe(this.headerScrollHero);
+		signal.addEventListener('abort', () => {
+			this.headerHeroObserver?.disconnect();
+			this.headerHeroObserver = null;
+			this.setHeaderStickyPinned(false);
 		});
-	};
+	}
+
+	private setHeaderStickyPinned(pinned: boolean): void {
+		if (!this.headerStickyBar || pinned === this.headerIsCompact) return;
+		this.headerStickyBar.classList.toggle('is-scrolled', pinned);
+		this.headerIsCompact = pinned;
+	}
 
 	private handleScheduleRootClick = (event: MouseEvent): void => {
 		const target = event.target;
@@ -668,6 +604,7 @@ class ScheduleManager extends HTMLElement {
 
 		ensureSearchableSelect(this.professionalSelect, {
 			placeholder: 'Buscar profesional...',
+			dropdownParent: 'body',
 		});
 
 		if (this.selectedProfessionalId > 0) {
@@ -1376,8 +1313,6 @@ class ScheduleManager extends HTMLElement {
 		this.templateViewNode?.classList.toggle('hidden', this.activeView !== 'template');
 		this.exceptionsViewNode?.classList.toggle('hidden', this.activeView !== 'exceptions');
 		this.saveButton?.classList.toggle('hidden', this.activeView !== 'template');
-
-		requestAnimationFrame(() => this.measureHeaderScrollThreshold());
 
 		if (this.loadingNode) {
 			const showLoading =

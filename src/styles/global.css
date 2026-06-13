@@ -1421,6 +1421,7 @@ html[data-theme='dark'] .workspace-account-subtitle {
 }
 
 .bookmate-searchable-select.ts-wrapper {
+	position: relative;
 	width: 100%;
 	max-width: 100%;
 	min-width: 0;
@@ -1512,9 +1513,10 @@ html[data-theme='dark'] .workspace-account-subtitle {
 	background: var(--control-surface);
 }
 
-.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .ts-dropdown {
-	z-index: 80;
-	margin-top: 0.6rem;
+.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .ts-dropdown,
+body > .bookmate-searchable-select-dropdown.ts-dropdown {
+	z-index: 120;
+	margin-top: 0;
 	border: 1px solid var(--shell-border);
 	border-radius: 0.75rem;
 	background: var(--surface-bright);
@@ -1525,7 +1527,8 @@ html[data-theme='dark'] .workspace-account-subtitle {
 	font-weight: 700;
 }
 
-.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input-wrap {
+.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input-wrap,
+body > .bookmate-searchable-select-dropdown.ts-dropdown .dropdown-input-wrap {
 	position: relative;
 	display: flex;
 	align-items: center;
@@ -1534,7 +1537,8 @@ html[data-theme='dark'] .workspace-account-subtitle {
 	padding: 0.65rem 0.75rem 0.65rem 2.65rem;
 }
 
-.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input-wrap::before {
+.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input-wrap::before,
+body > .bookmate-searchable-select-dropdown.ts-dropdown .dropdown-input-wrap::before {
 	content: "search";
 	position: absolute;
 	left: 0.9rem;
@@ -1547,7 +1551,8 @@ html[data-theme='dark'] .workspace-account-subtitle {
 	pointer-events: none;
 }
 
-.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input {
+.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input,
+body > .bookmate-searchable-select-dropdown.ts-dropdown .dropdown-input {
 	width: 100% !important;
 	min-width: 0;
 	border: 0;
@@ -1558,12 +1563,14 @@ html[data-theme='dark'] .workspace-account-subtitle {
 	outline: none;
 }
 
-.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input::placeholder {
+.bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input::placeholder,
+body > .bookmate-searchable-select-dropdown.ts-dropdown .dropdown-input::placeholder {
 	color: var(--on-surface-variant);
 	opacity: 0.9;
 }
 
-.bookmate-searchable-select.ts-wrapper .ts-dropdown-content {
+.bookmate-searchable-select.ts-wrapper .ts-dropdown-content,
+body > .bookmate-searchable-select-dropdown.ts-dropdown .ts-dropdown-content {
 	display: grid;
 	gap: 0.25rem;
 	background: var(--surface-bright);
@@ -1572,7 +1579,9 @@ html[data-theme='dark'] .workspace-account-subtitle {
 }
 
 .bookmate-searchable-select.ts-wrapper .ts-dropdown .option,
-.bookmate-searchable-select.ts-wrapper .ts-dropdown .no-results {
+.bookmate-searchable-select.ts-wrapper .ts-dropdown .no-results,
+body > .bookmate-searchable-select-dropdown.ts-dropdown .option,
+body > .bookmate-searchable-select-dropdown.ts-dropdown .no-results {
 	display: block;
 	border-radius: 0.5rem;
 	padding: 0.65rem 1rem;
@@ -1582,12 +1591,14 @@ html[data-theme='dark'] .workspace-account-subtitle {
 	transition: background-color 140ms ease, color 140ms ease;
 }
 
-.bookmate-searchable-select.ts-wrapper .ts-dropdown .option.active {
+.bookmate-searchable-select.ts-wrapper .ts-dropdown .option.active,
+body > .bookmate-searchable-select-dropdown.ts-dropdown .option.active {
 	background: color-mix(in srgb, var(--primary-soft) 74%, transparent);
 	color: var(--primary);
 }
 
-.bookmate-searchable-select.ts-wrapper .ts-dropdown .option.selected {
+.bookmate-searchable-select.ts-wrapper .ts-dropdown .option.selected,
+body > .bookmate-searchable-select-dropdown.ts-dropdown .option.selected {
 	background: color-mix(in srgb, var(--primary-soft) 88%, transparent);
 	color: var(--primary);
 	font-weight: 800;
@@ -1607,35 +1618,42 @@ html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.dropdown-active .
 	box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 
-html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .ts-dropdown {
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .ts-dropdown,
+html[data-theme='dark'] body > .bookmate-searchable-select-dropdown.ts-dropdown {
 	background: var(--surface-bright);
 	border-color: var(--shell-border);
 	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
-html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input-wrap {
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input-wrap,
+html[data-theme='dark'] body > .bookmate-searchable-select-dropdown.ts-dropdown .dropdown-input-wrap {
 	background: var(--surface-bright);
 	border-bottom-color: var(--shell-border);
 }
 
-html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown-content {
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown-content,
+html[data-theme='dark'] body > .bookmate-searchable-select-dropdown.ts-dropdown .ts-dropdown-content {
 	background: var(--surface-bright);
 }
 
-html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input {
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input,
+html[data-theme='dark'] body > .bookmate-searchable-select-dropdown.ts-dropdown .dropdown-input {
 	color: var(--on-surface);
 }
 
-html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown .option {
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown .option,
+html[data-theme='dark'] body > .bookmate-searchable-select-dropdown.ts-dropdown .option {
 	color: var(--on-surface);
 }
 
-html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown .option.active {
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown .option.active,
+html[data-theme='dark'] body > .bookmate-searchable-select-dropdown.ts-dropdown .option.active {
 	background: color-mix(in srgb, var(--primary-soft) 74%, transparent);
 	color: var(--primary);
 }
 
-html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown .option.selected {
+html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown .option.selected,
+html[data-theme='dark'] body > .bookmate-searchable-select-dropdown.ts-dropdown .option.selected {
 	background: color-mix(in srgb, var(--primary-soft) 88%, transparent);
 	color: var(--primary);
 }
