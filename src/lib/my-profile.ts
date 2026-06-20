@@ -28,6 +28,7 @@ export interface MyProfileData {
 	first_name: string;
 	last_name: string;
 	email: string;
+	phone_number?: string;
 	role_id: number;
 	org_id: number;
 	public_profile?: MyPublicProfile;
@@ -134,6 +135,7 @@ const normalizeMyProfile = (value: unknown): MyProfileData | null => {
 		first_name: String(source.first_name || '').trim(),
 		last_name: String(source.last_name || '').trim(),
 		email: String(source.email || '').trim(),
+		phone_number: String(source.phone_number || '').trim() || undefined,
 		role_id: toNumber(source.role_id, 0),
 		org_id: toNumber(source.org_id, 0),
 		public_profile: normalizePublicProfile(source.public_profile),

@@ -123,7 +123,43 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			</div>
 			<section data-settings-panel="profile" class="grid gap-6">
 				<form data-settings-profile-form class="grid gap-8">
-					<div class="grid gap-5">
+					<div class="settings-profile-hero settings-profile-hero--top">
+						<div class="profile-photo-uploader" data-settings-profile-dropzone>
+							<div class="profile-photo-uploader__stack">
+								<div class="profile-photo-uploader__avatar-wrap">
+									<div class="profile-photo-uploader__avatar">
+										<img
+											data-settings-profile-preview
+											alt="Foto de perfil personal"
+											class="absolute inset-0 hidden h-full w-full rounded-full object-cover object-center"
+										/>
+										<div class="absolute inset-0 grid place-items-center" data-settings-profile-placeholder>
+											<span class="material-symbols-rounded text-[2rem] sm:text-[2.15rem]">account_circle</span>
+										</div>
+									</div>
+									<label
+										for="settings-profile-image-input"
+										class="profile-photo-uploader__edit"
+										aria-label="Cambiar foto personal. JPG o PNG, máximo 2 MB"
+										title="Cambiar foto"
+									>
+										<span class="material-symbols-rounded">edit</span>
+										<input
+											id="settings-profile-image-input"
+											type="file"
+											name="profile_image"
+											accept=".jpg,.jpeg,.png"
+											class="sr-only"
+										/>
+									</label>
+								</div>
+							</div>
+						</div>
+						<p class="settings-profile-photo-label">Foto personal</p>
+						<p class="settings-profile-photo-hint">JPG o PNG, máximo 2 MB</p>
+					</div>
+
+					<div class="grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
 						<div class="grid gap-1">
 							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información personal</h3>
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Solo para tu cuenta y acceso interno.</p>
@@ -174,28 +210,8 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 						<div class="grid gap-1">
 							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Perfil público personal</h3>
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
-								Tu enlace único y foto para compartir en redes. La foto visible en la agenda de cada negocio la gestiona el administrador.
+								Tu enlace único y contacto para compartir en Hasel. La foto visible en la agenda de cada negocio la gestiona el administrador.
 							</p>
-						</div>
-
-						<div class="settings-upload-card settings-upload-card--profile" data-settings-profile-dropzone>
-							<div class="settings-upload-card__preview settings-upload-card__preview--avatar">
-								<img data-settings-profile-preview class="hidden" alt="Foto de perfil personal" />
-								<div data-settings-profile-placeholder class="settings-upload-card__placeholder">
-									<span class="material-symbols-rounded">account_circle</span>
-								</div>
-							</div>
-							<div class="settings-upload-card__content">
-								<h3 class="settings-upload-card__title">Foto personal <span class="text-rose-500">*</span></h3>
-								<div class="settings-upload-card__actions">
-									<label for="settings-profile-image-input" class="settings-upload-card__button">
-										<span class="material-symbols-rounded">add_photo_alternate</span>
-										<span data-settings-profile-file-name>Cambiar foto</span>
-										<input id="settings-profile-image-input" type="file" name="profile_image" accept=".jpg,.jpeg,.png" class="sr-only" />
-									</label>
-									<span class="settings-upload-card__meta">JPG o PNG</span>
-								</div>
-							</div>
 						</div>
 
 						<label class="settings-public-profile-field" data-settings-public-profile-field>
@@ -212,7 +228,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 									type="text"
 									name="public_slug"
 									maxlength="100"
-									class="block w-full min-w-0 flex-1 rounded-none border border-l-0 border-r-0 border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+									class="block w-full min-w-0 flex-1 rounded-none border border-r-0 border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 									placeholder="maria-lopez"
 								/>
 								<button
@@ -230,27 +246,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 							</span>
 							<span data-settings-profile-field-error="public_slug" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
-					</div>
 
-					<div data-settings-prof-fields class="settings-prof-section hidden gap-5 border-t border-(--shell-border) border-dashed pt-6">
-						<div class="grid gap-1">
-							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Datos profesionales en este negocio</h3>
-							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Información pública asociada a la organización activa.</p>
-						</div>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-							<span>Nombre en este negocio <span class="text-rose-500">*</span></span>
-							<input
-								type="text"
-								name="display_name"
-								maxlength="150"
-								required
-								class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-								placeholder="Ej: Dr. Sarah Gómez"
-							/>
-							<span class="text-[0.85rem] font-medium leading-relaxed text-(--on-surface-variant)">
-								Así te verán clientes y equipo en esta organización. No modifica tu nombre de cuenta en Hasel.
-							</span>
-						</label>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span>Teléfono público <span class="text-rose-500">*</span></span>
 							<div class="flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
@@ -268,14 +264,11 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 								/>
 							</div>
 							<span class="text-[0.85rem] font-medium leading-relaxed text-(--on-surface-variant)">
-								Este número es exclusivo de esta organización y no afectará tu cuenta global.
+								Teléfono de contacto de tu cuenta en Hasel. Se aplica en todos tus negocios.
 							</span>
 							<span data-settings-profile-field-error="phone_number" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
 					</div>
-
-					<div data-settings-profile-note class="hidden rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3 text-[0.9rem] font-medium text-amber-700 dark:text-amber-400 shadow-sm"></div>
-					
 					<div class="pt-2">
 						<div class="modal-footer">
 							<div class="modal-footer-actions">
@@ -776,13 +769,10 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			profilePreview: HTMLImageElement | null;
 			profilePlaceholder: HTMLElement | null;
 			profileDropzone: HTMLElement | null;
-			profileFileName: HTMLElement | null;
 			logoPreview: HTMLImageElement | null;
 			logoPlaceholder: HTMLElement | null;
 			logoDropzone: HTMLElement | null;
 			logoFileName: HTMLElement | null;
-			profFields: NodeListOf<HTMLElement>;
-			profileNote: HTMLElement | null;
 			cropModal: HTMLDialogElement | null;
 			cropMount: HTMLElement | null;
 			confirmCropBtn: HTMLButtonElement | null;
@@ -843,13 +833,10 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				profilePreview: this.querySelector<HTMLImageElement>('[data-settings-profile-preview]'),
 				profilePlaceholder: this.querySelector<HTMLElement>('[data-settings-profile-placeholder]'),
 				profileDropzone: this.querySelector<HTMLElement>('[data-settings-profile-dropzone]'),
-				profileFileName: this.querySelector<HTMLElement>('[data-settings-profile-file-name]'),
 				logoPreview: this.querySelector<HTMLImageElement>('[data-settings-logo-preview]'),
 				logoPlaceholder: this.querySelector<HTMLElement>('[data-settings-logo-placeholder]'),
 				logoDropzone: this.querySelector<HTMLElement>('[data-settings-logo-dropzone]'),
 				logoFileName: this.querySelector<HTMLElement>('[data-settings-logo-file-name]'),
-				profFields: this.querySelectorAll<HTMLElement>('[data-settings-prof-fields]'),
-				profileNote: this.querySelector<HTMLElement>('[data-settings-profile-note]'),
 				cropModal: this.querySelector<HTMLDialogElement>('[data-settings-profile-crop-modal]'),
 				cropMount: this.querySelector<HTMLElement>('[data-settings-profile-crop-mount]'),
 				confirmCropBtn: this.querySelector<HTMLButtonElement>('[data-confirm-settings-profile-crop]'),
@@ -1300,7 +1287,6 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			this.releaseProfilePreviewObjectUrl();
 			this.profilePreviewObjectUrl = URL.createObjectURL(file);
 			this.setProfilePreview(this.profilePreviewObjectUrl);
-			if (this.els.profileFileName) this.els.profileFileName.textContent = file.name;
 		}
 
 		private setLogoImageFile(file: File) {
@@ -1731,28 +1717,11 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				if (this.formEls.profileSlugInput.value.trim() === '') this.queueSlugSuggestion();
 			}
 			this.setProfilePreview(publicProfile?.image_url || '');
-			if (this.els.profileFileName) this.els.profileFileName.textContent = 'Cambiar foto';
 
-			const prof = profile?.professional_profile;
-			const displayNameInput = this.els.profileForm.querySelector<HTMLInputElement>('[name="display_name"]');
-			if (prof) {
-				this.els.profFields.forEach((el) => el.classList.remove('hidden'));
-				if (displayNameInput) displayNameInput.value = String(prof.display_name || '').trim();
-				if (phone) phone.value = this.formatParaguayPhoneLocal(prof.phone_number || '');
-				if (this.els.profileNote) {
-					this.els.profileNote.classList.add('hidden');
-					this.els.profileNote.textContent = '';
-				}
-			} else {
-				this.els.profFields.forEach((el) => el.classList.add('hidden'));
-				if (displayNameInput) displayNameInput.value = '';
-				if (phone) phone.value = '';
-				if (this.els.profileNote) {
-					this.els.profileNote.textContent =
-						'Esta cuenta no tiene ficha profesional en la organización activa. Solo se guardan tus datos personales y enlace global.';
-					this.els.profileNote.classList.remove('hidden');
-				}
-			}
+			const phoneNumber = String(
+				profile?.phone_number || profile?.professional_profile?.phone_number || ''
+			).trim();
+			if (phone) phone.value = this.formatParaguayPhoneLocal(phoneNumber);
 		}
 
 		private populateSystemSelect(
@@ -2106,7 +2075,6 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			}
 
 			const payload: Record<string, string | number> = { first_name: first, last_name: last };
-			const profVisible = !this.els.profFields[0]?.classList.contains('hidden');
 
 			const publicSlug = String(this.formEls.profileSlugInput?.value || '').trim();
 			if (publicSlug) payload.public_slug = publicSlug;
@@ -2117,28 +2085,17 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				payload.image_name = imageFile.name;
 				payload.image_mime = imageFile.type || 'application/octet-stream';
 			}
-			
-			if (profVisible) {
-				const displayName = String(
-					this.els.profileForm.querySelector<HTMLInputElement>('[name="display_name"]')?.value || ''
-				).trim();
-				if (!displayName) {
-					this.showFeedback('profile', 'El nombre en este negocio es obligatorio.', 'error');
+
+			const rawPhone = String(this.formEls.phoneInput?.value || '').trim();
+			if (rawPhone !== '') {
+				const parsedPhone = parseParaguayMobilePhone(rawPhone);
+				if (!parsedPhone.isValid) {
+					this.setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
 					return;
 				}
-				payload.display_name = displayName;
-
-				const rawPhone = String(this.formEls.phoneInput?.value || '').trim();
-				if (rawPhone !== '') {
-					const parsedPhone = parseParaguayMobilePhone(rawPhone);
-					if (!parsedPhone.isValid) {
-						this.setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
-						return;
-					}
-					payload.phone_number = parsedPhone.e164;
-				} else {
-					payload.phone_number = '';
-				}
+				payload.phone_number = parsedPhone.e164;
+			} else {
+				payload.phone_number = '';
 			}
 
 			try {
@@ -2700,13 +2657,11 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		display: none !important;
 	}
 
-	.settings-panel,
-	.settings-prof-section {
+	.settings-panel {
 		display: grid;
 	}
 
-	.settings-panel.hidden,
-	.settings-prof-section.hidden {
+	.settings-panel.hidden {
 		display: none;
 	}
 
@@ -2847,32 +2802,190 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		font-size: 2.25rem;
 	}
 
-	.settings-upload-card--profile {
-		flex-direction: row;
+	.settings-profile-hero {
+		display: grid;
+		justify-items: center;
+		gap: 0.35rem;
+		margin-bottom: 0.35rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 35%, transparent);
+	}
+
+	.settings-profile-hero--top {
+		margin-bottom: 0;
+		padding-top: 0.15rem;
+		padding-bottom: 0;
+		border-bottom: 0;
+	}
+
+	.settings-profile-photo-label {
+		margin: 0.15rem 0 0;
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.settings-profile-photo-hint {
+		margin: 0;
+		font-size: 0.74rem;
+		font-weight: 500;
+		color: var(--on-surface-variant);
+	}
+
+	[data-settings-modal] .profile-photo-uploader {
+		position: relative;
+		display: flex;
+		justify-content: center;
+		padding: 0.15rem 0 0;
+		transition: opacity 140ms ease;
+	}
+
+	[data-settings-modal] .profile-photo-uploader__stack {
+		display: flex;
+		width: min(100%, 14rem);
+		flex-direction: column;
 		align-items: center;
-		gap: 0.85rem;
-		padding: 0.85rem;
+		gap: 0.25rem;
+		text-align: center;
 	}
 
-	.settings-upload-card--profile .settings-upload-card__preview {
-		width: 4.25rem;
-		height: 4.25rem;
-		border-width: 3px;
+	[data-settings-modal] .profile-photo-uploader__avatar-wrap {
+		position: relative;
+		display: inline-flex;
 	}
 
-	.settings-upload-card--profile .settings-upload-card__content {
-		min-width: 0;
-		flex: 1;
-		gap: 0.45rem;
-		text-align: left;
+	[data-settings-modal] .profile-photo-uploader.is-dragover .profile-photo-uploader__stack {
+		opacity: 0.92;
 	}
 
-	.settings-upload-card--profile .settings-upload-card__actions {
-		flex-direction: row;
-		flex-wrap: wrap;
+	[data-settings-modal] .profile-photo-uploader.is-dragover .profile-photo-uploader__avatar {
+		box-shadow:
+			0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent),
+			0 8px 20px rgba(15, 23, 42, 0.12);
+	}
+
+	[data-settings-modal] .profile-photo-uploader__avatar {
+		position: relative;
+		width: 4.75rem;
+		height: 4.75rem;
+		flex: 0 0 auto;
+		overflow: hidden;
+		border-radius: 999px;
+		border: 2px solid #ffffff;
+		background: color-mix(in srgb, var(--primary-soft) 70%, var(--surface-container) 30%);
+		color: var(--primary);
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--shell-border) 65%, transparent),
+			0 10px 22px rgba(15, 23, 42, 0.1);
+	}
+
+	[data-settings-modal] .profile-photo-uploader__edit {
+		position: absolute;
+		right: -0.1rem;
+		bottom: -0.05rem;
+		z-index: 2;
+		display: inline-flex;
 		align-items: center;
-		justify-content: flex-start;
-		gap: 0.45rem 0.65rem;
+		justify-content: center;
+		width: 1.65rem;
+		height: 1.65rem;
+		border-radius: 999px;
+		border: 2px solid #ffffff;
+		background-color: #ffffff;
+		color: #64748b;
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--shell-border) 70%, #cbd5e1 30%),
+			0 2px 8px rgba(15, 23, 42, 0.14);
+		cursor: pointer;
+		transition:
+			background-color 140ms ease,
+			color 140ms ease,
+			transform 140ms ease,
+			box-shadow 140ms ease;
+	}
+
+	[data-settings-modal] .profile-photo-uploader__edit .material-symbols-rounded {
+		font-size: 0.9rem;
+		line-height: 1;
+	}
+
+	[data-settings-modal] .profile-photo-uploader__edit:hover {
+		background-color: #eff6ff;
+		color: #2563eb;
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, #93c5fd 55%, var(--shell-border) 45%),
+			0 3px 10px rgba(37, 99, 235, 0.16);
+	}
+
+	[data-settings-modal] .profile-photo-uploader__edit:active {
+		transform: scale(0.94);
+		background-color: #dbeafe;
+	}
+
+	html[data-theme='dark'] [data-settings-modal] .profile-photo-uploader__edit {
+		border-color: color-mix(in srgb, var(--surface-bright) 88%, #0f172a 12%);
+		background-color: #e2e8f0;
+		color: #475569;
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, #94a3b8 45%, transparent),
+			0 2px 8px rgba(0, 0, 0, 0.28);
+	}
+
+	html[data-theme='dark'] [data-settings-modal] .profile-photo-uploader__edit:hover {
+		background-color: #dbeafe;
+		color: #1d4ed8;
+	}
+
+	@media (max-width: 639px) {
+		[data-settings-modal] .settings-profile-hero,
+		[data-settings-modal] .settings-profile-hero--top {
+			gap: 0.55rem;
+			padding-top: 0.35rem;
+			padding-bottom: 1.25rem;
+		}
+
+		[data-settings-modal] .profile-photo-uploader__stack {
+			width: min(100%, 18rem);
+			gap: 0.35rem;
+		}
+
+		[data-settings-modal] .profile-photo-uploader__avatar {
+			width: 7rem;
+			height: 7rem;
+			border-width: 3px;
+		}
+
+		[data-settings-modal] .profile-photo-uploader__avatar [data-settings-profile-placeholder] .material-symbols-rounded {
+			font-size: 2.6rem;
+		}
+
+		[data-settings-modal] .profile-photo-uploader__edit {
+			width: 2rem;
+			height: 2rem;
+			right: 0;
+			bottom: 0;
+		}
+
+		[data-settings-modal] .profile-photo-uploader__edit .material-symbols-rounded {
+			font-size: 1.05rem;
+		}
+
+		[data-settings-modal] .settings-profile-photo-label {
+			font-size: 0.72rem;
+		}
+
+		[data-settings-modal] .settings-profile-photo-hint {
+			font-size: 0.78rem;
+		}
+	}
+
+	@media (min-width: 640px) {
+		[data-settings-modal] .profile-photo-uploader__avatar {
+			width: 5.25rem;
+			height: 5.25rem;
+		}
 	}
 
 	.settings-upload-card__title {
@@ -2966,31 +3079,21 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 	}
 
 	@media (min-width: 640px) {
-		.settings-upload-card:not(.settings-upload-card--profile) {
+		.settings-upload-card {
 			flex-direction: row;
 			align-items: center;
 			gap: 1.25rem;
 			padding: 1.15rem;
 		}
 
-		.settings-upload-card:not(.settings-upload-card--profile) .settings-upload-card__content {
+		.settings-upload-card .settings-upload-card__content {
 			text-align: left;
 		}
 
-		.settings-upload-card:not(.settings-upload-card--profile) .settings-upload-card__actions {
+		.settings-upload-card .settings-upload-card__actions {
 			flex-direction: row;
 			align-items: center;
 			justify-content: flex-start;
-		}
-
-		.settings-upload-card--profile {
-			gap: 1.1rem;
-			padding: 1rem 1.1rem;
-		}
-
-		.settings-upload-card--profile .settings-upload-card__preview {
-			width: 5rem;
-			height: 5rem;
 		}
 	}
 
