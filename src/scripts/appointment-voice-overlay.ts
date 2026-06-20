@@ -24,11 +24,6 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#audioContext: AudioContext | null = null;
 	#analyser: AnalyserNode | null = null;
 	#statusFadeTimer: number | null = null;
-	#dialogGlowRaf: number | null = null;
-	#dialogGlowEl: HTMLElement | null = null;
-
-	private static readonly DIALOG_GLOW_TRAVEL_X = 78;
-	private static readonly DIALOG_GLOW_SPEED = 0.62;
 
 	private static readonly STATUS_LABELS: Record<VoiceUiState, string> = {
 		idle: 'Toca el micrófono y describe la cita.',
@@ -108,43 +103,6 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.teardownAudioAnalysis();
 		this.#visualizer?.destroy();
 		this.#visualizer = null;
-		this.stopDialogGlowMotion();
-	}
-
-	private initDialogGlow() {
-		if (this.#dialogGlowEl) return;
-		this.#dialogGlowEl = this.querySelector<HTMLElement>('[data-voice-dialog-glow]');
-	}
-
-	private startDialogGlowMotion() {
-		this.initDialogGlow();
-		if (!this.#dialogGlowEl) return;
-		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-		if (this.#dialogGlowRaf) return;
-
-		const startedAt = performance.now();
-		const tick = (now: number) => {
-			const elapsed = (now - startedAt) / 1000;
-			const x = Math.sin(elapsed * AppointmentVoiceOverlay.DIALOG_GLOW_SPEED) * AppointmentVoiceOverlay.DIALOG_GLOW_TRAVEL_X;
-			const y = Math.sin(elapsed * AppointmentVoiceOverlay.DIALOG_GLOW_SPEED * 0.55) * 5;
-
-			if (this.#dialogGlowEl) {
-				this.#dialogGlowEl.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-			}
-
-			this.#dialogGlowRaf = requestAnimationFrame(tick);
-		};
-
-		this.#dialogGlowRaf = requestAnimationFrame(tick);
-	}
-
-	private stopDialogGlowMotion() {
-		if (this.#dialogGlowRaf) {
-			cancelAnimationFrame(this.#dialogGlowRaf);
-			this.#dialogGlowRaf = null;
-		}
-
-		this.#dialogGlowEl?.style.removeProperty('transform');
 	}
 
 	open(options: { mode?: VoiceOverlayMode } = {}) {
@@ -156,11 +114,9 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.#visualizer?.setMode('idle');
 		const shell = this.querySelector<HTMLDialogElement>('[data-voice-overlay-shell]');
 		if (shell && !shell.open) shell.showModal();
-		this.startDialogGlowMotion();
 	}
 
 	close() {
-		this.stopDialogGlowMotion();
 		this.stopRecording(false);
 		this.teardownAudioAnalysis();
 		this.#visualizer?.setMode('off');

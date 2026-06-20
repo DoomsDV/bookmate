@@ -12,11 +12,6 @@ const VOICE_BAR_COUNT = 28;
 			aria-label="Cita rápida por voz"
 		>
 			<div class="appointment-voice-dialog">
-				<div class="appointment-voice-dialog__gradients" aria-hidden="true">
-					<span class="appointment-voice-dialog__glow appointment-voice-dialog__glow--ambient" data-voice-dialog-glow>
-						<span class="appointment-voice-dialog__glow-core"></span>
-					</span>
-				</div>
 				<div class="appointment-voice-header">
 					<div class="appointment-voice-title-wrap">
 						<div class="appointment-voice-mark">
@@ -161,52 +156,6 @@ const VOICE_BAR_COUNT = 28;
 		background: #ffffff;
 		box-shadow: 0 24px 80px rgba(15, 23, 42, 0.14);
 		overflow: hidden;
-	}
-
-	.appointment-voice-dialog__gradients {
-		position: absolute;
-		inset: 0;
-		z-index: 0;
-		pointer-events: none;
-		overflow: hidden;
-	}
-
-	.appointment-voice-dialog__glow {
-		position: absolute;
-		border-radius: 999px;
-		opacity: 0.58;
-		transform: translate3d(0, 0, 0);
-		animation: none;
-		will-change: transform;
-	}
-
-	.appointment-voice-dialog__glow-core {
-		display: block;
-		width: 100%;
-		height: 100%;
-		border-radius: inherit;
-		filter: blur(28px);
-		transform: translateZ(0);
-	}
-
-	.appointment-voice-dialog__glow--ambient {
-		top: 38%;
-		left: 50%;
-		width: 9.5rem;
-		height: 9.5rem;
-		margin-left: -4.75rem;
-		margin-top: -4.75rem;
-		opacity: 0.62;
-	}
-
-	.appointment-voice-dialog__glow--ambient .appointment-voice-dialog__glow-core {
-		background: radial-gradient(
-			circle at 38% 42%,
-			rgba(253, 224, 71, 0.88) 0%,
-			rgba(134, 239, 172, 0.52) 38%,
-			rgba(125, 211, 252, 0.48) 62%,
-			transparent 78%
-		);
 	}
 
 	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-dialog,
@@ -861,8 +810,7 @@ const VOICE_BAR_COUNT = 28;
 		.appointment-voice-record__pulse,
 		.appointment-voice-record__halo,
 		.appointment-voice-visual__baseline,
-		.appointment-voice-record,
-		.appointment-voice-dialog__glow {
+		.appointment-voice-record {
 			animation: none;
 		}
 
@@ -986,24 +934,6 @@ const VOICE_BAR_COUNT = 28;
 
 	html[data-theme='dark'] .appointment-voice-dialog {
 		background: var(--surface-bright);
-	}
-
-	html[data-theme='dark'] .appointment-voice-dialog__glow {
-		opacity: 0.5;
-	}
-
-	html[data-theme='dark'] .appointment-voice-dialog__glow-core {
-		filter: blur(34px);
-	}
-
-	html[data-theme='dark'] .appointment-voice-dialog__glow--ambient .appointment-voice-dialog__glow-core {
-		background: radial-gradient(
-			circle at 38% 42%,
-			rgba(253, 224, 71, 0.62) 0%,
-			rgba(134, 239, 172, 0.38) 38%,
-			rgba(125, 211, 252, 0.34) 62%,
-			transparent 78%
-		);
 	}
 
 	html[data-theme='dark'] .appointment-voice-shell::backdrop {
