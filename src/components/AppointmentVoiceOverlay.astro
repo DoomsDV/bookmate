@@ -30,7 +30,7 @@ const VOICE_BAR_COUNT = 28;
 							aria-label="Guía de cita rápida por voz"
 						>
 							<span class="material-symbols-rounded" aria-hidden="true">help</span>
-							Guía
+							<span class="appointment-voice-help__label">Guía</span>
 						</button>
 						<button
 							type="button"
@@ -134,22 +134,34 @@ const VOICE_BAR_COUNT = 28;
 	</appointment-voice-overlay>
 )}
 
-<style>
+<style is:global>
+	appointment-voice-overlay {
+		display: block;
+	}
+
 	.appointment-voice-shell {
+		position: fixed;
+		inset: 0;
 		margin: 0;
-		padding: 1rem;
+		padding: max(1rem, env(safe-area-inset-top, 0px)) max(1rem, env(safe-area-inset-right, 0px))
+			max(1rem, env(safe-area-inset-bottom, 0px)) max(1rem, env(safe-area-inset-left, 0px));
 		border: 0;
 		background: transparent;
+		box-sizing: border-box;
 		max-width: none;
 		max-height: none;
 		width: 100%;
 		height: 100%;
-		overflow: visible;
+		height: 100dvh;
+		max-height: 100dvh;
+		overflow: auto;
+		overscroll-behavior: contain;
 	}
 
 	.appointment-voice-shell[open] {
 		display: grid;
 		place-items: center;
+		align-content: center;
 	}
 
 	.appointment-voice-shell::backdrop {
@@ -161,10 +173,11 @@ const VOICE_BAR_COUNT = 28;
 	.appointment-voice-dialog {
 		position: relative;
 		z-index: 1;
-		width: min(26rem, calc(100vw - 2rem));
+		width: min(26rem, 100%);
+		max-width: 100%;
 		border-radius: 1.6rem;
 		border: 1px solid color-mix(in srgb, var(--shell-border) 80%, #e2e8f0 20%);
-		background: #ffffff;
+		background: var(--surface-bright);
 		box-shadow: 0 24px 80px rgba(15, 23, 42, 0.14);
 		overflow: hidden;
 	}
@@ -184,7 +197,7 @@ const VOICE_BAR_COUNT = 28;
 		display: flex;
 		align-items: flex-start;
 		justify-content: space-between;
-		gap: 1rem;
+		gap: 0.75rem;
 		padding: 1.1rem 1.2rem 0.8rem;
 		border-bottom: 1px solid var(--shell-border);
 	}
@@ -193,6 +206,8 @@ const VOICE_BAR_COUNT = 28;
 		display: flex;
 		align-items: center;
 		gap: 0.85rem;
+		min-width: 0;
+		flex: 1;
 	}
 
 	.appointment-voice-mark {
@@ -211,6 +226,7 @@ const VOICE_BAR_COUNT = 28;
 		font-size: 1.05rem;
 		font-weight: 800;
 		color: var(--on-surface);
+		line-height: 1.2;
 	}
 
 	.appointment-voice-subtitle {
@@ -218,6 +234,7 @@ const VOICE_BAR_COUNT = 28;
 		font-size: 0.85rem;
 		font-weight: 600;
 		color: var(--on-surface-variant);
+		line-height: 1.35;
 	}
 
 	.appointment-voice-header-actions {
@@ -990,5 +1007,69 @@ const VOICE_BAR_COUNT = 28;
 	html[data-theme='dark'] .appointment-voice-discard {
 		border-color: color-mix(in srgb, var(--shell-border) 70%, white 30%);
 		color: color-mix(in srgb, var(--on-surface) 78%, var(--on-surface-variant) 22%);
+	}
+
+	@media (max-width: 480px) {
+		.appointment-voice-shell {
+			padding: max(0.75rem, env(safe-area-inset-top, 0px)) max(0.75rem, env(safe-area-inset-right, 0px))
+				max(0.75rem, env(safe-area-inset-bottom, 0px)) max(0.75rem, env(safe-area-inset-left, 0px));
+		}
+
+		.appointment-voice-dialog {
+			border-radius: 1.35rem;
+		}
+
+		.appointment-voice-header {
+			padding: 0.95rem 1rem 0.75rem;
+			gap: 0.55rem;
+		}
+
+		.appointment-voice-mark {
+			width: 2.45rem;
+			height: 2.45rem;
+			border-radius: 0.85rem;
+		}
+
+		.appointment-voice-title-wrap {
+			gap: 0.65rem;
+		}
+
+		.appointment-voice-title {
+			font-size: 0.98rem;
+		}
+
+		.appointment-voice-subtitle {
+			display: none;
+		}
+
+		.appointment-voice-help {
+			width: 2.25rem;
+			padding: 0;
+		}
+
+		.appointment-voice-help__label {
+			display: none;
+		}
+
+		.appointment-voice-body {
+			padding: 1.15rem 1rem 1.35rem;
+			gap: 0.75rem;
+		}
+
+		.appointment-voice-status {
+			font-size: 0.88rem;
+			padding-inline: 0.15rem;
+		}
+
+		.appointment-voice-stage {
+			width: 100%;
+			margin-inline: 0;
+			min-height: 11.5rem;
+		}
+
+		.appointment-voice-record {
+			width: 3.85rem;
+			height: 3.85rem;
+		}
 	}
 </style>
