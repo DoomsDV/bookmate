@@ -678,33 +678,47 @@ class CustomerManager extends HTMLElement {
 		const fragment = document.createDocumentFragment();
 		for (const customer of customers) {
 			const article = document.createElement('article');
-			article.className = 'customer-card material-data-card group';
+			article.className = 'customer-card group';
 			article.setAttribute('role', 'button');
 			article.tabIndex = 0;
 			article.dataset.customerCard = 'true';
 			article.dataset.customerId = String(customer.id_customer);
 
-			const row = document.createElement('div');
-			row.className = 'flex min-w-0 items-center gap-3';
+			const headerRow = document.createElement('div');
+			headerRow.className = 'flex items-start justify-between gap-4';
 
 			const iconWrap = document.createElement('div');
 			iconWrap.className = 'customer-card-icon';
-			iconWrap.innerHTML = '<span class="material-symbols-rounded text-[1.25rem]">person</span>';
+			iconWrap.innerHTML =
+				'<span class="material-symbols-rounded text-[1.25rem]">person</span>';
+
+			headerRow.append(iconWrap);
 
 			const body = document.createElement('div');
-			body.className = 'customer-card-body min-w-0';
+			body.className = 'customer-card-body';
 
 			const name = document.createElement('h3');
-			name.className = 'customer-card-title min-w-0 truncate';
+			name.className = 'customer-card-title line-clamp-1';
 			name.textContent = customer.full_name || `Cliente #${customer.id_customer}`;
 
-			const phone = document.createElement('p');
-			phone.className = 'customer-card-phone min-w-0 truncate';
-			phone.textContent = this.formatCustomerPhone(customer.phone_number);
+			const metrics = document.createElement('dl');
+			metrics.className = 'customer-card-metrics';
 
-			body.append(name, phone);
-			row.append(iconWrap, body);
-			article.append(row);
+			const metricRow = document.createElement('div');
+			metricRow.className = 'flex items-center justify-between text-[0.92rem]';
+
+			const term = document.createElement('dt');
+			term.className = 'customer-card-term';
+			term.textContent = 'Teléfono';
+
+			const value = document.createElement('dd');
+			value.className = 'customer-card-value';
+			value.textContent = this.formatCustomerPhone(customer.phone_number);
+
+			metricRow.append(term, value);
+			metrics.append(metricRow);
+			body.append(name, metrics);
+			article.append(headerRow, body);
 			fragment.appendChild(article);
 		}
 

@@ -54,9 +54,9 @@
 :root {
 	--font-body: "Nunito Sans", sans-serif;
 	--font-logo: "Nunito Sans", sans-serif;
-	--background: #f4f7fa;
-	--background-accent: #e8eef4;
-	--page-background: #f4f7fa;
+	--background: #fafbfc;
+	--background-accent: #f3f4f6;
+	--page-background: #fafbfc;
 	--surface: rgba(255, 255, 255, 0.92);
 	--surface-container: #eef2f6;
 	--surface-container-low: #ffffff;
@@ -69,10 +69,10 @@
 	--content-surface: rgba(255, 255, 255, 0.72);
 	--shell-border: #e2e8f0;
 	--shell-header-height: 4.5rem;
-	--primary: #3b82f6;
-	--primary-soft: rgba(59, 130, 246, 0.12);
-	--primary-soft-hover: rgba(59, 130, 246, 0.18);
-	--primary-container: #eff6ff;
+	--primary: #426edb;
+	--primary-soft: rgba(66, 110, 219, 0.12);
+	--primary-soft-hover: rgba(66, 110, 219, 0.18);
+	--primary-container: color-mix(in srgb, #426edb 12%, #ffffff);
 	--secondary: #475569;
 	--secondary-container: #e8eef4;
 	--on-surface: #1e293b;
@@ -91,7 +91,7 @@
 	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.8);
 	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 	--sidebar-card-surface: var(--sidebar-surface);
-	--sidebar-hover: rgba(59, 130, 246, 0.08);
+	--sidebar-hover: rgba(66, 110, 219, 0.08);
 	--status-total-bg: #dbe7f3;
 	--status-total-text: #38506e;
 	--status-total-border: rgba(120, 145, 171, 0.35);
@@ -132,8 +132,8 @@
 	--inline-feedback-error-close: #be123c;
 	--inline-feedback-error-close-hover: #ffe4e6;
 	--inline-feedback-error-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-	--workspace-avatar-outline: rgba(47, 111, 221, 0.26);
-	--workspace-avatar-outline-soft: rgba(47, 111, 221, 0.1);
+	--workspace-avatar-outline: rgba(66, 110, 219, 0.26);
+	--workspace-avatar-outline-soft: rgba(66, 110, 219, 0.1);
 	--calendar-surface: #f8fbff;
 	--calendar-outline: rgba(176, 194, 214, 0.72);
 	--calendar-outline-strong: rgba(142, 163, 187, 0.78);
@@ -150,9 +150,9 @@
 }
 
 html[data-theme='dark'] {
-	--background: #141414;
+	--background: #191919;
 	--background-accent: #161616;
-	--page-background: #141414;
+	--page-background: #191919;
 	--surface: rgba(26, 26, 26, 0.94);
 	--surface-container: #1a1a1a;
 	--surface-container-low: #1a1a1a;
@@ -160,19 +160,19 @@ html[data-theme='dark'] {
 	--surface-container-highest: #282828;
 	--surface-bright: #1a1a1a;
 	--bar-outline: rgba(255, 255, 255, 0.1);
-	--shell-surface: #141414;
+	--shell-surface: #191919;
 	--sidebar-surface: #1a1a1a;
 	--content-surface: rgba(26, 26, 26, 0.88);
 	--shell-border: rgba(255, 255, 255, 0.1);
-	--primary: #1a73e8;
-	--primary-soft: rgba(26, 115, 232, 0.14);
-	--primary-soft-hover: rgba(26, 115, 232, 0.2);
-	--primary-container: rgba(26, 115, 232, 0.16);
+	--primary: #426edb;
+	--primary-soft: rgba(66, 110, 219, 0.14);
+	--primary-soft-hover: rgba(66, 110, 219, 0.2);
+	--primary-container: rgba(66, 110, 219, 0.16);
 	--secondary: #a0a0a0;
 	--secondary-container: rgba(160, 160, 160, 0.12);
 	--on-surface: #ffffff;
 	--on-surface-variant: #a0a0a0;
-	--hero-gradient: linear-gradient(135deg, #1f1f1f 0%, #141414 100%);
+	--hero-gradient: linear-gradient(135deg, #1f1f1f 0%, #191919 100%);
 	--hero-shadow: rgba(0, 0, 0, 0.5);
 	--hero-glow: radial-gradient(circle at center, rgba(26, 115, 232, 0.03), transparent 60%);
 	--control-surface: #222222;
@@ -217,8 +217,8 @@ html[data-theme='dark'] {
 	--inline-feedback-error-close: #fda4af;
 	--inline-feedback-error-close-hover: #4c1d2a;
 	--inline-feedback-error-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
-	--workspace-avatar-outline: rgba(161, 161, 170, 0.28);
-	--workspace-avatar-outline-soft: rgba(161, 161, 170, 0.1);
+	--workspace-avatar-outline: rgba(66, 110, 219, 0.28);
+	--workspace-avatar-outline-soft: rgba(66, 110, 219, 0.1);
 	--calendar-surface: #1f2228;
 	--calendar-outline: rgba(97, 105, 121, 0.58);
 	--calendar-outline-strong: rgba(129, 140, 158, 0.68);
@@ -1319,7 +1319,7 @@ html[data-theme='dark'] .app-pagination__current {
 	box-shadow: var(--card-elevation), var(--card-inset-highlight);
 }
 
-/* Cards del panel: misma superficie que el sidenav */
+/* Cards del panel: estilo unificado (servicios, clientes, sucursales, etc.) */
 :is(
 	.locations-card,
 	.services-card,
@@ -1327,9 +1327,15 @@ html[data-theme='dark'] .app-pagination__current {
 	.specialties-card,
 	.professionals-card
 ) {
+	display: flex;
+	flex-direction: column;
+	gap: 0.95rem;
+	border-radius: 1rem;
+	padding: 1.45rem 1.5rem 1.55rem;
 	border: 1px solid var(--card-border);
 	background: var(--sidebar-surface);
 	box-shadow: var(--card-elevation), var(--card-inset-highlight);
+	transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
 }
 
 :is(
@@ -1339,7 +1345,92 @@ html[data-theme='dark'] .app-pagination__current {
 	.specialties-card,
 	.professionals-card
 ):hover {
+	transform: translateY(-2px);
 	box-shadow: var(--card-elevation-hover), var(--card-inset-highlight);
+}
+
+:is(
+	.locations-card,
+	.services-card,
+	.customer-card,
+	.specialties-card,
+	.professionals-card
+):focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--primary) 55%, #ffffff 45%);
+	outline-offset: 2px;
+}
+
+:is(
+	.services-card-icon,
+	.locations-card-icon,
+	.customer-card-icon,
+	.specialties-card-icon
+) {
+	display: inline-flex;
+	height: 2.75rem;
+	width: 2.75rem;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	border-radius: 0.85rem;
+	background: color-mix(in srgb, #426edb 22%, transparent);
+	color: #426edb;
+}
+
+		:is(
+	.services-card-body,
+	.locations-card-body,
+	.customer-card-body,
+	.specialties-card-body,
+	.professionals-card-body
+) {
+	display: grid;
+	gap: 0.85rem;
+}
+
+:is(
+	.services-card-title,
+	.locations-card-title,
+	.customer-card-title,
+	.specialties-card-title,
+	.professionals-card-title
+) {
+	margin: 0;
+	font-size: 1.1rem;
+	font-weight: 760;
+	line-height: 1.3;
+	letter-spacing: -0.01em;
+	color: var(--on-surface);
+}
+
+:is(
+	.services-card-metrics,
+	.locations-card-metrics,
+	.customer-card-metrics
+) {
+	margin: 0;
+	display: grid;
+	gap: 0.5rem;
+}
+
+:is(
+	.services-card-term,
+	.locations-card-term,
+	.customer-card-term,
+	.professionals-card-term
+) {
+	color: var(--on-surface-variant);
+	font-weight: 500;
+}
+
+:is(
+	.services-card-value,
+	.locations-card-value,
+	.customer-card-value,
+	.professionals-card-value
+) {
+	color: color-mix(in srgb, var(--on-surface-variant) 74%, var(--on-surface) 26%);
+	text-align: right;
 }
 
 html[data-theme='dark'] :is(
@@ -1349,6 +1440,8 @@ html[data-theme='dark'] :is(
 	.specialties-card,
 	.professionals-card
 ) {
+	background: #252525;
+	border-color: rgba(255, 255, 255, 0.1);
 	box-shadow: none;
 }
 
@@ -1360,8 +1453,22 @@ html[data-theme='dark'] :is(
 	.professionals-card
 ):hover {
 	border-color: rgba(255, 255, 255, 0.14);
-	background: var(--sidebar-surface);
+	background: #252525;
 	box-shadow: none;
+}
+
+html[data-theme='dark'] :is(
+	.services-card-value,
+	.locations-card-value,
+	.customer-card-value,
+	.professionals-card-value
+) {
+	color: color-mix(in srgb, var(--on-surface-variant) 86%, #d1d5db 14%);
+}
+
+.professionals-card-avatar--placeholder {
+	background: color-mix(in srgb, #426edb 22%, transparent);
+	color: #426edb;
 }
 
 .sidebar-account-header {
