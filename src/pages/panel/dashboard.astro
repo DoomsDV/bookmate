@@ -224,7 +224,7 @@ const toPageHref = (page: number) => {
 
 								<div class="mt-8">
 									<div
-										class="dashboard-ai-card rounded-4xl transition-all duration-300"
+										class="dashboard-ai-card is-generating rounded-4xl"
 										data-ai-summary-card
 										data-role-id={String(roleId)}
 										data-default-summary-short={defaultAiSummaryShort}
@@ -1967,24 +1967,34 @@ const toPageHref = (page: number) => {
 		top: 0;
 		left: 0;
 		right: 0;
-		height: 2px;
+		height: 3px;
 		opacity: 0;
-		background: linear-gradient(
-			90deg,
-			transparent 0%,
-			rgba(56, 189, 248, 0.15) 20%,
-			rgba(59, 130, 246, 0.85) 50%,
-			rgba(56, 189, 248, 0.15) 80%,
-			transparent 100%
-		);
-		background-size: 220% 100%;
+		overflow: hidden;
 		transition: opacity 280ms ease;
 		z-index: 1;
 	}
 
+	.dashboard-ai-shimmer-top::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			rgba(56, 189, 248, 0.2) 18%,
+			rgba(59, 130, 246, 0.95) 50%,
+			rgba(56, 189, 248, 0.2) 82%,
+			transparent 100%
+		);
+		transform: translateX(-100%);
+	}
+
 	.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top {
 		opacity: 1;
-		animation: ai-shimmer-bar 2.4s ease-in-out infinite;
+	}
+
+	.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top::after {
+		animation: ai-shimmer-sweep 2.4s ease-in-out infinite;
 	}
 
 	.dashboard-ai-card.is-generating {
@@ -2030,26 +2040,42 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-skeleton-line {
+		position: relative;
 		display: block;
+		overflow: hidden;
 		height: 0.72rem;
 		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 10%, #e2e8f0 90%);
+	}
+
+	.dashboard-ai-skeleton-line::after {
+		content: '';
+		position: absolute;
+		inset: 0;
 		background: linear-gradient(
 			90deg,
-			color-mix(in srgb, var(--on-surface-variant) 10%, #e2e8f0 90%) 0%,
-			color-mix(in srgb, rgba(59, 130, 246, 0.18) 100%, #f1f5f9 0%) 45%,
-			color-mix(in srgb, var(--on-surface-variant) 10%, #e2e8f0 90%) 90%
+			transparent 0%,
+			rgba(59, 130, 246, 0.12) 24%,
+			rgba(96, 165, 250, 0.42) 50%,
+			rgba(59, 130, 246, 0.12) 76%,
+			transparent 100%
 		);
-		background-size: 220% 100%;
-		animation: ai-shimmer-bar 1.8s ease-in-out infinite;
+		transform: translateX(-100%);
+	}
+
+	.dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after {
+		animation: ai-shimmer-sweep 1.8s ease-in-out infinite;
 	}
 
 	.dashboard-ai-skeleton-line--lg { width: 96%; }
-	.dashboard-ai-skeleton-line--md { width: 82%; animation-delay: 120ms; }
-	.dashboard-ai-skeleton-line--sm { width: 64%; animation-delay: 240ms; }
+	.dashboard-ai-skeleton-line--md { width: 82%; }
+	.dashboard-ai-skeleton-line--md::after { animation-delay: 120ms; }
+	.dashboard-ai-skeleton-line--sm { width: 64%; }
+	.dashboard-ai-skeleton-line--sm::after { animation-delay: 240ms; }
 
-	@keyframes ai-shimmer-bar {
-		0% { background-position: 120% 0; }
-		100% { background-position: -120% 0; }
+	@keyframes ai-shimmer-sweep {
+		0% { transform: translateX(-100%); }
+		100% { transform: translateX(100%); }
 	}
 
 	@keyframes ai-orb-drift {
@@ -2102,10 +2128,6 @@ const toPageHref = (page: number) => {
 	}
 
 	@media (max-width: 639px) {
-		.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top {
-			height: 3px;
-		}
-
 		.dashboard-ai-orb {
 			filter: blur(18px);
 		}
@@ -2123,6 +2145,12 @@ const toPageHref = (page: number) => {
 		.dashboard-ai-orb--3 {
 			width: 6rem;
 			height: 6rem;
+		}
+	}
+
+	@media (min-width: 640px) {
+		.dashboard-ai-card.is-generating .dashboard-ai-orb {
+			filter: blur(20px);
 		}
 	}
 
@@ -2624,13 +2652,18 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-skeleton-line {
+		background: color-mix(in srgb, var(--on-surface-variant) 12%, #2b2d31 88%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-skeleton-line::after {
 		background: linear-gradient(
 			90deg,
-			color-mix(in srgb, var(--on-surface-variant) 12%, #2b2d31 88%) 0%,
-			color-mix(in srgb, var(--primary) 18%, #3a3d42 82%) 45%,
-			color-mix(in srgb, var(--on-surface-variant) 12%, #2b2d31 88%) 90%
+			transparent 0%,
+			rgba(59, 130, 246, 0.14) 24%,
+			rgba(125, 211, 252, 0.5) 50%,
+			rgba(59, 130, 246, 0.14) 76%,
+			transparent 100%
 		);
-		background-size: 220% 100%;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-state {
@@ -3257,18 +3290,17 @@ const toPageHref = (page: number) => {
 			animation: none;
 		}
 
-		.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top,
+		.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top::after,
 		.dashboard-ai-card.is-generating .dashboard-ai-orb,
 		.dashboard-ai-card.is-generating .dashboard-ai-sparkle,
 		.dashboard-ai-card.is-generating,
 		.dashboard-ai-loading-icon,
-		.dashboard-ai-skeleton-line {
+		.dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after {
 			animation: none;
 		}
 
-		.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top {
-			opacity: 1;
-			background-position: 50% 0;
+		.dashboard-ai-card.is-generating .dashboard-ai-shimmer-top::after {
+			transform: translateX(0);
 		}
 
 		.dashboard-ai-card.is-generating .dashboard-ai-orb {

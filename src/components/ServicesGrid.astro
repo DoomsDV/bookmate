@@ -122,11 +122,11 @@ const inactiveCount = services.length - activeCount;
 						<dl class="services-card-metrics">
 							<div class="flex items-center justify-between text-[0.92rem]">
 								<dt class="services-card-term">Duración</dt>
-								<dd class="services-card-value">{toDurationLabel(service.duration_minutes)}</dd>
+								<dd class="services-card-value services-card-value--duration">{toDurationLabel(service.duration_minutes)}</dd>
 							</div>
 							<div class="flex items-center justify-between text-[0.92rem]">
 								<dt class="services-card-term">Precio</dt>
-								<dd class="services-card-value">
+								<dd class="services-card-value services-card-value--price">
 									{service.price ? currencyFormatter.format(service.price) : '--'}
 								</dd>
 							</div>
@@ -307,9 +307,17 @@ const inactiveCount = services.length - activeCount;
 	}
 
 	.services-card-value {
-		font-weight: 700;
 		color: color-mix(in srgb, var(--on-surface-variant) 74%, var(--on-surface) 26%);
 		text-align: right;
+	}
+
+	.services-card-value--duration {
+		font-weight: 500;
+	}
+
+	.services-card-value--price {
+		font-weight: 700;
+		color: var(--on-surface);
 	}
 
 	html[data-theme='dark'] .services-summary-pill--active {
@@ -356,7 +364,11 @@ const inactiveCount = services.length - activeCount;
 		color: #ffc8d2;
 	}
 
-	html[data-theme='dark'] .services-card-value {
+	html[data-theme='dark'] .services-card-value--duration {
 		color: color-mix(in srgb, var(--on-surface-variant) 86%, #d1d5db 14%);
+	}
+
+	html[data-theme='dark'] .services-card-value--price {
+		color: var(--on-surface);
 	}
 </style>
