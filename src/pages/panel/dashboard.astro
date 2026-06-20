@@ -460,7 +460,7 @@ const toPageHref = (page: number) => {
 	<AppAlert />
 
 	<dialog
-		class="dashboard-ai-modal m-auto h-[min(78dvh,40rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-white p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] max-md:mt-auto max-md:mb-0 max-md:w-screen max-md:max-w-none max-md:rounded-t-[1.8rem] max-md:rounded-b-none"
+		class="dashboard-ai-modal m-auto w-[min(42rem,calc(100vw-2rem))] max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] max-md:w-screen max-md:max-w-none max-md:rounded-t-[1.8rem] max-md:rounded-b-none"
 		data-ai-summary-modal
 	>
 		<div class="dashboard-ai-modal__mesh" aria-hidden="true"></div>
@@ -917,6 +917,27 @@ const toPageHref = (page: number) => {
 
 	let aiSummaryModalSections: AiSummarySection[] = [];
 	let aiSummaryModalCloseTimer: number | null = null;
+	let aiSummaryScrollLock: { container: HTMLElement; scrollTop: number } | null = null;
+
+	const getDashboardScrollContainer = (): HTMLElement | null =>
+		document.querySelector<HTMLElement>('.app-shell > :last-child > main');
+
+	const lockDashboardScrollForAiModal = () => {
+		const container = getDashboardScrollContainer();
+		if (!container) return;
+		aiSummaryScrollLock = { container, scrollTop: container.scrollTop };
+	};
+
+	const unlockDashboardScrollForAiModal = () => {
+		const lock = aiSummaryScrollLock;
+		aiSummaryScrollLock = null;
+		if (!lock) return;
+
+		requestAnimationFrame(() => {
+			lock.container.scrollTop = lock.scrollTop;
+			window.scrollTo(0, 0);
+		});
+	};
 
 	const applyAiSummaryContent = async (payload: AiSummaryPayload) => {
 		const card = document.querySelector<HTMLElement>('[data-ai-summary-card]');
@@ -1253,7 +1274,11 @@ const toPageHref = (page: number) => {
 			aiSummaryModalCloseTimer = null;
 		}
 
-		if (!modal.open) modal.showModal();
+		if (!modal.open) {
+			lockDashboardScrollForAiModal();
+			document.documentElement.classList.add('ai-summary-modal-open');
+			modal.showModal();
+		}
 	};
 
 	const closeAiSummaryModal = () => {
@@ -1267,6 +1292,8 @@ const toPageHref = (page: number) => {
 			modal.close();
 			modal.classList.remove('is-closing');
 			aiSummaryModalCloseTimer = null;
+			document.documentElement.classList.remove('ai-summary-modal-open');
+			unlockDashboardScrollForAiModal();
 		}, AI_MODAL_CLOSE_MS);
 	};
 
@@ -1288,6 +1315,11 @@ const toPageHref = (page: number) => {
 		modal.addEventListener('cancel', (event) => {
 			event.preventDefault();
 			closeAiSummaryModal();
+		});
+
+		modal.addEventListener('close', () => {
+			document.documentElement.classList.remove('ai-summary-modal-open');
+			unlockDashboardScrollForAiModal();
 		});
 
 		document.addEventListener('click', (event) => {
@@ -1387,9 +1419,6 @@ const toPageHref = (page: number) => {
 
 	const UPCOMING_APPOINTMENTS_ANCHOR_ID = 'dashboard-upcoming-appointments';
 	const UPCOMING_APPOINTMENTS_SCROLL_OFFSET = 12;
-
-	const getDashboardScrollContainer = (): HTMLElement | null =>
-		document.querySelector<HTMLElement>('.app-shell > :last-child > main');
 
 	const shouldScrollToUpcomingAppointments = (): boolean => {
 		const url = new URL(window.location.href);
@@ -1516,8 +1545,10 @@ const toPageHref = (page: number) => {
 	}
 
 	dialog[data-ai-summary-modal].dashboard-ai-modal {
-		position: relative;
-		background: #ffffff;
+		position: fixed;
+		margin: 0;
+		padding: 0;
+		background: var(--surface-bright);
 	}
 
 	.dashboard-ai-modal__mesh {
@@ -2507,12 +2538,25 @@ const toPageHref = (page: number) => {
 
 	dialog[data-ai-summary-modal] {
 		position: fixed;
-		inset: 0;
+		top: auto;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		max-width: 100%;
+		height: min(78dvh, 40rem);
+		max-height: 85dvh;
+		border: none;
 		animation: ai-summary-modal-in var(--modal-open-duration, 220ms) var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
 	}
 
 	dialog[data-ai-summary-modal]::backdrop {
+		background: rgba(15, 23, 42, 0.42);
 		animation: ai-summary-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
+	}
+
+	html[data-theme='dark'] dialog[data-ai-summary-modal]::backdrop {
+		background: rgba(0, 0, 0, 0.58);
 	}
 
 	dialog[data-ai-summary-modal].is-closing {
@@ -2558,27 +2602,41 @@ const toPageHref = (page: number) => {
 	}
 
 	@media (min-width: 640px) {
+		dialog[data-ai-summary-modal] {
+			top: 50%;
+			right: auto;
+			bottom: auto;
+			left: 50%;
+			width: min(42rem, calc(100vw - 2rem));
+			max-width: min(42rem, calc(100vw - 2rem));
+			height: min(78dvh, 40rem);
+			max-height: 85vh;
+			border: 1px solid var(--shell-border);
+			border-radius: 1.8rem;
+			transform: translate(-50%, -50%);
+		}
+
 		@keyframes ai-summary-modal-in {
 			from {
 				opacity: 0;
-				transform: translateY(10px) scale(0.98);
+				transform: translate(-50%, calc(-50% + 10px)) scale(0.98);
 			}
 
 			to {
 				opacity: 1;
-				transform: translateY(0) scale(1);
+				transform: translate(-50%, -50%) scale(1);
 			}
 		}
 
 		@keyframes ai-summary-modal-out {
 			from {
 				opacity: 1;
-				transform: translateY(0) scale(1);
+				transform: translate(-50%, -50%) scale(1);
 			}
 
 			to {
 				opacity: 0;
-				transform: translateY(8px) scale(0.98);
+				transform: translate(-50%, calc(-50% + 8px)) scale(0.98);
 			}
 		}
 	}
