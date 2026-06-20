@@ -24,6 +24,9 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#audioContext: AudioContext | null = null;
 	#analyser: AnalyserNode | null = null;
 	#statusFadeTimer: number | null = null;
+	#autoCloseTimer: number | null = null;
+	#draftAbortController: AbortController | null = null;
+	#session = 0;
 
 	private static readonly STATUS_LABELS: Record<VoiceUiState, string> = {
 		idle: 'Toca el micrófono y describe la cita.',
@@ -94,18 +97,14 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.#bound = false;
 		this.#listeners?.abort();
 		this.#listeners = null;
-		if (this.#statusFadeTimer) {
-			window.clearTimeout(this.#statusFadeTimer);
-			this.#statusFadeTimer = null;
-		}
-		this.stopElapsedTimer();
-		this.stopRecording(false);
-		this.teardownAudioAnalysis();
+		this.cancelAll(true);
 		this.#visualizer?.destroy();
 		this.#visualizer = null;
 	}
 
 	open(options: { mode?: VoiceOverlayMode } = {}) {
+		this.cancelAll(false);
+		this.#session += 1;
 		this.#mode = options.mode === 'inline' ? 'inline' : 'navigate';
 		this.stopElapsedTimer();
 		this.setState('idle');
@@ -117,11 +116,51 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	}
 
 	close() {
-		this.stopRecording(false);
-		this.teardownAudioAnalysis();
-		this.#visualizer?.setMode('off');
+		this.cancelAll(true);
 		const shell = this.querySelector<HTMLDialogElement>('[data-voice-overlay-shell]');
 		if (shell?.open) shell.close();
+	}
+
+	private isSessionActive(session: number) {
+		return this.#session === session;
+	}
+
+	private clearUiTimers() {
+		if (this.#statusFadeTimer) {
+			window.clearTimeout(this.#statusFadeTimer);
+			this.#statusFadeTimer = null;
+		}
+
+		if (this.#autoCloseTimer) {
+			window.clearTimeout(this.#autoCloseTimer);
+			this.#autoCloseTimer = null;
+		}
+	}
+
+	private abortDraftRequest() {
+		this.#draftAbortController?.abort();
+		this.#draftAbortController = null;
+	}
+
+	private cancelAll(invalidateSession = true) {
+		if (invalidateSession) {
+			this.#session += 1;
+		}
+
+		this.clearUiTimers();
+		this.abortDraftRequest();
+
+		if (this.#maxRecordingTimer) {
+			window.clearTimeout(this.#maxRecordingTimer);
+			this.#maxRecordingTimer = null;
+		}
+
+		this.stopElapsedTimer();
+		this.stopRecording(false);
+		this.teardownAudioAnalysis();
+		this.#visualizer?.cancelCollapse();
+		this.#visualizer?.setMode('off');
+		this.#audioChunks = [];
 	}
 
 	private handleDocumentClick = (event: Event) => {
@@ -277,11 +316,13 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		}
 	}
 
-	private async playCollapseTransition() {
+	private async playCollapseTransition(session: number) {
 		this.setState('collapsing');
 		this.teardownAudioAnalysis();
 		await this.#visualizer?.playCollapse();
+		if (!this.isSessionActive(session)) return false;
 		this.setState('processing');
+		return true;
 	}
 
 	private teardownAudioAnalysis() {
@@ -342,6 +383,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	}
 
 	private async startRecording() {
+		const session = this.#session;
 		this.setError('');
 		this.setTranscript('');
 
@@ -358,6 +400,12 @@ class AppointmentVoiceOverlay extends HTMLElement {
 
 		try {
 			this.#mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			if (!this.isSessionActive(session)) {
+				this.#mediaStream.getTracks().forEach((track) => track.stop());
+				this.#mediaStream = null;
+				return;
+			}
+
 			this.#audioChunks = [];
 			this.#mediaRecorder = new MediaRecorder(this.#mediaStream, { mimeType });
 
@@ -366,7 +414,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			};
 
 			this.#mediaRecorder.onstop = () => {
-				void this.handleRecordingComplete(mimeType);
+				void this.handleRecordingComplete(mimeType, session);
 			};
 
 			this.#mediaRecorder.start();
@@ -378,6 +426,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 				void this.stopRecording(true);
 			}, MAX_RECORDING_MS);
 		} catch {
+			if (!this.isSessionActive(session)) return;
 			this.setError('No fue posible acceder al micrófono.');
 			this.setState('idle');
 		}
@@ -414,17 +463,23 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		}
 	}
 
-	private async handleRecordingComplete(mimeType: string) {
+	private async handleRecordingComplete(mimeType: string, session: number) {
+		if (!this.isSessionActive(session)) return;
+
 		const blob = new Blob(this.#audioChunks, { type: mimeType });
 		this.#audioChunks = [];
 
 		if (blob.size <= 0) {
+			if (!this.isSessionActive(session)) return;
 			this.setError('No se capturó audio. Intenta de nuevo.');
 			this.setState('idle');
 			return;
 		}
 
-		await this.playCollapseTransition();
+		const shouldContinue = await this.playCollapseTransition(session);
+		if (!shouldContinue || !this.isSessionActive(session)) return;
+
+		this.#draftAbortController = new AbortController();
 
 		try {
 			const extension = mimeType.includes('mp4') ? 'cita.mp4' : 'cita.webm';
@@ -435,7 +490,10 @@ class AppointmentVoiceOverlay extends HTMLElement {
 				method: 'POST',
 				body: formData,
 				credentials: 'same-origin',
+				signal: this.#draftAbortController.signal,
 			});
+
+			if (!this.isSessionActive(session)) return;
 
 			const payload = (await response.json()) as {
 				status?: string;
@@ -446,6 +504,8 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			if (!response.ok || payload.status !== 'success' || !payload.data?.draft) {
 				throw new Error(payload.message || 'No fue posible procesar la cita por voz.');
 			}
+
+			if (!this.isSessionActive(session)) return;
 
 			const transcript = String(payload.data.transcript || '').trim();
 			const draft = payload.data.draft;
@@ -475,12 +535,19 @@ class AppointmentVoiceOverlay extends HTMLElement {
 
 			this.setTranscript(transcript);
 			this.setState('success');
-			window.setTimeout(() => this.close(), 400);
+			this.#autoCloseTimer = window.setTimeout(() => {
+				this.#autoCloseTimer = null;
+				this.close();
+			}, 400);
 		} catch (error) {
+			if (error instanceof DOMException && error.name === 'AbortError') return;
+			if (!this.isSessionActive(session)) return;
 			this.setError(
 				error instanceof Error ? error.message : 'No fue posible procesar la cita por voz.'
 			);
 			this.setState('idle');
+		} finally {
+			this.#draftAbortController = null;
 		}
 	}
 }

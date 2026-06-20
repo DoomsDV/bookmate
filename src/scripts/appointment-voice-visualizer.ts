@@ -89,9 +89,25 @@ export class AppointmentVoiceVisualizer {
 		}
 	}
 
-	destroy() {
+	cancelCollapse() {
+		if (this.#collapseResolve) {
+			const resolve = this.#collapseResolve;
+			this.#collapseResolve = null;
+			resolve();
+		}
+
+		this.#mode = 'off';
+		this.#collapseProgress = 0;
+		this.#root.dataset.visualizerMode = 'off';
+		this.#root.style.removeProperty('--collapse');
 		this.stop();
-		this.#collapseResolve = null;
+		this.#level = 0;
+		this.#emitLevel(0);
+		this.#resetBars();
+	}
+
+	destroy() {
+		this.cancelCollapse();
 	}
 
 	private readLevel() {
