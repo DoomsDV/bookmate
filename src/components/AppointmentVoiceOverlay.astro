@@ -22,14 +22,25 @@ const VOICE_BAR_COUNT = 28;
 							<p class="appointment-voice-subtitle">Describe la cita con tu voz</p>
 						</div>
 					</div>
-					<button
-						type="button"
-						class="appointment-voice-close"
-						data-voice-overlay-close
-						aria-label="Cerrar"
-					>
-						<span class="material-symbols-rounded">close</span>
-					</button>
+					<div class="appointment-voice-header-actions">
+						<button
+							type="button"
+							class="appointment-voice-help"
+							data-voice-overlay-tour-help
+							aria-label="Guía de cita rápida por voz"
+						>
+							<span class="material-symbols-rounded" aria-hidden="true">help</span>
+							Guía
+						</button>
+						<button
+							type="button"
+							class="appointment-voice-close"
+							data-voice-overlay-close
+							aria-label="Cerrar"
+						>
+							<span class="material-symbols-rounded">close</span>
+						</button>
+					</div>
 				</div>
 
 				<div class="appointment-voice-body">
@@ -207,6 +218,42 @@ const VOICE_BAR_COUNT = 28;
 		font-size: 0.85rem;
 		font-weight: 600;
 		color: var(--on-surface-variant);
+	}
+
+	.appointment-voice-header-actions {
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		flex-shrink: 0;
+	}
+
+	.appointment-voice-help {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		height: 2.25rem;
+		padding: 0 0.85rem;
+		border: 1px solid var(--shell-border);
+		border-radius: 999px;
+		background: var(--surface-bright);
+		color: var(--on-surface-variant);
+		font-size: 0.82rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition:
+			border-color 160ms ease,
+			color 160ms ease,
+			background 160ms ease;
+	}
+
+	.appointment-voice-help .material-symbols-rounded {
+		font-size: 1.05rem;
+	}
+
+	.appointment-voice-help:hover {
+		border-color: color-mix(in srgb, var(--primary) 35%, var(--shell-border));
+		color: var(--primary);
 	}
 
 	.appointment-voice-close {

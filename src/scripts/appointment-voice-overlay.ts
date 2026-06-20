@@ -3,6 +3,8 @@ import {
 	type AppointmentAiDraft,
 	type StoredAppointmentAiDraft,
 } from '../lib/appointment-ai-types';
+import { showAppointmentVoiceTour } from '../lib/appointment-voice-tour';
+import { destroyActiveBookmateTour } from '../lib/product-tour';
 import { AppointmentVoiceVisualizer } from './appointment-voice-visualizer';
 
 type VoiceOverlayMode = 'navigate' | 'inline';
@@ -59,6 +61,14 @@ class AppointmentVoiceOverlay extends HTMLElement {
 				{ signal }
 			);
 		});
+		this.querySelector('[data-voice-overlay-tour-help]')?.addEventListener(
+			'click',
+			(event) => {
+				event.preventDefault();
+				showAppointmentVoiceTour();
+			},
+			{ signal }
+		);
 		this.querySelector('[data-voice-overlay-record]')?.addEventListener(
 			'click',
 			this.handleRecordToggle,
@@ -147,6 +157,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			this.#session += 1;
 		}
 
+		destroyActiveBookmateTour();
 		this.clearUiTimers();
 		this.abortDraftRequest();
 
