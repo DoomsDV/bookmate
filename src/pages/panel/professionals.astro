@@ -156,18 +156,19 @@ const toPageHref = (page: number) => {
 			</div>
 
 	<dialog
-		class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[min(92dvh,100%)] sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:max-h-[90vh] open:flex open:flex-col overflow-hidden rounded-t-[1.35rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+		class="professional-modal m-0 mt-auto mb-0 w-screen max-w-none max-h-[min(92dvh,100%)] sm:m-auto sm:w-[min(44rem,calc(100vw-2rem))] sm:max-w-[min(44rem,calc(100vw-2rem))] sm:max-h-[90vh] open:flex open:flex-col overflow-hidden rounded-t-[1.35rem] rounded-b-none sm:rounded-[1.65rem] border border-(--shell-border) bg-white p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(15,23,42,0.16)]"
 		data-professional-modal
 	>
-		<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 sm:px-7 sm:py-6">
-			<div class="flex items-start justify-between gap-3 sm:gap-4">
-				<div class="flex min-w-0 items-center gap-3 sm:gap-4">
-					<div class="flex size-10 shrink-0 items-center justify-center rounded-xl bg-(--primary-soft) text-(--primary) sm:size-12 sm:rounded-2xl">
-						<span class="material-symbols-rounded text-[1.25rem] sm:text-[1.4rem]">badge</span>
+		<div class="professional-modal__header shrink-0 z-10 px-4 py-3 sm:px-6 sm:py-4">
+			<div class="professional-modal__mesh" aria-hidden="true"></div>
+			<div class="relative z-10 flex items-start justify-between gap-3 sm:gap-4">
+				<div class="flex min-w-0 items-center gap-2.5 sm:gap-3">
+					<div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/80 text-(--primary) shadow-sm ring-1 ring-(--shell-border) sm:size-10">
+						<span class="material-symbols-rounded text-[1.15rem] sm:text-[1.25rem]">badge</span>
 					</div>
 					<div class="min-w-0">
-						<h2 class="text-[1.05rem] font-extrabold tracking-tight text-(--on-surface) sm:text-[1.2rem]" data-professional-modal-title>Crear personal</h2>
-						<p class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5 hidden sm:block" data-professional-modal-description>Completa los datos para registrar profesional y cuenta en una sola operación.</p>
+						<h2 class="text-[1rem] font-bold tracking-tight text-(--on-surface) sm:text-[1.08rem]" data-professional-modal-title>Crear personal</h2>
+						<p class="text-[0.82rem] font-medium leading-snug text-(--on-surface-variant) mt-0.5 hidden sm:block" data-professional-modal-description>Completa los datos para registrar profesional y cuenta en una sola operación.</p>
 					</div>
 				</div>
 				<div class="flex shrink-0 items-center gap-2">
@@ -187,7 +188,7 @@ const toPageHref = (page: number) => {
 			</div>
 		</div>
 
-		<form class="relative flex flex-col overflow-hidden bg-(--surface)/30 min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-professional-form>
+		<form class="relative flex flex-col overflow-hidden bg-white min-h-0" data-professional-form>
 			<div class="pointer-events-none fixed inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all" data-professional-loading>
 				<div class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
 					<span class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)">progress_activity</span>
@@ -217,40 +218,53 @@ const toPageHref = (page: number) => {
 				</div>
 			</div>
 
-			<div class="flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-7 sm:py-7" data-professional-modal-scroll>
+			<div class="flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6 sm:py-4" data-professional-modal-scroll>
 
-			<div class="profile-photo-uploader mb-4 sm:mb-7" data-profile-upload-dropzone>
-				<div class="profile-photo-uploader__avatar">
-					<img src="" alt="Vista previa" class="absolute inset-0 hidden h-full w-full rounded-full object-cover object-center" data-profile-preview />
-					<div class="absolute inset-0 grid place-items-center" data-profile-placeholder>
-						<span class="material-symbols-rounded text-[2rem] sm:text-[2.5rem]">account_circle</span>
+			<div class="professional-modal-hero">
+				<div class="profile-photo-uploader" data-profile-upload-dropzone>
+					<div class="profile-photo-uploader__stack">
+						<div class="profile-photo-uploader__avatar-wrap">
+							<div class="profile-photo-uploader__avatar">
+								<img src="" alt="Vista previa" class="absolute inset-0 hidden h-full w-full rounded-full object-cover object-center" data-profile-preview />
+								<div class="absolute inset-0 grid place-items-center" data-profile-placeholder>
+									<span class="material-symbols-rounded text-[2rem] sm:text-[2.15rem]">account_circle</span>
+								</div>
+							</div>
+							<label
+								for="file-upload"
+								class="profile-photo-uploader__edit"
+								data-profile-upload-button
+								aria-label="Cambiar foto. JPG o PNG, máximo 2 MB"
+								title="Cambiar foto"
+							>
+								<span class="material-symbols-rounded" data-profile-upload-icon>edit</span>
+								<input id="file-upload" name="profile_image" type="file" class="sr-only" accept=".jpg,.jpeg,.png" />
+							</label>
+						</div>
+						<div class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_image"></div>
 					</div>
 				</div>
-				<div class="profile-photo-uploader__content">
-					<h3 class="profile-photo-uploader__title">Foto de perfil</h3>
-					<div class="profile-photo-uploader__actions">
-						<label for="file-upload" class="profile-photo-uploader__button" data-profile-upload-button>
-							<span class="material-symbols-rounded text-[1.2rem]" data-profile-upload-icon>add_photo_alternate</span>
-							<span data-image-file-name>Cambiar foto</span>
-							<input id="file-upload" name="profile_image" type="file" class="sr-only" accept=".jpg,.jpeg,.png" />
-						</label>
-						<span class="profile-photo-uploader__meta">JPG o PNG · máx. 2 MB</span>
-					</div>
-					<div class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_image"></div>
-				</div>
+
+				<label class="professional-modal-identity">
+					<span class="professional-modal-identity__label">Nombre en este negocio <span class="text-rose-500">*</span></span>
+					<input
+						type="text"
+						name="display_name"
+						maxlength="150"
+						required
+						autocomplete="off"
+						class="professional-modal-identity__input"
+						placeholder="Ej: Dr. Sarah Gómez"
+					/>
+					<span class="professional-modal-identity__hint">Así verán clientes y equipo en esta organización.</span>
+					<span class="hidden text-xs font-semibold text-rose-600" data-field-error="display_name"></span>
+				</label>
 			</div>
 
-			<div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
-				<div class="sm:col-span-2 grid gap-4 sm:gap-5">
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-						<span class="inline-flex items-center gap-1">Nombre en este negocio <span class="text-rose-500">*</span></span>
-						<input type="text" name="display_name" maxlength="150" required autocomplete="off" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="Ej: Dr. Sarah Gómez"/>
-						<span class="text-xs font-medium text-(--on-surface-variant)">Así verán clientes y equipo en esta organización.</span>
-						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="display_name"></span>
-					</label>
-
+			<div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+				<div class="sm:col-span-2 grid gap-3 sm:gap-4">
 					<label class="professional-public-profile-field" data-professional-public-profile-field>
-						<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">URL del perfil público <span class="font-semibold text-(--on-surface-variant)">(Opcional)</span></span>
+						<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">URL del perfil público <span class="text-rose-500">*</span></span>
 						<div class="flex min-w-0">
 							<span
 								class="public-profile-url-prefix inline-flex shrink-0 items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-2.5 text-xs font-semibold text-(--on-surface-variant) shadow-sm sm:px-3 sm:text-sm"
@@ -258,7 +272,7 @@ const toPageHref = (page: number) => {
 							>
 								{publicProfilePrefixDisplay}
 							</span>
-							<input type="text" name="profile_slug" maxlength="100" class="block w-full min-w-0 flex-1 rounded-none border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
+							<input type="text" name="profile_slug" maxlength="100" required class="block w-full min-w-0 flex-1 rounded-none border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
 							<button
 								type="button"
 								class="inline-flex w-12 shrink-0 items-center justify-center rounded-r-2xl border border-l-0 border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--surface-container-high) hover:text-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
@@ -269,7 +283,7 @@ const toPageHref = (page: number) => {
 								<span class="material-symbols-rounded text-[1.1rem]" data-copy-professional-profile-url-icon>content_copy</span>
 							</button>
 						</div>
-						<span class="text-[0.84rem] font-semibold text-(--on-surface-variant)">Este enlace es el perfil público que tus clientes usarán para reservar contigo.</span>
+						<span class="professional-field-hint">Enlace para que los clientes reserven en el negocio directamente con este profesional.</span>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="profile_slug"></span>
 					</label>
 				</div>
@@ -292,8 +306,11 @@ const toPageHref = (page: number) => {
 								class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
 							/>
 						</div>
-						<span class="text-[0.85rem] font-medium leading-relaxed text-(--on-surface-variant)">
-							Este número solo aplica a esta organización.
+						<span
+							class="text-[0.85rem] font-medium leading-relaxed text-(--on-surface-variant)"
+							data-phone-org-hint
+						>
+							Teléfono general de contacto del profesional.
 						</span>
 						<span class="hidden text-xs font-semibold text-rose-600" data-field-error="phone_number"></span>
 					</label>
@@ -445,7 +462,7 @@ const toPageHref = (page: number) => {
 			</div>
 			</div>
 			
-			<div class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-5">
+			<div class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-white px-4 py-2.5 sm:px-6 sm:py-3.5">
 				<div class="modal-footer">
 				<button type="button" class="hidden modal-action-danger" data-delete-professional>
 					<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" data-delete-professional-icon>delete</span>
@@ -539,7 +556,6 @@ const toPageHref = (page: number) => {
 			description: HTMLElement | null;
 			submitIcon: HTMLElement | null;
 			submitLabel: HTMLElement | null;
-			imageFileName: HTMLElement | null;
 			previewImg: HTMLImageElement | null;
 			previewPlaceholder: HTMLElement | null;
 			photoDropzone: HTMLElement | null;
@@ -635,7 +651,6 @@ const toPageHref = (page: number) => {
 				description: this.querySelector<HTMLElement>('[data-professional-modal-description]'),
 				submitIcon: this.querySelector<HTMLElement>('[data-submit-professional-icon]'),
 				submitLabel: this.querySelector<HTMLElement>('[data-submit-professional-label]'),
-				imageFileName: this.querySelector<HTMLElement>('[data-image-file-name]'),
 				previewImg: this.querySelector<HTMLImageElement>('[data-profile-preview]'),
 				previewPlaceholder: this.querySelector<HTMLElement>('[data-profile-placeholder]'),
 				photoDropzone: this.querySelector<HTMLElement>('[data-profile-upload-dropzone]'),
@@ -700,6 +715,13 @@ const toPageHref = (page: number) => {
 				const val = String(this.formEls.slug?.value || '').trim();
 				this.slugManuallyEdited = val !== '';
 				if (!this.slugManuallyEdited) this.queueSlugSuggestion();
+				const slugFieldNode = this.formEls.fieldErrors.find(
+					(el) => el.getAttribute('data-field-error') === 'profile_slug'
+				);
+				if (slugFieldNode) {
+					slugFieldNode.textContent = '';
+					slugFieldNode.classList.add('hidden');
+				}
 			}, { signal });
 			this.formEls.displayName?.addEventListener('input', () => this.queueSlugSuggestion(), { signal });
 
@@ -844,10 +866,22 @@ const toPageHref = (page: number) => {
 			);
 		}
 
+		private isEditingSelf() {
+			return (
+				this.mode === 'edit' &&
+				this.editingUserId !== null &&
+				this.editingUserId === this.currentUserId
+			);
+		}
+
 		private setFieldLocked(field: HTMLElement | null, locked: boolean) {
 			if (!field) return;
 			if (field instanceof HTMLSelectElement || field instanceof HTMLInputElement) {
 				field.disabled = locked;
+				if (field instanceof HTMLInputElement && field.name === 'phone_number') {
+					if (locked) field.removeAttribute('required');
+					else field.setAttribute('required', '');
+				}
 			}
 			field.classList.toggle('is-locked', locked);
 			field.closest('label')?.classList.toggle('is-locked', locked);
@@ -988,8 +1022,10 @@ const toPageHref = (page: number) => {
 
 		private applySelfAdminFieldRestrictions() {
 			const isSelfAdmin = this.isEditingSelfAdmin();
+			const isEditingSelf = this.isEditingSelf();
 
 			this.setFieldLocked(this.formEls.role, isSelfAdmin);
+			this.setFieldLocked(this.formEls.phone, isEditingSelf);
 
 			if (this.els.roleSelfAdminHint) {
 				this.els.roleSelfAdminHint.classList.toggle('hidden', !isSelfAdmin);
@@ -1178,6 +1214,15 @@ const toPageHref = (page: number) => {
 			phoneFieldNode.classList.remove('hidden');
 		}
 
+		private setSlugFieldError(message: string) {
+			const slugFieldNode = this.formEls.fieldErrors.find(
+				(el) => el.getAttribute('data-field-error') === 'profile_slug'
+			);
+			if (!slugFieldNode) return;
+			slugFieldNode.textContent = message;
+			slugFieldNode.classList.remove('hidden');
+		}
+
 		private handlePhoneInput = () => {
 			if (!this.formEls.phone) return;
 			this.formEls.phone.value = this.formatParaguayPhoneLocal(this.formEls.phone.value);
@@ -1257,9 +1302,7 @@ const toPageHref = (page: number) => {
 		}
 
 		private setImageFileNameLabel() {
-			if (!this.els.imageFileName) return;
 			const file = this.formEls.image?.files?.[0];
-			this.els.imageFileName.textContent = file ? file.name : 'Cambiar foto';
 			const imageFieldNode = this.formEls.fieldErrors.find(
 				(el) => el.getAttribute('data-field-error') === 'profile_image'
 			);
@@ -1288,7 +1331,7 @@ const toPageHref = (page: number) => {
 
 		private resetPhotoUploadIcon() {
 			if (this.els.profileUploadIcon) {
-				this.els.profileUploadIcon.textContent = 'add_photo_alternate';
+				this.els.profileUploadIcon.textContent = 'edit';
 			}
 			this.els.profileUploadButton?.classList.remove('is-success');
 		}
@@ -1575,6 +1618,11 @@ const toPageHref = (page: number) => {
 			return arr.map(Number).filter(n => Number.isInteger(n) && n > 0);
 		}
 
+		private resetModalScroll() {
+			const scrollContainer = this.querySelector<HTMLElement>('[data-professional-modal-scroll]');
+			if (scrollContainer) scrollContainer.scrollTop = 0;
+		}
+
 		private async openCreateModal() {
 			this.updateUIMode('create');
 			this.editingId = null;
@@ -1588,6 +1636,7 @@ const toPageHref = (page: number) => {
 				this.closeTimer = null;
 			}
 			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
+			this.resetModalScroll();
 			
 			try {
 				await Promise.all([this.ensureSpecialtiesLoaded(), this.ensureRolesLoaded(), this.ensureServicesLoaded()]);
@@ -1609,6 +1658,7 @@ const toPageHref = (page: number) => {
 				this.closeTimer = null;
 			}
 			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
+			this.resetModalScroll();
 			this.setLoadingMessage('Cargando...');
 			this.toggleFormLoading(true);
 
@@ -1703,10 +1753,13 @@ const toPageHref = (page: number) => {
 			
 			const fd = new FormData(this.els.form);
 			const isSelfAdmin = this.isEditingSelfAdmin();
+			const isEditingSelf = this.isEditingSelf();
 			const roleRaw = isSelfAdmin && this.editingRoleId
 				? String(this.editingRoleId)
 				: String(fd.get('rol_id_role') || '').trim();
-			const rawPhone = String(fd.get('phone_number') || '').trim();
+			const rawPhone = isEditingSelf
+				? String(this.formEls.phone?.value || '').trim()
+				: String(fd.get('phone_number') || '').trim();
 			const parsedPhone = parseParaguayMobilePhone(rawPhone);
 			if (!parsedPhone.isValid) {
 				this.setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
@@ -1729,7 +1782,11 @@ const toPageHref = (page: number) => {
 			}
 			
 			const slug = String(fd.get('profile_slug') || '').trim();
-			if (slug) payload.profile_slug = slug;
+			if (!slug) {
+				this.setSlugFieldError('La URL del perfil público es obligatoria.');
+				return;
+			}
+			payload.profile_slug = slug;
 			
 			const sId = Number(fd.get('spe_id_specialty'));
 			if (sId > 0) payload.spe_id_specialty = sId;
@@ -1850,14 +1907,139 @@ const toPageHref = (page: number) => {
 	}
 </script>
 <style is:global>
-	dialog[data-professional-modal] {
+	dialog[data-professional-modal].professional-modal {
 		position: fixed;
 		inset: 0;
+		background: #ffffff;
 		animation: professional-modal-in var(--modal-open-duration) var(--modal-easing);
 	}
 
+	.professional-modal__header {
+		position: relative;
+		overflow: hidden;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 55%, transparent);
+	}
+
+	.professional-modal__mesh {
+		position: absolute;
+		inset: 0 0 auto;
+		height: 100%;
+		pointer-events: none;
+		background:
+			radial-gradient(ellipse 85% 90% at 8% -30%, rgba(59, 130, 246, 0.14), transparent 62%),
+			radial-gradient(ellipse 70% 80% at 92% -10%, rgba(139, 92, 246, 0.1), transparent 58%);
+		filter: blur(20px);
+	}
+
+	html[data-theme='dark'] dialog[data-professional-modal].professional-modal {
+		background: var(--surface-bright);
+	}
+
+	html[data-theme='dark'] .professional-modal__mesh {
+		background:
+			radial-gradient(ellipse 85% 90% at 8% -30%, rgba(59, 130, 246, 0.2), transparent 62%),
+			radial-gradient(ellipse 70% 80% at 92% -10%, rgba(139, 92, 246, 0.16), transparent 58%);
+	}
+
+	.professional-modal-hero {
+		display: grid;
+		justify-items: center;
+		gap: 0.35rem;
+		margin-bottom: 1rem;
+		padding-bottom: 1rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 35%, transparent);
+	}
+
+	.professional-modal-identity {
+		display: grid;
+		width: min(100%, 22rem);
+		gap: 0.3rem;
+		text-align: center;
+	}
+
+	.professional-modal-identity__label {
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.professional-modal-identity__input {
+		width: 100%;
+		border: 0;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
+		background: transparent;
+		padding: 0.2rem 0.35rem 0.45rem;
+		text-align: center;
+		font-size: 1.05rem;
+		font-weight: 700;
+		line-height: 1.3;
+		color: var(--on-surface);
+		outline: none;
+		transition: border-color 160ms ease, box-shadow 160ms ease;
+	}
+
+	.professional-modal-identity__input::placeholder {
+		color: color-mix(in srgb, var(--on-surface-variant) 72%, transparent);
+		font-weight: 600;
+	}
+
+	.professional-modal-identity__input:hover {
+		border-bottom-color: color-mix(in srgb, var(--on-surface-variant) 45%, transparent);
+	}
+
+	.professional-modal-identity__input:focus {
+		border-bottom-color: var(--primary);
+		box-shadow: 0 1px 0 0 color-mix(in srgb, var(--primary) 55%, transparent);
+	}
+
+	.professional-modal-identity__hint {
+		font-size: 0.74rem;
+		font-weight: 500;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+
+	dialog[data-professional-modal] [data-professional-modal-scroll] label.grid {
+		gap: 0.35rem;
+		font-size: 0.88rem;
+		font-weight: 700;
+	}
+
+	dialog[data-professional-modal] [data-professional-modal-scroll] label.grid > span:first-child {
+		font-size: 0.88rem;
+	}
+
+	dialog[data-professional-modal] [data-professional-modal-scroll] .grid {
+		gap: 0.75rem;
+	}
+
+	@media (min-width: 640px) {
+		dialog[data-professional-modal] [data-professional-modal-scroll] .grid {
+			gap: 0.9rem;
+		}
+	}
+
+	dialog[data-professional-modal] [data-professional-modal-scroll] input:not(.professional-modal-identity__input),
+	dialog[data-professional-modal] [data-professional-modal-scroll] .professional-native-select {
+		padding-top: 0.5rem;
+		padding-bottom: 0.5rem;
+		font-size: 0.9rem;
+	}
+
+	dialog[data-professional-modal] [data-professional-modal-scroll] label.grid span.text-xs,
+	dialog[data-professional-modal] [data-professional-modal-scroll] label.grid span.text-\[0\.84rem\],
+	dialog[data-professional-modal] [data-professional-modal-scroll] label.grid span.text-\[0\.85rem\] {
+		font-size: 0.76rem;
+		font-weight: 500;
+		line-height: 1.4;
+	}
+
 	dialog[data-professional-modal] select.is-locked,
-	dialog[data-professional-modal] select:disabled {
+	dialog[data-professional-modal] select:disabled,
+	dialog[data-professional-modal] input.is-locked,
+	dialog[data-professional-modal] input:disabled {
 		cursor: not-allowed;
 		opacity: 0.78;
 		background-color: color-mix(in srgb, var(--surface-bright) 82%, var(--surface-container-high) 18%);
@@ -1965,98 +2147,123 @@ const toPageHref = (page: number) => {
 	.profile-photo-uploader {
 		position: relative;
 		display: flex;
-		flex-direction: row;
-		align-items: center;
-		gap: 0.85rem;
-		border-radius: 1.35rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 82%, var(--primary) 18%);
-		background:
-			linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 42%, transparent), transparent 46%),
-			var(--surface-bright);
-		padding: 0.85rem;
-		box-shadow: var(--card-inset-highlight), 0 10px 28px rgba(15, 23, 42, 0.06);
-		transition: border-color 140ms ease, background-color 140ms ease, box-shadow 140ms ease;
+		justify-content: center;
+		padding: 0.15rem 0 0;
+		transition: opacity 140ms ease;
 	}
 
-	.profile-photo-uploader.is-dragover {
-		border-color: var(--primary);
-		background:
-			linear-gradient(135deg, color-mix(in srgb, var(--primary-soft) 72%, transparent), transparent 54%),
-			var(--surface-bright);
-		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent), 0 14px 36px rgba(15, 23, 42, 0.1);
+	.profile-photo-uploader__stack {
+		display: flex;
+		width: min(100%, 14rem);
+		flex-direction: column;
+		align-items: center;
+		gap: 0.25rem;
+		text-align: center;
+	}
+
+	.profile-photo-uploader__avatar-wrap {
+		position: relative;
+		display: inline-flex;
+	}
+
+	.profile-photo-uploader.is-dragover .profile-photo-uploader__stack {
+		opacity: 0.92;
+	}
+
+	.profile-photo-uploader.is-dragover .profile-photo-uploader__avatar {
+		box-shadow:
+			0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent),
+			0 8px 20px rgba(15, 23, 42, 0.12);
 	}
 
 	.profile-photo-uploader__avatar {
 		position: relative;
-		width: 4.25rem;
-		height: 4.25rem;
+		width: 4.75rem;
+		height: 4.75rem;
 		flex: 0 0 auto;
 		overflow: hidden;
 		border-radius: 999px;
-		border: 3px solid var(--surface-bright);
+		border: 2px solid #ffffff;
 		background: color-mix(in srgb, var(--primary-soft) 70%, var(--surface-container) 30%);
 		color: var(--primary);
-		box-shadow: 0 8px 20px rgba(15, 23, 42, 0.1);
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--shell-border) 65%, transparent),
+			0 10px 22px rgba(15, 23, 42, 0.1);
 	}
 
-	.profile-photo-uploader__content {
-		display: grid;
-		min-width: 0;
-		flex: 1;
-		gap: 0.45rem;
-		text-align: left;
-	}
-
-	.profile-photo-uploader__title {
-		margin: 0;
-		font-size: 0.98rem;
-		font-weight: 850;
-		color: var(--on-surface);
-	}
-
-	.profile-photo-uploader__actions {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.45rem 0.65rem;
-	}
-
-	.profile-photo-uploader__button {
+	.profile-photo-uploader__edit {
+		position: absolute;
+		right: -0.1rem;
+		bottom: -0.05rem;
+		z-index: 2;
 		display: inline-flex;
-		min-height: 2.65rem;
-		cursor: pointer;
 		align-items: center;
 		justify-content: center;
-		gap: 0.5rem;
+		width: 1.65rem;
+		height: 1.65rem;
 		border-radius: 999px;
-		border: 1px solid var(--primary-container);
-		background: var(--primary-soft);
-		padding: 0.65rem 1rem;
-		color: var(--primary);
+		border: 2px solid #ffffff;
+		background-color: #ffffff;
+		background-image: none;
+		color: #64748b;
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--shell-border) 70%, #cbd5e1 30%),
+			0 2px 8px rgba(15, 23, 42, 0.14);
+		cursor: pointer;
+		transition:
+			background-color 140ms ease,
+			color 140ms ease,
+			transform 140ms ease,
+			box-shadow 140ms ease;
+	}
+
+	.profile-photo-uploader__edit .material-symbols-rounded {
 		font-size: 0.9rem;
-		font-weight: 850;
-		transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+		line-height: 1;
 	}
 
-	.profile-photo-uploader__button:hover {
-		background: var(--primary-soft-hover);
-		border-color: color-mix(in srgb, var(--primary) 44%, var(--primary-container) 56%);
+	.profile-photo-uploader__edit:hover {
+		background-color: #eff6ff;
+		color: #2563eb;
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, #93c5fd 55%, var(--shell-border) 45%),
+			0 3px 10px rgba(37, 99, 235, 0.16);
 	}
 
-	.profile-photo-uploader__button:active {
-		transform: scale(0.98);
+	.profile-photo-uploader__edit:active {
+		transform: scale(0.94);
+		background-color: #dbeafe;
 	}
 
-	.profile-photo-uploader__button.is-success {
-		border-color: color-mix(in srgb, #34d399 42%, var(--primary-container) 58%);
-		background: color-mix(in srgb, #34d399 12%, var(--primary-soft) 88%);
-		color: #34d399;
+	.profile-photo-uploader__edit.is-success {
+		background-color: #ecfdf5;
+		color: #059669;
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, #6ee7b7 50%, var(--shell-border) 50%),
+			0 2px 8px rgba(5, 150, 105, 0.14);
 	}
 
-	.profile-photo-uploader__meta {
-		color: var(--on-surface-variant);
-		font-size: 0.75rem;
-		font-weight: 700;
+	html[data-theme='dark'] .profile-photo-uploader__edit {
+		border-color: color-mix(in srgb, var(--surface-bright) 88%, #0f172a 12%);
+		background-color: #e2e8f0;
+		color: #475569;
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, #94a3b8 45%, transparent),
+			0 2px 8px rgba(0, 0, 0, 0.28);
+	}
+
+	html[data-theme='dark'] .profile-photo-uploader__edit:hover {
+		background-color: #dbeafe;
+		color: #1d4ed8;
+	}
+
+	html[data-theme='dark'] .profile-photo-uploader__edit.is-success {
+		background-color: #d1fae5;
+		color: #047857;
+	}
+
+	.profile-photo-uploader__edit.is-success .material-symbols-rounded {
+		font-size: 0.95rem;
 	}
 
 	.public-profile-url-prefix {
@@ -2067,17 +2274,20 @@ const toPageHref = (page: number) => {
 
 	.professional-public-profile-field {
 		display: grid;
-		gap: 0.55rem;
-		border-radius: 1.15rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 80%, var(--primary) 20%);
-		background: color-mix(in srgb, var(--primary-soft) 28%, var(--surface-bright) 72%);
-		padding: 1rem;
-		box-shadow: var(--card-inset-highlight);
+		gap: 0.4rem;
+		padding-top: 0.15rem;
+	}
+
+	.professional-field-hint {
+		font-size: 0.76rem;
+		font-weight: 500;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
 	}
 
 	.professional-status-stack {
 		display: grid;
-		gap: 0.75rem;
+		gap: 0.6rem;
 	}
 
 	.professional-status-card__layout {
@@ -2088,11 +2298,11 @@ const toPageHref = (page: number) => {
 
 	.professional-status-card,
 	.professional-permissions-card {
-		border-radius: 1rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright);
-		padding: 0.85rem 0.9rem;
-		box-shadow: var(--card-inset-highlight);
+		border-radius: 0.95rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 75%, transparent);
+		background: color-mix(in srgb, var(--surface-bright) 92%, var(--surface-variant) 8%);
+		padding: 0.75rem 0.85rem;
+		box-shadow: none;
 	}
 
 	@media (min-width: 640px) {
@@ -2301,15 +2511,59 @@ const toPageHref = (page: number) => {
 		opacity: 0.7;
 	}
 
-	@media (min-width: 640px) {
-		.profile-photo-uploader {
-			gap: 1.1rem;
-			padding: 1rem 1.1rem;
+	@media (max-width: 639px) {
+		.professional-modal-hero {
+			gap: 0.5rem;
+			margin-bottom: 1.15rem;
+			padding-top: 0.2rem;
+			padding-bottom: 1.15rem;
+		}
+
+		.profile-photo-uploader__stack {
+			gap: 0.35rem;
 		}
 
 		.profile-photo-uploader__avatar {
-			width: 5rem;
-			height: 5rem;
+			width: 5.5rem;
+			height: 5.5rem;
+		}
+
+		.profile-photo-uploader__avatar [data-profile-placeholder] .material-symbols-rounded {
+			font-size: 2.35rem;
+		}
+
+		.profile-photo-uploader__edit {
+			width: 1.8rem;
+			height: 1.8rem;
+		}
+
+		.profile-photo-uploader__edit .material-symbols-rounded {
+			font-size: 0.98rem;
+		}
+
+		.professional-modal-identity {
+			gap: 0.4rem;
+		}
+
+		.professional-modal-identity__input {
+			font-size: 1.12rem;
+			padding-bottom: 0.55rem;
+		}
+	}
+
+	@media (min-width: 640px) {
+		.profile-photo-uploader__avatar {
+			width: 5.25rem;
+			height: 5.25rem;
+		}
+
+		.professional-modal-hero {
+			margin-bottom: 1.1rem;
+			padding-bottom: 1.1rem;
+		}
+
+		.professional-modal-identity__input {
+			font-size: 1.12rem;
 		}
 	}
 

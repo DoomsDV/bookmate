@@ -460,21 +460,15 @@ const toPageHref = (page: number) => {
 	<AppAlert />
 
 	<dialog
-		class="dashboard-ai-modal m-auto h-[min(78dvh,40rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] max-md:mt-auto max-md:mb-0 max-md:w-screen max-md:max-w-none max-md:rounded-t-[1.8rem] max-md:rounded-b-none"
+		class="dashboard-ai-modal m-auto h-[min(78dvh,40rem)] w-[min(42rem,calc(100vw-2rem))] max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-white p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] max-md:mt-auto max-md:mb-0 max-md:w-screen max-md:max-w-none max-md:rounded-t-[1.8rem] max-md:rounded-b-none"
 		data-ai-summary-modal
 	>
-		<div class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-5">
+		<div class="dashboard-ai-modal__mesh" aria-hidden="true"></div>
+		<div class="dashboard-ai-modal__header shrink-0 z-10 px-4 py-4 sm:px-7 sm:py-5">
 			<div class="flex items-start justify-between gap-4">
-				<div class="flex items-center gap-3">
-					<div class="dashboard-ai-modal-mark flex size-11 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
-						<span class="material-symbols-rounded dashboard-ai-modal-mark__icon text-[1.35rem]">auto_awesome</span>
-					</div>
-					<div>
-						<h2 class="text-[1.1rem] font-extrabold tracking-tight text-(--on-surface)">
-							Resumen del día
-						</h2>
-					</div>
-				</div>
+				<h2 class="text-[1.12rem] font-bold tracking-tight text-(--on-surface)">
+					✨ Resumen del día
+				</h2>
 				<button
 					type="button"
 					class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)"
@@ -485,7 +479,7 @@ const toPageHref = (page: number) => {
 				</button>
 			</div>
 		</div>
-		<div class="overflow-y-auto overscroll-contain min-h-0 px-4 py-5 sm:px-7 sm:py-6">
+		<div class="dashboard-ai-modal__body overflow-y-auto overscroll-contain min-h-0 px-4 pb-6 pt-1 sm:px-7 sm:pb-7">
 			<div
 				class="dashboard-ai-sections dashboard-ai-sections--modal"
 				data-ai-summary-modal-sections
@@ -593,7 +587,7 @@ const toPageHref = (page: number) => {
 	> = {
 		panorama: { title: 'Panorama', icon: 'insights' },
 		contexto: { title: 'Contexto', icon: 'fact_check' },
-		sugerencia: { title: 'Sugerencia', icon: 'tips_and_updates' },
+		sugerencia: { title: 'Sugerencia', icon: 'auto_awesome' },
 	};
 
 	const normalizeAiSummarySection = (value: unknown): AiSummarySection | null => {
@@ -1446,8 +1440,8 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-sections--modal {
-		gap: 1rem;
-		padding-bottom: 0.35rem;
+		gap: 0;
+		padding-bottom: 0.15rem;
 	}
 
 	.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger {
@@ -1521,140 +1515,152 @@ const toPageHref = (page: number) => {
 		}
 	}
 
+	dialog[data-ai-summary-modal].dashboard-ai-modal {
+		position: relative;
+		background: #ffffff;
+	}
+
+	.dashboard-ai-modal__mesh {
+		position: absolute;
+		inset: 0 0 auto;
+		height: 9.5rem;
+		pointer-events: none;
+		z-index: 0;
+		background:
+			radial-gradient(ellipse 90% 80% at 12% -20%, rgba(59, 130, 246, 0.2), transparent 68%),
+			radial-gradient(ellipse 70% 70% at 88% -5%, rgba(139, 92, 246, 0.16), transparent 62%),
+			radial-gradient(ellipse 55% 50% at 48% 8%, rgba(56, 189, 248, 0.12), transparent 58%);
+		filter: blur(28px);
+	}
+
+	.dashboard-ai-modal__header,
+	.dashboard-ai-modal__body {
+		position: relative;
+		z-index: 1;
+	}
+
+	.dashboard-ai-modal__header {
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 28%, transparent);
+	}
+
 	.dashboard-ai-sections--modal .dashboard-ai-section {
-		padding: 1rem 1.05rem;
-		border-radius: 1.15rem;
+		padding: 1.45rem 0 1.35rem;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+		overflow: visible;
+	}
+
+	.dashboard-ai-sections--modal .dashboard-ai-section + .dashboard-ai-section {
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 22%, transparent);
 	}
 
 	.dashboard-ai-sections--modal .dashboard-ai-section__header {
-		margin-bottom: 0.7rem;
+		margin-bottom: 0.85rem;
 	}
 
 	.dashboard-ai-sections--modal .dashboard-ai-section__text,
 	.dashboard-ai-sections--modal .dashboard-ai-section__list li {
-		font-size: 0.9rem;
-		line-height: 1.55;
+		font-size: 0.92rem;
+		line-height: 1.62;
+		font-weight: 500;
 	}
 
 	.dashboard-ai-section {
 		position: relative;
-		overflow: hidden;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 55%, transparent);
-		border-radius: 1.1rem;
-		background: color-mix(in srgb, var(--surface-bright) 88%, var(--surface) 12%);
-		padding: 0.95rem 1.05rem;
-		box-shadow: inset 0 1px 0 color-mix(in srgb, white 40%, transparent);
+		overflow: visible;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		padding: 0;
+		box-shadow: none;
 	}
 
-	.dashboard-ai-section--panorama {
-		border-color: color-mix(in srgb, #0ea5e9 18%, transparent);
-		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, #0ea5e9 16%, transparent), transparent 58%),
-			color-mix(in srgb, var(--surface-bright) 90%, #0ea5e9 10%);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #38bdf8 14%, transparent),
-			0 0 28px color-mix(in srgb, #0ea5e9 10%, transparent);
-	}
-
-	.dashboard-ai-section--contexto {
-		border-color: color-mix(in srgb, #d97706 18%, transparent);
-		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, #d97706 14%, transparent), transparent 58%),
-			color-mix(in srgb, var(--surface-bright) 91%, #d97706 9%);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #fbbf24 12%, transparent),
-			0 0 28px color-mix(in srgb, #d97706 9%, transparent);
-	}
-
+	.dashboard-ai-section--panorama,
+	.dashboard-ai-section--contexto,
 	.dashboard-ai-section--sugerencia {
-		border-color: color-mix(in srgb, var(--primary) 18%, transparent);
-		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary) 15%, transparent), transparent 58%),
-			color-mix(in srgb, var(--surface-bright) 90%, var(--primary) 10%);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, var(--primary) 12%, transparent),
-			0 0 28px color-mix(in srgb, var(--primary) 10%, transparent);
+		border: 0;
+		background: transparent;
+		box-shadow: none;
 	}
 
 	.dashboard-ai-section__header {
 		display: flex;
 		align-items: center;
-		gap: 0.65rem;
-		margin-bottom: 0.65rem;
+		gap: 0.55rem;
+		margin-bottom: 0.75rem;
 	}
 
 	.dashboard-ai-section__icon {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.1rem;
-		height: 2.1rem;
-		border-radius: 0.75rem;
+		width: auto;
+		height: auto;
+		border-radius: 0;
+		background: transparent;
 		flex-shrink: 0;
 	}
 
 	.dashboard-ai-section--panorama .dashboard-ai-section__icon {
-		background: color-mix(in srgb, #0ea5e9 18%, transparent);
-		color: #0284c7;
+		color: #3b82f6;
 	}
 
 	.dashboard-ai-section--contexto .dashboard-ai-section__icon {
-		background: color-mix(in srgb, #d97706 18%, transparent);
-		color: #b45309;
+		color: #f59e0b;
 	}
 
 	.dashboard-ai-section--sugerencia .dashboard-ai-section__icon {
-		background: color-mix(in srgb, var(--primary) 18%, transparent);
-		color: var(--primary);
+		color: #60a5fa;
 	}
 
 	.dashboard-ai-section__icon .material-symbols-rounded {
-		font-size: 1.15rem;
+		font-size: 1.1rem;
 		color: inherit;
+	}
+
+	.dashboard-ai-section--sugerencia .dashboard-ai-section__icon .material-symbols-rounded {
+		font-size: 1.2rem;
 	}
 
 	.dashboard-ai-section__title {
 		margin: 0;
-		font-size: 0.74rem;
-		font-weight: 800;
-		letter-spacing: 0.08em;
+		font-size: 0.67rem;
+		font-weight: 700;
+		letter-spacing: 0.14em;
 		text-transform: uppercase;
 	}
 
 	.dashboard-ai-section--panorama .dashboard-ai-section__title {
-		color: #0284c7;
+		color: #3b82f6;
 	}
 
 	.dashboard-ai-section--contexto .dashboard-ai-section__title {
-		color: #b45309;
+		color: #d97706;
 	}
 
 	.dashboard-ai-section--sugerencia .dashboard-ai-section__title {
-		color: var(--primary);
+		color: #60a5fa;
 	}
 
 	.dashboard-ai-section__text {
 		margin: 0;
-		font-size: 0.93rem;
-		font-weight: 600;
-		line-height: 1.58;
-		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
+		font-size: 0.92rem;
+		font-weight: 500;
+		line-height: 1.62;
+		color: #475569;
 	}
 
 	.dashboard-ai-highlight {
-		font-weight: 800;
+		font-weight: 700;
+		color: inherit;
 	}
 
-	.dashboard-ai-highlight--panorama {
-		color: #0284c7;
-	}
-
-	.dashboard-ai-highlight--contexto {
-		color: #b45309;
-	}
-
+	.dashboard-ai-highlight--panorama,
+	.dashboard-ai-highlight--contexto,
 	.dashboard-ai-highlight--sugerencia {
-		color: var(--primary);
+		color: inherit;
 	}
 
 	.dashboard-ai-section__list {
@@ -1662,114 +1668,61 @@ const toPageHref = (page: number) => {
 		padding: 0;
 		list-style: none;
 		display: grid;
-		gap: 0.55rem;
+		gap: 0.72rem;
 	}
 
 	.dashboard-ai-section__list li {
 		position: relative;
-		padding-left: 1rem;
-		font-size: 0.9rem;
-		font-weight: 600;
-		line-height: 1.5;
-		color: color-mix(in srgb, var(--on-surface) 92%, #0f172a 8%);
+		padding-left: 0;
+		font-size: 0.92rem;
+		font-weight: 500;
+		line-height: 1.62;
+		color: #475569;
 	}
 
 	.dashboard-ai-section__list li::before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 0.58rem;
-		width: 0.35rem;
-		height: 0.35rem;
-		border-radius: 999px;
-		background: currentColor;
-		opacity: 0.72;
+		content: none;
+		display: none;
 	}
 
-	.dashboard-ai-section--panorama .dashboard-ai-section__list li::before {
-		color: #0284c7;
+	html[data-theme='dark'] dialog[data-ai-summary-modal].dashboard-ai-modal {
+		background: var(--surface-bright);
 	}
 
-	.dashboard-ai-section--contexto .dashboard-ai-section__list li::before {
-		color: #b45309;
-	}
-
-	.dashboard-ai-section--sugerencia .dashboard-ai-section__list li::before {
-		color: var(--primary);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--panorama {
+	html[data-theme='dark'] .dashboard-ai-modal__mesh {
 		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, #0ea5e9 22%, transparent), transparent 58%),
-			color-mix(in srgb, #0ea5e9 10%, #1e1f22 90%);
-		border-color: color-mix(in srgb, #0ea5e9 22%, transparent);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #38bdf8 10%, transparent),
-			0 0 32px color-mix(in srgb, #0ea5e9 12%, transparent);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--contexto {
-		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, #d97706 18%, transparent), transparent 58%),
-			color-mix(in srgb, #d97706 8%, #1e1f22 92%);
-		border-color: color-mix(in srgb, #d97706 20%, transparent);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #fbbf24 8%, transparent),
-			0 0 32px color-mix(in srgb, #d97706 10%, transparent);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--sugerencia {
-		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 58%),
-			color-mix(in srgb, var(--primary) 12%, #1e1f22 88%);
-		border-color: color-mix(in srgb, var(--primary) 22%, transparent);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, var(--primary) 10%, transparent),
-			0 0 32px color-mix(in srgb, var(--primary) 12%, transparent);
+			radial-gradient(ellipse 90% 80% at 12% -20%, rgba(59, 130, 246, 0.24), transparent 68%),
+			radial-gradient(ellipse 70% 70% at 88% -5%, rgba(139, 92, 246, 0.2), transparent 62%),
+			radial-gradient(ellipse 55% 50% at 48% 8%, rgba(56, 189, 248, 0.14), transparent 58%);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__icon {
-		background: color-mix(in srgb, #38bdf8 22%, transparent);
-		color: #7dd3fc;
+		color: #60a5fa;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--contexto .dashboard-ai-section__icon {
-		background: color-mix(in srgb, #fbbf24 20%, transparent);
-		color: #fcd34d;
+		color: #fbbf24;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--sugerencia .dashboard-ai-section__icon {
-		background: color-mix(in srgb, var(--primary) 22%, transparent);
-		color: color-mix(in srgb, var(--primary) 55%, white 45%);
+		color: #93c5fd;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__title {
-		color: #7dd3fc;
+		color: #60a5fa;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--contexto .dashboard-ai-section__title {
-		color: #fcd34d;
+		color: #fbbf24;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--sugerencia .dashboard-ai-section__title {
-		color: color-mix(in srgb, var(--primary) 55%, white 45%);
+		color: #93c5fd;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section__text,
 	html[data-theme='dark'] .dashboard-ai-section__list li {
-		color: color-mix(in srgb, var(--on-surface) 90%, white 10%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-highlight--panorama {
-		color: #7dd3fc;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-highlight--contexto {
-		color: #fcd34d;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-highlight--sugerencia {
-		color: color-mix(in srgb, var(--primary) 55%, white 45%);
+		color: color-mix(in srgb, var(--on-surface) 82%, #cbd5e1 18%);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -2309,7 +2262,7 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-sections--modal {
-		gap: 0.65rem;
+		gap: 0;
 	}
 
 	.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger {
@@ -2384,129 +2337,122 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-sections--modal .dashboard-ai-section {
-		padding: 0.75rem 0.85rem;
-		border-radius: 1rem;
+		padding: 1.45rem 0 1.35rem;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+		overflow: visible;
+	}
+
+	.dashboard-ai-sections--modal .dashboard-ai-section + .dashboard-ai-section {
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 22%, transparent);
 	}
 
 	.dashboard-ai-sections--modal .dashboard-ai-section__header {
-		margin-bottom: 0.4rem;
+		margin-bottom: 0.85rem;
 	}
 
 	.dashboard-ai-sections--modal .dashboard-ai-section__text,
 	.dashboard-ai-sections--modal .dashboard-ai-section__list li {
-		font-size: 0.86rem;
-		line-height: 1.45;
+		font-size: 0.92rem;
+		line-height: 1.62;
+		font-weight: 500;
 	}
 
 	.dashboard-ai-section {
 		position: relative;
-		overflow: hidden;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 55%, transparent);
-		border-radius: 1.1rem;
-		background: color-mix(in srgb, var(--surface-bright) 88%, var(--surface) 12%);
-		padding: 0.9rem 1rem;
-		box-shadow: inset 0 1px 0 color-mix(in srgb, white 40%, transparent);
+		overflow: visible;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		padding: 0;
+		box-shadow: none;
 	}
 
-	.dashboard-ai-section--panorama {
-		border-color: color-mix(in srgb, #0ea5e9 18%, transparent);
-		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, #0ea5e9 16%, transparent), transparent 58%),
-			color-mix(in srgb, var(--surface-bright) 90%, #0ea5e9 10%);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #38bdf8 14%, transparent),
-			0 0 28px color-mix(in srgb, #0ea5e9 10%, transparent);
-	}
-
-	.dashboard-ai-section--contexto {
-		border-color: color-mix(in srgb, #d97706 18%, transparent);
-		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, #d97706 14%, transparent), transparent 58%),
-			color-mix(in srgb, var(--surface-bright) 91%, #d97706 9%);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #fbbf24 12%, transparent),
-			0 0 28px color-mix(in srgb, #d97706 9%, transparent);
-	}
-
+	.dashboard-ai-section--panorama,
+	.dashboard-ai-section--contexto,
 	.dashboard-ai-section--sugerencia {
-		border-color: color-mix(in srgb, var(--primary) 18%, transparent);
-		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary) 15%, transparent), transparent 58%),
-			color-mix(in srgb, var(--surface-bright) 90%, var(--primary) 10%);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, var(--primary) 12%, transparent),
-			0 0 28px color-mix(in srgb, var(--primary) 10%, transparent);
+		border: 0;
+		background: transparent;
+		box-shadow: none;
 	}
 
 	.dashboard-ai-section__header {
 		display: flex;
 		align-items: center;
 		gap: 0.55rem;
-		margin-bottom: 0.55rem;
+		margin-bottom: 0.75rem;
 	}
 
 	.dashboard-ai-section__icon {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 1.85rem;
-		height: 1.85rem;
-		border-radius: 0.65rem;
-		background: color-mix(in srgb, var(--primary) 12%, transparent);
-		color: var(--primary);
+		width: auto;
+		height: auto;
+		border-radius: 0;
+		background: transparent;
 		flex-shrink: 0;
 	}
 
 	.dashboard-ai-section--panorama .dashboard-ai-section__icon {
-		background: color-mix(in srgb, #0ea5e9 16%, transparent);
-		color: #0284c7;
+		color: #3b82f6;
 	}
 
 	.dashboard-ai-section--contexto .dashboard-ai-section__icon {
-		background: color-mix(in srgb, #d97706 16%, transparent);
-		color: #b45309;
+		color: #f59e0b;
 	}
 
 	.dashboard-ai-section--sugerencia .dashboard-ai-section__icon {
-		background: color-mix(in srgb, var(--primary) 16%, transparent);
-		color: var(--primary);
+		color: #60a5fa;
 	}
 
 	.dashboard-ai-section__icon .material-symbols-rounded {
-		font-size: 1.05rem;
+		font-size: 1.1rem;
+	}
+
+	.dashboard-ai-section--sugerencia .dashboard-ai-section__icon .material-symbols-rounded {
+		font-size: 1.2rem;
 	}
 
 	.dashboard-ai-section__title {
 		margin: 0;
-		font-size: 0.72rem;
-		font-weight: 800;
-		letter-spacing: 0.08em;
+		font-size: 0.67rem;
+		font-weight: 700;
+		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: color-mix(in srgb, var(--on-surface-variant) 88%, #334155 12%);
+	}
+
+	.dashboard-ai-section--panorama .dashboard-ai-section__title {
+		color: #3b82f6;
+	}
+
+	.dashboard-ai-section--contexto .dashboard-ai-section__title {
+		color: #d97706;
+	}
+
+	.dashboard-ai-section--sugerencia .dashboard-ai-section__title {
+		color: #60a5fa;
 	}
 
 	.dashboard-ai-section__text {
 		margin: 0;
-		font-size: 0.93rem;
-		font-weight: 600;
-		line-height: 1.55;
-		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
+		font-size: 0.92rem;
+		font-weight: 500;
+		line-height: 1.62;
+		color: #475569;
 	}
 
 	.dashboard-ai-highlight {
-		font-weight: 800;
+		font-weight: 700;
+		color: inherit;
 	}
 
-	.dashboard-ai-highlight--panorama {
-		color: #0284c7;
-	}
-
-	.dashboard-ai-highlight--contexto {
-		color: #b45309;
-	}
-
+	.dashboard-ai-highlight--panorama,
+	.dashboard-ai-highlight--contexto,
 	.dashboard-ai-highlight--sugerencia {
-		color: var(--primary);
+		color: inherit;
 	}
 
 	.dashboard-ai-section__list {
@@ -2514,27 +2460,21 @@ const toPageHref = (page: number) => {
 		padding: 0;
 		list-style: none;
 		display: grid;
-		gap: 0.45rem;
+		gap: 0.72rem;
 	}
 
 	.dashboard-ai-section__list li {
 		position: relative;
-		padding-left: 1rem;
-		font-size: 0.9rem;
-		font-weight: 600;
-		line-height: 1.45;
-		color: color-mix(in srgb, var(--on-surface) 92%, #0f172a 8%);
+		padding-left: 0;
+		font-size: 0.92rem;
+		font-weight: 500;
+		line-height: 1.62;
+		color: #475569;
 	}
 
 	.dashboard-ai-section__list li::before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 0.58rem;
-		width: 0.35rem;
-		height: 0.35rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--primary) 72%, #ffffff 28%);
+		content: none;
+		display: none;
 	}
 
 	dialog[data-ai-summary-modal] {
@@ -2635,34 +2575,28 @@ const toPageHref = (page: number) => {
 		box-shadow: none;
 	}
 
-	html[data-theme='dark'] .dashboard-ai-section--panorama {
-		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, #0ea5e9 22%, transparent), transparent 58%),
-			color-mix(in srgb, #0ea5e9 10%, #1e1f22 90%);
-		border-color: color-mix(in srgb, #0ea5e9 22%, transparent);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #38bdf8 10%, transparent),
-			0 0 32px color-mix(in srgb, #0ea5e9 12%, transparent);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--contexto {
-		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, #d97706 18%, transparent), transparent 58%),
-			color-mix(in srgb, #d97706 8%, #1e1f22 92%);
-		border-color: color-mix(in srgb, #d97706 20%, transparent);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #fbbf24 8%, transparent),
-			0 0 32px color-mix(in srgb, #d97706 10%, transparent);
-	}
-
 	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__icon {
-		background: color-mix(in srgb, #38bdf8 18%, transparent);
-		color: #7dd3fc;
+		color: #60a5fa;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--contexto .dashboard-ai-section__icon {
-		background: color-mix(in srgb, #fbbf24 16%, transparent);
-		color: #fcd34d;
+		color: #fbbf24;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--sugerencia .dashboard-ai-section__icon {
+		color: #93c5fd;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__title {
+		color: #60a5fa;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--contexto .dashboard-ai-section__title {
+		color: #fbbf24;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-section--sugerencia .dashboard-ai-section__title {
+		color: #93c5fd;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-card.is-generating {
@@ -2706,33 +2640,7 @@ const toPageHref = (page: number) => {
 	html[data-theme='dark'] .dashboard-ai-text,
 	html[data-theme='dark'] .dashboard-ai-section__text,
 	html[data-theme='dark'] .dashboard-ai-section__list li {
-		color: color-mix(in srgb, var(--on-surface) 90%, white 10%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section {
-		border-color: color-mix(in srgb, var(--shell-border) 45%, transparent);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--sugerencia {
-		background:
-			radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 58%),
-			color-mix(in srgb, var(--primary) 12%, #1e1f22 88%);
-		border-color: color-mix(in srgb, var(--primary) 22%, transparent);
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, var(--primary) 10%, transparent),
-			0 0 32px color-mix(in srgb, var(--primary) 12%, transparent);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-highlight--panorama {
-		color: #7dd3fc;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-highlight--contexto {
-		color: #fcd34d;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-highlight--sugerencia {
-		color: color-mix(in srgb, var(--primary) 55%, white 45%);
+		color: color-mix(in srgb, var(--on-surface) 82%, #cbd5e1 18%);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
@@ -2743,10 +2651,6 @@ const toPageHref = (page: number) => {
 			opacity: 1;
 			transform: none;
 		}
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section__title {
-		color: color-mix(in srgb, var(--on-surface-variant) 42%, white 58%);
 	}
 
 	.dashboard-metric-card {

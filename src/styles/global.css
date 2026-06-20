@@ -1513,6 +1513,15 @@ html[data-theme='dark'] .workspace-account-subtitle {
 	background: var(--control-surface);
 }
 
+body > .bookmate-searchable-select-dropdown {
+	position: fixed;
+	top: auto;
+	left: auto;
+	width: auto;
+	background-color: var(--surface-bright);
+}
+
+.bookmate-searchable-select-dropdown,
 .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .ts-dropdown,
 body > .bookmate-searchable-select-dropdown.ts-dropdown {
 	z-index: 120;
@@ -1527,6 +1536,7 @@ body > .bookmate-searchable-select-dropdown.ts-dropdown {
 	font-weight: 700;
 }
 
+.bookmate-searchable-select-dropdown .dropdown-input-wrap,
 .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input-wrap,
 body > .bookmate-searchable-select-dropdown.ts-dropdown .dropdown-input-wrap {
 	position: relative;
@@ -1569,6 +1579,7 @@ body > .bookmate-searchable-select-dropdown.ts-dropdown .dropdown-input::placeho
 	opacity: 0.9;
 }
 
+.bookmate-searchable-select-dropdown .ts-dropdown-content,
 .bookmate-searchable-select.ts-wrapper .ts-dropdown-content,
 body > .bookmate-searchable-select-dropdown.ts-dropdown .ts-dropdown-content {
 	display: grid;
@@ -1618,6 +1629,7 @@ html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.dropdown-active .
 	box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 16%, transparent);
 }
 
+html[data-theme='dark'] .bookmate-searchable-select-dropdown,
 html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .ts-dropdown,
 html[data-theme='dark'] body > .bookmate-searchable-select-dropdown.ts-dropdown {
 	background: var(--surface-bright);
@@ -1625,12 +1637,14 @@ html[data-theme='dark'] body > .bookmate-searchable-select-dropdown.ts-dropdown 
 	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
 }
 
+html[data-theme='dark'] .bookmate-searchable-select-dropdown .dropdown-input-wrap,
 html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper.plugin-dropdown_input .dropdown-input-wrap,
 html[data-theme='dark'] body > .bookmate-searchable-select-dropdown.ts-dropdown .dropdown-input-wrap {
 	background: var(--surface-bright);
 	border-bottom-color: var(--shell-border);
 }
 
+html[data-theme='dark'] .bookmate-searchable-select-dropdown .ts-dropdown-content,
 html[data-theme='dark'] .bookmate-searchable-select.ts-wrapper .ts-dropdown-content,
 html[data-theme='dark'] body > .bookmate-searchable-select-dropdown.ts-dropdown .ts-dropdown-content {
 	background: var(--surface-bright);

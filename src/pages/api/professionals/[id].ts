@@ -80,7 +80,7 @@ const parseUpdatePayload = (body: any): UpdateProfessionalWithUserPayload => {
 	};
 
 	if (password.trim() !== '') payload.password = password;
-	if (profileSlug !== '') payload.profile_slug = profileSlug;
+	payload.profile_slug = profileSlug;
 
 	if (userIsActiveRaw !== '' && Number.isFinite(userIsActiveNumber)) {
 		payload.user_is_active = userIsActiveNumber as 0 | 1;
@@ -167,6 +167,11 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 
 		const body = await parseBody(request);
 		const payload = parseUpdatePayload(body);
+
+		if (!String(payload.profile_slug || '').trim()) {
+			throw new ProfessionalsApiError('La URL del perfil público es obligatoria.', 400);
+		}
+
 		const professional = await getProfessionalByIdWithOrds(token, professionalId);
 		const isActiveMember = professional.membership_status !== 'pending_invite';
 		const targetUserId = Number(professional.user?.id_user ?? 0);

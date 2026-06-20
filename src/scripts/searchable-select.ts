@@ -3,6 +3,41 @@ import TomSelect from 'tom-select';
 export type SearchableSelectInstance = TomSelect;
 
 const instances = new WeakMap<HTMLSelectElement, TomSelect>();
+const bodyDropdownCleanups = new WeakMap<TomSelect, () => void>();
+
+const usesBodyDropdown = (instance: TomSelect) => instance.settings.dropdownParent === 'body';
+
+const positionBodyDropdown = (instance: TomSelect) => {
+	if (!usesBodyDropdown(instance) || !instance.isOpen) return;
+
+	const rect = instance.control.getBoundingClientRect();
+	Object.assign(instance.dropdown.style, {
+		position: 'fixed',
+		width: `${rect.width}px`,
+		top: `${rect.bottom + 4}px`,
+		left: `${rect.left}px`,
+		right: 'auto',
+	});
+};
+
+const bindBodyDropdownPosition = (instance: TomSelect) => {
+	if (!usesBodyDropdown(instance)) return;
+
+	const reposition = () => positionBodyDropdown(instance);
+	const onScroll = () => reposition();
+	const onResize = () => reposition();
+
+	instance.on('dropdown_open', () => {
+		window.requestAnimationFrame(reposition);
+	});
+	window.addEventListener('scroll', onScroll, true);
+	window.addEventListener('resize', onResize, { passive: true });
+
+	bodyDropdownCleanups.set(instance, () => {
+		window.removeEventListener('scroll', onScroll, true);
+		window.removeEventListener('resize', onResize);
+	});
+};
 
 type SearchableSelectOptions = {
 	placeholder?: string;
@@ -35,7 +70,7 @@ export const ensureSearchableSelect = (
 		placeholder: options.placeholder,
 		controlInput: '<input type="text" autocomplete="off" />',
 		dropdownParent: options.dropdownParent ?? null,
-		dropdownClass: 'bookmate-searchable-select-dropdown',
+		dropdownClass: 'ts-dropdown bookmate-searchable-select-dropdown',
 	});
 
 	instance.on('dropdown_open', () => {
@@ -48,6 +83,8 @@ export const ensureSearchableSelect = (
 			controlInput.focus({ preventScroll: true });
 		});
 	});
+
+	bindBodyDropdownPosition(instance);
 
 	instances.set(select, instance);
 	if (select.disabled) instance.disable();
@@ -141,6 +178,8 @@ export const destroySearchableSelect = (select: HTMLSelectElement | null | undef
 	if (!select) return;
 	const instance = instances.get(select);
 	if (!instance) return;
+	bodyDropdownCleanups.get(instance)?.();
+	bodyDropdownCleanups.delete(instance);
 	instance.destroy();
 	instances.delete(select);
 	select.className = select.className

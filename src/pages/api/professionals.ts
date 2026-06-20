@@ -132,7 +132,10 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		if (apexUserName !== '') payload.apex_user_name = apexUserName;
 
 		const profileSlug = String(body?.profile_slug ?? '').trim();
-		if (profileSlug !== '') payload.profile_slug = profileSlug;
+		if (!profileSlug) {
+			throw createProfessionalError('La URL del perfil público es obligatoria.', 400);
+		}
+		payload.profile_slug = profileSlug;
 
 		if (specialtyRaw !== '' && specialtyId > 0) {
 			payload.spe_id_specialty = specialtyId;

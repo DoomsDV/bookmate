@@ -1,5 +1,7 @@
 ---
 import { FEATURE_FLAGS } from '../config/feature-flags';
+
+const VOICE_BAR_COUNT = 28;
 ---
 
 {FEATURE_FLAGS.APPOINTMENT_AI_VOICE && (
@@ -52,28 +54,53 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 					</div>
 
 					<div class="appointment-voice-stage" data-voice-overlay-stage>
-						<div class="appointment-voice-stage__ambient" aria-hidden="true"></div>
-						<canvas
-							class="appointment-voice-waveform"
-							data-voice-overlay-waveform
-							aria-hidden="true"
-						></canvas>
-						<div class="appointment-voice-rings" aria-hidden="true">
-							<span class="appointment-voice-rings__ring"></span>
-							<span class="appointment-voice-rings__ring"></span>
-							<span class="appointment-voice-rings__ring"></span>
+						<div class="appointment-voice-visual" data-voice-overlay-visualizer data-visualizer-mode="idle">
+							<div class="appointment-voice-visual__aura" aria-hidden="true">
+								<span class="appointment-voice-visual__blob appointment-voice-visual__blob--cyan"></span>
+								<span class="appointment-voice-visual__blob appointment-voice-visual__blob--lavender"></span>
+							</div>
+							<div
+								class="appointment-voice-visual__baseline"
+								data-voice-overlay-baseline
+								aria-hidden="true"
+							></div>
+							<div class="appointment-voice-visual__bars" data-voice-overlay-bars aria-hidden="true">
+								{Array.from({ length: VOICE_BAR_COUNT }, () => (
+									<span class="appointment-voice-visual__bar" data-voice-bar></span>
+								))}
+							</div>
 						</div>
-						<button
-							type="button"
-							class="appointment-voice-record"
-							data-voice-overlay-record
-							aria-label="Empezar a grabar"
-						>
-							<span class="appointment-voice-record__pulse" aria-hidden="true"></span>
-							<span class="appointment-voice-record__halo" aria-hidden="true"></span>
-							<span class="material-symbols-rounded" data-voice-overlay-record-icon>mic</span>
-						</button>
+						<div class="appointment-voice-record-wrap">
+							<button
+								type="button"
+								class="appointment-voice-record"
+								data-voice-overlay-record
+								aria-label="Empezar a grabar"
+							>
+								<span class="appointment-voice-record__pulse" aria-hidden="true"></span>
+								<span class="appointment-voice-record__halo" aria-hidden="true"></span>
+								<span
+									class="appointment-voice-record__icon appointment-voice-record__icon--mic material-symbols-rounded"
+									data-voice-overlay-record-icon-mic
+									aria-hidden="true"
+								>mic</span>
+								<span
+									class="appointment-voice-record__icon appointment-voice-record__icon--stop"
+									data-voice-overlay-record-icon-stop
+									aria-hidden="true"
+								></span>
+							</button>
+						</div>
 					</div>
+
+					<p
+						class="appointment-voice-timer hidden"
+						data-voice-overlay-timer
+						aria-live="polite"
+						aria-atomic="true"
+					>
+						00:00 / 01:00
+					</p>
 
 					<button
 						type="button"
@@ -81,7 +108,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 						data-voice-overlay-discard
 						aria-label="Descartar grabación"
 					>
-						<span class="material-symbols-rounded">delete</span>
+						<span class="material-symbols-rounded" aria-hidden="true">delete</span>
 						Descartar
 					</button>
 
@@ -125,13 +152,9 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		z-index: 1;
 		width: min(26rem, calc(100vw - 2rem));
 		border-radius: 1.6rem;
-		border: 1px solid var(--shell-border);
-		background:
-			radial-gradient(circle at 50% 0%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 55%),
-			var(--surface-bright);
-		box-shadow:
-			0 24px 80px rgba(0, 0, 0, 0.22),
-			0 0 0 1px color-mix(in srgb, var(--primary) 8%, transparent);
+		border: 1px solid color-mix(in srgb, var(--shell-border) 80%, #e2e8f0 20%);
+		background: #ffffff;
+		box-shadow: 0 24px 80px rgba(15, 23, 42, 0.14);
 		overflow: hidden;
 	}
 
@@ -213,14 +236,38 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	.appointment-voice-status {
 		margin: 0;
 		min-height: 1.35em;
-		font-size: 0.92rem;
-		font-weight: 700;
-		color: var(--on-surface-variant);
+		font-size: 0.94rem;
+		font-weight: 750;
+		color: color-mix(in srgb, var(--on-surface) 82%, var(--on-surface-variant) 18%);
 		opacity: 1;
 		transform: translateY(0);
 		transition:
 			opacity 180ms ease,
-			transform 180ms ease;
+			transform 180ms ease,
+			color 180ms ease;
+	}
+
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-status {
+		color: color-mix(in srgb, var(--on-surface) 90%, var(--primary) 10%);
+		margin-bottom: 0.65rem;
+	}
+
+	.appointment-voice-timer {
+		margin: -0.55rem 0 0;
+		font-size: 0.88rem;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.05em;
+		color: #3b82f6;
+		transition: opacity 180ms ease, color 180ms ease;
+	}
+
+	.appointment-voice-timer.is-near-limit {
+		color: #e11d48;
+	}
+
+	.appointment-voice-timer.hidden {
+		display: none;
 	}
 
 	.appointment-voice-status.is-leaving {
@@ -396,18 +443,19 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.35rem;
+		gap: 0.4rem;
 		margin-top: -0.15rem;
-		padding: 0.45rem 0.75rem;
-		border: 0;
+		padding: 0.55rem 0.95rem;
+		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 28%, var(--shell-border) 72%);
 		border-radius: 999px;
 		background: transparent;
-		color: var(--on-surface-variant);
-		font-size: 0.82rem;
-		font-weight: 700;
+		color: color-mix(in srgb, var(--on-surface) 72%, var(--on-surface-variant) 28%);
+		font-size: 0.84rem;
+		font-weight: 600;
 		cursor: pointer;
 		transition:
 			color 140ms ease,
+			border-color 140ms ease,
 			background-color 140ms ease,
 			opacity 180ms ease,
 			transform 180ms ease;
@@ -415,11 +463,18 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 	.appointment-voice-discard .material-symbols-rounded {
 		font-size: 1.05rem;
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, #64748b 20%);
+		transition: color 140ms ease;
 	}
 
 	.appointment-voice-discard:hover {
+		color: #be123c;
+		border-color: color-mix(in srgb, #e11d48 35%, var(--shell-border) 65%);
+		background: color-mix(in srgb, #e11d48 6%, transparent);
+	}
+
+	.appointment-voice-discard:hover .material-symbols-rounded {
 		color: #e11d48;
-		background: color-mix(in srgb, #e11d48 10%, transparent);
 	}
 
 	.appointment-voice-discard:focus-visible {
@@ -429,32 +484,141 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 	.appointment-voice-stage {
 		position: relative;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.15rem;
+		width: calc(100% + 2.4rem);
+		margin-inline: -1.2rem;
+		min-height: 10.5rem;
+		margin-top: 0.35rem;
+		padding-inline: 0;
+		--voice-level: 0.16;
+		--bar-max-height: 4.75rem;
+	}
+
+	.appointment-voice-visual {
+		position: relative;
+		z-index: 1;
 		display: grid;
 		place-items: center;
-		width: min(100%, 18rem);
-		height: 8.5rem;
-		margin-top: 0.15rem;
+		width: 100%;
+		height: var(--bar-max-height);
+		pointer-events: none;
+		overflow: visible;
 	}
 
-	.appointment-voice-stage__ambient {
+	.appointment-voice-visual__aura {
 		position: absolute;
-		inset: 8% 0;
-		border-radius: 999px;
-		background: radial-gradient(
-			ellipse at center,
-			color-mix(in srgb, var(--primary) 24%, transparent) 0%,
-			color-mix(in srgb, #22d3ee 10%, transparent) 42%,
-			transparent 72%
-		);
-		opacity: 0.55;
-		filter: blur(10px);
-		transition: opacity 220ms ease, transform 220ms ease;
+		inset: 0 -0.5rem;
+		z-index: 0;
 	}
 
-	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-stage__ambient,
-	appointment-voice-overlay[data-voice-state='collapsing'] .appointment-voice-stage__ambient {
-		opacity: 0.95;
-		transform: scale(1.04);
+	.appointment-voice-visual__blob {
+		position: absolute;
+		border-radius: 42% 58% 62% 38% / 38% 42% 58% 62%;
+		filter: blur(40px);
+		opacity: 0.72;
+		animation: appointment-voice-blob-drift 9s ease-in-out infinite;
+	}
+
+	.appointment-voice-visual__blob--cyan {
+		inset: 8% 6% 18% 8%;
+		background: radial-gradient(circle at 35% 35%, rgba(103, 232, 249, 0.72), rgba(59, 130, 246, 0.28) 58%, transparent 78%);
+		animation-duration: 8.5s;
+	}
+
+	.appointment-voice-visual__blob--lavender {
+		inset: 20% 8% 10% 6%;
+		background: radial-gradient(circle at 60% 40%, rgba(196, 181, 253, 0.62), rgba(56, 189, 248, 0.22) 55%, transparent 76%);
+		animation-duration: 11s;
+		animation-direction: reverse;
+	}
+
+	.appointment-voice-visual[data-visualizer-mode='idle'] .appointment-voice-visual__aura {
+		opacity: 0;
+	}
+
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-visual__blob,
+	.appointment-voice-visual[data-visualizer-mode='live'] .appointment-voice-visual__blob {
+		opacity: calc(0.68 + var(--voice-level, 0.2) * 0.32);
+		animation-duration: calc(7.5s - var(--voice-level, 0.2) * 2.2s);
+	}
+
+	.appointment-voice-visual__baseline {
+		position: absolute;
+		z-index: 1;
+		left: 0.65rem;
+		right: 0.65rem;
+		top: 50%;
+		height: 2px;
+		border-radius: 999px;
+		background: linear-gradient(
+			90deg,
+			color-mix(in srgb, #bfdbfe 55%, transparent) 0%,
+			#93c5fd 50%,
+			color-mix(in srgb, #bfdbfe 55%, transparent) 100%
+		);
+		transform: translateY(-50%);
+		opacity: 1;
+		transition: opacity 360ms ease, transform 360ms ease;
+		animation: appointment-voice-baseline-idle 5s ease-in-out infinite;
+	}
+
+	.appointment-voice-visual[data-visualizer-mode='live'] .appointment-voice-visual__baseline,
+	.appointment-voice-visual[data-visualizer-mode='collapsing'] .appointment-voice-visual__baseline,
+	.appointment-voice-visual[data-visualizer-mode='off'] .appointment-voice-visual__baseline {
+		opacity: 0;
+		transform: translateY(-50%) scaleX(0.98);
+		animation: none;
+	}
+
+	.appointment-voice-visual__bars {
+		position: relative;
+		z-index: 2;
+		display: flex;
+		align-items: center;
+		justify-content: stretch;
+		gap: 0.1rem;
+		width: 100%;
+		height: 100%;
+		padding-inline: 0.65rem;
+	}
+
+	.appointment-voice-visual__bar {
+		flex: 1 1 0;
+		min-width: 0.18rem;
+		height: var(--bar-max-height);
+		border-radius: 999px;
+		background: linear-gradient(180deg, #bfdbfe 0%, #93c5fd 42%, #60a5fa 100%);
+		box-shadow: 0 0 8px color-mix(in srgb, #93c5fd 32%, transparent);
+		transform: scaleY(var(--bar-scale, 0.06));
+		transform-origin: center center;
+		opacity: 0;
+		transition:
+			transform 160ms cubic-bezier(0.4, 0, 0.2, 1),
+			opacity 280ms ease,
+			background 220ms ease;
+		will-change: transform;
+	}
+
+	appointment-voice-overlay[data-voice-state='idle'] .appointment-voice-visual__bar,
+	.appointment-voice-visual[data-visualizer-mode='idle'] .appointment-voice-visual__bar {
+		opacity: 0;
+		transform: scaleY(0.06);
+	}
+
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-visual__bar,
+	.appointment-voice-visual[data-visualizer-mode='live'] .appointment-voice-visual__bar {
+		opacity: calc(0.94 + var(--voice-level, 0.2) * 0.06);
+	}
+
+	.appointment-voice-visual[data-visualizer-mode='collapsing'] .appointment-voice-visual__bar {
+		opacity: calc(1 - var(--collapse, 0));
+	}
+
+	.appointment-voice-visual[data-visualizer-mode='off'] .appointment-voice-visual__aura {
+		opacity: 0;
 	}
 
 	appointment-voice-overlay[data-voice-state='processing'] .appointment-voice-stage {
@@ -462,68 +626,40 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.appointment-voice-stage.is-collapsing {
-		height: 9rem;
+		min-height: 10.5rem;
 	}
 
-	.appointment-voice-waveform {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		pointer-events: none;
-		--voice-level: 0.16;
+	@keyframes appointment-voice-blob-drift {
+		0%,
+		100% {
+			transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
+			border-radius: 42% 58% 62% 38% / 38% 42% 58% 62%;
+		}
+		33% {
+			transform: translate3d(6%, -4%, 0) rotate(18deg) scale(1.08);
+			border-radius: 58% 42% 38% 62% / 52% 38% 62% 48%;
+		}
+		66% {
+			transform: translate3d(-5%, 5%, 0) rotate(-14deg) scale(0.94);
+			border-radius: 48% 52% 58% 42% / 42% 58% 42% 58%;
+		}
 	}
 
-	.appointment-voice-rings {
-		position: absolute;
-		inset: 0;
+	.appointment-voice-record-wrap {
+		position: relative;
+		z-index: 3;
 		display: grid;
 		place-items: center;
-		pointer-events: none;
-	}
-
-	.appointment-voice-rings__ring {
-		position: absolute;
-		width: 5rem;
-		height: 5rem;
-		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--primary) 42%, #22d3ee 58%);
-		opacity: 0;
-		transform: scale(0.82);
-	}
-
-	appointment-voice-overlay[data-voice-state='idle'] .appointment-voice-rings__ring,
-	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-rings__ring {
-		animation: appointment-voice-ring 3.2s ease-out infinite;
-	}
-
-	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-rings__ring {
-		border-color: color-mix(in srgb, var(--primary) 48%, #67e8f9 52%);
-		animation-duration: calc(2.6s - (var(--voice-level, 0.2) * 0.9s));
-	}
-
-	appointment-voice-overlay[data-voice-state='collapsing'] .appointment-voice-rings__ring,
-	appointment-voice-overlay[data-voice-state='processing'] .appointment-voice-rings__ring {
-		animation: none;
-		opacity: 0;
-	}
-
-	.appointment-voice-rings__ring:nth-child(2) {
-		animation-delay: 0.75s;
-	}
-
-	.appointment-voice-rings__ring:nth-child(3) {
-		animation-delay: 1.5s;
+		flex-shrink: 0;
 	}
 
 	.appointment-voice-record {
 		position: relative;
-		z-index: 2;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 5rem;
-		height: 5rem;
+		width: 4.25rem;
+		height: 4.25rem;
 		border: 0;
 		border-radius: 999px;
 		background: linear-gradient(
@@ -532,9 +668,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			color-mix(in srgb, var(--primary) 72%, #0f172a 28%)
 		);
 		color: #f8fbff;
-		box-shadow:
-			0 4px 14px rgba(15, 23, 42, 0.12),
-			0 0 28px color-mix(in srgb, var(--primary) 28%, transparent);
+		box-shadow: 0 4px 14px rgba(15, 23, 42, 0.12);
 		cursor: pointer;
 		transition:
 			transform 220ms ease,
@@ -542,37 +676,65 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			box-shadow 220ms ease;
 	}
 
-	.appointment-voice-record__halo {
+	.appointment-voice-record__icon {
 		position: absolute;
-		inset: -0.55rem;
-		border-radius: inherit;
-		background: radial-gradient(circle, color-mix(in srgb, var(--primary) 38%, #67e8f9 62%) 0%, transparent 72%);
-		opacity: 0.55;
-		filter: blur(6px);
-		transition: opacity 220ms ease, transform 220ms ease;
+		z-index: 1;
+		line-height: 1;
+		transition:
+			opacity 220ms ease,
+			transform 280ms cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
+	.appointment-voice-record__icon--mic {
+		font-size: 1.85rem;
+		opacity: 1;
+		transform: scale(1) rotate(0deg);
+	}
+
+	.appointment-voice-record__icon--stop {
+		width: 1rem;
+		height: 1rem;
+		border-radius: 0.16rem;
+		background: currentColor;
+		opacity: 0;
+		transform: scale(0.72) rotate(-12deg);
+	}
+
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record__icon--mic {
+		opacity: 0;
+		transform: scale(0.72) rotate(12deg);
+	}
+
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record__icon--stop {
+		opacity: 1;
+		transform: scale(1) rotate(0deg);
+	}
+
+	.appointment-voice-record__halo {
+		display: none;
 	}
 
 	.appointment-voice-record__pulse {
 		position: absolute;
-		inset: -0.35rem;
-		border-radius: inherit;
-		border: 2px solid color-mix(in srgb, var(--primary) 40%, #67e8f9 60%);
-		opacity: 0;
+		inset: -1.1rem;
+		z-index: 0;
+		border-radius: 999px;
+		background: radial-gradient(
+			circle,
+			color-mix(in srgb, var(--primary) 28%, transparent) 0%,
+			color-mix(in srgb, var(--primary) 12%, transparent) 52%,
+			transparent 72%
+		);
 		pointer-events: none;
+		animation: appointment-voice-mic-breathe 4.2s ease-in-out infinite;
 	}
 
-	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record {
-		box-shadow:
-			0 4px 18px rgba(15, 23, 42, 0.14),
-			0 0 calc(22px + var(--voice-level, 0.2) * 32px) color-mix(in srgb, var(--primary) 42%, #38bdf8 58%);
-	}
-
-	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record__halo {
-		animation: appointment-voice-halo-pulse 1.5s ease-in-out infinite;
-	}
-
-	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record__pulse {
-		animation: appointment-voice-record-ring-pulse 1.5s ease-out infinite;
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record__pulse,
+	appointment-voice-overlay[data-voice-state='processing'] .appointment-voice-record__pulse,
+	appointment-voice-overlay[data-voice-state='collapsing'] .appointment-voice-record__pulse,
+	appointment-voice-overlay[data-voice-state='success'] .appointment-voice-record__pulse {
+		opacity: 0;
+		animation: none;
 	}
 
 	.appointment-voice-stage.is-collapsing .appointment-voice-record {
@@ -583,9 +745,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 	.appointment-voice-record:hover:not(:disabled) {
 		transform: translateY(-1px);
-		box-shadow:
-			0 8px 22px rgba(15, 23, 42, 0.16),
-			0 0 36px color-mix(in srgb, var(--primary) 34%, transparent);
+		box-shadow: 0 6px 18px rgba(15, 23, 42, 0.14);
 	}
 
 	.appointment-voice-record:disabled {
@@ -593,47 +753,32 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		cursor: not-allowed;
 	}
 
-	.appointment-voice-record .material-symbols-rounded {
-		position: relative;
-		z-index: 1;
-		font-size: 2rem;
+	@media (prefers-reduced-motion: reduce) {
+		.appointment-voice-record,
+		.appointment-voice-record__icon,
+		.appointment-voice-status,
+		.appointment-voice-visual__bar {
+			transition: none;
+		}
+
+		.appointment-voice-visual__blob,
+		.appointment-voice-record__pulse,
+		.appointment-voice-visual__baseline {
+			animation: none;
+		}
+
+		.appointment-voice-record__pulse {
+			opacity: 0.55;
+			transform: scale(1);
+		}
+
+		.appointment-voice-visual__baseline {
+			opacity: 0.68;
+		}
 	}
 
 	appointment-voice-overlay[data-voice-state='success'] .appointment-voice-stage {
 		display: none;
-	}
-
-	@keyframes appointment-voice-halo-pulse {
-		0%,
-		100% {
-			opacity: 0.45;
-			transform: scale(1);
-		}
-		50% {
-			opacity: 0.9;
-			transform: scale(1.28);
-		}
-	}
-
-	@keyframes appointment-voice-record-ring-pulse {
-		0% {
-			opacity: 0.55;
-			transform: scale(0.92);
-		}
-		100% {
-			opacity: 0;
-			transform: scale(1.55);
-		}
-	}
-
-	@keyframes appointment-voice-glow-pulse {
-		0%,
-		100% {
-			transform: scale(1);
-		}
-		50% {
-			transform: scale(1.035);
-		}
 	}
 
 	@keyframes appointment-voice-shimmer {
@@ -663,35 +808,38 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 	}
 
-	@keyframes appointment-voice-ring {
-		0% {
-			opacity: 0.55;
-			transform: scale(0.82);
-		}
-		70% {
-			opacity: 0;
-		}
-		100% {
-			opacity: 0;
-			transform: scale(calc(1.55 + var(--voice-level, 0.2) * 0.35));
-		}
-	}
-
-	@keyframes appointment-voice-pulse {
+	@keyframes appointment-voice-mic-breathe {
 		0%,
 		100% {
-			transform: scale(1);
+			opacity: 0.42;
+			transform: scale(0.94);
 		}
 		50% {
-			transform: scale(1.04);
+			opacity: 0.78;
+			transform: scale(1.1);
 		}
 	}
 
-	html[data-theme='dark'] .appointment-voice-stage__ambient {
-		opacity: 0.72;
+	@keyframes appointment-voice-baseline-idle {
+		0%,
+		100% {
+			opacity: 0.52;
+		}
+		50% {
+			opacity: 0.82;
+		}
+	}
+
+	html[data-theme='dark'] .appointment-voice-dialog {
+		background: var(--surface-bright);
 	}
 
 	html[data-theme='dark'] .appointment-voice-shell::backdrop {
 		background: rgba(0, 0, 0, 0.58);
+	}
+
+	html[data-theme='dark'] .appointment-voice-discard {
+		border-color: color-mix(in srgb, var(--shell-border) 70%, white 30%);
+		color: color-mix(in srgb, var(--on-surface) 78%, var(--on-surface-variant) 22%);
 	}
 </style>

@@ -16,7 +16,9 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#mediaRecorder: MediaRecorder | null = null;
 	#mediaStream: MediaStream | null = null;
 	#audioChunks: Blob[] = [];
-	#recordingTimer: number | null = null;
+	#maxRecordingTimer: number | null = null;
+	#elapsedTimerInterval: number | null = null;
+	#recordingStartedAt = 0;
 	#mode: VoiceOverlayMode = 'navigate';
 	#visualizer: AppointmentVoiceVisualizer | null = null;
 	#audioContext: AudioContext | null = null;
@@ -37,9 +39,9 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.#listeners = new AbortController();
 		const signal = this.#listeners.signal;
 
-		const canvas = this.querySelector<HTMLCanvasElement>('[data-voice-overlay-waveform]');
-		if (canvas) {
-			this.#visualizer = new AppointmentVoiceVisualizer(canvas);
+		const visualizerRoot = this.querySelector<HTMLElement>('[data-voice-overlay-visualizer]');
+		if (visualizerRoot) {
+			this.#visualizer = new AppointmentVoiceVisualizer(visualizerRoot);
 			this.#visualizer.setMode('idle');
 		}
 
@@ -96,6 +98,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			window.clearTimeout(this.#statusFadeTimer);
 			this.#statusFadeTimer = null;
 		}
+		this.stopElapsedTimer();
 		this.stopRecording(false);
 		this.teardownAudioAnalysis();
 		this.#visualizer?.destroy();
@@ -104,6 +107,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 
 	open(options: { mode?: VoiceOverlayMode } = {}) {
 		this.#mode = options.mode === 'inline' ? 'inline' : 'navigate';
+		this.stopElapsedTimer();
 		this.setState('idle');
 		this.setError('');
 		this.setTranscript('');
@@ -187,6 +191,50 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		}, 180);
 	}
 
+	private formatRecordingClock(ms: number) {
+		const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+		const minutes = Math.floor(totalSeconds / 60);
+		const seconds = totalSeconds % 60;
+		return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+	}
+
+	private updateRecordingTimer() {
+		const timerNode = this.querySelector<HTMLElement>('[data-voice-overlay-timer]');
+		if (!timerNode || this.#recordingStartedAt <= 0) return;
+
+		const elapsed = Date.now() - this.#recordingStartedAt;
+		timerNode.textContent = `${this.formatRecordingClock(elapsed)} / ${this.formatRecordingClock(MAX_RECORDING_MS)}`;
+		timerNode.classList.toggle('is-near-limit', elapsed >= MAX_RECORDING_MS * 0.85);
+		timerNode.setAttribute('aria-label', `Tiempo de grabación: ${timerNode.textContent}`);
+	}
+
+	private startElapsedTimer() {
+		if (this.#elapsedTimerInterval) {
+			window.clearInterval(this.#elapsedTimerInterval);
+			this.#elapsedTimerInterval = null;
+		}
+
+		this.#recordingStartedAt = Date.now();
+		const timerNode = this.querySelector<HTMLElement>('[data-voice-overlay-timer]');
+		timerNode?.classList.remove('hidden');
+		this.updateRecordingTimer();
+		this.#elapsedTimerInterval = window.setInterval(() => this.updateRecordingTimer(), 250);
+	}
+
+	private stopElapsedTimer() {
+		if (this.#elapsedTimerInterval) {
+			window.clearInterval(this.#elapsedTimerInterval);
+			this.#elapsedTimerInterval = null;
+		}
+		this.#recordingStartedAt = 0;
+
+		const timerNode = this.querySelector<HTMLElement>('[data-voice-overlay-timer]');
+		if (!timerNode) return;
+		timerNode.classList.add('hidden');
+		timerNode.classList.remove('is-near-limit');
+		timerNode.textContent = `${this.formatRecordingClock(0)} / ${this.formatRecordingClock(MAX_RECORDING_MS)}`;
+	}
+
 	private setState(state: VoiceUiState) {
 		this.dataset.voiceState = state;
 		const recordButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-record]');
@@ -194,19 +242,18 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		const actionsNode = this.querySelector<HTMLElement>('[data-voice-overlay-actions]');
 		const processingNode = this.querySelector<HTMLElement>('[data-voice-overlay-processing]');
 		const stageNode = this.querySelector<HTMLElement>('[data-voice-overlay-stage]');
+		const timerNode = this.querySelector<HTMLElement>('[data-voice-overlay-timer]');
 
 		if (recordButton) {
 			recordButton.disabled = state === 'processing' || state === 'collapsing';
 			recordButton.hidden = state === 'success' || state === 'processing' || state === 'collapsing';
-			const icon = recordButton.querySelector<HTMLElement>('[data-voice-overlay-record-icon]');
-			if (icon) {
-				icon.textContent = state === 'recording' ? 'stop_circle' : 'mic';
-			}
 			recordButton.setAttribute(
 				'aria-label',
 				state === 'recording' ? 'Detener grabación' : 'Empezar a grabar'
 			);
 		}
+
+		timerNode?.classList.toggle('hidden', state !== 'recording');
 
 		discardButton?.classList.toggle('hidden', state !== 'recording');
 
@@ -325,8 +372,9 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			this.#mediaRecorder.start();
 			this.setupAudioAnalysis(this.#mediaStream);
 			this.setState('recording');
+			this.startElapsedTimer();
 
-			this.#recordingTimer = window.setTimeout(() => {
+			this.#maxRecordingTimer = window.setTimeout(() => {
 				void this.stopRecording(true);
 			}, MAX_RECORDING_MS);
 		} catch {
@@ -336,10 +384,11 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	}
 
 	private async stopRecording(process: boolean) {
-		if (this.#recordingTimer) {
-			window.clearTimeout(this.#recordingTimer);
-			this.#recordingTimer = null;
+		if (this.#maxRecordingTimer) {
+			window.clearTimeout(this.#maxRecordingTimer);
+			this.#maxRecordingTimer = null;
 		}
+		this.stopElapsedTimer();
 
 		if (this.#mediaRecorder && this.#mediaRecorder.state === 'recording') {
 			if (process) {

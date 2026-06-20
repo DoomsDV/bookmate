@@ -1025,6 +1025,11 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			});
 		};
 
+		private resetModalScroll() {
+			const content = this.querySelector<HTMLElement>('[data-settings-content]');
+			if (content) content.scrollTop = 0;
+		}
+
 		private openModal = () => {
 			destroyActiveBookmateTour();
 			this.setActiveTab('profile');
@@ -1037,8 +1042,10 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				this.closingTimer = null;
 			}
 			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
+			this.resetModalScroll();
 			void this.loadData();
 			requestAnimationFrame(() => {
+				this.resetModalScroll();
 				requestAnimationFrame(this.updateScrollHints);
 			});
 		};
