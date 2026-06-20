@@ -13,13 +13,7 @@ const VOICE_BAR_COUNT = 28;
 		>
 			<div class="appointment-voice-dialog">
 				<div class="appointment-voice-dialog__gradients" aria-hidden="true">
-					<span class="appointment-voice-dialog__glow appointment-voice-dialog__glow--sky">
-						<span class="appointment-voice-dialog__glow-core"></span>
-					</span>
-					<span class="appointment-voice-dialog__glow appointment-voice-dialog__glow--amber">
-						<span class="appointment-voice-dialog__glow-core"></span>
-					</span>
-					<span class="appointment-voice-dialog__glow appointment-voice-dialog__glow--green">
+					<span class="appointment-voice-dialog__glow appointment-voice-dialog__glow--ambient" data-voice-dialog-glow>
 						<span class="appointment-voice-dialog__glow-core"></span>
 					</span>
 				</div>
@@ -195,39 +189,24 @@ const VOICE_BAR_COUNT = 28;
 		transform: translateZ(0);
 	}
 
-	.appointment-voice-dialog__glow--sky {
-		top: 42%;
+	.appointment-voice-dialog__glow--ambient {
+		top: 38%;
 		left: 50%;
-		width: 6.5rem;
-		height: 6.5rem;
-		margin-left: -3.25rem;
-		margin-top: -3.25rem;
+		width: 9.5rem;
+		height: 9.5rem;
+		margin-left: -4.75rem;
+		margin-top: -4.75rem;
+		opacity: 0.62;
 	}
 
-	.appointment-voice-dialog__glow--sky .appointment-voice-dialog__glow-core {
-		background: radial-gradient(circle, rgba(125, 211, 252, 0.95) 0%, rgba(147, 197, 253, 0.42) 48%, transparent 72%);
-	}
-
-	.appointment-voice-dialog__glow--amber {
-		bottom: 18%;
-		left: 8%;
-		width: 5.5rem;
-		height: 5.5rem;
-	}
-
-	.appointment-voice-dialog__glow--amber .appointment-voice-dialog__glow-core {
-		background: radial-gradient(circle, rgba(253, 224, 71, 0.92) 0%, rgba(251, 191, 36, 0.38) 50%, transparent 72%);
-	}
-
-	.appointment-voice-dialog__glow--green {
-		bottom: 18%;
-		right: 8%;
-		width: 5.5rem;
-		height: 5.5rem;
-	}
-
-	.appointment-voice-dialog__glow--green .appointment-voice-dialog__glow-core {
-		background: radial-gradient(circle, rgba(134, 239, 172, 0.92) 0%, rgba(74, 222, 128, 0.38) 50%, transparent 72%);
+	.appointment-voice-dialog__glow--ambient .appointment-voice-dialog__glow-core {
+		background: radial-gradient(
+			circle at 38% 42%,
+			rgba(253, 224, 71, 0.88) 0%,
+			rgba(134, 239, 172, 0.52) 38%,
+			rgba(125, 211, 252, 0.48) 62%,
+			transparent 78%
+		);
 	}
 
 	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-dialog,
@@ -1010,23 +989,21 @@ const VOICE_BAR_COUNT = 28;
 	}
 
 	html[data-theme='dark'] .appointment-voice-dialog__glow {
-		opacity: 0.46;
+		opacity: 0.5;
 	}
 
 	html[data-theme='dark'] .appointment-voice-dialog__glow-core {
-		filter: blur(32px);
+		filter: blur(34px);
 	}
 
-	html[data-theme='dark'] .appointment-voice-dialog__glow--sky .appointment-voice-dialog__glow-core {
-		background: radial-gradient(circle, rgba(125, 211, 252, 0.72) 0%, rgba(56, 189, 248, 0.28) 48%, transparent 72%);
-	}
-
-	html[data-theme='dark'] .appointment-voice-dialog__glow--amber .appointment-voice-dialog__glow-core {
-		background: radial-gradient(circle, rgba(253, 224, 71, 0.7) 0%, rgba(245, 158, 11, 0.24) 50%, transparent 72%);
-	}
-
-	html[data-theme='dark'] .appointment-voice-dialog__glow--green .appointment-voice-dialog__glow-core {
-		background: radial-gradient(circle, rgba(134, 239, 172, 0.68) 0%, rgba(34, 197, 94, 0.22) 50%, transparent 72%);
+	html[data-theme='dark'] .appointment-voice-dialog__glow--ambient .appointment-voice-dialog__glow-core {
+		background: radial-gradient(
+			circle at 38% 42%,
+			rgba(253, 224, 71, 0.62) 0%,
+			rgba(134, 239, 172, 0.38) 38%,
+			rgba(125, 211, 252, 0.34) 62%,
+			transparent 78%
+		);
 	}
 
 	html[data-theme='dark'] .appointment-voice-shell::backdrop {

@@ -25,19 +25,10 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#analyser: AnalyserNode | null = null;
 	#statusFadeTimer: number | null = null;
 	#dialogGlowRaf: number | null = null;
-	#dialogGlowNodes: Array<{
-		el: HTMLElement;
-		phase: number;
-		radiusX: number;
-		radiusY: number;
-		speed: number;
-	}> = [];
+	#dialogGlowEl: HTMLElement | null = null;
 
-	private static readonly DIALOG_GLOW_CONFIG = [
-		{ selector: '.appointment-voice-dialog__glow--sky', phase: 0, radiusX: 26, radiusY: 20, speed: 0.9 },
-		{ selector: '.appointment-voice-dialog__glow--amber', phase: 1.7, radiusX: 24, radiusY: 18, speed: 0.74 },
-		{ selector: '.appointment-voice-dialog__glow--green', phase: 3.3, radiusX: 22, radiusY: 19, speed: 0.8 },
-	] as const;
+	private static readonly DIALOG_GLOW_TRAVEL_X = 78;
+	private static readonly DIALOG_GLOW_SPEED = 0.62;
 
 	private static readonly STATUS_LABELS: Record<VoiceUiState, string> = {
 		idle: 'Toca el micrófono y describe la cita.',
@@ -120,41 +111,25 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.stopDialogGlowMotion();
 	}
 
-	private initDialogGlows() {
-		if (this.#dialogGlowNodes.length > 0) return;
-
-		for (const config of AppointmentVoiceOverlay.DIALOG_GLOW_CONFIG) {
-			const el = this.querySelector<HTMLElement>(config.selector);
-			if (!el) continue;
-			this.#dialogGlowNodes.push({
-				el,
-				phase: config.phase,
-				radiusX: config.radiusX,
-				radiusY: config.radiusY,
-				speed: config.speed,
-			});
-		}
+	private initDialogGlow() {
+		if (this.#dialogGlowEl) return;
+		this.#dialogGlowEl = this.querySelector<HTMLElement>('[data-voice-dialog-glow]');
 	}
 
 	private startDialogGlowMotion() {
-		this.initDialogGlows();
-		if (this.#dialogGlowNodes.length === 0) return;
+		this.initDialogGlow();
+		if (!this.#dialogGlowEl) return;
 		if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		if (this.#dialogGlowRaf) return;
 
 		const startedAt = performance.now();
 		const tick = (now: number) => {
 			const elapsed = (now - startedAt) / 1000;
+			const x = Math.sin(elapsed * AppointmentVoiceOverlay.DIALOG_GLOW_SPEED) * AppointmentVoiceOverlay.DIALOG_GLOW_TRAVEL_X;
+			const y = Math.sin(elapsed * AppointmentVoiceOverlay.DIALOG_GLOW_SPEED * 0.55) * 5;
 
-			for (const node of this.#dialogGlowNodes) {
-				const angle = elapsed * node.speed + node.phase;
-				const x =
-					Math.sin(angle) * node.radiusX + Math.sin(angle * 1.65) * (node.radiusX * 0.34);
-				const y =
-					Math.cos(angle * 0.9) * node.radiusY + Math.cos(angle * 1.35) * (node.radiusY * 0.3);
-				const rot = Math.sin(angle * 0.58) * 12;
-				const scale = 1 + Math.sin(angle * 1.12) * 0.09;
-				node.el.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rot}deg) scale(${scale})`;
+			if (this.#dialogGlowEl) {
+				this.#dialogGlowEl.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 			}
 
 			this.#dialogGlowRaf = requestAnimationFrame(tick);
@@ -169,9 +144,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			this.#dialogGlowRaf = null;
 		}
 
-		for (const node of this.#dialogGlowNodes) {
-			node.el.style.removeProperty('transform');
-		}
+		this.#dialogGlowEl?.style.removeProperty('transform');
 	}
 
 	open(options: { mode?: VoiceOverlayMode } = {}) {
