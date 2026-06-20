@@ -156,14 +156,14 @@ const toPageHref = (page: number) => {
 			</div>
 
 	<dialog
-		class="professional-modal m-0 mt-auto mb-0 w-screen max-w-none max-h-[min(92dvh,100%)] sm:m-auto sm:w-[min(44rem,calc(100vw-2rem))] sm:max-w-[min(44rem,calc(100vw-2rem))] sm:max-h-[90vh] open:flex open:flex-col overflow-hidden rounded-t-[1.35rem] rounded-b-none sm:rounded-[1.65rem] border border-(--shell-border) bg-white p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(15,23,42,0.16)]"
+		class="professional-modal m-0 mt-auto mb-0 w-screen max-w-none max-h-[min(92dvh,100%)] sm:m-auto sm:w-[min(44rem,calc(100vw-2rem))] sm:max-w-[min(44rem,calc(100vw-2rem))] sm:max-h-[90vh] open:flex open:flex-col overflow-hidden rounded-t-[1.35rem] rounded-b-none sm:rounded-[1.65rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(15,23,42,0.16)]"
 		data-professional-modal
 	>
 		<div class="professional-modal__header shrink-0 z-10 px-4 py-3 sm:px-6 sm:py-4">
 			<div class="professional-modal__mesh" aria-hidden="true"></div>
 			<div class="relative z-10 flex items-start justify-between gap-3 sm:gap-4">
 				<div class="flex min-w-0 items-center gap-2.5 sm:gap-3">
-					<div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-white/80 text-(--primary) shadow-sm ring-1 ring-(--shell-border) sm:size-10">
+					<div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-(--primary-soft) text-(--primary) shadow-sm ring-1 ring-(--shell-border) sm:size-10">
 						<span class="material-symbols-rounded text-[1.15rem] sm:text-[1.25rem]">badge</span>
 					</div>
 					<div class="min-w-0">
@@ -188,7 +188,7 @@ const toPageHref = (page: number) => {
 			</div>
 		</div>
 
-		<form class="relative flex flex-col overflow-hidden bg-white min-h-0" data-professional-form>
+		<form class="relative flex flex-col overflow-hidden bg-(--surface-bright) min-h-0" data-professional-form>
 			<div class="pointer-events-none fixed inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all" data-professional-loading>
 				<div class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
 					<span class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)">progress_activity</span>
@@ -462,7 +462,7 @@ const toPageHref = (page: number) => {
 			</div>
 			</div>
 			
-			<div class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-white px-4 py-2.5 sm:px-6 sm:py-3.5">
+			<div class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 sm:px-6 sm:py-3.5">
 				<div class="modal-footer">
 				<button type="button" class="hidden modal-action-danger" data-delete-professional>
 					<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" data-delete-professional-icon>delete</span>
@@ -1910,7 +1910,7 @@ const toPageHref = (page: number) => {
 	dialog[data-professional-modal].professional-modal {
 		position: fixed;
 		inset: 0;
-		background: #ffffff;
+		background: var(--surface-bright);
 		animation: professional-modal-in var(--modal-open-duration) var(--modal-easing);
 	}
 
@@ -1929,10 +1929,6 @@ const toPageHref = (page: number) => {
 			radial-gradient(ellipse 85% 90% at 8% -30%, rgba(59, 130, 246, 0.14), transparent 62%),
 			radial-gradient(ellipse 70% 80% at 92% -10%, rgba(139, 92, 246, 0.1), transparent 58%);
 		filter: blur(20px);
-	}
-
-	html[data-theme='dark'] dialog[data-professional-modal].professional-modal {
-		background: var(--surface-bright);
 	}
 
 	html[data-theme='dark'] .professional-modal__mesh {
@@ -2183,7 +2179,7 @@ const toPageHref = (page: number) => {
 		flex: 0 0 auto;
 		overflow: hidden;
 		border-radius: 999px;
-		border: 2px solid #ffffff;
+		border: 2px solid var(--surface-bright);
 		background: color-mix(in srgb, var(--primary-soft) 70%, var(--surface-container) 30%);
 		color: var(--primary);
 		box-shadow:
@@ -2202,8 +2198,8 @@ const toPageHref = (page: number) => {
 		width: 1.65rem;
 		height: 1.65rem;
 		border-radius: 999px;
-		border: 2px solid #ffffff;
-		background-color: #ffffff;
+		border: 2px solid var(--surface-bright);
+		background-color: var(--surface-bright);
 		background-image: none;
 		color: #64748b;
 		box-shadow:
@@ -2223,16 +2219,16 @@ const toPageHref = (page: number) => {
 	}
 
 	.profile-photo-uploader__edit:hover {
-		background-color: #eff6ff;
-		color: #2563eb;
+		background-color: color-mix(in srgb, var(--primary-soft) 72%, var(--surface-bright) 28%);
+		color: var(--primary);
 		box-shadow:
-			0 0 0 1px color-mix(in srgb, #93c5fd 55%, var(--shell-border) 45%),
+			0 0 0 1px color-mix(in srgb, var(--primary) 35%, var(--shell-border) 65%),
 			0 3px 10px rgba(37, 99, 235, 0.16);
 	}
 
 	.profile-photo-uploader__edit:active {
 		transform: scale(0.94);
-		background-color: #dbeafe;
+		background-color: color-mix(in srgb, var(--primary-soft) 88%, var(--surface-bright) 12%);
 	}
 
 	.profile-photo-uploader__edit.is-success {
@@ -2244,17 +2240,17 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .profile-photo-uploader__edit {
-		border-color: color-mix(in srgb, var(--surface-bright) 88%, #0f172a 12%);
-		background-color: #e2e8f0;
-		color: #475569;
+		border-color: color-mix(in srgb, var(--shell-border) 70%, var(--surface-bright) 30%);
+		background-color: var(--surface-container-high);
+		color: var(--on-surface-variant);
 		box-shadow:
-			0 0 0 1px color-mix(in srgb, #94a3b8 45%, transparent),
+			0 0 0 1px color-mix(in srgb, var(--shell-border) 55%, transparent),
 			0 2px 8px rgba(0, 0, 0, 0.28);
 	}
 
 	html[data-theme='dark'] .profile-photo-uploader__edit:hover {
-		background-color: #dbeafe;
-		color: #1d4ed8;
+		background-color: color-mix(in srgb, var(--primary-soft) 55%, var(--surface-container-high) 45%);
+		color: var(--primary);
 	}
 
 	html[data-theme='dark'] .profile-photo-uploader__edit.is-success {

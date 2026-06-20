@@ -1332,10 +1332,10 @@ html[data-theme='dark'] .app-pagination__current {
 	gap: 0.95rem;
 	border-radius: 1rem;
 	padding: 1.45rem 1.5rem 1.55rem;
-	border: 1px solid var(--card-border);
+	border: none;
 	background: var(--sidebar-surface);
-	box-shadow: var(--card-elevation), var(--card-inset-highlight);
-	transition: transform 170ms ease, box-shadow 170ms ease, border-color 170ms ease;
+	box-shadow: var(--card-elevation);
+	transition: transform 170ms ease, box-shadow 170ms ease;
 }
 
 :is(
@@ -1346,7 +1346,7 @@ html[data-theme='dark'] .app-pagination__current {
 	.professionals-card
 ):hover {
 	transform: translateY(-2px);
-	box-shadow: var(--card-elevation-hover), var(--card-inset-highlight);
+	box-shadow: var(--card-elevation-hover);
 }
 
 :is(
@@ -1377,7 +1377,7 @@ html[data-theme='dark'] .app-pagination__current {
 	color: #426edb;
 }
 
-		:is(
+:is(
 	.services-card-body,
 	.locations-card-body,
 	.customer-card-body,
@@ -1441,7 +1441,7 @@ html[data-theme='dark'] :is(
 	.professionals-card
 ) {
 	background: #252525;
-	border-color: rgba(255, 255, 255, 0.1);
+	border: none;
 	box-shadow: none;
 }
 
@@ -1452,8 +1452,8 @@ html[data-theme='dark'] :is(
 	.specialties-card,
 	.professionals-card
 ):hover {
-	border-color: rgba(255, 255, 255, 0.14);
 	background: #252525;
+	border: none;
 	box-shadow: none;
 }
 
