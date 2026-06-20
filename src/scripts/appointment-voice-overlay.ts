@@ -299,7 +299,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		const source = this.#audioContext.createMediaStreamSource(stream);
 		this.#analyser = this.#audioContext.createAnalyser();
 		this.#analyser.fftSize = 512;
-		this.#analyser.smoothingTimeConstant = 0.82;
+		this.#analyser.smoothingTimeConstant = 0.68;
 		source.connect(this.#analyser);
 		this.#visualizer?.setAnalyser(this.#analyser);
 	}

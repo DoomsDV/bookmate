@@ -487,14 +487,14 @@ const VOICE_BAR_COUNT = 28;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 1.15rem;
+		gap: 1rem;
 		width: calc(100% + 2.4rem);
 		margin-inline: -1.2rem;
-		min-height: 10.5rem;
+		min-height: 9.5rem;
 		margin-top: 0.35rem;
 		padding-inline: 0;
 		--voice-level: 0.16;
-		--bar-max-height: 4.75rem;
+		--bar-max-height: 4.25rem;
 	}
 
 	.appointment-voice-visual {
@@ -611,6 +611,10 @@ const VOICE_BAR_COUNT = 28;
 	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-visual__bar,
 	.appointment-voice-visual[data-visualizer-mode='live'] .appointment-voice-visual__bar {
 		opacity: calc(0.94 + var(--voice-level, 0.2) * 0.06);
+		transition:
+			transform 110ms cubic-bezier(0.33, 1, 0.45, 1),
+			opacity 180ms ease,
+			background 180ms ease;
 	}
 
 	.appointment-voice-visual[data-visualizer-mode='collapsing'] .appointment-voice-visual__bar {
@@ -626,7 +630,7 @@ const VOICE_BAR_COUNT = 28;
 	}
 
 	.appointment-voice-stage.is-collapsing {
-		min-height: 10.5rem;
+		min-height: 9.5rem;
 	}
 
 	@keyframes appointment-voice-blob-drift {
@@ -711,7 +715,14 @@ const VOICE_BAR_COUNT = 28;
 	}
 
 	.appointment-voice-record__halo {
-		display: none;
+		position: absolute;
+		inset: -0.35rem;
+		z-index: 0;
+		border-radius: 999px;
+		border: 2px solid color-mix(in srgb, var(--primary) 42%, transparent);
+		pointer-events: none;
+		opacity: 0;
+		animation: appointment-voice-mic-ring 2.1s cubic-bezier(0.22, 1, 0.36, 1) infinite;
 	}
 
 	.appointment-voice-record__pulse {
@@ -721,18 +732,48 @@ const VOICE_BAR_COUNT = 28;
 		border-radius: 999px;
 		background: radial-gradient(
 			circle,
-			color-mix(in srgb, var(--primary) 28%, transparent) 0%,
-			color-mix(in srgb, var(--primary) 12%, transparent) 52%,
-			transparent 72%
+			color-mix(in srgb, var(--primary) 34%, transparent) 0%,
+			color-mix(in srgb, var(--primary) 16%, transparent) 48%,
+			transparent 74%
 		);
 		pointer-events: none;
-		animation: appointment-voice-mic-breathe 4.2s ease-in-out infinite;
+		animation: appointment-voice-mic-pulse 2.1s ease-in-out infinite;
 	}
 
-	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record__pulse,
+	appointment-voice-overlay[data-voice-state='idle'] .appointment-voice-record {
+		animation: appointment-voice-mic-button-pulse 2.4s ease-in-out infinite;
+	}
+
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record__pulse {
+		inset: -1.35rem;
+		opacity: calc(0.5 + var(--voice-level, 0.2) * 0.45);
+		animation: appointment-voice-mic-recording-pulse 0.85s ease-in-out infinite;
+	}
+
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record__halo {
+		inset: -0.55rem;
+		opacity: calc(0.35 + var(--voice-level, 0.2) * 0.55);
+		animation: appointment-voice-mic-ring-fast 1.05s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+	}
+
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-record {
+		animation: none;
+		box-shadow:
+			0 4px 14px rgba(15, 23, 42, 0.12),
+			0 0 0 calc(3px + var(--voice-level, 0.2) * 10px)
+				color-mix(in srgb, var(--primary) 32%, transparent);
+	}
+
 	appointment-voice-overlay[data-voice-state='processing'] .appointment-voice-record__pulse,
 	appointment-voice-overlay[data-voice-state='collapsing'] .appointment-voice-record__pulse,
 	appointment-voice-overlay[data-voice-state='success'] .appointment-voice-record__pulse {
+		opacity: 0;
+		animation: none;
+	}
+
+	appointment-voice-overlay[data-voice-state='processing'] .appointment-voice-record__halo,
+	appointment-voice-overlay[data-voice-state='collapsing'] .appointment-voice-record__halo,
+	appointment-voice-overlay[data-voice-state='success'] .appointment-voice-record__halo {
 		opacity: 0;
 		animation: none;
 	}
@@ -763,13 +804,19 @@ const VOICE_BAR_COUNT = 28;
 
 		.appointment-voice-visual__blob,
 		.appointment-voice-record__pulse,
-		.appointment-voice-visual__baseline {
+		.appointment-voice-record__halo,
+		.appointment-voice-visual__baseline,
+		.appointment-voice-record {
 			animation: none;
 		}
 
 		.appointment-voice-record__pulse {
 			opacity: 0.55;
 			transform: scale(1);
+		}
+
+		.appointment-voice-record__halo {
+			opacity: 0;
 		}
 
 		.appointment-voice-visual__baseline {
@@ -808,15 +855,66 @@ const VOICE_BAR_COUNT = 28;
 		}
 	}
 
-	@keyframes appointment-voice-mic-breathe {
+	@keyframes appointment-voice-mic-pulse {
 		0%,
 		100% {
-			opacity: 0.42;
-			transform: scale(0.94);
+			opacity: 0.45;
+			transform: scale(0.92);
 		}
+
 		50% {
-			opacity: 0.78;
-			transform: scale(1.1);
+			opacity: 0.88;
+			transform: scale(1.14);
+		}
+	}
+
+	@keyframes appointment-voice-mic-ring {
+		0% {
+			opacity: 0.72;
+			transform: scale(0.82);
+		}
+
+		100% {
+			opacity: 0;
+			transform: scale(1.42);
+		}
+	}
+
+	@keyframes appointment-voice-mic-button-pulse {
+		0%,
+		100% {
+			box-shadow:
+				0 4px 14px rgba(15, 23, 42, 0.12),
+				0 0 0 0 color-mix(in srgb, var(--primary) 34%, transparent);
+		}
+
+		50% {
+			box-shadow:
+				0 6px 20px color-mix(in srgb, var(--primary) 22%, rgba(15, 23, 42, 0.12)),
+				0 0 0 10px color-mix(in srgb, var(--primary) 0%, transparent);
+		}
+	}
+
+	@keyframes appointment-voice-mic-recording-pulse {
+		0%,
+		100% {
+			transform: scale(calc(0.94 + var(--voice-level, 0.2) * 0.08));
+		}
+
+		50% {
+			transform: scale(calc(1.08 + var(--voice-level, 0.2) * 0.22));
+		}
+	}
+
+	@keyframes appointment-voice-mic-ring-fast {
+		0% {
+			opacity: calc(0.55 + var(--voice-level, 0.2) * 0.35);
+			transform: scale(0.88);
+		}
+
+		100% {
+			opacity: 0;
+			transform: scale(calc(1.28 + var(--voice-level, 0.2) * 0.18));
 		}
 	}
 
