@@ -1018,7 +1018,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		}
 
 		private openModal = () => {
-			destroyActiveBookmateTour();
+			destroyActiveBookmateTour({ persistCompletion: false });
 			this.setActiveTab('profile');
 			this.clearFeedback();
 			this.resetSecurityForm();

@@ -4,6 +4,11 @@ import '../styles/product-tour.css';
 
 const TOUR_SHELL_SELECTOR = '[data-bookmate-tour-shell]';
 
+export type DestroyBookmateTourOptions = {
+	/** false = no marcar la guía como vista al cerrar (p. ej. interrumpida por un modal). */
+	persistCompletion?: boolean;
+};
+
 export type BookmateTourRunOptions = {
 	force?: boolean;
 	storageKey: string;
@@ -121,9 +126,83 @@ function mountPopoverInTourShell(popoverWrapper: HTMLElement) {
 let tourLayoutSyncGeneration = 0;
 let activeTourPopover: HTMLElement | null = null;
 let activeTourDriver: Driver | null = null;
+let activeTourStorageKey: string | null = null;
+let activeTourPersistCompletion = true;
+let activeTourUsesTopLayerShell = false;
+let destroyPersistOverride: boolean | null = null;
+
+function isTourShellDialog(dialog: Element) {
+	return dialog.matches(TOUR_SHELL_SELECTOR);
+}
+
+/** Hay un `<dialog open>` de la app (no el shell de la guía). */
+export function isBlockingDialogOpen() {
+	return Array.from(document.querySelectorAll('dialog[open]')).some(
+		(dialog) => !isTourShellDialog(dialog)
+	);
+}
+
+/** Espera a que el usuario cierre modales antes de mostrar la guía del dashboard. */
+export function waitUntilBlockingDialogsClosed(timeoutMs = 5 * 60 * 1000): Promise<void> {
+	if (!isBlockingDialogOpen()) return Promise.resolve();
+
+	return new Promise((resolve) => {
+		const finish = () => {
+			observer.disconnect();
+			window.clearTimeout(timeoutId);
+			resolve();
+		};
+
+		const observer = new MutationObserver(() => {
+			if (!isBlockingDialogOpen()) finish();
+		});
+
+		observer.observe(document.body, {
+			subtree: true,
+			attributes: true,
+			attributeFilter: ['open'],
+		});
+
+		const timeoutId = window.setTimeout(finish, timeoutMs);
+	});
+}
+
+function installBlockingDialogGuard() {
+	if (typeof window === 'undefined') return;
+	const globalWindow = window as typeof window & { __bookmateTourDialogGuard?: boolean };
+	if (globalWindow.__bookmateTourDialogGuard) return;
+	globalWindow.__bookmateTourDialogGuard = true;
+
+	const observer = new MutationObserver(() => {
+		if (!activeTourDriver?.isActive()) return;
+		if (!isBlockingDialogOpen()) return;
+		if (activeTourUsesTopLayerShell) return;
+
+		const interruptedKey = activeTourStorageKey;
+		destroyActiveBookmateTour({ persistCompletion: false });
+
+		if (interruptedKey) {
+			window.dispatchEvent(
+				new CustomEvent('bookmate:tour-interrupted-by-dialog', {
+					detail: { storageKey: interruptedKey },
+				})
+			);
+		}
+	});
+
+	observer.observe(document.body, {
+		subtree: true,
+		attributes: true,
+		attributeFilter: ['open'],
+	});
+}
 
 /** Cierra la guía activa (p. ej. al cerrar el modal que la inició). */
-export function destroyActiveBookmateTour() {
+export function destroyActiveBookmateTour(options?: DestroyBookmateTourOptions) {
+	if (options?.persistCompletion !== undefined) {
+		destroyPersistOverride = options.persistCompletion;
+	}
+
 	tourLayoutSyncGeneration += 1;
 	activeTourPopover = null;
 
@@ -136,8 +215,10 @@ export function destroyActiveBookmateTour() {
 		} catch {
 			// noop
 		}
+		return;
 	}
 
+	destroyPersistOverride = null;
 	forceCleanupDriverDom();
 }
 
@@ -274,11 +355,17 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 	if (!options.force && hasSeenBookmateTour(options.storageKey)) return;
 	if (steps.length === 0) return;
 
+	if (!options.useTopLayerShell && isBlockingDialogOpen()) return;
+
+	installBlockingDialogGuard();
 	destroyActiveBookmateTour();
 
 	const useShell = options.useTopLayerShell === true;
 	const needsScrollSync = Boolean(options.scrollIntoView);
 	const hostSelector = options.hostSelector;
+	activeTourStorageKey = options.storageKey;
+	activeTourPersistCompletion = options.persistCompletion !== false;
+	activeTourUsesTopLayerShell = useShell;
 
 	activeTourDriver = driver({
 		allowClose: true,
@@ -323,10 +410,19 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 			tourLayoutSyncGeneration += 1;
 			activeTourPopover = null;
 			activeTourDriver = null;
+			activeTourUsesTopLayerShell = false;
 			if (useShell) closeTourShell();
-			if (options.persistCompletion !== false) {
-				markBookmateTourSeen(options.storageKey);
+
+			const shouldPersist =
+				destroyPersistOverride !== null
+					? destroyPersistOverride
+					: activeTourPersistCompletion;
+			destroyPersistOverride = null;
+
+			if (shouldPersist && activeTourStorageKey) {
+				markBookmateTourSeen(activeTourStorageKey);
 			}
+			activeTourStorageKey = null;
 		},
 	});
 

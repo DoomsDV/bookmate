@@ -1,5 +1,9 @@
 import type { DriveStep } from 'driver.js';
-import { runBookmateTour } from './product-tour';
+import {
+	isBlockingDialogOpen,
+	runBookmateTour,
+	waitUntilBlockingDialogsClosed,
+} from './product-tour';
 
 const STORAGE_KEY = 'bookmate_settings_menu_tour_v2';
 const SETTINGS_MENU_TRIGGER = '[data-settings-menu-trigger]';
@@ -87,6 +91,51 @@ export function showSettingsMenuTour(options?: { force?: boolean; includeInstall
 	runBookmateTour(steps, { force: options?.force, storageKey: STORAGE_KEY });
 }
 
+async function tryRunSettingsMenuTour() {
+	if (hasSeenSettingsMenuTour()) return;
+	if (document.body.classList.contains('driver-active')) return;
+	if (!document.querySelector(SETTINGS_MENU_TRIGGER)) return;
+
+	const path = window.location.pathname.replace(/\/+$/, '') || '/';
+	if (path !== '/panel/dashboard') return;
+
+	const includeInstallStep = await waitForOptionalInstallButton();
+	if (hasSeenSettingsMenuTour()) return;
+	if (document.body.classList.contains('driver-active')) return;
+
+	if (isBlockingDialogOpen()) {
+		await waitUntilBlockingDialogsClosed();
+	}
+
+	if (hasSeenSettingsMenuTour()) return;
+	if (document.body.classList.contains('driver-active')) return;
+	if (isBlockingDialogOpen()) return;
+
+	const steps = buildTourSteps(includeInstallStep);
+	if (steps.length === 0) return;
+
+	runBookmateTour(steps, { storageKey: STORAGE_KEY });
+}
+
+function bindSettingsMenuTourRetry() {
+	if (typeof window === 'undefined') return;
+	const globalWindow = window as typeof window & { __bookmateSettingsTourRetryBound?: boolean };
+	if (globalWindow.__bookmateSettingsTourRetryBound) return;
+	globalWindow.__bookmateSettingsTourRetryBound = true;
+
+	window.addEventListener('bookmate:tour-interrupted-by-dialog', (event) => {
+		const storageKey =
+			event instanceof CustomEvent && typeof event.detail?.storageKey === 'string'
+				? event.detail.storageKey
+				: '';
+		if (storageKey !== STORAGE_KEY) return;
+
+		window.setTimeout(() => {
+			void tryRunSettingsMenuTour();
+		}, 400);
+	});
+}
+
 /** Muestra la guía una sola vez (en el dashboard al entrar al panel). */
 export function maybeShowSettingsMenuTour() {
 	if (hasSeenSettingsMenuTour()) return;
@@ -95,19 +144,9 @@ export function maybeShowSettingsMenuTour() {
 	const path = window.location.pathname.replace(/\/+$/, '') || '/';
 	if (path !== '/panel/dashboard') return;
 
+	bindSettingsMenuTourRetry();
+
 	window.setTimeout(() => {
-		void (async () => {
-			if (hasSeenSettingsMenuTour()) return;
-			if (document.body.classList.contains('driver-active')) return;
-
-			const includeInstallStep = await waitForOptionalInstallButton();
-			if (hasSeenSettingsMenuTour()) return;
-			if (document.body.classList.contains('driver-active')) return;
-
-			const steps = buildTourSteps(includeInstallStep);
-			if (steps.length === 0) return;
-
-			runBookmateTour(steps, { storageKey: STORAGE_KEY });
-		})();
+		void tryRunSettingsMenuTour();
 	}, 900);
 }
