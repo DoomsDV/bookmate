@@ -130,6 +130,7 @@ const serializedLocations = reservation
 							<strong data-current-date></strong>
 						</div>
 					</div>
+
 					{isCancelled ? (
 						<div class="reservation-cancelled rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6" data-reservation-cancelled>
 							<p class="reservation-cancelled-text">
@@ -138,81 +139,152 @@ const serializedLocations = reservation
 							<a href={rebookHref} class="reservation-link">Volver a reservar</a>
 						</div>
 					) : (
-					<form class="reservation-form rounded-[28px] bg-(--surface-container) p-4 shadow-sm sm:p-5" data-reservation-form>
-						<div>
-							<h2 class="text-xl font-normal tracking-tight text-(--on-surface) sm:text-2xl">Selecciona una nueva fecha</h2>
-							<p class="mt-1 text-sm text-(--on-surface-variant) sm:text-base">
-								Elige el día en el calendario para ver los horarios disponibles.
-							</p>
-						</div>
+					<>
+					<div class="reservation-actions-card rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6">
+						<button
+							type="button"
+							class="reservation-primary-action"
+							data-open-reschedule-modal
+						>
+							<span class="material-symbols-rounded" aria-hidden="true">event_repeat</span>
+							Reprogramar reserva
+						</button>
+						<button type="button" class="reservation-danger" data-cancel-reservation>
+							<span class="material-symbols-rounded" aria-hidden="true">event_busy</span>
+							Cancelar reserva
+						</button>
+					</div>
 
-						<div class="mt-4 rounded-3xl border border-(--outline-variant) bg-(--surface-container-low) p-4 sm:mt-6 sm:p-6">
-							<div class="mb-5 flex items-center justify-between gap-3">
+					<dialog
+						class="reservation-reschedule-modal m-0 mt-auto mb-0 w-screen max-w-none open:flex open:flex-col max-h-[88dvh] overflow-hidden rounded-t-[1.75rem] rounded-b-none border border-(--outline-variant) border-b-0 bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70 sm:m-auto sm:mb-auto sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] sm:max-h-[min(90vh,52rem)] sm:rounded-[28px] sm:border-b"
+						data-reschedule-modal
+					>
+						<form class="reservation-reschedule-form" data-reservation-form data-reschedule-step="1">
+							<div class="reservation-reschedule-header">
+								<div>
+									<h2 class="reservation-reschedule-title" data-reschedule-modal-title>Elige una nueva fecha y horario</h2>
+								</div>
 								<button
 									type="button"
-									data-calendar-prev
-									class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
+									class="reservation-modal-close"
+									data-reschedule-close
+									aria-label="Cerrar"
 								>
-									Anterior
-								</button>
-								<p class="text-base font-medium capitalize tracking-wide text-(--on-surface)" data-calendar-month></p>
-								<button
-									type="button"
-									data-calendar-next
-									class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
-								>
-									Siguiente
+									<span class="material-symbols-rounded" aria-hidden="true">close</span>
 								</button>
 							</div>
-							<div class="mb-3 grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase tracking-wider text-(--on-surface-variant) sm:text-sm">
-								<span>Lun</span>
-								<span>Mar</span>
-								<span>Mie</span>
-								<span>Jue</span>
-								<span>Vie</span>
-								<span>Sab</span>
-								<span>Dom</span>
-							</div>
-							<div class="grid grid-cols-7 gap-1 sm:gap-2" data-calendar-grid></div>
-						</div>
 
-						<input type="hidden" name="date" required data-reservation-date />
-						<div class="hidden grid gap-3" data-reservation-slots-panel>
-							<div>
-								<h2 class="text-xl font-normal tracking-tight text-(--on-surface) sm:text-2xl">Selecciona un horario</h2>
-								<p class="mt-1 text-sm text-(--on-surface-variant) sm:text-base">
-									<span class="font-medium text-(--on-surface)" data-reservation-selected-date></span>
-								</p>
+							<div class="reservation-reschedule-stepper">
+								<ol class="grid grid-cols-3" data-reschedule-step-indicator>
+									<li data-reschedule-step-item="1" class="step-item-current">1. Fecha</li>
+									<li data-reschedule-step-item="2" class="step-item-default">2. Horario</li>
+									<li data-reschedule-step-item="3" class="step-item-default">3. Confirmar</li>
+								</ol>
 							</div>
 
-							<div
-								data-reservation-slots-loading
-								class="hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)"
-							>
-								Consultando horarios disponibles...
+							<div class="reservation-reschedule-body">
+								<section data-reschedule-step-panel="1" class="grid gap-3">
+									<div>
+										<h3 class="text-lg font-normal tracking-tight text-(--on-surface) sm:text-xl">Selecciona una fecha</h3>
+										<p class="mt-0.5 text-sm text-(--on-surface-variant)">
+											Elige el día en el calendario para ver los horarios disponibles.
+										</p>
+									</div>
+
+									<div class="rounded-3xl border border-(--outline-variant) bg-(--surface-container-low) p-3 sm:p-4">
+										<div class="mb-3 flex items-center justify-between gap-3">
+											<button
+												type="button"
+												data-calendar-prev
+												class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
+											>
+												Anterior
+											</button>
+											<p class="text-base font-medium capitalize tracking-wide text-(--on-surface)" data-calendar-month></p>
+											<button
+												type="button"
+												data-calendar-next
+												class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
+											>
+												Siguiente
+											</button>
+										</div>
+										<div class="mb-3 grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase tracking-wider text-(--on-surface-variant) sm:text-sm">
+											<span>Lun</span>
+											<span>Mar</span>
+											<span>Mie</span>
+											<span>Jue</span>
+											<span>Vie</span>
+											<span>Sab</span>
+											<span>Dom</span>
+										</div>
+										<div class="grid grid-cols-7 gap-1 sm:gap-2" data-calendar-grid></div>
+									</div>
+								</section>
+
+								<section data-reschedule-step-panel="2" class="hidden grid gap-4">
+									<div>
+										<h3 class="text-xl font-normal tracking-tight text-(--on-surface) sm:text-2xl">Selecciona un horario</h3>
+										<p class="mt-1 text-sm text-(--on-surface-variant) sm:text-base">
+											<span class="font-medium text-(--on-surface)" data-reservation-selected-date></span>
+										</p>
+									</div>
+
+									<div
+										data-reservation-slots-loading
+										class="hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)"
+									>
+										Consultando horarios disponibles...
+									</div>
+
+									<div class="grid gap-6" data-reservation-slots-container></div>
+									<p
+										data-no-reservation-slots
+										class="hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
+									>
+										No se encontraron horarios para este día. Selecciona otra fecha para continuar.
+									</p>
+								</section>
+
+								<section data-reschedule-step-panel="3" class="hidden">
+									<div class="reservation-change-summary">
+										<p class="reservation-change-summary-label">Cambio de horario</p>
+										<div class="reservation-change-summary-text" data-reschedule-change-summary></div>
+									</div>
+								</section>
 							</div>
 
-							<div class="grid gap-6" data-reservation-slots-container></div>
-							<input type="hidden" id="reservation_slot" name="slot" required data-reservation-slot />
+							<input type="hidden" name="date" data-reservation-date />
+							<input type="hidden" id="reservation_slot" name="slot" data-reservation-slot />
 							<input type="hidden" name="loc_id_location" data-reservation-location />
-							<p data-no-reservation-slots class="hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)">
-								No hay horarios disponibles para este día.
-							</p>
-						</div>
 
-						<div class="reservation-actions">
-							<button type="button" class="reservation-danger" data-cancel-reservation>
-								<span class="material-symbols-rounded">event_busy</span>
-								Cancelar reserva
-							</button>
-							<button
-								type="submit"
-								class="inline-flex h-12 w-full items-center justify-center rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary) transition hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-							>
-								Guardar cambios
-							</button>
-						</div>
-					</form>
+							<div class="reservation-reschedule-footer">
+								<button
+									type="button"
+									class="reservation-secondary-action"
+									data-reschedule-back
+								>
+									Volver atrás
+								</button>
+								<div class="reservation-reschedule-footer-actions">
+									<button
+										type="button"
+										class="reservation-primary-action reservation-primary-action--compact"
+										data-reschedule-next
+									>
+										Siguiente
+									</button>
+									<button
+										type="submit"
+										class="reservation-primary-action reservation-primary-action--compact is-hidden"
+										data-reschedule-submit
+									>
+										Guardar cambios
+									</button>
+								</div>
+							</div>
+						</form>
+					</dialog>
 
 					<dialog
 						class="public-map-modal rounded-[28px] border border-(--outline-variant) bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70"
@@ -252,6 +324,7 @@ const serializedLocations = reservation
 							></p>
 						</div>
 					</dialog>
+					</>
 					)}
 
 				</>
@@ -362,11 +435,321 @@ const serializedLocations = reservation
 	gap: 1rem;
 }
 
+.reservation-actions-card {
+	display: grid;
+	gap: 0.75rem;
+}
+
+.reservation-primary-action,
+.reservation-secondary-action {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	border: 0;
+	border-radius: 999px;
+	font: inherit;
+	font-weight: 500;
+	padding: 0.85rem 1.35rem;
+	cursor: pointer;
+	text-decoration: none;
+	transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+}
+
+.reservation-primary-action {
+	background: var(--primary);
+	color: var(--on-primary);
+}
+
+.reservation-primary-action:hover:not(:disabled) {
+	background: var(--primary-hover);
+}
+
+.reservation-primary-action:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
+.reservation-primary-action--compact {
+	min-height: 3rem;
+	padding-inline: 1.5rem;
+}
+
+.reservation-secondary-action {
+	background: transparent;
+	color: var(--on-surface);
+	border: 1px solid var(--outline);
+}
+
+.reservation-secondary-action:hover {
+	background: var(--surface-container-highest);
+}
+
 .reservation-actions {
 	display: flex;
 	gap: 0.8rem;
 	justify-content: space-between;
 	margin-top: 0.75rem;
+}
+
+.reservation-reschedule-modal {
+	position: fixed;
+	top: auto;
+	right: 0;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	max-width: none;
+	height: auto;
+	max-height: 88dvh;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	animation: reservation-modal-in var(--modal-open-duration, 150ms)
+		var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.reservation-reschedule-modal::backdrop {
+	background: rgba(0, 0, 0, 0.7);
+	animation: reservation-backdrop-in var(--modal-open-duration, 150ms)
+		var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.reservation-reschedule-form {
+	display: grid;
+	min-height: 0;
+	height: auto;
+	max-height: inherit;
+	grid-template-rows: auto auto auto auto;
+}
+
+.reservation-reschedule-form[data-reschedule-step='2'],
+.reservation-reschedule-form[data-reschedule-step='3'] {
+	max-height: 88dvh;
+	grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+@media (max-width: 639px) {
+	.reservation-reschedule-form[data-reschedule-step='2'],
+	.reservation-reschedule-form[data-reschedule-step='3'] {
+		height: auto;
+		max-height: 88dvh;
+	}
+
+	.reservation-reschedule-form[data-reschedule-step='2'] .reservation-reschedule-body,
+	.reservation-reschedule-form[data-reschedule-step='3'] .reservation-reschedule-body {
+		overflow-y: auto;
+		max-height: calc(88dvh - 11.5rem);
+	}
+
+	.reservation-reschedule-footer {
+		padding: 0.65rem 1.15rem max(0.65rem, env(safe-area-inset-bottom, 0px));
+	}
+}
+
+.reservation-reschedule-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.85rem 1.15rem 0.45rem;
+}
+
+.reservation-reschedule-title {
+	margin: 0;
+	font-size: clamp(1.15rem, 2.5vw, 1.45rem);
+	line-height: 1.2;
+	letter-spacing: -0.02em;
+	color: var(--on-surface);
+}
+
+.reservation-modal-close {
+	display: grid;
+	place-items: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--on-surface-variant);
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+	flex-shrink: 0;
+}
+
+.reservation-modal-close:hover {
+	background: var(--surface-container-highest);
+	color: var(--on-surface);
+}
+
+.reservation-reschedule-stepper {
+	padding: 0.55rem 1.15rem 0.75rem;
+	border-bottom: 1px solid color-mix(in srgb, var(--outline-variant) 55%, transparent);
+}
+
+[data-reschedule-step-indicator] {
+	gap: 0.65rem;
+}
+
+.reservation-reschedule-body {
+	overflow-y: visible;
+	padding: 0.65rem 1.15rem 0.5rem;
+}
+
+.reservation-reschedule-form[data-reschedule-step='2'] .reservation-reschedule-body,
+.reservation-reschedule-form[data-reschedule-step='3'] .reservation-reschedule-body {
+	overflow-y: auto;
+}
+
+.reservation-reschedule-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	flex-shrink: 0;
+	padding: 0.75rem 1.15rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+	border-top: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent);
+	background: var(--surface-container);
+}
+
+.reservation-reschedule-footer-actions {
+	margin-left: auto;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+.reservation-reschedule-footer-actions .is-hidden,
+.reservation-primary-action.is-hidden {
+	display: none !important;
+}
+
+.reservation-change-summary {
+	border-radius: 1.25rem;
+	background: var(--surface-container-high);
+	padding: 1rem 1.1rem;
+}
+
+.reservation-change-summary-label {
+	margin: 0 0 0.9rem;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--primary);
+}
+
+.reservation-change-summary-text {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	margin: 0;
+}
+
+.reservation-change-diff__block {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.reservation-change-diff__block--previous {
+	margin-bottom: 0.85rem;
+}
+
+.reservation-change-diff__block--next {
+	gap: 0.4rem;
+	padding-top: 0.15rem;
+}
+
+.reservation-change-diff__microcopy {
+	font-size: 0.72rem;
+	font-weight: 700;
+	line-height: 1.3;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--on-surface-variant);
+}
+
+.reservation-change-diff__previous {
+	font-size: 0.92rem;
+	line-height: 1.45;
+	color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+	text-decoration: line-through;
+	text-decoration-color: color-mix(in srgb, var(--on-surface-variant) 55%, transparent);
+	text-wrap: pretty;
+}
+
+.reservation-change-diff__next {
+	font-size: 1.05rem;
+	line-height: 1.5;
+	font-weight: 600;
+	color: var(--primary);
+	text-wrap: pretty;
+}
+
+@media (min-width: 640px) {
+	.reservation-change-summary-label {
+		margin-bottom: 1rem;
+	}
+
+	.reservation-change-diff__block--previous {
+		margin-bottom: 1rem;
+	}
+
+	.reservation-change-diff__previous {
+		font-size: 0.95rem;
+	}
+
+	.reservation-change-diff__next {
+		font-size: 1.08rem;
+		line-height: 1.48;
+	}
+}
+
+.step-item-default,
+.step-item-current,
+.step-item-done {
+	border-radius: 100px;
+	padding: 0.55rem 0.65rem;
+	font-size: 0.78rem;
+	font-weight: 500;
+	text-align: center;
+	transition: all 0.2s ease-in-out;
+	cursor: default;
+	white-space: nowrap;
+}
+
+@media (min-width: 640px) {
+	.step-item-default,
+	.step-item-current,
+	.step-item-done {
+		padding: 0.6rem 1.15rem;
+		font-size: 0.82rem;
+	}
+}
+
+.step-item-default {
+	background: transparent;
+	color: var(--on-surface-variant);
+}
+
+.step-item-current {
+	background: var(--primary-container);
+	color: var(--on-primary-container);
+}
+
+.step-item-done {
+	background: var(--surface-container-highest);
+	color: var(--on-surface);
+}
+
+.step-item-done::before {
+	content: '\2713';
+	display: inline-block;
+	margin-right: 0.35rem;
+	color: var(--primary);
 }
 
 .reservation-danger,
@@ -446,6 +829,64 @@ const serializedLocations = reservation
 	}
 }
 
+@media (max-width: 639px) {
+	.reservation-reschedule-footer {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.reservation-reschedule-footer-actions {
+		margin-left: 0;
+		width: 100%;
+		flex-direction: column;
+	}
+
+	.reservation-reschedule-footer-actions .reservation-primary-action,
+	.reservation-secondary-action[data-reschedule-back] {
+		width: 100%;
+	}
+}
+
+@media (min-width: 640px) {
+	.reservation-reschedule-modal {
+		inset: 0;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		left: 0;
+		width: min(42rem, calc(100vw - 2rem));
+		max-width: min(42rem, calc(100vw - 2rem));
+		max-height: min(90vh, 52rem);
+		height: fit-content;
+		margin: auto;
+		border-bottom: 1px solid var(--outline-variant);
+		border-radius: 28px;
+	}
+
+	.reservation-reschedule-form[data-reschedule-step='2'],
+	.reservation-reschedule-form[data-reschedule-step='3'] {
+		height: 100%;
+		max-height: min(90vh, 52rem);
+	}
+
+	[data-reschedule-step-indicator] {
+		gap: 1.35rem;
+	}
+
+	.reservation-reschedule-stepper {
+		padding: 0.65rem 1.5rem 0.85rem;
+	}
+
+	.reservation-actions-card {
+		grid-template-columns: 1fr auto;
+		align-items: center;
+	}
+
+	.reservation-primary-action {
+		justify-self: start;
+	}
+}
+
 @media (min-width: 768px) {
 	.reservation-summary {
 		grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -497,6 +938,62 @@ const serializedLocations = reservation
 .public-location-link:hover .public-location-link__label {
 	text-decoration: underline;
 	text-underline-offset: 0.2em;
+}
+
+@keyframes reservation-modal-in {
+	from {
+		opacity: 0;
+		transform: translateY(100%);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes reservation-backdrop-in {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@media (min-width: 640px) {
+	@keyframes reservation-modal-in {
+		from {
+			opacity: 0;
+			transform: translateY(10px) scale(0.98);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+}
+
+html:has(.reservation-shell) dialog[data-app-alert-dialog] {
+	--surface-bright: #1b1b1b;
+	--on-surface: #e2e2e9;
+	--on-surface-variant: #c4c6d0;
+	--shell-border: #44474e;
+	--surface: rgba(27, 27, 27, 0.55);
+	--control-surface-strong: #2a2a2a;
+	--primary: #a8c7fa;
+	border-color: #44474e;
+	box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+}
+
+html:has(.reservation-shell) dialog[data-app-alert-dialog] [data-app-alert-icon-shell] {
+	background: rgba(245, 158, 11, 0.14) !important;
+	color: #fbbf24 !important;
+	box-shadow: 0 0 0 6px rgba(245, 158, 11, 0.1) !important;
+}
+
+html:has(.reservation-shell) dialog[data-app-alert-dialog] [data-app-alert-cancel]:hover {
+	background: #2a2a2a;
+	color: #a8c7fa;
 }
 </style>
 
