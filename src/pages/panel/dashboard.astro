@@ -54,7 +54,12 @@ if (!token) {
 	}
 }
 
-const dashboardDate = '17 de abril del 2026';
+const dashboardDate = new Intl.DateTimeFormat('es-PY', {
+	day: 'numeric',
+	month: 'long',
+	year: 'numeric',
+	timeZone: 'America/Asuncion',
+}).format(new Date());
 
 const metrics = [
 	{
