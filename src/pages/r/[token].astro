@@ -10,6 +10,11 @@ import {
 	type PublicReservationDetail,
 } from '../../lib/public-booking';
 import { buildPublicProfilePath } from '../../lib/public-profile-url';
+import {
+	formatHumanDateTime,
+	isReservationPast,
+	parseApiDateTime,
+} from '../../lib/booking-datetime';
 import '../../styles/global.css';
 
 const token = String(Astro.params.token || '').trim();
@@ -34,6 +39,10 @@ const serializedReservation = reservation
 
 const isCancelled =
 	Boolean(reservation) && String(reservation?.status || '').trim().toUpperCase() === 'CANCELADO';
+const reservationStart = reservation ? parseApiDateTime(reservation.start_time) : null;
+const formattedCurrentDate = reservationStart ? formatHumanDateTime(reservationStart) : '';
+const isPastReservation =
+	Boolean(reservation) && !isCancelled && isReservationPast(reservation);
 const professionalSlug = String(reservation?.professional_slug || '').trim();
 const organizationSlug = String(reservation?.organization_slug || '').trim();
 const rebookHref =
@@ -127,7 +136,7 @@ const serializedLocations = reservation
 						</div>
 						<div>
 							<span>Horario actual</span>
-							<strong data-current-date></strong>
+							<strong data-current-date>{formattedCurrentDate}</strong>
 						</div>
 					</div>
 
@@ -135,6 +144,13 @@ const serializedLocations = reservation
 						<div class="reservation-cancelled rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6" data-reservation-cancelled>
 							<p class="reservation-cancelled-text">
 								Esta reserva se encuentra cancelada. Si deseas, puedes agendar un nuevo turno con el profesional.
+							</p>
+							<a href={rebookHref} class="reservation-link">Volver a reservar</a>
+						</div>
+					) : isPastReservation ? (
+						<div class="reservation-cancelled rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6" data-reservation-past>
+							<p class="reservation-cancelled-text">
+								Esta reserva ya finalizó. Ya no es posible reprogramarla ni cancelarla desde este enlace.
 							</p>
 							<a href={rebookHref} class="reservation-link">Volver a reservar</a>
 						</div>

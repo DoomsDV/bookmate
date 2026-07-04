@@ -5,6 +5,7 @@ import {
 	formatHumanDateTime,
 	formatLongDateFromApiDate,
 	getTodayStart,
+	isReservationPast,
 	isValidApiTimeSlot,
 	parseApiDateTime,
 	resolveInitialSelectableDate,
@@ -113,9 +114,16 @@ export const initializePublicReservationPage = () => {
 	if (!reservation) return;
 
 	const token = root.dataset.token || '';
+	const reservationStart = parseApiDateTime(reservation.start_time);
+	const currentDate = root.querySelector<HTMLElement>('[data-current-date]');
+	if (currentDate && reservationStart) {
+		currentDate.textContent = formatHumanDateTime(reservationStart);
+	}
+
 	const isCancelledReservation =
 		String(reservation.status || '').trim().toUpperCase() === 'CANCELADO';
-	if (isCancelledReservation) return;
+	const isPastReservation = isReservationPast(reservation);
+	if (isCancelledReservation || isPastReservation) return;
 
 	const locations = normalizePublicBookingLocations(
 		parseJsonScript<unknown[]>('reservation-locations-json') || []
@@ -134,7 +142,6 @@ export const initializePublicReservationPage = () => {
 	const selectedDateLabel = root.querySelector<HTMLElement>('[data-reservation-selected-date]');
 	const cancelButton = root.querySelector<HTMLButtonElement>('[data-cancel-reservation]');
 	const openRescheduleButton = root.querySelector<HTMLButtonElement>('[data-open-reschedule-modal]');
-	const currentDate = root.querySelector<HTMLElement>('[data-current-date]');
 	const locationName = root.querySelector<HTMLElement>('[data-location-name]');
 	const statusText = root.querySelector<HTMLElement>('[data-status-text]');
 	const calendarMonth = root.querySelector<HTMLElement>('[data-calendar-month]');
@@ -187,7 +194,7 @@ export const initializePublicReservationPage = () => {
 		return;
 	}
 
-	const start = parseApiDateTime(reservation.start_time);
+	const start = reservationStart;
 	if (!start) return;
 
 	const durationMinutes = Number(reservation.duration_minutes || 30);
@@ -209,7 +216,6 @@ export const initializePublicReservationPage = () => {
 	let mapInstance: any = null;
 	let mapMarker: any = null;
 
-	if (currentDate) currentDate.textContent = formatHumanDateTime(start);
 	locationInput.value = String(reservation.loc_id_location);
 
 	const getSelectedSlotKey = () =>

@@ -126,3 +126,32 @@ export const buildApiAppointmentTimes = (
 		end_time: formatApiDateTime(end),
 	};
 };
+
+type ReservationTimeInput = {
+	start_time: string;
+	end_time?: string;
+	duration_minutes?: number;
+};
+
+export const getReservationEndTime = (reservation: ReservationTimeInput): Date | null => {
+	const endFromApi = parseApiDateTime(String(reservation.end_time || '').trim());
+	if (endFromApi) return endFromApi;
+
+	const start = parseApiDateTime(reservation.start_time);
+	if (!start) return null;
+
+	const durationMinutes = Number(reservation.duration_minutes);
+	const duration =
+		Number.isFinite(durationMinutes) && durationMinutes > 0 ? durationMinutes : 30;
+
+	return new Date(start.getTime() + duration * 60_000);
+};
+
+export const isReservationPast = (
+	reservation: ReservationTimeInput,
+	reference = new Date()
+): boolean => {
+	const end = getReservationEndTime(reservation);
+	if (!end) return false;
+	return end.getTime() <= reference.getTime();
+};
