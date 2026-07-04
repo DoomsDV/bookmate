@@ -12,7 +12,6 @@ import {
 	toDateStart,
 } from '../lib/booking-datetime';
 import {
-	mergePublicBookingLocations,
 	normalizePublicBookingLocations,
 } from '../lib/public-booking-locations';
 
@@ -53,6 +52,14 @@ type GoogleMapsNamespace = {
 type WindowWithGoogleMaps = Window & {
 	google?: { maps?: GoogleMapsNamespace };
 	__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
+};
+
+type RescheduleStep = 1 | 2 | 3;
+
+const RESCHEDULE_MODAL_TITLES: Record<RescheduleStep, string> = {
+	1: 'Elige una nueva fecha y horario',
+	2: 'Selecciona un horario',
+	3: 'Confirma tu reprogramación',
 };
 
 const darkMapStyles = [
@@ -119,12 +126,14 @@ export const initializePublicReservationPage = () => {
 	const dateInput = root.querySelector<HTMLInputElement>('[data-reservation-date]');
 	const slotInput = root.querySelector<HTMLInputElement>('[data-reservation-slot]');
 	const locationInput = root.querySelector<HTMLInputElement>('[data-reservation-location]');
-	const slotsPanel = root.querySelector<HTMLElement>('[data-reservation-slots-panel]');
 	const slotsContainer = root.querySelector<HTMLElement>('[data-reservation-slots-container]');
+	const slotsPanel = root.querySelector<HTMLElement>('[data-reservation-slots-panel]');
+	const slotsSectionHeading = root.querySelector<HTMLElement>('[data-reservation-slots-heading]');
 	const slotsLoading = root.querySelector<HTMLElement>('[data-reservation-slots-loading]');
 	const noSlots = root.querySelector<HTMLElement>('[data-no-reservation-slots]');
 	const selectedDateLabel = root.querySelector<HTMLElement>('[data-reservation-selected-date]');
 	const cancelButton = root.querySelector<HTMLButtonElement>('[data-cancel-reservation]');
+	const openRescheduleButton = root.querySelector<HTMLButtonElement>('[data-open-reschedule-modal]');
 	const currentDate = root.querySelector<HTMLElement>('[data-current-date]');
 	const locationName = root.querySelector<HTMLElement>('[data-location-name]');
 	const statusText = root.querySelector<HTMLElement>('[data-status-text]');
@@ -132,6 +141,15 @@ export const initializePublicReservationPage = () => {
 	const calendarGrid = root.querySelector<HTMLElement>('[data-calendar-grid]');
 	const prevMonthButton = root.querySelector<HTMLButtonElement>('[data-calendar-prev]');
 	const nextMonthButton = root.querySelector<HTMLButtonElement>('[data-calendar-next]');
+	const rescheduleModal = root.querySelector<HTMLDialogElement>('[data-reschedule-modal]');
+	const rescheduleModalTitle = root.querySelector<HTMLElement>('[data-reschedule-modal-title]');
+	const rescheduleCloseButton = root.querySelector<HTMLButtonElement>('[data-reschedule-close]');
+	const rescheduleBackButton = root.querySelector<HTMLButtonElement>('[data-reschedule-back]');
+	const rescheduleNextButton = root.querySelector<HTMLButtonElement>('[data-reschedule-next]');
+	const rescheduleSubmitButton = root.querySelector<HTMLButtonElement>('[data-reschedule-submit]');
+	const rescheduleStepItems = root.querySelectorAll<HTMLElement>('[data-reschedule-step-item]');
+	const rescheduleStepPanels = root.querySelectorAll<HTMLElement>('[data-reschedule-step-panel]');
+	const changeSummary = root.querySelector<HTMLElement>('[data-reschedule-change-summary]');
 	const mapModal = root.querySelector<HTMLDialogElement>('[data-public-map-modal]');
 	const mapCanvasWrap = root.querySelector<HTMLElement>('.public-map-canvas-wrap');
 	const mapCanvas = root.querySelector<HTMLElement>('[data-public-map-canvas]');
@@ -145,16 +163,23 @@ export const initializePublicReservationPage = () => {
 		!dateInput ||
 		!slotInput ||
 		!locationInput ||
-		!slotsPanel ||
 		!slotsContainer ||
 		!slotsLoading ||
 		!noSlots ||
 		!selectedDateLabel ||
 		!cancelButton ||
+		!openRescheduleButton ||
 		!calendarMonth ||
 		!calendarGrid ||
 		!prevMonthButton ||
 		!nextMonthButton ||
+		!rescheduleModal ||
+		!rescheduleModalTitle ||
+		!rescheduleCloseButton ||
+		!rescheduleBackButton ||
+		!rescheduleNextButton ||
+		!rescheduleSubmitButton ||
+		!changeSummary ||
 		!mapModal ||
 		!mapCanvas ||
 		!mapCloseButton
@@ -180,6 +205,7 @@ export const initializePublicReservationPage = () => {
 	let availableSlotGroups: LocationSlotGroup[] = [];
 	let visibleMonth = new Date(initialDate.getFullYear(), initialDate.getMonth(), 1);
 	let isLoadingSlots = false;
+	let rescheduleStep: RescheduleStep = 1;
 	let mapInstance: any = null;
 	let mapMarker: any = null;
 
@@ -193,6 +219,9 @@ export const initializePublicReservationPage = () => {
 		String(location.name || '').trim() ||
 		String(location.address || '').trim() ||
 		`Sucursal #${location.id_location}`;
+
+	const getTotalAvailableSlots = () =>
+		availableSlotGroups.reduce((count, group) => count + group.slots.length, 0);
 
 	const setMapStatus = (message: string) => {
 		if (!mapStatus) return;
@@ -375,25 +404,141 @@ export const initializePublicReservationPage = () => {
 		}
 	};
 
-	const setSlotsPanelVisible = (visible: boolean) => {
-		slotsPanel.classList.toggle('hidden', !visible);
-	};
-
 	const updateLocationSummary = (location: BookingLocation) => {
 		if (locationName) locationName.textContent = getLocationLabel(location);
 	};
 
-	const selectDate = (
-		date: Date,
-		options: { loadSlots?: boolean; showSlotsPanel?: boolean } = {}
-	) => {
+	const formatLongReservationDateTime = (date: Date) => {
+		const label = `${formatLongDateFromApiDate(formatApiDate(date))} a las ${formatApiTime(date)}`;
+		return label.charAt(0).toUpperCase() + label.slice(1);
+	};
+
+	const formatLongReservationDateTimeFromParts = (ymd: string, time: string) => {
+		const label = `${formatLongDateFromApiDate(ymd)} a las ${time}`;
+		return label.charAt(0).toUpperCase() + label.slice(1);
+	};
+
+	const updateChangeSummary = () => {
+		const currentStart = parseApiDateTime(reservation.start_time);
+		if (!currentStart || !selectedDate || !selectedSlot) {
+			changeSummary.innerHTML = '';
+			return;
+		}
+
+		const currentLabel = formatLongReservationDateTime(currentStart);
+		const nextLabelFormatted = formatLongReservationDateTimeFromParts(selectedDate, selectedSlot);
+		changeSummary.innerHTML = `
+			<div class="reservation-change-diff__block reservation-change-diff__block--previous">
+				<span class="reservation-change-diff__microcopy">Anterior:</span>
+				<span class="reservation-change-diff__previous">${currentLabel}</span>
+			</div>
+			<div class="reservation-change-diff__block reservation-change-diff__block--next">
+				<span class="reservation-change-diff__microcopy">Nuevo:</span>
+				<strong class="reservation-change-diff__next">${nextLabelFormatted}</strong>
+			</div>
+		`;
+	};
+
+	const updateFooterButtons = () => {
+		const isStep1 = rescheduleStep === 1;
+		const isStep3 = rescheduleStep === 3;
+		const hasSlots = getTotalAvailableSlots() > 0;
+
+		rescheduleBackButton.textContent = isStep1 ? 'Cancelar' : 'Volver atrás';
+		rescheduleNextButton.classList.toggle('is-hidden', isStep3);
+		rescheduleSubmitButton.classList.toggle('is-hidden', !isStep3);
+
+		if (isStep1) {
+			rescheduleNextButton.disabled = !selectedDate;
+			return;
+		}
+
+		if (rescheduleStep === 2) {
+			rescheduleNextButton.disabled =
+				isLoadingSlots || !selectedSlot || !hasSlots;
+			return;
+		}
+
+		rescheduleSubmitButton.disabled = !selectedDate || !selectedSlot;
+	};
+
+	const setRescheduleStep = (nextStep: RescheduleStep) => {
+		rescheduleStep = nextStep;
+		form.dataset.rescheduleStep = String(nextStep);
+		rescheduleModalTitle.textContent = RESCHEDULE_MODAL_TITLES[nextStep];
+
+		for (const panel of rescheduleStepPanels) {
+			const panelStep = Number(panel.dataset.rescheduleStepPanel || '0');
+			panel.classList.toggle('hidden', panelStep !== nextStep);
+		}
+
+		for (const item of rescheduleStepItems) {
+			const itemStep = Number(item.dataset.rescheduleStepItem || '0');
+			item.classList.remove('step-item-default', 'step-item-current', 'step-item-done');
+
+			if (itemStep === nextStep) {
+				item.classList.add('step-item-current');
+				continue;
+			}
+
+			if (itemStep < nextStep) {
+				item.classList.add('step-item-done');
+				continue;
+			}
+
+			item.classList.add('step-item-default');
+		}
+
+		if (nextStep === 3) {
+			updateChangeSummary();
+		}
+
+		updateFooterButtons();
+	};
+
+	const resetRescheduleFlow = () => {
+		selectedDate = '';
+		selectedSlot = '';
+		selectedLocationId = reservation.loc_id_location;
+		availableSlotGroups = [];
+		isLoadingSlots = false;
+		dateInput.value = '';
+		slotInput.value = '';
+		locationInput.value = String(reservation.loc_id_location);
+		visibleMonth = new Date(initialDate.getFullYear(), initialDate.getMonth(), 1);
+		slotsContainer.innerHTML = '';
+		noSlots.classList.add('hidden');
+		if (slotsPanel) slotsPanel.classList.add('hidden');
+		if (slotsSectionHeading) slotsSectionHeading.classList.add('hidden');
+		slotsLoading.classList.add('hidden');
+		setRescheduleStep(1);
+		renderCalendar();
+	};
+
+	const openRescheduleModal = () => {
+		resetRescheduleFlow();
+		if (!rescheduleModal.open) {
+			rescheduleModal.showModal();
+		}
+	};
+
+	const closeRescheduleModal = () => {
+		if (rescheduleModal.open) {
+			rescheduleModal.close();
+		}
+		resetRescheduleFlow();
+	};
+
+	const selectDate = (date: Date, options: { loadSlots?: boolean } = {}) => {
 		const dateStart = toDateStart(date);
 		const dateKey = formatApiDate(dateStart);
 		selectedDate = dateKey;
 		dateInput.value = dateKey;
 		selectedDateLabel.textContent = formatLongDateFromApiDate(dateKey);
-		if (options.showSlotsPanel) setSlotsPanelVisible(true);
+		selectedSlot = '';
+		slotInput.value = '';
 		renderCalendar();
+		updateFooterButtons();
 		if (options.loadSlots) void loadSlots(dateKey);
 	};
 
@@ -427,28 +572,42 @@ export const initializePublicReservationPage = () => {
 		slotsContainer.innerHTML = '';
 		slotsLoading.classList.toggle('hidden', !isLoadingSlots);
 
-		const totalSlots = availableSlotGroups.reduce(
-			(count, group) => count + group.slots.length,
-			0
-		);
+		const totalSlots = getTotalAvailableSlots();
 		noSlots.classList.toggle('hidden', isLoadingSlots || totalSlots > 0);
+		if (slotsPanel) {
+			slotsPanel.classList.toggle('hidden', isLoadingSlots);
+		}
+		if (slotsSectionHeading) {
+			slotsSectionHeading.classList.toggle('hidden', isLoadingSlots || totalSlots === 0);
+		}
 
-		if (isLoadingSlots) return;
+		if (isLoadingSlots) {
+			updateFooterButtons();
+			return;
+		}
 
 		const selectedSlotKey = getSelectedSlotKey();
+		let renderedSectionCount = 0;
 
 		for (const group of availableSlotGroups) {
 			if (group.slots.length === 0) continue;
 
+			if (renderedSectionCount > 0) {
+				const divider = document.createElement('div');
+				divider.className = 'reservation-slot-location-divider';
+				divider.setAttribute('role', 'separator');
+				slotsContainer.appendChild(divider);
+			}
+			renderedSectionCount += 1;
+
 			const section = document.createElement('section');
-			section.className = 'grid gap-3';
+			section.className = 'grid gap-3 pt-0.5';
 
 			const headerRow = document.createElement('div');
 			headerRow.className = 'flex flex-wrap items-center justify-between gap-2';
 
 			const heading = document.createElement('h3');
-			heading.className =
-				'text-sm font-semibold uppercase tracking-wide text-[var(--primary)]';
+			heading.className = 'reservation-slot-location-name';
 			heading.textContent = getLocationLabel(group.location);
 
 			const locationButton = document.createElement('button');
@@ -484,6 +643,7 @@ export const initializePublicReservationPage = () => {
 					locationInput.value = String(group.location.id_location);
 					updateLocationSummary(group.location);
 					renderSlotSections();
+					updateFooterButtons();
 				});
 				grid.appendChild(button);
 			}
@@ -491,6 +651,8 @@ export const initializePublicReservationPage = () => {
 			section.appendChild(grid);
 			slotsContainer.appendChild(section);
 		}
+
+		updateFooterButtons();
 	};
 
 	const loadSlots = async (targetDate: string) => {
@@ -609,7 +771,7 @@ export const initializePublicReservationPage = () => {
 			dayButton.textContent = String(day);
 			dayButton.disabled = isPast;
 			dayButton.className =
-				'flex h-10 w-10 mx-auto items-center justify-center rounded-full border text-sm font-medium cursor-pointer transition disabled:cursor-not-allowed ' +
+				'flex h-9 w-9 mx-auto items-center justify-center rounded-full border text-sm font-medium cursor-pointer transition disabled:cursor-not-allowed ' +
 				(isSelected
 					? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--on-primary)]'
 					: isToday
@@ -617,7 +779,7 @@ export const initializePublicReservationPage = () => {
 						: 'border-transparent bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
 
 			dayButton.addEventListener('click', () => {
-				selectDate(dateValue, { loadSlots: true, showSlotsPanel: true });
+				selectDate(dateValue);
 			});
 
 			calendarGrid.appendChild(dayButton);
@@ -650,13 +812,58 @@ export const initializePublicReservationPage = () => {
 		}
 		locationInput.value = String(reservation.loc_id_location);
 		selectedLocationId = reservation.loc_id_location;
-
-		const nextDate = resolveInitialSelectableDate(nextStart, today);
-		visibleMonth = new Date(nextDate.getFullYear(), nextDate.getMonth(), 1);
-		selectDate(nextDate, { showSlotsPanel: true });
-		await loadSlots(formatApiDate(nextDate));
 		return true;
 	};
+
+	const handleRescheduleNext = async () => {
+		if (rescheduleStep === 1) {
+			if (!selectedDate) {
+				showToast('Selecciona una fecha.', 'error');
+				return;
+			}
+			setRescheduleStep(2);
+			await loadSlots(selectedDate);
+			return;
+		}
+
+		if (rescheduleStep === 2) {
+			if (!selectedSlot) {
+				showToast('Selecciona un horario.', 'error');
+				return;
+			}
+			setRescheduleStep(3);
+		}
+	};
+
+	const handleRescheduleBack = () => {
+		if (rescheduleStep === 1) {
+			closeRescheduleModal();
+			return;
+		}
+
+		if (rescheduleStep === 2) {
+			setRescheduleStep(1);
+			return;
+		}
+
+		setRescheduleStep(2);
+	};
+
+	openRescheduleButton.addEventListener('click', openRescheduleModal);
+
+	rescheduleCloseButton.addEventListener('click', closeRescheduleModal);
+	rescheduleModal.addEventListener('click', (event) => {
+		if (event.target === rescheduleModal) closeRescheduleModal();
+	});
+	rescheduleModal.addEventListener('cancel', (event) => {
+		event.preventDefault();
+		closeRescheduleModal();
+	});
+
+	rescheduleBackButton.addEventListener('click', handleRescheduleBack);
+	rescheduleNextButton.addEventListener('click', () => {
+		void handleRescheduleNext();
+	});
 
 	prevMonthButton.addEventListener('click', () => {
 		visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
@@ -700,14 +907,20 @@ export const initializePublicReservationPage = () => {
 			payload.loc_id_location = nextLocationId;
 		}
 
+		rescheduleSubmitButton.disabled = true;
+
 		const response = await fetch(`/api/public/reservations/${encodeURIComponent(token)}`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 			body: JSON.stringify(payload),
 		});
 		const data = await response.json().catch(() => ({}));
+
+		rescheduleSubmitButton.disabled = false;
+
 		if (response.ok) {
 			await refreshReservationSummary();
+			closeRescheduleModal();
 			showToast('Tu cita se modificó correctamente.', 'success');
 			return;
 		}
@@ -718,10 +931,10 @@ export const initializePublicReservationPage = () => {
 		const confirmed = window.BookmateAlert?.confirm
 			? await window.BookmateAlert.confirm({
 					type: 'warning',
-					title: 'Cancelar reserva',
-					message: 'Esta acción cancelará tu reserva. ¿Deseas continuar?',
+					title: '¿Cancelar tu reserva?',
+					message: 'Tu turno será cancelado definitivamente. ¿Deseas continuar?',
 					confirmText: 'Sí, cancelar',
-					cancelText: 'Volver',
+					cancelText: 'Mantener reserva',
 				})
 			: window.confirm('¿Quieres cancelar esta reserva?');
 		if (!confirmed) return;
@@ -737,6 +950,4 @@ export const initializePublicReservationPage = () => {
 		}
 		showToast(data.message || 'No fue posible cancelar tu cita.', 'error');
 	});
-
-	selectDate(initialDate, { loadSlots: true, showSlotsPanel: true });
 };
