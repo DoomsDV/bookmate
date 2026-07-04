@@ -127,6 +127,8 @@ export const initializePublicReservationPage = () => {
 	const slotInput = root.querySelector<HTMLInputElement>('[data-reservation-slot]');
 	const locationInput = root.querySelector<HTMLInputElement>('[data-reservation-location]');
 	const slotsContainer = root.querySelector<HTMLElement>('[data-reservation-slots-container]');
+	const slotsPanel = root.querySelector<HTMLElement>('[data-reservation-slots-panel]');
+	const slotsSectionHeading = root.querySelector<HTMLElement>('[data-reservation-slots-heading]');
 	const slotsLoading = root.querySelector<HTMLElement>('[data-reservation-slots-loading]');
 	const noSlots = root.querySelector<HTMLElement>('[data-no-reservation-slots]');
 	const selectedDateLabel = root.querySelector<HTMLElement>('[data-reservation-selected-date]');
@@ -406,6 +408,16 @@ export const initializePublicReservationPage = () => {
 		if (locationName) locationName.textContent = getLocationLabel(location);
 	};
 
+	const formatLongReservationDateTime = (date: Date) => {
+		const label = `${formatLongDateFromApiDate(formatApiDate(date))} a las ${formatApiTime(date)}`;
+		return label.charAt(0).toUpperCase() + label.slice(1);
+	};
+
+	const formatLongReservationDateTimeFromParts = (ymd: string, time: string) => {
+		const label = `${formatLongDateFromApiDate(ymd)} a las ${time}`;
+		return label.charAt(0).toUpperCase() + label.slice(1);
+	};
+
 	const updateChangeSummary = () => {
 		const currentStart = parseApiDateTime(reservation.start_time);
 		if (!currentStart || !selectedDate || !selectedSlot) {
@@ -413,10 +425,8 @@ export const initializePublicReservationPage = () => {
 			return;
 		}
 
-		const currentLabel = formatHumanDateTime(currentStart);
-		const nextDateLabel = formatLongDateFromApiDate(selectedDate);
-		const nextLabel = `${nextDateLabel} a las ${selectedSlot}`;
-		const nextLabelFormatted = nextLabel.charAt(0).toUpperCase() + nextLabel.slice(1);
+		const currentLabel = formatLongReservationDateTime(currentStart);
+		const nextLabelFormatted = formatLongReservationDateTimeFromParts(selectedDate, selectedSlot);
 		changeSummary.innerHTML = `
 			<div class="reservation-change-diff__block reservation-change-diff__block--previous">
 				<span class="reservation-change-diff__microcopy">Anterior:</span>
@@ -498,6 +508,8 @@ export const initializePublicReservationPage = () => {
 		visibleMonth = new Date(initialDate.getFullYear(), initialDate.getMonth(), 1);
 		slotsContainer.innerHTML = '';
 		noSlots.classList.add('hidden');
+		if (slotsPanel) slotsPanel.classList.add('hidden');
+		if (slotsSectionHeading) slotsSectionHeading.classList.add('hidden');
 		slotsLoading.classList.add('hidden');
 		setRescheduleStep(1);
 		renderCalendar();
@@ -562,6 +574,12 @@ export const initializePublicReservationPage = () => {
 
 		const totalSlots = getTotalAvailableSlots();
 		noSlots.classList.toggle('hidden', isLoadingSlots || totalSlots > 0);
+		if (slotsPanel) {
+			slotsPanel.classList.toggle('hidden', isLoadingSlots);
+		}
+		if (slotsSectionHeading) {
+			slotsSectionHeading.classList.toggle('hidden', isLoadingSlots || totalSlots === 0);
+		}
 
 		if (isLoadingSlots) {
 			updateFooterButtons();
@@ -569,19 +587,27 @@ export const initializePublicReservationPage = () => {
 		}
 
 		const selectedSlotKey = getSelectedSlotKey();
+		let renderedSectionCount = 0;
 
 		for (const group of availableSlotGroups) {
 			if (group.slots.length === 0) continue;
 
+			if (renderedSectionCount > 0) {
+				const divider = document.createElement('div');
+				divider.className = 'reservation-slot-location-divider';
+				divider.setAttribute('role', 'separator');
+				slotsContainer.appendChild(divider);
+			}
+			renderedSectionCount += 1;
+
 			const section = document.createElement('section');
-			section.className = 'grid gap-3';
+			section.className = 'grid gap-3 pt-0.5';
 
 			const headerRow = document.createElement('div');
 			headerRow.className = 'flex flex-wrap items-center justify-between gap-2';
 
 			const heading = document.createElement('h3');
-			heading.className =
-				'text-sm font-semibold uppercase tracking-wide text-[var(--primary)]';
+			heading.className = 'reservation-slot-location-name';
 			heading.textContent = getLocationLabel(group.location);
 
 			const locationButton = document.createElement('button');

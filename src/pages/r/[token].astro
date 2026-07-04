@@ -222,13 +222,10 @@ const serializedLocations = reservation
 									</div>
 								</section>
 
-								<section data-reschedule-step-panel="2" class="hidden grid gap-4">
-									<div>
-										<h3 class="text-xl font-normal tracking-tight text-(--on-surface) sm:text-2xl">Selecciona un horario</h3>
-										<p class="mt-1 text-sm text-(--on-surface-variant) sm:text-base">
-											<span class="font-medium text-(--on-surface)" data-reservation-selected-date></span>
-										</p>
-									</div>
+								<section data-reschedule-step-panel="2" class="hidden grid gap-3">
+									<p class="reservation-slots-date-subtitle">
+										<span data-reservation-selected-date></span>
+									</p>
 
 									<div
 										data-reservation-slots-loading
@@ -237,13 +234,22 @@ const serializedLocations = reservation
 										Consultando horarios disponibles...
 									</div>
 
-									<div class="grid gap-6" data-reservation-slots-container></div>
-									<p
-										data-no-reservation-slots
-										class="hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
-									>
-										No se encontraron horarios para este día. Selecciona otra fecha para continuar.
-									</p>
+									<div class="reservation-slots-panel hidden" data-reservation-slots-panel>
+										<p
+											data-reservation-slots-heading
+											class="reservation-slots-section-label hidden"
+										>
+											Sucursales y horarios
+										</p>
+
+										<div class="grid gap-0" data-reservation-slots-container></div>
+										<p
+											data-no-reservation-slots
+											class="hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
+										>
+											No se encontraron horarios para este día. Selecciona otra fecha para continuar.
+										</p>
+									</div>
 								</section>
 
 								<section data-reschedule-step-panel="3" class="hidden">
@@ -938,6 +944,40 @@ const serializedLocations = reservation
 .public-location-link:hover .public-location-link__label {
 	text-decoration: underline;
 	text-underline-offset: 0.2em;
+}
+
+.reservation-slots-date-subtitle {
+	margin: 0;
+	font-size: 0.95rem;
+	line-height: 1.45;
+	color: var(--on-surface-variant);
+}
+
+.reservation-slots-panel {
+	display: grid;
+	gap: 1rem;
+}
+
+.reservation-slots-section-label {
+	margin: 0 0 0.15rem;
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--on-surface-variant);
+}
+
+.reservation-slot-location-divider {
+	height: 1px;
+	margin: 1rem 0;
+	background: color-mix(in srgb, var(--outline-variant) 50%, transparent);
+}
+
+.reservation-slot-location-name {
+	font-size: 0.875rem;
+	font-weight: 600;
+	line-height: 1.35;
+	color: var(--on-surface);
 }
 
 @keyframes reservation-modal-in {
