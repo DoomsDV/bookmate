@@ -67,6 +67,7 @@ const appointmentCreateSchema = baseAppointmentSchema.superRefine((payload, ctx)
 const appointmentUpdateSchema = baseAppointmentSchema
 	.extend({
 		status: appointmentStatusSchema,
+		session_notes: z.string().max(10000).optional(),
 	})
 	.superRefine((payload, ctx) => {
 		validateCustomerIdentity(payload, ctx);

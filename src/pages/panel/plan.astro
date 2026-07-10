@@ -1,0 +1,390 @@
+---
+import { ROLES } from '../../config/roles';
+import SideNav from '../../components/SideNav.astro';
+import TopBar from '../../components/TopBar.astro';
+import AppAlert from '../../components/AppAlert.astro';
+import Layout from '../../layouts/Layout.astro';
+import {
+	getPlansWithOrds,
+	SubscriptionApiError,
+	type PlansCatalog,
+} from '../../lib/subscription';
+import '../../styles/global.css';
+
+const token = Astro.locals.token ?? '';
+const roleId = Number(Astro.locals.roleId ?? 0);
+const isAdmin = roleId === ROLES.ADMIN;
+
+let catalog: PlansCatalog | null = null;
+let loadError = '';
+
+if (!token) {
+	loadError = 'No hay sesion valida para consultar tu plan.';
+} else {
+	try {
+		catalog = await getPlansWithOrds(token);
+	} catch (error) {
+		loadError =
+			error instanceof SubscriptionApiError
+				? error.message
+				: 'No fue posible cargar la información de tu plan.';
+	}
+}
+
+const currency = new Intl.NumberFormat('es-PY');
+const formatGs = (amount: number) => `${currency.format(Math.max(0, Math.round(amount)))} Gs`;
+const formatGb = (bytes: number) => {
+	if (!bytes || bytes <= 0) return '0 GB';
+	const gb = bytes / 1024 / 1024 / 1024;
+	return `${Number.isInteger(gb) ? gb : gb.toFixed(1)} GB`;
+};
+
+const FEATURE_LABELS: Record<string, string> = {
+	WEB_BOOKING: 'Reserva web / agenda online',
+	NOTIFICATIONS: 'Notificaciones y recordatorios',
+	CUSTOMERS: 'Gestión de clientes',
+	SERVICES: 'Servicios y sucursales',
+	TEAM_MULTI_BRANCH: 'Equipo y sucursales ilimitadas',
+	AI_MORNING_DIGEST: 'Resumen IA de la mañana',
+	VOICE_RECEPTION: 'Recepción por voz (IA)',
+	DEPOSIT_COLLECTION: 'Cobro de señas (Pagopar)',
+	APPOINTMENT_HISTORY: 'Historial por cita (notas + archivos)',
+	PROFITABILITY_ANALYTICS: 'Análisis de rentabilidad',
+};
+const featureLabel = (code: string) => FEATURE_LABELS[code] ?? code;
+
+const current = catalog?.current ?? null;
+const effState = current?.effective_status ?? 'NONE';
+
+// Días restantes de prueba (para el CTA de día 15).
+let trialDaysLeft: number | null = null;
+if (current?.trial_ends_at) {
+	const diffMs = new Date(current.trial_ends_at).getTime() - Date.now();
+	trialDaysLeft = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+}
+
+const STATUS_META: Record<string, { label: string; tone: string; hint: string }> = {
+	TRIAL: {
+		label: 'Prueba gratis',
+		tone: 'trial',
+		hint:
+			trialDaysLeft !== null
+				? `Te ${trialDaysLeft === 1 ? 'queda' : 'quedan'} ${trialDaysLeft} ${trialDaysLeft === 1 ? 'día' : 'días'} de prueba Premium. Al terminar, elegí un plan para continuar.`
+				: 'Estás en período de prueba Premium.',
+	},
+	TRIAL_EXPIRED: {
+		label: 'Prueba vencida',
+		tone: 'danger',
+		hint: 'Tu prueba terminó. Elegí un plan para seguir usando todas las funciones.',
+	},
+	ACTIVE: { label: 'Activo', tone: 'ok', hint: 'Tu suscripción está al día.' },
+	PAST_DUE: {
+		label: 'Pago pendiente',
+		tone: 'warning',
+		hint: 'Tu pago está pendiente. Regularizá para no perder el acceso de escritura.',
+	},
+	READ_ONLY: {
+		label: 'Solo lectura',
+		tone: 'danger',
+		hint: 'Tu suscripción venció. Podés ver tu información, pero no crear ni editar. Regularizá el pago para reactivarla.',
+	},
+	CANCELED: { label: 'Cancelado', tone: 'danger', hint: 'Tu suscripción está cancelada.' },
+	FOUNDER: {
+		label: 'Fundador',
+		tone: 'founder',
+		hint: 'Sos un early adopter: tu plan Premium está activo sin costo. ¡Gracias por acompañarnos!',
+	},
+	NONE: { label: 'Sin plan', tone: 'warning', hint: 'No encontramos una suscripción activa.' },
+};
+const statusMeta = STATUS_META[effState] ?? STATUS_META.NONE;
+
+const storagePct =
+	current && current.storage_limit_bytes > 0
+		? Math.min(100, Math.round((current.storage_used_bytes / current.storage_limit_bytes) * 100))
+		: 0;
+
+const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
+---
+
+<Layout pageTitle="Plan y facturación · Hasel">
+	<div class="plan-canvas min-h-screen w-full max-w-full overflow-x-hidden bg-(--page-background) transition-colors duration-300">
+		<div class="app-shell grid min-h-screen overflow-hidden bg-transparent" data-app-shell data-sidebar-state="expanded">
+			<SideNav currentPath={Astro.url.pathname} />
+
+			<div class="grid min-h-full grid-rows-[auto_1fr] bg-(--page-background) transition-colors duration-300">
+				<TopBar />
+
+				<main class="w-full max-w-full overflow-x-hidden px-4 py-4 sm:px-8 sm:py-8 lg:px-10">
+					<div class="mx-auto max-w-6xl grid gap-6 sm:gap-8">
+						<header class="grid gap-1">
+							<p class="text-xs font-bold uppercase tracking-[0.2em] text-(--on-surface-variant)">Facturación</p>
+							<h1 class="m-0 text-3xl font-extrabold tracking-tight text-(--on-surface) sm:text-4xl">Plan y suscripción</h1>
+							<p class="m-0 text-[0.95rem] font-medium text-(--on-surface-variant)">
+								Gestioná tu plan, tu almacenamiento y tus pagos.
+							</p>
+						</header>
+
+						{loadError ? (
+							<div class="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-rose-700 dark:border-rose-500/30 dark:bg-rose-500/10 dark:text-rose-300">
+								<p class="m-0 font-semibold">{loadError}</p>
+							</div>
+						) : current && catalog ? (
+							<>
+								{/* ---- Estado actual ---- */}
+								<section class={`plan-status-card plan-tone-${statusMeta.tone}`}>
+									<div class="flex flex-wrap items-start justify-between gap-4">
+										<div class="grid gap-1">
+											<span class="text-xs font-bold uppercase tracking-[0.18em] text-(--on-surface-variant)">Plan actual</span>
+											<div class="flex items-center gap-3">
+												<span class="text-2xl font-extrabold text-(--on-surface)">{current.plan_name || current.plan_code}</span>
+												<span class={`plan-badge plan-badge-${statusMeta.tone}`}>{statusMeta.label}</span>
+											</div>
+											<p class="m-0 max-w-2xl text-[0.9rem] font-medium text-(--on-surface-variant)">{statusMeta.hint}</p>
+										</div>
+										<div class="grid gap-2 text-right">
+											<span class="text-xs font-semibold uppercase tracking-wide text-(--on-surface-variant)">Almacenamiento</span>
+											<span class="text-[0.95rem] font-bold text-(--on-surface)">
+												{formatGb(current.storage_used_bytes)} / {current.storage_limit_bytes > 0 ? formatGb(current.storage_limit_bytes) : 'No incluido'}
+											</span>
+											<div class="plan-storage-track"><div class="plan-storage-fill" style={`width:${storagePct}%`}></div></div>
+										</div>
+									</div>
+
+									{showDay15 && (
+										<div class="plan-day15">
+											<div class="flex items-start gap-3">
+												<span class="material-symbols-rounded text-[1.4rem] text-(--primary)">workspace_premium</span>
+												<div class="grid gap-1">
+													<p class="m-0 font-bold text-(--on-surface)">
+														{effState === 'TRIAL' ? '¿Listo para continuar?' : 'Elegí tu plan para reactivar'}
+													</p>
+													<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+														Cuando termine tu prueba podés seguir con <strong>Premium</strong> o pasar al plan <strong>Base</strong>.
+													</p>
+												</div>
+											</div>
+										</div>
+									)}
+								</section>
+
+								{/* ---- Planes ---- */}
+								<section class="grid gap-4">
+									<h2 class="m-0 text-lg font-bold text-(--on-surface)">Elegí tu plan</h2>
+									<div class="grid gap-4 md:grid-cols-2">
+										{catalog.plans.map((plan) => (
+											<article class={`plan-card ${plan.is_current ? 'plan-card-current' : ''} ${plan.code === 'PREMIUM' ? 'plan-card-featured' : ''}`}>
+												{plan.code === 'PREMIUM' && <span class="plan-ribbon">Recomendado</span>}
+												<div class="grid gap-1">
+													<span class="text-sm font-bold uppercase tracking-wide text-(--on-surface-variant)">{plan.name}</span>
+													<div class="flex items-end gap-1">
+														<span class="text-3xl font-extrabold text-(--on-surface)">{formatGs(plan.price_amount)}</span>
+														<span class="pb-1 text-[0.85rem] font-semibold text-(--on-surface-variant)">/ {plan.billing_period === 'YEARLY' ? 'año' : 'mes'}</span>
+													</div>
+													{plan.storage_limit_bytes > 0 && (
+														<span class="text-[0.82rem] font-semibold text-(--primary)">Incluye {formatGb(plan.storage_limit_bytes)} de almacenamiento</span>
+													)}
+												</div>
+												<ul class="plan-feature-list">
+													{plan.features.map((f) => (
+														<li><span class="material-symbols-rounded">check_circle</span>{featureLabel(f)}</li>
+													))}
+												</ul>
+												<div class="mt-auto">
+													{plan.is_current ? (
+														<button type="button" class="plan-btn plan-btn-current" disabled>Plan actual</button>
+													) : isAdmin ? (
+														<button
+															type="button"
+															class="plan-btn plan-btn-primary"
+															data-plan-select
+															data-plan-code={plan.code}
+															data-plan-name={plan.name}
+															data-plan-price={String(plan.price_amount)}
+															data-billing-exempt={current.billing_exempt ? '1' : '0'}
+														>
+															{current.billing_exempt ? 'Cambiar a este plan' : `Elegir ${plan.name}`}
+														</button>
+													) : (
+														<button type="button" class="plan-btn plan-btn-current" disabled>Solo el administrador puede cambiarlo</button>
+													)}
+												</div>
+											</article>
+										))}
+									</div>
+									{!current.billing_configured && isAdmin && (
+										<p class="m-0 rounded-xl bg-amber-50 px-4 py-3 text-[0.85rem] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+											La pasarela de pago de suscripción aún no está configurada en este entorno. El checkout se habilitará al cargar las credenciales de Pagopar de la plataforma.
+										</p>
+									)}
+								</section>
+
+								{/* ---- Add-ons de storage ---- */}
+								{catalog.storage_addons.length > 0 && (
+									<section class="grid gap-4" data-storage-section>
+										<div class="grid gap-1">
+											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Almacenamiento adicional</h2>
+											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+												Sumá espacio para notas y archivos del historial de tus citas.
+												{!current.supports_storage_addons && ' Disponible con el plan Premium.'}
+											</p>
+										</div>
+										<div class="grid gap-4 sm:grid-cols-2">
+											{catalog.storage_addons.map((addon) => (
+												<article class="plan-addon-card">
+													<div class="grid gap-1">
+														<span class="text-[1.05rem] font-bold text-(--on-surface)">{addon.name}</span>
+														<span class="text-[0.85rem] font-semibold text-(--on-surface-variant)">{formatGb(addon.extra_bytes)} extra</span>
+													</div>
+													<div class="flex items-center justify-between gap-3">
+														<span class="text-xl font-extrabold text-(--on-surface)">{formatGs(addon.price_amount)}<span class="text-[0.8rem] font-semibold text-(--on-surface-variant)"> /mes</span></span>
+														{isAdmin && current.supports_storage_addons ? (
+															<button
+																type="button"
+																class="plan-btn plan-btn-soft"
+																data-addon-select
+																data-addon-code={addon.code}
+																data-addon-name={addon.name}
+															>Contratar</button>
+														) : (
+															<button type="button" class="plan-btn plan-btn-soft" disabled>{current.supports_storage_addons ? 'Solo admin' : 'Solo Premium'}</button>
+														)}
+													</div>
+												</article>
+											))}
+										</div>
+									</section>
+								)}
+							</>
+						) : null}
+					</div>
+				</main>
+			</div>
+		</div>
+	</div>
+
+	{/* Modal de forma de pago */}
+	<div class="plan-modal-backdrop hidden" data-pay-modal>
+		<div class="plan-modal" role="dialog" aria-modal="true" aria-labelledby="plan-pay-title">
+			<div class="grid gap-1">
+				<h3 id="plan-pay-title" class="m-0 text-lg font-bold text-(--on-surface)">Elegí cómo pagar</h3>
+				<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)" data-pay-summary>—</p>
+			</div>
+			<div class="grid gap-3">
+				<button type="button" class="plan-pay-option" data-forma-pago="9">
+					<span class="material-symbols-rounded">credit_card</span>
+					<span class="grid text-left"><strong>Tarjeta de crédito/débito</strong><small>Pago con Bancard vía Pagopar</small></span>
+				</button>
+				<button type="button" class="plan-pay-option" data-forma-pago="24">
+					<span class="material-symbols-rounded">qr_code_2</span>
+					<span class="grid text-left"><strong>Pago con QR</strong><small>Billeteras y bancos vía Pagopar</small></span>
+				</button>
+			</div>
+			<button type="button" class="plan-btn plan-btn-ghost" data-pay-cancel>Cancelar</button>
+			<div class="plan-modal-loading hidden" data-pay-loading>
+				<span class="plan-spinner"></span> Redirigiendo a la pasarela de pago…
+			</div>
+		</div>
+	</div>
+
+	<AppAlert />
+</Layout>
+
+<style>
+	.plan-status-card {
+		border-radius: 1.25rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright, #fff);
+		padding: 1.5rem;
+		display: grid;
+		gap: 1.25rem;
+	}
+	.plan-tone-danger { border-color: rgba(244, 63, 94, 0.35); }
+	.plan-tone-warning { border-color: rgba(245, 158, 11, 0.35); }
+	.plan-badge {
+		display: inline-flex; align-items: center;
+		padding: 0.3rem 0.7rem; border-radius: 999px;
+		font-size: 0.72rem; font-weight: 800; letter-spacing: 0.02em;
+	}
+	.plan-badge-ok { background: rgba(16,185,129,.14); color: #059669; }
+	.plan-badge-trial, .plan-badge-founder { background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); }
+	.plan-badge-warning { background: rgba(245,158,11,.16); color: #b45309; }
+	.plan-badge-danger { background: rgba(244,63,94,.14); color: #e11d48; }
+
+	.plan-storage-track { width: 200px; max-width: 55vw; height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--on-surface-variant) 22%, transparent); overflow: hidden; }
+	.plan-storage-fill { height: 100%; border-radius: 999px; background: var(--primary); transition: width .3s ease; }
+
+	.plan-day15 {
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--primary) 8%, transparent);
+		border: 1px dashed color-mix(in srgb, var(--primary) 40%, transparent);
+		padding: 1rem 1.15rem;
+	}
+
+	.plan-card {
+		position: relative;
+		display: flex; flex-direction: column; gap: 1rem;
+		border-radius: 1.25rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright, #fff);
+		padding: 1.5rem;
+	}
+	.plan-card-featured { border-color: color-mix(in srgb, var(--primary) 55%, transparent); box-shadow: 0 12px 30px -18px color-mix(in srgb, var(--primary) 60%, transparent); }
+	.plan-card-current { outline: 2px solid color-mix(in srgb, var(--primary) 40%, transparent); }
+	.plan-ribbon {
+		position: absolute; top: -0.7rem; right: 1.25rem;
+		background: var(--primary); color: #fff;
+		font-size: 0.68rem; font-weight: 800; letter-spacing: .04em;
+		padding: 0.28rem 0.7rem; border-radius: 999px;
+	}
+	.plan-feature-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
+	.plan-feature-list li { display: flex; align-items: center; gap: 0.55rem; font-size: 0.88rem; font-weight: 600; color: var(--on-surface); }
+	.plan-feature-list .material-symbols-rounded { font-size: 1.1rem; color: #059669; }
+
+	.plan-btn {
+		width: 100%; border: 0; cursor: pointer;
+		border-radius: 999px; padding: 0.8rem 1.25rem;
+		font-size: 0.9rem; font-weight: 800; transition: filter .15s ease, background .15s ease;
+	}
+	.plan-btn:disabled { cursor: default; opacity: .75; }
+	.plan-btn-primary { background: var(--primary); color: #fff; }
+	.plan-btn-primary:hover { filter: brightness(1.05); }
+	.plan-btn-current { background: color-mix(in srgb, var(--on-surface-variant) 16%, transparent); color: var(--on-surface-variant); }
+	.plan-btn-soft { width: auto; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
+	.plan-btn-ghost { background: transparent; color: var(--on-surface-variant); }
+
+	.plan-addon-card {
+		display: grid; gap: 1rem;
+		border-radius: 1.1rem; border: 1px solid var(--shell-border);
+		background: var(--surface-bright, #fff); padding: 1.25rem;
+	}
+
+	.plan-modal-backdrop {
+		position: fixed; inset: 0; z-index: 10001;
+		display: grid; place-items: center;
+		background: rgba(15, 23, 42, .55); padding: 1rem;
+	}
+	.plan-modal {
+		width: 100%; max-width: 26rem;
+		border-radius: 1.25rem; background: var(--surface-bright, #fff);
+		padding: 1.5rem; display: grid; gap: 1.1rem;
+	}
+	.plan-pay-option {
+		display: flex; align-items: center; gap: 0.8rem;
+		border: 1px solid var(--shell-border); border-radius: 1rem;
+		background: transparent; padding: 0.9rem 1rem; cursor: pointer; text-align: left;
+		transition: border-color .15s ease, background .15s ease;
+	}
+	.plan-pay-option:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
+	.plan-pay-option .material-symbols-rounded { color: var(--primary); font-size: 1.5rem; }
+	.plan-pay-option small { color: var(--on-surface-variant); font-size: 0.78rem; }
+	.plan-modal-loading { display: flex; align-items: center; gap: 0.6rem; font-size: 0.85rem; font-weight: 600; color: var(--on-surface-variant); }
+	.plan-spinner { width: 1rem; height: 1rem; border-radius: 999px; border: 2px solid color-mix(in srgb, var(--primary) 30%, transparent); border-top-color: var(--primary); animation: plan-spin .7s linear infinite; }
+	@keyframes plan-spin { to { transform: rotate(360deg); } }
+</style>
+
+<script>
+	import { initPlanPage } from '../../scripts/plan-page';
+	const boot = () => initPlanPage();
+	boot();
+	document.addEventListener('astro:page-load', boot);
+</script>

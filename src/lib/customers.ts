@@ -32,12 +32,24 @@ export interface CustomerAppointmentSummary {
 	professional_name: string;
 	status: string;
 	payment_status?: string;
+	id_appointment?: number;
+	has_history_notes?: boolean;
+	attachment_count?: number;
+	has_history?: boolean;
 }
 
 export interface CustomerTopService {
 	id_service: number;
 	name: string;
 	count: number;
+}
+
+export interface CustomerProfitability {
+	currency: string;
+	this_year_revenue: number;
+	this_year_count: number;
+	avg_ticket: number;
+	lost_value: number;
 }
 
 export interface CustomerProfileStats {
@@ -50,6 +62,8 @@ export interface CustomerProfileStats {
 	pending_count: number;
 	pending_appointments: CustomerAppointmentSummary[];
 	top_services: CustomerTopService[];
+	profitability_enabled: boolean;
+	profitability: CustomerProfitability | null;
 }
 
 export interface CustomerProfile {
@@ -242,6 +256,7 @@ const normalizeAppointmentSummary = (value: unknown): CustomerAppointmentSummary
 	if (!startTime) return null;
 
 	const endTime = String(source.end_time || '').trim();
+	const appointmentId = toNumber(source.id_appointment, 0);
 
 	return {
 		start_time: startTime,
@@ -252,6 +267,24 @@ const normalizeAppointmentSummary = (value: unknown): CustomerAppointmentSummary
 		...(String(source.payment_status || '').trim()
 			? { payment_status: String(source.payment_status).trim() }
 			: {}),
+		...(Number.isInteger(appointmentId) && appointmentId > 0
+			? { id_appointment: appointmentId }
+			: {}),
+		has_history_notes: source.has_history_notes === true,
+		attachment_count: Math.max(0, Math.floor(toNumber(source.attachment_count, 0))),
+		has_history: source.has_history === true,
+	};
+};
+
+const normalizeProfitability = (value: unknown): CustomerProfitability | null => {
+	if (!value || typeof value !== 'object') return null;
+	const source = value as Record<string, unknown>;
+	return {
+		currency: String(source.currency || 'PYG').trim() || 'PYG',
+		this_year_revenue: Math.max(0, toNumber(source.this_year_revenue, 0)),
+		this_year_count: Math.max(0, Math.floor(toNumber(source.this_year_count, 0))),
+		avg_ticket: Math.max(0, toNumber(source.avg_ticket, 0)),
+		lost_value: Math.max(0, toNumber(source.lost_value, 0)),
 	};
 };
 
@@ -284,6 +317,8 @@ const normalizeCustomerProfileStats = (value: unknown): CustomerProfileStats => 
 		pending_count: 0,
 		pending_appointments: [],
 		top_services: [],
+		profitability_enabled: false,
+		profitability: null,
 	};
 
 	if (!value || typeof value !== 'object') return emptyStats;
@@ -321,6 +356,8 @@ const normalizeCustomerProfileStats = (value: unknown): CustomerProfileStats => 
 		pending_count: Math.max(0, Math.floor(toNumber(source.pending_count, pendingAppointments.length))),
 		pending_appointments: pendingAppointments,
 		top_services: topServices,
+		profitability_enabled: source.profitability_enabled === true,
+		profitability: normalizeProfitability(source.profitability),
 	};
 };
 

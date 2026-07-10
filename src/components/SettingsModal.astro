@@ -97,6 +97,9 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 							<button type="button" data-settings-tab-trigger data-settings-tab="system" class="settings-tab">
 								<span class="material-symbols-rounded">settings_applications</span>Sistema
 							</button>
+							<button type="button" data-settings-tab-trigger data-settings-tab="plan" class="settings-tab">
+								<span class="material-symbols-rounded">workspace_premium</span>Plan
+							</button>
 						</>
 					) : null
 				}
@@ -644,6 +647,81 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 								</div>
 							</form>
 						</section>
+
+						<section data-settings-panel="plan" class="settings-panel hidden gap-6">
+							<div class="grid gap-1">
+								<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Plan y suscripción</h4>
+								<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+									Estado de tu suscripción, uso de almacenamiento y funciones incluidas.
+								</p>
+							</div>
+
+							<div data-settings-plan-loading class="settings-plan-loading grid place-items-center gap-2 py-10 text-(--on-surface-variant)">
+								<span class="material-symbols-rounded animate-spin text-[1.6rem]">progress_activity</span>
+								<span class="text-[0.9rem] font-semibold">Cargando tu plan…</span>
+							</div>
+
+							<div data-settings-plan-error class="hidden rounded-2xl border border-rose-200 bg-rose-50 p-4 text-rose-700">
+								<div class="flex items-center gap-2">
+									<span class="material-symbols-rounded">error</span>
+									<p class="m-0 text-[0.9rem] font-semibold" data-settings-plan-error-text>
+										No fue posible cargar tu plan.
+									</p>
+								</div>
+								<button type="button" data-settings-plan-retry class="mt-3 inline-flex items-center gap-2 rounded-full border border-rose-300 bg-white px-4 py-2 text-[0.85rem] font-bold text-rose-700 transition hover:bg-rose-100">
+									<span class="material-symbols-rounded text-[1.05rem]">refresh</span>Reintentar
+								</button>
+							</div>
+
+							<div data-settings-plan-body class="hidden grid gap-6">
+								<div class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-5">
+									<div class="flex flex-wrap items-start justify-between gap-3">
+										<div class="grid gap-1">
+											<div class="flex items-center gap-2">
+												<span class="material-symbols-rounded text-(--primary)">workspace_premium</span>
+												<span class="text-[1.15rem] font-extrabold text-(--on-surface)" data-settings-plan-name>—</span>
+											</div>
+											<p class="m-0 text-[0.9rem] font-semibold text-(--on-surface-variant)" data-settings-plan-price>—</p>
+										</div>
+										<span data-settings-plan-status-badge class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8rem] font-bold">
+											<span class="material-symbols-rounded text-[1rem]" data-settings-plan-status-icon>check_circle</span>
+											<span data-settings-plan-status-text>—</span>
+										</span>
+									</div>
+									<p data-settings-plan-status-hint class="mt-3 mb-0 hidden rounded-xl bg-(--surface-variant)/60 px-3 py-2 text-[0.85rem] font-medium text-(--on-surface-variant)"></p>
+								</div>
+
+								<div class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-5 grid gap-3">
+									<div class="flex items-center justify-between">
+										<div class="flex items-center gap-2">
+											<span class="material-symbols-rounded text-(--on-surface-variant)">database</span>
+											<span class="text-[0.95rem] font-bold text-(--on-surface)">Almacenamiento</span>
+										</div>
+										<span class="text-[0.85rem] font-semibold text-(--on-surface-variant)" data-settings-plan-storage-label>—</span>
+									</div>
+									<div class="h-2.5 w-full overflow-hidden rounded-full bg-(--surface-variant)">
+										<div data-settings-plan-storage-bar class="h-full rounded-full bg-(--primary) transition-all" style="width:0%"></div>
+									</div>
+									<p class="m-0 text-[0.8rem] font-medium text-(--on-surface-variant)" data-settings-plan-storage-hint></p>
+								</div>
+
+								<div class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-5 grid gap-3">
+									<div class="flex items-center gap-2">
+										<span class="material-symbols-rounded text-(--on-surface-variant)">check_circle</span>
+										<span class="text-[0.95rem] font-bold text-(--on-surface)">Funciones incluidas</span>
+									</div>
+									<ul data-settings-plan-features class="m-0 grid gap-2 p-0 list-none"></ul>
+								</div>
+
+								<a
+									href="/panel/plan"
+									class="inline-flex items-center justify-center gap-2 rounded-full bg-(--primary) px-5 py-3 text-[0.9rem] font-bold text-white no-underline transition hover:brightness-105"
+								>
+									<span class="material-symbols-rounded text-[1.1rem]">workspace_premium</span>
+									Gestionar plan y facturación
+								</a>
+							</div>
+						</section>
 					</>
 				) : null
 			}
@@ -808,6 +886,8 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		private cropBusy = false;
 		private pushToggleBusy = false;
 		private scrollHintsObserver: ResizeObserver | null = null;
+		private subscriptionLoaded = false;
+		private subscriptionLoading = false;
 
 		connectedCallback() {
 			const roleId = Number(this.dataset.roleId || '0');
@@ -876,6 +956,15 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			
 			this.els.tabButtons.forEach(btn => 
 				btn.addEventListener('click', () => this.setActiveTab(btn.dataset.settingsTab || 'profile'), { signal })
+			);
+
+			this.querySelector<HTMLButtonElement>('[data-settings-plan-retry]')?.addEventListener(
+				'click',
+				() => {
+					this.subscriptionLoaded = false;
+					void this.loadSubscription();
+				},
+				{ signal }
 			);
 
 			this.formEls.profileSlugInput?.addEventListener('input', this.handleSlugInput, { signal });
@@ -1675,6 +1764,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			this.els.tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.settingsTab === tabId));
 			this.els.panels.forEach((panel) => panel.classList.toggle('hidden', panel.dataset.settingsPanel !== tabId));
 			if (tabId === 'profile') this.syncPushNotificationToggle();
+			if (tabId === 'plan') void this.loadSubscription();
 
 			const content = this.querySelector<HTMLElement>('[data-settings-content]');
 			if (content) content.scrollTop = 0;
@@ -1994,6 +2084,181 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				this.showFeedback('profile', error instanceof Error ? error.message : 'No fue posible cargar ajustes.', 'error');
 			} finally {
 				this.setLoadingState(false);
+			}
+		}
+
+		private async loadSubscription() {
+			if (!this.isAdmin) return;
+			if (this.subscriptionLoaded || this.subscriptionLoading) return;
+
+			const loading = this.querySelector<HTMLElement>('[data-settings-plan-loading]');
+			const errorBox = this.querySelector<HTMLElement>('[data-settings-plan-error]');
+			const body = this.querySelector<HTMLElement>('[data-settings-plan-body]');
+
+			this.subscriptionLoading = true;
+			loading?.classList.remove('hidden');
+			errorBox?.classList.add('hidden');
+			body?.classList.add('hidden');
+
+			try {
+				const res = await this.requestApi<any>(
+					'/api/subscription',
+					{ method: 'GET', headers: { Accept: 'application/json' } },
+					'No fue posible cargar tu plan.'
+				);
+				this.renderSubscription(res.data || {});
+				this.subscriptionLoaded = true;
+				loading?.classList.add('hidden');
+				body?.classList.remove('hidden');
+			} catch (error) {
+				loading?.classList.add('hidden');
+				const errorText = this.querySelector<HTMLElement>('[data-settings-plan-error-text]');
+				if (errorText) {
+					errorText.textContent =
+						error instanceof Error ? error.message : 'No fue posible cargar tu plan.';
+				}
+				errorBox?.classList.remove('hidden');
+			} finally {
+				this.subscriptionLoading = false;
+			}
+		}
+
+		private formatBytes(bytes: number): string {
+			const value = Number(bytes) || 0;
+			if (value <= 0) return '0 MB';
+			const gb = value / 1073741824;
+			if (gb >= 1) return `${gb.toFixed(gb >= 10 ? 0 : 1)} GB`;
+			const mb = value / 1048576;
+			return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`;
+		}
+
+		private renderSubscription(data: any) {
+			const sub = data?.subscription ?? {};
+			const plan = data?.plan ?? {};
+			const storage = data?.storage ?? {};
+			const features: string[] = Array.isArray(data?.features) ? data.features : [];
+
+			const nameEl = this.querySelector<HTMLElement>('[data-settings-plan-name]');
+			if (nameEl) nameEl.textContent = String(plan.name || plan.code || 'Plan');
+
+			const priceEl = this.querySelector<HTMLElement>('[data-settings-plan-price]');
+			if (priceEl) {
+				const amount = Number(plan.price_amount) || 0;
+				const currency = String(plan.currency || 'PYG');
+				const period = String(plan.billing_period || 'MONTHLY') === 'YEARLY' ? 'año' : 'mes';
+				priceEl.textContent =
+					amount > 0
+						? `${new Intl.NumberFormat('es-PY').format(amount)} ${currency}/${period}`
+						: 'Sin costo';
+			}
+
+			const STATUS_MAP: Record<string, { label: string; icon: string; cls: string; hint?: string }> = {
+				TRIAL: { label: 'Prueba gratis', icon: 'schedule', cls: 'bg-sky-100 text-sky-700' },
+				ACTIVE: { label: 'Activo', icon: 'check_circle', cls: 'bg-emerald-100 text-emerald-700' },
+				FOUNDER: {
+					label: 'Fundador',
+					icon: 'stars',
+					cls: 'bg-amber-100 text-amber-700',
+					hint: 'Cuenta con beneficio de fundador (sin facturación).',
+				},
+				PAST_DUE: {
+					label: 'Pago pendiente',
+					icon: 'warning',
+					cls: 'bg-amber-100 text-amber-700',
+					hint: 'Regularizá el pago para no perder acceso.',
+				},
+				READ_ONLY: {
+					label: 'Solo lectura',
+					icon: 'lock',
+					cls: 'bg-rose-100 text-rose-700',
+					hint: 'Tu suscripción venció: podés ver, pero no crear ni editar. Regularizá el pago para reactivar.',
+				},
+				TRIAL_EXPIRED: {
+					label: 'Prueba vencida',
+					icon: 'lock',
+					cls: 'bg-rose-100 text-rose-700',
+					hint: 'Tu prueba terminó. Elegí un plan para seguir usando todas las funciones.',
+				},
+				CANCELED: { label: 'Cancelado', icon: 'cancel', cls: 'bg-rose-100 text-rose-700' },
+				NONE: { label: 'Sin suscripción', icon: 'help', cls: 'bg-gray-100 text-gray-600' },
+			};
+			const effective = String(sub.effective_status || 'NONE');
+			const meta = STATUS_MAP[effective] || STATUS_MAP.NONE;
+
+			const badge = this.querySelector<HTMLElement>('[data-settings-plan-status-badge]');
+			if (badge) badge.className = `inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8rem] font-bold ${meta.cls}`;
+			const statusIcon = this.querySelector<HTMLElement>('[data-settings-plan-status-icon]');
+			if (statusIcon) statusIcon.textContent = meta.icon;
+			const statusText = this.querySelector<HTMLElement>('[data-settings-plan-status-text]');
+			if (statusText) statusText.textContent = meta.label;
+
+			let hint = meta.hint || '';
+			if (effective === 'TRIAL' && sub.trial_ends_at) {
+				const ends = new Date(sub.trial_ends_at);
+				if (!Number.isNaN(ends.getTime())) {
+					const days = Math.max(0, Math.ceil((ends.getTime() - Date.now()) / 86400000));
+					hint = `Tu prueba termina en ${days} día${days === 1 ? '' : 's'} (${ends.toLocaleDateString('es-PY')}).`;
+				}
+			}
+			const hintEl = this.querySelector<HTMLElement>('[data-settings-plan-status-hint]');
+			if (hintEl) {
+				hintEl.textContent = hint;
+				hintEl.classList.toggle('hidden', hint === '');
+			}
+
+			const usedBytes = Number(storage.used_bytes) || 0;
+			const limitBytes = Number(storage.limit_bytes) || 0;
+			const pct = limitBytes > 0 ? Math.min(100, Math.round((usedBytes / limitBytes) * 100)) : 0;
+			const storageLabel = this.querySelector<HTMLElement>('[data-settings-plan-storage-label]');
+			if (storageLabel) {
+				storageLabel.textContent =
+					limitBytes > 0
+						? `${this.formatBytes(usedBytes)} de ${this.formatBytes(limitBytes)}`
+						: 'No incluido en este plan';
+			}
+			const bar = this.querySelector<HTMLElement>('[data-settings-plan-storage-bar]');
+			if (bar) {
+				bar.style.width = `${pct}%`;
+				bar.className = `h-full rounded-full transition-all ${pct >= 90 ? 'bg-rose-500' : pct >= 70 ? 'bg-amber-500' : 'bg-(--primary)'}`;
+			}
+			const storageHint = this.querySelector<HTMLElement>('[data-settings-plan-storage-hint]');
+			if (storageHint) {
+				storageHint.textContent =
+					limitBytes > 0 ? `${pct}% utilizado` : 'Actualizá a Premium para guardar archivos por cita.';
+			}
+
+			const FEATURE_LABELS: Record<string, string> = {
+				WEB_BOOKING: 'Reserva web',
+				NOTIFICATIONS: 'Notificaciones',
+				CUSTOMERS: 'Gestión de clientes',
+				SERVICES: 'Servicios',
+				TEAM_MULTI_BRANCH: 'Equipo y sucursales ilimitados',
+				AI_MORNING_DIGEST: 'Resumen IA de la mañana',
+				VOICE_RECEPTION: 'Recepción por voz',
+				DEPOSIT_COLLECTION: 'Cobro de señas',
+				APPOINTMENT_HISTORY: 'Historial por cita (notas y archivos)',
+				PROFITABILITY_ANALYTICS: 'Análisis de rentabilidad',
+			};
+			const list = this.querySelector<HTMLElement>('[data-settings-plan-features]');
+			if (list) {
+				list.replaceChildren();
+				if (features.length === 0) {
+					const li = document.createElement('li');
+					li.className = 'text-[0.88rem] font-medium text-(--on-surface-variant)';
+					li.textContent = 'Sin funciones activas.';
+					list.appendChild(li);
+				}
+				for (const code of features) {
+					const li = document.createElement('li');
+					li.className = 'flex items-center gap-2 text-[0.9rem] font-semibold text-(--on-surface)';
+					const icon = document.createElement('span');
+					icon.className = 'material-symbols-rounded text-[1.05rem] text-emerald-500';
+					icon.textContent = 'check';
+					const span = document.createElement('span');
+					span.textContent = FEATURE_LABELS[code] || code;
+					li.append(icon, span);
+					list.appendChild(li);
+				}
 			}
 		}
 

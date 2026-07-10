@@ -249,6 +249,57 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 						</article>
 					</section>
 
+					<section
+						class="customer-profile-section hidden"
+						data-customer-profile-profitability-wrap
+					>
+						<h3 class="customer-profile-section-title flex items-center gap-1.5">
+							<span class="material-symbols-rounded text-[1.1rem] text-(--primary)" aria-hidden="true">trending_up</span>
+							Rentabilidad
+							<span class="ml-1 inline-flex items-center gap-1 rounded-full bg-(--primary-soft) px-2 py-0.5 text-[0.68rem] font-bold text-(--primary)">Premium</span>
+						</h3>
+						<section class="customer-profile-metrics">
+							<article class="customer-profile-stat-card">
+								<p class="text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
+									Ingresos este año
+								</p>
+								<p
+									class="mt-1 text-[1.5rem] font-extrabold leading-tight text-(--on-surface)"
+									data-customer-profile-year-revenue
+								>
+									Gs. 0
+								</p>
+								<p class="customer-profile-stat-hint" data-customer-profile-year-count></p>
+							</article>
+
+							<article class="customer-profile-stat-card">
+								<p class="text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
+									Ticket promedio
+								</p>
+								<p
+									class="mt-1 text-[1.5rem] font-extrabold leading-tight text-(--on-surface)"
+									data-customer-profile-avg-ticket
+								>
+									Gs. 0
+								</p>
+								<p class="customer-profile-stat-hint">Promedio por cita atendida.</p>
+							</article>
+
+							<article class="customer-profile-stat-card">
+								<p class="text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
+									Valor perdido
+								</p>
+								<p
+									class="mt-1 text-[1.5rem] font-extrabold leading-tight text-(--on-surface)"
+									data-customer-profile-lost-value
+								>
+									Gs. 0
+								</p>
+								<p class="customer-profile-stat-hint">Ingresos no realizados por cancelaciones.</p>
+							</article>
+						</section>
+					</section>
+
 					<section class="customer-profile-section">
 						<h3 class="customer-profile-section-title">Reservas</h3>
 						<div class="grid gap-3">

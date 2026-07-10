@@ -22,6 +22,20 @@ export type ScheduleMisalignedReason =
 	| 'TIME_OUTSIDE_SCHEDULE'
 	| 'WRONG_LOCATION';
 
+export type AppointmentAttachment = {
+	id_attachment: number;
+	file_name: string;
+	mime_type: string;
+	size_bytes: number;
+	url: string;
+	created_at?: string;
+};
+
+export type AppointmentHistory = {
+	notes: string | null;
+	attachments: AppointmentAttachment[];
+};
+
 export type AppointmentDetail = {
 	id_appointment: number;
 	id_customer: number;
@@ -41,6 +55,8 @@ export type AppointmentDetail = {
 	end_time: string;
 	schedule_misaligned?: boolean;
 	schedule_misaligned_reason?: ScheduleMisalignedReason | null;
+	history_enabled?: boolean;
+	history?: AppointmentHistory;
 };
 
 export type AppointmentFormPayload = {
@@ -53,6 +69,7 @@ export type AppointmentFormPayload = {
 	start_time: string;
 	end_time: string;
 	status: AppointmentStatus;
+	session_notes?: string;
 };
 
 export type AppointmentCreatePayload = Omit<AppointmentFormPayload, 'status'>;

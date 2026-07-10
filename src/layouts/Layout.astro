@@ -4,6 +4,7 @@ import FlashMessage from '../components/FlashMessage.astro';
 import FcmManager from '../components/FcmManager.astro';
 import OrgNotificationDeepLink from '../components/OrgNotificationDeepLink.astro';
 import SessionGuard from '../components/SessionGuard.astro';
+import SubscriptionBanner from '../components/SubscriptionBanner.astro';
 import {
     FLASH_MESSAGE_COOKIE,
     FLASH_TYPE_COOKIE,
@@ -147,6 +148,7 @@ if (flashTypeFromCookie) {
         {hasSession && (
             <>
                 <SessionGuard />
+                <SubscriptionBanner />
                 <FcmManager />
                 <OrgNotificationDeepLink />
             </>

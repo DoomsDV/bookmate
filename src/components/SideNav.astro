@@ -52,6 +52,7 @@ const primaryItems: NavItem[] = [
 	{ label: "Clientes", icon: "contacts", href: "/panel/customers" },
 	{ label: "Servicios", icon: "inventory_2", href: "/panel/services" },
 	{ label: "Sucursales", icon: "storefront", href: "/panel/locations" },
+	{ label: "Plan", icon: "workspace_premium", href: "/panel/plan" },
 ];
 
 const teamItems: NavItem[] = [
@@ -120,8 +121,8 @@ const visibleTeamItems = teamItems.filter((item) =>
 								{workspaceName}
 							</p>
 						</div>
-						<p class="workspace-account-subtitle truncate">
-							Plan Pro
+						<p class="workspace-account-subtitle truncate" data-plan-label>
+							Plan
 						</p>
 					</div>
 					<span class="material-symbols-rounded sidebar-account-chevron" aria-hidden="true">
@@ -262,8 +263,8 @@ const visibleTeamItems = teamItems.filter((item) =>
 						{workspaceName}
 					</p>
 				</div>
-				<p class="workspace-account-subtitle truncate">
-					Plan Pro
+				<p class="workspace-account-subtitle truncate" data-plan-label>
+					Plan
 				</p>
 			</div>
 			<span class="material-symbols-rounded sidebar-account-chevron" aria-hidden="true">

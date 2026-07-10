@@ -289,6 +289,63 @@ const toPageHref = (page: number) => {
 								</div>
 							</section>
 
+							{roleId === ROLES.ADMIN && (
+								<section
+									class="dashboard-profitability-shell hidden rounded-4xl p-6 transition-colors duration-300"
+									data-profitability-panel
+									hidden
+								>
+									<div class="mb-5 flex items-center justify-between gap-3">
+										<div class="flex items-center gap-2">
+											<span class="material-symbols-rounded text-[1.3rem] text-(--primary)" aria-hidden="true">trending_up</span>
+											<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Rentabilidad del mes</h2>
+										</div>
+										<span class="inline-flex items-center gap-1 rounded-full bg-(--primary-soft) px-2.5 py-1 text-[0.72rem] font-bold text-(--primary)">
+											<span class="material-symbols-rounded text-[0.9rem]" aria-hidden="true">workspace_premium</span>
+											Premium
+										</span>
+									</div>
+
+									<div class="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+										<article class="dashboard-profit-card">
+											<p class="dashboard-profit-label">Ingresos del mes</p>
+											<p class="dashboard-profit-value" data-profit-month-revenue>Gs. 0</p>
+											<p class="dashboard-profit-hint" data-profit-mom></p>
+										</article>
+										<article class="dashboard-profit-card">
+											<p class="dashboard-profit-label">Ticket promedio</p>
+											<p class="dashboard-profit-value" data-profit-avg-ticket>Gs. 0</p>
+											<p class="dashboard-profit-hint" data-profit-count></p>
+										</article>
+										<article class="dashboard-profit-card">
+											<p class="dashboard-profit-label">Ingresos de hoy</p>
+											<p class="dashboard-profit-value" data-profit-today>Gs. 0</p>
+											<p class="dashboard-profit-hint">Citas ya atendidas hoy.</p>
+										</article>
+										<article class="dashboard-profit-card">
+											<p class="dashboard-profit-label">Esperado (futuro)</p>
+											<p class="dashboard-profit-value" data-profit-pending>Gs. 0</p>
+											<p class="dashboard-profit-hint">Citas confirmadas y pendientes.</p>
+										</article>
+									</div>
+
+									<div class="mt-6 grid gap-6 lg:grid-cols-2">
+										<div>
+											<h3 class="mb-2 text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">Top servicios (mes)</h3>
+											<ul class="m-0 grid list-none gap-2 p-0" data-profit-top-services>
+												<li class="dashboard-profit-empty">Sin datos este mes.</li>
+											</ul>
+										</div>
+										<div>
+											<h3 class="mb-2 text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">Ingreso por profesional (mes)</h3>
+											<ul class="m-0 grid list-none gap-2 p-0" data-profit-by-professional>
+												<li class="dashboard-profit-empty">Sin datos este mes.</li>
+											</ul>
+										</div>
+									</div>
+								</section>
+							)}
+
 							{
 								loadError ? (
 									<div class="rounded-3xl bg-rose-50 px-5 py-4 text-sm font-semibold text-rose-700 dark:bg-[#3B191E] dark:text-[#FFB4AB] shadow-sm">
@@ -1416,9 +1473,121 @@ const toPageHref = (page: number) => {
 		}
 	};
 
+	const formatGs = (value: unknown): string => {
+		const amount = Number(value);
+		const safe = Number.isFinite(amount) && amount > 0 ? Math.round(amount) : 0;
+		return `Gs. ${safe.toLocaleString('es-PY')}`;
+	};
+
+	const renderProfitabilityRows = (
+		container: HTMLElement | null,
+		rows: Array<Record<string, unknown>>
+	) => {
+		if (!container) return;
+		container.replaceChildren();
+
+		if (!Array.isArray(rows) || rows.length === 0) {
+			const empty = document.createElement('li');
+			empty.className = 'dashboard-profit-empty';
+			empty.textContent = 'Sin datos este mes.';
+			container.appendChild(empty);
+			return;
+		}
+
+		for (const row of rows) {
+			const item = document.createElement('li');
+			item.className = 'dashboard-profit-row';
+
+			const name = document.createElement('span');
+			name.className = 'dashboard-profit-row__name';
+			name.textContent = String(row.name ?? '—');
+
+			const meta = document.createElement('span');
+			meta.className = 'dashboard-profit-row__meta';
+			const count = Number(row.count) || 0;
+			const countLabel = count === 1 ? '1 cita' : `${count} citas`;
+			meta.textContent = `${formatGs(row.revenue)} · ${countLabel}`;
+
+			item.append(name, meta);
+			container.appendChild(item);
+		}
+	};
+
+	const loadProfitability = async () => {
+		const panel = document.querySelector<HTMLElement>('[data-profitability-panel]');
+		if (!panel) return;
+		if (panel.dataset.loaded === '1') return;
+		panel.dataset.loaded = '1';
+
+		try {
+			const response = await fetch('/api/dashboard/profitability', {
+				headers: { Accept: 'application/json' },
+			});
+			const payload = await response.json();
+
+			// 403 (no admin/feature) u otros errores: dejamos el panel oculto.
+			if (!response.ok || payload?.status !== 'success' || !payload?.data) {
+				panel.dataset.loaded = '';
+				return;
+			}
+
+			const data = payload.data as Record<string, unknown>;
+
+			const setText = (selector: string, text: string) => {
+				const node = panel.querySelector<HTMLElement>(selector);
+				if (node) node.textContent = text;
+			};
+
+			setText('[data-profit-month-revenue]', formatGs(data.month_revenue));
+			setText('[data-profit-avg-ticket]', formatGs(data.month_avg_ticket));
+			setText('[data-profit-today]', formatGs(data.today_revenue));
+			setText('[data-profit-pending]', formatGs(data.pending_expected_revenue));
+
+			const completedCount = Number(data.month_completed_count) || 0;
+			setText(
+				'[data-profit-count]',
+				completedCount === 1 ? '1 cita atendida' : `${completedCount} citas atendidas`
+			);
+
+			const momNode = panel.querySelector<HTMLElement>('[data-profit-mom]');
+			if (momNode) {
+				const mom = data.mom_delta_pct;
+				if (mom === null || mom === undefined || !Number.isFinite(Number(mom))) {
+					momNode.textContent = 'Sin comparación con el mes anterior.';
+					momNode.className = 'dashboard-profit-hint';
+				} else {
+					const value = Number(mom);
+					const sign = value > 0 ? '+' : '';
+					momNode.textContent = `${sign}${value}% vs. mes anterior`;
+					momNode.className =
+						value >= 0
+							? 'dashboard-profit-hint dashboard-profit-hint--up'
+							: 'dashboard-profit-hint dashboard-profit-hint--down';
+				}
+			}
+
+			renderProfitabilityRows(
+				panel.querySelector<HTMLElement>('[data-profit-top-services]'),
+				Array.isArray(data.top_services) ? (data.top_services as Array<Record<string, unknown>>) : []
+			);
+			renderProfitabilityRows(
+				panel.querySelector<HTMLElement>('[data-profit-by-professional]'),
+				Array.isArray(data.by_professional)
+					? (data.by_professional as Array<Record<string, unknown>>)
+					: []
+			);
+
+			panel.hidden = false;
+			panel.classList.remove('hidden');
+		} catch {
+			panel.dataset.loaded = '';
+		}
+	};
+
 	const initializeDashboardPage = () => {
 		loadAiSummary();
 		loadTeamOverview();
+		loadProfitability();
 		scrollToUpcomingAppointmentsIfNeeded();
 	};
 
@@ -2919,6 +3088,112 @@ const toPageHref = (page: number) => {
 		outline: none;
 		box-shadow: none;
 		background: rgba(253, 186, 116, 0.16);
+	}
+
+	.dashboard-profitability-shell {
+		border: 1px solid rgba(148, 163, 184, 0.24);
+		background: #ffffff;
+		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+	}
+
+	html[data-theme='dark'] .dashboard-profitability-shell {
+		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 78%, var(--surface-container, #131314) 22%);
+		border-color: color-mix(in srgb, var(--outline-variant, #8a9099) 36%, transparent);
+		box-shadow: none;
+	}
+
+	.dashboard-profit-card {
+		border: 1px solid #e2e8f0;
+		border-radius: 1.1rem;
+		background: color-mix(in srgb, var(--surface) 40%, #ffffff 60%);
+		padding: 1rem 1.1rem;
+	}
+
+	html[data-theme='dark'] .dashboard-profit-card {
+		border-color: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--surface-container, #131314) 18%);
+	}
+
+	.dashboard-profit-label {
+		margin: 0;
+		font-size: 0.74rem;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: color-mix(in srgb, var(--on-surface-variant) 86%, #516b85 14%);
+	}
+
+	.dashboard-profit-value {
+		margin: 0.35rem 0 0;
+		font-size: 1.45rem;
+		font-weight: 800;
+		line-height: 1.05;
+		letter-spacing: -0.02em;
+		color: var(--on-surface);
+		font-variant-numeric: tabular-nums lining-nums;
+	}
+
+	.dashboard-profit-hint {
+		margin: 0.3rem 0 0;
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	.dashboard-profit-hint--up {
+		color: #15803d;
+	}
+
+	.dashboard-profit-hint--down {
+		color: #c5221f;
+	}
+
+	html[data-theme='dark'] .dashboard-profit-hint--up {
+		color: #86efac;
+	}
+
+	html[data-theme='dark'] .dashboard-profit-hint--down {
+		color: #fca5a5;
+	}
+
+	.dashboard-profit-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.6rem 0.85rem;
+		border-radius: 0.85rem;
+		border: 1px solid #e2e8f0;
+		background: #ffffff;
+	}
+
+	html[data-theme='dark'] .dashboard-profit-row {
+		border-color: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--surface-container, #131314) 18%);
+	}
+
+	.dashboard-profit-row__name {
+		min-width: 0;
+		flex: 1 1 auto;
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--on-surface);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.dashboard-profit-row__meta {
+		flex-shrink: 0;
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	.dashboard-profit-empty {
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--on-surface-variant);
 	}
 
 	.dashboard-report-list {

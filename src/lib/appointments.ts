@@ -56,6 +56,20 @@ export interface AppointmentCalendarEvent {
 	extendedProps: AppointmentCalendarEventExtendedProps;
 }
 
+export interface AppointmentAttachment {
+	id_attachment: number;
+	file_name: string;
+	mime_type: string;
+	size_bytes: number;
+	url: string;
+	created_at?: string;
+}
+
+export interface AppointmentHistory {
+	notes: string | null;
+	attachments: AppointmentAttachment[];
+}
+
 export interface AppointmentDetail {
 	id_appointment: number;
 	id_customer: number;
@@ -75,6 +89,8 @@ export interface AppointmentDetail {
 	end_time: string;
 	schedule_misaligned?: boolean;
 	schedule_misaligned_reason?: ScheduleMisalignedReason | null;
+	history_enabled: boolean;
+	history: AppointmentHistory;
 }
 
 export interface AppointmentCalendarFilters {
@@ -98,6 +114,8 @@ export interface AppointmentCreatePayload {
 
 export interface AppointmentUpdatePayload extends AppointmentCreatePayload {
 	status: 'PENDIENTE' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO';
+	// Fase 4: notas de la sesion, se guardan al pasar a COMPLETADO (solo Premium).
+	session_notes?: string;
 }
 
 interface AppointmentSuccessResponse {
@@ -294,6 +312,37 @@ const normalizeCalendarEvent = (value: unknown): AppointmentCalendarEvent | null
 	};
 };
 
+const normalizeAttachment = (value: unknown): AppointmentAttachment | null => {
+	if (!value || typeof value !== 'object') return null;
+	const source = value as Record<string, unknown>;
+	const id = toNumber(source.id_attachment ?? source.id, NaN);
+	if (!Number.isInteger(id) || id <= 0) return null;
+	return {
+		id_attachment: id,
+		file_name: String(source.file_name ?? source.name ?? '').trim() || 'archivo',
+		mime_type: String(source.mime_type ?? '').trim(),
+		size_bytes: toNumber(source.size_bytes, 0),
+		url: String(source.url ?? source.storage_url ?? '').trim(),
+		created_at: String(source.created_at ?? '').trim() || undefined,
+	};
+};
+
+const normalizeAppointmentHistory = (value: unknown): AppointmentHistory => {
+	if (!value || typeof value !== 'object') {
+		return { notes: null, attachments: [] };
+	}
+	const source = value as Record<string, unknown>;
+	const rawNotes = source.notes;
+	const notes =
+		typeof rawNotes === 'string' && rawNotes.trim().length > 0 ? rawNotes : null;
+	const attachments = Array.isArray(source.attachments)
+		? source.attachments
+				.map(normalizeAttachment)
+				.filter((item): item is AppointmentAttachment => item !== null)
+		: [];
+	return { notes, attachments };
+};
+
 const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null => {
 	if (!value || typeof value !== 'object') return null;
 
@@ -326,6 +375,7 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 	if (!startTime || !endTime) return null;
 
 	const attendanceStatus = normalizeAttendanceStatus(source.attendance_status);
+	const history = normalizeAppointmentHistory(source.history);
 
 	const detail: AppointmentDetail = {
 		id_appointment: appointmentId,
@@ -348,6 +398,8 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 		attendance_reply_at: normalizeAttendanceReplyAt(source.attendance_reply_at),
 		start_time: startTime,
 		end_time: endTime,
+		history_enabled: source.history_enabled === true,
+		history,
 	};
 
 	applyScheduleMisalignedFields(detail, source, status, startTime);
@@ -496,6 +548,87 @@ export const updateAppointmentWithOrds = async (
 			typeof data.message === 'string' && data.message.trim()
 				? data.message
 				: 'Cita actualizada correctamente.',
+	};
+};
+
+export interface AppointmentAttachmentUploadPayload {
+	file_base64: string;
+	filename: string;
+	mime_type: string;
+}
+
+export const uploadAppointmentAttachmentWithOrds = async (
+	token: string,
+	appointmentId: number,
+	payload: AppointmentAttachmentUploadPayload
+) => {
+	ensureToken(token);
+	if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
+		throw new AppointmentsApiError('ID de cita invalido.', 400);
+	}
+
+	const response = await fetch(`${APPOINTMENTS_URL}/${appointmentId}/attachments`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+
+	const { data } = await parseJsonResponse(response);
+	if (!response.ok || !isSuccessResponse(data)) {
+		throw toApiError(response, data, 'No fue posible subir el archivo adjunto.');
+	}
+
+	const attachment = normalizeAttachment(
+		data.data && typeof data.data === 'object' ? data.data : null
+	);
+
+	return {
+		attachment,
+		message:
+			typeof data.message === 'string' && data.message.trim()
+				? data.message
+				: 'Archivo adjuntado correctamente.',
+	};
+};
+
+export const deleteAppointmentAttachmentWithOrds = async (
+	token: string,
+	appointmentId: number,
+	attachmentId: number
+) => {
+	ensureToken(token);
+	if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
+		throw new AppointmentsApiError('ID de cita invalido.', 400);
+	}
+	if (!Number.isInteger(attachmentId) || attachmentId <= 0) {
+		throw new AppointmentsApiError('ID de adjunto invalido.', 400);
+	}
+
+	const response = await fetch(
+		`${APPOINTMENTS_URL}/${appointmentId}/attachments/${attachmentId}`,
+		{
+			method: 'DELETE',
+			headers: {
+				Authorization: `Bearer ${token}`,
+				Accept: 'application/json',
+			},
+		}
+	);
+
+	const { data } = await parseJsonResponse(response);
+	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
+		throw toApiError(response, data, 'No fue posible eliminar el archivo adjunto.');
+	}
+
+	return {
+		message:
+			typeof data.message === 'string' && data.message.trim()
+				? data.message
+				: 'Adjunto eliminado correctamente.',
 	};
 };
 

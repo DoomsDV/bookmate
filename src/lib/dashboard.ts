@@ -12,6 +12,12 @@ export const DASHBOARD_AI_SUMMARY_URL = resolveOrdsApiUrl(
 	'/dashboard/ai-summary'
 );
 
+export const DASHBOARD_PROFITABILITY_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_DASHBOARD_PROFITABILITY_URL,
+	'ORDS_DASHBOARD_PROFITABILITY_URL',
+	'/dashboard/profitability'
+);
+
 export interface DashboardKpis {
 	today_appointments: number;
 	pending_appointments: number;
@@ -40,6 +46,27 @@ export interface DashboardMainData {
 	kpis: DashboardKpis;
 	upcoming_appointments: DashboardUpcomingAppointment[];
 	pagination: DashboardPaginationMeta;
+}
+
+export interface DashboardProfitabilityRow {
+	id: number;
+	name: string;
+	revenue: number;
+	count: number;
+}
+
+export interface DashboardProfitabilityData {
+	currency: string;
+	today_revenue: number;
+	month_revenue: number;
+	month_completed_count: number;
+	month_avg_ticket: number;
+	last_month_revenue: number;
+	mom_delta_pct: number | null;
+	pending_expected_revenue: number;
+	top_services: DashboardProfitabilityRow[];
+	by_professional: DashboardProfitabilityRow[];
+	generated_at_local: string;
 }
 
 export type DashboardAiSummarySectionType = 'panorama' | 'contexto' | 'sugerencia';
@@ -351,6 +378,87 @@ export const getMainDashboardWithOrds = async (
 	}
 
 	return normalizeMainData(data.data, data.meta, { page, limit });
+};
+
+const normalizeProfitabilityRow = (value: unknown): DashboardProfitabilityRow | null => {
+	if (!value || typeof value !== 'object') return null;
+	const source = value as Record<string, unknown>;
+	const id = toNumber(source.id_service ?? source.id_professional ?? source.id, 0);
+	const name = toText(source.name);
+	if (!name) return null;
+	return {
+		id: Math.max(0, Math.floor(id)),
+		name,
+		revenue: Math.max(0, toNumber(source.revenue, 0)),
+		count: Math.max(0, Math.floor(toNumber(source.count, 0))),
+	};
+};
+
+const normalizeProfitabilityData = (value: unknown): DashboardProfitabilityData => {
+	const source = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
+	const today = (source.today && typeof source.today === 'object' ? source.today : {}) as Record<string, unknown>;
+	const month = (source.this_month && typeof source.this_month === 'object' ? source.this_month : {}) as Record<string, unknown>;
+	const lastMonth = (source.last_month && typeof source.last_month === 'object' ? source.last_month : {}) as Record<string, unknown>;
+	const momRaw = source.mom_delta_pct;
+
+	return {
+		currency: toText(source.currency) || 'PYG',
+		today_revenue: Math.max(0, toNumber(today.revenue, 0)),
+		month_revenue: Math.max(0, toNumber(month.revenue, 0)),
+		month_completed_count: Math.max(0, Math.floor(toNumber(month.completed_count, 0))),
+		month_avg_ticket: Math.max(0, toNumber(month.avg_ticket, 0)),
+		last_month_revenue: Math.max(0, toNumber(lastMonth.revenue, 0)),
+		mom_delta_pct:
+			momRaw === null || momRaw === undefined || !Number.isFinite(Number(momRaw))
+				? null
+				: Number(momRaw),
+		pending_expected_revenue: Math.max(0, toNumber(source.pending_expected_revenue, 0)),
+		top_services: Array.isArray(source.top_services)
+			? source.top_services
+					.map(normalizeProfitabilityRow)
+					.filter((item): item is DashboardProfitabilityRow => item !== null)
+			: [],
+		by_professional: Array.isArray(source.by_professional)
+			? source.by_professional
+					.map(normalizeProfitabilityRow)
+					.filter((item): item is DashboardProfitabilityRow => item !== null)
+			: [],
+		generated_at_local: toText(source.generated_at_local),
+	};
+};
+
+export const getDashboardProfitabilityWithOrds = async (
+	token: string
+): Promise<DashboardProfitabilityData> => {
+	if (!token) {
+		throw new DashboardApiError('Token de acceso requerido.', 401);
+	}
+
+	const response = await fetch(DASHBOARD_PROFITABILITY_URL, {
+		method: 'GET',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	let data: DashboardSuccessResponse | DashboardFailureResponse | null = null;
+	try {
+		data = await response.json();
+	} catch {
+		throw new DashboardApiError('No fue posible interpretar la respuesta de rentabilidad.', 502);
+	}
+
+	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
+		const failureData = (data ?? {}) as DashboardFailureResponse;
+		throw new DashboardApiError(
+			toText(failureData.message) || 'No fue posible cargar la rentabilidad.',
+			response.status || 400,
+			failureData.details
+		);
+	}
+
+	return normalizeProfitabilityData(data.data);
 };
 
 export const getDashboardAiSummaryWithOrds = async (

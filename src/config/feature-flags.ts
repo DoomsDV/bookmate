@@ -10,3 +10,56 @@ export const FEATURE_FLAGS = {
 	/** Cita rápida por voz (Whisper + precarga del formulario). */
 	APPOINTMENT_AI_VOICE: true,
 } as const;
+
+export type FeatureFlag = keyof typeof FEATURE_FLAGS;
+
+/**
+ * Entitlements por plan definidos en el backend (`ref_plan_feature.feature_code`).
+ * Fuente de verdad: `GET /workspace/subscription` → `data.features`.
+ * Estos son los códigos canónicos del roadmap (Premium + Planes + Historial).
+ */
+export const PLAN_FEATURES = {
+	WEB_BOOKING: 'WEB_BOOKING',
+	NOTIFICATIONS: 'NOTIFICATIONS',
+	CUSTOMERS: 'CUSTOMERS',
+	SERVICES: 'SERVICES',
+	TEAM_MULTI_BRANCH: 'TEAM_MULTI_BRANCH',
+	AI_MORNING_DIGEST: 'AI_MORNING_DIGEST',
+	VOICE_RECEPTION: 'VOICE_RECEPTION',
+	DEPOSIT_COLLECTION: 'DEPOSIT_COLLECTION',
+	APPOINTMENT_HISTORY: 'APPOINTMENT_HISTORY',
+	PROFITABILITY_ANALYTICS: 'PROFITABILITY_ANALYTICS',
+} as const;
+
+export type PlanFeature = (typeof PLAN_FEATURES)[keyof typeof PLAN_FEATURES];
+
+/**
+ * Alineación flag de UI → entitlement de plan del backend.
+ * Permite migrar (Fase 5) los gates globales `FEATURE_FLAGS` a entitlements reales
+ * sin renombrar los flags existentes del frontend.
+ */
+export const FLAG_TO_PLAN_FEATURE: Record<FeatureFlag, PlanFeature> = {
+	INTEGRATIONS_SETTINGS: PLAN_FEATURES.DEPOSIT_COLLECTION,
+	SERVICE_DEPOSIT_OPTIONS: PLAN_FEATURES.DEPOSIT_COLLECTION,
+	APPOINTMENT_AI_VOICE: PLAN_FEATURES.VOICE_RECEPTION,
+};
+
+/** ¿El plan de la organización incluye este entitlement? */
+export const hasPlanFeature = (
+	entitlements: readonly string[] | null | undefined,
+	feature: PlanFeature
+): boolean => Array.isArray(entitlements) && entitlements.includes(feature);
+
+/**
+ * ¿La funcionalidad detrás de un flag está habilitada?
+ * Combina el flag de desarrollo con el entitlement del plan (si se proveen las features).
+ * Si no se pasan `entitlements`, se cae al comportamiento actual (solo el flag).
+ */
+export const isFeatureEnabled = (
+	flag: FeatureFlag,
+	entitlements?: readonly string[] | null
+): boolean => {
+	if (!FEATURE_FLAGS[flag]) return false;
+	if (entitlements === undefined || entitlements === null) return true;
+	return hasPlanFeature(entitlements, FLAG_TO_PLAN_FEATURE[flag]);
+};

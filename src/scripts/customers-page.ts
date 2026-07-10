@@ -78,6 +78,11 @@ class CustomerManager extends HTMLElement {
 	private profilePendingWrap: HTMLElement | null = null;
 	private profilePendingList: HTMLElement | null = null;
 	private profileServicesNode: HTMLElement | null = null;
+	private profileProfitabilityWrap: HTMLElement | null = null;
+	private profileYearRevenueNode: HTMLElement | null = null;
+	private profileYearCountNode: HTMLElement | null = null;
+	private profileAvgTicketNode: HTMLElement | null = null;
+	private profileLostValueNode: HTMLElement | null = null;
 
 	private professionals: ProfessionalLov[] = [];
 
@@ -124,6 +129,21 @@ class CustomerManager extends HTMLElement {
 			'[data-customer-profile-pending-list]'
 		);
 		this.profileServicesNode = this.querySelector<HTMLElement>('[data-customer-profile-services]');
+		this.profileProfitabilityWrap = this.querySelector<HTMLElement>(
+			'[data-customer-profile-profitability-wrap]'
+		);
+		this.profileYearRevenueNode = this.querySelector<HTMLElement>(
+			'[data-customer-profile-year-revenue]'
+		);
+		this.profileYearCountNode = this.querySelector<HTMLElement>(
+			'[data-customer-profile-year-count]'
+		);
+		this.profileAvgTicketNode = this.querySelector<HTMLElement>(
+			'[data-customer-profile-avg-ticket]'
+		);
+		this.profileLostValueNode = this.querySelector<HTMLElement>(
+			'[data-customer-profile-lost-value]'
+		);
 
 		if (!this.professionalSelect || !this.gridNode) return;
 
@@ -424,7 +444,70 @@ class CustomerManager extends HTMLElement {
 			detail.appendChild(paymentRow);
 		}
 
+		const historyRow = this.buildHistoryBadges(appointment);
+		if (historyRow) detail.appendChild(historyRow);
+
 		container.appendChild(detail);
+	}
+
+	private buildHistoryBadges(appointment: CustomerAppointmentSummary): HTMLElement | null {
+		const hasNotes = appointment.has_history_notes === true;
+		const attachmentCount = Math.max(0, Math.floor(Number(appointment.attachment_count || 0)));
+		if (!hasNotes && attachmentCount === 0) return null;
+
+		const row = document.createElement('div');
+		row.className = 'flex flex-wrap items-center gap-1.5 pt-1';
+
+		const makeBadge = (icon: string, label: string) => {
+			const badge = document.createElement('span');
+			badge.className =
+				'inline-flex items-center gap-1 rounded-full bg-(--primary-soft) px-2 py-0.5 text-[0.72rem] font-bold text-(--primary)';
+			const iconEl = document.createElement('span');
+			iconEl.className = 'material-symbols-rounded text-[0.9rem]';
+			iconEl.setAttribute('aria-hidden', 'true');
+			iconEl.textContent = icon;
+			const text = document.createElement('span');
+			text.textContent = label;
+			badge.append(iconEl, text);
+			return badge;
+		};
+
+		if (hasNotes) row.appendChild(makeBadge('description', 'Notas'));
+		if (attachmentCount > 0) {
+			row.appendChild(
+				makeBadge(
+					'attach_file',
+					attachmentCount === 1 ? '1 archivo' : `${attachmentCount} archivos`
+				)
+			);
+		}
+		return row;
+	}
+
+	private renderProfitability(stats: CustomerProfile['stats']) {
+		if (!this.profileProfitabilityWrap) return;
+
+		const profitability = stats.profitability_enabled ? stats.profitability : null;
+		if (!profitability) {
+			this.profileProfitabilityWrap.classList.add('hidden');
+			return;
+		}
+
+		this.profileProfitabilityWrap.classList.remove('hidden');
+		if (this.profileYearRevenueNode) {
+			this.profileYearRevenueNode.textContent = this.formatCurrency(profitability.this_year_revenue);
+		}
+		if (this.profileYearCountNode) {
+			const count = profitability.this_year_count;
+			this.profileYearCountNode.textContent =
+				count === 1 ? '1 cita atendida este año' : `${count} citas atendidas este año`;
+		}
+		if (this.profileAvgTicketNode) {
+			this.profileAvgTicketNode.textContent = this.formatCurrency(profitability.avg_ticket);
+		}
+		if (this.profileLostValueNode) {
+			this.profileLostValueNode.textContent = this.formatCurrency(profitability.lost_value);
+		}
 	}
 
 	private renderPendingAppointments(appointments: CustomerAppointmentSummary[]) {
@@ -558,6 +641,7 @@ class CustomerManager extends HTMLElement {
 		);
 		this.renderPendingAppointments(stats.pending_appointments);
 		this.renderTopServices(stats.top_services);
+		this.renderProfitability(stats);
 
 		if (this.profileBodyNode) this.profileBodyNode.classList.remove('hidden');
 	}

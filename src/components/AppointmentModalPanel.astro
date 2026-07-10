@@ -472,6 +472,71 @@ const { showVoiceButton = false }: Props = Astro.props;
 						</span>
 					</div>
 				</div>
+
+				<div
+					class="mx-7 mb-5 hidden grid gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4"
+					data-appointment-history-section
+					hidden
+				>
+					<div class="flex items-center gap-2">
+						<span class="material-symbols-rounded text-[1.2rem] text-(--primary)" aria-hidden="true">history_edu</span>
+						<h3 class="m-0 text-[1rem] font-extrabold tracking-tight text-(--on-surface)">Historial de la cita</h3>
+						<span class="ml-auto inline-flex items-center gap-1 rounded-full bg-(--primary-soft) px-2.5 py-0.5 text-[0.72rem] font-bold text-(--primary)">
+							<span class="material-symbols-rounded text-[0.9rem]" aria-hidden="true">workspace_premium</span>
+							Premium
+						</span>
+					</div>
+
+					<label class="hidden grid gap-1.5 text-[0.9rem] font-bold text-(--on-surface)" data-appointment-notes-edit-wrap hidden>
+						Notas de la sesión
+						<textarea
+							name="session_notes"
+							data-appointment-session-notes
+							rows="3"
+							maxlength="10000"
+							placeholder="Anota lo realizado, observaciones o recomendaciones…"
+							class="resize-y rounded-xl border border-(--shell-border) bg-(--surface) px-4 py-3 text-[0.92rem] font-medium leading-snug outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+						></textarea>
+						<span class="text-[0.78rem] font-semibold text-(--on-surface-variant)" data-appointment-notes-hint>
+							Se guardarán al marcar la cita como <b>Completada</b>.
+						</span>
+					</label>
+
+					<div class="hidden grid gap-1.5" data-appointment-notes-readonly-wrap hidden>
+						<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">Notas de la sesión</span>
+						<p
+							class="m-0 whitespace-pre-line rounded-xl border border-(--shell-border) bg-(--surface) px-4 py-3 text-[0.92rem] font-medium leading-snug text-(--on-surface)"
+							data-appointment-history-notes
+						></p>
+					</div>
+
+					<div class="grid gap-2">
+						<div class="flex items-center justify-between gap-2">
+							<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">Archivos adjuntos</span>
+							<button
+								type="button"
+								class="inline-flex items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface) px-3 py-1.5 text-[0.8rem] font-bold text-(--primary) transition hover:bg-(--primary-soft) disabled:cursor-not-allowed disabled:opacity-60"
+								data-appointment-attachment-add
+							>
+								<span class="material-symbols-rounded text-[1.05rem]" aria-hidden="true">upload_file</span>
+								<span data-appointment-attachment-add-label>Subir archivo</span>
+							</button>
+							<input type="file" class="hidden" data-appointment-attachment-input />
+						</div>
+
+						<ul class="m-0 grid list-none gap-2 p-0" data-appointment-attachments></ul>
+
+						<p class="m-0 text-[0.82rem] font-medium text-(--on-surface-variant)" data-appointment-attachment-empty>
+							Todavía no hay archivos adjuntos.
+						</p>
+
+						<p
+							class="m-0 hidden text-[0.82rem] font-semibold text-rose-600 dark:text-rose-400"
+							data-appointment-attachment-error
+							role="alert"
+						></p>
+					</div>
+				</div>
 				</div>
 
 				<div

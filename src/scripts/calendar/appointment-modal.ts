@@ -14,6 +14,7 @@ import {
 import { AppointmentsClient } from './appointments-client';
 import type {
 	ApiFieldError,
+	AppointmentAttachment,
 	AppointmentDetail,
 	AppointmentFormPayload,
 	CustomerOption,
@@ -161,6 +162,21 @@ class AppointmentModal extends HTMLElement {
 	scheduleMisalignedTitle: HTMLElement | null = null;
 	scheduleMisalignedMessage: HTMLElement | null = null;
 	scheduleMisalignedLink: HTMLAnchorElement | null = null;
+	historySection: HTMLElement | null = null;
+	notesEditWrap: HTMLElement | null = null;
+	sessionNotesInput: HTMLTextAreaElement | null = null;
+	notesHint: HTMLElement | null = null;
+	notesReadonlyWrap: HTMLElement | null = null;
+	historyNotes: HTMLElement | null = null;
+	attachmentsList: HTMLElement | null = null;
+	attachmentEmpty: HTMLElement | null = null;
+	attachmentError: HTMLElement | null = null;
+	attachmentAddButton: HTMLButtonElement | null = null;
+	attachmentAddLabel: HTMLElement | null = null;
+	attachmentInput: HTMLInputElement | null = null;
+	historyEnabled = false;
+	currentAttachments: AppointmentAttachment[] = [];
+	isUploadingAttachment = false;
 	modalProfessionalWrap: HTMLElement | null = null;
 	modalProfessional: HTMLSelectElement | null = null;
 	modalLocation: HTMLSelectElement | null = null;
@@ -261,6 +277,30 @@ class AppointmentModal extends HTMLElement {
 		this.scheduleMisalignedLink =
 			this.form?.querySelector<HTMLAnchorElement>('[data-appointment-schedule-misaligned-link]') ??
 			null;
+		this.historySection =
+			this.form?.querySelector<HTMLElement>('[data-appointment-history-section]') ?? null;
+		this.notesEditWrap =
+			this.form?.querySelector<HTMLElement>('[data-appointment-notes-edit-wrap]') ?? null;
+		this.sessionNotesInput =
+			this.form?.querySelector<HTMLTextAreaElement>('[data-appointment-session-notes]') ?? null;
+		this.notesHint =
+			this.form?.querySelector<HTMLElement>('[data-appointment-notes-hint]') ?? null;
+		this.notesReadonlyWrap =
+			this.form?.querySelector<HTMLElement>('[data-appointment-notes-readonly-wrap]') ?? null;
+		this.historyNotes =
+			this.form?.querySelector<HTMLElement>('[data-appointment-history-notes]') ?? null;
+		this.attachmentsList =
+			this.form?.querySelector<HTMLElement>('[data-appointment-attachments]') ?? null;
+		this.attachmentEmpty =
+			this.form?.querySelector<HTMLElement>('[data-appointment-attachment-empty]') ?? null;
+		this.attachmentError =
+			this.form?.querySelector<HTMLElement>('[data-appointment-attachment-error]') ?? null;
+		this.attachmentAddButton =
+			this.form?.querySelector<HTMLButtonElement>('[data-appointment-attachment-add]') ?? null;
+		this.attachmentAddLabel =
+			this.form?.querySelector<HTMLElement>('[data-appointment-attachment-add-label]') ?? null;
+		this.attachmentInput =
+			this.form?.querySelector<HTMLInputElement>('[data-appointment-attachment-input]') ?? null;
 		this.modalProfessionalWrap =
 			this.form?.querySelector<HTMLElement>('[data-modal-professional-wrap]') ?? null;
 		this.modalProfessional =
@@ -341,6 +381,10 @@ class AppointmentModal extends HTMLElement {
 		});
 		requiredNodes.dateTimePicker.addEventListener('click', this.handlePickerBackdropClick, { signal });
 		requiredNodes.dateTimePicker.addEventListener('close', this.handleNativePickerClose, { signal });
+
+		this.attachmentAddButton?.addEventListener('click', this.handleAttachmentAddClick, { signal });
+		this.attachmentInput?.addEventListener('change', this.handleAttachmentInputChange, { signal });
+		this.statusInput?.addEventListener('change', this.handleStatusChange, { signal });
 
 		this.setCreateMode();
 		this.resetFormValues();
@@ -826,6 +870,7 @@ class AppointmentModal extends HTMLElement {
 		this.closeDateTimePicker();
 		this.hideAttendanceBlock();
 		this.hideScheduleMisalignedBlock();
+		this.hideHistorySection();
 		this.clearImmutableReadOnlyMode();
 	}
 
@@ -896,6 +941,254 @@ class AppointmentModal extends HTMLElement {
 			this.attendancePendingWrap?.removeAttribute('hidden');
 			this.attendancePendingWrap?.classList.remove('hidden');
 		}
+	}
+
+	private hideHistorySection() {
+		this.historyEnabled = false;
+		this.currentAttachments = [];
+		this.isUploadingAttachment = false;
+		this.historySection?.setAttribute('hidden', '');
+		this.historySection?.classList.add('hidden');
+		this.notesEditWrap?.setAttribute('hidden', '');
+		this.notesEditWrap?.classList.add('hidden');
+		this.notesReadonlyWrap?.setAttribute('hidden', '');
+		this.notesReadonlyWrap?.classList.add('hidden');
+		if (this.sessionNotesInput) {
+			this.sessionNotesInput.value = '';
+			this.sessionNotesInput.readOnly = false;
+		}
+		if (this.historyNotes) this.historyNotes.textContent = '';
+		this.attachmentsList?.replaceChildren();
+		this.attachmentEmpty?.classList.remove('hidden');
+		this.clearAttachmentError();
+		this.setUploadingAttachment(false);
+		if (this.attachmentInput) this.attachmentInput.value = '';
+	}
+
+	private clearAttachmentError() {
+		if (!this.attachmentError) return;
+		this.attachmentError.textContent = '';
+		this.attachmentError.classList.add('hidden');
+	}
+
+	private showAttachmentError(message: string) {
+		if (!this.attachmentError) return;
+		this.attachmentError.textContent = message;
+		this.attachmentError.classList.remove('hidden');
+	}
+
+	private setUploadingAttachment(value: boolean) {
+		this.isUploadingAttachment = value;
+		if (this.attachmentAddButton) this.attachmentAddButton.disabled = value;
+		if (this.attachmentAddLabel) {
+			this.attachmentAddLabel.textContent = value ? 'Subiendo…' : 'Subir archivo';
+		}
+	}
+
+	private getAttachmentIcon(mimeType: string) {
+		const type = String(mimeType || '').toLowerCase();
+		if (type.startsWith('image/')) return 'image';
+		if (type === 'application/pdf') return 'picture_as_pdf';
+		if (type.startsWith('video/')) return 'movie';
+		if (type.startsWith('audio/')) return 'audio_file';
+		return 'description';
+	}
+
+	private formatFileSize(bytes: number) {
+		const value = Number(bytes) || 0;
+		if (value < 1024) return `${value} B`;
+		if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
+		return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+	}
+
+	private renderAttachments() {
+		if (!this.attachmentsList) return;
+		this.attachmentsList.replaceChildren();
+
+		if (this.currentAttachments.length === 0) {
+			this.attachmentEmpty?.classList.remove('hidden');
+			return;
+		}
+		this.attachmentEmpty?.classList.add('hidden');
+
+		for (const attachment of this.currentAttachments) {
+			const item = document.createElement('li');
+			item.className =
+				'flex items-center gap-3 rounded-xl border border-(--shell-border) bg-(--surface) px-3 py-2';
+
+			const icon = document.createElement('span');
+			icon.className = 'material-symbols-rounded shrink-0 text-[1.2rem] text-(--on-surface-variant)';
+			icon.setAttribute('aria-hidden', 'true');
+			icon.textContent = this.getAttachmentIcon(attachment.mime_type);
+			item.appendChild(icon);
+
+			const link = document.createElement('a');
+			link.href = attachment.url;
+			link.target = '_blank';
+			link.rel = 'noopener noreferrer';
+			link.className =
+				'min-w-0 flex-1 truncate text-[0.88rem] font-semibold text-(--on-surface) hover:text-(--primary) hover:underline';
+			link.textContent = attachment.file_name;
+			item.appendChild(link);
+
+			const size = document.createElement('span');
+			size.className = 'shrink-0 text-[0.76rem] font-medium text-(--on-surface-variant)';
+			size.textContent = this.formatFileSize(attachment.size_bytes);
+			item.appendChild(size);
+
+			const removeButton = document.createElement('button');
+			removeButton.type = 'button';
+			removeButton.className =
+				'shrink-0 inline-flex size-7 items-center justify-center rounded-full text-(--on-surface-variant) transition hover:bg-rose-500/10 hover:text-rose-600 disabled:opacity-50';
+			removeButton.setAttribute('aria-label', `Eliminar ${attachment.file_name}`);
+			removeButton.innerHTML =
+				'<span class="material-symbols-rounded text-[1.05rem]" aria-hidden="true">delete</span>';
+			removeButton.addEventListener('click', () =>
+				void this.handleAttachmentDelete(attachment.id_attachment)
+			);
+			item.appendChild(removeButton);
+
+			this.attachmentsList.appendChild(item);
+		}
+	}
+
+	private renderHistorySection(appointment: AppointmentDetail) {
+		this.hideHistorySection();
+		if (!this.historySection || appointment.history_enabled !== true) return;
+
+		this.historyEnabled = true;
+		this.historySection.removeAttribute('hidden');
+		this.historySection.classList.remove('hidden');
+
+		const status = String(appointment.status || '').trim().toUpperCase();
+		const isImmutable = status === 'COMPLETADO' || status === 'CANCELADO';
+		const savedNotes = appointment.history?.notes ?? null;
+
+		if (isImmutable) {
+			if (savedNotes && this.notesReadonlyWrap && this.historyNotes) {
+				this.historyNotes.textContent = savedNotes;
+				this.notesReadonlyWrap.removeAttribute('hidden');
+				this.notesReadonlyWrap.classList.remove('hidden');
+			}
+		} else if (this.notesEditWrap && this.sessionNotesInput) {
+			this.sessionNotesInput.value = savedNotes ?? '';
+			this.sessionNotesInput.readOnly = false;
+			this.notesEditWrap.removeAttribute('hidden');
+			this.notesEditWrap.classList.remove('hidden');
+		}
+
+		this.currentAttachments = Array.isArray(appointment.history?.attachments)
+			? [...(appointment.history?.attachments ?? [])]
+			: [];
+		this.renderAttachments();
+
+		// Los adjuntos se gestionan aun cuando la cita ya esta completada/cancelada.
+		if (this.attachmentInput) this.attachmentInput.disabled = false;
+		if (this.attachmentAddButton) this.attachmentAddButton.disabled = false;
+	}
+
+	handleStatusChange = () => {
+		if (!this.historyEnabled || this.isImmutableReadOnly) return;
+		const status = String(this.statusInput?.value || '').trim().toUpperCase();
+		const showNotes = status !== 'CANCELADO';
+		if (this.notesEditWrap) {
+			this.notesEditWrap.classList.toggle('hidden', !showNotes);
+			if (showNotes) this.notesEditWrap.removeAttribute('hidden');
+			else this.notesEditWrap.setAttribute('hidden', '');
+		}
+		if (this.notesHint) {
+			this.notesHint.innerHTML =
+				status === 'COMPLETADO'
+					? 'Se guardarán junto con los cambios de esta cita.'
+					: 'Se guardarán al marcar la cita como <b>Completada</b>.';
+		}
+	};
+
+	handleAttachmentAddClick = () => {
+		if (this.isUploadingAttachment) return;
+		this.clearAttachmentError();
+		this.attachmentInput?.click();
+	};
+
+	handleAttachmentInputChange = async () => {
+		const input = this.attachmentInput;
+		if (!input || !this.client || this.editingAppointmentId <= 0) return;
+		const file = input.files?.[0];
+		if (!file) return;
+
+		const maxBytes = 15 * 1024 * 1024;
+		if (file.size > maxBytes) {
+			this.showAttachmentError('El archivo supera el límite de 15 MB.');
+			input.value = '';
+			return;
+		}
+
+		this.clearAttachmentError();
+		this.setUploadingAttachment(true);
+		try {
+			const base64 = await this.fileToBase64(file);
+			const { attachment } = await this.client.uploadAttachment(this.editingAppointmentId, {
+				file_base64: base64,
+				filename: file.name,
+				mime_type: file.type || 'application/octet-stream',
+			});
+			if (attachment) {
+				this.currentAttachments = [...this.currentAttachments, attachment];
+				this.renderAttachments();
+			}
+		} catch (error) {
+			this.showAttachmentError(
+				error instanceof Error ? error.message : 'No fue posible subir el archivo adjunto.'
+			);
+		} finally {
+			input.value = '';
+			this.setUploadingAttachment(false);
+		}
+	};
+
+	private async handleAttachmentDelete(attachmentId: number) {
+		if (!this.client || this.editingAppointmentId <= 0 || this.isUploadingAttachment) return;
+
+		const confirmMessage = '¿Eliminar este archivo adjunto? Esta acción no se puede deshacer.';
+		const confirmed = window.BookmateAlert?.confirm
+			? await window.BookmateAlert.confirm({
+					type: 'error',
+					title: 'Eliminar adjunto',
+					message: confirmMessage,
+					confirmText: 'Eliminar',
+					cancelText: 'Cancelar',
+				})
+			: window.confirm(confirmMessage);
+		if (!confirmed) return;
+
+		this.clearAttachmentError();
+		this.setUploadingAttachment(true);
+		try {
+			await this.client.deleteAttachment(this.editingAppointmentId, attachmentId);
+			this.currentAttachments = this.currentAttachments.filter(
+				(item) => item.id_attachment !== attachmentId
+			);
+			this.renderAttachments();
+		} catch (error) {
+			this.showAttachmentError(
+				error instanceof Error ? error.message : 'No fue posible eliminar el archivo adjunto.'
+			);
+		} finally {
+			this.setUploadingAttachment(false);
+		}
+	}
+
+	private fileToBase64(file: File): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onerror = () => reject(new Error('No fue posible leer el archivo seleccionado.'));
+			reader.onload = () => {
+				const result = String(reader.result || '');
+				const commaIndex = result.indexOf(',');
+				resolve(commaIndex >= 0 ? result.slice(commaIndex + 1) : result);
+			};
+			reader.readAsDataURL(file);
+		});
 	}
 
 	openModalShell() {
@@ -1104,6 +1397,8 @@ class AppointmentModal extends HTMLElement {
 		if (status === 'CANCELADO' || status === 'COMPLETADO') {
 			this.setImmutableReadOnlyMode(status);
 		}
+
+		this.renderHistorySection(appointment);
 	}
 
 	fillFormFromAiDraft(draft: AppointmentAiDraft) {
@@ -1261,6 +1556,15 @@ class AppointmentModal extends HTMLElement {
 			return { error: 'El estado de la cita es invalido.' };
 		}
 
+		const includeSessionNotes =
+			this.historyEnabled &&
+			!!this.notesEditWrap &&
+			!this.notesEditWrap.hasAttribute('hidden') &&
+			!!this.sessionNotesInput;
+		const sessionNotes = includeSessionNotes
+			? String(this.sessionNotesInput?.value ?? '')
+			: undefined;
+
 		return {
 			payload: {
 				...(customerId > 0 ? { id_customer: customerId } : {}),
@@ -1273,6 +1577,7 @@ class AppointmentModal extends HTMLElement {
 				end_time: endIso,
 				status: statusRaw,
 				payment_status: 'NONE',
+				...(sessionNotes !== undefined ? { session_notes: sessionNotes } : {}),
 			},
 		};
 	}

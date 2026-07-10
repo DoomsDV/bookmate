@@ -1,4 +1,5 @@
 import type {
+	AppointmentAttachment,
 	AppointmentCreatePayload,
 	AppointmentDetail,
 	AppointmentFormPayload,
@@ -181,6 +182,45 @@ export class AppointmentsClient {
 			message:
 				(typeof data.message === 'string' && data.message.trim()) ||
 				'Cita actualizada correctamente.',
+		};
+	}
+
+	async uploadAttachment(
+		appointmentId: number,
+		payload: { file_base64: string; filename: string; mime_type: string }
+	) {
+		const response = await fetch(`/api/appointments/${appointmentId}/attachments`, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+			},
+			body: JSON.stringify(payload),
+		});
+		const data = await parseJsonResponse(response);
+		ensureSuccess(response, data, 'No fue posible subir el archivo adjunto.');
+		return {
+			attachment: (data as ApiSuccess<AppointmentAttachment>).data ?? null,
+			message:
+				(typeof data.message === 'string' && data.message.trim()) ||
+				'Archivo adjuntado correctamente.',
+		};
+	}
+
+	async deleteAttachment(appointmentId: number, attachmentId: number) {
+		const response = await fetch(
+			`/api/appointments/${appointmentId}/attachments/${attachmentId}`,
+			{
+				method: 'DELETE',
+				headers: { Accept: 'application/json' },
+			}
+		);
+		const data = await parseJsonResponse(response);
+		ensureSuccess(response, data, 'No fue posible eliminar el archivo adjunto.');
+		return {
+			message:
+				(typeof data.message === 'string' && data.message.trim()) ||
+				'Adjunto eliminado correctamente.',
 		};
 	}
 

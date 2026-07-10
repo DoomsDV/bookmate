@@ -1,0 +1,196 @@
+---
+// Banner de estado de suscripción + proveedor de entitlements en el cliente.
+// Se monta en el Layout cuando hay sesión. Consume GET /api/subscription y:
+//   * Muestra avisos de TRIAL (día 15), PAST_DUE (gracia) y READ_ONLY (mantenimiento).
+//   * Publica window.HaselSubscription y dispara el evento `hasel:subscription`.
+//   * Aplica gates de entitlements en el DOM: [data-requires-feature], [data-requires-write].
+//   * Actualiza la etiqueta de plan del SideNav ([data-plan-label]).
+---
+
+<subscription-banner></subscription-banner>
+
+<style is:global>
+	.hasel-sub-banner {
+		width: 100%;
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.7rem 1.1rem;
+		font-size: 0.88rem;
+		font-weight: 600;
+		border-bottom: 1px solid transparent;
+	}
+	.hasel-sub-banner .material-symbols-rounded { font-size: 1.25rem; flex-shrink: 0; }
+	.hasel-sub-banner a {
+		margin-left: auto;
+		white-space: nowrap;
+		font-weight: 800;
+		text-decoration: none;
+		border-radius: 999px;
+		padding: 0.4rem 0.95rem;
+		background: rgba(255, 255, 255, 0.22);
+		color: inherit;
+	}
+	.hasel-sub-banner a:hover { background: rgba(255, 255, 255, 0.32); }
+	.hasel-sub-banner-info    { background: #eef2ff; color: #3730a3; border-bottom-color: #c7d2fe; }
+	.hasel-sub-banner-warning { background: #fffbeb; color: #92400e; border-bottom-color: #fde68a; }
+	.hasel-sub-banner-danger  { background: #fef2f2; color: #991b1b; border-bottom-color: #fecaca; }
+	.hasel-sub-banner-info a    { background: rgba(55,48,163,.12); }
+	.hasel-sub-banner-danger a  { background: rgba(153,27,27,.12); }
+	.hasel-sub-banner-warning a { background: rgba(146,64,14,.12); }
+	[data-requires-feature-hidden] { display: none !important; }
+</style>
+
+<script>
+	type EffectiveStatus =
+		| 'TRIAL' | 'TRIAL_EXPIRED' | 'ACTIVE' | 'PAST_DUE'
+		| 'READ_ONLY' | 'CANCELED' | 'FOUNDER' | 'NONE';
+
+	interface SubscriptionState {
+		features: string[];
+		effectiveStatus: EffectiveStatus;
+		canWrite: boolean;
+		planName: string;
+		planCode: string;
+		trialEndsAt: string | null;
+		graceEndsAt: string | null;
+	}
+
+	declare global {
+		interface Window {
+			HaselSubscription?: SubscriptionState & {
+				hasFeature: (code: string) => boolean;
+			};
+		}
+	}
+
+	class SubscriptionBanner extends HTMLElement {
+		connectedCallback() {
+			void this.load();
+		}
+
+		private async load() {
+			try {
+				const res = await fetch('/api/subscription', { headers: { Accept: 'application/json' } });
+				if (!res.ok) return;
+				const body = await res.json().catch(() => null);
+				if (!body || body.status !== 'success' || !body.data) return;
+				this.apply(body.data);
+			} catch {
+				/* silencioso: el banner es no crítico */
+			}
+		}
+
+		private apply(data: any) {
+			const sub = data.subscription ?? {};
+			const plan = data.plan ?? {};
+			const state: SubscriptionState = {
+				features: Array.isArray(data.features) ? data.features : [],
+				effectiveStatus: (sub.effective_status || 'NONE') as EffectiveStatus,
+				canWrite: sub.can_write === true || sub.can_write === 1,
+				planName: String(plan.name || plan.code || 'Plan'),
+				planCode: String(plan.code || ''),
+				trialEndsAt: sub.trial_ends_at ?? null,
+				graceEndsAt: sub.grace_ends_at ?? null,
+			};
+
+			window.HaselSubscription = {
+				...state,
+				hasFeature: (code: string) => state.features.includes(code),
+			};
+			document.dispatchEvent(new CustomEvent('hasel:subscription', { detail: window.HaselSubscription }));
+
+			this.updatePlanLabels(state);
+			this.applyEntitlementGates(state);
+			this.renderBanner(state);
+		}
+
+		private updatePlanLabels(state: SubscriptionState) {
+			document.querySelectorAll<HTMLElement>('[data-plan-label]').forEach((el) => {
+				el.textContent = `Plan ${state.planName}`;
+			});
+		}
+
+		private applyEntitlementGates(state: SubscriptionState) {
+			document.querySelectorAll<HTMLElement>('[data-requires-feature]').forEach((el) => {
+				const code = el.getAttribute('data-requires-feature') || '';
+				if (code && !state.features.includes(code)) {
+					el.setAttribute('data-requires-feature-hidden', '');
+				} else {
+					el.removeAttribute('data-requires-feature-hidden');
+				}
+			});
+
+			if (!state.canWrite) {
+				document.querySelectorAll<HTMLElement>('[data-requires-write]').forEach((el) => {
+					el.setAttribute('disabled', 'true');
+					el.setAttribute('aria-disabled', 'true');
+					el.title = 'Tu suscripción está en solo lectura. Regularizá el pago para habilitar esta acción.';
+				});
+			}
+		}
+
+		private daysLeft(iso: string | null): number | null {
+			if (!iso) return null;
+			const diff = new Date(iso).getTime() - Date.now();
+			return Math.max(0, Math.ceil(diff / (1000 * 60 * 60 * 24)));
+		}
+
+		private renderBanner(state: SubscriptionState) {
+			let tone = '';
+			let icon = '';
+			let message = '';
+			let ctaLabel = 'Ver planes';
+
+			if (state.effectiveStatus === 'READ_ONLY' || state.effectiveStatus === 'CANCELED') {
+				tone = 'danger';
+				icon = 'lock';
+				message = 'Tu suscripción venció y la cuenta está en modo solo lectura. Regularizá el pago para volver a operar.';
+				ctaLabel = 'Regularizar pago';
+			} else if (state.effectiveStatus === 'PAST_DUE') {
+				const d = this.daysLeft(state.graceEndsAt);
+				tone = 'warning';
+				icon = 'error';
+				message = d !== null
+					? `Tu pago está pendiente. Te ${d === 1 ? 'queda' : 'quedan'} ${d} ${d === 1 ? 'día' : 'días'} de gracia antes de pasar a solo lectura.`
+					: 'Tu pago está pendiente. Regularizá para no perder el acceso.';
+				ctaLabel = 'Pagar ahora';
+			} else if (state.effectiveStatus === 'TRIAL_EXPIRED') {
+				tone = 'danger';
+				icon = 'schedule';
+				message = 'Tu prueba gratis terminó. Elegí un plan para seguir usando Hasel.';
+				ctaLabel = 'Elegir plan';
+			} else if (state.effectiveStatus === 'TRIAL') {
+				const d = this.daysLeft(state.trialEndsAt);
+				// Solo mostramos aviso cuando quedan pocos días (día 15 se acerca).
+				if (d !== null && d <= 3) {
+					tone = 'info';
+					icon = 'workspace_premium';
+					message = `Te ${d === 1 ? 'queda' : 'quedan'} ${d} ${d === 1 ? 'día' : 'días'} de prueba Premium. Elegí tu plan para no perder funciones.`;
+					ctaLabel = 'Elegir plan';
+				}
+			}
+
+			// Evita duplicados tras navegación SPA.
+			document.querySelectorAll('.hasel-sub-banner').forEach((el) => el.remove());
+
+			if (!tone) return;
+			if (window.location.pathname.startsWith('/panel/plan')) return;
+
+			const banner = document.createElement('div');
+			banner.className = `hasel-sub-banner hasel-sub-banner-${tone}`;
+			banner.setAttribute('role', 'status');
+			banner.innerHTML =
+				`<span class="material-symbols-rounded">${icon}</span>` +
+				`<span>${message}</span>` +
+				`<a href="/panel/plan">${ctaLabel}</a>`;
+
+			// Insertamos al inicio del body, en flujo normal (empuja el contenido).
+			document.body.insertBefore(banner, document.body.firstChild);
+		}
+	}
+
+	if (!customElements.get('subscription-banner')) {
+		customElements.define('subscription-banner', SubscriptionBanner);
+	}
+</script>
