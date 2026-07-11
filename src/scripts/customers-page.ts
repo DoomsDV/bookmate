@@ -315,6 +315,11 @@ class CustomerManager extends HTMLElement {
 
 	private updateControls() {
 		if (this.loadingNode) this.loadingNode.classList.toggle('hidden', !this.isLoading);
+		if (this.gridNode) {
+			const hideGrid = this.isLoading || this.gridNode.childElementCount === 0;
+			this.gridNode.classList.toggle('hidden', hideGrid);
+		}
+		if (this.emptyNode && this.isLoading) this.emptyNode.classList.add('hidden');
 
 		if (this.canFilterByProfessional()) {
 			setSearchableSelectDisabled(
@@ -756,8 +761,10 @@ class CustomerManager extends HTMLElement {
 		if (!this.gridNode) return;
 
 		this.clearNode(this.gridNode);
-		if (this.emptyNode) this.emptyNode.classList.toggle('hidden', customers.length > 0);
-		this.gridNode.classList.toggle('hidden', customers.length === 0);
+		if (this.emptyNode) {
+			this.emptyNode.classList.toggle('hidden', customers.length > 0 || this.isLoading);
+		}
+		this.gridNode.classList.toggle('hidden', customers.length === 0 || this.isLoading);
 
 		const fragment = document.createDocumentFragment();
 		for (const customer of customers) {

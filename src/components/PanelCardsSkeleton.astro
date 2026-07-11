@@ -1,0 +1,50 @@
+---
+interface Props {
+	label: string;
+	cardClass: string;
+	bodyClass: string;
+	count?: number;
+}
+
+const { label, cardClass, bodyClass, count = 6 } = Astro.props;
+const placeholders = Array.from({ length: count }, (_, i) => i);
+---
+
+<section aria-busy="true" aria-label={label}>
+	<header class="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+		<div class="flex flex-col gap-2.5">
+			<div class="panel-skeleton-line h-7 w-36 rounded-lg"></div>
+			<div class="flex flex-wrap items-center gap-2">
+				<div class="panel-skeleton-line h-6 w-24 rounded-full"></div>
+				<div class="panel-skeleton-line h-6 w-28 rounded-full"></div>
+			</div>
+		</div>
+		<div class="panel-skeleton-line h-11 w-full sm:w-40 rounded-full"></div>
+	</header>
+
+	<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
+		{
+			placeholders.map(() => (
+				<article class:list={[cardClass, 'panel-skeleton-card', 'pointer-events-none']} aria-hidden="true">
+					<div class="flex items-start justify-between gap-4">
+						<div class="panel-skeleton-line size-11 rounded-[0.85rem]"></div>
+						<div class="panel-skeleton-line h-6 w-16 rounded-full"></div>
+					</div>
+					<div class={bodyClass}>
+						<div class="panel-skeleton-line h-5 w-40 max-w-full rounded-md"></div>
+						<div class="grid gap-2.5 mt-1">
+							<div class="flex items-center justify-between gap-3">
+								<div class="panel-skeleton-line h-3.5 w-16 rounded"></div>
+								<div class="panel-skeleton-line h-3.5 w-14 rounded"></div>
+							</div>
+							<div class="flex items-center justify-between gap-3">
+								<div class="panel-skeleton-line h-3.5 w-14 rounded"></div>
+								<div class="panel-skeleton-line h-3.5 w-20 rounded"></div>
+							</div>
+						</div>
+					</div>
+				</article>
+			))
+		}
+	</div>
+</section>

@@ -1445,6 +1445,33 @@ html[data-theme='dark'] .app-pagination__current {
 	box-shadow: var(--card-elevation), var(--card-inset-highlight);
 }
 
+/* Skeletons de carga (clientes / server islands) */
+@keyframes panel-skeleton-pulse {
+	0%,
+	100% {
+		opacity: 0.55;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+
+.panel-skeleton-line {
+	display: block;
+	background: color-mix(in srgb, var(--on-surface-variant) 18%, transparent);
+	animation: panel-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.panel-skeleton-card {
+	cursor: default !important;
+	pointer-events: none;
+}
+
+.panel-skeleton-card:hover {
+	transform: none !important;
+	box-shadow: var(--card-elevation) !important;
+}
+
 /* Cards del panel: estilo unificado (servicios, clientes, sucursales, etc.) */
 :is(
 	.locations-card,

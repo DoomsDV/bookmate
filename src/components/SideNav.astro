@@ -45,7 +45,15 @@ const isItemActive = (item: NavItem) => {
 };
 
 /** Rutas con shell SSR liviano (datos en cliente). Prefetch solo al hover, no en viewport. */
-const prefetchHoverPaths = new Set(["/panel/dashboard", "/panel/customers", "/panel/cobros"]);
+const prefetchHoverPaths = new Set([
+	"/panel/dashboard",
+	"/panel/customers",
+	"/panel/cobros",
+	"/panel/services",
+	"/panel/locations",
+	"/panel/specialties",
+	"/panel/professionals",
+]);
 
 const getPrefetchMode = (item: NavItem) =>
 	prefetchHoverPaths.has(normalizePath(item.href)) ? "hover" : undefined;
@@ -213,6 +221,7 @@ const teamSectionOpen = visibleTeamItems.some((item) => isItemActive(item));
 											<li>
 												<a
 													href={item.href}
+													data-astro-prefetch={getPrefetchMode(item)}
 													class:list={[
 														"mx-1 flex min-h-12 rounded-full px-4 py-3.5 text-[0.98rem] font-semibold no-underline transition lg:py-2.5 lg:text-[0.88rem]",
 														isItemActive(item)
@@ -394,6 +403,7 @@ const teamSectionOpen = visibleTeamItems.some((item) => isItemActive(item));
 												<a
 													href={item.href}
 													data-sidebar-item
+													data-astro-prefetch={getPrefetchMode(item)}
 													class:list={[
 														"sidebar-nav-link sidebar-nav-link--sub flex rounded-full px-4 py-2.5 text-[0.88rem] font-medium no-underline transition",
 														isItemActive(item)

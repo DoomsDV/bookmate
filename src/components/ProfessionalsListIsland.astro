@@ -1,0 +1,117 @@
+---
+import FlashMessage from './FlashMessage.astro';
+import ProfessionalsGrid from './ProfessionalsGrid.astro';
+import {
+	ProfessionalsApiError,
+	listProfessionals,
+	type Professional,
+} from '../lib/professionals';
+
+interface Props {
+	currentPage?: number;
+}
+
+const PAGE_SIZE = 9;
+const { currentPage: pageProp = 1 } = Astro.props;
+
+const token = Astro.locals.token ?? '';
+const rawPage = Number(pageProp || Astro.url.searchParams.get('page') || '1');
+const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+
+let professionals: Professional[] = [];
+let loadError = '';
+let pagination = {
+	current_page: currentPage,
+	per_page: PAGE_SIZE,
+	total_records: 0,
+	total_pages: 1,
+};
+
+if (!token) {
+	loadError = 'No hay sesión válida para consultar personal.';
+} else {
+	try {
+		const listResult = await listProfessionals(token, { page: currentPage, limit: PAGE_SIZE });
+		professionals = listResult.data;
+		pagination = listResult.meta;
+	} catch (error) {
+		loadError =
+			error instanceof ProfessionalsApiError
+				? error.message
+				: 'No fue posible cargar el listado de personal.';
+	}
+}
+
+const totalPages = Math.max(1, pagination.total_pages);
+const safeCurrentPage = Math.min(Math.max(1, pagination.current_page), totalPages);
+const canPrevPage = safeCurrentPage > 1;
+const canNextPage = safeCurrentPage < totalPages;
+
+const toPageHref = (page: number) => {
+	const nextUrl = new URL(Astro.url);
+	nextUrl.searchParams.set('page', String(page));
+	return `${nextUrl.pathname}${nextUrl.search}`;
+};
+---
+
+{
+	loadError ? (
+		<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
+	) : (
+		<div class="grid gap-4">
+			<ProfessionalsGrid professionals={professionals} showCreateAction={true} />
+
+			<div class="app-pagination">
+				<p class="app-pagination__summary">
+					Página <strong>{safeCurrentPage}</strong> de <strong>{totalPages}</strong>
+					<span aria-hidden="true">-</span>
+					Total: <strong>{pagination.total_records}</strong> profesionales
+				</p>
+
+				<nav class="app-pagination__controls" aria-label="Paginación personal">
+					{
+						canPrevPage ? (
+							<a
+								href={toPageHref(safeCurrentPage - 1)}
+								class="app-pagination__icon-button"
+								aria-label="Página anterior"
+							>
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
+								</svg>
+							</a>
+						) : (
+							<span class="app-pagination__icon-button is-disabled" aria-disabled="true">
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
+								</svg>
+							</span>
+						)
+					}
+
+					<span class="app-pagination__current" aria-current="page">{safeCurrentPage}</span>
+
+					{
+						canNextPage ? (
+							<a
+								href={toPageHref(safeCurrentPage + 1)}
+								class="app-pagination__icon-button"
+								aria-label="Página siguiente"
+							>
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
+								</svg>
+							</a>
+						) : (
+							<span class="app-pagination__icon-button is-disabled" aria-disabled="true">
+								<svg viewBox="0 0 24 24" aria-hidden="true">
+									<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
+								</svg>
+							</span>
+						)
+					}
+				</nav>
+			</div>
+		</div>
+	)
+}

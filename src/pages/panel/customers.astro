@@ -80,10 +80,27 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 										></div>
 
 										<div
-											class="hidden rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-medium text-(--on-surface-variant)"
+											class="hidden"
 											data-customers-loading
+											aria-busy="true"
+											aria-label="Cargando clientes"
 										>
-											Cargando clientes...
+											<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
+												{Array.from({ length: 6 }).map(() => (
+													<article class="customer-card panel-skeleton-card" aria-hidden="true">
+														<div class="flex items-start justify-between gap-4">
+															<div class="panel-skeleton-line size-11 rounded-[0.85rem]"></div>
+														</div>
+														<div class="customer-card-body">
+															<div class="panel-skeleton-line h-5 w-40 max-w-full rounded-md"></div>
+															<div class="flex items-center justify-between gap-3 mt-1">
+																<div class="panel-skeleton-line h-3.5 w-16 rounded"></div>
+																<div class="panel-skeleton-line h-3.5 w-24 rounded"></div>
+															</div>
+														</div>
+													</article>
+												))}
+											</div>
 										</div>
 
 										<div
