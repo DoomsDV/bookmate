@@ -136,7 +136,6 @@ export const initializePublicUserBookingPage = () => {
 		!customerPhoneInput ||
 		!submitButton ||
 		!payDepositButton ||
-		!summaryServiceInline ||
 		!summaryDateInline ||
 		!summaryProfessional ||
 		!summaryService ||
@@ -292,7 +291,7 @@ export const initializePublicUserBookingPage = () => {
 		const serviceLabel = selectedService?.name || '-';
 		const timeLabel = selectedTime || '-';
 
-		summaryServiceInline.textContent = serviceLabel;
+		if (summaryServiceInline) summaryServiceInline.textContent = serviceLabel;
 		summaryDateInline.textContent = formattedDate;
 		summaryProfessional.textContent = profile.full_name;
 		summaryService.textContent = serviceLabel;
@@ -412,6 +411,7 @@ export const initializePublicUserBookingPage = () => {
 
 		for (let blank = 0; blank < firstWeekday; blank += 1) {
 			const placeholder = document.createElement('span');
+			placeholder.className = 'public-cal-day--empty';
 			calendarGrid.appendChild(placeholder);
 		}
 
@@ -466,12 +466,14 @@ export const initializePublicUserBookingPage = () => {
 		if (isLoadingSlots) return;
 
 		const selectedSlotKey = getSelectedSlotKey();
+		let branchToneIndex = 0;
 
 		for (const group of availableSlotGroups) {
 			if (group.slots.length === 0) continue;
 
 			const section = document.createElement('section');
-			section.className = 'grid gap-3';
+			section.className = `public-slot-branch public-slot-branch--tone-${branchToneIndex % 4}`;
+			branchToneIndex += 1;
 
 			appendLocationSlotHeader(section, group.location, {
 				onAddressClick: (location) => {
@@ -491,10 +493,8 @@ export const initializePublicUserBookingPage = () => {
 				button.type = 'button';
 				button.textContent = slot;
 				button.className =
-					'rounded-xl border px-4 py-3 text-sm font-semibold transition ' +
-					(isSelected
-						? 'border-[var(--primary)] bg-[var(--primary-container)] text-[var(--on-primary-container)]'
-						: 'border-[var(--outline-variant)] bg-[var(--surface-container-low)] text-[var(--on-surface)] hover:bg-[var(--surface-container-high)]');
+					'public-slot-time flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium transition' +
+					(isSelected ? ' is-selected' : '');
 				button.addEventListener(
 					'click',
 					() => {

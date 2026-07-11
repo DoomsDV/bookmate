@@ -123,7 +123,11 @@ const googleMapsApiKey =
 								</div>
 							)}
 							<div class="public-booking-profile__text">
+								<p class="public-booking-profile__eyebrow">Agendar cita con</p>
 								<h1 class="public-booking-profile__title">{profile.full_name}</h1>
+								<p class="public-booking-profile__subtitle">
+									Elegí dónde atenderte y reservá tu turno
+								</p>
 							</div>
 						</div>
 					</header>
@@ -165,26 +169,22 @@ const googleMapsApiKey =
 					<section data-step-panel="2" class="public-booking-panel hidden">
 						<div class="grid gap-2">
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Seleccioná una fecha</h2>
-							<p class="text-base text-(--on-surface-variant)">
-								Servicio: <span class="font-medium text-(--on-surface)" data-summary-service-inline></span>
-							</p>
 						</div>
-						<div class="public-booking-calendar mt-6">
+						<div class="public-booking-calendar">
 							<div class="public-booking-calendar__toolbar">
+								<button type="button" data-calendar-prev class="calendar-nav-btn" aria-label="Mes anterior">
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+								</button>
 								<p class="public-booking-calendar__month" data-calendar-month></p>
-								<div class="public-booking-calendar__nav">
-									<button type="button" data-calendar-prev class="calendar-nav-btn" aria-label="Mes anterior">
-										<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-									</button>
-									<button type="button" data-calendar-next class="calendar-nav-btn" aria-label="Mes siguiente">
-										<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
-									</button>
-								</div>
+								<button type="button" data-calendar-next class="calendar-nav-btn" aria-label="Mes siguiente">
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
+								</button>
 							</div>
-							<div class="mb-2 grid grid-cols-7 gap-0.5 text-center text-[0.7rem] font-medium uppercase tracking-wider text-(--on-surface-variant) sm:text-xs">
-								<span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span><span>Dom</span>
+							<div class="public-booking-calendar__weekdays">
+								<span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span>
+								<span>Vie</span><span>Sáb</span><span>Dom</span>
 							</div>
-							<div class="grid grid-cols-7" data-calendar-grid></div>
+							<div class="public-booking-calendar__grid" data-calendar-grid></div>
 						</div>
 						<div class="mt-6">
 							<button type="button" data-back-to-locations class="secondary-action-btn">Volver atrás</button>

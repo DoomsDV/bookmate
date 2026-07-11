@@ -330,7 +330,6 @@ export const initializePublicBookingPage = () => {
 		!customerPhoneInput ||
 		!submitButton ||
 		!payDepositButton ||
-		!summaryServiceInline ||
 		!summaryDateInline ||
 		!summaryProfessional ||
 		!summaryService ||
@@ -843,7 +842,7 @@ export const initializePublicBookingPage = () => {
 		const serviceLabel = selectedService ? selectedService.name : '-';
 		const timeLabel = selectedTime || '-';
 
-		summaryServiceInline.textContent = serviceLabel;
+		if (summaryServiceInline) summaryServiceInline.textContent = serviceLabel;
 		summaryDateInline.textContent = formattedDate || '-';
 		summaryProfessional.textContent = profile.full_name;
 		summaryService.textContent = serviceLabel;
@@ -944,7 +943,7 @@ export const initializePublicBookingPage = () => {
 
 		for (let blank = 0; blank < firstWeekday; blank += 1) {
 			const placeholder = document.createElement('span');
-			placeholder.className = 'empty-hidden';
+			placeholder.className = 'public-cal-day--empty';
 			calendarGrid.appendChild(placeholder);
 		}
 
@@ -999,12 +998,14 @@ export const initializePublicBookingPage = () => {
 		if (isLoadingSlots) return;
 
 		const selectedSlotKey = getSelectedSlotKey();
+		let branchToneIndex = 0;
 
 		for (const group of availableSlotGroups) {
 			if (group.slots.length === 0) continue;
 
 			const section = document.createElement('section');
-			section.className = 'grid gap-3';
+			section.className = `public-slot-branch public-slot-branch--tone-${branchToneIndex % 4}`;
+			branchToneIndex += 1;
 
 			appendLocationSlotHeader(section, group.location, {
 				onAddressClick: (location) => {
@@ -1020,11 +1021,10 @@ export const initializePublicBookingPage = () => {
 				const slotButton = document.createElement('button');
 				slotButton.type = 'button';
 				slotButton.textContent = slot;
+				const isSelected = selectedSlotKey === slotKey;
 				slotButton.className =
-					'flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition ' +
-					(selectedSlotKey === slotKey
-						? 'border-[var(--primary)] bg-[var(--primary-container)] text-[var(--on-primary-container)]'
-						: 'border-[var(--outline)] bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
+					'public-slot-time flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition' +
+					(isSelected ? ' is-selected' : '');
 
 				slotButton.addEventListener('click', () => {
 					selectedTime = slot;
