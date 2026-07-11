@@ -8,20 +8,24 @@ import AppointmentVoiceOverlay from '../../components/AppointmentVoiceOverlay.as
 import AppointmentModalPanel from '../../components/AppointmentModalPanel.astro';
 import TopBar from '../../components/TopBar.astro';
 import { DashboardApiError, getMainDashboardWithOrds, type DashboardMainData } from '../../lib/dashboard';
+import { getMyProfileWithOrds } from '../../lib/my-profile';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
 
 const token = Astro.locals.token ?? '';
 const roleId = Number(Astro.locals.roleId ?? 0);
 const showTeamOverview = roleId !== ROLES.PROFESIONAL;
+const showAlertsPanel = roleId === ROLES.ADMIN || roleId === ROLES.RECEPCIONISTA;
 const organizationName = String(Astro.locals.organizationName || 'Workspace').trim() || 'Workspace';
 const PAGE_SIZE = 5;
 const rawPage = Number(Astro.url.searchParams.get('page') || '1');
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+const APP_TZ = 'America/Asuncion';
 
 let dashboard: DashboardMainData = {
 	kpis: {
 		today_appointments: 0,
+		today_completed_appointments: 0,
 		pending_appointments: 0,
 		my_customers: 2,
 		total_customers: 6,
@@ -35,6 +39,7 @@ let dashboard: DashboardMainData = {
 	},
 };
 let loadError = '';
+let userFirstName = '';
 const defaultAiSummaryShort = '¡Buen día! Preparate para una excelente jornada de trabajo.';
 const defaultAiSummaryFull = defaultAiSummaryShort;
 
@@ -52,29 +57,87 @@ if (!token) {
 				? error.message
 				: 'No fue posible cargar los datos del dashboard.';
 	}
+
+	try {
+		const profile = await getMyProfileWithOrds(token);
+		userFirstName = String(profile.first_name || '')
+			.trim()
+			.split(/\s+/)
+			.filter(Boolean)[0] || '';
+	} catch {
+		userFirstName = '';
+	}
 }
 
 const dashboardDate = new Intl.DateTimeFormat('es-PY', {
 	day: 'numeric',
 	month: 'long',
 	year: 'numeric',
-	timeZone: 'America/Asuncion',
+	timeZone: APP_TZ,
 }).format(new Date());
 
-const metrics = [
-	{
-		label: 'Citas de hoy',
-		value: dashboard.kpis.today_appointments,
-		description: 'Turnos no cancelados para la jornada actual.',
-		zeroStateDescription: 'Tu agenda está libre para hoy.',
-		icon: 'calendar_month',
-		accent: 'violet',
-	},
+const hourAsuncion = Number(
+	new Intl.DateTimeFormat('en-US', {
+		hour: 'numeric',
+		hour12: false,
+		timeZone: APP_TZ,
+	}).format(new Date())
+);
+
+const greetingWord =
+	hourAsuncion < 12 ? 'Buenos días' : hourAsuncion < 19 ? 'Buenas tardes' : 'Buenas noches';
+const greetingTitle = userFirstName ? `${greetingWord}, ${userFirstName}` : greetingWord;
+
+const todayTotal = dashboard.kpis.today_appointments;
+const todayCompleted = Math.min(todayTotal, dashboard.kpis.today_completed_appointments || 0);
+const pendingAhead = dashboard.kpis.pending_appointments;
+const dayProgressPct =
+	todayTotal > 0 ? Math.min(100, Math.round((todayCompleted / todayTotal) * 100)) : 0;
+
+const greetingSubtitle = (() => {
+	if (todayTotal === 0) {
+		return 'Tu agenda está libre por hoy. Buen momento para planificar.';
+	}
+	if (hourAsuncion < 12) {
+		return todayTotal === 1 ? 'Tenés 1 cita hoy.' : `Tenés ${todayTotal} citas hoy.`;
+	}
+	if (hourAsuncion < 19) {
+		if (pendingAhead === 0) return 'No quedan turnos pendientes por delante.';
+		return pendingAhead === 1
+			? 'Tenés 1 cita esta tarde.'
+			: `Tenés ${pendingAhead} citas por delante.`;
+	}
+	return todayCompleted === todayTotal && todayTotal > 0
+		? 'Cerraste todas las citas del día. ¡Buen trabajo!'
+		: todayTotal === 1
+			? 'Cerrás el día con 1 cita en la agenda.'
+			: `Cerrás el día con ${todayTotal} citas en la agenda.`;
+})();
+
+const progressHint =
+	todayTotal === 0
+		? 'Sin turnos programados para hoy.'
+		: todayCompleted === todayTotal
+			? 'Todas las citas de hoy ya fueron atendidas.'
+			: `${todayTotal - todayCompleted} por atender todavía.`;
+
+type SecondaryMetric = {
+	label: string;
+	value: number | null;
+	description: string;
+	zeroStateDescription?: string;
+	zeroStateActionLabel?: string;
+	zeroStateActionHref?: string;
+	icon: string;
+	accent: string;
+};
+
+const secondaryMetrics: SecondaryMetric[] = [
 	{
 		label: 'Próximas citas',
 		value: dashboard.kpis.pending_appointments,
-		description: 'Turnos por atender desde este momento en adelante.',
-		zeroStateDescription: 'No hay pendientes. Puedes crear una nueva cita.',
+		description: 'Turnos por atender desde ahora.',
+		zeroStateDescription: 'Agenda al día.',
 		zeroStateActionLabel: 'Crear cita',
 		zeroStateActionHref: '/panel/calendar',
 		icon: 'schedule',
@@ -85,24 +148,58 @@ const metrics = [
 				{
 					label: 'Mis clientes',
 					value: dashboard.kpis.my_customers,
-					description: 'Clientes con historial de citas contigo (incluye canceladas).',
+					description: 'Con historial de citas contigo.',
 					icon: 'groups',
 					accent: 'green',
-				},
+				} satisfies SecondaryMetric,
 			]
-		: []),
-	...(dashboard.kpis.total_customers !== null
-		? [
-				{
-					label: 'Total de clientes',
-					value: dashboard.kpis.total_customers,
-					description: 'Base total de clientes registrados.',
-					icon: 'hub',
-					accent: 'orange',
-				},
-			]
-		: []),
+		: dashboard.kpis.total_customers !== null
+			? [
+					{
+						label: 'Total clientes',
+						value: dashboard.kpis.total_customers,
+						description: 'Base registrada en el negocio.',
+						icon: 'hub',
+						accent: 'orange',
+					} satisfies SecondaryMetric,
+				]
+			: []),
 ];
+
+const weekGlanceLabels = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'] as const;
+const asuncionDateParts = new Intl.DateTimeFormat('en-CA', {
+	timeZone: APP_TZ,
+	year: 'numeric',
+	month: '2-digit',
+	day: '2-digit',
+}).formatToParts(new Date());
+const asuncionY = Number(asuncionDateParts.find((p) => p.type === 'year')?.value || 0);
+const asuncionM = Number(asuncionDateParts.find((p) => p.type === 'month')?.value || 1);
+const asuncionD = Number(asuncionDateParts.find((p) => p.type === 'day')?.value || 1);
+const asuncionToday = new Date(Date.UTC(asuncionY, asuncionM - 1, asuncionD));
+const jsWeekday = asuncionToday.getUTCDay();
+const mondayOffset = jsWeekday === 0 ? -6 : 1 - jsWeekday;
+const weekGlance = Array.from({ length: 7 }, (_, index) => {
+	const day = new Date(asuncionToday);
+	day.setUTCDate(asuncionToday.getUTCDate() + mondayOffset + index);
+	const iso = `${day.getUTCFullYear()}-${String(day.getUTCMonth() + 1).padStart(2, '0')}-${String(day.getUTCDate()).padStart(2, '0')}`;
+	const isToday = iso === `${asuncionY}-${String(asuncionM).padStart(2, '0')}-${String(asuncionD).padStart(2, '0')}`;
+	const appointmentCount = dashboard.upcoming_appointments.filter(
+		(item) => item.appointment_date === iso
+	).length;
+	return {
+		label: weekGlanceLabels[index],
+		dayNumber: day.getUTCDate(),
+		iso,
+		isToday,
+		hasAppointments: appointmentCount > 0,
+		appointmentCount,
+	};
+});
+
+const pendingConfirmAlerts = dashboard.upcoming_appointments
+	.filter((item) => item.status === 'PENDIENTE')
+	.slice(0, 4);
 
 const getStatusLabel = (status: string) => {
 	switch (status) {
@@ -117,6 +214,16 @@ const getStatusLabel = (status: string) => {
 		default:
 			return status || 'Estado';
 	}
+};
+
+const getCustomerInitials = (name: string) => {
+	const parts = String(name || '')
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+	if (parts.length === 0) return '?';
+	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+	return `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase();
 };
 
 const formatUpcomingAppointmentDate = (value: string) => {
@@ -175,13 +282,16 @@ const toPageHref = (page: number) => {
 									<div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center">
 										<div class="grid gap-1">
 											<p class="text-xs font-bold uppercase tracking-[0.2em] text-[#5f6368] dark:text-[#C4C7C5]">
-												Dashboard
+												{organizationName} · {dashboardDate}
 											</p>
-											<h1 class="text-3xl font-extrabold text-[#202124] dark:text-[#E3E3E3] tracking-tight sm:text-4xl">
-												Resumen diario
+											<h1
+												class="text-3xl font-extrabold text-[#202124] dark:text-[#E3E3E3] tracking-tight sm:text-4xl"
+												data-dashboard-greeting
+											>
+												{greetingTitle}
 											</h1>
-											<p class="text-[0.95rem] font-medium text-[#5f6368] dark:text-[#C4C7C5]">
-												{organizationName} - {dashboardDate}
+											<p class="text-[0.95rem] font-medium text-[#5f6368] dark:text-[#C4C7C5]" data-dashboard-greeting-sub>
+												{greetingSubtitle}
 											</p>
 										</div>
 
@@ -227,65 +337,29 @@ const toPageHref = (page: number) => {
 									</div>
 								</div>
 
-								<div class="mt-8">
-									<div
-										class="dashboard-ai-card is-generating rounded-4xl"
-										data-ai-summary-card
-										data-role-id={String(roleId)}
-										data-default-summary-short={defaultAiSummaryShort}
-										data-default-summary-full={defaultAiSummaryFull}
-									>
-										<div class="dashboard-ai-orbs" aria-hidden="true">
-											<span class="dashboard-ai-orb dashboard-ai-orb--1"></span>
-											<span class="dashboard-ai-orb dashboard-ai-orb--2"></span>
-											<span class="dashboard-ai-orb dashboard-ai-orb--3"></span>
-										</div>
-										<div class="dashboard-ai-shimmer-top" aria-hidden="true"></div>
-										<div class="dashboard-ai-header mb-3">
-											<div class="inline-flex items-center gap-1.5 opacity-95">
-												<span class="dashboard-ai-sparkle material-symbols-rounded text-[1.1rem] text-(--primary)">auto_awesome</span>
-												<h2 class="text-sm font-semibold tracking-[0.01em] text-(--primary)">
-													Resumen inteligente del día
-												</h2>
-											</div>
-										</div>
-										<div
-											class="dashboard-ai-state mt-1"
-											data-ai-summary-state
-											aria-live="polite"
-										>
-											<div class="dashboard-ai-loading">
-												<p class="dashboard-ai-loading-label">
-													<span class="material-symbols-rounded dashboard-ai-loading-icon">auto_awesome</span>
-													Generando resumen inteligente...
-												</p>
-												<div class="dashboard-ai-skeleton" aria-hidden="true">
-													<span class="dashboard-ai-skeleton-line dashboard-ai-skeleton-line--lg"></span>
-													<span class="dashboard-ai-skeleton-line dashboard-ai-skeleton-line--md"></span>
-													<span class="dashboard-ai-skeleton-line dashboard-ai-skeleton-line--sm"></span>
-												</div>
-											</div>
-										</div>
-										<div class="dashboard-ai-body hidden mt-1" data-ai-summary-body>
-											<div class="dashboard-ai-preview-wrap">
-												<div
-													class="dashboard-ai-text dashboard-ai-text--preview text-[0.95rem] font-medium leading-relaxed sm:text-base max-w-4xl"
-													data-ai-summary-preview
-												>
-													<p class="dashboard-ai-preview-intro">{defaultAiSummaryShort}</p>
-												</div>
-											</div>
-											<button
-												type="button"
-												class="dashboard-ai-more-btn"
-												data-open-ai-summary-modal
-												hidden
-											>
-												<span class="dashboard-ai-more-btn__label">Ver análisis completo</span>
-												<span class="material-symbols-rounded dashboard-ai-more-btn__icon">expand_more</span>
-											</button>
-										</div>
+								<div
+									class="dashboard-ai-strip is-generating mt-5"
+									data-ai-summary-card
+									data-role-id={String(roleId)}
+									data-default-summary-short={defaultAiSummaryShort}
+									data-default-summary-full={defaultAiSummaryFull}
+									aria-live="polite"
+								>
+									<div class="dashboard-ai-strip__content">
+										<span class="dashboard-ai-strip__icon material-symbols-rounded" aria-hidden="true">auto_awesome</span>
+										<p class="dashboard-ai-strip__text" data-ai-summary-line>
+											Generando resumen inteligente…
+										</p>
 									</div>
+									<button
+										type="button"
+										class="dashboard-ai-strip__action"
+										data-open-ai-summary-modal
+										hidden
+									>
+										Ver análisis completo
+										<span class="material-symbols-rounded text-[1rem]" aria-hidden="true">chevron_right</span>
+									</button>
 								</div>
 							</section>
 
@@ -329,18 +403,15 @@ const toPageHref = (page: number) => {
 										</article>
 									</div>
 
-									<div class="mt-6 grid gap-6 lg:grid-cols-2">
-										<div>
-											<h3 class="mb-2 text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">Top servicios (mes)</h3>
-											<ul class="m-0 grid list-none gap-2 p-0" data-profit-top-services>
-												<li class="dashboard-profit-empty">Sin datos este mes.</li>
-											</ul>
+									<div class="mt-6 grid gap-6 lg:grid-cols-2 hidden" data-profit-details hidden>
+										<div data-profit-top-block>
+											<h3 class="mb-3 text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">Top servicios (mes)</h3>
+											<div class="dashboard-service-chart" data-profit-top-services-chart aria-hidden="true"></div>
+											<ul class="m-0 mt-3 grid list-none gap-2 p-0" data-profit-top-services></ul>
 										</div>
-										<div>
+										<div data-profit-prof-block>
 											<h3 class="mb-2 text-[0.82rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">Ingreso por profesional (mes)</h3>
-											<ul class="m-0 grid list-none gap-2 p-0" data-profit-by-professional>
-												<li class="dashboard-profit-empty">Sin datos este mes.</li>
-											</ul>
+											<ul class="m-0 grid list-none gap-2 p-0" data-profit-by-professional></ul>
 										</div>
 									</div>
 								</section>
@@ -353,60 +424,114 @@ const toPageHref = (page: number) => {
 									</div>
 								) : (
 									<>
-										<div class="dashboard-metrics-grid grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-											{
-												metrics.map((metric) => {
-													const numericValue = Number(metric.value ?? 0);
-													const isZeroState = Number.isFinite(numericValue) && numericValue === 0;
-													const supportingText =
-														isZeroState && metric.zeroStateDescription
-															? metric.zeroStateDescription
-															: metric.description;
+										<div class="dashboard-floor dashboard-floor--today">
+											<article class="dashboard-day-progress" aria-label="Progreso del día">
+												<div class="dashboard-day-progress__inner">
+													<div class="dashboard-day-progress__top">
+														<div>
+															<p class="dashboard-day-progress__eyebrow">Progreso del día</p>
+															<p class="dashboard-day-progress__metric">
+																<span data-day-completed>{todayCompleted}</span>
+																<span class="dashboard-day-progress__of"> / {todayTotal}</span>
+																<span class="dashboard-day-progress__unit">citas</span>
+															</p>
+															<p class="dashboard-day-progress__hint">{progressHint}</p>
+														</div>
+														<span class="dashboard-day-progress__icon material-symbols-rounded" aria-hidden="true">
+															event_available
+														</span>
+													</div>
+													<div
+														class="dashboard-day-progress__bar"
+														role="progressbar"
+														aria-valuemin="0"
+														aria-valuemax={Math.max(todayTotal, 1)}
+														aria-valuenow={todayCompleted}
+														aria-label={`${todayCompleted} de ${todayTotal} citas atendidas`}
+													>
+														<span class="dashboard-day-progress__fill" style={`width: ${dayProgressPct}%`}></span>
+													</div>
+													<p class="dashboard-day-progress__insight" data-day-progress-insight hidden></p>
+												</div>
+											</article>
 
-													return (
-														<article class="dashboard-metric-card flex h-full min-w-0 flex-col rounded-4xl p-6 pb-7 transition-all duration-300" data-metric-accent={metric.accent}>
-															<div class="dashboard-metric-head mb-4 sm:mb-6">
-																<p class="dashboard-metric-label text-[0.75rem] font-extrabold uppercase tracking-widest sm:text-[0.8rem] leading-tight">
+											<div class="dashboard-side-metrics">
+												{
+													secondaryMetrics.map((metric) => {
+														const numericValue = Number(metric.value ?? 0);
+														const isZeroState = Number.isFinite(numericValue) && numericValue === 0;
+														const supportingText =
+															isZeroState && metric.zeroStateDescription
+																? metric.zeroStateDescription
+																: metric.description;
+
+														return (
+															<article
+																class="dashboard-metric-card dashboard-metric-card--compact flex h-full min-w-0 flex-col rounded-4xl p-5 transition-all duration-300"
+																data-metric-accent={metric.accent}
+															>
+																<p class="dashboard-metric-label mb-2 text-[0.7rem] font-extrabold uppercase tracking-widest leading-tight">
 																	{metric.label}
 																</p>
-																<span class="dashboard-metric-icon material-symbols-rounded">
-																	{metric.icon}
-																</span>
-															</div>
-															<div class="dashboard-metric-content">
-																<p class="dashboard-metric-value mb-2">
-																	{metric.value}
-																</p>
-																<p class="dashboard-metric-description text-[0.84rem] font-semibold leading-snug sm:text-[0.9rem]">
-																	{supportingText}
-																</p>
-																{
-																	isZeroState && metric.zeroStateActionHref && metric.zeroStateActionLabel ? (
-																		<div class="dashboard-metric-zero-link-wrap mt-auto">
-																			<a href={metric.zeroStateActionHref} class="dashboard-metric-zero-link">
-																				{metric.zeroStateActionLabel}
-																				<span class="material-symbols-rounded text-[0.95rem]">chevron_right</span>
-																			</a>
-																		</div>
-																	) : null
-																}
-															</div>
-														</article>
-													);
-												})
-											}
+																<div class="dashboard-metric-content">
+																	<div class="dashboard-metric-value-row mb-1">
+																		<p class="dashboard-metric-value dashboard-metric-value--compact">
+																			{metric.value}
+																		</p>
+																		<span class="dashboard-metric-icon material-symbols-rounded" aria-hidden="true">
+																			{metric.icon}
+																		</span>
+																	</div>
+																	<p class="dashboard-metric-description text-[0.8rem] font-semibold leading-snug">
+																		{supportingText}
+																	</p>
+																	{
+																		isZeroState && metric.zeroStateActionHref && metric.zeroStateActionLabel ? (
+																			<div class="dashboard-metric-zero-link-wrap mt-auto">
+																				<a href={metric.zeroStateActionHref} class="dashboard-metric-zero-link">
+																					{metric.zeroStateActionLabel}
+																					<span class="material-symbols-rounded text-[0.95rem]">chevron_right</span>
+																				</a>
+																			</div>
+																		) : null
+																	}
+																</div>
+															</article>
+														);
+													})
+												}
+											</div>
 										</div>
 
-									<div class="grid grid-cols-1 gap-6">
+									<div class:list={['dashboard-floor', 'dashboard-floor--action', showAlertsPanel && 'dashboard-floor--split']}>
 										<div
 											id="dashboard-upcoming-appointments"
-											class="dashboard-report-shell rounded-4xl p-6 transition-colors duration-300"
+											class="dashboard-report-shell dashboard-floor__panel rounded-4xl p-6 transition-colors duration-300"
 										>
-											<div class="mb-6 flex items-center justify-between gap-3">
-												<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Próximas citas de los siguientes 7 días</h2>
+											<div class="mb-4 flex items-center justify-between gap-3">
+												<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Próximas citas</h2>
 												<span class="whitespace-nowrap rounded-full bg-[#E8EAED] dark:bg-[#2B2D31] px-4 py-1.5 text-[0.8rem] font-black text-[#5f6368] dark:text-[#C4C7C5] tracking-wide shadow-sm transition-colors duration-300">
 													{appointmentsCountText}
 												</span>
+											</div>
+
+											<div class="dashboard-week-glance" aria-label="Semana actual">
+												{
+													weekGlance.map((day) => (
+														<div
+															class:list={[
+																'dashboard-week-glance__day',
+																day.isToday && 'is-today',
+																day.hasAppointments && 'has-appointments',
+															]}
+															title={day.hasAppointments ? `${day.appointmentCount} cita(s)` : undefined}
+														>
+															<span class="dashboard-week-glance__label">{day.label}</span>
+															<span class="dashboard-week-glance__number">{day.dayNumber}</span>
+															<span class="dashboard-week-glance__dot" aria-hidden="true"></span>
+														</div>
+													))
+												}
 											</div>
 
 											{
@@ -428,13 +553,18 @@ const toPageHref = (page: number) => {
 																return (
 																	<article class="dashboard-report-card">
 																		<div class="dashboard-report-row">
-																			<div class="dashboard-report-main">
-																				<h3 class="dashboard-report-title">{appointment.customer_name}</h3>
-																				<p class="dashboard-report-meta">
-																					{appointmentDateLabel}
-																					{appointmentDateLabel ? ' · ' : ''}
-																					{appointment.time_start} - {appointment.time_end}
-																				</p>
+																			<div class="dashboard-report-identity">
+																				<span class="dashboard-report-avatar" aria-hidden="true">
+																					{getCustomerInitials(appointment.customer_name)}
+																				</span>
+																				<div class="dashboard-report-main">
+																					<h3 class="dashboard-report-title">{appointment.customer_name}</h3>
+																					<p class="dashboard-report-meta">
+																						{appointmentDateLabel}
+																						{appointmentDateLabel ? ' · ' : ''}
+																						{appointment.time_start} - {appointment.time_end}
+																					</p>
+																				</div>
 																			</div>
 																			<span
 																				class:list={[
@@ -505,10 +635,64 @@ const toPageHref = (page: number) => {
 												</nav>
 											</div>
 										</div>
+
+										{showAlertsPanel && (
+											<aside class="dashboard-alerts-shell dashboard-floor__panel rounded-4xl p-5 transition-colors duration-300" data-dashboard-alerts>
+												<div class="mb-4 flex shrink-0 items-center justify-between gap-2">
+													<h2 class="text-lg font-bold text-[#202124] dark:text-[#E3E3E3]">Pendientes</h2>
+													<a href="/panel/cobros" class="dashboard-alerts-viewall">Ver cobros</a>
+												</div>
+
+												<ul
+													class:list={[
+														'dashboard-alerts-list m-0 grid list-none gap-2.5 p-0',
+														pendingConfirmAlerts.length === 0 && 'hidden',
+													]}
+													data-dashboard-alerts-list
+												>
+													{
+														pendingConfirmAlerts.map((appointment) => (
+															<li class="dashboard-alert-item">
+																<span class="dashboard-alert-icon dashboard-alert-icon--amber material-symbols-rounded" aria-hidden="true">
+																	schedule
+																</span>
+																<div class="dashboard-alert-body">
+																	<p class="dashboard-alert-title">{appointment.customer_name}</p>
+																	<p class="dashboard-alert-meta">Cita pendiente de confirmar</p>
+																</div>
+																<a href="/panel/calendar" class="dashboard-alert-action">Revisar</a>
+															</li>
+														))
+													}
+													<li class="dashboard-alert-item dashboard-alert-item--loading" data-dashboard-cobros-alert-slot hidden>
+														<span class="dashboard-alert-icon dashboard-alert-icon--rose material-symbols-rounded" aria-hidden="true">
+															warning
+														</span>
+														<div class="dashboard-alert-body">
+															<p class="dashboard-alert-title" data-dashboard-cobros-alert-title>Comprobantes por validar</p>
+															<p class="dashboard-alert-meta" data-dashboard-cobros-alert-meta>Cargando…</p>
+														</div>
+														<a href="/panel/cobros?status=pending" class="dashboard-alert-action">Validar</a>
+													</li>
+												</ul>
+
+												<div
+													class:list={[
+														'dashboard-alerts-empty',
+														pendingConfirmAlerts.length > 0 && 'hidden',
+													]}
+													data-dashboard-alerts-empty
+												>
+													<span class="material-symbols-rounded dashboard-alerts-empty__icon" aria-hidden="true">task_alt</span>
+													<p class="dashboard-alerts-empty__text">Todo al día. No hay tareas urgentes.</p>
+												</div>
+											</aside>
+										)}
 									</div>
 								</>
 							)
 						}
+						</section>
 					</div>
 				</main>
 			</div>
@@ -1005,14 +1189,15 @@ const toPageHref = (page: number) => {
 		const card = document.querySelector<HTMLElement>('[data-ai-summary-card]');
 		if (!card) return;
 
-		const previewNode = card.querySelector<HTMLElement>('[data-ai-summary-preview]');
+		const lineNode = card.querySelector<HTMLElement>('[data-ai-summary-line]');
 		const moreButton = card.querySelector<HTMLButtonElement>('[data-open-ai-summary-modal]');
+		const insightNode = document.querySelector<HTMLElement>('[data-day-progress-insight]');
 		const fallbackShort =
 			sanitizeAiSummary(card.getAttribute('data-default-summary-short')) || DEFAULT_AI_SUMMARY_SHORT;
 		const fallbackFull =
 			sanitizeAiSummary(card.getAttribute('data-default-summary-full')) || fallbackShort;
 
-		if (!previewNode) return;
+		if (!lineNode) return;
 
 		const summaryShort = sanitizeAiSummary(payload.summaryShort) || fallbackShort;
 		const summaryFull = sanitizeAiSummary(payload.summaryFull) || summaryShort || fallbackFull;
@@ -1024,20 +1209,30 @@ const toPageHref = (page: number) => {
 		aiSummaryModalSections = sections;
 
 		const hasExpandedContent = summaryHasExpandedDetail(summaryShort, summaryFull, sections);
-
 		if (moreButton) {
 			moreButton.hidden = !hasExpandedContent;
 		}
 
-		const previewWrap = card.querySelector<HTMLElement>('.dashboard-ai-preview-wrap');
-		if (previewWrap) {
-			previewWrap.classList.toggle('has-more', hasExpandedContent);
-		}
+		const lineText = truncatePreviewText(summaryShort || summaryFull, 140);
+		lineNode.textContent = lineText;
 
-		renderMobilePreview(
-			previewNode,
-			buildMobilePreviewContent(summaryShort, summaryFull, sections)
-		);
+		if (insightNode) {
+			const suggestion =
+				sanitizeAiSummary(sections.find((section) => section.type === 'sugerencia')?.text) ||
+				truncatePreviewText(summaryShort, 110);
+			if (suggestion && !textsAreRedundant(suggestion, progressHintFromDom())) {
+				insightNode.textContent = suggestion;
+				insightNode.hidden = false;
+			} else {
+				insightNode.textContent = '';
+				insightNode.hidden = true;
+			}
+		}
+	};
+
+	const progressHintFromDom = (): string => {
+		const hint = document.querySelector('.dashboard-day-progress__hint');
+		return sanitizeAiSummary(hint?.textContent || '');
 	};
 
 	const toRecord = (value: unknown): Record<string, unknown> =>
@@ -1400,9 +1595,7 @@ const toPageHref = (page: number) => {
 		if (card.getAttribute('data-ai-summary-loaded') === '1') return;
 		card.setAttribute('data-ai-summary-loaded', '1');
 
-		const stateNode = card.querySelector<HTMLElement>('[data-ai-summary-state]');
-		const bodyNode = card.querySelector<HTMLElement>('[data-ai-summary-body]');
-		const previewNode = card.querySelector<HTMLElement>('[data-ai-summary-preview]');
+		const lineNode = card.querySelector<HTMLElement>('[data-ai-summary-line]');
 		const roleId = Number(card.getAttribute('data-role-id') ?? '0');
 		const fallbackShort =
 			sanitizeAiSummary(card.getAttribute('data-default-summary-short')) || DEFAULT_AI_SUMMARY_SHORT;
@@ -1410,19 +1603,14 @@ const toPageHref = (page: number) => {
 			sanitizeAiSummary(card.getAttribute('data-default-summary-full')) || fallbackShort;
 		const fallbackSections = buildSectionsFromLegacy(fallbackFull);
 
-		if (!stateNode || !bodyNode || !previewNode) return;
+		if (!lineNode) return;
 
 		bindAiSummaryModalEvents();
 		card.classList.add('is-generating');
+		lineNode.textContent = 'Generando resumen inteligente…';
 
 		const revealSummary = async (payload: AiSummaryPayload) => {
 			card.classList.remove('is-generating');
-			stateNode.classList.add('hidden');
-			stateNode.setAttribute('aria-hidden', 'true');
-			stateNode.style.display = 'none';
-			bodyNode.classList.remove('hidden');
-			bodyNode.style.display = 'block';
-
 			await applyAiSummaryContent(payload);
 		};
 
@@ -1513,6 +1701,114 @@ const toPageHref = (page: number) => {
 		}
 	};
 
+	const renderTopServicesChart = (
+		container: HTMLElement | null,
+		rows: Array<Record<string, unknown>>
+	) => {
+		if (!container) return;
+		container.replaceChildren();
+
+		if (!Array.isArray(rows) || rows.length === 0) {
+			const empty = document.createElement('p');
+			empty.className = 'dashboard-profit-empty';
+			empty.textContent = 'Sin datos este mes.';
+			container.appendChild(empty);
+			return;
+		}
+
+		const chartRows = rows.slice(0, 7);
+		const maxCount = Math.max(
+			1,
+			...chartRows.map((row) => Math.max(0, Number(row.count) || 0))
+		);
+
+		const track = document.createElement('div');
+		track.className = 'dashboard-service-chart__track';
+
+		for (const row of chartRows) {
+			const count = Math.max(0, Number(row.count) || 0);
+			const heightPct = Math.max(8, Math.round((count / maxCount) * 100));
+			const name = String(row.name ?? 'Servicio');
+			const shortName = name.length > 10 ? `${name.slice(0, 9)}…` : name;
+
+			const col = document.createElement('div');
+			col.className = 'dashboard-service-chart__col';
+			col.title = `${name} · ${count === 1 ? '1 cita' : `${count} citas`} · ${formatGs(row.revenue)}`;
+
+			const bar = document.createElement('span');
+			bar.className = 'dashboard-service-chart__bar';
+			bar.style.height = `${heightPct}%`;
+
+			const label = document.createElement('span');
+			label.className = 'dashboard-service-chart__label';
+			label.textContent = shortName;
+
+			col.append(bar, label);
+			track.appendChild(col);
+		}
+
+		container.appendChild(track);
+	};
+
+	const syncDashboardAlertsEmpty = () => {
+		const list = document.querySelector<HTMLElement>('[data-dashboard-alerts-list]');
+		const empty = document.querySelector<HTMLElement>('[data-dashboard-alerts-empty]');
+		if (!list || !empty) return;
+		const visibleItems = Array.from(list.children).filter(
+			(node) => node instanceof HTMLElement && !node.hidden
+		);
+		const hasItems = visibleItems.length > 0;
+		empty.classList.toggle('hidden', hasItems);
+		list.classList.toggle('hidden', !hasItems);
+	};
+
+	const loadDashboardCobrosAlert = async () => {
+		const slot = document.querySelector<HTMLElement>('[data-dashboard-cobros-alert-slot]');
+		if (!slot) return;
+
+		const hasFeature = window.HaselSubscription?.hasFeature?.('DEPOSIT_COLLECTION');
+		if (hasFeature === false) {
+			slot.hidden = true;
+			syncDashboardAlertsEmpty();
+			return;
+		}
+
+		try {
+			const response = await fetch('/api/cobros/pending-count', {
+				headers: { Accept: 'application/json' },
+			});
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok || payload?.status !== 'success') {
+				slot.hidden = true;
+				syncDashboardAlertsEmpty();
+				return;
+			}
+
+			const count = Number(payload?.data?.pending_count || 0);
+			if (!Number.isFinite(count) || count <= 0) {
+				slot.hidden = true;
+				syncDashboardAlertsEmpty();
+				return;
+			}
+
+			const title = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-title]');
+			const meta = slot.querySelector<HTMLElement>('[data-dashboard-cobros-alert-meta]');
+			if (title) {
+				title.textContent =
+					count === 1 ? '1 comprobante por validar' : `${count} comprobantes por validar`;
+			}
+			if (meta) {
+				meta.textContent = 'Señas SIPAP pendientes de revisión.';
+			}
+			slot.hidden = false;
+			slot.classList.remove('dashboard-alert-item--loading');
+		} catch {
+			slot.hidden = true;
+		} finally {
+			syncDashboardAlertsEmpty();
+		}
+	};
+
 	const loadProfitability = async () => {
 		const panel = document.querySelector<HTMLElement>('[data-profitability-panel]');
 		if (!panel) return;
@@ -1558,24 +1854,73 @@ const toPageHref = (page: number) => {
 				} else {
 					const value = Number(mom);
 					const sign = value > 0 ? '+' : '';
-					momNode.textContent = `${sign}${value}% vs. mes anterior`;
 					momNode.className =
 						value >= 0
 							? 'dashboard-profit-hint dashboard-profit-hint--up'
 							: 'dashboard-profit-hint dashboard-profit-hint--down';
+					momNode.replaceChildren();
+					if (value < 0) {
+						const arrow = document.createElement('span');
+						arrow.className = 'material-symbols-rounded dashboard-profit-hint__arrow';
+						arrow.setAttribute('aria-hidden', 'true');
+						arrow.textContent = 'arrow_downward';
+						momNode.appendChild(arrow);
+					} else if (value > 0) {
+						const arrow = document.createElement('span');
+						arrow.className = 'material-symbols-rounded dashboard-profit-hint__arrow';
+						arrow.setAttribute('aria-hidden', 'true');
+						arrow.textContent = 'arrow_upward';
+						momNode.appendChild(arrow);
+					}
+					momNode.appendChild(document.createTextNode(`${sign}${value}% vs. mes anterior`));
 				}
 			}
 
-			renderProfitabilityRows(
-				panel.querySelector<HTMLElement>('[data-profit-top-services]'),
-				Array.isArray(data.top_services) ? (data.top_services as Array<Record<string, unknown>>) : []
-			);
-			renderProfitabilityRows(
-				panel.querySelector<HTMLElement>('[data-profit-by-professional]'),
-				Array.isArray(data.by_professional)
-					? (data.by_professional as Array<Record<string, unknown>>)
-					: []
-			);
+			const topServices = Array.isArray(data.top_services)
+				? (data.top_services as Array<Record<string, unknown>>)
+				: [];
+			const byProfessional = Array.isArray(data.by_professional)
+				? (data.by_professional as Array<Record<string, unknown>>)
+				: [];
+
+			const details = panel.querySelector<HTMLElement>('[data-profit-details]');
+			const topBlock = panel.querySelector<HTMLElement>('[data-profit-top-block]');
+			const profBlock = panel.querySelector<HTMLElement>('[data-profit-prof-block]');
+			const hasTop = topServices.length > 0;
+			const hasProf = byProfessional.length > 0;
+			const hasDetails = hasTop || hasProf;
+
+			if (details) {
+				details.hidden = !hasDetails;
+				details.classList.toggle('hidden', !hasDetails);
+				details.classList.toggle('lg:grid-cols-2', hasTop && hasProf);
+				details.classList.toggle('lg:grid-cols-1', !(hasTop && hasProf));
+			}
+			if (topBlock) {
+				topBlock.hidden = !hasTop;
+				topBlock.classList.toggle('hidden', !hasTop);
+			}
+			if (profBlock) {
+				profBlock.hidden = !hasProf;
+				profBlock.classList.toggle('hidden', !hasProf);
+			}
+
+			if (hasTop) {
+				renderTopServicesChart(
+					panel.querySelector<HTMLElement>('[data-profit-top-services-chart]'),
+					topServices
+				);
+				renderProfitabilityRows(
+					panel.querySelector<HTMLElement>('[data-profit-top-services]'),
+					topServices
+				);
+			}
+			if (hasProf) {
+				renderProfitabilityRows(
+					panel.querySelector<HTMLElement>('[data-profit-by-professional]'),
+					byProfessional
+				);
+			}
 
 			panel.hidden = false;
 			panel.classList.remove('hidden');
@@ -1588,8 +1933,17 @@ const toPageHref = (page: number) => {
 		loadAiSummary();
 		loadTeamOverview();
 		loadProfitability();
+		loadDashboardCobrosAlert();
+		syncDashboardAlertsEmpty();
 		scrollToUpcomingAppointmentsIfNeeded();
 	};
+
+	document.addEventListener('hasel:subscription', () => {
+		void loadDashboardCobrosAlert();
+	});
+	document.addEventListener('hasel:cobros-changed', () => {
+		void loadDashboardCobrosAlert();
+	});
 
 	const UPCOMING_APPOINTMENTS_ANCHOR_ID = 'dashboard-upcoming-appointments';
 	const UPCOMING_APPOINTMENTS_SCROLL_OFFSET = 12;
@@ -2094,18 +2448,139 @@ const toPageHref = (page: number) => {
 		color: #c4c7c5;
 	}
 
+	.dashboard-ai-strip {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem 1rem;
+		min-height: 2.65rem;
+		padding: 0.55rem 0.85rem 0.55rem 0.75rem;
+		border-radius: 0.95rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+		background: color-mix(in srgb, #0b1220 88%, var(--primary) 12%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	}
+
+	html[data-theme='light'] .dashboard-ai-strip {
+		background: color-mix(in srgb, #101828 92%, #2f6fdd 8%);
+		border-color: rgba(47, 111, 221, 0.22);
+	}
+
+	.dashboard-ai-strip__content {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+
+	.dashboard-ai-strip__icon {
+		flex-shrink: 0;
+		font-size: 1.05rem;
+		color: #93c5fd;
+	}
+
+	.dashboard-ai-strip__text {
+		margin: 0;
+		min-width: 0;
+		font-size: 0.86rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: color-mix(in srgb, #e8eefc 92%, white 8%);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.dashboard-ai-strip__action {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.15rem;
+		flex-shrink: 0;
+		margin: 0;
+		padding: 0.25rem 0.15rem 0.25rem 0.35rem;
+		border: 0;
+		background: transparent;
+		color: #93c5fd;
+		font-size: 0.78rem;
+		font-weight: 800;
+		cursor: pointer;
+		white-space: nowrap;
+	}
+
+	.dashboard-ai-strip__action:hover {
+		color: #bfdbfe;
+		text-decoration: underline;
+	}
+
+	.dashboard-ai-strip__action:focus-visible {
+		outline: 2px solid #93c5fd;
+		outline-offset: 2px;
+		border-radius: 0.4rem;
+	}
+
+	.dashboard-ai-strip.is-generating .dashboard-ai-strip__icon {
+		animation: dashboard-ai-strip-pulse 1.2s ease-in-out infinite;
+	}
+
+	.dashboard-ai-strip.is-generating .dashboard-ai-strip__text {
+		opacity: 0.72;
+	}
+
+	@keyframes dashboard-ai-strip-pulse {
+		0%,
+		100% {
+			opacity: 0.55;
+			transform: scale(1);
+		}
+		50% {
+			opacity: 1;
+			transform: scale(1.08);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.dashboard-ai-strip {
+			flex-wrap: wrap;
+			align-items: flex-start;
+			padding: 0.7rem 0.8rem;
+		}
+
+		.dashboard-ai-strip__text {
+			white-space: normal;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+		}
+
+		.dashboard-ai-strip__action {
+			margin-left: 1.6rem;
+		}
+	}
+
+	.dashboard-day-progress__insight {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 600;
+		line-height: 1.4;
+		opacity: 0.92;
+		max-width: 36rem;
+	}
+
+	.dashboard-day-progress__insight[hidden] {
+		display: none !important;
+	}
+
 	.dashboard-ai-card {
 		position: relative;
-		overflow: hidden;
-		padding-block: 1.5rem;
-		padding-inline: clamp(1.5rem, 1.35rem + 0.45vw, 1.9rem);
-		border: 1px solid rgba(148, 163, 184, 0.24);
-		--ai-card-bg: color-mix(in srgb, #f8fafc 72%, #ffffff 28%);
-		background: var(--ai-card-bg);
+		overflow: visible;
+		padding-block: 0.35rem 0.15rem;
+		padding-inline: 0;
+		border: 0;
+		border-radius: 0;
+		--ai-card-bg: transparent;
+		background: transparent;
 		box-shadow: none;
-		transition:
-			box-shadow 400ms ease,
-			border-color 400ms ease;
 	}
 
 	.dashboard-ai-orbs {
@@ -2119,9 +2594,11 @@ const toPageHref = (page: number) => {
 
 	.dashboard-ai-orbs {
 		position: absolute;
-		inset: 0;
+		inset: -0.5rem 0;
 		z-index: 0;
 		overflow: hidden;
+		border-radius: 1.25rem;
+		pointer-events: none;
 	}
 
 	.dashboard-ai-orb {
@@ -2203,7 +2680,7 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-card.is-generating {
-		animation: ai-card-pulse 2.6s ease-in-out infinite;
+		animation: none;
 	}
 
 	.dashboard-ai-card.is-generating::after {
@@ -2829,9 +3306,9 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-card {
-		border-color: rgba(148, 163, 184, 0.18);
-		--ai-card-bg: color-mix(in srgb, #282a2c 74%, #1e1f22 26%);
-		background: var(--ai-card-bg);
+		border: 0;
+		--ai-card-bg: transparent;
+		background: transparent;
 		box-shadow: none;
 	}
 
@@ -2860,7 +3337,7 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-card.is-generating {
-		animation-name: ai-card-pulse-dark;
+		animation: none;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-orb--1 {
@@ -2944,11 +3421,12 @@ const toPageHref = (page: number) => {
 		overflow-wrap: anywhere;
 	}
 
-	.dashboard-metric-head {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		column-gap: 0.5rem;
-		align-items: start;
+	.dashboard-metric-value-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		min-width: 0;
 	}
 
 	.dashboard-metric-icon {
@@ -3090,6 +3568,488 @@ const toPageHref = (page: number) => {
 		background: rgba(253, 186, 116, 0.16);
 	}
 
+	.dashboard-floor {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1rem;
+		align-items: stretch;
+	}
+
+	.dashboard-floor--today,
+	.dashboard-floor--action {
+		--dashboard-floor-gap: 1.15rem;
+		gap: var(--dashboard-floor-gap);
+	}
+
+	.dashboard-floor__panel {
+		min-height: 0;
+		height: 100%;
+	}
+
+	.dashboard-side-metrics {
+		display: grid;
+		grid-template-columns: 1fr;
+		grid-template-rows: repeat(2, minmax(0, 1fr));
+		gap: 0.85rem;
+		min-height: 0;
+		height: 100%;
+	}
+
+	.dashboard-side-metrics:has(> :only-child) {
+		grid-template-rows: 1fr;
+	}
+
+	.dashboard-side-metrics > .dashboard-metric-card {
+		min-height: 0;
+	}
+
+	.dashboard-day-progress {
+		position: relative;
+		display: flex;
+		align-items: center;
+		overflow: hidden;
+		height: 100%;
+		min-height: 11.5rem;
+		border-radius: 1.6rem;
+		padding: 1.5rem 1.5rem;
+		color: #f8fbff;
+		background: linear-gradient(135deg, #3b6fe0 0%, #5b8def 48%, #7aa8f5 100%);
+		box-shadow: 0 14px 34px rgba(47, 111, 221, 0.22);
+		isolation: isolate;
+		box-sizing: border-box;
+	}
+
+	.dashboard-day-progress__inner {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 1.15rem;
+		width: 100%;
+	}
+
+	.dashboard-day-progress::after {
+		content: '';
+		position: absolute;
+		inset: auto -18% -42% auto;
+		width: 12rem;
+		height: 12rem;
+		border-radius: 999px;
+		background: radial-gradient(circle, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 70%);
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.dashboard-day-progress__top {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		margin: 0;
+	}
+
+	.dashboard-day-progress__eyebrow {
+		margin: 0 0 0.4rem;
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		opacity: 0.88;
+	}
+
+	.dashboard-day-progress__metric {
+		margin: 0;
+		display: flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 0.2rem 0.35rem;
+		font-size: clamp(2.1rem, 4vw, 2.7rem);
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.dashboard-day-progress__of {
+		font-size: 0.55em;
+		font-weight: 700;
+		opacity: 0.82;
+	}
+
+	.dashboard-day-progress__unit {
+		font-size: 0.9rem;
+		font-weight: 700;
+		opacity: 0.9;
+		letter-spacing: 0.01em;
+	}
+
+	.dashboard-day-progress__hint {
+		margin: 0.55rem 0 0;
+		font-size: 0.88rem;
+		font-weight: 600;
+		opacity: 0.9;
+	}
+
+	.dashboard-day-progress__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.6rem;
+		height: 2.6rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.18);
+		font-size: 1.35rem;
+		flex-shrink: 0;
+	}
+
+	.dashboard-day-progress__bar {
+		position: relative;
+		z-index: 1;
+		height: 0.55rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.28);
+		overflow: hidden;
+		flex-shrink: 0;
+	}
+
+	.dashboard-day-progress__fill {
+		display: block;
+		height: 100%;
+		border-radius: inherit;
+		background: #ffffff;
+		box-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
+		transition: width 420ms ease;
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress {
+		background: linear-gradient(135deg, #1e4bb8 0%, #2f6fdd 52%, #4f86e8 100%);
+		box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+	}
+
+	.dashboard-metric-card--compact {
+		padding: 1.1rem 1.15rem;
+	}
+
+	.dashboard-metric-value--compact {
+		font-size: clamp(1.7rem, 3.4vw, 2.15rem) !important;
+	}
+
+	.dashboard-report-shell.dashboard-floor__panel {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.dashboard-report-shell.dashboard-floor__panel .dashboard-report-list {
+		flex: 1 1 auto;
+	}
+
+	.dashboard-report-shell.dashboard-floor__panel .app-pagination {
+		margin-top: auto;
+		flex-shrink: 0;
+	}
+
+	.dashboard-week-glance {
+		display: grid;
+		grid-template-columns: repeat(7, minmax(0, 1fr));
+		gap: 0.35rem;
+		margin: 0 0 1.15rem;
+		padding: 0.35rem 0.15rem 0.55rem;
+		flex-shrink: 0;
+	}
+
+	.dashboard-week-glance__day {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.28rem;
+		min-width: 0;
+		padding: 0.35rem 0.15rem;
+		border-radius: 999px;
+		color: #5f6368;
+		transition: background-color 160ms ease, color 160ms ease;
+	}
+
+	.dashboard-week-glance__label {
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		opacity: 0.8;
+	}
+
+	.dashboard-week-glance__number {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.85rem;
+		height: 1.85rem;
+		border-radius: 999px;
+		font-size: 0.86rem;
+		font-weight: 800;
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+	}
+
+	.dashboard-week-glance__dot {
+		width: 0.28rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: transparent;
+	}
+
+	.dashboard-week-glance__day.has-appointments .dashboard-week-glance__dot {
+		background: color-mix(in srgb, var(--primary) 70%, #64748b 30%);
+	}
+
+	.dashboard-week-glance__day.is-today {
+		background: #1f2937;
+		color: #ffffff;
+	}
+
+	.dashboard-week-glance__day.is-today .dashboard-week-glance__number {
+		background: rgba(255, 255, 255, 0.12);
+	}
+
+	.dashboard-week-glance__day.is-today .dashboard-week-glance__dot {
+		background: rgba(255, 255, 255, 0.85);
+	}
+
+	html[data-theme='dark'] .dashboard-week-glance__day {
+		color: var(--on-surface-variant, #a7aaa8);
+	}
+
+	html[data-theme='dark'] .dashboard-week-glance__day.is-today {
+		background: color-mix(in srgb, var(--primary) 78%, #0f172a 22%);
+		color: #ffffff;
+	}
+
+	.dashboard-alerts-shell {
+		display: flex;
+		flex-direction: column;
+		border: 1px solid rgba(148, 163, 184, 0.24);
+		background: #ffffff;
+		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+		min-height: 100%;
+		box-sizing: border-box;
+	}
+
+	html[data-theme='dark'] .dashboard-alerts-shell {
+		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 78%, var(--surface-container, #131314) 22%);
+		border-color: color-mix(in srgb, var(--outline-variant, #8a9099) 36%, transparent);
+		box-shadow: none;
+	}
+
+	.dashboard-alerts-viewall {
+		font-size: 0.78rem;
+		font-weight: 800;
+		color: var(--primary);
+		text-decoration: none;
+	}
+
+	.dashboard-alerts-viewall:hover {
+		text-decoration: underline;
+	}
+
+	.dashboard-alert-item {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+		padding: 0.75rem 0.8rem;
+		border-radius: 0.95rem;
+		border: 1px solid #e2e8f0;
+		background: #fafbfc;
+	}
+
+	html[data-theme='dark'] .dashboard-alert-item {
+		border-color: rgba(255, 255, 255, 0.08);
+		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--surface-container, #131314) 18%);
+	}
+
+	.dashboard-alert-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 0.7rem;
+		font-size: 1.1rem;
+		flex-shrink: 0;
+	}
+
+	.dashboard-alert-icon--amber {
+		color: #b45309;
+		background: #fef3c7;
+	}
+
+	.dashboard-alert-icon--rose {
+		color: #b42318;
+		background: #fce8e6;
+	}
+
+	html[data-theme='dark'] .dashboard-alert-icon--amber {
+		color: #ffd9a0;
+		background: rgba(255, 183, 77, 0.16);
+	}
+
+	html[data-theme='dark'] .dashboard-alert-icon--rose {
+		color: #ffcdc7;
+		background: rgba(255, 180, 171, 0.14);
+	}
+
+	.dashboard-alert-body {
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+
+	.dashboard-alert-title {
+		margin: 0;
+		font-size: 0.86rem;
+		font-weight: 700;
+		color: #202124;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.dashboard-alert-meta {
+		margin: 0.15rem 0 0;
+		font-size: 0.74rem;
+		font-weight: 600;
+		color: #5f6368;
+	}
+
+	html[data-theme='dark'] .dashboard-alert-title {
+		color: var(--on-surface, #e3e3e3);
+	}
+
+	html[data-theme='dark'] .dashboard-alert-meta {
+		color: var(--on-surface-variant, #a7aaa8);
+	}
+
+	.dashboard-alert-action {
+		flex-shrink: 0;
+		font-size: 0.74rem;
+		font-weight: 800;
+		color: var(--primary);
+		text-decoration: none;
+	}
+
+	.dashboard-alert-action:hover {
+		text-decoration: underline;
+	}
+
+	.dashboard-alerts-empty {
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.55rem;
+		min-height: 8rem;
+		margin: 0;
+		padding: 1rem;
+		text-align: center;
+	}
+
+	.dashboard-alerts-empty.hidden {
+		display: none;
+	}
+
+	.dashboard-alerts-empty__icon {
+		font-size: 1.75rem;
+		color: color-mix(in srgb, var(--primary) 70%, #64748b 30%);
+		opacity: 0.85;
+	}
+
+	.dashboard-alerts-empty__text {
+		margin: 0;
+		font-size: 0.88rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+		max-width: 14rem;
+	}
+
+	.dashboard-service-chart {
+		min-height: 8.5rem;
+	}
+
+	.dashboard-service-chart__track {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 0.45rem;
+		height: 8.25rem;
+		padding: 0.35rem 0.15rem 0;
+	}
+
+	.dashboard-service-chart__col {
+		display: flex;
+		flex: 1 1 0;
+		flex-direction: column;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.4rem;
+		min-width: 0;
+		height: 100%;
+	}
+
+	.dashboard-service-chart__bar {
+		display: block;
+		width: 100%;
+		max-width: 2rem;
+		border-radius: 0.55rem 0.55rem 0.35rem 0.35rem;
+		background: linear-gradient(180deg, #7aa8f5 0%, #2f6fdd 100%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+		transition: height 360ms ease, filter 160ms ease;
+	}
+
+	.dashboard-service-chart__col:hover .dashboard-service-chart__bar {
+		filter: brightness(1.06);
+	}
+
+	.dashboard-service-chart__label {
+		max-width: 100%;
+		font-size: 0.66rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
+		text-align: center;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	html[data-theme='dark'] .dashboard-service-chart__bar {
+		background: linear-gradient(180deg, #6ea0f4 0%, #3b6fe0 100%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.18);
+	}
+
+	@media (min-width: 1024px) {
+		.dashboard-floor--today,
+		.dashboard-floor--action.dashboard-floor--split {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			gap: var(--dashboard-floor-gap);
+		}
+
+		.dashboard-floor--today {
+			min-height: 12.75rem;
+		}
+
+		.dashboard-floor--action.dashboard-floor--split {
+			min-height: 28rem;
+		}
+
+		.dashboard-side-metrics {
+			grid-template-columns: 1fr;
+			grid-template-rows: repeat(2, minmax(0, 1fr));
+		}
+
+		.dashboard-floor--today .dashboard-day-progress,
+		.dashboard-floor--today .dashboard-side-metrics {
+			height: 100%;
+		}
+	}
+
 	.dashboard-profitability-shell {
 		border: 1px solid rgba(148, 163, 184, 0.24);
 		background: #ffffff;
@@ -3107,11 +4067,13 @@ const toPageHref = (page: number) => {
 		border-radius: 1.1rem;
 		background: color-mix(in srgb, var(--surface) 40%, #ffffff 60%);
 		padding: 1rem 1.1rem;
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 12px rgba(15, 23, 42, 0.04);
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card {
 		border-color: rgba(255, 255, 255, 0.08);
 		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--surface-container, #131314) 18%);
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 6px 16px rgba(0, 0, 0, 0.16);
 	}
 
 	.dashboard-profit-label {
@@ -3135,25 +4097,33 @@ const toPageHref = (page: number) => {
 
 	.dashboard-profit-hint {
 		margin: 0.3rem 0 0;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2rem;
 		font-size: 0.78rem;
 		font-weight: 600;
 		color: var(--on-surface-variant);
 	}
 
+	.dashboard-profit-hint__arrow {
+		font-size: 0.95rem;
+		line-height: 1;
+	}
+
 	.dashboard-profit-hint--up {
-		color: #15803d;
+		color: color-mix(in srgb, #15803d 72%, var(--on-surface-variant) 28%);
 	}
 
 	.dashboard-profit-hint--down {
-		color: #c5221f;
+		color: color-mix(in srgb, var(--on-surface-variant) 78%, #94a3b8 22%);
 	}
 
 	html[data-theme='dark'] .dashboard-profit-hint--up {
-		color: #86efac;
+		color: color-mix(in srgb, #86efac 55%, var(--on-surface-variant) 45%);
 	}
 
 	html[data-theme='dark'] .dashboard-profit-hint--down {
-		color: #fca5a5;
+		color: color-mix(in srgb, var(--on-surface-variant) 70%, #94a3b8 30%);
 	}
 
 	.dashboard-profit-row {
@@ -3237,6 +4207,30 @@ const toPageHref = (page: number) => {
 		min-width: 0;
 	}
 
+	.dashboard-report-identity {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.7rem;
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+
+	.dashboard-report-avatar {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, #e8eefc 88%);
+		color: color-mix(in srgb, var(--primary) 78%, #1e3a8a 22%);
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		line-height: 1;
+	}
+
 	.dashboard-report-main {
 		min-width: 0;
 		flex: 1 1 auto;
@@ -3278,37 +4272,37 @@ const toPageHref = (page: number) => {
 		align-self: flex-start;
 		white-space: nowrap;
 		border-radius: 999px;
-		border: 1px solid transparent;
-		padding: 0.3rem 0.62rem;
-		font-size: 0.66rem;
+		border: 0;
+		padding: 0.35rem 0.72rem;
+		font-size: 0.68rem;
 		font-weight: 800;
-		letter-spacing: 0.08em;
+		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		box-shadow: none;
 	}
 
 	.dashboard-report-status--confirmed {
-		background: #e6f4ea;
-		color: #137333;
-		border-color: #b7dfc5;
+		background: #e8f5ee;
+		color: #146c2e;
+		border: 0;
 	}
 
 	.dashboard-report-status--pending {
 		background: #fef7e0;
-		color: #e37400;
-		border-color: #f2d39a;
+		color: #b45309;
+		border: 0;
 	}
 
 	.dashboard-report-status--canceled {
 		background: #fce8e6;
-		color: #c5221f;
-		border-color: #f1c3bf;
+		color: #b42318;
+		border: 0;
 	}
 
 	.dashboard-report-status--default {
 		background: #f1f3f4;
 		color: #5f6368;
-		border-color: #dde3ea;
+		border: 0;
 	}
 
 	html[data-theme='dark'] .dashboard-report-card {
@@ -3330,32 +4324,38 @@ const toPageHref = (page: number) => {
 		color: var(--on-surface-variant, #a7aaa8);
 	}
 
+	html[data-theme='dark'] .dashboard-report-avatar {
+		background: color-mix(in srgb, var(--primary) 22%, transparent);
+		color: color-mix(in srgb, var(--primary) 70%, white 30%);
+	}
+
 	html[data-theme='dark'] .dashboard-report-status {
 		box-shadow: none;
+		border: 0;
 	}
 
 	html[data-theme='dark'] .dashboard-report-status--confirmed {
-		background: rgba(61, 166, 98, 0.18);
+		background: rgba(61, 166, 98, 0.2);
 		color: #baf7c8;
-		border-color: rgba(109, 213, 140, 0.32);
+		border: 0;
 	}
 
 	html[data-theme='dark'] .dashboard-report-status--pending {
 		background: rgba(255, 183, 77, 0.16);
 		color: #ffd9a0;
-		border-color: rgba(255, 183, 77, 0.28);
+		border: 0;
 	}
 
 	html[data-theme='dark'] .dashboard-report-status--canceled {
 		background: rgba(255, 180, 171, 0.14);
 		color: #ffcdc7;
-		border-color: rgba(255, 180, 171, 0.28);
+		border: 0;
 	}
 
 	html[data-theme='dark'] .dashboard-report-status--default {
 		background: rgba(196, 199, 197, 0.14);
 		color: #d2d5d3;
-		border-color: rgba(196, 199, 197, 0.22);
+		border: 0;
 	}
 
 	@media (min-width: 640px) {
@@ -3369,13 +4369,16 @@ const toPageHref = (page: number) => {
 	}
 
 	@media (max-width: 768px) {
-		.dashboard-metrics-grid {
+		.dashboard-side-metrics {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 1rem;
+			grid-template-rows: 1fr;
+			height: auto;
+			gap: 0.75rem;
 		}
 
-		.dashboard-metrics-grid > * {
-			min-width: 0;
+		.dashboard-day-progress {
+			min-height: 10.5rem;
+			padding: 1.35rem 1.25rem;
 		}
 
 		.dashboard-metric-card {
@@ -3383,16 +4386,15 @@ const toPageHref = (page: number) => {
 			border-radius: 1.15rem;
 		}
 
-		.dashboard-metric-head {
-			display: flex;
-			align-items: center;
-			justify-content: flex-start;
-			gap: 0.5rem;
-			margin-bottom: 0.75rem;
+		.dashboard-metric-card--compact {
+			padding: 0.9rem 0.8rem 1rem;
+		}
+
+		.dashboard-metric-value-row {
+			gap: 0.55rem;
 		}
 
 		.dashboard-metric-icon {
-			order: -1;
 			width: 2rem;
 			height: 2rem;
 			min-width: 2rem;
@@ -3401,7 +4403,6 @@ const toPageHref = (page: number) => {
 		}
 
 		.dashboard-metric-label {
-			flex: 1;
 			min-width: 0;
 			font-size: 0.68rem;
 			letter-spacing: 0.05em;
@@ -3414,25 +4415,35 @@ const toPageHref = (page: number) => {
 			line-height: 1;
 		}
 
+		.dashboard-metric-value--compact {
+			font-size: clamp(1.55rem, 6.5vw, 1.95rem) !important;
+		}
+
 		.dashboard-metric-description {
 			font-size: 0.86rem;
 			line-height: 1.45;
 		}
+
+		.dashboard-week-glance {
+			gap: 0.15rem;
+			margin-bottom: 1rem;
+		}
+
+		.dashboard-week-glance__number {
+			width: 1.65rem;
+			height: 1.65rem;
+			font-size: 0.78rem;
+		}
 	}
 
 	@media (max-width: 380px) {
-		.dashboard-metrics-grid {
-			gap: 0.65rem;
+		.dashboard-side-metrics {
+			gap: 0.55rem;
 		}
 
 		.dashboard-metric-card {
 			padding: 0.75rem 0.65rem 1rem;
 			border-radius: 1rem;
-		}
-
-		.dashboard-metric-head {
-			gap: 0.4rem;
-			margin-bottom: 0.55rem;
 		}
 
 		.dashboard-metric-icon {
@@ -3451,7 +4462,6 @@ const toPageHref = (page: number) => {
 
 		.dashboard-metric-value {
 			font-size: clamp(1.75rem, 7.2vw, 2rem);
-			margin-bottom: 0.15rem;
 		}
 
 		.dashboard-metric-description {

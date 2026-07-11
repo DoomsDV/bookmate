@@ -20,6 +20,7 @@ export const DASHBOARD_PROFITABILITY_URL = resolveOrdsApiUrl(
 
 export interface DashboardKpis {
 	today_appointments: number;
+	today_completed_appointments: number;
 	pending_appointments: number;
 	my_customers: number;
 	total_customers: number | null;
@@ -149,6 +150,7 @@ const normalizeKpis = (value: unknown): DashboardKpis => {
 	if (!value || typeof value !== 'object') {
 		return {
 			today_appointments: 0,
+			today_completed_appointments: 0,
 			pending_appointments: 0,
 			my_customers: 0,
 			total_customers: null,
@@ -162,8 +164,15 @@ const normalizeKpis = (value: unknown): DashboardKpis => {
 			? null
 			: Math.max(0, Math.floor(toNumber(totalCustomersRaw, 0)));
 
+	const todayAppointments = Math.max(0, Math.floor(toNumber(source.today_appointments, 0)));
+	const todayCompleted = Math.min(
+		todayAppointments,
+		Math.max(0, Math.floor(toNumber(source.today_completed_appointments, 0)))
+	);
+
 	return {
-		today_appointments: Math.max(0, Math.floor(toNumber(source.today_appointments, 0))),
+		today_appointments: todayAppointments,
+		today_completed_appointments: todayCompleted,
 		pending_appointments: Math.max(0, Math.floor(toNumber(source.pending_appointments, 0))),
 		my_customers: Math.max(0, Math.floor(toNumber(source.my_customers, 0))),
 		total_customers: totalCustomers,
