@@ -118,7 +118,7 @@ export const initializePublicUserBookingPage = () => {
 	const prevMonthButton = root.querySelector<HTMLButtonElement>('[data-calendar-prev]');
 	const nextMonthButton = root.querySelector<HTMLButtonElement>('[data-calendar-next]');
 	const backToLocations = root.querySelector<HTMLButtonElement>('[data-back-to-locations]');
-	const backToCalendar = root.querySelector<HTMLButtonElement>('[data-back-to-calendar]');
+	const backToCalendarButtons = root.querySelectorAll<HTMLButtonElement>('[data-back-to-calendar]');
 	const backToSlots = root.querySelector<HTMLButtonElement>('[data-back-to-slots]');
 	const restartButtons = root.querySelectorAll<HTMLButtonElement>('[data-restart-booking]');
 	const summaryServiceInline = root.querySelector<HTMLElement>('[data-summary-service-inline]');
@@ -162,7 +162,7 @@ export const initializePublicUserBookingPage = () => {
 		!prevMonthButton ||
 		!nextMonthButton ||
 		!backToLocations ||
-		!backToCalendar ||
+		!backToCalendarButtons.length ||
 		!backToSlots ||
 		restartButtons.length === 0
 	) {
@@ -1158,7 +1158,9 @@ export const initializePublicUserBookingPage = () => {
 		{ signal }
 	);
 	backToOrgsButton?.addEventListener('click', () => backToOrganizationPicker(), { signal });
-	backToCalendar.addEventListener('click', () => setStep(2), { signal });
+	backToCalendarButtons.forEach((button) => {
+		button.addEventListener('click', () => setStep(2), { signal });
+	});
 	backToSlots.addEventListener('click', () => setStep(3), { signal });
 	restartButtons.forEach((button) => {
 		button.addEventListener('click', resetFlow, { signal });

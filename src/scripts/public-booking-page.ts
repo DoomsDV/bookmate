@@ -321,7 +321,7 @@ export const initializePublicBookingPage = () => {
 	const prevMonthButton = root.querySelector<HTMLButtonElement>('[data-calendar-prev]');
 	const nextMonthButton = root.querySelector<HTMLButtonElement>('[data-calendar-next]');
 	const backToServices = root.querySelector<HTMLButtonElement>('[data-back-to-services]');
-	const backToCalendar = root.querySelector<HTMLButtonElement>('[data-back-to-calendar]');
+	const backToCalendarButtons = root.querySelectorAll<HTMLButtonElement>('[data-back-to-calendar]');
 	const backToSlots = root.querySelector<HTMLButtonElement>('[data-back-to-slots]');
 	const restartButtons = root.querySelectorAll<HTMLButtonElement>('[data-restart-booking]');
 
@@ -355,7 +355,7 @@ export const initializePublicBookingPage = () => {
 		!prevMonthButton ||
 		!nextMonthButton ||
 		!backToServices ||
-		!backToCalendar ||
+		!backToCalendarButtons.length ||
 		!backToSlots ||
 		restartButtons.length === 0
 	) {
@@ -1311,7 +1311,9 @@ export const initializePublicBookingPage = () => {
 	);
 
 	backToServices.addEventListener('click', () => setStep(1), { signal });
-	backToCalendar.addEventListener('click', () => setStep(2), { signal });
+	backToCalendarButtons.forEach((button) => {
+		button.addEventListener('click', () => setStep(2), { signal });
+	});
 	backToSlots.addEventListener('click', () => setStep(3), { signal });
 	restartButtons.forEach((button) => {
 		button.addEventListener('click', resetFlow, { signal });

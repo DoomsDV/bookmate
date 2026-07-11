@@ -219,9 +219,17 @@ const googleMapsApiKey =
 							Consultando horarios disponibles...
 						</div>
 						<div class="mt-5 grid gap-6" data-slots-container></div>
-						<p data-no-slots class="mt-6 hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-5 py-4 text-base font-medium text-(--on-error-container)">
-							No se encontraron horarios para este día. Seleccioná otra fecha para continuar.
-						</p>
+						<div data-no-slots class="public-slots-empty mt-10 hidden">
+							<span class="material-symbols-rounded public-slots-empty__icon" aria-hidden="true"
+								>event_busy</span
+							>
+							<p class="public-slots-empty__text">
+								No se encontraron horarios para este día. Seleccioná otra fecha para continuar.
+							</p>
+							<button type="button" data-back-to-calendar class="public-slots-empty__action">
+								Volver al calendario
+							</button>
+						</div>
 					</section>
 
 					<section data-step-panel="4" class="public-booking-panel hidden">
