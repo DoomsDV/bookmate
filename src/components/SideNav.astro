@@ -79,6 +79,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 );
 const showPlanFooter = canAccessPath("/panel/plan", currentRoleId);
 const planFooterActive = activePath === "/panel/plan";
+const teamSectionOpen = visibleTeamItems.some((item) => isItemActive(item));
 ---
 
 <div
@@ -93,7 +94,7 @@ const planFooterActive = activePath === "/panel/plan";
 
 	<aside
 		id="app-side-nav"
-		class="relative flex h-full w-[min(20rem,100vw)] -translate-x-full flex-col overflow-y-auto border-r border-(--shell-border) bg-(--sidebar-surface)"
+		class="relative flex h-full w-[min(20rem,100vw)] -translate-x-full flex-col overflow-hidden border-r border-(--shell-border) bg-(--sidebar-surface)"
 		data-side-nav
 	>
 		<div class="shell-header-zone sidebar-account-header shrink-0 px-6 pt-6 pb-4">
@@ -153,9 +154,9 @@ const planFooterActive = activePath === "/panel/plan";
 
 		<div class="sidebar-divider shrink-0" role="presentation" aria-hidden="true"></div>
 
-		<div class="flex min-h-0 flex-1 flex-col px-6 pb-6">
-		<nav aria-label="Side navigation móvil">
-			<ul class="space-y-2.5">
+		<div class="flex min-h-0 flex-1 flex-col px-6 pb-[max(1.5rem,env(safe-area-inset-bottom))]">
+		<nav aria-label="Side navigation móvil" class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+			<ul class="space-y-2.5 pb-3">
 				{
 					visiblePrimaryItems.map((item) => (
 						<li
@@ -193,7 +194,7 @@ const planFooterActive = activePath === "/panel/plan";
 				{
 					visibleTeamItems.length > 0 && (
 						<li class="pt-2">
-							<details open class="group">
+							<details class="group" open={teamSectionOpen || undefined}>
 								<summary class="flex min-h-12 cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3.5 text-[1.02rem] font-bold text-(--primary) transition hover:bg-(--sidebar-hover) lg:py-2.5 lg:text-[0.9rem]">
 									<span class="flex items-center gap-3.5 lg:gap-3">
 										<span class="material-symbols-rounded text-[1.55rem] leading-none lg:text-[1.25rem]">
@@ -239,7 +240,7 @@ const planFooterActive = activePath === "/panel/plan";
 					href="/panel/plan"
 					data-side-nav-close
 					class:list={[
-						"mt-auto mx-1 flex min-h-12 items-center gap-3.5 rounded-2xl border border-(--shell-border) px-4 py-3.5 no-underline transition",
+						"mx-1 mt-2 flex min-h-12 shrink-0 items-center gap-3.5 rounded-2xl border border-(--shell-border) px-4 py-3.5 no-underline transition",
 						planFooterActive
 							? "bg-(--primary-container) text-(--primary)"
 							: "text-(--on-surface) hover:bg-(--sidebar-hover)",
