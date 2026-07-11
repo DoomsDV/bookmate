@@ -331,7 +331,6 @@ export const initializePublicBookingPage = () => {
 		!submitButton ||
 		!payDepositButton ||
 		!summaryDateInline ||
-		!summaryProfessional ||
 		!summaryService ||
 		!summaryDepositWrap ||
 		!summaryDeposit ||
@@ -679,6 +678,13 @@ export const initializePublicBookingPage = () => {
 		customerNameFieldError.classList.remove('hidden');
 	};
 
+	const setPolicyFieldError = (message: string) => {
+		const node = root.querySelector<HTMLElement>('[data-field-error="policy_accepted"]');
+		if (!node) return;
+		node.textContent = message;
+		node.classList.toggle('hidden', !message);
+	};
+
 	const setCustomerNameVisibility = (visible: boolean) => {
 		customerNameWrapper.classList.toggle('hidden', !visible);
 		customerNameInput.required = visible;
@@ -821,7 +827,7 @@ export const initializePublicBookingPage = () => {
 		const label = formatLocationLabel(location);
 		const canOpen = canShowLocationMap(location);
 		summaryLocation.className =
-			'public-location-address mt-1 text-left disabled:cursor-not-allowed';
+			'public-location-link public-booking-summary__value cursor-pointer text-right font-normal disabled:cursor-not-allowed disabled:text-[var(--on-surface-variant)]';
 		summaryLocation.disabled = !canOpen;
 		summaryLocation.replaceChildren();
 		if (!location || label === 'Ubicación no disponible') {
@@ -844,7 +850,7 @@ export const initializePublicBookingPage = () => {
 
 		if (summaryServiceInline) summaryServiceInline.textContent = serviceLabel;
 		summaryDateInline.textContent = formattedDate || '-';
-		summaryProfessional.textContent = profile.full_name;
+		if (summaryProfessional) summaryProfessional.textContent = profile.full_name;
 		summaryService.textContent = serviceLabel;
 		summaryDate.textContent = formattedDate || '-';
 		summaryTime.textContent = timeLabel;
@@ -872,6 +878,7 @@ export const initializePublicBookingPage = () => {
 			depositPolicyWrap.classList.toggle('hidden', !requiresDeposit);
 			depositPolicySummary.textContent = summary || 'Consultá la política con el comercio.';
 			if (!requiresDeposit && depositPolicyAccept) depositPolicyAccept.checked = false;
+			if (!requiresDeposit) setPolicyFieldError('');
 		}
 	};
 
@@ -885,6 +892,8 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
+	let servicesExpanded = false;
+
 	const renderServices = () => {
 		servicesGrid.innerHTML = '';
 		if (profile.services.length === 0) {
@@ -896,7 +905,21 @@ export const initializePublicBookingPage = () => {
 			return;
 		}
 
-		for (const service of profile.services) {
+		const INITIAL_VISIBLE_SERVICES = 4;
+		const totalServices = profile.services.length;
+		const selectedIndex = selectedService
+			? profile.services.findIndex((service) => service.id_service === selectedService.id_service)
+			: -1;
+		if (selectedIndex >= INITIAL_VISIBLE_SERVICES) {
+			servicesExpanded = true;
+		}
+
+		const visibleServices = servicesExpanded
+			? profile.services
+			: profile.services.slice(0, INITIAL_VISIBLE_SERVICES);
+		const hiddenCount = Math.max(0, totalServices - INITIAL_VISIBLE_SERVICES);
+
+		for (const service of visibleServices) {
 			const button = document.createElement('button');
 			button.type = 'button';
 			const isSelected = selectedService?.id_service === service.id_service;
@@ -925,6 +948,19 @@ export const initializePublicBookingPage = () => {
 			});
 
 			servicesGrid.appendChild(button);
+		}
+
+		if (!servicesExpanded && hiddenCount > 0) {
+			const moreButton = document.createElement('button');
+			moreButton.type = 'button';
+			moreButton.className = 'public-services-more';
+			moreButton.textContent =
+				hiddenCount === 1 ? 'Ver 1 servicio más' : `Ver ${hiddenCount} servicios más`;
+			moreButton.addEventListener('click', () => {
+				servicesExpanded = true;
+				renderServices();
+			});
+			servicesGrid.appendChild(moreButton);
 		}
 	};
 
@@ -1181,6 +1217,7 @@ export const initializePublicBookingPage = () => {
 		selectedLocation = defaultLocation;
 		availableSlotGroups = [];
 		isLoadingSlots = false;
+		servicesExpanded = false;
 		resetPendingAppointment();
 		stopSipapHoldCountdown(root);
 		customerForm.reset();
@@ -1249,6 +1286,14 @@ export const initializePublicBookingPage = () => {
 		{ signal }
 	);
 
+	depositPolicyAccept?.addEventListener(
+		'change',
+		() => {
+			setPolicyFieldError('');
+		},
+		{ signal }
+	);
+
 	customerPhoneInput.addEventListener(
 		'input',
 		() => {
@@ -1308,6 +1353,7 @@ export const initializePublicBookingPage = () => {
 		setSubmitError('');
 		setPhoneFieldError('');
 		setNameFieldError('');
+		setPolicyFieldError('');
 
 		if (!selectedService || !selectedDate || !selectedTime || !selectedLocation) {
 			setSubmitError('Selecciona servicio, fecha y horario antes de continuar.');
@@ -1323,14 +1369,12 @@ export const initializePublicBookingPage = () => {
 			if (isCustomerNameVisible && !rawCustomerName) {
 				setNameFieldError('El nombre completo es obligatorio.');
 			}
-			setSubmitError('Teléfono y nombre completo son obligatorios.');
 			return null;
 		}
 
 		const parsedPhone = parseParaguayMobilePhone(toParaguayMobileE164FromInput(rawCustomerPhone));
 		if (!parsedPhone.isValid) {
 			setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
-			setSubmitError('Revisa el telefono antes de continuar.');
 			return null;
 		}
 
@@ -1345,12 +1389,11 @@ export const initializePublicBookingPage = () => {
 		const customerName = String(customerNameInput.value || '').trim();
 		if (!customerName) {
 			setNameFieldError('El nombre completo es obligatorio.');
-			setSubmitError('Teléfono y nombre completo son obligatorios.');
 			return null;
 		}
 
 		if (calculateDepositAmount(selectedService) > 0 && !depositPolicyAccept?.checked) {
-			setSubmitError('Debés aceptar la política de cancelación para continuar.');
+			setPolicyFieldError('Debés aceptar la política de cancelación para continuar.');
 			return null;
 		}
 
@@ -1477,6 +1520,7 @@ export const initializePublicBookingPage = () => {
 		setSubmitError('');
 		setPhoneFieldError('');
 		setNameFieldError('');
+		setPolicyFieldError('');
 
 		if (!selectedService || !selectedDate || !selectedTime || !selectedLocation) {
 			setSubmitError('Selecciona servicio, fecha y horario antes de confirmar.');
@@ -1492,14 +1536,12 @@ export const initializePublicBookingPage = () => {
 			if (isCustomerNameVisible && !rawCustomerName) {
 				setNameFieldError('El nombre completo es obligatorio.');
 			}
-			setSubmitError('Teléfono y nombre completo son obligatorios.');
 			return;
 		}
 
 		const parsedPhone = parseParaguayMobilePhone(toParaguayMobileE164FromInput(rawCustomerPhone));
 		if (!parsedPhone.isValid) {
 			setPhoneFieldError(PARAGUAY_MOBILE_PHONE_ERROR);
-			setSubmitError('Revisa el telefono antes de continuar.');
 			return;
 		}
 
@@ -1513,7 +1555,6 @@ export const initializePublicBookingPage = () => {
 		const customerName = String(customerNameInput.value || '').trim();
 		if (!customerName) {
 			setNameFieldError('El nombre completo es obligatorio.');
-			setSubmitError('Teléfono y nombre completo son obligatorios.');
 			return;
 		}
 

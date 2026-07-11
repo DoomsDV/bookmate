@@ -188,9 +188,9 @@
 .public-booking-stepper [data-step-indicator] {
 	display: none;
 	align-items: center;
-	gap: 0.25rem;
+	gap: 0.55rem;
 	margin: 0;
-	padding: 0.3rem;
+	padding: 0.35rem;
 	list-style: none;
 	background: color-mix(in srgb, var(--surface-container-high) 55%, transparent);
 	border: 1px solid color-mix(in srgb, var(--outline-variant) 45%, transparent);
@@ -420,6 +420,31 @@
 	display: block;
 }
 
+.public-services-more {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 2.75rem;
+	padding: 0.7rem 1rem;
+	border: 0;
+	border-radius: 9999px;
+	background: transparent;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: var(--primary);
+	cursor: pointer;
+	grid-column: 1 / -1;
+	transition:
+		background 0.15s ease,
+		color 0.15s ease;
+}
+
+.public-services-more:hover {
+	background: color-mix(in srgb, var(--primary) 12%, transparent);
+	color: var(--primary-hover);
+}
+
 .booking-primary-action {
 	background: var(--primary-container) !important;
 	color: var(--on-primary-container) !important;
@@ -433,11 +458,124 @@
 	display: none !important;
 }
 
+/* Paso Datos: aviso sutil (sin caja) */
+.public-booking-notice {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.45rem;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	font-size: 0.88rem;
+	font-weight: 500;
+	line-height: 1.45;
+	color: #c9b458;
+	text-align: left;
+}
+
+.public-booking-notice .material-symbols-rounded {
+	flex-shrink: 0;
+	margin-top: 0.05rem;
+	font-size: 1.1rem;
+	line-height: 1;
+	opacity: 0.9;
+}
+
+.public-booking-back-link {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	margin: 0;
+	padding: 0.7rem 1.15rem;
+	border: 0;
+	border-radius: 9999px;
+	background: color-mix(in srgb, var(--surface-container-highest) 80%, transparent);
+	font-size: 0.92rem;
+	font-weight: 500;
+	color: var(--on-surface);
+	cursor: pointer;
+	transition:
+		background 0.15s ease,
+		color 0.15s ease;
+}
+
+.public-booking-back-link:hover {
+	background: var(--surface-container-highest);
+	color: var(--on-surface);
+}
+
+/* Resumen: elevación tonal + filas tipo ticket */
+.public-booking-summary {
+	align-self: start;
+	height: fit-content;
+	padding: 1.5rem;
+	border: 0;
+	border-radius: 1.25rem;
+	background: #1e1e1e;
+	text-align: left;
+}
+
+.public-booking-summary__row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.public-booking-summary__row.hidden {
+	display: none !important;
+}
+
+.public-booking-summary__label {
+	flex: 0 0 auto;
+	font-size: 0.72rem;
+	font-weight: 650;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #9ca3af;
+}
+
+.public-booking-summary__value {
+	min-width: 0;
+	flex: 1 1 auto;
+	font-size: 0.98rem;
+	font-weight: 550;
+	line-height: 1.3;
+	color: #fff;
+	text-align: right;
+}
+
+.public-booking-summary__row--deposit {
+	margin-top: 0.35rem;
+	padding-top: 1rem;
+	border-top: 1px solid color-mix(in srgb, #4b5563 70%, transparent);
+	align-items: baseline;
+}
+
+.public-booking-summary__deposit {
+	font-size: 1.45rem;
+	font-weight: 800;
+	line-height: 1.15;
+	letter-spacing: -0.02em;
+	color: var(--primary);
+	text-align: right;
+}
+
+.public-booking-summary .public-location-link {
+	display: inline-flex;
+	justify-content: flex-end;
+	margin-left: auto;
+	width: auto;
+	max-width: 65%;
+}
+
 .step-item-default,
 .step-item-current,
 .step-item-done {
 	border-radius: 100px;
-	padding: 0.5rem 1rem;
+	padding: 0.5rem 1.15rem;
 	font-weight: 500;
 	text-align: center;
 	transition: all 0.2s ease-in-out;

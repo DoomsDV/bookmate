@@ -137,7 +137,6 @@ export const initializePublicUserBookingPage = () => {
 		!submitButton ||
 		!payDepositButton ||
 		!summaryDateInline ||
-		!summaryProfessional ||
 		!summaryService ||
 		!summaryDepositWrap ||
 		!summaryDeposit ||
@@ -207,7 +206,7 @@ export const initializePublicUserBookingPage = () => {
 		const label = formatLocationLabel(location);
 		const canOpen = Boolean(mapController?.canShowLocationMap(location));
 		summaryLocation.className =
-			'public-location-address mt-1 text-left disabled:cursor-not-allowed';
+			'public-location-link public-booking-summary__value cursor-pointer text-right font-normal disabled:cursor-not-allowed disabled:text-[var(--on-surface-variant)]';
 		summaryLocation.disabled = !canOpen;
 		summaryLocation.replaceChildren();
 		if (!location || label === 'Ubicación no disponible') {
@@ -293,7 +292,7 @@ export const initializePublicUserBookingPage = () => {
 
 		if (summaryServiceInline) summaryServiceInline.textContent = serviceLabel;
 		summaryDateInline.textContent = formattedDate;
-		summaryProfessional.textContent = profile.full_name;
+		if (summaryProfessional) summaryProfessional.textContent = profile.full_name;
 		summaryService.textContent = serviceLabel;
 		summaryDate.textContent = formattedDate;
 		summaryTime.textContent = timeLabel;
@@ -314,8 +313,11 @@ export const initializePublicUserBookingPage = () => {
 			depositPolicyWrap.classList.toggle('hidden', depositAmount <= 0);
 			depositPolicySummary.textContent = summary || 'Consultá la política con el comercio.';
 			if (depositAmount <= 0 && depositPolicyAccept) depositPolicyAccept.checked = false;
+			if (depositAmount <= 0) setPolicyFieldError('');
 		}
 	};
+
+	let servicesExpandedByOrg = new Map<number, boolean>();
 
 	const renderOrganizationServices = () => {
 		orgGroups = buildOrganizationGroups(profile.locations);
@@ -329,6 +331,8 @@ export const initializePublicUserBookingPage = () => {
 			locationsRoot.appendChild(empty);
 			return;
 		}
+
+		const INITIAL_VISIBLE_SERVICES = 4;
 
 		for (const group of orgGroups) {
 			const section = document.createElement('article');
@@ -351,7 +355,21 @@ export const initializePublicUserBookingPage = () => {
 				emptyServices.textContent = 'No hay servicios disponibles en esta organización.';
 				servicesGrid.appendChild(emptyServices);
 			} else {
-				for (const service of group.services) {
+				const selectedIndex =
+					selectedOrgGroup?.org_id_organization === group.org_id_organization && selectedService
+						? group.services.findIndex((service) => service.id_service === selectedService.id_service)
+						: -1;
+				if (selectedIndex >= INITIAL_VISIBLE_SERVICES) {
+					servicesExpandedByOrg.set(group.org_id_organization, true);
+				}
+
+				const expanded = Boolean(servicesExpandedByOrg.get(group.org_id_organization));
+				const visibleServices = expanded
+					? group.services
+					: group.services.slice(0, INITIAL_VISIBLE_SERVICES);
+				const hiddenCount = Math.max(0, group.services.length - INITIAL_VISIBLE_SERVICES);
+
+				for (const service of visibleServices) {
 					const isSelected =
 						selectedOrgGroup?.org_id_organization === group.org_id_organization &&
 						selectedService?.id_service === service.id_service;
@@ -385,6 +403,23 @@ export const initializePublicUserBookingPage = () => {
 						{ signal }
 					);
 					servicesGrid.appendChild(serviceButton);
+				}
+
+				if (!expanded && hiddenCount > 0) {
+					const moreButton = document.createElement('button');
+					moreButton.type = 'button';
+					moreButton.className = 'public-services-more';
+					moreButton.textContent =
+						hiddenCount === 1 ? 'Ver 1 servicio más' : `Ver ${hiddenCount} servicios más`;
+					moreButton.addEventListener(
+						'click',
+						() => {
+							servicesExpandedByOrg.set(group.org_id_organization, true);
+							renderOrganizationServices();
+						},
+						{ signal }
+					);
+					servicesGrid.appendChild(moreButton);
 				}
 			}
 
@@ -583,6 +618,13 @@ export const initializePublicUserBookingPage = () => {
 		node.classList.toggle('hidden', !message);
 	};
 
+	const setPolicyFieldError = (message: string) => {
+		const node = root.querySelector<HTMLElement>('[data-field-error="policy_accepted"]');
+		if (!node) return;
+		node.textContent = message;
+		node.classList.toggle('hidden', !message);
+	};
+
 	const setSubmitError = (message: string) => {
 		if (!submitErrorNode) return;
 		submitErrorNode.textContent = message;
@@ -672,7 +714,7 @@ export const initializePublicUserBookingPage = () => {
 		}
 
 		if (reserveForDeposit && !depositPolicyAccept?.checked) {
-			setSubmitError('Debés aceptar la política de cancelación para continuar.');
+			setPolicyFieldError('Debés aceptar la política de cancelación para continuar.');
 			return null;
 		}
 
@@ -730,6 +772,7 @@ export const initializePublicUserBookingPage = () => {
 		setSubmitError('');
 		setPhoneFieldError('');
 		setNameFieldError('');
+		setPolicyFieldError('');
 
 		const payload = await buildAppointmentPayload(reserveForDeposit);
 		if (!payload) return;
@@ -768,6 +811,7 @@ export const initializePublicUserBookingPage = () => {
 		availableSlotGroups = [];
 		pendingAppointmentId = 0;
 		isLoadingSlots = false;
+		servicesExpandedByOrg = new Map();
 		stopSipapHoldCountdown(root);
 		customerForm.reset();
 		resetCustomerLookupState();
@@ -862,6 +906,10 @@ export const initializePublicUserBookingPage = () => {
 	customerNameInput.addEventListener('input', () => {
 		setNameFieldError('');
 		setSubmitError('');
+	}, { signal });
+
+	depositPolicyAccept?.addEventListener('change', () => {
+		setPolicyFieldError('');
 	}, { signal });
 
 	refreshSummary();
