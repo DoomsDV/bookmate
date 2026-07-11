@@ -929,8 +929,15 @@ class CalendarManager extends HTMLElement {
 				const dayName = new Intl.DateTimeFormat('es-ES', { weekday: 'short' })
 					.format(args.date)
 					.replace('.', '');
-				const dayNumber = args.date.getDate();
 
+				// En vista mes solo hace falta el nombre del día; el número vive en cada celda.
+				if (args.view.type.startsWith('dayGrid')) {
+					return {
+						html: `<div class="custom-cal-header custom-cal-header--month"><span class="cal-day-name">${dayName}</span></div>`,
+					};
+				}
+
+				const dayNumber = args.date.getDate();
 				return {
 					html: `
 						<div class="custom-cal-header">
