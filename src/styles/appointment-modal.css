@@ -515,3 +515,259 @@ html[data-theme='dark'] .appointment-modal-voice-btn__divider {
 		opacity: 0.72;
 	}
 }
+
+/* Tabs: Detalles / Notas y Archivos */
+.appointment-modal-tabs[hidden],
+.appointment-modal-tabs.hidden {
+	display: none !important;
+}
+
+.appointment-modal-tablist {
+	display: flex;
+	width: 100%;
+	gap: 0.25rem;
+	padding: 0.25rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+}
+
+.appointment-modal-tab {
+	flex: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	min-height: 2.35rem;
+	padding: 0.4rem 0.85rem;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--on-surface-variant);
+	font-size: 0.84rem;
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	cursor: pointer;
+	transition: background-color 140ms ease, color 140ms ease;
+}
+
+.appointment-modal-tab:hover {
+	color: var(--on-surface);
+}
+
+.appointment-modal-tab.is-active {
+	background: var(--surface-bright);
+	color: var(--on-surface);
+	box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+}
+
+.appointment-modal-tab:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+	outline-offset: 2px;
+}
+
+.appointment-modal-tab__premium {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--primary);
+	opacity: 0.85;
+}
+
+.appointment-modal-tab-panel[hidden],
+.appointment-modal-tab-panel.hidden {
+	display: none !important;
+}
+
+/* Recordatorio WhatsApp sutil */
+.appointment-wa-reminder {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 0.15rem;
+	margin-top: -0.35rem;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: var(--on-surface-variant);
+	font-size: 0.82rem;
+	font-weight: 600;
+	line-height: 1.25;
+}
+
+.appointment-wa-reminder[hidden],
+.appointment-wa-reminder.hidden {
+	display: none !important;
+}
+
+.appointment-wa-reminder__row {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.appointment-wa-reminder__icon.material-symbols-rounded {
+	display: block;
+	flex-shrink: 0;
+	width: 1em;
+	height: 1em;
+	margin: 0;
+	font-size: 1.05rem;
+	line-height: 1;
+	/* Material Symbols queda ópticamente alto respecto al texto */
+	translate: 0 0.08em;
+	color: var(--on-surface-variant);
+}
+
+.appointment-wa-reminder.is-pending .appointment-wa-reminder__icon {
+	color: color-mix(in srgb, var(--on-surface-variant) 70%, #d97706 30%);
+}
+
+.appointment-wa-reminder.is-confirmed .appointment-wa-reminder__icon {
+	color: color-mix(in srgb, var(--on-surface-variant) 55%, #059669 45%);
+}
+
+.appointment-wa-reminder__meta {
+	padding-left: calc(1.05rem + 0.35rem);
+	font-size: 0.76rem;
+	font-weight: 500;
+	line-height: 1.25;
+	color: color-mix(in srgb, var(--on-surface-variant) 85%, transparent);
+}
+
+.appointment-wa-reminder__meta[hidden],
+.appointment-wa-reminder__meta.hidden {
+	display: none !important;
+}
+
+/* Historial: lock + dropzone */
+.appointment-history {
+	min-height: 14rem;
+}
+
+.appointment-history__body.is-locked {
+	opacity: 0.48;
+	pointer-events: none;
+	user-select: none;
+	filter: grayscale(0.08);
+}
+
+.appointment-history-lock {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1.25rem;
+	pointer-events: none;
+}
+
+.appointment-history-lock[hidden],
+.appointment-history-lock.hidden {
+	display: none !important;
+}
+
+.appointment-history-lock__card {
+	display: flex;
+	max-width: 22rem;
+	flex-direction: column;
+	align-items: center;
+	gap: 0.55rem;
+	border-radius: 1.1rem;
+	border: 1px solid var(--shell-border);
+	background: color-mix(in srgb, var(--surface-bright) 92%, transparent);
+	padding: 1.1rem 1.25rem;
+	text-align: center;
+	box-shadow: 0 10px 28px rgb(0 0 0 / 0.08);
+	backdrop-filter: blur(2px);
+}
+
+.appointment-history-lock__icon {
+	font-size: 1.55rem;
+	line-height: 1;
+	color: var(--primary);
+}
+
+.appointment-history-lock__text {
+	font-size: 0.88rem;
+	font-weight: 700;
+	line-height: 1.35;
+	color: var(--on-surface);
+}
+
+.appointment-dropzone {
+	display: flex;
+	width: 100%;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	min-height: 8.5rem;
+	padding: 1.25rem 1rem;
+	border: 2px dashed color-mix(in srgb, var(--shell-border) 88%, var(--on-surface-variant) 12%);
+	border-radius: 1.1rem;
+	background: color-mix(in srgb, var(--surface) 70%, var(--surface-bright) 30%);
+	color: var(--on-surface-variant);
+	cursor: pointer;
+	transition:
+		border-color 140ms ease,
+		background-color 140ms ease,
+		color 140ms ease;
+}
+
+.appointment-dropzone:hover,
+.appointment-dropzone.is-dragover {
+	border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+	background: color-mix(in srgb, var(--primary) 8%, var(--surface-bright));
+	color: var(--on-surface);
+}
+
+.appointment-dropzone:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+	outline-offset: 2px;
+}
+
+.appointment-dropzone:disabled,
+.appointment-dropzone[aria-disabled='true'] {
+	cursor: not-allowed;
+	opacity: 1;
+}
+
+.appointment-dropzone__icon {
+	font-size: 1.85rem;
+	line-height: 1;
+	color: var(--primary);
+}
+
+.appointment-dropzone__title {
+	font-size: 0.9rem;
+	font-weight: 760;
+	line-height: 1.3;
+	text-align: center;
+	color: var(--on-surface);
+}
+
+.appointment-dropzone__hint {
+	font-size: 0.76rem;
+	font-weight: 600;
+	line-height: 1.3;
+	text-align: center;
+	color: var(--on-surface-variant);
+}
+
+html[data-theme='dark'] .appointment-modal-tablist {
+	background: color-mix(in srgb, var(--surface-container) 70%, rgb(255 255 255 / 0.04));
+}
+
+html[data-theme='dark'] .appointment-modal-tab.is-active {
+	background: color-mix(in srgb, var(--surface-bright) 92%, rgb(255 255 255 / 0.06));
+	box-shadow: none;
+}
+
+dialog[data-appointment-modal]:has([data-appointment-tabs]:not(.hidden):not([hidden]))
+	> div:first-child {
+	border-bottom-width: 0;
+	box-shadow: none;
+}

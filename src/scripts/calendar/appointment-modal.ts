@@ -163,15 +163,24 @@ class AppointmentModal extends HTMLElement {
 	modalStatusReadonlyLabel: HTMLElement | null = null;
 	modalFooter: HTMLElement | null = null;
 	modalFooterWrap: HTMLElement | null = null;
-	attendanceWrap: HTMLElement | null = null;
-	attendancePendingWrap: HTMLElement | null = null;
+	waReminder: HTMLElement | null = null;
+	waReminderIcon: HTMLElement | null = null;
+	waReminderLabel: HTMLElement | null = null;
 	attendanceReplyRow: HTMLElement | null = null;
 	attendanceReplyAt: HTMLElement | null = null;
 	scheduleMisalignedWrap: HTMLElement | null = null;
 	scheduleMisalignedTitle: HTMLElement | null = null;
 	scheduleMisalignedMessage: HTMLElement | null = null;
 	scheduleMisalignedLink: HTMLAnchorElement | null = null;
+	tabsBar: HTMLElement | null = null;
+	tabButtons: NodeListOf<HTMLButtonElement> | null = null;
+	tabPanels: NodeListOf<HTMLElement> | null = null;
+	activeTab: 'details' | 'notes' = 'details';
 	historySection: HTMLElement | null = null;
+	historyBody: HTMLElement | null = null;
+	notesLock: HTMLElement | null = null;
+	notesLockText: HTMLElement | null = null;
+	dropzone: HTMLElement | null = null;
 	notesEditWrap: HTMLElement | null = null;
 	sessionNotesInput: HTMLTextAreaElement | null = null;
 	notesHint: HTMLElement | null = null;
@@ -266,10 +275,12 @@ class AppointmentModal extends HTMLElement {
 		this.modalFooter = this.querySelector<HTMLElement>('[data-appointment-modal-footer]') ?? null;
 		this.modalFooterWrap =
 			this.querySelector<HTMLElement>('[data-appointment-modal-footer-wrap]') ?? null;
-		this.attendanceWrap =
-			this.form?.querySelector<HTMLElement>('[data-appointment-attendance-wrap]') ?? null;
-		this.attendancePendingWrap =
-			this.form?.querySelector<HTMLElement>('[data-appointment-attendance-pending-wrap]') ?? null;
+		this.waReminder =
+			this.form?.querySelector<HTMLElement>('[data-appointment-wa-reminder]') ?? null;
+		this.waReminderIcon =
+			this.form?.querySelector<HTMLElement>('[data-appointment-wa-reminder-icon]') ?? null;
+		this.waReminderLabel =
+			this.form?.querySelector<HTMLElement>('[data-appointment-wa-reminder-label]') ?? null;
 		this.attendanceReplyRow =
 			this.form?.querySelector<HTMLElement>('[data-appointment-attendance-reply]') ?? null;
 		this.attendanceReplyAt =
@@ -286,8 +297,20 @@ class AppointmentModal extends HTMLElement {
 		this.scheduleMisalignedLink =
 			this.form?.querySelector<HTMLAnchorElement>('[data-appointment-schedule-misaligned-link]') ??
 			null;
+		this.tabsBar = this.form?.querySelector<HTMLElement>('[data-appointment-tabs]') ?? null;
+		this.tabButtons = this.form?.querySelectorAll<HTMLButtonElement>('[data-appointment-tab]') ?? null;
+		this.tabPanels =
+			this.form?.querySelectorAll<HTMLElement>('[data-appointment-tab-panel]') ?? null;
 		this.historySection =
 			this.form?.querySelector<HTMLElement>('[data-appointment-history-section]') ?? null;
+		this.historyBody =
+			this.form?.querySelector<HTMLElement>('[data-appointment-history-body]') ?? null;
+		this.notesLock =
+			this.form?.querySelector<HTMLElement>('[data-appointment-notes-lock]') ?? null;
+		this.notesLockText =
+			this.notesLock?.querySelector<HTMLElement>('.appointment-history-lock__text') ?? null;
+		this.dropzone =
+			this.form?.querySelector<HTMLElement>('[data-appointment-dropzone]') ?? null;
 		this.notesEditWrap =
 			this.form?.querySelector<HTMLElement>('[data-appointment-notes-edit-wrap]') ?? null;
 		this.sessionNotesInput =
@@ -398,7 +421,14 @@ class AppointmentModal extends HTMLElement {
 
 		this.attachmentAddButton?.addEventListener('click', this.handleAttachmentAddClick, { signal });
 		this.attachmentInput?.addEventListener('change', this.handleAttachmentInputChange, { signal });
+		this.dropzone?.addEventListener('dragenter', this.handleDropzoneDragEnter, { signal });
+		this.dropzone?.addEventListener('dragover', this.handleDropzoneDragOver, { signal });
+		this.dropzone?.addEventListener('dragleave', this.handleDropzoneDragLeave, { signal });
+		this.dropzone?.addEventListener('drop', this.handleDropzoneDrop, { signal });
 		this.statusInput?.addEventListener('change', this.handleStatusChange, { signal });
+		for (const tab of this.tabButtons ?? []) {
+			tab.addEventListener('click', this.handleTabClick, { signal });
+		}
 
 		this.setCreateMode();
 		this.resetFormValues();
@@ -859,7 +889,7 @@ class AppointmentModal extends HTMLElement {
 		if (!this.isImmutableReadOnly) {
 			this.submitButton.disabled = false;
 			this.submitIcon.textContent = this.mode === 'edit' ? 'save' : 'check';
-			this.submitLabel.textContent = this.mode === 'edit' ? 'Guardar cambios' : 'Crear cita';
+			this.syncSubmitLabel();
 		}
 		if (this.mode === 'edit' && this.deleteButton && !this.isImmutableReadOnly) {
 			this.deleteButton.disabled = false;
@@ -897,12 +927,17 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	hideAttendanceBlock() {
-		this.attendanceWrap?.setAttribute('hidden', '');
-		this.attendanceWrap?.classList.add('hidden');
-		this.attendancePendingWrap?.setAttribute('hidden', '');
-		this.attendancePendingWrap?.classList.add('hidden');
+		this.waReminder?.setAttribute('hidden', '');
+		this.waReminder?.classList.add('hidden');
+		this.waReminder?.classList.remove('is-confirmed', 'is-pending');
 		this.attendanceReplyRow?.setAttribute('hidden', '');
+		this.attendanceReplyRow?.classList.add('hidden');
 		if (this.attendanceReplyAt) this.attendanceReplyAt.textContent = '';
+		if (this.waReminderIcon) this.waReminderIcon.textContent = 'schedule';
+		if (this.waReminderLabel) {
+			this.waReminderLabel.textContent =
+				'Recordatorio de WhatsApp: Enviado, pendiente de respuesta';
+		}
 	}
 
 	hideScheduleMisalignedBlock() {
@@ -948,29 +983,155 @@ class AppointmentModal extends HTMLElement {
 		this.hideAttendanceBlock();
 
 		if (isAttendanceReconfirmed(appointment)) {
-			this.attendanceWrap?.removeAttribute('hidden');
-			this.attendanceWrap?.classList.remove('hidden');
+			if (this.waReminderIcon) this.waReminderIcon.textContent = 'check_circle';
+			if (this.waReminderLabel) {
+				this.waReminderLabel.textContent =
+					'Recordatorio de WhatsApp: Confirmado por el cliente';
+			}
+			this.waReminder?.classList.add('is-confirmed');
+			this.waReminder?.removeAttribute('hidden');
+			this.waReminder?.classList.remove('hidden');
 
 			const replyLabel = formatAttendanceReplyAt(appointment.attendance_reply_at);
 			if (replyLabel && this.attendanceReplyAt) {
-				this.attendanceReplyAt.textContent = replyLabel;
+				this.attendanceReplyAt.textContent = `Confirmado el ${replyLabel}`;
 				this.attendanceReplyRow?.removeAttribute('hidden');
+				this.attendanceReplyRow?.classList.remove('hidden');
 			}
 			return;
 		}
 
 		if (isAttendanceAwaitingReconfirmation(appointment)) {
-			this.attendancePendingWrap?.removeAttribute('hidden');
-			this.attendancePendingWrap?.classList.remove('hidden');
+			if (this.waReminderIcon) this.waReminderIcon.textContent = 'schedule';
+			if (this.waReminderLabel) {
+				this.waReminderLabel.textContent =
+					'Recordatorio de WhatsApp: Enviado, pendiente de respuesta';
+			}
+			this.waReminder?.classList.add('is-pending');
+			this.waReminder?.removeAttribute('hidden');
+			this.waReminder?.classList.remove('hidden');
 		}
+	}
+
+	handleTabClick = (event: Event) => {
+		const button = event.currentTarget as HTMLButtonElement | null;
+		const tab = button?.dataset.appointmentTab;
+		if (tab !== 'details' && tab !== 'notes') return;
+		this.setActiveTab(tab);
+	};
+
+	private setActiveTab(tab: 'details' | 'notes') {
+		this.activeTab = tab;
+
+		for (const button of this.tabButtons ?? []) {
+			const isActive = button.dataset.appointmentTab === tab;
+			button.classList.toggle('is-active', isActive);
+			button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+			button.tabIndex = isActive ? 0 : -1;
+		}
+
+		for (const panel of this.tabPanels ?? []) {
+			const isActive = panel.dataset.appointmentTabPanel === tab;
+			panel.classList.toggle('hidden', !isActive);
+			if (isActive) panel.removeAttribute('hidden');
+			else panel.setAttribute('hidden', '');
+		}
+
+		const scroll = this.form?.querySelector<HTMLElement>('[data-appointment-form-scroll]');
+		if (scroll) scroll.scrollTop = 0;
+		this.syncSubmitLabel();
+	}
+
+	private syncSubmitLabel() {
+		if (!this.submitLabel || this.isSubmitting) return;
+		if (this.mode === 'create') {
+			this.submitLabel.textContent = 'Crear cita';
+			return;
+		}
+		if (this.isImmutableReadOnly) return;
+		this.submitLabel.textContent =
+			this.activeTab === 'notes' ? 'Guardar ficha' : 'Guardar cambios';
+	}
+
+	private getCurrentAppointmentStatus() {
+		if (this.immutableReadOnlyStatus) return this.immutableReadOnlyStatus;
+		return String(this.statusInput?.value || '').trim().toUpperCase();
+	}
+
+	private isNotesSectionUnlocked() {
+		return this.getCurrentAppointmentStatus() === 'COMPLETADO';
+	}
+
+	private syncNotesLockState() {
+		if (!this.historyEnabled) {
+			this.historyBody?.classList.remove('is-locked');
+			this.notesLock?.setAttribute('hidden', '');
+			this.notesLock?.classList.add('hidden');
+			return;
+		}
+
+		const status = this.getCurrentAppointmentStatus();
+		const unlocked = status === 'COMPLETADO';
+		const locked = !unlocked;
+
+		this.historyBody?.classList.toggle('is-locked', locked);
+		if (this.notesLock) {
+			if (locked) {
+				this.notesLock.removeAttribute('hidden');
+				this.notesLock.classList.remove('hidden');
+			} else {
+				this.notesLock.setAttribute('hidden', '');
+				this.notesLock.classList.add('hidden');
+			}
+		}
+		if (this.notesLockText) {
+			this.notesLockText.textContent =
+				status === 'CANCELADO'
+					? 'Las notas y archivos no están disponibles en citas canceladas'
+					: 'Las notas y archivos se habilitan al cambiar el estado a Completado';
+		}
+
+		const notesBlocked = locked || this.isImmutableReadOnly;
+		if (this.sessionNotesInput) {
+			this.sessionNotesInput.readOnly = notesBlocked;
+			this.sessionNotesInput.disabled = locked;
+		}
+		if (this.attachmentAddButton) {
+			this.attachmentAddButton.disabled = locked || this.isUploadingAttachment;
+			this.attachmentAddButton.setAttribute('aria-disabled', locked ? 'true' : 'false');
+		}
+		if (this.attachmentInput) {
+			this.attachmentInput.disabled = locked || this.isUploadingAttachment;
+		}
+		if (this.notesHint) {
+			this.notesHint.innerHTML = unlocked
+				? 'Se guardarán junto con los cambios de esta cita.'
+				: 'Disponible cuando el estado sea <b>Completado</b>.';
+		}
+	}
+
+	private showTabsBar() {
+		this.tabsBar?.removeAttribute('hidden');
+		this.tabsBar?.classList.remove('hidden');
+		this.setActiveTab('details');
+	}
+
+	private hideTabsBar() {
+		this.tabsBar?.setAttribute('hidden', '');
+		this.tabsBar?.classList.add('hidden');
+		this.setActiveTab('details');
 	}
 
 	private hideHistorySection() {
 		this.historyEnabled = false;
 		this.currentAttachments = [];
 		this.isUploadingAttachment = false;
+		this.hideTabsBar();
 		this.historySection?.setAttribute('hidden', '');
 		this.historySection?.classList.add('hidden');
+		this.historyBody?.classList.remove('is-locked');
+		this.notesLock?.setAttribute('hidden', '');
+		this.notesLock?.classList.add('hidden');
 		this.notesEditWrap?.setAttribute('hidden', '');
 		this.notesEditWrap?.classList.add('hidden');
 		this.notesReadonlyWrap?.setAttribute('hidden', '');
@@ -978,6 +1139,7 @@ class AppointmentModal extends HTMLElement {
 		if (this.sessionNotesInput) {
 			this.sessionNotesInput.value = '';
 			this.sessionNotesInput.readOnly = false;
+			this.sessionNotesInput.disabled = false;
 		}
 		if (this.historyNotes) this.historyNotes.textContent = '';
 		this.attachmentsList?.replaceChildren();
@@ -985,6 +1147,7 @@ class AppointmentModal extends HTMLElement {
 		this.clearAttachmentError();
 		this.setUploadingAttachment(false);
 		if (this.attachmentInput) this.attachmentInput.value = '';
+		this.dropzone?.classList.remove('is-dragover');
 	}
 
 	private clearAttachmentError() {
@@ -1001,9 +1164,17 @@ class AppointmentModal extends HTMLElement {
 
 	private setUploadingAttachment(value: boolean) {
 		this.isUploadingAttachment = value;
-		if (this.attachmentAddButton) this.attachmentAddButton.disabled = value;
+		const locked = this.historyEnabled && !this.isNotesSectionUnlocked();
+		if (this.attachmentAddButton) {
+			this.attachmentAddButton.disabled = value || locked;
+		}
 		if (this.attachmentAddLabel) {
-			this.attachmentAddLabel.textContent = value ? 'Subiendo…' : 'Subir archivo';
+			this.attachmentAddLabel.textContent = value
+				? 'Subiendo…'
+				: 'Arrastrá tus archivos aquí o hacé clic para buscar';
+		}
+		if (this.attachmentInput) {
+			this.attachmentInput.disabled = value || locked;
 		}
 	}
 
@@ -1079,51 +1250,50 @@ class AppointmentModal extends HTMLElement {
 		if (!this.historySection || appointment.history_enabled !== true) return;
 
 		this.historyEnabled = true;
+		this.showTabsBar();
 		this.historySection.removeAttribute('hidden');
 		this.historySection.classList.remove('hidden');
 
 		const status = String(appointment.status || '').trim().toUpperCase();
-		const isImmutable = status === 'COMPLETADO' || status === 'CANCELADO';
 		const savedNotes = appointment.history?.notes ?? null;
+		const showReadonlyNotes =
+			(status === 'CANCELADO' || (status === 'COMPLETADO' && this.isImmutableReadOnly)) &&
+			Boolean(savedNotes);
 
-		if (isImmutable) {
-			if (savedNotes && this.notesReadonlyWrap && this.historyNotes) {
-				this.historyNotes.textContent = savedNotes;
-				this.notesReadonlyWrap.removeAttribute('hidden');
-				this.notesReadonlyWrap.classList.remove('hidden');
-			}
+		if (showReadonlyNotes && this.notesReadonlyWrap && this.historyNotes) {
+			this.historyNotes.textContent = savedNotes;
+			this.notesReadonlyWrap.removeAttribute('hidden');
+			this.notesReadonlyWrap.classList.remove('hidden');
+			this.notesEditWrap?.setAttribute('hidden', '');
+			this.notesEditWrap?.classList.add('hidden');
 		} else if (this.notesEditWrap && this.sessionNotesInput) {
 			this.sessionNotesInput.value = savedNotes ?? '';
-			this.sessionNotesInput.readOnly = false;
 			this.notesEditWrap.removeAttribute('hidden');
 			this.notesEditWrap.classList.remove('hidden');
+			this.notesReadonlyWrap?.setAttribute('hidden', '');
+			this.notesReadonlyWrap?.classList.add('hidden');
 		}
 
 		this.currentAttachments = Array.isArray(appointment.history?.attachments)
 			? [...(appointment.history?.attachments ?? [])]
 			: [];
 		this.renderAttachments();
-
-		// Los adjuntos se gestionan aun cuando la cita ya esta completada/cancelada.
-		if (this.attachmentInput) this.attachmentInput.disabled = false;
-		if (this.attachmentAddButton) this.attachmentAddButton.disabled = false;
+		this.syncNotesLockState();
 	}
 
 	handleStatusChange = () => {
-		if (!this.historyEnabled || this.isImmutableReadOnly) return;
-		const status = String(this.statusInput?.value || '').trim().toUpperCase();
-		const showNotes = status !== 'CANCELADO';
-		if (this.notesEditWrap) {
-			this.notesEditWrap.classList.toggle('hidden', !showNotes);
-			if (showNotes) this.notesEditWrap.removeAttribute('hidden');
-			else this.notesEditWrap.setAttribute('hidden', '');
+		if (!this.historyEnabled) return;
+		const status = this.getCurrentAppointmentStatus();
+		if (status === 'CANCELADO') {
+			this.notesEditWrap?.setAttribute('hidden', '');
+			this.notesEditWrap?.classList.add('hidden');
+		} else if (this.notesEditWrap) {
+			this.notesEditWrap.classList.remove('hidden');
+			this.notesEditWrap.removeAttribute('hidden');
+			this.notesReadonlyWrap?.setAttribute('hidden', '');
+			this.notesReadonlyWrap?.classList.add('hidden');
 		}
-		if (this.notesHint) {
-			this.notesHint.innerHTML =
-				status === 'COMPLETADO'
-					? 'Se guardarán junto con los cambios de esta cita.'
-					: 'Se guardarán al marcar la cita como <b>Completada</b>.';
-		}
+		this.syncNotesLockState();
 	};
 
 	private syncPaymentStatusLabel(status: string | null, depositAmount: number | null) {
@@ -1186,49 +1356,106 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	handleAttachmentAddClick = () => {
-		if (this.isUploadingAttachment) return;
+		if (this.isUploadingAttachment || !this.isNotesSectionUnlocked()) return;
 		this.clearAttachmentError();
 		this.attachmentInput?.click();
 	};
 
+	handleDropzoneDragEnter = (event: DragEvent) => {
+		event.preventDefault();
+		if (!this.isNotesSectionUnlocked() || this.isUploadingAttachment) return;
+		this.dropzone?.classList.add('is-dragover');
+	};
+
+	handleDropzoneDragOver = (event: DragEvent) => {
+		event.preventDefault();
+		if (!this.isNotesSectionUnlocked() || this.isUploadingAttachment) return;
+		this.dropzone?.classList.add('is-dragover');
+	};
+
+	handleDropzoneDragLeave = (event: DragEvent) => {
+		event.preventDefault();
+		const related = event.relatedTarget as Node | null;
+		if (related && this.dropzone?.contains(related)) return;
+		this.dropzone?.classList.remove('is-dragover');
+	};
+
+	handleDropzoneDrop = (event: DragEvent) => {
+		event.preventDefault();
+		this.dropzone?.classList.remove('is-dragover');
+		if (!this.isNotesSectionUnlocked() || this.isUploadingAttachment) return;
+		const files = event.dataTransfer?.files;
+		if (!files?.length) return;
+		void this.uploadAttachmentFiles(Array.from(files));
+	};
+
 	handleAttachmentInputChange = async () => {
 		const input = this.attachmentInput;
-		if (!input || !this.client || this.editingAppointmentId <= 0) return;
-		const file = input.files?.[0];
-		if (!file) return;
+		if (!input) return;
+		const files = input.files ? Array.from(input.files) : [];
+		input.value = '';
+		if (!files.length) return;
+		await this.uploadAttachmentFiles(files);
+	};
 
-		const maxBytes = 15 * 1024 * 1024;
-		if (file.size > maxBytes) {
-			this.showAttachmentError('El archivo supera el límite de 15 MB.');
-			input.value = '';
+	private isAllowedAttachmentFile(file: File) {
+		const mime = String(file.type || '').toLowerCase();
+		const name = String(file.name || '').toLowerCase();
+		if (mime === 'image/jpeg' || mime === 'image/png' || mime === 'application/pdf') return true;
+		return /\.(jpe?g|png|pdf)$/.test(name);
+	}
+
+	private async uploadAttachmentFiles(files: File[]) {
+		if (!this.client || this.editingAppointmentId <= 0 || this.isUploadingAttachment) return;
+		if (!this.isNotesSectionUnlocked()) {
+			this.showAttachmentError(
+				'Las notas y archivos se habilitan al cambiar el estado a Completado.'
+			);
 			return;
+		}
+
+		const maxBytes = 5 * 1024 * 1024;
+		const queue = files.filter(Boolean);
+		if (!queue.length) return;
+
+		for (const file of queue) {
+			if (!this.isAllowedAttachmentFile(file)) {
+				this.showAttachmentError('Solo se permiten archivos JPG, PNG o PDF.');
+				return;
+			}
+			if (file.size > maxBytes) {
+				this.showAttachmentError('El archivo supera el límite de 5 MB.');
+				return;
+			}
 		}
 
 		this.clearAttachmentError();
 		this.setUploadingAttachment(true);
 		try {
-			const base64 = await this.fileToBase64(file);
-			const { attachment } = await this.client.uploadAttachment(this.editingAppointmentId, {
-				file_base64: base64,
-				filename: file.name,
-				mime_type: file.type || 'application/octet-stream',
-			});
-			if (attachment) {
-				this.currentAttachments = [...this.currentAttachments, attachment];
-				this.renderAttachments();
+			for (const file of queue) {
+				const base64 = await this.fileToBase64(file);
+				const { attachment } = await this.client.uploadAttachment(this.editingAppointmentId, {
+					file_base64: base64,
+					filename: file.name,
+					mime_type: file.type || 'application/octet-stream',
+				});
+				if (attachment) {
+					this.currentAttachments = [...this.currentAttachments, attachment];
+					this.renderAttachments();
+				}
 			}
 		} catch (error) {
 			this.showAttachmentError(
 				error instanceof Error ? error.message : 'No fue posible subir el archivo adjunto.'
 			);
 		} finally {
-			input.value = '';
 			this.setUploadingAttachment(false);
 		}
-	};
+	}
 
 	private async handleAttachmentDelete(attachmentId: number) {
 		if (!this.client || this.editingAppointmentId <= 0 || this.isUploadingAttachment) return;
+		if (!this.isNotesSectionUnlocked()) return;
 
 		const confirmMessage = '¿Eliminar este archivo adjunto? Esta acción no se puede deshacer.';
 		const confirmed = window.BookmateAlert?.confirm
@@ -1417,8 +1644,8 @@ class AppointmentModal extends HTMLElement {
 		if (this.modalDescription) {
 			this.modalDescription.textContent = 'Completa los datos para registrar una nueva reserva.';
 		}
-		if (this.submitLabel) this.submitLabel.textContent = 'Crear cita';
 		if (this.submitIcon) this.submitIcon.textContent = 'check';
+		this.syncSubmitLabel();
 		this.syncDeleteButtonVisibility();
 		if (this.statusInput) {
 			this.statusInput.value = 'CONFIRMADO';
@@ -1439,8 +1666,9 @@ class AppointmentModal extends HTMLElement {
 		if (this.modalDescription) {
 			this.modalDescription.textContent = 'Actualiza los datos de la reserva seleccionada.';
 		}
-		if (this.submitLabel) this.submitLabel.textContent = 'Guardar cambios';
 		if (this.submitIcon) this.submitIcon.textContent = 'save';
+		this.activeTab = 'details';
+		this.syncSubmitLabel();
 		this.syncDeleteButtonVisibility();
 		if (this.statusInput) this.statusInput.disabled = false;
 		this.modalStatusWrap?.removeAttribute('hidden');

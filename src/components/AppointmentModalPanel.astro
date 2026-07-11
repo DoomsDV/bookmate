@@ -82,8 +82,59 @@ const { showVoiceButton = false }: Props = Astro.props;
 				</div>
 
 				<div
+					class="appointment-modal-tabs shrink-0 hidden border-b border-(--shell-border) bg-(--surface-bright) px-4 pt-1 pb-3 sm:px-7"
+					data-appointment-tabs
+					hidden
+				>
+					<div
+						class="appointment-modal-tablist"
+						role="tablist"
+						aria-label="Secciones de la cita"
+					>
+						<button
+							type="button"
+							class="appointment-modal-tab is-active"
+							role="tab"
+							id="appointment-tab-details"
+							aria-selected="true"
+							aria-controls="appointment-panel-details"
+							data-appointment-tab="details"
+							tabindex="0"
+						>
+							Detalles
+						</button>
+						<button
+							type="button"
+							class="appointment-modal-tab"
+							role="tab"
+							id="appointment-tab-notes"
+							aria-selected="false"
+							aria-controls="appointment-panel-notes"
+							data-appointment-tab="notes"
+							tabindex="-1"
+						>
+							<span>Notas y Archivos</span>
+							<span
+								class="appointment-modal-tab__premium"
+								title="Premium"
+								aria-label="Premium"
+							>
+								<span class="material-symbols-rounded text-[0.9rem]" aria-hidden="true">workspace_premium</span>
+							</span>
+						</button>
+					</div>
+				</div>
+
+				<div
 					class="flex-1 overflow-y-auto overscroll-contain min-h-0"
 					data-appointment-form-scroll
+				>
+				<div
+					class="appointment-modal-tab-panel"
+					role="tabpanel"
+					id="appointment-panel-details"
+					aria-labelledby="appointment-tab-details"
+					data-appointment-tab-panel="details"
 				>
 				<div class="px-7 py-7 grid gap-5">
 					<div class="grid gap-5 sm:grid-cols-2">
@@ -250,6 +301,32 @@ const { showVoiceButton = false }: Props = Astro.props;
 								<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true" data-modal-status-readonly-icon>cancel</span>
 							<span data-modal-status-readonly-label>Cancelado</span>
 						</div>
+					</div>
+
+					<div
+						class="appointment-wa-reminder hidden"
+						data-appointment-wa-reminder
+						hidden
+						role="status"
+						aria-live="polite"
+					>
+						<span class="appointment-wa-reminder__row">
+							<span
+								class="material-symbols-rounded appointment-wa-reminder__icon"
+								aria-hidden="true"
+								data-appointment-wa-reminder-icon
+							>schedule</span>
+							<span data-appointment-wa-reminder-label>
+								Recordatorio de WhatsApp: Enviado, pendiente de respuesta
+							</span>
+						</span>
+						<span
+							class="appointment-wa-reminder__meta hidden"
+							data-appointment-attendance-reply
+							hidden
+						>
+							<span data-appointment-attendance-reply-at></span>
+						</span>
 					</div>
 
 					<div class="relative">
@@ -429,125 +506,99 @@ const { showVoiceButton = false }: Props = Astro.props;
 						</span>
 					</div>
 				</div>
-
-				<div
-					class="mx-7 mb-4 hidden rounded-2xl border border-amber-200/80 bg-amber-50/90 px-4 py-3.5 dark:border-amber-900/60 dark:bg-amber-950/35"
-					data-appointment-attendance-pending-wrap
-					hidden
-				>
-					<div class="flex items-start gap-3">
-						<span
-							class="material-symbols-rounded mt-0.5 shrink-0 text-[1.35rem] text-amber-600 dark:text-amber-400"
-							aria-hidden="true"
-						>
-							schedule
-						</span>
-						<span class="grid gap-1">
-							<span class="text-[0.95rem] font-bold text-(--on-surface)">
-								Pendiente de reconfirmación
-							</span>
-							<span class="text-[0.85rem] font-medium leading-snug text-(--on-surface-variant)">
-								El cliente aún no confirmó su asistencia por WhatsApp. Este dato es solo informativo.
-							</span>
-						</span>
-					</div>
 				</div>
 
 				<div
-					class="mx-7 mb-4 hidden rounded-2xl border border-emerald-200/80 bg-emerald-50/90 px-4 py-3.5 dark:border-emerald-900/60 dark:bg-emerald-950/35"
-					data-appointment-attendance-wrap
+					class="appointment-modal-tab-panel hidden"
+					role="tabpanel"
+					id="appointment-panel-notes"
+					aria-labelledby="appointment-tab-notes"
+					data-appointment-tab-panel="notes"
 					hidden
-					role="status"
-					aria-live="polite"
 				>
-					<div class="flex pointer-events-none select-none items-start gap-3">
-						<span
-							class="material-symbols-rounded mt-0.5 shrink-0 text-[1.35rem] text-emerald-600 dark:text-emerald-400"
-							aria-hidden="true"
-						>
-							check_circle
-						</span>
-						<span class="grid gap-1">
-							<span class="text-[0.95rem] font-bold text-(--on-surface)">
-								Asistencia reconfirmada
-							</span>
-							<span class="text-[0.85rem] font-medium leading-snug text-(--on-surface-variant)">
-								El cliente confirmó su asistencia por WhatsApp. Este dato es solo informativo.
-							</span>
-							<span
-								class="hidden text-[0.82rem] font-semibold text-emerald-800 dark:text-emerald-300"
-								data-appointment-attendance-reply
-							>
-								Confirmado el
-								<span data-appointment-attendance-reply-at></span>
-							</span>
-						</span>
-					</div>
-				</div>
-
 				<div
-					class="mx-7 mb-5 hidden grid gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4"
+					class="appointment-history relative px-7 py-7"
 					data-appointment-history-section
 					hidden
 				>
-					<div class="flex items-center gap-2">
-						<span class="material-symbols-rounded text-[1.2rem] text-(--primary)" aria-hidden="true">history_edu</span>
-						<h3 class="m-0 text-[1rem] font-extrabold tracking-tight text-(--on-surface)">Historial de la cita</h3>
-						<span class="ml-auto inline-flex items-center gap-1 rounded-full bg-(--primary-soft) px-2.5 py-0.5 text-[0.72rem] font-bold text-(--primary)">
-							<span class="material-symbols-rounded text-[0.9rem]" aria-hidden="true">workspace_premium</span>
-							Premium
-						</span>
-					</div>
+					<div
+						class="appointment-history__body grid gap-5"
+						data-appointment-history-body
+					>
+						<label class="grid gap-1.5 text-[0.9rem] font-bold text-(--on-surface)" data-appointment-notes-edit-wrap>
+							Notas de la sesión
+							<textarea
+								name="session_notes"
+								data-appointment-session-notes
+								rows="4"
+								maxlength="10000"
+								placeholder="Anota lo realizado, observaciones o recomendaciones…"
+								class="resize-y rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+							></textarea>
+							<span class="text-[0.78rem] font-semibold text-(--on-surface-variant)" data-appointment-notes-hint>
+								Se guardarán junto con los cambios de esta cita.
+							</span>
+						</label>
 
-					<label class="hidden grid gap-1.5 text-[0.9rem] font-bold text-(--on-surface)" data-appointment-notes-edit-wrap hidden>
-						Notas de la sesión
-						<textarea
-							name="session_notes"
-							data-appointment-session-notes
-							rows="3"
-							maxlength="10000"
-							placeholder="Anota lo realizado, observaciones o recomendaciones…"
-							class="resize-y rounded-xl border border-(--shell-border) bg-(--surface) px-4 py-3 text-[0.92rem] font-medium leading-snug outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-						></textarea>
-						<span class="text-[0.78rem] font-semibold text-(--on-surface-variant)" data-appointment-notes-hint>
-							Se guardarán al marcar la cita como <b>Completada</b>.
-						</span>
-					</label>
-
-					<div class="hidden grid gap-1.5" data-appointment-notes-readonly-wrap hidden>
-						<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">Notas de la sesión</span>
-						<p
-							class="m-0 whitespace-pre-line rounded-xl border border-(--shell-border) bg-(--surface) px-4 py-3 text-[0.92rem] font-medium leading-snug text-(--on-surface)"
-							data-appointment-history-notes
-						></p>
-					</div>
-
-					<div class="grid gap-2">
-						<div class="flex items-center justify-between gap-2">
-							<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">Archivos adjuntos</span>
-							<button
-								type="button"
-								class="inline-flex items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface) px-3 py-1.5 text-[0.8rem] font-bold text-(--primary) transition hover:bg-(--primary-soft) disabled:cursor-not-allowed disabled:opacity-60"
-								data-appointment-attachment-add
-							>
-								<span class="material-symbols-rounded text-[1.05rem]" aria-hidden="true">upload_file</span>
-								<span data-appointment-attachment-add-label>Subir archivo</span>
-							</button>
-							<input type="file" class="hidden" data-appointment-attachment-input />
+						<div class="hidden grid gap-1.5" data-appointment-notes-readonly-wrap hidden>
+							<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">Notas de la sesión</span>
+							<p
+								class="m-0 whitespace-pre-line rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug text-(--on-surface)"
+								data-appointment-history-notes
+							></p>
 						</div>
 
-						<ul class="m-0 grid list-none gap-2 p-0" data-appointment-attachments></ul>
+						<div class="grid gap-2" data-appointment-attachments-wrap>
+							<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">Archivos adjuntos</span>
 
-						<p class="m-0 text-[0.82rem] font-medium text-(--on-surface-variant)" data-appointment-attachment-empty>
-							Todavía no hay archivos adjuntos.
-						</p>
+							<button
+								type="button"
+								class="appointment-dropzone"
+								data-appointment-attachment-add
+								data-appointment-dropzone
+							>
+								<span class="material-symbols-rounded appointment-dropzone__icon" aria-hidden="true">cloud_upload</span>
+								<span class="appointment-dropzone__title" data-appointment-attachment-add-label>
+									Arrastrá tus archivos aquí o hacé clic para buscar
+								</span>
+								<span class="appointment-dropzone__hint">
+									Formatos: JPG, PNG, PDF. Máx 5MB
+								</span>
+							</button>
+							<input
+								type="file"
+								class="hidden"
+								accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+								data-appointment-attachment-input
+							/>
 
-						<p
-							class="m-0 hidden text-[0.82rem] font-semibold text-rose-600 dark:text-rose-400"
-							data-appointment-attachment-error
-							role="alert"
-						></p>
+							<ul class="m-0 grid list-none gap-2 p-0" data-appointment-attachments></ul>
+
+							<p class="m-0 text-[0.82rem] font-medium text-(--on-surface-variant)" data-appointment-attachment-empty>
+								Todavía no hay archivos adjuntos.
+							</p>
+
+							<p
+								class="m-0 hidden text-[0.82rem] font-semibold text-rose-600 dark:text-rose-400"
+								data-appointment-attachment-error
+								role="alert"
+							></p>
+						</div>
 					</div>
+
+					<div
+						class="appointment-history-lock hidden"
+						data-appointment-notes-lock
+						hidden
+					>
+						<span class="appointment-history-lock__card">
+							<span class="material-symbols-rounded appointment-history-lock__icon" aria-hidden="true">lock</span>
+							<span class="appointment-history-lock__text">
+								Las notas y archivos se habilitan al cambiar el estado a Completado
+							</span>
+						</span>
+					</div>
+				</div>
 				</div>
 				</div>
 
