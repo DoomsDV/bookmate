@@ -635,6 +635,28 @@ class CustomerManager extends HTMLElement {
 		}
 	}
 
+	private formatAppointmentStatusLabel(status: string) {
+		const normalized = String(status || '').trim().toUpperCase();
+		if (normalized === 'COMPLETADO') return 'Completado';
+		if (normalized === 'CONFIRMADO') return 'Confirmado';
+		if (normalized === 'CANCELADO') return 'Cancelado';
+		if (normalized === 'PENDIENTE') return 'Pendiente';
+		return normalized || '—';
+	}
+
+	private getAppointmentStatusBadgeClass(status: string) {
+		const normalized = String(status || '').trim().toUpperCase();
+		if (normalized === 'COMPLETADO') return 'is-completed';
+		if (normalized === 'CONFIRMADO') return 'is-confirmed';
+		if (normalized === 'CANCELADO') return 'is-cancelled';
+		if (normalized === 'PENDIENTE') return 'is-pending';
+		return 'is-neutral';
+	}
+
+	private shouldHideHistoryProfessionalName() {
+		return this.selectedProfessionalId > 0 || this.roleId === ROLES.PROFESIONAL;
+	}
+
 	private renderAppointmentHistory(
 		appointments: CustomerAppointmentSummary[],
 		historyEnabled: boolean
@@ -651,6 +673,8 @@ class CustomerManager extends HTMLElement {
 		}
 		this.profileHistoryEmpty?.classList.add('hidden');
 
+		const hideProfessional = this.shouldHideHistoryProfessionalName();
+
 		for (const appointment of appointments) {
 			const item = document.createElement('article');
 			item.className = 'customer-profile-history-item';
@@ -663,20 +687,28 @@ class CustomerManager extends HTMLElement {
 			const main = document.createElement('div');
 			main.className = 'customer-profile-history-item__main';
 
+			const titleRow = document.createElement('div');
+			titleRow.className = 'customer-profile-history-item__title-row';
+
 			const title = document.createElement('div');
 			title.className = 'customer-profile-history-item__title';
 			title.textContent = appointment.service_name || 'Servicio';
+
+			const statusBadge = document.createElement('span');
+			statusBadge.className = `customer-profile-history-status ${this.getAppointmentStatusBadgeClass(appointment.status)}`;
+			statusBadge.textContent = this.formatAppointmentStatusLabel(appointment.status);
+
+			titleRow.append(title, statusBadge);
 
 			const meta = document.createElement('div');
 			meta.className = 'customer-profile-history-item__meta';
 			const metaParts = [
 				this.formatDateTime(appointment.start_time),
-				appointment.professional_name,
-				appointment.status,
+				hideProfessional ? '' : appointment.professional_name,
 			].filter((part) => Boolean(String(part || '').trim()));
 			meta.textContent = metaParts.join(' · ');
 
-			main.append(title, meta);
+			main.append(titleRow, meta);
 			const badges = this.buildHistoryBadges(appointment);
 			if (badges) main.appendChild(badges);
 
@@ -698,29 +730,38 @@ class CustomerManager extends HTMLElement {
 					'Las notas y archivos de la sesión están disponibles en el plan Premium.';
 				body.appendChild(premium);
 			} else {
+				const notesBlock = document.createElement('div');
+				notesBlock.className = 'customer-profile-history-block';
+				const notesTitle = document.createElement('p');
+				notesTitle.className = 'customer-profile-history-block__label';
+				notesTitle.textContent = 'Notas de la sesión';
+				notesBlock.appendChild(notesTitle);
+
 				const notes = String(appointment.notes || '').trim();
 				if (notes) {
-					const notesTitle = document.createElement('p');
-					notesTitle.className = 'customer-profile-reservation-line__label';
-					notesTitle.textContent = 'Notas de la sesión';
 					const notesText = document.createElement('p');
 					notesText.className = 'customer-profile-history-notes';
 					notesText.textContent = notes;
-					body.append(notesTitle, notesText);
+					notesBlock.appendChild(notesText);
 				} else {
 					const noNotes = document.createElement('p');
 					noNotes.className = 'customer-profile-history-muted';
 					noNotes.textContent = 'Sin notas registradas.';
-					body.appendChild(noNotes);
+					notesBlock.appendChild(noNotes);
 				}
+				body.appendChild(notesBlock);
+
+				const filesBlock = document.createElement('div');
+				filesBlock.className = 'customer-profile-history-block';
+				const filesTitle = document.createElement('p');
+				filesTitle.className = 'customer-profile-history-block__label';
+				filesTitle.textContent = 'Archivos adjuntos';
+				filesBlock.appendChild(filesTitle);
 
 				const attachments = Array.isArray(appointment.attachments)
 					? appointment.attachments
 					: [];
 				if (attachments.length > 0) {
-					const filesTitle = document.createElement('p');
-					filesTitle.className = 'customer-profile-reservation-line__label';
-					filesTitle.textContent = 'Archivos adjuntos';
 					const list = document.createElement('ul');
 					list.className = 'customer-profile-history-attachments';
 					for (const file of attachments) {
@@ -741,13 +782,14 @@ class CustomerManager extends HTMLElement {
 						li.appendChild(link);
 						list.appendChild(li);
 					}
-					body.append(filesTitle, list);
+					filesBlock.appendChild(list);
 				} else {
 					const noFiles = document.createElement('p');
 					noFiles.className = 'customer-profile-history-muted';
 					noFiles.textContent = 'Sin archivos adjuntos.';
-					body.appendChild(noFiles);
+					filesBlock.appendChild(noFiles);
 				}
+				body.appendChild(filesBlock);
 			}
 
 			toggle.addEventListener('click', () => {
