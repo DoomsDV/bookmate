@@ -32,6 +32,8 @@ import {
 	formatAttendanceReplyAt,
 	formatDateTimeDisplay,
 	formatDateTimeLocal,
+	getAttendanceReminderLabel,
+	getAttendanceStatusFromValue,
 	isAppointmentStatus,
 	isAttendanceAwaitingReconfirmation,
 	isAttendanceReconfirmed,
@@ -935,7 +937,7 @@ class AppointmentModal extends HTMLElement {
 		if (this.waReminderIcon) this.waReminderIcon.textContent = 'schedule';
 		if (this.waReminderLabel) {
 			this.waReminderLabel.textContent =
-				'Recordatorio de WhatsApp: Enviado, pendiente de respuesta';
+				'Recordatorio de WhatsApp: Pendiente de envío';
 		}
 	}
 
@@ -984,8 +986,7 @@ class AppointmentModal extends HTMLElement {
 		if (isAttendanceReconfirmed(appointment)) {
 			if (this.waReminderIcon) this.waReminderIcon.textContent = 'check_circle';
 			if (this.waReminderLabel) {
-				this.waReminderLabel.textContent =
-					'Recordatorio de WhatsApp: Confirmado por el cliente';
+				this.waReminderLabel.textContent = getAttendanceReminderLabel(appointment);
 			}
 			this.waReminder?.classList.add('is-confirmed');
 			this.waReminder?.removeAttribute('hidden');
@@ -1001,10 +1002,13 @@ class AppointmentModal extends HTMLElement {
 		}
 
 		if (isAttendanceAwaitingReconfirmation(appointment)) {
-			if (this.waReminderIcon) this.waReminderIcon.textContent = 'schedule';
+			const status = getAttendanceStatusFromValue(appointment);
+			if (this.waReminderIcon) {
+				this.waReminderIcon.textContent =
+					status === 'NOT_REQUESTED' ? 'schedule_send' : 'schedule';
+			}
 			if (this.waReminderLabel) {
-				this.waReminderLabel.textContent =
-					'Recordatorio de WhatsApp: Enviado, pendiente de respuesta';
+				this.waReminderLabel.textContent = getAttendanceReminderLabel(appointment);
 			}
 			this.waReminder?.classList.add('is-pending');
 			this.waReminder?.removeAttribute('hidden');

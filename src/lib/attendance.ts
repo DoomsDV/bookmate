@@ -53,6 +53,23 @@ export const isAttendanceAwaitingReconfirmation = (value: unknown) => {
 	return status === 'NOT_REQUESTED' || status === 'SENT' || status === 'EXPIRED';
 };
 
+export const getAttendanceReminderLabel = (value: unknown) => {
+	const status = getAttendanceStatusFromValue(value);
+	if (status === 'CONFIRMED') {
+		return 'Recordatorio de WhatsApp: Confirmado por el cliente';
+	}
+	if (status === 'DECLINED') {
+		return 'Recordatorio de WhatsApp: Rechazado por el cliente';
+	}
+	if (status === 'SENT') {
+		return 'Recordatorio de WhatsApp: Enviado, pendiente de respuesta';
+	}
+	if (status === 'EXPIRED') {
+		return 'Recordatorio de WhatsApp: Sin respuesta del cliente';
+	}
+	return 'Recordatorio de WhatsApp: Pendiente de envío';
+};
+
 export const isAttendanceDeclined = (value: unknown) => {
 	return getAttendanceStatusFromValue(value) === 'DECLINED';
 };

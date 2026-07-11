@@ -1,5 +1,6 @@
 ---
 import Layout from '../../layouts/Layout.astro';
+import PublicSipapDepositPanel from '../../components/PublicSipapDepositPanel.astro';
 import {
 	buildPublicUserProfileMetaDescription,
 	getPublicUserProfileWithOrds,
@@ -12,6 +13,7 @@ import {
 	resolvePublicSiteOrigin,
 } from '../../lib/public-profile-url';
 import '../../styles/global.css';
+import '../../styles/public-booking.css';
 
 const publicSlug = String(Astro.params.slug || '').trim();
 
@@ -78,8 +80,8 @@ const googleMapsApiKey =
 	ogType="profile"
 	robots={profile ? 'index, follow' : 'noindex, nofollow'}
 >
-	<main class="public-booking-shell relative z-10 mx-auto min-h-screen w-full max-w-4xl px-2 py-8 sm:px-4 md:px-8 lg:py-12 md:max-w-5xl">
-		<div aria-hidden="true" class="pointer-events-none fixed inset-0 z-[-1] bg-(--surface-background)"></div>
+	<main class="public-booking-shell">
+		<div class="public-booking-shell__canvas">
 		{
 			loadError || !profile ? (
 				<section class="rounded-3xl border border-rose-200 bg-rose-50 px-8 py-10 text-rose-900 shadow-sm">
@@ -94,44 +96,42 @@ const googleMapsApiKey =
 				</section>
 			) : (
 				<section
-					class="grid gap-6"
+					class="public-booking-sheet"
 					data-public-user-booking-root
 					data-public-slug={publicSlug}
 					data-google-maps-api-key={googleMapsApiKey}
 				>
 					<script type="application/json" id="public-user-profile-json" set:html={serializedProfile}></script>
 
-					<header class="relative overflow-hidden rounded-[28px] bg-(--surface-container) p-6 sm:p-8 shadow-sm">
-						<div class="relative grid justify-items-center gap-4 text-center">
+					<header class="public-booking-profile" data-booking-profile-header>
+						<div class="public-booking-profile__inner">
 							{profile.image_url ? (
 								<img
 									src={profile.image_url}
 									alt={`Foto de ${profile.full_name}`}
 									loading="lazy"
-									class="public-booking-avatar h-28 w-28 rounded-full border border-(--outline-variant) bg-(--surface-container-high) object-cover sm:h-32 sm:w-32"
+									class="public-booking-avatar"
 								/>
 							) : (
 								<div
-									class="public-booking-avatar public-booking-avatar--empty h-28 w-28 sm:h-32 sm:w-32"
+									class="public-booking-avatar public-booking-avatar--empty"
 									aria-label={`Sin foto de ${profile.full_name}`}
 									role="img"
 								>
 									<span class="material-symbols-rounded">account_circle</span>
 								</div>
 							)}
-							<div class="grid gap-1">
-								<h1 class="text-3xl font-normal tracking-tight text-(--on-surface) sm:text-4xl">
-									{profile.full_name}
-								</h1>
-								<p class="text-sm font-medium text-(--on-surface-variant)">
+							<div class="public-booking-profile__text">
+								<h1 class="public-booking-profile__title">{profile.full_name}</h1>
+								<p class="public-booking-profile__subtitle">
 									Elegí dónde atenderte y reservá tu turno
 								</p>
 							</div>
 						</div>
 					</header>
 
-					<div class="rounded-3xl bg-(--surface-container) p-4 sm:p-6 shadow-sm">
-						<div class="flex items-center gap-4 md:hidden">
+					<div class="public-booking-stepper">
+						<div class="public-booking-stepper__mobile">
 							<p class="text-sm font-medium tracking-wide text-(--on-surface)" data-step-compact-label aria-live="polite">
 								Paso 1 de 4: Servicio
 							</p>
@@ -151,9 +151,9 @@ const googleMapsApiKey =
 						</ol>
 					</div>
 
-					<div class="hidden rounded-2xl px-5 py-4 text-sm font-medium shadow-sm transition-all" data-booking-toast></div>
+					<div class="hidden rounded-2xl mb-3 px-5 py-4 text-sm font-medium shadow-sm transition-all" data-booking-toast></div>
 
-					<section data-step-panel="1" class="rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8">
+					<section data-step-panel="1" class="public-booking-panel">
 						<div class="grid gap-2">
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Seleccioná un servicio</h2>
 							<p class="text-base text-(--on-surface-variant)">
@@ -163,30 +163,30 @@ const googleMapsApiKey =
 						<div class="mt-6 grid gap-4" data-user-locations-root></div>
 					</section>
 
-					<section data-step-panel="2" class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8">
+					<section data-step-panel="2" class="public-booking-panel hidden">
 						<div class="grid gap-2">
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Seleccioná una fecha</h2>
 							<p class="text-base text-(--on-surface-variant)">
 								Servicio: <span class="font-medium text-(--on-surface)" data-summary-service-inline></span>
 							</p>
 						</div>
-						<div class="mt-6 rounded-3xl border border-(--outline-variant) bg-(--surface-container-low) p-4 sm:p-6">
-							<div class="mb-5 flex items-center justify-between gap-3">
+						<div class="public-booking-calendar mt-6">
+							<div class="mb-4 flex items-center justify-between gap-2">
 								<button type="button" data-calendar-prev class="calendar-nav-btn">Anterior</button>
-								<p class="text-base font-medium capitalize tracking-wide text-(--on-surface)" data-calendar-month></p>
+								<p class="text-sm font-medium capitalize tracking-wide text-(--on-surface) sm:text-base" data-calendar-month></p>
 								<button type="button" data-calendar-next class="calendar-nav-btn">Siguiente</button>
 							</div>
-							<div class="mb-3 grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase tracking-wider text-(--on-surface-variant) sm:text-sm">
+							<div class="mb-2 grid grid-cols-7 gap-0.5 text-center text-[0.7rem] font-medium uppercase tracking-wider text-(--on-surface-variant) sm:text-xs">
 								<span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span><span>Dom</span>
 							</div>
-							<div class="grid grid-cols-7 gap-1 sm:gap-2" data-calendar-grid></div>
+							<div class="grid grid-cols-7" data-calendar-grid></div>
 						</div>
 						<div class="mt-6">
 							<button type="button" data-back-to-locations class="secondary-action-btn">Volver atrás</button>
 						</div>
 					</section>
 
-					<section data-step-panel="3" class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8">
+					<section data-step-panel="3" class="public-booking-panel hidden">
 						<div class="grid gap-2">
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Seleccioná un horario</h2>
 							<p class="text-base text-(--on-surface-variant)">
@@ -205,7 +205,7 @@ const googleMapsApiKey =
 						</div>
 					</section>
 
-					<section data-step-panel="4" class="hidden rounded-[28px] bg-(--surface-container) p-6 shadow-sm sm:p-8">
+					<section data-step-panel="4" class="public-booking-panel hidden">
 						<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Confirmá tus datos</h2>
 						<div class="mt-6 grid gap-5 lg:grid-cols-[1fr_22rem] lg:gap-8">
 							<form class="contents lg:grid lg:gap-5" data-customer-form>
@@ -251,17 +251,17 @@ const googleMapsApiKey =
 									No cierres esta página hasta confirmar. Si salís o cerrás el navegador, la cita no se reservará.
 								</p>
 								<div class="order-3 grid gap-3 sm:flex sm:flex-wrap sm:items-center lg:order-none lg:mt-3">
-									<button type="submit" data-submit-booking class="booking-primary-action inline-flex h-12 w-full items-center justify-center rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary) transition hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+									<button type="submit" data-submit-booking class="booking-primary-action inline-flex h-12 w-full items-center justify-center rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
 										Confirmar reserva
 									</button>
-									<button type="button" data-pay-deposit-submit class="booking-primary-action is-hidden inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary) transition hover:bg-(--primary-hover) disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
+									<button type="button" data-pay-deposit-submit class="booking-primary-action is-hidden inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto">
 										<span>Reservar y ver datos de transferencia</span>
 										<span aria-hidden="true">🔒</span>
 									</button>
 									<button type="button" data-back-to-slots class="secondary-action-btn w-full sm:w-auto">Volver atrás</button>
 								</div>
 							</form>
-							<aside class="order-2 rounded-3xl bg-(--surface-container-highest) p-6 shadow-sm lg:order-none">
+							<aside class="order-2 rounded-3xl border border-(--outline-variant) bg-(--surface-container-lowest) p-6 lg:order-none">
 								<h3 class="text-xs font-bold uppercase tracking-widest text-(--primary)">Resumen</h3>
 								<ul class="mt-4 grid gap-4 text-base">
 									<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Profesional</span><span class="font-normal text-(--on-surface)" data-summary-professional></span></li>
@@ -275,7 +275,7 @@ const googleMapsApiKey =
 						</div>
 					</section>
 
-					<section data-step-panel="5" class="hidden rounded-[28px] bg-(--tertiary-container) p-6 text-(--on-tertiary-container) shadow-sm sm:p-8">
+					<section data-step-panel="5" class="public-booking-panel hidden rounded-none bg-(--tertiary-container) text-(--on-tertiary-container)">
 						<h2 class="text-3xl font-normal tracking-tight">Reserva confirmada</h2>
 						<p class="mt-2 text-base font-medium opacity-90">
 							¡Todo listo! Te enviamos los detalles a tu WhatsApp.
@@ -288,113 +288,12 @@ const googleMapsApiKey =
 								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Hora</span><span class="font-normal text-(--on-surface)" data-ticket-time></span></li>
 							</ul>
 						</div>
-						<button type="button" data-restart-booking class="mt-8 booking-primary-action inline-flex h-12 items-center justify-center rounded-full bg-(--tertiary) px-8 text-base font-medium text-(--on-tertiary)">
+						<button type="button" data-restart-booking class="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-(--tertiary) px-8 text-base font-medium text-(--on-tertiary)">
 							Reservar otra cita
 						</button>
 					</section>
 
-					<section
-						data-step-panel="6"
-						class="hidden rounded-[28px] bg-(--surface-container) p-6 text-(--on-surface) shadow-sm sm:p-8"
-					>
-						<h2 class="text-3xl font-normal tracking-tight">Transferí la seña para confirmar</h2>
-						<p class="mt-2 text-base font-medium text-(--on-surface-variant)">
-							Tu turno quedó reservado por tiempo limitado. Hacé la transferencia SIPAP con el código en el asunto.
-						</p>
-						<p class="mt-3 rounded-2xl border border-(--outline-variant) bg-(--surface-container-lowest) px-4 py-3 text-sm text-(--on-surface-variant)">
-							No cierres esta ventana hasta subir el comprobante.
-						</p>
-
-						<div class="mt-6 grid gap-4">
-							<div class="rounded-3xl bg-(--primary-container) px-5 py-4 text-(--on-primary-container)">
-								<p class="text-sm font-medium opacity-90">Monto de la seña</p>
-								<p class="mt-1 text-2xl font-bold" data-sipap-amount>—</p>
-							</div>
-
-							<div class="rounded-3xl border border-(--outline-variant) bg-(--surface-container-lowest) p-5">
-								<div class="flex flex-wrap items-start justify-between gap-3">
-									<div>
-										<p class="text-sm font-medium text-(--on-surface-variant)">Código para el asunto</p>
-										<p class="mt-1 font-mono text-xl font-bold tracking-wide text-(--on-surface)" data-sipap-reference>—</p>
-										<input type="hidden" data-sipap-reference-value />
-									</div>
-									<button
-										type="button"
-										data-sipap-copy="reference"
-										class="inline-flex h-10 items-center rounded-full border border-(--outline-variant) px-4 text-sm font-semibold"
-									>
-										Copiar código
-									</button>
-								</div>
-								<p class="mt-3 text-sm text-(--on-surface-variant)">
-									Pegá este código exactamente en el asunto de la transferencia.
-								</p>
-							</div>
-
-							<div class="rounded-3xl border border-(--outline-variant) bg-(--surface-container-lowest) p-5">
-								<p class="text-sm font-bold uppercase tracking-wide text-(--primary)">Datos SIPAP del comercio</p>
-								<ul class="mt-4 grid gap-3 text-base">
-									<li class="grid gap-0.5 sm:grid-cols-[9rem_1fr] sm:items-center">
-										<span class="text-sm text-(--on-surface-variant)">Banco</span>
-										<span class="font-semibold" data-sipap-bank>—</span>
-									</li>
-									<li class="grid gap-0.5 sm:grid-cols-[9rem_1fr] sm:items-center">
-										<span class="text-sm text-(--on-surface-variant)">Titular</span>
-										<span class="font-semibold" data-sipap-holder>—</span>
-									</li>
-									<li class="grid gap-0.5 sm:grid-cols-[9rem_1fr] sm:items-center">
-										<span class="text-sm text-(--on-surface-variant)">C.I. / RUC</span>
-										<span class="font-semibold" data-sipap-document>—</span>
-									</li>
-									<li class="grid gap-0.5 sm:grid-cols-[9rem_1fr] sm:items-center">
-										<span class="text-sm text-(--on-surface-variant)">Alias</span>
-										<span class="flex flex-wrap items-center gap-2">
-											<span class="font-semibold" data-sipap-alias>—</span>
-											<button type="button" data-sipap-copy="alias" class="text-sm font-semibold text-(--primary)">Copiar</button>
-										</span>
-									</li>
-								</ul>
-							</div>
-
-							<div class="rounded-3xl border border-(--outline-variant) bg-(--surface-container-high)/40 p-5">
-								<p class="text-sm font-bold text-(--on-surface)">
-									Política: <span data-sipap-policy-label>—</span>
-								</p>
-								<p class="mt-1 text-sm text-(--on-surface-variant)" data-sipap-policy-summary>—</p>
-							</div>
-
-							<div class="rounded-3xl border border-(--outline-variant) bg-(--surface-container-lowest) p-5" data-sipap-upload>
-								<input type="hidden" data-sipap-manage-token />
-								<p class="text-sm font-bold text-(--on-surface)">Subí el comprobante</p>
-								<p class="mt-1 text-sm text-(--on-surface-variant)">
-									Foto clara del ticket (JPG o PNG). Lo leemos al instante para confirmar tu seña.
-								</p>
-								<input
-									type="file"
-									accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
-									capture="environment"
-									data-sipap-upload-input
-									class="mt-4 block w-full text-sm text-(--on-surface-variant) file:mr-3 file:rounded-full file:border-0 file:bg-(--primary-container) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--on-primary-container)"
-								/>
-								<button
-									type="button"
-									data-sipap-upload-submit
-									class="mt-4 inline-flex h-12 w-full items-center justify-center rounded-full bg-(--primary) px-6 text-base font-medium text-(--on-primary)"
-								>
-									Enviar comprobante
-								</button>
-								<p
-									class="mt-3 text-sm text-(--on-surface-variant) data-[state=error]:text-red-600 data-[state=success]:text-green-700 data-[state=loading]:text-(--primary)"
-									data-sipap-upload-status
-									data-state="idle"
-								></p>
-							</div>
-						</div>
-
-						<button type="button" data-restart-booking class="mt-8 booking-primary-action inline-flex h-12 items-center justify-center rounded-full bg-(--primary) px-8 text-base font-medium text-(--on-primary)">
-							Listo
-						</button>
-					</section>
+					<PublicSipapDepositPanel />
 
 					<dialog class="public-map-modal rounded-[28px] border border-(--outline-variant) bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70" data-public-map-modal>
 						<div class="grid gap-4 p-5 sm:p-6">
@@ -431,6 +330,7 @@ const googleMapsApiKey =
 				</section>
 			)
 		}
+		</div>
 	</main>
 </Layout>
 
@@ -443,13 +343,18 @@ const googleMapsApiKey =
 </script>
 
 <style is:global>
+	html:has(.public-booking-shell),
+	html:has(.public-booking-shell) body {
+		background: #1b1b1b;
+	}
+
 	.public-booking-shell {
-		--surface-background: #141414;
-		--surface-container-lowest: #1b1b1b;
+		--surface-background: #1b1b1b;
+		--surface-container-lowest: #141414;
 		--surface-container-low: #1b1b1b;
 		--surface-container: #1b1b1b;
-		--surface-container-high: #1b1b1b;
-		--surface-container-highest: #1b1b1b;
+		--surface-container-high: #252528;
+		--surface-container-highest: #2e2e32;
 		--outline: #44474e;
 		--outline-variant: #44474e;
 		--on-surface: #e2e2e9;
@@ -468,29 +373,6 @@ const googleMapsApiKey =
 		--on-error-container: #ffdad6;
 	}
 
-	.public-booking-avatar { flex: 0 0 auto; }
-	.public-booking-avatar--empty {
-		display: grid;
-		place-items: center;
-		border-radius: 9999px;
-		border: 1px solid var(--outline-variant);
-		background: var(--surface-background);
-		color: var(--on-surface-variant);
-	}
-	.public-booking-avatar--empty .material-symbols-rounded { font-size: 2.5rem; line-height: 1; }
-
-	.step-item-default, .step-item-current, .step-item-done {
-		border-radius: 100px;
-		padding: 0.5rem 1rem;
-		font-weight: 500;
-		text-align: center;
-		transition: all 0.2s ease-in-out;
-	}
-	.step-item-default { background: transparent; color: var(--on-surface-variant); }
-	.step-item-current { background: var(--primary-container); color: var(--on-primary-container); }
-	.step-item-done { background: var(--surface-container-highest); color: var(--on-surface); }
-	.step-item-done::before { content: '\2713'; display: inline-block; margin-right: 0.4rem; color: var(--primary); }
-
 	.calendar-nav-btn, .secondary-action-btn {
 		display: inline-flex;
 		height: 2.75rem;
@@ -505,10 +387,8 @@ const googleMapsApiKey =
 		color: var(--on-surface);
 		transition: background 0.15s ease;
 	}
-	.calendar-nav-btn { border: 0; color: var(--primary); }
+	.calendar-nav-btn { border: 0; color: var(--primary); padding: 0 0.85rem; }
 	.calendar-nav-btn:hover, .secondary-action-btn:hover { background: var(--surface-container-highest); }
-
-	.booking-primary-action.is-hidden { display: none !important; }
 
 	[data-booking-toast].is-error {
 		border: 1px solid var(--error-container);

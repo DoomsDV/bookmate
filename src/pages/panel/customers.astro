@@ -345,32 +345,41 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 					<section class="customer-profile-section">
 						<h3 class="customer-profile-section-title">Reservas</h3>
-						<div class="customer-profile-reservation-lines" data-customer-profile-reservations>
-							<div class="customer-profile-reservation-line">
-								<span class="customer-profile-reservation-line__label">Última reserva</span>
+						<div
+							class="customer-profile-reservation-cards"
+							data-customer-profile-reservations
+						>
+							<article class="customer-profile-reservation-card">
+								<p class="customer-profile-reservation-card__label">Última cita</p>
 								<div
-									class="customer-profile-reservation-line__content"
+									class="customer-profile-reservation-card__body"
 									data-customer-profile-last
 								>
-									<span class="customer-profile-reservation-line__empty">Sin reservas atendidas</span>
+									<span class="customer-profile-reservation-card__empty">Sin reservas atendidas</span>
 								</div>
-							</div>
-							<div class="customer-profile-reservation-line">
-								<span class="customer-profile-reservation-line__label">Próxima reserva</span>
+							</article>
+							<article
+								class="customer-profile-reservation-card customer-profile-reservation-card--next"
+							>
+								<p
+									class="customer-profile-reservation-card__label customer-profile-reservation-card__label--next"
+								>
+									Próxima cita
+								</p>
 								<div
-									class="customer-profile-reservation-line__content"
+									class="customer-profile-reservation-card__body"
 									data-customer-profile-next
 								>
-									<span class="customer-profile-reservation-line__empty">Sin reserva confirmada</span>
+									<span class="customer-profile-reservation-card__empty">Sin reserva confirmada</span>
 								</div>
-							</div>
-							<div
-								class="customer-profile-pending-block hidden"
-								data-customer-profile-pending-wrap
-							>
-								<p class="customer-profile-reservation-line__label">Pendientes</p>
-								<div class="grid gap-2 mt-1.5" data-customer-profile-pending-list></div>
-							</div>
+							</article>
+						</div>
+						<div
+							class="customer-profile-pending-block hidden"
+							data-customer-profile-pending-wrap
+						>
+							<p class="customer-profile-reservation-card__label">Pendientes</p>
+							<div class="grid gap-2 mt-1.5" data-customer-profile-pending-list></div>
 						</div>
 					</section>
 
@@ -732,19 +741,35 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		box-shadow: none;
 	}
 
-	.customer-profile-reservation-lines {
+	.customer-profile-reservation-cards {
 		display: grid;
-		gap: 1.35rem;
+		gap: 0.7rem;
+		grid-template-columns: 1fr;
+		align-items: stretch;
 	}
 
-	.customer-profile-reservation-line {
-		margin: 0;
-		display: grid;
-		gap: 0;
+	@media (min-width: 520px) {
+		.customer-profile-reservation-cards {
+			grid-template-columns: 1fr 1fr;
+		}
 	}
 
-	.customer-profile-reservation-line__label {
-		margin: 0 0 0.35rem;
+	.customer-profile-reservation-card {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+		height: 100%;
+		min-height: 100%;
+		min-width: 0;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--surface-bright) 88%, var(--surface-container-low) 12%);
+		padding: 0.85rem 1rem;
+	}
+
+	.customer-profile-reservation-card__label {
+		margin: 0 0 0.55rem;
 		font-size: 0.78rem;
 		font-weight: 700;
 		text-transform: uppercase;
@@ -752,21 +777,27 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		color: var(--on-surface-variant);
 	}
 
-	.customer-profile-reservation-line__content {
-		display: grid;
-		gap: 0;
-		min-width: 0;
+	.customer-profile-reservation-card__label--next {
+		color: color-mix(in srgb, var(--primary) 72%, var(--on-surface-variant) 28%);
 	}
 
-	.customer-profile-reservation-line__service {
-		margin: 0 0 0.3rem;
-		font-size: 0.95rem;
-		font-weight: 780;
+	.customer-profile-reservation-card__body {
+		display: grid;
+		gap: 0.35rem;
+		min-width: 0;
+		flex: 1;
+	}
+
+	.customer-profile-reservation-card__service {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 800;
 		line-height: 1.3;
 		color: var(--on-surface);
+		word-break: break-word;
 	}
 
-	.customer-profile-reservation-line__when {
+	.customer-profile-reservation-card__when {
 		margin: 0;
 		display: inline-flex;
 		align-items: center;
@@ -777,19 +808,20 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		color: var(--on-surface-variant);
 	}
 
-	.customer-profile-reservation-line__when .material-symbols-rounded {
+	.customer-profile-reservation-card__when .material-symbols-rounded {
 		font-size: 1rem;
 		line-height: 1;
+		flex-shrink: 0;
 	}
 
-	.customer-profile-reservation-line__empty {
+	.customer-profile-reservation-card__empty {
 		font-size: 0.9rem;
 		font-weight: 600;
 		color: var(--on-surface-variant);
 	}
 
 	.customer-profile-pending-block {
-		margin-top: 0.35rem;
+		margin-top: 0.85rem;
 	}
 
 	.customer-profile-history-item {

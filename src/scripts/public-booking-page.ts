@@ -24,6 +24,7 @@ import {
 	isDepositsEnabled,
 	POLICY_SUMMARIES,
 	normalizePolicyCode,
+	stopSipapHoldCountdown,
 	unwrapSipapHold,
 	type PublicDepositSettings,
 } from './public-deposit-sipap';
@@ -313,7 +314,7 @@ export const initializePublicBookingPage = () => {
 	const backToServices = root.querySelector<HTMLButtonElement>('[data-back-to-services]');
 	const backToCalendar = root.querySelector<HTMLButtonElement>('[data-back-to-calendar]');
 	const backToSlots = root.querySelector<HTMLButtonElement>('[data-back-to-slots]');
-	const restartButton = root.querySelector<HTMLButtonElement>('[data-restart-booking]');
+	const restartButtons = root.querySelectorAll<HTMLButtonElement>('[data-restart-booking]');
 
 	if (
 		!servicesGrid ||
@@ -349,7 +350,7 @@ export const initializePublicBookingPage = () => {
 		!backToServices ||
 		!backToCalendar ||
 		!backToSlots ||
-		!restartButton
+		restartButtons.length === 0
 	) {
 		return;
 	}
@@ -788,15 +789,20 @@ export const initializePublicBookingPage = () => {
 			item.classList.add('step-item-default');
 		}
 
+		const profileHeader = root.querySelector<HTMLElement>('[data-booking-profile-header]');
+		profileHeader?.classList.toggle('is-compact', step > 1);
+
 		const cappedStep = step >= 5 ? 4 : step;
 		if (stepCompactLabel) {
 			stepCompactLabel.textContent =
-				step === 5
-					? 'Reserva confirmada'
-					: `Paso ${cappedStep} de 4: ${stepLabelByNumber[cappedStep]}`;
+				step === 6
+					? 'Transferí la seña'
+					: step === 5
+						? 'Reserva confirmada'
+						: `Paso ${cappedStep} de 4: ${stepLabelByNumber[cappedStep]}`;
 		}
 		if (stepProgressBar) {
-			const progress = step === 5 ? 100 : cappedStep * 25;
+			const progress = step >= 5 ? 100 : cappedStep * 25;
 			stepProgressBar.style.width = `${progress}%`;
 		}
 	};
@@ -877,11 +883,8 @@ export const initializePublicBookingPage = () => {
 		for (const service of profile.services) {
 			const button = document.createElement('button');
 			button.type = 'button';
-			button.className =
-				'group grid gap-2 rounded-2xl border px-5 py-4 text-left cursor-pointer transition ' +
-				(selectedService?.id_service === service.id_service
-					? 'border-[var(--primary)] bg-[var(--primary-container)]'
-					: 'border-[var(--outline-variant)] bg-[var(--surface-container-low)] hover:bg-[var(--surface-container-high)]');
+			const isSelected = selectedService?.id_service === service.id_service;
+			button.className = `public-service-card${isSelected ? ' is-selected' : ''}`;
 
 			button.innerHTML = `
 				<span class="text-lg font-medium text-(--on-surface)">${service.name}</span>
@@ -889,6 +892,7 @@ export const initializePublicBookingPage = () => {
 					<span>${formatDuration(service.duration_minutes)}</span>
 					<span>${formatCurrency(service.price)}</span>
 				</div>
+				<span class="material-symbols-rounded public-service-card__check" aria-hidden="true">check_circle</span>
 			`;
 
 			button.addEventListener('click', () => {
@@ -939,13 +943,13 @@ export const initializePublicBookingPage = () => {
 			dayButton.type = 'button';
 			dayButton.textContent = String(day);
 			dayButton.disabled = isPast || !selectedService;
-			dayButton.className =
-				'flex h-10 w-10 mx-auto items-center justify-center rounded-full border text-sm font-medium cursor-pointer transition disabled:cursor-not-allowed ' +
-				(isSelected
-					? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--on-primary)]'
-					: isToday
-						? 'border-[var(--primary)] bg-transparent text-[var(--primary)]'
-						: 'border-transparent bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
+			dayButton.className = [
+				isSelected ? 'is-selected' : '',
+				isToday ? 'is-today' : '',
+				isPast ? 'is-past' : '',
+			]
+				.filter(Boolean)
+				.join(' ');
 
 			dayButton.addEventListener('click', () => {
 				if (!selectedService) {
@@ -1178,6 +1182,7 @@ export const initializePublicBookingPage = () => {
 		availableSlotGroups = [];
 		isLoadingSlots = false;
 		resetPendingAppointment();
+		stopSipapHoldCountdown(root);
 		customerForm.reset();
 		resetCustomerLookupState(true);
 		setPhoneFieldError('');
@@ -1210,7 +1215,9 @@ export const initializePublicBookingPage = () => {
 	backToServices.addEventListener('click', () => setStep(1), { signal });
 	backToCalendar.addEventListener('click', () => setStep(2), { signal });
 	backToSlots.addEventListener('click', () => setStep(3), { signal });
-	restartButton.addEventListener('click', resetFlow, { signal });
+	restartButtons.forEach((button) => {
+		button.addEventListener('click', resetFlow, { signal });
+	});
 	summaryLocation.addEventListener(
 		'click',
 		(event) => {
@@ -1427,7 +1434,10 @@ export const initializePublicBookingPage = () => {
 			const hold = await ensurePendingAppointment();
 			if (!hold) return;
 
-			fillSipapDepositPanel(root, hold, profile.deposit_settings);
+			fillSipapDepositPanel(root, hold, profile.deposit_settings, {
+				serviceName: selectedService?.name,
+				professionalName: profile.full_name,
+			});
 			ticketProfessional.textContent = profile.full_name;
 			ticketService.textContent = selectedService?.name || '-';
 			ticketDate.textContent = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';

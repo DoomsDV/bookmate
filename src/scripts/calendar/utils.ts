@@ -194,6 +194,8 @@ export const isAppointmentStatus = (
 };
 
 export {
+	getAttendanceReminderLabel,
+	getAttendanceStatusFromValue,
 	isAttendanceAwaitingReconfirmation,
 	isAttendanceDeclined,
 	isAttendanceReconfirmed,

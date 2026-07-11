@@ -483,14 +483,14 @@ class CustomerManager extends HTMLElement {
 
 		if (!appointment) {
 			const empty = document.createElement('span');
-			empty.className = 'customer-profile-reservation-line__empty';
+			empty.className = 'customer-profile-reservation-card__empty';
 			empty.textContent = emptyLabel;
 			container.appendChild(empty);
 			return;
 		}
 
 		const service = document.createElement('p');
-		service.className = 'customer-profile-reservation-line__service';
+		service.className = 'customer-profile-reservation-card__service';
 		const serviceName = appointment.service_name || 'Servicio';
 		const professional = String(appointment.professional_name || '').trim();
 		service.textContent = professional
@@ -498,7 +498,7 @@ class CustomerManager extends HTMLElement {
 			: serviceName;
 
 		const when = document.createElement('p');
-		when.className = 'customer-profile-reservation-line__when';
+		when.className = 'customer-profile-reservation-card__when';
 		const icon = document.createElement('span');
 		icon.className = 'material-symbols-rounded';
 		icon.setAttribute('aria-hidden', 'true');

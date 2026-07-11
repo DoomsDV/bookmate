@@ -74,7 +74,8 @@ export const unwrapSipapHold = (payload: SipapHoldResponse | null | undefined): 
 export const fillSipapDepositPanel = (
 	root: ParentNode,
 	hold: SipapHoldResponse,
-	fallbackSettings?: PublicDepositSettings | null
+	fallbackSettings?: PublicDepositSettings | null,
+	context?: { serviceName?: string | null; professionalName?: string | null }
 ) => {
 	const amount = Number(hold.deposit_amount || 0);
 	const reference = String(hold.payment_reference || '').trim();
@@ -112,6 +113,15 @@ export const fillSipapDepositPanel = (
 	setText('[data-sipap-policy-label]', policyLabel);
 	setText('[data-sipap-policy-summary]', policySummary);
 
+	const serviceName = String(context?.serviceName || '').trim();
+	const professionalName = String(context?.professionalName || '').trim();
+	const forLabel = serviceName
+		? professionalName
+			? `Seña por: ${serviceName} con ${professionalName}`
+			: `Seña por: ${serviceName}`
+		: 'Seña por: —';
+	setText('[data-sipap-for]', forLabel);
+
 	const refInput = root.querySelector<HTMLInputElement>('[data-sipap-reference-value]');
 	if (refInput) refInput.value = reference;
 
@@ -125,6 +135,53 @@ export const fillSipapDepositPanel = (
 	}
 
 	setSipapReceiptStatus(root, null);
+	startSipapHoldCountdown(root, hold.payment_expires_at);
+};
+
+const countdownTimers = new WeakMap<Element, number>();
+
+const formatCountdown = (remainingMs: number) => {
+	const totalSeconds = Math.max(0, Math.floor(remainingMs / 1000));
+	const minutes = Math.floor(totalSeconds / 60);
+	const seconds = totalSeconds % 60;
+	return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+};
+
+export const stopSipapHoldCountdown = (root: ParentNode) => {
+	if (!(root instanceof Element)) return;
+	const previous = countdownTimers.get(root);
+	if (previous) {
+		window.clearInterval(previous);
+		countdownTimers.delete(root);
+	}
+};
+
+export const startSipapHoldCountdown = (
+	root: ParentNode,
+	expiresAt?: string | null,
+	fallbackMinutes = 10
+) => {
+	const countdownEl = root.querySelector<HTMLElement>('[data-sipap-countdown]');
+	if (!countdownEl || !(root instanceof Element)) return;
+
+	stopSipapHoldCountdown(root);
+
+	const parsed = expiresAt ? Date.parse(String(expiresAt)) : Number.NaN;
+	const expiresMs = Number.isFinite(parsed)
+		? parsed
+		: Date.now() + Math.max(1, fallbackMinutes) * 60 * 1000;
+
+	const tick = () => {
+		const remaining = expiresMs - Date.now();
+		countdownEl.textContent = formatCountdown(remaining);
+		if (remaining <= 0) {
+			stopSipapHoldCountdown(root);
+			countdownEl.textContent = '00:00';
+		}
+	};
+
+	tick();
+	countdownTimers.set(root, window.setInterval(tick, 1000));
 };
 
 export const setSipapReceiptStatus = (
@@ -286,6 +343,21 @@ export const bindSipapCopyButtons = (root: ParentNode, signal?: AbortSignal) => 
 				if (!text || text === '—') return;
 				try {
 					await navigator.clipboard.writeText(text);
+					const icon = button.querySelector<HTMLElement>('[data-sipap-copy-icon]');
+					const label = button.querySelector<HTMLElement>('[data-sipap-copy-label]');
+					if (icon || label) {
+						const prevIcon = icon?.textContent || 'content_copy';
+						const prevLabel = label?.textContent || '';
+						if (icon) icon.textContent = 'check';
+						if (label) label.textContent = 'Copiado';
+						button.classList.add('is-copied');
+						window.setTimeout(() => {
+							if (icon) icon.textContent = prevIcon;
+							if (label) label.textContent = prevLabel;
+							button.classList.remove('is-copied');
+						}, 1600);
+						return;
+					}
 					const prev = button.textContent;
 					button.textContent = 'Copiado';
 					window.setTimeout(() => {
