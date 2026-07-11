@@ -13,6 +13,7 @@ import {
 	toDateStart,
 } from '../lib/booking-datetime';
 import {
+	appendLocationSlotHeader,
 	normalizePublicBookingLocations,
 } from '../lib/public-booking-locations';
 
@@ -689,25 +690,12 @@ export const initializePublicReservationPage = () => {
 			const section = document.createElement('section');
 			section.className = 'grid gap-3 pt-0.5';
 
-			const headerRow = document.createElement('div');
-			headerRow.className = 'flex flex-wrap items-center justify-between gap-2';
-
-			const heading = document.createElement('h3');
-			heading.className = 'reservation-slot-location-name';
-			heading.textContent = getLocationLabel(group.location);
-
-			const locationButton = document.createElement('button');
-			locationButton.type = 'button';
-			locationButton.className = 'public-location-link text-sm font-medium';
-			locationButton.innerHTML =
-				'<span class="material-symbols-rounded text-base leading-none">location_on</span><span class="public-location-link__label">Ver ubicación</span>';
-			locationButton.addEventListener('click', () => {
-				void openLocationMap(group.location);
+			appendLocationSlotHeader(section, group.location, {
+				titleClassName: 'reservation-slot-location-name',
+				onAddressClick: (location) => {
+					void openLocationMap(location as BookingLocation);
+				},
 			});
-
-			headerRow.appendChild(heading);
-			headerRow.appendChild(locationButton);
-			section.appendChild(headerRow);
 
 			const grid = document.createElement('div');
 			grid.className = 'grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4';

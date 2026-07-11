@@ -142,7 +142,7 @@ const normalizeLocation = (value: unknown): PublicUserProfileLocation | null => 
 	return {
 		id_location: idLocation,
 		name: name || address || `Sucursal #${idLocation}`,
-		address: address || name || '',
+		address,
 		latitude: Number.isFinite(latitude) ? latitude : undefined,
 		longitude: Number.isFinite(longitude) ? longitude : undefined,
 		org_id_organization: orgId,

@@ -521,7 +521,7 @@ const normalizePublicLocationDetail = (value: unknown): PublicBookingLocation | 
 	return {
 		id_location: idLocation,
 		name: String(source.name || '').trim() || `Sucursal #${idLocation}`,
-		address: String(source.address || source.name || '').trim(),
+		address: String(source.address || '').trim(),
 		latitude: Number.isFinite(latitude) ? latitude : undefined,
 		longitude: Number.isFinite(longitude) ? longitude : undefined,
 	};

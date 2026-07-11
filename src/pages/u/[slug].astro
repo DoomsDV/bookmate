@@ -81,9 +81,9 @@ const googleMapsApiKey =
 	robots={profile ? 'index, follow' : 'noindex, nofollow'}
 >
 	<main class="public-booking-shell">
-		<div class="public-booking-shell__canvas">
 		{
 			loadError || !profile ? (
+				<div class="public-booking-shell__canvas">
 				<section class="rounded-3xl border border-rose-200 bg-rose-50 px-8 py-10 text-rose-900 shadow-sm">
 					<h1 class="text-3xl font-semibold tracking-tight">No fue posible abrir este perfil</h1>
 					<p class="mt-3 text-base font-medium text-rose-800">{loadError || 'Perfil no disponible.'}</p>
@@ -94,6 +94,7 @@ const googleMapsApiKey =
 						Volver al inicio
 					</a>
 				</section>
+				</div>
 			) : (
 				<section
 					class="public-booking-sheet"
@@ -123,13 +124,11 @@ const googleMapsApiKey =
 							)}
 							<div class="public-booking-profile__text">
 								<h1 class="public-booking-profile__title">{profile.full_name}</h1>
-								<p class="public-booking-profile__subtitle">
-									Elegí dónde atenderte y reservá tu turno
-								</p>
 							</div>
 						</div>
 					</header>
 
+					<div class="public-booking-shell__canvas">
 					<div class="public-booking-stepper">
 						<div class="public-booking-stepper__mobile">
 							<p class="text-sm font-medium tracking-wide text-(--on-surface)" data-step-compact-label aria-live="polite">
@@ -143,7 +142,7 @@ const googleMapsApiKey =
 								></div>
 							</div>
 						</div>
-						<ol class="hidden gap-3 md:grid md:grid-cols-4" data-step-indicator>
+						<ol data-step-indicator>
 							<li data-step-item="1" class="step-item-current">1. Servicio</li>
 							<li data-step-item="2" class="step-item-default">2. Fecha</li>
 							<li data-step-item="3" class="step-item-default">3. Horario</li>
@@ -171,10 +170,16 @@ const googleMapsApiKey =
 							</p>
 						</div>
 						<div class="public-booking-calendar mt-6">
-							<div class="mb-4 flex items-center justify-between gap-2">
-								<button type="button" data-calendar-prev class="calendar-nav-btn">Anterior</button>
-								<p class="text-sm font-medium capitalize tracking-wide text-(--on-surface) sm:text-base" data-calendar-month></p>
-								<button type="button" data-calendar-next class="calendar-nav-btn">Siguiente</button>
+							<div class="public-booking-calendar__toolbar">
+								<p class="public-booking-calendar__month" data-calendar-month></p>
+								<div class="public-booking-calendar__nav">
+									<button type="button" data-calendar-prev class="calendar-nav-btn" aria-label="Mes anterior">
+										<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+									</button>
+									<button type="button" data-calendar-next class="calendar-nav-btn" aria-label="Mes siguiente">
+										<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
+									</button>
+								</div>
 							</div>
 							<div class="mb-2 grid grid-cols-7 gap-0.5 text-center text-[0.7rem] font-medium uppercase tracking-wider text-(--on-surface-variant) sm:text-xs">
 								<span>Lun</span><span>Mar</span><span>Mie</span><span>Jue</span><span>Vie</span><span>Sab</span><span>Dom</span>
@@ -327,10 +332,10 @@ const googleMapsApiKey =
 							<p class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)" data-public-map-status></p>
 						</div>
 					</dialog>
+					</div>
 				</section>
 			)
 		}
-		</div>
 	</main>
 </Layout>
 
@@ -373,7 +378,7 @@ const googleMapsApiKey =
 		--on-error-container: #ffdad6;
 	}
 
-	.calendar-nav-btn, .secondary-action-btn {
+	.secondary-action-btn {
 		display: inline-flex;
 		height: 2.75rem;
 		align-items: center;
@@ -387,8 +392,7 @@ const googleMapsApiKey =
 		color: var(--on-surface);
 		transition: background 0.15s ease;
 	}
-	.calendar-nav-btn { border: 0; color: var(--primary); padding: 0 0.85rem; }
-	.calendar-nav-btn:hover, .secondary-action-btn:hover { background: var(--surface-container-highest); }
+	.secondary-action-btn:hover { background: var(--surface-container-highest); }
 
 	[data-booking-toast].is-error {
 		border: 1px solid var(--error-container);

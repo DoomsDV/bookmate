@@ -8,6 +8,7 @@ import {
 	toDateStart,
 } from '../lib/booking-datetime';
 import {
+	appendLocationSlotHeader,
 	mergePublicBookingLocations,
 	normalizePublicBookingLocations,
 } from '../lib/public-booking-locations';
@@ -789,9 +790,6 @@ export const initializePublicBookingPage = () => {
 			item.classList.add('step-item-default');
 		}
 
-		const profileHeader = root.querySelector<HTMLElement>('[data-booking-profile-header]');
-		profileHeader?.classList.toggle('is-compact', step > 1);
-
 		const cappedStep = step >= 5 ? 4 : step;
 		if (stepCompactLabel) {
 			stepCompactLabel.textContent =
@@ -816,8 +814,28 @@ export const initializePublicBookingPage = () => {
 		if (!location) return 'Ubicación no disponible';
 		const name = String(location.name || '').trim();
 		const address = String(location.address || '').trim();
-		if (name && address) return `${name} · ${address}`;
-		return name || address || 'Ubicación no disponible';
+		if (address && name && address.toLowerCase() !== name.toLowerCase()) return address;
+		return address || name || 'Ubicación no disponible';
+	};
+
+	const refreshSummaryLocation = (location: BookingLocation | null) => {
+		const label = formatLocationLabel(location);
+		const canOpen = canShowLocationMap(location);
+		summaryLocation.className =
+			'public-location-address mt-1 text-left disabled:cursor-not-allowed';
+		summaryLocation.disabled = !canOpen;
+		summaryLocation.replaceChildren();
+		if (!location || label === 'Ubicación no disponible') {
+			summaryLocation.textContent = label;
+			return;
+		}
+		const icon = document.createElement('span');
+		icon.className = 'material-symbols-rounded';
+		icon.setAttribute('aria-hidden', 'true');
+		icon.textContent = 'location_on';
+		const text = document.createElement('span');
+		text.textContent = label;
+		summaryLocation.append(icon, text);
 	};
 
 	const refreshSummary = () => {
@@ -831,8 +849,7 @@ export const initializePublicBookingPage = () => {
 		summaryService.textContent = serviceLabel;
 		summaryDate.textContent = formattedDate || '-';
 		summaryTime.textContent = timeLabel;
-		summaryLocation.textContent = formatLocationLabel(selectedLocation);
-		summaryLocation.disabled = !canShowLocationMap(selectedLocation);
+		refreshSummaryLocation(selectedLocation);
 
 		const depositAmount = calculateDepositAmount(selectedService);
 		const requiresDeposit = depositAmount > 0;
@@ -989,28 +1006,11 @@ export const initializePublicBookingPage = () => {
 			const section = document.createElement('section');
 			section.className = 'grid gap-3';
 
-			const headerRow = document.createElement('div');
-			headerRow.className = 'flex flex-wrap items-center justify-between gap-2';
-
-			const heading = document.createElement('h3');
-			heading.className = 'text-sm font-semibold uppercase tracking-wide text-[var(--primary)]';
-			heading.textContent =
-				String(group.location.name || '').trim() ||
-				group.location.address ||
-				`Sucursal #${group.location.id_location}`;
-
-			const locationButton = document.createElement('button');
-			locationButton.type = 'button';
-			locationButton.className = 'public-location-link text-sm font-medium';
-			locationButton.innerHTML =
-				'<span class="material-symbols-rounded text-base leading-none">location_on</span><span class="public-location-link__label">Ver ubicación</span>';
-			locationButton.addEventListener('click', () => {
-				void openLocationMap(group.location);
+			appendLocationSlotHeader(section, group.location, {
+				onAddressClick: (location) => {
+					void openLocationMap(location as BookingLocation, { fetchCoordinates: true });
+				},
 			});
-
-			headerRow.appendChild(heading);
-			headerRow.appendChild(locationButton);
-			section.appendChild(headerRow);
 
 			const grid = document.createElement('div');
 			grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';

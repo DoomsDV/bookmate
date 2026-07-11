@@ -4,6 +4,7 @@ import {
 	getTodayStart,
 	toDateStart,
 } from '../../lib/booking-datetime';
+import { appendLocationSlotHeader } from '../../lib/public-booking-locations';
 import {
 	formatParaguayMobilePhoneInput,
 	PARAGUAY_MOBILE_PHONE_ERROR,
@@ -197,12 +198,30 @@ export const initializePublicUserBookingPage = () => {
 
 	const formatLocationLabel = (location: UserBookingContext | null) => {
 		if (!location) return 'Ubicación no disponible';
-		const branch = formatBranchLabel(location);
-		const org = String(
-			selectedOrgGroup?.organization_name || location.organization_name || ''
-		).trim();
-		if (org && branch) return `${org} · ${branch}`;
-		return branch || org || 'Ubicación no disponible';
+		const name = String(location.name || '').trim();
+		const address = String(location.address || '').trim();
+		if (address && name && address.toLowerCase() !== name.toLowerCase()) return address;
+		return address || name || formatBranchLabel(location) || 'Ubicación no disponible';
+	};
+
+	const refreshSummaryLocation = (location: UserBookingContext | null) => {
+		const label = formatLocationLabel(location);
+		const canOpen = Boolean(mapController?.canShowLocationMap(location));
+		summaryLocation.className =
+			'public-location-address mt-1 text-left disabled:cursor-not-allowed';
+		summaryLocation.disabled = !canOpen;
+		summaryLocation.replaceChildren();
+		if (!location || label === 'Ubicación no disponible') {
+			summaryLocation.textContent = label;
+			return;
+		}
+		const icon = document.createElement('span');
+		icon.className = 'material-symbols-rounded';
+		icon.setAttribute('aria-hidden', 'true');
+		icon.textContent = 'location_on';
+		const text = document.createElement('span');
+		text.textContent = label;
+		summaryLocation.append(icon, text);
 	};
 
 	const today = getTodayStart();
@@ -254,9 +273,6 @@ export const initializePublicUserBookingPage = () => {
 			item.classList.add('step-item-default');
 		}
 
-		const profileHeader = root.querySelector<HTMLElement>('[data-booking-profile-header]');
-		profileHeader?.classList.toggle('is-compact', step > 1);
-
 		const cappedStep = step >= 5 ? 4 : step;
 		if (stepCompactLabel) {
 			stepCompactLabel.textContent =
@@ -275,9 +291,6 @@ export const initializePublicUserBookingPage = () => {
 		const formattedDate = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
 		const serviceLabel = selectedService?.name || '-';
 		const timeLabel = selectedTime || '-';
-		const locationLabel = selectedContext
-			? formatLocationLabel(selectedContext)
-			: 'Ubicación no disponible';
 
 		summaryServiceInline.textContent = serviceLabel;
 		summaryDateInline.textContent = formattedDate;
@@ -285,8 +298,7 @@ export const initializePublicUserBookingPage = () => {
 		summaryService.textContent = serviceLabel;
 		summaryDate.textContent = formattedDate;
 		summaryTime.textContent = timeLabel;
-		summaryLocation.textContent = locationLabel;
-		summaryLocation.disabled = !mapController?.canShowLocationMap(selectedContext);
+		refreshSummaryLocation(selectedContext);
 
 		const depositAmount = calculateDepositAmount(selectedService);
 		summaryDepositWrap.classList.toggle('hidden', depositAmount <= 0);
@@ -461,31 +473,13 @@ export const initializePublicUserBookingPage = () => {
 			const section = document.createElement('section');
 			section.className = 'grid gap-3';
 
-			const headerRow = document.createElement('div');
-			headerRow.className = 'flex flex-wrap items-center justify-between gap-2';
-
-			const heading = document.createElement('h3');
-			heading.className = 'text-sm font-semibold uppercase tracking-wide text-[var(--primary)]';
-			heading.textContent = formatBranchLabel(group.location);
-
-			const locationButton = document.createElement('button');
-			locationButton.type = 'button';
-			locationButton.className = 'public-location-link text-sm font-medium';
-			locationButton.innerHTML =
-				'<span class="material-symbols-rounded text-base leading-none">location_on</span><span class="public-location-link__label">Ver ubicación</span>';
-			locationButton.addEventListener(
-				'click',
-				() => {
-					void mapController?.openLocationMap(group.location, { fetchCoordinates: true });
+			appendLocationSlotHeader(section, group.location, {
+				onAddressClick: (location) => {
+					void mapController?.openLocationMap(location as MapLocation, {
+						fetchCoordinates: true,
+					});
 				},
-				{ signal }
-			);
-
-			headerRow.appendChild(heading);
-			if (mapController?.canShowLocationMap(group.location)) {
-				headerRow.appendChild(locationButton);
-			}
-			section.appendChild(headerRow);
+			});
 
 			const grid = document.createElement('div');
 			grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
