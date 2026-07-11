@@ -1404,7 +1404,7 @@ export const initializePublicBookingPage = () => {
 
 	const setPayDepositButtonDefaultLabel = () => {
 		payDepositButton.innerHTML =
-			'<span>Reservar y pagar</span><span aria-hidden="true">🔒</span>';
+			'<span>Confirmar y transferir seña</span><span aria-hidden="true">🔒</span>';
 	};
 
 	const setPayDepositButtonLoadingLabel = (label: string) => {
