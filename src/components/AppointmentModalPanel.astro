@@ -48,7 +48,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 				</div>
 			</div>
 
-			<form class="relative flex flex-col overflow-hidden bg-(--surface)/30 min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-appointment-form>
+			<form class="relative flex flex-col overflow-hidden bg-(--surface)/30 min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-appointment-form autocomplete="off">
 				<div
 					class="pointer-events-none fixed inset-0 z-20 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
 					data-appointment-loading
@@ -99,7 +99,13 @@ const { showVoiceButton = false }: Props = Astro.props;
 									name="customer_name"
 									required
 									maxlength="100"
-									autocomplete="off"
+									autocomplete="new-password"
+									autocapitalize="off"
+									autocorrect="off"
+									spellcheck="false"
+									data-lpignore="true"
+									data-1p-ignore="true"
+									data-form-type="other"
 									class="appointment-customer-input rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 									placeholder="Buscar o crear cliente"
 									data-customer-name-input
@@ -127,11 +133,17 @@ const { showVoiceButton = false }: Props = Astro.props;
 									+595
 								</span>
 								<input
-									type="tel"
+									type="text"
 									name="customer_phone"
 									maxlength="11"
 									inputmode="numeric"
-									autocomplete="tel-national"
+									autocomplete="new-password"
+									autocapitalize="off"
+									autocorrect="off"
+									spellcheck="false"
+									data-lpignore="true"
+									data-1p-ignore="true"
+									data-form-type="other"
 									class="min-w-0 flex-1 rounded-none rounded-r-xl border border-(--shell-border) bg-(--surface-bright) px-4 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
 									placeholder="981 123 456"
 								/>
