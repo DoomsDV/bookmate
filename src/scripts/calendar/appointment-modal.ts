@@ -315,8 +315,7 @@ class AppointmentModal extends HTMLElement {
 			this.form?.querySelector<HTMLElement>('[data-appointment-notes-edit-wrap]') ?? null;
 		this.sessionNotesInput =
 			this.form?.querySelector<HTMLTextAreaElement>('[data-appointment-session-notes]') ?? null;
-		this.notesHint =
-			this.form?.querySelector<HTMLElement>('[data-appointment-notes-hint]') ?? null;
+		this.notesHint = null;
 		this.notesReadonlyWrap =
 			this.form?.querySelector<HTMLElement>('[data-appointment-notes-readonly-wrap]') ?? null;
 		this.historyNotes =
@@ -1103,11 +1102,32 @@ class AppointmentModal extends HTMLElement {
 		if (this.attachmentInput) {
 			this.attachmentInput.disabled = locked || this.isUploadingAttachment;
 		}
-		if (this.notesHint) {
-			this.notesHint.innerHTML = unlocked
-				? 'Se guardarán junto con los cambios de esta cita.'
-				: 'Disponible cuando el estado sea <b>Completado</b>.';
+		this.syncAttachmentEmptyVisibility();
+		this.syncDropzoneVisibility();
+	}
+
+	private static readonly MAX_ATTACHMENTS = 3;
+
+	private syncAttachmentEmptyVisibility() {
+		const locked = this.historyEnabled && !this.isNotesSectionUnlocked();
+		const showEmpty = !locked && this.currentAttachments.length === 0;
+		if (showEmpty) {
+			this.attachmentEmpty?.classList.remove('hidden');
+			this.attachmentEmpty?.removeAttribute('hidden');
+		} else {
+			this.attachmentEmpty?.classList.add('hidden');
+			this.attachmentEmpty?.setAttribute('hidden', '');
 		}
+	}
+
+	private syncDropzoneVisibility() {
+		if (!this.attachmentAddButton) return;
+		const locked = this.historyEnabled && !this.isNotesSectionUnlocked();
+		const atLimit = this.currentAttachments.length >= AppointmentModal.MAX_ATTACHMENTS;
+		const hide = !locked && atLimit;
+		this.attachmentAddButton.classList.toggle('hidden', hide);
+		if (hide) this.attachmentAddButton.setAttribute('hidden', '');
+		else this.attachmentAddButton.removeAttribute('hidden');
 	}
 
 	private showTabsBar() {
@@ -1197,12 +1217,10 @@ class AppointmentModal extends HTMLElement {
 	private renderAttachments() {
 		if (!this.attachmentsList) return;
 		this.attachmentsList.replaceChildren();
+		this.syncAttachmentEmptyVisibility();
+		this.syncDropzoneVisibility();
 
-		if (this.currentAttachments.length === 0) {
-			this.attachmentEmpty?.classList.remove('hidden');
-			return;
-		}
-		this.attachmentEmpty?.classList.add('hidden');
+		if (this.currentAttachments.length === 0) return;
 
 		for (const attachment of this.currentAttachments) {
 			const item = document.createElement('li');
@@ -1414,9 +1432,24 @@ class AppointmentModal extends HTMLElement {
 			return;
 		}
 
-		const maxBytes = 5 * 1024 * 1024;
+		const maxBytes = 20 * 1024 * 1024;
+		const maxFiles = AppointmentModal.MAX_ATTACHMENTS;
 		const queue = files.filter(Boolean);
 		if (!queue.length) return;
+
+		const remaining = maxFiles - this.currentAttachments.length;
+		if (remaining <= 0) {
+			this.showAttachmentError('Ya alcanzaste el máximo de 3 archivos.');
+			return;
+		}
+		if (queue.length > remaining) {
+			this.showAttachmentError(
+				remaining === 1
+					? 'Solo podés subir 1 archivo más (máximo 3).'
+					: `Solo podés subir ${remaining} archivos más (máximo 3).`
+			);
+			return;
+		}
 
 		for (const file of queue) {
 			if (!this.isAllowedAttachmentFile(file)) {
@@ -1424,7 +1457,7 @@ class AppointmentModal extends HTMLElement {
 				return;
 			}
 			if (file.size > maxBytes) {
-				this.showAttachmentError('El archivo supera el límite de 5 MB.');
+				this.showAttachmentError('El archivo supera el límite de 20 MB.');
 				return;
 			}
 		}

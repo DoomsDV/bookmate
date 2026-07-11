@@ -535,9 +535,6 @@ const { showVoiceButton = false }: Props = Astro.props;
 								placeholder="Anota lo realizado, observaciones o recomendaciones…"
 								class="resize-y rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 							></textarea>
-							<span class="text-[0.78rem] font-semibold text-(--on-surface-variant)" data-appointment-notes-hint>
-								Se guardarán junto con los cambios de esta cita.
-							</span>
 						</label>
 
 						<div class="hidden grid gap-1.5" data-appointment-notes-readonly-wrap hidden>
@@ -562,7 +559,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 									Arrastrá tus archivos aquí o hacé clic para buscar
 								</span>
 								<span class="appointment-dropzone__hint">
-									Formatos: JPG, PNG, PDF. Máx 5MB
+									Formatos: JPG, PNG, PDF. Máx 20MB · Hasta 3 archivos
 								</span>
 							</button>
 							<input
@@ -591,11 +588,9 @@ const { showVoiceButton = false }: Props = Astro.props;
 						data-appointment-notes-lock
 						hidden
 					>
-						<span class="appointment-history-lock__card">
-							<span class="material-symbols-rounded appointment-history-lock__icon" aria-hidden="true">lock</span>
-							<span class="appointment-history-lock__text">
-								Las notas y archivos se habilitan al cambiar el estado a Completado
-							</span>
+						<span class="material-symbols-rounded appointment-history-lock__icon" aria-hidden="true">lock</span>
+						<span class="appointment-history-lock__text">
+							Las notas y archivos se habilitan al cambiar el estado a Completado
 						</span>
 					</div>
 				</div>
