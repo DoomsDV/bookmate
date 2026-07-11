@@ -1783,20 +1783,17 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .fc .fc-toolbar.fc-header-toolbar {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr) auto;
-			grid-template-areas:
-				'title nav'
-				'views views';
-			align-items: center;
-			gap: 0.45rem 0.5rem;
+			display: flex;
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.45rem;
 			padding: 0 0 0.4rem;
 			border-bottom: 0;
 			margin-bottom: 0.5rem;
 		}
 
-		[data-calendar-root] .fc .fc-toolbar {
-			flex-direction: unset;
+		[data-calendar-root] .fc .fc-toolbar-chunk:empty {
+			display: none;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk {
@@ -1804,14 +1801,18 @@ const googleErrorMessage = hasGoogleError
 			justify-content: flex-start;
 		}
 
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav,
 		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title] {
-			grid-area: title;
-			justify-content: flex-start;
-			width: auto;
+			display: flex;
+			width: 100%;
+			align-items: center;
+			justify-content: space-between;
+			gap: 0.45rem;
 			min-width: 0;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-title {
+			flex: 1 1 auto;
 			width: auto;
 			max-width: 100%;
 			font-size: 1rem;
@@ -1823,23 +1824,19 @@ const googleErrorMessage = hasGoogleError
 			white-space: nowrap;
 		}
 
-		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-nav] {
-			grid-area: nav;
-			justify-content: flex-end;
-			gap: 0.3rem;
-		}
-
-		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-nav] .fc-button-group {
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .fc-button-group {
+			flex: 0 0 auto;
+			display: inline-flex;
+			flex-wrap: nowrap;
 			gap: 0.28rem;
 		}
 
-		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-nav] .fc-today-button {
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .fc-today-button {
 			min-width: 2.85rem;
 			padding-inline: 0.55rem;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch {
-			grid-area: views;
 			width: 100%;
 			display: flex;
 			flex-wrap: nowrap;
@@ -1847,11 +1844,10 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented {
-			flex: 1 1 auto;
+			display: flex;
+			flex-wrap: nowrap;
 			width: 100%;
 			min-width: 0;
-			display: grid;
-			grid-template-columns: repeat(3, minmax(0, 1fr));
 			gap: 0;
 			border: 1px solid var(--calendar-outline-strong);
 			border-radius: 999px;
@@ -1861,7 +1857,9 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button {
-			width: 100%;
+			flex: 1 1 0;
+			width: auto;
+			min-width: 0;
 			height: 2.15rem;
 			border: 0;
 			border-radius: 0;

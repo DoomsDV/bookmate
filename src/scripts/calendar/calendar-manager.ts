@@ -582,8 +582,8 @@ class CalendarManager extends HTMLElement {
 	private getHeaderToolbar(isMobile: boolean) {
 		return isMobile
 			? {
-					left: 'title',
-					center: 'prev,today,next',
+					left: 'title prev,today,next',
+					center: '',
 					right: 'timeGridDay,timeGridThreeDay,listWeek',
 				}
 			: {
@@ -727,6 +727,7 @@ class CalendarManager extends HTMLElement {
 		const chunks = Array.from(toolbar.querySelectorAll<HTMLElement>('.fc-toolbar-chunk'));
 		for (const chunk of chunks) {
 			chunk.classList.remove('fc-toolbar-chunk--view-switch');
+			chunk.classList.remove('fc-toolbar-chunk--time-nav');
 			chunk.removeAttribute('data-calendar-nav');
 			chunk.removeAttribute('data-calendar-view-switch');
 			chunk.removeAttribute('data-calendar-title');
@@ -738,15 +739,18 @@ class CalendarManager extends HTMLElement {
 		const titleChunk = chunks.find((chunk) => chunk.querySelector('.fc-toolbar-title'));
 		titleChunk?.setAttribute('data-calendar-title', 'true');
 
-		const navChunk = chunks.find(
-			(chunk) =>
-				chunk.querySelector('.fc-prev-button, .fc-next-button') &&
-				!chunk.querySelector('.fc-toolbar-title') &&
-				!chunk.querySelector(
-					'.fc-timeGridDay-button, .fc-timeGridThreeDay-button, .fc-listWeek-button'
-				)
-		);
-		navChunk?.setAttribute('data-calendar-nav', 'true');
+		const timeNavChunk =
+			chunks.find(
+				(chunk) =>
+					chunk.querySelector('.fc-prev-button, .fc-next-button, .fc-today-button') &&
+					!chunk.querySelector(
+						'.fc-timeGridDay-button, .fc-timeGridThreeDay-button, .fc-timeGridWeek-button, .fc-dayGridMonth-button, .fc-listWeek-button'
+					)
+			) ?? titleChunk;
+		if (timeNavChunk) {
+			timeNavChunk.classList.add('fc-toolbar-chunk--time-nav');
+			timeNavChunk.setAttribute('data-calendar-nav', 'true');
+		}
 
 		const viewChunk =
 			chunks.find((chunk) =>
