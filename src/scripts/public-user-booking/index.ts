@@ -12,6 +12,14 @@ import {
 	toParaguayMobileE164FromInput,
 } from '../../lib/paraguay-phone';
 import {
+	createDraftPersister,
+	readPublicBookingDraft,
+	SLOT_UNAVAILABLE_RESTORE_MESSAGE,
+	userBookingDraftKey,
+	type PublicBookingDraft,
+	type PublicBookingDraftStep,
+} from '../../lib/public-booking-draft';
+import {
 	buildApiAppointmentTimes,
 	createPublicAppointment,
 	fetchAvailableSlots,
@@ -239,6 +247,26 @@ export const initializePublicUserBookingPage = () => {
 	let validatedCustomerPhoneE164 = '';
 	let toastTimer: number | null = null;
 
+	const publicSlug = String(root.dataset.publicSlug || '').trim();
+	const draftStorageKey = userBookingDraftKey(publicSlug || 'unknown');
+	const draftPersister = createDraftPersister(draftStorageKey, () => {
+		if (step >= 5 || !selectedService) return null;
+		const draftStep = (step <= 4 ? step : 4) as PublicBookingDraftStep;
+		return {
+			v: 1 as const,
+			step: draftStep,
+			serviceId: selectedService.id_service,
+			orgId: selectedOrgGroup?.org_id_organization ?? null,
+			locationId: selectedContext?.id_location ?? null,
+			date: selectedDate,
+			time: selectedTime,
+			phone: customerPhoneInput.value,
+			name: customerNameInput.value,
+			policyAccepted: Boolean(depositPolicyAccept?.checked),
+			savedAt: Date.now(),
+		} satisfies PublicBookingDraft;
+	});
+
 	const showToast = (message: string, kind: 'success' | 'error' = 'error', durationMs = 3600) => {
 		if (!toastNode) return;
 		toastNode.textContent = message;
@@ -283,6 +311,8 @@ export const initializePublicUserBookingPage = () => {
 		if (stepProgressBar) {
 			stepProgressBar.style.width = `${step >= 5 ? 100 : cappedStep * 25}%`;
 		}
+
+		if (step <= 4) draftPersister.schedule();
 	};
 
 	const refreshSummary = () => {
@@ -398,6 +428,7 @@ export const initializePublicUserBookingPage = () => {
 							refreshSummary();
 							renderOrganizationServices();
 							renderCalendar();
+							draftPersister.schedule();
 							setStep(2);
 						},
 						{ signal }
@@ -480,6 +511,7 @@ export const initializePublicUserBookingPage = () => {
 					pendingAppointmentId = 0;
 					refreshSummary();
 					renderCalendar();
+					draftPersister.schedule();
 					void loadSlots(dateKey);
 				},
 				{ signal }
@@ -538,6 +570,7 @@ export const initializePublicUserBookingPage = () => {
 						pendingAppointmentId = 0;
 						refreshSummary();
 						renderSlots();
+						draftPersister.schedule();
 						setStep(4);
 					},
 					{ signal }
@@ -550,16 +583,27 @@ export const initializePublicUserBookingPage = () => {
 		}
 	};
 
-	const loadSlots = async (targetDate: string) => {
+	const loadSlots = async (
+		targetDate: string,
+		options?: { preserveSelection?: boolean; skipStepChange?: boolean }
+	) => {
 		const service = selectedService;
 		const orgGroup = selectedOrgGroup;
 		if (!service || !orgGroup) return;
+
+		const preservedTime = options?.preserveSelection ? selectedTime : '';
+		const preservedLocationId = options?.preserveSelection
+			? selectedContext?.id_location ?? 0
+			: 0;
+
 		isLoadingSlots = true;
 		availableSlotGroups = [];
-		selectedTime = '';
-		selectedContext = null;
+		if (!options?.preserveSelection) {
+			selectedTime = '';
+			selectedContext = null;
+		}
 		renderSlots();
-		setStep(3);
+		if (!options?.skipStepChange) setStep(3);
 
 		try {
 			const results = await Promise.allSettled(
@@ -595,6 +639,22 @@ export const initializePublicUserBookingPage = () => {
 						{ sensitivity: 'base' }
 					)
 				);
+
+			if (options?.preserveSelection && preservedTime) {
+				const match = availableSlotGroups.find(
+					(group) =>
+						(!preservedLocationId ||
+							group.location.id_location === preservedLocationId) &&
+						group.slots.includes(preservedTime)
+				);
+				if (match) {
+					selectedTime = preservedTime;
+					selectedContext = match.location;
+				} else {
+					selectedTime = '';
+					selectedContext = null;
+				}
+			}
 		} catch (error) {
 			availableSlotGroups = [];
 			showToast(error instanceof Error ? error.message : 'No fue posible consultar horarios.', 'error');
@@ -748,6 +808,7 @@ export const initializePublicUserBookingPage = () => {
 	};
 
 	const finalizeSuccess = () => {
+		draftPersister.clear();
 		ticketProfessional.textContent = profile.full_name;
 		ticketService.textContent = selectedService?.name || '-';
 		ticketDate.textContent = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
@@ -756,9 +817,11 @@ export const initializePublicUserBookingPage = () => {
 	};
 
 	const finalizeDepositHold = (hold: Record<string, unknown>) => {
+		draftPersister.clear();
 		fillSipapDepositPanel(root, unwrapSipapHold(hold as any), selectedContext?.deposit_settings, {
 			serviceName: selectedService?.name,
 			professionalName: profile.full_name,
+			depositAmount: calculateDepositAmount(selectedService),
 		});
 		ticketProfessional.textContent = profile.full_name;
 		ticketService.textContent = selectedService?.name || '-';
@@ -802,6 +865,7 @@ export const initializePublicUserBookingPage = () => {
 	};
 
 	const resetFlow = () => {
+		draftPersister.clear();
 		orgGroups = buildOrganizationGroups(profile.locations);
 		selectedOrgGroup = null;
 		selectedContext = null;
@@ -882,6 +946,7 @@ export const initializePublicUserBookingPage = () => {
 		customerPhoneInput.value = formatParaguayMobilePhoneInput(customerPhoneInput.value);
 		setPhoneFieldError('');
 		setSubmitError('');
+		draftPersister.schedule();
 		if (validatedCustomerPhoneE164) resetCustomerLookupState();
 	}, { signal });
 
@@ -906,15 +971,100 @@ export const initializePublicUserBookingPage = () => {
 	customerNameInput.addEventListener('input', () => {
 		setNameFieldError('');
 		setSubmitError('');
+		draftPersister.schedule();
 	}, { signal });
 
 	depositPolicyAccept?.addEventListener('change', () => {
 		setPolicyFieldError('');
+		draftPersister.schedule();
 	}, { signal });
 
 	refreshSummary();
 	renderOrganizationServices();
 	renderCalendar();
 	renderSlots();
-	setStep(1);
+
+	const restoreDraft = async () => {
+		const draft = readPublicBookingDraft(draftStorageKey, formatApiDate(today));
+		if (!draft || draft.serviceId <= 0) {
+			setStep(1);
+			return;
+		}
+
+		let matchedGroup: OrganizationBookingGroup | null = null;
+		let matchedService: UserBookingService | null = null;
+		for (const group of orgGroups) {
+			if (draft.orgId && group.org_id_organization !== draft.orgId) continue;
+			const service = group.services.find((item) => item.id_service === draft.serviceId) ?? null;
+			if (service) {
+				matchedGroup = group;
+				matchedService = service;
+				break;
+			}
+		}
+
+		if (!matchedGroup || !matchedService) {
+			draftPersister.clear();
+			setStep(1);
+			return;
+		}
+
+		selectedOrgGroup = matchedGroup;
+		selectedService = matchedService;
+		selectedDate = draft.date || '';
+		selectedTime = draft.time || '';
+		selectedContext =
+			(draft.locationId
+				? matchedGroup.locations.find((loc) => loc.id_location === draft.locationId) ?? null
+				: null) ?? null;
+
+		if (draft.phone) {
+			customerPhoneInput.value = formatParaguayMobilePhoneInput(draft.phone);
+		}
+		if (draft.name) {
+			customerNameInput.value = draft.name;
+			setCustomerNameVisibility(true);
+			customerNameInput.disabled = false;
+		}
+		if (depositPolicyAccept && draft.policyAccepted) {
+			depositPolicyAccept.checked = true;
+		}
+
+		if (selectedDate) {
+			const [y, m] = selectedDate.split('-').map(Number);
+			if (y && m) visibleMonth = new Date(y, m - 1, 1);
+		}
+
+		refreshSummary();
+		renderOrganizationServices();
+		renderCalendar();
+
+		const wantedTime = selectedTime;
+
+		if (selectedDate) {
+			await loadSlots(selectedDate, { preserveSelection: true, skipStepChange: true });
+			if (signal.aborted) return;
+
+			if (wantedTime && !selectedTime) {
+				showToast(SLOT_UNAVAILABLE_RESTORE_MESSAGE, 'error', 4800);
+				refreshSummary();
+				renderSlots();
+				draftPersister.schedule();
+				setStep(3);
+				return;
+			}
+		}
+
+		let targetStep: PublicBookingDraftStep = draft.step;
+		if (!selectedService) targetStep = 1;
+		else if (!selectedDate) targetStep = Math.min(draft.step, 2) as PublicBookingDraftStep;
+		else if (!selectedTime) targetStep = Math.min(Math.max(draft.step, 3), 3) as PublicBookingDraftStep;
+		else targetStep = Math.min(Math.max(draft.step, 4), 4) as PublicBookingDraftStep;
+
+		refreshSummary();
+		renderSlots();
+		setStep(targetStep);
+	};
+
+	void restoreDraft();
 };

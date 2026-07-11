@@ -75,9 +75,20 @@ export const fillSipapDepositPanel = (
 	root: ParentNode,
 	hold: SipapHoldResponse,
 	fallbackSettings?: PublicDepositSettings | null,
-	context?: { serviceName?: string | null; professionalName?: string | null }
+	context?: {
+		serviceName?: string | null;
+		professionalName?: string | null;
+		depositAmount?: number | null;
+	}
 ) => {
-	const amount = Number(hold.deposit_amount || 0);
+	const amountFromHold = Number(hold.deposit_amount || 0);
+	const amountFromContext = Number(context?.depositAmount || 0);
+	const amount =
+		Number.isFinite(amountFromHold) && amountFromHold > 0
+			? amountFromHold
+			: Number.isFinite(amountFromContext) && amountFromContext > 0
+				? amountFromContext
+				: 0;
 	const reference = String(hold.payment_reference || '').trim();
 	const sipap = hold.sipap || fallbackSettings?.sipap || {};
 	const policyCode =
@@ -97,7 +108,7 @@ export const fillSipapDepositPanel = (
 
 	setText(
 		'[data-sipap-amount]',
-		Number.isFinite(amount) && amount > 0
+		amount > 0
 			? new Intl.NumberFormat('es-PY', {
 					style: 'currency',
 					currency: 'PYG',

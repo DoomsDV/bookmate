@@ -19,6 +19,14 @@ import {
 	toParaguayMobileE164FromInput,
 } from '../lib/paraguay-phone';
 import {
+	createDraftPersister,
+	proBookingDraftKey,
+	readPublicBookingDraft,
+	SLOT_UNAVAILABLE_RESTORE_MESSAGE,
+	type PublicBookingDraft,
+	type PublicBookingDraftStep,
+} from '../lib/public-booking-draft';
+import {
 	bindSipapCopyButtons,
 	bindSipapReceiptUpload,
 	fillSipapDepositPanel,
@@ -386,6 +394,24 @@ export const initializePublicBookingPage = () => {
 	let mapInstance: any = null;
 	let mapMarker: any = null;
 	let mapOpenSeq = 0;
+
+	const draftStorageKey = proBookingDraftKey(organizationSlug, professionalSlug);
+	const draftPersister = createDraftPersister(draftStorageKey, () => {
+		if (step >= 5 || !selectedService) return null;
+		const draftStep = (step <= 4 ? step : 4) as PublicBookingDraftStep;
+		return {
+			v: 1 as const,
+			step: draftStep,
+			serviceId: selectedService.id_service,
+			locationId: selectedLocation?.id_location ?? null,
+			date: selectedDate,
+			time: selectedTime,
+			phone: customerPhoneInput.value,
+			name: customerNameInput.value,
+			policyAccepted: Boolean(depositPolicyAccept?.checked),
+			savedAt: Date.now(),
+		} satisfies PublicBookingDraft;
+	});
 
 	let toastTimer: number | null = null;
 	const stepLabelByNumber: Record<1 | 2 | 3 | 4, string> = {
@@ -808,6 +834,8 @@ export const initializePublicBookingPage = () => {
 			const progress = step >= 5 ? 100 : cappedStep * 25;
 			stepProgressBar.style.width = `${progress}%`;
 		}
+
+		if (step <= 4) draftPersister.schedule();
 	};
 
 	const getSelectedSlotKey = () =>
@@ -944,6 +972,7 @@ export const initializePublicBookingPage = () => {
 				refreshSummary();
 				renderServices();
 				renderCalendar();
+				draftPersister.schedule();
 				setStep(2);
 			});
 
@@ -1014,6 +1043,7 @@ export const initializePublicBookingPage = () => {
 				resetPendingAppointment();
 				refreshSummary();
 				renderCalendar();
+				draftPersister.schedule();
 				void loadAvailableSlots(dateKey);
 			});
 
@@ -1068,6 +1098,7 @@ export const initializePublicBookingPage = () => {
 					resetPendingAppointment();
 					refreshSummary();
 					renderSlots();
+					draftPersister.schedule();
 					setStep(4);
 				});
 
@@ -1150,15 +1181,25 @@ export const initializePublicBookingPage = () => {
 		} satisfies LocationSlotGroup;
 	};
 
-	const loadAvailableSlots = async (targetDate: string) => {
+	const loadAvailableSlots = async (
+		targetDate: string,
+		options?: { preserveSelection?: boolean; skipStepChange?: boolean }
+	) => {
 		if (!selectedService) return;
+
+		const preservedTime = options?.preserveSelection ? selectedTime : '';
+		const preservedLocationId = options?.preserveSelection
+			? selectedLocation?.id_location ?? 0
+			: 0;
 
 		isLoadingSlots = true;
 		availableSlotGroups = [];
-		selectedTime = '';
-		selectedLocation = defaultLocation;
+		if (!options?.preserveSelection) {
+			selectedTime = '';
+			selectedLocation = defaultLocation;
+		}
 		renderSlots();
-		setStep(3);
+		if (!options?.skipStepChange) setStep(3);
 
 		try {
 			bookingLocations = await fetchProfileLocations();
@@ -1196,6 +1237,22 @@ export const initializePublicBookingPage = () => {
 					const rightLabel = String(right.location.name || right.location.address || '');
 					return leftLabel.localeCompare(rightLabel, 'es');
 				});
+
+			if (options?.preserveSelection && preservedTime) {
+				const match = availableSlotGroups.find(
+					(group) =>
+						(!preservedLocationId ||
+							group.location.id_location === preservedLocationId) &&
+						group.slots.includes(preservedTime)
+				);
+				if (match) {
+					selectedTime = preservedTime;
+					selectedLocation = match.location;
+				} else {
+					selectedTime = '';
+					selectedLocation = defaultLocation;
+				}
+			}
 		} catch (error) {
 			availableSlotGroups = [];
 			showToast(
@@ -1211,6 +1268,7 @@ export const initializePublicBookingPage = () => {
 	};
 
 	const resetFlow = () => {
+		draftPersister.clear();
 		selectedService = null;
 		selectedDate = '';
 		selectedTime = '';
@@ -1282,6 +1340,7 @@ export const initializePublicBookingPage = () => {
 		() => {
 			setNameFieldError('');
 			setSubmitError('');
+			draftPersister.schedule();
 		},
 		{ signal }
 	);
@@ -1290,6 +1349,7 @@ export const initializePublicBookingPage = () => {
 		'change',
 		() => {
 			setPolicyFieldError('');
+			draftPersister.schedule();
 		},
 		{ signal }
 	);
@@ -1300,6 +1360,7 @@ export const initializePublicBookingPage = () => {
 			customerPhoneInput.value = formatParaguayMobilePhoneInput(customerPhoneInput.value);
 			setPhoneFieldError('');
 			setSubmitError('');
+			draftPersister.schedule();
 			if (isValidatingCustomer) resetCustomerLookupState();
 
 			const parsedPhone = parseParaguayMobilePhone(
@@ -1480,11 +1541,13 @@ export const initializePublicBookingPage = () => {
 			fillSipapDepositPanel(root, hold, profile.deposit_settings, {
 				serviceName: selectedService?.name,
 				professionalName: profile.full_name,
+				depositAmount: calculateDepositAmount(selectedService),
 			});
 			ticketProfessional.textContent = profile.full_name;
 			ticketService.textContent = selectedService?.name || '-';
 			ticketDate.textContent = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
 			ticketTime.textContent = selectedTime || '-';
+			draftPersister.clear();
 			setStep(6);
 			showToast('Turno reservado. Completá la transferencia SIPAP.', 'success');
 		} catch (error) {
@@ -1602,6 +1665,7 @@ export const initializePublicBookingPage = () => {
 			ticketDate.textContent = formatLongDateFromApiDate(selectedDate);
 			ticketTime.textContent = selectedTime;
 
+			draftPersister.clear();
 			setStep(5);
 		} catch (error) {
 			if (error instanceof PublicBookingClientError && error.status === 409) {
@@ -1644,6 +1708,81 @@ export const initializePublicBookingPage = () => {
 	renderServices();
 	renderCalendar();
 	renderSlots();
-	setStep(1);
+
+	const restoreDraft = async () => {
+		const draft = readPublicBookingDraft(draftStorageKey, formatApiDate(today));
+		if (!draft || draft.serviceId <= 0) {
+			setStep(1);
+			return;
+		}
+
+		const service =
+			profile.services.find((item) => item.id_service === draft.serviceId) ?? null;
+		if (!service) {
+			draftPersister.clear();
+			setStep(1);
+			return;
+		}
+
+		selectedService = service;
+		selectedDate = draft.date || '';
+		selectedTime = draft.time || '';
+		selectedLocation =
+			(draft.locationId
+				? bookingLocations.find((loc) => loc.id_location === draft.locationId)
+				: null) ?? defaultLocation;
+
+		if (draft.phone) {
+			customerPhoneInput.value = formatParaguayMobilePhoneInput(draft.phone);
+		}
+		if (draft.name) {
+			customerNameInput.value = draft.name;
+			setCustomerNameVisibility(true);
+			setCustomerNameLocked(false);
+		}
+		if (depositPolicyAccept && draft.policyAccepted) {
+			depositPolicyAccept.checked = true;
+		}
+
+		if (selectedDate) {
+			const [y, m] = selectedDate.split('-').map(Number);
+			if (y && m) visibleMonth = new Date(y, m - 1, 1);
+		}
+
+		refreshSummary();
+		renderServices();
+		renderCalendar();
+
+		const wantedTime = selectedTime;
+
+		if (selectedDate) {
+			await loadAvailableSlots(selectedDate, {
+				preserveSelection: true,
+				skipStepChange: true,
+			});
+			if (signal.aborted) return;
+
+			if (wantedTime && !selectedTime) {
+				showToast(SLOT_UNAVAILABLE_RESTORE_MESSAGE, 'error', 4800);
+				refreshSummary();
+				renderSlots();
+				draftPersister.schedule();
+				setStep(3);
+				return;
+			}
+		}
+
+		let targetStep: PublicBookingDraftStep = draft.step;
+		if (!selectedService) targetStep = 1;
+		else if (!selectedDate) targetStep = Math.min(draft.step, 2) as PublicBookingDraftStep;
+		else if (!selectedTime) targetStep = Math.min(Math.max(draft.step, 3), 3) as PublicBookingDraftStep;
+		else targetStep = Math.min(Math.max(draft.step, 4), 4) as PublicBookingDraftStep;
+
+		refreshSummary();
+		renderSlots();
+		setStep(targetStep);
+	};
+
+	void restoreDraft();
 	root.dataset.bound = 'true';
 };
