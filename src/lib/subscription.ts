@@ -196,6 +196,8 @@ export interface PlanCatalogItem {
 	code: string;
 	name: string;
 	price_amount: number;
+	checkout_price_amount: number;
+	founder_discount_percent: number;
 	currency: string;
 	billing_period: string;
 	storage_limit_bytes: number;
@@ -221,6 +223,7 @@ export interface SubscriptionCurrentSnapshot {
 	can_write: boolean;
 	is_founder: boolean;
 	billing_exempt: boolean;
+	founder_discount_percent: number;
 	trial_ends_at: string | null;
 	current_period_end: string | null;
 	grace_ends_at: string | null;
@@ -304,6 +307,7 @@ const normalizePlansCatalog = (value: unknown): PlansCatalog => {
 			can_write: toBool(cur.can_write),
 			is_founder: toBool(cur.is_founder),
 			billing_exempt: toBool(cur.billing_exempt),
+			founder_discount_percent: toNumber(cur.founder_discount_percent, 0),
 			trial_ends_at: toNullableString(cur.trial_ends_at),
 			current_period_end: toNullableString(cur.current_period_end),
 			grace_ends_at: toNullableString(cur.grace_ends_at),
@@ -314,11 +318,15 @@ const normalizePlansCatalog = (value: unknown): PlansCatalog => {
 		},
 		plans: plansRaw.map((item) => {
 			const p = (item ?? {}) as Record<string, unknown>;
+			const listPrice = toNumber(p.price_amount, 0);
+			const checkoutPrice = toNumber(p.checkout_price_amount, listPrice);
 			return {
 				id_plan: toNumber(p.id_plan, 0),
 				code: String(p.code || '').trim(),
 				name: String(p.name || '').trim(),
-				price_amount: toNumber(p.price_amount, 0),
+				price_amount: listPrice,
+				checkout_price_amount: checkoutPrice,
+				founder_discount_percent: toNumber(p.founder_discount_percent, 0),
 				currency: String(p.currency || 'PYG').trim(),
 				billing_period: String(p.billing_period || 'MONTHLY').trim(),
 				storage_limit_bytes: toNumber(p.storage_limit_bytes, 0),

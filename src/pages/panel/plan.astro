@@ -66,28 +66,23 @@ const PLAN_MARKETING: Record<string, PlanMarketing> = {
 		benefits: [
 			{
 				title: 'Equipo y sucursales sin límites',
-				description:
-					'Crecé sin pagar de más. Agregá todos los profesionales y locales que necesites desde el primer día.',
+				description: 'Agregá todos los profesionales y locales que necesites desde el primer día.',
 			},
 			{
 				title: 'Reservas web 24/7',
-				description:
-					'Tu propia página para que los clientes agenden sus turnos solos, en cualquier momento.',
+				description: 'Tu página para que los clientes agenden turnos solos, en cualquier momento.',
 			},
 			{
 				title: 'Notificaciones al instante',
-				description:
-					'Avisos automáticos a tu equipo sobre nuevas reservas, cambios o cancelaciones.',
+				description: 'Avisos automáticos al equipo sobre reservas, cambios o cancelaciones.',
 			},
 			{
 				title: 'Gestión de clientes y servicios',
-				description:
-					'Controlá tu base de datos y organizá todo tu catálogo en un solo lugar.',
+				description: 'Controlá tu base de clientes y organizá todo el catálogo en un solo lugar.',
 			},
 			{
 				title: 'Resumen Inteligente (IA)',
-				description:
-					'Hasel analiza tu agenda y te da un panorama claro cada mañana para arrancar el día con todo bajo control.',
+				description: 'Hasel analiza tu agenda y te da un panorama claro cada mañana.',
 			},
 		],
 	},
@@ -97,28 +92,23 @@ const PLAN_MARKETING: Record<string, PlanMarketing> = {
 		benefits: [
 			{
 				title: 'Recepción Inteligente por voz',
-				description:
-					'Olvidate de tipear. Creá turnos al instante hablándole al sistema gracias a nuestra IA integrada.',
+				description: 'Olvidate de tipear. Creá turnos al instante dictándole a nuestra IA.',
 			},
 			{
 				title: 'Cobro seguro por señas',
-				description:
-					'Protegé tu tiempo y tu dinero. Cobrá un anticipo al reservar y reducí el ausentismo de los clientes a cero.',
+				description: 'Cobrá un anticipo al momento de reservar y reducí el ausentismo a cero.',
 			},
 			{
 				title: 'Historial completo del cliente',
-				description:
-					'Llevá un registro profesional de cada visita. Agregá notas internas, subí fotos del "antes y después" y guardá documentos importantes (PDFs o consentimientos).',
+				description: 'Registrá visitas con notas internas, fotos del "antes y después" y documentos PDF.',
 			},
 			{
 				title: 'Almacenamiento seguro en la nube (5 GB)',
-				description:
-					'Espacio incluido para que no pierdas nunca las fotos y archivos de los historiales.',
+				description: 'Espacio garantizado para no perder nunca tus fotos y archivos.',
 			},
 			{
 				title: 'Análisis de rentabilidad',
-				description:
-					'Conocé a fondo los números de tu negocio con reportes detallados de ingresos y el nivel de asistencia de cada cliente.',
+				description: 'Reportes de ingresos y asistencia de cada cliente para conocer tu negocio.',
 			},
 		],
 	},
@@ -165,7 +155,7 @@ const STATUS_META: Record<string, { label: string; tone: string; hint: string }>
 	FOUNDER: {
 		label: 'Fundador',
 		tone: 'founder',
-		hint: 'Sos un early adopter: tu plan Premium está activo sin costo. ¡Gracias por acompañarnos!',
+		hint: 'Sos early adopter: tenés 50% de descuento de por vida en Premium (114.500 Gs/mes). ¡Gracias por acompañarnos!',
 	},
 	NONE: { label: 'Sin plan', tone: 'warning', hint: 'No encontramos una suscripción activa.' },
 };
@@ -246,15 +236,32 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 									<div class="grid gap-4 md:grid-cols-2">
 										{catalog.plans.map((plan) => {
 											const marketing = planMarketing(plan.code);
+											const hasFounderDeal =
+												plan.founder_discount_percent > 0 &&
+												plan.checkout_price_amount > 0 &&
+												plan.checkout_price_amount < plan.price_amount;
+											const displayPrice = hasFounderDeal
+												? plan.checkout_price_amount
+												: plan.price_amount;
 											return (
 											<article class={`plan-card ${plan.is_current ? 'plan-card-current' : ''} ${plan.code === 'PREMIUM' ? 'plan-card-featured' : ''}`}>
 												{plan.code === 'PREMIUM' && <span class="plan-ribbon">Recomendado</span>}
 												<div class="grid gap-1">
 													<span class="text-sm font-bold uppercase tracking-wide text-(--on-surface-variant)">{plan.name}</span>
-													<div class="flex items-end gap-1">
-														<span class="text-3xl font-extrabold text-(--on-surface)">{formatGs(plan.price_amount)}</span>
+													<div class="flex flex-wrap items-end gap-x-2 gap-y-1">
+														{hasFounderDeal ? (
+															<span class="pb-1 text-[0.95rem] font-semibold text-(--on-surface-variant) line-through">
+																{formatGs(plan.price_amount)}
+															</span>
+														) : null}
+														<span class="text-3xl font-extrabold text-(--on-surface)">{formatGs(displayPrice)}</span>
 														<span class="pb-1 text-[0.85rem] font-semibold text-(--on-surface-variant)">/ {plan.billing_period === 'YEARLY' ? 'año' : 'mes'}</span>
 													</div>
+													{hasFounderDeal ? (
+														<span class="text-[0.82rem] font-bold text-(--primary)">
+															Precio fundador · {plan.founder_discount_percent}% off de por vida
+														</span>
+													) : null}
 													{marketing ? (
 														<p class="plan-tagline m-0">{marketing.tagline}</p>
 													) : plan.storage_limit_bytes > 0 ? (
@@ -262,17 +269,24 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 													) : null}
 												</div>
 												{marketing ? (
-													<div class="grid gap-3">
+													<div class="grid gap-4">
 														{marketing.includesBase ? (
 															<p class="plan-includes-base m-0">Incluye todo lo del Plan Base, más:</p>
 														) : null}
 														<ul class="plan-feature-list">
 															{marketing.benefits.map((benefit) => (
 																<li>
-																	<span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+																	<span class="material-symbols-rounded plan-feature-check" aria-hidden="true">check_circle</span>
 																	<span class="plan-feature-copy">
 																		<strong>{benefit.title}</strong>
-																		<span>{benefit.description}</span>
+																		<button
+																			type="button"
+																			class="plan-feature-info"
+																			aria-label={benefit.description}
+																			data-tooltip={benefit.description}
+																		>
+																			<span class="material-symbols-rounded" aria-hidden="true">info</span>
+																		</button>
 																	</span>
 																</li>
 															))}
@@ -295,7 +309,7 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 															data-plan-select
 															data-plan-code={plan.code}
 															data-plan-name={plan.name}
-															data-plan-price={String(plan.price_amount)}
+															data-plan-price={String(displayPrice)}
 															data-billing-exempt={current.billing_exempt ? '1' : '0'}
 														>
 															{current.billing_exempt ? 'Cambiar a este plan' : `Elegir ${plan.name}`}
@@ -460,12 +474,79 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 		letter-spacing: 0.01em;
 		color: var(--primary);
 	}
-	.plan-feature-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.85rem; }
-	.plan-feature-list li { display: flex; align-items: flex-start; gap: 0.55rem; font-size: 0.88rem; font-weight: 600; color: var(--on-surface); }
-	.plan-feature-list .material-symbols-rounded { font-size: 1.15rem; color: #059669; margin-top: 0.1rem; flex-shrink: 0; }
-	.plan-feature-copy { display: grid; gap: 0.18rem; min-width: 0; }
-	.plan-feature-copy strong { font-size: 0.9rem; font-weight: 750; line-height: 1.3; color: var(--on-surface); }
-	.plan-feature-copy span { font-size: 0.82rem; font-weight: 500; line-height: 1.4; color: var(--on-surface-variant); }
+	.plan-feature-list { list-style: none; margin: 0; padding: 0.35rem 0 0.15rem; display: grid; gap: 0.9rem; }
+	.plan-feature-list li { display: flex; align-items: center; gap: 0.65rem; padding: 0.15rem 0; font-size: 0.88rem; font-weight: 600; color: var(--on-surface); }
+	.plan-feature-check { font-size: 1.15rem; color: #059669; flex-shrink: 0; }
+	.plan-feature-copy {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		min-width: 0;
+	}
+	.plan-feature-copy strong {
+		font-size: 0.9rem;
+		font-weight: 750;
+		line-height: 1.3;
+		color: var(--on-surface);
+	}
+	.plan-feature-info {
+		position: relative;
+		display: inline-grid;
+		place-items: center;
+		width: 1.25rem;
+		height: 1.25rem;
+		padding: 0;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: color-mix(in srgb, var(--on-surface-variant) 72%, transparent);
+		cursor: help;
+		flex-shrink: 0;
+	}
+	.plan-feature-info .material-symbols-rounded {
+		font-size: 1rem;
+		line-height: 1;
+		color: inherit;
+	}
+	.plan-feature-info:hover,
+	.plan-feature-info:focus-visible {
+		color: var(--on-surface-variant);
+		outline: none;
+	}
+	.plan-feature-info:focus-visible {
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+	}
+	.plan-feature-info::after {
+		content: attr(data-tooltip);
+		position: absolute;
+		left: 50%;
+		bottom: calc(100% + 0.45rem);
+		z-index: 5;
+		width: max-content;
+		max-width: min(16rem, 70vw);
+		padding: 0.55rem 0.7rem;
+		border-radius: 0.7rem;
+		background: var(--on-surface);
+		color: var(--surface-bright, #fff);
+		font-size: 0.75rem;
+		font-weight: 550;
+		line-height: 1.35;
+		text-align: left;
+		white-space: normal;
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transform: translateX(-50%) translateY(0.2rem);
+		transition: opacity 120ms ease, transform 120ms ease, visibility 0s linear 120ms;
+		box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
+	}
+	.plan-feature-info:hover::after,
+	.plan-feature-info:focus-visible::after {
+		opacity: 1;
+		visibility: visible;
+		transform: translateX(-50%) translateY(0);
+		transition-delay: 0s;
+	}
 
 	.plan-btn {
 		width: 100%; border: 0; cursor: pointer;
