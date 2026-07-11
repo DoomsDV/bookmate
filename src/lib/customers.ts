@@ -25,6 +25,14 @@ export interface CustomersListResult {
 	meta: CustomersListMeta;
 }
 
+export interface CustomerAppointmentAttachment {
+	id_attachment: number;
+	file_name: string;
+	mime_type: string;
+	size_bytes: number;
+	url: string;
+}
+
 export interface CustomerAppointmentSummary {
 	start_time: string;
 	end_time?: string;
@@ -36,6 +44,8 @@ export interface CustomerAppointmentSummary {
 	has_history_notes?: boolean;
 	attachment_count?: number;
 	has_history?: boolean;
+	notes?: string | null;
+	attachments?: CustomerAppointmentAttachment[];
 }
 
 export interface CustomerTopService {
@@ -61,6 +71,8 @@ export interface CustomerProfileStats {
 	next_appointment: CustomerAppointmentSummary | null;
 	pending_count: number;
 	pending_appointments: CustomerAppointmentSummary[];
+	appointment_history: CustomerAppointmentSummary[];
+	history_enabled: boolean;
 	top_services: CustomerTopService[];
 	profitability_enabled: boolean;
 	profitability: CustomerProfitability | null;
@@ -248,6 +260,24 @@ export const listCustomersWithOrds = async (
 	return parseCustomersResponse(response, { page, limit });
 };
 
+const normalizeAppointmentAttachment = (
+	value: unknown
+): CustomerAppointmentAttachment | null => {
+	if (!value || typeof value !== 'object') return null;
+	const source = value as Record<string, unknown>;
+	const id = toNumber(source.id_attachment, NaN);
+	const url = String(source.url || source.storage_url || '').trim();
+	const fileName = String(source.file_name || '').trim();
+	if (!Number.isInteger(id) || id <= 0 || !url || !fileName) return null;
+	return {
+		id_attachment: id,
+		file_name: fileName,
+		mime_type: String(source.mime_type || 'application/octet-stream').trim(),
+		size_bytes: Math.max(0, Math.floor(toNumber(source.size_bytes, 0))),
+		url,
+	};
+};
+
 const normalizeAppointmentSummary = (value: unknown): CustomerAppointmentSummary | null => {
 	if (!value || typeof value !== 'object') return null;
 
@@ -257,6 +287,17 @@ const normalizeAppointmentSummary = (value: unknown): CustomerAppointmentSummary
 
 	const endTime = String(source.end_time || '').trim();
 	const appointmentId = toNumber(source.id_appointment, 0);
+	const notesRaw = source.notes;
+	const notes =
+		notesRaw === null || notesRaw === undefined
+			? null
+			: String(notesRaw).trim() || null;
+	const attachmentsRaw = source.attachments;
+	const attachments = Array.isArray(attachmentsRaw)
+		? attachmentsRaw
+				.map(normalizeAppointmentAttachment)
+				.filter((item): item is CustomerAppointmentAttachment => item !== null)
+		: undefined;
 
 	return {
 		start_time: startTime,
@@ -270,9 +311,17 @@ const normalizeAppointmentSummary = (value: unknown): CustomerAppointmentSummary
 		...(Number.isInteger(appointmentId) && appointmentId > 0
 			? { id_appointment: appointmentId }
 			: {}),
-		has_history_notes: source.has_history_notes === true,
-		attachment_count: Math.max(0, Math.floor(toNumber(source.attachment_count, 0))),
-		has_history: source.has_history === true,
+		has_history_notes: source.has_history_notes === true || Boolean(notes),
+		attachment_count: Math.max(
+			0,
+			Math.floor(toNumber(source.attachment_count, attachments?.length ?? 0))
+		),
+		has_history:
+			source.has_history === true ||
+			Boolean(notes) ||
+			(attachments !== undefined && attachments.length > 0),
+		...(notes !== null ? { notes } : notesRaw === null ? { notes: null } : {}),
+		...(attachments ? { attachments } : {}),
 	};
 };
 
@@ -316,6 +365,8 @@ const normalizeCustomerProfileStats = (value: unknown): CustomerProfileStats => 
 		next_appointment: null,
 		pending_count: 0,
 		pending_appointments: [],
+		appointment_history: [],
+		history_enabled: false,
 		top_services: [],
 		profitability_enabled: false,
 		profitability: null,
@@ -339,6 +390,13 @@ const normalizeCustomerProfileStats = (value: unknown): CustomerProfileStats => 
 				.filter((item): item is CustomerAppointmentSummary => item !== null)
 		: [];
 
+	const historyRaw = source.appointment_history;
+	const appointmentHistory = Array.isArray(historyRaw)
+		? historyRaw
+				.map(normalizeAppointmentSummary)
+				.filter((item): item is CustomerAppointmentSummary => item !== null)
+		: [];
+
 	const topRaw = source.top_services;
 	const topServices = Array.isArray(topRaw)
 		? topRaw
@@ -355,6 +413,8 @@ const normalizeCustomerProfileStats = (value: unknown): CustomerProfileStats => 
 		next_appointment: normalizeAppointmentSummary(source.next_appointment),
 		pending_count: Math.max(0, Math.floor(toNumber(source.pending_count, pendingAppointments.length))),
 		pending_appointments: pendingAppointments,
+		appointment_history: appointmentHistory,
+		history_enabled: source.history_enabled === true,
 		top_services: topServices,
 		profitability_enabled: source.profitability_enabled === true,
 		profitability: normalizeProfitability(source.profitability),

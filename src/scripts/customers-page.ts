@@ -79,10 +79,14 @@ class CustomerManager extends HTMLElement {
 	private profilePendingList: HTMLElement | null = null;
 	private profileServicesNode: HTMLElement | null = null;
 	private profileProfitabilityWrap: HTMLElement | null = null;
-	private profileYearRevenueNode: HTMLElement | null = null;
-	private profileYearCountNode: HTMLElement | null = null;
 	private profileAvgTicketNode: HTMLElement | null = null;
 	private profileLostValueNode: HTMLElement | null = null;
+	private profileHistoryList: HTMLElement | null = null;
+	private profileHistoryEmpty: HTMLElement | null = null;
+	private profileTabButtons: NodeListOf<HTMLButtonElement> | null = null;
+	private profileTabPanels: NodeListOf<HTMLElement> | null = null;
+	private activeProfileTab: 'summary' | 'history' = 'summary';
+	private currentProfileHistoryEnabled = false;
 
 	private professionals: ProfessionalLov[] = [];
 
@@ -132,17 +136,23 @@ class CustomerManager extends HTMLElement {
 		this.profileProfitabilityWrap = this.querySelector<HTMLElement>(
 			'[data-customer-profile-profitability-wrap]'
 		);
-		this.profileYearRevenueNode = this.querySelector<HTMLElement>(
-			'[data-customer-profile-year-revenue]'
-		);
-		this.profileYearCountNode = this.querySelector<HTMLElement>(
-			'[data-customer-profile-year-count]'
-		);
 		this.profileAvgTicketNode = this.querySelector<HTMLElement>(
 			'[data-customer-profile-avg-ticket]'
 		);
 		this.profileLostValueNode = this.querySelector<HTMLElement>(
 			'[data-customer-profile-lost-value]'
+		);
+		this.profileHistoryList = this.querySelector<HTMLElement>(
+			'[data-customer-profile-history-list]'
+		);
+		this.profileHistoryEmpty = this.querySelector<HTMLElement>(
+			'[data-customer-profile-history-empty]'
+		);
+		this.profileTabButtons = this.querySelectorAll<HTMLButtonElement>(
+			'[data-customer-profile-tab]'
+		);
+		this.profileTabPanels = this.querySelectorAll<HTMLElement>(
+			'[data-customer-profile-tab-panel]'
 		);
 
 		if (!this.professionalSelect || !this.gridNode) return;
@@ -159,6 +169,9 @@ class CustomerManager extends HTMLElement {
 
 		this.addEventListener('click', this.handleDelegatedClick, { signal });
 		this.profileModal?.addEventListener('cancel', this.handleProfileModalCancel, { signal });
+		for (const tab of this.profileTabButtons ?? []) {
+			tab.addEventListener('click', this.handleProfileTabClick, { signal });
+		}
 
 		this.updateControls();
 		void this.loadMeta();
@@ -407,6 +420,98 @@ class CustomerManager extends HTMLElement {
 		return row;
 	}
 
+	private formatReservationWhen(value: string, options: { relative?: boolean } = {}) {
+		const text = String(value || '').trim();
+		if (!text) return '—';
+
+		const date = new Date(text);
+		if (Number.isNaN(date.getTime())) return text;
+
+		const absolute = new Intl.DateTimeFormat('es-PY', {
+			day: '2-digit',
+			month: 'short',
+			hour: '2-digit',
+			minute: '2-digit',
+		}).format(date);
+
+		if (!options.relative) {
+			const withYear = new Intl.DateTimeFormat('es-PY', {
+				day: '2-digit',
+				month: 'short',
+				year: 'numeric',
+				hour: '2-digit',
+				minute: '2-digit',
+			}).format(date);
+			return withYear.replace(',', ' a las');
+		}
+
+		const now = new Date();
+		const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+		const startOfTarget = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+		const dayDiff = Math.round(
+			(startOfTarget.getTime() - startOfToday.getTime()) / (24 * 60 * 60 * 1000)
+		);
+		const timePart = new Intl.DateTimeFormat('es-PY', {
+			hour: '2-digit',
+			minute: '2-digit',
+		}).format(date);
+		const shortDate = new Intl.DateTimeFormat('es-PY', {
+			day: '2-digit',
+			month: 'short',
+		}).format(date);
+
+		if (dayDiff === 0) return `Hoy a las ${timePart}`;
+		if (dayDiff === 1) return `Mañana a las ${timePart}`;
+		if (dayDiff > 1 && dayDiff <= 14) {
+			return `En ${dayDiff} días (${shortDate} a las ${timePart})`;
+		}
+		if (dayDiff === -1) return `Ayer a las ${timePart}`;
+		if (dayDiff < -1 && dayDiff >= -14) {
+			return `Hace ${Math.abs(dayDiff)} días (${shortDate} a las ${timePart})`;
+		}
+		return `${absolute.replace(',', ' a las')}`;
+	}
+
+	private renderReservationLine(
+		container: HTMLElement | null,
+		appointment: CustomerAppointmentSummary | null,
+		emptyLabel: string,
+		options: { relative?: boolean } = {}
+	) {
+		if (!container) return;
+		this.clearNode(container);
+
+		if (!appointment) {
+			const empty = document.createElement('span');
+			empty.className = 'customer-profile-reservation-line__empty';
+			empty.textContent = emptyLabel;
+			container.appendChild(empty);
+			return;
+		}
+
+		const service = document.createElement('p');
+		service.className = 'customer-profile-reservation-line__service';
+		const serviceName = appointment.service_name || 'Servicio';
+		const professional = String(appointment.professional_name || '').trim();
+		service.textContent = professional
+			? `${serviceName} con ${professional}`
+			: serviceName;
+
+		const when = document.createElement('p');
+		when.className = 'customer-profile-reservation-line__when';
+		const icon = document.createElement('span');
+		icon.className = 'material-symbols-rounded';
+		icon.setAttribute('aria-hidden', 'true');
+		icon.textContent = 'calendar_month';
+		const whenText = document.createElement('span');
+		whenText.textContent = this.formatReservationWhen(appointment.start_time, {
+			relative: options.relative === true,
+		});
+		when.append(icon, whenText);
+
+		container.append(service, when);
+	}
+
 	private renderAppointmentBlock(
 		container: HTMLElement | null,
 		appointment: CustomerAppointmentSummary | null,
@@ -499,19 +604,159 @@ class CustomerManager extends HTMLElement {
 		}
 
 		this.profileProfitabilityWrap.classList.remove('hidden');
-		if (this.profileYearRevenueNode) {
-			this.profileYearRevenueNode.textContent = this.formatCurrency(profitability.this_year_revenue);
-		}
-		if (this.profileYearCountNode) {
-			const count = profitability.this_year_count;
-			this.profileYearCountNode.textContent =
-				count === 1 ? '1 cita atendida este año' : `${count} citas atendidas este año`;
-		}
 		if (this.profileAvgTicketNode) {
 			this.profileAvgTicketNode.textContent = this.formatCurrency(profitability.avg_ticket);
 		}
 		if (this.profileLostValueNode) {
 			this.profileLostValueNode.textContent = this.formatCurrency(profitability.lost_value);
+		}
+	}
+
+	private handleProfileTabClick = (event: Event) => {
+		const button = event.currentTarget as HTMLButtonElement | null;
+		const tab = button?.dataset.customerProfileTab;
+		if (tab !== 'summary' && tab !== 'history') return;
+		this.setActiveProfileTab(tab);
+	};
+
+	private setActiveProfileTab(tab: 'summary' | 'history') {
+		this.activeProfileTab = tab;
+		for (const button of this.profileTabButtons ?? []) {
+			const isActive = button.dataset.customerProfileTab === tab;
+			button.classList.toggle('is-active', isActive);
+			button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+			button.tabIndex = isActive ? 0 : -1;
+		}
+		for (const panel of this.profileTabPanels ?? []) {
+			const isActive = panel.dataset.customerProfileTabPanel === tab;
+			panel.classList.toggle('hidden', !isActive);
+			if (isActive) panel.removeAttribute('hidden');
+			else panel.setAttribute('hidden', '');
+		}
+	}
+
+	private renderAppointmentHistory(
+		appointments: CustomerAppointmentSummary[],
+		historyEnabled: boolean
+	) {
+		if (!this.profileHistoryList) return;
+		this.clearNode(this.profileHistoryList);
+		this.currentProfileHistoryEnabled = historyEnabled;
+
+		const hasItems = appointments.length > 0;
+		this.profileHistoryEmpty?.classList.toggle('hidden', hasItems);
+		if (!hasItems) {
+			this.profileHistoryEmpty?.classList.remove('hidden');
+			return;
+		}
+		this.profileHistoryEmpty?.classList.add('hidden');
+
+		for (const appointment of appointments) {
+			const item = document.createElement('article');
+			item.className = 'customer-profile-history-item';
+
+			const toggle = document.createElement('button');
+			toggle.type = 'button';
+			toggle.className = 'customer-profile-history-item__toggle';
+			toggle.setAttribute('aria-expanded', 'false');
+
+			const main = document.createElement('div');
+			main.className = 'customer-profile-history-item__main';
+
+			const title = document.createElement('div');
+			title.className = 'customer-profile-history-item__title';
+			title.textContent = appointment.service_name || 'Servicio';
+
+			const meta = document.createElement('div');
+			meta.className = 'customer-profile-history-item__meta';
+			const metaParts = [
+				this.formatDateTime(appointment.start_time),
+				appointment.professional_name,
+				appointment.status,
+			].filter((part) => Boolean(String(part || '').trim()));
+			meta.textContent = metaParts.join(' · ');
+
+			main.append(title, meta);
+			const badges = this.buildHistoryBadges(appointment);
+			if (badges) main.appendChild(badges);
+
+			const chevron = document.createElement('span');
+			chevron.className =
+				'material-symbols-rounded customer-profile-history-item__chevron text-[1.2rem]';
+			chevron.setAttribute('aria-hidden', 'true');
+			chevron.textContent = 'expand_more';
+
+			toggle.append(main, chevron);
+
+			const body = document.createElement('div');
+			body.className = 'customer-profile-history-item__body';
+
+			if (!historyEnabled) {
+				const premium = document.createElement('p');
+				premium.className = 'customer-profile-history-muted';
+				premium.textContent =
+					'Las notas y archivos de la sesión están disponibles en el plan Premium.';
+				body.appendChild(premium);
+			} else {
+				const notes = String(appointment.notes || '').trim();
+				if (notes) {
+					const notesTitle = document.createElement('p');
+					notesTitle.className = 'customer-profile-reservation-line__label';
+					notesTitle.textContent = 'Notas de la sesión';
+					const notesText = document.createElement('p');
+					notesText.className = 'customer-profile-history-notes';
+					notesText.textContent = notes;
+					body.append(notesTitle, notesText);
+				} else {
+					const noNotes = document.createElement('p');
+					noNotes.className = 'customer-profile-history-muted';
+					noNotes.textContent = 'Sin notas registradas.';
+					body.appendChild(noNotes);
+				}
+
+				const attachments = Array.isArray(appointment.attachments)
+					? appointment.attachments
+					: [];
+				if (attachments.length > 0) {
+					const filesTitle = document.createElement('p');
+					filesTitle.className = 'customer-profile-reservation-line__label';
+					filesTitle.textContent = 'Archivos adjuntos';
+					const list = document.createElement('ul');
+					list.className = 'customer-profile-history-attachments';
+					for (const file of attachments) {
+						const li = document.createElement('li');
+						const link = document.createElement('a');
+						link.href = file.url;
+						link.target = '_blank';
+						link.rel = 'noopener noreferrer';
+						const icon = document.createElement('span');
+						icon.className = 'material-symbols-rounded text-[1.05rem]';
+						icon.setAttribute('aria-hidden', 'true');
+						icon.textContent = String(file.mime_type || '').startsWith('image/')
+							? 'image'
+							: 'description';
+						const label = document.createElement('span');
+						label.textContent = file.file_name;
+						link.append(icon, label);
+						li.appendChild(link);
+						list.appendChild(li);
+					}
+					body.append(filesTitle, list);
+				} else {
+					const noFiles = document.createElement('p');
+					noFiles.className = 'customer-profile-history-muted';
+					noFiles.textContent = 'Sin archivos adjuntos.';
+					body.appendChild(noFiles);
+				}
+			}
+
+			toggle.addEventListener('click', () => {
+				const isOpen = item.classList.toggle('is-open');
+				toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+			});
+
+			item.append(toggle, body);
+			this.profileHistoryList.appendChild(item);
 		}
 	}
 
@@ -634,19 +879,22 @@ class CustomerManager extends HTMLElement {
 			this.profileLtvNode.textContent = this.formatCurrency(stats.lifetime_value);
 		}
 
-		this.renderAppointmentBlock(
+		this.renderReservationLine(
 			this.profileLastNode,
 			stats.last_appointment,
 			'Sin reservas atendidas'
 		);
-		this.renderAppointmentBlock(
+		this.renderReservationLine(
 			this.profileNextNode,
 			stats.next_appointment,
-			'Sin reserva confirmada'
+			'Sin reserva confirmada',
+			{ relative: true }
 		);
 		this.renderPendingAppointments(stats.pending_appointments);
 		this.renderTopServices(stats.top_services);
 		this.renderProfitability(stats);
+		this.renderAppointmentHistory(stats.appointment_history ?? [], stats.history_enabled === true);
+		this.setActiveProfileTab('summary');
 
 		if (this.profileBodyNode) this.profileBodyNode.classList.remove('hidden');
 	}
