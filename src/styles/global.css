@@ -395,10 +395,19 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 }
 
 @media (min-width: 1024px) {
+	/* Motion tokens del sidebar: una sola curva/duración para todo el conjunto. */
+	:root {
+		--sidebar-motion: 240ms cubic-bezier(0.4, 0, 0.2, 1);
+	}
+
 	.app-shell {
 		grid-template-columns: 17.5rem minmax(0, 1fr);
-		transition: grid-template-columns 240ms cubic-bezier(0.22, 1, 0.36, 1);
+		transition: grid-template-columns var(--sidebar-motion);
 		overflow: clip;
+	}
+
+	[data-app-shell][data-sidebar-state="collapsed"] {
+		grid-template-columns: 5.5rem minmax(0, 1fr);
 	}
 
 	[data-desktop-sidebar] {
@@ -424,7 +433,7 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		overscroll-behavior: contain;
 		scrollbar-width: none;
 		-ms-overflow-style: none;
-		transition: padding 240ms cubic-bezier(0.22, 1, 0.36, 1);
+		transition: padding var(--sidebar-motion);
 	}
 
 	[data-sidebar-desktop-inner]::-webkit-scrollbar {
@@ -433,28 +442,20 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		display: none;
 	}
 
-	[data-app-shell][data-sidebar-animating] [data-sidebar-desktop-inner],
-	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-desktop-inner] {
-		overflow-y: hidden;
-	}
-
-	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-desktop-inner]:hover {
+	/* Scrollbar fino solo al pasar el mouse con el sidebar expandido. */
+	[data-app-shell][data-sidebar-state="expanded"] [data-sidebar-desktop-inner]:hover {
 		scrollbar-width: thin;
 	}
 
-	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-desktop-inner]:hover::-webkit-scrollbar {
+	[data-app-shell][data-sidebar-state="expanded"] [data-sidebar-desktop-inner]:hover::-webkit-scrollbar {
 		width: 6px;
 		height: 6px;
 		display: block;
 	}
 
-	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-desktop-inner]:hover::-webkit-scrollbar-thumb {
+	[data-app-shell][data-sidebar-state="expanded"] [data-sidebar-desktop-inner]:hover::-webkit-scrollbar-thumb {
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--on-surface-variant) 35%, transparent);
-	}
-
-	[data-app-shell][data-sidebar-state="collapsed"] {
-		grid-template-columns: 5.5rem minmax(0, 1fr);
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-desktop-inner] {
@@ -463,135 +464,114 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand-block] {
+		display: flex;
 		justify-content: center;
+		align-items: center;
 		padding-inline: 0.875rem;
+	}
+
+	[data-desktop-sidebar] [data-sidebar-brand] {
+		transition: gap var(--sidebar-motion);
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand] {
 		justify-content: center;
-		width: 100%;
+		align-items: center;
 		gap: 0;
+		width: auto;
 		padding: 0;
 		margin: 0;
 	}
 
 	[data-desktop-sidebar] [data-workspace-avatar] {
-		transition: width 240ms cubic-bezier(0.22, 1, 0.36, 1), height 240ms cubic-bezier(0.22, 1, 0.36, 1), font-size 240ms ease;
+		transition: width var(--sidebar-motion), height var(--sidebar-motion);
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-workspace-avatar] {
 		width: 3rem;
 		height: 3rem;
-		font-size: 1.25rem;
 	}
 
-	/* Textos: fade suave (sin display:none) para evitar el “golpe”. */
+	/*
+	 * Textos e íconos secundarios: se recogen (max-width) y se desvanecen
+	 * (opacity) con la MISMA curva/duración que el ancho del panel, todo a la
+	 * vez. Sin gating por JS -> el movimiento es único y continuo (nada de
+	 * textos que "aparecen de golpe" al terminar).
+	 */
 	[data-desktop-sidebar] [data-sidebar-brand-text],
 	[data-desktop-sidebar] [data-sidebar-label],
 	[data-desktop-sidebar] [data-sidebar-trailing],
 	[data-desktop-sidebar] [data-sidebar-footer] > :not(.sidebar-nav-icon),
 	[data-desktop-sidebar] .sidebar-account-chevron,
-	[data-desktop-sidebar] .sidebar-nav-trailing,
-	[data-desktop-sidebar] .sidebar-nav-summary-main .sidebar-nav-label,
-	[data-desktop-sidebar] [data-team-submenu] {
+	[data-desktop-sidebar] .sidebar-nav-trailing {
 		opacity: 1;
 		max-width: 16rem;
 		overflow: hidden;
+		transition:
+			opacity 140ms ease 60ms,
+			max-width var(--sidebar-motion);
+	}
+
+	/* Los labels de una línea recortan (no envuelven) al animar. */
+	[data-desktop-sidebar] [data-sidebar-label] {
 		white-space: nowrap;
-		visibility: visible;
-		pointer-events: auto;
-		transform: translateX(0);
-		transition:
-			opacity 160ms ease,
-			transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
-			max-width 240ms cubic-bezier(0.22, 1, 0.36, 1),
-			visibility 0s linear 0s;
 	}
 
-	[data-desktop-sidebar] [data-team-submenu] {
-		max-height: 20rem;
+	/* La marca (nombre de la organización) SÍ puede envolver a varias líneas. */
+	[data-desktop-sidebar] [data-sidebar-brand-text] {
+		max-width: 12rem;
 		white-space: normal;
-		transition:
-			opacity 160ms ease,
-			max-height 240ms cubic-bezier(0.22, 1, 0.36, 1),
-			max-width 240ms cubic-bezier(0.22, 1, 0.36, 1),
-			visibility 0s linear 0s;
 	}
 
-	/* Durante animación o colapsado: textos ocultos sin romper el layout. */
+	.sidebar-account-chevron {
+		transition:
+			opacity 140ms ease 60ms,
+			max-width var(--sidebar-motion),
+			margin var(--sidebar-motion);
+	}
+
+	/*
+	 * Al colapsar, los textos deben salir del flujo flex.
+	 * max-width:0 solo no alcanza: con white-space:nowrap el min-width:auto
+	 * del ítem flex gana y empuja el ícono fuera del centro.
+	 */
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand-text],
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-label],
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-trailing],
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-footer] > :not(.sidebar-nav-icon),
 	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-account-chevron,
-	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-trailing,
-	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-summary-main .sidebar-nav-label,
-	[data-app-shell][data-sidebar-state="collapsed"] [data-team-submenu],
-	[data-app-shell][data-sidebar-animating] [data-sidebar-brand-text],
-	[data-app-shell][data-sidebar-animating] [data-sidebar-label],
-	[data-app-shell][data-sidebar-animating] [data-sidebar-trailing],
-	[data-app-shell][data-sidebar-animating] [data-sidebar-footer] > :not(.sidebar-nav-icon),
-	[data-app-shell][data-sidebar-animating] .sidebar-account-chevron,
-	[data-app-shell][data-sidebar-animating] .sidebar-nav-trailing,
-	[data-app-shell][data-sidebar-animating] .sidebar-nav-summary-main .sidebar-nav-label,
-	[data-app-shell][data-sidebar-animating] [data-team-submenu] {
-		opacity: 0;
-		max-width: 0;
-		visibility: hidden;
-		pointer-events: none;
-		transform: translateX(-4px);
-		transition:
-			opacity 120ms ease,
-			transform 120ms ease,
-			max-width 200ms cubic-bezier(0.22, 1, 0.36, 1),
-			visibility 0s linear 120ms;
+	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-trailing {
+		display: none;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] [data-team-submenu],
-	[data-app-shell][data-sidebar-animating] [data-team-submenu] {
-		max-height: 0;
-		margin: 0;
-		padding: 0;
-		border: 0;
-	}
-
-	/* Al terminar de expandir, los textos entran con un leve delay. */
-	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-brand-text],
-	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-label],
-	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-trailing],
-	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-footer] > :not(.sidebar-nav-icon),
-	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) .sidebar-account-chevron,
-	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) .sidebar-nav-trailing,
-	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) .sidebar-nav-summary-main .sidebar-nav-label,
-	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-team-submenu] {
-		transition:
-			opacity 180ms ease 40ms,
-			transform 200ms cubic-bezier(0.22, 1, 0.36, 1) 40ms,
-			max-width 240ms cubic-bezier(0.22, 1, 0.36, 1),
-			max-height 240ms cubic-bezier(0.22, 1, 0.36, 1),
-			visibility 0s linear 0s;
+	/* Submenú Equipo: se oculta al colapsar (sin dejar hueco). */
+	[data-app-shell][data-sidebar-state="collapsed"] [data-team-submenu] {
+		display: none;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] nav > ul > li {
 		display: flex;
 		justify-content: center;
+		width: 100%;
 	}
 
+	/* Item de navegación: pastilla -> círculo, con una sola transición. */
 	[data-desktop-sidebar] .sidebar-nav-link {
 		box-sizing: border-box;
 		width: 100%;
 		transition:
-			width 240ms cubic-bezier(0.22, 1, 0.36, 1),
-			height 240ms cubic-bezier(0.22, 1, 0.36, 1),
-			min-height 240ms cubic-bezier(0.22, 1, 0.36, 1),
-			padding 240ms cubic-bezier(0.22, 1, 0.36, 1),
-			gap 240ms ease,
-			border-radius 240ms ease,
-			border-color 240ms ease,
-			margin 240ms ease;
+			width var(--sidebar-motion),
+			height var(--sidebar-motion),
+			min-height var(--sidebar-motion),
+			padding var(--sidebar-motion),
+			margin var(--sidebar-motion),
+			gap var(--sidebar-motion),
+			border-radius var(--sidebar-motion),
+			border-color var(--sidebar-motion);
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-link {
+		display: flex;
 		width: 2.75rem;
 		height: 2.75rem;
 		min-height: 2.75rem;
@@ -606,6 +586,10 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-footer] {
 		border-color: transparent;
 		border-radius: 9999px;
+		justify-content: center;
+		width: 2.75rem;
+		margin-inline: auto;
+		padding: 0;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-summary {
@@ -613,20 +597,39 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-summary-main {
+		display: flex;
 		justify-content: center;
+		align-items: center;
 		gap: 0;
 		min-width: 0;
-		width: 100%;
+		width: auto;
+		flex: 0 0 auto;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-icon {
+		display: inline-flex;
 		width: 1.25rem;
 		height: 1.25rem;
 		margin: 0;
+		flex: 0 0 auto;
 	}
 
 	[data-desktop-sidebar] .sidebar-nav-link--sub {
 		padding-left: 1rem;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.app-shell,
+		[data-desktop-sidebar] [data-sidebar-brand],
+		[data-desktop-sidebar] [data-workspace-avatar],
+		[data-desktop-sidebar] .sidebar-nav-link,
+		[data-desktop-sidebar] [data-sidebar-brand-text],
+		[data-desktop-sidebar] [data-sidebar-label],
+		[data-desktop-sidebar] [data-sidebar-trailing],
+		[data-desktop-sidebar] .sidebar-account-chevron,
+		[data-desktop-sidebar] .sidebar-nav-trailing {
+			transition: none;
+		}
 	}
 }
 

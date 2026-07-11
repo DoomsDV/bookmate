@@ -212,7 +212,6 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 		let swipeStartX: number | null = null;
 		let swipeStartY: number | null = null;
-		let sidebarCollapseDelayTimer: number | null = null;
 
 		const resetSwipeTracking = () => {
 			swipeStartX = null;
@@ -259,47 +258,8 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		const toggleDesktopSidebar = () => {
 			if (!appShell) return;
 			const isCollapsed = appShell.getAttribute('data-sidebar-state') === 'collapsed';
-
-			if (sidebarCollapseDelayTimer !== null) {
-				window.clearTimeout(sidebarCollapseDelayTimer);
-				sidebarCollapseDelayTimer = null;
-			}
-
-			const finishAnimating = () => {
-				appShell.removeAttribute('data-sidebar-animating');
-			};
-
-			const watchWidthTransition = () => {
-				const onTransitionEnd = (event: TransitionEvent) => {
-					if (event.target !== appShell || event.propertyName !== 'grid-template-columns') return;
-					appShell.removeEventListener('transitionend', onTransitionEnd);
-					window.clearTimeout(fallbackTimer);
-					finishAnimating();
-				};
-				appShell.addEventListener('transitionend', onTransitionEnd);
-				const fallbackTimer = window.setTimeout(() => {
-					appShell.removeEventListener('transitionend', onTransitionEnd);
-					finishAnimating();
-				}, 360);
-			};
-
-			if (isCollapsed) {
-				// Expandir: primero el ancho, después aparecen los textos.
-				appShell.setAttribute('data-sidebar-animating', '1');
-				appShell.setAttribute('data-sidebar-state', 'expanded');
-				syncDesktopToggle();
-				watchWidthTransition();
-				return;
-			}
-
-			// Colapsar: primero oculta textos, después reduce el ancho.
-			appShell.setAttribute('data-sidebar-animating', '1');
-			sidebarCollapseDelayTimer = window.setTimeout(() => {
-				sidebarCollapseDelayTimer = null;
-				appShell.setAttribute('data-sidebar-state', 'collapsed');
-				syncDesktopToggle();
-				watchWidthTransition();
-			}, 130);
+			appShell.setAttribute('data-sidebar-state', isCollapsed ? 'expanded' : 'collapsed');
+			syncDesktopToggle();
 		};
 
 		const toggleSideNav = () => {
