@@ -11,6 +11,13 @@ import {
 	isScheduleMisalignedFlag,
 	normalizeScheduleMisalignedReason,
 } from '../../lib/schedule-misaligned';
+import {
+	destroySearchableSelect,
+	ensureSearchableSelect,
+	setSearchableSelectDisabled,
+	setSearchableSelectValue,
+	syncSearchableSelect,
+} from '../searchable-select';
 import { AppointmentsClient } from './appointments-client';
 import type {
 	ApiFieldError,
@@ -349,6 +356,11 @@ class AppointmentModal extends HTMLElement {
 		this.#listeners = new AbortController();
 		const signal = this.#listeners.signal;
 
+		ensureSearchableSelect(requiredNodes.modalProfessional, {
+			placeholder: 'Buscar profesional...',
+			dropdownParent: requiredNodes.modal,
+		});
+
 		requiredNodes.form.addEventListener('submit', this.handleSubmit, { signal });
 		requiredNodes.modal.addEventListener('click', this.handleBackdropClick, { signal });
 		for (const closeButton of this.closeModalButtons ?? []) {
@@ -408,6 +420,7 @@ class AppointmentModal extends HTMLElement {
 		if (this.modal?.open) {
 			this.modal.close();
 		}
+		destroySearchableSelect(this.modalProfessional);
 	}
 
 	scheduleBindRetry() {
@@ -445,13 +458,13 @@ class AppointmentModal extends HTMLElement {
 
 		if (this.roleId === ROLES.PROFESIONAL) {
 			requiredNodes.modalProfessionalWrap.classList.add('hidden');
-			requiredNodes.modalProfessional.disabled = true;
+			setSearchableSelectDisabled(requiredNodes.modalProfessional, true);
 			if (this.currentProfessionalId > 0) {
-				requiredNodes.modalProfessional.value = String(this.currentProfessionalId);
+				setSearchableSelectValue(requiredNodes.modalProfessional, this.currentProfessionalId);
 			}
 		} else {
 			requiredNodes.modalProfessionalWrap.classList.remove('hidden');
-			requiredNodes.modalProfessional.disabled = false;
+			setSearchableSelectDisabled(requiredNodes.modalProfessional, false);
 		}
 	}
 
@@ -471,11 +484,11 @@ class AppointmentModal extends HTMLElement {
 		this.syncDateDisplayInputs();
 
 		if (this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0) {
-			requiredNodes.modalProfessional.value = String(this.currentProfessionalId);
+			setSearchableSelectValue(requiredNodes.modalProfessional, this.currentProfessionalId);
 		} else if (context.professionalId && context.professionalId > 0) {
-			requiredNodes.modalProfessional.value = String(context.professionalId);
+			setSearchableSelectValue(requiredNodes.modalProfessional, context.professionalId);
 		} else if (this.professionals.length > 0) {
-			requiredNodes.modalProfessional.value = String(this.professionals[0].id);
+			setSearchableSelectValue(requiredNodes.modalProfessional, this.professionals[0].id);
 		}
 
 		if (context.locationId && context.locationId > 0) {
@@ -608,6 +621,12 @@ class AppointmentModal extends HTMLElement {
 			option.textContent = item.name;
 			select.appendChild(option);
 		}
+		syncSearchableSelect(select);
+	}
+
+	private syncModalProfessionalDisabledState() {
+		if (!this.modalProfessional) return;
+		setSearchableSelectDisabled(this.modalProfessional, this.modalProfessional.disabled);
 	}
 
 	private hideCustomerResults() {
@@ -811,6 +830,7 @@ class AppointmentModal extends HTMLElement {
 		for (const field of this.formFields ?? []) {
 			field.disabled = value;
 		}
+		this.syncModalProfessionalDisabledState();
 		this.openStartPickerButton && (this.openStartPickerButton.disabled = value);
 		this.openEndPickerButton && (this.openEndPickerButton.disabled = value);
 		this.pickerMonthSelect && (this.pickerMonthSelect.disabled = value);
@@ -1293,7 +1313,7 @@ class AppointmentModal extends HTMLElement {
 
 	ensureModalProfessionalValue() {
 		if (this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0 && this.modalProfessional) {
-			this.modalProfessional.value = String(this.currentProfessionalId);
+			setSearchableSelectValue(this.modalProfessional, this.currentProfessionalId);
 		}
 	}
 
@@ -1311,6 +1331,10 @@ class AppointmentModal extends HTMLElement {
 
 		for (const field of this.formFields ?? []) {
 			field.disabled = false;
+		}
+		this.syncModalProfessionalDisabledState();
+		if (this.roleId === ROLES.PROFESIONAL) {
+			setSearchableSelectDisabled(this.modalProfessional, true);
 		}
 		requiredNodes.customerPhoneInput.readOnly = Number(requiredNodes.customerIdInput.value || 0) > 0;
 		requiredNodes.openStartPickerButton.disabled = false;
@@ -1365,6 +1389,7 @@ class AppointmentModal extends HTMLElement {
 		for (const field of this.formFields ?? []) {
 			field.disabled = true;
 		}
+		this.syncModalProfessionalDisabledState();
 		requiredNodes.customerPhoneInput.readOnly = true;
 		requiredNodes.openStartPickerButton.disabled = true;
 		requiredNodes.openEndPickerButton.disabled = true;
@@ -1445,7 +1470,7 @@ class AppointmentModal extends HTMLElement {
 					phone_number: String(appointment.customer_phone || ''),
 				}
 			: null;
-		requiredNodes.modalProfessional.value = String(appointment.pro_id_professional || '');
+		setSearchableSelectValue(requiredNodes.modalProfessional, appointment.pro_id_professional || '');
 		requiredNodes.modalLocation.value = String(appointment.loc_id_location || '');
 		requiredNodes.modalService.value = String(appointment.ser_id_service || '');
 		requiredNodes.statusInput.value = String(appointment.status || 'CONFIRMADO');
@@ -1501,7 +1526,7 @@ class AppointmentModal extends HTMLElement {
 				: null;
 
 		if (toPositiveInt(draft.pro_id_professional, 0) > 0) {
-			requiredNodes.modalProfessional.value = String(draft.pro_id_professional);
+			setSearchableSelectValue(requiredNodes.modalProfessional, draft.pro_id_professional);
 		}
 		if (toPositiveInt(draft.loc_id_location, 0) > 0) {
 			requiredNodes.modalLocation.value = String(draft.loc_id_location);

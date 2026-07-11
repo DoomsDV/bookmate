@@ -5,25 +5,46 @@ export type SearchableSelectInstance = TomSelect;
 const instances = new WeakMap<HTMLSelectElement, TomSelect>();
 const bodyDropdownCleanups = new WeakMap<TomSelect, () => void>();
 
-const usesBodyDropdown = (instance: TomSelect) => instance.settings.dropdownParent === 'body';
+const usesFixedDropdown = (instance: TomSelect) => {
+	const parent = instance.settings.dropdownParent;
+	return parent === 'body' || (typeof HTMLElement !== 'undefined' && parent instanceof HTMLElement);
+};
 
-const positionBodyDropdown = (instance: TomSelect) => {
-	if (!usesBodyDropdown(instance) || !instance.isOpen) return;
+const positionFixedDropdown = (instance: TomSelect) => {
+	if (!usesFixedDropdown(instance) || !instance.isOpen) return;
 
 	const rect = instance.control.getBoundingClientRect();
+	const parent = instance.settings.dropdownParent;
+
+	// `position: fixed` inside <dialog> (or any transformed ancestor) is relative to that
+	// element, not the viewport — convert coordinates when the parent is an HTMLElement.
+	if (parent instanceof HTMLElement) {
+		const parentRect = parent.getBoundingClientRect();
+		Object.assign(instance.dropdown.style, {
+			position: 'absolute',
+			width: `${rect.width}px`,
+			top: `${rect.bottom - parentRect.top + parent.scrollTop + 4}px`,
+			left: `${rect.left - parentRect.left + parent.scrollLeft}px`,
+			right: 'auto',
+			zIndex: '1000',
+		});
+		return;
+	}
+
 	Object.assign(instance.dropdown.style, {
 		position: 'fixed',
 		width: `${rect.width}px`,
 		top: `${rect.bottom + 4}px`,
 		left: `${rect.left}px`,
 		right: 'auto',
+		zIndex: '1000',
 	});
 };
 
-const bindBodyDropdownPosition = (instance: TomSelect) => {
-	if (!usesBodyDropdown(instance)) return;
+const bindFixedDropdownPosition = (instance: TomSelect) => {
+	if (!usesFixedDropdown(instance)) return;
 
-	const reposition = () => positionBodyDropdown(instance);
+	const reposition = () => positionFixedDropdown(instance);
 	const onScroll = () => reposition();
 	const onResize = () => reposition();
 
@@ -84,7 +105,7 @@ export const ensureSearchableSelect = (
 		});
 	});
 
-	bindBodyDropdownPosition(instance);
+	bindFixedDropdownPosition(instance);
 
 	instances.set(select, instance);
 	if (select.disabled) instance.disable();
