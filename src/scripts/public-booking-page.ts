@@ -868,6 +868,7 @@ export const initializePublicBookingPage = () => {
 		icon.setAttribute('aria-hidden', 'true');
 		icon.textContent = 'location_on';
 		const text = document.createElement('span');
+		text.className = 'public-location-link__label';
 		text.textContent = label;
 		summaryLocation.append(icon, text);
 	};
@@ -1401,7 +1402,7 @@ export const initializePublicBookingPage = () => {
 
 	const setPayDepositButtonDefaultLabel = () => {
 		payDepositButton.innerHTML =
-			'<span>Reservar y ver datos de transferencia</span><span aria-hidden="true">🔒</span>';
+			'<span>Reservar y pagar</span><span aria-hidden="true">🔒</span>';
 	};
 
 	const setPayDepositButtonLoadingLabel = (label: string) => {

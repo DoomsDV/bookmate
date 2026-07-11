@@ -424,10 +424,10 @@ const serializedLocations = reservation
 					</dialog>
 
 					<dialog
-						class="public-map-modal rounded-[28px] border border-(--outline-variant) bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70"
+						class="public-map-modal rounded-[28px] border-0 bg-(--surface-container-high) p-0 text-(--on-surface) shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop:bg-black/70"
 						data-public-map-modal
 					>
-						<div class="grid gap-4 p-5 sm:p-6">
+						<div class="grid gap-5 p-6">
 							<div class="flex items-start justify-between gap-4">
 								<div>
 									<h2 class="text-xl font-semibold tracking-tight">Ubicación</h2>
@@ -442,11 +442,10 @@ const serializedLocations = reservation
 									<span class="material-symbols-rounded">close</span>
 								</button>
 							</div>
-							<div class="public-map-modal-divider"></div>
-							<div class="public-map-canvas-wrap relative h-80 overflow-hidden rounded-3xl border border-(--outline-variant) bg-(--surface-container-high)">
+							<div class="public-map-canvas-wrap relative h-96 overflow-hidden rounded-2xl bg-(--surface-container-highest)">
 								<div class="h-full w-full" data-public-map-canvas></div>
 								<div
-									class="public-map-loading absolute inset-0 z-10 hidden place-items-center bg-(--surface-container-high)/85 backdrop-blur-[2px]"
+									class="public-map-loading absolute inset-0 z-10 hidden place-items-center bg-(--surface-container-highest)/85 backdrop-blur-[2px]"
 									data-public-map-loading
 									aria-hidden="true"
 									aria-live="polite"
@@ -1033,16 +1032,10 @@ const serializedLocations = reservation
 
 .public-map-modal {
 	width: min(92vw, 44rem);
-	max-height: min(90vh, 42rem);
+	max-height: min(92vh, 48rem);
 	margin: auto;
-}
-
-.public-map-modal-divider {
-	height: 1px;
-	width: 100%;
-	border-radius: 999px;
-	background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--outline-variant) 72%, white 28%), transparent);
-	opacity: 0.9;
+	border: none;
+	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
 }
 
 .public-map-canvas-wrap.is-loading [data-public-map-canvas] {

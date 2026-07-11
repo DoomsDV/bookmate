@@ -482,28 +482,44 @@
 	opacity: 0.9;
 }
 
+.public-booking-back-row {
+	display: flex;
+	justify-content: flex-start;
+	margin: 0 0 0.85rem;
+}
+
+.public-booking-back-row.hidden {
+	display: none;
+}
+
 .public-booking-back-link {
 	display: inline-flex;
 	align-items: center;
-	justify-content: center;
-	width: 100%;
+	gap: 0.15rem;
+	width: auto;
+	min-width: 0;
 	margin: 0;
-	padding: 0.7rem 1.15rem;
+	padding: 0.15rem 0;
 	border: 0;
-	border-radius: 9999px;
-	background: color-mix(in srgb, var(--surface-container-highest) 80%, transparent);
+	border-radius: 0;
+	background: transparent;
 	font-size: 0.92rem;
-	font-weight: 500;
-	color: var(--on-surface);
+	font-weight: 550;
+	line-height: 1.2;
+	color: var(--on-surface-variant);
 	cursor: pointer;
-	transition:
-		background 0.15s ease,
-		color 0.15s ease;
+	transition: color 0.15s ease;
+}
+
+.public-booking-back-link .material-symbols-rounded {
+	font-size: 1.15rem;
+	line-height: 1;
+	margin-left: -0.2rem;
 }
 
 .public-booking-back-link:hover {
-	background: var(--surface-container-highest);
-	color: var(--on-surface);
+	background: transparent;
+	color: var(--primary);
 }
 
 /* Resumen: elevación tonal + filas tipo ticket */
@@ -566,9 +582,27 @@
 .public-booking-summary .public-location-link {
 	display: inline-flex;
 	justify-content: flex-end;
+	align-items: center;
+	gap: 0.25rem;
 	margin-left: auto;
 	width: auto;
 	max-width: 65%;
+	text-decoration: none;
+}
+
+.public-booking-summary .public-location-link .material-symbols-rounded {
+	flex-shrink: 0;
+	text-decoration: none;
+}
+
+.public-booking-summary .public-location-link:hover:not(:disabled) {
+	text-decoration: none;
+}
+
+.public-booking-summary .public-location-link:hover:not(:disabled) .public-location-link__label {
+	text-decoration: underline;
+	text-decoration-thickness: 1px;
+	text-underline-offset: 0.2em;
 }
 
 .step-item-default,
@@ -644,7 +678,7 @@
 
 .public-slot-branch .public-slot-time {
 	border-color: var(--outline) !important;
-	background: transparent !important;
+	background: var(--surface-container-highest) !important;
 	color: var(--on-surface) !important;
 }
 
@@ -682,7 +716,7 @@
 	color: var(--primary);
 }
 
-.public-location-address:hover span:last-child {
+.public-location-address:hover .public-location-address__label {
 	text-decoration: underline;
 	text-decoration-thickness: 1px;
 	text-underline-offset: 0.15em;
@@ -696,7 +730,7 @@
 	color: var(--on-surface-variant);
 }
 
-.public-location-address--static:hover span:last-child {
+.public-location-address--static:hover .public-location-address__label {
 	text-decoration: none;
 }
 
@@ -706,4 +740,154 @@
 	font-size: 1rem;
 	line-height: 1;
 	opacity: 0.85;
+	text-decoration: none;
+}
+
+.public-org-card {
+	display: grid;
+	gap: 0.75rem;
+	width: 100%;
+	padding: 1.1rem 1.15rem;
+	border: 1px solid var(--outline-variant);
+	border-radius: 1.25rem;
+	background: var(--surface-container-high);
+	text-align: left;
+	cursor: pointer;
+	transition:
+		border-color 0.15s ease,
+		background 0.15s ease;
+}
+
+.public-org-card:hover {
+	border-color: color-mix(in srgb, var(--primary) 45%, var(--outline-variant));
+	background: var(--surface-container-highest);
+}
+
+.public-org-card.is-selected {
+	border-color: color-mix(in srgb, var(--primary) 75%, #3b82f6);
+	background: color-mix(in srgb, var(--primary-container) 16%, var(--surface-container-high));
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.public-org-card--location {
+	display: flex;
+	align-items: center;
+	gap: 0.85rem;
+	cursor: default;
+}
+
+.public-org-card--location:hover {
+	border-color: var(--outline-variant);
+	background: var(--surface-container-high);
+}
+
+.public-org-card--location.is-selected {
+	border-color: color-mix(in srgb, var(--primary) 75%, #3b82f6);
+	background: color-mix(in srgb, var(--primary-container) 16%, var(--surface-container-high));
+}
+
+.public-org-card__select {
+	display: grid;
+	gap: 0.35rem;
+	flex: 1 1 auto;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	text-align: left;
+	cursor: pointer;
+	color: inherit;
+	font: inherit;
+}
+
+.public-org-card__location {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.45rem;
+	margin: 0;
+	font-size: 0.95rem;
+	font-weight: 500;
+	line-height: 1.35;
+	color: var(--on-surface-variant);
+}
+
+.public-org-card__location-text {
+	display: grid;
+	gap: 0.2rem;
+	min-width: 0;
+}
+
+.public-org-card__location-title {
+	font-size: 1.05rem;
+	font-weight: 650;
+	line-height: 1.3;
+	color: var(--on-surface);
+}
+
+.public-org-card__location-address {
+	font-size: 0.9rem;
+	font-weight: 500;
+	line-height: 1.35;
+	color: var(--on-surface-variant);
+}
+
+.public-org-card__location .material-symbols-rounded {
+	flex-shrink: 0;
+	margin-top: 0.15rem;
+	font-size: 1.15rem;
+	line-height: 1;
+	color: var(--primary);
+	opacity: 0.95;
+}
+
+.public-org-card__map-btn {
+	position: relative;
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 2.75rem;
+	height: 2.75rem;
+	margin: 0;
+	margin-left: 0.15rem;
+	padding: 0;
+	border: 0;
+	border-radius: 0.85rem;
+	background: color-mix(in srgb, var(--on-surface) 8%, var(--surface-container-high));
+	color: var(--primary);
+	cursor: pointer;
+	transition:
+		background 0.15s ease,
+		color 0.15s ease;
+}
+
+.public-org-card__map-btn::before {
+	content: '';
+	position: absolute;
+	left: calc(-0.5rem - 0.5px);
+	top: 50%;
+	width: 1px;
+	height: 2.35rem;
+	transform: translateY(-50%);
+	background: var(--outline-variant);
+	pointer-events: none;
+}
+
+.public-org-card__map-btn:hover {
+	background: color-mix(in srgb, var(--on-surface) 14%, var(--surface-container-high));
+}
+
+.public-org-card__map-btn:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+	outline-offset: 2px;
+}
+
+.public-org-card--location.is-selected .public-org-card__map-btn {
+	background: color-mix(in srgb, var(--on-surface) 10%, transparent);
+}
+
+.public-org-card__map-btn .material-symbols-rounded {
+	font-size: 1.25rem;
+	line-height: 1;
 }

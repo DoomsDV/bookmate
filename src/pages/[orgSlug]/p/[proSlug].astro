@@ -183,10 +183,16 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 					</section>
 
 					<section data-step-panel="2" class="public-booking-panel hidden">
+						<div class="public-booking-back-row">
+							<button type="button" data-back-to-services class="public-booking-back-link">
+								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+								Volver
+							</button>
+						</div>
 						<div>
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona una fecha</h2>
 						</div>
-						<div class="public-booking-calendar">
+						<div class="public-booking-calendar mt-5">
 							<div class="public-booking-calendar__toolbar">
 								<button type="button" data-calendar-prev class="calendar-nav-btn" aria-label="Mes anterior">
 									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
@@ -202,33 +208,39 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 							</div>
 							<div class="public-booking-calendar__grid" data-calendar-grid></div>
 						</div>
-						<div class="mt-6">
-							<button type="button" data-back-to-services class="secondary-action-btn">Volver atrás</button>
-						</div>
 					</section>
 
 					<section data-step-panel="3" class="public-booking-panel hidden">
+						<div class="public-booking-back-row">
+							<button type="button" data-back-to-calendar class="public-booking-back-link">
+								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+								Volver
+							</button>
+						</div>
 						<div>
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona un horario</h2>
 							<p class="mt-1 text-base text-(--on-surface-variant)">
 								<span class="font-medium text-(--on-surface)" data-summary-date-inline></span>
 							</p>
 						</div>
-						<div data-slots-loading class="mt-6 hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)">
+						<div data-slots-loading class="mt-5 hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)">
 							Consultando horarios disponibles...
 						</div>
-						<div class="mt-6 grid gap-6" data-slots-container></div>
+						<div class="mt-5 grid gap-6" data-slots-container></div>
 						<p data-no-slots class="mt-6 hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-5 py-4 text-base font-medium text-(--on-error-container)">
 							No se encontraron horarios para este día. Selecciona otra fecha para continuar.
 						</p>
-						<div class="mt-6">
-							<button type="button" data-back-to-calendar class="secondary-action-btn">Volver atrás</button>
-						</div>
 					</section>
 
 					<section data-step-panel="4" class="public-booking-panel hidden">
+						<div class="public-booking-back-row">
+							<button type="button" data-back-to-slots class="public-booking-back-link">
+								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+								Volver
+							</button>
+						</div>
 						<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Confirma tus datos</h2>
-						<div class="mt-6 grid gap-5 lg:grid-cols-[1fr_22rem] lg:gap-8">
+						<div class="mt-5 grid gap-5 lg:grid-cols-[1fr_22rem] lg:gap-8">
 							<form class="contents lg:grid lg:gap-5" data-customer-form>
 								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
 									<span>Teléfono (WhatsApp) <span class="text-(--error)" aria-hidden="true">*</span></span>
@@ -258,8 +270,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 								</p>
 								<div class="order-3 grid gap-3 lg:order-none lg:mt-3">
 									<button type="submit" data-submit-booking data-submit-confirm data-booking-primary-action class="booking-primary-action inline-flex h-12 w-full items-center justify-center rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60">Confirmar reserva</button>
-									<button type="button" data-pay-deposit-submit data-booking-primary-action class="booking-primary-action is-hidden inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60"><span>Reservar y ver datos de transferencia</span><span aria-hidden="true">🔒</span></button>
-									<button type="button" data-back-to-slots class="public-booking-back-link">← Volver atrás</button>
+									<button type="button" data-pay-deposit-submit data-booking-primary-action class="booking-primary-action is-hidden inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60"><span>Reservar y pagar</span><span aria-hidden="true">🔒</span></button>
 								</div>
 							</form>
 							<aside class="public-booking-summary order-2 self-start lg:order-none">
@@ -291,8 +302,8 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 
 					<PublicSipapDepositPanel />
 
-					<dialog class="public-map-modal rounded-[28px] border border-(--outline-variant) bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70" data-public-map-modal>
-						<div class="grid gap-4 p-5 sm:p-6">
+					<dialog class="public-map-modal rounded-[28px] border-0 bg-(--surface-container-high) p-0 text-(--on-surface) shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop:bg-black/70" data-public-map-modal>
+						<div class="grid gap-5 p-6">
 							<div class="flex items-start justify-between gap-4">
 								<div>
 									<h2 class="text-xl font-semibold tracking-tight">Ubicación</h2>
@@ -307,11 +318,10 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 									<span class="material-symbols-rounded">close</span>
 								</button>
 							</div>
-								<div class="public-map-modal-divider"></div>
-							<div class="public-map-canvas-wrap relative h-80 overflow-hidden rounded-3xl border border-(--outline-variant) bg-(--surface-container-high)">
+							<div class="public-map-canvas-wrap relative h-96 overflow-hidden rounded-2xl bg-(--surface-container-highest)">
 								<div class="h-full w-full" data-public-map-canvas></div>
 								<div
-									class="public-map-loading absolute inset-0 z-10 hidden place-items-center bg-(--surface-container-high)/85 backdrop-blur-[2px]"
+									class="public-map-loading absolute inset-0 z-10 hidden place-items-center bg-(--surface-container-highest)/85 backdrop-blur-[2px]"
 									data-public-map-loading
 									aria-hidden="true"
 									aria-live="polite"
@@ -402,16 +412,10 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 
 	.public-map-modal {
 		width: min(92vw, 44rem);
-		max-height: min(90vh, 42rem);
+		max-height: min(92vh, 48rem);
 		margin: auto;
-	}
-
-	.public-map-modal-divider {
-		height: 1px;
-		width: 100%;
-		border-radius: 999px;
-		background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--outline-variant) 72%, white 28%), transparent);
-		opacity: 0.9;
+		border: none;
+		box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
 	}
 
 	.public-map-canvas-wrap.is-loading [data-public-map-canvas] {
@@ -464,6 +468,11 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 	.public-location-link .material-symbols-rounded {
 		font-size: 1rem;
 		line-height: 1;
+		text-decoration: none;
+	}
+
+	.public-location-link__label {
+		min-width: 0;
 	}
 
 	.public-booking-shell button:not([disabled]),

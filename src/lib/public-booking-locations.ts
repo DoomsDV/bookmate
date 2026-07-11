@@ -168,6 +168,7 @@ export const appendLocationSlotHeader = (
 		icon.textContent = 'location_on';
 
 		const text = document.createElement('span');
+		text.className = 'public-location-address__label';
 		text.textContent = addressLine;
 
 		row.append(icon, text);

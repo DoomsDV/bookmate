@@ -91,6 +91,10 @@ export const initializePublicUserBookingPage = () => {
 	if (!profile) return;
 
 	const locationsRoot = root.querySelector<HTMLElement>('[data-user-locations-root]');
+	const step1Title = root.querySelector<HTMLElement>('[data-step1-title]');
+	const step1Subtitle = root.querySelector<HTMLElement>('[data-step1-subtitle]');
+	const backToOrgsWrap = root.querySelector<HTMLElement>('[data-back-to-orgs-wrap]');
+	const backToOrgsButton = root.querySelector<HTMLButtonElement>('[data-back-to-orgs]');
 	const calendarMonth = root.querySelector<HTMLElement>('[data-calendar-month]');
 	const calendarGrid = root.querySelector<HTMLElement>('[data-calendar-grid]');
 	const slotsContainer = root.querySelector<HTMLElement>('[data-slots-container]');
@@ -226,6 +230,7 @@ export const initializePublicUserBookingPage = () => {
 		icon.setAttribute('aria-hidden', 'true');
 		icon.textContent = 'location_on';
 		const text = document.createElement('span');
+		text.className = 'public-location-link__label';
 		text.textContent = label;
 		summaryLocation.append(icon, text);
 	};
@@ -348,115 +353,338 @@ export const initializePublicUserBookingPage = () => {
 	};
 
 	let servicesExpandedByOrg = new Map<number, boolean>();
+	let servicePickerPhase: 'orgs' | 'locations' | 'services' = 'orgs';
+
+	const formatLocationCountLabel = (count: number) =>
+		count === 1 ? '1 ubicación disponible' : `${count} ubicaciones disponibles`;
+
+	const formatLocationLine = (location: UserBookingContext) => {
+		const branch = formatBranchLabel(location);
+		const address = String(location.address || '').trim();
+		if (address && branch && address.toLowerCase() !== branch.toLowerCase()) {
+			return `${branch} · ${address}`;
+		}
+		return branch || address || 'Ubicación';
+	};
+
+	const updateStep1Copy = () => {
+		const showBack =
+			(servicePickerPhase === 'locations' && orgGroups.length > 1) ||
+			(servicePickerPhase === 'services' &&
+				Boolean(
+					selectedOrgGroup &&
+						(selectedOrgGroup.locations.length > 1 || orgGroups.length > 1)
+				));
+
+		if (backToOrgsWrap) backToOrgsWrap.classList.toggle('hidden', !showBack);
+
+		if (servicePickerPhase === 'orgs') {
+			if (step1Title) step1Title.textContent = 'Seleccioná un negocio';
+			if (step1Subtitle) {
+				step1Subtitle.textContent = 'Elegí el negocio para ver ubicaciones y servicios.';
+			}
+			return;
+		}
+
+		if (servicePickerPhase === 'locations' && selectedOrgGroup) {
+			if (step1Title) step1Title.textContent = 'Seleccioná una ubicación';
+			if (step1Subtitle) {
+				step1Subtitle.textContent = `Ubicaciones de ${selectedOrgGroup.organization_name}.`;
+			}
+			return;
+		}
+
+		if (servicePickerPhase === 'services' && selectedOrgGroup) {
+			if (step1Title) step1Title.textContent = 'Seleccioná un servicio';
+			if (step1Subtitle) {
+				const locationLabel = selectedContext ? formatLocationLine(selectedContext) : '';
+				step1Subtitle.textContent = locationLabel
+					? `${selectedOrgGroup.organization_name} · ${locationLabel}`
+					: `Servicios en ${selectedOrgGroup.organization_name}.`;
+			}
+		}
+	};
+
+	const clearBookingSelection = (options?: { keepOrg?: boolean; keepLocation?: boolean }) => {
+		if (!options?.keepOrg) selectedOrgGroup = null;
+		if (!options?.keepLocation) selectedContext = null;
+		selectedService = null;
+		selectedDate = '';
+		selectedTime = '';
+		availableSlotGroups = [];
+		pendingAppointmentId = 0;
+	};
+
+	const selectOrganizationGroup = (group: OrganizationBookingGroup) => {
+		selectedOrgGroup = group;
+		clearBookingSelection({ keepOrg: true });
+		if (group.locations.length === 1) {
+			selectedContext = group.locations[0];
+			servicePickerPhase = 'services';
+		} else {
+			servicePickerPhase = 'locations';
+		}
+		refreshSummary();
+		renderOrganizationServices();
+		renderCalendar();
+		draftPersister.schedule();
+	};
+
+	const selectOrganizationLocation = (location: UserBookingContext) => {
+		if (!selectedOrgGroup) return;
+		selectedContext = location;
+		selectedService = null;
+		selectedDate = '';
+		selectedTime = '';
+		availableSlotGroups = [];
+		pendingAppointmentId = 0;
+		servicePickerPhase = 'services';
+		refreshSummary();
+		renderOrganizationServices();
+		renderCalendar();
+		draftPersister.schedule();
+	};
+
+	const backToOrganizationPicker = () => {
+		if (
+			servicePickerPhase === 'services' &&
+			selectedOrgGroup &&
+			selectedOrgGroup.locations.length > 1
+		) {
+			clearBookingSelection({ keepOrg: true });
+			servicePickerPhase = 'locations';
+			refreshSummary();
+			renderOrganizationServices();
+			renderCalendar();
+			draftPersister.schedule();
+			setStep(1);
+			return;
+		}
+
+		clearBookingSelection();
+		servicePickerPhase = 'orgs';
+		refreshSummary();
+		renderOrganizationServices();
+		renderCalendar();
+		draftPersister.schedule();
+		setStep(1);
+	};
 
 	const renderOrganizationServices = () => {
 		orgGroups = buildOrganizationGroups(profile.locations);
 		locationsRoot.innerHTML = '';
 
 		if (orgGroups.length === 0) {
+			servicePickerPhase = 'orgs';
+			updateStep1Copy();
 			const empty = document.createElement('p');
 			empty.className =
 				'rounded-2xl bg-[var(--surface-container-high)] px-5 py-4 text-base font-medium text-[var(--on-surface-variant)]';
-			empty.textContent = 'Este profesional no tiene organizaciones disponibles para reservar.';
+			empty.textContent = 'Este profesional no tiene negocios disponibles para reservar.';
 			locationsRoot.appendChild(empty);
 			return;
 		}
 
-		const INITIAL_VISIBLE_SERVICES = 4;
-
-		for (const group of orgGroups) {
-			const section = document.createElement('article');
-			section.className =
-				'user-org-group overflow-hidden rounded-2xl border border-(--outline-variant) bg-(--surface-container-high) p-5 sm:p-6';
-
-			const header = document.createElement('header');
-			header.className = 'grid gap-1.5';
-			header.innerHTML = `
-				<h3 class="text-lg font-semibold text-[var(--on-surface)]">${group.organization_name}</h3>
-			`;
-			section.appendChild(header);
-
-			const servicesGrid = document.createElement('div');
-			servicesGrid.className = 'mt-5 grid gap-3 sm:grid-cols-2';
-
-			if (group.services.length === 0) {
-				const emptyServices = document.createElement('p');
-				emptyServices.className = 'text-sm font-medium text-[var(--on-surface-variant)] sm:col-span-2';
-				emptyServices.textContent = 'No hay servicios disponibles en esta organización.';
-				servicesGrid.appendChild(emptyServices);
+		if (orgGroups.length === 1 && !selectedOrgGroup) {
+			selectedOrgGroup = orgGroups[0];
+			if (selectedOrgGroup.locations.length === 1) {
+				selectedContext = selectedOrgGroup.locations[0];
+				servicePickerPhase = 'services';
 			} else {
-				const selectedIndex =
-					selectedOrgGroup?.org_id_organization === group.org_id_organization && selectedService
-						? group.services.findIndex((service) => service.id_service === selectedService.id_service)
-						: -1;
-				if (selectedIndex >= INITIAL_VISIBLE_SERVICES) {
-					servicesExpandedByOrg.set(group.org_id_organization, true);
+				servicePickerPhase = 'locations';
+			}
+		}
+
+		if (
+			selectedOrgGroup &&
+			!orgGroups.some(
+				(group) => group.org_id_organization === selectedOrgGroup?.org_id_organization
+			)
+		) {
+			selectedOrgGroup = null;
+			selectedContext = null;
+			servicePickerPhase = 'orgs';
+		}
+
+		updateStep1Copy();
+
+		if (servicePickerPhase === 'orgs') {
+			for (const group of orgGroups) {
+				const button = document.createElement('button');
+				button.type = 'button';
+				button.className = 'public-org-card';
+
+				const title = document.createElement('span');
+				title.className = 'text-lg font-semibold text-[var(--on-surface)]';
+				title.textContent = group.organization_name;
+
+				const meta = document.createElement('span');
+				meta.className = 'text-sm font-medium text-[var(--on-surface-variant)]';
+				meta.textContent = formatLocationCountLabel(group.locations.length);
+
+				button.append(title, meta);
+				button.addEventListener('click', () => selectOrganizationGroup(group), { signal });
+				locationsRoot.appendChild(button);
+			}
+			return;
+		}
+
+		const group = selectedOrgGroup;
+		if (!group) {
+			servicePickerPhase = 'orgs';
+			renderOrganizationServices();
+			return;
+		}
+
+		if (servicePickerPhase === 'locations') {
+			const list = document.createElement('div');
+			list.className = 'grid gap-3';
+
+			for (const location of group.locations) {
+				const card = document.createElement('div');
+				card.className = `public-org-card public-org-card--location${
+					selectedContext?.id_location === location.id_location ? ' is-selected' : ''
+				}`;
+
+				const selectButton = document.createElement('button');
+				selectButton.type = 'button';
+				selectButton.className = 'public-org-card__select';
+				selectButton.setAttribute(
+					'aria-label',
+					`Elegir ubicación ${formatLocationLine(location)}`
+				);
+
+				const row = document.createElement('span');
+				row.className = 'public-org-card__location';
+				const icon = document.createElement('span');
+				icon.className = 'material-symbols-rounded';
+				icon.setAttribute('aria-hidden', 'true');
+				icon.textContent = 'location_on';
+
+				const textWrap = document.createElement('span');
+				textWrap.className = 'public-org-card__location-text';
+				const title = document.createElement('span');
+				title.className = 'public-org-card__location-title';
+				title.textContent = formatBranchLabel(location);
+				textWrap.append(title);
+				const address = String(location.address || '').trim();
+				const branch = formatBranchLabel(location);
+				if (address && address.toLowerCase() !== branch.toLowerCase()) {
+					const addressNode = document.createElement('span');
+					addressNode.className = 'public-org-card__location-address';
+					addressNode.textContent = address;
+					textWrap.append(addressNode);
 				}
+				row.append(icon, textWrap);
+				selectButton.append(row);
+				selectButton.addEventListener('click', () => selectOrganizationLocation(location), {
+					signal,
+				});
+				card.append(selectButton);
 
-				const expanded = Boolean(servicesExpandedByOrg.get(group.org_id_organization));
-				const visibleServices = expanded
-					? group.services
-					: group.services.slice(0, INITIAL_VISIBLE_SERVICES);
-				const hiddenCount = Math.max(0, group.services.length - INITIAL_VISIBLE_SERVICES);
-
-				for (const service of visibleServices) {
-					const isSelected =
-						selectedOrgGroup?.org_id_organization === group.org_id_organization &&
-						selectedService?.id_service === service.id_service;
-
-					const serviceButton = document.createElement('button');
-					serviceButton.type = 'button';
-					serviceButton.className = `public-service-card${isSelected ? ' is-selected' : ''}`;
-					serviceButton.innerHTML = `
-						<span class="text-base font-medium text-[var(--on-surface)]">${service.name}</span>
-						<span class="flex items-center justify-between gap-2 text-sm font-medium text-[var(--on-surface-variant)]">
-							<span>${formatDuration(service.duration_minutes)}</span>
-							<span>${formatCurrency(service.price)}</span>
-						</span>
-						<span class="material-symbols-rounded public-service-card__check" aria-hidden="true">check_circle</span>
-					`;
-					serviceButton.addEventListener(
+				if (mapController?.canShowLocationMap(location)) {
+					const mapButton = document.createElement('button');
+					mapButton.type = 'button';
+					mapButton.className = 'public-org-card__map-btn';
+					mapButton.setAttribute('aria-label', 'Ver en el mapa');
+					mapButton.innerHTML =
+						'<span class="material-symbols-rounded" aria-hidden="true">map</span>';
+					mapButton.addEventListener(
 						'click',
-						() => {
-							selectedOrgGroup = group;
-							selectedService = service;
-							selectedContext = null;
-							selectedDate = '';
-							selectedTime = '';
-							availableSlotGroups = [];
-							pendingAppointmentId = 0;
-							refreshSummary();
-							renderOrganizationServices();
-							renderCalendar();
-							draftPersister.schedule();
-							setStep(2);
+						(event) => {
+							event.preventDefault();
+							event.stopPropagation();
+							void mapController.openLocationMap(location, { fetchCoordinates: true });
 						},
 						{ signal }
 					);
-					servicesGrid.appendChild(serviceButton);
+					card.append(mapButton);
 				}
 
-				if (!expanded && hiddenCount > 0) {
-					const moreButton = document.createElement('button');
-					moreButton.type = 'button';
-					moreButton.className = 'public-services-more';
-					moreButton.textContent =
-						hiddenCount === 1 ? 'Ver 1 servicio más' : `Ver ${hiddenCount} servicios más`;
-					moreButton.addEventListener(
-						'click',
-						() => {
-							servicesExpandedByOrg.set(group.org_id_organization, true);
-							renderOrganizationServices();
-						},
-						{ signal }
-					);
-					servicesGrid.appendChild(moreButton);
-				}
+				list.appendChild(card);
 			}
 
-			section.appendChild(servicesGrid);
-			locationsRoot.appendChild(section);
+			locationsRoot.appendChild(list);
+			return;
 		}
+
+		const INITIAL_VISIBLE_SERVICES = 4;
+		const servicesGrid = document.createElement('div');
+		servicesGrid.className = 'user-org-group grid gap-3 sm:grid-cols-2';
+
+		if (group.services.length === 0) {
+			const emptyServices = document.createElement('p');
+			emptyServices.className = 'text-sm font-medium text-[var(--on-surface-variant)] sm:col-span-2';
+			emptyServices.textContent = 'No hay servicios disponibles en este negocio.';
+			servicesGrid.appendChild(emptyServices);
+			locationsRoot.appendChild(servicesGrid);
+			return;
+		}
+
+		const selectedIndex = selectedService
+			? group.services.findIndex((service) => service.id_service === selectedService.id_service)
+			: -1;
+		if (selectedIndex >= INITIAL_VISIBLE_SERVICES) {
+			servicesExpandedByOrg.set(group.org_id_organization, true);
+		}
+
+		const expanded = Boolean(servicesExpandedByOrg.get(group.org_id_organization));
+		const visibleServices = expanded
+			? group.services
+			: group.services.slice(0, INITIAL_VISIBLE_SERVICES);
+		const hiddenCount = Math.max(0, group.services.length - INITIAL_VISIBLE_SERVICES);
+
+		for (const service of visibleServices) {
+			const isSelected = selectedService?.id_service === service.id_service;
+			const serviceButton = document.createElement('button');
+			serviceButton.type = 'button';
+			serviceButton.className = `public-service-card${isSelected ? ' is-selected' : ''}`;
+			serviceButton.innerHTML = `
+				<span class="text-base font-medium text-[var(--on-surface)]">${service.name}</span>
+				<span class="flex items-center justify-between gap-2 text-sm font-medium text-[var(--on-surface-variant)]">
+					<span>${formatDuration(service.duration_minutes)}</span>
+					<span>${formatCurrency(service.price)}</span>
+				</span>
+				<span class="material-symbols-rounded public-service-card__check" aria-hidden="true">check_circle</span>
+			`;
+			serviceButton.addEventListener(
+				'click',
+				() => {
+					selectedOrgGroup = group;
+					selectedService = service;
+					selectedDate = '';
+					selectedTime = '';
+					availableSlotGroups = [];
+					pendingAppointmentId = 0;
+					refreshSummary();
+					renderOrganizationServices();
+					renderCalendar();
+					draftPersister.schedule();
+					setStep(2);
+				},
+				{ signal }
+			);
+			servicesGrid.appendChild(serviceButton);
+		}
+
+		if (!expanded && hiddenCount > 0) {
+			const moreButton = document.createElement('button');
+			moreButton.type = 'button';
+			moreButton.className = 'public-services-more';
+			moreButton.textContent =
+				hiddenCount === 1 ? 'Ver 1 servicio más' : `Ver ${hiddenCount} servicios más`;
+			moreButton.addEventListener(
+				'click',
+				() => {
+					servicesExpandedByOrg.set(group.org_id_organization, true);
+					renderOrganizationServices();
+				},
+				{ signal }
+			);
+			servicesGrid.appendChild(moreButton);
+		}
+
+		locationsRoot.appendChild(servicesGrid);
 	};
 
 	const getSelectedSlotKey = () =>
@@ -592,22 +820,27 @@ export const initializePublicUserBookingPage = () => {
 		if (!service || !orgGroup) return;
 
 		const preservedTime = options?.preserveSelection ? selectedTime : '';
+		const lockedLocationId = selectedContext?.id_location ?? 0;
 		const preservedLocationId = options?.preserveSelection
-			? selectedContext?.id_location ?? 0
-			: 0;
+			? lockedLocationId
+			: lockedLocationId;
 
 		isLoadingSlots = true;
 		availableSlotGroups = [];
 		if (!options?.preserveSelection) {
 			selectedTime = '';
-			selectedContext = null;
 		}
 		renderSlots();
 		if (!options?.skipStepChange) setStep(3);
 
 		try {
+			const locationTargets =
+				lockedLocationId > 0
+					? orgGroup.locations.filter((location) => location.id_location === lockedLocationId)
+					: orgGroup.locations;
+
 			const results = await Promise.allSettled(
-				orgGroup.locations.map(async (location) => ({
+				locationTargets.map(async (location) => ({
 					location,
 					slots: await fetchAvailableSlots({
 						pro_id: location.id_professional,
@@ -652,8 +885,17 @@ export const initializePublicUserBookingPage = () => {
 					selectedContext = match.location;
 				} else {
 					selectedTime = '';
-					selectedContext = null;
+					if (preservedLocationId > 0) {
+						selectedContext =
+							orgGroup.locations.find(
+								(location) => location.id_location === preservedLocationId
+							) ?? selectedContext;
+					}
 				}
+			} else if (lockedLocationId > 0) {
+				selectedContext =
+					orgGroup.locations.find((location) => location.id_location === lockedLocationId) ??
+					selectedContext;
 			}
 		} catch (error) {
 			availableSlotGroups = [];
@@ -875,6 +1117,7 @@ export const initializePublicUserBookingPage = () => {
 		availableSlotGroups = [];
 		pendingAppointmentId = 0;
 		isLoadingSlots = false;
+		servicePickerPhase = 'orgs';
 		servicesExpandedByOrg = new Map();
 		stopSipapHoldCountdown(root);
 		customerForm.reset();
@@ -897,7 +1140,21 @@ export const initializePublicUserBookingPage = () => {
 		renderCalendar();
 	}, { signal });
 
-	backToLocations.addEventListener('click', () => setStep(1), { signal });
+	backToLocations.addEventListener(
+		'click',
+		() => {
+			if (selectedOrgGroup) {
+				servicePickerPhase =
+					selectedOrgGroup.locations.length > 1 ? 'locations' : 'services';
+			} else {
+				servicePickerPhase = 'orgs';
+			}
+			setStep(1);
+			renderOrganizationServices();
+		},
+		{ signal }
+	);
+	backToOrgsButton?.addEventListener('click', () => backToOrganizationPicker(), { signal });
 	backToCalendar.addEventListener('click', () => setStep(2), { signal });
 	backToSlots.addEventListener('click', () => setStep(3), { signal });
 	restartButtons.forEach((button) => {
@@ -987,6 +1244,8 @@ export const initializePublicUserBookingPage = () => {
 	const restoreDraft = async () => {
 		const draft = readPublicBookingDraft(draftStorageKey, formatApiDate(today));
 		if (!draft || draft.serviceId <= 0) {
+			servicePickerPhase = 'orgs';
+			renderOrganizationServices();
 			setStep(1);
 			return;
 		}
@@ -1005,12 +1264,15 @@ export const initializePublicUserBookingPage = () => {
 
 		if (!matchedGroup || !matchedService) {
 			draftPersister.clear();
+			servicePickerPhase = 'orgs';
+			renderOrganizationServices();
 			setStep(1);
 			return;
 		}
 
 		selectedOrgGroup = matchedGroup;
 		selectedService = matchedService;
+		servicePickerPhase = 'services';
 		selectedDate = draft.date || '';
 		selectedTime = draft.time || '';
 		selectedContext =
