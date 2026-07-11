@@ -582,12 +582,12 @@ class CalendarManager extends HTMLElement {
 	private getHeaderToolbar(isMobile: boolean) {
 		return isMobile
 			? {
-					left: 'title prev,today,next',
+					left: 'title prev,goToday,next',
 					center: '',
 					right: 'timeGridDay,timeGridThreeDay,listWeek',
 				}
 			: {
-					left: 'prev,next today',
+					left: 'prev,next goToday',
 					center: 'title',
 					right: 'timeGridDay,timeGridWeek,dayGridMonth,listWeek',
 				};
@@ -611,7 +611,7 @@ class CalendarManager extends HTMLElement {
 		const anySheetOpen =
 			Boolean(this.filtersSheet?.classList.contains('is-open')) ||
 			Boolean(this.helpSheet?.classList.contains('is-open'));
-		document.body.style.overflow = anySheetOpen && this.isCompactChromeViewport() ? 'hidden' : '';
+		document.body.style.overflow = anySheetOpen ? 'hidden' : '';
 	}
 
 	private openFiltersSheet = () => {
@@ -625,7 +625,6 @@ class CalendarManager extends HTMLElement {
 	};
 
 	private openHelpSheet = () => {
-		if (!this.isCompactChromeViewport()) return;
 		this.closeFiltersSheet();
 		this.setSheetOpen(this.helpSheet, true);
 	};
@@ -637,7 +636,6 @@ class CalendarManager extends HTMLElement {
 	private syncFiltersSheetMode() {
 		if (!this.isCompactChromeViewport()) {
 			this.closeFiltersSheet();
-			this.closeHelpSheet();
 			if (this.filtersSheet) {
 				this.filtersSheet.setAttribute('aria-hidden', 'false');
 			}
@@ -661,11 +659,7 @@ class CalendarManager extends HTMLElement {
 	}
 
 	private handleCalendarHelpClick = () => {
-		if (this.isCompactChromeViewport()) {
-			this.openHelpSheet();
-			return;
-		}
-		showCalendarTour({ force: true });
+		this.openHelpSheet();
 	};
 
 	private handleCalendarTourStart = () => {
@@ -683,6 +677,34 @@ class CalendarManager extends HTMLElement {
 			this.closeFiltersSheet();
 		}
 	};
+
+	private handleGoToday = () => {
+		if (!this.calendar) return;
+		this.calendar.today();
+		window.requestAnimationFrame(() => {
+			this.scrollCalendarToNow();
+		});
+	};
+
+	private scrollCalendarToNow() {
+		if (!this.calendar || !this.calendarEl) return;
+		if (!this.isTimeGridView(this.calendar.view.type)) return;
+
+		const now = new Date();
+		this.calendar.scrollToTime({
+			hours: now.getHours(),
+			minutes: Math.max(0, now.getMinutes() - 20),
+		});
+
+		const indicator =
+			this.calendarEl.querySelector<HTMLElement>('.fc-timegrid-now-indicator-line') ??
+			this.calendarEl.querySelector<HTMLElement>('.fc-timegrid-now-indicator-arrow');
+		if (!indicator) return;
+
+		window.setTimeout(() => {
+			indicator.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+		}, 40);
+	}
 
 	private applyResponsiveCalendarLayout(force = false) {
 		if (!this.calendar) return;
@@ -742,7 +764,7 @@ class CalendarManager extends HTMLElement {
 		const timeNavChunk =
 			chunks.find(
 				(chunk) =>
-					chunk.querySelector('.fc-prev-button, .fc-next-button, .fc-today-button') &&
+					chunk.querySelector('.fc-prev-button, .fc-next-button, .fc-goToday-button, .fc-today-button') &&
 					!chunk.querySelector(
 						'.fc-timeGridDay-button, .fc-timeGridThreeDay-button, .fc-timeGridWeek-button, .fc-dayGridMonth-button, .fc-listWeek-button'
 					)
@@ -876,6 +898,13 @@ class CalendarManager extends HTMLElement {
 			slotMinTime: '06:00:00',
 			slotMaxTime: '22:00:00',
 			headerToolbar: this.getHeaderToolbar(isMobile),
+			customButtons: {
+				goToday: {
+					text: 'Hoy',
+					hint: 'Ir a hoy y a la hora actual',
+					click: this.handleGoToday,
+				},
+			},
 			views: {
 				timeGridThreeDay: {
 					type: 'timeGrid',

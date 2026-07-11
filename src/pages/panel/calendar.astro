@@ -181,7 +181,7 @@ const googleErrorMessage = hasGoogleError
 													aria-label="Refrescar calendario"
 												>
 													<span class="material-symbols-rounded text-[1.12rem]">refresh</span>
-													<span class="calendar-refresh-btn__label">Refrescar</span>
+													<span class="calendar-refresh-btn__label sr-only">Refrescar</span>
 												</button>
 
 												<button
@@ -200,7 +200,7 @@ const googleErrorMessage = hasGoogleError
 													type="button"
 													class="calendar-create-btn calendar-header-toolbar__create inline-flex items-center justify-center gap-2"
 													data-open-appointment-modal
-													aria-label="Crear cita"
+													aria-label="Agendar"
 												>
 													<svg
 														class="calendar-create-btn-icon w-[18px] h-[18px]"
@@ -210,7 +210,7 @@ const googleErrorMessage = hasGoogleError
 													>
 														<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
 													</svg>
-													<span class="calendar-create-btn__label">Crear cita</span>
+													<span class="calendar-create-btn__label">Agendar</span>
 												</button>
 											</div>
 										</div>
@@ -279,8 +279,8 @@ const googleErrorMessage = hasGoogleError
 												</button>
 											</div>
 
-											<div class="calendar-filters-sheet__body grid gap-3 sm:gap-4 sm:grid-cols-2" data-calendar-filters>
-												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-professional-filter-wrap>
+											<div class="calendar-filters-sheet__body flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:gap-4" data-calendar-filters>
+												<label class="grid w-full gap-1.5 text-[0.95rem] font-bold text-(--on-surface) sm:w-64" data-professional-filter-wrap>
 													Profesional
 													<select
 														data-professional-filter
@@ -290,7 +290,7 @@ const googleErrorMessage = hasGoogleError
 													</select>
 												</label>
 
-												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+												<label class="grid w-full gap-1.5 text-[0.95rem] font-bold text-(--on-surface) sm:w-64">
 													Sucursal
 													<select
 														data-location-filter
@@ -318,41 +318,6 @@ const googleErrorMessage = hasGoogleError
 										data-schedule-misaligned-banner
 										role="status"
 									></div>
-
-									<div
-										class="calendar-status-legend hidden sm:flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.82rem] font-semibold text-(--on-surface-variant)"
-										data-calendar-status-legend
-										aria-label="Leyenda de estados de citas"
-									>
-										<span class="inline-flex items-center gap-1.5">
-											<span class="calendar-legend-dot calendar-legend-dot--pending"></span>
-											Pendiente
-										</span>
-										<span class="inline-flex items-center gap-1.5">
-											<span class="calendar-legend-dot calendar-legend-dot--confirmed"></span>
-											Confirmado
-										</span>
-										<span class="inline-flex items-center gap-1.5">
-											<span class="calendar-legend-dot calendar-legend-dot--completed"></span>
-											Completado
-										</span>
-										<span class="inline-flex items-center gap-1.5">
-											<span class="calendar-legend-dot calendar-legend-dot--cancelled"></span>
-											Cancelado
-										</span>
-										<span class="inline-flex items-center gap-1.5">
-											<span class="calendar-legend-dot calendar-legend-dot--misaligned"></span>
-											Fuera de horario
-										</span>
-										{
-											ENABLE_GOOGLE_CALENDAR && (
-												<span class="inline-flex items-center gap-1.5">
-													<span class="calendar-legend-dot calendar-legend-dot--google"></span>
-													Google Calendar
-												</span>
-											)
-										}
-									</div>
 
 									<div
 										class="calendar-help-sheet"
@@ -385,7 +350,11 @@ const googleErrorMessage = hasGoogleError
 													<span class="material-symbols-rounded text-[1.3rem]">close</span>
 												</button>
 											</div>
-											<div class="calendar-help-sheet__body grid gap-3 text-[0.9rem] font-semibold text-(--on-surface-variant)">
+											<div
+												class="calendar-help-sheet__body grid gap-3 text-[0.9rem] font-semibold text-(--on-surface-variant)"
+												data-calendar-status-legend
+												aria-label="Leyenda de estados de citas"
+											>
 												<span class="inline-flex items-center gap-2">
 													<span class="calendar-legend-dot calendar-legend-dot--pending"></span>
 													Pendiente
@@ -432,11 +401,11 @@ const googleErrorMessage = hasGoogleError
 										data-calendar-error
 									></div>
 
-									<div class="mt-1.5 rounded-[1.3rem] bg-(--calendar-surface) p-2.5 sm:rounded-[1.45rem] sm:border sm:border-(--calendar-outline) sm:p-4">
+									<div class="mt-1.5">
 										<div class="calendar-stage relative" data-calendar-stage>
 											<div data-calendar-el class="calendar-host min-h-136 md:min-h-152"></div>
 											<div
-												class="calendar-loading-overlay pointer-events-none absolute inset-0 z-10 hidden flex items-center justify-center rounded-[inherit] bg-(--calendar-surface)/45 backdrop-blur-[3px]"
+												class="calendar-loading-overlay pointer-events-none absolute inset-0 z-10 hidden flex items-center justify-center rounded-[inherit] bg-(--surface-bright)/45 backdrop-blur-[3px]"
 												data-calendar-loading
 												aria-hidden="true"
 											>
@@ -590,12 +559,12 @@ const googleErrorMessage = hasGoogleError
 	}
 
 	[data-calendar-root] .fc .fc-toolbar.fc-header-toolbar {
-		margin-bottom: 0.8rem;
+		margin-bottom: 0.75rem;
 		border: 0;
-		border-bottom: 1px solid color-mix(in srgb, var(--calendar-outline) 76%, transparent);
+		border-bottom: 0;
 		background: transparent;
 		border-radius: 0;
-		padding: 0 0 0.52rem;
+		padding: 0;
 		box-shadow: none;
 	}
 
@@ -657,6 +626,24 @@ const googleErrorMessage = hasGoogleError
 		background: var(--surface-bright);
 		border-color: var(--calendar-outline-strong);
 		color: var(--on-surface);
+	}
+
+	[data-calendar-root] .fc .fc-goToday-button {
+		background: transparent;
+		border-color: var(--calendar-outline-strong);
+		color: var(--on-surface);
+	}
+
+	[data-calendar-root] .fc .fc-goToday-button:hover,
+	[data-calendar-root] .fc .fc-goToday-button:focus-visible {
+		background: color-mix(in srgb, var(--calendar-toolbar-surface) 88%, var(--surface-bright) 12%);
+		color: var(--on-surface);
+	}
+
+	[data-calendar-root] .fc .fc-scrollgrid {
+		border-radius: var(--calendar-radius);
+		overflow: hidden;
+		background: var(--surface-bright);
 	}
 
 	[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button {
@@ -1244,10 +1231,6 @@ const googleErrorMessage = hasGoogleError
 			border-radius: 999px;
 		}
 
-		.calendar-refresh-btn__label {
-			display: none;
-		}
-
 		.calendar-tour-help {
 			width: 2.75rem;
 			height: 2.75rem;
@@ -1377,9 +1360,24 @@ const googleErrorMessage = hasGoogleError
 			padding: 0;
 		}
 
-		.calendar-help-sheet,
 		.calendar-help-sheet.is-open {
-			display: none !important;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 1.25rem;
+		}
+
+		.calendar-help-sheet__panel {
+			width: min(100%, 24rem);
+			max-height: min(80vh, 32rem);
+			border-radius: 1.6rem;
+			border-bottom: 1px solid var(--shell-border);
+			box-shadow: 0 18px 48px rgb(0 0 0 / 0.18);
+			animation: appointment-modal-in 180ms ease;
+		}
+
+		.calendar-help-sheet__footer {
+			padding-bottom: 1rem;
 		}
 	}
 
@@ -1396,10 +1394,12 @@ const googleErrorMessage = hasGoogleError
 	}
 
 	.calendar-refresh-btn {
+		width: 2.5rem;
+		height: 2.5rem;
+		padding: 0;
 		border-radius: 999px;
 		border: 1px solid var(--calendar-outline-strong);
 		background: var(--calendar-toolbar-surface);
-		padding: 0.72rem 1.05rem;
 		font-size: 0.9rem;
 		font-weight: 760;
 		color: var(--on-surface);
@@ -1831,6 +1831,7 @@ const googleErrorMessage = hasGoogleError
 			gap: 0.28rem;
 		}
 
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .fc-goToday-button,
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .fc-today-button {
 			min-width: 2.85rem;
 			padding-inline: 0.55rem;

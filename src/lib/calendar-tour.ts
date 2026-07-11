@@ -33,9 +33,9 @@ function getFiltersTourTarget() {
 }
 
 function getLegendTourTarget() {
+	if (document.querySelector(HELP_SELECTOR)) return HELP_SELECTOR;
 	const legend = document.querySelector(STATUS_LEGEND_SELECTOR);
 	if (isVisible(legend)) return STATUS_LEGEND_SELECTOR;
-	if (document.querySelector(HELP_SELECTOR)) return HELP_SELECTOR;
 	return null;
 }
 
@@ -50,7 +50,7 @@ function buildTourSteps(): DriveStep[] {
 				title: 'Filtros',
 				description: hasProfessionalFilter()
 					? 'Acota la vista del calendario por profesional y sucursal. Así puedes revisar la agenda de una persona, de una ubicación o de todo el equipo.'
-					: 'Acota la vista del calendario por sucursal para ver solo las citas de una ubicación concreta.',
+					: 'Acota la vista del calendario por sucursal para ver solo las reservas de una ubicación concreta.',
 				side: 'bottom',
 				align: 'start',
 			},
@@ -62,11 +62,9 @@ function buildTourSteps(): DriveStep[] {
 		steps.push({
 			element: legendTarget,
 			popover: {
-				title: 'Estados de las citas',
+				title: 'Estados de las reservas',
 				description:
-					legendTarget === HELP_SELECTOR
-						? 'Toca el botón de ayuda para ver qué significa cada color: naranja pendiente, verde confirmada, azul completada y rojo cancelada.'
-						: 'Cada color en el calendario indica el estado de la reserva: naranja pendiente, verde confirmada, azul completada y rojo cancelada. Las citas canceladas o completadas no se pueden mover.',
+					'Toca Guía para ver qué significa cada color: naranja pendiente, verde confirmada, azul completada y rojo cancelada. Desde ahí también podés abrir el recorrido del calendario.',
 				side: 'bottom',
 				align: 'start',
 			},
@@ -92,7 +90,7 @@ function buildTourSteps(): DriveStep[] {
 			popover: {
 				title: 'Vista del calendario',
 				description:
-					'Cambia entre día, semana, mes o lista según necesites planificar o revisar citas. En móvil también verás la vista de tres días.',
+					'Elegí cómo querés ver tu agenda. Alterná entre las distintas vistas para organizar tus reservas de la forma que te resulte más cómoda.',
 				side: 'bottom',
 				align: 'end',
 			},
@@ -103,9 +101,9 @@ function buildTourSteps(): DriveStep[] {
 		steps.push({
 			element: NEW_APPOINTMENT_SELECTOR,
 			popover: {
-				title: 'Crear cita',
+				title: 'Agendar',
 				description:
-					'Crea una cita manualmente indicando fecha, hora, profesional y servicio. Úsalo para agendar fuera del horario habitual, cuando no haya un hueco libre en la grilla o si prefieres no seleccionar directamente en el calendario. También puedes hacer clic o arrastrar sobre un espacio vacío.',
+					'Creá reservas de forma manual para agendar fuera del horario habitual o cuando no haya huecos libres.',
 				side: 'top',
 				align: 'end',
 			},
