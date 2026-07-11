@@ -24,14 +24,14 @@
 	<div class="flex items-center justify-center gap-3 bg-(--surface)/50 px-7 py-5 border-t border-(--shell-border)">
 		<button
 			type="button"
-			class="flex-1 rounded-2xl border border-(--shell-border) bg-transparent px-4 py-3 text-sm font-bold text-(--on-surface) shadow-sm transition hover:bg-(--control-surface-strong) hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)"
+			class="flex-1 rounded-2xl border border-(--shell-border) bg-transparent px-4 py-3 text-sm font-bold text-(--on-surface) transition hover:bg-(--control-surface-strong) hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary) focus:ring-offset-2 focus:ring-offset-(--surface-bright)"
 			data-app-alert-cancel
 		>
 			Cancelar
 		</button>
 		<button
 			type="button"
-			class="flex-1 rounded-2xl px-4 py-3 text-sm font-bold text-white shadow-md transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-(--surface-bright)"
+			class="flex-1 rounded-2xl border-0 px-4 py-3 text-sm font-bold text-white shadow-none transition focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-(--surface-bright)"
 			data-app-alert-confirm
 		>
 			Aceptar
@@ -64,22 +64,22 @@
 			info: {
 				icon: 'info',
 				iconClasses: ['bg-sky-100', 'text-sky-600', 'ring-sky-50', 'dark:bg-sky-500/10', 'dark:text-sky-400', 'dark:ring-sky-500/10'],
-				btnClasses: ['bg-sky-600', 'hover:bg-sky-700', 'focus:ring-sky-600', 'shadow-[0_8px_20px_rgba(2,132,199,0.25)]']
+				btnClasses: ['bg-sky-600', 'hover:bg-sky-700', 'focus:ring-sky-600']
 			},
 			success: {
 				icon: 'check_circle',
 				iconClasses: ['bg-teal-100', 'text-teal-600', 'ring-teal-50', 'dark:bg-teal-500/10', 'dark:text-teal-400', 'dark:ring-teal-500/10'],
-				btnClasses: ['bg-teal-600', 'hover:bg-teal-700', 'focus:ring-teal-600', 'shadow-[0_8px_20px_rgba(13,148,136,0.25)]']
+				btnClasses: ['bg-teal-600', 'hover:bg-teal-700', 'focus:ring-teal-600']
 			},
 			warning: {
 				icon: 'warning',
 				iconClasses: ['bg-amber-100', 'text-amber-600', 'ring-amber-50', 'dark:bg-amber-500/10', 'dark:text-amber-400', 'dark:ring-amber-500/10'],
-				btnClasses: ['bg-amber-500', 'hover:bg-amber-600', 'focus:ring-amber-500', 'text-white', 'shadow-[0_8px_20px_rgba(245,158,11,0.25)]']
+				btnClasses: ['bg-amber-500', 'hover:bg-amber-600', 'focus:ring-amber-500', 'text-white']
 			},
 			error: {
 				icon: 'delete',
 				iconClasses: ['bg-red-100', 'text-red-600', 'ring-red-50', 'dark:bg-red-500/10', 'dark:text-red-400', 'dark:ring-red-500/10'],
-				btnClasses: ['bg-red-600', 'hover:bg-red-700', 'focus:ring-red-600', 'shadow-[0_8px_20px_rgba(220,38,38,0.25)]']
+				btnClasses: ['bg-red-600', 'hover:bg-red-700', 'focus:ring-red-600']
 			},
 		};
 
@@ -194,6 +194,11 @@
 		inset: 0;
 		margin: auto;
 		animation: app-alert-in var(--modal-open-duration) var(--modal-easing);
+	}
+
+	dialog[data-app-alert-dialog] [data-app-alert-confirm] {
+		background-image: none;
+		box-shadow: none;
 	}
 
 	dialog[data-app-alert-dialog]::backdrop {
