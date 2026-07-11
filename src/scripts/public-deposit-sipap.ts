@@ -45,11 +45,10 @@ export const POLICY_LABELS: Record<RefundPolicyCode, string> = {
 };
 
 export const POLICY_SUMMARIES: Record<RefundPolicyCode, string> = {
-	FLEXIBLE: 'Reembolso del 100% de la seña si cancelás con más de 24 hs de anticipación.',
+	FLEXIBLE: 'Reembolso total cancelando hasta 24 hs antes del turno.',
 	MODERATE:
-		'Reembolso del 50% si cancelás con más de 24 hs. Cancelaciones de último momento no tienen devolución.',
-	STRICT:
-		'La seña no se devuelve si cancelás vos. Solo se reintegra si el comercio cancela el turno.',
+		'Reembolso del 50% cancelando hasta 24 hs antes. Las cancelaciones posteriores no tienen devolución.',
+	STRICT: 'Las cancelaciones no tienen reembolso de la seña en ningún caso.',
 };
 
 export const normalizePolicyCode = (value: unknown): RefundPolicyCode | null => {

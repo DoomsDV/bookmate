@@ -8,13 +8,21 @@ export const PAYMENT_SETTINGS_URL = resolveOrdsApiUrl(
 
 export type RefundPolicy = 'FLEXIBLE' | 'MODERATE' | 'STRICT';
 
+export interface SipapBankOption {
+	id_bank: number;
+	code: string;
+	name: string;
+}
+
 export interface PaymentSettingsData {
 	deposits_enabled: 0 | 1;
 	refund_policy: RefundPolicy | null;
+	bank_id: number | null;
 	bank_name: string | null;
 	account_holder: string | null;
 	document_id: string | null;
 	bank_alias: string | null;
+	banks: SipapBankOption[];
 	plan_allows_deposits: 0 | 1 | boolean;
 	refund_strike_count?: number;
 	deposits_suspended?: 0 | 1;
@@ -27,7 +35,7 @@ export interface PaymentSettingsData {
 export interface PaymentSettingsPayload {
 	deposits_enabled: 0 | 1;
 	refund_policy?: RefundPolicy | null;
-	bank_name?: string | null;
+	bank_id?: number | null;
 	account_holder?: string | null;
 	document_id?: string | null;
 	bank_alias?: string | null;
@@ -68,6 +76,17 @@ const parseResponse = async (response: Response, fallbackMessage: string) => {
 	return payload || {};
 };
 
+const normalizeBanks = (raw: unknown): SipapBankOption[] => {
+	if (!Array.isArray(raw)) return [];
+	return raw
+		.map((item: any) => ({
+			id_bank: Number(item?.id_bank || 0),
+			code: String(item?.code || '').trim(),
+			name: String(item?.name || '').trim(),
+		}))
+		.filter((item) => item.id_bank > 0 && item.name);
+};
+
 const normalizeSettings = (raw: any): PaymentSettingsData => {
 	const policy = String(raw?.refund_policy || '')
 		.trim()
@@ -76,14 +95,17 @@ const normalizeSettings = (raw: any): PaymentSettingsData => {
 		policy === 'FLEXIBLE' || policy === 'MODERATE' || policy === 'STRICT'
 			? (policy as RefundPolicy)
 			: null;
+	const bankId = Number(raw?.bank_id || 0);
 
 	return {
 		deposits_enabled: Number(raw?.deposits_enabled) === 1 ? 1 : 0,
 		refund_policy: refundPolicy,
+		bank_id: bankId > 0 ? bankId : null,
 		bank_name: String(raw?.bank_name || '').trim() || null,
 		account_holder: String(raw?.account_holder || '').trim() || null,
 		document_id: String(raw?.document_id || '').trim() || null,
 		bank_alias: String(raw?.bank_alias || '').trim() || null,
+		banks: normalizeBanks(raw?.banks),
 		plan_allows_deposits:
 			raw?.plan_allows_deposits === true || Number(raw?.plan_allows_deposits) === 1 ? 1 : 0,
 		refund_strike_count: Number(raw?.refund_strike_count) || 0,

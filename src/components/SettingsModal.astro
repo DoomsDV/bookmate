@@ -453,7 +453,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 										<div class="grid gap-1">
 											<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cobro de señas</h3>
 											<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
-												Recibí señas por transferencia SIPAP. Pagopar queda solo para la suscripción de Hasel.
+												Asegurá tus turnos cobrando una seña por transferencia bancaria (SIPAP) directamente a tu cuenta.
 											</p>
 										</div>
 
@@ -462,21 +462,26 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 											class="hidden rounded-2xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-[0.88rem] font-medium text-amber-950"
 										></div>
 
-										<label class="flex items-start gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3.5">
-											<input
-												type="checkbox"
-												name="deposits_enabled"
-												value="1"
-												data-payments-deposits-toggle
-												class="mt-0.5 size-5 accent-(--primary)"
-											/>
-											<span class="grid gap-0.5">
+										<div class="flex items-start justify-between gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3.5">
+											<div class="grid min-w-0 flex-1 gap-0.5">
 												<span class="text-[0.95rem] font-bold text-(--on-surface)">Habilitar cobro de señas</span>
 												<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
 													Al activarlo, configurá la política de cancelación y tus datos SIPAP.
 												</span>
-											</span>
-										</label>
+											</div>
+											<label class="settings-switch shrink-0" data-payments-deposits-switch-label>
+												<input
+													type="checkbox"
+													role="switch"
+													name="deposits_enabled"
+													value="1"
+													class="settings-switch__input sr-only"
+													data-payments-deposits-toggle
+													aria-label="Habilitar cobro de señas"
+												/>
+												<span class="settings-switch__track" aria-hidden="true"></span>
+											</label>
+										</div>
 
 										<div data-payments-details class="grid gap-6 hidden">
 											<div class="grid gap-3">
@@ -489,7 +494,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 													<span class="grid gap-0.5">
 														<span class="text-[0.92rem] font-bold text-(--on-surface)">Flexible</span>
 														<span class="text-[0.82rem] font-medium text-(--on-surface-variant)">
-															Reembolso del 100% si cancela con más de 24 hs de anticipación.
+															Reembolso total cancelando hasta 24 hs antes del turno.
 														</span>
 													</span>
 												</label>
@@ -498,7 +503,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 													<span class="grid gap-0.5">
 														<span class="text-[0.92rem] font-bold text-(--on-surface)">Moderada</span>
 														<span class="text-[0.82rem] font-medium text-(--on-surface-variant)">
-															Reembolso del 50% si cancela con más de 24 hs. Último momento: sin devolución.
+															Reembolso del 50% cancelando hasta 24 hs antes. Las cancelaciones posteriores no tienen devolución.
 														</span>
 													</span>
 												</label>
@@ -507,7 +512,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 													<span class="grid gap-0.5">
 														<span class="text-[0.92rem] font-bold text-(--on-surface)">Estricta (no reembolsable)</span>
 														<span class="text-[0.82rem] font-medium text-(--on-surface-variant)">
-															La seña no se devuelve si cancela el cliente (sí si cancela el comercio).
+															Las cancelaciones no tienen reembolso de la seña en ningún caso.
 														</span>
 													</span>
 												</label>
@@ -516,32 +521,20 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 											<div class="grid gap-4">
 												<p class="text-[0.95rem] font-bold text-(--on-surface)">Datos para recibir la transferencia (SIPAP)</p>
 												<p class="text-[0.85rem] font-medium text-(--on-surface-variant) -mt-2">
-													Los clientes verán estos datos al momento de reservar.
+													Completá todos los datos para activar el cobro.
 												</p>
 												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Banco / Financiera <span class="text-rose-500">*</span></span>
-													<input
-														name="bank_name"
-														autocomplete="organization"
+													<span>Banco / Financiera</span>
+													<select
+														name="bank_id"
+														data-payments-bank-select
 														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-														placeholder="Ej. Banco Continental"
-														list="payments-bank-list"
-													/>
-													<datalist id="payments-bank-list">
-														<option value="Banco Continental"></option>
-														<option value="Banco Itaú"></option>
-														<option value="Banco Familiar"></option>
-														<option value="Banco GNB"></option>
-														<option value="Banco Atlas"></option>
-														<option value="Ueno Bank"></option>
-														<option value="Banco Basa"></option>
-														<option value="Visión Banco"></option>
-														<option value="Interfisa"></option>
-														<option value="Solar Bank"></option>
-													</datalist>
+													>
+														<option value="">Elegí tu banco</option>
+													</select>
 												</label>
 												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Titular de la cuenta <span class="text-rose-500">*</span></span>
+													<span>Titular de la cuenta</span>
 													<input
 														name="account_holder"
 														autocomplete="name"
@@ -550,7 +543,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 													/>
 												</label>
 												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Documento (C.I. o RUC) <span class="text-rose-500">*</span></span>
+													<span>Documento (C.I. o RUC)</span>
 													<input
 														name="document_id"
 														autocomplete="off"
@@ -559,7 +552,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 													/>
 												</label>
 												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Alias bancario <span class="text-rose-500">*</span></span>
+													<span>Alias bancario</span>
 													<input
 														name="bank_alias"
 														autocomplete="off"
@@ -2366,6 +2359,47 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			details?.classList.toggle('hidden', !enabled);
 		};
 
+		private populateBankSelect(
+			banks: any[],
+			selectedBankId: number | null,
+			legacyBankName?: string | null
+		) {
+			const form = this.els.paymentsForm;
+			if (!form) return;
+			const select = form.querySelector<HTMLSelectElement>('[data-payments-bank-select]');
+			if (!select) return;
+
+			const list = Array.isArray(banks) ? banks : [];
+			select.innerHTML = '';
+			const placeholder = document.createElement('option');
+			placeholder.value = '';
+			placeholder.textContent = 'Elegí tu banco';
+			select.appendChild(placeholder);
+
+			for (const bank of list) {
+				const id = Number(bank?.id_bank || 0);
+				if (!id) continue;
+				const option = document.createElement('option');
+				option.value = String(id);
+				option.textContent = String(bank?.name || '').trim() || `Banco ${id}`;
+				select.appendChild(option);
+			}
+
+			if (selectedBankId && selectedBankId > 0) {
+				const exists = Array.from(select.options).some((opt) => Number(opt.value) === selectedBankId);
+				if (!exists) {
+					const orphan = document.createElement('option');
+					orphan.value = String(selectedBankId);
+					orphan.textContent =
+						String(legacyBankName || '').trim() || 'Banco actual (actualizar)';
+					select.appendChild(orphan);
+				}
+				select.value = String(selectedBankId);
+			} else {
+				select.value = '';
+			}
+		}
+
 		private fillPayments(data: any) {
 			const form = this.els.paymentsForm;
 			if (!form) return;
@@ -2390,21 +2424,24 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			}
 
 			const toggle = form.querySelector<HTMLInputElement>('[data-payments-deposits-toggle]');
+			const switchLabel = form.querySelector<HTMLLabelElement>('[data-payments-deposits-switch-label]');
 			if (toggle) {
 				toggle.checked = Number(data?.deposits_enabled) === 1 && !suspended;
 				toggle.disabled = suspended;
 			}
+			switchLabel?.classList.toggle('is-disabled', suspended);
 
 			const policy = String(data?.refund_policy || '').trim().toUpperCase();
 			form.querySelectorAll<HTMLInputElement>('input[name="refund_policy"]').forEach((input) => {
 				input.checked = input.value === policy;
 			});
 
-			const bankName = form.querySelector<HTMLInputElement>('[name="bank_name"]');
+			const bankId = Number(data?.bank_id || 0) || null;
+			this.populateBankSelect(data?.banks || [], bankId, data?.bank_name);
+
 			const accountHolder = form.querySelector<HTMLInputElement>('[name="account_holder"]');
 			const documentId = form.querySelector<HTMLInputElement>('[name="document_id"]');
 			const bankAlias = form.querySelector<HTMLInputElement>('[name="bank_alias"]');
-			if (bankName) bankName.value = String(data?.bank_name || '');
 			if (accountHolder) accountHolder.value = String(data?.account_holder || '');
 			if (documentId) documentId.value = String(data?.document_id || '');
 			if (bankAlias) bankAlias.value = String(data?.bank_alias || '');
@@ -2458,9 +2495,10 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 					.querySelector<HTMLInputElement>('input[name="refund_policy"]:checked')
 					?.value?.trim()
 					.toUpperCase() || null;
-			const bankName =
-				this.els.paymentsForm.querySelector<HTMLInputElement>('[name="bank_name"]')?.value.trim() ||
+			const bankIdRaw =
+				this.els.paymentsForm.querySelector<HTMLSelectElement>('[name="bank_id"]')?.value.trim() ||
 				'';
+			const bankId = Number(bankIdRaw) || 0;
 			const accountHolder =
 				this.els.paymentsForm
 					.querySelector<HTMLInputElement>('[name="account_holder"]')
@@ -2481,7 +2519,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 					);
 					return;
 				}
-				if (!bankName || !accountHolder || !documentId || !bankAlias) {
+				if (!bankId || !accountHolder || !documentId || !bankAlias) {
 					this.showFeedback(
 						'payments',
 						'Completá banco, titular, documento y alias SIPAP.',
@@ -2503,7 +2541,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 						body: JSON.stringify({
 							deposits_enabled: depositsEnabled,
 							refund_policy: policy,
-							bank_name: bankName || null,
+							bank_id: bankId || null,
 							account_holder: accountHolder || null,
 							document_id: documentId || null,
 							bank_alias: bankAlias || null,

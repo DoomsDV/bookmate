@@ -68,7 +68,7 @@ const parseSavePayload = (source: any): PaymentSettingsPayload => {
 	return {
 		deposits_enabled: depositsEnabled as 0 | 1,
 		refund_policy: refundPolicy,
-		bank_name: String(source?.bank_name ?? '').trim() || null,
+		bank_id: Number(source?.bank_id || 0) || null,
 		account_holder: String(source?.account_holder ?? '').trim() || null,
 		document_id: String(source?.document_id ?? '').trim() || null,
 		bank_alias: String(source?.bank_alias ?? '').trim() || null,
