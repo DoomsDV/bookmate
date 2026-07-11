@@ -113,6 +113,8 @@ class AppointmentModal extends HTMLElement {
 	isLoading = false;
 	isLoadingCustomers = false;
 	editingAppointmentId = 0;
+	editingPaymentStatus: string | null = null;
+	editingDepositAmount: number | null = null;
 	isImmutableReadOnly = false;
 	/** Estado bloqueado en solo lectura (cancelada o completada). */
 	immutableReadOnlyStatus: 'CANCELADO' | 'COMPLETADO' | null = null;
@@ -1104,6 +1106,65 @@ class AppointmentModal extends HTMLElement {
 		}
 	};
 
+	private syncPaymentStatusLabel(status: string | null, depositAmount: number | null) {
+		const label = this.form?.querySelector<HTMLElement>('[data-modal-payment-status-label]');
+		if (!label) return;
+		const pay = String(status || 'NONE').toUpperCase();
+		const amount =
+			depositAmount != null && depositAmount > 0
+				? new Intl.NumberFormat('es-PY', {
+						style: 'currency',
+						currency: 'PYG',
+						maximumFractionDigits: 0,
+					}).format(depositAmount)
+				: '';
+		if (pay === 'PAID' || pay === 'PAID_TRANSFER') {
+			label.textContent = amount ? `Seña pagada · ${amount}` : 'Seña pagada';
+		} else if (pay === 'PENDING') {
+			label.textContent = amount ? `Seña pendiente · ${amount}` : 'Seña pendiente';
+		} else if (pay === 'PAID_CASH' || pay === 'EXEMPT') {
+			label.textContent = 'Pagado / exento';
+		} else {
+			label.textContent = 'No aplica';
+		}
+	}
+
+	private hasPaidDepositForRefund(): boolean {
+		const pay = String(this.editingPaymentStatus || '').toUpperCase();
+		return (
+			(pay === 'PAID' || pay === 'PAID_TRANSFER') &&
+			this.editingDepositAmount != null &&
+			this.editingDepositAmount > 0
+		);
+	}
+
+	private async confirmBusinessCancelWithDeposit(): Promise<'refund' | 'reschedule'> {
+		const amount = new Intl.NumberFormat('es-PY', {
+			style: 'currency',
+			currency: 'PYG',
+			maximumFractionDigits: 0,
+		}).format(this.editingDepositAmount || 0);
+
+		const message =
+			`Este cliente ya pagó una seña de ${amount}.\n\n` +
+			`Si cancelás, le pediremos su alias SIPAP por WhatsApp para que le reintegres el 100%.\n\n` +
+			`Si preferís que cambie la fecha, no cancelés: pedile que reprogramen desde su enlace de reserva (la seña se mantiene).`;
+
+		const confirmed = window.BookmateAlert?.confirm
+			? await window.BookmateAlert.confirm({
+					type: 'warning',
+					title: 'Seña pagada — ¿cancelar y reembolsar?',
+					message,
+					confirmText: 'Cancelar y reembolsar',
+					cancelText: 'No cancelar (que reprogramen)',
+				})
+			: window.confirm(
+					`${message}\n\nAceptar = cancelar y reembolsar. Cancelar = no cancelar la cita.`
+				);
+
+		return confirmed ? 'refund' : 'reschedule';
+	}
+
 	handleAttachmentAddClick = () => {
 		if (this.isUploadingAttachment) return;
 		this.clearAttachmentError();
@@ -1325,6 +1386,8 @@ class AppointmentModal extends HTMLElement {
 		this.clearImmutableReadOnlyMode();
 		this.mode = 'create';
 		this.editingAppointmentId = 0;
+		this.editingPaymentStatus = null;
+		this.editingDepositAmount = null;
 		if (this.modalTitle) this.modalTitle.textContent = 'Crear cita';
 		if (this.modalDescription) {
 			this.modalDescription.textContent = 'Completa los datos para registrar una nueva reserva.';
@@ -1336,6 +1399,8 @@ class AppointmentModal extends HTMLElement {
 			this.statusInput.value = 'CONFIRMADO';
 			this.statusInput.disabled = true;
 		}
+		if (this.paymentStatusInput) this.paymentStatusInput.value = 'NONE';
+		this.syncPaymentStatusLabel('NONE', null);
 		this.modalStatusWrap?.setAttribute('hidden', '');
 		this.hideAttendanceBlock();
 		this.hideScheduleMisalignedBlock();
@@ -1384,6 +1449,15 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.modalLocation.value = String(appointment.loc_id_location || '');
 		requiredNodes.modalService.value = String(appointment.ser_id_service || '');
 		requiredNodes.statusInput.value = String(appointment.status || 'CONFIRMADO');
+		this.editingPaymentStatus = String(appointment.payment_status || 'NONE').trim().toUpperCase() || 'NONE';
+		this.editingDepositAmount =
+			appointment.deposit_amount != null && Number(appointment.deposit_amount) > 0
+				? Number(appointment.deposit_amount)
+				: null;
+		if (requiredNodes.paymentStatusInput) {
+			requiredNodes.paymentStatusInput.value = this.editingPaymentStatus;
+		}
+		this.syncPaymentStatusLabel(this.editingPaymentStatus, this.editingDepositAmount);
 		requiredNodes.startInput.value = parseIsoToLocalInput(String(appointment.start_time || ''));
 		requiredNodes.endInput.value = parseIsoToLocalInput(String(appointment.end_time || ''));
 		this.syncDateBounds();
@@ -2021,6 +2095,33 @@ class AppointmentModal extends HTMLElement {
 		}
 
 		const payload = result.payload;
+
+		// Fase C2: cancelar con seña pagada → confirmar reembolso vs pedir reprogramar.
+		if (
+			this.mode === 'edit' &&
+			payload.status === 'CANCELADO' &&
+			this.hasPaidDepositForRefund()
+		) {
+			const decision = await this.confirmBusinessCancelWithDeposit();
+			if (decision === 'reschedule') {
+				if (this.statusInput) this.statusInput.value = 'CONFIRMADO';
+				this.handleStatusChange();
+				if (window.BookmateAlert?.alert) {
+					await window.BookmateAlert.alert({
+						type: 'info',
+						title: 'Cita sin cancelar',
+						message:
+							'Pedile al cliente que reprogramen desde el enlace de su reserva. Así mantiene la seña sin reembolso.',
+					});
+				} else {
+					window.alert(
+						'Pedile al cliente que reprogramen desde el enlace de su reserva. Así mantiene la seña sin reembolso.'
+					);
+				}
+				return;
+			}
+		}
+
 		this.setSubmittingState(true, this.mode === 'edit' ? 'Guardando...' : 'Creando...');
 
 		try {

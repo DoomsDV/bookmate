@@ -68,15 +68,34 @@ export const PUT: APIRoute = async ({ request, params }) => {
 	}
 };
 
-export const DELETE: APIRoute = async ({ params }) => {
+export const DELETE: APIRoute = async ({ request, params }) => {
 	try {
 		const token = parseToken(params.token);
-		const cancelled = await cancelPublicReservationWithOrds(token);
+		let refundAlias: string | undefined;
+		const contentType = request.headers.get('content-type') || '';
+		if (contentType.includes('application/json')) {
+			try {
+				const body = await parseRequestBody(request);
+				const alias = String(body?.refund_alias || '').trim();
+				if (alias) refundAlias = alias;
+			} catch {
+				// ignore body parse errors
+			}
+		}
+
+		const cancelled = await cancelPublicReservationWithOrds(
+			token,
+			refundAlias ? { refund_alias: refundAlias } : undefined
+		);
 
 		return Response.json(
 			{
 				status: 'success',
 				message: cancelled.message,
+				data: {
+					refund_status: cancelled.refund_status,
+					refund_amount: cancelled.refund_amount,
+				},
 			},
 			{ status: 200 }
 		);

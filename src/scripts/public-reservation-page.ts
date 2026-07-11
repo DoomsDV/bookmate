@@ -40,6 +40,18 @@ type PublicReservationDetail = {
 	end_time?: string;
 	status?: string;
 	duration_minutes?: number;
+	deposit_amount?: number | null;
+	refund_status?: string | null;
+	refund_amount?: number | null;
+	refund_preview?: {
+		amount: number;
+		requires_alias: boolean;
+		policy_code?: string | null;
+		policy_label?: string | null;
+		policy_summary?: string | null;
+	} | null;
+	can_claim_refund?: number | null;
+	refund_claim_open?: number | null;
 };
 
 type Coordinates = { lat: number; lng: number };
@@ -123,6 +135,74 @@ export const initializePublicReservationPage = () => {
 	const isCancelledReservation =
 		String(reservation.status || '').trim().toUpperCase() === 'CANCELADO';
 	const isPastReservation = isReservationPast(reservation);
+	const refundStatus = String(reservation.refund_status || '').trim().toUpperCase();
+
+	const formatMoney = (amount: number) =>
+		new Intl.NumberFormat('es-PY', {
+			style: 'currency',
+			currency: 'PYG',
+			maximumFractionDigits: 0,
+		}).format(Number(amount) || 0);
+
+	// Cancelada esperando alias (C2): solo bind del form de alias.
+	if (isCancelledReservation && refundStatus === 'AWAITING_ALIAS') {
+		const aliasForm = root.querySelector<HTMLFormElement>('[data-refund-alias-form]');
+		const aliasInput = root.querySelector<HTMLInputElement>('[data-refund-alias-input]');
+		const aliasStatus = root.querySelector<HTMLElement>('[data-refund-alias-status]');
+		aliasForm?.addEventListener('submit', async (event) => {
+			event.preventDefault();
+			const alias = String(aliasInput?.value || '').trim();
+			if (alias.length < 3) {
+				showToast('Indica un alias SIPAP válido.', 'error');
+				return;
+			}
+			if (aliasStatus) aliasStatus.textContent = 'Enviando…';
+			const response = await fetch(
+				`/api/public/reservations/${encodeURIComponent(token)}/refund-alias`,
+				{
+					method: 'POST',
+					headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+					body: JSON.stringify({ refund_alias: alias }),
+				}
+			);
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				if (aliasStatus) aliasStatus.textContent = '';
+				showToast(data.message || 'No fue posible guardar el alias.', 'error');
+				return;
+			}
+			window.location.reload();
+		});
+		return;
+	}
+
+	// Reembolso pendiente: reclamo si SLA vencido.
+	if (isCancelledReservation && refundStatus === 'PENDING') {
+		const claimBtn = root.querySelector<HTMLButtonElement>('[data-refund-claim-submit]');
+		const claimStatus = root.querySelector<HTMLElement>('[data-refund-claim-status]');
+		claimBtn?.addEventListener('click', async () => {
+			if (claimStatus) claimStatus.textContent = 'Registrando reclamo…';
+			claimBtn.disabled = true;
+			const response = await fetch(
+				`/api/public/reservations/${encodeURIComponent(token)}/refund-claim`,
+				{
+					method: 'POST',
+					headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+					body: JSON.stringify({ notes: 'Reclamo desde enlace de reserva' }),
+				}
+			);
+			const data = await response.json().catch(() => ({}));
+			if (!response.ok) {
+				claimBtn.disabled = false;
+				if (claimStatus) claimStatus.textContent = '';
+				showToast(data.message || 'No fue posible registrar el reclamo.', 'error');
+				return;
+			}
+			window.location.reload();
+		});
+		return;
+	}
+
 	if (isCancelledReservation || isPastReservation) return;
 
 	const locations = normalizePublicBookingLocations(
@@ -934,26 +1014,73 @@ export const initializePublicReservationPage = () => {
 	});
 
 	cancelButton.addEventListener('click', async () => {
+		const preview = reservation.refund_preview;
+		const requiresAlias = Boolean(preview?.requires_alias && (preview.amount || 0) > 0);
+		const cancelRefundModal = root.querySelector<HTMLDialogElement>('[data-cancel-refund-modal]');
+		const cancelRefundForm = root.querySelector<HTMLFormElement>('[data-cancel-refund-form]');
+		const cancelRefundAlias = root.querySelector<HTMLInputElement>('[data-cancel-refund-alias]');
+		const cancelRefundSummary = root.querySelector<HTMLElement>('[data-cancel-refund-summary]');
+
+		const doCancel = async (refundAlias?: string) => {
+			const response = await fetch(`/api/public/reservations/${encodeURIComponent(token)}`, {
+				method: 'DELETE',
+				headers: {
+					Accept: 'application/json',
+					...(refundAlias ? { 'Content-Type': 'application/json' } : {}),
+				},
+				body: refundAlias ? JSON.stringify({ refund_alias: refundAlias }) : undefined,
+			});
+			const data = await response.json().catch(() => ({}));
+			if (response.ok) {
+				window.location.reload();
+				return;
+			}
+			showToast(data.message || 'No fue posible cancelar tu cita.', 'error');
+		};
+
+		if (requiresAlias && cancelRefundModal && cancelRefundForm && cancelRefundAlias) {
+			if (cancelRefundSummary) {
+				cancelRefundSummary.textContent = `Te corresponde un reembolso de ${formatMoney(
+					preview?.amount || 0
+				)}. Ingresá tu alias SIPAP para recibirlo.`;
+			}
+			cancelRefundAlias.value = '';
+			if (!cancelRefundModal.open) cancelRefundModal.showModal();
+
+			const onClose = () => cancelRefundModal.close();
+			root.querySelectorAll('[data-cancel-refund-close]').forEach((el) => {
+				el.addEventListener('click', onClose, { once: true });
+			});
+
+			cancelRefundForm.onsubmit = async (event) => {
+				event.preventDefault();
+				const alias = String(cancelRefundAlias.value || '').trim();
+				if (alias.length < 3) {
+					showToast('Indica un alias SIPAP válido.', 'error');
+					return;
+				}
+				cancelRefundModal.close();
+				await doCancel(alias);
+			};
+			return;
+		}
+
+		const noRefundHint =
+			preview && (preview.amount || 0) === 0 && Number(reservation.deposit_amount || 0) > 0
+				? ' Según la política de seña, no corresponde reembolso.'
+				: '';
+
 		const confirmed = window.BookmateAlert?.confirm
 			? await window.BookmateAlert.confirm({
 					type: 'warning',
 					title: '¿Cancelar tu reserva?',
-					message: 'Tu turno será cancelado definitivamente. ¿Deseas continuar?',
+					message: `Tu turno será cancelado definitivamente.${noRefundHint} ¿Deseas continuar?`,
 					confirmText: 'Sí, cancelar',
 					cancelText: 'Mantener reserva',
 				})
 			: window.confirm('¿Quieres cancelar esta reserva?');
 		if (!confirmed) return;
 
-		const response = await fetch(`/api/public/reservations/${encodeURIComponent(token)}`, {
-			method: 'DELETE',
-			headers: { Accept: 'application/json' },
-		});
-		const data = await response.json().catch(() => ({}));
-		if (response.ok) {
-			window.location.reload();
-			return;
-		}
-		showToast(data.message || 'No fue posible cancelar tu cita.', 'error');
+		await doCancel();
 	});
 };

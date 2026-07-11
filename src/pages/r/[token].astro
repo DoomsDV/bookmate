@@ -39,6 +39,24 @@ const serializedReservation = reservation
 
 const isCancelled =
 	Boolean(reservation) && String(reservation?.status || '').trim().toUpperCase() === 'CANCELADO';
+const refundStatus = String(reservation?.refund_status || '').trim().toUpperCase();
+const awaitsRefundAlias = isCancelled && refundStatus === 'AWAITING_ALIAS';
+const refundPending = isCancelled && refundStatus === 'PENDING';
+const refundSent = isCancelled && refundStatus === 'SENT';
+const canClaimRefund =
+	refundPending &&
+	Number((reservation as any)?.can_claim_refund || 0) === 1 &&
+	Number((reservation as any)?.refund_claim_open || 0) === 0;
+const claimAlreadyOpen =
+	refundPending && Number((reservation as any)?.refund_claim_open || 0) === 1;
+const refundAmountLabel =
+	reservation?.refund_amount != null
+		? new Intl.NumberFormat('es-PY', {
+				style: 'currency',
+				currency: 'PYG',
+				maximumFractionDigits: 0,
+			}).format(Number(reservation.refund_amount) || 0)
+		: '';
 const reservationStart = reservation ? parseApiDateTime(reservation.start_time) : null;
 const formattedCurrentDate = reservationStart ? formatHumanDateTime(reservationStart) : '';
 const isPastReservation =
@@ -142,10 +160,71 @@ const serializedLocations = reservation
 
 					{isCancelled ? (
 						<div class="reservation-cancelled rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6" data-reservation-cancelled>
-							<p class="reservation-cancelled-text">
-								Esta reserva se encuentra cancelada. Si deseas, puedes agendar un nuevo turno con el profesional.
-							</p>
-							<a href={rebookHref} class="reservation-link">Volver a reservar</a>
+							{awaitsRefundAlias ? (
+								<>
+									<p class="reservation-cancelled-text">
+										Tu turno fue cancelado. Para recibir el reembolso
+										{refundAmountLabel ? ` de ${refundAmountLabel}` : ''}, cargá tu alias SIPAP.
+									</p>
+									<form class="mt-4 grid gap-3" data-refund-alias-form>
+										<label class="grid gap-1 text-sm font-semibold text-(--on-surface)">
+											Alias SIPAP
+											<input
+												type="text"
+												name="refund_alias"
+												required
+												minlength="3"
+												maxlength="100"
+												placeholder="Ej. 0981XXXXXX"
+												class="rounded-2xl border border-(--outline-variant) bg-(--surface-bright) px-4 py-3 text-base font-normal"
+												data-refund-alias-input
+											/>
+										</label>
+										<button type="submit" class="reservation-primary-action" data-refund-alias-submit>
+											Enviar alias para reembolso
+										</button>
+										<p class="m-0 text-sm text-(--on-surface-variant)" data-refund-alias-status></p>
+									</form>
+								</>
+							) : refundPending ? (
+								<>
+									<p class="reservation-cancelled-text">
+										Reserva cancelada. Tu reembolso
+										{refundAmountLabel ? ` de ${refundAmountLabel}` : ''} está pendiente: el comercio te transferirá en hasta 48 horas hábiles.
+									</p>
+									{claimAlreadyOpen ? (
+										<p class="mt-3 text-sm font-semibold text-amber-700">
+											Ya registraste un reclamo. Hasel está al tanto.
+										</p>
+									) : canClaimRefund ? (
+										<div class="mt-4 grid gap-2" data-refund-claim-wrap>
+											<p class="m-0 text-sm text-(--on-surface-variant)">
+												Pasaron las 48 horas hábiles y aún no marcó el reembolso como enviado.
+											</p>
+											<button type="button" class="reservation-danger" data-refund-claim-submit>
+												Reclamar reembolso
+											</button>
+											<p class="m-0 text-sm text-(--on-surface-variant)" data-refund-claim-status></p>
+										</div>
+									) : null}
+									<a href={rebookHref} class="reservation-link">Volver a reservar</a>
+								</>
+							) : refundSent ? (
+								<>
+									<p class="reservation-cancelled-text">
+										Reserva cancelada. El reembolso
+										{refundAmountLabel ? ` de ${refundAmountLabel}` : ''} ya fue marcado como enviado.
+									</p>
+									<a href={rebookHref} class="reservation-link">Volver a reservar</a>
+								</>
+							) : (
+								<>
+									<p class="reservation-cancelled-text">
+										Esta reserva se encuentra cancelada. Si deseas, puedes agendar un nuevo turno con el profesional.
+									</p>
+									<a href={rebookHref} class="reservation-link">Volver a reservar</a>
+								</>
+							)}
 						</div>
 					) : isPastReservation ? (
 						<div class="reservation-cancelled rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6" data-reservation-past>
@@ -170,6 +249,42 @@ const serializedLocations = reservation
 							Cancelar reserva
 						</button>
 					</div>
+
+					<dialog
+						class="reservation-reschedule-modal m-0 mt-auto mb-0 w-screen max-w-none open:flex open:flex-col max-h-[88dvh] overflow-hidden rounded-t-[1.75rem] rounded-b-none border border-(--outline-variant) border-b-0 bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70 sm:m-auto sm:mb-auto sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] sm:max-h-[min(90vh,52rem)] sm:rounded-[28px] sm:border-b"
+						data-cancel-refund-modal
+					>
+						<form class="reservation-reschedule-form p-5 sm:p-6" data-cancel-refund-form>
+							<div class="reservation-reschedule-header !mb-4">
+								<div>
+									<h2 class="reservation-reschedule-title">Cancelar y pedir reembolso</h2>
+									<p class="mt-1 text-sm text-(--on-surface-variant)" data-cancel-refund-summary></p>
+								</div>
+								<button type="button" class="reservation-modal-close" data-cancel-refund-close aria-label="Cerrar">
+									<span class="material-symbols-rounded" aria-hidden="true">close</span>
+								</button>
+							</div>
+							<label class="grid gap-1 text-sm font-semibold text-(--on-surface)">
+								Tu alias SIPAP
+								<input
+									type="text"
+									required
+									minlength="3"
+									maxlength="100"
+									placeholder="Ej. 0981XXXXXX"
+									class="rounded-2xl border border-(--outline-variant) bg-(--surface-bright) px-4 py-3 text-base font-normal"
+									data-cancel-refund-alias
+								/>
+							</label>
+							<p class="mt-2 text-sm text-(--on-surface-variant)">
+								El comercio te transferirá el reembolso en hasta 48 horas hábiles después de enviar el alias.
+							</p>
+							<div class="mt-5 grid gap-2">
+								<button type="submit" class="reservation-danger">Confirmar cancelación</button>
+								<button type="button" class="reservation-link justify-center" data-cancel-refund-close>Volver</button>
+							</div>
+						</form>
+					</dialog>
 
 					<dialog
 						class="reservation-reschedule-modal m-0 mt-auto mb-0 w-screen max-w-none open:flex open:flex-col max-h-[88dvh] overflow-hidden rounded-t-[1.75rem] rounded-b-none border border-(--outline-variant) border-b-0 bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70 sm:m-auto sm:mb-auto sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] sm:max-h-[min(90vh,52rem)] sm:rounded-[28px] sm:border-b"

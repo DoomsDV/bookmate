@@ -203,8 +203,8 @@ const { showVoiceButton = false }: Props = Astro.props;
 								<span class="material-symbols-rounded text-[0.95rem]" aria-hidden="true">payments</span>
 								<span data-modal-payment-status-label>No aplica</span>
 							</span>
-							<span class="text-[0.8rem] font-medium leading-snug text-(--on-surface-variant)">
-								La gestión de pagos estará disponible en una próxima versión.
+							<span class="text-[0.8rem] font-medium leading-snug text-(--on-surface-variant)" data-modal-payment-status-hint>
+								Si cancelás con seña pagada, Hasel pedirá el alias al cliente para el reembolso.
 							</span>
 						</div>
 						<input type="hidden" name="payment_status" value="NONE" data-modal-payment-status />

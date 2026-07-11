@@ -23,6 +23,7 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/panel/dashboard', roles: ALL_ROLES },
 	{ path: '/panel/calendar', roles: ALL_ROLES },
 	{ path: '/panel/customers', roles: CUSTOMER_ROLES },
+	{ path: '/panel/cobros', roles: MANAGER_ROLES },
 	{ path: '/calendar', roles: ALL_ROLES },
 	{ path: '/panel/services', roles: MANAGER_ROLES },
 	{ path: '/panel/locations', roles: MANAGER_ROLES },
@@ -38,6 +39,7 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/api/session/switch-organization', roles: ALL_ROLES },
 	{ path: '/api/ai', roles: ALL_ROLES, match: 'prefix' },
 	{ path: '/api/customers', roles: CUSTOMER_ROLES, match: 'prefix' },
+	{ path: '/api/cobros', roles: MANAGER_ROLES, match: 'prefix' },
 	{ path: '/api/schedules', roles: ALL_ROLES, match: 'prefix' },
 	{ path: '/api/services', roles: MANAGER_ROLES, match: 'prefix' },
 	{ path: '/api/locations', roles: MANAGER_ROLES, match: 'prefix' },
@@ -48,8 +50,6 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/api/roles', roles: MANAGER_ROLES, match: 'prefix' },
 	{ path: '/api/catalog', roles: MANAGER_ROLES, match: 'prefix' },
 	{ path: '/api/google', roles: ALL_ROLES, match: 'prefix' },
-	{ path: '/api/org-integrations', roles: [ROLES.ADMIN], match: 'prefix' },
-	{ path: '/api/public/payments', roles: ALL_ROLES, match: 'prefix' },
 ];
 
 const normalizePath = (path: string) => {

@@ -1,0 +1,281 @@
+---
+import FlashMessage from '../../components/FlashMessage.astro';
+import SideNav from '../../components/SideNav.astro';
+import TopBar from '../../components/TopBar.astro';
+import Layout from '../../layouts/Layout.astro';
+import '../../styles/global.css';
+
+const token = Astro.locals.token ?? '';
+const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobros.';
+---
+
+<Layout>
+	<cobros-manager>
+		<div class="min-h-screen bg-(--page-background) transition-colors duration-300">
+			<div
+				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
+				data-app-shell
+				data-sidebar-state="expanded"
+			>
+				<SideNav currentPath={Astro.url.pathname} />
+
+				<div class="grid min-h-full grid-rows-[auto_1fr]">
+					<TopBar />
+
+					<main class="px-4 py-4 sm:px-6 sm:py-6">
+						<section class="grid gap-4 sm:gap-5" data-requires-feature="DEPOSIT_COLLECTION">
+							{
+								initialLoadError ? (
+									<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
+								) : (
+									<div class="grid gap-4 sm:gap-5">
+										<header class="flex flex-col justify-between gap-3 sm:flex-row sm:items-end sm:gap-4">
+											<div class="grid gap-2">
+												<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
+													Cobros
+												</h1>
+												<p class="text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
+													Revisá señas SIPAP y validá comprobantes pendientes.
+												</p>
+											</div>
+											<div class="rounded-full border border-(--shell-border) bg-(--surface-bright) px-4 py-2 text-[0.88rem] font-extrabold text-(--on-surface)">
+												<span data-cobros-summary>0 cobros</span>
+											</div>
+										</header>
+
+										<div class="flex flex-wrap gap-2" role="tablist" aria-label="Estado">
+											<button type="button" data-cobros-tab="all" class="cobros-tab is-active">Todos</button>
+											<button type="button" data-cobros-tab="pending" class="cobros-tab">Pendientes</button>
+											<button type="button" data-cobros-tab="approved" class="cobros-tab">Aprobados</button>
+											<button type="button" data-cobros-tab="refunded" class="cobros-tab">Reembolsados</button>
+										</div>
+
+										<div class="flex flex-wrap items-end gap-3">
+											<label class="grid gap-1 text-[0.85rem] font-bold text-(--on-surface)">
+												Periodo
+												<select data-cobros-date-preset class="cobros-select">
+													<option value="this_month">Este mes</option>
+													<option value="last_month">Mes pasado</option>
+													<option value="custom">Personalizado</option>
+												</select>
+											</label>
+											<div class="hidden flex-wrap gap-3" data-cobros-custom-dates>
+												<label class="grid gap-1 text-[0.85rem] font-bold text-(--on-surface)">
+													Desde
+													<input type="date" data-cobros-date-from class="cobros-select" />
+												</label>
+												<label class="grid gap-1 text-[0.85rem] font-bold text-(--on-surface)">
+													Hasta
+													<input type="date" data-cobros-date-to class="cobros-select" />
+												</label>
+											</div>
+										</div>
+
+										<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500" data-cobros-error></div>
+										<div class="hidden rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-medium text-(--on-surface-variant)" data-cobros-loading>
+											Cargando cobros...
+										</div>
+										<div class="hidden cobros-empty" data-cobros-empty>
+											<span class="material-symbols-rounded text-[2rem] text-(--on-surface-variant)">payments</span>
+											<h2 class="mt-2 text-[1.1rem] font-bold text-(--on-surface)">No hay cobros</h2>
+											<p class="mt-1 max-w-sm text-center text-[0.95rem] text-(--on-surface-variant)">
+												No hay movimientos para el filtro seleccionado.
+											</p>
+										</div>
+
+										<!-- Desktop table -->
+										<div class="hidden overflow-x-auto rounded-2xl border border-(--shell-border) bg-(--surface-bright) md:block" data-cobros-table-wrap>
+											<table class="w-full min-w-[44rem] border-collapse text-left text-[0.92rem]">
+												<thead>
+													<tr class="border-b border-(--shell-border) text-[0.78rem] uppercase tracking-wide text-(--on-surface-variant)">
+														<th class="px-4 py-3 font-bold">Fecha / Hora</th>
+														<th class="px-4 py-3 font-bold">Cliente</th>
+														<th class="px-4 py-3 font-bold">Servicio</th>
+														<th class="px-4 py-3 font-bold">Monto</th>
+														<th class="px-4 py-3 font-bold">Estado</th>
+														<th class="px-4 py-3 font-bold"></th>
+													</tr>
+												</thead>
+												<tbody data-cobros-table-body></tbody>
+											</table>
+										</div>
+
+										<!-- Mobile cards -->
+										<div class="grid gap-3 md:hidden" data-cobros-cards></div>
+									</div>
+								)
+							}
+						</section>
+
+						<section
+							class="hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-6"
+							data-cobros-feature-locked
+						>
+							<h2 class="text-xl font-bold text-(--on-surface)">Cobros es Premium</h2>
+							<p class="mt-2 text-(--on-surface-variant)">
+								El cobro de señas SIPAP está disponible en el plan Premium.
+							</p>
+							<a href="/panel/plan" class="mt-4 inline-flex h-11 items-center rounded-full bg-(--primary) px-5 text-sm font-semibold text-(--on-primary) no-underline">
+								Ver planes
+							</a>
+						</section>
+					</main>
+				</div>
+			</div>
+
+			<dialog
+				class="cobros-modal m-0 max-h-[100dvh] w-full max-w-none border-0 bg-transparent p-0 text-(--on-surface) backdrop:bg-black/55 open:flex open:items-end open:justify-center sm:open:items-center"
+				data-cobros-modal
+			>
+				<div class="flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-[1.5rem] bg-(--surface-bright) shadow-2xl sm:rounded-[1.5rem]">
+					<header class="flex items-start justify-between gap-3 border-b border-(--shell-border) px-5 py-4">
+						<div>
+							<h2 class="m-0 text-lg font-bold" data-cobros-modal-title>Validar comprobante</h2>
+							<p class="mt-1 text-sm text-(--on-surface-variant)" data-cobros-modal-subtitle></p>
+						</div>
+						<button type="button" class="grid size-10 place-items-center rounded-full hover:bg-(--control-surface)" data-cobros-modal-close aria-label="Cerrar">
+							<span class="material-symbols-rounded">close</span>
+						</button>
+					</header>
+					<div class="grid min-h-0 flex-1 gap-4 overflow-y-auto p-5 sm:grid-cols-[1.1fr_0.9fr]">
+						<div class="overflow-hidden rounded-2xl border border-(--shell-border) bg-(--control-surface)">
+							<img alt="Comprobante" class="hidden max-h-[50vh] w-full object-contain" data-cobros-modal-image />
+							<p class="hidden p-6 text-sm text-(--on-surface-variant)" data-cobros-modal-no-image>Sin imagen de comprobante.</p>
+						</div>
+						<div class="grid gap-3 content-start">
+							<div class="grid gap-1 text-sm">
+								<span class="text-(--on-surface-variant)">Cliente</span>
+								<strong data-cobros-modal-customer>—</strong>
+							</div>
+							<div class="grid gap-1 text-sm">
+								<span class="text-(--on-surface-variant)">Servicio</span>
+								<strong data-cobros-modal-service>—</strong>
+							</div>
+							<div class="grid gap-1 text-sm">
+								<span class="text-(--on-surface-variant)">Monto</span>
+								<strong data-cobros-modal-amount>—</strong>
+							</div>
+							<div class="grid gap-1 text-sm">
+								<span class="text-(--on-surface-variant)">Código HASEL</span>
+								<strong class="font-mono" data-cobros-modal-reference>—</strong>
+							</div>
+							<div class="grid gap-1 text-sm">
+								<span class="text-(--on-surface-variant)">OCR</span>
+								<strong data-cobros-modal-ocr>—</strong>
+							</div>
+							<div class="hidden grid gap-3" data-cobros-refund-block>
+								<div class="grid gap-1 text-sm">
+									<span class="text-(--on-surface-variant)">Estado reembolso</span>
+									<strong data-cobros-modal-refund-status>—</strong>
+								</div>
+								<div class="grid gap-1 text-sm">
+									<span class="text-(--on-surface-variant)">Alias SIPAP del cliente</span>
+									<strong class="font-mono break-all" data-cobros-modal-refund-alias>—</strong>
+								</div>
+								<button
+									type="button"
+									class="hidden inline-flex h-12 items-center justify-center rounded-full bg-(--primary) px-5 text-base font-semibold text-(--on-primary)"
+									data-cobros-mark-refund-sent
+								>
+									Marcar reembolso enviado
+								</button>
+								<p class="hidden text-sm font-semibold text-amber-700" data-cobros-claim-note></p>
+								<div class="hidden grid gap-2" data-cobros-waive-wrap>
+									<label class="grid gap-1 text-sm font-semibold">
+										Renunciar al reembolso (motivo)
+										<input type="text" maxlength="400" placeholder="Ej. cliente aceptó crédito / error de monto" class="cobros-select" data-cobros-waive-reason />
+									</label>
+									<button type="button" class="inline-flex h-11 items-center justify-center rounded-full border border-(--shell-border) px-5 text-sm font-semibold" data-cobros-waive>
+										Marcar como renunciado (WAIVED)
+									</button>
+								</div>
+							</div>
+							<label class="grid gap-1 text-sm font-semibold" data-cobros-reject-wrap>
+								Motivo de rechazo (opcional)
+								<input type="text" maxlength="400" placeholder="Ej. foto borrosa, monto distinto" class="cobros-select" data-cobros-reject-reason />
+							</label>
+							<div class="mt-2 grid gap-2" data-cobros-modal-actions>
+								<button type="button" class="inline-flex h-12 items-center justify-center rounded-full bg-(--primary) px-5 text-base font-semibold text-(--on-primary)" data-cobros-approve>
+									Aprobar seña
+								</button>
+								<button type="button" class="inline-flex h-12 items-center justify-center rounded-full border border-rose-500/40 bg-rose-500/10 px-5 text-base font-semibold text-rose-600" data-cobros-reject>
+									Rechazar
+								</button>
+							</div>
+							<p class="text-sm text-(--on-surface-variant)" data-cobros-modal-status></p>
+						</div>
+					</div>
+				</div>
+			</dialog>
+		</div>
+	</cobros-manager>
+</Layout>
+
+<style>
+	.cobros-tab {
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.55rem 1rem;
+		font-size: 0.88rem;
+		font-weight: 700;
+		color: var(--on-surface);
+		cursor: pointer;
+	}
+	.cobros-tab.is-active {
+		background: var(--primary-container);
+		color: var(--primary);
+		border-color: transparent;
+	}
+	.cobros-select {
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.65rem 0.9rem;
+		font-size: 0.92rem;
+		font-weight: 600;
+		color: var(--on-surface);
+		outline: none;
+	}
+	.cobros-empty {
+		display: grid;
+		place-items: center;
+		padding: 2.5rem 1rem;
+		border-radius: 1.25rem;
+		border: 1px dashed var(--shell-border);
+		background: var(--control-surface);
+	}
+	.cobros-chip {
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		padding: 0.2rem 0.65rem;
+		font-size: 0.75rem;
+		font-weight: 800;
+	}
+	.cobros-chip--pending {
+		background: #fef3c7;
+		color: #92400e;
+	}
+	.cobros-chip--approved {
+		background: #dcfce7;
+		color: #166534;
+	}
+	.cobros-chip--refund {
+		background: #dbeafe;
+		color: #1e40af;
+	}
+	.cobros-chip--sent {
+		background: #e5e7eb;
+		color: #374151;
+	}
+	.cobros-chip--other {
+		background: var(--control-surface);
+		color: var(--on-surface-variant);
+	}
+</style>
+
+<script>
+	import { initCobrosPage } from '../../scripts/cobros-page';
+	initCobrosPage();
+</script>

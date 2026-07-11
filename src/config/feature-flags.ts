@@ -3,12 +3,12 @@
  * Activar en `true` cuando estén listas para producción.
  */
 export const FEATURE_FLAGS = {
-	/** Ajustes → pestaña Integraciones (Pagopar). */
-	INTEGRATIONS_SETTINGS: false,
-	/** Panel servicios → seña / depósito en reserva pública. */
-	SERVICE_DEPOSIT_OPTIONS: false,
+	/** Panel servicios → seña / depósito (requiere Ajustes → Pagos habilitado en backend). */
+	SERVICE_DEPOSIT_OPTIONS: true,
 	/** Cita rápida por voz (Whisper + precarga del formulario). */
 	APPOINTMENT_AI_VOICE: true,
+	/** Ajustes → pestaña Pagos (SIPAP + políticas de seña). */
+	PAYMENTS_SETTINGS: true,
 } as const;
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;
@@ -39,9 +39,9 @@ export type PlanFeature = (typeof PLAN_FEATURES)[keyof typeof PLAN_FEATURES];
  * sin renombrar los flags existentes del frontend.
  */
 export const FLAG_TO_PLAN_FEATURE: Record<FeatureFlag, PlanFeature> = {
-	INTEGRATIONS_SETTINGS: PLAN_FEATURES.DEPOSIT_COLLECTION,
 	SERVICE_DEPOSIT_OPTIONS: PLAN_FEATURES.DEPOSIT_COLLECTION,
 	APPOINTMENT_AI_VOICE: PLAN_FEATURES.VOICE_RECEPTION,
+	PAYMENTS_SETTINGS: PLAN_FEATURES.DEPOSIT_COLLECTION,
 };
 
 /** ¿El plan de la organización incluye este entitlement? */

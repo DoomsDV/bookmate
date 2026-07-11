@@ -17,8 +17,18 @@ import {
 	parseParaguayMobilePhone,
 	toParaguayMobileE164FromInput,
 } from '../lib/paraguay-phone';
+import {
+	bindSipapCopyButtons,
+	bindSipapReceiptUpload,
+	fillSipapDepositPanel,
+	isDepositsEnabled,
+	POLICY_SUMMARIES,
+	normalizePolicyCode,
+	unwrapSipapHold,
+	type PublicDepositSettings,
+} from './public-deposit-sipap';
 
-type WizardStep = 1 | 2 | 3 | 4 | 5;
+type WizardStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 type BookingService = {
 	id_service: number;
@@ -52,6 +62,7 @@ type BookingProfile = {
 	image_url: string;
 	services: BookingService[];
 	locations?: BookingLocation[];
+	deposit_settings?: PublicDepositSettings | null;
 };
 
 type ValidateCustomerApiData = {
@@ -124,10 +135,7 @@ const calculateDepositAmount = (service: BookingService | null) => {
 	return 0;
 };
 
-/** Redirige al checkout hospedado de Pagopar (sin elegir tarjeta/QR en Hasel). */
-const USE_DIRECT_PAGOPAR_CHECKOUT = true;
-/** Forma de pago por defecto al iniciar transacción (9 = tarjeta; Pagopar muestra el resto en su UI). */
-const DEFAULT_PAGOPAR_FORMA_PAGO = 9 as const;
+/** Flujo de seña: transferencia SIPAP (Pagopar de señas deprecado). */
 
 const formatCurrency = (value: number) =>
 	new Intl.NumberFormat('es-PY', {
@@ -269,11 +277,9 @@ export const initializePublicBookingPage = () => {
 	);
 	const submitButton = root.querySelector<HTMLButtonElement>('[data-submit-booking]');
 	const payDepositButton = root.querySelector<HTMLButtonElement>('[data-pay-deposit-submit]');
-	const paymentModal = root.querySelector<HTMLDialogElement>('[data-payment-modal]');
-	const paymentModalClose = root.querySelector<HTMLButtonElement>('[data-payment-modal-close]');
-	const paymentModalDeposit = root.querySelector<HTMLElement>('[data-payment-modal-deposit]');
-	const paymentModalError = root.querySelector<HTMLElement>('[data-payment-modal-error]');
-	const payMethodButtons = root.querySelectorAll<HTMLButtonElement>('[data-pay-method]');
+	const depositPolicyWrap = root.querySelector<HTMLElement>('[data-deposit-policy-wrap]');
+	const depositPolicyAccept = root.querySelector<HTMLInputElement>('[data-deposit-policy-accept]');
+	const depositPolicySummary = root.querySelector<HTMLElement>('[data-deposit-policy-summary]');
 	const submitErrorNode = root.querySelector<HTMLElement>('[data-submit-error]');
 	const toastNode = root.querySelector<HTMLElement>('[data-booking-toast]');
 
@@ -322,10 +328,6 @@ export const initializePublicBookingPage = () => {
 		!customerPhoneInput ||
 		!submitButton ||
 		!payDepositButton ||
-		!paymentModal ||
-		!paymentModalClose ||
-		!paymentModalDeposit ||
-		!paymentModalError ||
 		!summaryServiceInline ||
 		!summaryDateInline ||
 		!summaryProfessional ||
@@ -778,7 +780,7 @@ export const initializePublicBookingPage = () => {
 				continue;
 			}
 
-			if (itemStep < step || step === 5) {
+			if (itemStep < step || step >= 5) {
 				item.classList.add('step-item-done');
 				continue;
 			}
@@ -786,7 +788,7 @@ export const initializePublicBookingPage = () => {
 			item.classList.add('step-item-default');
 		}
 
-		const cappedStep = step === 5 ? 4 : step;
+		const cappedStep = step >= 5 ? 4 : step;
 		if (stepCompactLabel) {
 			stepCompactLabel.textContent =
 				step === 5
@@ -838,6 +840,17 @@ export const initializePublicBookingPage = () => {
 
 		submitButton.classList.toggle('is-hidden', requiresDeposit);
 		payDepositButton.classList.toggle('is-hidden', !requiresDeposit);
+
+		if (depositPolicyWrap && depositPolicySummary) {
+			const settings = profile.deposit_settings;
+			const policyCode = normalizePolicyCode(settings?.refund_policy);
+			const summary =
+				String(settings?.refund_policy_summary || '').trim() ||
+				(policyCode ? POLICY_SUMMARIES[policyCode] : '');
+			depositPolicyWrap.classList.toggle('hidden', !requiresDeposit);
+			depositPolicySummary.textContent = summary || 'Consultá la política con el comercio.';
+			if (!requiresDeposit && depositPolicyAccept) depositPolicyAccept.checked = false;
+		}
 	};
 
 	const resetPendingAppointment = () => {
@@ -1271,29 +1284,13 @@ export const initializePublicBookingPage = () => {
 		await validateCustomerPhone(parsedPhone.e164);
 	}, { signal });
 
-	const setPaymentModalError = (message: string) => {
-		if (!message) {
-			paymentModalError.textContent = '';
-			paymentModalError.classList.add('hidden');
-			return;
-		}
-		paymentModalError.textContent = message;
-		paymentModalError.classList.remove('hidden');
+	const setPayDepositButtonDefaultLabel = () => {
+		payDepositButton.innerHTML =
+			'<span>Reservar y ver datos de transferencia</span><span aria-hidden="true">🔒</span>';
 	};
 
-	const setPaymentMethodsLoading = (isLoading: boolean) => {
-		for (const button of payMethodButtons) {
-			button.disabled = isLoading;
-			button.classList.toggle('is-loading', isLoading);
-		}
-	};
-
-	const closePaymentModal = () => {
-		if (!paymentModal.open) return;
-		paymentModal.close();
-		setPaymentModalError('');
-		setPaymentMethodsLoading(false);
-		syncPendingAppointmentContext();
+	const setPayDepositButtonLoadingLabel = (label: string) => {
+		payDepositButton.textContent = label;
 	};
 
 	const buildAppointmentHoldPayload = async () => {
@@ -1345,6 +1342,19 @@ export const initializePublicBookingPage = () => {
 			return null;
 		}
 
+		if (calculateDepositAmount(selectedService) > 0 && !depositPolicyAccept?.checked) {
+			setSubmitError('Debés aceptar la política de cancelación para continuar.');
+			return null;
+		}
+
+		if (
+			calculateDepositAmount(selectedService) > 0 &&
+			!isDepositsEnabled(profile.deposit_settings)
+		) {
+			setSubmitError('Este negocio aún no tiene habilitado el cobro de señas.');
+			return null;
+		}
+
 		const appointmentTimes = buildApiAppointmentTimes(
 			selectedDate,
 			selectedTime,
@@ -1365,25 +1375,19 @@ export const initializePublicBookingPage = () => {
 			start_time: appointmentTimes.start_time,
 			end_time: appointmentTimes.end_time,
 			reserve_for_deposit: true as const,
+			policy_accepted: true as const,
 		};
-	};
-
-	const setPayDepositButtonDefaultLabel = () => {
-		payDepositButton.innerHTML =
-			'<span>Pagar Seña para Confirmar</span><span aria-hidden="true">🔒</span>';
-	};
-
-	const setPayDepositButtonLoadingLabel = (label: string) => {
-		payDepositButton.textContent = label;
 	};
 
 	const ensurePendingAppointment = async () => {
 		const holdPayload = await buildAppointmentHoldPayload();
-		if (!holdPayload) return false;
+		if (!holdPayload) return null;
 
-		if (pendingAppointmentId) return true;
+		if (pendingAppointmentId) {
+			return { appointment_id: pendingAppointmentId };
+		}
 
-		const created = await fetchJson<{ data?: { appointment_id?: number } }>(
+		const created = await fetchJson(
 			'/api/public/appointments',
 			{
 				method: 'POST',
@@ -1395,38 +1399,16 @@ export const initializePublicBookingPage = () => {
 			},
 			'No fue posible reservar el turno para el pago.'
 		);
-		const appointmentId = Number(
-			(created as any)?.data?.appointment_id || (created as any)?.appointment_id || 0
-		);
+		const hold = unwrapSipapHold(created as any);
+		const appointmentId = Number(hold.appointment_id || 0);
 		if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
 			throw new Error('No fue posible obtener la reserva pendiente.');
 		}
 		pendingAppointmentId = appointmentId;
-		return true;
+		return hold;
 	};
 
-	const openPaymentModal = async () => {
-		if (USE_DIRECT_PAGOPAR_CHECKOUT) {
-			await startDepositCheckout(DEFAULT_PAGOPAR_FORMA_PAGO);
-			return;
-		}
-
-		const depositAmount = calculateDepositAmount(selectedService);
-		if (depositAmount <= 0) {
-			setSubmitError('Este servicio no requiere seña.');
-			return;
-		}
-
-		const reserved = await ensurePendingAppointment();
-		if (!reserved) return;
-
-		paymentModalDeposit.textContent = `Seña requerida: ${formatCurrency(depositAmount)}`;
-		setPaymentModalError('');
-		setPaymentMethodsLoading(false);
-		if (!paymentModal.open) paymentModal.showModal();
-	};
-
-	const startDepositCheckout = async (formaPago: 9 | 24 = DEFAULT_PAGOPAR_FORMA_PAGO) => {
+	const beginDepositFlow = async () => {
 		if (isSubmitting) return;
 
 		const depositAmount = calculateDepositAmount(selectedService);
@@ -1438,36 +1420,20 @@ export const initializePublicBookingPage = () => {
 		isSubmitting = true;
 		payDepositButton.disabled = true;
 		submitButton.disabled = true;
-		setPayDepositButtonLoadingLabel('Preparando pago...');
+		setPayDepositButtonLoadingLabel('Reservando turno...');
 		setSubmitError('');
-		setPaymentModalError('');
 
 		try {
-			setPayDepositButtonLoadingLabel('Reservando turno...');
-			const reserved = await ensurePendingAppointment();
-			if (!reserved) return;
+			const hold = await ensurePendingAppointment();
+			if (!hold) return;
 
-			setPayDepositButtonLoadingLabel('Redirigiendo a Pagopar...');
-			const result = await fetchJson<{ data?: { checkout_url?: string } }>(
-				'/api/public/payments',
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Accept: 'application/json',
-					},
-					body: JSON.stringify({
-						id_appointment: pendingAppointmentId,
-						forma_pago: formaPago,
-					}),
-				},
-				'No fue posible iniciar el pago.'
-			);
-			const checkoutUrl = String((result as any)?.data?.checkout_url || '').trim();
-			if (!checkoutUrl) {
-				throw new Error('No fue posible obtener la URL de pago.');
-			}
-			window.location.href = checkoutUrl;
+			fillSipapDepositPanel(root, hold, profile.deposit_settings);
+			ticketProfessional.textContent = profile.full_name;
+			ticketService.textContent = selectedService?.name || '-';
+			ticketDate.textContent = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
+			ticketTime.textContent = selectedTime || '-';
+			setStep(6);
+			showToast('Turno reservado. Completá la transferencia SIPAP.', 'success');
 		} catch (error) {
 			if (error instanceof PublicBookingClientError && error.status === 409) {
 				showToast(error.message, 'error');
@@ -1476,23 +1442,15 @@ export const initializePublicBookingPage = () => {
 				setStep(3);
 				return;
 			}
-			const message =
-				error instanceof Error ? error.message : 'No fue posible iniciar el pago.';
-			setSubmitError(message);
+			setSubmitError(
+				error instanceof Error ? error.message : 'No fue posible iniciar el cobro de seña.'
+			);
 		} finally {
 			isSubmitting = false;
 			payDepositButton.disabled = false;
 			submitButton.disabled = false;
 			setPayDepositButtonDefaultLabel();
 		}
-	};
-
-	const beginDepositFlow = async () => {
-		if (USE_DIRECT_PAGOPAR_CHECKOUT) {
-			await startDepositCheckout(DEFAULT_PAGOPAR_FORMA_PAGO);
-			return;
-		}
-		await openPaymentModal();
 	};
 
 	customerForm.addEventListener('submit', async (event) => {
@@ -1612,71 +1570,22 @@ export const initializePublicBookingPage = () => {
 		}
 	}, { signal });
 
-	const handlePayClick = async (formaPago: 9 | 24) => {
-		if (!pendingAppointmentId) {
-			setPaymentModalError('Primero debés reservar el turno. Cerrá el modal e intentá de nuevo.');
-			return;
-		}
-
-		isSubmitting = true;
-		setPaymentMethodsLoading(true);
-		setPaymentModalError('');
-		payDepositButton.disabled = true;
-
-		try {
-			const result = await fetchJson<{ data?: { checkout_url?: string } }>(
-				'/api/public/payments',
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Accept: 'application/json',
-					},
-					body: JSON.stringify({
-						id_appointment: pendingAppointmentId,
-						forma_pago: formaPago,
-					}),
-				},
-				'No fue posible iniciar el pago.'
-			);
-			const checkoutUrl = String((result as any)?.data?.checkout_url || '').trim();
-			if (!checkoutUrl) {
-				throw new Error('No fue posible obtener la URL de pago.');
-			}
-			window.location.href = checkoutUrl;
-		} catch (error) {
-			const message =
-				error instanceof Error ? error.message : 'No fue posible iniciar el pago.';
-			if (paymentModal.open) {
-				setPaymentModalError(message);
-			} else {
-				setSubmitError(message);
-			}
-		} finally {
-			isSubmitting = false;
-			setPaymentMethodsLoading(false);
-			payDepositButton.disabled = false;
-		}
-	};
-
 	payDepositButton.addEventListener('click', () => void beginDepositFlow(), { signal });
-	paymentModalClose.addEventListener('click', closePaymentModal, { signal });
-	paymentModal.addEventListener('cancel', closePaymentModal, { signal });
-	paymentModal.addEventListener('click', (event) => {
-		if (event.target === paymentModal) closePaymentModal();
-	}, { signal });
-
-	for (const button of payMethodButtons) {
-		button.addEventListener(
-			'click',
-			() => {
-				const formaPago = Number(button.dataset.payMethod || '0');
-				if (formaPago !== 9 && formaPago !== 24) return;
-				void handlePayClick(formaPago as 9 | 24);
-			},
-			{ signal }
-		);
-	}
+	bindSipapCopyButtons(root, signal);
+	bindSipapReceiptUpload(root, {
+		signal,
+		onResult: (result) => {
+			const ocr = String(result.ocr_status || '').toUpperCase();
+			showToast(
+				result.message ||
+					(ocr === 'MATCH'
+						? 'Pago verificado. Turno confirmado.'
+						: 'Comprobante recibido.'),
+				ocr === 'MATCH' ? 'success' : 'success'
+			);
+		},
+		onError: (message) => showToast(message, 'error'),
+	});
 
 	if (signal.aborted) return;
 

@@ -28,6 +28,14 @@ const parsePayload = (source: any): PublicCreateAppointmentPayload => {
 	}
 
 	if (
+		source?.policy_accepted === true ||
+		source?.policy_accepted === 1 ||
+		source?.policy_accepted === '1'
+	) {
+		payload.policy_accepted = true;
+	}
+
+	if (
 		!payload.org_id_organization ||
 		!payload.loc_id_location ||
 		!payload.pro_id_professional ||

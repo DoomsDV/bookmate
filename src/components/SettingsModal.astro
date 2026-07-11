@@ -15,7 +15,7 @@ interface Props {
 const { roleId = 0, organizationSlug = '' } = Astro.props;
 const isAdmin = Number(roleId) === ROLES.ADMIN;
 const canEditAppearance = isAdmin;
-const showIntegrationsTab = isAdmin && FEATURE_FLAGS.INTEGRATIONS_SETTINGS;
+const showPaymentsTab = isAdmin && FEATURE_FLAGS.PAYMENTS_SETTINGS;
 const rawPublicProfileDomain = String(
 	import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? Astro.url.origin
 ).trim();
@@ -88,9 +88,9 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 								<span class="material-symbols-rounded">storefront</span>Negocio
 							</button>
 							{
-								showIntegrationsTab ? (
-									<button type="button" data-settings-tab-trigger data-settings-tab="integrations" class="settings-tab">
-										<span class="material-symbols-rounded">credit_card</span>Integraciones
+								showPaymentsTab ? (
+									<button type="button" data-settings-tab-trigger data-settings-tab="payments" class="settings-tab">
+										<span class="material-symbols-rounded">account_balance</span>Pagos
 									</button>
 								) : null
 							}
@@ -447,40 +447,133 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 						</section>
 
 						{
-							showIntegrationsTab ? (
-								<section data-settings-panel="integrations" class="settings-panel hidden gap-6">
-									<form data-settings-integrations-form class="grid gap-6">
+							showPaymentsTab ? (
+								<section data-settings-panel="payments" class="settings-panel hidden gap-6">
+									<form data-settings-payments-form class="grid gap-6">
 										<div class="grid gap-1">
-											<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Pagopar</h3>
+											<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cobro de señas</h3>
 											<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
-												Configura las claves del negocio para cobrar señas en la reserva pública.
+												Recibí señas por transferencia SIPAP. Pagopar queda solo para la suscripción de Hasel.
 											</p>
 										</div>
 
-										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-											<span>Clave pública <span class="text-rose-500">*</span></span>
+										<div
+											data-payments-strikes-banner
+											class="hidden rounded-2xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-[0.88rem] font-medium text-amber-950"
+										></div>
+
+										<label class="flex items-start gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3.5">
 											<input
-												name="public_key"
-												autocomplete="off"
-												spellcheck="false"
-												class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-												placeholder="Public key de Pagopar"
-												required
+												type="checkbox"
+												name="deposits_enabled"
+												value="1"
+												data-payments-deposits-toggle
+												class="mt-0.5 size-5 accent-(--primary)"
 											/>
+											<span class="grid gap-0.5">
+												<span class="text-[0.95rem] font-bold text-(--on-surface)">Habilitar cobro de señas</span>
+												<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+													Al activarlo, configurá la política de cancelación y tus datos SIPAP.
+												</span>
+											</span>
 										</label>
 
-										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-											<span>Clave privada <span class="text-rose-500">*</span></span>
-											<input
-												name="private_key"
-												type="password"
-												autocomplete="new-password"
-												spellcheck="false"
-												class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-												placeholder="Private key de Pagopar"
-												required
-											/>
-										</label>
+										<div data-payments-details class="grid gap-6 hidden">
+											<div class="grid gap-3">
+												<p class="text-[0.95rem] font-bold text-(--on-surface)">Política de cancelación</p>
+												<p class="text-[0.85rem] font-medium text-(--on-surface-variant) -mt-1">
+													El cliente debe aceptarla al reservar. No es texto libre: elegí un nivel.
+												</p>
+												<label class="flex items-start gap-3 rounded-2xl border border-(--shell-border) px-4 py-3 has-[:checked]:border-(--primary) has-[:checked]:bg-(--primary-soft)/40">
+													<input type="radio" name="refund_policy" value="FLEXIBLE" class="mt-1 accent-(--primary)" />
+													<span class="grid gap-0.5">
+														<span class="text-[0.92rem] font-bold text-(--on-surface)">Flexible</span>
+														<span class="text-[0.82rem] font-medium text-(--on-surface-variant)">
+															Reembolso del 100% si cancela con más de 24 hs de anticipación.
+														</span>
+													</span>
+												</label>
+												<label class="flex items-start gap-3 rounded-2xl border border-(--shell-border) px-4 py-3 has-[:checked]:border-(--primary) has-[:checked]:bg-(--primary-soft)/40">
+													<input type="radio" name="refund_policy" value="MODERATE" class="mt-1 accent-(--primary)" />
+													<span class="grid gap-0.5">
+														<span class="text-[0.92rem] font-bold text-(--on-surface)">Moderada</span>
+														<span class="text-[0.82rem] font-medium text-(--on-surface-variant)">
+															Reembolso del 50% si cancela con más de 24 hs. Último momento: sin devolución.
+														</span>
+													</span>
+												</label>
+												<label class="flex items-start gap-3 rounded-2xl border border-(--shell-border) px-4 py-3 has-[:checked]:border-(--primary) has-[:checked]:bg-(--primary-soft)/40">
+													<input type="radio" name="refund_policy" value="STRICT" class="mt-1 accent-(--primary)" />
+													<span class="grid gap-0.5">
+														<span class="text-[0.92rem] font-bold text-(--on-surface)">Estricta (no reembolsable)</span>
+														<span class="text-[0.82rem] font-medium text-(--on-surface-variant)">
+															La seña no se devuelve si cancela el cliente (sí si cancela el comercio).
+														</span>
+													</span>
+												</label>
+											</div>
+
+											<div class="grid gap-4">
+												<p class="text-[0.95rem] font-bold text-(--on-surface)">Datos para recibir la transferencia (SIPAP)</p>
+												<p class="text-[0.85rem] font-medium text-(--on-surface-variant) -mt-2">
+													Los clientes verán estos datos al momento de reservar.
+												</p>
+												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+													<span>Banco / Financiera <span class="text-rose-500">*</span></span>
+													<input
+														name="bank_name"
+														autocomplete="organization"
+														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+														placeholder="Ej. Banco Continental"
+														list="payments-bank-list"
+													/>
+													<datalist id="payments-bank-list">
+														<option value="Banco Continental"></option>
+														<option value="Banco Itaú"></option>
+														<option value="Banco Familiar"></option>
+														<option value="Banco GNB"></option>
+														<option value="Banco Atlas"></option>
+														<option value="Ueno Bank"></option>
+														<option value="Banco Basa"></option>
+														<option value="Visión Banco"></option>
+														<option value="Interfisa"></option>
+														<option value="Solar Bank"></option>
+													</datalist>
+												</label>
+												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+													<span>Titular de la cuenta <span class="text-rose-500">*</span></span>
+													<input
+														name="account_holder"
+														autocomplete="name"
+														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+														placeholder="Nombre del titular"
+													/>
+												</label>
+												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+													<span>Documento (C.I. o RUC) <span class="text-rose-500">*</span></span>
+													<input
+														name="document_id"
+														autocomplete="off"
+														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+														placeholder="Ej. 1234567 o 80012345-6"
+													/>
+												</label>
+												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+													<span>Alias bancario <span class="text-rose-500">*</span></span>
+													<input
+														name="bank_alias"
+														autocomplete="off"
+														spellcheck="false"
+														class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+														placeholder="Ej. juan.perez.123"
+													/>
+												</label>
+											</div>
+										</div>
+
+										<p data-payments-plan-hint class="hidden text-[0.85rem] font-medium text-amber-700 dark:text-amber-300">
+											Tu plan actual no incluye cobro de señas. Actualizá a Premium en Plan para habilitarlo.
+										</p>
 
 										<div class="pt-4 border-t border-(--shell-border) border-dashed">
 											<div class="modal-footer">
@@ -490,7 +583,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 													</button>
 													<button type="submit" class="modal-action-primary">
 														<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">save</span>
-														Guardar Pagopar
+														Guardar cobros
 													</button>
 												</div>
 											</div>
@@ -842,7 +935,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			workspaceForm: HTMLFormElement | null;
 			brandingForm: HTMLFormElement | null;
 			systemForm: HTMLFormElement | null;
-			integrationsForm: HTMLFormElement | null;
+			paymentsForm: HTMLFormElement | null;
 			loadingOverlay: HTMLElement | null;
 			profilePreview: HTMLImageElement | null;
 			profilePlaceholder: HTMLElement | null;
@@ -888,6 +981,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		private scrollHintsObserver: ResizeObserver | null = null;
 		private subscriptionLoaded = false;
 		private subscriptionLoading = false;
+		private paymentsLoaded = false;
 
 		connectedCallback() {
 			const roleId = Number(this.dataset.roleId || '0');
@@ -908,7 +1002,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				workspaceForm: this.querySelector<HTMLFormElement>('[data-settings-workspace-form]'),
 				brandingForm: this.querySelector<HTMLFormElement>('[data-settings-branding-form]'),
 				systemForm: this.querySelector<HTMLFormElement>('[data-settings-system-form]'),
-				integrationsForm: this.querySelector<HTMLFormElement>('[data-settings-integrations-form]'),
+				paymentsForm: this.querySelector<HTMLFormElement>('[data-settings-payments-form]'),
 				loadingOverlay: this.querySelector<HTMLElement>('[data-settings-loading]'),
 				profilePreview: this.querySelector<HTMLImageElement>('[data-settings-profile-preview]'),
 				profilePlaceholder: this.querySelector<HTMLElement>('[data-settings-profile-placeholder]'),
@@ -983,7 +1077,10 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			this.els.workspaceForm?.addEventListener('submit', this.handleWorkspaceSubmit, { signal });
 			this.els.systemForm?.addEventListener('submit', this.handleSystemSubmit, { signal });
 			this.els.systemForm?.addEventListener('change', this.handleSystemFormChange, { signal });
-			this.els.integrationsForm?.addEventListener('submit', this.handleIntegrationsSubmit, { signal });
+			this.els.paymentsForm?.addEventListener('submit', this.handlePaymentsSubmit, { signal });
+			this.els.paymentsForm
+				?.querySelector<HTMLInputElement>('[data-payments-deposits-toggle]')
+				?.addEventListener('change', this.syncPaymentsDetailsVisibility, { signal });
 			this.bindScrollHints(signal);
 		}
 
@@ -1765,6 +1862,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			this.els.panels.forEach((panel) => panel.classList.toggle('hidden', panel.dataset.settingsPanel !== tabId));
 			if (tabId === 'profile') this.syncPushNotificationToggle();
 			if (tabId === 'plan') void this.loadSubscription();
+			if (tabId === 'payments') void this.loadPayments();
 
 			const content = this.querySelector<HTMLElement>('[data-settings-content]');
 			if (content) content.scrollTop = 0;
@@ -2076,9 +2174,6 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				if (this.isAdmin) {
 					const workspaceRes = await this.requestApi('/api/workspace', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar negocio.');
 					this.fillWorkspace((workspaceRes.data as unknown as WorkspaceSettingsData | null) ?? null);
-					if (FEATURE_FLAGS.INTEGRATIONS_SETTINGS) {
-						await this.loadIntegrations();
-					}
 				}
 			} catch (error) {
 				this.showFeedback('profile', error instanceof Error ? error.message : 'No fue posible cargar ajustes.', 'error');
@@ -2235,7 +2330,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				TEAM_MULTI_BRANCH: 'Equipo y sucursales ilimitados',
 				AI_MORNING_DIGEST: 'Resumen IA de la mañana',
 				VOICE_RECEPTION: 'Recepción por voz',
-				DEPOSIT_COLLECTION: 'Cobro de señas',
+				DEPOSIT_COLLECTION: 'Cobro de señas (transferencia SIPAP)',
 				APPOINTMENT_HISTORY: 'Historial por cita (notas y archivos)',
 				PROFITABILITY_ANALYTICS: 'Análisis de rentabilidad',
 			};
@@ -2262,68 +2357,173 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			}
 		}
 
-		private async loadIntegrations() {
-			if (!this.isAdmin || !this.els.integrationsForm) return;
+		private syncPaymentsDetailsVisibility = () => {
+			const form = this.els.paymentsForm;
+			if (!form) return;
+			const toggle = form.querySelector<HTMLInputElement>('[data-payments-deposits-toggle]');
+			const details = form.querySelector<HTMLElement>('[data-payments-details]');
+			const enabled = Boolean(toggle?.checked);
+			details?.classList.toggle('hidden', !enabled);
+		};
 
-			try {
-				const data = await this.requestApi(
-					'/api/org-integrations/pagopar',
-					{ method: 'GET', headers: { Accept: 'application/json' } },
-					'No fue posible cargar Pagopar.'
-				);
+		private fillPayments(data: any) {
+			const form = this.els.paymentsForm;
+			if (!form) return;
 
-				const raw = (data as any)?.data ?? {};
-				const publicKey = String(raw?.public_key || '').trim();
-				const privateConfigured = Boolean(raw?.private_key_configured);
-
-				const publicKeyInput = this.els.integrationsForm.querySelector<HTMLInputElement>('[name="public_key"]');
-				const privateKeyInput = this.els.integrationsForm.querySelector<HTMLInputElement>('[name="private_key"]');
-
-				if (publicKeyInput) publicKeyInput.value = publicKey;
-				if (privateKeyInput) privateKeyInput.value = '';
-
-				if (privateConfigured) {
-					privateKeyInput?.setAttribute('placeholder', 'Clave privada configurada (reemplaza para actualizar)');
+			const suspended = Number(data?.deposits_suspended) === 1;
+			const strikes = Number(data?.refund_strike_count) || 0;
+			const maxStrikes = Number(data?.max_refund_strikes) || 3;
+			const banner = form.querySelector<HTMLElement>('[data-payments-strikes-banner]');
+			if (banner) {
+				if (suspended) {
+					banner.classList.remove('hidden');
+					banner.textContent =
+						String(data?.deposits_suspended_reason || '').trim() ||
+						`Cobro de señas suspendido por ${maxStrikes} reclamos de reembolso fuera de plazo. Contactá a soporte Hasel para reactivarlo.`;
+				} else if (strikes > 0) {
+					banner.classList.remove('hidden');
+					banner.textContent = `Atención: ${strikes} de ${maxStrikes} reclamos por reembolso fuera de plazo. Al llegar a ${maxStrikes}, se suspende el cobro de señas.`;
+				} else {
+					banner.classList.add('hidden');
+					banner.textContent = '';
 				}
+			}
+
+			const toggle = form.querySelector<HTMLInputElement>('[data-payments-deposits-toggle]');
+			if (toggle) {
+				toggle.checked = Number(data?.deposits_enabled) === 1 && !suspended;
+				toggle.disabled = suspended;
+			}
+
+			const policy = String(data?.refund_policy || '').trim().toUpperCase();
+			form.querySelectorAll<HTMLInputElement>('input[name="refund_policy"]').forEach((input) => {
+				input.checked = input.value === policy;
+			});
+
+			const bankName = form.querySelector<HTMLInputElement>('[name="bank_name"]');
+			const accountHolder = form.querySelector<HTMLInputElement>('[name="account_holder"]');
+			const documentId = form.querySelector<HTMLInputElement>('[name="document_id"]');
+			const bankAlias = form.querySelector<HTMLInputElement>('[name="bank_alias"]');
+			if (bankName) bankName.value = String(data?.bank_name || '');
+			if (accountHolder) accountHolder.value = String(data?.account_holder || '');
+			if (documentId) documentId.value = String(data?.document_id || '');
+			if (bankAlias) bankAlias.value = String(data?.bank_alias || '');
+
+			const planHint = form.querySelector<HTMLElement>('[data-payments-plan-hint]');
+			const allows =
+				data?.plan_allows_deposits === true || Number(data?.plan_allows_deposits) === 1;
+			planHint?.classList.toggle('hidden', Boolean(allows));
+
+			this.syncPaymentsDetailsVisibility();
+		}
+
+		private async loadPayments() {
+			if (!this.isAdmin || !this.els.paymentsForm) return;
+			if (this.paymentsLoaded) return;
+			try {
+				const res = await this.requestApi(
+					'/api/org-payment-settings',
+					{ method: 'GET', headers: { Accept: 'application/json' } },
+					'No fue posible cargar la configuración de cobros.'
+				);
+				this.fillPayments(res.data || {});
+				this.paymentsLoaded = true;
 			} catch (error) {
-				// 404: integración no configurada aún → no es error para UI.
-				const status = error instanceof SettingsApiError ? error.status : 0;
-				if (status === 404) return;
-				this.showFeedback('integrations', error instanceof Error ? error.message : 'No fue posible cargar Pagopar.', 'error');
+				this.showFeedback(
+					'payments',
+					error instanceof Error ? error.message : 'No fue posible cargar cobros.',
+					'error'
+				);
 			}
 		}
 
-		private handleIntegrationsSubmit = async (event: SubmitEvent) => {
+		private handlePaymentsSubmit = async (event: Event) => {
 			event.preventDefault();
-			this.clearFeedback();
-			if (!this.els.integrationsForm) return;
+			if (!this.els.paymentsForm) return;
 
-			const publicKey = String(
-				this.els.integrationsForm.querySelector<HTMLInputElement>('[name="public_key"]')?.value || ''
-			).trim();
-			const privateKey = String(
-				this.els.integrationsForm.querySelector<HTMLInputElement>('[name="private_key"]')?.value || ''
-			).trim();
-
-			if (!publicKey || !privateKey) {
-				this.showFeedback('integrations', 'Clave pública y clave privada son obligatorias.', 'error');
+			const toggle = this.els.paymentsForm.querySelector<HTMLInputElement>(
+				'[data-payments-deposits-toggle]'
+			);
+			if (toggle?.disabled) {
+				this.showFeedback(
+					'payments',
+					'El cobro de señas está suspendido. Contactá a soporte Hasel para reactivarlo.',
+					'error'
+				);
 				return;
+			}
+			const depositsEnabled = Boolean(toggle?.checked) ? 1 : 0;
+			const policy =
+				this.els.paymentsForm
+					.querySelector<HTMLInputElement>('input[name="refund_policy"]:checked')
+					?.value?.trim()
+					.toUpperCase() || null;
+			const bankName =
+				this.els.paymentsForm.querySelector<HTMLInputElement>('[name="bank_name"]')?.value.trim() ||
+				'';
+			const accountHolder =
+				this.els.paymentsForm
+					.querySelector<HTMLInputElement>('[name="account_holder"]')
+					?.value.trim() || '';
+			const documentId =
+				this.els.paymentsForm.querySelector<HTMLInputElement>('[name="document_id"]')?.value.trim() ||
+				'';
+			const bankAlias =
+				this.els.paymentsForm.querySelector<HTMLInputElement>('[name="bank_alias"]')?.value.trim() ||
+				'';
+
+			if (depositsEnabled === 1) {
+				if (!policy || !['FLEXIBLE', 'MODERATE', 'STRICT'].includes(policy)) {
+					this.showFeedback(
+						'payments',
+						'Elegí una política de cancelación para habilitar señas.',
+						'error'
+					);
+					return;
+				}
+				if (!bankName || !accountHolder || !documentId || !bankAlias) {
+					this.showFeedback(
+						'payments',
+						'Completá banco, titular, documento y alias SIPAP.',
+						'error'
+					);
+					return;
+				}
 			}
 
 			try {
 				const data = await this.requestApi(
-					'/api/org-integrations/pagopar',
+					'/api/org-payment-settings',
 					{
 						method: 'PUT',
-						headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-						body: JSON.stringify({ provider: 'pagopar', public_key: publicKey, private_key: privateKey }),
+						headers: {
+							Accept: 'application/json',
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify({
+							deposits_enabled: depositsEnabled,
+							refund_policy: policy,
+							bank_name: bankName || null,
+							account_holder: accountHolder || null,
+							document_id: documentId || null,
+							bank_alias: bankAlias || null,
+						}),
 					},
-					'No fue posible guardar Pagopar.'
+					'No fue posible guardar la configuración de cobros.'
 				);
-				this.showFeedback('integrations', this.readApiMessage(data, 'Pagopar configurado correctamente.'), 'success');
-				await this.loadIntegrations();
+				this.fillPayments(data.data || {});
+				this.paymentsLoaded = true;
+				this.showFeedback(
+					'payments',
+					this.readApiMessage(data, 'Configuración de cobros guardada correctamente.'),
+					'success'
+				);
 			} catch (error) {
-				this.showFeedback('integrations', error instanceof Error ? error.message : 'No fue posible guardar Pagopar.', 'error');
+				this.showFeedback(
+					'payments',
+					error instanceof Error ? error.message : 'No fue posible guardar cobros.',
+					'error'
+				);
 			}
 		};
 

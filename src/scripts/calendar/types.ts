@@ -57,6 +57,10 @@ export type AppointmentDetail = {
 	schedule_misaligned_reason?: ScheduleMisalignedReason | null;
 	history_enabled?: boolean;
 	history?: AppointmentHistory;
+	payment_status?: string | null;
+	deposit_amount?: number | null;
+	refund_status?: string | null;
+	refund_amount?: number | null;
 };
 
 export type AppointmentFormPayload = {

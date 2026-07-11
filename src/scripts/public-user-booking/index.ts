@@ -14,7 +14,6 @@ import {
 	buildApiAppointmentTimes,
 	createPublicAppointment,
 	fetchAvailableSlots,
-	startPagoparCheckout,
 	validateCustomerPhone,
 } from './api-client';
 import {
@@ -37,9 +36,15 @@ import {
 	type UserBookingService,
 	type UserBookingWizardStep,
 } from './types';
-
-const USE_DIRECT_PAGOPAR_CHECKOUT = true;
-const DEFAULT_PAGOPAR_FORMA_PAGO = 9 as const;
+import {
+	bindSipapCopyButtons,
+	bindSipapReceiptUpload,
+	fillSipapDepositPanel,
+	isDepositsEnabled,
+	POLICY_SUMMARIES,
+	normalizePolicyCode,
+	unwrapSipapHold,
+} from '../public-deposit-sipap';
 
 const toPositiveInt = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);
@@ -87,6 +92,9 @@ export const initializePublicUserBookingPage = () => {
 	const customerPhoneInput = customerForm?.querySelector<HTMLInputElement>('[name="customer_phone"]');
 	const submitButton = root.querySelector<HTMLButtonElement>('[data-submit-booking]');
 	const payDepositButton = root.querySelector<HTMLButtonElement>('[data-pay-deposit-submit]');
+	const depositPolicyWrap = root.querySelector<HTMLElement>('[data-deposit-policy-wrap]');
+	const depositPolicyAccept = root.querySelector<HTMLInputElement>('[data-deposit-policy-accept]');
+	const depositPolicySummary = root.querySelector<HTMLElement>('[data-deposit-policy-summary]');
 	const submitErrorNode = root.querySelector<HTMLElement>('[data-submit-error]');
 	const toastNode = root.querySelector<HTMLElement>('[data-booking-toast]');
 	const stepCompactLabel = root.querySelector<HTMLElement>('[data-step-compact-label]');
@@ -238,21 +246,23 @@ export const initializePublicUserBookingPage = () => {
 				item.classList.add('step-item-current');
 				continue;
 			}
-			if (itemStep < step || step === 5) {
+			if (itemStep < step || step >= 5) {
 				item.classList.add('step-item-done');
 				continue;
 			}
 			item.classList.add('step-item-default');
 		}
-		const cappedStep = step === 5 ? 4 : step;
+		const cappedStep = step >= 5 ? 4 : step;
 		if (stepCompactLabel) {
 			stepCompactLabel.textContent =
-				step === 5
-					? 'Reserva confirmada'
-					: `Paso ${cappedStep} de 4: ${USER_BOOKING_STEP_LABELS[cappedStep as 1 | 2 | 3 | 4]}`;
+				step === 6
+					? 'Transferí la seña'
+					: step === 5
+						? 'Reserva confirmada'
+						: `Paso ${cappedStep} de 4: ${USER_BOOKING_STEP_LABELS[cappedStep as 1 | 2 | 3 | 4]}`;
 		}
 		if (stepProgressBar) {
-			stepProgressBar.style.width = `${step === 5 ? 100 : cappedStep * 25}%`;
+			stepProgressBar.style.width = `${step >= 5 ? 100 : cappedStep * 25}%`;
 		}
 	};
 
@@ -278,6 +288,17 @@ export const initializePublicUserBookingPage = () => {
 		summaryDeposit.textContent = depositAmount > 0 ? formatCurrency(depositAmount) : '';
 		submitButton.classList.toggle('is-hidden', depositAmount > 0);
 		payDepositButton.classList.toggle('is-hidden', depositAmount <= 0);
+
+		if (depositPolicyWrap && depositPolicySummary) {
+			const settings = selectedContext?.deposit_settings;
+			const policyCode = normalizePolicyCode(settings?.refund_policy);
+			const summary =
+				String(settings?.refund_policy_summary || '').trim() ||
+				(policyCode ? POLICY_SUMMARIES[policyCode] : '');
+			depositPolicyWrap.classList.toggle('hidden', depositAmount <= 0);
+			depositPolicySummary.textContent = summary || 'Consultá la política con el comercio.';
+			if (depositAmount <= 0 && depositPolicyAccept) depositPolicyAccept.checked = false;
+		}
 	};
 
 	const renderOrganizationServices = () => {
@@ -654,6 +675,16 @@ export const initializePublicUserBookingPage = () => {
 			return null;
 		}
 
+		if (reserveForDeposit && !depositPolicyAccept?.checked) {
+			setSubmitError('Debés aceptar la política de cancelación para continuar.');
+			return null;
+		}
+
+		if (reserveForDeposit && !isDepositsEnabled(selectedContext.deposit_settings)) {
+			setSubmitError('Este negocio aún no tiene habilitado el cobro de señas.');
+			return null;
+		}
+
 		const appointmentTimes = buildApiAppointmentTimes(
 			selectedDate,
 			selectedTime,
@@ -674,6 +705,7 @@ export const initializePublicUserBookingPage = () => {
 			start_time: appointmentTimes.start_time,
 			end_time: appointmentTimes.end_time,
 			reserve_for_deposit: reserveForDeposit,
+			...(reserveForDeposit ? { policy_accepted: true } : {}),
 		};
 	};
 
@@ -683,6 +715,15 @@ export const initializePublicUserBookingPage = () => {
 		ticketDate.textContent = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
 		ticketTime.textContent = selectedTime || '-';
 		setStep(5);
+	};
+
+	const finalizeDepositHold = (hold: Record<string, unknown>) => {
+		fillSipapDepositPanel(root, unwrapSipapHold(hold as any), selectedContext?.deposit_settings);
+		ticketProfessional.textContent = profile.full_name;
+		ticketService.textContent = selectedService?.name || '-';
+		ticketDate.textContent = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
+		ticketTime.textContent = selectedTime || '-';
+		setStep(6);
 	};
 
 	const submitBooking = async (reserveForDeposit: boolean) => {
@@ -699,18 +740,12 @@ export const initializePublicUserBookingPage = () => {
 		payDepositButton.disabled = true;
 
 		try {
-			if (reserveForDeposit && USE_DIRECT_PAGOPAR_CHECKOUT) {
-				await startPagoparCheckout({
-					forma_pago: DEFAULT_PAGOPAR_FORMA_PAGO,
-					...payload,
-				});
+			const created = await createPublicAppointment(payload);
+			if (reserveForDeposit) {
+				pendingAppointmentId = created.appointment_id;
+				finalizeDepositHold(created.hold);
+				showToast('Turno reservado. Completá la transferencia SIPAP.', 'success');
 				return;
-			}
-
-			if (reserveForDeposit && pendingAppointmentId <= 0) {
-				pendingAppointmentId = await createPublicAppointment(payload);
-			} else if (!reserveForDeposit) {
-				await createPublicAppointment(payload);
 			}
 
 			finalizeSuccess();
@@ -784,6 +819,18 @@ export const initializePublicUserBookingPage = () => {
 		event.preventDefault();
 		void submitBooking(true);
 	}, { signal });
+
+	bindSipapCopyButtons(root, signal);
+	bindSipapReceiptUpload(root, {
+		signal,
+		onResult: (result) => {
+			showToast(
+				result.message || 'Comprobante recibido.',
+				'success'
+			);
+		},
+		onError: (message) => showToast(message, 'error'),
+	});
 
 	customerPhoneInput.addEventListener('input', () => {
 		customerPhoneInput.value = formatParaguayMobilePhoneInput(customerPhoneInput.value);

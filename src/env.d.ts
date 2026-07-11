@@ -35,6 +35,11 @@ interface Window {
     BookmateFlash?: {
         show: (detail: BookmateFlashDetail) => void;
     };
+    HaselSubscription?: {
+        features: string[];
+        hasFeature: (code: string) => boolean;
+        [key: string]: unknown;
+    };
 }
 
 interface ImportMetaEnv {
@@ -45,8 +50,6 @@ interface ImportMetaEnv {
     readonly PUBLIC_VALIDATE_CUSTOMER_URL?: string;
     readonly ORDS_PUBLIC_RESERVATION_URL?: string;
     readonly ORDS_PUBLIC_LOCATION_URL?: string;
-    readonly ORDS_PUBLIC_PAYMENTS_URL?: string;
-    readonly ORDS_PUBLIC_PAYMENTS_STATUS_URL?: string;
 
     readonly ORDS_AUTH_LOGIN_URL?: string;
     readonly ORDS_AUTH_REFRESH_URL?: string;
@@ -80,11 +83,12 @@ interface ImportMetaEnv {
     readonly ORDS_APPOINTMENTS_URL?: string;
     readonly ORDS_APPOINTMENTS_CALENDAR_URL?: string;
     readonly ORDS_CUSTOMERS_URL?: string;
+    readonly ORDS_COBROS_URL?: string;
+    readonly ORDS_COBROS_PENDING_COUNT_URL?: string;
     readonly ORDS_DAYS_URL?: string;
     readonly ORDS_PROFESSIONALS_LOV_URL?: string;
     readonly ORDS_LOCATIONS_LOV_URL?: string;
     readonly ORDS_INTEGRATIONS_URL?: string;
-    readonly ORDS_ORG_INTEGRATIONS_URL?: string;
     readonly FCM_SUSCRIBE_URL?: string;
     readonly FCM_UNSUSCRIBE_URL?: string;
     readonly GOOGLE_CLIENT_ID?: string;

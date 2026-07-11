@@ -84,7 +84,7 @@ export const validateCustomerPhone = async (phoneE164: string, orgId: number) =>
 };
 
 export const createPublicAppointment = async (payload: Record<string, unknown>) => {
-	const { data } = await fetchJson<{ data?: { appointment_id?: number } }>(
+	const { data } = await fetchJson<Record<string, unknown>>(
 		'/api/public/appointments',
 		{
 			method: 'POST',
@@ -94,26 +94,12 @@ export const createPublicAppointment = async (payload: Record<string, unknown>) 
 		'No fue posible confirmar la reserva.'
 	);
 
-	return Number(data.data?.appointment_id || 0);
-};
-
-export const startPagoparCheckout = async (payload: Record<string, unknown>) => {
-	const { data } = await fetchJson<{ data?: { checkout_url?: string } }>(
-		'/api/public/payments',
-		{
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-			body: JSON.stringify(payload),
-		},
-		'No fue posible iniciar el pago.'
-	);
-
-	const checkoutUrl = String(data.data?.checkout_url || '').trim();
-	if (!checkoutUrl) {
-		throw new PublicUserBookingClientError('No fue posible obtener el enlace de pago.', 502);
-	}
-
-	window.location.assign(checkoutUrl);
+	const raw = (data as any)?.data && typeof (data as any).data === 'object' ? (data as any).data : data;
+	const appointmentId = Number(raw?.appointment_id || (data as any)?.appointment_id || 0);
+	return {
+		appointment_id: appointmentId,
+		hold: raw as Record<string, unknown>,
+	};
 };
 
 export { buildApiAppointmentTimes };

@@ -91,6 +91,10 @@ export interface AppointmentDetail {
 	schedule_misaligned_reason?: ScheduleMisalignedReason | null;
 	history_enabled: boolean;
 	history: AppointmentHistory;
+	payment_status?: string | null;
+	deposit_amount?: number | null;
+	refund_status?: string | null;
+	refund_amount?: number | null;
 }
 
 export interface AppointmentCalendarFilters {
@@ -400,6 +404,10 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 		end_time: endTime,
 		history_enabled: source.history_enabled === true,
 		history,
+		payment_status: String(source.payment_status || '').trim() || null,
+		deposit_amount: Number(source.deposit_amount ?? NaN) || null,
+		refund_status: String(source.refund_status || '').trim() || null,
+		refund_amount: Number(source.refund_amount ?? NaN) || null,
 	};
 
 	applyScheduleMisalignedFields(detail, source, status, startTime);

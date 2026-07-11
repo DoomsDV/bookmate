@@ -40,6 +40,18 @@ export interface PublicUserProfileLocation {
 	organization_slug: string;
 	id_professional: number;
 	services: PublicUserProfileService[];
+	deposit_settings?: {
+		deposits_enabled?: 0 | 1 | boolean;
+		refund_policy?: string | null;
+		refund_policy_label?: string | null;
+		refund_policy_summary?: string | null;
+		sipap?: {
+			bank_name?: string | null;
+			account_holder?: string | null;
+			document_id?: string | null;
+			bank_alias?: string | null;
+		} | null;
+	} | null;
 }
 
 export interface PublicUserProfile {
@@ -138,6 +150,10 @@ const normalizeLocation = (value: unknown): PublicUserProfileLocation | null => 
 		organization_slug: orgSlug,
 		id_professional: proId,
 		services,
+		deposit_settings:
+			source.deposit_settings && typeof source.deposit_settings === 'object'
+				? (source.deposit_settings as PublicUserProfileLocation['deposit_settings'])
+				: null,
 	};
 };
 

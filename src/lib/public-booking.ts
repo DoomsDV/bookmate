@@ -36,18 +36,6 @@ export const PUBLIC_RESERVATION_API_URL = resolveOrdsPublicApiUrl(
 	'reservations/:token'
 );
 
-export const PUBLIC_PAYMENTS_API_URL = resolveOrdsPublicApiUrl(
-	import.meta.env.ORDS_PUBLIC_PAYMENTS_URL,
-	'ORDS_PUBLIC_PAYMENTS_URL',
-	'payments'
-);
-
-export const PUBLIC_PAYMENTS_STATUS_API_URL = resolveOrdsPublicApiUrl(
-	import.meta.env.ORDS_PUBLIC_PAYMENTS_STATUS_URL,
-	'ORDS_PUBLIC_PAYMENTS_STATUS_URL',
-	'payments/:hash'
-);
-
 const resolvePublicLocationApiUrl = (locationId: number) => {
 	const safeId = encodeURIComponent(String(locationId));
 	const template = String(import.meta.env.ORDS_PUBLIC_LOCATION_URL || '').trim();
@@ -110,6 +98,7 @@ export interface PublicBookingProfile {
 	image_url: string;
 	services: PublicBookingService[];
 	locations: PublicBookingLocation[];
+	deposit_settings?: Record<string, unknown> | null;
 }
 
 const EMPTY_SPECIALTY_LABELS = new Set(['', 'sin especialidad', 'sin especialidades']);
@@ -154,51 +143,28 @@ export interface PublicCreateAppointmentPayload {
 	start_time: string;
 	end_time: string;
 	reserve_for_deposit?: boolean;
+	policy_accepted?: boolean;
 }
-
-export interface PublicCreatePaymentPayload {
-	forma_pago: 9 | 24;
-	id_appointment?: number;
-	org_id_organization?: number;
-	loc_id_location?: number;
-	pro_id_professional?: number;
-	ser_id_service?: number;
-	customer_name?: string;
-	customer_phone?: string;
-	start_time?: string;
-	end_time?: string;
-	customer_email?: string;
-}
-
-export interface PublicPaymentStatus {
-	hash: string;
-	appointment_id: number;
-	status: string;
-	payment_status: string;
-	deposit_amount?: number;
-	service_name?: string;
-	customer_name?: string;
-	start_time?: string;
-	end_time?: string;
-	paid_at?: string | null;
-	forma_pago_confirmed?: number | null;
-	forma_pago_label?: string | null;
-	forma_pago_requested?: number | null;
-}
-
-const resolvePublicPaymentsUrl = () => `${PUBLIC_PAYMENTS_API_URL.replace(/\/+$/, '')}`;
-
-const resolvePublicPaymentStatusUrl = (hash: string) => {
-	const safeHash = encodeURIComponent(String(hash || '').trim());
-	return PUBLIC_PAYMENTS_STATUS_API_URL.includes(':hash')
-		? PUBLIC_PAYMENTS_STATUS_API_URL.replace(':hash', safeHash)
-		: `${PUBLIC_PAYMENTS_STATUS_API_URL.replace(/\/+$/, '')}/${safeHash}`;
-};
 
 export interface PublicCreatedAppointmentData {
 	appointment_id?: number;
 	start_time?: string;
 	end_time?: string;
+	payment_status?: string;
+	deposit_amount?: number;
+	payment_expires_at?: string;
+	payment_reference?: string;
+	public_manage_token?: string;
+	provider?: string;
+	sipap?: {
+		bank_name?: string | null;
+		account_holder?: string | null;
+		document_id?: string | null;
+		bank_alias?: string | null;
+	};
+	refund_policy?: string;
+	refund_policy_label?: string;
+	refund_policy_summary?: string;
 }
 
 export interface PublicValidateCustomerPayload {
@@ -215,6 +181,14 @@ export interface PublicValidateCustomerResult {
 	exists: boolean;
 	message: string;
 	customer: PublicValidatedCustomer | null;
+}
+
+export interface PublicReservationRefundPreview {
+	amount: number;
+	requires_alias: boolean;
+	policy_code?: string | null;
+	policy_label?: string | null;
+	policy_summary?: string | null;
 }
 
 export interface PublicReservationDetail {
@@ -235,6 +209,14 @@ export interface PublicReservationDetail {
 	status: string;
 	start_time: string;
 	end_time: string;
+	payment_status?: string | null;
+	deposit_amount?: number | null;
+	policy_code_snapshot?: string | null;
+	policy_label?: string | null;
+	refund_status?: string | null;
+	refund_amount?: number | null;
+	refund_alias?: string | null;
+	refund_preview?: PublicReservationRefundPreview | null;
 }
 
 export interface PublicReservationUpdatePayload {
@@ -465,11 +447,31 @@ const normalizeCreatedAppointmentData = (value: unknown): PublicCreatedAppointme
 
 	const source = value as Record<string, unknown>;
 	const appointmentId = toPositiveInt(source.appointment_id, 0);
+	const sipapRaw = source.sipap;
+	const sipap =
+		sipapRaw && typeof sipapRaw === 'object'
+			? {
+					bank_name: String((sipapRaw as any).bank_name || '').trim() || null,
+					account_holder: String((sipapRaw as any).account_holder || '').trim() || null,
+					document_id: String((sipapRaw as any).document_id || '').trim() || null,
+					bank_alias: String((sipapRaw as any).bank_alias || '').trim() || null,
+				}
+			: undefined;
 
 	return {
 		appointment_id: appointmentId || undefined,
 		start_time: String(source.start_time || '').trim() || undefined,
 		end_time: String(source.end_time || '').trim() || undefined,
+		payment_status: String(source.payment_status || '').trim() || undefined,
+		deposit_amount: Number(source.deposit_amount ?? NaN) || undefined,
+		payment_expires_at: String(source.payment_expires_at || '').trim() || undefined,
+		payment_reference: String(source.payment_reference || '').trim() || undefined,
+		public_manage_token: String(source.public_manage_token || '').trim() || undefined,
+		provider: String(source.provider || '').trim() || undefined,
+		sipap,
+		refund_policy: String(source.refund_policy || '').trim() || undefined,
+		refund_policy_label: String(source.refund_policy_label || '').trim() || undefined,
+		refund_policy_summary: String(source.refund_policy_summary || '').trim() || undefined,
 	};
 };
 
@@ -556,6 +558,10 @@ const normalizeProfile = (value: unknown): PublicBookingProfile | null => {
 		image_url: String(source.image_url || '').trim(),
 		services,
 		locations,
+		deposit_settings:
+			source.deposit_settings && typeof source.deposit_settings === 'object'
+				? (source.deposit_settings as Record<string, unknown>)
+				: null,
 	};
 };
 
@@ -711,8 +717,14 @@ export const createPublicAppointmentWithOrds = async (payload: PublicCreateAppoi
 
 	const data = await parseApiResponse(response, 'No fue posible confirmar la cita.');
 	const successMessage = String(data.message || '').trim();
+	// Hold SIPAP: campos en top-level del JSON ORDS (no siempre en data).
+	const merged = {
+		...(typeof data === 'object' ? data : {}),
+		...(data.data && typeof data.data === 'object' ? data.data : {}),
+	} as Record<string, unknown>;
+	const normalized = normalizeCreatedAppointmentData(merged);
 	const appointmentId = toPositiveInt(
-		(data as any).appointment_id ?? (data as any).data?.appointment_id,
+		merged.appointment_id ?? (data as any).appointment_id ?? normalized?.appointment_id,
 		0
 	);
 
@@ -720,78 +732,9 @@ export const createPublicAppointmentWithOrds = async (payload: PublicCreateAppoi
 		statusCode: response.status || 201,
 		message: successMessage || 'Cita confirmada!',
 		data: {
-			...(normalizeCreatedAppointmentData(data.data) || {}),
-			appointment_id: appointmentId || normalizeCreatedAppointmentData(data.data)?.appointment_id,
+			...(normalized || {}),
+			appointment_id: appointmentId || normalized?.appointment_id,
 		},
-	};
-};
-
-export const createPublicPaymentOrderWithOrds = async (payload: PublicCreatePaymentPayload) => {
-	const response = await fetch(resolvePublicPaymentsUrl(), {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-		},
-		body: JSON.stringify(payload),
-	});
-
-	const data = await parseApiResponse(response, 'No fue posible iniciar el pago.');
-	const rawData = (data.data ?? null) as any;
-	const hash = String(rawData?.hash || '').trim();
-	const checkoutUrl = String(rawData?.checkout_url || '').trim();
-	const appointmentId = toPositiveInt(rawData?.appointment_id, 0);
-
-	if (!hash || !checkoutUrl || !appointmentId) {
-		throw new PublicBookingApiError('No fue posible interpretar la respuesta de pago.', 502, {
-			response_body: data,
-		});
-	}
-
-	return {
-		hash,
-		checkout_url: checkoutUrl,
-		appointment_id: appointmentId,
-		deposit_amount: toPositiveInt(rawData?.deposit_amount, 0),
-	};
-};
-
-export const getPublicPaymentStatusWithOrds = async (hash: string): Promise<PublicPaymentStatus> => {
-	const safeHash = String(hash || '').trim();
-	if (!safeHash) {
-		throw new PublicBookingApiError('Hash de pago requerido.', 400);
-	}
-
-	const response = await fetch(resolvePublicPaymentStatusUrl(safeHash), {
-		method: 'GET',
-		headers: { Accept: 'application/json' },
-	});
-
-	const data = await parseApiResponse(response, 'No fue posible consultar el estado del pago.');
-	const raw = (data.data ?? null) as any;
-	const appointmentId = toPositiveInt(raw?.appointment_id ?? raw?.appointmentId ?? raw?.appointment_id, 0);
-	const paymentStatus = String(raw?.payment_status || '').trim();
-
-	if (!appointmentId || !paymentStatus) {
-		throw new PublicBookingApiError('No fue posible interpretar el estado del pago.', 502, {
-			response_body: data,
-		});
-	}
-
-	return {
-		hash: safeHash,
-		appointment_id: appointmentId,
-		status: String(raw?.status || '').trim(),
-		payment_status: paymentStatus,
-		deposit_amount: Number(raw?.deposit_amount ?? raw?.depositAmount ?? raw?.deposit_amount) || undefined,
-		service_name: String(raw?.service_name || '').trim() || undefined,
-		customer_name: String(raw?.customer_name || '').trim() || undefined,
-		start_time: String(raw?.start_time || '').trim() || undefined,
-		end_time: String(raw?.end_time || '').trim() || undefined,
-		paid_at: raw?.paid_at ? String(raw.paid_at) : null,
-		forma_pago_confirmed: raw?.forma_pago_confirmed ? Number(raw.forma_pago_confirmed) : null,
-		forma_pago_label: raw?.forma_pago_label ? String(raw.forma_pago_label) : null,
-		forma_pago_requested: raw?.forma_pago_requested ? Number(raw.forma_pago_requested) : null,
 	};
 };
 
@@ -844,6 +787,25 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 		status: String(source.status || '').trim().toUpperCase(),
 		start_time: startTime,
 		end_time: endTime,
+		payment_status: String(source.payment_status || '').trim() || null,
+		deposit_amount: Number(source.deposit_amount ?? NaN) || null,
+		policy_code_snapshot: String(source.policy_code_snapshot || '').trim() || null,
+		policy_label: String(source.policy_label || '').trim() || null,
+		refund_status: String(source.refund_status || '').trim() || null,
+		refund_amount: Number(source.refund_amount ?? NaN) || null,
+		refund_alias: String(source.refund_alias || '').trim() || null,
+		refund_preview: (() => {
+			const preview = source.refund_preview;
+			if (!preview || typeof preview !== 'object') return null;
+			const p = preview as Record<string, unknown>;
+			return {
+				amount: Number(p.amount ?? 0) || 0,
+				requires_alias: Boolean(Number(p.requires_alias) === 1 || p.requires_alias === true),
+				policy_code: String(p.policy_code || '').trim() || null,
+				policy_label: String(p.policy_label || '').trim() || null,
+				policy_summary: String(p.policy_summary || '').trim() || null,
+			};
+		})(),
 	};
 };
 
@@ -891,20 +853,139 @@ export const updatePublicReservationWithOrds = async (
 	};
 };
 
-export const cancelPublicReservationWithOrds = async (token: string) => {
+export const cancelPublicReservationWithOrds = async (
+	token: string,
+	options?: { refund_alias?: string }
+) => {
 	const safeToken = String(token || '').trim();
 	if (!safeToken) {
 		throw new PublicBookingApiError('Token de reserva requerido.', 400);
 	}
 
+	const body: Record<string, string> = {};
+	const alias = String(options?.refund_alias || '').trim();
+	if (alias) body.refund_alias = alias;
+
 	const response = await fetch(resolvePublicReservationApiUrl(safeToken), {
 		method: 'DELETE',
-		headers: { Accept: 'application/json' },
+		headers: {
+			Accept: 'application/json',
+			...(alias ? { 'Content-Type': 'application/json' } : {}),
+		},
+		body: alias ? JSON.stringify(body) : undefined,
 	});
 
 	const data = await parseApiResponse(response, 'No fue posible cancelar la reserva.');
 	return {
 		message: String(data.message || '').trim() || 'Reserva cancelada correctamente.',
+		refund_status: String(data.data?.refund_status || '').trim() || null,
+		refund_amount: Number(data.data?.refund_amount ?? NaN) || null,
+	};
+};
+
+export const submitRefundAliasWithOrds = async (token: string, refundAlias: string) => {
+	const safeToken = String(token || '').trim();
+	const alias = String(refundAlias || '').trim();
+	if (!safeToken) {
+		throw new PublicBookingApiError('Token de reserva requerido.', 400);
+	}
+	if (!alias) {
+		throw new PublicBookingApiError('Indica tu alias SIPAP.', 400);
+	}
+
+	const response = await fetch(`${resolvePublicReservationApiUrl(safeToken)}/refund-alias`, {
+		method: 'POST',
+		headers: {
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ refund_alias: alias }),
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible guardar el alias.');
+	return {
+		message: String(data.message || '').trim() || 'Alias recibido.',
+		refund_status: String(data.data?.refund_status || '').trim() || null,
+		refund_amount: Number(data.data?.refund_amount ?? NaN) || null,
+	};
+};
+
+export const submitRefundClaimWithOrds = async (token: string, notes?: string) => {
+	const safeToken = String(token || '').trim();
+	if (!safeToken) {
+		throw new PublicBookingApiError('Token de reserva requerido.', 400);
+	}
+
+	const response = await fetch(`${resolvePublicReservationApiUrl(safeToken)}/refund-claim`, {
+		method: 'POST',
+		headers: {
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ notes: String(notes || '').trim() || null }),
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible registrar el reclamo.');
+	return {
+		message: String(data.message || '').trim() || 'Reclamo registrado.',
+		data: data.data || null,
+	};
+};
+
+export interface PublicReceiptUploadPayload {
+	file_base64: string;
+	filename: string;
+	mime_type: string;
+}
+
+export interface PublicReceiptUploadResult {
+	message: string;
+	appointment_id?: number;
+	ocr_status?: string;
+	payment_status?: string;
+	receipt_url?: string;
+	ocr_reference?: string;
+	ocr_amount?: number;
+	ocr_confidence?: number;
+}
+
+export const uploadPublicReceiptWithOrds = async (
+	token: string,
+	payload: PublicReceiptUploadPayload
+): Promise<PublicReceiptUploadResult> => {
+	const safeToken = String(token || '').trim();
+	if (!safeToken) {
+		throw new PublicBookingApiError('Token de reserva requerido.', 400);
+	}
+	if (!payload?.file_base64) {
+		throw new PublicBookingApiError('Debes enviar el comprobante.', 400);
+	}
+
+	const response = await fetch(`${resolvePublicReservationApiUrl(safeToken)}/receipt`, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({
+			file_base64: payload.file_base64,
+			filename: payload.filename || 'comprobante.jpg',
+			mime_type: payload.mime_type || 'image/jpeg',
+		}),
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible subir el comprobante.');
+	const raw = (data.data ?? data) as Record<string, unknown>;
+
+	return {
+		message: String(data.message || '').trim() || 'Comprobante recibido.',
+		appointment_id: toPositiveInt(raw.appointment_id, 0) || undefined,
+		ocr_status: String(raw.ocr_status || '').trim() || undefined,
+		payment_status: String(raw.payment_status || '').trim() || undefined,
+		receipt_url: String(raw.receipt_url || '').trim() || undefined,
+		ocr_reference: String(raw.ocr_reference || '').trim() || undefined,
+		ocr_amount: Number(raw.ocr_amount ?? NaN) || undefined,
+		ocr_confidence: Number(raw.ocr_confidence ?? NaN) || undefined,
 	};
 };
 

@@ -1,6 +1,6 @@
 import type { PublicUserProfile, PublicUserProfileLocation, PublicUserProfileService } from '../../lib/public-user-profile';
 
-export type UserBookingWizardStep = 1 | 2 | 3 | 4 | 5;
+export type UserBookingWizardStep = 1 | 2 | 3 | 4 | 5 | 6;
 
 export type UserBookingContext = PublicUserProfileLocation;
 

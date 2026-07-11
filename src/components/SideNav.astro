@@ -7,6 +7,10 @@ interface NavItem {
 	href: string;
 	icon?: string;
 	active?: boolean;
+	/** Si true, muestra badge de pendientes (Cobros). */
+	pendingBadge?: boolean;
+	/** Gate de entitlement en cliente. */
+	requiresFeature?: string;
 }
 
 interface Props {
@@ -41,7 +45,7 @@ const isItemActive = (item: NavItem) => {
 };
 
 /** Rutas con shell SSR liviano (datos en cliente). Prefetch solo al hover, no en viewport. */
-const prefetchHoverPaths = new Set(["/panel/dashboard", "/panel/customers"]);
+const prefetchHoverPaths = new Set(["/panel/dashboard", "/panel/customers", "/panel/cobros"]);
 
 const getPrefetchMode = (item: NavItem) =>
 	prefetchHoverPaths.has(normalizePath(item.href)) ? "hover" : undefined;
@@ -50,9 +54,15 @@ const primaryItems: NavItem[] = [
 	{ label: "Dashboard", icon: "space_dashboard", href: "/panel/dashboard" },
 	{ label: "Calendario", icon: "calendar_month", href: "/panel/calendar" },
 	{ label: "Clientes", icon: "contacts", href: "/panel/customers" },
+	{
+		label: "Cobros",
+		icon: "payments",
+		href: "/panel/cobros",
+		pendingBadge: true,
+		requiresFeature: "DEPOSIT_COLLECTION",
+	},
 	{ label: "Servicios", icon: "inventory_2", href: "/panel/services" },
 	{ label: "Sucursales", icon: "storefront", href: "/panel/locations" },
-	{ label: "Plan", icon: "workspace_premium", href: "/panel/plan" },
 ];
 
 const teamItems: NavItem[] = [
@@ -67,6 +77,8 @@ const visiblePrimaryItems = primaryItems.filter((item) =>
 const visibleTeamItems = teamItems.filter((item) =>
 	canAccessPath(item.href, currentRoleId),
 );
+const showPlanFooter = canAccessPath("/panel/plan", currentRoleId);
+const planFooterActive = activePath === "/panel/plan";
 ---
 
 <div
@@ -121,9 +133,6 @@ const visibleTeamItems = teamItems.filter((item) =>
 								{workspaceName}
 							</p>
 						</div>
-						<p class="workspace-account-subtitle truncate" data-plan-label>
-							Plan
-						</p>
 					</div>
 					<span class="material-symbols-rounded sidebar-account-chevron" aria-hidden="true">
 						unfold_more
@@ -144,12 +153,14 @@ const visibleTeamItems = teamItems.filter((item) =>
 
 		<div class="sidebar-divider shrink-0" role="presentation" aria-hidden="true"></div>
 
-		<div class="flex-1 px-6 pb-6">
+		<div class="flex min-h-0 flex-1 flex-col px-6 pb-6">
 		<nav aria-label="Side navigation móvil">
 			<ul class="space-y-2.5">
 				{
 					visiblePrimaryItems.map((item) => (
-						<li>
+						<li
+							data-requires-feature={item.requiresFeature || undefined}
+						>
 							<a
 								href={item.href}
 								data-astro-prefetch={getPrefetchMode(item)}
@@ -164,7 +175,16 @@ const visibleTeamItems = teamItems.filter((item) =>
 								<span class="material-symbols-rounded text-[1.55rem] leading-none lg:text-[1.25rem]">
 									{item.icon}
 								</span>
-								<span>{item.label}</span>
+								<span class="flex min-w-0 flex-1 items-center justify-between gap-2">
+									<span>{item.label}</span>
+									{item.pendingBadge ? (
+										<span
+											class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.7rem] font-extrabold leading-none text-white"
+											data-cobros-nav-badge
+											aria-label="Pendientes de revisión"
+										></span>
+									) : null}
+								</span>
 							</a>
 						</li>
 					))
@@ -212,6 +232,37 @@ const visibleTeamItems = teamItems.filter((item) =>
 				}
 			</ul>
 		</nav>
+
+		{
+			showPlanFooter ? (
+				<a
+					href="/panel/plan"
+					data-side-nav-close
+					class:list={[
+						"mt-auto mx-1 flex min-h-12 items-center gap-3.5 rounded-2xl border border-(--shell-border) px-4 py-3.5 no-underline transition",
+						planFooterActive
+							? "bg-(--primary-container) text-(--primary)"
+							: "text-(--on-surface) hover:bg-(--sidebar-hover)",
+					]}
+					aria-label="Ver plan y facturación"
+				>
+					<span class="material-symbols-rounded text-[1.55rem] leading-none lg:text-[1.25rem]" aria-hidden="true">
+						workspace_premium
+					</span>
+					<span class="min-w-0 flex-1">
+						<span class="block truncate text-[1.02rem] font-bold lg:text-[0.9rem]" data-plan-label>
+							Plan
+						</span>
+						<span class="block text-[0.8rem] font-medium text-(--on-surface-variant)">
+							Ver plan y facturación
+						</span>
+					</span>
+					<span class="material-symbols-rounded text-[1.15rem] text-(--on-surface-variant)" aria-hidden="true">
+						chevron_right
+					</span>
+				</a>
+			) : null
+		}
 		</div>
 	</aside>
 </div>
@@ -263,9 +314,6 @@ const visibleTeamItems = teamItems.filter((item) =>
 						{workspaceName}
 					</p>
 				</div>
-				<p class="workspace-account-subtitle truncate" data-plan-label>
-					Plan
-				</p>
 			</div>
 			<span class="material-symbols-rounded sidebar-account-chevron" aria-hidden="true">
 				unfold_more
@@ -283,7 +331,7 @@ const visibleTeamItems = teamItems.filter((item) =>
 			<ul class="space-y-2">
 				{
 					visiblePrimaryItems.map((item) => (
-						<li>
+						<li data-requires-feature={item.requiresFeature || undefined}>
 							<a
 								href={item.href}
 								data-astro-prefetch={getPrefetchMode(item)}
@@ -298,7 +346,16 @@ const visibleTeamItems = teamItems.filter((item) =>
 								<span class="sidebar-nav-icon material-symbols-rounded shrink-0 text-[1.25rem] leading-none">
 									{item.icon}
 								</span>
-								<span class="sidebar-nav-label" data-sidebar-label>{item.label}</span>
+								<span class="sidebar-nav-label flex min-w-0 flex-1 items-center justify-between gap-2" data-sidebar-label>
+									<span>{item.label}</span>
+									{item.pendingBadge ? (
+										<span
+											class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-none text-white"
+											data-cobros-nav-badge
+											aria-label="Pendientes de revisión"
+										></span>
+									) : null}
+								</span>
 							</a>
 						</li>
 					))
@@ -358,7 +415,36 @@ const visibleTeamItems = teamItems.filter((item) =>
 			</ul>
 		</nav>
 
-		
+		{
+			showPlanFooter ? (
+				<a
+					href="/panel/plan"
+					data-sidebar-item
+					class:list={[
+						"sidebar-nav-link mt-auto flex items-center gap-3 rounded-2xl border border-(--shell-border) px-4 py-3 no-underline transition",
+						planFooterActive
+							? "is-active bg-(--primary-container) text-(--primary)"
+							: "text-(--on-surface) hover:bg-(--sidebar-hover)",
+					]}
+					aria-label="Ver plan y facturación"
+				>
+					<span class="sidebar-nav-icon material-symbols-rounded shrink-0 text-[1.25rem] leading-none" aria-hidden="true">
+						workspace_premium
+					</span>
+					<span class="min-w-0 flex-1">
+						<span class="sidebar-nav-label block truncate text-[0.9rem] font-bold" data-sidebar-label data-plan-label>
+							Plan
+						</span>
+						<span class="block text-[0.75rem] font-medium text-(--on-surface-variant)">
+							Ver plan y facturación
+						</span>
+					</span>
+					<span class="material-symbols-rounded shrink-0 text-[1.05rem] text-(--on-surface-variant)" aria-hidden="true">
+						chevron_right
+					</span>
+				</a>
+			) : null
+		}
 	</div>
 </aside>
 
@@ -447,4 +533,56 @@ const visibleTeamItems = teamItems.filter((item) =>
 		line-height: 1.25;
 	}
 </style>
+
+<script>
+	const refreshCobrosBadges = async () => {
+		const badges = document.querySelectorAll<HTMLElement>('[data-cobros-nav-badge]');
+		if (!badges.length) return;
+
+		const hasFeature = window.HaselSubscription?.hasFeature?.('DEPOSIT_COLLECTION');
+		if (hasFeature === false) {
+			badges.forEach((el) => {
+				el.classList.add('hidden');
+				el.classList.remove('inline-flex');
+				el.textContent = '';
+			});
+			return;
+		}
+
+		try {
+			const response = await fetch('/api/cobros/pending-count', {
+				headers: { Accept: 'application/json' },
+			});
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok || payload.status !== 'success') return;
+			const count = Number(payload?.data?.pending_count || 0);
+			badges.forEach((el) => {
+				if (count > 0) {
+					el.textContent = count > 99 ? '99+' : String(count);
+					el.classList.remove('hidden');
+					el.classList.add('inline-flex');
+				} else {
+					el.textContent = '';
+					el.classList.add('hidden');
+					el.classList.remove('inline-flex');
+				}
+			});
+		} catch {
+			/* ignore */
+		}
+	};
+
+	document.addEventListener('hasel:subscription', () => {
+		void refreshCobrosBadges();
+	});
+	document.addEventListener('hasel:cobros-changed', () => {
+		void refreshCobrosBadges();
+	});
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', () => void refreshCobrosBadges());
+	} else {
+		void refreshCobrosBadges();
+	}
+</script>
 
