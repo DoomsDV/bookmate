@@ -30,6 +30,36 @@ const SUBSCRIPTION_INVOICE_URL_TEMPLATE = resolveOrdsApiUrl(
 	'/workspace/subscription/invoice/:hash'
 );
 
+export const SUBSCRIPTION_CARD_ADD_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SUBSCRIPTION_CARD_ADD_URL,
+	'ORDS_SUBSCRIPTION_CARD_ADD_URL',
+	'/workspace/subscription/card/add'
+);
+
+export const SUBSCRIPTION_CARD_CONFIRM_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SUBSCRIPTION_CARD_CONFIRM_URL,
+	'ORDS_SUBSCRIPTION_CARD_CONFIRM_URL',
+	'/workspace/subscription/card/confirm'
+);
+
+export const SUBSCRIPTION_CARDS_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SUBSCRIPTION_CARDS_URL,
+	'ORDS_SUBSCRIPTION_CARDS_URL',
+	'/workspace/subscription/cards'
+);
+
+const SUBSCRIPTION_CARD_DELETE_URL_TEMPLATE = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SUBSCRIPTION_CARD_DELETE_URL,
+	'ORDS_SUBSCRIPTION_CARD_DELETE_URL',
+	'/workspace/subscription/card/:id'
+);
+
+export const SUBSCRIPTION_ACTIVATE_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SUBSCRIPTION_ACTIVATE_URL,
+	'ORDS_SUBSCRIPTION_ACTIVATE_URL',
+	'/workspace/subscription/activate'
+);
+
 export type SubscriptionEffectiveStatus =
 	| 'TRIAL'
 	| 'TRIAL_EXPIRED'
@@ -441,4 +471,138 @@ export const getInvoiceStatusWithOrds = async (
 		headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
 	});
 	return parseOrdsData(response, normalizeInvoiceStatus);
+};
+
+// ---------------------------------------------------------------------------
+// Pago recurrente: catastro de tarjeta (uPay), gestión y activación.
+// ---------------------------------------------------------------------------
+
+export interface PaymentCard {
+	id: number;
+	provider: string;
+	brand: string | null;
+	masked_number: string | null;
+	card_type: string | null;
+	issuer: string | null;
+	is_default: boolean;
+}
+
+export interface AddCardResult {
+	id_form: string;
+	iframe_url: string;
+	provider: string;
+	return_url: string;
+}
+
+export interface ActivateResult {
+	invoice_id: number;
+	hash: string;
+	status: string;
+	target_type: string;
+}
+
+const normalizeCards = (value: unknown): PaymentCard[] => {
+	const source = (value ?? {}) as Record<string, unknown>;
+	const cardsRaw = Array.isArray(source.cards) ? source.cards : [];
+	return cardsRaw.map((item) => {
+		const c = (item ?? {}) as Record<string, unknown>;
+		return {
+			id: toNumber(c.id, 0),
+			provider: String(c.provider || 'uPay').trim(),
+			brand: toNullableString(c.brand),
+			masked_number: toNullableString(c.masked_number),
+			card_type: toNullableString(c.card_type),
+			issuer: toNullableString(c.issuer),
+			is_default: toBool(c.is_default),
+		};
+	});
+};
+
+const normalizeAddCard = (value: unknown): AddCardResult => {
+	const d = (value ?? {}) as Record<string, unknown>;
+	const iframe = String(d.iframe_url || '').trim();
+	if (!iframe) throw new SubscriptionApiError('Pagopar no devolvió el formulario de tarjeta.', 502);
+	return {
+		id_form: String(d.id_form || '').trim(),
+		iframe_url: iframe,
+		provider: String(d.provider || 'uPay').trim(),
+		return_url: String(d.return_url || '').trim(),
+	};
+};
+
+const normalizeActivate = (value: unknown): ActivateResult => {
+	const d = (value ?? {}) as Record<string, unknown>;
+	return {
+		invoice_id: toNumber(d.invoice_id, 0),
+		hash: String(d.hash || '').trim(),
+		status: String(d.status || 'PENDING').trim(),
+		target_type: String(d.target_type || 'PLAN').trim(),
+	};
+};
+
+export const addCardWithOrds = async (
+	token: string,
+	provider?: string
+): Promise<AddCardResult> => {
+	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
+	const response = await fetch(SUBSCRIPTION_CARD_ADD_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(provider ? { provider } : {}),
+	});
+	return parseOrdsData(response, normalizeAddCard);
+};
+
+export const confirmCardWithOrds = async (token: string): Promise<PaymentCard[]> => {
+	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
+	const response = await fetch(SUBSCRIPTION_CARD_CONFIRM_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({}),
+	});
+	return parseOrdsData(response, normalizeCards);
+};
+
+export const listCardsWithOrds = async (token: string): Promise<PaymentCard[]> => {
+	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
+	const response = await fetch(SUBSCRIPTION_CARDS_URL, {
+		method: 'GET',
+		headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+	});
+	return parseOrdsData(response, normalizeCards);
+};
+
+export const deleteCardWithOrds = async (token: string, cardId: number): Promise<void> => {
+	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
+	const url = SUBSCRIPTION_CARD_DELETE_URL_TEMPLATE.replace(':id', encodeURIComponent(String(cardId)));
+	const response = await fetch(url, {
+		method: 'DELETE',
+		headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+	});
+	await parseOrdsData(response, () => undefined);
+};
+
+export const activateSubscriptionWithOrds = async (
+	token: string,
+	payload: { target_type?: 'PLAN' | 'STORAGE_ADDON'; plan_code?: string; addon_code?: string }
+): Promise<ActivateResult> => {
+	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
+	const response = await fetch(SUBSCRIPTION_ACTIVATE_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+	return parseOrdsData(response, normalizeActivate);
 };

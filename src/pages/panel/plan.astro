@@ -6,8 +6,10 @@ import AppAlert from '../../components/AppAlert.astro';
 import Layout from '../../layouts/Layout.astro';
 import {
 	getPlansWithOrds,
+	listCardsWithOrds,
 	SubscriptionApiError,
 	type PlansCatalog,
+	type PaymentCard,
 } from '../../lib/subscription';
 import '../../styles/global.css';
 
@@ -16,6 +18,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 const isAdmin = roleId === ROLES.ADMIN;
 
 let catalog: PlansCatalog | null = null;
+let cards: PaymentCard[] = [];
 let loadError = '';
 
 if (!token) {
@@ -29,7 +32,18 @@ if (!token) {
 				? error.message
 				: 'No fue posible cargar la información de tu plan.';
 	}
+
+	// Tarjetas catastradas (solo admin; para el cobro recurrente).
+	if (isAdmin) {
+		try {
+			cards = await listCardsWithOrds(token);
+		} catch {
+			cards = [];
+		}
+	}
 }
+
+const hasCard = cards.length > 0;
 
 const currency = new Intl.NumberFormat('es-PY');
 const formatGs = (amount: number) => `${currency.format(Math.max(0, Math.round(amount)))} Gs`;
@@ -167,10 +181,14 @@ const storagePct =
 		: 0;
 
 const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
+
+// Método de pago (cobro recurrente con tarjeta): solo admin y planes facturables.
+const showPaymentMethod = isAdmin && !!current && !current.billing_exempt;
+const maskCard = (masked: string | null) => masked || '•••• •••• •••• ••••';
 ---
 
 <Layout pageTitle="Plan y facturación · Hasel">
-	<div class="plan-canvas min-h-screen w-full max-w-full overflow-x-hidden bg-(--page-background) transition-colors duration-300">
+	<div class="plan-canvas min-h-screen w-full max-w-full overflow-x-hidden bg-(--page-background) transition-colors duration-300" data-has-card={hasCard ? '1' : '0'}>
 		<div class="app-shell grid min-h-screen overflow-hidden bg-transparent" data-app-shell data-sidebar-state="expanded">
 			<SideNav currentPath={Astro.url.pathname} />
 
@@ -329,6 +347,64 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 									)}
 								</section>
 
+								{/* ---- Método de pago (cobro recurrente con tarjeta) ---- */}
+								{showPaymentMethod && (
+									<section class="grid gap-4" data-payment-section>
+										<div class="grid gap-1">
+											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Método de pago</h2>
+											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+												Registrá una tarjeta para el cobro automático mensual de tu suscripción. El débito se realiza de forma segura vía Pagopar.
+											</p>
+										</div>
+
+										<div class="grid gap-3" data-cards-list>
+											{cards.length === 0 ? (
+												<div class="plan-card-empty" data-cards-empty>
+													<span class="material-symbols-rounded text-[1.5rem] text-(--on-surface-variant)">credit_card_off</span>
+													<p class="m-0 text-[0.9rem] font-semibold text-(--on-surface-variant)">
+														Todavía no registraste ninguna tarjeta.
+													</p>
+												</div>
+											) : (
+												cards.map((card) => (
+													<article class={`plan-card-row ${card.is_default ? 'plan-card-row-default' : ''}`}>
+														<div class="flex items-center gap-3">
+															<span class="material-symbols-rounded text-[1.6rem] text-(--primary)">credit_card</span>
+															<div class="grid gap-0.5">
+																<span class="text-[0.95rem] font-bold text-(--on-surface)">
+																	{card.brand || 'Tarjeta'} · {maskCard(card.masked_number)}
+																</span>
+																<span class="text-[0.78rem] font-semibold text-(--on-surface-variant)">
+																	{[card.card_type, card.issuer].filter(Boolean).join(' · ') || card.provider}
+																</span>
+															</div>
+														</div>
+														<div class="flex items-center gap-2">
+															{card.is_default && <span class="plan-badge plan-badge-ok">Predeterminada</span>}
+															<button
+																type="button"
+																class="plan-card-del"
+																data-card-delete
+																data-card-id={String(card.id)}
+																aria-label="Eliminar tarjeta"
+															>
+																<span class="material-symbols-rounded">delete</span>
+															</button>
+														</div>
+													</article>
+												))
+											)}
+										</div>
+
+										<div>
+											<button type="button" class="plan-btn plan-btn-soft" data-add-card>
+												<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
+												{cards.length === 0 ? 'Agregar tarjeta' : 'Agregar otra tarjeta'}
+											</button>
+										</div>
+									</section>
+								)}
+
 								{/* ---- Add-ons de storage ---- */}
 								{catalog.storage_addons.length > 0 && (
 									<section class="grid gap-4" data-storage-section>
@@ -373,26 +449,57 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 		</div>
 	</div>
 
-	{/* Modal de forma de pago */}
+	{/* Modal de confirmación de cobro recurrente */}
 	<div class="plan-modal-backdrop hidden" data-pay-modal>
 		<div class="plan-modal" role="dialog" aria-modal="true" aria-labelledby="plan-pay-title">
 			<div class="grid gap-1">
-				<h3 id="plan-pay-title" class="m-0 text-lg font-bold text-(--on-surface)">Elegí cómo pagar</h3>
+				<h3 id="plan-pay-title" class="m-0 text-lg font-bold text-(--on-surface)">Confirmar suscripción</h3>
 				<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)" data-pay-summary>—</p>
 			</div>
-			<div class="grid gap-3">
-				<button type="button" class="plan-pay-option" data-forma-pago="9">
+
+			{/* Con tarjeta: confirmar cobro */}
+			<div class="grid gap-3" data-pay-has-card>
+				<div class="plan-pay-card" data-pay-card-info>
 					<span class="material-symbols-rounded">credit_card</span>
-					<span class="grid text-left"><strong>Tarjeta de crédito/débito</strong><small>Pago con Bancard vía Pagopar</small></span>
-				</button>
-				<button type="button" class="plan-pay-option" data-forma-pago="24">
-					<span class="material-symbols-rounded">qr_code_2</span>
-					<span class="grid text-left"><strong>Pago con QR</strong><small>Billeteras y bancos vía Pagopar</small></span>
+					<span class="grid text-left"><strong data-pay-card-label>Tarjeta registrada</strong><small>Se debitará automáticamente cada mes.</small></span>
+				</div>
+				<button type="button" class="plan-btn plan-btn-primary" data-confirm-pay>Pagar y activar</button>
+			</div>
+
+			{/* Sin tarjeta: pedir catastro */}
+			<div class="grid gap-3 hidden" data-pay-need-card>
+				<p class="m-0 rounded-xl bg-amber-50 px-4 py-3 text-[0.85rem] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
+					Para continuar necesitás registrar una tarjeta. El cobro es automático cada mes.
+				</p>
+				<button type="button" class="plan-btn plan-btn-primary" data-add-card-cta>
+					<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span> Registrar tarjeta
 				</button>
 			</div>
+
 			<button type="button" class="plan-btn plan-btn-ghost" data-pay-cancel>Cancelar</button>
 			<div class="plan-modal-loading hidden" data-pay-loading>
-				<span class="plan-spinner"></span> Redirigiendo a la pasarela de pago…
+				<span class="plan-spinner"></span> Procesando el cobro…
+			</div>
+		</div>
+	</div>
+
+	{/* Modal del iframe uPay (catastro de tarjeta) */}
+	<div class="plan-modal-backdrop hidden" data-card-modal>
+		<div class="plan-modal plan-modal-wide" role="dialog" aria-modal="true" aria-labelledby="plan-card-title">
+			<div class="flex items-start justify-between gap-3">
+				<div class="grid gap-1">
+					<h3 id="plan-card-title" class="m-0 text-lg font-bold text-(--on-surface)">Registrar tarjeta</h3>
+					<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">Ingresá los datos de tu tarjeta de forma segura.</p>
+				</div>
+				<button type="button" class="plan-card-close" data-card-close aria-label="Cerrar">
+					<span class="material-symbols-rounded">close</span>
+				</button>
+			</div>
+			<div class="plan-iframe-wrap">
+				<div class="plan-modal-loading" data-card-loading>
+					<span class="plan-spinner"></span> Cargando formulario seguro…
+				</div>
+				<iframe class="plan-card-iframe hidden" data-card-iframe title="Registro de tarjeta" allow="payment"></iframe>
 			</div>
 		</div>
 	</div>
@@ -592,6 +699,43 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 	.plan-modal-loading:not(.hidden) { display: flex; }
 	.plan-spinner { width: 1rem; height: 1rem; border-radius: 999px; border: 2px solid color-mix(in srgb, var(--primary) 30%, transparent); border-top-color: var(--primary); animation: plan-spin .7s linear infinite; }
 	@keyframes plan-spin { to { transform: rotate(360deg); } }
+
+	/* Método de pago */
+	.plan-card-empty {
+		display: flex; align-items: center; gap: 0.75rem;
+		border: 1px dashed var(--shell-border); border-radius: 1rem;
+		padding: 1.1rem 1.25rem;
+	}
+	.plan-card-row {
+		display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+		border: 1px solid var(--shell-border); border-radius: 1rem;
+		background: var(--surface-bright, #fff); padding: 1rem 1.25rem;
+	}
+	.plan-card-row-default { border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
+	.plan-card-del {
+		display: inline-grid; place-items: center;
+		width: 2.2rem; height: 2.2rem; border: 0; border-radius: 999px;
+		background: transparent; color: var(--on-surface-variant); cursor: pointer;
+		transition: background .15s ease, color .15s ease;
+	}
+	.plan-card-del:hover { background: rgba(244,63,94,.12); color: #e11d48; }
+	.plan-pay-card {
+		display: flex; align-items: center; gap: 0.8rem;
+		border: 1px solid var(--shell-border); border-radius: 1rem;
+		padding: 0.9rem 1rem;
+	}
+	.plan-pay-card .material-symbols-rounded { color: var(--primary); font-size: 1.5rem; }
+	.plan-pay-card small { color: var(--on-surface-variant); font-size: 0.78rem; }
+
+	.plan-modal-wide { max-width: 32rem; }
+	.plan-card-close {
+		display: inline-grid; place-items: center;
+		width: 2rem; height: 2rem; border: 0; border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 12%, transparent);
+		color: var(--on-surface-variant); cursor: pointer;
+	}
+	.plan-iframe-wrap { position: relative; min-height: 320px; display: grid; }
+	.plan-card-iframe { width: 100%; min-height: 320px; border: 0; border-radius: 0.75rem; }
 </style>
 
 <script>
