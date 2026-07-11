@@ -56,7 +56,6 @@ export const initCobrosPage = () => {
 	const summaryEl = root.querySelector<HTMLElement>('[data-cobros-summary]');
 	const tableBody = root.querySelector<HTMLElement>('[data-cobros-table-body]');
 	const cardsEl = root.querySelector<HTMLElement>('[data-cobros-cards]');
-	const tableWrap = root.querySelector<HTMLElement>('[data-cobros-table-wrap]');
 	const datePresetEl = root.querySelector<HTMLSelectElement>('[data-cobros-date-preset]');
 	const customDatesEl = root.querySelector<HTMLElement>('[data-cobros-custom-dates]');
 	const dateFromEl = root.querySelector<HTMLInputElement>('[data-cobros-date-from]');
@@ -215,7 +214,6 @@ export const initCobrosPage = () => {
 
 		const empty = items.length === 0;
 		emptyEl?.classList.toggle('hidden', !empty);
-		tableWrap?.classList.toggle('hidden', empty);
 		cardsEl.classList.toggle('hidden', empty);
 
 		for (const item of items) {

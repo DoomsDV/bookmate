@@ -75,33 +75,36 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 										<div class="hidden rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-medium text-(--on-surface-variant)" data-cobros-loading>
 											Cargando cobros...
 										</div>
-										<div class="hidden cobros-empty" data-cobros-empty>
-											<span class="material-symbols-rounded text-[2rem] text-(--on-surface-variant)">payments</span>
-											<h2 class="mt-2 text-[1.1rem] font-bold text-(--on-surface)">No hay cobros</h2>
-											<p class="mt-1 max-w-sm text-center text-[0.95rem] text-(--on-surface-variant)">
-												No hay movimientos para el filtro seleccionado.
-											</p>
-										</div>
 
-										<!-- Desktop table -->
-										<div class="hidden overflow-x-auto rounded-2xl border border-(--shell-border) bg-(--surface-bright) md:block" data-cobros-table-wrap>
-											<table class="w-full min-w-[44rem] border-collapse text-left text-[0.92rem]">
-												<thead>
-													<tr class="border-b border-(--shell-border) text-[0.78rem] uppercase tracking-wide text-(--on-surface-variant)">
-														<th class="px-4 py-3 font-bold">Fecha / Hora</th>
-														<th class="px-4 py-3 font-bold">Cliente</th>
-														<th class="px-4 py-3 font-bold">Servicio</th>
-														<th class="px-4 py-3 font-bold">Monto</th>
-														<th class="px-4 py-3 font-bold">Estado</th>
-														<th class="px-4 py-3 font-bold"></th>
-													</tr>
-												</thead>
-												<tbody data-cobros-table-body></tbody>
-											</table>
-										</div>
+										<div class="overflow-hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright)" data-cobros-results>
+											<!-- Desktop headers -->
+											<div class="hidden overflow-x-auto md:block" data-cobros-table-wrap>
+												<table class="w-full min-w-[44rem] border-collapse text-left text-[0.92rem]">
+													<thead>
+														<tr class="border-b border-(--shell-border) text-[0.78rem] uppercase tracking-wide text-(--on-surface-variant)">
+															<th class="px-4 py-3 font-bold">Fecha / Hora</th>
+															<th class="px-4 py-3 font-bold">Cliente</th>
+															<th class="px-4 py-3 font-bold">Servicio</th>
+															<th class="px-4 py-3 font-bold">Monto</th>
+															<th class="px-4 py-3 font-bold">Estado</th>
+															<th class="px-4 py-3 font-bold"></th>
+														</tr>
+													</thead>
+													<tbody data-cobros-table-body></tbody>
+												</table>
+											</div>
 
-										<!-- Mobile cards -->
-										<div class="grid gap-3 md:hidden" data-cobros-cards></div>
+											<div class="hidden cobros-empty" data-cobros-empty>
+												<span class="material-symbols-rounded text-[2rem] text-(--on-surface-variant)">payments</span>
+												<h2 class="mt-2 text-[1.1rem] font-bold text-(--on-surface)">No hay cobros</h2>
+												<p class="mt-1 max-w-sm text-center text-[0.95rem] text-(--on-surface-variant)">
+													No hay movimientos para el filtro seleccionado.
+												</p>
+											</div>
+
+											<!-- Mobile cards -->
+											<div class="grid gap-3 p-3 md:hidden" data-cobros-cards></div>
+										</div>
 									</div>
 								)
 							}
@@ -241,9 +244,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		display: grid;
 		place-items: center;
 		padding: 2.5rem 1rem;
-		border-radius: 1.25rem;
-		border: 1px dashed var(--shell-border);
-		background: var(--control-surface);
+		background: transparent;
+	}
+	.cobros-empty.hidden {
+		display: none;
 	}
 	.cobros-chip {
 		display: inline-flex;
