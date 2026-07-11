@@ -65,10 +65,17 @@ export const isDepositsEnabled = (settings?: PublicDepositSettings | null) =>
 
 export const unwrapSipapHold = (payload: SipapHoldResponse | null | undefined): SipapHoldResponse => {
 	if (!payload || typeof payload !== 'object') return {};
-	if (payload.data && typeof payload.data === 'object') {
-		return { ...payload, ...payload.data };
+
+	let current: SipapHoldResponse = payload;
+	// API Astro/ORDS puede anidar el hold en data (a veces dos niveles).
+	for (let depth = 0; depth < 4; depth += 1) {
+		const nested = current.data;
+		if (!nested || typeof nested !== 'object') break;
+		current = { ...current, ...nested };
+		if (String(current.payment_reference || '').trim()) break;
 	}
-	return payload;
+
+	return current;
 };
 
 export const fillSipapDepositPanel = (

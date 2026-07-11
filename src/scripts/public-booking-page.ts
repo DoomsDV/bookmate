@@ -389,6 +389,7 @@ export const initializePublicBookingPage = () => {
 	let isSubmitting = false;
 	let isValidatingCustomer = false;
 	let pendingAppointmentId = 0;
+	let pendingSipapHold: ReturnType<typeof unwrapSipapHold> | null = null;
 	let customerValidationSeq = 0;
 	let validatedCustomerPhoneE164 = '';
 	let mapInstance: any = null;
@@ -912,6 +913,7 @@ export const initializePublicBookingPage = () => {
 
 	const resetPendingAppointment = () => {
 		pendingAppointmentId = 0;
+		pendingSipapHold = null;
 	};
 
 	const syncPendingAppointmentContext = () => {
@@ -1494,11 +1496,11 @@ export const initializePublicBookingPage = () => {
 		const holdPayload = await buildAppointmentHoldPayload();
 		if (!holdPayload) return null;
 
-		if (pendingAppointmentId) {
-			return { appointment_id: pendingAppointmentId };
+		if (pendingAppointmentId && pendingSipapHold?.payment_reference) {
+			return pendingSipapHold;
 		}
 
-		const created = await fetchJson(
+		const { data: apiBody } = await fetchJson(
 			'/api/public/appointments',
 			{
 				method: 'POST',
@@ -1510,12 +1512,16 @@ export const initializePublicBookingPage = () => {
 			},
 			'No fue posible reservar el turno para el pago.'
 		);
-		const hold = unwrapSipapHold(created as any);
+		const hold = unwrapSipapHold(apiBody as any);
 		const appointmentId = Number(hold.appointment_id || 0);
 		if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
 			throw new Error('No fue posible obtener la reserva pendiente.');
 		}
+		if (!String(hold.payment_reference || '').trim()) {
+			throw new Error('No fue posible obtener el código de transferencia.');
+		}
 		pendingAppointmentId = appointmentId;
+		pendingSipapHold = hold;
 		return hold;
 	};
 
