@@ -40,18 +40,91 @@ const formatGb = (bytes: number) => {
 };
 
 const FEATURE_LABELS: Record<string, string> = {
-	WEB_BOOKING: 'Reserva web / agenda online',
-	NOTIFICATIONS: 'Notificaciones y recordatorios',
+	WEB_BOOKING: 'Reservas web 24/7',
+	NOTIFICATIONS: 'Notificaciones al instante',
 	CUSTOMERS: 'Gestión de clientes',
-	SERVICES: 'Servicios y sucursales',
-	TEAM_MULTI_BRANCH: 'Equipo y sucursales ilimitadas',
-	AI_MORNING_DIGEST: 'Resumen IA de la mañana',
-	VOICE_RECEPTION: 'Recepción por voz (IA)',
-	DEPOSIT_COLLECTION: 'Cobro de señas (transferencia SIPAP)',
-	APPOINTMENT_HISTORY: 'Historial por cita (notas + archivos)',
+	SERVICES: 'Servicios y catálogo',
+	TEAM_MULTI_BRANCH: 'Equipo y sucursales sin límites',
+	AI_MORNING_DIGEST: 'Resumen Inteligente (IA)',
+	VOICE_RECEPTION: 'Recepción Inteligente por voz',
+	DEPOSIT_COLLECTION: 'Cobro seguro por señas',
+	APPOINTMENT_HISTORY: 'Historial completo del cliente',
 	PROFITABILITY_ANALYTICS: 'Análisis de rentabilidad',
 };
 const featureLabel = (code: string) => FEATURE_LABELS[code] ?? code;
+
+type PlanBenefit = { title: string; description: string };
+type PlanMarketing = {
+	tagline: string;
+	includesBase?: boolean;
+	benefits: PlanBenefit[];
+};
+
+const PLAN_MARKETING: Record<string, PlanMarketing> = {
+	BASE: {
+		tagline: 'Para digitalizar y ordenar tu negocio sin límites.',
+		benefits: [
+			{
+				title: 'Equipo y sucursales sin límites',
+				description:
+					'Crecé sin pagar de más. Agregá todos los profesionales y locales que necesites desde el primer día.',
+			},
+			{
+				title: 'Reservas web 24/7',
+				description:
+					'Tu propia página para que los clientes agenden sus turnos solos, en cualquier momento.',
+			},
+			{
+				title: 'Notificaciones al instante',
+				description:
+					'Avisos automáticos a tu equipo sobre nuevas reservas, cambios o cancelaciones.',
+			},
+			{
+				title: 'Gestión de clientes y servicios',
+				description:
+					'Controlá tu base de datos y organizá todo tu catálogo en un solo lugar.',
+			},
+			{
+				title: 'Resumen Inteligente (IA)',
+				description:
+					'Hasel analiza tu agenda y te da un panorama claro cada mañana para arrancar el día con todo bajo control.',
+			},
+		],
+	},
+	PREMIUM: {
+		tagline: 'Nuestra solución más completa para ahorrar tiempo, asegurar ingresos y fidelizar clientes.',
+		includesBase: true,
+		benefits: [
+			{
+				title: 'Recepción Inteligente por voz',
+				description:
+					'Olvidate de tipear. Creá turnos al instante hablándole al sistema gracias a nuestra IA integrada.',
+			},
+			{
+				title: 'Cobro seguro por señas',
+				description:
+					'Protegé tu tiempo y tu dinero. Cobrá un anticipo al reservar y reducí el ausentismo de los clientes a cero.',
+			},
+			{
+				title: 'Historial completo del cliente',
+				description:
+					'Llevá un registro profesional de cada visita. Agregá notas internas, subí fotos del "antes y después" y guardá documentos importantes (PDFs o consentimientos).',
+			},
+			{
+				title: 'Almacenamiento seguro en la nube (5 GB)',
+				description:
+					'Espacio incluido para que no pierdas nunca las fotos y archivos de los historiales.',
+			},
+			{
+				title: 'Análisis de rentabilidad',
+				description:
+					'Conocé a fondo los números de tu negocio con reportes detallados de ingresos y el nivel de asistencia de cada cliente.',
+			},
+		],
+	},
+};
+
+const planMarketing = (code: string): PlanMarketing | null => PLAN_MARKETING[code] ?? null;
 
 const current = catalog?.current ?? null;
 const effState = current?.effective_status ?? 'NONE';
@@ -141,7 +214,7 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 											</div>
 											<p class="m-0 max-w-2xl text-[0.9rem] font-medium text-(--on-surface-variant)">{statusMeta.hint}</p>
 										</div>
-										<div class="grid gap-2 text-right">
+										<div class="grid w-full gap-2 text-left sm:w-auto sm:text-right">
 											<span class="text-xs font-semibold uppercase tracking-wide text-(--on-surface-variant)">Almacenamiento</span>
 											<span class="text-[0.95rem] font-bold text-(--on-surface)">
 												{formatGb(current.storage_used_bytes)} / {current.storage_limit_bytes > 0 ? formatGb(current.storage_limit_bytes) : 'No incluido'}
@@ -171,7 +244,9 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 								<section class="grid gap-4">
 									<h2 class="m-0 text-lg font-bold text-(--on-surface)">Elegí tu plan</h2>
 									<div class="grid gap-4 md:grid-cols-2">
-										{catalog.plans.map((plan) => (
+										{catalog.plans.map((plan) => {
+											const marketing = planMarketing(plan.code);
+											return (
 											<article class={`plan-card ${plan.is_current ? 'plan-card-current' : ''} ${plan.code === 'PREMIUM' ? 'plan-card-featured' : ''}`}>
 												{plan.code === 'PREMIUM' && <span class="plan-ribbon">Recomendado</span>}
 												<div class="grid gap-1">
@@ -180,15 +255,36 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 														<span class="text-3xl font-extrabold text-(--on-surface)">{formatGs(plan.price_amount)}</span>
 														<span class="pb-1 text-[0.85rem] font-semibold text-(--on-surface-variant)">/ {plan.billing_period === 'YEARLY' ? 'año' : 'mes'}</span>
 													</div>
-													{plan.storage_limit_bytes > 0 && (
+													{marketing ? (
+														<p class="plan-tagline m-0">{marketing.tagline}</p>
+													) : plan.storage_limit_bytes > 0 ? (
 														<span class="text-[0.82rem] font-semibold text-(--primary)">Incluye {formatGb(plan.storage_limit_bytes)} de almacenamiento</span>
-													)}
+													) : null}
 												</div>
-												<ul class="plan-feature-list">
-													{plan.features.map((f) => (
-														<li><span class="material-symbols-rounded">check_circle</span>{featureLabel(f)}</li>
-													))}
-												</ul>
+												{marketing ? (
+													<div class="grid gap-3">
+														{marketing.includesBase ? (
+															<p class="plan-includes-base m-0">Incluye todo lo del Plan Base, más:</p>
+														) : null}
+														<ul class="plan-feature-list">
+															{marketing.benefits.map((benefit) => (
+																<li>
+																	<span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+																	<span class="plan-feature-copy">
+																		<strong>{benefit.title}</strong>
+																		<span>{benefit.description}</span>
+																	</span>
+																</li>
+															))}
+														</ul>
+													</div>
+												) : (
+													<ul class="plan-feature-list">
+														{plan.features.map((f) => (
+															<li><span class="material-symbols-rounded" aria-hidden="true">check_circle</span>{featureLabel(f)}</li>
+														))}
+													</ul>
+												)}
 												<div class="mt-auto">
 													{plan.is_current ? (
 														<button type="button" class="plan-btn plan-btn-current" disabled>Plan actual</button>
@@ -209,7 +305,8 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 													)}
 												</div>
 											</article>
-										))}
+											);
+										})}
 									</div>
 									{!current.billing_configured && isAdmin && (
 										<p class="m-0 rounded-xl bg-amber-50 px-4 py-3 text-[0.85rem] font-semibold text-amber-700 dark:bg-amber-500/10 dark:text-amber-300">
@@ -310,7 +407,21 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 	.plan-badge-warning { background: rgba(245,158,11,.16); color: #b45309; }
 	.plan-badge-danger { background: rgba(244,63,94,.14); color: #e11d48; }
 
-	.plan-storage-track { width: 200px; max-width: 55vw; height: 8px; border-radius: 999px; background: color-mix(in srgb, var(--on-surface-variant) 22%, transparent); overflow: hidden; }
+	.plan-storage-track {
+		width: 100%;
+		max-width: 16rem;
+		height: 8px;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 22%, transparent);
+		overflow: hidden;
+	}
+	@media (min-width: 640px) {
+		.plan-storage-track {
+			width: 200px;
+			max-width: 55vw;
+			margin-left: auto;
+		}
+	}
 	.plan-storage-fill { height: 100%; border-radius: 999px; background: var(--primary); transition: width .3s ease; }
 
 	.plan-day15 {
@@ -336,9 +447,25 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 		font-size: 0.68rem; font-weight: 800; letter-spacing: .04em;
 		padding: 0.28rem 0.7rem; border-radius: 999px;
 	}
-	.plan-feature-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.55rem; }
-	.plan-feature-list li { display: flex; align-items: center; gap: 0.55rem; font-size: 0.88rem; font-weight: 600; color: var(--on-surface); }
-	.plan-feature-list .material-symbols-rounded { font-size: 1.1rem; color: #059669; }
+	.plan-tagline {
+		margin-top: 0.35rem;
+		font-size: 0.9rem;
+		font-weight: 550;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+	.plan-includes-base {
+		font-size: 0.82rem;
+		font-weight: 750;
+		letter-spacing: 0.01em;
+		color: var(--primary);
+	}
+	.plan-feature-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.85rem; }
+	.plan-feature-list li { display: flex; align-items: flex-start; gap: 0.55rem; font-size: 0.88rem; font-weight: 600; color: var(--on-surface); }
+	.plan-feature-list .material-symbols-rounded { font-size: 1.15rem; color: #059669; margin-top: 0.1rem; flex-shrink: 0; }
+	.plan-feature-copy { display: grid; gap: 0.18rem; min-width: 0; }
+	.plan-feature-copy strong { font-size: 0.9rem; font-weight: 750; line-height: 1.3; color: var(--on-surface); }
+	.plan-feature-copy span { font-size: 0.82rem; font-weight: 500; line-height: 1.4; color: var(--on-surface-variant); }
 
 	.plan-btn {
 		width: 100%; border: 0; cursor: pointer;

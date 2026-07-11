@@ -10,7 +10,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim();
 ---
 
-<header class="shell-header-zone relative z-40 px-4 sm:px-6">
+<header class="shell-header-zone relative z-40 pl-4 pr-5 sm:px-6">
 	<div class="flex w-full items-center justify-between gap-3 sm:gap-4">
 		<div class="flex min-w-0 items-center gap-3">
 			<button
@@ -31,7 +31,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			</div>
 		</div>
 
-		<div class="flex shrink-0 items-center gap-2 sm:gap-3">
+		<div class="flex shrink-0 items-center gap-3 sm:gap-3">
 			<button
 				id="pwa-install-btn"
 				type="button"
