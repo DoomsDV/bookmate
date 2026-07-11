@@ -735,7 +735,6 @@ export const initializePublicUserBookingPage = () => {
 					if (!selectedService || !selectedOrgGroup) return;
 					selectedDate = dateKey;
 					selectedTime = '';
-					selectedContext = null;
 					pendingAppointmentId = 0;
 					refreshSummary();
 					renderCalendar();
@@ -761,22 +760,26 @@ export const initializePublicUserBookingPage = () => {
 		if (isLoadingSlots) return;
 
 		const selectedSlotKey = getSelectedSlotKey();
+		const visibleGroups = availableSlotGroups.filter((group) => group.slots.length > 0);
+		const showLocationHeaders = visibleGroups.length > 1;
 		let branchToneIndex = 0;
 
-		for (const group of availableSlotGroups) {
-			if (group.slots.length === 0) continue;
-
+		for (const group of visibleGroups) {
 			const section = document.createElement('section');
-			section.className = `public-slot-branch public-slot-branch--tone-${branchToneIndex % 4}`;
+			section.className = showLocationHeaders
+				? `public-slot-branch public-slot-branch--tone-${branchToneIndex % 4}`
+				: 'public-slot-branch';
 			branchToneIndex += 1;
 
-			appendLocationSlotHeader(section, group.location, {
-				onAddressClick: (location) => {
-					void mapController?.openLocationMap(location as MapLocation, {
-						fetchCoordinates: true,
-					});
-				},
-			});
+			if (showLocationHeaders) {
+				appendLocationSlotHeader(section, group.location, {
+					onAddressClick: (location) => {
+						void mapController?.openLocationMap(location as MapLocation, {
+							fetchCoordinates: true,
+						});
+					},
+				});
+			}
 
 			const grid = document.createElement('div');
 			grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
