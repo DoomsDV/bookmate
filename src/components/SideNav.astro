@@ -268,7 +268,7 @@ const planFooterActive = activePath === "/panel/plan";
 </div>
 
 <aside
-	class="hidden h-full min-h-0 flex-col overflow-hidden border-r border-(--shell-border) bg-(--sidebar-surface) transition-[width] duration-200 lg:flex lg:w-[17.5rem]"
+	class="hidden h-full min-h-0 w-full flex-col overflow-hidden border-r border-(--shell-border) bg-(--sidebar-surface) lg:flex"
 	data-desktop-sidebar
 >
 	<div
@@ -324,7 +324,7 @@ const planFooterActive = activePath === "/panel/plan";
 	<div class="sidebar-divider shrink-0" role="presentation" aria-hidden="true"></div>
 
 	<div
-		class="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain px-6 pb-7 transition-[padding] duration-200"
+		class="flex min-h-0 flex-1 flex-col overscroll-contain px-6 pb-7"
 		data-sidebar-desktop-inner
 	>
 		<nav aria-label="Side navigation desktop">
@@ -420,6 +420,7 @@ const planFooterActive = activePath === "/panel/plan";
 				<a
 					href="/panel/plan"
 					data-sidebar-item
+					data-sidebar-footer
 					class:list={[
 						"sidebar-nav-link mt-auto flex items-center gap-3 rounded-2xl border border-(--shell-border) px-4 py-3 no-underline transition",
 						planFooterActive
@@ -431,15 +432,15 @@ const planFooterActive = activePath === "/panel/plan";
 					<span class="sidebar-nav-icon material-symbols-rounded shrink-0 text-[1.25rem] leading-none" aria-hidden="true">
 						workspace_premium
 					</span>
-					<span class="min-w-0 flex-1">
-						<span class="sidebar-nav-label block truncate text-[0.9rem] font-bold" data-sidebar-label data-plan-label>
+					<span class="min-w-0 flex-1" data-sidebar-label>
+						<span class="sidebar-nav-label block truncate text-[0.9rem] font-bold" data-plan-label>
 							Plan
 						</span>
 						<span class="block text-[0.75rem] font-medium text-(--on-surface-variant)">
 							Ver plan y facturación
 						</span>
 					</span>
-					<span class="material-symbols-rounded shrink-0 text-[1.05rem] text-(--on-surface-variant)" aria-hidden="true">
+					<span class="material-symbols-rounded shrink-0 text-[1.05rem] text-(--on-surface-variant)" data-sidebar-trailing aria-hidden="true">
 						chevron_right
 					</span>
 				</a>

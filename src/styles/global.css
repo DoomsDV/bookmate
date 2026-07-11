@@ -397,7 +397,7 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 @media (min-width: 1024px) {
 	.app-shell {
 		grid-template-columns: 17.5rem minmax(0, 1fr);
-		transition: grid-template-columns 170ms ease;
+		transition: grid-template-columns 240ms cubic-bezier(0.22, 1, 0.36, 1);
 		overflow: clip;
 	}
 
@@ -409,6 +409,7 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		max-height: 100dvh;
 		min-height: 0;
 		min-width: 0;
+		width: 100%;
 		overflow: hidden;
 		overflow-x: clip;
 		background-color: var(--sidebar-surface);
@@ -418,16 +419,42 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 	}
 
 	[data-sidebar-desktop-inner] {
+		overflow-x: hidden;
 		overflow-y: auto;
 		overscroll-behavior: contain;
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+		transition: padding 240ms cubic-bezier(0.22, 1, 0.36, 1);
+	}
+
+	[data-sidebar-desktop-inner]::-webkit-scrollbar {
+		width: 0;
+		height: 0;
+		display: none;
+	}
+
+	[data-app-shell][data-sidebar-animating] [data-sidebar-desktop-inner],
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-desktop-inner] {
+		overflow-y: hidden;
+	}
+
+	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-desktop-inner]:hover {
+		scrollbar-width: thin;
+	}
+
+	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-desktop-inner]:hover::-webkit-scrollbar {
+		width: 6px;
+		height: 6px;
+		display: block;
+	}
+
+	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-desktop-inner]:hover::-webkit-scrollbar-thumb {
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 35%, transparent);
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] {
 		grid-template-columns: 5.5rem minmax(0, 1fr);
-	}
-
-	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] {
-		width: 5.5rem;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-desktop-inner] {
@@ -448,24 +475,101 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		margin: 0;
 	}
 
+	[data-desktop-sidebar] [data-workspace-avatar] {
+		transition: width 240ms cubic-bezier(0.22, 1, 0.36, 1), height 240ms cubic-bezier(0.22, 1, 0.36, 1), font-size 240ms ease;
+	}
+
 	[data-app-shell][data-sidebar-state="collapsed"] [data-workspace-avatar] {
 		width: 3rem;
 		height: 3rem;
 		font-size: 1.25rem;
 	}
 
+	/* Textos: fade suave (sin display:none) para evitar el “golpe”. */
+	[data-desktop-sidebar] [data-sidebar-brand-text],
+	[data-desktop-sidebar] [data-sidebar-label],
+	[data-desktop-sidebar] [data-sidebar-trailing],
+	[data-desktop-sidebar] [data-sidebar-footer] > :not(.sidebar-nav-icon),
+	[data-desktop-sidebar] .sidebar-account-chevron,
+	[data-desktop-sidebar] .sidebar-nav-trailing,
+	[data-desktop-sidebar] .sidebar-nav-summary-main .sidebar-nav-label,
+	[data-desktop-sidebar] [data-team-submenu] {
+		opacity: 1;
+		max-width: 16rem;
+		overflow: hidden;
+		white-space: nowrap;
+		visibility: visible;
+		pointer-events: auto;
+		transform: translateX(0);
+		transition:
+			opacity 160ms ease,
+			transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
+			max-width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+			visibility 0s linear 0s;
+	}
+
+	[data-desktop-sidebar] [data-team-submenu] {
+		max-height: 20rem;
+		white-space: normal;
+		transition:
+			opacity 160ms ease,
+			max-height 240ms cubic-bezier(0.22, 1, 0.36, 1),
+			max-width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+			visibility 0s linear 0s;
+	}
+
+	/* Durante animación o colapsado: textos ocultos sin romper el layout. */
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand-text],
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-label],
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-trailing],
-	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-footer],
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-footer] > :not(.sidebar-nav-icon),
 	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-account-chevron,
 	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-trailing,
-	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-summary-main .sidebar-nav-label {
-		display: none;
+	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-summary-main .sidebar-nav-label,
+	[data-app-shell][data-sidebar-state="collapsed"] [data-team-submenu],
+	[data-app-shell][data-sidebar-animating] [data-sidebar-brand-text],
+	[data-app-shell][data-sidebar-animating] [data-sidebar-label],
+	[data-app-shell][data-sidebar-animating] [data-sidebar-trailing],
+	[data-app-shell][data-sidebar-animating] [data-sidebar-footer] > :not(.sidebar-nav-icon),
+	[data-app-shell][data-sidebar-animating] .sidebar-account-chevron,
+	[data-app-shell][data-sidebar-animating] .sidebar-nav-trailing,
+	[data-app-shell][data-sidebar-animating] .sidebar-nav-summary-main .sidebar-nav-label,
+	[data-app-shell][data-sidebar-animating] [data-team-submenu] {
+		opacity: 0;
+		max-width: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transform: translateX(-4px);
+		transition:
+			opacity 120ms ease,
+			transform 120ms ease,
+			max-width 200ms cubic-bezier(0.22, 1, 0.36, 1),
+			visibility 0s linear 120ms;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] [data-team-submenu] {
-		display: none;
+	[data-app-shell][data-sidebar-state="collapsed"] [data-team-submenu],
+	[data-app-shell][data-sidebar-animating] [data-team-submenu] {
+		max-height: 0;
+		margin: 0;
+		padding: 0;
+		border: 0;
+	}
+
+	/* Al terminar de expandir, los textos entran con un leve delay. */
+	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-brand-text],
+	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-label],
+	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-trailing],
+	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-sidebar-footer] > :not(.sidebar-nav-icon),
+	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) .sidebar-account-chevron,
+	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) .sidebar-nav-trailing,
+	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) .sidebar-nav-summary-main .sidebar-nav-label,
+	[data-app-shell][data-sidebar-state="expanded"]:not([data-sidebar-animating]) [data-team-submenu] {
+		transition:
+			opacity 180ms ease 40ms,
+			transform 200ms cubic-bezier(0.22, 1, 0.36, 1) 40ms,
+			max-width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+			max-height 240ms cubic-bezier(0.22, 1, 0.36, 1),
+			visibility 0s linear 0s;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] nav > ul > li {
@@ -473,8 +577,21 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		justify-content: center;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-link {
+	[data-desktop-sidebar] .sidebar-nav-link {
 		box-sizing: border-box;
+		width: 100%;
+		transition:
+			width 240ms cubic-bezier(0.22, 1, 0.36, 1),
+			height 240ms cubic-bezier(0.22, 1, 0.36, 1),
+			min-height 240ms cubic-bezier(0.22, 1, 0.36, 1),
+			padding 240ms cubic-bezier(0.22, 1, 0.36, 1),
+			gap 240ms ease,
+			border-radius 240ms ease,
+			border-color 240ms ease,
+			margin 240ms ease;
+	}
+
+	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-link {
 		width: 2.75rem;
 		height: 2.75rem;
 		min-height: 2.75rem;
@@ -483,6 +600,12 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		gap: 0;
 		justify-content: center;
 		align-items: center;
+		overflow: hidden;
+	}
+
+	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-footer] {
+		border-color: transparent;
+		border-radius: 9999px;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-summary {
@@ -500,10 +623,6 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		width: 1.25rem;
 		height: 1.25rem;
 		margin: 0;
-	}
-
-	[data-desktop-sidebar] .sidebar-nav-link {
-		width: 100%;
 	}
 
 	[data-desktop-sidebar] .sidebar-nav-link--sub {
