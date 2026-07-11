@@ -118,7 +118,7 @@ const googleErrorMessage = hasGoogleError
 									<header class="calendar-page-header">
 										<div class="calendar-page-header__intro grid gap-1 min-w-0">
 											<h1 class="text-[1.3rem] font-extrabold text-(--on-surface)">
-												Calendario de citas
+												Calendario
 											</h1>
 											{
 												ENABLE_GOOGLE_CALENDAR && (
@@ -163,8 +163,22 @@ const googleErrorMessage = hasGoogleError
 											<div class="calendar-header-toolbar__actions">
 												<button
 													type="button"
+													class="calendar-filters-trigger calendar-header-toolbar__filters sm:hidden inline-flex items-center justify-center gap-2"
+													data-calendar-filters-open
+													aria-haspopup="dialog"
+													aria-controls="calendar-filters-sheet"
+												>
+													<span class="material-symbols-rounded text-[1.12rem]" aria-hidden="true">filter_list</span>
+													<span class="calendar-filters-trigger__label">
+														Filtros (<span data-calendar-filters-count>2</span>)
+													</span>
+												</button>
+
+												<button
+													type="button"
 													class="calendar-refresh-btn calendar-header-toolbar__refresh inline-flex items-center justify-center gap-2"
 													data-refresh-calendar
+													aria-label="Refrescar calendario"
 												>
 													<span class="material-symbols-rounded text-[1.12rem]">refresh</span>
 													<span class="calendar-refresh-btn__label">Refrescar</span>
@@ -174,7 +188,9 @@ const googleErrorMessage = hasGoogleError
 													type="button"
 													class="calendar-tour-help calendar-header-toolbar__guide inline-flex shrink-0 items-center justify-center gap-2"
 													data-calendar-tour-help
-													aria-label="Guía del calendario de citas"
+													aria-label="Ayuda del calendario"
+													aria-haspopup="dialog"
+													aria-controls="calendar-help-sheet"
 												>
 													<span class="material-symbols-rounded text-[1.12rem]">help</span>
 													<span class="calendar-tour-help__label hidden sm:inline">Guía</span>
@@ -184,6 +200,7 @@ const googleErrorMessage = hasGoogleError
 													type="button"
 													class="calendar-create-btn calendar-header-toolbar__create inline-flex items-center justify-center gap-2"
 													data-open-appointment-modal
+													aria-label="Crear cita"
 												>
 													<svg
 														class="calendar-create-btn-icon w-[18px] h-[18px]"
@@ -230,26 +247,70 @@ const googleErrorMessage = hasGoogleError
 										)
 									}
 
-									<div class="grid gap-3 sm:gap-4 sm:grid-cols-2" data-calendar-filters>
-										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-professional-filter-wrap>
-											Profesional
-											<select
-												data-professional-filter
-												class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
-											>
-												<option value="">Todos los profesionales</option>
-											</select>
-										</label>
+									<div
+										class="calendar-filters-sheet"
+										id="calendar-filters-sheet"
+										data-calendar-filters-sheet
+										aria-hidden="true"
+									>
+										<button
+											type="button"
+											class="calendar-filters-sheet__backdrop"
+											data-calendar-filters-close
+											aria-label="Cerrar filtros"
+										></button>
+										<div
+											class="calendar-filters-sheet__panel"
+											role="dialog"
+											aria-modal="true"
+											aria-labelledby="calendar-filters-title"
+										>
+											<div class="calendar-filters-sheet__header">
+												<h2 id="calendar-filters-title" class="text-[1.05rem] font-extrabold text-(--on-surface)">
+													Filtros
+												</h2>
+												<button
+													type="button"
+													class="calendar-sheet-close"
+													data-calendar-filters-close
+													aria-label="Cerrar"
+												>
+													<span class="material-symbols-rounded text-[1.3rem]">close</span>
+												</button>
+											</div>
 
-										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-											Sucursal
-											<select
-												data-location-filter
-												class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
-											>
-												<option value="">Todas las sucursales</option>
-											</select>
-										</label>
+											<div class="calendar-filters-sheet__body grid gap-3 sm:gap-4 sm:grid-cols-2" data-calendar-filters>
+												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-professional-filter-wrap>
+													Profesional
+													<select
+														data-professional-filter
+														class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+													>
+														<option value="">Todos los profesionales</option>
+													</select>
+												</label>
+
+												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+													Sucursal
+													<select
+														data-location-filter
+														class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+													>
+														<option value="">Todas las sucursales</option>
+													</select>
+												</label>
+											</div>
+
+											<div class="calendar-filters-sheet__footer">
+												<button
+													type="button"
+													class="calendar-filters-sheet__done"
+													data-calendar-filters-close
+												>
+													Listo
+												</button>
+											</div>
+										</div>
 									</div>
 
 									<div
@@ -259,7 +320,7 @@ const googleErrorMessage = hasGoogleError
 									></div>
 
 									<div
-										class="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.82rem] font-semibold text-(--on-surface-variant)"
+										class="calendar-status-legend hidden sm:flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.82rem] font-semibold text-(--on-surface-variant)"
 										data-calendar-status-legend
 										aria-label="Leyenda de estados de citas"
 									>
@@ -291,6 +352,79 @@ const googleErrorMessage = hasGoogleError
 												</span>
 											)
 										}
+									</div>
+
+									<div
+										class="calendar-help-sheet"
+										id="calendar-help-sheet"
+										data-calendar-help-sheet
+										aria-hidden="true"
+									>
+										<button
+											type="button"
+											class="calendar-help-sheet__backdrop"
+											data-calendar-help-close
+											aria-label="Cerrar ayuda"
+										></button>
+										<div
+											class="calendar-help-sheet__panel"
+											role="dialog"
+											aria-modal="true"
+											aria-labelledby="calendar-help-title"
+										>
+											<div class="calendar-help-sheet__header">
+												<h2 id="calendar-help-title" class="text-[1.05rem] font-extrabold text-(--on-surface)">
+													Estados de las citas
+												</h2>
+												<button
+													type="button"
+													class="calendar-sheet-close"
+													data-calendar-help-close
+													aria-label="Cerrar"
+												>
+													<span class="material-symbols-rounded text-[1.3rem]">close</span>
+												</button>
+											</div>
+											<div class="calendar-help-sheet__body grid gap-3 text-[0.9rem] font-semibold text-(--on-surface-variant)">
+												<span class="inline-flex items-center gap-2">
+													<span class="calendar-legend-dot calendar-legend-dot--pending"></span>
+													Pendiente
+												</span>
+												<span class="inline-flex items-center gap-2">
+													<span class="calendar-legend-dot calendar-legend-dot--confirmed"></span>
+													Confirmado
+												</span>
+												<span class="inline-flex items-center gap-2">
+													<span class="calendar-legend-dot calendar-legend-dot--completed"></span>
+													Completado
+												</span>
+												<span class="inline-flex items-center gap-2">
+													<span class="calendar-legend-dot calendar-legend-dot--cancelled"></span>
+													Cancelado
+												</span>
+												<span class="inline-flex items-center gap-2">
+													<span class="calendar-legend-dot calendar-legend-dot--misaligned"></span>
+													Fuera de horario
+												</span>
+												{
+													ENABLE_GOOGLE_CALENDAR && (
+														<span class="inline-flex items-center gap-2">
+															<span class="calendar-legend-dot calendar-legend-dot--google"></span>
+															Google Calendar
+														</span>
+													)
+												}
+											</div>
+											<div class="calendar-help-sheet__footer">
+												<button
+													type="button"
+													class="calendar-help-sheet__tour"
+													data-calendar-tour-start
+												>
+													Ver guía del calendario
+												</button>
+											</div>
+										</div>
 									</div>
 
 									<div
@@ -934,25 +1068,52 @@ const googleErrorMessage = hasGoogleError
 	.calendar-header-toolbar__actions {
 		grid-area: actions;
 		display: flex;
-		flex-wrap: wrap;
-		align-items: stretch;
-		gap: 0.5rem;
+		flex-wrap: nowrap;
+		align-items: center;
+		gap: 0.45rem;
+		min-width: 0;
+	}
+
+	.calendar-header-toolbar__filters {
+		flex: 1 1 auto;
 		min-width: 0;
 	}
 
 	.calendar-header-toolbar__create,
 	.calendar-header-toolbar__refresh {
-		flex: 1 1 calc(50% - 1.4rem);
+		flex: 0 0 auto;
 		min-width: 0;
 	}
 
 	.calendar-header-toolbar__guide {
 		flex: 0 0 auto;
-		align-self: stretch;
+		align-self: center;
 	}
 
 	.calendar-header-toolbar__google {
 		grid-area: google;
+	}
+
+	.calendar-filters-trigger {
+		min-height: 2.75rem;
+		padding: 0.55rem 0.9rem;
+		border-radius: 999px;
+		border: 1px solid var(--calendar-outline-strong);
+		background: var(--calendar-toolbar-surface);
+		font-size: 0.84rem;
+		font-weight: 760;
+		color: var(--on-surface);
+		transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+	}
+
+	.calendar-filters-trigger[data-has-active='true'] {
+		border-color: color-mix(in srgb, var(--primary) 55%, var(--calendar-outline-strong));
+		background: color-mix(in srgb, var(--primary) 10%, var(--calendar-toolbar-surface));
+		color: var(--primary);
+	}
+
+	.calendar-filters-trigger:hover {
+		background: color-mix(in srgb, var(--calendar-toolbar-surface) 88%, var(--surface-bright) 12%);
 	}
 
 	.calendar-tour-help {
@@ -976,45 +1137,161 @@ const googleErrorMessage = hasGoogleError
 		outline-offset: 3px;
 	}
 
+	.calendar-sheet-close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.35rem;
+		height: 2.35rem;
+		border-radius: 999px;
+		border: 1px solid var(--calendar-outline-strong);
+		background: var(--calendar-toolbar-surface);
+		color: var(--on-surface-variant);
+	}
+
+	.calendar-filters-sheet,
+	.calendar-help-sheet {
+		display: none;
+	}
+
+	.calendar-filters-sheet.is-open,
+	.calendar-help-sheet.is-open {
+		display: flex;
+		position: fixed;
+		inset: 0;
+		z-index: 60;
+		align-items: flex-end;
+		justify-content: center;
+	}
+
+	.calendar-filters-sheet__backdrop,
+	.calendar-help-sheet__backdrop {
+		position: absolute;
+		inset: 0;
+		border: 0;
+		background: rgb(0 0 0 / 0.4);
+		cursor: pointer;
+	}
+
+	.calendar-filters-sheet__panel,
+	.calendar-help-sheet__panel {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		width: 100%;
+		max-height: min(82dvh, 36rem);
+		flex-direction: column;
+		overflow: hidden;
+		border: 1px solid var(--shell-border);
+		border-bottom: 0;
+		border-radius: 1.6rem 1.6rem 0 0;
+		background: var(--surface-bright);
+		box-shadow: 0 -12px 40px rgb(0 0 0 / 0.18);
+		animation: appointment-modal-in 180ms ease;
+	}
+
+	.calendar-filters-sheet__header,
+	.calendar-help-sheet__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.95rem 1rem 0.75rem;
+		border-bottom: 1px solid var(--shell-border);
+	}
+
+	.calendar-filters-sheet__body,
+	.calendar-help-sheet__body {
+		min-height: 0;
+		flex: 1 1 auto;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding: 1rem;
+	}
+
+	.calendar-filters-sheet__footer,
+	.calendar-help-sheet__footer {
+		padding: 0.85rem 1rem max(0.95rem, env(safe-area-inset-bottom));
+		border-top: 1px solid var(--shell-border);
+	}
+
+	.calendar-filters-sheet__done,
+	.calendar-help-sheet__tour {
+		display: inline-flex;
+		width: 100%;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.75rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
+		background: var(--primary);
+		font-size: 0.92rem;
+		font-weight: 780;
+		color: #f8fbff;
+	}
+
+	.calendar-help-sheet__tour {
+		border-color: var(--calendar-outline-strong);
+		background: var(--calendar-toolbar-surface);
+		color: var(--on-surface);
+	}
+
 	@media (max-width: 639px) {
-		.calendar-header-toolbar__create {
-			order: -1;
-			flex: 1 1 100%;
+		.calendar-header-toolbar__refresh {
+			width: 2.75rem;
+			height: 2.75rem;
+			padding: 0;
+			border-radius: 999px;
 		}
 
-		.calendar-header-toolbar__refresh {
-			flex: 1 1 0;
+		.calendar-refresh-btn__label {
+			display: none;
+		}
+
+		.calendar-tour-help {
+			width: 2.75rem;
+			height: 2.75rem;
+		}
+
+		.calendar-header-toolbar__create {
+			position: fixed;
+			right: max(1rem, env(safe-area-inset-right, 0px));
+			bottom: max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1.25rem));
+			z-index: 40;
+			width: 3.55rem;
+			height: 3.55rem;
+			padding: 0;
+			border-radius: 999px;
+			box-shadow:
+				0 8px 22px color-mix(in srgb, var(--primary) 35%, transparent),
+				0 2px 8px rgb(0 0 0 / 0.16);
+		}
+
+		.calendar-create-btn__label {
+			display: none;
+		}
+
+		.calendar-create-btn-icon {
+			width: 1.35rem;
+			height: 1.35rem;
 		}
 
 		.calendar-create-btn,
 		.calendar-refresh-btn {
-			width: 100%;
-			min-height: 2.75rem;
-			padding: 0.62rem 0.85rem;
+			min-height: 0;
 			font-size: 0.84rem;
 			line-height: 1.15;
 			white-space: nowrap;
 		}
 
-		.calendar-create-btn-icon,
-		.calendar-refresh-btn .material-symbols-rounded {
-			flex-shrink: 0;
-		}
-
-		.calendar-tour-help {
-			align-self: center;
-			width: 2.75rem;
-			height: 2.75rem;
+		[data-calendar-root] .calendar-host {
+			padding-bottom: 4.25rem;
 		}
 	}
 
 	@media (max-width: 380px) {
-		.calendar-refresh-btn__label {
-			display: none;
-		}
-
-		.calendar-refresh-btn {
-			padding-inline: 0.75rem;
+		.calendar-filters-trigger__label {
+			font-size: 0.8rem;
 		}
 	}
 
@@ -1066,6 +1343,43 @@ const googleErrorMessage = hasGoogleError
 			font-size: 0.9rem;
 			font-weight: 760;
 			color: var(--on-surface);
+		}
+
+		.calendar-filters-sheet,
+		.calendar-filters-sheet.is-open {
+			display: block;
+			position: static;
+			inset: auto;
+			z-index: auto;
+			align-items: stretch;
+			justify-content: flex-start;
+		}
+
+		.calendar-filters-sheet__backdrop,
+		.calendar-filters-sheet__header,
+		.calendar-filters-sheet__footer {
+			display: none;
+		}
+
+		.calendar-filters-sheet__panel {
+			display: block;
+			max-height: none;
+			overflow: visible;
+			border: 0;
+			border-radius: 0;
+			background: transparent;
+			box-shadow: none;
+			animation: none;
+		}
+
+		.calendar-filters-sheet__body {
+			overflow: visible;
+			padding: 0;
+		}
+
+		.calendar-help-sheet,
+		.calendar-help-sheet.is-open {
+			display: none !important;
 		}
 	}
 
@@ -1469,60 +1783,111 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .fc .fc-toolbar.fc-header-toolbar {
-			padding: 0 0 0.45rem;
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) auto;
+			grid-template-areas:
+				'title nav'
+				'views views';
+			align-items: center;
+			gap: 0.45rem 0.5rem;
+			padding: 0 0 0.4rem;
 			border-bottom: 0;
-			margin-bottom: 0.55rem;
+			margin-bottom: 0.5rem;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar {
-			flex-direction: column;
-			align-items: stretch;
-			gap: 0.55rem;
+			flex-direction: unset;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk {
-			flex-wrap: wrap;
+			flex-wrap: nowrap;
 			justify-content: flex-start;
 		}
 
+		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title] {
+			grid-area: title;
+			justify-content: flex-start;
+			width: auto;
+			min-width: 0;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-title {
+			width: auto;
+			max-width: 100%;
+			font-size: 1rem;
+			line-height: 1.2;
+			margin: 0;
+			text-align: left;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			white-space: nowrap;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-nav] {
+			grid-area: nav;
+			justify-content: flex-end;
+			gap: 0.3rem;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-nav] .fc-button-group {
+			gap: 0.28rem;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-nav] .fc-today-button {
+			min-width: 2.85rem;
+			padding-inline: 0.55rem;
+		}
+
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch {
+			grid-area: views;
 			width: 100%;
+			display: flex;
+			flex-wrap: nowrap;
+			align-items: center;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented {
+			flex: 1 1 auto;
 			width: 100%;
+			min-width: 0;
 			display: grid;
 			grid-template-columns: repeat(3, minmax(0, 1fr));
-			border-radius: 0.92rem;
-			gap: 0.34rem;
-			border: 0;
+			gap: 0;
+			border: 1px solid var(--calendar-outline-strong);
+			border-radius: 999px;
 			padding: 0;
-			background: transparent;
+			overflow: hidden;
+			background: var(--calendar-segmented-surface);
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button {
 			width: 100%;
-			border-radius: 0.82rem;
-			padding-inline: 0.6rem;
+			height: 2.15rem;
+			border: 0;
+			border-radius: 0;
 			margin-left: 0;
+			padding-inline: 0.35rem;
+			background: transparent;
+			box-shadow: none;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button + .fc-button {
+			margin-left: 0;
+			border-left: 1px solid color-mix(in srgb, var(--calendar-outline-strong) 72%, transparent);
+		}
+
+		[data-calendar-root]
+			.fc
+			.fc-toolbar-chunk--view-switch
+			.fc-button-group--segmented
+			.fc-button.fc-button-active {
+			background: var(--surface-bright);
+			color: var(--on-surface);
 		}
 		
-		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title] {
-			justify-content: center;
-			width: 100%;
-		}
-
-		[data-calendar-root] .fc .fc-toolbar-title {
-			width: 100%;
-			font-size: 1.06rem;
-			line-height: 1.2;
-			margin: 0;
-			text-align: center;
-		}
-
 		[data-calendar-root] .fc .fc-button {
-			height: 2.22rem;
-			font-size: 0.83rem;
+			height: 2.15rem;
+			font-size: 0.8rem;
 		}
 
 		[data-calendar-root] .fc .fc-col-header-cell-cushion {

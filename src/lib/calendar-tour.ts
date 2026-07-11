@@ -3,7 +3,9 @@ import { runBookmateTour } from './product-tour';
 
 const STORAGE_KEY = 'bookmate_calendar_tour_v3';
 const FILTERS_SELECTOR = '[data-calendar-filters]';
+const FILTERS_TRIGGER_SELECTOR = '[data-calendar-filters-open]';
 const STATUS_LEGEND_SELECTOR = '[data-calendar-status-legend]';
+const HELP_SELECTOR = '[data-calendar-tour-help]';
 const NEW_APPOINTMENT_SELECTOR = '[data-open-appointment-modal]';
 const NAV_SELECTOR = '[data-calendar-nav]';
 const VIEW_SWITCH_SELECTOR = '[data-calendar-view-switch]';
@@ -12,18 +14,38 @@ export function hasSeenCalendarTour() {
 	return localStorage.getItem(STORAGE_KEY) === '1';
 }
 
+function isVisible(el: Element | null) {
+	if (!(el instanceof HTMLElement)) return false;
+	return window.getComputedStyle(el).display !== 'none' && el.getClientRects().length > 0;
+}
+
 function hasProfessionalFilter() {
 	const wrap = document.querySelector('[data-professional-filter-wrap]');
 	if (!wrap) return false;
 	return !wrap.classList.contains('hidden');
 }
 
+function getFiltersTourTarget() {
+	const trigger = document.querySelector(FILTERS_TRIGGER_SELECTOR);
+	if (isVisible(trigger)) return FILTERS_TRIGGER_SELECTOR;
+	if (document.querySelector(FILTERS_SELECTOR)) return FILTERS_SELECTOR;
+	return null;
+}
+
+function getLegendTourTarget() {
+	const legend = document.querySelector(STATUS_LEGEND_SELECTOR);
+	if (isVisible(legend)) return STATUS_LEGEND_SELECTOR;
+	if (document.querySelector(HELP_SELECTOR)) return HELP_SELECTOR;
+	return null;
+}
+
 function buildTourSteps(): DriveStep[] {
 	const steps: DriveStep[] = [];
+	const filtersTarget = getFiltersTourTarget();
 
-	if (document.querySelector(FILTERS_SELECTOR)) {
+	if (filtersTarget) {
 		steps.push({
-			element: FILTERS_SELECTOR,
+			element: filtersTarget,
 			popover: {
 				title: 'Filtros',
 				description: hasProfessionalFilter()
@@ -35,13 +57,16 @@ function buildTourSteps(): DriveStep[] {
 		});
 	}
 
-	if (document.querySelector(STATUS_LEGEND_SELECTOR)) {
+	const legendTarget = getLegendTourTarget();
+	if (legendTarget) {
 		steps.push({
-			element: STATUS_LEGEND_SELECTOR,
+			element: legendTarget,
 			popover: {
 				title: 'Estados de las citas',
 				description:
-					'Cada color en el calendario indica el estado de la reserva: naranja pendiente, verde confirmada, azul completada y rojo cancelada. Las citas canceladas o completadas no se pueden mover.',
+					legendTarget === HELP_SELECTOR
+						? 'Toca el botón de ayuda para ver qué significa cada color: naranja pendiente, verde confirmada, azul completada y rojo cancelada.'
+						: 'Cada color en el calendario indica el estado de la reserva: naranja pendiente, verde confirmada, azul completada y rojo cancelada. Las citas canceladas o completadas no se pueden mover.',
 				side: 'bottom',
 				align: 'start',
 			},
@@ -54,7 +79,7 @@ function buildTourSteps(): DriveStep[] {
 			popover: {
 				title: 'Navegación',
 				description:
-					'Muévete en el tiempo con las flechas anterior y siguiente. Pulsa «Hoy» para volver al día actual y centrar la vista.',
+					'Muévete en el tiempo con las flechas. En el centro está «Hoy» para volver al día actual.',
 				side: 'bottom',
 				align: 'start',
 			},
@@ -81,7 +106,7 @@ function buildTourSteps(): DriveStep[] {
 				title: 'Crear cita',
 				description:
 					'Crea una cita manualmente indicando fecha, hora, profesional y servicio. Úsalo para agendar fuera del horario habitual, cuando no haya un hueco libre en la grilla o si prefieres no seleccionar directamente en el calendario. También puedes hacer clic o arrastrar sobre un espacio vacío.',
-				side: 'bottom',
+				side: 'top',
 				align: 'end',
 			},
 		});
@@ -100,7 +125,7 @@ export function maybeShowCalendarTour() {
 	if (hasSeenCalendarTour()) return;
 
 	const tryStart = (attempt = 0) => {
-		if (!document.querySelector(FILTERS_SELECTOR)) {
+		if (!getFiltersTourTarget()) {
 			if (attempt < 12) window.setTimeout(() => tryStart(attempt + 1), 120);
 			return;
 		}

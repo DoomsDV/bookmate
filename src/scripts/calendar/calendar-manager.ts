@@ -193,6 +193,10 @@ class CalendarManager extends HTMLElement {
 	private openModalButton: HTMLButtonElement | null = null;
 	private refreshCalendarButton: HTMLButtonElement | null = null;
 	private calendarTourHelpButton: HTMLButtonElement | null = null;
+	private filtersOpenButton: HTMLButtonElement | null = null;
+	private filtersSheet: HTMLElement | null = null;
+	private helpSheet: HTMLElement | null = null;
+	private filtersCountNode: HTMLElement | null = null;
 	private professionalFilterWrap: HTMLElement | null = null;
 	private professionalFilter: HTMLSelectElement | null = null;
 	private locationFilter: HTMLSelectElement | null = null;
@@ -210,6 +214,10 @@ class CalendarManager extends HTMLElement {
 		this.openModalButton = this.querySelector<HTMLButtonElement>('[data-open-appointment-modal]');
 		this.refreshCalendarButton = this.querySelector<HTMLButtonElement>('[data-refresh-calendar]');
 		this.calendarTourHelpButton = this.querySelector<HTMLButtonElement>('[data-calendar-tour-help]');
+		this.filtersOpenButton = this.querySelector<HTMLButtonElement>('[data-calendar-filters-open]');
+		this.filtersSheet = this.querySelector<HTMLElement>('[data-calendar-filters-sheet]');
+		this.helpSheet = this.querySelector<HTMLElement>('[data-calendar-help-sheet]');
+		this.filtersCountNode = this.querySelector<HTMLElement>('[data-calendar-filters-count]');
 		this.professionalFilterWrap = this.querySelector<HTMLElement>('[data-professional-filter-wrap]');
 		this.professionalFilter = this.querySelector<HTMLSelectElement>('[data-professional-filter]');
 		this.locationFilter = this.querySelector<HTMLSelectElement>('[data-location-filter]');
@@ -237,17 +245,27 @@ class CalendarManager extends HTMLElement {
 
 		ensureSearchableSelect(requiredNodes.professionalFilter, {
 			placeholder: 'Buscar profesional...',
+			dropdownParent: 'body',
 		});
 		ensureSearchableSelect(requiredNodes.locationFilter, {
 			placeholder: 'Buscar sucursal...',
+			dropdownParent: 'body',
 		});
 
 		requiredNodes.appointmentModal.setClient(this.client);
 		requiredNodes.openModalButton.addEventListener('click', this.handleOpenCreateModal, { signal });
 		this.refreshCalendarButton?.addEventListener('click', this.handleRefreshCalendar, { signal });
-		this.calendarTourHelpButton?.addEventListener(
+		this.calendarTourHelpButton?.addEventListener('click', this.handleCalendarHelpClick, { signal });
+		this.filtersOpenButton?.addEventListener('click', this.openFiltersSheet, { signal });
+		this.querySelectorAll<HTMLElement>('[data-calendar-filters-close]').forEach((el) => {
+			el.addEventListener('click', this.closeFiltersSheet, { signal });
+		});
+		this.querySelectorAll<HTMLElement>('[data-calendar-help-close]').forEach((el) => {
+			el.addEventListener('click', this.closeHelpSheet, { signal });
+		});
+		this.querySelector<HTMLElement>('[data-calendar-tour-start]')?.addEventListener(
 			'click',
-			() => showCalendarTour({ force: true }),
+			this.handleCalendarTourStart,
 			{ signal }
 		);
 		requiredNodes.professionalFilter.addEventListener('change', this.handleProfessionalFilterChange, {
@@ -255,6 +273,7 @@ class CalendarManager extends HTMLElement {
 		});
 		requiredNodes.locationFilter.addEventListener('change', this.handleLocationFilterChange, { signal });
 		window.addEventListener('resize', this.handleViewportResize, { signal });
+		document.addEventListener('keydown', this.handleSheetKeydown, { signal });
 		this.addEventListener('appointment:changed', this.handleAppointmentChanged as EventListener, {
 			signal,
 		});
@@ -262,6 +281,8 @@ class CalendarManager extends HTMLElement {
 			signal,
 		});
 
+		this.syncFiltersSheetMode();
+		this.syncFiltersTrigger();
 		void this.bootstrap();
 	}
 
@@ -274,6 +295,7 @@ class CalendarManager extends HTMLElement {
 			this.#bindRetryTimer = null;
 		}
 		this.#bindRetryAttempts = 0;
+		document.body.style.overflow = '';
 		destroySearchableSelect(this.professionalFilter);
 		destroySearchableSelect(this.locationFilter);
 		this.destroyCalendar();
@@ -560,9 +582,9 @@ class CalendarManager extends HTMLElement {
 	private getHeaderToolbar(isMobile: boolean) {
 		return isMobile
 			? {
-					left: 'prev,next today',
-					center: 'title',
-					right: 'timeGridThreeDay,timeGridDay,listWeek',
+					left: 'title',
+					center: 'prev,today,next',
+					right: 'timeGridDay,timeGridThreeDay,listWeek',
 				}
 			: {
 					left: 'prev,next today',
@@ -570,6 +592,97 @@ class CalendarManager extends HTMLElement {
 					right: 'timeGridDay,timeGridWeek,dayGridMonth,listWeek',
 				};
 	}
+
+	private getMobileTitleFormat() {
+		return {
+			year: 'numeric' as const,
+			month: 'long' as const,
+		};
+	}
+
+	private isCompactChromeViewport() {
+		return window.innerWidth < 640;
+	}
+
+	private setSheetOpen(sheet: HTMLElement | null, open: boolean) {
+		if (!sheet) return;
+		sheet.classList.toggle('is-open', open);
+		sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
+		const anySheetOpen =
+			Boolean(this.filtersSheet?.classList.contains('is-open')) ||
+			Boolean(this.helpSheet?.classList.contains('is-open'));
+		document.body.style.overflow = anySheetOpen && this.isCompactChromeViewport() ? 'hidden' : '';
+	}
+
+	private openFiltersSheet = () => {
+		if (!this.isCompactChromeViewport()) return;
+		this.closeHelpSheet();
+		this.setSheetOpen(this.filtersSheet, true);
+	};
+
+	private closeFiltersSheet = () => {
+		this.setSheetOpen(this.filtersSheet, false);
+	};
+
+	private openHelpSheet = () => {
+		if (!this.isCompactChromeViewport()) return;
+		this.closeFiltersSheet();
+		this.setSheetOpen(this.helpSheet, true);
+	};
+
+	private closeHelpSheet = () => {
+		this.setSheetOpen(this.helpSheet, false);
+	};
+
+	private syncFiltersSheetMode() {
+		if (!this.isCompactChromeViewport()) {
+			this.closeFiltersSheet();
+			this.closeHelpSheet();
+			if (this.filtersSheet) {
+				this.filtersSheet.setAttribute('aria-hidden', 'false');
+			}
+		} else if (this.filtersSheet && !this.filtersSheet.classList.contains('is-open')) {
+			this.filtersSheet.setAttribute('aria-hidden', 'true');
+		}
+	}
+
+	private syncFiltersTrigger() {
+		const available =
+			this.professionalFilterWrap && !this.professionalFilterWrap.classList.contains('hidden') ? 2 : 1;
+		if (this.filtersCountNode) {
+			this.filtersCountNode.textContent = String(available);
+		}
+
+		const professionalActive =
+			this.roleId !== ROLES.PROFESIONAL && toPositiveInt(this.professionalFilter?.value, 0) > 0;
+		const locationActive = toPositiveInt(this.locationFilter?.value, 0) > 0;
+		const hasActive = professionalActive || locationActive;
+		this.filtersOpenButton?.setAttribute('data-has-active', hasActive ? 'true' : 'false');
+	}
+
+	private handleCalendarHelpClick = () => {
+		if (this.isCompactChromeViewport()) {
+			this.openHelpSheet();
+			return;
+		}
+		showCalendarTour({ force: true });
+	};
+
+	private handleCalendarTourStart = () => {
+		this.closeHelpSheet();
+		showCalendarTour({ force: true });
+	};
+
+	private handleSheetKeydown = (event: KeyboardEvent) => {
+		if (event.key !== 'Escape') return;
+		if (this.helpSheet?.classList.contains('is-open')) {
+			this.closeHelpSheet();
+			return;
+		}
+		if (this.filtersSheet?.classList.contains('is-open')) {
+			this.closeFiltersSheet();
+		}
+	};
 
 	private applyResponsiveCalendarLayout(force = false) {
 		if (!this.calendar) return;
@@ -582,18 +695,16 @@ class CalendarManager extends HTMLElement {
 
 		this.isMobileLayout = isMobile;
 		this.calendar.setOption('headerToolbar', this.getHeaderToolbar(isMobile));
-		this.calendar.setOption('titleFormat',
+		this.calendar.setOption(
+			'titleFormat',
 			isMobile
-				? {
-						year: 'numeric',
-						month: 'short',
-						day: 'numeric',
-					}
+				? this.getMobileTitleFormat()
 				: {
 						year: 'numeric',
 						month: 'long',
 					}
 		);
+		this.syncFiltersSheetMode();
 
 		if (isMobile) {
 			const currentView = this.calendar.view.type;
@@ -624,15 +735,25 @@ class CalendarManager extends HTMLElement {
 			}
 		}
 
-		const navChunk = chunks.find((chunk) =>
-			chunk.querySelector('.fc-prev-button, .fc-next-button, .fc-today-button')
-		);
-		navChunk?.setAttribute('data-calendar-nav', 'true');
-
 		const titleChunk = chunks.find((chunk) => chunk.querySelector('.fc-toolbar-title'));
 		titleChunk?.setAttribute('data-calendar-title', 'true');
 
-		const viewChunk = chunks[chunks.length - 1];
+		const navChunk = chunks.find(
+			(chunk) =>
+				chunk.querySelector('.fc-prev-button, .fc-next-button') &&
+				!chunk.querySelector('.fc-toolbar-title') &&
+				!chunk.querySelector(
+					'.fc-timeGridDay-button, .fc-timeGridThreeDay-button, .fc-listWeek-button'
+				)
+		);
+		navChunk?.setAttribute('data-calendar-nav', 'true');
+
+		const viewChunk =
+			chunks.find((chunk) =>
+				chunk.querySelector(
+					'.fc-timeGridDay-button, .fc-timeGridThreeDay-button, .fc-timeGridWeek-button, .fc-dayGridMonth-button, .fc-listWeek-button'
+				)
+			) ?? chunks[chunks.length - 1];
 		if (!viewChunk) return;
 		viewChunk.classList.add('fc-toolbar-chunk--view-switch');
 		viewChunk.setAttribute('data-calendar-view-switch', 'true');
@@ -755,15 +876,11 @@ class CalendarManager extends HTMLElement {
 				timeGridThreeDay: {
 					type: 'timeGrid',
 					duration: { days: 3 },
-					buttonText: '3 dias',
+					buttonText: '3 días',
 				},
 			},
 			titleFormat: isMobile
-				? {
-						year: 'numeric',
-						month: 'short',
-						day: 'numeric',
-				  }
+				? this.getMobileTitleFormat()
 				: {
 						year: 'numeric',
 						month: 'long',
@@ -1121,6 +1238,8 @@ class CalendarManager extends HTMLElement {
 				setSearchableSelectDisabled(requiredNodes.professionalFilter, false);
 			}
 
+			this.syncFiltersTrigger();
+
 			requiredNodes.appointmentModal.configure({
 				roleId: this.roleId,
 				currentProfessionalId: this.currentProfessionalId,
@@ -1160,11 +1279,13 @@ class CalendarManager extends HTMLElement {
 	}
 
 	private handleProfessionalFilterChange = () => {
+		this.syncFiltersTrigger();
 		if (this.roleId === ROLES.PROFESIONAL) return;
 		this.reloadCalendarEvents();
 	};
 
 	private handleLocationFilterChange = () => {
+		this.syncFiltersTrigger();
 		this.reloadCalendarEvents();
 	};
 
