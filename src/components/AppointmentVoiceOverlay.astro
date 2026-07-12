@@ -180,11 +180,11 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.appointment-voice-shell.is-closing {
-		animation: appointment-voice-sheet-out var(--modal-close-duration, 140ms) var(--modal-easing, cubic-bezier(0.4, 0, 0.2, 1)) forwards;
+		animation: appointment-voice-sheet-out 100ms var(--modal-easing, cubic-bezier(0.4, 0, 0.2, 1)) forwards;
 	}
 
 	.appointment-voice-shell.is-closing::backdrop {
-		animation: appointment-voice-backdrop-out var(--modal-close-duration, 140ms) var(--modal-easing, cubic-bezier(0.4, 0, 0.2, 1)) forwards;
+		animation: appointment-voice-backdrop-out 100ms var(--modal-easing, cubic-bezier(0.4, 0, 0.2, 1)) forwards;
 	}
 
 	.appointment-voice-dialog {

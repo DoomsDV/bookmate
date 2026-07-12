@@ -27,6 +27,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#analyser: AnalyserNode | null = null;
 	#statusFadeTimer: number | null = null;
 	#autoCloseTimer: number | null = null;
+	#closeTimer: number | null = null;
 	#draftAbortController: AbortController | null = null;
 	#session = 0;
 
@@ -123,6 +124,10 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.#visualizer?.setMode('idle');
 		const shell = this.querySelector<HTMLDialogElement>('[data-voice-overlay-shell]');
 		if (!shell) return;
+		if (this.#closeTimer) {
+			window.clearTimeout(this.#closeTimer);
+			this.#closeTimer = null;
+		}
 		shell.classList.remove('is-closing');
 		if (!shell.open) shell.showModal();
 	}
@@ -136,22 +141,24 @@ class AppointmentVoiceOverlay extends HTMLElement {
 
 		if (shell.classList.contains('is-closing')) return;
 
+		// Cortar micrófono/visualizer de inmediato para que el cierre se sienta al toque.
+		this.cancelAll(true);
+
 		const finishClose = () => {
-			shell.removeEventListener('animationend', onAnimationEnd);
-			window.clearTimeout(fallbackTimer);
+			window.clearTimeout(this.#closeTimer);
+			this.#closeTimer = null;
 			shell.classList.remove('is-closing');
-			this.cancelAll(true);
 			if (shell.open) shell.close();
 		};
 
-		const onAnimationEnd = (event: AnimationEvent) => {
-			if (event.target !== shell) return;
+		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		if (prefersReducedMotion) {
 			finishClose();
-		};
+			return;
+		}
 
 		shell.classList.add('is-closing');
-		shell.addEventListener('animationend', onAnimationEnd);
-		const fallbackTimer = window.setTimeout(finishClose, 220);
+		this.#closeTimer = window.setTimeout(finishClose, 100);
 	}
 
 	private isSessionActive(session: number) {
@@ -167,6 +174,11 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		if (this.#autoCloseTimer) {
 			window.clearTimeout(this.#autoCloseTimer);
 			this.#autoCloseTimer = null;
+		}
+
+		if (this.#closeTimer) {
+			window.clearTimeout(this.#closeTimer);
+			this.#closeTimer = null;
 		}
 	}
 
