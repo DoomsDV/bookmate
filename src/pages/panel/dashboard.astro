@@ -362,9 +362,9 @@ const toPageHref = (page: number) => {
 
 							{roleId === ROLES.ADMIN && (
 								<section
-									class="dashboard-profitability-shell hidden rounded-4xl p-6 transition-colors duration-300"
+									class="dashboard-profitability-shell is-loading rounded-4xl p-6 transition-colors duration-300"
 									data-profitability-panel
-									hidden
+									aria-busy="true"
 								>
 									<div class="mb-5 flex items-center justify-between gap-3 dashboard-profitability-head">
 										<div class="flex items-center gap-2">
@@ -384,23 +384,23 @@ const toPageHref = (page: number) => {
 												<p class="dashboard-profit-label">Ingresos del mes</p>
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">payments</span>
 											</div>
-											<p class="dashboard-profit-value" data-profit-month-revenue>Gs. 0</p>
-											<p class="dashboard-profit-hint" data-profit-mom></p>
+											<p class="dashboard-profit-value" data-profit-month-revenue>&nbsp;</p>
+											<p class="dashboard-profit-hint" data-profit-mom>&nbsp;</p>
 										</article>
 										<article class="dashboard-profit-card" data-profit-accent="violet">
 											<div class="dashboard-profit-card__head">
 												<p class="dashboard-profit-label">Ticket promedio</p>
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">confirmation_number</span>
 											</div>
-											<p class="dashboard-profit-value" data-profit-avg-ticket>Gs. 0</p>
-											<p class="dashboard-profit-hint" data-profit-count></p>
+											<p class="dashboard-profit-value" data-profit-avg-ticket>&nbsp;</p>
+											<p class="dashboard-profit-hint" data-profit-count>&nbsp;</p>
 										</article>
 										<article class="dashboard-profit-card" data-profit-accent="brand">
 											<div class="dashboard-profit-card__head">
 												<p class="dashboard-profit-label">Ingresos de hoy</p>
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">today</span>
 											</div>
-											<p class="dashboard-profit-value" data-profit-today>Gs. 0</p>
+											<p class="dashboard-profit-value" data-profit-today>&nbsp;</p>
 											<p class="dashboard-profit-hint">Citas ya atendidas hoy.</p>
 										</article>
 										<article class="dashboard-profit-card" data-profit-accent="amber">
@@ -408,7 +408,7 @@ const toPageHref = (page: number) => {
 												<p class="dashboard-profit-label">Esperado (futuro)</p>
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">trending_up</span>
 											</div>
-											<p class="dashboard-profit-value" data-profit-pending>Gs. 0</p>
+											<p class="dashboard-profit-value" data-profit-pending>&nbsp;</p>
 											<p class="dashboard-profit-hint">Citas confirmadas y pendientes.</p>
 										</article>
 									</div>
@@ -1849,11 +1849,27 @@ const toPageHref = (page: number) => {
 		}
 	};
 
+	const dismissProfitabilityPanel = (panel: HTMLElement) => {
+		panel.dataset.loaded = '';
+		panel.setAttribute('aria-busy', 'false');
+		panel.classList.remove('is-loading', 'is-ready');
+		panel.classList.add('is-dismissed');
+		window.setTimeout(() => {
+			if (!panel.classList.contains('is-dismissed')) return;
+			panel.hidden = true;
+			panel.classList.add('hidden');
+		}, 280);
+	};
+
 	const loadProfitability = async () => {
 		const panel = document.querySelector<HTMLElement>('[data-profitability-panel]');
 		if (!panel) return;
 		if (panel.dataset.loaded === '1') return;
 		panel.dataset.loaded = '1';
+		panel.hidden = false;
+		panel.classList.remove('hidden', 'is-dismissed', 'is-ready');
+		panel.classList.add('is-loading');
+		panel.setAttribute('aria-busy', 'true');
 
 		try {
 			const response = await fetch('/api/dashboard/profitability', {
@@ -1861,9 +1877,9 @@ const toPageHref = (page: number) => {
 			});
 			const payload = await response.json();
 
-			// 403 (no admin/feature) u otros errores: dejamos el panel oculto.
+			// 403 (no admin/feature) u otros errores: ocultamos sin salto brusco.
 			if (!response.ok || payload?.status !== 'success' || !payload?.data) {
-				panel.dataset.loaded = '';
+				dismissProfitabilityPanel(panel);
 				return;
 			}
 
@@ -1963,9 +1979,13 @@ const toPageHref = (page: number) => {
 			}
 
 			panel.hidden = false;
-			panel.classList.remove('hidden');
+			panel.classList.remove('hidden', 'is-dismissed', 'is-loading');
+			panel.setAttribute('aria-busy', 'false');
+			// Forzar reflow para que la transición de entrada se note.
+			void panel.offsetWidth;
+			panel.classList.add('is-ready');
 		} catch {
-			panel.dataset.loaded = '';
+			dismissProfitabilityPanel(panel);
 		}
 	};
 
@@ -3838,9 +3858,9 @@ const toPageHref = (page: number) => {
 		min-height: 11.5rem;
 		border-radius: 1.6rem;
 		padding: 1.5rem 1.5rem;
-		color: #f8fbff;
-		background: linear-gradient(135deg, #3b6fe0 0%, #5b8def 48%, #7aa8f5 100%);
-		box-shadow: 0 14px 34px rgba(47, 111, 221, 0.22);
+		color: #f4f7fc;
+		background: linear-gradient(135deg, #355fbf 0%, #4a74d0 55%, #5b84d8 100%);
+		box-shadow: 0 8px 22px rgba(47, 111, 221, 0.14);
 		isolation: isolate;
 		box-sizing: border-box;
 	}
@@ -3862,7 +3882,7 @@ const toPageHref = (page: number) => {
 		width: 12rem;
 		height: 12rem;
 		border-radius: 999px;
-		background: radial-gradient(circle, rgba(255, 255, 255, 0.28) 0%, rgba(255, 255, 255, 0) 70%);
+		background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 72%);
 		pointer-events: none;
 		z-index: 0;
 	}
@@ -3924,7 +3944,7 @@ const toPageHref = (page: number) => {
 		width: 2.6rem;
 		height: 2.6rem;
 		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.18);
+		background: rgba(255, 255, 255, 0.14);
 		font-size: 1.35rem;
 		flex-shrink: 0;
 	}
@@ -3934,7 +3954,7 @@ const toPageHref = (page: number) => {
 		z-index: 1;
 		height: 0.55rem;
 		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.28);
+		background: rgba(255, 255, 255, 0.22);
 		overflow: hidden;
 		flex-shrink: 0;
 	}
@@ -3943,14 +3963,18 @@ const toPageHref = (page: number) => {
 		display: block;
 		height: 100%;
 		border-radius: inherit;
-		background: #ffffff;
-		box-shadow: 0 0 12px rgba(255, 255, 255, 0.45);
+		background: rgba(255, 255, 255, 0.92);
+		box-shadow: none;
 		transition: width 420ms ease;
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress {
-		background: linear-gradient(135deg, #1e4bb8 0%, #2f6fdd 52%, #4f86e8 100%);
-		box-shadow: 0 16px 36px rgba(0, 0, 0, 0.28);
+		background: linear-gradient(135deg, #1a3a8a 0%, #234fa8 58%, #2d5fbc 100%);
+		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress::after {
+		background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 72%);
 	}
 
 	.dashboard-metric-card--compact {
@@ -4291,12 +4315,105 @@ const toPageHref = (page: number) => {
 		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
 		min-width: 0;
 		max-width: 100%;
+		opacity: 1;
+		transform: translateY(0);
+		transition:
+			opacity 280ms ease,
+			transform 280ms ease,
+			max-height 280ms ease,
+			margin 280ms ease,
+			padding 280ms ease,
+			border-color 280ms ease,
+			background-color 280ms ease;
+	}
+
+	.dashboard-profitability-shell.is-loading .dashboard-profit-value,
+	.dashboard-profitability-shell.is-loading [data-profit-mom],
+	.dashboard-profitability-shell.is-loading [data-profit-count] {
+		color: transparent !important;
+		border-radius: 0.55rem;
+		background: linear-gradient(
+			110deg,
+			color-mix(in srgb, var(--on-surface-variant) 10%, transparent) 0%,
+			color-mix(in srgb, var(--on-surface-variant) 10%, transparent) 36%,
+			color-mix(in srgb, var(--on-surface-variant) 22%, transparent) 50%,
+			color-mix(in srgb, var(--on-surface-variant) 10%, transparent) 64%,
+			color-mix(in srgb, var(--on-surface-variant) 10%, transparent) 100%
+		);
+		background-size: 220% 100%;
+		animation: dashboard-profit-skeleton 1.4s ease-in-out infinite;
+	}
+
+	.dashboard-profitability-shell.is-loading .dashboard-profit-value {
+		min-height: 1.55rem;
+		max-width: 7.5rem;
+		margin-top: 0.55rem;
+	}
+
+	.dashboard-profitability-shell.is-loading [data-profit-mom],
+	.dashboard-profitability-shell.is-loading [data-profit-count] {
+		min-height: 0.95rem;
+		max-width: 9.5rem;
+		margin-top: 0.55rem;
+	}
+
+	.dashboard-profitability-shell.is-ready .dashboard-profit-value,
+	.dashboard-profitability-shell.is-ready [data-profit-mom],
+	.dashboard-profitability-shell.is-ready [data-profit-count] {
+		animation: dashboard-profit-value-in 320ms ease both;
+	}
+
+	.dashboard-profitability-shell.is-dismissed {
+		opacity: 0;
+		transform: translateY(-8px);
+		pointer-events: none;
+		max-height: 0;
+		margin: 0;
+		padding-top: 0;
+		padding-bottom: 0;
+		border-width: 0;
+		overflow: hidden;
+		box-shadow: none;
+	}
+
+	@keyframes dashboard-profit-skeleton {
+		0% {
+			background-position: 120% 0;
+		}
+		100% {
+			background-position: -120% 0;
+		}
+	}
+
+	@keyframes dashboard-profit-value-in {
+		from {
+			opacity: 0;
+			transform: translateY(4px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
 	html[data-theme='dark'] .dashboard-profitability-shell {
 		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 78%, var(--surface-container, #131314) 22%);
 		border-color: color-mix(in srgb, var(--outline-variant, #8a9099) 36%, transparent);
 		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .dashboard-profitability-shell.is-loading .dashboard-profit-value,
+	html[data-theme='dark'] .dashboard-profitability-shell.is-loading [data-profit-mom],
+	html[data-theme='dark'] .dashboard-profitability-shell.is-loading [data-profit-count] {
+		background: linear-gradient(
+			110deg,
+			rgba(255, 255, 255, 0.05) 0%,
+			rgba(255, 255, 255, 0.05) 36%,
+			rgba(255, 255, 255, 0.12) 50%,
+			rgba(255, 255, 255, 0.05) 64%,
+			rgba(255, 255, 255, 0.05) 100%
+		);
+		background-size: 220% 100%;
 	}
 
 	.dashboard-appointments-see-all {
@@ -5131,7 +5248,13 @@ const toPageHref = (page: number) => {
 		.dashboard-ai-card.is-generating .dashboard-ai-sparkle,
 		.dashboard-ai-card.is-generating,
 		.dashboard-ai-loading-icon,
-		.dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after {
+		.dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after,
+		.dashboard-profitability-shell.is-loading .dashboard-profit-value,
+		.dashboard-profitability-shell.is-loading [data-profit-mom],
+		.dashboard-profitability-shell.is-loading [data-profit-count],
+		.dashboard-profitability-shell.is-ready .dashboard-profit-value,
+		.dashboard-profitability-shell.is-ready [data-profit-mom],
+		.dashboard-profitability-shell.is-ready [data-profit-count] {
 			animation: none;
 		}
 
