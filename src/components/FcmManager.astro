@@ -8,9 +8,10 @@ const hasSession = Boolean(Astro.locals.token ?? '');
 			import {
 				FCM_DEVICE_TOKEN_STORAGE_KEY,
 				FCM_PROMPT_SHOWN_SESSION_KEY,
+				IOS_INSTALL_GUIDE_SHOWN_SESSION_KEY,
 				isInstalledPwaContext,
 				refreshPushTokenSilently,
-				runInitialFcmPromptIfNeeded,
+				runPushOnboardingIfNeeded,
 			} from '../lib/fcm-client';
 
 			const logoutAfterAppInstalled = async () => {
@@ -37,6 +38,7 @@ const hasSession = Boolean(Astro.locals.token ?? '');
 				} finally {
 					localStorage.removeItem(FCM_DEVICE_TOKEN_STORAGE_KEY);
 					sessionStorage.removeItem(FCM_PROMPT_SHOWN_SESSION_KEY);
+					sessionStorage.removeItem(IOS_INSTALL_GUIDE_SHOWN_SESSION_KEY);
 					window.location.assign('/auth/login');
 				}
 			};
@@ -46,10 +48,8 @@ const hasSession = Boolean(Astro.locals.token ?? '');
 				(window as any).__bookmateFcmManagerRunning = true;
 
 				try {
-					if (!isInstalledPwaContext()) return;
-
-					const handledPrompt = await runInitialFcmPromptIfNeeded();
-					if (!handledPrompt) {
+					const handledPrompt = await runPushOnboardingIfNeeded();
+					if (!handledPrompt && isInstalledPwaContext()) {
 						await refreshPushTokenSilently();
 					}
 				} finally {

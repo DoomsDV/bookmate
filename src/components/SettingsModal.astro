@@ -875,6 +875,8 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		disablePushNotifications,
 		enablePushNotifications,
 		getPushNotificationUiState,
+		isIosBrowser,
+		showIosPwaInstallGuide,
 	} from '../lib/fcm-client';
 	import {
 		isAcceptedProfileImage,
@@ -1229,8 +1231,9 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 
 			let hintMessage = '';
 			if (!state.pwaInstalled) {
-				hintMessage =
-					'Instalá Hasel en tu dispositivo para gestionar las notificaciones desde aquí.';
+				hintMessage = isIosBrowser()
+					? 'En iPhone: Compartir → Agregar a pantalla de inicio. Después abrí Hasel desde el inicio.'
+					: 'Instalá Hasel en tu dispositivo para gestionar las notificaciones desde aquí.';
 			} else if (!state.browserSupported) {
 				hintMessage = 'Este navegador no admite notificaciones push.';
 			} else if (state.permission === 'denied') {
@@ -1260,6 +1263,20 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 
 			try {
 				if (shouldEnable) {
+					const state = getPushNotificationUiState();
+					if (!state.pwaInstalled) {
+						toggle.checked = previousChecked;
+						if (isIosBrowser()) {
+							await showIosPwaInstallGuide();
+						} else {
+							this.showFeedback(
+								'profile',
+								'Instalá Hasel en tu dispositivo para activar notificaciones.',
+								'info'
+							);
+						}
+						return;
+					}
 					await enablePushNotifications({ fromSettings: true });
 					this.showFeedback(
 						'profile',

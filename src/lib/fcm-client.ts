@@ -3,6 +3,7 @@ import { getFcmTokenFromFirebase } from '../scripts/firebase-messaging';
 export const FCM_PROMPT_COOKIE_KEY = 'fcm_prompt_pending';
 export const FCM_DEVICE_TOKEN_STORAGE_KEY = 'hasel:fcm:device-token';
 export const FCM_PROMPT_SHOWN_SESSION_KEY = 'hasel:fcm:prompt-shown';
+export const IOS_INSTALL_GUIDE_SHOWN_SESSION_KEY = 'hasel:fcm:ios-install-guide-shown';
 
 export type PushPermissionState = NotificationPermission | 'unsupported';
 
@@ -41,12 +42,26 @@ export const isInstalledPwaContext = () => {
 	return isStandaloneDisplayMode || isIosStandalone || isAndroidTwa;
 };
 
+/** iPhone/iPad (incluye iPadOS desktop UA). */
+export const isIosBrowser = () => {
+	if (typeof window === 'undefined') return false;
+	const ua = window.navigator.userAgent;
+	if (/iPhone|iPad|iPod/i.test(ua)) return true;
+	// iPadOS 13+ puede reportarse como MacIntel con touch.
+	return (
+		window.navigator.platform === 'MacIntel' &&
+		typeof window.navigator.maxTouchPoints === 'number' &&
+		window.navigator.maxTouchPoints > 1
+	);
+};
+
 export const inferFcmPlatform = () => {
 	const userAgent = window.navigator.userAgent.toLowerCase();
 	if (userAgent.includes('android')) return 'android';
 	if (userAgent.includes('iphone') || userAgent.includes('ipad') || userAgent.includes('ios')) {
 		return 'ios';
 	}
+	if (isIosBrowser()) return 'ios';
 	return 'web';
 };
 
@@ -88,12 +103,50 @@ export const showFcmAlert = async (title: string, message: string) => {
 	window.alert(message);
 };
 
+/** Misma alerta del sistema, con pasos visuales para «Agregar a inicio» en iOS. */
+export const showIosPwaInstallGuide = async () => {
+	const messageHtml = `
+		<p class="app-alert-install-lead">Para recibir recordatorios de tus citas al instante, instalá la app:</p>
+		<ol class="app-alert-install-steps">
+			<li>
+				<span class="material-symbols-rounded" aria-hidden="true">ios_share</span>
+				<span>Tocá <strong>Compartir</strong> en Safari</span>
+			</li>
+			<li>
+				<span class="material-symbols-rounded" aria-hidden="true">add_box</span>
+				<span>Elegí <strong>Agregar a pantalla de inicio</strong></span>
+			</li>
+			<li>
+				<span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+				<span>Confirmá con <strong>Agregar</strong> y abrí Hasel desde el inicio</span>
+			</li>
+		</ol>
+		<p class="app-alert-install-note">Cuando la abras como app, te vamos a pedir activar las notificaciones.</p>
+	`.trim();
+
+	if (window.BookmateAlert?.alert) {
+		await window.BookmateAlert.alert({
+			type: 'info',
+			icon: 'ios_share',
+			title: 'Instalá Hasel en tu iPhone',
+			messageHtml,
+			confirmText: 'Entendido',
+		});
+		return;
+	}
+
+	window.alert(
+		'Para recibir recordatorios, instalá Hasel: tocá Compartir → Agregar a pantalla de inicio. Después abrí la app desde el inicio para activar notificaciones.'
+	);
+};
+
 const askNotificationConsent = async () => {
 	const message =
 		'¿Querés activar notificaciones para recibir avisos de nuevas citas y recordatorios en este dispositivo?';
 	if (window.BookmateAlert?.confirm) {
 		return window.BookmateAlert.confirm({
 			type: 'info',
+			icon: 'notifications_active',
 			title: 'Activar notificaciones',
 			message,
 			confirmText: 'Activar',
@@ -203,6 +256,12 @@ const requestBrowserNotificationPermission = async (options?: { fromSettings?: b
 
 export const enablePushNotifications = async (options?: { fromSettings?: boolean }) => {
 	if (!isInstalledPwaContext()) {
+		if (isIosBrowser()) {
+			await showIosPwaInstallGuide();
+			throw new Error(
+				'Instalá Hasel en tu iPhone (Compartir → Agregar a pantalla de inicio) y abrila desde el inicio para activar notificaciones.'
+			);
+		}
 		throw new Error(
 			'Instalá la app en tu dispositivo (PWA) para activar notificaciones desde este panel.'
 		);
@@ -238,11 +297,25 @@ export const refreshPushTokenSilently = async () => {
 	}
 };
 
-export const runInitialFcmPromptIfNeeded = async () => {
-	if (!isInstalledPwaContext()) return false;
-
+/**
+ * Onboarding unificado:
+ * 1) iOS Safari (sin PWA) → misma alerta, texto de instalación.
+ * 2) PWA instalada → misma alerta, texto de activar notificaciones.
+ */
+export const runPushOnboardingIfNeeded = async () => {
 	const promptPending = readCookie(FCM_PROMPT_COOKIE_KEY) === '1';
 	if (!promptPending) return false;
+
+	await waitForBookmateAlert();
+
+	if (!isInstalledPwaContext()) {
+		if (!isIosBrowser()) return false;
+		if (sessionStorage.getItem(IOS_INSTALL_GUIDE_SHOWN_SESSION_KEY) === '1') return true;
+		sessionStorage.setItem(IOS_INSTALL_GUIDE_SHOWN_SESSION_KEY, '1');
+		await showIosPwaInstallGuide();
+		// Mantener fcm_prompt_pending para el paso de notificaciones al abrir la PWA.
+		return true;
+	}
 
 	if (sessionStorage.getItem(FCM_PROMPT_SHOWN_SESSION_KEY) === '1') return true;
 	sessionStorage.setItem(FCM_PROMPT_SHOWN_SESSION_KEY, '1');
@@ -267,4 +340,18 @@ export const runInitialFcmPromptIfNeeded = async () => {
 	}
 
 	return true;
+};
+
+const waitForBookmateAlert = async (timeoutMs = 1800) => {
+	if (window.BookmateAlert) return;
+	const started = Date.now();
+	while (!window.BookmateAlert && Date.now() - started < timeoutMs) {
+		await new Promise((resolve) => window.setTimeout(resolve, 40));
+	}
+};
+
+/** @deprecated Preferí runPushOnboardingIfNeeded */
+export const runInitialFcmPromptIfNeeded = async () => {
+	if (!isInstalledPwaContext()) return false;
+	return runPushOnboardingIfNeeded();
 };

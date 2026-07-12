@@ -17,6 +17,10 @@ interface BookmateAlertOptions {
     type?: 'info' | 'success' | 'warning' | 'error';
     title?: string;
     message?: string;
+    /** HTML controlado por la app (no input de usuario). */
+    messageHtml?: string;
+    /** Material Symbol name override. */
+    icon?: string;
     confirmText?: string;
     cancelText?: string;
 }

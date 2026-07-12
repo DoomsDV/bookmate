@@ -130,15 +130,23 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 <script>
 	import { maybeShowSettingsMenuTour } from '../lib/settings-menu-tour';
-
-	const FCM_DEVICE_TOKEN_STORAGE_KEY = 'hasel:fcm:device-token';
-	const FCM_PROMPT_SHOWN_SESSION_KEY = 'hasel:fcm:prompt-shown';
+	import {
+		FCM_DEVICE_TOKEN_STORAGE_KEY,
+		FCM_PROMPT_SHOWN_SESSION_KEY,
+		IOS_INSTALL_GUIDE_SHOWN_SESSION_KEY,
+		isInstalledPwaContext,
+		isIosBrowser,
+		showIosPwaInstallGuide,
+	} from '../lib/fcm-client';
 
 	const initializeTopBar = () => {
 		// PWA Install Button Handler for SPA transitions (Astro View Transitions)
 		const installBtn = document.getElementById('pwa-install-btn');
 		const deferredPrompt = (window as any).deferredPrompt;
-		if (installBtn && deferredPrompt) {
+		const canUseNativeInstall = Boolean(deferredPrompt);
+		const showIosGuide = isIosBrowser() && !isInstalledPwaContext();
+
+		if (installBtn && (canUseNativeInstall || showIosGuide)) {
 			installBtn.classList.remove('hidden');
 			installBtn.classList.add('flex');
 		}
@@ -148,10 +156,15 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 				const currentPrompt = (window as any).deferredPrompt;
 				if (currentPrompt) {
 					currentPrompt.prompt();
-					const { outcome } = await currentPrompt.userChoice;
+					await currentPrompt.userChoice;
 					(window as any).deferredPrompt = null;
 					installBtn.classList.remove('flex');
 					installBtn.classList.add('hidden');
+					return;
+				}
+
+				if (isIosBrowser() && !isInstalledPwaContext()) {
+					await showIosPwaInstallGuide();
 				}
 			});
 		}
@@ -339,6 +352,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 					if (tokenInput) tokenInput.value = localToken;
 					localStorage.removeItem(FCM_DEVICE_TOKEN_STORAGE_KEY);
 					sessionStorage.removeItem(FCM_PROMPT_SHOWN_SESSION_KEY);
+					sessionStorage.removeItem(IOS_INSTALL_GUIDE_SHOWN_SESSION_KEY);
 				});
 			});
 		};

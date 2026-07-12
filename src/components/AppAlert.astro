@@ -121,13 +121,26 @@
 							: 'Confirmar acción';
 			}
 			if (messageNode) {
-				messageNode.textContent =
-					typeof options.message === 'string' && options.message.trim()
-						? options.message
-						: '¿Deseas continuar?';
+				const html =
+					typeof options.messageHtml === 'string' && options.messageHtml.trim()
+						? options.messageHtml.trim()
+						: '';
+				if (html) {
+					messageNode.innerHTML = html;
+				} else {
+					messageNode.textContent =
+						typeof options.message === 'string' && options.message.trim()
+							? options.message
+							: '¿Deseas continuar?';
+				}
 			}
 			
-			if (iconNode) iconNode.textContent = tone.icon;
+			if (iconNode) {
+				iconNode.textContent =
+					typeof options.icon === 'string' && options.icon.trim()
+						? options.icon.trim()
+						: tone.icon;
+			}
 			
 			clearToneClasses();
 			
@@ -199,6 +212,52 @@
 	dialog[data-app-alert-dialog] [data-app-alert-confirm] {
 		background-image: none;
 		box-shadow: none;
+	}
+
+	dialog[data-app-alert-dialog] [data-app-alert-message] {
+		max-width: 20rem;
+	}
+
+	dialog[data-app-alert-dialog] .app-alert-install-lead {
+		margin: 0 0 0.85rem;
+		text-align: center;
+	}
+
+	dialog[data-app-alert-dialog] .app-alert-install-steps {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.55rem;
+		text-align: left;
+	}
+
+	dialog[data-app-alert-dialog] .app-alert-install-steps li {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.55rem;
+		padding: 0.55rem 0.65rem;
+		border-radius: 0.85rem;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--control-surface) 88%, transparent);
+		font-size: 0.86rem;
+		line-height: 1.35;
+		color: var(--on-surface);
+	}
+
+	dialog[data-app-alert-dialog] .app-alert-install-steps .material-symbols-rounded {
+		flex-shrink: 0;
+		margin-top: 0.05rem;
+		font-size: 1.2rem;
+		color: var(--primary);
+	}
+
+	dialog[data-app-alert-dialog] .app-alert-install-note {
+		margin: 0.85rem 0 0;
+		font-size: 0.8rem;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+		text-align: center;
 	}
 
 	dialog[data-app-alert-dialog]::backdrop {
