@@ -38,7 +38,7 @@ const candidates: BottomItem[] = [
 ];
 
 const navItems = candidates.filter((item) => !item.href || canAccessPath(item.href, currentRoleId));
-const moreItem: BottomItem = { label: 'Más', icon: 'menu', action: 'more' };
+const moreItem: BottomItem = { label: 'Más', icon: 'more_horiz', action: 'more' };
 const items = [...navItems.slice(0, 4), moreItem].slice(0, 5);
 
 const isActive = (href?: string) => {
@@ -59,8 +59,10 @@ const isActive = (href?: string) => {
 						aria-controls="app-side-nav"
 						aria-label="Abrir más opciones"
 					>
-						<span class="material-symbols-rounded mobile-bottom-nav__icon" aria-hidden="true">
-							{item.icon}
+						<span class="mobile-bottom-nav__icon-wrap">
+							<span class="material-symbols-rounded mobile-bottom-nav__icon" aria-hidden="true">
+								{item.icon}
+							</span>
 						</span>
 						<span class="mobile-bottom-nav__label">{item.label}</span>
 					</button>
@@ -113,8 +115,9 @@ const isActive = (href?: string) => {
 			width: 100%;
 			max-width: 100%;
 			box-sizing: border-box;
-			min-height: 3.65rem;
-			padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
+			min-height: 4.25rem;
+			/* Base generoso + safe-area (gesture bar iOS/Android). Sin depender solo del inset. */
+			padding: 0.45rem 0.25rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
 			border-top: 1px solid var(--shell-border);
 			background: color-mix(in srgb, var(--surface-bright, #fff) 92%, transparent);
 			backdrop-filter: blur(14px);
@@ -129,7 +132,7 @@ const isActive = (href?: string) => {
 
 		body:has([data-mobile-bottom-nav]) .app-shell > :last-child > main,
 		body:has([data-mobile-bottom-nav]) .dashboard-content-canvas > main {
-			padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+			padding-bottom: calc(6.1rem + env(safe-area-inset-bottom, 0px));
 		}
 	}
 
@@ -139,10 +142,10 @@ const isActive = (href?: string) => {
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 0.12rem;
+		gap: 0.18rem;
 		min-width: 0;
 		max-width: 100%;
-		padding: 0.3rem 0.1rem;
+		padding: 0.2rem 0.1rem;
 		border: 0;
 		border-radius: 0.85rem;
 		background: transparent;
@@ -160,7 +163,7 @@ const isActive = (href?: string) => {
 
 	.mobile-bottom-nav__item.is-active {
 		color: var(--primary);
-		background: color-mix(in srgb, var(--primary) 10%, transparent);
+		background: transparent;
 	}
 
 	.mobile-bottom-nav__icon-wrap {
@@ -168,6 +171,29 @@ const isActive = (href?: string) => {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+		min-width: 3.4rem;
+		min-height: 1.7rem;
+		padding: 0.2rem 0.85rem;
+		border-radius: 999px;
+		background: transparent;
+		transition: background-color 0.15s ease, color 0.15s ease;
+	}
+
+	.mobile-bottom-nav__item.is-active .mobile-bottom-nav__icon-wrap {
+		background: color-mix(in srgb, var(--primary) 16%, transparent);
+	}
+
+	/* Dark: pastilla pastel clara + ícono oscuro (MD3 secondary-container) */
+	html[data-theme='dark'] .mobile-bottom-nav__item.is-active {
+		color: #a8c7fa;
+	}
+
+	html[data-theme='dark'] .mobile-bottom-nav__item.is-active .mobile-bottom-nav__icon-wrap {
+		background: #a8c7fa;
+	}
+
+	html[data-theme='dark'] .mobile-bottom-nav__item.is-active .mobile-bottom-nav__icon {
+		color: #1b3a6e;
 	}
 
 	.mobile-bottom-nav__icon {
@@ -179,7 +205,7 @@ const isActive = (href?: string) => {
 		font-size: 0.62rem;
 		font-weight: 750;
 		letter-spacing: 0.01em;
-		line-height: 1.1;
+		line-height: 1.15;
 		max-width: 100%;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -188,8 +214,8 @@ const isActive = (href?: string) => {
 
 	.mobile-bottom-nav__badge {
 		position: absolute;
-		top: -0.2rem;
-		right: -0.45rem;
+		top: -0.05rem;
+		right: 0.15rem;
 		min-width: 1rem;
 		height: 1rem;
 		padding: 0 0.25rem;

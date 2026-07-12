@@ -10,35 +10,114 @@ const usesFixedDropdown = (instance: TomSelect) => {
 	return parent === 'body' || (typeof HTMLElement !== 'undefined' && parent instanceof HTMLElement);
 };
 
+const DROPDOWN_GAP_PX = 4;
+const DROPDOWN_VIEWPORT_MARGIN_PX = 10;
+const DROPDOWN_PREFERRED_MAX_PX = 256; // ~16rem
+const DROPDOWN_MIN_PX = 120;
+
+const getLayoutViewportHeight = () =>
+	document.documentElement.clientHeight || window.innerHeight;
+
+/** Bounds visibles (incluye teclado móvil vía visualViewport). */
+const getVisibleBounds = () => {
+	const vv = window.visualViewport;
+	if (!vv) {
+		const height = getLayoutViewportHeight();
+		return { top: 0, bottom: height };
+	}
+	return { top: vv.offsetTop, bottom: vv.offsetTop + vv.height };
+};
+
+const applyDropdownMaxHeight = (instance: TomSelect, maxHeight: number) => {
+	instance.dropdown.style.maxHeight = `${maxHeight}px`;
+	instance.dropdown.style.overflowY = 'hidden';
+
+	const content = instance.dropdown.querySelector<HTMLElement>('.ts-dropdown-content');
+	const inputWrap = instance.dropdown.querySelector<HTMLElement>('.dropdown-input-wrap');
+	const chrome = inputWrap?.offsetHeight ?? 0;
+	if (content) {
+		content.style.maxHeight = `${Math.max(72, maxHeight - chrome)}px`;
+		content.style.overflowY = 'auto';
+	}
+};
+
 const positionFixedDropdown = (instance: TomSelect) => {
 	if (!usesFixedDropdown(instance) || !instance.isOpen) return;
 
 	const rect = instance.control.getBoundingClientRect();
 	const parent = instance.settings.dropdownParent;
+	const visible = getVisibleBounds();
+
+	const spaceBelow = Math.max(
+		0,
+		visible.bottom - rect.bottom - DROPDOWN_GAP_PX - DROPDOWN_VIEWPORT_MARGIN_PX
+	);
+	const spaceAbove = Math.max(
+		0,
+		rect.top - visible.top - DROPDOWN_GAP_PX - DROPDOWN_VIEWPORT_MARGIN_PX
+	);
+	// En bottom sheets / cerca del borde inferior: abrir hacia arriba.
+	const openUpward =
+		spaceBelow < Math.min(DROPDOWN_PREFERRED_MAX_PX, 200) && spaceAbove > spaceBelow;
+	const available = openUpward ? spaceAbove : spaceBelow;
+	const maxHeight = Math.min(
+		DROPDOWN_PREFERRED_MAX_PX,
+		Math.max(80, available || DROPDOWN_MIN_PX)
+	);
 
 	// `position: fixed` inside <dialog> (or any transformed ancestor) is relative to that
 	// element, not the viewport — convert coordinates when the parent is an HTMLElement.
 	if (parent instanceof HTMLElement) {
 		const parentRect = parent.getBoundingClientRect();
-		Object.assign(instance.dropdown.style, {
-			position: 'absolute',
-			width: `${rect.width}px`,
-			top: `${rect.bottom - parentRect.top + parent.scrollTop + 4}px`,
-			left: `${rect.left - parentRect.left + parent.scrollLeft}px`,
-			right: 'auto',
-			zIndex: '1000',
-		});
+		const left = `${rect.left - parentRect.left + parent.scrollLeft}px`;
+
+		if (openUpward) {
+			Object.assign(instance.dropdown.style, {
+				position: 'absolute',
+				width: `${rect.width}px`,
+				top: 'auto',
+				bottom: `${parentRect.bottom - rect.top + parent.scrollTop + DROPDOWN_GAP_PX}px`,
+				left,
+				right: 'auto',
+				zIndex: '1000',
+			});
+		} else {
+			Object.assign(instance.dropdown.style, {
+				position: 'absolute',
+				width: `${rect.width}px`,
+				top: `${rect.bottom - parentRect.top + parent.scrollTop + DROPDOWN_GAP_PX}px`,
+				bottom: 'auto',
+				left,
+				right: 'auto',
+				zIndex: '1000',
+			});
+		}
+		applyDropdownMaxHeight(instance, maxHeight);
 		return;
 	}
 
-	Object.assign(instance.dropdown.style, {
-		position: 'fixed',
-		width: `${rect.width}px`,
-		top: `${rect.bottom + 4}px`,
-		left: `${rect.left}px`,
-		right: 'auto',
-		zIndex: '1000',
-	});
+	if (openUpward) {
+		Object.assign(instance.dropdown.style, {
+			position: 'fixed',
+			width: `${rect.width}px`,
+			top: 'auto',
+			bottom: `${getLayoutViewportHeight() - rect.top + DROPDOWN_GAP_PX}px`,
+			left: `${rect.left}px`,
+			right: 'auto',
+			zIndex: '1000',
+		});
+	} else {
+		Object.assign(instance.dropdown.style, {
+			position: 'fixed',
+			width: `${rect.width}px`,
+			top: `${rect.bottom + DROPDOWN_GAP_PX}px`,
+			bottom: 'auto',
+			left: `${rect.left}px`,
+			right: 'auto',
+			zIndex: '1000',
+		});
+	}
+	applyDropdownMaxHeight(instance, maxHeight);
 };
 
 const bindFixedDropdownPosition = (instance: TomSelect) => {
@@ -53,10 +132,14 @@ const bindFixedDropdownPosition = (instance: TomSelect) => {
 	});
 	window.addEventListener('scroll', onScroll, true);
 	window.addEventListener('resize', onResize, { passive: true });
+	window.visualViewport?.addEventListener('resize', onResize);
+	window.visualViewport?.addEventListener('scroll', onResize);
 
 	bodyDropdownCleanups.set(instance, () => {
 		window.removeEventListener('scroll', onScroll, true);
 		window.removeEventListener('resize', onResize);
+		window.visualViewport?.removeEventListener('resize', onResize);
+		window.visualViewport?.removeEventListener('scroll', onResize);
 	});
 };
 
