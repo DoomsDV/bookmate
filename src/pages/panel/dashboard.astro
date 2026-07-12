@@ -253,15 +253,31 @@ const toPageHref = (page: number) => {
 			<SideNav currentPath={Astro.url.pathname} />
 
 			<div class="dashboard-content-canvas grid min-h-full min-w-0 max-w-full grid-rows-[auto_1fr] overflow-x-hidden bg-(--page-background) transition-colors duration-300">
-				<TopBar />
+				<TopBar>
+					{showTeamOverview && (
+						<div
+							slot="actions-before"
+							class="dashboard-team-chip dashboard-team-chip--compact"
+							data-team-card
+						>
+							<div class="flex -space-x-2" data-team-avatar-stack aria-label="Vista previa del equipo">
+								<span class="team-avatar team-avatar--placeholder"></span>
+								<span class="team-avatar team-avatar--placeholder"></span>
+								<span class="team-avatar team-avatar--placeholder"></span>
+							</div>
+							<p class="dashboard-team-summary sr-only" data-team-summary>Equipo activo</p>
+							<p class="team-overview-state text-[0.75rem] font-medium hidden" data-team-state></p>
+						</div>
+					)}
+				</TopBar>
 
 				<main class="w-full max-w-full min-w-0 overflow-x-hidden px-3 py-4 sm:px-5 sm:py-6 lg:px-6">
 					<div class="mx-auto w-full max-w-[92rem] min-w-0">
-						<section class="grid w-full min-w-0 gap-6 sm:gap-8">
+						<section class="grid w-full min-w-0 gap-5 sm:gap-8">
 							<section class="dashboard-summary-card mb-0 transition-all duration-300">
-								<div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-									<div class="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
-										<div class="dashboard-greeting grid min-w-0 gap-1">
+								<div class="flex flex-col justify-between gap-3 lg:flex-row lg:items-center lg:gap-4">
+									<div class="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
+										<div class="dashboard-greeting grid min-w-0 gap-0.5">
 											<h1
 												class="dashboard-greeting__title text-3xl font-extrabold text-[#202124] dark:text-[#E3E3E3] tracking-tight sm:text-4xl"
 												data-dashboard-greeting
@@ -278,14 +294,14 @@ const toPageHref = (page: number) => {
 
 										{showTeamOverview && (
 										<div
-											class="dashboard-team-chip h-fit lg:ml-8"
+											class="dashboard-team-chip dashboard-team-chip--pill h-fit lg:ml-8"
 											data-team-card
 										>
 											<div class="flex items-center gap-3">
 												<div class="flex -space-x-2" data-team-avatar-stack aria-label="Vista previa del equipo">
-													<span class="w-8 h-8 rounded-full bg-[#E8EAED] dark:bg-[#444746] border-2 border-white dark:border-[#1E1F22] shrink-0 z-30 transition-colors duration-300"></span>
-													<span class="w-8 h-8 rounded-full bg-[#DADCE0] dark:bg-[#5F6368] border-2 border-white dark:border-[#1E1F22] shrink-0 z-20 transition-colors duration-300"></span>
-													<span class="w-8 h-8 rounded-full bg-[#BDC1C6] dark:bg-[#747775] border-2 border-white dark:border-[#1E1F22] shrink-0 z-10 transition-colors duration-300"></span>
+													<span class="team-avatar team-avatar--placeholder"></span>
+													<span class="team-avatar team-avatar--placeholder"></span>
+													<span class="team-avatar team-avatar--placeholder"></span>
 												</div>
 												<p class="dashboard-team-summary" data-team-summary>
 													Equipo activo
@@ -703,6 +719,18 @@ const toPageHref = (page: number) => {
 						}
 						</section>
 					</div>
+
+					{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && (
+						<button
+							type="button"
+							class="dashboard-cita-fab"
+							data-open-appointment-voice
+							data-appointment-voice-mode="inline"
+							aria-label="Cita rápida"
+						>
+							<span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>
+						</button>
+					)}
 				</main>
 			</div>
 		</div>
@@ -1499,28 +1527,34 @@ const toPageHref = (page: number) => {
 	};
 
 	const loadTeamOverview = async () => {
-		const card = document.querySelector<HTMLElement>('[data-team-card]');
-		if (!card) return;
-
-		const stateNode = card.querySelector<HTMLElement>('[data-team-state]');
-		if (!stateNode) return;
+		const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-team-card]'));
+		if (cards.length === 0) return;
 
 		const cachedPayload = readTeamOverviewCache();
 		if (cachedPayload) {
-			renderTeamOverview(card, cachedPayload, 'cache');
+			for (const card of cards) {
+				renderTeamOverview(card, cachedPayload, 'cache');
+			}
 			return;
 		}
 
 		try {
 			const teamPayload = await fetchTeamOverview();
 			saveTeamOverviewCache(teamPayload);
-			renderTeamOverview(card, teamPayload, 'network');
+			for (const card of cards) {
+				renderTeamOverview(card, teamPayload, 'network');
+			}
 		} catch (error) {
-			stateNode.classList.remove('team-overview-state--empty');
-			stateNode.classList.remove('hidden');
-			stateNode.textContent =
+			const message =
 				error instanceof Error ? error.message : 'No fue posible cargar el equipo de trabajo.';
-			stateNode.classList.add('team-overview-state--error');
+			for (const card of cards) {
+				const stateNode = card.querySelector<HTMLElement>('[data-team-state]');
+				if (!stateNode) continue;
+				stateNode.classList.remove('team-overview-state--empty');
+				stateNode.classList.remove('hidden');
+				stateNode.textContent = message;
+				stateNode.classList.add('team-overview-state--error');
+			}
 		}
 	};
 
@@ -2461,6 +2495,46 @@ const toPageHref = (page: number) => {
 		background: color-mix(in srgb, #f8fafc 72%, #ffffff 28%);
 	}
 
+	.dashboard-team-chip--pill {
+		display: none;
+	}
+
+	.dashboard-team-chip--compact {
+		display: inline-flex;
+		min-height: 0;
+		margin-right: 0.1rem;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		gap: 0;
+	}
+
+	.dashboard-team-chip--compact .team-overview-state {
+		display: none !important;
+	}
+
+	.dashboard-team-chip--compact :global(.team-avatar) {
+		width: 1.65rem;
+		height: 1.65rem;
+		margin-left: -0.4rem;
+		font-size: 0.58rem;
+		border-width: 1.5px;
+	}
+
+	.dashboard-team-chip--compact :global(.team-avatar:first-child) {
+		margin-left: 0;
+	}
+
+	@media (min-width: 1024px) {
+		.dashboard-team-chip--compact {
+			display: none;
+		}
+
+		.dashboard-team-chip--pill {
+			display: inline-flex;
+		}
+	}
+
 	.dashboard-team-summary {
 		margin: 0;
 		white-space: nowrap;
@@ -2470,13 +2544,84 @@ const toPageHref = (page: number) => {
 		color: #475569;
 	}
 
-	html[data-theme='dark'] .dashboard-team-chip {
+	html[data-theme='dark'] .dashboard-team-chip--pill {
 		border-color: rgba(148, 163, 184, 0.2);
 		background: color-mix(in srgb, #1e1f22 78%, #131314 22%);
 	}
 
 	html[data-theme='dark'] .dashboard-team-summary {
 		color: #c4c7c5;
+	}
+
+	.dashboard-cita-fab {
+		display: none;
+	}
+
+	@media (max-width: 1023px) {
+		.dashboard-header-actions {
+			display: none;
+		}
+
+		.dashboard-header-actions .dashboard-ai-chat-cta {
+			display: none;
+		}
+
+		.dashboard-cita-fab {
+			position: fixed;
+			right: max(1rem, env(safe-area-inset-right, 0px));
+			bottom: calc(4.35rem + env(safe-area-inset-bottom, 0px));
+			z-index: 44;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 3.5rem;
+			height: 3.5rem;
+			padding: 0;
+			border: 0;
+			border-radius: 999px;
+			color: #f8fbff;
+			background: linear-gradient(135deg, #3b6fe0 0%, #5b8def 48%, #7aa8f5 100%);
+			box-shadow:
+				0 6px 18px rgba(47, 111, 221, 0.38),
+				0 1px 3px rgba(15, 23, 42, 0.12);
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+			transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+		}
+
+		.dashboard-cita-fab .material-symbols-rounded {
+			font-size: 1.45rem;
+			line-height: 1;
+			color: inherit;
+		}
+
+		.dashboard-cita-fab:hover {
+			filter: brightness(1.04);
+			box-shadow:
+				0 8px 22px rgba(47, 111, 221, 0.44),
+				0 1px 3px rgba(15, 23, 42, 0.14);
+		}
+
+		.dashboard-cita-fab:active {
+			transform: scale(0.96);
+		}
+
+		.dashboard-cita-fab:focus-visible {
+			outline: 3px solid color-mix(in srgb, var(--primary) 36%, white 64%);
+			outline-offset: 3px;
+		}
+
+		html[data-theme='dark'] .dashboard-cita-fab {
+			background: linear-gradient(135deg, #3b6fe0 0%, #5b8def 55%, #6b9af0 100%);
+			box-shadow:
+				0 8px 24px rgba(0, 0, 0, 0.45),
+				0 0 0 1px rgba(147, 197, 253, 0.18);
+		}
+
+		/* Agenda ya está en la bottom nav: evitamos CTA duplicada en mobile/tablet. */
+		.dashboard-header-cta {
+			display: none;
+		}
 	}
 
 	.dashboard-ai-strip {
@@ -4568,37 +4713,18 @@ const toPageHref = (page: number) => {
 
 	@media (max-width: 768px) {
 		.dashboard-greeting__title {
-			font-size: clamp(1.55rem, 7vw, 1.9rem);
-			line-height: 1.15;
+			font-size: clamp(1.4rem, 6.2vw, 1.75rem);
+			line-height: 1.12;
 		}
 
 		.dashboard-greeting__sub {
-			font-size: 0.9rem;
-			line-height: 1.45;
+			font-size: 0.8rem;
+			line-height: 1.35;
+			opacity: 0.92;
 		}
 
-		.dashboard-header-actions {
-			flex-direction: row;
-			flex-wrap: wrap;
-			gap: 0.55rem;
-		}
-
-		.dashboard-ai-chat-cta,
-		.dashboard-header-cta {
-			flex: 1 1 calc(50% - 0.3rem);
-			min-width: 9.5rem;
-			width: auto;
-			padding: 0.7rem 0.9rem;
-			min-height: 2.75rem;
-		}
-
-		/* Agenda ya está en la bottom nav: evitamos CTA duplicada en mobile. */
-		.dashboard-header-cta {
-			display: none;
-		}
-
-		.dashboard-ai-chat-cta {
-			flex: 1 1 100%;
+		.dashboard-summary-card .dashboard-ai-strip {
+			margin-top: 0.9rem;
 		}
 
 		.dashboard-profitability-shell {

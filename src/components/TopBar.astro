@@ -31,7 +31,9 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			</div>
 		</div>
 
-		<div class="flex shrink-0 items-center gap-3 sm:gap-3">
+		<div class="flex shrink-0 items-center gap-2 sm:gap-3">
+			<slot name="actions-before" />
+
 			<button
 				id="pwa-install-btn"
 				type="button"
