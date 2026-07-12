@@ -122,13 +122,36 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.setTranscript('');
 		this.#visualizer?.setMode('idle');
 		const shell = this.querySelector<HTMLDialogElement>('[data-voice-overlay-shell]');
-		if (shell && !shell.open) shell.showModal();
+		if (!shell) return;
+		shell.classList.remove('is-closing');
+		if (!shell.open) shell.showModal();
 	}
 
 	close() {
-		this.cancelAll(true);
 		const shell = this.querySelector<HTMLDialogElement>('[data-voice-overlay-shell]');
-		if (shell?.open) shell.close();
+		if (!shell?.open) {
+			this.cancelAll(true);
+			return;
+		}
+
+		if (shell.classList.contains('is-closing')) return;
+
+		const finishClose = () => {
+			shell.removeEventListener('animationend', onAnimationEnd);
+			window.clearTimeout(fallbackTimer);
+			shell.classList.remove('is-closing');
+			this.cancelAll(true);
+			if (shell.open) shell.close();
+		};
+
+		const onAnimationEnd = (event: AnimationEvent) => {
+			if (event.target !== shell) return;
+			finishClose();
+		};
+
+		shell.classList.add('is-closing');
+		shell.addEventListener('animationend', onAnimationEnd);
+		const fallbackTimer = window.setTimeout(finishClose, 220);
 	}
 
 	private isSessionActive(session: number) {

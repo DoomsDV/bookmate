@@ -1,15 +1,19 @@
 type VisualizerMode = 'idle' | 'live' | 'collapsing' | 'off';
 
-const COLLAPSE_MS = 780;
-const RESTING_SCALE = 0.06;
-const LIVE_MAX_SCALE = 0.68;
-const LIVE_MIN_SCALE = 0.1;
+type DotState = {
+	y: number;
+	scaleX: number;
+	scaleY: number;
+};
+
+const COLLAPSE_MS = 640;
+const RESTING_DOT: DotState = { y: 0, scaleX: 1, scaleY: 1 };
 
 export class AppointmentVoiceVisualizer {
 	#root: HTMLElement;
-	#bars: HTMLElement[];
-	#barCurrent: number[];
-	#barTarget: number[];
+	#dots: HTMLElement[];
+	#current: DotState[];
+	#target: DotState[];
 	#analyser: AnalyserNode | null = null;
 	#dataArray: Uint8Array | null = null;
 	#raf: number | null = null;
@@ -22,14 +26,11 @@ export class AppointmentVoiceVisualizer {
 
 	constructor(root: HTMLElement) {
 		this.#root = root;
-		this.#bars = Array.from(root.querySelectorAll<HTMLElement>('[data-voice-bar]'));
-		if (this.#bars.length === 0) {
-			throw new Error('Voice visualizer bars not found.');
-		}
+		this.#dots = Array.from(root.querySelectorAll<HTMLElement>('[data-voice-dot]'));
 
-		this.#barCurrent = this.#bars.map(() => RESTING_SCALE);
-		this.#barTarget = [...this.#barCurrent];
-		this.#applyBarScales();
+		this.#current = this.createDotStates();
+		this.#target = this.createDotStates();
+		this.applyDots();
 	}
 
 	setAnalyser(analyser: AnalyserNode | null) {
@@ -48,14 +49,14 @@ export class AppointmentVoiceVisualizer {
 			this.stop();
 			this.#level = 0;
 			this.#emitLevel(0);
-			this.#resetBars();
+			this.resetDots();
 			return;
 		}
 
 		if (mode === 'idle' || mode === 'live') {
-			this.#barCurrent = this.#bars.map(() => RESTING_SCALE);
-			this.#barTarget = [...this.#barCurrent];
-			this.#applyBarScales();
+			this.#current = this.createDotStates();
+			this.#target = this.createDotStates();
+			this.applyDots();
 		}
 
 		if (!this.#raf) {
@@ -103,127 +104,126 @@ export class AppointmentVoiceVisualizer {
 		this.stop();
 		this.#level = 0;
 		this.#emitLevel(0);
-		this.#resetBars();
+		this.resetDots();
 	}
 
 	destroy() {
 		this.cancelCollapse();
 	}
 
+	private createDotStates() {
+		return Array.from({ length: this.#dots.length }, () => ({ ...RESTING_DOT }));
+	}
+
 	private readLevel() {
 		if (this.#mode === 'live' && this.#analyser && this.#dataArray) {
-			this.#analyser.getByteFrequencyData(this.#dataArray);
+			this.#analyser.getByteTimeDomainData(this.#dataArray);
 			let sum = 0;
-			const slice = Math.min(32, this.#dataArray.length);
-			for (let i = 0; i < slice; i += 1) {
-				sum += this.#dataArray[i];
+			for (let i = 0; i < this.#dataArray.length; i += 1) {
+				const centered = ((this.#dataArray[i] ?? 128) - 128) / 128;
+				sum += centered * centered;
 			}
-			const avg = sum / slice / 255;
-			this.#level += (Math.min(1, avg * 4.1) - this.#level) * 0.38;
+			const rms = Math.sqrt(sum / this.#dataArray.length);
+			this.#level += (Math.min(1, rms * 5.5) - this.#level) * 0.36;
 			return;
 		}
 
 		if (this.#mode === 'idle') {
-			this.#level += (0.04 - this.#level) * 0.06;
+			this.#level += (0.05 - this.#level) * 0.06;
 			return;
 		}
 
-		const wave =
-			(Math.sin(this.#phase * 1.35) + Math.sin(this.#phase * 2.1 + 0.6)) * 0.5;
+		const wave = (Math.sin(this.#phase * 1.2) + Math.sin(this.#phase * 2.1 + 0.8)) * 0.5;
 		const target = 0.12 + wave * 0.07;
 		this.#level += (target - this.#level) * 0.08;
 	}
 
-	private readBarLevel(index: number) {
-		if (!this.#analyser || !this.#dataArray || this.#bars.length === 0) {
-			return this.#level;
+	private readDotEnergy(index: number) {
+		if (!this.#analyser || !this.#dataArray || this.#dataArray.length === 0) {
+			return 0;
 		}
 
-		const binCount = this.#dataArray.length;
-		const barCount = this.#bars.length;
-		const minBin = 2;
-		const maxBin = Math.max(minBin + 2, Math.floor(binCount * 0.48));
-		const span = maxBin - minBin;
-		const t0 = index / barCount;
-		const t1 = (index + 1) / barCount;
-		const binStart = Math.floor(minBin + span * t0 ** 1.28);
-		const binEnd = Math.max(binStart + 1, Math.floor(minBin + span * t1 ** 1.28));
-
+		const segmentSize = Math.floor(this.#dataArray.length / this.#dots.length);
+		const start = Math.max(0, index * segmentSize);
+		const end = Math.min(this.#dataArray.length, start + segmentSize);
 		let sum = 0;
-		let peak = 0;
-		for (let i = binStart; i < binEnd; i += 1) {
-			const value = this.#dataArray[i] ?? 0;
-			sum += value;
-			peak = Math.max(peak, value);
+
+		for (let i = start; i < end; i += 1) {
+			const centered = ((this.#dataArray[i] ?? 128) - 128) / 128;
+			sum += centered * centered;
 		}
 
-		const avg = sum / (binEnd - binStart) / 255;
-		const peakNorm = peak / 255;
-		return Math.min(1, avg * 0.55 + peakNorm * 0.45);
+		const rms = Math.sqrt(sum / Math.max(1, end - start));
+		return Math.min(1, rms * 6.2);
 	}
 
-	private updateBarTargets() {
+	private updateDotTargets() {
 		const collapse = this.#mode === 'collapsing' ? this.#collapseProgress : 0;
+		const collapseScale = 1 - collapse;
 
-		if (this.#mode === 'idle') {
-			this.#bars.forEach((_, index) => {
-				this.#barTarget[index] = RESTING_SCALE;
-			});
-			return;
-		}
+		this.#target.forEach((_, index) => {
+			const idleWave = Math.sin(this.#phase * 1.25 + index * 0.86);
+			const alternate = index % 2 === 0 ? -1 : 1;
 
-		const amp = Math.max(0, (0.22 + this.#level * 0.28) * (1 - collapse));
-
-		this.#bars.forEach((_, index) => {
-			if (this.#mode === 'live') {
-				const barLevel = this.readBarLevel(index);
-				const shaped = Math.pow(Math.min(1, barLevel * 2.6), 0.62);
-				const globalLift = this.#level * 0.18;
-				const waveMix = shaped * 0.82 + globalLift;
-				const wobbleAmp = 0.035 + this.#level * 0.09;
-				const wobble =
-					Math.sin(this.#phase * 3.2 + index * 0.88) * wobbleAmp +
-					Math.sin(this.#phase * 1.95 - index * 0.54) * (wobbleAmp * 0.55);
-				const height =
-					LIVE_MIN_SCALE + waveMix * (LIVE_MAX_SCALE - LIVE_MIN_SCALE) * (1 + wobble);
-				this.#barTarget[index] = Math.max(
-					RESTING_SCALE,
-					Math.min(LIVE_MAX_SCALE, height),
-				);
+			if (this.#mode === 'idle') {
+				const y = idleWave * 3.4;
+				this.#target[index] = {
+					y,
+					scaleX: 1 + Math.abs(idleWave) * 0.04,
+					scaleY: 1 + Math.abs(idleWave) * 0.08,
+				};
 				return;
 			}
 
-			const barLevel = this.#level;
-			const wobbleAmp = 0.11;
-			const wobble =
-				Math.sin(this.#phase * 3.1 + index * 0.8) * wobbleAmp +
-				Math.sin(this.#phase * 2 - index * 0.52) * (wobbleAmp * 0.68);
-			const target = Math.max(RESTING_SCALE, amp * (1 + wobble));
-			this.#barTarget[index] = target;
+			const energy = this.#mode === 'live' ? this.readDotEnergy(index) : this.#level;
+			const lift = (8 + energy * 34) * alternate;
+			const pulse = Math.sin(this.#phase * 2.6 + index * 0.72) * (3 + energy * 6);
+
+			this.#target[index] = {
+				y: (pulse + lift * energy) * collapseScale,
+				scaleX: (1 + energy * 0.34) * collapseScale + collapse,
+				scaleY: (1 + energy * 1.18 + this.#level * 0.28) * collapseScale + collapse,
+			};
 		});
 	}
 
-	private smoothBars() {
-		const easing = this.#mode === 'live' ? 0.34 : this.#mode === 'idle' ? 0.12 : 0.14;
-		this.#bars.forEach((bar, index) => {
-			const current = this.#barCurrent[index] ?? RESTING_SCALE;
-			const target = this.#barTarget[index] ?? current;
-			const next = current + (target - current) * easing;
-			this.#barCurrent[index] = next;
-			bar.style.setProperty('--bar-scale', next.toFixed(3));
+	private smoothDots() {
+		const easing = this.#mode === 'live' ? 0.42 : this.#mode === 'idle' ? 0.16 : 0.14;
+		this.#current.forEach((current, index) => {
+			const target = this.#target[index] ?? RESTING_DOT;
+			current.y += (target.y - current.y) * easing;
+			current.scaleX += (target.scaleX - current.scaleX) * easing;
+			current.scaleY += (target.scaleY - current.scaleY) * easing;
 		});
 	}
 
-	private #applyBarScales() {
-		this.#bars.forEach((bar, index) => {
-			bar.style.setProperty('--bar-scale', (this.#barCurrent[index] ?? RESTING_SCALE).toFixed(3));
+	private applyDots() {
+		this.#dots.forEach((dot, index) => {
+			const state = this.#current[index] ?? RESTING_DOT;
+			dot.style.setProperty('--dot-y', `${state.y.toFixed(2)}px`);
+			dot.style.setProperty('--dot-scale-x', state.scaleX.toFixed(3));
+			dot.style.setProperty('--dot-scale-y', state.scaleY.toFixed(3));
 		});
 	}
 
-	private #resetBars() {
-		this.#barCurrent = this.#bars.map(() => RESTING_SCALE);
-		this.#barTarget = [...this.#barCurrent];
-		this.#applyBarScales();
+	private applyMagicGlow() {
+		const collapseScale = this.#mode === 'collapsing' ? 1 - this.#collapseProgress : 1;
+		const breathe = Math.sin(this.#phase * 1.18) * 0.5 + Math.sin(this.#phase * 0.72 + 0.8) * 0.5;
+		const driftX = Math.sin(this.#phase * 0.9) * (1.5 + this.#level * 3.5);
+		const driftY = Math.cos(this.#phase * 1.1 + 0.4) * (1.1 + this.#level * 3);
+		const scale = (0.96 + this.#level * 0.22 + breathe * 0.025) * collapseScale;
+		const rotate = Math.sin(this.#phase * 0.82) * (1.8 + this.#level * 3.2);
+
+		this.#root.style.setProperty('--magic-x', `${driftX.toFixed(2)}px`);
+		this.#root.style.setProperty('--magic-y', `${driftY.toFixed(2)}px`);
+		this.#root.style.setProperty('--magic-scale', scale.toFixed(3));
+		this.#root.style.setProperty('--magic-rotate', `${rotate.toFixed(2)}deg`);
+	}
+
+	private resetDots() {
+		this.#current = this.createDotStates();
+		this.#target = this.createDotStates();
+		this.applyDots();
 	}
 
 	#emitLevel(level: number) {
@@ -258,13 +258,15 @@ export class AppointmentVoiceVisualizer {
 		this.readLevel();
 		this.#phase +=
 			this.#mode === 'live'
-				? 0.08 + this.#level * 0.1
+				? 0.075 + this.#level * 0.12
 				: this.#mode === 'collapsing'
 					? 0.055
 					: 0.032;
 
-		this.updateBarTargets();
-		this.smoothBars();
+		this.updateDotTargets();
+		this.smoothDots();
+		this.applyDots();
+		this.applyMagicGlow();
 		this.#emitLevel(this.#level);
 
 		this.#raf = requestAnimationFrame(this.#tick);
