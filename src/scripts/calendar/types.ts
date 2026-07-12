@@ -77,6 +77,7 @@ export type AppointmentFormPayload = {
 	status: AppointmentStatus;
 	session_notes?: string;
 	acknowledge_schedule_misalignment?: boolean;
+	notify_customer?: boolean;
 };
 
 export type AppointmentCreatePayload = Omit<AppointmentFormPayload, 'status'>;

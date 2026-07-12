@@ -115,6 +115,7 @@ export interface AppointmentCreatePayload {
 	end_time: string;
 	payment_status?: 'NONE' | 'PENDING' | 'PAID' | 'PAID_TRANSFER' | 'PAID_CASH' | 'EXEMPT';
 	acknowledge_schedule_misalignment?: boolean;
+	notify_customer?: boolean;
 }
 
 export interface AppointmentUpdatePayload extends AppointmentCreatePayload {

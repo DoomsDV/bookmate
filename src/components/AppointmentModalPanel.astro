@@ -471,6 +471,30 @@ const { showVoiceButton = false }: Props = Astro.props;
 							</div>
 						</dialog>
 					</div>
+
+					<div
+						class="mx-7 mb-1 flex items-start justify-between gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-container-low)/55 px-4 py-3.5"
+						data-modal-notify-customer-wrap
+					>
+						<div class="grid min-w-0 gap-0.5">
+							<span class="text-[0.92rem] font-bold text-(--on-surface)">
+								Notificar al cliente por WhatsApp
+							</span>
+							<span class="text-[0.8rem] font-medium leading-snug text-(--on-surface-variant)">
+								Desactivalo si estás regularizando o corrigiendo un error.
+							</span>
+						</div>
+						<label class="appointment-notify-switch shrink-0">
+							<span class="sr-only">Notificar al cliente por WhatsApp</span>
+							<input
+								type="checkbox"
+								class="appointment-notify-switch__input sr-only"
+								data-modal-notify-customer
+								checked
+							/>
+							<span class="appointment-notify-switch__track" aria-hidden="true"></span>
+						</label>
+					</div>
 				</div>
 
 				<div

@@ -179,6 +179,7 @@ class AppointmentModal extends HTMLElement {
 	scheduleMisalignedTitle: HTMLElement | null = null;
 	scheduleMisalignedMessage: HTMLElement | null = null;
 	scheduleMisalignedLink: HTMLAnchorElement | null = null;
+	notifyCustomerInput: HTMLInputElement | null = null;
 	tabsBar: HTMLElement | null = null;
 	tabButtons: NodeListOf<HTMLButtonElement> | null = null;
 	tabPanels: NodeListOf<HTMLElement> | null = null;
@@ -305,6 +306,8 @@ class AppointmentModal extends HTMLElement {
 		this.scheduleMisalignedLink =
 			this.form?.querySelector<HTMLAnchorElement>('[data-appointment-schedule-misaligned-link]') ??
 			null;
+		this.notifyCustomerInput =
+			this.form?.querySelector<HTMLInputElement>('[data-modal-notify-customer]') ?? null;
 		this.tabsBar = this.form?.querySelector<HTMLElement>('[data-appointment-tabs]') ?? null;
 		this.tabButtons = this.form?.querySelectorAll<HTMLButtonElement>('[data-appointment-tab]') ?? null;
 		this.tabPanels =
@@ -932,6 +935,7 @@ class AppointmentModal extends HTMLElement {
 		this.hideScheduleMisalignedBlock();
 		this.hideHistorySection();
 		this.clearImmutableReadOnlyMode();
+		if (this.notifyCustomerInput) this.notifyCustomerInput.checked = true;
 	}
 
 	hideAttendanceBlock() {
@@ -1954,6 +1958,7 @@ class AppointmentModal extends HTMLElement {
 				end_time: endIso,
 				status: statusRaw,
 				payment_status: 'NONE',
+				notify_customer: this.notifyCustomerInput?.checked ?? true,
 				...(sessionNotes !== undefined ? { session_notes: sessionNotes } : {}),
 			},
 		};
@@ -2559,6 +2564,7 @@ class AppointmentModal extends HTMLElement {
 					| 'EXEMPT'
 					| undefined,
 				acknowledge_schedule_misalignment: body.acknowledge_schedule_misalignment,
+				notify_customer: body.notify_customer,
 			});
 		};
 
