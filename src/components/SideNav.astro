@@ -48,6 +48,7 @@ const isItemActive = (item: NavItem) => {
 /** Rutas con shell SSR liviano (datos en cliente). Prefetch solo al hover, no en viewport. */
 const prefetchHoverPaths = new Set([
 	"/panel/dashboard",
+	"/panel/calendar",
 	"/panel/customers",
 	"/panel/cobros",
 	"/panel/services",
@@ -549,54 +550,8 @@ const teamSectionOpen = visibleTeamItems.some((item) => isItemActive(item));
 </style>
 
 <script>
-	const refreshCobrosBadges = async () => {
-		const badges = document.querySelectorAll<HTMLElement>('[data-cobros-nav-badge]');
-		if (!badges.length) return;
+	import { initCobrosPendingBadge } from '../scripts/cobros-pending-badge';
 
-		const hasFeature = window.HaselSubscription?.hasFeature?.('DEPOSIT_COLLECTION');
-		if (hasFeature === false) {
-			badges.forEach((el) => {
-				el.classList.add('hidden');
-				el.classList.remove('inline-flex');
-				el.textContent = '';
-			});
-			return;
-		}
-
-		try {
-			const response = await fetch('/api/cobros/pending-count', {
-				headers: { Accept: 'application/json' },
-			});
-			const payload = await response.json().catch(() => ({}));
-			if (!response.ok || payload.status !== 'success') return;
-			const count = Number(payload?.data?.pending_count || 0);
-			badges.forEach((el) => {
-				if (count > 0) {
-					el.textContent = count > 99 ? '99+' : String(count);
-					el.classList.remove('hidden');
-					el.classList.add('inline-flex');
-				} else {
-					el.textContent = '';
-					el.classList.add('hidden');
-					el.classList.remove('inline-flex');
-				}
-			});
-		} catch {
-			/* ignore */
-		}
-	};
-
-	document.addEventListener('hasel:subscription', () => {
-		void refreshCobrosBadges();
-	});
-	document.addEventListener('hasel:cobros-changed', () => {
-		void refreshCobrosBadges();
-	});
-
-	if (document.readyState === 'loading') {
-		document.addEventListener('DOMContentLoaded', () => void refreshCobrosBadges());
-	} else {
-		void refreshCobrosBadges();
-	}
+	initCobrosPendingBadge();
 </script>
 

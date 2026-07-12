@@ -1771,7 +1771,7 @@ const toPageHref = (page: number) => {
 		list.classList.toggle('hidden', !hasItems);
 	};
 
-	const loadDashboardCobrosAlert = async () => {
+	const loadDashboardCobrosAlert = async (options?: { force?: boolean }) => {
 		const slot = document.querySelector<HTMLElement>('[data-dashboard-cobros-alert-slot]');
 		if (!slot) return;
 
@@ -1783,18 +1783,15 @@ const toPageHref = (page: number) => {
 		}
 
 		try {
-			const response = await fetch('/api/cobros/pending-count', {
-				headers: { Accept: 'application/json' },
-			});
-			const payload = await response.json().catch(() => ({}));
-			if (!response.ok || payload?.status !== 'success') {
+			const { fetchCobrosPendingCount } = await import('../../scripts/cobros-pending-badge');
+			const count = await fetchCobrosPendingCount(options);
+			if (count === null) {
 				slot.hidden = true;
 				syncDashboardAlertsEmpty();
 				return;
 			}
 
-			const count = Number(payload?.data?.pending_count || 0);
-			if (!Number.isFinite(count) || count <= 0) {
+			if (count <= 0) {
 				slot.hidden = true;
 				syncDashboardAlertsEmpty();
 				return;
@@ -1947,12 +1944,15 @@ const toPageHref = (page: number) => {
 		scrollToUpcomingAppointmentsIfNeeded();
 	};
 
-	document.addEventListener('hasel:subscription', () => {
-		void loadDashboardCobrosAlert();
-	});
-	document.addEventListener('hasel:cobros-changed', () => {
-		void loadDashboardCobrosAlert();
-	});
+	if (!(window as unknown as { __haselDashCobrosListeners?: boolean }).__haselDashCobrosListeners) {
+		(window as unknown as { __haselDashCobrosListeners?: boolean }).__haselDashCobrosListeners = true;
+		document.addEventListener('hasel:subscription', () => {
+			void loadDashboardCobrosAlert();
+		});
+		document.addEventListener('hasel:cobros-changed', () => {
+			void loadDashboardCobrosAlert({ force: true });
+		});
+	}
 
 	const UPCOMING_APPOINTMENTS_ANCHOR_ID = 'dashboard-upcoming-appointments';
 	const UPCOMING_APPOINTMENTS_SCROLL_OFFSET = 12;

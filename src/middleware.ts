@@ -11,6 +11,11 @@ import {
 	setSessionCookies,
 } from './lib/auth';
 import { PanelAccessError, validatePanelSessionWithOrds } from './lib/panel-access';
+import {
+	clearPanelValidationCache,
+	isPanelValidationFresh,
+	setPanelValidationCache,
+} from './lib/panel-validation-cache';
 import { getCurrentOrganizationWithOrds } from './lib/organization';
 import { SESSION_EXPIRED_API_CODE } from './lib/session-auth-messages';
 import { isOrgSelectionToken, parseTokenClaims } from './lib/token-claims';
@@ -97,6 +102,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 			const session = await refreshWithOrds(refreshToken);
 			setSessionCookies(cookies, url, session);
 			accessToken = session.access_token;
+			clearPanelValidationCache(cookies);
 		} catch {
 			clearSessionCookies(cookies);
 			return redirectToLogin();
@@ -128,9 +134,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	}
 
 	try {
-		await validatePanelSessionWithOrds(accessToken);
+		if (!isPanelValidationFresh(cookies, claims)) {
+			await validatePanelSessionWithOrds(accessToken);
+			setPanelValidationCache(cookies, claims);
+		}
 	} catch (error) {
 		if (error instanceof PanelAccessError) {
+			clearPanelValidationCache(cookies);
 			clearSessionCookies(cookies);
 
 			if (url.pathname.startsWith('/api/')) {
