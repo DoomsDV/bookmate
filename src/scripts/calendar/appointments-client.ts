@@ -19,6 +19,8 @@ type ApiFailure = {
 	status?: string;
 	message?: string;
 	errors?: unknown;
+	code?: string;
+	schedule_misaligned_reason?: string;
 };
 
 type GoogleCalendarEventsPayload = {
@@ -37,10 +39,15 @@ const parseJsonResponse = async (response: Response) => {
 const ensureSuccess = (response: Response, data: ApiSuccess | ApiFailure, fallbackMessage: string) => {
 	if (response.ok && data?.status === 'success') return;
 
+	const failure = data as ApiFailure;
 	throw new ApiClientError(
 		readApiError(data, fallbackMessage),
 		response.status || 500,
-		parseApiFieldErrors((data as ApiFailure)?.errors)
+		parseApiFieldErrors(failure?.errors),
+		{
+			code: String(failure?.code || '').trim() || undefined,
+			scheduleMisalignedReason: String(failure?.schedule_misaligned_reason || '').trim() || null,
+		}
 	);
 };
 

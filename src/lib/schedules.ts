@@ -21,6 +21,7 @@ export const DAYS_URL = resolveOrdsApiUrl(
 export interface ScheduleProfessionalLov {
 	id_professional: number;
 	display_name: string;
+	services: number[];
 }
 
 export interface ScheduleLocationLov {
@@ -200,6 +201,20 @@ const firstString = (source: Record<string, unknown>, keys: string[]) => {
 	return '';
 };
 
+const normalizeIdArray = (value: unknown): number[] => {
+	if (!Array.isArray(value)) return [];
+	const ids: number[] = [];
+	for (const item of value) {
+		const parsed =
+			typeof item === 'object' && item !== null
+				? firstNumber(item as Record<string, unknown>, ['ser_id_service', 'id_service', 'id'])
+				: toNumber(item, NaN);
+		if (!Number.isInteger(parsed) || parsed <= 0) continue;
+		if (!ids.includes(parsed)) ids.push(parsed);
+	}
+	return ids;
+};
+
 const parseFieldErrors = (value: unknown) => {
 	if (!Array.isArray(value)) return [];
 	return value.flatMap((item) => {
@@ -325,6 +340,7 @@ const normalizeProfessionalLov = (value: unknown): ScheduleProfessionalLov | nul
 	return {
 		id_professional: professionalId,
 		display_name: displayName || `Profesional #${professionalId}`,
+		services: normalizeIdArray(source.services),
 	};
 };
 

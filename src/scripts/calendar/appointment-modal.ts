@@ -6,8 +6,11 @@ import {
 	parseParaguayMobilePhone,
 } from '../../lib/paraguay-phone';
 import {
+	getScheduleMisalignedConfirmMessage,
+	getScheduleMisalignedConfirmTitle,
 	getScheduleMisalignedMessage,
 	getScheduleMisalignedTitle,
+	isScheduleMisalignedConflictError,
 	isScheduleMisalignedFlag,
 	normalizeScheduleMisalignedReason,
 } from '../../lib/schedule-misaligned';
@@ -26,6 +29,7 @@ import type {
 	AppointmentFormPayload,
 	CustomerOption,
 	Option,
+	ProfessionalOption,
 } from './types';
 import {
 	ApiClientError,
@@ -52,7 +56,7 @@ type BuildPayloadResult = { payload: AppointmentFormPayload } | { error: string 
 export type AppointmentModalConfig = {
 	roleId: number;
 	currentProfessionalId: number;
-	professionals: Option[];
+	professionals: ProfessionalOption[];
 	locations: Option[];
 	services: Option[];
 };
@@ -89,6 +93,7 @@ type RequiredNodes = {
 	modalProfessional: HTMLSelectElement;
 	modalLocation: HTMLSelectElement;
 	modalService: HTMLSelectElement;
+	modalServiceHint: HTMLElement | null;
 	dateTimePicker: HTMLDialogElement;
 	pickerTargetLabel: HTMLElement;
 	pickerMonthSelect: HTMLSelectElement;
@@ -112,7 +117,7 @@ class AppointmentModal extends HTMLElement {
 	client: AppointmentsClient | null = null;
 	roleId = 0;
 	currentProfessionalId = 0;
-	professionals: Option[] = [];
+	professionals: ProfessionalOption[] = [];
 	locations: Option[] = [];
 	services: Option[] = [];
 	customers: CustomerOption[] = [];
@@ -201,6 +206,7 @@ class AppointmentModal extends HTMLElement {
 	modalProfessional: HTMLSelectElement | null = null;
 	modalLocation: HTMLSelectElement | null = null;
 	modalService: HTMLSelectElement | null = null;
+	modalServiceHint: HTMLElement | null = null;
 	dateTimePicker: HTMLDialogElement | null = null;
 	pickerTargetLabel: HTMLElement | null = null;
 	pickerMonthSelect: HTMLSelectElement | null = null;
@@ -340,6 +346,7 @@ class AppointmentModal extends HTMLElement {
 			this.form?.querySelector<HTMLSelectElement>('[data-modal-professional]') ?? null;
 		this.modalLocation = this.form?.querySelector<HTMLSelectElement>('[data-modal-location]') ?? null;
 		this.modalService = this.form?.querySelector<HTMLSelectElement>('[data-modal-service]') ?? null;
+		this.modalServiceHint = this.form?.querySelector<HTMLElement>('[data-modal-service-hint]') ?? null;
 		this.dateTimePicker =
 			this.form?.querySelector<HTMLDialogElement>('[data-datetime-picker]') ?? null;
 		this.pickerTargetLabel =
@@ -485,7 +492,6 @@ class AppointmentModal extends HTMLElement {
 
 		this.renderOptions(requiredNodes.modalProfessional, this.professionals, 'Selecciona un profesional');
 		this.renderOptions(requiredNodes.modalLocation, this.locations, 'Selecciona una sucursal');
-		this.renderOptions(requiredNodes.modalService, this.services, 'Selecciona un servicio');
 
 		if (this.roleId === ROLES.PROFESIONAL) {
 			requiredNodes.modalProfessionalWrap.classList.add('hidden');
@@ -497,6 +503,9 @@ class AppointmentModal extends HTMLElement {
 			requiredNodes.modalProfessionalWrap.classList.remove('hidden');
 			setSearchableSelectDisabled(requiredNodes.modalProfessional, false);
 		}
+
+		const selectedProId = this.getSelectedProfessionalId();
+		this.refreshServicesForProfessional(selectedProId);
 	}
 
 	openCreate(context: OpenCreateContext = {}) {
@@ -528,11 +537,8 @@ class AppointmentModal extends HTMLElement {
 			requiredNodes.modalLocation.value = String(this.locations[0].id);
 		}
 
-		if (this.services.length > 0) {
-			requiredNodes.modalService.value = String(this.services[0].id);
-		}
-
 		this.ensureModalProfessionalValue();
+		this.refreshServicesForProfessional(this.getSelectedProfessionalId());
 		void this.loadCustomersForCurrentProfessional(true);
 		this.openModalShell();
 	}
@@ -625,6 +631,7 @@ class AppointmentModal extends HTMLElement {
 			modalProfessional: this.modalProfessional,
 			modalLocation: this.modalLocation,
 			modalService: this.modalService,
+			modalServiceHint: this.modalServiceHint,
 			dateTimePicker: this.dateTimePicker,
 			pickerTargetLabel: this.pickerTargetLabel,
 			pickerMonthSelect: this.pickerMonthSelect,
@@ -1737,7 +1744,11 @@ class AppointmentModal extends HTMLElement {
 			: null;
 		setSearchableSelectValue(requiredNodes.modalProfessional, appointment.pro_id_professional || '');
 		requiredNodes.modalLocation.value = String(appointment.loc_id_location || '');
-		requiredNodes.modalService.value = String(appointment.ser_id_service || '');
+		this.ensureModalProfessionalValue();
+		this.refreshServicesForProfessional(this.getSelectedProfessionalId(), {
+			preferredServiceId: toPositiveInt(appointment.ser_id_service, 0),
+			includePreferredIfMissing: true,
+		});
 		requiredNodes.statusInput.value = String(appointment.status || 'CONFIRMADO');
 		this.editingPaymentStatus = String(appointment.payment_status || 'NONE').trim().toUpperCase() || 'NONE';
 		this.editingDepositAmount =
@@ -1796,9 +1807,12 @@ class AppointmentModal extends HTMLElement {
 		if (toPositiveInt(draft.loc_id_location, 0) > 0) {
 			requiredNodes.modalLocation.value = String(draft.loc_id_location);
 		}
-		if (toPositiveInt(draft.ser_id_service, 0) > 0) {
-			requiredNodes.modalService.value = String(draft.ser_id_service);
-		}
+
+		this.ensureModalProfessionalValue();
+		this.refreshServicesForProfessional(this.getSelectedProfessionalId(), {
+			preferredServiceId: toPositiveInt(draft.ser_id_service, 0),
+			includePreferredIfMissing: true,
+		});
 
 		const startLocal = draft.start_time ? parseIsoToLocalInput(String(draft.start_time)) : '';
 		const endLocal = draft.end_time ? parseIsoToLocalInput(String(draft.end_time)) : '';
@@ -1822,7 +1836,6 @@ class AppointmentModal extends HTMLElement {
 
 		this.syncDateBounds();
 		this.syncDateDisplayInputs();
-		this.ensureModalProfessionalValue();
 		void this.loadCustomersForCurrentProfessional(true);
 
 		this.form?.querySelectorAll('[data-ai-draft-highlight]').forEach((node) => {
@@ -1978,6 +1991,8 @@ class AppointmentModal extends HTMLElement {
 	};
 
 	handleProfessionalChange = () => {
+		this.refreshServicesForProfessional(this.getSelectedProfessionalId());
+
 		if (this.roleId === ROLES.PROFESIONAL) {
 			if (this.selectedCustomer) this.clearSelectedCustomer({ clearFields: true });
 			this.customers = [];
@@ -1990,6 +2005,59 @@ class AppointmentModal extends HTMLElement {
 			void this.loadCustomersForCurrentProfessional(true);
 		}
 	};
+
+	private getServiceIdsForProfessional(professionalId: number): number[] | null {
+		if (professionalId <= 0) return null;
+		const professional = this.professionals.find((item) => item.id === professionalId);
+		if (!professional) return null;
+		return Array.isArray(professional.services) ? professional.services : [];
+	}
+
+	private refreshServicesForProfessional(
+		professionalId: number,
+		options: { preferredServiceId?: number; includePreferredIfMissing?: boolean } = {}
+	) {
+		const requiredNodes = this.getRequiredNodes();
+		if (!requiredNodes) return;
+
+		const preferredServiceId = toPositiveInt(options.preferredServiceId, 0);
+		const assignedIds = this.getServiceIdsForProfessional(professionalId);
+		let filtered =
+			assignedIds === null
+				? [...this.services]
+				: this.services.filter((service) => assignedIds.includes(service.id));
+
+		if (
+			options.includePreferredIfMissing &&
+			preferredServiceId > 0 &&
+			!filtered.some((service) => service.id === preferredServiceId)
+		) {
+			const preferred = this.services.find((service) => service.id === preferredServiceId);
+			if (preferred) filtered = [preferred, ...filtered];
+		}
+
+		const emptyLabel =
+			professionalId > 0 && assignedIds !== null && assignedIds.length === 0
+				? 'Sin servicios asignados'
+				: 'Selecciona un servicio';
+
+		this.renderOptions(requiredNodes.modalService, filtered, emptyLabel);
+
+		const nextServiceId =
+			preferredServiceId > 0 && filtered.some((service) => service.id === preferredServiceId)
+				? preferredServiceId
+				: filtered[0]?.id || 0;
+		requiredNodes.modalService.value = nextServiceId > 0 ? String(nextServiceId) : '';
+
+		const hint = requiredNodes.modalServiceHint;
+		if (hint) {
+			const showEmptyHint = professionalId > 0 && assignedIds !== null && assignedIds.length === 0;
+			hint.textContent = showEmptyHint
+				? 'Este profesional no tiene servicios asignados. Asignalos desde Personal.'
+				: '';
+			hint.classList.toggle('hidden', !showEmptyHint);
+		}
+	}
 
 	syncDateBounds() {
 		const requiredNodes = this.getRequiredNodes();
@@ -2415,20 +2483,8 @@ class AppointmentModal extends HTMLElement {
 		this.setSubmittingState(true, this.mode === 'edit' ? 'Guardando...' : 'Creando...');
 
 		try {
-			const response =
-				this.mode === 'edit' && this.editingAppointmentId > 0
-					? await this.client.updateAppointment(this.editingAppointmentId, payload)
-					: await this.client.createAppointment({
-							id_customer: payload.id_customer,
-							loc_id_location: payload.loc_id_location,
-							pro_id_professional: payload.pro_id_professional,
-							ser_id_service: payload.ser_id_service,
-							customer_name: payload.customer_name,
-							customer_phone: payload.customer_phone,
-							start_time: payload.start_time,
-							end_time: payload.end_time,
-							payment_status: (payload as any).payment_status,
-						});
+			const response = await this.persistAppointment(payload);
+			if (!response) return;
 
 			this.closeModal();
 			this.dispatchEvent(
@@ -2447,9 +2503,74 @@ class AppointmentModal extends HTMLElement {
 					? 'No fue posible actualizar la cita.'
 					: 'No fue posible crear la cita.'
 			);
+		} finally {
 			this.setSubmittingState(false);
 		}
 	};
+
+	private getSelectedLocationName() {
+		const locationId = toPositiveInt(this.modalLocation?.value, 0);
+		if (locationId <= 0) return '';
+		return this.locations.find((item) => item.id === locationId)?.name || '';
+	}
+
+	private async confirmScheduleMisalignment(error: unknown): Promise<boolean> {
+		const reason = normalizeScheduleMisalignedReason(
+			(error as { scheduleMisalignedReason?: unknown })?.scheduleMisalignedReason
+		);
+		const title = getScheduleMisalignedConfirmTitle(reason);
+		const message = getScheduleMisalignedConfirmMessage(reason, {
+			locationName: this.getSelectedLocationName(),
+		});
+
+		if (window.BookmateAlert?.confirm) {
+			return window.BookmateAlert.confirm({
+				type: 'warning',
+				title,
+				message,
+				confirmText: 'Guardar de todos modos',
+				cancelText: 'Cancelar',
+			});
+		}
+
+		return window.confirm(`${title}\n\n${message}`);
+	}
+
+	private async persistAppointment(payload: AppointmentFormPayload) {
+		const run = async (body: AppointmentFormPayload) => {
+			if (this.mode === 'edit' && this.editingAppointmentId > 0) {
+				return this.client!.updateAppointment(this.editingAppointmentId, body);
+			}
+			return this.client!.createAppointment({
+				id_customer: body.id_customer,
+				loc_id_location: body.loc_id_location,
+				pro_id_professional: body.pro_id_professional,
+				ser_id_service: body.ser_id_service,
+				customer_name: body.customer_name,
+				customer_phone: body.customer_phone,
+				start_time: body.start_time,
+				end_time: body.end_time,
+				payment_status: (body as { payment_status?: string }).payment_status as
+					| 'NONE'
+					| 'PENDING'
+					| 'PAID'
+					| 'PAID_TRANSFER'
+					| 'PAID_CASH'
+					| 'EXEMPT'
+					| undefined,
+				acknowledge_schedule_misalignment: body.acknowledge_schedule_misalignment,
+			});
+		};
+
+		try {
+			return await run(payload);
+		} catch (error) {
+			if (!isScheduleMisalignedConflictError(error)) throw error;
+			const confirmed = await this.confirmScheduleMisalignment(error);
+			if (!confirmed) return null;
+			return run({ ...payload, acknowledge_schedule_misalignment: true });
+		}
+	}
 
 	handleDelete = async () => {
 		if (!this.client || this.mode !== 'edit' || !this.editingAppointmentId) return;

@@ -74,6 +74,13 @@ export const toErrorResponse = <TError extends ApiErrorLike>(
 		payload.code = SESSION_EXPIRED_API_CODE;
 	}
 
+	const scheduleReason = String(
+		(resolvedError as { scheduleMisalignedReason?: unknown }).scheduleMisalignedReason || ''
+	).trim();
+	if (scheduleReason && !payload.schedule_misaligned_reason) {
+		payload.schedule_misaligned_reason = scheduleReason;
+	}
+
 	return Response.json(payload, { status: resolvedError.status });
 };
 

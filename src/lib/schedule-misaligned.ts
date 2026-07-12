@@ -99,3 +99,49 @@ export const getScheduleMisalignedBannerAction = (count: number) => {
 	}
 	return 'Buscá las alertas ⚠ en el calendario para reprogramarlas.';
 };
+
+export const getScheduleMisalignedConfirmTitle = (reason: ScheduleMisalignedReason | null) => {
+	switch (reason) {
+		case 'DAY_BLOCKED':
+			return 'Día bloqueado para el profesional';
+		case 'WRONG_LOCATION':
+			return 'Sucursal fuera de su agenda';
+		case 'TIME_OUTSIDE_SCHEDULE':
+			return 'Horario fuera de sus turnos';
+		default:
+			return 'Cita fuera de la agenda del profesional';
+	}
+};
+
+export const getScheduleMisalignedConfirmMessage = (
+	reason: ScheduleMisalignedReason | null,
+	context: MisalignedMessageContext = {}
+) => {
+	const locationLabel = String(context.locationName || '').trim() || 'esa sucursal';
+
+	switch (reason) {
+		case 'DAY_BLOCKED':
+			return 'El profesional tiene ese día bloqueado en excepciones de horario. Si guardás de todos modos, la cita quedará fuera de su agenda. ¿Querés continuar?';
+		case 'WRONG_LOCATION':
+			return `El profesional no atiende en ${locationLabel} en ese horario (sí puede tener turnos en otra sucursal). Si guardás de todos modos, la cita quedará fuera de su agenda. ¿Querés continuar?`;
+		case 'TIME_OUTSIDE_SCHEDULE':
+			return 'El profesional no atiende ese día o la hora no cae en sus turnos (plantilla semanal o excepción). Si guardás de todos modos, la cita quedará fuera de su agenda. ¿Querés continuar?';
+		default:
+			return 'La fecha u hora elegida no coincide con la agenda del profesional. Si guardás de todos modos, la cita quedará fuera de su agenda. ¿Querés continuar?';
+	}
+};
+
+export const SCHEDULE_MISALIGNED_ERROR_CODE = 'SCHEDULE_MISALIGNED';
+
+export const isScheduleMisalignedConflictError = (error: unknown) => {
+	if (!error || typeof error !== 'object') return false;
+	const source = error as {
+		status?: number;
+		code?: string;
+		scheduleMisalignedReason?: string | null;
+	};
+	return (
+		source.status === 409 &&
+		String(source.code || '').trim().toUpperCase() === SCHEDULE_MISALIGNED_ERROR_CODE
+	);
+};

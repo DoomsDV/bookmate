@@ -840,7 +840,16 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 												<span class="material-symbols-rounded text-(--primary)">workspace_premium</span>
 												<span class="text-[1.15rem] font-extrabold text-(--on-surface)" data-settings-plan-name>—</span>
 											</div>
-											<p class="m-0 text-[0.9rem] font-semibold text-(--on-surface-variant)" data-settings-plan-price>—</p>
+											<p class="m-0 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+												<span
+													data-settings-plan-price-list
+													class="hidden text-[0.85rem] font-semibold text-(--on-surface-variant) line-through"
+												></span>
+												<span
+													class="text-[0.95rem] font-bold text-(--on-surface)"
+													data-settings-plan-price
+												>—</span>
+											</p>
 										</div>
 										<span data-settings-plan-status-badge class="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[0.8rem] font-bold">
 											<span class="material-symbols-rounded text-[1rem]" data-settings-plan-status-icon>check_circle</span>
@@ -2349,15 +2358,31 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			const nameEl = this.querySelector<HTMLElement>('[data-settings-plan-name]');
 			if (nameEl) nameEl.textContent = String(plan.name || plan.code || 'Plan');
 
+			const listAmount = Number(plan.price_amount) || 0;
+			const currency = String(plan.currency || 'PYG');
+			const period = String(plan.billing_period || 'MONTHLY') === 'YEARLY' ? 'año' : 'mes';
+			const formatMoney = (amount: number) =>
+				`${new Intl.NumberFormat('es-PY').format(amount)} ${currency}`;
+			const isFounder =
+				sub.is_founder === true || sub.is_founder === 1 || sub.is_founder === '1';
+			const founderPayAmount =
+				isFounder && listAmount > 0 ? Math.round(listAmount * 0.5) : null;
+
 			const priceEl = this.querySelector<HTMLElement>('[data-settings-plan-price]');
+			const priceListEl = this.querySelector<HTMLElement>('[data-settings-plan-price-list]');
 			if (priceEl) {
-				const amount = Number(plan.price_amount) || 0;
-				const currency = String(plan.currency || 'PYG');
-				const period = String(plan.billing_period || 'MONTHLY') === 'YEARLY' ? 'año' : 'mes';
-				priceEl.textContent =
-					amount > 0
-						? `${new Intl.NumberFormat('es-PY').format(amount)} ${currency}/${period}`
-						: 'Sin costo';
+				if (founderPayAmount != null) {
+					priceEl.textContent = `${formatMoney(founderPayAmount)}/${period}`;
+					if (priceListEl) {
+						priceListEl.textContent = formatMoney(listAmount);
+						priceListEl.classList.remove('hidden');
+					}
+				} else {
+					priceEl.textContent =
+						listAmount > 0 ? `${formatMoney(listAmount)}/${period}` : 'Sin costo';
+					priceListEl?.classList.add('hidden');
+					if (priceListEl) priceListEl.textContent = '';
+				}
 			}
 
 			const STATUS_MAP: Record<string, { label: string; icon: string; cls: string; hint?: string }> = {
@@ -2367,7 +2392,10 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 					label: 'Fundador',
 					icon: 'stars',
 					cls: 'bg-amber-100 text-amber-700',
-					hint: 'Por ser miembro Fundador, tenés un 50% de descuento de por vida en tu plan Premium.',
+					hint:
+						founderPayAmount != null
+							? `Por ser miembro Fundador, pagás ${formatMoney(founderPayAmount)}/${period} (50% de descuento de por vida).`
+							: 'Por ser miembro Fundador, tenés un 50% de descuento de por vida en tu plan Premium.',
 				},
 				PAST_DUE: {
 					label: 'Pago pendiente',

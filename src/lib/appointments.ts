@@ -114,6 +114,7 @@ export interface AppointmentCreatePayload {
 	start_time: string;
 	end_time: string;
 	payment_status?: 'NONE' | 'PENDING' | 'PAID' | 'PAID_TRANSFER' | 'PAID_CASH' | 'EXEMPT';
+	acknowledge_schedule_misalignment?: boolean;
 }
 
 export interface AppointmentUpdatePayload extends AppointmentCreatePayload {
@@ -134,24 +135,31 @@ interface AppointmentFailureResponse {
 	message?: string;
 	details?: unknown;
 	errors?: unknown;
+	code?: string;
+	schedule_misaligned_reason?: string;
 }
 
 export class AppointmentsApiError extends Error {
 	status: number;
 	details?: unknown;
 	fieldErrors: AppointmentFieldError[];
+	code?: string;
+	scheduleMisalignedReason?: string | null;
 
 	constructor(
 		message: string,
 		status = 400,
 		details?: unknown,
-		fieldErrors: AppointmentFieldError[] = []
+		fieldErrors: AppointmentFieldError[] = [],
+		options?: { code?: string; scheduleMisalignedReason?: string | null }
 	) {
 		super(message);
 		this.name = 'AppointmentsApiError';
 		this.status = status;
 		this.details = details;
 		this.fieldErrors = fieldErrors;
+		this.code = options?.code;
+		this.scheduleMisalignedReason = options?.scheduleMisalignedReason ?? null;
 	}
 }
 
@@ -205,11 +213,26 @@ const toApiError = (
 	fallbackMessage: string
 ) => {
 	const failureData = (data ?? {}) as AppointmentFailureResponse;
+	const code = String(failureData.code || '').trim() || undefined;
+	const scheduleMisalignedReason = String(failureData.schedule_misaligned_reason || '').trim() || null;
+	const details =
+		failureData.details && typeof failureData.details === 'object' && !Array.isArray(failureData.details)
+			? {
+					...(failureData.details as Record<string, unknown>),
+					...(code ? { code } : {}),
+					...(scheduleMisalignedReason ? { schedule_misaligned_reason: scheduleMisalignedReason } : {}),
+				}
+			: {
+					...(code ? { code } : {}),
+					...(scheduleMisalignedReason ? { schedule_misaligned_reason: scheduleMisalignedReason } : {}),
+				};
+
 	return new AppointmentsApiError(
 		(typeof failureData.message === 'string' && failureData.message.trim()) || fallbackMessage,
 		response.status || 400,
-		failureData.details,
-		parseFieldErrors(failureData.errors)
+		Object.keys(details).length > 0 ? details : failureData.details,
+		parseFieldErrors(failureData.errors),
+		{ code, scheduleMisalignedReason }
 	);
 };
 

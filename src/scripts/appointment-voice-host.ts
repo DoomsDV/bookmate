@@ -112,10 +112,18 @@ class AppointmentVoiceHost extends HTMLElement {
 
 			const professionals = Array.isArray(data.professionals)
 				? data.professionals
-						.map((item) => ({
-							id: toPositiveInt(item?.id_professional, 0),
-							name: String(item?.display_name || '').trim(),
-						}))
+						.map((item) => {
+							const serviceIds = Array.isArray(item?.services)
+								? item.services
+										.map((serviceId) => toPositiveInt(serviceId, 0))
+										.filter((serviceId) => serviceId > 0)
+								: [];
+							return {
+								id: toPositiveInt(item?.id_professional, 0),
+								name: String(item?.display_name || '').trim(),
+								services: [...new Set(serviceIds)],
+							};
+						})
 						.filter((item) => item.id > 0 && item.name)
 				: [];
 

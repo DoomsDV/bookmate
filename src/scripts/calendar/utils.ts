@@ -146,12 +146,21 @@ export const toIsoWithOffset = (value: string | Date) => {
 export class ApiClientError extends Error {
 	status: number;
 	fieldErrors: ApiFieldError[];
+	code?: string;
+	scheduleMisalignedReason?: string | null;
 
-	constructor(message: string, status = 400, fieldErrors: ApiFieldError[] = []) {
+	constructor(
+		message: string,
+		status = 400,
+		fieldErrors: ApiFieldError[] = [],
+		options?: { code?: string; scheduleMisalignedReason?: string | null }
+	) {
 		super(message);
 		this.name = 'ApiClientError';
 		this.status = status;
 		this.fieldErrors = fieldErrors;
+		this.code = options?.code;
+		this.scheduleMisalignedReason = options?.scheduleMisalignedReason ?? null;
 	}
 }
 

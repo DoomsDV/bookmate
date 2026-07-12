@@ -26,6 +26,7 @@ const baseAppointmentSchema = z.object({
 	payment_status: z
 		.enum(['NONE', 'PENDING', 'PAID', 'PAID_TRANSFER', 'PAID_CASH', 'EXEMPT'])
 		.optional(),
+	acknowledge_schedule_misalignment: z.boolean().optional(),
 });
 
 const validateCustomerIdentity = (

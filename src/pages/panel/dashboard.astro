@@ -362,11 +362,11 @@ const toPageHref = (page: number) => {
 
 							{roleId === ROLES.ADMIN && (
 								<section
-									class="dashboard-profitability-shell is-loading rounded-4xl p-6 transition-colors duration-300"
+									class="dashboard-profitability-shell is-loading transition-colors duration-300"
 									data-profitability-panel
 									aria-busy="true"
 								>
-									<div class="mb-5 flex items-center justify-between gap-3 dashboard-profitability-head">
+									<div class="mb-4 flex items-center justify-between gap-3 dashboard-profitability-head">
 										<div class="flex items-center gap-2">
 											<span class="material-symbols-rounded text-[1.3rem] text-(--primary)" aria-hidden="true">trending_up</span>
 											<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Rentabilidad del mes</h2>
@@ -2750,9 +2750,9 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip {
-		border-color: color-mix(in srgb, var(--primary) 28%, transparent);
-		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--primary) 18%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+		border: 0;
+		background: color-mix(in srgb, var(--surface-container-high, #242424) 78%, var(--primary) 22%);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__icon {
@@ -3645,18 +3645,18 @@ const toPageHref = (page: number) => {
 		--metric-accent-soft: rgba(47, 111, 221, 0.12);
 		min-width: 0;
 		overflow: hidden;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, white 12%);
+		border: 0;
 		background: #ffffff;
-		box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
 		transition:
 			transform 180ms ease,
 			box-shadow 180ms ease,
-			border-color 180ms ease;
+			background-color 180ms ease;
 	}
 
 	.dashboard-metric-card:hover {
 		transform: translateY(-2px);
-		box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+		box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06), 0 12px 24px rgba(15, 23, 42, 0.05);
 	}
 
 	.dashboard-metric-label {
@@ -3757,13 +3757,14 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-metric-card {
-		border-color: color-mix(in srgb, var(--shell-border) 76%, transparent);
-		background: var(--surface-container-low, #1e1f22);
-		box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+		border: 0;
+		background: var(--surface-container-high, #222222);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-metric-card:hover {
-		box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+		background: var(--surface-container-highest, #282828);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-metric-label {
@@ -3806,11 +3807,8 @@ const toPageHref = (page: number) => {
 		--metric-accent-soft: rgba(253, 186, 116, 0.16);
 	}
 
-	html[data-theme='dark'] .dashboard-metric-card[data-metric-accent='orange'] .dashboard-metric-icon {
-		border: none;
-		outline: none;
-		box-shadow: none;
-		background: rgba(253, 186, 116, 0.16);
+	html[data-theme='dark'] .dashboard-metric-icon {
+		border: 0;
 	}
 
 	.dashboard-floor {
@@ -3998,6 +3996,14 @@ const toPageHref = (page: number) => {
 
 	.dashboard-report-shell.dashboard-floor__panel .dashboard-report-list {
 		flex: 1 1 auto;
+		align-content: start;
+		align-items: stretch;
+	}
+
+	.dashboard-report-shell.dashboard-floor__panel .dashboard-report-card {
+		align-self: start;
+		width: 100%;
+		height: auto;
 	}
 
 	.dashboard-report-shell.dashboard-floor__panel .app-pagination {
@@ -4092,16 +4098,16 @@ const toPageHref = (page: number) => {
 	.dashboard-alerts-shell {
 		display: flex;
 		flex-direction: column;
-		border: 1px solid rgba(148, 163, 184, 0.24);
+		border: 0;
 		background: #ffffff;
-		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
-		min-height: 100%;
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
+		min-height: 0;
 		box-sizing: border-box;
 	}
 
 	html[data-theme='dark'] .dashboard-alerts-shell {
-		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 78%, var(--surface-container, #131314) 22%);
-		border-color: color-mix(in srgb, var(--outline-variant, #8a9099) 36%, transparent);
+		background: var(--surface-container-high, #222222);
+		border: 0;
 		box-shadow: none;
 	}
 
@@ -4111,13 +4117,13 @@ const toPageHref = (page: number) => {
 		gap: 0.7rem;
 		padding: 0.75rem 0.8rem;
 		border-radius: 0.95rem;
-		border: 1px solid #e2e8f0;
-		background: #fafbfc;
+		border: 0;
+		background: #f4f6f8;
 	}
 
 	html[data-theme='dark'] .dashboard-alert-item {
-		border-color: rgba(255, 255, 255, 0.08);
-		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--surface-container, #131314) 18%);
+		border: 0;
+		background: color-mix(in srgb, var(--surface-container-highest, #282828) 88%, #000 12%);
 	}
 
 	.dashboard-alert-icon {
@@ -4353,7 +4359,8 @@ const toPageHref = (page: number) => {
 		}
 
 		.dashboard-floor--action.dashboard-floor--split {
-			min-height: 28rem;
+			min-height: 0;
+			align-items: start;
 		}
 
 		.dashboard-side-metrics {
@@ -4368,9 +4375,11 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-profitability-shell {
-		border: 1px solid rgba(148, 163, 184, 0.24);
-		background: #ffffff;
-		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+		border: 0;
+		background: transparent;
+		box-shadow: none;
+		border-radius: 0;
+		padding: 0;
 		min-width: 0;
 		max-width: 100%;
 		opacity: 1;
@@ -4380,9 +4389,7 @@ const toPageHref = (page: number) => {
 			transform 280ms ease,
 			max-height 280ms ease,
 			margin 280ms ease,
-			padding 280ms ease,
-			border-color 280ms ease,
-			background-color 280ms ease;
+			padding 280ms ease;
 	}
 
 	.dashboard-profitability-shell.is-loading .dashboard-profit-value,
@@ -4455,8 +4462,8 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-profitability-shell {
-		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 78%, var(--surface-container, #131314) 22%);
-		border-color: color-mix(in srgb, var(--outline-variant, #8a9099) 36%, transparent);
+		background: transparent;
+		border: 0;
 		box-shadow: none;
 	}
 
@@ -4493,11 +4500,11 @@ const toPageHref = (page: number) => {
 	.dashboard-profit-card {
 		--profit-accent: #426edb;
 		--profit-accent-soft: rgba(66, 110, 219, 0.1);
-		border: 1px solid #e2e8f0;
+		border: 0;
 		border-radius: 1.1rem;
 		background: #ffffff;
 		padding: 1rem 1.1rem;
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.03);
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
 	}
 
 	.dashboard-profit-card__head {
@@ -4522,9 +4529,9 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card {
-		border-color: rgba(255, 255, 255, 0.08);
-		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--surface-container, #131314) 18%);
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16), 0 6px 16px rgba(0, 0, 0, 0.12);
+		border: 0;
+		background: var(--surface-container-high, #222222);
+		box-shadow: none;
 	}
 
 	.dashboard-profit-card[data-profit-accent='emerald'] {
@@ -4643,13 +4650,13 @@ const toPageHref = (page: number) => {
 		gap: 0.75rem;
 		padding: 0.6rem 0.85rem;
 		border-radius: 0.85rem;
-		border: 1px solid #e2e8f0;
-		background: #ffffff;
+		border: 0;
+		background: #f4f6f8;
 	}
 
 	html[data-theme='dark'] .dashboard-profit-row {
-		border-color: rgba(255, 255, 255, 0.08);
-		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--surface-container, #131314) 18%);
+		border: 0;
+		background: var(--surface-container-high, #222222);
 	}
 
 	.dashboard-profit-row__name {
@@ -4685,15 +4692,15 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-report-shell {
-		border: 1px solid rgba(148, 163, 184, 0.24);
+		border: 0;
 		background: #ffffff;
-		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
 		scroll-margin-top: 0.75rem;
 	}
 
 	html[data-theme='dark'] .dashboard-report-shell {
-		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 78%, var(--surface-container, #131314) 22%);
-		border-color: color-mix(in srgb, var(--outline-variant, #8a9099) 36%, transparent);
+		background: var(--surface-container-high, #222222);
+		border: 0;
 		box-shadow: none;
 	}
 
@@ -4826,7 +4833,7 @@ const toPageHref = (page: number) => {
 
 	html[data-theme='dark'] .dashboard-report-card {
 		border: 0;
-		background: color-mix(in srgb, #ffffff 7%, var(--surface-container-low, #1e1f22) 93%);
+		background: var(--surface-container-highest, #2c2c2c);
 		box-shadow: none;
 	}
 

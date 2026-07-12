@@ -1,5 +1,7 @@
 export type Option = { id: number; name: string };
 
+export type ProfessionalOption = Option & { services: number[] };
+
 export type CustomerOption = {
 	id_customer: number;
 	full_name: string;
@@ -74,6 +76,7 @@ export type AppointmentFormPayload = {
 	end_time: string;
 	status: AppointmentStatus;
 	session_notes?: string;
+	acknowledge_schedule_misalignment?: boolean;
 };
 
 export type AppointmentCreatePayload = Omit<AppointmentFormPayload, 'status'>;
@@ -84,7 +87,7 @@ export type ApiFieldError = {
 };
 
 export type CalendarMetaResponse = {
-	professionals: Array<{ id_professional: number; display_name: string }>;
+	professionals: Array<{ id_professional: number; display_name: string; services?: number[] }>;
 	locations: Array<{ id_location: number; name: string }>;
 	services: Array<{ id_service: number; name: string }>;
 	session: SessionData;

@@ -37,11 +37,15 @@ import {
 	getScheduleMisalignedBannerCaption,
 	getScheduleMisalignedBannerReasonLabel,
 	getScheduleMisalignedBannerTitle,
+	getScheduleMisalignedConfirmMessage,
+	getScheduleMisalignedConfirmTitle,
+	isScheduleMisalignedConflictError,
 	isScheduleMisalignedFlag,
 	normalizeScheduleMisalignedReason,
 } from '../../lib/schedule-misaligned';
-import type { AppointmentFormPayload, Option } from './types';
+import type { AppointmentFormPayload, Option, ProfessionalOption } from './types';
 import {
+	ApiClientError,
 	formatDateTimeLocal,
 	isAppointmentStatus,
 	showErrorAlert,
@@ -176,7 +180,7 @@ class CalendarManager extends HTMLElement {
 
 	private roleId = 0;
 	private currentProfessionalId = 0;
-	private professionals: Option[] = [];
+	private professionals: ProfessionalOption[] = [];
 	private locations: Option[] = [];
 	private services: Option[] = [];
 	private isMobileLayout = false;
@@ -1205,7 +1209,38 @@ class CalendarManager extends HTMLElement {
 				status,
 			};
 
-			await this.client.updateAppointment(appointmentId, payload);
+			try {
+				await this.client.updateAppointment(appointmentId, payload);
+			} catch (error) {
+				if (!isScheduleMisalignedConflictError(error)) throw error;
+
+				const reason = normalizeScheduleMisalignedReason(
+					(error as ApiClientError).scheduleMisalignedReason
+				);
+				const title = getScheduleMisalignedConfirmTitle(reason);
+				const message = getScheduleMisalignedConfirmMessage(reason, {
+					locationName: String(detail.location_name || '').trim(),
+				});
+				const confirmed = window.BookmateAlert?.confirm
+					? await window.BookmateAlert.confirm({
+							type: 'warning',
+							title,
+							message,
+							confirmText: 'Guardar de todos modos',
+							cancelText: 'Cancelar',
+						})
+					: window.confirm(`${title}\n\n${message}`);
+
+				if (!confirmed) {
+					info.revert();
+					return;
+				}
+
+				await this.client.updateAppointment(appointmentId, {
+					...payload,
+					acknowledge_schedule_misalignment: true,
+				});
+			}
 		} catch (error) {
 			info.revert();
 			const message =
@@ -1230,10 +1265,18 @@ class CalendarManager extends HTMLElement {
 
 			this.professionals = Array.isArray(data.professionals)
 				? data.professionals
-						.map((item) => ({
-							id: toPositiveInt(item?.id_professional, 0),
-							name: String(item?.display_name || '').trim(),
-						}))
+						.map((item) => {
+							const serviceIds = Array.isArray(item?.services)
+								? item.services
+										.map((serviceId) => toPositiveInt(serviceId, 0))
+										.filter((serviceId) => serviceId > 0)
+								: [];
+							return {
+								id: toPositiveInt(item?.id_professional, 0),
+								name: String(item?.display_name || '').trim(),
+								services: [...new Set(serviceIds)],
+							};
+						})
 						.filter((item) => item.id > 0 && item.name)
 				: [];
 
