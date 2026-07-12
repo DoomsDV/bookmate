@@ -386,12 +386,31 @@ professional-manager:has(.app-shell) {
 
 .app-shell > :last-child > main {
 	min-height: 0;
+	min-width: 0;
 	overflow-y: auto;
+	overflow-x: hidden;
 	overscroll-behavior: contain;
 }
 
 html.ai-summary-modal-open .app-shell > :last-child > main {
 	overflow: hidden;
+}
+
+/* Mobile: evitar que shells fijos del SideNav/bottom-nav ocupen celdas de grid y ensanchen el layout. */
+@media (max-width: 1023.98px) {
+	.app-shell.grid {
+		display: block;
+	}
+
+	.app-shell > :last-child {
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+	}
+
+	.app-shell > [data-desktop-sidebar] {
+		display: none !important;
+	}
 }
 
 @media (min-width: 1024px) {

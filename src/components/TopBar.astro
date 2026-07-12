@@ -15,7 +15,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		<div class="flex min-w-0 items-center gap-3">
 			<button
 				type="button"
-				class="flex size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:size-11"
+				class="hidden size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) lg:flex sm:size-11"
 					aria-label="Alternar menú lateral"
 				aria-controls="app-side-nav"
 				aria-expanded="false"
@@ -168,7 +168,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 		// DOM Element References
 		const profileMenus = document.querySelectorAll<HTMLDetailsElement>('[data-profile-menu]');
-		const navToggle = document.querySelector<HTMLButtonElement>('[data-nav-toggle]');
+		const navToggles = document.querySelectorAll<HTMLButtonElement>('[data-nav-toggle]');
 		const appShell = document.querySelector<HTMLElement>('[data-app-shell]');
 		const sideNavShell = document.querySelector<HTMLElement>('[data-side-nav-shell]');
 		const sideNav = document.querySelector<HTMLElement>('[data-side-nav]');
@@ -190,21 +190,27 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		};
 
 		// Sidebar Actions
+		const setNavTogglesExpanded = (expanded: boolean) => {
+			navToggles.forEach((toggle) => {
+				toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+			});
+		};
+
 		const openSideNav = () => {
-			if (!sideNavShell || !sideNav || !navToggle) return;
+			if (!sideNavShell || !sideNav || navToggles.length === 0) return;
 			sideNavShell.classList.replace('pointer-events-none', 'pointer-events-auto');
 			sideNavBackdrop?.classList.replace('opacity-0', 'opacity-100');
 			sideNav.classList.replace('-translate-x-full', 'translate-x-0');
-			navToggle.setAttribute('aria-expanded', 'true');
+			setNavTogglesExpanded(true);
 			document.body.classList.add('overflow-hidden');
 		};
 
 		const closeSideNav = () => {
-			if (!sideNavShell || !sideNav || !navToggle) return;
+			if (!sideNavShell || !sideNav || navToggles.length === 0) return;
 			sideNavShell.classList.replace('pointer-events-auto', 'pointer-events-none');
 			sideNavBackdrop?.classList.replace('opacity-100', 'opacity-0');
 			sideNav.classList.replace('translate-x-0', '-translate-x-full');
-			navToggle.setAttribute('aria-expanded', 'false');
+			setNavTogglesExpanded(false);
 			document.body.classList.remove('overflow-hidden');
 		};
 
@@ -250,9 +256,9 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		};
 
 		const syncDesktopToggle = () => {
-			if (!appShell || !navToggle || !desktopBreakpoint.matches) return;
+			if (!appShell || navToggles.length === 0 || !desktopBreakpoint.matches) return;
 			const isExpanded = appShell.getAttribute('data-sidebar-state') !== 'collapsed';
-			navToggle.setAttribute('aria-expanded', String(isExpanded));
+			setNavTogglesExpanded(isExpanded);
 		};
 
 		const toggleDesktopSidebar = () => {
@@ -319,7 +325,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 				closeSideNav();
 				syncDesktopToggle();
 			} else {
-				navToggle?.setAttribute('aria-expanded', 'false');
+				setNavTogglesExpanded(false);
 			}
 		};
 
@@ -336,7 +342,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		};
 
 		// Attach Listeners
-		on(navToggle, 'click', toggleSideNav);
+		navToggles.forEach((toggle) => on(toggle, 'click', toggleSideNav));
 		on(themeToggle, 'click', toggleTheme);
 		on(themeToggleMobile, 'click', toggleTheme);
 		on(sideNavBackdrop, 'click', closeSideNav);

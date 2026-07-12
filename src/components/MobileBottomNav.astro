@@ -1,0 +1,204 @@
+---
+import { canAccessPath } from '../config/roles';
+
+interface Props {
+	currentPath?: string;
+}
+
+const { currentPath = '/' } = Astro.props;
+
+const normalizePath = (path: string) => {
+	if (!path || path === '/') return '/';
+	return path.endsWith('/') ? path.slice(0, -1) : path;
+};
+
+const activePath = normalizePath(currentPath);
+const currentRoleId = Number(Astro.locals.roleId ?? 0);
+
+type BottomItem = {
+	label: string;
+	href?: string;
+	icon: string;
+	action?: 'more';
+	pendingBadge?: boolean;
+	requiresFeature?: string;
+};
+
+const candidates: BottomItem[] = [
+	{ label: 'Inicio', icon: 'home', href: '/panel/dashboard' },
+	{ label: 'Agenda', icon: 'calendar_month', href: '/panel/calendar' },
+	{ label: 'Clientes', icon: 'contacts', href: '/panel/customers' },
+	{
+		label: 'Cobros',
+		icon: 'payments',
+		href: '/panel/cobros',
+		pendingBadge: true,
+		requiresFeature: 'DEPOSIT_COLLECTION',
+	},
+];
+
+const navItems = candidates.filter((item) => !item.href || canAccessPath(item.href, currentRoleId));
+const moreItem: BottomItem = { label: 'Más', icon: 'menu', action: 'more' };
+const items = [...navItems.slice(0, 4), moreItem].slice(0, 5);
+
+const isActive = (href?: string) => {
+	if (!href) return false;
+	return normalizePath(href) === activePath;
+};
+---
+
+<nav class="mobile-bottom-nav lg:hidden" aria-label="Navegación principal" data-mobile-bottom-nav>
+	{
+		items.map((item) => {
+			if (item.action === 'more') {
+				return (
+					<button
+						type="button"
+						class="mobile-bottom-nav__item"
+						data-nav-toggle
+						aria-controls="app-side-nav"
+						aria-label="Abrir más opciones"
+					>
+						<span class="material-symbols-rounded mobile-bottom-nav__icon" aria-hidden="true">
+							{item.icon}
+						</span>
+						<span class="mobile-bottom-nav__label">{item.label}</span>
+					</button>
+				);
+			}
+
+			return (
+				<a
+					href={item.href}
+					class:list={['mobile-bottom-nav__item', isActive(item.href) && 'is-active']}
+					aria-current={isActive(item.href) ? 'page' : undefined}
+					data-requires-feature={item.requiresFeature || undefined}
+					data-feature-gated={item.requiresFeature ? '' : undefined}
+				>
+					<span class="mobile-bottom-nav__icon-wrap">
+						<span class="material-symbols-rounded mobile-bottom-nav__icon" aria-hidden="true">
+							{item.icon}
+						</span>
+						{item.pendingBadge ? (
+							<span
+								class="mobile-bottom-nav__badge hidden"
+								data-cobros-nav-badge
+								aria-hidden="true"
+							></span>
+						) : null}
+					</span>
+					<span class="mobile-bottom-nav__label">{item.label}</span>
+				</a>
+			);
+		})
+	}
+</nav>
+
+<style is:global>
+	.mobile-bottom-nav {
+		display: none;
+	}
+
+	@media (max-width: 1023px) {
+		.mobile-bottom-nav {
+			position: fixed;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			z-index: 45;
+			display: flex;
+			align-items: stretch;
+			justify-content: space-around;
+			gap: 0.1rem;
+			width: 100%;
+			max-width: 100%;
+			box-sizing: border-box;
+			min-height: 3.65rem;
+			padding: 0.35rem 0.25rem calc(0.35rem + env(safe-area-inset-bottom, 0px));
+			border-top: 1px solid var(--shell-border);
+			background: color-mix(in srgb, var(--surface-bright, #fff) 92%, transparent);
+			backdrop-filter: blur(14px);
+			-webkit-backdrop-filter: blur(14px);
+			box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.06);
+		}
+
+		html[data-theme='dark'] .mobile-bottom-nav {
+			background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 92%, transparent);
+			box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.28);
+		}
+
+		body:has([data-mobile-bottom-nav]) .app-shell > :last-child > main,
+		body:has([data-mobile-bottom-nav]) .dashboard-content-canvas > main {
+			padding-bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
+		}
+	}
+
+	.mobile-bottom-nav__item {
+		display: flex;
+		flex: 1 1 0;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.12rem;
+		min-width: 0;
+		max-width: 100%;
+		padding: 0.3rem 0.1rem;
+		border: 0;
+		border-radius: 0.85rem;
+		background: transparent;
+		color: var(--on-surface-variant);
+		text-decoration: none;
+		font: inherit;
+		cursor: pointer;
+		-webkit-tap-highlight-color: transparent;
+		box-sizing: border-box;
+	}
+
+	.mobile-bottom-nav__item[data-requires-feature-hidden] {
+		display: none !important;
+	}
+
+	.mobile-bottom-nav__item.is-active {
+		color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
+	}
+
+	.mobile-bottom-nav__icon-wrap {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.mobile-bottom-nav__icon {
+		font-size: 1.3rem;
+		line-height: 1;
+	}
+
+	.mobile-bottom-nav__label {
+		font-size: 0.62rem;
+		font-weight: 750;
+		letter-spacing: 0.01em;
+		line-height: 1.1;
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.mobile-bottom-nav__badge {
+		position: absolute;
+		top: -0.2rem;
+		right: -0.45rem;
+		min-width: 1rem;
+		height: 1rem;
+		padding: 0 0.25rem;
+		border-radius: 999px;
+		background: #dc2626;
+		color: #fff;
+		font-size: 0.58rem;
+		font-weight: 800;
+		line-height: 1rem;
+		text-align: center;
+	}
+</style>

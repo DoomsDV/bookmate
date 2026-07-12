@@ -1,6 +1,7 @@
 ---
 import { canAccessPath } from "../config/roles";
 import OrgSwitcherModal from "./OrgSwitcherModal.astro";
+import MobileBottomNav from "./MobileBottomNav.astro";
 
 interface NavItem {
 	label: string;
@@ -461,6 +462,7 @@ const teamSectionOpen = visibleTeamItems.some((item) => isItemActive(item));
 </aside>
 
 <OrgSwitcherModal currentOrgMemberId={currentOrgMemberId} />
+<MobileBottomNav currentPath={currentPath} />
 
 <style>
 	.sidebar-divider {

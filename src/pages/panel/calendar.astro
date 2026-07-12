@@ -1487,8 +1487,9 @@ const googleErrorMessage = hasGoogleError
 		.calendar-header-toolbar__create {
 			position: fixed;
 			right: max(1rem, env(safe-area-inset-right, 0px));
-			bottom: max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1.25rem));
-			z-index: 40;
+			/* Por encima del bottom nav mobile (~3.65rem + padding + safe-area) */
+			bottom: calc(4.85rem + env(safe-area-inset-bottom, 0px));
+			z-index: 46;
 			width: 3.55rem;
 			height: 3.55rem;
 			padding: 0;
@@ -1516,7 +1517,7 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .calendar-host {
-			padding-bottom: 4.25rem;
+			padding-bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px));
 		}
 	}
 

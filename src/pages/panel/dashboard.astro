@@ -16,7 +16,6 @@ const token = Astro.locals.token ?? '';
 const roleId = Number(Astro.locals.roleId ?? 0);
 const showTeamOverview = roleId !== ROLES.PROFESIONAL;
 const showAlertsPanel = roleId === ROLES.ADMIN || roleId === ROLES.RECEPCIONISTA;
-const organizationName = String(Astro.locals.organizationName || 'Workspace').trim() || 'Workspace';
 const PAGE_SIZE = 5;
 const rawPage = Number(Astro.url.searchParams.get('page') || '1');
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
@@ -76,6 +75,8 @@ const dashboardDate = new Intl.DateTimeFormat('es-PY', {
 	timeZone: APP_TZ,
 }).format(new Date());
 
+const organizationName = String(Astro.locals.organizationName || 'Workspace').trim() || 'Workspace';
+
 const hourAsuncion = Number(
 	new Intl.DateTimeFormat('en-US', {
 		hour: 'numeric',
@@ -90,29 +91,10 @@ const greetingTitle = userFirstName ? `${greetingWord}, ${userFirstName}` : gree
 
 const todayTotal = dashboard.kpis.today_appointments;
 const todayCompleted = Math.min(todayTotal, dashboard.kpis.today_completed_appointments || 0);
-const pendingAhead = dashboard.kpis.pending_appointments;
 const dayProgressPct =
 	todayTotal > 0 ? Math.min(100, Math.round((todayCompleted / todayTotal) * 100)) : 0;
 
-const greetingSubtitle = (() => {
-	if (todayTotal === 0) {
-		return 'Tu agenda está libre por hoy. Buen momento para planificar.';
-	}
-	if (hourAsuncion < 12) {
-		return todayTotal === 1 ? 'Tenés 1 cita hoy.' : `Tenés ${todayTotal} citas hoy.`;
-	}
-	if (hourAsuncion < 19) {
-		if (pendingAhead === 0) return 'No quedan turnos pendientes por delante.';
-		return pendingAhead === 1
-			? 'Tenés 1 cita esta tarde.'
-			: `Tenés ${pendingAhead} citas por delante.`;
-	}
-	return todayCompleted === todayTotal && todayTotal > 0
-		? 'Cerraste todas las citas del día. ¡Buen trabajo!'
-		: todayTotal === 1
-			? 'Cerrás el día con 1 cita en la agenda.'
-			: `Cerrás el día con ${todayTotal} citas en la agenda.`;
-})();
+const greetingSubtitle = `${organizationName} · ${dashboardDate}`;
 
 const progressHint =
 	todayTotal === 0
@@ -166,7 +148,7 @@ const secondaryMetrics: SecondaryMetric[] = [
 			: []),
 ];
 
-const weekGlanceLabels = ['Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa', 'Do'] as const;
+const weekDayLabelsByJs = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'] as const;
 const asuncionDateParts = new Intl.DateTimeFormat('en-CA', {
 	timeZone: APP_TZ,
 	year: 'numeric',
@@ -177,21 +159,20 @@ const asuncionY = Number(asuncionDateParts.find((p) => p.type === 'year')?.value
 const asuncionM = Number(asuncionDateParts.find((p) => p.type === 'month')?.value || 1);
 const asuncionD = Number(asuncionDateParts.find((p) => p.type === 'day')?.value || 1);
 const asuncionToday = new Date(Date.UTC(asuncionY, asuncionM - 1, asuncionD));
-const jsWeekday = asuncionToday.getUTCDay();
-const mondayOffset = jsWeekday === 0 ? -6 : 1 - jsWeekday;
+const asuncionTodayIso = `${asuncionY}-${String(asuncionM).padStart(2, '0')}-${String(asuncionD).padStart(2, '0')}`;
+// Próximos 7 días desde hoy (alineado al listado), no la semana calendario Lu–Do.
 const weekGlance = Array.from({ length: 7 }, (_, index) => {
 	const day = new Date(asuncionToday);
-	day.setUTCDate(asuncionToday.getUTCDate() + mondayOffset + index);
+	day.setUTCDate(asuncionToday.getUTCDate() + index);
 	const iso = `${day.getUTCFullYear()}-${String(day.getUTCMonth() + 1).padStart(2, '0')}-${String(day.getUTCDate()).padStart(2, '0')}`;
-	const isToday = iso === `${asuncionY}-${String(asuncionM).padStart(2, '0')}-${String(asuncionD).padStart(2, '0')}`;
 	const appointmentCount = dashboard.upcoming_appointments.filter(
 		(item) => item.appointment_date === iso
 	).length;
 	return {
-		label: weekGlanceLabels[index],
+		label: weekDayLabelsByJs[day.getUTCDay()],
 		dayNumber: day.getUTCDate(),
 		iso,
-		isToday,
+		isToday: iso === asuncionTodayIso,
 		hasAppointments: appointmentCount > 0,
 		appointmentCount,
 	};
@@ -271,26 +252,26 @@ const toPageHref = (page: number) => {
 		>
 			<SideNav currentPath={Astro.url.pathname} />
 
-			<div class="dashboard-content-canvas grid min-h-full grid-rows-[auto_1fr] bg-(--page-background) transition-colors duration-300">
+			<div class="dashboard-content-canvas grid min-h-full min-w-0 max-w-full grid-rows-[auto_1fr] overflow-x-hidden bg-(--page-background) transition-colors duration-300">
 				<TopBar />
 
-				<main class="w-full max-w-full overflow-x-hidden px-4 py-4 sm:px-8 sm:py-8 lg:px-10">
-					<div class="mx-auto max-w-7xl">
+				<main class="w-full max-w-full min-w-0 overflow-x-hidden px-3 py-4 sm:px-5 sm:py-6 lg:px-6">
+					<div class="mx-auto w-full max-w-[92rem] min-w-0">
 						<section class="grid w-full min-w-0 gap-6 sm:gap-8">
 							<section class="dashboard-summary-card mb-0 transition-all duration-300">
 								<div class="flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
-									<div class="flex min-w-0 flex-col gap-4 lg:flex-row lg:items-center">
-										<div class="grid gap-1">
-											<p class="text-xs font-bold uppercase tracking-[0.2em] text-[#5f6368] dark:text-[#C4C7C5]">
-												{organizationName} · {dashboardDate}
-											</p>
+									<div class="flex min-w-0 flex-col gap-3 lg:flex-row lg:items-center lg:gap-4">
+										<div class="dashboard-greeting grid min-w-0 gap-1">
 											<h1
-												class="text-3xl font-extrabold text-[#202124] dark:text-[#E3E3E3] tracking-tight sm:text-4xl"
+												class="dashboard-greeting__title text-3xl font-extrabold text-[#202124] dark:text-[#E3E3E3] tracking-tight sm:text-4xl"
 												data-dashboard-greeting
 											>
 												{greetingTitle}
 											</h1>
-											<p class="text-[0.95rem] font-medium text-[#5f6368] dark:text-[#C4C7C5]" data-dashboard-greeting-sub>
+											<p
+												class="dashboard-greeting__sub text-[0.95rem] font-medium text-[#5f6368] dark:text-[#C4C7C5]"
+												data-dashboard-greeting-sub
+											>
 												{greetingSubtitle}
 											</p>
 										</div>
@@ -323,16 +304,16 @@ const toPageHref = (page: number) => {
 												data-open-appointment-voice
 												data-appointment-voice-mode="inline"
 											>
-												<span class="material-symbols-rounded text-lg">auto_awesome</span>
-												Cita rápida
+												<span class="material-symbols-rounded text-lg" aria-hidden="true">auto_awesome</span>
+												<span>Cita rápida</span>
 											</button>
 										)}
 										<a
 											href="/panel/calendar"
 											class="dashboard-primary-cta dashboard-header-cta inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold no-underline transition sm:w-auto"
 										>
-											<span class="material-symbols-rounded text-lg">calendar_month</span>
-											Ir al calendario
+											<span class="material-symbols-rounded text-lg" aria-hidden="true">calendar_month</span>
+											<span>Ir al calendario</span>
 										</a>
 									</div>
 								</div>
@@ -357,7 +338,7 @@ const toPageHref = (page: number) => {
 										data-open-ai-summary-modal
 										hidden
 									>
-										Ver análisis completo
+										<span class="dashboard-ai-strip__action-label">Ver análisis completo</span>
 										<span class="material-symbols-rounded text-[1rem]" aria-hidden="true">chevron_right</span>
 									</button>
 								</div>
@@ -369,38 +350,52 @@ const toPageHref = (page: number) => {
 									data-profitability-panel
 									hidden
 								>
-									<div class="mb-5 flex items-center justify-between gap-3">
+									<div class="mb-5 flex items-center justify-between gap-3 dashboard-profitability-head">
 										<div class="flex items-center gap-2">
 											<span class="material-symbols-rounded text-[1.3rem] text-(--primary)" aria-hidden="true">trending_up</span>
 											<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Rentabilidad del mes</h2>
 										</div>
-										<span class="inline-flex items-center gap-1 rounded-full bg-(--primary-soft) px-2.5 py-1 text-[0.72rem] font-bold text-(--primary)">
+										<span class="dashboard-premium-badge inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[0.72rem] font-bold">
 											<span class="material-symbols-rounded text-[0.9rem]" aria-hidden="true">workspace_premium</span>
 											Premium
 										</span>
 									</div>
 
-									<div class="grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
-										<article class="dashboard-profit-card">
-											<p class="dashboard-profit-label">Ingresos del mes</p>
+									<div class="dashboard-carousel">
+									<div class="dashboard-profit-metrics-track grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+										<article class="dashboard-profit-card" data-profit-accent="emerald">
+											<div class="dashboard-profit-card__head">
+												<p class="dashboard-profit-label">Ingresos del mes</p>
+												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">payments</span>
+											</div>
 											<p class="dashboard-profit-value" data-profit-month-revenue>Gs. 0</p>
 											<p class="dashboard-profit-hint" data-profit-mom></p>
 										</article>
-										<article class="dashboard-profit-card">
-											<p class="dashboard-profit-label">Ticket promedio</p>
+										<article class="dashboard-profit-card" data-profit-accent="violet">
+											<div class="dashboard-profit-card__head">
+												<p class="dashboard-profit-label">Ticket promedio</p>
+												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">confirmation_number</span>
+											</div>
 											<p class="dashboard-profit-value" data-profit-avg-ticket>Gs. 0</p>
 											<p class="dashboard-profit-hint" data-profit-count></p>
 										</article>
-										<article class="dashboard-profit-card">
-											<p class="dashboard-profit-label">Ingresos de hoy</p>
+										<article class="dashboard-profit-card" data-profit-accent="brand">
+											<div class="dashboard-profit-card__head">
+												<p class="dashboard-profit-label">Ingresos de hoy</p>
+												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">today</span>
+											</div>
 											<p class="dashboard-profit-value" data-profit-today>Gs. 0</p>
 											<p class="dashboard-profit-hint">Citas ya atendidas hoy.</p>
 										</article>
-										<article class="dashboard-profit-card">
-											<p class="dashboard-profit-label">Esperado (futuro)</p>
+										<article class="dashboard-profit-card" data-profit-accent="amber">
+											<div class="dashboard-profit-card__head">
+												<p class="dashboard-profit-label">Esperado (futuro)</p>
+												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">trending_up</span>
+											</div>
 											<p class="dashboard-profit-value" data-profit-pending>Gs. 0</p>
 											<p class="dashboard-profit-hint">Citas confirmadas y pendientes.</p>
 										</article>
+									</div>
 									</div>
 
 									<div class="mt-6 grid gap-6 lg:grid-cols-2 hidden" data-profit-details hidden>
@@ -509,13 +504,16 @@ const toPageHref = (page: number) => {
 											class="dashboard-report-shell dashboard-floor__panel rounded-4xl p-6 transition-colors duration-300"
 										>
 											<div class="mb-4 flex items-center justify-between gap-3">
-												<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Próximas citas</h2>
-												<span class="whitespace-nowrap rounded-full bg-[#E8EAED] dark:bg-[#2B2D31] px-4 py-1.5 text-[0.8rem] font-black text-[#5f6368] dark:text-[#C4C7C5] tracking-wide shadow-sm transition-colors duration-300">
+												<div class="min-w-0">
+													<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Próximas citas</h2>
+													<p class="dashboard-appointments-subtitle">Siguientes 7 días</p>
+												</div>
+												<span class="dashboard-appointments-count whitespace-nowrap rounded-full bg-[#E8EAED] dark:bg-[#2B2D31] px-3 py-1.5 text-[0.75rem] font-black text-[#5f6368] dark:text-[#C4C7C5] tracking-wide shadow-sm transition-colors duration-300">
 													{appointmentsCountText}
 												</span>
 											</div>
 
-											<div class="dashboard-week-glance" aria-label="Semana actual">
+											<div class="dashboard-week-glance" aria-label="Próximos 7 días">
 												{
 													weekGlance.map((day) => (
 														<div
@@ -524,7 +522,13 @@ const toPageHref = (page: number) => {
 																day.isToday && 'is-today',
 																day.hasAppointments && 'has-appointments',
 															]}
-															title={day.hasAppointments ? `${day.appointmentCount} cita(s)` : undefined}
+															title={
+																day.hasAppointments
+																	? `${day.appointmentCount} cita(s)`
+																	: day.isToday
+																		? 'Hoy'
+																		: undefined
+															}
 														>
 															<span class="dashboard-week-glance__label">{day.label}</span>
 															<span class="dashboard-week-glance__number">{day.dayNumber}</span>
@@ -587,7 +591,7 @@ const toPageHref = (page: number) => {
 												)
 											}
 
-											<div class="app-pagination">
+											<div class="app-pagination dashboard-appointments-pagination">
 												<p class="app-pagination__summary">
 													Página <strong>{safeCurrentPage}</strong> de <strong>{totalAppointmentPages}</strong>
 													<span aria-hidden="true">-</span>
@@ -634,6 +638,11 @@ const toPageHref = (page: number) => {
 													)}
 												</nav>
 											</div>
+
+											<a href="/panel/calendar" class="dashboard-appointments-see-all">
+												Ver todas en la agenda
+												<span class="material-symbols-rounded text-[1.05rem]" aria-hidden="true">arrow_forward</span>
+											</a>
 										</div>
 
 										{showAlertsPanel && (
@@ -2336,6 +2345,11 @@ const toPageHref = (page: number) => {
 		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 	}
 
+	.dashboard-primary-cta,
+	.dashboard-primary-cta span {
+		color: #f8fbff;
+	}
+
 	.dashboard-header-actions {
 		display: flex;
 		width: 100%;
@@ -2355,8 +2369,13 @@ const toPageHref = (page: number) => {
 		padding: 0.75rem 1.35rem;
 		font-size: 0.875rem;
 		font-weight: 800;
+		line-height: 1.2;
 		color: var(--primary);
 		transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
+	}
+
+	.dashboard-ai-chat-cta span {
+		color: inherit;
 	}
 
 	.dashboard-ai-chat-cta:hover {
@@ -2381,23 +2400,30 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-chat-cta {
-		border-color: color-mix(in srgb, var(--primary) 30%, var(--shell-border) 70%);
-		background: color-mix(in srgb, var(--primary) 14%, #1e1f22 86%);
-		color: color-mix(in srgb, var(--primary) 80%, #ffffff 20%);
+		border-color: color-mix(in srgb, var(--primary) 36%, rgba(255, 255, 255, 0.14) 64%);
+		background: color-mix(in srgb, var(--primary) 18%, #2b2d31 82%);
+		color: #dbeafe;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-chat-cta:hover {
-		background: color-mix(in srgb, var(--primary) 22%, #1e1f22 78%);
+		background: color-mix(in srgb, var(--primary) 26%, #2b2d31 74%);
+		color: #eff6ff;
 	}
 
 	html[data-theme='dark'] .dashboard-primary-cta {
 		background: linear-gradient(
 			158deg,
-			color-mix(in srgb, var(--primary) 86%, #131314 14%) 0%,
-			color-mix(in srgb, var(--primary) 78%, #1e1f22 22%) 100%
+			color-mix(in srgb, var(--primary) 92%, #60a5fa 8%) 0%,
+			color-mix(in srgb, var(--primary) 78%, #1e3a8a 22%) 100%
 		);
-		border-color: color-mix(in srgb, var(--primary) 52%, #1e1f22 48%);
+		border-color: color-mix(in srgb, var(--primary) 52%, #93c5fd 48%);
 		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+		color: #ffffff;
+	}
+
+	html[data-theme='dark'] .dashboard-primary-cta,
+	html[data-theme='dark'] .dashboard-primary-cta span {
+		color: #ffffff;
 	}
 
 	@media (min-width: 640px) {
@@ -2416,6 +2442,11 @@ const toPageHref = (page: number) => {
 
 	html[data-theme='dark'] .dashboard-primary-cta:hover {
 		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+	}
+
+	.dashboard-greeting__sub {
+		overflow-wrap: anywhere;
+		word-break: break-word;
 	}
 
 	.dashboard-team-chip {
@@ -2456,14 +2487,9 @@ const toPageHref = (page: number) => {
 		min-height: 2.65rem;
 		padding: 0.55rem 0.85rem 0.55rem 0.75rem;
 		border-radius: 0.95rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
-		background: color-mix(in srgb, #0b1220 88%, var(--primary) 12%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
-	}
-
-	html[data-theme='light'] .dashboard-ai-strip {
-		background: color-mix(in srgb, #101828 92%, #2f6fdd 8%);
-		border-color: rgba(47, 111, 221, 0.22);
+		border: 1px solid color-mix(in srgb, var(--primary) 22%, #d0d7e2 78%);
+		background: color-mix(in srgb, var(--primary) 8%, #ffffff 92%);
+		box-shadow: none;
 	}
 
 	.dashboard-ai-strip__content {
@@ -2477,7 +2503,7 @@ const toPageHref = (page: number) => {
 	.dashboard-ai-strip__icon {
 		flex-shrink: 0;
 		font-size: 1.05rem;
-		color: #93c5fd;
+		color: var(--primary);
 	}
 
 	.dashboard-ai-strip__text {
@@ -2486,10 +2512,10 @@ const toPageHref = (page: number) => {
 		font-size: 0.86rem;
 		font-weight: 600;
 		line-height: 1.35;
-		color: color-mix(in srgb, #e8eefc 92%, white 8%);
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
+		color: color-mix(in srgb, var(--on-surface) 88%, #1e3a8a 12%);
+		white-space: normal;
+		overflow: visible;
+		text-overflow: unset;
 	}
 
 	.dashboard-ai-strip__action {
@@ -2501,20 +2527,33 @@ const toPageHref = (page: number) => {
 		padding: 0.25rem 0.15rem 0.25rem 0.35rem;
 		border: 0;
 		background: transparent;
-		color: #93c5fd;
+		color: var(--primary);
 		font-size: 0.78rem;
 		font-weight: 800;
 		cursor: pointer;
 		white-space: nowrap;
+		text-decoration: none;
+	}
+
+	.dashboard-ai-strip__action-label {
+		text-decoration: none;
+		text-underline-offset: 0.18em;
 	}
 
 	.dashboard-ai-strip__action:hover {
-		color: #bfdbfe;
+		color: color-mix(in srgb, var(--primary) 78%, #0f172a 22%);
+	}
+
+	.dashboard-ai-strip__action:hover .dashboard-ai-strip__action-label {
 		text-decoration: underline;
 	}
 
+	.dashboard-ai-strip__action .material-symbols-rounded {
+		text-decoration: none;
+	}
+
 	.dashboard-ai-strip__action:focus-visible {
-		outline: 2px solid #93c5fd;
+		outline: 2px solid var(--primary);
 		outline-offset: 2px;
 		border-radius: 0.4rem;
 	}
@@ -2539,22 +2578,55 @@ const toPageHref = (page: number) => {
 		}
 	}
 
+	html[data-theme='dark'] .dashboard-ai-strip {
+		border-color: color-mix(in srgb, var(--primary) 28%, transparent);
+		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--primary) 18%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-strip__icon {
+		color: #93c5fd;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-strip__text {
+		color: color-mix(in srgb, #e8eefc 92%, white 8%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-strip__action {
+		color: #93c5fd;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-strip__action:hover {
+		color: #bfdbfe;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-strip__action:focus-visible {
+		outline-color: #93c5fd;
+	}
+
 	@media (max-width: 640px) {
 		.dashboard-ai-strip {
-			flex-wrap: wrap;
+			flex-direction: column;
+			align-items: stretch;
+			gap: 0.55rem;
+			padding: 0.75rem 0.85rem;
+		}
+
+		.dashboard-ai-strip__content {
 			align-items: flex-start;
-			padding: 0.7rem 0.8rem;
 		}
 
 		.dashboard-ai-strip__text {
 			white-space: normal;
-			display: -webkit-box;
-			-webkit-line-clamp: 2;
-			-webkit-box-orient: vertical;
+			display: block;
+			-webkit-line-clamp: unset;
+			overflow: visible;
 		}
 
 		.dashboard-ai-strip__action {
-			margin-left: 1.6rem;
+			margin-left: 0;
+			align-self: flex-start;
+			padding-left: 1.6rem;
 		}
 	}
 
@@ -2565,6 +2637,8 @@ const toPageHref = (page: number) => {
 		line-height: 1.4;
 		opacity: 0.92;
 		max-width: 36rem;
+		white-space: normal;
+		overflow-wrap: anywhere;
 	}
 
 	.dashboard-day-progress__insight[hidden] {
@@ -3573,6 +3647,9 @@ const toPageHref = (page: number) => {
 		grid-template-columns: 1fr;
 		gap: 1rem;
 		align-items: stretch;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
 	}
 
 	.dashboard-floor--today,
@@ -3583,6 +3660,7 @@ const toPageHref = (page: number) => {
 
 	.dashboard-floor__panel {
 		min-height: 0;
+		min-width: 0;
 		height: 100%;
 	}
 
@@ -3591,8 +3669,11 @@ const toPageHref = (page: number) => {
 		grid-template-columns: 1fr;
 		grid-template-rows: repeat(2, minmax(0, 1fr));
 		gap: 0.85rem;
+		min-width: 0;
 		min-height: 0;
 		height: 100%;
+		width: 100%;
+		max-width: 100%;
 	}
 
 	.dashboard-side-metrics:has(> :only-child) {
@@ -3749,11 +3830,20 @@ const toPageHref = (page: number) => {
 		flex-shrink: 0;
 	}
 
+	.dashboard-appointments-pagination {
+		margin-top: 1.25rem;
+		border: 0;
+		box-shadow: none;
+		background: transparent;
+		padding: 0.25rem 0 0;
+		border-radius: 0;
+	}
+
 	.dashboard-week-glance {
 		display: grid;
 		grid-template-columns: repeat(7, minmax(0, 1fr));
 		gap: 0.35rem;
-		margin: 0 0 1.15rem;
+		margin: 0 0 1.65rem;
 		padding: 0.35rem 0.15rem 0.55rem;
 		flex-shrink: 0;
 	}
@@ -3762,7 +3852,7 @@ const toPageHref = (page: number) => {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.28rem;
+		gap: 0.42rem;
 		min-width: 0;
 		padding: 0.35rem 0.15rem;
 		border-radius: 999px;
@@ -3803,16 +3893,16 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-week-glance__day.is-today {
-		background: #1f2937;
+		background: color-mix(in srgb, var(--primary) 92%, #1e3a8a 8%);
 		color: #ffffff;
 	}
 
 	.dashboard-week-glance__day.is-today .dashboard-week-glance__number {
-		background: rgba(255, 255, 255, 0.12);
+		background: rgba(255, 255, 255, 0.16);
 	}
 
 	.dashboard-week-glance__day.is-today .dashboard-week-glance__dot {
-		background: rgba(255, 255, 255, 0.85);
+		background: rgba(255, 255, 255, 0.9);
 	}
 
 	html[data-theme='dark'] .dashboard-week-glance__day {
@@ -4054,6 +4144,8 @@ const toPageHref = (page: number) => {
 		border: 1px solid rgba(148, 163, 184, 0.24);
 		background: #ffffff;
 		box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	html[data-theme='dark'] .dashboard-profitability-shell {
@@ -4062,18 +4154,87 @@ const toPageHref = (page: number) => {
 		box-shadow: none;
 	}
 
+	.dashboard-appointments-see-all {
+		display: none;
+	}
+
+	.dashboard-carousel {
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		overflow: hidden;
+	}
+
+	.dashboard-profit-metrics-track {
+		min-width: 0;
+		max-width: 100%;
+	}
+
 	.dashboard-profit-card {
+		--profit-accent: #426edb;
+		--profit-accent-soft: rgba(66, 110, 219, 0.1);
 		border: 1px solid #e2e8f0;
 		border-radius: 1.1rem;
-		background: color-mix(in srgb, var(--surface) 40%, #ffffff 60%);
+		background: #ffffff;
 		padding: 1rem 1.1rem;
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05), 0 4px 12px rgba(15, 23, 42, 0.04);
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 12px rgba(15, 23, 42, 0.03);
+	}
+
+	.dashboard-profit-card__head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.65rem;
+	}
+
+	.dashboard-profit-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 1.85rem;
+		height: 1.85rem;
+		border-radius: 0.65rem;
+		background: var(--profit-accent-soft);
+		color: var(--profit-accent);
+		font-size: 1.05rem;
+		line-height: 1;
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card {
 		border-color: rgba(255, 255, 255, 0.08);
 		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--surface-container, #131314) 18%);
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.18), 0 6px 16px rgba(0, 0, 0, 0.16);
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16), 0 6px 16px rgba(0, 0, 0, 0.12);
+	}
+
+	.dashboard-profit-card[data-profit-accent='emerald'] {
+		--profit-accent: #059669;
+		--profit-accent-soft: rgba(5, 150, 105, 0.12);
+	}
+
+	.dashboard-profit-card[data-profit-accent='violet'] {
+		--profit-accent: #7c3aed;
+		--profit-accent-soft: rgba(124, 58, 237, 0.12);
+	}
+
+	.dashboard-profit-card[data-profit-accent='brand'] {
+		--profit-accent: #426edb;
+		--profit-accent-soft: rgba(66, 110, 219, 0.12);
+	}
+
+	.dashboard-profit-card[data-profit-accent='amber'] {
+		--profit-accent: #b45309;
+		--profit-accent-soft: rgba(245, 158, 11, 0.14);
+	}
+
+	.dashboard-premium-badge {
+		background: color-mix(in srgb, #f59e0b 14%, #fffbeb 86%);
+		color: #b45309;
+	}
+
+	.dashboard-premium-badge .material-symbols-rounded {
+		color: #d97706;
+		font-variation-settings: 'FILL' 1, 'wght' 600, 'GRAD' 0, 'opsz' 20;
 	}
 
 	.dashboard-profit-label {
@@ -4086,7 +4247,7 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-profit-value {
-		margin: 0.35rem 0 0;
+		margin: 0.45rem 0 0;
 		font-size: 1.45rem;
 		font-weight: 800;
 		line-height: 1.05;
@@ -4116,6 +4277,35 @@ const toPageHref = (page: number) => {
 
 	.dashboard-profit-hint--down {
 		color: color-mix(in srgb, var(--on-surface-variant) 78%, #94a3b8 22%);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-card[data-profit-accent='emerald'] {
+		--profit-accent: #34d399;
+		--profit-accent-soft: rgba(52, 211, 153, 0.16);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-card[data-profit-accent='violet'] {
+		--profit-accent: #c4b5fd;
+		--profit-accent-soft: rgba(196, 181, 253, 0.16);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-card[data-profit-accent='brand'] {
+		--profit-accent: #8bb0ff;
+		--profit-accent-soft: rgba(66, 110, 219, 0.18);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-card[data-profit-accent='amber'] {
+		--profit-accent: #e8c56b;
+		--profit-accent-soft: rgba(232, 197, 107, 0.14);
+	}
+
+	html[data-theme='dark'] .dashboard-premium-badge {
+		background: color-mix(in srgb, #c9a227 14%, transparent);
+		color: #f0d78c;
+	}
+
+	html[data-theme='dark'] .dashboard-premium-badge .material-symbols-rounded {
+		color: #e8c56b;
 	}
 
 	html[data-theme='dark'] .dashboard-profit-hint--up {
@@ -4190,20 +4380,27 @@ const toPageHref = (page: number) => {
 	.dashboard-report-card {
 		display: flex;
 		flex-direction: column;
-		gap: 0.42rem;
+		gap: 0.5rem;
 		min-width: 0;
 		padding: 0.95rem 1rem;
 		border-radius: 1rem;
-		border: 1px solid #e2e8f0;
-		background: #ffffff;
+		border: 0;
+		background: #f4f6f8;
 		box-shadow: none;
+	}
+
+	.dashboard-appointments-subtitle {
+		margin: 0.15rem 0 0;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
 	}
 
 	.dashboard-report-row {
 		display: flex;
 		align-items: flex-start;
 		justify-content: space-between;
-		gap: 0.75rem;
+		gap: 0.65rem;
 		min-width: 0;
 	}
 
@@ -4212,7 +4409,7 @@ const toPageHref = (page: number) => {
 		align-items: flex-start;
 		gap: 0.7rem;
 		min-width: 0;
-		flex: 1 1 auto;
+		flex: 1 1 0;
 	}
 
 	.dashboard-report-avatar {
@@ -4244,23 +4441,25 @@ const toPageHref = (page: number) => {
 		font-weight: 600;
 		line-height: 1.35;
 		color: #202124;
-		word-break: break-word;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.dashboard-report-meta {
 		margin: 0;
-		font-size: 0.82rem;
-		font-weight: 600;
+		font-size: 0.8rem;
+		font-weight: 500;
 		line-height: 1.35;
-		color: #5f6368;
+		color: #80868b;
 	}
 
 	.dashboard-report-service {
 		margin: 0;
-		font-size: 0.86rem;
-		font-weight: 500;
+		font-size: 0.88rem;
+		font-weight: 600;
 		line-height: 1.4;
-		color: #5f6368;
+		color: #202124;
 		word-break: break-word;
 	}
 
@@ -4273,10 +4472,10 @@ const toPageHref = (page: number) => {
 		white-space: nowrap;
 		border-radius: 999px;
 		border: 0;
-		padding: 0.35rem 0.72rem;
-		font-size: 0.68rem;
+		padding: 0.22rem 0.5rem;
+		font-size: 0.6rem;
 		font-weight: 800;
-		letter-spacing: 0.06em;
+		letter-spacing: 0.04em;
 		text-transform: uppercase;
 		box-shadow: none;
 	}
@@ -4306,12 +4505,8 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-report-card {
-		border-color: rgba(255, 255, 255, 0.08);
-		background: color-mix(
-			in srgb,
-			var(--surface-container-low, #1e1f22) 80%,
-			var(--surface-container, #131314) 20%
-		);
+		border: 0;
+		background: color-mix(in srgb, #ffffff 7%, var(--surface-container-low, #1e1f22) 93%);
 		box-shadow: none;
 	}
 
@@ -4319,9 +4514,12 @@ const toPageHref = (page: number) => {
 		color: var(--on-surface, #e3e3e3);
 	}
 
-	html[data-theme='dark'] .dashboard-report-meta,
+	html[data-theme='dark'] .dashboard-report-meta {
+		color: color-mix(in srgb, var(--on-surface-variant, #a7aaa8) 82%, transparent);
+	}
+
 	html[data-theme='dark'] .dashboard-report-service {
-		color: var(--on-surface-variant, #a7aaa8);
+		color: var(--on-surface, #e3e3e3);
 	}
 
 	html[data-theme='dark'] .dashboard-report-avatar {
@@ -4369,16 +4567,116 @@ const toPageHref = (page: number) => {
 	}
 
 	@media (max-width: 768px) {
-		.dashboard-side-metrics {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			grid-template-rows: 1fr;
-			height: auto;
+		.dashboard-greeting__title {
+			font-size: clamp(1.55rem, 7vw, 1.9rem);
+			line-height: 1.15;
+		}
+
+		.dashboard-greeting__sub {
+			font-size: 0.9rem;
+			line-height: 1.45;
+		}
+
+		.dashboard-header-actions {
+			flex-direction: row;
+			flex-wrap: wrap;
+			gap: 0.55rem;
+		}
+
+		.dashboard-ai-chat-cta,
+		.dashboard-header-cta {
+			flex: 1 1 calc(50% - 0.3rem);
+			min-width: 9.5rem;
+			width: auto;
+			padding: 0.7rem 0.9rem;
+			min-height: 2.75rem;
+		}
+
+		/* Agenda ya está en la bottom nav: evitamos CTA duplicada en mobile. */
+		.dashboard-header-cta {
+			display: none;
+		}
+
+		.dashboard-ai-chat-cta {
+			flex: 1 1 100%;
+		}
+
+		.dashboard-profitability-shell {
+			border: 0;
+			background: transparent;
+			box-shadow: none;
+			border-radius: 0;
+			padding: 0;
+		}
+
+		html[data-theme='dark'] .dashboard-profitability-shell {
+			background: transparent;
+			border-color: transparent;
+			box-shadow: none;
+		}
+
+		.dashboard-profitability-head {
+			margin-bottom: 0.85rem;
+			padding-inline: 0.1rem;
+		}
+
+		.dashboard-profit-metrics-track {
+			display: flex;
+			grid-template-columns: none;
 			gap: 0.75rem;
+			width: 100%;
+			max-width: 100%;
+			min-width: 0;
+			overflow-x: auto;
+			overscroll-behavior-x: contain;
+			scroll-snap-type: x mandatory;
+			-webkit-overflow-scrolling: touch;
+			scrollbar-width: none;
+			padding: 0.1rem 1rem 0.45rem 0.05rem;
+			margin-inline: 0;
+			box-sizing: border-box;
+		}
+
+		.dashboard-profit-metrics-track::-webkit-scrollbar {
+			display: none;
+		}
+
+		.dashboard-profit-metrics-track > .dashboard-profit-card {
+			flex: 0 0 min(72%, 13.5rem);
+			scroll-snap-align: start;
+			min-height: 7.25rem;
+			min-width: 0;
+			box-sizing: border-box;
+		}
+
+		.dashboard-side-metrics {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			grid-template-rows: none;
+			gap: 0.65rem;
+			height: auto;
+			width: 100%;
+			max-width: 100%;
+			min-width: 0;
+			overflow: visible;
+			padding: 0;
+		}
+
+		.dashboard-side-metrics > .dashboard-metric-card {
+			flex: unset;
+			width: auto;
+			min-width: 0;
+			height: auto;
+			scroll-snap-align: unset;
 		}
 
 		.dashboard-day-progress {
-			min-height: 10.5rem;
-			padding: 1.35rem 1.25rem;
+			min-height: 0;
+			padding: 1.2rem 1.15rem;
+		}
+
+		.dashboard-day-progress__metric {
+			font-size: clamp(1.75rem, 8vw, 2.2rem);
 		}
 
 		.dashboard-metric-card {
@@ -4426,13 +4724,85 @@ const toPageHref = (page: number) => {
 
 		.dashboard-week-glance {
 			gap: 0.15rem;
-			margin-bottom: 1rem;
+			margin-bottom: 1.55rem;
+		}
+
+		.dashboard-week-glance__day {
+			gap: 0.4rem;
 		}
 
 		.dashboard-week-glance__number {
 			width: 1.65rem;
 			height: 1.65rem;
 			font-size: 0.78rem;
+		}
+
+		.dashboard-appointments-count {
+			padding: 0.3rem 0.7rem;
+			font-size: 0.72rem;
+		}
+
+		.dashboard-report-row {
+			flex-wrap: wrap;
+			align-items: center;
+			gap: 0.4rem 0.55rem;
+		}
+
+		.dashboard-report-identity {
+			flex: 1 1 auto;
+			min-width: 0;
+		}
+
+		.dashboard-report-status {
+			flex: 0 0 auto;
+			padding: 0.18rem 0.45rem;
+			font-size: 0.56rem;
+			letter-spacing: 0.03em;
+		}
+
+		.dashboard-report-title {
+			white-space: normal;
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			-webkit-box-orient: vertical;
+			overflow: hidden;
+		}
+
+		.dashboard-appointments-pagination {
+			display: none;
+		}
+
+		.dashboard-report-list > .dashboard-report-card:nth-child(n + 4) {
+			display: none;
+		}
+
+		.dashboard-appointments-see-all {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			gap: 0.35rem;
+			width: 100%;
+			margin-top: 1.35rem;
+			padding: 0.75rem 1rem;
+			border-radius: 999px;
+			border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--shell-border) 72%);
+			background: color-mix(in srgb, var(--primary) 8%, transparent);
+			color: var(--primary);
+			font-size: 0.88rem;
+			font-weight: 800;
+			text-decoration: none;
+		}
+
+		.dashboard-appointments-see-all:hover {
+			background: color-mix(in srgb, var(--primary) 14%, transparent);
+		}
+
+		.dashboard-floor--action.dashboard-floor--split {
+			min-height: 0;
+		}
+
+		.dashboard-alerts-shell {
+			min-height: 0;
 		}
 	}
 
