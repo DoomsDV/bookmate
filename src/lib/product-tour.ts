@@ -25,6 +25,8 @@ export type BookmateTourRunOptions = {
 	scrollIntoView?: boolean | { rootSelector?: string };
 	/** Destruye la guía si este contenedor se cierra (p. ej. `[data-professional-modal]`). */
 	hostSelector?: string;
+	/** Callback al cerrar la guía (completar, saltar o destruir). */
+	onDestroyed?: () => void;
 };
 
 function ensureTourShell(): HTMLDialogElement {
@@ -423,6 +425,7 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 				markBookmateTourSeen(activeTourStorageKey);
 			}
 			activeTourStorageKey = null;
+			options.onDestroyed?.();
 		},
 	});
 
