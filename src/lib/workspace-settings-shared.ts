@@ -27,6 +27,8 @@ export interface WorkspaceSettingsData {
 	booking_slot_interval_minutes: number;
 	reminder_hours_before: number;
 	cancel_wait_hours: number | null;
+	/** Preferencia personal del admin: Y/N */
+	notify_all_professionals: string;
 	catalogs?: WorkspaceCatalogs;
 }
 
@@ -41,6 +43,7 @@ export interface UpdateWorkspacePayload {
 	rsi_id_slot_interval?: number;
 	rh_id_reminder_hours?: number;
 	cwh_id_cancel_wait_hours?: number | null;
+	notify_all_professionals?: 'Y' | 'N';
 	panel_theme?: string;
 	logo_base64?: string;
 	logo_name?: string;

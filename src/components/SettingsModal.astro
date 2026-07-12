@@ -173,40 +173,42 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 						</div>
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electrónico<input name="email" readonly class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-4 py-3 text-[0.95rem] outline-none text-(--on-surface-variant) cursor-not-allowed" /></label>
 
-						<div
-							class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
-							data-settings-push-notifications
-						>
-							<div class="flex items-start justify-between gap-4">
-								<div class="grid min-w-0 flex-1 gap-1.5">
-									<div class="flex items-center gap-2">
-										<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">notifications_active</span>
-										<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Notificaciones</h4>
+						{!isAdmin ? (
+							<div
+								class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
+								data-settings-push-notifications
+							>
+								<div class="flex items-start justify-between gap-4">
+									<div class="grid min-w-0 flex-1 gap-1.5">
+										<div class="flex items-center gap-2">
+											<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">notifications_active</span>
+											<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Notificaciones</h4>
+										</div>
+										<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
+											Recibí avisos de nuevas citas, cambios y cancelaciones en todas tus organizaciones.
+										</p>
+										<p
+											class="hidden text-[0.82rem] font-semibold text-amber-700 dark:text-amber-400"
+											data-settings-push-hint
+											role="status"
+										></p>
 									</div>
-									<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
-										Recibí avisos de nuevas citas, cambios y cancelaciones en todas tus organizaciones.
-									</p>
-									<p
-										class="hidden text-[0.82rem] font-semibold text-amber-700 dark:text-amber-400"
-										data-settings-push-hint
-										role="status"
-									></p>
+									<label class="settings-switch shrink-0" data-settings-push-switch-label>
+										<input
+											type="checkbox"
+											role="switch"
+											class="settings-switch__input sr-only"
+											data-settings-push-toggle
+											aria-describedby="settings-push-help"
+										/>
+										<span class="settings-switch__track" aria-hidden="true"></span>
+									</label>
 								</div>
-								<label class="settings-switch shrink-0" data-settings-push-switch-label>
-									<input
-										type="checkbox"
-										role="switch"
-										class="settings-switch__input sr-only"
-										data-settings-push-toggle
-										aria-describedby="settings-push-help"
-									/>
-									<span class="settings-switch__track" aria-hidden="true"></span>
-								</label>
+								<p id="settings-push-help" class="sr-only">
+									Activa o desactiva las notificaciones en este dispositivo.
+								</p>
 							</div>
-							<p id="settings-push-help" class="sr-only">
-								Activa o desactiva las notificaciones en este dispositivo.
-							</p>
-						</div>
+						) : null}
 					</div>
 
 					<div class="grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
@@ -587,23 +589,6 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 						}
 
 						<section data-settings-panel="system" class="settings-panel hidden gap-6">
-							<details class="settings-system-notice" open>
-								<summary class="settings-system-notice__summary">
-									<div class="settings-system-notice__header">
-									<span class="material-symbols-rounded settings-system-notice__icon" aria-hidden="true">
-										info
-									</span>
-									<p class="settings-system-notice__title">Importante</p>
-									</div>
-									<span class="material-symbols-rounded settings-system-notice__chevron" aria-hidden="true">expand_more</span>
-								</summary>
-								<p class="settings-system-notice__text">
-									Los cambios se aplican según el tipo de ajuste. El intervalo de horarios en la página
-									pública se actualiza al guardar. Los recordatorios por WhatsApp usan la nueva
-									configuración solo en citas que aún no hayan recibido el mensaje. Si ya se envió un
-									recordatorio, el plazo de respuesta de esa cita no se modifica.
-								</p>
-							</details>
 							<form data-settings-system-form class="grid gap-6">
 								<div class="grid gap-8">
 									<div class="grid gap-5">
@@ -715,6 +700,91 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 												Es el tiempo que se da al cliente de reconfirmar antes de la cancelación automática.
 											</span>
 										</label>
+									</div>
+
+									<div
+										class="border-t border-(--shell-border) border-dashed"
+										role="separator"
+										aria-hidden="true"
+									></div>
+
+									<div class="grid gap-5">
+										<div class="grid gap-1">
+											<h4 class="text-[0.98rem] font-bold text-(--on-surface)">
+												Notificaciones push
+											</h4>
+											<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+												Activá avisos en este dispositivo y elegí si también querés recibir los de
+												todo el equipo.
+											</p>
+										</div>
+
+										<div
+											class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
+											data-settings-push-notifications
+										>
+											<div class="flex items-start justify-between gap-4">
+												<div class="grid min-w-0 flex-1 gap-1.5">
+													<div class="flex items-center gap-2">
+														<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">notifications_active</span>
+														<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Notificaciones</h4>
+													</div>
+													<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
+														Recibí avisos de nuevas citas, cambios y cancelaciones en este dispositivo.
+													</p>
+													<p
+														class="hidden text-[0.82rem] font-semibold text-amber-700 dark:text-amber-400"
+														data-settings-push-hint
+														role="status"
+													></p>
+												</div>
+												<label class="settings-switch shrink-0" data-settings-push-switch-label>
+													<input
+														type="checkbox"
+														role="switch"
+														class="settings-switch__input sr-only"
+														data-settings-push-toggle
+														aria-describedby="settings-push-help-system"
+													/>
+													<span class="settings-switch__track" aria-hidden="true"></span>
+												</label>
+											</div>
+											<p id="settings-push-help-system" class="sr-only">
+												Activa o desactiva las notificaciones en este dispositivo.
+											</p>
+										</div>
+
+										<div
+											class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
+											data-settings-system-notify-all
+										>
+											<div class="flex items-start justify-between gap-4">
+												<div class="grid min-w-0 flex-1 gap-1.5">
+													<div class="flex items-center gap-2">
+														<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">group</span>
+														<h4 class="text-[0.98rem] font-bold text-(--on-surface)">
+															Recibir notificaciones de todos los profesionales
+														</h4>
+													</div>
+													<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
+														Te avisamos de citas nuevas, cambios y cancelaciones de otros
+														profesionales del negocio. Primero activá las notificaciones de arriba.
+													</p>
+												</div>
+												<label class="settings-switch shrink-0">
+													<input
+														type="checkbox"
+														role="switch"
+														name="notify_all_professionals"
+														value="Y"
+														class="settings-switch__input sr-only"
+														data-settings-system-notify-all-toggle
+														aria-label="Recibir notificaciones de todos los profesionales"
+													/>
+													<span class="settings-switch__track" aria-hidden="true"></span>
+												</label>
+											</div>
+										</div>
 									</div>
 								</div>
 
@@ -1870,7 +1940,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		private setActiveTab(tabId: string) {
 			this.els.tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.settingsTab === tabId));
 			this.els.panels.forEach((panel) => panel.classList.toggle('hidden', panel.dataset.settingsPanel !== tabId));
-			if (tabId === 'profile') this.syncPushNotificationToggle();
+			if (tabId === 'profile' || tabId === 'system') this.syncPushNotificationToggle();
 			if (tabId === 'plan') void this.loadSubscription();
 			if (tabId === 'payments') void this.loadPayments();
 
@@ -1975,6 +2045,14 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			}
 
 			this.refreshSystemCancelWaitField(workspace.cwh_id_cancel_wait_hours);
+
+			const notifyAllToggle = this.querySelector<HTMLInputElement>(
+				'[data-settings-system-notify-all-toggle]'
+			);
+			if (notifyAllToggle) {
+				notifyAllToggle.checked =
+					String(workspace.notify_all_professionals || 'N').toUpperCase() === 'Y';
+			}
 		}
 
 		private getSelectedSlotIntervalMinutes() {
@@ -2070,6 +2148,11 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 					rh_id_reminder_hours: reminderId,
 					unanswered_alert_action: alertAction,
 					cwh_id_cancel_wait_hours: alertAction === 'CANCEL' ? cancelId : null,
+					notify_all_professionals: this.querySelector<HTMLInputElement>(
+						'[data-settings-system-notify-all-toggle]'
+					)?.checked
+						? 'Y'
+						: 'N',
 				},
 			};
 		}
@@ -3616,79 +3699,4 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			justify-content: flex-start;
 		}
 	}
-
-	.settings-system-notice {
-		overflow: hidden;
-		border-radius: 1rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--shell-border));
-		background: linear-gradient(
-			135deg,
-			color-mix(in srgb, var(--primary) 16%, var(--surface-bright)) 0%,
-			var(--surface-bright) 100%
-		);
-		padding: 0.95rem 1rem;
-	}
-
-	.settings-system-notice__summary {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		cursor: pointer;
-		list-style: none;
-	}
-
-	.settings-system-notice__summary::-webkit-details-marker {
-		display: none;
-	}
-
-	.settings-system-notice__header {
-		display: flex;
-		align-items: center;
-		gap: 0.65rem;
-	}
-
-	.settings-system-notice[open] .settings-system-notice__header {
-		margin-bottom: 0.55rem;
-	}
-
-	.settings-system-notice__icon {
-		flex-shrink: 0;
-		font-size: 1.25rem;
-		line-height: 1;
-		color: var(--primary);
-	}
-
-	.settings-system-notice__title {
-		margin: 0;
-		font-size: 0.9rem;
-		font-weight: 800;
-		color: var(--on-surface);
-	}
-
-	.settings-system-notice__chevron {
-		font-size: 1.15rem;
-		line-height: 1;
-		color: var(--on-surface-variant);
-		transition: transform 180ms ease;
-	}
-
-	.settings-system-notice[open] .settings-system-notice__chevron {
-		transform: rotate(180deg);
-	}
-
-	.settings-system-notice:not([open]) .settings-system-notice__text {
-		display: none;
-	}
-
-	.settings-system-notice__text {
-		margin: 0;
-		font-size: 0.85rem;
-		line-height: 1.55;
-		color: var(--on-surface-variant);
-	}
 </style>
-
-
-
-

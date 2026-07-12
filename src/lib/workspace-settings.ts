@@ -144,6 +144,8 @@ const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | nul
 		booking_slot_interval_minutes: toNumber(source.booking_slot_interval_minutes, 30) || 30,
 		reminder_hours_before: toNumber(source.reminder_hours_before, 24) || 24,
 		cancel_wait_hours: cancelWaitHours,
+		notify_all_professionals:
+			String(source.notify_all_professionals || 'N').trim().toUpperCase() === 'Y' ? 'Y' : 'N',
 		catalogs: parseCatalogs(source.catalogs),
 	};
 };
