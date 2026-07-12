@@ -710,6 +710,13 @@ const toPageHref = (page: number) => {
 												>
 													<span class="material-symbols-rounded dashboard-alerts-empty__icon" aria-hidden="true">task_alt</span>
 													<p class="dashboard-alerts-empty__text">Todo al día. No hay tareas urgentes.</p>
+													<div class="dashboard-alerts-empty__actions">
+														<a href="/panel/calendar" class="dashboard-alerts-empty__cta">
+															<span class="material-symbols-rounded" aria-hidden="true">add</span>
+															Crear cita
+														</a>
+														<a href="/panel/cobros" class="dashboard-alerts-empty__link">Revisar cobros</a>
+													</div>
 												</div>
 											</aside>
 										)}
@@ -4207,7 +4214,7 @@ const toPageHref = (page: number) => {
 		gap: 0.55rem;
 		min-height: 8rem;
 		margin: 0;
-		padding: 1rem;
+		padding: 1rem 0.75rem 1.15rem;
 		text-align: center;
 	}
 
@@ -4227,6 +4234,69 @@ const toPageHref = (page: number) => {
 		font-weight: 600;
 		color: var(--on-surface-variant);
 		max-width: 14rem;
+	}
+
+	.dashboard-alerts-empty__actions {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.55rem;
+		margin-top: 0.35rem;
+	}
+
+	.dashboard-alerts-empty__cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.3rem;
+		min-height: 2.35rem;
+		padding: 0.4rem 1rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--shell-border) 72%);
+		background: color-mix(in srgb, var(--primary) 8%, transparent);
+		color: var(--primary);
+		font-size: 0.8rem;
+		font-weight: 780;
+		text-decoration: none;
+		transition: background-color 140ms ease, border-color 140ms ease, transform 140ms ease;
+	}
+
+	.dashboard-alerts-empty__cta .material-symbols-rounded {
+		font-size: 1.05rem;
+		line-height: 1;
+	}
+
+	.dashboard-alerts-empty__cta:hover {
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		border-color: color-mix(in srgb, var(--primary) 48%, var(--shell-border) 52%);
+		transform: translateY(-1px);
+	}
+
+	.dashboard-alerts-empty__link {
+		font-size: 0.78rem;
+		font-weight: 750;
+		color: var(--on-surface-variant);
+		text-decoration: none;
+	}
+
+	.dashboard-alerts-empty__link:hover {
+		color: var(--primary);
+		text-decoration: underline;
+	}
+
+	html[data-theme='dark'] .dashboard-alerts-empty__cta {
+		border-color: color-mix(in srgb, #a8c7fa 32%, rgba(255, 255, 255, 0.12) 68%);
+		background: color-mix(in srgb, #a8c7fa 12%, transparent);
+		color: #a8c7fa;
+	}
+
+	html[data-theme='dark'] .dashboard-alerts-empty__cta:hover {
+		background: color-mix(in srgb, #a8c7fa 20%, transparent);
+		border-color: color-mix(in srgb, #a8c7fa 52%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-alerts-empty__link:hover {
+		color: #a8c7fa;
 	}
 
 	.dashboard-service-chart {
