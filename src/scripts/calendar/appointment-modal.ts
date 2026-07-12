@@ -179,7 +179,6 @@ class AppointmentModal extends HTMLElement {
 	scheduleMisalignedTitle: HTMLElement | null = null;
 	scheduleMisalignedMessage: HTMLElement | null = null;
 	scheduleMisalignedLink: HTMLAnchorElement | null = null;
-	notifyCustomerInput: HTMLInputElement | null = null;
 	tabsBar: HTMLElement | null = null;
 	tabButtons: NodeListOf<HTMLButtonElement> | null = null;
 	tabPanels: NodeListOf<HTMLElement> | null = null;
@@ -306,8 +305,6 @@ class AppointmentModal extends HTMLElement {
 		this.scheduleMisalignedLink =
 			this.form?.querySelector<HTMLAnchorElement>('[data-appointment-schedule-misaligned-link]') ??
 			null;
-		this.notifyCustomerInput =
-			this.form?.querySelector<HTMLInputElement>('[data-modal-notify-customer]') ?? null;
 		this.tabsBar = this.form?.querySelector<HTMLElement>('[data-appointment-tabs]') ?? null;
 		this.tabButtons = this.form?.querySelectorAll<HTMLButtonElement>('[data-appointment-tab]') ?? null;
 		this.tabPanels =
@@ -935,7 +932,6 @@ class AppointmentModal extends HTMLElement {
 		this.hideScheduleMisalignedBlock();
 		this.hideHistorySection();
 		this.clearImmutableReadOnlyMode();
-		if (this.notifyCustomerInput) this.notifyCustomerInput.checked = true;
 	}
 
 	hideAttendanceBlock() {
@@ -1958,7 +1954,6 @@ class AppointmentModal extends HTMLElement {
 				end_time: endIso,
 				status: statusRaw,
 				payment_status: 'NONE',
-				notify_customer: this.notifyCustomerInput?.checked ?? true,
 				...(sessionNotes !== undefined ? { session_notes: sessionNotes } : {}),
 			},
 		};
@@ -2483,6 +2478,10 @@ class AppointmentModal extends HTMLElement {
 				}
 				return;
 			}
+		} else if (payload.status !== 'CANCELADO') {
+			const notifyDecision = await this.confirmNotifyCustomerOnSave();
+			if (!notifyDecision) return;
+			payload.notify_customer = notifyDecision.notifyCustomer;
 		}
 
 		this.setSubmittingState(true, this.mode === 'edit' ? 'Guardando...' : 'Creando...');
@@ -2517,6 +2516,58 @@ class AppointmentModal extends HTMLElement {
 		const locationId = toPositiveInt(this.modalLocation?.value, 0);
 		if (locationId <= 0) return '';
 		return this.locations.find((item) => item.id === locationId)?.name || '';
+	}
+
+	private async confirmNotifyCustomerOnSave(): Promise<
+		{ notifyCustomer: boolean } | null
+	> {
+		const isEdit = this.mode === 'edit';
+		const title = isEdit ? 'Guardar cambios' : 'Crear cita';
+		const lead = isEdit
+			? '¿Confirmás guardar los cambios de esta cita?'
+			: '¿Confirmás crear esta cita?';
+		const confirmText = isEdit ? 'Guardar' : 'Crear cita';
+		const messageHtml = `
+			<p class="app-alert-notify-lead">${lead}</p>
+			<label class="app-alert-notify-row">
+				<span class="app-alert-notify-copy">
+					<span class="app-alert-notify-title">Notificar al cliente por WhatsApp</span>
+					<span class="app-alert-notify-hint">Desactivalo si estás regularizando o corrigiendo un error.</span>
+				</span>
+				<span class="app-alert-notify-switch">
+					<input
+						type="checkbox"
+						class="app-alert-notify-switch__input sr-only"
+						data-app-alert-notify-customer
+						checked
+					/>
+					<span class="app-alert-notify-switch__track" aria-hidden="true"></span>
+				</span>
+			</label>
+		`;
+
+		if (window.BookmateAlert?.confirm) {
+			const confirmed = await window.BookmateAlert.confirm({
+				type: 'info',
+				title,
+				messageHtml,
+				confirmText,
+				cancelText: 'Volver',
+				icon: 'notifications',
+			});
+			if (!confirmed) return null;
+			const toggle = document.querySelector<HTMLInputElement>(
+				'[data-app-alert-dialog] [data-app-alert-notify-customer]'
+			);
+			return { notifyCustomer: toggle?.checked ?? true };
+		}
+
+		const notifyCustomer = window.confirm(
+			`${lead}\n\nNotificar al cliente por WhatsApp?\nAceptar = sí, Cancelar = no notificar y no guardar.`
+		);
+		// Native confirm cannot separate "cancel save" vs "save without notify".
+		// Keep save + notify when accepted; abort when cancelled.
+		return notifyCustomer ? { notifyCustomer: true } : null;
 	}
 
 	private async confirmScheduleMisalignment(error: unknown): Promise<boolean> {
