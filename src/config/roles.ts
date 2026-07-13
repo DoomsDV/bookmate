@@ -38,6 +38,7 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/api/session/organizations', roles: ALL_ROLES },
 	{ path: '/api/session/switch-organization', roles: ALL_ROLES },
 	{ path: '/api/ai', roles: ALL_ROLES, match: 'prefix' },
+	{ path: '/api/atc', roles: ALL_ROLES, match: 'prefix' },
 	{ path: '/api/customers', roles: CUSTOMER_ROLES, match: 'prefix' },
 	{ path: '/api/cobros', roles: MANAGER_ROLES, match: 'prefix' },
 	{ path: '/api/schedules', roles: ALL_ROLES, match: 'prefix' },

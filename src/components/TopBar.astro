@@ -1,5 +1,6 @@
 ---
 import SettingsModal from './SettingsModal.astro';
+import AtcChatModal from './AtcChatModal.astro';
 
 interface Props {
 	userName?: string;
@@ -59,6 +60,16 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 					}
 				});
 			</script>
+
+			<button
+				type="button"
+				class="flex size-11 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong)"
+				aria-label="Atención al cliente"
+				title="Atención al cliente"
+				data-atc-button
+			>
+				<span class="material-symbols-rounded text-[1rem]">support_agent</span>
+			</button>
 
 			<button
 				type="button"
@@ -127,6 +138,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 </header>
 
 <SettingsModal roleId={roleId} organizationSlug={organizationSlug} />
+<AtcChatModal />
 
 <script>
 	import { maybeShowSettingsMenuTour } from '../lib/settings-menu-tour';
