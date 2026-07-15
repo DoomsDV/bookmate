@@ -68,22 +68,19 @@ const showcaseFeatures = [
 
 const steps = [
 	{
-		step: '01',
+		step: '1',
 		title: 'Configurá en minutos',
 		text: 'Definí tus servicios, horarios y profesionales en un panel intuitivo. Tu negocio listo para operar al instante.',
-		icon: 'storefront',
 	},
 	{
-		step: '02',
+		step: '2',
 		title: 'Compartí tu enlace',
 		text: 'Pegá tu enlace en WhatsApp, Instagram o tu bio. Tus clientes ven tu disponibilidad real y agendan solos 24/7.',
-		icon: 'link',
 	},
 	{
-		step: '03',
+		step: '3',
 		title: 'Todo bajo control',
 		text: 'El calendario se actualiza solo. Recibí alertas al instante y dejá que Hasel envíe los recordatorios automáticos por vos.',
-		icon: 'calendar_month',
 	},
 ];
 
@@ -167,7 +164,7 @@ const jsonLd = [
 			<section class="m3-hero" aria-labelledby="hero-heading">
 				<div class="m3-hero-content">
 					<p class="m3-chip m3-chip-primary">
-						<span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>
+						<span class="material-symbols-rounded" aria-hidden="true">workspace_premium</span>
 						<span>14 días Premium de prueba</span>
 					</p>
 					<h1 id="hero-heading" class="m3-display">
@@ -178,10 +175,6 @@ const jsonLd = [
 					</p>
 
 					<div class="hero-actions">
-						<a href="/auth/register" class="m3-btn m3-btn-primary m3-btn-large no-underline">
-							Crear mi espacio gratis
-							<span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
-						</a>
 						<a href="#funciones" class="m3-btn m3-btn-tonal m3-btn-large no-underline">Ver funciones</a>
 					</div>
 				</div>
@@ -218,7 +211,7 @@ const jsonLd = [
 
 			<section id="funciones" class="m3-section" aria-labelledby="funciones-heading">
 				<div class="section-header center reveal-on-scroll">
-					<h2 id="funciones-heading" class="m3-headline">Herramientas avanzadas para escalar tu negocio</h2>
+					<h2 id="funciones-heading" class="m3-headline">Herramientas Premium</h2>
 					<p class="m3-body section-lead">
 						Recepción por voz con IA, cobro de señas e historial de clientes. Todo el poder de Hasel
 						incluido en tu prueba de 14 días.
@@ -249,7 +242,7 @@ const jsonLd = [
 												“Agendá a Ana Ríos mañana a las 10:30 para consulta general con María”
 											</p>
 											<div class="ui-voice-result">
-												<span class="ui-pill-soft">Lista para confirmar</span>
+												<span class="ui-pill-soft">Pendiente</span>
 												<small>Ana Ríos · Consulta · Mañana 10:30 · María</small>
 											</div>
 										</div>
@@ -318,16 +311,17 @@ const jsonLd = [
 					<h2 id="como-funciona-heading" class="m3-headline">Cómo funciona Hasel</h2>
 				</div>
 
-				<ol class="workflow-steps-grid">
+				<ol class="workflow-steps">
 					{
 						steps.map((item, index) => (
-							<li class="workflow-step-card reveal-on-scroll">
-								<span class="workflow-step-icon material-symbols-rounded" aria-hidden="true">
-									{item.icon}
+							<li class="workflow-step reveal-on-scroll">
+								<span class="workflow-step-marker" aria-hidden="true">
+									<span class="workflow-step-num">{item.step}</span>
 								</span>
-								<span class="workflow-step-num">{item.step}</span>
-								<h3 class="m3-title">{item.title}</h3>
-								<p class="m3-body">{item.text}</p>
+								<div class="workflow-step-copy">
+									<h3 class="m3-title">{item.title}</h3>
+									<p class="m3-body">{item.text}</p>
+								</div>
 								{index < steps.length - 1 ? (
 									<span class="workflow-step-arrow material-symbols-rounded" aria-hidden="true">
 										arrow_forward
@@ -358,9 +352,12 @@ const jsonLd = [
 			</section>
 
 			<footer id="soporte" class="m3-footer">
-				<p>© {new Date().getFullYear()} Hasel — Software de citas y reservas online.</p>
+				<div class="m3-footer-brand">
+					<p class="m3-footer-copy">© {new Date().getFullYear()} Hasel</p>
+					<p class="m3-footer-tagline">Software de citas y reservas online</p>
+				</div>
 				<p class="m3-footer-support">
-					¿Necesitás ayuda? Escribinos a
+					<span>¿Necesitás ayuda? Escribinos al correo</span>
 					<a href="mailto:support@hasel.app" class="m3-footer-link no-underline">support@hasel.app</a>
 				</p>
 				<nav class="m3-footer-nav" aria-label="Enlaces legales">
@@ -459,12 +456,20 @@ const jsonLd = [
 	}
 
 	.landing-root {
+		--landing-max: 1200px;
+		--landing-pad-x: 1rem;
 		position: relative;
 		overflow: hidden;
 		min-height: 100vh;
 		background-color: var(--m3-sys-light-surface);
 		color: var(--m3-sys-light-on-surface);
 		font-family: 'Inter', system-ui, sans-serif;
+	}
+
+	@media (min-width: 768px) {
+		.landing-root {
+			--landing-pad-x: 1.5rem;
+		}
 	}
 
 	html {
@@ -517,9 +522,9 @@ const jsonLd = [
 	.landing-shell {
 		position: relative;
 		z-index: 1;
-		width: min(1200px, 100%);
+		width: min(var(--landing-max), 100%);
 		margin: 0 auto;
-		padding: 1rem;
+		padding: 1rem var(--landing-pad-x);
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
@@ -549,9 +554,9 @@ const jsonLd = [
 	}
 
 	.landing-topbar-inner {
-		width: min(1200px, 100%);
+		width: min(var(--landing-max), 100%);
 		margin: 0 auto;
-		padding: 0 1rem;
+		padding: 0 var(--landing-pad-x);
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -607,14 +612,13 @@ const jsonLd = [
 
 	@media (min-width: 768px) {
 		.landing-shell {
-			padding: 1.5rem;
+			padding-block: 1.5rem;
 			gap: 1.5rem;
 		}
 
 		.landing-topbar-inner {
 			display: grid;
 			grid-template-columns: auto 1fr auto;
-			padding: 0 1.5rem;
 			gap: 1rem;
 		}
 
@@ -770,7 +774,7 @@ const jsonLd = [
 	.m3-hero {
 		display: grid;
 		gap: 3rem;
-		padding: 1rem 1rem 2rem;
+		padding: 1rem 0 2rem;
 		align-items: center;
 	}
 
@@ -788,6 +792,16 @@ const jsonLd = [
 		letter-spacing: -0.03em;
 		color: var(--m3-sys-light-on-surface);
 		margin: 0;
+	}
+
+	@media (max-width: 1023px) {
+		.m3-display {
+			font-size: clamp(2.05rem, 7vw, 3.1rem);
+			line-height: 1.22;
+			letter-spacing: -0.025em;
+			text-wrap: balance;
+			max-width: 16ch;
+		}
 	}
 
 	.m3-body-large {
@@ -883,7 +897,7 @@ const jsonLd = [
 
 		.m3-hero {
 			grid-template-columns: 1fr 1fr;
-			padding: 2rem 2rem 3rem;
+			padding: 2rem 0 3rem;
 		}
 	}
 
@@ -981,7 +995,7 @@ const jsonLd = [
 	}
 
 	.m3-section {
-		padding: 2rem 1rem;
+		padding: 2rem 0;
 		display: flex;
 		flex-direction: column;
 		gap: 2rem;
@@ -989,7 +1003,7 @@ const jsonLd = [
 
 	@media (min-width: 768px) {
 		.m3-section {
-			padding: 4rem 1.5rem;
+			padding: 4rem 0;
 			gap: 3rem;
 		}
 	}
@@ -1000,6 +1014,14 @@ const jsonLd = [
 		border-radius: 2rem;
 		backdrop-filter: blur(8px);
 		-webkit-backdrop-filter: blur(8px);
+		padding-inline: 1.15rem;
+		overflow: hidden;
+	}
+
+	@media (min-width: 768px) {
+		.m3-section-tonal {
+			padding-inline: 1.75rem;
+		}
 	}
 
 	.section-header.center {
@@ -1020,7 +1042,7 @@ const jsonLd = [
 		}
 
 		#funciones.m3-section {
-			padding: 1.75rem 0.85rem;
+			padding: 1.75rem 0;
 			gap: 1.35rem;
 		}
 
@@ -1096,11 +1118,10 @@ const jsonLd = [
 
 	.feature-eyebrow {
 		margin: 0;
-		color: #bfd6ff;
-		font-size: 0.8rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
+		color: #94a3b8;
+		font-size: 0.8125rem;
+		font-weight: 600;
+		letter-spacing: 0.01em;
 	}
 
 	.feature-badge {
@@ -1258,9 +1279,9 @@ const jsonLd = [
 		width: fit-content;
 		padding: 0.28rem 0.65rem;
 		border-radius: 999px;
-		background: rgba(34, 197, 94, 0.18);
-		border: 1px solid rgba(74, 222, 128, 0.28);
-		color: #bbf7d0;
+		background: rgba(255, 183, 77, 0.16);
+		border: 1px solid rgba(255, 183, 77, 0.28);
+		color: #ffd9a0;
 		font-size: 0.72rem;
 		font-weight: 700;
 	}
@@ -1405,57 +1426,83 @@ const jsonLd = [
 		text-align: center;
 	}
 
-	.workflow-steps-grid {
+	.workflow-steps {
+		--workflow-marker: 2.35rem;
+		--workflow-rail: 1rem;
 		list-style: none;
 		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 1.5rem;
-	}
-
-	.workflow-step-card {
+		padding: 0.15rem 0;
 		position: relative;
 		display: grid;
-		grid-template-columns: auto 1fr;
-		grid-template-areas:
-			'icon num'
-			'icon title'
-			'icon text';
-		column-gap: 0.9rem;
-		row-gap: 0.2rem;
-		align-items: start;
-		text-align: left;
-		padding: 0.15rem 0;
+		gap: 1.75rem;
+		min-width: 0;
 	}
 
-	.workflow-step-icon {
-		grid-area: icon;
+	.workflow-steps::before {
+		content: '';
+		position: absolute;
+		left: calc(var(--workflow-marker) / 2);
+		top: calc(var(--workflow-marker) / 2);
+		bottom: calc(var(--workflow-marker) / 2);
+		width: 1px;
+		transform: translateX(-50%);
+		background: rgba(255, 255, 255, 0.1);
+		pointer-events: none;
+	}
+
+	.workflow-step {
+		position: relative;
+		display: grid;
+		grid-template-columns: var(--workflow-marker) minmax(0, 1fr);
+		column-gap: var(--workflow-rail);
+		align-items: start;
+		text-align: left;
+		min-width: 0;
+	}
+
+	.workflow-step-marker {
+		position: relative;
+		z-index: 1;
 		display: grid;
 		place-items: center;
-		width: 2.5rem;
-		height: 2.5rem;
-		border-radius: 0.85rem;
-		background: rgba(58, 111, 215, 0.18);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		color: #bfd6ff;
-		font-size: 1.25rem;
-		margin: 0.1rem 0 0;
+		width: var(--workflow-marker);
+		height: var(--workflow-marker);
+		border-radius: 999px;
+		background: #16181d;
+		border: 1px solid rgba(255, 255, 255, 0.12);
+		box-shadow: 0 0 0 3px #16181d;
+		justify-self: center;
 	}
 
 	.workflow-step-num {
-		grid-area: num;
-		color: #93c5fd;
-		font-size: 0.72rem;
-		font-weight: 750;
-		letter-spacing: 0.08em;
+		color: #bfd6ff;
+		font-size: 0.95rem;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
 	}
 
-	.workflow-step-card .m3-title {
-		grid-area: title;
+	@media (max-width: 380px) {
+		.workflow-steps {
+			--workflow-marker: 2.1rem;
+			--workflow-rail: 0.85rem;
+		}
+
+		.workflow-step-num {
+			font-size: 0.88rem;
+		}
 	}
 
-	.workflow-step-card .m3-body {
-		grid-area: text;
+	.workflow-step-copy {
+		display: grid;
+		gap: 0.35rem;
+		padding-top: 0.2rem;
+		min-width: 0;
+	}
+
+	.workflow-step-copy .m3-body {
+		margin: 0;
 	}
 
 	.workflow-step-arrow {
@@ -1495,39 +1542,43 @@ const jsonLd = [
 			max-width: 48ch;
 		}
 
-		.workflow-steps-grid {
+		.workflow-steps {
+			--workflow-marker: 2.75rem;
 			grid-template-columns: repeat(3, minmax(0, 1fr));
 			gap: 1.25rem 2rem;
 			align-items: start;
 			margin-top: 0.5rem;
 		}
 
-		.workflow-step-card {
+		.workflow-steps::before {
+			display: none;
+		}
+
+		.workflow-step {
 			grid-template-columns: 1fr;
-			grid-template-areas:
-				'icon'
-				'num'
-				'title'
-				'text';
 			justify-items: center;
 			text-align: center;
 			padding: 0.5rem 0.75rem;
-			row-gap: 0.45rem;
+			row-gap: 0.65rem;
 		}
 
-		.workflow-step-icon {
-			width: 2.75rem;
-			height: 2.75rem;
-			font-size: 1.4rem;
-			margin: 0 0 0.2rem;
+		.workflow-step-marker {
+			box-shadow: none;
+			background: rgba(15, 23, 42, 0.92);
+		}
+
+		.workflow-step-copy {
+			padding-top: 0;
+			gap: 0.45rem;
 		}
 
 		.workflow-step-arrow {
 			display: grid;
 			place-items: center;
 			position: absolute;
-			top: 1.35rem;
+			top: calc(var(--workflow-marker) / 2);
 			right: -1.15rem;
+			transform: translateY(-50%);
 			color: rgba(147, 197, 253, 0.55);
 			font-size: 1.25rem;
 		}
@@ -1571,14 +1622,14 @@ const jsonLd = [
 		align-items: center;
 		gap: 0.4rem;
 		margin: 0.15rem 0 0;
-		color: #bbf7d0;
+		color: #a1a1aa;
 		font-size: 0.9rem;
-		font-weight: 650;
+		font-weight: 550;
 	}
 
 	.cta-reassure .material-symbols-rounded {
 		font-size: 1.15rem;
-		color: #86efac;
+		color: #93c5fd;
 	}
 
 	.m3-cta-card .m3-headline {
@@ -1590,31 +1641,95 @@ const jsonLd = [
 	}
 
 	.m3-footer {
-		text-align: center;
-		padding: 2rem 1rem 3rem;
-		color: var(--m3-sys-light-on-surface-variant);
-		font-size: 0.9rem;
+		width: 100%;
+		max-width: 22rem;
+		margin-inline: auto;
+		padding: 2.5rem 0.5rem 3.25rem;
+		color: #71717a;
+		font-size: 0.875rem;
+		line-height: 1.45;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.75rem;
+		text-align: center;
+		gap: 1.25rem;
+	}
+
+	.m3-footer-brand,
+	.m3-footer-support,
+	.m3-footer-nav {
+		width: 100%;
+		margin: 0;
+	}
+
+	.m3-footer-brand {
+		display: grid;
+		gap: 0.2rem;
+		justify-items: center;
+	}
+
+	.m3-footer-copy,
+	.m3-footer-tagline {
+		margin: 0;
+	}
+
+	.m3-footer-copy {
+		color: #a1a1aa;
+		font-weight: 600;
+	}
+
+	.m3-footer-tagline {
+		color: #71717a;
+		font-size: 0.82rem;
 	}
 
 	.m3-footer-support {
-		margin: 0;
-		color: #a1a1aa;
-		font-size: 0.9rem;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.3rem;
+		color: #71717a;
 	}
 
 	.m3-footer-nav {
 		display: flex;
-		flex-wrap: wrap;
-		justify-content: center;
-		gap: 1rem;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.85rem;
+		padding-top: 0.15rem;
 	}
 
 	.m3-footer-link {
+		color: #93c5fd;
+		font-weight: 600;
+		font-size: 0.9rem;
+		padding: 0.2rem 0.4rem;
+		border-radius: 0.4rem;
+		transition: color 0.2s ease;
+	}
+
+	.m3-footer-link:hover {
 		color: #bfd6ff;
-		font-weight: 650;
+	}
+
+	@media (min-width: 640px) {
+		.m3-footer {
+			max-width: 36rem;
+			gap: 1rem;
+		}
+
+		.m3-footer-support {
+			flex-direction: row;
+			flex-wrap: wrap;
+			justify-content: center;
+			column-gap: 0.35rem;
+		}
+
+		.m3-footer-nav {
+			flex-direction: row;
+			justify-content: center;
+			flex-wrap: wrap;
+			gap: 0.35rem 1.35rem;
+		}
 	}
 </style>
