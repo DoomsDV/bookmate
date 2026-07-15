@@ -18,11 +18,6 @@ const showcaseFeatures = [
 				title: 'Uso en movimiento',
 				text: 'Pensado para que cargues turnos al instante mientras estás ocupado o atendiendo en el mostrador.',
 			},
-			{
-				icon: 'psychology',
-				title: 'Lenguaje natural',
-				text: 'Olvidate de los formularios. Dictá los datos y la IA arma la cita directamente en tu calendario.',
-			},
 		],
 		visual: 'voice',
 	},
@@ -38,9 +33,9 @@ const showcaseFeatures = [
 				text: 'El cliente te transfiere la seña a tu cuenta. El dinero llega sin intermediarios.',
 			},
 			{
-				icon: 'verified',
-				title: 'Validación y políticas',
-				text: 'Recibí el comprobante, validalo y el turno queda confirmado. Protegé tus ingresos con reglas claras que el cliente acepta al reservar.',
+				icon: 'fact_check',
+				title: 'Validación con un clic',
+				text: 'Recibí el comprobante del cliente directamente en tu panel y aprobá el turno al instante.',
 			},
 		],
 		visual: 'deposit',
@@ -55,11 +50,6 @@ const showcaseFeatures = [
 				icon: 'note_alt',
 				title: 'Notas y archivos',
 				text: 'Al completar un turno, guardá el contexto de la visita: notas, fotos o documentos en un solo lugar.',
-			},
-			{
-				icon: 'person_search',
-				title: 'Atención personalizada',
-				text: 'Llevá un registro centralizado de la evolución de tus clientes para brindar una atención mejor en cada nueva visita.',
 			},
 		],
 		visual: 'history',
@@ -179,31 +169,48 @@ const jsonLd = [
 					</div>
 				</div>
 
-				<div class="m3-hero-visuals" aria-hidden="true">
+				<div class="m3-hero-visuals" data-hero-visuals>
 					<div class="visual-story-shell">
-						<div class="visual-card visual-card-main">
-							<div class="visual-header">
-								<div class="visual-avatar">
-									<span class="material-symbols-rounded">event</span>
+						<div class="visual-card-slot visual-card-slot--main">
+							<button
+								type="button"
+								class="visual-card visual-card-main"
+								data-visual-card
+								aria-expanded="false"
+								aria-label="¡Nueva Cita Agendada!"
+							>
+								<div class="visual-header">
+									<div class="visual-avatar">
+										<span class="material-symbols-rounded" aria-hidden="true">event</span>
+									</div>
+									<div class="visual-detail">
+										<div class="visual-info">
+											<strong>¡Nueva Cita Agendada!</strong>
+											<span>[Consultorio Centro] Ana Ríos ha reservado para el 15/07/2026 a las 10:30</span>
+										</div>
+									</div>
 								</div>
-								<div class="visual-info">
-									<strong>Reserva recibida</strong>
-									<span>Desde tu enlace público</span>
-								</div>
-								<div class="visual-badge visual-badge-success">Pendiente</div>
-							</div>
+							</button>
 						</div>
 
-						<div class="visual-metrics-grid">
-							<div class="visual-card visual-card-3">
-								<div class="visual-icon-box visual-icon-ai">
-									<span class="material-symbols-rounded">groups</span>
+						<div class="visual-card-slot visual-card-slot--team">
+							<button
+								type="button"
+								class="visual-card visual-card-3"
+								data-visual-card
+								aria-expanded="false"
+								aria-label="Cita cancelada"
+							>
+								<div class="visual-icon-box visual-icon-cancel">
+									<span class="material-symbols-rounded" aria-hidden="true">event_busy</span>
 								</div>
-								<div class="visual-info">
-									<strong>Equipo y sucursales</strong>
-									<span>Sin cupo artificial de asientos</span>
+								<div class="visual-detail">
+									<div class="visual-info">
+										<strong>Cita cancelada</strong>
+										<span>[Consultorio Centro] Ana Ríos cancelo su cita del 15/07/2026 a las 10:30</span>
+									</div>
 								</div>
-							</div>
+							</button>
 						</div>
 					</div>
 				</div>
@@ -222,45 +229,67 @@ const jsonLd = [
 					{
 						showcaseFeatures.map((feature) => (
 							<article class="feature-stack reveal-on-scroll">
-								<header class="feature-stack-head">
-									<div class="feature-stack-labels">
-										<p class="feature-eyebrow">{feature.eyebrow}</p>
-										<span class="feature-badge">{feature.badge}</span>
+								<div class="feature-stack-copy">
+									<header class="feature-stack-head">
+										<div class="feature-stack-labels">
+											<p class="feature-eyebrow">{feature.eyebrow}</p>
+											<span class="feature-badge">
+												<span class="material-symbols-rounded" aria-hidden="true">workspace_premium</span>
+												{feature.badge}
+											</span>
+										</div>
+										<h3 class="feature-title">{feature.title}</h3>
+									</header>
+
+									<div class="feature-microblocks">
+										{feature.blocks.map((block) => (
+											<div class="feature-microblock">
+												<span class="feature-microblock-icon material-symbols-rounded" aria-hidden="true">
+													{block.icon}
+												</span>
+												<div class="feature-microblock-copy">
+													<strong>{block.title}</strong>
+													<p>{block.text}</p>
+												</div>
+											</div>
+										))}
 									</div>
-									<h3 class="feature-title">{feature.title}</h3>
-								</header>
+								</div>
 
 								<div class="feature-visual" aria-hidden="true">
-									<div class="feature-visual-glow"></div>
 									{feature.visual === 'voice' ? (
 										<div class="ui-panel ui-panel--voice">
 											<div class="ui-voice-header">
 												<span class="ui-voice-mic material-symbols-rounded">mic</span>
 												<strong>Cita rápida por voz</strong>
 											</div>
-											<p class="ui-voice-quote">
-												“Agendá a Ana Ríos mañana a las 10:30 para consulta general con María”
+											<p
+												class="ui-voice-quote"
+												data-typewriter="“Agendá a Ana Ríos mañana a las 10:30 para consulta general con la Dra. María en la sucursal Centro, dura 45 minutos”"
+											>
+												<span class="ui-voice-quote-text"></span><span class="ui-voice-caret" aria-hidden="true"></span>
 											</p>
 											<div class="ui-voice-result">
-												<span class="ui-pill-soft">Pendiente</span>
-												<small>Ana Ríos · Consulta · Mañana 10:30 · María</small>
+												<small>Ana Ríos · Consulta · Mañana 10:30 · 45 min · Sucursal Centro · Dra. María</small>
 											</div>
 										</div>
 									) : feature.visual === 'deposit' ? (
 										<div class="ui-panel ui-panel--deposit">
-											<div class="ui-deposit-header">
-												<strong>Seña recibida</strong>
-												<span>Gs. 50.000</span>
+											<p class="ui-deposit-kicker">Señas pendientes de validación</p>
+											<div class="ui-cobros-card">
+												<div class="ui-cobros-card__top">
+													<div>
+														<strong class="ui-cobros-card__amount">Gs. 50.000</strong>
+														<span class="ui-cobros-card__client">Ana Ríos</span>
+													</div>
+													<span class="ui-cobros-status">Comprobante subido</span>
+												</div>
+												<p class="ui-cobros-card__meta">En revisión · Consulta general · Mañana 10:30</p>
+												<div class="ui-cobros-actions">
+													<span class="ui-cobros-btn ui-cobros-btn--ghost">Ver comprobante</span>
+													<span class="ui-cobros-btn ui-cobros-btn--primary">Aprobar seña</span>
+												</div>
 											</div>
-											<div class="ui-deposit-code">
-												<em>Transferencia a tu cuenta</em>
-												<strong>Comprobante listo</strong>
-											</div>
-											<div class="ui-deposit-row">
-												<span>Validación del pago</span>
-												<em>En revisión</em>
-											</div>
-											<div class="ui-booking-cta">Confirmar turno</div>
 										</div>
 									) : (
 										<div class="ui-panel ui-panel--history">
@@ -272,7 +301,10 @@ const jsonLd = [
 												<small>12 jun · Completado</small>
 												<strong>Consulta de control</strong>
 												<p>Nota: Respondió bien al plan. Próximo control en 30 días.</p>
-												<span class="ui-file-chip">foto-control.jpg</span>
+												<div class="ui-file-chips">
+													<span class="ui-file-chip">foto-control-1.jpg</span>
+													<span class="ui-file-chip">foto-control-2.jpg</span>
+												</div>
 											</div>
 											<div class="ui-history-card ui-history-card--muted">
 												<small>15 may · Completado</small>
@@ -281,20 +313,6 @@ const jsonLd = [
 											</div>
 										</div>
 									)}
-								</div>
-
-								<div class="feature-microblocks">
-									{feature.blocks.map((block) => (
-										<div class="feature-microblock">
-											<span class="feature-microblock-icon material-symbols-rounded" aria-hidden="true">
-												{block.icon}
-											</span>
-											<div class="feature-microblock-copy">
-												<strong>{block.title}</strong>
-												<p>{block.text}</p>
-											</div>
-										</div>
-									))}
 								</div>
 							</article>
 						))
@@ -344,10 +362,6 @@ const jsonLd = [
 						Crear mi espacio gratis
 						<span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
 					</a>
-					<p class="cta-reassure">
-						<span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
-						Sin tarjeta de crédito requerida
-					</p>
 				</div>
 			</section>
 
@@ -431,6 +445,79 @@ const jsonLd = [
 		} else {
 			revealNodes.forEach((node) => node.classList.add('is-visible'));
 		}
+
+		const heroVisualMq = window.matchMedia('(max-width: 1023px)');
+		const visualCards = Array.from(document.querySelectorAll('[data-visual-card]'));
+
+		const closeVisualCards = () => {
+			for (const card of visualCards) {
+				if (!(card instanceof HTMLElement)) continue;
+				card.classList.remove('is-open');
+				card.setAttribute('aria-expanded', 'false');
+			}
+		};
+
+		for (const card of visualCards) {
+			card.addEventListener('click', (event) => {
+				if (!heroVisualMq.matches) return;
+				event.stopPropagation();
+				const willOpen = !card.classList.contains('is-open');
+				closeVisualCards();
+				if (!willOpen) return;
+				card.classList.add('is-open');
+				card.setAttribute('aria-expanded', 'true');
+			});
+		}
+
+		document.addEventListener('click', () => {
+			if (!heroVisualMq.matches) return;
+			closeVisualCards();
+		});
+
+		heroVisualMq.addEventListener('change', () => {
+			if (!heroVisualMq.matches) closeVisualCards();
+		});
+
+		document.querySelectorAll('[data-typewriter]').forEach((node) => {
+			if (!(node instanceof HTMLElement)) return;
+			const full = node.getAttribute('data-typewriter') || '';
+			const textEl = node.querySelector('.ui-voice-quote-text');
+			if (!textEl) return;
+
+			let started = false;
+			const runTypewriter = () => {
+				if (started) return;
+				started = true;
+				node.classList.add('is-typing');
+				let i = 0;
+				const tick = () => {
+					textEl.textContent = full.slice(0, i);
+					i += 1;
+					if (i <= full.length) {
+						window.setTimeout(tick, 28);
+					} else {
+						window.setTimeout(() => node.classList.remove('is-typing'), 1800);
+					}
+				};
+				tick();
+			};
+
+			if ('IntersectionObserver' in window) {
+				const typeObserver = new IntersectionObserver(
+					(entries) => {
+						for (const entry of entries) {
+							if (!entry.isIntersecting) continue;
+							runTypewriter();
+							typeObserver.disconnect();
+						}
+					},
+					{ rootMargin: '0px 0px -20% 0px', threshold: 0.25 }
+				);
+				typeObserver.observe(node);
+			} else {
+				runTypewriter();
+			}
+		});
 	})();
 </script>
 
@@ -671,44 +758,15 @@ const jsonLd = [
 	}
 
 	.m3-btn-primary {
-		position: relative;
-		isolation: isolate;
 		background: linear-gradient(180deg, #4a7fdc 0%, #3a6fd7 55%, #335fa9 100%);
 		color: var(--m3-sys-light-on-primary);
-		border-color: rgba(147, 197, 253, 0.35);
-		box-shadow:
-			0 0 0 1px rgba(147, 197, 253, 0.12),
-			0 10px 28px rgba(58, 111, 215, 0.28);
-	}
-
-	.m3-btn-primary::before {
-		content: '';
-		position: absolute;
-		inset: -1px;
-		z-index: -1;
-		border-radius: inherit;
-		background: linear-gradient(
-			120deg,
-			rgba(191, 214, 255, 0.55),
-			rgba(58, 111, 215, 0.15) 40%,
-			rgba(125, 211, 252, 0.45)
-		);
-		opacity: 0.55;
-		transition: opacity 0.25s ease, filter 0.25s ease;
-		filter: blur(0.5px);
+		border-color: rgba(147, 197, 253, 0.28);
+		box-shadow: none;
 	}
 
 	.m3-btn-primary:hover {
 		background: linear-gradient(180deg, #5689e2 0%, #4478d9 55%, #3a6fd7 100%);
-		box-shadow:
-			0 0 0 1px rgba(191, 214, 255, 0.28),
-			0 14px 36px rgba(58, 111, 215, 0.42),
-			0 0 28px rgba(125, 211, 252, 0.22);
-	}
-
-	.m3-btn-primary:hover::before {
-		opacity: 1;
-		filter: blur(1px);
+		box-shadow: none;
 	}
 
 	.m3-btn-tonal {
@@ -783,6 +841,7 @@ const jsonLd = [
 		flex-direction: column;
 		align-items: flex-start;
 		gap: 1.5rem;
+		min-width: 0;
 	}
 
 	.m3-display {
@@ -792,16 +851,6 @@ const jsonLd = [
 		letter-spacing: -0.03em;
 		color: var(--m3-sys-light-on-surface);
 		margin: 0;
-	}
-
-	@media (max-width: 1023px) {
-		.m3-display {
-			font-size: clamp(2.05rem, 7vw, 3.1rem);
-			line-height: 1.22;
-			letter-spacing: -0.025em;
-			text-wrap: balance;
-			max-width: 16ch;
-		}
 	}
 
 	.m3-body-large {
@@ -828,41 +877,179 @@ const jsonLd = [
 	}
 
 	.visual-story-shell {
-		display: contents;
+		display: flex;
+		flex-direction: column;
+		gap: 0.7rem;
+		align-items: flex-end;
+		width: 100%;
+		height: 100%;
+	}
+
+	.visual-card-slot {
+		display: block;
+		position: relative;
+		animation: hero-float 6.5s ease-in-out infinite;
+		will-change: transform;
+	}
+
+	.visual-card-slot--main {
+		animation-delay: 0s;
+	}
+
+	.visual-card-slot--team {
+		animation-delay: -3.5s;
+	}
+
+	.visual-card-slot:has(.is-open) {
+		animation: none;
+		transform: none;
 	}
 
 	.visual-card {
-		background: rgba(255, 255, 255, 0.04);
+		background: rgba(20, 20, 24, 0.92);
 		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 1.25rem;
 		padding: 0.875rem 1rem;
-		box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
+		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 		display: flex;
 		align-items: center;
 		gap: 0.875rem;
 		width: 100%;
-		animation: float 7s ease-in-out infinite;
+		font: inherit;
+		color: inherit;
+		appearance: none;
+		-webkit-appearance: none;
+		text-align: left;
+		cursor: default;
 	}
 
-	.visual-card-main {
-		animation-delay: 0s;
+	.visual-detail {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		min-width: 0;
+		flex: 1;
 	}
 
-	.visual-metrics-grid {
-		display: contents;
-	}
+	@media (max-width: 1023px) {
+		.m3-hero {
+			grid-template-columns: minmax(0, 1fr) 3.1rem;
+			column-gap: 0.7rem;
+			row-gap: 1.25rem;
+			align-items: start;
+			padding: 0.75rem 0 1.5rem;
+		}
 
-	.visual-card-2 {
-		animation-delay: -2.4s;
-	}
+		.m3-hero-content {
+			grid-column: 1;
+			grid-row: 1;
+			gap: 1.15rem;
+		}
 
-	.visual-card-3 {
-		animation-delay: -4.2s;
+		.m3-display {
+			font-size: clamp(2.05rem, 7vw, 3.1rem);
+			line-height: 1.22;
+			letter-spacing: -0.025em;
+			text-wrap: balance;
+			max-width: 12.5ch;
+		}
+
+		.m3-hero-visuals {
+			grid-column: 2;
+			grid-row: 1;
+			width: 3.1rem;
+			align-self: start;
+			margin-top: 3.6rem;
+			gap: 0.7rem;
+			z-index: 4;
+		}
+
+		.visual-story-shell {
+			align-items: flex-end;
+		}
+
+		.visual-card-slot {
+			width: 3.1rem;
+			height: 3.1rem;
+			flex-shrink: 0;
+		}
+
+		.visual-card {
+			position: relative;
+			width: 3.1rem;
+			height: 3.1rem;
+			padding: 0;
+			border-radius: 999px;
+			justify-content: center;
+			gap: 0;
+			box-shadow: none;
+			background: rgba(255, 255, 255, 0.06);
+			border-color: rgba(255, 255, 255, 0.14);
+			cursor: pointer;
+			overflow: visible;
+			transition:
+				width 0.22s ease,
+				border-radius 0.22s ease,
+				background-color 0.22s ease,
+				box-shadow 0.22s ease;
+		}
+
+		.visual-header {
+			width: 100%;
+			justify-content: center;
+			gap: 0;
+		}
+
+		.visual-avatar,
+		.visual-icon-box {
+			width: 3.1rem;
+			height: 3.1rem;
+		}
+
+		.visual-detail {
+			display: none;
+		}
+
+		.visual-card.is-open {
+			width: min(17.5rem, calc(100vw - 2.5rem));
+			height: auto;
+			min-height: 3.1rem;
+			padding: 0.8rem 0.9rem;
+			border-radius: 1.15rem;
+			justify-content: flex-start;
+			gap: 0.75rem;
+			background: #141418;
+			border-color: rgba(255, 255, 255, 0.14);
+			box-shadow: 0 18px 40px rgba(0, 0, 0, 0.45);
+			position: absolute;
+			top: 0;
+			right: 0;
+			z-index: 6;
+		}
+
+		.visual-card.is-open .visual-header {
+			justify-content: flex-start;
+			gap: 0.75rem;
+		}
+
+		.visual-card.is-open .visual-avatar,
+		.visual-card.is-open .visual-icon-box {
+			width: 2.6rem;
+			height: 2.6rem;
+		}
+
+		.visual-card.is-open .visual-detail {
+			display: flex;
+		}
 	}
 
 	@media (min-width: 1024px) {
+		.m3-hero {
+			grid-template-columns: 1fr 1fr;
+			padding: 2rem 0 3rem;
+		}
+
 		.m3-hero-visuals {
 			position: relative;
 			height: 360px;
@@ -870,44 +1057,50 @@ const jsonLd = [
 			width: auto;
 		}
 
-		.visual-card {
-			position: absolute;
-			width: auto;
-			padding: 1.25rem;
-			border-radius: 1.5rem;
+		.visual-story-shell {
+			display: block;
+			position: relative;
+			height: 100%;
+			width: 100%;
 		}
 
-		.visual-card-main {
-			top: 5%;
+		.visual-card-slot {
+			position: absolute;
+			width: max-content;
+			max-width: min(100%, 22rem);
+		}
+
+		.visual-card-slot--main {
+			top: 8%;
 			left: 0;
 			z-index: 2;
 		}
 
-		.visual-card-2 {
-			bottom: 5%;
-			left: 0;
-			z-index: 1;
-		}
-
-		.visual-card-3 {
-			top: 38%;
+		.visual-card-slot--team {
+			top: 48%;
 			right: 0;
 			z-index: 3;
 		}
 
-		.m3-hero {
-			grid-template-columns: 1fr 1fr;
-			padding: 2rem 0 3rem;
+		.visual-card {
+			width: auto;
+			padding: 1.25rem;
+			border-radius: 1.5rem;
+			pointer-events: none;
+		}
+
+		.visual-detail {
+			display: flex;
 		}
 	}
 
-	@keyframes float {
+	@keyframes hero-float {
 		0%,
 		100% {
-			transform: translateY(0);
+			transform: translate3d(0, 0, 0);
 		}
 		50% {
-			transform: translateY(-9px);
+			transform: translate3d(0, -14px, 0);
 		}
 	}
 
@@ -931,9 +1124,9 @@ const jsonLd = [
 		}
 	}
 
-	.visual-icon-ai {
-		background: rgba(148, 163, 184, 0.22);
-		color: #dbeafe;
+	.visual-icon-cancel {
+		background: rgba(248, 113, 113, 0.18);
+		color: #fecaca;
 	}
 
 	.visual-header {
@@ -1001,10 +1194,18 @@ const jsonLd = [
 		gap: 2rem;
 	}
 
+	#funciones.m3-section {
+		padding-top: 0.75rem;
+	}
+
 	@media (min-width: 768px) {
 		.m3-section {
 			padding: 4rem 0;
 			gap: 3rem;
+		}
+
+		#funciones.m3-section {
+			padding-top: 1.25rem;
 		}
 	}
 
@@ -1042,12 +1243,13 @@ const jsonLd = [
 		}
 
 		#funciones.m3-section {
-			padding: 1.75rem 0;
+			padding-top: 0.5rem;
+			padding-bottom: 1.75rem;
 			gap: 1.35rem;
 		}
 
 		.feature-showcase {
-			gap: 2.75rem;
+			gap: 4rem;
 		}
 	}
 
@@ -1094,19 +1296,33 @@ const jsonLd = [
 
 	.feature-showcase {
 		display: grid;
-		gap: 3.25rem;
+		gap: 4.5rem;
 	}
 
 	.feature-stack {
 		display: grid;
 		gap: 1.15rem;
-		width: min(100%, 36rem);
-		margin: 0 auto;
+		width: 100%;
+		margin: 0;
+		align-items: center;
+	}
+
+	.feature-stack-copy {
+		display: contents;
 	}
 
 	.feature-stack-head {
 		display: grid;
 		gap: 0.55rem;
+		order: 1;
+	}
+
+	.feature-visual {
+		order: 2;
+	}
+
+	.feature-microblocks {
+		order: 3;
 	}
 
 	.feature-stack-labels {
@@ -1127,6 +1343,7 @@ const jsonLd = [
 	.feature-badge {
 		display: inline-flex;
 		align-items: center;
+		gap: 0.3rem;
 		padding: 0.28rem 0.65rem;
 		border-radius: 999px;
 		background: rgba(58, 111, 215, 0.22);
@@ -1136,6 +1353,11 @@ const jsonLd = [
 		font-weight: 700;
 		letter-spacing: 0.01em;
 		white-space: nowrap;
+	}
+
+	.feature-badge .material-symbols-rounded {
+		font-size: 0.95rem;
+		line-height: 1;
 	}
 
 	.feature-title {
@@ -1157,6 +1379,12 @@ const jsonLd = [
 		display: grid;
 		gap: 1.1rem;
 		padding-top: 0.15rem;
+	}
+
+	@media (max-width: 899px) {
+		.feature-microblocks {
+			display: none !important;
+		}
 	}
 
 	.feature-microblock {
@@ -1198,31 +1426,13 @@ const jsonLd = [
 		line-height: 1.55;
 	}
 
-	.feature-visual-glow {
-		position: absolute;
-		z-index: 0;
-		inset: 8% 4% 4%;
-		border-radius: 50%;
-		background: radial-gradient(
-			circle at 50% 45%,
-			rgba(58, 111, 215, 0.32) 0%,
-			rgba(99, 102, 241, 0.14) 42%,
-			transparent 72%
-		);
-		filter: blur(18px);
-		pointer-events: none;
-	}
-
 	.ui-panel {
 		position: relative;
 		z-index: 1;
-		border: 1px solid rgba(255, 255, 255, 0.12);
+		border: 1px solid rgba(255, 255, 255, 0.1);
 		border-radius: 1.35rem;
-		background: linear-gradient(160deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
-		box-shadow:
-			0 0 0 1px rgba(255, 255, 255, 0.04),
-			0 28px 60px rgba(0, 0, 0, 0.38),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1);
+		background: #141418;
+		box-shadow: none;
 		padding: 1.1rem;
 		overflow: hidden;
 	}
@@ -1232,6 +1442,11 @@ const jsonLd = [
 	.ui-panel--history {
 		display: grid;
 		gap: 0.9rem;
+	}
+
+	.ui-panel--deposit {
+		gap: 0.85rem;
+		padding: 1rem 1.05rem;
 	}
 
 	.ui-voice-header {
@@ -1246,10 +1461,11 @@ const jsonLd = [
 		width: 2.5rem;
 		height: 2.5rem;
 		border-radius: 999px;
-		background: rgba(58, 111, 215, 0.28);
-		color: #dbeafe;
+		background: rgba(255, 255, 255, 0.08);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		color: #d4d4d8;
 		font-size: 1.25rem;
-		box-shadow: 0 0 20px rgba(58, 111, 215, 0.35);
+		box-shadow: none;
 	}
 
 	.ui-voice-header strong {
@@ -1267,6 +1483,32 @@ const jsonLd = [
 		font-size: 0.92rem;
 		line-height: 1.5;
 		font-style: italic;
+		min-height: 6em;
+	}
+
+	.ui-voice-caret {
+		display: inline-block;
+		width: 1px;
+		height: 1.05em;
+		margin-left: 1px;
+		vertical-align: -0.15em;
+		background: #93c5fd;
+		opacity: 0;
+	}
+
+	.ui-voice-quote.is-typing .ui-voice-caret {
+		opacity: 1;
+		animation: ui-voice-caret-blink 0.9s step-end infinite;
+	}
+
+	@keyframes ui-voice-caret-blink {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0;
+		}
 	}
 
 	.ui-voice-result {
@@ -1274,90 +1516,97 @@ const jsonLd = [
 		gap: 0.35rem;
 	}
 
-	.ui-pill-soft {
-		display: inline-flex;
-		width: fit-content;
-		padding: 0.28rem 0.65rem;
-		border-radius: 999px;
-		background: rgba(255, 183, 77, 0.16);
-		border: 1px solid rgba(255, 183, 77, 0.28);
-		color: #ffd9a0;
-		font-size: 0.72rem;
-		font-weight: 700;
-	}
-
 	.ui-voice-result small {
 		color: #a1a1aa;
 		font-size: 0.82rem;
 	}
 
-	.ui-deposit-header {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 0.75rem;
-	}
-
-	.ui-deposit-header strong {
-		color: #f4f4f5;
-		font-size: 0.95rem;
-	}
-
-	.ui-deposit-header span {
-		color: #93c5fd;
-		font-size: 0.95rem;
-		font-weight: 700;
-	}
-
-	.ui-deposit-code {
-		display: grid;
-		gap: 0.25rem;
-		padding: 0.85rem 1rem;
-		border-radius: 1rem;
-		border: 1px dashed rgba(147, 197, 253, 0.35);
-		background: rgba(58, 111, 215, 0.12);
-	}
-
-	.ui-deposit-code em {
-		font-style: normal;
-		color: #93c5fd;
-		font-size: 0.72rem;
-		font-weight: 650;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-	}
-
-	.ui-deposit-code strong {
-		color: #ffffff;
-		font-size: 1.15rem;
-		letter-spacing: 0.06em;
-	}
-
-	.ui-deposit-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		color: #c4c4cc;
-		font-size: 0.88rem;
-	}
-
-	.ui-deposit-row em {
-		font-style: normal;
-		color: #fde68a;
+	.ui-deposit-kicker {
+		margin: 0;
 		font-size: 0.78rem;
 		font-weight: 700;
+		letter-spacing: 0.02em;
+		color: #a1a1aa;
 	}
 
-	.ui-booking-cta {
-		display: inline-flex;
-		justify-content: center;
-		padding: 0.7rem 1rem;
+	.ui-cobros-card {
+		display: grid;
+		gap: 0.75rem;
+		padding: 0.9rem;
+		border-radius: 1rem;
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: rgba(255, 255, 255, 0.03);
+	}
+
+	.ui-cobros-card__top {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.ui-cobros-card__amount {
+		display: block;
+		color: #86efac;
+		font-size: 1.2rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+	}
+
+	.ui-cobros-card__client {
+		display: block;
+		margin-top: 0.15rem;
+		color: #f4f4f5;
+		font-size: 0.95rem;
+		font-weight: 600;
+	}
+
+	.ui-cobros-status {
+		flex-shrink: 0;
+		padding: 0.28rem 0.6rem;
 		border-radius: 999px;
-		background: #3a6fd7;
-		color: #ffffff;
-		font-size: 0.9rem;
+		background: rgba(255, 183, 77, 0.16);
+		border: 1px solid rgba(255, 183, 77, 0.28);
+		color: #ffd9a0;
+		font-size: 0.7rem;
+		font-weight: 700;
+		white-space: nowrap;
+	}
+
+	.ui-cobros-card__meta {
+		margin: 0;
+		color: #a1a1aa;
+		font-size: 0.8rem;
+		line-height: 1.4;
+	}
+
+	.ui-cobros-actions {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.5rem;
+	}
+
+	.ui-cobros-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.55rem 0.7rem;
+		border-radius: 999px;
+		font-size: 0.78rem;
 		font-weight: 650;
+		text-align: center;
+	}
+
+	.ui-cobros-btn--ghost {
+		background: rgba(255, 255, 255, 0.04);
+		border: 1px solid rgba(255, 255, 255, 0.14);
+		color: #d4d4d8;
+	}
+
+	.ui-cobros-btn--primary {
+		background: #3a6fd7;
+		border: 1px solid transparent;
+		color: #ffffff;
 	}
 
 	.ui-history-header {
@@ -1406,10 +1655,16 @@ const jsonLd = [
 		line-height: 1.45;
 	}
 
+	.ui-file-chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		margin-top: 0.2rem;
+	}
+
 	.ui-file-chip {
 		display: inline-flex;
 		width: fit-content;
-		margin-top: 0.2rem;
 		padding: 0.28rem 0.55rem;
 		border-radius: 0.5rem;
 		background: rgba(255, 255, 255, 0.06);
@@ -1518,14 +1773,46 @@ const jsonLd = [
 
 	@media (min-width: 900px) {
 		.feature-showcase {
-			gap: 5rem;
+			gap: 8rem;
 			justify-items: stretch;
 		}
 
 		.feature-stack {
+			grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+			align-items: center;
 			width: 100%;
-			max-width: 44rem;
-			gap: 1.35rem;
+			max-width: none;
+			gap: 2rem 2.75rem;
+		}
+
+		.feature-stack:nth-child(even) {
+			grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+		}
+
+		.feature-stack-copy {
+			display: grid;
+			gap: 1.5rem;
+			min-width: 0;
+			order: 1;
+			align-self: center;
+		}
+
+		.feature-stack-head,
+		.feature-microblocks {
+			order: initial;
+		}
+
+		.feature-visual {
+			order: 2;
+			align-self: center;
+		}
+
+		.feature-stack:nth-child(even) .feature-stack-copy {
+			order: 2;
+		}
+
+		.feature-stack:nth-child(even) .feature-visual {
+			order: 1;
 		}
 
 		.feature-microblocks {
@@ -1539,7 +1826,7 @@ const jsonLd = [
 		.feature-microblock-copy p {
 			font-size: 0.98rem;
 			line-height: 1.6;
-			max-width: 48ch;
+			max-width: none;
 		}
 
 		.workflow-steps {
@@ -1615,21 +1902,6 @@ const jsonLd = [
 
 	.cta-btn {
 		margin-top: 0.5rem;
-	}
-
-	.cta-reassure {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		margin: 0.15rem 0 0;
-		color: #a1a1aa;
-		font-size: 0.9rem;
-		font-weight: 550;
-	}
-
-	.cta-reassure .material-symbols-rounded {
-		font-size: 1.15rem;
-		color: #93c5fd;
 	}
 
 	.m3-cta-card .m3-headline {
