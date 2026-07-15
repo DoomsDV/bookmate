@@ -137,6 +137,8 @@ const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | nul
 		logo_url: String(source.logo_url || '').trim(),
 		time_format: normalizeTimeFormat(source.time_format),
 		theme_pref: String(source.theme_pref || '').trim(),
+		hidden_public_price_label:
+			String(source.hidden_public_price_label || '').trim() || 'A evaluar',
 		unanswered_alert_action: String(source.unanswered_alert_action || 'KEEP').trim().toUpperCase(),
 		rsi_id_slot_interval: toOptionalPositiveInt(source.rsi_id_slot_interval),
 		rh_id_reminder_hours: toOptionalPositiveInt(source.rh_id_reminder_hours),

@@ -420,6 +420,56 @@
 	display: block;
 }
 
+.public-service-card--skeleton {
+	pointer-events: none;
+	cursor: default;
+}
+
+.public-service-card--skeleton:hover {
+	border-color: color-mix(in srgb, var(--outline-variant) 85%, transparent);
+	background: var(--surface-container-high);
+}
+
+.public-service-skeleton-line {
+	display: block;
+	border-radius: 0.45rem;
+	background: color-mix(in srgb, var(--on-surface-variant) 18%, transparent);
+	animation: public-service-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.public-service-skeleton-line--title {
+	width: 58%;
+	height: 1.15rem;
+}
+
+.public-service-skeleton-meta {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	margin-top: 0.15rem;
+}
+
+.public-service-skeleton-line--sm {
+	width: 3.25rem;
+	height: 0.85rem;
+}
+
+.public-service-skeleton-line--price {
+	width: 5.5rem;
+	height: 0.85rem;
+}
+
+@keyframes public-service-skeleton-pulse {
+	0%,
+	100% {
+		opacity: 0.5;
+	}
+	50% {
+		opacity: 1;
+	}
+}
+
 .public-services-more {
 	display: inline-flex;
 	align-items: center;

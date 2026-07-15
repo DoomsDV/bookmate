@@ -16,6 +16,8 @@ export interface Service {
 	name: string;
 	duration_minutes: number;
 	price: number;
+	hide_public_price?: 0 | 1;
+	hidden_public_price_label?: string | null;
 	is_active: 0 | 1;
 	requires_deposit?: 0 | 1;
 	deposit_type?: 'PERCENT' | 'FIXED' | null;
@@ -28,6 +30,8 @@ export interface ServiceLov {
 	name: string;
 	duration_minutes: number;
 	price: number;
+	hide_public_price?: 0 | 1;
+	hidden_public_price_label?: string | null;
 	requires_deposit?: 0 | 1;
 	deposit_type?: 'PERCENT' | 'FIXED' | null;
 	deposit_value?: number | null;
@@ -54,6 +58,8 @@ export interface CreateServicePayload {
 	name: string;
 	duration_minutes: number;
 	price?: number;
+	hide_public_price?: 0 | 1;
+	hidden_public_price_label?: string | null;
 	is_active?: 0 | 1;
 	requires_deposit?: 0 | 1;
 	deposit_type?: 'PERCENT' | 'FIXED';
@@ -99,6 +105,11 @@ const toNumber = (value: unknown, fallback = 0) => {
 };
 
 const normalizeRequiresDeposit = (value: unknown): 0 | 1 => {
+	if (value === 1 || value === '1' || value === true) return 1;
+	return 0;
+};
+
+const normalizeFlag01 = (value: unknown): 0 | 1 => {
 	if (value === 1 || value === '1' || value === true) return 1;
 	return 0;
 };
@@ -171,6 +182,11 @@ const normalizeService = (value: unknown): Service | null => {
 		name: String(source.name || '').trim(),
 		duration_minutes: toNumber(source.duration_minutes),
 		price: toNumber(source.price),
+		hide_public_price: normalizeFlag01(source.hide_public_price),
+		hidden_public_price_label: (() => {
+			const raw = String(source.hidden_public_price_label ?? '').trim();
+			return raw || null;
+		})(),
 		is_active: source.is_active === 1 || source.is_active === '1' || source.is_active === true ? 1 : 0,
 		requires_deposit: normalizeRequiresDeposit(source.requires_deposit),
 		deposit_type: normalizeDepositType(source.deposit_type),
@@ -191,6 +207,11 @@ const normalizeServiceLov = (value: unknown): ServiceLov | null => {
 		name: String(source.name || '').trim(),
 		duration_minutes: toNumber(source.duration_minutes),
 		price: toNumber(source.price),
+		hide_public_price: normalizeFlag01(source.hide_public_price),
+		hidden_public_price_label: (() => {
+			const raw = String(source.hidden_public_price_label ?? '').trim();
+			return raw || null;
+		})(),
 		requires_deposit: normalizeRequiresDeposit(source.requires_deposit),
 		deposit_type: normalizeDepositType(source.deposit_type),
 		deposit_value: normalizeDepositValue(source.deposit_value),

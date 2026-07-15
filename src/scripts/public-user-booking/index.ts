@@ -395,7 +395,7 @@ export const initializePublicUserBookingPage = () => {
 		}
 
 		if (servicePickerPhase === 'services' && selectedOrgGroup) {
-			if (step1Title) step1Title.textContent = 'Seleccioná un servicio';
+			if (step1Title) step1Title.textContent = '¿Qué servicio desea?';
 			if (step1Subtitle) {
 				const locationLabel = selectedContext ? formatLocationLine(selectedContext) : '';
 				step1Subtitle.textContent = locationLabel
@@ -643,7 +643,7 @@ export const initializePublicUserBookingPage = () => {
 				<span class="text-base font-medium text-[var(--on-surface)]">${service.name}</span>
 				<span class="flex items-center justify-between gap-2 text-sm font-medium text-[var(--on-surface-variant)]">
 					<span>${formatDuration(service.duration_minutes)}</span>
-					<span>${formatCurrency(service.price)}</span>
+					<span>${service.hide_public_price === 1 ? (service.hidden_price_label || 'A evaluar') : formatCurrency(service.price)}</span>
 				</span>
 				<span class="material-symbols-rounded public-service-card__check" aria-hidden="true">check_circle</span>
 			`;

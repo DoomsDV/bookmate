@@ -2,19 +2,18 @@
 import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
 
-const updatedAt = '15 de mayo de 2026';
-const pageTitle = 'Políticas y privacidad — Hasel';
+const updatedAt = '14 de julio de 2026';
+const pageTitle = 'Políticas de cancelación y reembolso — Hasel';
 const pageDescription =
-	'Qué datos trata Hasel, para qué los usa y cómo se administran en la plataforma.';
+	'Cómo funcionan las señas por SIPAP, las políticas Flexible, Moderada y Estricta, y los reembolsos en Hasel.';
 
 const toc = [
-	{ id: 'responsable', label: 'Responsable del sitio' },
-	{ id: 'datos', label: 'Datos que tratamos' },
-	{ id: 'finalidad', label: 'Finalidad del tratamiento' },
-	{ id: 'manejo', label: 'Cómo se maneja la información' },
-	{ id: 'seguridad', label: 'Seguridad y conservación' },
-	{ id: 'servicios-externos', label: 'Servicios externos' },
-	{ id: 'derechos', label: 'Derechos y consultas' },
+	{ id: 'alcance', label: 'Alcance y rol de Hasel' },
+	{ id: 'niveles', label: 'Niveles de política' },
+	{ id: 'cancelacion-comercio', label: 'Cancelación del comercio' },
+	{ id: 'proceso-reembolso', label: 'Proceso de reembolso' },
+	{ id: 'penalizaciones', label: 'Sistema de penalizaciones' },
+	{ id: 'otras-politicas', label: 'Otras políticas' },
 ] as const;
 ---
 
@@ -37,11 +36,11 @@ const toc = [
 
 			<header class="policy-hero">
 				<p class="policy-kicker">Documentación legal</p>
-				<h1>Políticas y privacidad de Hasel</h1>
+				<h1>Políticas de cancelación y reembolso</h1>
 				<p class="policy-lead">
-					En Hasel cuidamos la información de los negocios que usan la plataforma para organizar
-					servicios, clientes, equipos, horarios y citas. Esta página explica de forma simple qué
-					datos tratamos, para qué los usamos y cómo se administran dentro del proyecto.
+					Cuando un negocio habilita el cobro de señas en Hasel, el cliente paga por transferencia
+					SIPAP directamente a la cuenta del comercio. Esta página explica los niveles de política,
+					cuándo corresponde un reembolso y cómo se gestiona el proceso.
 				</p>
 				<p class="policy-updated">Última actualización: {updatedAt}</p>
 			</header>
@@ -73,94 +72,144 @@ const toc = [
 				</aside>
 
 				<article class="policy-article">
-					<section id="responsable" class="policy-section" data-policy-section>
-						<h2>Responsable del sitio y la aplicación</h2>
+					<section id="alcance" class="policy-section" data-policy-section>
+						<h2>Alcance y rol de Hasel</h2>
 						<p>
-							Este sitio web y la aplicación Hasel son operados y administrados por Daniel Ramon
-							Villasanti Vergara, responsable principal del proyecto y CEO de Hasel.
-						</p>
-					</section>
-
-					<section id="datos" class="policy-section" data-policy-section>
-						<h2>Datos que podemos tratar</h2>
-						<p>
-							Hasel puede procesar datos necesarios para operar la agenda y el panel
-							administrativo, incluyendo información de cuentas, negocios, sucursales, servicios,
-							especialidades, profesionales, horarios, clientes, citas y estados operativos.
-						</p>
-						<p>
-							También podemos registrar información técnica básica, como fecha y hora de acceso,
-							identificadores de sesión, preferencias de la aplicación, notificaciones y datos
-							mínimos para seguridad, soporte y mejora del servicio.
-						</p>
-					</section>
-
-					<section id="finalidad" class="policy-section" data-policy-section>
-						<h2>Finalidad del tratamiento</h2>
-						<p>
-							Usamos la información para permitir el funcionamiento de Hasel: gestionar reservas,
-							mostrar disponibilidad, organizar equipos, consultar el estado del negocio, enviar
-							notificaciones relevantes y mantener la seguridad de la cuenta.
-						</p>
-						<p>
-							Cuando se usan funciones de asistencia inteligente, la información enviada al
-							asistente se utiliza para responder consultas sobre agenda, clientes, turnos o
-							disponibilidad dentro del contexto autorizado por el usuario.
-						</p>
-					</section>
-
-					<section id="manejo" class="policy-section" data-policy-section>
-						<h2>Cómo se maneja la información en el proyecto</h2>
-						<p>
-							Los datos se organizan por módulos funcionales de la plataforma, como panel,
-							calendario, clientes, servicios, sucursales, equipo, horarios y herramientas de IA.
-							El acceso se limita a usuarios autenticados y a los permisos necesarios para operar
-							cada espacio de trabajo.
+							Las señas se cobran por transferencia bancaria (SIPAP) a la cuenta configurada por el
+							negocio. Hasel facilita la reserva, el comprobante y el seguimiento del estado del
+							cobro o reembolso.
 						</p>
 						<aside class="policy-callout" role="note">
 							<p>
-								<strong>No vendemos información personal.</strong> Los datos se usan para
-								prestar el servicio, cumplir solicitudes del usuario, mantener continuidad
-								operativa y mejorar la experiencia de la aplicación.
+								<strong>Hasel no intermedia ni retiene el dinero de la seña.</strong> El
+								pago y, cuando corresponda, el reembolso se realizan directamente entre cliente
+								y comercio por SIPAP.
 							</p>
 						</aside>
-					</section>
-
-					<section id="seguridad" class="policy-section" data-policy-section>
-						<h2>Seguridad y conservación</h2>
 						<p>
-							Aplicamos controles razonables de acceso, autenticación y separación lógica de
-							datos para reducir riesgos de acceso no autorizado. La información se conserva
-							mientras sea necesaria para operar el servicio, cumplir obligaciones aplicables o
-							atender solicitudes del usuario.
+							Esta política describe el comportamiento estándar de la plataforma. El negocio
+							elige un nivel (Flexible, Moderada o Estricta) y el cliente lo acepta al
+							reservar. Esa elección queda asociada a la cita.
 						</p>
 					</section>
 
-					<section id="servicios-externos" class="policy-section" data-policy-section>
-						<h2>Servicios externos</h2>
+					<section id="niveles" class="policy-section" data-policy-section>
+						<h2>Niveles de política</h2>
 						<p>
-							Hasel puede apoyarse en proveedores tecnológicos para infraestructura,
-							autenticación, notificaciones, hosting, análisis operativo o funciones de
-							inteligencia artificial. Estos servicios se utilizan únicamente para habilitar
-							funcionalidades del producto.
+							Los tres niveles definen qué ocurre si el <strong>cliente</strong> cancela,
+							según el tiempo restante hasta el turno.
+						</p>
+
+						<div class="policy-table-wrap">
+							<table class="policy-table">
+								<thead>
+									<tr>
+										<th scope="col">Nivel de política</th>
+										<th scope="col">Reembolso (antes de 24 hs)</th>
+										<th scope="col">Reembolso (menos de 24 hs)</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<th scope="row">Flexible</th>
+										<td>100% de la seña</td>
+										<td>0%</td>
+									</tr>
+									<tr>
+										<th scope="row">Moderada</th>
+										<td>50% de la seña</td>
+										<td>0%</td>
+									</tr>
+									<tr>
+										<th scope="row">Estricta</th>
+										<td>0% (sin reembolso)</td>
+										<td>0% (sin reembolso)</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+
+						<p>
+							La ventana de 24 horas se mide respecto al inicio programado del turno. La
+							política aplicable es la que el cliente aceptó al confirmar la reserva.
 						</p>
 					</section>
 
-					<section id="derechos" class="policy-section policy-section--last" data-policy-section>
-						<h2>Derechos y consultas</h2>
+					<section id="cancelacion-comercio" class="policy-section" data-policy-section>
+						<h2>Cuando cancela el comercio</h2>
 						<p>
-							Los usuarios pueden solicitar revisión, actualización o eliminación de información
-							asociada a su cuenta o negocio, según corresponda al uso de la plataforma y a las
-							obligaciones operativas vigentes.
+							Si el negocio cancela un turno cuya seña ya fue cobrada y validada, corresponde
+							reembolso del <strong>100%</strong> al cliente, aunque la política elegida sea
+							Moderada o Estricta.
 						</p>
 						<p>
-							Para consultas sobre privacidad o tratamiento de datos, el usuario puede
-							comunicarse por los canales oficiales habilitados por Hasel.
+							En ese caso el cliente recibe instrucciones para indicar un alias bancario donde
+							recibir la devolución.
+						</p>
+					</section>
+
+					<section id="proceso-reembolso" class="policy-section" data-policy-section>
+						<h2>Cómo se procesa un reembolso</h2>
+						<p>
+							Cuando corresponde una devolución, el cliente informa su alias SIPAP. El negocio
+							debe transferir el monto correspondiente en un plazo de hasta
+							<strong> 48 horas hábiles</strong> desde que el cliente carga ese alias.
 						</p>
 						<p>
-							Las reglas de señas, cancelación y devoluciones se detallan en
-							<a href="/politicas-de-cancelacion-y-reembolso" class="policy-inline-link">
-								Políticas de cancelación y reembolso
+							Hasel registra el estado del reembolso (pendiente, enviado, etc.) para que ambas
+							partes puedan hacer seguimiento desde la plataforma.
+						</p>
+					</section>
+
+					<section id="penalizaciones" class="policy-section" data-policy-section>
+						<h2>Incumplimiento de políticas y sistema de penalizaciones</h2>
+						<p>
+							Para garantizar un entorno seguro, transparente y confiable para todos los
+							usuarios, exigimos a los profesionales y organizaciones el estricto cumplimiento
+							de la Política de Cancelación elegida al momento de la reserva. En caso de
+							irregularidades, aplicamos las siguientes normativas.
+						</p>
+
+						<h3>Derecho a reclamo</h3>
+						<p>
+							Si un cliente cancela una cita dentro de los plazos establecidos por una política
+							Flexible o Moderada y la organización se niega a emitir el reembolso
+							correspondiente mediante transferencia (SIPAP), el cliente podrá emitir un
+							reporte formal a nuestro equipo de soporte.
+						</p>
+
+						<h3>Sistema de infracciones (strikes)</h3>
+						<p>
+							Tras la recepción de un reporte, la plataforma evaluará el caso. Si se comprueba
+							el incumplimiento por parte del profesional u organización, se aplicará una (1)
+							infracción o strike a su cuenta.
+						</p>
+
+						<h3>Límite de penalizaciones</h3>
+						<p>Cada cuenta dispone de un límite máximo de tres (3) infracciones.</p>
+
+						<aside class="policy-callout" role="note">
+							<p>
+								<strong>Cancelación de la cuenta.</strong> La acumulación de tres (3)
+								strikes resultará en la suspensión permanente e irreversible de la cuenta de
+								la organización en la plataforma, bloqueando su acceso al sistema de
+								reservas y su catálogo público de servicios.
+							</p>
+						</aside>
+
+						<p>
+							Para consultas sobre un cobro o devolución puntual, el cliente debe contactar
+							primero al comercio. Si necesita ayuda adicional, puede escribir a los canales
+							oficiales de Hasel.
+						</p>
+					</section>
+
+					<section id="otras-politicas" class="policy-section policy-section--last" data-policy-section>
+						<h2>Otras políticas</h2>
+						<p>
+							El tratamiento de datos personales se detalla en
+							<a href="/politicas-y-privacidad" class="policy-inline-link">
+								Políticas y privacidad
 							</a>.
 						</p>
 					</section>
@@ -302,7 +351,7 @@ const toc = [
 
 	.policy-hero h1 {
 		margin: 0 0 1rem;
-		max-width: 14ch;
+		max-width: 16ch;
 		color: var(--policy-heading);
 		font-size: clamp(2.35rem, 6.5vw, 3.75rem);
 		font-weight: 750;
@@ -430,6 +479,13 @@ const toc = [
 		line-height: 1.25;
 	}
 
+	.policy-section h3 {
+		margin: 1.5rem 0 0.65rem;
+		color: var(--policy-heading);
+		font-size: 1.05rem;
+		font-weight: 650;
+	}
+
 	.policy-section p {
 		margin: 0;
 		color: var(--policy-muted);
@@ -463,6 +519,45 @@ const toc = [
 
 	.policy-callout strong {
 		color: var(--policy-heading);
+	}
+
+	.policy-table-wrap {
+		margin: 1.35rem 0 1.5rem;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.policy-table {
+		width: 100%;
+		min-width: 28rem;
+		border-collapse: collapse;
+		background: transparent;
+	}
+
+	.policy-table th,
+	.policy-table td {
+		padding: 0.85rem 0.9rem;
+		border: 1px solid var(--policy-border);
+		text-align: left;
+		font-size: 0.92rem;
+		line-height: 1.45;
+		vertical-align: top;
+	}
+
+	.policy-table thead th {
+		color: var(--policy-heading);
+		font-weight: 650;
+		background: rgba(255, 255, 255, 0.03);
+	}
+
+	.policy-table tbody th {
+		color: var(--policy-heading);
+		font-weight: 600;
+		width: 22%;
+	}
+
+	.policy-table td {
+		color: var(--policy-muted);
 	}
 
 	.policy-inline-link {

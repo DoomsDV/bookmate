@@ -54,6 +54,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 					class="settings-toolbar-help inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-(--shell-border) bg-(--surface-bright) px-[1.05rem] py-[0.72rem] text-[0.9rem] font-bold text-(--on-surface) transition focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
 					data-settings-modal-tour-help
 					aria-label="Guía de la sección actual"
+					hidden
 				>
 					<span class="material-symbols-rounded text-[1.12rem]">help</span>
 					<span class="hidden sm:inline">Guía</span>
@@ -434,7 +435,32 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre del negocio <span class="text-rose-500">*</span></span><input name="name" maxlength="100" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 								</div>
 								<input type="hidden" name="profile_slug" />
-								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripción<textarea name="description" maxlength="1000" rows="4" class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 resize-y"></textarea></label>
+								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripción<textarea name="description" maxlength="1000" rows="4" placeholder="Ej: Consultorio de psicología clínica. Atención presencial y online." class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 resize-y"></textarea></label>
+								<div class="border-t border-(--shell-border) border-dashed" role="separator"></div>
+								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+									<span>Texto por defecto para precios ocultos <span class="text-rose-500">*</span></span>
+									<input
+										name="hidden_public_price_label"
+										maxlength="80"
+										required
+										placeholder="Ej: A evaluar (Texto por defecto)"
+										data-hidden-price-label-input
+										class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+									/>
+									<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+										Se muestra en la reserva pública cuando un servicio oculta el precio y no tiene texto propio.
+									</span>
+									<div class="mt-2 grid gap-2">
+										<span class="text-[0.8rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Vista previa</span>
+										<div class="settings-hidden-price-preview" aria-hidden="true">
+											<span class="settings-hidden-price-preview__name">Consulta general</span>
+											<span class="settings-hidden-price-preview__meta">
+												<span>45 min</span>
+												<span data-hidden-price-preview-label>A evaluar</span>
+											</span>
+										</div>
+									</div>
+								</label>
 								<div class="pt-4 border-t border-(--shell-border) border-dashed">
 									<div class="modal-footer">
 										<div class="modal-footer-actions">
@@ -451,7 +477,15 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 						{
 							showPaymentsTab ? (
 								<section data-settings-panel="payments" class="settings-panel hidden gap-6">
-									<form data-settings-payments-form class="grid gap-6">
+									<div
+										data-payments-loading
+										class="hidden grid place-items-center gap-2 py-10 text-(--on-surface-variant)"
+									>
+										<span class="material-symbols-rounded animate-spin text-[1.6rem]">progress_activity</span>
+										<span class="text-[0.9rem] font-semibold">Cargando cobros…</span>
+									</div>
+
+									<form data-settings-payments-form data-payments-body class="hidden grid gap-6">
 										<div class="grid gap-1">
 											<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cobro de señas</h3>
 											<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
@@ -490,9 +524,19 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 
 										<div data-payments-details class="grid gap-6 hidden">
 											<div data-payments-tour-policy class="grid gap-3">
-												<p class="text-[0.95rem] font-bold text-(--on-surface)">Política de cancelación</p>
+												<p class="text-[0.95rem] font-bold text-(--on-surface)">
+													Política de cancelación <span class="text-rose-500">*</span>
+												</p>
 												<p class="text-[0.85rem] font-medium text-(--on-surface-variant) -mt-1">
-													El cliente debe aceptarla al reservar. No es texto libre: elegí un nivel.
+													El cliente debe aceptarla al reservar.
+													<a
+														href="/politicas-de-cancelacion-y-reembolso"
+														target="_blank"
+														rel="noopener noreferrer"
+														class="font-semibold text-(--primary) underline underline-offset-2 hover:opacity-90"
+													>
+														Ver detalles de nuestra política de reembolsos
+													</a>
 												</p>
 												<label class="flex items-start gap-3 rounded-2xl border border-(--shell-border) px-4 py-3 has-[:checked]:border-(--primary) has-[:checked]:bg-(--primary-soft)/40">
 													<input type="radio" name="refund_policy" value="FLEXIBLE" class="mt-1 accent-(--primary)" />
@@ -529,7 +573,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 													Completá todos los datos para activar el cobro.
 												</p>
 												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Banco / Financiera</span>
+													<span>Banco / Financiera <span class="text-rose-500">*</span></span>
 													<select
 														name="bank_id"
 														data-payments-bank-select
@@ -539,7 +583,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 													</select>
 												</label>
 												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Titular de la cuenta</span>
+													<span>Titular de la cuenta <span class="text-rose-500">*</span></span>
 													<input
 														name="account_holder"
 														autocomplete="name"
@@ -548,7 +592,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 													/>
 												</label>
 												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Documento (C.I. o RUC)</span>
+													<span>Documento (C.I. o RUC) <span class="text-rose-500">*</span></span>
 													<input
 														name="document_id"
 														autocomplete="off"
@@ -557,7 +601,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 													/>
 												</label>
 												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-													<span>Alias bancario</span>
+													<span>Alias bancario <span class="text-rose-500">*</span></span>
 													<input
 														name="bank_alias"
 														autocomplete="off"
@@ -952,6 +996,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		type WorkspaceSettingsData,
 	} from '../lib/workspace-settings-shared';
 	import {
+		hasSettingsModalTourForTab,
 		revealPaymentsDetailsForTour,
 		showSettingsModalTour,
 	} from '../lib/settings-modal-tour';
@@ -1062,6 +1107,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		private subscriptionLoaded = false;
 		private subscriptionLoading = false;
 		private paymentsLoaded = false;
+		private paymentsLoading = false;
 
 		connectedCallback() {
 			const roleId = Number(this.dataset.roleId || '0');
@@ -1155,6 +1201,9 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			this.els.securityForm?.addEventListener('submit', this.handleSecuritySubmit, { signal });
 			this.els.appearanceSaveBtn?.addEventListener('click', this.handleAppearanceSave, { signal });
 			this.els.workspaceForm?.addEventListener('submit', this.handleWorkspaceSubmit, { signal });
+			this.els.workspaceForm
+				?.querySelector<HTMLInputElement>('[data-hidden-price-label-input]')
+				?.addEventListener('input', this.syncHiddenPricePreview, { signal });
 			this.els.systemForm?.addEventListener('submit', this.handleSystemSubmit, { signal });
 			this.els.systemForm?.addEventListener('change', this.handleSystemFormChange, { signal });
 			this.els.paymentsForm?.addEventListener('submit', this.handlePaymentsSubmit, { signal });
@@ -1972,10 +2021,17 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			if (tabId === 'profile' || tabId === 'system') this.syncPushNotificationToggle();
 			if (tabId === 'plan') void this.loadSubscription();
 			if (tabId === 'payments') void this.loadPayments();
+			this.syncTourHelpVisibility(tabId);
 
 			const content = this.querySelector<HTMLElement>('[data-settings-content]');
 			if (content) content.scrollTop = 0;
 			requestAnimationFrame(this.updateScrollHints);
+		}
+
+		private syncTourHelpVisibility(tabId = this.getActiveTabId()) {
+			const helpBtn = this.querySelector<HTMLButtonElement>('[data-settings-modal-tour-help]');
+			if (!helpBtn) return;
+			helpBtn.hidden = !hasSettingsModalTourForTab(tabId);
 		}
 
 		private resetSecurityForm() {
@@ -2207,6 +2263,14 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			this.refreshSystemCancelWaitField(preserveCancelWaitId);
 		};
 
+		private syncHiddenPricePreview = () => {
+			const input = this.querySelector<HTMLInputElement>('[data-hidden-price-label-input]');
+			const preview = this.querySelector<HTMLElement>('[data-hidden-price-preview-label]');
+			if (!preview) return;
+			const value = String(input?.value || '').trim() || 'A evaluar';
+			preview.textContent = value;
+		};
+
 		private fillWorkspace(workspace: WorkspaceSettingsData | null) {
 			const setValue = (selector: string, value: string) => {
 				const input = this.querySelector<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>(selector);
@@ -2216,6 +2280,11 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			setValue('[data-settings-workspace-form] [name="name"]', String(workspace?.name ?? ''));
 			setValue('[data-settings-workspace-form] [name="profile_slug"]', String(workspace?.profile_slug ?? ''));
 			setValue('[data-settings-workspace-form] [name="description"]', String(workspace?.description ?? ''));
+			setValue(
+				'[data-settings-workspace-form] [name="hidden_public_price_label"]',
+				String(workspace?.hidden_public_price_label || 'A evaluar'),
+			);
+			this.syncHiddenPricePreview();
 			this.fillSystemSettings(workspace);
 			
 			this.releaseLogoPreviewObjectUrl();
@@ -2281,6 +2350,12 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 
 		private async loadData() {
 			this.setLoadingState(true);
+			this.paymentsLoaded = false;
+			if (this.isAdmin && this.els.paymentsForm) {
+				this.setPaymentsPanelState({ loading: true, ready: false });
+			}
+			const paymentsPromise =
+				this.isAdmin && this.els.paymentsForm ? this.loadPayments() : Promise.resolve();
 			try {
 				const profileRes = await this.requestApi('/api/profile/me', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar perfil.');
 				this.fillProfile(profileRes.data || {});
@@ -2300,6 +2375,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			} catch (error) {
 				this.showFeedback('profile', error instanceof Error ? error.message : 'No fue posible cargar ajustes.', 'error');
 			} finally {
+				await paymentsPromise;
 				this.setLoadingState(false);
 			}
 		}
@@ -2498,6 +2574,13 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			}
 		}
 
+		private setPaymentsPanelState(opts: { loading: boolean; ready: boolean }) {
+			const loading = this.querySelector<HTMLElement>('[data-payments-loading]');
+			const body = this.querySelector<HTMLElement>('[data-payments-body]');
+			loading?.classList.toggle('hidden', !opts.loading);
+			body?.classList.toggle('hidden', !opts.ready);
+		}
+
 		private syncPaymentsDetailsVisibility = () => {
 			const form = this.els.paymentsForm;
 			if (!form) return;
@@ -2604,7 +2687,11 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 
 		private async loadPayments() {
 			if (!this.isAdmin || !this.els.paymentsForm) return;
-			if (this.paymentsLoaded) return;
+			if (this.paymentsLoaded || this.paymentsLoading) return;
+
+			this.paymentsLoading = true;
+			this.setPaymentsPanelState({ loading: true, ready: false });
+
 			try {
 				const res = await this.requestApi(
 					'/api/org-payment-settings',
@@ -2613,12 +2700,16 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				);
 				this.fillPayments(res.data || {});
 				this.paymentsLoaded = true;
+				this.setPaymentsPanelState({ loading: false, ready: true });
 			} catch (error) {
+				this.setPaymentsPanelState({ loading: false, ready: true });
 				this.showFeedback(
 					'payments',
 					error instanceof Error ? error.message : 'No fue posible cargar cobros.',
 					'error'
 				);
+			} finally {
+				this.paymentsLoading = false;
 			}
 		}
 
@@ -3746,5 +3837,34 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			align-items: center;
 			justify-content: flex-start;
 		}
+	}
+
+	.settings-hidden-price-preview {
+		display: grid;
+		gap: 0.45rem;
+		width: 100%;
+		max-width: 22rem;
+		padding: 1rem 1.15rem;
+		border-radius: 1rem;
+		border: 1.5px solid color-mix(in srgb, var(--outline-variant, var(--shell-border)) 85%, transparent);
+		background: var(--surface-container-high, var(--surface-bright));
+		text-align: left;
+		pointer-events: none;
+	}
+
+	.settings-hidden-price-preview__name {
+		font-size: 1.05rem;
+		font-weight: 600;
+		color: var(--on-surface);
+	}
+
+	.settings-hidden-price-preview__meta {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		font-size: 0.88rem;
+		font-weight: 500;
+		color: var(--on-surface-variant);
 	}
 </style>

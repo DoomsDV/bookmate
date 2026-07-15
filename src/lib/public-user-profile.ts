@@ -23,6 +23,8 @@ export interface PublicUserProfileService {
 	name: string;
 	duration_minutes: number;
 	price: number;
+	hide_public_price?: 0 | 1;
+	hidden_price_label?: string | null;
 	requires_deposit?: 0 | 1;
 	deposit_type?: 'PERCENT' | 'FIXED' | null;
 	deposit_value?: number | null;
@@ -99,6 +101,14 @@ const normalizeService = (value: unknown): PublicUserProfileService | null => {
 		name,
 		duration_minutes: toPositiveInt(source.duration_minutes, 0),
 		price: Number(source.price ?? 0) || 0,
+		hide_public_price:
+			source.hide_public_price === 1 ||
+			source.hide_public_price === '1' ||
+			source.hide_public_price === true
+				? 1
+				: 0,
+		hidden_price_label:
+			String(source.hidden_price_label ?? '').trim() || null,
 		requires_deposit: Number(source.requires_deposit) === 1 ? 1 : 0,
 		deposit_type:
 			source.deposit_type === 'PERCENT' || source.deposit_type === 'FIXED'

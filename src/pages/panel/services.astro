@@ -184,56 +184,118 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 					</label>
 				</div>
 
-				{
-					FEATURE_FLAGS.SERVICE_DEPOSIT_OPTIONS ? (
-						<div class="grid gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright)/40 p-4">
-							<label class="flex items-center justify-between gap-4 text-[0.95rem] font-bold text-(--on-surface)">
-								<span class="grid gap-1">
-									<span>Requiere seña para reservar</span>
-									<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
-										Si lo activas, el cliente deberá pagar una seña en la web para confirmar.
+				<details class="service-accordion" data-service-accordion="price-visibility">
+					<summary class="service-accordion__summary">
+						<span class="service-accordion__title">Opciones de visibilidad de precio</span>
+						<span class="material-symbols-rounded service-accordion__chevron" aria-hidden="true">expand_more</span>
+					</summary>
+					<div class="service-accordion__body">
+						<div class="grid gap-3 text-[0.95rem] font-bold text-(--on-surface)">
+							<div class="flex items-start justify-between gap-4">
+								<div class="grid gap-1 min-w-0 flex-1">
+									<span>Ocultar precio en reserva pública</span>
+									<span class="text-[0.85rem] font-medium text-(--on-surface-variant)" data-hide-public-price-hint>
+										El cliente verá el texto por defecto de Ajustes → Negocio. El precio real sigue usándose en el panel y en métricas.
+									</span>
+								</div>
+								<input
+									type="checkbox"
+									name="hide_public_price"
+									value="1"
+									data-hide-public-price-toggle
+									class="mt-0.5 size-5 shrink-0 accent-(--primary)"
+									aria-label="Ocultar precio en reserva pública"
+								/>
+							</div>
+							<div class="grid gap-1.5 hidden" data-hide-public-price-fields>
+								<label class="grid gap-1.5">
+									<span class="text-[0.9rem]">Texto personalizado <span class="font-medium text-(--on-surface-variant)">(opcional)</span></span>
+									<input
+										type="text"
+										name="hidden_public_price_label"
+										maxlength="80"
+										data-hidden-public-price-label
+										placeholder="Ej: A evaluar (Texto por defecto)"
+										class="w-full rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-medium outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+									/>
+								</label>
+								<span class="grid gap-2 pt-1">
+									<span class="text-[0.75rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Vista previa</span>
+									<span class="service-hidden-price-preview" aria-hidden="true">
+										<span class="service-hidden-price-preview__name">Consulta general</span>
+										<span class="service-hidden-price-preview__meta">
+											<span>45 min</span>
+											<span data-service-hidden-price-preview-label>A evaluar</span>
+										</span>
 									</span>
 								</span>
-								<input type="checkbox" name="requires_deposit" value="1" data-requires-deposit-toggle class="size-5 accent-(--primary)" />
-							</label>
-
-							<div class="grid gap-4 hidden" data-deposit-fields>
-								<div class="grid grid-cols-2 gap-5">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-										<span>Tipo de seña <span class="text-rose-500">*</span></span>
-										<div class="relative">
-											<select
-												name="deposit_type"
-												data-deposit-type
-												class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer"
-											>
-												<option value="PERCENT">Porcentaje (%)</option>
-												<option value="FIXED">Monto fijo (Gs)</option>
-											</select>
-											<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)">
-												<span class="material-symbols-rounded">expand_more</span>
-											</span>
-										</div>
-										<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_type"></span>
-									</label>
-
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-										<span>Valor <span class="text-rose-500">*</span></span>
-										<input
-											type="number"
-											name="deposit_value"
-											data-deposit-value
-											min="1"
-											step="1"
-											inputmode="numeric"
-											class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-											placeholder="Ej: 30 o 50000"
-										/>
-										<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_value"></span>
-									</label>
-								</div>
+								<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="hidden_public_price_label"></span>
 							</div>
 						</div>
+					</div>
+				</details>
+
+				{
+					FEATURE_FLAGS.SERVICE_DEPOSIT_OPTIONS ? (
+						<details class="service-accordion" data-service-accordion="deposit">
+							<summary class="service-accordion__summary">
+								<span class="service-accordion__title">Opciones de seña</span>
+								<span class="material-symbols-rounded service-accordion__chevron" aria-hidden="true">expand_more</span>
+							</summary>
+							<div class="service-accordion__body">
+								<div class="flex items-start justify-between gap-4 text-[0.95rem] font-bold text-(--on-surface)">
+									<div class="grid gap-1 min-w-0 flex-1">
+										<span>Requiere seña para reservar</span>
+										<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+											Si lo activas, el cliente deberá pagar una seña en la web para confirmar.
+										</span>
+									</div>
+									<input
+										type="checkbox"
+										name="requires_deposit"
+										value="1"
+										data-requires-deposit-toggle
+										class="mt-0.5 size-5 shrink-0 accent-(--primary)"
+										aria-label="Requiere seña para reservar"
+									/>
+								</div>
+
+								<div class="grid gap-4 hidden mt-4" data-deposit-fields>
+									<div class="grid grid-cols-2 gap-5">
+										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+											<span>Tipo de seña <span class="text-rose-500">*</span></span>
+											<div class="relative">
+												<select
+													name="deposit_type"
+													data-deposit-type
+													class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer"
+												>
+													<option value="PERCENT">Porcentaje (%)</option>
+													<option value="FIXED">Monto fijo (Gs)</option>
+												</select>
+												<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)">
+													<span class="material-symbols-rounded">expand_more</span>
+												</span>
+											</div>
+											<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_type"></span>
+										</label>
+
+										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+											<span>Valor <span class="text-rose-500">*</span></span>
+											<input
+												type="text"
+												name="deposit_value"
+												data-deposit-value
+												inputmode="numeric"
+												class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+												placeholder="Ej: 50.000"
+											/>
+											<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_value"></span>
+										</label>
+									</div>
+								</div>
+							</div>
+						</details>
 					) : null
 				}
 
@@ -326,6 +388,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		duration_minutes: number;
 		is_active: 0 | 1;
 		price?: number;
+		hide_public_price?: 0 | 1;
+		hidden_public_price_label?: string | null;
 		requires_deposit?: 0 | 1;
 		deposit_type?: "PERCENT" | "FIXED";
 		deposit_value?: number;
@@ -335,6 +399,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		name?: string | null;
 		duration_minutes?: number | null;
 		price?: number | null;
+		hide_public_price?: 0 | 1 | boolean | null;
+		hidden_public_price_label?: string | null;
 		is_active?: 0 | 1 | boolean | null;
 		requires_deposit?: 0 | 1 | boolean | null;
 		deposit_type?: "PERCENT" | "FIXED" | string | null;
@@ -351,6 +417,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		private mode: ServiceMode = "create";
 		private editingServiceId = 0;
 		private requestSeq = 0;
+		private orgHiddenPriceDefault = "A evaluar";
 
 		// Grouped DOM References
 		private els!: {
@@ -366,6 +433,9 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			modalDesc: HTMLElement | null;
 			statusWrap: HTMLElement | null;
 			priceInput: HTMLInputElement | null;
+			hidePublicPriceToggle: HTMLInputElement | null;
+			hidePublicPriceFields: HTMLElement | null;
+			hiddenPublicPriceLabel: HTMLInputElement | null;
 			requiresDepositToggle: HTMLInputElement | null;
 			depositFields: HTMLElement | null;
 			depositType: HTMLSelectElement | null;
@@ -413,6 +483,15 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				),
 				priceInput:
 					this.querySelector<HTMLInputElement>("[data-price-mask]"),
+				hidePublicPriceToggle: this.querySelector<HTMLInputElement>(
+					"[data-hide-public-price-toggle]",
+				),
+				hidePublicPriceFields: this.querySelector<HTMLElement>(
+					"[data-hide-public-price-fields]",
+				),
+				hiddenPublicPriceLabel: this.querySelector<HTMLInputElement>(
+					"[data-hidden-public-price-label]",
+				),
 				requiresDepositToggle: this.querySelector<HTMLInputElement>(
 					"[data-requires-deposit-toggle]",
 				),
@@ -460,6 +539,27 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.handleRequiresDepositToggle,
 				{ signal },
 			);
+			this.els.depositType?.addEventListener(
+				"change",
+				this.handleDepositTypeChange,
+				{ signal },
+			);
+			this.els.depositValue?.addEventListener(
+				"input",
+				this.handleDepositValueInput,
+				{ signal },
+			);
+			this.els.hidePublicPriceToggle?.addEventListener(
+				"change",
+				this.handleHidePublicPriceToggle,
+				{ signal },
+			);
+			this.els.hiddenPublicPriceLabel?.addEventListener(
+				"input",
+				this.syncServiceHiddenPricePreview,
+				{ signal },
+			);
+			void this.loadOrgHiddenPriceDefault();
 			this.formEls.duration?.addEventListener(
 				"input",
 				this.handleDurationInput,
@@ -627,6 +727,20 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.els.priceInput.value = this.formatPrice(
 					service?.price ?? "",
 				);
+			const hidePublicPrice =
+				String(service?.hide_public_price ?? "0") === "1" ||
+				service?.hide_public_price === true;
+			if (this.els.hidePublicPriceToggle) {
+				this.els.hidePublicPriceToggle.checked = hidePublicPrice;
+			}
+			if (this.els.hiddenPublicPriceLabel) {
+				const custom = String(service?.hidden_public_price_label || "").trim();
+				// Si coincide con el default de org, dejar vacío para mostrar el placeholder.
+				this.els.hiddenPublicPriceLabel.value =
+					custom && custom !== this.orgHiddenPriceDefault ? custom : "";
+			}
+			this.toggleHidePublicPriceFields(hidePublicPrice);
+			this.syncServiceHiddenPricePreview();
 			const requiresDeposit =
 				String(service?.requires_deposit ?? "0") === "1" ||
 				service?.requires_deposit === true;
@@ -638,11 +752,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				const type = String(service?.deposit_type || "PERCENT").toUpperCase();
 				this.els.depositType.value = type === "FIXED" ? "FIXED" : "PERCENT";
 			}
-			if (this.els.depositValue) {
-				this.els.depositValue.value = service?.deposit_value
-					? String(service.deposit_value)
-					: "";
-			}
+			this.syncDepositValueField(service?.deposit_value ?? "");
 			if (this.formEls.status)
 				this.formEls.status.value = String(
 					service?.is_active === 0 ? 0 : 1,
@@ -656,10 +766,32 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.els.priceInput,
 			].forEach((el) => el && (el.value = ""));
 			if (this.formEls.status) this.formEls.status.value = "1";
+			if (this.els.hidePublicPriceToggle) this.els.hidePublicPriceToggle.checked = false;
+			if (this.els.hiddenPublicPriceLabel) this.els.hiddenPublicPriceLabel.value = "";
+			this.toggleHidePublicPriceFields(false);
 			if (this.els.requiresDepositToggle) this.els.requiresDepositToggle.checked = false;
 			this.toggleDepositFields(false);
+			this.collapseAdvancedAccordions();
 			if (this.els.depositType) this.els.depositType.value = "PERCENT";
 			if (this.els.depositValue) this.els.depositValue.value = "";
+			this.syncDepositValueField("");
+		}
+
+		private toggleHidePublicPriceFields(isEnabled: boolean) {
+			this.els.hidePublicPriceFields?.classList.toggle("hidden", !isEnabled);
+			this.syncHidePublicPriceHints();
+			if (!isEnabled && this.els.hiddenPublicPriceLabel) {
+				this.els.hiddenPublicPriceLabel.value = "";
+			}
+			if (isEnabled) {
+				this.setAccordionOpen("price-visibility", true);
+				// Dejar vacío para que se vea el placeholder de ayuda.
+				if (this.els.hiddenPublicPriceLabel && !this.els.hiddenPublicPriceLabel.value.trim()) {
+					this.els.hiddenPublicPriceLabel.value = "";
+					this.els.hiddenPublicPriceLabel.placeholder =
+						`Ej: ${this.orgHiddenPriceDefault || "A evaluar"} (Texto por defecto)`;
+				}
+			}
 		}
 
 		private toggleDepositFields(isEnabled: boolean) {
@@ -667,11 +799,98 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			if (!isEnabled) {
 				if (this.els.depositValue) this.els.depositValue.value = "";
 			}
+			if (isEnabled) this.setAccordionOpen("deposit", true);
 		}
+
+		private setAccordionOpen(name: string, open: boolean) {
+			const accordion = this.querySelector<HTMLDetailsElement>(
+				`[data-service-accordion="${name}"]`,
+			);
+			if (!accordion) return;
+			accordion.open = open;
+		}
+
+		private collapseAdvancedAccordions() {
+			this.setAccordionOpen("price-visibility", false);
+			this.setAccordionOpen("deposit", false);
+		}
+
+		private syncHidePublicPriceHints() {
+			const defaultLabel = this.orgHiddenPriceDefault || "A evaluar";
+			if (this.els.hiddenPublicPriceLabel) {
+				this.els.hiddenPublicPriceLabel.placeholder = `Ej: ${defaultLabel} (Texto por defecto)`;
+			}
+			this.syncServiceHiddenPricePreview();
+		}
+
+		private syncServiceHiddenPricePreview = () => {
+			const preview = this.querySelector<HTMLElement>(
+				"[data-service-hidden-price-preview-label]",
+			);
+			if (!preview) return;
+			const custom = String(this.els.hiddenPublicPriceLabel?.value || "").trim();
+			preview.textContent = custom || this.orgHiddenPriceDefault || "A evaluar";
+		};
+
+		private handleHidePublicPriceToggle = () => {
+			const enabled = Boolean(this.els.hidePublicPriceToggle?.checked);
+			this.toggleHidePublicPriceFields(enabled);
+		};
+
+		private async loadOrgHiddenPriceDefault() {
+			if (!this.canManage) return;
+			try {
+				const data = await this.requestApi("/api/workspace", {
+					headers: { Accept: "application/json" },
+				});
+				const label = String(
+					(data?.data as { hidden_public_price_label?: string } | null)
+						?.hidden_public_price_label || "",
+				).trim();
+				this.orgHiddenPriceDefault = label || "A evaluar";
+				this.syncHidePublicPriceHints();
+			} catch {
+				this.orgHiddenPriceDefault = "A evaluar";
+				this.syncHidePublicPriceHints();
+			}
+		}
+
+		private isDepositFixedType() {
+			return String(this.els.depositType?.value || "").toUpperCase() === "FIXED";
+		}
+
+		private formatDepositValue(val: string | number | null | undefined) {
+			if (this.isDepositFixedType()) {
+				return this.formatPrice(val);
+			}
+			const digits = String(val ?? "").replace(/\D/g, "").slice(0, 3);
+			if (!digits) return "";
+			const n = Number(digits);
+			if (!Number.isFinite(n) || n <= 0) return "";
+			return String(Math.min(n, 100));
+		}
+
+		private syncDepositValueField(val: string | number | null | undefined) {
+			if (!this.els.depositValue) return;
+			this.els.depositValue.value = this.formatDepositValue(val);
+			this.els.depositValue.placeholder = this.isDepositFixedType()
+				? "Ej: 50.000"
+				: "Ej: 30";
+			this.els.depositValue.maxLength = this.isDepositFixedType() ? 12 : 3;
+		}
+
+		private handleDepositTypeChange = () => {
+			this.syncDepositValueField(this.els.depositValue?.value ?? "");
+		};
+
+		private handleDepositValueInput = () => {
+			this.syncDepositValueField(this.els.depositValue?.value ?? "");
+		};
 
 		private handleRequiresDepositToggle = () => {
 			const enabled = Boolean(this.els.requiresDepositToggle?.checked);
 			this.toggleDepositFields(enabled);
+			if (enabled) this.syncDepositValueField(this.els.depositValue?.value ?? "");
 		};
 
 		private async requestApi<T = any>(url: string, options?: RequestInit): Promise<any> {
@@ -792,6 +1011,10 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				/\D/g,
 				"",
 			).slice(0, 8);
+			const hidePublicPrice = formData.get("hide_public_price") ? 1 : 0;
+			const hiddenPriceLabel = String(
+				formData.get("hidden_public_price_label") || "",
+			).trim();
 			const requiresDeposit = formData.get("requires_deposit") ? 1 : 0;
 			const depositType = String(formData.get("deposit_type") || "")
 				.trim()
@@ -810,6 +1033,9 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				name,
 				duration_minutes: duration,
 				is_active: isActive,
+				hide_public_price: hidePublicPrice as 0 | 1,
+				hidden_public_price_label:
+					hidePublicPrice === 1 ? hiddenPriceLabel || null : null,
 			};
 			if (priceRaw) payload.price = Number(priceRaw);
 
@@ -1014,4 +1240,76 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 	}
 
+	.service-accordion {
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--surface-bright) 40%, transparent);
+		overflow: hidden;
+	}
+
+	.service-accordion__summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.95rem 1rem;
+		cursor: pointer;
+		list-style: none;
+		user-select: none;
+	}
+
+	.service-accordion__summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.service-accordion__title {
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--on-surface);
+	}
+
+	.service-accordion__chevron {
+		flex-shrink: 0;
+		color: var(--on-surface-variant);
+		transition: transform 160ms ease;
+	}
+
+	.service-accordion[open] .service-accordion__chevron {
+		transform: rotate(180deg);
+	}
+
+	.service-accordion__body {
+		display: grid;
+		gap: 1rem;
+		padding: 0 1rem 1rem;
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+		padding-top: 1rem;
+	}
+
+	.service-hidden-price-preview {
+		display: grid;
+		gap: 0.4rem;
+		width: 100%;
+		padding: 0.9rem 1rem;
+		border-radius: 1rem;
+		border: 1.5px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
+		background: var(--surface-bright);
+		pointer-events: none;
+	}
+
+	.service-hidden-price-preview__name {
+		font-size: 1rem;
+		font-weight: 600;
+		color: var(--on-surface);
+	}
+
+	.service-hidden-price-preview__meta {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--on-surface-variant);
+	}
 </style>

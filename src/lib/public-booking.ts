@@ -73,6 +73,8 @@ export interface PublicBookingService {
 	name: string;
 	duration_minutes: number;
 	price: number;
+	hide_public_price?: 0 | 1;
+	hidden_price_label?: string | null;
 	requires_deposit?: 0 | 1;
 	deposit_type?: 'PERCENT' | 'FIXED' | null;
 	deposit_value?: number | null;
@@ -501,6 +503,14 @@ const normalizeService = (value: unknown): PublicBookingService | null => {
 		name,
 		duration_minutes: durationMinutes,
 		price: Number(source.price ?? 0),
+		hide_public_price:
+			source.hide_public_price === 1 ||
+			source.hide_public_price === '1' ||
+			source.hide_public_price === true
+				? 1
+				: 0,
+		hidden_price_label:
+			String(source.hidden_price_label ?? '').trim() || null,
 		requires_deposit: requiresDeposit,
 		deposit_type: depositType,
 		deposit_value: Number.isFinite(depositValueRaw) ? depositValueRaw : null,

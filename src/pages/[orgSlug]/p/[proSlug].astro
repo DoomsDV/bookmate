@@ -177,9 +177,19 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 					<div class="hidden rounded-2xl mb-3 px-5 py-4 text-sm font-medium shadow-sm transition-all" data-booking-toast></div>
 
 					<section data-step-panel="1" class="public-booking-panel">
-						<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona un servicio</h2>
-						<p class="mt-2 text-base text-(--on-surface-variant)">Elige el tipo de cita para continuar con la agenda.</p>
-						<div class="mt-6 grid gap-4 sm:grid-cols-2" data-services-grid></div>
+						<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">¿Qué servicio desea?</h2>
+						<p class="mt-2 text-base text-(--on-surface-variant)">Dale click al servicio que querés reservar</p>
+						<div class="mt-6 grid gap-4 sm:grid-cols-2" data-services-grid aria-busy="true">
+							{Array.from({ length: 4 }).map(() => (
+								<div class="public-service-card public-service-card--skeleton" aria-hidden="true">
+									<span class="public-service-skeleton-line public-service-skeleton-line--title"></span>
+									<span class="public-service-skeleton-meta">
+										<span class="public-service-skeleton-line public-service-skeleton-line--sm"></span>
+										<span class="public-service-skeleton-line public-service-skeleton-line--price"></span>
+									</span>
+								</div>
+							))}
+						</div>
 					</section>
 
 					<section data-step-panel="2" class="public-booking-panel hidden">

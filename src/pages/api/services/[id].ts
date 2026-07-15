@@ -58,6 +58,17 @@ const parseUpdatePayload = (body: any): CreateServicePayload => {
 		else if (requires === 0) payload.requires_deposit = 0;
 	}
 
+	if (Object.prototype.hasOwnProperty.call(body ?? {}, 'hide_public_price')) {
+		const hide = Number(String(body?.hide_public_price ?? '').trim());
+		if (hide === 1) payload.hide_public_price = 1;
+		else if (hide === 0) payload.hide_public_price = 0;
+	}
+
+	if (Object.prototype.hasOwnProperty.call(body ?? {}, 'hidden_public_price_label')) {
+		const label = String(body?.hidden_public_price_label ?? '').trim();
+		payload.hidden_public_price_label = label || null;
+	}
+
 	const depositType = String(body?.deposit_type ?? '').trim().toUpperCase();
 	if (depositType === 'PERCENT' || depositType === 'FIXED') {
 		payload.deposit_type = depositType as 'PERCENT' | 'FIXED';

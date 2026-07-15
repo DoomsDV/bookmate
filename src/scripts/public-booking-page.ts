@@ -927,6 +927,7 @@ export const initializePublicBookingPage = () => {
 
 	const renderServices = () => {
 		servicesGrid.innerHTML = '';
+		servicesGrid.removeAttribute('aria-busy');
 		if (profile.services.length === 0) {
 			const emptyState = document.createElement('p');
 			emptyState.className =
@@ -960,7 +961,7 @@ export const initializePublicBookingPage = () => {
 				<span class="text-lg font-medium text-(--on-surface)">${service.name}</span>
 				<div class="flex items-center justify-between gap-2 text-sm font-medium text-(--on-surface-variant)">
 					<span>${formatDuration(service.duration_minutes)}</span>
-					<span>${formatCurrency(service.price)}</span>
+					<span>${service.hide_public_price === 1 ? (service.hidden_price_label || 'A evaluar') : formatCurrency(service.price)}</span>
 				</div>
 				<span class="material-symbols-rounded public-service-card__check" aria-hidden="true">check_circle</span>
 			`;

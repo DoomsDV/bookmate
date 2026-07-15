@@ -20,6 +20,7 @@ export interface WorkspaceSettingsData {
 	logo_url: string;
 	time_format: string;
 	theme_pref: string;
+	hidden_public_price_label: string;
 	unanswered_alert_action: string;
 	rsi_id_slot_interval: number | null;
 	rh_id_reminder_hours: number | null;
@@ -39,6 +40,7 @@ export interface UpdateWorkspacePayload {
 	public_whatsapp?: string;
 	time_format?: string;
 	theme_pref?: string;
+	hidden_public_price_label?: string;
 	unanswered_alert_action?: string;
 	rsi_id_slot_interval?: number;
 	rh_id_reminder_hours?: number;

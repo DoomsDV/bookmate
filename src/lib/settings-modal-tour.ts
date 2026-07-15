@@ -125,19 +125,31 @@ function showPaymentsTour(context: SettingsModalTourContext) {
 }
 
 /**
+ * Tabs con recorrido definido: Mi perfil (enlace personal) y Pagos (señas SIPAP).
+ */
+export function hasSettingsModalTourForTab(tab: string): boolean {
+	if (tab === 'payments') return isPaymentsTourAvailable();
+	if (tab === 'profile') return isPublicProfileFieldVisible();
+	return false;
+}
+
+/**
  * Guía contextual del modal de ajustes.
  * En Pagos: cobro de señas → políticas → datos SIPAP.
- * En el resto: enlace personal (si está disponible).
+ * En Mi perfil: enlace personal (si está disponible).
  */
 export function showSettingsModalTour(context: SettingsModalTourContext = {}) {
 	const tab = context.getActiveTab?.() ?? 'profile';
 
-	if (tab === 'payments' && isPaymentsTourAvailable()) {
+	if (tab === 'payments') {
+		if (!isPaymentsTourAvailable()) return;
 		showPaymentsTour(context);
 		return;
 	}
 
-	showProfileTour(context);
+	if (tab === 'profile') {
+		showProfileTour(context);
+	}
 }
 
 /** Fuerza mostrar `[data-payments-details]` sin cambiar el toggle; restaura con `classList`. */

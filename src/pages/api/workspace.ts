@@ -93,6 +93,11 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 	const themePref = String(source?.theme_pref ?? '').trim();
 	if (themePref !== '') payload.theme_pref = themePref;
 
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'hidden_public_price_label')) {
+		const label = String(source?.hidden_public_price_label ?? '').trim();
+		payload.hidden_public_price_label = label || 'A evaluar';
+	}
+
 	const unansweredAlertAction = String(source?.unanswered_alert_action ?? '').trim();
 	if (unansweredAlertAction !== '') payload.unanswered_alert_action = unansweredAlertAction;
 
