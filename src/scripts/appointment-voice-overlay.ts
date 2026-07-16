@@ -8,7 +8,7 @@ import { destroyActiveBookmateTour } from '../lib/product-tour';
 import { AppointmentVoiceVisualizer } from './appointment-voice-visualizer';
 
 type VoiceOverlayMode = 'navigate' | 'inline';
-type VoiceUiState = 'idle' | 'recording' | 'collapsing' | 'processing' | 'success';
+type VoiceUiState = 'idle' | 'recording' | 'paused' | 'collapsing' | 'processing' | 'success';
 
 const MAX_RECORDING_MS = 60_000;
 
@@ -21,6 +21,8 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#maxRecordingTimer: number | null = null;
 	#elapsedTimerInterval: number | null = null;
 	#recordingStartedAt = 0;
+	#elapsedBeforePause = 0;
+	#recordingBudgetRemainingMs = MAX_RECORDING_MS;
 	#mode: VoiceOverlayMode = 'navigate';
 	#visualizer: AppointmentVoiceVisualizer | null = null;
 	#audioContext: AudioContext | null = null;
@@ -34,6 +36,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	private static readonly STATUS_LABELS: Record<VoiceUiState, string> = {
 		idle: 'Toca el micrófono y describe la cita.',
 		recording: 'Escuchando… describe la cita.',
+		paused: 'En pausa. Tocá reanudar para seguir.',
 		collapsing: '',
 		processing: '',
 		success: 'Formulario listo. Revisá los datos precargados.',
@@ -75,14 +78,19 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			this.handleRecordToggle,
 			{ signal }
 		);
+		this.querySelector('[data-voice-overlay-stop]')?.addEventListener(
+			'click',
+			this.handleStopRecording,
+			{ signal }
+		);
+		this.querySelector('[data-voice-overlay-restart]')?.addEventListener(
+			'click',
+			this.handleRestartRecording,
+			{ signal }
+		);
 		this.querySelector('[data-voice-overlay-continue]')?.addEventListener(
 			'click',
 			this.handleContinue,
-			{ signal }
-		);
-		this.querySelector('[data-voice-overlay-discard]')?.addEventListener(
-			'click',
-			this.handleDiscardRecording,
 			{ signal }
 		);
 
@@ -207,6 +215,8 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.#visualizer?.cancelCollapse();
 		this.#visualizer?.setMode('off');
 		this.#audioChunks = [];
+		this.#recordingBudgetRemainingMs = MAX_RECORDING_MS;
+		this.#elapsedBeforePause = 0;
 	}
 
 	private handleDocumentClick = (event: Event) => {
@@ -222,15 +232,28 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	};
 
 	private handleRecordToggle = () => {
-		if (this.#mediaRecorder?.state === 'recording') {
-			void this.stopRecording(true);
+		const state = this.dataset.voiceState as VoiceUiState | undefined;
+		if (state === 'recording') {
+			this.pauseRecording();
+			return;
+		}
+		if (state === 'paused') {
+			this.resumeRecording();
 			return;
 		}
 		void this.startRecording();
 	};
 
-	private handleDiscardRecording = () => {
-		void this.stopRecording(false);
+	private handleStopRecording = () => {
+		const state = this.dataset.voiceState;
+		if (state !== 'recording' && state !== 'paused') return;
+		void this.stopRecording(true);
+	};
+
+	private handleRestartRecording = () => {
+		const state = this.dataset.voiceState;
+		if (state !== 'recording' && state !== 'paused') return;
+		void this.restartRecording();
 	};
 
 	private updateStatus(state: VoiceUiState) {
@@ -283,25 +306,38 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 	}
 
+	private getElapsedRecordingMs() {
+		if (this.#recordingStartedAt <= 0 && this.#elapsedBeforePause <= 0) return 0;
+		if (this.dataset.voiceState === 'paused') return this.#elapsedBeforePause;
+		if (this.#recordingStartedAt <= 0) return this.#elapsedBeforePause;
+		return this.#elapsedBeforePause + (Date.now() - this.#recordingStartedAt);
+	}
+
 	private updateRecordingTimer() {
 		const timerNode = this.querySelector<HTMLElement>('[data-voice-overlay-timer]');
-		if (!timerNode || this.#recordingStartedAt <= 0) return;
+		if (!timerNode) return;
 
-		const elapsed = Date.now() - this.#recordingStartedAt;
-		timerNode.textContent = `${this.formatRecordingClock(elapsed)} / ${this.formatRecordingClock(MAX_RECORDING_MS)}`;
+		const elapsed = this.getElapsedRecordingMs();
+		timerNode.textContent = this.formatRecordingClock(elapsed);
 		timerNode.classList.toggle('is-near-limit', elapsed >= MAX_RECORDING_MS * 0.85);
 		timerNode.setAttribute('aria-label', `Tiempo de grabación: ${timerNode.textContent}`);
 	}
 
-	private startElapsedTimer() {
+	private startElapsedTimer(reset = true) {
 		if (this.#elapsedTimerInterval) {
 			window.clearInterval(this.#elapsedTimerInterval);
 			this.#elapsedTimerInterval = null;
 		}
 
-		this.#recordingStartedAt = Date.now();
-		const timerNode = this.querySelector<HTMLElement>('[data-voice-overlay-timer]');
-		timerNode?.classList.remove('hidden');
+		if (reset) {
+			this.#elapsedBeforePause = 0;
+			this.#recordingStartedAt = Date.now();
+		} else if (this.#recordingStartedAt <= 0) {
+			this.#recordingStartedAt = Date.now();
+		}
+
+		const livebar = this.querySelector<HTMLElement>('[data-voice-overlay-livebar]');
+		livebar?.classList.remove('hidden');
 		this.updateRecordingTimer();
 		this.#elapsedTimerInterval = window.setInterval(() => this.updateRecordingTimer(), 250);
 	}
@@ -312,35 +348,87 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			this.#elapsedTimerInterval = null;
 		}
 		this.#recordingStartedAt = 0;
+		this.#elapsedBeforePause = 0;
 
 		const timerNode = this.querySelector<HTMLElement>('[data-voice-overlay-timer]');
-		if (!timerNode) return;
-		timerNode.classList.add('hidden');
-		timerNode.classList.remove('is-near-limit');
-		timerNode.textContent = `${this.formatRecordingClock(0)} / ${this.formatRecordingClock(MAX_RECORDING_MS)}`;
+		const livebar = this.querySelector<HTMLElement>('[data-voice-overlay-livebar]');
+		if (timerNode) {
+			timerNode.classList.remove('is-near-limit');
+			timerNode.textContent = this.formatRecordingClock(0);
+		}
+		livebar?.classList.add('hidden');
+	}
+
+	private clearMaxRecordingTimer() {
+		if (this.#maxRecordingTimer) {
+			window.clearTimeout(this.#maxRecordingTimer);
+			this.#maxRecordingTimer = null;
+		}
+	}
+
+	private armMaxRecordingTimer(remainingMs = this.#recordingBudgetRemainingMs) {
+		this.clearMaxRecordingTimer();
+		const budget = Math.max(0, remainingMs);
+		this.#recordingBudgetRemainingMs = budget;
+		if (budget <= 0) {
+			void this.stopRecording(true);
+			return;
+		}
+		this.#maxRecordingTimer = window.setTimeout(() => {
+			void this.stopRecording(true);
+		}, budget);
 	}
 
 	private setState(state: VoiceUiState) {
 		this.dataset.voiceState = state;
 		const recordButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-record]');
-		const discardButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-discard]');
+		const restartButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-restart]');
+		const stopButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-stop]');
+		const primaryIcon = this.querySelector<HTMLElement>('[data-voice-overlay-primary-icon]');
+		const liveLabel = this.querySelector<HTMLElement>('[data-voice-overlay-live-label]');
+		const controlsNode = this.querySelector<HTMLElement>('[data-voice-overlay-controls]');
+		const livebar = this.querySelector<HTMLElement>('[data-voice-overlay-livebar]');
 		const actionsNode = this.querySelector<HTMLElement>('[data-voice-overlay-actions]');
 		const processingNode = this.querySelector<HTMLElement>('[data-voice-overlay-processing]');
 		const stageNode = this.querySelector<HTMLElement>('[data-voice-overlay-stage]');
-		const timerNode = this.querySelector<HTMLElement>('[data-voice-overlay-timer]');
+
+		const isLive = state === 'recording' || state === 'paused';
+		const isBusy = state === 'processing' || state === 'collapsing' || state === 'success';
+
+		if (controlsNode) {
+			controlsNode.hidden = isBusy;
+		}
 
 		if (recordButton) {
-			recordButton.disabled = state === 'processing' || state === 'collapsing';
-			recordButton.hidden = state === 'success' || state === 'processing' || state === 'collapsing';
+			recordButton.disabled = isBusy;
 			recordButton.setAttribute(
 				'aria-label',
-				state === 'recording' ? 'Detener grabación' : 'Empezar a grabar'
+				state === 'recording'
+					? 'Pausar grabación'
+					: state === 'paused'
+						? 'Reanudar grabación'
+						: 'Empezar a grabar'
 			);
 		}
 
-		timerNode?.classList.toggle('hidden', state !== 'recording');
+		if (primaryIcon) {
+			primaryIcon.textContent =
+				state === 'recording' ? 'pause' : state === 'paused' ? 'play_arrow' : 'mic';
+		}
 
-		discardButton?.classList.toggle('hidden', state !== 'recording');
+		if (restartButton) {
+			restartButton.disabled = !isLive;
+		}
+
+		if (stopButton) {
+			stopButton.disabled = !isLive;
+		}
+
+		if (liveLabel) {
+			liveLabel.textContent = state === 'paused' ? 'En pausa' : 'Escuchando…';
+		}
+
+		livebar?.classList.toggle('hidden', !isLive);
 
 		stageNode?.classList.toggle('is-collapsing', state === 'collapsing');
 
@@ -355,6 +443,8 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			this.#visualizer?.setMode('idle');
 		} else if (state === 'recording') {
 			this.#visualizer?.setMode('live');
+		} else if (state === 'paused') {
+			this.#visualizer?.setMode('idle');
 		} else if (state === 'processing' || state === 'collapsing') {
 			this.#visualizer?.setAnalyser(null);
 		} else if (state === 'success') {
@@ -465,12 +555,10 @@ class AppointmentVoiceOverlay extends HTMLElement {
 
 			this.#mediaRecorder.start();
 			this.setupAudioAnalysis(this.#mediaStream);
+			this.#recordingBudgetRemainingMs = MAX_RECORDING_MS;
 			this.setState('recording');
-			this.startElapsedTimer();
-
-			this.#maxRecordingTimer = window.setTimeout(() => {
-				void this.stopRecording(true);
-			}, MAX_RECORDING_MS);
+			this.startElapsedTimer(true);
+			this.armMaxRecordingTimer(MAX_RECORDING_MS);
 		} catch {
 			if (!this.isSessionActive(session)) return;
 			this.setError('No fue posible acceder al micrófono.');
@@ -478,20 +566,66 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		}
 	}
 
-	private async stopRecording(process: boolean) {
-		if (this.#maxRecordingTimer) {
-			window.clearTimeout(this.#maxRecordingTimer);
-			this.#maxRecordingTimer = null;
+	private pauseRecording() {
+		const recorder = this.#mediaRecorder;
+		if (!recorder || recorder.state !== 'recording') return;
+
+		try {
+			recorder.pause();
+		} catch {
+			return;
 		}
+
+		this.#elapsedBeforePause = this.getElapsedRecordingMs();
+		this.#recordingStartedAt = 0;
+		this.#recordingBudgetRemainingMs = Math.max(
+			0,
+			MAX_RECORDING_MS - this.#elapsedBeforePause
+		);
+		this.clearMaxRecordingTimer();
+		this.setState('paused');
+		this.updateRecordingTimer();
+	}
+
+	private resumeRecording() {
+		const recorder = this.#mediaRecorder;
+		if (!recorder || recorder.state !== 'paused') return;
+
+		try {
+			recorder.resume();
+		} catch {
+			return;
+		}
+
+		this.#recordingStartedAt = Date.now();
+		this.setState('recording');
+		this.startElapsedTimer(false);
+		this.armMaxRecordingTimer(this.#recordingBudgetRemainingMs);
+		if (this.#mediaStream) this.setupAudioAnalysis(this.#mediaStream);
+	}
+
+	private async restartRecording() {
+		await this.stopRecording(false);
+		await this.startRecording();
+	}
+
+	private async stopRecording(process: boolean) {
+		this.clearMaxRecordingTimer();
 		this.stopElapsedTimer();
 
-		if (this.#mediaRecorder && this.#mediaRecorder.state === 'recording') {
+		const recorder = this.#mediaRecorder;
+		if (recorder && (recorder.state === 'recording' || recorder.state === 'paused')) {
 			if (process) {
-				this.#mediaRecorder.stop();
-			} else {
-				this.#mediaRecorder.onstop = null;
 				try {
-					this.#mediaRecorder.stop();
+					if (recorder.state === 'paused') recorder.resume();
+				} catch {
+					// ignore
+				}
+				recorder.stop();
+			} else {
+				recorder.onstop = null;
+				try {
+					recorder.stop();
 				} catch {
 					// ignore
 				}
@@ -501,6 +635,8 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.#mediaRecorder = null;
 		this.#mediaStream?.getTracks().forEach((track) => track.stop());
 		this.#mediaStream = null;
+		this.#recordingBudgetRemainingMs = MAX_RECORDING_MS;
+		this.#elapsedBeforePause = 0;
 
 		if (!process) {
 			this.teardownAudioAnalysis();

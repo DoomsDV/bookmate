@@ -124,7 +124,7 @@ export class AppointmentVoiceVisualizer {
 				sum += centered * centered;
 			}
 			const rms = Math.sqrt(sum / this.#dataArray.length);
-			this.#level += (Math.min(1, rms * 5.5) - this.#level) * 0.36;
+			this.#level += (Math.min(1, rms * 9.2) - this.#level) * 0.48;
 			return;
 		}
 
@@ -208,11 +208,12 @@ export class AppointmentVoiceVisualizer {
 
 	private applyMagicGlow() {
 		const collapseScale = this.#mode === 'collapsing' ? 1 - this.#collapseProgress : 1;
-		const breathe = Math.sin(this.#phase * 1.18) * 0.5 + Math.sin(this.#phase * 0.72 + 0.8) * 0.5;
-		const driftX = Math.sin(this.#phase * 0.9) * (1.5 + this.#level * 3.5);
-		const driftY = Math.cos(this.#phase * 1.1 + 0.4) * (1.1 + this.#level * 3);
-		const scale = (0.96 + this.#level * 0.22 + breathe * 0.025) * collapseScale;
-		const rotate = Math.sin(this.#phase * 0.82) * (1.8 + this.#level * 3.2);
+		const liveBoost = this.#mode === 'live' ? 1 : 0.55;
+		const breathe = Math.sin(this.#phase * 1.35) * 0.5 + Math.sin(this.#phase * 0.88 + 0.8) * 0.5;
+		const driftX = Math.sin(this.#phase * 1.15) * (2.8 + this.#level * 10) * liveBoost;
+		const driftY = Math.cos(this.#phase * 1.35 + 0.4) * (2.2 + this.#level * 9) * liveBoost;
+		const scale = (0.94 + this.#level * 0.38 + breathe * 0.05) * collapseScale;
+		const rotate = Math.sin(this.#phase * 1.05) * (3.5 + this.#level * 7.5) * liveBoost;
 
 		this.#root.style.setProperty('--magic-x', `${driftX.toFixed(2)}px`);
 		this.#root.style.setProperty('--magic-y', `${driftY.toFixed(2)}px`);
@@ -258,7 +259,7 @@ export class AppointmentVoiceVisualizer {
 		this.readLevel();
 		this.#phase +=
 			this.#mode === 'live'
-				? 0.075 + this.#level * 0.12
+				? 0.11 + this.#level * 0.2
 				: this.#mode === 'collapsing'
 					? 0.055
 					: 0.032;
