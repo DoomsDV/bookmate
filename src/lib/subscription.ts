@@ -72,6 +72,18 @@ export const SUBSCRIPTION_INVOICES_URL = resolveOrdsApiUrl(
 	'/workspace/subscription/invoices'
 );
 
+export const SUBSCRIPTION_CANCEL_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SUBSCRIPTION_CANCEL_URL,
+	'ORDS_SUBSCRIPTION_CANCEL_URL',
+	'/workspace/subscription/cancel'
+);
+
+export const SUBSCRIPTION_CANCEL_UNDO_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SUBSCRIPTION_CANCEL_UNDO_URL,
+	'ORDS_SUBSCRIPTION_CANCEL_UNDO_URL',
+	'/workspace/subscription/cancel/undo'
+);
+
 export type SubscriptionEffectiveStatus =
 	| 'TRIAL'
 	| 'TRIAL_EXPIRED'
@@ -93,6 +105,8 @@ export interface SubscriptionData {
 		current_period_start: string | null;
 		current_period_end: string | null;
 		grace_ends_at: string | null;
+		canceled_at: string | null;
+		auto_renew: boolean;
 	};
 	plan: {
 		code: string;
@@ -167,6 +181,8 @@ const normalizeSubscription = (value: unknown): SubscriptionData | null => {
 			current_period_start: toNullableString(sub.current_period_start),
 			current_period_end: toNullableString(sub.current_period_end),
 			grace_ends_at: toNullableString(sub.grace_ends_at),
+			canceled_at: toNullableString(sub.canceled_at),
+			auto_renew: sub.auto_renew === undefined || sub.auto_renew === null ? true : toBool(sub.auto_renew),
 		},
 		plan: {
 			code: String(plan.code || '').trim(),
@@ -301,6 +317,9 @@ export interface SubscriptionCurrentSnapshot {
 	pending_plan_code: string | null;
 	pending_plan_name: string | null;
 	pending_plan_change_at: string | null;
+	auto_renew: boolean;
+	canceled_at: string | null;
+	cancel_scheduled: boolean;
 	active_storage_addons: ActiveStorageAddonLine[];
 }
 
@@ -437,6 +456,13 @@ const normalizePlansCatalog = (value: unknown): PlansCatalog => {
 			pending_plan_code: toNullableString(cur.pending_plan_code),
 			pending_plan_name: toNullableString(cur.pending_plan_name),
 			pending_plan_change_at: toNullableString(cur.pending_plan_change_at),
+			auto_renew: cur.auto_renew === undefined || cur.auto_renew === null ? true : toBool(cur.auto_renew),
+			canceled_at: toNullableString(cur.canceled_at),
+			cancel_scheduled:
+				toBool(cur.cancel_scheduled) ||
+				String(cur.pending_plan_code || '')
+					.trim()
+					.toUpperCase() === 'FREE',
 			active_storage_addons: activeAddonsRaw.map((item) => {
 				const a = (item ?? {}) as Record<string, unknown>;
 				return {
@@ -575,6 +601,66 @@ export const changePlanWithOrds = async (
 			scheduled: toBool(d.scheduled),
 			pending_plan_code: toNullableString(d.pending_plan_code),
 			pending_plan_change_at: toNullableString(d.pending_plan_change_at),
+		};
+	});
+};
+
+export const cancelSubscriptionWithOrds = async (
+	token: string
+): Promise<{
+	plan_code: string;
+	effective_status: string;
+	scheduled: boolean;
+	applied: boolean;
+	pending_plan_code: string | null;
+	pending_plan_change_at: string | null;
+}> => {
+	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
+	const response = await fetch(SUBSCRIPTION_CANCEL_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({}),
+	});
+	return parseOrdsData(response, (data) => {
+		const d = (data ?? {}) as Record<string, unknown>;
+		return {
+			plan_code: String(d.plan_code || '').trim(),
+			effective_status: String(d.effective_status || '').trim(),
+			scheduled: toBool(d.scheduled),
+			applied: toBool(d.applied),
+			pending_plan_code: toNullableString(d.pending_plan_code),
+			pending_plan_change_at: toNullableString(d.pending_plan_change_at),
+		};
+	});
+};
+
+export const undoCancelSubscriptionWithOrds = async (
+	token: string
+): Promise<{
+	plan_code: string;
+	effective_status: string;
+	pending_cleared: boolean;
+}> => {
+	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
+	const response = await fetch(SUBSCRIPTION_CANCEL_UNDO_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({}),
+	});
+	return parseOrdsData(response, (data) => {
+		const d = (data ?? {}) as Record<string, unknown>;
+		return {
+			plan_code: String(d.plan_code || '').trim(),
+			effective_status: String(d.effective_status || '').trim(),
+			pending_cleared: toBool(d.pending_cleared),
 		};
 	});
 };

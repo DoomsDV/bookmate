@@ -337,6 +337,14 @@ export function initPlanPage() {
 		});
 	});
 
+	document.querySelectorAll<HTMLButtonElement>('[data-terminate-sub]').forEach((btn) => {
+		btn.addEventListener('click', () => void terminateSubscription(btn));
+	});
+
+	document.querySelectorAll<HTMLButtonElement>('[data-undo-cancel]').forEach((btn) => {
+		btn.addEventListener('click', () => void undoCancelSubscription(btn));
+	});
+
 	// --- Selección de add-on de storage ---
 	document.querySelectorAll<HTMLButtonElement>('[data-addon-select]').forEach((btn) => {
 		btn.addEventListener('click', () => {
@@ -414,6 +422,78 @@ export function initPlanPage() {
 			flash('No se pudo registrar la tarjeta. Verificá los datos e intentá de nuevo.', 'error');
 		}
 	});
+
+	async function terminateSubscription(btn: HTMLButtonElement) {
+		const confirmed = window.BookmateAlert?.confirm
+			? await window.BookmateAlert.confirm({
+					type: 'warning',
+					title: 'Terminar suscripción',
+					message:
+						'Al fin del periodo pasás a Continuidad (0 Gs): se cancelan los paquetes de almacenamiento, no hay cobros y la cuenta queda en solo lectura. Hasta esa fecha seguís con tu plan actual. Si solo querés pagar menos, usá Pasar a Base.',
+					confirmText: 'Terminar suscripción',
+					cancelText: 'Volver',
+				})
+			: window.confirm('¿Terminar la suscripción al fin del periodo?');
+		if (!confirmed) return;
+
+		const original = btn.textContent;
+		btn.disabled = true;
+		btn.textContent = 'Programando…';
+		try {
+			const res = await fetch('/api/subscription/cancel', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({}),
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok || data?.status !== 'success') {
+				throw new Error(data?.message || 'No fue posible terminar la suscripción.');
+			}
+			flash(
+				(typeof data?.message === 'string' && data.message.trim()) ||
+					'Cancelación programada.',
+				'success'
+			);
+			setTimeout(() => window.location.reload(), 900);
+		} catch (error) {
+			btn.disabled = false;
+			btn.textContent = original;
+			flash(
+				error instanceof Error ? error.message : 'No fue posible terminar la suscripción.',
+				'error'
+			);
+		}
+	}
+
+	async function undoCancelSubscription(btn: HTMLButtonElement) {
+		const original = btn.textContent;
+		btn.disabled = true;
+		btn.textContent = 'Restaurando…';
+		try {
+			const res = await fetch('/api/subscription/cancel/undo', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({}),
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok || data?.status !== 'success') {
+				throw new Error(data?.message || 'No fue posible anular la cancelación.');
+			}
+			flash(
+				(typeof data?.message === 'string' && data.message.trim()) ||
+					'Cancelación anulada.',
+				'success'
+			);
+			setTimeout(() => window.location.reload(), 900);
+		} catch (error) {
+			btn.disabled = false;
+			btn.textContent = original;
+			flash(
+				error instanceof Error ? error.message : 'No fue posible anular la cancelación.',
+				'error'
+			);
+		}
+	}
 
 	async function changePlan(
 		code: string,

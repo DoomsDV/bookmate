@@ -51,8 +51,18 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 												</p>
 											</div>
 
-											<div class="rounded-full border border-(--shell-border) bg-(--surface-bright) px-4 py-2 text-[0.88rem] font-extrabold text-(--on-surface)">
-												<span data-customers-summary>0 clientes</span>
+											<div class="flex flex-wrap items-center gap-2">
+												<a
+													href="/api/customers/export"
+													class="inline-flex items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-4 py-2 text-[0.88rem] font-extrabold text-(--on-surface) no-underline transition hover:border-(--primary) hover:text-(--primary)"
+													download
+												>
+													<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">download</span>
+													Exportar CSV
+												</a>
+												<div class="rounded-full border border-(--shell-border) bg-(--surface-bright) px-4 py-2 text-[0.88rem] font-extrabold text-(--on-surface)">
+													<span data-customers-summary>0 clientes</span>
+												</div>
 											</div>
 										</header>
 

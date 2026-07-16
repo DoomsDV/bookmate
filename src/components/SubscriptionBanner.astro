@@ -54,6 +54,7 @@
 		planCode: string;
 		trialEndsAt: string | null;
 		graceEndsAt: string | null;
+		canceledAt: string | null;
 	}
 
 	declare global {
@@ -92,6 +93,7 @@
 				planCode: String(plan.code || ''),
 				trialEndsAt: sub.trial_ends_at ?? null,
 				graceEndsAt: sub.grace_ends_at ?? null,
+				canceledAt: sub.canceled_at ?? null,
 			};
 
 			window.HaselSubscription = {
@@ -122,10 +124,14 @@
 			});
 
 			if (!state.canWrite) {
+				const writeHint =
+					state.planCode === 'FREE' || state.canceledAt
+						? 'Tu cuenta está en solo lectura. Renová tu plan para seguir agendando.'
+						: 'Tu suscripción está en solo lectura. Regularizá el pago para habilitar esta acción.';
 				document.querySelectorAll<HTMLElement>('[data-requires-write]').forEach((el) => {
 					el.setAttribute('disabled', 'true');
 					el.setAttribute('aria-disabled', 'true');
-					el.title = 'Tu suscripción está en solo lectura. Regularizá el pago para habilitar esta acción.';
+					el.title = writeHint;
 				});
 			}
 		}
@@ -145,8 +151,15 @@
 			if (state.effectiveStatus === 'READ_ONLY' || state.effectiveStatus === 'CANCELED') {
 				tone = 'danger';
 				icon = 'lock';
-				message = 'Tu suscripción venció y la cuenta está en modo solo lectura. Regularizá el pago para volver a operar.';
-				ctaLabel = 'Regularizar pago';
+				if (state.planCode === 'FREE' || state.canceledAt) {
+					message =
+						'Tu cuenta está en modo Continuidad (solo lectura). Renová Base o Premium para volver a agendar.';
+					ctaLabel = 'Renovar plan';
+				} else {
+					message =
+						'Tu suscripción venció y la cuenta está en modo solo lectura. Regularizá el pago para volver a operar.';
+					ctaLabel = 'Regularizar pago';
+				}
 			} else if (state.effectiveStatus === 'PAST_DUE') {
 				const d = this.daysLeft(state.graceEndsAt);
 				tone = 'warning';

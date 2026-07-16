@@ -198,7 +198,7 @@ const STATUS_META: Record<string, { label: string; tone: string; hint: string }>
 	READ_ONLY: {
 		label: 'Solo lectura',
 		tone: 'danger',
-		hint: 'Tu suscripción venció. Podés ver tu información, pero no crear ni editar. Regularizá el pago para reactivarla.',
+		hint: 'Tu cuenta está en solo lectura. Podés consultar tu información; para volver a agendar, elegí un plan Base o Premium.',
 	},
 	CANCELED: { label: 'Cancelado', tone: 'danger', hint: 'Tu suscripción está cancelada.' },
 	FOUNDER: {
@@ -216,6 +216,18 @@ const storagePct =
 		: 0;
 
 const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
+const cancelScheduled = !!current?.cancel_scheduled;
+const isContinuity =
+	!!current &&
+	(current.plan_code === 'FREE' || (effState === 'READ_ONLY' && !!current.canceled_at));
+const canTerminate =
+	isAdmin &&
+	!!current &&
+	!current.billing_exempt &&
+	!current.is_founder &&
+	!cancelScheduled &&
+	!isContinuity &&
+	['ACTIVE', 'PAST_DUE', 'TRIAL'].includes(effState);
 
 // Método de pago (cobro recurrente con tarjeta): solo admin y planes facturables.
 const showPaymentMethod = isAdmin && !!current && !current.billing_exempt;
@@ -323,31 +335,75 @@ const defaultCardHint = defaultCard
 											<div class="flex flex-wrap items-start justify-between gap-3">
 												<div class="grid gap-1">
 													<p class="m-0 font-bold text-(--on-surface)">
-														Cambio a {current.pending_plan_name || current.pending_plan_code} programado
+														{cancelScheduled
+															? 'Cancelación programada'
+															: `Cambio a ${current.pending_plan_name || current.pending_plan_code} programado`}
 													</p>
 													<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
-														Seguís con {current.plan_name} hasta el{' '}
-														{current.pending_plan_change_at
-															? new Date(current.pending_plan_change_at).toLocaleDateString('es-PY', {
-																	day: 'numeric',
-																	month: 'long',
-																	year: 'numeric',
-																})
-															: 'fin del periodo'}
-														. Ese día se aplica el nuevo plan y se cobra su tarifa.
+														{cancelScheduled ? (
+															<>
+																Seguís con {current.plan_name} hasta el{' '}
+																{current.pending_plan_change_at
+																	? new Date(current.pending_plan_change_at).toLocaleDateString('es-PY', {
+																			day: 'numeric',
+																			month: 'long',
+																			year: 'numeric',
+																		})
+																	: 'fin del periodo'}
+																. Ese día pasás a Continuidad (0 Gs): sin cobros, addons cancelados y cuenta en solo lectura.
+															</>
+														) : (
+															<>
+																Seguís con {current.plan_name} hasta el{' '}
+																{current.pending_plan_change_at
+																	? new Date(current.pending_plan_change_at).toLocaleDateString('es-PY', {
+																			day: 'numeric',
+																			month: 'long',
+																			year: 'numeric',
+																		})
+																	: 'fin del periodo'}
+																. Ese día se aplica {current.pending_plan_name || current.pending_plan_code} y se cobra su tarifa mensual.
+															</>
+														)}
 													</p>
 												</div>
 												{isAdmin ? (
-													<button
-														type="button"
-														class="plan-btn plan-btn-soft"
-														data-keep-plan
-														data-plan-code={current.plan_code}
-														data-plan-name={current.plan_name}
-													>
-														Mantener {current.plan_name}
-													</button>
+													cancelScheduled ? (
+														<button type="button" class="plan-btn plan-btn-soft" data-undo-cancel>
+															Seguir con {current.plan_name}
+														</button>
+													) : (
+														<button
+															type="button"
+															class="plan-btn plan-btn-soft"
+															data-keep-plan
+															data-plan-code={current.plan_code}
+															data-plan-name={current.plan_name}
+														>
+															Mantener {current.plan_name}
+														</button>
+													)
 												) : null}
+											</div>
+										</div>
+									) : null}
+
+									{isContinuity ? (
+										<div class="plan-day15 mt-4">
+											<div class="flex flex-wrap items-start justify-between gap-3">
+												<div class="grid gap-1">
+													<p class="m-0 font-bold text-(--on-surface)">Modo Continuidad (solo lectura)</p>
+													<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+														Podés consultar historial y exportar clientes. Para volver a agendar, elegí Base o Premium abajo.
+													</p>
+												</div>
+												<a
+													href="/api/customers/export"
+													class="plan-btn plan-btn-soft"
+													download
+												>
+													Exportar clientes
+												</a>
 											</div>
 										</div>
 									) : null}
@@ -472,9 +528,11 @@ const defaultCardHint = defaultCard
 														>
 															{current.billing_exempt
 																? 'Cambiar a este plan'
-																: plan.code === 'BASE' && current.plan_code === 'PREMIUM'
-																	? `Pasar a ${plan.name}`
-																	: `Elegir ${plan.name}`}
+																: current.plan_code === 'FREE' || effState === 'READ_ONLY'
+																	? `Renovar con ${plan.name}`
+																	: plan.code === 'BASE' && current.plan_code === 'PREMIUM'
+																		? `Pasar a ${plan.name}`
+																		: `Elegir ${plan.name}`}
 														</button>
 													) : (
 														<button type="button" class="plan-btn plan-btn-current" disabled>Solo el administrador puede cambiarlo</button>
@@ -623,7 +681,7 @@ const defaultCardHint = defaultCard
 													</div>
 													<div class="flex items-center justify-between gap-3">
 														<span class="text-xl font-extrabold text-(--on-surface)">{formatGs(addon.price_amount)}<span class="text-[0.8rem] font-semibold text-(--on-surface-variant)"> /mes</span></span>
-														{isAdmin && current.supports_storage_addons ? (
+														{isAdmin && current.supports_storage_addons && !cancelScheduled ? (
 															<button
 																type="button"
 																class="plan-btn plan-btn-soft"
@@ -635,7 +693,13 @@ const defaultCardHint = defaultCard
 																data-addon-days={String(addon.days_remaining)}
 															>Contratar</button>
 														) : (
-															<button type="button" class="plan-btn plan-btn-soft" disabled>{current.supports_storage_addons ? 'Solo admin' : 'Solo Premium'}</button>
+															<button type="button" class="plan-btn plan-btn-soft" disabled>
+																{cancelScheduled
+																	? 'Cancelación programada'
+																	: current.supports_storage_addons
+																		? 'Solo admin'
+																		: 'Solo Premium'}
+															</button>
 														)}
 													</div>
 												</article>
@@ -645,6 +709,22 @@ const defaultCardHint = defaultCard
 										) : null}
 									</section>
 								)}
+
+								{canTerminate ? (
+									<section class="grid gap-3 rounded-2xl border border-rose-500/25 bg-rose-500/5 px-4 py-4 sm:px-5">
+										<div class="grid gap-1">
+											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Terminar suscripción</h2>
+											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+												Al fin del periodo pasás a Continuidad (0 Gs): sin cobros, se cancelan los paquetes de almacenamiento y la cuenta queda en solo lectura. Si preferís seguir pagando menos, usá <strong>Pasar a Base</strong> arriba.
+											</p>
+										</div>
+										<div>
+											<button type="button" class="plan-btn plan-btn-danger" data-terminate-sub>
+												Terminar suscripción
+											</button>
+										</div>
+									</section>
+								) : null}
 								</div>
 
 								{/* ---- Pestaña Facturación ---- */}
@@ -1025,6 +1105,12 @@ const defaultCardHint = defaultCard
 	.plan-btn-primary:hover { filter: brightness(1.05); }
 	.plan-btn-current { background: color-mix(in srgb, var(--on-surface-variant) 16%, transparent); color: var(--on-surface-variant); }
 	.plan-btn-soft { width: auto; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
+	.plan-btn-danger {
+		width: auto;
+		background: color-mix(in srgb, #be123c 12%, transparent);
+		color: #be123c;
+	}
+	.plan-btn-danger:hover { filter: brightness(0.96); }
 	.plan-btn-ghost { background: transparent; color: var(--on-surface-variant); }
 
 	.plan-addon-card {
