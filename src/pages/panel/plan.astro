@@ -514,14 +514,14 @@ const defaultCardHint = defaultCard
 		</div>
 	</div>
 
-	{/* Modal del iframe uPay (catastro de tarjeta) — sheet desde abajo en mobile */}
+	{/* Modal del iframe uPay — bottom sheet en mobile/tablet */}
 	<div class="plan-modal-backdrop plan-card-modal-backdrop hidden" data-card-modal>
 		<div class="plan-modal plan-modal-wide plan-card-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-card-title">
 			<div class="plan-sheet-handle" aria-hidden="true"><span></span></div>
-			<div class="flex items-start justify-between gap-3">
-				<div class="grid gap-1">
+			<div class="plan-card-sheet-head">
+				<div class="plan-card-sheet-copy">
 					<h3 id="plan-card-title" class="m-0 text-lg font-bold text-(--on-surface)">Registrar tarjeta</h3>
-					<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">Crédito o débito · Visa / Mastercard. Los datos se cargan de forma segura.</p>
+					<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">Crédito o débito · Visa / Mastercard</p>
 				</div>
 				<button type="button" class="plan-card-close" data-card-close aria-label="Cerrar">
 					<span class="material-symbols-rounded">close</span>
@@ -919,29 +919,56 @@ const defaultCardHint = defaultCard
 		max-height: min(92vh, 52rem);
 		overflow: hidden;
 	}
-	.plan-card-close {
-		display: inline-grid; place-items: center;
-		width: 2rem; height: 2rem; border: 0; border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface-variant) 12%, transparent);
-		color: var(--on-surface-variant); cursor: pointer;
+	.plan-card-sheet {
+		display: grid;
+		grid-template-rows: auto auto minmax(0, 1fr);
+		gap: 0.85rem;
 	}
+	.plan-card-sheet-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+		min-width: 0;
+	}
+	.plan-card-sheet-copy {
+		display: grid;
+		gap: 0.2rem;
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+	.plan-card-close {
+		display: inline-grid;
+		place-items: center;
+		flex-shrink: 0;
+		width: 2.4rem;
+		height: 2.4rem;
+		border: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
+		color: var(--on-surface);
+		cursor: pointer;
+	}
+	.plan-card-close .material-symbols-rounded { font-size: 1.25rem; }
 	.plan-iframe-wrap {
 		position: relative;
 		display: grid;
 		min-height: min(68vh, 36rem);
 		height: min(68vh, 36rem);
+		min-width: 0;
+		overflow: hidden;
 	}
 	.plan-card-iframe {
 		width: 100%;
 		height: 100%;
-		min-height: min(68vh, 36rem);
+		min-height: 0;
 		border: 0;
 		border-radius: 0.75rem;
 		background: #fff;
 	}
 
-	/* uPay: bottom sheet en mobile (como Settings / SideNav) */
-	@media (max-width: 639px) {
+	/* uPay: bottom sheet en mobile + tablet (< lg), como Settings */
+	@media (max-width: 1023px) {
 		.plan-card-modal-backdrop:not(.hidden) {
 			display: flex;
 			align-items: flex-end;
@@ -951,17 +978,40 @@ const defaultCardHint = defaultCard
 		.plan-card-sheet {
 			width: 100%;
 			max-width: 100%;
-			max-height: min(92dvh, 52rem);
+			height: min(94dvh, 56rem);
+			max-height: min(94dvh, 56rem);
 			margin: 0;
 			border-radius: 1.8rem 1.8rem 0 0;
-			padding: 0.65rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+			padding: 0.35rem 0.55rem calc(0.45rem + env(safe-area-inset-bottom, 0px));
+			gap: 0.55rem;
 			animation: plan-card-sheet-in 180ms cubic-bezier(0.4, 0, 0.2, 1);
+			box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
 		}
-		.plan-sheet-handle { display: flex; }
-		.plan-iframe-wrap,
+		.plan-sheet-handle {
+			display: flex;
+			padding-top: 0.15rem;
+			padding-bottom: 0.05rem;
+		}
+		.plan-card-sheet-head {
+			align-items: center;
+			padding-inline: 0.2rem;
+		}
+		.plan-card-sheet-copy h3 {
+			font-size: 1.05rem;
+			line-height: 1.25;
+		}
+		.plan-card-sheet-copy p {
+			font-size: 0.78rem;
+			line-height: 1.3;
+		}
+		.plan-iframe-wrap {
+			flex: 1 1 auto;
+			min-height: 0;
+			height: auto;
+			margin-inline: 0;
+		}
 		.plan-card-iframe {
-			min-height: min(62dvh, 30rem);
-			height: min(62dvh, 30rem);
+			border-radius: 0.9rem;
 		}
 	}
 	@keyframes plan-card-sheet-in {
