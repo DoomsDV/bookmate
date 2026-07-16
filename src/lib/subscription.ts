@@ -60,6 +60,18 @@ export const SUBSCRIPTION_ACTIVATE_URL = resolveOrdsApiUrl(
 	'/workspace/subscription/activate'
 );
 
+export const SUBSCRIPTION_ADDON_CANCEL_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SUBSCRIPTION_ADDON_CANCEL_URL,
+	'ORDS_SUBSCRIPTION_ADDON_CANCEL_URL',
+	'/workspace/subscription/addon/cancel'
+);
+
+export const SUBSCRIPTION_INVOICES_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_SUBSCRIPTION_INVOICES_URL,
+	'ORDS_SUBSCRIPTION_INVOICES_URL',
+	'/workspace/subscription/invoices'
+);
+
 export type SubscriptionEffectiveStatus =
 	| 'TRIAL'
 	| 'TRIAL_EXPIRED'
@@ -228,6 +240,7 @@ export interface PlanCatalogItem {
 	price_amount: number;
 	checkout_price_amount: number;
 	founder_discount_percent: number;
+	monthly_total: number;
 	currency: string;
 	billing_period: string;
 	storage_limit_bytes: number;
@@ -241,8 +254,23 @@ export interface StorageAddonItem {
 	name: string;
 	extra_bytes: number;
 	price_amount: number;
+	prorate_amount: number;
+	cancel_credit_amount: number;
+	days_remaining: number;
+	period_days: number;
 	currency: string;
 	billing_period: string;
+}
+
+export interface ActiveStorageAddonLine {
+	code: string;
+	name: string;
+	quantity: number;
+	price_amount: number;
+	line_total: number;
+	extra_bytes: number;
+	cancel_credit_amount: number;
+	cancelable: boolean;
 }
 
 export interface SubscriptionCurrentSnapshot {
@@ -255,12 +283,56 @@ export interface SubscriptionCurrentSnapshot {
 	billing_exempt: boolean;
 	founder_discount_percent: number;
 	trial_ends_at: string | null;
+	current_period_start: string | null;
 	current_period_end: string | null;
 	grace_ends_at: string | null;
 	storage_used_bytes: number;
 	storage_limit_bytes: number;
 	supports_storage_addons: boolean;
 	billing_configured: boolean;
+	plan_monthly_amount: number;
+	addons_monthly_amount: number;
+	monthly_total: number;
+	days_remaining_in_period: number;
+	period_days: number;
+	account_balance: number;
+	next_billing_at: string | null;
+	next_charge_estimate: number;
+	pending_plan_code: string | null;
+	pending_plan_name: string | null;
+	pending_plan_change_at: string | null;
+	active_storage_addons: ActiveStorageAddonLine[];
+}
+
+export interface BillingInvoiceItem {
+	invoice_id: number;
+	invoice_type: string;
+	status: string;
+	amount: number;
+	gross_amount: number;
+	credit_applied: number;
+	currency: string;
+	description: string | null;
+	payment_provider: string | null;
+	plan_code: string | null;
+	plan_name: string | null;
+	created_at: string | null;
+	paid_at: string | null;
+	period_start: string | null;
+	period_end: string | null;
+	hash: string | null;
+}
+
+export interface BillingHistory {
+	next_billing_at: string | null;
+	plan_code: string;
+	plan_name: string;
+	plan_monthly_amount: number;
+	addons_monthly_amount: number;
+	monthly_total: number;
+	account_balance: number;
+	next_charge_estimate: number;
+	invoices: BillingInvoiceItem[];
 }
 
 export interface PlansCatalog {
@@ -328,6 +400,8 @@ const normalizePlansCatalog = (value: unknown): PlansCatalog => {
 	const plansRaw = Array.isArray(source.plans) ? source.plans : [];
 	const addonsRaw = Array.isArray(source.storage_addons) ? source.storage_addons : [];
 
+	const activeAddonsRaw = Array.isArray(cur.active_storage_addons) ? cur.active_storage_addons : [];
+
 	return {
 		current: {
 			plan_code: String(cur.plan_code || '').trim(),
@@ -339,12 +413,43 @@ const normalizePlansCatalog = (value: unknown): PlansCatalog => {
 			billing_exempt: toBool(cur.billing_exempt),
 			founder_discount_percent: toNumber(cur.founder_discount_percent, 0),
 			trial_ends_at: toNullableString(cur.trial_ends_at),
+			current_period_start: toNullableString(cur.current_period_start),
 			current_period_end: toNullableString(cur.current_period_end),
 			grace_ends_at: toNullableString(cur.grace_ends_at),
 			storage_used_bytes: toNumber(cur.storage_used_bytes, 0),
 			storage_limit_bytes: toNumber(cur.storage_limit_bytes, 0),
 			supports_storage_addons: toBool(cur.supports_storage_addons),
 			billing_configured: toBool(cur.billing_configured),
+			plan_monthly_amount: toNumber(cur.plan_monthly_amount, 0),
+			addons_monthly_amount: toNumber(cur.addons_monthly_amount, 0),
+			monthly_total: toNumber(cur.monthly_total, 0),
+			days_remaining_in_period: toNumber(cur.days_remaining_in_period, 0),
+			period_days: toNumber(cur.period_days, 30),
+			account_balance: toNumber(cur.account_balance, 0),
+			next_billing_at: toNullableString(cur.next_billing_at) || toNullableString(cur.current_period_end),
+			next_charge_estimate: toNumber(
+				cur.next_charge_estimate,
+				Math.max(
+					0,
+					toNumber(cur.monthly_total, 0) - toNumber(cur.account_balance, 0)
+				)
+			),
+			pending_plan_code: toNullableString(cur.pending_plan_code),
+			pending_plan_name: toNullableString(cur.pending_plan_name),
+			pending_plan_change_at: toNullableString(cur.pending_plan_change_at),
+			active_storage_addons: activeAddonsRaw.map((item) => {
+				const a = (item ?? {}) as Record<string, unknown>;
+				return {
+					code: String(a.code || '').trim(),
+					name: String(a.name || '').trim(),
+					quantity: toNumber(a.quantity, 1),
+					price_amount: toNumber(a.price_amount, 0),
+					line_total: toNumber(a.line_total, 0),
+					extra_bytes: toNumber(a.extra_bytes, 0),
+					cancel_credit_amount: toNumber(a.cancel_credit_amount, 0),
+					cancelable: a.cancelable === undefined ? true : toBool(a.cancelable),
+				};
+			}),
 		},
 		plans: plansRaw.map((item) => {
 			const p = (item ?? {}) as Record<string, unknown>;
@@ -357,6 +462,7 @@ const normalizePlansCatalog = (value: unknown): PlansCatalog => {
 				price_amount: listPrice,
 				checkout_price_amount: checkoutPrice,
 				founder_discount_percent: toNumber(p.founder_discount_percent, 0),
+				monthly_total: toNumber(p.monthly_total, checkoutPrice),
 				currency: String(p.currency || 'PYG').trim(),
 				billing_period: String(p.billing_period || 'MONTHLY').trim(),
 				storage_limit_bytes: toNumber(p.storage_limit_bytes, 0),
@@ -366,12 +472,17 @@ const normalizePlansCatalog = (value: unknown): PlansCatalog => {
 		}),
 		storage_addons: addonsRaw.map((item) => {
 			const a = (item ?? {}) as Record<string, unknown>;
+			const full = toNumber(a.price_amount, 0);
 			return {
 				id_storage_addon: toNumber(a.id_storage_addon, 0),
 				code: String(a.code || '').trim(),
 				name: String(a.name || '').trim(),
 				extra_bytes: toNumber(a.extra_bytes, 0),
-				price_amount: toNumber(a.price_amount, 0),
+				price_amount: full,
+				prorate_amount: toNumber(a.prorate_amount, full),
+				cancel_credit_amount: toNumber(a.cancel_credit_amount, 0),
+				days_remaining: toNumber(a.days_remaining, 0),
+				period_days: toNumber(a.period_days, 30),
 				currency: String(a.currency || 'PYG').trim(),
 				billing_period: String(a.billing_period || 'MONTHLY').trim(),
 			};
@@ -439,7 +550,13 @@ export const createSubscriptionCheckoutWithOrds = async (
 export const changePlanWithOrds = async (
 	token: string,
 	planCode: string
-): Promise<{ plan_code: string; effective_status: string }> => {
+): Promise<{
+	plan_code: string;
+	effective_status: string;
+	scheduled: boolean;
+	pending_plan_code: string | null;
+	pending_plan_change_at: string | null;
+}> => {
 	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
 	const response = await fetch(SUBSCRIPTION_CHANGE_PLAN_URL, {
 		method: 'POST',
@@ -455,8 +572,80 @@ export const changePlanWithOrds = async (
 		return {
 			plan_code: String(d.plan_code || '').trim(),
 			effective_status: String(d.effective_status || '').trim(),
+			scheduled: toBool(d.scheduled),
+			pending_plan_code: toNullableString(d.pending_plan_code),
+			pending_plan_change_at: toNullableString(d.pending_plan_change_at),
 		};
 	});
+};
+
+export const cancelStorageAddonWithOrds = async (
+	token: string,
+	addonCode: string
+): Promise<{ credit_granted: number; account_balance: number; addon_code: string }> => {
+	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
+	const response = await fetch(SUBSCRIPTION_ADDON_CANCEL_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: JSON.stringify({ addon_code: addonCode }),
+	});
+	return parseOrdsData(response, (data) => {
+		const d = (data ?? {}) as Record<string, unknown>;
+		return {
+			addon_code: String(d.addon_code || '').trim(),
+			credit_granted: toNumber(d.credit_granted, 0),
+			account_balance: toNumber(d.account_balance, 0),
+		};
+	});
+};
+
+const normalizeBillingHistory = (value: unknown): BillingHistory => {
+	const d = (value ?? {}) as Record<string, unknown>;
+	const invoicesRaw = Array.isArray(d.invoices) ? d.invoices : [];
+	return {
+		next_billing_at: toNullableString(d.next_billing_at),
+		plan_code: String(d.plan_code || '').trim(),
+		plan_name: String(d.plan_name || '').trim(),
+		plan_monthly_amount: toNumber(d.plan_monthly_amount, 0),
+		addons_monthly_amount: toNumber(d.addons_monthly_amount, 0),
+		monthly_total: toNumber(d.monthly_total, 0),
+		account_balance: toNumber(d.account_balance, 0),
+		next_charge_estimate: toNumber(d.next_charge_estimate, 0),
+		invoices: invoicesRaw.map((item) => {
+			const i = (item ?? {}) as Record<string, unknown>;
+			return {
+				invoice_id: toNumber(i.invoice_id, 0),
+				invoice_type: String(i.invoice_type || '').trim(),
+				status: String(i.status || '').trim(),
+				amount: toNumber(i.amount, 0),
+				gross_amount: toNumber(i.gross_amount, toNumber(i.amount, 0)),
+				credit_applied: toNumber(i.credit_applied, 0),
+				currency: String(i.currency || 'PYG').trim(),
+				description: toNullableString(i.description),
+				payment_provider: toNullableString(i.payment_provider),
+				plan_code: toNullableString(i.plan_code),
+				plan_name: toNullableString(i.plan_name),
+				created_at: toNullableString(i.created_at),
+				paid_at: toNullableString(i.paid_at),
+				period_start: toNullableString(i.period_start),
+				period_end: toNullableString(i.period_end),
+				hash: toNullableString(i.hash),
+			};
+		}),
+	};
+};
+
+export const listInvoicesWithOrds = async (token: string): Promise<BillingHistory> => {
+	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
+	const response = await fetch(SUBSCRIPTION_INVOICES_URL, {
+		method: 'GET',
+		headers: { Authorization: `Bearer ${token}`, Accept: 'application/json' },
+	});
+	return parseOrdsData(response, normalizeBillingHistory);
 };
 
 export const getInvoiceStatusWithOrds = async (
@@ -495,10 +684,11 @@ export interface AddCardResult {
 }
 
 export interface ActivateResult {
-	invoice_id: number;
+	invoice_id: number | null;
 	hash: string;
 	status: string;
 	target_type: string;
+	requires_polling: boolean;
 }
 
 const normalizeCards = (value: unknown): PaymentCard[] => {
@@ -532,11 +722,13 @@ const normalizeAddCard = (value: unknown): AddCardResult => {
 
 const normalizeActivate = (value: unknown): ActivateResult => {
 	const d = (value ?? {}) as Record<string, unknown>;
+	const hash = String(d.hash || '').trim();
 	return {
-		invoice_id: toNumber(d.invoice_id, 0),
-		hash: String(d.hash || '').trim(),
+		invoice_id: d.invoice_id == null || d.invoice_id === '' ? null : toNumber(d.invoice_id, 0),
+		hash,
 		status: String(d.status || 'PENDING').trim(),
 		target_type: String(d.target_type || 'PLAN').trim(),
+		requires_polling: d.requires_polling === undefined ? Boolean(hash) : toBool(d.requires_polling),
 	};
 };
 

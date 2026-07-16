@@ -7,7 +7,9 @@ import Layout from '../../layouts/Layout.astro';
 import {
 	getPlansWithOrds,
 	listCardsWithOrds,
+	listInvoicesWithOrds,
 	SubscriptionApiError,
+	type BillingHistory,
 	type PlansCatalog,
 	type PaymentCard,
 } from '../../lib/subscription';
@@ -19,6 +21,7 @@ const isAdmin = roleId === ROLES.ADMIN;
 
 let catalog: PlansCatalog | null = null;
 let cards: PaymentCard[] = [];
+let billing: BillingHistory | null = null;
 let loadError = '';
 
 if (!token) {
@@ -41,12 +44,44 @@ if (!token) {
 			cards = [];
 		}
 	}
+
+	try {
+		billing = await listInvoicesWithOrds(token);
+	} catch {
+		billing = null;
+	}
 }
 
 const hasCard = cards.length > 0;
 
 const currency = new Intl.NumberFormat('es-PY');
 const formatGs = (amount: number) => `${currency.format(Math.max(0, Math.round(amount)))} Gs`;
+const formatDateEs = (iso: string | null | undefined) => {
+	if (!iso) return '—';
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return '—';
+	return d.toLocaleDateString('es-PY', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+const formatDateTimeEs = (iso: string | null | undefined) => {
+	if (!iso) return '—';
+	const d = new Date(iso);
+	if (Number.isNaN(d.getTime())) return '—';
+	return d.toLocaleString('es-PY', {
+		day: 'numeric',
+		month: 'short',
+		year: 'numeric',
+		hour: '2-digit',
+		minute: '2-digit',
+	});
+};
+const invoiceStatusMeta = (status: string) => {
+	const s = status.toUpperCase();
+	if (s === 'PAID') return { label: 'Pagado', tone: 'ok' as const };
+	if (s === 'FAILED') return { label: 'Fallido', tone: 'bad' as const };
+	if (s === 'PENDING') return { label: 'Pendiente', tone: 'warn' as const };
+	if (s === 'VOID') return { label: 'Anulado', tone: 'muted' as const };
+	return { label: status || '—', tone: 'muted' as const };
+};
 const formatGb = (bytes: number) => {
 	if (!bytes || bytes <= 0) return '0 GB';
 	const gb = bytes / 1024 / 1024 / 1024;
@@ -234,6 +269,16 @@ const defaultCardHint = defaultCard
 							</div>
 						) : current && catalog ? (
 							<>
+								<nav class="plan-tabs" data-plan-tabs aria-label="Secciones de plan">
+									<button type="button" class="plan-tab is-active" data-plan-tab="plan" aria-selected="true">
+										Plan
+									</button>
+									<button type="button" class="plan-tab" data-plan-tab="billing" aria-selected="false">
+										Facturación
+									</button>
+								</nav>
+
+								<div data-plan-panel="plan" class="grid gap-6 sm:gap-8">
 								{/* ---- Estado actual ---- */}
 								<section class={`plan-status-card plan-tone-${statusMeta.tone}`}>
 									<div class="flex flex-wrap items-start justify-between gap-4">
@@ -244,6 +289,12 @@ const defaultCardHint = defaultCard
 												<span class={`plan-badge plan-badge-${statusMeta.tone}`}>{statusMeta.label}</span>
 											</div>
 											<p class="m-0 max-w-2xl text-[0.9rem] font-medium text-(--on-surface-variant)">{statusMeta.hint}</p>
+											{current.next_billing_at && !current.billing_exempt ? (
+												<p class="m-0 text-[0.88rem] font-semibold text-(--on-surface)">
+													Próxima facturación:{' '}
+													<span class="text-(--primary)">{formatDateEs(current.next_billing_at)}</span>
+												</p>
+											) : null}
 										</div>
 										<div class="grid w-full gap-2 text-left sm:w-auto sm:text-right">
 											<span class="text-xs font-semibold uppercase tracking-wide text-(--on-surface-variant)">Almacenamiento</span>
@@ -251,8 +302,55 @@ const defaultCardHint = defaultCard
 												{formatGb(current.storage_used_bytes)} / {current.storage_limit_bytes > 0 ? formatGb(current.storage_limit_bytes) : 'No incluido'}
 											</span>
 											<div class="plan-storage-track"><div class="plan-storage-fill" style={`width:${storagePct}%`}></div></div>
+											{current.monthly_total > 0 && !current.billing_exempt ? (
+												<div class="mt-2 grid gap-0.5">
+													<span class="text-xs font-semibold uppercase tracking-wide text-(--on-surface-variant)">Total mensual</span>
+													<span class="text-[1.05rem] font-extrabold text-(--on-surface)">{formatGs(current.monthly_total)}</span>
+													{current.addons_monthly_amount > 0 ? (
+														<span class="text-[0.78rem] font-medium text-(--on-surface-variant)">
+															Plan {formatGs(current.plan_monthly_amount)}
+															{' + '}
+															almacenamiento {formatGs(current.addons_monthly_amount)}
+														</span>
+													) : null}
+												</div>
+											) : null}
 										</div>
 									</div>
+
+									{current.pending_plan_code ? (
+										<div class="plan-day15 mt-4">
+											<div class="flex flex-wrap items-start justify-between gap-3">
+												<div class="grid gap-1">
+													<p class="m-0 font-bold text-(--on-surface)">
+														Cambio a {current.pending_plan_name || current.pending_plan_code} programado
+													</p>
+													<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+														Seguís con {current.plan_name} hasta el{' '}
+														{current.pending_plan_change_at
+															? new Date(current.pending_plan_change_at).toLocaleDateString('es-PY', {
+																	day: 'numeric',
+																	month: 'long',
+																	year: 'numeric',
+																})
+															: 'fin del periodo'}
+														. Ese día se aplica el nuevo plan y se cobra su tarifa.
+													</p>
+												</div>
+												{isAdmin ? (
+													<button
+														type="button"
+														class="plan-btn plan-btn-soft"
+														data-keep-plan
+														data-plan-code={current.plan_code}
+														data-plan-name={current.plan_name}
+													>
+														Mantener {current.plan_name}
+													</button>
+												) : null}
+											</div>
+										</div>
+									) : null}
 
 									{showDay15 && (
 										<div class="plan-day15">
@@ -284,6 +382,10 @@ const defaultCardHint = defaultCard
 											const displayPrice = hasFounderDeal
 												? plan.checkout_price_amount
 												: plan.price_amount;
+											const showConsolidated =
+												plan.code === 'PREMIUM' &&
+												plan.monthly_total > displayPrice &&
+												current.addons_monthly_amount > 0;
 											return (
 											<article class={`plan-card ${plan.is_current ? 'plan-card-current' : ''} ${plan.code === 'PREMIUM' ? 'plan-card-featured' : ''}`}>
 												{plan.code === 'PREMIUM' && <span class="plan-ribbon">Recomendado</span>}
@@ -301,6 +403,11 @@ const defaultCardHint = defaultCard
 													{hasFounderDeal ? (
 														<span class="text-[0.82rem] font-bold text-(--primary)">
 															Precio fundador · {plan.founder_discount_percent}% off de por vida
+														</span>
+													) : null}
+													{showConsolidated ? (
+														<span class="text-[0.82rem] font-semibold text-(--on-surface-variant)">
+															Con almacenamiento: {formatGs(plan.monthly_total)} / mes
 														</span>
 													) : null}
 													{marketing ? (
@@ -351,9 +458,23 @@ const defaultCardHint = defaultCard
 															data-plan-code={plan.code}
 															data-plan-name={plan.name}
 															data-plan-price={String(displayPrice)}
+															data-plan-monthly-total={String(showConsolidated ? plan.monthly_total : displayPrice)}
 															data-billing-exempt={current.billing_exempt ? '1' : '0'}
+															data-plan-action={
+																current.billing_exempt
+																	? 'immediate'
+																	: plan.price_amount < (catalog.plans.find((p) => p.is_current)?.price_amount ?? 0) ||
+																		  (plan.code === 'BASE' && current.plan_code === 'PREMIUM')
+																		? 'schedule'
+																		: 'activate'
+															}
+															data-period-end={current.current_period_end || ''}
 														>
-															{current.billing_exempt ? 'Cambiar a este plan' : `Elegir ${plan.name}`}
+															{current.billing_exempt
+																? 'Cambiar a este plan'
+																: plan.code === 'BASE' && current.plan_code === 'PREMIUM'
+																	? `Pasar a ${plan.name}`
+																	: `Elegir ${plan.name}`}
 														</button>
 													) : (
 														<button type="button" class="plan-btn plan-btn-current" disabled>Solo el administrador puede cambiarlo</button>
@@ -432,21 +553,73 @@ const defaultCardHint = defaultCard
 								)}
 
 								{/* ---- Add-ons de storage ---- */}
-								{catalog.storage_addons.length > 0 && (
+								{(catalog.storage_addons.length > 0 || current.active_storage_addons.length > 0) && (
 									<section class="grid gap-4" data-storage-section>
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Almacenamiento adicional</h2>
 											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
 												Sumá espacio para notas y archivos del historial de tus citas.
 												{!current.supports_storage_addons && ' Disponible con el plan Premium.'}
+												{current.account_balance > 0
+													? ' Si cancelás un paquete, el tiempo no usado se acredita a favor.'
+													: ''}
 											</p>
 										</div>
+
+										{current.active_storage_addons.length > 0 ? (
+											<div class="grid gap-3">
+												<span class="text-xs font-bold uppercase tracking-wide text-(--on-surface-variant)">Activos</span>
+												{current.active_storage_addons.map((line) => (
+													<article class="plan-addon-card">
+														<div class="grid gap-1">
+															<span class="text-[1.05rem] font-bold text-(--on-surface)">
+																{line.name}
+																{line.quantity > 1 ? ` ×${line.quantity}` : ''}
+															</span>
+															<span class="text-[0.85rem] font-semibold text-(--on-surface-variant)">
+																{formatGs(line.line_total)} / mes · {formatGb(line.extra_bytes * line.quantity)}
+															</span>
+															{line.cancel_credit_amount > 0 ? (
+																<span class="text-[0.78rem] font-medium text-(--on-surface-variant)">
+																	Al cancelar: crédito estimado {formatGs(line.cancel_credit_amount)}
+																</span>
+															) : null}
+														</div>
+														{isAdmin && line.cancelable ? (
+															<button
+																type="button"
+																class="plan-btn plan-btn-soft"
+																data-addon-cancel
+																data-addon-code={line.code}
+																data-addon-name={line.name}
+																data-addon-credit={String(line.cancel_credit_amount)}
+															>
+																Cancelar
+															</button>
+														) : null}
+													</article>
+												))}
+											</div>
+										) : null}
+
+										{catalog.storage_addons.length > 0 ? (
 										<div class="grid gap-4 sm:grid-cols-2">
-											{catalog.storage_addons.map((addon) => (
+											{catalog.storage_addons.map((addon) => {
+												const showProrate =
+													current.supports_storage_addons &&
+													addon.days_remaining > 0 &&
+													addon.prorate_amount > 0 &&
+													addon.prorate_amount < addon.price_amount;
+												return (
 												<article class="plan-addon-card">
 													<div class="grid gap-1">
 														<span class="text-[1.05rem] font-bold text-(--on-surface)">{addon.name}</span>
 														<span class="text-[0.85rem] font-semibold text-(--on-surface-variant)">{formatGb(addon.extra_bytes)} extra</span>
+														{showProrate ? (
+															<span class="text-[0.78rem] font-medium text-(--on-surface-variant)">
+																Hoy: {formatGs(addon.prorate_amount)} (proporcional · {addon.days_remaining} día{addon.days_remaining === 1 ? '' : 's'})
+															</span>
+														) : null}
 													</div>
 													<div class="flex items-center justify-between gap-3">
 														<span class="text-xl font-extrabold text-(--on-surface)">{formatGs(addon.price_amount)}<span class="text-[0.8rem] font-semibold text-(--on-surface-variant)"> /mes</span></span>
@@ -457,16 +630,152 @@ const defaultCardHint = defaultCard
 																data-addon-select
 																data-addon-code={addon.code}
 																data-addon-name={addon.name}
+																data-addon-price={String(addon.price_amount)}
+																data-addon-prorate={String(addon.prorate_amount)}
+																data-addon-days={String(addon.days_remaining)}
 															>Contratar</button>
 														) : (
 															<button type="button" class="plan-btn plan-btn-soft" disabled>{current.supports_storage_addons ? 'Solo admin' : 'Solo Premium'}</button>
 														)}
 													</div>
 												</article>
-											))}
+												);
+											})}
 										</div>
+										) : null}
 									</section>
 								)}
+								</div>
+
+								{/* ---- Pestaña Facturación ---- */}
+								<div data-plan-panel="billing" class="hidden grid gap-6 sm:gap-8">
+									<section class="plan-billing-summary">
+										<div class="grid gap-1">
+											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Resumen de facturación</h2>
+											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+												Próximo cobro y desglose de tu suscripción.
+											</p>
+										</div>
+										<div class="plan-billing-grid">
+											<div class="plan-billing-cell">
+												<span class="plan-billing-label">Próxima facturación</span>
+												<strong class="plan-billing-value">
+													{formatDateEs(billing?.next_billing_at || current.next_billing_at)}
+												</strong>
+											</div>
+											<div class="plan-billing-cell">
+												<span class="plan-billing-label">Plan</span>
+												<strong class="plan-billing-value">
+													{formatGs(billing?.plan_monthly_amount ?? current.plan_monthly_amount)}
+												</strong>
+												<small>{billing?.plan_name || current.plan_name}</small>
+											</div>
+											<div class="plan-billing-cell">
+												<span class="plan-billing-label">Almacenamiento</span>
+												<strong class="plan-billing-value">
+													{formatGs(billing?.addons_monthly_amount ?? current.addons_monthly_amount)}
+												</strong>
+												<small>/ mes</small>
+											</div>
+											<div class="plan-billing-cell">
+												<span class="plan-billing-label">Saldo a favor</span>
+												<strong class="plan-billing-value text-(--primary)">
+													{formatGs(billing?.account_balance ?? current.account_balance)}
+												</strong>
+											</div>
+											<div class="plan-billing-cell plan-billing-cell-accent">
+												<span class="plan-billing-label">Estimado próximo cargo</span>
+												<strong class="plan-billing-value plan-billing-value-lg">
+													{formatGs(billing?.next_charge_estimate ?? current.next_charge_estimate)}
+												</strong>
+												<small>Después de aplicar el saldo a favor</small>
+											</div>
+										</div>
+									</section>
+
+									<section class="grid gap-4">
+										<div class="grid gap-1">
+											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Historial de pagos</h2>
+											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+												Cobros exitosos, pendientes y fallidos de tu suscripción.
+											</p>
+										</div>
+
+										{(billing?.invoices?.length ?? 0) === 0 ? (
+											<div class="plan-billing-empty">
+												<span class="material-symbols-rounded text-[1.5rem] text-(--on-surface-variant)">receipt_long</span>
+												<p class="m-0 text-[0.9rem] font-semibold text-(--on-surface-variant)">
+													Todavía no hay pagos registrados.
+												</p>
+											</div>
+										) : (
+											<>
+												<div class="plan-invoice-table-wrap hidden md:block">
+													<table class="plan-invoice-table">
+														<thead>
+															<tr>
+																<th>Fecha</th>
+																<th>Detalle</th>
+																<th>Monto</th>
+																<th>Estado</th>
+															</tr>
+														</thead>
+														<tbody>
+															{billing!.invoices.map((inv) => {
+																const st = invoiceStatusMeta(inv.status);
+																return (
+																	<tr>
+																		<td>
+																			{formatDateTimeEs(inv.paid_at || inv.created_at)}
+																		</td>
+																		<td>
+																			<span class="plan-invoice-desc">{inv.description || inv.invoice_type}</span>
+																			{inv.credit_applied > 0 ? (
+																				<small class="plan-invoice-credit">
+																					Crédito aplicado: {formatGs(inv.credit_applied)}
+																				</small>
+																			) : null}
+																		</td>
+																		<td class="plan-invoice-amount">{formatGs(inv.amount)}</td>
+																		<td>
+																			<span class={`plan-inv-badge plan-inv-${st.tone}`}>{st.label}</span>
+																		</td>
+																	</tr>
+																);
+															})}
+														</tbody>
+													</table>
+												</div>
+												<div class="grid gap-3 md:hidden">
+													{billing!.invoices.map((inv) => {
+														const st = invoiceStatusMeta(inv.status);
+														return (
+															<article class="plan-invoice-card">
+																<div class="flex items-start justify-between gap-3">
+																	<div class="grid gap-1">
+																		<span class="text-[0.95rem] font-bold text-(--on-surface)">
+																			{inv.description || inv.invoice_type}
+																		</span>
+																		<span class="text-[0.8rem] font-medium text-(--on-surface-variant)">
+																			{formatDateTimeEs(inv.paid_at || inv.created_at)}
+																		</span>
+																		{inv.credit_applied > 0 ? (
+																			<span class="text-[0.78rem] font-medium text-(--primary)">
+																				Crédito: {formatGs(inv.credit_applied)}
+																			</span>
+																		) : null}
+																	</div>
+																	<span class={`plan-inv-badge plan-inv-${st.tone}`}>{st.label}</span>
+																</div>
+																<span class="text-lg font-extrabold text-(--on-surface)">{formatGs(inv.amount)}</span>
+															</article>
+														);
+													})}
+												</div>
+											</>
+										)}
+									</section>
+								</div>
 							</>
 						) : null}
 					</div>
@@ -475,12 +784,28 @@ const defaultCardHint = defaultCard
 		</div>
 	</div>
 
-	{/* Modal de confirmación de cobro recurrente */}
-	<div class="plan-modal-backdrop hidden" data-pay-modal>
-		<div class="plan-modal" role="dialog" aria-modal="true" aria-labelledby="plan-pay-title">
-			<div class="grid gap-1">
-				<h3 id="plan-pay-title" class="m-0 text-lg font-bold text-(--on-surface)">Confirmar suscripción</h3>
-				<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)" data-pay-summary>—</p>
+	{/* Modal de confirmación de cobro — bottom sheet en mobile/tablet */}
+	<div class="plan-modal-backdrop plan-pay-modal-backdrop hidden" data-pay-modal>
+		<div class="plan-modal plan-pay-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-pay-title">
+			<div class="plan-sheet-handle" aria-hidden="true"><span></span></div>
+			<div class="grid gap-3">
+				<h3 id="plan-pay-title" class="m-0 text-lg font-bold text-(--on-surface)" data-pay-title>Confirmar suscripción</h3>
+
+				{/* Formato recibo: cobro hoy vs renovación */}
+				<div class="plan-pay-receipt" data-pay-receipt>
+					<div class="plan-pay-receipt-today">
+						<span class="plan-pay-receipt-label" data-pay-today-label>A pagar hoy</span>
+						<span class="plan-pay-receipt-amount" data-pay-today-amount>—</span>
+						<span class="plan-pay-receipt-note hidden" data-pay-today-note></span>
+					</div>
+					<div class="plan-pay-receipt-future hidden" data-pay-future>
+						<span class="plan-pay-receipt-future-text" data-pay-future-note></span>
+					</div>
+				</div>
+
+				{/* Fallback legacy (oculto si hay recibo) */}
+				<p class="m-0 hidden text-[0.88rem] font-medium text-(--on-surface-variant)" data-pay-summary></p>
+				<p class="m-0 hidden text-[0.82rem] font-medium text-(--on-surface-variant)" data-pay-detail></p>
 			</div>
 
 			{/* Con tarjeta: confirmar cobro */}
@@ -722,10 +1047,182 @@ const defaultCardHint = defaultCard
 	.plan-modal-backdrop:not(.hidden) {
 		display: grid;
 	}
+	.plan-tabs {
+		display: inline-flex;
+		gap: 0.25rem;
+		padding: 0.25rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--on-surface) 4%, transparent);
+		width: fit-content;
+	}
+	.plan-tab {
+		border: 0;
+		background: transparent;
+		color: var(--on-surface-variant);
+		font-size: 0.9rem;
+		font-weight: 700;
+		padding: 0.55rem 1.15rem;
+		border-radius: 999px;
+		cursor: pointer;
+	}
+	.plan-tab.is-active {
+		background: var(--surface-bright, #fff);
+		color: var(--on-surface);
+		box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+	}
+	.plan-billing-summary {
+		display: grid;
+		gap: 1rem;
+		border-radius: 1.25rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright, #fff);
+		padding: 1.25rem 1.35rem;
+	}
+	.plan-billing-grid {
+		display: grid;
+		gap: 0.85rem;
+		grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+	}
+	.plan-billing-cell {
+		display: grid;
+		gap: 0.2rem;
+		padding: 0.85rem 0.95rem;
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--on-surface) 3.5%, transparent);
+	}
+	.plan-billing-cell-accent {
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+	}
+	.plan-billing-label {
+		font-size: 0.7rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+	.plan-billing-value {
+		font-size: 1.05rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+	.plan-billing-value-lg { font-size: 1.35rem; }
+	.plan-billing-cell small {
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+	.plan-billing-empty {
+		display: grid;
+		place-items: center;
+		gap: 0.5rem;
+		padding: 2rem 1rem;
+		border-radius: 1.1rem;
+		border: 1px dashed var(--shell-border);
+	}
+	.plan-invoice-table-wrap {
+		overflow-x: auto;
+		border-radius: 1.1rem;
+		border: 1px solid var(--shell-border);
+	}
+	.plan-invoice-table {
+		width: 100%;
+		border-collapse: collapse;
+		font-size: 0.9rem;
+	}
+	.plan-invoice-table th {
+		text-align: left;
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+		padding: 0.85rem 1rem;
+		border-bottom: 1px solid var(--shell-border);
+	}
+	.plan-invoice-table td {
+		padding: 0.95rem 1rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
+		vertical-align: top;
+		color: var(--on-surface);
+	}
+	.plan-invoice-table tr:last-child td { border-bottom: 0; }
+	.plan-invoice-desc { display: block; font-weight: 700; }
+	.plan-invoice-credit { display: block; margin-top: 0.2rem; color: var(--primary); font-weight: 600; }
+	.plan-invoice-amount { font-weight: 800; white-space: nowrap; }
+	.plan-invoice-card {
+		display: grid;
+		gap: 0.65rem;
+		padding: 1rem 1.1rem;
+		border-radius: 1.1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright, #fff);
+	}
+	.plan-inv-badge {
+		display: inline-flex;
+		align-items: center;
+		border-radius: 999px;
+		padding: 0.2rem 0.65rem;
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
+		white-space: nowrap;
+	}
+	.plan-inv-ok { background: color-mix(in srgb, #16a34a 18%, transparent); color: #15803d; }
+	.plan-inv-bad { background: color-mix(in srgb, #e11d48 16%, transparent); color: #be123c; }
+	.plan-inv-warn { background: color-mix(in srgb, #f59e0b 18%, transparent); color: #b45309; }
+	.plan-inv-muted { background: color-mix(in srgb, var(--on-surface) 8%, transparent); color: var(--on-surface-variant); }
+	:global(.dark) .plan-inv-ok { color: #86efac; }
+	:global(.dark) .plan-inv-bad { color: #fda4af; }
+	:global(.dark) .plan-inv-warn { color: #fcd34d; }
 	.plan-modal {
 		width: 100%; max-width: 26rem;
 		border-radius: 1.25rem; background: var(--surface-bright, #fff);
 		padding: 1.5rem; display: grid; gap: 1.1rem;
+	}
+	.plan-pay-receipt {
+		display: grid;
+		gap: 0.85rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--on-surface) 3%, transparent);
+		padding: 1rem 1.1rem;
+	}
+	.plan-pay-receipt-today {
+		display: grid;
+		gap: 0.2rem;
+	}
+	.plan-pay-receipt-label {
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+	.plan-pay-receipt-amount {
+		font-size: 1.75rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		line-height: 1.15;
+		color: var(--on-surface);
+	}
+	.plan-pay-receipt-note {
+		font-size: 0.8rem;
+		font-weight: 550;
+		color: var(--on-surface-variant);
+	}
+	.plan-pay-receipt-note.hidden,
+	.plan-pay-receipt-future.hidden { display: none; }
+	.plan-pay-receipt-future {
+		padding-top: 0.85rem;
+		border-top: 1px solid var(--shell-border);
+	}
+	.plan-pay-receipt-future-text {
+		display: block;
+		font-size: 0.84rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
 	}
 	.plan-pay-option {
 		display: flex; align-items: center; gap: 0.8rem;
@@ -967,13 +1464,27 @@ const defaultCardHint = defaultCard
 		background: #fff;
 	}
 
-	/* uPay: bottom sheet en mobile + tablet; alto/ancho acotados al form (sin vacío abajo) */
+	/* Bottom sheet en mobile + tablet (pago + uPay) */
 	@media (max-width: 1023px) {
+		.plan-pay-modal-backdrop:not(.hidden),
 		.plan-card-modal-backdrop:not(.hidden) {
 			display: flex;
 			align-items: flex-end;
 			justify-content: center;
 			padding: 0;
+		}
+		.plan-pay-sheet {
+			width: 100%;
+			max-width: 100%;
+			height: auto;
+			max-height: min(92dvh, 40rem);
+			margin: 0;
+			overflow-y: auto;
+			border-radius: 1.8rem 1.8rem 0 0;
+			padding: 0.35rem 1.15rem calc(1rem + env(safe-area-inset-bottom, 0px));
+			gap: 1rem;
+			animation: plan-card-sheet-in 180ms cubic-bezier(0.4, 0, 0.2, 1);
+			box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
 		}
 		.plan-card-sheet {
 			/* Ancho típico del formulario uPay; no estira a pantalla completa */
@@ -989,6 +1500,8 @@ const defaultCardHint = defaultCard
 			animation: plan-card-sheet-in 180ms cubic-bezier(0.4, 0, 0.2, 1);
 			box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
 		}
+		.plan-pay-sheet .plan-sheet-handle,
+		.plan-card-sheet .plan-sheet-handle,
 		.plan-sheet-handle {
 			display: flex;
 			padding-top: 0.15rem;
@@ -1030,6 +1543,7 @@ const defaultCardHint = defaultCard
 		to { transform: translateY(0); opacity: 1; }
 	}
 	@media (prefers-reduced-motion: reduce) {
+		.plan-pay-sheet,
 		.plan-card-sheet { animation: none; }
 	}
 </style>

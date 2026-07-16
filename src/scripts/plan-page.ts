@@ -31,19 +31,98 @@ export function initPlanPage() {
 
 	let hasCard = root.dataset.hasCard === '1';
 
+	// ---- Pestañas Plan | Facturación ----
+	const setTab = (tab: string) => {
+		const key = tab === 'billing' ? 'billing' : 'plan';
+		document.querySelectorAll<HTMLButtonElement>('[data-plan-tab]').forEach((btn) => {
+			const active = btn.dataset.planTab === key;
+			btn.classList.toggle('is-active', active);
+			btn.setAttribute('aria-selected', active ? 'true' : 'false');
+		});
+		document.querySelectorAll<HTMLElement>('[data-plan-panel]').forEach((panel) => {
+			const show = panel.dataset.planPanel === key;
+			panel.classList.toggle('hidden', !show);
+		});
+		const url = new URL(window.location.href);
+		if (key === 'plan') url.searchParams.delete('tab');
+		else url.searchParams.set('tab', key);
+		window.history.replaceState({}, '', url.toString());
+	};
+	document.querySelectorAll<HTMLButtonElement>('[data-plan-tab]').forEach((btn) => {
+		btn.addEventListener('click', () => setTab(btn.dataset.planTab || 'plan'));
+	});
+	const initialTab = new URLSearchParams(window.location.search).get('tab');
+	if (initialTab === 'billing') setTab('billing');
+
 	// ---- Modal de confirmación de cobro ----
 	const payModal = document.querySelector<HTMLElement>('[data-pay-modal]');
+	const modalTitle = document.querySelector<HTMLElement>('[data-pay-title]');
+	const modalReceipt = document.querySelector<HTMLElement>('[data-pay-receipt]');
+	const modalTodayLabel = document.querySelector<HTMLElement>('[data-pay-today-label]');
+	const modalTodayAmount = document.querySelector<HTMLElement>('[data-pay-today-amount]');
+	const modalTodayNote = document.querySelector<HTMLElement>('[data-pay-today-note]');
+	const modalFuture = document.querySelector<HTMLElement>('[data-pay-future]');
+	const modalFutureNote = document.querySelector<HTMLElement>('[data-pay-future-note]');
 	const modalSummary = document.querySelector<HTMLElement>('[data-pay-summary]');
+	const modalDetail = document.querySelector<HTMLElement>('[data-pay-detail]');
 	const modalLoading = document.querySelector<HTMLElement>('[data-pay-loading]');
 	const hasCardBlock = document.querySelector<HTMLElement>('[data-pay-has-card]');
 	const needCardBlock = document.querySelector<HTMLElement>('[data-pay-need-card]');
 	const payCardLabel = document.querySelector<HTMLElement>('[data-pay-card-label]');
 	const payCardHint = document.querySelector<HTMLElement>('[data-pay-card-hint]');
+	const confirmPayBtn = document.querySelector<HTMLButtonElement>('[data-confirm-pay]');
 	let pending: PendingTarget | null = null;
 
-	const openConfirm = (target: PendingTarget, summary: string) => {
+	type ConfirmReceipt = {
+		title: string;
+		todayAmount: number | null;
+		todayLabel?: string;
+		todayNote?: string;
+		futureNote?: string;
+		confirmLabel?: string;
+	};
+
+	const openConfirm = (target: PendingTarget, receipt: ConfirmReceipt) => {
 		pending = target;
-		if (modalSummary) modalSummary.textContent = summary;
+		if (modalTitle) modalTitle.textContent = receipt.title;
+
+		const hasToday = receipt.todayAmount !== null && receipt.todayAmount !== undefined;
+		modalReceipt?.classList.toggle('hidden', !hasToday);
+		modalSummary?.classList.add('hidden');
+		modalDetail?.classList.add('hidden');
+
+		if (hasToday) {
+			if (modalTodayLabel) {
+				modalTodayLabel.textContent = receipt.todayLabel || 'A pagar hoy';
+			}
+			if (modalTodayAmount) {
+				modalTodayAmount.textContent =
+					receipt.todayAmount! > 0 ? formatGs(receipt.todayAmount!) : 'Sin cobro hoy';
+			}
+			const todayNote = (receipt.todayNote || '').trim();
+			if (modalTodayNote) {
+				modalTodayNote.textContent = todayNote;
+				modalTodayNote.classList.toggle('hidden', !todayNote);
+			}
+			const futureNote = (receipt.futureNote || '').trim();
+			if (modalFuture && modalFutureNote) {
+				modalFutureNote.textContent = futureNote;
+				modalFuture.classList.toggle('hidden', !futureNote);
+			}
+		}
+
+		if (confirmPayBtn) {
+			if (receipt.confirmLabel) {
+				confirmPayBtn.textContent = receipt.confirmLabel;
+			} else if (hasToday && receipt.todayAmount! > 0) {
+				confirmPayBtn.textContent = `Pagar ${formatGs(receipt.todayAmount!)}`;
+			} else if (hasToday && receipt.todayAmount === 0) {
+				confirmPayBtn.textContent = 'Activar sin cobro';
+			} else {
+				confirmPayBtn.textContent = 'Pagar y activar';
+			}
+		}
+
 		if (payCardLabel) {
 			payCardLabel.textContent = root.dataset.defaultCardLabel || 'Tarjeta registrada';
 		}
@@ -175,11 +254,18 @@ export function initPlanPage() {
 			}
 			closeConfirm();
 			const hash = String(data?.data?.hash || '');
-			flash('Cobro iniciado. Confirmando el pago…', 'info');
-			if (hash) {
+			const needsPoll = data?.data?.requires_polling !== 0 && Boolean(hash);
+			if (needsPoll) {
+				flash('Cobro iniciado. Confirmando el pago…', 'info');
 				await pollInvoice(hash);
 			} else {
-				setTimeout(() => window.location.reload(), 1500);
+				flash(
+					typeof data?.message === 'string' && data.message.trim()
+						? data.message
+						: 'Listo. Se sumará al cargo de la próxima renovación.',
+					'success'
+				);
+				setTimeout(() => window.location.reload(), 1200);
 			}
 		} catch (error) {
 			modalLoading?.classList.add('hidden');
@@ -188,19 +274,66 @@ export function initPlanPage() {
 		}
 	}
 
+	const formatDateEs = (iso: string) => {
+		if (!iso) return 'el fin del periodo';
+		const d = new Date(iso);
+		if (Number.isNaN(d.getTime())) return 'el fin del periodo';
+		return d.toLocaleDateString('es-PY', { day: 'numeric', month: 'long', year: 'numeric' });
+	};
+
 	// --- Selección de plan ---
 	document.querySelectorAll<HTMLButtonElement>('[data-plan-select]').forEach((btn) => {
 		btn.addEventListener('click', async () => {
 			const code = btn.dataset.planCode || '';
 			const name = btn.dataset.planName || code;
 			const price = Number(btn.dataset.planPrice || '0');
+			const monthlyTotal = Number(btn.dataset.planMonthlyTotal || String(price));
 			const exempt = btn.dataset.billingExempt === '1';
+			const action = btn.dataset.planAction || 'activate';
+			const periodEnd = btn.dataset.periodEnd || '';
 
-			if (exempt) {
+			if (exempt || action === 'immediate') {
 				await changePlan(code, name, btn);
 				return;
 			}
-			openConfirm({ kind: 'PLAN', code, name }, `Plan ${name} · ${formatGs(price)} / mes`);
+
+			if (action === 'schedule') {
+				const confirmed = window.BookmateAlert?.confirm
+					? await window.BookmateAlert.confirm({
+							type: 'info',
+							title: `Pasar a ${name}`,
+							message: `Seguirás con tu plan actual hasta el ${formatDateEs(periodEnd)}. Ese día pasás a ${name} y se cobra ${formatGs(price)} / mes. No se genera saldo a favor por el plan (disfrutás el mes ya pagado).`,
+							confirmText: 'Programar cambio',
+							cancelText: 'Cancelar',
+						})
+					: window.confirm(`Programar cambio a ${name} el ${formatDateEs(periodEnd)}?`);
+				if (!confirmed) return;
+				await changePlan(code, name, btn, true);
+				return;
+			}
+
+			openConfirm(
+				{ kind: 'PLAN', code, name },
+				{
+					title: `Plan ${name}`,
+					todayAmount: price,
+					todayLabel: 'A pagar hoy',
+					todayNote: 'Cargo del primer mes con tu tarjeta predeterminada.',
+					futureNote:
+						monthlyTotal > price
+							? `En cada renovación: un solo cargo de ${formatGs(monthlyTotal)} (plan + almacenamiento).`
+							: `Luego se renueva automáticamente a ${formatGs(price)} / mes.`,
+					confirmLabel: price > 0 ? `Pagar ${formatGs(price)}` : 'Activar',
+				}
+			);
+		});
+	});
+
+	document.querySelectorAll<HTMLButtonElement>('[data-keep-plan]').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			const code = btn.dataset.planCode || '';
+			const name = btn.dataset.planName || code;
+			void changePlan(code, name, btn, false);
 		});
 	});
 
@@ -209,8 +342,35 @@ export function initPlanPage() {
 		btn.addEventListener('click', () => {
 			const code = btn.dataset.addonCode || '';
 			const name = btn.dataset.addonName || code;
-			openConfirm({ kind: 'STORAGE_ADDON', code, name }, name);
+			const monthly = Number(btn.dataset.addonPrice || '0');
+			const prorate = Number(btn.dataset.addonProrate || '0');
+			const days = Number(btn.dataset.addonDays || '0');
+			const isProrated = days > 0 && prorate > 0;
+			const todayAmount = days <= 0 ? 0 : isProrated ? prorate : monthly;
+			const dayLabel = days === 1 ? 'día restante' : 'días restantes';
+
+			openConfirm(
+				{ kind: 'STORAGE_ADDON', code, name },
+				{
+					title: name,
+					todayAmount,
+					todayLabel: 'A pagar hoy',
+					todayNote:
+						days <= 0
+							? 'Entra en el cargo de la próxima renovación.'
+							: isProrated && prorate < monthly
+								? `Prorrateo por los ${days} ${dayLabel} de tu ciclo`
+								: 'Cargo del mes completo hasta la renovación.',
+					futureNote: `A partir de tu próxima renovación, se sumarán ${formatGs(monthly)} / mes a tu plan actual.`,
+					confirmLabel:
+						todayAmount > 0 ? `Pagar ${formatGs(todayAmount)}` : 'Activar sin cobro',
+				}
+			);
 		});
+	});
+
+	document.querySelectorAll<HTMLButtonElement>('[data-addon-cancel]').forEach((btn) => {
+		btn.addEventListener('click', () => void cancelAddon(btn));
 	});
 
 	// --- Método de pago ---
@@ -255,11 +415,15 @@ export function initPlanPage() {
 		}
 	});
 
-	// --- Cambio de plan sin pago (founders/exentos) ---
-	async function changePlan(code: string, name: string, btn: HTMLButtonElement) {
+	async function changePlan(
+		code: string,
+		name: string,
+		btn: HTMLButtonElement,
+		scheduled = false
+	) {
 		const original = btn.textContent;
 		btn.disabled = true;
-		btn.textContent = 'Aplicando…';
+		btn.textContent = scheduled ? 'Programando…' : 'Aplicando…';
 		try {
 			const res = await fetch('/api/subscription/change-plan', {
 				method: 'POST',
@@ -270,12 +434,64 @@ export function initPlanPage() {
 			if (!res.ok || data?.status !== 'success') {
 				throw new Error(data?.message || 'No fue posible cambiar el plan.');
 			}
-			flash(`Tu plan cambió a ${name}.`, 'success');
+			const msg =
+				(typeof data?.message === 'string' && data.message.trim()) ||
+				(data?.data?.scheduled
+					? `Cambio a ${data?.data?.pending_plan_code || name} programado.`
+					: `Tu plan cambió a ${name}.`);
+			flash(msg, 'success');
 			setTimeout(() => window.location.reload(), 900);
 		} catch (error) {
 			btn.disabled = false;
 			btn.textContent = original;
 			flash(error instanceof Error ? error.message : 'No fue posible cambiar el plan.', 'error');
+		}
+	}
+
+	async function cancelAddon(btn: HTMLButtonElement) {
+		const code = btn.dataset.addonCode || '';
+		const name = btn.dataset.addonName || code;
+		const credit = Number(btn.dataset.addonCredit || '0');
+		const message =
+			credit > 0
+				? `Al cancelar ${name} se acreditarán ${formatGs(credit)} a favor por el tiempo no utilizado. El espacio deja de estar disponible de inmediato.`
+				: `Vas a cancelar ${name}. El espacio deja de estar disponible de inmediato.`;
+		const confirmed = window.BookmateAlert?.confirm
+			? await window.BookmateAlert.confirm({
+					type: 'warning',
+					title: 'Cancelar almacenamiento',
+					message,
+					confirmText: 'Cancelar paquete',
+					cancelText: 'Volver',
+				})
+			: window.confirm(message);
+		if (!confirmed) return;
+
+		const original = btn.textContent;
+		btn.disabled = true;
+		btn.textContent = 'Cancelando…';
+		try {
+			const res = await fetch('/api/subscription/addon/cancel', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ addon_code: code }),
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok || data?.status !== 'success') {
+				throw new Error(data?.message || 'No fue posible cancelar el almacenamiento.');
+			}
+			const granted = Number(data?.data?.credit_granted || 0);
+			flash(
+				granted > 0
+					? `Cancelado. Se acreditaron ${formatGs(granted)} a favor.`
+					: 'Almacenamiento cancelado.',
+				'success'
+			);
+			setTimeout(() => window.location.reload(), 900);
+		} catch (error) {
+			btn.disabled = false;
+			btn.textContent = original;
+			flash(error instanceof Error ? error.message : 'No fue posible cancelar.', 'error');
 		}
 	}
 

@@ -1,18 +1,18 @@
 import type { APIRoute } from 'astro';
 
-import { ROLES } from '../../../config/roles';
-import { changePlanWithOrds, SubscriptionApiError } from '../../../lib/subscription';
+import { ROLES } from '../../../../config/roles';
+import { cancelStorageAddonWithOrds, SubscriptionApiError } from '../../../../lib/subscription';
 
 const requireToken = (token: string | undefined) => {
 	if (!token) {
-		throw new SubscriptionApiError('No hay sesion valida para cambiar de plan.', 401);
+		throw new SubscriptionApiError('No hay sesion valida para cancelar el almacenamiento.', 401);
 	}
 	return token;
 };
 
 const requireAdminRole = (roleId: number | undefined) => {
 	if (Number(roleId || 0) !== ROLES.ADMIN) {
-		throw new SubscriptionApiError('Solo el administrador puede cambiar el plan.', 403);
+		throw new SubscriptionApiError('Solo el administrador puede cancelar almacenamiento.', 403);
 	}
 };
 
@@ -35,14 +35,13 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		const token = requireToken(locals.token);
 		requireAdminRole(locals.roleId);
 		const body = await request.json().catch(() => ({}));
-		const planCode = String((body as any)?.plan_code ?? '').trim().toUpperCase();
-		if (!planCode) throw new SubscriptionApiError('Falta el código de plan.', 400);
-		const result = await changePlanWithOrds(token, planCode);
-		const message = result.scheduled
-			? `Cambio a ${result.pending_plan_code || planCode} programado.`
-			: 'Plan actualizado.';
-		return Response.json({ status: 'success', message, data: result }, { status: 200 });
+		const addonCode = String((body as { addon_code?: string })?.addon_code ?? '')
+			.trim()
+			.toUpperCase();
+		if (!addonCode) throw new SubscriptionApiError('Falta el código del paquete.', 400);
+		const result = await cancelStorageAddonWithOrds(token, addonCode);
+		return Response.json({ status: 'success', data: result }, { status: 200 });
 	} catch (error) {
-		return toErrorResponse(error, 'No fue posible cambiar el plan.');
+		return toErrorResponse(error, 'No fue posible cancelar el almacenamiento.');
 	}
 };
