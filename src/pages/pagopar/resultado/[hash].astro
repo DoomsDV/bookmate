@@ -1,0 +1,11 @@
+---
+/**
+ * Return URL de Pagopar (panel: .../pagopar/resultado/($hash)).
+ * Reenvía al checkout de suscripción Hasel que ya hace polling de la factura.
+ */
+const hash = String(Astro.params.hash ?? '').trim();
+if (!hash) {
+	return Astro.redirect('/panel/plan', 302);
+}
+return Astro.redirect(`/panel/plan?checkout=${encodeURIComponent(hash)}`, 302);
+---
