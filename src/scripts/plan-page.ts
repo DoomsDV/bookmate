@@ -37,11 +37,20 @@ export function initPlanPage() {
 	const modalLoading = document.querySelector<HTMLElement>('[data-pay-loading]');
 	const hasCardBlock = document.querySelector<HTMLElement>('[data-pay-has-card]');
 	const needCardBlock = document.querySelector<HTMLElement>('[data-pay-need-card]');
+	const payCardLabel = document.querySelector<HTMLElement>('[data-pay-card-label]');
+	const payCardHint = document.querySelector<HTMLElement>('[data-pay-card-hint]');
 	let pending: PendingTarget | null = null;
 
 	const openConfirm = (target: PendingTarget, summary: string) => {
 		pending = target;
 		if (modalSummary) modalSummary.textContent = summary;
+		if (payCardLabel) {
+			payCardLabel.textContent = root.dataset.defaultCardLabel || 'Tarjeta registrada';
+		}
+		if (payCardHint) {
+			payCardHint.textContent =
+				root.dataset.defaultCardHint || 'Se debitará automáticamente cada mes.';
+		}
 		modalLoading?.classList.add('hidden');
 		hasCardBlock?.classList.toggle('hidden', !hasCard);
 		needCardBlock?.classList.toggle('hidden', hasCard);

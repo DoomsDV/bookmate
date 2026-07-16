@@ -195,10 +195,23 @@ const cardTone = (brand: string | null) => {
 	if (b.includes('visa')) return 'visa';
 	return 'generic';
 };
+const defaultCard = cards.find((c) => c.is_default) || cards[0] || null;
+const defaultCardLabel = defaultCard
+	? `${defaultCard.brand || 'Tarjeta'} · ${formatMaskedCard(defaultCard.masked_number)}`
+	: 'Tarjeta registrada';
+const defaultCardHint = defaultCard
+	? [defaultCard.card_type, defaultCard.issuer].filter(Boolean).join(' · ') ||
+		'Se debitará automáticamente cada mes.'
+	: 'Se debitará automáticamente cada mes.';
 ---
 
 <Layout pageTitle="Plan y facturación · Hasel">
-	<div class="plan-canvas min-h-screen w-full max-w-full overflow-x-hidden bg-(--page-background) transition-colors duration-300" data-has-card={hasCard ? '1' : '0'}>
+	<div
+		class="plan-canvas min-h-screen w-full max-w-full overflow-x-hidden bg-(--page-background) transition-colors duration-300"
+		data-has-card={hasCard ? '1' : '0'}
+		data-default-card-label={defaultCardLabel}
+		data-default-card-hint={defaultCardHint}
+	>
 		<div class="app-shell grid min-h-screen overflow-hidden bg-transparent" data-app-shell data-sidebar-state="expanded">
 			<SideNav currentPath={Astro.url.pathname} />
 
@@ -474,7 +487,11 @@ const cardTone = (brand: string | null) => {
 			<div class="grid gap-3" data-pay-has-card>
 				<div class="plan-pay-card" data-pay-card-info>
 					<span class="material-symbols-rounded">credit_card</span>
-					<span class="grid text-left"><strong data-pay-card-label>Tarjeta registrada</strong><small>Se debitará automáticamente cada mes.</small></span>
+					<span class="grid text-left gap-0.5">
+						<strong data-pay-card-label>{defaultCardLabel}</strong>
+						<small data-pay-card-hint>{defaultCardHint}</small>
+						<small class="opacity-80">Cobro con la tarjeta predeterminada · se renueva cada mes.</small>
+					</span>
 				</div>
 				<button type="button" class="plan-btn plan-btn-primary" data-confirm-pay>Pagar y activar</button>
 			</div>
