@@ -269,14 +269,19 @@
 	atc-chat-modal {
 		display: contents;
 	}
-
-	atc-chat-modal dialog::backdrop {
-		background: rgba(15, 23, 42, 0.45);
-		backdrop-filter: blur(2px);
-	}
 </style>
 
 <style is:global>
+	[data-atc-chat-modal]::backdrop {
+		background: rgba(15, 17, 21, 0.6);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+
+	html[data-theme='dark'] [data-atc-chat-modal]::backdrop {
+		background: rgba(0, 0, 0, 0.58);
+	}
+
 	.atc-thinking {
 		display: flex;
 		align-items: center;
