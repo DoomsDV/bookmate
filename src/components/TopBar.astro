@@ -227,7 +227,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			if (!sideNavShell || !sideNav || navToggles.length === 0) return;
 			sideNavShell.classList.replace('pointer-events-none', 'pointer-events-auto');
 			sideNavBackdrop?.classList.replace('opacity-0', 'opacity-100');
-			sideNav.classList.replace('-translate-x-full', 'translate-x-0');
+			sideNav.classList.replace('translate-y-full', 'translate-y-0');
 			setNavTogglesExpanded(true);
 			document.body.classList.add('overflow-hidden');
 		};
@@ -236,12 +236,12 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			if (!sideNavShell || !sideNav || navToggles.length === 0) return;
 			sideNavShell.classList.replace('pointer-events-auto', 'pointer-events-none');
 			sideNavBackdrop?.classList.replace('opacity-100', 'opacity-0');
-			sideNav.classList.replace('translate-x-0', '-translate-x-full');
+			sideNav.classList.replace('translate-y-0', 'translate-y-full');
 			setNavTogglesExpanded(false);
 			document.body.classList.remove('overflow-hidden');
 		};
 
-		const isSideNavOpen = () => Boolean(sideNav?.classList.contains('translate-x-0'));
+		const isSideNavOpen = () => Boolean(sideNav?.classList.contains('translate-y-0'));
 
 		let swipeStartX: number | null = null;
 		let swipeStartY: number | null = null;
@@ -273,9 +273,9 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			const absDeltaX = Math.abs(deltaX);
 			const absDeltaY = Math.abs(deltaY);
 
-			const swipedLeft = deltaX <= -52;
-			const mostlyHorizontal = absDeltaX > absDeltaY * 1.2;
-			if (swipedLeft && mostlyHorizontal) {
+			const swipedDown = deltaY >= 52;
+			const mostlyVertical = absDeltaY > absDeltaX * 1.2;
+			if (swipedDown && mostlyVertical) {
 				closeSideNav();
 			}
 
@@ -299,7 +299,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			if (desktopBreakpoint.matches) return toggleDesktopSidebar();
 			if (!sideNav) return;
 			
-			if (sideNav.classList.contains('translate-x-0')) {
+			if (sideNav.classList.contains('translate-y-0')) {
 				closeSideNav();
 			} else {
 				closeProfileMenus();
