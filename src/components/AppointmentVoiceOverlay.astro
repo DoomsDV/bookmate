@@ -160,8 +160,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		box-sizing: border-box;
 		width: 100vw;
 		max-width: none;
-		height: min(88dvh, 100%);
-		max-height: min(90dvh, 100%);
+		height: 60dvh;
+		max-height: 60dvh;
 		overflow: visible;
 		overscroll-behavior: contain;
 		color: var(--on-surface);
@@ -200,8 +200,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		flex-direction: column;
 		width: 100%;
 		height: 100%;
-		max-height: min(90dvh, 100%);
-		min-height: min(82dvh, 100%);
+		max-height: 60dvh;
+		min-height: 0;
 		overflow: hidden;
 		border-radius: 1.8rem 1.8rem 0 0;
 		border: 1px solid var(--shell-border);
@@ -368,13 +368,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		width: 2.75rem;
 		height: 2.75rem;
 		border-radius: 1rem;
-		background: linear-gradient(
-			135deg,
-			color-mix(in srgb, #4285f4 22%, transparent),
-			color-mix(in srgb, #ea4335 14%, transparent) 40%,
-			color-mix(in srgb, #fbbc05 14%, transparent) 70%,
-			color-mix(in srgb, #34a853 18%, transparent)
-		);
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
 		color: var(--primary);
 	}
 
@@ -463,9 +457,10 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		min-height: 0;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.95rem;
-		padding: 1.35rem 1.25rem 1.35rem;
+		gap: 0.7rem;
+		padding: 0.85rem 1.15rem 1rem;
 		text-align: center;
+		overflow: hidden;
 	}
 
 	.appointment-voice-status {
@@ -826,14 +821,14 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 0.95rem;
+		gap: 0.65rem;
 		width: calc(100% + 2.5rem);
 		margin-inline: -1.25rem;
-		min-height: 15rem;
-		margin-top: 0.35rem;
+		min-height: 0;
+		margin-top: 0.15rem;
 		padding-inline: 0;
 		--voice-level: 0.16;
-		--magic-height: 10.5rem;
+		--magic-height: 7.5rem;
 	}
 
 	.appointment-voice-visual {

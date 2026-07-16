@@ -722,6 +722,28 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
 	text-shadow: 0 0 18px color-mix(in srgb, var(--primary) 32%, transparent);
 }
 
+@media (max-width: 380px) {
+	.shell-header-zone:not(.sidebar-account-header) {
+		padding-left: 0.65rem;
+		padding-right: 0.65rem;
+	}
+
+	.topbar-brand-wordmark {
+		font-size: 0.85rem;
+		letter-spacing: 0.16em;
+	}
+
+	.topbar-actions {
+		gap: 0.3rem;
+	}
+
+	.topbar-action-btn {
+		width: 2.35rem;
+		height: 2.35rem;
+		border-radius: 0.9rem;
+	}
+}
+
 .material-symbols-rounded {
 	font-family: "Material Symbols Rounded";
 	font-weight: normal;

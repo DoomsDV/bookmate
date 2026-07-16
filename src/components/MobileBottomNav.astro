@@ -117,7 +117,9 @@ const isActive = (href?: string) => {
 			box-sizing: border-box;
 			min-height: 4.25rem;
 			/* Base generoso + safe-area (gesture bar iOS/Android). Sin depender solo del inset. */
-			padding: 0.45rem 0.25rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+			padding: 0.45rem 0.35rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+			padding-left: max(0.35rem, env(safe-area-inset-left, 0px));
+			padding-right: max(0.35rem, env(safe-area-inset-right, 0px));
 			border-top: 1px solid var(--shell-border);
 			background: color-mix(in srgb, var(--surface-bright, #fff) 92%, transparent);
 			backdrop-filter: blur(14px);
@@ -171,12 +173,24 @@ const isActive = (href?: string) => {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-width: 3.4rem;
+		min-width: min(3.4rem, 100%);
 		min-height: 1.7rem;
-		padding: 0.2rem 0.85rem;
+		padding: 0.2rem 0.55rem;
 		border-radius: 999px;
 		background: transparent;
 		transition: background-color 0.15s ease, color 0.15s ease;
+		box-sizing: border-box;
+	}
+
+	@media (max-width: 360px) {
+		.mobile-bottom-nav__icon-wrap {
+			min-width: 0;
+			padding-inline: 0.4rem;
+		}
+
+		.mobile-bottom-nav__label {
+			font-size: 0.56rem;
+		}
 	}
 
 	.mobile-bottom-nav__item.is-active .mobile-bottom-nav__icon-wrap {

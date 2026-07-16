@@ -11,9 +11,9 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim();
 ---
 
-<header class="shell-header-zone relative z-40 pl-4 pr-5 sm:px-6">
-	<div class="flex w-full items-center justify-between gap-3 sm:gap-4">
-		<div class="flex min-w-0 items-center gap-3">
+<header class="shell-header-zone relative z-40 pl-3 pr-3 sm:px-6">
+	<div class="flex w-full min-w-0 items-center justify-between gap-2 sm:gap-4">
+		<div class="flex min-w-0 items-center gap-2 sm:gap-3">
 			<button
 				type="button"
 				class="hidden size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) lg:flex sm:size-11"
@@ -32,7 +32,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			</div>
 		</div>
 
-		<div class="flex shrink-0 items-center gap-2 sm:gap-3">
+		<div class="topbar-actions flex min-w-0 shrink items-center justify-end gap-1.5 sm:gap-3">
 			<slot name="actions-before" />
 
 			<button
@@ -63,7 +63,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 			<button
 				type="button"
-				class="flex size-11 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong)"
+				class="topbar-action-btn flex size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:size-11"
 				aria-label="Atención al cliente"
 				title="Atención al cliente"
 				data-atc-button
@@ -73,7 +73,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 			<button
 				type="button"
-				class="flex size-11 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:hidden"
+				class="topbar-action-btn flex size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:hidden"
 				aria-label="Cambiar tema"
 				aria-pressed="false"
 				data-theme-toggle-mobile
@@ -83,7 +83,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 			<button
 				type="button"
-				class="hidden size-11 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:flex"
+				class="topbar-action-btn hidden size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:flex sm:size-11"
 				aria-label="Cambiar tema"
 				title="Cambiar tema"
 				aria-pressed="false"
@@ -93,9 +93,9 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 				<span class="sr-only" data-theme-label>Modo Oscuro</span>
 			</button>
 
-			<details class="group relative" data-profile-menu>
+			<details class="group relative shrink-0" data-profile-menu>
 				<summary
-					class="flex size-11 cursor-pointer list-none items-center justify-center rounded-2xl border border-(--primary-container) bg-(--primary-soft) text-(--primary) outline-none transition duration-200 hover:bg-(--primary-soft-hover) focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+					class="topbar-action-btn flex size-10 cursor-pointer list-none items-center justify-center rounded-2xl border border-(--primary-container) bg-(--primary-soft) text-(--primary) outline-none transition duration-200 hover:bg-(--primary-soft-hover) focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:size-11"
 					aria-label={`Abrir menu de ${userName}`}
 					data-settings-menu-trigger
 				>
