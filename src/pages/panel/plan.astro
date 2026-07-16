@@ -353,7 +353,7 @@ const maskCard = (masked: string | null) => masked || '•••• ••••
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Método de pago</h2>
 											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
-												Registrá una tarjeta para el cobro automático mensual de tu suscripción. El débito se realiza de forma segura vía Pagopar.
+												Registrá una tarjeta de crédito o débito para el cobro automático mensual. El cargo se realiza de forma segura vía Pagopar.
 											</p>
 										</div>
 
@@ -489,7 +489,7 @@ const maskCard = (masked: string | null) => masked || '•••• ••••
 			<div class="flex items-start justify-between gap-3">
 				<div class="grid gap-1">
 					<h3 id="plan-card-title" class="m-0 text-lg font-bold text-(--on-surface)">Registrar tarjeta</h3>
-					<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">Ingresá los datos de tu tarjeta de forma segura.</p>
+					<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">Crédito o débito · Visa / Mastercard. Los datos se cargan de forma segura.</p>
 				</div>
 				<button type="button" class="plan-card-close" data-card-close aria-label="Cerrar">
 					<span class="material-symbols-rounded">close</span>
@@ -727,15 +727,32 @@ const maskCard = (masked: string | null) => masked || '•••• ••••
 	.plan-pay-card .material-symbols-rounded { color: var(--primary); font-size: 1.5rem; }
 	.plan-pay-card small { color: var(--on-surface-variant); font-size: 0.78rem; }
 
-	.plan-modal-wide { max-width: 32rem; }
+	.plan-modal-wide {
+		max-width: 36rem;
+		width: min(100%, 36rem);
+		max-height: min(92vh, 52rem);
+		overflow: hidden;
+	}
 	.plan-card-close {
 		display: inline-grid; place-items: center;
 		width: 2rem; height: 2rem; border: 0; border-radius: 999px;
 		background: color-mix(in srgb, var(--on-surface-variant) 12%, transparent);
 		color: var(--on-surface-variant); cursor: pointer;
 	}
-	.plan-iframe-wrap { position: relative; min-height: 320px; display: grid; }
-	.plan-card-iframe { width: 100%; min-height: 320px; border: 0; border-radius: 0.75rem; }
+	.plan-iframe-wrap {
+		position: relative;
+		display: grid;
+		min-height: min(68vh, 36rem);
+		height: min(68vh, 36rem);
+	}
+	.plan-card-iframe {
+		width: 100%;
+		height: 100%;
+		min-height: min(68vh, 36rem);
+		border: 0;
+		border-radius: 0.75rem;
+		background: #fff;
+	}
 </style>
 
 <script>
