@@ -507,8 +507,9 @@ const defaultCardHint = defaultCard
 			</div>
 
 			<button type="button" class="plan-btn plan-btn-ghost" data-pay-cancel>Cancelar</button>
-			<div class="plan-modal-loading hidden" data-pay-loading>
-				<span class="plan-spinner"></span> Procesando el cobro…
+			<div class="plan-loading-chip hidden" data-pay-loading aria-live="polite">
+				<span class="material-symbols-rounded animate-spin text-[1.1rem] text-(--primary)">progress_activity</span>
+				<span>Procesando el cobro…</span>
 			</div>
 		</div>
 	</div>
@@ -527,8 +528,11 @@ const defaultCardHint = defaultCard
 				</button>
 			</div>
 			<div class="plan-iframe-wrap">
-				<div class="plan-modal-loading" data-card-loading>
-					<span class="plan-spinner"></span> Cargando formulario seguro…
+				<div class="plan-iframe-loading" data-card-loading aria-live="polite" aria-busy="true">
+					<span class="plan-loading-chip">
+						<span class="material-symbols-rounded animate-spin text-[1.1rem] text-(--primary)">progress_activity</span>
+						<span>Cargando formulario seguro…</span>
+					</span>
 				</div>
 				<iframe class="plan-card-iframe hidden" data-card-iframe title="Registro de tarjeta" allow="payment"></iframe>
 			</div>
@@ -732,10 +736,32 @@ const defaultCardHint = defaultCard
 	.plan-pay-option:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, transparent); }
 	.plan-pay-option .material-symbols-rounded { color: var(--primary); font-size: 1.5rem; }
 	.plan-pay-option small { color: var(--on-surface-variant); font-size: 0.78rem; }
-	.plan-modal-loading { align-items: center; gap: 0.6rem; font-size: 0.85rem; font-weight: 600; color: var(--on-surface-variant); }
-	.plan-modal-loading:not(.hidden) { display: flex; }
-	.plan-spinner { width: 1rem; height: 1rem; border-radius: 999px; border: 2px solid color-mix(in srgb, var(--primary) 30%, transparent); border-top-color: var(--primary); animation: plan-spin .7s linear infinite; }
-	@keyframes plan-spin { to { transform: rotate(360deg); } }
+	.plan-loading-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: color-mix(in srgb, var(--surface-bright, #fff) 92%, transparent);
+		padding: 0.55rem 0.95rem;
+		font-size: 0.84rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
+		box-shadow: 0 8px 22px rgba(15, 23, 42, 0.12);
+	}
+	.plan-loading-chip.hidden { display: none; }
+	.plan-iframe-loading {
+		position: absolute;
+		inset: 0;
+		z-index: 2;
+		display: grid;
+		place-items: center;
+		border-radius: 0.75rem;
+		background: color-mix(in srgb, var(--surface-bright, #fff) 55%, transparent);
+		backdrop-filter: blur(3px);
+		-webkit-backdrop-filter: blur(3px);
+	}
+	.plan-iframe-loading.hidden { display: none; }
 
 	/* Método de pago — tarjetas tipo plástico */
 	.plan-card-empty {
