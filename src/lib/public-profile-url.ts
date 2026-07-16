@@ -86,7 +86,7 @@ export const resolvePublicSiteOrigin = (fallbackOrigin = ''): string => {
 
 export const resolveOgImageUrl = (imageUrl: string, siteOrigin: string): string => {
 	const trimmed = String(imageUrl || '').trim();
-	const fallbackPath = '/icon-512x512.png';
+	const fallbackPath = '/icons/icon-512x512.png';
 
 	if (!trimmed) {
 		return siteOrigin ? new URL(fallbackPath, siteOrigin).href : fallbackPath;
