@@ -704,10 +704,16 @@ const defaultCardHint = defaultCard
 		background: var(--surface-bright, #fff); padding: 1.25rem;
 	}
 
+	/* Mismo overlay que [data-settings-modal]::backdrop (sin blur extra). */
 	.plan-modal-backdrop {
-		position: fixed; inset: 0; z-index: 10001;
+		position: fixed;
+		inset: 0;
+		z-index: 10001;
 		place-items: center;
-		background: rgba(15, 23, 42, .55); padding: 1rem;
+		padding: 1rem;
+		background: rgba(15, 17, 21, 0.6);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
 	}
 	.plan-modal-backdrop:not(.hidden) {
 		display: grid;
