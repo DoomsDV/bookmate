@@ -335,7 +335,7 @@ const toPageHref = (page: number) => {
 								</div>
 
 								<div
-									class="dashboard-ai-strip is-generating my-7"
+									class="dashboard-ai-strip is-generating mt-5 mb-3"
 									data-ai-summary-card
 									data-role-id={String(roleId)}
 									data-default-summary-short={defaultAiSummaryShort}
@@ -348,7 +348,7 @@ const toPageHref = (page: number) => {
 											<span class="dashboard-ai-strip__icon material-symbols-rounded">auto_awesome</span>
 										</span>
 										<div class="dashboard-ai-strip__meta">
-											<p class="dashboard-ai-strip__eyebrow">Resumen inteligente</p>
+											<p class="dashboard-ai-strip__eyebrow">Resumen inteligente del día</p>
 										</div>
 									</div>
 									<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
@@ -366,7 +366,7 @@ const toPageHref = (page: number) => {
 										hidden
 									>
 										<span class="dashboard-ai-strip__action-label">Ver análisis completo</span>
-										<span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
+										<span class="material-symbols-rounded" aria-hidden="true">expand_more</span>
 									</button>
 								</div>
 							</section>
@@ -1255,7 +1255,15 @@ const toPageHref = (page: number) => {
 			moreButton.hidden = !hasExpandedContent;
 		}
 
-		const lineText = truncatePreviewText(summaryShort || summaryFull, 160);
+		const rawPreview = summaryShort || summaryFull;
+		const sentenceParts = rawPreview
+			.split(/(?<=[.!?])\s+/)
+			.map((part) => part.trim())
+			.filter(Boolean);
+		const lineText =
+			sentenceParts.length > 1
+				? sentenceParts.slice(0, 3).join('\n')
+				: truncatePreviewText(rawPreview, 220);
 		lineNode.textContent = lineText;
 
 		if (insightNode) {
@@ -2529,44 +2537,14 @@ const toPageHref = (page: number) => {
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
-		gap: 0.85rem;
-		padding: 1rem 1.05rem 0;
+		gap: 0.95rem;
+		width: 100%;
+		max-width: none;
+		padding: 1.15rem 1.2rem;
 		border-radius: 1.25rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border, #d0d7e2) 82%, transparent);
-		background:
-			radial-gradient(
-				ellipse 70% 65% at 8% 12%,
-				color-mix(in srgb, var(--primary) 18%, transparent) 0%,
-				transparent 62%
-			),
-			radial-gradient(
-				ellipse 55% 50% at 28% 0%,
-				color-mix(in srgb, #38bdf8 10%, transparent) 0%,
-				transparent 58%
-			),
-			linear-gradient(
-				165deg,
-				color-mix(in srgb, var(--primary) 4%, #ffffff 96%) 0%,
-				#ffffff 100%
-			);
-		box-shadow: 0 8px 22px rgba(15, 23, 42, 0.045);
-	}
-
-	.dashboard-ai-strip::after {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		width: 3px;
-		border-radius: 1.25rem 0 0 1.25rem;
-		background: linear-gradient(
-			180deg,
-			color-mix(in srgb, var(--primary) 72%, #38bdf8 28%) 0%,
-			color-mix(in srgb, var(--primary) 28%, transparent) 100%
-		);
-		pointer-events: none;
-		z-index: 0;
+		border: 1px solid color-mix(in srgb, var(--shell-border, #d0d7e2) 88%, transparent);
+		background: color-mix(in srgb, var(--surface-bright, #ffffff) 88%, var(--page-background, #f4f6f8) 12%);
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
 	}
 
 	.dashboard-ai-strip__head,
@@ -2580,7 +2558,7 @@ const toPageHref = (page: number) => {
 	.dashboard-ai-strip__head {
 		display: flex;
 		align-items: center;
-		gap: 0.55rem;
+		gap: 0.45rem;
 		min-width: 0;
 	}
 
@@ -2588,17 +2566,17 @@ const toPageHref = (page: number) => {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.1rem;
-		height: 2.1rem;
+		width: 1.55rem;
+		height: 1.55rem;
 		flex-shrink: 0;
-		border-radius: 0.85rem;
+		border-radius: 0.45rem;
 		background: transparent;
 		border: 0;
 		box-shadow: none;
 	}
 
 	.dashboard-ai-strip__icon {
-		font-size: 1.25rem;
+		font-size: 1.2rem;
 		color: var(--primary);
 		line-height: 1;
 		animation: dashboard-ai-strip-sparkle 3.6s ease-in-out infinite;
@@ -2613,24 +2591,23 @@ const toPageHref = (page: number) => {
 
 	.dashboard-ai-strip__eyebrow {
 		margin: 0;
-		font-size: 0.68rem;
-		font-weight: 800;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: color-mix(in srgb, var(--primary) 72%, var(--on-surface-variant) 28%);
-		line-height: 1.2;
+		font-size: 0.92rem;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+		text-transform: none;
+		color: color-mix(in srgb, var(--primary) 78%, #1d4ed8 22%);
+		line-height: 1.25;
 	}
-
-
 
 	.dashboard-ai-strip__text {
 		margin: 0;
 		min-width: 0;
-		font-size: 0.9rem;
-		font-weight: 600;
-		line-height: 1.45;
-		color: color-mix(in srgb, var(--on-surface) 86%, #1e3a8a 14%);
+		font-size: 0.95rem;
+		font-weight: 550;
+		line-height: 1.55;
+		color: color-mix(in srgb, var(--on-surface) 90%, #0f172a 10%);
 		text-align: left;
+		white-space: pre-line;
 	}
 
 	.dashboard-ai-strip__skeleton {
@@ -2638,7 +2615,7 @@ const toPageHref = (page: number) => {
 		flex-direction: column;
 		gap: 0.55rem;
 		width: 100%;
-		padding-top: 0.1rem;
+		padding-top: 0.05rem;
 	}
 
 	.dashboard-ai-strip__skel-line {
@@ -2669,28 +2646,30 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-strip__action {
-		display: flex;
+		display: inline-flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		width: calc(100% + 2.1rem);
-		min-height: 0;
-		margin: 0.55rem -1.05rem 0;
-		padding: 0.72rem 1.05rem 0.85rem;
-		border: 0;
-		border-top: 1px solid color-mix(in srgb, var(--shell-border, #d0d7e2) 88%, transparent);
-		border-radius: 0;
-		background: transparent;
-		color: var(--primary);
-		font-size: 0.84rem;
+		justify-content: center;
+		gap: 0.4rem;
+		width: 100%;
+		min-height: 2.85rem;
+		margin: 0.15rem 0 0;
+		padding: 0.75rem 1rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border, #d0d7e2) 92%, transparent);
+		border-radius: 0.95rem;
+		background: color-mix(in srgb, var(--page-background, #f4f6f8) 72%, #ffffff 28%);
+		color: color-mix(in srgb, var(--primary) 82%, var(--on-surface) 18%);
+		font-size: 0.78rem;
 		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
 		cursor: pointer;
 		text-decoration: none;
-		text-align: left;
+		text-align: center;
 		transition:
 			color 160ms ease,
 			background 160ms ease,
-			padding-left 160ms ease;
+			border-color 160ms ease,
+			transform 160ms ease;
 	}
 
 	.dashboard-ai-strip__action[hidden] {
@@ -2702,29 +2681,30 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-strip__action .material-symbols-rounded {
-		font-size: 1.05rem;
+		font-size: 1.2rem;
 		line-height: 1;
-		opacity: 0.9;
+		opacity: 0.95;
 		transition: transform 160ms ease;
 	}
 
 	.dashboard-ai-strip__action:hover {
-		background: color-mix(in srgb, var(--primary) 7%, transparent);
-		color: color-mix(in srgb, var(--primary) 82%, #0f172a 18%);
+		background: color-mix(in srgb, var(--primary) 8%, var(--page-background, #f4f6f8) 92%);
+		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border, #d0d7e2) 72%);
+		color: var(--primary);
 	}
 
 	.dashboard-ai-strip__action:hover .material-symbols-rounded {
-		transform: translateX(2px);
+		transform: translateY(1px);
 	}
 
 	.dashboard-ai-strip__action:focus-visible {
 		outline: 2px solid var(--primary);
-		outline-offset: -2px;
+		outline-offset: 2px;
 	}
 
 	.dashboard-ai-strip.is-generating {
-		border-color: color-mix(in srgb, var(--shell-border, #d0d7e2) 70%, transparent);
-		box-shadow: 0 12px 32px rgba(59, 130, 246, 0.1);
+		border-color: color-mix(in srgb, var(--shell-border, #d0d7e2) 82%, transparent);
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.05);
 	}
 
 	.dashboard-ai-strip.is-generating::before {
@@ -2732,10 +2712,12 @@ const toPageHref = (page: number) => {
 		position: absolute;
 		inset: 0;
 		pointer-events: none;
-		background:
-			radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 42%),
-			radial-gradient(circle at 88% 78%, color-mix(in srgb, #38bdf8 14%, transparent), transparent 46%);
-		opacity: 0.85;
+		background: radial-gradient(
+			circle at 14% 20%,
+			color-mix(in srgb, var(--primary) 8%, transparent),
+			transparent 48%
+		);
+		opacity: 0.7;
 		animation: dashboard-ai-strip-glow 2.4s ease-in-out infinite;
 	}
 
@@ -2753,8 +2735,6 @@ const toPageHref = (page: number) => {
 	.dashboard-ai-strip.is-generating .dashboard-ai-strip__badge {
 		animation: dashboard-ai-strip-badge-glow 1.6s ease-in-out infinite;
 	}
-
-
 
 	.dashboard-ai-strip.is-generating .dashboard-ai-strip__text {
 		position: absolute;
@@ -2845,32 +2825,9 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip {
-		border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
-		background:
-			radial-gradient(
-				ellipse 75% 70% at 6% 10%,
-				color-mix(in srgb, #6366f1 22%, transparent) 0%,
-				transparent 58%
-			),
-			radial-gradient(
-				ellipse 60% 55% at 22% 0%,
-				color-mix(in srgb, var(--primary) 18%, transparent) 0%,
-				transparent 55%
-			),
-			linear-gradient(
-				165deg,
-				color-mix(in srgb, var(--surface-container-high, #242424) 90%, #1e1b4b 10%) 0%,
-				color-mix(in srgb, var(--surface-container-high, #242424) 96%, #0b1220 4%) 100%
-			);
-		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.18);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip::after {
-		background: linear-gradient(
-			180deg,
-			color-mix(in srgb, #93c5fd 78%, #818cf8 22%) 0%,
-			color-mix(in srgb, #93c5fd 18%, transparent) 100%
-		);
+		border: 1px solid color-mix(in srgb, var(--shell-border, #3a3a3a) 80%, transparent);
+		background: var(--surface-container-high, #222222);
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__badge {
@@ -2880,107 +2837,74 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__icon {
-		color: #93c5fd;
+		color: color-mix(in srgb, var(--primary) 70%, #93c5fd 30%);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__eyebrow {
-		color: #93c5fd;
+		color: color-mix(in srgb, var(--primary) 62%, #a5b4fc 38%);
 	}
 
-
 	html[data-theme='dark'] .dashboard-ai-strip__text {
-		color: color-mix(in srgb, #e8eefc 92%, white 8%);
+		color: var(--on-surface, #e3e3e3);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__skel-line {
-		background: color-mix(in srgb, #334155 72%, var(--primary) 28%);
+		background: color-mix(in srgb, var(--surface-container, #2b2b2b) 70%, #3a3a3a 30%);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__skel-line::after {
 		background: linear-gradient(
 			90deg,
 			transparent 0%,
-			color-mix(in srgb, #93c5fd 34%, transparent) 48%,
+			color-mix(in srgb, #ffffff 12%, transparent) 48%,
 			transparent 100%
 		);
-		opacity: 0.9;
+		opacity: 0.85;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__action {
-		border-top-color: color-mix(in srgb, #ffffff 10%, transparent);
-		background: transparent;
-		color: #bfdbfe;
+		border-color: color-mix(in srgb, var(--shell-border, #3a3a3a) 90%, transparent);
+		background: color-mix(in srgb, var(--page-background, #131314) 55%, var(--surface-container-high, #222222) 45%);
+		color: color-mix(in srgb, var(--primary) 55%, #c7d2fe 45%);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__action:hover {
-		background: color-mix(in srgb, #93c5fd 10%, transparent);
-		color: #e0f2fe;
+		background: color-mix(in srgb, var(--primary) 10%, var(--surface-container-high, #222222) 90%);
+		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border, #3a3a3a) 72%);
+		color: color-mix(in srgb, var(--primary) 45%, #e0e7ff 55%);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__action:focus-visible {
-		outline-color: #93c5fd;
+		outline-color: var(--primary);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip.is-generating {
-		border-color: color-mix(in srgb, #93c5fd 34%, transparent);
-		box-shadow:
-			0 14px 34px rgba(0, 0, 0, 0.28),
-			0 0 28px rgba(59, 130, 246, 0.12);
+		border-color: color-mix(in srgb, var(--shell-border, #3a3a3a) 85%, transparent);
+		box-shadow: none;
 	}
 
 	@media (min-width: 641px) {
 		.dashboard-ai-strip {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr) auto;
-			grid-template-areas:
-				'head action'
-				'text action';
-			align-items: center;
-			column-gap: 1rem;
-			row-gap: 0.45rem;
-			padding: 0.85rem 1rem;
-			border-radius: 1.1rem;
+			gap: 1.05rem;
+			width: 100%;
+			max-width: none;
+			padding: 1.3rem 1.45rem;
+			border-radius: 1.3rem;
 		}
 
-		.dashboard-ai-strip__head {
-			grid-area: head;
-		}
-
-		.dashboard-ai-strip__text,
-		.dashboard-ai-strip__skeleton {
-			grid-area: text;
-			padding-left: 3.05rem;
+		.dashboard-ai-strip__eyebrow {
+			font-size: 0.98rem;
 		}
 
 		.dashboard-ai-strip__text {
-			font-size: 0.88rem;
+			font-size: 0.98rem;
+			max-width: 52rem;
 		}
 
 		.dashboard-ai-strip__action {
-			grid-area: action;
-			width: auto;
-			min-height: 0;
-			margin: 0;
-			align-self: center;
-			justify-content: flex-end;
-			gap: 0.35rem;
-			padding: 0.4rem 0.65rem;
-			border-top: 0;
-			border-radius: 0.75rem;
-			background: transparent;
-			white-space: nowrap;
+			min-height: 3rem;
+			font-size: 0.8rem;
 		}
-
-		.dashboard-ai-strip__action:hover {
-			background: color-mix(in srgb, var(--primary) 8%, transparent);
-		}
-
-		.dashboard-ai-strip__badge {
-			width: 2.15rem;
-			height: 2.15rem;
-			border-radius: 0.75rem;
-		}
-
 	}
 
 	@media (prefers-reduced-motion: reduce) {
