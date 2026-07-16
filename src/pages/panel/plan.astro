@@ -184,7 +184,17 @@ const showDay15 = effState === 'TRIAL' || effState === 'TRIAL_EXPIRED';
 
 // Método de pago (cobro recurrente con tarjeta): solo admin y planes facturables.
 const showPaymentMethod = isAdmin && !!current && !current.billing_exempt;
-const maskCard = (masked: string | null) => masked || '•••• •••• •••• ••••';
+const formatMaskedCard = (masked: string | null) => {
+	const raw = String(masked || '').replace(/\s+/g, '');
+	if (!raw) return '•••• •••• •••• ••••';
+	return raw.replace(/(.{4})/g, '$1 ').trim();
+};
+const cardTone = (brand: string | null) => {
+	const b = String(brand || '').toLowerCase();
+	if (b.includes('master')) return 'mc';
+	if (b.includes('visa')) return 'visa';
+	return 'generic';
+};
 ---
 
 <Layout pageTitle="Plan y facturación · Hasel">
@@ -357,7 +367,7 @@ const maskCard = (masked: string | null) => masked || '•••• ••••
 											</p>
 										</div>
 
-										<div class="grid gap-3" data-cards-list>
+										<div class="plan-plastic-grid" data-cards-list>
 											{cards.length === 0 ? (
 												<div class="plan-card-empty" data-cards-empty>
 													<span class="material-symbols-rounded text-[1.5rem] text-(--on-surface-variant)">credit_card_off</span>
@@ -367,23 +377,26 @@ const maskCard = (masked: string | null) => masked || '•••• ••••
 												</div>
 											) : (
 												cards.map((card) => (
-													<article class={`plan-card-row ${card.is_default ? 'plan-card-row-default' : ''}`}>
-														<div class="flex items-center gap-3">
-															<span class="material-symbols-rounded text-[1.6rem] text-(--primary)">credit_card</span>
-															<div class="grid gap-0.5">
-																<span class="text-[0.95rem] font-bold text-(--on-surface)">
-																	{card.brand || 'Tarjeta'} · {maskCard(card.masked_number)}
-																</span>
-																<span class="text-[0.78rem] font-semibold text-(--on-surface-variant)">
-																	{[card.card_type, card.issuer].filter(Boolean).join(' · ') || card.provider}
-																</span>
+													<article class={`plan-plastic-card plan-plastic-${cardTone(card.brand)} ${card.is_default ? 'plan-plastic-default' : ''}`}>
+														<div class="plan-plastic-shine" aria-hidden="true"></div>
+														<div class="plan-plastic-top">
+															<div class="plan-plastic-meta">
+																<span class="plan-plastic-issuer">{card.issuer || card.brand || 'Tarjeta'}</span>
+																<span class="plan-plastic-type">{card.card_type || 'Crédito / Débito'}</span>
 															</div>
+															<span class="plan-plastic-brand">{card.brand || 'Card'}</span>
 														</div>
-														<div class="flex items-center gap-2">
-															{card.is_default && <span class="plan-badge plan-badge-ok">Predeterminada</span>}
+														<div class="plan-plastic-chip" aria-hidden="true"></div>
+														<p class="plan-plastic-number">{formatMaskedCard(card.masked_number)}</p>
+														<div class="plan-plastic-bottom">
+															{card.is_default ? (
+																<span class="plan-plastic-default-badge">Predeterminada</span>
+															) : (
+																<span class="plan-plastic-provider">{card.provider}</span>
+															)}
 															<button
 																type="button"
-																class="plan-card-del"
+																class="plan-plastic-del"
 																data-card-delete
 																data-card-id={String(card.id)}
 																aria-label="Eliminar tarjeta"
@@ -483,9 +496,10 @@ const maskCard = (masked: string | null) => masked || '•••• ••••
 		</div>
 	</div>
 
-	{/* Modal del iframe uPay (catastro de tarjeta) */}
-	<div class="plan-modal-backdrop hidden" data-card-modal>
-		<div class="plan-modal plan-modal-wide" role="dialog" aria-modal="true" aria-labelledby="plan-card-title">
+	{/* Modal del iframe uPay (catastro de tarjeta) — sheet desde abajo en mobile */}
+	<div class="plan-modal-backdrop plan-card-modal-backdrop hidden" data-card-modal>
+		<div class="plan-modal plan-modal-wide plan-card-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-card-title">
+			<div class="plan-sheet-handle" aria-hidden="true"><span></span></div>
 			<div class="flex items-start justify-between gap-3">
 				<div class="grid gap-1">
 					<h3 id="plan-card-title" class="m-0 text-lg font-bold text-(--on-surface)">Registrar tarjeta</h3>
@@ -700,25 +714,137 @@ const maskCard = (masked: string | null) => masked || '•••• ••••
 	.plan-spinner { width: 1rem; height: 1rem; border-radius: 999px; border: 2px solid color-mix(in srgb, var(--primary) 30%, transparent); border-top-color: var(--primary); animation: plan-spin .7s linear infinite; }
 	@keyframes plan-spin { to { transform: rotate(360deg); } }
 
-	/* Método de pago */
+	/* Método de pago — tarjetas tipo plástico */
 	.plan-card-empty {
 		display: flex; align-items: center; gap: 0.75rem;
 		border: 1px dashed var(--shell-border); border-radius: 1rem;
 		padding: 1.1rem 1.25rem;
+		grid-column: 1 / -1;
 	}
-	.plan-card-row {
-		display: flex; align-items: center; justify-content: space-between; gap: 1rem;
-		border: 1px solid var(--shell-border); border-radius: 1rem;
-		background: var(--surface-bright, #fff); padding: 1rem 1.25rem;
+	.plan-plastic-grid {
+		display: grid;
+		gap: 1rem;
+		grid-template-columns: 1fr;
 	}
-	.plan-card-row-default { border-color: color-mix(in srgb, var(--primary) 45%, transparent); }
-	.plan-card-del {
-		display: inline-grid; place-items: center;
-		width: 2.2rem; height: 2.2rem; border: 0; border-radius: 999px;
-		background: transparent; color: var(--on-surface-variant); cursor: pointer;
+	@media (min-width: 640px) {
+		.plan-plastic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+	}
+	.plan-plastic-card {
+		position: relative;
+		display: grid;
+		gap: 0.85rem;
+		aspect-ratio: 1.68 / 1;
+		min-height: 11.5rem;
+		padding: 1.15rem 1.25rem 1rem;
+		border-radius: 1.15rem;
+		overflow: hidden;
+		color: #f8fafc;
+		box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
+		isolation: isolate;
+	}
+	.plan-plastic-shine {
+		pointer-events: none;
+		position: absolute;
+		inset: 0;
+		background:
+			radial-gradient(120% 80% at 0% 0%, rgba(255,255,255,0.22), transparent 55%),
+			radial-gradient(90% 70% at 100% 100%, rgba(255,255,255,0.08), transparent 50%);
+		z-index: 0;
+	}
+	.plan-plastic-card > *:not(.plan-plastic-shine) { position: relative; z-index: 1; }
+	.plan-plastic-visa {
+		background: linear-gradient(145deg, #1e293b 0%, #0f766e 52%, #134e4a 100%);
+	}
+	.plan-plastic-mc {
+		background: linear-gradient(145deg, #1c1917 0%, #9a3412 48%, #7c2d12 100%);
+	}
+	.plan-plastic-generic {
+		background: linear-gradient(145deg, #111827 0%, #1f2937 55%, #374151 100%);
+	}
+	.plan-plastic-default {
+		outline: 2px solid color-mix(in srgb, var(--primary) 70%, #fff);
+		outline-offset: 2px;
+	}
+	.plan-plastic-top {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+	.plan-plastic-meta { display: grid; gap: 0.15rem; min-width: 0; }
+	.plan-plastic-issuer {
+		font-size: 0.92rem;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.plan-plastic-type {
+		font-size: 0.72rem;
+		font-weight: 600;
+		opacity: 0.78;
+		text-transform: capitalize;
+	}
+	.plan-plastic-brand {
+		flex-shrink: 0;
+		font-size: 0.95rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		opacity: 0.95;
+	}
+	.plan-plastic-chip {
+		width: 2.4rem;
+		height: 1.7rem;
+		border-radius: 0.35rem;
+		background: linear-gradient(135deg, #fde68a, #d97706 55%, #b45309);
+		box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+	}
+	.plan-plastic-number {
+		margin: 0;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: clamp(1rem, 3.6vw, 1.2rem);
+		font-weight: 650;
+		letter-spacing: 0.08em;
+	}
+	.plan-plastic-bottom {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-top: auto;
+	}
+	.plan-plastic-default-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.2rem 0.55rem;
+		border-radius: 999px;
+		font-size: 0.68rem;
+		font-weight: 700;
+		background: rgba(255,255,255,0.18);
+		backdrop-filter: blur(4px);
+	}
+	.plan-plastic-provider {
+		font-size: 0.72rem;
+		font-weight: 600;
+		opacity: 0.75;
+	}
+	.plan-plastic-del {
+		display: inline-grid;
+		place-items: center;
+		width: 2rem;
+		height: 2rem;
+		border: 0;
+		border-radius: 999px;
+		background: rgba(0,0,0,0.22);
+		color: #fecaca;
+		cursor: pointer;
 		transition: background .15s ease, color .15s ease;
 	}
-	.plan-card-del:hover { background: rgba(244,63,94,.12); color: #e11d48; }
+	.plan-plastic-del:hover { background: rgba(244,63,94,.35); color: #fff; }
+	.plan-plastic-del .material-symbols-rounded { font-size: 1.15rem; }
+
 	.plan-pay-card {
 		display: flex; align-items: center; gap: 0.8rem;
 		border: 1px solid var(--shell-border); border-radius: 1rem;
@@ -726,6 +852,18 @@ const maskCard = (masked: string | null) => masked || '•••• ••••
 	}
 	.plan-pay-card .material-symbols-rounded { color: var(--primary); font-size: 1.5rem; }
 	.plan-pay-card small { color: var(--on-surface-variant); font-size: 0.78rem; }
+
+	.plan-sheet-handle {
+		display: none;
+		justify-content: center;
+		padding-bottom: 0.15rem;
+	}
+	.plan-sheet-handle span {
+		width: 2.5rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 35%, transparent);
+	}
 
 	.plan-modal-wide {
 		max-width: 36rem;
@@ -752,6 +890,38 @@ const maskCard = (masked: string | null) => masked || '•••• ••••
 		border: 0;
 		border-radius: 0.75rem;
 		background: #fff;
+	}
+
+	/* uPay: bottom sheet en mobile (como Settings / SideNav) */
+	@media (max-width: 639px) {
+		.plan-card-modal-backdrop:not(.hidden) {
+			display: flex;
+			align-items: flex-end;
+			justify-content: center;
+			padding: 0;
+		}
+		.plan-card-sheet {
+			width: 100%;
+			max-width: 100%;
+			max-height: min(92dvh, 52rem);
+			margin: 0;
+			border-radius: 1.8rem 1.8rem 0 0;
+			padding: 0.65rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+			animation: plan-card-sheet-in 180ms cubic-bezier(0.4, 0, 0.2, 1);
+		}
+		.plan-sheet-handle { display: flex; }
+		.plan-iframe-wrap,
+		.plan-card-iframe {
+			min-height: min(62dvh, 30rem);
+			height: min(62dvh, 30rem);
+		}
+	}
+	@keyframes plan-card-sheet-in {
+		from { transform: translateY(100%); opacity: 0.96; }
+		to { transform: translateY(0); opacity: 1; }
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.plan-card-sheet { animation: none; }
 	}
 </style>
 
