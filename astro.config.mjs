@@ -27,6 +27,9 @@ export default defineConfig({
   // 2. Le pasamos la URL dinámica a Astro
   site: getSiteUrl(),
   output: 'server',
+  devToolbar: {
+    enabled: false,
+  },
   
   // 3. ¡VOLVEMOS A PRENDER LA SEGURIDAD!
   security: {
