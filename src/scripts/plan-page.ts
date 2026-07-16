@@ -118,6 +118,20 @@ export function initPlanPage() {
 	}
 
 	async function deleteCard(cardId: string, btn: HTMLButtonElement) {
+		if (!cardId) return;
+		const confirmMessage =
+			'Vas a eliminar esta tarjeta. Si es la predeterminada, el cobro automático dejará de funcionar hasta que registres otra.';
+		const confirmed = window.BookmateAlert?.confirm
+			? await window.BookmateAlert.confirm({
+					type: 'error',
+					title: 'Eliminar tarjeta',
+					message: confirmMessage,
+					confirmText: 'Eliminar',
+					cancelText: 'Cancelar',
+				})
+			: window.confirm(confirmMessage);
+		if (!confirmed) return;
+
 		btn.disabled = true;
 		try {
 			const res = await fetch(`/api/subscription/card/${encodeURIComponent(cardId)}`, { method: 'DELETE' });
