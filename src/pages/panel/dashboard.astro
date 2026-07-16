@@ -100,7 +100,7 @@ const progressHint =
 	todayTotal === 0
 		? 'Sin turnos programados para hoy.'
 		: todayCompleted === todayTotal
-			? 'Todas las citas de hoy ya fueron atendidas.'
+			? 'Todos los turnos de hoy ya fueron completados.'
 			: `${todayTotal - todayCompleted} por atender todavía.`;
 
 type SecondaryMetric = {
@@ -335,7 +335,7 @@ const toPageHref = (page: number) => {
 								</div>
 
 								<div
-									class="dashboard-ai-strip is-generating mt-5"
+									class="dashboard-ai-strip is-generating my-7"
 									data-ai-summary-card
 									data-role-id={String(roleId)}
 									data-default-summary-short={defaultAiSummaryShort}
@@ -389,7 +389,7 @@ const toPageHref = (page: number) => {
 										</article>
 										<article class="dashboard-profit-card" data-profit-accent="violet">
 											<div class="dashboard-profit-card__head">
-												<p class="dashboard-profit-label">Ticket promedio</p>
+												<p class="dashboard-profit-label">Promedio por turno</p>
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">confirmation_number</span>
 											</div>
 											<p class="dashboard-profit-value" data-profit-avg-ticket>&nbsp;</p>
@@ -431,8 +431,8 @@ const toPageHref = (page: number) => {
 															<p class="dashboard-day-progress__eyebrow">Progreso del día</p>
 															<p class="dashboard-day-progress__metric">
 																<span data-day-completed>{todayCompleted}</span>
-																<span class="dashboard-day-progress__of"> / {todayTotal}</span>
-																<span class="dashboard-day-progress__unit">citas</span>
+																<span class="dashboard-day-progress__of"> de {todayTotal}</span>
+																<span class="dashboard-day-progress__unit">turnos completados</span>
 															</p>
 															<p class="dashboard-day-progress__hint">{progressHint}</p>
 														</div>
@@ -446,7 +446,7 @@ const toPageHref = (page: number) => {
 														aria-valuemin="0"
 														aria-valuemax={Math.max(todayTotal, 1)}
 														aria-valuenow={todayCompleted}
-														aria-label={`${todayCompleted} de ${todayTotal} citas atendidas`}
+														aria-label={`${todayCompleted} de ${todayTotal} turnos completados`}
 													>
 														<span class="dashboard-day-progress__fill" style={`width: ${dayProgressPct}%`}></span>
 													</div>
@@ -1809,7 +1809,7 @@ const toPageHref = (page: number) => {
 			const completedCount = Number(data.month_completed_count) || 0;
 			setText(
 				'[data-profit-count]',
-				completedCount === 1 ? '1 cita atendida' : `${completedCount} citas atendidas`
+				completedCount === 1 ? '1 turno este mes' : `${completedCount} turnos este mes`
 			);
 
 			const momNode = panel.querySelector<HTMLElement>('[data-profit-mom]');
@@ -4671,7 +4671,8 @@ const toPageHref = (page: number) => {
 		}
 
 		.dashboard-summary-card .dashboard-ai-strip {
-			margin-top: 0.9rem;
+			margin-top: 1.35rem;
+			margin-bottom: 1.35rem;
 		}
 
 		.dashboard-profitability-shell {
