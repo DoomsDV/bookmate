@@ -73,14 +73,17 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 	const name = String(source?.name ?? '').trim();
 	if (name !== '') payload.name = name;
 
-	const profileSlug = String(source?.profile_slug ?? '').trim();
-	if (profileSlug !== '') payload.profile_slug = profileSlug;
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'profile_slug')) {
+		payload.profile_slug = String(source?.profile_slug ?? '').trim();
+	}
 
-	const description = String(source?.description ?? '').trim();
-	if (description !== '') payload.description = description;
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'description')) {
+		payload.description = String(source?.description ?? '').trim();
+	}
 
-	const publicWhatsapp = String(source?.public_whatsapp ?? '').trim();
-	if (publicWhatsapp !== '') payload.public_whatsapp = publicWhatsapp;
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'public_whatsapp')) {
+		payload.public_whatsapp = String(source?.public_whatsapp ?? '').trim();
+	}
 
 	const timeFormat = String(source?.time_format ?? '').trim();
 	if (timeFormat !== '') {

@@ -27,6 +27,7 @@ export const ROUTE_PERMISSIONS: readonly RoutePermission[] = [
 	{ path: '/calendar', roles: ALL_ROLES },
 	{ path: '/panel/services', roles: MANAGER_ROLES },
 	{ path: '/panel/locations', roles: MANAGER_ROLES },
+	{ path: '/panel/perfil-publico', roles: [ROLES.ADMIN] },
 	{ path: '/panel/specialties', roles: MANAGER_ROLES },
 	{ path: '/panel/professionals', roles: MANAGER_ROLES },
 	{ path: '/panel/schedules', roles: [ROLES.ADMIN, ROLES.RECEPCIONISTA, ROLES.PROFESIONAL] },

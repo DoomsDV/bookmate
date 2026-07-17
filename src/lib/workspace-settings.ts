@@ -253,3 +253,67 @@ export const updateWorkspaceSettingsWithOrds = async (
 
 	return parseWorkspaceActionResponse(response);
 };
+
+export type ProfileSlugAvailability = {
+	slug: string;
+	available: boolean;
+	reason: 'ok' | 'reserved' | 'taken' | 'invalid';
+};
+
+const PROFILE_SLUG_AVAILABLE_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_WORKSPACE_SLUG_AVAILABLE_URL,
+	'ORDS_WORKSPACE_SLUG_AVAILABLE_URL',
+	'/workspace/profile-slug-available'
+);
+
+export const checkProfileSlugAvailableWithOrds = async (
+	token: string,
+	slug: string
+): Promise<ProfileSlugAvailability> => {
+	if (!token) throw new WorkspaceSettingsApiError('Token de acceso requerido.', 401);
+	const safeSlug = String(slug || '').trim();
+	if (!safeSlug) {
+		return { slug: '', available: false, reason: 'invalid' };
+	}
+
+	const url = new URL(PROFILE_SLUG_AVAILABLE_URL);
+	url.searchParams.set('slug', safeSlug);
+
+	const response = await fetch(url.toString(), {
+		method: 'GET',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	let data: Record<string, unknown> | null = null;
+	try {
+		data = (await response.json()) as Record<string, unknown>;
+	} catch {
+		throw new WorkspaceSettingsApiError('No fue posible validar el enlace público.', 502);
+	}
+
+	if (!response.ok || !data || data.status !== 'success') {
+		throw new WorkspaceSettingsApiError(
+			String(data?.message || 'No fue posible validar el enlace público.'),
+			response.status || 400
+		);
+	}
+
+	const payload =
+		data.data && typeof data.data === 'object'
+			? (data.data as Record<string, unknown>)
+			: {};
+	const reasonRaw = String(payload.reason || '').trim().toLowerCase();
+	const reason: ProfileSlugAvailability['reason'] =
+		reasonRaw === 'reserved' || reasonRaw === 'taken' || reasonRaw === 'ok'
+			? reasonRaw
+			: 'invalid';
+
+	return {
+		slug: String(payload.slug || safeSlug).trim(),
+		available: payload.available === true || payload.available === 'true',
+		reason,
+	};
+};

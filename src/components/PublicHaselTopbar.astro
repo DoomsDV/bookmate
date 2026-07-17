@@ -1,0 +1,236 @@
+---
+interface Props {
+	/** Ancla o URL del CTA principal (ej. #equipo o /org/p/pro) */
+	reserveHref?: string;
+	reserveLabel?: string;
+	showLogin?: boolean;
+}
+
+const {
+	reserveHref = '#equipo',
+	reserveLabel = 'Reservar',
+	showLogin = true,
+} = Astro.props;
+---
+
+<header class="public-hasel-topbar" data-public-hasel-topbar>
+	<div class="public-hasel-topbar__inner">
+		<a href="/" class="public-hasel-topbar__brand no-underline" aria-label="Hasel — Inicio">
+			<img
+				src="/icons/icon-64.png"
+				alt=""
+				class="public-hasel-topbar__logo"
+				width="40"
+				height="40"
+				loading="eager"
+				decoding="async"
+			/>
+			<span class="public-hasel-topbar__wordmark">Hasel</span>
+		</a>
+
+		<div class="public-hasel-topbar__actions">
+			<button
+				type="button"
+				class="public-hasel-topbar__theme"
+				aria-label="Cambiar tema"
+				title="Cambiar tema"
+				aria-pressed="false"
+				data-hub-theme-toggle
+			>
+				<span class="material-symbols-rounded" data-hub-theme-icon aria-hidden="true">dark_mode</span>
+			</button>
+			{
+				showLogin ? (
+					<a href="/auth/login" class="public-hasel-topbar__login no-underline">
+						Iniciar sesión
+					</a>
+				) : null
+			}
+			<a href={reserveHref} class="public-hasel-topbar__cta no-underline" data-hub-reserve-cta>
+				{reserveLabel}
+			</a>
+		</div>
+	</div>
+</header>
+
+<script>
+	const THEME_KEY = 'bookmate-theme';
+
+	const applyTheme = (theme: 'light' | 'dark') => {
+		const isDark = theme === 'dark';
+		document.documentElement.dataset.theme = theme;
+		localStorage.setItem(THEME_KEY, theme);
+		const label = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
+		document.querySelectorAll<HTMLElement>('[data-hub-theme-toggle]').forEach((btn) => {
+			btn.setAttribute('aria-pressed', String(isDark));
+			btn.setAttribute('aria-label', label);
+			btn.setAttribute('title', label);
+		});
+		document.querySelectorAll<HTMLElement>('[data-hub-theme-icon]').forEach((icon) => {
+			icon.textContent = isDark ? 'light_mode' : 'dark_mode';
+		});
+	};
+
+	const resolveTheme = (): 'light' | 'dark' => {
+		const stored = localStorage.getItem(THEME_KEY);
+		if (stored === 'dark' || stored === 'light') return stored;
+		return 'dark';
+	};
+
+	const initTopbar = () => {
+		const topbar = document.querySelector<HTMLElement>('[data-public-hasel-topbar]');
+		if (!topbar) return;
+
+		applyTheme(resolveTheme());
+
+		document.querySelectorAll<HTMLElement>('[data-hub-theme-toggle]').forEach((btn) => {
+			if (btn.dataset.bound === '1') return;
+			btn.dataset.bound = '1';
+			btn.addEventListener('click', () => {
+				const isDark = document.documentElement.dataset.theme === 'dark';
+				applyTheme(isDark ? 'light' : 'dark');
+			});
+		});
+
+		const onScroll = () => {
+			topbar.classList.toggle('is-scrolled', window.scrollY > 8);
+		};
+		onScroll();
+		if (topbar.dataset.scrollBound !== '1') {
+			topbar.dataset.scrollBound = '1';
+			window.addEventListener('scroll', onScroll, { passive: true });
+		}
+	};
+
+	initTopbar();
+	document.addEventListener('astro:page-load', initTopbar);
+</script>
+
+<style>
+	.public-hasel-topbar {
+		position: sticky;
+		top: 0;
+		z-index: 40;
+		height: var(--hub-topbar-h, 4.25rem);
+		border-bottom: 1px solid transparent;
+		background: color-mix(in srgb, var(--surface, #fafbfc) 82%, transparent);
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
+		transition:
+			border-color 200ms ease,
+			box-shadow 200ms ease,
+			background 200ms ease;
+	}
+
+	:global(html[data-theme='dark']) .public-hasel-topbar {
+		background: color-mix(in srgb, var(--surface, #191919) 78%, transparent);
+	}
+
+	.public-hasel-topbar.is-scrolled {
+		border-bottom-color: var(--shell-border, rgba(148, 163, 184, 0.28));
+		box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+	}
+
+	:global(html[data-theme='dark']) .public-hasel-topbar.is-scrolled {
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+	}
+
+	.public-hasel-topbar__inner {
+		max-width: var(--hub-max, 1120px);
+		margin: 0 auto;
+		height: 100%;
+		padding: 0 var(--hub-pad-x, 1.25rem);
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.public-hasel-topbar__brand {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.55rem;
+		color: var(--on-surface, #1e293b);
+	}
+
+	.public-hasel-topbar__logo {
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 0.65rem;
+		object-fit: cover;
+	}
+
+	.public-hasel-topbar__wordmark {
+		font-weight: 800;
+		font-size: 1.2rem;
+		letter-spacing: -0.02em;
+		line-height: 1;
+	}
+
+	.public-hasel-topbar__actions {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+	}
+
+	.public-hasel-topbar__theme {
+		display: inline-grid;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 0.85rem;
+		border: 1px solid var(--shell-border, rgba(148, 163, 184, 0.35));
+		background: var(--control-surface, #fff);
+		color: var(--on-surface-variant, #64748b);
+		cursor: pointer;
+		transition: background 160ms ease, color 160ms ease;
+	}
+
+	.public-hasel-topbar__theme:hover {
+		background: var(--control-surface-strong, #f1f5f9);
+		color: var(--on-surface, #1e293b);
+	}
+
+	.public-hasel-topbar__theme .material-symbols-rounded {
+		font-size: 1.15rem;
+	}
+
+	.public-hasel-topbar__login {
+		display: none;
+		padding: 0.55rem 0.9rem;
+		border-radius: 999px;
+		font-weight: 700;
+		font-size: 0.92rem;
+		color: var(--on-surface-variant, #64748b);
+		transition: color 160ms ease;
+	}
+
+	.public-hasel-topbar__login:hover {
+		color: var(--on-surface, #1e293b);
+	}
+
+	.public-hasel-topbar__cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.6rem 1.05rem;
+		border-radius: 999px;
+		font-weight: 800;
+		font-size: 0.92rem;
+		background: #426edb;
+		color: #fff;
+		box-shadow: 0 8px 20px rgba(66, 110, 219, 0.28);
+		transition: background 160ms ease, transform 160ms ease;
+	}
+
+	.public-hasel-topbar__cta:hover {
+		background: #5a82e8;
+		transform: translateY(-1px);
+	}
+
+	@media (min-width: 640px) {
+		.public-hasel-topbar__login {
+			display: inline-flex;
+		}
+	}
+</style>

@@ -1,0 +1,725 @@
+---
+import Layout from '../../layouts/Layout.astro';
+import PublicHaselTopbar from '../../components/PublicHaselTopbar.astro';
+import { PublicBookingApiError, getPublicProfileSpecialtyLabel } from '../../lib/public-booking';
+import { buildGoogleMapsUrl } from '../../lib/public-booking-locations';
+import {
+	appendLocIdToBookingPath,
+	getPublicOrgHubWithOrds,
+	type PublicOrgHub,
+} from '../../lib/public-org-hub';
+import {
+	buildOrgHubPath,
+	resolveOgImageUrl,
+	resolvePublicSiteOrigin,
+} from '../../lib/public-profile-url';
+import { isReservedOrgSlug } from '../../lib/reserved-org-slugs';
+import '../../styles/global.css';
+import '../../styles/public-org-hub.css';
+
+const organizationSlug = String(Astro.params.orgSlug || '').trim();
+
+const toSafePageStatus = (status: number, hasHub: boolean) => {
+	if (hasHub) return 200;
+	const parsed = Number(status);
+	if (!Number.isInteger(parsed)) return 200;
+	if (parsed >= 400 && parsed < 500) return parsed;
+	return 200;
+};
+
+const initialsFromName = (name: string) => {
+	const parts = String(name || '')
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+	if (!parts.length) return '?';
+	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+	return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+};
+
+const whatsappHref = (phone: string) => {
+	const digits = String(phone || '').replace(/\D/g, '');
+	if (!digits) return '';
+	return `https://wa.me/${digits}`;
+};
+
+const googleMapsApiKey =
+	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
+	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
+	'';
+
+let hub: PublicOrgHub | null = null;
+let loadError = '';
+let statusCode = 500;
+
+if (!organizationSlug || isReservedOrgSlug(organizationSlug)) {
+	loadError = 'Negocio no encontrado.';
+	statusCode = 404;
+} else {
+	try {
+		hub = await getPublicOrgHubWithOrds(organizationSlug);
+		statusCode = 200;
+	} catch (error) {
+		const bookingError =
+			error instanceof PublicBookingApiError
+				? error
+				: new PublicBookingApiError('No fue posible cargar este negocio.', 500);
+		loadError = bookingError.message;
+		statusCode = bookingError.status || 500;
+	}
+}
+
+Astro.response.status = toSafePageStatus(statusCode, Boolean(hub));
+
+const siteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
+const canonicalPath = buildOrgHubPath(organizationSlug) || Astro.url.pathname;
+const organizationName = hub?.organization_name?.trim() || organizationSlug;
+const description = hub?.description?.trim() || '';
+const pageTitle = hub ? `${organizationName} | Hasel` : 'Negocio | Hasel';
+const metaDescription =
+	description ||
+	(hub
+		? `Reservá turnos online en ${organizationName} con Hasel.`
+		: 'Perfil público de negocio en Hasel.');
+const ogImage = hub ? resolveOgImageUrl(hub.logo_url, siteOrigin) : resolveOgImageUrl('', siteOrigin);
+
+const professionals = hub?.professionals || [];
+const locations = hub?.locations || [];
+const serviceCategories = hub?.service_categories || [];
+const singlePro = professionals.length === 1 ? professionals[0] : null;
+const reserveHref = singlePro?.booking_path || '#equipo';
+const hubUrl = siteOrigin ? `${siteOrigin}${canonicalPath}` : canonicalPath;
+const waHref = hub ? whatsappHref(hub.public_whatsapp) : '';
+const serializedProfessionals = professionals.length
+	? JSON.stringify(
+			professionals.map((pro) => ({
+				id: pro.id_professional,
+				location_ids: pro.location_ids,
+				booking_path: pro.booking_path,
+			}))
+		).replace(/</g, '\\u003c')
+	: '[]';
+---
+
+<Layout
+	pageTitle={pageTitle}
+	metaDescription={metaDescription}
+	canonicalPath={canonicalPath}
+	ogImage={ogImage}
+	ogImageAlt={hub ? `Logo de ${organizationName}` : 'Hasel'}
+>
+	<main
+		class="hub-root"
+		data-hub-root
+		data-google-maps-api-key={googleMapsApiKey}
+		data-hub-professionals={serializedProfessionals}
+	>
+		{
+			hub ? (
+				<>
+					<PublicHaselTopbar reserveHref={reserveHref} />
+
+					{hub.maintenance ? (
+						<p class="hub-maintenance" role="status">
+							La agenda online está en mantenimiento temporal. Podés contactar al local
+							directamente.
+						</p>
+					) : null}
+
+					<section class="hub-hero" aria-labelledby="hub-org-name">
+						<div class="hub-hero__banner" aria-hidden="true">
+							<span class="hub-hero__orb hub-hero__orb--a" />
+							<span class="hub-hero__orb hub-hero__orb--b" />
+						</div>
+						<div class="hub-hero__card">
+							<div class="hub-hero__card-top">
+								<div class="hub-hero__identity">
+									{hub.logo_url ? (
+										<img
+											src={hub.logo_url}
+											alt=""
+											class="hub-hero__logo"
+											width="84"
+											height="84"
+											loading="eager"
+											decoding="async"
+										/>
+									) : (
+										<div
+											class="hub-hero__logo hub-hero__logo--placeholder"
+											aria-hidden="true"
+										>
+											{initialsFromName(organizationName)}
+										</div>
+									)}
+									<div class="min-w-0">
+										<h1 id="hub-org-name" class="hub-hero__name">
+											{organizationName}
+										</h1>
+										{description ? (
+											<p class="hub-hero__tagline">{description}</p>
+										) : null}
+									</div>
+								</div>
+								<div class="hub-hero__actions">
+									{waHref ? (
+										<a
+											href={waHref}
+											class="hub-wa-link"
+											target="_blank"
+											rel="noopener noreferrer"
+											aria-label="Contactar por WhatsApp"
+										>
+											<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true"
+												>chat</span
+											>
+											WhatsApp
+										</a>
+									) : null}
+									<button
+										type="button"
+										class="hub-icon-btn"
+										data-hub-copy-link
+										data-hub-url={hubUrl}
+										aria-label="Copiar enlace del negocio"
+										title="Copiar enlace"
+									>
+										<span class="material-symbols-rounded" aria-hidden="true">link</span>
+									</button>
+								</div>
+							</div>
+						</div>
+					</section>
+
+					<nav class="hub-tabs" aria-label="Secciones del negocio" data-hub-tabs>
+						<button type="button" class="hub-tab is-active" data-hub-tab="overview">
+							Overview
+						</button>
+						<button type="button" class="hub-tab" data-hub-tab="equipo">Equipo</button>
+						<button type="button" class="hub-tab" data-hub-tab="sucursales">Sucursales</button>
+					</nav>
+
+					<div class="hub-panels">
+						<section
+							id="overview"
+							class="hub-panel is-active"
+							data-hub-panel="overview"
+							aria-labelledby="hub-about-title"
+						>
+							<h2 id="hub-about-title" class="hub-section-title">
+								Sobre {organizationName}
+							</h2>
+							{description ? (
+								<p class="hub-about-text">{description}</p>
+							) : (
+								<p class="hub-about-text hub-about-text--empty">
+									Este negocio todavía no agregó una descripción.
+								</p>
+							)}
+							{serviceCategories.length ? (
+								<div class="hub-categories" aria-label="Servicios principales">
+									<p class="hub-categories__label">Servicios</p>
+									<ul class="hub-categories__list">
+										{serviceCategories.map((category) => (
+											<li>
+												<span class="hub-category-tag">{category}</span>
+											</li>
+										))}
+									</ul>
+								</div>
+							) : null}
+						</section>
+
+						<section
+							id="equipo"
+							class="hub-panel"
+							data-hub-panel="equipo"
+							aria-labelledby="hub-team-title"
+							hidden
+						>
+							<div class="hub-panel-header">
+								<h2 id="hub-team-title" class="hub-section-title">Equipo</h2>
+								<div class="hub-location-filter" data-hub-location-filter hidden>
+									<span class="hub-location-filter__text" data-hub-location-filter-label></span>
+									<button
+										type="button"
+										class="hub-location-filter__clear"
+										data-hub-clear-location-filter
+									>
+										Ver todos
+									</button>
+								</div>
+							</div>
+							{professionals.length ? (
+								<div class="hub-team-grid" data-hub-team-grid>
+									{professionals.map((pro) => {
+										const specialty = getPublicProfileSpecialtyLabel(pro.specialty);
+										const initials = initialsFromName(pro.full_name);
+										return (
+											<a
+												href={pro.booking_path}
+												class="hub-pro-card"
+												data-hub-pro-card
+												data-pro-id={String(pro.id_professional)}
+												data-booking-path={pro.booking_path}
+												data-location-ids={pro.location_ids.join(',')}
+											>
+												<div class="hub-pro-card__head">
+													{pro.image_url ? (
+														<img
+															src={pro.image_url}
+															alt=""
+															class="hub-pro-card__avatar"
+															width="56"
+															height="56"
+															loading="lazy"
+															decoding="async"
+														/>
+													) : (
+														<div
+															class="hub-pro-card__avatar hub-pro-card__avatar--ph"
+															aria-hidden="true"
+														>
+															{initials}
+														</div>
+													)}
+													<div class="min-w-0">
+														<h3 class="hub-pro-card__name">{pro.full_name}</h3>
+														<p class="hub-pro-card__specialty">
+															{specialty || 'Profesional'}
+														</p>
+													</div>
+												</div>
+												<span class="hub-pro-card__cta">Reservar</span>
+											</a>
+										);
+									})}
+								</div>
+							) : (
+								<p class="hub-empty">
+									Todavía no hay profesionales con agenda pública en este negocio.
+								</p>
+							)}
+							<p class="hub-empty" data-hub-team-empty-filter hidden>
+								No hay profesionales con agenda en esta sucursal.
+							</p>
+						</section>
+
+						<section
+							id="sucursales"
+							class="hub-panel"
+							data-hub-panel="sucursales"
+							aria-labelledby="hub-locations-title"
+							hidden
+						>
+							<h2 id="hub-locations-title" class="hub-section-title">Sucursales</h2>
+							{locations.length ? (
+								<div class="hub-locations-grid">
+									{locations.map((loc) => {
+										const mapsUrl = buildGoogleMapsUrl(loc);
+										const hasCoords =
+											Number.isFinite(Number(loc.latitude)) &&
+											Number.isFinite(Number(loc.longitude));
+										const prosHere = professionals.filter((pro) =>
+											pro.location_ids.includes(loc.id_location)
+										);
+										const canFilterHere = prosHere.length > 0;
+										const reserveHereHref =
+											prosHere.length === 1
+												? appendLocIdToBookingPath(
+														prosHere[0].booking_path,
+														loc.id_location
+													)
+												: '#equipo';
+										return (
+											<article class="hub-location-card" data-hub-location-card>
+												<div class="hub-location-card__info">
+													<h3 class="hub-location-card__name">{loc.name}</h3>
+													{loc.address ? (
+														<p class="hub-location-card__address">{loc.address}</p>
+													) : null}
+													<div class="hub-location-card__actions">
+														{mapsUrl ? (
+															<a
+																href={mapsUrl}
+																class="hub-location-card__maps-link no-underline"
+																target="_blank"
+																rel="noopener noreferrer"
+															>
+																<span
+																	class="material-symbols-rounded text-[1.1rem]"
+																	aria-hidden="true"
+																	>open_in_new</span
+																>
+																Abrir en Google Maps
+															</a>
+														) : null}
+														{prosHere.length === 1 ? (
+															<a
+																href={reserveHereHref}
+																class="hub-location-card__cta no-underline"
+															>
+																Reservar en esta sucursal
+															</a>
+														) : (
+															<button
+																type="button"
+																class="hub-location-card__cta"
+																data-hub-view-pros-at-location
+																data-loc-id={canFilterHere ? String(loc.id_location) : '0'}
+																data-loc-name={canFilterHere ? loc.name : ''}
+															>
+																{canFilterHere
+																	? 'Ver profesionales aquí'
+																	: 'Ver profesionales'}
+															</button>
+														)}
+													</div>
+												</div>
+												{hasCoords ? (
+													<div
+														class="hub-location-card__map"
+														data-hub-map
+														data-lat={String(loc.latitude)}
+														data-lng={String(loc.longitude)}
+														data-title={loc.name}
+														aria-label={`Mapa de ${loc.name}`}
+													>
+														<div class="hub-location-card__map-placeholder">
+															<span
+																class="material-symbols-rounded"
+																aria-hidden="true">map</span
+															>
+															<span>Cargando mapa…</span>
+														</div>
+													</div>
+												) : (
+													<div class="hub-location-card__map hub-location-card__map--empty">
+														<span
+															class="material-symbols-rounded"
+															aria-hidden="true">location_off</span
+														>
+														<span>Sin coordenadas cargadas</span>
+													</div>
+												)}
+											</article>
+										);
+									})}
+								</div>
+							) : (
+								<p class="hub-empty">Sin sucursales publicadas.</p>
+							)}
+						</section>
+					</div>
+				</>
+			) : (
+				<>
+					<PublicHaselTopbar reserveHref="/" reserveLabel="Ir al inicio" showLogin={true} />
+					<div class="hub-error">
+						<h1>No encontramos este negocio</h1>
+						<p>{loadError || 'El enlace puede ser incorrecto o el negocio ya no está disponible.'}</p>
+						<a href="/">Volver a Hasel</a>
+					</div>
+				</>
+			)
+		}
+	</main>
+</Layout>
+
+<script>
+	type GoogleMapsNamespace = {
+		Map: new (el: HTMLElement, opts: Record<string, unknown>) => {
+			setCenter: (c: { lat: number; lng: number }) => void;
+		};
+		Marker: new (opts: Record<string, unknown>) => unknown;
+		event?: { trigger?: (instance: unknown, name: string) => void };
+	};
+
+	type WindowWithGoogleMaps = Window & {
+		google?: { maps?: GoogleMapsNamespace };
+		__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
+	};
+
+	const VALID_TABS = new Set(['overview', 'equipo', 'sucursales']);
+
+	const loadGoogleMaps = async (apiKey: string): Promise<GoogleMapsNamespace> => {
+		const win = window as WindowWithGoogleMaps;
+		if (win.google?.maps) return win.google.maps;
+		if (win.__bookmateGoogleMapsLoader) return win.__bookmateGoogleMapsLoader;
+
+		win.__bookmateGoogleMapsLoader = new Promise<GoogleMapsNamespace>((resolve, reject) => {
+			const existing = document.querySelector<HTMLScriptElement>('script[data-google-maps-loader]');
+			if (existing) {
+				existing.addEventListener(
+					'load',
+					() => {
+						const maps = (window as WindowWithGoogleMaps).google?.maps;
+						maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
+					},
+					{ once: true }
+				);
+				existing.addEventListener(
+					'error',
+					() => reject(new Error('No fue posible cargar Google Maps.')),
+					{ once: true }
+				);
+				return;
+			}
+
+			const script = document.createElement('script');
+			script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly`;
+			script.async = true;
+			script.defer = true;
+			script.dataset.googleMapsLoader = 'true';
+			script.addEventListener(
+				'load',
+				() => {
+					const maps = (window as WindowWithGoogleMaps).google?.maps;
+					maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
+				},
+				{ once: true }
+			);
+			script.addEventListener(
+				'error',
+				() => reject(new Error('No fue posible cargar Google Maps.')),
+				{ once: true }
+			);
+			document.head.appendChild(script);
+		});
+
+		try {
+			return await win.__bookmateGoogleMapsLoader;
+		} catch (error) {
+			win.__bookmateGoogleMapsLoader = null;
+			throw error;
+		}
+	};
+
+	const hubMapInstances = new WeakMap<
+		HTMLElement,
+		{ map: { setCenter: (c: { lat: number; lng: number }) => void }; center: { lat: number; lng: number } }
+	>();
+
+	const initHubMaps = async (root: HTMLElement) => {
+		const apiKey = String(root.dataset.googleMapsApiKey || '').trim();
+		const canvases = Array.from(root.querySelectorAll<HTMLElement>('[data-hub-map]'));
+		if (!canvases.length) return;
+
+		if (!apiKey) {
+			canvases.forEach((canvas) => {
+				if (canvas.dataset.mapReady === '1') return;
+				canvas.classList.add('hub-location-card__map--empty');
+				canvas.innerHTML =
+					'<span class="material-symbols-rounded" aria-hidden="true">map</span><span>Mapa no disponible</span>';
+			});
+			return;
+		}
+
+		try {
+			const maps = await loadGoogleMaps(apiKey);
+			const isDark = document.documentElement.dataset.theme === 'dark';
+			canvases.forEach((canvas) => {
+				const existing = hubMapInstances.get(canvas);
+				if (existing) {
+					window.setTimeout(() => {
+						maps.event?.trigger?.(existing.map, 'resize');
+						existing.map.setCenter(existing.center);
+					}, 80);
+					return;
+				}
+
+				const lat = Number(canvas.dataset.lat);
+				const lng = Number(canvas.dataset.lng);
+				if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+				canvas.innerHTML = '';
+				const center = { lat, lng };
+				const map = new maps.Map(canvas, {
+					center,
+					zoom: 16,
+					disableDefaultUI: false,
+					mapTypeControl: false,
+					streetViewControl: false,
+					fullscreenControl: true,
+					styles: isDark
+						? [
+								{ elementType: 'geometry', stylers: [{ color: '#1d1d1d' }] },
+								{ elementType: 'labels.text.fill', stylers: [{ color: '#8a8a8a' }] },
+								{ featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2c2c2c' }] },
+								{
+									featureType: 'water',
+									elementType: 'geometry',
+									stylers: [{ color: '#0e1624' }],
+								},
+							]
+						: undefined,
+				});
+				new maps.Marker({
+					map,
+					position: center,
+					title: String(canvas.dataset.title || 'Sucursal'),
+				});
+				hubMapInstances.set(canvas, { map, center });
+				canvas.dataset.mapReady = '1';
+				window.setTimeout(() => {
+					maps.event?.trigger?.(map, 'resize');
+					map.setCenter(center);
+				}, 80);
+			});
+		} catch {
+			canvases.forEach((canvas) => {
+				if (canvas.dataset.mapReady === '1') return;
+				canvas.classList.add('hub-location-card__map--empty');
+				canvas.innerHTML =
+					'<span class="material-symbols-rounded" aria-hidden="true">error</span><span>No se pudo cargar el mapa</span>';
+			});
+		}
+	};
+
+	const appendLocId = (bookingPath: string, locId: number) => {
+		const path = String(bookingPath || '').trim();
+		if (!path || !locId) return path;
+		const separator = path.includes('?') ? '&' : '?';
+		return `${path}${separator}loc_id=${locId}`;
+	};
+
+	const initHubPage = () => {
+		const root = document.querySelector<HTMLElement>('[data-hub-root]');
+		if (!root) return;
+
+		const copyBtn = root.querySelector<HTMLButtonElement>('[data-hub-copy-link]');
+		if (copyBtn && copyBtn.dataset.bound !== '1') {
+			copyBtn.dataset.bound = '1';
+			copyBtn.addEventListener('click', async () => {
+				const url = String(copyBtn.dataset.hubUrl || window.location.href).trim();
+				try {
+					await navigator.clipboard.writeText(url);
+					copyBtn.title = 'Enlace copiado';
+					copyBtn.setAttribute('aria-label', 'Enlace copiado');
+					window.setTimeout(() => {
+						copyBtn.title = 'Copiar enlace';
+						copyBtn.setAttribute('aria-label', 'Copiar enlace del negocio');
+					}, 1800);
+				} catch {
+					/* ignore */
+				}
+			});
+		}
+
+		const tabs = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-hub-tab]'));
+		const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-hub-panel]'));
+		const filterBar = root.querySelector<HTMLElement>('[data-hub-location-filter]');
+		const filterLabel = root.querySelector<HTMLElement>('[data-hub-location-filter-label]');
+		const emptyFilter = root.querySelector<HTMLElement>('[data-hub-team-empty-filter]');
+		const proCards = Array.from(root.querySelectorAll<HTMLAnchorElement>('[data-hub-pro-card]'));
+		let activeLocId = 0;
+
+		const applyLocationFilter = (locId: number, locName = '') => {
+			activeLocId = locId > 0 ? locId : 0;
+			let visibleCount = 0;
+
+			proCards.forEach((card) => {
+				const ids = String(card.dataset.locationIds || '')
+					.split(',')
+					.map((value) => Number(value))
+					.filter((value) => Number.isInteger(value) && value > 0);
+				const basePath = String(card.dataset.bookingPath || card.getAttribute('href') || '');
+				const matches = !activeLocId || ids.length === 0 || ids.includes(activeLocId);
+				card.hidden = !matches;
+				if (matches) {
+					visibleCount += 1;
+					card.href = activeLocId ? appendLocId(basePath, activeLocId) : basePath;
+				}
+			});
+
+			if (filterBar && filterLabel) {
+				if (activeLocId && locName) {
+					filterBar.hidden = false;
+					filterLabel.textContent = `En ${locName}`;
+				} else {
+					filterBar.hidden = true;
+					filterLabel.textContent = '';
+				}
+			}
+
+			if (emptyFilter) {
+				emptyFilter.hidden = !(activeLocId && visibleCount === 0 && proCards.length > 0);
+			}
+		};
+
+		const setActiveTab = (tabId: string, { updateHash = true } = {}) => {
+			const safeTab = VALID_TABS.has(tabId) ? tabId : 'overview';
+			tabs.forEach((tab) => {
+				const active = tab.dataset.hubTab === safeTab;
+				tab.classList.toggle('is-active', active);
+				tab.setAttribute('aria-selected', String(active));
+			});
+			panels.forEach((panel) => {
+				const active = panel.dataset.hubPanel === safeTab;
+				panel.classList.toggle('is-active', active);
+				panel.hidden = !active;
+			});
+			if (updateHash) {
+				const nextHash = `#${safeTab}`;
+				if (window.location.hash !== nextHash) {
+					history.replaceState(null, '', `${window.location.pathname}${nextHash}`);
+				}
+			}
+			if (safeTab === 'sucursales') {
+				void initHubMaps(root);
+			}
+			if (safeTab !== 'equipo' && activeLocId) {
+				/* keep filter when returning to equipo */
+			}
+		};
+
+		const hashTab = String(window.location.hash || '')
+			.replace(/^#/, '')
+			.trim();
+		setActiveTab(VALID_TABS.has(hashTab) ? hashTab : 'overview', { updateHash: false });
+
+		tabs.forEach((tab) => {
+			if (tab.dataset.bound === '1') return;
+			tab.dataset.bound = '1';
+			tab.addEventListener('click', () => {
+				if (tab.dataset.hubTab !== 'equipo') {
+					applyLocationFilter(0);
+				}
+				setActiveTab(String(tab.dataset.hubTab || 'overview'));
+			});
+		});
+
+		root.querySelectorAll<HTMLElement>('[data-hub-view-pros-at-location]').forEach((btn) => {
+			if (btn.dataset.bound === '1') return;
+			btn.dataset.bound = '1';
+			btn.addEventListener('click', () => {
+				const locId = Number(btn.getAttribute('data-loc-id') || 0);
+				const locName = String(btn.getAttribute('data-loc-name') || '').trim();
+				applyLocationFilter(locId, locName);
+				setActiveTab('equipo');
+			});
+		});
+
+		const clearFilterBtn = root.querySelector<HTMLButtonElement>('[data-hub-clear-location-filter]');
+		if (clearFilterBtn && clearFilterBtn.dataset.bound !== '1') {
+			clearFilterBtn.dataset.bound = '1';
+			clearFilterBtn.addEventListener('click', () => applyLocationFilter(0));
+		}
+
+		const reserveCta = document.querySelector<HTMLAnchorElement>('[data-hub-reserve-cta]');
+		if (reserveCta && reserveCta.dataset.bound !== '1') {
+			reserveCta.dataset.bound = '1';
+			reserveCta.addEventListener('click', (event) => {
+				const href = String(reserveCta.getAttribute('href') || '');
+				if (href === '#equipo') {
+					event.preventDefault();
+					applyLocationFilter(0);
+					setActiveTab('equipo');
+				}
+			});
+		}
+	};
+
+	initHubPage();
+	document.addEventListener('astro:page-load', initHubPage);
+</script>

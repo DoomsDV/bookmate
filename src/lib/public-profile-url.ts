@@ -35,6 +35,27 @@ export const buildGlobalPublicProfilePrefix = (publicDomain: string): string => 
 	}
 };
 
+export const buildOrgHubPath = (organizationSlug: string): string => {
+	const org = trimSlashes(organizationSlug);
+	if (!org) return '';
+	return `/${encodeURIComponent(org)}`;
+};
+
+export const buildOrgHubUrl = (publicDomain: string, organizationSlug: string): string => {
+	const path = buildOrgHubPath(organizationSlug);
+	if (!path) return '';
+
+	const domain = String(publicDomain || '').trim();
+	if (!domain) return path;
+
+	const withScheme = /^https?:\/\//i.test(domain) ? domain : `https://${domain}`;
+	try {
+		return `${new URL(withScheme).origin}${path}`;
+	} catch {
+		return `${domain.replace(/\/+$/, '')}${path}`;
+	}
+};
+
 export const buildPublicProfilePath = (organizationSlug: string, professionalSlug: string): string => {
 	const org = trimSlashes(organizationSlug);
 	const pro = trimSlashes(professionalSlug);

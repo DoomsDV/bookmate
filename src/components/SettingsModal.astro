@@ -5,6 +5,7 @@ import { ROLES } from '../config/roles';
 import {
 	buildGlobalPublicProfilePrefix,
 	formatPublicProfilePrefixDisplay,
+	resolvePublicSiteOrigin,
 } from '../lib/public-profile-url';
 
 interface Props {
@@ -25,6 +26,7 @@ const globalPublicProfilePrefix = buildGlobalPublicProfilePrefix(
 	rawPublicProfileDomain || Astro.url.origin
 );
 const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(globalPublicProfilePrefix);
+const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 ---
 
 <settings-manager
@@ -32,6 +34,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 	data-public-profile-domain={publicProfileDomain}
 	data-organization-slug={organizationSlug}
 	data-global-public-profile-prefix={globalPublicProfilePrefix}
+	data-org-hub-origin={orgHubSiteOrigin || Astro.url.origin}
 >
 <dialog
 	data-settings-modal
@@ -372,39 +375,22 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 
 				{
 					isAdmin ? (
-						<>
-							<form data-settings-branding-form class="grid gap-6 border-t border-(--shell-border) border-dashed pt-8">
-								<div class="grid gap-1">
-									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Página pública de reservas</h3>
-									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Personaliza como te ven los clientes.</p>
-								</div>
-								
-								<div class="grid gap-1.5 mt-2">
-									<div class="settings-upload-card" data-settings-logo-dropzone>
-										<div class="settings-upload-card__preview settings-upload-card__preview--logo">
-											<img data-settings-logo-preview class="hidden" alt="Vista previa del logo" />
-											<div data-settings-logo-placeholder class="settings-upload-card__placeholder">
-												<span class="material-symbols-rounded">image</span>
-											</div>
-										</div>
-										<div class="settings-upload-card__content">
-											<div class="settings-upload-card__copy">
-												<h3>Logo negocio <span class="text-rose-500">*</span></h3>
-												<p>Arrastra tu logo o selecciona un archivo JPG o PNG.</p>
-											</div>
-											<div class="settings-upload-card__actions">
-												<label for="settings-branding-logo-input" class="settings-upload-card__button">
-													<span class="material-symbols-rounded">add_photo_alternate</span>
-													<span data-settings-logo-file-name>Subir logo</span>
-													<input id="settings-branding-logo-input" type="file" name="logo_file" accept=".jpg,.jpeg,.png" class="sr-only" />
-												</label>
-												<span class="settings-upload-card__meta">Se mostrará una vista previa antes de guardar.</span>
-											</div>
-										</div>
-									</div>
-								</div>
-							</form>
-						</>
+						<div class="grid gap-3 border-t border-(--shell-border) border-dashed pt-8">
+							<div class="grid gap-1">
+								<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Página pública</h3>
+								<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
+									Logo, descripción y enlace del hub se configuran en Perfil Público.
+								</p>
+							</div>
+							<a
+								href="/panel/perfil-publico"
+								class="inline-flex w-fit items-center gap-2 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.92rem] font-bold text-(--on-surface) transition hover:border-(--primary)/40 hover:text-(--primary)"
+							>
+								<span class="material-symbols-rounded text-[1.15rem]" aria-hidden="true">public</span>
+								Ir a Perfil Público
+							</a>
+							<form data-settings-branding-form class="hidden" aria-hidden="true"></form>
+						</div>
 					) : null
 				}
 				<div class="border-t border-(--shell-border) border-dashed pt-2">
@@ -435,7 +421,19 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre del negocio <span class="text-rose-500">*</span></span><input name="name" maxlength="100" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 								</div>
 								<input type="hidden" name="profile_slug" />
-								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Descripción<textarea name="description" maxlength="1000" rows="4" placeholder="Ej: Consultorio de psicología clínica. Atención presencial y online." class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 resize-y"></textarea></label>
+								<a
+									href="/panel/perfil-publico"
+									class="flex items-start gap-3 rounded-2xl border border-(--shell-border) bg-(--control-surface) px-4 py-3.5 transition hover:border-(--primary)/40 hover:bg-(--surface-bright)"
+								>
+									<span class="material-symbols-rounded mt-0.5 text-(--primary)" aria-hidden="true">public</span>
+									<span class="grid min-w-0 gap-0.5">
+										<span class="text-[0.95rem] font-bold text-(--on-surface)">Perfil Público</span>
+										<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+											Configurá logo, descripción y enlace en Perfil Público
+										</span>
+									</span>
+									<span class="material-symbols-rounded ml-auto mt-0.5 text-(--on-surface-variant)" aria-hidden="true">chevron_right</span>
+								</a>
 								<div class="border-t border-(--shell-border) border-dashed" role="separator"></div>
 								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 									<span>Texto por defecto para precios ocultos <span class="text-rose-500">*</span></span>
@@ -1047,6 +1045,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 		private publicProfileDomain = '';
 		private organizationSlug = '';
 		private globalPublicProfilePrefix = '';
+		private orgHubOrigin = '';
 
 		private els!: {
 			modal: HTMLDialogElement | null;
@@ -1115,6 +1114,7 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			this.publicProfileDomain = String(this.dataset.publicProfileDomain || '');
 			this.organizationSlug = String(this.dataset.organizationSlug || '').trim();
 			this.globalPublicProfilePrefix = String(this.dataset.globalPublicProfilePrefix || '').trim();
+			this.orgHubOrigin = String(this.dataset.orgHubOrigin || '').trim();
 
 			this.els = {
 				modal: this.querySelector<HTMLDialogElement>('[data-settings-modal]'),
@@ -1309,6 +1309,13 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 			if (copyUrlBtn && this.contains(copyUrlBtn)) {
 				event.preventDefault();
 				void this.copyPublicProfileUrl(copyUrlBtn);
+				return;
+			}
+
+			const copyOrgHubBtn = target.closest<HTMLButtonElement>('[data-copy-settings-org-hub-url]');
+			if (copyOrgHubBtn && this.contains(copyOrgHubBtn)) {
+				event.preventDefault();
+				void this.copyOrgHubUrl(copyOrgHubBtn);
 				return;
 			}
 
@@ -1525,6 +1532,48 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				}, 1400);
 			} catch {
 				this.showFeedback('profile', 'No fue posible copiar la URL. Intenta nuevamente.', 'error');
+			}
+		}
+
+		private getOrgHubUrl() {
+			const slugInput = this.querySelector<HTMLInputElement>(
+				'[data-settings-workspace-form] [name="profile_slug"]'
+			);
+			const slug = String(slugInput?.value || this.organizationSlug || '')
+				.trim()
+				.replace(/^\/+|\/+$/g, '');
+			if (!slug) return '';
+			const origin = String(this.orgHubOrigin || window.location.origin || '').replace(/\/+$/, '');
+			return origin ? `${origin}/${encodeURIComponent(slug)}` : `/${encodeURIComponent(slug)}`;
+		}
+
+		private syncOrgHubUrlDisplay() {
+			const el = this.querySelector<HTMLElement>('[data-settings-org-hub-url]');
+			if (!el) return;
+			const url = this.getOrgHubUrl();
+			el.textContent = url || '—';
+			el.setAttribute('title', url || '');
+		}
+
+		private async copyOrgHubUrl(button: HTMLButtonElement) {
+			const url = this.getOrgHubUrl();
+			if (!url) {
+				this.showFeedback('workspace', 'No hay enlace público del negocio para copiar.', 'error');
+				return;
+			}
+
+			const icon = button.querySelector<HTMLElement>('[data-copy-settings-org-hub-url-icon]');
+			try {
+				await this.writeClipboardText(url);
+				if (icon) icon.textContent = 'check';
+				button.classList.add('text-emerald-500');
+				this.showFeedback('workspace', 'Enlace del negocio copiado al portapapeles.', 'success');
+				window.setTimeout(() => {
+					if (icon) icon.textContent = 'content_copy';
+					button.classList.remove('text-emerald-500');
+				}, 1400);
+			} catch {
+				this.showFeedback('workspace', 'No fue posible copiar la URL. Intenta nuevamente.', 'error');
 			}
 		}
 
@@ -2284,6 +2333,10 @@ const globalPublicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(global
 				'[data-settings-workspace-form] [name="hidden_public_price_label"]',
 				String(workspace?.hidden_public_price_label || 'A evaluar'),
 			);
+			if (workspace?.profile_slug) {
+				this.organizationSlug = String(workspace.profile_slug).trim();
+			}
+			this.syncOrgHubUrlDisplay();
 			this.syncHiddenPricePreview();
 			this.fillSystemSettings(workspace);
 			

@@ -1,0 +1,364 @@
+---
+import type { PublicOrgHub } from '../lib/public-org-hub';
+import type { WorkspaceSettingsData } from '../lib/workspace-settings-shared';
+import {
+	buildOrgHubUrl,
+	resolvePublicSiteOrigin,
+} from '../lib/public-profile-url';
+
+interface Props {
+	workspace: WorkspaceSettingsData;
+	hub: PublicOrgHub | null;
+	organizationName: string;
+}
+
+const DESC_MAX = 500;
+
+const { workspace, hub, organizationName } = Astro.props;
+const siteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
+const initialSlug = workspace.profile_slug || '';
+const hubUrl = initialSlug ? buildOrgHubUrl(siteOrigin || Astro.url.origin, initialSlug) : '';
+const domainLabel = (siteOrigin || Astro.url.origin).replace(/^https?:\/\//i, '').replace(/\/+$/, '');
+const whatsappDigits = String(workspace.public_whatsapp || '').replace(/\D/g, '');
+const whatsappLocal = whatsappDigits.startsWith('595')
+	? whatsappDigits.slice(3)
+	: whatsappDigits;
+const descriptionValue = String(workspace.description || '').slice(0, DESC_MAX);
+
+const initials = (() => {
+	const parts = organizationName.trim().split(/\s+/).filter(Boolean);
+	if (!parts.length) return '?';
+	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+	return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+})();
+
+const payload = {
+	workspace: { ...workspace, description: descriptionValue },
+	hub,
+	organizationName,
+	siteOrigin: siteOrigin || Astro.url.origin,
+	domainLabel,
+	descMax: DESC_MAX,
+};
+const serialized = JSON.stringify(payload).replace(/</g, '\\u003c');
+---
+
+<public-profile-editor data-ppe-root data-ppe-bootstrap={serialized}>
+	<div class="ppe-page">
+		<header class="ppe-header">
+			<div>
+				<h1 class="ppe-header__title">Perfil Público</h1>
+				<p class="ppe-header__sub">
+					Configurá cómo ven tu negocio los clientes en Hasel. Los cambios se reflejan en la vista previa.
+				</p>
+			</div>
+			<div class="ppe-header__actions">
+				<a
+					class="ppe-btn ppe-btn-secondary"
+					href={hubUrl || '#'}
+					target="_blank"
+					rel="noopener noreferrer"
+					data-ppe-open-public
+				>
+					<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">open_in_new</span>
+					Ver página pública
+				</a>
+			</div>
+		</header>
+
+		<div data-ppe-feedback class="ppe-feedback" hidden></div>
+
+		<div class="ppe-layout">
+			<form class="ppe-form-col" id="ppe-form" data-ppe-form>
+				<details class="ppe-accordion" open>
+					<summary>
+						<span class="material-symbols-rounded" aria-hidden="true">link</span>
+						Enlace del perfil
+						<span class="material-symbols-rounded ppe-accordion__chevron" aria-hidden="true"
+							>expand_more</span
+						>
+					</summary>
+					<div class="ppe-accordion__body">
+						<div class="ppe-field">
+							<span class="ppe-field__label">URL pública <span class="text-rose-500">*</span></span>
+							<div class="ppe-slug-row" data-ppe-slug-row>
+								<span class="ppe-slug-prefix" title={`${domainLabel}/`}>{domainLabel}/</span>
+								<div class="ppe-slug-input-wrap">
+									<input
+										class="ppe-input"
+										type="text"
+										name="profile_slug"
+										maxlength="100"
+										required
+										autocomplete="off"
+										spellcheck="false"
+										value={initialSlug}
+										data-ppe-slug
+										placeholder="mi-negocio"
+									/>
+									<span class="ppe-slug-inline-icon" data-ppe-slug-icon hidden aria-hidden="true">
+										<span class="material-symbols-rounded">check_circle</span>
+									</span>
+								</div>
+								<button
+									type="button"
+									class="ppe-icon-btn"
+									data-ppe-copy-url
+									aria-label="Copiar enlace"
+									title="Copiar enlace"
+								>
+									<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true"
+										>content_copy</span
+									>
+								</button>
+							</div>
+							<p class="ppe-slug-meta">
+								<span class="ppe-slug-status is-pending" data-ppe-slug-status>Validando…</span>
+								<span class="ppe-field__hint" data-ppe-slug-hint>Ej: {domainLabel}/mi-peluqueria</span>
+							</p>
+						</div>
+					</div>
+				</details>
+
+				<details class="ppe-accordion" open>
+					<summary>
+						<span class="material-symbols-rounded" aria-hidden="true">palette</span>
+						Apariencia
+						<span class="material-symbols-rounded ppe-accordion__chevron" aria-hidden="true"
+							>expand_more</span
+						>
+					</summary>
+					<div class="ppe-accordion__body">
+						<div class="ppe-field">
+							<span class="ppe-field__label">Logo del negocio</span>
+							<label class="ppe-logo-drop" data-ppe-logo-dropzone>
+								<img
+									src={workspace.logo_url || ''}
+									alt=""
+									class={`ppe-logo-preview ${workspace.logo_url ? '' : 'hidden'}`}
+									data-ppe-logo-preview
+									width="88"
+									height="88"
+								/>
+								<div
+									class={`ppe-logo-preview ppe-logo-preview--ph ${workspace.logo_url ? 'hidden' : ''}`}
+									data-ppe-logo-placeholder
+								>
+									{initials}
+								</div>
+								<p class="ppe-field__hint">JPG o PNG. Arrastrá o hacé clic para subir.</p>
+								<span class="ppe-btn ppe-btn-secondary" data-ppe-logo-file-label>Subir logo</span>
+								<input
+									type="file"
+									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+									class="sr-only"
+									data-ppe-logo-input
+								/>
+							</label>
+						</div>
+					</div>
+				</details>
+
+				<details class="ppe-accordion" open>
+					<summary>
+						<span class="material-symbols-rounded" aria-hidden="true">edit_note</span>
+						Información
+						<span class="material-symbols-rounded ppe-accordion__chevron" aria-hidden="true"
+							>expand_more</span
+						>
+					</summary>
+					<div class="ppe-accordion__body">
+						<div class="ppe-field">
+							<label for="ppe-description">Descripción (Sobre nosotros)</label>
+							<textarea
+								id="ppe-description"
+								class="ppe-textarea"
+								name="description"
+								maxlength={DESC_MAX}
+								rows="4"
+								placeholder="Contá qué hace tu negocio y por qué elegirte."
+								data-ppe-description>{descriptionValue}</textarea
+							>
+							<span class="ppe-field__hint"
+								><span data-ppe-desc-count>{descriptionValue.length}</span>/{DESC_MAX} caracteres</span
+							>
+						</div>
+
+						<div class="ppe-switch-row">
+							<div class="ppe-switch-row__text">
+								<strong>Mostrar botón WhatsApp</strong>
+								<span>Aparece en la cabecera del hub público.</span>
+							</div>
+							<label class="ppe-switch">
+								<input type="checkbox" data-ppe-wa-toggle checked={Boolean(whatsappLocal)} />
+								<span class="ppe-switch__track" aria-hidden="true"></span>
+							</label>
+						</div>
+
+						<div class={`ppe-field ${whatsappLocal ? '' : 'hidden'}`} data-ppe-wa-field>
+							<label for="ppe-whatsapp">Número de WhatsApp</label>
+							<div class="flex rounded-2xl shadow-sm">
+								<span
+									class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)"
+									>+595</span
+								>
+								<input
+									id="ppe-whatsapp"
+									class="ppe-input rounded-l-none!"
+									type="tel"
+									inputmode="numeric"
+									name="public_whatsapp_local"
+									maxlength="20"
+									placeholder="981 123 456"
+									value={whatsappLocal}
+									data-ppe-whatsapp
+								/>
+							</div>
+							<span class="ppe-field__hint">Sin el 0 inicial. Ej: 981 123 456</span>
+						</div>
+					</div>
+				</details>
+			</form>
+
+			<aside class="ppe-phone-col" aria-label="Vista previa móvil">
+				<div class="ppe-phone">
+					<div class="ppe-phone__bezel">
+						<span class="ppe-phone__island" aria-hidden="true"></span>
+						<div class="ppe-phone__screen hub-root ppe-preview-hub" data-ppe-preview>
+							<header class="ppe-preview-topbar" aria-hidden="true">
+								<span class="ppe-preview-topbar__brand">
+									<img src="/icons/icon-64.png" alt="" width="22" height="22" />
+									Hasel
+								</span>
+								<span class="ppe-preview-topbar__cta">Reservar</span>
+							</header>
+
+							<section class="hub-hero">
+								<div class="hub-hero__banner" aria-hidden="true">
+									<span class="hub-hero__orb hub-hero__orb--a"></span>
+								</div>
+								<div class="hub-hero__card">
+									<div class="hub-hero__card-top">
+										<div class="hub-hero__identity">
+											<img
+												src={workspace.logo_url || ''}
+												alt=""
+												class={`hub-hero__logo ${workspace.logo_url ? '' : 'hidden'}`}
+												data-ppe-preview-logo
+												width="60"
+												height="60"
+											/>
+											<div
+												class={`hub-hero__logo hub-hero__logo--placeholder ${workspace.logo_url ? 'hidden' : ''}`}
+												data-ppe-preview-logo-ph
+												aria-hidden="true"
+											>
+												{initials}
+											</div>
+											<div class="min-w-0">
+												<h2 class="hub-hero__name" data-ppe-preview-name>
+													{organizationName}
+												</h2>
+												<p
+													class={`hub-hero__tagline ${descriptionValue ? '' : 'hidden'}`}
+													data-ppe-preview-desc
+												>
+													{descriptionValue}
+												</p>
+											</div>
+										</div>
+										<div class="hub-hero__actions">
+											<span
+												class={`hub-wa-link ${whatsappLocal ? '' : 'hidden'}`}
+												data-ppe-preview-wa
+											>
+												<span class="material-symbols-rounded text-[1rem]" aria-hidden="true"
+													>chat</span
+												>
+												WhatsApp
+											</span>
+										</div>
+									</div>
+								</div>
+							</section>
+
+							<nav class="hub-tabs" aria-hidden="true">
+								<span class="hub-tab is-active">Overview</span>
+								<span class="hub-tab">Equipo</span>
+								<span class="hub-tab">Sucursales</span>
+							</nav>
+
+							<div class="hub-panels">
+								<section class="hub-panel is-active">
+									<h3 class="hub-section-title">
+										Sobre <span data-ppe-preview-about-name>{organizationName}</span>
+									</h3>
+									<p
+										class={`hub-about-text ${descriptionValue ? '' : 'hub-about-text--empty'}`}
+										data-ppe-preview-about
+									>
+										{
+											descriptionValue ||
+												'Este negocio todavía no agregó una descripción.'
+										}
+									</p>
+									{
+										hub?.service_categories?.length ? (
+											<div class="hub-categories">
+												<p class="hub-categories__label">Servicios</p>
+												<ul class="hub-categories__list">
+													{hub.service_categories.slice(0, 8).map((category) => (
+														<li>
+															<span class="hub-category-tag">{category}</span>
+														</li>
+													))}
+												</ul>
+											</div>
+										) : null
+									}
+								</section>
+							</div>
+						</div>
+					</div>
+				</div>
+			</aside>
+		</div>
+	</div>
+
+	<footer class="ppe-save-footer">
+		<span class="ppe-field__hint ppe-save-footer__hint">
+			Guardá para publicar los cambios en tu página.
+		</span>
+		<button type="submit" form="ppe-form" class="ppe-btn ppe-btn-primary" data-ppe-save>
+			<span class="material-symbols-rounded text-[1.15rem]" aria-hidden="true">save</span>
+			Guardar perfil
+		</button>
+	</footer>
+
+	<dialog class="ppe-crop-modal" data-ppe-crop-modal>
+		<div class="ppe-crop-modal__head">
+			<strong>Recortar logo</strong>
+			<button type="button" class="ppe-icon-btn" data-ppe-crop-close aria-label="Cerrar">
+				<span class="material-symbols-rounded" aria-hidden="true">close</span>
+			</button>
+		</div>
+		<div class="ppe-crop-modal__mount" data-ppe-crop-mount></div>
+		<div class="ppe-crop-modal__actions">
+			<button type="button" class="ppe-btn ppe-btn-secondary" data-ppe-crop-close>Cancelar</button>
+			<button type="button" class="ppe-btn ppe-btn-primary" data-ppe-crop-confirm>Usar foto</button>
+		</div>
+	</dialog>
+</public-profile-editor>
+
+<script>
+	import { initializePublicProfileEditor } from '../scripts/public-profile-editor';
+
+	const boot = () => {
+		document.querySelectorAll<HTMLElement>('public-profile-editor[data-ppe-root]').forEach((el) => {
+			initializePublicProfileEditor(el);
+		});
+	};
+
+	boot();
+	document.addEventListener('astro:page-load', boot);
+</script>

@@ -1,4 +1,5 @@
 import { resolveOrdsApiUrl } from './env-urls';
+import { isReservedOrgSlug } from './reserved-org-slugs';
 
 export const LOGIN_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_AUTH_LOGIN_URL,
@@ -1232,6 +1233,15 @@ export const clearSessionCookies = (
 	clearOrgSelectionCookie(cookies);
 };
 
+/** Hub público del negocio: /{orgSlug} (un solo segmento, no reservado). */
+const isPublicOrgHubPath = (pathname: string) => {
+	const match = pathname.match(/^\/([^/]+)\/?$/);
+	if (!match) return false;
+	const slug = decodeURIComponent(match[1] || '').trim();
+	if (!slug || isReservedOrgSlug(slug)) return false;
+	return true;
+};
+
 export const isPublicPath = (pathname: string) => {
 	return (
 		pathname === '/' ||
@@ -1245,6 +1255,7 @@ export const isPublicPath = (pathname: string) => {
 		pathname === '/u' ||
 		pathname.startsWith('/u/') ||
 		/^\/[^/]+\/p(\/|$)/.test(pathname) ||
+		isPublicOrgHubPath(pathname) ||
 		pathname === '/r' ||
 		pathname.startsWith('/r/') ||
 		pathname.startsWith('/_astro') ||
