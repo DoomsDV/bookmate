@@ -1,7 +1,7 @@
 <atc-chat-modal>
 	<dialog
 		data-atc-chat-modal
-		class="m-0 mt-auto mb-0 h-[min(34rem,92dvh)] w-screen max-w-none open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:h-[min(36rem,90vh)] sm:w-[min(28rem,calc(100vw-2rem))] sm:max-w-[min(28rem,calc(100vw-2rem))] sm:rounded-[1.8rem]"
+		class="m-0 mt-auto mb-0 h-[min(34rem,92svh)] w-screen max-w-none open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:h-[min(36rem,90vh)] sm:w-[min(28rem,calc(100vw-2rem))] sm:max-w-[min(28rem,calc(100vw-2rem))] sm:rounded-[1.8rem]"
 	>
 		<header class="flex shrink-0 items-start justify-between gap-3 border-b border-(--shell-border) px-4 py-3 sm:px-5 sm:py-4">
 			<div class="flex min-w-0 items-center gap-3">
@@ -73,6 +73,7 @@
 		private messages: AtcMessage[] = [];
 		private busy = false;
 		private abort: AbortController | null = null;
+		private lockedSheetHeightPx = 0;
 
 		connectedCallback() {
 			this.modal = this.querySelector('[data-atc-chat-modal]');
@@ -101,6 +102,8 @@
 				{ signal }
 			);
 
+			this.modal?.addEventListener('close', () => this.clearMobileSheetLock(), { signal });
+
 			this.form?.addEventListener(
 				'submit',
 				(event) => {
@@ -120,22 +123,67 @@
 				},
 				{ signal }
 			);
+
+			// Evita que el browser scrollee/empuje el sheet al enfocar el textarea.
+			this.input?.addEventListener(
+				'focus',
+				() => {
+					this.applyMobileSheetLock();
+					this.messagesEl?.scrollTo({ top: this.messagesEl.scrollHeight });
+				},
+				{ signal }
+			);
 		}
 
 		disconnectedCallback() {
+			this.clearMobileSheetLock();
 			this.abort?.abort();
 			this.abort = null;
 		}
 
+		private isMobileSheet() {
+			return window.matchMedia('(max-width: 639px)').matches;
+		}
+
+		private applyMobileSheetLock() {
+			if (!this.modal || !this.isMobileSheet()) return;
+			if (!this.lockedSheetHeightPx) {
+				this.lockedSheetHeightPx = Math.min(
+					34 * 16,
+					Math.round(window.innerHeight * 0.92)
+				);
+			}
+			this.modal.style.height = `${this.lockedSheetHeightPx}px`;
+			this.modal.style.maxHeight = `${this.lockedSheetHeightPx}px`;
+			this.modal.style.margin = '0';
+			this.modal.style.bottom = '0';
+			this.modal.style.top = 'auto';
+		}
+
+		private clearMobileSheetLock() {
+			this.lockedSheetHeightPx = 0;
+			if (!this.modal) return;
+			this.modal.style.height = '';
+			this.modal.style.maxHeight = '';
+			this.modal.style.margin = '';
+			this.modal.style.bottom = '';
+			this.modal.style.top = '';
+		}
+
 		private open() {
 			if (!this.modal) return;
+			this.applyMobileSheetLock();
 			if (!this.modal.open) this.modal.showModal();
 			this.clearError();
-			queueMicrotask(() => this.input?.focus());
+			// En mobile no autofocus: el teclado sube el sheet y lo comprime.
+			if (!this.isMobileSheet()) {
+				queueMicrotask(() => this.input?.focus({ preventScroll: true }));
+			}
 		}
 
 		private close() {
 			this.modal?.close();
+			this.clearMobileSheetLock();
 		}
 
 		private clearError() {
@@ -255,7 +303,9 @@
 				this.showError(error instanceof Error ? error.message : 'Error al consultar ATC.');
 			} finally {
 				if (this.busy) this.setBusy(false);
-				this.input?.focus();
+				if (!this.isMobileSheet()) {
+					this.input?.focus({ preventScroll: true });
+				}
 			}
 		}
 	}
@@ -280,6 +330,20 @@
 
 	html[data-theme='dark'] [data-atc-chat-modal]::backdrop {
 		background: rgba(0, 0, 0, 0.58);
+	}
+
+	/* Bottom sheet estable en mobile: no re-centrar ni achicar con el teclado (dvh). */
+	@media (max-width: 639px) {
+		[data-atc-chat-modal][open] {
+			position: fixed;
+			inset: auto 0 0 0;
+			margin: 0;
+			width: 100%;
+			max-width: none;
+			height: min(34rem, 92svh);
+			max-height: 92svh;
+			transform: none;
+		}
 	}
 
 	.atc-thinking {
