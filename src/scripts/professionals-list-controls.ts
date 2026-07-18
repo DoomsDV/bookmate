@@ -158,6 +158,12 @@ const renderProfessionalCard = (professional: ProfessionalItem) => {
 	`;
 };
 
+const updateTitleSummary = (totalRecords: number) => {
+	const root = getListRoot();
+	const summaryNode = root?.querySelector('[data-professionals-summary]');
+	if (summaryNode) summaryNode.textContent = `(${totalRecords})`;
+};
+
 const updateSummaryPills = (professionals: ProfessionalItem[]) => {
 	const root = getListRoot();
 	if (!root) return;
@@ -340,6 +346,7 @@ const loadProfessionals = async (state: {
 			search: state.search,
 			isActive: state.isActive,
 		});
+		updateTitleSummary(normalizedMeta.total_records);
 		updateSummaryPills(professionals);
 		updateEmptyOrGrid(professionals, state);
 		updateFilterUi(state.isActive);

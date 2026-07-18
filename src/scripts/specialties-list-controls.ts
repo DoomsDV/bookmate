@@ -103,6 +103,12 @@ const renderSpecialtyCard = (specialty: SpecialtyItem) => {
 	`;
 };
 
+const updateTitleSummary = (totalRecords: number) => {
+	const root = getListRoot();
+	const summaryNode = root?.querySelector('[data-specialties-summary]');
+	if (summaryNode) summaryNode.textContent = `(${totalRecords})`;
+};
+
 const updateSummaryPills = (specialties: SpecialtyItem[]) => {
 	const root = getListRoot();
 	if (!root) return;
@@ -281,6 +287,7 @@ const loadSpecialties = async (state: {
 			search: state.search,
 			isActive: state.isActive,
 		});
+		updateTitleSummary(normalizedMeta.total_records);
 		updateSummaryPills(specialties);
 		updateEmptyOrGrid(specialties, state);
 		updateFilterUi(state.isActive);

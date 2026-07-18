@@ -56,12 +56,38 @@
 </atc-chat-modal>
 
 <script>
+	import { marked } from 'marked';
+
 	type AtcRole = 'user' | 'assistant';
 
 	type AtcMessage = {
 		role: AtcRole;
 		content: string;
 	};
+
+	const ALLOWED_MARKDOWN_TAGS = new Set([
+		'a',
+		'blockquote',
+		'br',
+		'code',
+		'del',
+		'em',
+		'h1',
+		'h2',
+		'h3',
+		'h4',
+		'h5',
+		'h6',
+		'hr',
+		'li',
+		'ol',
+		'p',
+		'pre',
+		'strong',
+		'ul',
+	]);
+
+	const ALLOWED_LINK_PROTOCOLS = new Set(['http:', 'https:', 'mailto:', 'tel:']);
 
 	class AtcChatModal extends HTMLElement {
 		private modal: HTMLDialogElement | null = null;
@@ -198,6 +224,75 @@
 			this.errorEl.classList.remove('hidden');
 		}
 
+		private isSafeUrl(value: string) {
+			const url = value.trim();
+			if (!url || url.startsWith('#')) return Boolean(url);
+			try {
+				const parsed = new URL(url, window.location.origin);
+				return ALLOWED_LINK_PROTOCOLS.has(parsed.protocol);
+			} catch {
+				return false;
+			}
+		}
+
+		private sanitizeMarkdownHtml(html: string) {
+			const template = document.createElement('template');
+			template.innerHTML = html;
+
+			const walker = document.createTreeWalker(template.content, NodeFilter.SHOW_ELEMENT);
+			const elements: Element[] = [];
+			while (walker.nextNode()) {
+				elements.push(walker.currentNode as Element);
+			}
+
+			for (const element of elements) {
+				const tagName = element.tagName.toLowerCase();
+				if (!ALLOWED_MARKDOWN_TAGS.has(tagName)) {
+					element.replaceWith(...Array.from(element.childNodes));
+					continue;
+				}
+
+				const href = element.getAttribute('href') || '';
+				for (const attribute of Array.from(element.attributes)) {
+					element.removeAttribute(attribute.name);
+				}
+
+				if (tagName === 'a' && this.isSafeUrl(href)) {
+					element.setAttribute('href', href.trim());
+					element.setAttribute('target', '_blank');
+					element.setAttribute('rel', 'noreferrer');
+				}
+			}
+
+			return template.innerHTML;
+		}
+
+		private normalizeAssistantMarkdown(content: string) {
+			let text = String(content || '').trim();
+			if (!text) return '';
+
+			// Convierte pasos inline "1) ... 2) ..." en lista Markdown con saltos.
+			if (/\d+[.)]\s+/.test(text) && !/^\s*\d+[.)]\s+/m.test(text.split('\n').slice(1).join('\n'))) {
+				text = text.replace(/(?:^|[ \t]+)(\d+)[.)]\s+/g, '\n\n$1. ');
+			}
+
+			// Viñetas inline "- item - item" → lista.
+			if (/(?:^|\s)-\s+\S/.test(text) && !/^\s*[-*]\s+/m.test(text)) {
+				text = text.replace(/(?:^|[ \t]+)[-*]\s+/g, '\n\n- ');
+			}
+
+			return text.replace(/\n{3,}/g, '\n\n').trim();
+		}
+
+		private renderMarkdown(content: string) {
+			const html = marked.parse(this.normalizeAssistantMarkdown(content), {
+				async: false,
+				breaks: true,
+				gfm: true,
+			});
+			return this.sanitizeMarkdownHtml(typeof html === 'string' ? html : String(html));
+		}
+
 		private renderMessages() {
 			if (!this.messagesEl) return;
 			const welcome = this.messagesEl.querySelector('[data-atc-chat-welcome]');
@@ -209,9 +304,13 @@
 				bubble.dataset.atcMsg = message.role;
 				bubble.className =
 					message.role === 'user'
-						? 'ml-8 rounded-2xl bg-(--primary) px-3.5 py-3 text-sm leading-relaxed text-(--on-primary)'
-						: 'mr-8 rounded-2xl bg-(--control-surface) px-3.5 py-3 text-sm leading-relaxed text-(--on-surface)';
-				bubble.textContent = message.content;
+						? 'atc-chat-bubble atc-chat-bubble--user ml-8 rounded-2xl bg-(--primary) px-3.5 py-3 text-sm leading-relaxed text-(--on-primary)'
+						: 'atc-chat-bubble atc-chat-bubble--assistant mr-8 rounded-2xl bg-(--control-surface) px-3.5 py-3 text-sm leading-relaxed text-(--on-surface)';
+				if (message.role === 'assistant') {
+					bubble.innerHTML = this.renderMarkdown(message.content);
+				} else {
+					bubble.textContent = message.content;
+				}
 				this.messagesEl.appendChild(bubble);
 			}
 
@@ -344,6 +443,74 @@
 			max-height: 92svh;
 			transform: none;
 		}
+	}
+
+	.atc-chat-bubble--assistant > :first-child {
+		margin-top: 0;
+	}
+
+	.atc-chat-bubble--assistant > :last-child {
+		margin-bottom: 0;
+	}
+
+	.atc-chat-bubble--assistant p,
+	.atc-chat-bubble--assistant ul,
+	.atc-chat-bubble--assistant ol,
+	.atc-chat-bubble--assistant blockquote,
+	.atc-chat-bubble--assistant pre {
+		margin: 0.5rem 0;
+	}
+
+	.atc-chat-bubble--assistant ul,
+	.atc-chat-bubble--assistant ol {
+		padding-left: 1.2rem;
+	}
+
+	.atc-chat-bubble--assistant li + li {
+		margin-top: 0.2rem;
+	}
+
+	.atc-chat-bubble--assistant h1,
+	.atc-chat-bubble--assistant h2,
+	.atc-chat-bubble--assistant h3,
+	.atc-chat-bubble--assistant h4,
+	.atc-chat-bubble--assistant h5,
+	.atc-chat-bubble--assistant h6 {
+		margin: 0.6rem 0 0.3rem;
+		font-size: 0.95rem;
+		font-weight: 850;
+		line-height: 1.3;
+	}
+
+	.atc-chat-bubble--assistant strong {
+		font-weight: 850;
+	}
+
+	.atc-chat-bubble--assistant a {
+		color: var(--primary);
+		font-weight: 800;
+		text-decoration: underline;
+		text-underline-offset: 0.16em;
+	}
+
+	.atc-chat-bubble--assistant code {
+		border-radius: 0.35rem;
+		background: color-mix(in srgb, var(--on-surface) 9%, transparent);
+		padding: 0.08rem 0.24rem;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+		font-size: 0.86em;
+	}
+
+	.atc-chat-bubble--assistant pre {
+		overflow-x: auto;
+		border-radius: 0.65rem;
+		background: color-mix(in srgb, var(--on-surface) 9%, transparent);
+		padding: 0.7rem;
+	}
+
+	.atc-chat-bubble--assistant pre code {
+		background: transparent;
+		padding: 0;
 	}
 
 	.atc-thinking {

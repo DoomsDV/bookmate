@@ -6,6 +6,7 @@ interface Props {
 	showCreateAction?: boolean;
 	searchQuery?: string;
 	isActiveFilter?: number | null;
+	totalRecords?: number;
 }
 
 const {
@@ -13,6 +14,7 @@ const {
 	showCreateAction = false,
 	searchQuery = '',
 	isActiveFilter = null,
+	totalRecords = 0,
 } = Astro.props;
 const hasSearch = Boolean(searchQuery);
 const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
@@ -33,7 +35,10 @@ const inactiveCount = specialties.length - activeCount;
 <section class="specialties-view">
 	<header class="mb-4 flex flex-wrap items-center justify-between gap-3">
 		<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
-			Especialidades
+			Especialidades{' '}
+			<span class="font-semibold text-(--on-surface-variant)" data-specialties-summary>
+				({totalRecords})
+			</span>
 		</h2>
 
 		<div class="flex flex-wrap items-center justify-end gap-2">
