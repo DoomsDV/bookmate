@@ -3,8 +3,7 @@ import {
 	PUBLIC_PROFILE_PREVIEW_EVENT,
 	type PublicProfilePreviewState,
 } from '../lib/public-profile-preview-events';
-
-const EMPTY_ABOUT = 'Este negocio todavía no agregó una descripción.';
+import { FacebookIcon, InstagramIcon } from './hub-brand-icons';
 
 type PreviewTab = 'overview' | 'galeria' | 'equipo' | 'sucursales';
 
@@ -50,6 +49,18 @@ export default function PublicProfilePreview({ initial }: Props) {
 	const hasDescription = description.length > 0;
 	const gallery = Array.isArray(state.galleryUrls) ? state.galleryUrls.filter(Boolean) : [];
 	const galleryBlocks = chunkArray(gallery, 4);
+	const slug = String(state.profileSlug || '').trim();
+	const handle = slug ? `@${slug}` : '';
+	const shortTagline = hasDescription
+		? description
+				.split(/\n/)
+				.map((line) => line.trim())
+				.find(Boolean)
+				?.slice(0, 70) || ''
+		: '';
+	const locationLabel = String(state.locationLabel || '').trim();
+	const teamCount = Number(state.teamCount || 0);
+	const servicesCount = state.serviceCategories?.length || 0;
 
 	return (
 		<div class="ppe-phone">
@@ -61,7 +72,6 @@ export default function PublicProfilePreview({ initial }: Props) {
 							<img src="/icons/icon-64.png" alt="" width="22" height="22" />
 							Hasel
 						</span>
-						<span class="ppe-preview-topbar__cta">Reservar</span>
 					</header>
 
 					<div class="hub-shell">
@@ -84,8 +94,8 @@ export default function PublicProfilePreview({ initial }: Props) {
 											src={state.logoUrl}
 											alt=""
 											class="hub-hero__logo"
-											width="64"
-											height="64"
+											width="72"
+											height="72"
 										/>
 									) : (
 										<div class="hub-hero__logo hub-hero__logo--placeholder" aria-hidden="true">
@@ -95,24 +105,47 @@ export default function PublicProfilePreview({ initial }: Props) {
 									<div class="hub-hero__actions">
 										{state.facebookUrl ? (
 											<span class="hub-icon-btn" title="Facebook">
-												<span class="material-symbols-rounded" aria-hidden="true">
-													public
-												</span>
+												<FacebookIcon class="hub-icon-btn__svg" />
 											</span>
 										) : null}
 										{state.instagramUrl ? (
 											<span class="hub-icon-btn" title="Instagram">
-												<span class="material-symbols-rounded" aria-hidden="true">
-													photo_camera
-												</span>
+												<InstagramIcon class="hub-icon-btn__svg" />
 											</span>
 										) : null}
 									</div>
 								</div>
 								<div class="hub-hero__meta">
 									<h2 class="hub-hero__name">{state.organizationName}</h2>
-									{hasDescription ? (
-										<p class="hub-hero__tagline">{description}</p>
+									{handle ? <p class="hub-hero__handle">{handle}</p> : null}
+									{shortTagline ? <p class="hub-hero__tagline">{shortTagline}</p> : null}
+									{(locationLabel || teamCount > 0 || servicesCount > 0) ? (
+										<ul class="hub-hero__facts">
+											{locationLabel ? (
+												<li>
+													<span class="material-symbols-rounded" aria-hidden="true">
+														location_on
+													</span>
+													{locationLabel}
+												</li>
+											) : null}
+											{teamCount > 0 ? (
+												<li>
+													<span class="material-symbols-rounded" aria-hidden="true">
+														group
+													</span>
+													{teamCount} profesional{teamCount === 1 ? '' : 'es'}
+												</li>
+											) : null}
+											{servicesCount > 0 ? (
+												<li>
+													<span class="material-symbols-rounded" aria-hidden="true">
+														category
+													</span>
+													{servicesCount} servicio{servicesCount === 1 ? '' : 's'}
+												</li>
+											) : null}
+										</ul>
 									) : null}
 								</div>
 								<div class="hub-hero__cta-row">
@@ -131,46 +164,51 @@ export default function PublicProfilePreview({ initial }: Props) {
 										Reservar
 									</span>
 								</div>
+								{hasDescription ? (
+									<>
+										<div class="hub-hero__divider" aria-hidden="true" />
+										<p class="hub-hero__bio">{description}</p>
+									</>
+								) : null}
 							</div>
 						</section>
 
-						<nav class="hub-tabs" aria-label="Vista previa de secciones">
-							{(
-								[
-									['overview', 'Overview'],
-									['galeria', 'Galería'],
-									['equipo', 'Equipo'],
-									['sucursales', 'Sucursales'],
-								] as const
-							).map(([id, label]) => (
-								<button
-									key={id}
-									type="button"
-									class={`hub-tab ${activeTab === id ? 'is-active' : ''}`}
-									aria-selected={activeTab === id}
-									onClick={() => setActiveTab(id)}
-								>
-									{label}
-								</button>
-							))}
-						</nav>
+						<div class="hub-section">
+							<nav class="hub-tabs" aria-label="Vista previa de secciones">
+								{(
+									[
+										['overview', 'Overview'],
+										['galeria', 'Galería'],
+										['equipo', 'Equipo'],
+										['sucursales', 'Sucursales'],
+									] as const
+								).map(([id, label]) => (
+									<button
+										key={id}
+										type="button"
+										class={`hub-tab ${activeTab === id ? 'is-active' : ''}`}
+										aria-selected={activeTab === id}
+										onClick={() => setActiveTab(id)}
+									>
+										{label}
+									</button>
+								))}
+							</nav>
+						</div>
 
-						<div class="hub-panels">
+						<div class="hub-section hub-panels">
 							<section
 								class={`hub-panel ${activeTab === 'overview' ? 'is-active' : ''}`}
 								hidden={activeTab !== 'overview'}
 							>
-								<div class="hub-surface">
-									<h3 class="hub-section-title">
-										Sobre <span>{state.organizationName}</span>
-									</h3>
-									<p class={`hub-about-text ${hasDescription ? '' : 'hub-about-text--empty'}`}>
-										{hasDescription ? description : EMPTY_ABOUT}
-									</p>
-								</div>
 								{state.serviceCategories?.length ? (
-									<div class="hub-surface hub-categories">
-										<p class="hub-categories__label">Servicios</p>
+									<div class="hub-pin-block">
+										<p class="hub-pin-block__label">
+											<span class="material-symbols-rounded" aria-hidden="true">
+												keep
+											</span>
+											Servicios
+										</p>
 										<ul class="hub-categories__list">
 											{state.serviceCategories.slice(0, 8).map((category) => (
 												<li key={category}>
@@ -179,7 +217,9 @@ export default function PublicProfilePreview({ initial }: Props) {
 											))}
 										</ul>
 									</div>
-								) : null}
+								) : (
+									<p class="hub-empty">Todavía no hay servicios destacados.</p>
+								)}
 							</section>
 
 							<section

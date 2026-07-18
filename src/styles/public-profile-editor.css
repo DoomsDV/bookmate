@@ -597,7 +597,26 @@ html[data-theme='dark'] .ppe-preview-hub {
 	margin: 0;
 	border-radius: 0;
 	box-shadow: none;
+	background: transparent;
 	padding-bottom: 1.25rem;
+}
+
+.ppe-preview-hub .hub-section {
+	padding-left: 0.85rem;
+	padding-right: 0.85rem;
+}
+
+.ppe-preview-hub .hub-section:has(.hub-tabs) {
+	margin-top: 0.85rem;
+}
+
+.ppe-preview-hub .hub-tab {
+	padding: 0.55rem 0.7rem;
+	font-size: 0.74rem;
+}
+
+.ppe-preview-hub .hub-tab:first-child {
+	padding-left: 0;
 }
 
 .ppe-preview-hub .hub-hero__banner {
@@ -610,11 +629,11 @@ html[data-theme='dark'] .ppe-preview-hub {
 }
 
 .ppe-preview-hub .hub-hero__avatar-row {
-	margin-top: -1.65rem;
+	margin-top: -1.85rem;
 }
 
 .ppe-preview-hub .hub-hero__actions {
-	padding-top: 1.85rem;
+	padding-top: 2rem;
 	gap: 0.25rem;
 }
 
@@ -624,17 +643,41 @@ html[data-theme='dark'] .ppe-preview-hub {
 }
 
 .ppe-preview-hub .hub-hero__logo {
-	width: 3.35rem;
-	height: 3.35rem;
+	width: 3.6rem;
+	height: 3.6rem;
 	border-width: 3px;
 }
 
 .ppe-preview-hub .hub-hero__name {
-	font-size: 1.05rem;
+	font-size: 1.08rem;
+}
+
+.ppe-preview-hub .hub-hero__handle {
+	font-size: 0.78rem;
 }
 
 .ppe-preview-hub .hub-hero__tagline {
-	font-size: 0.78rem;
+	font-size: 0.76rem;
+}
+
+.ppe-preview-hub .hub-hero__facts {
+	margin-top: 0.35rem;
+	gap: 0.35rem 0.65rem;
+	font-size: 0.7rem;
+}
+
+.ppe-preview-hub .hub-hero__bio {
+	font-size: 0.74rem;
+	line-height: 1.4;
+	display: -webkit-box;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	white-space: normal;
+}
+
+.ppe-preview-hub .hub-pin-block__label {
+	font-size: 0.82rem;
 }
 
 .ppe-preview-hub .hub-btn {
@@ -647,24 +690,9 @@ html[data-theme='dark'] .ppe-preview-hub {
 	font-size: 0.95rem;
 }
 
-.ppe-preview-hub .hub-tabs {
-	margin: 0.65rem 0.75rem 0;
-	padding: 0.15rem;
-	gap: 0.15rem;
-}
-
-.ppe-preview-hub .hub-tab {
-	padding: 0.35rem 0.65rem;
-	font-size: 0.74rem;
-}
-
 .ppe-preview-hub .hub-panels {
-	padding: 0.85rem 0.75rem 1.25rem;
-}
-
-.ppe-preview-hub .hub-surface {
-	padding: 0.8rem 0.85rem;
-	gap: 0.5rem;
+	padding-top: 0.85rem;
+	padding-bottom: 1.25rem;
 }
 
 .ppe-preview-hub .hub-gallery-blocks {

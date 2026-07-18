@@ -242,6 +242,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			facebookUrl: String(facebookInput?.value || '').trim(),
 			instagramUrl: String(instagramInput?.value || '').trim(),
 			galleryUrls: galleryItems.map((item) => item.url),
+			profileSlug: slug,
 		});
 	};
 

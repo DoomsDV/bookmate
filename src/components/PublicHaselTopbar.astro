@@ -4,12 +4,14 @@ interface Props {
 	reserveHref?: string;
 	reserveLabel?: string;
 	showLogin?: boolean;
+	showReserve?: boolean;
 }
 
 const {
 	reserveHref = '#equipo',
 	reserveLabel = 'Reservar',
 	showLogin = true,
+	showReserve = true,
 } = Astro.props;
 ---
 
@@ -46,9 +48,13 @@ const {
 					</a>
 				) : null
 			}
-			<a href={reserveHref} class="public-hasel-topbar__cta no-underline" data-hub-reserve-cta>
-				{reserveLabel}
-			</a>
+			{
+				showReserve ? (
+					<a href={reserveHref} class="public-hasel-topbar__cta no-underline" data-hub-reserve-cta>
+						{reserveLabel}
+					</a>
+				) : null
+			}
 		</div>
 	</div>
 </header>
@@ -219,13 +225,11 @@ const {
 		font-size: 0.92rem;
 		background: #426edb;
 		color: #fff;
-		box-shadow: 0 8px 20px rgba(66, 110, 219, 0.28);
-		transition: background 160ms ease, transform 160ms ease;
+		transition: background 160ms ease;
 	}
 
 	.public-hasel-topbar__cta:hover {
 		background: #5a82e8;
-		transform: translateY(-1px);
 	}
 
 	@media (min-width: 640px) {

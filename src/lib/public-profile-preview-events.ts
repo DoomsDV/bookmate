@@ -9,6 +9,9 @@ export type PublicProfilePreviewState = {
 	instagramUrl: string;
 	galleryUrls: string[];
 	serviceCategories: string[];
+	profileSlug: string;
+	locationLabel: string;
+	teamCount: number;
 };
 
 export const PUBLIC_PROFILE_PREVIEW_EVENT = 'ppe:preview-update';

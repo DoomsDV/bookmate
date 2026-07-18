@@ -64,6 +64,9 @@ const previewInitial = {
 	instagramUrl,
 	galleryUrls: galleryImages.map((item) => item.url).filter(Boolean),
 	serviceCategories: hub?.service_categories || [],
+	profileSlug: initialSlug,
+	locationLabel: hub?.locations?.[0]?.name || hub?.locations?.[0]?.address || '',
+	teamCount: hub?.professionals?.length || 0,
 };
 ---
 
