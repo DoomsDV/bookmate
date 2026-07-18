@@ -138,6 +138,7 @@ const serializedProfessionals = professionals.length
 						</p>
 					) : null}
 
+					<div class="hub-shell">
 					<section class="hub-hero" aria-labelledby="hub-org-name">
 						<div
 							class={`hub-hero__banner ${bannerUrl ? 'hub-hero__banner--photo' : ''}`}
@@ -151,36 +152,26 @@ const serializedProfessionals = professionals.length
 								</>
 							) : null}
 						</div>
-						<div class="hub-hero__card">
-							<div class="hub-hero__card-top">
-								<div class="hub-hero__identity">
-									{hub.logo_url ? (
-										<img
-											src={hub.logo_url}
-											alt=""
-											class="hub-hero__logo"
-											width="56"
-											height="56"
-											loading="eager"
-											decoding="async"
-										/>
-									) : (
-										<div
-											class="hub-hero__logo hub-hero__logo--placeholder"
-											aria-hidden="true"
-										>
-											{initialsFromName(organizationName)}
-										</div>
-									)}
-									<div class="min-w-0">
-										<h1 id="hub-org-name" class="hub-hero__name">
-											{organizationName}
-										</h1>
-										{description ? (
-											<p class="hub-hero__tagline">{description}</p>
-										) : null}
+						<div class="hub-hero__profile">
+							<div class="hub-hero__avatar-row">
+								{hub.logo_url ? (
+									<img
+										src={hub.logo_url}
+										alt=""
+										class="hub-hero__logo"
+										width="88"
+										height="88"
+										loading="eager"
+										decoding="async"
+									/>
+								) : (
+									<div
+										class="hub-hero__logo hub-hero__logo--placeholder"
+										aria-hidden="true"
+									>
+										{initialsFromName(organizationName)}
 									</div>
-								</div>
+								)}
 								<div class="hub-hero__actions">
 									{facebookUrl ? (
 										<a
@@ -214,22 +205,40 @@ const serializedProfessionals = professionals.length
 										aria-label="Copiar enlace del negocio"
 										title="Copiar enlace"
 									>
-										<span class="material-symbols-rounded" aria-hidden="true">link</span>
+										<span class="material-symbols-rounded" aria-hidden="true">ios_share</span>
 									</button>
 								</div>
 							</div>
-							{waHref ? (
+							<div class="hub-hero__meta">
+								<h1 id="hub-org-name" class="hub-hero__name">
+									{organizationName}
+								</h1>
+								{description ? (
+									<p class="hub-hero__tagline">{description}</p>
+								) : null}
+							</div>
+							<div class="hub-hero__cta-row">
+								{waHref ? (
+									<a
+										href={waHref}
+										class="hub-btn hub-btn--outline hub-wa-link"
+										target="_blank"
+										rel="noopener noreferrer"
+										aria-label="Contactar por WhatsApp"
+									>
+										<span class="material-symbols-rounded" aria-hidden="true">chat</span>
+										WhatsApp
+									</a>
+								) : null}
 								<a
-									href={waHref}
-									class="hub-wa-link hub-wa-link--block"
-									target="_blank"
-									rel="noopener noreferrer"
-									aria-label="Contactar por WhatsApp"
+									href={reserveHref}
+									class="hub-btn hub-btn--filled"
+									data-hub-reserve-cta
 								>
-									<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">chat</span>
-									WhatsApp
+									<span class="material-symbols-rounded" aria-hidden="true">event</span>
+									Reservar
 								</a>
-							) : null}
+							</div>
 						</div>
 					</section>
 
@@ -249,18 +258,20 @@ const serializedProfessionals = professionals.length
 							data-hub-panel="overview"
 							aria-labelledby="hub-about-title"
 						>
-							<h2 id="hub-about-title" class="hub-section-title">
-								Sobre {organizationName}
-							</h2>
-							{description ? (
-								<p class="hub-about-text">{description}</p>
-							) : (
-								<p class="hub-about-text hub-about-text--empty">
-									Este negocio todavía no agregó una descripción.
-								</p>
-							)}
+							<div class="hub-surface">
+								<h2 id="hub-about-title" class="hub-section-title">
+									Sobre {organizationName}
+								</h2>
+								{description ? (
+									<p class="hub-about-text">{description}</p>
+								) : (
+									<p class="hub-about-text hub-about-text--empty">
+										Este negocio todavía no agregó una descripción.
+									</p>
+								)}
+							</div>
 							{serviceCategories.length ? (
-								<div class="hub-categories" aria-label="Servicios principales">
+								<div class="hub-surface hub-categories" aria-label="Servicios principales">
 									<p class="hub-categories__label">Servicios</p>
 									<ul class="hub-categories__list">
 										{serviceCategories.map((category) => (
@@ -486,6 +497,7 @@ const serializedProfessionals = professionals.length
 								<p class="hub-empty">Sin sucursales publicadas.</p>
 							)}
 						</section>
+					</div>
 					</div>
 				</>
 			) : (
