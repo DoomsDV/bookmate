@@ -758,5 +758,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 <script>
 	import { initCobrosPage } from '../../scripts/cobros-page';
-	initCobrosPage();
+
+	const bootCobrosPage = () => {
+		initCobrosPage();
+	};
+
+	bootCobrosPage();
+	document.addEventListener('astro:page-load', bootCobrosPage);
 </script>

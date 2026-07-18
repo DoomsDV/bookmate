@@ -47,7 +47,13 @@ const isActive = (href?: string) => {
 };
 ---
 
-<nav class="mobile-bottom-nav lg:hidden" aria-label="Navegación principal" data-mobile-bottom-nav>
+<nav
+	class="mobile-bottom-nav lg:hidden"
+	aria-label="Navegación principal"
+	data-mobile-bottom-nav
+	transition:persist="mobile-bottom-nav"
+>
+	<span class="mobile-bottom-nav__pill" data-mobile-nav-pill aria-hidden="true"></span>
 	{
 		items.map((item) => {
 			if (item.action === 'more') {
@@ -96,6 +102,183 @@ const isActive = (href?: string) => {
 	}
 </nav>
 
+<script>
+	const normalizePath = (path: string) => {
+		if (!path || path === '/') return '/';
+		return path.endsWith('/') ? path.slice(0, -1) : path;
+	};
+
+	type PillState = {
+		pill: HTMLElement;
+		x: number;
+		y: number;
+		w: number;
+		h: number;
+		raf: number;
+		resizeRaf: number;
+	};
+
+	const stateByNav = new WeakMap<HTMLElement, PillState>();
+
+	const getPillState = (nav: HTMLElement) => {
+		let state = stateByNav.get(nav);
+		if (state) return state;
+		const pill = nav.querySelector<HTMLElement>('[data-mobile-nav-pill]');
+		if (!pill) return null;
+		state = { pill, x: NaN, y: NaN, w: NaN, h: NaN, raf: 0, resizeRaf: 0 };
+		stateByNav.set(nav, state);
+		return state;
+	};
+
+	const measureWrap = (nav: HTMLElement, wrap: HTMLElement) => {
+		// offset* evita layout thrash de getBoundingClientRect en cadena.
+		let x = 0;
+		let y = 0;
+		let node: HTMLElement | null = wrap;
+		while (node && node !== nav) {
+			x += node.offsetLeft;
+			y += node.offsetTop;
+			node = node.offsetParent instanceof HTMLElement ? node.offsetParent : null;
+			// Si el offsetParent salta fuera del nav (transform/fixed), caemos a rects.
+			if (node && !nav.contains(node) && node !== nav) {
+				const navRect = nav.getBoundingClientRect();
+				const wrapRect = wrap.getBoundingClientRect();
+				return {
+					x: wrapRect.left - navRect.left + nav.scrollLeft,
+					y: wrapRect.top - navRect.top + nav.scrollTop,
+					w: wrapRect.width,
+					h: wrapRect.height,
+				};
+			}
+		}
+		return { x, y, w: wrap.offsetWidth, h: wrap.offsetHeight };
+	};
+
+	const applyPillFrame = (state: PillState, x: number, y: number, w: number, h: number, animate: boolean) => {
+		const same =
+			Math.abs(state.x - x) < 0.5 &&
+			Math.abs(state.y - y) < 0.5 &&
+			Math.abs(state.w - w) < 0.5 &&
+			Math.abs(state.h - h) < 0.5;
+		if (same && state.pill.style.opacity === '1') return;
+
+		// Width/height al instante; solo transform anima en el compositor.
+		state.pill.style.width = `${w}px`;
+		state.pill.style.height = `${h}px`;
+		if (!animate) state.pill.classList.add('is-instant');
+		state.pill.style.transform = `translate3d(${x}px, ${y}px, 0)`;
+		state.pill.style.opacity = '1';
+		state.x = x;
+		state.y = y;
+		state.w = w;
+		state.h = h;
+
+		if (!animate) {
+			void state.pill.offsetWidth;
+			state.pill.classList.remove('is-instant');
+		}
+	};
+
+	const movePill = (
+		nav: HTMLElement,
+		targetItem: Element | null,
+		options: { animate?: boolean } = {}
+	) => {
+		const state = getPillState(nav);
+		const wrap = targetItem?.querySelector<HTMLElement>('.mobile-bottom-nav__icon-wrap');
+		if (!state || !wrap) {
+			if (state) state.pill.style.opacity = '0';
+			return;
+		}
+
+		const animate = options.animate !== false;
+		const { x, y, w, h } = measureWrap(nav, wrap);
+
+		if (state.raf) cancelAnimationFrame(state.raf);
+		state.raf = requestAnimationFrame(() => {
+			state.raf = 0;
+			applyPillFrame(state, x, y, w, h, animate);
+		});
+	};
+
+	const setActiveItem = (nav: HTMLElement, item: HTMLElement) => {
+		const prev = nav.querySelector<HTMLElement>('.mobile-bottom-nav__item.is-active');
+		if (prev === item) return;
+		if (prev) {
+			prev.classList.remove('is-active');
+			prev.removeAttribute('aria-current');
+		}
+		item.classList.add('is-active');
+		item.setAttribute('aria-current', 'page');
+	};
+
+	const syncActiveFromLocation = (nav: HTMLElement, animate: boolean) => {
+		const path = normalizePath(window.location.pathname);
+		let activeItem: HTMLElement | null = null;
+
+		nav.querySelectorAll<HTMLElement>('.mobile-bottom-nav__item[href]').forEach((item) => {
+			const href = item.getAttribute('href') || '';
+			const active = normalizePath(href) === path;
+			item.classList.toggle('is-active', active);
+			if (active) {
+				item.setAttribute('aria-current', 'page');
+				activeItem = item;
+			} else {
+				item.removeAttribute('aria-current');
+			}
+		});
+
+		movePill(nav, activeItem, { animate });
+	};
+
+	const bindNav = (nav: HTMLElement) => {
+		if (nav.dataset.pillBound === '1') return;
+		nav.dataset.pillBound = '1';
+
+		const onSelect = (event: Event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const item = target.closest<HTMLAnchorElement>('a.mobile-bottom-nav__item');
+			if (!item || !nav.contains(item) || item.hasAttribute('data-requires-feature-hidden')) {
+				return;
+			}
+			// Ignorar click derecho / no-primario en pointerdown.
+			if (event instanceof PointerEvent && event.button !== 0) return;
+
+			setActiveItem(nav, item);
+			movePill(nav, item, { animate: true });
+		};
+
+		// pointerdown arranca la animación antes de la navegación (menos lag percibido).
+		nav.addEventListener('pointerdown', onSelect, { passive: true });
+		nav.addEventListener('click', onSelect);
+
+		window.addEventListener('resize', () => {
+			const state = getPillState(nav);
+			if (!state) return;
+			if (state.resizeRaf) cancelAnimationFrame(state.resizeRaf);
+			state.resizeRaf = requestAnimationFrame(() => {
+				state.resizeRaf = 0;
+				const active = nav.querySelector('.mobile-bottom-nav__item.is-active');
+				movePill(nav, active, { animate: false });
+			});
+		});
+	};
+
+	const initMobileBottomNavPill = () => {
+		const nav = document.querySelector<HTMLElement>('[data-mobile-bottom-nav]');
+		if (!nav) return;
+		bindNav(nav);
+		const firstPaint = nav.dataset.pillReady !== '1';
+		// Tras navegación: sin re-animar (la animación ya corrió en pointerdown).
+		syncActiveFromLocation(nav, false);
+		if (firstPaint) nav.dataset.pillReady = '1';
+	};
+
+	initMobileBottomNavPill();
+	document.addEventListener('astro:page-load', initMobileBottomNavPill);
+</script>
+
 <style is:global>
 	.mobile-bottom-nav {
 		display: none;
@@ -138,7 +321,36 @@ const isActive = (href?: string) => {
 		}
 	}
 
+	.mobile-bottom-nav__pill {
+		position: absolute;
+		top: 0;
+		left: 0;
+		z-index: 0;
+		width: 2.5rem;
+		height: 1.7rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 16%, transparent);
+		opacity: 0;
+		pointer-events: none;
+		transform: translate3d(0, 0, 0);
+		/* Solo transform/opacity en compositor; width/height se setean al instante. */
+		transition: transform 220ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 120ms ease;
+		will-change: transform;
+		contain: layout style;
+		backface-visibility: hidden;
+	}
+
+	.mobile-bottom-nav__pill.is-instant {
+		transition: none !important;
+	}
+
+	html[data-theme='dark'] .mobile-bottom-nav__pill {
+		background: #a8c7fa;
+	}
+
 	.mobile-bottom-nav__item {
+		position: relative;
+		z-index: 1;
 		display: flex;
 		flex: 1 1 0;
 		flex-direction: column;
@@ -178,7 +390,7 @@ const isActive = (href?: string) => {
 		padding: 0.2rem 0.55rem;
 		border-radius: 999px;
 		background: transparent;
-		transition: background-color 0.15s ease, color 0.15s ease;
+		transition: color 0.2s ease;
 		box-sizing: border-box;
 	}
 
@@ -194,16 +406,12 @@ const isActive = (href?: string) => {
 	}
 
 	.mobile-bottom-nav__item.is-active .mobile-bottom-nav__icon-wrap {
-		background: color-mix(in srgb, var(--primary) 16%, transparent);
+		background: transparent;
 	}
 
 	/* Dark: pastilla pastel clara + ícono oscuro (MD3 secondary-container) */
 	html[data-theme='dark'] .mobile-bottom-nav__item.is-active {
 		color: #a8c7fa;
-	}
-
-	html[data-theme='dark'] .mobile-bottom-nav__item.is-active .mobile-bottom-nav__icon-wrap {
-		background: #a8c7fa;
 	}
 
 	html[data-theme='dark'] .mobile-bottom-nav__item.is-active .mobile-bottom-nav__icon {
@@ -224,6 +432,7 @@ const isActive = (href?: string) => {
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+		transition: color 0.2s ease;
 	}
 
 	.mobile-bottom-nav__badge {

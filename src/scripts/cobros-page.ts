@@ -2,6 +2,7 @@ import type { CobroItem, CobrosDatePreset, CobrosStatusFilter } from '../lib/cob
 
 type CobrosManagerElement = HTMLElement & {
 	__cobrosBound?: boolean;
+	__cobrosReload?: () => void;
 };
 
 const formatMoney = (amount: number, currency = 'PYG') =>
@@ -74,9 +75,18 @@ const maskDateDisplay = (raw: string) => {
 	return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
 };
 
+let onSubscriptionRefresh: (() => void) | null = null;
+let subscriptionListenerBound = false;
+
 export const initCobrosPage = () => {
 	const root = document.querySelector<CobrosManagerElement>('cobros-manager');
-	if (!root || root.__cobrosBound) return;
+	if (!root) return;
+
+	// ClientRouter: el script del módulo no siempre re-ejecuta; reusar reload si ya está vivo.
+	if (root.__cobrosBound) {
+		root.__cobrosReload?.();
+		return;
+	}
 	root.__cobrosBound = true;
 
 	const errorEl = root.querySelector<HTMLElement>('[data-cobros-error]');
@@ -553,10 +563,6 @@ export const initCobrosPage = () => {
 	};
 
 	const render = () => {
-		if (!tableBody || !cardsEl) return;
-		tableBody.replaceChildren();
-		cardsEl.replaceChildren();
-
 		if (summaryEl) {
 			summaryEl.textContent = `(${items.length})`;
 		}
@@ -564,8 +570,13 @@ export const initCobrosPage = () => {
 		const empty = items.length === 0;
 		emptyEl?.classList.toggle('hidden', !empty);
 		tableWrap?.classList.toggle('is-empty', empty);
-		cardsEl.classList.toggle('hidden', empty);
+		cardsEl?.classList.toggle('hidden', empty);
 		resultsEl?.classList.remove('hidden');
+		loadingEl?.classList.add('hidden');
+
+		if (!tableBody || !cardsEl) return;
+		tableBody.replaceChildren();
+		cardsEl.replaceChildren();
 
 		for (const item of items) {
 			const tr = document.createElement('tr');
@@ -615,7 +626,12 @@ export const initCobrosPage = () => {
 	};
 
 	const load = async () => {
-		if (!applyFeatureGate()) return;
+		if (!applyFeatureGate()) {
+			setLoading(false);
+			items = [];
+			render();
+			return;
+		}
 		const requestId = ++loadRequestId;
 		setError('');
 		setLoading(true);
@@ -649,6 +665,10 @@ export const initCobrosPage = () => {
 			setLoading(false);
 			render();
 		}
+	};
+
+	root.__cobrosReload = () => {
+		void load();
 	};
 
 	const approve = async () => {
@@ -915,25 +935,19 @@ export const initCobrosPage = () => {
 	if (datePresetEl) datePresetEl.value = datePreset;
 	syncTabs();
 	updatePeriodFilterUi();
+	applyFeatureGate();
+	void load();
 
-	let started = false;
-	const start = () => {
-		if (started) return;
-		started = true;
-		void load();
+	onSubscriptionRefresh = () => {
+		const ok = applyFeatureGate();
+		if (ok) void load();
 	};
 
-	document.addEventListener('hasel:subscription', () => {
-		applyFeatureGate();
-		start();
-	});
-
-	if (window.HaselSubscription) {
-		applyFeatureGate();
-		start();
-	} else {
-		// Evita doble fetch (init + evento de suscripción) que alarga el skeleton.
-		window.setTimeout(start, 400);
+	if (!subscriptionListenerBound) {
+		subscriptionListenerBound = true;
+		document.addEventListener('hasel:subscription', () => {
+			onSubscriptionRefresh?.();
+		});
 	}
 };
 

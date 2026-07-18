@@ -274,14 +274,16 @@ const toPageHref = (page: number) => {
 
 				<main class="w-full max-w-full min-w-0 overflow-x-hidden px-3 py-4 sm:px-5 sm:py-6 lg:px-6">
 					<div class="mx-auto w-full max-w-[92rem] min-w-0">
-						<section class="grid w-full min-w-0 gap-5 sm:gap-8">
+						<section class="dashboard-main-stack grid w-full min-w-0 gap-5 sm:gap-8" data-dashboard-main>
 							<section class="dashboard-summary-card mb-0 transition-all duration-300">
 								<div class="flex flex-col justify-between gap-3 lg:flex-row lg:items-center lg:gap-4">
 									<div class="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
-										<div class="dashboard-greeting grid min-w-0 gap-1">
+										<div class="dashboard-greeting grid min-w-0 gap-1" data-dashboard-intro>
 											<h1
 												class="dashboard-greeting__title font-extrabold text-[#202124] dark:text-[#E3E3E3] tracking-tight"
 												data-dashboard-greeting
+												data-dashboard-reveal
+												data-dashboard-reveal-delay="0"
 												aria-label={greetingTitle}
 											>
 												{greetingHasName ? (
@@ -296,6 +298,8 @@ const toPageHref = (page: number) => {
 											<p
 												class="dashboard-greeting__sub font-medium text-[#5f6368] dark:text-[#C4C7C5]"
 												data-dashboard-greeting-sub
+												data-dashboard-reveal
+												data-dashboard-reveal-delay="90"
 											>
 												{greetingSubtitle}
 											</p>
@@ -303,8 +307,10 @@ const toPageHref = (page: number) => {
 
 										{showTeamOverview && (
 										<div
-											class="dashboard-team-chip dashboard-team-chip--pill h-fit lg:ml-8"
+											class="dashboard-team-chip dashboard-team-chip--pill dashboard-deferred h-fit lg:ml-8"
 											data-team-card
+											data-dashboard-reveal
+											data-dashboard-reveal-delay="180"
 										>
 											<div class="flex items-center gap-3">
 												<div class="flex -space-x-2" data-team-avatar-stack aria-label="Vista previa del equipo">
@@ -321,7 +327,11 @@ const toPageHref = (page: number) => {
 										)}
 									</div>
 
-									<div class="dashboard-header-actions">
+									<div
+										class="dashboard-header-actions dashboard-deferred"
+										data-dashboard-reveal
+										data-dashboard-reveal-delay="180"
+									>
 										{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && (
 											<button
 												type="button"
@@ -358,7 +368,7 @@ const toPageHref = (page: number) => {
 									</div>
 
 									<div class="dashboard-carousel">
-									<div class="dashboard-profit-metrics-track grid grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+									<div class="dashboard-profit-metrics-track">
 										<article class="dashboard-profit-card" data-profit-accent="emerald">
 											<div class="dashboard-profit-card__head">
 												<p class="dashboard-profit-label">Ingresos del mes</p>
@@ -1897,7 +1907,61 @@ const toPageHref = (page: number) => {
 		}
 	};
 
+	const playDashboardIntro = () => {
+		const main = document.querySelector<HTMLElement>('[data-dashboard-main]');
+		if (!main) return;
+
+		const summary = main.querySelector<HTMLElement>('.dashboard-summary-card');
+		// Stagger M3: cada bloque entra con un pequeño offset tras el saludo.
+		[...main.children]
+			.filter((child): child is HTMLElement => child instanceof HTMLElement && child !== summary)
+			.forEach((child, index) => {
+				if (!child.hasAttribute('data-dashboard-reveal')) {
+					child.setAttribute('data-dashboard-reveal', '');
+					child.setAttribute('data-dashboard-reveal-delay', String(260 + index * 70));
+				}
+			});
+
+		const revealNodes = Array.from(main.querySelectorAll<HTMLElement>('[data-dashboard-reveal]'));
+		if (!revealNodes.length) return;
+
+		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+		const clearReveal = () => {
+			revealNodes.forEach((node) => {
+				node.classList.remove('is-in');
+				node.style.animation = 'none';
+			});
+		};
+
+		if (prefersReducedMotion) {
+			revealNodes.forEach((node) => {
+				node.style.animation = '';
+				node.classList.add('is-in');
+			});
+			return;
+		}
+
+		clearReveal();
+		void main.offsetWidth;
+
+		window.requestAnimationFrame(() => {
+			window.requestAnimationFrame(() => {
+				if (!document.contains(main)) return;
+				revealNodes.forEach((node) => {
+					node.style.animation = '';
+					const delay = Number(node.getAttribute('data-dashboard-reveal-delay') || 0);
+					const safeDelay = Number.isFinite(delay) ? Math.max(0, delay) : 0;
+					window.setTimeout(() => {
+						if (document.contains(node)) node.classList.add('is-in');
+					}, safeDelay + 40);
+				});
+			});
+		});
+	};
+
 	const initializeDashboardPage = () => {
+		playDashboardIntro();
 		loadAiSummary();
 		loadTeamOverview();
 		loadProfitability();
@@ -1957,7 +2021,7 @@ const toPageHref = (page: number) => {
 		});
 	};
 
-	initializeDashboardPage();
+	// Solo page-load: evita doble init (cancela la animación a mitad).
 	document.addEventListener('astro:page-load', initializeDashboardPage);
 </script>
 
@@ -2262,6 +2326,40 @@ const toPageHref = (page: number) => {
 			animation: none !important;
 			opacity: 1;
 			transform: none;
+		}
+	}
+
+	/* Intro dashboard: M3 Enter (Fade and Scale) + staggered. */
+	@keyframes dashboard-material-enter {
+		from {
+			opacity: 0;
+			transform: scale(0.92) translateY(10px);
+		}
+		to {
+			opacity: 1;
+			transform: scale(1) translateY(0);
+		}
+	}
+
+	[data-dashboard-main] [data-dashboard-reveal] {
+		opacity: 0;
+		transform: scale(0.92) translateY(10px);
+		transform-origin: center top;
+		will-change: opacity, transform;
+	}
+
+	[data-dashboard-main] [data-dashboard-reveal].is-in {
+		opacity: 1;
+		animation: dashboard-material-enter 0.55s cubic-bezier(0.2, 0, 0, 1) both;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		[data-dashboard-main] [data-dashboard-reveal],
+		[data-dashboard-main] [data-dashboard-reveal].is-in {
+			animation: none !important;
+			opacity: 1;
+			transform: none;
+			will-change: auto;
 		}
 	}
 </style>
@@ -4685,8 +4783,18 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-profit-metrics-track {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 1.25rem;
 		min-width: 0;
 		max-width: 100%;
+	}
+
+	@media (max-width: 1023px) {
+		.dashboard-profit-metrics-track {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 1rem;
+		}
 	}
 
 	.dashboard-profit-card {
@@ -5054,7 +5162,6 @@ const toPageHref = (page: number) => {
 		.dashboard-greeting__sub {
 			font-size: clamp(0.88rem, 3.2vw, 0.95rem);
 			line-height: 1.4;
-			opacity: 0.95;
 		}
 
 		.dashboard-ai-strip {
@@ -5336,21 +5443,9 @@ const toPageHref = (page: number) => {
 			font-size: 0.68rem;
 		}
 
-		/* Pantallas muy angostas: cards a ancho completo, sin recorte lateral */
-		.dashboard-profit-metrics-track {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr);
-			gap: 0.6rem;
-			overflow-x: visible;
-			scroll-snap-type: none;
-			padding: 0;
-		}
-
+		/* Mantener carrusel horizontal también en pantallas muy angostas */
 		.dashboard-profit-metrics-track > .dashboard-profit-card {
-			flex: unset;
-			width: 100%;
-			max-width: 100%;
-			min-width: 0;
+			flex: 0 0 min(86%, 15.5rem);
 		}
 
 		.dashboard-profit-card {
