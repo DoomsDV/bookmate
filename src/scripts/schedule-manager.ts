@@ -19,13 +19,6 @@ import {
 	type ExceptionSlotDraft,
 	type ExceptionSummaryMap,
 } from './schedule-exception-ui';
-import {
-	destroySearchableSelect,
-	ensureSearchableSelect,
-	setSearchableSelectDisabled,
-	setSearchableSelectValue,
-} from './searchable-select';
-
 type ProfessionalLov = { id_professional: number; display_name: string };
 type LocationLov = { id_location: number; name: string };
 type Day = { day_of_week: number; name: string };
@@ -103,6 +96,11 @@ class ScheduleManager extends HTMLElement {
 
 	private canEdit = false;
 	private professionalSelect: HTMLSelectElement | null = null;
+	private proFilterButton: HTMLButtonElement | null = null;
+	private proFilterBadge: HTMLElement | null = null;
+	private proFilterSheet: HTMLDialogElement | null = null;
+	private proFilterList: HTMLElement | null = null;
+	private professionalLabel: HTMLElement | null = null;
 	private plannerNode: HTMLElement | null = null;
 	private saveButton: HTMLButtonElement | null = null;
 	private saveLabel: HTMLElement | null = null;
@@ -168,6 +166,11 @@ class ScheduleManager extends HTMLElement {
 		this.canEdit = this.dataset.canEdit === 'true';
 
 		this.professionalSelect = this.querySelector<HTMLSelectElement>('[data-professional-select]');
+		this.proFilterButton = this.querySelector<HTMLButtonElement>('[data-open-schedule-pro-filter]');
+		this.proFilterBadge = this.querySelector<HTMLElement>('[data-schedule-pro-filter-badge]');
+		this.proFilterSheet = this.querySelector<HTMLDialogElement>('[data-schedule-pro-filter-sheet]');
+		this.proFilterList = this.querySelector<HTMLElement>('[data-schedule-pro-filter-list]');
+		this.professionalLabel = this.querySelector<HTMLElement>('[data-schedule-professional-label]');
 		this.plannerNode = this.querySelector<HTMLElement>('[data-weekly-planner]');
 		this.saveButton = this.querySelector<HTMLButtonElement>('[data-save-schedule]');
 		this.saveLabel = this.querySelector<HTMLElement>('[data-save-schedule-label]');
@@ -209,6 +212,9 @@ class ScheduleManager extends HTMLElement {
 		const signal = this.#listenerController.signal;
 
 		this.professionalSelect.addEventListener('change', this.handleProfessionalChange, { signal });
+		this.proFilterButton?.addEventListener('click', this.handleOpenProFilter, { signal });
+		this.proFilterSheet?.addEventListener('click', this.handleProFilterSheetClick, { signal });
+		this.proFilterSheet?.addEventListener('cancel', this.handleProFilterSheetCancel, { signal });
 		this.plannerNode.addEventListener('change', this.handlePlannerChange, { signal });
 		this.plannerNode.addEventListener('click', this.handlePlannerClick, { signal });
 		if (this.saveButton && this.canEdit) {
@@ -250,7 +256,7 @@ class ScheduleManager extends HTMLElement {
 		this.headerHeroObserver = null;
 		this.#listenerController?.abort();
 		this.#listenerController = null;
-		destroySearchableSelect(this.professionalSelect);
+		this.closeProFilterSheet();
 		this.dayNodes.clear();
 	}
 
@@ -258,8 +264,7 @@ class ScheduleManager extends HTMLElement {
 		this.headerScrollHero = this.querySelector<HTMLElement>('[data-schedule-header-hero]');
 		this.headerStickyBar = this.querySelector<HTMLElement>('[data-schedule-header-sticky]');
 		this.headerScrollRoot = this.querySelector('main');
-		const toolbar = this.querySelector('[data-schedule-header-toolbar]');
-		if (!this.headerScrollHero || !this.headerStickyBar || !this.headerScrollRoot || !toolbar) return;
+		if (!this.headerScrollHero || !this.headerStickyBar || !this.headerScrollRoot) return;
 
 		this.headerHeroObserver = new IntersectionObserver(
 			(entries) => {
@@ -425,33 +430,82 @@ class ScheduleManager extends HTMLElement {
 		}
 	};
 
-	private handleProfessionalChange = async (): Promise<void> => {
-		if (!this.professionalSelect || this.roleId === ROLES.PROFESIONAL) return;
+	private handleOpenProFilter = (): void => {
+		if (this.roleId === ROLES.PROFESIONAL || !this.proFilterSheet) return;
+		if (this.isMetaLoading || this.isScheduleLoading || this.isSaving) return;
+		if (this.proFilterSheet.open) return;
+		this.proFilterSheet.showModal();
+	};
 
-		const nextProfessionalId = Number(this.professionalSelect.value || 0);
-		if (!Number.isInteger(nextProfessionalId) || nextProfessionalId <= 0) {
-			setSearchableSelectValue(
-				this.professionalSelect,
-				this.selectedProfessionalId > 0 ? this.selectedProfessionalId : ''
-			);
+	private handleProFilterSheetCancel = (): void => {
+		this.closeProFilterSheet();
+	};
+
+	private handleProFilterSheetClick = (event: MouseEvent): void => {
+		const target = event.target;
+		if (!(target instanceof Element) || !this.proFilterSheet) return;
+
+		if (target.closest('[data-close-schedule-pro-filter]')) {
+			this.closeProFilterSheet();
 			return;
 		}
-		if (nextProfessionalId === this.selectedProfessionalId) return;
+
+		const option = target.closest<HTMLButtonElement>('[data-schedule-pro-filter-option]');
+		if (option && this.proFilterList?.contains(option)) {
+			const nextId = Number(option.dataset.scheduleProFilterOption || 0);
+			void this.selectProfessional(nextId);
+			this.closeProFilterSheet();
+			return;
+		}
+
+		const rect = this.proFilterSheet.getBoundingClientRect();
+		const insidePanel =
+			event.clientX >= rect.left &&
+			event.clientX <= rect.right &&
+			event.clientY >= rect.top &&
+			event.clientY <= rect.bottom;
+		if (!insidePanel) this.closeProFilterSheet();
+	};
+
+	private closeProFilterSheet(): void {
+		if (this.proFilterSheet?.open) this.proFilterSheet.close();
+	}
+
+	private handleProfessionalChange = async (): Promise<void> => {
+		if (!this.professionalSelect || this.roleId === ROLES.PROFESIONAL) return;
+		const nextProfessionalId = Number(this.professionalSelect.value || 0);
+		await this.selectProfessional(nextProfessionalId);
+	};
+
+	private selectProfessional = async (nextProfessionalId: number): Promise<void> => {
+		if (!this.professionalSelect || this.roleId === ROLES.PROFESIONAL) return;
+
+		if (!Number.isInteger(nextProfessionalId) || nextProfessionalId <= 0) {
+			this.professionalSelect.value =
+				this.selectedProfessionalId > 0 ? String(this.selectedProfessionalId) : '';
+			this.updateProFilterUi();
+			return;
+		}
+		if (nextProfessionalId === this.selectedProfessionalId) {
+			this.updateProFilterUi();
+			return;
+		}
 
 		if (this.isDirty) {
 			const canContinue = await this.confirmDiscardChanges();
 			if (!canContinue) {
-				setSearchableSelectValue(
-					this.professionalSelect,
-					this.selectedProfessionalId > 0 ? this.selectedProfessionalId : ''
-				);
+				this.professionalSelect.value =
+					this.selectedProfessionalId > 0 ? String(this.selectedProfessionalId) : '';
+				this.updateProFilterUi();
 				return;
 			}
 		}
 
 		this.selectedProfessionalId = nextProfessionalId;
+		this.professionalSelect.value = String(nextProfessionalId);
 		this.dayStates = this.buildEmptyDayStates();
 		this.exceptionSummaryMap = new Map();
+		this.updateProFilterUi();
 		this.renderPlanner();
 		this.setDirty(false);
 		await this.loadScheduleByProfessional(this.selectedProfessionalId);
@@ -581,7 +635,6 @@ class ScheduleManager extends HTMLElement {
 	private renderProfessionalOptions(): void {
 		if (!this.professionalSelect) return;
 
-		destroySearchableSelect(this.professionalSelect);
 		this.clearNode(this.professionalSelect);
 
 		if (this.roleId !== ROLES.PROFESIONAL) {
@@ -598,27 +651,72 @@ class ScheduleManager extends HTMLElement {
 			this.professionalSelect.value = String(this.selectedProfessionalId);
 		}
 
-		if (this.roleId === ROLES.PROFESIONAL) {
-			return;
+		this.renderProFilterList();
+		this.updateProFilterUi();
+	}
+
+	private renderProFilterList(): void {
+		if (!this.proFilterList || this.roleId === ROLES.PROFESIONAL) return;
+
+		this.clearNode(this.proFilterList);
+		const fragment = document.createDocumentFragment();
+
+		for (const professional of this.professionals) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'schedule-pro-filter-option';
+			button.dataset.scheduleProFilterOption = String(professional.id_professional);
+			button.setAttribute('role', 'option');
+			const selected = professional.id_professional === this.selectedProfessionalId;
+			button.classList.toggle('is-selected', selected);
+			button.setAttribute('aria-selected', selected ? 'true' : 'false');
+
+			const label = document.createElement('span');
+			label.textContent = professional.display_name;
+
+			const check = document.createElement('span');
+			check.className = 'material-symbols-rounded';
+			check.setAttribute('aria-hidden', 'true');
+			check.textContent = 'check';
+
+			button.append(label, check);
+			fragment.appendChild(button);
 		}
 
-		ensureSearchableSelect(this.professionalSelect, {
-			placeholder: 'Buscar profesional...',
-			dropdownParent: 'body',
-		});
+		this.proFilterList.appendChild(fragment);
+	}
 
-		if (this.selectedProfessionalId > 0) {
-			setSearchableSelectValue(this.professionalSelect, this.selectedProfessionalId);
-		}
-
-		setSearchableSelectDisabled(
-			this.professionalSelect,
-			this.isMetaLoading ||
-				this.isScheduleLoading ||
-				this.isSaving ||
-				!this.canEdit ||
-				this.professionals.length === 0
+	private updateProFilterUi(): void {
+		const selected = this.professionals.find(
+			(item) => item.id_professional === this.selectedProfessionalId
 		);
+		const active = this.roleId !== ROLES.PROFESIONAL && this.selectedProfessionalId > 0;
+
+		if (this.professionalLabel) {
+			this.professionalLabel.textContent = selected?.display_name || 'Selecciona un profesional';
+		}
+
+		this.proFilterBadge?.classList.toggle('hidden', !active);
+		this.proFilterButton?.classList.toggle('is-active', active);
+		this.proFilterButton?.setAttribute('aria-pressed', active ? 'true' : 'false');
+		if (this.proFilterButton) {
+			this.proFilterButton.setAttribute(
+				'aria-label',
+				active && selected
+					? `Filtrar por profesional, ${selected.display_name}`
+					: 'Filtrar por profesional'
+			);
+		}
+
+		if (!this.proFilterList) return;
+		for (const option of this.proFilterList.querySelectorAll<HTMLButtonElement>(
+			'[data-schedule-pro-filter-option]'
+		)) {
+			const optionId = Number(option.dataset.scheduleProFilterOption || 0);
+			const isSelected = optionId === this.selectedProfessionalId;
+			option.classList.toggle('is-selected', isSelected);
+			option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+		}
 	}
 
 	private renderPlannerMessage(message: string, tone: 'info' | 'error'): void {
@@ -878,11 +976,12 @@ class ScheduleManager extends HTMLElement {
 		if (this.saveButton) {
 			this.saveButton.disabled = blocked || this.selectedProfessionalId <= 0;
 		}
-		if (this.roleId !== ROLES.PROFESIONAL) {
-			setSearchableSelectDisabled(
-				this.professionalSelect,
-				blocked || this.professionals.length === 0
-			);
+		if (this.proFilterButton) {
+			this.proFilterButton.disabled =
+				this.isMetaLoading ||
+				this.isScheduleLoading ||
+				this.isSaving ||
+				this.professionals.length === 0;
 		}
 
 		if (this.saveLabel) {
@@ -893,6 +992,7 @@ class ScheduleManager extends HTMLElement {
 					: 'Guardar horarios';
 		}
 
+		this.updateProFilterUi();
 		this.updateViewVisibility();
 
 		this.updatePlannerInteractivity();
@@ -1422,16 +1522,25 @@ class ScheduleManager extends HTMLElement {
 			this.exceptionCalGridNode.appendChild(placeholder);
 		}
 
+		const todayKey = formatDateKey(new Date());
 		for (let day = 1; day <= daysInMonth; day += 1) {
 			const date = new Date(year, month, day);
 			const dateKey = formatDateKey(date);
 			const tone = resolveCalendarDayTone(dateKey, this.exceptionSummaryMap);
 			const isPast = isPastDateKey(dateKey);
+			const isToday = dateKey === todayKey;
 			const dayButton = document.createElement('button');
 			dayButton.type = 'button';
 			dayButton.dataset.exceptionDate = dateKey;
 			dayButton.textContent = String(day);
-			dayButton.className = `schedule-cal-day schedule-cal-day--${tone}${isPast ? ' schedule-cal-day--past' : ''}`;
+			dayButton.className = [
+				'schedule-cal-day',
+				`schedule-cal-day--${tone}`,
+				isPast ? 'schedule-cal-day--past' : '',
+				isToday ? 'schedule-cal-day--today' : '',
+			]
+				.filter(Boolean)
+				.join(' ');
 			this.exceptionCalGridNode.appendChild(dayButton);
 		}
 	}

@@ -2115,16 +2115,7 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-modal__mesh {
-		position: absolute;
-		inset: 0 0 auto;
-		height: 9.5rem;
-		pointer-events: none;
-		z-index: 0;
-		background:
-			radial-gradient(ellipse 90% 80% at 12% -20%, rgba(59, 130, 246, 0.2), transparent 68%),
-			radial-gradient(ellipse 70% 70% at 88% -5%, rgba(139, 92, 246, 0.16), transparent 62%),
-			radial-gradient(ellipse 55% 50% at 48% 8%, rgba(56, 189, 248, 0.12), transparent 58%);
-		filter: blur(28px);
+		display: none;
 	}
 
 	.dashboard-ai-modal__header,
@@ -2281,13 +2272,6 @@ const toPageHref = (page: number) => {
 
 	html[data-theme='dark'] dialog[data-ai-summary-modal].dashboard-ai-modal {
 		background: var(--surface-bright);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-modal__mesh {
-		background:
-			radial-gradient(ellipse 90% 80% at 12% -20%, rgba(59, 130, 246, 0.24), transparent 68%),
-			radial-gradient(ellipse 70% 70% at 88% -5%, rgba(139, 92, 246, 0.2), transparent 62%),
-			radial-gradient(ellipse 55% 50% at 48% 8%, rgba(56, 189, 248, 0.14), transparent 58%);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__icon {

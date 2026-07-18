@@ -1826,20 +1826,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 	}
 
 	.professional-modal__mesh {
-		position: absolute;
-		inset: 0 0 auto;
-		height: 100%;
-		pointer-events: none;
-		background:
-			radial-gradient(ellipse 85% 90% at 8% -30%, rgba(59, 130, 246, 0.14), transparent 62%),
-			radial-gradient(ellipse 70% 80% at 92% -10%, rgba(139, 92, 246, 0.1), transparent 58%);
-		filter: blur(20px);
-	}
-
-	html[data-theme='dark'] .professional-modal__mesh {
-		background:
-			radial-gradient(ellipse 85% 90% at 8% -30%, rgba(59, 130, 246, 0.2), transparent 62%),
-			radial-gradient(ellipse 70% 80% at 92% -10%, rgba(139, 92, 246, 0.16), transparent 58%);
+		display: none;
 	}
 
 	.professional-modal-hero {

@@ -2412,7 +2412,9 @@ html[data-theme='dark'] .dtp-action-btn--primary:hover {
 		height: fit-content;
 		border-bottom: 1px solid var(--shell-border);
 		border-radius: 1.6rem;
-		box-shadow: 0 24px 80px rgb(0 0 0 / 0.2);
+		background: var(--surface-bright);
+		background-image: none;
+		box-shadow: 0 8px 28px rgb(0 0 0 / 0.28);
 	}
 
 	.panel-status-filter-sheet__handle {
@@ -2421,6 +2423,14 @@ html[data-theme='dark'] .dtp-action-btn--primary:hover {
 
 	.panel-status-filter-sheet__header {
 		padding: 1rem 1rem 0.85rem;
+	}
+
+	/* Modales en desktop: fondo plano, sin glow degradado */
+	dialog,
+	[data-settings-modal] {
+		background-color: var(--surface-bright);
+		background-image: none;
+		box-shadow: 0 8px 28px rgb(0 0 0 / 0.28);
 	}
 }
 
