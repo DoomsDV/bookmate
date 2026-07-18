@@ -87,6 +87,14 @@ const professionals = hub?.professionals || [];
 const locations = hub?.locations || [];
 const serviceCategories = hub?.service_categories || [];
 const galleryImages = hub?.gallery_images || [];
+const chunkArray = <T,>(items: T[], size: number): T[][] => {
+	const chunks: T[][] = [];
+	for (let i = 0; i < items.length; i += size) {
+		chunks.push(items.slice(i, i + size));
+	}
+	return chunks;
+};
+const galleryBlocks = chunkArray(galleryImages, 4);
 const bannerUrl = String(hub?.banner_url || '').trim();
 const facebookUrl = String(hub?.facebook_url || '').trim();
 const instagramUrl = String(hub?.instagram_url || '').trim();
@@ -229,6 +237,7 @@ const serializedProfessionals = professionals.length
 						<button type="button" class="hub-tab is-active" data-hub-tab="overview">
 							Overview
 						</button>
+						<button type="button" class="hub-tab" data-hub-tab="galeria">Galería</button>
 						<button type="button" class="hub-tab" data-hub-tab="equipo">Equipo</button>
 						<button type="button" class="hub-tab" data-hub-tab="sucursales">Sucursales</button>
 					</nav>
@@ -240,23 +249,6 @@ const serializedProfessionals = professionals.length
 							data-hub-panel="overview"
 							aria-labelledby="hub-about-title"
 						>
-							{galleryImages.length ? (
-								<div class="hub-gallery" aria-label="Galería del negocio">
-									<p class="hub-categories__label">Galería</p>
-									<ul class="hub-gallery__grid">
-										{galleryImages.map((image, index) => (
-											<li>
-												<img
-													src={image.url}
-													alt=""
-													loading={index < 6 ? 'eager' : 'lazy'}
-													decoding="async"
-												/>
-											</li>
-										))}
-									</ul>
-								</div>
-							) : null}
 							<h2 id="hub-about-title" class="hub-section-title">
 								Sobre {organizationName}
 							</h2>
@@ -279,6 +271,39 @@ const serializedProfessionals = professionals.length
 									</ul>
 								</div>
 							) : null}
+						</section>
+
+						<section
+							id="galeria"
+							class="hub-panel"
+							data-hub-panel="galeria"
+							aria-labelledby="hub-gallery-title"
+							hidden
+						>
+							<h2 id="hub-gallery-title" class="hub-section-title">Galería</h2>
+							{galleryBlocks.length ? (
+								<div class="hub-gallery-blocks" aria-label="Fotos del negocio">
+									{galleryBlocks.map((block, blockIndex) => (
+										<ul class="hub-gallery-block">
+											{block.map((image, imageIndex) => {
+												const globalIndex = blockIndex * 4 + imageIndex;
+												return (
+													<li>
+														<img
+															src={image.url}
+															alt=""
+															loading={globalIndex < 4 ? 'eager' : 'lazy'}
+															decoding="async"
+														/>
+													</li>
+												);
+											})}
+										</ul>
+									))}
+								</div>
+							) : (
+								<p class="hub-empty">Todavía no hay fotos.</p>
+							)}
 						</section>
 
 						<section
@@ -491,7 +516,7 @@ const serializedProfessionals = professionals.length
 		__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
 	};
 
-	const VALID_TABS = new Set(['overview', 'equipo', 'sucursales']);
+	const VALID_TABS = new Set(['overview', 'galeria', 'equipo', 'sucursales']);
 
 	const loadGoogleMaps = async (apiKey: string): Promise<GoogleMapsNamespace> => {
 		const win = window as WindowWithGoogleMaps;

@@ -69,31 +69,33 @@ const previewInitial = {
 
 <public-profile-editor data-ppe-root data-ppe-bootstrap={serialized}>
 	<div class="ppe-page">
-		<header class="ppe-header">
-			<div>
-				<h1 class="ppe-header__title">Perfil Público</h1>
-				<p class="ppe-header__sub">
-					Configurá cómo ven tu negocio los clientes en Hasel. Los cambios se reflejan en la vista previa.
-				</p>
-			</div>
-			<div class="ppe-header__actions">
-				<a
-					class="ppe-btn ppe-btn-secondary"
-					href={hubUrl || '#'}
-					target="_blank"
-					rel="noopener noreferrer"
-					data-ppe-open-public
-				>
-					<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">open_in_new</span>
-					Ver página pública
-				</a>
-			</div>
-		</header>
-
-		<div data-ppe-feedback class="ppe-feedback" hidden></div>
-
 		<div class="ppe-layout">
-			<form class="ppe-form-col" id="ppe-form" data-ppe-form>
+			<div class="ppe-config-pane">
+				<header class="ppe-header">
+					<div>
+						<h1 class="ppe-header__title">Perfil Público</h1>
+						<p class="ppe-header__sub">
+							Configurá cómo ven tu negocio los clientes en Hasel. Los cambios se reflejan en la vista
+							previa.
+						</p>
+					</div>
+					<div class="ppe-header__actions">
+						<a
+							class="ppe-btn ppe-btn-secondary"
+							href={hubUrl || '#'}
+							target="_blank"
+							rel="noopener noreferrer"
+							data-ppe-open-public
+						>
+							<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">open_in_new</span>
+							Ver página pública
+						</a>
+					</div>
+				</header>
+
+				<div data-ppe-feedback class="ppe-feedback" hidden></div>
+
+				<form class="ppe-form-col" id="ppe-form" data-ppe-form>
 				<details class="ppe-accordion" open>
 					<summary>
 						<span class="material-symbols-rounded" aria-hidden="true">link</span>
@@ -157,7 +159,7 @@ const previewInitial = {
 							<span class="ppe-field__label">Logo del negocio</span>
 							<label class="ppe-logo-drop" data-ppe-logo-dropzone>
 								<img
-									src={workspace.logo_url || ''}
+									src={workspace.logo_url || undefined}
 									alt=""
 									class={`ppe-logo-preview ${workspace.logo_url ? '' : 'hidden'}`}
 									data-ppe-logo-preview
@@ -185,7 +187,7 @@ const previewInitial = {
 							<span class="ppe-field__label">Banner del negocio</span>
 							<label class="ppe-banner-drop" data-ppe-banner-dropzone>
 								<img
-									src={bannerUrl || ''}
+									src={bannerUrl || undefined}
 									alt=""
 									class={`ppe-banner-preview ${bannerUrl ? '' : 'hidden'}`}
 									data-ppe-banner-preview
@@ -348,7 +350,8 @@ const previewInitial = {
 						</div>
 					</div>
 				</details>
-			</form>
+				</form>
+			</div>
 
 			<aside class="ppe-phone-col" aria-label="Vista previa móvil">
 				<PublicProfilePreview client:load initial={previewInitial} />

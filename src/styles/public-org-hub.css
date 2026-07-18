@@ -49,8 +49,8 @@ html[data-theme='dark'] .hub-root {
 
 .hub-hero__banner {
 	position: relative;
-	height: clamp(5.5rem, 16vw, 7.5rem);
-	border-radius: 0 0 1.15rem 1.15rem;
+	height: clamp(3.25rem, 10vw, 4.75rem);
+	border-radius: 0 0 1rem 1rem;
 	overflow: hidden;
 	background:
 		radial-gradient(ellipse 80% 90% at 85% 10%, rgba(90, 150, 255, 0.45), transparent 55%),
@@ -85,25 +85,26 @@ html[data-theme='light'] .hub-hero__banner {
 	text-decoration: none;
 }
 
-.hub-gallery {
-	margin: 0 0 1.25rem;
+.hub-gallery-blocks {
+	display: grid;
+	gap: 1.75rem;
 }
 
-.hub-gallery__grid {
+.hub-gallery-block {
 	list-style: none;
-	margin: 0.55rem 0 0;
+	margin: 0;
 	padding: 0;
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 0.45rem;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.55rem;
 }
 
-.hub-gallery__grid img {
+.hub-gallery-block img {
 	display: block;
 	width: 100%;
 	aspect-ratio: 1;
 	object-fit: cover;
-	border-radius: 0.85rem;
+	border-radius: 1.15rem;
 	background: var(--control-surface);
 }
 
@@ -146,19 +147,19 @@ html[data-theme='light'] .hub-hero__banner {
 	position: relative;
 	z-index: 1;
 	max-width: var(--hub-max);
-	margin: -2.25rem auto 0;
-	padding: 0.85rem 1rem 1rem;
-	border-radius: 0.9rem;
+	margin: -1.35rem auto 0;
+	padding: 0.7rem 0.9rem 0.85rem;
+	border-radius: 0.85rem;
 	background: var(--surface-bright, #fff);
 	border: 1px solid var(--shell-border, rgba(148, 163, 184, 0.28));
-	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.04);
 	display: grid;
-	gap: 0.7rem;
+	gap: 0.55rem;
 }
 
 html[data-theme='dark'] .hub-hero__card {
 	background: var(--surface-container, #1c1c1c);
-	box-shadow: 0 10px 25px rgba(0, 0, 0, 0.22);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.18);
 }
 
 .hub-hero__card-top {
@@ -179,13 +180,13 @@ html[data-theme='dark'] .hub-hero__card {
 
 .hub-hero__logo {
 	flex-shrink: 0;
-	width: 3.25rem;
-	height: 3.25rem;
+	width: 2.85rem;
+	height: 2.85rem;
 	border-radius: 9999px;
 	object-fit: cover;
 	border: 2px solid var(--surface-bright, #fff);
 	background: var(--control-surface, #f1f5f9);
-	box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+	box-shadow: 0 3px 10px rgba(15, 23, 42, 0.05);
 }
 
 .hub-hero__logo--placeholder {
@@ -270,7 +271,7 @@ html[data-theme='dark'] .hub-hero__card {
 
 .hub-tabs {
 	max-width: var(--hub-max);
-	margin: 0.85rem auto 0;
+	margin: 1.15rem auto 0;
 	padding: 0 var(--hub-pad-x);
 	display: flex;
 	gap: 0.4rem;
@@ -311,7 +312,7 @@ html[data-theme='dark'] .hub-hero__card {
 .hub-panels {
 	max-width: var(--hub-max);
 	margin: 0 auto;
-	padding: 1.1rem var(--hub-pad-x) 3rem;
+	padding: 1.5rem var(--hub-pad-x) 3.5rem;
 }
 
 .hub-panel {
@@ -321,7 +322,7 @@ html[data-theme='dark'] .hub-hero__card {
 
 .hub-panel.is-active {
 	display: grid;
-	gap: 1.25rem;
+	gap: 1.5rem;
 	animation: hub-panel-in 220ms ease;
 }
 

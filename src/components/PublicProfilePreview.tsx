@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import {
 	PUBLIC_PROFILE_PREVIEW_EVENT,
 	type PublicProfilePreviewState,
@@ -6,18 +6,40 @@ import {
 
 const EMPTY_ABOUT = 'Este negocio todavía no agregó una descripción.';
 
+type PreviewTab = 'overview' | 'galeria' | 'equipo' | 'sucursales';
+
 type Props = {
 	initial: PublicProfilePreviewState;
 };
 
+const chunkArray = <T,>(items: T[], size: number): T[][] => {
+	const chunks: T[][] = [];
+	for (let i = 0; i < items.length; i += size) {
+		chunks.push(items.slice(i, i + size));
+	}
+	return chunks;
+};
+
+const galleryCount = (urls: unknown) =>
+	Array.isArray(urls) ? urls.filter(Boolean).length : 0;
+
 export default function PublicProfilePreview({ initial }: Props) {
 	const [state, setState] = useState<PublicProfilePreviewState>(initial);
+	const [activeTab, setActiveTab] = useState<PreviewTab>('overview');
+	const galleryCountRef = useRef(galleryCount(initial.galleryUrls));
 
 	useEffect(() => {
 		const onUpdate = (event: Event) => {
 			const detail = (event as CustomEvent<Partial<PublicProfilePreviewState>>).detail;
 			if (!detail || typeof detail !== 'object') return;
 			setState((prev) => ({ ...prev, ...detail }));
+			if (Array.isArray(detail.galleryUrls)) {
+				const nextCount = galleryCount(detail.galleryUrls);
+				if (nextCount !== galleryCountRef.current) {
+					galleryCountRef.current = nextCount;
+					setActiveTab('galeria');
+				}
+			}
 		};
 		window.addEventListener(PUBLIC_PROFILE_PREVIEW_EVENT, onUpdate as EventListener);
 		return () =>
@@ -27,6 +49,7 @@ export default function PublicProfilePreview({ initial }: Props) {
 	const description = String(state.description || '').trim();
 	const hasDescription = description.length > 0;
 	const gallery = Array.isArray(state.galleryUrls) ? state.galleryUrls.filter(Boolean) : [];
+	const galleryBlocks = chunkArray(gallery, 4);
 
 	return (
 		<div class="ppe-phone">
@@ -104,30 +127,32 @@ export default function PublicProfilePreview({ initial }: Props) {
 						</div>
 					</section>
 
-					<nav class="hub-tabs" aria-hidden="true">
-						<span class="hub-tab is-active">Overview</span>
-						<span class="hub-tab">Equipo</span>
-						<span class="hub-tab">Sucursales</span>
+					<nav class="hub-tabs" aria-label="Vista previa de secciones">
+						{(
+							[
+								['overview', 'Overview'],
+								['galeria', 'Galería'],
+								['equipo', 'Equipo'],
+								['sucursales', 'Sucursales'],
+							] as const
+						).map(([id, label]) => (
+							<button
+								key={id}
+								type="button"
+								class={`hub-tab ${activeTab === id ? 'is-active' : ''}`}
+								aria-selected={activeTab === id}
+								onClick={() => setActiveTab(id)}
+							>
+								{label}
+							</button>
+						))}
 					</nav>
 
 					<div class="hub-panels">
-						<section class="hub-panel is-active">
-							{gallery.length ? (
-								<div class="hub-gallery">
-									<p class="hub-categories__label">Galería</p>
-									<ul class="hub-gallery__grid">
-										{gallery.slice(0, 6).map((url, index) => (
-											<li key={`${url}-${index}`}>
-												<img src={url} alt="" loading={index < 4 ? 'eager' : 'lazy'} />
-											</li>
-										))}
-									</ul>
-									{gallery.length > 6 ? (
-										<p class="ppe-field__hint">+{gallery.length - 6} más</p>
-									) : null}
-								</div>
-							) : null}
-
+						<section
+							class={`hub-panel ${activeTab === 'overview' ? 'is-active' : ''}`}
+							hidden={activeTab !== 'overview'}
+						>
 							<h3 class="hub-section-title">
 								Sobre <span>{state.organizationName}</span>
 							</h3>
@@ -146,6 +171,48 @@ export default function PublicProfilePreview({ initial }: Props) {
 									</ul>
 								</div>
 							) : null}
+						</section>
+
+						<section
+							class={`hub-panel ${activeTab === 'galeria' ? 'is-active' : ''}`}
+							hidden={activeTab !== 'galeria'}
+						>
+							<h3 class="hub-section-title">Galería</h3>
+							{galleryBlocks.length ? (
+								<div class="hub-gallery-blocks" aria-label="Fotos del negocio">
+									{galleryBlocks.map((block, blockIndex) => (
+										<ul class="hub-gallery-block" key={`block-${blockIndex}`}>
+											{block.map((url, imageIndex) => (
+												<li key={`${url}-${imageIndex}`}>
+													<img
+														src={url}
+														alt=""
+														loading={blockIndex === 0 ? 'eager' : 'lazy'}
+													/>
+												</li>
+											))}
+										</ul>
+									))}
+								</div>
+							) : (
+								<p class="hub-empty">Todavía no hay fotos.</p>
+							)}
+						</section>
+
+						<section
+							class={`hub-panel ${activeTab === 'equipo' ? 'is-active' : ''}`}
+							hidden={activeTab !== 'equipo'}
+						>
+							<h3 class="hub-section-title">Equipo</h3>
+							<p class="hub-empty">Vista previa: el equipo se muestra en la página pública.</p>
+						</section>
+
+						<section
+							class={`hub-panel ${activeTab === 'sucursales' ? 'is-active' : ''}`}
+							hidden={activeTab !== 'sucursales'}
+						>
+							<h3 class="hub-section-title">Sucursales</h3>
+							<p class="hub-empty">Vista previa: las sucursales se muestran en la página pública.</p>
 						</section>
 					</div>
 				</div>
