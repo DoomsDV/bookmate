@@ -155,47 +155,78 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 										</div>
 
 										<div class="mt-0.5">
-												<div
-													class="mb-2 hidden rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-medium text-(--on-surface-variant)"
-													data-schedule-loading
-												>
-													Cargando configuración de horarios...
-												</div>
-
 												<div data-schedule-view-template>
 													<p class="mb-2 text-[0.88rem] font-medium text-(--on-surface-variant)">
 														Horario habitual que se repite cada semana.
 													</p>
-													<details
-														class="schedule-template-callout"
-														data-schedule-template-notes
+													<div
+														class="schedule-loading-skeleton hidden grid gap-4 sm:gap-5"
+														data-schedule-loading-template
+														aria-busy="true"
+														aria-label="Cargando plantilla semanal"
 													>
-														<summary class="schedule-template-callout__summary">
-															<span
-																class="schedule-template-callout__icon material-symbols-rounded"
-																aria-hidden="true"
-															>info</span>
-															<span class="schedule-template-callout__title">Antes de guardar</span>
-															<span
-																class="schedule-template-callout__chevron material-symbols-rounded"
-																aria-hidden="true"
-															>expand_more</span>
-														</summary>
-														<div class="schedule-template-callout__body">
-															<ul class="schedule-template-callout__list">
-																<li>
-																	Al guardar la plantilla, las citas ya agendadas no se mueven solas.
-																</li>
-																<li>
-																	Si hay citas futuras desalineadas, el sistema te avisará antes de guardar.
-																</li>
-																<li>
-																	Revisa el calendario y reprograma manualmente; avisa al cliente si cambias fecha u hora.
-																</li>
-															</ul>
-														</div>
-													</details>
-													<div class="grid gap-4 sm:gap-5" data-weekly-planner></div>
+														{
+															[0, 1, 2].map(() => (
+																<article
+																	class="schedule-day-card panel-skeleton-card pointer-events-none p-4 sm:p-5"
+																	aria-hidden="true"
+																>
+																	<div class="flex items-center justify-between gap-3">
+																		<div class="panel-skeleton-line h-5 w-24 rounded-md"></div>
+																		<div class="panel-skeleton-line h-7 w-24 rounded-full"></div>
+																	</div>
+																	<div class="panel-skeleton-line mt-3 h-3.5 w-36 rounded"></div>
+																	<div class="mt-4 grid gap-3">
+																		<div class="grid grid-cols-[1fr_5.5rem_5.5rem] gap-2 sm:grid-cols-[1fr_6rem_6rem_auto]">
+																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
+																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
+																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
+																			<div class="panel-skeleton-line hidden size-11 rounded-2xl sm:block"></div>
+																		</div>
+																		<div class="grid grid-cols-[1fr_5.5rem_5.5rem] gap-2 sm:grid-cols-[1fr_6rem_6rem_auto]">
+																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
+																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
+																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
+																			<div class="panel-skeleton-line hidden size-11 rounded-2xl sm:block"></div>
+																		</div>
+																	</div>
+																	<div class="panel-skeleton-line mt-4 h-10 w-36 rounded-full"></div>
+																</article>
+															))
+														}
+													</div>
+													<div data-schedule-template-content>
+														<details
+															class="schedule-template-callout"
+															data-schedule-template-notes
+														>
+															<summary class="schedule-template-callout__summary">
+																<span
+																	class="schedule-template-callout__icon material-symbols-rounded"
+																	aria-hidden="true"
+																>info</span>
+																<span class="schedule-template-callout__title">Antes de guardar</span>
+																<span
+																	class="schedule-template-callout__chevron material-symbols-rounded"
+																	aria-hidden="true"
+																>expand_more</span>
+															</summary>
+															<div class="schedule-template-callout__body">
+																<ul class="schedule-template-callout__list">
+																	<li>
+																		Al guardar la plantilla, las citas ya agendadas no se mueven solas.
+																	</li>
+																	<li>
+																		Si hay citas futuras desalineadas, el sistema te avisará antes de guardar.
+																	</li>
+																	<li>
+																		Revisa el calendario y reprograma manualmente; avisa al cliente si cambias fecha u hora.
+																	</li>
+																</ul>
+															</div>
+														</details>
+														<div class="grid gap-4 sm:gap-5" data-weekly-planner></div>
+													</div>
 												</div>
 
 												<div class="hidden" data-schedule-view-exceptions>
@@ -204,54 +235,78 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 													</p>
 
 													<div
-														class="mb-3 flex flex-wrap gap-3 text-[0.82rem] font-semibold text-(--on-surface-variant)"
-														data-exception-legend
-													>
-														<span class="inline-flex items-center gap-1.5">
-															<span class="schedule-cal-dot schedule-cal-dot--normal"></span>
-															Usa plantilla
-														</span>
-														<span class="inline-flex items-center gap-1.5">
-															<span class="schedule-cal-dot schedule-cal-dot--blocked"></span>
-															Bloqueado
-														</span>
-														<span class="inline-flex items-center gap-1.5">
-															<span class="schedule-cal-dot schedule-cal-dot--override"></span>
-															Horario especial
-														</span>
-													</div>
-
-													<div
-														class="schedule-exception-calendar"
-														data-exception-calendar-panel
+														class="schedule-loading-skeleton schedule-exception-calendar hidden"
+														data-schedule-loading-exceptions
+														aria-busy="true"
+														aria-label="Cargando excepciones del calendario"
 													>
 														<div class="schedule-exception-calendar__toolbar">
-															<button
-																type="button"
-																class="schedule-cal-nav"
-																data-exception-cal-prev
-																aria-label="Mes anterior"
-															>
-																<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-															</button>
-															<p
-																class="schedule-exception-calendar__month"
-																data-exception-cal-month
-															></p>
-															<button
-																type="button"
-																class="schedule-cal-nav"
-																data-exception-cal-next
-																aria-label="Mes siguiente"
-															>
-																<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
-															</button>
+															<div class="panel-skeleton-line size-9 rounded-full"></div>
+															<div class="panel-skeleton-line mx-auto h-5 w-36 rounded-md"></div>
+															<div class="panel-skeleton-line size-9 rounded-full"></div>
 														</div>
-														<div class="schedule-exception-calendar__weekdays">
+														<div class="schedule-exception-calendar__weekdays" aria-hidden="true">
 															<span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span>
 															<span>Vie</span><span>Sáb</span><span>Dom</span>
 														</div>
-														<div class="schedule-exception-calendar__grid" data-exception-cal-grid></div>
+														<div class="schedule-exception-calendar__grid" aria-hidden="true">
+															{Array.from({ length: 35 }).map(() => (
+																<div class="panel-skeleton-line min-h-[2.55rem] w-full rounded-[0.75rem]"></div>
+															))}
+														</div>
+													</div>
+
+													<div data-schedule-exceptions-content>
+														<div
+															class="mb-3 flex flex-wrap gap-3 text-[0.82rem] font-semibold text-(--on-surface-variant)"
+															data-exception-legend
+														>
+															<span class="inline-flex items-center gap-1.5">
+																<span class="schedule-cal-dot schedule-cal-dot--normal"></span>
+																Usa plantilla
+															</span>
+															<span class="inline-flex items-center gap-1.5">
+																<span class="schedule-cal-dot schedule-cal-dot--blocked"></span>
+																Bloqueado
+															</span>
+															<span class="inline-flex items-center gap-1.5">
+																<span class="schedule-cal-dot schedule-cal-dot--override"></span>
+																Horario especial
+															</span>
+														</div>
+
+														<div
+															class="schedule-exception-calendar"
+															data-exception-calendar-panel
+														>
+															<div class="schedule-exception-calendar__toolbar">
+																<button
+																	type="button"
+																	class="schedule-cal-nav"
+																	data-exception-cal-prev
+																	aria-label="Mes anterior"
+																>
+																	<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+																</button>
+																<p
+																	class="schedule-exception-calendar__month"
+																	data-exception-cal-month
+																></p>
+																<button
+																	type="button"
+																	class="schedule-cal-nav"
+																	data-exception-cal-next
+																	aria-label="Mes siguiente"
+																>
+																	<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
+																</button>
+															</div>
+															<div class="schedule-exception-calendar__weekdays">
+																<span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span>
+																<span>Vie</span><span>Sáb</span><span>Dom</span>
+															</div>
+															<div class="schedule-exception-calendar__grid" data-exception-cal-grid></div>
+														</div>
 													</div>
 												</div>
 											</div>

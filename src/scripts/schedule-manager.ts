@@ -105,7 +105,10 @@ class ScheduleManager extends HTMLElement {
 	private saveButton: HTMLButtonElement | null = null;
 	private saveLabel: HTMLElement | null = null;
 	private errorNode: HTMLElement | null = null;
-	private loadingNode: HTMLElement | null = null;
+	private templateLoadingNode: HTMLElement | null = null;
+	private exceptionsLoadingNode: HTMLElement | null = null;
+	private templateContentNode: HTMLElement | null = null;
+	private exceptionsContentNode: HTMLElement | null = null;
 
 	private professionals: ProfessionalLov[] = [];
 	private locations: LocationLov[] = [];
@@ -175,7 +178,14 @@ class ScheduleManager extends HTMLElement {
 		this.saveButton = this.querySelector<HTMLButtonElement>('[data-save-schedule]');
 		this.saveLabel = this.querySelector<HTMLElement>('[data-save-schedule-label]');
 		this.errorNode = this.querySelector<HTMLElement>('[data-schedule-error]');
-		this.loadingNode = this.querySelector<HTMLElement>('[data-schedule-loading]');
+		this.templateLoadingNode = this.querySelector<HTMLElement>('[data-schedule-loading-template]');
+		this.exceptionsLoadingNode = this.querySelector<HTMLElement>(
+			'[data-schedule-loading-exceptions]'
+		);
+		this.templateContentNode = this.querySelector<HTMLElement>('[data-schedule-template-content]');
+		this.exceptionsContentNode = this.querySelector<HTMLElement>(
+			'[data-schedule-exceptions-content]'
+		);
 		this.templateViewNode = this.querySelector<HTMLElement>('[data-schedule-view-template]');
 		this.exceptionsViewNode = this.querySelector<HTMLElement>('[data-schedule-view-exceptions]');
 		this.tabButtons = this.querySelectorAll<HTMLButtonElement>('[data-schedule-tab]');
@@ -1414,21 +1424,15 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionsViewNode?.classList.toggle('hidden', this.activeView !== 'exceptions');
 		this.saveButton?.classList.toggle('hidden', this.activeView !== 'template');
 
-		if (this.loadingNode) {
-			const showLoading =
-				this.activeView === 'template'
-					? this.isMetaLoading || this.isScheduleLoading
-					: this.isMetaLoading || this.isExceptionsLoading;
-			this.loadingNode.classList.toggle('hidden', !showLoading);
-			this.loadingNode.textContent =
-				this.activeView === 'template'
-					? this.isMetaLoading
-						? 'Cargando configuracion de horarios...'
-						: 'Cargando agenda del profesional...'
-					: this.isExceptionsLoading
-						? 'Cargando excepciones del calendario...'
-						: 'Cargando configuracion de horarios...';
-		}
+		const showTemplateLoading =
+			this.activeView === 'template' && (this.isMetaLoading || this.isScheduleLoading);
+		const showExceptionsLoading =
+			this.activeView === 'exceptions' && (this.isMetaLoading || this.isExceptionsLoading);
+
+		this.templateLoadingNode?.classList.toggle('hidden', !showTemplateLoading);
+		this.templateContentNode?.classList.toggle('hidden', showTemplateLoading);
+		this.exceptionsLoadingNode?.classList.toggle('hidden', !showExceptionsLoading);
+		this.exceptionsContentNode?.classList.toggle('hidden', showExceptionsLoading);
 	}
 
 	private createDefaultExceptionSlot(): ExceptionSlotDraft {
