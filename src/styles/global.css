@@ -681,9 +681,17 @@ button {
 	border-bottom: 1px solid var(--shell-border);
 }
 
-/* TopBar del panel: mismo fondo que el área principal en oscuro */
+/* TopBar del panel: translúcido con blur (no aplica al header del sidebar) */
+.shell-header-zone:not(.sidebar-account-header) {
+	background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 62%, transparent);
+	border-bottom-color: color-mix(in srgb, var(--shell-border) 55%, transparent);
+	backdrop-filter: blur(18px) saturate(1.15);
+	-webkit-backdrop-filter: blur(18px) saturate(1.15);
+}
+
 html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
-	background-color: var(--page-background);
+	background-color: color-mix(in srgb, var(--page-background, #131314) 58%, transparent);
+	border-bottom-color: color-mix(in srgb, var(--shell-border) 45%, transparent);
 }
 
 .shell-header-zone.sidebar-account-header {

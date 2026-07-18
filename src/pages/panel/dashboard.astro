@@ -88,6 +88,7 @@ const hourAsuncion = Number(
 const greetingWord =
 	hourAsuncion < 12 ? 'Buenos días' : hourAsuncion < 19 ? 'Buenas tardes' : 'Buenas noches';
 const greetingTitle = userFirstName ? `${greetingWord}, ${userFirstName}` : greetingWord;
+const greetingHasName = Boolean(userFirstName);
 
 const todayTotal = dashboard.kpis.today_appointments;
 const todayCompleted = Math.min(todayTotal, dashboard.kpis.today_completed_appointments || 0);
@@ -244,7 +245,7 @@ const toPageHref = (page: number) => {
 ---
 
 <Layout>
-	<div class="dashboard-canvas min-h-screen w-full max-w-full overflow-x-hidden bg-(--page-background) transition-colors duration-300">
+	<div class="dashboard-canvas min-h-screen w-full max-w-full overflow-x-hidden transition-colors duration-300">
 		<div
 			class="app-shell grid min-h-screen overflow-hidden bg-transparent"
 			data-app-shell
@@ -252,7 +253,7 @@ const toPageHref = (page: number) => {
 		>
 			<SideNav currentPath={Astro.url.pathname} />
 
-			<div class="dashboard-content-canvas grid min-h-full min-w-0 max-w-full grid-rows-[auto_1fr] overflow-x-hidden bg-(--page-background) transition-colors duration-300">
+			<div class="dashboard-content-canvas grid min-h-full min-w-0 max-w-full grid-rows-[auto_1fr] overflow-x-hidden transition-colors duration-300">
 				<TopBar>
 					{showTeamOverview && (
 						<div
@@ -277,15 +278,23 @@ const toPageHref = (page: number) => {
 							<section class="dashboard-summary-card mb-0 transition-all duration-300">
 								<div class="flex flex-col justify-between gap-3 lg:flex-row lg:items-center lg:gap-4">
 									<div class="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
-										<div class="dashboard-greeting grid min-w-0 gap-0.5">
+										<div class="dashboard-greeting grid min-w-0 gap-1">
 											<h1
-												class="dashboard-greeting__title text-3xl font-extrabold text-[#202124] dark:text-[#E3E3E3] tracking-tight sm:text-4xl"
+												class="dashboard-greeting__title font-extrabold text-[#202124] dark:text-[#E3E3E3] tracking-tight"
 												data-dashboard-greeting
+												aria-label={greetingTitle}
 											>
-												{greetingTitle}
+												{greetingHasName ? (
+													<>
+														<span class="dashboard-greeting__word">{greetingWord},</span>
+														<span class="dashboard-greeting__name">{userFirstName}</span>
+													</>
+												) : (
+													greetingWord
+												)}
 											</h1>
 											<p
-												class="dashboard-greeting__sub text-[0.95rem] font-medium text-[#5f6368] dark:text-[#C4C7C5]"
+												class="dashboard-greeting__sub font-medium text-[#5f6368] dark:text-[#C4C7C5]"
 												data-dashboard-greeting-sub
 											>
 												{greetingSubtitle}
@@ -333,42 +342,6 @@ const toPageHref = (page: number) => {
 										</a>
 									</div>
 								</div>
-
-								<div
-									class="dashboard-ai-strip is-generating mt-5 mb-3"
-									data-ai-summary-card
-									data-role-id={String(roleId)}
-									data-default-summary-short={defaultAiSummaryShort}
-									data-default-summary-full={defaultAiSummaryFull}
-									aria-live="polite"
-									aria-busy="true"
-								>
-									<div class="dashboard-ai-strip__head">
-										<span class="dashboard-ai-strip__badge" aria-hidden="true">
-											<span class="dashboard-ai-strip__icon material-symbols-rounded">auto_awesome</span>
-										</span>
-										<div class="dashboard-ai-strip__meta">
-											<p class="dashboard-ai-strip__eyebrow">Resumen inteligente del día</p>
-										</div>
-									</div>
-									<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
-										<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--lg"></span>
-										<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--md"></span>
-										<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--sm"></span>
-									</div>
-									<p class="dashboard-ai-strip__text" data-ai-summary-line>
-										Generando resumen inteligente…
-									</p>
-									<button
-										type="button"
-										class="dashboard-ai-strip__action"
-										data-open-ai-summary-modal
-										hidden
-									>
-										<span class="dashboard-ai-strip__action-label">Ver análisis completo</span>
-										<span class="material-symbols-rounded" aria-hidden="true">expand_more</span>
-									</button>
-								</div>
 							</section>
 
 							{roleId === ROLES.ADMIN && (
@@ -382,10 +355,6 @@ const toPageHref = (page: number) => {
 											<span class="material-symbols-rounded shrink-0 text-[1.3rem] text-(--primary)" aria-hidden="true">trending_up</span>
 											<h2 class="dashboard-profitability-title min-w-0 text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Rentabilidad del mes</h2>
 										</div>
-										<span class="dashboard-premium-badge inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-[0.72rem] font-bold">
-											<span class="material-symbols-rounded text-[0.9rem]" aria-hidden="true">workspace_premium</span>
-											Premium
-										</span>
 									</div>
 
 									<div class="dashboard-carousel">
@@ -426,6 +395,43 @@ const toPageHref = (page: number) => {
 									</div>
 								</section>
 							)}
+
+							<div
+								class="dashboard-ai-strip is-generating"
+								data-ai-summary-card
+								data-role-id={String(roleId)}
+								data-default-summary-short={defaultAiSummaryShort}
+								data-default-summary-full={defaultAiSummaryFull}
+								aria-live="polite"
+								aria-busy="true"
+							>
+								<div class="dashboard-ai-strip__glow" aria-hidden="true"></div>
+								<div class="dashboard-ai-strip__head">
+									<span class="dashboard-ai-strip__badge" aria-hidden="true">
+										<span class="dashboard-ai-strip__icon material-symbols-rounded">auto_awesome</span>
+									</span>
+									<div class="dashboard-ai-strip__meta">
+										<p class="dashboard-ai-strip__eyebrow">Resumen inteligente del día</p>
+									</div>
+								</div>
+								<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
+									<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--lg"></span>
+									<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--md"></span>
+									<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--sm"></span>
+								</div>
+								<p class="dashboard-ai-strip__text" data-ai-summary-line>
+									Generando resumen inteligente…
+								</p>
+								<button
+									type="button"
+									class="dashboard-ai-strip__action"
+									data-open-ai-summary-modal
+									hidden
+								>
+									<span class="dashboard-ai-strip__action-label">Ver análisis completo</span>
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
+								</button>
+							</div>
 
 							{
 								loadError ? (
@@ -2282,12 +2288,60 @@ const toPageHref = (page: number) => {
 
 	.dashboard-canvas,
 	.dashboard-content-canvas {
-		background: var(--page-background);
+		position: relative;
+		isolation: isolate;
+		/* Mesh: azul → celeste → verde agua (como referencia) */
+		background:
+			radial-gradient(ellipse 70% 50% at 6% 36%, rgba(147, 197, 253, 0.14), transparent 62%),
+			radial-gradient(ellipse 80% 55% at 55% 18%, rgba(186, 230, 253, 0.28), transparent 60%),
+			radial-gradient(ellipse 70% 50% at 92% 42%, rgba(165, 243, 252, 0.28), transparent 55%),
+			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(167, 243, 208, 0.26), transparent 58%),
+			radial-gradient(ellipse 60% 45% at 35% 88%, rgba(204, 251, 241, 0.2), transparent 62%),
+			linear-gradient(
+				165deg,
+				#f8fbfe 0%,
+				#eef5fa 32%,
+				#e8f5f8 58%,
+				#eaf8f4 82%,
+				#f4faf8 100%
+			);
+		transition: background 300ms ease;
+	}
+
+	.dashboard-content-canvas::before {
+		content: '';
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		pointer-events: none;
+		background:
+			radial-gradient(ellipse 40% 30% at 10% 46%, rgba(96, 165, 250, 0.06), transparent 72%),
+			radial-gradient(ellipse 52% 38% at 88% 58%, rgba(34, 211, 238, 0.1), transparent 68%),
+			radial-gradient(ellipse 45% 40% at 72% 90%, rgba(52, 211, 153, 0.12), transparent 70%);
+		filter: blur(44px);
+		opacity: 0.55;
+	}
+
+	.dashboard-content-canvas > * {
+		position: relative;
+		z-index: 1;
 	}
 
 	html[data-theme='dark'] .dashboard-canvas,
 	html[data-theme='dark'] .dashboard-content-canvas {
-		background: var(--page-background, #131314);
+		background:
+			radial-gradient(ellipse 70% 50% at 6% 36%, rgba(59, 130, 246, 0.05), transparent 62%),
+			radial-gradient(ellipse 80% 55% at 55% 18%, rgba(56, 189, 248, 0.08), transparent 60%),
+			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(45, 212, 191, 0.08), transparent 58%),
+			var(--page-background, #131314);
+	}
+
+	html[data-theme='dark'] .dashboard-content-canvas::before {
+		opacity: 0.3;
+		background:
+			radial-gradient(ellipse 40% 30% at 10% 46%, rgba(96, 165, 250, 0.05), transparent 72%),
+			radial-gradient(ellipse 52% 38% at 88% 58%, rgba(34, 211, 238, 0.07), transparent 68%),
+			radial-gradient(ellipse 45% 40% at 72% 90%, rgba(52, 211, 153, 0.08), transparent 70%);
 	}
 
 	.dashboard-primary-cta {
@@ -2400,7 +2454,23 @@ const toPageHref = (page: number) => {
 		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
 	}
 
+	.dashboard-greeting__title {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.05em;
+		font-size: clamp(2.35rem, 5.5vw, 3.15rem);
+		line-height: 1.08;
+	}
+
+	.dashboard-greeting__word,
+	.dashboard-greeting__name {
+		display: block;
+	}
+
 	.dashboard-greeting__sub {
+		font-size: clamp(0.9rem, 2vw, 1rem);
+		line-height: 1.4;
 		overflow-wrap: anywhere;
 		word-break: break-word;
 	}
@@ -2549,7 +2619,7 @@ const toPageHref = (page: number) => {
 	.dashboard-ai-strip {
 		position: relative;
 		isolation: isolate;
-		overflow: hidden;
+		overflow: visible;
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
@@ -2559,8 +2629,47 @@ const toPageHref = (page: number) => {
 		padding: 1.15rem 1.2rem;
 		border-radius: 1.25rem;
 		border: 1px solid color-mix(in srgb, var(--shell-border, #d0d7e2) 88%, transparent);
-		background: color-mix(in srgb, var(--surface-bright, #ffffff) 88%, var(--page-background, #f4f6f8) 12%);
+		background: color-mix(in srgb, var(--surface-bright, #ffffff) 92%, var(--page-background, #f4f6f8) 8%);
 		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
+	}
+
+	.dashboard-ai-strip__glow {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		overflow: hidden;
+		border-radius: inherit;
+		pointer-events: none;
+	}
+
+	.dashboard-ai-strip__glow::before,
+	.dashboard-ai-strip__glow::after {
+		content: '';
+		position: absolute;
+		pointer-events: none;
+		filter: blur(40px);
+	}
+
+	/* Aurora inferior suave, sin neón */
+	.dashboard-ai-strip__glow::before {
+		left: -20%;
+		right: -10%;
+		bottom: -58%;
+		height: 88%;
+		background:
+			radial-gradient(ellipse 55% 48% at 30% 74%, rgba(147, 197, 253, 0.22), transparent 72%),
+			radial-gradient(ellipse 48% 42% at 70% 80%, rgba(196, 181, 253, 0.14), transparent 70%),
+			radial-gradient(ellipse 42% 38% at 52% 96%, rgba(165, 243, 252, 0.16), transparent 68%);
+		opacity: 0.65;
+	}
+
+	.dashboard-ai-strip__glow::after {
+		left: 40%;
+		right: -8%;
+		bottom: -42%;
+		height: 62%;
+		background: radial-gradient(ellipse 50% 45% at 60% 80%, rgba(191, 219, 254, 0.12), transparent 72%);
+		opacity: 0.5;
 	}
 
 	.dashboard-ai-strip__head,
@@ -2664,28 +2773,27 @@ const toPageHref = (page: number) => {
 	.dashboard-ai-strip__action {
 		display: inline-flex;
 		align-items: center;
-		justify-content: center;
-		gap: 0.4rem;
-		width: 100%;
-		min-height: 2.85rem;
-		margin: 0.15rem 0 0;
-		padding: 0.75rem 1rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border, #d0d7e2) 92%, transparent);
-		border-radius: 0.95rem;
-		background: color-mix(in srgb, var(--page-background, #f4f6f8) 72%, #ffffff 28%);
-		color: color-mix(in srgb, var(--primary) 82%, var(--on-surface) 18%);
-		font-size: 0.78rem;
-		font-weight: 800;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
+		justify-content: flex-start;
+		align-self: flex-start;
+		gap: 0.15rem;
+		width: auto;
+		min-height: 0;
+		margin: 0.1rem 0 0;
+		padding: 0.15rem 0;
+		border: 0;
+		border-radius: 0.35rem;
+		background: transparent;
+		color: color-mix(in srgb, var(--primary) 72%, var(--on-surface-variant) 28%);
+		font-size: 0.82rem;
+		font-weight: 600;
+		letter-spacing: 0.01em;
+		text-transform: none;
 		cursor: pointer;
 		text-decoration: none;
-		text-align: center;
+		text-align: left;
 		transition:
 			color 160ms ease,
-			background 160ms ease,
-			border-color 160ms ease,
-			transform 160ms ease;
+			opacity 160ms ease;
 	}
 
 	.dashboard-ai-strip__action[hidden] {
@@ -2697,25 +2805,24 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-ai-strip__action .material-symbols-rounded {
-		font-size: 1.2rem;
+		font-size: 1.05rem;
 		line-height: 1;
-		opacity: 0.95;
+		opacity: 0.8;
 		transition: transform 160ms ease;
 	}
 
 	.dashboard-ai-strip__action:hover {
-		background: color-mix(in srgb, var(--primary) 8%, var(--page-background, #f4f6f8) 92%);
-		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border, #d0d7e2) 72%);
+		background: transparent;
 		color: var(--primary);
 	}
 
 	.dashboard-ai-strip__action:hover .material-symbols-rounded {
-		transform: translateY(1px);
+		transform: translateX(2px);
 	}
 
 	.dashboard-ai-strip__action:focus-visible {
 		outline: 2px solid var(--primary);
-		outline-offset: 2px;
+		outline-offset: 3px;
 	}
 
 	.dashboard-ai-strip.is-generating {
@@ -2723,18 +2830,8 @@ const toPageHref = (page: number) => {
 		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.05);
 	}
 
-	.dashboard-ai-strip.is-generating::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		pointer-events: none;
-		background: radial-gradient(
-			circle at 14% 20%,
-			color-mix(in srgb, var(--primary) 8%, transparent),
-			transparent 48%
-		);
-		opacity: 0.7;
-		animation: dashboard-ai-strip-glow 2.4s ease-in-out infinite;
+	.dashboard-ai-strip.is-generating .dashboard-ai-strip__glow::before {
+		animation: dashboard-ai-strip-glow 3.2s ease-in-out infinite;
 	}
 
 	.dashboard-ai-strip.is-generating .dashboard-ai-strip__head,
@@ -2846,6 +2943,20 @@ const toPageHref = (page: number) => {
 		box-shadow: none;
 	}
 
+	html[data-theme='dark'] .dashboard-ai-strip__glow::before {
+		background:
+			radial-gradient(ellipse 55% 48% at 30% 74%, rgba(59, 130, 246, 0.18), transparent 72%),
+			radial-gradient(ellipse 48% 42% at 70% 80%, rgba(139, 92, 246, 0.12), transparent 70%),
+			radial-gradient(ellipse 42% 38% at 52% 96%, rgba(34, 211, 238, 0.12), transparent 68%);
+		opacity: 0.7;
+		filter: blur(42px);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-strip__glow::after {
+		background: radial-gradient(ellipse 50% 45% at 60% 80%, rgba(99, 102, 241, 0.1), transparent 72%);
+		opacity: 0.55;
+	}
+
 	html[data-theme='dark'] .dashboard-ai-strip__badge {
 		background: transparent;
 		border: 0;
@@ -2879,15 +2990,14 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__action {
-		border-color: color-mix(in srgb, var(--shell-border, #3a3a3a) 90%, transparent);
-		background: color-mix(in srgb, var(--page-background, #131314) 55%, var(--surface-container-high, #222222) 45%);
-		color: color-mix(in srgb, var(--primary) 55%, #c7d2fe 45%);
+		border: 0;
+		background: transparent;
+		color: color-mix(in srgb, var(--primary) 42%, #a5b4fc 58%);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__action:hover {
-		background: color-mix(in srgb, var(--primary) 10%, var(--surface-container-high, #222222) 90%);
-		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border, #3a3a3a) 72%);
-		color: color-mix(in srgb, var(--primary) 45%, #e0e7ff 55%);
+		background: transparent;
+		color: color-mix(in srgb, var(--primary) 35%, #c7d2fe 65%);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip__action:focus-visible {
@@ -2918,14 +3028,13 @@ const toPageHref = (page: number) => {
 		}
 
 		.dashboard-ai-strip__action {
-			min-height: 3rem;
-			font-size: 0.8rem;
+			font-size: 0.84rem;
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.dashboard-ai-strip__icon,
-		.dashboard-ai-strip.is-generating::before,
+		.dashboard-ai-strip.is-generating .dashboard-ai-strip__glow::before,
 		.dashboard-ai-strip.is-generating .dashboard-ai-strip__icon,
 		.dashboard-ai-strip.is-generating .dashboard-ai-strip__badge,
 		.dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-line::after {
@@ -4938,19 +5047,18 @@ const toPageHref = (page: number) => {
 
 	@media (max-width: 768px) {
 		.dashboard-greeting__title {
-			font-size: clamp(1.85rem, 7.2vw, 2.2rem);
-			line-height: 1.12;
+			font-size: clamp(2.2rem, 8.5vw, 2.75rem);
+			line-height: 1.08;
 		}
 
 		.dashboard-greeting__sub {
-			font-size: 0.8rem;
-			line-height: 1.35;
-			opacity: 0.92;
+			font-size: clamp(0.88rem, 3.2vw, 0.95rem);
+			line-height: 1.4;
+			opacity: 0.95;
 		}
 
-		.dashboard-summary-card .dashboard-ai-strip {
-			margin-top: 1.35rem;
-			margin-bottom: 1.35rem;
+		.dashboard-ai-strip {
+			margin-block: 0;
 		}
 
 		.dashboard-profitability-shell {
