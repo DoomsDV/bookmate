@@ -93,7 +93,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 				<span class="sr-only" data-theme-label>Modo Oscuro</span>
 			</button>
 
-			<details class="group relative shrink-0" data-profile-menu>
+			<details class="group relative hidden shrink-0 lg:block" data-profile-menu>
 				<summary
 					class="topbar-action-btn flex size-10 cursor-pointer list-none items-center justify-center rounded-2xl border border-(--primary-container) bg-(--primary-soft) text-(--primary) outline-none transition duration-200 hover:bg-(--primary-soft-hover) focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:size-11"
 					aria-label={`Abrir menu de ${userName}`}

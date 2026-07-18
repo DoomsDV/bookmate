@@ -440,22 +440,17 @@ html[data-theme='dark']
 	border-radius: 999px;
 	background: color-mix(in srgb, var(--primary) 11%, var(--surface-bright) 89%);
 	color: var(--primary);
-	box-shadow:
-		inset 0 1px 0 color-mix(in srgb, white 55%, transparent),
-		0 0 0 1px color-mix(in srgb, var(--primary) 8%, transparent);
+	box-shadow: none;
 	cursor: pointer;
 	transition:
 		background-color 160ms ease,
-		border-color 160ms ease,
-		box-shadow 160ms ease;
+		border-color 160ms ease;
 }
 
 .appointment-modal-voice-btn:hover {
 	background: color-mix(in srgb, var(--primary) 18%, var(--surface-bright) 82%);
 	border-color: color-mix(in srgb, var(--primary) 52%, var(--shell-border) 48%);
-	box-shadow:
-		inset 0 1px 0 color-mix(in srgb, white 60%, transparent),
-		0 0 14px color-mix(in srgb, var(--primary) 16%, transparent);
+	box-shadow: none;
 }
 
 .appointment-modal-voice-btn:focus-visible {
@@ -485,9 +480,7 @@ html[data-theme='dark']
 html[data-theme='dark'] .appointment-modal-voice-btn {
 	background: color-mix(in srgb, var(--primary) 16%, #1e1f22 84%);
 	border-color: color-mix(in srgb, var(--primary) 42%, transparent);
-	box-shadow:
-		inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
-		0 0 18px color-mix(in srgb, var(--primary) 12%, transparent);
+	box-shadow: none;
 }
 
 html[data-theme='dark'] .appointment-modal-voice-btn:hover {

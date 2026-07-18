@@ -1,14 +1,16 @@
 import type { DriveStep } from 'driver.js';
 import { runBookmateTour } from './product-tour';
 
-const STORAGE_KEY = 'bookmate_calendar_tour_v3';
+const STORAGE_KEY = 'bookmate_calendar_tour_v4';
 const FILTERS_SELECTOR = '[data-calendar-filters]';
 const FILTERS_TRIGGER_SELECTOR = '[data-calendar-filters-open]';
 const STATUS_LEGEND_SELECTOR = '[data-calendar-status-legend]';
 const HELP_SELECTOR = '[data-calendar-tour-help]';
 const NEW_APPOINTMENT_SELECTOR = '[data-open-appointment-modal]';
-const NAV_SELECTOR = '[data-calendar-nav]';
-const VIEW_SWITCH_SELECTOR = '[data-calendar-view-switch]';
+/** Solo flechas + Hoy (no filtros ni título). */
+const NAV_SELECTOR = '[data-calendar-tour-nav]';
+/** Solo Día/Semana/Mes/Lista (no actualizar/guía/agendar). */
+const VIEW_SWITCH_SELECTOR = '[data-calendar-tour-views]';
 
 export function hasSeenCalendarTour() {
 	return localStorage.getItem(STORAGE_KEY) === '1';
@@ -64,7 +66,7 @@ function buildTourSteps(): DriveStep[] {
 			popover: {
 				title: 'Estados de las reservas',
 				description:
-					'Toca Guía para ver qué significa cada color: naranja pendiente, verde confirmada, azul completada y rojo cancelada. Desde ahí también podés abrir el recorrido del calendario.',
+					'Toca Ayuda (?) para ver qué significa cada color: naranja pendiente, verde confirmada, azul completada y rojo cancelada. Desde ahí también podés abrir el recorrido del calendario.',
 				side: 'bottom',
 				align: 'start',
 			},
@@ -77,9 +79,9 @@ function buildTourSteps(): DriveStep[] {
 			popover: {
 				title: 'Navegación',
 				description:
-					'Muévete en el tiempo con las flechas. En el centro está «Hoy» para volver al día actual.',
+					'Muévete en el tiempo con las flechas y usá «Hoy» para volver al día actual.',
 				side: 'bottom',
-				align: 'start',
+				align: 'center',
 			},
 		});
 	}
@@ -92,7 +94,7 @@ function buildTourSteps(): DriveStep[] {
 				description:
 					'Elegí cómo querés ver tu agenda. Alterná entre las distintas vistas para organizar tus reservas de la forma que te resulte más cómoda.',
 				side: 'bottom',
-				align: 'end',
+				align: 'center',
 			},
 		});
 	}

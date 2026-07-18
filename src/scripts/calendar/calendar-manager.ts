@@ -199,6 +199,7 @@ class CalendarManager extends HTMLElement {
 	private calendarTourHelpButton: HTMLButtonElement | null = null;
 	private filtersOpenButton: HTMLButtonElement | null = null;
 	private filtersSheet: HTMLElement | null = null;
+	private filtersSheetHome: HTMLElement | null = null;
 	private helpSheet: HTMLElement | null = null;
 	private filtersCountNode: HTMLElement | null = null;
 	private professionalFilterWrap: HTMLElement | null = null;
@@ -299,6 +300,8 @@ class CalendarManager extends HTMLElement {
 			this.#bindRetryTimer = null;
 		}
 		this.#bindRetryAttempts = 0;
+		this.setSheetOpen(this.filtersSheet, false);
+		this.restoreFiltersSheetHome();
 		document.body.style.overflow = '';
 		destroySearchableSelect(this.professionalFilter);
 		destroySearchableSelect(this.locationFilter);
@@ -600,28 +603,54 @@ class CalendarManager extends HTMLElement {
 	private getMobileTitleFormat() {
 		return {
 			year: 'numeric' as const,
-			month: 'long' as const,
+			month: 'short' as const,
 		};
+	}
+
+	private getCalendarHeightOption(_isMobile?: boolean) {
+		// Host con altura fija → scroll interno del timegrid (headers sticky).
+		return '100%';
 	}
 
 	private isCompactChromeViewport() {
 		return window.innerWidth < 640;
 	}
 
+	private mountFiltersSheetToBody() {
+		if (!this.filtersSheet) return;
+		if (!this.filtersSheetHome) {
+			this.filtersSheetHome = this.filtersSheet.parentElement;
+		}
+		if (this.filtersSheet.parentElement !== document.body) {
+			document.body.appendChild(this.filtersSheet);
+		}
+	}
+
+	private restoreFiltersSheetHome() {
+		if (!this.filtersSheet || !this.filtersSheetHome) return;
+		if (this.filtersSheet.parentElement !== this.filtersSheetHome) {
+			this.filtersSheetHome.appendChild(this.filtersSheet);
+		}
+	}
+
 	private setSheetOpen(sheet: HTMLElement | null, open: boolean) {
 		if (!sheet) return;
+		if (sheet === this.filtersSheet) {
+			if (open) this.mountFiltersSheetToBody();
+			else this.restoreFiltersSheetHome();
+			this.filtersOpenButton?.setAttribute('aria-expanded', open ? 'true' : 'false');
+		}
 		sheet.classList.toggle('is-open', open);
 		sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
-		const anySheetOpen =
-			Boolean(this.filtersSheet?.classList.contains('is-open')) ||
-			Boolean(this.helpSheet?.classList.contains('is-open'));
-		document.body.style.overflow = anySheetOpen ? 'hidden' : '';
+		const helpOpen = Boolean(this.helpSheet?.classList.contains('is-open'));
+		const filtersOpen = Boolean(this.filtersSheet?.classList.contains('is-open'));
+		document.body.style.overflow = helpOpen || filtersOpen ? 'hidden' : '';
 	}
 
 	private openFiltersSheet = () => {
-		if (!this.isCompactChromeViewport()) return;
 		this.closeHelpSheet();
-		this.setSheetOpen(this.filtersSheet, true);
+		const isOpen = Boolean(this.filtersSheet?.classList.contains('is-open'));
+		this.setSheetOpen(this.filtersSheet, !isOpen);
 	};
 
 	private closeFiltersSheet = () => {
@@ -638,28 +667,43 @@ class CalendarManager extends HTMLElement {
 	};
 
 	private syncFiltersSheetMode() {
-		if (!this.isCompactChromeViewport()) {
+		// En resize: cerrar el panel para no dejar un sheet “atascado” entre mobile/desktop.
+		if (this.filtersSheet?.classList.contains('is-open')) {
 			this.closeFiltersSheet();
-			if (this.filtersSheet) {
-				this.filtersSheet.setAttribute('aria-hidden', 'false');
-			}
-		} else if (this.filtersSheet && !this.filtersSheet.classList.contains('is-open')) {
+		} else if (this.filtersSheet) {
 			this.filtersSheet.setAttribute('aria-hidden', 'true');
+			this.filtersOpenButton?.setAttribute('aria-expanded', 'false');
 		}
 	}
 
 	private syncFiltersTrigger() {
-		const available =
-			this.professionalFilterWrap && !this.professionalFilterWrap.classList.contains('hidden') ? 2 : 1;
+		const professionalActive =
+			this.roleId !== ROLES.PROFESIONAL &&
+			!(this.professionalFilterWrap?.classList.contains('hidden')) &&
+			toPositiveInt(this.professionalFilter?.value, 0) > 0;
+		const locationActive = toPositiveInt(this.locationFilter?.value, 0) > 0;
+		const activeCount = Number(professionalActive) + Number(locationActive);
+		const hasActive = activeCount > 0;
+
 		if (this.filtersCountNode) {
-			this.filtersCountNode.textContent = String(available);
+			this.filtersCountNode.textContent = String(activeCount);
 		}
 
-		const professionalActive =
-			this.roleId !== ROLES.PROFESIONAL && toPositiveInt(this.professionalFilter?.value, 0) > 0;
-		const locationActive = toPositiveInt(this.locationFilter?.value, 0) > 0;
-		const hasActive = professionalActive || locationActive;
 		this.filtersOpenButton?.setAttribute('data-has-active', hasActive ? 'true' : 'false');
+		this.filtersOpenButton?.classList.toggle('is-active', hasActive);
+
+		const badge = this.querySelector<HTMLElement>('[data-calendar-filters-badge]');
+		if (badge) {
+			badge.classList.toggle('hidden', !hasActive);
+			badge.classList.toggle('is-dot', activeCount === 1);
+			badge.textContent = activeCount > 1 ? String(activeCount) : '';
+			badge.setAttribute('aria-hidden', hasActive ? 'false' : 'true');
+		}
+
+		const label = hasActive
+			? `Filtros del calendario, ${activeCount} activo${activeCount === 1 ? '' : 's'}`
+			: 'Filtros del calendario';
+		this.filtersOpenButton?.setAttribute('aria-label', label);
 	}
 
 	private handleCalendarHelpClick = () => {
@@ -721,6 +765,7 @@ class CalendarManager extends HTMLElement {
 
 		this.isMobileLayout = isMobile;
 		this.calendar.setOption('headerToolbar', this.getHeaderToolbar(isMobile));
+		this.calendar.setOption('height', this.getCalendarHeightOption(isMobile));
 		this.calendar.setOption(
 			'titleFormat',
 			isMobile
@@ -790,6 +835,140 @@ class CalendarManager extends HTMLElement {
 		for (const group of viewChunk.querySelectorAll<HTMLElement>('.fc-button-group')) {
 			group.classList.add('fc-button-group--segmented');
 		}
+
+		this.ensureTourToolbarTargets(timeNavChunk, viewChunk);
+		this.syncChromeToolbarPlacement(timeNavChunk, viewChunk);
+	}
+
+	/** Targets compactos para la guía (evita resaltar todo el chunk del toolbar). */
+	private ensureTourToolbarTargets(
+		navChunk: HTMLElement | null | undefined,
+		viewChunk: HTMLElement | null | undefined
+	) {
+		if (navChunk) {
+			let navTour = navChunk.querySelector<HTMLElement>('[data-calendar-tour-nav]');
+			if (!navTour) {
+				navTour = document.createElement('div');
+				navTour.className = 'calendar-tour-target';
+				navTour.setAttribute('data-calendar-tour-nav', '');
+				navChunk.insertBefore(navTour, navChunk.firstChild);
+			}
+			for (const child of Array.from(navChunk.children)) {
+				if (child === navTour) continue;
+				if (child instanceof HTMLElement && child.hasAttribute('data-calendar-filters-control')) {
+					continue;
+				}
+				navTour.appendChild(child);
+			}
+		}
+
+		if (viewChunk) {
+			const segmented = viewChunk.querySelector<HTMLElement>('.fc-button-group--segmented');
+			if (segmented) {
+				let viewsTour = viewChunk.querySelector<HTMLElement>('[data-calendar-tour-views]');
+				if (!viewsTour) {
+					viewsTour = document.createElement('div');
+					viewsTour.className = 'calendar-tour-target';
+					viewsTour.setAttribute('data-calendar-tour-views', '');
+					segmented.before(viewsTour);
+				}
+				if (segmented.parentElement !== viewsTour) {
+					viewsTour.appendChild(segmented);
+				}
+			}
+		}
+	}
+
+	/**
+	 * Mobile: filtros en toolbar FC; ayuda en TopBar; refresh encima del FAB Agendar.
+	 * Desktop: una fila — nav+filtros | título | vistas+acciones.
+	 */
+	private syncChromeToolbarPlacement(
+		navChunk: HTMLElement | null | undefined,
+		viewChunk: HTMLElement | null | undefined
+	) {
+		const home = this.querySelector<HTMLElement>('[data-calendar-chrome-home]');
+		const topbarActions = this.querySelector<HTMLElement>('[data-calendar-topbar-actions]');
+		const filters = this.querySelector<HTMLElement>('[data-calendar-filters-control]');
+		const refresh = this.querySelector<HTMLElement>('[data-refresh-calendar]');
+		const guide = this.querySelector<HTMLElement>('[data-calendar-tour-help]');
+		const create = this.querySelector<HTMLElement>('[data-open-appointment-modal]');
+		if (!home) return;
+
+		const clearEmptyChromeWraps = () => {
+			this.querySelectorAll('[data-calendar-chrome-actions], [data-calendar-fab-stack]').forEach((node) => {
+				if (!node.childElementCount) node.remove();
+			});
+		};
+
+		const unwrapFabStack = () => {
+			const fabStack = this.querySelector<HTMLElement>('[data-calendar-fab-stack]');
+			if (!fabStack) return;
+			while (fabStack.firstChild) {
+				home.appendChild(fabStack.firstChild);
+			}
+			fabStack.remove();
+		};
+
+		const dockFiltersToNav = () => {
+			if (!navChunk || !filters) return;
+			const navTour = navChunk.querySelector<HTMLElement>('[data-calendar-tour-nav]');
+			if (navTour) {
+				if (filters.parentElement !== navChunk || filters.nextElementSibling !== navTour) {
+					navChunk.insertBefore(filters, navTour);
+				}
+				return;
+			}
+			if (filters.parentElement !== navChunk || filters !== navChunk.firstElementChild) {
+				navChunk.insertBefore(filters, navChunk.firstChild);
+			}
+		};
+
+		if (this.isMobileViewport()) {
+			// Filtros al lado del título (antes de flechas/Hoy).
+			dockFiltersToNav();
+			// Ayuda → TopBar (junto al tema).
+			if (topbarActions && guide && guide.parentElement !== topbarActions) {
+				topbarActions.appendChild(guide);
+			} else if (!topbarActions && guide && guide.parentElement !== home) {
+				home.appendChild(guide);
+			}
+			// Refresh encima del FAB Agendar.
+			let fabStack = this.querySelector<HTMLElement>('[data-calendar-fab-stack]');
+			if (!fabStack) {
+				fabStack = document.createElement('div');
+				fabStack.className = 'calendar-fab-stack';
+				fabStack.setAttribute('data-calendar-fab-stack', '');
+			}
+			if (fabStack.parentElement !== home) home.appendChild(fabStack);
+			if (refresh && refresh.parentElement !== fabStack) fabStack.appendChild(refresh);
+			if (create && create.parentElement !== fabStack) fabStack.appendChild(create);
+			this.querySelectorAll('[data-calendar-chrome-actions]').forEach((node) => {
+				if (!node.childElementCount) node.remove();
+			});
+			this.querySelector('.calendar-page-header')?.classList.add('calendar-page-header--chrome-docked');
+			return;
+		}
+
+		unwrapFabStack();
+		dockFiltersToNav();
+
+		if (viewChunk) {
+			let actionsWrap = viewChunk.querySelector<HTMLElement>('[data-calendar-chrome-actions]');
+			if (!actionsWrap) {
+				actionsWrap = document.createElement('div');
+				actionsWrap.className = 'calendar-chrome-actions';
+				actionsWrap.setAttribute('data-calendar-chrome-actions', '');
+				viewChunk.appendChild(actionsWrap);
+			}
+			if (refresh && refresh.parentElement !== actionsWrap) actionsWrap.appendChild(refresh);
+			if (guide && guide.parentElement !== actionsWrap) actionsWrap.appendChild(guide);
+			if (create && create.parentElement !== actionsWrap) actionsWrap.appendChild(create);
+			if (actionsWrap.parentElement !== viewChunk) viewChunk.appendChild(actionsWrap);
+		}
+
+		clearEmptyChromeWraps();
+		this.querySelector('.calendar-page-header')?.classList.add('calendar-page-header--chrome-docked');
 	}
 
 	private buildEventSource = (
@@ -897,7 +1076,7 @@ class CalendarManager extends HTMLElement {
 			selectMirror: true,
 			nowIndicator: true,
 			allDaySlot: false,
-			height: 'auto',
+			height: this.getCalendarHeightOption(isMobile),
 			scrollTimeReset: false,
 			slotMinTime: '06:00:00',
 			slotMaxTime: '22:00:00',

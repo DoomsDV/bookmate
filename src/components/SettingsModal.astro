@@ -939,7 +939,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		<div class="settings-content-scroll-edge" aria-hidden="true"></div>
 		<p class="settings-content-scroll-hint" aria-hidden="true">
 			<span class="material-symbols-rounded">expand_more</span>
-			Deslizá para ver más
+			<span>Deslizá para ver más</span>
 		</p>
 		</div>
 	</div>
@@ -3331,15 +3331,19 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			bottom: 0.85rem;
 			transform: translateX(-50%);
 			align-items: center;
-			gap: 0.15rem;
+			justify-content: center;
+			gap: 0.35rem;
 			margin: 0;
-			padding: 0.38rem 0.82rem;
+			padding: 0.48rem 1.15rem;
+			width: max-content;
+			max-width: calc(100% - 1.25rem);
 			border-radius: 999px;
-			font-size: 0.68rem;
+			font-size: 0.72rem;
 			font-weight: 800;
-			line-height: 1;
-			letter-spacing: 0.06em;
+			line-height: 1.1;
+			letter-spacing: 0.04em;
 			text-transform: uppercase;
+			white-space: nowrap;
 			color: var(--primary);
 			background: color-mix(in srgb, var(--surface-bright) 94%, transparent);
 			border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--shell-border) 76%);

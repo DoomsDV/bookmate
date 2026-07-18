@@ -80,6 +80,7 @@ const isActive = (href?: string) => {
 					href={item.href}
 					class:list={['mobile-bottom-nav__item', isActive(item.href) && 'is-active']}
 					aria-current={isActive(item.href) ? 'page' : undefined}
+					data-astro-prefetch="tap"
 					data-requires-feature={item.requiresFeature || undefined}
 					data-feature-gated={item.requiresFeature ? '' : undefined}
 				>
@@ -201,17 +202,6 @@ const isActive = (href?: string) => {
 		});
 	};
 
-	const setActiveItem = (nav: HTMLElement, item: HTMLElement) => {
-		const prev = nav.querySelector<HTMLElement>('.mobile-bottom-nav__item.is-active');
-		if (prev === item) return;
-		if (prev) {
-			prev.classList.remove('is-active');
-			prev.removeAttribute('aria-current');
-		}
-		item.classList.add('is-active');
-		item.setAttribute('aria-current', 'page');
-	};
-
 	const syncActiveFromLocation = (nav: HTMLElement, animate: boolean) => {
 		const path = normalizePath(window.location.pathname);
 		let activeItem: HTMLElement | null = null;
@@ -231,27 +221,11 @@ const isActive = (href?: string) => {
 		movePill(nav, activeItem, { animate });
 	};
 
+	let lastSyncedPath = '';
+
 	const bindNav = (nav: HTMLElement) => {
 		if (nav.dataset.pillBound === '1') return;
 		nav.dataset.pillBound = '1';
-
-		const onSelect = (event: Event) => {
-			const target = event.target;
-			if (!(target instanceof Element)) return;
-			const item = target.closest<HTMLAnchorElement>('a.mobile-bottom-nav__item');
-			if (!item || !nav.contains(item) || item.hasAttribute('data-requires-feature-hidden')) {
-				return;
-			}
-			// Ignorar click derecho / no-primario en pointerdown.
-			if (event instanceof PointerEvent && event.button !== 0) return;
-
-			setActiveItem(nav, item);
-			movePill(nav, item, { animate: true });
-		};
-
-		// pointerdown arranca la animación antes de la navegación (menos lag percibido).
-		nav.addEventListener('pointerdown', onSelect, { passive: true });
-		nav.addEventListener('click', onSelect);
 
 		window.addEventListener('resize', () => {
 			const state = getPillState(nav);
@@ -269,10 +243,14 @@ const isActive = (href?: string) => {
 		const nav = document.querySelector<HTMLElement>('[data-mobile-bottom-nav]');
 		if (!nav) return;
 		bindNav(nav);
+
+		const path = normalizePath(window.location.pathname);
 		const firstPaint = nav.dataset.pillReady !== '1';
-		// Tras navegación: sin re-animar (la animación ya corrió en pointerdown).
-		syncActiveFromLocation(nav, false);
-		if (firstPaint) nav.dataset.pillReady = '1';
+		// Animar solo cuando la ruta ya cambió (junto al contenido), no en pointerdown.
+		const pathChanged = Boolean(lastSyncedPath) && lastSyncedPath !== path;
+		syncActiveFromLocation(nav, !firstPaint && pathChanged);
+		lastSyncedPath = path;
+		nav.dataset.pillReady = '1';
 	};
 
 	initMobileBottomNavPill();
@@ -390,8 +368,13 @@ const isActive = (href?: string) => {
 		padding: 0.2rem 0.55rem;
 		border-radius: 999px;
 		background: transparent;
-		transition: color 0.2s ease;
+		transition: color 0.2s ease, transform 120ms ease, background-color 120ms ease;
 		box-sizing: border-box;
+	}
+
+	.mobile-bottom-nav__item:active:not(.is-active) .mobile-bottom-nav__icon-wrap {
+		transform: scale(0.94);
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
 	}
 
 	@media (max-width: 360px) {

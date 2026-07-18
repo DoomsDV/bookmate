@@ -261,34 +261,67 @@ const planFooterActive = activePath === "/panel/plan";
 
 		{
 			showPlanFooter ? (
-				<a
-					href="/panel/plan"
-					data-side-nav-close
-					class:list={[
-						"mx-1 mt-2 flex min-h-12 shrink-0 items-center gap-3.5 rounded-2xl border border-(--shell-border) px-4 py-3.5 no-underline transition",
-						planFooterActive
-							? "bg-(--primary-container) text-(--primary)"
-							: "text-(--on-surface) hover:bg-(--sidebar-hover)",
-					]}
-					aria-label="Ver plan y facturación"
-				>
-					<span class="material-symbols-rounded text-[1.55rem] leading-none" aria-hidden="true">
-						workspace_premium
-					</span>
-					<span class="min-w-0 flex-1">
-						<span class="block truncate text-[1.02rem] font-bold" data-plan-label>
-							Plan
+				<div class="mx-1 mt-2 flex shrink-0 items-stretch gap-2">
+					<a
+						href="/panel/plan"
+						data-side-nav-close
+						class:list={[
+							"flex min-h-12 min-w-0 flex-1 items-center gap-3.5 rounded-2xl border border-(--shell-border) px-4 py-3.5 no-underline transition",
+							planFooterActive
+								? "bg-(--primary-container) text-(--primary)"
+								: "text-(--on-surface) hover:bg-(--sidebar-hover)",
+						]}
+						aria-label="Ver plan y facturación"
+					>
+						<span class="material-symbols-rounded text-[1.55rem] leading-none" aria-hidden="true">
+							workspace_premium
 						</span>
-						<span class="block text-[0.8rem] font-medium text-(--on-surface-variant)">
-							Ver plan y facturación
+						<span class="min-w-0 flex-1">
+							<span class="block truncate text-[1.02rem] font-bold" data-plan-label>
+								Plan
+							</span>
+							<span class="block text-[0.8rem] font-medium text-(--on-surface-variant)">
+								Ver plan y facturación
+							</span>
 						</span>
-					</span>
-					<span class="material-symbols-rounded text-[1.15rem] text-(--on-surface-variant)" aria-hidden="true">
-						chevron_right
-					</span>
-				</a>
-			) : null
+					</a>
+					<button
+						type="button"
+						class="flex w-14 shrink-0 items-center justify-center self-stretch rounded-2xl border border-(--shell-border) text-(--on-surface-variant) transition hover:bg-(--sidebar-hover) hover:text-(--on-surface)"
+						data-open-settings-modal
+						data-side-nav-close
+						aria-label="Abrir configuración"
+						title="Configuración"
+					>
+						<span class="material-symbols-rounded text-[1.45rem]" aria-hidden="true">settings</span>
+					</button>
+				</div>
+			) : (
+				<div class="mx-1 mt-2 flex shrink-0 justify-end">
+					<button
+						type="button"
+						class="flex min-h-12 w-14 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) text-(--on-surface-variant) transition hover:bg-(--sidebar-hover) hover:text-(--on-surface)"
+						data-open-settings-modal
+						data-side-nav-close
+						aria-label="Abrir configuración"
+						title="Configuración"
+					>
+						<span class="material-symbols-rounded text-[1.45rem]" aria-hidden="true">settings</span>
+					</button>
+				</div>
+			)
 		}
+
+		<form method="post" action="/api/auth/logout" class="mx-1 mt-2 shrink-0" data-logout-form>
+			<input type="hidden" name="fcm_token" value="" data-logout-fcm-token />
+			<button
+				type="submit"
+				class="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-[0.92rem] font-semibold text-red-600 transition hover:bg-red-50/80 dark:hover:bg-red-950/25"
+			>
+				<span class="material-symbols-rounded text-[1.2rem] text-red-500" aria-hidden="true">logout</span>
+				Cerrar sesión
+			</button>
+		</form>
 		</div>
 	</aside>
 </div>
