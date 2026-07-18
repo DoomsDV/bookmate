@@ -41,6 +41,9 @@ export const GET: APIRoute = async ({ locals, url }) => {
 		const page = toPositiveInt(url.searchParams.get('page'), 1);
 		const limit = toPositiveInt(url.searchParams.get('limit'), 9);
 		let professionalId = toOptionalPositiveInt(url.searchParams.get('pro_id'));
+		const searchQuery = String(
+			url.searchParams.get('search') || url.searchParams.get('q') || ''
+		).trim();
 
 		if (roleId === ROLES.PROFESIONAL) {
 			const currentProfessionalId = await getCurrentProfessionalId(token);
@@ -61,6 +64,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
 			page,
 			limit,
 			pro_id: professionalId,
+			search: searchQuery || undefined,
 		});
 
 		return Response.json(

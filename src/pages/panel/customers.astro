@@ -26,7 +26,18 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 				<SideNav currentPath={Astro.url.pathname} />
 
 				<div class="grid min-h-full grid-rows-[auto_1fr]">
-					<TopBar />
+					<TopBar>
+						<a
+							slot="actions-before"
+							href="/api/customers/export"
+							class="topbar-action-btn flex size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) no-underline transition hover:bg-(--control-surface-strong) hover:text-(--on-surface) sm:size-11"
+							download
+							aria-label="Exportar CSV"
+							title="Exportar CSV"
+						>
+							<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">download</span>
+						</a>
+					</TopBar>
 
 					<main class="px-4 py-4 sm:px-6 sm:py-6">
 						<section class="grid gap-4 sm:gap-5">
@@ -34,55 +45,73 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 								initialLoadError ? (
 									<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
 								) : (
-									<div class="grid gap-4 sm:gap-5">
-										<header class="flex flex-col justify-between gap-3 sm:flex-row sm:items-end sm:gap-4">
-											<div class="grid gap-2">
-												<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
-													Clientes
-												</h1>
-												<p class="text-[0.95rem] text-(--on-surface-variant) leading-relaxed">
-													{
-														isProfessional
-															? 'Consulta los clientes registrados en tu agenda.'
-															: canFilterByProfessional
-																? 'Consulta los clientes registrados y filtralos por profesional.'
-																: 'Consulta los clientes registrados.'
-													}
-												</p>
-											</div>
-
-											<div class="flex flex-wrap items-center gap-2">
-												<a
-													href="/api/customers/export"
-													class="inline-flex items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-4 py-2 text-[0.88rem] font-extrabold text-(--on-surface) no-underline transition hover:border-(--primary) hover:text-(--primary)"
-													download
-												>
-													<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">download</span>
-													Exportar CSV
-												</a>
-												<div class="rounded-full border border-(--shell-border) bg-(--surface-bright) px-4 py-2 text-[0.88rem] font-extrabold text-(--on-surface)">
-													<span data-customers-summary>0 clientes</span>
-												</div>
-											</div>
+									<div class="grid gap-3 sm:gap-4">
+										<header class="grid gap-1">
+											<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
+												Clientes{' '}
+												<span
+													class="font-semibold text-(--on-surface-variant)"
+													data-customers-summary
+												>(0)</span>
+											</h1>
+											<p class="m-0 hidden text-[0.88rem] leading-snug text-(--on-surface-variant) sm:block">
+												{
+													isProfessional
+														? 'Clientes registrados en tu agenda.'
+														: canFilterByProfessional
+															? 'Buscá por nombre o teléfono y filtrá por profesional.'
+															: 'Clientes registrados en el consultorio.'
+												}
+											</p>
 										</header>
 
-										{
-											!canFilterByProfessional ? (
-												<select data-professional-filter hidden class="hidden" aria-hidden="true" tabindex="-1"></select>
-											) : (
-												<div class="grid gap-3 sm:max-w-xl">
-													<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
-														Profesional
-														<select
-															data-professional-filter
-															class="cursor-pointer appearance-none w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
-														>
-															<option value="">Todos los profesionales</option>
-														</select>
-													</label>
-												</div>
-											)
-										}
+										<select
+											data-professional-filter
+											hidden
+											class="hidden"
+											aria-hidden="true"
+											tabindex="-1"
+										></select>
+
+										<div class="flex max-w-xl items-center gap-2">
+											<div class="relative min-w-0 flex-1">
+												<span
+													class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--on-surface-variant)"
+													aria-hidden="true"
+												>
+													<span class="material-symbols-rounded text-[1.2rem]">search</span>
+												</span>
+												<input
+													type="search"
+													data-customers-search
+													placeholder="Buscar por nombre o teléfono"
+													aria-label="Buscar por nombre o teléfono"
+													autocomplete="off"
+													class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-4 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+												/>
+											</div>
+
+											{
+												canFilterByProfessional ? (
+													<button
+														type="button"
+														class="customers-pro-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+														data-open-pro-filter
+														aria-label="Filtrar por profesional"
+														aria-haspopup="dialog"
+														aria-controls="customers-pro-filter-sheet"
+														aria-pressed="false"
+													>
+														<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
+														<span
+															class="customers-pro-filter-badge hidden"
+															data-pro-filter-badge
+															aria-hidden="true"
+														></span>
+													</button>
+												) : null
+											}
+										</div>
 
 										<div
 											class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
@@ -116,19 +145,25 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 										<div
 											class="hidden customers-empty-state"
 											data-customers-empty
+											role="status"
 										>
 											<div class="customers-empty-icon">
-												<span class="material-symbols-rounded text-[2rem]">inbox</span>
+												<span class="material-symbols-rounded text-[2rem]" data-customers-empty-icon>group_off</span>
 											</div>
-											<h2 class="text-[1.1rem] font-bold text-(--on-surface)">No hay clientes registrados</h2>
-											<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
-												No hay clientes para mostrar con el filtro seleccionado.
+											<h2 class="text-[1.1rem] font-bold text-(--on-surface)" data-customers-empty-title>
+												No hay clientes para mostrar
+											</h2>
+											<p
+												class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)"
+												data-customers-empty-copy
+											>
+												Cuando registres citas, tus clientes aparecerán aquí.
 											</p>
 										</div>
 
 										<div class="customers-grid material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-customers-grid></div>
 
-										<div class="app-pagination">
+										<div class="app-pagination" data-customers-pagination>
 											<p class="app-pagination__summary" data-customers-page-label>
 												Pagina <strong>1</strong> de <strong>1</strong>
 												<span aria-hidden="true">-</span>
@@ -161,7 +196,32 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		</div>
 
 		<dialog
-			class="relative m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+			id="customers-pro-filter-sheet"
+			class="customers-pro-filter-sheet"
+			data-pro-filter-sheet
+			aria-labelledby="customers-pro-filter-title"
+		>
+			<div class="customers-pro-filter-sheet__handle" aria-hidden="true">
+				<span></span>
+			</div>
+			<div class="customers-pro-filter-sheet__header">
+				<h2 id="customers-pro-filter-title" class="m-0 text-[1.05rem] font-extrabold tracking-tight">
+					Profesional
+				</h2>
+				<button
+					type="button"
+					class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface)"
+					data-close-pro-filter
+					aria-label="Cerrar filtro"
+				>
+					<span class="material-symbols-rounded text-[1.3rem]">close</span>
+				</button>
+			</div>
+			<div class="customers-pro-filter-sheet__list" data-pro-filter-list role="listbox" aria-label="Profesionales"></div>
+		</dialog>
+
+		<dialog
+			class="customer-profile-modal relative m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
 			data-customer-profile-modal
 		>
 			<div
@@ -241,7 +301,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 			</div>
 
 			<div
-				class="relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-(--surface)/30 px-4 py-4 sm:px-7 sm:py-5"
+				class="customer-profile-modal-body relative flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain bg-(--surface)/30 px-4 py-4 sm:px-7 sm:py-5"
 			>
 				<div
 					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
@@ -407,12 +467,19 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 						hidden
 					>
 						<div class="grid gap-2" data-customer-profile-history-list></div>
-						<p
-							class="m-0 hidden text-[0.88rem] font-medium text-(--on-surface-variant)"
+						<div
+							class="customer-profile-history-empty hidden"
 							data-customer-profile-history-empty
+							role="status"
 						>
-							Todavía no hay citas atendidas.
-						</p>
+							<div class="customer-profile-history-empty__icon" aria-hidden="true">
+								<span class="material-symbols-rounded">event_busy</span>
+							</div>
+							<p class="customer-profile-history-empty__title">Todavía no hay citas atendidas.</p>
+							<p class="customer-profile-history-empty__copy">
+								Cuando completes citas con este cliente, aparecerán aquí.
+							</p>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -464,15 +531,22 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		align-items: stretch;
 	}
 
+	/* .material-cards-grid { display:grid } pisa la utilidad .hidden de Tailwind. */
+	.customers-grid.hidden,
+	[data-customers-grid].hidden {
+		display: none !important;
+	}
+
 	.customers-empty-state {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
+		margin: 0;
 		border-radius: 1.35rem;
 		border: 1px solid rgba(148, 163, 184, 0.24);
 		background: color-mix(in srgb, var(--surface-container-low) 72%, var(--surface-bright) 28%);
-		padding: 2.5rem 1.25rem;
+		padding: 1.75rem 1.25rem;
 		text-align: center;
 	}
 
@@ -480,8 +554,15 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		display: none;
 	}
 
+	/* .app-pagination define display:flex y pisa la utilidad .hidden de Tailwind. */
+	.app-pagination.hidden,
+	.app-pagination[hidden] {
+		display: none !important;
+		margin: 0;
+	}
+
 	.customers-empty-icon {
-		margin-bottom: 1rem;
+		margin-bottom: 0.75rem;
 		display: flex;
 		height: 4rem;
 		width: 4rem;
@@ -517,6 +598,33 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		--modal-open-duration: 150ms;
 		animation: customer-profile-modal-in var(--modal-open-duration, 150ms)
 			var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
+	}
+
+	/* Misma altura al cambiar entre Resumen e Historial de citas */
+	dialog[data-customer-profile-modal][open].customer-profile-modal {
+		min-height: min(85vh, 36rem);
+	}
+
+	@media (min-width: 640px) {
+		dialog[data-customer-profile-modal][open].customer-profile-modal {
+			min-height: min(90vh, 40rem);
+		}
+	}
+
+	.customer-profile-modal-body {
+		flex: 1 1 auto;
+		min-height: 0;
+	}
+
+	.customer-profile-tab-panel[data-customer-profile-tab-panel='history']:not([hidden]) {
+		min-height: 100%;
+		align-content: start;
+	}
+
+	.customer-profile-tab-panel[data-customer-profile-tab-panel='history']:has(
+		[data-customer-profile-history-empty]:not(.hidden)
+	) {
+		align-content: center;
 	}
 
 	dialog[data-customer-profile-modal]::backdrop {
@@ -1033,6 +1141,52 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		color: var(--on-surface-variant);
 	}
 
+	.customer-profile-history-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		padding: 1.75rem 1rem;
+		text-align: center;
+	}
+
+	.customer-profile-history-empty.hidden {
+		display: none;
+	}
+
+	.customer-profile-history-empty__icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 3.5rem;
+		height: 3.5rem;
+		margin-bottom: 0.5rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-history-empty__icon .material-symbols-rounded {
+		font-size: 1.75rem;
+	}
+
+	.customer-profile-history-empty__title {
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.customer-profile-history-empty__copy {
+		margin: 0;
+		max-width: 18rem;
+		font-size: 0.88rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+
 	.customer-profile-reservation {
 		border-radius: 0.9rem;
 		border: 1px solid var(--shell-border);
@@ -1131,5 +1285,139 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	html[data-theme='dark'] .customers-empty-icon {
 		background: rgba(255, 255, 255, 0.05);
 		color: var(--on-surface-variant);
+	}
+
+	.customers-pro-filter-btn.is-active {
+		border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+		color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 10%, var(--surface-bright));
+	}
+
+	.customers-pro-filter-badge {
+		position: absolute;
+		top: 0.45rem;
+		right: 0.45rem;
+		width: 0.45rem;
+		height: 0.45rem;
+		border-radius: 999px;
+		background: var(--primary);
+		box-shadow: 0 0 0 2px var(--surface-bright);
+	}
+
+	.customers-pro-filter-sheet {
+		position: fixed;
+		inset: auto 0 0;
+		z-index: 80;
+		margin: 0;
+		width: 100vw;
+		max-width: none;
+		max-height: min(72dvh, 28rem);
+		border: 1px solid var(--shell-border);
+		border-bottom: 0;
+		border-radius: 1.6rem 1.6rem 0 0;
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		padding: 0;
+		overflow: hidden;
+		box-shadow: 0 -12px 40px rgb(0 0 0 / 0.18);
+	}
+
+	.customers-pro-filter-sheet[open] {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.customers-pro-filter-sheet::backdrop {
+		background: rgb(0 0 0 / 0.4);
+	}
+
+	.customers-pro-filter-sheet__handle {
+		display: flex;
+		justify-content: center;
+		padding: 0.65rem 0 0.15rem;
+	}
+
+	.customers-pro-filter-sheet__handle span {
+		display: block;
+		width: 2.4rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 45%, transparent);
+	}
+
+	.customers-pro-filter-sheet__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.35rem 1rem 0.75rem;
+		border-bottom: 1px solid var(--shell-border);
+	}
+
+	.customers-pro-filter-sheet__list {
+		display: grid;
+		gap: 0.35rem;
+		padding: 0.75rem 0.85rem max(0.95rem, env(safe-area-inset-bottom));
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		min-height: 0;
+	}
+
+	.customers-pro-filter-option {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		width: 100%;
+		border: 1px solid transparent;
+		border-radius: 1rem;
+		background: transparent;
+		padding: 0.85rem 0.95rem;
+		text-align: left;
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--on-surface);
+		cursor: pointer;
+		transition: background 120ms ease, border-color 120ms ease;
+	}
+
+	.customers-pro-filter-option:hover {
+		background: color-mix(in srgb, var(--surface-variant) 55%, transparent);
+	}
+
+	.customers-pro-filter-option.is-selected {
+		border-color: color-mix(in srgb, var(--primary) 40%, var(--shell-border));
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
+		color: var(--primary);
+	}
+
+	.customers-pro-filter-option .material-symbols-rounded {
+		font-size: 1.2rem;
+		opacity: 0;
+	}
+
+	.customers-pro-filter-option.is-selected .material-symbols-rounded {
+		opacity: 1;
+	}
+
+	@media (min-width: 640px) {
+		.customers-pro-filter-sheet {
+			inset: 0;
+			margin: auto;
+			width: min(24rem, calc(100vw - 2rem));
+			max-height: min(70vh, 26rem);
+			height: fit-content;
+			border-bottom: 1px solid var(--shell-border);
+			border-radius: 1.6rem;
+			box-shadow: 0 24px 80px rgb(0 0 0 / 0.2);
+		}
+
+		.customers-pro-filter-sheet__handle {
+			display: none;
+		}
+
+		.customers-pro-filter-sheet__header {
+			padding: 1rem 1rem 0.85rem;
+		}
 	}
 </style>

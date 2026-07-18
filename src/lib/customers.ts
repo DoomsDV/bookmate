@@ -233,13 +233,14 @@ const ensureToken = (token: string) => {
 
 export const listCustomersWithOrds = async (
 	token: string,
-	options: { page?: number; limit?: number; pro_id?: number } = {}
+	options: { page?: number; limit?: number; pro_id?: number; search?: string } = {}
 ): Promise<CustomersListResult> => {
 	ensureToken(token);
 
 	const page = Number.isInteger(options.page) && Number(options.page) > 0 ? Number(options.page) : 1;
 	const limit =
 		Number.isInteger(options.limit) && Number(options.limit) > 0 ? Number(options.limit) : 9;
+	const search = String(options.search || '').trim();
 
 	const customersUrl = new URL(CUSTOMERS_URL);
 	customersUrl.searchParams.set('page', String(page));
@@ -247,6 +248,11 @@ export const listCustomersWithOrds = async (
 
 	if (Number.isInteger(options.pro_id) && Number(options.pro_id) > 0) {
 		customersUrl.searchParams.set('pro_id', String(options.pro_id));
+	}
+
+	if (search) {
+		// ORDS reserva "q" para QBE; usar "search".
+		customersUrl.searchParams.set('search', search);
 	}
 
 	const response = await fetch(customersUrl.toString(), {

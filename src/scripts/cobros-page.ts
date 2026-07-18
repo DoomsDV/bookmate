@@ -45,6 +45,35 @@ const statusChipClass = (item: CobroItem) => {
 	return 'cobros-chip cobros-chip--other';
 };
 
+const isoToDisplay = (iso: string) => {
+	const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '').trim());
+	if (!match) return '';
+	return `${match[3]}/${match[2]}/${match[1]}`;
+};
+
+const displayToIso = (display: string) => {
+	const match = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(display || '').trim());
+	if (!match) return '';
+	const day = Number(match[1]);
+	const month = Number(match[2]);
+	const year = Number(match[3]);
+	if (month < 1 || month > 12 || day < 1 || day > 31) return '';
+	const date = new Date(year, month - 1, day);
+	if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+		return '';
+	}
+	return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+};
+
+const maskDateDisplay = (raw: string) => {
+	const digits = String(raw || '')
+		.replace(/\D/g, '')
+		.slice(0, 8);
+	if (digits.length <= 2) return digits;
+	if (digits.length <= 4) return `${digits.slice(0, 2)}/${digits.slice(2)}`;
+	return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+};
+
 export const initCobrosPage = () => {
 	const root = document.querySelector<CobrosManagerElement>('cobros-manager');
 	if (!root || root.__cobrosBound) return;
@@ -54,12 +83,32 @@ export const initCobrosPage = () => {
 	const loadingEl = root.querySelector<HTMLElement>('[data-cobros-loading]');
 	const emptyEl = root.querySelector<HTMLElement>('[data-cobros-empty]');
 	const summaryEl = root.querySelector<HTMLElement>('[data-cobros-summary]');
+	const resultsEl = root.querySelector<HTMLElement>('[data-cobros-results]');
+	const tableWrap = root.querySelector<HTMLElement>('[data-cobros-table-wrap]');
 	const tableBody = root.querySelector<HTMLElement>('[data-cobros-table-body]');
 	const cardsEl = root.querySelector<HTMLElement>('[data-cobros-cards]');
 	const datePresetEl = root.querySelector<HTMLSelectElement>('[data-cobros-date-preset]');
 	const customDatesEl = root.querySelector<HTMLElement>('[data-cobros-custom-dates]');
 	const dateFromEl = root.querySelector<HTMLInputElement>('[data-cobros-date-from]');
 	const dateToEl = root.querySelector<HTMLInputElement>('[data-cobros-date-to]');
+	const dateFromTextEl = root.querySelector<HTMLInputElement>('[data-cobros-date-from-text]');
+	const dateToTextEl = root.querySelector<HTMLInputElement>('[data-cobros-date-to-text]');
+	const dateFromPickBtn = root.querySelector<HTMLButtonElement>('[data-cobros-date-from-pick]');
+	const dateToPickBtn = root.querySelector<HTMLButtonElement>('[data-cobros-date-to-pick]');
+	const dateErrorEl = root.querySelector<HTMLElement>('[data-cobros-date-error]');
+	const datePicker = root.querySelector<HTMLDialogElement>('[data-cobros-date-picker]');
+	const datePickerLabel = root.querySelector<HTMLElement>('[data-cobros-dp-label]');
+	const datePickerMonth = root.querySelector<HTMLSelectElement>('[data-cobros-dp-month]');
+	const datePickerYear = root.querySelector<HTMLSelectElement>('[data-cobros-dp-year]');
+	const datePickerDays = root.querySelector<HTMLElement>('[data-cobros-dp-days]');
+	const datePickerPrev = root.querySelector<HTMLButtonElement>('[data-cobros-dp-prev]');
+	const datePickerNext = root.querySelector<HTMLButtonElement>('[data-cobros-dp-next]');
+	const datePickerClose = root.querySelector<HTMLButtonElement>('[data-cobros-dp-close]');
+	const datePickerToday = root.querySelector<HTMLButtonElement>('[data-cobros-dp-today]');
+	const datePickerApply = root.querySelector<HTMLButtonElement>('[data-cobros-dp-apply]');
+	const periodFilterBtn = root.querySelector<HTMLButtonElement>('[data-open-period-filter]');
+	const periodFilterBadge = root.querySelector<HTMLElement>('[data-period-filter-badge]');
+	const periodSheet = root.querySelector<HTMLDialogElement>('[data-cobros-period-sheet]');
 	const modal = root.querySelector<HTMLDialogElement>('[data-cobros-modal]');
 	const featureSection = root.querySelector<HTMLElement>('[data-requires-feature="DEPOSIT_COLLECTION"]');
 	const lockedSection = root.querySelector<HTMLElement>('[data-cobros-feature-locked]');
@@ -69,6 +118,11 @@ export const initCobrosPage = () => {
 	let items: CobroItem[] = [];
 	let selected: CobroItem | null = null;
 	let busy = false;
+	let loading = false;
+	let loadRequestId = 0;
+	let activeDateField: 'from' | 'to' | null = null;
+	let pickerViewDate = new Date();
+	let pickerDraftDate = new Date();
 
 	const setError = (message: string) => {
 		if (!errorEl) return;
@@ -82,7 +136,306 @@ export const initCobrosPage = () => {
 	};
 
 	const setLoading = (on: boolean) => {
+		loading = on;
 		loadingEl?.classList.toggle('hidden', !on);
+		resultsEl?.classList.toggle('hidden', on);
+		if (on) {
+			tableBody?.replaceChildren();
+			cardsEl?.replaceChildren();
+			emptyEl?.classList.add('hidden');
+		}
+		if (periodFilterBtn) periodFilterBtn.disabled = on;
+	};
+
+	const closePeriodSheet = () => {
+		if (periodSheet?.open) periodSheet.close();
+	};
+
+	const setDateError = (message: string) => {
+		if (!dateErrorEl) return;
+		if (!message) {
+			dateErrorEl.textContent = '';
+			dateErrorEl.classList.add('hidden');
+			return;
+		}
+		dateErrorEl.textContent = message;
+		dateErrorEl.classList.remove('hidden');
+	};
+
+	const syncTextFromNative = () => {
+		if (dateFromTextEl) dateFromTextEl.value = isoToDisplay(dateFromEl?.value || '');
+		if (dateToTextEl) dateToTextEl.value = isoToDisplay(dateToEl?.value || '');
+		dateFromTextEl?.classList.remove('is-invalid');
+		dateToTextEl?.classList.remove('is-invalid');
+		setDateError('');
+	};
+
+	const syncNativeFromText = (which: 'from' | 'to' | 'both' = 'both') => {
+		const syncOne = (
+			textEl: HTMLInputElement | null,
+			nativeEl: HTMLInputElement | null,
+			required: boolean
+		) => {
+			if (!textEl || !nativeEl) return true;
+			const raw = textEl.value.trim();
+			if (!raw) {
+				nativeEl.value = '';
+				textEl.classList.toggle('is-invalid', required);
+				return !required;
+			}
+			const iso = displayToIso(raw);
+			if (!iso) {
+				textEl.classList.add('is-invalid');
+				return false;
+			}
+			nativeEl.value = iso;
+			textEl.value = isoToDisplay(iso);
+			textEl.classList.remove('is-invalid');
+			return true;
+		};
+
+		const fromOk =
+			which === 'to' ? true : syncOne(dateFromTextEl, dateFromEl, datePreset === 'custom');
+		const toOk =
+			which === 'from' ? true : syncOne(dateToTextEl, dateToEl, datePreset === 'custom');
+		return fromOk && toOk;
+	};
+
+	const parseIsoDate = (iso: string) => {
+		const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso || '').trim());
+		if (!match) return null;
+		const year = Number(match[1]);
+		const month = Number(match[2]);
+		const day = Number(match[3]);
+		const date = new Date(year, month - 1, day);
+		if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+			return null;
+		}
+		return date;
+	};
+
+	const toIsoDate = (date: Date) =>
+		`${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+	const ensurePickerMonthOptions = () => {
+		if (!datePickerMonth || datePickerMonth.options.length > 0) return;
+		const monthFormatter = new Intl.DateTimeFormat('es-PY', { month: 'long' });
+		for (let month = 0; month < 12; month += 1) {
+			const option = document.createElement('option');
+			option.value = String(month);
+			const monthName = monthFormatter.format(new Date(2020, month, 1));
+			option.textContent = monthName.charAt(0).toUpperCase() + monthName.slice(1);
+			datePickerMonth.appendChild(option);
+		}
+	};
+
+	const renderPickerYearOptions = () => {
+		if (!datePickerYear) return;
+		const viewYear = pickerViewDate.getFullYear();
+		const minYear = viewYear - 12;
+		const maxYear = viewYear + 12;
+		const firstYear = Number(datePickerYear.options[0]?.value ?? Number.NaN);
+		const lastYear = Number(
+			datePickerYear.options[datePickerYear.options.length - 1]?.value ?? Number.NaN
+		);
+		if (
+			datePickerYear.options.length === 0 ||
+			firstYear !== minYear ||
+			lastYear !== maxYear
+		) {
+			datePickerYear.replaceChildren();
+			for (let year = minYear; year <= maxYear; year += 1) {
+				const option = document.createElement('option');
+				option.value = String(year);
+				option.textContent = String(year);
+				datePickerYear.appendChild(option);
+			}
+		}
+		datePickerYear.value = String(viewYear);
+	};
+
+	const renderDatePickerDays = () => {
+		if (!datePickerDays) return;
+		datePickerDays.replaceChildren();
+
+		const viewYear = pickerViewDate.getFullYear();
+		const viewMonth = pickerViewDate.getMonth();
+		const firstDay = new Date(viewYear, viewMonth, 1);
+		const firstWeekdayMondayBased = (firstDay.getDay() + 6) % 7;
+		const gridStart = new Date(viewYear, viewMonth, 1 - firstWeekdayMondayBased);
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+
+		for (let index = 0; index < 42; index += 1) {
+			const date = new Date(
+				gridStart.getFullYear(),
+				gridStart.getMonth(),
+				gridStart.getDate() + index
+			);
+			const inCurrentMonth = date.getMonth() === viewMonth;
+			const isSelected =
+				date.getFullYear() === pickerDraftDate.getFullYear() &&
+				date.getMonth() === pickerDraftDate.getMonth() &&
+				date.getDate() === pickerDraftDate.getDate();
+			const isToday = date.getTime() === today.getTime();
+
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.textContent = String(date.getDate());
+			button.className = [
+				'dtp-day',
+				!inCurrentMonth ? 'dtp-day--out' : '',
+				isToday ? 'dtp-day--today' : '',
+				isSelected ? 'dtp-day--selected' : '',
+			]
+				.filter(Boolean)
+				.join(' ');
+			button.addEventListener('click', () => {
+				pickerDraftDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+				renderDatePicker();
+			});
+			datePickerDays.appendChild(button);
+		}
+	};
+
+	const renderDatePicker = () => {
+		ensurePickerMonthOptions();
+		if (datePickerMonth) datePickerMonth.value = String(pickerViewDate.getMonth());
+		renderPickerYearOptions();
+		renderDatePickerDays();
+	};
+
+	const closeDatePicker = () => {
+		if (datePicker?.open) datePicker.close();
+		activeDateField = null;
+	};
+
+	const openDatePicker = (field: 'from' | 'to') => {
+		if (!datePicker) return;
+		activeDateField = field;
+		const source = field === 'from' ? dateFromEl : dateToEl;
+		const parsed = parseIsoDate(source?.value || '') || new Date();
+		parsed.setHours(0, 0, 0, 0);
+		pickerDraftDate = parsed;
+		pickerViewDate = new Date(parsed.getFullYear(), parsed.getMonth(), 1);
+		if (datePickerLabel) {
+			datePickerLabel.textContent =
+				field === 'from' ? 'Seleccionando desde' : 'Seleccionando hasta';
+		}
+		renderDatePicker();
+		if (!datePicker.open) datePicker.showModal();
+	};
+
+	const applyDatePicker = () => {
+		if (!activeDateField) return;
+		const iso = toIsoDate(pickerDraftDate);
+		const display = isoToDisplay(iso);
+		if (activeDateField === 'from') {
+			if (dateFromEl) dateFromEl.value = iso;
+			if (dateFromTextEl) {
+				dateFromTextEl.value = display;
+				dateFromTextEl.classList.remove('is-invalid');
+			}
+		} else {
+			if (dateToEl) dateToEl.value = iso;
+			if (dateToTextEl) {
+				dateToTextEl.value = display;
+				dateToTextEl.classList.remove('is-invalid');
+			}
+		}
+		setDateError('');
+		closeDatePicker();
+	};
+
+	const caretAfterDigits = (formatted: string, digitCount: number) => {
+		if (digitCount <= 0) return 0;
+		let seen = 0;
+		for (let i = 0; i < formatted.length; i += 1) {
+			if (/\d/.test(formatted[i]!)) {
+				seen += 1;
+				if (seen >= digitCount) return i + 1;
+			}
+		}
+		return formatted.length;
+	};
+
+	const bindDateTextInput = (
+		textEl: HTMLInputElement | null,
+		nativeEl: HTMLInputElement | null
+	) => {
+		textEl?.addEventListener('input', () => {
+			const selection = textEl.selectionStart ?? textEl.value.length;
+			const digitsBeforeCaret = textEl.value.slice(0, selection).replace(/\D/g, '').length;
+			const next = maskDateDisplay(textEl.value);
+			textEl.value = next;
+			const nextCaret = caretAfterDigits(next, digitsBeforeCaret);
+			textEl.setSelectionRange(nextCaret, nextCaret);
+			textEl.classList.remove('is-invalid');
+			setDateError('');
+			if (next.length === 10) {
+				const iso = displayToIso(next);
+				if (iso && nativeEl) nativeEl.value = iso;
+			} else if (nativeEl && next.length < 10) {
+				// Evita valores nativos a medias mientras se edita el mes/día.
+				nativeEl.value = '';
+			}
+		});
+		textEl?.addEventListener('blur', () => {
+			if (!textEl.value.trim()) {
+				if (nativeEl) nativeEl.value = '';
+				return;
+			}
+			const iso = displayToIso(textEl.value);
+			if (!iso) {
+				textEl.classList.add('is-invalid');
+				return;
+			}
+			if (nativeEl) nativeEl.value = iso;
+			textEl.value = isoToDisplay(iso);
+			textEl.classList.remove('is-invalid');
+		});
+		nativeEl?.addEventListener('change', () => {
+			if (textEl) textEl.value = isoToDisplay(nativeEl.value || '');
+			textEl?.classList.remove('is-invalid');
+			setDateError('');
+		});
+	};
+
+	const updatePeriodFilterUi = () => {
+		const active = datePreset !== 'this_month';
+		periodFilterBadge?.classList.toggle('hidden', !active);
+		periodFilterBtn?.classList.toggle('is-active', active);
+		periodFilterBtn?.setAttribute('aria-pressed', active ? 'true' : 'false');
+
+		periodSheet?.querySelectorAll<HTMLButtonElement>('[data-period-option]').forEach((btn) => {
+			const selectedOpt = btn.dataset.periodOption === datePreset;
+			btn.classList.toggle('is-selected', selectedOpt);
+			btn.setAttribute('aria-selected', selectedOpt ? 'true' : 'false');
+		});
+		customDatesEl?.classList.toggle('hidden', datePreset !== 'custom');
+		if (datePreset === 'custom') syncTextFromNative();
+	};
+
+	const openPeriodSheet = (event?: Event) => {
+		event?.preventDefault();
+		event?.stopPropagation();
+		if (loading || !periodSheet) return;
+		if (datePresetEl) datePresetEl.value = datePreset;
+		setDateError('');
+		updatePeriodFilterUi();
+		window.setTimeout(() => {
+			if (!periodSheet.open) periodSheet.showModal();
+		}, 0);
+	};
+
+	const applyPeriodOption = (next: CobrosDatePreset) => {
+		datePreset = next;
+		if (datePresetEl) datePresetEl.value = next;
+		updatePeriodFilterUi();
+		if (next !== 'custom') {
+			closePeriodSheet();
+			void load();
+		}
 	};
 
 	const applyFeatureGate = () => {
@@ -103,10 +456,6 @@ export const initCobrosPage = () => {
 		root.querySelectorAll<HTMLButtonElement>('[data-cobros-tab]').forEach((btn) => {
 			btn.classList.toggle('is-active', btn.dataset.cobrosTab === statusFilter);
 		});
-	};
-
-	const syncCustomDates = () => {
-		customDatesEl?.classList.toggle('hidden', datePreset !== 'custom');
 	};
 
 	const openModal = (item: CobroItem) => {
@@ -209,12 +558,14 @@ export const initCobrosPage = () => {
 		cardsEl.replaceChildren();
 
 		if (summaryEl) {
-			summaryEl.textContent = `${items.length} cobro${items.length === 1 ? '' : 's'}`;
+			summaryEl.textContent = `(${items.length})`;
 		}
 
 		const empty = items.length === 0;
 		emptyEl?.classList.toggle('hidden', !empty);
+		tableWrap?.classList.toggle('is-empty', empty);
 		cardsEl.classList.toggle('hidden', empty);
+		resultsEl?.classList.remove('hidden');
 
 		for (const item of items) {
 			const tr = document.createElement('tr');
@@ -265,6 +616,7 @@ export const initCobrosPage = () => {
 
 	const load = async () => {
 		if (!applyFeatureGate()) return;
+		const requestId = ++loadRequestId;
 		setError('');
 		setLoading(true);
 		try {
@@ -283,17 +635,19 @@ export const initCobrosPage = () => {
 				headers: { Accept: 'application/json' },
 			});
 			const payload = await response.json().catch(() => ({}));
+			if (requestId !== loadRequestId) return;
 			if (!response.ok || payload.status !== 'success') {
 				throw new Error(String(payload.message || 'No fue posible cargar los cobros.'));
 			}
 			items = Array.isArray(payload.data) ? payload.data : [];
-			render();
 		} catch (error) {
+			if (requestId !== loadRequestId) return;
 			items = [];
-			render();
 			setError(error instanceof Error ? error.message : 'No fue posible cargar los cobros.');
 		} finally {
+			if (requestId !== loadRequestId) return;
 			setLoading(false);
+			render();
 		}
 	};
 
@@ -427,17 +781,112 @@ export const initCobrosPage = () => {
 		});
 	});
 
-	datePresetEl?.addEventListener('change', () => {
-		datePreset = (datePresetEl.value || 'this_month') as CobrosDatePreset;
-		syncCustomDates();
-		if (datePreset !== 'custom') void load();
+	periodFilterBtn?.addEventListener('click', openPeriodSheet);
+	bindDateTextInput(dateFromTextEl, dateFromEl);
+	bindDateTextInput(dateToTextEl, dateToEl);
+	dateFromPickBtn?.addEventListener('click', (event) => {
+		event.preventDefault();
+		event.stopPropagation();
+		openDatePicker('from');
+	});
+	dateToPickBtn?.addEventListener('click', (event) => {
+		event.preventDefault();
+		event.stopPropagation();
+		openDatePicker('to');
 	});
 
-	dateFromEl?.addEventListener('change', () => {
-		if (datePreset === 'custom') void load();
+	datePickerPrev?.addEventListener('click', () => {
+		pickerViewDate = new Date(pickerViewDate.getFullYear(), pickerViewDate.getMonth() - 1, 1);
+		renderDatePicker();
 	});
-	dateToEl?.addEventListener('change', () => {
-		if (datePreset === 'custom') void load();
+	datePickerNext?.addEventListener('click', () => {
+		pickerViewDate = new Date(pickerViewDate.getFullYear(), pickerViewDate.getMonth() + 1, 1);
+		renderDatePicker();
+	});
+	datePickerMonth?.addEventListener('change', () => {
+		pickerViewDate = new Date(
+			pickerViewDate.getFullYear(),
+			Number(datePickerMonth.value),
+			1
+		);
+		renderDatePicker();
+	});
+	datePickerYear?.addEventListener('change', () => {
+		pickerViewDate = new Date(Number(datePickerYear.value), pickerViewDate.getMonth(), 1);
+		renderDatePicker();
+	});
+	datePickerClose?.addEventListener('click', closeDatePicker);
+	datePickerToday?.addEventListener('click', () => {
+		const now = new Date();
+		now.setHours(0, 0, 0, 0);
+		pickerDraftDate = now;
+		pickerViewDate = new Date(now.getFullYear(), now.getMonth(), 1);
+		renderDatePicker();
+	});
+	datePickerApply?.addEventListener('click', applyDatePicker);
+	datePicker?.addEventListener('cancel', (event) => {
+		event.preventDefault();
+		closeDatePicker();
+	});
+	datePicker?.addEventListener('click', (event) => {
+		if (event.target === datePicker) closeDatePicker();
+	});
+
+	periodSheet?.addEventListener('cancel', closePeriodSheet);
+	periodSheet?.addEventListener('click', (event) => {
+		const target = event.target;
+		if (!(target instanceof Element) || !periodSheet) return;
+
+		if (target === periodSheet) {
+			closePeriodSheet();
+			return;
+		}
+		if (target.closest('[data-close-period-filter]')) {
+			closePeriodSheet();
+			return;
+		}
+
+		const option = target.closest<HTMLButtonElement>('[data-period-option]');
+		if (option) {
+			applyPeriodOption((option.dataset.periodOption || 'this_month') as CobrosDatePreset);
+			return;
+		}
+
+		if (target.closest('[data-apply-period-filter]')) {
+			if (datePreset === 'custom') {
+				const ok = syncNativeFromText('both');
+				if (!ok) {
+					setDateError('Usá el formato dd/mm/aaaa en ambas fechas.');
+					return;
+				}
+				const from = dateFromEl?.value || '';
+				const to = dateToEl?.value || '';
+				if (!from || !to) {
+					setDateError('Completá desde y hasta para aplicar el periodo.');
+					dateFromTextEl?.classList.toggle('is-invalid', !from);
+					dateToTextEl?.classList.toggle('is-invalid', !to);
+					return;
+				}
+				if (from > to) {
+					setDateError('La fecha desde no puede ser posterior a hasta.');
+					dateFromTextEl?.classList.add('is-invalid');
+					dateToTextEl?.classList.add('is-invalid');
+					return;
+				}
+			}
+			setDateError('');
+			closePeriodSheet();
+			void load();
+			return;
+		}
+
+		const rect = periodSheet.getBoundingClientRect();
+		const inside =
+			event.clientX >= rect.left &&
+			event.clientX <= rect.right &&
+			event.clientY >= rect.top &&
+			event.clientY <= rect.bottom;
+		if (!inside) closePeriodSheet();
 	});
 
 	root.addEventListener('click', (event) => {
@@ -461,15 +910,31 @@ export const initCobrosPage = () => {
 		if (event.target === modal) closeModal();
 	});
 
-	document.addEventListener('hasel:subscription', () => {
-		void load();
-	});
-
 	// Default tab: pendientes (donde vive el negocio)
 	statusFilter = 'pending';
+	if (datePresetEl) datePresetEl.value = datePreset;
 	syncTabs();
-	syncCustomDates();
-	void load();
+	updatePeriodFilterUi();
+
+	let started = false;
+	const start = () => {
+		if (started) return;
+		started = true;
+		void load();
+	};
+
+	document.addEventListener('hasel:subscription', () => {
+		applyFeatureGate();
+		start();
+	});
+
+	if (window.HaselSubscription) {
+		applyFeatureGate();
+		start();
+	} else {
+		// Evita doble fetch (init + evento de suscripción) que alarga el skeleton.
+		window.setTimeout(start, 400);
+	}
 };
 
 if (!customElements.get('cobros-manager')) {

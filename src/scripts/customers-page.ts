@@ -5,13 +5,6 @@ import type {
 	CustomerTopService,
 } from '../lib/customers';
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
-import {
-	destroySearchableSelect,
-	ensureSearchableSelect,
-	setSearchableSelectDisabled,
-	setSearchableSelectValue,
-} from './searchable-select';
-
 type ProfessionalLov = { id_professional: number; display_name: string };
 type Customer = {
 	id_customer: number;
@@ -47,15 +40,26 @@ class CustomerManager extends HTMLElement {
 	private isLoading = false;
 	private isProfileLoading = false;
 	private activeProfileCustomerId = 0;
+	private searchQuery = '';
+	#searchDebounceTimer: number | null = null;
 
 	private professionalSelect: HTMLSelectElement | null = null;
+	private searchInput: HTMLInputElement | null = null;
+	private proFilterButton: HTMLButtonElement | null = null;
+	private proFilterBadge: HTMLElement | null = null;
+	private proFilterSheet: HTMLDialogElement | null = null;
+	private proFilterList: HTMLElement | null = null;
 	private loadingNode: HTMLElement | null = null;
 	private errorNode: HTMLElement | null = null;
 	private summaryNode: HTMLElement | null = null;
 	private gridNode: HTMLElement | null = null;
 	private emptyNode: HTMLElement | null = null;
+	private emptyTitleNode: HTMLElement | null = null;
+	private emptyCopyNode: HTMLElement | null = null;
+	private emptyIconNode: HTMLElement | null = null;
 	private pageLabelNode: HTMLElement | null = null;
 	private currentPageNode: HTMLElement | null = null;
+	private paginationNode: HTMLElement | null = null;
 	private prevButton: HTMLButtonElement | null = null;
 	private nextButton: HTMLButtonElement | null = null;
 
@@ -94,13 +98,22 @@ class CustomerManager extends HTMLElement {
 		if (this.#bound) return;
 
 		this.professionalSelect = this.querySelector<HTMLSelectElement>('[data-professional-filter]');
+		this.searchInput = this.querySelector<HTMLInputElement>('[data-customers-search]');
+		this.proFilterButton = this.querySelector<HTMLButtonElement>('[data-open-pro-filter]');
+		this.proFilterBadge = this.querySelector<HTMLElement>('[data-pro-filter-badge]');
+		this.proFilterSheet = this.querySelector<HTMLDialogElement>('[data-pro-filter-sheet]');
+		this.proFilterList = this.querySelector<HTMLElement>('[data-pro-filter-list]');
 		this.loadingNode = this.querySelector<HTMLElement>('[data-customers-loading]');
 		this.errorNode = this.querySelector<HTMLElement>('[data-customers-error]');
 		this.summaryNode = this.querySelector<HTMLElement>('[data-customers-summary]');
 		this.gridNode = this.querySelector<HTMLElement>('[data-customers-grid]');
 		this.emptyNode = this.querySelector<HTMLElement>('[data-customers-empty]');
+		this.emptyTitleNode = this.querySelector<HTMLElement>('[data-customers-empty-title]');
+		this.emptyCopyNode = this.querySelector<HTMLElement>('[data-customers-empty-copy]');
+		this.emptyIconNode = this.querySelector<HTMLElement>('[data-customers-empty-icon]');
 		this.pageLabelNode = this.querySelector<HTMLElement>('[data-customers-page-label]');
 		this.currentPageNode = this.querySelector<HTMLElement>('[data-customers-current-page]');
+		this.paginationNode = this.querySelector<HTMLElement>('[data-customers-pagination]');
 		this.prevButton = this.querySelector<HTMLButtonElement>('[data-customers-prev]');
 		this.nextButton = this.querySelector<HTMLButtonElement>('[data-customers-next]');
 
@@ -155,13 +168,18 @@ class CustomerManager extends HTMLElement {
 			'[data-customer-profile-tab-panel]'
 		);
 
-		if (!this.professionalSelect || !this.gridNode) return;
+		if (!this.gridNode) return;
 
 		this.#bound = true;
+		this.roleId = Number(this.dataset.roleId || 0);
 		this.#listeners = new AbortController();
 		const signal = this.#listeners.signal;
 
-		this.professionalSelect.addEventListener('change', this.handleProfessionalChange, { signal });
+		this.professionalSelect?.addEventListener('change', this.handleProfessionalChange, { signal });
+		this.searchInput?.addEventListener('input', this.handleSearchInput, { signal });
+		this.proFilterButton?.addEventListener('click', this.handleOpenProFilter, { signal });
+		this.proFilterSheet?.addEventListener('click', this.handleProFilterSheetClick, { signal });
+		this.proFilterSheet?.addEventListener('cancel', this.handleProFilterSheetCancel, { signal });
 		this.prevButton?.addEventListener('click', this.handlePrevPage, { signal });
 		this.nextButton?.addEventListener('click', this.handleNextPage, { signal });
 		this.gridNode.addEventListener('click', this.handleGridClick, { signal });
@@ -185,7 +203,10 @@ class CustomerManager extends HTMLElement {
 			window.clearTimeout(this.#profileCloseTimer);
 			this.#profileCloseTimer = null;
 		}
-		destroySearchableSelect(this.professionalSelect);
+		if (this.#searchDebounceTimer !== null) {
+			window.clearTimeout(this.#searchDebounceTimer);
+			this.#searchDebounceTimer = null;
+		}
 	}
 
 	private canFilterByProfessional() {
@@ -196,7 +217,73 @@ class CustomerManager extends HTMLElement {
 		if (!this.professionalSelect || !this.canFilterByProfessional()) return;
 		this.selectedProfessionalId = Number(this.professionalSelect.value || 0);
 		this.page = 1;
+		this.updateProFilterUi();
 		void this.loadCustomers();
+	};
+
+	private handleOpenProFilter = (event: Event) => {
+		event.preventDefault();
+		event.stopPropagation();
+		if (!this.canFilterByProfessional() || this.isLoading || !this.proFilterSheet) return;
+
+		this.renderProFilterList();
+		// Evita que el mismo click del botón cierre el dialog al instante (click-through al backdrop).
+		window.setTimeout(() => {
+			if (!this.proFilterSheet || this.proFilterSheet.open) return;
+			this.proFilterSheet.showModal();
+		}, 0);
+	};
+
+	private handleProFilterSheetCancel = () => {
+		this.closeProFilterSheet();
+	};
+
+	private handleProFilterSheetClick = (event: MouseEvent) => {
+		const target = event.target;
+		if (!(target instanceof Element) || !this.proFilterSheet) return;
+
+		if (target.closest('[data-close-pro-filter]')) {
+			this.closeProFilterSheet();
+			return;
+		}
+
+		const option = target.closest<HTMLButtonElement>('[data-pro-filter-option]');
+		if (option && this.proFilterList?.contains(option)) {
+			const nextId = Number(option.dataset.proFilterOption || 0);
+			if (!this.professionalSelect) return;
+
+			this.professionalSelect.value = nextId > 0 ? String(nextId) : '';
+			this.closeProFilterSheet();
+			this.handleProfessionalChange();
+			return;
+		}
+
+		// Cerrar solo si el click cayó fuera del panel (backdrop del dialog nativo).
+		const rect = this.proFilterSheet.getBoundingClientRect();
+		const insidePanel =
+			event.clientX >= rect.left &&
+			event.clientX <= rect.right &&
+			event.clientY >= rect.top &&
+			event.clientY <= rect.bottom;
+		if (!insidePanel) this.closeProFilterSheet();
+	};
+
+	private closeProFilterSheet() {
+		if (this.proFilterSheet?.open) this.proFilterSheet.close();
+	}
+
+	private handleSearchInput = () => {
+		const nextQuery = String(this.searchInput?.value || '').trim();
+		if (this.#searchDebounceTimer !== null) {
+			window.clearTimeout(this.#searchDebounceTimer);
+		}
+		this.#searchDebounceTimer = window.setTimeout(() => {
+			this.#searchDebounceTimer = null;
+			if (nextQuery === this.searchQuery) return;
+			this.searchQuery = nextQuery;
+			this.page = 1;
+			void this.loadCustomers();
+		}, 300);
 	};
 
 	private handlePrevPage = () => {
@@ -281,6 +368,9 @@ class CustomerManager extends HTMLElement {
 
 	private setLoading(value: boolean) {
 		this.isLoading = value;
+		// Evita que las cards previas queden visibles debajo del skeleton
+		// (por si .hidden pierde contra display:grid de .material-cards-grid).
+		if (value && this.gridNode) this.clearNode(this.gridNode);
 		this.updateControls();
 	}
 
@@ -327,19 +417,26 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private updateControls() {
+		const hasCustomers = Boolean(this.gridNode && this.gridNode.childElementCount > 0);
+		const showEmpty = !this.isLoading && !hasCustomers;
+
 		if (this.loadingNode) this.loadingNode.classList.toggle('hidden', !this.isLoading);
 		if (this.gridNode) {
-			const hideGrid = this.isLoading || this.gridNode.childElementCount === 0;
-			this.gridNode.classList.toggle('hidden', hideGrid);
+			this.gridNode.classList.toggle('hidden', this.isLoading || !hasCustomers);
 		}
-		if (this.emptyNode && this.isLoading) this.emptyNode.classList.add('hidden');
+		if (this.emptyNode) {
+			this.emptyNode.classList.toggle('hidden', !showEmpty);
+			if (showEmpty) this.updateEmptyStateCopy();
+		}
+		this.paginationNode?.classList.toggle('hidden', this.isLoading || !hasCustomers);
 
-		if (this.canFilterByProfessional()) {
-			setSearchableSelectDisabled(
-				this.professionalSelect,
-				this.isLoading || this.professionals.length === 0
-			);
+		if (this.searchInput) this.searchInput.disabled = this.isLoading;
+
+		if (this.proFilterButton) {
+			this.proFilterButton.disabled =
+				this.isLoading || (this.canFilterByProfessional() && this.professionals.length === 0);
 		}
+		this.updateProFilterUi();
 
 		if (this.prevButton) this.prevButton.disabled = this.isLoading || this.page <= 1;
 		if (this.nextButton) {
@@ -354,6 +451,31 @@ class CustomerManager extends HTMLElement {
 			this.pageLabelNode.innerHTML = `Pagina <strong>${this.page}</strong> de <strong>${totalPages}</strong> <span aria-hidden="true">-</span> Total: <strong>${this.totalRecords}</strong> clientes`;
 		}
 		if (this.currentPageNode) this.currentPageNode.textContent = String(this.page);
+	}
+
+	private updateEmptyStateCopy() {
+		const hasSearch = Boolean(this.searchQuery);
+		const hasProFilter = this.canFilterByProfessional() && this.selectedProfessionalId > 0;
+
+		if (this.emptyTitleNode) {
+			this.emptyTitleNode.textContent = hasSearch
+				? 'No se encontraron clientes'
+				: 'No hay clientes para mostrar';
+		}
+		if (this.emptyCopyNode) {
+			if (hasSearch) {
+				this.emptyCopyNode.textContent = 'Probá con otro nombre o teléfono.';
+			} else if (hasProFilter) {
+				this.emptyCopyNode.textContent =
+					'No hay clientes asociados al profesional seleccionado.';
+			} else {
+				this.emptyCopyNode.textContent =
+					'Cuando registres citas, tus clientes aparecerán aquí.';
+			}
+		}
+		if (this.emptyIconNode) {
+			this.emptyIconNode.textContent = hasSearch ? 'search_off' : 'group_off';
+		}
 	}
 
 	private formatDate(value: string) {
@@ -994,7 +1116,6 @@ class CustomerManager extends HTMLElement {
 	private renderProfessionalOptions() {
 		if (!this.professionalSelect) return;
 
-		destroySearchableSelect(this.professionalSelect);
 		this.clearNode(this.professionalSelect);
 
 		if (this.canFilterByProfessional()) {
@@ -1017,24 +1138,67 @@ class CustomerManager extends HTMLElement {
 		if (targetProfessionalId > 0) {
 			this.selectedProfessionalId = targetProfessionalId;
 			this.professionalSelect.value = String(targetProfessionalId);
+		} else {
+			this.professionalSelect.value = '';
 		}
 
-		if (!this.canFilterByProfessional()) {
-			return;
+		this.renderProFilterList();
+		this.updateProFilterUi();
+	}
+
+	private renderProFilterList() {
+		if (!this.proFilterList || !this.canFilterByProfessional()) return;
+
+		this.clearNode(this.proFilterList);
+		const fragment = document.createDocumentFragment();
+		const options: Array<{ id: number; label: string }> = [
+			{ id: 0, label: 'Todos los profesionales' },
+			...this.professionals.map((professional) => ({
+				id: professional.id_professional,
+				label: professional.display_name,
+			})),
+		];
+
+		for (const option of options) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'customers-pro-filter-option';
+			button.dataset.proFilterOption = option.id > 0 ? String(option.id) : '';
+			button.setAttribute('role', 'option');
+			const selected = option.id === this.selectedProfessionalId;
+			button.classList.toggle('is-selected', selected);
+			button.setAttribute('aria-selected', selected ? 'true' : 'false');
+
+			const label = document.createElement('span');
+			label.textContent = option.label;
+
+			const check = document.createElement('span');
+			check.className = 'material-symbols-rounded';
+			check.setAttribute('aria-hidden', 'true');
+			check.textContent = 'check';
+
+			button.append(label, check);
+			fragment.appendChild(button);
 		}
 
-		ensureSearchableSelect(this.professionalSelect, {
-			placeholder: 'Buscar profesional...',
-		});
+		this.proFilterList.appendChild(fragment);
+	}
 
-		if (targetProfessionalId > 0) {
-			setSearchableSelectValue(this.professionalSelect, targetProfessionalId);
+	private updateProFilterUi() {
+		const active = this.canFilterByProfessional() && this.selectedProfessionalId > 0;
+		this.proFilterBadge?.classList.toggle('hidden', !active);
+		this.proFilterButton?.classList.toggle('is-active', active);
+		this.proFilterButton?.setAttribute('aria-pressed', active ? 'true' : 'false');
+
+		if (!this.proFilterList) return;
+		for (const option of this.proFilterList.querySelectorAll<HTMLButtonElement>(
+			'[data-pro-filter-option]'
+		)) {
+			const optionId = Number(option.dataset.proFilterOption || 0);
+			const selected = optionId === this.selectedProfessionalId;
+			option.classList.toggle('is-selected', selected);
+			option.setAttribute('aria-selected', selected ? 'true' : 'false');
 		}
-
-		setSearchableSelectDisabled(
-			this.professionalSelect,
-			this.isLoading || this.professionals.length === 0
-		);
 	}
 
 	private formatCustomerPhone(rawValue: string) {
@@ -1051,10 +1215,7 @@ class CustomerManager extends HTMLElement {
 		if (!this.gridNode) return;
 
 		this.clearNode(this.gridNode);
-		if (this.emptyNode) {
-			this.emptyNode.classList.toggle('hidden', customers.length > 0 || this.isLoading);
-		}
-		this.gridNode.classList.toggle('hidden', customers.length === 0 || this.isLoading);
+		this.updateEmptyStateCopy();
 
 		const fragment = document.createDocumentFragment();
 		for (const customer of customers) {
@@ -1108,16 +1269,7 @@ class CustomerManager extends HTMLElement {
 
 	private renderSummary() {
 		if (!this.summaryNode) return;
-
-		const professionalName =
-			this.selectedProfessionalId > 0
-				? this.professionals.find(
-						(professional) => professional.id_professional === this.selectedProfessionalId
-					)?.display_name
-				: '';
-		const scope = professionalName ? ` de ${professionalName}` : '';
-		const total = this.totalRecords === 1 ? '1 cliente' : `${this.totalRecords} clientes`;
-		this.summaryNode.textContent = `${total}${scope}`;
+		this.summaryNode.textContent = `(${this.totalRecords})`;
 	}
 
 	private async loadMeta() {
@@ -1176,6 +1328,9 @@ class CustomerManager extends HTMLElement {
 			});
 			if (this.selectedProfessionalId > 0) {
 				query.set('pro_id', String(this.selectedProfessionalId));
+			}
+			if (this.searchQuery) {
+				query.set('search', this.searchQuery);
 			}
 
 			const response = await fetch(`/api/customers?${query.toString()}`, {
