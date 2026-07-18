@@ -13,28 +13,27 @@ const inactiveCount = locations.length - activeCount;
 ---
 
 <section class="locations-view">
-	<header class="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-		<div class="flex flex-col gap-2.5">
-			<h2 class="text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none m-0">Sucursales</h2>
-			<div class="flex flex-wrap items-center gap-2">
-				<span class="locations-summary-pill locations-summary-pill--active">
-					<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--active"></span>
-					Activas: {activeCount}
-				</span>
-				{inactiveCount > 0 && (
-					<span class="locations-summary-pill locations-summary-pill--inactive">
-						<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--inactive"></span>
-						Inactivas: {inactiveCount}
-					</span>
-				)}
-			</div>
-		</div>
+	<header class="mb-4 flex flex-wrap items-center justify-between gap-3">
+		<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
+			Sucursales
+		</h2>
 
-		<div class="w-full shrink-0 sm:mt-0 sm:w-auto">
+		<div class="flex flex-wrap items-center justify-end gap-2">
+			<span class="locations-summary-pill locations-summary-pill--active">
+				<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--active"></span>
+				Activas: {activeCount}
+			</span>
+			{inactiveCount > 0 && (
+				<span class="locations-summary-pill locations-summary-pill--inactive">
+					<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--inactive"></span>
+					Inactivas: {inactiveCount}
+				</span>
+			)}
+
 			{showCreateAction && (
 				<button
 					type="button"
-					class="locations-create-btn w-full sm:w-auto flex items-center justify-center gap-2"
+					class="locations-create-btn hidden sm:inline-flex items-center justify-center gap-2"
 					data-open-location-modal
 				>
 					<svg
@@ -50,6 +49,25 @@ const inactiveCount = locations.length - activeCount;
 			)}
 		</div>
 	</header>
+
+	{showCreateAction && (
+		<button
+			type="button"
+			class="locations-create-fab"
+			data-open-location-modal
+			aria-label="Nueva Sucursal"
+			title="Nueva Sucursal"
+		>
+			<svg
+				class="locations-create-fab-icon"
+				viewBox="0 0 24 24"
+				fill="none"
+				aria-hidden="true"
+			>
+				<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+			</svg>
+		</button>
+	)}
 
 	{locations.length === 0 ? (
 		<div class="locations-empty-state">
@@ -189,6 +207,57 @@ const inactiveCount = locations.length - activeCount;
 		outline-offset: 3px;
 	}
 
+	.locations-create-fab {
+		display: none;
+	}
+
+	@media (max-width: 639px) {
+		.locations-create-fab {
+			position: fixed;
+			right: max(1rem, env(safe-area-inset-right, 0px));
+			bottom: calc(5.15rem + env(safe-area-inset-bottom, 0px));
+			z-index: 44;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 3.5rem;
+			height: 3.5rem;
+			padding: 0;
+			border: 0;
+			border-radius: 999px;
+			color: #f8fbff;
+			background: var(--primary);
+			box-shadow:
+				0 6px 18px color-mix(in srgb, var(--primary) 38%, transparent),
+				0 1px 3px rgba(15, 23, 42, 0.12);
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+			transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+		}
+
+		.locations-create-fab-icon {
+			width: 1.35rem;
+			height: 1.35rem;
+			flex-shrink: 0;
+		}
+
+		.locations-create-fab:hover {
+			filter: brightness(1.04);
+			box-shadow:
+				0 8px 22px color-mix(in srgb, var(--primary) 44%, transparent),
+				0 1px 3px rgba(15, 23, 42, 0.14);
+		}
+
+		.locations-create-fab:active {
+			transform: scale(0.96);
+		}
+
+		.locations-create-fab:focus-visible {
+			outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+			outline-offset: 3px;
+		}
+	}
+
 	.locations-empty-state {
 		display: flex;
 		flex-direction: column;
@@ -262,6 +331,16 @@ const inactiveCount = locations.length - activeCount;
 
 	html[data-theme='dark'] .locations-create-btn:hover {
 		filter: brightness(1.08);
+	}
+
+	@media (max-width: 639px) {
+		html[data-theme='dark'] .locations-create-fab {
+			background: color-mix(in srgb, var(--primary) 78%, #131314 22%);
+		}
+
+		html[data-theme='dark'] .locations-create-fab:hover {
+			filter: brightness(1.08);
+		}
 	}
 
 	html[data-theme='dark'] .locations-empty-state {

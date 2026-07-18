@@ -116,6 +116,12 @@ const renderServiceCard = (service: ServiceItem) => {
 	`;
 };
 
+const updateTitleSummary = (totalRecords: number) => {
+	const root = getListRoot();
+	const summaryNode = root?.querySelector('[data-services-summary]');
+	if (summaryNode) summaryNode.textContent = `(${totalRecords})`;
+};
+
 const updateSummaryPills = (services: ServiceItem[]) => {
 	const root = getListRoot();
 	if (!root) return;
@@ -288,6 +294,7 @@ const loadServices = async (state: { page: number; search: string; isActive: num
 			search: state.search,
 			isActive: state.isActive,
 		});
+		updateTitleSummary(normalizedMeta.total_records);
 		updateSummaryPills(services);
 		updateEmptyOrGrid(services, state);
 		updateFilterUi(state.isActive);

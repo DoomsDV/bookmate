@@ -68,6 +68,7 @@ const canNextPage = safeCurrentPage < totalPages;
 				showCreateAction={canManageServices}
 				searchQuery={searchQuery}
 				isActiveFilter={isActiveFilter}
+				totalRecords={pagination.total_records}
 			/>
 
 			<div class="app-pagination" data-services-pagination>
