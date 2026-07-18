@@ -312,13 +312,26 @@ export class ServicesClient {
 		return { response, data: body };
 	}
 
-	async list(page = 1, limit = 9): Promise<ServicesListResult> {
+	async list(
+		page = 1,
+		limit = 9,
+		search?: string,
+		isActive?: number | null
+	): Promise<ServicesListResult> {
 		const safePage = Number.isInteger(page) && page > 0 ? page : 1;
 		const safeLimit = Number.isInteger(limit) && limit > 0 ? limit : 9;
+		const searchQuery = String(search || '').trim();
+		const hasActiveFilter = isActive === 0 || isActive === 1;
 
 		const serviceUrl = new URL(SERVICES_URL);
 		serviceUrl.searchParams.set('page', String(safePage));
 		serviceUrl.searchParams.set('limit', String(safeLimit));
+		if (searchQuery) {
+			serviceUrl.searchParams.set('search', searchQuery);
+		}
+		if (hasActiveFilter) {
+			serviceUrl.searchParams.set('is_active', String(isActive));
+		}
 
 		const { response, data } = await this.request(serviceUrl.toString(), { method: 'GET' }, 'list');
 		if (!Array.isArray(data.data)) {
@@ -437,10 +450,15 @@ export class ServicesClient {
 
 export const listServices = async (
 	token: string,
-	options: { page?: number; limit?: number } = {}
+	options: {
+		page?: number;
+		limit?: number;
+		search?: string;
+		isActive?: number | null;
+	} = {}
 ): Promise<ServicesListResult> => {
 	const apiClient = new ServicesClient(token);
-	return apiClient.list(options.page, options.limit);
+	return apiClient.list(options.page, options.limit, options.search, options.isActive);
 };
 
 export const listServicesLovWithOrds = async (token: string): Promise<ServiceLov[]> => {

@@ -4,9 +4,19 @@ import type { Service } from '../lib/services';
 interface Props {
 	services: Service[];
 	showCreateAction?: boolean;
+	searchQuery?: string;
+	isActiveFilter?: number | null;
 }
 
-const { services = [], showCreateAction = false } = Astro.props;
+const {
+	services = [],
+	showCreateAction = false,
+	searchQuery = '',
+	isActiveFilter = null,
+} = Astro.props;
+const hasSearch = Boolean(searchQuery);
+const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
+const hasFilters = hasSearch || hasStatusFilter;
 
 const currencyFormatter = new Intl.NumberFormat('es-PY', {
 	style: 'currency',
@@ -30,28 +40,29 @@ const inactiveCount = services.length - activeCount;
 ---
 
 <section class="services-view">
-	<header class="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-		<div class="flex flex-col gap-2.5">
-			<h2 class="text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none m-0">Servicios</h2>
-			<div class="flex flex-wrap items-center gap-2">
-				<span class="services-summary-pill services-summary-pill--active">
-					<span class="size-2 rounded-full services-summary-dot services-summary-dot--active"></span>
-					Activos: {activeCount}
-				</span>
-				{inactiveCount > 0 && (
-					<span class="services-summary-pill services-summary-pill--inactive">
-						<span class="size-2 rounded-full services-summary-dot services-summary-dot--inactive"></span>
-						Inactivos: {inactiveCount}
-					</span>
-				)}
-			</div>
-		</div>
+	<header class="mb-4 flex flex-wrap items-center justify-between gap-3">
+		<h2 class="text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none m-0">
+			Servicios
+		</h2>
 
-		<div class="w-full shrink-0 sm:mt-0 sm:w-auto">
+		<div class="flex flex-wrap items-center justify-end gap-2">
+			<span class="services-summary-pill services-summary-pill--active">
+				<span class="size-2 rounded-full services-summary-dot services-summary-dot--active"></span>
+				Activos: <span data-services-active-count>{activeCount}</span>
+			</span>
+			<span
+				class="services-summary-pill services-summary-pill--inactive"
+				data-services-inactive-pill
+				hidden={inactiveCount <= 0}
+			>
+				<span class="size-2 rounded-full services-summary-dot services-summary-dot--inactive"></span>
+				Inactivos: <span data-services-inactive-count>{inactiveCount}</span>
+			</span>
+
 			{showCreateAction && (
 				<button
 					type="button"
-					class="services-create-btn w-full sm:w-auto flex items-center justify-center gap-2"
+					class="services-create-btn hidden sm:inline-flex items-center justify-center gap-2"
 					data-open-service-modal
 				>
 					<svg
@@ -68,77 +79,203 @@ const inactiveCount = services.length - activeCount;
 		</div>
 	</header>
 
-	{services.length === 0 ? (
-		<div class="services-empty-state">
-			<div class="services-empty-icon">
-				<span class="material-symbols-rounded text-[2rem]">inbox</span>
-			</div>
-			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">No hay servicios registrados</h3>
-			<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
-				Aun no has agregado ningun servicio a esta organizacion. Comienza creando tu primera prestacion.
-			</p>
-		</div>
-	) : (
-		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
-			{services.map((service) => (
-				<article
-					class="services-card group cursor-pointer"
-					data-service-card
-					data-service-id={service.id_service}
-					tabindex="0"
-					role="button"
-					aria-label={`Editar servicio ${service.name || service.id_service}`}
-				>
-					<div class="flex items-start justify-between gap-4">
-						<div class="services-card-icon">
-							<span class="material-symbols-rounded text-[1.25rem]">design_services</span>
-						</div>
+	{showCreateAction && (
+		<button
+			type="button"
+			class="services-create-fab"
+			data-open-service-modal
+			aria-label="Nuevo Servicio"
+			title="Nuevo Servicio"
+		>
+			<svg
+				class="services-create-fab-icon"
+				viewBox="0 0 24 24"
+				fill="none"
+				aria-hidden="true"
+			>
+				<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+			</svg>
+		</button>
+	)}
 
-						<span
-							class:list={[
-								'services-card-status',
-								service.is_active === 1
-									? 'services-card-status--active'
-									: 'services-card-status--inactive',
-							]}
-						>
+	<div class="flex max-w-xl items-center gap-2">
+		<div class="relative min-w-0 flex-1">
+			<span
+				class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--on-surface-variant)"
+				aria-hidden="true"
+			>
+				<span class="material-symbols-rounded text-[1.2rem]">search</span>
+			</span>
+			<input
+				type="search"
+				data-services-search
+				placeholder="Buscar por nombre"
+				aria-label="Buscar por nombre"
+				autocomplete="off"
+				value={searchQuery}
+				class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-4 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+			/>
+		</div>
+
+		<button
+			type="button"
+			class:list={[
+				'services-status-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10',
+				hasStatusFilter && 'is-active',
+			]}
+			data-open-services-status-filter
+			aria-label="Filtrar por estado"
+			aria-haspopup="dialog"
+			aria-controls="services-status-filter-sheet"
+			aria-pressed={hasStatusFilter ? 'true' : 'false'}
+		>
+			<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
+			{hasStatusFilter && (
+				<span class="services-status-filter-badge" data-services-status-filter-badge aria-hidden="true"></span>
+			)}
+		</button>
+	</div>
+
+	<dialog
+		id="services-status-filter-sheet"
+		class="services-status-filter-sheet"
+		data-services-status-filter-sheet
+		aria-labelledby="services-status-filter-title"
+	>
+		<div class="services-status-filter-sheet__handle" aria-hidden="true">
+			<span></span>
+		</div>
+		<div class="services-status-filter-sheet__header">
+			<h2 id="services-status-filter-title" class="m-0 text-[1.05rem] font-extrabold tracking-tight">
+				Estado
+			</h2>
+			<button
+				type="button"
+				class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface)"
+				data-close-services-status-filter
+				aria-label="Cerrar filtro"
+			>
+				<span class="material-symbols-rounded text-[1.3rem]">close</span>
+			</button>
+		</div>
+		<div class="services-status-filter-sheet__list" role="listbox" aria-label="Estado del servicio">
+			<button
+				type="button"
+				class:list={['services-status-filter-option', !hasStatusFilter && 'is-selected']}
+				data-services-status-option
+				data-value=""
+				role="option"
+				aria-selected={!hasStatusFilter ? 'true' : 'false'}
+			>
+				<span>Todos</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+			<button
+				type="button"
+				class:list={['services-status-filter-option', isActiveFilter === 1 && 'is-selected']}
+				data-services-status-option
+				data-value="1"
+				role="option"
+				aria-selected={isActiveFilter === 1 ? 'true' : 'false'}
+			>
+				<span>Activos</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+			<button
+				type="button"
+				class:list={['services-status-filter-option', isActiveFilter === 0 && 'is-selected']}
+				data-services-status-option
+				data-value="0"
+				role="option"
+				aria-selected={isActiveFilter === 0 ? 'true' : 'false'}
+			>
+				<span>Inactivos</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+		</div>
+	</dialog>
+
+	<div data-services-results>
+		{services.length === 0 ? (
+			<div class="services-empty-state" data-services-empty>
+				<div class="services-empty-icon">
+					<span class="material-symbols-rounded text-[2rem]">
+						{hasFilters ? 'search_off' : 'inbox'}
+					</span>
+				</div>
+				<h3 class="text-[1.1rem] font-bold text-(--on-surface)">
+					{hasFilters ? 'No se encontraron servicios' : 'No hay servicios registrados'}
+				</h3>
+				<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
+					{hasSearch
+						? 'Probá con otro nombre.'
+						: hasStatusFilter
+							? 'No hay servicios con ese estado.'
+							: 'Aun no has agregado ningun servicio a esta organizacion. Comienza creando tu primera prestacion.'}
+				</p>
+			</div>
+		) : (
+			<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-services-grid>
+				{services.map((service) => (
+					<article
+						class="services-card group cursor-pointer"
+						data-service-card
+						data-service-id={service.id_service}
+						tabindex="0"
+						role="button"
+						aria-label={`Editar servicio ${service.name || service.id_service}`}
+					>
+						<div class="flex items-start justify-between gap-4">
+							<div class="services-card-icon">
+								<span class="material-symbols-rounded text-[1.25rem]">design_services</span>
+							</div>
+
 							<span
 								class:list={[
-									'size-1.5 rounded-full',
+									'services-card-status',
 									service.is_active === 1
-										? 'services-summary-dot--active'
-										: 'services-summary-dot--inactive',
+										? 'services-card-status--active'
+										: 'services-card-status--inactive',
 								]}
-							></span>
-							{service.is_active === 1 ? 'Activo' : 'Inactivo'}
-						</span>
-					</div>
+							>
+								<span
+									class:list={[
+										'size-1.5 rounded-full',
+										service.is_active === 1
+											? 'services-summary-dot--active'
+											: 'services-summary-dot--inactive',
+									]}
+								></span>
+								{service.is_active === 1 ? 'Activo' : 'Inactivo'}
+							</span>
+						</div>
 
-					<div class="services-card-body">
-						<h3 class="services-card-title">
-							{service.name || `Servicio #${service.id_service}`}
-						</h3>
+						<div class="services-card-body">
+							<h3 class="services-card-title">
+								{service.name || `Servicio #${service.id_service}`}
+							</h3>
 
-						<dl class="services-card-metrics">
-							<div class="flex items-center justify-between text-[0.92rem]">
-								<dt class="services-card-term">Duración</dt>
-								<dd class="services-card-value services-card-value--duration">{toDurationLabel(service.duration_minutes)}</dd>
-							</div>
-							<div class="flex items-center justify-between text-[0.92rem]">
-								<dt class="services-card-term">Precio</dt>
-								<dd class="services-card-value services-card-value--price">
-									{service.price ? currencyFormatter.format(service.price) : '--'}
-								</dd>
-							</div>
-						</dl>
-					</div>
-				</article>
-			))}
-		</div>
-	)}
+							<dl class="services-card-metrics">
+								<div class="flex items-center justify-between text-[0.92rem]">
+									<dt class="services-card-term">Duración</dt>
+									<dd class="services-card-value services-card-value--duration">{toDurationLabel(service.duration_minutes)}</dd>
+								</div>
+								<div class="flex items-center justify-between text-[0.92rem]">
+									<dt class="services-card-term">Precio</dt>
+									<dd class="services-card-value services-card-value--price">
+										{service.price ? currencyFormatter.format(service.price) : '--'}
+									</dd>
+								</div>
+							</dl>
+						</div>
+					</article>
+				))}
+			</div>
+		)}
+	</div>
 </section>
 
-<style>
+<style is:global>
 	.services-view {
 		display: grid;
 		gap: 1.2rem;
@@ -201,6 +338,57 @@ const inactiveCount = services.length - activeCount;
 	.services-create-btn:focus-visible {
 		outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
 		outline-offset: 3px;
+	}
+
+	.services-create-fab {
+		display: none;
+	}
+
+	@media (max-width: 639px) {
+		.services-create-fab {
+			position: fixed;
+			right: max(1rem, env(safe-area-inset-right, 0px));
+			bottom: calc(5.15rem + env(safe-area-inset-bottom, 0px));
+			z-index: 44;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 3.5rem;
+			height: 3.5rem;
+			padding: 0;
+			border: 0;
+			border-radius: 999px;
+			color: #f8fbff;
+			background: var(--primary);
+			box-shadow:
+				0 6px 18px color-mix(in srgb, var(--primary) 38%, transparent),
+				0 1px 3px rgba(15, 23, 42, 0.12);
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+			transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+		}
+
+		.services-create-fab-icon {
+			width: 1.35rem;
+			height: 1.35rem;
+			flex-shrink: 0;
+		}
+
+		.services-create-fab:hover {
+			filter: brightness(1.04);
+			box-shadow:
+				0 8px 22px color-mix(in srgb, var(--primary) 44%, transparent),
+				0 1px 3px rgba(15, 23, 42, 0.14);
+		}
+
+		.services-create-fab:active {
+			transform: scale(0.96);
+		}
+
+		.services-create-fab:focus-visible {
+			outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+			outline-offset: 3px;
+		}
 	}
 
 	.services-empty-state {
@@ -283,6 +471,16 @@ const inactiveCount = services.length - activeCount;
 		filter: brightness(1.08);
 	}
 
+	@media (max-width: 639px) {
+		html[data-theme='dark'] .services-create-fab {
+			background: color-mix(in srgb, var(--primary) 78%, #131314 22%);
+		}
+
+		html[data-theme='dark'] .services-create-fab:hover {
+			filter: brightness(1.08);
+		}
+	}
+
 	html[data-theme='dark'] .services-empty-state {
 		border-color: rgba(255, 255, 255, 0.08);
 		background: color-mix(
@@ -314,4 +512,144 @@ const inactiveCount = services.length - activeCount;
 	html[data-theme='dark'] .services-card-value--price {
 		color: var(--on-surface);
 	}
+
+	.services-status-filter-btn.is-active {
+		border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+		color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 10%, var(--surface-bright));
+	}
+
+	.services-status-filter-badge {
+		position: absolute;
+		top: 0.45rem;
+		right: 0.45rem;
+		width: 0.45rem;
+		height: 0.45rem;
+		border-radius: 999px;
+		background: var(--primary);
+		box-shadow: 0 0 0 2px var(--surface-bright);
+	}
+
+	.services-status-filter-sheet {
+		position: fixed;
+		inset: auto 0 0;
+		z-index: 80;
+		margin: 0;
+		width: 100vw;
+		max-width: none;
+		max-height: min(72dvh, 28rem);
+		border: 1px solid var(--shell-border);
+		border-bottom: 0;
+		border-radius: 1.6rem 1.6rem 0 0;
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		padding: 0;
+		overflow: hidden;
+		box-shadow: 0 -12px 40px rgb(0 0 0 / 0.18);
+	}
+
+	.services-status-filter-sheet[open] {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.services-status-filter-sheet::backdrop {
+		background: rgb(0 0 0 / 0.4);
+	}
+
+	.services-status-filter-sheet__handle {
+		display: flex;
+		justify-content: center;
+		padding: 0.65rem 0 0.15rem;
+	}
+
+	.services-status-filter-sheet__handle span {
+		display: block;
+		width: 2.4rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 45%, transparent);
+	}
+
+	.services-status-filter-sheet__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.35rem 1rem 0.75rem;
+		border-bottom: 1px solid var(--shell-border);
+	}
+
+	.services-status-filter-sheet__list {
+		display: grid;
+		gap: 0.35rem;
+		padding: 0.75rem 0.85rem max(0.95rem, env(safe-area-inset-bottom));
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		min-height: 0;
+	}
+
+	.services-status-filter-option {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		width: 100%;
+		border: 1px solid transparent;
+		border-radius: 1rem;
+		background: transparent;
+		padding: 0.85rem 0.95rem;
+		text-align: left;
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--on-surface);
+		cursor: pointer;
+		transition: background 120ms ease, border-color 120ms ease;
+	}
+
+	.services-status-filter-option:hover {
+		background: color-mix(in srgb, var(--surface-variant) 55%, transparent);
+	}
+
+	.services-status-filter-option.is-selected {
+		border-color: color-mix(in srgb, var(--primary) 40%, var(--shell-border));
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
+		color: var(--primary);
+	}
+
+	.services-status-filter-option .material-symbols-rounded {
+		font-size: 1.2rem;
+		opacity: 0;
+	}
+
+	.services-status-filter-option.is-selected .material-symbols-rounded {
+		opacity: 1;
+	}
+
+	@media (min-width: 640px) {
+		.services-status-filter-sheet {
+			inset: 0;
+			margin: auto;
+			width: min(24rem, calc(100vw - 2rem));
+			max-height: min(70vh, 26rem);
+			height: fit-content;
+			border-bottom: 1px solid var(--shell-border);
+			border-radius: 1.6rem;
+			box-shadow: 0 24px 80px rgb(0 0 0 / 0.2);
+		}
+
+		.services-status-filter-sheet__handle {
+			display: none;
+		}
+
+		.services-status-filter-sheet__header {
+			padding: 1rem 1rem 0.85rem;
+		}
+	}
 </style>
+
+<script>
+	import { initServicesListControls } from '../scripts/services-list-controls';
+
+	initServicesListControls();
+</script>

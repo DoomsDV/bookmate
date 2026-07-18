@@ -1,6 +1,60 @@
 import type { APIRoute } from 'astro';
 
-import { ServicesApiError, createServiceWithOrds, type CreateServicePayload } from '../../lib/services';
+import {
+	ServicesApiError,
+	createServiceWithOrds,
+	listServices,
+	type CreateServicePayload,
+} from '../../lib/services';
+import {
+	requireToken as requireApiToken,
+	toErrorResponse as toApiErrorResponse,
+	toPositiveInt,
+} from '../../utils/api-helpers';
+
+const createServicesError = (message: string, status = 400) =>
+	new ServicesApiError(message, status);
+
+const requireToken = (token: string | undefined) =>
+	requireApiToken(token, createServicesError, 'No hay sesion valida para consultar servicios.');
+
+const toErrorResponse = (error: unknown, fallbackMessage: string) =>
+	toApiErrorResponse(error, fallbackMessage, {
+		isKnownError: (value): value is ServicesApiError => value instanceof ServicesApiError,
+		createError: createServicesError,
+	});
+
+export const GET: APIRoute = async ({ locals, url }) => {
+	try {
+		const token = requireToken(locals.token);
+		const page = toPositiveInt(url.searchParams.get('page'), 1);
+		const limit = toPositiveInt(url.searchParams.get('limit'), 9);
+		const searchQuery = String(
+			url.searchParams.get('search') || url.searchParams.get('q') || ''
+		).trim();
+		const rawIsActive = String(url.searchParams.get('is_active') || '').trim();
+		const isActive =
+			rawIsActive === '0' || rawIsActive === '1' ? Number(rawIsActive) : null;
+
+		const result = await listServices(token, {
+			page,
+			limit,
+			search: searchQuery || undefined,
+			isActive,
+		});
+
+		return Response.json(
+			{
+				status: 'success',
+				data: result.data,
+				meta: result.meta,
+			},
+			{ status: 200 }
+		);
+	} catch (error) {
+		return toErrorResponse(error, 'No fue posible obtener el listado de servicios.');
+	}
+};
 
 const parseBody = async (request: Request) => {
 	const contentType = request.headers.get('content-type') || '';
