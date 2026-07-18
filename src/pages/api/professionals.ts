@@ -79,10 +79,18 @@ export const GET: APIRoute = async ({ request, locals }) => {
 		const url = new URL(request.url);
 		const page = toIntOr(url.searchParams.get('page'), 1);
 		const limit = toIntOr(url.searchParams.get('limit'), 9);
+		const searchQuery = String(
+			url.searchParams.get('search') || url.searchParams.get('q') || ''
+		).trim();
+		const rawIsActive = String(url.searchParams.get('is_active') || '').trim();
+		const isActive =
+			rawIsActive === '0' || rawIsActive === '1' ? Number(rawIsActive) : null;
 
 		const professionals = await listProfessionals(token, {
 			page: page > 0 ? page : 1,
 			limit: limit > 0 ? limit : 9,
+			search: searchQuery || undefined,
+			isActive,
 		});
 
 		return Response.json(

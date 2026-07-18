@@ -3,8 +3,60 @@ import type { APIRoute } from 'astro';
 import {
 	SpecialtiesApiError,
 	SpecialtiesClient,
+	listSpecialties,
 	type CreateSpecialtyPayload,
 } from '../../lib/specialties';
+import {
+	requireToken as requireApiToken,
+	toErrorResponse as toApiErrorResponse,
+	toPositiveInt,
+} from '../../utils/api-helpers';
+
+const createSpecialtiesError = (message: string, status = 400) =>
+	new SpecialtiesApiError(message, status);
+
+const requireToken = (token: string | undefined) =>
+	requireApiToken(
+		token,
+		createSpecialtiesError,
+		'No hay sesion valida para consultar especialidades.'
+	);
+
+const toErrorResponse = (error: unknown, fallbackMessage: string) =>
+	toApiErrorResponse(error, fallbackMessage, {
+		isKnownError: (value): value is SpecialtiesApiError => value instanceof SpecialtiesApiError,
+		createError: createSpecialtiesError,
+	});
+
+export const GET: APIRoute = async ({ locals, url }) => {
+	try {
+		const token = requireToken(locals.token);
+		const page = toPositiveInt(url.searchParams.get('page'), 1);
+		const limit = toPositiveInt(url.searchParams.get('limit'), 9);
+		const searchQuery = String(url.searchParams.get('search') || '').trim();
+		const rawIsActive = String(url.searchParams.get('is_active') || '').trim();
+		const isActive =
+			rawIsActive === '0' || rawIsActive === '1' ? Number(rawIsActive) : null;
+
+		const result = await listSpecialties(token, {
+			page,
+			limit,
+			isActive,
+			search: searchQuery || undefined,
+		});
+
+		return Response.json(
+			{
+				status: 'success',
+				data: result.data,
+				meta: result.meta,
+			},
+			{ status: 200 }
+		);
+	} catch (error) {
+		return toErrorResponse(error, 'No fue posible obtener el listado de especialidades.');
+	}
+};
 
 const parseBody = async (request: Request) => {
 	const contentType = request.headers.get('content-type') || '';
@@ -63,48 +115,6 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			error instanceof SpecialtiesApiError
 				? error
 				: new SpecialtiesApiError('No fue posible crear la especialidad.', 500);
-
-		return Response.json(
-			{
-				status: 'error',
-				message: specialtyError.message,
-				details: specialtyError.details,
-				errors: specialtyError.fieldErrors,
-			},
-			{ status: specialtyError.status }
-		);
-	}
-};
-
-export const GET: APIRoute = async ({ request, locals }) => {
-	try {
-		const token = locals.token;
-		if (!token) {
-			throw new SpecialtiesApiError('No hay sesion valida para consultar especialidades.', 401);
-		}
-
-		const url = new URL(request.url);
-		const pageRaw = Number(url.searchParams.get('page') || '1');
-		const limitRaw = Number(url.searchParams.get('limit') || '9');
-		const page = Number.isInteger(pageRaw) && pageRaw > 0 ? pageRaw : 1;
-		const limit = Number.isInteger(limitRaw) && limitRaw > 0 ? limitRaw : 9;
-
-		const client = new SpecialtiesClient(token);
-		const listResult = await client.list(page, limit);
-
-		return Response.json(
-			{
-				status: 'success',
-				meta: listResult.meta,
-				data: listResult.data,
-			},
-			{ status: 200 }
-		);
-	} catch (error) {
-		const specialtyError =
-			error instanceof SpecialtiesApiError
-				? error
-				: new SpecialtiesApiError('No fue posible consultar especialidades.', 500);
 
 		return Response.json(
 			{

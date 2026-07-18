@@ -499,7 +499,7 @@ const parseProfessionalsResponse = async (
 
 export const listProfessionals = async (
 	token: string,
-	options: { page?: number; limit?: number } = {}
+	options: { page?: number; limit?: number; search?: string; isActive?: number | null } = {}
 ): Promise<ProfessionalsListResult> => {
 	if (!token) {
 		throw new ProfessionalsApiError('Token de acceso requerido.', 401);
@@ -508,10 +508,18 @@ export const listProfessionals = async (
 	const page = Number.isInteger(options.page) && Number(options.page) > 0 ? Number(options.page) : 1;
 	const limit =
 		Number.isInteger(options.limit) && Number(options.limit) > 0 ? Number(options.limit) : 9;
+	const searchQuery = String(options.search || '').trim();
+	const hasActiveFilter = options.isActive === 0 || options.isActive === 1;
 
 	const professionalUrl = new URL(PROFESSIONALS_URL);
 	professionalUrl.searchParams.set('page', String(page));
 	professionalUrl.searchParams.set('limit', String(limit));
+	if (searchQuery) {
+		professionalUrl.searchParams.set('search', searchQuery);
+	}
+	if (hasActiveFilter) {
+		professionalUrl.searchParams.set('is_active', String(options.isActive));
+	}
 
 	const response = await fetch(professionalUrl.toString(), {
 		method: 'GET',

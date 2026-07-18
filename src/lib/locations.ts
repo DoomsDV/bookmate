@@ -286,13 +286,17 @@ export class LocationsClient {
 		return { response, data: body };
 	}
 
-	async list(page = 1, limit = 9): Promise<LocationsListResult> {
+	async list(page = 1, limit = 9, isActive?: number | null): Promise<LocationsListResult> {
 		const safePage = Number.isInteger(page) && page > 0 ? page : 1;
 		const safeLimit = Number.isInteger(limit) && limit > 0 ? limit : 9;
+		const hasActiveFilter = isActive === 0 || isActive === 1;
 
 		const locationUrl = new URL(LOCATIONS_URL);
 		locationUrl.searchParams.set('page', String(safePage));
 		locationUrl.searchParams.set('limit', String(safeLimit));
+		if (hasActiveFilter) {
+			locationUrl.searchParams.set('is_active', String(isActive));
+		}
 
 		const { response, data } = await this.request(locationUrl.toString(), { method: 'GET' }, 'list');
 		if (!Array.isArray(data.data)) {
@@ -400,10 +404,10 @@ export class LocationsClient {
 
 export const listLocations = async (
 	token: string,
-	options: { page?: number; limit?: number } = {}
+	options: { page?: number; limit?: number; isActive?: number | null } = {}
 ): Promise<LocationsListResult> => {
 	const apiClient = new LocationsClient(token);
-	return apiClient.list(options.page, options.limit);
+	return apiClient.list(options.page, options.limit, options.isActive);
 };
 
 export const createLocationWithOrds = async (token: string, payload: CreateLocationPayload) => {

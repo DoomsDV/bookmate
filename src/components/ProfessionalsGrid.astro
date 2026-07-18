@@ -4,9 +4,19 @@ import { getProfessionalDisplayName, isProfessionalAccountActive, type Professio
 interface Props {
 	professionals: Professional[];
 	showCreateAction?: boolean;
+	searchQuery?: string;
+	isActiveFilter?: number | null;
 }
 
-const { professionals = [], showCreateAction = false } = Astro.props;
+const {
+	professionals = [],
+	showCreateAction = false,
+	searchQuery = '',
+	isActiveFilter = null,
+} = Astro.props;
+const hasSearch = Boolean(searchQuery);
+const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
+const hasFilters = hasSearch || hasStatusFilter;
 
 const PROFESSIONAL_ICON = 'badge';
 
@@ -40,28 +50,29 @@ const inactiveCount = professionals.filter(
 ---
 
 <section class="professionals-view">
-	<header class="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-		<div class="flex flex-col gap-2.5">
-			<h2 class="text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none m-0">Personal</h2>
-			<div class="flex flex-wrap items-center gap-2">
-				<span class="professionals-summary-pill professionals-summary-pill--active">
-					<span class="size-2 rounded-full professionals-summary-dot professionals-summary-dot--active"></span>
-					Activos: {activeCount}
-				</span>
-				{inactiveCount > 0 && (
-					<span class="professionals-summary-pill professionals-summary-pill--inactive">
-						<span class="size-2 rounded-full professionals-summary-dot professionals-summary-dot--inactive"></span>
-						Inactivos: {inactiveCount}
-					</span>
-				)}
-			</div>
-		</div>
+	<header class="mb-4 flex flex-wrap items-center justify-between gap-3">
+		<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
+			Personal
+		</h2>
 
-		<div class="w-full shrink-0 sm:mt-0 sm:w-auto">
+		<div class="flex flex-wrap items-center justify-end gap-2">
+			<span class="professionals-summary-pill professionals-summary-pill--active">
+				<span class="size-2 rounded-full professionals-summary-dot professionals-summary-dot--active"></span>
+				Activos: <span data-professionals-active-count>{activeCount}</span>
+			</span>
+			<span
+				class="professionals-summary-pill professionals-summary-pill--inactive"
+				data-professionals-inactive-pill
+				hidden={inactiveCount <= 0}
+			>
+				<span class="size-2 rounded-full professionals-summary-dot professionals-summary-dot--inactive"></span>
+				Inactivos: <span data-professionals-inactive-count>{inactiveCount}</span>
+			</span>
+
 			{showCreateAction && (
 				<button
 					type="button"
-					class="professionals-create-btn w-full sm:w-auto flex items-center justify-center gap-2"
+					class="professionals-create-btn hidden sm:inline-flex items-center justify-center gap-2"
 					data-open-professional-modal
 				>
 					<svg class="professionals-create-btn-icon w-[18px] h-[18px]" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -73,18 +84,141 @@ const inactiveCount = professionals.filter(
 		</div>
 	</header>
 
+	{showCreateAction && (
+		<button
+			type="button"
+			class="professionals-create-fab"
+			data-open-professional-modal
+			aria-label="Nuevo Personal"
+			title="Nuevo Personal"
+		>
+			<svg
+				class="professionals-create-fab-icon"
+				viewBox="0 0 24 24"
+				fill="none"
+				aria-hidden="true"
+			>
+				<path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" />
+			</svg>
+		</button>
+	)}
+
+	<div class="flex max-w-xl items-center gap-2">
+		<div class="relative min-w-0 flex-1">
+			<span
+				class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--on-surface-variant)"
+				aria-hidden="true"
+			>
+				<span class="material-symbols-rounded text-[1.2rem]">search</span>
+			</span>
+			<input
+				type="search"
+				data-professionals-search
+				placeholder="Buscar por nombre, email o teléfono"
+				aria-label="Buscar por nombre, email o teléfono"
+				autocomplete="off"
+				value={searchQuery}
+				class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-4 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+			/>
+		</div>
+
+		<button
+			type="button"
+			class:list={[
+				'panel-status-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10',
+				hasStatusFilter && 'is-active',
+			]}
+			data-open-professionals-status-filter
+			aria-label="Filtrar por estado"
+			aria-haspopup="dialog"
+			aria-controls="professionals-status-filter-sheet"
+			aria-pressed={hasStatusFilter ? 'true' : 'false'}
+		>
+			<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
+			{hasStatusFilter && (
+				<span class="panel-status-filter-badge" data-professionals-status-filter-badge aria-hidden="true"></span>
+			)}
+		</button>
+	</div>
+
+	<dialog
+		id="professionals-status-filter-sheet"
+		class="panel-status-filter-sheet"
+		data-professionals-status-filter-sheet
+		aria-labelledby="professionals-status-filter-title"
+	>
+		<div class="panel-status-filter-sheet__handle" aria-hidden="true">
+			<span></span>
+		</div>
+		<div class="panel-status-filter-sheet__header">
+			<h2 id="professionals-status-filter-title" class="m-0 text-[1.05rem] font-extrabold tracking-tight">
+				Estado
+			</h2>
+			<button
+				type="button"
+				class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface)"
+				data-close-professionals-status-filter
+				aria-label="Cerrar filtro"
+			>
+				<span class="material-symbols-rounded text-[1.3rem]">close</span>
+			</button>
+		</div>
+		<div class="panel-status-filter-sheet__list" role="listbox" aria-label="Estado del personal">
+			<button
+				type="button"
+				class:list={['panel-status-filter-option', !hasStatusFilter && 'is-selected']}
+				data-professionals-status-option
+				data-value=""
+				role="option"
+				aria-selected={!hasStatusFilter ? 'true' : 'false'}
+			>
+				<span>Todos</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+			<button
+				type="button"
+				class:list={['panel-status-filter-option', isActiveFilter === 1 && 'is-selected']}
+				data-professionals-status-option
+				data-value="1"
+				role="option"
+				aria-selected={isActiveFilter === 1 ? 'true' : 'false'}
+			>
+				<span>Activos</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+			<button
+				type="button"
+				class:list={['panel-status-filter-option', isActiveFilter === 0 && 'is-selected']}
+				data-professionals-status-option
+				data-value="0"
+				role="option"
+				aria-selected={isActiveFilter === 0 ? 'true' : 'false'}
+			>
+				<span>Inactivos</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+		</div>
+	</dialog>
+
+	<div data-professionals-results>
 	{professionals.length === 0 ? (
-		<div class="professionals-empty-state">
+		<div class="professionals-empty-state" data-professionals-empty>
 			<div class="professionals-empty-icon">
-				<span class="material-symbols-rounded text-[2rem]">badge</span>
+				<span class="material-symbols-rounded text-[2rem]">{hasFilters ? 'search_off' : 'badge'}</span>
 			</div>
-			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">No hay profesionales registrados</h3>
+			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">
+				{hasFilters ? 'No se encontraron profesionales' : 'No hay profesionales registrados'}
+			</h3>
 			<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
-				Aún no has agregado a ningún profesional a esta organización. Comienza creando tu primer registro de personal.
+				{hasSearch
+					? 'Probá con otro nombre, email o teléfono.'
+					: hasStatusFilter
+						? 'No hay profesionales con ese estado.'
+						: 'Aún no has agregado a ningún profesional a esta organización. Comienza creando tu primer registro de personal.'}
 			</p>
 		</div>
 	) : (
-		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
+		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-professionals-grid>
 			{cardItems.map((item) => (
 				<article
 					class="professionals-card group cursor-pointer relative overflow-hidden"
@@ -176,9 +310,10 @@ const inactiveCount = professionals.filter(
 			))}
 		</div>
 	)}
+	</div>
 </section>
 
-<style>
+<style is:global>
 	.professionals-view {
 		display: grid;
 		gap: 1.2rem;
@@ -236,6 +371,62 @@ const inactiveCount = professionals.filter(
 
 	.professionals-create-btn:hover {
 		filter: brightness(1.04);
+	}
+
+	.professionals-create-btn:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+		outline-offset: 3px;
+	}
+
+	.professionals-create-fab {
+		display: none;
+	}
+
+	@media (max-width: 639px) {
+		.professionals-create-fab {
+			position: fixed;
+			right: max(1rem, env(safe-area-inset-right, 0px));
+			bottom: calc(5.15rem + env(safe-area-inset-bottom, 0px));
+			z-index: 44;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 3.5rem;
+			height: 3.5rem;
+			padding: 0;
+			border: 0;
+			border-radius: 999px;
+			color: #f8fbff;
+			background: var(--primary);
+			box-shadow:
+				0 6px 18px color-mix(in srgb, var(--primary) 38%, transparent),
+				0 1px 3px rgba(15, 23, 42, 0.12);
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+			transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+		}
+
+		.professionals-create-fab-icon {
+			width: 1.35rem;
+			height: 1.35rem;
+			flex-shrink: 0;
+		}
+
+		.professionals-create-fab:hover {
+			filter: brightness(1.04);
+			box-shadow:
+				0 8px 22px color-mix(in srgb, var(--primary) 44%, transparent),
+				0 1px 3px rgba(15, 23, 42, 0.14);
+		}
+
+		.professionals-create-fab:active {
+			transform: scale(0.96);
+		}
+
+		.professionals-create-fab:focus-visible {
+			outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+			outline-offset: 3px;
+		}
 	}
 
 	.professionals-empty-state {
@@ -362,6 +553,16 @@ const inactiveCount = professionals.filter(
 		filter: brightness(1.08);
 	}
 
+	@media (max-width: 639px) {
+		html[data-theme='dark'] .professionals-create-fab {
+			background: color-mix(in srgb, var(--primary) 78%, #131314 22%);
+		}
+
+		html[data-theme='dark'] .professionals-create-fab:hover {
+			filter: brightness(1.08);
+		}
+	}
+
 	html[data-theme='dark'] .professionals-empty-state {
 		border-color: rgba(255, 255, 255, 0.08);
 		background: color-mix(
@@ -387,3 +588,9 @@ const inactiveCount = professionals.filter(
 		color: #fcd34d;
 	}
 </style>
+
+<script>
+	import { initProfessionalsListControls } from '../scripts/professionals-list-controls';
+
+	initProfessionalsListControls();
+</script>

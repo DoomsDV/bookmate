@@ -4,9 +4,19 @@ import type { Specialty } from '../lib/specialties';
 interface Props {
 	specialties: Specialty[];
 	showCreateAction?: boolean;
+	searchQuery?: string;
+	isActiveFilter?: number | null;
 }
 
-const { specialties = [], showCreateAction = false } = Astro.props;
+const {
+	specialties = [],
+	showCreateAction = false,
+	searchQuery = '',
+	isActiveFilter = null,
+} = Astro.props;
+const hasSearch = Boolean(searchQuery);
+const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
+const hasFilters = hasSearch || hasStatusFilter;
 
 const SPECIALTY_ICON = 'workspace_premium';
 
@@ -29,14 +39,16 @@ const inactiveCount = specialties.length - activeCount;
 		<div class="flex flex-wrap items-center justify-end gap-2">
 			<span class="specialties-summary-pill specialties-summary-pill--active">
 				<span class="size-2 rounded-full specialties-summary-dot specialties-summary-dot--active"></span>
-				Activas: {activeCount}
+				Activas: <span data-specialties-active-count>{activeCount}</span>
 			</span>
-			{inactiveCount > 0 && (
-				<span class="specialties-summary-pill specialties-summary-pill--inactive">
-					<span class="size-2 rounded-full specialties-summary-dot specialties-summary-dot--inactive"></span>
-					Inactivas: {inactiveCount}
-				</span>
-			)}
+			<span
+				class="specialties-summary-pill specialties-summary-pill--inactive"
+				data-specialties-inactive-pill
+				hidden={inactiveCount <= 0}
+			>
+				<span class="size-2 rounded-full specialties-summary-dot specialties-summary-dot--inactive"></span>
+				Inactivas: <span data-specialties-inactive-count>{inactiveCount}</span>
+			</span>
 
 			{showCreateAction && (
 				<button
@@ -72,18 +84,122 @@ const inactiveCount = specialties.length - activeCount;
 		</button>
 	)}
 
+	<div class="flex max-w-xl items-center gap-2">
+		<div class="relative min-w-0 flex-1">
+			<span
+				class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--on-surface-variant)"
+				aria-hidden="true"
+			>
+				<span class="material-symbols-rounded text-[1.2rem]">search</span>
+			</span>
+			<input
+				type="search"
+				data-specialties-search
+				placeholder="Buscar por nombre"
+				aria-label="Buscar por nombre"
+				autocomplete="off"
+				value={searchQuery}
+				class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-4 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+			/>
+		</div>
+
+		<button
+			type="button"
+			class:list={[
+				'panel-status-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10',
+				hasStatusFilter && 'is-active',
+			]}
+			data-open-specialties-status-filter
+			aria-label="Filtrar por estado"
+			aria-haspopup="dialog"
+			aria-controls="specialties-status-filter-sheet"
+			aria-pressed={hasStatusFilter ? 'true' : 'false'}
+		>
+			<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
+			{hasStatusFilter && (
+				<span class="panel-status-filter-badge" data-specialties-status-filter-badge aria-hidden="true"></span>
+			)}
+		</button>
+	</div>
+
+	<dialog
+		id="specialties-status-filter-sheet"
+		class="panel-status-filter-sheet"
+		data-specialties-status-filter-sheet
+		aria-labelledby="specialties-status-filter-title"
+	>
+		<div class="panel-status-filter-sheet__handle" aria-hidden="true">
+			<span></span>
+		</div>
+		<div class="panel-status-filter-sheet__header">
+			<h2 id="specialties-status-filter-title" class="m-0 text-[1.05rem] font-extrabold tracking-tight">
+				Estado
+			</h2>
+			<button
+				type="button"
+				class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface)"
+				data-close-specialties-status-filter
+				aria-label="Cerrar filtro"
+			>
+				<span class="material-symbols-rounded text-[1.3rem]">close</span>
+			</button>
+		</div>
+		<div class="panel-status-filter-sheet__list" role="listbox" aria-label="Estado de la especialidad">
+			<button
+				type="button"
+				class:list={['panel-status-filter-option', !hasStatusFilter && 'is-selected']}
+				data-specialties-status-option
+				data-value=""
+				role="option"
+				aria-selected={!hasStatusFilter ? 'true' : 'false'}
+			>
+				<span>Todas</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+			<button
+				type="button"
+				class:list={['panel-status-filter-option', isActiveFilter === 1 && 'is-selected']}
+				data-specialties-status-option
+				data-value="1"
+				role="option"
+				aria-selected={isActiveFilter === 1 ? 'true' : 'false'}
+			>
+				<span>Activas</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+			<button
+				type="button"
+				class:list={['panel-status-filter-option', isActiveFilter === 0 && 'is-selected']}
+				data-specialties-status-option
+				data-value="0"
+				role="option"
+				aria-selected={isActiveFilter === 0 ? 'true' : 'false'}
+			>
+				<span>Inactivas</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+		</div>
+	</dialog>
+
+	<div data-specialties-results>
 	{specialties.length === 0 ? (
-		<div class="specialties-empty-state">
+		<div class="specialties-empty-state" data-specialties-empty>
 			<div class="specialties-empty-icon">
-				<span class="material-symbols-rounded text-[2rem]">inbox</span>
+				<span class="material-symbols-rounded text-[2rem]">{hasFilters ? 'search_off' : 'inbox'}</span>
 			</div>
-			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">No hay especialidades registradas</h3>
+			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">
+				{hasFilters ? 'No se encontraron especialidades' : 'No hay especialidades registradas'}
+			</h3>
 			<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
-				Aún no has agregado ninguna especialidad a esta organización. Comienza creando tu primera especialidad.
+				{hasSearch
+					? 'Probá con otro nombre.'
+					: hasStatusFilter
+						? 'No hay especialidades con ese estado.'
+						: 'Creá tu primera especialidad para empezar.'}
 			</p>
 		</div>
 	) : (
-		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
+		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-specialties-grid>
 			{specialties.map((specialty) => (
 				<article
 					class="specialties-card group cursor-pointer relative overflow-hidden"
@@ -132,9 +248,10 @@ const inactiveCount = specialties.length - activeCount;
 			))}
 		</div>
 	)}
+	</div>
 </section>
 
-<style>
+<style is:global>
 	.specialties-view {
 		display: grid;
 		gap: 1.2rem;
@@ -351,3 +468,9 @@ const inactiveCount = specialties.length - activeCount;
 		color: #ffc8d2;
 	}
 </style>
+
+<script>
+	import { initSpecialtiesListControls } from '../scripts/specialties-list-controls';
+
+	initSpecialtiesListControls();
+</script>

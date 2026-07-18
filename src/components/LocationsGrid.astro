@@ -4,9 +4,11 @@ import type { Location } from '../lib/locations';
 interface Props {
 	locations: Location[];
 	showCreateAction?: boolean;
+	isActiveFilter?: number | null;
 }
 
-const { locations = [], showCreateAction = false } = Astro.props;
+const { locations = [], showCreateAction = false, isActiveFilter = null } = Astro.props;
+const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
 
 const activeCount = locations.filter((item) => item.is_active === 1).length;
 const inactiveCount = locations.length - activeCount;
@@ -21,14 +23,16 @@ const inactiveCount = locations.length - activeCount;
 		<div class="flex flex-wrap items-center justify-end gap-2">
 			<span class="locations-summary-pill locations-summary-pill--active">
 				<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--active"></span>
-				Activas: {activeCount}
+				Activas: <span data-locations-active-count>{activeCount}</span>
 			</span>
-			{inactiveCount > 0 && (
-				<span class="locations-summary-pill locations-summary-pill--inactive">
-					<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--inactive"></span>
-					Inactivas: {inactiveCount}
-				</span>
-			)}
+			<span
+				class="locations-summary-pill locations-summary-pill--inactive"
+				data-locations-inactive-pill
+				hidden={inactiveCount <= 0}
+			>
+				<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--inactive"></span>
+				Inactivas: <span data-locations-inactive-count>{inactiveCount}</span>
+			</span>
 
 			{showCreateAction && (
 				<button
@@ -69,18 +73,102 @@ const inactiveCount = locations.length - activeCount;
 		</button>
 	)}
 
+	<div class="flex max-w-xl items-center gap-2">
+		<button
+			type="button"
+			class:list={[
+				'panel-status-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10',
+				hasStatusFilter && 'is-active',
+			]}
+			data-open-locations-status-filter
+			aria-label="Filtrar por estado"
+			aria-haspopup="dialog"
+			aria-controls="locations-status-filter-sheet"
+			aria-pressed={hasStatusFilter ? 'true' : 'false'}
+		>
+			<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
+			{hasStatusFilter && (
+				<span class="panel-status-filter-badge" data-locations-status-filter-badge aria-hidden="true"></span>
+			)}
+		</button>
+	</div>
+
+	<dialog
+		id="locations-status-filter-sheet"
+		class="panel-status-filter-sheet"
+		data-locations-status-filter-sheet
+		aria-labelledby="locations-status-filter-title"
+	>
+		<div class="panel-status-filter-sheet__handle" aria-hidden="true">
+			<span></span>
+		</div>
+		<div class="panel-status-filter-sheet__header">
+			<h2 id="locations-status-filter-title" class="m-0 text-[1.05rem] font-extrabold tracking-tight">
+				Estado
+			</h2>
+			<button
+				type="button"
+				class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface)"
+				data-close-locations-status-filter
+				aria-label="Cerrar filtro"
+			>
+				<span class="material-symbols-rounded text-[1.3rem]">close</span>
+			</button>
+		</div>
+		<div class="panel-status-filter-sheet__list" role="listbox" aria-label="Estado de la sucursal">
+			<button
+				type="button"
+				class:list={['panel-status-filter-option', !hasStatusFilter && 'is-selected']}
+				data-locations-status-option
+				data-value=""
+				role="option"
+				aria-selected={!hasStatusFilter ? 'true' : 'false'}
+			>
+				<span>Todas</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+			<button
+				type="button"
+				class:list={['panel-status-filter-option', isActiveFilter === 1 && 'is-selected']}
+				data-locations-status-option
+				data-value="1"
+				role="option"
+				aria-selected={isActiveFilter === 1 ? 'true' : 'false'}
+			>
+				<span>Activas</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+			<button
+				type="button"
+				class:list={['panel-status-filter-option', isActiveFilter === 0 && 'is-selected']}
+				data-locations-status-option
+				data-value="0"
+				role="option"
+				aria-selected={isActiveFilter === 0 ? 'true' : 'false'}
+			>
+				<span>Inactivas</span>
+				<span class="material-symbols-rounded">check</span>
+			</button>
+		</div>
+	</dialog>
+
+	<div data-locations-results>
 	{locations.length === 0 ? (
-		<div class="locations-empty-state">
+		<div class="locations-empty-state" data-locations-empty>
 			<div class="locations-empty-icon">
-				<span class="material-symbols-rounded text-[2rem]">domain</span>
+				<span class="material-symbols-rounded text-[2rem]">{hasStatusFilter ? 'search_off' : 'domain'}</span>
 			</div>
-			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">No hay sucursales registradas</h3>
+			<h3 class="text-[1.1rem] font-bold text-(--on-surface)">
+				{hasStatusFilter ? 'No se encontraron sucursales' : 'No hay sucursales registradas'}
+			</h3>
 			<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
-				Aún no has agregado ninguna sucursal a esta organización. Comienza creando tu primer local.
+				{hasStatusFilter
+					? 'No hay sucursales con ese estado.'
+					: 'Aún no has agregado ninguna sucursal a esta organización. Comienza creando tu primer local.'}
 			</p>
 		</div>
 	) : (
-		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
+		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-locations-grid>
 			{locations.map((location) => (
 				<article
 					class="locations-card group cursor-pointer"
@@ -140,9 +228,10 @@ const inactiveCount = locations.length - activeCount;
 			))}
 		</div>
 	)}
+	</div>
 </section>
 
-<style>
+<style is:global>
 	.locations-view {
 		display: grid;
 		gap: 1.2rem;
@@ -368,3 +457,9 @@ const inactiveCount = locations.length - activeCount;
 		color: #ffc8d2;
 	}
 </style>
+
+<script>
+	import { initLocationsListControls } from '../scripts/locations-list-controls';
+
+	initLocationsListControls();
+</script>

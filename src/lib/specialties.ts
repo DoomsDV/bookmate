@@ -231,13 +231,26 @@ export class SpecialtiesClient {
 		return { response, data: body };
 	}
 
-	async list(page = 1, limit = 9): Promise<SpecialtiesListResult> {
+	async list(
+		page = 1,
+		limit = 9,
+		isActive?: number | null,
+		search?: string
+	): Promise<SpecialtiesListResult> {
 		const safePage = Number.isInteger(page) && page > 0 ? page : 1;
 		const safeLimit = Number.isInteger(limit) && limit > 0 ? limit : 9;
+		const hasActiveFilter = isActive === 0 || isActive === 1;
+		const searchQuery = String(search || '').trim();
 
 		const specialtyUrl = new URL(SPECIALTIES_URL);
 		specialtyUrl.searchParams.set('page', String(safePage));
 		specialtyUrl.searchParams.set('limit', String(safeLimit));
+		if (hasActiveFilter) {
+			specialtyUrl.searchParams.set('is_active', String(isActive));
+		}
+		if (searchQuery) {
+			specialtyUrl.searchParams.set('search', searchQuery);
+		}
 
 		const { response, data } = await this.request(specialtyUrl.toString(), { method: 'GET' }, 'list');
 		if (!Array.isArray(data.data)) {
@@ -346,10 +359,15 @@ export class SpecialtiesClient {
 
 export const listSpecialties = async (
 	token: string,
-	options: { page?: number; limit?: number } = {}
+	options: {
+		page?: number;
+		limit?: number;
+		isActive?: number | null;
+		search?: string;
+	} = {}
 ): Promise<SpecialtiesListResult> => {
 	const apiClient = new SpecialtiesClient(token);
-	return apiClient.list(options.page, options.limit);
+	return apiClient.list(options.page, options.limit, options.isActive, options.search);
 };
 
 export const createSpecialtyWithOrds = async (token: string, payload: CreateSpecialtyPayload) => {

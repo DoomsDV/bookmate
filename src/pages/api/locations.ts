@@ -3,8 +3,50 @@ import type { APIRoute } from 'astro';
 import {
 	LocationsApiError,
 	LocationsClient,
+	listLocations,
 	type CreateLocationPayload,
 } from '../../lib/locations';
+import {
+	requireToken as requireApiToken,
+	toErrorResponse as toApiErrorResponse,
+	toPositiveInt,
+} from '../../utils/api-helpers';
+
+const createLocationsError = (message: string, status = 400) =>
+	new LocationsApiError(message, status);
+
+const requireToken = (token: string | undefined) =>
+	requireApiToken(token, createLocationsError, 'No hay sesion valida para consultar sucursales.');
+
+const toErrorResponse = (error: unknown, fallbackMessage: string) =>
+	toApiErrorResponse(error, fallbackMessage, {
+		isKnownError: (value): value is LocationsApiError => value instanceof LocationsApiError,
+		createError: createLocationsError,
+	});
+
+export const GET: APIRoute = async ({ locals, url }) => {
+	try {
+		const token = requireToken(locals.token);
+		const page = toPositiveInt(url.searchParams.get('page'), 1);
+		const limit = toPositiveInt(url.searchParams.get('limit'), 9);
+		const rawIsActive = String(url.searchParams.get('is_active') || '').trim();
+		const isActive =
+			rawIsActive === '0' || rawIsActive === '1' ? Number(rawIsActive) : null;
+
+		const result = await listLocations(token, { page, limit, isActive });
+
+		return Response.json(
+			{
+				status: 'success',
+				data: result.data,
+				meta: result.meta,
+			},
+			{ status: 200 }
+		);
+	} catch (error) {
+		return toErrorResponse(error, 'No fue posible obtener el listado de sucursales.');
+	}
+};
 
 const parseBody = async (request: Request) => {
 	const contentType = request.headers.get('content-type') || '';

@@ -17,6 +17,9 @@ const { currentPage: pageProp = 1 } = Astro.props;
 const token = Astro.locals.token ?? '';
 const rawPage = Number(pageProp || Astro.url.searchParams.get('page') || '1');
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
+const searchQuery = String(Astro.url.searchParams.get('search') || '').trim();
+const rawIsActive = String(Astro.url.searchParams.get('is_active') || '').trim();
+const isActiveFilter = rawIsActive === '0' || rawIsActive === '1' ? Number(rawIsActive) : null;
 
 let professionals: Professional[] = [];
 let loadError = '';
@@ -31,7 +34,12 @@ if (!token) {
 	loadError = 'No hay sesión válida para consultar personal.';
 } else {
 	try {
-		const listResult = await listProfessionals(token, { page: currentPage, limit: PAGE_SIZE });
+		const listResult = await listProfessionals(token, {
+			page: currentPage,
+			limit: PAGE_SIZE,
+			search: searchQuery || undefined,
+			isActive: isActiveFilter,
+		});
 		professionals = listResult.data;
 		pagination = listResult.meta;
 	} catch (error) {
@@ -46,70 +54,61 @@ const totalPages = Math.max(1, pagination.total_pages);
 const safeCurrentPage = Math.min(Math.max(1, pagination.current_page), totalPages);
 const canPrevPage = safeCurrentPage > 1;
 const canNextPage = safeCurrentPage < totalPages;
-
-const toPageHref = (page: number) => {
-	const nextUrl = new URL(Astro.url);
-	nextUrl.searchParams.set('page', String(page));
-	return `${nextUrl.pathname}${nextUrl.search}`;
-};
 ---
 
 {
 	loadError ? (
 		<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
 	) : (
-		<div class="grid gap-4">
-			<ProfessionalsGrid professionals={professionals} showCreateAction={true} />
+		<div class="grid gap-4" data-professionals-list>
+			<ProfessionalsGrid
+				professionals={professionals}
+				showCreateAction={true}
+				searchQuery={searchQuery}
+				isActiveFilter={isActiveFilter}
+			/>
 
-			<div class="app-pagination">
-				<p class="app-pagination__summary">
+			<div class="app-pagination" data-professionals-pagination>
+				<p class="app-pagination__summary" data-professionals-pagination-summary>
 					Página <strong>{safeCurrentPage}</strong> de <strong>{totalPages}</strong>
 					<span aria-hidden="true">-</span>
 					Total: <strong>{pagination.total_records}</strong> profesionales
 				</p>
 
 				<nav class="app-pagination__controls" aria-label="Paginación personal">
-					{
-						canPrevPage ? (
-							<a
-								href={toPageHref(safeCurrentPage - 1)}
-								class="app-pagination__icon-button"
-								aria-label="Página anterior"
-							>
-								<svg viewBox="0 0 24 24" aria-hidden="true">
-									<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
-								</svg>
-							</a>
-						) : (
-							<span class="app-pagination__icon-button is-disabled" aria-disabled="true">
-								<svg viewBox="0 0 24 24" aria-hidden="true">
-									<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
-								</svg>
-							</span>
-						)
-					}
+					<button
+						type="button"
+						class:list={['app-pagination__icon-button', !canPrevPage && 'is-disabled']}
+						data-professionals-page-prev
+						data-page={Math.max(1, safeCurrentPage - 1)}
+						aria-label="Página anterior"
+						disabled={!canPrevPage}
+					>
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
+						</svg>
+					</button>
 
-					<span class="app-pagination__current" aria-current="page">{safeCurrentPage}</span>
+					<span
+						class="app-pagination__current"
+						aria-current="page"
+						data-professionals-pagination-current
+					>
+						{safeCurrentPage}
+					</span>
 
-					{
-						canNextPage ? (
-							<a
-								href={toPageHref(safeCurrentPage + 1)}
-								class="app-pagination__icon-button"
-								aria-label="Página siguiente"
-							>
-								<svg viewBox="0 0 24 24" aria-hidden="true">
-									<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
-								</svg>
-							</a>
-						) : (
-							<span class="app-pagination__icon-button is-disabled" aria-disabled="true">
-								<svg viewBox="0 0 24 24" aria-hidden="true">
-									<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
-								</svg>
-							</span>
-						)
-					}
+					<button
+						type="button"
+						class:list={['app-pagination__icon-button', !canNextPage && 'is-disabled']}
+						data-professionals-page-next
+						data-page={Math.min(totalPages, safeCurrentPage + 1)}
+						aria-label="Página siguiente"
+						disabled={!canNextPage}
+					>
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
+						</svg>
+					</button>
 				</nav>
 			</div>
 		</div>
