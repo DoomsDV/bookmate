@@ -31,13 +31,23 @@ export interface PublicOrgHubProfessional {
 	location_ids: number[];
 }
 
+export interface PublicOrgHubGalleryImage {
+	id: number;
+	url: string;
+	sort_order: number;
+}
+
 export interface PublicOrgHub {
 	organization_name: string;
 	organization_slug: string;
 	logo_url: string;
+	banner_url: string;
+	facebook_url: string;
+	instagram_url: string;
 	description: string;
 	public_whatsapp: string;
 	maintenance: boolean;
+	gallery_images: PublicOrgHubGalleryImage[];
 	locations: PublicOrgHubLocation[];
 	professionals: PublicOrgHubProfessional[];
 	service_categories: string[];
@@ -119,10 +129,32 @@ const normalizeOrgHub = (value: unknown): PublicOrgHub | null => {
 				.filter(Boolean)
 		: [];
 
+	const galleryImages = Array.isArray(source.gallery_images)
+		? source.gallery_images
+				.flatMap((item) => {
+					if (!item || typeof item !== 'object') return [];
+					const gal = item as Record<string, unknown>;
+					const id = toPositiveInt(gal.id, 0);
+					const url = String(gal.url || '').trim();
+					if (!id || !url) return [];
+					return [
+						{
+							id,
+							url,
+							sort_order: toPositiveInt(gal.sort_order, 0),
+						} satisfies PublicOrgHubGalleryImage,
+					];
+				})
+				.sort((a, b) => a.sort_order - b.sort_order || a.id - b.id)
+		: [];
+
 	return {
 		organization_name: organizationName,
 		organization_slug: organizationSlug,
 		logo_url: String(source.logo_url || '').trim(),
+		banner_url: String(source.banner_url || '').trim(),
+		facebook_url: String(source.facebook_url || '').trim(),
+		instagram_url: String(source.instagram_url || '').trim(),
 		description: String(source.description || '').trim(),
 		public_whatsapp: String(source.public_whatsapp || '').trim(),
 		maintenance:
@@ -130,6 +162,7 @@ const normalizeOrgHub = (value: unknown): PublicOrgHub | null => {
 			source.maintenance === 1 ||
 			source.maintenance === '1' ||
 			source.maintenance === 'true',
+		gallery_images: galleryImages,
 		locations,
 		professionals,
 		service_categories: serviceCategories,

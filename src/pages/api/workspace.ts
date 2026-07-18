@@ -3,6 +3,10 @@ import type { APIRoute } from 'astro';
 import { ROLES } from '../../config/roles';
 import { setOrganizationCacheCookies } from '../../lib/auth';
 import {
+	bufferToBase64,
+	optimizeProfileImage,
+} from '../../lib/optimize-profile-image';
+import {
 	getWorkspaceSettingsWithOrds,
 	type UpdateWorkspacePayload,
 	updateWorkspaceSettingsWithOrds,
@@ -85,6 +89,14 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 		payload.public_whatsapp = String(source?.public_whatsapp ?? '').trim();
 	}
 
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'facebook_url')) {
+		payload.facebook_url = String(source?.facebook_url ?? '').trim();
+	}
+
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'instagram_url')) {
+		payload.instagram_url = String(source?.instagram_url ?? '').trim();
+	}
+
 	const timeFormat = String(source?.time_format ?? '').trim();
 	if (timeFormat !== '') {
 		const normalizedTimeFormat = timeFormat.toLowerCase();
@@ -130,6 +142,13 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 		payload.logo_mime = String(source?.logo_mime ?? '').trim();
 	}
 
+	const bannerBase64 = String(source?.banner_base64 ?? '').trim();
+	if (bannerBase64 !== '') {
+		payload.banner_base64 = bannerBase64;
+		payload.banner_name = String(source?.banner_name ?? '').trim();
+		payload.banner_mime = String(source?.banner_mime ?? '').trim();
+	}
+
 	return payload;
 };
 
@@ -158,6 +177,24 @@ export const PUT: APIRoute = async ({ cookies, request, locals, url }) => {
 		requireAdminRole(locals.roleId);
 		const body = await parseBody(request);
 		const payload = parseUpdatePayload(body);
+
+		if (payload.banner_base64) {
+			const compressRaw = String(body?.compress_banner ?? body?.compress ?? 'true').toLowerCase();
+			const compress = compressRaw !== 'false' && compressRaw !== '0';
+			const raw = payload.banner_base64.replace(/^\s*data:[^,]+,/, '');
+			const input = Buffer.from(raw, 'base64');
+			const optimized = await optimizeProfileImage({
+				input,
+				filename: payload.banner_name || 'banner.jpg',
+				mimeType: payload.banner_mime || 'image/jpeg',
+				compress,
+				mode: 'banner',
+			});
+			payload.banner_base64 = bufferToBase64(optimized.buffer);
+			payload.banner_name = optimized.filename;
+			payload.banner_mime = optimized.mime;
+		}
+
 		const updated = await updateWorkspaceSettingsWithOrds(token, payload);
 		const workspace = await getWorkspaceSettingsWithOrds(token);
 		setOrganizationCacheCookies(cookies, url, workspace);

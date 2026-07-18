@@ -11,6 +11,14 @@ export interface WorkspaceCatalogs {
 	cancel_wait_hours: WorkspaceCatalogOption[];
 }
 
+export interface WorkspaceGalleryImage {
+	id: number;
+	url: string;
+	filename?: string;
+	mime_type?: string;
+	sort_order: number;
+}
+
 export interface WorkspaceSettingsData {
 	id_organization: number;
 	name: string;
@@ -18,6 +26,10 @@ export interface WorkspaceSettingsData {
 	description: string;
 	public_whatsapp: string;
 	logo_url: string;
+	banner_url: string;
+	facebook_url: string;
+	instagram_url: string;
+	gallery_images: WorkspaceGalleryImage[];
 	time_format: string;
 	theme_pref: string;
 	hidden_public_price_label: string;
@@ -38,6 +50,8 @@ export interface UpdateWorkspacePayload {
 	profile_slug?: string;
 	description?: string;
 	public_whatsapp?: string;
+	facebook_url?: string;
+	instagram_url?: string;
 	time_format?: string;
 	theme_pref?: string;
 	hidden_public_price_label?: string;
@@ -50,6 +64,9 @@ export interface UpdateWorkspacePayload {
 	logo_base64?: string;
 	logo_name?: string;
 	logo_mime?: string;
+	banner_base64?: string;
+	banner_name?: string;
+	banner_mime?: string;
 }
 
 export interface WorkspaceFieldError {

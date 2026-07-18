@@ -86,6 +86,10 @@ const ogImage = hub ? resolveOgImageUrl(hub.logo_url, siteOrigin) : resolveOgIma
 const professionals = hub?.professionals || [];
 const locations = hub?.locations || [];
 const serviceCategories = hub?.service_categories || [];
+const galleryImages = hub?.gallery_images || [];
+const bannerUrl = String(hub?.banner_url || '').trim();
+const facebookUrl = String(hub?.facebook_url || '').trim();
+const instagramUrl = String(hub?.instagram_url || '').trim();
 const singlePro = professionals.length === 1 ? professionals[0] : null;
 const reserveHref = singlePro?.booking_path || '#equipo';
 const hubUrl = siteOrigin ? `${siteOrigin}${canonicalPath}` : canonicalPath;
@@ -127,9 +131,17 @@ const serializedProfessionals = professionals.length
 					) : null}
 
 					<section class="hub-hero" aria-labelledby="hub-org-name">
-						<div class="hub-hero__banner" aria-hidden="true">
-							<span class="hub-hero__orb hub-hero__orb--a" />
-							<span class="hub-hero__orb hub-hero__orb--b" />
+						<div
+							class={`hub-hero__banner ${bannerUrl ? 'hub-hero__banner--photo' : ''}`}
+							aria-hidden="true"
+							style={bannerUrl ? `background-image: url(${bannerUrl})` : undefined}
+						>
+							{!bannerUrl ? (
+								<>
+									<span class="hub-hero__orb hub-hero__orb--a" />
+									<span class="hub-hero__orb hub-hero__orb--b" />
+								</>
+							) : null}
 						</div>
 						<div class="hub-hero__card">
 							<div class="hub-hero__card-top">
@@ -139,8 +151,8 @@ const serializedProfessionals = professionals.length
 											src={hub.logo_url}
 											alt=""
 											class="hub-hero__logo"
-											width="84"
-											height="84"
+											width="56"
+											height="56"
 											loading="eager"
 											decoding="async"
 										/>
@@ -162,18 +174,28 @@ const serializedProfessionals = professionals.length
 									</div>
 								</div>
 								<div class="hub-hero__actions">
-									{waHref ? (
+									{facebookUrl ? (
 										<a
-											href={waHref}
-											class="hub-wa-link"
+											href={facebookUrl}
+											class="hub-icon-btn"
 											target="_blank"
 											rel="noopener noreferrer"
-											aria-label="Contactar por WhatsApp"
+											aria-label="Facebook"
+											title="Facebook"
 										>
-											<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true"
-												>chat</span
-											>
-											WhatsApp
+											<span class="material-symbols-rounded" aria-hidden="true">public</span>
+										</a>
+									) : null}
+									{instagramUrl ? (
+										<a
+											href={instagramUrl}
+											class="hub-icon-btn"
+											target="_blank"
+											rel="noopener noreferrer"
+											aria-label="Instagram"
+											title="Instagram"
+										>
+											<span class="material-symbols-rounded" aria-hidden="true">photo_camera</span>
 										</a>
 									) : null}
 									<button
@@ -188,6 +210,18 @@ const serializedProfessionals = professionals.length
 									</button>
 								</div>
 							</div>
+							{waHref ? (
+								<a
+									href={waHref}
+									class="hub-wa-link hub-wa-link--block"
+									target="_blank"
+									rel="noopener noreferrer"
+									aria-label="Contactar por WhatsApp"
+								>
+									<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">chat</span>
+									WhatsApp
+								</a>
+							) : null}
 						</div>
 					</section>
 
@@ -206,6 +240,23 @@ const serializedProfessionals = professionals.length
 							data-hub-panel="overview"
 							aria-labelledby="hub-about-title"
 						>
+							{galleryImages.length ? (
+								<div class="hub-gallery" aria-label="Galería del negocio">
+									<p class="hub-categories__label">Galería</p>
+									<ul class="hub-gallery__grid">
+										{galleryImages.map((image, index) => (
+											<li>
+												<img
+													src={image.url}
+													alt=""
+													loading={index < 6 ? 'eager' : 'lazy'}
+													decoding="async"
+												/>
+											</li>
+										))}
+									</ul>
+								</div>
+							) : null}
 							<h2 id="hub-about-title" class="hub-section-title">
 								Sobre {organizationName}
 							</h2>

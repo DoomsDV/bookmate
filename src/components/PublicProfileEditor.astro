@@ -5,6 +5,7 @@ import {
 	buildOrgHubUrl,
 	resolvePublicSiteOrigin,
 } from '../lib/public-profile-url';
+import PublicProfilePreview from './PublicProfilePreview';
 
 interface Props {
 	workspace: WorkspaceSettingsData;
@@ -13,6 +14,7 @@ interface Props {
 }
 
 const DESC_MAX = 500;
+const GALLERY_MAX = 30;
 
 const { workspace, hub, organizationName } = Astro.props;
 const siteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
@@ -24,6 +26,10 @@ const whatsappLocal = whatsappDigits.startsWith('595')
 	? whatsappDigits.slice(3)
 	: whatsappDigits;
 const descriptionValue = String(workspace.description || '').slice(0, DESC_MAX);
+const galleryImages = workspace.gallery_images || [];
+const facebookUrl = String(workspace.facebook_url || '').trim();
+const instagramUrl = String(workspace.instagram_url || '').trim();
+const bannerUrl = String(workspace.banner_url || '').trim();
 
 const initials = (() => {
 	const parts = organizationName.trim().split(/\s+/).filter(Boolean);
@@ -33,14 +39,32 @@ const initials = (() => {
 })();
 
 const payload = {
-	workspace: { ...workspace, description: descriptionValue },
+	workspace: {
+		...workspace,
+		description: descriptionValue,
+		gallery_images: galleryImages,
+	},
 	hub,
 	organizationName,
 	siteOrigin: siteOrigin || Astro.url.origin,
 	domainLabel,
 	descMax: DESC_MAX,
+	galleryMax: GALLERY_MAX,
 };
 const serialized = JSON.stringify(payload).replace(/</g, '\\u003c');
+
+const previewInitial = {
+	organizationName,
+	initials,
+	description: descriptionValue,
+	logoUrl: workspace.logo_url || '',
+	bannerUrl,
+	whatsappVisible: Boolean(whatsappLocal),
+	facebookUrl,
+	instagramUrl,
+	galleryUrls: galleryImages.map((item) => item.url).filter(Boolean),
+	serviceCategories: hub?.service_categories || [],
+};
 ---
 
 <public-profile-editor data-ppe-root data-ppe-bootstrap={serialized}>
@@ -156,6 +180,87 @@ const serialized = JSON.stringify(payload).replace(/</g, '\\u003c');
 								/>
 							</label>
 						</div>
+
+						<div class="ppe-field">
+							<span class="ppe-field__label">Banner del negocio</span>
+							<label class="ppe-banner-drop" data-ppe-banner-dropzone>
+								<img
+									src={bannerUrl || ''}
+									alt=""
+									class={`ppe-banner-preview ${bannerUrl ? '' : 'hidden'}`}
+									data-ppe-banner-preview
+								/>
+								<div
+									class={`ppe-banner-preview ppe-banner-preview--ph ${bannerUrl ? 'hidden' : ''}`}
+									data-ppe-banner-placeholder
+								>
+									<span class="material-symbols-rounded" aria-hidden="true">image</span>
+									<span>1200 × 600 (2:1)</span>
+								</div>
+								<p class="ppe-field__hint">
+									JPG o PNG hasta 5 MB. Recomendado 1200×600 o 1080×566.
+								</p>
+								<span class="ppe-btn ppe-btn-secondary">Subir banner</span>
+								<input
+									type="file"
+									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+									class="sr-only"
+									data-ppe-banner-input
+								/>
+							</label>
+							<label class="ppe-check">
+								<input type="checkbox" data-ppe-banner-compress checked />
+								<span>Comprimir imagen (recomendado)</span>
+							</label>
+							<p class="ppe-field__hint" data-ppe-banner-compress-hint hidden>
+								Se mantiene la resolución; el perfil puede cargar más lento.
+							</p>
+						</div>
+
+						<div class="ppe-field">
+							<span class="ppe-field__label">
+								Galería <span data-ppe-gallery-count>({galleryImages.length}/{GALLERY_MAX})</span>
+							</span>
+							<p class="ppe-field__hint">
+								Hasta 30 fotos del negocio (fachada, interior, servicios). Hasta 5 MB c/u.
+							</p>
+							<label class="ppe-check">
+								<input type="checkbox" data-ppe-gallery-compress checked />
+								<span>Comprimir imagen (recomendado)</span>
+							</label>
+							<p class="ppe-field__hint" data-ppe-gallery-compress-hint hidden>
+								Se mantiene la resolución; el perfil puede cargar más lento.
+							</p>
+							<ul class="ppe-gallery-grid" data-ppe-gallery-grid>
+								{
+									galleryImages.map((item) => (
+										<li class="ppe-gallery-item" data-ppe-gallery-item data-id={item.id}>
+											<img src={item.url} alt="" />
+											<button
+												type="button"
+												class="ppe-gallery-item__remove"
+												data-ppe-gallery-remove
+												data-id={item.id}
+												aria-label="Eliminar foto"
+											>
+												<span class="material-symbols-rounded" aria-hidden="true">close</span>
+											</button>
+										</li>
+									))
+								}
+							</ul>
+							<label class="ppe-btn ppe-btn-secondary ppe-gallery-add" data-ppe-gallery-add>
+								<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">add_photo_alternate</span>
+								Agregar foto
+								<input
+									type="file"
+									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+									class="sr-only"
+									data-ppe-gallery-input
+									multiple
+								/>
+							</label>
+						</div>
 					</div>
 				</details>
 
@@ -197,14 +302,11 @@ const serialized = JSON.stringify(payload).replace(/</g, '\\u003c');
 
 						<div class={`ppe-field ${whatsappLocal ? '' : 'hidden'}`} data-ppe-wa-field>
 							<label for="ppe-whatsapp">Número de WhatsApp</label>
-							<div class="flex rounded-2xl shadow-sm">
-								<span
-									class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)"
-									>+595</span
-								>
+							<div class="ppe-phone-input">
+								<span class="ppe-phone-input__prefix">+595</span>
 								<input
 									id="ppe-whatsapp"
-									class="ppe-input rounded-l-none!"
+									class="ppe-input ppe-phone-input__field"
 									type="tel"
 									inputmode="numeric"
 									name="public_whatsapp_local"
@@ -216,111 +318,40 @@ const serialized = JSON.stringify(payload).replace(/</g, '\\u003c');
 							</div>
 							<span class="ppe-field__hint">Sin el 0 inicial. Ej: 981 123 456</span>
 						</div>
+
+						<div class="ppe-field">
+							<label for="ppe-facebook">Facebook</label>
+							<input
+								id="ppe-facebook"
+								class="ppe-input"
+								type="url"
+								name="facebook_url"
+								placeholder="https://facebook.com/tu-negocio"
+								value={facebookUrl}
+								data-ppe-facebook
+							/>
+							<span class="ppe-field__hint">URL completa de tu página o perfil.</span>
+						</div>
+
+						<div class="ppe-field">
+							<label for="ppe-instagram">Instagram</label>
+							<input
+								id="ppe-instagram"
+								class="ppe-input"
+								type="url"
+								name="instagram_url"
+								placeholder="https://instagram.com/tu-negocio"
+								value={instagramUrl}
+								data-ppe-instagram
+							/>
+							<span class="ppe-field__hint">URL completa de tu perfil.</span>
+						</div>
 					</div>
 				</details>
 			</form>
 
 			<aside class="ppe-phone-col" aria-label="Vista previa móvil">
-				<div class="ppe-phone">
-					<div class="ppe-phone__bezel">
-						<span class="ppe-phone__island" aria-hidden="true"></span>
-						<div class="ppe-phone__screen hub-root ppe-preview-hub" data-ppe-preview>
-							<header class="ppe-preview-topbar" aria-hidden="true">
-								<span class="ppe-preview-topbar__brand">
-									<img src="/icons/icon-64.png" alt="" width="22" height="22" />
-									Hasel
-								</span>
-								<span class="ppe-preview-topbar__cta">Reservar</span>
-							</header>
-
-							<section class="hub-hero">
-								<div class="hub-hero__banner" aria-hidden="true">
-									<span class="hub-hero__orb hub-hero__orb--a"></span>
-								</div>
-								<div class="hub-hero__card">
-									<div class="hub-hero__card-top">
-										<div class="hub-hero__identity">
-											<img
-												src={workspace.logo_url || ''}
-												alt=""
-												class={`hub-hero__logo ${workspace.logo_url ? '' : 'hidden'}`}
-												data-ppe-preview-logo
-												width="60"
-												height="60"
-											/>
-											<div
-												class={`hub-hero__logo hub-hero__logo--placeholder ${workspace.logo_url ? 'hidden' : ''}`}
-												data-ppe-preview-logo-ph
-												aria-hidden="true"
-											>
-												{initials}
-											</div>
-											<div class="min-w-0">
-												<h2 class="hub-hero__name" data-ppe-preview-name>
-													{organizationName}
-												</h2>
-												<p
-													class={`hub-hero__tagline ${descriptionValue ? '' : 'hidden'}`}
-													data-ppe-preview-desc
-												>
-													{descriptionValue}
-												</p>
-											</div>
-										</div>
-										<div class="hub-hero__actions">
-											<span
-												class={`hub-wa-link ${whatsappLocal ? '' : 'hidden'}`}
-												data-ppe-preview-wa
-											>
-												<span class="material-symbols-rounded text-[1rem]" aria-hidden="true"
-													>chat</span
-												>
-												WhatsApp
-											</span>
-										</div>
-									</div>
-								</div>
-							</section>
-
-							<nav class="hub-tabs" aria-hidden="true">
-								<span class="hub-tab is-active">Overview</span>
-								<span class="hub-tab">Equipo</span>
-								<span class="hub-tab">Sucursales</span>
-							</nav>
-
-							<div class="hub-panels">
-								<section class="hub-panel is-active">
-									<h3 class="hub-section-title">
-										Sobre <span data-ppe-preview-about-name>{organizationName}</span>
-									</h3>
-									<p
-										class={`hub-about-text ${descriptionValue ? '' : 'hub-about-text--empty'}`}
-										data-ppe-preview-about
-									>
-										{
-											descriptionValue ||
-												'Este negocio todavía no agregó una descripción.'
-										}
-									</p>
-									{
-										hub?.service_categories?.length ? (
-											<div class="hub-categories">
-												<p class="hub-categories__label">Servicios</p>
-												<ul class="hub-categories__list">
-													{hub.service_categories.slice(0, 8).map((category) => (
-														<li>
-															<span class="hub-category-tag">{category}</span>
-														</li>
-													))}
-												</ul>
-											</div>
-										) : null
-									}
-								</section>
-							</div>
-						</div>
-					</div>
-				</div>
+				<PublicProfilePreview client:load initial={previewInitial} />
 			</aside>
 		</div>
 	</div>
@@ -337,7 +368,7 @@ const serialized = JSON.stringify(payload).replace(/</g, '\\u003c');
 
 	<dialog class="ppe-crop-modal" data-ppe-crop-modal>
 		<div class="ppe-crop-modal__head">
-			<strong>Recortar logo</strong>
+			<strong data-ppe-crop-title>Recortar logo</strong>
 			<button type="button" class="ppe-icon-btn" data-ppe-crop-close aria-label="Cerrar">
 				<span class="material-symbols-rounded" aria-hidden="true">close</span>
 			</button>

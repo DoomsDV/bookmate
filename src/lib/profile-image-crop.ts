@@ -18,13 +18,16 @@ export function buildCroppedProfileFileName(originalName: string): string {
 	return `${base}.jpg`;
 }
 
+export type ProfileCropMode = 'logo' | 'banner';
+
 export class ProfileImageCropper {
 	private instance: Croppie | null = null;
 	private objectUrl: string | null = null;
 
 	constructor(
 		private readonly mountEl: HTMLElement,
-		private readonly outputSize = PROFILE_IMAGE_OUTPUT_SIZE
+		private readonly outputSize = PROFILE_IMAGE_OUTPUT_SIZE,
+		private readonly mode: ProfileCropMode = 'logo'
 	) {}
 
 	async bindFile(file: File): Promise<void> {
@@ -32,14 +35,26 @@ export class ProfileImageCropper {
 		const url = URL.createObjectURL(file);
 		this.objectUrl = url;
 
-		const viewport = Math.min(260, Math.max(200, this.mountEl.clientWidth - 24));
-		this.instance = new Croppie(this.mountEl, {
-			viewport: { width: viewport, height: viewport, type: 'circle' },
-			boundary: { width: viewport + 32, height: viewport + 32 },
-			showZoomer: true,
-			enableExif: true,
-			enforceBoundary: true,
-		});
+		if (this.mode === 'banner') {
+			const width = Math.min(320, Math.max(240, this.mountEl.clientWidth - 24));
+			const height = Math.round(width / 2);
+			this.instance = new Croppie(this.mountEl, {
+				viewport: { width, height, type: 'square' },
+				boundary: { width: width + 32, height: height + 48 },
+				showZoomer: true,
+				enableExif: true,
+				enforceBoundary: true,
+			});
+		} else {
+			const viewport = Math.min(260, Math.max(200, this.mountEl.clientWidth - 24));
+			this.instance = new Croppie(this.mountEl, {
+				viewport: { width: viewport, height: viewport, type: 'circle' },
+				boundary: { width: viewport + 32, height: viewport + 32 },
+				showZoomer: true,
+				enableExif: true,
+				enforceBoundary: true,
+			});
+		}
 
 		await this.instance.bind({ url });
 	}
@@ -49,19 +64,26 @@ export class ProfileImageCropper {
 			throw new Error('No hay imagen para recortar.');
 		}
 
+		const isBanner = this.mode === 'banner';
 		const blob = await this.instance.result({
 			type: 'blob',
-			size: { width: this.outputSize, height: this.outputSize },
+			size: isBanner
+				? { width: 1200, height: 600 }
+				: { width: this.outputSize, height: this.outputSize },
 			format: 'jpeg',
 			quality: 0.9,
-			circle: true,
+			circle: !isBanner,
 		});
 
 		if (!(blob instanceof Blob)) {
 			throw new Error('No se pudo generar la imagen recortada.');
 		}
 
-		return new File([blob], buildCroppedProfileFileName(originalName), {
+		const name = isBanner
+			? `${originalName.replace(/\.[^.]+$/, '') || 'banner'}.jpg`
+			: buildCroppedProfileFileName(originalName);
+
+		return new File([blob], name, {
 			type: 'image/jpeg',
 		});
 	}

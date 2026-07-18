@@ -5,6 +5,7 @@ import type {
 	WorkspaceCatalogOption,
 	WorkspaceCatalogs,
 	WorkspaceFieldError,
+	WorkspaceGalleryImage,
 	WorkspaceSettingsData,
 } from './workspace-settings-shared';
 
@@ -13,6 +14,7 @@ export type {
 	WorkspaceCatalogOption,
 	WorkspaceCatalogs,
 	WorkspaceFieldError,
+	WorkspaceGalleryImage,
 	WorkspaceSettingsData,
 } from './workspace-settings-shared';
 
@@ -116,6 +118,28 @@ const parseFieldErrors = (value: unknown): WorkspaceFieldError[] => {
 	});
 };
 
+const parseGalleryImages = (value: unknown): WorkspaceGalleryImage[] => {
+	if (!Array.isArray(value)) return [];
+	return value
+		.flatMap((item) => {
+			if (!item || typeof item !== 'object') return [];
+			const source = item as Record<string, unknown>;
+			const id = toOptionalPositiveInt(source.id);
+			const url = String(source.url || '').trim();
+			if (!id || !url) return [];
+			return [
+				{
+					id,
+					url,
+					filename: String(source.filename || '').trim() || undefined,
+					mime_type: String(source.mime_type || '').trim() || undefined,
+					sort_order: toNumber(source.sort_order, 0) || 0,
+				},
+			];
+		})
+		.sort((a, b) => a.sort_order - b.sort_order || a.id - b.id);
+};
+
 const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | null => {
 	if (!value || typeof value !== 'object') return null;
 	const source = value as Record<string, unknown>;
@@ -135,6 +159,10 @@ const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | nul
 		description: String(source.description || '').trim(),
 		public_whatsapp: String(source.public_whatsapp || '').trim(),
 		logo_url: String(source.logo_url || '').trim(),
+		banner_url: String(source.banner_url || '').trim(),
+		facebook_url: String(source.facebook_url || '').trim(),
+		instagram_url: String(source.instagram_url || '').trim(),
+		gallery_images: parseGalleryImages(source.gallery_images),
 		time_format: normalizeTimeFormat(source.time_format),
 		theme_pref: String(source.theme_pref || '').trim(),
 		hidden_public_price_label:
@@ -252,6 +280,94 @@ export const updateWorkspaceSettingsWithOrds = async (
 	});
 
 	return parseWorkspaceActionResponse(response);
+};
+
+const WORKSPACE_GALLERY_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_WORKSPACE_GALLERY_URL,
+	'ORDS_WORKSPACE_GALLERY_URL',
+	'/workspace/gallery'
+);
+
+const parseGalleryMutationResponse = async (response: Response) => {
+	let data: Record<string, unknown> | null = null;
+	try {
+		data = (await response.json()) as Record<string, unknown>;
+	} catch {
+		throw new WorkspaceSettingsApiError('No fue posible interpretar la respuesta de galería.', 502);
+	}
+
+	if (!response.ok || !data || data.status !== 'success') {
+		throw new WorkspaceSettingsApiError(
+			String(data?.message || 'No fue posible actualizar la galería.'),
+			response.status || 400,
+			data?.details
+		);
+	}
+
+	const payload =
+		data.data && typeof data.data === 'object'
+			? (data.data as Record<string, unknown>)
+			: {};
+
+	return {
+		message: String(data.message || '').trim(),
+		gallery_images: parseGalleryImages(payload.gallery_images),
+		item: (() => {
+			const id = toOptionalPositiveInt(payload.id);
+			const url = String(payload.url || '').trim();
+			if (!id || !url) return null;
+			return {
+				id,
+				url,
+				filename: String(payload.filename || '').trim() || undefined,
+				mime_type: String(payload.mime_type || '').trim() || undefined,
+				sort_order: toNumber(payload.sort_order, 0) || 0,
+			} satisfies WorkspaceGalleryImage;
+		})(),
+	};
+};
+
+export const addWorkspaceGalleryImageWithOrds = async (
+	token: string,
+	payload: { image_base64: string; image_name: string; image_mime: string }
+) => {
+	if (!token) throw new WorkspaceSettingsApiError('Token de acceso requerido.', 401);
+	const response = await fetch(WORKSPACE_GALLERY_URL, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify(payload),
+	});
+	return parseGalleryMutationResponse(response);
+};
+
+export const deleteWorkspaceGalleryImageWithOrds = async (token: string, galleryId: number) => {
+	if (!token) throw new WorkspaceSettingsApiError('Token de acceso requerido.', 401);
+	const response = await fetch(`${WORKSPACE_GALLERY_URL.replace(/\/+$/, '')}/${galleryId}`, {
+		method: 'DELETE',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+	return parseGalleryMutationResponse(response);
+};
+
+export const reorderWorkspaceGalleryWithOrds = async (token: string, ids: number[]) => {
+	if (!token) throw new WorkspaceSettingsApiError('Token de acceso requerido.', 401);
+	const response = await fetch(WORKSPACE_GALLERY_URL, {
+		method: 'PUT',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({ ids }),
+	});
+	return parseGalleryMutationResponse(response);
 };
 
 export type ProfileSlugAvailability = {

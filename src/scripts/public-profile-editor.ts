@@ -1,9 +1,13 @@
 import {
 	ProfileImageCropper,
 	isAcceptedProfileImage,
+	type ProfileCropMode,
 } from '../lib/profile-image-crop';
+import { emitPublicProfilePreviewUpdate } from '../lib/public-profile-preview-events';
 import { buildOrgHubUrl } from '../lib/public-profile-url';
 import { isReservedOrgSlug } from '../lib/reserved-org-slugs';
+
+type GalleryItem = { id: number; url: string; sort_order?: number };
 
 type Bootstrap = {
 	workspace: {
@@ -11,15 +15,18 @@ type Bootstrap = {
 		description?: string;
 		public_whatsapp?: string;
 		logo_url?: string;
+		banner_url?: string;
+		facebook_url?: string;
+		instagram_url?: string;
+		gallery_images?: GalleryItem[];
 		name?: string;
 	};
 	organizationName: string;
 	siteOrigin: string;
 	domainLabel: string;
 	descMax?: number;
+	galleryMax?: number;
 };
-
-const EMPTY_ABOUT = 'Este negocio todavía no agregó una descripción.';
 
 const fileToBase64 = (file: File) =>
 	new Promise<string>((resolve, reject) => {
@@ -44,6 +51,16 @@ const normalizeSlugInput = (value: string) =>
 
 const digitsOnly = (value: string) => String(value || '').replace(/\D/g, '');
 
+const initialsFromName = (name: string) => {
+	const parts = String(name || '')
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+	if (!parts.length) return '?';
+	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+	return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+};
+
 export const initializePublicProfileEditor = (root: HTMLElement) => {
 	if (root.dataset.ppeBound === '1') return;
 	root.dataset.ppeBound = '1';
@@ -66,37 +83,58 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const waToggle = root.querySelector<HTMLInputElement>('[data-ppe-wa-toggle]');
 	const waField = root.querySelector<HTMLElement>('[data-ppe-wa-field]');
 	const waInput = root.querySelector<HTMLInputElement>('[data-ppe-whatsapp]');
+	const facebookInput = root.querySelector<HTMLInputElement>('[data-ppe-facebook]');
+	const instagramInput = root.querySelector<HTMLInputElement>('[data-ppe-instagram]');
 	const feedback = root.querySelector<HTMLElement>('[data-ppe-feedback]');
 	const saveBtn = root.querySelector<HTMLButtonElement>('[data-ppe-save]');
 	const openPublic = root.querySelector<HTMLAnchorElement>('[data-ppe-open-public]');
 	const copyBtn = root.querySelector<HTMLButtonElement>('[data-ppe-copy-url]');
 	const descMax = Number(bootstrap.descMax || 500);
+	const galleryMax = Number(bootstrap.galleryMax || 30);
 
 	const logoInput = root.querySelector<HTMLInputElement>('[data-ppe-logo-input]');
 	const logoDropzone = root.querySelector<HTMLElement>('[data-ppe-logo-dropzone]');
 	const logoPreview = root.querySelector<HTMLImageElement>('[data-ppe-logo-preview]');
 	const logoPlaceholder = root.querySelector<HTMLElement>('[data-ppe-logo-placeholder]');
 
-	const previewLogo = root.querySelector<HTMLImageElement>('[data-ppe-preview-logo]');
-	const previewLogoPh = root.querySelector<HTMLElement>('[data-ppe-preview-logo-ph]');
-	const previewDesc = root.querySelector<HTMLElement>('[data-ppe-preview-desc]');
-	const previewAbout = root.querySelector<HTMLElement>('[data-ppe-preview-about]');
-	const previewWa = root.querySelector<HTMLElement>('[data-ppe-preview-wa]');
+	const bannerInput = root.querySelector<HTMLInputElement>('[data-ppe-banner-input]');
+	const bannerDropzone = root.querySelector<HTMLElement>('[data-ppe-banner-dropzone]');
+	const bannerPreview = root.querySelector<HTMLImageElement>('[data-ppe-banner-preview]');
+	const bannerPlaceholder = root.querySelector<HTMLElement>('[data-ppe-banner-placeholder]');
+	const bannerCompress = root.querySelector<HTMLInputElement>('[data-ppe-banner-compress]');
+	const bannerCompressHint = root.querySelector<HTMLElement>('[data-ppe-banner-compress-hint]');
+
+	const galleryGrid = root.querySelector<HTMLElement>('[data-ppe-gallery-grid]');
+	const galleryCount = root.querySelector<HTMLElement>('[data-ppe-gallery-count]');
+	const galleryInput = root.querySelector<HTMLInputElement>('[data-ppe-gallery-input]');
+	const galleryCompress = root.querySelector<HTMLInputElement>('[data-ppe-gallery-compress]');
+	const galleryCompressHint = root.querySelector<HTMLElement>('[data-ppe-gallery-compress-hint]');
 
 	const cropModal = root.querySelector<HTMLDialogElement>('[data-ppe-crop-modal]');
 	const cropMount = root.querySelector<HTMLElement>('[data-ppe-crop-mount]');
 	const cropConfirm = root.querySelector<HTMLButtonElement>('[data-ppe-crop-confirm]');
+	const cropTitle = root.querySelector<HTMLElement>('[data-ppe-crop-title]');
 
 	let cropper: ProfileImageCropper | null = null;
+	let cropMode: ProfileCropMode = 'logo';
 	let pendingCropName = 'logo.jpg';
 	let logoObjectUrl = '';
 	let logoBase64 = '';
 	let logoName = '';
 	let logoMime = '';
+	let bannerObjectUrl = '';
+	let bannerBase64 = '';
+	let bannerName = '';
+	let bannerMime = '';
 	let currentLogoUrl = String(bootstrap.workspace?.logo_url || '').trim();
+	let currentBannerUrl = String(bootstrap.workspace?.banner_url || '').trim();
+	let galleryItems: GalleryItem[] = Array.isArray(bootstrap.workspace?.gallery_images)
+		? [...bootstrap.workspace.gallery_images]
+		: [];
 	let slugCheckTimer: number | null = null;
 	let slugAvailable = true;
 	let originalSlug = normalizeSlugInput(String(bootstrap.workspace?.profile_slug || ''));
+	const initials = initialsFromName(bootstrap.organizationName);
 
 	const showFeedback = (message: string, kind: 'success' | 'error') => {
 		if (!feedback) return;
@@ -118,40 +156,74 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			}
 		}
 		logoPlaceholder?.classList.toggle('hidden', Boolean(url));
-		if (previewLogo) {
+	};
+
+	const setBannerPreview = (url: string) => {
+		currentBannerUrl = url;
+		if (bannerPreview) {
 			if (url) {
-				previewLogo.src = url;
-				previewLogo.classList.remove('hidden');
+				bannerPreview.src = url;
+				bannerPreview.classList.remove('hidden');
 			} else {
-				previewLogo.classList.add('hidden');
+				bannerPreview.removeAttribute('src');
+				bannerPreview.classList.add('hidden');
 			}
 		}
-		previewLogoPh?.classList.toggle('hidden', Boolean(url));
+		bannerPlaceholder?.classList.toggle('hidden', Boolean(url));
+	};
+
+	const renderGalleryGrid = () => {
+		if (!galleryGrid) return;
+		galleryGrid.replaceChildren();
+		for (const item of galleryItems) {
+			const li = document.createElement('li');
+			li.className = 'ppe-gallery-item';
+			li.dataset.ppeGalleryItem = '';
+			li.dataset.id = String(item.id);
+
+			const img = document.createElement('img');
+			img.src = item.url;
+			img.alt = '';
+
+			const actions = document.createElement('div');
+			actions.className = 'ppe-gallery-item__actions';
+
+			const makeAction = (label: string, iconName: string, attr: string) => {
+				const btn = document.createElement('button');
+				btn.type = 'button';
+				btn.className = 'ppe-gallery-item__action';
+				btn.dataset[attr] = '';
+				btn.dataset.id = String(item.id);
+				btn.setAttribute('aria-label', label);
+				const icon = document.createElement('span');
+				icon.className = 'material-symbols-rounded';
+				icon.setAttribute('aria-hidden', 'true');
+				icon.textContent = iconName;
+				btn.appendChild(icon);
+				return btn;
+			};
+
+			actions.append(
+				makeAction('Mover izquierda', 'chevron_left', 'ppeGalleryLeft'),
+				makeAction('Mover derecha', 'chevron_right', 'ppeGalleryRight'),
+				makeAction('Eliminar foto', 'close', 'ppeGalleryRemove')
+			);
+
+			li.append(img, actions);
+			galleryGrid.appendChild(li);
+		}
+		if (galleryCount) galleryCount.textContent = `(${galleryItems.length}/${galleryMax})`;
 	};
 
 	const syncPreview = () => {
 		const rawDescription = String(descInput?.value || '');
 		const description = rawDescription.trim();
-		const hasDescription = rawDescription.length > 0;
 		const showWa = Boolean(waToggle?.checked) && digitsOnly(waInput?.value || '').length >= 6;
 
 		if (descCount) descCount.textContent = String(rawDescription.length);
-
-		if (previewDesc) {
-			previewDesc.textContent = description;
-			previewDesc.classList.toggle('hidden', !hasDescription);
-		}
-		if (previewAbout) {
-			if (hasDescription) {
-				previewAbout.textContent = description || rawDescription;
-				previewAbout.classList.remove('hub-about-text--empty');
-			} else {
-				previewAbout.textContent = EMPTY_ABOUT;
-				previewAbout.classList.add('hub-about-text--empty');
-			}
-		}
-		previewWa?.classList.toggle('hidden', !showWa);
 		waField?.classList.toggle('hidden', !waToggle?.checked);
+		bannerCompressHint?.toggleAttribute('hidden', Boolean(bannerCompress?.checked));
+		galleryCompressHint?.toggleAttribute('hidden', Boolean(galleryCompress?.checked));
 
 		const slug = normalizeSlugInput(slugInput?.value || '');
 		if (openPublic) {
@@ -159,6 +231,18 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			openPublic.href = url;
 			openPublic.classList.toggle('opacity-50', !slug);
 		}
+
+		emitPublicProfilePreviewUpdate({
+			organizationName: bootstrap.organizationName,
+			initials,
+			description,
+			logoUrl: currentLogoUrl,
+			bannerUrl: currentBannerUrl,
+			whatsappVisible: showWa,
+			facebookUrl: String(facebookInput?.value || '').trim(),
+			instagramUrl: String(instagramInput?.value || '').trim(),
+			galleryUrls: galleryItems.map((item) => item.url),
+		});
 	};
 
 	const setSlugStatus = (text: string, state: 'ok' | 'bad' | 'pending') => {
@@ -169,10 +253,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		slugRow?.classList.toggle('is-ok', state === 'ok');
 		slugRow?.classList.toggle('is-bad', state === 'bad');
 		if (slugIcon) slugIcon.hidden = state !== 'ok';
-		if (slugHint) {
-			// Evita choque visual: con OK solo mostramos el check + mensaje corto.
-			slugHint.hidden = state === 'ok';
-		}
+		if (slugHint) slugHint.hidden = state === 'ok';
 	};
 
 	const checkSlug = async () => {
@@ -214,15 +295,10 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			const available = Boolean(data.data?.available);
 			const reason = String(data.data?.reason || '');
 			slugAvailable = available;
-			if (available) {
-				setSlugStatus('Disponible', 'ok');
-			} else if (reason === 'reserved') {
-				setSlugStatus('Ese enlace está reservado por el sistema.', 'bad');
-			} else if (reason === 'taken') {
-				setSlugStatus('Ese enlace ya está en uso. Probá otro.', 'bad');
-			} else {
-				setSlugStatus('Enlace no válido.', 'bad');
-			}
+			if (available) setSlugStatus('Disponible', 'ok');
+			else if (reason === 'reserved') setSlugStatus('Ese enlace está reservado por el sistema.', 'bad');
+			else if (reason === 'taken') setSlugStatus('Ese enlace ya está en uso. Probá otro.', 'bad');
+			else setSlugStatus('Enlace no válido.', 'bad');
 		} catch {
 			slugAvailable = false;
 			setSlugStatus('No se pudo validar el enlace.', 'bad');
@@ -236,15 +312,17 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}, 400);
 	};
 
-	const openCrop = async (file: File) => {
+	const openCrop = async (file: File, mode: ProfileCropMode) => {
 		if (!cropModal || !cropMount) return;
 		if (!isAcceptedProfileImage(file)) {
 			showFeedback('Usá una imagen JPG o PNG.', 'error');
 			return;
 		}
-		pendingCropName = file.name || 'logo.jpg';
+		cropMode = mode;
+		pendingCropName = file.name || (mode === 'banner' ? 'banner.jpg' : 'logo.jpg');
+		if (cropTitle) cropTitle.textContent = mode === 'banner' ? 'Recortar banner' : 'Recortar logo';
 		cropper?.destroy();
-		cropper = new ProfileImageCropper(cropMount);
+		cropper = new ProfileImageCropper(cropMount, 512, mode);
 		await cropper.bindFile(file);
 		if (!cropModal.open) cropModal.showModal();
 	};
@@ -255,21 +333,32 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		cropModal?.close();
 	};
 
-	const applyCroppedLogo = async () => {
+	const applyCropped = async () => {
 		if (!cropper) return;
 		try {
 			const file = await cropper.exportJpeg(pendingCropName);
-			logoBase64 = await fileToBase64(file);
-			logoName = file.name;
-			logoMime = file.type || 'image/jpeg';
-			if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl);
-			logoObjectUrl = URL.createObjectURL(file);
-			setLogoPreview(logoObjectUrl);
+			const base64 = await fileToBase64(file);
+			if (cropMode === 'banner') {
+				bannerBase64 = base64;
+				bannerName = file.name;
+				bannerMime = file.type || 'image/jpeg';
+				if (bannerObjectUrl) URL.revokeObjectURL(bannerObjectUrl);
+				bannerObjectUrl = URL.createObjectURL(file);
+				setBannerPreview(bannerObjectUrl);
+			} else {
+				logoBase64 = base64;
+				logoName = file.name;
+				logoMime = file.type || 'image/jpeg';
+				if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl);
+				logoObjectUrl = URL.createObjectURL(file);
+				setLogoPreview(logoObjectUrl);
+			}
 			closeCrop();
 			showFeedback('', 'success');
+			syncPreview();
 		} catch (error) {
 			showFeedback(
-				error instanceof Error ? error.message : 'No se pudo recortar el logo.',
+				error instanceof Error ? error.message : 'No se pudo recortar la imagen.',
 				'error'
 			);
 		}
@@ -281,6 +370,79 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		if (!local) return '';
 		const normalized = local.startsWith('595') ? local : `595${local.replace(/^0+/, '')}`;
 		return `+${normalized}`;
+	};
+
+	const uploadGalleryFiles = async (files: FileList | File[]) => {
+		const list = Array.from(files);
+		if (!list.length) return;
+		if (galleryItems.length >= galleryMax) {
+			showFeedback(`La galería admite un máximo de ${galleryMax} fotos.`, 'error');
+			return;
+		}
+
+		for (const file of list) {
+			if (galleryItems.length >= galleryMax) break;
+			if (!isAcceptedProfileImage(file)) {
+				showFeedback('Usá imágenes JPG o PNG en la galería.', 'error');
+				continue;
+			}
+			const formData = new FormData();
+			formData.append('file', file);
+			formData.append('compress', galleryCompress?.checked === false ? 'false' : 'true');
+			try {
+				const response = await fetch('/api/workspace/gallery', {
+					method: 'POST',
+					body: formData,
+					headers: { Accept: 'application/json' },
+				});
+				const data = (await response.json()) as {
+					status?: string;
+					message?: string;
+					data?: { gallery_images?: GalleryItem[] };
+				};
+				if (!response.ok || data.status !== 'success') {
+					throw new Error(data.message || 'No se pudo subir la foto.');
+				}
+				galleryItems = Array.isArray(data.data?.gallery_images)
+					? data.data.gallery_images
+					: galleryItems;
+				renderGalleryGrid();
+				syncPreview();
+				showFeedback(data.message || 'Foto agregada a la galería.', 'success');
+			} catch (error) {
+				showFeedback(
+					error instanceof Error ? error.message : 'No se pudo subir la foto.',
+					'error'
+				);
+				break;
+			}
+		}
+	};
+
+	const removeGalleryItem = async (id: number) => {
+		try {
+			const response = await fetch(`/api/workspace/gallery/${id}`, {
+				method: 'DELETE',
+				headers: { Accept: 'application/json' },
+			});
+			const data = (await response.json()) as {
+				status?: string;
+				message?: string;
+				data?: { gallery_images?: GalleryItem[] };
+			};
+			if (!response.ok || data.status !== 'success') {
+				throw new Error(data.message || 'No se pudo eliminar la foto.');
+			}
+			galleryItems = Array.isArray(data.data?.gallery_images) ? data.data.gallery_images : [];
+			renderGalleryGrid();
+			syncPreview();
+			showFeedback(data.message || 'Foto eliminada.', 'success');
+		} catch (error) {
+			showFeedback(
+				error instanceof Error ? error.message : 'No se pudo eliminar la foto.',
+				'error'
+			);
+		}
 	};
 
 	form?.addEventListener('submit', async (event) => {
@@ -296,11 +458,19 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			profile_slug: slug,
 			description: String(descInput?.value || '').trim().slice(0, descMax),
 			public_whatsapp: buildWhatsappPayload(),
+			facebook_url: String(facebookInput?.value || '').trim(),
+			instagram_url: String(instagramInput?.value || '').trim(),
+			compress_banner: bannerCompress?.checked === false ? 'false' : 'true',
 		};
 		if (logoBase64) {
 			payload.logo_base64 = logoBase64;
 			payload.logo_name = logoName || 'logo.jpg';
 			payload.logo_mime = logoMime || 'image/jpeg';
+		}
+		if (bannerBase64) {
+			payload.banner_base64 = bannerBase64;
+			payload.banner_name = bannerName || 'banner.jpg';
+			payload.banner_mime = bannerMime || 'image/jpeg';
 		}
 
 		if (saveBtn) saveBtn.disabled = true;
@@ -317,7 +487,14 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			const data = (await response.json()) as {
 				status?: string;
 				message?: string;
-				data?: { logo_url?: string; profile_slug?: string };
+				data?: {
+					logo_url?: string;
+					banner_url?: string;
+					profile_slug?: string;
+					facebook_url?: string;
+					instagram_url?: string;
+					gallery_images?: GalleryItem[];
+				};
 			};
 			if (!response.ok || data.status !== 'success') {
 				throw new Error(data.message || 'No fue posible guardar el perfil.');
@@ -326,14 +503,22 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			originalSlug = normalizeSlugInput(String(data.data?.profile_slug || slug));
 			if (slugInput) slugInput.value = originalSlug;
 			logoBase64 = '';
+			bannerBase64 = '';
 			if (data.data?.logo_url) setLogoPreview(String(data.data.logo_url));
+			if (data.data?.banner_url) setBannerPreview(String(data.data.banner_url));
+			if (Array.isArray(data.data?.gallery_images)) {
+				galleryItems = data.data.gallery_images;
+				renderGalleryGrid();
+			}
+			if (facebookInput && data.data?.facebook_url !== undefined) {
+				facebookInput.value = String(data.data.facebook_url || '');
+			}
+			if (instagramInput && data.data?.instagram_url !== undefined) {
+				instagramInput.value = String(data.data.instagram_url || '');
+			}
 			showFeedback(data.message || 'Perfil público guardado.', 'success');
 			await checkSlug();
 			syncPreview();
-
-			if (originalSlug && originalSlug !== bootstrap.workspace?.profile_slug) {
-				// Actualizar cookie/org slug vía recarga suave no es crítico; el hub usa BD.
-			}
 		} catch (error) {
 			showFeedback(
 				error instanceof Error ? error.message : 'No fue posible guardar el perfil.',
@@ -349,9 +534,12 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		syncPreview();
 	});
 	descInput?.addEventListener('input', syncPreview);
-	descInput?.addEventListener('keyup', syncPreview);
 	waToggle?.addEventListener('change', syncPreview);
 	waInput?.addEventListener('input', syncPreview);
+	facebookInput?.addEventListener('input', syncPreview);
+	instagramInput?.addEventListener('input', syncPreview);
+	bannerCompress?.addEventListener('change', syncPreview);
+	galleryCompress?.addEventListener('change', syncPreview);
 
 	copyBtn?.addEventListener('click', async () => {
 		const slug = normalizeSlugInput(slugInput?.value || '');
@@ -370,34 +558,109 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 
 	logoInput?.addEventListener('change', () => {
 		const file = logoInput.files?.[0];
-		if (file) void openCrop(file);
+		if (file) void openCrop(file, 'logo');
 		logoInput.value = '';
 	});
 
-	logoDropzone?.addEventListener('dragover', (event) => {
-		event.preventDefault();
-		logoDropzone.classList.add('is-dragging');
+	bannerInput?.addEventListener('change', () => {
+		const file = bannerInput.files?.[0];
+		if (file) void openCrop(file, 'banner');
+		bannerInput.value = '';
 	});
-	logoDropzone?.addEventListener('dragleave', () => {
-		logoDropzone.classList.remove('is-dragging');
+
+	const bindDropzone = (
+		zone: HTMLElement | null,
+		onFile: (file: File) => void
+	) => {
+		zone?.addEventListener('dragover', (event) => {
+			event.preventDefault();
+			zone.classList.add('is-dragging');
+		});
+		zone?.addEventListener('dragleave', () => zone.classList.remove('is-dragging'));
+		zone?.addEventListener('drop', (event) => {
+			event.preventDefault();
+			zone.classList.remove('is-dragging');
+			const file = event.dataTransfer?.files?.[0];
+			if (file) onFile(file);
+		});
+	};
+
+	bindDropzone(logoDropzone, (file) => void openCrop(file, 'logo'));
+	bindDropzone(bannerDropzone, (file) => void openCrop(file, 'banner'));
+
+	galleryInput?.addEventListener('change', () => {
+		if (galleryInput.files?.length) void uploadGalleryFiles(galleryInput.files);
+		galleryInput.value = '';
 	});
-	logoDropzone?.addEventListener('drop', (event) => {
-		event.preventDefault();
-		logoDropzone.classList.remove('is-dragging');
-		const file = event.dataTransfer?.files?.[0];
-		if (file) void openCrop(file);
+
+	const reorderGallery = async (id: number, direction: -1 | 1) => {
+		const index = galleryItems.findIndex((item) => item.id === id);
+		const next = index + direction;
+		if (index < 0 || next < 0 || next >= galleryItems.length) return;
+		const copy = [...galleryItems];
+		const [moved] = copy.splice(index, 1);
+		copy.splice(next, 0, moved);
+		const ids = copy.map((item) => item.id);
+		try {
+			const response = await fetch('/api/workspace/gallery', {
+				method: 'PUT',
+				headers: {
+					'Content-Type': 'application/json',
+					Accept: 'application/json',
+				},
+				body: JSON.stringify({ ids }),
+			});
+			const data = (await response.json()) as {
+				status?: string;
+				message?: string;
+				data?: { gallery_images?: GalleryItem[] };
+			};
+			if (!response.ok || data.status !== 'success') {
+				throw new Error(data.message || 'No se pudo reordenar la galería.');
+			}
+			galleryItems = Array.isArray(data.data?.gallery_images) ? data.data.gallery_images : copy;
+			renderGalleryGrid();
+			syncPreview();
+		} catch (error) {
+			showFeedback(
+				error instanceof Error ? error.message : 'No se pudo reordenar la galería.',
+				'error'
+			);
+		}
+	};
+
+	galleryGrid?.addEventListener('click', (event) => {
+		const target = event.target as HTMLElement | null;
+		const removeBtn = target?.closest<HTMLElement>('[data-ppe-gallery-remove]');
+		if (removeBtn) {
+			const id = Number(removeBtn.dataset.id || 0);
+			if (id > 0) void removeGalleryItem(id);
+			return;
+		}
+		const leftBtn = target?.closest<HTMLElement>('[data-ppe-gallery-left]');
+		if (leftBtn) {
+			const id = Number(leftBtn.dataset.id || 0);
+			if (id > 0) void reorderGallery(id, -1);
+			return;
+		}
+		const rightBtn = target?.closest<HTMLElement>('[data-ppe-gallery-right]');
+		if (rightBtn) {
+			const id = Number(rightBtn.dataset.id || 0);
+			if (id > 0) void reorderGallery(id, 1);
+		}
 	});
 
 	root.querySelectorAll('[data-ppe-crop-close]').forEach((btn) => {
 		btn.addEventListener('click', () => closeCrop());
 	});
 	cropConfirm?.addEventListener('click', () => {
-		void applyCroppedLogo();
+		void applyCropped();
 	});
 	cropModal?.addEventListener('click', (event) => {
 		if (event.target === cropModal) closeCrop();
 	});
 
+	renderGalleryGrid();
 	syncPreview();
 	void checkSlug();
 };
