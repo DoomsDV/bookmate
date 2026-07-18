@@ -41,8 +41,9 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 				data-pwa-install-trigger
 				class="hidden items-center gap-2 rounded-full border border-(--primary) bg-(--primary-container) px-4 py-2 text-sm font-semibold text-(--on-primary-container) transition hover:bg-(--primary) hover:text-(--on-primary)"
 				aria-label="Instalar aplicación para recibir notificaciones"
+				title="Instalar App"
 			>
-				<span class="material-symbols-rounded text-[1rem]">download</span>
+				<span class="material-symbols-rounded text-[1rem]" aria-hidden="true">install_mobile</span>
 				<span class="hidden sm:inline">Instalar App</span>
 			</button>
 

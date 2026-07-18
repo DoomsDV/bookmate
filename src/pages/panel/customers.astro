@@ -26,18 +26,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 				<SideNav currentPath={Astro.url.pathname} />
 
 				<div class="grid min-h-full grid-rows-[auto_1fr]">
-					<TopBar>
-						<a
-							slot="actions-before"
-							href="/api/customers/export"
-							class="topbar-action-btn flex size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) no-underline transition hover:bg-(--control-surface-strong) hover:text-(--on-surface) sm:size-11"
-							download
-							aria-label="Exportar CSV"
-							title="Exportar CSV"
-						>
-							<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">download</span>
-						</a>
-					</TopBar>
+					<TopBar />
 
 					<main class="px-4 py-4 sm:px-6 sm:py-6">
 						<section class="grid gap-4 sm:gap-5">
@@ -111,6 +100,16 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 													</button>
 												) : null
 											}
+
+											<a
+												href="/api/customers/export"
+												class="flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) no-underline shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+												download
+												aria-label="Exportar CSV"
+												title="Exportar CSV"
+											>
+												<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">download</span>
+											</a>
 										</div>
 
 										<div
