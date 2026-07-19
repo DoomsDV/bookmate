@@ -204,7 +204,7 @@ const STATUS_META: Record<string, { label: string; tone: string; hint: string }>
 	FOUNDER: {
 		label: 'Fundador',
 		tone: 'founder',
-		hint: 'Por ser miembro Fundador, tenés un 50% de descuento de por vida en tu plan Premium.',
+		hint: '50% off de por vida (Miembro Fundador)',
 	},
 	NONE: { label: 'Sin plan', tone: 'warning', hint: 'No encontramos una suscripción activa.' },
 };
@@ -224,10 +224,9 @@ const canTerminate =
 	isAdmin &&
 	!!current &&
 	!current.billing_exempt &&
-	!current.is_founder &&
 	!cancelScheduled &&
 	!isContinuity &&
-	['ACTIVE', 'PAST_DUE', 'TRIAL'].includes(effState);
+	['ACTIVE', 'PAST_DUE', 'TRIAL', 'FOUNDER'].includes(effState);
 
 // Método de pago (cobro recurrente con tarjeta): solo admin y planes facturables.
 const showPaymentMethod = isAdmin && !!current && !current.billing_exempt;
@@ -270,9 +269,6 @@ const defaultCardHint = defaultCard
 						<header class="grid gap-1">
 							<p class="text-xs font-bold uppercase tracking-[0.2em] text-(--on-surface-variant)">Facturación</p>
 							<h1 class="m-0 text-3xl font-extrabold tracking-tight text-(--on-surface) sm:text-4xl">Plan y suscripción</h1>
-							<p class="m-0 text-[0.95rem] font-medium text-(--on-surface-variant)">
-								Gestioná tu plan, tu almacenamiento y tus pagos.
-							</p>
 						</header>
 
 						{loadError ? (
@@ -293,39 +289,57 @@ const defaultCardHint = defaultCard
 								<div data-plan-panel="plan" class="grid gap-6 sm:gap-8">
 								{/* ---- Estado actual ---- */}
 								<section class={`plan-status-card plan-tone-${statusMeta.tone}`}>
-									<div class="flex flex-wrap items-start justify-between gap-4">
-										<div class="grid gap-1">
-											<span class="text-xs font-bold uppercase tracking-[0.18em] text-(--on-surface-variant)">Plan actual</span>
-											<div class="flex items-center gap-3">
-												<span class="text-2xl font-extrabold text-(--on-surface)">{current.plan_name || current.plan_code}</span>
-												<span class={`plan-badge plan-badge-${statusMeta.tone}`}>{statusMeta.label}</span>
-											</div>
-											<p class="m-0 max-w-2xl text-[0.9rem] font-medium text-(--on-surface-variant)">{statusMeta.hint}</p>
-											{current.next_billing_at && !current.billing_exempt ? (
-												<p class="m-0 text-[0.88rem] font-semibold text-(--on-surface)">
-													Próxima facturación:{' '}
-													<span class="text-(--primary)">{formatDateEs(current.next_billing_at)}</span>
-												</p>
+									<span class="plan-status-corner" aria-hidden="true">{statusMeta.label}</span>
+									<div class="plan-status-main">
+										<div class="plan-status-copy">
+											<span class="plan-status-kicker">Plan actual</span>
+											<h2 class="plan-status-title">{current.plan_name || current.plan_code}</h2>
+											{current.monthly_total > 0 && !current.billing_exempt ? (
+												<div class="plan-status-price">
+													<span class="plan-status-amount">{formatGs(current.monthly_total)}</span>
+													<span class="plan-status-period">/ mes</span>
+												</div>
 											) : null}
+											{effState === 'FOUNDER' || current.is_founder ? (
+												<ul class="plan-status-facts">
+													<li>
+														<span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>
+														<span>50% off de por vida (Miembro Fundador)</span>
+													</li>
+													{current.next_billing_at && !current.billing_exempt ? (
+														<li>
+															<span class="material-symbols-rounded" aria-hidden="true">calendar_month</span>
+															<span>
+																Próxima facturación:{' '}
+																<strong>{formatDateEs(current.next_billing_at)}</strong>
+															</span>
+														</li>
+													) : null}
+												</ul>
+											) : (
+												<>
+													<p class="plan-status-hint">{statusMeta.hint}</p>
+													{current.next_billing_at && !current.billing_exempt ? (
+														<p class="plan-status-billing">
+															Próxima facturación:{' '}
+															<strong>{formatDateEs(current.next_billing_at)}</strong>
+														</p>
+													) : null}
+												</>
+											)}
 										</div>
-										<div class="grid w-full gap-2 text-left sm:w-auto sm:text-right">
-											<span class="text-xs font-semibold uppercase tracking-wide text-(--on-surface-variant)">Almacenamiento</span>
-											<span class="text-[0.95rem] font-bold text-(--on-surface)">
+										<div class="plan-status-side">
+											<span class="plan-status-side-label">Almacenamiento</span>
+											<span class="plan-status-side-value">
 												{formatGb(current.storage_used_bytes)} / {current.storage_limit_bytes > 0 ? formatGb(current.storage_limit_bytes) : 'No incluido'}
 											</span>
 											<div class="plan-storage-track"><div class="plan-storage-fill" style={`width:${storagePct}%`}></div></div>
-											{current.monthly_total > 0 && !current.billing_exempt ? (
-												<div class="mt-2 grid gap-0.5">
-													<span class="text-xs font-semibold uppercase tracking-wide text-(--on-surface-variant)">Total mensual</span>
-													<span class="text-[1.05rem] font-extrabold text-(--on-surface)">{formatGs(current.monthly_total)}</span>
-													{current.addons_monthly_amount > 0 ? (
-														<span class="text-[0.78rem] font-medium text-(--on-surface-variant)">
-															Plan {formatGs(current.plan_monthly_amount)}
-															{' + '}
-															almacenamiento {formatGs(current.addons_monthly_amount)}
-														</span>
-													) : null}
-												</div>
+											{current.addons_monthly_amount > 0 && !current.billing_exempt ? (
+												<span class="plan-status-side-note">
+													Plan {formatGs(current.plan_monthly_amount)}
+													{' + '}
+													almacenamiento {formatGs(current.addons_monthly_amount)}
+												</span>
 											) : null}
 										</div>
 									</div>
@@ -428,7 +442,7 @@ const defaultCardHint = defaultCard
 								{/* ---- Planes ---- */}
 								<section class="grid gap-4">
 									<h2 class="m-0 text-lg font-bold text-(--on-surface)">Elegí tu plan</h2>
-									<div class="grid gap-4 md:grid-cols-2">
+									<div class="plan-cards-carousel md:grid md:grid-cols-2 md:gap-4">
 										{catalog.plans.map((plan) => {
 											const marketing = planMarketing(plan.code);
 											const hasFounderDeal =
@@ -444,25 +458,29 @@ const defaultCardHint = defaultCard
 												current.addons_monthly_amount > 0;
 											return (
 											<article class={`plan-card ${plan.is_current ? 'plan-card-current' : ''} ${plan.code === 'PREMIUM' ? 'plan-card-featured' : ''}`}>
-												{plan.code === 'PREMIUM' && <span class="plan-ribbon">Recomendado</span>}
-												<div class="grid gap-1">
-													<span class="text-sm font-bold uppercase tracking-wide text-(--on-surface-variant)">{plan.name}</span>
-													<div class="flex flex-wrap items-end gap-x-2 gap-y-1">
+												{plan.is_current ? (
+													<span class="plan-ribbon plan-ribbon--included">Incluido</span>
+												) : plan.code === 'PREMIUM' ? (
+													<span class="plan-ribbon">Recomendado</span>
+												) : null}
+												<div class="plan-card-head grid gap-1">
+													<span class="plan-card-name text-sm font-bold uppercase tracking-wide text-(--on-surface-variant)">{plan.name}</span>
+													<div class="plan-card-price-row flex flex-wrap items-end gap-x-2 gap-y-1">
 														{hasFounderDeal ? (
-															<span class="pb-1 text-[0.95rem] font-semibold text-(--on-surface-variant) line-through">
+															<span class="plan-card-price-old pb-1 text-[0.95rem] font-semibold text-(--on-surface-variant) line-through">
 																{formatGs(plan.price_amount)}
 															</span>
 														) : null}
-														<span class="text-3xl font-extrabold text-(--on-surface)">{formatGs(displayPrice)}</span>
-														<span class="pb-1 text-[0.85rem] font-semibold text-(--on-surface-variant)">/ {plan.billing_period === 'YEARLY' ? 'año' : 'mes'}</span>
+														<span class="plan-card-price text-3xl font-extrabold text-(--on-surface)">{formatGs(displayPrice)}</span>
+														<span class="plan-card-period pb-1 text-[0.85rem] font-semibold text-(--on-surface-variant)">/ {plan.billing_period === 'YEARLY' ? 'año' : 'mes'}</span>
 													</div>
 													{hasFounderDeal ? (
-														<span class="text-[0.82rem] font-bold text-(--primary)">
+														<span class="plan-card-deal text-[0.82rem] font-bold text-(--primary)">
 															Precio fundador · {plan.founder_discount_percent}% off de por vida
 														</span>
 													) : null}
 													{showConsolidated ? (
-														<span class="text-[0.82rem] font-semibold text-(--on-surface-variant)">
+														<span class="plan-card-extra text-[0.82rem] font-semibold text-(--on-surface-variant)">
 															Con almacenamiento: {formatGs(plan.monthly_total)} / mes
 														</span>
 													) : null}
@@ -472,11 +490,14 @@ const defaultCardHint = defaultCard
 														<span class="text-[0.82rem] font-semibold text-(--primary)">Incluye {formatGb(plan.storage_limit_bytes)} de almacenamiento</span>
 													) : null}
 												</div>
+												<div class="plan-card-divider" aria-hidden="true"></div>
 												{marketing ? (
-													<div class="grid gap-4">
+													<div class="plan-card-body grid gap-3">
 														{marketing.includesBase ? (
 															<p class="plan-includes-base m-0">Incluye todo lo del Plan Base, más:</p>
-														) : null}
+														) : (
+															<p class="plan-features-label m-0">Características</p>
+														)}
 														<ul class="plan-feature-list">
 															{marketing.benefits.map((benefit) => (
 																<li>
@@ -497,13 +518,16 @@ const defaultCardHint = defaultCard
 														</ul>
 													</div>
 												) : (
-													<ul class="plan-feature-list">
-														{plan.features.map((f) => (
-															<li><span class="material-symbols-rounded" aria-hidden="true">check_circle</span>{featureLabel(f)}</li>
-														))}
-													</ul>
+													<div class="plan-card-body grid gap-3">
+														<p class="plan-features-label m-0">Características</p>
+														<ul class="plan-feature-list">
+															{plan.features.map((f) => (
+																<li><span class="material-symbols-rounded plan-feature-check" aria-hidden="true">check_circle</span>{featureLabel(f)}</li>
+															))}
+														</ul>
+													</div>
 												)}
-												<div class="mt-auto">
+												<div class="plan-card-cta mt-auto">
 													{plan.is_current ? (
 														<button type="button" class="plan-btn plan-btn-current" disabled>Plan actual</button>
 													) : isAdmin ? (
@@ -554,9 +578,6 @@ const defaultCardHint = defaultCard
 									<section class="grid gap-4" data-payment-section>
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Método de pago</h2>
-											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
-												Registrá una tarjeta de crédito o débito para el cobro automático mensual. El cargo se realiza de forma segura vía Pagopar.
-											</p>
 										</div>
 
 										<div class="plan-plastic-grid" data-cards-list>
@@ -601,11 +622,12 @@ const defaultCardHint = defaultCard
 											)}
 										</div>
 
-										<div>
+										<div class="plan-payment-actions">
 											<button type="button" class="plan-btn plan-btn-soft" data-add-card>
 												<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
 												{cards.length === 0 ? 'Agregar tarjeta' : 'Agregar otra tarjeta'}
 											</button>
+											<p class="plan-payment-secure">Pagos 100% seguros vía Pagopar.</p>
 										</div>
 									</section>
 								)}
@@ -616,11 +638,8 @@ const defaultCardHint = defaultCard
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Almacenamiento adicional</h2>
 											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
-												Sumá espacio para notas y archivos del historial de tus citas.
-												{!current.supports_storage_addons && ' Disponible con el plan Premium.'}
-												{current.account_balance > 0
-													? ' Si cancelás un paquete, el tiempo no usado se acredita a favor.'
-													: ''}
+												Más espacio para tus archivos. El saldo no usado al cancelar se acredita a tu favor.
+												{!current.supports_storage_addons ? ' Disponible con el plan Premium.' : ''}
 											</p>
 										</div>
 
@@ -713,14 +732,14 @@ const defaultCardHint = defaultCard
 								{canTerminate ? (
 									<section class="grid gap-3 rounded-2xl border border-rose-500/25 bg-rose-500/5 px-4 py-4 sm:px-5">
 										<div class="grid gap-1">
-											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Terminar suscripción</h2>
+											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Cancelar suscripción</h2>
 											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
-												Al fin del periodo pasás a Continuidad (0 Gs): sin cobros, se cancelan los paquetes de almacenamiento y la cuenta queda en solo lectura. Si preferís seguir pagando menos, usá <strong>Pasar a Base</strong> arriba.
+												Tu cuenta pasará al plan gratuito (solo lectura) al finalizar el ciclo. Se cancelarán tus paquetes extra.
 											</p>
 										</div>
 										<div>
 											<button type="button" class="plan-btn plan-btn-danger" data-terminate-sub>
-												Terminar suscripción
+												Cancelar suscripción
 											</button>
 										</div>
 									</section>
@@ -736,39 +755,44 @@ const defaultCardHint = defaultCard
 												Próximo cobro y desglose de tu suscripción.
 											</p>
 										</div>
-										<div class="plan-billing-grid">
-											<div class="plan-billing-cell">
-												<span class="plan-billing-label">Próxima facturación</span>
-												<strong class="plan-billing-value">
+										<div class="plan-billing-ticket">
+											<div class="plan-billing-row">
+												<span class="plan-billing-concept">Próxima facturación</span>
+												<span class="plan-billing-amount">
 													{formatDateEs(billing?.next_billing_at || current.next_billing_at)}
-												</strong>
+												</span>
 											</div>
-											<div class="plan-billing-cell">
-												<span class="plan-billing-label">Plan</span>
-												<strong class="plan-billing-value">
+											<div class="plan-billing-row">
+												<span class="plan-billing-concept">
+													Plan
+													<small>({billing?.plan_name || current.plan_name})</small>
+												</span>
+												<span class="plan-billing-amount">
 													{formatGs(billing?.plan_monthly_amount ?? current.plan_monthly_amount)}
-												</strong>
-												<small>{billing?.plan_name || current.plan_name}</small>
+												</span>
 											</div>
-											<div class="plan-billing-cell">
-												<span class="plan-billing-label">Almacenamiento</span>
-												<strong class="plan-billing-value">
+											<div class="plan-billing-row">
+												<span class="plan-billing-concept">Almacenamiento</span>
+												<span class="plan-billing-amount">
 													{formatGs(billing?.addons_monthly_amount ?? current.addons_monthly_amount)}
-												</strong>
-												<small>/ mes</small>
+												</span>
 											</div>
-											<div class="plan-billing-cell">
-												<span class="plan-billing-label">Saldo a favor</span>
-												<strong class="plan-billing-value text-(--primary)">
-													{formatGs(billing?.account_balance ?? current.account_balance)}
-												</strong>
+											<div class="plan-billing-row plan-billing-row--credit">
+												<span class="plan-billing-concept">Saldo a favor</span>
+												<span class="plan-billing-amount">
+													{(billing?.account_balance ?? current.account_balance) > 0
+														? `− ${formatGs(billing?.account_balance ?? current.account_balance)}`
+														: formatGs(billing?.account_balance ?? current.account_balance)}
+												</span>
 											</div>
-											<div class="plan-billing-cell plan-billing-cell-accent">
-												<span class="plan-billing-label">Estimado próximo cargo</span>
-												<strong class="plan-billing-value plan-billing-value-lg">
+											<div class="plan-billing-total">
+												<div class="plan-billing-total-copy">
+													<span class="plan-billing-total-label">Estimado próximo cargo</span>
+													<small>Después de aplicar el saldo a favor</small>
+												</div>
+												<strong class="plan-billing-total-amount">
 													{formatGs(billing?.next_charge_estimate ?? current.next_charge_estimate)}
 												</strong>
-												<small>Después de aplicar el saldo a favor</small>
 											</div>
 										</div>
 									</section>
@@ -949,6 +973,8 @@ const defaultCardHint = defaultCard
 
 <style>
 	.plan-status-card {
+		position: relative;
+		overflow: hidden;
 		border-radius: 1.25rem;
 		border: 1px solid var(--shell-border);
 		background: var(--surface-bright, #fff);
@@ -956,6 +982,141 @@ const defaultCardHint = defaultCard
 		display: grid;
 		gap: 1.25rem;
 	}
+	.plan-status-corner {
+		display: none;
+	}
+	.plan-status-main {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+	.plan-status-copy {
+		display: grid;
+		gap: 0.35rem;
+		min-width: 0;
+		flex: 1 1 14rem;
+	}
+	.plan-status-kicker {
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+	.plan-status-title {
+		margin: 0;
+		font-size: 1.55rem;
+		font-weight: 800;
+		line-height: 1.15;
+		color: var(--on-surface);
+	}
+	.plan-status-price {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.35rem;
+	}
+	.plan-status-amount {
+		font-size: 1.35rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+	.plan-status-period {
+		font-size: 0.85rem;
+		font-weight: 650;
+		color: var(--on-surface-variant);
+	}
+	.plan-status-hint {
+		margin: 0;
+		max-width: 36rem;
+		font-size: 0.9rem;
+		font-weight: 550;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+	.plan-status-billing {
+		margin: 0;
+		font-size: 0.88rem;
+		font-weight: 650;
+		color: var(--on-surface);
+	}
+	.plan-status-billing strong {
+		color: var(--primary);
+		font-weight: 800;
+	}
+	.plan-status-facts {
+		list-style: none;
+		margin: 0.15rem 0 0;
+		padding: 0;
+		display: grid;
+		gap: 0.45rem;
+	}
+	.plan-status-facts li {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.45rem;
+		margin: 0;
+		font-size: 0.88rem;
+		font-weight: 650;
+		line-height: 1.35;
+		color: var(--on-surface);
+	}
+	.plan-status-facts .material-symbols-rounded {
+		font-size: 1.1rem;
+		line-height: 1.2;
+		color: var(--primary);
+		flex-shrink: 0;
+	}
+	.plan-status-facts strong {
+		color: var(--primary);
+		font-weight: 800;
+	}
+	.plan-payment-actions {
+		display: grid;
+		gap: 0.55rem;
+		justify-items: start;
+	}
+	.plan-payment-secure {
+		margin: 0;
+		width: 100%;
+		text-align: center;
+		font-size: 0.78rem;
+		font-weight: 550;
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+	}
+	.plan-status-side {
+		display: grid;
+		gap: 0.35rem;
+		width: 100%;
+		text-align: left;
+	}
+	@media (min-width: 640px) {
+		.plan-status-side {
+			width: auto;
+			text-align: right;
+			justify-items: end;
+		}
+	}
+	.plan-status-side-label {
+		font-size: 0.72rem;
+		font-weight: 750;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+	.plan-status-side-value {
+		font-size: 0.95rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+	.plan-status-side-note {
+		font-size: 0.78rem;
+		font-weight: 550;
+		color: var(--on-surface-variant);
+	}
+
 	.plan-tone-danger { border-color: rgba(244, 63, 94, 0.35); }
 	.plan-tone-warning { border-color: rgba(245, 158, 11, 0.35); }
 	.plan-badge {
@@ -999,15 +1160,272 @@ const defaultCardHint = defaultCard
 		border: 1px solid var(--shell-border);
 		background: var(--surface-bright, #fff);
 		padding: 1.5rem;
+		overflow: hidden;
 	}
 	.plan-card-featured { border-color: color-mix(in srgb, var(--primary) 55%, transparent); box-shadow: 0 12px 30px -18px color-mix(in srgb, var(--primary) 60%, transparent); }
 	.plan-card-current { outline: 2px solid color-mix(in srgb, var(--primary) 40%, transparent); }
+	.plan-card-divider {
+		display: none;
+		height: 0;
+		border: 0;
+		border-top: 1px dashed color-mix(in srgb, var(--on-surface) 16%, transparent);
+	}
+	.plan-features-label {
+		font-size: 0.82rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
+		color: var(--on-surface);
+	}
+
+	@media (max-width: 767px) {
+		.plan-status-card {
+			padding: 1.25rem 1.15rem 1.2rem;
+			border-radius: 1.35rem;
+			border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--shell-border));
+			background:
+				linear-gradient(
+					180deg,
+					color-mix(in srgb, var(--primary) 8%, var(--surface-bright, #fff)) 0%,
+					var(--surface-bright, #fff) 42%
+				);
+			color: var(--on-surface);
+			box-shadow: 0 10px 28px -22px rgba(15, 23, 42, 0.35);
+			gap: 0.95rem;
+		}
+
+		.plan-status-corner {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			position: absolute;
+			top: 0.85rem;
+			right: 0.85rem;
+			width: auto;
+			height: auto;
+			min-height: 0;
+			padding: 0.32rem 0.7rem;
+			border-radius: 999px;
+			font-size: 0.68rem;
+			font-weight: 850;
+			letter-spacing: 0.04em;
+			text-transform: uppercase;
+			line-height: 1.1;
+			text-align: center;
+			clip-path: none;
+			color: #fff;
+			background: var(--primary);
+			box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--primary) 70%, transparent);
+		}
+
+		.plan-status-main {
+			display: grid;
+			gap: 1rem;
+		}
+
+		.plan-status-copy {
+			padding-right: 5.5rem;
+		}
+
+		.plan-status-kicker {
+			color: var(--on-surface-variant);
+		}
+
+		.plan-status-title {
+			font-size: 1.65rem;
+			color: var(--on-surface);
+		}
+
+		.plan-status-amount {
+			font-size: 1.7rem;
+			color: var(--primary);
+		}
+
+		.plan-status-period,
+		.plan-status-hint,
+		.plan-status-side-label,
+		.plan-status-side-note {
+			color: var(--on-surface-variant);
+		}
+
+		.plan-status-billing,
+		.plan-status-side-value {
+			color: var(--on-surface);
+		}
+
+		.plan-status-billing strong {
+			color: var(--primary);
+		}
+
+		.plan-status-side {
+			padding-top: 0.85rem;
+			border-top: 1px dashed color-mix(in srgb, var(--shell-border) 90%, transparent);
+			justify-items: start;
+			text-align: left;
+		}
+
+		.plan-status-card .plan-storage-track {
+			max-width: none;
+			width: 100%;
+			height: 0.45rem;
+			background: color-mix(in srgb, var(--on-surface-variant) 18%, transparent);
+			margin-left: 0;
+		}
+
+		.plan-status-card .plan-storage-fill {
+			background: var(--primary);
+		}
+
+		.plan-status-card .plan-day15 {
+			background: color-mix(in srgb, var(--primary) 8%, transparent);
+			border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+		}
+
+		.plan-status-card .plan-day15 p,
+		.plan-status-card .plan-day15 strong,
+		.plan-status-card .plan-day15 .material-symbols-rounded {
+			color: var(--on-surface);
+		}
+
+		.plan-status-card .plan-day15 p + p,
+		.plan-status-card .plan-day15 .font-medium {
+			color: var(--on-surface-variant);
+		}
+
+		.plan-cards-carousel {
+			display: flex;
+			align-items: stretch;
+			gap: 0.9rem;
+			overflow-x: auto;
+			overscroll-behavior-x: contain;
+			scroll-snap-type: x mandatory;
+			scroll-padding-inline: 0.15rem;
+			padding: 0.35rem 0.1rem 0.65rem;
+			-webkit-overflow-scrolling: touch;
+			scrollbar-width: none;
+		}
+
+		.plan-cards-carousel::-webkit-scrollbar {
+			display: none;
+		}
+
+		.plan-cards-carousel .plan-card {
+			flex: 0 0 min(88vw, 22.75rem);
+			width: min(88vw, 22.75rem);
+			max-width: 88vw;
+			scroll-snap-align: center;
+			scroll-snap-stop: always;
+			gap: 1.05rem;
+			padding: 1.35rem 1.2rem 1.2rem;
+			border-radius: 1.35rem;
+			border-width: 1.5px;
+			box-shadow: 0 12px 28px -24px rgba(15, 23, 42, 0.35);
+		}
+
+		.plan-cards-carousel .plan-card-head {
+			padding-right: 3.25rem;
+		}
+
+		.plan-cards-carousel .plan-card-divider {
+			display: block;
+			margin: 0.15rem 0;
+		}
+
+		.plan-cards-carousel .plan-card-current {
+			outline: 0;
+			border-color: color-mix(in srgb, var(--primary) 42%, var(--shell-border));
+			background:
+				linear-gradient(
+					180deg,
+					color-mix(in srgb, var(--primary) 9%, var(--surface-bright, #fff)) 0%,
+					var(--surface-bright, #fff) 48%
+				);
+			color: var(--on-surface);
+			box-shadow: 0 14px 30px -22px color-mix(in srgb, var(--primary) 45%, transparent);
+		}
+
+		.plan-cards-carousel .plan-card-current .plan-card-name,
+		.plan-cards-carousel .plan-card-current .plan-card-period,
+		.plan-cards-carousel .plan-card-current .plan-card-price-old,
+		.plan-cards-carousel .plan-card-current .plan-card-extra,
+		.plan-cards-carousel .plan-card-current .plan-tagline,
+		.plan-cards-carousel .plan-card-current .plan-includes-base,
+		.plan-cards-carousel .plan-card-current .plan-features-label,
+		.plan-cards-carousel .plan-card-current .plan-feature-list li {
+			color: var(--on-surface-variant);
+		}
+
+		.plan-cards-carousel .plan-card-current .plan-card-price,
+		.plan-cards-carousel .plan-card-current .plan-feature-copy strong,
+		.plan-cards-carousel .plan-card-current .plan-features-label {
+			color: var(--on-surface);
+		}
+
+		.plan-cards-carousel .plan-card-current .plan-card-deal,
+		.plan-cards-carousel .plan-card-current .plan-card-price {
+			color: var(--primary);
+		}
+
+		.plan-cards-carousel .plan-card-current .plan-card-divider {
+			border-top-color: color-mix(in srgb, var(--shell-border) 90%, transparent);
+		}
+
+		.plan-cards-carousel .plan-card-current .plan-feature-check {
+			color: #059669;
+		}
+
+		.plan-cards-carousel .plan-card-current .plan-feature-info {
+			color: var(--on-surface-variant);
+		}
+
+		.plan-cards-carousel .plan-card-current .plan-btn-current {
+			background: color-mix(in srgb, var(--primary) 12%, transparent);
+			color: var(--primary);
+		}
+
+		.plan-cards-carousel .plan-card-price {
+			font-size: 2rem;
+			letter-spacing: -0.02em;
+		}
+	}
 	.plan-ribbon {
 		position: absolute; top: -0.7rem; right: 1.25rem;
 		background: var(--primary); color: #fff;
 		font-size: 0.68rem; font-weight: 800; letter-spacing: .04em;
 		padding: 0.28rem 0.7rem; border-radius: 999px;
+		z-index: 2;
 	}
+
+	@media (max-width: 767px) {
+		.plan-cards-carousel .plan-ribbon,
+		.plan-cards-carousel .plan-ribbon--included {
+			top: 0.85rem;
+			right: 0.85rem;
+			width: auto;
+			height: auto;
+			min-height: 0;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			place-items: center;
+			padding: 0.32rem 0.7rem;
+			border-radius: 999px;
+			clip-path: none;
+			font-size: 0.68rem;
+			letter-spacing: 0.04em;
+			text-align: center;
+			line-height: 1.1;
+			color: #fff;
+			background: var(--primary);
+			box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--primary) 70%, transparent);
+		}
+
+		.plan-cards-carousel .plan-ribbon--included {
+			background: color-mix(in srgb, var(--on-surface) 78%, transparent);
+			color: #fff;
+			box-shadow: none;
+		}
+	}
+
 	.plan-tagline {
 		margin-top: 0.35rem;
 		font-size: 0.9rem;
@@ -1165,38 +1583,80 @@ const defaultCardHint = defaultCard
 		background: var(--surface-bright, #fff);
 		padding: 1.25rem 1.35rem;
 	}
-	.plan-billing-grid {
+	.plan-billing-ticket {
 		display: grid;
-		gap: 0.85rem;
-		grid-template-columns: repeat(auto-fit, minmax(10.5rem, 1fr));
+		gap: 0;
 	}
-	.plan-billing-cell {
-		display: grid;
-		gap: 0.2rem;
-		padding: 0.85rem 0.95rem;
-		border-radius: 1rem;
-		background: color-mix(in srgb, var(--on-surface) 3.5%, transparent);
+	.plan-billing-row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.72rem 0;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
 	}
-	.plan-billing-cell-accent {
-		background: color-mix(in srgb, var(--primary) 12%, transparent);
+	.plan-billing-row:has(+ .plan-billing-total) {
+		border-bottom: 0;
+		padding-bottom: 0.85rem;
 	}
-	.plan-billing-label {
-		font-size: 0.7rem;
-		font-weight: 700;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
+	.plan-billing-concept {
+		display: inline-flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.3rem;
+		min-width: 0;
+		font-size: 0.92rem;
+		font-weight: 650;
+		color: var(--on-surface);
+	}
+	.plan-billing-concept small {
+		font-size: 0.82rem;
+		font-weight: 600;
 		color: var(--on-surface-variant);
 	}
-	.plan-billing-value {
-		font-size: 1.05rem;
+	.plan-billing-amount {
+		flex-shrink: 0;
+		text-align: right;
+		font-size: 0.95rem;
 		font-weight: 800;
 		color: var(--on-surface);
 	}
-	.plan-billing-value-lg { font-size: 1.35rem; }
-	.plan-billing-cell small {
+	.plan-billing-row--credit .plan-billing-amount {
+		color: var(--primary);
+	}
+	.plan-billing-total {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		margin-top: 0.55rem;
+		padding: 0.95rem 1rem;
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+	}
+	.plan-billing-total-copy {
+		display: grid;
+		gap: 0.15rem;
+		min-width: 0;
+	}
+	.plan-billing-total-label {
 		font-size: 0.78rem;
-		font-weight: 600;
+		font-weight: 750;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
 		color: var(--on-surface-variant);
+	}
+	.plan-billing-total-copy small {
+		font-size: 0.78rem;
+		font-weight: 550;
+		color: var(--on-surface-variant);
+	}
+	.plan-billing-total-amount {
+		flex-shrink: 0;
+		font-size: 1.25rem;
+		font-weight: 850;
+		color: var(--on-surface);
+		text-align: right;
 	}
 	.plan-billing-empty {
 		display: grid;

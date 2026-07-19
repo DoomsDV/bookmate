@@ -427,13 +427,13 @@ export function initPlanPage() {
 		const confirmed = window.BookmateAlert?.confirm
 			? await window.BookmateAlert.confirm({
 					type: 'warning',
-					title: 'Terminar suscripción',
+					title: 'Cancelar suscripción',
 					message:
-						'Al fin del periodo pasás a Continuidad (0 Gs): se cancelan los paquetes de almacenamiento, no hay cobros y la cuenta queda en solo lectura. Hasta esa fecha seguís con tu plan actual. Si solo querés pagar menos, usá Pasar a Base.',
-					confirmText: 'Terminar suscripción',
+						'Tu cuenta pasará al plan gratuito (solo lectura) al finalizar el ciclo. Se cancelarán tus paquetes extra.',
+					confirmText: 'Cancelar suscripción',
 					cancelText: 'Volver',
 				})
-			: window.confirm('¿Terminar la suscripción al fin del periodo?');
+			: window.confirm('¿Cancelar la suscripción al fin del periodo?');
 		if (!confirmed) return;
 
 		const original = btn.textContent;
@@ -447,7 +447,7 @@ export function initPlanPage() {
 			});
 			const data = await res.json().catch(() => ({}));
 			if (!res.ok || data?.status !== 'success') {
-				throw new Error(data?.message || 'No fue posible terminar la suscripción.');
+				throw new Error(data?.message || 'No fue posible cancelar la suscripción.');
 			}
 			flash(
 				(typeof data?.message === 'string' && data.message.trim()) ||

@@ -131,213 +131,186 @@ const planFooterActive = activePath === "/panel/plan";
 
 	<aside
 		id="app-side-nav"
-		class="relative flex w-full max-h-[min(85dvh,40rem)] translate-y-full flex-col overflow-hidden rounded-t-[1.8rem] border border-b-0 border-(--shell-border) bg-(--sidebar-surface) shadow-[0_-8px_32px_rgba(0,0,0,0.28)]"
+		class="more-sheet relative flex h-auto max-h-[min(90dvh,52rem)] w-full translate-y-full flex-col overflow-hidden rounded-t-[1.75rem] border border-b-0 border-(--shell-border) bg-(--sidebar-surface) shadow-[0_-12px_40px_rgba(0,0,0,0.32)]"
 		data-side-nav
 		role="dialog"
 		aria-modal="true"
 		aria-label="Más opciones"
 	>
-		<div class="mx-auto mt-2.5 h-1 w-10 shrink-0 rounded-full bg-(--on-surface-variant)/35" aria-hidden="true"></div>
-		<div class="shell-header-zone sidebar-account-header shrink-0 px-5 pt-3 pb-3 sm:px-6">
-			<div class="flex w-full items-center justify-between gap-3">
-				<button
-					type="button"
-					class="sidebar-account-row sidebar-account-trigger min-w-0 flex-1"
-					data-org-switcher-trigger
-					aria-haspopup="dialog"
-					aria-label={`Organización actual: ${workspaceName}. Cambiar organización`}
-				>
-					<div
-						class:list={[
-							"workspace-avatar flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-xl font-bold sm:size-16",
-							workspaceLogoUrl ? "workspace-avatar--has-logo" : "workspace-avatar--empty",
-						]}
-						data-workspace-avatar
-					>
-						<span class="workspace-logo-placeholder" aria-hidden="true">
-							<span class="material-symbols-rounded">storefront</span>
-						</span>
-						{
-							workspaceLogoUrl ? (
-								<img
-									src={workspaceLogoUrl}
-									alt=""
-									class="workspace-logo-image size-full object-cover"
-									loading="eager"
-									onerror="this.classList.add('is-hidden'); this.removeAttribute('src');"
-								/>
-							) : null
-						}
-					</div>
-					<div class="sidebar-account-meta" data-sidebar-brand-text>
-						<div class="sidebar-account-title-row">
-							<p class="workspace-account-name text-[1.1rem] leading-snug font-bold">
-								{workspaceName}
-							</p>
-						</div>
-					</div>
-					<span class="material-symbols-rounded sidebar-account-chevron" aria-hidden="true">
-						unfold_more
-					</span>
-				</button>
+		<div class="mx-auto mt-2.5 h-1 w-11 shrink-0 rounded-full bg-(--on-surface-variant)/30" aria-hidden="true"></div>
 
-				<button
-					type="button"
-					class="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong)"
-					aria-label="Cerrar menú"
-					data-side-nav-close
+		<div class="shell-header-zone sidebar-account-header shrink-0 px-4 pt-3 pb-2 sm:px-5">
+			<button
+				type="button"
+				class="more-sheet__org sidebar-account-row sidebar-account-trigger w-full min-w-0"
+				data-org-switcher-trigger
+				aria-haspopup="dialog"
+				aria-label={`Organización actual: ${workspaceName}. Cambiar organización`}
+			>
+				<div
+					class:list={[
+						"workspace-avatar flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-bold",
+						workspaceLogoUrl ? "workspace-avatar--has-logo" : "workspace-avatar--empty",
+					]}
+					data-workspace-avatar
 				>
-					<span class="material-symbols-rounded text-[1.35rem]">close</span>
-				</button>
-			</div>
+					<span class="workspace-logo-placeholder" aria-hidden="true">
+						<span class="material-symbols-rounded">storefront</span>
+					</span>
+					{
+						workspaceLogoUrl ? (
+							<img
+								src={workspaceLogoUrl}
+								alt=""
+								class="workspace-logo-image size-full object-cover"
+								loading="eager"
+								onerror="this.classList.add('is-hidden'); this.removeAttribute('src');"
+							/>
+						) : null
+					}
+				</div>
+				<div class="sidebar-account-meta" data-sidebar-brand-text>
+					<div class="sidebar-account-title-row">
+						<p class="workspace-account-name text-[1.05rem] leading-snug font-bold">
+							{workspaceName}
+						</p>
+					</div>
+				</div>
+				<span class="material-symbols-rounded sidebar-account-chevron" aria-hidden="true">
+					unfold_more
+				</span>
+			</button>
 		</div>
 
-		<div class="sidebar-divider shrink-0" role="presentation" aria-hidden="true"></div>
-
-		<div class="flex min-h-0 flex-1 flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] sm:px-6">
-		<nav aria-label="Más opciones" class="min-h-0 flex-1 overflow-y-auto overscroll-contain">
-			<ul class="space-y-2 pb-3 pt-1">
-				{
-					mobileSheetPrimaryItems.map((item) => (
-						<li
-							data-requires-feature={item.requiresFeature || undefined}
-						>
-							<a
-								href={item.href}
-								data-astro-prefetch={getPrefetchMode(item)}
-								class:list={[
-									"mx-1 flex min-h-12 items-center gap-3.5 rounded-full px-4 py-3.5 text-[1.02rem] font-semibold no-underline transition",
-									isItemActive(item)
-										? "bg-(--primary-container) text-(--primary) font-extrabold shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
-										: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
-								]}
-								data-side-nav-close
+		<div class="flex min-h-0 flex-col px-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5">
+			<nav aria-label="Más opciones" class="more-sheet__nav min-h-0 overflow-y-auto overscroll-contain">
+				<ul class="more-sheet__list">
+					{
+						mobileSheetPrimaryItems.map((item) => (
+							<li
+								class="more-sheet__item"
+								data-requires-feature={item.requiresFeature || undefined}
 							>
-								<span class="material-symbols-rounded text-[1.55rem] leading-none">
-									{item.icon}
-								</span>
-								<span class="flex min-w-0 flex-1 items-center justify-between gap-2">
-									<span>{item.label}</span>
-									{item.pendingBadge ? (
-										<span
-											class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.7rem] font-extrabold leading-none text-white"
-											data-cobros-nav-badge
-											aria-label="Pendientes de revisión"
-										></span>
-									) : null}
-								</span>
-							</a>
-						</li>
-					))
-				}
+								<a
+									href={item.href}
+									data-astro-prefetch={getPrefetchMode(item)}
+									class:list={[
+										"more-sheet__link",
+										isItemActive(item) && "is-active",
+									]}
+									data-side-nav-close
+								>
+									<span class="material-symbols-rounded more-sheet__icon" aria-hidden="true">
+										{item.icon}
+									</span>
+									<span class="more-sheet__label">
+										<span>{item.label}</span>
+										{item.pendingBadge ? (
+											<span
+												class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-none text-white"
+												data-cobros-nav-badge
+												aria-label="Pendientes de revisión"
+											></span>
+										) : null}
+									</span>
+								</a>
+							</li>
+						))
+					}
 
-				{
-					visibleTeamItems.length > 0 && (
-						<li class="pt-1">
-							<details open class="group">
-								<summary class="flex min-h-12 cursor-pointer list-none items-center justify-between rounded-2xl px-4 py-3.5 text-[1.02rem] font-bold text-(--primary) transition hover:bg-(--sidebar-hover)">
-									<span class="flex items-center gap-3.5">
-										<span class="material-symbols-rounded text-[1.55rem] leading-none">
+					<li class="more-sheet__item">
+						<button
+							type="button"
+							class="more-sheet__link w-full text-left"
+							data-open-settings-modal
+							data-side-nav-close
+						>
+							<span class="material-symbols-rounded more-sheet__icon" aria-hidden="true">
+								settings
+							</span>
+							<span class="more-sheet__label">
+								<span>Configuración</span>
+							</span>
+						</button>
+					</li>
+
+					{
+						visibleTeamItems.length > 0 && (
+							<li class="more-sheet__item more-sheet__item--team">
+								<details open class="more-sheet__team group">
+									<summary class="more-sheet__link more-sheet__team-summary">
+										<span class="material-symbols-rounded more-sheet__icon" aria-hidden="true">
 											groups
 										</span>
-										<span>Equipo</span>
-									</span>
-									<span class="material-symbols-rounded text-[1.25rem] leading-none transition group-open:rotate-180">
-										expand_more
-									</span>
-								</summary>
+										<span class="more-sheet__label">
+											<span>Equipo</span>
+										</span>
+										<span class="material-symbols-rounded more-sheet__chevron more-sheet__chevron--expand transition group-open:rotate-180" aria-hidden="true">
+											expand_more
+										</span>
+									</summary>
 
-								<div class="ml-5 mt-1 border-l border-(--shell-border) pl-4">
-									<ul class="space-y-1">
+									<ul class="more-sheet__sublist">
 										{visibleTeamItems.map((item) => (
 											<li>
 												<a
 													href={item.href}
 													data-astro-prefetch={getPrefetchMode(item)}
 													class:list={[
-														"mx-1 flex min-h-12 rounded-full px-4 py-3.5 text-[0.98rem] font-semibold no-underline transition",
-														isItemActive(item)
-															? "bg-(--primary-container) text-(--primary) font-bold shadow-[0_2px_8px_rgba(15,23,42,0.08)]"
-															: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
+														"more-sheet__sublink",
+														isItemActive(item) && "is-active",
 													]}
 													data-side-nav-close
 												>
-													{item.label}
+													<span class="more-sheet__label">
+														<span>{item.label}</span>
+													</span>
 												</a>
 											</li>
 										))}
 									</ul>
-								</div>
-							</details>
-						</li>
-					)
+								</details>
+							</li>
+						)
+					}
+				</ul>
+			</nav>
+
+			<div class="more-sheet__footer shrink-0 pt-3">
+				{
+					showPlanFooter ? (
+						<a
+							href="/panel/plan"
+							data-side-nav-close
+							class:list={[
+								"more-sheet__plan",
+								planFooterActive && "is-active",
+							]}
+							aria-label="Ver plan y facturación"
+						>
+							<span class="material-symbols-rounded more-sheet__plan-icon" aria-hidden="true">
+								workspace_premium
+							</span>
+							<span class="min-w-0 flex-1">
+								<span class="block truncate text-[0.98rem] font-bold" data-plan-label>
+									Plan
+								</span>
+								<span class="block text-[0.78rem] font-medium text-(--on-surface-variant)">
+									Ver plan y facturación
+								</span>
+							</span>
+						</a>
+					) : null
 				}
-			</ul>
-		</nav>
 
-		{
-			showPlanFooter ? (
-				<div class="mx-1 mt-2 flex shrink-0 items-stretch gap-2">
-					<a
-						href="/panel/plan"
-						data-side-nav-close
-						class:list={[
-							"flex min-h-12 min-w-0 flex-1 items-center gap-3.5 rounded-2xl border border-(--shell-border) px-4 py-3.5 no-underline transition",
-							planFooterActive
-								? "bg-(--primary-container) text-(--primary)"
-								: "text-(--on-surface) hover:bg-(--sidebar-hover)",
-						]}
-						aria-label="Ver plan y facturación"
-					>
-						<span class="material-symbols-rounded text-[1.55rem] leading-none" aria-hidden="true">
-							workspace_premium
-						</span>
-						<span class="min-w-0 flex-1">
-							<span class="block truncate text-[1.02rem] font-bold" data-plan-label>
-								Plan
-							</span>
-							<span class="block text-[0.8rem] font-medium text-(--on-surface-variant)">
-								Ver plan y facturación
-							</span>
-						</span>
-					</a>
-					<button
-						type="button"
-						class="flex w-14 shrink-0 items-center justify-center self-stretch rounded-2xl border border-(--shell-border) text-(--on-surface-variant) transition hover:bg-(--sidebar-hover) hover:text-(--on-surface)"
-						data-open-settings-modal
-						data-side-nav-close
-						aria-label="Abrir configuración"
-						title="Configuración"
-					>
-						<span class="material-symbols-rounded text-[1.45rem]" aria-hidden="true">settings</span>
+				<form method="post" action="/api/auth/logout" class:list={[showPlanFooter && 'mt-2']} data-logout-form>
+					<input type="hidden" name="fcm_token" value="" data-logout-fcm-token />
+					<button type="submit" class="more-sheet__logout">
+						<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">logout</span>
+						Cerrar sesión
 					</button>
-				</div>
-			) : (
-				<div class="mx-1 mt-2 flex shrink-0 justify-end">
-					<button
-						type="button"
-						class="flex min-h-12 w-14 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) text-(--on-surface-variant) transition hover:bg-(--sidebar-hover) hover:text-(--on-surface)"
-						data-open-settings-modal
-						data-side-nav-close
-						aria-label="Abrir configuración"
-						title="Configuración"
-					>
-						<span class="material-symbols-rounded text-[1.45rem]" aria-hidden="true">settings</span>
-					</button>
-				</div>
-			)
-		}
-
-		<form method="post" action="/api/auth/logout" class="mx-1 mt-2 shrink-0" data-logout-form>
-			<input type="hidden" name="fcm_token" value="" data-logout-fcm-token />
-			<button
-				type="submit"
-				class="flex min-h-11 w-full items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-[0.92rem] font-semibold text-red-600 transition hover:bg-red-50/80 dark:hover:bg-red-950/25"
-			>
-				<span class="material-symbols-rounded text-[1.2rem] text-red-500" aria-hidden="true">logout</span>
-				Cerrar sesión
-			</button>
-		</form>
+				</form>
+			</div>
 		</div>
 	</aside>
 </div>
@@ -529,6 +502,170 @@ const planFooterActive = activePath === "/panel/plan";
 <MobileBottomNav currentPath={currentPath} />
 
 <style>
+	.more-sheet__nav {
+		margin-top: 0.35rem;
+		padding-inline: 0.15rem;
+	}
+
+	.more-sheet__list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.more-sheet__item + .more-sheet__item {
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
+	}
+
+	.more-sheet__link,
+	.more-sheet__sublink {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		min-height: 3.55rem;
+		padding: 0.95rem 0.65rem;
+		margin: 0.2rem 0;
+		border: 0;
+		border-radius: 1rem;
+		background: transparent;
+		color: var(--on-surface);
+		font: inherit;
+		font-size: 1rem;
+		font-weight: 600;
+		text-decoration: none;
+		cursor: pointer;
+		transition: background-color 0.15s ease, color 0.15s ease;
+	}
+
+	.more-sheet__link:hover,
+	.more-sheet__sublink:hover {
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+	}
+
+	.more-sheet__link.is-active,
+	.more-sheet__sublink.is-active {
+		background: var(--primary-container);
+		color: var(--primary);
+		font-weight: 800;
+	}
+
+	.more-sheet__icon {
+		font-size: 1.4rem;
+		line-height: 1;
+		color: var(--on-surface-variant);
+	}
+
+	.more-sheet__link.is-active .more-sheet__icon,
+	.more-sheet__sublink.is-active .more-sheet__chevron {
+		color: var(--primary);
+	}
+
+	.more-sheet__label {
+		display: flex;
+		min-width: 0;
+		flex: 1;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+
+	.more-sheet__chevron {
+		font-size: 1.25rem;
+		line-height: 1;
+		color: color-mix(in srgb, var(--on-surface-variant) 75%, transparent);
+		flex-shrink: 0;
+	}
+
+	.more-sheet__team-summary {
+		list-style: none;
+		cursor: pointer;
+		color: var(--on-surface);
+		font-weight: 600;
+	}
+
+	.more-sheet__team-summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.more-sheet__chevron--expand {
+		color: var(--on-surface-variant);
+	}
+
+	.more-sheet__sublist {
+		margin: 0 0 0.25rem;
+		padding: 0 0 0.15rem 2.35rem;
+		list-style: none;
+	}
+
+	.more-sheet__sublink {
+		min-height: 3rem;
+		padding: 0.75rem 0.55rem;
+		font-size: 0.95rem;
+		font-weight: 600;
+	}
+
+	.more-sheet__footer {
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+	}
+
+	.more-sheet__plan {
+		display: flex;
+		min-height: 3.25rem;
+		min-width: 0;
+		flex: 1;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.7rem 0.9rem;
+		border-radius: 1.1rem;
+		border: 1px solid var(--shell-border);
+		color: var(--on-surface);
+		text-decoration: none;
+		transition: background-color 0.15s ease, color 0.15s ease;
+	}
+
+	.more-sheet__plan:hover {
+		background: var(--sidebar-hover);
+	}
+
+	.more-sheet__plan.is-active {
+		background: var(--primary-container);
+		color: var(--primary);
+		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border));
+	}
+
+	.more-sheet__plan-icon {
+		font-size: 1.45rem;
+		line-height: 1;
+		color: var(--primary);
+	}
+
+	.more-sheet__logout {
+		display: flex;
+		width: 100%;
+		min-height: 2.75rem;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		border: 0;
+		border-radius: 1rem;
+		background: transparent;
+		padding: 0.55rem 0.75rem;
+		font: inherit;
+		font-size: 0.92rem;
+		font-weight: 700;
+		color: #dc2626;
+		cursor: pointer;
+		transition: background-color 0.15s ease;
+	}
+
+	.more-sheet__logout:hover {
+		background: color-mix(in srgb, #ef4444 10%, transparent);
+	}
+
+	:global(html[data-theme='dark']) .more-sheet__logout:hover {
+		background: color-mix(in srgb, #ef4444 16%, transparent);
+	}
+
 	.sidebar-divider {
 		margin: 0 1.5rem 1rem;
 		height: 0;
@@ -545,6 +682,17 @@ const planFooterActive = activePath === "/panel/plan";
 	}
 
 	.sidebar-account-trigger:hover {
+		background: var(--sidebar-hover);
+	}
+
+	.more-sheet__org.sidebar-account-trigger {
+		padding: 0.65rem 0.75rem;
+		border-radius: 1.15rem;
+		background: color-mix(in srgb, var(--surface-container, var(--control-surface)) 88%, transparent);
+		border: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+	}
+
+	.more-sheet__org.sidebar-account-trigger:hover {
 		background: var(--sidebar-hover);
 	}
 

@@ -38,7 +38,7 @@ const candidates: BottomItem[] = [
 ];
 
 const navItems = candidates.filter((item) => !item.href || canAccessPath(item.href, currentRoleId));
-const moreItem: BottomItem = { label: 'Más', icon: 'more_horiz', action: 'more' };
+const moreItem: BottomItem = { label: 'Más', icon: 'apps', action: 'more' };
 const items = [...navItems.slice(0, 4), moreItem].slice(0, 5);
 
 const isActive = (href?: string) => {
