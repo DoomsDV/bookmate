@@ -86,18 +86,23 @@ const previewInitial = {
 ---
 
 <public-profile-editor data-ppe-root data-ppe-bootstrap={serialized}>
-	<div class="ppe-page">
+	<div class="ppe-page" data-ppe-page>
 		<div class="ppe-layout">
-			<div class="ppe-config-pane">
+			<div class="ppe-config-pane" data-ppe-config-pane>
 				<header class="ppe-header">
 					<div>
 						<h1 class="ppe-header__title">Perfil Público</h1>
-						<p class="ppe-header__sub">
-							Configurá cómo ven tu negocio los clientes en Hasel. Los cambios se reflejan en la vista
-							previa.
-						</p>
 					</div>
 					<div class="ppe-header__actions">
+						<button
+							type="button"
+							class="ppe-btn ppe-btn-secondary ppe-preview-trigger--header"
+							data-ppe-open-preview
+							aria-label="Ver vista previa"
+							title="Ver vista previa"
+						>
+							<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">visibility</span>
+						</button>
 						<a
 							class="ppe-btn ppe-btn-secondary"
 							href={hubUrl || '#'}
@@ -322,11 +327,18 @@ const previewInitial = {
 								</div>
 								<span class="ppe-dropzone__cta">
 									<span class="material-symbols-rounded" aria-hidden="true">cloud_upload</span>
-									<span data-ppe-logo-file-label
-										>{workspace.logo_url
-											? 'Hacé clic o arrastrá para cambiar el logo'
-											: 'Hacé clic o arrastrá tu logo aquí'}</span
-									>
+									<span data-ppe-logo-file-label>
+										<span class="ppe-copy-desktop" data-ppe-logo-copy-desktop>
+											{workspace.logo_url
+												? 'Hacé clic o arrastrá para cambiar el logo'
+												: 'Hacé clic o arrastrá tu logo aquí'}
+										</span>
+										<span class="ppe-copy-mobile" data-ppe-logo-copy-mobile>
+											{workspace.logo_url
+												? 'Tocá para cambiar el logo'
+												: 'Tocá para subir tu logo'}
+										</span>
+									</span>
 								</span>
 								<input
 									type="file"
@@ -352,14 +364,18 @@ const previewInitial = {
 									data-ppe-banner-placeholder
 								>
 									<span class="material-symbols-rounded" aria-hidden="true">cloud_upload</span>
-									<span class="ppe-dropzone__cta-text">Hacé clic o arrastrá tu banner aquí</span>
+									<span class="ppe-dropzone__cta-text">
+										<span class="ppe-copy-desktop">Hacé clic o arrastrá tu banner aquí</span>
+										<span class="ppe-copy-mobile">Tocá para subir tu banner</span>
+									</span>
 									<span class="ppe-dropzone__meta">1200 × 600 · proporción 2:1</span>
 								</div>
 								<span
 									class={`ppe-dropzone__change ${bannerUrl ? '' : 'hidden'}`}
 									data-ppe-banner-change
 								>
-									Hacé clic o arrastrá para cambiar
+									<span class="ppe-copy-desktop">Hacé clic o arrastrá para cambiar</span>
+									<span class="ppe-copy-mobile">Tocá para cambiar</span>
 								</span>
 								<input
 									type="file"
@@ -392,7 +408,15 @@ const previewInitial = {
 								{
 									galleryImages.map((item) => (
 										<li class="ppe-gallery-item" data-ppe-gallery-item data-id={item.id}>
-											<img src={item.url} alt="" />
+											<button
+												type="button"
+												class="ppe-gallery-item__open"
+												data-ppe-gallery-open
+												data-id={item.id}
+												aria-label="Ver foto"
+											>
+												<img src={item.url} alt="" />
+											</button>
 											<button
 												type="button"
 												class="ppe-gallery-item__remove"
@@ -408,7 +432,10 @@ const previewInitial = {
 							</ul>
 							<label class="ppe-dropzone ppe-dropzone--gallery" data-ppe-gallery-add>
 								<span class="material-symbols-rounded" aria-hidden="true">add_photo_alternate</span>
-								<span class="ppe-dropzone__cta-text">Hacé clic o arrastrá fotos aquí</span>
+								<span class="ppe-dropzone__cta-text">
+									<span class="ppe-copy-desktop">Hacé clic o arrastrá fotos aquí</span>
+									<span class="ppe-copy-mobile">Tocá para agregar fotos</span>
+								</span>
 								<input
 									type="file"
 									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
@@ -439,7 +466,7 @@ const previewInitial = {
 				</form>
 			</div>
 
-			<aside class="ppe-phone-col" aria-label="Vista previa móvil">
+			<aside class="ppe-phone-col" data-ppe-phone-col aria-label="Vista previa">
 				<PublicProfilePreview client:load initial={previewInitial} />
 			</aside>
 		</div>
@@ -451,9 +478,29 @@ const previewInitial = {
 		</span>
 		<button type="submit" form="ppe-form" class="ppe-btn ppe-btn-primary" data-ppe-save>
 			<span class="material-symbols-rounded text-[1.15rem]" aria-hidden="true">save</span>
-			Guardar perfil
+			Guardar cambios
 		</button>
 	</footer>
+
+	<dialog class="ppe-preview-modal" data-ppe-preview-modal aria-label="Vista previa del perfil público">
+		<div class="ppe-preview-modal__bar">
+			<button type="button" class="ppe-preview-modal__back" data-ppe-close-preview>
+				<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+				Volver a edición
+			</button>
+			<button
+				type="button"
+				class="ppe-preview-modal__close"
+				data-ppe-close-preview
+				aria-label="Cerrar vista previa"
+			>
+				<span class="material-symbols-rounded" aria-hidden="true">close</span>
+			</button>
+		</div>
+		<div class="ppe-preview-modal__scroll">
+			<PublicProfilePreview client:load initial={previewInitial} variant="live" />
+		</div>
+	</dialog>
 
 	<dialog class="ppe-crop-modal" data-ppe-crop-modal>
 		<div class="ppe-crop-modal__sheet" data-ppe-crop-sheet>

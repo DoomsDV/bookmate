@@ -263,6 +263,17 @@ const isActive = (href?: string) => {
 	}
 
 	@media (max-width: 1023px) {
+		:root {
+			/*
+			 * Altura del dock inferior (debe coincidir con .mobile-bottom-nav).
+			 * min-height 4.25rem; si el safe-area crece el padding, la barra crece igual.
+			 */
+			--mobile-bottom-nav-height: max(
+				4.25rem,
+				calc(0.45rem + 2.35rem + 0.9rem + env(safe-area-inset-bottom, 0px))
+			);
+		}
+
 		.mobile-bottom-nav {
 			position: fixed;
 			left: 0;
@@ -276,7 +287,7 @@ const isActive = (href?: string) => {
 			width: 100%;
 			max-width: 100%;
 			box-sizing: border-box;
-			min-height: 4.25rem;
+			min-height: var(--mobile-bottom-nav-height);
 			/* Base generoso + safe-area (gesture bar iOS/Android). Sin depender solo del inset. */
 			padding: 0.45rem 0.35rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
 			padding-left: max(0.35rem, env(safe-area-inset-left, 0px));
@@ -291,6 +302,12 @@ const isActive = (href?: string) => {
 		html[data-theme='dark'] .mobile-bottom-nav {
 			background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 92%, transparent);
 			box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.28);
+		}
+
+		/* Bloque sólido: footer de guardar + bottom-nav sin hueco ni doble borde */
+		body:has(public-profile-editor .ppe-save-footer) .mobile-bottom-nav {
+			border-top: 0;
+			box-shadow: none;
 		}
 
 		body:has([data-mobile-bottom-nav]) .app-shell > :last-child > main,

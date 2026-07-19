@@ -102,6 +102,8 @@ const instagramUrl = String(hub?.instagram_url || '').trim();
 const businessHoursRows = hub?.business_hours
 	? formatBusinessHoursForDisplay(hub.business_hours)
 	: [];
+const businessHoursLiveStatus =
+	businessHoursRows.find((row) => row.liveStatus)?.liveStatus ?? null;
 const singlePro = professionals.length === 1 ? professionals[0] : null;
 const reserveHref = singlePro?.booking_path || '#equipo';
 const hubUrl = siteOrigin ? `${siteOrigin}${canonicalPath}` : canonicalPath;
@@ -338,9 +340,60 @@ const serializedProfessionals = professionals.length
 							id="overview"
 							class="hub-panel is-active"
 							data-hub-panel="overview"
-							aria-labelledby="hub-services-title"
+							aria-labelledby={
+								businessHoursRows.length ? 'hub-hours-title' : 'hub-services-title'
+							}
 						>
 							<div class="hub-overview-stack">
+								{businessHoursRows.length ? (
+									<div class="hub-pin-block hub-hours" aria-label="Horario comercial">
+										<p id="hub-hours-title" class="hub-pin-block__label hub-hours__heading">
+											<span class="hub-hours__heading-title">
+												<span class="material-symbols-rounded" aria-hidden="true">schedule</span>
+												Horario
+											</span>
+											{businessHoursLiveStatus ? (
+												<span
+													class:list={[
+														'hub-hours__live',
+														businessHoursLiveStatus === 'open' ? 'is-open' : 'is-closed',
+													]}
+												>
+													<span class="hub-hours__live-dot" aria-hidden="true" />
+													{businessHoursLiveStatus === 'open'
+														? 'Abierto ahora'
+														: 'Cerrado ahora'}
+												</span>
+											) : null}
+										</p>
+										<ul class="hub-hours__list">
+											{businessHoursRows.map((row) => (
+												<li
+													class:list={[
+														{ 'is-closed': row.closed },
+														{ 'is-today': row.isToday },
+													]}
+												>
+													<span class="hub-hours__day">{row.label}</span>
+													<span class="hub-hours__value">
+														{row.closed
+															? 'Cerrado'
+															: row.slots.map((slot, slotIndex) => (
+																	<span class="hub-hours__slot-wrap">
+																		{slotIndex > 0 ? (
+																			<span class="hub-hours__sep" aria-hidden="true">
+																				|
+																			</span>
+																		) : null}
+																		<span class="hub-hours__slot">{slot}</span>
+																	</span>
+																))}
+													</span>
+												</li>
+											))}
+										</ul>
+									</div>
+								) : null}
 								{serviceCategories.length ? (
 									<div class="hub-pin-block" aria-label="Servicios principales">
 										<p id="hub-services-title" class="hub-pin-block__label">
@@ -358,22 +411,6 @@ const serializedProfessionals = professionals.length
 								) : (
 									<p class="hub-empty">Todavía no hay servicios destacados.</p>
 								)}
-								{businessHoursRows.length ? (
-									<div class="hub-pin-block hub-hours" aria-label="Horario comercial">
-										<p class="hub-pin-block__label">
-											<span class="material-symbols-rounded" aria-hidden="true">schedule</span>
-											Horario
-										</p>
-										<ul class="hub-hours__list">
-											{businessHoursRows.map((row) => (
-												<li class:list={[{ 'is-closed': row.closed }]}>
-													<span class="hub-hours__day">{row.label}</span>
-													<span class="hub-hours__value">{row.value}</span>
-												</li>
-											))}
-										</ul>
-									</div>
-								) : null}
 							</div>
 						</section>
 

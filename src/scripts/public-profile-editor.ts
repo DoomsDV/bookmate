@@ -63,6 +63,46 @@ const normalizeSlugInput = (value: string) =>
 
 const digitsOnly = (value: string) => String(value || '').replace(/\D/g, '');
 
+/** Normaliza a HH:mm 24h (acepta H:mm, HH:mm y variantes con AM/PM). */
+const normalizeHoursTimeInput = (value: string): string => {
+	const raw = String(value || '').trim().toLowerCase().replace(/\./g, ':');
+	if (!raw) return '';
+
+	const ampm = raw.match(/^(\d{1,2}):(\d{2})\s*(a\.?\s*m\.?|p\.?\s*m\.?|am|pm)$/i);
+	if (ampm) {
+		let hour = Number(ampm[1]);
+		const minute = Number(ampm[2]);
+		const isPm = /p/.test(ampm[3]);
+		if (!Number.isFinite(hour) || !Number.isFinite(minute) || minute > 59) return raw;
+		if (isPm && hour < 12) hour += 12;
+		if (!isPm && hour === 12) hour = 0;
+		if (hour > 23) return raw;
+		return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+	}
+
+	const match = raw.match(/^(\d{1,2}):(\d{2})$/);
+	if (!match) return raw;
+	const hour = Number(match[1]);
+	const minute = Number(match[2]);
+	if (!Number.isFinite(hour) || !Number.isFinite(minute) || hour > 23 || minute > 59) {
+		return raw;
+	}
+	return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+};
+
+const bindHoursTimeInput = (input: HTMLInputElement, value: string) => {
+	input.type = 'text';
+	input.inputMode = 'numeric';
+	input.placeholder = '09:00';
+	input.autocomplete = 'off';
+	input.spellcheck = false;
+	input.maxLength = 8;
+	input.lang = 'es';
+	input.setAttribute('pattern', '([01]\\d|2[0-3]):[0-5]\\d');
+	input.setAttribute('title', 'Formato 24 h (HH:mm)');
+	input.value = value;
+};
+
 const initialsFromName = (name: string) => {
 	const parts = String(name || '')
 		.trim()
@@ -105,6 +145,8 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const descMax = Number(bootstrap.descMax || 500);
 	const galleryMax = Number(bootstrap.galleryMax || 30);
 	let businessHours: BusinessHours = parseBusinessHours(bootstrap.workspace?.business_hours);
+	/** Día 1–7 expandido para editar turnos; null = todos colapsados. */
+	let expandedHoursDay: number | null = null;
 
 	const logoInput = root.querySelector<HTMLInputElement>('[data-ppe-logo-input]');
 	const logoDropzone = root.querySelector<HTMLElement>('[data-ppe-logo-dropzone]');
@@ -194,9 +236,18 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}
 		logoPlaceholder?.classList.toggle('hidden', Boolean(url));
 		if (logoFileLabel) {
-			logoFileLabel.textContent = url
-				? 'Hacé clic o arrastrá para cambiar el logo'
-				: 'Hacé clic o arrastrá tu logo aquí';
+			const desktop = logoFileLabel.querySelector<HTMLElement>('[data-ppe-logo-copy-desktop]');
+			const mobile = logoFileLabel.querySelector<HTMLElement>('[data-ppe-logo-copy-mobile]');
+			if (desktop) {
+				desktop.textContent = url
+					? 'Hacé clic o arrastrá para cambiar el logo'
+					: 'Hacé clic o arrastrá tu logo aquí';
+			}
+			if (mobile) {
+				mobile.textContent = url
+					? 'Tocá para cambiar el logo'
+					: 'Tocá para subir tu logo';
+			}
 		}
 	};
 
@@ -291,31 +342,19 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			img.alt = '';
 			openBtn.appendChild(img);
 
-			const actions = document.createElement('div');
-			actions.className = 'ppe-gallery-item__actions';
+			const removeBtn = document.createElement('button');
+			removeBtn.type = 'button';
+			removeBtn.className = 'ppe-gallery-item__remove';
+			removeBtn.dataset.ppeGalleryRemove = '';
+			removeBtn.dataset.id = String(item.id);
+			removeBtn.setAttribute('aria-label', 'Eliminar foto');
+			const removeIcon = document.createElement('span');
+			removeIcon.className = 'material-symbols-rounded';
+			removeIcon.setAttribute('aria-hidden', 'true');
+			removeIcon.textContent = 'close';
+			removeBtn.appendChild(removeIcon);
 
-			const makeAction = (label: string, iconName: string, attr: string) => {
-				const btn = document.createElement('button');
-				btn.type = 'button';
-				btn.className = 'ppe-gallery-item__action';
-				btn.dataset[attr] = '';
-				btn.dataset.id = String(item.id);
-				btn.setAttribute('aria-label', label);
-				const icon = document.createElement('span');
-				icon.className = 'material-symbols-rounded';
-				icon.setAttribute('aria-hidden', 'true');
-				icon.textContent = iconName;
-				btn.appendChild(icon);
-				return btn;
-			};
-
-			actions.append(
-				makeAction('Mover izquierda', 'chevron_left', 'ppeGalleryLeft'),
-				makeAction('Mover derecha', 'chevron_right', 'ppeGalleryRight'),
-				makeAction('Eliminar foto', 'close', 'ppeGalleryRemove')
-			);
-
-			li.append(openBtn, actions);
+			li.append(openBtn, removeBtn);
 			galleryGrid.appendChild(li);
 		}
 		if (galleryCount) galleryCount.textContent = `(${galleryItems.length}/${galleryMax})`;
@@ -329,27 +368,66 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}
 	};
 
+	const formatHoursDaySummary = (day: BusinessHoursDay): string => {
+		if (day.closed || !day.intervals.length) return 'Cerrado';
+		return day.intervals.map((interval) => `${interval.start}–${interval.end}`).join(' · ');
+	};
+
 	const renderBusinessHours = () => {
 		if (!hoursList) return;
 		hoursList.replaceChildren();
 
+		if (
+			expandedHoursDay != null &&
+			(businessHours.days[expandedHoursDay - 1]?.closed ?? true)
+		) {
+			expandedHoursDay = null;
+		}
+
 		for (const day of businessHours.days) {
+			const dayLabel = BUSINESS_HOURS_DAY_LABELS[day.day - 1] || `Día ${day.day}`;
+			const isExpanded = !day.closed && expandedHoursDay === day.day;
 			const li = document.createElement('li');
-			li.className = day.closed ? 'ppe-hours-day is-closed' : 'ppe-hours-day';
+			li.className = day.closed
+				? 'ppe-hours-day is-closed'
+				: isExpanded
+					? 'ppe-hours-day is-open is-expanded'
+					: 'ppe-hours-day is-open is-collapsed';
 			li.dataset.day = String(day.day);
 
 			const head = document.createElement('div');
 			head.className = 'ppe-hours-day__head';
 
-			const name = document.createElement('span');
-			name.className = 'ppe-hours-day__name';
-			name.textContent = BUSINESS_HOURS_DAY_LABELS[day.day - 1] || `Día ${day.day}`;
+			if (day.closed) {
+				const name = document.createElement('span');
+				name.className = 'ppe-hours-day__name';
+				name.textContent = dayLabel;
+				head.appendChild(name);
+			} else {
+				const leadBtn = document.createElement('button');
+				leadBtn.type = 'button';
+				leadBtn.className = 'ppe-hours-day__lead';
+				leadBtn.setAttribute('data-ppe-hours-fold', String(day.day));
+				leadBtn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+				leadBtn.setAttribute(
+					'aria-label',
+					isExpanded
+						? `Ocultar horarios de ${dayLabel}`
+						: `Editar horarios de ${dayLabel}`
+				);
+				const name = document.createElement('span');
+				name.className = 'ppe-hours-day__name';
+				name.textContent = dayLabel;
+				const chevron = document.createElement('span');
+				chevron.className = 'material-symbols-rounded ppe-hours-day__chevron';
+				chevron.setAttribute('aria-hidden', 'true');
+				chevron.textContent = isExpanded ? 'expand_less' : 'expand_more';
+				leadBtn.append(name, chevron);
+				head.appendChild(leadBtn);
+			}
 
 			const toggleWrap = document.createElement('label');
 			toggleWrap.className = 'ppe-hours-toggle';
-			const toggleText = document.createElement('span');
-			toggleText.className = 'ppe-hours-toggle__label';
-			toggleText.textContent = day.closed ? 'Cerrado' : 'Abierto';
 			const switchEl = document.createElement('span');
 			switchEl.className = 'ppe-switch';
 			const toggle = document.createElement('input');
@@ -358,18 +436,27 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			toggle.setAttribute('data-ppe-hours-open', String(day.day));
 			toggle.setAttribute(
 				'aria-label',
-				`${name.textContent}: ${day.closed ? 'Cerrado' : 'Abierto'}`
+				`${dayLabel}: ${day.closed ? 'Cerrado' : 'Abierto'}`
 			);
 			const track = document.createElement('span');
 			track.className = 'ppe-switch__track';
 			track.setAttribute('aria-hidden', 'true');
 			switchEl.append(toggle, track);
-			toggleWrap.append(toggleText, switchEl);
-
-			head.append(name, toggleWrap);
+			const toggleText = document.createElement('span');
+			toggleText.className = 'ppe-hours-toggle__label';
+			toggleText.textContent = day.closed ? 'Cerrado' : 'Abierto';
+			toggleWrap.append(switchEl, toggleText);
+			head.appendChild(toggleWrap);
 			li.appendChild(head);
 
-			if (!day.closed) {
+			if (!day.closed && !isExpanded) {
+				const summary = document.createElement('p');
+				summary.className = 'ppe-hours-summary';
+				summary.textContent = formatHoursDaySummary(day);
+				li.appendChild(summary);
+			}
+
+			if (!day.closed && isExpanded) {
 				const intervalsWrap = document.createElement('div');
 				intervalsWrap.className = 'ppe-hours-intervals';
 
@@ -378,20 +465,18 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 					row.className = 'ppe-hours-interval';
 
 					const start = document.createElement('input');
-					start.type = 'time';
 					start.className = 'ppe-input ppe-hours-interval__time';
-					start.value = interval.start;
+					bindHoursTimeInput(start, interval.start);
 					start.setAttribute('data-ppe-hours-start', String(day.day));
 					start.dataset.index = String(index);
 
 					const sep = document.createElement('span');
 					sep.className = 'ppe-hours-interval__sep';
-					sep.textContent = '–';
+					sep.textContent = 'a';
 
 					const end = document.createElement('input');
-					end.type = 'time';
 					end.className = 'ppe-input ppe-hours-interval__time';
-					end.value = interval.end;
+					bindHoursTimeInput(end, interval.end);
 					end.setAttribute('data-ppe-hours-end', String(day.day));
 					end.dataset.index = String(index);
 
@@ -407,6 +492,11 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 						removeBtn.innerHTML =
 							'<span class="material-symbols-rounded" aria-hidden="true">close</span>';
 						row.appendChild(removeBtn);
+					} else {
+						const spacer = document.createElement('span');
+						spacer.className = 'ppe-hours-remove-spacer';
+						spacer.setAttribute('aria-hidden', 'true');
+						row.appendChild(spacer);
 					}
 
 					intervalsWrap.appendChild(row);
@@ -958,8 +1048,10 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			day.closed = !openToggle.checked;
 			if (day.closed) {
 				day.intervals = [];
-			} else if (!day.intervals.length) {
-				day.intervals = [defaultOpenInterval()];
+				if (expandedHoursDay === dayNum) expandedHoursDay = null;
+			} else {
+				if (!day.intervals.length) day.intervals = [defaultOpenInterval()];
+				expandedHoursDay = dayNum;
 			}
 			businessHours.days[dayNum - 1] = day;
 			renderBusinessHours();
@@ -973,7 +1065,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			const index = Number(startInput.dataset.index || 0);
 			const day = getDay(dayNum);
 			if (day.intervals[index]) {
-				day.intervals[index].start = startInput.value || '09:00';
+				const normalized = normalizeHoursTimeInput(startInput.value) || '09:00';
+				startInput.value = normalized;
+				day.intervals[index].start = normalized;
 				businessHours.days[dayNum - 1] = day;
 				syncPreview();
 			}
@@ -986,16 +1080,40 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			const index = Number(endInput.dataset.index || 0);
 			const day = getDay(dayNum);
 			if (day.intervals[index]) {
-				day.intervals[index].end = endInput.value || '18:00';
+				const normalized = normalizeHoursTimeInput(endInput.value) || '18:00';
+				endInput.value = normalized;
+				day.intervals[index].end = normalized;
 				businessHours.days[dayNum - 1] = day;
 				syncPreview();
 			}
 		}
 	});
 
+	hoursList?.addEventListener('blur', (event) => {
+		const target = event.target as HTMLElement | null;
+		const timeInput = target?.closest<HTMLInputElement>(
+			'[data-ppe-hours-start], [data-ppe-hours-end]'
+		);
+		if (!timeInput) return;
+		const normalized = normalizeHoursTimeInput(timeInput.value);
+		if (normalized && normalized !== timeInput.value) {
+			timeInput.value = normalized;
+			timeInput.dispatchEvent(new Event('change', { bubbles: true }));
+		}
+	}, true);
+
 	hoursList?.addEventListener('click', (event) => {
 		const target = event.target as HTMLElement | null;
 		if (!target) return;
+
+		const foldBtn = target.closest<HTMLElement>('[data-ppe-hours-fold]');
+		if (foldBtn) {
+			const dayNum = Number(foldBtn.getAttribute('data-ppe-hours-fold') || 0);
+			if (!dayNum) return;
+			expandedHoursDay = expandedHoursDay === dayNum ? null : dayNum;
+			renderBusinessHours();
+			return;
+		}
 
 		const addBtn = target.closest<HTMLElement>('[data-ppe-hours-add]');
 		if (addBtn) {
@@ -1009,6 +1127,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 					: defaultOpenInterval()
 			);
 			businessHours.days[dayNum - 1] = day;
+			expandedHoursDay = dayNum;
 			renderBusinessHours();
 			syncPreview();
 			return;
@@ -1022,6 +1141,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			if (day.intervals.length <= 1) return;
 			day.intervals.splice(index, 1);
 			businessHours.days[dayNum - 1] = day;
+			expandedHoursDay = dayNum;
 			renderBusinessHours();
 			syncPreview();
 		}
@@ -1150,6 +1270,38 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		renderGalleryPreviewList();
 	});
 
+	const previewModal = root.querySelector<HTMLDialogElement>('[data-ppe-preview-modal]');
+	const openPreviewButtons = Array.from(
+		root.querySelectorAll<HTMLButtonElement>('[data-ppe-open-preview]')
+	);
+	const closePreviewButtons = Array.from(
+		root.querySelectorAll<HTMLButtonElement>('[data-ppe-close-preview]')
+	);
+
+	const openPreviewModal = () => {
+		if (!previewModal || previewModal.open) return;
+		previewModal.showModal();
+		document.documentElement.classList.add('ppe-preview-open');
+	};
+
+	const closePreviewModal = () => {
+		if (!previewModal?.open) return;
+		previewModal.close();
+	};
+
+	openPreviewButtons.forEach((btn) => {
+		btn.addEventListener('click', () => openPreviewModal());
+	});
+	closePreviewButtons.forEach((btn) => {
+		btn.addEventListener('click', () => closePreviewModal());
+	});
+	previewModal?.addEventListener('close', () => {
+		document.documentElement.classList.remove('ppe-preview-open');
+	});
+	previewModal?.addEventListener('cancel', () => {
+		document.documentElement.classList.remove('ppe-preview-open');
+	});
+
 	tabButtons.forEach((btn) => {
 		btn.addEventListener('click', () => {
 			const tabId = String(btn.dataset.ppeTab || 'general');
@@ -1174,60 +1326,12 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		target.focus();
 	});
 
-	const reorderGallery = async (id: number, direction: -1 | 1) => {
-		const index = galleryItems.findIndex((item) => item.id === id);
-		const next = index + direction;
-		if (index < 0 || next < 0 || next >= galleryItems.length) return;
-		const copy = [...galleryItems];
-		const [moved] = copy.splice(index, 1);
-		copy.splice(next, 0, moved);
-		const ids = copy.map((item) => item.id);
-		try {
-			const response = await fetch('/api/workspace/gallery', {
-				method: 'PUT',
-				headers: {
-					'Content-Type': 'application/json',
-					Accept: 'application/json',
-				},
-				body: JSON.stringify({ ids }),
-			});
-			const data = (await response.json()) as {
-				status?: string;
-				message?: string;
-				data?: { gallery_images?: GalleryItem[] };
-			};
-			if (!response.ok || data.status !== 'success') {
-				throw new Error(data.message || 'No se pudo reordenar la galería.');
-			}
-			galleryItems = Array.isArray(data.data?.gallery_images) ? data.data.gallery_images : copy;
-			renderGalleryGrid();
-			syncPreview();
-		} catch (error) {
-			showFeedback(
-				error instanceof Error ? error.message : 'No se pudo reordenar la galería.',
-				'error'
-			);
-		}
-	};
-
 	galleryGrid?.addEventListener('click', (event) => {
 		const target = event.target as HTMLElement | null;
 		const removeBtn = target?.closest<HTMLElement>('[data-ppe-gallery-remove]');
 		if (removeBtn) {
 			const id = Number(removeBtn.dataset.id || 0);
 			if (id > 0) void removeGalleryItem(id);
-			return;
-		}
-		const leftBtn = target?.closest<HTMLElement>('[data-ppe-gallery-left]');
-		if (leftBtn) {
-			const id = Number(leftBtn.dataset.id || 0);
-			if (id > 0) void reorderGallery(id, -1);
-			return;
-		}
-		const rightBtn = target?.closest<HTMLElement>('[data-ppe-gallery-right]');
-		if (rightBtn) {
-			const id = Number(rightBtn.dataset.id || 0);
-			if (id > 0) void reorderGallery(id, 1);
 			return;
 		}
 		const openBtn = target?.closest<HTMLElement>('[data-ppe-gallery-open]');

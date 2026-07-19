@@ -13,11 +13,21 @@ export type BusinessHours = {
 	days: BusinessHoursDay[];
 };
 
+export type BusinessHoursLiveStatus = 'open' | 'closed';
+
 export type BusinessHoursDisplayRow = {
 	label: string;
+	/** Turnos formateados (vacío si cerrado). */
+	slots: string[];
+	/** Texto plano (p. ej. a11y / keys). */
 	value: string;
 	closed: boolean;
+	isToday: boolean;
+	liveStatus: BusinessHoursLiveStatus | null;
 };
+
+/** Zona horaria por defecto del producto (Paraguay). */
+export const BUSINESS_HOURS_TIME_ZONE = 'America/Asuncion';
 
 export const BUSINESS_HOURS_DAY_LABELS = [
 	'Lunes',
@@ -177,15 +187,74 @@ const daySignature = (day: BusinessHoursDay): string => {
 		.join('|');
 };
 
-const formatIntervals = (intervals: BusinessHoursInterval[]): string =>
-	intervals.map((interval) => `${interval.start}–${interval.end}`).join(', ');
+const formatSlot = (interval: BusinessHoursInterval): string =>
+	`${interval.start}–${interval.end}`;
+
+const WEEKDAY_SHORT_TO_DAY: Record<string, number> = {
+	Mon: 1,
+	Tue: 2,
+	Wed: 3,
+	Thu: 4,
+	Fri: 5,
+	Sat: 6,
+	Sun: 7,
+};
+
+/** Día 1–7 (Lun–Dom) y minutos desde medianoche en la zona dada. */
+export const getLocalDayAndMinutes = (
+	now: Date = new Date(),
+	timeZone: string = BUSINESS_HOURS_TIME_ZONE
+): { day: number; minutes: number } => {
+	const parts = new Intl.DateTimeFormat('en-US', {
+		timeZone,
+		weekday: 'short',
+		hour: '2-digit',
+		minute: '2-digit',
+		hour12: false,
+	}).formatToParts(now);
+
+	const weekday = parts.find((part) => part.type === 'weekday')?.value || '';
+	const hourRaw = parts.find((part) => part.type === 'hour')?.value || '0';
+	const minuteRaw = parts.find((part) => part.type === 'minute')?.value || '0';
+	const day = WEEKDAY_SHORT_TO_DAY[weekday] || 1;
+	// Some environments emit "24" for midnight with hour12:false
+	let hour = Number(hourRaw);
+	if (hour === 24) hour = 0;
+	const minute = Number(minuteRaw);
+	return {
+		day,
+		minutes: hour * 60 + minute,
+	};
+};
+
+export const isOpenAt = (
+	hours: BusinessHours,
+	now: Date = new Date(),
+	timeZone: string = BUSINESS_HOURS_TIME_ZONE
+): boolean => {
+	const normalized = normalizeBusinessHours(hours);
+	const { day, minutes } = getLocalDayAndMinutes(now, timeZone);
+	const today = normalized.days[day - 1];
+	if (!today || today.closed || !today.intervals.length) return false;
+	return today.intervals.some((interval) => {
+		const start = timeToMinutes(interval.start);
+		const end = timeToMinutes(interval.end);
+		return minutes >= start && minutes < end;
+	});
+};
 
 /** Filas para Overview: agrupa días consecutivos con el mismo horario. */
 export const formatBusinessHoursForDisplay = (
-	hours: BusinessHours
+	hours: BusinessHours,
+	options?: { now?: Date; timeZone?: string }
 ): BusinessHoursDisplayRow[] => {
 	const normalized = normalizeBusinessHours(hours);
 	if (!hasOpenBusinessHours(normalized)) return [];
+
+	const timeZone = options?.timeZone || BUSINESS_HOURS_TIME_ZONE;
+	const now = options?.now || new Date();
+	const { day: todayDay } = getLocalDayAndMinutes(now, timeZone);
+	const openNow = isOpenAt(normalized, now, timeZone);
 
 	const rows: BusinessHoursDisplayRow[] = [];
 	let index = 0;
@@ -200,14 +269,24 @@ export const formatBusinessHoursForDisplay = (
 			end += 1;
 		}
 
+		const isToday = todayDay >= index + 1 && todayDay <= end + 1;
 		const startLabel = BUSINESS_HOURS_DAY_SHORT[index];
 		const endLabel = BUSINESS_HOURS_DAY_SHORT[end];
-		const label = index === end ? startLabel : `${startLabel}–${endLabel}`;
+		const label =
+			isToday && index === end
+				? 'Hoy'
+				: index === end
+					? startLabel
+					: `${startLabel}–${endLabel}`;
 		const closed = current.closed || !current.intervals.length;
+		const slots = closed ? [] : current.intervals.map(formatSlot);
 		rows.push({
 			label,
+			slots,
 			closed,
-			value: closed ? 'Cerrado' : formatIntervals(current.intervals),
+			isToday,
+			liveStatus: isToday ? (openNow ? 'open' : 'closed') : null,
+			value: closed ? 'Cerrado' : slots.join(' | '),
 		});
 		index = end + 1;
 	}
