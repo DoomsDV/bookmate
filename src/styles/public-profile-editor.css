@@ -106,6 +106,35 @@ public-profile-editor {
 	display: none !important;
 }
 
+/*
+ * Preferencia de pestaña en <html> (script del <head>): evita FOUC
+ * General → pestaña guardada antes de que hidrate el módulo TS.
+ */
+html[data-ppe-tab-pref] .ppe-tab.is-active {
+	color: var(--on-surface-variant);
+	border-bottom-color: transparent;
+	background: transparent;
+}
+
+html[data-ppe-tab-pref='general'] .ppe-tab[data-ppe-tab='general'],
+html[data-ppe-tab-pref='apariencia'] .ppe-tab[data-ppe-tab='apariencia'],
+html[data-ppe-tab-pref='galeria'] .ppe-tab[data-ppe-tab='galeria'],
+html[data-ppe-tab-pref='horario'] .ppe-tab[data-ppe-tab='horario'] {
+	color: var(--primary);
+	border-bottom-color: var(--primary);
+}
+
+html[data-ppe-tab-pref] .ppe-panel {
+	display: none !important;
+}
+
+html[data-ppe-tab-pref='general'] .ppe-panel[data-ppe-panel='general'],
+html[data-ppe-tab-pref='apariencia'] .ppe-panel[data-ppe-panel='apariencia'],
+html[data-ppe-tab-pref='galeria'] .ppe-panel[data-ppe-panel='galeria'],
+html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
+	display: grid !important;
+}
+
 @media (min-width: 1024px) {
 	/* Main no scrollea: solo la columna izquierda (.ppe-config-pane) */
 	.app-shell > :last-child > main.ppe-main {
@@ -175,8 +204,12 @@ public-profile-editor {
 		justify-content: flex-start;
 		width: 20.5rem;
 		max-height: 100%;
-		overflow: hidden;
+		/* visible: no cortar el bisel redondeado ni los botones laterales */
+		overflow: visible;
+		padding-top: 0.35rem;
 		padding-bottom: 5.5rem;
+		padding-inline: 0.2rem;
+		box-sizing: border-box;
 	}
 
 	.ppe-phone {
@@ -464,6 +497,11 @@ public-profile-editor {
 	border-bottom: 1px solid var(--shell-border);
 }
 
+/* En el mockup, deja aire bajo el Dynamic Island */
+.ppe-phone .ppe-preview-topbar {
+	padding-top: 1.55rem;
+}
+
 .ppe-preview-topbar__brand {
 	display: inline-flex;
 	align-items: center;
@@ -645,7 +683,7 @@ public-profile-editor {
 	justify-content: center;
 }
 
-/* Phone chrome — mismo lenguaje visual que el landing (hero-phone) */
+/* Phone chrome — mockup tipo iPhone (bisel, island, botones, home bar) */
 .ppe-phone {
 	width: min(100%, 17.5rem);
 	margin: 0 auto;
@@ -654,38 +692,101 @@ public-profile-editor {
 .ppe-phone__bezel {
 	position: relative;
 	width: 100%;
-	padding: 0.42rem;
-	border-radius: 1.85rem;
-	background: linear-gradient(160deg, #3a3d46 0%, #1c1e24 42%, #12141a 100%);
-	border: 1px solid rgba(255, 255, 255, 0.1);
+	padding: 0.55rem;
+	border-radius: 2.15rem;
+	background:
+		linear-gradient(155deg, #4a4e58 0%, #2a2d35 28%, #15171c 68%, #0c0d11 100%);
+	border: 1px solid rgba(255, 255, 255, 0.14);
 	box-shadow:
-		0 1px 0 rgba(255, 255, 255, 0.08) inset,
-		0 10px 25px rgba(0, 0, 0, 0.08);
+		0 1px 0 rgba(255, 255, 255, 0.14) inset,
+		0 -1px 0 rgba(0, 0, 0, 0.45) inset,
+		0 0 0 1px rgba(0, 0, 0, 0.35),
+		0 18px 36px rgba(0, 0, 0, 0.28);
+}
+
+/* Botones físicos laterales */
+.ppe-phone__btn {
+	position: absolute;
+	z-index: 2;
+	background: linear-gradient(90deg, #2a2d34, #1a1c22);
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	pointer-events: none;
+}
+
+.ppe-phone__btn--silent {
+	left: -2px;
+	top: 5.25rem;
+	width: 3px;
+	height: 1.05rem;
+	border-radius: 2px 0 0 2px;
+}
+
+.ppe-phone__btn--vol-up {
+	left: -2px;
+	top: 7.1rem;
+	width: 3px;
+	height: 1.55rem;
+	border-radius: 2px 0 0 2px;
+}
+
+.ppe-phone__btn--vol-down {
+	left: -2px;
+	top: 9rem;
+	width: 3px;
+	height: 1.55rem;
+	border-radius: 2px 0 0 2px;
+}
+
+.ppe-phone__btn--power {
+	right: -2px;
+	top: 7.6rem;
+	width: 3px;
+	height: 2.35rem;
+	border-radius: 0 2px 2px 0;
+	background: linear-gradient(270deg, #2a2d34, #1a1c22);
 }
 
 .ppe-phone__island {
 	position: absolute;
 	z-index: 6;
-	top: 0.72rem;
+	top: 0.85rem;
 	left: 50%;
 	transform: translateX(-50%);
-	width: 28%;
-	height: 0.72rem;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	width: 5.6rem;
+	height: 1.15rem;
+	padding: 0 0.45rem;
 	border-radius: 999px;
 	background: #050608;
-	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+	box-shadow:
+		0 0 0 1px rgba(255, 255, 255, 0.05),
+		0 2px 6px rgba(0, 0, 0, 0.45);
 	pointer-events: none;
+}
+
+.ppe-phone__island-lens {
+	width: 0.42rem;
+	height: 0.42rem;
+	border-radius: 999px;
+	background: radial-gradient(circle at 35% 35%, #3b4a6b 0%, #152033 55%, #050608 100%);
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .ppe-phone__screen {
 	position: relative;
 	height: min(62vh, 34rem);
 	overflow: auto;
-	border-radius: 1.45rem;
+	border-radius: 1.7rem;
 	background: var(--surface, #fafbfc);
-	box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55) inset;
+	box-shadow:
+		0 0 0 1px rgba(0, 0, 0, 0.65) inset,
+		0 0 0 0.5px rgba(255, 255, 255, 0.04);
 	scrollbar-width: none;
 	-ms-overflow-style: none;
+	/* Espacio para el home indicator fijo */
+	padding-bottom: 0.85rem;
 }
 
 .ppe-phone__screen::-webkit-scrollbar {
@@ -694,8 +795,27 @@ public-profile-editor {
 	height: 0;
 }
 
+/* Home indicator (barra inferior iOS), fijo sobre el bisel */
+.ppe-phone__home {
+	position: absolute;
+	z-index: 7;
+	bottom: 0.78rem;
+	left: 50%;
+	transform: translateX(-50%);
+	display: block;
+	width: 6.5rem;
+	height: 0.28rem;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.32);
+	pointer-events: none;
+}
+
 html[data-theme='dark'] .ppe-phone__screen {
 	background: var(--surface, #191919);
+}
+
+html[data-theme='dark'] .ppe-phone__home {
+	background: rgba(255, 255, 255, 0.28);
 }
 
 @media (min-width: 1024px) {

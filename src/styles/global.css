@@ -432,6 +432,17 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		overflow: clip;
 	}
 
+	/* Sin animación en el primer paint al restaurar desde localStorage */
+	html[data-sidebar-booting] .app-shell {
+		transition: none !important;
+	}
+
+	/*
+	 * Preferencia en <html> (seteada en <head>): evita el flash expandido→colapsado
+	 * antes de que exista [data-app-shell] en el DOM.
+	 */
+	html[data-sidebar-pref='collapsed'] .app-shell,
+	html[data-sidebar-pref='collapsed'] [data-app-shell],
 	[data-app-shell][data-sidebar-state="collapsed"] {
 		grid-template-columns: 5.5rem minmax(0, 1fr);
 	}

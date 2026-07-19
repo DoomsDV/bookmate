@@ -210,6 +210,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		const logoutForms = document.querySelectorAll<HTMLFormElement>('[data-logout-form]');
 		
 		const desktopBreakpoint = window.matchMedia('(min-width: 1024px)');
+		const SIDEBAR_STATE_KEY = 'hasel-sidebar-state';
 
 		// Profile Menu Actions
 		const closeProfileMenus = () => {
@@ -288,10 +289,37 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			setNavTogglesExpanded(isExpanded);
 		};
 
+		const persistDesktopSidebarState = (state: 'expanded' | 'collapsed') => {
+			try {
+				localStorage.setItem(SIDEBAR_STATE_KEY, state);
+			} catch {
+				/* ignore quota / private mode */
+			}
+			document.documentElement.setAttribute('data-sidebar-pref', state);
+		};
+
+		const restoreDesktopSidebarState = () => {
+			if (!appShell || !desktopBreakpoint.matches) return;
+			let stored: string | null = null;
+			try {
+				stored = localStorage.getItem(SIDEBAR_STATE_KEY);
+			} catch {
+				stored = null;
+			}
+			if (stored === 'collapsed' || stored === 'expanded') {
+				appShell.setAttribute('data-sidebar-state', stored);
+				document.documentElement.setAttribute('data-sidebar-pref', stored);
+			}
+			document.documentElement.removeAttribute('data-sidebar-booting');
+			syncDesktopToggle();
+		};
+
 		const toggleDesktopSidebar = () => {
 			if (!appShell) return;
 			const isCollapsed = appShell.getAttribute('data-sidebar-state') === 'collapsed';
-			appShell.setAttribute('data-sidebar-state', isCollapsed ? 'expanded' : 'collapsed');
+			const nextState = isCollapsed ? 'expanded' : 'collapsed';
+			appShell.setAttribute('data-sidebar-state', nextState);
+			persistDesktopSidebarState(nextState);
 			syncDesktopToggle();
 		};
 
@@ -350,7 +378,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		const syncOnResize = () => {
 			if (desktopBreakpoint.matches) {
 				closeSideNav();
-				syncDesktopToggle();
+				restoreDesktopSidebarState();
 			} else {
 				setNavTogglesExpanded(false);
 			}
@@ -386,6 +414,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		// Initialization logic wrapper
 		enrichLogoutForms();
 		applyTheme(resolveInitialTheme());
+		restoreDesktopSidebarState();
 		syncOnResize();
 		maybeShowSettingsMenuTour();
 	};

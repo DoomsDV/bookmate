@@ -266,16 +266,40 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		bannerChange?.classList.toggle('hidden', !url);
 	};
 
-	const activateTab = (tabId: string) => {
+	const PPE_TAB_KEY = 'hasel-ppe-active-tab';
+	const PPE_TAB_IDS = new Set(
+		tabButtons.map((btn) => String(btn.dataset.ppeTab || '')).filter(Boolean)
+	);
+
+	const activateTab = (tabId: string, options?: { persist?: boolean }) => {
+		const nextId = PPE_TAB_IDS.has(tabId) ? tabId : 'general';
 		for (const btn of tabButtons) {
-			const active = btn.dataset.ppeTab === tabId;
+			const active = btn.dataset.ppeTab === nextId;
 			btn.classList.toggle('is-active', active);
 			btn.setAttribute('aria-selected', active ? 'true' : 'false');
 			btn.tabIndex = active ? 0 : -1;
 		}
 		for (const panel of panels) {
-			panel.hidden = panel.dataset.ppePanel !== tabId;
+			panel.hidden = panel.dataset.ppePanel !== nextId;
 		}
+		document.documentElement.setAttribute('data-ppe-tab-pref', nextId);
+		if (options?.persist !== false) {
+			try {
+				localStorage.setItem(PPE_TAB_KEY, nextId);
+			} catch {
+				/* ignore */
+			}
+		}
+	};
+
+	const restoreActiveTab = () => {
+		let stored: string | null = null;
+		try {
+			stored = localStorage.getItem(PPE_TAB_KEY);
+		} catch {
+			stored = null;
+		}
+		activateTab(stored && PPE_TAB_IDS.has(stored) ? stored : 'general', { persist: false });
 	};
 
 	const syncLightbox = () => {
@@ -710,6 +734,58 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		return `+${normalized}`;
 	};
 
+	/** Snapshot del formulario para advertir al salir/refrescar sin guardar. */
+	const getEditorSnapshot = () =>
+		JSON.stringify({
+			slug: normalizeSlugInput(slugInput?.value || ''),
+			description: String(descInput?.value || '').trim(),
+			whatsapp: buildWhatsappPayload(),
+			waEnabled: Boolean(waToggle?.checked),
+			facebook: String(facebookInput?.value || '').trim(),
+			instagram: String(instagramInput?.value || '').trim(),
+			hours: businessHours,
+			logoPending: Boolean(logoBase64),
+			bannerPending: Boolean(bannerBase64),
+			galleryPending: pendingGalleryFiles.length,
+		});
+
+	let savedEditorSnapshot = '';
+	const captureSavedSnapshot = () => {
+		savedEditorSnapshot = getEditorSnapshot();
+	};
+	const hasUnsavedChanges = () =>
+		Boolean(savedEditorSnapshot) && getEditorSnapshot() !== savedEditorSnapshot;
+
+	const UNSAVED_LEAVE_MESSAGE =
+		'Tenés cambios sin guardar en el Perfil Público. Si salís o actualizás la página, se van a perder.';
+
+	const onBeforeUnload = (event: BeforeUnloadEvent) => {
+		if (!hasUnsavedChanges()) return;
+		event.preventDefault();
+		event.returnValue = UNSAVED_LEAVE_MESSAGE;
+	};
+
+	const onAstroBeforePreparation = (event: Event) => {
+		if (!hasUnsavedChanges()) return;
+		const ok = window.confirm(
+			`${UNSAVED_LEAVE_MESSAGE}\n\n¿Querés salir de todos modos?`
+		);
+		if (!ok) {
+			event.preventDefault();
+		}
+	};
+
+	window.addEventListener('beforeunload', onBeforeUnload);
+	document.addEventListener('astro:before-preparation', onAstroBeforePreparation);
+	document.addEventListener(
+		'astro:before-swap',
+		() => {
+			window.removeEventListener('beforeunload', onBeforeUnload);
+			document.removeEventListener('astro:before-preparation', onAstroBeforePreparation);
+		},
+		{ once: true }
+	);
+
 	const clearPendingGalleryFiles = () => {
 		for (const item of pendingGalleryFiles) {
 			URL.revokeObjectURL(item.url);
@@ -1026,6 +1102,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			showFeedback(data.message || 'Perfil público guardado.', 'success');
 			await checkSlug();
 			syncPreview();
+			captureSavedSnapshot();
 		} catch (error) {
 			showFeedback(
 				error instanceof Error ? error.message : 'No fue posible guardar el perfil.',
@@ -1371,6 +1448,8 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 
 	renderGalleryGrid();
 	renderBusinessHours();
+	restoreActiveTab();
 	syncPreview();
+	captureSavedSnapshot();
 	void checkSlug();
 };

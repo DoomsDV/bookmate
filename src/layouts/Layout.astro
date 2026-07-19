@@ -125,11 +125,63 @@ if (flashTypeFromCookie) {
                 document.documentElement.dataset.theme = theme;
             };
 
+            /** Solo desktop: recuerda sidebar colapsado/expandido entre páginas y refrescos. */
+            const SIDEBAR_STATE_KEY = 'hasel-sidebar-state';
+            const applySidebarState = () => {
+                const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+                let stored = null;
+                try {
+                    stored = localStorage.getItem(SIDEBAR_STATE_KEY);
+                } catch (e) {
+                    stored = null;
+                }
+                if (!isDesktop || (stored !== 'collapsed' && stored !== 'expanded')) {
+                    document.documentElement.removeAttribute('data-sidebar-pref');
+                    document.documentElement.removeAttribute('data-sidebar-booting');
+                    return;
+                }
+                // Preferencia en <html> (existe desde el primer paint) + shell si ya está en el DOM
+                document.documentElement.setAttribute('data-sidebar-pref', stored);
+                document.documentElement.setAttribute('data-sidebar-booting', '');
+                document.querySelectorAll('[data-app-shell]').forEach((shell) => {
+                    shell.setAttribute('data-sidebar-state', stored);
+                });
+                // Quitar "booting" tras el primer frame para reactivar transiciones
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        document.documentElement.removeAttribute('data-sidebar-booting');
+                    });
+                });
+            };
+
+            /** Pestaña activa del editor Perfil Público (evita flash General → Galería). */
+            const PPE_TAB_KEY = 'hasel-ppe-active-tab';
+            const PPE_TAB_IDS = ['general', 'apariencia', 'galeria', 'horario'];
+            const applyPpeTabPref = () => {
+                let stored = null;
+                try {
+                    stored = localStorage.getItem(PPE_TAB_KEY);
+                } catch (e) {
+                    stored = null;
+                }
+                if (!stored || PPE_TAB_IDS.indexOf(stored) === -1) {
+                    document.documentElement.removeAttribute('data-ppe-tab-pref');
+                    return;
+                }
+                document.documentElement.setAttribute('data-ppe-tab-pref', stored);
+            };
+
             // 1. Se ejecuta inmediatamente en la carga inicial (evita el FOUC)
             setBookmateTheme();
+            applySidebarState();
+            applyPpeTabPref();
 
             // 2. Se ejecuta cada vez que ClientRouter intercambia el contenido de la página
-            document.addEventListener('astro:after-swap', setBookmateTheme);
+            document.addEventListener('astro:after-swap', () => {
+                setBookmateTheme();
+                applySidebarState();
+                applyPpeTabPref();
+            });
         </script>
         
         <meta name="generator" content={Astro.generator} />

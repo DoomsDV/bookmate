@@ -348,9 +348,16 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 
 	return (
 		<div class="ppe-phone">
-			<div class="ppe-phone__bezel">
-				<span class="ppe-phone__island" aria-hidden="true" />
+			<div class="ppe-phone__bezel" aria-hidden="true">
+				<span class="ppe-phone__btn ppe-phone__btn--silent" />
+				<span class="ppe-phone__btn ppe-phone__btn--vol-up" />
+				<span class="ppe-phone__btn ppe-phone__btn--vol-down" />
+				<span class="ppe-phone__btn ppe-phone__btn--power" />
+				<span class="ppe-phone__island">
+					<span class="ppe-phone__island-lens" />
+				</span>
 				<div class="ppe-phone__screen hub-root ppe-preview-hub">{hubBody}</div>
+				<span class="ppe-phone__home" />
 			</div>
 		</div>
 	);

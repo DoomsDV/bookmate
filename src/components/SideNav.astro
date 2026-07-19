@@ -103,6 +103,22 @@ const showPlanFooter = canAccessPath("/panel/plan", currentRoleId);
 const planFooterActive = activePath === "/panel/plan";
 ---
 
+{/* Sync inmediato del shell (antes del paint del sidebar) — solo desktop */}
+<script is:inline>
+	(function () {
+		try {
+			if (!window.matchMedia('(min-width: 1024px)').matches) return;
+			var stored = localStorage.getItem('hasel-sidebar-state');
+			if (stored !== 'collapsed' && stored !== 'expanded') return;
+			var shell =
+				(document.currentScript && document.currentScript.closest('[data-app-shell]')) ||
+				document.querySelector('[data-app-shell]');
+			if (shell) shell.setAttribute('data-sidebar-state', stored);
+			document.documentElement.setAttribute('data-sidebar-pref', stored);
+		} catch (e) {}
+	})();
+</script>
+
 <div
 	class="pointer-events-none fixed inset-0 z-50 flex items-end justify-center lg:hidden"
 	data-side-nav-shell
