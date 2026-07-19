@@ -161,12 +161,6 @@ export default function PublicProfilePreview({ initial }: Props) {
 										Reservar
 									</span>
 								</div>
-								{hasDescription ? (
-									<>
-										<div class="hub-hero__divider" aria-hidden="true" />
-										<p class="hub-hero__bio">{description}</p>
-									</>
-								) : null}
 							</div>
 						</section>
 

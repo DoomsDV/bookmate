@@ -310,14 +310,6 @@ const serializedProfessionals = professionals.length
 									Reservar
 								</a>
 							</div>
-							{description ? (
-								<>
-									<div class="hub-hero__divider" aria-hidden="true" />
-									<p id="hub-about-title" class="hub-hero__bio">
-										{description}
-									</p>
-								</>
-							) : null}
 						</div>
 					</section>
 
@@ -408,14 +400,22 @@ const serializedProfessionals = professionals.length
 						>
 							<div class="hub-panel-header">
 								<h2 id="hub-team-title" class="hub-section-title">Equipo</h2>
-								<div class="hub-location-filter" data-hub-location-filter hidden>
+								<div
+									class="hub-location-filter"
+									data-hub-location-filter
+									hidden
+									role="status"
+								>
+									<span class="hub-location-filter__label">Sucursal:</span>
 									<span class="hub-location-filter__text" data-hub-location-filter-label></span>
 									<button
 										type="button"
 										class="hub-location-filter__clear"
 										data-hub-clear-location-filter
+										aria-label="Quitar filtro de sucursal"
+										title="Quitar filtro"
 									>
-										Ver todos
+										<span class="material-symbols-rounded" aria-hidden="true">close</span>
 									</button>
 								</div>
 							</div>
@@ -531,9 +531,7 @@ const serializedProfessionals = professionals.length
 																data-loc-id={canFilterHere ? String(loc.id_location) : '0'}
 																data-loc-name={canFilterHere ? loc.name : ''}
 															>
-																{canFilterHere
-																	? 'Ver profesionales aquí'
-																	: 'Ver profesionales'}
+																Ver profesionales
 															</button>
 														)}
 													</div>
@@ -875,7 +873,7 @@ const serializedProfessionals = professionals.length
 			if (filterBar && filterLabel) {
 				if (activeLocId && locName) {
 					filterBar.hidden = false;
-					filterLabel.textContent = `En ${locName}`;
+					filterLabel.textContent = locName;
 				} else {
 					filterBar.hidden = true;
 					filterLabel.textContent = '';
@@ -887,7 +885,20 @@ const serializedProfessionals = professionals.length
 			}
 		};
 
-		const setActiveTab = (tabId: string, { updateHash = true } = {}) => {
+		const scrollToPanel = (tabId: string) => {
+			const target =
+				root.querySelector<HTMLElement>(`[data-hub-panel="${tabId}"]`) ||
+				root.querySelector<HTMLElement>(`#${tabId}`);
+			if (!target) return;
+			window.requestAnimationFrame(() => {
+				target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+			});
+		};
+
+		const setActiveTab = (
+			tabId: string,
+			{ updateHash = true, scrollIntoView = false }: { updateHash?: boolean; scrollIntoView?: boolean } = {}
+		) => {
 			const safeTab = VALID_TABS.has(tabId) ? tabId : 'overview';
 			tabs.forEach((tab) => {
 				const active = tab.dataset.hubTab === safeTab;
@@ -908,8 +919,8 @@ const serializedProfessionals = professionals.length
 			if (safeTab === 'sucursales') {
 				void initHubMaps(root);
 			}
-			if (safeTab !== 'equipo' && activeLocId) {
-				/* keep filter when returning to equipo */
+			if (scrollIntoView) {
+				scrollToPanel(safeTab);
 			}
 		};
 
@@ -936,7 +947,7 @@ const serializedProfessionals = professionals.length
 				const locId = Number(btn.getAttribute('data-loc-id') || 0);
 				const locName = String(btn.getAttribute('data-loc-name') || '').trim();
 				applyLocationFilter(locId, locName);
-				setActiveTab('equipo');
+				setActiveTab('equipo', { scrollIntoView: true });
 			});
 		});
 
