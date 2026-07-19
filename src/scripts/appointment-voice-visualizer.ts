@@ -252,6 +252,11 @@ export class AppointmentVoiceVisualizer {
 	}
 
 	#tick = () => {
+		if (this.#mode === 'off' || (typeof document !== 'undefined' && document.hidden)) {
+			this.stop();
+			return;
+		}
+
 		if (this.#mode === 'collapsing') {
 			this.advanceCollapse();
 		}

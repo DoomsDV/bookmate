@@ -662,6 +662,13 @@ const googleMapsApiKey =
 				attributes: true,
 				attributeFilter: ["data-theme"],
 			});
+
+			document.addEventListener(
+				"visibilitychange",
+				this.handleVisibilityChange,
+				{ signal },
+			);
+			window.addEventListener("pagehide", this.handlePageHide, { signal });
 		}
 
 		disconnectedCallback() {
@@ -672,7 +679,80 @@ const googleMapsApiKey =
 			destroySearchableSelect(this.formEls?.department);
 			destroySearchableSelect(this.formEls?.city);
 			if (this.closeTimer) window.clearTimeout(this.closeTimer);
+			this.destroyMapInstance();
 		}
+
+		private handleVisibilityChange = () => {
+			if (document.hidden) {
+				this.freezeMapForBackground();
+				return;
+			}
+			this.unfreezeMapFromBackground();
+		};
+
+		private handlePageHide = () => {
+			this.freezeMapForBackground();
+		};
+
+		/** Evita trabajo de tiles/gestures de Maps en segundo plano. */
+		private freezeMapForBackground = () => {
+			if (!this.mapInstance?.setOptions) {
+				this.destroyMapInstance();
+				return;
+			}
+			try {
+				this.mapInstance.setOptions({
+					gestureHandling: "none",
+					draggable: false,
+					scrollwheel: false,
+					disableDoubleClickZoom: true,
+				});
+			} catch {
+				this.destroyMapInstance();
+			}
+		};
+
+		private unfreezeMapFromBackground = () => {
+			if (!this.mapInstance?.setOptions) return;
+			if (!this.els.modal?.open) {
+				this.destroyMapInstance();
+				return;
+			}
+			const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+			try {
+				this.mapInstance.setOptions({
+					gestureHandling: isCoarsePointer ? "cooperative" : "greedy",
+					draggable: true,
+					scrollwheel: true,
+					disableDoubleClickZoom: false,
+				});
+			} catch {
+				// ignore
+			}
+		};
+
+		private destroyMapInstance = () => {
+			try {
+				this.mapMarker?.setMap?.(null);
+			} catch {
+				// ignore
+			}
+			this.mapMarker = null;
+
+			const maps = (window as any).google?.maps;
+			if (this.mapInstance && maps?.event?.clearInstanceListeners) {
+				try {
+					maps.event.clearInstanceListeners(this.mapInstance);
+				} catch {
+					// ignore
+				}
+			}
+			this.mapInstance = null;
+
+			if (this.els?.mapContainer) {
+				this.els.mapContainer.replaceChildren();
+			}
+		};
 
 		private isDarkTheme = () =>
 			document.documentElement.dataset.theme === "dark";
@@ -1326,6 +1406,7 @@ const googleMapsApiKey =
 				this.els.form?.reset();
 				destroySearchableSelect(this.formEls?.department);
 				destroySearchableSelect(this.formEls?.city);
+				this.destroyMapInstance();
 				this.setCreateMode();
 				this.setFormLoadingState(false);
 				this.clearErrors();

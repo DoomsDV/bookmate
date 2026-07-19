@@ -51,10 +51,13 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		const visualizerRoot = this.querySelector<HTMLElement>('[data-voice-overlay-visualizer]');
 		if (visualizerRoot) {
 			this.#visualizer = new AppointmentVoiceVisualizer(visualizerRoot);
-			this.#visualizer.setMode('idle');
+			// off por defecto: no arrancar rAF hasta que el overlay se abra.
+			this.#visualizer.setMode('off');
 		}
 
 		document.addEventListener('click', this.handleDocumentClick, { signal });
+		document.addEventListener('visibilitychange', this.handleVisibilityChange, { signal });
+		window.addEventListener('pagehide', this.handlePageHide, { signal });
 		this.querySelectorAll('[data-voice-overlay-close]').forEach((button) => {
 			button.addEventListener(
 				'click',
@@ -230,6 +233,45 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		const mode = trigger.dataset.appointmentVoiceMode === 'inline' ? 'inline' : 'navigate';
 		this.open({ mode });
 	};
+
+	private handleVisibilityChange = () => {
+		if (document.hidden) {
+			this.pauseForBackground();
+			return;
+		}
+		this.resumeFromBackground();
+	};
+
+	private handlePageHide = () => {
+		this.pauseForBackground();
+	};
+
+	/** Corta mic/rAF/timers al backgroundear sin cerrar el overlay. */
+	private pauseForBackground() {
+		const state = this.dataset.voiceState as VoiceUiState | undefined;
+		if (state === 'recording' || state === 'paused') {
+			void this.stopRecording(false);
+			this.setError(
+				'La grabación se detuvo al salir de la app. Tocá el micrófono para empezar de nuevo.'
+			);
+		}
+
+		this.clearMaxRecordingTimer();
+		this.stopElapsedTimer();
+		this.teardownAudioAnalysis();
+		this.#visualizer?.cancelCollapse();
+		this.#visualizer?.setMode('off');
+	}
+
+	private resumeFromBackground() {
+		const shell = this.querySelector<HTMLDialogElement>('[data-voice-overlay-shell]');
+		if (!shell?.open) return;
+
+		const state = this.dataset.voiceState as VoiceUiState | undefined;
+		if (state === 'idle' || state === 'paused' || !state) {
+			this.#visualizer?.setMode('idle');
+		}
+	}
 
 	private handleRecordToggle = () => {
 		const state = this.dataset.voiceState as VoiceUiState | undefined;

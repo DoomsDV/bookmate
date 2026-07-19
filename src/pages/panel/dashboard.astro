@@ -1969,6 +1969,15 @@ const toPageHref = (page: number) => {
 		scrollToUpcomingAppointmentsIfNeeded();
 	};
 
+	if (!(window as unknown as { __haselDashVisibilityBound?: boolean }).__haselDashVisibilityBound) {
+		(window as unknown as { __haselDashVisibilityBound?: boolean }).__haselDashVisibilityBound = true;
+		const syncPageHidden = () => {
+			document.documentElement.toggleAttribute('data-page-hidden', document.hidden);
+		};
+		syncPageHidden();
+		document.addEventListener('visibilitychange', syncPageHidden);
+	}
+
 	if (!(window as unknown as { __haselDashCobrosListeners?: boolean }).__haselDashCobrosListeners) {
 		(window as unknown as { __haselDashCobrosListeners?: boolean }).__haselDashCobrosListeners = true;
 		document.addEventListener('hasel:subscription', () => {
@@ -2785,7 +2794,6 @@ const toPageHref = (page: number) => {
 		font-size: 1.2rem;
 		color: var(--primary);
 		line-height: 1;
-		animation: dashboard-ai-strip-sparkle 3.6s ease-in-out infinite;
 	}
 
 	.dashboard-ai-strip__meta {
@@ -5608,5 +5616,21 @@ const toPageHref = (page: number) => {
 		.dashboard-ai-card.is-generating .dashboard-ai-orb {
 			opacity: 0.35;
 		}
+	}
+
+	/* Pausar animaciones infinitas al backgroundear (calor en PWA iOS/Android). */
+	html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__glow::before,
+	html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__icon,
+	html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__badge,
+	html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-line::after,
+	html[data-page-hidden] .dashboard-ai-modal-mark::before,
+	html[data-page-hidden] .dashboard-ai-modal-mark__icon,
+	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-shimmer-top::after,
+	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-orb,
+	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-sparkle,
+	html[data-page-hidden] .dashboard-ai-card.is-generating,
+	html[data-page-hidden] .dashboard-ai-loading-icon,
+	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after {
+		animation-play-state: paused !important;
 	}
 </style>
