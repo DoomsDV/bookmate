@@ -10,7 +10,7 @@ const SESSION_RETRY_HEADER = 'x-bookmate-session-retry';
 
 const REFRESH_PATH = '/api/auth/refresh';
 const LOGOUT_PATH = '/api/auth/logout';
-const LOGIN_PATH = '/api/auth/login';
+const LOGIN_PATH = '/auth/login';
 
 const EXCLUDED_API_PREFIXES = [
 	'/api/public/',

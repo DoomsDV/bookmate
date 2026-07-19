@@ -9,6 +9,7 @@ import {
 	type BusinessHours,
 	type BusinessHoursDay,
 } from '../lib/business-hours';
+import { showFlashMessage } from '../lib/flash';
 import {
 	ProfileImageCropper,
 	isAcceptedProfileImage,
@@ -138,7 +139,6 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const facebookInput = root.querySelector<HTMLInputElement>('[data-ppe-facebook]');
 	const instagramInput = root.querySelector<HTMLInputElement>('[data-ppe-instagram]');
 	const hoursList = root.querySelector<HTMLElement>('[data-ppe-hours-list]');
-	const feedback = root.querySelector<HTMLElement>('[data-ppe-feedback]');
 	const saveBtn = root.querySelector<HTMLButtonElement>('[data-ppe-save]');
 	const openPublic = root.querySelector<HTMLAnchorElement>('[data-ppe-open-public]');
 	const copyBtn = root.querySelector<HTMLButtonElement>('[data-ppe-copy-url]');
@@ -216,11 +216,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const initials = initialsFromName(bootstrap.organizationName);
 
 	const showFeedback = (message: string, kind: 'success' | 'error') => {
-		if (!feedback) return;
-		feedback.hidden = !message;
-		feedback.textContent = message;
-		feedback.classList.toggle('is-success', kind === 'success');
-		feedback.classList.toggle('is-error', kind === 'error');
+		const text = String(message || '').trim();
+		if (!text) return;
+		showFlashMessage({ message: text, type: kind, autoHideMs: 4000 });
 	};
 
 	const setLogoPreview = (url: string) => {

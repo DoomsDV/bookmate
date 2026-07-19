@@ -111,9 +111,42 @@ if (flashTypeFromCookie) {
 
         <script>
             import { registerSW } from 'virtual:pwa-register';
-            
+
+            const PWA_PENDING_UPDATE_KEY = 'hasel-pwa-pending-update';
+
+            const isAuthRoute = (pathname = window.location.pathname) =>
+                pathname === '/auth' || pathname.startsWith('/auth/');
+
             if ('serviceWorker' in navigator) {
-                registerSW({ immediate: true });
+                const updateSW = registerSW({
+                    immediate: true,
+                    onNeedRefresh() {
+                        // No forzar reload en login/registro: el usuario pierde el form.
+                        if (isAuthRoute()) {
+                            try {
+                                sessionStorage.setItem(PWA_PENDING_UPDATE_KEY, '1');
+                            } catch {
+                                // ignore
+                            }
+                            return;
+                        }
+                        void updateSW(true);
+                    },
+                });
+
+                const flushPendingUpdate = () => {
+                    if (isAuthRoute()) return;
+                    try {
+                        if (sessionStorage.getItem(PWA_PENDING_UPDATE_KEY) !== '1') return;
+                        sessionStorage.removeItem(PWA_PENDING_UPDATE_KEY);
+                    } catch {
+                        return;
+                    }
+                    void updateSW(true);
+                };
+
+                document.addEventListener('astro:after-swap', flushPendingUpdate);
+                document.addEventListener('astro:page-load', flushPendingUpdate);
             }
         </script>
 

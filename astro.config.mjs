@@ -40,7 +40,9 @@ export default defineConfig({
   
   integrations: [preact(), // <-- Agregamos y configuramos la PWA aquí
   AstroPWA({
-    registerType: 'autoUpdate',
+    // prompt: evita location.reload() automático al activar un SW nuevo
+    // (con autoUpdate el login/auth se recargaba solo al entrar).
+    registerType: 'prompt',
     manifest: {
       name: 'Hasel',
       short_name: 'Hasel',
