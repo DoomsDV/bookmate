@@ -1,3 +1,5 @@
+import type { BusinessHoursDisplayRow } from './business-hours';
+
 export type PublicProfilePreviewState = {
 	organizationName: string;
 	initials: string;
@@ -12,6 +14,8 @@ export type PublicProfilePreviewState = {
 	profileSlug: string;
 	locationLabel: string;
 	teamCount: number;
+	/** Filas de horario comercial para Overview; vacío = ocultar bloque. */
+	businessHoursRows: BusinessHoursDisplayRow[];
 };
 
 export const PUBLIC_PROFILE_PREVIEW_EVENT = 'ppe:preview-update';

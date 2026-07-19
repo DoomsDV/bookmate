@@ -1,6 +1,7 @@
 ---
 import Layout from '../../layouts/Layout.astro';
 import PublicHaselTopbar from '../../components/PublicHaselTopbar.astro';
+import { formatBusinessHoursForDisplay } from '../../lib/business-hours';
 import { PublicBookingApiError, getPublicProfileSpecialtyLabel } from '../../lib/public-booking';
 import { buildGoogleMapsUrl } from '../../lib/public-booking-locations';
 import {
@@ -98,15 +99,23 @@ const galleryBlocks = chunkArray(galleryImages, 4);
 const bannerUrl = String(hub?.banner_url || '').trim();
 const facebookUrl = String(hub?.facebook_url || '').trim();
 const instagramUrl = String(hub?.instagram_url || '').trim();
+const businessHoursRows = hub?.business_hours
+	? formatBusinessHoursForDisplay(hub.business_hours)
+	: [];
 const singlePro = professionals.length === 1 ? professionals[0] : null;
 const reserveHref = singlePro?.booking_path || '#equipo';
 const hubUrl = siteOrigin ? `${siteOrigin}${canonicalPath}` : canonicalPath;
 const waHref = hub ? whatsappHref(hub.public_whatsapp) : '';
 const profileHandle = organizationSlug ? `@${organizationSlug}` : '';
-const primaryLocation = locations[0];
+const locationCount = locations.length;
+const singleLocationName =
+	String(locations[0]?.name || '').trim() || String(locations[0]?.address || '').trim();
 const locationLabel =
-	String(primaryLocation?.name || '').trim() ||
-	String(primaryLocation?.address || '').trim();
+	locationCount === 0
+		? ''
+		: locationCount === 1
+			? singleLocationName
+			: `${locationCount} sucursales`;
 const teamLabel = professionals.length
 	? `${professionals.length} profesional${professionals.length === 1 ? '' : 'es'}`
 	: '';
@@ -331,23 +340,41 @@ const serializedProfessionals = professionals.length
 							data-hub-panel="overview"
 							aria-labelledby="hub-services-title"
 						>
-							{serviceCategories.length ? (
-								<div class="hub-pin-block" aria-label="Servicios principales">
-									<p id="hub-services-title" class="hub-pin-block__label">
-										<span class="material-symbols-rounded" aria-hidden="true">keep</span>
-										Servicios
-									</p>
-									<ul class="hub-categories__list">
-										{serviceCategories.map((category) => (
-											<li>
-												<span class="hub-category-tag">{category}</span>
-											</li>
-										))}
-									</ul>
-								</div>
-							) : (
-								<p class="hub-empty">Todavía no hay servicios destacados.</p>
-							)}
+							<div class="hub-overview-stack">
+								{serviceCategories.length ? (
+									<div class="hub-pin-block" aria-label="Servicios principales">
+										<p id="hub-services-title" class="hub-pin-block__label">
+											<span class="material-symbols-rounded" aria-hidden="true">keep</span>
+											Servicios
+										</p>
+										<ul class="hub-categories__list">
+											{serviceCategories.map((category) => (
+												<li>
+													<span class="hub-category-tag">{category}</span>
+												</li>
+											))}
+										</ul>
+									</div>
+								) : (
+									<p class="hub-empty">Todavía no hay servicios destacados.</p>
+								)}
+								{businessHoursRows.length ? (
+									<div class="hub-pin-block hub-hours" aria-label="Horario comercial">
+										<p class="hub-pin-block__label">
+											<span class="material-symbols-rounded" aria-hidden="true">schedule</span>
+											Horario
+										</p>
+										<ul class="hub-hours__list">
+											{businessHoursRows.map((row) => (
+												<li class:list={[{ 'is-closed': row.closed }]}>
+													<span class="hub-hours__day">{row.label}</span>
+													<span class="hub-hours__value">{row.value}</span>
+												</li>
+											))}
+										</ul>
+									</div>
+								) : null}
+							</div>
 						</section>
 
 						<section
@@ -459,7 +486,10 @@ const serializedProfessionals = professionals.length
 														</p>
 													</div>
 												</div>
-												<span class="hub-pro-card__cta">Reservar</span>
+												<span class="hub-pro-card__cta">
+													<span class="material-symbols-rounded" aria-hidden="true">event</span>
+													Reservar
+												</span>
 											</a>
 										);
 									})}
@@ -521,6 +551,9 @@ const serializedProfessionals = professionals.length
 																href={reserveHereHref}
 																class="hub-location-card__cta no-underline"
 															>
+																<span class="material-symbols-rounded" aria-hidden="true"
+																	>event</span
+																>
 																Reservar en esta sucursal
 															</a>
 														) : (
@@ -531,6 +564,9 @@ const serializedProfessionals = professionals.length
 																data-loc-id={canFilterHere ? String(loc.id_location) : '0'}
 																data-loc-name={canFilterHere ? loc.name : ''}
 															>
+																<span class="material-symbols-rounded" aria-hidden="true"
+																	>group</span
+																>
 																Ver profesionales
 															</button>
 														)}

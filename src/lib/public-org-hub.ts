@@ -1,3 +1,5 @@
+import type { BusinessHours } from './business-hours';
+import { parseBusinessHours } from './business-hours';
 import { resolveOrdsPublicApiUrl } from './env-urls';
 import { normalizePublicBookingLocations } from './public-booking-locations';
 import { PublicBookingApiError } from './public-booking';
@@ -44,6 +46,8 @@ export interface PublicOrgHub {
 	banner_url: string;
 	facebook_url: string;
 	instagram_url: string;
+	/** Horario comercial informativo; null si no configurado. */
+	business_hours: BusinessHours | null;
 	description: string;
 	public_whatsapp: string;
 	maintenance: boolean;
@@ -155,6 +159,10 @@ const normalizeOrgHub = (value: unknown): PublicOrgHub | null => {
 		banner_url: String(source.banner_url || '').trim(),
 		facebook_url: String(source.facebook_url || '').trim(),
 		instagram_url: String(source.instagram_url || '').trim(),
+		business_hours:
+			source.business_hours == null || source.business_hours === ''
+				? null
+				: parseBusinessHours(source.business_hours),
 		description: String(source.description || '').trim(),
 		public_whatsapp: String(source.public_whatsapp || '').trim(),
 		maintenance:

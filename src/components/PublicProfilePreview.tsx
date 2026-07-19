@@ -192,25 +192,48 @@ export default function PublicProfilePreview({ initial }: Props) {
 								class={`hub-panel ${activeTab === 'overview' ? 'is-active' : ''}`}
 								hidden={activeTab !== 'overview'}
 							>
-								{state.serviceCategories?.length ? (
-									<div class="hub-pin-block">
-										<p class="hub-pin-block__label">
-											<span class="material-symbols-rounded" aria-hidden="true">
-												keep
-											</span>
-											Servicios
-										</p>
-										<ul class="hub-categories__list">
-											{state.serviceCategories.slice(0, 8).map((category) => (
-												<li key={category}>
-													<span class="hub-category-tag">{category}</span>
-												</li>
-											))}
-										</ul>
-									</div>
-								) : (
-									<p class="hub-empty">Todavía no hay servicios destacados.</p>
-								)}
+								<div class="hub-overview-stack">
+									{state.serviceCategories?.length ? (
+										<div class="hub-pin-block">
+											<p class="hub-pin-block__label">
+												<span class="material-symbols-rounded" aria-hidden="true">
+													keep
+												</span>
+												Servicios
+											</p>
+											<ul class="hub-categories__list">
+												{state.serviceCategories.slice(0, 8).map((category) => (
+													<li key={category}>
+														<span class="hub-category-tag">{category}</span>
+													</li>
+												))}
+											</ul>
+										</div>
+									) : (
+										<p class="hub-empty">Todavía no hay servicios destacados.</p>
+									)}
+									{state.businessHoursRows?.length ? (
+										<div class="hub-pin-block hub-hours">
+											<p class="hub-pin-block__label">
+												<span class="material-symbols-rounded" aria-hidden="true">
+													schedule
+												</span>
+												Horario
+											</p>
+											<ul class="hub-hours__list">
+												{state.businessHoursRows.map((row) => (
+													<li
+														key={`${row.label}-${row.value}`}
+														class={row.closed ? 'is-closed' : undefined}
+													>
+														<span class="hub-hours__day">{row.label}</span>
+														<span class="hub-hours__value">{row.value}</span>
+													</li>
+												))}
+											</ul>
+										</div>
+									) : null}
+								</div>
 							</section>
 
 							<section

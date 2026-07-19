@@ -97,6 +97,17 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 		payload.instagram_url = String(source?.instagram_url ?? '').trim();
 	}
 
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'business_hours')) {
+		const raw = source?.business_hours;
+		if (raw === null || raw === '') {
+			payload.business_hours = null;
+		} else if (typeof raw === 'string') {
+			payload.business_hours = raw.trim() || null;
+		} else if (typeof raw === 'object') {
+			payload.business_hours = raw;
+		}
+	}
+
 	const timeFormat = String(source?.time_format ?? '').trim();
 	if (timeFormat !== '') {
 		const normalizedTimeFormat = timeFormat.toLowerCase();

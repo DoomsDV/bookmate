@@ -1,3 +1,5 @@
+import type { BusinessHours } from './business-hours';
+
 export interface WorkspaceCatalogOption {
 	id: number;
 	label: string;
@@ -29,6 +31,8 @@ export interface WorkspaceSettingsData {
 	banner_url: string;
 	facebook_url: string;
 	instagram_url: string;
+	/** Horario comercial informativo (perfil); no afecta reservas. */
+	business_hours: BusinessHours | null;
 	gallery_images: WorkspaceGalleryImage[];
 	time_format: string;
 	theme_pref: string;
@@ -52,6 +56,7 @@ export interface UpdateWorkspacePayload {
 	public_whatsapp?: string;
 	facebook_url?: string;
 	instagram_url?: string;
+	business_hours?: BusinessHours | string | null;
 	time_format?: string;
 	theme_pref?: string;
 	hidden_public_price_label?: string;

@@ -1,4 +1,8 @@
 ---
+import {
+	formatBusinessHoursForDisplay,
+	parseBusinessHours,
+} from '../lib/business-hours';
 import type { PublicOrgHub } from '../lib/public-org-hub';
 import type { WorkspaceSettingsData } from '../lib/workspace-settings-shared';
 import {
@@ -31,6 +35,8 @@ const galleryImages = workspace.gallery_images || [];
 const facebookUrl = String(workspace.facebook_url || '').trim();
 const instagramUrl = String(workspace.instagram_url || '').trim();
 const bannerUrl = String(workspace.banner_url || '').trim();
+const businessHours = parseBusinessHours(workspace.business_hours);
+const businessHoursRows = formatBusinessHoursForDisplay(businessHours);
 
 const initials = (() => {
 	const parts = organizationName.trim().split(/\s+/).filter(Boolean);
@@ -66,8 +72,16 @@ const previewInitial = {
 	galleryUrls: galleryImages.map((item) => item.url).filter(Boolean),
 	serviceCategories: hub?.service_categories || [],
 	profileSlug: initialSlug,
-	locationLabel: hub?.locations?.[0]?.name || hub?.locations?.[0]?.address || '',
+	locationLabel: (() => {
+		const locs = hub?.locations || [];
+		if (!locs.length) return '';
+		if (locs.length === 1) {
+			return String(locs[0]?.name || locs[0]?.address || '').trim();
+		}
+		return `${locs.length} sucursales`;
+	})(),
 	teamCount: hub?.professionals?.length || 0,
+	businessHoursRows,
 };
 ---
 
@@ -134,6 +148,18 @@ const previewInitial = {
 						tabindex="-1"
 					>
 						Galería
+					</button>
+					<button
+						type="button"
+						class="ppe-tab"
+						role="tab"
+						id="ppe-tab-horario"
+						aria-selected="false"
+						aria-controls="ppe-panel-horario"
+						data-ppe-tab="horario"
+						tabindex="-1"
+					>
+						Horario
 					</button>
 				</nav>
 
@@ -343,13 +369,6 @@ const previewInitial = {
 								/>
 							</label>
 							<p class="ppe-field__hint">JPG o PNG hasta 5 MB. Recomendado 1200×600 o 1080×566.</p>
-							<label class="ppe-check">
-								<input type="checkbox" data-ppe-banner-compress checked />
-								<span>Comprimir imagen (recomendado)</span>
-							</label>
-							<p class="ppe-field__hint" data-ppe-banner-compress-hint hidden>
-								Se mantiene la resolución; el perfil puede cargar más lento.
-							</p>
 						</div>
 					</section>
 
@@ -368,13 +387,6 @@ const previewInitial = {
 							</span>
 							<p class="ppe-field__hint">
 								Hasta 30 fotos (fachada, interior, servicios). Máximo 5 MB por imagen.
-							</p>
-							<label class="ppe-check">
-								<input type="checkbox" data-ppe-gallery-compress checked />
-								<span>Comprimir imagen (recomendado)</span>
-							</label>
-							<p class="ppe-field__hint" data-ppe-gallery-compress-hint hidden>
-								Se mantiene la resolución; el perfil puede cargar más lento.
 							</p>
 							<ul class="ppe-gallery-grid" data-ppe-gallery-grid>
 								{
@@ -405,6 +417,23 @@ const previewInitial = {
 									multiple
 								/>
 							</label>
+						</div>
+					</section>
+
+					<section
+						class="ppe-panel"
+						role="tabpanel"
+						id="ppe-panel-horario"
+						aria-labelledby="ppe-tab-horario"
+						data-ppe-panel="horario"
+						hidden
+					>
+						<div class="ppe-field">
+							<span class="ppe-field__label">Horario comercial</span>
+							<p class="ppe-field__hint">
+								Se muestra en el Overview del perfil. No afecta la disponibilidad de reservas.
+							</p>
+							<ul class="ppe-hours-list" data-ppe-hours-list></ul>
 						</div>
 					</section>
 				</form>
@@ -441,6 +470,15 @@ const previewInitial = {
 				</button>
 			</div>
 			<div class="ppe-crop-modal__mount" data-ppe-crop-mount></div>
+			<div class="ppe-crop-modal__compress" data-ppe-crop-compress-wrap>
+				<label class="ppe-check ppe-crop-modal__compress-check">
+					<input type="checkbox" data-ppe-crop-compress checked />
+					<span>Comprimir imagen (recomendado)</span>
+				</label>
+				<p class="ppe-field__hint" data-ppe-crop-compress-hint hidden>
+					Se mantiene la resolución; el perfil puede cargar más lento.
+				</p>
+			</div>
 			<div class="ppe-crop-modal__actions">
 				<button type="button" class="ppe-btn ppe-btn-secondary" data-ppe-crop-close>Cancelar</button>
 				<button type="button" class="ppe-btn ppe-btn-primary" data-ppe-crop-confirm>Usar foto</button>
@@ -455,7 +493,7 @@ const previewInitial = {
 				<div>
 					<strong data-ppe-gallery-preview-title>Vista previa</strong>
 					<p class="ppe-gallery-preview-modal__sub" data-ppe-gallery-preview-sub>
-						Revisá las fotos antes de subirlas.
+						Revisá cada foto y elegí si comprimirla antes de subir.
 					</p>
 				</div>
 				<button type="button" class="ppe-icon-btn" data-ppe-gallery-preview-close aria-label="Cerrar">

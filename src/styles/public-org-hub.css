@@ -533,9 +533,45 @@ html[data-theme='dark'] .hub-hero__tagline {
 	white-space: pre-wrap;
 }
 
+.hub-overview-stack {
+	display: grid;
+	gap: 1.35rem;
+}
+
 .hub-pin-block {
 	display: grid;
 	gap: 0.85rem;
+}
+
+.hub-hours__list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: grid;
+	gap: 0.45rem;
+}
+
+.hub-hours__list li {
+	display: grid;
+	grid-template-columns: minmax(4.5rem, auto) 1fr;
+	gap: 0.75rem;
+	align-items: baseline;
+	font-size: 0.92rem;
+	line-height: 1.4;
+}
+
+.hub-hours__day {
+	font-weight: 750;
+	color: var(--on-surface, #1e293b);
+}
+
+.hub-hours__value {
+	color: var(--on-surface-variant, #64748b);
+	font-weight: 600;
+}
+
+.hub-hours__list li.is-closed .hub-hours__value {
+	color: color-mix(in srgb, var(--on-surface-variant, #64748b) 85%, transparent);
 }
 
 .hub-pin-block__label {
@@ -841,6 +877,7 @@ html[data-theme='dark'] .hub-location-card__address {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	gap: 0.35rem;
 	width: auto;
 	max-width: 100%;
 	padding: 0.5rem 1rem;
@@ -857,6 +894,10 @@ html[data-theme='dark'] .hub-location-card__address {
 		background 160ms ease,
 		border-color 160ms ease,
 		color 160ms ease;
+}
+
+.hub-location-card__cta .material-symbols-rounded {
+	font-size: 1.05rem;
 }
 
 .hub-location-card__cta:hover {
@@ -1074,6 +1115,7 @@ html[data-theme='dark'] .hub-pro-card__avatar--ph {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	gap: 0.35rem;
 	width: auto;
 	max-width: 100%;
 	margin-top: 0.15rem;
@@ -1088,6 +1130,10 @@ html[data-theme='dark'] .hub-pro-card__avatar--ph {
 		background 160ms ease,
 		border-color 160ms ease,
 		color 160ms ease;
+}
+
+.hub-pro-card__cta .material-symbols-rounded {
+	font-size: 1.05rem;
 }
 
 .hub-pro-card:hover .hub-pro-card__cta {

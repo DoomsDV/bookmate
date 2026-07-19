@@ -1,4 +1,15 @@
 import {
+	BUSINESS_HOURS_DAY_LABELS,
+	BUSINESS_HOURS_MAX_INTERVALS,
+	defaultOpenInterval,
+	emptyBusinessHours,
+	formatBusinessHoursForDisplay,
+	parseBusinessHours,
+	validateBusinessHours,
+	type BusinessHours,
+	type BusinessHoursDay,
+} from '../lib/business-hours';
+import {
 	ProfileImageCropper,
 	isAcceptedProfileImage,
 	type ProfileCropMode,
@@ -18,6 +29,7 @@ type Bootstrap = {
 		banner_url?: string;
 		facebook_url?: string;
 		instagram_url?: string;
+		business_hours?: BusinessHours | string | null;
 		gallery_images?: GalleryItem[];
 		name?: string;
 	};
@@ -85,12 +97,14 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const waInput = root.querySelector<HTMLInputElement>('[data-ppe-whatsapp]');
 	const facebookInput = root.querySelector<HTMLInputElement>('[data-ppe-facebook]');
 	const instagramInput = root.querySelector<HTMLInputElement>('[data-ppe-instagram]');
+	const hoursList = root.querySelector<HTMLElement>('[data-ppe-hours-list]');
 	const feedback = root.querySelector<HTMLElement>('[data-ppe-feedback]');
 	const saveBtn = root.querySelector<HTMLButtonElement>('[data-ppe-save]');
 	const openPublic = root.querySelector<HTMLAnchorElement>('[data-ppe-open-public]');
 	const copyBtn = root.querySelector<HTMLButtonElement>('[data-ppe-copy-url]');
 	const descMax = Number(bootstrap.descMax || 500);
 	const galleryMax = Number(bootstrap.galleryMax || 30);
+	let businessHours: BusinessHours = parseBusinessHours(bootstrap.workspace?.business_hours);
 
 	const logoInput = root.querySelector<HTMLInputElement>('[data-ppe-logo-input]');
 	const logoDropzone = root.querySelector<HTMLElement>('[data-ppe-logo-dropzone]');
@@ -103,15 +117,11 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const bannerPreview = root.querySelector<HTMLImageElement>('[data-ppe-banner-preview]');
 	const bannerPlaceholder = root.querySelector<HTMLElement>('[data-ppe-banner-placeholder]');
 	const bannerChange = root.querySelector<HTMLElement>('[data-ppe-banner-change]');
-	const bannerCompress = root.querySelector<HTMLInputElement>('[data-ppe-banner-compress]');
-	const bannerCompressHint = root.querySelector<HTMLElement>('[data-ppe-banner-compress-hint]');
 
 	const galleryGrid = root.querySelector<HTMLElement>('[data-ppe-gallery-grid]');
 	const galleryCount = root.querySelector<HTMLElement>('[data-ppe-gallery-count]');
 	const galleryInput = root.querySelector<HTMLInputElement>('[data-ppe-gallery-input]');
 	const galleryDropzone = root.querySelector<HTMLElement>('[data-ppe-gallery-add]');
-	const galleryCompress = root.querySelector<HTMLInputElement>('[data-ppe-gallery-compress]');
-	const galleryCompressHint = root.querySelector<HTMLElement>('[data-ppe-gallery-compress-hint]');
 	const galleryPreviewModal = root.querySelector<HTMLDialogElement>('[data-ppe-gallery-preview-modal]');
 	const galleryPreviewList = root.querySelector<HTMLElement>('[data-ppe-gallery-preview-list]');
 	const galleryPreviewSub = root.querySelector<HTMLElement>('[data-ppe-gallery-preview-sub]');
@@ -133,10 +143,14 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const cropConfirm = root.querySelector<HTMLButtonElement>('[data-ppe-crop-confirm]');
 	const cropTitle = root.querySelector<HTMLElement>('[data-ppe-crop-title]');
 	const cropHint = root.querySelector<HTMLElement>('[data-ppe-crop-hint]');
+	const cropCompressWrap = root.querySelector<HTMLElement>('[data-ppe-crop-compress-wrap]');
+	const cropCompress = root.querySelector<HTMLInputElement>('[data-ppe-crop-compress]');
+	const cropCompressHint = root.querySelector<HTMLElement>('[data-ppe-crop-compress-hint]');
 
 	let cropper: ProfileImageCropper | null = null;
 	let cropMode: ProfileCropMode = 'logo';
 	let pendingCropName = 'logo.jpg';
+	let bannerCompress = true;
 	let logoObjectUrl = '';
 	let logoBase64 = '';
 	let logoName = '';
@@ -150,7 +164,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	let galleryItems: GalleryItem[] = Array.isArray(bootstrap.workspace?.gallery_images)
 		? [...bootstrap.workspace.gallery_images]
 		: [];
-	type PendingGalleryFile = { id: string; file: File; url: string };
+	type PendingGalleryFile = { id: string; file: File; url: string; compress: boolean };
 	let pendingGalleryFiles: PendingGalleryFile[] = [];
 	let galleryUploadBusy = false;
 	let lightboxIndex = 0;
@@ -315,6 +329,109 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}
 	};
 
+	const renderBusinessHours = () => {
+		if (!hoursList) return;
+		hoursList.replaceChildren();
+
+		for (const day of businessHours.days) {
+			const li = document.createElement('li');
+			li.className = day.closed ? 'ppe-hours-day is-closed' : 'ppe-hours-day';
+			li.dataset.day = String(day.day);
+
+			const head = document.createElement('div');
+			head.className = 'ppe-hours-day__head';
+
+			const name = document.createElement('span');
+			name.className = 'ppe-hours-day__name';
+			name.textContent = BUSINESS_HOURS_DAY_LABELS[day.day - 1] || `Día ${day.day}`;
+
+			const toggleWrap = document.createElement('label');
+			toggleWrap.className = 'ppe-hours-toggle';
+			const toggleText = document.createElement('span');
+			toggleText.className = 'ppe-hours-toggle__label';
+			toggleText.textContent = day.closed ? 'Cerrado' : 'Abierto';
+			const switchEl = document.createElement('span');
+			switchEl.className = 'ppe-switch';
+			const toggle = document.createElement('input');
+			toggle.type = 'checkbox';
+			toggle.checked = !day.closed;
+			toggle.setAttribute('data-ppe-hours-open', String(day.day));
+			toggle.setAttribute(
+				'aria-label',
+				`${name.textContent}: ${day.closed ? 'Cerrado' : 'Abierto'}`
+			);
+			const track = document.createElement('span');
+			track.className = 'ppe-switch__track';
+			track.setAttribute('aria-hidden', 'true');
+			switchEl.append(toggle, track);
+			toggleWrap.append(toggleText, switchEl);
+
+			head.append(name, toggleWrap);
+			li.appendChild(head);
+
+			if (!day.closed) {
+				const intervalsWrap = document.createElement('div');
+				intervalsWrap.className = 'ppe-hours-intervals';
+
+				day.intervals.forEach((interval, index) => {
+					const row = document.createElement('div');
+					row.className = 'ppe-hours-interval';
+
+					const start = document.createElement('input');
+					start.type = 'time';
+					start.className = 'ppe-input ppe-hours-interval__time';
+					start.value = interval.start;
+					start.setAttribute('data-ppe-hours-start', String(day.day));
+					start.dataset.index = String(index);
+
+					const sep = document.createElement('span');
+					sep.className = 'ppe-hours-interval__sep';
+					sep.textContent = '–';
+
+					const end = document.createElement('input');
+					end.type = 'time';
+					end.className = 'ppe-input ppe-hours-interval__time';
+					end.value = interval.end;
+					end.setAttribute('data-ppe-hours-end', String(day.day));
+					end.dataset.index = String(index);
+
+					row.append(start, sep, end);
+
+					if (day.intervals.length > 1) {
+						const removeBtn = document.createElement('button');
+						removeBtn.type = 'button';
+						removeBtn.className = 'ppe-hours-remove';
+						removeBtn.setAttribute('data-ppe-hours-remove', String(day.day));
+						removeBtn.dataset.index = String(index);
+						removeBtn.setAttribute('aria-label', 'Quitar turno');
+						removeBtn.innerHTML =
+							'<span class="material-symbols-rounded" aria-hidden="true">close</span>';
+						row.appendChild(removeBtn);
+					}
+
+					intervalsWrap.appendChild(row);
+				});
+
+				if (day.intervals.length < BUSINESS_HOURS_MAX_INTERVALS) {
+					const addBtn = document.createElement('button');
+					addBtn.type = 'button';
+					addBtn.className = 'ppe-hours-add';
+					addBtn.setAttribute('data-ppe-hours-add', String(day.day));
+					addBtn.innerHTML =
+						'<span class="material-symbols-rounded" aria-hidden="true">add</span> Agregar turno';
+					intervalsWrap.appendChild(addBtn);
+				}
+
+				li.appendChild(intervalsWrap);
+			}
+
+			hoursList.appendChild(li);
+		}
+	};
+
+	const getDay = (dayNum: number): BusinessHoursDay =>
+		businessHours.days[dayNum - 1] || emptyBusinessHours().days[dayNum - 1];
+
 	const syncPreview = () => {
 		const rawDescription = String(descInput?.value || '');
 		const description = rawDescription.trim();
@@ -322,8 +439,6 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 
 		if (descCount) descCount.textContent = String(rawDescription.length);
 		waField?.classList.toggle('hidden', !waToggle?.checked);
-		bannerCompressHint?.toggleAttribute('hidden', Boolean(bannerCompress?.checked));
-		galleryCompressHint?.toggleAttribute('hidden', Boolean(galleryCompress?.checked));
 
 		const slug = normalizeSlugInput(slugInput?.value || '');
 		if (openPublic) {
@@ -343,6 +458,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			instagramUrl: String(instagramInput?.value || '').trim(),
 			galleryUrls: galleryItems.map((item) => item.url),
 			profileSlug: slug,
+			businessHoursRows: formatBusinessHoursForDisplay(businessHours),
 		});
 	};
 
@@ -413,6 +529,10 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}, 400);
 	};
 
+	const syncCropCompressHint = () => {
+		cropCompressHint?.toggleAttribute('hidden', Boolean(cropCompress?.checked));
+	};
+
 	const openCrop = async (file: File, mode: ProfileCropMode) => {
 		if (!cropModal || !cropMount) return;
 		if (!isAcceptedProfileImage(file)) {
@@ -428,6 +548,12 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 					? 'El marco es lo que se verá arriba del perfil (proporción 2:1). Arrastrá para mover y usá el control para acercar o alejar.'
 					: 'Arrastrá la imagen para centrarla y usá el control para acercar o alejar.';
 		}
+		// La compresión server-side aplica al banner; el logo ya sale del recorte listo.
+		cropCompressWrap?.toggleAttribute('hidden', mode !== 'banner');
+		if (cropCompress && mode === 'banner') {
+			cropCompress.checked = bannerCompress;
+		}
+		syncCropCompressHint();
 		cropSheet?.classList.toggle('ppe-crop-modal__sheet--banner', mode === 'banner');
 		cropSheet?.classList.toggle('ppe-crop-modal__sheet--logo', mode === 'logo');
 		cropper?.destroy();
@@ -458,7 +584,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		try {
 			const file = await cropper.exportJpeg(pendingCropName);
 			const base64 = await fileToBase64(file);
+			const compress = cropCompress?.checked !== false;
 			if (cropMode === 'banner') {
+				bannerCompress = compress;
 				bannerBase64 = base64;
 				bannerName = file.name;
 				bannerMime = file.type || 'image/jpeg';
@@ -523,6 +651,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			li.className = 'ppe-gallery-preview-item';
 			li.dataset.pendingId = item.id;
 
+			const media = document.createElement('div');
+			media.className = 'ppe-gallery-preview-item__media';
+
 			const img = document.createElement('img');
 			img.src = item.url;
 			img.alt = item.file.name || 'Vista previa';
@@ -537,8 +668,24 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			icon.setAttribute('aria-hidden', 'true');
 			icon.textContent = 'close';
 			removeBtn.appendChild(icon);
+			media.append(img, removeBtn);
 
-			li.append(img, removeBtn);
+			const compressLabel = document.createElement('label');
+			compressLabel.className = 'ppe-gallery-preview-item__compress';
+			const compressInput = document.createElement('input');
+			compressInput.type = 'checkbox';
+			compressInput.checked = item.compress;
+			compressInput.dataset.ppeGalleryPreviewCompress = item.id;
+			const compressText = document.createElement('span');
+			compressText.textContent = 'Comprimir';
+			compressLabel.append(compressInput, compressText);
+
+			const compressHint = document.createElement('p');
+			compressHint.className = 'ppe-gallery-preview-item__compress-hint';
+			compressHint.hidden = item.compress;
+			compressHint.textContent = 'Sin comprimir puede cargar más lento.';
+
+			li.append(media, compressLabel, compressHint);
 			galleryPreviewList.appendChild(li);
 		}
 		syncGalleryPreviewUi();
@@ -595,6 +742,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			id: `${Date.now()}-${index}-${file.name}`,
 			file,
 			url: URL.createObjectURL(file),
+			compress: true,
 		}));
 		renderGalleryPreviewList();
 		if (galleryPreviewModal && !galleryPreviewModal.open) {
@@ -602,23 +750,23 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}
 	};
 
-	const uploadGalleryFiles = async (files: File[]) => {
-		if (!files.length) return;
+	const uploadGalleryFiles = async (items: PendingGalleryFile[]) => {
+		if (!items.length) return;
 		if (galleryItems.length >= galleryMax) {
 			showFeedback(`La galería admite un máximo de ${galleryMax} fotos.`, 'error');
 			return;
 		}
 
 		let uploaded = 0;
-		for (const file of files) {
+		for (const item of items) {
 			if (galleryItems.length >= galleryMax) break;
-			if (!isAcceptedProfileImage(file)) {
+			if (!isAcceptedProfileImage(item.file)) {
 				showFeedback('Usá imágenes JPG o PNG en la galería.', 'error');
 				continue;
 			}
 			const formData = new FormData();
-			formData.append('file', file);
-			formData.append('compress', galleryCompress?.checked === false ? 'false' : 'true');
+			formData.append('file', item.file);
+			formData.append('compress', item.compress ? 'true' : 'false');
 			try {
 				const response = await fetch('/api/workspace/gallery', {
 					method: 'POST',
@@ -662,9 +810,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		galleryUploadBusy = true;
 		galleryPreviewConfirm?.classList.add('ppe-gallery-preview-modal__actions-busy');
 		syncGalleryPreviewUi();
-		const files = pendingGalleryFiles.map((item) => item.file);
+		const items = [...pendingGalleryFiles];
 		try {
-			await uploadGalleryFiles(files);
+			await uploadGalleryFiles(items);
 			clearPendingGalleryFiles();
 			renderGalleryPreviewList();
 			galleryPreviewModal?.close();
@@ -710,13 +858,21 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			return;
 		}
 
-		const payload: Record<string, string> = {
+		const hoursCheck = validateBusinessHours(businessHours);
+		if (!hoursCheck.ok) {
+			showFeedback(hoursCheck.message, 'error');
+			activateTab('horario');
+			return;
+		}
+
+		const payload: Record<string, unknown> = {
 			profile_slug: slug,
 			description: String(descInput?.value || '').trim().slice(0, descMax),
 			public_whatsapp: buildWhatsappPayload(),
 			facebook_url: String(facebookInput?.value || '').trim(),
 			instagram_url: String(instagramInput?.value || '').trim(),
-			compress_banner: bannerCompress?.checked === false ? 'false' : 'true',
+			business_hours: businessHours,
+			compress_banner: bannerCompress ? 'true' : 'false',
 		};
 		if (logoBase64) {
 			payload.logo_base64 = logoBase64;
@@ -749,6 +905,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 					profile_slug?: string;
 					facebook_url?: string;
 					instagram_url?: string;
+					business_hours?: BusinessHours | string | null;
 					gallery_images?: GalleryItem[];
 				};
 			};
@@ -772,6 +929,10 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			if (instagramInput && data.data?.instagram_url !== undefined) {
 				instagramInput.value = String(data.data.instagram_url || '');
 			}
+			if (data.data && Object.prototype.hasOwnProperty.call(data.data, 'business_hours')) {
+				businessHours = parseBusinessHours(data.data.business_hours);
+				renderBusinessHours();
+			}
 			showFeedback(data.message || 'Perfil público guardado.', 'success');
 			await checkSlug();
 			syncPreview();
@@ -785,6 +946,87 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}
 	});
 
+	hoursList?.addEventListener('change', (event) => {
+		const target = event.target as HTMLElement | null;
+		if (!target) return;
+
+		const openToggle = target.closest<HTMLInputElement>('[data-ppe-hours-open]');
+		if (openToggle) {
+			const dayNum = Number(openToggle.getAttribute('data-ppe-hours-open') || 0);
+			const day = getDay(dayNum);
+			if (!dayNum) return;
+			day.closed = !openToggle.checked;
+			if (day.closed) {
+				day.intervals = [];
+			} else if (!day.intervals.length) {
+				day.intervals = [defaultOpenInterval()];
+			}
+			businessHours.days[dayNum - 1] = day;
+			renderBusinessHours();
+			syncPreview();
+			return;
+		}
+
+		const startInput = target.closest<HTMLInputElement>('[data-ppe-hours-start]');
+		if (startInput) {
+			const dayNum = Number(startInput.getAttribute('data-ppe-hours-start') || 0);
+			const index = Number(startInput.dataset.index || 0);
+			const day = getDay(dayNum);
+			if (day.intervals[index]) {
+				day.intervals[index].start = startInput.value || '09:00';
+				businessHours.days[dayNum - 1] = day;
+				syncPreview();
+			}
+			return;
+		}
+
+		const endInput = target.closest<HTMLInputElement>('[data-ppe-hours-end]');
+		if (endInput) {
+			const dayNum = Number(endInput.getAttribute('data-ppe-hours-end') || 0);
+			const index = Number(endInput.dataset.index || 0);
+			const day = getDay(dayNum);
+			if (day.intervals[index]) {
+				day.intervals[index].end = endInput.value || '18:00';
+				businessHours.days[dayNum - 1] = day;
+				syncPreview();
+			}
+		}
+	});
+
+	hoursList?.addEventListener('click', (event) => {
+		const target = event.target as HTMLElement | null;
+		if (!target) return;
+
+		const addBtn = target.closest<HTMLElement>('[data-ppe-hours-add]');
+		if (addBtn) {
+			const dayNum = Number(addBtn.getAttribute('data-ppe-hours-add') || 0);
+			const day = getDay(dayNum);
+			if (day.closed || day.intervals.length >= BUSINESS_HOURS_MAX_INTERVALS) return;
+			const last = day.intervals[day.intervals.length - 1];
+			day.intervals.push(
+				last
+					? { start: last.end, end: '20:00' }
+					: defaultOpenInterval()
+			);
+			businessHours.days[dayNum - 1] = day;
+			renderBusinessHours();
+			syncPreview();
+			return;
+		}
+
+		const removeBtn = target.closest<HTMLElement>('[data-ppe-hours-remove]');
+		if (removeBtn) {
+			const dayNum = Number(removeBtn.getAttribute('data-ppe-hours-remove') || 0);
+			const index = Number(removeBtn.dataset.index || 0);
+			const day = getDay(dayNum);
+			if (day.intervals.length <= 1) return;
+			day.intervals.splice(index, 1);
+			businessHours.days[dayNum - 1] = day;
+			renderBusinessHours();
+			syncPreview();
+		}
+	});
+
 	slugInput?.addEventListener('input', () => {
 		scheduleSlugCheck();
 		syncPreview();
@@ -794,8 +1036,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	waInput?.addEventListener('input', syncPreview);
 	facebookInput?.addEventListener('input', syncPreview);
 	instagramInput?.addEventListener('input', syncPreview);
-	bannerCompress?.addEventListener('change', syncPreview);
-	galleryCompress?.addEventListener('change', syncPreview);
+	cropCompress?.addEventListener('change', syncCropCompressHint);
 
 	copyBtn?.addEventListener('click', async () => {
 		const slug = normalizeSlugInput(slugInput?.value || '');
@@ -874,6 +1115,21 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		pendingGalleryFiles.splice(index, 1);
 		renderGalleryPreviewList();
 		if (!pendingGalleryFiles.length) closeGalleryPreview();
+	});
+
+	galleryPreviewList?.addEventListener('change', (event) => {
+		const target = event.target as HTMLElement | null;
+		const compressInput = target?.closest<HTMLInputElement>(
+			'[data-ppe-gallery-preview-compress]'
+		);
+		if (!compressInput || galleryUploadBusy) return;
+		const id = String(compressInput.dataset.ppeGalleryPreviewCompress || '');
+		const item = pendingGalleryFiles.find((entry) => entry.id === id);
+		if (!item) return;
+		item.compress = compressInput.checked;
+		const card = compressInput.closest<HTMLElement>('.ppe-gallery-preview-item');
+		const hint = card?.querySelector<HTMLElement>('.ppe-gallery-preview-item__compress-hint');
+		if (hint) hint.hidden = item.compress;
 	});
 
 	root.querySelectorAll('[data-ppe-gallery-preview-close]').forEach((btn) => {
@@ -1010,6 +1266,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	});
 
 	renderGalleryGrid();
+	renderBusinessHours();
 	syncPreview();
 	void checkSlug();
 };

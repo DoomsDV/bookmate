@@ -1,3 +1,4 @@
+import { parseBusinessHours } from './business-hours';
 import { resolveOrdsApiUrl } from './env-urls';
 
 import type {
@@ -162,6 +163,10 @@ const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | nul
 		banner_url: String(source.banner_url || '').trim(),
 		facebook_url: String(source.facebook_url || '').trim(),
 		instagram_url: String(source.instagram_url || '').trim(),
+		business_hours:
+			source.business_hours == null || source.business_hours === ''
+				? null
+				: parseBusinessHours(source.business_hours),
 		gallery_images: parseGalleryImages(source.gallery_images),
 		time_format: normalizeTimeFormat(source.time_format),
 		theme_pref: String(source.theme_pref || '').trim(),
