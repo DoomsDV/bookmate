@@ -6,6 +6,7 @@ import {
 	resolvePublicSiteOrigin,
 } from '../lib/public-profile-url';
 import PublicProfilePreview from './PublicProfilePreview';
+import { FacebookIcon, InstagramIcon } from './hub-brand-icons';
 
 interface Props {
 	workspace: WorkspaceSettingsData;
@@ -98,16 +99,52 @@ const previewInitial = {
 
 				<div data-ppe-feedback class="ppe-feedback" hidden></div>
 
+				<nav class="ppe-tabs" role="tablist" aria-label="Secciones del perfil">
+					<button
+						type="button"
+						class="ppe-tab is-active"
+						role="tab"
+						id="ppe-tab-general"
+						aria-selected="true"
+						aria-controls="ppe-panel-general"
+						data-ppe-tab="general"
+					>
+						General
+					</button>
+					<button
+						type="button"
+						class="ppe-tab"
+						role="tab"
+						id="ppe-tab-apariencia"
+						aria-selected="false"
+						aria-controls="ppe-panel-apariencia"
+						data-ppe-tab="apariencia"
+						tabindex="-1"
+					>
+						Apariencia
+					</button>
+					<button
+						type="button"
+						class="ppe-tab"
+						role="tab"
+						id="ppe-tab-galeria"
+						aria-selected="false"
+						aria-controls="ppe-panel-galeria"
+						data-ppe-tab="galeria"
+						tabindex="-1"
+					>
+						Galería
+					</button>
+				</nav>
+
 				<form class="ppe-form-col" id="ppe-form" data-ppe-form>
-				<details class="ppe-accordion" open>
-					<summary>
-						<span class="material-symbols-rounded" aria-hidden="true">link</span>
-						Enlace del perfil
-						<span class="material-symbols-rounded ppe-accordion__chevron" aria-hidden="true"
-							>expand_more</span
-						>
-					</summary>
-					<div class="ppe-accordion__body">
+					<section
+						class="ppe-panel"
+						role="tabpanel"
+						id="ppe-panel-general"
+						aria-labelledby="ppe-tab-general"
+						data-ppe-panel="general"
+					>
 						<div class="ppe-field">
 							<span class="ppe-field__label">URL pública <span class="text-rose-500">*</span></span>
 							<div class="ppe-slug-row" data-ppe-slug-row>
@@ -146,140 +183,9 @@ const previewInitial = {
 								<span class="ppe-field__hint" data-ppe-slug-hint>Ej: {domainLabel}/mi-peluqueria</span>
 							</p>
 						</div>
-					</div>
-				</details>
-
-				<details class="ppe-accordion" open>
-					<summary>
-						<span class="material-symbols-rounded" aria-hidden="true">palette</span>
-						Apariencia
-						<span class="material-symbols-rounded ppe-accordion__chevron" aria-hidden="true"
-							>expand_more</span
-						>
-					</summary>
-					<div class="ppe-accordion__body">
-						<div class="ppe-field">
-							<span class="ppe-field__label">Logo del negocio</span>
-							<label class="ppe-logo-drop" data-ppe-logo-dropzone>
-								<img
-									src={workspace.logo_url || undefined}
-									alt=""
-									class={`ppe-logo-preview ${workspace.logo_url ? '' : 'hidden'}`}
-									data-ppe-logo-preview
-									width="88"
-									height="88"
-								/>
-								<div
-									class={`ppe-logo-preview ppe-logo-preview--ph ${workspace.logo_url ? 'hidden' : ''}`}
-									data-ppe-logo-placeholder
-								>
-									{initials}
-								</div>
-								<p class="ppe-field__hint">JPG o PNG. Arrastrá o hacé clic para subir.</p>
-								<span class="ppe-btn ppe-btn-secondary" data-ppe-logo-file-label>Subir logo</span>
-								<input
-									type="file"
-									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-									class="sr-only"
-									data-ppe-logo-input
-								/>
-							</label>
-						</div>
 
 						<div class="ppe-field">
-							<span class="ppe-field__label">Banner del negocio</span>
-							<label class="ppe-banner-drop" data-ppe-banner-dropzone>
-								<img
-									src={bannerUrl || undefined}
-									alt=""
-									class={`ppe-banner-preview ${bannerUrl ? '' : 'hidden'}`}
-									data-ppe-banner-preview
-								/>
-								<div
-									class={`ppe-banner-preview ppe-banner-preview--ph ${bannerUrl ? 'hidden' : ''}`}
-									data-ppe-banner-placeholder
-								>
-									<span class="material-symbols-rounded" aria-hidden="true">image</span>
-									<span>1200 × 600 (2:1)</span>
-								</div>
-								<p class="ppe-field__hint">
-									JPG o PNG hasta 5 MB. Recomendado 1200×600 o 1080×566.
-								</p>
-								<span class="ppe-btn ppe-btn-secondary">Subir banner</span>
-								<input
-									type="file"
-									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-									class="sr-only"
-									data-ppe-banner-input
-								/>
-							</label>
-							<label class="ppe-check">
-								<input type="checkbox" data-ppe-banner-compress checked />
-								<span>Comprimir imagen (recomendado)</span>
-							</label>
-							<p class="ppe-field__hint" data-ppe-banner-compress-hint hidden>
-								Se mantiene la resolución; el perfil puede cargar más lento.
-							</p>
-						</div>
-
-						<div class="ppe-field">
-							<span class="ppe-field__label">
-								Galería <span data-ppe-gallery-count>({galleryImages.length}/{GALLERY_MAX})</span>
-							</span>
-							<p class="ppe-field__hint">
-								Hasta 30 fotos del negocio (fachada, interior, servicios). Hasta 5 MB c/u.
-							</p>
-							<label class="ppe-check">
-								<input type="checkbox" data-ppe-gallery-compress checked />
-								<span>Comprimir imagen (recomendado)</span>
-							</label>
-							<p class="ppe-field__hint" data-ppe-gallery-compress-hint hidden>
-								Se mantiene la resolución; el perfil puede cargar más lento.
-							</p>
-							<ul class="ppe-gallery-grid" data-ppe-gallery-grid>
-								{
-									galleryImages.map((item) => (
-										<li class="ppe-gallery-item" data-ppe-gallery-item data-id={item.id}>
-											<img src={item.url} alt="" />
-											<button
-												type="button"
-												class="ppe-gallery-item__remove"
-												data-ppe-gallery-remove
-												data-id={item.id}
-												aria-label="Eliminar foto"
-											>
-												<span class="material-symbols-rounded" aria-hidden="true">close</span>
-											</button>
-										</li>
-									))
-								}
-							</ul>
-							<label class="ppe-btn ppe-btn-secondary ppe-gallery-add" data-ppe-gallery-add>
-								<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">add_photo_alternate</span>
-								Agregar foto
-								<input
-									type="file"
-									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-									class="sr-only"
-									data-ppe-gallery-input
-									multiple
-								/>
-							</label>
-						</div>
-					</div>
-				</details>
-
-				<details class="ppe-accordion" open>
-					<summary>
-						<span class="material-symbols-rounded" aria-hidden="true">edit_note</span>
-						Información
-						<span class="material-symbols-rounded ppe-accordion__chevron" aria-hidden="true"
-							>expand_more</span
-						>
-					</summary>
-					<div class="ppe-accordion__body">
-						<div class="ppe-field">
-							<label for="ppe-description">Descripción (Sobre nosotros)</label>
+							<label for="ppe-description">Descripción</label>
 							<textarea
 								id="ppe-description"
 								class="ppe-textarea"
@@ -326,33 +232,181 @@ const previewInitial = {
 
 						<div class="ppe-field">
 							<label for="ppe-facebook">Facebook</label>
-							<input
-								id="ppe-facebook"
-								class="ppe-input"
-								type="url"
-								name="facebook_url"
-								placeholder="https://facebook.com/tu-negocio"
-								value={facebookUrl}
-								data-ppe-facebook
-							/>
+							<div class="ppe-social-input">
+								<span class="ppe-social-input__icon" aria-hidden="true">
+									<FacebookIcon />
+								</span>
+								<input
+									id="ppe-facebook"
+									class="ppe-input ppe-social-input__field"
+									type="url"
+									name="facebook_url"
+									placeholder="https://facebook.com/tu-negocio"
+									value={facebookUrl}
+									data-ppe-facebook
+								/>
+							</div>
 							<span class="ppe-field__hint">URL completa de tu página o perfil.</span>
 						</div>
 
 						<div class="ppe-field">
 							<label for="ppe-instagram">Instagram</label>
-							<input
-								id="ppe-instagram"
-								class="ppe-input"
-								type="url"
-								name="instagram_url"
-								placeholder="https://instagram.com/tu-negocio"
-								value={instagramUrl}
-								data-ppe-instagram
-							/>
+							<div class="ppe-social-input">
+								<span class="ppe-social-input__icon" aria-hidden="true">
+									<InstagramIcon />
+								</span>
+								<input
+									id="ppe-instagram"
+									class="ppe-input ppe-social-input__field"
+									type="url"
+									name="instagram_url"
+									placeholder="https://instagram.com/tu-negocio"
+									value={instagramUrl}
+									data-ppe-instagram
+								/>
+							</div>
 							<span class="ppe-field__hint">URL completa de tu perfil.</span>
 						</div>
-					</div>
-				</details>
+					</section>
+
+					<section
+						class="ppe-panel"
+						role="tabpanel"
+						id="ppe-panel-apariencia"
+						aria-labelledby="ppe-tab-apariencia"
+						data-ppe-panel="apariencia"
+						hidden
+					>
+						<div class="ppe-field">
+							<span class="ppe-field__label">Logo del negocio</span>
+							<label class="ppe-dropzone ppe-dropzone--logo" data-ppe-logo-dropzone>
+								<img
+									src={workspace.logo_url || undefined}
+									alt=""
+									class={`ppe-logo-preview ${workspace.logo_url ? '' : 'hidden'}`}
+									data-ppe-logo-preview
+									width="88"
+									height="88"
+								/>
+								<div
+									class={`ppe-logo-preview ppe-logo-preview--ph ${workspace.logo_url ? 'hidden' : ''}`}
+									data-ppe-logo-placeholder
+								>
+									{initials}
+								</div>
+								<span class="ppe-dropzone__cta">
+									<span class="material-symbols-rounded" aria-hidden="true">cloud_upload</span>
+									<span data-ppe-logo-file-label
+										>{workspace.logo_url
+											? 'Hacé clic o arrastrá para cambiar el logo'
+											: 'Hacé clic o arrastrá tu logo aquí'}</span
+									>
+								</span>
+								<input
+									type="file"
+									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+									class="sr-only"
+									data-ppe-logo-input
+								/>
+							</label>
+							<p class="ppe-field__hint">JPG o PNG hasta 5 MB.</p>
+						</div>
+
+						<div class="ppe-field">
+							<span class="ppe-field__label">Banner del negocio</span>
+							<label class="ppe-dropzone ppe-dropzone--banner" data-ppe-banner-dropzone>
+								<img
+									src={bannerUrl || undefined}
+									alt=""
+									class={`ppe-banner-preview ${bannerUrl ? '' : 'hidden'}`}
+									data-ppe-banner-preview
+								/>
+								<div
+									class={`ppe-banner-empty ${bannerUrl ? 'hidden' : ''}`}
+									data-ppe-banner-placeholder
+								>
+									<span class="material-symbols-rounded" aria-hidden="true">cloud_upload</span>
+									<span class="ppe-dropzone__cta-text">Hacé clic o arrastrá tu banner aquí</span>
+									<span class="ppe-dropzone__meta">1200 × 600 · proporción 2:1</span>
+								</div>
+								<span
+									class={`ppe-dropzone__change ${bannerUrl ? '' : 'hidden'}`}
+									data-ppe-banner-change
+								>
+									Hacé clic o arrastrá para cambiar
+								</span>
+								<input
+									type="file"
+									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+									class="sr-only"
+									data-ppe-banner-input
+								/>
+							</label>
+							<p class="ppe-field__hint">JPG o PNG hasta 5 MB. Recomendado 1200×600 o 1080×566.</p>
+							<label class="ppe-check">
+								<input type="checkbox" data-ppe-banner-compress checked />
+								<span>Comprimir imagen (recomendado)</span>
+							</label>
+							<p class="ppe-field__hint" data-ppe-banner-compress-hint hidden>
+								Se mantiene la resolución; el perfil puede cargar más lento.
+							</p>
+						</div>
+					</section>
+
+					<section
+						class="ppe-panel"
+						role="tabpanel"
+						id="ppe-panel-galeria"
+						aria-labelledby="ppe-tab-galeria"
+						data-ppe-panel="galeria"
+						hidden
+					>
+						<div class="ppe-field">
+							<span class="ppe-field__label">
+								Fotos del negocio
+								<span data-ppe-gallery-count>({galleryImages.length}/{GALLERY_MAX})</span>
+							</span>
+							<p class="ppe-field__hint">
+								Hasta 30 fotos (fachada, interior, servicios). Máximo 5 MB por imagen.
+							</p>
+							<label class="ppe-check">
+								<input type="checkbox" data-ppe-gallery-compress checked />
+								<span>Comprimir imagen (recomendado)</span>
+							</label>
+							<p class="ppe-field__hint" data-ppe-gallery-compress-hint hidden>
+								Se mantiene la resolución; el perfil puede cargar más lento.
+							</p>
+							<ul class="ppe-gallery-grid" data-ppe-gallery-grid>
+								{
+									galleryImages.map((item) => (
+										<li class="ppe-gallery-item" data-ppe-gallery-item data-id={item.id}>
+											<img src={item.url} alt="" />
+											<button
+												type="button"
+												class="ppe-gallery-item__remove"
+												data-ppe-gallery-remove
+												data-id={item.id}
+												aria-label="Eliminar foto"
+											>
+												<span class="material-symbols-rounded" aria-hidden="true">close</span>
+											</button>
+										</li>
+									))
+								}
+							</ul>
+							<label class="ppe-dropzone ppe-dropzone--gallery" data-ppe-gallery-add>
+								<span class="material-symbols-rounded" aria-hidden="true">add_photo_alternate</span>
+								<span class="ppe-dropzone__cta-text">Hacé clic o arrastrá fotos aquí</span>
+								<input
+									type="file"
+									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+									class="sr-only"
+									data-ppe-gallery-input
+									multiple
+								/>
+							</label>
+						</div>
+					</section>
 				</form>
 			</div>
 
@@ -373,17 +427,68 @@ const previewInitial = {
 	</footer>
 
 	<dialog class="ppe-crop-modal" data-ppe-crop-modal>
-		<div class="ppe-crop-modal__head">
-			<strong data-ppe-crop-title>Recortar logo</strong>
-			<button type="button" class="ppe-icon-btn" data-ppe-crop-close aria-label="Cerrar">
-				<span class="material-symbols-rounded" aria-hidden="true">close</span>
-			</button>
+		<div class="ppe-crop-modal__sheet" data-ppe-crop-sheet>
+			<div class="ppe-crop-modal__handle" aria-hidden="true"><span></span></div>
+			<div class="ppe-crop-modal__head">
+				<div>
+					<strong data-ppe-crop-title>Recortar logo</strong>
+					<p class="ppe-crop-modal__hint" data-ppe-crop-hint>
+						Arrastrá la imagen para centrarla y usá el control para acercar o alejar.
+					</p>
+				</div>
+				<button type="button" class="ppe-icon-btn" data-ppe-crop-close aria-label="Cerrar">
+					<span class="material-symbols-rounded" aria-hidden="true">close</span>
+				</button>
+			</div>
+			<div class="ppe-crop-modal__mount" data-ppe-crop-mount></div>
+			<div class="ppe-crop-modal__actions">
+				<button type="button" class="ppe-btn ppe-btn-secondary" data-ppe-crop-close>Cancelar</button>
+				<button type="button" class="ppe-btn ppe-btn-primary" data-ppe-crop-confirm>Usar foto</button>
+			</div>
 		</div>
-		<div class="ppe-crop-modal__mount" data-ppe-crop-mount></div>
-		<div class="ppe-crop-modal__actions">
-			<button type="button" class="ppe-btn ppe-btn-secondary" data-ppe-crop-close>Cancelar</button>
-			<button type="button" class="ppe-btn ppe-btn-primary" data-ppe-crop-confirm>Usar foto</button>
+	</dialog>
+
+	<dialog class="ppe-crop-modal ppe-gallery-preview-modal" data-ppe-gallery-preview-modal>
+		<div class="ppe-crop-modal__sheet ppe-gallery-preview-modal__sheet">
+			<div class="ppe-crop-modal__handle" aria-hidden="true"><span></span></div>
+			<div class="ppe-crop-modal__head">
+				<div>
+					<strong data-ppe-gallery-preview-title>Vista previa</strong>
+					<p class="ppe-gallery-preview-modal__sub" data-ppe-gallery-preview-sub>
+						Revisá las fotos antes de subirlas.
+					</p>
+				</div>
+				<button type="button" class="ppe-icon-btn" data-ppe-gallery-preview-close aria-label="Cerrar">
+					<span class="material-symbols-rounded" aria-hidden="true">close</span>
+				</button>
+			</div>
+			<ul class="ppe-gallery-preview-list" data-ppe-gallery-preview-list></ul>
+			<div class="ppe-crop-modal__actions">
+				<button type="button" class="ppe-btn ppe-btn-secondary" data-ppe-gallery-preview-close>
+					Cancelar
+				</button>
+				<button type="button" class="ppe-btn ppe-btn-primary" data-ppe-gallery-preview-confirm>
+					<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">cloud_upload</span>
+					<span data-ppe-gallery-preview-confirm-label>Subir fotos</span>
+				</button>
+			</div>
 		</div>
+	</dialog>
+
+	<dialog class="ppe-lightbox" data-ppe-lightbox aria-label="Foto de la galería">
+		<button type="button" class="ppe-lightbox__close" data-ppe-lightbox-close aria-label="Cerrar">
+			<span class="material-symbols-rounded" aria-hidden="true">close</span>
+		</button>
+		<button type="button" class="ppe-lightbox__nav ppe-lightbox__nav--prev" data-ppe-lightbox-prev aria-label="Foto anterior">
+			<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+		</button>
+		<figure class="ppe-lightbox__figure">
+			<img src="" alt="" data-ppe-lightbox-image />
+			<figcaption class="ppe-lightbox__caption" data-ppe-lightbox-caption></figcaption>
+		</figure>
+		<button type="button" class="ppe-lightbox__nav ppe-lightbox__nav--next" data-ppe-lightbox-next aria-label="Foto siguiente">
+			<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
+		</button>
 	</dialog>
 </public-profile-editor>
 

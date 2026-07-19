@@ -96,24 +96,43 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const logoDropzone = root.querySelector<HTMLElement>('[data-ppe-logo-dropzone]');
 	const logoPreview = root.querySelector<HTMLImageElement>('[data-ppe-logo-preview]');
 	const logoPlaceholder = root.querySelector<HTMLElement>('[data-ppe-logo-placeholder]');
+	const logoFileLabel = root.querySelector<HTMLElement>('[data-ppe-logo-file-label]');
 
 	const bannerInput = root.querySelector<HTMLInputElement>('[data-ppe-banner-input]');
 	const bannerDropzone = root.querySelector<HTMLElement>('[data-ppe-banner-dropzone]');
 	const bannerPreview = root.querySelector<HTMLImageElement>('[data-ppe-banner-preview]');
 	const bannerPlaceholder = root.querySelector<HTMLElement>('[data-ppe-banner-placeholder]');
+	const bannerChange = root.querySelector<HTMLElement>('[data-ppe-banner-change]');
 	const bannerCompress = root.querySelector<HTMLInputElement>('[data-ppe-banner-compress]');
 	const bannerCompressHint = root.querySelector<HTMLElement>('[data-ppe-banner-compress-hint]');
 
 	const galleryGrid = root.querySelector<HTMLElement>('[data-ppe-gallery-grid]');
 	const galleryCount = root.querySelector<HTMLElement>('[data-ppe-gallery-count]');
 	const galleryInput = root.querySelector<HTMLInputElement>('[data-ppe-gallery-input]');
+	const galleryDropzone = root.querySelector<HTMLElement>('[data-ppe-gallery-add]');
 	const galleryCompress = root.querySelector<HTMLInputElement>('[data-ppe-gallery-compress]');
 	const galleryCompressHint = root.querySelector<HTMLElement>('[data-ppe-gallery-compress-hint]');
+	const galleryPreviewModal = root.querySelector<HTMLDialogElement>('[data-ppe-gallery-preview-modal]');
+	const galleryPreviewList = root.querySelector<HTMLElement>('[data-ppe-gallery-preview-list]');
+	const galleryPreviewSub = root.querySelector<HTMLElement>('[data-ppe-gallery-preview-sub]');
+	const galleryPreviewConfirm = root.querySelector<HTMLButtonElement>('[data-ppe-gallery-preview-confirm]');
+	const galleryPreviewConfirmLabel = root.querySelector<HTMLElement>(
+		'[data-ppe-gallery-preview-confirm-label]'
+	);
+	const lightbox = root.querySelector<HTMLDialogElement>('[data-ppe-lightbox]');
+	const lightboxImage = root.querySelector<HTMLImageElement>('[data-ppe-lightbox-image]');
+	const lightboxCaption = root.querySelector<HTMLElement>('[data-ppe-lightbox-caption]');
+	const lightboxPrev = root.querySelector<HTMLButtonElement>('[data-ppe-lightbox-prev]');
+	const lightboxNext = root.querySelector<HTMLButtonElement>('[data-ppe-lightbox-next]');
+	const tabButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ppe-tab]'));
+	const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-ppe-panel]'));
 
 	const cropModal = root.querySelector<HTMLDialogElement>('[data-ppe-crop-modal]');
+	const cropSheet = root.querySelector<HTMLElement>('[data-ppe-crop-sheet]');
 	const cropMount = root.querySelector<HTMLElement>('[data-ppe-crop-mount]');
 	const cropConfirm = root.querySelector<HTMLButtonElement>('[data-ppe-crop-confirm]');
 	const cropTitle = root.querySelector<HTMLElement>('[data-ppe-crop-title]');
+	const cropHint = root.querySelector<HTMLElement>('[data-ppe-crop-hint]');
 
 	let cropper: ProfileImageCropper | null = null;
 	let cropMode: ProfileCropMode = 'logo';
@@ -131,6 +150,10 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	let galleryItems: GalleryItem[] = Array.isArray(bootstrap.workspace?.gallery_images)
 		? [...bootstrap.workspace.gallery_images]
 		: [];
+	type PendingGalleryFile = { id: string; file: File; url: string };
+	let pendingGalleryFiles: PendingGalleryFile[] = [];
+	let galleryUploadBusy = false;
+	let lightboxIndex = 0;
 	let slugCheckTimer: number | null = null;
 	let slugAvailable = true;
 	let originalSlug = normalizeSlugInput(String(bootstrap.workspace?.profile_slug || ''));
@@ -156,6 +179,11 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			}
 		}
 		logoPlaceholder?.classList.toggle('hidden', Boolean(url));
+		if (logoFileLabel) {
+			logoFileLabel.textContent = url
+				? 'Hacé clic o arrastrá para cambiar el logo'
+				: 'Hacé clic o arrastrá tu logo aquí';
+		}
 	};
 
 	const setBannerPreview = (url: string) => {
@@ -170,6 +198,62 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			}
 		}
 		bannerPlaceholder?.classList.toggle('hidden', Boolean(url));
+		bannerChange?.classList.toggle('hidden', !url);
+	};
+
+	const activateTab = (tabId: string) => {
+		for (const btn of tabButtons) {
+			const active = btn.dataset.ppeTab === tabId;
+			btn.classList.toggle('is-active', active);
+			btn.setAttribute('aria-selected', active ? 'true' : 'false');
+			btn.tabIndex = active ? 0 : -1;
+		}
+		for (const panel of panels) {
+			panel.hidden = panel.dataset.ppePanel !== tabId;
+		}
+	};
+
+	const syncLightbox = () => {
+		const item = galleryItems[lightboxIndex];
+		if (!item || !lightboxImage) return;
+		lightboxImage.src = item.url;
+		lightboxImage.alt = `Foto ${lightboxIndex + 1} de ${galleryItems.length}`;
+		if (lightboxCaption) {
+			lightboxCaption.textContent = `${lightboxIndex + 1} / ${galleryItems.length}`;
+		}
+		const atStart = lightboxIndex <= 0;
+		const atEnd = lightboxIndex >= galleryItems.length - 1;
+		if (lightboxPrev) {
+			lightboxPrev.disabled = atStart;
+			lightboxPrev.hidden = galleryItems.length <= 1;
+		}
+		if (lightboxNext) {
+			lightboxNext.disabled = atEnd;
+			lightboxNext.hidden = galleryItems.length <= 1;
+		}
+	};
+
+	const openLightbox = (id: number) => {
+		const index = galleryItems.findIndex((item) => item.id === id);
+		if (index < 0 || !lightbox) return;
+		lightboxIndex = index;
+		syncLightbox();
+		if (!lightbox.open) lightbox.showModal();
+	};
+
+	const closeLightbox = () => {
+		lightbox?.close();
+		if (lightboxImage) {
+			lightboxImage.removeAttribute('src');
+			lightboxImage.alt = '';
+		}
+	};
+
+	const stepLightbox = (delta: -1 | 1) => {
+		const next = lightboxIndex + delta;
+		if (next < 0 || next >= galleryItems.length) return;
+		lightboxIndex = next;
+		syncLightbox();
 	};
 
 	const renderGalleryGrid = () => {
@@ -181,9 +265,17 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			li.dataset.ppeGalleryItem = '';
 			li.dataset.id = String(item.id);
 
+			const openBtn = document.createElement('button');
+			openBtn.type = 'button';
+			openBtn.className = 'ppe-gallery-item__open';
+			openBtn.dataset.ppeGalleryOpen = '';
+			openBtn.dataset.id = String(item.id);
+			openBtn.setAttribute('aria-label', 'Ver foto');
+
 			const img = document.createElement('img');
 			img.src = item.url;
 			img.alt = '';
+			openBtn.appendChild(img);
 
 			const actions = document.createElement('div');
 			actions.className = 'ppe-gallery-item__actions';
@@ -209,10 +301,18 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				makeAction('Eliminar foto', 'close', 'ppeGalleryRemove')
 			);
 
-			li.append(img, actions);
+			li.append(openBtn, actions);
 			galleryGrid.appendChild(li);
 		}
 		if (galleryCount) galleryCount.textContent = `(${galleryItems.length}/${galleryMax})`;
+		if (lightbox?.open) {
+			if (!galleryItems.length) {
+				closeLightbox();
+			} else {
+				lightboxIndex = Math.min(lightboxIndex, galleryItems.length - 1);
+				syncLightbox();
+			}
+		}
 	};
 
 	const syncPreview = () => {
@@ -322,10 +422,29 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		cropMode = mode;
 		pendingCropName = file.name || (mode === 'banner' ? 'banner.jpg' : 'logo.jpg');
 		if (cropTitle) cropTitle.textContent = mode === 'banner' ? 'Recortar banner' : 'Recortar logo';
+		if (cropHint) {
+			cropHint.textContent =
+				mode === 'banner'
+					? 'El marco es lo que se verá arriba del perfil (proporción 2:1). Arrastrá para mover y usá el control para acercar o alejar.'
+					: 'Arrastrá la imagen para centrarla y usá el control para acercar o alejar.';
+		}
+		cropSheet?.classList.toggle('ppe-crop-modal__sheet--banner', mode === 'banner');
+		cropSheet?.classList.toggle('ppe-crop-modal__sheet--logo', mode === 'logo');
 		cropper?.destroy();
-		cropper = new ProfileImageCropper(cropMount, 512, mode);
-		await cropper.bindFile(file);
+		cropper = null;
+
+		// Abrir primero: Croppie necesita el ancho real del modal para no quedar en negro
 		if (!cropModal.open) cropModal.showModal();
+		cropper = new ProfileImageCropper(cropMount, 512, mode);
+		try {
+			await cropper.bindFile(file);
+		} catch (error) {
+			closeCrop();
+			showFeedback(
+				error instanceof Error ? error.message : 'No se pudo abrir el recorte.',
+				'error'
+			);
+		}
 	};
 
 	const closeCrop = () => {
@@ -373,7 +492,66 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		return `+${normalized}`;
 	};
 
-	const uploadGalleryFiles = async (files: FileList | File[]) => {
+	const clearPendingGalleryFiles = () => {
+		for (const item of pendingGalleryFiles) {
+			URL.revokeObjectURL(item.url);
+		}
+		pendingGalleryFiles = [];
+	};
+
+	const syncGalleryPreviewUi = () => {
+		const count = pendingGalleryFiles.length;
+		if (galleryPreviewSub) {
+			galleryPreviewSub.textContent =
+				count === 1
+					? '1 foto lista para subir.'
+					: `${count} fotos listas para subir.`;
+		}
+		if (galleryPreviewConfirmLabel) {
+			galleryPreviewConfirmLabel.textContent = count === 1 ? 'Subir foto' : 'Subir fotos';
+		}
+		if (galleryPreviewConfirm) {
+			galleryPreviewConfirm.disabled = count === 0 || galleryUploadBusy;
+		}
+	};
+
+	const renderGalleryPreviewList = () => {
+		if (!galleryPreviewList) return;
+		galleryPreviewList.replaceChildren();
+		for (const item of pendingGalleryFiles) {
+			const li = document.createElement('li');
+			li.className = 'ppe-gallery-preview-item';
+			li.dataset.pendingId = item.id;
+
+			const img = document.createElement('img');
+			img.src = item.url;
+			img.alt = item.file.name || 'Vista previa';
+
+			const removeBtn = document.createElement('button');
+			removeBtn.type = 'button';
+			removeBtn.className = 'ppe-gallery-preview-item__remove';
+			removeBtn.dataset.ppeGalleryPreviewRemove = item.id;
+			removeBtn.setAttribute('aria-label', 'Quitar de la vista previa');
+			const icon = document.createElement('span');
+			icon.className = 'material-symbols-rounded';
+			icon.setAttribute('aria-hidden', 'true');
+			icon.textContent = 'close';
+			removeBtn.appendChild(icon);
+
+			li.append(img, removeBtn);
+			galleryPreviewList.appendChild(li);
+		}
+		syncGalleryPreviewUi();
+	};
+
+	const closeGalleryPreview = () => {
+		if (galleryUploadBusy) return;
+		clearPendingGalleryFiles();
+		renderGalleryPreviewList();
+		galleryPreviewModal?.close();
+	};
+
+	const openGalleryPreview = (files: FileList | File[]) => {
 		const list = Array.from(files);
 		if (!list.length) return;
 		if (galleryItems.length >= galleryMax) {
@@ -381,7 +559,58 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			return;
 		}
 
+		const slots = galleryMax - galleryItems.length;
+		const accepted: File[] = [];
+		let rejectedType = false;
 		for (const file of list) {
+			if (accepted.length >= slots) break;
+			if (!isAcceptedProfileImage(file)) {
+				rejectedType = true;
+				continue;
+			}
+			accepted.push(file);
+		}
+
+		if (!accepted.length) {
+			showFeedback(
+				rejectedType
+					? 'Usá imágenes JPG o PNG en la galería.'
+					: `La galería admite un máximo de ${galleryMax} fotos.`,
+				'error'
+			);
+			return;
+		}
+
+		if (list.length > accepted.length) {
+			showFeedback(
+				rejectedType
+					? `Solo se previsualizan ${accepted.length} foto(s) válidas (JPG/PNG) y cupo disponible.`
+					: `Solo se pueden agregar ${accepted.length} foto(s) más (máximo ${galleryMax}).`,
+				'error'
+			);
+		}
+
+		clearPendingGalleryFiles();
+		pendingGalleryFiles = accepted.map((file, index) => ({
+			id: `${Date.now()}-${index}-${file.name}`,
+			file,
+			url: URL.createObjectURL(file),
+		}));
+		renderGalleryPreviewList();
+		if (galleryPreviewModal && !galleryPreviewModal.open) {
+			galleryPreviewModal.showModal();
+		}
+	};
+
+	const uploadGalleryFiles = async (files: File[]) => {
+		if (!files.length) return;
+		if (galleryItems.length >= galleryMax) {
+			showFeedback(`La galería admite un máximo de ${galleryMax} fotos.`, 'error');
+			return;
+		}
+
+		let uploaded = 0;
+		for (const file of files) {
 			if (galleryItems.length >= galleryMax) break;
 			if (!isAcceptedProfileImage(file)) {
 				showFeedback('Usá imágenes JPG o PNG en la galería.', 'error');
@@ -407,9 +636,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				galleryItems = Array.isArray(data.data?.gallery_images)
 					? data.data.gallery_images
 					: galleryItems;
+				uploaded += 1;
 				renderGalleryGrid();
 				syncPreview();
-				showFeedback(data.message || 'Foto agregada a la galería.', 'success');
 			} catch (error) {
 				showFeedback(
 					error instanceof Error ? error.message : 'No se pudo subir la foto.',
@@ -417,6 +646,32 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				);
 				break;
 			}
+		}
+		if (uploaded > 0) {
+			showFeedback(
+				uploaded === 1
+					? 'Foto agregada a la galería.'
+					: `${uploaded} fotos agregadas a la galería.`,
+				'success'
+			);
+		}
+	};
+
+	const confirmGalleryPreviewUpload = async () => {
+		if (galleryUploadBusy || !pendingGalleryFiles.length) return;
+		galleryUploadBusy = true;
+		galleryPreviewConfirm?.classList.add('ppe-gallery-preview-modal__actions-busy');
+		syncGalleryPreviewUi();
+		const files = pendingGalleryFiles.map((item) => item.file);
+		try {
+			await uploadGalleryFiles(files);
+			clearPendingGalleryFiles();
+			renderGalleryPreviewList();
+			galleryPreviewModal?.close();
+		} finally {
+			galleryUploadBusy = false;
+			galleryPreviewConfirm?.classList.remove('ppe-gallery-preview-modal__actions-busy');
+			syncGalleryPreviewUi();
 		}
 	};
 
@@ -589,9 +844,78 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	bindDropzone(logoDropzone, (file) => void openCrop(file, 'logo'));
 	bindDropzone(bannerDropzone, (file) => void openCrop(file, 'banner'));
 
+	galleryDropzone?.addEventListener('dragover', (event) => {
+		event.preventDefault();
+		galleryDropzone.classList.add('is-dragging');
+	});
+	galleryDropzone?.addEventListener('dragleave', () => {
+		galleryDropzone.classList.remove('is-dragging');
+	});
+	galleryDropzone?.addEventListener('drop', (event) => {
+		event.preventDefault();
+		galleryDropzone.classList.remove('is-dragging');
+		const files = event.dataTransfer?.files;
+		if (files?.length) openGalleryPreview(files);
+	});
+
 	galleryInput?.addEventListener('change', () => {
-		if (galleryInput.files?.length) void uploadGalleryFiles(galleryInput.files);
+		if (galleryInput.files?.length) openGalleryPreview(galleryInput.files);
 		galleryInput.value = '';
+	});
+
+	galleryPreviewList?.addEventListener('click', (event) => {
+		const target = event.target as HTMLElement | null;
+		const removeBtn = target?.closest<HTMLElement>('[data-ppe-gallery-preview-remove]');
+		if (!removeBtn || galleryUploadBusy) return;
+		const id = String(removeBtn.dataset.ppeGalleryPreviewRemove || '');
+		const index = pendingGalleryFiles.findIndex((item) => item.id === id);
+		if (index < 0) return;
+		URL.revokeObjectURL(pendingGalleryFiles[index].url);
+		pendingGalleryFiles.splice(index, 1);
+		renderGalleryPreviewList();
+		if (!pendingGalleryFiles.length) closeGalleryPreview();
+	});
+
+	root.querySelectorAll('[data-ppe-gallery-preview-close]').forEach((btn) => {
+		btn.addEventListener('click', () => closeGalleryPreview());
+	});
+	galleryPreviewConfirm?.addEventListener('click', () => {
+		void confirmGalleryPreviewUpload();
+	});
+	galleryPreviewModal?.addEventListener('click', (event) => {
+		if (event.target === galleryPreviewModal) closeGalleryPreview();
+	});
+	galleryPreviewModal?.addEventListener('cancel', (event) => {
+		if (galleryUploadBusy) {
+			event.preventDefault();
+			return;
+		}
+		clearPendingGalleryFiles();
+		renderGalleryPreviewList();
+	});
+
+	tabButtons.forEach((btn) => {
+		btn.addEventListener('click', () => {
+			const tabId = String(btn.dataset.ppeTab || 'general');
+			activateTab(tabId);
+		});
+	});
+
+	root.querySelector<HTMLElement>('.ppe-tabs')?.addEventListener('keydown', (event) => {
+		const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+		if (!keys.includes(event.key)) return;
+		const current = tabButtons.findIndex((btn) => btn.classList.contains('is-active'));
+		if (current < 0) return;
+		event.preventDefault();
+		let next = current;
+		if (event.key === 'ArrowLeft') next = (current - 1 + tabButtons.length) % tabButtons.length;
+		if (event.key === 'ArrowRight') next = (current + 1) % tabButtons.length;
+		if (event.key === 'Home') next = 0;
+		if (event.key === 'End') next = tabButtons.length - 1;
+		const target = tabButtons[next];
+		if (!target) return;
+		activateTab(String(target.dataset.ppeTab || 'general'));
+		target.focus();
 	});
 
 	const reorderGallery = async (id: number, direction: -1 | 1) => {
@@ -648,6 +972,30 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		if (rightBtn) {
 			const id = Number(rightBtn.dataset.id || 0);
 			if (id > 0) void reorderGallery(id, 1);
+			return;
+		}
+		const openBtn = target?.closest<HTMLElement>('[data-ppe-gallery-open]');
+		if (openBtn) {
+			const id = Number(openBtn.dataset.id || 0);
+			if (id > 0) openLightbox(id);
+		}
+	});
+
+	root.querySelectorAll('[data-ppe-lightbox-close]').forEach((btn) => {
+		btn.addEventListener('click', () => closeLightbox());
+	});
+	lightboxPrev?.addEventListener('click', () => stepLightbox(-1));
+	lightboxNext?.addEventListener('click', () => stepLightbox(1));
+	lightbox?.addEventListener('click', (event) => {
+		if (event.target === lightbox) closeLightbox();
+	});
+	lightbox?.addEventListener('keydown', (event) => {
+		if (event.key === 'ArrowLeft') {
+			event.preventDefault();
+			stepLightbox(-1);
+		} else if (event.key === 'ArrowRight') {
+			event.preventDefault();
+			stepLightbox(1);
 		}
 	});
 

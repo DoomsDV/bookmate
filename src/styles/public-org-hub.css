@@ -1,3 +1,8 @@
+/* Evita salto horizontal al cambiar tema (scrollbar) */
+html:has(.hub-root) {
+	scrollbar-gutter: stable;
+}
+
 .hub-root {
 	--hub-max: 1120px;
 	--hub-pad-x: 1.25rem;
@@ -59,35 +64,45 @@ html[data-theme='dark'] .hub-root {
 .hub-hero {
 	position: relative;
 	isolation: isolate;
+	box-sizing: border-box;
+	max-width: var(--hub-max);
+	width: 100%;
+	margin: 0 auto;
+	padding: 0.85rem var(--hub-pad-x) 0;
 }
 
 .hub-hero__banner {
 	position: relative;
 	z-index: 0;
 	width: 100%;
-	height: clamp(8rem, 24vw, 12.5rem);
+	height: clamp(7.25rem, 16vw, 10.5rem);
 	overflow: hidden;
-	border-radius: 0;
-	background:
+	border-radius: var(--hub-radius-lg);
+	background-color: #2a4a8a;
+}
+
+/* Gradiente solo si no hay foto (el shorthand no debe pisar background-image) */
+.hub-hero__banner:not(.hub-hero__banner--photo) {
+	background-image:
 		radial-gradient(ellipse 80% 90% at 85% 10%, rgba(90, 150, 255, 0.45), transparent 55%),
 		radial-gradient(ellipse 60% 70% at 15% 80%, rgba(66, 110, 219, 0.28), transparent 55%),
 		linear-gradient(145deg, #1a2744 0%, #2a4a8a 48%, #426edb 100%);
 }
 
-html[data-theme='light'] .hub-hero__banner {
-	background:
-		linear-gradient(135deg, #d7e3fb 0%, #c4d4f6 42%, #ddd0f5 100%);
+html[data-theme='light'] .hub-hero__banner:not(.hub-hero__banner--photo) {
+	background-color: #c4d4f6;
+	background-image: linear-gradient(135deg, #d7e3fb 0%, #c4d4f6 42%, #ddd0f5 100%);
 }
 
 .hub-hero__banner--photo {
-	background-size: cover;
-	background-position: center;
-	background-repeat: no-repeat;
+	background-size: cover !important;
+	background-position: center !important;
+	background-repeat: no-repeat !important;
 }
 
 .hub-gallery-blocks {
 	display: grid;
-	gap: 1.5rem;
+	gap: 0.85rem;
 }
 
 .hub-gallery-block {
@@ -95,17 +110,152 @@ html[data-theme='light'] .hub-hero__banner {
 	margin: 0;
 	padding: 0;
 	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 0.55rem;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.45rem;
+	max-width: 36rem;
 }
 
+.hub-gallery-open {
+	display: block;
+	width: 100%;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	cursor: zoom-in;
+	border-radius: 0.85rem;
+	overflow: hidden;
+}
+
+.hub-gallery-open img,
 .hub-gallery-block img {
 	display: block;
 	width: 100%;
 	aspect-ratio: 1;
 	object-fit: cover;
-	border-radius: 1.15rem;
+	border-radius: 0.85rem;
 	background: var(--control-surface);
+}
+
+.hub-gallery-open:focus-visible {
+	outline: 2px solid var(--hub-primary, var(--primary));
+	outline-offset: 2px;
+}
+
+@media (min-width: 700px) {
+	.hub-gallery-block {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		max-width: 42rem;
+		gap: 0.5rem;
+	}
+}
+
+.hub-lightbox {
+	position: fixed;
+	inset: 0;
+	z-index: 90;
+	margin: 0;
+	width: 100%;
+	max-width: none;
+	height: 100%;
+	max-height: none;
+	border: 0;
+	padding: 0;
+	background: rgba(0, 0, 0, 0.88) !important;
+	background-image: none !important;
+	box-shadow: none !important;
+	color: #fff;
+	overflow: hidden;
+}
+
+.hub-lightbox[open] {
+	display: grid;
+	place-items: center;
+}
+
+.hub-lightbox::backdrop {
+	background: rgba(0, 0, 0, 0.72);
+}
+
+.hub-lightbox__figure {
+	margin: 0;
+	max-width: min(92vw, 56rem);
+	max-height: min(86dvh, 48rem);
+	display: grid;
+	gap: 0.65rem;
+	justify-items: center;
+}
+
+.hub-lightbox__figure img {
+	display: block;
+	max-width: 100%;
+	max-height: min(78dvh, 44rem);
+	width: auto;
+	height: auto;
+	object-fit: contain;
+	border-radius: 0.65rem;
+	background: #111;
+}
+
+.hub-lightbox__caption {
+	margin: 0;
+	font-size: 0.85rem;
+	font-weight: 650;
+	color: rgba(255, 255, 255, 0.78);
+}
+
+.hub-lightbox__close,
+.hub-lightbox__nav {
+	position: absolute;
+	display: inline-grid;
+	place-items: center;
+	border: 0;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	cursor: pointer;
+}
+
+.hub-lightbox__close:hover,
+.hub-lightbox__nav:hover {
+	background: rgba(255, 255, 255, 0.22);
+}
+
+.hub-lightbox__close {
+	top: 0.85rem;
+	right: 0.85rem;
+	width: 2.5rem;
+	height: 2.5rem;
+}
+
+.hub-lightbox__nav {
+	top: 50%;
+	transform: translateY(-50%);
+	width: 2.75rem;
+	height: 2.75rem;
+}
+
+.hub-lightbox__nav--prev {
+	left: 0.65rem;
+}
+
+.hub-lightbox__nav--next {
+	right: 0.65rem;
+}
+
+.hub-lightbox__nav[hidden],
+.hub-lightbox__nav:disabled {
+	opacity: 0.35;
+	pointer-events: none;
+}
+
+@media (min-width: 640px) {
+	.hub-lightbox__nav--prev {
+		left: 1.25rem;
+	}
+
+	.hub-lightbox__nav--next {
+		right: 1.25rem;
+	}
 }
 
 .hub-hero__orb {
@@ -159,10 +309,9 @@ html[data-theme='light'] .hub-hero__banner {
 	display: grid;
 	gap: 0.85rem;
 	box-sizing: border-box;
-	max-width: var(--hub-max);
 	width: 100%;
-	margin: 0 auto;
-	padding: 0 var(--hub-pad-x) 0.35rem;
+	margin: 0;
+	padding: 0 0 0.35rem;
 }
 
 @media (min-width: 768px) {
@@ -232,9 +381,10 @@ html[data-theme='light'] .hub-hero__banner {
 	color: var(--on-surface, #1e293b);
 	font-size: 0.95rem;
 	font-weight: 650;
-	line-height: 1.4;
+	line-height: 1.45;
+	max-width: 42rem;
 	display: -webkit-box;
-	-webkit-line-clamp: 2;
+	-webkit-line-clamp: 3;
 	-webkit-box-orient: vertical;
 	overflow: hidden;
 }
@@ -331,6 +481,13 @@ html[data-theme='dark'] .hub-hero__tagline {
 
 .hub-btn .material-symbols-rounded {
 	font-size: 1.1rem;
+}
+
+.hub-btn__brand-icon {
+	display: block;
+	width: 1.1rem;
+	height: 1.1rem;
+	flex-shrink: 0;
 }
 
 .hub-btn--outline {

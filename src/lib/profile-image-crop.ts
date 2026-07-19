@@ -20,6 +20,20 @@ export function buildCroppedProfileFileName(originalName: string): string {
 
 export type ProfileCropMode = 'logo' | 'banner';
 
+const waitForLayout = (el: HTMLElement) =>
+	new Promise<void>((resolve) => {
+		requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				if (el.clientWidth > 0) {
+					resolve();
+					return;
+				}
+				// Diálogo recién abierto: un frame extra suele bastar
+				requestAnimationFrame(() => resolve());
+			});
+		});
+	});
+
 export class ProfileImageCropper {
 	private instance: Croppie | null = null;
 	private objectUrl: string | null = null;
@@ -32,26 +46,46 @@ export class ProfileImageCropper {
 
 	async bindFile(file: File): Promise<void> {
 		this.destroy();
+		await waitForLayout(this.mountEl);
+
 		const url = URL.createObjectURL(file);
 		this.objectUrl = url;
 
+		const mountW = Math.max(this.mountEl.clientWidth || 0, 280);
+		const mountH = Math.max(this.mountEl.clientHeight || 0, 200);
+
 		if (this.mode === 'banner') {
-			const width = Math.min(320, Math.max(240, this.mountEl.clientWidth - 24));
-			const height = Math.round(width / 2);
+			// Viewport 2:1 lo más grande posible dentro del modal
+			const maxViewportW = Math.min(mountW - 32, 720);
+			const maxViewportH = Math.min(mountH - 72, 320);
+			let viewportW = maxViewportW;
+			let viewportH = Math.round(viewportW / 2);
+			if (viewportH > maxViewportH) {
+				viewportH = maxViewportH;
+				viewportW = Math.round(viewportH * 2);
+			}
+			viewportW = Math.max(280, viewportW);
+			viewportH = Math.max(140, Math.round(viewportW / 2));
+
+			const boundaryW = Math.min(mountW, viewportW + 48);
+			const boundaryH = Math.min(Math.max(mountH - 24, viewportH + 56), viewportH + 80);
+
 			this.instance = new Croppie(this.mountEl, {
-				viewport: { width, height, type: 'square' },
-				boundary: { width: width + 32, height: height + 48 },
+				viewport: { width: viewportW, height: viewportH, type: 'square' },
+				boundary: { width: boundaryW, height: boundaryH },
 				showZoomer: true,
 				enableExif: true,
+				enableOrientation: true,
 				enforceBoundary: true,
 			});
 		} else {
-			const viewport = Math.min(260, Math.max(200, this.mountEl.clientWidth - 24));
+			const viewport = Math.min(300, Math.max(220, mountW - 48));
 			this.instance = new Croppie(this.mountEl, {
 				viewport: { width: viewport, height: viewport, type: 'circle' },
-				boundary: { width: viewport + 32, height: viewport + 32 },
+				boundary: { width: viewport + 40, height: viewport + 40 },
 				showZoomer: true,
 				enableExif: true,
+				enableOrientation: true,
 				enforceBoundary: true,
 			});
 		}

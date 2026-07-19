@@ -3,7 +3,7 @@ import {
 	PUBLIC_PROFILE_PREVIEW_EVENT,
 	type PublicProfilePreviewState,
 } from '../lib/public-profile-preview-events';
-import { FacebookIcon, InstagramIcon } from './hub-brand-icons';
+import { FacebookIcon, InstagramIcon, WhatsAppIcon } from './hub-brand-icons';
 
 type PreviewTab = 'overview' | 'galeria' | 'equipo' | 'sucursales';
 
@@ -55,8 +55,7 @@ export default function PublicProfilePreview({ initial }: Props) {
 		? description
 				.split(/\n/)
 				.map((line) => line.trim())
-				.find(Boolean)
-				?.slice(0, 70) || ''
+				.find(Boolean) || ''
 		: '';
 	const locationLabel = String(state.locationLabel || '').trim();
 	const teamCount = Number(state.teamCount || 0);
@@ -151,9 +150,7 @@ export default function PublicProfilePreview({ initial }: Props) {
 								<div class="hub-hero__cta-row">
 									{state.whatsappVisible ? (
 										<span class="hub-btn hub-btn--outline hub-wa-link">
-											<span class="material-symbols-rounded" aria-hidden="true">
-												chat
-											</span>
+											<WhatsAppIcon class="hub-btn__brand-icon" />
 											WhatsApp
 										</span>
 									) : null}
