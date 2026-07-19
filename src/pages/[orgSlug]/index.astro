@@ -704,6 +704,14 @@ const serializedProfessionals = professionals.length
 							</button>
 						</dialog>
 					) : null}
+
+					<div
+						class="hub-toast"
+						data-hub-toast
+						role="status"
+						aria-live="polite"
+						hidden
+					></div>
 				</>
 			) : (
 				<>
@@ -898,21 +906,46 @@ const serializedProfessionals = professionals.length
 		const root = document.querySelector<HTMLElement>('[data-hub-root]');
 		if (!root) return;
 
+		const toastEl = root.querySelector<HTMLElement>('[data-hub-toast]');
+		let toastTimer: number | null = null;
+		const showHubToast = (message: string) => {
+			if (!toastEl) return;
+			toastEl.hidden = false;
+			toastEl.textContent = message;
+			toastEl.classList.add('is-visible');
+			if (toastTimer) window.clearTimeout(toastTimer);
+			toastTimer = window.setTimeout(() => {
+				toastEl.classList.remove('is-visible');
+				window.setTimeout(() => {
+					if (!toastEl.classList.contains('is-visible')) {
+						toastEl.hidden = true;
+						toastEl.textContent = '';
+					}
+				}, 220);
+			}, 2200);
+		};
+
 		const copyBtn = root.querySelector<HTMLButtonElement>('[data-hub-copy-link]');
 		if (copyBtn && copyBtn.dataset.bound !== '1') {
 			copyBtn.dataset.bound = '1';
 			copyBtn.addEventListener('click', async () => {
 				const url = String(copyBtn.dataset.hubUrl || window.location.href).trim();
+				const icon = copyBtn.querySelector<HTMLElement>('.material-symbols-rounded');
 				try {
 					await navigator.clipboard.writeText(url);
 					copyBtn.title = 'Enlace copiado';
 					copyBtn.setAttribute('aria-label', 'Enlace copiado');
+					copyBtn.classList.add('is-copied');
+					if (icon) icon.textContent = 'check';
+					showHubToast('Enlace copiado al portapapeles');
 					window.setTimeout(() => {
 						copyBtn.title = 'Copiar enlace';
 						copyBtn.setAttribute('aria-label', 'Copiar enlace del negocio');
+						copyBtn.classList.remove('is-copied');
+						if (icon) icon.textContent = 'link';
 					}, 1800);
 				} catch {
-					/* ignore */
+					showHubToast('No se pudo copiar el enlace');
 				}
 			});
 		}

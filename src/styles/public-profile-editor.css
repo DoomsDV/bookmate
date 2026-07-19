@@ -56,19 +56,15 @@ public-profile-editor {
 
 .ppe-tabs {
 	display: flex;
-	flex-wrap: nowrap;
+	flex-wrap: wrap;
 	gap: 0.15rem;
 	margin: 0.15rem 0 0.25rem;
 	border-bottom: 1px solid var(--shell-border);
-	overflow-x: auto;
-	overflow-y: hidden;
-	-webkit-overflow-scrolling: touch;
-	scrollbar-width: none;
-	overscroll-behavior-x: contain;
-}
-
-.ppe-tabs::-webkit-scrollbar {
-	display: none;
+	min-height: 2.75rem;
+	align-items: flex-end;
+	/* Evita que un overflow anidado colapse la altura en desktop */
+	overflow: visible;
+	flex-shrink: 0;
 }
 
 .ppe-tab {
@@ -86,6 +82,7 @@ public-profile-editor {
 	border-radius: 0.45rem 0.45rem 0 0;
 	flex: 0 0 auto;
 	white-space: nowrap;
+	line-height: 1.2;
 }
 
 .ppe-tab:hover {
@@ -157,6 +154,15 @@ public-profile-editor {
 		padding-bottom: 5.75rem;
 		scrollbar-gutter: stable;
 		align-content: start;
+	}
+
+	/* Pestañas siempre visibles al scrollear el formulario */
+	.ppe-config-pane > .ppe-tabs {
+		position: sticky;
+		top: 0;
+		z-index: 4;
+		background: var(--page-background, var(--surface, #121212));
+		overflow: visible;
 	}
 
 	.ppe-phone-col {
@@ -453,7 +459,7 @@ public-profile-editor {
 	align-items: center;
 	justify-content: space-between;
 	gap: 0.5rem;
-	padding: 0.7rem 0.75rem 0.55rem;
+	padding: 0.7rem var(--hub-pad-x, 1rem) 0.55rem;
 	background: color-mix(in srgb, var(--surface) 85%, transparent);
 	border-bottom: 1px solid var(--shell-border);
 }
@@ -464,6 +470,21 @@ public-profile-editor {
 	gap: 0.35rem;
 	font-weight: 800;
 	font-size: 0.95rem;
+}
+
+.ppe-preview-topbar__theme {
+	display: inline-grid;
+	place-items: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 0.75rem;
+	border: 1px solid var(--shell-border);
+	background: var(--control-surface);
+	color: var(--on-surface-variant);
+}
+
+.ppe-preview-topbar__theme .material-symbols-rounded {
+	font-size: 1.1rem;
 }
 
 .ppe-preview-topbar__cta {
@@ -689,7 +710,8 @@ html[data-theme='dark'] .ppe-phone__screen {
 }
 
 .ppe-preview-hub {
-	--hub-pad-x: 0.65rem;
+	/* Misma respiración horizontal que el hub público en móvil */
+	--hub-pad-x: 1.5rem;
 	--hub-topbar-h: 3.25rem;
 	--hub-radius-xl: 0;
 	--hub-radius-lg: 0.9rem;
@@ -716,8 +738,8 @@ html[data-theme='dark'] .ppe-preview-hub {
 }
 
 .ppe-preview-hub .hub-section {
-	padding-left: 0.85rem;
-	padding-right: 0.85rem;
+	padding-left: var(--hub-pad-x);
+	padding-right: var(--hub-pad-x);
 }
 
 .ppe-preview-hub .hub-section:has(.hub-tabs) {
@@ -734,7 +756,7 @@ html[data-theme='dark'] .ppe-preview-hub {
 }
 
 .ppe-preview-hub .hub-hero {
-	padding: 0.55rem 0.85rem 0;
+	padding: 0.55rem var(--hub-pad-x) 0;
 	max-width: none;
 }
 
@@ -875,9 +897,16 @@ html[data-theme='dark'] .ppe-preview-hub {
 	box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.08);
 }
 
-.ppe-preview-trigger--header {
+/* Más específico que .ppe-btn { display: inline-flex } */
+.ppe-btn.ppe-preview-trigger--header {
+	/* En desktop ya está la preview del teléfono; el ojo solo en móvil */
+	display: none;
 	width: 2.75rem;
 	padding-inline: 0;
+}
+
+.ppe-preview-trigger__label {
+	display: none;
 }
 
 /* Modal inmersivo: tapa shell, bottom-nav y footer de guardar */
@@ -908,17 +937,18 @@ html[data-theme='dark'] .ppe-preview-hub {
 	z-index: 2;
 	display: flex;
 	align-items: center;
-	justify-content: space-between;
+	justify-content: flex-start;
 	gap: 0.75rem;
 	padding: 0.55rem 0.75rem;
 	padding-top: max(0.55rem, env(safe-area-inset-top, 0px));
-	background: color-mix(in srgb, #0b1220 78%, transparent);
+	border-bottom: 1px solid var(--shell-border);
+	background: color-mix(in srgb, var(--surface, #121212) 92%, transparent);
 	backdrop-filter: blur(12px);
-	color: #f9fafb;
+	-webkit-backdrop-filter: blur(12px);
+	color: var(--on-surface);
 }
 
-.ppe-preview-modal__back,
-.ppe-preview-modal__close {
+.ppe-preview-modal__back {
 	appearance: none;
 	border: 0;
 	background: transparent;
@@ -934,15 +964,8 @@ html[data-theme='dark'] .ppe-preview-hub {
 	font-weight: 700;
 }
 
-.ppe-preview-modal__back:hover,
-.ppe-preview-modal__close:hover {
-	background: color-mix(in srgb, #fff 14%, transparent);
-}
-
-.ppe-preview-modal__close {
-	justify-content: center;
-	width: 2.5rem;
-	padding-inline: 0;
+.ppe-preview-modal__back:hover {
+	background: color-mix(in srgb, var(--on-surface) 8%, transparent);
 }
 
 .ppe-preview-modal__scroll {
@@ -954,12 +977,57 @@ html[data-theme='dark'] .ppe-preview-hub {
 }
 
 .ppe-preview-hub--live {
-	--hub-pad-x: 1rem;
+	--hub-pad-x: 1.5rem;
 	font-size: 1rem;
 	min-height: 100%;
 }
 
+.ppe-preview-hub--live .hub-overview-stack {
+	gap: 1.85rem;
+}
+
 @media (max-width: 1023.98px) {
+	.ppe-header {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.75rem;
+	}
+
+	.ppe-header__actions {
+		display: flex;
+		width: 100%;
+	}
+
+	/* Móvil: CTA full-width a la vista previa inmersiva */
+	.ppe-btn.ppe-preview-trigger--header {
+		display: inline-flex;
+		width: 100%;
+		padding-inline: 1.05rem;
+		justify-content: center;
+	}
+
+	.ppe-preview-trigger__label {
+		display: inline;
+	}
+
+	/* En PC sirve; en móvil preferimos el modal controlado */
+	.ppe-open-public {
+		display: none !important;
+	}
+
+	.ppe-tabs {
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		overflow-y: visible;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		overscroll-behavior-x: contain;
+	}
+
+	.ppe-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
 	.ppe-layout {
 		display: flex;
 		flex-direction: column;
@@ -1689,13 +1757,18 @@ html[data-theme='dark'] .ppe-preview-hub {
 
 .ppe-hours-interval {
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) 1.1rem minmax(0, 1fr) 2.25rem;
+	grid-template-columns: 8.75rem 1.1rem 8.75rem 2.25rem;
 	align-items: center;
+	justify-content: start;
 	column-gap: 0.35rem;
+	width: fit-content;
+	max-width: 100%;
 }
 
 .ppe-hours-interval__time {
-	width: 100%;
+	box-sizing: border-box;
+	width: 8.75rem; /* 140px: suficiente para HH:MM */
+	max-width: 140px;
 	min-width: 0;
 	padding: 0.42rem 0.45rem;
 	font-size: 0.88rem;
@@ -1703,6 +1776,17 @@ html[data-theme='dark'] .ppe-preview-hub {
 	text-align: center;
 	font-variant-numeric: tabular-nums;
 	font-feature-settings: 'tnum';
+}
+
+@media (max-width: 380px) {
+	.ppe-hours-interval {
+		grid-template-columns: minmax(0, 7.5rem) 1rem minmax(0, 7.5rem) 2.25rem;
+	}
+
+	.ppe-hours-interval__time {
+		width: 100%;
+		max-width: 7.5rem;
+	}
 }
 
 .ppe-hours-interval__sep {

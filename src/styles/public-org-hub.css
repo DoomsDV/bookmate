@@ -5,7 +5,8 @@ html:has(.hub-root) {
 
 .hub-root {
 	--hub-max: 1120px;
-	--hub-pad-x: 1.25rem;
+	/* Más aire en móvil para que badges como “Cerrado ahora” no peguen al borde */
+	--hub-pad-x: 1.5rem;
 	--hub-topbar-h: 4.25rem;
 	--hub-primary: #426edb;
 	--hub-accent: #5b9cff;
@@ -445,8 +446,51 @@ html[data-theme='dark'] .hub-hero__tagline {
 	color: var(--hub-primary);
 }
 
+.hub-icon-btn.is-copied {
+	color: #15803d;
+	border-color: color-mix(in srgb, #22c55e 40%, transparent);
+	background: color-mix(in srgb, #22c55e 14%, transparent);
+}
+
+html[data-theme='dark'] .hub-icon-btn.is-copied {
+	color: #86efac;
+}
+
 .hub-icon-btn .material-symbols-rounded {
 	font-size: 1.15rem;
+}
+
+.hub-toast {
+	position: fixed;
+	left: 50%;
+	bottom: max(1.25rem, env(safe-area-inset-bottom, 0px));
+	z-index: 80;
+	transform: translate(-50%, 0.6rem);
+	opacity: 0;
+	pointer-events: none;
+	max-width: min(22rem, calc(100vw - 2rem));
+	padding: 0.7rem 1rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, #0b1220 92%, transparent);
+	color: #f9fafb;
+	font-size: 0.88rem;
+	font-weight: 750;
+	text-align: center;
+	box-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+	backdrop-filter: blur(10px);
+	transition:
+		opacity 180ms ease,
+		transform 180ms ease;
+}
+
+.hub-toast.is-visible {
+	opacity: 1;
+	transform: translate(-50%, 0);
+}
+
+html[data-theme='dark'] .hub-toast {
+	background: color-mix(in srgb, #f3f4f6 94%, transparent);
+	color: #111827;
 }
 
 .hub-icon-btn__svg {
@@ -535,7 +579,7 @@ html[data-theme='dark'] .hub-hero__tagline {
 
 .hub-overview-stack {
 	display: grid;
-	gap: 1.35rem;
+	gap: 1.85rem;
 }
 
 .hub-pin-block {
@@ -547,9 +591,18 @@ html[data-theme='dark'] .hub-hero__tagline {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
-	justify-content: space-between;
-	gap: 0.45rem 0.75rem;
+	justify-content: flex-start;
 	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+/* Gana a .hub-pin-block__label { gap: 0.35rem } — título y badge con aire real */
+.hub-pin-block__label.hub-hours__heading {
+	display: flex;
+	width: 100%;
+	max-width: 100%;
+	gap: 1.5rem;
 }
 
 .hub-hours__heading-title {
@@ -619,9 +672,18 @@ html[data-theme='dark'] .hub-hero__tagline {
 	align-items: center;
 	gap: 0.35rem;
 	margin: 0;
+	flex-shrink: 0;
+	max-width: 100%;
 	font-size: 0.78rem;
 	font-weight: 750;
 	line-height: 1.2;
+	white-space: nowrap;
+}
+
+.hub-hours {
+	box-sizing: border-box;
+	max-width: 100%;
+	padding-inline: 0;
 }
 
 .hub-hours__live-dot {
@@ -761,6 +823,9 @@ html[data-theme='dark'] .hub-tab.is-active {
 .hub-panels {
 	padding-top: 1.5rem;
 	padding-bottom: 0.75rem;
+	padding-left: var(--hub-pad-x);
+	padding-right: var(--hub-pad-x);
+	box-sizing: border-box;
 }
 
 .hub-panel {
@@ -965,12 +1030,12 @@ html[data-theme='dark'] .hub-location-card__address {
 	max-width: 100%;
 	padding: 0.5rem 1rem;
 	border-radius: 0.65rem;
-	border: 1px solid color-mix(in srgb, var(--on-surface) 12%, transparent);
-	background: color-mix(in srgb, var(--on-surface) 6%, transparent);
-	color: var(--on-surface);
+	border: 1px solid color-mix(in srgb, var(--on-surface) 10%, transparent);
+	background: color-mix(in srgb, var(--on-surface) 4%, transparent);
+	color: var(--on-surface-variant, #64748b);
 	font: inherit;
 	font-size: 0.86rem;
-	font-weight: 750;
+	font-weight: 700;
 	cursor: pointer;
 	text-decoration: none;
 	transition:
@@ -984,20 +1049,21 @@ html[data-theme='dark'] .hub-location-card__address {
 }
 
 .hub-location-card__cta:hover {
-	background: color-mix(in srgb, var(--on-surface) 10%, transparent);
-	border-color: color-mix(in srgb, var(--on-surface) 18%, transparent);
+	background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+	border-color: color-mix(in srgb, var(--on-surface) 14%, transparent);
+	color: var(--on-surface);
 }
 
 html[data-theme='dark'] .hub-location-card__cta {
-	background: #3f3f46;
+	background: color-mix(in srgb, #fff 6%, transparent);
 	border-color: color-mix(in srgb, #fff 8%, transparent);
-	color: #f4f4f5;
+	color: #a1a1aa;
 }
 
 html[data-theme='dark'] .hub-location-card__cta:hover {
-	background: #52525b;
+	background: color-mix(in srgb, #fff 10%, transparent);
 	border-color: color-mix(in srgb, #fff 12%, transparent);
-	color: #fff;
+	color: #d4d4d8;
 }
 
 .hub-location-card__map-frame {
@@ -1204,11 +1270,11 @@ html[data-theme='dark'] .hub-pro-card__avatar--ph {
 	margin-top: 0.15rem;
 	padding: 0.5rem 1rem;
 	border-radius: 0.65rem;
-	border: 1px solid color-mix(in srgb, var(--on-surface) 12%, transparent);
+	border: 1px solid color-mix(in srgb, var(--on-surface) 10%, transparent);
 	font-size: 0.86rem;
-	font-weight: 750;
-	background: color-mix(in srgb, var(--on-surface) 6%, transparent);
-	color: var(--on-surface);
+	font-weight: 700;
+	background: color-mix(in srgb, var(--on-surface) 4%, transparent);
+	color: var(--on-surface-variant, #64748b);
 	transition:
 		background 160ms ease,
 		border-color 160ms ease,
@@ -1220,20 +1286,21 @@ html[data-theme='dark'] .hub-pro-card__avatar--ph {
 }
 
 .hub-pro-card:hover .hub-pro-card__cta {
-	background: color-mix(in srgb, var(--on-surface) 10%, transparent);
-	border-color: color-mix(in srgb, var(--on-surface) 18%, transparent);
+	background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+	border-color: color-mix(in srgb, var(--on-surface) 14%, transparent);
+	color: var(--on-surface);
 }
 
 html[data-theme='dark'] .hub-pro-card__cta {
-	background: #3f3f46;
+	background: color-mix(in srgb, #fff 6%, transparent);
 	border-color: color-mix(in srgb, #fff 8%, transparent);
-	color: #f4f4f5;
+	color: #a1a1aa;
 }
 
 html[data-theme='dark'] .hub-pro-card:hover .hub-pro-card__cta {
-	background: #52525b;
+	background: color-mix(in srgb, #fff 10%, transparent);
 	border-color: color-mix(in srgb, #fff 12%, transparent);
-	color: #fff;
+	color: #d4d4d8;
 }
 
 .hub-empty {

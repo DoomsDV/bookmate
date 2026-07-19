@@ -729,7 +729,6 @@ const toPageHref = (page: number) => {
 															<span class="material-symbols-rounded" aria-hidden="true">add</span>
 															Crear cita
 														</a>
-														<a href="/panel/cobros" class="dashboard-alerts-empty__link">Revisar cobros</a>
 													</div>
 												</div>
 											</aside>
@@ -4594,18 +4593,6 @@ const toPageHref = (page: number) => {
 		transform: translateY(-1px);
 	}
 
-	.dashboard-alerts-empty__link {
-		font-size: 0.78rem;
-		font-weight: 750;
-		color: var(--on-surface-variant);
-		text-decoration: none;
-	}
-
-	.dashboard-alerts-empty__link:hover {
-		color: var(--primary);
-		text-decoration: underline;
-	}
-
 	html[data-theme='dark'] .dashboard-alerts-empty__cta {
 		border-color: color-mix(in srgb, #a8c7fa 32%, rgba(255, 255, 255, 0.12) 68%);
 		background: color-mix(in srgb, #a8c7fa 12%, transparent);
@@ -4615,10 +4602,6 @@ const toPageHref = (page: number) => {
 	html[data-theme='dark'] .dashboard-alerts-empty__cta:hover {
 		background: color-mix(in srgb, #a8c7fa 20%, transparent);
 		border-color: color-mix(in srgb, #a8c7fa 52%, transparent);
-	}
-
-	html[data-theme='dark'] .dashboard-alerts-empty__link:hover {
-		color: #a8c7fa;
 	}
 
 	@media (min-width: 1024px) {

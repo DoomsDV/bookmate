@@ -885,66 +885,74 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	.schedule-day-switch__label {
 		user-select: none;
+		font-size: 0.78rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
+		min-width: 3.4rem;
+		transition: color 160ms ease;
 	}
 
-	.settings-switch {
+	.schedule-day-switch.is-on .schedule-day-switch__label {
+		color: #426edb;
+	}
+
+	/* Mismo estilo activo que el toggle de Horario del perfil público */
+	.settings-switch.schedule-day-switch {
 		position: relative;
 		display: inline-flex;
 		align-items: center;
+		gap: 0.4rem;
 		cursor: pointer;
 	}
 
-	.settings-switch.is-disabled {
+	.settings-switch.schedule-day-switch.is-disabled {
 		cursor: not-allowed;
 		opacity: 0.55;
 	}
 
-	.settings-switch__track {
+	.schedule-day-switch .settings-switch__track {
 		position: relative;
-		display: inline-flex;
-		width: 3rem;
-		height: 1.7rem;
+		display: block;
+		width: 2rem;
+		height: 1.15rem;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface-variant) 11%, var(--surface-container-low));
-		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 20%, var(--shell-border));
-		transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+		border: 0;
+		background: color-mix(in srgb, var(--on-surface-variant) 35%, transparent);
+		box-shadow: none;
+		transition: background 160ms ease;
 	}
 
-	.settings-switch__track::after {
+	.schedule-day-switch .settings-switch__track::after {
 		content: '';
 		position: absolute;
-		top: 2px;
-		left: 2px;
-		width: 1.25rem;
-		height: 1.25rem;
-		border-radius: 50%;
-		background: color-mix(in srgb, var(--surface-bright) 78%, var(--on-surface-variant) 22%);
-		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 18%, var(--shell-border));
-		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.14);
-		transition:
-			transform 0.2s ease,
-			background 0.2s ease,
-			border-color 0.2s ease,
-			box-shadow 0.2s ease;
+		top: 0.12rem;
+		left: 0.14rem;
+		width: 0.88rem;
+		height: 0.88rem;
+		border-radius: 999px;
+		background: #fff;
+		border: 0;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+		transition: transform 160ms ease;
 	}
 
-	.settings-switch__input:focus-visible + .settings-switch__track {
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 16%, transparent);
+	.schedule-day-switch .settings-switch__input:focus-visible + .settings-switch__track {
+		box-shadow: 0 0 0 2px color-mix(in srgb, #426edb 28%, transparent);
 	}
 
-	.settings-switch__input:checked + .settings-switch__track {
-		background: color-mix(in srgb, var(--primary) 52%, var(--surface-variant));
-		border-color: color-mix(in srgb, var(--primary) 38%, var(--shell-border));
+	.schedule-day-switch .settings-switch__input:checked + .settings-switch__track {
+		background: #426edb;
+		border-color: transparent;
 	}
 
-	.settings-switch__input:checked + .settings-switch__track::after {
-		transform: translateX(1.25rem);
-		background: color-mix(in srgb, white 88%, var(--primary) 12%);
-		border-color: color-mix(in srgb, var(--primary) 24%, var(--shell-border));
-		box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+	.schedule-day-switch .settings-switch__input:checked + .settings-switch__track::after {
+		transform: translateX(0.8rem);
+		background: #fff;
+		border-color: transparent;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 	}
 
-	.settings-switch__input:disabled + .settings-switch__track {
+	.schedule-day-switch .settings-switch__input:disabled + .settings-switch__track {
 		opacity: 0.72;
 	}
 

@@ -73,6 +73,9 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 					<img src="/icons/icon-64.png" alt="" width="22" height="22" />
 					Hasel
 				</span>
+				<span class="ppe-preview-topbar__theme">
+					<span class="material-symbols-rounded">light_mode</span>
+				</span>
 			</header>
 
 			<div class="hub-shell">
@@ -114,6 +117,11 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 										<InstagramIcon class="hub-icon-btn__svg" />
 									</span>
 								) : null}
+								<span class="hub-icon-btn" title="Copiar enlace">
+									<span class="material-symbols-rounded" aria-hidden="true">
+										link
+									</span>
+								</span>
 							</div>
 						</div>
 						<div class="hub-hero__meta">

@@ -53,6 +53,8 @@ type DayState = {
 type DayNodeRefs = {
 	summaryNode: HTMLElement;
 	toggleInput: HTMLInputElement;
+	toggleLabel: HTMLLabelElement;
+	toggleText: HTMLSpanElement;
 	slotSection: HTMLElement;
 	slotsContainer: HTMLElement;
 	addButton: HTMLButtonElement | null;
@@ -798,9 +800,8 @@ class ScheduleManager extends HTMLElement {
 			toggleTrack.className = 'settings-switch__track';
 			toggleTrack.setAttribute('aria-hidden', 'true');
 			const toggleText = document.createElement('span');
-			toggleText.className =
-				'schedule-day-switch__label text-[0.82rem] font-bold text-[color:var(--on-surface-variant)]';
-			toggleText.textContent = 'Habilitado';
+			toggleText.className = 'schedule-day-switch__label';
+			toggleText.textContent = 'Abierto';
 			toggleLabel.append(toggleInput, toggleTrack, toggleText);
 
 			headLine.append(title, toggleLabel);
@@ -833,6 +834,8 @@ class ScheduleManager extends HTMLElement {
 			this.dayNodes.set(dayState.day_of_week, {
 				summaryNode: summary,
 				toggleInput,
+				toggleLabel,
+				toggleText,
 				slotSection,
 				slotsContainer,
 				addButton,
@@ -852,6 +855,8 @@ class ScheduleManager extends HTMLElement {
 		if (!dayState || !refs) return;
 
 		refs.toggleInput.checked = dayState.enabled;
+		refs.toggleLabel.classList.toggle('is-on', dayState.enabled);
+		refs.toggleText.textContent = dayState.enabled ? 'Abierto' : 'Cerrado';
 		refs.summaryNode.textContent = dayState.enabled
 			? `${dayState.slots.length} turno(s) configurado(s)`
 			: 'Dia libre';

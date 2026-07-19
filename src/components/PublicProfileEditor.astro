@@ -102,9 +102,10 @@ const previewInitial = {
 							title="Ver vista previa"
 						>
 							<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">visibility</span>
+							<span class="ppe-preview-trigger__label">Ver vista previa</span>
 						</button>
 						<a
-							class="ppe-btn ppe-btn-secondary"
+							class="ppe-btn ppe-btn-secondary ppe-open-public"
 							href={hubUrl || '#'}
 							target="_blank"
 							rel="noopener noreferrer"
@@ -487,14 +488,6 @@ const previewInitial = {
 			<button type="button" class="ppe-preview-modal__back" data-ppe-close-preview>
 				<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
 				Volver a edición
-			</button>
-			<button
-				type="button"
-				class="ppe-preview-modal__close"
-				data-ppe-close-preview
-				aria-label="Cerrar vista previa"
-			>
-				<span class="material-symbols-rounded" aria-hidden="true">close</span>
 			</button>
 		</div>
 		<div class="ppe-preview-modal__scroll">
