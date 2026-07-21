@@ -38,7 +38,6 @@ type Bootstrap = {
 	siteOrigin: string;
 	domainLabel: string;
 	descMax?: number;
-	galleryMax?: number;
 };
 
 const fileToBase64 = (file: File) =>
@@ -143,7 +142,6 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const openPublic = root.querySelector<HTMLAnchorElement>('[data-ppe-open-public]');
 	const copyBtn = root.querySelector<HTMLButtonElement>('[data-ppe-copy-url]');
 	const descMax = Number(bootstrap.descMax || 500);
-	const galleryMax = Number(bootstrap.galleryMax || 30);
 	let businessHours: BusinessHours = parseBusinessHours(bootstrap.workspace?.business_hours);
 	/** Día 1–7 expandido para editar turnos; null = todos colapsados. */
 	let expandedHoursDay: number | null = null;
@@ -379,7 +377,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			li.append(openBtn, removeBtn);
 			galleryGrid.appendChild(li);
 		}
-		if (galleryCount) galleryCount.textContent = `(${galleryItems.length}/${galleryMax})`;
+		if (galleryCount) galleryCount.textContent = `(${galleryItems.length})`;
 		if (lightbox?.open) {
 			if (!galleryItems.length) {
 				closeLightbox();
@@ -865,16 +863,10 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const openGalleryPreview = (files: FileList | File[]) => {
 		const list = Array.from(files);
 		if (!list.length) return;
-		if (galleryItems.length >= galleryMax) {
-			showFeedback(`La galería admite un máximo de ${galleryMax} fotos.`, 'error');
-			return;
-		}
 
-		const slots = galleryMax - galleryItems.length;
 		const accepted: File[] = [];
 		let rejectedType = false;
 		for (const file of list) {
-			if (accepted.length >= slots) break;
 			if (!isAcceptedProfileImage(file)) {
 				rejectedType = true;
 				continue;
@@ -883,20 +875,13 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}
 
 		if (!accepted.length) {
-			showFeedback(
-				rejectedType
-					? 'Usá imágenes JPG o PNG en la galería.'
-					: `La galería admite un máximo de ${galleryMax} fotos.`,
-				'error'
-			);
+			showFeedback('Usá imágenes JPG o PNG en la galería.', 'error');
 			return;
 		}
 
-		if (list.length > accepted.length) {
+		if (list.length > accepted.length && rejectedType) {
 			showFeedback(
-				rejectedType
-					? `Solo se previsualizan ${accepted.length} foto(s) válidas (JPG/PNG) y cupo disponible.`
-					: `Solo se pueden agregar ${accepted.length} foto(s) más (máximo ${galleryMax}).`,
+				`Solo se previsualizan ${accepted.length} foto(s) válidas (JPG/PNG).`,
 				'error'
 			);
 		}
@@ -916,14 +901,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 
 	const uploadGalleryFiles = async (items: PendingGalleryFile[]) => {
 		if (!items.length) return;
-		if (galleryItems.length >= galleryMax) {
-			showFeedback(`La galería admite un máximo de ${galleryMax} fotos.`, 'error');
-			return;
-		}
 
 		let uploaded = 0;
 		for (const item of items) {
-			if (galleryItems.length >= galleryMax) break;
 			if (!isAcceptedProfileImage(item.file)) {
 				showFeedback('Usá imágenes JPG o PNG en la galería.', 'error');
 				continue;

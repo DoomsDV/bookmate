@@ -19,7 +19,6 @@ interface Props {
 }
 
 const DESC_MAX = 500;
-const GALLERY_MAX = 30;
 
 const { workspace, hub, organizationName } = Astro.props;
 const siteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
@@ -56,7 +55,6 @@ const payload = {
 	siteOrigin: siteOrigin || Astro.url.origin,
 	domainLabel,
 	descMax: DESC_MAX,
-	galleryMax: GALLERY_MAX,
 };
 const serialized = JSON.stringify(payload).replace(/</g, '\\u003c');
 
@@ -398,10 +396,10 @@ const previewInitial = {
 						<div class="ppe-field">
 							<span class="ppe-field__label">
 								Fotos del negocio
-								<span data-ppe-gallery-count>({galleryImages.length}/{GALLERY_MAX})</span>
+								<span data-ppe-gallery-count>({galleryImages.length})</span>
 							</span>
 							<p class="ppe-field__hint">
-								Hasta 30 fotos (fachada, interior, servicios). Máximo 5 MB por imagen.
+								Fotos (fachada, interior, servicios). Máximo 5 MB por imagen.
 							</p>
 							<ul class="ppe-gallery-grid" data-ppe-gallery-grid>
 								{

@@ -254,23 +254,7 @@ const toPageHref = (page: number) => {
 			<SideNav currentPath={Astro.url.pathname} />
 
 			<div class="dashboard-content-canvas grid min-h-full min-w-0 max-w-full grid-rows-[auto_1fr] overflow-x-hidden transition-colors duration-300">
-				<TopBar>
-					{showTeamOverview && (
-						<div
-							slot="actions-before"
-							class="dashboard-team-chip dashboard-team-chip--compact"
-							data-team-card
-						>
-							<div class="flex -space-x-2" data-team-avatar-stack aria-label="Vista previa del equipo">
-								<span class="team-avatar team-avatar--placeholder"></span>
-								<span class="team-avatar team-avatar--placeholder"></span>
-								<span class="team-avatar team-avatar--placeholder"></span>
-							</div>
-							<p class="dashboard-team-summary sr-only" data-team-summary>Equipo activo</p>
-							<p class="team-overview-state text-[0.75rem] font-medium hidden" data-team-state></p>
-						</div>
-					)}
-				</TopBar>
+				<TopBar />
 
 				<main class="w-full max-w-full min-w-0 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
 					<div class="mx-auto w-full max-w-[92rem] min-w-0">
@@ -404,6 +388,28 @@ const toPageHref = (page: number) => {
 									</div>
 									</div>
 								</section>
+							)}
+
+							{showTeamOverview && (
+								<div
+									class="dashboard-team-chip dashboard-team-chip--compact dashboard-deferred"
+									data-team-card
+									data-dashboard-reveal
+									data-dashboard-reveal-delay="140"
+								>
+									<div class="dashboard-team-chip__row">
+										<div class="dashboard-team-chip__avatars flex -space-x-2" data-team-avatar-stack aria-label="Vista previa del equipo">
+											<span class="team-avatar team-avatar--placeholder"></span>
+											<span class="team-avatar team-avatar--placeholder"></span>
+											<span class="team-avatar team-avatar--placeholder"></span>
+										</div>
+										<div class="dashboard-team-chip__copy">
+											<p class="dashboard-team-chip__label">Tu equipo</p>
+											<p class="dashboard-team-summary" data-team-summary>Equipo activo</p>
+										</div>
+									</div>
+									<p class="team-overview-state text-[0.75rem] font-medium hidden" data-team-state></p>
+								</div>
 							)}
 
 							<div
@@ -2582,13 +2588,53 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-team-chip--compact {
-		display: inline-flex;
+		display: flex;
+		flex-direction: column;
+		align-self: stretch;
+		width: 100%;
 		min-height: 0;
-		margin-right: 0.1rem;
-		padding: 0;
-		border: 0;
-		background: transparent;
-		gap: 0;
+		margin: 0;
+		padding: 0.7rem 0.85rem;
+		border-radius: 1.15rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border, rgba(148, 163, 184, 0.28)) 90%, transparent);
+		background: color-mix(in srgb, var(--surface-bright, #fff) 88%, var(--surface-container, #eef2f6) 12%);
+		box-shadow: 0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent);
+		gap: 0.35rem;
+	}
+
+	.dashboard-team-chip__row {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		min-width: 0;
+	}
+
+	.dashboard-team-chip__avatars {
+		flex: 0 0 auto;
+	}
+
+	.dashboard-team-chip__copy {
+		display: grid;
+		gap: 0.1rem;
+		min-width: 0;
+	}
+
+	.dashboard-team-chip__label {
+		margin: 0;
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant, #5f6368);
+	}
+
+	.dashboard-team-chip--compact .dashboard-team-summary {
+		font-size: 0.88rem;
+		font-weight: 700;
+		letter-spacing: 0;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		color: var(--on-surface, #202124);
 	}
 
 	.dashboard-team-chip--compact .team-overview-state {
@@ -2596,15 +2642,30 @@ const toPageHref = (page: number) => {
 	}
 
 	.dashboard-team-chip--compact :global(.team-avatar) {
-		width: 1.65rem;
-		height: 1.65rem;
-		margin-left: -0.4rem;
-		font-size: 0.58rem;
-		border-width: 1.5px;
+		width: 2.05rem;
+		height: 2.05rem;
+		margin-left: -0.45rem;
+		font-size: 0.66rem;
+		border-width: 2px;
+		border-color: color-mix(in srgb, var(--surface-bright, #fff) 80%, transparent);
 	}
 
 	.dashboard-team-chip--compact :global(.team-avatar:first-child) {
 		margin-left: 0;
+	}
+
+	html[data-theme='dark'] .dashboard-team-chip--compact {
+		border-color: rgba(148, 163, 184, 0.16);
+		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--page-background, #191919) 18%);
+		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .dashboard-team-chip--compact .dashboard-team-summary {
+		color: #e3e3e3;
+	}
+
+	html[data-theme='dark'] .dashboard-team-chip--compact :global(.team-avatar) {
+		border-color: color-mix(in srgb, var(--surface-container-low, #1e1f22) 85%, #000 15%);
 	}
 
 	@media (min-width: 1024px) {
@@ -5433,10 +5494,6 @@ const toPageHref = (page: number) => {
 
 		.dashboard-ai-strip {
 			padding-inline: 0.95rem;
-		}
-
-		.dashboard-team-chip--compact {
-			display: none;
 		}
 	}
 
