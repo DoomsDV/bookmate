@@ -1230,6 +1230,7 @@ export const initializePublicBookingPage = () => {
 		const onViewportChange = () => {
 			if (signal.aborted) return;
 			renderServices();
+			renderSlots();
 		};
 		if (typeof media.addEventListener === 'function') {
 			media.addEventListener('change', onViewportChange, { signal });
@@ -1297,6 +1298,8 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
+	const slotFocusByLocation = new Map<number, number>();
+
 	const renderSlots = () => {
 		slotsContainer.innerHTML = '';
 		slotsLoadingNode.classList.toggle('hidden', !isLoadingSlots);
@@ -1310,13 +1313,16 @@ export const initializePublicBookingPage = () => {
 		if (isLoadingSlots) return;
 
 		const selectedSlotKey = getSelectedSlotKey();
+		const useRoulette = isMobileServicesStack();
 		let branchToneIndex = 0;
 
 		for (const group of availableSlotGroups) {
 			if (group.slots.length === 0) continue;
 
 			const section = document.createElement('section');
-			section.className = `public-slot-branch public-slot-branch--tone-${branchToneIndex % 4}`;
+			section.className = `public-slot-branch public-slot-branch--tone-${branchToneIndex % 4}${
+				useRoulette ? ' is-slot-roulette' : ''
+			}`;
 			branchToneIndex += 1;
 
 			appendLocationSlotHeader(section, group.location, {
@@ -1325,35 +1331,294 @@ export const initializePublicBookingPage = () => {
 				},
 			});
 
-			const grid = document.createElement('div');
-			grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
-
-			for (const slot of group.slots) {
-				const slotKey = `${group.location.id_location}:${slot}`;
-				const slotButton = document.createElement('button');
-				slotButton.type = 'button';
-				slotButton.textContent = slot;
-				const isSelected = selectedSlotKey === slotKey;
-				slotButton.className =
-					'public-slot-time flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition' +
-					(isSelected ? ' is-selected' : '');
-
-				slotButton.addEventListener('click', () => {
-					selectedTime = slot;
-					selectedLocation = group.location;
-					resetPendingAppointment();
-					refreshSummary();
-					renderSlots();
-					draftPersister.schedule();
-					setStep(4);
-				});
-
-				grid.appendChild(slotButton);
+			if (useRoulette) {
+				mountSlotRoulette(section, group, selectedSlotKey);
+			} else {
+				mountSlotGrid(section, group, selectedSlotKey);
 			}
 
-			section.appendChild(grid);
 			slotsContainer.appendChild(section);
 		}
+	};
+
+	const selectSlotAndAdvance = (group: LocationSlotGroup, slot: string) => {
+		selectedTime = slot;
+		selectedLocation = group.location;
+		resetPendingAppointment();
+		refreshSummary();
+		draftPersister.schedule();
+		setStep(4);
+	};
+
+	const softSelectSlot = (
+		group: LocationSlotGroup,
+		slot: string,
+		roulette: HTMLElement,
+		focusedIndex: number
+	) => {
+		const changed =
+			selectedTime !== slot || selectedLocation?.id_location !== group.location.id_location;
+		if (changed) {
+			selectedTime = slot;
+			selectedLocation = group.location;
+			resetPendingAppointment();
+			refreshSummary();
+			draftPersister.schedule();
+		}
+		for (const button of roulette.querySelectorAll<HTMLElement>('[data-slot-roulette-index]')) {
+			const index = Number(button.dataset.slotRouletteIndex ?? -1);
+			button.classList.toggle('is-selected', index === focusedIndex);
+		}
+	};
+
+	const syncSlotRouletteLayers = (
+		roulette: HTMLElement,
+		focusedIndex: number,
+		options?: { wrap?: boolean }
+	) => {
+		const buttons = Array.from(
+			roulette.querySelectorAll<HTMLElement>('[data-slot-roulette-index]')
+		);
+		const total = buttons.length;
+		const wrap = Boolean(options?.wrap) && total >= 3;
+
+		for (const button of buttons) {
+			const index = Number(button.dataset.slotRouletteIndex ?? -1);
+			button.classList.remove(
+				'is-focus',
+				'is-near',
+				'is-near-left',
+				'is-near-right',
+				'is-far'
+			);
+
+			let role: 'focus' | 'left' | 'right' | 'far' = 'far';
+			if (wrap) {
+				const raw = ((index - focusedIndex) % total + total) % total;
+				if (raw === 0) role = 'focus';
+				else if (raw === 1) role = 'right';
+				else if (raw === total - 1) role = 'left';
+			} else {
+				const distance = index - focusedIndex;
+				if (distance === 0) role = 'focus';
+				else if (distance === -1) role = 'left';
+				else if (distance === 1) role = 'right';
+			}
+
+			button.setAttribute('aria-selected', role === 'focus' ? 'true' : 'false');
+			button.tabIndex = role === 'focus' ? 0 : -1;
+			if (role === 'focus') {
+				button.classList.add('is-focus');
+			} else if (role === 'left') {
+				button.classList.add('is-near', 'is-near-left');
+			} else if (role === 'right') {
+				button.classList.add('is-near', 'is-near-right');
+			} else {
+				button.classList.add('is-far');
+			}
+		}
+	};
+
+	const mountSlotGrid = (
+		section: HTMLElement,
+		group: LocationSlotGroup,
+		selectedSlotKey: string
+	) => {
+		const grid = document.createElement('div');
+		grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
+
+		for (const slot of group.slots) {
+			const slotKey = `${group.location.id_location}:${slot}`;
+			const slotButton = document.createElement('button');
+			slotButton.type = 'button';
+			slotButton.textContent = slot;
+			const isSelected = selectedSlotKey === slotKey;
+			slotButton.className =
+				'public-slot-time flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition' +
+				(isSelected ? ' is-selected' : '');
+
+			slotButton.addEventListener(
+				'click',
+				() => selectSlotAndAdvance(group, slot),
+				{ signal }
+			);
+			grid.appendChild(slotButton);
+		}
+
+		section.appendChild(grid);
+	};
+
+	const mountSlotRoulette = (
+		section: HTMLElement,
+		group: LocationSlotGroup,
+		selectedSlotKey: string
+	) => {
+		const locationId = group.location.id_location;
+		const totalSlots = group.slots.length;
+		const wrapRoulette = totalSlots >= 3;
+		const selectedIndex = group.slots.findIndex(
+			(slot) => `${locationId}:${slot}` === selectedSlotKey
+		);
+		let focusedIndex =
+			selectedIndex >= 0
+				? selectedIndex
+				: Math.min(
+						Math.max(0, slotFocusByLocation.get(locationId) ?? 0),
+						Math.max(0, totalSlots - 1)
+					);
+		slotFocusByLocation.set(locationId, focusedIndex);
+
+		const shell = document.createElement('div');
+		shell.className = 'public-slot-roulette-shell';
+
+		const roulette = document.createElement('div');
+		roulette.className = `public-slot-roulette${wrapRoulette ? ' is-circular' : ''}`;
+		roulette.setAttribute('role', 'listbox');
+		roulette.setAttribute('aria-label', `Horarios en ${group.location.name || 'sucursal'}`);
+		roulette.tabIndex = 0;
+
+		let touchStartX: number | null = null;
+		let touchMoved = false;
+		let wheelLockedUntil = 0;
+		let suppressClickUntil = 0;
+
+		const continueWithFocused = () => {
+			const slot = group.slots[focusedIndex];
+			if (slot) selectSlotAndAdvance(group, slot);
+		};
+
+		const applyFocus = (nextIndex: number) => {
+			if (nextIndex === focusedIndex) return;
+			focusedIndex = nextIndex;
+			slotFocusByLocation.set(locationId, focusedIndex);
+			syncSlotRouletteLayers(roulette, focusedIndex, { wrap: wrapRoulette });
+			const slot = group.slots[focusedIndex];
+			if (slot) softSelectSlot(group, slot, roulette, focusedIndex);
+		};
+
+		const moveFocus = (delta: number) => {
+			if (totalSlots <= 0) return;
+			if (wrapRoulette) {
+				applyFocus((focusedIndex + delta + totalSlots) % totalSlots);
+				return;
+			}
+			applyFocus(Math.min(Math.max(0, focusedIndex + delta), totalSlots - 1));
+		};
+
+		for (const [index, slot] of group.slots.entries()) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.setAttribute('role', 'option');
+			button.dataset.slotRouletteIndex = String(index);
+			button.textContent = slot;
+			button.className =
+				'public-slot-time public-slot-time--roulette' +
+				(`${locationId}:${slot}` === selectedSlotKey ? ' is-selected' : '');
+			button.addEventListener(
+				'click',
+				() => {
+					if (Date.now() < suppressClickUntil) return;
+					applyFocus(index);
+				},
+				{ signal }
+			);
+			roulette.appendChild(button);
+		}
+
+		syncSlotRouletteLayers(roulette, focusedIndex, { wrap: wrapRoulette });
+		const focusedSlot = group.slots[focusedIndex];
+		if (focusedSlot) softSelectSlot(group, focusedSlot, roulette, focusedIndex);
+
+		roulette.addEventListener(
+			'touchstart',
+			(event) => {
+				if (event.touches.length !== 1) return;
+				touchStartX = event.touches[0]?.clientX ?? null;
+				touchMoved = false;
+			},
+			{ signal, passive: true }
+		);
+
+		roulette.addEventListener(
+			'touchmove',
+			(event) => {
+				if (touchStartX == null || event.touches.length !== 1) return;
+				const currentX = event.touches[0]?.clientX ?? touchStartX;
+				if (Math.abs(currentX - touchStartX) > 12) touchMoved = true;
+			},
+			{ signal, passive: true }
+		);
+
+		roulette.addEventListener(
+			'touchend',
+			(event) => {
+				if (touchStartX == null) return;
+				const endX = event.changedTouches[0]?.clientX ?? touchStartX;
+				const deltaX = endX - touchStartX;
+				touchStartX = null;
+				if (!touchMoved || Math.abs(deltaX) < 40) return;
+				suppressClickUntil = Date.now() + 350;
+				// Swipe left → next; swipe right → previous
+				moveFocus(deltaX < 0 ? 1 : -1);
+			},
+			{ signal }
+		);
+
+		roulette.addEventListener(
+			'click',
+			(event) => {
+				if (Date.now() < suppressClickUntil) {
+					event.preventDefault();
+					event.stopPropagation();
+				}
+			},
+			{ signal, capture: true }
+		);
+
+		roulette.addEventListener(
+			'wheel',
+			(event) => {
+				const now = Date.now();
+				if (now < wheelLockedUntil) {
+					event.preventDefault();
+					return;
+				}
+				const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+				if (Math.abs(delta) < 8) return;
+				event.preventDefault();
+				wheelLockedUntil = now + 280;
+				moveFocus(delta > 0 ? 1 : -1);
+			},
+			{ signal, passive: false }
+		);
+
+		roulette.addEventListener(
+			'keydown',
+			(event) => {
+				if (event.key === 'ArrowRight' || event.key === 'ArrowDown') {
+					event.preventDefault();
+					moveFocus(1);
+				} else if (event.key === 'ArrowLeft' || event.key === 'ArrowUp') {
+					event.preventDefault();
+					moveFocus(-1);
+				} else if (event.key === 'Enter' || event.key === ' ') {
+					event.preventDefault();
+					continueWithFocused();
+				}
+			},
+			{ signal }
+		);
+
+		shell.appendChild(roulette);
+
+		const continueButton = document.createElement('button');
+		continueButton.type = 'button';
+		continueButton.className = 'public-slot-roulette__continue';
+		continueButton.textContent = 'Continuar';
+		continueButton.addEventListener('click', continueWithFocused, { signal });
+
+		section.appendChild(shell);
+		section.appendChild(continueButton);
 	};
 
 	const readLocationsFromDom = () =>
