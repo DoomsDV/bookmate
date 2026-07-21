@@ -438,18 +438,23 @@
 		flex-direction: column;
 		grid-template-columns: none;
 		gap: 1rem;
+		overscroll-behavior: contain;
+		touch-action: pan-x;
 	}
 
 	.public-service-stack-shell {
 		position: relative;
 		isolation: isolate;
+		overscroll-behavior: contain;
+		touch-action: none;
 	}
 
 	.public-service-stack {
 		position: relative;
 		height: 14.5rem;
 		perspective: 900px;
-		touch-action: pan-y;
+		touch-action: none;
+		overscroll-behavior: contain;
 		outline: none;
 		user-select: none;
 		-webkit-user-select: none;

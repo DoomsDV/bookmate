@@ -1084,9 +1084,13 @@ export const initializePublicBookingPage = () => {
 			(event) => {
 				if (touchStartY == null || event.touches.length !== 1) return;
 				const currentY = event.touches[0]?.clientY ?? touchStartY;
-				if (Math.abs(currentY - touchStartY) > 12) touchMoved = true;
+				const deltaY = currentY - touchStartY;
+				if (Math.abs(deltaY) <= 8) return;
+				touchMoved = true;
+				// Evita pull-to-refresh / scroll de la página al deslizar el picker.
+				event.preventDefault();
 			},
-			{ signal, passive: true }
+			{ signal, passive: false }
 		);
 
 		stack.addEventListener(
