@@ -49,6 +49,8 @@ type BookingService = {
 	deposit_type?: 'PERCENT' | 'FIXED' | null;
 	deposit_value?: number | null;
 	deposit_amount?: number | null;
+	hide_public_price?: 0 | 1;
+	hidden_price_label?: string | null;
 };
 
 type BookingLocation = {
@@ -924,18 +926,241 @@ export const initializePublicBookingPage = () => {
 	};
 
 	let servicesExpanded = false;
+	let serviceStackFocusIndex = 0;
+	let serviceStackBound = false;
 
-	const renderServices = () => {
-		servicesGrid.innerHTML = '';
-		servicesGrid.removeAttribute('aria-busy');
-		if (profile.services.length === 0) {
-			const emptyState = document.createElement('p');
-			emptyState.className =
-				'rounded-2xl bg-[var(--surface-container-high)] px-5 py-4 text-base font-medium text-[var(--on-surface-variant)]';
-			emptyState.textContent = 'Este profesional no tiene servicios disponibles actualmente.';
-			servicesGrid.appendChild(emptyState);
-			return;
+	const isMobileServicesStack = () =>
+		typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
+
+	const selectServiceAndAdvance = (service: BookingService) => {
+		selectedService = service;
+		selectedDate = '';
+		selectedTime = '';
+		selectedLocation = defaultLocation;
+		availableSlotGroups = [];
+		resetPendingAppointment();
+		refreshSummary();
+		renderCalendar();
+		draftPersister.schedule();
+		setStep(2);
+	};
+
+	const softSelectService = (service: BookingService, stack: HTMLElement) => {
+		const changed = selectedService?.id_service !== service.id_service;
+		if (changed) {
+			selectedService = service;
+			selectedDate = '';
+			selectedTime = '';
+			selectedLocation = defaultLocation;
+			availableSlotGroups = [];
+			resetPendingAppointment();
+			refreshSummary();
+			draftPersister.schedule();
 		}
+		for (const card of stack.querySelectorAll<HTMLElement>('[data-service-stack-index]')) {
+			const index = Number(card.dataset.serviceStackIndex ?? -1);
+			card.classList.toggle('is-selected', index === serviceStackFocusIndex);
+		}
+	};
+
+	const buildServiceCardInnerHtml = (service: BookingService) => `
+		<span class="public-service-card__title text-lg font-medium text-(--on-surface)">${service.name}</span>
+		<div class="public-service-card__meta flex items-center justify-between gap-2 text-sm font-medium text-(--on-surface-variant)">
+			<span>${formatDuration(service.duration_minutes)}</span>
+			<span>${
+				service.hide_public_price === 1
+					? service.hidden_price_label || 'A evaluar'
+					: formatCurrency(service.price)
+			}</span>
+		</div>
+		<span class="material-symbols-rounded public-service-card__check" aria-hidden="true">check_circle</span>
+	`;
+
+	const syncServiceStackLayers = (stack: HTMLElement, focusedIndex: number) => {
+		const cards = Array.from(stack.querySelectorAll<HTMLElement>('[data-service-stack-index]'));
+		for (const card of cards) {
+			const index = Number(card.dataset.serviceStackIndex ?? -1);
+			const distance = index - focusedIndex;
+			card.classList.remove('is-focus', 'is-near', 'is-near-up', 'is-near-down', 'is-far');
+			card.setAttribute('aria-selected', distance === 0 ? 'true' : 'false');
+			card.tabIndex = distance === 0 ? 0 : -1;
+			if (distance === 0) {
+				card.classList.add('is-focus');
+			} else if (distance === -1) {
+				card.classList.add('is-near', 'is-near-up');
+			} else if (distance === 1) {
+				card.classList.add('is-near', 'is-near-down');
+			} else {
+				card.classList.add('is-far');
+			}
+		}
+	};
+
+	const renderServicesStack = () => {
+		const services = profile.services;
+		servicesGrid.classList.add('is-service-stack');
+
+		const selectedIndex = selectedService
+			? services.findIndex((service) => service.id_service === selectedService.id_service)
+			: -1;
+		if (selectedIndex >= 0) {
+			serviceStackFocusIndex = selectedIndex;
+		} else {
+			serviceStackFocusIndex = Math.min(
+				Math.max(0, serviceStackFocusIndex),
+				Math.max(0, services.length - 1)
+			);
+		}
+
+		const stackShell = document.createElement('div');
+		stackShell.className = 'public-service-stack-shell';
+
+		const stack = document.createElement('div');
+		stack.className = 'public-service-stack';
+		stack.setAttribute('role', 'listbox');
+		stack.setAttribute('aria-label', 'Servicios disponibles');
+		stack.tabIndex = 0;
+
+		let touchStartY: number | null = null;
+		let touchMoved = false;
+		let wheelLockedUntil = 0;
+		let suppressClickUntil = 0;
+
+		const continueWithFocused = () => {
+			const service = services[serviceStackFocusIndex];
+			if (service) selectServiceAndAdvance(service);
+		};
+
+		const moveFocus = (delta: number) => {
+			const next = Math.min(
+				Math.max(0, serviceStackFocusIndex + delta),
+				services.length - 1
+			);
+			if (next === serviceStackFocusIndex) return;
+			serviceStackFocusIndex = next;
+			syncServiceStackLayers(stack, serviceStackFocusIndex);
+			const service = services[serviceStackFocusIndex];
+			if (service) softSelectService(service, stack);
+		};
+
+		for (const [index, service] of services.entries()) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.setAttribute('role', 'option');
+			button.dataset.serviceStackIndex = String(index);
+			const isSelected = selectedService?.id_service === service.id_service;
+			button.className = `public-service-card${isSelected ? ' is-selected' : ''}`;
+			button.innerHTML = buildServiceCardInnerHtml(service);
+			button.addEventListener(
+				'click',
+				() => {
+					if (Date.now() < suppressClickUntil) return;
+					if (index === serviceStackFocusIndex) return;
+					serviceStackFocusIndex = index;
+					syncServiceStackLayers(stack, serviceStackFocusIndex);
+					softSelectService(service, stack);
+				},
+				{ signal }
+			);
+			stack.appendChild(button);
+		}
+
+		syncServiceStackLayers(stack, serviceStackFocusIndex);
+		const focusedService = services[serviceStackFocusIndex];
+		if (focusedService) softSelectService(focusedService, stack);
+
+		stack.addEventListener(
+			'touchstart',
+			(event) => {
+				if (event.touches.length !== 1) return;
+				touchStartY = event.touches[0]?.clientY ?? null;
+				touchMoved = false;
+			},
+			{ signal, passive: true }
+		);
+
+		stack.addEventListener(
+			'touchmove',
+			(event) => {
+				if (touchStartY == null || event.touches.length !== 1) return;
+				const currentY = event.touches[0]?.clientY ?? touchStartY;
+				if (Math.abs(currentY - touchStartY) > 12) touchMoved = true;
+			},
+			{ signal, passive: true }
+		);
+
+		stack.addEventListener(
+			'touchend',
+			(event) => {
+				if (touchStartY == null) return;
+				const endY = event.changedTouches[0]?.clientY ?? touchStartY;
+				const deltaY = endY - touchStartY;
+				touchStartY = null;
+				if (!touchMoved || Math.abs(deltaY) < 40) return;
+				suppressClickUntil = Date.now() + 350;
+				moveFocus(deltaY < 0 ? 1 : -1);
+			},
+			{ signal }
+		);
+
+		stack.addEventListener(
+			'click',
+			(event) => {
+				if (Date.now() < suppressClickUntil) {
+					event.preventDefault();
+					event.stopPropagation();
+				}
+			},
+			{ signal, capture: true }
+		);
+
+		stack.addEventListener(
+			'wheel',
+			(event) => {
+				const now = Date.now();
+				if (now < wheelLockedUntil) {
+					event.preventDefault();
+					return;
+				}
+				if (Math.abs(event.deltaY) < 8) return;
+				event.preventDefault();
+				wheelLockedUntil = now + 280;
+				moveFocus(event.deltaY > 0 ? 1 : -1);
+			},
+			{ signal, passive: false }
+		);
+
+		stack.addEventListener(
+			'keydown',
+			(event) => {
+				if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
+					event.preventDefault();
+					moveFocus(1);
+				} else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
+					event.preventDefault();
+					moveFocus(-1);
+				} else if (event.key === 'Enter' || event.key === ' ') {
+					event.preventDefault();
+					continueWithFocused();
+				}
+			},
+			{ signal }
+		);
+
+		stackShell.appendChild(stack);
+
+		const continueButton = document.createElement('button');
+		continueButton.type = 'button';
+		continueButton.className = 'public-service-stack__continue';
+		continueButton.textContent = 'Continuar';
+		continueButton.addEventListener('click', continueWithFocused, { signal });
+
+		servicesGrid.appendChild(stackShell);
+		servicesGrid.appendChild(continueButton);
+	};
+
+	const renderServicesGrid = () => {
+		servicesGrid.classList.remove('is-service-stack');
 
 		const INITIAL_VISIBLE_SERVICES = 4;
 		const totalServices = profile.services.length;
@@ -956,30 +1181,8 @@ export const initializePublicBookingPage = () => {
 			button.type = 'button';
 			const isSelected = selectedService?.id_service === service.id_service;
 			button.className = `public-service-card${isSelected ? ' is-selected' : ''}`;
-
-			button.innerHTML = `
-				<span class="text-lg font-medium text-(--on-surface)">${service.name}</span>
-				<div class="flex items-center justify-between gap-2 text-sm font-medium text-(--on-surface-variant)">
-					<span>${formatDuration(service.duration_minutes)}</span>
-					<span>${service.hide_public_price === 1 ? (service.hidden_price_label || 'A evaluar') : formatCurrency(service.price)}</span>
-				</div>
-				<span class="material-symbols-rounded public-service-card__check" aria-hidden="true">check_circle</span>
-			`;
-
-			button.addEventListener('click', () => {
-				selectedService = service;
-				selectedDate = '';
-				selectedTime = '';
-				selectedLocation = defaultLocation;
-				availableSlotGroups = [];
-				resetPendingAppointment();
-				refreshSummary();
-				renderServices();
-				renderCalendar();
-				draftPersister.schedule();
-				setStep(2);
-			});
-
+			button.innerHTML = buildServiceCardInnerHtml(service);
+			button.addEventListener('click', () => selectServiceAndAdvance(service), { signal });
 			servicesGrid.appendChild(button);
 		}
 
@@ -989,13 +1192,52 @@ export const initializePublicBookingPage = () => {
 			moreButton.className = 'public-services-more';
 			moreButton.textContent =
 				hiddenCount === 1 ? 'Ver 1 servicio más' : `Ver ${hiddenCount} servicios más`;
-			moreButton.addEventListener('click', () => {
-				servicesExpanded = true;
-				renderServices();
-			});
+			moreButton.addEventListener(
+				'click',
+				() => {
+					servicesExpanded = true;
+					renderServices();
+				},
+				{ signal }
+			);
 			servicesGrid.appendChild(moreButton);
 		}
 	};
+
+	const renderServices = () => {
+		servicesGrid.innerHTML = '';
+		servicesGrid.removeAttribute('aria-busy');
+		if (profile.services.length === 0) {
+			servicesGrid.classList.remove('is-service-stack');
+			const emptyState = document.createElement('p');
+			emptyState.className =
+				'rounded-2xl bg-[var(--surface-container-high)] px-5 py-4 text-base font-medium text-[var(--on-surface-variant)]';
+			emptyState.textContent = 'Este profesional no tiene servicios disponibles actualmente.';
+			servicesGrid.appendChild(emptyState);
+			return;
+		}
+
+		if (isMobileServicesStack()) {
+			renderServicesStack();
+		} else {
+			renderServicesGrid();
+		}
+	};
+
+	if (!serviceStackBound && typeof window !== 'undefined') {
+		serviceStackBound = true;
+		const media = window.matchMedia('(max-width: 639px)');
+		const onViewportChange = () => {
+			if (signal.aborted) return;
+			renderServices();
+		};
+		if (typeof media.addEventListener === 'function') {
+			media.addEventListener('change', onViewportChange, { signal });
+		} else {
+			media.addListener(onViewportChange);
+			signal.addEventListener('abort', () => media.removeListener(onViewportChange));
+		}
+	}
 
 	const renderCalendar = () => {
 		calendarGrid.innerHTML = '';

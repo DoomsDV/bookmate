@@ -178,8 +178,11 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 
 					<section data-step-panel="1" class="public-booking-panel">
 						<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">¿Qué servicio desea?</h2>
-						<p class="mt-2 text-base text-(--on-surface-variant)">Dale click al servicio que querés reservar</p>
-						<div class="mt-6 grid gap-4 sm:grid-cols-2" data-services-grid aria-busy="true">
+						<p class="mt-2 text-base text-(--on-surface-variant)" data-step-services-hint>
+							<span class="public-services-hint__desktop">Dale click al servicio que querés reservar</span>
+							<span class="public-services-hint__mobile">Deslizá para elegir un servicio</span>
+						</p>
+						<div class="mt-6 grid gap-4 sm:grid-cols-2 public-services-grid" data-services-grid aria-busy="true">
 							{Array.from({ length: 4 }).map(() => (
 								<div class="public-service-card public-service-card--skeleton" aria-hidden="true">
 									<span class="public-service-skeleton-line public-service-skeleton-line--title"></span>
