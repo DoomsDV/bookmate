@@ -3,10 +3,15 @@
  * Paso de seña SIPAP (reserva pública).
  * Layout: acciones a la izquierda + ticket resumen sticky a la derecha (desktop).
  */
+interface Props {
+	stepPanel?: number;
+}
+
+const { stepPanel = 6 } = Astro.props;
 ---
 
 <section
-	data-step-panel="6"
+	data-step-panel={String(stepPanel)}
 	class="sipap-deposit-panel public-booking-panel hidden text-(--on-surface)"
 >
 	<div class="sipap-hold-banner" role="status" aria-live="polite">

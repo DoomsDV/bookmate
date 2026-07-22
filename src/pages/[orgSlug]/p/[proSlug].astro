@@ -160,17 +160,18 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 					<div class="public-booking-stepper">
 						<div class="public-booking-stepper__mobile">
 							<p class="text-sm font-medium tracking-wide text-(--on-surface)" data-step-compact-label aria-live="polite">
-								Paso 1 de 4: Servicio
+								Paso 1 de 5: Servicio
 							</p>
 							<div class="h-2 flex-1 overflow-hidden rounded-full bg-(--surface-container-highest)" aria-hidden="true">
-								<div class="h-full rounded-full bg-(--primary) transition-[width] duration-500 ease-out" data-step-progress-bar style="width:25%"></div>
+								<div class="h-full rounded-full bg-(--primary) transition-[width] duration-500 ease-out" data-step-progress-bar style="width:20%"></div>
 							</div>
 						</div>
 						<ol data-step-indicator>
 							<li data-step-item="1" class="step-item-current">1. Servicio</li>
-							<li data-step-item="2" class="step-item-default">2. Fecha</li>
-							<li data-step-item="3" class="step-item-default">3. Horario</li>
-							<li data-step-item="4" class="step-item-default">4. Datos</li>
+							<li data-step-item="2" class="step-item-default">2. Sucursal</li>
+							<li data-step-item="3" class="step-item-default">3. Fecha</li>
+							<li data-step-item="4" class="step-item-default">4. Horario</li>
+							<li data-step-item="5" class="step-item-default">5. Datos</li>
 						</ol>
 					</div>
 
@@ -203,6 +204,23 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 							</button>
 						</div>
 						<div>
+							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">¿Dónde querés atenderte?</h2>
+							<p class="mt-2 text-base text-(--on-surface-variant)">
+								<span class="public-locations-hint__desktop">Elegí la sucursal para ver fechas y horarios disponibles</span>
+								<span class="public-locations-hint__mobile">Deslizá para elegir una sucursal</span>
+							</p>
+						</div>
+						<div class="mt-6 grid gap-3 public-locations-grid" data-locations-grid aria-busy="true"></div>
+					</section>
+
+					<section data-step-panel="3" class="public-booking-panel hidden">
+						<div class="public-booking-back-row">
+							<button type="button" data-back-to-locations class="public-booking-back-link">
+								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+								Volver
+							</button>
+						</div>
+						<div>
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona una fecha</h2>
 						</div>
 						<div class="public-booking-calendar mt-5">
@@ -223,7 +241,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 						</div>
 					</section>
 
-					<section data-step-panel="3" class="public-booking-panel hidden">
+					<section data-step-panel="4" class="public-booking-panel hidden">
 						<div class="public-booking-back-row">
 							<button type="button" data-back-to-calendar class="public-booking-back-link">
 								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
@@ -231,10 +249,10 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 							</button>
 						</div>
 						<div>
-							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona un horario</h2>
+							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)" data-summary-date-inline></h2>
 							<p class="mt-1 text-base text-(--on-surface-variant)">
-								<span class="font-medium text-(--on-surface)" data-summary-date-inline></span>
-								<span class="public-slots-hint__mobile"> · Deslizá para elegir un horario</span>
+								<span class="public-slots-hint__desktop">Elegí un horario disponible</span>
+								<span class="public-slots-hint__mobile">Deslizá para seleccionar un horario</span>
 							</p>
 						</div>
 						<div data-slots-loading class="mt-5 hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)">
@@ -254,7 +272,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 						</div>
 					</section>
 
-					<section data-step-panel="4" class="public-booking-panel hidden">
+					<section data-step-panel="5" class="public-booking-panel hidden">
 						<div class="public-booking-back-row">
 							<button type="button" data-back-to-slots class="public-booking-back-link">
 								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
@@ -308,7 +326,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 						</div>
 					</section>
 
-					<section data-step-panel="5" class="public-booking-panel hidden bg-(--tertiary-container) text-(--on-tertiary-container)">
+					<section data-step-panel="6" class="public-booking-panel hidden bg-(--tertiary-container) text-(--on-tertiary-container)">
 						<h2 class="text-3xl font-normal tracking-tight">Reserva confirmada</h2>
 						<p class="mt-2 text-base font-medium opacity-90">¡Todo listo! Tu cita está confirmada. Te enviamos los detalles y la ubicación del local directamente a tu WhatsApp.</p>
 						<div class="mt-6 rounded-3xl bg-(--surface-container-lowest) p-6 shadow-sm">
@@ -322,25 +340,27 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 						<button type="button" data-restart-booking class="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-(--tertiary) px-8 text-base font-medium text-(--on-tertiary)">Reservar otra cita</button>
 					</section>
 
-					<PublicSipapDepositPanel />
+					<PublicSipapDepositPanel stepPanel={7} />
+					</div>
 
-					<dialog class="public-map-modal rounded-[28px] border-0 bg-(--surface-container-high) p-0 text-(--on-surface) shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop:bg-black/70" data-public-map-modal>
-						<div class="grid gap-5 p-6">
-							<div class="flex items-start justify-between gap-4">
-								<div>
+					<dialog class="public-map-modal" data-public-map-modal>
+						<div class="public-map-modal__sheet">
+							<div class="public-map-modal__handle" aria-hidden="true"><span></span></div>
+							<div class="public-map-modal__header">
+								<div class="min-w-0">
 									<h2 class="text-xl font-semibold tracking-tight">Ubicación</h2>
 									<p class="mt-1 text-sm text-(--on-surface-variant)" data-public-map-address></p>
 								</div>
 								<button
 									type="button"
-									class="grid h-10 w-10 place-items-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-highest) hover:text-(--on-surface)"
+									class="grid h-10 w-10 shrink-0 place-items-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-highest) hover:text-(--on-surface)"
 									data-public-map-close
 									aria-label="Cerrar mapa"
 								>
 									<span class="material-symbols-rounded">close</span>
 								</button>
 							</div>
-							<div class="public-map-canvas-wrap relative h-96 overflow-hidden rounded-2xl bg-(--surface-container-highest)">
+							<div class="public-map-canvas-wrap relative overflow-hidden rounded-2xl bg-(--surface-container-highest)">
 								<div class="h-full w-full" data-public-map-canvas></div>
 								<div
 									class="public-map-loading absolute inset-0 z-10 hidden place-items-center bg-(--surface-container-highest)/85 backdrop-blur-[2px]"
@@ -355,7 +375,6 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 							<p class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)" data-public-map-status></p>
 						</div>
 					</dialog>
-					</div>
 				</section>
 			)
 		}
@@ -430,14 +449,6 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 
 	.secondary-action-btn:hover {
 		background: var(--surface-container-highest);
-	}
-
-	.public-map-modal {
-		width: min(92vw, 44rem);
-		max-height: min(92vh, 48rem);
-		margin: auto;
-		border: none;
-		box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
 	}
 
 	.public-map-canvas-wrap.is-loading [data-public-map-canvas] {

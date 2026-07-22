@@ -5,7 +5,7 @@ export const PUBLIC_BOOKING_DRAFT_TTL_MS = 6 * 60 * 60 * 1000;
 export const SLOT_UNAVAILABLE_RESTORE_MESSAGE =
 	'El horario que habías elegido ya no está disponible. Por favor, seleccioná uno nuevo.';
 
-export type PublicBookingDraftStep = 1 | 2 | 3 | 4;
+export type PublicBookingDraftStep = 1 | 2 | 3 | 4 | 5;
 
 export type PublicBookingDraft = {
 	v: 1;
@@ -27,7 +27,7 @@ export const proBookingDraftKey = (orgSlug: string, proSlug: string) =>
 export const userBookingDraftKey = (publicSlug: string) => `hasel:pb:user:${publicSlug}`;
 
 const isDraftStep = (value: unknown): value is PublicBookingDraftStep =>
-	value === 1 || value === 2 || value === 3 || value === 4;
+	value === 1 || value === 2 || value === 3 || value === 4 || value === 5;
 
 const parseDraft = (raw: string | null): PublicBookingDraft | null => {
 	if (!raw) return null;
