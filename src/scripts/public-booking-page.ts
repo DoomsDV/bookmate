@@ -311,7 +311,6 @@ export const initializePublicBookingPage = () => {
 	const ticketTime = root.querySelector<HTMLElement>('[data-ticket-time]');
 	const stepCompactLabel = root.querySelector<HTMLElement>('[data-step-compact-label]');
 	const stepProgressBar = root.querySelector<HTMLElement>('[data-step-progress-bar]');
-	const bookingProfileHeader = root.querySelector<HTMLElement>('[data-booking-profile-header]');
 	const mapModal = root.querySelector<HTMLDialogElement>('[data-public-map-modal]');
 	const mapCanvasWrap = root.querySelector<HTMLElement>('.public-map-canvas-wrap');
 	const mapCanvas = root.querySelector<HTMLElement>('[data-public-map-canvas]');
@@ -839,57 +838,6 @@ export const initializePublicBookingPage = () => {
 			item.classList.add('step-item-default');
 		}
 
-		// A partir del paso 2 el header pasa a barra compacta (avatar chico + nombre),
-		// liberando espacio vertical. El paso 1 (bienvenida) y la confirmación (6) usan el hero.
-		if (bookingProfileHeader) {
-			const shouldCompact = step >= 2 && step !== 6;
-			const wasCompact = bookingProfileHeader.classList.contains('is-compact');
-			const prefersReducedMotion =
-				typeof window !== 'undefined' &&
-				window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-			if (shouldCompact !== wasCompact && !prefersReducedMotion) {
-				const morphTargets = [
-					bookingProfileHeader.querySelector<HTMLElement>('.public-booking-avatar'),
-					bookingProfileHeader.querySelector<HTMLElement>('.public-booking-profile__text'),
-				].filter((node): node is HTMLElement => Boolean(node));
-
-				const firstRects = morphTargets.map((node) => node.getBoundingClientRect());
-				bookingProfileHeader.classList.add('is-morphing');
-				bookingProfileHeader.classList.toggle('is-compact', shouldCompact);
-
-				const animations = morphTargets.map((node, index) => {
-					const first = firstRects[index];
-					const last = node.getBoundingClientRect();
-					if (!first || last.width < 1 || last.height < 1) return null;
-					const dx = first.left + first.width / 2 - (last.left + last.width / 2);
-					const dy = first.top + first.height / 2 - (last.top + last.height / 2);
-					const sx = first.width / last.width;
-					const sy = first.height / last.height;
-					return node.animate(
-						[
-							{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
-							{ transform: 'translate(0, 0) scale(1)' },
-						],
-						{
-							duration: 340,
-							easing: 'cubic-bezier(0.32, 0.72, 0, 1)',
-						}
-					);
-				});
-
-				void Promise.all(
-					animations
-						.filter((animation): animation is Animation => Boolean(animation))
-						.map((animation) => animation.finished.catch(() => undefined))
-				).then(() => {
-					bookingProfileHeader.classList.remove('is-morphing');
-				});
-			} else {
-				bookingProfileHeader.classList.toggle('is-compact', shouldCompact);
-			}
-		}
-
 		const cappedStep = (step >= 6 ? 5 : step) as 1 | 2 | 3 | 4 | 5;
 		if (stepCompactLabel) {
 			stepCompactLabel.textContent =
@@ -1351,6 +1299,20 @@ export const initializePublicBookingPage = () => {
 			.replace(/</g, '&lt;')
 			.replace(/>/g, '&gt;')
 			.replace(/"/g, '&quot;');
+
+	/** Etiqueta visible HH:mm + A.M./P.M. (el valor interno del slot sigue en 24h). */
+	const formatSlotLabelAmPm = (slot: string) => {
+		const match = String(slot || '').trim().match(/^(\d{1,2}):(\d{2})$/);
+		if (!match) return { time: slot, meridiem: '' };
+		const hour = Number(match[1]);
+		if (!Number.isFinite(hour) || hour < 0 || hour > 23) {
+			return { time: slot, meridiem: '' };
+		}
+		return {
+			time: `${String(hour).padStart(2, '0')}:${match[2]}`,
+			meridiem: hour < 12 ? 'A.M.' : 'P.M.',
+		};
+	};
 
 	const softSelectLocation = (location: BookingLocation, stack: HTMLElement) => {
 		const changed = selectedLocation?.id_location !== location.id_location;
@@ -1877,42 +1839,6 @@ export const initializePublicBookingPage = () => {
 		section.appendChild(grid);
 	};
 
-	/** Dial curvo (regla de ticks en arco + puntero) para el picker de horarios. */
-	const buildSlotDialSvg = () => {
-		const W = 44;
-		const H = 256;
-		const cy = H / 2;
-		const R = 240; // radio del arco
-		const cx = 246; // centro del círculo a la derecha → el arco bulge hacia la izquierda
-		const spanDeg = 30; // medio ángulo (±30° = ~240px de recorrido vertical)
-		const ticks = 15;
-		const half = (ticks - 1) / 2;
-
-		const toX = (radius: number, rad: number) => cx - radius * Math.cos(rad);
-		const toY = (radius: number, rad: number) => cy + radius * Math.sin(rad);
-
-		let marks = '';
-		for (let i = 0; i < ticks; i += 1) {
-			const t = (i - half) / half; // -1..1
-			const rad = (t * spanDeg * Math.PI) / 180;
-			const isCenter = i === half;
-			const len = isCenter ? 13 : 8;
-			const x1 = toX(R, rad).toFixed(2);
-			const y1 = toY(R, rad).toFixed(2);
-			const x2 = toX(R - len, rad).toFixed(2);
-			const y2 = toY(R - len, rad).toFixed(2);
-			marks += isCenter
-				? `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="var(--primary)" stroke-width="2.4" stroke-linecap="round" />`
-				: `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />`;
-		}
-
-		// Puntero triangular en el centro, apuntando a la izquierda (hacia la píldora activa).
-		const px = toX(R - 13, 0).toFixed(2);
-		const pointer = `<path d="M ${px} ${cy} l 7 -5 l 0 10 z" fill="var(--primary)" />`;
-
-		return `<svg class="public-slot-roulette__dial-svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg">${marks}${pointer}</svg>`;
-	};
-
 	const mountSlotRoulette = (
 		section: HTMLElement,
 		group: LocationSlotGroup,
@@ -1941,11 +1867,6 @@ export const initializePublicBookingPage = () => {
 		roulette.setAttribute('role', 'listbox');
 		roulette.setAttribute('aria-label', `Horarios en ${group.location.name || 'sucursal'}`);
 		roulette.tabIndex = 0;
-
-		const dial = document.createElement('div');
-		dial.className = 'public-slot-roulette__dial';
-		dial.setAttribute('aria-hidden', 'true');
-		dial.innerHTML = buildSlotDialSvg();
 
 		let touchStartY: number | null = null;
 		let touchMoved = false;
@@ -1981,10 +1902,11 @@ export const initializePublicBookingPage = () => {
 			button.type = 'button';
 			button.setAttribute('role', 'option');
 			button.dataset.slotRouletteIndex = String(index);
-			button.innerHTML = `
-				<span class="public-slot-time__icon material-symbols-rounded" aria-hidden="true">schedule</span>
-				<span class="public-slot-time__label">${escapeHtml(slot)}</span>
-			`;
+			const { time, meridiem } = formatSlotLabelAmPm(slot);
+			button.innerHTML = meridiem
+				? `<span class="public-slot-time__label">${escapeHtml(time)} <span class="public-slot-time__meridiem">${escapeHtml(meridiem)}</span></span>`
+				: `<span class="public-slot-time__label">${escapeHtml(slot)}</span>`;
+			button.setAttribute('aria-label', meridiem ? `${time} ${meridiem}` : slot);
 			button.className =
 				'public-slot-time public-slot-time--roulette' +
 				(`${locationId}:${slot}` === selectedSlotKey ? ' is-selected' : '');
@@ -2085,7 +2007,6 @@ export const initializePublicBookingPage = () => {
 		);
 
 		shell.appendChild(roulette);
-		shell.appendChild(dial);
 
 		const continueButton = document.createElement('button');
 		continueButton.type = 'button';

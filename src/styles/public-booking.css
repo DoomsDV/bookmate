@@ -172,68 +172,6 @@
 	transition: font-size 320ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
-/* Header compacto (paso 2 en adelante): barra estrecha tipo app nativa.
-   Avatar chico + nombre; se ocultan el eyebrow ("CONSULTORIO GENERAL") y la especialidad. */
-.public-booking-profile.is-compact {
-	position: sticky;
-	top: 0;
-	z-index: 20;
-	background: color-mix(in srgb, var(--surface-background) 92%, transparent);
-	backdrop-filter: blur(10px);
-	-webkit-backdrop-filter: blur(10px);
-	border-bottom-color: color-mix(in srgb, var(--outline-variant) 40%, transparent);
-}
-
-.public-booking-profile.is-compact .public-booking-profile__inner {
-	flex-direction: row;
-	gap: 0.6rem;
-	padding: 0.55rem 1rem;
-	text-align: left;
-}
-
-.public-booking-profile.is-compact .public-booking-avatar {
-	width: 2.25rem;
-	height: 2.25rem;
-	box-shadow: none;
-}
-
-.public-booking-profile.is-compact .public-booking-avatar--empty .material-symbols-rounded {
-	font-size: 1.35rem;
-}
-
-.public-booking-profile.is-compact .public-booking-profile__text {
-	gap: 0;
-}
-
-.public-booking-profile.is-compact .public-booking-profile__eyebrow,
-.public-booking-profile.is-compact .public-booking-profile__subtitle {
-	max-height: 0;
-	margin: 0;
-	opacity: 0;
-	pointer-events: none;
-}
-
-.public-booking-profile.is-compact .public-booking-profile__title {
-	font-size: 1.05rem;
-	font-weight: 600;
-	line-height: 1.2;
-}
-
-@media (min-width: 640px) {
-	.public-booking-profile.is-compact .public-booking-profile__inner {
-		padding: 0.7rem 1.25rem;
-	}
-
-	.public-booking-profile.is-compact .public-booking-avatar {
-		width: 2.5rem;
-		height: 2.5rem;
-	}
-
-	.public-booking-profile.is-compact .public-booking-profile__title {
-		font-size: 1.2rem;
-	}
-}
-
 @media (prefers-reduced-motion: reduce) {
 	.public-booking-profile,
 	.public-booking-profile__inner,
@@ -244,13 +182,6 @@
 	.public-booking-avatar--empty .material-symbols-rounded {
 		transition: none;
 	}
-}
-
-/* Durante el FLIP el tamaño lo anima el transform; sin pelear con width/height CSS. */
-.public-booking-profile.is-morphing .public-booking-avatar,
-.public-booking-profile.is-morphing .public-booking-profile__text,
-.public-booking-profile.is-morphing .public-booking-profile__title {
-	transition: none !important;
 }
 
 .public-booking-stepper {
@@ -1215,6 +1146,14 @@
 	color: var(--on-primary-container) !important;
 }
 
+.public-slot-branch.is-slot-roulette .public-slot-time--roulette,
+.public-slot-branch.is-slot-roulette .public-slot-time--roulette:hover,
+.public-slot-branch.is-slot-roulette .public-slot-time--roulette.is-selected {
+	border: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
 .public-location-card {
 	position: relative;
 	display: grid;
@@ -1460,16 +1399,18 @@
 		display: inline;
 	}
 
-	.public-slot-branch.is-slot-roulette {
-		gap: 1rem;
+	.public-booking-panel[data-step-panel='4'] [data-slots-container] {
+		margin-top: 0.35rem;
 	}
 
+	.public-slot-branch.is-slot-roulette {
+		gap: 0.85rem;
+	}
+
+	/* Drum tipográfico: hora grande al centro, vecinos que se desvanecen (sin píldoras ni dial). */
 	.public-slot-roulette-shell {
 		position: relative;
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 2.4rem;
-		align-items: center;
-		gap: 0.55rem;
+		display: block;
 		isolation: isolate;
 		overscroll-behavior: contain;
 		touch-action: none;
@@ -1477,132 +1418,143 @@
 
 	.public-slot-roulette {
 		position: relative;
-		height: 16rem;
-		perspective: 900px;
+		height: 15.5rem;
 		touch-action: none;
 		overscroll-behavior: contain;
 		outline: none;
 		user-select: none;
 		-webkit-user-select: none;
-		overflow: visible;
+		overflow: hidden;
+		mask-image: linear-gradient(
+			to bottom,
+			transparent 0%,
+			#000 16%,
+			#000 84%,
+			transparent 100%
+		);
+		-webkit-mask-image: linear-gradient(
+			to bottom,
+			transparent 0%,
+			#000 16%,
+			#000 84%,
+			transparent 100%
+		);
 	}
 
 	.public-slot-roulette .public-slot-time--roulette {
 		position: absolute;
-		left: 0;
-		right: 1.25rem;
+		left: 50%;
 		top: 50%;
 		display: inline-flex;
 		align-items: center;
-		justify-content: flex-start;
-		gap: 0.7rem;
-		width: min(100%, 15.5rem);
+		justify-content: center;
+		width: auto;
 		min-width: 0;
-		height: 3.15rem;
-		padding: 0 1.05rem 0 0.55rem;
+		height: auto;
+		padding: 0.15rem 0.5rem;
 		margin: 0;
-		border-radius: 999px;
-		border: 1.5px solid color-mix(in srgb, var(--outline-variant) 35%, transparent) !important;
-		font-size: 1rem;
-		font-weight: 700;
-		letter-spacing: 0.01em;
-		cursor: pointer;
-		transform-origin: left center;
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
+		appearance: none;
+		-webkit-appearance: none;
+		border: 0 !important;
+		border-radius: 0;
+		background: transparent !important;
 		box-shadow: none !important;
+		font-family: inherit;
+		font-size: 1.15rem;
+		font-weight: 400;
+		letter-spacing: 0.04em;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
+		color: color-mix(in srgb, var(--on-surface) 28%, transparent) !important;
+		cursor: pointer;
+		transform-origin: center center;
 		transition:
-			transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-			opacity 0.28s ease,
-			background 0.2s ease,
-			border-color 0.2s ease,
-			color 0.2s ease;
+			transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+			opacity 0.3s ease,
+			color 0.25s ease,
+			font-size 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+			font-weight 0.2s ease;
 		will-change: transform, opacity;
+		-webkit-tap-highlight-color: transparent;
 	}
 
 	.public-slot-roulette .public-slot-time__icon {
-		display: grid;
-		place-items: center;
-		flex-shrink: 0;
-		width: 2.1rem;
-		height: 2.1rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--primary) 18%, transparent);
-		color: var(--primary);
-		font-size: 1.15rem;
-		line-height: 1;
+		display: none;
 	}
 
 	.public-slot-roulette .public-slot-time__label {
 		min-width: 0;
+		white-space: nowrap;
+	}
+
+	.public-slot-roulette .public-slot-time__meridiem {
+		display: inline-block;
+		margin-left: 0.2em;
+		font-size: 0.42em;
+		font-weight: 500;
+		letter-spacing: 0.06em;
+		vertical-align: 0.35em;
+		opacity: 0.72;
+	}
+
+	.public-slot-roulette .public-slot-time--roulette.is-focus .public-slot-time__meridiem {
+		opacity: 0.85;
+		font-weight: 600;
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-focus {
-		transform: translate(0, -50%) scale(1);
+		transform: translate(-50%, -50%) scale(1);
 		opacity: 1;
 		z-index: 4;
-		filter: none;
-		border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6) !important;
-		background: color-mix(in srgb, var(--primary-container) 28%, var(--surface-container-high)) !important;
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent) !important;
+		font-size: 2.65rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
 		color: var(--on-surface) !important;
 		pointer-events: auto;
 	}
 
-	.public-slot-roulette .public-slot-time--roulette.is-focus .public-slot-time__icon {
-		background: color-mix(in srgb, var(--primary) 32%, transparent);
-		color: var(--primary);
-	}
-
 	.public-slot-roulette .public-slot-time--roulette.is-near-up {
-		transform: translate(1.6rem, calc(-50% - 3.4rem)) scale(0.9);
-		opacity: 0.72;
+		transform: translate(-50%, calc(-50% - 3.15rem)) scale(0.92);
+		opacity: 0.55;
 		z-index: 3;
-		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent) !important;
-		background: color-mix(in srgb, var(--surface-container-high) 32%, transparent) !important;
-		color: color-mix(in srgb, var(--on-surface) 72%, transparent) !important;
+		font-size: 1.35rem;
+		font-weight: 400;
+		color: color-mix(in srgb, var(--on-surface) 48%, transparent) !important;
 		pointer-events: auto;
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-near-down {
-		transform: translate(1.6rem, calc(-50% + 3.4rem)) scale(0.9);
-		opacity: 0.72;
+		transform: translate(-50%, calc(-50% + 3.15rem)) scale(0.92);
+		opacity: 0.55;
 		z-index: 3;
-		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent) !important;
-		background: color-mix(in srgb, var(--surface-container-high) 32%, transparent) !important;
-		color: color-mix(in srgb, var(--on-surface) 72%, transparent) !important;
+		font-size: 1.35rem;
+		font-weight: 400;
+		color: color-mix(in srgb, var(--on-surface) 48%, transparent) !important;
 		pointer-events: auto;
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-far-up {
-		transform: translate(4.2rem, calc(-50% - 6.35rem)) scale(0.8);
-		opacity: 0.4;
+		transform: translate(-50%, calc(-50% - 5.85rem)) scale(0.84);
+		opacity: 0.28;
 		z-index: 2;
-		border-color: color-mix(in srgb, var(--outline-variant) 22%, transparent) !important;
-		background: color-mix(in srgb, var(--surface-container-high) 22%, transparent) !important;
-		color: color-mix(in srgb, var(--on-surface) 55%, transparent) !important;
+		font-size: 1.05rem;
+		font-weight: 400;
+		color: color-mix(in srgb, var(--on-surface) 32%, transparent) !important;
 		pointer-events: auto;
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-far-down {
-		transform: translate(4.2rem, calc(-50% + 6.35rem)) scale(0.8);
-		opacity: 0.4;
+		transform: translate(-50%, calc(-50% + 5.85rem)) scale(0.84);
+		opacity: 0.28;
 		z-index: 2;
-		border-color: color-mix(in srgb, var(--outline-variant) 22%, transparent) !important;
-		background: color-mix(in srgb, var(--surface-container-high) 22%, transparent) !important;
-		color: color-mix(in srgb, var(--on-surface) 55%, transparent) !important;
+		font-size: 1.05rem;
+		font-weight: 400;
+		color: color-mix(in srgb, var(--on-surface) 32%, transparent) !important;
 		pointer-events: auto;
 	}
 
-	.public-slot-roulette .public-slot-time--roulette.is-near .public-slot-time__icon,
-	.public-slot-roulette .public-slot-time--roulette.is-far-up .public-slot-time__icon,
-	.public-slot-roulette .public-slot-time--roulette.is-far-down .public-slot-time__icon {
-		background: color-mix(in srgb, var(--on-surface) 10%, transparent);
-		color: color-mix(in srgb, var(--on-surface) 55%, transparent);
-	}
-
 	.public-slot-roulette .public-slot-time--roulette.is-far {
-		transform: translate(6rem, -50%) scale(0.72);
+		transform: translate(-50%, -50%) scale(0.72);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
@@ -1610,38 +1562,9 @@
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-selected.is-focus {
-		border-color: color-mix(in srgb, var(--primary) 88%, #3b82f6) !important;
-		background: color-mix(in srgb, var(--primary-container) 34%, var(--surface-container-high)) !important;
 		color: var(--on-surface) !important;
-	}
-
-	.public-slot-roulette__dial {
-		position: relative;
-		height: 16rem;
-		width: 100%;
-		pointer-events: none;
-		color: color-mix(in srgb, var(--on-surface) 38%, transparent);
-	}
-
-	.public-slot-roulette__dial-svg {
-		display: block;
-		height: 100%;
-		width: 100%;
-		mask-image: linear-gradient(
-			to bottom,
-			transparent 0%,
-			#000 18%,
-			#000 82%,
-			transparent 100%
-		);
-		-webkit-mask-image: linear-gradient(
-			to bottom,
-			transparent 0%,
-			#000 18%,
-			#000 82%,
-			transparent 100%
-		);
-		overflow: visible;
+		background: transparent !important;
+		border: 0 !important;
 	}
 
 	.public-slot-roulette__continue {
@@ -1673,7 +1596,6 @@
 @media (min-width: 640px) {
 	.public-slot-roulette-shell,
 	.public-slot-roulette,
-	.public-slot-roulette__dial,
 	.public-slot-roulette__continue {
 		display: none;
 	}
