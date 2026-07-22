@@ -587,23 +587,24 @@
 
 	.public-service-stack {
 		position: relative;
-		height: 14.5rem;
+		height: 10.5rem;
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
 		outline: none;
 		user-select: none;
 		-webkit-user-select: none;
-		overflow: visible;
+		/* Anclado al inicio: recorta los vecinos superiores para eliminar el hueco fantasma. */
+		overflow: hidden;
 	}
 
 	.public-service-stack .public-service-card {
 		position: absolute;
 		left: 0;
 		right: 0;
-		top: 50%;
+		top: 0;
 		margin: 0;
-		transform-origin: center center;
+		transform-origin: center top;
 		backdrop-filter: blur(10px);
 		-webkit-backdrop-filter: blur(10px);
 		transition:
@@ -618,7 +619,7 @@
 	}
 
 	.public-service-stack .public-service-card.is-focus {
-		transform: translateY(-50%) scale(1);
+		transform: translateY(0.35rem) scale(1);
 		opacity: 1;
 		z-index: 3;
 		filter: none;
@@ -629,21 +630,21 @@
 	}
 
 	.public-service-stack .public-service-card.is-near-up {
-		transform: translateY(calc(-50% - 3.65rem)) scale(0.92);
+		transform: translateY(-3.4rem) scale(0.9);
 		opacity: 0.72;
 		z-index: 2;
 		filter: none;
-		border-color: color-mix(in srgb, var(--outline-variant) 40%, transparent);
+		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
 		background: color-mix(in srgb, var(--surface-container-high) 32%, transparent);
 		pointer-events: auto;
 	}
 
 	.public-service-stack .public-service-card.is-near-down {
-		transform: translateY(calc(-50% + 3.65rem)) scale(0.92);
+		transform: translateY(4.1rem) scale(0.9);
 		opacity: 0.72;
 		z-index: 2;
 		filter: none;
-		border-color: color-mix(in srgb, var(--outline-variant) 40%, transparent);
+		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
 		background: color-mix(in srgb, var(--surface-container-high) 32%, transparent);
 		pointer-events: auto;
 	}
@@ -654,7 +655,7 @@
 	}
 
 	.public-service-stack .public-service-card.is-far {
-		transform: translateY(-50%) scale(0.86);
+		transform: translateY(4.1rem) scale(0.86);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
@@ -713,23 +714,24 @@
 
 	.public-location-stack {
 		position: relative;
-		height: 16rem;
+		height: 13.5rem;
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
 		outline: none;
 		user-select: none;
 		-webkit-user-select: none;
-		overflow: visible;
+		/* Anclado al inicio: recorta los vecinos superiores para eliminar el hueco fantasma. */
+		overflow: hidden;
 	}
 
 	.public-location-stack .public-location-card {
 		position: absolute;
 		left: 0;
 		right: 0;
-		top: 50%;
+		top: 0;
 		margin: 0;
-		transform-origin: center center;
+		transform-origin: center top;
 		backdrop-filter: blur(10px);
 		-webkit-backdrop-filter: blur(10px);
 		transition:
@@ -743,10 +745,10 @@
 		box-shadow: none;
 	}
 
-	/* Cover Flow plano: foco al 100% (borde azul) y vecinos al 90%/80% en gris oscuro,
-	   con el mismo lenguaje visual que los horarios inactivos. Sin curvatura hacia atrás. */
+	/* Cover Flow plano anclado al inicio: foco al 100% (borde azul) y vecinos al 90%/80%
+	   en gris oscuro, con el mismo lenguaje visual que los horarios inactivos. */
 	.public-location-stack .public-location-card.is-focus {
-		transform: translateY(-50%) scale(1);
+		transform: translateY(0.35rem) scale(1);
 		opacity: 1;
 		z-index: 4;
 		filter: none;
@@ -757,7 +759,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-near-up {
-		transform: translateY(calc(-50% - 3.65rem)) scale(0.9);
+		transform: translateY(-3.4rem) scale(0.9);
 		opacity: 0.72;
 		z-index: 3;
 		filter: none;
@@ -767,7 +769,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-near-down {
-		transform: translateY(calc(-50% + 3.65rem)) scale(0.9);
+		transform: translateY(4.1rem) scale(0.9);
 		opacity: 0.72;
 		z-index: 3;
 		filter: none;
@@ -777,7 +779,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-far-up {
-		transform: translateY(calc(-50% - 6.55rem)) scale(0.8);
+		transform: translateY(-7rem) scale(0.8);
 		opacity: 0.4;
 		z-index: 2;
 		filter: none;
@@ -787,7 +789,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-far-down {
-		transform: translateY(calc(-50% + 6.55rem)) scale(0.8);
+		transform: translateY(7.75rem) scale(0.8);
 		opacity: 0.4;
 		z-index: 2;
 		filter: none;
@@ -809,7 +811,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-far {
-		transform: translateY(-50%) scale(0.72);
+		transform: translateY(4.1rem) scale(0.72);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
