@@ -51,6 +51,7 @@ type BookingService = {
 	deposit_amount?: number | null;
 	hide_public_price?: 0 | 1;
 	hidden_price_label?: string | null;
+	image_url?: string | null;
 };
 
 type BookingLocation = {
@@ -1009,18 +1010,24 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
-	const buildServiceCardInnerHtml = (service: BookingService) => `
-		<span class="public-service-card__title text-lg font-medium text-(--on-surface)">${service.name}</span>
+	const buildServiceCardInnerHtml = (service: BookingService) => {
+		const cover = service.image_url
+			? `<span class="public-service-card__cover"><img src="${escapeHtml(service.image_url)}" alt="" loading="lazy" /></span>`
+			: '';
+		return `
+		${cover}
+		<span class="public-service-card__title text-lg font-medium text-(--on-surface)">${escapeHtml(service.name)}</span>
 		<div class="public-service-card__meta flex items-center justify-between gap-2 text-sm font-medium text-(--on-surface-variant)">
 			<span>${formatDuration(service.duration_minutes)}</span>
 			<span>${
 				service.hide_public_price === 1
-					? service.hidden_price_label || 'A evaluar'
+					? escapeHtml(service.hidden_price_label || 'A evaluar')
 					: formatCurrency(service.price)
 			}</span>
 		</div>
 		<span class="material-symbols-rounded public-service-card__check" aria-hidden="true">check_circle</span>
 	`;
+	};
 
 	const syncServiceStackLayers = (stack: HTMLElement, focusedIndex: number) => {
 		const cards = Array.from(stack.querySelectorAll<HTMLElement>('[data-service-stack-index]'));
@@ -1846,7 +1853,8 @@ export const initializePublicBookingPage = () => {
 	) => {
 		const locationId = group.location.id_location;
 		const totalSlots = group.slots.length;
-		const wrapRoulette = totalSlots >= 3;
+		/* Sin wrap circular: en iOS el CSS interpola saltos de un extremo al otro y desajusta. */
+		const wrapRoulette = false;
 		const selectedIndex = group.slots.findIndex(
 			(slot) => `${locationId}:${slot}` === selectedSlotKey
 		);
@@ -1863,15 +1871,17 @@ export const initializePublicBookingPage = () => {
 		shell.className = 'public-slot-roulette-shell';
 
 		const roulette = document.createElement('div');
-		roulette.className = `public-slot-roulette${wrapRoulette ? ' is-circular' : ''}`;
+		roulette.className = 'public-slot-roulette';
 		roulette.setAttribute('role', 'listbox');
 		roulette.setAttribute('aria-label', `Horarios en ${group.location.name || 'sucursal'}`);
 		roulette.tabIndex = 0;
 
 		let touchStartY: number | null = null;
 		let touchMoved = false;
+		let lastStepY: number | null = null;
 		let wheelLockedUntil = 0;
 		let suppressClickUntil = 0;
+		const STEP_PX = 36;
 
 		const continueWithFocused = () => {
 			const slot = group.slots[focusedIndex];
@@ -1890,10 +1900,6 @@ export const initializePublicBookingPage = () => {
 
 		const moveFocus = (delta: number) => {
 			if (totalSlots <= 0) return;
-			if (wrapRoulette) {
-				applyFocus((focusedIndex + delta + totalSlots) % totalSlots);
-				return;
-			}
 			applyFocus(Math.min(Math.max(0, focusedIndex + delta), totalSlots - 1));
 		};
 
@@ -1929,7 +1935,9 @@ export const initializePublicBookingPage = () => {
 			'touchstart',
 			(event) => {
 				if (event.touches.length !== 1) return;
-				touchStartY = event.touches[0]?.clientY ?? null;
+				const y = event.touches[0]?.clientY ?? null;
+				touchStartY = y;
+				lastStepY = y;
 				touchMoved = false;
 			},
 			{ signal, passive: true }
@@ -1938,26 +1946,42 @@ export const initializePublicBookingPage = () => {
 		roulette.addEventListener(
 			'touchmove',
 			(event) => {
-				if (touchStartY == null || event.touches.length !== 1) return;
+				if (touchStartY == null || lastStepY == null || event.touches.length !== 1) return;
 				const currentY = event.touches[0]?.clientY ?? touchStartY;
-				const deltaY = currentY - touchStartY;
-				if (Math.abs(deltaY) <= 8) return;
-				touchMoved = true;
+				const deltaFromStart = currentY - touchStartY;
+				if (Math.abs(deltaFromStart) > 8) {
+					touchMoved = true;
+					event.preventDefault();
+				}
+				const stepDelta = currentY - lastStepY;
+				if (Math.abs(stepDelta) < STEP_PX) return;
 				event.preventDefault();
+				const steps = Math.trunc(stepDelta / STEP_PX);
+				lastStepY += steps * STEP_PX;
+				suppressClickUntil = Date.now() + 350;
+				/* Dedo hacia abajo → horarios anteriores; hacia arriba → siguientes. */
+				moveFocus(-steps);
 			},
 			{ signal, passive: false }
 		);
 
 		roulette.addEventListener(
 			'touchend',
-			(event) => {
-				if (touchStartY == null) return;
-				const endY = event.changedTouches[0]?.clientY ?? touchStartY;
-				const deltaY = endY - touchStartY;
+			() => {
 				touchStartY = null;
-				if (!touchMoved || Math.abs(deltaY) < 40) return;
-				suppressClickUntil = Date.now() + 350;
-				moveFocus(deltaY < 0 ? 1 : -1);
+				lastStepY = null;
+				if (touchMoved) suppressClickUntil = Date.now() + 350;
+				touchMoved = false;
+			},
+			{ signal }
+		);
+
+		roulette.addEventListener(
+			'touchcancel',
+			() => {
+				touchStartY = null;
+				lastStepY = null;
+				touchMoved = false;
 			},
 			{ signal }
 		);

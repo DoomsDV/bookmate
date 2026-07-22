@@ -449,6 +449,26 @@
 		background 0.15s ease;
 }
 
+.public-service-card:has(.public-service-card__cover) {
+	padding-top: 0.65rem;
+}
+
+.public-service-card__cover {
+	display: block;
+	margin: 0 -0.35rem 0.15rem;
+	overflow: hidden;
+	border-radius: 0.75rem;
+	aspect-ratio: 4 / 3;
+	background: color-mix(in srgb, var(--surface-container-highest) 70%, transparent);
+}
+
+.public-service-card__cover img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
 .public-service-card:hover {
 	border-color: color-mix(in srgb, var(--primary) 45%, var(--outline-variant));
 	background: var(--surface-container-highest);
@@ -462,13 +482,13 @@
 
 .public-service-card__check {
 	position: absolute;
-	top: 50%;
+	top: 0.85rem;
 	right: 0.85rem;
 	display: none;
-	translate: 0 -50%;
 	font-size: 1.25rem;
 	line-height: 1;
 	color: var(--primary);
+	z-index: 1;
 }
 
 .public-service-card.is-selected .public-service-card__check {
@@ -518,7 +538,7 @@
 
 	.public-service-stack {
 		position: relative;
-		height: 10.5rem;
+		height: 16.5rem;
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
@@ -549,6 +569,12 @@
 		box-shadow: none;
 	}
 
+	.public-service-stack .public-service-card__cover {
+		max-height: 6.5rem;
+		aspect-ratio: 4 / 3;
+		margin: 0 0 0.35rem;
+	}
+
 	.public-service-stack .public-service-card.is-focus {
 		transform: translateY(0.35rem) scale(1);
 		opacity: 1;
@@ -561,7 +587,7 @@
 	}
 
 	.public-service-stack .public-service-card.is-near-up {
-		transform: translateY(-3.4rem) scale(0.9);
+		transform: translateY(-5.2rem) scale(0.9);
 		opacity: 0.72;
 		z-index: 2;
 		filter: none;
@@ -571,7 +597,7 @@
 	}
 
 	.public-service-stack .public-service-card.is-near-down {
-		transform: translateY(4.1rem) scale(0.9);
+		transform: translateY(7.2rem) scale(0.9);
 		opacity: 0.72;
 		z-index: 2;
 		filter: none;
@@ -586,7 +612,7 @@
 	}
 
 	.public-service-stack .public-service-card.is-far {
-		transform: translateY(4.1rem) scale(0.86);
+		transform: translateY(7.2rem) scale(0.86);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
@@ -838,6 +864,15 @@
 	display: block;
 	border-radius: 0.45rem;
 	background: color-mix(in srgb, var(--on-surface-variant) 18%, transparent);
+	animation: public-service-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+.public-service-skeleton-cover {
+	display: block;
+	width: 100%;
+	aspect-ratio: 4 / 3;
+	border-radius: 0.75rem;
+	background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
 	animation: public-service-skeleton-pulse 1.2s ease-in-out infinite;
 }
 
@@ -1407,7 +1442,9 @@
 		gap: 0.85rem;
 	}
 
-	/* Drum tipográfico: hora grande al centro, vecinos que se desvanecen (sin píldoras ni dial). */
+	/* Drum tipográfico: hora grande al centro, vecinos que se desvanecen (sin píldoras ni dial).
+	   iOS: no animar font-size con translate %-based (desajusta el centro). Tamaño solo con scale;
+	   offsets en px sobre una fila de altura fija. */
 	.public-slot-roulette-shell {
 		position: relative;
 		display: block;
@@ -1425,14 +1462,14 @@
 		user-select: none;
 		-webkit-user-select: none;
 		overflow: hidden;
-		mask-image: linear-gradient(
+		-webkit-mask-image: linear-gradient(
 			to bottom,
 			transparent 0%,
 			#000 16%,
 			#000 84%,
 			transparent 100%
 		);
-		-webkit-mask-image: linear-gradient(
+		mask-image: linear-gradient(
 			to bottom,
 			transparent 0%,
 			#000 16%,
@@ -1443,16 +1480,16 @@
 
 	.public-slot-roulette .public-slot-time--roulette {
 		position: absolute;
-		left: 50%;
+		left: 0;
+		right: 0;
 		top: 50%;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: auto;
-		min-width: 0;
-		height: auto;
-		padding: 0.15rem 0.5rem;
-		margin: 0;
+		width: 100%;
+		height: 3rem;
+		margin-top: -1.5rem;
+		padding: 0;
 		appearance: none;
 		-webkit-appearance: none;
 		border: 0 !important;
@@ -1460,20 +1497,22 @@
 		background: transparent !important;
 		box-shadow: none !important;
 		font-family: inherit;
-		font-size: 1.15rem;
-		font-weight: 400;
-		letter-spacing: 0.04em;
+		font-size: 2.65rem;
+		font-weight: 600;
+		letter-spacing: 0.02em;
 		line-height: 1;
 		font-variant-numeric: tabular-nums;
 		color: color-mix(in srgb, var(--on-surface) 28%, transparent) !important;
 		cursor: pointer;
+		transform: translate3d(0, 0, 0) scale(0.42);
 		transform-origin: center center;
+		opacity: 0;
+		backface-visibility: hidden;
+		-webkit-backface-visibility: hidden;
 		transition:
-			transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-			opacity 0.3s ease,
-			color 0.25s ease,
-			font-size 0.3s cubic-bezier(0.22, 1, 0.36, 1),
-			font-weight 0.2s ease;
+			transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+			opacity 0.28s ease,
+			color 0.22s ease;
 		will-change: transform, opacity;
 		-webkit-tap-highlight-color: transparent;
 	}
@@ -1503,68 +1542,68 @@
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-focus {
-		transform: translate(-50%, -50%) scale(1);
+		transform: translate3d(0, 0, 0) scale(1);
 		opacity: 1;
 		z-index: 4;
-		font-size: 2.65rem;
-		font-weight: 600;
-		letter-spacing: 0.02em;
 		color: var(--on-surface) !important;
 		pointer-events: auto;
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-near-up {
-		transform: translate(-50%, calc(-50% - 3.15rem)) scale(0.92);
+		transform: translate3d(0, -3.1rem, 0) scale(0.5);
 		opacity: 0.55;
 		z-index: 3;
-		font-size: 1.35rem;
 		font-weight: 400;
 		color: color-mix(in srgb, var(--on-surface) 48%, transparent) !important;
 		pointer-events: auto;
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-near-down {
-		transform: translate(-50%, calc(-50% + 3.15rem)) scale(0.92);
+		transform: translate3d(0, 3.1rem, 0) scale(0.5);
 		opacity: 0.55;
 		z-index: 3;
-		font-size: 1.35rem;
 		font-weight: 400;
 		color: color-mix(in srgb, var(--on-surface) 48%, transparent) !important;
 		pointer-events: auto;
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-far-up {
-		transform: translate(-50%, calc(-50% - 5.85rem)) scale(0.84);
+		transform: translate3d(0, -5.6rem, 0) scale(0.4);
 		opacity: 0.28;
 		z-index: 2;
-		font-size: 1.05rem;
 		font-weight: 400;
 		color: color-mix(in srgb, var(--on-surface) 32%, transparent) !important;
 		pointer-events: auto;
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-far-down {
-		transform: translate(-50%, calc(-50% + 5.85rem)) scale(0.84);
+		transform: translate3d(0, 5.6rem, 0) scale(0.4);
 		opacity: 0.28;
 		z-index: 2;
-		font-size: 1.05rem;
 		font-weight: 400;
 		color: color-mix(in srgb, var(--on-surface) 32%, transparent) !important;
 		pointer-events: auto;
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-far {
-		transform: translate(-50%, -50%) scale(0.72);
+		transform: translate3d(0, 0, 0) scale(0.35);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
 		visibility: hidden;
+		transition: none;
 	}
 
 	.public-slot-roulette .public-slot-time--roulette.is-selected.is-focus {
 		color: var(--on-surface) !important;
 		background: transparent !important;
 		border: 0 !important;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.public-slot-roulette .public-slot-time--roulette {
+			transition: none;
+		}
 	}
 
 	.public-slot-roulette__continue {

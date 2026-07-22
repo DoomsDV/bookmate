@@ -18,6 +18,7 @@ export interface Service {
 	price: number;
 	hide_public_price?: 0 | 1;
 	hidden_public_price_label?: string | null;
+	image_url?: string | null;
 	is_active: 0 | 1;
 	requires_deposit?: 0 | 1;
 	deposit_type?: 'PERCENT' | 'FIXED' | null;
@@ -64,6 +65,10 @@ export interface CreateServicePayload {
 	requires_deposit?: 0 | 1;
 	deposit_type?: 'PERCENT' | 'FIXED';
 	deposit_value?: number;
+	image_base64?: string;
+	image_name?: string;
+	image_mime?: string;
+	clear_image?: 0 | 1 | boolean;
 }
 
 interface ServicesFailureResponse {
@@ -185,6 +190,10 @@ const normalizeService = (value: unknown): Service | null => {
 		hide_public_price: normalizeFlag01(source.hide_public_price),
 		hidden_public_price_label: (() => {
 			const raw = String(source.hidden_public_price_label ?? '').trim();
+			return raw || null;
+		})(),
+		image_url: (() => {
+			const raw = String(source.image_url ?? '').trim();
 			return raw || null;
 		})(),
 		is_active: source.is_active === 1 || source.is_active === '1' || source.is_active === true ? 1 : 0,

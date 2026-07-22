@@ -113,6 +113,55 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				>
 				</div>
 
+				<div class="grid gap-2" data-service-cover-block>
+					<span class="text-[0.95rem] font-bold text-(--on-surface)">Imagen de portada</span>
+					<p class="m-0 text-[0.82rem] font-medium text-(--on-surface-variant)">
+						Opcional. Se muestra en la reserva pública (proporción 4:3).
+					</p>
+					<label
+						class="service-cover-dropzone relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-dashed border-(--shell-border) bg-(--surface-container-high) transition hover:border-(--primary)/45"
+						data-service-cover-dropzone
+					>
+						<input
+							type="file"
+							accept="image/jpeg,image/png,image/webp"
+							class="sr-only"
+							data-service-cover-input
+						/>
+						<div
+							class="relative w-full overflow-hidden"
+							style="aspect-ratio: 4 / 3; max-height: 8.5rem;"
+							data-service-cover-preview-wrap
+						>
+							<img
+								alt=""
+								class="hidden h-full w-full object-cover"
+								data-service-cover-preview
+							/>
+							<div
+								class="absolute inset-0 flex flex-col items-center justify-center gap-1 px-3 text-center text-(--on-surface-variant)"
+								data-service-cover-empty
+							>
+								<span class="material-symbols-rounded text-[1.5rem]" aria-hidden="true">image</span>
+								<span class="text-[0.78rem] font-semibold leading-snug sm:hidden" data-service-cover-hint-mobile
+									>Tocar para subir</span
+								>
+								<span class="hidden text-[0.78rem] font-semibold leading-snug sm:inline" data-service-cover-hint-desktop
+									>Arrastrá una imagen o hacé click</span
+								>
+							</div>
+						</div>
+					</label>
+					<button
+						type="button"
+						class="hidden w-fit inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[0.85rem] font-bold text-rose-500 transition hover:bg-rose-500/10"
+						data-service-cover-clear
+					>
+						<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">delete</span>
+						Quitar
+					</button>
+				</div>
+
 				<label
 					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 				>
@@ -393,6 +442,10 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		requires_deposit?: 0 | 1;
 		deposit_type?: "PERCENT" | "FIXED";
 		deposit_value?: number;
+		image_base64?: string;
+		image_name?: string;
+		image_mime?: string;
+		clear_image?: 0 | 1;
 	};
 
 	type ServiceDetail = {
@@ -401,6 +454,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		price?: number | null;
 		hide_public_price?: 0 | 1 | boolean | null;
 		hidden_public_price_label?: string | null;
+		image_url?: string | null;
 		is_active?: 0 | 1 | boolean | null;
 		requires_deposit?: 0 | 1 | boolean | null;
 		deposit_type?: "PERCENT" | "FIXED" | string | null;
@@ -418,6 +472,11 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		private editingServiceId = 0;
 		private requestSeq = 0;
 		private orgHiddenPriceDefault = "A evaluar";
+		private coverPendingBase64: string | null = null;
+		private coverPendingName = "portada.jpg";
+		private coverPendingMime = "image/jpeg";
+		private coverExistingUrl: string | null = null;
+		private coverCleared = false;
 
 		// Grouped DOM References
 		private els!: {
@@ -440,6 +499,11 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			depositFields: HTMLElement | null;
 			depositType: HTMLSelectElement | null;
 			depositValue: HTMLInputElement | null;
+			coverPreview: HTMLImageElement | null;
+			coverEmpty: HTMLElement | null;
+			coverInput: HTMLInputElement | null;
+			coverClear: HTMLButtonElement | null;
+			coverDropzone: HTMLElement | null;
 		};
 
 		private formEls!: {
@@ -498,6 +562,11 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				depositFields: this.querySelector<HTMLElement>("[data-deposit-fields]"),
 				depositType: this.querySelector<HTMLSelectElement>("[data-deposit-type]"),
 				depositValue: this.querySelector<HTMLInputElement>("[data-deposit-value]"),
+				coverPreview: this.querySelector<HTMLImageElement>("[data-service-cover-preview]"),
+				coverEmpty: this.querySelector<HTMLElement>("[data-service-cover-empty]"),
+				coverInput: this.querySelector<HTMLInputElement>("[data-service-cover-input]"),
+				coverClear: this.querySelector<HTMLButtonElement>("[data-service-cover-clear]"),
+				coverDropzone: this.querySelector<HTMLElement>("[data-service-cover-dropzone]"),
 			};
 
 			this.formEls = {
@@ -549,6 +618,17 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.handleDepositValueInput,
 				{ signal },
 			);
+			this.els.coverInput?.addEventListener(
+				"change",
+				this.handleCoverInput,
+				{ signal },
+			);
+			this.els.coverClear?.addEventListener(
+				"click",
+				this.handleCoverClear,
+				{ signal },
+			);
+			this.bindCoverDropzone(signal);
 			this.els.hidePublicPriceToggle?.addEventListener(
 				"change",
 				this.handleHidePublicPriceToggle,
@@ -762,6 +842,10 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.formEls.status.value = String(
 					service?.is_active === 0 ? 0 : 1,
 				);
+			this.setCoverState({
+				existingUrl: String(service?.image_url || "").trim() || null,
+				pendingBase64: null,
+			});
 		}
 
 		private resetFormValues() {
@@ -781,6 +865,171 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			if (this.els.depositValue) this.els.depositValue.value = "";
 			this.syncDepositValueField("");
 			this.syncServiceHiddenPricePreview();
+			this.setCoverState({ existingUrl: null, pendingBase64: null });
+		}
+
+		private setCoverState(options: {
+			existingUrl: string | null;
+			pendingBase64: string | null;
+			pendingName?: string;
+			pendingMime?: string;
+			cleared?: boolean;
+		}) {
+			this.coverExistingUrl = options.existingUrl;
+			this.coverPendingBase64 = options.pendingBase64;
+			this.coverPendingName = options.pendingName || "portada.jpg";
+			this.coverPendingMime = options.pendingMime || "image/jpeg";
+			this.coverCleared = Boolean(options.cleared);
+			if (this.els.coverInput) this.els.coverInput.value = "";
+
+			const previewSrc = options.pendingBase64
+				? `data:${this.coverPendingMime};base64,${options.pendingBase64}`
+				: options.existingUrl && !options.cleared
+					? options.existingUrl
+					: "";
+
+			if (this.els.coverPreview) {
+				if (previewSrc) {
+					this.els.coverPreview.src = previewSrc;
+					this.els.coverPreview.classList.remove("hidden");
+				} else {
+					this.els.coverPreview.removeAttribute("src");
+					this.els.coverPreview.classList.add("hidden");
+				}
+			}
+			this.els.coverEmpty?.classList.toggle("hidden", Boolean(previewSrc));
+			this.els.coverClear?.classList.toggle("hidden", !previewSrc);
+		}
+
+		private handleCoverClear = () => {
+			this.setCoverState({
+				existingUrl: this.coverExistingUrl,
+				pendingBase64: null,
+				cleared: true,
+			});
+		};
+
+		private handleCoverInput = () => {
+			const file = this.els.coverInput?.files?.[0];
+			if (!file) return;
+			void this.processCoverFile(file);
+		};
+
+		/** Drag & drop solo en desktop (pointer fino). En mobile queda click/tap. */
+		private bindCoverDropzone(signal: AbortSignal) {
+			const zone = this.els.coverDropzone;
+			if (!zone) return;
+
+			const canDragDrop =
+				typeof window !== "undefined" &&
+				window.matchMedia("(hover: hover) and (pointer: fine)").matches;
+
+			if (!canDragDrop) return;
+
+			zone.addEventListener(
+				"dragover",
+				(event) => {
+					event.preventDefault();
+					zone.classList.add("is-dragging");
+				},
+				{ signal },
+			);
+			zone.addEventListener(
+				"dragleave",
+				() => zone.classList.remove("is-dragging"),
+				{ signal },
+			);
+			zone.addEventListener(
+				"drop",
+				(event) => {
+					event.preventDefault();
+					zone.classList.remove("is-dragging");
+					const file = event.dataTransfer?.files?.[0];
+					if (file) void this.processCoverFile(file);
+				},
+				{ signal },
+			);
+		}
+
+		private async processCoverFile(file: File) {
+			const allowed = ["image/jpeg", "image/png", "image/webp"];
+			if (!allowed.includes(file.type)) {
+				this.showFormError("Usá una imagen JPG, PNG o WebP.");
+				return;
+			}
+			if (file.size > 5 * 1024 * 1024) {
+				this.showFormError("La imagen supera el máximo de 5 MB.");
+				return;
+			}
+			try {
+				const { base64, mime, name } = await this.cropCoverToBase64(file);
+				this.setCoverState({
+					existingUrl: this.coverExistingUrl,
+					pendingBase64: base64,
+					pendingName: name,
+					pendingMime: mime,
+					cleared: false,
+				});
+			} catch (err) {
+				this.showFormError(
+					err instanceof Error ? err.message : "No fue posible procesar la imagen.",
+				);
+			}
+		}
+
+		/** Recorte centrado 4:3 → JPEG base64 (sin data URL prefix). */
+		private cropCoverToBase64(file: File): Promise<{
+			base64: string;
+			mime: string;
+			name: string;
+		}> {
+			return new Promise((resolve, reject) => {
+				const url = URL.createObjectURL(file);
+				const img = new Image();
+				img.onload = () => {
+					try {
+						const outW = 800;
+						const outH = 600;
+						const srcRatio = img.naturalWidth / img.naturalHeight;
+						const targetRatio = outW / outH;
+						let sx = 0;
+						let sy = 0;
+						let sw = img.naturalWidth;
+						let sh = img.naturalHeight;
+						if (srcRatio > targetRatio) {
+							sw = Math.round(img.naturalHeight * targetRatio);
+							sx = Math.round((img.naturalWidth - sw) / 2);
+						} else {
+							sh = Math.round(img.naturalWidth / targetRatio);
+							sy = Math.round((img.naturalHeight - sh) / 2);
+						}
+						const canvas = document.createElement("canvas");
+						canvas.width = outW;
+						canvas.height = outH;
+						const ctx = canvas.getContext("2d");
+						if (!ctx) throw new Error("No se pudo preparar el canvas.");
+						ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
+						const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+						const base64 = dataUrl.replace(/^data:image\/jpeg;base64,/, "");
+						const base =
+							file.name.replace(/\.[^.]+$/, "").trim() || "portada";
+						resolve({
+							base64,
+							mime: "image/jpeg",
+							name: `${base}.jpg`,
+						});
+					} catch (err) {
+						reject(err);
+					} finally {
+						URL.revokeObjectURL(url);
+					}
+				};
+				img.onerror = () => {
+					URL.revokeObjectURL(url);
+					reject(new Error("No se pudo leer la imagen."));
+				};
+				img.src = url;
+			});
 		}
 
 		private toggleHidePublicPriceFields(isEnabled: boolean) {
@@ -1078,6 +1327,14 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				}
 			}
 
+			if (this.coverPendingBase64) {
+				payload.image_base64 = this.coverPendingBase64;
+				payload.image_name = this.coverPendingName;
+				payload.image_mime = this.coverPendingMime;
+			} else if (this.coverCleared && this.mode === "edit") {
+				payload.clear_image = 1;
+			}
+
 			const isEdit = this.mode === "edit" && this.editingServiceId > 0;
 			this.setButtonsProcessing(isEdit ? "Guardando..." : "Creando...");
 
@@ -1193,6 +1450,16 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 	dialog[data-service-modal].is-closing::backdrop {
 		animation: service-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
+	}
+
+	.service-cover-dropzone {
+		width: min(100%, 14rem);
+	}
+
+	.service-cover-dropzone.is-dragging {
+		border-color: color-mix(in srgb, var(--primary) 70%, transparent);
+		background: color-mix(in srgb, var(--primary-container) 28%, var(--surface-container-high));
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
 	}
 
 	@keyframes service-modal-in {

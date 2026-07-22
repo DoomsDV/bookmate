@@ -183,17 +183,18 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 							<span class="public-services-hint__desktop">Dale click al servicio que querés reservar</span>
 							<span class="public-services-hint__mobile">Deslizá para elegir un servicio</span>
 						</p>
-						<div class="mt-6 grid gap-4 sm:grid-cols-2 public-services-grid" data-services-grid aria-busy="true">
-							{Array.from({ length: 4 }).map(() => (
-								<div class="public-service-card public-service-card--skeleton" aria-hidden="true">
-									<span class="public-service-skeleton-line public-service-skeleton-line--title"></span>
-									<span class="public-service-skeleton-meta">
-										<span class="public-service-skeleton-line public-service-skeleton-line--sm"></span>
-										<span class="public-service-skeleton-line public-service-skeleton-line--price"></span>
-									</span>
-								</div>
-							))}
-						</div>
+				<div class="mt-6 grid gap-4 sm:grid-cols-2 public-services-grid" data-services-grid aria-busy="true">
+						{Array.from({ length: 4 }).map(() => (
+							<div class="public-service-card public-service-card--skeleton" aria-hidden="true">
+								<span class="public-service-skeleton-cover"></span>
+								<span class="public-service-skeleton-line public-service-skeleton-line--title"></span>
+								<span class="public-service-skeleton-meta">
+									<span class="public-service-skeleton-line public-service-skeleton-line--sm"></span>
+									<span class="public-service-skeleton-line public-service-skeleton-line--price"></span>
+								</span>
+							</div>
+						))}
+					</div>
 					</section>
 
 					<section data-step-panel="2" class="public-booking-panel hidden">

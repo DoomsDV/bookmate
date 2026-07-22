@@ -4,6 +4,7 @@ type ServiceItem = {
 	duration_minutes: number;
 	price: number;
 	is_active: 0 | 1;
+	image_url?: string | null;
 };
 
 type ServicesListMeta = {
@@ -80,6 +81,10 @@ const renderServiceCard = (service: ServiceItem) => {
 	const dotClass = isActive ? 'services-summary-dot--active' : 'services-summary-dot--inactive';
 	const statusLabel = isActive ? 'Activo' : 'Inactivo';
 	const price = service.price ? currencyFormatter.format(service.price) : '--';
+	const coverUrl = String(service.image_url || '').trim();
+	const coverHtml = coverUrl
+		? `<div class="services-card-cover"><img src="${escapeHtml(coverUrl)}" alt="" loading="lazy" /></div>`
+		: '';
 
 	return `
 		<article
@@ -90,6 +95,7 @@ const renderServiceCard = (service: ServiceItem) => {
 			role="button"
 			aria-label="Editar servicio ${escapeHtml(name)}"
 		>
+			${coverHtml}
 			<div class="flex items-start justify-between gap-4">
 				<div class="services-card-icon">
 					<span class="material-symbols-rounded text-[1.25rem]">design_services</span>

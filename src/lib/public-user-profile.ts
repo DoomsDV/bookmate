@@ -25,6 +25,7 @@ export interface PublicUserProfileService {
 	price: number;
 	hide_public_price?: 0 | 1;
 	hidden_price_label?: string | null;
+	image_url?: string | null;
 	requires_deposit?: 0 | 1;
 	deposit_type?: 'PERCENT' | 'FIXED' | null;
 	deposit_value?: number | null;
@@ -109,6 +110,10 @@ const normalizeService = (value: unknown): PublicUserProfileService | null => {
 				: 0,
 		hidden_price_label:
 			String(source.hidden_price_label ?? '').trim() || null,
+		image_url: (() => {
+			const raw = String(source.image_url ?? '').trim();
+			return raw || null;
+		})(),
 		requires_deposit: Number(source.requires_deposit) === 1 ? 1 : 0,
 		deposit_type:
 			source.deposit_type === 'PERCENT' || source.deposit_type === 'FIXED'

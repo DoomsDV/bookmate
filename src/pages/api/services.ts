@@ -134,6 +134,18 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			if (Number.isFinite(depositValue)) payload.deposit_value = depositValue;
 		}
 
+		const imageBase64 = String(body?.image_base64 ?? '').trim();
+		if (imageBase64) {
+			payload.image_base64 = imageBase64;
+			payload.image_name = String(body?.image_name ?? 'portada.jpg').trim() || 'portada.jpg';
+			payload.image_mime = String(body?.image_mime ?? 'image/jpeg').trim() || 'image/jpeg';
+		}
+
+		const clearRaw = body?.clear_image;
+		if (clearRaw === true || clearRaw === 1 || clearRaw === '1' || clearRaw === 'true') {
+			payload.clear_image = 1;
+		}
+
 		const created = await createServiceWithOrds(token, payload);
 
 		return Response.json(
