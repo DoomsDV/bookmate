@@ -42,13 +42,19 @@
 .public-booking-profile {
 	width: 100%;
 	padding: 0;
-	border-bottom: 0;
+	border-bottom: 1px solid transparent;
 	background: var(--surface-background);
+	transition:
+		background 280ms ease,
+		border-color 280ms ease,
+		backdrop-filter 280ms ease;
 }
 
 .public-booking-profile__inner {
-	display: grid;
-	justify-items: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
 	gap: 0.85rem;
 	width: 100%;
 	max-width: 42rem;
@@ -56,6 +62,9 @@
 	padding: 1.5rem 1rem 0.5rem;
 	box-sizing: border-box;
 	text-align: center;
+	transition:
+		padding 320ms cubic-bezier(0.32, 0.72, 0, 1),
+		gap 320ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 @media (min-width: 640px) {
@@ -80,11 +89,18 @@
 
 .public-booking-profile__eyebrow {
 	margin: 0;
+	max-height: 1.5rem;
+	overflow: hidden;
 	font-size: 0.72rem;
 	font-weight: 650;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	color: var(--primary);
+	opacity: 1;
+	transition:
+		opacity 220ms ease,
+		max-height 280ms ease,
+		margin 280ms ease;
 }
 
 .public-booking-profile__title {
@@ -94,6 +110,10 @@
 	letter-spacing: -0.02em;
 	line-height: 1.15;
 	color: var(--on-surface);
+	transition:
+		font-size 320ms cubic-bezier(0.32, 0.72, 0, 1),
+		font-weight 320ms ease,
+		line-height 320ms ease;
 }
 
 @media (min-width: 640px) {
@@ -104,9 +124,16 @@
 
 .public-booking-profile__subtitle {
 	margin: 0;
+	max-height: 1.75rem;
+	overflow: hidden;
 	font-size: 0.95rem;
 	font-weight: 500;
 	color: var(--on-surface-variant);
+	opacity: 1;
+	transition:
+		opacity 220ms ease,
+		max-height 280ms ease,
+		margin 280ms ease;
 }
 
 .public-booking-avatar {
@@ -118,6 +145,11 @@
 	background: var(--surface-container-high);
 	object-fit: cover;
 	box-shadow: 0 12px 32px color-mix(in srgb, black 28%, transparent);
+	transform-origin: center center;
+	transition:
+		width 320ms cubic-bezier(0.32, 0.72, 0, 1),
+		height 320ms cubic-bezier(0.32, 0.72, 0, 1),
+		box-shadow 280ms ease;
 }
 
 @media (min-width: 640px) {
@@ -137,6 +169,7 @@
 .public-booking-avatar--empty .material-symbols-rounded {
 	font-size: 2.75rem;
 	line-height: 1;
+	transition: font-size 320ms cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /* Header compacto (paso 2 en adelante): barra estrecha tipo app nativa.
@@ -148,15 +181,11 @@
 	background: color-mix(in srgb, var(--surface-background) 92%, transparent);
 	backdrop-filter: blur(10px);
 	-webkit-backdrop-filter: blur(10px);
-	border-bottom: 1px solid color-mix(in srgb, var(--outline-variant) 40%, transparent);
+	border-bottom-color: color-mix(in srgb, var(--outline-variant) 40%, transparent);
 }
 
 .public-booking-profile.is-compact .public-booking-profile__inner {
-	grid-auto-flow: column;
-	grid-template-columns: none;
-	justify-items: center;
-	justify-content: center;
-	align-items: center;
+	flex-direction: row;
 	gap: 0.6rem;
 	padding: 0.55rem 1rem;
 	text-align: left;
@@ -178,7 +207,10 @@
 
 .public-booking-profile.is-compact .public-booking-profile__eyebrow,
 .public-booking-profile.is-compact .public-booking-profile__subtitle {
-	display: none;
+	max-height: 0;
+	margin: 0;
+	opacity: 0;
+	pointer-events: none;
 }
 
 .public-booking-profile.is-compact .public-booking-profile__title {
@@ -200,6 +232,25 @@
 	.public-booking-profile.is-compact .public-booking-profile__title {
 		font-size: 1.2rem;
 	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.public-booking-profile,
+	.public-booking-profile__inner,
+	.public-booking-profile__eyebrow,
+	.public-booking-profile__subtitle,
+	.public-booking-profile__title,
+	.public-booking-avatar,
+	.public-booking-avatar--empty .material-symbols-rounded {
+		transition: none;
+	}
+}
+
+/* Durante el FLIP el tamaño lo anima el transform; sin pelear con width/height CSS. */
+.public-booking-profile.is-morphing .public-booking-avatar,
+.public-booking-profile.is-morphing .public-booking-profile__text,
+.public-booking-profile.is-morphing .public-booking-profile__title {
+	transition: none !important;
 }
 
 .public-booking-stepper {
@@ -662,7 +713,7 @@
 
 	.public-location-stack {
 		position: relative;
-		height: 14.5rem;
+		height: 16rem;
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
@@ -692,10 +743,12 @@
 		box-shadow: none;
 	}
 
+	/* Cover Flow plano: foco al 100% (borde azul) y vecinos al 90%/80% en gris oscuro,
+	   con el mismo lenguaje visual que los horarios inactivos. Sin curvatura hacia atrás. */
 	.public-location-stack .public-location-card.is-focus {
 		transform: translateY(-50%) scale(1);
 		opacity: 1;
-		z-index: 3;
+		z-index: 4;
 		filter: none;
 		border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
 		background: color-mix(in srgb, var(--primary-container) 28%, var(--surface-container-high));
@@ -704,22 +757,42 @@
 	}
 
 	.public-location-stack .public-location-card.is-near-up {
-		transform: translateY(calc(-50% - 3.65rem)) scale(0.92);
+		transform: translateY(calc(-50% - 3.65rem)) scale(0.9);
 		opacity: 0.72;
-		z-index: 2;
+		z-index: 3;
 		filter: none;
-		border-color: color-mix(in srgb, var(--outline-variant) 40%, transparent);
+		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
 		background: color-mix(in srgb, var(--surface-container-high) 32%, transparent);
 		pointer-events: auto;
 	}
 
 	.public-location-stack .public-location-card.is-near-down {
-		transform: translateY(calc(-50% + 3.65rem)) scale(0.92);
+		transform: translateY(calc(-50% + 3.65rem)) scale(0.9);
 		opacity: 0.72;
+		z-index: 3;
+		filter: none;
+		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
+		background: color-mix(in srgb, var(--surface-container-high) 32%, transparent);
+		pointer-events: auto;
+	}
+
+	.public-location-stack .public-location-card.is-far-up {
+		transform: translateY(calc(-50% - 6.55rem)) scale(0.8);
+		opacity: 0.4;
 		z-index: 2;
 		filter: none;
-		border-color: color-mix(in srgb, var(--outline-variant) 40%, transparent);
-		background: color-mix(in srgb, var(--surface-container-high) 32%, transparent);
+		border-color: color-mix(in srgb, var(--outline-variant) 22%, transparent);
+		background: color-mix(in srgb, var(--surface-container-high) 22%, transparent);
+		pointer-events: auto;
+	}
+
+	.public-location-stack .public-location-card.is-far-down {
+		transform: translateY(calc(-50% + 6.55rem)) scale(0.8);
+		opacity: 0.4;
+		z-index: 2;
+		filter: none;
+		border-color: color-mix(in srgb, var(--outline-variant) 22%, transparent);
+		background: color-mix(in srgb, var(--surface-container-high) 22%, transparent);
 		pointer-events: auto;
 	}
 
@@ -728,8 +801,15 @@
 		color: color-mix(in srgb, var(--on-surface) 72%, transparent);
 	}
 
+	.public-location-stack .public-location-card.is-far-up .public-location-card__name,
+	.public-location-stack .public-location-card.is-far-up .public-location-card__address,
+	.public-location-stack .public-location-card.is-far-down .public-location-card__name,
+	.public-location-stack .public-location-card.is-far-down .public-location-card__address {
+		color: color-mix(in srgb, var(--on-surface) 55%, transparent);
+	}
+
 	.public-location-stack .public-location-card.is-far {
-		transform: translateY(-50%) scale(0.86);
+		transform: translateY(-50%) scale(0.72);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
@@ -1312,15 +1392,14 @@
 		margin: 0;
 		border-radius: 1.6rem 1.6rem 0 0;
 		box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.35);
+		/* Evita el “rebote”: anima el dialog entero, no el sheet interno. */
+		transform: translateY(0);
 	}
 
 	.public-map-modal[open] {
 		display: flex;
 		flex-direction: column;
-	}
-
-	.public-map-modal[open] .public-map-modal__sheet {
-		animation: public-map-sheet-in 220ms cubic-bezier(0.4, 0, 0.2, 1);
+		animation: public-map-modal-in 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
 	}
 
 	.public-map-modal__sheet {
@@ -1347,19 +1426,17 @@
 	}
 }
 
-@keyframes public-map-sheet-in {
+@keyframes public-map-modal-in {
 	from {
 		transform: translateY(100%);
-		opacity: 0.96;
 	}
 	to {
 		transform: translateY(0);
-		opacity: 1;
 	}
 }
 
 @media (prefers-reduced-motion: reduce) {
-	.public-map-modal[open] .public-map-modal__sheet {
+	.public-map-modal[open] {
 		animation: none;
 	}
 }

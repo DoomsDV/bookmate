@@ -679,7 +679,7 @@ export const initializePublicBookingPage = () => {
 				if (openSeq === mapOpenSeq) {
 					setMapLoading(false);
 				}
-			}, 80);
+			}, 320);
 		} catch (error) {
 			if (!isActiveMapOpen()) return;
 			setMapStatus(error instanceof Error ? error.message : 'No fue posible mostrar el mapa.');
@@ -842,7 +842,52 @@ export const initializePublicBookingPage = () => {
 		// A partir del paso 2 el header pasa a barra compacta (avatar chico + nombre),
 		// liberando espacio vertical. El paso 1 (bienvenida) y la confirmación (6) usan el hero.
 		if (bookingProfileHeader) {
-			bookingProfileHeader.classList.toggle('is-compact', step >= 2 && step !== 6);
+			const shouldCompact = step >= 2 && step !== 6;
+			const wasCompact = bookingProfileHeader.classList.contains('is-compact');
+			const prefersReducedMotion =
+				typeof window !== 'undefined' &&
+				window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+			if (shouldCompact !== wasCompact && !prefersReducedMotion) {
+				const morphTargets = [
+					bookingProfileHeader.querySelector<HTMLElement>('.public-booking-avatar'),
+					bookingProfileHeader.querySelector<HTMLElement>('.public-booking-profile__text'),
+				].filter((node): node is HTMLElement => Boolean(node));
+
+				const firstRects = morphTargets.map((node) => node.getBoundingClientRect());
+				bookingProfileHeader.classList.add('is-morphing');
+				bookingProfileHeader.classList.toggle('is-compact', shouldCompact);
+
+				const animations = morphTargets.map((node, index) => {
+					const first = firstRects[index];
+					const last = node.getBoundingClientRect();
+					if (!first || last.width < 1 || last.height < 1) return null;
+					const dx = first.left + first.width / 2 - (last.left + last.width / 2);
+					const dy = first.top + first.height / 2 - (last.top + last.height / 2);
+					const sx = first.width / last.width;
+					const sy = first.height / last.height;
+					return node.animate(
+						[
+							{ transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` },
+							{ transform: 'translate(0, 0) scale(1)' },
+						],
+						{
+							duration: 340,
+							easing: 'cubic-bezier(0.32, 0.72, 0, 1)',
+						}
+					);
+				});
+
+				void Promise.all(
+					animations
+						.filter((animation): animation is Animation => Boolean(animation))
+						.map((animation) => animation.finished.catch(() => undefined))
+				).then(() => {
+					bookingProfileHeader.classList.remove('is-morphing');
+				});
+			} else {
+				bookingProfileHeader.classList.toggle('is-compact', shouldCompact);
+			}
 		}
 
 		const cappedStep = (step >= 6 ? 5 : step) as 1 | 2 | 3 | 4 | 5;
@@ -1352,7 +1397,15 @@ export const initializePublicBookingPage = () => {
 		for (const card of cards) {
 			const index = Number(card.dataset.locationStackIndex ?? -1);
 			const distance = index - focusedIndex;
-			card.classList.remove('is-focus', 'is-near', 'is-near-up', 'is-near-down', 'is-far');
+			card.classList.remove(
+				'is-focus',
+				'is-near',
+				'is-near-up',
+				'is-near-down',
+				'is-far-up',
+				'is-far-down',
+				'is-far'
+			);
 			card.setAttribute('aria-selected', distance === 0 ? 'true' : 'false');
 			card.tabIndex = distance === 0 ? 0 : -1;
 			if (distance === 0) {
@@ -1361,6 +1414,10 @@ export const initializePublicBookingPage = () => {
 				card.classList.add('is-near', 'is-near-up');
 			} else if (distance === 1) {
 				card.classList.add('is-near', 'is-near-down');
+			} else if (distance === -2) {
+				card.classList.add('is-far-up');
+			} else if (distance === 2) {
+				card.classList.add('is-far-down');
 			} else {
 				card.classList.add('is-far');
 			}
