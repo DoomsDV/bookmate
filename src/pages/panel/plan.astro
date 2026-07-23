@@ -307,40 +307,23 @@ const defaultCardHint = defaultCard
 									<div class="plan-status-main">
 										<div class="plan-status-copy">
 											<span class="plan-status-kicker">Plan actual</span>
-											<h2 class="plan-status-title">{current.plan_name || current.plan_code}</h2>
-											{current.monthly_total > 0 && !current.billing_exempt ? (
-												<div class="plan-status-price">
-													<span class="plan-status-amount">{formatGs(current.monthly_total)}</span>
-													<span class="plan-status-period">/ mes</span>
-												</div>
-											) : null}
+											<div class="plan-status-headline">
+												<h2 class="plan-status-title">{current.plan_name || current.plan_code}</h2>
+												{current.monthly_total > 0 && !current.billing_exempt ? (
+													<>
+														<span class="plan-status-sep" aria-hidden="true">·</span>
+														<div class="plan-status-price">
+															<span class="plan-status-amount">{formatGs(current.monthly_total)}</span>
+															<span class="plan-status-period">/ mes</span>
+														</div>
+													</>
+												) : null}
+											</div>
 											{effState === 'FOUNDER' || current.is_founder ? (
-												<ul class="plan-status-facts">
-													<li>
-														<span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>
-														<span>50% off de por vida (Miembro Fundador)</span>
-													</li>
-													{current.next_billing_at && !current.billing_exempt ? (
-														<li>
-															<span class="material-symbols-rounded" aria-hidden="true">calendar_month</span>
-															<span>
-																Próxima facturación:{' '}
-																<strong>{formatDateEs(current.next_billing_at)}</strong>
-															</span>
-														</li>
-													) : null}
-												</ul>
-											) : (
-												<>
-													<p class="plan-status-hint">{statusMeta.hint}</p>
-													{current.next_billing_at && !current.billing_exempt ? (
-														<p class="plan-status-billing">
-															Próxima facturación:{' '}
-															<strong>{formatDateEs(current.next_billing_at)}</strong>
-														</p>
-													) : null}
-												</>
-											)}
+												<span class="plan-status-deal">50% off de por vida</span>
+											) : statusMeta.hint ? (
+												<p class="plan-status-hint">{statusMeta.hint}</p>
+											) : null}
 										</div>
 										<div class="plan-status-side">
 											<span class="plan-status-side-label">Almacenamiento</span>
@@ -354,6 +337,12 @@ const defaultCardHint = defaultCard
 													{' + '}
 													almacenamiento {formatGs(current.addons_monthly_amount)}
 												</span>
+											) : null}
+											{current.next_billing_at && !current.billing_exempt ? (
+												<p class="plan-status-billing">
+													<span class="plan-status-billing-label">Próxima facturación</span>
+													<strong>{formatDateEs(current.next_billing_at)}</strong>
+												</p>
 											) : null}
 										</div>
 									</div>
@@ -470,6 +459,25 @@ const defaultCardHint = defaultCard
 												plan.code === 'PREMIUM' &&
 												plan.monthly_total > displayPrice &&
 												current.addons_monthly_amount > 0;
+											const isFounderViewer =
+												!!current.is_founder ||
+												effState === 'FOUNDER' ||
+												catalog.plans.some(
+													(p) =>
+														p.code === 'PREMIUM' &&
+														p.founder_discount_percent > 0 &&
+														p.checkout_price_amount > 0 &&
+														p.checkout_price_amount < p.price_amount
+												);
+											const showRegularPriceTag =
+												plan.code === 'BASE' && isFounderViewer && !hasFounderDeal;
+											const planAction = current.billing_exempt
+												? 'immediate'
+												: plan.price_amount < (catalog.plans.find((p) => p.is_current)?.price_amount ?? 0) ||
+													  (plan.code === 'BASE' && current.plan_code === 'PREMIUM')
+													? 'schedule'
+													: 'activate';
+											const isDowngradeCta = planAction === 'schedule';
 											return (
 											<article class={`plan-card ${plan.is_current ? 'plan-card-current' : ''} ${plan.code === 'PREMIUM' ? 'plan-card-featured' : ''}`}>
 												{plan.is_current ? (
@@ -492,6 +500,9 @@ const defaultCardHint = defaultCard
 														<span class="plan-card-deal text-[0.82rem] font-bold text-(--primary)">
 															Precio fundador · {plan.founder_discount_percent}% off de por vida
 														</span>
+													) : null}
+													{showRegularPriceTag ? (
+														<span class="plan-price-tag">Precio Regular</span>
 													) : null}
 													{showConsolidated ? (
 														<span class="plan-card-extra text-[0.82rem] font-semibold text-(--on-surface-variant)">
@@ -547,21 +558,14 @@ const defaultCardHint = defaultCard
 													) : isAdmin ? (
 														<button
 															type="button"
-															class="plan-btn plan-btn-primary"
+															class={`plan-btn ${isDowngradeCta ? 'plan-btn-outline' : 'plan-btn-primary'}`}
 															data-plan-select
 															data-plan-code={plan.code}
 															data-plan-name={plan.name}
 															data-plan-price={String(displayPrice)}
 															data-plan-monthly-total={String(showConsolidated ? plan.monthly_total : displayPrice)}
 															data-billing-exempt={current.billing_exempt ? '1' : '0'}
-															data-plan-action={
-																current.billing_exempt
-																	? 'immediate'
-																	: plan.price_amount < (catalog.plans.find((p) => p.is_current)?.price_amount ?? 0) ||
-																		  (plan.code === 'BASE' && current.plan_code === 'PREMIUM')
-																		? 'schedule'
-																		: 'activate'
-															}
+															data-plan-action={planAction}
 															data-period-end={current.current_period_end || ''}
 														>
 															{current.billing_exempt
@@ -598,6 +602,7 @@ const defaultCardHint = defaultCard
 											class="grid gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 sm:p-5"
 											data-billing-profile-form
 											autocomplete="off"
+											novalidate
 										>
 											<div class="grid gap-1">
 												<h3 class="m-0 text-[1rem] font-bold text-(--on-surface)">Datos de facturación</h3>
@@ -606,7 +611,7 @@ const defaultCardHint = defaultCard
 												</p>
 											</div>
 
-											<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)">
+											<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_name">
 												<span>Razón social / Nombre <span class="text-rose-500">*</span></span>
 												<input
 													type="text"
@@ -617,10 +622,11 @@ const defaultCardHint = defaultCard
 													placeholder="Nombre o razón social"
 													class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 												/>
+												<p class="plan-field-error" data-field-error="billing_name" role="alert"></p>
 											</label>
 
 											<div class="grid gap-3 sm:grid-cols-2">
-												<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)">
+												<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_doc_type">
 													<span>Tipo de documento <span class="text-rose-500">*</span></span>
 													<select
 														name="billing_doc_type"
@@ -631,7 +637,7 @@ const defaultCardHint = defaultCard
 														<option value="RUC" selected={billingProfile?.billing_doc_type === 'RUC'}>RUC</option>
 													</select>
 												</label>
-												<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)">
+												<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_doc_number">
 													<span>Número de documento <span class="text-rose-500">*</span></span>
 													<input
 														type="text"
@@ -642,10 +648,11 @@ const defaultCardHint = defaultCard
 														placeholder="C.I. o RUC"
 														class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 													/>
+													<p class="plan-field-error" data-field-error="billing_doc_number" role="alert"></p>
 												</label>
 											</div>
 
-											<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)">
+											<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_email">
 												<span>Email de factura <span class="text-rose-500">*</span></span>
 												<input
 													type="email"
@@ -656,6 +663,7 @@ const defaultCardHint = defaultCard
 													placeholder="facturacion@tuempresa.com"
 													class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 												/>
+												<p class="plan-field-error" data-field-error="billing_email" role="alert"></p>
 											</label>
 
 											<div class="flex flex-wrap items-center gap-3">
@@ -722,7 +730,10 @@ const defaultCardHint = defaultCard
 												<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
 												{cards.length === 0 ? 'Agregar tarjeta' : 'Agregar otra tarjeta'}
 											</button>
-											<p class="plan-payment-secure">Pagos 100% seguros vía Pagopar.</p>
+											<p class="plan-payment-secure">
+												<span class="material-symbols-rounded" aria-hidden="true">lock</span>
+												Pagos 100% seguros vía Pagopar.
+											</p>
 										</div>
 									</section>
 								)}
@@ -798,7 +809,7 @@ const defaultCardHint = defaultCard
 														{isAdmin && current.supports_storage_addons && !cancelScheduled ? (
 															<button
 																type="button"
-																class="plan-btn plan-btn-soft"
+																class="plan-btn plan-btn-primary plan-btn--auto"
 																data-addon-select
 																data-addon-code={addon.code}
 																data-addon-name={addon.name}
@@ -825,7 +836,7 @@ const defaultCardHint = defaultCard
 								)}
 
 								{canTerminate ? (
-									<section class="grid gap-3 rounded-2xl border border-rose-500/25 bg-rose-500/5 px-4 py-4 sm:px-5">
+									<section class="grid gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-5">
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Cancelar suscripción</h2>
 											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
@@ -1072,10 +1083,12 @@ const defaultCardHint = defaultCard
 		overflow: hidden;
 		border-radius: 1.25rem;
 		border: 1px solid var(--shell-border);
-		background: var(--surface-bright, #fff);
+		border-top: 4px solid var(--primary);
+		background: color-mix(in srgb, var(--primary) 4%, var(--surface-bright, #fff));
 		padding: 1.5rem;
 		display: grid;
 		gap: 1.25rem;
+		box-shadow: none;
 	}
 	.plan-status-corner {
 		display: none;
@@ -1085,11 +1098,11 @@ const defaultCardHint = defaultCard
 		flex-wrap: wrap;
 		align-items: flex-start;
 		justify-content: space-between;
-		gap: 1rem;
+		gap: 1.25rem 1.5rem;
 	}
 	.plan-status-copy {
 		display: grid;
-		gap: 0.35rem;
+		gap: 0.55rem;
 		min-width: 0;
 		flex: 1 1 14rem;
 	}
@@ -1100,6 +1113,12 @@ const defaultCardHint = defaultCard
 		text-transform: uppercase;
 		color: var(--on-surface-variant);
 	}
+	.plan-status-headline {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.35rem 0.55rem;
+	}
 	.plan-status-title {
 		margin: 0;
 		font-size: 1.55rem;
@@ -1107,21 +1126,41 @@ const defaultCardHint = defaultCard
 		line-height: 1.15;
 		color: var(--on-surface);
 	}
+	.plan-status-sep {
+		font-size: 1.15rem;
+		font-weight: 700;
+		line-height: 1;
+		color: var(--on-surface-variant);
+		opacity: 0.55;
+	}
 	.plan-status-price {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
-		gap: 0.35rem;
+		gap: 0.3rem;
 	}
 	.plan-status-amount {
 		font-size: 1.35rem;
 		font-weight: 800;
-		color: var(--on-surface);
+		color: var(--primary);
 	}
 	.plan-status-period {
 		font-size: 0.85rem;
 		font-weight: 650;
 		color: var(--on-surface-variant);
+	}
+	.plan-status-deal {
+		display: inline-flex;
+		align-items: center;
+		width: fit-content;
+		padding: 0.28rem 0.65rem;
+		border-radius: 0.55rem;
+		font-size: 0.78rem;
+		font-weight: 750;
+		letter-spacing: 0.01em;
+		line-height: 1.2;
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		color: var(--primary);
 	}
 	.plan-status-hint {
 		margin: 0;
@@ -1132,54 +1171,67 @@ const defaultCardHint = defaultCard
 		color: var(--on-surface-variant);
 	}
 	.plan-status-billing {
-		margin: 0;
+		margin: 0.35rem 0 0;
+		display: grid;
+		gap: 0.15rem;
 		font-size: 0.88rem;
 		font-weight: 650;
 		color: var(--on-surface);
+	}
+	.plan-status-billing-label {
+		font-size: 0.72rem;
+		font-weight: 750;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
 	}
 	.plan-status-billing strong {
 		color: var(--primary);
 		font-weight: 800;
 	}
-	.plan-status-facts {
-		list-style: none;
-		margin: 0.15rem 0 0;
-		padding: 0;
-		display: grid;
-		gap: 0.45rem;
-	}
-	.plan-status-facts li {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.45rem;
-		margin: 0;
-		font-size: 0.88rem;
-		font-weight: 650;
-		line-height: 1.35;
-		color: var(--on-surface);
-	}
-	.plan-status-facts .material-symbols-rounded {
-		font-size: 1.1rem;
-		line-height: 1.2;
-		color: var(--primary);
-		flex-shrink: 0;
-	}
-	.plan-status-facts strong {
-		color: var(--primary);
-		font-weight: 800;
-	}
 	.plan-payment-actions {
 		display: grid;
-		gap: 0.55rem;
+		gap: 0.45rem;
 		justify-items: start;
 	}
 	.plan-payment-secure {
 		margin: 0;
-		width: 100%;
-		text-align: center;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
 		font-size: 0.78rem;
 		font-weight: 550;
 		color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+	}
+	.plan-payment-secure .material-symbols-rounded {
+		font-size: 0.95rem;
+		opacity: 0.9;
+	}
+	.plan-field-error {
+		margin: 0;
+		font-size: 0.78rem;
+		font-weight: 650;
+		color: #e11d48;
+		display: none;
+	}
+	.plan-field-error.is-visible {
+		display: block;
+	}
+	.plan-field-invalid {
+		border-color: #e11d48 !important;
+		box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
+	}
+	.plan-price-tag {
+		display: inline-flex;
+		align-items: center;
+		margin-top: 0.15rem;
+		padding: 0.15rem 0.55rem;
+		border-radius: 999px;
+		font-size: 0.7rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
+		background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
+		color: var(--on-surface-variant);
 	}
 	.plan-status-side {
 		display: grid;
@@ -1190,8 +1242,14 @@ const defaultCardHint = defaultCard
 	@media (min-width: 640px) {
 		.plan-status-side {
 			width: auto;
+			min-width: 12.5rem;
+			max-width: 16rem;
 			text-align: right;
 			justify-items: end;
+		}
+		.plan-status-billing {
+			justify-items: end;
+			text-align: right;
 		}
 	}
 	.plan-status-side-label {
@@ -1212,8 +1270,10 @@ const defaultCardHint = defaultCard
 		color: var(--on-surface-variant);
 	}
 
-	.plan-tone-danger { border-color: rgba(244, 63, 94, 0.35); }
-	.plan-tone-warning { border-color: rgba(245, 158, 11, 0.35); }
+	.plan-tone-danger { border-top-color: #e11d48; }
+	.plan-tone-warning { border-top-color: #f59e0b; }
+	.plan-tone-ok,
+	.plan-tone-founder { border-top-color: var(--primary); }
 	.plan-badge {
 		display: inline-flex; align-items: center;
 		padding: 0.3rem 0.7rem; border-radius: 999px;
@@ -1227,9 +1287,9 @@ const defaultCardHint = defaultCard
 	.plan-storage-track {
 		width: 100%;
 		max-width: 16rem;
-		height: 8px;
+		height: 10px;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface-variant) 22%, transparent);
+		background: color-mix(in srgb, var(--on-surface-variant) 38%, transparent);
 		overflow: hidden;
 	}
 	@media (min-width: 640px) {
@@ -1257,8 +1317,13 @@ const defaultCardHint = defaultCard
 		padding: 1.5rem;
 		overflow: hidden;
 	}
-	.plan-card-featured { border-color: color-mix(in srgb, var(--primary) 55%, transparent); box-shadow: 0 12px 30px -18px color-mix(in srgb, var(--primary) 60%, transparent); }
-	.plan-card-current { outline: 2px solid color-mix(in srgb, var(--primary) 40%, transparent); }
+	.plan-card-featured {
+		border-color: color-mix(in srgb, var(--primary) 45%, var(--shell-border));
+		border-top: 4px solid var(--primary);
+		background: color-mix(in srgb, var(--primary) 4%, var(--surface-bright, #fff));
+		box-shadow: none;
+	}
+	.plan-card-current { outline: none; border-color: color-mix(in srgb, var(--primary) 40%, var(--shell-border)); }
 	.plan-card-divider {
 		display: none;
 		height: 0;
@@ -1276,15 +1341,11 @@ const defaultCardHint = defaultCard
 		.plan-status-card {
 			padding: 1.25rem 1.15rem 1.2rem;
 			border-radius: 1.35rem;
-			border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--shell-border));
-			background:
-				linear-gradient(
-					180deg,
-					color-mix(in srgb, var(--primary) 8%, var(--surface-bright, #fff)) 0%,
-					var(--surface-bright, #fff) 42%
-				);
+			border: 1px solid var(--shell-border);
+			border-top: 4px solid var(--primary);
+			background: color-mix(in srgb, var(--primary) 5%, var(--surface-bright, #fff));
 			color: var(--on-surface);
-			box-shadow: 0 10px 28px -22px rgba(15, 23, 42, 0.35);
+			box-shadow: none;
 			gap: 0.95rem;
 		}
 
@@ -1309,7 +1370,7 @@ const defaultCardHint = defaultCard
 			clip-path: none;
 			color: #fff;
 			background: var(--primary);
-			box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--primary) 70%, transparent);
+			box-shadow: none;
 		}
 
 		.plan-status-main {
@@ -1319,26 +1380,38 @@ const defaultCardHint = defaultCard
 
 		.plan-status-copy {
 			padding-right: 5.5rem;
+			gap: 0.5rem;
 		}
 
 		.plan-status-kicker {
 			color: var(--on-surface-variant);
 		}
 
+		.plan-status-headline {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.2rem;
+		}
+
+		.plan-status-sep {
+			display: none;
+		}
+
 		.plan-status-title {
-			font-size: 1.65rem;
+			font-size: 1.55rem;
 			color: var(--on-surface);
 		}
 
 		.plan-status-amount {
-			font-size: 1.7rem;
+			font-size: 1.45rem;
 			color: var(--primary);
 		}
 
 		.plan-status-period,
 		.plan-status-hint,
 		.plan-status-side-label,
-		.plan-status-side-note {
+		.plan-status-side-note,
+		.plan-status-billing-label {
 			color: var(--on-surface-variant);
 		}
 
@@ -1353,7 +1426,14 @@ const defaultCardHint = defaultCard
 
 		.plan-status-side {
 			padding-top: 0.85rem;
-			border-top: 1px dashed color-mix(in srgb, var(--shell-border) 90%, transparent);
+			border-top: 1px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
+			justify-items: start;
+			text-align: left;
+		}
+
+		.plan-status-billing {
+			margin-top: 0.55rem;
+			width: 100%;
 			justify-items: start;
 			text-align: left;
 		}
@@ -1361,8 +1441,8 @@ const defaultCardHint = defaultCard
 		.plan-status-card .plan-storage-track {
 			max-width: none;
 			width: 100%;
-			height: 0.45rem;
-			background: color-mix(in srgb, var(--on-surface-variant) 18%, transparent);
+			height: 10px;
+			background: color-mix(in srgb, var(--on-surface-variant) 38%, transparent);
 			margin-left: 0;
 		}
 
@@ -1427,15 +1507,11 @@ const defaultCardHint = defaultCard
 
 		.plan-cards-carousel .plan-card-current {
 			outline: 0;
-			border-color: color-mix(in srgb, var(--primary) 42%, var(--shell-border));
-			background:
-				linear-gradient(
-					180deg,
-					color-mix(in srgb, var(--primary) 9%, var(--surface-bright, #fff)) 0%,
-					var(--surface-bright, #fff) 48%
-				);
+			border: 1px solid var(--shell-border);
+			border-top: 4px solid var(--primary);
+			background: color-mix(in srgb, var(--primary) 5%, var(--surface-bright, #fff));
 			color: var(--on-surface);
-			box-shadow: 0 14px 30px -22px color-mix(in srgb, var(--primary) 45%, transparent);
+			box-shadow: none;
 		}
 
 		.plan-cards-carousel .plan-card-current .plan-card-name,
@@ -1483,11 +1559,27 @@ const defaultCardHint = defaultCard
 		}
 	}
 	.plan-ribbon {
-		position: absolute; top: -0.7rem; right: 1.25rem;
-		background: var(--primary); color: #fff;
-		font-size: 0.68rem; font-weight: 800; letter-spacing: .04em;
-		padding: 0.28rem 0.7rem; border-radius: 999px;
+		position: absolute;
+		top: 0.85rem;
+		right: 0.85rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: var(--primary);
+		color: #fff;
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		line-height: 1.1;
+		padding: 0.32rem 0.7rem;
+		border-radius: 999px;
 		z-index: 2;
+		box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--primary) 70%, transparent);
+	}
+	.plan-ribbon--included {
+		background: color-mix(in srgb, var(--on-surface-variant) 28%, transparent);
+		color: var(--on-surface);
+		box-shadow: none;
 	}
 
 	@media (max-width: 767px) {
@@ -1495,29 +1587,6 @@ const defaultCardHint = defaultCard
 		.plan-cards-carousel .plan-ribbon--included {
 			top: 0.85rem;
 			right: 0.85rem;
-			width: auto;
-			height: auto;
-			min-height: 0;
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			place-items: center;
-			padding: 0.32rem 0.7rem;
-			border-radius: 999px;
-			clip-path: none;
-			font-size: 0.68rem;
-			letter-spacing: 0.04em;
-			text-align: center;
-			line-height: 1.1;
-			color: #fff;
-			background: var(--primary);
-			box-shadow: 0 6px 16px -8px color-mix(in srgb, var(--primary) 70%, transparent);
-		}
-
-		.plan-cards-carousel .plan-ribbon--included {
-			background: color-mix(in srgb, var(--on-surface) 78%, transparent);
-			color: #fff;
-			box-shadow: none;
 		}
 	}
 
@@ -1611,19 +1680,27 @@ const defaultCardHint = defaultCard
 	.plan-btn {
 		width: 100%; border: 0; cursor: pointer;
 		border-radius: 999px; padding: 0.8rem 1.25rem;
-		font-size: 0.9rem; font-weight: 800; transition: filter .15s ease, background .15s ease;
+		font-size: 0.9rem; font-weight: 800; transition: filter .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
 	}
 	.plan-btn:disabled { cursor: default; opacity: .75; }
 	.plan-btn-primary { background: var(--primary); color: #fff; }
 	.plan-btn-primary:hover { filter: brightness(1.05); }
+	.plan-btn-outline {
+		background: transparent;
+		color: var(--primary);
+		border: 1.5px solid var(--primary);
+	}
+	.plan-btn-outline:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
 	.plan-btn-current { background: color-mix(in srgb, var(--on-surface-variant) 16%, transparent); color: var(--on-surface-variant); }
 	.plan-btn-soft { width: auto; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
+	.plan-btn-primary.plan-btn--auto { width: auto; }
 	.plan-btn-danger {
 		width: auto;
-		background: color-mix(in srgb, #be123c 12%, transparent);
+		background: transparent;
+		border: 1.5px solid color-mix(in srgb, #be123c 45%, transparent);
 		color: #be123c;
 	}
-	.plan-btn-danger:hover { filter: brightness(0.96); }
+	.plan-btn-danger:hover { background: color-mix(in srgb, #be123c 8%, transparent); }
 	.plan-btn-ghost { background: transparent; color: var(--on-surface-variant); }
 
 	.plan-addon-card {

@@ -166,6 +166,9 @@ export function initPlanPage() {
 	const billingStatus = document.querySelector<HTMLElement>('[data-billing-profile-status]');
 	const billingSaveBtn = document.querySelector<HTMLButtonElement>('[data-billing-profile-save]');
 
+	const BILLING_FIELDS = ['billing_name', 'billing_doc_number', 'billing_email'] as const;
+	type BillingField = (typeof BILLING_FIELDS)[number];
+
 	const isBillingComplete = () => billingStatus?.dataset.complete === '1';
 
 	const setBillingComplete = (complete: boolean) => {
@@ -175,6 +178,32 @@ export function initPlanPage() {
 		billingStatus.classList.toggle('text-emerald-600', complete);
 		billingStatus.classList.toggle('dark:text-emerald-400', complete);
 		billingStatus.classList.toggle('text-(--on-surface-variant)', !complete);
+	};
+
+	const clearBillingFieldError = (field: BillingField) => {
+		if (!billingForm) return;
+		const control = billingForm.querySelector<HTMLElement>(`[name="${field}"]`);
+		const errorEl = billingForm.querySelector<HTMLElement>(`[data-field-error="${field}"]`);
+		control?.classList.remove('plan-field-invalid');
+		if (errorEl) {
+			errorEl.textContent = '';
+			errorEl.classList.remove('is-visible');
+		}
+	};
+
+	const clearAllBillingFieldErrors = () => {
+		for (const field of BILLING_FIELDS) clearBillingFieldError(field);
+	};
+
+	const setBillingFieldError = (field: BillingField, message: string) => {
+		if (!billingForm) return;
+		const control = billingForm.querySelector<HTMLElement>(`[name="${field}"]`);
+		const errorEl = billingForm.querySelector<HTMLElement>(`[data-field-error="${field}"]`);
+		control?.classList.add('plan-field-invalid');
+		if (errorEl) {
+			errorEl.textContent = message;
+			errorEl.classList.add('is-visible');
+		}
 	};
 
 	const readBillingPayload = () => {
@@ -188,32 +217,42 @@ export function initPlanPage() {
 		};
 	};
 
-	const validateBillingPayload = (payload: {
+	const validateBillingFields = (payload: {
 		billing_name: string;
 		billing_doc_type: string;
 		billing_doc_number: string;
 		billing_email: string;
 	}) => {
+		const errors: Partial<Record<BillingField, string>> = {};
 		if (!payload.billing_name || payload.billing_name.length < 2) {
-			return payload.billing_doc_type === 'RUC'
-				? 'La razón social es obligatoria para RUC.'
-				: 'El nombre / razón social es obligatorio.';
+			errors.billing_name = 'Campo obligatorio';
 		}
 		if (!payload.billing_doc_number || payload.billing_doc_number.length < 3) {
-			return 'El número de documento (C.I. o RUC) es obligatorio.';
+			errors.billing_doc_number = 'Campo obligatorio';
 		}
-		if (!payload.billing_email || !payload.billing_email.includes('@') || !payload.billing_email.includes('.')) {
-			return 'Ingresá un email de factura válido.';
+		if (!payload.billing_email) {
+			errors.billing_email = 'Campo obligatorio';
+		} else if (!payload.billing_email.includes('@') || !payload.billing_email.includes('.')) {
+			errors.billing_email = 'Ingresá un email válido';
 		}
-		return '';
+		return errors;
 	};
 
 	async function saveBillingProfile(opts?: { silent?: boolean }) {
 		const payload = readBillingPayload();
 		if (!payload) return false;
-		const validationError = validateBillingPayload(payload);
-		if (validationError) {
-			flash(validationError, 'error');
+		clearAllBillingFieldErrors();
+		const fieldErrors = validateBillingFields(payload);
+		const errorKeys = Object.keys(fieldErrors) as BillingField[];
+		if (errorKeys.length > 0) {
+			for (const field of errorKeys) {
+				setBillingFieldError(field, fieldErrors[field] || 'Campo obligatorio');
+			}
+			const firstInvalid = billingForm?.querySelector<HTMLElement>('.plan-field-invalid');
+			firstInvalid?.focus();
+			if (!opts?.silent) {
+				flash('Completá los campos marcados para continuar.', 'error');
+			}
 			return false;
 		}
 		if (billingSaveBtn) billingSaveBtn.disabled = true;
@@ -247,6 +286,12 @@ export function initPlanPage() {
 		event.preventDefault();
 		void saveBillingProfile();
 	});
+
+	for (const field of BILLING_FIELDS) {
+		const control = billingForm?.querySelector<HTMLElement>(`[name="${field}"]`);
+		control?.addEventListener('input', () => clearBillingFieldError(field));
+		control?.addEventListener('change', () => clearBillingFieldError(field));
+	}
 
 	// ---- Registrar tarjeta (catastro uPay) ----
 	async function addCard() {
