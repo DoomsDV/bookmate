@@ -587,8 +587,8 @@
 
 	.public-service-stack {
 		position: relative;
-		/* Card compacta (~5.5–6.5rem) + peek de vecinos. */
-		height: 9rem;
+		/* Card foco + card siguiente completa (sin cortar con Continuar). */
+		height: 13.25rem;
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
@@ -651,7 +651,7 @@
 	}
 
 	.public-service-stack .public-service-card.is-focus {
-		transform: translateY(0.25rem) scale(1);
+		transform: translateY(0) scale(1);
 		opacity: 1;
 		z-index: 3;
 		filter: none;
@@ -662,8 +662,8 @@
 	}
 
 	.public-service-stack .public-service-card.is-near-up {
-		transform: translateY(-3.5rem) scale(0.92);
-		opacity: 0.72;
+		transform: translateY(-6.55rem) scale(0.94);
+		opacity: 0.55;
 		z-index: 2;
 		filter: none;
 		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
@@ -672,22 +672,22 @@
 	}
 
 	.public-service-stack .public-service-card.is-near-down {
-		transform: translateY(4.15rem) scale(0.92);
-		opacity: 0.72;
+		transform: translateY(6.55rem) scale(0.96);
+		opacity: 0.88;
 		z-index: 2;
 		filter: none;
 		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
-		background: color-mix(in srgb, var(--surface-container-high) 32%, transparent);
+		background: color-mix(in srgb, var(--surface-container-high) 42%, transparent);
 		pointer-events: auto;
 	}
 
 	.public-service-stack .public-service-card.is-near .public-service-card__title,
 	.public-service-stack .public-service-card.is-near .public-service-card__meta {
-		color: color-mix(in srgb, var(--on-surface) 72%, transparent);
+		color: color-mix(in srgb, var(--on-surface) 78%, transparent);
 	}
 
 	.public-service-stack .public-service-card.is-far {
-		transform: translateY(4.15rem) scale(0.88);
+		transform: translateY(6.55rem) scale(0.9);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
@@ -746,7 +746,7 @@
 
 	.public-location-stack {
 		position: relative;
-		height: 9rem;
+		height: 13.25rem;
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
@@ -786,7 +786,7 @@
 	/* Cover Flow plano anclado al inicio: foco al 100% (borde azul) y vecinos al 90%/80%
 	   en gris oscuro, con el mismo lenguaje visual que los horarios inactivos. */
 	.public-location-stack .public-location-card.is-focus {
-		transform: translateY(0.25rem) scale(1);
+		transform: translateY(0) scale(1);
 		opacity: 1;
 		z-index: 4;
 		filter: none;
@@ -797,8 +797,8 @@
 	}
 
 	.public-location-stack .public-location-card.is-near-up {
-		transform: translateY(-3.5rem) scale(0.92);
-		opacity: 0.72;
+		transform: translateY(-6.55rem) scale(0.94);
+		opacity: 0.55;
 		z-index: 3;
 		filter: none;
 		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
@@ -807,18 +807,18 @@
 	}
 
 	.public-location-stack .public-location-card.is-near-down {
-		transform: translateY(4.15rem) scale(0.92);
-		opacity: 0.72;
+		transform: translateY(6.55rem) scale(0.96);
+		opacity: 0.88;
 		z-index: 3;
 		filter: none;
 		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
-		background: color-mix(in srgb, var(--surface-container-high) 32%, transparent);
+		background: color-mix(in srgb, var(--surface-container-high) 42%, transparent);
 		pointer-events: auto;
 	}
 
 	.public-location-stack .public-location-card.is-far-up {
-		transform: translateY(-5.75rem) scale(0.86);
-		opacity: 0.4;
+		transform: translateY(-6.55rem) scale(0.9);
+		opacity: 0.35;
 		z-index: 2;
 		filter: none;
 		border-color: color-mix(in srgb, var(--outline-variant) 22%, transparent);
@@ -827,8 +827,8 @@
 	}
 
 	.public-location-stack .public-location-card.is-far-down {
-		transform: translateY(5.9rem) scale(0.86);
-		opacity: 0.4;
+		transform: translateY(6.55rem) scale(0.9);
+		opacity: 0.35;
 		z-index: 2;
 		filter: none;
 		border-color: color-mix(in srgb, var(--outline-variant) 22%, transparent);
@@ -838,7 +838,7 @@
 
 	.public-location-stack .public-location-card.is-near .public-location-card__name,
 	.public-location-stack .public-location-card.is-near .public-location-card__address {
-		color: color-mix(in srgb, var(--on-surface) 72%, transparent);
+		color: color-mix(in srgb, var(--on-surface) 78%, transparent);
 	}
 
 	.public-location-stack .public-location-card.is-far-up .public-location-card__name,
@@ -849,7 +849,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-far {
-		transform: translateY(4.15rem) scale(0.8);
+		transform: translateY(6.55rem) scale(0.86);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
