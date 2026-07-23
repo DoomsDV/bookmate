@@ -43,12 +43,12 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		</div>
 
 		<dialog
-			class="m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:max-h-[90vh] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-1/2 lg:max-w-[50vw] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 			data-service-modal
 		>
 
 			<div
-				class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6"
+				class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-4"
 			>
 				<div class="flex items-start justify-between gap-4">
 					<div class="flex items-center gap-4">
@@ -66,13 +66,6 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 							>
 								Crear servicio
 							</h2>
-							<p
-								class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5 hidden sm:block"
-								data-service-modal-description
-							>
-								Completa los campos para registrar un nuevo
-								servicio.
-							</p>
 						</div>
 					</div>
 					<button
@@ -87,7 +80,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			</div>
 
 			<form
-				class="relative flex flex-col bg-(--surface)/30 overflow-y-auto overscroll-contain min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
+				class="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-(--surface)/30 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]"
 				data-service-create-form
 			>
 				<div
@@ -105,8 +98,10 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 					</div>
 				</div>
 
-				<fieldset data-form-fieldset class="flex flex-col min-h-0">
-				<div class="px-7 py-7 grid gap-5">
+				{/* fieldset con display:contents evita el bug de flex que aplasta el contenido en drawers */}
+				<fieldset data-form-fieldset class="contents">
+				<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 py-7 lg:px-6">
+				<div class="grid gap-5">
 				<div
 					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
 					data-form-error
@@ -119,7 +114,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 						Opcional. Se muestra en la reserva pública (proporción 4:3).
 					</p>
 					<label
-						class="service-cover-dropzone relative flex cursor-pointer flex-col overflow-hidden rounded-xl border border-dashed border-(--shell-border) bg-(--surface-container-high) transition hover:border-(--primary)/45"
+						class="service-cover-dropzone"
 						data-service-cover-dropzone
 					>
 						<input
@@ -128,38 +123,44 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 							class="sr-only"
 							data-service-cover-input
 						/>
-						<div
-							class="relative w-full overflow-hidden"
-							style="aspect-ratio: 4 / 3; max-height: 8.5rem;"
-							data-service-cover-preview-wrap
-						>
-							<img
-								alt=""
-								class="hidden h-full w-full object-cover"
-								data-service-cover-preview
-							/>
-							<div
-								class="absolute inset-0 flex flex-col items-center justify-center gap-1 px-3 text-center text-(--on-surface-variant)"
-								data-service-cover-empty
+						<img
+							alt=""
+							class="service-cover-dropzone__preview hidden"
+							data-service-cover-preview
+						/>
+						<div class="service-cover-dropzone__empty" data-service-cover-empty>
+							<span
+								class="material-symbols-rounded service-cover-dropzone__icon"
+								aria-hidden="true"
+								>image</span
 							>
-								<span class="material-symbols-rounded text-[1.5rem]" aria-hidden="true">image</span>
-								<span class="text-[0.78rem] font-semibold leading-snug sm:hidden" data-service-cover-hint-mobile
-									>Tocar para subir</span
-								>
-								<span class="hidden text-[0.78rem] font-semibold leading-snug sm:inline" data-service-cover-hint-desktop
-									>Arrastrá una imagen o hacé click</span
-								>
-							</div>
+							<span class="service-cover-dropzone__title">
+								<span class="service-cover-copy-desktop">Arrastrá tu imagen aquí</span>
+								<span class="service-cover-copy-mobile">Tocá para subir una imagen</span>
+							</span>
+							<span class="service-cover-dropzone__meta"
+								>JPG, PNG o WebP · máx. 5 MB</span
+							>
+							<span class="service-cover-dropzone__btn" data-service-cover-select>
+								Seleccionar imagen
+							</span>
 						</div>
+						<span
+							class="service-cover-dropzone__change hidden"
+							data-service-cover-change
+						>
+							<span class="service-cover-copy-desktop">Hacé clic o arrastrá para cambiar</span>
+							<span class="service-cover-copy-mobile">Tocá para cambiar</span>
+						</span>
+						<button
+							type="button"
+							class="service-cover-dropzone__clear hidden"
+							data-service-cover-clear
+							aria-label="Eliminar portada"
+						>
+							<span class="material-symbols-rounded" aria-hidden="true">delete</span>
+						</button>
 					</label>
-					<button
-						type="button"
-						class="hidden w-fit inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-[0.85rem] font-bold text-rose-500 transition hover:bg-rose-500/10"
-						data-service-cover-clear
-					>
-						<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">delete</span>
-						Quitar
-					</button>
 				</div>
 
 				<label
@@ -239,25 +240,30 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 						<span class="material-symbols-rounded service-accordion__chevron" aria-hidden="true">expand_more</span>
 					</summary>
 					<div class="service-accordion__body">
-						<div class="grid gap-3 text-[0.95rem] font-bold text-(--on-surface)">
-							<div class="flex items-start justify-between gap-4">
-								<div class="grid gap-1 min-w-0 flex-1">
-									<span>Ocultar precio en reserva pública</span>
-									<span class="text-[0.85rem] font-medium text-(--on-surface-variant)" data-hide-public-price-hint>
-										El cliente verá el texto por defecto de Ajustes → Negocio. El precio real sigue usándose en el panel y en métricas.
-									</span>
-								</div>
+						<div class="grid gap-2 text-[0.95rem] font-bold text-(--on-surface)">
+							<div class="flex items-center justify-between gap-3">
+								<span class="inline-flex min-w-0 items-center gap-1.5">
+									Ocultar precio en reserva pública
+									<button
+										type="button"
+										class="service-field-info"
+										aria-label="El cliente verá el texto por defecto de Ajustes → Negocio. El precio real sigue usándose en el panel y en métricas."
+										data-tooltip="El cliente verá el texto por defecto de Ajustes → Negocio. El precio real sigue usándose en el panel y en métricas."
+									>
+										<span class="material-symbols-rounded" aria-hidden="true">info</span>
+									</button>
+								</span>
 								<input
 									type="checkbox"
 									name="hide_public_price"
 									value="1"
 									data-hide-public-price-toggle
-									class="mt-0.5 size-5 shrink-0 accent-(--primary)"
+									class="size-5 shrink-0 accent-(--primary)"
 									aria-label="Ocultar precio en reserva pública"
 								/>
 							</div>
-							<div class="grid gap-1.5 hidden" data-hide-public-price-fields>
-								<label class="grid gap-1.5">
+							<div class="grid gap-1 hidden" data-hide-public-price-fields>
+								<label class="grid gap-1">
 									<span class="text-[0.9rem]">Texto personalizado <span class="font-medium text-(--on-surface-variant)">(opcional)</span></span>
 									<input
 										type="text"
@@ -265,19 +271,16 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 										maxlength="80"
 										data-hidden-public-price-label
 										placeholder="Ej: A evaluar (Texto por defecto)"
-										class="w-full rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-medium outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+										class="w-full rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-medium outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 									/>
 								</label>
-								<span class="grid gap-2 pt-1">
-									<span class="text-[0.75rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Cómo lo verán los clientes</span>
-									<span class="service-hidden-price-preview" aria-hidden="true">
-										<span class="service-hidden-price-preview__name" data-service-hidden-price-preview-name>Nombre del servicio</span>
-										<span class="service-hidden-price-preview__meta">
-											<span data-service-hidden-price-preview-duration>— min</span>
-											<span data-service-hidden-price-preview-label>A evaluar</span>
-										</span>
-									</span>
-								</span>
+								<p
+									class="m-0 text-[0.8rem] font-medium italic leading-snug text-(--on-surface-variant)"
+									data-service-hidden-price-hint
+									aria-live="polite"
+								>
+									Se verá así: "Nombre del servicio - A evaluar"
+								</p>
 								<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="hidden_public_price_label"></span>
 							</div>
 						</div>
@@ -292,32 +295,37 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 								<span class="material-symbols-rounded service-accordion__chevron" aria-hidden="true">expand_more</span>
 							</summary>
 							<div class="service-accordion__body">
-								<div class="flex items-start justify-between gap-4 text-[0.95rem] font-bold text-(--on-surface)">
-									<div class="grid gap-1 min-w-0 flex-1">
-										<span>Requiere seña para reservar</span>
-										<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
-											Si lo activas, el cliente deberá pagar una seña en la web para confirmar.
-										</span>
-									</div>
+								<div class="flex items-center justify-between gap-3 text-[0.95rem] font-bold text-(--on-surface)">
+									<span class="inline-flex min-w-0 items-center gap-1.5">
+										Requiere seña para reservar
+										<button
+											type="button"
+											class="service-field-info"
+											aria-label="Si lo activas, el cliente deberá pagar una seña en la web para confirmar."
+											data-tooltip="Si lo activas, el cliente deberá pagar una seña en la web para confirmar."
+										>
+											<span class="material-symbols-rounded" aria-hidden="true">info</span>
+										</button>
+									</span>
 									<input
 										type="checkbox"
 										name="requires_deposit"
 										value="1"
 										data-requires-deposit-toggle
-										class="mt-0.5 size-5 shrink-0 accent-(--primary)"
+										class="size-5 shrink-0 accent-(--primary)"
 										aria-label="Requiere seña para reservar"
 									/>
 								</div>
 
-								<div class="grid gap-4 hidden mt-4" data-deposit-fields>
-									<div class="grid grid-cols-2 gap-5">
-										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+								<div class="grid gap-3 hidden mt-2" data-deposit-fields>
+									<div class="grid grid-cols-2 gap-3">
+										<label class="grid gap-1 text-[0.95rem] font-bold text-(--on-surface)">
 											<span>Tipo de seña <span class="text-rose-500">*</span></span>
 											<div class="relative">
 												<select
 													name="deposit_type"
 													data-deposit-type
-													class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer"
+													class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer"
 												>
 													<option value="PERCENT">Porcentaje (%)</option>
 													<option value="FIXED">Monto fijo (Gs)</option>
@@ -329,14 +337,14 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 											<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_type"></span>
 										</label>
 
-										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+										<label class="grid gap-1 text-[0.95rem] font-bold text-(--on-surface)">
 											<span>Valor <span class="text-rose-500">*</span></span>
 											<input
 												type="text"
 												name="deposit_value"
 												data-deposit-value
 												inputmode="numeric"
-												class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+												class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 												placeholder="Ej: 50.000"
 											/>
 											<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_value"></span>
@@ -349,7 +357,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				}
 
 				<label
-					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
+					class="grid gap-1.5 border-t border-(--shell-border) pt-5 text-[0.95rem] font-bold text-(--on-surface)"
 					data-service-status-wrap
 					hidden
 				>
@@ -380,8 +388,9 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				</label>
 
 				</div>
+				</div>
 				<div
-					class="sticky bottom-0 z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
+					class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5 lg:px-6"
 				>
 					<div class="modal-footer">
 						<button
@@ -422,6 +431,37 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				</fieldset>
 			</form>
 		</dialog>
+
+		<dialog class="service-crop-modal" data-service-crop-modal>
+			<div class="service-crop-modal__sheet" data-service-crop-sheet>
+				<div class="service-crop-modal__handle" aria-hidden="true"><span></span></div>
+				<div class="service-crop-modal__head">
+					<div>
+						<strong data-service-crop-title>Recortar portada</strong>
+						<p class="service-crop-modal__hint" data-service-crop-hint>
+							El marco es lo que se verá en la reserva pública (proporción 4:3). Arrastrá para mover y usá el control para acercar o alejar.
+						</p>
+					</div>
+					<button
+						type="button"
+						class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface)"
+						data-service-crop-close
+						aria-label="Cerrar"
+					>
+						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+					</button>
+				</div>
+				<div class="service-crop-modal__mount" data-service-crop-mount></div>
+				<div class="service-crop-modal__actions">
+					<button type="button" class="modal-action-secondary" data-service-crop-close>
+						Cancelar
+					</button>
+					<button type="button" class="modal-action-primary" data-service-crop-confirm>
+						Usar imagen
+					</button>
+				</div>
+			</div>
+		</dialog>
 	</service-manager>
 
 	<AppAlert />
@@ -430,6 +470,10 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 <script>
 	import { FEATURE_FLAGS } from "../../config/feature-flags";
 	import { reloadPageWithFlash } from "../../lib/flash";
+	import {
+		isAcceptedCoverImage,
+		ProfileImageCropper,
+	} from "../../lib/profile-image-crop";
 
 	type ServiceMode = "create" | "edit";
 	type ServiceSubmitPayload = {
@@ -477,6 +521,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		private coverPendingMime = "image/jpeg";
 		private coverExistingUrl: string | null = null;
 		private coverCleared = false;
+		private coverCropper: ProfileImageCropper | null = null;
+		private coverCropPendingName = "portada.jpg";
 
 		// Grouped DOM References
 		private els!: {
@@ -489,7 +535,6 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			errorBox: HTMLElement | null;
 			loading: HTMLElement | null;
 			modalTitle: HTMLElement | null;
-			modalDesc: HTMLElement | null;
 			statusWrap: HTMLElement | null;
 			priceInput: HTMLInputElement | null;
 			hidePublicPriceToggle: HTMLInputElement | null;
@@ -504,6 +549,9 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			coverInput: HTMLInputElement | null;
 			coverClear: HTMLButtonElement | null;
 			coverDropzone: HTMLElement | null;
+			cropModal: HTMLDialogElement | null;
+			cropMount: HTMLElement | null;
+			cropConfirm: HTMLButtonElement | null;
 		};
 
 		private formEls!: {
@@ -539,9 +587,6 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				modalTitle: this.querySelector<HTMLElement>(
 					"[data-service-modal-title]",
 				),
-				modalDesc: this.querySelector<HTMLElement>(
-					"[data-service-modal-description]",
-				),
 				statusWrap: this.querySelector<HTMLElement>(
 					"[data-service-status-wrap]",
 				),
@@ -567,6 +612,9 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				coverInput: this.querySelector<HTMLInputElement>("[data-service-cover-input]"),
 				coverClear: this.querySelector<HTMLButtonElement>("[data-service-cover-clear]"),
 				coverDropzone: this.querySelector<HTMLElement>("[data-service-cover-dropzone]"),
+				cropModal: this.querySelector<HTMLDialogElement>("[data-service-crop-modal]"),
+				cropMount: this.querySelector<HTMLElement>("[data-service-crop-mount]"),
+				cropConfirm: this.querySelector<HTMLButtonElement>("[data-service-crop-confirm]"),
 			};
 
 			this.formEls = {
@@ -634,6 +682,26 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.handleHidePublicPriceToggle,
 				{ signal },
 			);
+			this.els.cropConfirm?.addEventListener(
+				"click",
+				() => void this.applyCoverCrop(),
+				{ signal },
+			);
+			this.els.cropModal?.addEventListener(
+				"cancel",
+				(event) => {
+					event.preventDefault();
+					this.closeCoverCrop();
+				},
+				{ signal },
+			);
+			this.els.cropModal?.addEventListener(
+				"click",
+				(event) => {
+					if (event.target === this.els.cropModal) this.closeCoverCrop();
+				},
+				{ signal },
+			);
 			this.els.hiddenPublicPriceLabel?.addEventListener(
 				"input",
 				this.syncServiceHiddenPricePreview,
@@ -656,6 +724,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			this.abortController?.abort();
 			this.abortController = null;
 			if (this.closeTimer) window.clearTimeout(this.closeTimer);
+			this.closeCoverCrop();
 		}
 
 		private clearErrors() {
@@ -683,11 +752,6 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.els.modalTitle.textContent = isEdit
 					? "Editar servicio"
 					: "Crear servicio";
-			if (this.els.modalDesc) {
-				this.els.modalDesc.textContent = isEdit
-					? "Actualiza la información del servicio."
-					: "Completa los campos para registrar un nuevo servicio.";
-			}
 
 			if (this.els.submitLabel)
 				this.els.submitLabel.textContent = isEdit
@@ -770,6 +834,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 		private closeModal() {
 			if (!this.els.modal?.open) return;
+			this.closeCoverCrop();
 			this.requestSeq++;
 			this.els.modal.classList.add("is-closing");
 
@@ -899,9 +964,16 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			}
 			this.els.coverEmpty?.classList.toggle("hidden", Boolean(previewSrc));
 			this.els.coverClear?.classList.toggle("hidden", !previewSrc);
+			this.querySelector("[data-service-cover-change]")?.classList.toggle(
+				"hidden",
+				!previewSrc,
+			);
+			this.els.coverDropzone?.classList.toggle("has-preview", Boolean(previewSrc));
 		}
 
-		private handleCoverClear = () => {
+		private handleCoverClear = (event?: MouseEvent) => {
+			event?.preventDefault();
+			event?.stopPropagation();
 			this.setCoverState({
 				existingUrl: this.coverExistingUrl,
 				pendingBase64: null,
@@ -952,8 +1024,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 
 		private async processCoverFile(file: File) {
-			const allowed = ["image/jpeg", "image/png", "image/webp"];
-			if (!allowed.includes(file.type)) {
+			if (!isAcceptedCoverImage(file)) {
 				this.showFormError("Usá una imagen JPG, PNG o WebP.");
 				return;
 			}
@@ -961,74 +1032,84 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.showFormError("La imagen supera el máximo de 5 MB.");
 				return;
 			}
+			if (this.els.coverInput) this.els.coverInput.value = "";
+			await this.openCoverCrop(file);
+		}
+
+		private async openCoverCrop(file: File) {
+			const modal = this.els.cropModal;
+			const mount = this.els.cropMount;
+			if (!modal || !mount) return;
+
+			this.coverCropPendingName = file.name || "portada.jpg";
+			this.coverCropper?.destroy();
+			this.coverCropper = null;
+
+			if (!modal.open) modal.showModal();
+			// Esperar a que el sheet mobile tenga ancho real antes de medir Croppie
+			await new Promise<void>((resolve) =>
+				requestAnimationFrame(() => requestAnimationFrame(() => resolve())),
+			);
+			this.coverCropper = new ProfileImageCropper(mount, 512, "cover");
 			try {
-				const { base64, mime, name } = await this.cropCoverToBase64(file);
-				this.setCoverState({
-					existingUrl: this.coverExistingUrl,
-					pendingBase64: base64,
-					pendingName: name,
-					pendingMime: mime,
-					cleared: false,
-				});
+				await this.coverCropper.bindFile(file);
 			} catch (err) {
+				this.closeCoverCrop();
 				this.showFormError(
-					err instanceof Error ? err.message : "No fue posible procesar la imagen.",
+					err instanceof Error
+						? err.message
+						: "No se pudo abrir el recorte.",
 				);
 			}
 		}
 
-		/** Recorte centrado 4:3 → JPEG base64 (sin data URL prefix). */
-		private cropCoverToBase64(file: File): Promise<{
-			base64: string;
-			mime: string;
-			name: string;
-		}> {
+		private closeCoverCrop() {
+			this.coverCropper?.destroy();
+			this.coverCropper = null;
+			if (this.els.cropModal?.open) this.els.cropModal.close();
+		}
+
+		private async applyCoverCrop() {
+			if (!this.coverCropper) return;
+			try {
+				const file = await this.coverCropper.exportJpeg(
+					this.coverCropPendingName,
+				);
+				const base64 = await this.fileToBase64(file);
+				this.setCoverState({
+					existingUrl: this.coverExistingUrl,
+					pendingBase64: base64,
+					pendingName: file.name,
+					pendingMime: file.type || "image/jpeg",
+					cleared: false,
+				});
+				this.closeCoverCrop();
+			} catch (err) {
+				this.showFormError(
+					err instanceof Error
+						? err.message
+						: "No se pudo recortar la imagen.",
+				);
+			}
+		}
+
+		private fileToBase64(file: File): Promise<string> {
 			return new Promise((resolve, reject) => {
-				const url = URL.createObjectURL(file);
-				const img = new Image();
-				img.onload = () => {
-					try {
-						const outW = 800;
-						const outH = 600;
-						const srcRatio = img.naturalWidth / img.naturalHeight;
-						const targetRatio = outW / outH;
-						let sx = 0;
-						let sy = 0;
-						let sw = img.naturalWidth;
-						let sh = img.naturalHeight;
-						if (srcRatio > targetRatio) {
-							sw = Math.round(img.naturalHeight * targetRatio);
-							sx = Math.round((img.naturalWidth - sw) / 2);
-						} else {
-							sh = Math.round(img.naturalWidth / targetRatio);
-							sy = Math.round((img.naturalHeight - sh) / 2);
-						}
-						const canvas = document.createElement("canvas");
-						canvas.width = outW;
-						canvas.height = outH;
-						const ctx = canvas.getContext("2d");
-						if (!ctx) throw new Error("No se pudo preparar el canvas.");
-						ctx.drawImage(img, sx, sy, sw, sh, 0, 0, outW, outH);
-						const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
-						const base64 = dataUrl.replace(/^data:image\/jpeg;base64,/, "");
-						const base =
-							file.name.replace(/\.[^.]+$/, "").trim() || "portada";
-						resolve({
-							base64,
-							mime: "image/jpeg",
-							name: `${base}.jpg`,
-						});
-					} catch (err) {
-						reject(err);
-					} finally {
-						URL.revokeObjectURL(url);
+				const reader = new FileReader();
+				reader.onload = () => {
+					const result = String(reader.result || "");
+					const base64 = result.includes(",")
+						? result.split(",")[1] || ""
+						: result;
+					if (!base64) {
+						reject(new Error("No se pudo leer la imagen."));
+						return;
 					}
+					resolve(base64);
 				};
-				img.onerror = () => {
-					URL.revokeObjectURL(url);
+				reader.onerror = () =>
 					reject(new Error("No se pudo leer la imagen."));
-				};
-				img.src = url;
+				reader.readAsDataURL(file);
 			});
 		}
 
@@ -1079,30 +1160,19 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 
 		private syncServiceHiddenPricePreview = () => {
-			const labelPreview = this.querySelector<HTMLElement>(
-				"[data-service-hidden-price-preview-label]",
+			const hint = this.querySelector<HTMLElement>(
+				"[data-service-hidden-price-hint]",
 			);
-			const namePreview = this.querySelector<HTMLElement>(
-				"[data-service-hidden-price-preview-name]",
-			);
-			const durationPreview = this.querySelector<HTMLElement>(
-				"[data-service-hidden-price-preview-duration]",
-			);
+			if (!hint) return;
 
-			if (labelPreview) {
-				const custom = String(this.els.hiddenPublicPriceLabel?.value || "").trim();
-				labelPreview.textContent = custom || this.orgHiddenPriceDefault || "A evaluar";
-			}
-
-			if (namePreview) {
-				const name = String(this.formEls.name?.value || "").trim();
-				namePreview.textContent = name || "Nombre del servicio";
-			}
-
-			if (durationPreview) {
-				const minutes = this.sanitizeDuration(this.formEls.duration?.value || "");
-				durationPreview.textContent = minutes ? `${minutes} min` : "— min";
-			}
+			const name =
+				String(this.formEls.name?.value || "").trim() ||
+				"Nombre del servicio";
+			const custom = String(
+				this.els.hiddenPublicPriceLabel?.value || "",
+			).trim();
+			const label = custom || this.orgHiddenPriceDefault || "A evaluar";
+			hint.textContent = `Se verá así: "${name} - ${label}"`;
 		};
 
 		private handleHidePublicPriceToggle = () => {
@@ -1222,12 +1292,16 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			this.formEls.duration.value = this.sanitizeDuration(
 				this.formEls.duration.value,
 			);
-			this.syncServiceHiddenPricePreview();
 		};
 
 		private handleRootClick = (e: MouseEvent) => {
 			const target = e.target as Element;
 			if (!target) return;
+
+			if (target.closest("[data-service-crop-close]")) {
+				this.closeCoverCrop();
+				return;
+			}
 
 			if (this.els.modal && target === this.els.modal)
 				return this.closeModal();
@@ -1453,15 +1527,196 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 	}
 
 	.service-cover-dropzone {
-		width: min(100%, 14rem);
+		position: relative;
+		display: grid;
+		width: 100%;
+		min-height: 11.5rem;
+		place-items: center;
+		overflow: hidden;
+		padding: 1.5rem 1.25rem;
+		border: 1.5px dashed color-mix(in srgb, var(--on-surface-variant) 40%, transparent);
+		border-radius: 0.95rem;
+		background: color-mix(in srgb, var(--on-surface) 3.5%, transparent);
+		cursor: pointer;
+		transition:
+			border-color 140ms ease,
+			background 140ms ease,
+			box-shadow 140ms ease;
+	}
+
+	.service-cover-dropzone:hover {
+		border-color: color-mix(in srgb, var(--primary) 55%, var(--on-surface-variant));
+		background: color-mix(in srgb, var(--primary) 6%, transparent);
 	}
 
 	.service-cover-dropzone.is-dragging {
-		border-color: color-mix(in srgb, var(--primary) 70%, transparent);
-		background: color-mix(in srgb, var(--primary-container) 28%, var(--surface-container-high));
+		border-color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
 		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
 	}
 
+	.service-cover-dropzone.has-preview {
+		display: block;
+		padding: 0;
+		min-height: 0;
+		aspect-ratio: 4 / 3;
+		max-height: 14rem;
+		border-style: solid;
+		border-color: var(--shell-border);
+		background: var(--surface-container-high);
+	}
+
+	.service-cover-dropzone__preview {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.service-cover-dropzone__preview.hidden {
+		display: none;
+	}
+
+	.service-cover-dropzone__empty {
+		display: grid;
+		justify-items: center;
+		align-content: center;
+		gap: 0.45rem;
+		text-align: center;
+		color: var(--on-surface-variant);
+	}
+
+	.service-cover-dropzone__empty.hidden {
+		display: none;
+	}
+
+	.service-cover-dropzone__icon {
+		font-size: 1.85rem;
+		line-height: 1;
+		color: var(--on-surface-variant);
+		margin-bottom: 0.15rem;
+	}
+
+	.service-cover-dropzone__title {
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--on-surface);
+		line-height: 1.3;
+	}
+
+	.service-cover-dropzone__meta {
+		font-size: 0.8rem;
+		font-weight: 550;
+		color: var(--on-surface-variant);
+		line-height: 1.3;
+	}
+
+	.service-cover-dropzone__btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		margin-top: 0.55rem;
+		padding: 0.55rem 1rem;
+		border-radius: 0.7rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		font-size: 0.85rem;
+		font-weight: 700;
+		line-height: 1.2;
+		transition:
+			background 140ms ease,
+			border-color 140ms ease,
+			color 140ms ease;
+	}
+
+	.service-cover-dropzone:hover .service-cover-dropzone__btn,
+	.service-cover-dropzone.is-dragging .service-cover-dropzone__btn {
+		border-color: transparent;
+		background: var(--primary);
+		color: var(--on-primary, #fff);
+	}
+
+	.service-cover-dropzone__change {
+		position: absolute;
+		left: 50%;
+		bottom: 0.75rem;
+		transform: translateX(-50%);
+		z-index: 2;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0.45rem 0.85rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-bright) 88%, transparent);
+		backdrop-filter: blur(6px);
+		-webkit-backdrop-filter: blur(6px);
+		color: var(--on-surface);
+		font-size: 0.78rem;
+		font-weight: 700;
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+		pointer-events: none;
+		white-space: nowrap;
+	}
+
+	.service-cover-dropzone__change.hidden {
+		display: none;
+	}
+
+	.service-cover-dropzone__clear {
+		position: absolute;
+		top: 0.65rem;
+		right: 0.65rem;
+		z-index: 3;
+		display: inline-grid;
+		place-items: center;
+		width: 2rem;
+		height: 2rem;
+		padding: 0;
+		border: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-bright) 88%, transparent);
+		backdrop-filter: blur(6px);
+		-webkit-backdrop-filter: blur(6px);
+		color: #f43f5e;
+		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+		cursor: pointer;
+	}
+
+	.service-cover-dropzone__clear .material-symbols-rounded {
+		font-size: 1.15rem;
+		line-height: 1;
+	}
+
+	.service-cover-dropzone__clear:hover {
+		background: color-mix(in srgb, #f43f5e 18%, var(--surface-bright));
+		color: #e11d48;
+	}
+
+	.service-cover-dropzone__clear.hidden {
+		display: none !important;
+	}
+
+	.service-cover-copy-mobile {
+		display: none;
+	}
+
+	@media (max-width: 1023.98px) {
+		.service-cover-copy-desktop {
+			display: none;
+		}
+
+		.service-cover-copy-mobile {
+			display: inline;
+		}
+
+		.service-cover-dropzone {
+			min-height: 10.25rem;
+			padding: 1.25rem 1rem;
+		}
+	}
+
+	/* Mobile: entra desde abajo */
 	@keyframes service-modal-in {
 		from {
 			opacity: 0;
@@ -1486,7 +1741,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 	}
 
-	@media (min-width: 640px) {
+	/* Tablet: modal centrado (sin tocar layout) */
+	@media (min-width: 640px) and (max-width: 1023px) {
 		@keyframes service-modal-in {
 			from {
 				opacity: 0;
@@ -1512,6 +1768,49 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 	}
 
+	/* Desktop PC: side drawer a la derecha */
+	@media (min-width: 1024px) {
+		dialog[data-service-modal] {
+			inset: 0 0 0 auto;
+			height: 100dvh;
+			max-height: 100dvh;
+			width: 50vw;
+			max-width: 50vw;
+			border-radius: 0;
+			box-shadow: none;
+		}
+
+		dialog[data-service-modal]::backdrop {
+			background-color: transparent;
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+		}
+
+		@keyframes service-modal-in {
+			from {
+				opacity: 0;
+				transform: translateX(100%);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateX(0);
+			}
+		}
+
+		@keyframes service-modal-out {
+			from {
+				opacity: 1;
+				transform: translateX(0);
+			}
+
+			to {
+				opacity: 0;
+				transform: translateX(100%);
+			}
+		}
+	}
+
 	@keyframes service-backdrop-in {
 		from {
 			opacity: 0;
@@ -1533,10 +1832,12 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 	}
 
 	.service-accordion {
-		border-radius: 1rem;
+		border-radius: 0.85rem;
 		border: 1px solid var(--shell-border);
 		background: color-mix(in srgb, var(--surface-bright) 40%, transparent);
-		overflow: hidden;
+		overflow: visible;
+		min-height: min-content;
+		flex-shrink: 0;
 	}
 
 	.service-accordion__summary {
@@ -1544,7 +1845,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem;
-		padding: 0.95rem 1rem;
+		padding: 0.7rem 0.85rem;
 		cursor: pointer;
 		list-style: none;
 		user-select: none;
@@ -1572,36 +1873,249 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 	.service-accordion__body {
 		display: grid;
-		gap: 1rem;
-		padding: 0 1rem 1rem;
+		gap: 0.65rem;
+		padding: 0 0.85rem 0.75rem;
 		border-top: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
-		padding-top: 1rem;
+		padding-top: 0.7rem;
 	}
 
-	.service-hidden-price-preview {
-		display: grid;
-		gap: 0.4rem;
-		width: 100%;
-		padding: 0.9rem 1rem;
-		border-radius: 1rem;
-		border: 1.5px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
-		background: var(--surface-bright);
-		pointer-events: none;
+	.service-field-info {
+		position: relative;
+		display: inline-grid;
+		place-items: center;
+		width: 1.2rem;
+		height: 1.2rem;
+		padding: 0;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: help;
+		flex-shrink: 0;
 	}
 
-	.service-hidden-price-preview__name {
+	.service-field-info .material-symbols-rounded {
 		font-size: 1rem;
-		font-weight: 600;
+		line-height: 1;
+		color: inherit;
+	}
+
+	.service-field-info:hover,
+	.service-field-info:focus-visible {
+		color: var(--on-surface);
+		outline: none;
+	}
+
+	.service-field-info:focus-visible {
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 35%, transparent);
+	}
+
+	.service-field-info::after {
+		content: attr(data-tooltip);
+		position: absolute;
+		left: 50%;
+		top: calc(100% + 0.4rem);
+		z-index: 30;
+		width: max-content;
+		max-width: min(16rem, 70vw);
+		padding: 0.5rem 0.65rem;
+		border-radius: 0.65rem;
+		background: var(--on-surface);
+		color: var(--surface-bright, #fff);
+		font-size: 0.72rem;
+		font-weight: 550;
+		font-style: normal;
+		line-height: 1.35;
+		text-align: left;
+		white-space: normal;
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
+		transform: translateX(-50%) translateY(-0.15rem);
+		transition: opacity 120ms ease, transform 120ms ease, visibility 0s linear 120ms;
+		box-shadow: 0 10px 28px rgba(15, 23, 42, 0.22);
+	}
+
+	.service-field-info:hover::after,
+	.service-field-info:focus-visible::after {
+		opacity: 1;
+		visibility: visible;
+		transform: translateX(-50%) translateY(0);
+		transition-delay: 0s;
+	}
+
+	.service-crop-modal {
+		position: fixed;
+		inset: 0;
+		z-index: 90;
+		margin: 0;
+		width: 100%;
+		max-width: none;
+		height: 100%;
+		max-height: none;
+		border: 0;
+		padding: 0;
+		background: transparent !important;
+		box-shadow: none !important;
+		color: var(--on-surface);
+		overflow: hidden;
+	}
+
+	.service-crop-modal[open] {
+		display: flex;
+		align-items: flex-end;
+		justify-content: center;
+	}
+
+	.service-crop-modal::backdrop {
+		background: rgba(0, 0, 0, 0.55);
+	}
+
+	.service-crop-modal__sheet {
+		display: flex;
+		flex-direction: column;
+		width: 100%;
+		max-width: min(100%, 40rem);
+		max-height: min(92dvh, 44rem);
+		border: 1px solid var(--shell-border);
+		border-bottom: 0;
+		border-radius: 1.5rem 1.5rem 0 0;
+		background: var(--surface-bright);
+		box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.2);
+		overflow: hidden;
+		min-width: 0;
+		box-sizing: border-box;
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+	}
+
+	.service-crop-modal__handle {
+		display: flex;
+		justify-content: center;
+		padding: 0.55rem 0 0.15rem;
+	}
+
+	.service-crop-modal__handle span {
+		width: 2.4rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 45%, transparent);
+	}
+
+	.service-crop-modal__head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.65rem 1rem 0.75rem;
+	}
+
+	.service-crop-modal__head strong {
+		display: block;
+		font-size: 1.05rem;
+		font-weight: 800;
 		color: var(--on-surface);
 	}
 
-	.service-hidden-price-preview__meta {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
-		font-size: 0.85rem;
-		font-weight: 500;
+	.service-crop-modal__hint {
+		margin: 0.25rem 0 0;
+		font-size: 0.82rem;
+		font-weight: 550;
+		line-height: 1.35;
 		color: var(--on-surface-variant);
+	}
+
+	.service-crop-modal__mount {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
+		min-height: min(42dvh, 22rem);
+		padding: 0.5rem 1rem 0.35rem;
+		overflow: hidden;
+	}
+
+	.service-crop-modal__mount .croppie-container {
+		width: 100% !important;
+		max-width: 100% !important;
+		min-width: 0 !important;
+		box-sizing: border-box !important;
+		display: flex !important;
+		flex-direction: column;
+		align-items: center;
+		overflow: hidden;
+	}
+
+	.service-crop-modal__mount .cr-boundary {
+		margin-left: auto !important;
+		margin-right: auto !important;
+		max-width: 100% !important;
+		min-width: 0 !important;
+		box-sizing: border-box !important;
+		border-radius: 0.85rem;
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+	}
+
+	.service-crop-modal__mount .cr-viewport {
+		border: 2px solid color-mix(in srgb, var(--primary) 70%, white);
+		box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.45);
+		box-sizing: border-box;
+	}
+
+	.service-crop-modal__mount .cr-slider-wrap {
+		margin: 0.65rem auto 0.25rem !important;
+		width: min(100%, 16rem);
+		max-width: 100%;
+		align-self: center;
+		box-sizing: border-box;
+	}
+
+	.service-crop-modal__mount .cr-slider {
+		width: 100%;
+	}
+
+	.service-crop-modal__actions {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.65rem;
+		padding: 0.85rem 1rem 1rem;
+		border-top: 1px solid var(--shell-border);
+	}
+
+	@media (min-width: 640px) {
+		.service-crop-modal[open] {
+			align-items: center;
+			padding: 1.25rem;
+		}
+
+		.service-crop-modal__sheet {
+			width: min(44rem, calc(100vw - 2.5rem));
+			max-width: min(44rem, calc(100vw - 2.5rem));
+			max-height: min(90dvh, 48rem);
+			border-radius: 1.35rem;
+			border-bottom: 1px solid var(--shell-border);
+			box-shadow: 0 20px 60px rgba(0, 0, 0, 0.28);
+			padding-bottom: 0;
+		}
+
+		.service-crop-modal__handle {
+			display: none;
+		}
+
+		.service-crop-modal__head {
+			padding: 1.1rem 1.25rem 0.85rem;
+		}
+
+		.service-crop-modal__mount {
+			min-height: min(48dvh, 26rem);
+			padding: 0.75rem 1.25rem 0.5rem;
+		}
+
+		.service-crop-modal__actions {
+			padding: 0.95rem 1.25rem 1.15rem;
+		}
 	}
 </style>

@@ -150,13 +150,15 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const logoDropzone = root.querySelector<HTMLElement>('[data-ppe-logo-dropzone]');
 	const logoPreview = root.querySelector<HTMLImageElement>('[data-ppe-logo-preview]');
 	const logoPlaceholder = root.querySelector<HTMLElement>('[data-ppe-logo-placeholder]');
-	const logoFileLabel = root.querySelector<HTMLElement>('[data-ppe-logo-file-label]');
+	const logoChange = root.querySelector<HTMLElement>('[data-ppe-logo-change]');
+	const logoClear = root.querySelector<HTMLButtonElement>('[data-ppe-logo-clear]');
 
 	const bannerInput = root.querySelector<HTMLInputElement>('[data-ppe-banner-input]');
 	const bannerDropzone = root.querySelector<HTMLElement>('[data-ppe-banner-dropzone]');
 	const bannerPreview = root.querySelector<HTMLImageElement>('[data-ppe-banner-preview]');
 	const bannerPlaceholder = root.querySelector<HTMLElement>('[data-ppe-banner-placeholder]');
 	const bannerChange = root.querySelector<HTMLElement>('[data-ppe-banner-change]');
+	const bannerClear = root.querySelector<HTMLButtonElement>('[data-ppe-banner-clear]');
 
 	const galleryGrid = root.querySelector<HTMLElement>('[data-ppe-gallery-grid]');
 	const galleryCount = root.querySelector<HTMLElement>('[data-ppe-gallery-count]');
@@ -195,10 +197,12 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	let logoBase64 = '';
 	let logoName = '';
 	let logoMime = '';
+	let logoCleared = false;
 	let bannerObjectUrl = '';
 	let bannerBase64 = '';
 	let bannerName = '';
 	let bannerMime = '';
+	let bannerCleared = false;
 	let currentLogoUrl = String(bootstrap.workspace?.logo_url || '').trim();
 	let currentBannerUrl = String(bootstrap.workspace?.banner_url || '').trim();
 	let galleryItems: GalleryItem[] = Array.isArray(bootstrap.workspace?.gallery_images)
@@ -231,20 +235,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			}
 		}
 		logoPlaceholder?.classList.toggle('hidden', Boolean(url));
-		if (logoFileLabel) {
-			const desktop = logoFileLabel.querySelector<HTMLElement>('[data-ppe-logo-copy-desktop]');
-			const mobile = logoFileLabel.querySelector<HTMLElement>('[data-ppe-logo-copy-mobile]');
-			if (desktop) {
-				desktop.textContent = url
-					? 'Hacé clic o arrastrá para cambiar el logo'
-					: 'Hacé clic o arrastrá tu logo aquí';
-			}
-			if (mobile) {
-				mobile.textContent = url
-					? 'Tocá para cambiar el logo'
-					: 'Tocá para subir tu logo';
-			}
-		}
+		logoChange?.classList.toggle('hidden', !url);
+		logoClear?.classList.toggle('hidden', !url);
+		logoDropzone?.classList.toggle('has-preview', Boolean(url));
 	};
 
 	const setBannerPreview = (url: string) => {
@@ -260,6 +253,8 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}
 		bannerPlaceholder?.classList.toggle('hidden', Boolean(url));
 		bannerChange?.classList.toggle('hidden', !url);
+		bannerClear?.classList.toggle('hidden', !url);
+		bannerDropzone?.classList.toggle('has-preview', Boolean(url));
 	};
 
 	const PPE_TAB_KEY = 'hasel-ppe-active-tab';
@@ -371,7 +366,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			const removeIcon = document.createElement('span');
 			removeIcon.className = 'material-symbols-rounded';
 			removeIcon.setAttribute('aria-hidden', 'true');
-			removeIcon.textContent = 'close';
+			removeIcon.textContent = 'delete';
 			removeBtn.appendChild(removeIcon);
 
 			li.append(openBtn, removeBtn);
@@ -572,6 +567,34 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		});
 	};
 
+	const clearBannerPreview = () => {
+		if (bannerObjectUrl) {
+			URL.revokeObjectURL(bannerObjectUrl);
+			bannerObjectUrl = '';
+		}
+		bannerBase64 = '';
+		bannerName = '';
+		bannerMime = '';
+		bannerCleared = true;
+		if (bannerInput) bannerInput.value = '';
+		setBannerPreview('');
+		syncPreview();
+	};
+
+	const clearLogoPreview = () => {
+		if (logoObjectUrl) {
+			URL.revokeObjectURL(logoObjectUrl);
+			logoObjectUrl = '';
+		}
+		logoBase64 = '';
+		logoName = '';
+		logoMime = '';
+		logoCleared = true;
+		if (logoInput) logoInput.value = '';
+		setLogoPreview('');
+		syncPreview();
+	};
+
 	const setSlugStatus = (text: string, state: 'ok' | 'bad' | 'pending') => {
 		if (!slugStatus) return;
 		slugStatus.textContent = text;
@@ -700,6 +723,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				bannerBase64 = base64;
 				bannerName = file.name;
 				bannerMime = file.type || 'image/jpeg';
+				bannerCleared = false;
 				if (bannerObjectUrl) URL.revokeObjectURL(bannerObjectUrl);
 				bannerObjectUrl = URL.createObjectURL(file);
 				setBannerPreview(bannerObjectUrl);
@@ -707,6 +731,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				logoBase64 = base64;
 				logoName = file.name;
 				logoMime = file.type || 'image/jpeg';
+				logoCleared = false;
 				if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl);
 				logoObjectUrl = URL.createObjectURL(file);
 				setLogoPreview(logoObjectUrl);
@@ -741,7 +766,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			instagram: String(instagramInput?.value || '').trim(),
 			hours: businessHours,
 			logoPending: Boolean(logoBase64),
+			logoCleared,
 			bannerPending: Boolean(bannerBase64),
+			bannerCleared,
 			galleryPending: pendingGalleryFiles.length,
 		});
 
@@ -828,7 +855,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			const icon = document.createElement('span');
 			icon.className = 'material-symbols-rounded';
 			icon.setAttribute('aria-hidden', 'true');
-			icon.textContent = 'close';
+			icon.textContent = 'delete';
 			removeBtn.appendChild(icon);
 			media.append(img, removeBtn);
 
@@ -1022,11 +1049,15 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			payload.logo_base64 = logoBase64;
 			payload.logo_name = logoName || 'logo.jpg';
 			payload.logo_mime = logoMime || 'image/jpeg';
+		} else if (logoCleared) {
+			payload.clear_logo = 1;
 		}
 		if (bannerBase64) {
 			payload.banner_base64 = bannerBase64;
 			payload.banner_name = bannerName || 'banner.jpg';
 			payload.banner_mime = bannerMime || 'image/jpeg';
+		} else if (bannerCleared) {
+			payload.clear_banner = 1;
 		}
 
 		if (saveBtn) saveBtn.disabled = true;
@@ -1060,9 +1091,11 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			originalSlug = normalizeSlugInput(String(data.data?.profile_slug || slug));
 			if (slugInput) slugInput.value = originalSlug;
 			logoBase64 = '';
+			logoCleared = false;
 			bannerBase64 = '';
-			if (data.data?.logo_url) setLogoPreview(String(data.data.logo_url));
-			if (data.data?.banner_url) setBannerPreview(String(data.data.banner_url));
+			bannerCleared = false;
+			setLogoPreview(String(data.data?.logo_url || '').trim());
+			setBannerPreview(String(data.data?.banner_url || '').trim());
 			if (Array.isArray(data.data?.gallery_images)) {
 				galleryItems = data.data.gallery_images;
 				renderGalleryGrid();
@@ -1234,10 +1267,22 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		logoInput.value = '';
 	});
 
+	logoClear?.addEventListener('click', (event) => {
+		event.preventDefault();
+		event.stopPropagation();
+		clearLogoPreview();
+	});
+
 	bannerInput?.addEventListener('change', () => {
 		const file = bannerInput.files?.[0];
 		if (file) void openCrop(file, 'banner');
 		bannerInput.value = '';
+	});
+
+	bannerClear?.addEventListener('click', (event) => {
+		event.preventDefault();
+		event.stopPropagation();
+		clearBannerPreview();
 	});
 
 	const bindDropzone = (

@@ -72,6 +72,8 @@ export interface UpdateWorkspacePayload {
 	banner_base64?: string;
 	banner_name?: string;
 	banner_mime?: string;
+	clear_banner?: 0 | 1 | boolean;
+	clear_logo?: 0 | 1 | boolean;
 }
 
 export interface WorkspaceFieldError {

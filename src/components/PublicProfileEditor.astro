@@ -307,65 +307,83 @@ const previewInitial = {
 					>
 						<div class="ppe-field">
 							<span class="ppe-field__label">Logo del negocio</span>
-							<label class="ppe-dropzone ppe-dropzone--logo" data-ppe-logo-dropzone>
-								<img
-									src={workspace.logo_url || undefined}
-									alt=""
-									class={`ppe-logo-preview ${workspace.logo_url ? '' : 'hidden'}`}
-									data-ppe-logo-preview
-									width="88"
-									height="88"
-								/>
-								<div
-									class={`ppe-logo-preview ppe-logo-preview--ph ${workspace.logo_url ? 'hidden' : ''}`}
-									data-ppe-logo-placeholder
-								>
-									{initials}
-								</div>
-								<span class="ppe-dropzone__cta">
-									<span class="material-symbols-rounded" aria-hidden="true">cloud_upload</span>
-									<span data-ppe-logo-file-label>
-										<span class="ppe-copy-desktop" data-ppe-logo-copy-desktop>
-											{workspace.logo_url
-												? 'Hacé clic o arrastrá para cambiar el logo'
-												: 'Hacé clic o arrastrá tu logo aquí'}
-										</span>
-										<span class="ppe-copy-mobile" data-ppe-logo-copy-mobile>
-											{workspace.logo_url
-												? 'Tocá para cambiar el logo'
-												: 'Tocá para subir tu logo'}
-										</span>
-									</span>
-								</span>
+							<label
+								class={`ppe-dropzone ppe-dropzone--logo ${workspace.logo_url ? 'has-preview' : ''}`}
+								data-ppe-logo-dropzone
+							>
 								<input
 									type="file"
 									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
 									class="sr-only"
 									data-ppe-logo-input
 								/>
+								<img
+									src={workspace.logo_url || undefined}
+									alt=""
+									class={`ppe-dropzone__preview ppe-dropzone__preview--logo ${workspace.logo_url ? '' : 'hidden'}`}
+									data-ppe-logo-preview
+									width="88"
+									height="88"
+								/>
+								<div
+									class={`ppe-dropzone__empty ${workspace.logo_url ? 'hidden' : ''}`}
+									data-ppe-logo-placeholder
+								>
+									<span class="material-symbols-rounded ppe-dropzone__icon" aria-hidden="true">image</span>
+									<span class="ppe-dropzone__title">
+										<span class="ppe-copy-desktop">Arrastrá tu logo aquí</span>
+										<span class="ppe-copy-mobile">Tocá para subir tu logo</span>
+									</span>
+									<span class="ppe-dropzone__meta">JPG o PNG · máx. 5 MB</span>
+									<span class="ppe-dropzone__btn">Seleccionar imagen</span>
+								</div>
+								<span
+									class={`ppe-dropzone__change ${workspace.logo_url ? '' : 'hidden'}`}
+									data-ppe-logo-change
+								>
+									<span class="ppe-copy-desktop">Hacé clic o arrastrá para cambiar</span>
+									<span class="ppe-copy-mobile">Tocá para cambiar</span>
+								</span>
+								<button
+									type="button"
+									class={`ppe-dropzone__clear ${workspace.logo_url ? '' : 'hidden'}`}
+									data-ppe-logo-clear
+									aria-label="Eliminar logo"
+								>
+									<span class="material-symbols-rounded" aria-hidden="true">delete</span>
+								</button>
 							</label>
-							<p class="ppe-field__hint">JPG o PNG hasta 5 MB.</p>
 						</div>
 
 						<div class="ppe-field">
 							<span class="ppe-field__label">Banner del negocio</span>
-							<label class="ppe-dropzone ppe-dropzone--banner" data-ppe-banner-dropzone>
+							<label
+								class={`ppe-dropzone ppe-dropzone--banner ${bannerUrl ? 'has-preview' : ''}`}
+								data-ppe-banner-dropzone
+							>
+								<input
+									type="file"
+									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+									class="sr-only"
+									data-ppe-banner-input
+								/>
 								<img
 									src={bannerUrl || undefined}
 									alt=""
-									class={`ppe-banner-preview ${bannerUrl ? '' : 'hidden'}`}
+									class={`ppe-dropzone__preview ppe-dropzone__preview--banner ${bannerUrl ? '' : 'hidden'}`}
 									data-ppe-banner-preview
 								/>
 								<div
-									class={`ppe-banner-empty ${bannerUrl ? 'hidden' : ''}`}
+									class={`ppe-dropzone__empty ${bannerUrl ? 'hidden' : ''}`}
 									data-ppe-banner-placeholder
 								>
-									<span class="material-symbols-rounded" aria-hidden="true">cloud_upload</span>
-									<span class="ppe-dropzone__cta-text">
-										<span class="ppe-copy-desktop">Hacé clic o arrastrá tu banner aquí</span>
+									<span class="material-symbols-rounded ppe-dropzone__icon" aria-hidden="true">image</span>
+									<span class="ppe-dropzone__title">
+										<span class="ppe-copy-desktop">Arrastrá tu banner aquí</span>
 										<span class="ppe-copy-mobile">Tocá para subir tu banner</span>
 									</span>
-									<span class="ppe-dropzone__meta">1200 × 600 · proporción 2:1</span>
+									<span class="ppe-dropzone__meta">JPG o PNG · máx. 5 MB · 2:1</span>
+									<span class="ppe-dropzone__btn">Seleccionar imagen</span>
 								</div>
 								<span
 									class={`ppe-dropzone__change ${bannerUrl ? '' : 'hidden'}`}
@@ -374,14 +392,16 @@ const previewInitial = {
 									<span class="ppe-copy-desktop">Hacé clic o arrastrá para cambiar</span>
 									<span class="ppe-copy-mobile">Tocá para cambiar</span>
 								</span>
-								<input
-									type="file"
-									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-									class="sr-only"
-									data-ppe-banner-input
-								/>
+								<button
+									type="button"
+									class={`ppe-dropzone__clear ${bannerUrl ? '' : 'hidden'}`}
+									data-ppe-banner-clear
+									aria-label="Eliminar banner"
+								>
+									<span class="material-symbols-rounded" aria-hidden="true">delete</span>
+								</button>
 							</label>
-							<p class="ppe-field__hint">JPG o PNG hasta 5 MB. Recomendado 1200×600 o 1080×566.</p>
+							<p class="ppe-field__hint">JPG o PNG. Recomendado 1200×600 o 1080×566.</p>
 						</div>
 					</section>
 
@@ -421,18 +441,20 @@ const previewInitial = {
 												data-id={item.id}
 												aria-label="Eliminar foto"
 											>
-												<span class="material-symbols-rounded" aria-hidden="true">close</span>
+												<span class="material-symbols-rounded" aria-hidden="true">delete</span>
 											</button>
 										</li>
 									))
 								}
 							</ul>
 							<label class="ppe-dropzone ppe-dropzone--gallery" data-ppe-gallery-add>
-								<span class="material-symbols-rounded" aria-hidden="true">add_photo_alternate</span>
-								<span class="ppe-dropzone__cta-text">
-									<span class="ppe-copy-desktop">Hacé clic o arrastrá fotos aquí</span>
+								<span class="material-symbols-rounded ppe-dropzone__icon" aria-hidden="true">image</span>
+								<span class="ppe-dropzone__title">
+									<span class="ppe-copy-desktop">Arrastrá fotos aquí</span>
 									<span class="ppe-copy-mobile">Tocá para agregar fotos</span>
 								</span>
+								<span class="ppe-dropzone__meta">JPG o PNG · máx. 5 MB</span>
+								<span class="ppe-dropzone__btn">Seleccionar imágenes</span>
 								<input
 									type="file"
 									accept=".jpg,.jpeg,.png,image/jpeg,image/png"

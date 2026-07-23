@@ -160,6 +160,16 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 		payload.banner_mime = String(source?.banner_mime ?? '').trim();
 	}
 
+	const clearBannerRaw = source?.clear_banner;
+	if (clearBannerRaw === 1 || clearBannerRaw === true || clearBannerRaw === '1' || clearBannerRaw === 'true') {
+		payload.clear_banner = 1;
+	}
+
+	const clearLogoRaw = source?.clear_logo;
+	if (clearLogoRaw === 1 || clearLogoRaw === true || clearLogoRaw === '1' || clearLogoRaw === 'true') {
+		payload.clear_logo = 1;
+	}
+
 	return payload;
 };
 
