@@ -187,10 +187,12 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 						{Array.from({ length: 4 }).map(() => (
 							<div class="public-service-card public-service-card--skeleton" aria-hidden="true">
 								<span class="public-service-skeleton-cover"></span>
-								<span class="public-service-skeleton-line public-service-skeleton-line--title"></span>
-								<span class="public-service-skeleton-meta">
-									<span class="public-service-skeleton-line public-service-skeleton-line--sm"></span>
-									<span class="public-service-skeleton-line public-service-skeleton-line--price"></span>
+								<span class="public-service-card__body">
+									<span class="public-service-skeleton-line public-service-skeleton-line--title"></span>
+									<span class="public-service-skeleton-meta">
+										<span class="public-service-skeleton-line public-service-skeleton-line--sm"></span>
+										<span class="public-service-skeleton-line public-service-skeleton-line--price"></span>
+									</span>
 								</span>
 							</div>
 						))}
@@ -240,6 +242,14 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 							</div>
 							<div class="public-booking-calendar__grid" data-calendar-grid></div>
 						</div>
+						<button
+							type="button"
+							class="public-booking-continue"
+							data-calendar-continue
+							disabled
+						>
+							Continuar
+						</button>
 					</section>
 
 					<section data-step-panel="4" class="public-booking-panel hidden">

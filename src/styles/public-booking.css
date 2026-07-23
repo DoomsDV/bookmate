@@ -437,7 +437,8 @@
 	display: grid;
 	gap: 0.45rem;
 	width: 100%;
-	padding: 1rem 1.15rem;
+	height: 100%;
+	padding: 0.65rem 1.15rem 1rem;
 	padding-right: 2.75rem;
 	border-radius: 1rem;
 	border: 1.5px solid color-mix(in srgb, var(--outline-variant) 85%, transparent);
@@ -447,10 +448,7 @@
 	transition:
 		border-color 0.15s ease,
 		background 0.15s ease;
-}
-
-.public-service-card:has(.public-service-card__cover) {
-	padding-top: 0.65rem;
+	box-sizing: border-box;
 }
 
 .public-service-card__cover {
@@ -462,11 +460,32 @@
 	background: color-mix(in srgb, var(--surface-container-highest) 70%, transparent);
 }
 
+.public-service-card__cover--brand {
+	background:
+		radial-gradient(
+			ellipse 80% 70% at 20% 15%,
+			color-mix(in srgb, var(--primary) 28%, transparent),
+			transparent 60%
+		),
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
+			var(--surface-container-highest) 55%,
+			color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
+		);
+}
+
 .public-service-card__cover img {
 	display: block;
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
+}
+
+.public-service-card__body {
+	display: grid;
+	gap: 0.45rem;
+	min-width: 0;
 }
 
 .public-service-card:hover {
@@ -529,6 +548,36 @@
 		touch-action: pan-x;
 	}
 
+	/* Grid móvil (u/[slug] y skeletons): misma fila cover | body que el stack. */
+	.public-services-grid:not(.is-service-stack) .public-service-card {
+		display: grid;
+		grid-template-columns: 4.5rem minmax(0, 1fr);
+		align-items: center;
+		column-gap: 0.7rem;
+		row-gap: 0;
+		height: auto;
+		padding: 0.65rem 2.35rem 0.65rem 0.65rem;
+	}
+
+	.public-services-grid:not(.is-service-stack) .public-service-card__cover,
+	.public-services-grid:not(.is-service-stack) .public-service-skeleton-cover {
+		width: 4.5rem;
+		height: 4.5rem;
+		aspect-ratio: 1;
+		max-height: 4.5rem;
+		margin: 0;
+		border-radius: 0.65rem;
+	}
+
+	.public-services-grid:not(.is-service-stack) .public-service-card__body {
+		gap: 0.25rem;
+	}
+
+	.public-services-grid:not(.is-service-stack) .public-service-card__title {
+		font-size: 0.95rem;
+		line-height: 1.25;
+	}
+
 	.public-service-stack-shell {
 		position: relative;
 		isolation: isolate;
@@ -538,14 +587,14 @@
 
 	.public-service-stack {
 		position: relative;
-		height: 16.5rem;
+		/* Card compacta (~5.5–6.5rem) + peek de vecinos. */
+		height: 9rem;
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
 		outline: none;
 		user-select: none;
 		-webkit-user-select: none;
-		/* Anclado al inicio: recorta los vecinos superiores para eliminar el hueco fantasma. */
 		overflow: hidden;
 	}
 
@@ -555,9 +604,16 @@
 		right: 0;
 		top: 0;
 		margin: 0;
+		height: auto;
+		display: grid;
+		grid-template-columns: 4.5rem minmax(0, 1fr);
+		align-items: center;
+		column-gap: 0.7rem;
+		row-gap: 0;
+		padding: 0.65rem 2.35rem 0.65rem 0.65rem;
 		transform-origin: center top;
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
 		transition:
 			transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
 			opacity 0.28s ease,
@@ -569,14 +625,33 @@
 		box-shadow: none;
 	}
 
-	.public-service-stack .public-service-card__cover {
-		max-height: 6.5rem;
-		aspect-ratio: 4 / 3;
-		margin: 0 0 0.35rem;
+	.public-service-stack .public-service-card__cover,
+	.public-service-stack .public-service-skeleton-cover {
+		width: 4.5rem;
+		height: 4.5rem;
+		aspect-ratio: 1;
+		max-height: 4.5rem;
+		margin: 0;
+		border-radius: 0.65rem;
+		flex-shrink: 0;
+	}
+
+	.public-service-stack .public-service-card__body {
+		gap: 0.25rem;
+	}
+
+	.public-service-stack .public-service-card__title {
+		font-size: 0.95rem;
+		line-height: 1.25;
+	}
+
+	.public-service-stack .public-service-card__check {
+		top: 0.55rem;
+		right: 0.55rem;
 	}
 
 	.public-service-stack .public-service-card.is-focus {
-		transform: translateY(0.35rem) scale(1);
+		transform: translateY(0.25rem) scale(1);
 		opacity: 1;
 		z-index: 3;
 		filter: none;
@@ -587,7 +662,7 @@
 	}
 
 	.public-service-stack .public-service-card.is-near-up {
-		transform: translateY(-5.2rem) scale(0.9);
+		transform: translateY(-3.5rem) scale(0.92);
 		opacity: 0.72;
 		z-index: 2;
 		filter: none;
@@ -597,7 +672,7 @@
 	}
 
 	.public-service-stack .public-service-card.is-near-down {
-		transform: translateY(7.2rem) scale(0.9);
+		transform: translateY(4.15rem) scale(0.92);
 		opacity: 0.72;
 		z-index: 2;
 		filter: none;
@@ -612,7 +687,7 @@
 	}
 
 	.public-service-stack .public-service-card.is-far {
-		transform: translateY(7.2rem) scale(0.86);
+		transform: translateY(4.15rem) scale(0.88);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
@@ -671,14 +746,13 @@
 
 	.public-location-stack {
 		position: relative;
-		height: 13.5rem;
+		height: 9rem;
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
 		outline: none;
 		user-select: none;
 		-webkit-user-select: none;
-		/* Anclado al inicio: recorta los vecinos superiores para eliminar el hueco fantasma. */
 		overflow: hidden;
 	}
 
@@ -688,9 +762,16 @@
 		right: 0;
 		top: 0;
 		margin: 0;
+		height: auto;
+		display: grid;
+		grid-template-columns: 4.5rem minmax(0, 1fr);
+		align-items: center;
+		column-gap: 0.7rem;
+		row-gap: 0;
+		padding: 0.65rem 0.75rem;
 		transform-origin: center top;
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
 		transition:
 			transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
 			opacity 0.28s ease,
@@ -705,7 +786,7 @@
 	/* Cover Flow plano anclado al inicio: foco al 100% (borde azul) y vecinos al 90%/80%
 	   en gris oscuro, con el mismo lenguaje visual que los horarios inactivos. */
 	.public-location-stack .public-location-card.is-focus {
-		transform: translateY(0.35rem) scale(1);
+		transform: translateY(0.25rem) scale(1);
 		opacity: 1;
 		z-index: 4;
 		filter: none;
@@ -716,7 +797,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-near-up {
-		transform: translateY(-3.4rem) scale(0.9);
+		transform: translateY(-3.5rem) scale(0.92);
 		opacity: 0.72;
 		z-index: 3;
 		filter: none;
@@ -726,7 +807,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-near-down {
-		transform: translateY(4.1rem) scale(0.9);
+		transform: translateY(4.15rem) scale(0.92);
 		opacity: 0.72;
 		z-index: 3;
 		filter: none;
@@ -736,7 +817,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-far-up {
-		transform: translateY(-7rem) scale(0.8);
+		transform: translateY(-5.75rem) scale(0.86);
 		opacity: 0.4;
 		z-index: 2;
 		filter: none;
@@ -746,7 +827,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-far-down {
-		transform: translateY(7.75rem) scale(0.8);
+		transform: translateY(5.9rem) scale(0.86);
 		opacity: 0.4;
 		z-index: 2;
 		filter: none;
@@ -768,7 +849,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-far {
-		transform: translateY(4.1rem) scale(0.72);
+		transform: translateY(4.15rem) scale(0.8);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
@@ -784,17 +865,30 @@
 		background: color-mix(in srgb, var(--primary-container) 34%, var(--surface-container-high));
 	}
 
-	/* Mapa solo en la card activa del slider */
-	.public-location-stack .public-location-card__map-btn {
-		display: none;
+	/* Móvil: preview como thumb a la izquierda (mismo patrón que servicios). */
+	.public-location-stack .public-location-card__preview {
+		display: block;
+		width: 4.5rem;
+		height: 4.5rem;
+		max-height: 4.5rem;
+		aspect-ratio: 1;
+		margin: 0;
+		border-radius: 0.65rem;
+		flex-shrink: 0;
 	}
 
-	.public-location-stack .public-location-card.is-focus .public-location-card__map-btn {
-		display: inline-flex;
-		flex-direction: row;
-		flex-wrap: nowrap;
-		align-self: center;
-		justify-self: end;
+	.public-location-stack .public-location-card__preview-label {
+		display: none !important;
+	}
+
+	.public-location-stack .public-location-card__main {
+		padding: 0;
+		min-width: 0;
+	}
+
+	.public-location-stack .public-location-card__name {
+		font-size: 0.95rem;
+		line-height: 1.25;
 	}
 
 	.public-location-stack__continue {
@@ -832,6 +926,162 @@
 		display: grid;
 	}
 
+	.public-services-grid.is-service-carousel {
+		display: block;
+	}
+
+	.public-locations-grid.is-location-carousel {
+		display: block;
+	}
+
+	.public-services-carousel,
+	.public-locations-carousel {
+		display: grid;
+		gap: 0.85rem;
+		width: 100%;
+		/* Espacio para flechas laterales que sobresalen del stage. */
+		padding-inline: 0.85rem;
+		overflow: visible;
+	}
+
+	.public-services-carousel__stage,
+	.public-locations-carousel__stage {
+		position: relative;
+		width: 100%;
+		overflow: visible;
+	}
+
+	.public-services-carousel__viewport,
+	.public-locations-carousel__viewport {
+		overflow: hidden;
+		width: 100%;
+	}
+
+	.public-services-carousel__track,
+	.public-locations-carousel__track {
+		display: flex;
+		width: 100%;
+		transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1);
+		will-change: transform;
+	}
+
+	.public-services-carousel__page,
+	.public-locations-carousel__page {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+		width: 100%;
+		flex: 0 0 100%;
+		min-width: 100%;
+		box-sizing: border-box;
+		align-items: stretch;
+	}
+
+	.public-services-carousel__page > .public-service-card,
+	.public-locations-carousel__page > .public-location-card {
+		height: 100%;
+		min-height: 0;
+	}
+
+	@media (min-width: 1024px) {
+		.public-services-carousel__page,
+		.public-locations-carousel__page {
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+		}
+	}
+
+	.public-services-carousel__arrow,
+	.public-locations-carousel__arrow {
+		position: absolute;
+		top: 50%;
+		z-index: 3;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.65rem;
+		height: 2.65rem;
+		margin: 0;
+		border: 1px solid color-mix(in srgb, var(--outline-variant) 55%, transparent);
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-container-high) 88%, transparent);
+		color: color-mix(in srgb, var(--on-surface-variant) 92%, transparent);
+		cursor: pointer;
+		box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		transition:
+			background 0.15s ease,
+			color 0.15s ease,
+			opacity 0.15s ease,
+			border-color 0.15s ease;
+	}
+
+	.public-services-carousel__arrow--prev,
+	.public-locations-carousel__arrow--prev {
+		left: 0;
+		transform: translate(-45%, -50%);
+	}
+
+	.public-services-carousel__arrow--next,
+	.public-locations-carousel__arrow--next {
+		right: 0;
+		transform: translate(45%, -50%);
+	}
+
+	.public-services-carousel__arrow .material-symbols-rounded,
+	.public-locations-carousel__arrow .material-symbols-rounded {
+		font-size: 1.45rem;
+		line-height: 1;
+	}
+
+	.public-services-carousel__arrow:hover:not(:disabled),
+	.public-locations-carousel__arrow:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--surface-container-highest) 92%, transparent);
+		border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+		color: var(--on-surface);
+	}
+
+	.public-services-carousel__arrow:disabled,
+	.public-locations-carousel__arrow:disabled {
+		opacity: 0.28;
+		cursor: default;
+		box-shadow: none;
+	}
+
+	.public-services-carousel__dots,
+	.public-locations-carousel__dots {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		padding-top: 0.1rem;
+	}
+
+	.public-services-carousel__dot,
+	.public-locations-carousel__dot {
+		width: 0.42rem;
+		height: 0.42rem;
+		padding: 0;
+		border: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 28%, transparent);
+		cursor: pointer;
+		transition:
+			background 0.15s ease,
+			transform 0.15s ease;
+	}
+
+	.public-services-carousel__dot.is-active,
+	.public-locations-carousel__dot.is-active {
+		background: color-mix(in srgb, var(--on-surface-variant) 78%, transparent);
+		transform: scale(1.08);
+	}
+
+	.public-services-carousel__dot:hover:not(.is-active),
+	.public-locations-carousel__dot:hover:not(.is-active) {
+		background: color-mix(in srgb, var(--on-surface-variant) 48%, transparent);
+	}
+
 	.public-service-stack-shell,
 	.public-service-stack,
 	.public-service-stack__continue,
@@ -846,6 +1096,49 @@
 	.public-location-stack-shell,
 	.public-location-stack,
 	.public-location-stack__continue {
+		display: none;
+	}
+}
+
+.public-booking-continue {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 3.15rem;
+	margin-top: 1.15rem;
+	padding: 0.85rem 1.25rem;
+	border: 0;
+	border-radius: 999px;
+	background: var(--primary, #426edb);
+	color: var(--on-primary, #fff);
+	font: inherit;
+	font-size: 1rem;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	cursor: pointer;
+	box-shadow: none;
+	transition: filter 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+}
+
+.public-booking-continue:hover:not(:disabled) {
+	filter: brightness(1.05);
+}
+
+.public-booking-continue:active:not(:disabled) {
+	transform: scale(0.985);
+	filter: brightness(0.96);
+}
+
+.public-booking-continue:disabled {
+	opacity: 0.42;
+	cursor: default;
+}
+
+@media (max-width: 639px) {
+	/* En móvil servicio/sucursal ya tienen su Continuar del stack. */
+	.public-services-grid .public-booking-continue,
+	.public-locations-grid .public-booking-continue {
 		display: none;
 	}
 }
@@ -1192,17 +1485,20 @@
 .public-location-card {
 	position: relative;
 	display: grid;
-	grid-template-columns: minmax(0, 1fr) auto;
-	align-items: center;
+	grid-template-columns: minmax(0, 1fr);
+	grid-template-rows: auto 1fr;
+	align-items: stretch;
 	gap: 0.45rem;
 	width: 100%;
-	padding: 0;
-	border-radius: 1.15rem;
+	height: 100%;
+	padding: 0.65rem 1.15rem 1rem;
+	border-radius: 1rem;
 	border: 1.5px solid color-mix(in srgb, var(--outline-variant) 85%, transparent);
 	background: var(--surface-container-high);
 	text-align: left;
 	overflow: hidden;
 	transition: border-color 0.15s ease, background 0.15s ease;
+	box-sizing: border-box;
 }
 
 .public-location-card:hover {
@@ -1216,12 +1512,72 @@
 	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
+.public-location-card__preview {
+	position: relative;
+	display: block;
+	width: auto;
+	margin: 0 -0.35rem 0.15rem;
+	padding: 0;
+	border: 0;
+	aspect-ratio: 4 / 3;
+	overflow: hidden;
+	border-radius: 0.75rem;
+	background:
+		radial-gradient(
+			ellipse 80% 70% at 20% 15%,
+			color-mix(in srgb, var(--primary) 28%, transparent),
+			transparent 60%
+		),
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
+			var(--surface-container-highest) 55%,
+			color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
+		);
+	cursor: pointer;
+	color: inherit;
+}
+
+.public-location-card__map-img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	pointer-events: none;
+}
+
+.public-location-card__preview-label {
+	position: absolute;
+	right: 0.65rem;
+	bottom: 0.65rem;
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.28rem;
+	padding: 0.35rem 0.65rem 0.35rem 0.5rem;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
+	background: color-mix(in srgb, var(--surface-container-high) 78%, transparent);
+	color: var(--primary);
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	line-height: 1;
+	backdrop-filter: blur(6px);
+	-webkit-backdrop-filter: blur(6px);
+}
+
+.public-location-card__preview-label .material-symbols-rounded {
+	font-size: 1rem;
+	line-height: 1;
+}
+
 .public-location-card__main {
 	display: flex;
 	min-width: 0;
 	align-items: flex-start;
 	margin: 0;
-	padding: 1rem 0.35rem 1rem 1.15rem;
+	padding: 0;
 	border: 0;
 	background: transparent;
 	text-align: left;
@@ -1272,48 +1628,6 @@
 	line-height: 1;
 	color: var(--primary);
 	text-decoration: none;
-}
-
-.public-location-card__map-btn {
-	display: inline-flex;
-	flex-direction: row;
-	flex-wrap: nowrap;
-	flex-shrink: 0;
-	align-items: center;
-	justify-content: center;
-	gap: 0.22rem;
-	width: max-content;
-	max-width: none;
-	height: 2rem;
-	margin: 0.7rem 0.7rem 0.7rem 0;
-	padding: 0 0.7rem 0 0.55rem;
-	border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
-	border-radius: 999px;
-	background: color-mix(in srgb, var(--primary) 14%, transparent);
-	color: var(--primary);
-	font: inherit;
-	font-size: 0.72rem;
-	font-weight: 700;
-	letter-spacing: 0.01em;
-	line-height: 1;
-	white-space: nowrap;
-	cursor: pointer;
-	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-
-.public-location-card__map-btn:hover {
-	border-color: color-mix(in srgb, var(--primary) 65%, transparent);
-	background: color-mix(in srgb, var(--primary) 24%, transparent);
-}
-
-.public-location-card__map-btn .material-symbols-rounded {
-	flex-shrink: 0;
-	font-size: 1rem;
-	line-height: 1;
-}
-
-.public-location-card__map-btn > span:last-child {
-	flex-shrink: 0;
 }
 
 /* Mapa: modal centrado en desktop, bottom sheet en mobile */

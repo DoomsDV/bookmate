@@ -643,12 +643,14 @@ export const initializePublicUserBookingPage = () => {
 				${
 					service.image_url
 						? `<span class="public-service-card__cover"><img src="${String(service.image_url).replace(/"/g, '&quot;')}" alt="" loading="lazy" /></span>`
-						: ''
+						: `<span class="public-service-card__cover public-service-card__cover--brand" aria-hidden="true"></span>`
 				}
-				<span class="public-service-card__title text-base font-medium text-[var(--on-surface)]">${service.name}</span>
-				<span class="public-service-card__meta flex items-center justify-between gap-2 text-sm font-medium text-[var(--on-surface-variant)]">
-					<span>${formatDuration(service.duration_minutes)}</span>
-					<span>${service.hide_public_price === 1 ? (service.hidden_price_label || 'A evaluar') : formatCurrency(service.price)}</span>
+				<span class="public-service-card__body">
+					<span class="public-service-card__title text-base font-medium text-[var(--on-surface)]">${service.name}</span>
+					<span class="public-service-card__meta flex items-center justify-between gap-2 text-sm font-medium text-[var(--on-surface-variant)]">
+						<span>${formatDuration(service.duration_minutes)}</span>
+						<span>${service.hide_public_price === 1 ? (service.hidden_price_label || 'A evaluar') : formatCurrency(service.price)}</span>
+					</span>
 				</span>
 				<span class="material-symbols-rounded public-service-card__check" aria-hidden="true">check_circle</span>
 			`;
