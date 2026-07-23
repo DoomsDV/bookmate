@@ -161,8 +161,103 @@ export function initPlanPage() {
 		if (cardIframe) cardIframe.src = 'about:blank';
 	};
 
+	// ---- Datos de facturación (perfil fiscal Hasel) ----
+	const billingForm = document.querySelector<HTMLFormElement>('[data-billing-profile-form]');
+	const billingStatus = document.querySelector<HTMLElement>('[data-billing-profile-status]');
+	const billingSaveBtn = document.querySelector<HTMLButtonElement>('[data-billing-profile-save]');
+
+	const isBillingComplete = () => billingStatus?.dataset.complete === '1';
+
+	const setBillingComplete = (complete: boolean) => {
+		if (!billingStatus) return;
+		billingStatus.dataset.complete = complete ? '1' : '0';
+		billingStatus.textContent = complete ? 'Datos listos para facturar.' : 'Pendiente de completar.';
+		billingStatus.classList.toggle('text-emerald-600', complete);
+		billingStatus.classList.toggle('dark:text-emerald-400', complete);
+		billingStatus.classList.toggle('text-(--on-surface-variant)', !complete);
+	};
+
+	const readBillingPayload = () => {
+		if (!billingForm) return null;
+		const fd = new FormData(billingForm);
+		return {
+			billing_name: String(fd.get('billing_name') || '').trim(),
+			billing_doc_type: String(fd.get('billing_doc_type') || 'CI').trim().toUpperCase() === 'RUC' ? 'RUC' : 'CI',
+			billing_doc_number: String(fd.get('billing_doc_number') || '').trim(),
+			billing_email: String(fd.get('billing_email') || '').trim().toLowerCase(),
+		};
+	};
+
+	const validateBillingPayload = (payload: {
+		billing_name: string;
+		billing_doc_type: string;
+		billing_doc_number: string;
+		billing_email: string;
+	}) => {
+		if (!payload.billing_name || payload.billing_name.length < 2) {
+			return payload.billing_doc_type === 'RUC'
+				? 'La razón social es obligatoria para RUC.'
+				: 'El nombre / razón social es obligatorio.';
+		}
+		if (!payload.billing_doc_number || payload.billing_doc_number.length < 3) {
+			return 'El número de documento (C.I. o RUC) es obligatorio.';
+		}
+		if (!payload.billing_email || !payload.billing_email.includes('@') || !payload.billing_email.includes('.')) {
+			return 'Ingresá un email de factura válido.';
+		}
+		return '';
+	};
+
+	async function saveBillingProfile(opts?: { silent?: boolean }) {
+		const payload = readBillingPayload();
+		if (!payload) return false;
+		const validationError = validateBillingPayload(payload);
+		if (validationError) {
+			flash(validationError, 'error');
+			return false;
+		}
+		if (billingSaveBtn) billingSaveBtn.disabled = true;
+		try {
+			const res = await fetch('/api/billing-profile', {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(payload),
+			});
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok || data?.status !== 'success') {
+				throw new Error(data?.message || 'No fue posible guardar los datos de facturación.');
+			}
+			setBillingComplete(Number(data?.data?.is_complete) === 1);
+			if (!opts?.silent) {
+				flash(data?.message || 'Datos de facturación guardados correctamente.', 'success');
+			}
+			return true;
+		} catch (error) {
+			flash(
+				error instanceof Error ? error.message : 'No fue posible guardar los datos de facturación.',
+				'error'
+			);
+			return false;
+		} finally {
+			if (billingSaveBtn) billingSaveBtn.disabled = false;
+		}
+	}
+
+	billingForm?.addEventListener('submit', (event) => {
+		event.preventDefault();
+		void saveBillingProfile();
+	});
+
 	// ---- Registrar tarjeta (catastro uPay) ----
 	async function addCard() {
+		if (billingForm && !isBillingComplete()) {
+			const saved = await saveBillingProfile({ silent: true });
+			if (!saved || !isBillingComplete()) {
+				flash('Completá y guardá los datos de facturación antes de registrar la tarjeta.', 'warning');
+				billingForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+				return;
+			}
+		}
 		flash('Preparando el formulario seguro…', 'info');
 		try {
 			const res = await fetch('/api/subscription/card/add', {
