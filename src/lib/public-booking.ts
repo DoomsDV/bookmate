@@ -696,6 +696,61 @@ export const getPublicAvailableSlotsWithOrds = async (params: {
 		.filter((slot) => /^\d{2}:\d{2}$/.test(slot));
 };
 
+export const getPublicAvailableDatesWithOrds = async (params: {
+	pro_id: number;
+	loc_id: number;
+	ser_id: number;
+	from_date: string;
+	to_date: string;
+	exclude_app_id?: number;
+}) => {
+	const proId = toPositiveInt(params.pro_id, 0);
+	const locId = toPositiveInt(params.loc_id, 0);
+	const serId = toPositiveInt(params.ser_id, 0);
+	const excludeAppId = toPositiveInt(params.exclude_app_id, 0);
+	const fromDate = String(params.from_date || '').trim();
+	const toDate = String(params.to_date || '').trim();
+	if (
+		!proId ||
+		!locId ||
+		!serId ||
+		!/^\d{4}-\d{2}-\d{2}$/.test(fromDate) ||
+		!/^\d{4}-\d{2}-\d{2}$/.test(toDate)
+	) {
+		throw new PublicBookingApiError(
+			'pro_id, loc_id, ser_id, from_date y to_date (YYYY-MM-DD) son obligatorios.',
+			400
+		);
+	}
+
+	const datesUrl = new URL(`${PUBLIC_BOOKING_API_BASE_URL}/available-dates`);
+	datesUrl.searchParams.set('pro_id', String(proId));
+	datesUrl.searchParams.set('loc_id', String(locId));
+	datesUrl.searchParams.set('ser_id', String(serId));
+	datesUrl.searchParams.set('from_date', fromDate);
+	datesUrl.searchParams.set('to_date', toDate);
+	if (excludeAppId > 0) {
+		datesUrl.searchParams.set('exclude_app_id', String(excludeAppId));
+	}
+
+	const response = await fetch(datesUrl.toString(), {
+		method: 'GET',
+		headers: { Accept: 'application/json' },
+	});
+
+	const data = await parseApiResponse(response, 'No fue posible cargar fechas disponibles.');
+	if (!Array.isArray(data.data)) {
+		throw new PublicBookingApiError(
+			'No fue posible interpretar las fechas disponibles del servicio.',
+			502
+		);
+	}
+
+	return data.data
+		.map((date) => String(date || '').trim())
+		.filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date));
+};
+
 export const getPublicLocationWithOrds = async (locationId: number): Promise<PublicBookingLocation> => {
 	const safeLocationId = toPositiveInt(locationId, 0);
 	if (!safeLocationId) {

@@ -22,6 +22,7 @@ import {
 import {
 	buildApiAppointmentTimes,
 	createPublicAppointment,
+	fetchAvailableDates,
 	fetchAvailableSlots,
 	validateCustomerPhone,
 } from './api-client';
@@ -245,6 +246,10 @@ export const initializePublicUserBookingPage = () => {
 	let selectedTime = '';
 	let availableSlotGroups: LocationSlotGroup[] = [];
 	let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+	const availableDatesCache = new Map<string, Set<string>>();
+	let availableDatesLoadingKey: string | null = null;
+	let availableDatesRequestSeq = 0;
+	let renderCalendar = () => {};
 	let isLoadingSlots = false;
 	let isSubmitting = false;
 	let isValidatingCustomer = false;
@@ -284,6 +289,104 @@ export const initializePublicUserBookingPage = () => {
 		}, durationMs);
 	};
 
+	const invalidateAvailableDatesCache = () => {
+		availableDatesCache.clear();
+		availableDatesLoadingKey = null;
+		availableDatesRequestSeq += 1;
+	};
+
+	const availableDatesMonthKey = (year: number, monthIndex: number) => {
+		const org = selectedOrgGroup?.org_id_organization ?? 0;
+		const ser = selectedService?.id_service ?? 0;
+		const loc = selectedContext?.id_location ?? 0;
+		const ym = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+		return `${org}|${ser}|${loc}|${ym}`;
+	};
+
+	const locationTargetsForAvailability = () => {
+		const orgGroup = selectedOrgGroup;
+		if (!orgGroup) return [] as UserBookingContext[];
+		const lockedLocationId = selectedContext?.id_location ?? 0;
+		return lockedLocationId > 0
+			? orgGroup.locations.filter((location) => location.id_location === lockedLocationId)
+			: orgGroup.locations;
+	};
+
+	const loadAvailableDatesForVisibleMonth = async () => {
+		if (!selectedService || !selectedOrgGroup) {
+			renderCalendar();
+			return;
+		}
+
+		const year = visibleMonth.getFullYear();
+		const month = visibleMonth.getMonth();
+		const cacheKey = availableDatesMonthKey(year, month);
+		const ymPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+		if (availableDatesCache.has(cacheKey)) {
+			const dates = availableDatesCache.get(cacheKey)!;
+			if (selectedDate.startsWith(ymPrefix) && !dates.has(selectedDate)) {
+				selectedDate = '';
+				selectedTime = '';
+				refreshSummary();
+				draftPersister.schedule();
+			}
+			renderCalendar();
+			return;
+		}
+
+		const targets = locationTargetsForAvailability();
+		if (targets.length === 0) {
+			renderCalendar();
+			return;
+		}
+
+		const reqId = ++availableDatesRequestSeq;
+		availableDatesLoadingKey = cacheKey;
+		renderCalendar();
+
+		try {
+			const fromDate = formatApiDate(new Date(year, month, 1));
+			const toDate = formatApiDate(new Date(year, month + 1, 0));
+			const results = await Promise.allSettled(
+				targets.map((location) =>
+					fetchAvailableDates({
+						pro_id: location.id_professional,
+						loc_id: location.id_location,
+						ser_id: selectedService!.id_service,
+						from_date: fromDate,
+						to_date: toDate,
+					})
+				)
+			);
+			if (reqId !== availableDatesRequestSeq) return;
+
+			const merged = new Set<string>();
+			let anyOk = false;
+			for (const result of results) {
+				if (result.status !== 'fulfilled') continue;
+				anyOk = true;
+				for (const date of result.value) merged.add(date);
+			}
+			if (anyOk) {
+				availableDatesCache.set(cacheKey, merged);
+				if (selectedDate.startsWith(ymPrefix) && !merged.has(selectedDate)) {
+					selectedDate = '';
+					selectedTime = '';
+					refreshSummary();
+					draftPersister.schedule();
+				}
+			}
+		} catch {
+			if (reqId !== availableDatesRequestSeq) return;
+		} finally {
+			if (reqId === availableDatesRequestSeq) {
+				availableDatesLoadingKey = null;
+				renderCalendar();
+			}
+		}
+	};
+
 	const setStep = (nextStep: UserBookingWizardStep) => {
 		step = nextStep;
 		for (const panel of stepPanels) {
@@ -315,6 +418,12 @@ export const initializePublicUserBookingPage = () => {
 		}
 		if (stepProgressBar) {
 			stepProgressBar.style.width = `${step >= 5 ? 100 : cappedStep * 25}%`;
+		}
+
+		if (step === 2) {
+			queueMicrotask(() => {
+				void loadAvailableDatesForVisibleMonth();
+			});
 		}
 
 		if (step <= 4) draftPersister.schedule();
@@ -413,6 +522,7 @@ export const initializePublicUserBookingPage = () => {
 		selectedTime = '';
 		availableSlotGroups = [];
 		pendingAppointmentId = 0;
+		invalidateAvailableDatesCache();
 	};
 
 	const selectOrganizationGroup = (group: OrganizationBookingGroup) => {
@@ -438,6 +548,7 @@ export const initializePublicUserBookingPage = () => {
 		selectedTime = '';
 		availableSlotGroups = [];
 		pendingAppointmentId = 0;
+		invalidateAvailableDatesCache();
 		servicePickerPhase = 'services';
 		refreshSummary();
 		renderOrganizationServices();
@@ -663,6 +774,7 @@ export const initializePublicUserBookingPage = () => {
 					selectedTime = '';
 					availableSlotGroups = [];
 					pendingAppointmentId = 0;
+					invalidateAvailableDatesCache();
 					refreshSummary();
 					renderOrganizationServices();
 					renderCalendar();
@@ -697,7 +809,7 @@ export const initializePublicUserBookingPage = () => {
 	const getSelectedSlotKey = () =>
 		selectedContext && selectedTime ? `${selectedContext.id_location}:${selectedTime}` : '';
 
-	const renderCalendar = () => {
+	renderCalendar = () => {
 		calendarGrid.innerHTML = '';
 		calendarMonth.textContent = new Intl.DateTimeFormat('es-PY', {
 			month: 'long',
@@ -709,6 +821,9 @@ export const initializePublicUserBookingPage = () => {
 		const firstDay = new Date(year, month, 1);
 		const daysInMonth = new Date(year, month + 1, 0).getDate();
 		const firstWeekday = (firstDay.getDay() + 6) % 7;
+		const cacheKey = availableDatesMonthKey(year, month);
+		const availableDates = availableDatesCache.get(cacheKey);
+		const isLoadingAvailability = availableDatesLoadingKey === cacheKey;
 
 		for (let blank = 0; blank < firstWeekday; blank += 1) {
 			const placeholder = document.createElement('span');
@@ -723,18 +838,26 @@ export const initializePublicUserBookingPage = () => {
 			const isPast = dateStart.getTime() < today.getTime();
 			const isToday = dateStart.getTime() === today.getTime();
 			const isSelected = selectedDate === dateKey;
+			const isUnavailable =
+				!isPast &&
+				Boolean(selectedService && selectedOrgGroup) &&
+				(isLoadingAvailability || (availableDates ? !availableDates.has(dateKey) : false));
 
 			const dayButton = document.createElement('button');
 			dayButton.type = 'button';
 			dayButton.textContent = String(day);
-			dayButton.disabled = isPast || !selectedService;
+			dayButton.disabled = isPast || !selectedService || !selectedOrgGroup || isUnavailable;
 			dayButton.className = [
 				isSelected ? 'is-selected' : '',
 				isToday ? 'is-today' : '',
 				isPast ? 'is-past' : '',
+				isUnavailable ? 'is-unavailable' : '',
 			]
 				.filter(Boolean)
 				.join(' ');
+			if (isUnavailable && !isPast) {
+				dayButton.title = 'Sin horarios disponibles';
+			}
 
 			dayButton.addEventListener(
 				'click',
@@ -1142,12 +1265,12 @@ export const initializePublicUserBookingPage = () => {
 
 	prevMonthButton.addEventListener('click', () => {
 		visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
-		renderCalendar();
+		void loadAvailableDatesForVisibleMonth();
 	}, { signal });
 
 	nextMonthButton.addEventListener('click', () => {
 		visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
-		renderCalendar();
+		void loadAvailableDatesForVisibleMonth();
 	}, { signal });
 
 	backToLocations.addEventListener(

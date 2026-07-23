@@ -397,7 +397,12 @@ export const initializePublicBookingPage = () => {
 	let selectedLocation: BookingLocation | null = defaultLocation;
 	let availableSlotGroups: LocationSlotGroup[] = [];
 	let visibleMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+	/** Cache mes: `pro|loc|ser|yyyy-mm` → fechas YYYY-MM-DD con ≥1 slot. */
+	const availableDatesCache = new Map<string, Set<string>>();
+	let availableDatesLoadingKey: string | null = null;
+	let availableDatesRequestSeq = 0;
 	let isLoadingSlots = false;
+	let renderCalendar = () => {};
 	let isSubmitting = false;
 	let isValidatingCustomer = false;
 	let pendingAppointmentId = 0;
@@ -819,6 +824,93 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
+	const invalidateAvailableDatesCache = () => {
+		availableDatesCache.clear();
+		availableDatesLoadingKey = null;
+		availableDatesRequestSeq += 1;
+	};
+
+	const availableDatesMonthKey = (year: number, monthIndex: number) => {
+		const pro = profile.id_professional;
+		const loc = selectedLocation?.id_location ?? 0;
+		const ser = selectedService?.id_service ?? 0;
+		const ym = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+		return `${pro}|${loc}|${ser}|${ym}`;
+	};
+
+	const fetchAvailableDatesForRange = async (fromDate: string, toDate: string) => {
+		const params = new URLSearchParams({
+			pro_id: String(profile.id_professional),
+			loc_id: String(selectedLocation!.id_location),
+			ser_id: String(selectedService!.id_service),
+			from_date: fromDate,
+			to_date: toDate,
+		});
+		const { data } = await fetchJson<{ data?: unknown[] }>(
+			`/api/public/available-dates?${params.toString()}`,
+			{
+				method: 'GET',
+				headers: { Accept: 'application/json' },
+				cache: 'no-store',
+			},
+			'No fue posible consultar fechas disponibles.'
+		);
+		if (!Array.isArray(data.data)) {
+			throw new Error('No fue posible consultar fechas disponibles.');
+		}
+		return data.data
+			.map((value: unknown) => String(value || '').trim())
+			.filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value));
+	};
+
+	const loadAvailableDatesForVisibleMonth = async () => {
+		if (!selectedService || !selectedLocation) {
+			renderCalendar();
+			return;
+		}
+
+		const year = visibleMonth.getFullYear();
+		const month = visibleMonth.getMonth();
+		const cacheKey = availableDatesMonthKey(year, month);
+		const ymPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+
+		if (availableDatesCache.has(cacheKey)) {
+			const dates = availableDatesCache.get(cacheKey)!;
+			if (selectedDate.startsWith(ymPrefix) && !dates.has(selectedDate)) {
+				selectedDate = '';
+				refreshSummary();
+				draftPersister.schedule();
+			}
+			renderCalendar();
+			return;
+		}
+
+		const reqId = ++availableDatesRequestSeq;
+		availableDatesLoadingKey = cacheKey;
+		renderCalendar();
+
+		try {
+			const fromDate = formatApiDate(new Date(year, month, 1));
+			const toDate = formatApiDate(new Date(year, month + 1, 0));
+			const dates = await fetchAvailableDatesForRange(fromDate, toDate);
+			if (reqId !== availableDatesRequestSeq) return;
+			availableDatesCache.set(cacheKey, new Set(dates));
+			if (selectedDate.startsWith(ymPrefix) && !dates.includes(selectedDate)) {
+				selectedDate = '';
+				refreshSummary();
+				draftPersister.schedule();
+			}
+		} catch {
+			// Si falla la consulta, no cacheamos: el calendario no bloquea por disponibilidad.
+			if (reqId !== availableDatesRequestSeq) return;
+		} finally {
+			if (reqId === availableDatesRequestSeq) {
+				availableDatesLoadingKey = null;
+				renderCalendar();
+			}
+		}
+	};
+
 	const setStep = (nextStep: WizardStep) => {
 		step = nextStep;
 
@@ -856,6 +948,12 @@ export const initializePublicBookingPage = () => {
 		if (stepProgressBar) {
 			const progress = step >= 6 ? 100 : cappedStep * 20;
 			stepProgressBar.style.width = `${progress}%`;
+		}
+
+		if (step === 3) {
+			queueMicrotask(() => {
+				void loadAvailableDatesForVisibleMonth();
+			});
 		}
 
 		if (step <= 5) draftPersister.schedule();
@@ -957,6 +1055,9 @@ export const initializePublicBookingPage = () => {
 	const isMobileServicesStack = () =>
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
 	const isMobileLocationsStack = () => isMobileServicesStack();
+	/** Tablet/PC angosto: 2 por slide (1 fila). Desktop ≥1024: 4 por slide. */
+	const getCarouselPageSize = () =>
+		typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches ? 4 : 2;
 
 	/** Mejora progresiva: Android vibra; iOS ignora sin romper. */
 	const triggerPickerHaptic = () => {
@@ -991,6 +1092,7 @@ export const initializePublicBookingPage = () => {
 			selectedTime = '';
 			selectedLocation = defaultLocation;
 			availableSlotGroups = [];
+			invalidateAvailableDatesCache();
 			resetPendingAppointment();
 			refreshSummary();
 			draftPersister.schedule();
@@ -1010,6 +1112,7 @@ export const initializePublicBookingPage = () => {
 			selectedDate = '';
 			selectedTime = '';
 			availableSlotGroups = [];
+			invalidateAvailableDatesCache();
 			resetPendingAppointment();
 		}
 		refreshSummary();
@@ -1026,6 +1129,7 @@ export const initializePublicBookingPage = () => {
 			selectedDate = '';
 			selectedTime = '';
 			availableSlotGroups = [];
+			invalidateAvailableDatesCache();
 			resetPendingAppointment();
 			refreshSummary();
 			draftPersister.schedule();
@@ -1056,6 +1160,7 @@ export const initializePublicBookingPage = () => {
 			selectedTime = '';
 			selectedLocation = defaultLocation;
 			availableSlotGroups = [];
+			invalidateAvailableDatesCache();
 			resetPendingAppointment();
 			refreshSummary();
 			draftPersister.schedule();
@@ -1280,7 +1385,7 @@ export const initializePublicBookingPage = () => {
 		servicesGrid.classList.remove('is-service-stack');
 		servicesGrid.classList.add('is-service-carousel');
 
-		const PAGE_SIZE = 4;
+		const PAGE_SIZE = getCarouselPageSize();
 		const services = profile.services;
 		const pageCount = Math.max(1, Math.ceil(services.length / PAGE_SIZE));
 
@@ -1430,19 +1535,24 @@ export const initializePublicBookingPage = () => {
 
 	if (!serviceStackBound && typeof window !== 'undefined') {
 		serviceStackBound = true;
-		const media = window.matchMedia('(max-width: 639px)');
+		const mobileMedia = window.matchMedia('(max-width: 639px)');
+		const desktopCarouselMedia = window.matchMedia('(min-width: 1024px)');
 		const onViewportChange = () => {
 			if (signal.aborted) return;
 			renderServices();
 			renderLocations();
 			renderSlots();
 		};
-		if (typeof media.addEventListener === 'function') {
-			media.addEventListener('change', onViewportChange, { signal });
-		} else {
-			media.addListener(onViewportChange);
-			signal.addEventListener('abort', () => media.removeListener(onViewportChange));
-		}
+		const bindMedia = (media: MediaQueryList) => {
+			if (typeof media.addEventListener === 'function') {
+				media.addEventListener('change', onViewportChange, { signal });
+			} else {
+				media.addListener(onViewportChange);
+				signal.addEventListener('abort', () => media.removeListener(onViewportChange));
+			}
+		};
+		bindMedia(mobileMedia);
+		bindMedia(desktopCarouselMedia);
 	}
 
 	const escapeHtml = (value: string) =>
@@ -1473,6 +1583,7 @@ export const initializePublicBookingPage = () => {
 			selectedDate = '';
 			selectedTime = '';
 			availableSlotGroups = [];
+			invalidateAvailableDatesCache();
 			resetPendingAppointment();
 			refreshSummary();
 			draftPersister.schedule();
@@ -1593,7 +1704,7 @@ export const initializePublicBookingPage = () => {
 		locationsGrid.classList.remove('is-location-stack');
 		locationsGrid.classList.add('is-location-carousel');
 
-		const PAGE_SIZE = 4;
+		const PAGE_SIZE = getCarouselPageSize();
 		const pageCount = Math.max(1, Math.ceil(locations.length / PAGE_SIZE));
 
 		const selectedIndex = selectedLocation
@@ -1925,7 +2036,7 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
-	const renderCalendar = () => {
+	renderCalendar = () => {
 		calendarGrid.innerHTML = '';
 		calendarMonth.textContent = new Intl.DateTimeFormat('es-PY', {
 			month: 'long',
@@ -1937,6 +2048,9 @@ export const initializePublicBookingPage = () => {
 		const firstDay = new Date(year, month, 1);
 		const daysInMonth = new Date(year, month + 1, 0).getDate();
 		const firstWeekday = (firstDay.getDay() + 6) % 7;
+		const cacheKey = availableDatesMonthKey(year, month);
+		const availableDates = availableDatesCache.get(cacheKey);
+		const isLoadingAvailability = availableDatesLoadingKey === cacheKey;
 
 		for (let blank = 0; blank < firstWeekday; blank += 1) {
 			const placeholder = document.createElement('span');
@@ -1951,22 +2065,34 @@ export const initializePublicBookingPage = () => {
 			const isPast = dateStart.getTime() < today.getTime();
 			const isToday = dateStart.getTime() === today.getTime();
 			const isSelected = selectedDate === dateKey;
+			const isUnavailable =
+				!isPast &&
+				Boolean(selectedService && selectedLocation) &&
+				(isLoadingAvailability || (availableDates ? !availableDates.has(dateKey) : false));
 
 			const dayButton = document.createElement('button');
 			dayButton.type = 'button';
 			dayButton.textContent = String(day);
-			dayButton.disabled = isPast || !selectedService;
+			dayButton.disabled = isPast || !selectedService || !selectedLocation || isUnavailable;
 			dayButton.className = [
 				isSelected ? 'is-selected' : '',
 				isToday ? 'is-today' : '',
 				isPast ? 'is-past' : '',
+				isUnavailable ? 'is-unavailable' : '',
 			]
 				.filter(Boolean)
 				.join(' ');
+			if (isUnavailable && !isPast) {
+				dayButton.title = 'Sin horarios disponibles';
+			}
 
 			dayButton.addEventListener('click', () => {
 				if (!selectedService) {
 					showToast('Selecciona primero un servicio.');
+					return;
+				}
+				if (!selectedLocation) {
+					showToast('Seleccioná una sucursal para ver fechas.');
 					return;
 				}
 				selectedDate = dateKey;
@@ -2569,7 +2695,7 @@ export const initializePublicBookingPage = () => {
 		'click',
 		() => {
 			visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
-			renderCalendar();
+			void loadAvailableDatesForVisibleMonth();
 		},
 		{ signal }
 	);
@@ -2578,7 +2704,7 @@ export const initializePublicBookingPage = () => {
 		'click',
 		() => {
 			visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
-			renderCalendar();
+			void loadAvailableDatesForVisibleMonth();
 		},
 		{ signal }
 	);

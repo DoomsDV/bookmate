@@ -63,6 +63,40 @@ export const fetchAvailableSlots = async (params: {
 	);
 };
 
+export const fetchAvailableDates = async (params: {
+	pro_id: number;
+	loc_id: number;
+	ser_id: number;
+	from_date: string;
+	to_date: string;
+}) => {
+	const query = new URLSearchParams({
+		pro_id: String(params.pro_id),
+		loc_id: String(params.loc_id),
+		ser_id: String(params.ser_id),
+		from_date: params.from_date,
+		to_date: params.to_date,
+	});
+
+	const { data } = await fetchJson<{ data?: unknown[] }>(
+		`/api/public/available-dates?${query.toString()}`,
+		{
+			method: 'GET',
+			headers: { Accept: 'application/json' },
+			cache: 'no-store',
+		},
+		'No fue posible consultar fechas disponibles.'
+	);
+
+	if (!Array.isArray(data.data)) {
+		throw new PublicUserBookingClientError('No fue posible consultar fechas disponibles.', 502);
+	}
+
+	return data.data
+		.map((value) => String(value || '').trim())
+		.filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value));
+};
+
 export const validateCustomerPhone = async (phoneE164: string, orgId: number) => {
 	const { data } = await fetchJson<{ data?: { full_name?: string }; exists?: boolean }>(
 		'/api/public/validate-customer',

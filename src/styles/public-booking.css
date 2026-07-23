@@ -552,6 +552,7 @@
 }
 
 [data-calendar-grid] > button.is-past,
+[data-calendar-grid] > button.is-unavailable,
 [data-calendar-grid] > button:disabled {
 	cursor: not-allowed;
 	background: #222225;
@@ -561,7 +562,7 @@
 	box-shadow: none;
 }
 
-[data-calendar-grid] > button:not(:disabled):not(.is-selected):not(.is-past):hover {
+[data-calendar-grid] > button:not(:disabled):not(.is-selected):not(.is-past):not(.is-unavailable):hover {
 	border-color: var(--primary);
 	box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
 }
