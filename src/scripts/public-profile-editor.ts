@@ -145,6 +145,16 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	let businessHours: BusinessHours = parseBusinessHours(bootstrap.workspace?.business_hours);
 	/** Día 1–7 expandido para editar turnos; null = todos colapsados. */
 	let expandedHoursDay: number | null = null;
+	/** Metadatos del hub público (sucursales/equipo/categorías) cargados en cliente. */
+	let previewHubMeta: {
+		serviceCategories: string[];
+		locationLabel: string;
+		teamCount: number;
+	} = {
+		serviceCategories: [],
+		locationLabel: '',
+		teamCount: 0,
+	};
 
 	const logoInput = root.querySelector<HTMLInputElement>('[data-ppe-logo-input]');
 	const logoDropzone = root.querySelector<HTMLElement>('[data-ppe-logo-dropzone]');
@@ -564,7 +574,44 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			galleryUrls: galleryItems.map((item) => item.url),
 			profileSlug: slug,
 			businessHoursRows: formatBusinessHoursForDisplay(businessHours),
+			serviceCategories: previewHubMeta.serviceCategories,
+			locationLabel: previewHubMeta.locationLabel,
+			teamCount: previewHubMeta.teamCount,
 		});
+	};
+
+	const enrichPreviewFromHub = async () => {
+		const slug = normalizeSlugInput(
+			slugInput?.value || bootstrap.workspace?.profile_slug || ''
+		);
+		if (!slug) return;
+		try {
+			const res = await fetch(`/api/public/org/${encodeURIComponent(slug)}`);
+			const data = await res.json().catch(() => ({}));
+			if (!res.ok || data?.status !== 'success' || !data?.data) return;
+			const hub = data.data as {
+				locations?: Array<{ name?: string; address?: string }>;
+				professionals?: unknown[];
+				service_categories?: string[];
+			};
+			const locs = Array.isArray(hub.locations) ? hub.locations : [];
+			let locationLabel = '';
+			if (locs.length === 1) {
+				locationLabel = String(locs[0]?.name || locs[0]?.address || '').trim();
+			} else if (locs.length > 1) {
+				locationLabel = `${locs.length} sucursales`;
+			}
+			previewHubMeta = {
+				serviceCategories: Array.isArray(hub.service_categories)
+					? hub.service_categories.map((c) => String(c || '').trim()).filter(Boolean)
+					: [],
+				locationLabel,
+				teamCount: Array.isArray(hub.professionals) ? hub.professionals.length : 0,
+			};
+			syncPreview();
+		} catch {
+			/* preview enrichment is best-effort */
+		}
 	};
 
 	const clearBannerPreview = () => {
@@ -1475,4 +1522,5 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	syncPreview();
 	captureSavedSnapshot();
 	void checkSlug();
+	void enrichPreviewFromHub();
 };

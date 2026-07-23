@@ -1,0 +1,46 @@
+---
+import PublicProfileEditor from './PublicProfileEditor.astro';
+import { getWorkspaceSettingsWithOrds } from '../lib/workspace-settings';
+
+/**
+ * Carga solo workspace (auth). El hub público se enriquece en cliente
+ * para no bloquear el shell del panel.
+ */
+const token = String(Astro.locals.token || '').trim();
+let workspace = null;
+let loadError = '';
+
+try {
+	if (!token) {
+		throw new Error('No hay sesión válida para cargar el perfil público.');
+	}
+	workspace = await getWorkspaceSettingsWithOrds(token);
+} catch (error) {
+	loadError =
+		error instanceof Error
+			? error.message
+			: 'No fue posible cargar el perfil público.';
+}
+
+const organizationName =
+	workspace?.name?.trim() ||
+	String(Astro.locals.organizationName || '').trim() ||
+	'Tu negocio';
+---
+
+{
+	workspace ? (
+		<PublicProfileEditor
+			workspace={workspace}
+			hub={null}
+			organizationName={organizationName}
+		/>
+	) : (
+		<section class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-6">
+			<h1 class="text-xl font-extrabold">Perfil Público</h1>
+			<p class="mt-2 font-semibold text-(--on-surface-variant)">
+				{loadError || 'No fue posible cargar la configuración.'}
+			</p>
+		</section>
+	)
+}
