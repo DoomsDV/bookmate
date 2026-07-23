@@ -1,7 +1,7 @@
 <atc-chat-modal>
 	<dialog
 		data-atc-chat-modal
-		class="m-0 mt-auto mb-0 h-[min(34rem,92svh)] w-screen max-w-none open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:h-[min(36rem,90vh)] sm:w-[min(28rem,calc(100vw-2rem))] sm:max-w-[min(28rem,calc(100vw-2rem))] sm:rounded-[1.8rem]"
+		class="m-0 mt-auto mb-0 h-[min(34rem,92svh)] w-screen max-w-none open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:h-[min(36rem,90vh)] sm:w-[min(28rem,calc(100vw-2rem))] sm:max-w-[min(28rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 	>
 		<header class="flex shrink-0 items-start justify-between gap-3 border-b border-(--shell-border) px-4 py-3 sm:px-5 sm:py-4">
 			<div class="flex min-w-0 items-center gap-3">
@@ -130,6 +130,23 @@
 
 			this.modal?.addEventListener('close', () => this.clearMobileSheetLock(), { signal });
 
+			this.modal?.addEventListener(
+				'cancel',
+				(event) => {
+					event.preventDefault();
+					this.close();
+				},
+				{ signal }
+			);
+
+			this.modal?.addEventListener(
+				'click',
+				(event) => {
+					if (event.target === this.modal) this.close();
+				},
+				{ signal }
+			);
+
 			this.form?.addEventListener(
 				'submit',
 				(event) => {
@@ -198,6 +215,7 @@
 
 		private open() {
 			if (!this.modal) return;
+			this.modal.classList.remove('is-closing');
 			this.applyMobileSheetLock();
 			if (!this.modal.open) this.modal.showModal();
 			this.clearError();
@@ -208,8 +226,13 @@
 		}
 
 		private close() {
-			this.modal?.close();
-			this.clearMobileSheetLock();
+			if (!this.modal?.open || this.modal.classList.contains('is-closing')) return;
+			this.modal.classList.add('is-closing');
+			window.setTimeout(() => {
+				this.modal?.close();
+				this.modal?.classList.remove('is-closing');
+				this.clearMobileSheetLock();
+			}, 200);
 		}
 
 		private clearError() {
@@ -421,14 +444,91 @@
 </style>
 
 <style is:global>
+	[data-atc-chat-modal] {
+		animation: atc-modal-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
+	}
+
 	[data-atc-chat-modal]::backdrop {
 		background: rgba(15, 17, 21, 0.6);
 		backdrop-filter: none;
 		-webkit-backdrop-filter: none;
+		animation: atc-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
 	}
 
 	html[data-theme='dark'] [data-atc-chat-modal]::backdrop {
 		background: rgba(0, 0, 0, 0.58);
+	}
+
+	[data-atc-chat-modal].is-closing {
+		animation: atc-modal-out var(--modal-close-duration, 200ms) var(--modal-easing, ease) forwards;
+	}
+
+	[data-atc-chat-modal].is-closing::backdrop {
+		animation: atc-backdrop-out var(--modal-close-duration, 200ms) var(--modal-easing, ease) forwards;
+	}
+
+	@keyframes atc-modal-in {
+		from {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes atc-modal-out {
+		from {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+	}
+
+	@media (min-width: 640px) {
+		@keyframes atc-modal-in {
+			from {
+				opacity: 0;
+				transform: translateY(10px) scale(0.98);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		@keyframes atc-modal-out {
+			from {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+			to {
+				opacity: 0;
+				transform: translateY(8px) scale(0.98);
+			}
+		}
+	}
+
+	@keyframes atc-backdrop-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes atc-backdrop-out {
+		from {
+			opacity: 1;
+		}
+		to {
+			opacity: 0;
+		}
 	}
 
 	/* Bottom sheet estable en mobile: no re-centrar ni achicar con el teclado (dvh). */
@@ -442,6 +542,52 @@
 			height: min(34rem, 92svh);
 			max-height: 92svh;
 			transform: none;
+		}
+	}
+
+	/* Desktop PC: side drawer a la derecha (mismo patrón que Servicios / Ajustes) */
+	@media (min-width: 1024px) {
+		[data-atc-chat-modal] {
+			inset: 0 0 0 auto;
+			height: 100dvh;
+			max-height: 100dvh;
+			width: max(50vw, 40rem);
+			max-width: max(50vw, 40rem);
+			border-radius: 0;
+			box-shadow: none;
+			animation-name: atc-drawer-in;
+		}
+
+		[data-atc-chat-modal].is-closing {
+			animation-name: atc-drawer-out;
+		}
+
+		[data-atc-chat-modal]::backdrop {
+			background: transparent;
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+		}
+
+		@keyframes atc-drawer-in {
+			from {
+				opacity: 0;
+				transform: translateX(100%);
+			}
+			to {
+				opacity: 1;
+				transform: translateX(0);
+			}
+		}
+
+		@keyframes atc-drawer-out {
+			from {
+				opacity: 1;
+				transform: translateX(0);
+			}
+			to {
+				opacity: 0;
+				transform: translateX(100%);
+			}
 		}
 	}
 
