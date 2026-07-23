@@ -413,13 +413,13 @@ const toPageHref = (page: number) => {
 							)}
 
 							<div
-								class="dashboard-ai-strip is-generating"
+								class="dashboard-ai-strip"
 								data-ai-summary-card
 								data-role-id={String(roleId)}
 								data-default-summary-short={defaultAiSummaryShort}
 								data-default-summary-full={defaultAiSummaryFull}
 								aria-live="polite"
-								aria-busy="true"
+								aria-busy="false"
 							>
 								<div class="dashboard-ai-strip__glow" aria-hidden="true"></div>
 								<div class="dashboard-ai-strip__head">
@@ -436,7 +436,7 @@ const toPageHref = (page: number) => {
 									<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--sm"></span>
 								</div>
 								<p class="dashboard-ai-strip__text" data-ai-summary-line>
-									Generando resumen inteligente…
+									{defaultAiSummaryShort}
 								</p>
 								<button
 									type="button"
@@ -1699,9 +1699,6 @@ const toPageHref = (page: number) => {
 		if (!lineNode) return;
 
 		bindAiSummaryModalEvents();
-		card.setAttribute('aria-busy', 'true');
-		card.classList.add('is-generating');
-		lineNode.textContent = 'Generando resumen inteligente…';
 
 		const revealSummary = async (payload: AiSummaryPayload) => {
 			card.classList.remove('is-generating');
@@ -1716,6 +1713,10 @@ const toPageHref = (page: number) => {
 			await revealSummary(cachedSummary);
 			return;
 		}
+
+		card.setAttribute('aria-busy', 'true');
+		card.classList.add('is-generating');
+		lineNode.textContent = 'Generando resumen inteligente…';
 
 		try {
 			const response = await fetch('/api/dashboard/ai-summary', {
@@ -2416,6 +2417,43 @@ const toPageHref = (page: number) => {
 			radial-gradient(ellipse 45% 40% at 72% 90%, rgba(52, 211, 153, 0.12), transparent 70%);
 		filter: blur(44px);
 		opacity: 0.55;
+	}
+
+	/* Touch/iOS (+ viewport estrecho): gradientes pre-difuminados sin filter (blur fullscreen calienta WebKit). */
+	@media (hover: none) and (pointer: coarse), (max-width: 1023px) {
+		.dashboard-content-canvas::before {
+			filter: none;
+			opacity: 0.85;
+			background:
+				radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.09), transparent 70%),
+				radial-gradient(ellipse 62% 48% at 92% 55%, rgba(34, 211, 238, 0.11), transparent 68%),
+				radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.13), transparent 72%);
+		}
+
+		html[data-theme='dark'] .dashboard-content-canvas::before {
+			filter: none;
+			opacity: 0.45;
+			background:
+				radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.07), transparent 70%),
+				radial-gradient(ellipse 62% 48% at 92% 55%, rgba(34, 211, 238, 0.08), transparent 68%),
+				radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.09), transparent 72%);
+		}
+
+		.dashboard-ai-strip__glow::before,
+		.dashboard-ai-strip__glow::after,
+		html[data-theme='dark'] .dashboard-ai-strip__glow::before,
+		html[data-theme='dark'] .dashboard-ai-strip__glow::after {
+			filter: none;
+		}
+
+		.dashboard-ai-strip:not(.is-generating) .dashboard-ai-strip__glow {
+			display: none;
+		}
+
+		.dashboard-ai-orb {
+			filter: none !important;
+			animation: none !important;
+		}
 	}
 
 	.dashboard-content-canvas > * {
@@ -5687,7 +5725,10 @@ const toPageHref = (page: number) => {
 	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-sparkle,
 	html[data-page-hidden] .dashboard-ai-card.is-generating,
 	html[data-page-hidden] .dashboard-ai-loading-icon,
-	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after {
+	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after,
+	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-value,
+	html[data-page-hidden] .dashboard-profitability-shell.is-loading [data-profit-mom],
+	html[data-page-hidden] .dashboard-profitability-shell.is-loading [data-profit-count] {
 		animation-play-state: paused !important;
 	}
 </style>

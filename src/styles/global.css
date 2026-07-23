@@ -711,6 +711,20 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
 	box-shadow: none;
 }
 
+/* Touch/iOS (+ viewport estrecho): sin glass — backdrop-filter calienta WebKit en PWA (mismo patrón opaco que bottom nav). */
+@media (hover: none) and (pointer: coarse), (max-width: 1023px) {
+	.shell-header-zone:not(.sidebar-account-header) {
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 78%, var(--surface-container, #eef2f6) 22%);
+	}
+
+	html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
+		background-color: var(--page-background, #191919);
+		border-bottom-color: color-mix(in srgb, var(--shell-border) 28%, transparent);
+	}
+}
+
 .shell-header-zone.sidebar-account-header {
 	height: auto;
 	width: 100%;
