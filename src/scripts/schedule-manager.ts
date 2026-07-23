@@ -1769,7 +1769,7 @@ class ScheduleManager extends HTMLElement {
 		const typeFieldset = document.createElement('fieldset');
 		typeFieldset.className = 'grid gap-2';
 		const typeLegend = document.createElement('legend');
-		typeLegend.className = 'text-[0.88rem] font-bold text-(--on-surface)';
+		typeLegend.className = 'pb-2.5 text-[0.88rem] font-bold text-(--on-surface)';
 		typeLegend.textContent = 'Tipo de excepción';
 		typeFieldset.appendChild(typeLegend);
 

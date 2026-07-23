@@ -186,6 +186,7 @@ class CustomerManager extends HTMLElement {
 		this.gridNode.addEventListener('keydown', this.handleGridKeydown, { signal });
 
 		this.addEventListener('click', this.handleDelegatedClick, { signal });
+		this.profileModal?.addEventListener('click', this.handleProfileModalClick, { signal });
 		this.profileModal?.addEventListener('cancel', this.handleProfileModalCancel, { signal });
 		for (const tab of this.profileTabButtons ?? []) {
 			tab.addEventListener('click', this.handleProfileTabClick, { signal });
@@ -321,6 +322,13 @@ class CustomerManager extends HTMLElement {
 		const target = event.target;
 		if (!(target instanceof Element)) return;
 		if (target.closest('[data-close-customer-profile-modal]')) {
+			this.closeProfileModal();
+		}
+	};
+
+	private handleProfileModalClick = (event: MouseEvent) => {
+		// Click en el área vacía del dialog (blur / fuera del panel) → cerrar.
+		if (event.target === this.profileModal) {
 			this.closeProfileModal();
 		}
 	};

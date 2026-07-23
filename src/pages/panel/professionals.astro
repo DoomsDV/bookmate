@@ -61,7 +61,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			</div>
 
 	<dialog
-		class="professional-modal m-0 mt-auto mb-0 w-screen max-w-none max-h-[min(92dvh,100%)] sm:m-auto sm:w-[min(44rem,calc(100vw-2rem))] sm:max-w-[min(44rem,calc(100vw-2rem))] sm:max-h-[90vh] open:flex open:flex-col overflow-hidden rounded-t-[1.35rem] rounded-b-none sm:rounded-[1.65rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(15,23,42,0.16)]"
+		class="professional-modal m-0 mt-auto mb-0 w-screen max-w-none max-h-[min(92dvh,100%)] open:flex open:flex-col overflow-hidden rounded-t-[1.35rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(15,23,42,0.16)] sm:m-auto sm:w-[min(44rem,calc(100vw-2rem))] sm:max-w-[min(44rem,calc(100vw-2rem))] sm:max-h-[90vh] sm:rounded-[1.65rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 		data-professional-modal
 	>
 		<div class="professional-modal__header shrink-0 z-10 px-4 py-3 sm:px-6 sm:py-4">
@@ -73,7 +73,6 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 					</div>
 					<div class="min-w-0">
 						<h2 class="text-[1rem] font-bold tracking-tight text-(--on-surface) sm:text-[1.08rem]" data-professional-modal-title>Crear personal</h2>
-						<p class="text-[0.82rem] font-medium leading-snug text-(--on-surface-variant) mt-0.5 hidden sm:block" data-professional-modal-description>Completa los datos para registrar profesional y cuenta en una sola operación.</p>
 					</div>
 				</div>
 				<div class="flex shrink-0 items-center gap-2">
@@ -93,7 +92,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			</div>
 		</div>
 
-		<form class="relative flex flex-col overflow-hidden bg-(--surface-bright) min-h-0" data-professional-form>
+		<form class="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-(--surface-bright)" data-professional-form>
 			<div class="pointer-events-none fixed inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all" data-professional-loading>
 				<div class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
 					<span class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)">progress_activity</span>
@@ -123,7 +122,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				</div>
 			</div>
 
-			<div class="flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6 sm:py-4" data-professional-modal-scroll>
+			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6 sm:py-4" data-professional-modal-scroll>
 
 			<div class="professional-modal-hero">
 				<div class="profile-photo-uploader" data-profile-upload-dropzone>
@@ -329,7 +328,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 										<span class="professional-permission-row__title">Acceso al panel administrativo</span>
 										<span class="professional-permission-row__hint">Puede iniciar sesión en esta organización.</span>
 									</div>
-									<label class="settings-switch shrink-0">
+									<label class="settings-switch schedule-day-switch shrink-0 is-on" data-panel-access-switch>
 										<input
 											type="checkbox"
 											role="switch"
@@ -338,6 +337,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 											checked
 										/>
 										<span class="settings-switch__track" aria-hidden="true"></span>
+										<span class="schedule-day-switch__label" data-panel-access-label>Sí</span>
 									</label>
 								</div>
 
@@ -346,7 +346,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 										<span class="professional-permission-row__title">Visible en la app pública</span>
 										<span class="professional-permission-row__hint">Los clientes pueden reservar con esta persona.</span>
 									</div>
-									<label class="settings-switch shrink-0">
+									<label class="settings-switch schedule-day-switch shrink-0 is-on" data-public-visibility-switch>
 										<input
 											type="checkbox"
 											role="switch"
@@ -355,6 +355,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 											checked
 										/>
 										<span class="settings-switch__track" aria-hidden="true"></span>
+										<span class="schedule-day-switch__label" data-public-visibility-label>Sí</span>
 									</label>
 								</div>
 							</div>
@@ -483,7 +484,11 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			userActive: HTMLInputElement | null;
 			profActive: HTMLInputElement | null;
 			panelAccessToggle: HTMLInputElement | null;
+			panelAccessSwitch: HTMLLabelElement | null;
+			panelAccessLabel: HTMLElement | null;
 			publicVisibilityToggle: HTMLInputElement | null;
+			publicVisibilitySwitch: HTMLLabelElement | null;
+			publicVisibilityLabel: HTMLElement | null;
 			slug: HTMLInputElement | null;
 			image: HTMLInputElement | null;
 			services: HTMLSelectElement | null;
@@ -579,8 +584,14 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				userActive: formNode?.querySelector<HTMLInputElement>('input[name="user_is_active"]') || null,
 				profActive: formNode?.querySelector<HTMLInputElement>('input[name="prof_is_active"]') || null,
 				panelAccessToggle: formNode?.querySelector<HTMLInputElement>('[data-panel-access-toggle]') || null,
+				panelAccessSwitch: formNode?.querySelector<HTMLLabelElement>('[data-panel-access-switch]') || null,
+				panelAccessLabel: formNode?.querySelector<HTMLElement>('[data-panel-access-label]') || null,
 				publicVisibilityToggle:
 					formNode?.querySelector<HTMLInputElement>('[data-public-visibility-toggle]') || null,
+				publicVisibilitySwitch:
+					formNode?.querySelector<HTMLLabelElement>('[data-public-visibility-switch]') || null,
+				publicVisibilityLabel:
+					formNode?.querySelector<HTMLElement>('[data-public-visibility-label]') || null,
 				slug: formNode?.querySelector<HTMLInputElement>('input[name="profile_slug"]') || null,
 				image: formNode?.querySelector<HTMLInputElement>('input[name="profile_image"]') || null,
 				services: formNode?.querySelector<HTMLSelectElement>('select[name="services"]') || null,
@@ -837,6 +848,10 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			this.panelAccessEnabled = this.formEls.panelAccessToggle?.checked ? 1 : 0;
 			this.syncHiddenActiveFields();
 			this.editingUserIsActive = this.panelAccessEnabled;
+			this.formEls.panelAccessSwitch?.classList.toggle('is-on', this.panelAccessEnabled === 1);
+			if (this.formEls.panelAccessLabel) {
+				this.formEls.panelAccessLabel.textContent = this.panelAccessEnabled === 1 ? 'Sí' : 'No';
+			}
 		}
 
 		private handlePublicVisibilityToggle() {
@@ -844,6 +859,11 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			this.publicVisibilityEnabled = this.formEls.publicVisibilityToggle?.checked ? 1 : 0;
 			this.syncHiddenActiveFields();
 			this.editingProfIsActive = this.publicVisibilityEnabled;
+			this.formEls.publicVisibilitySwitch?.classList.toggle('is-on', this.publicVisibilityEnabled === 1);
+			if (this.formEls.publicVisibilityLabel) {
+				this.formEls.publicVisibilityLabel.textContent =
+					this.publicVisibilityEnabled === 1 ? 'Sí' : 'No';
+			}
 		}
 
 		private syncHiddenActiveFields() {
@@ -871,9 +891,21 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				this.formEls.panelAccessToggle.checked = this.panelAccessEnabled === 1;
 				this.formEls.panelAccessToggle.disabled = permissionsDisabled;
 			}
+			this.formEls.panelAccessSwitch?.classList.toggle('is-on', this.panelAccessEnabled === 1);
+			this.formEls.panelAccessSwitch?.classList.toggle('is-disabled', permissionsDisabled);
+			if (this.formEls.panelAccessLabel) {
+				this.formEls.panelAccessLabel.textContent = this.panelAccessEnabled === 1 ? 'Sí' : 'No';
+			}
+
 			if (this.formEls.publicVisibilityToggle) {
 				this.formEls.publicVisibilityToggle.checked = this.publicVisibilityEnabled === 1;
 				this.formEls.publicVisibilityToggle.disabled = permissionsDisabled;
+			}
+			this.formEls.publicVisibilitySwitch?.classList.toggle('is-on', this.publicVisibilityEnabled === 1);
+			this.formEls.publicVisibilitySwitch?.classList.toggle('is-disabled', permissionsDisabled);
+			if (this.formEls.publicVisibilityLabel) {
+				this.formEls.publicVisibilityLabel.textContent =
+					this.publicVisibilityEnabled === 1 ? 'Sí' : 'No';
 			}
 
 			this.syncHiddenActiveFields();
@@ -2338,65 +2370,77 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 		}
 	}
 
-	.settings-switch {
+	/* Mismo estilo de toggle que Horarios */
+	.schedule-day-switch__label {
+		user-select: none;
+		font-size: 0.78rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
+		min-width: 1.4rem;
+		transition: color 160ms ease;
+	}
+
+	.schedule-day-switch.is-on .schedule-day-switch__label {
+		color: #426edb;
+	}
+
+	.settings-switch.schedule-day-switch {
 		position: relative;
 		display: inline-flex;
 		align-items: center;
+		gap: 0.4rem;
 		cursor: pointer;
 	}
 
-	.settings-switch.is-disabled {
+	.settings-switch.schedule-day-switch.is-disabled {
 		cursor: not-allowed;
 		opacity: 0.55;
 	}
 
-	.settings-switch__track {
+	.schedule-day-switch .settings-switch__track {
 		position: relative;
-		display: inline-flex;
-		width: 3rem;
-		height: 1.7rem;
+		display: block;
+		width: 2rem;
+		height: 1.15rem;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface-variant) 11%, var(--surface-container-low));
-		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 20%, var(--shell-border));
-		transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+		border: 0;
+		background: color-mix(in srgb, var(--on-surface-variant) 35%, transparent);
+		box-shadow: none;
+		transition: background 160ms ease;
 	}
 
-	.settings-switch__track::after {
+	.schedule-day-switch .settings-switch__track::after {
 		content: '';
 		position: absolute;
-		top: 2px;
-		left: 2px;
-		width: 1.25rem;
-		height: 1.25rem;
-		border-radius: 50%;
-		background: color-mix(in srgb, var(--surface-bright) 78%, var(--on-surface-variant) 22%);
-		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 18%, var(--shell-border));
-		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.14);
-		transition:
-			transform 0.2s ease,
-			background 0.2s ease,
-			border-color 0.2s ease,
-			box-shadow 0.2s ease;
-	}
-
-	.settings-switch__input:focus-visible + .settings-switch__track {
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 16%, transparent);
-	}
-
-	.settings-switch__input:checked + .settings-switch__track {
-		background: color-mix(in srgb, var(--primary) 52%, var(--surface-variant));
-		border-color: color-mix(in srgb, var(--primary) 36%, var(--shell-border));
-	}
-
-	.settings-switch__input:checked + .settings-switch__track::after {
-		transform: translateX(1.3rem);
+		top: 0.12rem;
+		left: 0.14rem;
+		width: 0.88rem;
+		height: 0.88rem;
+		border-radius: 999px;
 		background: #fff;
-		border-color: color-mix(in srgb, var(--primary) 24%, transparent);
-		box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+		border: 0;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+		transition: transform 160ms ease;
 	}
 
-	.settings-switch__input:disabled + .settings-switch__track {
-		opacity: 0.7;
+	.schedule-day-switch .settings-switch__input:focus-visible + .settings-switch__track {
+		box-shadow: 0 0 0 2px color-mix(in srgb, #426edb 28%, transparent);
+	}
+
+	.schedule-day-switch .settings-switch__input:checked + .settings-switch__track {
+		background: #426edb;
+		border-color: transparent;
+	}
+
+	.schedule-day-switch .settings-switch__input:checked + .settings-switch__track::after {
+		transform: translateX(0.8rem);
+		background: #fff;
+		border-color: transparent;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+	}
+
+	.schedule-day-switch .settings-switch__input:disabled + .settings-switch__track {
+		opacity: 0.72;
 	}
 
 	@media (max-width: 639px) {
@@ -2479,7 +2523,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 		}
 	}
 
-	@media (min-width: 640px) {
+	@media (min-width: 640px) and (max-width: 1023px) {
 		@keyframes professional-modal-in {
 			from {
 				opacity: 0;
@@ -2501,6 +2545,48 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			to {
 				opacity: 0;
 				transform: translateY(8px) scale(0.98);
+			}
+		}
+	}
+
+	@media (min-width: 1024px) {
+		dialog[data-professional-modal].professional-modal {
+			inset: 0 0 0 auto;
+			height: 100dvh;
+			max-height: 100dvh;
+			width: max(50vw, 40rem);
+			max-width: max(50vw, 40rem);
+			border-radius: 0;
+			box-shadow: none;
+		}
+
+		dialog[data-professional-modal]::backdrop {
+			background-color: transparent;
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+		}
+
+		@keyframes professional-modal-in {
+			from {
+				opacity: 0;
+				transform: translateX(100%);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateX(0);
+			}
+		}
+
+		@keyframes professional-modal-out {
+			from {
+				opacity: 1;
+				transform: translateX(0);
+			}
+
+			to {
+				opacity: 0;
+				transform: translateX(100%);
 			}
 		}
 	}

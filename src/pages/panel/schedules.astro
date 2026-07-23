@@ -312,14 +312,14 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 											</div>
 
 										<div
-											class="schedule-exception-modal-backdrop fixed inset-0 z-50 hidden items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+											class="schedule-exception-modal-backdrop fixed inset-0 z-50 hidden items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4 lg:items-stretch lg:justify-end lg:bg-transparent lg:p-0"
 											data-exception-modal
 											role="dialog"
 											aria-modal="true"
 											aria-labelledby="exception-modal-title"
 										>
 											<div
-												class="schedule-exception-modal flex w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) border-b-0 bg-(--surface-bright) text-(--on-surface) shadow-[0_-12px_40px_rgba(0,0,0,0.18)] max-h-[80dvh] sm:max-h-[90vh] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-[1.8rem] sm:border-b sm:shadow-xl md:max-w-[min(52rem,calc(100vw-2rem))]"
+												class="schedule-exception-modal flex w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) border-b-0 bg-(--surface-bright) text-(--on-surface) shadow-[0_-12px_40px_rgba(0,0,0,0.18)] max-h-[80dvh] sm:max-h-[90vh] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-[1.8rem] sm:border-b sm:shadow-xl md:max-w-[min(52rem,calc(100vw-2rem))] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 											>
 												<div
 													class="schedule-exception-modal-header shrink-0 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 shadow-sm sm:px-7 sm:py-5"
@@ -1140,6 +1140,77 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		display: flex;
 	}
 
+	.schedule-exception-modal-backdrop.flex .schedule-exception-modal {
+		animation: schedule-exception-modal-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
+	}
+
+	@keyframes schedule-exception-modal-in {
+		from {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes schedule-exception-backdrop-in {
+		from {
+			opacity: 0;
+		}
+
+		to {
+			opacity: 1;
+		}
+	}
+
+	@media (min-width: 640px) and (max-width: 1023px) {
+		@keyframes schedule-exception-modal-in {
+			from {
+				opacity: 0;
+				transform: translateY(10px) scale(0.98);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+	}
+
+	/* Desktop PC: side drawer a la derecha */
+	@media (min-width: 1024px) {
+		.schedule-exception-modal-backdrop.flex {
+			background-color: transparent;
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+			animation: schedule-exception-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
+		}
+
+		.schedule-exception-modal-backdrop.flex .schedule-exception-modal {
+			height: 100dvh;
+			max-height: 100dvh;
+			width: max(50vw, 40rem);
+			max-width: max(50vw, 40rem);
+			border-radius: 0;
+			box-shadow: none;
+		}
+
+		@keyframes schedule-exception-modal-in {
+			from {
+				opacity: 0;
+				transform: translateX(100%);
+			}
+
+			to {
+				opacity: 1;
+				transform: translateX(0);
+			}
+		}
+	}
+
 	.schedule-exception-modal-loading {
 		display: flex;
 		min-height: 10rem;
@@ -1463,6 +1534,11 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		color: var(--on-surface-variant);
 	}
 
+	.schedule-exception-modal .schedule-slot-field {
+		color: var(--on-surface);
+		font-weight: 700;
+	}
+
 	/* Modal de excepciones: sucursal a ancho completo; inicio/fin 50% / 50% */
 	.schedule-exception-modal .schedule-slot-row {
 		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -1556,6 +1632,36 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 			grid-column: 4 / 5;
 			grid-row: 1 / 2;
 			padding-bottom: 0;
+		}
+
+		/* En drawer angosto: sucursal arriba, horas abajo */
+		.schedule-exception-modal .schedule-slot-row {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+
+		.schedule-exception-modal .schedule-slot-field--location {
+			grid-column: 1 / -1;
+			grid-row: 1 / 2;
+			padding-right: 2.35rem;
+		}
+
+		.schedule-exception-modal .schedule-slot-remove-wrap {
+			grid-column: 2 / 3;
+			grid-row: 1 / 2;
+			align-self: end;
+			justify-self: end;
+			padding-bottom: 0.2rem;
+			z-index: 1;
+		}
+
+		.schedule-exception-modal .schedule-slot-field--start {
+			grid-column: 1 / 2;
+			grid-row: 2 / 3;
+		}
+
+		.schedule-exception-modal .schedule-slot-field--end {
+			grid-column: 2 / 3;
+			grid-row: 2 / 3;
 		}
 	}
 </style>

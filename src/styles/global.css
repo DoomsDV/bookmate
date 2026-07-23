@@ -251,6 +251,7 @@ dialog::backdrop {
 
 dialog[data-service-modal],
 dialog[data-professional-modal],
+dialog[data-customer-profile-modal],
 dialog[data-profile-crop-modal],
 dialog[data-settings-profile-crop-modal],
 dialog[data-location-modal],
@@ -265,6 +266,7 @@ dialog[data-app-alert-dialog],
 
 dialog[data-service-modal]::backdrop,
 dialog[data-professional-modal]::backdrop,
+dialog[data-customer-profile-modal]::backdrop,
 dialog[data-profile-crop-modal]::backdrop,
 dialog[data-settings-profile-crop-modal]::backdrop,
 dialog[data-location-modal]::backdrop,
@@ -277,6 +279,7 @@ dialog[data-app-alert-dialog]::backdrop,
 
 html[data-theme='dark'] dialog[data-service-modal],
 html[data-theme='dark'] dialog[data-professional-modal],
+html[data-theme='dark'] dialog[data-customer-profile-modal],
 html[data-theme='dark'] dialog[data-profile-crop-modal],
 html[data-theme='dark'] dialog[data-settings-profile-crop-modal],
 html[data-theme='dark'] dialog[data-location-modal],
@@ -397,6 +400,7 @@ professional-manager:has(.app-shell) {
 	overflow-y: auto;
 	overflow-x: hidden;
 	overscroll-behavior: contain;
+	scrollbar-gutter: stable;
 }
 
 html.ai-summary-modal-open .app-shell > :last-child > main {
@@ -1850,11 +1854,16 @@ body > .bookmate-searchable-select-dropdown {
 	background-color: var(--surface-bright);
 }
 
-dialog .bookmate-searchable-select-dropdown {
+dialog .bookmate-searchable-select-dropdown,
+.bookmate-searchable-select.ts-wrapper > .ts-dropdown {
 	position: absolute;
 	top: auto;
-	left: auto;
-	width: auto;
+	left: 0;
+	right: auto;
+	width: 100%;
+	min-width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
 	background-color: var(--surface-bright);
 }
 

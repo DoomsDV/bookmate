@@ -220,9 +220,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		</dialog>
 
 		<dialog
-			class="customer-profile-modal relative m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[85vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+			class="customer-profile-modal m-0 max-h-none w-screen max-w-none border-0 bg-transparent p-0 text-(--on-surface) shadow-none open:flex open:flex-col open:items-stretch open:justify-end sm:open:items-center sm:open:justify-center lg:open:flex-row lg:open:items-stretch lg:open:justify-end"
 			data-customer-profile-modal
 		>
+			<div
+				class="customer-profile-modal__panel relative flex max-h-[85vh] w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:max-h-[90vh] sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+				data-customer-profile-panel
+			>
 			<div
 				class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6"
 			>
@@ -511,6 +515,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 					Cargando perfil...
 				</div>
 			</div>
+			</div>
 		</dialog>
 	</customer-manager>
 
@@ -595,17 +600,33 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 	dialog[data-customer-profile-modal] {
 		--modal-open-duration: 150ms;
+		position: fixed;
+		inset: 0;
+		width: 100%;
+		max-width: none;
+		height: 100%;
+		max-height: none;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		box-shadow: none;
+		overflow: hidden;
 		animation: customer-profile-modal-in var(--modal-open-duration, 150ms)
 			var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
 	}
 
+	dialog[data-customer-profile-modal][open] {
+		display: flex;
+	}
+
 	/* Misma altura al cambiar entre Resumen e Historial de citas */
-	dialog[data-customer-profile-modal][open].customer-profile-modal {
+	dialog[data-customer-profile-modal][open] .customer-profile-modal__panel {
 		min-height: min(85vh, 36rem);
 	}
 
 	@media (min-width: 640px) {
-		dialog[data-customer-profile-modal][open].customer-profile-modal {
+		dialog[data-customer-profile-modal][open] .customer-profile-modal__panel {
 			min-height: min(90vh, 40rem);
 		}
 	}
@@ -641,22 +662,96 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	@keyframes customer-profile-modal-in {
 		from {
 			opacity: 0;
-			transform: translateY(12px) scale(0.98);
+			transform: translateY(100%);
 		}
 		to {
 			opacity: 1;
-			transform: translateY(0) scale(1);
+			transform: translateY(0);
 		}
 	}
 
 	@keyframes customer-profile-modal-out {
 		from {
 			opacity: 1;
-			transform: translateY(0) scale(1);
+			transform: translateY(0);
 		}
 		to {
 			opacity: 0;
-			transform: translateY(8px) scale(0.98);
+			transform: translateY(100%);
+		}
+	}
+
+	@media (min-width: 640px) and (max-width: 1023px) {
+		@keyframes customer-profile-modal-in {
+			from {
+				opacity: 0;
+				transform: translateY(12px) scale(0.98);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		@keyframes customer-profile-modal-out {
+			from {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+			to {
+				opacity: 0;
+				transform: translateY(8px) scale(0.98);
+			}
+		}
+	}
+
+	/* Desktop PC: side drawer a la derecha (mismo slide que Servicios) */
+	@media (min-width: 1024px) {
+		dialog[data-customer-profile-modal][open] {
+			flex-direction: row;
+			align-items: stretch;
+			justify-content: flex-end;
+		}
+
+		dialog[data-customer-profile-modal][open] .customer-profile-modal__panel {
+			min-height: 100dvh;
+			margin-left: auto;
+		}
+
+		dialog[data-customer-profile-modal] {
+			animation-name: customer-profile-drawer-in;
+		}
+
+		dialog[data-customer-profile-modal].is-closing {
+			animation-name: customer-profile-drawer-out;
+		}
+
+		dialog[data-customer-profile-modal]::backdrop {
+			background-color: transparent;
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+		}
+	}
+
+	@keyframes customer-profile-drawer-in {
+		from {
+			opacity: 0;
+			transform: translateX(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	@keyframes customer-profile-drawer-out {
+		from {
+			opacity: 1;
+			transform: translateX(0);
+		}
+		to {
+			opacity: 0;
+			transform: translateX(100%);
 		}
 	}
 

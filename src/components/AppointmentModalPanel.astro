@@ -10,9 +10,13 @@ const { showVoiceButton = false }: Props = Astro.props;
 ---
 		<appointment-modal>
 		<dialog
-			class="m-0 mt-auto mb-0 w-screen max-w-none sm:m-auto sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col max-h-[80vh] sm:max-h-[90vh] overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+			class="appointment-modal m-0 max-h-none w-screen max-w-none border-0 bg-transparent p-0 text-(--on-surface) shadow-none open:flex open:flex-col open:items-stretch open:justify-end sm:open:items-center sm:open:justify-center lg:open:flex-row lg:open:items-stretch lg:open:justify-end"
 			data-appointment-modal
 		>
+			<div
+				class="appointment-modal__panel relative flex max-h-[80vh] w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:max-h-[90vh] sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+				data-appointment-panel
+			>
 			<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6 ">
 				<div class="flex items-start justify-between gap-4">
 					<div class="flex items-center gap-4">
@@ -48,9 +52,9 @@ const { showVoiceButton = false }: Props = Astro.props;
 				</div>
 			</div>
 
-			<form class="relative flex flex-col overflow-hidden bg-(--surface)/30 min-h-0 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-appointment-form autocomplete="off">
+			<form class="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-(--surface)/30 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)]" data-appointment-form autocomplete="off">
 				<div
-					class="pointer-events-none fixed inset-0 z-20 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
+					class="pointer-events-none absolute inset-0 z-20 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all"
 					data-appointment-loading
 				>
 					<div class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
@@ -632,5 +636,6 @@ const { showVoiceButton = false }: Props = Astro.props;
 				</div>
 				</div>
 			</form>
+			</div>
 		</dialog>
 		</appointment-modal>

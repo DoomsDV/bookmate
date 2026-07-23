@@ -472,7 +472,21 @@ const googleErrorMessage = hasGoogleError
 	dialog[data-appointment-modal] {
 		position: fixed;
 		inset: 0;
+		width: 100%;
+		max-width: none;
+		height: 100%;
+		max-height: none;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		box-shadow: none;
+		overflow: hidden;
 		animation: appointment-modal-in var(--modal-open-duration) var(--modal-easing);
+	}
+
+	dialog[data-appointment-modal][open] {
+		display: flex;
 	}
 
 	dialog[data-appointment-modal]::backdrop {
@@ -2763,7 +2777,7 @@ const googleErrorMessage = hasGoogleError
 		}
 	}
 
-	@media (min-width: 640px) {
+	@media (min-width: 640px) and (max-width: 1023px) {
 		@keyframes appointment-modal-in {
 			from {
 				opacity: 0;
@@ -2784,6 +2798,60 @@ const googleErrorMessage = hasGoogleError
 				opacity: 0;
 				transform: translateY(8px) scale(0.98);
 			}
+		}
+	}
+
+	@media (min-width: 1024px) {
+		dialog[data-appointment-modal][open] {
+			flex-direction: row;
+			align-items: stretch;
+			justify-content: flex-end;
+		}
+
+		dialog[data-appointment-modal][open] .appointment-modal__panel {
+			margin-left: auto;
+			height: 100dvh;
+			max-height: 100dvh;
+			width: max(50vw, 40rem);
+			max-width: max(50vw, 40rem);
+			border-radius: 0;
+			box-shadow: none;
+		}
+
+		dialog[data-appointment-modal] {
+			animation-name: appointment-drawer-in;
+		}
+
+		dialog[data-appointment-modal].is-closing {
+			animation-name: appointment-drawer-out;
+		}
+
+		dialog[data-appointment-modal]::backdrop {
+			background-color: transparent;
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+		}
+	}
+
+	@keyframes appointment-drawer-in {
+		from {
+			opacity: 0;
+			transform: translateX(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	@keyframes appointment-drawer-out {
+		from {
+			opacity: 1;
+			transform: translateX(0);
+		}
+		to {
+			opacity: 0;
+			transform: translateX(100%);
 		}
 	}
 

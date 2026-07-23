@@ -38,7 +38,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 >
 <dialog
 	data-settings-modal
-		class="m-0 mt-auto mb-0 h-[92dvh] w-screen max-w-none sm:m-auto sm:h-[min(46rem,90vh)] sm:w-[min(54rem,calc(100vw-2rem))] sm:max-w-[min(54rem,calc(100vw-2rem))] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)]"
+		class="m-0 mt-auto mb-0 h-[92dvh] w-screen max-w-none sm:m-auto sm:h-[min(46rem,90vh)] sm:w-[min(54rem,calc(100vw-2rem))] sm:max-w-[min(54rem,calc(100vw-2rem))] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 >
 	<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6">
 		<div class="flex items-start justify-between gap-4">
@@ -3140,6 +3140,34 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 	@keyframes settings-backdrop-out {
 		from { opacity: 1; }
 		to { opacity: 0; }
+	}
+
+	/* Desktop PC: side drawer a la derecha (mismo slide que Servicios) */
+	@media (min-width: 1024px) {
+		[data-settings-modal] {
+			inset: 0 0 0 auto;
+			animation-name: settings-drawer-in;
+		}
+
+		[data-settings-modal].is-closing {
+			animation-name: settings-drawer-out;
+		}
+
+		[data-settings-modal]::backdrop {
+			background: transparent;
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+		}
+	}
+
+	@keyframes settings-drawer-in {
+		from { opacity: 0; transform: translateX(100%); }
+		to { opacity: 1; transform: translateX(0); }
+	}
+
+	@keyframes settings-drawer-out {
+		from { opacity: 1; transform: translateX(0); }
+		to { opacity: 0; transform: translateX(100%); }
 	}
 
 	@media (min-width: 769px) {
