@@ -290,6 +290,140 @@
 	margin-bottom: 1.15rem;
 }
 
+@media (max-width: 639px) {
+	.public-booking-shell__canvas {
+		padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	/* Paso fecha: compactar para que Continuar se vea entero de un vistazo */
+	.public-booking-panel[data-step-panel='3'] {
+		padding-top: 0.15rem;
+		padding-bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	.public-booking-panel[data-step-panel='3'] > div:first-child,
+	.public-booking-panel[data-step-panel='3'] .public-booking-back-row {
+		margin-bottom: 0.4rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] h2 {
+		font-size: 1.35rem;
+		line-height: 1.2;
+	}
+
+	.public-booking-panel[data-step-panel='3'] .public-booking-calendar {
+		margin-top: 0.55rem;
+		padding: 0 0 0.1rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] .public-booking-calendar__toolbar {
+		margin-bottom: 0.45rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] .public-booking-calendar__weekdays {
+		margin-bottom: 0.25rem;
+		font-size: 0.68rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] .public-booking-calendar__grid,
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] {
+		gap: 0.2rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > button,
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--empty {
+		min-height: 2.15rem;
+		border-radius: 0.65rem;
+		font-size: 0.78rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] .public-booking-continue {
+		margin-top: 0.7rem;
+	}
+}
+
+@media (min-width: 640px) {
+	/* Paso fecha en PC: mismo criterio — todo + Continuar a la vista */
+	.public-booking-panel[data-step-panel='3'] {
+		padding-top: 0.2rem;
+		padding-bottom: 1.25rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] > div:first-child,
+	.public-booking-panel[data-step-panel='3'] .public-booking-back-row {
+		margin-bottom: 0.45rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] h2 {
+		font-size: 1.5rem;
+		line-height: 1.2;
+	}
+
+	.public-booking-panel[data-step-panel='3'] .public-booking-calendar {
+		margin-top: 0.65rem;
+		padding: 0.1rem 0 0.2rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] .public-booking-calendar__toolbar {
+		margin-bottom: 0.5rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] .public-booking-calendar__weekdays {
+		margin-bottom: 0.3rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] .public-booking-calendar__grid,
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] {
+		gap: 0.22rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > button,
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--empty {
+		min-height: 2.3rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] .public-booking-continue {
+		margin-top: 0.75rem;
+	}
+}
+
+/* Pantallas PC bajas: achicar header para que Fecha + Continuar entren sin scroll */
+@media (min-width: 640px) and (max-height: 920px) {
+	.public-booking-profile__inner {
+		gap: 0.55rem;
+		padding-top: 1rem;
+		padding-bottom: 0.25rem;
+	}
+
+	.public-booking-avatar {
+		width: 5.75rem;
+		height: 5.75rem;
+	}
+
+	.public-booking-avatar--empty .material-symbols-rounded {
+		font-size: 2.25rem;
+	}
+
+	.public-booking-profile__title {
+		font-size: 1.55rem;
+	}
+
+	.public-booking-profile__eyebrow,
+	.public-booking-profile__subtitle {
+		font-size: 0.8rem;
+	}
+
+	.public-booking-stepper {
+		margin: 0.2rem 0 0.5rem;
+	}
+
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > button,
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--empty {
+		min-height: 2.1rem;
+		font-size: 0.8rem;
+	}
+}
+
 /* Calendario público — estilo del calendario de excepciones (elevación tonal) */
 .public-booking-calendar {
 	width: 100%;
@@ -796,6 +930,11 @@
 		pointer-events: auto;
 	}
 
+	.public-location-stack .public-location-card__check {
+		top: 0.55rem;
+		right: 0.55rem;
+	}
+
 	.public-location-stack .public-location-card.is-near-up {
 		transform: translateY(-6.55rem) scale(0.94);
 		opacity: 0.55;
@@ -875,10 +1014,6 @@
 		margin: 0;
 		border-radius: 0.65rem;
 		flex-shrink: 0;
-	}
-
-	.public-location-stack .public-location-card__preview-label {
-		display: none !important;
 	}
 
 	.public-location-stack .public-location-card__main {
@@ -1506,10 +1641,32 @@
 	background: var(--surface-container-highest);
 }
 
+/* Sobre el mapa: el borde va al preview; la card vuelve a su estado base (salvo selección). */
+.public-location-card:not(.is-selected):has(.public-location-card__preview:hover) {
+	border-color: color-mix(in srgb, var(--outline-variant) 85%, transparent);
+	background: var(--surface-container-high);
+}
+
 .public-location-card.is-selected {
 	border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
 	background: color-mix(in srgb, var(--primary-container) 28%, var(--surface-container-high));
 	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.public-location-card__check {
+	position: absolute;
+	top: 0.85rem;
+	right: 0.85rem;
+	display: none;
+	font-size: 1.25rem;
+	line-height: 1;
+	color: var(--primary);
+	z-index: 2;
+	pointer-events: none;
+}
+
+.public-location-card.is-selected .public-location-card__check {
+	display: block;
 }
 
 .public-location-card__preview {
@@ -1518,7 +1675,7 @@
 	width: auto;
 	margin: 0 -0.35rem 0.15rem;
 	padding: 0;
-	border: 0;
+	border: 1.5px solid transparent;
 	aspect-ratio: 4 / 3;
 	overflow: hidden;
 	border-radius: 0.75rem;
@@ -1536,6 +1693,13 @@
 		);
 	cursor: pointer;
 	color: inherit;
+	box-sizing: border-box;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.public-location-card__preview:hover {
+	border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
 .public-location-card__map-img {
@@ -1544,32 +1708,6 @@
 	height: 100%;
 	object-fit: cover;
 	pointer-events: none;
-}
-
-.public-location-card__preview-label {
-	position: absolute;
-	right: 0.65rem;
-	bottom: 0.65rem;
-	z-index: 1;
-	display: inline-flex;
-	align-items: center;
-	gap: 0.28rem;
-	padding: 0.35rem 0.65rem 0.35rem 0.5rem;
-	border-radius: 999px;
-	border: 1px solid color-mix(in srgb, var(--primary) 42%, transparent);
-	background: color-mix(in srgb, var(--surface-container-high) 78%, transparent);
-	color: var(--primary);
-	font-size: 0.72rem;
-	font-weight: 700;
-	letter-spacing: 0.01em;
-	line-height: 1;
-	backdrop-filter: blur(6px);
-	-webkit-backdrop-filter: blur(6px);
-}
-
-.public-location-card__preview-label .material-symbols-rounded {
-	font-size: 1rem;
-	line-height: 1;
 }
 
 .public-location-card__main {

@@ -1516,10 +1516,6 @@ export const initializePublicBookingPage = () => {
 		const preview = showMap
 			? `<button type="button" class="public-location-card__preview${staticMapUrl ? '' : ' public-location-card__preview--brand'}" data-location-map-trigger aria-label="Ver mapa de ${escapeHtml(name)}">
 					${previewInner}
-					<span class="public-location-card__preview-label">
-						<span class="material-symbols-rounded" aria-hidden="true">map</span>
-						<span>Ver mapa</span>
-					</span>
 				</button>`
 			: '';
 		return `
@@ -1534,6 +1530,7 @@ export const initializePublicBookingPage = () => {
 					}
 				</span>
 			</button>
+			<span class="material-symbols-rounded public-location-card__check" aria-hidden="true">check_circle</span>
 		`;
 	};
 
