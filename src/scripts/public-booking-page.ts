@@ -1173,13 +1173,26 @@ export const initializePublicBookingPage = () => {
 	};
 
 	const buildServiceCardInnerHtml = (service: BookingService) => {
+		const showDepositBadge =
+			isDepositsEnabled(profile.deposit_settings) && calculateDepositAmount(service) > 0;
+		const depositBadgeCover = showDepositBadge
+			? `<span class="public-service-card__deposit-badge public-service-card__deposit-badge--cover">Seña requerida</span>`
+			: '';
+		const depositBadgeInline = showDepositBadge
+			? `<span class="public-service-card__deposit-badge public-service-card__deposit-badge--inline">Seña requerida</span>`
+			: '';
 		const cover = service.image_url
-			? `<span class="public-service-card__cover"><img src="${escapeHtml(service.image_url)}" alt="" loading="lazy" /></span>`
-			: `<span class="public-service-card__cover public-service-card__cover--brand" aria-hidden="true"></span>`;
+			? `<span class="public-service-card__cover"><img src="${escapeHtml(service.image_url)}" alt="" loading="lazy" />${depositBadgeCover}</span>`
+			: `<span class="public-service-card__cover public-service-card__cover--brand"${
+					showDepositBadge ? '' : ' aria-hidden="true"'
+				}>${depositBadgeCover}</span>`;
 		return `
 		${cover}
 		<span class="public-service-card__body">
-			<span class="public-service-card__title text-lg font-medium text-(--on-surface)">${escapeHtml(service.name)}</span>
+			<span class="public-service-card__title-row">
+				<span class="public-service-card__title text-lg font-medium text-(--on-surface)">${escapeHtml(service.name)}</span>
+				${depositBadgeInline}
+			</span>
 			<div class="public-service-card__meta flex items-center justify-between gap-2 text-sm font-medium text-(--on-surface-variant)">
 				<span>${formatDuration(service.duration_minutes)}</span>
 				<span>${

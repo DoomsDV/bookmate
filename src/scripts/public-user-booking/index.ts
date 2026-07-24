@@ -745,19 +745,34 @@ export const initializePublicUserBookingPage = () => {
 			: group.services.slice(0, INITIAL_VISIBLE_SERVICES);
 		const hiddenCount = Math.max(0, group.services.length - INITIAL_VISIBLE_SERVICES);
 
+		const depositsEnabled = group.locations.some((location) =>
+			isDepositsEnabled(location.deposit_settings)
+		);
+
 		for (const service of visibleServices) {
 			const isSelected = selectedService?.id_service === service.id_service;
+			const showDepositBadge = depositsEnabled && calculateDepositAmount(service) > 0;
+			const depositBadgeCover = showDepositBadge
+				? `<span class="public-service-card__deposit-badge public-service-card__deposit-badge--cover">Seña requerida</span>`
+				: '';
+			const depositBadgeInline = showDepositBadge
+				? `<span class="public-service-card__deposit-badge public-service-card__deposit-badge--inline">Seña requerida</span>`
+				: '';
+			const cover = service.image_url
+				? `<span class="public-service-card__cover"><img src="${String(service.image_url).replace(/"/g, '&quot;')}" alt="" loading="lazy" />${depositBadgeCover}</span>`
+				: `<span class="public-service-card__cover public-service-card__cover--brand"${
+						showDepositBadge ? '' : ' aria-hidden="true"'
+					}>${depositBadgeCover}</span>`;
 			const serviceButton = document.createElement('button');
 			serviceButton.type = 'button';
 			serviceButton.className = `public-service-card${isSelected ? ' is-selected' : ''}`;
 			serviceButton.innerHTML = `
-				${
-					service.image_url
-						? `<span class="public-service-card__cover"><img src="${String(service.image_url).replace(/"/g, '&quot;')}" alt="" loading="lazy" /></span>`
-						: `<span class="public-service-card__cover public-service-card__cover--brand" aria-hidden="true"></span>`
-				}
+				${cover}
 				<span class="public-service-card__body">
-					<span class="public-service-card__title text-base font-medium text-[var(--on-surface)]">${service.name}</span>
+					<span class="public-service-card__title-row">
+						<span class="public-service-card__title text-base font-medium text-[var(--on-surface)]">${service.name}</span>
+						${depositBadgeInline}
+					</span>
 					<span class="public-service-card__meta flex items-center justify-between gap-2 text-sm font-medium text-[var(--on-surface-variant)]">
 						<span>${formatDuration(service.duration_minutes)}</span>
 						<span>${service.hide_public_price === 1 ? (service.hidden_price_label || 'A evaluar') : formatCurrency(service.price)}</span>
