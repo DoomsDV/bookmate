@@ -2363,7 +2363,12 @@ export const initializePublicBookingPage = () => {
 		let lastStepY: number | null = null;
 		let wheelLockedUntil = 0;
 		let suppressClickUntil = 0;
-		const STEP_PX = 36;
+		let lastFocusAt = 0;
+		/* Más px por horario + tope de 1 paso/evento: un swipe brusco no salta de extremo a extremo. */
+		const STEP_PX = 62;
+		const MAX_STEPS_PER_MOVE = 1;
+		const MIN_FOCUS_INTERVAL_MS = 70;
+		const WHEEL_LOCK_MS = 380;
 
 		const continueWithFocused = () => {
 			const slot = group.slots[focusedIndex];
@@ -2437,10 +2442,15 @@ export const initializePublicBookingPage = () => {
 				}
 				const stepDelta = currentY - lastStepY;
 				if (Math.abs(stepDelta) < STEP_PX) return;
+				const now = Date.now();
+				if (now - lastFocusAt < MIN_FOCUS_INTERVAL_MS) return;
 				event.preventDefault();
-				const steps = Math.trunc(stepDelta / STEP_PX);
+				let steps = Math.trunc(stepDelta / STEP_PX);
+				steps = Math.max(-MAX_STEPS_PER_MOVE, Math.min(MAX_STEPS_PER_MOVE, steps));
+				if (steps === 0) return;
 				lastStepY += steps * STEP_PX;
-				suppressClickUntil = Date.now() + 350;
+				lastFocusAt = now;
+				suppressClickUntil = now + 350;
 				/* Dedo hacia abajo → horarios anteriores; hacia arriba → siguientes. */
 				moveFocus(-steps);
 			},
@@ -2489,7 +2499,7 @@ export const initializePublicBookingPage = () => {
 				}
 				if (Math.abs(event.deltaY) < 8) return;
 				event.preventDefault();
-				wheelLockedUntil = now + 280;
+				wheelLockedUntil = now + WHEEL_LOCK_MS;
 				moveFocus(event.deltaY > 0 ? 1 : -1);
 			},
 			{ signal, passive: false }
