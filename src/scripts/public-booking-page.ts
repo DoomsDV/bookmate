@@ -1208,6 +1208,7 @@ export const initializePublicBookingPage = () => {
 
 	const syncServiceStackLayers = (stack: HTMLElement, focusedIndex: number) => {
 		const cards = Array.from(stack.querySelectorAll<HTMLElement>('[data-service-stack-index]'));
+		stack.classList.toggle('has-prev', focusedIndex > 0);
 		for (const card of cards) {
 			const index = Number(card.dataset.serviceStackIndex ?? -1);
 			const distance = index - focusedIndex;
@@ -1661,6 +1662,7 @@ export const initializePublicBookingPage = () => {
 
 	const syncLocationStackLayers = (stack: HTMLElement, focusedIndex: number) => {
 		const cards = Array.from(stack.querySelectorAll<HTMLElement>('[data-location-stack-index]'));
+		stack.classList.toggle('has-prev', focusedIndex > 0);
 		for (const card of cards) {
 			const index = Number(card.dataset.locationStackIndex ?? -1);
 			const distance = index - focusedIndex;
