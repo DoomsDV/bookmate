@@ -135,5 +135,11 @@ export const createDraftPersister = (
 		clearPublicBookingDraft(key);
 	};
 
+	/** Evita perder el paso al recargar antes de que corra el debounce. */
+	if (typeof window !== 'undefined') {
+		window.addEventListener('pagehide', flush);
+		window.addEventListener('beforeunload', flush);
+	}
+
 	return { schedule, flush, clear };
 };

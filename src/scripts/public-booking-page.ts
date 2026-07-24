@@ -956,7 +956,8 @@ export const initializePublicBookingPage = () => {
 			});
 		}
 
-		if (step <= 5) draftPersister.schedule();
+		// Persistir el paso al instante (Volver + F5 no debe saltar adelante).
+		if (step <= 5) draftPersister.flush();
 	};
 
 	const getSelectedSlotKey = () =>
@@ -2051,6 +2052,10 @@ export const initializePublicBookingPage = () => {
 		const cacheKey = availableDatesMonthKey(year, month);
 		const availableDates = availableDatesCache.get(cacheKey);
 		const isLoadingAvailability = availableDatesLoadingKey === cacheKey;
+		const calendarRoot = calendarGrid.closest('.public-booking-calendar');
+		calendarRoot?.classList.toggle('is-loading-availability', isLoadingAvailability);
+		calendarGrid.classList.toggle('is-loading', isLoadingAvailability);
+		calendarGrid.setAttribute('aria-busy', isLoadingAvailability ? 'true' : 'false');
 
 		for (let blank = 0; blank < firstWeekday; blank += 1) {
 			const placeholder = document.createElement('span');
@@ -2065,10 +2070,19 @@ export const initializePublicBookingPage = () => {
 			const isPast = dateStart.getTime() < today.getTime();
 			const isToday = dateStart.getTime() === today.getTime();
 			const isSelected = selectedDate === dateKey;
+
+			if (isLoadingAvailability && !isPast && selectedService && selectedLocation) {
+				const skeleton = document.createElement('span');
+				skeleton.className = 'public-cal-day--skeleton';
+				skeleton.setAttribute('aria-hidden', 'true');
+				calendarGrid.appendChild(skeleton);
+				continue;
+			}
+
 			const isUnavailable =
 				!isPast &&
 				Boolean(selectedService && selectedLocation) &&
-				(isLoadingAvailability || (availableDates ? !availableDates.has(dateKey) : false));
+				(availableDates ? !availableDates.has(dateKey) : false);
 
 			const dayButton = document.createElement('button');
 			dayButton.type = 'button';
@@ -2108,7 +2122,7 @@ export const initializePublicBookingPage = () => {
 		}
 
 		if (calendarContinueButton) {
-			calendarContinueButton.disabled = !selectedDate;
+			calendarContinueButton.disabled = !selectedDate || isLoadingAvailability;
 		}
 	};
 
@@ -2280,7 +2294,11 @@ export const initializePublicBookingPage = () => {
 			const slotKey = `${group.location.id_location}:${slot}`;
 			const slotButton = document.createElement('button');
 			slotButton.type = 'button';
-			slotButton.textContent = slot;
+			const { time, meridiem } = formatSlotLabelAmPm(slot);
+			slotButton.innerHTML = meridiem
+				? `<span class="public-slot-time__label">${escapeHtml(time)} <span class="public-slot-time__meridiem">${escapeHtml(meridiem)}</span></span>`
+				: `<span class="public-slot-time__label">${escapeHtml(slot)}</span>`;
+			slotButton.setAttribute('aria-label', meridiem ? `${time} ${meridiem}` : slot);
 			slotButton.dataset.slotKey = slotKey;
 			const isSelected = selectedSlotKey === slotKey;
 			slotButton.className =
@@ -2793,19 +2811,19 @@ export const initializePublicBookingPage = () => {
 			setPhoneFieldError('');
 			setSubmitError('');
 			draftPersister.schedule();
-			if (isValidatingCustomer) resetCustomerLookupState();
 
 			const parsedPhone = parseParaguayMobilePhone(
 				toParaguayMobileE164FromInput(customerPhoneInput.value)
 			);
 			if (!parsedPhone.isValid) {
-				if (validatedCustomerPhoneE164) resetCustomerLookupState();
+				if (validatedCustomerPhoneE164 || !customerNameWrapper.classList.contains('hidden')) {
+					resetCustomerLookupState();
+				}
 				return;
 			}
 
-			if (validatedCustomerPhoneE164 && parsedPhone.e164 !== validatedCustomerPhoneE164) {
-				resetCustomerLookupState();
-			}
+			// Longitud/formato OK → buscar y mostrar nombre sin esperar al blur.
+			void validateCustomerPhone(parsedPhone.e164);
 		},
 		{ signal }
 	);
@@ -3140,15 +3158,36 @@ export const initializePublicBookingPage = () => {
 
 	if (signal.aborted) return;
 
-	refreshSummary();
-	renderServices();
-	renderLocations();
-	renderCalendar();
-	renderSlots();
+	const finishBoot = () => {
+		root.removeAttribute('data-booting');
+	};
+
+	const resolveDraftTargetStep = (draftStep: PublicBookingDraftStep): PublicBookingDraftStep => {
+		let targetStep: PublicBookingDraftStep = draftStep;
+		if (!selectedService) {
+			targetStep = 1;
+		} else if (hasMultipleLocations() && !selectedLocation) {
+			targetStep = Math.min(targetStep, 2) as PublicBookingDraftStep;
+		} else if (!selectedLocation && !defaultLocation) {
+			targetStep = Math.min(targetStep, hasMultipleLocations() ? 2 : 1) as PublicBookingDraftStep;
+		} else if (targetStep >= 4 && !selectedDate) {
+			targetStep = 3;
+		} else if (targetStep >= 5 && !selectedTime) {
+			targetStep = selectedDate ? 4 : 3;
+		} else if (!hasMultipleLocations() && targetStep === 2) {
+			targetStep = 1;
+		}
+		return targetStep;
+	};
 
 	const restoreDraft = async () => {
 		const draft = readPublicBookingDraft(draftStorageKey, formatApiDate(today));
 		if (!draft || draft.serviceId <= 0) {
+			refreshSummary();
+			renderServices();
+			renderLocations();
+			renderCalendar();
+			renderSlots();
 			setStep(1);
 			return;
 		}
@@ -3157,6 +3196,11 @@ export const initializePublicBookingPage = () => {
 			profile.services.find((item) => item.id_service === draft.serviceId) ?? null;
 		if (!service) {
 			draftPersister.clear();
+			refreshSummary();
+			renderServices();
+			renderLocations();
+			renderCalendar();
+			renderSlots();
 			setStep(1);
 			return;
 		}
@@ -3164,8 +3208,6 @@ export const initializePublicBookingPage = () => {
 		selectedService = service;
 		selectedDate = draft.date || '';
 		selectedTime = draft.time || '';
-		bookingLocations = await fetchProfileLocations();
-		if (signal.aborted) return;
 		selectedLocation =
 			(draft.locationId
 				? bookingLocations.find((loc) => loc.id_location === draft.locationId)
@@ -3192,14 +3234,37 @@ export const initializePublicBookingPage = () => {
 			if (y && m) visibleMonth = new Date(y, m - 1, 1);
 		}
 
+		const targetStep = resolveDraftTargetStep(draft.step);
+
+		// Mostrar ya la etapa correcta (sin flash del paso 1).
 		refreshSummary();
 		renderServices();
 		renderLocations();
 		renderCalendar();
+		renderSlots();
+		setStep(targetStep);
+		finishBoot();
 
 		const wantedTime = selectedTime;
+		bookingLocations = await fetchProfileLocations();
+		if (signal.aborted) return;
 
-		if (selectedDate && selectedLocation) {
+		selectedLocation =
+			(draft.locationId
+				? bookingLocations.find((loc) => loc.id_location === draft.locationId)
+				: null) ??
+			selectedLocation ??
+			defaultLocation;
+
+		if (!selectedLocation && bookingLocations.length === 1) {
+			selectedLocation = bookingLocations[0] ?? null;
+		}
+
+		refreshSummary();
+		renderLocations();
+		renderCalendar();
+
+		if (selectedDate && selectedLocation && targetStep >= 4) {
 			await loadAvailableSlots(selectedDate, {
 				preserveSelection: true,
 				skipStepChange: true,
@@ -3210,30 +3275,28 @@ export const initializePublicBookingPage = () => {
 				showToast(SLOT_UNAVAILABLE_RESTORE_MESSAGE, 'error', 4800);
 				refreshSummary();
 				renderSlots();
-				draftPersister.schedule();
+				draftPersister.flush();
 				setStep(4);
 				return;
 			}
 		}
 
-		let targetStep: PublicBookingDraftStep = draft.step;
-		if (!selectedService) {
-			targetStep = 1;
-		} else if (hasMultipleLocations() && !selectedLocation) {
-			targetStep = 2;
-		} else if (!selectedDate) {
-			targetStep = Math.min(Math.max(draft.step, stepAfterService()), 3) as PublicBookingDraftStep;
-		} else if (!selectedTime) {
-			targetStep = Math.min(Math.max(draft.step, 4), 4) as PublicBookingDraftStep;
-		} else {
-			targetStep = Math.min(Math.max(draft.step, 5), 5) as PublicBookingDraftStep;
-		}
-
 		refreshSummary();
 		renderSlots();
-		setStep(targetStep);
 	};
 
-	void restoreDraft();
+	void restoreDraft()
+		.catch(() => {
+			refreshSummary();
+			renderServices();
+			renderLocations();
+			renderCalendar();
+			renderSlots();
+			setStep(1);
+		})
+		.finally(() => {
+			finishBoot();
+		});
+
 	root.dataset.bound = 'true';
 };

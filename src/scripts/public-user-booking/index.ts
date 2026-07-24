@@ -426,7 +426,7 @@ export const initializePublicUserBookingPage = () => {
 			});
 		}
 
-		if (step <= 4) draftPersister.schedule();
+		if (step <= 4) draftPersister.flush();
 	};
 
 	const refreshSummary = () => {
@@ -824,6 +824,10 @@ export const initializePublicUserBookingPage = () => {
 		const cacheKey = availableDatesMonthKey(year, month);
 		const availableDates = availableDatesCache.get(cacheKey);
 		const isLoadingAvailability = availableDatesLoadingKey === cacheKey;
+		const calendarRoot = calendarGrid.closest('.public-booking-calendar');
+		calendarRoot?.classList.toggle('is-loading-availability', isLoadingAvailability);
+		calendarGrid.classList.toggle('is-loading', isLoadingAvailability);
+		calendarGrid.setAttribute('aria-busy', isLoadingAvailability ? 'true' : 'false');
 
 		for (let blank = 0; blank < firstWeekday; blank += 1) {
 			const placeholder = document.createElement('span');
@@ -838,10 +842,19 @@ export const initializePublicUserBookingPage = () => {
 			const isPast = dateStart.getTime() < today.getTime();
 			const isToday = dateStart.getTime() === today.getTime();
 			const isSelected = selectedDate === dateKey;
+
+			if (isLoadingAvailability && !isPast && selectedService && selectedOrgGroup) {
+				const skeleton = document.createElement('span');
+				skeleton.className = 'public-cal-day--skeleton';
+				skeleton.setAttribute('aria-hidden', 'true');
+				calendarGrid.appendChild(skeleton);
+				continue;
+			}
+
 			const isUnavailable =
 				!isPast &&
 				Boolean(selectedService && selectedOrgGroup) &&
-				(isLoadingAvailability || (availableDates ? !availableDates.has(dateKey) : false));
+				(availableDates ? !availableDates.has(dateKey) : false);
 
 			const dayButton = document.createElement('button');
 			dayButton.type = 'button';
@@ -919,7 +932,24 @@ export const initializePublicUserBookingPage = () => {
 				const isSelected = selectedSlotKey === slotKey;
 				const button = document.createElement('button');
 				button.type = 'button';
-				button.textContent = slot;
+				const match = String(slot || '')
+					.trim()
+					.match(/^(\d{1,2}):(\d{2})$/);
+				const hour = match ? Number(match[1]) : NaN;
+				const meridiem =
+					Number.isFinite(hour) && hour >= 0 && hour <= 23
+						? hour < 12
+							? 'A.M.'
+							: 'P.M.'
+						: '';
+				const time = match
+					? `${String(hour).padStart(2, '0')}:${match[2]}`
+					: slot;
+				button.innerHTML = meridiem
+					? `<span class="public-slot-time__label">${time} <span class="public-slot-time__meridiem">${meridiem}</span></span>`
+					: `<span class="public-slot-time__label">${slot}</span>`;
+				button.setAttribute('aria-label', meridiem ? `${time} ${meridiem}` : slot);
+				button.dataset.slotKey = slotKey;
 				button.className =
 					'public-slot-time flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium transition' +
 					(isSelected ? ' is-selected' : '');
@@ -1339,7 +1369,18 @@ export const initializePublicUserBookingPage = () => {
 		setPhoneFieldError('');
 		setSubmitError('');
 		draftPersister.schedule();
-		if (validatedCustomerPhoneE164) resetCustomerLookupState();
+
+		const parsedPhone = parseParaguayMobilePhone(
+			toParaguayMobileE164FromInput(customerPhoneInput.value)
+		);
+		if (!parsedPhone.isValid) {
+			if (validatedCustomerPhoneE164 || !customerNameWrapper.classList.contains('hidden')) {
+				resetCustomerLookupState();
+			}
+			return;
+		}
+
+		void runCustomerValidation(parsedPhone.e164);
 	}, { signal });
 
 	customerPhoneInput.addEventListener('blur', async () => {
@@ -1375,6 +1416,10 @@ export const initializePublicUserBookingPage = () => {
 	renderOrganizationServices();
 	renderCalendar();
 	renderSlots();
+
+	const finishBoot = () => {
+		root.removeAttribute('data-booting');
+	};
 
 	const restoreDraft = async () => {
 		const draft = readPublicBookingDraft(draftStorageKey, formatApiDate(today));
@@ -1432,13 +1477,24 @@ export const initializePublicUserBookingPage = () => {
 			if (y && m) visibleMonth = new Date(y, m - 1, 1);
 		}
 
+		let targetStep: PublicBookingDraftStep = draft.step;
+		if (!selectedService) {
+			targetStep = 1;
+		} else if (targetStep >= 3 && !selectedDate) {
+			targetStep = 2;
+		} else if (targetStep >= 4 && !selectedTime) {
+			targetStep = selectedDate ? 3 : 2;
+		}
+
 		refreshSummary();
 		renderOrganizationServices();
 		renderCalendar();
+		renderSlots();
+		setStep(targetStep);
+		finishBoot();
 
 		const wantedTime = selectedTime;
-
-		if (selectedDate) {
+		if (selectedDate && targetStep >= 3) {
 			await loadSlots(selectedDate, { preserveSelection: true, skipStepChange: true });
 			if (signal.aborted) return;
 
@@ -1446,22 +1502,25 @@ export const initializePublicUserBookingPage = () => {
 				showToast(SLOT_UNAVAILABLE_RESTORE_MESSAGE, 'error', 4800);
 				refreshSummary();
 				renderSlots();
-				draftPersister.schedule();
+				draftPersister.flush();
 				setStep(3);
 				return;
 			}
 		}
 
-		let targetStep: PublicBookingDraftStep = draft.step;
-		if (!selectedService) targetStep = 1;
-		else if (!selectedDate) targetStep = Math.min(draft.step, 2) as PublicBookingDraftStep;
-		else if (!selectedTime) targetStep = Math.min(Math.max(draft.step, 3), 3) as PublicBookingDraftStep;
-		else targetStep = Math.min(Math.max(draft.step, 4), 4) as PublicBookingDraftStep;
-
 		refreshSummary();
 		renderSlots();
-		setStep(targetStep);
 	};
 
-	void restoreDraft();
+	void restoreDraft()
+		.catch(() => {
+			servicePickerPhase = 'orgs';
+			renderOrganizationServices();
+			renderCalendar();
+			renderSlots();
+			setStep(1);
+		})
+		.finally(() => {
+			finishBoot();
+		});
 };

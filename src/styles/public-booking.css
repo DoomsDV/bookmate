@@ -7,6 +7,17 @@
 	color: var(--on-surface);
 }
 
+/* Evita flash del paso 1 mientras se restaura el borrador de sesión. */
+.public-booking-sheet[data-booting] .public-booking-shell__canvas {
+	opacity: 0;
+	pointer-events: none;
+}
+
+.public-booking-sheet:not([data-booting]) .public-booking-shell__canvas {
+	opacity: 1;
+	transition: opacity 0.14s ease;
+}
+
 .public-booking-shell__canvas {
 	width: 100%;
 	max-width: 42rem;
@@ -138,8 +149,8 @@
 
 .public-booking-avatar {
 	flex: 0 0 auto;
-	width: 7.5rem;
-	height: 7.5rem;
+	width: 9rem;
+	height: 9rem;
 	border-radius: 9999px;
 	border: 1px solid var(--outline-variant);
 	background: var(--surface-container-high);
@@ -154,8 +165,8 @@
 
 @media (min-width: 640px) {
 	.public-booking-avatar {
-		width: 9rem;
-		height: 9rem;
+		width: 10.8rem;
+		height: 10.8rem;
 	}
 }
 
@@ -167,7 +178,7 @@
 }
 
 .public-booking-avatar--empty .material-symbols-rounded {
-	font-size: 2.75rem;
+	font-size: 3.3rem;
 	line-height: 1;
 	transition: font-size 320ms cubic-bezier(0.32, 0.72, 0, 1);
 }
@@ -331,7 +342,8 @@
 	}
 
 	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > button,
-	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--empty {
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--empty,
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--skeleton {
 		min-height: 2.15rem;
 		border-radius: 0.65rem;
 		font-size: 0.78rem;
@@ -378,7 +390,8 @@
 	}
 
 	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > button,
-	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--empty {
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--empty,
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--skeleton {
 		min-height: 2.3rem;
 	}
 
@@ -396,12 +409,12 @@
 	}
 
 	.public-booking-avatar {
-		width: 5.75rem;
-		height: 5.75rem;
+		width: 6.9rem;
+		height: 6.9rem;
 	}
 
 	.public-booking-avatar--empty .material-symbols-rounded {
-		font-size: 2.25rem;
+		font-size: 2.7rem;
 	}
 
 	.public-booking-profile__title {
@@ -418,7 +431,8 @@
 	}
 
 	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > button,
-	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--empty {
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--empty,
+	.public-booking-panel[data-step-panel='3'] [data-calendar-grid] > .public-cal-day--skeleton {
 		min-height: 2.1rem;
 		font-size: 0.8rem;
 	}
@@ -562,6 +576,37 @@
 	box-shadow: none;
 }
 
+[data-calendar-grid] > .public-cal-day--skeleton {
+	display: block;
+	min-height: 2.55rem;
+	width: 100%;
+	border-radius: 0.75rem;
+	border: 0;
+	background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
+	color: transparent;
+	font-size: 0;
+	line-height: 0;
+	pointer-events: none;
+	user-select: none;
+	animation: public-service-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
+[data-calendar-grid].is-loading {
+	pointer-events: none;
+}
+
+.public-booking-calendar.is-loading-availability .public-booking-calendar__toolbar,
+.public-booking-calendar.is-loading-availability .public-booking-calendar__weekdays {
+	opacity: 0.72;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	[data-calendar-grid] > .public-cal-day--skeleton {
+		animation: none;
+		opacity: 0.55;
+	}
+}
+
 [data-calendar-grid] > button:not(:disabled):not(.is-selected):not(.is-past):not(.is-unavailable):hover {
 	border-color: var(--primary);
 	box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
@@ -574,7 +619,6 @@
 	width: 100%;
 	height: 100%;
 	padding: 0.65rem 1.15rem 1rem;
-	padding-right: 2.75rem;
 	border-radius: 1rem;
 	border: 1.5px solid color-mix(in srgb, var(--outline-variant) 85%, transparent);
 	background: var(--surface-container-high);
@@ -588,11 +632,13 @@
 
 .public-service-card__cover {
 	display: block;
-	margin: 0 -0.35rem 0.15rem;
+	width: 100%;
+	margin: 0 0 0.15rem;
 	overflow: hidden;
 	border-radius: 0.75rem;
 	aspect-ratio: 4 / 3;
 	background: color-mix(in srgb, var(--surface-container-highest) 70%, transparent);
+	justify-self: stretch;
 }
 
 .public-service-card__cover--brand {
@@ -620,6 +666,19 @@
 .public-service-card__body {
 	display: grid;
 	gap: 0.45rem;
+	min-width: 0;
+	width: 100%;
+}
+
+.public-service-card__title {
+	display: block;
+	min-width: 0;
+	/* Espacio para el check absoluto sin desalinear cover/meta. */
+	padding-right: 1.5rem;
+}
+
+.public-service-card__meta {
+	width: 100%;
 	min-width: 0;
 }
 
@@ -1091,6 +1150,9 @@
 	.public-locations-carousel__viewport {
 		overflow: hidden;
 		width: 100%;
+		/* Evita que el borde/selection de la card quede cortado arriba/abajo. */
+		padding-block: 3px;
+		margin-block: -3px;
 	}
 
 	.public-services-carousel__track,
@@ -1111,6 +1173,8 @@
 		min-width: 100%;
 		box-sizing: border-box;
 		align-items: stretch;
+		/* Aire interno para borde 1.5px + glow de selección. */
+		padding: 2px;
 	}
 
 	.public-services-carousel__page > .public-service-card,
@@ -1237,13 +1301,16 @@
 }
 
 .public-booking-continue {
-	display: inline-flex;
+	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 100%;
+	width: fit-content;
+	max-width: 100%;
+	min-width: 0;
 	min-height: 3.15rem;
 	margin-top: 1.15rem;
-	padding: 0.85rem 1.25rem;
+	margin-inline: auto;
+	padding: 0.85rem 1.85rem;
 	border: 0;
 	border-radius: 999px;
 	background: var(--primary, #426edb);
@@ -1255,6 +1322,8 @@
 	cursor: pointer;
 	box-shadow: none;
 	transition: filter 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+	justify-self: center;
+	align-self: center;
 }
 
 .public-booking-continue:hover:not(:disabled) {
@@ -1271,11 +1340,30 @@
 	cursor: default;
 }
 
+/* Carruseles: el botón vive dentro del grid; forzar centrado en todo el ancho. */
+.public-services-grid.is-service-carousel > .public-booking-continue,
+.public-locations-grid.is-location-carousel > .public-booking-continue {
+	display: flex;
+	width: fit-content;
+	margin-inline: auto;
+	justify-self: center;
+	align-self: center;
+}
+
 @media (max-width: 639px) {
 	/* En móvil servicio/sucursal ya tienen su Continuar del stack. */
 	.public-services-grid .public-booking-continue,
 	.public-locations-grid .public-booking-continue {
 		display: none;
+	}
+
+	/* Fecha/horario: CTA full-width más cómodo al tacto. */
+	.public-booking-continue {
+		width: 100%;
+		margin-inline: 0;
+		justify-self: stretch;
+		align-self: stretch;
+		padding: 0.85rem 1.25rem;
 	}
 }
 
@@ -1608,6 +1696,16 @@
 	border-color: var(--primary) !important;
 	background: var(--primary-container) !important;
 	color: var(--on-primary-container) !important;
+}
+
+.public-slot-branch .public-slot-time__meridiem {
+	display: inline-block;
+	margin-left: 0.28em;
+	font-size: 0.68em;
+	font-weight: 650;
+	letter-spacing: 0.04em;
+	opacity: 0.78;
+	vertical-align: 0.08em;
 }
 
 .public-slot-branch.is-slot-roulette .public-slot-time--roulette,
