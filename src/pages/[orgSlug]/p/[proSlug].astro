@@ -267,8 +267,25 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 								<span class="public-slots-hint__mobile">Deslizá para seleccionar un horario</span>
 							</p>
 						</div>
-						<div data-slots-loading class="mt-5 hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)">
-							Consultando horarios disponibles...
+						<div data-slots-loading class="public-slots-skeleton mt-5 hidden" aria-busy="true" aria-live="polite">
+							<span class="sr-only">Consultando horarios disponibles…</span>
+							<div class="public-slots-skeleton__roulette" aria-hidden="true">
+								<span class="public-slots-skeleton__bar public-slots-skeleton__bar--far"></span>
+								<span class="public-slots-skeleton__bar public-slots-skeleton__bar--near"></span>
+								<span class="public-slots-skeleton__bar public-slots-skeleton__bar--focus"></span>
+								<span class="public-slots-skeleton__bar public-slots-skeleton__bar--near"></span>
+								<span class="public-slots-skeleton__bar public-slots-skeleton__bar--far"></span>
+							</div>
+							<div class="public-slots-skeleton__grid" aria-hidden="true">
+								<span class="public-slots-skeleton__chip"></span>
+								<span class="public-slots-skeleton__chip"></span>
+								<span class="public-slots-skeleton__chip"></span>
+								<span class="public-slots-skeleton__chip"></span>
+								<span class="public-slots-skeleton__chip"></span>
+								<span class="public-slots-skeleton__chip"></span>
+								<span class="public-slots-skeleton__chip"></span>
+								<span class="public-slots-skeleton__chip"></span>
+							</div>
 						</div>
 						<div class="mt-2 grid gap-6" data-slots-container></div>
 						<div data-no-slots class="public-slots-empty mt-10 hidden">

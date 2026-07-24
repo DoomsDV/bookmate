@@ -3245,6 +3245,12 @@ export const initializePublicBookingPage = () => {
 		}
 
 		const targetStep = resolveDraftTargetStep(draft.step);
+		const expectSlotsSoon = Boolean(selectedDate) && targetStep >= 4;
+
+		// Evitar flash de “sin horarios” antes del fetch al restaurar el paso Horario.
+		if (expectSlotsSoon) {
+			isLoadingSlots = true;
+		}
 
 		// Mostrar ya la etapa correcta (sin flash del paso 1).
 		refreshSummary();
@@ -3289,6 +3295,8 @@ export const initializePublicBookingPage = () => {
 				setStep(4);
 				return;
 			}
+		} else if (expectSlotsSoon) {
+			isLoadingSlots = false;
 		}
 
 		refreshSummary();

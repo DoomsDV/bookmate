@@ -1486,6 +1486,11 @@ export const initializePublicUserBookingPage = () => {
 			targetStep = selectedDate ? 3 : 2;
 		}
 
+		const expectSlotsSoon = Boolean(selectedDate) && targetStep >= 3;
+		if (expectSlotsSoon) {
+			isLoadingSlots = true;
+		}
+
 		refreshSummary();
 		renderOrganizationServices();
 		renderCalendar();
@@ -1506,6 +1511,8 @@ export const initializePublicUserBookingPage = () => {
 				setStep(3);
 				return;
 			}
+		} else if (expectSlotsSoon) {
+			isLoadingSlots = false;
 		}
 
 		refreshSummary();
