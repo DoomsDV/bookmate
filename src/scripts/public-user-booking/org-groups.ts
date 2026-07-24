@@ -4,6 +4,7 @@ export type OrganizationBookingGroup = {
 	org_id_organization: number;
 	organization_name: string;
 	organization_slug: string;
+	organization_logo_url?: string | null;
 	id_professional: number;
 	locations: UserBookingContext[];
 	services: UserBookingService[];
@@ -39,11 +40,14 @@ export const buildOrganizationGroups = (
 				org_id_organization: orgId,
 				organization_name: location.organization_name,
 				organization_slug: location.organization_slug,
+				organization_logo_url: location.organization_logo_url || null,
 				id_professional: location.id_professional,
 				locations: [],
 				services: [],
 			};
 			map.set(orgId, group);
+		} else if (!group.organization_logo_url && location.organization_logo_url) {
+			group.organization_logo_url = location.organization_logo_url;
 		}
 
 		group.locations.push(location);

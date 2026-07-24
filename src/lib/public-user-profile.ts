@@ -41,6 +41,7 @@ export interface PublicUserProfileLocation {
 	org_id_organization: number;
 	organization_name: string;
 	organization_slug: string;
+	organization_logo_url?: string | null;
 	id_professional: number;
 	services: PublicUserProfileService[];
 	deposit_settings?: {
@@ -163,6 +164,9 @@ const normalizeLocation = (value: unknown): PublicUserProfileLocation | null => 
 		org_id_organization: orgId,
 		organization_name: orgName,
 		organization_slug: orgSlug,
+		organization_logo_url: String(
+			source.organization_logo_url ?? source.logo_url ?? ''
+		).trim() || null,
 		id_professional: proId,
 		services,
 		deposit_settings:

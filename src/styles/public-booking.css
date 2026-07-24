@@ -291,7 +291,9 @@
 }
 
 .public-booking-panel[data-step-panel='1'] [data-services-grid],
+.public-booking-panel[data-step-panel='1'] .public-locations-grid,
 .public-booking-panel[data-step-panel='2'] [data-locations-grid],
+.public-booking-panel[data-step-panel='2'] [data-services-grid],
 .public-booking-panel[data-step-panel='4'] [data-slots-container] {
 	text-align: left;
 }
@@ -848,8 +850,8 @@
 
 	.public-service-stack {
 		position: relative;
-		/* Card foco + card siguiente completa (sin cortar con Continuar). */
-		height: 13.25rem;
+		/* Altura fija (con espacio de peek) para que Continuar no salte al deslizar. */
+		height: 15.75rem;
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
@@ -912,7 +914,7 @@
 	}
 
 	.public-service-stack .public-service-card.is-focus {
-		transform: translateY(0) scale(1);
+		transform: translateY(2.65rem) scale(1);
 		opacity: 1;
 		z-index: 3;
 		filter: none;
@@ -923,8 +925,8 @@
 	}
 
 	.public-service-stack .public-service-card.is-near-up {
-		transform: translateY(-6.55rem) scale(0.94);
-		opacity: 0.55;
+		transform: translateY(0) scale(0.94);
+		opacity: 0.62;
 		z-index: 2;
 		filter: none;
 		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
@@ -933,7 +935,7 @@
 	}
 
 	.public-service-stack .public-service-card.is-near-down {
-		transform: translateY(6.55rem) scale(0.96);
+		transform: translateY(9.2rem) scale(0.96);
 		opacity: 0.88;
 		z-index: 2;
 		filter: none;
@@ -942,35 +944,13 @@
 		pointer-events: auto;
 	}
 
-	/* Peek de la card anterior (~40% visible detrás del foco). */
-	.public-service-stack.has-prev {
-		height: 15.75rem;
-	}
-
-	.public-service-stack.has-prev .public-service-card.is-focus {
-		transform: translateY(2.65rem) scale(1);
-	}
-
-	.public-service-stack.has-prev .public-service-card.is-near-up {
-		transform: translateY(0) scale(0.94);
-		opacity: 0.62;
-	}
-
-	.public-service-stack.has-prev .public-service-card.is-near-down {
-		transform: translateY(9.2rem) scale(0.96);
-	}
-
-	.public-service-stack.has-prev .public-service-card.is-far {
-		transform: translateY(9.2rem) scale(0.9);
-	}
-
 	.public-service-stack .public-service-card.is-near .public-service-card__title,
 	.public-service-stack .public-service-card.is-near .public-service-card__meta {
 		color: color-mix(in srgb, var(--on-surface) 78%, transparent);
 	}
 
 	.public-service-stack .public-service-card.is-far {
-		transform: translateY(6.55rem) scale(0.9);
+		transform: translateY(9.2rem) scale(0.9);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
@@ -1029,7 +1009,8 @@
 
 	.public-location-stack {
 		position: relative;
-		height: 13.25rem;
+		/* Altura fija (con espacio de peek) para que Continuar no salte al deslizar. */
+		height: 15.75rem;
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
@@ -1067,9 +1048,10 @@
 	}
 
 	/* Cover Flow plano anclado al inicio: foco al 100% (borde azul) y vecinos al 90%/80%
-	   en gris oscuro, con el mismo lenguaje visual que los horarios inactivos. */
+	   en gris oscuro, con el mismo lenguaje visual que los horarios inactivos.
+	   Posiciones fijas (con espacio de peek) para que Continuar no salte. */
 	.public-location-stack .public-location-card.is-focus {
-		transform: translateY(0) scale(1);
+		transform: translateY(2.65rem) scale(1);
 		opacity: 1;
 		z-index: 4;
 		filter: none;
@@ -1085,8 +1067,8 @@
 	}
 
 	.public-location-stack .public-location-card.is-near-up {
-		transform: translateY(-6.55rem) scale(0.94);
-		opacity: 0.55;
+		transform: translateY(0) scale(0.94);
+		opacity: 0.62;
 		z-index: 3;
 		filter: none;
 		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
@@ -1095,7 +1077,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-near-down {
-		transform: translateY(6.55rem) scale(0.96);
+		transform: translateY(9.2rem) scale(0.96);
 		opacity: 0.88;
 		z-index: 3;
 		filter: none;
@@ -1104,35 +1086,8 @@
 		pointer-events: auto;
 	}
 
-	/* Peek de la sucursal anterior (~40% visible detrás del foco). */
-	.public-location-stack.has-prev {
-		height: 15.75rem;
-	}
-
-	.public-location-stack.has-prev .public-location-card.is-focus {
-		transform: translateY(2.65rem) scale(1);
-	}
-
-	.public-location-stack.has-prev .public-location-card.is-near-up {
-		transform: translateY(0) scale(0.94);
-		opacity: 0.62;
-	}
-
-	.public-location-stack.has-prev .public-location-card.is-near-down {
-		transform: translateY(9.2rem) scale(0.96);
-	}
-
-	.public-location-stack.has-prev .public-location-card.is-far-up {
-		transform: translateY(-2.65rem) scale(0.9);
-	}
-
-	.public-location-stack.has-prev .public-location-card.is-far-down,
-	.public-location-stack.has-prev .public-location-card.is-far {
-		transform: translateY(9.2rem) scale(0.9);
-	}
-
 	.public-location-stack .public-location-card.is-far-up {
-		transform: translateY(-6.55rem) scale(0.9);
+		transform: translateY(-2.65rem) scale(0.9);
 		opacity: 0.35;
 		z-index: 2;
 		filter: none;
@@ -1142,7 +1097,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-far-down {
-		transform: translateY(6.55rem) scale(0.9);
+		transform: translateY(9.2rem) scale(0.9);
 		opacity: 0.35;
 		z-index: 2;
 		filter: none;
@@ -1164,7 +1119,7 @@
 	}
 
 	.public-location-stack .public-location-card.is-far {
-		transform: translateY(6.55rem) scale(0.86);
+		transform: translateY(9.2rem) scale(0.86);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
@@ -1225,6 +1180,145 @@
 	.public-location-stack__continue:active {
 		transform: scale(0.985);
 		filter: brightness(0.96);
+	}
+
+	/* Negocios (u/[slug]): mismo stack deslizable que sucursales. */
+	.public-orgs-grid.is-org-stack {
+		display: flex;
+		flex-direction: column;
+		grid-template-columns: none;
+		gap: 1rem;
+		overscroll-behavior: contain;
+		touch-action: pan-x;
+	}
+
+	.public-location-stack .public-org-card--business {
+		position: absolute;
+		left: 0;
+		right: 0;
+		top: 0;
+		margin: 0;
+		height: auto;
+		min-height: 0;
+		display: grid;
+		grid-template-columns: 4.5rem minmax(0, 1fr);
+		align-items: center;
+		column-gap: 0.7rem;
+		row-gap: 0;
+		padding: 0.65rem 0.75rem;
+		transform-origin: center top;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		transition:
+			transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+			opacity 0.28s ease,
+			filter 0.28s ease,
+			border-color 0.2s ease,
+			background 0.2s ease,
+			color 0.2s ease;
+		will-change: transform, opacity;
+		box-shadow: none;
+	}
+
+	.public-location-stack .public-org-card--business.is-focus {
+		transform: translateY(2.65rem) scale(1);
+		opacity: 1;
+		z-index: 4;
+		filter: none;
+		border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
+		background: color-mix(in srgb, var(--primary-container) 28%, var(--surface-container-high));
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+		pointer-events: auto;
+	}
+
+	.public-location-stack .public-org-card__check {
+		top: 0.55rem;
+		right: 0.55rem;
+	}
+
+	.public-location-stack .public-org-card--business.is-near-up {
+		transform: translateY(0) scale(0.94);
+		opacity: 0.62;
+		z-index: 3;
+		filter: none;
+		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
+		background: color-mix(in srgb, var(--surface-container-high) 32%, transparent);
+		pointer-events: auto;
+	}
+
+	.public-location-stack .public-org-card--business.is-near-down {
+		transform: translateY(9.2rem) scale(0.96);
+		opacity: 0.88;
+		z-index: 3;
+		filter: none;
+		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
+		background: color-mix(in srgb, var(--surface-container-high) 42%, transparent);
+		pointer-events: auto;
+	}
+
+	.public-location-stack .public-org-card--business.is-far-up {
+		transform: translateY(-2.65rem) scale(0.9);
+		opacity: 0.35;
+		z-index: 2;
+		filter: none;
+		border-color: color-mix(in srgb, var(--outline-variant) 22%, transparent);
+		background: color-mix(in srgb, var(--surface-container-high) 22%, transparent);
+		pointer-events: auto;
+	}
+
+	.public-location-stack .public-org-card--business.is-far-down {
+		transform: translateY(9.2rem) scale(0.9);
+		opacity: 0.35;
+		z-index: 2;
+		filter: none;
+		border-color: color-mix(in srgb, var(--outline-variant) 22%, transparent);
+		background: color-mix(in srgb, var(--surface-container-high) 22%, transparent);
+		pointer-events: auto;
+	}
+
+	.public-location-stack .public-org-card--business.is-near .public-org-card__title,
+	.public-location-stack .public-org-card--business.is-near .public-org-card__meta {
+		color: color-mix(in srgb, var(--on-surface) 78%, transparent);
+	}
+
+	.public-location-stack .public-org-card--business.is-far-up .public-org-card__title,
+	.public-location-stack .public-org-card--business.is-far-up .public-org-card__meta,
+	.public-location-stack .public-org-card--business.is-far-down .public-org-card__title,
+	.public-location-stack .public-org-card--business.is-far-down .public-org-card__meta {
+		color: color-mix(in srgb, var(--on-surface) 55%, transparent);
+	}
+
+	.public-location-stack .public-org-card--business.is-far {
+		transform: translateY(9.2rem) scale(0.86);
+		opacity: 0;
+		z-index: 1;
+		pointer-events: none;
+		visibility: hidden;
+	}
+
+	.public-location-stack .public-org-card--business.is-near:hover {
+		background: color-mix(in srgb, var(--surface-container-highest) 62%, transparent);
+	}
+
+	.public-location-stack .public-org-card--business.is-focus:hover {
+		border-color: color-mix(in srgb, var(--primary) 88%, #3b82f6);
+		background: color-mix(in srgb, var(--primary-container) 34%, var(--surface-container-high));
+	}
+
+	.public-location-stack .public-org-card__logo {
+		width: 4.5rem;
+		height: 4.5rem;
+		border-radius: 0.65rem;
+	}
+
+	.public-location-stack .public-org-card__body {
+		padding: 0;
+		min-width: 0;
+	}
+
+	.public-location-stack .public-org-card__title {
+		font-size: 0.95rem;
+		line-height: 1.25;
 	}
 }
 
@@ -1406,6 +1500,10 @@
 	}
 
 	.public-locations-grid.is-location-stack {
+		display: grid;
+	}
+
+	.public-orgs-grid.is-org-stack {
 		display: grid;
 	}
 
@@ -1917,12 +2015,34 @@
 	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
+.public-location-card__map-skeleton {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	background: color-mix(in srgb, var(--on-surface) 8%, var(--surface-container-highest));
+	animation: public-service-skeleton-pulse 1.2s ease-in-out infinite;
+}
+
 .public-location-card__map-img {
 	display: block;
 	width: 100%;
 	height: 100%;
 	object-fit: cover;
 	pointer-events: none;
+	opacity: 0;
+	transition: opacity 0.22s ease;
+}
+
+.public-location-card__preview:not(.is-map-loading) .public-location-card__map-img {
+	opacity: 1;
+}
+
+.public-location-card__preview:not(.is-map-loading) .public-location-card__map-skeleton {
+	opacity: 0;
+	animation: none;
+	pointer-events: none;
+	visibility: hidden;
 }
 
 .public-location-card__main {
@@ -2397,19 +2517,98 @@
 	text-decoration: none;
 }
 
+.public-orgs-grid {
+	display: grid;
+	gap: 0.85rem;
+	width: 100%;
+}
+
+@media (min-width: 640px) {
+	.public-orgs-grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+	}
+}
+
 .public-org-card {
 	display: grid;
 	gap: 0.75rem;
 	width: 100%;
 	padding: 1.1rem 1.15rem;
-	border: 1px solid var(--outline-variant);
-	border-radius: 1.25rem;
+	border: 1.5px solid color-mix(in srgb, var(--outline-variant) 85%, transparent);
+	border-radius: 1rem;
 	background: var(--surface-container-high);
 	text-align: left;
 	cursor: pointer;
 	transition:
 		border-color 0.15s ease,
 		background 0.15s ease;
+	box-sizing: border-box;
+}
+
+.public-org-card--business {
+	position: relative;
+	display: grid;
+	grid-template-columns: 4.5rem minmax(0, 1fr);
+	align-items: center;
+	column-gap: 0.85rem;
+	row-gap: 0;
+	padding: 0.75rem 1rem;
+	min-height: 5.75rem;
+}
+
+.public-org-card__logo {
+	display: block;
+	width: 4.5rem;
+	height: 4.5rem;
+	overflow: hidden;
+	border-radius: 0.75rem;
+	background: color-mix(in srgb, var(--surface-container-highest) 70%, transparent);
+	flex-shrink: 0;
+}
+
+.public-org-card__logo img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.public-org-card__logo--brand {
+	background:
+		radial-gradient(
+			ellipse 80% 70% at 20% 15%,
+			color-mix(in srgb, var(--primary) 28%, transparent),
+			transparent 60%
+		),
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
+			var(--surface-container-highest) 55%,
+			color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
+		);
+}
+
+.public-org-card__body {
+	display: grid;
+	gap: 0.3rem;
+	min-width: 0;
+}
+
+.public-org-card__title {
+	display: block;
+	font-size: 1.05rem;
+	font-weight: 650;
+	line-height: 1.25;
+	color: var(--on-surface);
+}
+
+.public-org-card__meta {
+	display: block;
+	font-size: 0.88rem;
+	font-weight: 500;
+	line-height: 1.35;
+	color: var(--on-surface-variant);
 }
 
 .public-org-card:hover {
@@ -2418,9 +2617,25 @@
 }
 
 .public-org-card.is-selected {
-	border-color: color-mix(in srgb, var(--primary) 75%, #3b82f6);
-	background: color-mix(in srgb, var(--primary-container) 16%, var(--surface-container-high));
-	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+	border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
+	background: color-mix(in srgb, var(--primary-container) 28%, var(--surface-container-high));
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.public-org-card__check {
+	position: absolute;
+	top: 0.85rem;
+	right: 0.85rem;
+	display: none;
+	font-size: 1.25rem;
+	line-height: 1;
+	color: var(--primary);
+	z-index: 2;
+	pointer-events: none;
+}
+
+.public-org-card.is-selected .public-org-card__check {
+	display: block;
 }
 
 .public-org-card--location {

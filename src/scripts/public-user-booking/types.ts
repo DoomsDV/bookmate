@@ -1,6 +1,6 @@
 import type { PublicUserProfile, PublicUserProfileLocation, PublicUserProfileService } from '../../lib/public-user-profile';
 
-export type UserBookingWizardStep = 1 | 2 | 3 | 4 | 5 | 6;
+export type UserBookingWizardStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
 export type UserBookingContext = PublicUserProfileLocation;
 
@@ -20,11 +20,12 @@ export type UserBookingState = {
 	isSubmitting: boolean;
 };
 
-export const USER_BOOKING_STEP_LABELS: Record<1 | 2 | 3 | 4, string> = {
-	1: 'Servicio',
-	2: 'Fecha',
-	3: 'Horario',
-	4: 'Datos',
+export const USER_BOOKING_STEP_LABELS: Record<1 | 2 | 3 | 4 | 5, string> = {
+	1: 'Sucursal',
+	2: 'Servicio',
+	3: 'Fecha',
+	4: 'Horario',
+	5: 'Datos',
 };
 
 export type LocationCardKey = `${number}:${number}`;

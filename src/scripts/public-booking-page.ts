@@ -1637,10 +1637,12 @@ export const initializePublicBookingPage = () => {
 		const showMap = options?.showMap !== false && canShowLocationMap(location);
 		const staticMapUrl = showMap ? buildLocationStaticMapUrl(location) : null;
 		const previewInner = staticMapUrl
-			? `<img class="public-location-card__map-img" src="${escapeHtml(staticMapUrl)}" alt="" loading="lazy" decoding="async" data-location-map-img />`
+			? `<span class="public-location-card__map-skeleton" aria-hidden="true"></span><img class="public-location-card__map-img" src="${escapeHtml(staticMapUrl)}" alt="" loading="lazy" decoding="async" data-location-map-img />`
 			: '';
 		const preview = showMap
-			? `<button type="button" class="public-location-card__preview${staticMapUrl ? '' : ' public-location-card__preview--brand'}" data-location-map-trigger aria-label="Ver mapa de ${escapeHtml(name)}">
+			? `<button type="button" class="public-location-card__preview${
+					staticMapUrl ? ' is-map-loading' : ' public-location-card__preview--brand'
+				}" data-location-map-trigger aria-label="Ver mapa de ${escapeHtml(name)}">
 					${previewInner}
 				</button>`
 			: '';
@@ -1706,14 +1708,28 @@ export const initializePublicBookingPage = () => {
 		);
 
 		const mapImg = card.querySelector<HTMLImageElement>('[data-location-map-img]');
+		const revealMap = () => {
+			mapTrigger?.classList.remove('is-map-loading');
+		};
+		mapImg?.addEventListener(
+			'load',
+			() => {
+				revealMap();
+			},
+			{ once: true, signal }
+		);
 		mapImg?.addEventListener(
 			'error',
 			() => {
 				mapImg.remove();
+				mapTrigger?.classList.remove('is-map-loading');
 				mapTrigger?.classList.add('public-location-card__preview--brand');
 			},
 			{ once: true, signal }
 		);
+		if (mapImg?.complete && mapImg.naturalWidth > 0) {
+			revealMap();
+		}
 	};
 
 	const renderLocationsGrid = (locations: BookingLocation[]) => {
