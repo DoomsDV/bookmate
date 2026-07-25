@@ -446,11 +446,31 @@ const serializedLocations = reservation
 								</button>
 							</div>
 
-							<div class="reservation-reschedule-stepper">
-								<ol class="grid grid-cols-3" data-reschedule-step-indicator>
+							<div class="reservation-reschedule-stepper public-booking-stepper">
+								<div class="public-booking-stepper__mobile">
+									<p
+										class="text-sm font-medium tracking-wide text-(--on-surface)"
+										data-reschedule-step-compact-label
+										aria-live="polite"
+									>
+										Paso 1 de 4: Fecha
+									</p>
+									<div
+										class="h-2 flex-1 overflow-hidden rounded-full bg-(--surface-container-highest)"
+										aria-hidden="true"
+									>
+										<div
+											class="h-full rounded-full bg-(--primary) transition-[width] duration-500 ease-out"
+											data-reschedule-step-progress-bar
+											style="width:25%"
+										></div>
+									</div>
+								</div>
+								<ol data-reschedule-step-indicator>
 									<li data-reschedule-step-item="1" class="step-item-current">1. Fecha</li>
-									<li data-reschedule-step-item="2" class="step-item-default">2. Horario</li>
-									<li data-reschedule-step-item="3" class="step-item-default">3. Confirmar</li>
+									<li data-reschedule-step-item="2" class="step-item-default">2. Sucursal</li>
+									<li data-reschedule-step-item="3" class="step-item-default">3. Horario</li>
+									<li data-reschedule-step-item="4" class="step-item-default">4. Confirmar</li>
 								</ol>
 							</div>
 
@@ -458,9 +478,6 @@ const serializedLocations = reservation
 								<section data-reschedule-step-panel="1" class="grid gap-3">
 									<div>
 										<h3 class="text-lg font-normal tracking-tight text-(--on-surface) sm:text-xl">Selecciona una fecha</h3>
-										<p class="mt-0.5 text-sm text-(--on-surface-variant)">
-											Elige el día en el calendario para ver los horarios disponibles.
-										</p>
 									</div>
 
 									<div class="public-booking-calendar">
@@ -485,6 +502,39 @@ const serializedLocations = reservation
 									<p class="reservation-slots-date-subtitle">
 										<span data-reservation-selected-date></span>
 									</p>
+									<div>
+										<h3 class="text-lg font-normal tracking-tight text-(--on-surface) sm:text-xl">
+											¿Dónde querés atenderte?
+										</h3>
+										<p class="mt-1 text-base text-(--on-surface-variant)">
+											<span class="public-locations-hint__desktop">Elegí la sucursal para ver horarios disponibles</span>
+											<span class="public-locations-hint__mobile">Deslizá para elegir una sucursal</span>
+										</p>
+									</div>
+
+									<div
+										data-reservation-locations-loading
+										class="hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)"
+									>
+										Consultando sucursales disponibles…
+									</div>
+									<div
+										class="mt-1 grid gap-3 public-locations-grid"
+										data-reschedule-locations-grid
+										aria-busy="false"
+									></div>
+									<p
+										data-no-reservation-locations
+										class="hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
+									>
+										No hay sucursales con horarios para este día. Selecciona otra fecha.
+									</p>
+								</section>
+
+								<section data-reschedule-step-panel="3" class="hidden grid gap-3">
+									<p class="reservation-slots-date-subtitle">
+										<span data-reservation-slots-date></span>
+									</p>
 									<p class="m-0 text-base text-(--on-surface-variant)">
 										<span class="public-slots-hint__desktop">Elegí un horario disponible</span>
 										<span class="public-slots-hint__mobile">Deslizá para seleccionar un horario</span>
@@ -492,30 +542,38 @@ const serializedLocations = reservation
 
 									<div
 										data-reservation-slots-loading
-										class="hidden rounded-2xl bg-(--surface-container-high) px-5 py-4 text-base font-medium text-(--on-surface-variant)"
+										class="public-slots-skeleton mt-2 hidden"
+										aria-busy="true"
+										aria-live="polite"
 									>
-										Consultando horarios disponibles...
+										<span class="sr-only">Consultando horarios disponibles…</span>
+										<div class="public-slots-skeleton__roulette" aria-hidden="true">
+											<span class="public-slots-skeleton__bar public-slots-skeleton__bar--far"></span>
+											<span class="public-slots-skeleton__bar public-slots-skeleton__bar--near"></span>
+											<span class="public-slots-skeleton__bar public-slots-skeleton__bar--focus"></span>
+											<span class="public-slots-skeleton__bar public-slots-skeleton__bar--near"></span>
+											<span class="public-slots-skeleton__bar public-slots-skeleton__bar--far"></span>
+										</div>
+										<div class="public-slots-skeleton__grid" aria-hidden="true">
+											<span class="public-slots-skeleton__chip"></span>
+											<span class="public-slots-skeleton__chip"></span>
+											<span class="public-slots-skeleton__chip"></span>
+											<span class="public-slots-skeleton__chip"></span>
+										</div>
 									</div>
 
 									<div class="reservation-slots-panel hidden" data-reservation-slots-panel>
-										<p
-											data-reservation-slots-heading
-											class="reservation-slots-section-label hidden"
-										>
-											Sucursales y horarios
-										</p>
-
 										<div class="public-slots-container grid gap-0" data-reservation-slots-container></div>
 										<p
 											data-no-reservation-slots
 											class="hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
 										>
-											No se encontraron horarios para este día. Selecciona otra fecha para continuar.
+											No se encontraron horarios para esta sucursal. Probá otra sucursal o fecha.
 										</p>
 									</div>
 								</section>
 
-								<section data-reschedule-step-panel="3" class="hidden">
+								<section data-reschedule-step-panel="4" class="hidden">
 									<div class="reservation-change-summary">
 										<p class="reservation-change-summary-label">Cambio de horario</p>
 										<div class="reservation-change-summary-text" data-reschedule-change-summary></div>
@@ -530,10 +588,10 @@ const serializedLocations = reservation
 							<div class="reservation-reschedule-footer">
 								<button
 									type="button"
-									class="reservation-secondary-action"
+									class="reservation-secondary-action is-hidden"
 									data-reschedule-back
 								>
-									Volver atrás
+									Volver
 								</button>
 								<div class="reservation-reschedule-footer-actions">
 									<button
@@ -541,7 +599,7 @@ const serializedLocations = reservation
 										class="reservation-primary-action reservation-primary-action--compact"
 										data-reschedule-next
 									>
-										Siguiente
+										Continuar
 									</button>
 									<button
 										type="submit"
@@ -968,20 +1026,23 @@ button.reservation-manage__location:hover {
 }
 
 .reservation-reschedule-form[data-reschedule-step='2'],
-.reservation-reschedule-form[data-reschedule-step='3'] {
+.reservation-reschedule-form[data-reschedule-step='3'],
+.reservation-reschedule-form[data-reschedule-step='4'] {
 	max-height: 88dvh;
 	grid-template-rows: auto auto minmax(0, 1fr) auto;
 }
 
 @media (max-width: 639px) {
 	.reservation-reschedule-form[data-reschedule-step='2'],
-	.reservation-reschedule-form[data-reschedule-step='3'] {
+	.reservation-reschedule-form[data-reschedule-step='3'],
+	.reservation-reschedule-form[data-reschedule-step='4'] {
 		height: auto;
 		max-height: 88dvh;
 	}
 
 	.reservation-reschedule-form[data-reschedule-step='2'] .reservation-reschedule-body,
-	.reservation-reschedule-form[data-reschedule-step='3'] .reservation-reschedule-body {
+	.reservation-reschedule-form[data-reschedule-step='3'] .reservation-reschedule-body,
+	.reservation-reschedule-form[data-reschedule-step='4'] .reservation-reschedule-body {
 		overflow-y: auto;
 		max-height: calc(88dvh - 11.5rem);
 	}
@@ -1027,12 +1088,30 @@ button.reservation-manage__location:hover {
 }
 
 .reservation-reschedule-stepper {
-	padding: 0.55rem 1.15rem 0.75rem;
+	margin: 0;
+	padding: 0.35rem 1.15rem 0.65rem;
 	border-bottom: 1px solid color-mix(in srgb, var(--outline-variant) 55%, transparent);
+	justify-content: stretch;
 }
 
-[data-reschedule-step-indicator] {
-	gap: 0.65rem;
+.reservation-reschedule-stepper [data-reschedule-step-indicator] {
+	display: none;
+	align-items: center;
+	gap: 0.55rem;
+	margin: 0;
+	padding: 0.35rem;
+	list-style: none;
+	background: color-mix(in srgb, var(--surface-container-high) 55%, transparent);
+	border: 1px solid color-mix(in srgb, var(--outline-variant) 45%, transparent);
+	border-radius: 9999px;
+}
+
+@media (min-width: 768px) {
+	.reservation-reschedule-stepper [data-reschedule-step-indicator] {
+		display: inline-flex;
+		width: 100%;
+		justify-content: center;
+	}
 }
 
 .reservation-reschedule-body {
@@ -1041,7 +1120,8 @@ button.reservation-manage__location:hover {
 }
 
 .reservation-reschedule-form[data-reschedule-step='2'] .reservation-reschedule-body,
-.reservation-reschedule-form[data-reschedule-step='3'] .reservation-reschedule-body {
+.reservation-reschedule-form[data-reschedule-step='3'] .reservation-reschedule-body,
+.reservation-reschedule-form[data-reschedule-step='4'] .reservation-reschedule-body {
 	overflow-y: auto;
 }
 
@@ -1066,8 +1146,18 @@ button.reservation-manage__location:hover {
 }
 
 .reservation-reschedule-footer-actions .is-hidden,
-.reservation-primary-action.is-hidden {
+.reservation-primary-action.is-hidden,
+.reservation-secondary-action.is-hidden {
 	display: none !important;
+}
+
+.reservation-reschedule-footer:has([data-reschedule-back].is-hidden) .reservation-reschedule-footer-actions {
+	margin-left: 0;
+	width: 100%;
+}
+
+.reservation-reschedule-footer:has([data-reschedule-back].is-hidden) .reservation-primary-action {
+	width: 100%;
 }
 
 .reservation-change-summary {
@@ -1270,17 +1360,18 @@ button.reservation-manage__location:hover {
 	}
 
 	.reservation-reschedule-form[data-reschedule-step='2'],
-	.reservation-reschedule-form[data-reschedule-step='3'] {
+	.reservation-reschedule-form[data-reschedule-step='3'],
+	.reservation-reschedule-form[data-reschedule-step='4'] {
 		height: 100%;
 		max-height: min(90vh, 52rem);
 	}
 
-	[data-reschedule-step-indicator] {
-		gap: 1.35rem;
+	.reservation-reschedule-stepper {
+		padding: 0.5rem 1.5rem 0.75rem;
 	}
 
-	.reservation-reschedule-stepper {
-		padding: 0.65rem 1.5rem 0.85rem;
+	.reservation-reschedule-stepper [data-reschedule-step-indicator] {
+		gap: 0.85rem;
 	}
 }
 
@@ -1331,18 +1422,20 @@ button.reservation-manage__location:hover {
 	color: var(--on-surface-variant);
 }
 
+.reservation-reschedule-body .public-locations-grid {
+	margin-top: 0.25rem;
+}
+
+.reservation-reschedule-body .public-location-card {
+	height: auto;
+	min-height: 0;
+	grid-template-rows: auto;
+	cursor: pointer;
+}
+
 .reservation-slots-panel {
 	display: grid;
 	gap: 1rem;
-}
-
-.reservation-slots-section-label {
-	margin: 0 0 0.15rem;
-	font-size: 0.72rem;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: var(--on-surface-variant);
 }
 
 .reservation-slot-location-divider {
