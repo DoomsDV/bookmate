@@ -2,7 +2,7 @@ import {
 	buildApiAppointmentTimes,
 	formatApiDate,
 	formatApiTime,
-	formatHumanDateTime,
+	formatFriendlyDateTime,
 	formatLongDateFromApiDate,
 	getTodayStart,
 	isReservationPast,
@@ -131,7 +131,7 @@ export const initializePublicReservationPage = () => {
 	const reservationStart = parseApiDateTime(reservation.start_time);
 	const currentDate = root.querySelector<HTMLElement>('[data-current-date]');
 	if (currentDate && reservationStart) {
-		currentDate.textContent = formatHumanDateTime(reservationStart);
+		currentDate.textContent = formatFriendlyDateTime(reservationStart);
 	}
 
 	const isCancelledReservation =
@@ -1013,7 +1013,7 @@ export const initializePublicReservationPage = () => {
 		if (!nextStart) return false;
 
 		if (statusText) statusText.textContent = String(updated.status || reservation.status || '');
-		if (currentDate) currentDate.textContent = formatHumanDateTime(nextStart);
+		if (currentDate) currentDate.textContent = formatFriendlyDateTime(nextStart);
 		if (locationName && updated.location_name) {
 			locationName.textContent = updated.location_name;
 		}

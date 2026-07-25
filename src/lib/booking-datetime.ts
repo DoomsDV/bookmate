@@ -102,6 +102,15 @@ export const formatShortDateFromApiDate = (ymd: string) => {
 export const formatHumanDateTime = (date: Date) =>
 	`${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 
+/** Fecha/hora amigable: "Miércoles 29 de julio, 11:00 hs." */
+export const formatFriendlyDateTime = (date: Date) => {
+	const cap = (value: string) => (value ? value.charAt(0).toUpperCase() + value.slice(1) : value);
+	const weekday = new Intl.DateTimeFormat('es-PY', { weekday: 'long' }).format(date);
+	const month = new Intl.DateTimeFormat('es-PY', { month: 'long' }).format(date);
+	const time = `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+	return `${cap(weekday)} ${date.getDate()} de ${month}, ${time} hs.`;
+};
+
 export const isApiDateOnOrAfter = (date: Date, reference: Date) =>
 	toDateStart(date).getTime() >= toDateStart(reference).getTime();
 

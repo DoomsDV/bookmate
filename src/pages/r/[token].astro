@@ -11,7 +11,7 @@ import {
 } from '../../lib/public-booking';
 import { buildPublicProfilePath } from '../../lib/public-profile-url';
 import {
-	formatHumanDateTime,
+	formatFriendlyDateTime,
 	isReservationPast,
 	parseApiDateTime,
 } from '../../lib/booking-datetime';
@@ -59,7 +59,7 @@ const refundAmountLabel =
 			}).format(Number(reservation.refund_amount) || 0)
 		: '';
 const reservationStart = reservation ? parseApiDateTime(reservation.start_time) : null;
-const formattedCurrentDate = reservationStart ? formatHumanDateTime(reservationStart) : '';
+const formattedCurrentDate = reservationStart ? formatFriendlyDateTime(reservationStart) : '';
 const isPastReservation =
 	Boolean(reservation) && !isCancelled && isReservationPast(reservation);
 const professionalSlug = String(reservation?.professional_slug || '').trim();
