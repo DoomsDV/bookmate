@@ -152,9 +152,25 @@ export const bindVerticalStackGestures = (
 	}
 ) => {
 	let touchStartY: number | null = null;
+	let touchTarget: EventTarget | null = null;
 	let touchMoved = false;
 	let wheelLockedUntil = 0;
 	let suppressClickUntil = 0;
+
+	const findStackIndex = (from: EventTarget | null): number | null => {
+		if (!(from instanceof Element)) return null;
+		const card = from.closest<HTMLElement>(
+			'[data-location-stack-index], [data-service-stack-index], [data-org-stack-index]'
+		);
+		if (!card || !stack.contains(card)) return null;
+		const raw =
+			card.getAttribute('data-location-stack-index') ??
+			card.getAttribute('data-service-stack-index') ??
+			card.getAttribute('data-org-stack-index');
+		if (raw == null) return null;
+		const index = Number(raw);
+		return Number.isFinite(index) ? index : null;
+	};
 
 	const moveFocus = (delta: number) => {
 		const next = Math.min(
@@ -167,11 +183,21 @@ export const bindVerticalStackGestures = (
 		triggerPickerHaptic();
 	};
 
+	const focusIndex = (index: number) => {
+		if (index === options.getFocusIndex()) return false;
+		if (index < 0 || index >= options.itemCount) return false;
+		options.setFocusIndex(index);
+		options.onFocusChanged();
+		triggerPickerHaptic();
+		return true;
+	};
+
 	stack.addEventListener(
 		'touchstart',
 		(event) => {
 			if (event.touches.length !== 1) return;
 			touchStartY = event.touches[0]?.clientY ?? null;
+			touchTarget = event.target;
 			touchMoved = false;
 		},
 		{ signal: options.signal, passive: true }
@@ -195,8 +221,22 @@ export const bindVerticalStackGestures = (
 			if (touchStartY == null) return;
 			const endY = event.changedTouches[0]?.clientY ?? touchStartY;
 			const deltaY = endY - touchStartY;
+			const startTarget = touchTarget;
 			touchStartY = null;
-			if (!touchMoved || Math.abs(deltaY) < 40) return;
+			touchTarget = null;
+
+			// Tap (poco movimiento): enfocar la card tocada. En iOS el click sintético
+			// a veces falla sobre elementos con transform.
+			if (!touchMoved || Math.abs(deltaY) < 40) {
+				if (!touchMoved && Math.abs(deltaY) < 40) {
+					const index = findStackIndex(startTarget);
+					if (index != null && focusIndex(index)) {
+						suppressClickUntil = Date.now() + 450;
+					}
+				}
+				return;
+			}
+
 			suppressClickUntil = Date.now() + 350;
 			moveFocus(deltaY < 0 ? 1 : -1);
 		},

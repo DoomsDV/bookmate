@@ -1037,19 +1037,31 @@ export const initializePublicReservationPage = () => {
 				? selectedIndex
 				: Math.min(Math.max(0, locationStackFocusIndex), locations.length - 1);
 
-		if (isMobileStack() && locations.length > 1) {
+		if (isMobileStack() && locations.length >= 1) {
 			locationsGrid.classList.add('is-location-stack');
 
 			const stackShell = document.createElement('div');
 			stackShell.className = 'public-location-stack-shell';
 
 			const stack = document.createElement('div');
-			stack.className = 'public-location-stack';
+			stack.className = `public-location-stack${locations.length === 1 ? ' is-single' : ''}`;
 			stack.setAttribute('role', 'listbox');
 			stack.setAttribute('aria-label', 'Sucursales disponibles');
 			stack.tabIndex = 0;
 
 			let shouldSuppressClick = () => false;
+
+			const focusLocationAt = (index: number) => {
+				if (shouldSuppressClick()) return;
+				if (index === locationStackFocusIndex) return;
+				const location = locations[index];
+				if (!location) return;
+				locationStackFocusIndex = index;
+				syncStackLayers(stack, locationStackFocusIndex, 'data-location-stack-index', {
+					farLevels: true,
+				});
+				softSelectRescheduleLocation(location, stack);
+			};
 
 			for (const [index, location] of locations.entries()) {
 				const card = document.createElement('div');
@@ -1061,23 +1073,38 @@ export const initializePublicReservationPage = () => {
 				}`;
 				card.innerHTML = buildLocationCardContent(location);
 
-				const mainButton = card.querySelector<HTMLButtonElement>('.public-location-card__main');
-				mainButton?.addEventListener(
+				const focusThisCard = () => focusLocationAt(index);
+
+				// Toda la card enfoca (no solo el botón main) — más fiable en iOS.
+				card.addEventListener(
 					'click',
-					() => {
-						if (shouldSuppressClick()) return;
-						if (index === locationStackFocusIndex) return;
-						locationStackFocusIndex = index;
-						syncStackLayers(stack, locationStackFocusIndex, 'data-location-stack-index', {
-							farLevels: true,
-						});
-						softSelectRescheduleLocation(location, stack);
+					(event) => {
+						if (shouldSuppressClick()) {
+							event.preventDefault();
+							event.stopPropagation();
+							return;
+						}
+						const target = event.target;
+						if (
+							target instanceof Element &&
+							target.closest('[data-location-map-trigger]') &&
+							index === locationStackFocusIndex
+						) {
+							return;
+						}
+						focusThisCard();
 					},
 					{ signal }
 				);
+
 				bindMapImageLifecycle(card, {
 					signal,
 					onOpenMap: () => {
+						if (shouldSuppressClick()) return;
+						if (index !== locationStackFocusIndex) {
+							focusThisCard();
+							return;
+						}
 						void openLocationMap(location);
 					},
 				});
