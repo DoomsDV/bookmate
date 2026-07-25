@@ -259,16 +259,6 @@ const serializedProfessionals = professionals.length
 									>
 										<span class="material-symbols-rounded" aria-hidden="true">ios_share</span>
 									</button>
-									<button
-										type="button"
-										class="hub-icon-btn"
-										data-hub-copy-link
-										data-hub-url={hubUrl}
-										aria-label="Copiar enlace del negocio"
-										title="Copiar enlace"
-									>
-										<span class="material-symbols-rounded" aria-hidden="true">link</span>
-									</button>
 								</div>
 							</div>
 							<div class="hub-hero__meta">
@@ -1140,31 +1130,6 @@ const serializedProfessionals = professionals.length
 		const copyHubUrl = async (url: string) => {
 			await navigator.clipboard.writeText(url);
 		};
-
-		const copyBtn = root.querySelector<HTMLButtonElement>('[data-hub-copy-link]');
-		if (copyBtn && copyBtn.dataset.bound !== '1') {
-			copyBtn.dataset.bound = '1';
-			copyBtn.addEventListener('click', async () => {
-				const url = String(copyBtn.dataset.hubUrl || window.location.href).trim();
-				const icon = copyBtn.querySelector<HTMLElement>('.material-symbols-rounded');
-				try {
-					await copyHubUrl(url);
-					copyBtn.title = 'Enlace copiado';
-					copyBtn.setAttribute('aria-label', 'Enlace copiado');
-					copyBtn.classList.add('is-copied');
-					if (icon) icon.textContent = 'check';
-					showHubToast('Enlace copiado al portapapeles');
-					window.setTimeout(() => {
-						copyBtn.title = 'Copiar enlace';
-						copyBtn.setAttribute('aria-label', 'Copiar enlace del negocio');
-						copyBtn.classList.remove('is-copied');
-						if (icon) icon.textContent = 'link';
-					}, 1800);
-				} catch {
-					showHubToast('No se pudo copiar el enlace');
-				}
-			});
-		}
 
 		const shareBtn = root.querySelector<HTMLButtonElement>('[data-hub-share]');
 		if (shareBtn && shareBtn.dataset.bound !== '1') {

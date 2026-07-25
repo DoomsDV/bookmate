@@ -122,11 +122,6 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 										ios_share
 									</span>
 								</span>
-								<span class="hub-icon-btn" title="Copiar enlace">
-									<span class="material-symbols-rounded" aria-hidden="true">
-										link
-									</span>
-								</span>
 							</div>
 						</div>
 						<div class="hub-hero__meta">
