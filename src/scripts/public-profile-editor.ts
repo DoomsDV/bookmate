@@ -202,7 +202,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	let cropper: ProfileImageCropper | null = null;
 	let cropMode: ProfileCropMode = 'logo';
 	let pendingCropName = 'logo.jpg';
-	let bannerCompress = true;
+	let bannerCompress = false;
 	let logoObjectUrl = '';
 	let logoBase64 = '';
 	let logoName = '';
@@ -764,7 +764,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		try {
 			const file = await cropper.exportJpeg(pendingCropName);
 			const base64 = await fileToBase64(file);
-			const compress = cropCompress?.checked !== false;
+			const compress = Boolean(cropCompress?.checked);
 			if (cropMode === 'banner') {
 				bannerCompress = compress;
 				bannerBase64 = base64;
@@ -965,7 +965,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			id: `${Date.now()}-${index}-${file.name}`,
 			file,
 			url: URL.createObjectURL(file),
-			compress: true,
+			compress: false,
 		}));
 		renderGalleryPreviewList();
 		if (galleryPreviewModal && !galleryPreviewModal.open) {

@@ -355,18 +355,39 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 						</div>
 					</section>
 
-					<section data-step-panel="6" class="public-booking-panel hidden bg-(--tertiary-container) text-(--on-tertiary-container)">
-						<h2 class="text-3xl font-normal tracking-tight">Reserva confirmada</h2>
-						<p class="mt-2 text-base font-medium opacity-90">¡Todo listo! Tu cita está confirmada. Te enviamos los detalles y la ubicación del local directamente a tu WhatsApp.</p>
-						<div class="mt-6 rounded-3xl bg-(--surface-container-lowest) p-6 shadow-sm">
-							<ul class="grid gap-4 text-base">
-								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Profesional</span> <span class="font-normal text-(--on-surface)" data-ticket-professional></span></li>
-								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Servicio</span> <span class="font-normal text-(--on-surface)" data-ticket-service></span></li>
-								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Fecha</span> <span class="font-normal text-(--on-surface)" data-ticket-date></span></li>
-								<li class="grid"><span class="text-sm font-medium text-(--on-surface-variant)">Hora</span> <span class="font-normal text-(--on-surface)" data-ticket-time></span></li>
+					<section data-step-panel="6" class="public-booking-panel public-booking-confirmed hidden">
+						<div class="public-booking-confirmed__hero">
+							<span class="public-booking-confirmed__icon" aria-hidden="true">
+								<span class="material-symbols-rounded">check_circle</span>
+							</span>
+							<h2 class="public-booking-confirmed__title">Reserva confirmada</h2>
+							<p class="public-booking-confirmed__desc">
+								¡Todo listo! Tu cita está confirmada. Te enviamos los detalles y la ubicación del local directamente a tu WhatsApp.
+							</p>
+						</div>
+						<div class="public-booking-confirmed__ticket">
+							<ul class="public-booking-confirmed__rows">
+								<li class="public-booking-confirmed__row">
+									<span class="public-booking-confirmed__label">Profesional</span>
+									<span class="public-booking-confirmed__value" data-ticket-professional></span>
+								</li>
+								<li class="public-booking-confirmed__row">
+									<span class="public-booking-confirmed__label">Servicio</span>
+									<span class="public-booking-confirmed__value" data-ticket-service></span>
+								</li>
+								<li class="public-booking-confirmed__row">
+									<span class="public-booking-confirmed__label">Fecha</span>
+									<span class="public-booking-confirmed__value" data-ticket-date></span>
+								</li>
+								<li class="public-booking-confirmed__row">
+									<span class="public-booking-confirmed__label">Hora</span>
+									<span class="public-booking-confirmed__value" data-ticket-time></span>
+								</li>
 							</ul>
 						</div>
-						<button type="button" data-restart-booking class="mt-8 inline-flex h-12 items-center justify-center rounded-full bg-(--tertiary) px-8 text-base font-medium text-(--on-tertiary)">Reservar otra cita</button>
+						<button type="button" data-restart-booking class="public-booking-confirmed__cta">
+							Reservar otra cita
+						</button>
 					</section>
 
 					<PublicSipapDepositPanel stepPanel={7} />

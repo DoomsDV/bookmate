@@ -1436,6 +1436,24 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	border-bottom: 1px solid var(--shell-border);
 }
 
+.ppe-crop-modal__head .ppe-icon-btn {
+	width: 2.5rem;
+	height: 2.5rem;
+	flex-shrink: 0;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--on-surface-variant);
+	transition:
+		background 0.15s ease,
+		color 0.15s ease;
+}
+
+.ppe-crop-modal__head .ppe-icon-btn:hover {
+	background: color-mix(in srgb, var(--on-surface) 10%, transparent);
+	color: var(--on-surface);
+}
+
 .ppe-crop-modal__hint {
 	margin: 0.25rem 0 0;
 	font-size: 0.82rem;

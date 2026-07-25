@@ -16,6 +16,7 @@ import {
 	parseApiDateTime,
 } from '../../lib/booking-datetime';
 import '../../styles/global.css';
+import '../../styles/public-booking.css';
 
 const token = String(Astro.params.token || '').trim();
 
@@ -75,11 +76,22 @@ const googleMapsApiKey =
 	'';
 
 let reservationLocations: PublicBookingLocation[] = [];
+let professionalImageUrl = '';
+let organizationName = '';
+let serviceImageUrl = '';
+let durationMinutes = 0;
 
 if (reservation && organizationSlug && professionalSlug) {
 	try {
 		const profile = await getPublicProfileWithOrds(organizationSlug, professionalSlug);
 		reservationLocations = normalizePublicBookingLocations(profile.locations);
+		professionalImageUrl = String(profile.image_url || '').trim();
+		organizationName = String(profile.organization_name || '').trim();
+		durationMinutes = Number(reservation.duration_minutes || 0) || 0;
+		const matchedService = Array.isArray(profile.services)
+			? profile.services.find((svc) => Number(svc.id_service) === Number(reservation.ser_id_service))
+			: null;
+		serviceImageUrl = String(matchedService?.image_url || '').trim();
 	} catch {
 		reservationLocations = [];
 	}
@@ -95,23 +107,32 @@ if (reservation && reservationLocations.length === 0) {
 	];
 }
 
+if (reservation && !durationMinutes) {
+	durationMinutes = Number(reservation.duration_minutes || 0) || 0;
+}
+
+const professionalDisplayName = String(reservation?.professional_name || '').trim();
+const organizationDisplayName = organizationName || organizationSlug || 'Hasel';
+const locationAddress = String(reservation?.location_address || '').trim();
+const durationLabel = durationMinutes > 0 ? `${durationMinutes} min` : '';
+
 const serializedLocations = reservation
 	? JSON.stringify(reservationLocations).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
 	: '';
 ---
 
 <Layout>
-	<main class="public-booking-shell reservation-shell relative z-10 mx-auto min-h-screen w-full max-w-4xl px-2 py-6 sm:px-4 md:px-6 lg:py-8">
+	<main class="public-booking-shell reservation-shell relative z-10 mx-auto min-h-screen w-full max-w-3xl px-3 py-6 sm:px-5 md:px-6 lg:py-8">
 		<div aria-hidden="true" class="pointer-events-none fixed inset-0 z-[-1] bg-(--surface-background)"></div>
 		<section
-			class="reservation-card grid gap-4"
+			class="reservation-manage"
 			data-reservation-root
 			data-token={token}
 			data-google-maps-api-key={googleMapsApiKey}
 		>
 			{loadError || !reservation ? (
-				<div class="reservation-state rounded-[28px] bg-(--surface-container) p-6 shadow-sm">
-					<span class="material-symbols-rounded">event_busy</span>
+				<div class="reservation-state">
+					<span class="material-symbols-rounded" aria-hidden="true">event_busy</span>
 					<h1>No encontramos esta reserva</h1>
 					<p>{loadError || 'El enlace puede haber expirado o no existe.'}</p>
 					<a href="/" class="reservation-link">Volver al inicio</a>
@@ -121,135 +142,255 @@ const serializedLocations = reservation
 					<script type="application/json" id="reservation-json" set:html={serializedReservation}></script>
 					<script type="application/json" id="reservation-locations-json" set:html={serializedLocations}></script>
 
-					<header class="reservation-header rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6">
-						<div class="reservation-header-content">
-							<div class="grid gap-1">
-								<p class="reservation-eyebrow">Gestionar reserva</p>
-								<h1>Tu reserva en Hasel</h1>
-								<p>Revisa los datos, cambia la fecha o cancela tu turno si ya no puedes asistir.</p>
+					<article class="public-booking-sheet reservation-manage__sheet">
+						<header class="public-booking-profile reservation-manage__profile">
+							<div class="public-booking-profile__inner">
+								{professionalImageUrl ? (
+									<img
+										src={professionalImageUrl}
+										alt={`Foto de ${professionalDisplayName}`}
+										loading="lazy"
+										class="public-booking-avatar"
+									/>
+								) : (
+									<div
+										class="public-booking-avatar public-booking-avatar--empty"
+										aria-label={`Sin foto de ${professionalDisplayName}`}
+										role="img"
+									>
+										<span class="material-symbols-rounded">account_circle</span>
+									</div>
+								)}
+								<div class="public-booking-profile__text">
+									<p class="public-booking-profile__eyebrow">{organizationDisplayName}</p>
+									<h1 class="public-booking-profile__title">{professionalDisplayName}</h1>
+									<p class="public-booking-profile__subtitle">Gestionar reserva</p>
+								</div>
 							</div>
-						</div>
-					</header>
+						</header>
 
-					<div class="reservation-summary rounded-[28px] bg-(--surface-container) p-4 shadow-sm sm:p-5">
-						<div>
-							<span>Cliente</span>
-							<strong>{reservation.customer_name}</strong>
-						</div>
-						<div>
-							<span>Servicio</span>
-							<strong>{reservation.service_name}</strong>
-						</div>
-						<div>
-							<span>Profesional</span>
-							<strong>{reservation.professional_name}</strong>
-						</div>
-						<div>
-							<span>Sucursal</span>
-							<strong data-location-name>{reservation.location_name}</strong>
-						</div>
-						<div>
-							<span>Estado</span>
-							<strong data-status-text>{reservation.status}</strong>
-						</div>
-						<div>
-							<span>Horario actual</span>
-							<strong data-current-date>{formattedCurrentDate}</strong>
-						</div>
-					</div>
+						<div class="reservation-manage__body">
+							<div class="reservation-manage__hero">
+								<div class="reservation-manage__schedule">
+									<span class="reservation-manage__schedule-icon material-symbols-rounded" aria-hidden="true">
+										calendar_month
+									</span>
+									<div class="reservation-manage__schedule-text">
+										<span class="reservation-manage__micro">Horario actual</span>
+										<strong class="reservation-manage__schedule-value" data-current-date>
+											{formattedCurrentDate}
+										</strong>
+									</div>
+									<span class="reservation-manage__status" data-status-text>{reservation.status}</span>
+								</div>
 
-					{isCancelled ? (
-						<div class="reservation-cancelled rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6" data-reservation-cancelled>
-							{awaitsRefundAlias ? (
-								<>
-									<p class="reservation-cancelled-text">
-										Tu turno fue cancelado. Para recibir el reembolso
-										{refundAmountLabel ? ` de ${refundAmountLabel}` : ''}, cargá tu alias SIPAP.
-									</p>
-									<form class="mt-4 grid gap-3" data-refund-alias-form>
-										<label class="grid gap-1 text-sm font-semibold text-(--on-surface)">
-											Alias SIPAP
-											<input
-												type="text"
-												name="refund_alias"
-												required
-												minlength="3"
-												maxlength="100"
-												placeholder="Ej. 0981XXXXXX"
-												class="rounded-2xl border border-(--outline-variant) bg-(--surface-bright) px-4 py-3 text-base font-normal"
-												data-refund-alias-input
-											/>
-										</label>
-										<button type="submit" class="reservation-primary-action" data-refund-alias-submit>
-											Enviar alias para reembolso
-										</button>
-										<p class="m-0 text-sm text-(--on-surface-variant)" data-refund-alias-status></p>
-									</form>
-								</>
-							) : refundPending ? (
-								<>
-									<p class="reservation-cancelled-text">
-										Reserva cancelada. Tu reembolso
-										{refundAmountLabel ? ` de ${refundAmountLabel}` : ''} está pendiente: el comercio te transferirá en hasta 48 horas hábiles.
-									</p>
-									{claimAlreadyOpen ? (
-										<p class="mt-3 text-sm font-semibold text-amber-700">
-											Ya registraste un reclamo. Hasel está al tanto.
-										</p>
-									) : canClaimRefund ? (
-										<div class="mt-4 grid gap-2" data-refund-claim-wrap>
-											<p class="m-0 text-sm text-(--on-surface-variant)">
-												Pasaron las 48 horas hábiles y aún no marcó el reembolso como enviado.
-											</p>
-											<button type="button" class="reservation-danger" data-refund-claim-submit>
-												Reclamar reembolso
-											</button>
-											<p class="m-0 text-sm text-(--on-surface-variant)" data-refund-claim-status></p>
-										</div>
-									) : null}
-									<a href={rebookHref} class="reservation-link">Volver a reservar</a>
-								</>
-							) : refundSent ? (
-								<>
-									<p class="reservation-cancelled-text">
-										Reserva cancelada. El reembolso
-										{refundAmountLabel ? ` de ${refundAmountLabel}` : ''} ya fue marcado como enviado.
-									</p>
-									<a href={rebookHref} class="reservation-link">Volver a reservar</a>
-								</>
+								<div class="reservation-manage__service">
+									{serviceImageUrl ? (
+										<img
+											src={serviceImageUrl}
+											alt=""
+											loading="lazy"
+											class="reservation-manage__service-thumb"
+										/>
+									) : (
+										<span class="reservation-manage__service-thumb reservation-manage__service-thumb--empty" aria-hidden="true">
+											<span class="material-symbols-rounded">spa</span>
+										</span>
+									)}
+									<div class="reservation-manage__service-text">
+										<span class="reservation-manage__micro">Servicio</span>
+										<strong class="reservation-manage__service-name">{reservation.service_name}</strong>
+										{durationLabel && (
+											<span class="reservation-manage__service-meta">{durationLabel}</span>
+										)}
+									</div>
+								</div>
+							</div>
+
+							{isCancelled || isPastReservation ? (
+								<div class="reservation-manage__location">
+									<span class="reservation-manage__location-icon material-symbols-rounded" aria-hidden="true">
+										location_on
+									</span>
+									<span class="reservation-manage__location-text">
+										<span class="reservation-manage__micro">Sucursal</span>
+										<strong class="reservation-manage__location-name" data-location-name>
+											{reservation.location_name}
+										</strong>
+										{locationAddress && (
+											<span class="reservation-manage__location-address">{locationAddress}</span>
+										)}
+									</span>
+								</div>
 							) : (
-								<>
+								<button
+									type="button"
+									class="reservation-manage__location"
+									data-manage-open-map
+									aria-label={`Ver mapa de ${reservation.location_name}`}
+								>
+									<span class="reservation-manage__location-icon material-symbols-rounded" aria-hidden="true">
+										location_on
+									</span>
+									<span class="reservation-manage__location-text">
+										<span class="reservation-manage__micro">Sucursal</span>
+										<strong class="reservation-manage__location-name" data-location-name>
+											{reservation.location_name}
+										</strong>
+										{locationAddress && (
+											<span class="reservation-manage__location-address">{locationAddress}</span>
+										)}
+									</span>
+									<span class="reservation-manage__location-chevron material-symbols-rounded" aria-hidden="true">
+										chevron_right
+									</span>
+								</button>
+							)}
+
+							<ul class="reservation-manage__meta">
+								<li class="reservation-manage__meta-row">
+									<span class="material-symbols-rounded" aria-hidden="true">person</span>
+									<span class="reservation-manage__meta-copy">
+										<span class="reservation-manage__micro">Cliente</span>
+										<strong>{reservation.customer_name}</strong>
+									</span>
+								</li>
+							</ul>
+
+							{isCancelled ? (
+								<div class="reservation-manage__notice" data-reservation-cancelled>
+									{awaitsRefundAlias ? (
+										<>
+											<p class="reservation-cancelled-text">
+												Tu turno fue cancelado. Para recibir el reembolso
+												{refundAmountLabel ? ` de ${refundAmountLabel}` : ''}, cargá tu alias SIPAP.
+											</p>
+											<form class="mt-4 grid gap-3" data-refund-alias-form>
+												<label class="grid gap-1 text-sm font-semibold text-(--on-surface)">
+													Alias SIPAP
+													<input
+														type="text"
+														name="refund_alias"
+														required
+														minlength="3"
+														maxlength="100"
+														placeholder="Ej. 0981XXXXXX"
+														class="rounded-2xl border border-(--outline-variant) bg-(--surface-bright) px-4 py-3 text-base font-normal"
+														data-refund-alias-input
+													/>
+												</label>
+												<button type="submit" class="reservation-primary-action" data-refund-alias-submit>
+													Enviar alias para reembolso
+												</button>
+												<p class="m-0 text-sm text-(--on-surface-variant)" data-refund-alias-status></p>
+											</form>
+										</>
+									) : refundPending ? (
+										<>
+											<p class="reservation-cancelled-text">
+												Reserva cancelada. Tu reembolso
+												{refundAmountLabel ? ` de ${refundAmountLabel}` : ''} está pendiente: el comercio te transferirá en hasta 48 horas hábiles.
+											</p>
+											{claimAlreadyOpen ? (
+												<p class="mt-3 text-sm font-semibold text-amber-700">
+													Ya registraste un reclamo. Hasel está al tanto.
+												</p>
+											) : canClaimRefund ? (
+												<div class="mt-4 grid gap-2" data-refund-claim-wrap>
+													<p class="m-0 text-sm text-(--on-surface-variant)">
+														Pasaron las 48 horas hábiles y aún no marcó el reembolso como enviado.
+													</p>
+													<button type="button" class="reservation-danger" data-refund-claim-submit>
+														Reclamar reembolso
+													</button>
+													<p class="m-0 text-sm text-(--on-surface-variant)" data-refund-claim-status></p>
+												</div>
+											) : null}
+											<a href={rebookHref} class="reservation-link">Volver a reservar</a>
+										</>
+									) : refundSent ? (
+										<>
+											<p class="reservation-cancelled-text">
+												Reserva cancelada. El reembolso
+												{refundAmountLabel ? ` de ${refundAmountLabel}` : ''} ya fue marcado como enviado.
+											</p>
+											<a href={rebookHref} class="reservation-link">Volver a reservar</a>
+										</>
+									) : (
+										<>
+											<p class="reservation-cancelled-text">
+												Esta reserva se encuentra cancelada. Si deseas, puedes agendar un nuevo turno con el profesional.
+											</p>
+											<a href={rebookHref} class="reservation-link">Volver a reservar</a>
+										</>
+									)}
+								</div>
+							) : isPastReservation ? (
+								<div class="reservation-manage__notice" data-reservation-past>
 									<p class="reservation-cancelled-text">
-										Esta reserva se encuentra cancelada. Si deseas, puedes agendar un nuevo turno con el profesional.
+										Esta reserva ya finalizó. Ya no es posible reprogramarla ni cancelarla desde este enlace.
 									</p>
 									<a href={rebookHref} class="reservation-link">Volver a reservar</a>
-								</>
+								</div>
+							) : (
+								<div class="reservation-manage__actions">
+									<button
+										type="button"
+										class="reservation-primary-action"
+										data-open-reschedule-modal
+									>
+										<span class="material-symbols-rounded" aria-hidden="true">event_repeat</span>
+										Reprogramar reserva
+									</button>
+									<button type="button" class="reservation-danger" data-cancel-reservation>
+										<span class="material-symbols-rounded" aria-hidden="true">event_busy</span>
+										Cancelar reserva
+									</button>
+								</div>
 							)}
 						</div>
-					) : isPastReservation ? (
-						<div class="reservation-cancelled rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6" data-reservation-past>
-							<p class="reservation-cancelled-text">
-								Esta reserva ya finalizó. Ya no es posible reprogramarla ni cancelarla desde este enlace.
-							</p>
-							<a href={rebookHref} class="reservation-link">Volver a reservar</a>
-						</div>
-					) : (
-					<>
-					<div class="reservation-actions-card rounded-[28px] bg-(--surface-container) p-5 shadow-sm sm:p-6">
-						<button
-							type="button"
-							class="reservation-primary-action"
-							data-open-reschedule-modal
-						>
-							<span class="material-symbols-rounded" aria-hidden="true">event_repeat</span>
-							Reprogramar reserva
-						</button>
-						<button type="button" class="reservation-danger" data-cancel-reservation>
-							<span class="material-symbols-rounded" aria-hidden="true">event_busy</span>
-							Cancelar reserva
-						</button>
-					</div>
+					</article>
 
+					<dialog
+						class="public-map-modal rounded-[28px] border-0 bg-(--surface-container-high) p-0 text-(--on-surface) shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop:bg-black/70"
+						data-public-map-modal
+					>
+						<div class="grid gap-5 p-6">
+							<div class="flex items-start justify-between gap-4">
+								<div>
+									<h2 class="text-xl font-semibold tracking-tight">Ubicación</h2>
+									<p class="mt-1 text-sm text-(--on-surface-variant)" data-public-map-address></p>
+								</div>
+								<button
+									type="button"
+									class="grid h-10 w-10 place-items-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-highest) hover:text-(--on-surface)"
+									data-public-map-close
+									aria-label="Cerrar mapa"
+								>
+									<span class="material-symbols-rounded">close</span>
+								</button>
+							</div>
+							<div class="public-map-canvas-wrap relative h-96 overflow-hidden rounded-2xl bg-(--surface-container-highest)">
+								<div class="h-full w-full" data-public-map-canvas></div>
+								<div
+									class="public-map-loading absolute inset-0 z-10 hidden place-items-center bg-(--surface-container-highest)/85 backdrop-blur-[2px]"
+									data-public-map-loading
+									aria-hidden="true"
+									aria-live="polite"
+									aria-label="Cargando mapa"
+								>
+									<span class="material-symbols-rounded animate-spin text-[1.75rem] text-(--primary)" aria-hidden="true">progress_activity</span>
+								</div>
+							</div>
+							<p
+								class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
+								data-public-map-status
+							></p>
+						</div>
+					</dialog>
+
+					{!isCancelled && !isPastReservation && (
+					<>
 					<dialog
 						class="reservation-reschedule-modal m-0 mt-auto mb-0 w-screen max-w-none open:flex open:flex-col max-h-[88dvh] overflow-hidden rounded-t-[1.75rem] rounded-b-none border border-(--outline-variant) border-b-0 bg-(--surface-container) p-0 text-(--on-surface) shadow-2xl backdrop:bg-black/70 sm:m-auto sm:mb-auto sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] sm:max-h-[min(90vh,52rem)] sm:rounded-[28px] sm:border-b"
 						data-cancel-refund-modal
@@ -322,40 +463,31 @@ const serializedLocations = reservation
 										</p>
 									</div>
 
-									<div class="rounded-3xl border border-(--outline-variant) bg-(--surface-container-low) p-3 sm:p-4">
-										<div class="mb-3 flex items-center justify-between gap-3">
-											<button
-												type="button"
-												data-calendar-prev
-												class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
-											>
-												Anterior
+									<div class="public-booking-calendar">
+										<div class="public-booking-calendar__toolbar">
+											<button type="button" data-calendar-prev class="calendar-nav-btn" aria-label="Mes anterior">
+												<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
 											</button>
-											<p class="text-base font-medium capitalize tracking-wide text-(--on-surface)" data-calendar-month></p>
-											<button
-												type="button"
-												data-calendar-next
-												class="flex h-10 items-center rounded-full px-5 text-sm font-medium text-(--primary) transition hover:bg-(--primary-container) hover:text-(--on-primary-container)"
-											>
-												Siguiente
+											<p class="public-booking-calendar__month" data-calendar-month></p>
+											<button type="button" data-calendar-next class="calendar-nav-btn" aria-label="Mes siguiente">
+												<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
 											</button>
 										</div>
-										<div class="mb-3 grid grid-cols-7 gap-1 text-center text-xs font-medium uppercase tracking-wider text-(--on-surface-variant) sm:text-sm">
-											<span>Lun</span>
-											<span>Mar</span>
-											<span>Mie</span>
-											<span>Jue</span>
-											<span>Vie</span>
-											<span>Sab</span>
-											<span>Dom</span>
+										<div class="public-booking-calendar__weekdays">
+											<span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span>
+											<span>Vie</span><span>Sáb</span><span>Dom</span>
 										</div>
-										<div class="grid grid-cols-7 gap-1 sm:gap-2" data-calendar-grid></div>
+										<div class="public-booking-calendar__grid" data-calendar-grid></div>
 									</div>
 								</section>
 
 								<section data-reschedule-step-panel="2" class="hidden grid gap-3">
 									<p class="reservation-slots-date-subtitle">
 										<span data-reservation-selected-date></span>
+									</p>
+									<p class="m-0 text-base text-(--on-surface-variant)">
+										<span class="public-slots-hint__desktop">Elegí un horario disponible</span>
+										<span class="public-slots-hint__mobile">Deslizá para seleccionar un horario</span>
 									</p>
 
 									<div
@@ -373,7 +505,7 @@ const serializedLocations = reservation
 											Sucursales y horarios
 										</p>
 
-										<div class="grid gap-0" data-reservation-slots-container></div>
+										<div class="public-slots-container grid gap-0" data-reservation-slots-container></div>
 										<p
 											data-no-reservation-slots
 											class="hidden rounded-2xl border border-(--error-container) bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
@@ -422,44 +554,6 @@ const serializedLocations = reservation
 							</div>
 						</form>
 					</dialog>
-
-					<dialog
-						class="public-map-modal rounded-[28px] border-0 bg-(--surface-container-high) p-0 text-(--on-surface) shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop:bg-black/70"
-						data-public-map-modal
-					>
-						<div class="grid gap-5 p-6">
-							<div class="flex items-start justify-between gap-4">
-								<div>
-									<h2 class="text-xl font-semibold tracking-tight">Ubicación</h2>
-									<p class="mt-1 text-sm text-(--on-surface-variant)" data-public-map-address></p>
-								</div>
-								<button
-									type="button"
-									class="grid h-10 w-10 place-items-center rounded-full text-(--on-surface-variant) transition hover:bg-(--surface-container-highest) hover:text-(--on-surface)"
-									data-public-map-close
-									aria-label="Cerrar mapa"
-								>
-									<span class="material-symbols-rounded">close</span>
-								</button>
-							</div>
-							<div class="public-map-canvas-wrap relative h-96 overflow-hidden rounded-2xl bg-(--surface-container-highest)">
-								<div class="h-full w-full" data-public-map-canvas></div>
-								<div
-									class="public-map-loading absolute inset-0 z-10 hidden place-items-center bg-(--surface-container-highest)/85 backdrop-blur-[2px]"
-									data-public-map-loading
-									aria-hidden="true"
-									aria-live="polite"
-									aria-label="Cargando mapa"
-								>
-									<span class="material-symbols-rounded animate-spin text-[1.75rem] text-(--primary)" aria-hidden="true">progress_activity</span>
-								</div>
-							</div>
-							<p
-								class="hidden rounded-2xl bg-(--error-container) px-4 py-3 text-sm font-medium text-(--on-error-container)"
-								data-public-map-status
-							></p>
-						</div>
-					</dialog>
 					</>
 					)}
 
@@ -485,8 +579,8 @@ const serializedLocations = reservation
 	--surface-container-lowest: #1b1b1b;
 	--surface-container-low: #1b1b1b;
 	--surface-container: #1b1b1b;
-	--surface-container-high: #1b1b1b;
-	--surface-container-highest: #1b1b1b;
+	--surface-container-high: #1e1e1e;
+	--surface-container-highest: #2b2b2f;
 	--outline: #44474e;
 	--outline-variant: #44474e;
 	--on-surface: #e2e2e9;
@@ -505,17 +599,251 @@ const serializedLocations = reservation
 	--on-error-container: #ffdad6;
 }
 
-.reservation-card {
+.reservation-manage {
 	width: 100%;
 }
 
-.reservation-header-content {
+.reservation-manage__sheet {
+	display: grid;
+	gap: 0;
+	padding: 0;
+	background: transparent;
+	border: 0;
+	box-shadow: none;
+}
+
+.reservation-manage__profile {
+	margin: 0 0 1.25rem;
+	padding: 0;
+	background: transparent;
+}
+
+.reservation-manage__body {
+	display: grid;
+	gap: 1rem;
+	padding: 0;
+	background: transparent;
+}
+
+.reservation-manage__hero {
+	display: grid;
+	gap: 0.85rem;
+}
+
+.reservation-manage__micro {
+	display: block;
+	margin: 0 0 0.2rem;
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: #9ca3af;
+}
+
+.reservation-manage__schedule {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.85rem;
+	padding: 1.1rem 1.15rem;
+	border-radius: 1.35rem;
+	border: 1px solid color-mix(in srgb, var(--outline-variant) 65%, transparent);
+	background: #1e1e1e;
+}
+
+.reservation-manage__schedule-icon {
+	flex: 0 0 auto;
+	margin-top: 0.15rem;
+	font-size: 1.55rem;
+	color: var(--primary);
+}
+
+.reservation-manage__schedule-text {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.reservation-manage__schedule-value {
+	display: block;
+	font-size: clamp(1.15rem, 3.4vw, 1.45rem);
+	font-weight: 700;
+	line-height: 1.25;
+	letter-spacing: -0.02em;
+	color: var(--on-surface);
+}
+
+.reservation-manage__status {
+	flex: 0 0 auto;
+	align-self: center;
+	padding: 0.35rem 0.7rem;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--primary) 16%, #1e1e1e);
+	border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+	color: var(--primary);
+	font-size: 0.68rem;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	white-space: nowrap;
+}
+
+.reservation-manage__service {
 	display: flex;
 	align-items: center;
 	gap: 0.9rem;
+	padding: 0.9rem 1rem;
+	border-radius: 1.35rem;
+	border: 1px solid color-mix(in srgb, var(--outline-variant) 65%, transparent);
+	background: #1e1e1e;
 }
 
-.reservation-header h1,
+.reservation-manage__service-thumb {
+	flex: 0 0 auto;
+	width: 4.25rem;
+	height: 4.25rem;
+	border-radius: 1rem;
+	object-fit: cover;
+	background: #2b2b2f;
+}
+
+.reservation-manage__service-thumb--empty {
+	display: inline-grid;
+	place-items: center;
+	color: var(--on-surface-variant);
+}
+
+.reservation-manage__service-thumb--empty .material-symbols-rounded {
+	font-size: 1.6rem;
+}
+
+.reservation-manage__service-text {
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.reservation-manage__service-name {
+	display: block;
+	font-size: 1.08rem;
+	font-weight: 700;
+	line-height: 1.25;
+	color: var(--on-surface);
+}
+
+.reservation-manage__service-meta {
+	display: block;
+	margin-top: 0.2rem;
+	font-size: 0.88rem;
+	color: var(--on-surface-variant);
+}
+
+.reservation-manage__location {
+	display: flex;
+	align-items: center;
+	gap: 0.85rem;
+	width: 100%;
+	padding: 0.95rem 1rem;
+	border-radius: 1.35rem;
+	border: 1px solid color-mix(in srgb, var(--outline-variant) 65%, transparent);
+	background: #1e1e1e;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+	cursor: default;
+}
+
+button.reservation-manage__location {
+	cursor: pointer;
+	transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+button.reservation-manage__location:hover {
+	border-color: color-mix(in srgb, var(--primary) 40%, var(--outline-variant));
+	background: color-mix(in srgb, var(--primary) 8%, #1e1e1e);
+}
+
+.reservation-manage__location-icon {
+	flex: 0 0 auto;
+	font-size: 1.35rem;
+	color: var(--primary);
+}
+
+.reservation-manage__location-text {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.reservation-manage__location-name {
+	display: block;
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--on-surface);
+}
+
+.reservation-manage__location-address {
+	display: block;
+	margin-top: 0.15rem;
+	font-size: 0.88rem;
+	line-height: 1.35;
+	color: var(--on-surface-variant);
+}
+
+.reservation-manage__location-chevron {
+	flex: 0 0 auto;
+	color: #64748b;
+	font-size: 1.25rem;
+}
+
+.reservation-manage__meta {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 0.55rem;
+}
+
+.reservation-manage__meta-row {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.15rem 0.15rem;
+	color: var(--on-surface-variant);
+}
+
+.reservation-manage__meta-row .material-symbols-rounded {
+	font-size: 1.2rem;
+	color: #8b93a1;
+}
+
+.reservation-manage__meta-copy strong {
+	display: block;
+	font-size: 0.95rem;
+	font-weight: 600;
+	color: var(--on-surface);
+}
+
+.reservation-manage__actions {
+	display: grid;
+	gap: 0.7rem;
+	margin-top: 0.35rem;
+}
+
+.reservation-manage__notice {
+	display: grid;
+	gap: 0.75rem;
+	padding: 1rem 0 0.25rem;
+}
+
+.reservation-state {
+	display: grid;
+	justify-items: start;
+	gap: 0.75rem;
+	padding: 1.5rem 0;
+}
+
+.reservation-state .material-symbols-rounded {
+	font-size: 2rem;
+	color: var(--on-surface-variant);
+}
+
 .reservation-state h1 {
 	margin: 0;
 	font-size: clamp(1.75rem, 3.4vw, 2.2rem);
@@ -524,56 +852,16 @@ const serializedLocations = reservation
 	color: var(--on-surface);
 }
 
-.reservation-header p,
 .reservation-state p {
-	margin: 0.3rem 0 0;
+	margin: 0;
 	color: var(--on-surface-variant);
 	line-height: 1.45;
 }
 
-.reservation-eyebrow {
-	color: var(--primary) !important;
-	font-size: 0.72rem;
-	font-weight: 800;
-	letter-spacing: 0.12em;
-	text-transform: uppercase;
-}
-
-.reservation-summary {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 0.55rem;
-}
-
-.reservation-summary div {
-	border-radius: 0.8rem;
-	background: var(--surface-container-high);
-	padding: 0.65rem 0.75rem;
-}
-
-.reservation-summary span {
-	display: block;
+.reservation-cancelled-text {
+	margin: 0;
 	color: var(--on-surface-variant);
-	font-size: 0.72rem;
-	font-weight: 700;
-	margin-bottom: 0.28rem;
-}
-
-.reservation-summary strong {
-	display: block;
-	color: var(--on-surface);
-	font-size: 0.96rem;
-	line-height: 1.25;
-}
-
-.reservation-form {
-	display: grid;
-	gap: 1rem;
-}
-
-.reservation-actions-card {
-	display: grid;
-	gap: 0.75rem;
+	line-height: 1.5;
 }
 
 .reservation-primary-action,
@@ -619,6 +907,26 @@ const serializedLocations = reservation
 
 .reservation-secondary-action:hover {
 	background: var(--surface-container-highest);
+}
+
+.reservation-manage__actions .reservation-primary-action,
+.reservation-manage__actions .reservation-danger {
+	width: 100%;
+}
+
+@media (min-width: 640px) {
+	.reservation-manage__actions {
+		grid-template-columns: 1.2fr 1fr;
+	}
+}
+
+.reservation-card {
+	width: 100%;
+}
+
+.reservation-form {
+	display: grid;
+	gap: 1rem;
 }
 
 .reservation-actions {
@@ -916,18 +1224,6 @@ const serializedLocations = reservation
 	border-color: rgba(248, 113, 113, 0.42);
 }
 
-.reservation-cancelled {
-	display: grid;
-	gap: 1rem;
-}
-
-.reservation-cancelled-text {
-	margin: 0;
-	color: var(--on-surface-variant);
-	line-height: 1.5;
-	font-size: 0.98rem;
-}
-
 .reservation-link {
 	margin-top: 0;
 	background: var(--primary);
@@ -937,32 +1233,6 @@ const serializedLocations = reservation
 
 .is-hidden {
 	display: none;
-}
-
-.reservation-state {
-	text-align: center;
-}
-
-.reservation-state .material-symbols-rounded {
-	color: var(--primary);
-	font-size: 3rem;
-}
-
-@media (max-width: 640px) {
-	.reservation-header-content,
-	.reservation-actions {
-		flex-direction: column;
-		align-items: stretch;
-	}
-
-	.reservation-summary {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-		gap: 0.5rem;
-	}
-
-	.reservation-summary div {
-		padding: 0.62rem 0.7rem;
-	}
 }
 
 @media (max-width: 639px) {
@@ -1011,22 +1281,6 @@ const serializedLocations = reservation
 
 	.reservation-reschedule-stepper {
 		padding: 0.65rem 1.5rem 0.85rem;
-	}
-
-	.reservation-actions-card {
-		grid-template-columns: 1fr auto;
-		align-items: center;
-	}
-
-	.reservation-primary-action {
-		justify-self: start;
-	}
-}
-
-@media (min-width: 768px) {
-	.reservation-summary {
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 0.65rem;
 	}
 }
 

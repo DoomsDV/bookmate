@@ -12,10 +12,11 @@ import {
 	sortTimeSlotsChronologically,
 	toDateStart,
 } from '../lib/booking-datetime';
+import { normalizePublicBookingLocations } from '../lib/public-booking-locations';
 import {
-	appendLocationSlotHeader,
-	normalizePublicBookingLocations,
-} from '../lib/public-booking-locations';
+	isMobileSlotRouletteViewport,
+	mountPublicSlotBranches,
+} from '../lib/public-booking-slots-ui';
 
 type BookingLocation = {
 	id_location: number;
@@ -296,8 +297,123 @@ export const initializePublicReservationPage = () => {
 	let rescheduleStep: RescheduleStep = 1;
 	let mapInstance: any = null;
 	let mapMarker: any = null;
+	const availableDatesCache = new Map<string, Set<string>>();
+	let availableDatesLoadingKey: string | null = null;
+	let availableDatesRequestSeq = 0;
 
 	locationInput.value = String(reservation.loc_id_location);
+
+	const getLocationTargets = (): BookingLocation[] =>
+		locations.length > 0
+			? locations
+			: defaultLocation.id_location
+				? [defaultLocation]
+				: [];
+
+	const availableDatesMonthKey = (year: number, monthIndex: number) => {
+		const ym = `${year}-${String(monthIndex + 1).padStart(2, '0')}`;
+		const locIds = getLocationTargets()
+			.map((loc) => loc.id_location)
+			.sort((a, b) => a - b)
+			.join(',');
+		return `${reservation.pro_id_professional}|${reservation.ser_id_service}|${locIds}|${ym}`;
+	};
+
+	const fetchAvailableDatesForLocation = async (
+		locationId: number,
+		fromDate: string,
+		toDate: string
+	) => {
+		const params = new URLSearchParams({
+			pro_id: String(reservation.pro_id_professional),
+			loc_id: String(locationId),
+			ser_id: String(reservation.ser_id_service),
+			from_date: fromDate,
+			to_date: toDate,
+		});
+		if (reservation.id_appointment > 0) {
+			params.set('exclude_app_id', String(reservation.id_appointment));
+		}
+
+		const response = await fetch(`/api/public/available-dates?${params.toString()}`, {
+			headers: { Accept: 'application/json' },
+			cache: 'no-store',
+		});
+		const data = await response.json().catch(() => ({}));
+		if (!response.ok || data.status !== 'success' || !Array.isArray(data.data)) {
+			return [] as string[];
+		}
+		return data.data
+			.map((value: unknown) => String(value || '').trim())
+			.filter((value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value));
+	};
+
+	const loadAvailableDatesForVisibleMonth = async (options?: { preferDate?: string }) => {
+		const year = visibleMonth.getFullYear();
+		const month = visibleMonth.getMonth();
+		const cacheKey = availableDatesMonthKey(year, month);
+		const ymPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+		const locationTargets = getLocationTargets();
+
+		if (availableDatesCache.has(cacheKey)) {
+			const dates = availableDatesCache.get(cacheKey)!;
+			if (selectedDate.startsWith(ymPrefix) && selectedDate && !dates.has(selectedDate)) {
+				selectedDate = '';
+				dateInput.value = '';
+			}
+			renderCalendar();
+			updateFooterButtons();
+			return;
+		}
+
+		if (locationTargets.length === 0) {
+			availableDatesCache.set(cacheKey, new Set());
+			renderCalendar();
+			updateFooterButtons();
+			return;
+		}
+
+		const reqId = ++availableDatesRequestSeq;
+		availableDatesLoadingKey = cacheKey;
+		renderCalendar();
+		updateFooterButtons();
+
+		try {
+			const fromDate = formatApiDate(new Date(year, month, 1));
+			const toDate = formatApiDate(new Date(year, month + 1, 0));
+			const results = await Promise.all(
+				locationTargets.map((loc) =>
+					fetchAvailableDatesForLocation(loc.id_location, fromDate, toDate)
+				)
+			);
+			if (reqId !== availableDatesRequestSeq) return;
+
+			const union = new Set<string>();
+			for (const dates of results) {
+				for (const date of dates) union.add(date);
+			}
+			availableDatesCache.set(cacheKey, union);
+
+			const prefer = String(options?.preferDate || '').trim();
+			if (prefer && union.has(prefer) && prefer.startsWith(ymPrefix)) {
+				selectedDate = prefer;
+				dateInput.value = prefer;
+				selectedDateLabel.textContent = formatLongDateFromApiDate(prefer);
+			} else if (selectedDate.startsWith(ymPrefix) && selectedDate && !union.has(selectedDate)) {
+				selectedDate = '';
+				dateInput.value = '';
+			}
+		} catch {
+			if (reqId !== availableDatesRequestSeq) return;
+			availableDatesCache.set(cacheKey, new Set());
+		} finally {
+			if (reqId === availableDatesRequestSeq) {
+				availableDatesLoadingKey = null;
+			}
+			renderCalendar();
+			updateFooterButtons();
+		}
+	};
 
 	const getSelectedSlotKey = () =>
 		selectedSlot ? `${selectedLocationId}:${selectedSlot}` : '';
@@ -505,6 +621,13 @@ export const initializePublicReservationPage = () => {
 		return label.charAt(0).toUpperCase() + label.slice(1);
 	};
 
+	const escapeHtml = (value: string) =>
+		String(value || '')
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;');
+
 	const updateChangeSummary = () => {
 		const currentStart = parseApiDateTime(reservation.start_time);
 		if (!currentStart || !selectedDate || !selectedSlot) {
@@ -514,14 +637,38 @@ export const initializePublicReservationPage = () => {
 
 		const currentLabel = formatLongReservationDateTime(currentStart);
 		const nextLabelFormatted = formatLongReservationDateTimeFromParts(selectedDate, selectedSlot);
+		const previousLocationLabel = getLocationLabel(defaultLocation);
+		const nextLocation =
+			getLocationTargets().find((loc) => loc.id_location === selectedLocationId) ||
+			(selectedLocationId === defaultLocation.id_location ? defaultLocation : null);
+		const nextLocationLabel = nextLocation
+			? getLocationLabel(nextLocation)
+			: `Sucursal #${selectedLocationId}`;
+		const locationChanged =
+			selectedLocationId > 0 && selectedLocationId !== reservation.loc_id_location;
+
+		const locationDiff = locationChanged
+			? `
+			<div class="reservation-change-diff__block reservation-change-diff__block--previous">
+				<span class="reservation-change-diff__microcopy">Sucursal anterior:</span>
+				<span class="reservation-change-diff__previous">${escapeHtml(previousLocationLabel)}</span>
+			</div>
+			<div class="reservation-change-diff__block reservation-change-diff__block--next">
+				<span class="reservation-change-diff__microcopy">Sucursal nueva:</span>
+				<strong class="reservation-change-diff__next">${escapeHtml(nextLocationLabel)}</strong>
+			</div>
+			`
+			: '';
+
 		changeSummary.innerHTML = `
+			${locationDiff}
 			<div class="reservation-change-diff__block reservation-change-diff__block--previous">
 				<span class="reservation-change-diff__microcopy">Anterior:</span>
-				<span class="reservation-change-diff__previous">${currentLabel}</span>
+				<span class="reservation-change-diff__previous">${escapeHtml(currentLabel)}</span>
 			</div>
 			<div class="reservation-change-diff__block reservation-change-diff__block--next">
 				<span class="reservation-change-diff__microcopy">Nuevo:</span>
-				<strong class="reservation-change-diff__next">${nextLabelFormatted}</strong>
+				<strong class="reservation-change-diff__next">${escapeHtml(nextLabelFormatted)}</strong>
 			</div>
 		`;
 	};
@@ -536,7 +683,11 @@ export const initializePublicReservationPage = () => {
 		rescheduleSubmitButton.classList.toggle('is-hidden', !isStep3);
 
 		if (isStep1) {
-			rescheduleNextButton.disabled = !selectedDate;
+			const year = visibleMonth.getFullYear();
+			const month = visibleMonth.getMonth();
+			const isLoadingAvailability =
+				availableDatesLoadingKey === availableDatesMonthKey(year, month);
+			rescheduleNextButton.disabled = !selectedDate || isLoadingAvailability;
 			return;
 		}
 
@@ -599,7 +750,8 @@ export const initializePublicReservationPage = () => {
 		if (slotsSectionHeading) slotsSectionHeading.classList.add('hidden');
 		slotsLoading.classList.add('hidden');
 		setRescheduleStep(1);
-		renderCalendar();
+		const preferDate = formatApiDate(initialDate);
+		void loadAvailableDatesForVisibleMonth({ preferDate });
 	};
 
 	const openRescheduleModal = () => {
@@ -656,7 +808,6 @@ export const initializePublicReservationPage = () => {
 	};
 
 	const renderSlotSections = () => {
-		slotsContainer.innerHTML = '';
 		slotsLoading.classList.toggle('hidden', !isLoadingSlots);
 
 		const totalSlots = getTotalAvailableSlots();
@@ -669,62 +820,28 @@ export const initializePublicReservationPage = () => {
 		}
 
 		if (isLoadingSlots) {
+			slotsContainer.innerHTML = '';
 			updateFooterButtons();
 			return;
 		}
 
-		const selectedSlotKey = getSelectedSlotKey();
-		let renderedSectionCount = 0;
-
-		for (const group of availableSlotGroups) {
-			if (group.slots.length === 0) continue;
-
-			if (renderedSectionCount > 0) {
-				const divider = document.createElement('div');
-				divider.className = 'reservation-slot-location-divider';
-				divider.setAttribute('role', 'separator');
-				slotsContainer.appendChild(divider);
-			}
-			renderedSectionCount += 1;
-
-			const section = document.createElement('section');
-			section.className = 'grid gap-3 pt-0.5';
-
-			appendLocationSlotHeader(section, group.location, {
-				titleClassName: 'reservation-slot-location-name',
-				onAddressClick: (location) => {
-					void openLocationMap(location as BookingLocation);
-				},
-			});
-
-			const grid = document.createElement('div');
-			grid.className = 'grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4';
-
-			for (const slot of group.slots) {
-				const slotKey = `${group.location.id_location}:${slot}`;
-				const button = document.createElement('button');
-				button.type = 'button';
-				button.textContent = slot;
-				button.className =
-					'flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition ' +
-					(selectedSlotKey === slotKey
-						? 'border-[var(--primary)] bg-[var(--primary-container)] text-[var(--on-primary-container)]'
-						: 'border-[var(--outline)] bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
-				button.addEventListener('click', () => {
-					selectedSlot = slot;
-					selectedLocationId = group.location.id_location;
-					slotInput.value = slot;
-					locationInput.value = String(group.location.id_location);
-					updateLocationSummary(group.location);
-					renderSlotSections();
-					updateFooterButtons();
-				});
-				grid.appendChild(button);
-			}
-
-			section.appendChild(grid);
-			slotsContainer.appendChild(section);
-		}
+		mountPublicSlotBranches({
+			container: slotsContainer,
+			groups: availableSlotGroups,
+			selectedSlotKey: getSelectedSlotKey(),
+			useRoulette: isMobileSlotRouletteViewport(),
+			onSelect: (locationId, slot, location) => {
+				selectedSlot = slot;
+				selectedLocationId = locationId;
+				slotInput.value = slot;
+				locationInput.value = String(locationId);
+				updateLocationSummary(location);
+				updateFooterButtons();
+			},
+			onAddressClick: (location) => {
+				void openLocationMap(location as BookingLocation);
+			},
+		});
 
 		updateFooterButtons();
 	};
@@ -739,12 +856,7 @@ export const initializePublicReservationPage = () => {
 		renderSlotSections();
 
 		try {
-			const locationTargets =
-				locations.length > 0
-					? locations
-					: defaultLocation.id_location
-						? [defaultLocation]
-						: [];
+			const locationTargets = getLocationTargets();
 
 			const slotResults = await Promise.allSettled(
 				locationTargets.map((location) => fetchAvailableSlotsForLocation(location, targetDate))
@@ -825,10 +937,17 @@ export const initializePublicReservationPage = () => {
 		const firstDay = new Date(year, month, 1);
 		const daysInMonth = new Date(year, month + 1, 0).getDate();
 		const firstWeekday = (firstDay.getDay() + 6) % 7;
+		const cacheKey = availableDatesMonthKey(year, month);
+		const availableDates = availableDatesCache.get(cacheKey);
+		const isLoadingAvailability = availableDatesLoadingKey === cacheKey;
+		const calendarRoot = calendarGrid.closest('.public-booking-calendar');
+		calendarRoot?.classList.toggle('is-loading-availability', isLoadingAvailability);
+		calendarGrid.classList.toggle('is-loading', isLoadingAvailability);
+		calendarGrid.setAttribute('aria-busy', isLoadingAvailability ? 'true' : 'false');
 
 		for (let blank = 0; blank < firstWeekday; blank += 1) {
 			const placeholder = document.createElement('span');
-			placeholder.setAttribute('aria-hidden', 'true');
+			placeholder.className = 'public-cal-day--empty';
 			calendarGrid.appendChild(placeholder);
 		}
 
@@ -840,17 +959,31 @@ export const initializePublicReservationPage = () => {
 			const isToday = dateStart.getTime() === today.getTime();
 			const isSelected = selectedDate === dateKey;
 
+			if (isLoadingAvailability && !isPast) {
+				const skeleton = document.createElement('span');
+				skeleton.className = 'public-cal-day--skeleton';
+				skeleton.setAttribute('aria-hidden', 'true');
+				calendarGrid.appendChild(skeleton);
+				continue;
+			}
+
+			const isUnavailable = !isPast && (availableDates ? !availableDates.has(dateKey) : false);
+
 			const dayButton = document.createElement('button');
 			dayButton.type = 'button';
 			dayButton.textContent = String(day);
-			dayButton.disabled = isPast;
-			dayButton.className =
-				'flex h-9 w-9 mx-auto items-center justify-center rounded-full border text-sm font-medium cursor-pointer transition disabled:cursor-not-allowed ' +
-				(isSelected
-					? 'border-[var(--primary)] bg-[var(--primary)] text-[var(--on-primary)]'
-					: isToday
-						? 'border-[var(--primary)] bg-transparent text-[var(--primary)]'
-						: 'border-transparent bg-transparent text-[var(--on-surface)] hover:bg-[var(--surface-container-highest)]');
+			dayButton.disabled = isPast || isUnavailable;
+			dayButton.className = [
+				isSelected ? 'is-selected' : '',
+				isToday ? 'is-today' : '',
+				isPast ? 'is-past' : '',
+				isUnavailable ? 'is-unavailable' : '',
+			]
+				.filter(Boolean)
+				.join(' ');
+			if (isUnavailable && !isPast) {
+				dayButton.title = 'Sin horarios disponibles';
+			}
 
 			dayButton.addEventListener('click', () => {
 				selectDate(dateValue);
@@ -925,6 +1058,15 @@ export const initializePublicReservationPage = () => {
 
 	openRescheduleButton.addEventListener('click', openRescheduleModal);
 
+	const manageOpenMapButton = root.querySelector<HTMLButtonElement>('[data-manage-open-map]');
+	manageOpenMapButton?.addEventListener('click', () => {
+		const currentLocId = toPositiveInt(locationInput.value, selectedLocationId);
+		const target =
+			locations.find((loc) => loc.id_location === currentLocId) ||
+			(defaultLocation.id_location ? defaultLocation : null);
+		if (target) void openLocationMap(target);
+	});
+
 	rescheduleCloseButton.addEventListener('click', closeRescheduleModal);
 	rescheduleModal.addEventListener('click', (event) => {
 		if (event.target === rescheduleModal) closeRescheduleModal();
@@ -941,12 +1083,12 @@ export const initializePublicReservationPage = () => {
 
 	prevMonthButton.addEventListener('click', () => {
 		visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() - 1, 1);
-		renderCalendar();
+		void loadAvailableDatesForVisibleMonth();
 	});
 
 	nextMonthButton.addEventListener('click', () => {
 		visibleMonth = new Date(visibleMonth.getFullYear(), visibleMonth.getMonth() + 1, 1);
-		renderCalendar();
+		void loadAvailableDatesForVisibleMonth();
 	});
 
 	mapCloseButton.addEventListener('click', () => {
