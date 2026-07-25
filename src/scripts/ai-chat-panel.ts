@@ -1,5 +1,5 @@
 import { marked } from 'marked';
-import { AI_CHAT_QUICK_ACTIONS, AI_CHAT_SUGGESTED_QUESTIONS } from '../lib/chat';
+import { AI_CHAT_QUICK_ACTIONS, AI_CHAT_SUGGESTED_QUESTIONS } from '../lib/chat-ui';
 
 type ChatSession = {
 	id_session: number;
