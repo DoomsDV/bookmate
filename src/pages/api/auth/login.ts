@@ -16,6 +16,15 @@ import {
 	setSessionCookies,
 } from '../../../lib/auth';
 import { getCurrentOrganizationWithOrds } from '../../../lib/organization';
+import { setPanelValidationCache } from '../../../lib/panel-validation-cache';
+import { parseTokenClaims } from '../../../lib/token-claims';
+
+const markPanelValidated = (
+	cookies: Parameters<typeof setPanelValidationCache>[0],
+	accessToken: string
+) => {
+	setPanelValidationCache(cookies, parseTokenClaims(accessToken));
+};
 
 const mapFieldParamName = (field: string) => {
 	if (field === 'username' || field === 'email' || field === 'identifier') return 'identifier_error';
@@ -137,6 +146,7 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 		const session = loginResult;
 		clearOrgSelectionCookie(cookies);
 		setSessionCookies(cookies, url, session);
+		markPanelValidated(cookies, session.access_token);
 		cookies.set('fcm_prompt_pending', '1', {
 			httpOnly: false,
 			secure: import.meta.env.PROD,
@@ -155,6 +165,7 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 					invitationToken
 				);
 				setSessionCookies(cookies, url, acceptedSession);
+				markPanelValidated(cookies, acceptedSession.access_token);
 
 				try {
 					const organization = await getCurrentOrganizationWithOrds(acceptedSession.access_token);

@@ -11,6 +11,8 @@ import {
 	setSessionCookies,
 } from '../../../lib/auth';
 import { getCurrentOrganizationWithOrds } from '../../../lib/organization';
+import { setPanelValidationCache } from '../../../lib/panel-validation-cache';
+import { parseTokenClaims } from '../../../lib/token-claims';
 
 const wantsHtml = (request: Request) => {
 	const accept = request.headers.get('accept') || '';
@@ -39,6 +41,26 @@ const sanitizeRedirectTo = (value: unknown) => {
 	}
 
 	return redirectTo;
+};
+
+const markPanelValidated = (
+	cookies: Parameters<typeof setPanelValidationCache>[0],
+	accessToken: string
+) => {
+	setPanelValidationCache(cookies, parseTokenClaims(accessToken));
+};
+
+const seedOrgCookiesFromSelection = (
+	cookies: Parameters<typeof setOrganizationCacheCookies>[0],
+	url: URL,
+	org: { organization_id: number; organization_name: string }
+) => {
+	setOrganizationCacheCookies(cookies, url, {
+		id_organization: org.organization_id,
+		name: org.organization_name,
+		profile_slug: '',
+		logo_url: '',
+	});
 };
 
 export const POST: APIRoute = async ({ request, cookies, url }) => {
@@ -73,10 +95,10 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 			throw new AuthApiError('Debes seleccionar una organización.', 400);
 		}
 
-		const allowed = selectionContext.organizations.some(
+		const selectedOrg = selectionContext.organizations.find(
 			(item) => item.org_member_id === orgMemberId
 		);
-		if (!allowed) {
+		if (!selectedOrg) {
 			throw new AuthApiError('La organización seleccionada no es válida.', 400);
 		}
 
@@ -87,6 +109,8 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 
 		clearOrgSelectionCookie(cookies);
 		setSessionCookies(cookies, url, session);
+		markPanelValidated(cookies, session.access_token);
+		seedOrgCookiesFromSelection(cookies, url, selectedOrg);
 		cookies.set('fcm_prompt_pending', '1', {
 			httpOnly: false,
 			secure: import.meta.env.PROD,
@@ -105,6 +129,7 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 					invitationToken
 				);
 				setSessionCookies(cookies, url, acceptedSession);
+				markPanelValidated(cookies, acceptedSession.access_token);
 
 				try {
 					const organization = await getCurrentOrganizationWithOrds(acceptedSession.access_token);
@@ -115,19 +140,7 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 
 				finalRedirect = '/panel/dashboard';
 			} catch {
-				try {
-					const organization = await getCurrentOrganizationWithOrds(session.access_token);
-					setOrganizationCacheCookies(cookies, url, organization);
-				} catch {
-					// No bloqueamos el acceso si falla la carga de branding de la org.
-				}
-			}
-		} else {
-			try {
-				const organization = await getCurrentOrganizationWithOrds(session.access_token);
-				setOrganizationCacheCookies(cookies, url, organization);
-			} catch {
-				// No bloqueamos el acceso si falla la carga de branding de la org.
+				// Invitación fallida: ya tenemos branding seed desde la org elegida.
 			}
 		}
 

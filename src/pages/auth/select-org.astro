@@ -121,8 +121,10 @@ const autoSubmitPreferredOrg =
 					</div>
 
 					<div class="org-select-actions">
-						<a href="/auth/login" class="m3-btn-tonal">Volver al login</a>
-						<button type="submit" class="m3-btn-primary">Continuar</button>
+						<a href="/auth/login" class="m3-btn-tonal" data-select-org-back>Volver al login</a>
+						<button type="submit" class="m3-btn-primary" data-select-org-submit>
+							Continuar
+						</button>
 					</div>
 				</form>
 
@@ -176,12 +178,33 @@ const autoSubmitPreferredOrg =
 		syncSelected();
 
 		const form = root.querySelector('form.org-select-form');
+		const submitBtn = root.querySelector('[data-select-org-submit]');
+		const setSubmitting = (isSubmitting) => {
+			if (!(submitBtn instanceof HTMLButtonElement)) return;
+			submitBtn.disabled = isSubmitting;
+			submitBtn.setAttribute('aria-busy', isSubmitting ? 'true' : 'false');
+			submitBtn.textContent = isSubmitting ? 'Entrando…' : 'Continuar';
+			const backLink = root.querySelector('[data-select-org-back]');
+			if (backLink instanceof HTMLAnchorElement) {
+				backLink.style.pointerEvents = isSubmitting ? 'none' : '';
+				backLink.setAttribute('aria-disabled', isSubmitting ? 'true' : 'false');
+			}
+		};
+
+		if (form instanceof HTMLFormElement && !form.dataset.submitBound) {
+			form.dataset.submitBound = 'true';
+			form.addEventListener('submit', () => {
+				setSubmitting(true);
+			});
+		}
+
 		if (
 			form instanceof HTMLFormElement &&
-			root.dataset.autoSubmitPreferred === '1' &&
+			form.dataset.autoSubmitPreferred === '1' &&
 			!root.dataset.autoSubmitted
 		) {
 			root.dataset.autoSubmitted = '1';
+			setSubmitting(true);
 			form.requestSubmit();
 		}
 	}
@@ -461,6 +484,12 @@ const autoSubmitPreferredOrg =
 	}
 
 	.m3-btn-primary:hover {
+		background: #1d4ed8;
+	}
+
+	.m3-btn-primary:disabled {
+		opacity: 0.72;
+		cursor: wait;
 		background: #1d4ed8;
 	}
 

@@ -45,25 +45,30 @@ const defaultAiSummaryFull = defaultAiSummaryShort;
 if (!token) {
 	loadError = 'No hay sesion valida para consultar el dashboard.';
 } else {
-	try {
-		dashboard = await getMainDashboardWithOrds(token, {
+	const [dashboardResult, profileResult] = await Promise.allSettled([
+		getMainDashboardWithOrds(token, {
 			page: currentPage,
 			limit: PAGE_SIZE,
-		});
-	} catch (error) {
+		}),
+		getMyProfileWithOrds(token),
+	]);
+
+	if (dashboardResult.status === 'fulfilled') {
+		dashboard = dashboardResult.value;
+	} else {
+		const error = dashboardResult.reason;
 		loadError =
 			error instanceof DashboardApiError
 				? error.message
 				: 'No fue posible cargar los datos del dashboard.';
 	}
 
-	try {
-		const profile = await getMyProfileWithOrds(token);
-		userFirstName = String(profile.first_name || '')
+	if (profileResult.status === 'fulfilled') {
+		userFirstName = String(profileResult.value.first_name || '')
 			.trim()
 			.split(/\s+/)
 			.filter(Boolean)[0] || '';
-	} catch {
+	} else {
 		userFirstName = '';
 	}
 }

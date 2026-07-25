@@ -162,7 +162,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
 	let organizationName = String(cookies.get('org_name')?.value || '').trim();
 	let organizationLogoUrl = String(cookies.get('org_logo_url')?.value || '').trim();
-	if ((!organizationName || !organizationLogoUrl) && accessToken) {
+	// Solo re-fetch si falta el nombre. Logo vacío es válido (orgs sin logo) y no debe
+	// forzar /workspace en cada request del panel.
+	if (!organizationName && accessToken) {
 		try {
 			const organization = await getCurrentOrganizationWithOrds(accessToken);
 			setOrganizationCacheCookies(cookies, url, organization);
