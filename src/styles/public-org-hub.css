@@ -5,8 +5,7 @@ html:has(.hub-root) {
 
 .hub-root {
 	--hub-max: 1120px;
-	/* Más aire en móvil para que badges como “Cerrado ahora” no peguen al borde */
-	--hub-pad-x: 1.5rem;
+	--hub-pad-x: 1.35rem;
 	--hub-topbar-h: 4.25rem;
 	--hub-primary: #426edb;
 	--hub-accent: #5b9cff;
@@ -68,20 +67,20 @@ html[data-theme='dark'] .hub-root::before {
 @media (hover: none) and (pointer: coarse), (max-width: 1023px) {
 	.hub-root::before {
 		filter: none;
-		opacity: 0.85;
+		opacity: 0.45;
 		background:
-			radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.09), transparent 70%),
-			radial-gradient(ellipse 62% 48% at 92% 55%, rgba(34, 211, 238, 0.11), transparent 68%),
-			radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.13), transparent 72%);
+			radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.05), transparent 70%),
+			radial-gradient(ellipse 62% 48% at 92% 55%, rgba(34, 211, 238, 0.055), transparent 68%),
+			radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.06), transparent 72%);
 	}
 
 	html[data-theme='dark'] .hub-root::before {
 		filter: none;
-		opacity: 0.22;
+		opacity: 0.1;
 		background:
-			radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.035), transparent 70%),
-			radial-gradient(ellipse 62% 48% at 92% 55%, rgba(34, 211, 238, 0.04), transparent 68%),
-			radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.045), transparent 72%);
+			radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.02), transparent 70%),
+			radial-gradient(ellipse 62% 48% at 92% 55%, rgba(34, 211, 238, 0.022), transparent 68%),
+			radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.025), transparent 72%);
 	}
 }
 
@@ -94,6 +93,98 @@ html[data-theme='dark'] .hub-root::before {
 @media (min-width: 1024px) {
 	.hub-root {
 		--hub-pad-x: 2rem;
+	}
+}
+
+@media (max-width: 639px) {
+	.hub-root::before {
+		opacity: 0.32;
+	}
+
+	html[data-theme='dark'] .hub-root {
+		background:
+			radial-gradient(ellipse 70% 50% at 6% 36%, rgba(59, 130, 246, 0.015), transparent 62%),
+			radial-gradient(ellipse 80% 55% at 55% 18%, rgba(56, 189, 248, 0.02), transparent 60%),
+			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(45, 212, 191, 0.02), transparent 58%),
+			var(--page-background, #131314);
+	}
+
+	html[data-theme='dark'] .hub-root::before {
+		opacity: 0.06;
+		background:
+			radial-gradient(ellipse 50% 40% at 12% 42%, rgba(96, 165, 250, 0.014), transparent 72%),
+			radial-gradient(ellipse 55% 45% at 88% 58%, rgba(34, 211, 238, 0.016), transparent 70%),
+			radial-gradient(ellipse 50% 45% at 70% 90%, rgba(52, 211, 153, 0.018), transparent 72%);
+	}
+
+	.hub-hero {
+		padding-top: 0.7rem;
+	}
+
+	.hub-hero__profile {
+		gap: 0.75rem;
+	}
+
+	.hub-hero__avatar-row {
+		gap: 0.55rem;
+		margin-top: -2.65rem;
+	}
+
+	.hub-hero__logo {
+		width: 5.15rem;
+		height: 5.15rem;
+		border-width: 3px;
+	}
+
+	.hub-hero__actions {
+		gap: 0.3rem;
+		padding-top: 2.85rem;
+	}
+
+	.hub-icon-btn {
+		width: 2.15rem;
+		height: 2.15rem;
+	}
+
+	.hub-icon-btn .material-symbols-rounded {
+		font-size: 1.05rem;
+	}
+
+	.hub-icon-btn__svg {
+		width: 1.05rem;
+		height: 1.05rem;
+	}
+
+	.hub-hero__facts {
+		gap: 0.55rem 0.85rem;
+		flex-wrap: wrap;
+	}
+
+	.hub-hero__cta-row {
+		gap: 0.55rem;
+	}
+
+	.hub-btn {
+		min-height: 2.45rem;
+		padding: 0.5rem 0.75rem;
+		font-size: 0.86rem;
+	}
+
+	.hub-section:has(.hub-tabs) {
+		margin-top: 1.1rem;
+	}
+
+	.hub-tabs {
+		gap: 0.15rem;
+	}
+
+	.hub-tab {
+		padding: 0.7rem 0.7rem;
+		font-size: 0.86rem;
+	}
+
+	.hub-panels {
+		padding-top: 1.2rem;
 	}
 }
 
@@ -131,7 +222,8 @@ html[data-theme='dark'] .hub-root::before {
 	max-width: var(--hub-max);
 	width: 100%;
 	margin: 0 auto;
-	padding: 0.85rem var(--hub-pad-x) 0;
+	padding: 0.85rem max(var(--hub-pad-x), env(safe-area-inset-right, 0px)) 0
+		max(var(--hub-pad-x), env(safe-area-inset-left, 0px));
 }
 
 .hub-hero__banner {
@@ -369,8 +461,8 @@ html[data-theme='light'] .hub-hero__banner:not(.hub-hero__banner--photo) {
 	width: 100%;
 	margin-left: auto;
 	margin-right: auto;
-	padding-left: var(--hub-pad-x);
-	padding-right: var(--hub-pad-x);
+	padding-left: max(var(--hub-pad-x), env(safe-area-inset-left, 0px));
+	padding-right: max(var(--hub-pad-x), env(safe-area-inset-right, 0px));
 }
 
 .hub-hero__profile {
@@ -494,6 +586,7 @@ html[data-theme='dark'] .hub-hero__tagline {
 	gap: 0.4rem;
 	flex: 0 0 auto;
 	padding-top: 3.2rem;
+	min-width: 0;
 }
 
 .hub-icon-btn {
@@ -570,9 +663,14 @@ html[data-theme='dark'] .hub-toast {
 
 .hub-hero__cta-row {
 	display: flex;
-	flex-wrap: wrap;
-	gap: 0.55rem;
-	padding-bottom: 0.35rem;
+	flex-wrap: nowrap;
+	gap: 0.65rem;
+	padding-bottom: 0.5rem;
+}
+
+.hub-hero__cta-row .hub-btn {
+	flex: 1 1 0;
+	min-width: 0;
 }
 
 .hub-btn {
@@ -841,11 +939,11 @@ html[data-theme='dark'] .hub-hours__live.is-closed {
 }
 
 .hub-tab:first-child {
-	padding-left: 0;
+	padding-left: 0.15rem;
 }
 
 .hub-tab:last-child {
-	padding-right: 0;
+	padding-right: 0.15rem;
 }
 
 .hub-tab::after {
@@ -861,11 +959,11 @@ html[data-theme='dark'] .hub-hours__live.is-closed {
 }
 
 .hub-tab:first-child::after {
-	left: 0;
+	left: 0.15rem;
 }
 
 .hub-tab:last-child::after {
-	right: 0;
+	right: 0.15rem;
 }
 
 .hub-tab:hover {
@@ -938,8 +1036,6 @@ html[data-hub-tab-pref='sucursales'] .hub-panel[data-hub-panel='sucursales'] {
 .hub-panels {
 	padding-top: 1.5rem;
 	padding-bottom: 0.75rem;
-	padding-left: var(--hub-pad-x);
-	padding-right: var(--hub-pad-x);
 	box-sizing: border-box;
 }
 

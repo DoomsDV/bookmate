@@ -145,7 +145,8 @@ const {
 		max-width: var(--hub-max, 1120px);
 		margin: 0 auto;
 		height: 100%;
-		padding: 0 var(--hub-pad-x, 1.25rem);
+		padding: 0 max(var(--hub-pad-x, 1.25rem), env(safe-area-inset-right, 0px)) 0
+			max(var(--hub-pad-x, 1.25rem), env(safe-area-inset-left, 0px));
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
