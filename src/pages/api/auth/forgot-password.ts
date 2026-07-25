@@ -1,10 +1,9 @@
 import type { APIRoute } from 'astro';
 
 import { AuthApiError, forgotPasswordWithOrds } from '../../../lib/auth';
+import { redirectWithFlashCookies } from '../../../lib/flash-server';
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const FLASH_MESSAGE_COOKIE = 'bookmate_flash_message';
-const FLASH_TYPE_COOKIE = 'bookmate_flash_type';
 const FORGOT_PASSWORD_SUCCESS_MESSAGE =
 	'Revisa tu bandeja de entrada. Encontrarás un enlace seguro con las instrucciones para crear tu nueva contraseña.';
 
@@ -16,9 +15,6 @@ const mapFieldParamName = (field: string) => {
 
 const toSafeStatus = (status: number) =>
 	Number.isInteger(status) && status >= 400 && status <= 599 ? status : 500;
-
-const buildFlashCookie = (name: string, value: string) =>
-	`${name}=${encodeURIComponent(value)}; Path=/; Max-Age=60; SameSite=Lax; HttpOnly`;
 
 const withQuery = (path: string, params: URLSearchParams) => {
 	const queryString = params.toString();
@@ -35,21 +31,17 @@ const wantsHtml = (request: Request) => {
 /** 404 del backend indica email inexistente; no debe exponerse al cliente. */
 const isForgotPasswordEnumerationResponse = (error: AuthApiError) => error.status === 404;
 
-const buildForgotPasswordSuccessResponse = (request: Request) => {
+const buildForgotPasswordSuccessResponse = (request: Request, email = '') => {
 	if (wantsHtml(request)) {
-		const headers = new Headers({
-			Location: '/auth/login',
-		});
-		headers.append(
-			'Set-Cookie',
-			buildFlashCookie(FLASH_MESSAGE_COOKIE, FORGOT_PASSWORD_SUCCESS_MESSAGE)
-		);
-		headers.append('Set-Cookie', buildFlashCookie(FLASH_TYPE_COOKIE, 'info'));
+		const redirectParams = new URLSearchParams();
+		redirectParams.set('sent', '1');
+		if (email) redirectParams.set('email', email);
 
-		return new Response(null, {
-			status: 302,
-			headers,
-		});
+		return redirectWithFlashCookies(
+			withQuery('/auth/forgot-password', redirectParams),
+			FORGOT_PASSWORD_SUCCESS_MESSAGE,
+			'success'
+		);
 	}
 
 	return Response.json(
@@ -113,7 +105,7 @@ export const POST: APIRoute = async ({ request }) => {
 
 		await forgotPasswordWithOrds({ email });
 
-		return buildForgotPasswordSuccessResponse(request);
+		return buildForgotPasswordSuccessResponse(request, email);
 	} catch (error) {
 		const authError =
 			error instanceof AuthApiError
@@ -121,7 +113,7 @@ export const POST: APIRoute = async ({ request }) => {
 				: new AuthApiError('No fue posible iniciar la recuperación de contraseña.', 500);
 
 		if (isForgotPasswordEnumerationResponse(authError)) {
-			return buildForgotPasswordSuccessResponse(request);
+			return buildForgotPasswordSuccessResponse(request, email);
 		}
 
 		console.error('[API forgot-password] Error procesando solicitud', {

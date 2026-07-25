@@ -41,13 +41,19 @@ export const onRequest = defineMiddleware(async (context, next) => {
 				return redirect(redirectToParam);
 			}
 
+			const wantsSwitchAccountLogin =
+				url.pathname === '/auth/login' && url.searchParams.get('switch_account') === '1';
+
 			if (
 				url.pathname.startsWith('/auth/accept-invite') ||
 				url.pathname === '/auth/create-organization' ||
 				url.pathname === '/auth/select-org' ||
+				url.pathname === '/auth/forgot-password' ||
+				url.pathname === '/auth/reset-password' ||
+				wantsSwitchAccountLogin ||
 				isInvitationLoginLanding(url.pathname, url.searchParams)
 			) {
-				if (isInvitationLoginLanding(url.pathname, url.searchParams)) {
+				if (isInvitationLoginLanding(url.pathname, url.searchParams) || wantsSwitchAccountLogin) {
 					clearSessionCookies(cookies);
 				}
 				return next();
