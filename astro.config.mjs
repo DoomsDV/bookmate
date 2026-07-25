@@ -31,9 +31,16 @@ export default defineConfig({
     enabled: false,
   },
   
-  // CSRF: reject cross-origin mutating requests to /api/* when Origin mismatches.
+  // CSRF: reject cross-origin mutating requests when Origin mismatches.
+  // On Vercel the request URL origin is often https://localhost; allowedDomains
+  // lets Astro trust X-Forwarded-Host for staging/prod custom domains.
   security: {
-    checkOrigin: true
+    checkOrigin: true,
+    allowedDomains: [
+      { hostname: 'staging.hasel.app', protocol: 'https' },
+      { hostname: 'hasel.app', protocol: 'https' },
+      { hostname: 'www.hasel.app', protocol: 'https' },
+    ],
   },
   
   adapter: vercel(),
