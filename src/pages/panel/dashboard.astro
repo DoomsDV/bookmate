@@ -2698,8 +2698,8 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-team-chip--compact {
-		border-color: rgba(148, 163, 184, 0.16);
-		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 82%, var(--page-background, #191919) 18%);
+		border-color: transparent;
+		background: var(--surface-container-high, #222222);
 		box-shadow: none;
 	}
 
@@ -2708,7 +2708,7 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] .dashboard-team-chip--compact :global(.team-avatar) {
-		border-color: color-mix(in srgb, var(--surface-container-low, #1e1f22) 85%, #000 15%);
+		border-color: var(--surface-container-high, #222222);
 	}
 
 	@media (min-width: 1024px) {
