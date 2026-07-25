@@ -484,53 +484,115 @@ const serializedProfessionals = professionals.length
 								</div>
 							</div>
 							{professionals.length ? (
-								<div class="hub-team-grid" data-hub-team-grid>
-									{professionals.map((pro) => {
-										const specialty = getPublicProfileSpecialtyLabel(pro.specialty);
-										const initials = initialsFromName(pro.full_name);
-										return (
-											<a
-												href={pro.booking_path}
-												class="hub-pro-card"
-												data-hub-pro-card
-												data-pro-id={String(pro.id_professional)}
-												data-booking-path={pro.booking_path}
-												data-location-ids={pro.location_ids.join(',')}
-											>
-												<div class="hub-pro-card__head">
-													{pro.image_url ? (
-														<img
-															src={pro.image_url}
-															alt=""
-															class="hub-pro-card__avatar"
-															width="56"
-															height="56"
-															loading="lazy"
-															decoding="async"
-														/>
-													) : (
-														<div
-															class="hub-pro-card__avatar hub-pro-card__avatar--ph"
-															aria-hidden="true"
-														>
-															{initials}
-														</div>
-													)}
-													<div class="min-w-0">
-														<h3 class="hub-pro-card__name">{pro.full_name}</h3>
-														<p class="hub-pro-card__specialty">
-															{specialty || 'Profesional'}
-														</p>
+								<>
+									<div
+										class="hub-team-grid hub-skel-grid"
+										data-hub-team-skeleton
+										hidden
+										aria-hidden="true"
+									>
+										{Array.from(
+											{ length: Math.min(4, Math.max(2, professionals.length)) },
+											(_, i) => (
+												<div class="hub-pro-card hub-pro-card--skeleton" aria-hidden="true">
+													<div class="hub-pro-card__top">
+														<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
+														<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
 													</div>
+													<div class="hub-pro-card__main">
+														<span class="hub-skel hub-skel-circle hub-pro-card__avatar"></span>
+														<div class="hub-pro-card__text">
+															<span
+																class={`hub-skel hub-skel-line hub-skel-line--title${i % 2 === 1 ? ' hub-skel-line--short' : ''}`}
+															></span>
+															<span class="hub-skel hub-skel-line hub-skel-line--sub"></span>
+														</div>
+													</div>
+													<span class="hub-skel hub-pro-card__btn-skel"></span>
 												</div>
-												<span class="hub-pro-card__cta">
-													<span class="material-symbols-rounded" aria-hidden="true">event</span>
-													Reservar
-												</span>
-											</a>
-										);
-									})}
-								</div>
+											)
+										)}
+									</div>
+									<div class="hub-team-grid" data-hub-team-grid>
+										{professionals.map((pro) => {
+											const specialty = getPublicProfileSpecialtyLabel(pro.specialty);
+											const initials = initialsFromName(pro.full_name);
+											const locationCount = pro.location_ids.length;
+											const locationMeta =
+												locationCount === 0
+													? ''
+													: locationCount === 1
+														? '1 sucursal'
+														: `${locationCount} sucursales`;
+											return (
+												<a
+													href={pro.booking_path}
+													class="hub-pro-card"
+													data-hub-pro-card
+													data-pro-id={String(pro.id_professional)}
+													data-booking-path={pro.booking_path}
+													data-location-ids={pro.location_ids.join(',')}
+												>
+													<div class="hub-pro-card__top">
+														<span class="hub-pro-card__status">
+															<span class="hub-pro-card__status-dot" aria-hidden="true"></span>
+															Agenda abierta
+														</span>
+														{locationMeta ? (
+															<span class="hub-pro-card__top-meta">
+																<span class="material-symbols-rounded" aria-hidden="true">
+																	location_on
+																</span>
+																{locationMeta}
+															</span>
+														) : null}
+													</div>
+													<div class="hub-pro-card__main">
+														<div
+															class:list={[
+																'hub-pro-card__avatar',
+																pro.image_url ? 'is-loading' : 'hub-pro-card__avatar--ph',
+															]}
+														>
+															{pro.image_url ? (
+																<>
+																	<span
+																		class="hub-skel hub-pro-card__avatar-skel"
+																		aria-hidden="true"
+																	></span>
+																	<img
+																		src={pro.image_url}
+																		alt=""
+																		class="hub-pro-card__photo is-loading"
+																		width="96"
+																		height="96"
+																		loading="lazy"
+																		decoding="async"
+																		data-hub-pro-photo
+																	/>
+																</>
+															) : (
+																<span class="hub-pro-card__initials" aria-hidden="true">
+																	{initials}
+																</span>
+															)}
+														</div>
+														<div class="hub-pro-card__text">
+															<h3 class="hub-pro-card__name">{pro.full_name}</h3>
+															<p class="hub-pro-card__specialty">
+																{specialty || 'Profesional'}
+															</p>
+														</div>
+													</div>
+													<span class="hub-pro-card__btn">
+														<span class="material-symbols-rounded" aria-hidden="true">event</span>
+														Reservar
+													</span>
+												</a>
+											);
+										})}
+									</div>
+								</>
 							) : (
 								<p class="hub-empty">
 									Todavía no hay profesionales con agenda pública en este negocio.
@@ -550,121 +612,160 @@ const serializedProfessionals = professionals.length
 						>
 							<h2 id="hub-locations-title" class="hub-section-title">Sucursales</h2>
 							{locations.length ? (
-								<div class="hub-locations-grid">
-									{locations.map((loc) => {
-										const mapsUrl = buildGoogleMapsUrl(loc);
-										const hasCoords =
-											Number.isFinite(Number(loc.latitude)) &&
-											Number.isFinite(Number(loc.longitude));
-										const prosHere = professionals.filter((pro) =>
-											pro.location_ids.includes(loc.id_location)
-										);
-										const canFilterHere = prosHere.length > 0;
-										const reserveHereHref =
-											prosHere.length === 1
-												? appendLocIdToBookingPath(
-														prosHere[0].booking_path,
-														loc.id_location
-													)
-												: '#equipo';
-										return (
-											<article class="hub-location-card" data-hub-location-card>
-												<div class="hub-location-card__info">
-													<h3 class="hub-location-card__name">{loc.name}</h3>
-													{loc.address ? (
-														<p class="hub-location-card__address">
+								<>
+									<div
+										class="hub-locations-grid hub-skel-grid"
+										data-hub-locations-skeleton
+										hidden
+										aria-hidden="true"
+									>
+										{Array.from(
+											{ length: Math.min(3, Math.max(2, locations.length)) },
+											(_, i) => (
+												<article
+													class="hub-location-card hub-location-card--skeleton"
+													aria-hidden="true"
+												>
+													<div class="hub-skel hub-location-card__map"></div>
+													<div class="hub-location-card__body">
+														<div class="hub-location-card__info">
 															<span
-																class="material-symbols-rounded"
-																aria-hidden="true"
+																class={`hub-skel hub-skel-line hub-skel-line--title${i % 2 === 1 ? ' hub-skel-line--short' : ''}`}
+															></span>
+															<span class="hub-skel hub-skel-line hub-skel-line--sub"></span>
+															<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
+														</div>
+														<span class="hub-skel hub-skel-circle"></span>
+													</div>
+												</article>
+											)
+										)}
+									</div>
+									<div class="hub-locations-grid" data-hub-locations-grid>
+										{locations.map((loc) => {
+											const mapsUrl = buildGoogleMapsUrl(loc);
+											const hasCoords =
+												Number.isFinite(Number(loc.latitude)) &&
+												Number.isFinite(Number(loc.longitude));
+											const prosHere = professionals.filter((pro) =>
+												pro.location_ids.includes(loc.id_location)
+											);
+											const canFilterHere = prosHere.length > 0;
+											const reserveHereHref =
+												prosHere.length === 1
+													? appendLocIdToBookingPath(
+															prosHere[0].booking_path,
+															loc.id_location
+														)
+													: '#equipo';
+											const prosMeta =
+												prosHere.length === 0
+													? 'Sin profesionales con agenda'
+													: prosHere.length === 1
+														? '1 profesional'
+														: `${prosHere.length} profesionales`;
+											const actionLabel =
+												prosHere.length === 1
+													? 'Reservar en esta sucursal'
+													: 'Ver profesionales';
+											const actionIcon = prosHere.length === 1 ? 'event' : 'group';
+											return (
+												<article class="hub-location-card" data-hub-location-card>
+													<div class="hub-location-card__map-frame">
+														{hasCoords ? (
+															<div
+																class="hub-location-card__map is-loading"
+																data-hub-map
+																data-lat={String(loc.latitude)}
+																data-lng={String(loc.longitude)}
+																data-title={loc.name}
+																aria-hidden={mapsUrl ? 'true' : undefined}
+																aria-label={mapsUrl ? undefined : `Mapa de ${loc.name}`}
 															>
-																location_on
-															</span>
-															<span>{loc.address}</span>
-														</p>
-													) : null}
-													<div class="hub-location-card__actions">
+																<span
+																	class="hub-skel hub-location-card__map-skel"
+																	aria-hidden="true"
+																></span>
+																<div
+																	class="hub-location-card__map-canvas"
+																	data-hub-map-canvas
+																></div>
+															</div>
+														) : (
+															<div class="hub-location-card__map hub-location-card__map--empty">
+																<span
+																	class="material-symbols-rounded"
+																	aria-hidden="true"
+																>
+																	location_off
+																</span>
+																<span>Sin coordenadas cargadas</span>
+															</div>
+														)}
+														{mapsUrl ? (
+															<button
+																type="button"
+																class="hub-location-card__map-hit"
+																data-hub-map-open
+																data-lat={hasCoords ? String(loc.latitude) : ''}
+																data-lng={hasCoords ? String(loc.longitude) : ''}
+																data-title={loc.name}
+																data-address={loc.address || ''}
+																data-maps-url={mapsUrl}
+																aria-label={`Ver mapa de ${loc.name}`}
+															>
+																<span class="hub-location-card__map-hit-label">
+																	<span
+																		class="material-symbols-rounded"
+																		aria-hidden="true"
+																	>
+																		map
+																	</span>
+																	<span class="hub-location-card__map-hit-text">Ver mapa</span>
+																</span>
+															</button>
+														) : null}
+													</div>
+													<div class="hub-location-card__body">
+														<div class="hub-location-card__info">
+															<h3 class="hub-location-card__name">{loc.name}</h3>
+															{loc.address ? (
+																<p class="hub-location-card__address">{loc.address}</p>
+															) : null}
+															<p class="hub-location-card__meta">{prosMeta}</p>
+														</div>
 														{prosHere.length === 1 ? (
 															<a
 																href={reserveHereHref}
-																class="hub-location-card__cta no-underline"
+																class="hub-location-card__action no-underline"
+																aria-label={actionLabel}
+																title={actionLabel}
 															>
 																<span class="material-symbols-rounded" aria-hidden="true"
-																	>event</span
+																	>{actionIcon}</span
 																>
-																Reservar en esta sucursal
 															</a>
 														) : (
 															<button
 																type="button"
-																class="hub-location-card__cta"
+																class="hub-location-card__action"
 																data-hub-view-pros-at-location
 																data-loc-id={canFilterHere ? String(loc.id_location) : '0'}
 																data-loc-name={canFilterHere ? loc.name : ''}
+																aria-label={actionLabel}
+																title={actionLabel}
 															>
 																<span class="material-symbols-rounded" aria-hidden="true"
-																	>group</span
+																	>{actionIcon}</span
 																>
-																Ver profesionales
 															</button>
 														)}
 													</div>
-												</div>
-												<div class="hub-location-card__map-frame">
-													{hasCoords ? (
-														<div
-															class="hub-location-card__map"
-															data-hub-map
-															data-lat={String(loc.latitude)}
-															data-lng={String(loc.longitude)}
-															data-title={loc.name}
-															aria-hidden={mapsUrl ? 'true' : undefined}
-															aria-label={mapsUrl ? undefined : `Mapa de ${loc.name}`}
-														>
-															<div class="hub-location-card__map-placeholder">
-																<span
-																	class="material-symbols-rounded"
-																	aria-hidden="true"
-																>
-																	map
-																</span>
-																<span>Cargando mapa…</span>
-															</div>
-														</div>
-													) : (
-														<div class="hub-location-card__map hub-location-card__map--empty">
-															<span
-																class="material-symbols-rounded"
-																aria-hidden="true"
-															>
-																location_off
-															</span>
-															<span>Sin coordenadas cargadas</span>
-														</div>
-													)}
-													{mapsUrl ? (
-														<a
-															href={mapsUrl}
-															class="hub-location-card__map-hit no-underline"
-															target="_blank"
-															rel="noopener noreferrer"
-															aria-label={`Abrir ${loc.name} en Google Maps`}
-														>
-															<span class="hub-location-card__map-hit-label">
-																<span
-																	class="material-symbols-rounded"
-																	aria-hidden="true"
-																>
-																	open_in_new
-																</span>
-																Abrir en Maps
-															</span>
-														</a>
-													) : null}
-												</div>
-											</article>
-										);
-									})}
-								</div>
+												</article>
+											);
+										})}
+									</div>
+								</>
 							) : (
 								<p class="hub-empty">Sin sucursales publicadas.</p>
 							)}
@@ -705,6 +806,51 @@ const serializedProfessionals = professionals.length
 						</dialog>
 					) : null}
 
+					{locations.length ? (
+						<dialog class="hub-map-modal" data-hub-map-modal aria-label="Mapa de la sucursal">
+							<div class="hub-map-modal__sheet">
+								<div class="hub-map-modal__handle" aria-hidden="true"><span></span></div>
+								<div class="hub-map-modal__header">
+									<div class="hub-map-modal__heading">
+										<h2 class="hub-map-modal__title" data-hub-map-modal-title>Ubicación</h2>
+										<p class="hub-map-modal__address" data-hub-map-modal-address></p>
+									</div>
+									<button
+										type="button"
+										class="hub-map-modal__close"
+										data-hub-map-modal-close
+										aria-label="Cerrar mapa"
+									>
+										<span class="material-symbols-rounded" aria-hidden="true">close</span>
+									</button>
+								</div>
+								<div class="hub-map-modal__canvas-wrap" data-hub-map-modal-wrap>
+									<div class="hub-map-modal__canvas" data-hub-map-modal-canvas></div>
+									<div
+										class="hub-map-modal__loading"
+										data-hub-map-modal-loading
+										hidden
+										aria-live="polite"
+										aria-label="Cargando mapa"
+									>
+										<span class="material-symbols-rounded" aria-hidden="true">progress_activity</span>
+									</div>
+								</div>
+								<p class="hub-map-modal__status" data-hub-map-modal-status hidden></p>
+								<a
+									class="hub-map-modal__external no-underline"
+									data-hub-map-modal-external
+									href="#"
+									target="_blank"
+									rel="noopener noreferrer"
+								>
+									<span class="material-symbols-rounded" aria-hidden="true">open_in_new</span>
+									Abrir en Google Maps
+								</a>
+							</div>
+						</dialog>
+					) : null}
+
 					<div
 						class="hub-toast"
 						data-hub-toast
@@ -729,11 +875,18 @@ const serializedProfessionals = professionals.length
 
 <script>
 	type GoogleMapsNamespace = {
-		Map: new (el: HTMLElement, opts: Record<string, unknown>) => {
+		Map: new (
+			el: HTMLElement,
+			opts: Record<string, unknown>
+		) => {
 			setCenter: (c: { lat: number; lng: number }) => void;
+			setOptions?: (opts: Record<string, unknown>) => void;
 		};
 		Marker: new (opts: Record<string, unknown>) => unknown;
-		event?: { trigger?: (instance: unknown, name: string) => void };
+		event?: {
+			trigger?: (instance: unknown, name: string) => void;
+			addListenerOnce?: (instance: unknown, name: string, handler: () => void) => void;
+		};
 	};
 
 	type WindowWithGoogleMaps = Window & {
@@ -741,7 +894,52 @@ const serializedProfessionals = professionals.length
 		__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
 	};
 
+	type HubMapHandle = {
+		map: {
+			setCenter: (c: { lat: number; lng: number }) => void;
+			setOptions?: (opts: Record<string, unknown>) => void;
+		};
+		center: { lat: number; lng: number };
+	};
+
 	const VALID_TABS = new Set(['overview', 'galeria', 'equipo', 'sucursales']);
+
+	const HUB_MAP_DARK_STYLES = [
+		{ elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
+		{ elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a1a' }] },
+		{ elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
+		{ featureType: 'poi', stylers: [{ visibility: 'off' }] },
+		{ featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+		{ featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1f2420' }] },
+		{ featureType: 'poi.park', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+		{ featureType: 'transit', stylers: [{ visibility: 'off' }] },
+		{ featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2a2a2a' }] },
+		{ featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#222222' }] },
+		{ featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
+		{ featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+		{ featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#333333' }] },
+		{ featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111827' }] },
+		{ featureType: 'water', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+		{
+			featureType: 'administrative',
+			elementType: 'labels.text.fill',
+			stylers: [{ color: '#6b7280' }],
+		},
+	];
+
+	const HUB_MAP_LIGHT_STYLES = [
+		{ featureType: 'poi', stylers: [{ visibility: 'off' }] },
+		{ featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
+		{ featureType: 'transit', stylers: [{ visibility: 'off' }] },
+		{ featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
+	];
+
+	const isHubDarkTheme = () => document.documentElement.dataset.theme === 'dark';
+
+	const hubMapThemeOptions = (dark: boolean) => ({
+		backgroundColor: dark ? '#141414' : '#eef2f7',
+		styles: dark ? HUB_MAP_DARK_STYLES : HUB_MAP_LIGHT_STYLES,
+	});
 
 	const loadGoogleMaps = async (apiKey: string): Promise<GoogleMapsNamespace> => {
 		const win = window as WindowWithGoogleMaps;
@@ -796,19 +994,29 @@ const serializedProfessionals = professionals.length
 		}
 	};
 
-	const hubMapInstances = new WeakMap<
-		HTMLElement,
-		{ map: { setCenter: (c: { lat: number; lng: number }) => void }; center: { lat: number; lng: number } }
-	>();
+	const hubMapInstances = new WeakMap<HTMLElement, HubMapHandle>();
+	const hubMapInstanceList: HubMapHandle[] = [];
+
+	const syncHubMapsTheme = () => {
+		const opts = hubMapThemeOptions(isHubDarkTheme());
+		hubMapInstanceList.forEach((entry) => {
+			entry.map.setOptions?.(opts);
+		});
+	};
 
 	const initHubMaps = async (root: HTMLElement) => {
 		const apiKey = String(root.dataset.googleMapsApiKey || '').trim();
 		const canvases = Array.from(root.querySelectorAll<HTMLElement>('[data-hub-map]'));
 		if (!canvases.length) return;
 
+		const markMapSettled = (canvas: HTMLElement) => {
+			canvas.classList.remove('is-loading');
+		};
+
 		if (!apiKey) {
 			canvases.forEach((canvas) => {
 				if (canvas.dataset.mapReady === '1') return;
+				markMapSettled(canvas);
 				canvas.classList.add('hub-location-card__map--empty');
 				canvas.innerHTML =
 					'<span class="material-symbols-rounded" aria-hidden="true">map</span><span>Mapa no disponible</span>';
@@ -818,10 +1026,12 @@ const serializedProfessionals = professionals.length
 
 		try {
 			const maps = await loadGoogleMaps(apiKey);
-			const isDark = document.documentElement.dataset.theme === 'dark';
+			const dark = isHubDarkTheme();
 			canvases.forEach((canvas) => {
 				const existing = hubMapInstances.get(canvas);
 				if (existing) {
+					existing.map.setOptions?.(hubMapThemeOptions(dark));
+					markMapSettled(canvas);
 					window.setTimeout(() => {
 						maps.event?.trigger?.(existing.map, 'resize');
 						existing.map.setCenter(existing.center);
@@ -831,55 +1041,50 @@ const serializedProfessionals = professionals.length
 
 				const lat = Number(canvas.dataset.lat);
 				const lng = Number(canvas.dataset.lng);
-				if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+				if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+					markMapSettled(canvas);
+					return;
+				}
 
-				canvas.innerHTML = '';
+				let mount = canvas.querySelector<HTMLElement>('[data-hub-map-canvas]');
+				if (!mount) {
+					mount = document.createElement('div');
+					mount.className = 'hub-location-card__map-canvas';
+					mount.dataset.hubMapCanvas = 'true';
+					canvas.appendChild(mount);
+				}
+
 				const center = { lat, lng };
-				const darkMapStyles = [
-					{ elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
-					{ elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a1a' }] },
-					{ elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
-					{ featureType: 'poi', stylers: [{ visibility: 'off' }] },
-					{ featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
-					{ featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1f2420' }] },
-					{ featureType: 'poi.park', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-					{ featureType: 'transit', stylers: [{ visibility: 'off' }] },
-					{ featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2a2a2a' }] },
-					{ featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#222222' }] },
-					{ featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
-					{ featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-					{ featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#333333' }] },
-					{ featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111827' }] },
-					{ featureType: 'water', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-					{
-						featureType: 'administrative',
-						elementType: 'labels.text.fill',
-						stylers: [{ color: '#6b7280' }],
-					},
-				];
-				const lightMapStyles = [
-					{ featureType: 'poi', stylers: [{ visibility: 'off' }] },
-					{ featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
-					{ featureType: 'transit', stylers: [{ visibility: 'off' }] },
-					{ featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-				];
-				const map = new maps.Map(canvas, {
+				const map = new maps.Map(mount, {
 					center,
 					zoom: 16,
-					disableDefaultUI: false,
-					mapTypeControl: false,
-					streetViewControl: false,
-					fullscreenControl: true,
+					disableDefaultUI: true,
+					gestureHandling: 'none',
+					keyboardShortcuts: false,
 					clickableIcons: false,
-					styles: isDark ? darkMapStyles : lightMapStyles,
+					...hubMapThemeOptions(dark),
 				});
 				new maps.Marker({
 					map,
 					position: center,
 					title: String(canvas.dataset.title || 'Sucursal'),
 				});
-				hubMapInstances.set(canvas, { map, center });
+				const handle: HubMapHandle = { map, center };
+				hubMapInstances.set(canvas, handle);
+				hubMapInstanceList.push(handle);
 				canvas.dataset.mapReady = '1';
+
+				let revealed = false;
+				const reveal = () => {
+					if (revealed) return;
+					revealed = true;
+					markMapSettled(canvas);
+				};
+				if (maps.event?.addListenerOnce) {
+					maps.event.addListenerOnce(map, 'idle', reveal);
+				}
+				window.setTimeout(reveal, 1400);
+
 				window.setTimeout(() => {
 					maps.event?.trigger?.(map, 'resize');
 					map.setCenter(center);
@@ -888,6 +1093,7 @@ const serializedProfessionals = professionals.length
 		} catch {
 			canvases.forEach((canvas) => {
 				if (canvas.dataset.mapReady === '1') return;
+				markMapSettled(canvas);
 				canvas.classList.add('hub-location-card__map--empty');
 				canvas.innerHTML =
 					'<span class="material-symbols-rounded" aria-hidden="true">error</span><span>No se pudo cargar el mapa</span>';
@@ -956,7 +1162,148 @@ const serializedProfessionals = professionals.length
 		const filterLabel = root.querySelector<HTMLElement>('[data-hub-location-filter-label]');
 		const emptyFilter = root.querySelector<HTMLElement>('[data-hub-team-empty-filter]');
 		const proCards = Array.from(root.querySelectorAll<HTMLAnchorElement>('[data-hub-pro-card]'));
+		const teamGrid = root.querySelector<HTMLElement>('[data-hub-team-grid]');
+		const teamSkeleton = root.querySelector<HTMLElement>('[data-hub-team-skeleton]');
+		const locationsGrid = root.querySelector<HTMLElement>('[data-hub-locations-grid]');
+		const locationsSkeleton = root.querySelector<HTMLElement>('[data-hub-locations-skeleton]');
+		const equipoPanel = root.querySelector<HTMLElement>('[data-hub-panel="equipo"]');
+		const sucursalesPanel = root.querySelector<HTMLElement>('[data-hub-panel="sucursales"]');
 		let activeLocId = 0;
+		let teamRevealPromise: Promise<void> | null = null;
+		let locationsRevealPromise: Promise<void> | null = null;
+
+		const markProPhotoReady = (img: HTMLImageElement) => {
+			img.classList.remove('is-loading');
+			img.classList.add('is-ready');
+			img.closest('.hub-pro-card__avatar')?.classList.remove('is-loading');
+		};
+
+		root.querySelectorAll<HTMLImageElement>('[data-hub-pro-photo]').forEach((img) => {
+			if (img.dataset.bound === '1') return;
+			img.dataset.bound = '1';
+			if (img.complete && img.naturalWidth > 0) {
+				markProPhotoReady(img);
+				return;
+			}
+			img.addEventListener('load', () => markProPhotoReady(img), { once: true });
+			img.addEventListener(
+				'error',
+				() => {
+					markProPhotoReady(img);
+				},
+				{ once: true }
+			);
+		});
+
+		const waitForProPhotos = (grid: HTMLElement, timeoutMs = 1200) =>
+			new Promise<void>((resolve) => {
+				const imgs = Array.from(grid.querySelectorAll<HTMLImageElement>('[data-hub-pro-photo]'));
+				const pending = imgs.filter((img) => !(img.complete && img.naturalWidth > 0));
+				if (!pending.length) {
+					resolve();
+					return;
+				}
+				let settled = 0;
+				let done = false;
+				const finish = () => {
+					if (done) return;
+					done = true;
+					resolve();
+				};
+				const timer = window.setTimeout(finish, timeoutMs);
+				pending.forEach((img) => {
+					const onDone = () => {
+						settled += 1;
+						if (settled >= pending.length) {
+							window.clearTimeout(timer);
+							finish();
+						}
+					};
+					img.addEventListener('load', onDone, { once: true });
+					img.addEventListener('error', onDone, { once: true });
+				});
+			});
+
+		const revealTeamGrid = async () => {
+			if (!teamGrid || !teamSkeleton || !equipoPanel) return;
+			if (equipoPanel.dataset.teamReady === '1') return;
+			if (teamRevealPromise) {
+				await teamRevealPromise;
+				return;
+			}
+			teamRevealPromise = (async () => {
+				const pendingPhotos = Array.from(
+					teamGrid.querySelectorAll<HTMLImageElement>('[data-hub-pro-photo]')
+				).filter((img) => !(img.complete && img.naturalWidth > 0));
+
+				if (!pendingPhotos.length) {
+					equipoPanel.dataset.teamReady = '1';
+					teamSkeleton.hidden = true;
+					teamGrid.hidden = false;
+					equipoPanel.removeAttribute('aria-busy');
+					return;
+				}
+
+				// Forzar carga (el grid oculto no dispara lazy-load).
+				pendingPhotos.forEach((img) => {
+					img.loading = 'eager';
+					if (!img.src && img.dataset.src) img.src = img.dataset.src;
+				});
+
+				teamGrid.hidden = true;
+				teamSkeleton.hidden = false;
+				equipoPanel.setAttribute('aria-busy', 'true');
+				await waitForProPhotos(teamGrid);
+				teamSkeleton.hidden = true;
+				teamGrid.hidden = false;
+				equipoPanel.dataset.teamReady = '1';
+				equipoPanel.removeAttribute('aria-busy');
+			})();
+			await teamRevealPromise;
+		};
+
+		const revealLocationsGrid = async () => {
+			if (!locationsGrid || !locationsSkeleton || !sucursalesPanel) {
+				await initHubMaps(root);
+				return;
+			}
+			if (sucursalesPanel.dataset.locationsReady === '1') {
+				await initHubMaps(root);
+				return;
+			}
+			if (locationsRevealPromise) {
+				await locationsRevealPromise;
+				return;
+			}
+			locationsRevealPromise = (async () => {
+				locationsGrid.hidden = true;
+				locationsSkeleton.hidden = false;
+				sucursalesPanel.setAttribute('aria-busy', 'true');
+
+				const apiKey = String(root.dataset.googleMapsApiKey || '').trim();
+				const startedAt = Date.now();
+				if (apiKey) {
+					try {
+						await loadGoogleMaps(apiKey);
+					} catch {
+						/* initHubMaps maneja el error visual */
+					}
+				}
+				const elapsed = Date.now() - startedAt;
+				if (elapsed < 240) {
+					await new Promise<void>((resolve) => {
+						window.setTimeout(resolve, 240 - elapsed);
+					});
+				}
+
+				locationsSkeleton.hidden = true;
+				locationsGrid.hidden = false;
+				await initHubMaps(root);
+				sucursalesPanel.dataset.locationsReady = '1';
+				sucursalesPanel.removeAttribute('aria-busy');
+			})();
+			await locationsRevealPromise;
+		};
 
 		const applyLocationFilter = (locId: number, locName = '') => {
 			activeLocId = locId > 0 ? locId : 0;
@@ -1022,8 +1369,11 @@ const serializedProfessionals = professionals.length
 					history.replaceState(null, '', `${window.location.pathname}${nextHash}`);
 				}
 			}
+			if (safeTab === 'equipo') {
+				void revealTeamGrid();
+			}
 			if (safeTab === 'sucursales') {
-				void initHubMaps(root);
+				void revealLocationsGrid();
 			}
 			if (scrollIntoView) {
 				scrollToPanel(safeTab);
@@ -1034,6 +1384,17 @@ const serializedProfessionals = professionals.length
 			.replace(/^#/, '')
 			.trim();
 		setActiveTab(VALID_TABS.has(hashTab) ? hashTab : 'overview', { updateHash: false });
+
+		if (root.dataset.themeSyncBound !== '1') {
+			root.dataset.themeSyncBound = '1';
+			const themeObserver = new MutationObserver(() => {
+				syncHubMapsTheme();
+			});
+			themeObserver.observe(document.documentElement, {
+				attributes: true,
+				attributeFilter: ['data-theme'],
+			});
+		}
 
 		tabs.forEach((tab) => {
 			if (tab.dataset.bound === '1') return;
@@ -1153,6 +1514,171 @@ const serializedProfessionals = professionals.length
 					event.preventDefault();
 					stepLightbox(1);
 				}
+			});
+		}
+
+		const mapModal = root.querySelector<HTMLDialogElement>('[data-hub-map-modal]');
+		const mapModalTitle = root.querySelector<HTMLElement>('[data-hub-map-modal-title]');
+		const mapModalAddress = root.querySelector<HTMLElement>('[data-hub-map-modal-address]');
+		const mapModalCanvas = root.querySelector<HTMLElement>('[data-hub-map-modal-canvas]');
+		const mapModalLoading = root.querySelector<HTMLElement>('[data-hub-map-modal-loading]');
+		const mapModalStatus = root.querySelector<HTMLElement>('[data-hub-map-modal-status]');
+		const mapModalExternal = root.querySelector<HTMLAnchorElement>('[data-hub-map-modal-external]');
+		const mapModalCloseBtns = Array.from(
+			root.querySelectorAll<HTMLButtonElement>('[data-hub-map-modal-close]')
+		);
+		let modalMapHandle: HubMapHandle | null = null;
+
+		const isHubMobileViewport = () => window.matchMedia('(max-width: 639px)').matches;
+
+		const setMapModalLoading = (loading: boolean) => {
+			if (!mapModalLoading) return;
+			mapModalLoading.hidden = !loading;
+		};
+
+		const setMapModalStatus = (message: string) => {
+			if (!mapModalStatus) return;
+			const text = String(message || '').trim();
+			mapModalStatus.textContent = text;
+			mapModalStatus.hidden = !text;
+		};
+
+		const renderModalMap = async (lat: number, lng: number, title: string) => {
+			if (!mapModalCanvas) return;
+			const apiKey = String(root.dataset.googleMapsApiKey || '').trim();
+			if (!apiKey) {
+				setMapModalStatus('Mapa no disponible.');
+				setMapModalLoading(false);
+				return;
+			}
+
+			setMapModalLoading(true);
+			setMapModalStatus('');
+			try {
+				const maps = await loadGoogleMaps(apiKey);
+				const center = { lat, lng };
+				const dark = isHubDarkTheme();
+				if (modalMapHandle) {
+					modalMapHandle.map.setOptions?.({
+						...hubMapThemeOptions(dark),
+						center,
+					});
+					modalMapHandle.map.setCenter(center);
+					modalMapHandle.center = center;
+					window.setTimeout(() => {
+						maps.event?.trigger?.(modalMapHandle!.map, 'resize');
+						modalMapHandle!.map.setCenter(center);
+					}, 80);
+				} else {
+					mapModalCanvas.innerHTML = '';
+					const map = new maps.Map(mapModalCanvas, {
+						center,
+						zoom: 16,
+						disableDefaultUI: false,
+						mapTypeControl: false,
+						streetViewControl: false,
+						fullscreenControl: false,
+						zoomControl: true,
+						gestureHandling: 'greedy',
+						keyboardShortcuts: false,
+						clickableIcons: false,
+						...hubMapThemeOptions(dark),
+					});
+					new maps.Marker({
+						map,
+						position: center,
+						title,
+					});
+					modalMapHandle = { map, center };
+					hubMapInstanceList.push(modalMapHandle);
+					window.setTimeout(() => {
+						maps.event?.trigger?.(map, 'resize');
+						map.setCenter(center);
+					}, 120);
+				}
+			} catch {
+				setMapModalStatus('No se pudo cargar el mapa.');
+			} finally {
+				setMapModalLoading(false);
+			}
+		};
+
+		const openHubMapModal = (payload: {
+			title: string;
+			address: string;
+			mapsUrl: string;
+			lat: number;
+			lng: number;
+			hasCoords: boolean;
+		}) => {
+			if (!mapModal) return;
+			if (mapModalTitle) mapModalTitle.textContent = payload.title || 'Ubicación';
+			if (mapModalAddress) mapModalAddress.textContent = payload.address || '';
+			if (mapModalExternal) {
+				mapModalExternal.href = payload.mapsUrl || '#';
+				mapModalExternal.hidden = !payload.mapsUrl;
+			}
+			if (!mapModal.open) mapModal.showModal();
+			if (payload.hasCoords) {
+				void renderModalMap(payload.lat, payload.lng, payload.title);
+			} else {
+				setMapModalLoading(false);
+				setMapModalStatus(
+					payload.mapsUrl
+						? 'Usá el botón de abajo para abrir la ubicación en Google Maps.'
+						: 'Sin coordenadas cargadas.'
+				);
+			}
+		};
+
+		const closeHubMapModal = () => {
+			mapModal?.close();
+			setMapModalLoading(false);
+			setMapModalStatus('');
+		};
+
+		if (mapModal && mapModal.dataset.bound !== '1') {
+			mapModal.dataset.bound = '1';
+			root.querySelectorAll<HTMLButtonElement>('[data-hub-map-open]').forEach((btn) => {
+				btn.addEventListener('click', () => {
+					const mapsUrl = String(btn.dataset.mapsUrl || '').trim();
+					const lat = Number(btn.dataset.lat);
+					const lng = Number(btn.dataset.lng);
+					const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
+					const title = String(btn.dataset.title || 'Ubicación').trim() || 'Ubicación';
+					const address = String(btn.dataset.address || '').trim();
+
+					if (!isHubMobileViewport()) {
+						if (mapsUrl) {
+							window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+						}
+						return;
+					}
+
+					openHubMapModal({
+						title,
+						address,
+						mapsUrl,
+						lat,
+						lng,
+						hasCoords,
+					});
+				});
+			});
+			root.querySelectorAll<HTMLElement>('[data-hub-location-card]').forEach((card) => {
+				card.addEventListener('click', (event) => {
+					if (!isHubMobileViewport()) return;
+					const target = event.target as HTMLElement | null;
+					if (target?.closest('a, button')) return;
+					const openBtn = card.querySelector<HTMLButtonElement>('[data-hub-map-open]');
+					openBtn?.click();
+				});
+			});
+			mapModalCloseBtns.forEach((btn) => {
+				btn.addEventListener('click', () => closeHubMapModal());
+			});
+			mapModal.addEventListener('click', (event) => {
+				if (event.target === mapModal) closeHubMapModal();
 			});
 		}
 	};

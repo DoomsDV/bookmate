@@ -325,7 +325,26 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 						hidden={activeTab !== 'equipo'}
 					>
 						<h3 class="hub-section-title">Equipo</h3>
-						<p class="hub-empty">Vista previa: el equipo se muestra en la página pública.</p>
+						<div class="hub-team-grid hub-skel-grid" aria-hidden="true">
+							{Array.from({ length: 4 }, (_, i) => (
+								<div class="hub-pro-card hub-pro-card--skeleton">
+									<div class="hub-pro-card__top">
+										<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
+										<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
+									</div>
+									<div class="hub-pro-card__main">
+										<span class="hub-skel hub-skel-circle hub-pro-card__avatar"></span>
+										<div class="hub-pro-card__text">
+											<span
+												class={`hub-skel hub-skel-line hub-skel-line--title${i % 2 === 1 ? ' hub-skel-line--short' : ''}`}
+											></span>
+											<span class="hub-skel hub-skel-line hub-skel-line--sub"></span>
+										</div>
+									</div>
+									<span class="hub-skel hub-pro-card__btn-skel"></span>
+								</div>
+							))}
+						</div>
 					</section>
 
 					<section
@@ -333,7 +352,23 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 						hidden={activeTab !== 'sucursales'}
 					>
 						<h3 class="hub-section-title">Sucursales</h3>
-						<p class="hub-empty">Vista previa: las sucursales se muestran en la página pública.</p>
+						<div class="hub-locations-grid hub-skel-grid" aria-hidden="true">
+							{Array.from({ length: 2 }, (_, i) => (
+								<article class="hub-location-card hub-location-card--skeleton">
+									<div class="hub-skel hub-location-card__map"></div>
+									<div class="hub-location-card__body">
+										<div class="hub-location-card__info">
+											<span
+												class={`hub-skel hub-skel-line hub-skel-line--title${i % 2 === 1 ? ' hub-skel-line--short' : ''}`}
+											></span>
+											<span class="hub-skel hub-skel-line hub-skel-line--sub"></span>
+											<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
+										</div>
+										<span class="hub-skel hub-skel-circle"></span>
+									</div>
+								</article>
+							))}
+						</div>
 					</section>
 				</div>
 			</div>
