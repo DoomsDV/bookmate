@@ -250,6 +250,18 @@ const serializedProfessionals = professionals.length
 									<button
 										type="button"
 										class="hub-icon-btn"
+										data-hub-share
+										data-hub-url={hubUrl}
+										data-hub-share-title={organizationName}
+										data-hub-share-text={shortTagline || metaDescription || organizationName}
+										aria-label="Compartir perfil del negocio"
+										title="Compartir"
+									>
+										<span class="material-symbols-rounded" aria-hidden="true">ios_share</span>
+									</button>
+									<button
+										type="button"
+										class="hub-icon-btn"
 										data-hub-copy-link
 										data-hub-url={hubUrl}
 										aria-label="Copiar enlace del negocio"
@@ -670,7 +682,10 @@ const serializedProfessionals = professionals.length
 													: 'Ver profesionales';
 											const actionIcon = prosHere.length === 1 ? 'event' : 'group';
 											return (
-												<article class="hub-location-card" data-hub-location-card>
+												<article
+													class="hub-location-card"
+													data-hub-location-card
+												>
 													<div class="hub-location-card__map-frame">
 														{hasCoords ? (
 															<div
@@ -1131,6 +1146,10 @@ const serializedProfessionals = professionals.length
 			}, 2200);
 		};
 
+		const copyHubUrl = async (url: string) => {
+			await navigator.clipboard.writeText(url);
+		};
+
 		const copyBtn = root.querySelector<HTMLButtonElement>('[data-hub-copy-link]');
 		if (copyBtn && copyBtn.dataset.bound !== '1') {
 			copyBtn.dataset.bound = '1';
@@ -1138,7 +1157,7 @@ const serializedProfessionals = professionals.length
 				const url = String(copyBtn.dataset.hubUrl || window.location.href).trim();
 				const icon = copyBtn.querySelector<HTMLElement>('.material-symbols-rounded');
 				try {
-					await navigator.clipboard.writeText(url);
+					await copyHubUrl(url);
 					copyBtn.title = 'Enlace copiado';
 					copyBtn.setAttribute('aria-label', 'Enlace copiado');
 					copyBtn.classList.add('is-copied');
@@ -1152,6 +1171,38 @@ const serializedProfessionals = professionals.length
 					}, 1800);
 				} catch {
 					showHubToast('No se pudo copiar el enlace');
+				}
+			});
+		}
+
+		const shareBtn = root.querySelector<HTMLButtonElement>('[data-hub-share]');
+		if (shareBtn && shareBtn.dataset.bound !== '1') {
+			shareBtn.dataset.bound = '1';
+			shareBtn.addEventListener('click', async () => {
+				const url = String(shareBtn.dataset.hubUrl || window.location.href).trim();
+				const title = String(shareBtn.dataset.hubShareTitle || document.title).trim();
+				const text = String(shareBtn.dataset.hubShareText || title).trim();
+				const payload: ShareData = { title, text, url };
+
+				const canNativeShare =
+					typeof navigator.share === 'function' &&
+					(typeof navigator.canShare !== 'function' || navigator.canShare(payload));
+
+				if (canNativeShare) {
+					try {
+						await navigator.share(payload);
+						return;
+					} catch (error) {
+						const name = error instanceof DOMException ? error.name : '';
+						if (name === 'AbortError') return;
+					}
+				}
+
+				try {
+					await copyHubUrl(url);
+					showHubToast('Enlace copiado para compartir');
+				} catch {
+					showHubToast('No se pudo compartir el enlace');
 				}
 			});
 		}
@@ -1171,7 +1222,6 @@ const serializedProfessionals = professionals.length
 		let activeLocId = 0;
 		let teamRevealPromise: Promise<void> | null = null;
 		let locationsRevealPromise: Promise<void> | null = null;
-
 		const markProPhotoReady = (img: HTMLImageElement) => {
 			img.classList.remove('is-loading');
 			img.classList.add('is-ready');
@@ -1225,13 +1275,21 @@ const serializedProfessionals = professionals.length
 			});
 
 		const revealTeamGrid = async () => {
-			if (!teamGrid || !teamSkeleton || !equipoPanel) return;
-			if (equipoPanel.dataset.teamReady === '1') return;
+			if (!teamGrid || !equipoPanel) {
+				return;
+			}
+			if (equipoPanel.dataset.teamReady === '1') {
+				return;
+			}
 			if (teamRevealPromise) {
 				await teamRevealPromise;
 				return;
 			}
 			teamRevealPromise = (async () => {
+				if (!teamSkeleton) {
+					equipoPanel.dataset.teamReady = '1';
+					return;
+				}
 				const pendingPhotos = Array.from(
 					teamGrid.querySelectorAll<HTMLImageElement>('[data-hub-pro-photo]')
 				).filter((img) => !(img.complete && img.naturalWidth > 0));
@@ -1263,7 +1321,7 @@ const serializedProfessionals = professionals.length
 		};
 
 		const revealLocationsGrid = async () => {
-			if (!locationsGrid || !locationsSkeleton || !sucursalesPanel) {
+			if (!locationsGrid || !sucursalesPanel) {
 				await initHubMaps(root);
 				return;
 			}
@@ -1276,9 +1334,11 @@ const serializedProfessionals = professionals.length
 				return;
 			}
 			locationsRevealPromise = (async () => {
-				locationsGrid.hidden = true;
-				locationsSkeleton.hidden = false;
-				sucursalesPanel.setAttribute('aria-busy', 'true');
+				if (locationsSkeleton) {
+					locationsGrid.hidden = true;
+					locationsSkeleton.hidden = false;
+					sucursalesPanel.setAttribute('aria-busy', 'true');
+				}
 
 				const apiKey = String(root.dataset.googleMapsApiKey || '').trim();
 				const startedAt = Date.now();
@@ -1296,8 +1356,10 @@ const serializedProfessionals = professionals.length
 					});
 				}
 
-				locationsSkeleton.hidden = true;
-				locationsGrid.hidden = false;
+				if (locationsSkeleton) {
+					locationsSkeleton.hidden = true;
+					locationsGrid.hidden = false;
+				}
 				await initHubMaps(root);
 				sucursalesPanel.dataset.locationsReady = '1';
 				sucursalesPanel.removeAttribute('aria-busy');
@@ -1363,6 +1425,7 @@ const serializedProfessionals = professionals.length
 				panel.classList.toggle('is-active', active);
 				panel.hidden = !active;
 			});
+			document.documentElement.setAttribute('data-hub-tab-pref', safeTab);
 			if (updateHash) {
 				const nextHash = `#${safeTab}`;
 				if (window.location.hash !== nextHash) {
@@ -1395,6 +1458,7 @@ const serializedProfessionals = professionals.length
 				attributeFilter: ['data-theme'],
 			});
 		}
+
 
 		tabs.forEach((tab) => {
 			if (tab.dataset.bound === '1') return;

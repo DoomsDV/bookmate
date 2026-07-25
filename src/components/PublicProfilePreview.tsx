@@ -117,6 +117,11 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 										<InstagramIcon class="hub-icon-btn__svg" />
 									</span>
 								) : null}
+								<span class="hub-icon-btn" title="Compartir">
+									<span class="material-symbols-rounded" aria-hidden="true">
+										ios_share
+									</span>
+								</span>
 								<span class="hub-icon-btn" title="Copiar enlace">
 									<span class="material-symbols-rounded" aria-hidden="true">
 										link

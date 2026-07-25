@@ -204,16 +204,31 @@ if (flashTypeFromCookie) {
                 document.documentElement.setAttribute('data-ppe-tab-pref', stored);
             };
 
+            /** Pestaña del hub público vía hash (#galeria, #equipo…) — evita flash Overview. */
+            const HUB_TAB_IDS = ['overview', 'galeria', 'equipo', 'sucursales'];
+            const applyHubTabPref = () => {
+                const hash = String(location.hash || '')
+                    .replace(/^#/, '')
+                    .trim();
+                if (HUB_TAB_IDS.indexOf(hash) === -1) {
+                    document.documentElement.removeAttribute('data-hub-tab-pref');
+                    return;
+                }
+                document.documentElement.setAttribute('data-hub-tab-pref', hash);
+            };
+
             // 1. Se ejecuta inmediatamente en la carga inicial (evita el FOUC)
             setBookmateTheme();
             applySidebarState();
             applyPpeTabPref();
+            applyHubTabPref();
 
             // 2. Se ejecuta cada vez que ClientRouter intercambia el contenido de la página
             document.addEventListener('astro:after-swap', () => {
                 setBookmateTheme();
                 applySidebarState();
                 applyPpeTabPref();
+                applyHubTabPref();
             });
         </script>
         
