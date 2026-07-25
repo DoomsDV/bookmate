@@ -6,16 +6,13 @@ const toPositiveInt = (value: unknown, fallback = 0) => {
 };
 
 /**
- * ORDS (pendiente de registrar):
- * GET {ORDS_PUBLIC_USER_PROFILE_URL} → PKG_AOX_PUBLIC_BOOKING_API.PR_GET_USER_PUBLIC_PROFILE
- *
- * Path sugerido: /public/user/:public_slug
- * Placeholder en env: public/user/:slug
+ * GET {ORDS_PUBLIC_API_BASE_URL}/user/:slug
+ * → PKG_AOX_PUBLIC_BOOKING_API.PR_GET_USER_PUBLIC_PROFILE
  */
 export const PUBLIC_USER_PROFILE_API_URL = resolveOrdsPublicApiUrl(
 	import.meta.env.ORDS_PUBLIC_USER_PROFILE_URL,
 	'ORDS_PUBLIC_USER_PROFILE_URL',
-	'public/user/:slug'
+	'user/:slug'
 );
 
 export interface PublicUserProfileService {

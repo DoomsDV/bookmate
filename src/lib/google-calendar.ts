@@ -1,6 +1,13 @@
 import { google, type calendar_v3 } from 'googleapis';
+import { resolveOrdsApiUrl } from './env-urls';
 
 const PROVIDER = 'google_calendar';
+
+const INTEGRATIONS_BASE_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_INTEGRATIONS_URL,
+	'ORDS_INTEGRATIONS_URL',
+	'/integrations'
+);
 
 type IntegrationCredentials = {
 	accessToken: string;
@@ -102,7 +109,7 @@ const resolveIntegrationData = (payload: unknown) => {
 const getIntegrationCredentials = async (
 	token: string
 ): Promise<IntegrationCredentials | null> => {
-	const baseUrl = getRequiredEnv(import.meta.env.ORDS_INTEGRATIONS_URL, 'ORDS_INTEGRATIONS_URL');
+	const baseUrl = INTEGRATIONS_BASE_URL;
 	const integrationUrl = `${baseUrl.replace(/\/+$/, '')}/${PROVIDER}`;
 
 	const response = await fetch(integrationUrl, {

@@ -1,3 +1,5 @@
+import { resolveOrdsAiUrl } from './env-urls';
+
 export interface ChatSession {
 	id_session: number;
 	title: string;
@@ -89,22 +91,32 @@ const toNumber = (value: unknown, fallback = 0) => {
 
 const toText = (value: unknown) => String(value ?? '').trim();
 
-const getEnvUrl = (envName: keyof ImportMetaEnv) => {
-	const value = String(import.meta.env[envName] || '').trim();
-	if (!value) {
-		throw new ChatApiError(`Falta configurar ${envName} en el entorno.`, 500);
-	}
+const AI_SEND_CHAT_URL = resolveOrdsAiUrl(
+	import.meta.env.ORDS_AI_SEND_CHAT,
+	'ORDS_AI_SEND_CHAT',
+	'/chat/message'
+);
 
-	const withScheme = /^https?:\/\//i.test(value) ? value : `https://${value}`;
-	try {
-		return new URL(withScheme).toString();
-	} catch {
-		throw new ChatApiError(`URL invalida en ${envName}.`, 500);
-	}
-};
+const AI_GET_CHAT_SESSION_URL = resolveOrdsAiUrl(
+	import.meta.env.ORDS_AI_GET_CHAT_SESSION,
+	'ORDS_AI_GET_CHAT_SESSION',
+	'/chat/sessions'
+);
+
+const AI_GET_CHAT_MESSAGES_URL = resolveOrdsAiUrl(
+	import.meta.env.ORDS_AI_GET_CHAT_MESSAGES,
+	'ORDS_AI_GET_CHAT_MESSAGES',
+	'/chat/sessions/:id/messages'
+);
+
+const AI_DELETE_CHAT_SESSION_URL = resolveOrdsAiUrl(
+	import.meta.env.ORDS_AI_DELETE_CHAT_SESSION,
+	'ORDS_AI_DELETE_CHAT_SESSION',
+	'/chat/sessions/:id'
+);
 
 const getMessagesUrl = (sessionId: number) => {
-	const rawUrl = getEnvUrl('ORDS_AI_GET_CHAT_MESSAGES');
+	const rawUrl = AI_GET_CHAT_MESSAGES_URL;
 	const encodedId = encodeURIComponent(String(sessionId));
 
 	if (rawUrl.includes(':id')) return rawUrl.replace(':id', encodedId);
@@ -120,7 +132,7 @@ const getMessagesUrl = (sessionId: number) => {
 };
 
 const getDeleteSessionUrl = (sessionId: number) => {
-	const rawUrl = getEnvUrl('ORDS_AI_DELETE_CHAT_SESSION');
+	const rawUrl = AI_DELETE_CHAT_SESSION_URL;
 	const encodedId = encodeURIComponent(String(sessionId));
 
 	if (rawUrl.includes(':id')) return rawUrl.replace(':id', encodedId);
@@ -197,7 +209,7 @@ export const sendChatMessageWithOrds = async (
 		body.session_id = Number(payload.session_id);
 	}
 
-	const response = await fetch(getEnvUrl('ORDS_AI_SEND_CHAT'), {
+	const response = await fetch(AI_SEND_CHAT_URL, {
 		method: 'POST',
 		headers: {
 			Authorization: `Bearer ${token}`,
@@ -223,7 +235,7 @@ export const sendChatMessageWithOrds = async (
 export const listChatSessionsWithOrds = async (token: string): Promise<ChatSession[]> => {
 	ensureToken(token);
 
-	const response = await fetch(getEnvUrl('ORDS_AI_GET_CHAT_SESSION'), {
+	const response = await fetch(AI_GET_CHAT_SESSION_URL, {
 		method: 'GET',
 		headers: {
 			Authorization: `Bearer ${token}`,

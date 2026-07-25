@@ -46,3 +46,13 @@ export const resolveOrdsPublicApiUrl = (
 		pathFromPublicBase
 	);
 };
+
+export const resolveOrdsAiUrl = (
+	explicitUrl: string | undefined,
+	explicitEnvName: string,
+	pathFromAiBase: string
+) => {
+	const explicit = String(explicitUrl || '').trim();
+	if (explicit) return normalizeAbsoluteUrl(explicit, explicitEnvName);
+	return resolveFromBase('ORDS_AI_BASE_URL', import.meta.env.ORDS_AI_BASE_URL, pathFromAiBase);
+};

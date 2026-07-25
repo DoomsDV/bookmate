@@ -1,4 +1,4 @@
-import { resolveOrdsApiUrl } from './env-urls';
+import { resolveOrdsAiUrl, resolveOrdsApiUrl } from './env-urls';
 
 export const DASHBOARD_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_DASHBOARD_URL,
@@ -6,7 +6,7 @@ export const DASHBOARD_URL = resolveOrdsApiUrl(
 	'/dashboard'
 );
 
-export const DASHBOARD_AI_SUMMARY_URL = resolveOrdsApiUrl(
+export const DASHBOARD_AI_SUMMARY_URL = resolveOrdsAiUrl(
 	import.meta.env.AI_SUMMARIZATION_URL,
 	'AI_SUMMARIZATION_URL',
 	'/dashboard/ai-summary'

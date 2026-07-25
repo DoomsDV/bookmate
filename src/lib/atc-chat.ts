@@ -1,3 +1,5 @@
+import { resolveOrdsAiUrl } from './env-urls';
+
 export class AtcChatApiError extends Error {
 	status: number;
 	details?: unknown;
@@ -12,19 +14,11 @@ export class AtcChatApiError extends Error {
 
 const toText = (value: unknown) => String(value ?? '').trim();
 
-const getEnvUrl = (envName: keyof ImportMetaEnv) => {
-	const value = String(import.meta.env[envName] || '').trim();
-	if (!value) {
-		throw new AtcChatApiError(`Falta configurar ${envName} en el entorno.`, 500);
-	}
-
-	const withScheme = /^https?:\/\//i.test(value) ? value : `https://${value}`;
-	try {
-		return new URL(withScheme).toString();
-	} catch {
-		throw new AtcChatApiError(`URL invalida en ${envName}.`, 500);
-	}
-};
+const ATC_ASK_URL = resolveOrdsAiUrl(
+	import.meta.env.ORDS_AI_ATC_ASK,
+	'ORDS_AI_ATC_ASK',
+	'/atc/ask'
+);
 
 const parseJsonResponse = async (response: Response) => {
 	const payload = (await response.json().catch(() => null)) as
@@ -47,7 +41,7 @@ export const askAtcWithOrds = async (token: string, message: string): Promise<st
 	if (!token) throw new AtcChatApiError('No hay sesion valida.', 401);
 	if (!trimmed) throw new AtcChatApiError('El mensaje no puede estar vacio.', 400);
 
-	const response = await fetch(getEnvUrl('ORDS_AI_ATC_ASK'), {
+	const response = await fetch(ATC_ASK_URL, {
 		method: 'POST',
 		headers: {
 			Authorization: `Bearer ${token}`,

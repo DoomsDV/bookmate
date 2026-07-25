@@ -1,4 +1,4 @@
-import { resolveOrdsApiUrl } from './env-urls';
+import { resolveOrdsAiUrl } from './env-urls';
 import { formatPersonName } from './format-person-name';
 import type {
 	AppointmentAiCandidate,
@@ -7,10 +7,10 @@ import type {
 	AppointmentVoiceDraftResult,
 } from './appointment-ai-types';
 
-export const VOICE_APPOINTMENT_DRAFT_URL = resolveOrdsApiUrl(
+export const VOICE_APPOINTMENT_DRAFT_URL = resolveOrdsAiUrl(
 	import.meta.env.ORDS_AI_VOICE_APPOINTMENT_DRAFT,
 	'ORDS_AI_VOICE_APPOINTMENT_DRAFT',
-	'/ai/appointments/voice-draft'
+	'/appointments/voice-draft'
 );
 
 export class AppointmentAiError extends Error {
