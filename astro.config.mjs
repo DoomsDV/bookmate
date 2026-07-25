@@ -31,9 +31,9 @@ export default defineConfig({
     enabled: false,
   },
   
-  // 3. ¡VOLVEMOS A PRENDER LA SEGURIDAD!
+  // CSRF: reject cross-origin mutating requests to /api/* when Origin mismatches.
   security: {
-    checkOrigin: false
+    checkOrigin: true
   },
   
   adapter: vercel(),

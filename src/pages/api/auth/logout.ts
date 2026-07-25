@@ -104,19 +104,3 @@ export const POST: APIRoute = async ({ request, cookies }) => {
 
 	return Response.json({ success: true, redirect: location });
 };
-
-export const GET: APIRoute = async ({ request, cookies }) => {
-	await performLogout(request, cookies);
-	const location = resolveLogoutRedirect(request);
-
-	if (wantsHtml(request)) {
-		return new Response(null, {
-			status: 302,
-			headers: {
-				Location: location,
-			},
-		});
-	}
-
-	return Response.json({ success: true, redirect: location });
-};

@@ -3,18 +3,9 @@ import type { APIRoute } from 'astro';
 import { AuthApiError, refreshWithOrds, setOrganizationCacheCookies, setSessionCookies } from '../../../lib/auth';
 import { getCurrentOrganizationWithOrds } from '../../../lib/organization';
 
-export const POST: APIRoute = async ({ request, cookies, url }) => {
+export const POST: APIRoute = async ({ cookies, url }) => {
 	try {
-		let body: Record<string, unknown> = {};
-		try {
-			body = (await request.json()) as Record<string, unknown>;
-		} catch {
-			body = {};
-		}
-
-		const refreshToken = String(
-			body.refresh_token ?? cookies.get('refresh_token')?.value ?? ''
-		).trim();
+		const refreshToken = String(cookies.get('refresh_token')?.value ?? '').trim();
 
 		if (!refreshToken) {
 			throw new AuthApiError('Refresh token requerido.', 400);
