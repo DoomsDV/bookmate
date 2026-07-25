@@ -120,6 +120,8 @@ export type MountPublicSlotBranchesOptions = {
 	onAddressClick?: (location: PublicSlotBranchLocation) => void;
 	/** Si true, el roulette incluye botón Continuar que dispara onSelect del foco. */
 	showRouletteContinue?: boolean;
+	/** Header nombre/dirección de sucursal encima de los slots (default true). */
+	showLocationHeader?: boolean;
 };
 
 /**
@@ -133,6 +135,7 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 		onSelect,
 		onAddressClick,
 		showRouletteContinue = false,
+		showLocationHeader = true,
 	} = options;
 	const useRoulette = options.useRoulette ?? isMobileSlotRouletteViewport();
 	const slotFocusByLocation = new Map<number, number>();
@@ -141,11 +144,13 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 	let branchToneIndex = 0;
 
 	const mountGrid = (section: HTMLElement, group: PublicSlotBranchGroup) => {
-		appendLocationSlotHeader(section, group.location, {
-			onAddressClick: onAddressClick
-				? (location) => onAddressClick(location as PublicSlotBranchLocation)
-				: undefined,
-		});
+		if (showLocationHeader) {
+			appendLocationSlotHeader(section, group.location, {
+				onAddressClick: onAddressClick
+					? (location) => onAddressClick(location as PublicSlotBranchLocation)
+					: undefined,
+			});
+		}
 
 		const grid = document.createElement('div');
 		grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
@@ -182,11 +187,13 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 		group: PublicSlotBranchGroup,
 		rouletteOptions?: { softSelectOnMount?: boolean }
 	) => {
-		appendLocationSlotHeader(section, group.location, {
-			onAddressClick: onAddressClick
-				? (location) => onAddressClick(location as PublicSlotBranchLocation)
-				: undefined,
-		});
+		if (showLocationHeader) {
+			appendLocationSlotHeader(section, group.location, {
+				onAddressClick: onAddressClick
+					? (location) => onAddressClick(location as PublicSlotBranchLocation)
+					: undefined,
+			});
+		}
 
 		const locationId = group.location.id_location;
 		const totalSlots = group.slots.length;

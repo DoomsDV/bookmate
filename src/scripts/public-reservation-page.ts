@@ -17,6 +17,15 @@ import {
 	isMobileSlotRouletteViewport,
 	mountPublicSlotBranches,
 } from '../lib/public-booking-slots-ui';
+import {
+	bindMapImageLifecycle,
+	bindVerticalStackGestures,
+	buildStaticMapUrl,
+	escapeHtml,
+	getCoords,
+	isMobileStack,
+	syncStackLayers,
+} from './public-user-booking/picker-ui';
 
 type BookingLocation = {
 	id_location: number;
@@ -273,7 +282,6 @@ export const initializePublicReservationPage = () => {
 		!locationsGrid ||
 		!locationsLoading ||
 		!noLocations ||
-		!selectedDateLabel ||
 		!cancelButton ||
 		!openRescheduleButton ||
 		!calendarMonth ||
@@ -315,6 +323,8 @@ export const initializePublicReservationPage = () => {
 	let rescheduleStep: RescheduleStep = 1;
 	let mapInstance: any = null;
 	let mapMarker: any = null;
+	let locationStackFocusIndex = 0;
+	let locationsRenderAbort: AbortController | null = null;
 	const availableDatesCache = new Map<string, Set<string>>();
 	let availableDatesLoadingKey: string | null = null;
 	let availableDatesRequestSeq = 0;
@@ -456,7 +466,7 @@ export const initializePublicReservationPage = () => {
 
 	const syncDateLabels = (ymd: string) => {
 		const label = ymd ? formatLongDateFromApiDate(ymd) : '';
-		selectedDateLabel.textContent = label;
+		if (selectedDateLabel) selectedDateLabel.textContent = label;
 		if (slotsDateLabel) slotsDateLabel.textContent = label;
 	};
 
@@ -654,13 +664,6 @@ export const initializePublicReservationPage = () => {
 		const label = `${formatLongDateFromApiDate(ymd)} a las ${time}`;
 		return label.charAt(0).toUpperCase() + label.slice(1);
 	};
-
-	const escapeHtml = (value: string) =>
-		String(value || '')
-			.replace(/&/g, '&amp;')
-			.replace(/</g, '&lt;')
-			.replace(/>/g, '&gt;')
-			.replace(/"/g, '&quot;');
 
 	const updateChangeSummary = () => {
 		const currentStart = parseApiDateTime(reservation.start_time);
@@ -893,14 +896,66 @@ export const initializePublicReservationPage = () => {
 		} satisfies LocationSlotGroup;
 	};
 
-	const selectRescheduleLocation = (location: BookingLocation) => {
+	const buildLocationCardContent = (location: BookingLocation) => {
+		const name = getLocationLabel(location);
+		const address = String(location.address || '').trim();
+		const coords = getCoords(location);
+		const staticMapUrl = buildStaticMapUrl(mapsApiKey, coords);
+		const showMap = Boolean(mapsApiKey);
+		const previewInner = staticMapUrl
+			? `<span class="public-location-card__map-skeleton" aria-hidden="true"></span><img class="public-location-card__map-img" src="${escapeHtml(staticMapUrl)}" alt="" loading="lazy" decoding="async" data-location-map-img />`
+			: '';
+		const preview = showMap
+			? `<button type="button" class="public-location-card__preview${
+					staticMapUrl ? ' is-map-loading' : ' public-location-card__preview--brand'
+				}" data-location-map-trigger aria-label="Ver mapa de ${escapeHtml(name)}">
+					${previewInner}
+				</button>`
+			: '';
+		return `
+			${preview}
+			<button type="button" class="public-location-card__main">
+				<span class="public-location-card__body">
+					<span class="public-location-card__name">${escapeHtml(name)}</span>
+					${
+						address
+							? `<span class="public-location-card__address"><span class="material-symbols-rounded" aria-hidden="true">location_on</span><span class="public-location-card__address-text">${escapeHtml(address)}</span></span>`
+							: ''
+					}
+				</span>
+			</button>
+			<span class="material-symbols-rounded public-location-card__check" aria-hidden="true">check_circle</span>
+		`;
+	};
+
+	const softSelectRescheduleLocation = (location: BookingLocation, stack?: HTMLElement | null) => {
 		selectedLocationId = location.id_location;
 		locationInput.value = String(location.id_location);
 		selectedSlot = '';
 		slotInput.value = '';
 		updateLocationSummary(location);
-		renderLocationsStep();
+		const rootEl = stack || locationsGrid;
+		for (const card of rootEl.querySelectorAll<HTMLElement>('.public-location-card')) {
+			const id = Number(card.dataset.locationId || 0);
+			card.classList.toggle('is-selected', id === location.id_location);
+			card.setAttribute('aria-pressed', id === location.id_location ? 'true' : 'false');
+		}
 		updateFooterButtons();
+	};
+
+	const enrichLocationsWithCoordinates = async () => {
+		const enriched = await Promise.all(
+			availableSlotGroups.map(async (group) => {
+				if (getCoords(group.location)) return group;
+				try {
+					const detailed = await fetchPublicLocationDetails(group.location);
+					return { ...group, location: detailed };
+				} catch {
+					return group;
+				}
+			})
+		);
+		availableSlotGroups = enriched;
 	};
 
 	const renderLocationsStep = () => {
@@ -910,51 +965,128 @@ export const initializePublicReservationPage = () => {
 		const hasLocations = availableSlotGroups.length > 0;
 		noLocations.classList.toggle('hidden', isLoadingSlots || hasLocations);
 
+		locationsRenderAbort?.abort();
+		locationsRenderAbort = new AbortController();
+		const { signal } = locationsRenderAbort;
+
 		if (isLoadingSlots) {
 			locationsGrid.innerHTML = '';
+			locationsGrid.classList.remove('is-location-stack');
 			updateFooterButtons();
 			return;
 		}
 
 		locationsGrid.innerHTML = '';
 		if (!hasLocations) {
+			locationsGrid.classList.remove('is-location-stack');
 			updateFooterButtons();
 			return;
 		}
 
-		for (const group of availableSlotGroups) {
-			const location = group.location;
+		const locations = availableSlotGroups.map((group) => group.location);
+		const selectedIndex = locations.findIndex((loc) => loc.id_location === selectedLocationId);
+		locationStackFocusIndex =
+			selectedIndex >= 0
+				? selectedIndex
+				: Math.min(Math.max(0, locationStackFocusIndex), locations.length - 1);
+
+		if (isMobileStack() && locations.length > 1) {
+			locationsGrid.classList.add('is-location-stack');
+
+			const stackShell = document.createElement('div');
+			stackShell.className = 'public-location-stack-shell';
+
+			const stack = document.createElement('div');
+			stack.className = 'public-location-stack';
+			stack.setAttribute('role', 'listbox');
+			stack.setAttribute('aria-label', 'Sucursales disponibles');
+			stack.tabIndex = 0;
+
+			let shouldSuppressClick = () => false;
+
+			for (const [index, location] of locations.entries()) {
+				const card = document.createElement('div');
+				card.setAttribute('role', 'option');
+				card.dataset.locationStackIndex = String(index);
+				card.dataset.locationId = String(location.id_location);
+				card.className = `public-location-card${
+					location.id_location === selectedLocationId ? ' is-selected' : ''
+				}`;
+				card.innerHTML = buildLocationCardContent(location);
+
+				const mainButton = card.querySelector<HTMLButtonElement>('.public-location-card__main');
+				mainButton?.addEventListener(
+					'click',
+					() => {
+						if (shouldSuppressClick()) return;
+						if (index === locationStackFocusIndex) return;
+						locationStackFocusIndex = index;
+						syncStackLayers(stack, locationStackFocusIndex, 'data-location-stack-index', {
+							farLevels: true,
+						});
+						softSelectRescheduleLocation(location, stack);
+					},
+					{ signal }
+				);
+				bindMapImageLifecycle(card, {
+					signal,
+					onOpenMap: () => {
+						void openLocationMap(location);
+					},
+				});
+				stack.appendChild(card);
+			}
+
+			const gestureApi = bindVerticalStackGestures(stack, {
+				signal,
+				itemCount: locations.length,
+				getFocusIndex: () => locationStackFocusIndex,
+				setFocusIndex: (index) => {
+					locationStackFocusIndex = index;
+				},
+				onFocusChanged: () => {
+					syncStackLayers(stack, locationStackFocusIndex, 'data-location-stack-index', {
+						farLevels: true,
+					});
+					const location = locations[locationStackFocusIndex];
+					if (location) softSelectRescheduleLocation(location, stack);
+				},
+				onContinue: () => {
+					const location = locations[locationStackFocusIndex];
+					if (location) softSelectRescheduleLocation(location, stack);
+				},
+			});
+			shouldSuppressClick = gestureApi.shouldSuppressClick;
+
+			syncStackLayers(stack, locationStackFocusIndex, 'data-location-stack-index', {
+				farLevels: true,
+			});
+			const focused = locations[locationStackFocusIndex];
+			if (focused) softSelectRescheduleLocation(focused, stack);
+
+			stackShell.appendChild(stack);
+			locationsGrid.appendChild(stackShell);
+			updateFooterButtons();
+			return;
+		}
+
+		locationsGrid.classList.remove('is-location-stack');
+		for (const location of locations) {
 			const isSelected = location.id_location === selectedLocationId;
-			const address = String(location.address || '').trim();
 			const card = document.createElement('div');
 			card.className = `public-location-card${isSelected ? ' is-selected' : ''}`;
 			card.dataset.locationId = String(location.id_location);
-			card.setAttribute('role', 'button');
-			card.tabIndex = 0;
-			card.setAttribute('aria-pressed', isSelected ? 'true' : 'false');
-			card.innerHTML = `
-				<button type="button" class="public-location-card__main">
-					<span class="public-location-card__body">
-						<span class="public-location-card__name">${escapeHtml(getLocationLabel(location))}</span>
-						${
-							address
-								? `<span class="public-location-card__address"><span class="material-symbols-rounded" aria-hidden="true">location_on</span><span class="public-location-card__address-text">${escapeHtml(address)}</span></span>`
-								: ''
-						}
-					</span>
-				</button>
-				<span class="material-symbols-rounded public-location-card__check" aria-hidden="true">check_circle</span>
-			`;
-			const selectCard = () => selectRescheduleLocation(location);
+			card.innerHTML = buildLocationCardContent(location);
 			card.querySelector<HTMLButtonElement>('.public-location-card__main')?.addEventListener(
 				'click',
-				selectCard
+				() => softSelectRescheduleLocation(location),
+				{ signal }
 			);
-			card.addEventListener('keydown', (event) => {
-				if (event.key === 'Enter' || event.key === ' ') {
-					event.preventDefault();
-					selectCard();
-				}
+			bindMapImageLifecycle(card, {
+				signal,
+				onOpenMap: () => {
+					void openLocationMap(location);
+				},
 			});
 			locationsGrid.appendChild(card);
 		}
@@ -983,6 +1115,7 @@ export const initializePublicReservationPage = () => {
 			groups: selectedGroup ? [selectedGroup] : [],
 			selectedSlotKey: getSelectedSlotKey(),
 			useRoulette: isMobileSlotRouletteViewport(),
+			showLocationHeader: false,
 			onSelect: (locationId, slot, location) => {
 				selectedSlot = slot;
 				selectedLocationId = locationId;
@@ -990,9 +1123,6 @@ export const initializePublicReservationPage = () => {
 				locationInput.value = String(locationId);
 				updateLocationSummary(location);
 				updateFooterButtons();
-			},
-			onAddressClick: (location) => {
-				void openLocationMap(location as BookingLocation);
 			},
 		});
 
@@ -1066,6 +1196,7 @@ export const initializePublicReservationPage = () => {
 			locationInput.value = selectedLocationId ? String(selectedLocationId) : '';
 			const selectedLoc = getSelectedLocationGroup()?.location;
 			if (selectedLoc) updateLocationSummary(selectedLoc);
+			await enrichLocationsWithCoordinates();
 		} catch (error) {
 			availableSlotGroups = [];
 			showToast(
