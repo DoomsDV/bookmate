@@ -220,7 +220,7 @@ const inactiveCount = services.length - activeCount;
 				</p>
 			</div>
 		) : (
-			<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-services-grid>
+			<div class="material-cards-grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4" data-services-grid>
 				{services.map((service) => (
 					<article
 						class="services-card group cursor-pointer"
@@ -234,7 +234,9 @@ const inactiveCount = services.length - activeCount;
 							<div class="services-card-cover">
 								<img src={service.image_url} alt="" loading="lazy" />
 							</div>
-						) : null}
+						) : (
+							<div class="services-card-cover services-card-cover--brand" aria-hidden="true"></div>
+						)}
 						<div class="flex items-start justify-between gap-4">
 							<div class="services-card-icon">
 								<span class="material-symbols-rounded text-[1.25rem]">design_services</span>
@@ -423,14 +425,32 @@ const inactiveCount = services.length - activeCount;
 
 	.services-card {
 		cursor: pointer;
+		gap: 0.7rem;
+		padding: 0.95rem 1rem 1.05rem;
+		border-radius: 0.9rem;
 	}
 
 	.services-card-cover {
-		margin: -0.15rem -0.15rem 0.85rem;
+		margin: -0.1rem -0.1rem 0.55rem;
 		overflow: hidden;
-		border-radius: 1rem;
+		border-radius: 0.75rem;
 		aspect-ratio: 4 / 3;
 		background: color-mix(in srgb, var(--surface-container-high) 80%, transparent);
+	}
+
+	.services-card-cover--brand {
+		background:
+			radial-gradient(
+				ellipse 80% 70% at 20% 15%,
+				color-mix(in srgb, var(--primary) 28%, transparent),
+				transparent 60%
+			),
+			linear-gradient(
+				145deg,
+				color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
+				var(--surface-container-highest) 55%,
+				color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
+			);
 	}
 
 	.services-card-cover img {
@@ -438,6 +458,29 @@ const inactiveCount = services.length - activeCount;
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
+	}
+
+	.services-card .services-card-icon {
+		width: 2.15rem;
+		height: 2.15rem;
+		border-radius: 0.7rem;
+	}
+
+	.services-card .services-card-icon .material-symbols-rounded {
+		font-size: 1.1rem;
+	}
+
+	.services-card .services-card-body {
+		gap: 0.55rem;
+	}
+
+	.services-card .services-card-title {
+		font-size: 1rem;
+	}
+
+	.services-card .services-card-metrics {
+		gap: 0.35rem;
+		font-size: 0.86rem;
 	}
 
 	.services-card-status {

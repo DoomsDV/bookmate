@@ -84,7 +84,7 @@ const renderServiceCard = (service: ServiceItem) => {
 	const coverUrl = String(service.image_url || '').trim();
 	const coverHtml = coverUrl
 		? `<div class="services-card-cover"><img src="${escapeHtml(coverUrl)}" alt="" loading="lazy" /></div>`
-		: '';
+		: `<div class="services-card-cover services-card-cover--brand" aria-hidden="true"></div>`;
 
 	return `
 		<article
@@ -182,7 +182,7 @@ const updateEmptyOrGrid = (
 	}
 
 	results.innerHTML = `
-		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-services-grid>
+		<div class="material-cards-grid gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4" data-services-grid>
 			${services.map(renderServiceCard).join('')}
 		</div>
 	`;

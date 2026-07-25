@@ -388,6 +388,7 @@ const googleMapsApiKey =
 			options: Record<string, unknown>,
 		) => any;
 		Marker: new (options: Record<string, unknown>) => any;
+		Point: new (x: number, y: number) => unknown;
 		event?: { trigger?: (instance: unknown, eventName: string) => void };
 	};
 
@@ -430,76 +431,46 @@ const googleMapsApiKey =
 		private readonly mapIdleMessage =
 			"Haz clic en el mapa para registrar coordenadas exactas. En móvil, usa dos dedos para mover o hacer zoom.";
 		private readonly darkMapStyles = [
-			{ elementType: "geometry", stylers: [{ color: "#242f3e" }] },
+			{ elementType: "geometry", stylers: [{ color: "#1d1d1f" }] },
+			{ elementType: "labels.text.fill", stylers: [{ color: "#c4c6d0" }] },
+			{ elementType: "labels.text.stroke", stylers: [{ color: "#1d1d1f" }] },
 			{
-				elementType: "labels.text.stroke",
-				stylers: [{ color: "#242f3e" }],
+				featureType: "road",
+				elementType: "geometry",
+				stylers: [{ color: "#2e2e32" }],
 			},
-			{ elementType: "labels.text.fill", stylers: [{ color: "#746855" }] },
 			{
-				featureType: "administrative.locality",
+				featureType: "road",
+				elementType: "geometry.stroke",
+				stylers: [{ color: "#1d1d1f" }],
+			},
+			{
+				featureType: "road",
 				elementType: "labels.text.fill",
-				stylers: [{ color: "#d59563" }],
+				stylers: [{ color: "#c4c6d0" }],
+			},
+			{
+				featureType: "road.highway",
+				elementType: "geometry",
+				stylers: [{ color: "#3a3a40" }],
+			},
+			{
+				featureType: "water",
+				elementType: "geometry",
+				stylers: [{ color: "#0f172a" }],
+			},
+			{
+				featureType: "water",
+				elementType: "labels.text.fill",
+				stylers: [{ color: "#64748b" }],
 			},
 			{
 				featureType: "poi",
-				elementType: "labels.text.fill",
-				stylers: [{ color: "#d59563" }],
+				stylers: [{ visibility: "off" }],
 			},
 			{
-				featureType: "poi.park",
-				elementType: "geometry",
-				stylers: [{ color: "#263c3f" }],
-			},
-			{
-				featureType: "poi.park",
-				elementType: "labels.text.fill",
-				stylers: [{ color: "#6b9a76" }],
-			},
-			{
-				featureType: "road",
-				elementType: "geometry",
-				stylers: [{ color: "#38414e" }],
-			},
-			{
-				featureType: "road",
-				elementType: "geometry.stroke",
-				stylers: [{ color: "#212a37" }],
-			},
-			{
-				featureType: "road",
-				elementType: "labels.text.fill",
-				stylers: [{ color: "#9ca5b3" }],
-			},
-			{
-				featureType: "road.highway",
-				elementType: "geometry",
-				stylers: [{ color: "#746855" }],
-			},
-			{
-				featureType: "road.highway",
-				elementType: "geometry.stroke",
-				stylers: [{ color: "#1f2835" }],
-			},
-			{
-				featureType: "road.highway",
-				elementType: "labels.text.fill",
-				stylers: [{ color: "#f3d19c" }],
-			},
-			{
-				featureType: "water",
-				elementType: "geometry",
-				stylers: [{ color: "#17263c" }],
-			},
-			{
-				featureType: "water",
-				elementType: "labels.text.fill",
-				stylers: [{ color: "#515c6d" }],
-			},
-			{
-				featureType: "water",
-				elementType: "labels.text.stroke",
-				stylers: [{ color: "#17263c" }],
+				featureType: "transit",
+				stylers: [{ visibility: "off" }],
 			},
 		];
 		private selectedCoordinates: Coordinates | null = null;
@@ -957,6 +928,15 @@ const googleMapsApiKey =
 				this.mapMarker = new maps.Marker({
 					map: this.mapInstance,
 					position: coords,
+					icon: {
+						path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
+						fillColor: "#A8C7FA",
+						fillOpacity: 1,
+						strokeColor: "#062e6f",
+						strokeWeight: 1.25,
+						scale: 1.55,
+						anchor: new maps.Point(12, 22),
+					},
 				});
 			} else {
 				this.mapMarker.setMap(this.mapInstance);
