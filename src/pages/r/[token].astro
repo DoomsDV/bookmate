@@ -15,6 +15,7 @@ import {
 	isReservationPast,
 	parseApiDateTime,
 } from '../../lib/booking-datetime';
+import { buildStaticMapUrl, getCoords } from '../../scripts/public-user-booking/picker-ui';
 import '../../styles/global.css';
 import '../../styles/public-booking.css';
 
@@ -115,6 +116,13 @@ const professionalDisplayName = String(reservation?.professional_name || '').tri
 const organizationDisplayName = organizationName || organizationSlug || 'Hasel';
 const locationAddress = String(reservation?.location_address || '').trim();
 const durationLabel = durationMinutes > 0 ? `${durationMinutes} min` : '';
+const currentLocationRecord =
+	reservation &&
+	reservationLocations.find((loc) => Number(loc.id_location) === Number(reservation.loc_id_location));
+const locationStaticMapUrl =
+	googleMapsApiKey && currentLocationRecord
+		? buildStaticMapUrl(String(googleMapsApiKey), getCoords(currentLocationRecord))
+		: null;
 
 const serializedLocations = reservation
 	? JSON.stringify(reservationLocations).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
@@ -209,17 +217,35 @@ const serializedLocations = reservation
 
 							{isCancelled || isPastReservation ? (
 								<div class="reservation-manage__location">
-									<span class="reservation-manage__location-icon material-symbols-rounded" aria-hidden="true">
-										location_on
+									<span
+										class={`reservation-manage__location-map${locationStaticMapUrl ? '' : ' reservation-manage__location-map--brand'}`}
+										aria-hidden="true"
+									>
+										{locationStaticMapUrl ? (
+											<img
+												src={locationStaticMapUrl}
+												alt=""
+												loading="lazy"
+												decoding="async"
+												class="reservation-manage__location-map-img"
+												data-manage-location-map
+											/>
+										) : (
+											<span class="material-symbols-rounded">location_on</span>
+										)}
 									</span>
 									<span class="reservation-manage__location-text">
 										<span class="reservation-manage__micro">Sucursal</span>
 										<strong class="reservation-manage__location-name" data-location-name>
 											{reservation.location_name}
 										</strong>
-										{locationAddress && (
-											<span class="reservation-manage__location-address">{locationAddress}</span>
-										)}
+										<span
+											class="reservation-manage__location-address"
+											data-location-address
+											hidden={!locationAddress}
+										>
+											{locationAddress}
+										</span>
 									</span>
 								</div>
 							) : (
@@ -229,33 +255,41 @@ const serializedLocations = reservation
 									data-manage-open-map
 									aria-label={`Ver mapa de ${reservation.location_name}`}
 								>
-									<span class="reservation-manage__location-icon material-symbols-rounded" aria-hidden="true">
-										location_on
+									<span
+										class={`reservation-manage__location-map${locationStaticMapUrl ? '' : ' reservation-manage__location-map--brand'}`}
+										aria-hidden="true"
+									>
+										{locationStaticMapUrl ? (
+											<img
+												src={locationStaticMapUrl}
+												alt=""
+												loading="lazy"
+												decoding="async"
+												class="reservation-manage__location-map-img"
+												data-manage-location-map
+											/>
+										) : (
+											<span class="material-symbols-rounded">location_on</span>
+										)}
 									</span>
 									<span class="reservation-manage__location-text">
 										<span class="reservation-manage__micro">Sucursal</span>
 										<strong class="reservation-manage__location-name" data-location-name>
 											{reservation.location_name}
 										</strong>
-										{locationAddress && (
-											<span class="reservation-manage__location-address">{locationAddress}</span>
-										)}
+										<span
+											class="reservation-manage__location-address"
+											data-location-address
+											hidden={!locationAddress}
+										>
+											{locationAddress}
+										</span>
 									</span>
 									<span class="reservation-manage__location-chevron material-symbols-rounded" aria-hidden="true">
 										chevron_right
 									</span>
 								</button>
 							)}
-
-							<ul class="reservation-manage__meta">
-								<li class="reservation-manage__meta-row">
-									<span class="material-symbols-rounded" aria-hidden="true">person</span>
-									<span class="reservation-manage__meta-copy">
-										<span class="reservation-manage__micro">Cliente</span>
-										<strong>{reservation.customer_name}</strong>
-									</span>
-								</li>
-							</ul>
 
 							{isCancelled ? (
 								<div class="reservation-manage__notice" data-reservation-cancelled>
@@ -524,9 +558,6 @@ const serializedLocations = reservation
 								</section>
 
 								<section data-reschedule-step-panel="3" class="hidden grid gap-3 reservation-reschedule-panel">
-									<p class="reservation-slots-date-subtitle">
-										<span data-reservation-slots-date></span>
-									</p>
 									<p class="reservation-reschedule-panel__hint">
 										<span class="public-slots-hint__desktop">Elegí un horario disponible</span>
 										<span class="public-slots-hint__mobile">Deslizá para seleccionar un horario</span>
@@ -566,10 +597,7 @@ const serializedLocations = reservation
 								</section>
 
 								<section data-reschedule-step-panel="4" class="hidden">
-									<div class="reservation-change-summary">
-										<p class="reservation-change-summary-label">Cambio de horario</p>
-										<div class="reservation-change-summary-text" data-reschedule-change-summary></div>
-									</div>
+									<div class="reservation-change-compare" data-reschedule-change-summary></div>
 								</section>
 							</div>
 
@@ -791,7 +819,7 @@ const serializedLocations = reservation
 	align-items: center;
 	gap: 0.85rem;
 	width: 100%;
-	padding: 0.95rem 1rem;
+	padding: 0.85rem 1rem;
 	border-radius: 1.35rem;
 	border: 1px solid color-mix(in srgb, var(--outline-variant) 65%, transparent);
 	background: #1e1e1e;
@@ -811,10 +839,42 @@ button.reservation-manage__location:hover {
 	background: color-mix(in srgb, var(--primary) 8%, #1e1e1e);
 }
 
-.reservation-manage__location-icon {
+.reservation-manage__location-map {
+	position: relative;
 	flex: 0 0 auto;
-	font-size: 1.35rem;
+	width: 4.25rem;
+	height: 4.25rem;
+	overflow: hidden;
+	border-radius: 0.95rem;
+	background:
+		radial-gradient(
+			ellipse 80% 70% at 20% 15%,
+			color-mix(in srgb, var(--primary) 28%, transparent),
+			transparent 60%
+		),
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
+			var(--surface-container-highest) 55%,
+			color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
+		);
+}
+
+.reservation-manage__location-map--brand {
+	display: grid;
+	place-items: center;
 	color: var(--primary);
+}
+
+.reservation-manage__location-map--brand .material-symbols-rounded {
+	font-size: 1.55rem;
+}
+
+.reservation-manage__location-map-img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
 }
 
 .reservation-manage__location-text {
@@ -837,38 +897,14 @@ button.reservation-manage__location:hover {
 	color: var(--on-surface-variant);
 }
 
+.reservation-manage__location-address[hidden] {
+	display: none;
+}
+
 .reservation-manage__location-chevron {
 	flex: 0 0 auto;
 	color: #64748b;
 	font-size: 1.25rem;
-}
-
-.reservation-manage__meta {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	display: grid;
-	gap: 0.55rem;
-}
-
-.reservation-manage__meta-row {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	padding: 0.15rem 0.15rem;
-	color: var(--on-surface-variant);
-}
-
-.reservation-manage__meta-row .material-symbols-rounded {
-	font-size: 1.2rem;
-	color: #8b93a1;
-}
-
-.reservation-manage__meta-copy strong {
-	display: block;
-	font-size: 0.95rem;
-	font-weight: 600;
-	color: var(--on-surface);
 }
 
 .reservation-manage__actions {
@@ -1190,85 +1226,166 @@ button.reservation-manage__location:hover {
 	width: 100%;
 }
 
-.reservation-change-summary {
-	border-radius: 1.25rem;
-	background: var(--surface-container-high);
-	padding: 1rem 1.1rem;
+.reservation-change-compare {
+	display: grid;
+	gap: 1rem;
 }
 
-.reservation-change-summary-label {
-	margin: 0 0 0.9rem;
-	font-size: 0.72rem;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
+.reservation-change-compare__row {
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	justify-content: center;
+	gap: 0.55rem;
+}
+
+.reservation-change-compare__card {
+	flex: 0 0 auto;
+	width: 100%;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.85rem;
+	padding: 0.95rem 0.85rem 1.05rem;
+	border-radius: 1.25rem;
+	border: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent);
+	background: color-mix(in srgb, var(--surface-container-high) 88%, #111);
+}
+
+.reservation-change-compare__card--previous {
+	opacity: 0.78;
+	border-color: color-mix(in srgb, var(--outline-variant) 55%, transparent);
+}
+
+.reservation-change-compare__card--next {
+	opacity: 1;
+	border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+
+.reservation-change-compare__header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+}
+
+.reservation-change-compare__heading {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-width: 0;
+	color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+}
+
+.reservation-change-compare__card--next .reservation-change-compare__heading {
 	color: var(--primary);
 }
 
-.reservation-change-summary-text {
+.reservation-change-compare__heading .material-symbols-rounded,
+.reservation-change-compare__clock {
+	font-size: 1.15rem;
+	line-height: 1;
+}
+
+.reservation-change-compare__clock {
+	flex: 0 0 auto;
+	color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+}
+
+.reservation-change-compare__card--next .reservation-change-compare__clock {
+	color: var(--primary);
+}
+
+.reservation-change-compare__body {
 	display: flex;
 	flex-direction: column;
-	gap: 0;
-	margin: 0;
+	align-items: flex-start;
+	gap: 0.35rem;
+	min-width: 0;
 }
 
-.reservation-change-diff__block {
-	display: flex;
-	flex-direction: column;
-	gap: 0.3rem;
-}
-
-.reservation-change-diff__block--previous {
-	margin-bottom: 0.85rem;
-}
-
-.reservation-change-diff__block--next {
-	gap: 0.4rem;
-	padding-top: 0.15rem;
-}
-
-.reservation-change-diff__microcopy {
-	font-size: 0.72rem;
-	font-weight: 700;
-	line-height: 1.3;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
+.reservation-change-compare__label {
+	font-size: 0.84rem;
+	font-weight: 600;
+	line-height: 1.2;
 	color: var(--on-surface-variant);
 }
 
-.reservation-change-diff__previous {
-	font-size: 0.92rem;
-	line-height: 1.45;
-	color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
-	text-decoration: line-through;
-	text-decoration-color: color-mix(in srgb, var(--on-surface-variant) 55%, transparent);
+.reservation-change-compare__card--next .reservation-change-compare__label {
+	color: color-mix(in srgb, var(--on-surface) 92%, var(--primary));
+	font-weight: 700;
+}
+
+.reservation-change-compare__date {
+	font-size: 0.84rem;
+	line-height: 1.35;
+	color: color-mix(in srgb, var(--on-surface-variant) 92%, transparent);
 	text-wrap: pretty;
 }
 
-.reservation-change-diff__next {
-	font-size: 1.05rem;
-	line-height: 1.5;
-	font-weight: 600;
+.reservation-change-compare__card--next .reservation-change-compare__date {
+	color: var(--on-surface);
+}
+
+.reservation-change-compare__time {
+	margin-top: 0.15rem;
+	font-size: 1.55rem;
+	font-weight: 700;
+	line-height: 1.1;
+	letter-spacing: -0.02em;
+	color: color-mix(in srgb, var(--on-surface-variant) 90%, transparent);
+}
+
+.reservation-change-compare__card--next .reservation-change-compare__time {
+	color: var(--on-surface);
+}
+
+.reservation-change-compare__arrow {
+	flex: 0 0 auto;
+	align-self: center;
+	font-size: 1.55rem;
 	color: var(--primary);
-	text-wrap: pretty;
+	transform: rotate(90deg);
+}
+
+.reservation-change-compare__location {
+	margin: 0;
+	text-align: center;
+	font-size: 0.88rem;
+	line-height: 1.4;
+	color: var(--on-surface-variant);
+}
+
+.reservation-change-compare__location strong {
+	color: var(--on-surface);
+	font-weight: 600;
 }
 
 @media (min-width: 640px) {
-	.reservation-change-summary-label {
-		margin-bottom: 1rem;
+	.reservation-change-compare__row {
+		flex-direction: row;
+		align-items: stretch;
+		gap: 0.85rem;
 	}
 
-	.reservation-change-diff__block--previous {
-		margin-bottom: 1rem;
+	.reservation-change-compare__card {
+		flex: 1 1 0;
+		width: auto;
+		padding: 1.1rem 1.15rem 1.2rem;
+		gap: 1rem;
 	}
 
-	.reservation-change-diff__previous {
-		font-size: 0.95rem;
+	.reservation-change-compare__arrow {
+		transform: none;
 	}
 
-	.reservation-change-diff__next {
-		font-size: 1.08rem;
-		line-height: 1.48;
+	.reservation-change-compare__date {
+		font-size: 0.92rem;
+	}
+
+	.reservation-change-compare__time {
+		font-size: 1.75rem;
 	}
 }
 
@@ -1399,13 +1516,6 @@ button.reservation-manage__location:hover {
 		max-height: min(90vh, 52rem);
 	}
 
-	.reservation-reschedule-form[data-reschedule-step='2'],
-	.reservation-reschedule-form[data-reschedule-step='3'],
-	.reservation-reschedule-form[data-reschedule-step='4'] {
-		height: min(90vh, 52rem);
-		max-height: min(90vh, 52rem);
-	}
-
 	.reservation-reschedule-header {
 		justify-content: space-between;
 		text-align: left;
@@ -1500,8 +1610,42 @@ button.reservation-manage__location:hover {
 }
 
 @media (min-width: 640px) {
+	.reservation-reschedule-body .public-locations-grid:not(.is-location-stack) {
+		grid-template-columns: repeat(auto-fit, minmax(16.5rem, 1fr));
+		align-items: start;
+		gap: 0.85rem;
+	}
+
 	.reservation-reschedule-body .public-location-card {
-		grid-template-rows: auto auto;
+		display: grid;
+		grid-template-columns: 6.75rem minmax(0, 1fr);
+		grid-template-rows: auto;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 0.8rem 0.95rem;
+	}
+
+	.reservation-reschedule-body .public-location-card__preview {
+		width: 6.75rem;
+		height: 6.75rem;
+		aspect-ratio: 1;
+		margin: 0;
+		border-radius: 0.9rem;
+		flex: 0 0 auto;
+	}
+
+	.reservation-reschedule-body .public-location-card__main {
+		align-self: center;
+		min-width: 0;
+	}
+
+	.reservation-reschedule-body .public-location-card__name {
+		font-size: 1rem;
+	}
+
+	.reservation-reschedule-body .public-location-card__check {
+		top: 0.7rem;
+		right: 0.7rem;
 	}
 }
 

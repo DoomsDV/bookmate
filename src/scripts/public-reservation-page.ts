@@ -243,10 +243,11 @@ export const initializePublicReservationPage = () => {
 	const locationsLoading = root.querySelector<HTMLElement>('[data-reservation-locations-loading]');
 	const noLocations = root.querySelector<HTMLElement>('[data-no-reservation-locations]');
 	const selectedDateLabel = root.querySelector<HTMLElement>('[data-reservation-selected-date]');
-	const slotsDateLabel = root.querySelector<HTMLElement>('[data-reservation-slots-date]');
 	const cancelButton = root.querySelector<HTMLButtonElement>('[data-cancel-reservation]');
 	const openRescheduleButton = root.querySelector<HTMLButtonElement>('[data-open-reschedule-modal]');
 	const locationName = root.querySelector<HTMLElement>('[data-location-name]');
+	const locationAddressEl = root.querySelector<HTMLElement>('[data-location-address]');
+	const locationMapWrap = root.querySelector<HTMLElement>('.reservation-manage__location-map');
 	const statusText = root.querySelector<HTMLElement>('[data-status-text]');
 	const calendarMonth = root.querySelector<HTMLElement>('[data-calendar-month]');
 	const calendarGrid = root.querySelector<HTMLElement>('[data-calendar-grid]');
@@ -467,7 +468,6 @@ export const initializePublicReservationPage = () => {
 	const syncDateLabels = (ymd: string) => {
 		const label = ymd ? formatLongDateFromApiDate(ymd) : '';
 		if (selectedDateLabel) selectedDateLabel.textContent = label;
-		if (slotsDateLabel) slotsDateLabel.textContent = label;
 	};
 
 	const setMapStatus = (message: string) => {
@@ -653,17 +653,68 @@ export const initializePublicReservationPage = () => {
 
 	const updateLocationSummary = (location: BookingLocation) => {
 		if (locationName) locationName.textContent = getLocationLabel(location);
+		const address = String(location.address || '').trim();
+		if (locationAddressEl) {
+			if (address) {
+				locationAddressEl.textContent = address;
+				locationAddressEl.hidden = false;
+			} else {
+				locationAddressEl.textContent = '';
+				locationAddressEl.hidden = true;
+			}
+		}
+		if (!locationMapWrap) return;
+		const staticMapUrl = buildStaticMapUrl(mapsApiKey, getCoords(location));
+		if (staticMapUrl) {
+			locationMapWrap.classList.remove('reservation-manage__location-map--brand');
+			const existingImg = locationMapWrap.querySelector<HTMLImageElement>(
+				'[data-manage-location-map]'
+			);
+			if (existingImg) {
+				existingImg.src = staticMapUrl;
+				existingImg.hidden = false;
+			} else {
+				const img = document.createElement('img');
+				img.src = staticMapUrl;
+				img.alt = '';
+				img.loading = 'lazy';
+				img.decoding = 'async';
+				img.className = 'reservation-manage__location-map-img';
+				img.setAttribute('data-manage-location-map', '');
+				locationMapWrap.replaceChildren(img);
+			}
+		} else {
+			locationMapWrap.classList.add('reservation-manage__location-map--brand');
+			locationMapWrap.innerHTML =
+				'<span class="material-symbols-rounded">location_on</span>';
+		}
 	};
 
-	const formatLongReservationDateTime = (date: Date) => {
-		const label = `${formatLongDateFromApiDate(formatApiDate(date))} a las ${formatApiTime(date)}`;
-		return label.charAt(0).toUpperCase() + label.slice(1);
-	};
+	const capitalizeLabel = (value: string) =>
+		value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
 
-	const formatLongReservationDateTimeFromParts = (ymd: string, time: string) => {
-		const label = `${formatLongDateFromApiDate(ymd)} a las ${time}`;
-		return label.charAt(0).toUpperCase() + label.slice(1);
-	};
+	const formatCompareDate = (ymd: string) => capitalizeLabel(formatLongDateFromApiDate(ymd));
+
+	const buildCompareCard = (options: {
+		variant: 'previous' | 'next';
+		label: string;
+		dateLabel: string;
+		timeLabel: string;
+	}) => `
+		<article class="reservation-change-compare__card reservation-change-compare__card--${options.variant}">
+			<div class="reservation-change-compare__header">
+				<span class="reservation-change-compare__heading">
+					<span class="material-symbols-rounded" aria-hidden="true">calendar_month</span>
+					<span class="reservation-change-compare__label">${escapeHtml(options.label)}</span>
+				</span>
+				<span class="material-symbols-rounded reservation-change-compare__clock" aria-hidden="true">schedule</span>
+			</div>
+			<div class="reservation-change-compare__body">
+				<span class="reservation-change-compare__date">${escapeHtml(options.dateLabel)}</span>
+				<strong class="reservation-change-compare__time">${escapeHtml(options.timeLabel)}</strong>
+			</div>
+		</article>
+	`;
 
 	const updateChangeSummary = () => {
 		const currentStart = parseApiDateTime(reservation.start_time);
@@ -672,9 +723,10 @@ export const initializePublicReservationPage = () => {
 			return;
 		}
 
-		const currentLabel = formatLongReservationDateTime(currentStart);
-		const nextLabelFormatted = formatLongReservationDateTimeFromParts(selectedDate, selectedSlot);
-		const previousLocationLabel = getLocationLabel(defaultLocation);
+		const previousDateLabel = formatCompareDate(formatApiDate(currentStart));
+		const previousTimeLabel = formatApiTime(currentStart);
+		const nextDateLabel = formatCompareDate(selectedDate);
+		const nextTimeLabel = selectedSlot;
 		const nextLocation =
 			getLocationTargets().find((loc) => loc.id_location === selectedLocationId) ||
 			(selectedLocationId === defaultLocation.id_location ? defaultLocation : null);
@@ -684,29 +736,27 @@ export const initializePublicReservationPage = () => {
 		const locationChanged =
 			selectedLocationId > 0 && selectedLocationId !== reservation.loc_id_location;
 
-		const locationDiff = locationChanged
-			? `
-			<div class="reservation-change-diff__block reservation-change-diff__block--previous">
-				<span class="reservation-change-diff__microcopy">Sucursal anterior:</span>
-				<span class="reservation-change-diff__previous">${escapeHtml(previousLocationLabel)}</span>
-			</div>
-			<div class="reservation-change-diff__block reservation-change-diff__block--next">
-				<span class="reservation-change-diff__microcopy">Sucursal nueva:</span>
-				<strong class="reservation-change-diff__next">${escapeHtml(nextLocationLabel)}</strong>
-			</div>
-			`
-			: '';
-
 		changeSummary.innerHTML = `
-			${locationDiff}
-			<div class="reservation-change-diff__block reservation-change-diff__block--previous">
-				<span class="reservation-change-diff__microcopy">Anterior:</span>
-				<span class="reservation-change-diff__previous">${escapeHtml(currentLabel)}</span>
+			<div class="reservation-change-compare__row">
+				${buildCompareCard({
+					variant: 'previous',
+					label: 'Anterior:',
+					dateLabel: previousDateLabel,
+					timeLabel: previousTimeLabel,
+				})}
+				<span class="reservation-change-compare__arrow material-symbols-rounded" aria-hidden="true">chevron_right</span>
+				${buildCompareCard({
+					variant: 'next',
+					label: 'Nuevo:',
+					dateLabel: nextDateLabel,
+					timeLabel: nextTimeLabel,
+				})}
 			</div>
-			<div class="reservation-change-diff__block reservation-change-diff__block--next">
-				<span class="reservation-change-diff__microcopy">Nuevo:</span>
-				<strong class="reservation-change-diff__next">${escapeHtml(nextLabelFormatted)}</strong>
-			</div>
+			${
+				locationChanged
+					? `<p class="reservation-change-compare__location">Nueva sucursal: <strong>${escapeHtml(nextLocationLabel)}</strong></p>`
+					: ''
+			}
 		`;
 	};
 
@@ -782,20 +832,17 @@ export const initializePublicReservationPage = () => {
 
 		if (nextStep === 3) {
 			const group = getSelectedLocationGroup();
-			const reservationStartLocal = parseApiDateTime(reservation.start_time);
-			const currentSlot =
-				reservationStartLocal && selectedDate === formatApiDate(reservationStartLocal)
-					? formatApiTime(reservationStartLocal)
-					: '';
-			if (
-				group &&
-				currentSlot &&
-				group.location.id_location === reservation.loc_id_location &&
-				group.slots.includes(currentSlot) &&
-				!selectedSlot
-			) {
-				selectedSlot = currentSlot;
-				slotInput.value = currentSlot;
+			const orderedSlots = group
+				? sortTimeSlotsChronologically(group.slots)
+				: [];
+			if (group && orderedSlots.length > 0) {
+				group.slots = orderedSlots;
+				// Empezar siempre por el primer horario disponible (más temprano).
+				if (!selectedSlot || !orderedSlots.includes(selectedSlot)) {
+					selectedSlot = orderedSlots[0];
+					slotInput.value = orderedSlots[0];
+					locationInput.value = String(group.location.id_location);
+				}
 			}
 			renderSlotSections();
 		}
@@ -1112,7 +1159,14 @@ export const initializePublicReservationPage = () => {
 
 		mountPublicSlotBranches({
 			container: slotsContainer,
-			groups: selectedGroup ? [selectedGroup] : [],
+			groups: selectedGroup
+				? [
+						{
+							...selectedGroup,
+							slots: sortTimeSlotsChronologically(selectedGroup.slots),
+						},
+					]
+				: [],
 			selectedSlotKey: getSelectedSlotKey(),
 			useRoulette: isMobileSlotRouletteViewport(),
 			showLocationHeader: false,
@@ -1302,9 +1356,13 @@ export const initializePublicReservationPage = () => {
 
 		if (statusText) statusText.textContent = String(updated.status || reservation.status || '');
 		if (currentDate) currentDate.textContent = formatFriendlyDateTime(nextStart);
-		if (locationName && updated.location_name) {
-			locationName.textContent = updated.location_name;
-		}
+		const matchedLocation =
+			getLocationTargets().find((loc) => loc.id_location === reservation.loc_id_location) || {
+				id_location: reservation.loc_id_location,
+				name: reservation.location_name,
+				address: reservation.location_address || '',
+			};
+		updateLocationSummary(matchedLocation);
 		locationInput.value = String(reservation.loc_id_location);
 		selectedLocationId = reservation.loc_id_location;
 		return true;
