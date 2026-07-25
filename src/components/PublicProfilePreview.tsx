@@ -332,13 +332,15 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 						<h3 class="hub-section-title">Equipo</h3>
 						<div class="hub-team-grid hub-skel-grid" aria-hidden="true">
 							{Array.from({ length: 4 }, (_, i) => (
-								<div class="hub-pro-card hub-pro-card--skeleton">
+								<div class="hub-pro-card hub-pro-card--skeleton" key={`team-skel-${i}`}>
 									<div class="hub-pro-card__top">
-										<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
 										<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
 									</div>
 									<div class="hub-pro-card__main">
-										<span class="hub-skel hub-skel-circle hub-pro-card__avatar"></span>
+										<span class="hub-pro-card__avatar hub-skel-circle">
+											<span class="hub-skel hub-skel-circle hub-pro-card__avatar-face"></span>
+											<span class="hub-pro-card__status-dot" aria-hidden="true"></span>
+										</span>
 										<div class="hub-pro-card__text">
 											<span
 												class={`hub-skel hub-skel-line hub-skel-line--title${i % 2 === 1 ? ' hub-skel-line--short' : ''}`}

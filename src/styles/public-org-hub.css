@@ -1590,10 +1590,23 @@ html[data-theme='dark'] .hub-location-card--skeleton:hover {
 	background: color-mix(in srgb, #fff 5%, #141414);
 }
 
-.hub-pro-card--skeleton .hub-pro-card__avatar.hub-skel-circle {
+.hub-pro-card--skeleton .hub-pro-card__avatar {
 	width: 3.5rem;
 	height: 3.5rem;
 	flex-shrink: 0;
+	overflow: visible;
+	background: transparent;
+}
+
+.hub-pro-card--skeleton .hub-pro-card__avatar-face {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border-radius: 9999px;
+}
+
+.hub-pro-card--skeleton .hub-pro-card__status-dot {
+	display: none;
 }
 
 .hub-pro-card--skeleton .hub-skel,
@@ -1694,8 +1707,8 @@ html[data-theme='dark'] .hub-location-card__map-canvas {
 
 .hub-team-grid {
 	display: grid;
-	gap: 0.55rem;
-	grid-template-columns: 1fr;
+	gap: 0.65rem;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 @media (min-width: 640px) {
@@ -1752,75 +1765,6 @@ html[data-theme='dark'] .hub-pro-card:hover {
 	outline-offset: 3px;
 }
 
-@media (max-width: 639px) {
-	.hub-pro-card {
-		display: grid;
-		gap: 0.55rem;
-		padding: 0.75rem 0.8rem 0.8rem;
-		border-radius: 1.1rem;
-	}
-
-	.hub-pro-card__top {
-		gap: 0.45rem;
-	}
-
-	.hub-pro-card__status,
-	.hub-pro-card__top-meta {
-		font-size: 0.72rem;
-	}
-
-	.hub-pro-card__status-dot {
-		width: 0.4rem;
-		height: 0.4rem;
-		box-shadow: 0 0 0 2px color-mix(in srgb, #22c55e 22%, transparent);
-	}
-
-	.hub-pro-card__top-meta .material-symbols-rounded {
-		font-size: 0.88rem;
-	}
-
-	.hub-pro-card__main {
-		gap: 0.7rem;
-	}
-
-	.hub-pro-card__avatar {
-		width: 2.85rem;
-		height: 2.85rem;
-	}
-
-	.hub-pro-card__text {
-		gap: 0.12rem;
-	}
-
-	.hub-pro-card__name {
-		font-size: 0.95rem;
-	}
-
-	.hub-pro-card__specialty {
-		font-size: 0.78rem;
-	}
-
-	.hub-pro-card__btn {
-		padding: 0.58rem 0.75rem;
-		font-size: 0.84rem;
-		border-radius: 0.75rem;
-	}
-
-	.hub-pro-card__btn .material-symbols-rounded {
-		font-size: 1.05rem;
-	}
-
-	.hub-pro-card__btn-skel {
-		height: 2.25rem;
-		border-radius: 0.75rem;
-	}
-
-	.hub-pro-card--skeleton .hub-pro-card__avatar.hub-skel-circle {
-		width: 2.85rem;
-		height: 2.85rem;
-	}
-}
-
 .hub-pro-card__top {
 	display: flex;
 	align-items: center;
@@ -1848,6 +1792,10 @@ html[data-theme='dark'] .hub-pro-card:hover {
 	background: #22c55e;
 	box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 22%, transparent);
 	flex-shrink: 0;
+}
+
+.hub-pro-card__status-dot--avatar {
+	display: none;
 }
 
 .hub-pro-card__top-meta {
@@ -1993,6 +1941,135 @@ html[data-theme='dark'] .hub-pro-card:hover .hub-pro-card__btn {
 
 	.hub-pro-card:hover {
 		transform: none;
+	}
+}
+
+@media (max-width: 639px) {
+	.hub-pro-card {
+		display: grid;
+		justify-items: center;
+		align-content: start;
+		gap: 0.7rem;
+		padding: 0.9rem 0.7rem 0.75rem;
+		border-radius: 1.15rem;
+		text-align: center;
+		box-shadow: 0 4px 16px rgba(15, 23, 42, 0.06);
+	}
+
+	html[data-theme='dark'] .hub-pro-card {
+		box-shadow: none;
+	}
+
+	.hub-pro-card__top {
+		display: none;
+	}
+
+	.hub-pro-card__main {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.55rem;
+		width: 100%;
+	}
+
+	.hub-pro-card__avatar {
+		width: 4.75rem;
+		height: 4.75rem;
+		overflow: visible;
+	}
+
+	.hub-pro-card__photo,
+	.hub-pro-card__avatar-skel,
+	.hub-pro-card__avatar-face {
+		border-radius: 9999px;
+	}
+
+	.hub-pro-card__avatar-face {
+		display: block;
+		width: 100%;
+		height: 100%;
+	}
+
+	.hub-pro-card__status-dot--avatar {
+		display: block;
+		position: absolute;
+		right: 0.12rem;
+		bottom: 0.12rem;
+		z-index: 2;
+		width: 0.72rem;
+		height: 0.72rem;
+		box-shadow:
+			0 0 0 2.5px var(--surface-bright, #fff),
+			0 0 0 4px color-mix(in srgb, #22c55e 28%, transparent);
+	}
+
+	html[data-theme='dark'] .hub-pro-card__status-dot--avatar {
+		box-shadow:
+			0 0 0 2.5px #171717,
+			0 0 0 4px color-mix(in srgb, #22c55e 28%, transparent);
+	}
+
+	.hub-pro-card__text {
+		width: 100%;
+		justify-items: center;
+		gap: 0.18rem;
+	}
+
+	.hub-pro-card__name {
+		font-size: 0.9rem;
+		width: 100%;
+		white-space: normal;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.hub-pro-card__specialty {
+		font-size: 0.74rem;
+		width: 100%;
+	}
+
+	.hub-pro-card__initials {
+		font-size: 1.15rem;
+	}
+
+	.hub-pro-card__btn {
+		width: 100%;
+		padding: 0.5rem 0.55rem;
+		font-size: 0.78rem;
+		border-radius: 0.7rem;
+		gap: 0.28rem;
+	}
+
+	.hub-pro-card__btn .material-symbols-rounded {
+		font-size: 0.98rem;
+	}
+
+	.hub-pro-card__btn-skel {
+		height: 2rem;
+		border-radius: 0.7rem;
+	}
+
+	.hub-pro-card--skeleton .hub-pro-card__avatar {
+		width: 4.75rem;
+		height: 4.75rem;
+	}
+
+	.hub-pro-card--skeleton .hub-pro-card__avatar .hub-pro-card__status-dot {
+		display: block;
+		position: absolute;
+		right: 0.12rem;
+		bottom: 0.12rem;
+		z-index: 2;
+		width: 0.72rem;
+		height: 0.72rem;
+		background: color-mix(in srgb, #22c55e 55%, transparent);
+		box-shadow: 0 0 0 2.5px var(--surface-bright, #fff);
+	}
+
+	html[data-theme='dark'] .hub-pro-card--skeleton .hub-pro-card__avatar .hub-pro-card__status-dot {
+		box-shadow: 0 0 0 2.5px #171717;
 	}
 }
 

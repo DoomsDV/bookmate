@@ -509,10 +509,12 @@ const serializedProfessionals = professionals.length
 												<div class="hub-pro-card hub-pro-card--skeleton" aria-hidden="true">
 													<div class="hub-pro-card__top">
 														<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
-														<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
 													</div>
 													<div class="hub-pro-card__main">
-														<span class="hub-skel hub-skel-circle hub-pro-card__avatar"></span>
+														<span class="hub-pro-card__avatar hub-skel-circle">
+															<span class="hub-skel hub-skel-circle hub-pro-card__avatar-face"></span>
+															<span class="hub-pro-card__status-dot" aria-hidden="true"></span>
+														</span>
 														<div class="hub-pro-card__text">
 															<span
 																class={`hub-skel hub-skel-line hub-skel-line--title${i % 2 === 1 ? ' hub-skel-line--short' : ''}`}
@@ -529,13 +531,6 @@ const serializedProfessionals = professionals.length
 										{professionals.map((pro) => {
 											const specialty = getPublicProfileSpecialtyLabel(pro.specialty);
 											const initials = initialsFromName(pro.full_name);
-											const locationCount = pro.location_ids.length;
-											const locationMeta =
-												locationCount === 0
-													? ''
-													: locationCount === 1
-														? '1 sucursal'
-														: `${locationCount} sucursales`;
 											return (
 												<a
 													href={pro.booking_path}
@@ -550,14 +545,6 @@ const serializedProfessionals = professionals.length
 															<span class="hub-pro-card__status-dot" aria-hidden="true"></span>
 															Agenda abierta
 														</span>
-														{locationMeta ? (
-															<span class="hub-pro-card__top-meta">
-																<span class="material-symbols-rounded" aria-hidden="true">
-																	location_on
-																</span>
-																{locationMeta}
-															</span>
-														) : null}
 													</div>
 													<div class="hub-pro-card__main">
 														<div
@@ -588,6 +575,10 @@ const serializedProfessionals = professionals.length
 																	{initials}
 																</span>
 															)}
+															<span
+																class="hub-pro-card__status-dot hub-pro-card__status-dot--avatar"
+																aria-hidden="true"
+															></span>
 														</div>
 														<div class="hub-pro-card__text">
 															<h3 class="hub-pro-card__name">{pro.full_name}</h3>
