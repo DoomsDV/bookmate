@@ -90,7 +90,7 @@ const inactiveCount = specialties.length - activeCount;
 	)}
 
 	<div class="flex max-w-xl items-center gap-2">
-		<div class="relative min-w-0 flex-1">
+		<div class="relative min-w-0 flex-1" data-panel-search>
 			<span
 				class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--on-surface-variant)"
 				aria-hidden="true"
@@ -106,8 +106,17 @@ const inactiveCount = specialties.length - activeCount;
 				aria-label="Buscar por nombre"
 				autocomplete="off"
 				value={searchQuery}
-				class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-4 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+				class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-11 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
 			/>
+			<button
+				type="button"
+				class="panel-search-clear"
+				data-panel-search-clear
+				hidden={String(searchQuery || '').length === 0}
+				aria-label="Limpiar búsqueda"
+			>
+				<span class="material-symbols-rounded" aria-hidden="true">close</span>
+			</button>
 		</div>
 
 		<button
@@ -474,6 +483,8 @@ const inactiveCount = specialties.length - activeCount;
 
 <script>
 	import { initSpecialtiesListControls } from '../scripts/specialties-list-controls';
+	import { initPanelSearchClear } from '../scripts/panel-search-clear';
 
 	initSpecialtiesListControls();
+	initPanelSearchClear();
 </script>
