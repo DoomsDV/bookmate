@@ -1962,7 +1962,7 @@ const googleErrorMessage = hasGoogleError
 			color: var(--on-surface);
 		}
 
-		/* Desktop: botón ícono (como Clientes) + popover de filtros */
+		/* Desktop: botón ícono + popover anclado (como Clientes / Documentos) */
 		.calendar-filters-trigger {
 			width: 2.875rem;
 			height: 2.875rem;
@@ -1976,34 +1976,80 @@ const googleErrorMessage = hasGoogleError
 			display: none;
 		}
 
-		.calendar-filters-sheet.is-open {
-			align-items: center;
-			justify-content: center;
-			padding: 1.25rem;
+		.calendar-filters-sheet.is-open.is-desktop-popover {
+			align-items: flex-start;
+			justify-content: flex-start;
+			padding: 0;
 			z-index: 220;
+			pointer-events: none;
 		}
 
-		.calendar-filters-sheet__backdrop {
-			background: rgba(15, 17, 21, 0.6);
+		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__backdrop {
+			pointer-events: auto;
+			background: transparent;
+			cursor: default;
 		}
 
-		.calendar-filters-sheet__panel {
-			width: min(24rem, calc(100vw - 2rem));
-			max-height: min(70vh, 26rem);
-			border-radius: 1.6rem;
+		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__panel {
+			pointer-events: auto;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: min(18.5rem, calc(100vw - 1.5rem));
+			max-height: min(22rem, 60vh);
+			height: fit-content;
+			border-radius: 1rem;
+			border: 1px solid var(--shell-border);
 			border-bottom: 1px solid var(--shell-border);
 			background: var(--surface-bright);
 			background-image: none;
-			box-shadow: 0 8px 28px rgb(0 0 0 / 0.28);
+			box-shadow: 0 14px 40px rgb(15 23 42 / 0.16);
 			animation: calendar-filters-popover-in 160ms cubic-bezier(0.2, 0, 0, 1);
+			transform-origin: top left;
 		}
 
-		.calendar-filters-sheet__footer {
-			padding-bottom: 0.95rem;
+		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__header {
+			padding: 0.9rem 1rem 0.35rem;
+			border-bottom: 0;
+		}
+
+		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__header h2 {
+			font-size: 0.95rem;
+			font-weight: 800;
+		}
+
+		.calendar-filters-sheet.is-desktop-popover .calendar-sheet-close,
+		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__footer {
+			display: none;
+		}
+
+		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__body {
+			padding: 0.25rem 0.85rem 0.95rem;
+			gap: 0.75rem;
+		}
+
+		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__body label {
+			gap: 0.35rem;
+			font-size: 0.78rem;
+			font-weight: 700;
+			letter-spacing: 0.01em;
+			color: var(--on-surface-variant);
+		}
+
+		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__body select,
+		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__body .ts-control {
+			min-height: 2.6rem;
+			border-radius: 0.85rem;
+			padding-top: 0.55rem;
+			padding-bottom: 0.55rem;
+			font-size: 0.9rem;
+		}
+
+		html[data-theme='dark'] .calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__panel {
+			box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
 		}
 
 		.calendar-help-sheet.is-open {
-			display: flex;
 			align-items: center;
 			justify-content: center;
 			padding: 1.25rem;

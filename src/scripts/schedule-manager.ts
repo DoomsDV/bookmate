@@ -1,4 +1,9 @@
 import { showFlashMessage } from '../lib/flash';
+import {
+	bindFilterPopoverChrome,
+	closeFilterPopoverSheet,
+	toggleFilterPopoverSheet,
+} from '../lib/panel-filter-popover';
 import { showScheduleExceptionModalTour } from '../lib/schedule-exception-modal-tour';
 import {
 	maybeShowScheduleExceptionsTour,
@@ -226,7 +231,13 @@ class ScheduleManager extends HTMLElement {
 		this.professionalSelect.addEventListener('change', this.handleProfessionalChange, { signal });
 		this.proFilterButton?.addEventListener('click', this.handleOpenProFilter, { signal });
 		this.proFilterSheet?.addEventListener('click', this.handleProFilterSheetClick, { signal });
-		this.proFilterSheet?.addEventListener('cancel', this.handleProFilterSheetCancel, { signal });
+		if (this.proFilterSheet) {
+			bindFilterPopoverChrome({
+				sheet: this.proFilterSheet,
+				getTrigger: () => this.proFilterButton,
+				signal,
+			});
+		}
 		this.plannerNode.addEventListener('change', this.handlePlannerChange, { signal });
 		this.plannerNode.addEventListener('click', this.handlePlannerClick, { signal });
 		if (this.saveButton && this.canEdit) {
@@ -442,15 +453,12 @@ class ScheduleManager extends HTMLElement {
 		}
 	};
 
-	private handleOpenProFilter = (): void => {
-		if (this.roleId === ROLES.PROFESIONAL || !this.proFilterSheet) return;
+	private handleOpenProFilter = (event: MouseEvent): void => {
+		if (this.roleId === ROLES.PROFESIONAL || !this.proFilterSheet || !this.proFilterButton) return;
 		if (this.isMetaLoading || this.isScheduleLoading || this.isSaving) return;
-		if (this.proFilterSheet.open) return;
-		this.proFilterSheet.showModal();
-	};
-
-	private handleProFilterSheetCancel = (): void => {
-		this.closeProFilterSheet();
+		event.preventDefault();
+		event.stopPropagation();
+		toggleFilterPopoverSheet(this.proFilterSheet, this.proFilterButton);
 	};
 
 	private handleProFilterSheetClick = (event: MouseEvent): void => {
@@ -470,17 +478,12 @@ class ScheduleManager extends HTMLElement {
 			return;
 		}
 
-		const rect = this.proFilterSheet.getBoundingClientRect();
-		const insidePanel =
-			event.clientX >= rect.left &&
-			event.clientX <= rect.right &&
-			event.clientY >= rect.top &&
-			event.clientY <= rect.bottom;
-		if (!insidePanel) this.closeProFilterSheet();
+		if (this.proFilterSheet.classList.contains('is-desktop-popover')) return;
+		if (event.target === this.proFilterSheet) this.closeProFilterSheet();
 	};
 
 	private closeProFilterSheet(): void {
-		if (this.proFilterSheet?.open) this.proFilterSheet.close();
+		closeFilterPopoverSheet(this.proFilterSheet, this.proFilterButton);
 	}
 
 	private handleProfessionalChange = async (): Promise<void> => {

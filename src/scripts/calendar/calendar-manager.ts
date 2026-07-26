@@ -278,6 +278,7 @@ class CalendarManager extends HTMLElement {
 		});
 		requiredNodes.locationFilter.addEventListener('change', this.handleLocationFilterChange, { signal });
 		window.addEventListener('resize', this.handleViewportResize, { signal });
+		window.addEventListener('scroll', this.handleFiltersPopoverReposition, { signal, capture: true });
 		document.addEventListener('keydown', this.handleSheetKeydown, { signal });
 		this.addEventListener('appointment:changed', this.handleAppointmentChanged as EventListener, {
 			signal,
@@ -616,6 +617,64 @@ class CalendarManager extends HTMLElement {
 		return window.innerWidth < 640;
 	}
 
+	private isDesktopFiltersPopover() {
+		return window.matchMedia('(min-width: 768px)').matches;
+	}
+
+	private getFiltersPanel() {
+		return this.filtersSheet?.querySelector<HTMLElement>('.calendar-filters-sheet__panel') ?? null;
+	}
+
+	private clearFiltersPopoverStyles() {
+		const panel = this.getFiltersPanel();
+		if (!panel) return;
+		panel.style.top = '';
+		panel.style.left = '';
+		panel.style.right = '';
+		panel.style.bottom = '';
+		panel.style.width = '';
+		panel.style.maxWidth = '';
+	}
+
+	private positionFiltersPopover() {
+		if (!this.filtersSheet || !this.filtersOpenButton) return;
+		const panel = this.getFiltersPanel();
+		if (!panel) return;
+
+		const buttonRect = this.filtersOpenButton.getBoundingClientRect();
+		const gap = 8;
+		const width = Math.min(18.5 * 16, window.innerWidth - 24);
+		const spaceRight = window.innerWidth - buttonRect.left - 12;
+		const spaceLeft = buttonRect.right - 12;
+
+		// Preferir abrir hacia la derecha del botón (no tapar el sidebar).
+		let left =
+			spaceRight >= width || spaceRight >= spaceLeft
+				? buttonRect.left
+				: buttonRect.right - width;
+		left = Math.max(12, Math.min(left, window.innerWidth - width - 12));
+		const top = buttonRect.bottom + gap;
+
+		panel.style.width = `${width}px`;
+		panel.style.maxWidth = `${width}px`;
+		panel.style.right = 'auto';
+		panel.style.bottom = 'auto';
+		panel.style.left = `${left}px`;
+		panel.style.top = `${top}px`;
+
+		requestAnimationFrame(() => {
+			const panelRect = panel.getBoundingClientRect();
+			const overflowBottom = panelRect.bottom - window.innerHeight + 12;
+			if (overflowBottom <= 0) return;
+			const aboveTop = buttonRect.top - gap - panelRect.height;
+			if (aboveTop >= 12) {
+				panel.style.top = `${aboveTop}px`;
+			} else {
+				panel.style.top = `${Math.max(12, top - overflowBottom)}px`;
+			}
+		});
+	}
+
 	private mountFiltersSheetToBody() {
 		if (!this.filtersSheet) return;
 		if (!this.filtersSheetHome) {
@@ -636,15 +695,29 @@ class CalendarManager extends HTMLElement {
 	private setSheetOpen(sheet: HTMLElement | null, open: boolean) {
 		if (!sheet) return;
 		if (sheet === this.filtersSheet) {
-			if (open) this.mountFiltersSheetToBody();
-			else this.restoreFiltersSheetHome();
+			if (open) {
+				this.mountFiltersSheetToBody();
+				if (this.isDesktopFiltersPopover()) {
+					this.filtersSheet.classList.add('is-desktop-popover');
+					this.positionFiltersPopover();
+				} else {
+					this.filtersSheet.classList.remove('is-desktop-popover');
+					this.clearFiltersPopoverStyles();
+				}
+			} else {
+				this.restoreFiltersSheetHome();
+				this.filtersSheet.classList.remove('is-desktop-popover');
+				this.clearFiltersPopoverStyles();
+			}
 			this.filtersOpenButton?.setAttribute('aria-expanded', open ? 'true' : 'false');
 		}
 		sheet.classList.toggle('is-open', open);
 		sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
 		const helpOpen = Boolean(this.helpSheet?.classList.contains('is-open'));
 		const filtersOpen = Boolean(this.filtersSheet?.classList.contains('is-open'));
-		document.body.style.overflow = helpOpen || filtersOpen ? 'hidden' : '';
+		const filtersLockScroll =
+			filtersOpen && !this.filtersSheet?.classList.contains('is-desktop-popover');
+		document.body.style.overflow = helpOpen || filtersLockScroll ? 'hidden' : '';
 	}
 
 	private openFiltersSheet = () => {
@@ -671,6 +744,8 @@ class CalendarManager extends HTMLElement {
 		if (this.filtersSheet?.classList.contains('is-open')) {
 			this.closeFiltersSheet();
 		} else if (this.filtersSheet) {
+			this.filtersSheet.classList.remove('is-desktop-popover');
+			this.clearFiltersPopoverStyles();
 			this.filtersSheet.setAttribute('aria-hidden', 'true');
 			this.filtersOpenButton?.setAttribute('aria-expanded', 'false');
 		}
@@ -1327,6 +1402,14 @@ class CalendarManager extends HTMLElement {
 
 	private handleViewportResize = () => {
 		this.applyResponsiveCalendarLayout();
+		this.handleFiltersPopoverReposition();
+	};
+
+	private handleFiltersPopoverReposition = () => {
+		if (!this.filtersSheet?.classList.contains('is-open')) return;
+		if (!this.filtersSheet.classList.contains('is-desktop-popover')) return;
+		if (!this.isDesktopFiltersPopover()) return;
+		this.positionFiltersPopover();
 	};
 
 	private reloadCalendarEvents() {

@@ -85,6 +85,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 															aria-label="Filtrar por profesional"
 															aria-haspopup="dialog"
 															aria-controls="schedule-pro-filter-sheet"
+															aria-expanded="false"
 															aria-pressed="false"
 														>
 															<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
@@ -432,7 +433,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 					</div>
 					<div class="schedule-pro-filter-sheet__header">
 						<h2 id="schedule-pro-filter-title" class="m-0 text-[1.05rem] font-extrabold tracking-tight">
-							Profesional
+							Filtros
 						</h2>
 						<button
 							type="button"
@@ -655,7 +656,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		justify-content: space-between;
 		gap: 0.75rem;
 		width: 100%;
-		border: 1px solid transparent;
+		border: 0;
 		border-radius: 1rem;
 		background: transparent;
 		padding: 0.85rem 0.95rem;
@@ -664,17 +665,20 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		font-weight: 700;
 		color: var(--on-surface);
 		cursor: pointer;
-		transition: background 120ms ease, border-color 120ms ease;
+		transition: background-color 120ms ease, color 120ms ease;
 	}
 
 	.schedule-pro-filter-option:hover {
-		background: color-mix(in srgb, var(--surface-variant) 55%, transparent);
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
 	}
 
 	.schedule-pro-filter-option.is-selected {
-		border-color: color-mix(in srgb, var(--primary) 40%, var(--shell-border));
-		background: color-mix(in srgb, var(--primary) 10%, transparent);
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
 		color: var(--primary);
+	}
+
+	.schedule-pro-filter-option.is-selected:hover {
+		background: color-mix(in srgb, var(--primary) 18%, transparent);
 	}
 
 	.schedule-pro-filter-option .material-symbols-rounded {
@@ -684,29 +688,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	.schedule-pro-filter-option.is-selected .material-symbols-rounded {
 		opacity: 1;
-	}
-
-	@media (min-width: 640px) {
-		.schedule-pro-filter-sheet {
-			inset: 0;
-			margin: auto;
-			width: min(24rem, calc(100vw - 2rem));
-			max-height: min(70vh, 26rem);
-			height: fit-content;
-			border-bottom: 1px solid var(--shell-border);
-			border-radius: 1.6rem;
-			background: var(--surface-bright);
-			background-image: none;
-			box-shadow: 0 8px 28px rgb(0 0 0 / 0.28);
-		}
-
-		.schedule-pro-filter-sheet__handle {
-			display: none;
-		}
-
-		.schedule-pro-filter-sheet__header {
-			padding: 1rem 1rem 0.85rem;
-		}
 	}
 
 	.schedule-page-header__save.hidden {
@@ -874,9 +855,11 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	.schedule-day-card__headline {
 		display: flex;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		align-items: center;
+		justify-content: space-between;
 		gap: 0.65rem 0.85rem;
+		width: 100%;
 	}
 
 	.schedule-day-card__title {

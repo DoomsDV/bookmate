@@ -1,3 +1,9 @@
+import {
+	bindFilterPopoverChrome,
+	closeFilterPopoverSheet,
+	toggleFilterPopoverSheet,
+} from '../lib/panel-filter-popover';
+
 type ProfessionalItem = {
 	id_professional: number;
 	display_name?: string | null;
@@ -370,6 +376,15 @@ export const initProfessionalsListControls = () => {
 		window as unknown as { __professionalsListControlsInit?: boolean }
 	).__professionalsListControlsInit = true;
 
+	const sheet = document.querySelector<HTMLDialogElement>(
+		'[data-professionals-status-filter-sheet]'
+	);
+	const getTrigger = () =>
+		document.querySelector<HTMLElement>('[data-open-professionals-status-filter]');
+	if (sheet) {
+		bindFilterPopoverChrome({ sheet, getTrigger });
+	}
+
 	document.addEventListener('input', (event) => {
 		const target = event.target;
 		if (!(target instanceof HTMLInputElement) || !target.matches('[data-professionals-search]')) {
@@ -399,17 +414,15 @@ export const initProfessionalsListControls = () => {
 
 		const openBtn = target.closest<HTMLButtonElement>('[data-open-professionals-status-filter]');
 		if (openBtn) {
-			document
-				.querySelector<HTMLDialogElement>('[data-professionals-status-filter-sheet]')
-				?.showModal();
+			event.preventDefault();
+			event.stopPropagation();
+			toggleFilterPopoverSheet(sheet, openBtn);
 			return;
 		}
 
 		const closeBtn = target.closest<HTMLButtonElement>('[data-close-professionals-status-filter]');
 		if (closeBtn) {
-			document
-				.querySelector<HTMLDialogElement>('[data-professionals-status-filter-sheet]')
-				?.close();
+			closeFilterPopoverSheet(sheet, getTrigger());
 			return;
 		}
 
@@ -419,9 +432,7 @@ export const initProfessionalsListControls = () => {
 			const current = readStateFromUrl();
 			const nextIsActive =
 				nextValue === '0' || nextValue === '1' ? Number(nextValue) : null;
-			document
-				.querySelector<HTMLDialogElement>('[data-professionals-status-filter-sheet]')
-				?.close();
+			closeFilterPopoverSheet(sheet, getTrigger());
 
 			if (nextIsActive === current.isActive) return;
 			void loadProfessionals({
@@ -449,10 +460,8 @@ export const initProfessionalsListControls = () => {
 	});
 
 	document.addEventListener('click', (event) => {
-		const sheet = document.querySelector<HTMLDialogElement>(
-			'[data-professionals-status-filter-sheet]'
-		);
-		if (!sheet?.open || event.target !== sheet) return;
-		sheet.close();
+		if (!sheet?.open || sheet.classList.contains('is-desktop-popover')) return;
+		if (event.target !== sheet) return;
+		closeFilterPopoverSheet(sheet, getTrigger());
 	});
 };

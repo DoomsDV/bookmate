@@ -1,3 +1,9 @@
+import {
+	bindFilterPopoverChrome,
+	closeFilterPopoverSheet,
+	toggleFilterPopoverSheet,
+} from '../lib/panel-filter-popover';
+
 type ServiceItem = {
 	id_service: number;
 	name: string;
@@ -319,6 +325,13 @@ export const initServicesListControls = () => {
 	}
 	(window as unknown as { __servicesListControlsInit?: boolean }).__servicesListControlsInit = true;
 
+	const sheet = document.querySelector<HTMLDialogElement>('[data-services-status-filter-sheet]');
+	const getTrigger = () =>
+		document.querySelector<HTMLElement>('[data-open-services-status-filter]');
+	if (sheet) {
+		bindFilterPopoverChrome({ sheet, getTrigger });
+	}
+
 	document.addEventListener('input', (event) => {
 		const target = event.target;
 		if (!(target instanceof HTMLInputElement) || !target.matches('[data-services-search]')) {
@@ -348,17 +361,15 @@ export const initServicesListControls = () => {
 
 		const openBtn = target.closest<HTMLButtonElement>('[data-open-services-status-filter]');
 		if (openBtn) {
-			document
-				.querySelector<HTMLDialogElement>('[data-services-status-filter-sheet]')
-				?.showModal();
+			event.preventDefault();
+			event.stopPropagation();
+			toggleFilterPopoverSheet(sheet, openBtn);
 			return;
 		}
 
 		const closeBtn = target.closest<HTMLButtonElement>('[data-close-services-status-filter]');
 		if (closeBtn) {
-			document
-				.querySelector<HTMLDialogElement>('[data-services-status-filter-sheet]')
-				?.close();
+			closeFilterPopoverSheet(sheet, getTrigger());
 			return;
 		}
 
@@ -368,9 +379,7 @@ export const initServicesListControls = () => {
 			const current = readStateFromUrl();
 			const nextIsActive =
 				nextValue === '0' || nextValue === '1' ? Number(nextValue) : null;
-			document
-				.querySelector<HTMLDialogElement>('[data-services-status-filter-sheet]')
-				?.close();
+			closeFilterPopoverSheet(sheet, getTrigger());
 
 			if (nextIsActive === current.isActive) return;
 			void loadServices({
@@ -398,10 +407,8 @@ export const initServicesListControls = () => {
 	});
 
 	document.addEventListener('click', (event) => {
-		const sheet = document.querySelector<HTMLDialogElement>(
-			'[data-services-status-filter-sheet]'
-		);
-		if (!sheet?.open || event.target !== sheet) return;
-		sheet.close();
+		if (!sheet?.open || sheet.classList.contains('is-desktop-popover')) return;
+		if (event.target !== sheet) return;
+		closeFilterPopoverSheet(sheet, getTrigger());
 	});
 };

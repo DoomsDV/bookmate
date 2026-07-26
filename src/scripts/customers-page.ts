@@ -33,6 +33,7 @@ class CustomerManager extends HTMLElement {
 	#bound = false;
 	#listeners: AbortController | null = null;
 	#profileCloseTimer: number | null = null;
+	#proFilterOutsideBound = false;
 
 	private roleId = 0;
 	private currentProfessionalId = 0;
@@ -72,6 +73,7 @@ class CustomerManager extends HTMLElement {
 	private profileErrorNode: HTMLElement | null = null;
 	private profileBodyNode: HTMLElement | null = null;
 	private profileNameNode: HTMLElement | null = null;
+	private profileAvatarNode: HTMLElement | null = null;
 	private profilePhoneNode: HTMLElement | null = null;
 	private profileRegisteredNode: HTMLElement | null = null;
 	private profileScopeNode: HTMLElement | null = null;
@@ -126,6 +128,7 @@ class CustomerManager extends HTMLElement {
 		this.profileErrorNode = this.querySelector<HTMLElement>('[data-customer-profile-error]');
 		this.profileBodyNode = this.querySelector<HTMLElement>('[data-customer-profile-body]');
 		this.profileNameNode = this.querySelector<HTMLElement>('[data-customer-profile-name]');
+		this.profileAvatarNode = this.querySelector<HTMLElement>('[data-customer-profile-avatar]');
 		this.profilePhoneNode = this.querySelector<HTMLElement>('[data-customer-profile-phone]');
 		this.profileRegisteredNode = this.querySelector<HTMLElement>('[data-customer-profile-registered]');
 		this.profileScopeNode = this.querySelector<HTMLElement>('[data-customer-profile-scope]');
@@ -184,6 +187,11 @@ class CustomerManager extends HTMLElement {
 		this.proFilterButton?.addEventListener('click', this.handleOpenProFilter, { signal });
 		this.proFilterSheet?.addEventListener('click', this.handleProFilterSheetClick, { signal });
 		this.proFilterSheet?.addEventListener('cancel', this.handleProFilterSheetCancel, { signal });
+		this.proFilterSheet?.addEventListener('close', this.handleProFilterSheetClose, { signal });
+		window.addEventListener('resize', this.handleProFilterViewportChange, { signal });
+		window.addEventListener('scroll', this.handleProFilterViewportChange, { signal, capture: true });
+		document.addEventListener('keydown', this.handleProFilterKeydown, { signal });
+		document.addEventListener('pointerdown', this.handleProFilterOutsidePointer, { signal, capture: true });
 		this.prevButton?.addEventListener('click', this.handlePrevPage, { signal });
 		this.nextButton?.addEventListener('click', this.handleNextPage, { signal });
 		this.gridNode.addEventListener('click', this.handleGridClick, { signal });
@@ -226,20 +234,142 @@ class CustomerManager extends HTMLElement {
 		void this.loadCustomers();
 	};
 
+	private isDesktopProFilter() {
+		return window.matchMedia('(min-width: 768px)').matches;
+	}
+
+	private clearProFilterPopoverStyles() {
+		if (!this.proFilterSheet) return;
+		this.proFilterSheet.style.top = '';
+		this.proFilterSheet.style.left = '';
+		this.proFilterSheet.style.right = '';
+		this.proFilterSheet.style.bottom = '';
+		this.proFilterSheet.style.width = '';
+		this.proFilterSheet.style.maxWidth = '';
+		this.proFilterSheet.style.margin = '';
+	}
+
+	private positionProFilterPopover() {
+		if (!this.proFilterSheet || !this.proFilterButton) return;
+
+		const buttonRect = this.proFilterButton.getBoundingClientRect();
+		const gap = 8;
+		const width = Math.min(18.5 * 16, window.innerWidth - 24);
+		let left = buttonRect.right - width;
+		left = Math.max(12, Math.min(left, window.innerWidth - width - 12));
+		let top = buttonRect.bottom + gap;
+
+		this.proFilterSheet.style.width = `${width}px`;
+		this.proFilterSheet.style.maxWidth = `${width}px`;
+		this.proFilterSheet.style.margin = '0';
+		this.proFilterSheet.style.right = 'auto';
+		this.proFilterSheet.style.bottom = 'auto';
+		this.proFilterSheet.style.left = `${left}px`;
+		this.proFilterSheet.style.top = `${top}px`;
+
+		// Si no entra abajo, abrir hacia arriba.
+		requestAnimationFrame(() => {
+			if (!this.proFilterSheet || !this.proFilterButton) return;
+			const panelRect = this.proFilterSheet.getBoundingClientRect();
+			const overflowBottom = panelRect.bottom - window.innerHeight + 12;
+			if (overflowBottom > 0) {
+				const aboveTop = buttonRect.top - gap - panelRect.height;
+				if (aboveTop >= 12) {
+					this.proFilterSheet.style.top = `${aboveTop}px`;
+				} else {
+					this.proFilterSheet.style.top = `${Math.max(12, top - overflowBottom)}px`;
+				}
+			}
+		});
+	}
+
+	private openProFilterPopover() {
+		if (!this.proFilterSheet) return;
+		this.proFilterSheet.classList.add('is-desktop-popover');
+		this.positionProFilterPopover();
+		this.proFilterSheet.show();
+		this.proFilterButton?.setAttribute('aria-expanded', 'true');
+		this.#proFilterOutsideBound = true;
+	}
+
+	private openProFilterModal() {
+		if (!this.proFilterSheet) return;
+		this.proFilterSheet.classList.remove('is-desktop-popover');
+		this.clearProFilterPopoverStyles();
+		this.proFilterSheet.showModal();
+		this.proFilterButton?.setAttribute('aria-expanded', 'true');
+		this.#proFilterOutsideBound = false;
+	}
+
 	private handleOpenProFilter = (event: Event) => {
 		event.preventDefault();
 		event.stopPropagation();
 		if (!this.canFilterByProfessional() || this.isLoading || !this.proFilterSheet) return;
 
+		if (this.proFilterSheet.open) {
+			this.closeProFilterSheet();
+			return;
+		}
+
 		this.renderProFilterList();
-		// Evita que el mismo click del botón cierre el dialog al instante (click-through al backdrop).
+		// Evita que el mismo click del botón cierre el dialog al instante (click-through).
 		window.setTimeout(() => {
 			if (!this.proFilterSheet || this.proFilterSheet.open) return;
-			this.proFilterSheet.showModal();
+			if (this.isDesktopProFilter()) {
+				this.openProFilterPopover();
+			} else {
+				this.openProFilterModal();
+			}
 		}, 0);
 	};
 
-	private handleProFilterSheetCancel = () => {
+	private handleProFilterSheetCancel = (event: Event) => {
+		event.preventDefault();
+		this.closeProFilterSheet();
+	};
+
+	private handleProFilterSheetClose = () => {
+		this.clearProFilterPopoverStyles();
+		this.proFilterSheet?.classList.remove('is-desktop-popover');
+		this.proFilterButton?.setAttribute('aria-expanded', 'false');
+		this.#proFilterOutsideBound = false;
+	};
+
+	private handleProFilterViewportChange = () => {
+		if (!this.proFilterSheet?.open) return;
+
+		if (!this.isDesktopProFilter()) {
+			if (this.proFilterSheet.classList.contains('is-desktop-popover')) {
+				this.closeProFilterSheet();
+			}
+			return;
+		}
+
+		if (this.proFilterSheet.classList.contains('is-desktop-popover')) {
+			this.positionProFilterPopover();
+			return;
+		}
+
+		// Pasó de mobile modal a desktop: reabrir como popover.
+		this.closeProFilterSheet();
+	};
+
+	private handleProFilterKeydown = (event: KeyboardEvent) => {
+		if (event.key !== 'Escape') return;
+		if (!this.proFilterSheet?.open) return;
+		if (!this.proFilterSheet.classList.contains('is-desktop-popover')) return;
+		event.preventDefault();
+		this.closeProFilterSheet();
+	};
+
+	private handleProFilterOutsidePointer = (event: PointerEvent) => {
+		if (!this.#proFilterOutsideBound || !this.proFilterSheet?.open) return;
+		if (!this.proFilterSheet.classList.contains('is-desktop-popover')) return;
+
+		const target = event.target;
+		if (!(target instanceof Node)) return;
+		if (this.proFilterSheet.contains(target)) return;
+		if (this.proFilterButton?.contains(target)) return;
 		this.closeProFilterSheet();
 	};
 
@@ -263,7 +393,8 @@ class CustomerManager extends HTMLElement {
 			return;
 		}
 
-		// Cerrar solo si el click cayó fuera del panel (backdrop del dialog nativo).
+		// Mobile modal: cerrar si el click cayó fuera del panel (backdrop).
+		if (this.proFilterSheet.classList.contains('is-desktop-popover')) return;
 		const rect = this.proFilterSheet.getBoundingClientRect();
 		const insidePanel =
 			event.clientX >= rect.left &&
@@ -274,7 +405,11 @@ class CustomerManager extends HTMLElement {
 	};
 
 	private closeProFilterSheet() {
-		if (this.proFilterSheet?.open) this.proFilterSheet.close();
+		if (!this.proFilterSheet?.open) {
+			this.handleProFilterSheetClose();
+			return;
+		}
+		this.proFilterSheet.close();
 	}
 
 	private handleSearchInput = () => {
@@ -1016,12 +1151,22 @@ class CustomerManager extends HTMLElement {
 
 	private renderCustomerProfile(profile: CustomerProfile) {
 		const stats = profile.stats;
+		const displayName = profile.full_name || `Cliente #${profile.id_customer}`;
 
 		this.renderProfileScope();
 
 		if (this.profileNameNode) {
-			this.profileNameNode.textContent =
-				profile.full_name || `Cliente #${profile.id_customer}`;
+			this.profileNameNode.textContent = displayName;
+		}
+		if (this.profileAvatarNode) {
+			const tone = this.getCustomerAvatarTone({
+				id_customer: profile.id_customer,
+				full_name: displayName,
+				phone_number: profile.phone_number,
+				created_at: profile.created_at,
+			});
+			this.profileAvatarNode.className = `customer-card-avatar customer-card-avatar--tone-${tone} size-12 text-[0.85rem]`;
+			this.profileAvatarNode.textContent = this.getCustomerInitials(displayName);
 		}
 		if (this.profilePhoneNode) {
 			this.profilePhoneNode.textContent = profile.phone_number || '—';
@@ -1085,6 +1230,11 @@ class CustomerManager extends HTMLElement {
 		this.setProfileLoading(true);
 
 		if (this.profileNameNode) this.profileNameNode.textContent = 'Cliente';
+		if (this.profileAvatarNode) {
+			this.profileAvatarNode.className =
+				'customer-card-avatar customer-card-avatar--tone-1 size-12 text-[0.85rem]';
+			this.profileAvatarNode.textContent = '?';
+		}
 		if (this.profilePhoneNode) this.profilePhoneNode.textContent = '—';
 		if (this.profileRegisteredNode) this.profileRegisteredNode.textContent = '—';
 		this.renderProfileScope();

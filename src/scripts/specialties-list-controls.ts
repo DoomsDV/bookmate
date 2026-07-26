@@ -1,3 +1,9 @@
+import {
+	bindFilterPopoverChrome,
+	closeFilterPopoverSheet,
+	toggleFilterPopoverSheet,
+} from '../lib/panel-filter-popover';
+
 type SpecialtyItem = {
 	id_specialty: number;
 	name?: string | null;
@@ -311,6 +317,13 @@ export const initSpecialtiesListControls = () => {
 		window as unknown as { __specialtiesListControlsInit?: boolean }
 	).__specialtiesListControlsInit = true;
 
+	const sheet = document.querySelector<HTMLDialogElement>('[data-specialties-status-filter-sheet]');
+	const getTrigger = () =>
+		document.querySelector<HTMLElement>('[data-open-specialties-status-filter]');
+	if (sheet) {
+		bindFilterPopoverChrome({ sheet, getTrigger });
+	}
+
 	document.addEventListener('input', (event) => {
 		const target = event.target;
 		if (!(target instanceof HTMLInputElement) || !target.matches('[data-specialties-search]')) {
@@ -340,17 +353,15 @@ export const initSpecialtiesListControls = () => {
 
 		const openBtn = target.closest<HTMLButtonElement>('[data-open-specialties-status-filter]');
 		if (openBtn) {
-			document
-				.querySelector<HTMLDialogElement>('[data-specialties-status-filter-sheet]')
-				?.showModal();
+			event.preventDefault();
+			event.stopPropagation();
+			toggleFilterPopoverSheet(sheet, openBtn);
 			return;
 		}
 
 		const closeBtn = target.closest<HTMLButtonElement>('[data-close-specialties-status-filter]');
 		if (closeBtn) {
-			document
-				.querySelector<HTMLDialogElement>('[data-specialties-status-filter-sheet]')
-				?.close();
+			closeFilterPopoverSheet(sheet, getTrigger());
 			return;
 		}
 
@@ -360,9 +371,7 @@ export const initSpecialtiesListControls = () => {
 			const current = readStateFromUrl();
 			const nextIsActive =
 				nextValue === '0' || nextValue === '1' ? Number(nextValue) : null;
-			document
-				.querySelector<HTMLDialogElement>('[data-specialties-status-filter-sheet]')
-				?.close();
+			closeFilterPopoverSheet(sheet, getTrigger());
 
 			if (nextIsActive === current.isActive) return;
 			void loadSpecialties({
@@ -390,10 +399,8 @@ export const initSpecialtiesListControls = () => {
 	});
 
 	document.addEventListener('click', (event) => {
-		const sheet = document.querySelector<HTMLDialogElement>(
-			'[data-specialties-status-filter-sheet]'
-		);
-		if (!sheet?.open || event.target !== sheet) return;
-		sheet.close();
+		if (!sheet?.open || sheet.classList.contains('is-desktop-popover')) return;
+		if (event.target !== sheet) return;
+		closeFilterPopoverSheet(sheet, getTrigger());
 	});
 };

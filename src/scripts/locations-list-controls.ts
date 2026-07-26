@@ -1,3 +1,9 @@
+import {
+	bindFilterPopoverChrome,
+	closeFilterPopoverSheet,
+	toggleFilterPopoverSheet,
+} from '../lib/panel-filter-popover';
+
 type LocationItem = {
 	id_location: number;
 	name?: string | null;
@@ -281,23 +287,28 @@ export const initLocationsListControls = () => {
 	}
 	(window as unknown as { __locationsListControlsInit?: boolean }).__locationsListControlsInit = true;
 
+	const sheet = document.querySelector<HTMLDialogElement>('[data-locations-status-filter-sheet]');
+	const getTrigger = () =>
+		document.querySelector<HTMLElement>('[data-open-locations-status-filter]');
+	if (sheet) {
+		bindFilterPopoverChrome({ sheet, getTrigger });
+	}
+
 	document.addEventListener('click', (event) => {
 		const target = event.target;
 		if (!(target instanceof Element)) return;
 
 		const openBtn = target.closest<HTMLButtonElement>('[data-open-locations-status-filter]');
 		if (openBtn) {
-			document
-				.querySelector<HTMLDialogElement>('[data-locations-status-filter-sheet]')
-				?.showModal();
+			event.preventDefault();
+			event.stopPropagation();
+			toggleFilterPopoverSheet(sheet, openBtn);
 			return;
 		}
 
 		const closeBtn = target.closest<HTMLButtonElement>('[data-close-locations-status-filter]');
 		if (closeBtn) {
-			document
-				.querySelector<HTMLDialogElement>('[data-locations-status-filter-sheet]')
-				?.close();
+			closeFilterPopoverSheet(sheet, getTrigger());
 			return;
 		}
 
@@ -307,9 +318,7 @@ export const initLocationsListControls = () => {
 			const current = readStateFromUrl();
 			const nextIsActive =
 				nextValue === '0' || nextValue === '1' ? Number(nextValue) : null;
-			document
-				.querySelector<HTMLDialogElement>('[data-locations-status-filter-sheet]')
-				?.close();
+			closeFilterPopoverSheet(sheet, getTrigger());
 
 			if (nextIsActive === current.isActive) return;
 			void loadLocations({
@@ -335,10 +344,8 @@ export const initLocationsListControls = () => {
 	});
 
 	document.addEventListener('click', (event) => {
-		const sheet = document.querySelector<HTMLDialogElement>(
-			'[data-locations-status-filter-sheet]'
-		);
-		if (!sheet?.open || event.target !== sheet) return;
-		sheet.close();
+		if (!sheet?.open || sheet.classList.contains('is-desktop-popover')) return;
+		if (event.target !== sheet) return;
+		closeFilterPopoverSheet(sheet, getTrigger());
 	});
 };
