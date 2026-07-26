@@ -122,12 +122,11 @@ const { stepPanel = 6 } = Astro.props;
 				<input type="hidden" data-sipap-manage-token />
 				<p class="text-sm font-bold text-(--on-surface)">Subí el comprobante</p>
 				<p class="mt-1 text-sm text-(--on-surface-variant)">
-					Foto clara del ticket (JPG o PNG). Lo leemos al instante para confirmar tu seña.
+					Subí una foto clara del ticket (JPG o PNG) o el comprobante en PDF. Lo leemos al instante para confirmar tu seña.
 				</p>
 				<input
 					type="file"
-					accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
-					capture="environment"
+					accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.pdf"
 					data-sipap-upload-input
 					class="mt-4 block w-full text-sm text-(--on-surface-variant) file:mr-3 file:rounded-full file:border-0 file:bg-(--primary-container) file:px-4 file:py-2 file:text-sm file:font-semibold file:text-(--on-primary-container)"
 				/>

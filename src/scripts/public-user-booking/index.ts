@@ -12,10 +12,14 @@ import {
 	toParaguayMobileE164FromInput,
 } from '../../lib/paraguay-phone';
 import {
+	clearSipapHold,
 	createDraftPersister,
 	readPublicBookingDraft,
+	readSipapHold,
 	SLOT_UNAVAILABLE_RESTORE_MESSAGE,
 	userBookingDraftKey,
+	userBookingHoldKey,
+	writeSipapHold,
 	type PublicBookingDraft,
 	type PublicBookingDraftStep,
 } from '../../lib/public-booking-draft';
@@ -283,6 +287,7 @@ export const initializePublicUserBookingPage = () => {
 
 	const publicSlug = String(root.dataset.publicSlug || '').trim();
 	const draftStorageKey = userBookingDraftKey(publicSlug || 'unknown');
+	const holdStorageKey = userBookingHoldKey(publicSlug || 'unknown');
 	const draftPersister = createDraftPersister(draftStorageKey, () => {
 		if (step >= 5 || !selectedService) return null;
 		const draftStep = (step <= 5 ? step : 5) as PublicBookingDraftStep;
@@ -522,6 +527,7 @@ export const initializePublicUserBookingPage = () => {
 		selectedTime = '';
 		availableSlotGroups = [];
 		pendingAppointmentId = 0;
+		clearSipapHold(holdStorageKey);
 		invalidateAvailableDatesCache();
 	};
 
@@ -2091,7 +2097,8 @@ export const initializePublicUserBookingPage = () => {
 
 	const finalizeDepositHold = (hold: Record<string, unknown>) => {
 		draftPersister.clear();
-		fillSipapDepositPanel(root, unwrapSipapHold(hold as any), selectedContext?.deposit_settings, {
+		const unwrapped = unwrapSipapHold(hold as any);
+		fillSipapDepositPanel(root, unwrapped, selectedContext?.deposit_settings, {
 			serviceName: selectedService?.name,
 			professionalName: profile.full_name,
 			depositAmount: calculateDepositAmount(selectedService),
@@ -2100,6 +2107,17 @@ export const initializePublicUserBookingPage = () => {
 		ticketService.textContent = selectedService?.name || '-';
 		ticketDate.textContent = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
 		ticketTime.textContent = selectedTime || '-';
+		// Persistir el hold para que el paso "Transferí la seña" sobreviva a un F5
+		// o al cierre del navegador dentro de la ventana de pago.
+		writeSipapHold(holdStorageKey, unwrapped as unknown as Record<string, unknown>, {
+			serviceId: selectedService?.id_service ?? 0,
+			serviceName: selectedService?.name,
+			professionalName: profile.full_name,
+			depositAmount: calculateDepositAmount(selectedService),
+			date: selectedDate,
+			time: selectedTime,
+			locationId: selectedContext?.id_location ?? null,
+		});
 		setStep(7);
 	};
 
@@ -2139,6 +2157,7 @@ export const initializePublicUserBookingPage = () => {
 
 	const resetFlow = () => {
 		draftPersister.clear();
+		clearSipapHold(holdStorageKey);
 		orgGroups = buildOrganizationGroups(profile.locations);
 		selectedOrgGroup = null;
 		selectedContext = null;
@@ -2246,8 +2265,14 @@ export const initializePublicUserBookingPage = () => {
 	bindSipapReceiptUpload(root, {
 		signal,
 		onResult: (result) => {
+			const ocr = String(result.ocr_status || '').toUpperCase();
+			// Seña verificada: la cita quedó confirmada, ya no hace falta persistir el hold.
+			if (ocr === 'MATCH') {
+				clearSipapHold(holdStorageKey);
+			}
 			showToast(
-				result.message || 'Comprobante recibido.',
+				result.message ||
+					(ocr === 'MATCH' ? 'Pago verificado. Turno confirmado.' : 'Comprobante recibido.'),
 				'success'
 			);
 		},
@@ -2312,7 +2337,35 @@ export const initializePublicUserBookingPage = () => {
 		root.removeAttribute('data-booting');
 	};
 
+	const restoreSipapHold = (): boolean => {
+		const stored = readSipapHold(holdStorageKey);
+		if (!stored) return false;
+
+		const hold = stored.hold as unknown as ReturnType<typeof unwrapSipapHold>;
+		pendingAppointmentId = Number((hold as { appointment_id?: number }).appointment_id || 0);
+
+		// El hold ya trae sipap + política + token, así que el panel se reconstruye aunque
+		// no tengamos el contexto/sucursal cargado en memoria tras el reload.
+		fillSipapDepositPanel(root, hold, selectedContext?.deposit_settings, {
+			serviceName: stored.context.serviceName,
+			professionalName: stored.context.professionalName ?? profile.full_name,
+			depositAmount: stored.context.depositAmount,
+		});
+		ticketProfessional.textContent = stored.context.professionalName ?? profile.full_name;
+		ticketService.textContent = stored.context.serviceName ?? '-';
+		ticketDate.textContent = stored.context.date ? formatLongDateFromApiDate(stored.context.date) : '-';
+		ticketTime.textContent = stored.context.time || '-';
+		setStep(7);
+		return true;
+	};
+
 	const restoreDraft = async () => {
+		// La seña (hold) tiene prioridad: si hay uno vigente, retomamos "Transferí la seña".
+		if (restoreSipapHold()) {
+			finishBoot();
+			return;
+		}
+
 		const draft = readPublicBookingDraft(draftStorageKey, formatApiDate(today));
 		if (!draft || draft.serviceId <= 0) {
 			servicePickerPhase = 'orgs';

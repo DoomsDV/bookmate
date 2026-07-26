@@ -19,10 +19,14 @@ import {
 	toParaguayMobileE164FromInput,
 } from '../lib/paraguay-phone';
 import {
+	clearSipapHold,
 	createDraftPersister,
 	proBookingDraftKey,
+	proBookingHoldKey,
 	readPublicBookingDraft,
+	readSipapHold,
 	SLOT_UNAVAILABLE_RESTORE_MESSAGE,
+	writeSipapHold,
 	type PublicBookingDraft,
 	type PublicBookingDraftStep,
 } from '../lib/public-booking-draft';
@@ -414,6 +418,7 @@ export const initializePublicBookingPage = () => {
 	let mapOpenSeq = 0;
 
 	const draftStorageKey = proBookingDraftKey(organizationSlug, professionalSlug);
+	const holdStorageKey = proBookingHoldKey(organizationSlug, professionalSlug);
 	const draftPersister = createDraftPersister(draftStorageKey, () => {
 		if (step >= 6 || !selectedService) return null;
 		const draftStep = (step <= 5 ? step : 5) as PublicBookingDraftStep;
@@ -1038,6 +1043,7 @@ export const initializePublicBookingPage = () => {
 	const resetPendingAppointment = () => {
 		pendingAppointmentId = 0;
 		pendingSipapHold = null;
+		clearSipapHold(holdStorageKey);
 	};
 
 	const syncPendingAppointmentContext = () => {
@@ -3043,6 +3049,17 @@ export const initializePublicBookingPage = () => {
 			ticketDate.textContent = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
 			ticketTime.textContent = selectedTime || '-';
 			draftPersister.clear();
+			// Persistir el hold para que el paso "Transferí la seña" sobreviva a un F5
+			// o al cierre del navegador dentro de la ventana de pago.
+			writeSipapHold(holdStorageKey, hold as unknown as Record<string, unknown>, {
+				serviceId: selectedService?.id_service ?? 0,
+				serviceName: selectedService?.name,
+				professionalName: profile.full_name,
+				depositAmount: calculateDepositAmount(selectedService),
+				date: selectedDate,
+				time: selectedTime,
+				locationId: selectedLocation?.id_location ?? null,
+			});
 			setStep(7);
 			showToast('Turno reservado. Completá la transferencia SIPAP.', 'success');
 		} catch (error) {
@@ -3186,6 +3203,10 @@ export const initializePublicBookingPage = () => {
 		signal,
 		onResult: (result) => {
 			const ocr = String(result.ocr_status || '').toUpperCase();
+			// Seña verificada: la cita quedó confirmada, ya no hace falta persistir el hold.
+			if (ocr === 'MATCH') {
+				clearSipapHold(holdStorageKey);
+			}
 			showToast(
 				result.message ||
 					(ocr === 'MATCH'
@@ -3221,7 +3242,53 @@ export const initializePublicBookingPage = () => {
 		return targetStep;
 	};
 
+	const restoreSipapHold = (): boolean => {
+		const stored = readSipapHold(holdStorageKey);
+		if (!stored) return false;
+
+		const service =
+			profile.services.find((item) => item.id_service === stored.context.serviceId) ?? null;
+		if (!service) {
+			clearSipapHold(holdStorageKey);
+			return false;
+		}
+
+		const hold = stored.hold as unknown as ReturnType<typeof unwrapSipapHold>;
+		selectedService = service;
+		selectedDate = stored.context.date || '';
+		selectedTime = stored.context.time || '';
+		selectedLocation =
+			(stored.context.locationId
+				? bookingLocations.find((loc) => loc.id_location === stored.context.locationId)
+				: null) ??
+			defaultLocation ??
+			(bookingLocations.length === 1 ? (bookingLocations[0] ?? null) : null);
+
+		pendingAppointmentId = Number((hold as { appointment_id?: number }).appointment_id || 0);
+		pendingSipapHold = hold;
+
+		fillSipapDepositPanel(root, hold, profile.deposit_settings, {
+			serviceName: stored.context.serviceName ?? service.name,
+			professionalName: stored.context.professionalName ?? profile.full_name,
+			depositAmount: stored.context.depositAmount ?? calculateDepositAmount(service),
+		});
+		ticketProfessional.textContent = stored.context.professionalName ?? profile.full_name;
+		ticketService.textContent = stored.context.serviceName ?? service.name;
+		ticketDate.textContent = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
+		ticketTime.textContent = selectedTime || '-';
+
+		refreshSummary();
+		setStep(7);
+		return true;
+	};
+
 	const restoreDraft = async () => {
+		// La seña (hold) tiene prioridad: si hay uno vigente, retomamos "Transferí la seña".
+		if (restoreSipapHold()) {
+			finishBoot();
+			return;
+		}
+
 		const draft = readPublicBookingDraft(draftStorageKey, formatApiDate(today));
 		if (!draft || draft.serviceId <= 0) {
 			refreshSummary();

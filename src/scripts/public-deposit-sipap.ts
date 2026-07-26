@@ -289,8 +289,20 @@ export const bindSipapReceiptUpload = (
 			return;
 		}
 		if (!file) {
-			setSipapReceiptStatus(root, { message: 'Elegí una foto del comprobante.' }, 'error');
-			options?.onError?.('Elegí una foto del comprobante.');
+			setSipapReceiptStatus(root, { message: 'Elegí el comprobante (imagen o PDF).' }, 'error');
+			options?.onError?.('Elegí el comprobante (imagen o PDF).');
+			return;
+		}
+		const fileName = String(file.name || '').toLowerCase();
+		const isImage = file.type.startsWith('image/');
+		const isPdf = file.type === 'application/pdf' || fileName.endsWith('.pdf');
+		if (!isImage && !isPdf) {
+			setSipapReceiptStatus(
+				root,
+				{ message: 'Formato no válido. Subí una imagen (JPG/PNG) o un PDF.' },
+				'error'
+			);
+			options?.onError?.('Formato no válido. Subí una imagen (JPG/PNG) o un PDF.');
 			return;
 		}
 		if (file.size > 8 * 1024 * 1024) {
@@ -302,6 +314,8 @@ export const bindSipapReceiptUpload = (
 		setSipapReceiptStatus(root, null, 'uploading');
 		try {
 			const file_base64 = await fileToBase64(file);
+			const resolvedMime = file.type || (isPdf ? 'application/pdf' : 'image/jpeg');
+			const resolvedName = file.name || (isPdf ? 'comprobante.pdf' : 'comprobante.jpg');
 			const response = await fetch(
 				`/api/public/reservations/${encodeURIComponent(token)}/receipt`,
 				{
@@ -309,8 +323,8 @@ export const bindSipapReceiptUpload = (
 					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
 					body: JSON.stringify({
 						file_base64,
-						filename: file.name || 'comprobante.jpg',
-						mime_type: file.type || 'image/jpeg',
+						filename: resolvedName,
+						mime_type: resolvedMime,
 					}),
 					signal: options?.signal,
 				}
