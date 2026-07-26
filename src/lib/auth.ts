@@ -581,18 +581,30 @@ export const loginWithOrds = async (payload: {
 	password: string;
 	org_member_id?: number;
 }) => {
-	const response = await fetch(LOGIN_URL, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({
-			username: payload.email,
-			email: payload.email,
-			password: payload.password,
-			...(payload.org_member_id ? { org_member_id: payload.org_member_id } : {}),
-		}),
-	});
+	let response: Response;
+	try {
+		response = await fetch(LOGIN_URL, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({
+				username: payload.email,
+				email: payload.email,
+				password: payload.password,
+				...(payload.org_member_id ? { org_member_id: payload.org_member_id } : {}),
+			}),
+		});
+	} catch (error) {
+		console.error('[auth/login] No se pudo contactar ORDS', {
+			url: LOGIN_URL,
+			error,
+		});
+		throw new AuthApiError(
+			'No pudimos conectar con el servidor de autenticación. Probá de nuevo en unos segundos.',
+			503
+		);
+	}
 
 	return parseLoginResponse(response);
 };

@@ -218,7 +218,10 @@ export const POST: APIRoute = async ({ request, cookies, url }) => {
 		const authError =
 			error instanceof AuthApiError
 				? error
-				: new AuthApiError('Ocurrio un error inesperado al iniciar sesion.', 500);
+				: (() => {
+						console.error('[api/auth/login] Unexpected login error', error);
+						return new AuthApiError('Ocurrio un error inesperado al iniciar sesion.', 500);
+					})();
 		const fieldErrors = authError.fieldErrors;
 
 		if (isEmailVerificationRequiredError(authError)) {
