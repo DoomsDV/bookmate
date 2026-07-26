@@ -11,6 +11,8 @@ export interface Customer {
 	full_name: string;
 	phone_number: string;
 	created_at: string;
+	appointment_count: number;
+	last_appointment_at: string | null;
 }
 
 export interface CustomersListMeta {
@@ -142,11 +144,19 @@ const normalizeCustomer = (value: unknown): Customer | null => {
 	const customerId = toNumber(source.id_customer, NaN);
 	if (!Number.isInteger(customerId) || customerId <= 0) return null;
 
+	const lastAppointmentRaw = source.last_appointment_at;
+	const lastAppointmentAt =
+		lastAppointmentRaw == null || String(lastAppointmentRaw).trim() === ''
+			? null
+			: String(lastAppointmentRaw).trim();
+
 	return {
 		id_customer: customerId,
 		full_name: String(source.full_name || '').trim(),
 		phone_number: String(source.phone_number || '').trim(),
 		created_at: String(source.created_at || '').trim(),
+		appointment_count: Math.max(0, Math.floor(toNumber(source.appointment_count, 0))),
+		last_appointment_at: lastAppointmentAt,
 	};
 };
 

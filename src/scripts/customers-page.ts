@@ -11,7 +11,11 @@ type Customer = {
 	full_name: string;
 	phone_number: string;
 	created_at: string;
+	appointment_count?: number;
+	last_appointment_at?: string | null;
 };
+
+const CUSTOMER_AVATAR_TONES = 6;
 type CustomerMeta = {
 	current_page: number;
 	per_page: number;
@@ -1219,6 +1223,60 @@ class CustomerManager extends HTMLElement {
 		return value;
 	}
 
+	private getCustomerInitials(name: string) {
+		const parts = String(name || '')
+			.trim()
+			.split(/\s+/)
+			.filter(Boolean);
+		if (parts.length === 0) return '?';
+		if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+		return `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase();
+	}
+
+	private getCustomerAvatarTone(customer: Customer) {
+		const seed = String(customer.full_name || customer.id_customer || '')
+			.toLowerCase()
+			.replace(/\s+/g, '');
+		let hash = 0;
+		for (let i = 0; i < seed.length; i += 1) {
+			hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+		}
+		return (hash % CUSTOMER_AVATAR_TONES) + 1;
+	}
+
+	private formatShortAppointmentDate(value: string) {
+		const text = String(value || '').trim();
+		if (!text) return '';
+
+		const date = new Date(text.includes('T') ? text : text.replace(' ', 'T'));
+		if (Number.isNaN(date.getTime())) return text;
+
+		const day = date.getDate();
+		const monthRaw = new Intl.DateTimeFormat('es-PY', { month: 'short' })
+			.format(date)
+			.replace(/\./g, '')
+			.trim();
+		const month = monthRaw ? monthRaw.charAt(0).toUpperCase() + monthRaw.slice(1) : '';
+		return month ? `${day}/${month}` : text;
+	}
+
+	private getCustomerCardSubtitle(customer: Customer) {
+		const lastAt = String(customer.last_appointment_at || '').trim();
+		const count = Math.max(0, Math.floor(Number(customer.appointment_count) || 0));
+
+		if (lastAt) {
+			const shortDate = this.formatShortAppointmentDate(lastAt);
+			if (count > 1) return `Última cita: ${shortDate} · ${count} citas`;
+			return `Última cita: ${shortDate}`;
+		}
+
+		if (count > 0) {
+			return count === 1 ? '1 cita' : `Citas totales: ${count}`;
+		}
+
+		return 'Sin citas aún';
+	}
+
 	private renderCustomers(customers: Customer[]) {
 		if (!this.gridNode) return;
 
@@ -1237,19 +1295,29 @@ class CustomerManager extends HTMLElement {
 			const headerRow = document.createElement('div');
 			headerRow.className = 'flex items-start justify-between gap-4';
 
-			const iconWrap = document.createElement('div');
-			iconWrap.className = 'customer-card-icon';
-			iconWrap.innerHTML =
-				'<span class="material-symbols-rounded text-[1.25rem]">person</span>';
+			const displayName = customer.full_name || `Cliente #${customer.id_customer}`;
+			const avatar = document.createElement('div');
+			avatar.className = `customer-card-avatar customer-card-avatar--tone-${this.getCustomerAvatarTone(customer)}`;
+			avatar.setAttribute('aria-hidden', 'true');
+			avatar.textContent = this.getCustomerInitials(displayName);
 
-			headerRow.append(iconWrap);
+			headerRow.append(avatar);
 
 			const body = document.createElement('div');
 			body.className = 'customer-card-body';
 
+			const nameBlock = document.createElement('div');
+			nameBlock.className = 'customer-card-name-block';
+
 			const name = document.createElement('h3');
 			name.className = 'customer-card-title line-clamp-1';
-			name.textContent = customer.full_name || `Cliente #${customer.id_customer}`;
+			name.textContent = displayName;
+
+			const subtitle = document.createElement('p');
+			subtitle.className = 'customer-card-subtitle';
+			subtitle.textContent = this.getCustomerCardSubtitle(customer);
+
+			nameBlock.append(name, subtitle);
 
 			const metrics = document.createElement('dl');
 			metrics.className = 'customer-card-metrics';
@@ -1267,7 +1335,7 @@ class CustomerManager extends HTMLElement {
 
 			metricRow.append(term, value);
 			metrics.append(metricRow);
-			body.append(name, metrics);
+			body.append(nameBlock, metrics);
 			article.append(headerRow, body);
 			fragment.appendChild(article);
 		}
