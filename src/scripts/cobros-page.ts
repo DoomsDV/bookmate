@@ -1,4 +1,10 @@
 import type { CobroItem, CobrosDatePreset, CobrosStatusFilter } from '../lib/cobros';
+import {
+	bindFilterPopoverChrome,
+	closeFilterPopoverSheet,
+	positionFilterPopover,
+	toggleFilterPopoverSheet,
+} from '../lib/panel-filter-popover';
 
 type CobrosManagerElement = HTMLElement & {
 	__cobrosBound?: boolean;
@@ -120,6 +126,11 @@ export const initCobrosPage = () => {
 	const periodFilterBadge = root.querySelector<HTMLElement>('[data-period-filter-badge]');
 	const periodSheet = root.querySelector<HTMLDialogElement>('[data-cobros-period-sheet]');
 	const modal = root.querySelector<HTMLDialogElement>('[data-cobros-modal]');
+	const viewer = root.querySelector<HTMLDialogElement>('[data-cobros-viewer]');
+	const viewerImg = viewer?.querySelector<HTMLImageElement>('[data-cobros-viewer-img]') ?? null;
+	const viewerFrame = viewer?.querySelector<HTMLIFrameElement>('[data-cobros-viewer-frame]') ?? null;
+	const viewerName = viewer?.querySelector<HTMLElement>('[data-cobros-viewer-name]') ?? null;
+	const viewerOpen = viewer?.querySelector<HTMLAnchorElement>('[data-cobros-viewer-open]') ?? null;
 	const featureSection = root.querySelector<HTMLElement>('[data-requires-feature="DEPOSIT_COLLECTION"]');
 	const lockedSection = root.querySelector<HTMLElement>('[data-cobros-feature-locked]');
 
@@ -158,7 +169,7 @@ export const initCobrosPage = () => {
 	};
 
 	const closePeriodSheet = () => {
-		if (periodSheet?.open) periodSheet.close();
+		closeFilterPopoverSheet(periodSheet, periodFilterBtn);
 	};
 
 	const setDateError = (message: string) => {
@@ -424,18 +435,24 @@ export const initCobrosPage = () => {
 		});
 		customDatesEl?.classList.toggle('hidden', datePreset !== 'custom');
 		if (datePreset === 'custom') syncTextFromNative();
+		// Tras mostrar fechas custom el popover crece: re-anclar al botón.
+		if (
+			periodSheet?.open &&
+			periodSheet.classList.contains('is-desktop-popover') &&
+			periodFilterBtn
+		) {
+			positionFilterPopover(periodSheet, periodFilterBtn);
+		}
 	};
 
 	const openPeriodSheet = (event?: Event) => {
 		event?.preventDefault();
 		event?.stopPropagation();
-		if (loading || !periodSheet) return;
+		if (loading || !periodSheet || !periodFilterBtn) return;
 		if (datePresetEl) datePresetEl.value = datePreset;
 		setDateError('');
 		updatePeriodFilterUi();
-		window.setTimeout(() => {
-			if (!periodSheet.open) periodSheet.showModal();
-		}, 0);
+		toggleFilterPopoverSheet(periodSheet, periodFilterBtn);
 	};
 
 	const applyPeriodOption = (next: CobrosDatePreset) => {
@@ -468,6 +485,38 @@ export const initCobrosPage = () => {
 		});
 	};
 
+	const setRejectMode = (on: boolean) => {
+		if (!modal) return;
+		const rejectWrap = modal.querySelector<HTMLElement>('[data-cobros-reject-wrap]');
+		const defaultActions = modal.querySelector<HTMLElement>('[data-cobros-actions-default]');
+		const rejectActions = modal.querySelector<HTMLElement>('[data-cobros-actions-reject]');
+		rejectWrap?.classList.toggle('is-open', on);
+		defaultActions?.classList.toggle('hidden', on);
+		rejectActions?.classList.toggle('hidden', !on);
+		if (on) {
+			window.setTimeout(
+				() => modal.querySelector<HTMLInputElement>('[data-cobros-reject-reason]')?.focus(),
+				180,
+			);
+		}
+	};
+
+	const receiptFileName = (url: string, customerName?: string | null) => {
+		try {
+			const path = new URL(url).pathname;
+			const base = decodeURIComponent(path.split('/').pop() || '');
+			if (base && /\.[a-z0-9]+$/i.test(base)) return base;
+		} catch {
+			/* ignore */
+		}
+		const safe = String(customerName || 'comprobante')
+			.trim()
+			.replace(/[^\w\-]+/g, '_')
+			.replace(/_+/g, '_')
+			.slice(0, 40);
+		return `${safe || 'comprobante'}.pdf`;
+	};
+
 	const openModal = (item: CobroItem) => {
 		selected = item;
 		if (!modal) return;
@@ -498,31 +547,49 @@ export const initCobrosPage = () => {
 			)
 		);
 		setText('[data-cobros-modal-reference]', item.payment_reference || '—');
-		setText(
-			'[data-cobros-modal-ocr]',
-			[
-				item.ocr_status || '—',
-				item.ocr_reference ? `ref ${item.ocr_reference}` : '',
-				item.ocr_amount != null ? formatMoney(item.ocr_amount) : '',
-			]
-				.filter(Boolean)
-				.join(' · ')
-		);
 		setText('[data-cobros-modal-refund-alias]', item.refund_alias || '—');
 		setText('[data-cobros-modal-refund-status]', statusLabel(item));
 
 		const img = modal.querySelector<HTMLImageElement>('[data-cobros-modal-image]');
+		const pdfWrap = modal.querySelector<HTMLElement>('[data-cobros-modal-pdf]');
+		const pdfLink = modal.querySelector<HTMLAnchorElement>('[data-cobros-modal-pdf-link]');
+		const pdfName = modal.querySelector<HTMLElement>('[data-cobros-modal-pdf-name]');
 		const noImg = modal.querySelector<HTMLElement>('[data-cobros-modal-no-image]');
-		if (img && noImg) {
-			if (item.receipt_url) {
-				img.src = item.receipt_url;
-				img.classList.remove('hidden');
-				noImg.classList.add('hidden');
-			} else {
-				img.removeAttribute('src');
-				img.classList.add('hidden');
-				noImg.classList.remove('hidden');
-			}
+		const receiptUrl = String(item.receipt_url || '').trim();
+		const isPdf = /\.pdf($|\?)/i.test(receiptUrl) || /application\/pdf/i.test(receiptUrl);
+
+		if (img) {
+			img.classList.add('hidden');
+			img.removeAttribute('src');
+		}
+		pdfWrap?.classList.add('hidden');
+		pdfWrap?.classList.remove('flex');
+		noImg?.classList.add('hidden');
+
+		const receiptName = receiptFileName(receiptUrl, item.customer_name);
+		if (receiptUrl && isPdf) {
+			pdfWrap?.classList.remove('hidden');
+			pdfWrap?.classList.add('flex');
+			if (pdfLink) pdfLink.href = receiptUrl;
+			if (pdfName) pdfName.textContent = receiptName;
+		} else if (receiptUrl && img) {
+			img.src = receiptUrl;
+			img.classList.remove('hidden');
+		} else {
+			noImg?.classList.remove('hidden');
+		}
+
+		if (pdfLink) {
+			pdfLink.onclick = (event) => {
+				event.preventDefault();
+				openViewer(receiptUrl, true, receiptName);
+			};
+		}
+		if (img) {
+			img.classList.toggle('cursor-zoom-in', Boolean(receiptUrl) && !isPdf);
+			img.onclick = receiptUrl && !isPdf
+				? () => openViewer(receiptUrl, false, receiptName)
+				: null;
 		}
 
 		const canReview = item.ui_status === 'pending';
@@ -530,7 +597,6 @@ export const initCobrosPage = () => {
 		const canWaive =
 			item.ui_status === 'refund_pending' || item.ui_status === 'refund_awaiting_alias';
 		modal.querySelector<HTMLElement>('[data-cobros-modal-actions]')?.classList.toggle('hidden', !canReview);
-		modal.querySelector<HTMLElement>('[data-cobros-reject-wrap]')?.classList.toggle('hidden', !canReview);
 		modal.querySelector<HTMLElement>('[data-cobros-refund-block]')?.classList.toggle('hidden', !isRefund);
 		modal
 			.querySelector<HTMLElement>('[data-cobros-mark-refund-sent]')
@@ -553,14 +619,64 @@ export const initCobrosPage = () => {
 		const reasonInput = modal.querySelector<HTMLInputElement>('[data-cobros-reject-reason]');
 		if (reasonInput) reasonInput.value = item.reject_reason || '';
 		setText('[data-cobros-modal-status]', '');
+		setRejectMode(false);
 
+		modal.classList.remove('is-closing');
 		if (!modal.open) modal.showModal();
 	};
 
+	let closeTimer: number | null = null;
+
 	const closeModal = () => {
-		selected = null;
-		modal?.close();
+		if (!modal?.open) {
+			selected = null;
+			return;
+		}
+		setRejectMode(false);
+		modal.classList.add('is-closing');
+		if (closeTimer !== null) window.clearTimeout(closeTimer);
+		closeTimer = window.setTimeout(() => {
+			modal?.classList.remove('is-closing');
+			modal?.close();
+			selected = null;
+			closeTimer = null;
+		}, 140);
 	};
+
+	const openViewer = (url: string, isPdf: boolean, name: string) => {
+		if (!viewer || !url) return;
+		if (viewerName) viewerName.textContent = name || 'Comprobante';
+		if (viewerOpen) viewerOpen.href = url;
+		if (viewerImg) {
+			viewerImg.classList.toggle('hidden', isPdf);
+			if (isPdf) {
+				viewerImg.removeAttribute('src');
+			} else {
+				viewerImg.src = url;
+			}
+		}
+		if (viewerFrame) {
+			viewerFrame.classList.toggle('hidden', !isPdf);
+			viewerFrame.src = isPdf ? url : 'about:blank';
+		}
+		if (!viewer.open) viewer.showModal();
+	};
+
+	const closeViewer = () => {
+		if (!viewer?.open) return;
+		viewer.close();
+		if (viewerFrame) viewerFrame.src = 'about:blank';
+		if (viewerImg) viewerImg.removeAttribute('src');
+	};
+
+	viewer?.querySelector('[data-cobros-viewer-close]')?.addEventListener('click', closeViewer);
+	viewer?.addEventListener('click', (event) => {
+		if (event.target === viewer) closeViewer();
+	});
+	viewer?.addEventListener('cancel', (event) => {
+		event.preventDefault();
+		closeViewer();
+	});
 
 	const render = () => {
 		if (summaryEl) {
@@ -588,7 +704,7 @@ export const initCobrosPage = () => {
 				<td class="px-4 py-3 font-bold">${formatMoney(item.amount, item.currency)}</td>
 				<td class="px-4 py-3"><span class="${statusChipClass(item)}">${statusLabel(item)}</span></td>
 				<td class="px-4 py-3 text-right">
-					<button type="button" class="text-sm font-bold text-(--primary)" data-cobros-open="${item.id_transaction}">
+					<button type="button" class="cursor-pointer text-sm font-bold text-(--primary)" data-cobros-open="${item.id_transaction}">
 						Ver comprobante
 					</button>
 				</td>
@@ -802,6 +918,12 @@ export const initCobrosPage = () => {
 	});
 
 	periodFilterBtn?.addEventListener('click', openPeriodSheet);
+	if (periodSheet) {
+		bindFilterPopoverChrome({
+			sheet: periodSheet,
+			getTrigger: () => periodFilterBtn,
+		});
+	}
 	bindDateTextInput(dateFromTextEl, dateFromEl);
 	bindDateTextInput(dateToTextEl, dateToEl);
 	dateFromPickBtn?.addEventListener('click', (event) => {
@@ -852,11 +974,11 @@ export const initCobrosPage = () => {
 		if (event.target === datePicker) closeDatePicker();
 	});
 
-	periodSheet?.addEventListener('cancel', closePeriodSheet);
 	periodSheet?.addEventListener('click', (event) => {
 		const target = event.target;
 		if (!(target instanceof Element) || !periodSheet) return;
 
+		// Backdrop del bottom sheet (modal): cerrar al tocar fuera del panel.
 		if (target === periodSheet) {
 			closePeriodSheet();
 			return;
@@ -897,16 +1019,7 @@ export const initCobrosPage = () => {
 			setDateError('');
 			closePeriodSheet();
 			void load();
-			return;
 		}
-
-		const rect = periodSheet.getBoundingClientRect();
-		const inside =
-			event.clientX >= rect.left &&
-			event.clientX <= rect.right &&
-			event.clientY >= rect.top &&
-			event.clientY <= rect.bottom;
-		if (!inside) closePeriodSheet();
 	});
 
 	root.addEventListener('click', (event) => {
@@ -921,13 +1034,23 @@ export const initCobrosPage = () => {
 
 	modal?.querySelector('[data-cobros-modal-close]')?.addEventListener('click', closeModal);
 	modal?.querySelector('[data-cobros-approve]')?.addEventListener('click', () => void approve());
-	modal?.querySelector('[data-cobros-reject]')?.addEventListener('click', () => void reject());
+	modal?.querySelector('[data-cobros-reject]')?.addEventListener('click', () => setRejectMode(true));
+	modal
+		?.querySelector('[data-cobros-reject-cancel]')
+		?.addEventListener('click', () => setRejectMode(false));
+	modal
+		?.querySelector('[data-cobros-reject-confirm]')
+		?.addEventListener('click', () => void reject());
 	modal
 		?.querySelector('[data-cobros-mark-refund-sent]')
 		?.addEventListener('click', () => void markRefundSent());
 	modal?.querySelector('[data-cobros-waive]')?.addEventListener('click', () => void waiveRefund());
 	modal?.addEventListener('click', (event) => {
 		if (event.target === modal) closeModal();
+	});
+	modal?.addEventListener('cancel', (event) => {
+		event.preventDefault();
+		closeModal();
 	});
 
 	// Default tab: pendientes (donde vive el negocio)

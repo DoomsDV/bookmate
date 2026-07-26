@@ -94,7 +94,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 											</div>
 										</div>
 
-										<div class="overflow-hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright)" data-cobros-results>
+										<div class="cobros-results overflow-hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright)" data-cobros-results>
 											<!-- Desktop headers -->
 											<div class="hidden overflow-x-auto md:block" data-cobros-table-wrap>
 												<table class="w-full min-w-[44rem] border-collapse text-left text-[0.92rem]">
@@ -123,7 +123,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 											</div>
 
 											<!-- Mobile cards -->
-											<div class="grid gap-3 p-3 md:hidden" data-cobros-cards></div>
+											<div class="cobros-cards grid gap-3 md:hidden" data-cobros-cards></div>
 										</div>
 									</div>
 								)
@@ -322,87 +322,170 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 			</dialog>
 
 			<dialog
-				class="cobros-modal m-0 max-h-[100dvh] w-full max-w-none border-0 bg-transparent p-0 text-(--on-surface) backdrop:bg-black/55 open:flex open:items-end open:justify-center sm:open:items-center"
+				class="cobros-modal m-0 max-h-none w-screen max-w-none border-0 bg-transparent p-0 text-(--on-surface) shadow-none open:flex open:flex-col open:items-stretch open:justify-end sm:open:items-center sm:open:justify-center lg:open:flex-row lg:open:items-stretch lg:open:justify-end"
 				data-cobros-modal
+				aria-labelledby="cobros-modal-title"
 			>
-				<div class="flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-t-[1.5rem] bg-(--surface-bright) shadow-2xl sm:rounded-[1.5rem]">
-					<header class="flex items-start justify-between gap-3 border-b border-(--shell-border) px-5 py-4">
+				<div
+					class="cobros-modal__panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-hidden rounded-t-[1.5rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:max-h-[90vh] sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] sm:rounded-[1.5rem] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(min(36rem,100vw),28rem)] lg:max-w-[max(min(36rem,100vw),28rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+					data-cobros-modal-panel
+				>
+					<header class="flex shrink-0 items-start justify-between gap-3 border-b border-(--shell-border) px-5 py-4">
 						<div>
-							<h2 class="m-0 text-lg font-bold" data-cobros-modal-title>Validar comprobante</h2>
+							<h2 id="cobros-modal-title" class="m-0 text-lg font-bold" data-cobros-modal-title>Validar comprobante</h2>
 							<p class="mt-1 text-sm text-(--on-surface-variant)" data-cobros-modal-subtitle></p>
 						</div>
 						<button type="button" class="grid size-10 place-items-center rounded-full hover:bg-(--control-surface)" data-cobros-modal-close aria-label="Cerrar">
 							<span class="material-symbols-rounded">close</span>
 						</button>
 					</header>
-					<div class="grid min-h-0 flex-1 gap-4 overflow-y-auto p-5 sm:grid-cols-[1.1fr_0.9fr]">
-						<div class="overflow-hidden rounded-2xl border border-(--shell-border) bg-(--control-surface)">
-							<img alt="Comprobante" class="hidden max-h-[50vh] w-full object-contain" data-cobros-modal-image />
-							<p class="hidden p-6 text-sm text-(--on-surface-variant)" data-cobros-modal-no-image>Sin imagen de comprobante.</p>
+					<div class="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto overscroll-contain p-5">
+						<div class="cobros-receipt-media" data-cobros-receipt-media>
+							<img alt="Comprobante" class="hidden max-h-[min(28vh,16rem)] w-full rounded-2xl border border-(--shell-border) object-contain bg-(--control-surface)" data-cobros-modal-image />
+							<div
+								class="hidden items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--control-surface) px-3.5 py-3"
+								data-cobros-modal-pdf
+							>
+								<span class="material-symbols-rounded shrink-0 text-[1.65rem] text-(--primary)" aria-hidden="true">picture_as_pdf</span>
+								<div class="min-w-0 flex-1">
+									<p class="m-0 truncate text-sm font-bold text-(--on-surface)" data-cobros-modal-pdf-name>comprobante.pdf</p>
+									<p class="m-0 text-xs text-(--on-surface-variant)">Comprobante adjunto</p>
+								</div>
+								<a
+									href="#"
+									target="_blank"
+									rel="noopener noreferrer"
+									class="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-(--primary-container) px-4 text-sm font-semibold text-(--on-primary-container) no-underline"
+									data-cobros-modal-pdf-link
+								>
+									Ver
+								</a>
+							</div>
+							<p class="hidden rounded-2xl border border-dashed border-(--shell-border) px-4 py-5 text-sm text-(--on-surface-variant)" data-cobros-modal-no-image>
+								Sin comprobante adjunto.
+							</p>
 						</div>
-						<div class="grid gap-3 content-start">
+
+						<div class="cobros-ticket grid grid-cols-2 gap-x-5 gap-y-4" data-cobros-ticket>
+							<div class="grid gap-1 min-w-0">
+								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Cliente</span>
+								<strong class="truncate text-[1.05rem] font-extrabold leading-snug" data-cobros-modal-customer>—</strong>
+							</div>
+							<div class="grid gap-1 min-w-0 text-right">
+								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Monto</span>
+								<strong class="text-[1.15rem] font-extrabold leading-snug tabular-nums" data-cobros-modal-amount>—</strong>
+							</div>
+							<div class="grid gap-1 min-w-0">
+								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Servicio</span>
+								<strong class="truncate text-[0.98rem] font-bold leading-snug" data-cobros-modal-service>—</strong>
+							</div>
+							<div class="grid gap-1 min-w-0 text-right">
+								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Código HASEL</span>
+								<strong class="truncate font-mono text-[0.92rem] font-bold leading-snug" data-cobros-modal-reference>—</strong>
+							</div>
+						</div>
+
+						<div class="hidden grid gap-3" data-cobros-refund-block>
 							<div class="grid gap-1 text-sm">
-								<span class="text-(--on-surface-variant)">Cliente</span>
-								<strong data-cobros-modal-customer>—</strong>
+								<span class="text-(--on-surface-variant)">Estado reembolso</span>
+								<strong data-cobros-modal-refund-status>—</strong>
 							</div>
 							<div class="grid gap-1 text-sm">
-								<span class="text-(--on-surface-variant)">Servicio</span>
-								<strong data-cobros-modal-service>—</strong>
+								<span class="text-(--on-surface-variant)">Alias SIPAP del cliente</span>
+								<strong class="font-mono break-all" data-cobros-modal-refund-alias>—</strong>
 							</div>
-							<div class="grid gap-1 text-sm">
-								<span class="text-(--on-surface-variant)">Monto</span>
-								<strong data-cobros-modal-amount>—</strong>
+							<button
+								type="button"
+								class="hidden inline-flex h-12 items-center justify-center rounded-full bg-(--primary) px-5 text-base font-semibold text-(--on-primary)"
+								data-cobros-mark-refund-sent
+							>
+								Marcar reembolso enviado
+							</button>
+							<p class="hidden text-sm font-semibold text-amber-700" data-cobros-claim-note></p>
+							<div class="hidden grid gap-2" data-cobros-waive-wrap>
+								<label class="grid gap-1 text-sm font-semibold">
+									Renunciar al reembolso (motivo)
+									<input type="text" maxlength="400" placeholder="Ej. cliente aceptó crédito / error de monto" class="cobros-select" data-cobros-waive-reason />
+								</label>
+								<button type="button" class="inline-flex h-11 items-center justify-center rounded-full border border-(--shell-border) px-5 text-sm font-semibold" data-cobros-waive>
+									Marcar como renunciado (WAIVED)
+								</button>
 							</div>
-							<div class="grid gap-1 text-sm">
-								<span class="text-(--on-surface-variant)">Código HASEL</span>
-								<strong class="font-mono" data-cobros-modal-reference>—</strong>
-							</div>
-							<div class="grid gap-1 text-sm">
-								<span class="text-(--on-surface-variant)">OCR</span>
-								<strong data-cobros-modal-ocr>—</strong>
-							</div>
-							<div class="hidden grid gap-3" data-cobros-refund-block>
-								<div class="grid gap-1 text-sm">
-									<span class="text-(--on-surface-variant)">Estado reembolso</span>
-									<strong data-cobros-modal-refund-status>—</strong>
+						</div>
+					</div>
+
+					<footer class="cobros-modal-footer z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-5 py-4">
+						<div class="hidden" data-cobros-modal-actions>
+							<div class="cobros-reject-reveal" data-cobros-reject-wrap>
+								<div class="cobros-reject-alert" role="status">
+									<span class="material-symbols-rounded cobros-reject-alert__icon" aria-hidden="true">warning</span>
+									<p class="cobros-reject-alert__text">
+										¿Confirmás el rechazo? El cliente deberá subir un nuevo comprobante.
+									</p>
 								</div>
-								<div class="grid gap-1 text-sm">
-									<span class="text-(--on-surface-variant)">Alias SIPAP del cliente</span>
-									<strong class="font-mono break-all" data-cobros-modal-refund-alias>—</strong>
-								</div>
+								<label class="grid gap-1.5 pb-3.5 text-sm font-semibold">
+									Motivo de rechazo (opcional)
+									<input type="text" maxlength="400" placeholder="Ej. foto borrosa, monto distinto" class="cobros-select" data-cobros-reject-reason />
+								</label>
+							</div>
+							<div class="cobros-modal-actions" data-cobros-actions-default>
 								<button
 									type="button"
-									class="hidden inline-flex h-12 items-center justify-center rounded-full bg-(--primary) px-5 text-base font-semibold text-(--on-primary)"
-									data-cobros-mark-refund-sent
+									class="cobros-modal-btn cobros-modal-btn--ghost"
+									data-cobros-reject
 								>
-									Marcar reembolso enviado
+									Rechazar
 								</button>
-								<p class="hidden text-sm font-semibold text-amber-700" data-cobros-claim-note></p>
-								<div class="hidden grid gap-2" data-cobros-waive-wrap>
-									<label class="grid gap-1 text-sm font-semibold">
-										Renunciar al reembolso (motivo)
-										<input type="text" maxlength="400" placeholder="Ej. cliente aceptó crédito / error de monto" class="cobros-select" data-cobros-waive-reason />
-									</label>
-									<button type="button" class="inline-flex h-11 items-center justify-center rounded-full border border-(--shell-border) px-5 text-sm font-semibold" data-cobros-waive>
-										Marcar como renunciado (WAIVED)
-									</button>
-								</div>
-							</div>
-							<label class="grid gap-1 text-sm font-semibold" data-cobros-reject-wrap>
-								Motivo de rechazo (opcional)
-								<input type="text" maxlength="400" placeholder="Ej. foto borrosa, monto distinto" class="cobros-select" data-cobros-reject-reason />
-							</label>
-							<div class="mt-2 grid gap-2" data-cobros-modal-actions>
-								<button type="button" class="inline-flex h-12 items-center justify-center rounded-full bg-(--primary) px-5 text-base font-semibold text-(--on-primary)" data-cobros-approve>
+								<button
+									type="button"
+									class="cobros-modal-btn cobros-modal-btn--primary"
+									data-cobros-approve
+								>
 									Aprobar seña
 								</button>
-								<button type="button" class="inline-flex h-12 items-center justify-center rounded-full border border-rose-500/40 bg-rose-500/10 px-5 text-base font-semibold text-rose-600" data-cobros-reject>
+							</div>
+							<div class="cobros-modal-actions hidden" data-cobros-actions-reject>
+								<button
+									type="button"
+									class="cobros-modal-btn cobros-modal-btn--muted"
+									data-cobros-reject-cancel
+								>
+									Cancelar
+								</button>
+								<button
+									type="button"
+									class="cobros-modal-btn cobros-modal-btn--danger"
+									data-cobros-reject-confirm
+								>
 									Rechazar
 								</button>
 							</div>
-							<p class="text-sm text-(--on-surface-variant)" data-cobros-modal-status></p>
 						</div>
-					</div>
+						<p class="text-sm text-(--on-surface-variant)" data-cobros-modal-status></p>
+					</footer>
+				</div>
+			</dialog>
+
+			<dialog class="cobros-viewer" data-cobros-viewer aria-label="Comprobante">
+				<div class="cobros-viewer__bar">
+					<p class="cobros-viewer__name" data-cobros-viewer-name>Comprobante</p>
+					<a
+						class="cobros-viewer__open"
+						href="#"
+						target="_blank"
+						rel="noopener noreferrer"
+						data-cobros-viewer-open
+					>
+						<span class="material-symbols-rounded text-[1.15rem]" aria-hidden="true">open_in_new</span>
+						Abrir
+					</a>
+					<button type="button" class="cobros-viewer__close" data-cobros-viewer-close aria-label="Cerrar">
+						<span class="material-symbols-rounded">close</span>
+					</button>
+				</div>
+				<div class="cobros-viewer__body">
+					<img alt="Comprobante" class="cobros-viewer__img hidden" data-cobros-viewer-img />
+					<iframe class="cobros-viewer__frame hidden" title="Comprobante PDF" data-cobros-viewer-frame></iframe>
 				</div>
 			</dialog>
 		</div>
@@ -440,6 +523,17 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	[data-cobros-results].hidden,
 	.cobros-loading.hidden {
 		display: none !important;
+	}
+
+	/* Móvil: sin caja externa → cards sueltas (como Clientes/Servicios) */
+	@media (max-width: 767px) {
+		.cobros-results {
+			border: 0;
+			background: transparent;
+			border-radius: 0;
+			overflow: visible;
+			box-shadow: none;
+		}
 	}
 
 	.cobros-loading {
@@ -606,12 +700,15 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		cursor: pointer;
 	}
 	.cobros-period-option:hover {
-		background: color-mix(in srgb, var(--surface-variant) 55%, transparent);
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
 	}
 	.cobros-period-option.is-selected {
-		border-color: color-mix(in srgb, var(--primary) 40%, var(--shell-border));
-		background: color-mix(in srgb, var(--primary) 10%, transparent);
+		border-color: transparent;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
 		color: var(--primary);
+	}
+	.cobros-period-option.is-selected:hover {
+		background: color-mix(in srgb, var(--primary) 18%, transparent);
 	}
 	.cobros-period-option .material-symbols-rounded {
 		font-size: 1.2rem;
@@ -709,7 +806,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		cursor: pointer;
 	}
 	@media (min-width: 640px) {
-		.cobros-period-filter-sheet {
+		.cobros-period-filter-sheet:not(.is-desktop-popover) {
 			inset: 0;
 			margin: auto;
 			width: min(24rem, calc(100vw - 2rem));
@@ -721,11 +818,18 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 			background-image: none;
 			box-shadow: 0 8px 28px rgb(0 0 0 / 0.28);
 		}
-		.cobros-period-filter-sheet__handle {
+		.cobros-period-filter-sheet:not(.is-desktop-popover) .cobros-period-filter-sheet__handle {
 			display: none;
 		}
-		.cobros-period-filter-sheet__header {
+		.cobros-period-filter-sheet:not(.is-desktop-popover) .cobros-period-filter-sheet__header {
 			padding: 1rem 1rem 0.85rem;
+		}
+	}
+	@media (min-width: 768px) {
+		.cobros-period-filter-sheet.is-desktop-popover {
+			border: 1px solid var(--shell-border);
+			border-radius: 1rem;
+			overflow: hidden;
 		}
 	}
 	.cobros-chip {
@@ -755,6 +859,387 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	.cobros-chip--other {
 		background: var(--control-surface);
 		color: var(--on-surface-variant);
+	}
+
+	.cobros-modal-actions {
+		display: flex;
+		flex-direction: column-reverse;
+		gap: 0.65rem;
+		width: 100%;
+	}
+
+	.cobros-modal-actions.hidden {
+		display: none;
+	}
+
+	@media (min-width: 640px) {
+		.cobros-modal-actions {
+			flex-direction: row;
+			justify-content: flex-end;
+			align-items: center;
+			gap: 0.75rem;
+		}
+	}
+
+	.cobros-modal-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 3rem;
+		width: 100%;
+		border-radius: 999px;
+		padding: 0 1.25rem;
+		font-size: 1rem;
+		font-weight: 700;
+		cursor: pointer;
+		border: 1px solid transparent;
+		transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+	}
+
+	@media (min-width: 640px) {
+		.cobros-modal-btn {
+			min-width: 9.5rem;
+			width: auto;
+		}
+	}
+
+	.cobros-modal-btn--primary {
+		background: var(--primary);
+		color: var(--on-primary);
+	}
+
+	.cobros-modal-btn--ghost {
+		background: transparent;
+		border-color: color-mix(in srgb, #f43f5e 45%, var(--shell-border));
+		color: #e11d48;
+	}
+
+	.cobros-modal-btn--muted {
+		background: transparent;
+		border-color: var(--shell-border);
+		color: var(--on-surface-variant);
+	}
+
+	.cobros-modal-btn--danger {
+		background: #be123c;
+		border-color: transparent;
+		color: #fff;
+	}
+	.cobros-modal-btn--danger:hover {
+		background: #9f1239;
+	}
+
+	.cobros-reject-reveal {
+		max-height: 0;
+		opacity: 0;
+		overflow: hidden;
+		transition:
+			max-height 200ms ease,
+			opacity 200ms ease;
+	}
+	.cobros-reject-reveal.is-open {
+		max-height: 14rem;
+		opacity: 1;
+	}
+
+	.cobros-reject-alert {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.65rem;
+		margin-bottom: 0.85rem;
+		padding: 0.75rem 0.9rem;
+		border-radius: 1rem;
+		border: 1px solid color-mix(in srgb, #f59e0b 35%, transparent);
+		background: color-mix(in srgb, #f59e0b 14%, transparent);
+		color: #fbbf24;
+	}
+	.cobros-reject-alert__icon {
+		flex-shrink: 0;
+		font-size: 1.25rem;
+		line-height: 1.2;
+		color: #fbbf24;
+	}
+	.cobros-reject-alert__text {
+		margin: 0;
+		font-size: 0.86rem;
+		font-weight: 650;
+		line-height: 1.35;
+		color: #fcd34d;
+	}
+
+	.cobros-receipt-media {
+		align-self: start;
+		width: 100%;
+		height: fit-content;
+	}
+
+	.cobros-modal-footer [data-cobros-modal-status]:empty {
+		display: none;
+	}
+
+	.cobros-modal-footer [data-cobros-modal-actions]:not(.hidden) + [data-cobros-modal-status]:not(:empty) {
+		margin-top: 0.75rem;
+	}
+
+	/* Validar comprobante: sheet móvil → drawer desktop (mismo patrón que Clientes) */
+	dialog[data-cobros-modal] {
+		position: fixed;
+		inset: 0;
+		width: 100%;
+		max-width: none;
+		height: 100%;
+		max-height: none;
+		margin: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		box-shadow: none;
+		overflow: hidden;
+		animation: cobros-modal-in 180ms cubic-bezier(0.2, 0, 0, 1);
+	}
+
+	dialog[data-cobros-modal][open] {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-end;
+	}
+
+	@media (min-width: 640px) {
+		dialog[data-cobros-modal][open] {
+			align-items: center;
+			justify-content: center;
+		}
+	}
+
+	dialog[data-cobros-modal]::backdrop {
+		background: rgb(0 0 0 / 0.4);
+		animation: cobros-backdrop-in 180ms ease;
+	}
+
+	dialog[data-cobros-modal].is-closing {
+		animation: cobros-modal-out 140ms ease forwards;
+	}
+
+	dialog[data-cobros-modal].is-closing::backdrop {
+		animation: cobros-backdrop-out 140ms ease forwards;
+	}
+
+	@keyframes cobros-modal-in {
+		from {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes cobros-modal-out {
+		from {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+	}
+
+	@keyframes cobros-backdrop-in {
+		from {
+			opacity: 0;
+		}
+		to {
+			opacity: 1;
+		}
+	}
+
+	@keyframes cobros-backdrop-out {
+		from {
+			opacity: 1;
+		}
+		to {
+			opacity: 0;
+		}
+	}
+
+	@media (min-width: 640px) and (max-width: 1023px) {
+		@keyframes cobros-modal-in {
+			from {
+				opacity: 0;
+				transform: translateY(12px) scale(0.98);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		@keyframes cobros-modal-out {
+			from {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+			to {
+				opacity: 0;
+				transform: translateY(8px) scale(0.98);
+			}
+		}
+	}
+
+	@media (min-width: 1024px) {
+		dialog[data-cobros-modal][open] {
+			flex-direction: row;
+			align-items: stretch;
+			justify-content: flex-end;
+		}
+
+		dialog[data-cobros-modal][open] .cobros-modal__panel {
+			min-height: 100dvh;
+			margin-left: auto;
+		}
+
+		dialog[data-cobros-modal] {
+			animation-name: cobros-drawer-in;
+		}
+
+		dialog[data-cobros-modal].is-closing {
+			animation-name: cobros-drawer-out;
+		}
+
+		/* Glass: blur + velo liviano (no negro sólido) */
+		dialog[data-cobros-modal]::backdrop {
+			background: rgb(0 0 0 / 0.18);
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+		}
+	}
+
+	@keyframes cobros-drawer-in {
+		from {
+			opacity: 0;
+			transform: translateX(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	@keyframes cobros-drawer-out {
+		from {
+			opacity: 1;
+			transform: translateX(0);
+		}
+		to {
+			opacity: 0;
+			transform: translateX(100%);
+		}
+	}
+
+	/* Visor de comprobante a pantalla completa (PDF/imagen) */
+	.cobros-viewer {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		width: 100%;
+		max-width: 100%;
+		height: 100%;
+		max-height: 100%;
+		background: var(--surface);
+		color: var(--on-surface);
+		overflow: hidden;
+	}
+	.cobros-viewer:not([open]) {
+		display: none;
+	}
+	.cobros-viewer::backdrop {
+		background: rgb(0 0 0 / 0.6);
+	}
+	.cobros-viewer[open] {
+		display: flex;
+		flex-direction: column;
+	}
+	.cobros-viewer__bar {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+	}
+	.cobros-viewer__name {
+		margin: 0;
+		flex: 1 1 auto;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.95rem;
+		font-weight: 700;
+	}
+	.cobros-viewer__open {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		height: 2.25rem;
+		padding: 0 0.9rem;
+		border-radius: 999px;
+		background: var(--primary-container);
+		color: var(--on-primary-container);
+		font-size: 0.85rem;
+		font-weight: 600;
+		text-decoration: none;
+	}
+	.cobros-viewer__close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		height: 2.25rem;
+		width: 2.25rem;
+		border: 0;
+		border-radius: 999px;
+		background: var(--control-surface);
+		color: var(--on-surface);
+		cursor: pointer;
+	}
+	.cobros-viewer__body {
+		flex: 1 1 auto;
+		min-height: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgb(0 0 0 / 0.04);
+		overflow: auto;
+	}
+	.cobros-viewer__img {
+		max-width: 100%;
+		max-height: 100%;
+		object-fit: contain;
+	}
+	.cobros-viewer__frame {
+		width: 100%;
+		height: 100%;
+		border: 0;
+	}
+
+	@media (min-width: 768px) {
+		.cobros-viewer {
+			width: min(880px, 92vw);
+			height: min(90vh, 900px);
+			max-height: 90vh;
+			margin: auto;
+			border-radius: 1.25rem;
+			border: 1px solid var(--shell-border);
+			box-shadow: 0 24px 60px rgb(0 0 0 / 0.25);
+		}
+		.cobros-viewer::backdrop {
+			background: rgb(0 0 0 / 0.4);
+			backdrop-filter: blur(6px);
+			-webkit-backdrop-filter: blur(6px);
+		}
 	}
 </style>
 
