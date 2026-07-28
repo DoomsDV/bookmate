@@ -1,5 +1,6 @@
 const DESKTOP_MQ = '(min-width: 768px)';
 const POPOVER_CLASS = 'is-desktop-popover';
+const DEFAULT_WIDTH_REM = 18.5;
 
 export const isDesktopFilterPopover = () =>
 	typeof window !== 'undefined' && window.matchMedia(DESKTOP_MQ).matches;
@@ -14,10 +15,14 @@ const clearPopoverStyles = (sheet: HTMLDialogElement) => {
 	sheet.style.margin = '';
 };
 
-export const positionFilterPopover = (sheet: HTMLDialogElement, trigger: HTMLElement) => {
+export const positionFilterPopover = (
+	sheet: HTMLDialogElement,
+	trigger: HTMLElement,
+	widthRem: number = DEFAULT_WIDTH_REM
+) => {
 	const buttonRect = trigger.getBoundingClientRect();
 	const gap = 8;
-	const width = Math.min(18.5 * 16, window.innerWidth - 24);
+	const width = Math.min(widthRem * 16, window.innerWidth - 24);
 	const spaceRight = window.innerWidth - buttonRect.left - 12;
 	const spaceLeft = buttonRect.right - 12;
 
@@ -62,9 +67,13 @@ export const closeFilterPopoverSheet = (
 	trigger?.setAttribute('aria-expanded', 'false');
 };
 
-const openAsPopover = (sheet: HTMLDialogElement, trigger: HTMLElement) => {
+const openAsPopover = (
+	sheet: HTMLDialogElement,
+	trigger: HTMLElement,
+	widthRem: number = DEFAULT_WIDTH_REM
+) => {
 	sheet.classList.add(POPOVER_CLASS);
-	positionFilterPopover(sheet, trigger);
+	positionFilterPopover(sheet, trigger, widthRem);
 	sheet.show();
 	trigger.setAttribute('aria-expanded', 'true');
 };
@@ -79,7 +88,8 @@ const openAsModal = (sheet: HTMLDialogElement, trigger: HTMLElement) => {
 /** Toggle open. On desktop uses non-modal popover; on mobile uses showModal(). */
 export const toggleFilterPopoverSheet = (
 	sheet: HTMLDialogElement | null | undefined,
-	trigger: HTMLElement
+	trigger: HTMLElement,
+	widthRem: number = DEFAULT_WIDTH_REM
 ) => {
 	if (!sheet) return;
 
@@ -92,7 +102,7 @@ export const toggleFilterPopoverSheet = (
 	window.setTimeout(() => {
 		if (sheet.open) return;
 		if (isDesktopFilterPopover()) {
-			openAsPopover(sheet, trigger);
+			openAsPopover(sheet, trigger, widthRem);
 		} else {
 			openAsModal(sheet, trigger);
 		}
@@ -103,10 +113,17 @@ type BindOptions = {
 	sheet: HTMLDialogElement;
 	getTrigger: () => HTMLElement | null;
 	signal?: AbortSignal;
+	/** Ancho del popover desktop en rem (default 18.5). */
+	widthRem?: number;
 };
 
 /** Escape / outside click / resize-scroll reposition / cleanup on close. */
-export const bindFilterPopoverChrome = ({ sheet, getTrigger, signal }: BindOptions) => {
+export const bindFilterPopoverChrome = ({
+	sheet,
+	getTrigger,
+	signal,
+	widthRem = DEFAULT_WIDTH_REM,
+}: BindOptions) => {
 	const onClose = () => {
 		clearPopoverStyles(sheet);
 		sheet.classList.remove(POPOVER_CLASS);
@@ -145,7 +162,7 @@ export const bindFilterPopoverChrome = ({ sheet, getTrigger, signal }: BindOptio
 		}
 		if (sheet.classList.contains(POPOVER_CLASS)) {
 			const trigger = getTrigger();
-			if (trigger) positionFilterPopover(sheet, trigger);
+			if (trigger) positionFilterPopover(sheet, trigger, widthRem);
 			return;
 		}
 		closeFilterPopoverSheet(sheet, getTrigger());

@@ -269,80 +269,6 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 								</button>
 							</span>
 						</label>
-
-						<div class="cobros-dp-inline hidden" data-cobros-date-picker aria-labelledby="cobros-date-picker-label">
-							<div class="dtp-card">
-								<div class="dtp-head">
-									<div class="dtp-head-row">
-										<p class="dtp-target-label" id="cobros-date-picker-label" data-cobros-dp-label>
-											Seleccionando fecha
-										</p>
-										<button
-											type="button"
-											class="dtp-icon-btn"
-											data-cobros-dp-close
-											aria-label="Cerrar selector de fecha"
-										>
-											<span class="material-symbols-rounded text-[1.1rem]">close</span>
-										</button>
-									</div>
-
-									<div class="dtp-nav-row">
-										<div class="inline-flex items-center gap-1.5">
-											<select
-												data-cobros-dp-month
-												class="dtp-select"
-												aria-label="Seleccionar mes"
-											></select>
-											<select
-												data-cobros-dp-year
-												class="dtp-select dtp-select--year"
-												aria-label="Seleccionar año"
-											></select>
-										</div>
-										<div class="inline-flex items-center gap-1">
-											<button
-												type="button"
-												class="dtp-icon-btn"
-												data-cobros-dp-prev
-												aria-label="Mes anterior"
-											>
-												<span class="material-symbols-rounded text-[1.05rem]">chevron_left</span>
-											</button>
-											<button
-												type="button"
-												class="dtp-icon-btn"
-												data-cobros-dp-next
-												aria-label="Mes siguiente"
-											>
-												<span class="material-symbols-rounded text-[1.05rem]">chevron_right</span>
-											</button>
-										</div>
-									</div>
-
-									<div class="dtp-weekdays">
-										<span>Lun</span>
-										<span>Mar</span>
-										<span>Mié</span>
-										<span>Jue</span>
-										<span>Vie</span>
-										<span>Sáb</span>
-										<span>Dom</span>
-									</div>
-									<div class="dtp-days-grid" data-cobros-dp-days></div>
-								</div>
-
-								<div class="dtp-foot">
-									<div class="dtp-foot-row cobros-dp-foot-row">
-										<button type="button" class="dtp-action-btn" data-cobros-dp-today>Hoy</button>
-										<button type="button" class="dtp-action-btn dtp-action-btn--primary" data-cobros-dp-apply>
-											Hecho
-										</button>
-									</div>
-								</div>
-							</div>
-						</div>
-
 						<p class="hidden m-0 text-[0.82rem] font-semibold text-rose-500" data-cobros-date-error></p>
 						<button
 							type="button"
@@ -352,6 +278,83 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 							Aplicar
 						</button>
 					</div>
+
+					<dialog
+						class="cobros-date-picker"
+						data-cobros-date-picker
+						aria-labelledby="cobros-date-picker-label"
+					>
+						<div class="dtp-card">
+							<div class="dtp-head">
+								<div class="dtp-head-row">
+									<p class="dtp-target-label" id="cobros-date-picker-label" data-cobros-dp-label>
+										Seleccionando fecha
+									</p>
+									<button
+										type="button"
+										class="dtp-icon-btn"
+										data-cobros-dp-close
+										aria-label="Cerrar selector de fecha"
+									>
+										<span class="material-symbols-rounded text-[1.1rem]">close</span>
+									</button>
+								</div>
+
+								<div class="dtp-nav-row">
+									<div class="inline-flex items-center gap-1.5">
+										<select
+											data-cobros-dp-month
+											class="dtp-select"
+											aria-label="Seleccionar mes"
+										></select>
+										<select
+											data-cobros-dp-year
+											class="dtp-select dtp-select--year"
+											aria-label="Seleccionar año"
+										></select>
+									</div>
+									<div class="inline-flex items-center gap-1">
+										<button
+											type="button"
+											class="dtp-icon-btn"
+											data-cobros-dp-prev
+											aria-label="Mes anterior"
+										>
+											<span class="material-symbols-rounded text-[1.05rem]">chevron_left</span>
+										</button>
+										<button
+											type="button"
+											class="dtp-icon-btn"
+											data-cobros-dp-next
+											aria-label="Mes siguiente"
+										>
+											<span class="material-symbols-rounded text-[1.05rem]">chevron_right</span>
+										</button>
+									</div>
+								</div>
+
+								<div class="dtp-weekdays">
+									<span>Lun</span>
+									<span>Mar</span>
+									<span>Mié</span>
+									<span>Jue</span>
+									<span>Vie</span>
+									<span>Sáb</span>
+									<span>Dom</span>
+								</div>
+								<div class="dtp-days-grid" data-cobros-dp-days></div>
+							</div>
+
+							<div class="dtp-foot">
+								<div class="dtp-foot-row cobros-dp-foot-row">
+									<button type="button" class="dtp-action-btn" data-cobros-dp-today>Hoy</button>
+									<button type="button" class="dtp-action-btn dtp-action-btn--primary" data-cobros-dp-apply>
+										Hecho
+									</button>
+								</div>
+							</div>
+						</div>
+					</dialog>
 				</div>
 			</dialog>
 

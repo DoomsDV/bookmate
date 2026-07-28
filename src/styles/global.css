@@ -2225,14 +2225,35 @@ html[data-theme='dark'] [data-theme-toggle-mobile]:hover {
 	box-shadow: 0 18px 45px rgba(15, 23, 42, 0.16);
 }
 
-.cobros-dp-inline {
-	margin-top: 0.35rem;
+.cobros-date-picker {
+	position: fixed;
+	z-index: 10001;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	max-width: none;
+	max-height: none;
+	overflow: visible;
+	background: transparent;
 }
 
-.cobros-dp-inline .dtp-card {
-	width: 100%;
-	max-width: 100%;
-	border-radius: 1rem;
+.cobros-date-picker:not([open]) {
+	display: none;
+}
+
+.cobros-date-picker::backdrop {
+	background: transparent;
+}
+
+.cobros-date-picker .dtp-card {
+	width: 320px;
+	max-width: calc(100vw - 1.5rem);
+	border-radius: 1.25rem;
+	box-shadow: 0 18px 45px rgb(15 23 42 / 0.22);
+}
+
+html[data-theme='dark'] .cobros-date-picker .dtp-card {
+	box-shadow: 0 18px 50px rgb(0 0 0 / 0.55);
 }
 
 html[data-theme='dark'] .dtp-card {
@@ -2635,6 +2656,10 @@ html[data-theme='dark'] .dtp-action-btn--primary:hover {
 		transform-origin: top left;
 	}
 
+	.cobros-period-filter-sheet.is-desktop-popover {
+		width: min(22rem, calc(100vw - 1.5rem));
+	}
+
 	.panel-status-filter-sheet.is-desktop-popover .panel-status-filter-sheet__handle,
 	.panel-status-filter-sheet.is-desktop-popover .panel-status-filter-sheet__header > button,
 	.services-status-filter-sheet.is-desktop-popover .services-status-filter-sheet__handle,
@@ -2681,7 +2706,12 @@ html[data-theme='dark'] .dtp-action-btn--primary:hover {
 	.cobros-period-filter-sheet.is-desktop-popover .cobros-period-filter-sheet__list {
 		padding: 0;
 		overflow: visible;
-		min-height: 0;
+	}
+
+	/* En el popover desktop solo va el periodo; Estado + labels son solo mobile. */
+	.cobros-period-filter-sheet.is-desktop-popover .cobros-filter-group,
+	.cobros-period-filter-sheet.is-desktop-popover .cobros-filter-group__label {
+		display: none;
 	}
 
 	.cobros-period-filter-sheet.is-desktop-popover .cobros-period-custom {

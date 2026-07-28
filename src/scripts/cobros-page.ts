@@ -125,7 +125,7 @@ export const initCobrosPage = () => {
 	const dateFromPickBtn = root.querySelector<HTMLButtonElement>('[data-cobros-date-from-pick]');
 	const dateToPickBtn = root.querySelector<HTMLButtonElement>('[data-cobros-date-to-pick]');
 	const dateErrorEl = root.querySelector<HTMLElement>('[data-cobros-date-error]');
-	const datePicker = root.querySelector<HTMLElement>('[data-cobros-date-picker]');
+	const datePicker = root.querySelector<HTMLDialogElement>('[data-cobros-date-picker]');
 	const datePickerLabel = root.querySelector<HTMLElement>('[data-cobros-dp-label]');
 	const datePickerMonth = root.querySelector<HTMLSelectElement>('[data-cobros-dp-month]');
 	const datePickerYear = root.querySelector<HTMLSelectElement>('[data-cobros-dp-year]');
@@ -335,6 +335,7 @@ export const initCobrosPage = () => {
 			button.addEventListener('click', () => {
 				pickerDraftDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
 				renderDatePicker();
+				applyDatePicker();
 			});
 			datePickerDays.appendChild(button);
 		}
@@ -347,25 +348,38 @@ export const initCobrosPage = () => {
 		renderDatePickerDays();
 	};
 
-	const reanchorPeriodPopover = () => {
-		if (
-			periodSheet?.open &&
-			periodSheet.classList.contains('is-desktop-popover') &&
-			periodFilterBtn
-		) {
-			positionFilterPopover(periodSheet, periodFilterBtn);
+	let datePickerAnchor: HTMLElement | null = null;
+
+	const positionDatePicker = () => {
+		if (!datePicker?.open) return;
+		const anchor = datePickerAnchor;
+		if (!anchor) return;
+		const card = datePicker.querySelector<HTMLElement>('.dtp-card');
+		const rect = anchor.getBoundingClientRect();
+		const gap = 6;
+		const cardW = card?.offsetWidth || datePicker.offsetWidth || 320;
+		const cardH = card?.offsetHeight || datePicker.offsetHeight || 380;
+		let left = rect.left;
+		left = Math.max(8, Math.min(left, window.innerWidth - cardW - 8));
+		let top = rect.bottom + gap;
+		if (top + cardH > window.innerHeight - 8) {
+			const above = rect.top - gap - cardH;
+			top = above >= 8 ? above : Math.max(8, window.innerHeight - cardH - 8);
 		}
+		datePicker.style.left = `${Math.round(left)}px`;
+		datePicker.style.top = `${Math.round(top)}px`;
 	};
 
 	const closeDatePicker = () => {
-		datePicker?.classList.add('hidden');
+		if (datePicker?.open) datePicker.close();
 		activeDateField = null;
-		reanchorPeriodPopover();
+		datePickerAnchor = null;
 	};
 
-	const openDatePicker = (field: 'from' | 'to') => {
+	const openDatePicker = (field: 'from' | 'to', anchor?: HTMLElement | null) => {
 		if (!datePicker) return;
 		activeDateField = field;
+		datePickerAnchor = anchor ?? (field === 'from' ? dateFromPickBtn : dateToPickBtn);
 		const source = field === 'from' ? dateFromEl : dateToEl;
 		const parsed = parseIsoDate(source?.value || '') || new Date();
 		parsed.setHours(0, 0, 0, 0);
@@ -376,9 +390,9 @@ export const initCobrosPage = () => {
 				field === 'from' ? 'Seleccionando desde' : 'Seleccionando hasta';
 		}
 		renderDatePicker();
-		datePicker.classList.remove('hidden');
-		datePicker.scrollIntoView({ block: 'nearest' });
-		reanchorPeriodPopover();
+		if (!datePicker.open) datePicker.show();
+		positionDatePicker();
+		requestAnimationFrame(positionDatePicker);
 	};
 
 	const applyDatePicker = () => {
@@ -470,7 +484,7 @@ export const initCobrosPage = () => {
 			btn.setAttribute('aria-selected', selectedOpt ? 'true' : 'false');
 		});
 		customDatesEl?.classList.toggle('hidden', datePreset !== 'custom');
-		if (datePreset !== 'custom') datePicker?.classList.add('hidden');
+		if (datePreset !== 'custom' && datePicker?.open) datePicker.close();
 		if (datePreset === 'custom') syncTextFromNative();
 		// Tras mostrar fechas custom el popover crece: re-anclar al botón.
 		if (
@@ -478,7 +492,7 @@ export const initCobrosPage = () => {
 			periodSheet.classList.contains('is-desktop-popover') &&
 			periodFilterBtn
 		) {
-			positionFilterPopover(periodSheet, periodFilterBtn);
+			positionFilterPopover(periodSheet, periodFilterBtn, 22);
 		}
 	};
 
@@ -488,9 +502,9 @@ export const initCobrosPage = () => {
 		if (loading || !periodSheet || !periodFilterBtn) return;
 		if (datePresetEl) datePresetEl.value = datePreset;
 		setDateError('');
-		datePicker?.classList.add('hidden');
+		if (datePicker?.open) datePicker.close();
 		updatePeriodFilterUi();
-		toggleFilterPopoverSheet(periodSheet, periodFilterBtn);
+		toggleFilterPopoverSheet(periodSheet, periodFilterBtn, 22);
 	};
 
 	const applyPeriodOption = (next: CobrosDatePreset) => {
@@ -1036,6 +1050,7 @@ export const initCobrosPage = () => {
 		bindFilterPopoverChrome({
 			sheet: periodSheet,
 			getTrigger: () => periodFilterBtn,
+			widthRem: 22,
 		});
 	}
 	bindDateTextInput(dateFromTextEl, dateFromEl);
@@ -1043,12 +1058,12 @@ export const initCobrosPage = () => {
 	dateFromPickBtn?.addEventListener('click', (event) => {
 		event.preventDefault();
 		event.stopPropagation();
-		openDatePicker('from');
+		openDatePicker('from', dateFromPickBtn);
 	});
 	dateToPickBtn?.addEventListener('click', (event) => {
 		event.preventDefault();
 		event.stopPropagation();
-		openDatePicker('to');
+		openDatePicker('to', dateToPickBtn);
 	});
 
 	datePickerPrev?.addEventListener('click', () => {
@@ -1080,6 +1095,34 @@ export const initCobrosPage = () => {
 		renderDatePicker();
 	});
 	datePickerApply?.addEventListener('click', applyDatePicker);
+
+	// Click-away: cerrar el calendario si se clickea fuera de él (sin cerrar el filtro).
+	document.addEventListener(
+		'pointerdown',
+		(event) => {
+			if (!datePicker?.open) return;
+			const target = event.target;
+			if (!(target instanceof Node)) return;
+			if (datePicker.contains(target)) return;
+			if (dateFromPickBtn?.contains(target) || dateToPickBtn?.contains(target)) return;
+			closeDatePicker();
+		},
+		true
+	);
+	// Esc: cerrar solo el calendario primero (no el filtro).
+	document.addEventListener(
+		'keydown',
+		(event) => {
+			if (event.key !== 'Escape' || !datePicker?.open) return;
+			event.preventDefault();
+			event.stopPropagation();
+			closeDatePicker();
+		},
+		true
+	);
+	window.addEventListener('resize', positionDatePicker);
+	window.addEventListener('scroll', positionDatePicker, true);
+	periodSheet?.addEventListener('close', closeDatePicker);
 
 	periodSheet?.addEventListener('click', (event) => {
 		const target = event.target;
