@@ -1,3 +1,5 @@
+import { prepareReceiptUploadFile } from '../lib/pdf-receipt-to-image';
+
 export type RefundPolicyCode = 'FLEXIBLE' | 'MODERATE' | 'STRICT';
 
 export interface SipapBankDetails {
@@ -313,9 +315,18 @@ export const bindSipapReceiptUpload = (
 
 		setSipapReceiptStatus(root, null, 'uploading');
 		try {
-			const file_base64 = await fileToBase64(file);
-			const resolvedMime = file.type || (isPdf ? 'application/pdf' : 'image/jpeg');
-			const resolvedName = file.name || (isPdf ? 'comprobante.pdf' : 'comprobante.jpg');
+			// PDF → JPEG silencioso para OCR; si falla el render, se sube el PDF (MANUAL_REVIEW).
+			const uploadFile = await prepareReceiptUploadFile(file);
+			const uploadIsPdf =
+				uploadFile.type === 'application/pdf' ||
+				String(uploadFile.name || '')
+					.toLowerCase()
+					.endsWith('.pdf');
+			const file_base64 = await fileToBase64(uploadFile);
+			const resolvedMime =
+				uploadFile.type || (uploadIsPdf ? 'application/pdf' : 'image/jpeg');
+			const resolvedName =
+				uploadFile.name || (uploadIsPdf ? 'comprobante.pdf' : 'comprobante.jpg');
 			const response = await fetch(
 				`/api/public/reservations/${encodeURIComponent(token)}/receipt`,
 				{

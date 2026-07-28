@@ -12,7 +12,7 @@ export const COBROS_PENDING_COUNT_URL = resolveOrdsApiUrl(
 	'/workspace/payments/pending-count'
 );
 
-export type CobrosStatusFilter = 'all' | 'pending' | 'approved' | 'refunded';
+export type CobrosStatusFilter = 'all' | 'pending' | 'approved' | 'refunded' | 'expired';
 export type CobrosDatePreset = 'this_month' | 'last_month' | 'custom';
 
 export interface CobroItem {
@@ -136,7 +136,7 @@ export const listCobrosWithOrds = async (
 	if (query.date_from) url.searchParams.set('date_from', query.date_from);
 	if (query.date_to) url.searchParams.set('date_to', query.date_to);
 	url.searchParams.set('page', String(query.page || 1));
-	url.searchParams.set('limit', String(query.limit || 50));
+	url.searchParams.set('limit', String(query.limit || 9));
 
 	const response = await fetch(url.toString(), {
 		method: 'GET',
@@ -156,7 +156,7 @@ export const listCobrosWithOrds = async (
 		meta: {
 			total: toPositiveInt(metaRaw.total, items.length),
 			page: toPositiveInt(metaRaw.page, query.page || 1),
-			limit: toPositiveInt(metaRaw.limit, query.limit || 50),
+			limit: toPositiveInt(metaRaw.limit, query.limit || 9),
 			pending_count: toPositiveInt(metaRaw.pending_count, 0),
 		},
 	};

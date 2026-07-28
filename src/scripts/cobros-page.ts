@@ -31,17 +31,30 @@ const formatDateTime = (iso?: string | null) => {
 	}).format(d);
 };
 
+const isExpiredCobro = (item: CobroItem) => {
+	const pay = String(item.payment_status || '').toUpperCase();
+	const ui = String(item.ui_status || '').toUpperCase();
+	return pay === 'EXPIRED' || ui === 'EXPIRED';
+};
+
 const statusLabel = (item: CobroItem) => {
+	if (isExpiredCobro(item)) return 'Vencido';
 	if (item.ui_status === 'approved') return 'Aprobado';
 	if (item.ui_status === 'pending') return 'Pendiente de revisión';
 	if (item.ui_status === 'refund_pending') return 'Reembolso pendiente';
 	if (item.ui_status === 'refund_awaiting_alias') return 'Esperando alias';
 	if (item.ui_status === 'refund_sent') return 'Reembolso enviado';
 	if (item.ui_status === 'refund_waived') return 'Reembolso renunciado';
+	const raw = String(item.ocr_status || item.payment_status || '').trim().toUpperCase();
+	if (raw === 'EXPIRED') return 'Vencido';
+	if (raw === 'CANCELLED' || raw === 'CANCELED') return 'Cancelado';
+	if (raw === 'PENDING') return 'Pendiente';
+	if (raw === 'PAID' || raw === 'PAID_TRANSFER') return 'Pagado';
 	return String(item.ocr_status || item.payment_status || '—');
 };
 
 const statusChipClass = (item: CobroItem) => {
+	if (isExpiredCobro(item)) return 'cobros-chip cobros-chip--expired';
 	if (item.ui_status === 'approved') return 'cobros-chip cobros-chip--approved';
 	if (item.ui_status === 'pending') return 'cobros-chip cobros-chip--pending';
 	if (item.ui_status === 'refund_pending' || item.ui_status === 'refund_awaiting_alias') {
@@ -112,7 +125,7 @@ export const initCobrosPage = () => {
 	const dateFromPickBtn = root.querySelector<HTMLButtonElement>('[data-cobros-date-from-pick]');
 	const dateToPickBtn = root.querySelector<HTMLButtonElement>('[data-cobros-date-to-pick]');
 	const dateErrorEl = root.querySelector<HTMLElement>('[data-cobros-date-error]');
-	const datePicker = root.querySelector<HTMLDialogElement>('[data-cobros-date-picker]');
+	const datePicker = root.querySelector<HTMLElement>('[data-cobros-date-picker]');
 	const datePickerLabel = root.querySelector<HTMLElement>('[data-cobros-dp-label]');
 	const datePickerMonth = root.querySelector<HTMLSelectElement>('[data-cobros-dp-month]');
 	const datePickerYear = root.querySelector<HTMLSelectElement>('[data-cobros-dp-year]');
@@ -133,14 +146,22 @@ export const initCobrosPage = () => {
 	const viewerOpen = viewer?.querySelector<HTMLAnchorElement>('[data-cobros-viewer-open]') ?? null;
 	const featureSection = root.querySelector<HTMLElement>('[data-requires-feature="DEPOSIT_COLLECTION"]');
 	const lockedSection = root.querySelector<HTMLElement>('[data-cobros-feature-locked]');
+	const paginationEl = root.querySelector<HTMLElement>('[data-cobros-pagination]');
+	const pageLabelEl = root.querySelector<HTMLElement>('[data-cobros-page-label]');
+	const currentPageEl = root.querySelector<HTMLElement>('[data-cobros-current-page]');
+	const prevPageBtn = root.querySelector<HTMLButtonElement>('[data-cobros-prev]');
+	const nextPageBtn = root.querySelector<HTMLButtonElement>('[data-cobros-next]');
 
-	let statusFilter: CobrosStatusFilter = 'pending';
+	const PAGE_SIZE = 9;
+	let statusFilter: CobrosStatusFilter = 'all';
 	let datePreset: CobrosDatePreset = 'this_month';
 	let items: CobroItem[] = [];
 	let selected: CobroItem | null = null;
 	let busy = false;
 	let loading = false;
 	let loadRequestId = 0;
+	let page = 1;
+	let totalRecords = 0;
 	let activeDateField: 'from' | 'to' | null = null;
 	let pickerViewDate = new Date();
 	let pickerDraftDate = new Date();
@@ -326,9 +347,20 @@ export const initCobrosPage = () => {
 		renderDatePickerDays();
 	};
 
+	const reanchorPeriodPopover = () => {
+		if (
+			periodSheet?.open &&
+			periodSheet.classList.contains('is-desktop-popover') &&
+			periodFilterBtn
+		) {
+			positionFilterPopover(periodSheet, periodFilterBtn);
+		}
+	};
+
 	const closeDatePicker = () => {
-		if (datePicker?.open) datePicker.close();
+		datePicker?.classList.add('hidden');
 		activeDateField = null;
+		reanchorPeriodPopover();
 	};
 
 	const openDatePicker = (field: 'from' | 'to') => {
@@ -344,7 +376,9 @@ export const initCobrosPage = () => {
 				field === 'from' ? 'Seleccionando desde' : 'Seleccionando hasta';
 		}
 		renderDatePicker();
-		if (!datePicker.open) datePicker.showModal();
+		datePicker.classList.remove('hidden');
+		datePicker.scrollIntoView({ block: 'nearest' });
+		reanchorPeriodPopover();
 	};
 
 	const applyDatePicker = () => {
@@ -423,7 +457,9 @@ export const initCobrosPage = () => {
 	};
 
 	const updatePeriodFilterUi = () => {
-		const active = datePreset !== 'this_month';
+		const mobileFilters =
+			typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
+		const active = datePreset !== 'this_month' || (mobileFilters && statusFilter !== 'all');
 		periodFilterBadge?.classList.toggle('hidden', !active);
 		periodFilterBtn?.classList.toggle('is-active', active);
 		periodFilterBtn?.setAttribute('aria-pressed', active ? 'true' : 'false');
@@ -434,6 +470,7 @@ export const initCobrosPage = () => {
 			btn.setAttribute('aria-selected', selectedOpt ? 'true' : 'false');
 		});
 		customDatesEl?.classList.toggle('hidden', datePreset !== 'custom');
+		if (datePreset !== 'custom') datePicker?.classList.add('hidden');
 		if (datePreset === 'custom') syncTextFromNative();
 		// Tras mostrar fechas custom el popover crece: re-anclar al botón.
 		if (
@@ -451,6 +488,7 @@ export const initCobrosPage = () => {
 		if (loading || !periodSheet || !periodFilterBtn) return;
 		if (datePresetEl) datePresetEl.value = datePreset;
 		setDateError('');
+		datePicker?.classList.add('hidden');
 		updatePeriodFilterUi();
 		toggleFilterPopoverSheet(periodSheet, periodFilterBtn);
 	};
@@ -461,6 +499,7 @@ export const initCobrosPage = () => {
 		updatePeriodFilterUi();
 		if (next !== 'custom') {
 			closePeriodSheet();
+			page = 1;
 			void load();
 		}
 	};
@@ -479,10 +518,23 @@ export const initCobrosPage = () => {
 		return true;
 	};
 
+	const statusSelect = root.querySelector<HTMLSelectElement>('[data-cobros-status-select]');
+
 	const syncTabs = () => {
 		root.querySelectorAll<HTMLButtonElement>('[data-cobros-tab]').forEach((btn) => {
 			btn.classList.toggle('is-active', btn.dataset.cobrosTab === statusFilter);
 		});
+		if (statusSelect && statusSelect.value !== statusFilter) {
+			statusSelect.value = statusFilter;
+		}
+	};
+
+	const applyStatusOption = (next: CobrosStatusFilter) => {
+		statusFilter = next;
+		page = 1;
+		syncTabs();
+		updatePeriodFilterUi();
+		void load();
 	};
 
 	const setRejectMode = (on: boolean) => {
@@ -501,7 +553,11 @@ export const initCobrosPage = () => {
 		}
 	};
 
-	const receiptFileName = (url: string, customerName?: string | null) => {
+	const receiptFileName = (
+		url: string,
+		customerName?: string | null,
+		kind: 'pdf' | 'image' = 'pdf'
+	) => {
 		try {
 			const path = new URL(url).pathname;
 			const base = decodeURIComponent(path.split('/').pop() || '');
@@ -514,7 +570,8 @@ export const initCobrosPage = () => {
 			.replace(/[^\w\-]+/g, '_')
 			.replace(/_+/g, '_')
 			.slice(0, 40);
-		return `${safe || 'comprobante'}.pdf`;
+		const ext = kind === 'image' ? 'jpg' : 'pdf';
+		return `${safe || 'comprobante'}.${ext}`;
 	};
 
 	const openModal = (item: CobroItem) => {
@@ -550,46 +607,36 @@ export const initCobrosPage = () => {
 		setText('[data-cobros-modal-refund-alias]', item.refund_alias || '—');
 		setText('[data-cobros-modal-refund-status]', statusLabel(item));
 
-		const img = modal.querySelector<HTMLImageElement>('[data-cobros-modal-image]');
-		const pdfWrap = modal.querySelector<HTMLElement>('[data-cobros-modal-pdf]');
-		const pdfLink = modal.querySelector<HTMLAnchorElement>('[data-cobros-modal-pdf-link]');
-		const pdfName = modal.querySelector<HTMLElement>('[data-cobros-modal-pdf-name]');
+		const receiptRow = modal.querySelector<HTMLElement>('[data-cobros-receipt-row]');
+		const receiptIcon = modal.querySelector<HTMLElement>('[data-cobros-receipt-icon]');
+		const receiptNameEl = modal.querySelector<HTMLElement>('[data-cobros-receipt-name]');
+		const receiptOpenBtn = modal.querySelector<HTMLButtonElement>('[data-cobros-receipt-open]');
 		const noImg = modal.querySelector<HTMLElement>('[data-cobros-modal-no-image]');
 		const receiptUrl = String(item.receipt_url || '').trim();
 		const isPdf = /\.pdf($|\?)/i.test(receiptUrl) || /application\/pdf/i.test(receiptUrl);
+		const receiptName = receiptFileName(
+			receiptUrl,
+			item.customer_name,
+			isPdf ? 'pdf' : 'image'
+		);
 
-		if (img) {
-			img.classList.add('hidden');
-			img.removeAttribute('src');
-		}
-		pdfWrap?.classList.add('hidden');
-		pdfWrap?.classList.remove('flex');
+		receiptRow?.classList.add('hidden');
+		receiptRow?.classList.remove('flex');
 		noImg?.classList.add('hidden');
 
-		const receiptName = receiptFileName(receiptUrl, item.customer_name);
-		if (receiptUrl && isPdf) {
-			pdfWrap?.classList.remove('hidden');
-			pdfWrap?.classList.add('flex');
-			if (pdfLink) pdfLink.href = receiptUrl;
-			if (pdfName) pdfName.textContent = receiptName;
-		} else if (receiptUrl && img) {
-			img.src = receiptUrl;
-			img.classList.remove('hidden');
+		if (receiptUrl) {
+			receiptRow?.classList.remove('hidden');
+			receiptRow?.classList.add('flex');
+			if (receiptIcon) {
+				receiptIcon.textContent = isPdf ? 'picture_as_pdf' : 'image';
+			}
+			if (receiptNameEl) receiptNameEl.textContent = receiptName;
+			if (receiptOpenBtn) {
+				receiptOpenBtn.onclick = () => openViewer(receiptUrl, isPdf, receiptName);
+			}
 		} else {
 			noImg?.classList.remove('hidden');
-		}
-
-		if (pdfLink) {
-			pdfLink.onclick = (event) => {
-				event.preventDefault();
-				openViewer(receiptUrl, true, receiptName);
-			};
-		}
-		if (img) {
-			img.classList.toggle('cursor-zoom-in', Boolean(receiptUrl) && !isPdf);
-			img.onclick = receiptUrl && !isPdf
-				? () => openViewer(receiptUrl, false, receiptName)
-				: null;
+			if (receiptOpenBtn) receiptOpenBtn.onclick = null;
 		}
 
 		const canReview = item.ui_status === 'pending';
@@ -678,9 +725,25 @@ export const initCobrosPage = () => {
 		closeViewer();
 	});
 
+	const totalPages = () => Math.max(1, Math.ceil(Math.max(totalRecords, 0) / PAGE_SIZE));
+
+	const updatePagination = () => {
+		const pages = totalPages();
+		const hasItems = totalRecords > 0;
+		paginationEl?.classList.toggle('hidden', loading || !hasItems);
+		if (pageLabelEl) {
+			pageLabelEl.innerHTML = `Pagina <strong>${page}</strong> de <strong>${pages}</strong> <span aria-hidden="true">-</span> Total: <strong>${totalRecords}</strong> cobros`;
+		}
+		if (currentPageEl) currentPageEl.textContent = String(page);
+		prevPageBtn?.classList.toggle('is-disabled', page <= 1 || loading);
+		prevPageBtn?.toggleAttribute('disabled', page <= 1 || loading);
+		nextPageBtn?.classList.toggle('is-disabled', page >= pages || loading);
+		nextPageBtn?.toggleAttribute('disabled', page >= pages || loading);
+	};
+
 	const render = () => {
 		if (summaryEl) {
-			summaryEl.textContent = `(${items.length})`;
+			summaryEl.textContent = `(${totalRecords})`;
 		}
 
 		const empty = items.length === 0;
@@ -689,6 +752,7 @@ export const initCobrosPage = () => {
 		cardsEl?.classList.toggle('hidden', empty);
 		resultsEl?.classList.remove('hidden');
 		loadingEl?.classList.add('hidden');
+		updatePagination();
 
 		if (!tableBody || !cardsEl) return;
 		tableBody.replaceChildren();
@@ -704,8 +768,14 @@ export const initCobrosPage = () => {
 				<td class="px-4 py-3 font-bold">${formatMoney(item.amount, item.currency)}</td>
 				<td class="px-4 py-3"><span class="${statusChipClass(item)}">${statusLabel(item)}</span></td>
 				<td class="px-4 py-3 text-right">
-					<button type="button" class="cursor-pointer text-sm font-bold text-(--primary)" data-cobros-open="${item.id_transaction}">
-						Ver comprobante
+					<button
+						type="button"
+						class="cobros-view-btn cursor-pointer"
+						title="Ver comprobante"
+						aria-label="Ver comprobante"
+						data-cobros-open="${item.id_transaction}"
+					>
+						<span class="material-symbols-rounded" aria-hidden="true">visibility</span>
 					</button>
 				</td>
 			`;
@@ -713,28 +783,39 @@ export const initCobrosPage = () => {
 
 			const card = document.createElement('article');
 			card.className =
-				'grid gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 shadow-sm';
+				'grid gap-3.5 rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 shadow-sm';
+			const ctaLabel =
+				item.ui_status === 'refund_pending' ||
+				item.ui_status === 'refund_awaiting_alias' ||
+				item.ui_status === 'refund_sent'
+					? 'Ver reembolso'
+					: item.ui_status === 'pending'
+						? 'Validar comprobante'
+						: 'Ver detalle';
 			card.innerHTML = `
 				<div class="flex items-start justify-between gap-3">
-					<div>
-						<p class="m-0 text-base font-bold text-(--on-surface)">${item.customer_name || '—'}</p>
-						<p class="m-0 mt-0.5 text-lg font-extrabold text-(--on-surface)">${formatMoney(item.amount, item.currency)}</p>
+					<div class="grid min-w-0 gap-0.5">
+						<span class="text-[0.7rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Cliente</span>
+						<p class="m-0 truncate text-[1.02rem] font-semibold text-(--on-surface)">${item.customer_name || '—'}</p>
 					</div>
 					<span class="${statusChipClass(item)}">${statusLabel(item)}</span>
 				</div>
-				<div class="text-sm text-(--on-surface-variant)">
-					<p class="m-0">${item.service_name || '—'}</p>
-					<p class="m-0 mt-1">${formatDateTime(item.start_time || item.created_at)}</p>
-					<p class="m-0 mt-1 font-mono text-xs">${item.payment_reference || ''}</p>
+				<div class="grid grid-cols-2 gap-x-4 gap-y-3">
+					<div class="grid min-w-0 gap-0.5">
+						<span class="text-[0.7rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Monto</span>
+						<p class="m-0 text-[1.08rem] font-semibold tabular-nums text-(--on-surface)">${formatMoney(item.amount, item.currency)}</p>
+					</div>
+					<div class="grid min-w-0 gap-0.5">
+						<span class="text-[0.7rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Servicio</span>
+						<p class="m-0 truncate text-[0.95rem] font-semibold text-(--on-surface)">${item.service_name || '—'}</p>
+					</div>
+					<div class="col-span-2 grid min-w-0 gap-0.5">
+						<span class="text-[0.7rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Fecha</span>
+						<p class="m-0 text-[0.92rem] font-medium text-(--on-surface)">${formatDateTime(item.start_time || item.created_at)}</p>
+					</div>
 				</div>
-				<button type="button" class="inline-flex h-12 w-full items-center justify-center rounded-full bg-(--primary) px-5 text-base font-semibold text-(--on-primary)" data-cobros-open="${item.id_transaction}">
-					${
-						item.ui_status === 'refund_pending' ||
-						item.ui_status === 'refund_awaiting_alias' ||
-						item.ui_status === 'refund_sent'
-							? 'Ver reembolso'
-							: 'Validar comprobante'
-					}
+				<button type="button" class="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-full bg-(--primary) px-5 text-base font-semibold text-(--on-primary)" data-cobros-open="${item.id_transaction}">
+					${ctaLabel}
 				</button>
 			`;
 			cardsEl.appendChild(card);
@@ -745,18 +826,21 @@ export const initCobrosPage = () => {
 		if (!applyFeatureGate()) {
 			setLoading(false);
 			items = [];
+			totalRecords = 0;
+			page = 1;
 			render();
 			return;
 		}
 		const requestId = ++loadRequestId;
 		setError('');
 		setLoading(true);
+		updatePagination();
 		try {
 			const params = new URLSearchParams({
 				status: statusFilter,
 				date_preset: datePreset,
-				page: '1',
-				limit: '50',
+				page: String(page),
+				limit: String(PAGE_SIZE),
 			});
 			if (datePreset === 'custom') {
 				if (dateFromEl?.value) params.set('date_from', dateFromEl.value);
@@ -772,9 +856,26 @@ export const initCobrosPage = () => {
 				throw new Error(String(payload.message || 'No fue posible cargar los cobros.'));
 			}
 			items = Array.isArray(payload.data) ? payload.data : [];
+			const meta = payload.meta && typeof payload.meta === 'object' ? payload.meta : {};
+			totalRecords = Number(meta.total ?? items.length) || 0;
+			page = Number(meta.page ?? page) || page;
+			const pages = totalPages();
+			if (items.length === 0 && page > 1 && totalRecords > 0) {
+				page = Math.min(page - 1, pages);
+				void load();
+				return;
+			}
+			if (page > pages) {
+				page = pages;
+				if (pages >= 1 && totalRecords > 0) {
+					void load();
+					return;
+				}
+			}
 		} catch (error) {
 			if (requestId !== loadRequestId) return;
 			items = [];
+			totalRecords = 0;
 			setError(error instanceof Error ? error.message : 'No fue posible cargar los cobros.');
 		} finally {
 			if (requestId !== loadRequestId) return;
@@ -911,10 +1012,23 @@ export const initCobrosPage = () => {
 
 	root.querySelectorAll<HTMLButtonElement>('[data-cobros-tab]').forEach((btn) => {
 		btn.addEventListener('click', () => {
-			statusFilter = (btn.dataset.cobrosTab || 'all') as CobrosStatusFilter;
-			syncTabs();
-			void load();
+			applyStatusOption((btn.dataset.cobrosTab || 'all') as CobrosStatusFilter);
 		});
+	});
+
+	statusSelect?.addEventListener('change', () => {
+		applyStatusOption((statusSelect.value || 'all') as CobrosStatusFilter);
+	});
+
+	prevPageBtn?.addEventListener('click', () => {
+		if (page <= 1 || loading) return;
+		page -= 1;
+		void load();
+	});
+	nextPageBtn?.addEventListener('click', () => {
+		if (page >= totalPages() || loading) return;
+		page += 1;
+		void load();
 	});
 
 	periodFilterBtn?.addEventListener('click', openPeriodSheet);
@@ -966,13 +1080,6 @@ export const initCobrosPage = () => {
 		renderDatePicker();
 	});
 	datePickerApply?.addEventListener('click', applyDatePicker);
-	datePicker?.addEventListener('cancel', (event) => {
-		event.preventDefault();
-		closeDatePicker();
-	});
-	datePicker?.addEventListener('click', (event) => {
-		if (event.target === datePicker) closeDatePicker();
-	});
 
 	periodSheet?.addEventListener('click', (event) => {
 		const target = event.target;
@@ -1018,6 +1125,7 @@ export const initCobrosPage = () => {
 			}
 			setDateError('');
 			closePeriodSheet();
+			page = 1;
 			void load();
 		}
 	});
@@ -1053,8 +1161,8 @@ export const initCobrosPage = () => {
 		closeModal();
 	});
 
-	// Default tab: pendientes (donde vive el negocio)
-	statusFilter = 'pending';
+	// Default tab: todos
+	statusFilter = 'all';
 	if (datePresetEl) datePresetEl.value = datePreset;
 	syncTabs();
 	updatePeriodFilterUi();

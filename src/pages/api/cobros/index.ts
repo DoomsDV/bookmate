@@ -40,7 +40,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
 		const dateFrom = String(url.searchParams.get('date_from') || '').trim() || undefined;
 		const dateTo = String(url.searchParams.get('date_to') || '').trim() || undefined;
 		const page = Number(url.searchParams.get('page') || 1);
-		const limit = Number(url.searchParams.get('limit') || 50);
+		const limit = Number(url.searchParams.get('limit') || 9);
 
 		const result = await listCobrosWithOrds(token, {
 			status,

@@ -52,15 +52,16 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 										</select>
 
 										<div class="flex items-start gap-2">
-											<div class="flex min-w-0 flex-1 flex-wrap gap-2" role="tablist" aria-label="Estado">
-												<button type="button" data-cobros-tab="all" class="cobros-tab">Todos</button>
-												<button type="button" data-cobros-tab="pending" class="cobros-tab is-active">Pendientes</button>
+											<div class="hidden min-w-0 flex-1 flex-wrap gap-2 md:flex" role="tablist" aria-label="Estado">
+												<button type="button" data-cobros-tab="all" class="cobros-tab is-active">Todos</button>
+												<button type="button" data-cobros-tab="pending" class="cobros-tab">Pendientes</button>
 												<button type="button" data-cobros-tab="approved" class="cobros-tab">Aprobados</button>
 												<button type="button" data-cobros-tab="refunded" class="cobros-tab">Reembolsados</button>
+												<button type="button" data-cobros-tab="expired" class="cobros-tab">Vencidos</button>
 											</div>
 											<button
 												type="button"
-												class="cobros-period-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+												class="cobros-period-filter-btn relative ml-auto flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
 												data-open-period-filter
 												aria-label="Filtrar por periodo"
 												aria-haspopup="dialog"
@@ -125,6 +126,27 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 											<!-- Mobile cards -->
 											<div class="cobros-cards grid gap-3 md:hidden" data-cobros-cards></div>
 										</div>
+
+										<div class="app-pagination hidden" data-cobros-pagination>
+											<p class="app-pagination__summary" data-cobros-page-label>
+												Pagina <strong>1</strong> de <strong>1</strong>
+												<span aria-hidden="true">-</span>
+												Total: <strong>0</strong> cobros
+											</p>
+											<nav class="app-pagination__controls" aria-label="Paginacion cobros">
+												<button type="button" class="app-pagination__icon-button" data-cobros-prev aria-label="Pagina anterior">
+													<svg viewBox="0 0 24 24" aria-hidden="true">
+														<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
+													</svg>
+												</button>
+												<span class="app-pagination__current" aria-current="page" data-cobros-current-page>1</span>
+												<button type="button" class="app-pagination__icon-button" data-cobros-next aria-label="Pagina siguiente">
+													<svg viewBox="0 0 24 24" aria-hidden="true">
+														<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
+													</svg>
+												</button>
+											</nav>
+										</div>
 									</div>
 								)
 							}
@@ -157,7 +179,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 				</div>
 				<div class="cobros-period-filter-sheet__header">
 					<h2 id="cobros-period-filter-title" class="m-0 text-[1.05rem] font-extrabold tracking-tight">
-						Periodo
+						<span class="md:hidden">Filtros</span>
+						<span class="hidden md:inline">Periodo</span>
 					</h2>
 					<button
 						type="button"
@@ -169,6 +192,20 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 					</button>
 				</div>
 				<div class="cobros-period-filter-sheet__body">
+					<div class="cobros-filter-group md:hidden">
+						<label class="cobros-filter-group__label" for="cobros-status-select">Estado</label>
+						<div class="cobros-filter-select">
+							<select id="cobros-status-select" data-cobros-status-select aria-label="Estado">
+								<option value="all">Todos</option>
+								<option value="pending">Pendientes</option>
+								<option value="approved">Aprobados</option>
+								<option value="refunded">Reembolsados</option>
+								<option value="expired">Vencidos</option>
+							</select>
+							<span class="material-symbols-rounded cobros-filter-select__chevron" aria-hidden="true">expand_more</span>
+						</div>
+					</div>
+					<p class="cobros-filter-group__label md:hidden">Periodo</p>
 					<div class="cobros-period-filter-sheet__list" role="listbox" aria-label="Periodo">
 						<button type="button" class="cobros-period-option" data-period-option="this_month" role="option">
 							<span>Este mes</span>
@@ -232,6 +269,80 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 								</button>
 							</span>
 						</label>
+
+						<div class="cobros-dp-inline hidden" data-cobros-date-picker aria-labelledby="cobros-date-picker-label">
+							<div class="dtp-card">
+								<div class="dtp-head">
+									<div class="dtp-head-row">
+										<p class="dtp-target-label" id="cobros-date-picker-label" data-cobros-dp-label>
+											Seleccionando fecha
+										</p>
+										<button
+											type="button"
+											class="dtp-icon-btn"
+											data-cobros-dp-close
+											aria-label="Cerrar selector de fecha"
+										>
+											<span class="material-symbols-rounded text-[1.1rem]">close</span>
+										</button>
+									</div>
+
+									<div class="dtp-nav-row">
+										<div class="inline-flex items-center gap-1.5">
+											<select
+												data-cobros-dp-month
+												class="dtp-select"
+												aria-label="Seleccionar mes"
+											></select>
+											<select
+												data-cobros-dp-year
+												class="dtp-select dtp-select--year"
+												aria-label="Seleccionar año"
+											></select>
+										</div>
+										<div class="inline-flex items-center gap-1">
+											<button
+												type="button"
+												class="dtp-icon-btn"
+												data-cobros-dp-prev
+												aria-label="Mes anterior"
+											>
+												<span class="material-symbols-rounded text-[1.05rem]">chevron_left</span>
+											</button>
+											<button
+												type="button"
+												class="dtp-icon-btn"
+												data-cobros-dp-next
+												aria-label="Mes siguiente"
+											>
+												<span class="material-symbols-rounded text-[1.05rem]">chevron_right</span>
+											</button>
+										</div>
+									</div>
+
+									<div class="dtp-weekdays">
+										<span>Lun</span>
+										<span>Mar</span>
+										<span>Mié</span>
+										<span>Jue</span>
+										<span>Vie</span>
+										<span>Sáb</span>
+										<span>Dom</span>
+									</div>
+									<div class="dtp-days-grid" data-cobros-dp-days></div>
+								</div>
+
+								<div class="dtp-foot">
+									<div class="dtp-foot-row cobros-dp-foot-row">
+										<button type="button" class="dtp-action-btn" data-cobros-dp-today>Hoy</button>
+										<button type="button" class="dtp-action-btn dtp-action-btn--primary" data-cobros-dp-apply>
+											Hecho
+										</button>
+									</div>
+								</div>
+							</div>
+						</div>
+
 						<p class="hidden m-0 text-[0.82rem] font-semibold text-rose-500" data-cobros-date-error></p>
 						<button
 							type="button"
@@ -245,89 +356,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 			</dialog>
 
 			<dialog
-				class="fixed inset-0 z-[10000] m-0 h-screen w-screen max-h-none max-w-none border-0 bg-transparent p-4 outline-none backdrop:bg-black/45 open:grid open:place-items-center"
-				data-cobros-date-picker
-				aria-labelledby="cobros-date-picker-label"
-			>
-				<div class="dtp-card">
-					<div class="dtp-head">
-						<div class="dtp-head-row">
-							<p class="dtp-target-label" id="cobros-date-picker-label" data-cobros-dp-label>
-								Seleccionando fecha
-							</p>
-							<button
-								type="button"
-								class="dtp-icon-btn"
-								data-cobros-dp-close
-								aria-label="Cerrar selector de fecha"
-							>
-								<span class="material-symbols-rounded text-[1.1rem]">close</span>
-							</button>
-						</div>
-
-						<div class="dtp-nav-row">
-							<div class="inline-flex items-center gap-1.5">
-								<select
-									data-cobros-dp-month
-									class="dtp-select"
-									aria-label="Seleccionar mes"
-								></select>
-								<select
-									data-cobros-dp-year
-									class="dtp-select dtp-select--year"
-									aria-label="Seleccionar año"
-								></select>
-							</div>
-							<div class="inline-flex items-center gap-1">
-								<button
-									type="button"
-									class="dtp-icon-btn"
-									data-cobros-dp-prev
-									aria-label="Mes anterior"
-								>
-									<span class="material-symbols-rounded text-[1.05rem]">chevron_left</span>
-								</button>
-								<button
-									type="button"
-									class="dtp-icon-btn"
-									data-cobros-dp-next
-									aria-label="Mes siguiente"
-								>
-									<span class="material-symbols-rounded text-[1.05rem]">chevron_right</span>
-								</button>
-							</div>
-						</div>
-
-						<div class="dtp-weekdays">
-							<span>Lun</span>
-							<span>Mar</span>
-							<span>Mié</span>
-							<span>Jue</span>
-							<span>Vie</span>
-							<span>Sáb</span>
-							<span>Dom</span>
-						</div>
-						<div class="dtp-days-grid" data-cobros-dp-days></div>
-					</div>
-
-					<div class="dtp-foot">
-						<div class="dtp-foot-row cobros-dp-foot-row">
-							<button type="button" class="dtp-action-btn" data-cobros-dp-today>Hoy</button>
-							<button type="button" class="dtp-action-btn dtp-action-btn--primary" data-cobros-dp-apply>
-								Hecho
-							</button>
-						</div>
-					</div>
-				</div>
-			</dialog>
-
-			<dialog
 				class="cobros-modal m-0 max-h-none w-screen max-w-none border-0 bg-transparent p-0 text-(--on-surface) shadow-none open:flex open:flex-col open:items-stretch open:justify-end sm:open:items-center sm:open:justify-center lg:open:flex-row lg:open:items-stretch lg:open:justify-end"
 				data-cobros-modal
 				aria-labelledby="cobros-modal-title"
 			>
 				<div
-					class="cobros-modal__panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-hidden rounded-t-[1.5rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:max-h-[90vh] sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] sm:rounded-[1.5rem] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(min(36rem,100vw),28rem)] lg:max-w-[max(min(36rem,100vw),28rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+					class="cobros-modal__panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-hidden rounded-t-[1.5rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:max-h-[min(90vh,40rem)] sm:w-[min(28rem,calc(100vw-2rem))] sm:max-w-[28rem] sm:rounded-[1.5rem] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[min(26rem,100vw)] lg:max-w-[26rem] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 					data-cobros-modal-panel
 				>
 					<header class="flex shrink-0 items-start justify-between gap-3 border-b border-(--shell-border) px-5 py-4">
@@ -340,38 +374,39 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 						</button>
 					</header>
 					<div class="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto overscroll-contain p-5">
-						<div class="cobros-receipt-media" data-cobros-receipt-media>
-							<img alt="Comprobante" class="hidden max-h-[min(28vh,16rem)] w-full rounded-2xl border border-(--shell-border) object-contain bg-(--control-surface)" data-cobros-modal-image />
-							<div
-								class="hidden items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--control-surface) px-3.5 py-3"
-								data-cobros-modal-pdf
-							>
-								<span class="material-symbols-rounded shrink-0 text-[1.65rem] text-(--primary)" aria-hidden="true">picture_as_pdf</span>
-								<div class="min-w-0 flex-1">
-									<p class="m-0 truncate text-sm font-bold text-(--on-surface)" data-cobros-modal-pdf-name>comprobante.pdf</p>
-									<p class="m-0 text-xs text-(--on-surface-variant)">Comprobante adjunto</p>
-								</div>
-								<a
-									href="#"
-									target="_blank"
-									rel="noopener noreferrer"
-									class="inline-flex h-9 shrink-0 items-center justify-center rounded-full bg-(--primary-container) px-4 text-sm font-semibold text-(--on-primary-container) no-underline"
-									data-cobros-modal-pdf-link
-								>
-									Ver
-								</a>
+						<div
+							class="cobros-receipt-row hidden items-center gap-3 rounded-xl border border-(--shell-border) bg-(--control-surface) px-3.5 py-3"
+							data-cobros-receipt-row
+						>
+							<span
+								class="material-symbols-rounded shrink-0 text-[1.4rem] text-(--primary)"
+								aria-hidden="true"
+								data-cobros-receipt-icon
+							>description</span>
+							<div class="min-w-0 flex-1">
+								<p class="m-0 truncate text-sm font-bold text-(--on-surface)" data-cobros-receipt-name>comprobante</p>
+								<p class="m-0 text-xs text-(--on-surface-variant)">Comprobante adjunto</p>
 							</div>
-							<p class="hidden rounded-2xl border border-dashed border-(--shell-border) px-4 py-5 text-sm text-(--on-surface-variant)" data-cobros-modal-no-image>
-								Sin comprobante adjunto.
-							</p>
+							<button
+								type="button"
+								class="cobros-receipt-open cursor-pointer"
+								title="Ver comprobante"
+								aria-label="Ver comprobante"
+								data-cobros-receipt-open
+							>
+								<span class="material-symbols-rounded" aria-hidden="true">visibility</span>
+							</button>
 						</div>
+						<p class="hidden rounded-xl border border-dashed border-(--shell-border) px-4 py-4 text-sm text-(--on-surface-variant)" data-cobros-modal-no-image>
+							Sin comprobante adjunto.
+						</p>
 
-						<div class="cobros-ticket grid grid-cols-2 gap-x-5 gap-y-4" data-cobros-ticket>
+						<div class="cobros-ticket grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-4" data-cobros-ticket>
 							<div class="grid gap-1 min-w-0">
 								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Cliente</span>
 								<strong class="truncate text-[1.05rem] font-extrabold leading-snug" data-cobros-modal-customer>—</strong>
 							</div>
-							<div class="grid gap-1 min-w-0 text-right">
+							<div class="grid gap-1 min-w-0 sm:text-right">
 								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Monto</span>
 								<strong class="text-[1.15rem] font-extrabold leading-snug tabular-nums" data-cobros-modal-amount>—</strong>
 							</div>
@@ -379,7 +414,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Servicio</span>
 								<strong class="truncate text-[0.98rem] font-bold leading-snug" data-cobros-modal-service>—</strong>
 							</div>
-							<div class="grid gap-1 min-w-0 text-right">
+							<div class="grid gap-1 min-w-0 sm:text-right">
 								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Código HASEL</span>
 								<strong class="truncate font-mono text-[0.92rem] font-bold leading-snug" data-cobros-modal-reference>—</strong>
 							</div>
@@ -522,6 +557,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	[data-cobros-cards].hidden,
 	[data-cobros-results].hidden,
 	.cobros-loading.hidden {
+		display: none !important;
+	}
+
+	/* .app-pagination define display:flex y pisa la utilidad .hidden de Tailwind. */
+	.app-pagination.hidden,
+	.app-pagination[hidden] {
 		display: none !important;
 	}
 
@@ -683,6 +724,52 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		display: grid;
 		gap: 0.35rem;
 	}
+	.cobros-filter-group {
+		display: grid;
+		gap: 0.4rem;
+	}
+	.cobros-filter-group__label {
+		display: block;
+		margin: 0;
+		padding: 0 0.25rem;
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+	.cobros-filter-select {
+		position: relative;
+		display: flex;
+		align-items: center;
+	}
+	.cobros-filter-select select {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 100%;
+		height: 3rem;
+		padding: 0 2.75rem 0 1rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		font-size: 0.95rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	}
+	.cobros-filter-select select:focus {
+		outline: none;
+		border-color: var(--primary);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 12%, transparent);
+	}
+	.cobros-filter-select__chevron {
+		position: absolute;
+		right: 0.85rem;
+		font-size: 1.4rem;
+		color: var(--on-surface-variant);
+		pointer-events: none;
+	}
 	.cobros-period-option {
 		display: flex;
 		align-items: center;
@@ -760,7 +847,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		border-color: color-mix(in srgb, #f43f5e 55%, var(--shell-border));
 	}
 	.cobros-dp-foot-row {
-		justify-content: flex-end;
+		justify-content: space-between;
+		width: 100%;
 	}
 	.cobros-date-field__pick {
 		position: absolute;
@@ -832,7 +920,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 			overflow: hidden;
 		}
 	}
-	.cobros-chip {
+	:global(.cobros-chip) {
 		display: inline-flex;
 		align-items: center;
 		border-radius: 999px;
@@ -840,25 +928,56 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		font-size: 0.75rem;
 		font-weight: 800;
 	}
-	.cobros-chip--pending {
+	:global(.cobros-chip--pending) {
 		background: #fef3c7;
 		color: #92400e;
 	}
-	.cobros-chip--approved {
+	:global(.cobros-chip--approved) {
 		background: #dcfce7;
 		color: #166534;
 	}
-	.cobros-chip--refund {
+	:global(.cobros-chip--refund) {
 		background: #dbeafe;
 		color: #1e40af;
 	}
-	.cobros-chip--sent {
+	:global(.cobros-chip--sent) {
 		background: #e5e7eb;
 		color: #374151;
 	}
-	.cobros-chip--other {
+	:global(.cobros-chip--expired) {
+		background: #ffe4e6;
+		color: #be123c;
+	}
+	:global(.cobros-chip--other) {
 		background: var(--control-surface);
 		color: var(--on-surface-variant);
+	}
+
+	:global(html[data-theme='dark'] .cobros-chip--expired) {
+		background: color-mix(in srgb, #f43f5e 16%, transparent);
+		color: #fb7185;
+	}
+
+	:global(.cobros-view-btn) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.35rem;
+		height: 2.35rem;
+		border: 0;
+		border-radius: 0.75rem;
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
+		color: var(--primary);
+		cursor: pointer;
+		transition: background 140ms ease, color 140ms ease;
+	}
+	:global(.cobros-view-btn:hover) {
+		background: color-mix(in srgb, var(--primary) 18%, transparent);
+	}
+	:global(.cobros-view-btn .material-symbols-rounded) {
+		font-size: 1.25rem;
+		line-height: 1;
+		pointer-events: none;
 	}
 
 	.cobros-modal-actions {
@@ -967,10 +1086,34 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		color: #fcd34d;
 	}
 
-	.cobros-receipt-media {
+	.cobros-receipt-row {
 		align-self: start;
 		width: 100%;
 		height: fit-content;
+	}
+	.cobros-receipt-row.hidden {
+		display: none;
+	}
+	.cobros-receipt-open {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+		cursor: pointer;
+		transition: background 140ms ease;
+	}
+	.cobros-receipt-open:hover {
+		background: color-mix(in srgb, var(--primary) 20%, transparent);
+	}
+	.cobros-receipt-open .material-symbols-rounded {
+		font-size: 1.2rem;
+		line-height: 1;
+		pointer-events: none;
 	}
 
 	.cobros-modal-footer [data-cobros-modal-status]:empty {
