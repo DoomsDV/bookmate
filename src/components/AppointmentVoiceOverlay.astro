@@ -203,8 +203,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		box-sizing: border-box;
 		width: 100vw;
 		max-width: none;
-		height: 60dvh;
-		max-height: 60dvh;
+		height: min(72dvh, calc(100dvh - 1.5rem));
+		max-height: min(72dvh, calc(100dvh - 1.5rem));
 		overflow: visible;
 		overscroll-behavior: contain;
 		color: var(--on-surface);
@@ -219,6 +219,16 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			background: rgba(15, 23, 42, 0.42);
 			backdrop-filter: blur(6px);
 			-webkit-backdrop-filter: blur(6px);
+		}
+
+		.appointment-voice-dialog {
+			max-height: min(72dvh, calc(100dvh - 1.5rem));
+			padding-bottom: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.65rem));
+		}
+
+		.appointment-voice-controls {
+			flex-shrink: 0;
+			padding-bottom: 0.5rem;
 		}
 	}
 
@@ -245,7 +255,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		flex-direction: column;
 		width: 100%;
 		height: 100%;
-		max-height: 60dvh;
+		max-height: min(72dvh, calc(100dvh - 1.5rem));
 		min-height: 0;
 		overflow: hidden;
 		border-radius: 1.8rem 1.8rem 0 0;
@@ -1620,8 +1630,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		.appointment-voice-stage {
 			width: 100%;
 			margin-inline: 0;
-			min-height: 14rem;
-			--magic-height: 9.5rem;
+			min-height: min(11.5rem, 30dvh);
+			--magic-height: 8.75rem;
 		}
 
 		.appointment-voice-ctrl--side {
