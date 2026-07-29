@@ -159,7 +159,14 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		shell?.addEventListener(
 			'click',
 			(event) => {
-				if (event.target === shell) this.close();
+				const mouse = event as MouseEvent;
+				const rect = shell.getBoundingClientRect();
+				const inside =
+					mouse.clientX >= rect.left &&
+					mouse.clientX <= rect.right &&
+					mouse.clientY >= rect.top &&
+					mouse.clientY <= rect.bottom;
+				if (!inside) this.close();
 			},
 			{ signal }
 		);
@@ -228,7 +235,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		}
 
 		shell.classList.add('is-closing');
-		this.#closeTimer = window.setTimeout(finishClose, 100);
+		this.#closeTimer = window.setTimeout(finishClose, 140);
 	}
 
 	private isSessionActive(session: number) {

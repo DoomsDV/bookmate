@@ -214,10 +214,12 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		display: block;
 	}
 
-	.appointment-voice-shell::backdrop {
-		background: rgba(15, 23, 42, 0.42);
-		backdrop-filter: blur(6px);
-		-webkit-backdrop-filter: blur(6px);
+	@media (max-width: 639px) {
+		.appointment-voice-shell::backdrop {
+			background: rgba(15, 23, 42, 0.42);
+			backdrop-filter: blur(6px);
+			-webkit-backdrop-filter: blur(6px);
+		}
 	}
 
 	.appointment-voice-shell[open] {
@@ -277,26 +279,61 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	@media (min-width: 640px) {
-		.appointment-voice-shell {
-			left: 50%;
-			right: auto;
-			bottom: auto;
-			top: 50%;
-			width: min(26.5rem, calc(100vw - 2rem));
-			max-width: min(26.5rem, calc(100vw - 2rem));
-			height: fit-content;
-			max-height: min(88vh, 44rem);
-			transform: translate(-50%, -50%);
+		/* Drawer solo a la derecha (como Servicios): sin capa oscura a la izquierda */
+		dialog.appointment-voice-shell {
+			inset: 0 0 0 auto;
+			left: auto;
+			right: 0;
+			top: 0;
+			bottom: 0;
+			width: min(28rem, 100%);
+			max-width: min(28rem, 100%);
+			height: 100%;
+			max-height: none;
+			transform: none;
+			overflow: hidden;
+			border-radius: 0;
+			background: transparent;
+			box-shadow: none;
+		}
+
+		dialog.appointment-voice-shell[open] {
+			display: flex;
+			flex-direction: column;
+			align-items: stretch;
+			justify-content: stretch;
+			animation: appointment-voice-drawer-in var(--modal-open-duration, 180ms)
+				var(--modal-easing, cubic-bezier(0.2, 0, 0, 1));
+		}
+
+		dialog.appointment-voice-shell.is-closing {
+			animation: appointment-voice-drawer-out 140ms
+				var(--modal-easing, cubic-bezier(0.4, 0, 0.2, 1)) forwards;
+		}
+
+		dialog.appointment-voice-shell[open]::backdrop,
+		dialog.appointment-voice-shell.is-closing::backdrop {
+			animation: none;
 		}
 
 		.appointment-voice-dialog {
-			border-radius: 1.8rem;
-			border-bottom: 1px solid var(--shell-border);
-			box-shadow: 0 24px 80px rgba(15, 23, 42, 0.16);
+			width: 100%;
+			max-width: none;
+			flex: 1 1 auto;
+			height: 100%;
+			min-height: 0;
+			max-height: none;
+			border-radius: 0;
+			border: 0;
+			border-left: 1px solid var(--shell-border);
+			box-shadow: -18px 0 50px rgba(15, 23, 42, 0.16);
 			padding-bottom: 0;
-			height: auto;
-			min-height: min(36rem, 82vh);
-			max-height: min(88vh, 44rem);
+			background: var(--surface-bright);
+			animation: none;
+		}
+
+		.appointment-voice-shell.is-closing .appointment-voice-dialog {
+			animation: none;
 		}
 
 		.appointment-voice-body {
@@ -314,12 +351,20 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			display: none;
 		}
 
-		.appointment-voice-shell[open] {
-			animation-name: appointment-voice-sheet-in-desktop;
+		/* Blur translúcido sin tinte oscuro (igual que Cliente/Servicio) */
+		dialog.appointment-voice-shell::backdrop {
+			background: transparent;
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
 		}
 
-		.appointment-voice-shell.is-closing {
-			animation-name: appointment-voice-sheet-out-desktop;
+		appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-dialog,
+		appointment-voice-overlay[data-voice-state='collapsing'] .appointment-voice-dialog,
+		appointment-voice-overlay[data-voice-state='processing'] .appointment-voice-dialog {
+			border-left-color: color-mix(in srgb, var(--primary) 45%, var(--shell-border));
+			box-shadow:
+				-18px 0 50px rgba(15, 23, 42, 0.18),
+				0 0 48px color-mix(in srgb, #4285f4 14%, transparent);
 		}
 	}
 
@@ -345,25 +390,25 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 	}
 
-	@keyframes appointment-voice-sheet-in-desktop {
+	@keyframes appointment-voice-drawer-in {
 		from {
 			opacity: 0;
-			transform: translate(-50%, calc(-50% + 12px)) scale(0.98);
+			transform: translateX(100%);
 		}
 		to {
 			opacity: 1;
-			transform: translate(-50%, -50%) scale(1);
+			transform: translateX(0);
 		}
 	}
 
-	@keyframes appointment-voice-sheet-out-desktop {
+	@keyframes appointment-voice-drawer-out {
 		from {
 			opacity: 1;
-			transform: translate(-50%, -50%) scale(1);
+			transform: translateX(0);
 		}
 		to {
 			opacity: 0;
-			transform: translate(-50%, calc(-50% + 10px)) scale(0.98);
+			transform: translateX(100%);
 		}
 	}
 
@@ -1317,7 +1362,9 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		.appointment-voice-shell[open],
 		.appointment-voice-shell[open]::backdrop,
 		.appointment-voice-shell.is-closing,
-		.appointment-voice-shell.is-closing::backdrop {
+		.appointment-voice-shell.is-closing::backdrop,
+		.appointment-voice-shell[open] .appointment-voice-dialog,
+		.appointment-voice-shell.is-closing .appointment-voice-dialog {
 			animation: none;
 		}
 
@@ -1491,8 +1538,22 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		background: var(--surface-bright);
 	}
 
-	html[data-theme='dark'] .appointment-voice-shell::backdrop {
-		background: rgba(0, 0, 0, 0.62);
+	@media (max-width: 639px) {
+		html[data-theme='dark'] .appointment-voice-shell::backdrop {
+			background: rgba(0, 0, 0, 0.62);
+		}
+	}
+
+	@media (min-width: 640px) {
+		html[data-theme='dark'] .appointment-voice-dialog {
+			background: var(--surface-bright);
+		}
+
+		html[data-theme='dark'] dialog.appointment-voice-shell::backdrop {
+			background: transparent;
+			backdrop-filter: blur(8px);
+			-webkit-backdrop-filter: blur(8px);
+		}
 	}
 
 	html[data-theme='dark'] .appointment-voice-visual__blob {
