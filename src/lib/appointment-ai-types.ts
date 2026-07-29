@@ -36,6 +36,21 @@ export interface AppointmentVoiceDraftResult {
 	draft: AppointmentAiDraft;
 }
 
+/** Confianza por fila para el borde de color en la vista de escaneo. */
+export type AgendaScanRowConfidence = AppointmentAiConfidence;
+
+/** Una cita detectada en una imagen de agenda manuscrita. */
+export interface AgendaScanRow extends AppointmentAiDraft {
+	/** Confianza de lectura de la fila (verde/ámbar en UI). */
+	row_confidence?: AgendaScanRowConfidence;
+	/** Renglón literal leído por el modelo (para comparar). */
+	raw_text?: string | null;
+}
+
+export interface AgendaScanResult {
+	appointments: AgendaScanRow[];
+}
+
 export const APPOINTMENT_AI_DRAFT_STORAGE_KEY = 'hasel:appointment-ai-draft';
 
 export interface StoredAppointmentAiDraft {

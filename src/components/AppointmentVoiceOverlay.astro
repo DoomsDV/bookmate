@@ -21,7 +21,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 						</div>
 						<div>
 							<h2 class="appointment-voice-title">Cita rápida</h2>
-							<p class="appointment-voice-subtitle">Describe la cita con tu voz</p>
+							<p class="appointment-voice-subtitle" data-voice-overlay-subtitle>Describe la cita con tu voz</p>
 						</div>
 					</div>
 					<div class="appointment-voice-header-actions">
@@ -45,10 +45,53 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 					</div>
 				</div>
 
+				<div class="appointment-voice-tabs" role="tablist" aria-label="Modo de cita rápida">
+					<button
+						type="button"
+						class="appointment-voice-tab is-active"
+						data-voice-overlay-tab="voice"
+						role="tab"
+						aria-selected="true"
+					>
+						<span class="material-symbols-rounded" aria-hidden="true">mic</span>
+						<span>Por voz</span>
+					</button>
+					<button
+						type="button"
+						class="appointment-voice-tab"
+						data-voice-overlay-tab="scan"
+						role="tab"
+						aria-selected="false"
+					>
+						<span class="material-symbols-rounded" aria-hidden="true">photo_camera</span>
+						<span>Escanear agenda</span>
+					</button>
+				</div>
+
 				<div class="appointment-voice-body">
 					<p class="appointment-voice-status" data-voice-overlay-status>
 						Toca el micrófono y describe la cita.
 					</p>
+
+					<div class="appointment-voice-scan" data-voice-overlay-scan>
+						<label class="appointment-voice-scan__dropzone" data-voice-overlay-dropzone>
+							<input
+								type="file"
+								accept="image/*"
+								class="appointment-voice-scan__input"
+								data-voice-overlay-scan-input
+								hidden
+							/>
+							<span class="appointment-voice-scan__icon material-symbols-rounded" aria-hidden="true">
+								add_a_photo
+							</span>
+							<span class="appointment-voice-scan__title">Tomá o subí una foto de tu agenda</span>
+							<span class="appointment-voice-scan__hint">
+								La IA leerá las citas escritas a mano. JPG, PNG o WEBP.
+							</span>
+							<span class="appointment-voice-scan__cta">Elegir imagen</span>
+						</label>
+					</div>
 					<div class="appointment-voice-transcript-wrap hidden" data-voice-overlay-transcript-wrap>
 						<p class="appointment-voice-transcript-label">Escuché</p>
 						<p class="appointment-voice-transcript" data-voice-overlay-transcript></p>
@@ -61,7 +104,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 							<span class="appointment-voice-processing__sparkle material-symbols-rounded">auto_awesome</span>
 							<span class="appointment-voice-processing__spinner"></span>
 						</div>
-						<span class="appointment-voice-processing__shimmer">
+						<span class="appointment-voice-processing__shimmer" data-voice-overlay-processing-label>
 							Transcribiendo y completando datos…
 						</span>
 					</div>
@@ -449,6 +492,45 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		color: var(--on-surface);
 	}
 
+	.appointment-voice-tabs {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		gap: 0.3rem;
+		margin: 0.6rem 1.15rem 0;
+		padding: 0.25rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-variant) 70%, transparent);
+		border: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
+	}
+
+	.appointment-voice-tab {
+		flex: 1;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		padding: 0.5rem 0.6rem;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--on-surface-variant);
+		font-size: 0.85rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+	}
+
+	.appointment-voice-tab .material-symbols-rounded {
+		font-size: 1.1rem;
+	}
+
+	.appointment-voice-tab.is-active {
+		background: var(--surface-bright);
+		color: var(--primary);
+		box-shadow: 0 2px 8px rgba(15, 23, 42, 0.1);
+	}
+
 	.appointment-voice-body {
 		position: relative;
 		z-index: 1;
@@ -461,6 +543,86 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		padding: 0.85rem 1.15rem 1rem;
 		text-align: center;
 		overflow: hidden;
+	}
+
+	/* Escaneo de agenda: zona de captura */
+	.appointment-voice-scan {
+		display: none;
+		width: 100%;
+		flex: 1;
+		min-height: 0;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.appointment-voice-scan__dropzone {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.55rem;
+		width: 100%;
+		max-width: 24rem;
+		min-height: 12rem;
+		padding: 1.5rem 1.25rem;
+		border-radius: 1.35rem;
+		border: 2px dashed color-mix(in srgb, var(--primary) 42%, var(--shell-border));
+		background: color-mix(in srgb, var(--primary) 6%, transparent);
+		color: var(--on-surface-variant);
+		cursor: pointer;
+		text-align: center;
+		transition: border-color 150ms ease, background 150ms ease, transform 150ms ease;
+	}
+
+	.appointment-voice-scan__dropzone:hover,
+	.appointment-voice-scan__dropzone.is-dragover {
+		border-color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+	}
+
+	.appointment-voice-scan__icon {
+		font-size: 2.6rem;
+		color: var(--primary);
+	}
+
+	.appointment-voice-scan__title {
+		font-size: 0.98rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.appointment-voice-scan__hint {
+		font-size: 0.82rem;
+		font-weight: 600;
+		max-width: 20rem;
+		line-height: 1.35;
+	}
+
+	.appointment-voice-scan__cta {
+		margin-top: 0.35rem;
+		padding: 0.5rem 1.1rem;
+		border-radius: 999px;
+		background: var(--primary);
+		color: #f8fbff;
+		font-size: 0.85rem;
+		font-weight: 800;
+	}
+
+	/* Mostrar/ocultar según modo */
+	appointment-voice-overlay[data-voice-mode='scan'] .appointment-voice-status,
+	appointment-voice-overlay[data-voice-mode='scan'] .appointment-voice-stage,
+	appointment-voice-overlay[data-voice-mode='scan'] .appointment-voice-controls,
+	appointment-voice-overlay[data-voice-mode='scan'] .appointment-voice-livebar,
+	appointment-voice-overlay[data-voice-mode='scan'] .appointment-voice-transcript-wrap {
+		display: none !important;
+	}
+
+	appointment-voice-overlay[data-voice-mode='scan'][data-voice-state='idle'] .appointment-voice-scan {
+		display: flex;
+	}
+
+	appointment-voice-overlay[data-voice-mode='scan'] .appointment-voice-controls {
+		display: none !important;
 	}
 
 	.appointment-voice-status {

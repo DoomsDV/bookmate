@@ -9,8 +9,11 @@ import { AppointmentVoiceVisualizer } from './appointment-voice-visualizer';
 
 type VoiceOverlayMode = 'navigate' | 'inline';
 type VoiceUiState = 'idle' | 'recording' | 'paused' | 'collapsing' | 'processing' | 'success';
+type VoiceTab = 'voice' | 'scan';
 
 const MAX_RECORDING_MS = 60_000;
+const MAX_SCAN_IMAGE_BYTES = 12 * 1024 * 1024;
+const ALLOWED_SCAN_TYPES = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
 
 class AppointmentVoiceOverlay extends HTMLElement {
 	#bound = false;
@@ -32,6 +35,8 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#closeTimer: number | null = null;
 	#draftAbortController: AbortController | null = null;
 	#session = 0;
+	#tab: VoiceTab = 'voice';
+	#scanAbortController: AbortController | null = null;
 
 	private static readonly STATUS_LABELS: Record<VoiceUiState, string> = {
 		idle: 'Toca el micrófono y describe la cita.',
@@ -97,6 +102,59 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			{ signal }
 		);
 
+		this.querySelectorAll<HTMLButtonElement>('[data-voice-overlay-tab]').forEach((button) => {
+			button.addEventListener(
+				'click',
+				(event) => {
+					event.preventDefault();
+					const tab = button.dataset.voiceOverlayTab === 'scan' ? 'scan' : 'voice';
+					this.setTab(tab);
+				},
+				{ signal }
+			);
+		});
+
+		const scanInput = this.querySelector<HTMLInputElement>('[data-voice-overlay-scan-input]');
+		scanInput?.addEventListener(
+			'change',
+			() => {
+				const file = scanInput.files?.[0];
+				if (file) void this.handleScanFile(file);
+				scanInput.value = '';
+			},
+			{ signal }
+		);
+
+		const dropzone = this.querySelector<HTMLElement>('[data-voice-overlay-dropzone]');
+		if (dropzone) {
+			['dragenter', 'dragover'].forEach((type) => {
+				dropzone.addEventListener(
+					type,
+					(event) => {
+						event.preventDefault();
+						dropzone.classList.add('is-dragover');
+					},
+					{ signal }
+				);
+			});
+			['dragleave', 'dragend', 'drop'].forEach((type) => {
+				dropzone.addEventListener(
+					type,
+					() => dropzone.classList.remove('is-dragover'),
+					{ signal }
+				);
+			});
+			dropzone.addEventListener(
+				'drop',
+				(event) => {
+					event.preventDefault();
+					const file = (event as DragEvent).dataTransfer?.files?.[0];
+					if (file) void this.handleScanFile(file);
+				},
+				{ signal }
+			);
+		}
+
 		const shell = this.querySelector<HTMLDialogElement>('[data-voice-overlay-shell]');
 		shell?.addEventListener(
 			'click',
@@ -129,6 +187,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.#session += 1;
 		this.#mode = options.mode === 'inline' ? 'inline' : 'navigate';
 		this.stopElapsedTimer();
+		this.setTab('voice');
 		this.setState('idle');
 		this.setError('');
 		this.setTranscript('');
@@ -196,6 +255,124 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	private abortDraftRequest() {
 		this.#draftAbortController?.abort();
 		this.#draftAbortController = null;
+		this.#scanAbortController?.abort();
+		this.#scanAbortController = null;
+	}
+
+	private setTab(tab: VoiceTab) {
+		// Al cambiar de pestaña cortamos cualquier grabación/proceso en curso.
+		if (this.#tab !== tab) {
+			this.cancelAll(false);
+		}
+		this.#tab = tab;
+		this.dataset.voiceMode = tab;
+		this.setError('');
+		this.setTranscript('');
+		this.setState('idle');
+
+		this.querySelectorAll<HTMLButtonElement>('[data-voice-overlay-tab]').forEach((button) => {
+			const isActive = button.dataset.voiceOverlayTab === tab;
+			button.classList.toggle('is-active', isActive);
+			button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+		});
+
+		const subtitle = this.querySelector<HTMLElement>('[data-voice-overlay-subtitle]');
+		if (subtitle) {
+			subtitle.textContent =
+				tab === 'scan' ? 'Escaneá tu agenda escrita a mano' : 'Describe la cita con tu voz';
+		}
+	}
+
+	private setProcessingLabel(text: string) {
+		const label = this.querySelector<HTMLElement>('[data-voice-overlay-processing-label]');
+		if (label) label.textContent = text;
+	}
+
+	private async handleScanFile(file: File) {
+		this.setError('');
+
+		const rawType = String(file.type || '').toLowerCase();
+		const mimeType = rawType === 'image/jpg' ? 'image/jpeg' : rawType;
+		if (!ALLOWED_SCAN_TYPES.has(mimeType)) {
+			this.setError('Formato no soportado. Usá una foto JPG, PNG o WEBP.');
+			return;
+		}
+		if (file.size <= 0) {
+			this.setError('La imagen está vacía.');
+			return;
+		}
+		if (file.size > MAX_SCAN_IMAGE_BYTES) {
+			this.setError('La imagen es muy pesada (máx. 12 MB).');
+			return;
+		}
+
+		const session = this.#session;
+		this.setProcessingLabel('Analizando tu agenda…');
+		this.setState('processing');
+		this.#scanAbortController = new AbortController();
+
+		let imageDataUrl = '';
+		try {
+			imageDataUrl = await this.readFileAsDataUrl(file);
+		} catch {
+			imageDataUrl = '';
+		}
+
+		try {
+			const formData = new FormData();
+			formData.append('image', file, file.name || 'agenda.jpg');
+
+			const response = await fetch('/api/ai/appointments/image-draft', {
+				method: 'POST',
+				body: formData,
+				credentials: 'same-origin',
+				signal: this.#scanAbortController.signal,
+			});
+
+			if (!this.isSessionActive(session)) return;
+
+			const payload = (await response.json()) as {
+				status?: string;
+				message?: string;
+				data?: { appointments?: unknown[] };
+			};
+
+			if (!response.ok || payload.status !== 'success' || !Array.isArray(payload.data?.appointments)) {
+				throw new Error(payload.message || 'No fue posible leer la agenda.');
+			}
+
+			const appointments = payload.data.appointments;
+			if (appointments.length === 0) {
+				if (!this.isSessionActive(session)) return;
+				this.setState('idle');
+				this.setError('No se detectaron citas legibles en la imagen. Probá con otra foto.');
+				return;
+			}
+
+			document.dispatchEvent(
+				new CustomEvent('agenda-scan:success', {
+					detail: { appointments, imageDataUrl },
+				})
+			);
+
+			this.close();
+		} catch (error) {
+			if (error instanceof DOMException && error.name === 'AbortError') return;
+			if (!this.isSessionActive(session)) return;
+			this.setState('idle');
+			this.setError(error instanceof Error ? error.message : 'No fue posible leer la agenda.');
+		} finally {
+			this.#scanAbortController = null;
+		}
+	}
+
+	private readFileAsDataUrl(file: File): Promise<string> {
+		return new Promise((resolve, reject) => {
+			const reader = new FileReader();
+			reader.onload = () => resolve(String(reader.result || ''));
+			reader.onerror = () => reject(reader.error);
+			reader.readAsDataURL(file);
+		});
 	}
 
 	private cancelAll(invalidateSession = true) {
@@ -499,6 +676,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.teardownAudioAnalysis();
 		await this.#visualizer?.playCollapse();
 		if (!this.isSessionActive(session)) return false;
+		this.setProcessingLabel('Transcribiendo y completando datos…');
 		this.setState('processing');
 		return true;
 	}

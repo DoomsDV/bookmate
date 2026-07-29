@@ -2,6 +2,7 @@
 import AppAlert from '../../components/AppAlert.astro';
 import AppointmentModalPanel from '../../components/AppointmentModalPanel.astro';
 import AppointmentVoiceOverlay from '../../components/AppointmentVoiceOverlay.astro';
+import AgendaScanPreview from '../../components/AgendaScanPreview.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
@@ -450,6 +451,7 @@ const googleErrorMessage = hasGoogleError
 	</calendar-manager>
 
 	{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && <AppointmentVoiceOverlay />}
+	{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && <AgendaScanPreview />}
 	<AppAlert />
 </Layout>
 

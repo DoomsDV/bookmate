@@ -550,6 +550,56 @@ export const createAppointmentWithOrds = async (token: string, payload: Appointm
 	};
 };
 
+export interface AppointmentBulkRowResult {
+	index: number;
+	status: 'created' | 'error';
+	id_appointment?: number;
+	message?: string;
+}
+
+export interface AppointmentBulkResult {
+	created: number;
+	failed: number;
+	results: AppointmentBulkRowResult[];
+}
+
+/**
+ * Guardado masivo de citas (escaneo de agenda). Reutiliza el create unitario
+ * fila por fila para conservar toda la validacion/enforcement del backend.
+ * No aborta el lote si una fila falla; devuelve resultado por fila.
+ */
+export const createAppointmentsBulkWithOrds = async (
+	token: string,
+	rows: AppointmentCreatePayload[]
+): Promise<AppointmentBulkResult> => {
+	ensureToken(token);
+
+	if (!Array.isArray(rows) || rows.length === 0) {
+		throw new AppointmentsApiError('No hay citas para guardar.', 400);
+	}
+
+	const results: AppointmentBulkRowResult[] = [];
+	let created = 0;
+	let failed = 0;
+
+	for (let index = 0; index < rows.length; index += 1) {
+		try {
+			const { id_appointment } = await createAppointmentWithOrds(token, rows[index]);
+			created += 1;
+			results.push({ index, status: 'created', id_appointment });
+		} catch (error) {
+			failed += 1;
+			const message =
+				error instanceof AppointmentsApiError
+					? error.message
+					: 'No fue posible crear la cita.';
+			results.push({ index, status: 'error', message });
+		}
+	}
+
+	return { created, failed, results };
+};
+
 export const updateAppointmentWithOrds = async (
 	token: string,
 	appointmentId: number,

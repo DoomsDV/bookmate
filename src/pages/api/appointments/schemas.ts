@@ -122,3 +122,49 @@ export const parseUpdateAppointmentPayload = (source: unknown): AppointmentUpdat
 		customer_phone: parsed.data.customer_phone || '',
 	};
 };
+
+// Bulk (escaneo de agenda): el telefono es OPCIONAL; basta id_customer o customer_name.
+const validateBulkCustomerIdentity = (
+	payload: z.infer<typeof baseAppointmentSchema>,
+	ctx: z.RefinementCtx
+) => {
+	if (payload.id_customer) return;
+	if (!payload.customer_name?.trim()) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ['customer_name'],
+			message: 'El nombre del cliente es obligatorio.',
+		});
+	}
+};
+
+const appointmentBulkRowSchema = baseAppointmentSchema.superRefine((payload, ctx) => {
+	validateBulkCustomerIdentity(payload, ctx);
+	const start = new Date(payload.start_time);
+	const end = new Date(payload.end_time);
+	if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || start >= end) {
+		ctx.addIssue({
+			code: z.ZodIssueCode.custom,
+			path: ['end_time'],
+			message: 'La fecha/hora de inicio debe ser menor que la de fin.',
+		});
+	}
+});
+
+const appointmentBulkSchema = z.object({
+	appointments: z.array(appointmentBulkRowSchema).min(1, 'No hay citas para guardar.').max(60),
+});
+
+export const parseBulkAppointmentsPayload = (source: unknown): AppointmentCreatePayload[] => {
+	const parsed = appointmentBulkSchema.safeParse(source);
+	if (!parsed.success) {
+		throw toValidationError(parsed.error);
+	}
+	return parsed.data.appointments.map((row) => ({
+		...row,
+		customer_name: row.customer_name || '',
+		customer_phone: row.customer_phone || '',
+		// Carga historica/masiva: no notificar por WhatsApp por defecto.
+		notify_customer: row.notify_customer ?? false,
+	}));
+};
