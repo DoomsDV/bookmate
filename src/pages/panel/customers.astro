@@ -1,5 +1,6 @@
 ---
 import AppAlert from '../../components/AppAlert.astro';
+import AppPagination from '../../components/AppPagination.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
@@ -177,29 +178,19 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 										<div class="customers-grid material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-customers-grid></div>
 
-										<div class="app-pagination" data-customers-pagination>
-											<p class="app-pagination__summary" data-customers-page-label>
-												Pagina <strong>1</strong> de <strong>1</strong>
-												<span aria-hidden="true">-</span>
-												Total: <strong>0</strong> clientes
-											</p>
-
-											<nav class="app-pagination__controls" aria-label="Paginacion clientes">
-												<button type="button" class="app-pagination__icon-button" data-customers-prev aria-label="Pagina anterior">
-													<svg viewBox="0 0 24 24" aria-hidden="true">
-														<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
-													</svg>
-												</button>
-
-												<span class="app-pagination__current" aria-current="page" data-customers-current-page>1</span>
-
-												<button type="button" class="app-pagination__icon-button" data-customers-next aria-label="Pagina siguiente">
-													<svg viewBox="0 0 24 24" aria-hidden="true">
-														<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
-													</svg>
-												</button>
-											</nav>
-										</div>
+										<AppPagination
+											currentPage={1}
+											totalPages={1}
+											totalRecords={0}
+											recordLabel="clientes"
+											ariaLabel="Paginacion clientes"
+											rootDataAttr="data-customers-pagination"
+											summaryDataAttr="data-customers-page-label"
+											pagesDataAttr="data-customers-pagination-pages"
+											prevDataAttr="data-customers-prev"
+											nextDataAttr="data-customers-next"
+											pageDataAttr="data-customers-page"
+										/>
 									</div>
 								)
 							}

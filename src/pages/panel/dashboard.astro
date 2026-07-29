@@ -3,6 +3,7 @@ import { ROLES } from '../../config/roles';
 import { FEATURE_FLAGS } from '../../config/feature-flags';
 import SideNav from '../../components/SideNav.astro';
 import AppAlert from '../../components/AppAlert.astro';
+import AppPagination from '../../components/AppPagination.astro';
 import AiChatPanel from '../../components/AiChatPanel.astro';
 import AppointmentVoiceOverlay from '../../components/AppointmentVoiceOverlay.astro';
 import AgendaScanPreview from '../../components/AgendaScanPreview.astro';
@@ -247,6 +248,11 @@ const toPageHref = (page: number) => {
 	nextUrl.hash = 'dashboard-upcoming-appointments';
 	return `${nextUrl.pathname}${nextUrl.search}${nextUrl.hash}`;
 };
+
+const appointmentPageHrefs: Partial<Record<number, string>> = {};
+for (let page = 1; page <= totalAppointmentPages; page += 1) {
+	appointmentPageHrefs[page] = toPageHref(page);
+}
 
 ---
 
@@ -634,53 +640,17 @@ const toPageHref = (page: number) => {
 												)
 											}
 
-											<div class="app-pagination dashboard-appointments-pagination">
-												<p class="app-pagination__summary">
-													Página <strong>{safeCurrentPage}</strong> de <strong>{totalAppointmentPages}</strong>
-													<span aria-hidden="true">-</span>
-													Total: <strong>{appointmentPagination.total_records}</strong> citas
-												</p>
-
-												<nav class="app-pagination__controls" aria-label="Paginación próximas citas">
-													{canPrevPage ? (
-														<a
-															href={toPageHref(safeCurrentPage - 1)}
-															class="app-pagination__icon-button"
-															aria-label="Página anterior"
-														>
-															<svg viewBox="0 0 24 24" aria-hidden="true">
-																<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
-															</svg>
-														</a>
-													) : (
-														<span class="app-pagination__icon-button is-disabled" aria-disabled="true">
-															<svg viewBox="0 0 24 24" aria-hidden="true">
-																<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
-															</svg>
-														</span>
-													)}
-
-													<span class="app-pagination__current" aria-current="page">{safeCurrentPage}</span>
-
-													{canNextPage ? (
-														<a
-															href={toPageHref(safeCurrentPage + 1)}
-															class="app-pagination__icon-button"
-															aria-label="Página siguiente"
-														>
-															<svg viewBox="0 0 24 24" aria-hidden="true">
-																<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
-															</svg>
-														</a>
-													) : (
-														<span class="app-pagination__icon-button is-disabled" aria-disabled="true">
-															<svg viewBox="0 0 24 24" aria-hidden="true">
-																<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
-															</svg>
-														</span>
-													)}
-												</nav>
-											</div>
+											<AppPagination
+												class="dashboard-appointments-pagination"
+												currentPage={safeCurrentPage}
+												totalPages={totalAppointmentPages}
+												totalRecords={appointmentPagination.total_records}
+												recordLabel="citas"
+												ariaLabel="Paginación próximas citas"
+												prevHref={canPrevPage ? toPageHref(safeCurrentPage - 1) : undefined}
+												nextHref={canNextPage ? toPageHref(safeCurrentPage + 1) : undefined}
+												pageHrefs={appointmentPageHrefs}
+											/>
 
 											<a href="/panel/calendar" class="dashboard-appointments-see-all">
 												Ver todas en la agenda
@@ -776,31 +746,33 @@ const toPageHref = (page: number) => {
 	<AppAlert />
 
 	<dialog
-		class="dashboard-ai-modal m-auto w-[min(42rem,calc(100vw-2rem))] max-w-[min(42rem,calc(100vw-2rem))] open:flex open:flex-col overflow-hidden rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] max-md:w-screen max-md:max-w-none max-md:rounded-t-[1.8rem] max-md:rounded-b-none"
+		class="dashboard-ai-modal dashboard-ai-drawer m-0 max-h-none w-full max-w-none border-0 bg-transparent p-0 text-(--on-surface) shadow-none open:flex open:flex-row open:items-stretch open:justify-end"
 		data-ai-summary-modal
 	>
-		<div class="dashboard-ai-modal__mesh" aria-hidden="true"></div>
-		<div class="dashboard-ai-modal__header shrink-0 z-10 px-4 py-4 sm:px-7 sm:py-5">
-			<div class="flex items-start justify-between gap-4">
-				<h2 class="text-[1.12rem] font-bold tracking-tight text-(--on-surface)">
-					✨ Resumen del día
-				</h2>
-				<button
-					type="button"
-					class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)"
-					data-close-ai-summary-modal
-					aria-label="Cerrar resumen"
-				>
-					<span class="material-symbols-rounded text-[1.3rem]">close</span>
-				</button>
+		<div class="dashboard-ai-drawer__panel relative flex h-[100dvh] max-h-[100dvh] w-[min(32rem,100vw)] flex-col overflow-hidden border-l border-(--shell-border) bg-(--surface-bright) shadow-[-18px_0_48px_rgba(0,0,0,0.22)]">
+			<div class="dashboard-ai-modal__mesh" aria-hidden="true"></div>
+			<div class="dashboard-ai-modal__header shrink-0 z-10 px-4 py-4 sm:px-6 sm:py-5">
+				<div class="flex items-start justify-between gap-4">
+					<h2 class="text-[1.12rem] font-bold tracking-tight text-(--on-surface)">
+						✨ Resumen del día
+					</h2>
+					<button
+						type="button"
+						class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)"
+						data-close-ai-summary-modal
+						aria-label="Cerrar resumen"
+					>
+						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+					</button>
+				</div>
 			</div>
-		</div>
-		<div class="dashboard-ai-modal__body overflow-y-auto overscroll-contain min-h-0 px-4 pb-6 pt-1 sm:px-7 sm:pb-7">
-			<div
-				class="dashboard-ai-sections dashboard-ai-sections--modal"
-				data-ai-summary-modal-sections
-				aria-live="polite"
-			></div>
+			<div class="dashboard-ai-modal__body overflow-y-auto overscroll-contain min-h-0 flex-1 px-4 pb-6 pt-1 sm:px-6 sm:pb-7">
+				<div
+					class="dashboard-ai-sections dashboard-ai-sections--modal"
+					data-ai-summary-modal-sections
+					aria-live="polite"
+				></div>
+			</div>
 		</div>
 	</dialog>
 </Layout>
@@ -2131,9 +2103,18 @@ const toPageHref = (page: number) => {
 
 	dialog[data-ai-summary-modal].dashboard-ai-modal {
 		position: fixed;
+		inset: 0;
 		margin: 0;
 		padding: 0;
-		background: var(--surface-bright);
+		background: transparent;
+	}
+
+	dialog[data-ai-summary-modal]:not([open]) {
+		display: none;
+	}
+
+	.dashboard-ai-drawer__panel {
+		will-change: transform;
 	}
 
 	.dashboard-ai-modal__mesh {
@@ -2293,7 +2274,7 @@ const toPageHref = (page: number) => {
 	}
 
 	html[data-theme='dark'] dialog[data-ai-summary-modal].dashboard-ai-modal {
-		background: var(--surface-bright);
+		background: transparent;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__icon {
@@ -3889,56 +3870,65 @@ const toPageHref = (page: number) => {
 
 	dialog[data-ai-summary-modal] {
 		position: fixed;
-		top: auto;
-		right: 0;
-		bottom: 0;
-		left: 0;
+		inset: 0;
+		margin: 0;
+		padding: 0;
 		width: 100%;
 		max-width: 100%;
-		height: min(78dvh, 40rem);
-		max-height: 85dvh;
+		height: 100dvh;
+		max-height: 100dvh;
 		border: none;
-		animation: ai-summary-modal-in var(--modal-open-duration, 220ms) var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
+		background: transparent;
+	}
+
+	dialog[data-ai-summary-modal][open] .dashboard-ai-drawer__panel {
+		animation: ai-summary-drawer-in var(--modal-open-duration, 220ms)
+			var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
 	}
 
 	dialog[data-ai-summary-modal]::backdrop {
 		background: rgba(15, 23, 42, 0.42);
-		animation: ai-summary-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
+		backdrop-filter: blur(4px);
+		-webkit-backdrop-filter: blur(4px);
+		animation: ai-summary-backdrop-in var(--modal-open-duration, 220ms)
+			var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
 	}
 
 	html[data-theme='dark'] dialog[data-ai-summary-modal]::backdrop {
 		background: rgba(0, 0, 0, 0.58);
 	}
 
-	dialog[data-ai-summary-modal].is-closing {
-		animation: ai-summary-modal-out var(--modal-close-duration, 140ms) var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+	dialog[data-ai-summary-modal].is-closing .dashboard-ai-drawer__panel {
+		animation: ai-summary-drawer-out var(--modal-close-duration, 140ms)
+			var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
 	}
 
 	dialog[data-ai-summary-modal].is-closing::backdrop {
-		animation: ai-summary-backdrop-out var(--modal-close-duration, 140ms) var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+		animation: ai-summary-backdrop-out var(--modal-close-duration, 140ms)
+			var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
 	}
 
-	@keyframes ai-summary-modal-in {
+	@keyframes ai-summary-drawer-in {
 		from {
 			opacity: 0;
-			transform: translateY(100%);
+			transform: translateX(100%);
 		}
 
 		to {
 			opacity: 1;
-			transform: translateY(0);
+			transform: translateX(0);
 		}
 	}
 
-	@keyframes ai-summary-modal-out {
+	@keyframes ai-summary-drawer-out {
 		from {
 			opacity: 1;
-			transform: translateY(0);
+			transform: translateX(0);
 		}
 
 		to {
 			opacity: 0;
-			transform: translateY(100%);
+			transform: translateX(100%);
 		}
 	}
 
@@ -3952,44 +3942,8 @@ const toPageHref = (page: number) => {
 		to { opacity: 0; }
 	}
 
-	@media (min-width: 640px) {
-		dialog[data-ai-summary-modal] {
-			top: 50%;
-			right: auto;
-			bottom: auto;
-			left: 50%;
-			width: min(42rem, calc(100vw - 2rem));
-			max-width: min(42rem, calc(100vw - 2rem));
-			height: min(78dvh, 40rem);
-			max-height: 85vh;
-			border: 1px solid var(--shell-border);
-			border-radius: 1.8rem;
-			transform: translate(-50%, -50%);
-		}
-
-		@keyframes ai-summary-modal-in {
-			from {
-				opacity: 0;
-				transform: translate(-50%, calc(-50% + 10px)) scale(0.98);
-			}
-
-			to {
-				opacity: 1;
-				transform: translate(-50%, -50%) scale(1);
-			}
-		}
-
-		@keyframes ai-summary-modal-out {
-			from {
-				opacity: 1;
-				transform: translate(-50%, -50%) scale(1);
-			}
-
-			to {
-				opacity: 0;
-				transform: translate(-50%, calc(-50% + 8px)) scale(0.98);
-			}
-		}
+	html[data-theme='dark'] .dashboard-ai-drawer__panel {
+		box-shadow: -18px 0 48px rgba(0, 0, 0, 0.45);
 	}
 
 	html[data-theme='dark'] .dashboard-ai-preview-highlights li {
@@ -4468,11 +4422,6 @@ const toPageHref = (page: number) => {
 
 	.dashboard-appointments-pagination {
 		margin-top: 1.25rem;
-		border: 0;
-		box-shadow: none;
-		background: transparent;
-		padding: 0.25rem 0 0;
-		border-radius: 0;
 	}
 
 	.dashboard-week-glance {

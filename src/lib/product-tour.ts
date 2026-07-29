@@ -271,6 +271,27 @@ function isPopoverOffscreen(popover: HTMLElement) {
 	);
 }
 
+function isPopoverMispositioned(popover: HTMLElement, activeElement: Element | null) {
+	if (isPopoverOffscreen(popover)) return true;
+	if (!(activeElement instanceof HTMLElement)) return false;
+
+	const pop = popover.getBoundingClientRect();
+	const target = activeElement.getBoundingClientRect();
+
+	// driver.js a veces deja el popover en la esquina superior izquierda.
+	if (pop.top < 28 && pop.left < 28 && (target.top > 96 || target.left > 96)) {
+		return true;
+	}
+
+	const popCenterX = pop.left + pop.width / 2;
+	const popCenterY = pop.top + pop.height / 2;
+	const targetCenterX = target.left + target.width / 2;
+	const targetCenterY = target.top + target.height / 2;
+	const distance = Math.hypot(popCenterX - targetCenterX, popCenterY - targetCenterY);
+
+	return distance > 240;
+}
+
 function pinPopoverNearActiveElement(popover: HTMLElement, side: 'top' | 'bottom') {
 	const active = document.querySelector('.driver-active-element');
 	if (!(active instanceof HTMLElement)) return;
@@ -323,7 +344,12 @@ function syncTourLayout(
 	popover.style.display = 'block';
 	popover.style.visibility = 'visible';
 
-	if (isPopoverOffscreen(popover)) {
+	const activeElement = document.querySelector('.driver-active-element');
+	const shouldPin =
+		activeTourUsesTopLayerShell ||
+		isPopoverMispositioned(popover, activeElement);
+
+	if (shouldPin && activeElement instanceof HTMLElement) {
 		pinPopoverNearActiveElement(popover, preferredSide);
 	}
 }

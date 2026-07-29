@@ -3,6 +3,7 @@ import {
 	closeFilterPopoverSheet,
 	toggleFilterPopoverSheet,
 } from '../lib/panel-filter-popover';
+import { updateAppPaginationDom } from '../lib/pagination';
 
 type LocationItem = {
 	id_location: number;
@@ -196,34 +197,17 @@ const updatePagination = (meta: LocationsListMeta) => {
 	const root = getListRoot();
 	if (!root) return;
 
-	const totalPages = Math.max(1, Number(meta.total_pages) || 1);
-	const currentPage = Math.min(Math.max(1, Number(meta.current_page) || 1), totalPages);
-	const totalRecords = Number(meta.total_records) || 0;
-
-	const summary = root.querySelector('[data-locations-pagination-summary]');
-	if (summary) {
-		summary.innerHTML = `
-			Página <strong>${currentPage}</strong> de <strong>${totalPages}</strong>
-			<span aria-hidden="true">-</span>
-			Total: <strong>${totalRecords}</strong> sucursales
-		`;
-	}
-
-	const currentLabel = root.querySelector('[data-locations-pagination-current]');
-	if (currentLabel) currentLabel.textContent = String(currentPage);
-
-	const prevBtn = root.querySelector<HTMLButtonElement>('[data-locations-page-prev]');
-	const nextBtn = root.querySelector<HTMLButtonElement>('[data-locations-page-next]');
-	if (prevBtn) {
-		prevBtn.disabled = currentPage <= 1;
-		prevBtn.classList.toggle('is-disabled', currentPage <= 1);
-		prevBtn.dataset.page = String(Math.max(1, currentPage - 1));
-	}
-	if (nextBtn) {
-		nextBtn.disabled = currentPage >= totalPages;
-		nextBtn.classList.toggle('is-disabled', currentPage >= totalPages);
-		nextBtn.dataset.page = String(Math.min(totalPages, currentPage + 1));
-	}
+	updateAppPaginationDom(root, {
+		currentPage: Number(meta.current_page) || 1,
+		totalPages: Number(meta.total_pages) || 1,
+		totalRecords: Number(meta.total_records) || 0,
+		recordLabel: 'sucursales',
+		summarySelector: '[data-locations-pagination-summary]',
+		pagesSelector: '[data-locations-pagination-pages]',
+		prevSelector: '[data-locations-page-prev]',
+		nextSelector: '[data-locations-page-next]',
+		pageDataAttr: 'data-locations-page',
+	});
 };
 
 let loadRequestId = 0;
@@ -329,10 +313,10 @@ export const initLocationsListControls = () => {
 		}
 
 		const pageBtn = target.closest<HTMLButtonElement>(
-			'[data-locations-page-prev], [data-locations-page-next]'
+			'[data-locations-page-prev], [data-locations-page-next], [data-locations-page]'
 		);
 		if (pageBtn && !pageBtn.disabled && !isLoading) {
-			const nextPage = Number(pageBtn.dataset.page || '1');
+			const nextPage = Number(pageBtn.dataset.page || pageBtn.dataset.locationsPage || '1');
 			if (!Number.isInteger(nextPage) || nextPage <= 0) return;
 			const current = readStateFromUrl();
 			if (nextPage === current.page) return;

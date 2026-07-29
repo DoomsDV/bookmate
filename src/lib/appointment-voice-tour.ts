@@ -35,6 +35,7 @@ export function showAppointmentVoiceTour() {
 		persistCompletion: false,
 		useTopLayerShell: true,
 		hostSelector: VOICE_SHELL_SELECTOR,
+		scrollIntoView: { rootSelector: '.appointment-voice-body' },
 		stagePadding: 10,
 		stageRadius: 999,
 	});

@@ -3,6 +3,7 @@ import {
 	closeFilterPopoverSheet,
 	toggleFilterPopoverSheet,
 } from '../lib/panel-filter-popover';
+import { updateAppPaginationDom } from '../lib/pagination';
 
 type ProfessionalItem = {
 	id_professional: number;
@@ -270,34 +271,17 @@ const updatePagination = (meta: ProfessionalsListMeta) => {
 	const root = getListRoot();
 	if (!root) return;
 
-	const totalPages = Math.max(1, Number(meta.total_pages) || 1);
-	const currentPage = Math.min(Math.max(1, Number(meta.current_page) || 1), totalPages);
-	const totalRecords = Number(meta.total_records) || 0;
-
-	const summary = root.querySelector('[data-professionals-pagination-summary]');
-	if (summary) {
-		summary.innerHTML = `
-			Página <strong>${currentPage}</strong> de <strong>${totalPages}</strong>
-			<span aria-hidden="true">-</span>
-			Total: <strong>${totalRecords}</strong> profesionales
-		`;
-	}
-
-	const currentLabel = root.querySelector('[data-professionals-pagination-current]');
-	if (currentLabel) currentLabel.textContent = String(currentPage);
-
-	const prevBtn = root.querySelector<HTMLButtonElement>('[data-professionals-page-prev]');
-	const nextBtn = root.querySelector<HTMLButtonElement>('[data-professionals-page-next]');
-	if (prevBtn) {
-		prevBtn.disabled = currentPage <= 1;
-		prevBtn.classList.toggle('is-disabled', currentPage <= 1);
-		prevBtn.dataset.page = String(Math.max(1, currentPage - 1));
-	}
-	if (nextBtn) {
-		nextBtn.disabled = currentPage >= totalPages;
-		nextBtn.classList.toggle('is-disabled', currentPage >= totalPages);
-		nextBtn.dataset.page = String(Math.min(totalPages, currentPage + 1));
-	}
+	updateAppPaginationDom(root, {
+		currentPage: Number(meta.current_page) || 1,
+		totalPages: Number(meta.total_pages) || 1,
+		totalRecords: Number(meta.total_records) || 0,
+		recordLabel: 'profesionales',
+		summarySelector: '[data-professionals-pagination-summary]',
+		pagesSelector: '[data-professionals-pagination-pages]',
+		prevSelector: '[data-professionals-page-prev]',
+		nextSelector: '[data-professionals-page-next]',
+		pageDataAttr: 'data-professionals-page',
+	});
 };
 
 let searchDebounceTimer: number | null = null;
@@ -444,10 +428,12 @@ export const initProfessionalsListControls = () => {
 		}
 
 		const pageBtn = target.closest<HTMLButtonElement>(
-			'[data-professionals-page-prev], [data-professionals-page-next]'
+			'[data-professionals-page-prev], [data-professionals-page-next], [data-professionals-page]'
 		);
 		if (pageBtn && !pageBtn.disabled && !isLoading) {
-			const nextPage = Number(pageBtn.dataset.page || '1');
+			const nextPage = Number(
+				pageBtn.dataset.page || pageBtn.getAttribute('data-professionals-page') || '1'
+			);
 			if (!Number.isInteger(nextPage) || nextPage <= 0) return;
 			const current = readStateFromUrl();
 			if (nextPage === current.page) return;

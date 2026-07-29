@@ -48,8 +48,6 @@ if (!token) {
 
 const totalPages = Math.max(1, pagination.total_pages);
 const safeCurrentPage = Math.min(Math.max(1, pagination.current_page), totalPages);
-const canPrevPage = safeCurrentPage > 1;
-const canNextPage = safeCurrentPage < totalPages;
 ---
 
 {
@@ -61,51 +59,10 @@ const canNextPage = safeCurrentPage < totalPages;
 				locations={locations}
 				showCreateAction={canManageLocations}
 				isActiveFilter={isActiveFilter}
+				currentPage={safeCurrentPage}
+				totalPages={totalPages}
+				totalRecords={pagination.total_records}
 			/>
-
-			<div class="app-pagination" data-locations-pagination>
-				<p class="app-pagination__summary" data-locations-pagination-summary>
-					Página <strong>{safeCurrentPage}</strong> de <strong>{totalPages}</strong>
-					<span aria-hidden="true">-</span>
-					Total: <strong>{pagination.total_records}</strong> sucursales
-				</p>
-
-				<nav class="app-pagination__controls" aria-label="Paginación sucursales">
-					<button
-						type="button"
-						class:list={['app-pagination__icon-button', !canPrevPage && 'is-disabled']}
-						data-locations-page-prev
-						data-page={Math.max(1, safeCurrentPage - 1)}
-						aria-label="Página anterior"
-						disabled={!canPrevPage}
-					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
-						</svg>
-					</button>
-
-					<span
-						class="app-pagination__current"
-						aria-current="page"
-						data-locations-pagination-current
-					>
-						{safeCurrentPage}
-					</span>
-
-					<button
-						type="button"
-						class:list={['app-pagination__icon-button', !canNextPage && 'is-disabled']}
-						data-locations-page-next
-						data-page={Math.min(totalPages, safeCurrentPage + 1)}
-						aria-label="Página siguiente"
-						disabled={!canNextPage}
-					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
-						</svg>
-					</button>
-				</nav>
-			</div>
 		</div>
 	)
 }

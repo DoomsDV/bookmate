@@ -1,0 +1,173 @@
+---
+import { buildPaginationItems } from '../lib/pagination';
+
+interface Props {
+	currentPage?: number;
+	totalPages?: number;
+	totalRecords?: number;
+	recordLabel: string;
+	ariaLabel: string;
+	class?: string;
+	hidden?: boolean;
+	prevHref?: string;
+	nextHref?: string;
+	pageHrefs?: Partial<Record<number, string>>;
+	rootDataAttr?: string;
+	summaryDataAttr?: string;
+	pagesDataAttr?: string;
+	prevDataAttr?: string;
+	nextDataAttr?: string;
+	pageDataAttr?: string;
+}
+
+const {
+	currentPage = 1,
+	totalPages = 1,
+	totalRecords = 0,
+	recordLabel,
+	ariaLabel,
+	class: className = '',
+	hidden = false,
+	prevHref,
+	nextHref,
+	pageHrefs = {},
+	rootDataAttr,
+	summaryDataAttr,
+	pagesDataAttr,
+	prevDataAttr,
+	nextDataAttr,
+	pageDataAttr,
+} = Astro.props;
+
+const safeTotalPages = Math.max(1, totalPages);
+const safeCurrentPage = Math.min(Math.max(1, currentPage), safeTotalPages);
+const canPrevPage = safeCurrentPage > 1;
+const canNextPage = safeCurrentPage < safeTotalPages;
+const pageItems = buildPaginationItems(safeCurrentPage, safeTotalPages);
+const useLinks = Boolean(prevHref || nextHref || Object.keys(pageHrefs).length > 0);
+
+const rootAttrs = rootDataAttr ? { [rootDataAttr]: '' } : {};
+const summaryAttrs = summaryDataAttr ? { [summaryDataAttr]: '' } : {};
+const pagesAttrs = pagesDataAttr ? { [pagesDataAttr]: '' } : {};
+---
+
+<nav
+	class:list={['app-pagination', className, hidden && 'hidden']}
+	{...rootAttrs}
+	aria-label={ariaLabel}
+>
+	<div class="app-pagination__pill">
+		<p class="app-pagination__summary" {...summaryAttrs}>
+			Página <strong>{safeCurrentPage}</strong> de <strong>{safeTotalPages}</strong>
+			<span aria-hidden="true">-</span>
+			Total: <strong>{totalRecords}</strong>
+			{recordLabel}
+		</p>
+
+		<div class="app-pagination__controls">
+			{
+				useLinks ? (
+					canPrevPage && prevHref ? (
+						<a class="app-pagination__arrow" href={prevHref} aria-label="Página anterior">
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
+							</svg>
+						</a>
+					) : (
+						<span class="app-pagination__arrow is-disabled" aria-disabled="true">
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
+							</svg>
+						</span>
+					)
+				) : (
+					<button
+						type="button"
+						class:list={['app-pagination__arrow', !canPrevPage && 'is-disabled']}
+						{...(prevDataAttr ? { [prevDataAttr]: '' } : {})}
+						data-page={Math.max(1, safeCurrentPage - 1)}
+						aria-label="Página anterior"
+						disabled={!canPrevPage}
+					>
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
+						</svg>
+					</button>
+				)
+			}
+
+			<div class="app-pagination__pages" {...pagesAttrs}>
+				{
+					pageItems.map((item) => {
+						if (item === 'ellipsis') {
+							return (
+								<span class="app-pagination__ellipsis" aria-hidden="true">
+									…
+								</span>
+							);
+						}
+
+						if (item === safeCurrentPage) {
+							return (
+								<span class="app-pagination__page is-active" aria-current="page">
+									{item}
+								</span>
+							);
+						}
+
+						const pageHref = pageHrefs[item];
+						if (pageHref) {
+							return (
+								<a class="app-pagination__page" href={pageHref} aria-label={`Página ${item}`}>
+									{item}
+								</a>
+							);
+						}
+
+						return (
+							<button
+								type="button"
+								class="app-pagination__page"
+								{...(pageDataAttr ? { [pageDataAttr]: item } : {})}
+								aria-label={`Página ${item}`}
+							>
+								{item}
+							</button>
+						);
+					})
+				}
+			</div>
+
+			{
+				useLinks ? (
+					canNextPage && nextHref ? (
+						<a class="app-pagination__arrow" href={nextHref} aria-label="Página siguiente">
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+							</svg>
+						</a>
+					) : (
+						<span class="app-pagination__arrow is-disabled" aria-disabled="true">
+							<svg viewBox="0 0 24 24" aria-hidden="true">
+								<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+							</svg>
+						</span>
+					)
+				) : (
+					<button
+						type="button"
+						class:list={['app-pagination__arrow', !canNextPage && 'is-disabled']}
+						{...(nextDataAttr ? { [nextDataAttr]: '' } : {})}
+						data-page={Math.min(safeTotalPages, safeCurrentPage + 1)}
+						aria-label="Página siguiente"
+						disabled={!canNextPage}
+					>
+						<svg viewBox="0 0 24 24" aria-hidden="true">
+							<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
+						</svg>
+					</button>
+				)
+			}
+		</div>
+	</div>
+</nav>

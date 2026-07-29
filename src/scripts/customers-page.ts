@@ -4,6 +4,7 @@ import type {
 	CustomerProfile,
 	CustomerTopService,
 } from '../lib/customers';
+import { updateAppPaginationDom } from '../lib/pagination';
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 type ProfessionalLov = { id_professional: number; display_name: string };
 type Customer = {
@@ -63,7 +64,6 @@ class CustomerManager extends HTMLElement {
 	private emptyCopyNode: HTMLElement | null = null;
 	private emptyIconNode: HTMLElement | null = null;
 	private pageLabelNode: HTMLElement | null = null;
-	private currentPageNode: HTMLElement | null = null;
 	private paginationNode: HTMLElement | null = null;
 	private prevButton: HTMLButtonElement | null = null;
 	private nextButton: HTMLButtonElement | null = null;
@@ -118,7 +118,6 @@ class CustomerManager extends HTMLElement {
 		this.emptyCopyNode = this.querySelector<HTMLElement>('[data-customers-empty-copy]');
 		this.emptyIconNode = this.querySelector<HTMLElement>('[data-customers-empty-icon]');
 		this.pageLabelNode = this.querySelector<HTMLElement>('[data-customers-page-label]');
-		this.currentPageNode = this.querySelector<HTMLElement>('[data-customers-current-page]');
 		this.paginationNode = this.querySelector<HTMLElement>('[data-customers-pagination]');
 		this.prevButton = this.querySelector<HTMLButtonElement>('[data-customers-prev]');
 		this.nextButton = this.querySelector<HTMLButtonElement>('[data-customers-next]');
@@ -194,6 +193,7 @@ class CustomerManager extends HTMLElement {
 		document.addEventListener('pointerdown', this.handleProFilterOutsidePointer, { signal, capture: true });
 		this.prevButton?.addEventListener('click', this.handlePrevPage, { signal });
 		this.nextButton?.addEventListener('click', this.handleNextPage, { signal });
+		this.paginationNode?.addEventListener('click', this.handlePaginationClick, { signal });
 		this.gridNode.addEventListener('click', this.handleGridClick, { signal });
 		this.gridNode.addEventListener('keydown', this.handleGridKeydown, { signal });
 
@@ -438,6 +438,19 @@ class CustomerManager extends HTMLElement {
 		void this.loadCustomers();
 	};
 
+	private handlePaginationClick = (event: Event) => {
+		const target = event.target;
+		if (!(target instanceof Element) || this.isLoading) return;
+
+		const pageBtn = target.closest<HTMLButtonElement>('[data-customers-page]');
+		if (!pageBtn) return;
+
+		const nextPage = Number(pageBtn.getAttribute('data-customers-page') || '1');
+		if (!Number.isInteger(nextPage) || nextPage <= 0 || nextPage === this.page) return;
+		this.page = nextPage;
+		void this.loadCustomers();
+	};
+
 	private handleGridClick = (event: Event) => {
 		const target = event.target;
 		if (!(target instanceof Element)) return;
@@ -585,6 +598,20 @@ class CustomerManager extends HTMLElement {
 		}
 		this.updateProFilterUi();
 
+		if (this.pageLabelNode && this.paginationNode) {
+			updateAppPaginationDom(this.paginationNode, {
+				currentPage: this.page,
+				totalPages: Math.max(1, this.totalPages),
+				totalRecords: this.totalRecords,
+				recordLabel: 'clientes',
+				summarySelector: '[data-customers-page-label]',
+				pagesSelector: '[data-customers-pagination-pages]',
+				prevSelector: '[data-customers-prev]',
+				nextSelector: '[data-customers-next]',
+				pageDataAttr: 'data-customers-page',
+			});
+		}
+
 		if (this.prevButton) this.prevButton.disabled = this.isLoading || this.page <= 1;
 		if (this.nextButton) {
 			this.nextButton.disabled =
@@ -592,12 +619,6 @@ class CustomerManager extends HTMLElement {
 		}
 		this.prevButton?.classList.toggle('is-disabled', Boolean(this.prevButton.disabled));
 		this.nextButton?.classList.toggle('is-disabled', Boolean(this.nextButton.disabled));
-
-		if (this.pageLabelNode) {
-			const totalPages = Math.max(1, this.totalPages);
-			this.pageLabelNode.innerHTML = `Pagina <strong>${this.page}</strong> de <strong>${totalPages}</strong> <span aria-hidden="true">-</span> Total: <strong>${this.totalRecords}</strong> clientes`;
-		}
-		if (this.currentPageNode) this.currentPageNode.textContent = String(this.page);
 	}
 
 	private updateEmptyStateCopy() {

@@ -1,6 +1,7 @@
 ---
 import FlashMessage from './FlashMessage.astro';
 import ServicesGrid from './ServicesGrid.astro';
+import AppPagination from './AppPagination.astro';
 import {
 	ServicesApiError,
 	ServicesClient,
@@ -54,8 +55,6 @@ if (!token) {
 
 const totalPages = Math.max(1, pagination.total_pages);
 const safeCurrentPage = Math.min(Math.max(1, pagination.current_page), totalPages);
-const canPrevPage = safeCurrentPage > 1;
-const canNextPage = safeCurrentPage < totalPages;
 ---
 
 {
@@ -71,45 +70,19 @@ const canNextPage = safeCurrentPage < totalPages;
 				totalRecords={pagination.total_records}
 			/>
 
-			<div class="app-pagination" data-services-pagination>
-				<p class="app-pagination__summary" data-services-pagination-summary>
-					Página <strong>{safeCurrentPage}</strong> de <strong>{totalPages}</strong>
-					<span aria-hidden="true">-</span>
-					Total: <strong>{pagination.total_records}</strong> servicios
-				</p>
-
-				<nav class="app-pagination__controls" aria-label="Paginacion servicios">
-					<button
-						type="button"
-						class:list={['app-pagination__icon-button', !canPrevPage && 'is-disabled']}
-						data-services-page-prev
-						data-page={Math.max(1, safeCurrentPage - 1)}
-						aria-label="Página anterior"
-						disabled={!canPrevPage}
-					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z"></path>
-						</svg>
-					</button>
-
-					<span class="app-pagination__current" aria-current="page" data-services-pagination-current>
-						{safeCurrentPage}
-					</span>
-
-					<button
-						type="button"
-						class:list={['app-pagination__icon-button', !canNextPage && 'is-disabled']}
-						data-services-page-next
-						data-page={Math.min(totalPages, safeCurrentPage + 1)}
-						aria-label="Página siguiente"
-						disabled={!canNextPage}
-					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z"></path>
-						</svg>
-					</button>
-				</nav>
-			</div>
+			<AppPagination
+				currentPage={safeCurrentPage}
+				totalPages={totalPages}
+				totalRecords={pagination.total_records}
+				recordLabel="servicios"
+				ariaLabel="Paginacion servicios"
+				rootDataAttr="data-services-pagination"
+				summaryDataAttr="data-services-pagination-summary"
+				pagesDataAttr="data-services-pagination-pages"
+				prevDataAttr="data-services-page-prev"
+				nextDataAttr="data-services-page-next"
+				pageDataAttr="data-services-page"
+			/>
 		</div>
 	)
 }

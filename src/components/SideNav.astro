@@ -119,27 +119,27 @@ const planFooterActive = activePath === "/panel/plan";
 	})();
 </script>
 
-<div
-	class="pointer-events-none fixed inset-0 z-50 flex items-end justify-center lg:hidden"
-	data-side-nav-shell
->
 	<div
-		class="absolute inset-0 bg-black/45 opacity-0"
+		class="pointer-events-none fixed inset-0 z-50 flex items-end justify-center lg:hidden"
+		data-side-nav-shell
+	>
+	<div
+		class="absolute inset-0 bg-black/55 opacity-0 backdrop-blur-[2px]"
 		data-side-nav-backdrop
 	>
 	</div>
 
 	<aside
 		id="app-side-nav"
-		class="more-sheet relative flex h-auto max-h-[min(90dvh,52rem)] w-full translate-y-full flex-col overflow-hidden rounded-t-[1.75rem] border border-b-0 border-(--shell-border) bg-(--sidebar-surface) shadow-[0_-12px_40px_rgba(0,0,0,0.32)]"
+		class="more-sheet relative flex h-auto max-h-[min(90dvh,52rem)] w-full translate-y-full flex-col overflow-hidden rounded-t-[1.5rem] border border-b-0 border-(--shell-border) bg-(--sidebar-surface) shadow-[0_-20px_60px_rgba(0,0,0,0.45)]"
 		data-side-nav
 		role="dialog"
 		aria-modal="true"
 		aria-label="Más opciones"
 	>
-		<div class="mx-auto mt-2.5 h-1 w-11 shrink-0 rounded-full bg-(--on-surface-variant)/30" aria-hidden="true"></div>
+		<div class="more-sheet__handle" aria-hidden="true"></div>
 
-		<div class="shell-header-zone sidebar-account-header shrink-0 px-4 pt-3 pb-2 sm:px-5">
+		<div class="more-sheet__header shrink-0 px-4 pt-1 pb-3 sm:px-5">
 			<button
 				type="button"
 				class="more-sheet__org sidebar-account-row sidebar-account-trigger w-full min-w-0"
@@ -149,7 +149,7 @@ const planFooterActive = activePath === "/panel/plan";
 			>
 				<div
 					class:list={[
-						"workspace-avatar flex size-12 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-bold",
+						"more-sheet__org-avatar workspace-avatar flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-2xl text-base font-bold",
 						workspaceLogoUrl ? "workspace-avatar--has-logo" : "workspace-avatar--empty",
 					]}
 					data-workspace-avatar
@@ -169,21 +169,19 @@ const planFooterActive = activePath === "/panel/plan";
 						) : null
 					}
 				</div>
-				<div class="sidebar-account-meta" data-sidebar-brand-text>
-					<div class="sidebar-account-title-row">
-						<p class="workspace-account-name text-[1.05rem] leading-snug font-bold">
-							{workspaceName}
-						</p>
-					</div>
+				<div class="sidebar-account-meta min-w-0" data-sidebar-brand-text>
+					<p class="workspace-account-name truncate text-[1rem] leading-snug font-bold">
+						{workspaceName}
+					</p>
 				</div>
-				<span class="material-symbols-rounded sidebar-account-chevron" aria-hidden="true">
+				<span class="material-symbols-rounded more-sheet__org-chevron" aria-hidden="true">
 					unfold_more
 				</span>
 			</button>
 		</div>
 
-		<div class="flex min-h-0 flex-col px-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-5">
-			<nav aria-label="Más opciones" class="more-sheet__nav min-h-0 overflow-y-auto overscroll-contain">
+		<div class="more-sheet__body flex min-h-0 flex-1 flex-col px-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-4">
+			<nav aria-label="Más opciones" class="more-sheet__nav min-h-0 flex-1 overflow-y-auto overscroll-contain">
 				<ul class="more-sheet__list">
 					{
 						mobileSheetPrimaryItems.map((item) => (
@@ -276,7 +274,9 @@ const planFooterActive = activePath === "/panel/plan";
 				</ul>
 			</nav>
 
-			<div class="more-sheet__footer shrink-0 pt-3">
+			<div class="more-sheet__divider" role="presentation" aria-hidden="true"></div>
+
+			<div class="more-sheet__footer shrink-0 pt-2">
 				{
 					showPlanFooter ? (
 						<a
@@ -502,45 +502,91 @@ const planFooterActive = activePath === "/panel/plan";
 <MobileBottomNav currentPath={currentPath} />
 
 <style>
+	.more-sheet__handle {
+		margin: 0.65rem auto 0;
+		width: 2.5rem;
+		height: 0.28rem;
+		flex-shrink: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 42%, transparent);
+	}
+
+	.more-sheet__header {
+		padding-top: 0.15rem;
+	}
+
+	.more-sheet__org.sidebar-account-trigger {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.7rem 0.85rem;
+		border-radius: 1rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
+		background: color-mix(in srgb, var(--surface-container, var(--control-surface)) 72%, transparent);
+	}
+
+	.more-sheet__org.sidebar-account-trigger:hover {
+		background: color-mix(in srgb, var(--on-surface) 6%, var(--surface-container, var(--control-surface)));
+	}
+
+	.more-sheet__org-avatar.workspace-avatar {
+		border-radius: 0.85rem;
+	}
+
+	.more-sheet__org-chevron {
+		margin-left: auto;
+		flex-shrink: 0;
+		font-size: 1.2rem;
+		line-height: 1;
+		color: var(--on-surface-variant);
+	}
+
+	.more-sheet__body {
+		gap: 0;
+	}
+
 	.more-sheet__nav {
-		margin-top: 0.35rem;
-		padding-inline: 0.15rem;
+		margin-top: 0.15rem;
+		padding-inline: 0.2rem;
+		scrollbar-width: thin;
 	}
 
 	.more-sheet__list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.12rem;
 		margin: 0;
 		padding: 0;
 		list-style: none;
 	}
 
-	.more-sheet__item + .more-sheet__item {
-		border-top: 0;
-	}
-
 	.more-sheet__item--team {
-		border-top: 1px solid color-mix(in srgb, var(--shell-border) 55%, transparent);
-		margin-top: 0.25rem;
-		padding-top: 0.25rem;
+		margin-top: 0.35rem;
+		padding-top: 0.35rem;
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
 	}
 
 	.more-sheet__link,
 	.more-sheet__sublink {
 		display: flex;
 		align-items: center;
-		gap: 0.7rem;
-		min-height: 2.95rem;
-		padding: 0.7rem 0.55rem;
-		margin: 0.1rem 0;
+		gap: 0.8rem;
+		min-height: 3rem;
+		padding: 0.65rem 0.8rem;
+		margin: 0;
 		border: 0;
-		border-radius: 0.9rem;
+		border-radius: 0.85rem;
 		background: transparent;
 		color: var(--on-surface);
 		font: inherit;
-		font-size: 0.95rem;
+		font-size: 0.94rem;
 		font-weight: 600;
+		line-height: 1.25;
 		text-decoration: none;
 		cursor: pointer;
-		transition: background-color 0.15s ease, color 0.15s ease;
+		transition:
+			background-color 0.16s ease,
+			color 0.16s ease;
 	}
 
 	.more-sheet__link:hover,
@@ -550,19 +596,23 @@ const planFooterActive = activePath === "/panel/plan";
 
 	.more-sheet__link.is-active,
 	.more-sheet__sublink.is-active {
-		background: var(--primary-container);
+		background: color-mix(in srgb, var(--primary) 16%, transparent);
 		color: var(--primary);
-		font-weight: 800;
+		font-weight: 700;
 	}
 
 	.more-sheet__icon {
-		font-size: 1.3rem;
+		display: inline-flex;
+		width: 1.35rem;
+		height: 1.35rem;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.28rem;
 		line-height: 1;
-		color: var(--on-surface-variant);
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, var(--on-surface) 12%);
 	}
 
-	.more-sheet__link.is-active .more-sheet__icon,
-	.more-sheet__sublink.is-active .more-sheet__chevron {
+	.more-sheet__link.is-active .more-sheet__icon {
 		color: var(--primary);
 	}
 
@@ -576,9 +626,9 @@ const planFooterActive = activePath === "/panel/plan";
 	}
 
 	.more-sheet__chevron {
-		font-size: 1.25rem;
+		font-size: 1.2rem;
 		line-height: 1;
-		color: color-mix(in srgb, var(--on-surface-variant) 75%, transparent);
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, transparent);
 		flex-shrink: 0;
 	}
 
@@ -593,54 +643,66 @@ const planFooterActive = activePath === "/panel/plan";
 		display: none;
 	}
 
-	.more-sheet__chevron--expand {
-		color: var(--on-surface-variant);
-	}
-
 	.more-sheet__sublist {
-		margin: 0 0 0.25rem;
-		padding: 0 0 0.15rem 2.35rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0.08rem;
+		margin: 0.15rem 0 0.35rem;
+		padding: 0 0 0 0.35rem;
 		list-style: none;
 	}
 
 	.more-sheet__sublink {
-		min-height: 2.6rem;
-		padding: 0.55rem 0.5rem;
+		min-height: 2.75rem;
+		padding: 0.55rem 0.8rem 0.55rem 2.45rem;
 		font-size: 0.9rem;
 		font-weight: 600;
 	}
 
+	.more-sheet__divider {
+		margin: 0.65rem 0.35rem 0;
+		height: 0;
+		border: 0;
+		border-top: 1px solid color-mix(in srgb, var(--shell-border) 85%, transparent);
+	}
+
 	.more-sheet__footer {
-		border-top: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+		padding-inline: 0.2rem;
 	}
 
 	.more-sheet__plan {
 		display: flex;
-		min-height: 3.25rem;
+		min-height: 3.35rem;
 		min-width: 0;
-		flex: 1;
 		align-items: center;
-		gap: 0.75rem;
-		padding: 0.7rem 0.9rem;
-		border-radius: 1.1rem;
-		border: 1px solid var(--shell-border);
+		gap: 0.8rem;
+		padding: 0.8rem 0.95rem;
+		border-radius: 1rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
+		background: color-mix(in srgb, var(--surface-container, var(--control-surface)) 55%, transparent);
 		color: var(--on-surface);
 		text-decoration: none;
-		transition: background-color 0.15s ease, color 0.15s ease;
+		transition:
+			background-color 0.16s ease,
+			border-color 0.16s ease,
+			color 0.16s ease;
 	}
 
 	.more-sheet__plan:hover {
-		background: var(--sidebar-hover);
+		background: color-mix(in srgb, var(--on-surface) 5%, var(--surface-container, var(--control-surface)));
 	}
 
 	.more-sheet__plan.is-active {
-		background: var(--primary-container);
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
 		color: var(--primary);
-		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border));
+		border-color: color-mix(in srgb, var(--primary) 24%, var(--shell-border));
 	}
 
 	.more-sheet__plan-icon {
-		font-size: 1.45rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.4rem;
 		line-height: 1;
 		color: var(--primary);
 	}
@@ -648,28 +710,69 @@ const planFooterActive = activePath === "/panel/plan";
 	.more-sheet__logout {
 		display: flex;
 		width: 100%;
-		min-height: 2.75rem;
+		min-height: 2.85rem;
 		align-items: center;
 		justify-content: center;
-		gap: 0.45rem;
+		gap: 0.5rem;
+		margin-top: 0.35rem;
 		border: 0;
-		border-radius: 1rem;
+		border-radius: 0.85rem;
 		background: transparent;
-		padding: 0.55rem 0.75rem;
+		padding: 0.6rem 0.75rem;
 		font: inherit;
 		font-size: 0.92rem;
 		font-weight: 700;
-		color: #dc2626;
+		color: #ef4444;
 		cursor: pointer;
-		transition: background-color 0.15s ease;
+		transition: background-color 0.16s ease;
 	}
 
 	.more-sheet__logout:hover {
 		background: color-mix(in srgb, #ef4444 10%, transparent);
 	}
 
+	:global(html[data-theme='dark']) .more-sheet {
+		background: #1a1a1a;
+		border-color: rgba(255, 255, 255, 0.08);
+		box-shadow: 0 -24px 64px rgba(0, 0, 0, 0.55);
+	}
+
+	:global(html[data-theme='dark']) .more-sheet__org.sidebar-account-trigger {
+		background: rgba(255, 255, 255, 0.04);
+		border-color: rgba(255, 255, 255, 0.08);
+	}
+
+	:global(html[data-theme='dark']) .more-sheet__org.sidebar-account-trigger:hover {
+		background: rgba(255, 255, 255, 0.06);
+	}
+
+	:global(html[data-theme='dark']) .more-sheet__link.is-active,
+	:global(html[data-theme='dark']) .more-sheet__sublink.is-active {
+		background: rgba(66, 110, 219, 0.18);
+		color: #9eb8ff;
+	}
+
+	:global(html[data-theme='dark']) .more-sheet__link.is-active .more-sheet__icon {
+		color: #9eb8ff;
+	}
+
+	:global(html[data-theme='dark']) .more-sheet__plan {
+		background: rgba(255, 255, 255, 0.03);
+		border-color: rgba(255, 255, 255, 0.08);
+	}
+
+	:global(html[data-theme='dark']) .more-sheet__plan.is-active {
+		background: rgba(66, 110, 219, 0.16);
+		color: #9eb8ff;
+		border-color: rgba(66, 110, 219, 0.28);
+	}
+
+	:global(html[data-theme='dark']) .more-sheet__logout {
+		color: #f87171;
+	}
+
 	:global(html[data-theme='dark']) .more-sheet__logout:hover {
-		background: color-mix(in srgb, #ef4444 16%, transparent);
+		background: rgba(248, 113, 113, 0.12);
 	}
 
 	.sidebar-divider {
@@ -688,17 +791,6 @@ const planFooterActive = activePath === "/panel/plan";
 	}
 
 	.sidebar-account-trigger:hover {
-		background: var(--sidebar-hover);
-	}
-
-	.more-sheet__org.sidebar-account-trigger {
-		padding: 0.65rem 0.75rem;
-		border-radius: 1.15rem;
-		background: color-mix(in srgb, var(--surface-container, var(--control-surface)) 88%, transparent);
-		border: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
-	}
-
-	.more-sheet__org.sidebar-account-trigger:hover {
 		background: var(--sidebar-hover);
 	}
 

@@ -1,13 +1,24 @@
 ---
 import type { Location } from '../lib/locations';
+import AppPagination from './AppPagination.astro';
 
 interface Props {
 	locations: Location[];
 	showCreateAction?: boolean;
 	isActiveFilter?: number | null;
+	currentPage?: number;
+	totalPages?: number;
+	totalRecords?: number;
 }
 
-const { locations = [], showCreateAction = false, isActiveFilter = null } = Astro.props;
+const {
+	locations = [],
+	showCreateAction = false,
+	isActiveFilter = null,
+	currentPage = 1,
+	totalPages = 1,
+	totalRecords = 0,
+} = Astro.props;
 const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
 
 const activeCount = locations.filter((item) => item.is_active === 1).length;
@@ -229,6 +240,20 @@ const inactiveCount = locations.length - activeCount;
 		</div>
 	)}
 	</div>
+
+	<AppPagination
+		currentPage={currentPage}
+		totalPages={totalPages}
+		totalRecords={totalRecords}
+		recordLabel="sucursales"
+		ariaLabel="Paginación sucursales"
+		rootDataAttr="data-locations-pagination"
+		summaryDataAttr="data-locations-pagination-summary"
+		pagesDataAttr="data-locations-pagination-pages"
+		prevDataAttr="data-locations-page-prev"
+		nextDataAttr="data-locations-page-next"
+		pageDataAttr="data-locations-page"
+	/>
 </section>
 
 <style is:global>

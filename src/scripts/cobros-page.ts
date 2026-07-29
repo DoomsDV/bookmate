@@ -6,6 +6,7 @@ import {
 	positionFilterPopover,
 	toggleFilterPopoverSheet,
 } from '../lib/panel-filter-popover';
+import { updateAppPaginationDom } from '../lib/pagination';
 
 type CobrosManagerElement = HTMLElement & {
 	__cobrosBound?: boolean;
@@ -162,8 +163,6 @@ export const initCobrosPage = () => {
 	const featureSection = root.querySelector<HTMLElement>('[data-requires-feature="DEPOSIT_COLLECTION"]');
 	const lockedSection = root.querySelector<HTMLElement>('[data-cobros-feature-locked]');
 	const paginationEl = root.querySelector<HTMLElement>('[data-cobros-pagination]');
-	const pageLabelEl = root.querySelector<HTMLElement>('[data-cobros-page-label]');
-	const currentPageEl = root.querySelector<HTMLElement>('[data-cobros-current-page]');
 	const prevPageBtn = root.querySelector<HTMLButtonElement>('[data-cobros-prev]');
 	const nextPageBtn = root.querySelector<HTMLButtonElement>('[data-cobros-next]');
 
@@ -762,10 +761,19 @@ export const initCobrosPage = () => {
 		const pages = totalPages();
 		const hasItems = totalRecords > 0;
 		paginationEl?.classList.toggle('hidden', loading || !hasItems);
-		if (pageLabelEl) {
-			pageLabelEl.innerHTML = `Pagina <strong>${page}</strong> de <strong>${pages}</strong> <span aria-hidden="true">-</span> Total: <strong>${totalRecords}</strong> cobros`;
+		if (paginationEl) {
+			updateAppPaginationDom(paginationEl, {
+				currentPage: page,
+				totalPages: pages,
+				totalRecords,
+				recordLabel: 'cobros',
+				summarySelector: '[data-cobros-page-label]',
+				pagesSelector: '[data-cobros-pagination-pages]',
+				prevSelector: '[data-cobros-prev]',
+				nextSelector: '[data-cobros-next]',
+				pageDataAttr: 'data-cobros-page',
+			});
 		}
-		if (currentPageEl) currentPageEl.textContent = String(page);
 		prevPageBtn?.classList.toggle('is-disabled', page <= 1 || loading);
 		prevPageBtn?.toggleAttribute('disabled', page <= 1 || loading);
 		nextPageBtn?.classList.toggle('is-disabled', page >= pages || loading);
@@ -1059,6 +1067,17 @@ export const initCobrosPage = () => {
 	nextPageBtn?.addEventListener('click', () => {
 		if (page >= totalPages() || loading) return;
 		page += 1;
+		void load();
+	});
+
+	paginationEl?.addEventListener('click', (event) => {
+		const target = event.target;
+		if (!(target instanceof Element) || loading) return;
+		const pageBtn = target.closest<HTMLButtonElement>('[data-cobros-page]');
+		if (!pageBtn) return;
+		const nextPage = Number(pageBtn.getAttribute('data-cobros-page') || '1');
+		if (!Number.isInteger(nextPage) || nextPage <= 0 || nextPage === page) return;
+		page = nextPage;
 		void load();
 	});
 
