@@ -1,4 +1,5 @@
 import type { CobroItem, CobrosDatePreset, CobrosStatusFilter } from '../lib/cobros';
+import { parseApiDateTime } from '../lib/booking-datetime';
 import {
 	bindFilterPopoverChrome,
 	closeFilterPopoverSheet,
@@ -11,6 +12,8 @@ type CobrosManagerElement = HTMLElement & {
 	__cobrosReload?: () => void;
 };
 
+const APP_TZ = 'America/Asuncion';
+
 const formatMoney = (amount: number, currency = 'PYG') =>
 	new Intl.NumberFormat('es-PY', {
 		style: 'currency',
@@ -18,17 +21,29 @@ const formatMoney = (amount: number, currency = 'PYG') =>
 		maximumFractionDigits: 0,
 	}).format(Number(amount) || 0);
 
-const formatDateTime = (iso?: string | null) => {
-	if (!iso) return '—';
-	const d = new Date(iso);
-	if (Number.isNaN(d.getTime())) return '—';
-	return new Intl.DateTimeFormat('es-PY', {
+const formatDateTimeParts = (d: Date, timeZone?: string) =>
+	new Intl.DateTimeFormat('es-PY', {
 		day: '2-digit',
 		month: 'short',
 		year: 'numeric',
 		hour: '2-digit',
 		minute: '2-digit',
+		...(timeZone ? { timeZone } : {}),
 	}).format(d);
+
+/** start_time = hora de pared; created_at (…Z) = instante → Asunción. */
+const formatDateTime = (value?: string | null) => {
+	if (!value) return '—';
+	const trimmed = String(value).trim();
+	const hasOffset = /([zZ]|[+-]\d{2}:?\d{2})$/.test(trimmed);
+	if (hasOffset) {
+		const instant = new Date(trimmed);
+		if (Number.isNaN(instant.getTime())) return '—';
+		return formatDateTimeParts(instant, APP_TZ);
+	}
+	const wall = parseApiDateTime(trimmed);
+	if (!wall) return '—';
+	return formatDateTimeParts(wall);
 };
 
 const isExpiredCobro = (item: CobroItem) => {
@@ -610,6 +625,8 @@ export const initCobrosPage = () => {
 		setText('[data-cobros-modal-subtitle]', formatDateTime(item.start_time || item.created_at));
 		setText('[data-cobros-modal-customer]', item.customer_name || '—');
 		setText('[data-cobros-modal-service]', item.service_name || '—');
+		setText('[data-cobros-modal-professional]', item.professional_name || '—');
+		setText('[data-cobros-modal-location]', item.location_name || '—');
 		setText(
 			'[data-cobros-modal-amount]',
 			formatMoney(

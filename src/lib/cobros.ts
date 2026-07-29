@@ -21,6 +21,8 @@ export interface CobroItem {
 	start_time?: string | null;
 	customer_name?: string | null;
 	service_name?: string | null;
+	professional_name?: string | null;
+	location_name?: string | null;
 	amount: number;
 	currency: string;
 	payment_status?: string | null;
@@ -105,6 +107,8 @@ const normalizeItem = (raw: any): CobroItem | null => {
 		start_time: String(raw?.start_time || '').trim() || null,
 		customer_name: String(raw?.customer_name || '').trim() || null,
 		service_name: String(raw?.service_name || '').trim() || null,
+		professional_name: String(raw?.professional_name || '').trim() || null,
+		location_name: String(raw?.location_name || '').trim() || null,
 		amount: Number(raw?.amount ?? 0) || 0,
 		currency: String(raw?.currency || 'PYG').trim() || 'PYG',
 		payment_status: String(raw?.payment_status || '').trim() || null,
