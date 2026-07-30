@@ -158,6 +158,20 @@ dialog[data-bookmate-tour-shell] .driver-overlay {
 	z-index: 1;
 }
 
+dialog[data-bookmate-tour-shell][data-overlay-opacity='0'] .driver-overlay,
+body[data-bookmate-tour-overlay='0'] .driver-overlay,
+body.driver-active[data-bookmate-tour-overlay='0'] .driver-overlay {
+	display: none !important;
+	visibility: hidden !important;
+	pointer-events: none !important;
+}
+
+body[data-bookmate-tour-overlay='0'] .driver-overlay path,
+body.driver-active[data-bookmate-tour-overlay='0'] .driver-overlay path {
+	fill: transparent !important;
+	opacity: 0 !important;
+}
+
 dialog[data-bookmate-tour-shell] .driver-popover,
 dialog[data-bookmate-tour-shell] .driver-popover * {
 	pointer-events: auto;
@@ -180,4 +194,9 @@ dialog[data-professional-modal] .driver-active-element {
 [data-voice-overlay-record].driver-active-element {
 	border-radius: 999px !important;
 	box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 32%, transparent);
+}
+
+[data-voice-overlay-dropzone].driver-active-element {
+	border-radius: 1rem !important;
+	box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 28%, transparent);
 }

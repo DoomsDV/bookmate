@@ -105,31 +105,35 @@ const googleMapsApiKey =
 				>
 					<script type="application/json" id="public-user-profile-json" set:html={serializedProfile}></script>
 
-					<header class="public-booking-profile" data-booking-profile-header>
+					<header class="public-booking-profile public-booking-profile--card" data-booking-profile-header>
 						<div class="public-booking-profile__inner">
-							{profile.image_url ? (
-								<img
-									src={profile.image_url}
-									alt={`Foto de ${profile.full_name}`}
-									loading="lazy"
-									class="public-booking-avatar"
-								/>
-							) : (
-								<div
-									class="public-booking-avatar public-booking-avatar--empty"
-									aria-label={`Sin foto de ${profile.full_name}`}
-									role="img"
-								>
-									<span class="material-symbols-rounded">account_circle</span>
+							<article class="public-booking-profile__card">
+								<div class="public-booking-profile__body">
+									<div class="public-booking-profile__text">
+										<p class="public-booking-profile__eyebrow">Agendar cita con</p>
+										<h1 class="public-booking-profile__title">{profile.full_name}</h1>
+										<p class="public-booking-profile__meta">Elegí dónde atenderte y reservá tu turno</p>
+									</div>
+									<div class="public-booking-profile__media">
+										{profile.image_url ? (
+											<img
+												src={profile.image_url}
+												alt={`Foto de ${profile.full_name}`}
+												loading="lazy"
+												class="public-booking-avatar"
+											/>
+										) : (
+											<div
+												class="public-booking-avatar public-booking-avatar--empty"
+												aria-label={`Sin foto de ${profile.full_name}`}
+												role="img"
+											>
+												<span class="material-symbols-rounded">account_circle</span>
+											</div>
+										)}
+									</div>
 								</div>
-							)}
-							<div class="public-booking-profile__text">
-								<p class="public-booking-profile__eyebrow">Agendar cita con</p>
-								<h1 class="public-booking-profile__title">{profile.full_name}</h1>
-								<p class="public-booking-profile__subtitle">
-									Elegí dónde atenderte y reservá tu turno
-								</p>
-							</div>
+							</article>
 						</div>
 					</header>
 

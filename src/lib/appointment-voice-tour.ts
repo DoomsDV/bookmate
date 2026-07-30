@@ -1,10 +1,24 @@
 import type { DriveStep } from 'driver.js';
-import { runBookmateTour } from './product-tour';
+import { runBookmateTour, type BookmateTourRunOptions } from './product-tour';
 
 const VOICE_SHELL_SELECTOR = '[data-voice-overlay-shell]';
 const VOICE_RECORD_SELECTOR = '[data-voice-overlay-record]';
+const SCAN_DROPZONE_SELECTOR = '[data-voice-overlay-dropzone]';
 
-function buildTourSteps(): DriveStep[] {
+const QUICK_TOUR_OPTIONS: Pick<
+	BookmateTourRunOptions,
+	'force' | 'persistCompletion' | 'useTopLayerShell' | 'overlayOpacity' | 'hostSelector' | 'scrollIntoView' | 'stagePadding'
+> = {
+	force: true,
+	persistCompletion: false,
+	useTopLayerShell: true,
+	overlayOpacity: 0,
+	hostSelector: VOICE_SHELL_SELECTOR,
+	scrollIntoView: { rootSelector: '.appointment-voice-body' },
+	stagePadding: 10,
+};
+
+function buildVoiceTourSteps(): DriveStep[] {
 	if (!document.querySelector(VOICE_RECORD_SELECTOR)) return [];
 
 	return [
@@ -21,22 +35,57 @@ function buildTourSteps(): DriveStep[] {
 	];
 }
 
+function buildScanTourSteps(): DriveStep[] {
+	if (!document.querySelector(SCAN_DROPZONE_SELECTOR)) return [];
+
+	return [
+		{
+			element: SCAN_DROPZONE_SELECTOR,
+			popover: {
+				title: 'Subí tu agenda',
+				description:
+					'Podés tomar una foto de tu agenda escrita a mano o elegir una imagen guardada. La IA lee las citas y las precarga en el formulario. Usá JPG, PNG o WEBP; que la letra se vea clara y con buena luz.',
+				side: 'top',
+				align: 'center',
+			},
+		},
+	];
+}
+
 /** Guía repetible del modal de cita rápida por voz. */
 export function showAppointmentVoiceTour() {
 	const shell = document.querySelector<HTMLDialogElement>(VOICE_SHELL_SELECTOR);
 	if (!shell?.open) return;
 
-	const steps = buildTourSteps();
+	const steps = buildVoiceTourSteps();
 	if (steps.length === 0) return;
 
 	runBookmateTour(steps, {
-		force: true,
+		...QUICK_TOUR_OPTIONS,
 		storageKey: 'bookmate_appointment_voice_tour',
-		persistCompletion: false,
-		useTopLayerShell: true,
-		hostSelector: VOICE_SHELL_SELECTOR,
-		scrollIntoView: { rootSelector: '.appointment-voice-body' },
-		stagePadding: 10,
 		stageRadius: 999,
 	});
+}
+
+/** Guía repetible de la pestaña Escanear agenda. */
+export function showAppointmentAgendaScanTour() {
+	const shell = document.querySelector<HTMLDialogElement>(VOICE_SHELL_SELECTOR);
+	if (!shell?.open) return;
+
+	const steps = buildScanTourSteps();
+	if (steps.length === 0) return;
+
+	runBookmateTour(steps, {
+		...QUICK_TOUR_OPTIONS,
+		storageKey: 'bookmate_appointment_agenda_scan_tour',
+		stageRadius: 16,
+	});
+}
+
+export function showAppointmentQuickTour(mode: 'voice' | 'scan') {
+	if (mode === 'scan') {
+		showAppointmentAgendaScanTour();
+		return;
+	}
+	showAppointmentVoiceTour();
 }

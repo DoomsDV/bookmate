@@ -166,7 +166,7 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 		flex: 1 1 0;
 		min-height: 0;
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) 20.5rem;
+		grid-template-columns: minmax(0, 1fr);
 		grid-template-rows: minmax(0, 1fr);
 		gap: 1.75rem;
 		align-items: stretch;
@@ -794,17 +794,12 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 .ppe-phone-col {
 	position: relative;
 	min-width: 0;
-	display: flex;
+	display: none; /* mockup oculto; PublicProfilePreview sigue montado en el DOM */
 	justify-content: center;
 }
 
-/* Phone chrome — mockup tipo iPhone (bisel, island, botones, home bar) */
-.ppe-phone {
-	width: min(100%, 17.5rem);
-	margin: 0 auto;
-}
-
 .ppe-phone__bezel {
+	display: none; /* no renderizar el bisel; conservar markup en PublicProfilePreview */
 	position: relative;
 	width: 100%;
 	padding: 0.55rem;
@@ -817,6 +812,12 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 		0 -1px 0 rgba(0, 0, 0, 0.45) inset,
 		0 0 0 1px rgba(0, 0, 0, 0.35),
 		0 18px 36px rgba(0, 0, 0, 0.28);
+}
+
+/* Phone chrome — mockup tipo iPhone (bisel, island, botones, home bar) */
+.ppe-phone {
+	width: min(100%, 17.5rem);
+	margin: 0 auto;
 }
 
 /* Botones físicos laterales */

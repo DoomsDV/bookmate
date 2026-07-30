@@ -40,6 +40,7 @@
 }
 
 .public-booking-sheet {
+	position: relative;
 	display: grid;
 	gap: 0;
 	background: transparent;
@@ -181,6 +182,156 @@
 	font-size: 3.3rem;
 	line-height: 1;
 	transition: font-size 320ms cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+/* —— Card estilo referencia (solo páginas de reserva pública) —— */
+.public-booking-profile--card .public-booking-profile__inner {
+	align-items: stretch;
+	text-align: left;
+	gap: 0;
+	padding-top: 0.85rem;
+	padding-bottom: 0.75rem;
+}
+
+.public-booking-profile__card {
+	position: relative;
+	display: grid;
+	align-content: center;
+	gap: 0;
+	min-height: 10rem;
+	padding: 1rem;
+	border-radius: 1.65rem;
+	overflow: hidden;
+	background: transparent;
+	box-shadow: none;
+}
+
+html[data-theme='dark'] .public-booking-profile__card {
+	background: transparent;
+	box-shadow: none;
+}
+
+.public-booking-profile__body {
+	display: grid;
+	grid-template-columns: minmax(0, 1.15fr) minmax(7.5rem, 0.85fr);
+	align-items: center;
+	gap: 0.75rem;
+	min-height: 8.5rem;
+	margin-top: 3rem;
+}
+
+/* Paso 1: sin espacio extra (aún no hay Volver) */
+.public-booking-sheet:has(.public-booking-panel[data-step-panel='1']:not(.hidden))
+	.public-booking-profile__body {
+	margin-top: 0;
+}
+
+.public-booking-profile--card .public-booking-profile__text {
+	align-self: center;
+	gap: 0.35rem;
+	padding-top: 0;
+	z-index: 1;
+}
+
+.public-booking-profile--card .public-booking-profile__eyebrow {
+	max-height: none;
+	font-size: 0.92rem;
+	font-weight: 500;
+	letter-spacing: 0.01em;
+	text-transform: none;
+	color: color-mix(in srgb, var(--primary) 82%, #7eb0e6);
+}
+
+html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__eyebrow {
+	color: color-mix(in srgb, var(--primary) 55%, #93c5fd);
+}
+
+.public-booking-profile--card .public-booking-profile__title {
+	margin-top: 0;
+	font-size: clamp(1.75rem, 6vw, 2.35rem);
+	font-weight: 800;
+	letter-spacing: -0.03em;
+	line-height: 1.12;
+	color: #0f172a;
+}
+
+html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__title {
+	color: #f8fafc;
+}
+
+.public-booking-profile__meta {
+	margin: 0.15rem 0 0;
+	font-size: 0.92rem;
+	font-weight: 500;
+	color: color-mix(in srgb, #334155 72%, var(--primary));
+}
+
+html[data-theme='dark'] .public-booking-profile__meta {
+	color: color-mix(in srgb, white 68%, var(--primary));
+}
+
+.public-booking-profile__media {
+	position: relative;
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	min-height: 8.75rem;
+	z-index: 0;
+}
+
+.public-booking-profile--card .public-booking-avatar {
+	width: 8.75rem;
+	height: 8.75rem;
+	border-radius: 50%;
+	border: 0;
+	background: transparent;
+	box-shadow: none;
+	object-fit: cover;
+	object-position: center top;
+}
+
+.public-booking-profile--card .public-booking-avatar--empty {
+	width: 8.75rem;
+	height: 8.75rem;
+	border-radius: 50%;
+	background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+	color: color-mix(in srgb, var(--on-surface) 55%, var(--primary));
+}
+
+html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--empty {
+	background: color-mix(in srgb, white 8%, transparent);
+	color: color-mix(in srgb, white 70%, var(--primary));
+}
+
+.public-booking-profile--card .public-booking-avatar--empty .material-symbols-rounded {
+	font-size: 3.6rem;
+}
+
+@media (min-width: 640px) {
+	.public-booking-profile--card .public-booking-profile__inner {
+		padding-top: 1.15rem;
+		padding-bottom: 0.85rem;
+	}
+
+	.public-booking-profile__card {
+		min-height: 11rem;
+		padding: 1.15rem;
+		border-radius: 1.85rem;
+	}
+
+	.public-booking-profile__body {
+		min-height: 9.25rem;
+		grid-template-columns: minmax(0, 1.2fr) minmax(9rem, 0.8fr);
+	}
+
+	.public-booking-profile--card .public-booking-profile__title {
+		font-size: 2.5rem;
+	}
+
+	.public-booking-profile--card .public-booking-avatar {
+		width: 9.9rem;
+		height: 9.9rem;
+	}
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -529,28 +680,48 @@
 
 /* Pantallas PC bajas: achicar header para que Fecha + Continuar entren sin scroll */
 @media (min-width: 640px) and (max-height: 920px) {
-	.public-booking-profile__inner {
+	.public-booking-profile:not(.public-booking-profile--card) .public-booking-profile__inner {
 		gap: 0.55rem;
 		padding-top: 1rem;
 		padding-bottom: 0.25rem;
 	}
 
-	.public-booking-avatar {
+	.public-booking-profile:not(.public-booking-profile--card) .public-booking-avatar {
 		width: 6.9rem;
 		height: 6.9rem;
 	}
 
-	.public-booking-avatar--empty .material-symbols-rounded {
+	.public-booking-profile:not(.public-booking-profile--card)
+		.public-booking-avatar--empty
+		.material-symbols-rounded {
 		font-size: 2.7rem;
 	}
 
-	.public-booking-profile__title {
+	.public-booking-profile:not(.public-booking-profile--card) .public-booking-profile__title {
 		font-size: 1.55rem;
 	}
 
-	.public-booking-profile__eyebrow,
-	.public-booking-profile__subtitle {
+	.public-booking-profile:not(.public-booking-profile--card) .public-booking-profile__eyebrow,
+	.public-booking-profile:not(.public-booking-profile--card) .public-booking-profile__subtitle {
 		font-size: 0.8rem;
+	}
+
+	.public-booking-profile--card .public-booking-profile__card {
+		min-height: 9.5rem;
+		padding: 0.9rem 1rem;
+	}
+
+	.public-booking-profile--card .public-booking-profile__body {
+		min-height: 7.5rem;
+	}
+
+	.public-booking-profile--card .public-booking-avatar {
+		width: 7.9rem;
+		height: 7.9rem;
+	}
+
+	.public-booking-profile--card .public-booking-profile__title {
+		font-size: 2rem;
 	}
 
 	.public-booking-stepper {
@@ -1841,6 +2012,29 @@
 	margin: 0 0 0.85rem;
 }
 
+.public-booking-panel:not(.hidden) > .public-booking-back-row {
+	position: absolute;
+	top: 0.55rem;
+	left: 1rem;
+	z-index: 20;
+	margin: 0 !important;
+	padding: 0;
+	height: 0;
+	overflow: visible;
+	pointer-events: none;
+}
+
+.public-booking-panel:not(.hidden) > .public-booking-back-row .public-booking-back-link {
+	pointer-events: auto;
+}
+
+@media (min-width: 640px) {
+	.public-booking-panel:not(.hidden) > .public-booking-back-row {
+		top: 0.75rem;
+		left: 1.25rem;
+	}
+}
+
 .public-booking-back-row.hidden {
 	display: none;
 }
@@ -1848,30 +2042,46 @@
 .public-booking-back-link {
 	display: inline-flex;
 	align-items: center;
-	gap: 0.15rem;
+	justify-content: center;
+	gap: 0.1rem;
 	width: auto;
-	min-width: 0;
+	min-width: 2.35rem;
+	min-height: 2.35rem;
 	margin: 0;
-	padding: 0.15rem 0;
+	padding: 0.35rem 0.7rem 0.35rem 0.45rem;
 	border: 0;
-	border-radius: 0;
-	background: transparent;
-	font-size: 0.92rem;
-	font-weight: 550;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--surface-bright, #fff) 88%, transparent);
+	font-size: 0.88rem;
+	font-weight: 600;
 	line-height: 1.2;
-	color: var(--on-surface-variant);
+	color: var(--on-surface);
 	cursor: pointer;
-	transition: color 0.15s ease;
+	box-shadow: 0 2px 10px color-mix(in srgb, black 12%, transparent);
+	transition:
+		color 0.15s ease,
+		background 0.15s ease,
+		box-shadow 0.15s ease;
+}
+
+html[data-theme='dark'] .public-booking-back-link {
+	background: color-mix(in srgb, white 12%, #1e293b);
+	box-shadow: 0 2px 12px color-mix(in srgb, black 28%, transparent);
 }
 
 .public-booking-back-link .material-symbols-rounded {
-	font-size: 1.15rem;
+	font-size: 1.2rem;
 	line-height: 1;
-	margin-left: -0.2rem;
+	margin-left: 0;
 }
 
 .public-booking-back-link:hover {
-	background: transparent;
+	background: color-mix(in srgb, var(--primary) 14%, var(--surface-bright, #fff));
+	color: var(--primary);
+}
+
+html[data-theme='dark'] .public-booking-back-link:hover {
+	background: color-mix(in srgb, var(--primary) 22%, #1e293b);
 	color: var(--primary);
 }
 

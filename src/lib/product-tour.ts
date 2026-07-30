@@ -19,6 +19,8 @@ export type BookmateTourRunOptions = {
 	 * con `showModal()` (top layer). Sin esto, la guía queda detrás del modal.
 	 */
 	useTopLayerShell?: boolean;
+	/** Opacidad del velo de driver.js (0 = sin fondo oscuro). */
+	overlayOpacity?: number;
 	stagePadding?: number;
 	stageRadius?: number;
 	/** Desplaza el objetivo al centro del contenedor con scroll antes de posicionar el popover. */
@@ -47,6 +49,9 @@ function closeTourShell() {
 	const shell = document.querySelector<HTMLDialogElement>(TOUR_SHELL_SELECTOR);
 	if (!shell) return;
 	shell.querySelectorAll('.driver-popover, .driver-overlay').forEach((node) => node.remove());
+	delete shell.dataset.overlayOpacity;
+	delete document.body.dataset.bookmateTourOverlay;
+	stopOverlayStripObserver();
 	if (shell.open) shell.close();
 }
 
@@ -64,6 +69,7 @@ function forceCleanupDriverDom() {
 		el.removeAttribute('aria-controls');
 	});
 	document.body.classList.remove('driver-active', 'driver-fade', 'driver-simple');
+	stopOverlayStripObserver();
 	closeTourShell();
 }
 
@@ -95,6 +101,10 @@ function reparentTourPopoverToBody(popover?: HTMLElement | null) {
 }
 
 function mountDriverOverlayInTourShell() {
+	if (isTourOverlayDisabled()) {
+		removeTourOverlaysIfDisabled();
+		return;
+	}
 	const shell = ensureTourShell();
 	document.querySelectorAll('.driver-overlay').forEach((overlay) => {
 		if (overlay.parentElement !== shell) shell.appendChild(overlay);
@@ -123,6 +133,8 @@ function mountPopoverInTourShell(popoverWrapper: HTMLElement) {
 	if (overlay && popoverWrapper.previousElementSibling !== overlay) {
 		shell.insertBefore(overlay, popoverWrapper);
 	}
+
+	removeTourOverlaysIfDisabled();
 }
 
 let tourLayoutSyncGeneration = 0;
@@ -131,7 +143,55 @@ let activeTourDriver: Driver | null = null;
 let activeTourStorageKey: string | null = null;
 let activeTourPersistCompletion = true;
 let activeTourUsesTopLayerShell = false;
+let activeTourOverlayOpacity = 0.55;
 let destroyPersistOverride: boolean | null = null;
+
+function isTourOverlayDisabled() {
+	return activeTourOverlayOpacity <= 0;
+}
+
+/** driver.js siempre crea el SVG del velo; con opacidad 0 lo sacamos del DOM por completo. */
+function removeTourOverlaysIfDisabled() {
+	if (!isTourOverlayDisabled()) return;
+	document.querySelectorAll('.driver-overlay').forEach((overlay) => overlay.remove());
+}
+
+let overlayStripObserver: MutationObserver | null = null;
+
+/** driver.js recrea el overlay en rAF tras `refresh()`; lo volvemos a quitar al instante. */
+function startOverlayStripObserver() {
+	if (!isTourOverlayDisabled()) return;
+	stopOverlayStripObserver();
+	removeTourOverlaysIfDisabled();
+
+	overlayStripObserver = new MutationObserver(() => {
+		removeTourOverlaysIfDisabled();
+	});
+
+	const observe = (root: Node) => {
+		overlayStripObserver?.observe(root, { childList: true, subtree: true });
+	};
+
+	observe(document.body);
+	const shell = document.querySelector(TOUR_SHELL_SELECTOR);
+	if (shell) observe(shell);
+}
+
+function stopOverlayStripObserver() {
+	overlayStripObserver?.disconnect();
+	overlayStripObserver = null;
+}
+
+function scheduleRemoveTourOverlaysAfterDriverPaint() {
+	if (!isTourOverlayDisabled()) return;
+	removeTourOverlaysIfDisabled();
+	requestAnimationFrame(() => {
+		removeTourOverlaysIfDisabled();
+		requestAnimationFrame(() => {
+			removeTourOverlaysIfDisabled();
+		});
+	});
+}
 
 function isTourShellDialog(dialog: Element) {
 	return dialog.matches(TOUR_SHELL_SELECTOR);
@@ -337,6 +397,7 @@ function syncTourLayout(
 
 	if (activeTourPopover) mountPopoverInTourShell(activeTourPopover);
 	activeDriver.refresh();
+	scheduleRemoveTourOverlaysAfterDriverPaint();
 
 	const popover = activeTourPopover;
 	if (!(popover instanceof HTMLElement)) return;
@@ -391,6 +452,8 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 	const useShell = options.useTopLayerShell === true;
 	const needsScrollSync = Boolean(options.scrollIntoView);
 	const hostSelector = options.hostSelector;
+	const overlayOpacity = options.overlayOpacity ?? 0.55;
+	activeTourOverlayOpacity = overlayOpacity;
 	activeTourStorageKey = options.storageKey;
 	activeTourPersistCompletion = options.persistCompletion !== false;
 	activeTourUsesTopLayerShell = useShell;
@@ -404,7 +467,8 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 		nextBtnText: 'Siguiente',
 		prevBtnText: 'Atrás',
 		doneBtnText: 'Entendido',
-		overlayOpacity: 0.55,
+		overlayOpacity,
+		overlayColor: overlayOpacity <= 0 ? 'transparent' : undefined,
 		stagePadding: options.stagePadding ?? 4,
 		stageRadius: options.stageRadius ?? 16,
 		popoverClass: 'bookmate-driver-popover',
@@ -418,6 +482,7 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 			: undefined,
 		onHighlightStarted: (element) => {
 			scrollTourTargetIntoView(element, options.scrollIntoView);
+			scheduleRemoveTourOverlaysAfterDriverPaint();
 		},
 		onHighlighted: (_element, step, { driver: activeDriver }) => {
 			if (!useShell && !needsScrollSync) return;
@@ -439,6 +504,8 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 			activeTourPopover = null;
 			activeTourDriver = null;
 			activeTourUsesTopLayerShell = false;
+			activeTourOverlayOpacity = 0.55;
+			stopOverlayStripObserver();
 			if (useShell) closeTourShell();
 
 			const shouldPersist =
@@ -455,7 +522,18 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 		},
 	});
 
-	if (useShell) ensureTourShell();
+	if (useShell) {
+		const shell = ensureTourShell();
+		shell.dataset.overlayOpacity = String(overlayOpacity);
+	}
+	if (isTourOverlayDisabled()) {
+		document.body.dataset.bookmateTourOverlay = '0';
+		startOverlayStripObserver();
+	} else {
+		delete document.body.dataset.bookmateTourOverlay;
+		stopOverlayStripObserver();
+	}
 	if (hostSelector) bindTourHostClose(hostSelector);
 	activeTourDriver.drive();
+	scheduleRemoveTourOverlaysAfterDriverPaint();
 }

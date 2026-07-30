@@ -70,7 +70,6 @@ const serializedProfile = profile
 const serializedLocations = profile
 	? JSON.stringify(profile.locations || []).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
 	: '';
-const profileTopLabel = profile?.organization_name?.trim() || 'AGENDAR CITA CON';
 
 const siteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 const canonicalPath = buildPublicProfilePath(organizationSlug, professionalSlug) || Astro.url.pathname;
@@ -133,27 +132,36 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 					<script type="application/json" id="public-booking-profile-json" set:html={serializedProfile}></script>
 					<script type="application/json" id="public-booking-locations-json" set:html={serializedLocations}></script>
 
-					<header class="public-booking-profile" data-booking-profile-header>
+					<header class="public-booking-profile public-booking-profile--card" data-booking-profile-header>
 						<div class="public-booking-profile__inner">
-							{profile.image_url ? (
-								<img
-									src={profile.image_url}
-									alt={`Foto de ${profile.full_name}`}
-									loading="lazy"
-									class="public-booking-avatar"
-								/>
-							) : (
-								<div class="public-booking-avatar public-booking-avatar--empty" aria-label={`Sin foto de ${profile.full_name}`} role="img">
-									<span class="material-symbols-rounded">account_circle</span>
+							<article class="public-booking-profile__card">
+								<div class="public-booking-profile__body">
+									<div class="public-booking-profile__text">
+										<h1 class="public-booking-profile__title">{profile.full_name}</h1>
+										{specialtyLabel ? (
+											<p class="public-booking-profile__meta">{specialtyLabel}</p>
+										) : null}
+									</div>
+									<div class="public-booking-profile__media">
+										{profile.image_url ? (
+											<img
+												src={profile.image_url}
+												alt={`Foto de ${profile.full_name}`}
+												loading="lazy"
+												class="public-booking-avatar"
+											/>
+										) : (
+											<div
+												class="public-booking-avatar public-booking-avatar--empty"
+												aria-label={`Sin foto de ${profile.full_name}`}
+												role="img"
+											>
+												<span class="material-symbols-rounded">account_circle</span>
+											</div>
+										)}
+									</div>
 								</div>
-							)}
-							<div class="public-booking-profile__text">
-								<p class="public-booking-profile__eyebrow">{profileTopLabel}</p>
-								<h1 class="public-booking-profile__title">{profile.full_name}</h1>
-								{specialtyLabel && (
-									<p class="public-booking-profile__subtitle">{specialtyLabel}</p>
-								)}
-							</div>
+							</article>
 						</div>
 					</header>
 

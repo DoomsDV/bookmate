@@ -3,7 +3,7 @@ import {
 	type AppointmentAiDraft,
 	type StoredAppointmentAiDraft,
 } from '../lib/appointment-ai-types';
-import { showAppointmentVoiceTour } from '../lib/appointment-voice-tour';
+import { showAppointmentQuickTour } from '../lib/appointment-voice-tour';
 import { destroyActiveBookmateTour } from '../lib/product-tour';
 import { AppointmentVoiceVisualizer } from './appointment-voice-visualizer';
 
@@ -77,7 +77,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			'click',
 			(event) => {
 				event.preventDefault();
-				showAppointmentVoiceTour();
+				showAppointmentQuickTour(this.#tab);
 			},
 			{ signal }
 		);
@@ -287,6 +287,16 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		if (subtitle) {
 			subtitle.textContent =
 				tab === 'scan' ? 'Escaneá tu agenda escrita a mano' : 'Describe la cita con tu voz';
+		}
+
+		const helpButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-tour-help]');
+		if (helpButton) {
+			helpButton.setAttribute(
+				'aria-label',
+				tab === 'scan'
+					? 'Guía para escanear agenda escrita a mano'
+					: 'Guía de cita rápida por voz'
+			);
 		}
 	}
 

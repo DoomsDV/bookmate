@@ -157,7 +157,7 @@ const serializedProfessionals = professionals.length
 		{
 			hub ? (
 				<>
-					<PublicHaselTopbar showReserve={false} />
+					<PublicHaselTopbar showReserve={false} showLogin={false} />
 
 					{hub.maintenance ? (
 						<p class="hub-maintenance" role="status">
@@ -857,7 +857,7 @@ const serializedProfessionals = professionals.length
 				</>
 			) : (
 				<>
-					<PublicHaselTopbar reserveHref="/" reserveLabel="Ir al inicio" showLogin={true} />
+					<PublicHaselTopbar reserveHref="/" reserveLabel="Ir al inicio" showLogin={false} />
 					<div class="hub-error">
 						<h1>No encontramos este negocio</h1>
 						<p>{loadError || 'El enlace puede ser incorrecto o el negocio ya no está disponible.'}</p>
@@ -1178,6 +1178,23 @@ const serializedProfessionals = professionals.length
 		let activeLocId = 0;
 		let teamRevealPromise: Promise<void> | null = null;
 		let locationsRevealPromise: Promise<void> | null = null;
+
+		/** En PC, Reservar abre la agenda en una pestaña nueva. */
+		const syncProCardTargets = () => {
+			const openInNewTab = window.matchMedia('(min-width: 1024px)').matches;
+			proCards.forEach((card) => {
+				if (openInNewTab) {
+					card.target = '_blank';
+					card.rel = 'noopener noreferrer';
+				} else {
+					card.removeAttribute('target');
+					card.removeAttribute('rel');
+				}
+			});
+		};
+		syncProCardTargets();
+		window.matchMedia('(min-width: 1024px)').addEventListener('change', syncProCardTargets);
+
 		const markProPhotoReady = (img: HTMLImageElement) => {
 			img.classList.remove('is-loading');
 			img.classList.add('is-ready');
