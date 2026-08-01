@@ -119,6 +119,25 @@ const planFooterActive = activePath === "/panel/plan";
 	})();
 </script>
 
+{/* Animación de entrada solo en la primera visita de la sesión */}
+<script is:inline>
+	(function () {
+		try {
+			var key = 'hasel-sidenav-shown';
+			var sidebar = document.querySelector('[data-desktop-sidebar]');
+			if (!sidebar) return;
+			if (!sessionStorage.getItem(key)) {
+				sidebar.classList.add('is-first-visit');
+				sessionStorage.setItem(key, '1');
+				sidebar.addEventListener('animationend', function handler() {
+					sidebar.classList.remove('is-first-visit');
+					sidebar.removeEventListener('animationend', handler);
+				});
+			}
+		} catch (e) {}
+	})();
+</script>
+
 	<div
 		class="pointer-events-none fixed inset-0 z-50 flex items-end justify-center lg:hidden"
 		data-side-nav-shell
@@ -502,15 +521,15 @@ const planFooterActive = activePath === "/panel/plan";
 <MobileBottomNav currentPath={currentPath} />
 
 <style>
-	/* Entrada del SideNav en PC: slide desde la izquierda. */
+	/* Entrada del SideNav en PC: slide solo en la primera visita de la sesión. */
 	@media (min-width: 1024px) {
-		[data-desktop-sidebar] {
+		[data-desktop-sidebar].is-first-visit {
 			animation: sidenav-slide-in 320ms cubic-bezier(0.2, 0, 0, 1) both;
 			will-change: transform, opacity;
 		}
 
 		@media (prefers-reduced-motion: reduce) {
-			[data-desktop-sidebar] {
+			[data-desktop-sidebar].is-first-visit {
 				animation: none;
 			}
 		}
