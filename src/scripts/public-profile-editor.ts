@@ -439,11 +439,14 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			const head = document.createElement('div');
 			head.className = 'ppe-hours-day__head';
 
+			const left = document.createElement('div');
+			left.className = 'ppe-hours-day__left';
+
 			if (day.closed) {
 				const name = document.createElement('span');
 				name.className = 'ppe-hours-day__name';
 				name.textContent = dayLabel;
-				head.appendChild(name);
+				left.appendChild(name);
 			} else {
 				const leadBtn = document.createElement('button');
 				leadBtn.type = 'button';
@@ -464,7 +467,14 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				chevron.setAttribute('aria-hidden', 'true');
 				chevron.textContent = isExpanded ? 'expand_less' : 'expand_more';
 				leadBtn.append(name, chevron);
-				head.appendChild(leadBtn);
+				left.appendChild(leadBtn);
+			}
+
+			if (!day.closed && !isExpanded) {
+				const summary = document.createElement('p');
+				summary.className = 'ppe-hours-summary';
+				summary.textContent = formatHoursDaySummary(day);
+				left.appendChild(summary);
 			}
 
 			const toggleWrap = document.createElement('label');
@@ -487,15 +497,8 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			toggleText.className = 'ppe-hours-toggle__label';
 			toggleText.textContent = day.closed ? 'Cerrado' : 'Abierto';
 			toggleWrap.append(switchEl, toggleText);
-			head.appendChild(toggleWrap);
+			head.append(left, toggleWrap);
 			li.appendChild(head);
-
-			if (!day.closed && !isExpanded) {
-				const summary = document.createElement('p');
-				summary.className = 'ppe-hours-summary';
-				summary.textContent = formatHoursDaySummary(day);
-				li.appendChild(summary);
-			}
 
 			if (!day.closed && isExpanded) {
 				const intervalsWrap = document.createElement('div');
