@@ -265,54 +265,85 @@ const isActive = (href?: string) => {
 	@media (max-width: 1023px) {
 		:root {
 			/*
-			 * Altura del dock inferior (debe coincidir con .mobile-bottom-nav).
-			 * min-height 4.25rem; si el safe-area crece el padding, la barra crece igual.
+			 * Espacio reservado desde el borde inferior hasta el tope del dock
+			 * (alto del dock + gap flotante + safe-area).
 			 */
+			--mobile-bottom-nav-dock-height: max(4.25rem, calc(0.5rem + 2.35rem + 0.5rem));
+			--mobile-bottom-nav-float-gap: 0.9rem;
+			--mobile-bottom-nav-height: calc(
+				var(--mobile-bottom-nav-dock-height) + var(--mobile-bottom-nav-float-gap) +
+					env(safe-area-inset-bottom, 0px)
+			);
+		}
+
+		.mobile-bottom-nav {
+			--mobile-bottom-nav-radius: 1.75rem;
+			position: fixed;
+			left: 0;
+			right: 0;
+			bottom: calc(var(--mobile-bottom-nav-float-gap) + env(safe-area-inset-bottom, 0px));
+			z-index: 45;
+			display: flex;
+			align-items: stretch;
+			justify-content: space-around;
+			gap: 0.1rem;
+			width: min(calc(100% - 1.5rem), 30rem);
+			max-width: 100%;
+			margin-inline: auto;
+			box-sizing: border-box;
+			min-height: var(--mobile-bottom-nav-dock-height);
+			padding: 0.5rem 0.55rem;
+			border: 1px solid color-mix(in srgb, var(--shell-border) 60%, transparent);
+			border-radius: var(--mobile-bottom-nav-radius);
+			overflow: hidden;
+			background: color-mix(in srgb, var(--surface-bright, #ffffff) 78%, var(--surface-container, #eef2f6) 22%);
+			box-shadow:
+				0 4px 12px rgba(15, 23, 42, 0.08),
+				0 16px 40px rgba(15, 23, 42, 0.14);
+		}
+
+		html[data-theme='dark'] .mobile-bottom-nav {
+			background: color-mix(in srgb, var(--surface-container-high, #222222) 92%, black);
+			border-color: rgba(255, 255, 255, 0.06);
+			box-shadow:
+				0 4px 12px rgba(0, 0, 0, 0.28),
+				0 16px 40px rgba(0, 0, 0, 0.38);
+		}
+
+		/*
+		 * Perfil público: volver a modo pegado para encajar con .ppe-save-footer
+		 * (sin hueco flotante ni doble borde).
+		 */
+		body:has(public-profile-editor .ppe-save-footer) {
+			--mobile-bottom-nav-float-gap: 0px;
 			--mobile-bottom-nav-height: max(
 				4.25rem,
 				calc(0.45rem + 2.35rem + 0.9rem + env(safe-area-inset-bottom, 0px))
 			);
 		}
 
-		.mobile-bottom-nav {
-			position: fixed;
+		body:has(public-profile-editor .ppe-save-footer) .mobile-bottom-nav {
+			--mobile-bottom-nav-radius: 0px;
 			left: 0;
 			right: 0;
 			bottom: 0;
-			z-index: 45;
-			display: flex;
-			align-items: stretch;
-			justify-content: space-around;
-			gap: 0.1rem;
 			width: 100%;
 			max-width: 100%;
-			box-sizing: border-box;
+			margin-inline: 0;
 			min-height: var(--mobile-bottom-nav-height);
-			/* Base generoso + safe-area (gesture bar iOS/Android). Sin depender solo del inset. */
 			padding: 0.45rem 0.35rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
 			padding-left: max(0.35rem, env(safe-area-inset-left, 0px));
 			padding-right: max(0.35rem, env(safe-area-inset-right, 0px));
-			border-top: 1px solid var(--shell-border);
-			/* Mismo tono que .shell-header-zone (topbar), opaco */
-			background: color-mix(in srgb, var(--surface-bright, #ffffff) 78%, var(--surface-container, #eef2f6) 22%);
-			box-shadow: 0 -8px 28px rgba(15, 23, 42, 0.06);
-		}
-
-		html[data-theme='dark'] .mobile-bottom-nav {
-			/* Equivalente sólido al topbar oscuro (sobre page-background) */
-			background: var(--page-background, #191919);
-			box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.28);
-		}
-
-		/* Bloque sólido: footer de guardar + bottom-nav sin hueco ni doble borde */
-		body:has(public-profile-editor .ppe-save-footer) .mobile-bottom-nav {
+			border: 0;
+			border-radius: 0;
 			border-top: 0;
+			overflow: visible;
 			box-shadow: none;
 		}
 
 		body:has([data-mobile-bottom-nav]) .app-shell > :last-child > main,
 		body:has([data-mobile-bottom-nav]) .dashboard-content-canvas > main {
-			padding-bottom: calc(6.1rem + env(safe-area-inset-bottom, 0px));
+			padding-bottom: calc(6.6rem + env(safe-area-inset-bottom, 0px));
 		}
 	}
 
@@ -364,6 +395,18 @@ const isActive = (href?: string) => {
 		cursor: pointer;
 		-webkit-tap-highlight-color: transparent;
 		box-sizing: border-box;
+		transition: background-color 120ms ease;
+	}
+
+	/* Extremos: el hover sigue la curva del dock */
+	.mobile-bottom-nav__item:first-child {
+		border-top-left-radius: var(--mobile-bottom-nav-radius, 1.75rem);
+		border-bottom-left-radius: var(--mobile-bottom-nav-radius, 1.75rem);
+	}
+
+	.mobile-bottom-nav__item:last-child {
+		border-top-right-radius: var(--mobile-bottom-nav-radius, 1.75rem);
+		border-bottom-right-radius: var(--mobile-bottom-nav-radius, 1.75rem);
 	}
 
 	.mobile-bottom-nav__item[data-requires-feature-hidden] {
@@ -394,7 +437,28 @@ const isActive = (href?: string) => {
 		background: color-mix(in srgb, var(--primary) 10%, transparent);
 	}
 
+	/* Más: hover/active sobre el item entero, con el radio del dock */
+	.mobile-bottom-nav__item[data-nav-toggle]:hover,
+	.mobile-bottom-nav__item[data-nav-toggle]:active {
+		background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+	}
+
+	html[data-theme='dark'] .mobile-bottom-nav__item[data-nav-toggle]:hover,
+	html[data-theme='dark'] .mobile-bottom-nav__item[data-nav-toggle]:active {
+		background: color-mix(in srgb, #ffffff 10%, transparent);
+	}
+
+	.mobile-bottom-nav__item[data-nav-toggle]:active .mobile-bottom-nav__icon-wrap,
+	.mobile-bottom-nav__item[data-nav-toggle]:hover .mobile-bottom-nav__icon-wrap {
+		transform: none;
+		background: transparent;
+	}
+
 	@media (max-width: 360px) {
+		.mobile-bottom-nav {
+			width: min(calc(100% - 1rem), 30rem);
+		}
+
 		.mobile-bottom-nav__icon-wrap {
 			min-width: 0;
 			padding-inline: 0.4rem;

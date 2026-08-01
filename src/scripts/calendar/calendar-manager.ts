@@ -882,9 +882,6 @@ class CalendarManager extends HTMLElement {
 			}
 		}
 
-		const titleChunk = chunks.find((chunk) => chunk.querySelector('.fc-toolbar-title'));
-		titleChunk?.setAttribute('data-calendar-title', 'true');
-
 		const timeNavChunk =
 			chunks.find(
 				(chunk) =>
@@ -892,7 +889,7 @@ class CalendarManager extends HTMLElement {
 					!chunk.querySelector(
 						'.fc-timeGridDay-button, .fc-timeGridThreeDay-button, .fc-timeGridWeek-button, .fc-dayGridMonth-button, .fc-listWeek-button'
 					)
-			) ?? titleChunk;
+			) ?? null;
 		if (timeNavChunk) {
 			timeNavChunk.classList.add('fc-toolbar-chunk--time-nav');
 			timeNavChunk.setAttribute('data-calendar-nav', 'true');
@@ -911,8 +908,20 @@ class CalendarManager extends HTMLElement {
 			group.classList.add('fc-button-group--segmented');
 		}
 
+		// Título: chunk propio (puede estar vacío en mobile si el h2 vive dentro de time-nav).
+		const titleChunk =
+			chunks.find(
+				(chunk) =>
+					chunk !== timeNavChunk &&
+					chunk !== viewChunk &&
+					(Boolean(chunk.querySelector('.fc-toolbar-title')) || chunk.childElementCount === 0)
+			) ??
+			chunks.find((chunk) => chunk !== timeNavChunk && chunk.querySelector('.fc-toolbar-title')) ??
+			null;
+		titleChunk?.setAttribute('data-calendar-title', 'true');
+
 		this.ensureTourToolbarTargets(timeNavChunk, viewChunk);
-		this.syncChromeToolbarPlacement(timeNavChunk, viewChunk);
+		this.syncChromeToolbarPlacement(timeNavChunk, viewChunk, titleChunk);
 	}
 
 	/** Targets compactos para la guía (evita resaltar todo el chunk del toolbar). */
@@ -930,9 +939,10 @@ class CalendarManager extends HTMLElement {
 			}
 			for (const child of Array.from(navChunk.children)) {
 				if (child === navTour) continue;
-				if (child instanceof HTMLElement && child.hasAttribute('data-calendar-filters-control')) {
-					continue;
-				}
+				if (!(child instanceof HTMLElement)) continue;
+				if (child.hasAttribute('data-calendar-filters-control')) continue;
+				// En mobile el título vive entre filtros y flechas; no meterlo en el tour.
+				if (child.classList.contains('fc-toolbar-title')) continue;
 				navTour.appendChild(child);
 			}
 		}
@@ -960,7 +970,8 @@ class CalendarManager extends HTMLElement {
 	 */
 	private syncChromeToolbarPlacement(
 		navChunk: HTMLElement | null | undefined,
-		viewChunk: HTMLElement | null | undefined
+		viewChunk: HTMLElement | null | undefined,
+		titleChunk: HTMLElement | null | undefined = null
 	) {
 		const home = this.querySelector<HTMLElement>('[data-calendar-chrome-home]');
 		const topbarActions = this.querySelector<HTMLElement>('[data-calendar-topbar-actions]');
@@ -968,6 +979,11 @@ class CalendarManager extends HTMLElement {
 		const refresh = this.querySelector<HTMLElement>('[data-refresh-calendar]');
 		const guide = this.querySelector<HTMLElement>('[data-calendar-tour-help]');
 		const create = this.querySelector<HTMLElement>('[data-open-appointment-modal]');
+		const titleEl =
+			titleChunk?.querySelector<HTMLElement>('.fc-toolbar-title') ||
+			navChunk?.querySelector<HTMLElement>('.fc-toolbar-title') ||
+			this.calendarEl?.querySelector<HTMLElement>('.fc-toolbar-title') ||
+			null;
 		if (!home) return;
 
 		const clearEmptyChromeWraps = () => {
@@ -985,6 +1001,21 @@ class CalendarManager extends HTMLElement {
 			fabStack.remove();
 		};
 
+		/** Mobile: filtro → día → flechas en un solo chunk centrado. */
+		const dockMobileChromeRow = () => {
+			if (!navChunk) return;
+			const navTour = navChunk.querySelector<HTMLElement>('[data-calendar-tour-nav]');
+
+			if (filters) navChunk.appendChild(filters);
+			if (titleEl) navChunk.appendChild(titleEl);
+			if (navTour) navChunk.appendChild(navTour);
+		};
+
+		const restoreTitleToChunk = () => {
+			if (!titleChunk || !titleEl || titleEl.parentElement === titleChunk) return;
+			titleChunk.appendChild(titleEl);
+		};
+
 		const dockFiltersToNav = () => {
 			if (!navChunk || !filters) return;
 			const navTour = navChunk.querySelector<HTMLElement>('[data-calendar-tour-nav]');
@@ -1000,8 +1031,7 @@ class CalendarManager extends HTMLElement {
 		};
 
 		if (this.isMobileViewport()) {
-			// Filtros al lado del título (antes de flechas/Hoy).
-			dockFiltersToNav();
+			dockMobileChromeRow();
 			// Ayuda → TopBar (junto al tema).
 			if (topbarActions && guide && guide.parentElement !== topbarActions) {
 				topbarActions.appendChild(guide);
@@ -1026,6 +1056,7 @@ class CalendarManager extends HTMLElement {
 		}
 
 		unwrapFabStack();
+		restoreTitleToChunk();
 		dockFiltersToNav();
 
 		if (viewChunk) {
