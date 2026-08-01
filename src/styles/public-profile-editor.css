@@ -2003,140 +2003,51 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	padding: 0;
 	display: grid;
 	gap: 0;
-	border: 0;
-	border-radius: 0;
-	overflow: visible;
-	background: transparent;
+	max-width: 34rem;
 	border-top: 1px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
 }
 
 .ppe-hours-day {
-	position: relative;
 	display: grid;
-	gap: 0.55rem;
-	padding: 0.85rem 0.15rem;
-	border: 0;
+	grid-template-columns: 6.5rem 5.25rem minmax(0, 1fr);
+	align-items: start;
+	column-gap: 0.85rem;
+	row-gap: 0.45rem;
+	padding: 0.7rem 0.1rem;
 	border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
-	border-radius: 0;
-	background: transparent;
-	box-shadow: none;
 	transition: opacity 140ms ease;
 }
 
-.ppe-hours-day::before {
-	display: none;
-}
-
-.ppe-hours-day.is-expanded {
-	border-color: color-mix(in srgb, var(--shell-border) 90%, transparent);
-	box-shadow: none;
-}
-
 .ppe-hours-day.is-closed {
-	opacity: 0.72;
-	background: transparent;
-	box-shadow: none;
-}
-
-.ppe-hours-day.is-closed .ppe-hours-day__name {
-	opacity: 1;
-	color: var(--on-surface-variant);
-	font-weight: 650;
-}
-
-.ppe-hours-day.is-closed .ppe-hours-toggle__label {
-	opacity: 0.85;
-}
-
-.ppe-hours-day__head {
-	display: flex;
-	align-items: center;
-	justify-content: flex-start;
-	gap: 1rem;
-	min-width: 0;
-	padding-left: 0;
-	width: fit-content;
-	max-width: 100%;
-}
-
-.ppe-hours-day__left {
-	display: grid;
-	gap: 0.2rem;
-	min-width: 0;
-	flex: 0 1 auto;
-}
-
-.ppe-hours-day__lead {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.25rem;
-	min-width: 0;
-	width: fit-content;
-	max-width: 100%;
-	padding: 0;
-	border: 0;
-	border-radius: 0.35rem;
-	background: transparent;
-	color: inherit;
-	font: inherit;
-	text-align: left;
-	cursor: pointer;
-}
-
-.ppe-hours-day__lead:hover .ppe-hours-day__name {
-	color: var(--on-surface);
-}
-
-.ppe-hours-day__lead:hover .ppe-hours-day__chevron {
-	background: transparent;
-	color: var(--on-surface);
+	opacity: 0.78;
+	grid-template-columns: 6.5rem auto;
 }
 
 .ppe-hours-day__name {
 	font-weight: 700;
-	font-size: 0.92rem;
+	font-size: 0.9rem;
 	letter-spacing: -0.01em;
 	color: var(--on-surface);
+	line-height: 1.9;
 	min-width: 0;
 }
 
-.ppe-hours-day__chevron {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: auto;
-	height: auto;
-	border-radius: 0;
-	font-size: 1.15rem;
+.ppe-hours-day.is-closed .ppe-hours-day__name {
 	color: var(--on-surface-variant);
-	background: transparent;
-	flex-shrink: 0;
-	transition: color 140ms ease;
-}
-
-.ppe-hours-day.is-expanded .ppe-hours-day__chevron {
-	background: transparent;
-	color: var(--on-surface);
+	font-weight: 650;
 }
 
 .ppe-hours-toggle {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.4rem;
-	margin-top: 0;
+	margin-top: 0.2rem;
 	padding: 0;
-	border-radius: 0;
 	border: 0;
 	background: transparent;
 	cursor: pointer;
 	user-select: none;
 	flex-shrink: 0;
-	transition: none;
-}
-
-.ppe-hours-day.is-open .ppe-hours-toggle {
-	border-color: transparent;
-	background: transparent;
 }
 
 .ppe-hours-toggle .ppe-switch {
@@ -2159,109 +2070,112 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	font-size: 0.78rem;
 	font-weight: 650;
 	letter-spacing: 0.01em;
-	text-transform: none;
 	color: var(--on-surface-variant);
-	min-width: 3.2rem;
-}
-
-.ppe-hours-day:not(.is-closed) .ppe-hours-toggle__label {
-	color: var(--primary);
-}
-
-.ppe-hours-summary {
-	margin: 0;
-	padding: 0;
-	color: var(--on-surface-variant);
-	font-size: 0.8rem;
-	font-weight: 550;
-	font-variant-numeric: tabular-nums;
-	font-feature-settings: 'tnum';
-	letter-spacing: 0;
-	line-height: 1.35;
+	white-space: nowrap;
 }
 
 .ppe-hours-intervals {
 	display: grid;
-	gap: 0.45rem;
-	margin: 0;
-	padding: 0.55rem 0 0.1rem;
-	border-top: 1px solid color-mix(in srgb, var(--shell-border) 85%, transparent);
+	gap: 0.4rem;
 	min-width: 0;
+	padding-top: 0.05rem;
 }
 
 .ppe-hours-interval {
 	display: grid;
-	grid-template-columns: 8.75rem 1.1rem 8.75rem 2.25rem;
+	grid-template-columns: minmax(0, 1fr) 0.7rem minmax(0, 1fr) auto;
 	align-items: center;
-	justify-content: start;
 	column-gap: 0.35rem;
-	width: fit-content;
+	min-width: 0;
+	width: 100%;
 	max-width: 100%;
-	padding: 0;
-	border-radius: 0;
-	background: transparent;
 }
 
 .ppe-hours-interval__time {
 	box-sizing: border-box;
-	width: 8.75rem;
-	max-width: 140px;
+	width: 100%;
 	min-width: 0;
-	padding: 0.42rem 0.45rem;
-	border-radius: 0.55rem;
-	font-size: 0.88rem;
-	line-height: 1.2;
+	padding: 0.32rem 0.4rem;
+	border-radius: 0.45rem;
+	border-color: color-mix(in srgb, var(--shell-border) 85%, transparent);
+	background: color-mix(in srgb, var(--surface-bright) 88%, var(--on-surface) 4%);
+	font-size: 0.84rem;
+	line-height: 1.25;
 	text-align: center;
 	font-variant-numeric: tabular-nums;
 	font-feature-settings: 'tnum';
+	box-shadow: none;
+	color-scheme: light;
 }
 
-@media (max-width: 380px) {
-	.ppe-hours-interval {
-		grid-template-columns: minmax(0, 7.5rem) 1rem minmax(0, 7.5rem) 2.25rem;
-	}
+html[data-theme='dark'] .ppe-hours-interval__time {
+	color-scheme: dark;
+	background: color-mix(in srgb, var(--surface-bright) 70%, #fff 4%);
+	border-color: color-mix(in srgb, #fff 12%, transparent);
+}
 
-	.ppe-hours-interval__time {
-		width: 100%;
-		max-width: 7.5rem;
-	}
+.ppe-hours-interval__time::-webkit-calendar-picker-indicator {
+	opacity: 0.55;
+	cursor: pointer;
+	margin-left: 0;
+}
+
+.ppe-hours-interval__time::-webkit-datetime-edit {
+	padding: 0;
+}
+
+.ppe-hours-interval__time::-webkit-datetime-edit-fields-wrapper {
+	padding: 0;
+}
+
+.ppe-hours-interval__time:focus {
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 14%, transparent);
 }
 
 .ppe-hours-interval__sep {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
 	width: 100%;
+	text-align: center;
 	line-height: 1;
-	font-size: 0.72rem;
-	font-weight: 650;
-	text-transform: lowercase;
+	font-size: 0.85rem;
+	font-weight: 500;
 	color: var(--on-surface-variant);
+	opacity: 0.75;
+}
+
+.ppe-hours-interval__actions {
+	display: grid;
+	grid-template-columns: 1.85rem 1.85rem;
+	align-items: center;
+	justify-items: center;
+	gap: 0.1rem;
+	margin-left: 0.1rem;
+}
+
+.ppe-hours-action-slot {
+	display: block;
+	width: 1.85rem;
+	height: 1.85rem;
 }
 
 .ppe-hours-remove,
-.ppe-hours-remove-spacer {
+.ppe-hours-add {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 2.25rem;
-	height: 2.25rem;
+	width: 1.85rem;
+	height: 1.85rem;
 	padding: 0;
 	border: 0;
-	border-radius: 999px;
+	border-radius: 0.4rem;
 	background: transparent;
 	color: var(--on-surface-variant);
 	cursor: pointer;
-	transition: color 140ms ease, background 140ms ease;
+	transition: color 140ms ease, background 140ms ease, opacity 140ms ease;
 }
 
-.ppe-hours-remove-spacer {
-	pointer-events: none;
-	visibility: hidden;
-}
-
-.ppe-hours-remove .material-symbols-rounded {
-	font-size: 1.15rem;
+.ppe-hours-remove .material-symbols-rounded,
+.ppe-hours-add .material-symbols-rounded {
+	font-size: 1.1rem;
 }
 
 .ppe-hours-remove:hover {
@@ -2270,51 +2184,48 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 }
 
 .ppe-hours-add {
-	display: inline-flex;
-	align-items: center;
-	justify-content: flex-start;
-	gap: 0.25rem;
-	width: fit-content;
-	min-height: 2.2rem;
-	margin: 0.05rem 0 0;
-	padding: 0.25rem 0.15rem;
-	border: 0;
-	border-radius: 0.4rem;
-	background: transparent;
 	color: var(--primary);
-	font: inherit;
-	font-size: 0.84rem;
-	font-weight: 700;
-	cursor: pointer;
-	transition: opacity 140ms ease;
-}
-
-.ppe-hours-add .material-symbols-rounded {
-	font-size: 1.1rem;
 }
 
 .ppe-hours-add:hover {
-	background: transparent;
-	border-color: transparent;
-	opacity: 0.85;
+	background: color-mix(in srgb, var(--primary) 12%, transparent);
+	opacity: 1;
 }
 
-html[data-theme='dark'] .ppe-hours-day,
-html[data-theme='dark'] .ppe-hours-day.is-closed,
-html[data-theme='dark'] .ppe-hours-toggle,
-html[data-theme='dark'] .ppe-hours-day.is-open .ppe-hours-toggle,
-html[data-theme='dark'] .ppe-hours-interval {
-	background: transparent;
-	border-color: inherit;
-	box-shadow: none;
+@media (max-width: 520px) {
+	.ppe-hours-list {
+		max-width: none;
+		width: 100%;
+	}
+
+	.ppe-hours-day {
+		grid-template-columns: minmax(0, 1fr) auto;
+		column-gap: 0.65rem;
+		row-gap: 0.45rem;
+		width: 100%;
+	}
+
+	.ppe-hours-day.is-closed {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+
+	.ppe-hours-intervals {
+		grid-column: 1 / -1;
+		width: 100%;
+	}
+
+	.ppe-hours-interval {
+		column-gap: 0.35rem;
+	}
+
+	.ppe-hours-interval__time {
+		padding: 0.35rem 0.4rem;
+		font-size: 0.84rem;
+	}
 }
 
 html[data-theme='dark'] .ppe-hours-list,
 html[data-theme='dark'] .ppe-hours-day {
 	border-color: color-mix(in srgb, #fff 9%, transparent);
-}
-
-html[data-theme='dark'] .ppe-hours-intervals {
-	border-top-color: color-mix(in srgb, #fff 9%, transparent);
 }
 
