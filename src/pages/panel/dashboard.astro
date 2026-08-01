@@ -1974,6 +1974,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		if (prefersReducedMotion) {
 			revealNodes.forEach((node) => {
+				if (node.hasAttribute('data-profitability-panel')) return;
 				node.style.animation = '';
 				node.classList.add('is-in');
 			});
