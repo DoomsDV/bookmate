@@ -313,17 +313,17 @@ const previewInitial = {
 								<div class="ppe-logo-bg-toggle" role="group" aria-label="Fondo de vista previa del logo">
 									<button
 										type="button"
-										class="ppe-logo-bg-toggle__btn is-active"
+										class="ppe-logo-bg-toggle__btn"
 										data-ppe-logo-bg="light"
-										aria-pressed="true"
+										aria-pressed="false"
 									>
 										Claro
 									</button>
 									<button
 										type="button"
-										class="ppe-logo-bg-toggle__btn"
+										class="ppe-logo-bg-toggle__btn is-active"
 										data-ppe-logo-bg="dark"
-										aria-pressed="false"
+										aria-pressed="true"
 									>
 										Oscuro
 									</button>
@@ -332,7 +332,7 @@ const previewInitial = {
 							<label
 								class={`ppe-dropzone ppe-dropzone--logo ${workspace.logo_url ? 'has-preview' : ''}`}
 								data-ppe-logo-dropzone
-								data-ppe-logo-bg="light"
+								data-ppe-logo-bg="dark"
 							>
 								<input
 									type="file"

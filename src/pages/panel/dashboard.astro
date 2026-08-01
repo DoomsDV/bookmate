@@ -2415,20 +2415,20 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-content-canvas {
 		position: relative;
 		isolation: isolate;
-		/* Mesh: azul → celeste → verde agua (como referencia) */
+		/* Mesh light: azul/celeste suave, sin verde dominante */
 		background:
-			radial-gradient(ellipse 70% 50% at 6% 36%, rgba(147, 197, 253, 0.14), transparent 62%),
-			radial-gradient(ellipse 80% 55% at 55% 18%, rgba(186, 230, 253, 0.28), transparent 60%),
-			radial-gradient(ellipse 70% 50% at 92% 42%, rgba(165, 243, 252, 0.28), transparent 55%),
-			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(167, 243, 208, 0.26), transparent 58%),
-			radial-gradient(ellipse 60% 45% at 35% 88%, rgba(204, 251, 241, 0.2), transparent 62%),
+			radial-gradient(ellipse 70% 50% at 6% 36%, rgba(147, 197, 253, 0.12), transparent 62%),
+			radial-gradient(ellipse 80% 55% at 55% 18%, rgba(186, 230, 253, 0.2), transparent 60%),
+			radial-gradient(ellipse 70% 50% at 92% 42%, rgba(191, 219, 254, 0.18), transparent 55%),
+			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(199, 210, 254, 0.12), transparent 58%),
+			radial-gradient(ellipse 60% 45% at 35% 88%, rgba(224, 242, 254, 0.14), transparent 62%),
 			linear-gradient(
 				165deg,
 				#f8fbfe 0%,
-				#eef5fa 32%,
-				#e8f5f8 58%,
-				#eaf8f4 82%,
-				#f4faf8 100%
+				#f2f6fb 32%,
+				#eef4fa 58%,
+				#f1f5f9 82%,
+				#f7fafc 100%
 			);
 		transition: background 300ms ease;
 	}
@@ -2440,22 +2440,22 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		z-index: 0;
 		pointer-events: none;
 		background:
-			radial-gradient(ellipse 40% 30% at 10% 46%, rgba(96, 165, 250, 0.06), transparent 72%),
-			radial-gradient(ellipse 52% 38% at 88% 58%, rgba(34, 211, 238, 0.1), transparent 68%),
-			radial-gradient(ellipse 45% 40% at 72% 90%, rgba(52, 211, 153, 0.12), transparent 70%);
+			radial-gradient(ellipse 40% 30% at 10% 46%, rgba(96, 165, 250, 0.05), transparent 72%),
+			radial-gradient(ellipse 52% 38% at 88% 58%, rgba(125, 211, 252, 0.07), transparent 68%),
+			radial-gradient(ellipse 45% 40% at 72% 90%, rgba(165, 180, 252, 0.06), transparent 70%);
 		filter: blur(44px);
-		opacity: 0.55;
+		opacity: 0.45;
 	}
 
 	/* Touch/iOS (+ viewport estrecho): gradientes pre-difuminados sin filter (blur fullscreen calienta WebKit). */
 	@media (hover: none) and (pointer: coarse), (max-width: 1023px) {
 		.dashboard-content-canvas::before {
 			filter: none;
-			opacity: 0.85;
+			opacity: 0.7;
 			background:
-				radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.09), transparent 70%),
-				radial-gradient(ellipse 62% 48% at 92% 55%, rgba(34, 211, 238, 0.11), transparent 68%),
-				radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.13), transparent 72%);
+				radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.07), transparent 70%),
+				radial-gradient(ellipse 62% 48% at 92% 55%, rgba(125, 211, 252, 0.08), transparent 68%),
+				radial-gradient(ellipse 58% 50% at 70% 92%, rgba(165, 180, 252, 0.07), transparent 72%);
 		}
 
 		html[data-theme='dark'] .dashboard-content-canvas::before {
@@ -5010,10 +5010,61 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		stroke-linecap: round;
 		stroke-linejoin: round;
 		opacity: 0.75;
+		stroke-dasharray: 200;
+		stroke-dashoffset: 200;
+		animation: dashboard-profit-spark-draw 1.4s cubic-bezier(0.22, 1, 0.36, 1) 220ms forwards;
 	}
 
 	.dashboard-profit-spark__area {
-		opacity: 1;
+		opacity: 0;
+		animation: dashboard-profit-spark-fill 900ms ease-out 900ms forwards;
+	}
+
+	.dashboard-profit-card[data-profit-accent='emerald'] .dashboard-profit-spark__line {
+		animation-delay: 220ms;
+	}
+	.dashboard-profit-card[data-profit-accent='violet'] .dashboard-profit-spark__line {
+		animation-delay: 320ms;
+	}
+	.dashboard-profit-card[data-profit-accent='brand'] .dashboard-profit-spark__line {
+		animation-delay: 420ms;
+	}
+	.dashboard-profit-card[data-profit-accent='amber'] .dashboard-profit-spark__line {
+		animation-delay: 520ms;
+	}
+
+	.dashboard-profit-card[data-profit-accent='emerald'] .dashboard-profit-spark__area {
+		animation-delay: 900ms;
+	}
+	.dashboard-profit-card[data-profit-accent='violet'] .dashboard-profit-spark__area {
+		animation-delay: 1000ms;
+	}
+	.dashboard-profit-card[data-profit-accent='brand'] .dashboard-profit-spark__area {
+		animation-delay: 1100ms;
+	}
+	.dashboard-profit-card[data-profit-accent='amber'] .dashboard-profit-spark__area {
+		animation-delay: 1200ms;
+	}
+
+	@keyframes dashboard-profit-spark-draw {
+		to {
+			stroke-dashoffset: 0;
+		}
+	}
+
+	@keyframes dashboard-profit-spark-fill {
+		to {
+			opacity: 1;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.dashboard-profit-spark__line,
+		.dashboard-profit-spark__area {
+			animation: none;
+			stroke-dashoffset: 0;
+			opacity: 1;
+		}
 	}
 
 	.dashboard-premium-badge {
