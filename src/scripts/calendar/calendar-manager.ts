@@ -608,9 +608,10 @@ class CalendarManager extends HTMLElement {
 		};
 	}
 
-	private getCalendarHeightOption(_isMobile?: boolean) {
-		// Host con altura fija → scroll interno del timegrid (headers sticky).
-		return '100%';
+	private getCalendarHeightOption(isMobile?: boolean) {
+		// Mobile: altura natural → scroll del main (no se corta con el bottom bar).
+		// Desktop: host fijo → scroll interno del timegrid (headers sticky).
+		return (isMobile ?? this.isMobileViewport()) ? 'auto' : '100%';
 	}
 
 	private isCompactChromeViewport() {

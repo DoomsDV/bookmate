@@ -1,5 +1,8 @@
 @import "tailwindcss";
 @import "tom-select/dist/css/tom-select.css";
+/* Guías (driver.js): en el CSS de página para evitar FOUC del auto-tour vs. import JS. */
+@import "driver.js/dist/driver.css";
+@import "./product-tour.css";
 
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
 

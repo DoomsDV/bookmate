@@ -1,6 +1,5 @@
 import { driver, type DriveStep, type Driver, type PopoverDOM } from 'driver.js';
-import 'driver.js/dist/driver.css';
-import '../styles/product-tour.css';
+/* Estilos de driver.js + product-tour.css viven en global.css (evita FOUC del auto-tour). */
 
 const TOUR_SHELL_SELECTOR = '[data-bookmate-tour-shell]';
 

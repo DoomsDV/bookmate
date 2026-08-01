@@ -293,21 +293,30 @@ const isActive = (href?: string) => {
 			box-sizing: border-box;
 			min-height: var(--mobile-bottom-nav-dock-height);
 			padding: 0.5rem 0.55rem;
-			border: 1px solid color-mix(in srgb, var(--shell-border) 60%, transparent);
+			border: 1px solid color-mix(in srgb, white 55%, var(--shell-border) 45%);
 			border-radius: var(--mobile-bottom-nav-radius);
 			overflow: hidden;
-			background: color-mix(in srgb, var(--surface-bright, #ffffff) 78%, var(--surface-container, #eef2f6) 22%);
+			/* Liquid glass — prueba */
+			background: color-mix(in srgb, var(--surface-bright, #ffffff) 42%, transparent);
+			-webkit-backdrop-filter: blur(18px) saturate(1.35);
+			backdrop-filter: blur(18px) saturate(1.35);
 			box-shadow:
-				0 4px 12px rgba(15, 23, 42, 0.08),
-				0 16px 40px rgba(15, 23, 42, 0.14);
+				0 4px 12px rgba(15, 23, 42, 0.06),
+				0 16px 40px rgba(15, 23, 42, 0.1),
+				inset 0 1px 0 rgba(255, 255, 255, 0.55),
+				inset 0 -1px 0 rgba(255, 255, 255, 0.12);
 		}
 
 		html[data-theme='dark'] .mobile-bottom-nav {
-			background: color-mix(in srgb, var(--surface-container-high, #222222) 92%, black);
-			border-color: rgba(255, 255, 255, 0.06);
+			background: color-mix(in srgb, var(--surface-container-high, #222222) 38%, transparent);
+			border-color: rgba(255, 255, 255, 0.14);
+			-webkit-backdrop-filter: blur(20px) saturate(1.4);
+			backdrop-filter: blur(20px) saturate(1.4);
 			box-shadow:
-				0 4px 12px rgba(0, 0, 0, 0.28),
-				0 16px 40px rgba(0, 0, 0, 0.38);
+				0 4px 12px rgba(0, 0, 0, 0.22),
+				0 16px 40px rgba(0, 0, 0, 0.28),
+				inset 0 1px 0 rgba(255, 255, 255, 0.16),
+				inset 0 -1px 0 rgba(255, 255, 255, 0.04);
 		}
 
 		body:has([data-mobile-bottom-nav]) .app-shell > :last-child > main,

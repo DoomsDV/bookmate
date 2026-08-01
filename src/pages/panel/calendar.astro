@@ -2533,10 +2533,40 @@ const googleErrorMessage = hasGoogleError
 			flex: 1 1 auto;
 		}
 
-		/* Mobile: reserva bottom nav; toolbar FC en una fila */
+		/* Mobile: reserva bottom nav; el main scrollea (calendario altura natural) */
 		.calendar-main[data-calendar-main] {
 			padding-top: 0.35rem;
 			padding-bottom: calc(5.15rem + env(safe-area-inset-bottom, 0px));
+			height: 100%;
+			max-height: 100%;
+			overflow-x: hidden;
+			overflow-y: auto;
+			-webkit-overflow-scrolling: touch;
+			overscroll-behavior: contain;
+		}
+
+		[data-calendar-root].material-region,
+		[data-calendar-root] .calendar-page-stack,
+		.calendar-stage-wrap,
+		.calendar-stage {
+			flex: 0 0 auto;
+			min-height: auto;
+			height: auto;
+		}
+
+		[data-calendar-root] .calendar-host {
+			flex: 0 0 auto;
+			min-height: 0 !important;
+			height: auto;
+		}
+
+		[data-calendar-root] .fc {
+			height: auto;
+		}
+
+		[data-calendar-root] .fc .fc-view-harness {
+			height: auto !important;
+			min-height: 0 !important;
 		}
 
 		.calendar-page-header {
