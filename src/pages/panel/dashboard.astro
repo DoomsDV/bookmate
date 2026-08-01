@@ -3828,31 +3828,28 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: transparent;
 	}
 
-	dialog[data-ai-summary-modal][open] .dashboard-ai-drawer__panel {
-		animation: ai-summary-drawer-in var(--modal-open-duration, 220ms)
-			var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
+	/* Misma animación que el modal de Cita rápida: drawer lateral desde la derecha. */
+	dialog[data-ai-summary-modal][open] {
+		animation: ai-summary-drawer-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-ai-summary-modal]::backdrop {
-		background: rgba(15, 23, 42, 0.42);
-		backdrop-filter: blur(4px);
-		-webkit-backdrop-filter: blur(4px);
-		animation: ai-summary-backdrop-in var(--modal-open-duration, 220ms)
-			var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1));
+		background-color: transparent;
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+		animation: ai-summary-backdrop-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	html[data-theme='dark'] dialog[data-ai-summary-modal]::backdrop {
-		background: rgba(0, 0, 0, 0.58);
+		background-color: transparent;
 	}
 
-	dialog[data-ai-summary-modal].is-closing .dashboard-ai-drawer__panel {
-		animation: ai-summary-drawer-out var(--modal-close-duration, 140ms)
-			var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+	dialog[data-ai-summary-modal].is-closing {
+		animation: ai-summary-drawer-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	dialog[data-ai-summary-modal].is-closing::backdrop {
-		animation: ai-summary-backdrop-out var(--modal-close-duration, 140ms)
-			var(--modal-easing, cubic-bezier(0.16, 1, 0.3, 1)) forwards;
+		animation: ai-summary-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	@keyframes ai-summary-drawer-in {
