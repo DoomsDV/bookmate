@@ -2603,11 +2603,11 @@ const googleErrorMessage = hasGoogleError
 			display: none;
 		}
 
-		/* Controles FC: fila 1 = filtro → día → flechas (centrado); fila 2 = vistas */
+		/* Controles FC: fila 1 = mes/año · flechas · filtro (derecha); fila 2 = vistas */
 		[data-calendar-root] .fc .fc-toolbar.fc-header-toolbar {
 			display: grid !important;
 			grid-template-columns: 1fr;
-			justify-items: center;
+			justify-items: stretch;
 			align-items: center;
 			gap: 0.45rem;
 			padding: 0 0 0.45rem;
@@ -2623,15 +2623,15 @@ const googleErrorMessage = hasGoogleError
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav {
 			display: flex !important;
 			order: 1;
-			width: max-content;
+			width: 100%;
 			max-width: 100%;
-			flex-wrap: nowrap;
 			align-items: center;
-			justify-content: center;
-			justify-self: center;
-			gap: 0.4rem;
+			justify-content: flex-end;
+			gap: 0.35rem;
 			min-width: 0;
-			margin: 0 auto !important;
+			min-height: 1.95rem;
+			margin: 0 !important;
+			justify-self: stretch;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav > * {
@@ -2639,29 +2639,45 @@ const googleErrorMessage = hasGoogleError
 			margin-right: 0 !important;
 		}
 
-		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-filters-control {
-			flex: 0 0 auto;
-			margin-right: 2rem !important;
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-time-nav-end {
+			display: contents;
 		}
 
+		/* Orden a la derecha: mes/año · flechas · filtro */
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .fc-toolbar-title {
+			position: static;
+			left: auto;
+			transform: none;
+			order: 1 !important;
 			flex: 0 1 auto;
 			width: auto;
-			max-width: 7.5rem;
+			max-width: min(9.5rem, 36vw);
 			font-size: 0.86rem;
 			line-height: 1.15;
 			margin: 0;
-			text-align: center;
+			text-align: right;
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
+			pointer-events: auto;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav [data-calendar-tour-nav] {
 			display: inline-flex;
-			flex: 0 0 auto;
+			order: 2 !important;
 			align-items: center;
 			gap: 0.2rem;
+			flex: 0 0 auto;
+		}
+
+		/* Si el título quedó dentro del tour, forzálo antes de las flechas */
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav [data-calendar-tour-nav] .fc-toolbar-title {
+			order: -1 !important;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-filters-control {
+			order: 3 !important;
+			flex: 0 0 auto;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .fc-button-group {

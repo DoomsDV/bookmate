@@ -60,7 +60,9 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 				.find(Boolean) || ''
 		: '';
 	const locationLabel = String(state.locationLabel || '').trim();
-	const teamCount = Number(state.teamCount || 0);
+	const professionals = Array.isArray(state.professionals) ? state.professionals : [];
+	const locations = Array.isArray(state.locations) ? state.locations : [];
+	const teamCount = Number(state.teamCount || professionals.length || 0);
 	const servicesCount = state.serviceCategories?.length || 0;
 	const hoursLiveStatus =
 		state.businessHoursRows?.find((row) => row.liveStatus)?.liveStatus ?? null;
@@ -325,28 +327,57 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 						hidden={activeTab !== 'equipo'}
 					>
 						<h3 class="hub-section-title">Equipo</h3>
-						<div class="hub-team-grid hub-skel-grid" aria-hidden="true">
-							{Array.from({ length: 4 }, (_, i) => (
-								<div class="hub-pro-card hub-pro-card--skeleton" key={`team-skel-${i}`}>
-									<div class="hub-pro-card__top">
-										<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
-									</div>
-									<div class="hub-pro-card__main">
-										<span class="hub-pro-card__avatar hub-skel-circle">
-											<span class="hub-skel hub-skel-circle hub-pro-card__avatar-face"></span>
-											<span class="hub-pro-card__status-dot" aria-hidden="true"></span>
-										</span>
-										<div class="hub-pro-card__text">
-											<span
-												class={`hub-skel hub-skel-line hub-skel-line--title${i % 2 === 1 ? ' hub-skel-line--short' : ''}`}
-											></span>
-											<span class="hub-skel hub-skel-line hub-skel-line--sub"></span>
+						{professionals.length ? (
+							<div class="hub-team-grid" aria-label="Profesionales">
+								{professionals.map((pro) => (
+									<div class="hub-pro-card" key={pro.id}>
+										<div class="hub-pro-card__top">
+											<span class="hub-pro-card__status">
+												<span class="hub-pro-card__status-dot" aria-hidden="true" />
+												Agenda abierta
+											</span>
 										</div>
+										<div class="hub-pro-card__main">
+											<div
+												class={`hub-pro-card__avatar${pro.imageUrl ? '' : ' hub-pro-card__avatar--ph'}`}
+											>
+												{pro.imageUrl ? (
+													<img
+														src={pro.imageUrl}
+														alt=""
+														class="hub-pro-card__photo is-ready"
+														width="96"
+														height="96"
+														loading="lazy"
+														decoding="async"
+													/>
+												) : (
+													<span class="hub-pro-card__initials" aria-hidden="true">
+														{pro.initials}
+													</span>
+												)}
+												<span
+													class="hub-pro-card__status-dot hub-pro-card__status-dot--avatar"
+													aria-hidden="true"
+												/>
+											</div>
+											<div class="hub-pro-card__text">
+												<h3 class="hub-pro-card__name">{pro.fullName}</h3>
+												<p class="hub-pro-card__specialty">{pro.specialty}</p>
+											</div>
+										</div>
+										<span class="hub-pro-card__btn">
+											<span class="material-symbols-rounded" aria-hidden="true">
+												event
+											</span>
+											Reservar
+										</span>
 									</div>
-									<span class="hub-skel hub-pro-card__btn-skel"></span>
-								</div>
-							))}
-						</div>
+								))}
+							</div>
+						) : (
+							<p class="hub-empty">Todavía no hay profesionales.</p>
+						)}
 					</section>
 
 					<section
@@ -354,23 +385,29 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 						hidden={activeTab !== 'sucursales'}
 					>
 						<h3 class="hub-section-title">Sucursales</h3>
-						<div class="hub-locations-grid hub-skel-grid" aria-hidden="true">
-							{Array.from({ length: 2 }, (_, i) => (
-								<article class="hub-location-card hub-location-card--skeleton">
-									<div class="hub-skel hub-location-card__map"></div>
-									<div class="hub-location-card__body">
-										<div class="hub-location-card__info">
-											<span
-												class={`hub-skel hub-skel-line hub-skel-line--title${i % 2 === 1 ? ' hub-skel-line--short' : ''}`}
-											></span>
-											<span class="hub-skel hub-skel-line hub-skel-line--sub"></span>
-											<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
+						{locations.length ? (
+							<div class="hub-locations-grid" aria-label="Sucursales">
+								{locations.map((loc) => (
+									<article class="hub-location-card" key={loc.id}>
+										<div class="hub-location-card__map hub-location-card__map--empty">
+											<span class="material-symbols-rounded" aria-hidden="true">
+												location_on
+											</span>
 										</div>
-										<span class="hub-skel hub-skel-circle"></span>
-									</div>
-								</article>
-							))}
-						</div>
+										<div class="hub-location-card__body">
+											<div class="hub-location-card__info">
+												<h3 class="hub-location-card__name">{loc.name}</h3>
+												{loc.address ? (
+													<p class="hub-location-card__address">{loc.address}</p>
+												) : null}
+											</div>
+										</div>
+									</article>
+								))}
+							</div>
+						) : (
+							<p class="hub-empty">Todavía no hay sucursales.</p>
+						)}
 					</section>
 				</div>
 			</div>

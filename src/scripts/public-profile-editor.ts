@@ -16,7 +16,12 @@ import {
 	type ProfileCropMode,
 } from '../lib/profile-image-crop';
 import { emitPublicProfilePreviewUpdate } from '../lib/public-profile-preview-events';
+import type {
+	PublicProfilePreviewLocation,
+	PublicProfilePreviewProfessional,
+} from '../lib/public-profile-preview-events';
 import { buildOrgHubUrl } from '../lib/public-profile-url';
+import { getPublicProfileSpecialtyLabel } from '../lib/public-booking';
 import { isReservedOrgSlug } from '../lib/reserved-org-slugs';
 
 type GalleryItem = { id: number; url: string; sort_order?: number };
@@ -34,6 +39,20 @@ type Bootstrap = {
 		gallery_images?: GalleryItem[];
 		name?: string;
 	};
+	hub?: {
+		locations?: Array<{
+			id_location?: number;
+			name?: string;
+			address?: string;
+		}>;
+		professionals?: Array<{
+			id_professional?: number;
+			full_name?: string;
+			specialty?: string;
+			image_url?: string;
+		}>;
+		service_categories?: string[];
+	} | null;
 	organizationName: string;
 	siteOrigin: string;
 	domainLabel: string;
@@ -109,6 +128,44 @@ const initialsFromName = (name: string) => {
 	return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
 };
 
+const mapPreviewProfessionals = (
+	raw: unknown
+): PublicProfilePreviewProfessional[] => {
+	if (!Array.isArray(raw)) return [];
+	return raw
+		.map((item) => {
+			if (!item || typeof item !== 'object') return null;
+			const row = item as Record<string, unknown>;
+			const fullName = String(row.full_name || '').trim();
+			if (!fullName) return null;
+			return {
+				id: Number(row.id_professional) || 0,
+				fullName,
+				specialty: getPublicProfileSpecialtyLabel(String(row.specialty || '')) || 'Profesional',
+				imageUrl: String(row.image_url || '').trim(),
+				initials: initialsFromName(fullName),
+			} satisfies PublicProfilePreviewProfessional;
+		})
+		.filter((item): item is PublicProfilePreviewProfessional => item !== null);
+};
+
+const mapPreviewLocations = (raw: unknown): PublicProfilePreviewLocation[] => {
+	if (!Array.isArray(raw)) return [];
+	return raw
+		.map((item) => {
+			if (!item || typeof item !== 'object') return null;
+			const row = item as Record<string, unknown>;
+			const name = String(row.name || '').trim();
+			if (!name && !String(row.address || '').trim()) return null;
+			return {
+				id: Number(row.id_location) || 0,
+				name: name || 'Sucursal',
+				address: String(row.address || '').trim(),
+			} satisfies PublicProfilePreviewLocation;
+		})
+		.filter((item): item is PublicProfilePreviewLocation => item !== null);
+};
+
 export const initializePublicProfileEditor = (root: HTMLElement) => {
 	if (root.dataset.ppeBound === '1') return;
 	root.dataset.ppeBound = '1';
@@ -144,11 +201,29 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		serviceCategories: string[];
 		locationLabel: string;
 		teamCount: number;
-	} = {
-		serviceCategories: [],
-		locationLabel: '',
-		teamCount: 0,
-	};
+		professionals: PublicProfilePreviewProfessional[];
+		locations: PublicProfilePreviewLocation[];
+	} = (() => {
+		const professionals = mapPreviewProfessionals(bootstrap.hub?.professionals);
+		const locations = mapPreviewLocations(bootstrap.hub?.locations);
+		let locationLabel = '';
+		if (locations.length === 1) {
+			locationLabel = locations[0]?.name || locations[0]?.address || '';
+		} else if (locations.length > 1) {
+			locationLabel = `${locations.length} sucursales`;
+		}
+		return {
+			serviceCategories: Array.isArray(bootstrap.hub?.service_categories)
+				? bootstrap.hub.service_categories
+						.map((c) => String(c || '').trim())
+						.filter(Boolean)
+				: [],
+			locationLabel,
+			teamCount: professionals.length,
+			professionals,
+			locations,
+		};
+	})();
 
 	const logoInput = root.querySelector<HTMLInputElement>('[data-ppe-logo-input]');
 	const logoDropzone = root.querySelector<HTMLElement>('[data-ppe-logo-dropzone]');
@@ -555,6 +630,8 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			serviceCategories: previewHubMeta.serviceCategories,
 			locationLabel: previewHubMeta.locationLabel,
 			teamCount: previewHubMeta.teamCount,
+			professionals: previewHubMeta.professionals,
+			locations: previewHubMeta.locations,
 		});
 	};
 
@@ -568,23 +645,26 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			const data = await res.json().catch(() => ({}));
 			if (!res.ok || data?.status !== 'success' || !data?.data) return;
 			const hub = data.data as {
-				locations?: Array<{ name?: string; address?: string }>;
-				professionals?: unknown[];
+				locations?: unknown;
+				professionals?: unknown;
 				service_categories?: string[];
 			};
-			const locs = Array.isArray(hub.locations) ? hub.locations : [];
+			const professionals = mapPreviewProfessionals(hub.professionals);
+			const locations = mapPreviewLocations(hub.locations);
 			let locationLabel = '';
-			if (locs.length === 1) {
-				locationLabel = String(locs[0]?.name || locs[0]?.address || '').trim();
-			} else if (locs.length > 1) {
-				locationLabel = `${locs.length} sucursales`;
+			if (locations.length === 1) {
+				locationLabel = locations[0]?.name || locations[0]?.address || '';
+			} else if (locations.length > 1) {
+				locationLabel = `${locations.length} sucursales`;
 			}
 			previewHubMeta = {
 				serviceCategories: Array.isArray(hub.service_categories)
 					? hub.service_categories.map((c) => String(c || '').trim()).filter(Boolean)
 					: [],
 				locationLabel,
-				teamCount: Array.isArray(hub.professionals) ? hub.professionals.length : 0,
+				teamCount: professionals.length,
+				professionals,
+				locations,
 			};
 			syncPreview();
 		} catch {

@@ -310,37 +310,6 @@ const isActive = (href?: string) => {
 				0 16px 40px rgba(0, 0, 0, 0.38);
 		}
 
-		/*
-		 * Perfil público: volver a modo pegado para encajar con .ppe-save-footer
-		 * (sin hueco flotante ni doble borde).
-		 */
-		body:has(public-profile-editor .ppe-save-footer) {
-			--mobile-bottom-nav-float-gap: 0px;
-			--mobile-bottom-nav-height: max(
-				4.25rem,
-				calc(0.45rem + 2.35rem + 0.9rem + env(safe-area-inset-bottom, 0px))
-			);
-		}
-
-		body:has(public-profile-editor .ppe-save-footer) .mobile-bottom-nav {
-			--mobile-bottom-nav-radius: 0px;
-			left: 0;
-			right: 0;
-			bottom: 0;
-			width: 100%;
-			max-width: 100%;
-			margin-inline: 0;
-			min-height: var(--mobile-bottom-nav-height);
-			padding: 0.45rem 0.35rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
-			padding-left: max(0.35rem, env(safe-area-inset-left, 0px));
-			padding-right: max(0.35rem, env(safe-area-inset-right, 0px));
-			border: 0;
-			border-radius: 0;
-			border-top: 0;
-			overflow: visible;
-			box-shadow: none;
-		}
-
 		body:has([data-mobile-bottom-nav]) .app-shell > :last-child > main,
 		body:has([data-mobile-bottom-nav]) .dashboard-content-canvas > main {
 			padding-bottom: calc(6.6rem + env(safe-area-inset-bottom, 0px));

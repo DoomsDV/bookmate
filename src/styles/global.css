@@ -821,32 +821,65 @@ button {
 	border-bottom: 1px solid var(--shell-border);
 }
 
-/* TopBar del panel: en light más sólido para separarlo del page-background */
+/* TopBar del panel: opaco arriba; translúcido al hacer scroll */
 .shell-header-zone:not(.sidebar-account-header) {
-	background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 78%, var(--surface-container, #eef2f6) 22%);
+	background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 94%, var(--surface-container, #eef2f6) 6%);
 	border-bottom-color: color-mix(in srgb, var(--shell-border) 88%, transparent);
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+	box-shadow: 0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent);
+	transition:
+		background-color 220ms ease,
+		border-color 220ms ease,
+		box-shadow 220ms ease,
+		backdrop-filter 220ms ease;
+}
+
+.shell-header-zone:not(.sidebar-account-header).is-scrolled {
+	background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 62%, transparent);
+	border-bottom-color: color-mix(in srgb, var(--shell-border) 55%, transparent);
 	backdrop-filter: blur(16px) saturate(1.12);
 	-webkit-backdrop-filter: blur(16px) saturate(1.12);
-	box-shadow: 0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent);
+	box-shadow: 0 8px 24px color-mix(in srgb, var(--on-surface) 6%, transparent);
 }
 
 html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
-	background-color: color-mix(in srgb, var(--page-background, #131314) 36%, transparent);
-	border-bottom-color: color-mix(in srgb, var(--shell-border) 28%, transparent);
+	background-color: var(--page-background, #191919);
+	border-bottom-color: color-mix(in srgb, var(--shell-border) 40%, transparent);
 	box-shadow: none;
 }
 
-/* Touch/iOS (+ viewport estrecho): sin glass — backdrop-filter calienta WebKit en PWA (mismo patrón opaco que bottom nav). */
+html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrolled {
+	background-color: color-mix(in srgb, var(--page-background, #131314) 48%, transparent);
+	border-bottom-color: color-mix(in srgb, var(--shell-border) 22%, transparent);
+	backdrop-filter: blur(16px) saturate(1.1);
+	-webkit-backdrop-filter: blur(16px) saturate(1.1);
+}
+
+/* Touch/iOS: sin blur en reposo (opaco). Con scroll, translucidez suave sin backdrop-filter. */
 @media (hover: none) and (pointer: coarse), (max-width: 1023px) {
 	.shell-header-zone:not(.sidebar-account-header) {
 		backdrop-filter: none;
 		-webkit-backdrop-filter: none;
-		background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 78%, var(--surface-container, #eef2f6) 22%);
+		background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 96%, var(--surface-container, #eef2f6) 4%);
+	}
+
+	.shell-header-zone:not(.sidebar-account-header).is-scrolled {
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 78%, transparent);
+		box-shadow: 0 6px 18px color-mix(in srgb, var(--on-surface) 5%, transparent);
 	}
 
 	html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
 		background-color: var(--page-background, #191919);
 		border-bottom-color: color-mix(in srgb, var(--shell-border) 28%, transparent);
+	}
+
+	html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrolled {
+		background-color: color-mix(in srgb, var(--page-background, #191919) 72%, transparent);
+		border-bottom-color: color-mix(in srgb, var(--shell-border) 18%, transparent);
+		box-shadow: none;
 	}
 }
 

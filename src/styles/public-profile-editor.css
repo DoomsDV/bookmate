@@ -1224,8 +1224,10 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 
 @media (max-width: 1023px) {
 	body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
-		/* bottom-nav + altura del footer de guardar + gap */
-		bottom: calc(var(--mobile-bottom-nav-height, 4.25rem) + 4.25rem + 0.75rem);
+		/* dock + hueco + footer guardar + margen */
+		bottom: calc(
+			var(--mobile-bottom-nav-height, 4.25rem) + 0.55rem + 4.5rem + 0.75rem
+		);
 	}
 }
 
@@ -1407,27 +1409,39 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	}
 
 	.ppe-save-footer {
-		/* Acoplado al tope del MobileBottomNav (sin hueco) */
-		bottom: var(--mobile-bottom-nav-height, 4.25rem);
+		/* Por encima del dock flotante, con hueco visible (no taparlo) */
+		--ppe-save-footer-gap: 0.55rem;
+		bottom: calc(
+			var(--mobile-bottom-nav-height, 4.25rem) + var(--ppe-save-footer-gap)
+		);
+		left: 0.75rem;
+		right: 0.75rem;
+		width: auto;
 		margin: 0;
-		padding: 0.75rem 1rem;
-		border-top: 1px solid var(--shell-border);
-		border-bottom: 0;
-		box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.08);
-		background: color-mix(in srgb, var(--surface-bright, #fff) 92%, transparent);
+		padding: 0.65rem 0.75rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
+		border-radius: 1.15rem;
+		box-shadow:
+			0 4px 12px rgba(15, 23, 42, 0.08),
+			0 12px 28px rgba(15, 23, 42, 0.12);
+		background: color-mix(in srgb, var(--surface-bright, #fff) 88%, transparent);
 		backdrop-filter: blur(14px);
 		-webkit-backdrop-filter: blur(14px);
-		z-index: 46;
+		/* Debajo del bottom-nav para no interceptar taps del dock */
+		z-index: 44;
 	}
 
 	html[data-theme='dark'] .ppe-save-footer {
-		background: color-mix(in srgb, var(--surface-container-low, #1e1f22) 92%, transparent);
-		box-shadow: 0 -10px 28px rgba(0, 0, 0, 0.28);
+		background: color-mix(in srgb, var(--surface-container-high, #222222) 92%, black);
+		border-color: rgba(255, 255, 255, 0.08);
+		box-shadow:
+			0 4px 12px rgba(0, 0, 0, 0.28),
+			0 12px 28px rgba(0, 0, 0, 0.34);
 	}
 
 	.ppe-page {
-		/* Espacio para el bloque Guardar (main ya reserva el bottom-nav) */
-		padding-bottom: 5.25rem;
+		/* Espacio para Guardar + hueco + dock flotante */
+		padding-bottom: calc(var(--mobile-bottom-nav-height, 4.25rem) + 5.25rem);
 	}
 
 	.ppe-save-footer__hint {
@@ -1436,6 +1450,7 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 
 	.ppe-save-footer .ppe-btn {
 		width: 100%;
+		border-radius: 0.85rem;
 	}
 }
 

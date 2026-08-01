@@ -11,7 +11,7 @@ const roleId = Number(Astro.locals.roleId ?? 0);
 const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim();
 ---
 
-<header class="shell-header-zone relative z-40 pl-3 pr-3 sm:px-6">
+<header class="shell-header-zone relative z-40 pl-3 pr-3 sm:px-6" data-shell-topbar>
 	<div class="flex w-full min-w-0 items-center justify-between gap-2 sm:gap-4">
 		<div class="flex min-w-0 items-center gap-2 sm:gap-3">
 			<button
@@ -457,6 +457,30 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		restoreDesktopSidebarState();
 		syncOnResize();
 		maybeShowSettingsMenuTour();
+
+		const topBar = document.querySelector<HTMLElement>('[data-shell-topbar]');
+		const scrollRoots = [
+			document.querySelector<HTMLElement>('.app-shell > :last-child > main'),
+			document.querySelector<HTMLElement>('[data-ppe-config-pane]'),
+		].filter((node): node is HTMLElement => Boolean(node));
+
+		const SCROLL_OPAQUE_MAX = 8;
+		let scrollRaf = 0;
+		const syncTopBarScrollState = () => {
+			if (!topBar) return;
+			const scrolled = scrollRoots.some((root) => root.scrollTop > SCROLL_OPAQUE_MAX);
+			topBar.classList.toggle('is-scrolled', scrolled);
+		};
+		const onScrollRoot = () => {
+			if (scrollRaf) return;
+			scrollRaf = requestAnimationFrame(() => {
+				scrollRaf = 0;
+				syncTopBarScrollState();
+			});
+		};
+
+		scrollRoots.forEach((root) => on(root, 'scroll', onScrollRoot));
+		syncTopBarScrollState();
 	};
 
 	initializeTopBar();

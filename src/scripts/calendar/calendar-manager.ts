@@ -941,7 +941,8 @@ class CalendarManager extends HTMLElement {
 				if (child === navTour) continue;
 				if (!(child instanceof HTMLElement)) continue;
 				if (child.hasAttribute('data-calendar-filters-control')) continue;
-				// En mobile el título vive entre filtros y flechas; no meterlo en el tour.
+				if (child.hasAttribute('data-calendar-time-nav-end')) continue;
+				// En mobile el título vive fuera del tour (mes/año · flechas · filtro).
 				if (child.classList.contains('fc-toolbar-title')) continue;
 				navTour.appendChild(child);
 			}
@@ -1001,14 +1002,29 @@ class CalendarManager extends HTMLElement {
 			fabStack.remove();
 		};
 
-		/** Mobile: filtro → día → flechas en un solo chunk centrado. */
+		/** Mobile: mes/año · flechas · filtro, todos pegados a la derecha. */
 		const dockMobileChromeRow = () => {
 			if (!navChunk) return;
 			const navTour = navChunk.querySelector<HTMLElement>('[data-calendar-tour-nav]');
 
-			if (filters) navChunk.appendChild(filters);
-			if (titleEl) navChunk.appendChild(titleEl);
+			// Sacá el título si quedó dentro del tour/flechas.
+			if (titleEl && titleEl.parentElement !== navChunk) {
+				navChunk.appendChild(titleEl);
+			}
+			if (navTour) {
+				navTour.querySelectorAll('.fc-toolbar-title').forEach((node) => {
+					navChunk.appendChild(node);
+				});
+			}
+
+			const titleNode =
+				(titleEl && navChunk.contains(titleEl) ? titleEl : null) ||
+				navChunk.querySelector<HTMLElement>('.fc-toolbar-title');
+
+			// Orden estricto: título → flechas → filtro
+			if (titleNode) navChunk.appendChild(titleNode);
 			if (navTour) navChunk.appendChild(navTour);
+			if (filters) navChunk.appendChild(filters);
 		};
 
 		const restoreTitleToChunk = () => {

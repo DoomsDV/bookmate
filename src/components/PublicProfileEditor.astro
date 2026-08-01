@@ -4,6 +4,7 @@ import {
 	parseBusinessHours,
 } from '../lib/business-hours';
 import type { PublicOrgHub } from '../lib/public-org-hub';
+import { getPublicProfileSpecialtyLabel } from '../lib/public-booking';
 import type { WorkspaceSettingsData } from '../lib/workspace-settings-shared';
 import {
 	buildOrgHubUrl,
@@ -44,6 +45,30 @@ const initials = (() => {
 	return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
 })();
 
+const personInitials = (name: string) => {
+	const parts = String(name || '')
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+	if (!parts.length) return '?';
+	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+	return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+};
+
+const previewProfessionals = (hub?.professionals || []).map((pro) => ({
+	id: Number(pro.id_professional) || 0,
+	fullName: String(pro.full_name || '').trim(),
+	specialty: getPublicProfileSpecialtyLabel(pro.specialty) || 'Profesional',
+	imageUrl: String(pro.image_url || '').trim(),
+	initials: personInitials(pro.full_name),
+}));
+
+const previewLocations = (hub?.locations || []).map((loc) => ({
+	id: Number(loc.id_location) || 0,
+	name: String(loc.name || '').trim() || 'Sucursal',
+	address: String(loc.address || '').trim(),
+}));
+
 const payload = {
 	workspace: {
 		...workspace,
@@ -78,7 +103,9 @@ const previewInitial = {
 		}
 		return `${locs.length} sucursales`;
 	})(),
-	teamCount: hub?.professionals?.length || 0,
+	teamCount: previewProfessionals.length,
+	professionals: previewProfessionals,
+	locations: previewLocations,
 	businessHoursRows,
 };
 ---

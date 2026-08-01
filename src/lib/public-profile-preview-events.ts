@@ -1,5 +1,19 @@
 import type { BusinessHoursDisplayRow } from './business-hours';
 
+export type PublicProfilePreviewProfessional = {
+	id: number;
+	fullName: string;
+	specialty: string;
+	imageUrl: string;
+	initials: string;
+};
+
+export type PublicProfilePreviewLocation = {
+	id: number;
+	name: string;
+	address: string;
+};
+
 export type PublicProfilePreviewState = {
 	organizationName: string;
 	initials: string;
@@ -14,6 +28,8 @@ export type PublicProfilePreviewState = {
 	profileSlug: string;
 	locationLabel: string;
 	teamCount: number;
+	professionals: PublicProfilePreviewProfessional[];
+	locations: PublicProfilePreviewLocation[];
 	/** Filas de horario comercial para Overview; vacío = ocultar bloque. */
 	businessHoursRows: BusinessHoursDisplayRow[];
 };
