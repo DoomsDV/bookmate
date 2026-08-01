@@ -103,7 +103,7 @@ const renderServiceCard = (service: ServiceItem) => {
 			aria-label="Editar servicio ${escapeHtml(name)}"
 		>
 			${coverHtml}
-			<div class="flex items-start justify-between gap-4">
+			<div class="flex items-start justify-between gap-2">
 				<div class="services-card-icon">
 					<span class="material-symbols-rounded text-[1.25rem]">design_services</span>
 				</div>
@@ -115,11 +115,11 @@ const renderServiceCard = (service: ServiceItem) => {
 			<div class="services-card-body">
 				<h3 class="services-card-title">${escapeHtml(name)}</h3>
 				<dl class="services-card-metrics">
-					<div class="flex items-center justify-between text-[0.92rem]">
+					<div class="flex items-center justify-between text-[0.8rem]">
 						<dt class="services-card-term">Duración</dt>
 						<dd class="services-card-value services-card-value--duration">${toDurationLabel(service.duration_minutes)}</dd>
 					</div>
-					<div class="flex items-center justify-between text-[0.92rem]">
+					<div class="flex items-center justify-between text-[0.8rem]">
 						<dt class="services-card-term">Precio</dt>
 						<dd class="services-card-value services-card-value--price">${price}</dd>
 					</div>
@@ -189,7 +189,7 @@ const updateEmptyOrGrid = (
 	}
 
 	results.innerHTML = `
-		<div class="material-cards-grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6" data-services-grid>
+		<div class="material-cards-grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4" data-services-grid>
 			${services.map(renderServiceCard).join('')}
 		</div>
 	`;
