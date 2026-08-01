@@ -151,9 +151,9 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 				<div class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5 lg:px-6">
 					<div class="modal-footer">
-					<button type="button" class="hidden modal-action-danger" data-delete-specialty>
-						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
-						Eliminar
+					<button type="button" class="hidden modal-action-danger" data-delete-specialty aria-label="Eliminar especialidad">
+						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" aria-hidden="true">delete</span>
+						<span class="modal-action-danger__label" data-delete-specialty-label>Eliminar</span>
 					</button>
 
 					<div class="modal-footer-actions">

@@ -397,12 +397,14 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 							type="button"
 							class="hidden modal-action-danger"
 							data-delete-service
+							aria-label="Eliminar servicio"
 						>
 							<span
 								class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]"
+								aria-hidden="true"
 								>delete</span
 							>
-							Eliminar
+							<span class="modal-action-danger__label" data-delete-service-label>Eliminar</span>
 						</button>
 
 						<div class="modal-footer-actions">

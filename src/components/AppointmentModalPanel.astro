@@ -611,9 +611,10 @@ const { showVoiceButton = false }: Props = Astro.props;
 						type="button"
 						class="hidden appointment-delete-btn"
 						data-delete-appointment
+						aria-label="Eliminar cita"
 					>
-						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]">delete</span>
-						Eliminar
+						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" aria-hidden="true">delete</span>
+						<span class="appointment-delete-btn__label">Eliminar</span>
 					</button>
 
 					<div class="appointment-modal-footer-actions">

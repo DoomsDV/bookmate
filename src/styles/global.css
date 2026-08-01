@@ -1285,15 +1285,17 @@ html[data-theme='dark'] .modal-action-danger:hover {
 
 @media (max-width: 767px) {
 	.modal-footer {
-		flex-direction: column;
+		flex-direction: row;
 		align-items: stretch;
 		gap: 0.65rem;
 	}
 
 	.modal-footer-actions {
 		margin-left: 0;
-		width: 100%;
-		flex-direction: column;
+		flex: 1 1 auto;
+		width: auto;
+		min-width: 0;
+		flex-direction: row;
 		align-items: stretch;
 		gap: 0.65rem;
 	}
@@ -1302,9 +1304,36 @@ html[data-theme='dark'] .modal-action-danger:hover {
 		display: none;
 	}
 
-	.modal-action-primary,
 	.modal-action-danger {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex: 0 0 3.1rem;
+		width: 3.1rem;
+		min-width: 3.1rem;
+		padding: 0;
+	}
+
+	.modal-action-danger .modal-action-danger__label,
+	.modal-action-danger [data-delete-professional-label],
+	.modal-action-danger [data-delete-specialty-label],
+	.modal-action-danger [data-delete-location-label],
+	.modal-action-danger [data-delete-service-label] {
+		display: none;
+	}
+
+	.modal-action-danger .material-symbols-rounded {
+		margin: 0;
+		align-self: center;
+	}
+
+	.modal-action-primary {
 		width: 100%;
+		flex: 1 1 auto;
+	}
+
+	.modal-action-danger.hidden {
+		display: none !important;
 	}
 }
 
