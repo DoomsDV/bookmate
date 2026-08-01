@@ -295,12 +295,11 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		bannerDropzone?.classList.toggle('has-preview', Boolean(url));
 	};
 
-	const PPE_TAB_KEY = 'hasel-ppe-active-tab';
 	const PPE_TAB_IDS = new Set(
 		tabButtons.map((btn) => String(btn.dataset.ppeTab || '')).filter(Boolean)
 	);
 
-	const activateTab = (tabId: string, options?: { persist?: boolean }) => {
+	const activateTab = (tabId: string) => {
 		const nextId = PPE_TAB_IDS.has(tabId) ? tabId : 'general';
 		for (const btn of tabButtons) {
 			const active = btn.dataset.ppeTab === nextId;
@@ -311,24 +310,13 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		for (const panel of panels) {
 			panel.hidden = panel.dataset.ppePanel !== nextId;
 		}
+		// Solo en esta visita a la página (no localStorage): ayuda al CSS de pestañas.
 		document.documentElement.setAttribute('data-ppe-tab-pref', nextId);
-		if (options?.persist !== false) {
-			try {
-				localStorage.setItem(PPE_TAB_KEY, nextId);
-			} catch {
-				/* ignore */
-			}
-		}
 	};
 
 	const restoreActiveTab = () => {
-		let stored: string | null = null;
-		try {
-			stored = localStorage.getItem(PPE_TAB_KEY);
-		} catch {
-			stored = null;
-		}
-		activateTab(stored && PPE_TAB_IDS.has(stored) ? stored : 'general', { persist: false });
+		// Al entrar / volver a perfil-publico siempre General.
+		activateTab('general');
 	};
 
 	const syncLightbox = () => {

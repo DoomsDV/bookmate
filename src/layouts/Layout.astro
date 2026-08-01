@@ -187,31 +187,21 @@ if (flashTypeFromCookie) {
                 });
             };
 
-            /** Pestaña activa del editor Perfil Público (evita flash General → Galería). */
-            const PPE_TAB_KEY = 'hasel-ppe-active-tab';
-            const PPE_TAB_IDS = ['general', 'apariencia', 'galeria', 'horario'];
-            const applyPpeTabPref = () => {
-                let stored = null;
+            /** Pestaña activa del editor Perfil Público: solo en la visita actual (sin localStorage). */
+            const PPE_TAB_KEY_LEGACY = 'hasel-ppe-active-tab';
+            const clearPpeTabPref = () => {
+                document.documentElement.removeAttribute('data-ppe-tab-pref');
                 try {
-                    stored = localStorage.getItem(PPE_TAB_KEY);
+                    localStorage.removeItem(PPE_TAB_KEY_LEGACY);
                 } catch (e) {
-                    stored = null;
+                    /* ignore */
                 }
-                if (!stored || PPE_TAB_IDS.indexOf(stored) === -1) {
-                    document.documentElement.removeAttribute('data-ppe-tab-pref');
-                    return;
+            };
+            const syncPpeTabPrefForRoute = () => {
+                const path = String(location.pathname || '');
+                if (path.indexOf('/panel/perfil-publico') === -1) {
+                    clearPpeTabPref();
                 }
-                document.documentElement.setAttribute('data-ppe-tab-pref', stored);
-                // Si el island ya está en el DOM, alinear hidden/is-active (FOUC + server:defer).
-                document.querySelectorAll('[data-ppe-panel]').forEach((panel) => {
-                    panel.hidden = panel.getAttribute('data-ppe-panel') !== stored;
-                });
-                document.querySelectorAll('[data-ppe-tab]').forEach((btn) => {
-                    const active = btn.getAttribute('data-ppe-tab') === stored;
-                    btn.classList.toggle('is-active', active);
-                    btn.setAttribute('aria-selected', active ? 'true' : 'false');
-                    btn.tabIndex = active ? 0 : -1;
-                });
             };
 
             /** Pestaña del hub público vía hash (#galeria, #equipo…) — evita flash Overview. */
@@ -230,16 +220,18 @@ if (flashTypeFromCookie) {
             // 1. Se ejecuta inmediatamente en la carga inicial (evita el FOUC)
             setBookmateTheme();
             applySidebarState();
-            applyPpeTabPref();
+            syncPpeTabPrefForRoute();
             applyHubTabPref();
 
             // 2. Se ejecuta cada vez que ClientRouter intercambia el contenido de la página
             document.addEventListener('astro:after-swap', () => {
                 setBookmateTheme();
                 applySidebarState();
-                applyPpeTabPref();
+                syncPpeTabPrefForRoute();
                 applyHubTabPref();
             });
+            // Al salir de perfil-publico, olvidar la pestaña para la próxima visita.
+            document.addEventListener('astro:before-preparation', clearPpeTabPref);
         </script>
         
         <meta name="generator" content={Astro.generator} />
