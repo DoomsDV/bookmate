@@ -487,9 +487,12 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 }
 
 @media (min-width: 1024px) {
-	/* Motion tokens del sidebar: una sola curva/duración para todo el conjunto. */
+	/* Motion tokens del sidebar: easing "emphasized" (Material 3) con leve rebote
+	 * al final para que expandir/colapsar se sienta más suave y premium.
+	 */
 	:root {
-		--sidebar-motion: 240ms cubic-bezier(0.4, 0, 0.2, 1);
+		--sidebar-motion: 420ms cubic-bezier(0.34, 1.36, 0.36, 1);
+		--sidebar-motion-fade: 180ms cubic-bezier(0.2, 0, 0, 1);
 	}
 
 	.app-shell {
@@ -610,8 +613,24 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		opacity: 1;
 		max-width: 16rem;
 		overflow: hidden;
+		transform: translateX(0);
 		transition:
-			opacity 140ms ease 60ms,
+			opacity var(--sidebar-motion-fade) 120ms,
+			transform var(--sidebar-motion-fade) 120ms,
+			max-width var(--sidebar-motion);
+	}
+
+	/* Al colapsar los textos se van con un ligero desplazamiento a la izquierda. */
+	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] [data-sidebar-brand-text],
+	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] [data-sidebar-label],
+	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] [data-sidebar-trailing],
+	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] .sidebar-account-chevron,
+	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] .sidebar-nav-trailing {
+		opacity: 0;
+		transform: translateX(-6px);
+		transition:
+			opacity var(--sidebar-motion-fade),
+			transform var(--sidebar-motion-fade),
 			max-width var(--sidebar-motion);
 	}
 

@@ -71,6 +71,13 @@ class AgendaScanPreview extends HTMLElement {
 	#defaultProfessionalId = 0;
 	#saving = false;
 	#zoom = 1;
+	#panX = 0;
+	#panY = 0;
+	#dragging = false;
+	#dragStartX = 0;
+	#dragStartY = 0;
+	#panStartX = 0;
+	#panStartY = 0;
 
 	connectedCallback() {
 		if (this.#bound) return;
@@ -82,7 +89,7 @@ class AgendaScanPreview extends HTMLElement {
 			signal,
 		});
 
-		this.querySelectorAll('[data-agenda-preview-close], [data-agenda-preview-cancel]').forEach(
+		this.querySelectorAll('[data-agenda-preview-close]').forEach(
 			(button) => {
 				button.addEventListener('click', (event) => {
 					event.preventDefault();
@@ -108,6 +115,7 @@ class AgendaScanPreview extends HTMLElement {
 
 		this.querySelector('[data-agenda-zoom-in]')?.addEventListener('click', () => this.setZoom(this.#zoom + 0.25), { signal });
 		this.querySelector('[data-agenda-zoom-out]')?.addEventListener('click', () => this.setZoom(this.#zoom - 0.25), { signal });
+		this.bindImagePan(signal);
 
 		const shell = this.querySelector<HTMLDialogElement>('[data-agenda-preview-shell]');
 		shell?.addEventListener('cancel', (event) => {
@@ -121,7 +129,6 @@ class AgendaScanPreview extends HTMLElement {
 			}
 		}, { signal });
 
-		this.querySelector('[data-agenda-default-date]')?.addEventListener('change', () => this.applyDefaults(false), { signal });
 		this.querySelector('[data-agenda-default-professional]')?.addEventListener('change', () => {
 			this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
 			this.applyDefaults(false);
@@ -176,7 +183,40 @@ class AgendaScanPreview extends HTMLElement {
 
 	close() {
 		const shell = this.querySelector<HTMLDialogElement>('[data-agenda-preview-shell]');
-		if (shell?.open) shell.close();
+		if (!shell?.open) return;
+
+		if (shell.classList.contains('is-closing')) return;
+		shell.classList.add('is-closing');
+
+		const finish = () => {
+			shell.classList.remove('is-closing');
+			if (shell.open) shell.close();
+		};
+
+		const duration = this.readCloseDurationMs(shell);
+		let done = false;
+		const handleEnd = (event: AnimationEvent) => {
+			if (event.target !== shell) return;
+			if (done) return;
+			done = true;
+			shell.removeEventListener('animationend', handleEnd);
+			finish();
+		};
+		shell.addEventListener('animationend', handleEnd);
+		window.setTimeout(() => {
+			if (done) return;
+			done = true;
+			shell.removeEventListener('animationend', handleEnd);
+			finish();
+		}, duration + 60);
+	}
+
+	private readCloseDurationMs(el: HTMLElement) {
+		const raw = getComputedStyle(el).getPropertyValue('--modal-close-duration').trim();
+		if (!raw) return 160;
+		if (raw.endsWith('ms')) return Number.parseFloat(raw) || 160;
+		if (raw.endsWith('s')) return (Number.parseFloat(raw) || 0.16) * 1000;
+		return Number.parseFloat(raw) || 160;
 	}
 
 	private async ensureCatalog() {
@@ -230,10 +270,12 @@ class AgendaScanPreview extends HTMLElement {
 		selected: number,
 		placeholder: string
 	) {
-		const opts = [`<option value="">${placeholder}</option>`];
+		// Chrome/móvil ignora padding CSS en <option>; un NBSP da aire sin exagerar.
+		const pad = (label: string) => `\u00A0${label}`;
+		const opts = [`<option value="">${pad(this.escape(placeholder))}</option>`];
 		for (const item of items) {
 			const sel = item.id === selected ? ' selected' : '';
-			opts.push(`<option value="${item.id}"${sel}>${this.escape(item.name)}</option>`);
+			opts.push(`<option value="${item.id}"${sel}>${pad(this.escape(item.name))}</option>`);
 		}
 		return opts.join('');
 	}
@@ -291,18 +333,86 @@ class AgendaScanPreview extends HTMLElement {
 			pane.style.display = '';
 			dialog?.classList.remove('has-image');
 		}
+		this.#panX = 0;
+		this.#panY = 0;
 		this.setZoom(1);
+	}
+
+	private bindImagePan(signal: AbortSignal) {
+		const frame = this.querySelector<HTMLElement>('[data-agenda-image-frame]');
+		if (!frame) return;
+
+		const onPointerMove = (event: PointerEvent) => {
+			if (!this.#dragging) return;
+			const dx = event.clientX - this.#dragStartX;
+			const dy = event.clientY - this.#dragStartY;
+			this.#panX = this.#panStartX + dx;
+			this.#panY = this.#panStartY + dy;
+			this.applyImageTransform();
+		};
+
+		const endPan = () => {
+			if (!this.#dragging) return;
+			this.#dragging = false;
+			frame.classList.remove('is-panning');
+			window.removeEventListener('pointermove', onPointerMove);
+			window.removeEventListener('pointerup', endPan);
+			window.removeEventListener('pointercancel', endPan);
+			window.removeEventListener('blur', endPan);
+		};
+
+		const onPointerDown = (event: PointerEvent) => {
+			if (event.button !== 0 && event.pointerType === 'mouse') return;
+			if (this.#zoom <= 1) return;
+			const target = event.target as HTMLElement | null;
+			if (target?.closest('button')) return;
+
+			this.#dragging = true;
+			this.#dragStartX = event.clientX;
+			this.#dragStartY = event.clientY;
+			this.#panStartX = this.#panX;
+			this.#panStartY = this.#panY;
+			frame.classList.add('is-panning');
+			event.preventDefault();
+
+			window.addEventListener('pointermove', onPointerMove);
+			window.addEventListener('pointerup', endPan);
+			window.addEventListener('pointercancel', endPan);
+			window.addEventListener('blur', endPan);
+		};
+
+		frame.addEventListener('pointerdown', onPointerDown, { signal });
+
+		signal.addEventListener('abort', () => endPan(), { once: true });
+
+		const img = this.querySelector<HTMLImageElement>('[data-agenda-preview-image]');
+		img?.addEventListener('dragstart', (event) => event.preventDefault(), { signal });
 	}
 
 	private setZoom(value: number) {
 		this.#zoom = Math.min(4, Math.max(0.5, value));
+		if (this.#zoom <= 1) {
+			this.#panX = 0;
+			this.#panY = 0;
+		}
+		this.applyImageTransform();
+		this.syncPanCursor();
+	}
+
+	private applyImageTransform() {
 		const img = this.querySelector<HTMLImageElement>('[data-agenda-preview-image]');
-		if (img) img.style.transform = `scale(${this.#zoom})`;
+		if (!img) return;
+		img.style.transform = `translate(${this.#panX}px, ${this.#panY}px) scale(${this.#zoom})`;
+	}
+
+	private syncPanCursor() {
+		const frame = this.querySelector<HTMLElement>('[data-agenda-image-frame]');
+		if (!frame) return;
+		frame.classList.toggle('is-zoomable', this.#zoom > 1);
 	}
 
 	private defaultsValues() {
 		return {
-			date: this.querySelector<HTMLInputElement>('[data-agenda-default-date]')?.value || '',
 			professional: toInt(
 				this.querySelector<HTMLSelectElement>('[data-agenda-default-professional]')?.value
 			),
@@ -315,7 +425,6 @@ class AgendaScanPreview extends HTMLElement {
 	private applyDefaults(overwriteAll: boolean) {
 		const defaults = this.defaultsValues();
 		for (const row of this.#rows) {
-			if (defaults.date && (overwriteAll || !row.date)) row.date = defaults.date;
 			if (defaults.professional && (overwriteAll || !row.pro_id_professional)) {
 				row.pro_id_professional = defaults.professional;
 			}
@@ -332,7 +441,7 @@ class AgendaScanPreview extends HTMLElement {
 			uid: uid(),
 			customer_name: '',
 			customer_phone: '',
-			date: defaults.date,
+			date: '',
 			time: '',
 			ser_id_service: 0,
 			pro_id_professional: defaults.professional,

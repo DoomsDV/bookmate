@@ -62,7 +62,7 @@ const getPrefetchMode = (item: NavItem) =>
 	prefetchHoverPaths.has(normalizePath(item.href)) ? "hover" : undefined;
 
 const primaryItems: NavItem[] = [
-	{ label: "Dashboard", icon: "space_dashboard", href: "/panel/dashboard" },
+	{ label: "Dashboard", icon: "home", href: "/panel/dashboard" },
 	{ label: "Calendario", icon: "calendar_month", href: "/panel/calendar" },
 	{ label: "Clientes", icon: "group", href: "/panel/customers" },
 	{
@@ -502,6 +502,31 @@ const planFooterActive = activePath === "/panel/plan";
 <MobileBottomNav currentPath={currentPath} />
 
 <style>
+	/* Entrada del SideNav en PC: slide desde la izquierda. */
+	@media (min-width: 1024px) {
+		[data-desktop-sidebar] {
+			animation: sidenav-slide-in 320ms cubic-bezier(0.2, 0, 0, 1) both;
+			will-change: transform, opacity;
+		}
+
+		@media (prefers-reduced-motion: reduce) {
+			[data-desktop-sidebar] {
+				animation: none;
+			}
+		}
+	}
+
+	@keyframes sidenav-slide-in {
+		from {
+			opacity: 0;
+			transform: translateX(-100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
 	.more-sheet__handle {
 		margin: 0.65rem auto 0;
 		width: 2.5rem;
