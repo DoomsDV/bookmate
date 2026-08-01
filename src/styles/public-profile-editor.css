@@ -128,10 +128,15 @@ html[data-ppe-tab-pref] .ppe-panel {
 	display: none !important;
 }
 
+/* Incluye [hidden]: gana a .ppe-panel[hidden] hasta que JS quite el atributo. */
 html[data-ppe-tab-pref='general'] .ppe-panel[data-ppe-panel='general'],
 html[data-ppe-tab-pref='apariencia'] .ppe-panel[data-ppe-panel='apariencia'],
 html[data-ppe-tab-pref='galeria'] .ppe-panel[data-ppe-panel='galeria'],
-html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
+html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'],
+html[data-ppe-tab-pref='general'] .ppe-panel[data-ppe-panel='general'][hidden],
+html[data-ppe-tab-pref='apariencia'] .ppe-panel[data-ppe-panel='apariencia'][hidden],
+html[data-ppe-tab-pref='galeria'] .ppe-panel[data-ppe-panel='galeria'][hidden],
+html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'][hidden] {
 	display: grid !important;
 }
 

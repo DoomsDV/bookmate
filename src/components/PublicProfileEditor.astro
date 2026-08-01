@@ -623,4 +623,17 @@ const previewInitial = {
 
 	boot();
 	document.addEventListener('astro:page-load', boot);
+	document.addEventListener('astro:after-swap', boot);
+
+	// server:defer: el island llega después del primer boot(); reintentar al insertarse.
+	if (typeof MutationObserver !== 'undefined') {
+		const observer = new MutationObserver(() => boot());
+		const start = () => {
+			if (document.body) {
+				observer.observe(document.body, { childList: true, subtree: true });
+			}
+		};
+		if (document.body) start();
+		else document.addEventListener('DOMContentLoaded', start, { once: true });
+	}
 </script>

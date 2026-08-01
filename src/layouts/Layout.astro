@@ -202,6 +202,16 @@ if (flashTypeFromCookie) {
                     return;
                 }
                 document.documentElement.setAttribute('data-ppe-tab-pref', stored);
+                // Si el island ya está en el DOM, alinear hidden/is-active (FOUC + server:defer).
+                document.querySelectorAll('[data-ppe-panel]').forEach((panel) => {
+                    panel.hidden = panel.getAttribute('data-ppe-panel') !== stored;
+                });
+                document.querySelectorAll('[data-ppe-tab]').forEach((btn) => {
+                    const active = btn.getAttribute('data-ppe-tab') === stored;
+                    btn.classList.toggle('is-active', active);
+                    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+                    btn.tabIndex = active ? 0 : -1;
+                });
             };
 
             /** Pestaña del hub público vía hash (#galeria, #equipo…) — evita flash Overview. */
