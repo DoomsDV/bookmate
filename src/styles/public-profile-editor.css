@@ -195,16 +195,17 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 	}
 
 	.ppe-phone-col {
+		/* Mockup de celular desactivado (preview en modal / live). Mantener none
+		   también aquí para que no parpadee si cambia el orden de cascada. */
+		display: none;
 		position: relative;
 		top: auto;
 		align-self: start;
-		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: flex-start;
 		width: 20.5rem;
 		max-height: 100%;
-		/* visible: no cortar el bisel redondeado ni los botones laterales */
 		overflow: visible;
 		padding-top: 0.35rem;
 		padding-bottom: 5.5rem;
@@ -219,11 +220,28 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 	}
 }
 
+.ppe-field-grid {
+	display: grid;
+	gap: 0.85rem 1rem;
+	min-width: 0;
+}
+
+.ppe-field-grid--2 {
+	grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+	.ppe-field-grid--2 {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
 .ppe-field {
 	display: grid;
 	gap: 0.45rem;
 	justify-items: stretch;
 	text-align: left;
+	min-width: 0;
 }
 
 .ppe-field label,
@@ -560,6 +578,49 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 	color: var(--on-surface-variant);
 }
 
+.ppe-field--logo {
+	max-width: 18rem;
+}
+
+.ppe-logo-field__head {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem 0.75rem;
+}
+
+.ppe-logo-bg-toggle {
+	display: inline-flex;
+	align-items: center;
+	padding: 0.15rem;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+	background: color-mix(in srgb, var(--surface-variant) 55%, var(--surface-bright));
+}
+
+.ppe-logo-bg-toggle__btn {
+	appearance: none;
+	border: 0;
+	margin: 0;
+	padding: 0.3rem 0.7rem;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--on-surface-variant);
+	font: inherit;
+	font-size: 0.72rem;
+	font-weight: 800;
+	letter-spacing: 0.02em;
+	cursor: pointer;
+	line-height: 1.2;
+}
+
+.ppe-logo-bg-toggle__btn.is-active {
+	background: var(--surface-bright);
+	color: var(--on-surface);
+	box-shadow: 0 1px 2px color-mix(in srgb, #000 18%, transparent);
+}
+
 .ppe-dropzone {
 	position: relative;
 	display: grid;
@@ -577,6 +638,38 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 		border-color 140ms ease,
 		background 140ms ease,
 		box-shadow 140ms ease;
+}
+
+/* Logo: ancho compacto (no full-bleed como el banner). */
+.ppe-dropzone--logo {
+	max-width: 18rem;
+	min-height: 12rem;
+}
+
+.ppe-dropzone--logo[data-ppe-logo-bg='light'] {
+	background:
+		linear-gradient(45deg, #e8eaed 25%, transparent 25%) 0 0 / 14px 14px,
+		linear-gradient(-45deg, #e8eaed 25%, transparent 25%) 0 7px / 14px 14px,
+		linear-gradient(45deg, transparent 75%, #e8eaed 75%) 7px -7px / 14px 14px,
+		linear-gradient(-45deg, transparent 75%, #e8eaed 75%) -7px 0 / 14px 14px,
+		#f5f6f8;
+}
+
+.ppe-dropzone--logo[data-ppe-logo-bg='dark'] {
+	background:
+		linear-gradient(45deg, #2a2c31 25%, transparent 25%) 0 0 / 14px 14px,
+		linear-gradient(-45deg, #2a2c31 25%, transparent 25%) 0 7px / 14px 14px,
+		linear-gradient(45deg, transparent 75%, #2a2c31 75%) 7px -7px / 14px 14px,
+		linear-gradient(-45deg, transparent 75%, #2a2c31 75%) -7px 0 / 14px 14px,
+		#1a1b1e;
+}
+
+.ppe-dropzone--logo[data-ppe-logo-bg='light']:hover {
+	border-color: color-mix(in srgb, var(--primary) 55%, var(--on-surface-variant));
+}
+
+.ppe-dropzone--logo[data-ppe-logo-bg='dark']:hover {
+	border-color: color-mix(in srgb, var(--primary) 55%, #6b7280);
 }
 
 .ppe-dropzone:hover {
@@ -601,8 +694,29 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 .ppe-dropzone--logo.has-preview {
 	display: grid;
 	place-items: center;
-	min-height: 11rem;
+	min-height: 12rem;
 	padding: 1.25rem;
+	/* Conserva el fondo claro/oscuro (no lo pisa el gris genérico de .has-preview). */
+	border-style: solid;
+	border-color: var(--shell-border);
+}
+
+.ppe-dropzone--logo.has-preview[data-ppe-logo-bg='light'] {
+	background:
+		linear-gradient(45deg, #e8eaed 25%, transparent 25%) 0 0 / 14px 14px,
+		linear-gradient(-45deg, #e8eaed 25%, transparent 25%) 0 7px / 14px 14px,
+		linear-gradient(45deg, transparent 75%, #e8eaed 75%) 7px -7px / 14px 14px,
+		linear-gradient(-45deg, transparent 75%, #e8eaed 75%) -7px 0 / 14px 14px,
+		#f5f6f8;
+}
+
+.ppe-dropzone--logo.has-preview[data-ppe-logo-bg='dark'] {
+	background:
+		linear-gradient(45deg, #2a2c31 25%, transparent 25%) 0 0 / 14px 14px,
+		linear-gradient(-45deg, #2a2c31 25%, transparent 25%) 0 7px / 14px 14px,
+		linear-gradient(45deg, transparent 75%, #2a2c31 75%) 7px -7px / 14px 14px,
+		linear-gradient(-45deg, transparent 75%, #2a2c31 75%) -7px 0 / 14px 14px,
+		#1a1b1e;
 }
 
 .ppe-dropzone--banner.has-preview {
@@ -704,8 +818,8 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 	height: 5.5rem;
 	border-radius: 9999px;
 	object-fit: cover;
-	border: 3px solid var(--surface-bright);
-	background: var(--surface-bright);
+	border: 3px solid color-mix(in srgb, var(--on-surface) 12%, transparent);
+	background: transparent;
 }
 
 .ppe-dropzone__preview--banner {

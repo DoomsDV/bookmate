@@ -233,6 +233,34 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		showFlashMessage({ message: text, type: kind, autoHideMs: 4000 });
 	};
 
+	const syncSidebarLogo = (url: string) => {
+		const cleanUrl = String(url || '').trim();
+		document.querySelectorAll<HTMLElement>('[data-workspace-avatar]').forEach((avatar) => {
+			avatar.classList.toggle('workspace-avatar--has-logo', Boolean(cleanUrl));
+			avatar.classList.toggle('workspace-avatar--empty', !cleanUrl);
+
+			let img = avatar.querySelector<HTMLImageElement>('img.workspace-logo-image');
+			if (cleanUrl) {
+				if (!img) {
+					img = document.createElement('img');
+					img.className = 'workspace-logo-image size-full object-cover';
+					img.alt = '';
+					img.loading = 'eager';
+					img.onerror = () => {
+						img?.classList.add('is-hidden');
+						img?.removeAttribute('src');
+					};
+					avatar.appendChild(img);
+				}
+				img.classList.remove('is-hidden');
+				if (img.src !== cleanUrl) img.src = cleanUrl;
+			} else if (img) {
+				img.removeAttribute('src');
+				img.classList.add('is-hidden');
+			}
+		});
+	};
+
 	const setLogoPreview = (url: string) => {
 		currentLogoUrl = url;
 		if (logoPreview) {
@@ -1141,7 +1169,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			logoCleared = false;
 			bannerBase64 = '';
 			bannerCleared = false;
-			setLogoPreview(String(data.data?.logo_url || '').trim());
+			const savedLogoUrl = String(data.data?.logo_url || '').trim();
+			setLogoPreview(savedLogoUrl);
+			syncSidebarLogo(savedLogoUrl);
 			setBannerPreview(String(data.data?.banner_url || '').trim());
 			if (Array.isArray(data.data?.gallery_images)) {
 				galleryItems = data.data.gallery_images;
@@ -1318,6 +1348,19 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		event.preventDefault();
 		event.stopPropagation();
 		clearLogoPreview();
+	});
+
+	root.querySelectorAll<HTMLButtonElement>('[data-ppe-logo-bg]').forEach((btn) => {
+		btn.addEventListener('click', (event) => {
+			event.preventDefault();
+			const mode = btn.dataset.ppeLogoBg === 'dark' ? 'dark' : 'light';
+			logoDropzone?.setAttribute('data-ppe-logo-bg', mode);
+			root.querySelectorAll<HTMLButtonElement>('[data-ppe-logo-bg]').forEach((item) => {
+				const active = item.dataset.ppeLogoBg === mode;
+				item.classList.toggle('is-active', active);
+				item.setAttribute('aria-pressed', active ? 'true' : 'false');
+			});
+		});
 	});
 
 	bannerInput?.addEventListener('change', () => {

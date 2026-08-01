@@ -3139,13 +3139,29 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 	}
 
 	@keyframes settings-backdrop-in {
-		from { opacity: 0; }
-		to { opacity: 1; }
+		from {
+			opacity: 0;
+			backdrop-filter: blur(0);
+			-webkit-backdrop-filter: blur(0);
+		}
+		to {
+			opacity: 1;
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+		}
 	}
 
 	@keyframes settings-backdrop-out {
-		from { opacity: 1; }
-		to { opacity: 0; }
+		from {
+			opacity: 1;
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+		}
+		to {
+			opacity: 0;
+			backdrop-filter: blur(0);
+			-webkit-backdrop-filter: blur(0);
+		}
 	}
 
 	/* Desktop PC: side drawer a la derecha (mismo slide que Servicios) */
@@ -3160,9 +3176,9 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		}
 
 		[data-settings-modal]::backdrop {
-			background: transparent;
-			backdrop-filter: blur(8px);
-			-webkit-backdrop-filter: blur(8px);
+			background: var(--modal-backdrop-tint);
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 	}
 

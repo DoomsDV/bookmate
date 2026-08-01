@@ -361,11 +361,11 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			display: none;
 		}
 
-		/* Blur translúcido sin tinte oscuro (igual que Cliente/Servicio) */
+		/* Blur translúcido con token compartido (menor costo en PC). */
 		dialog.appointment-voice-shell::backdrop {
-			background: transparent;
-			backdrop-filter: blur(8px);
-			-webkit-backdrop-filter: blur(8px);
+			background: var(--modal-backdrop-tint);
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 
 		appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-dialog,
@@ -936,8 +936,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 				color-mix(in srgb, #ffffff 28%, transparent),
 				color-mix(in srgb, var(--surface-variant) 55%, transparent)
 			);
-		backdrop-filter: blur(18px) saturate(1.25);
-		-webkit-backdrop-filter: blur(18px) saturate(1.25);
+		backdrop-filter: blur(10px) saturate(1.25);
+		-webkit-backdrop-filter: blur(10px) saturate(1.25);
 		color: var(--on-surface);
 		box-shadow:
 			0 10px 28px rgba(15, 23, 42, 0.1),
@@ -1094,7 +1094,20 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		filter: blur(28px);
 		opacity: 0.54;
 		animation: appointment-voice-blob-drift 9s ease-in-out infinite;
-		will-change: transform, opacity, filter;
+		will-change: transform, opacity;
+	}
+
+	/* Pausar blobs/magic cuando no se graba ni procesa (idle consume GPU). */
+	appointment-voice-overlay:not([data-voice-state='recording']):not([data-voice-state='processing']) .appointment-voice-visual__blob,
+	appointment-voice-overlay:not([data-voice-state='recording']):not([data-voice-state='processing']) .appointment-voice-visual__magic,
+	appointment-voice-overlay:not([data-voice-state='recording']):not([data-voice-state='processing']) .appointment-voice-visual__magic::before,
+	appointment-voice-overlay:not([data-voice-state='recording']):not([data-voice-state='processing']) .appointment-voice-visual__magic::after {
+		animation-play-state: paused;
+	}
+
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-visual__blob,
+	appointment-voice-overlay[data-voice-state='processing'] .appointment-voice-visual__blob {
+		will-change: transform, opacity;
 	}
 
 	.appointment-voice-visual__blob--blue {
@@ -1323,15 +1336,12 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		0%,
 		100% {
 			transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-			border-radius: 42% 58% 62% 38% / 38% 42% 58% 62%;
 		}
 		33% {
 			transform: translate3d(7%, -5%, 0) rotate(18deg) scale(1.1);
-			border-radius: 58% 42% 38% 62% / 52% 38% 62% 48%;
 		}
 		66% {
 			transform: translate3d(-6%, 6%, 0) rotate(-14deg) scale(0.92);
-			border-radius: 48% 52% 58% 42% / 42% 58% 42% 58%;
 		}
 	}
 
@@ -1339,19 +1349,15 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		0%,
 		100% {
 			transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
-			border-radius: 42% 58% 62% 38% / 38% 42% 58% 62%;
 		}
 		25% {
 			transform: translate3d(16%, -12%, 0) rotate(28deg) scale(1.22);
-			border-radius: 62% 38% 34% 66% / 48% 36% 64% 52%;
 		}
 		50% {
 			transform: translate3d(-14%, 10%, 0) rotate(-22deg) scale(0.88);
-			border-radius: 38% 62% 58% 42% / 56% 44% 36% 64%;
 		}
 		75% {
 			transform: translate3d(10%, 14%, 0) rotate(16deg) scale(1.16);
-			border-radius: 54% 46% 40% 60% / 42% 58% 48% 52%;
 		}
 	}
 
@@ -1456,15 +1462,13 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	@keyframes appointment-voice-mic-button-pulse {
 		0%,
 		100% {
-			box-shadow:
-				0 4px 14px rgba(15, 23, 42, 0.12),
-				0 0 0 0 color-mix(in srgb, var(--primary) 34%, transparent);
+			opacity: 1;
+			transform: scale(1);
 		}
 
 		50% {
-			box-shadow:
-				0 6px 20px color-mix(in srgb, var(--primary) 22%, rgba(15, 23, 42, 0.12)),
-				0 0 0 10px color-mix(in srgb, var(--primary) 0%, transparent);
+			opacity: 0.92;
+			transform: scale(1.035);
 		}
 	}
 
@@ -1562,9 +1566,9 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		html[data-theme='dark'] dialog.appointment-voice-shell::backdrop {
-			background: transparent;
-			backdrop-filter: blur(8px);
-			-webkit-backdrop-filter: blur(8px);
+			background: var(--modal-backdrop-tint);
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 	}
 

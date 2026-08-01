@@ -204,6 +204,8 @@ input[type='search']::-ms-clear {
 	--modal-easing: cubic-bezier(0.4, 0, 0.2, 1);
 	--modal-open-duration: 150ms;
 	--modal-close-duration: 140ms;
+	--modal-backdrop-blur: 6px;
+	--modal-backdrop-tint: rgba(15, 17, 21, 0.32);
 	--md-space-2: 0.5rem;
 	--md-space-3: 0.75rem;
 	--md-space-4: 1rem;
@@ -311,32 +313,88 @@ dialog::backdrop {
 	background-color: rgba(15, 17, 21, 0.6);
 }
 
-dialog[data-service-modal],
-dialog[data-professional-modal],
-dialog[data-customer-profile-modal],
-dialog[data-profile-crop-modal],
-dialog[data-settings-profile-crop-modal],
-dialog[data-location-modal],
-dialog[data-specialty-modal],
-dialog[data-appointment-modal],
-dialog[data-app-alert-dialog],
-[data-settings-modal] {
+/* will-change solo mientras el modal está abierto (evita layers permanentes). */
+dialog[data-service-modal][open],
+dialog[data-professional-modal][open],
+dialog[data-customer-profile-modal][open],
+dialog[data-profile-crop-modal][open],
+dialog[data-settings-profile-crop-modal][open],
+dialog[data-location-modal][open],
+dialog[data-specialty-modal][open],
+dialog[data-appointment-modal][open],
+dialog[data-app-alert-dialog][open],
+dialog[data-cobros-modal][open],
+dialog[data-atc-chat-modal][open],
+dialog.agenda-preview-shell[open],
+dialog[data-ai-summary-modal][open],
+[data-settings-modal][open] {
 	will-change: transform, opacity;
-	backface-visibility: hidden;
-	transform: translateZ(0);
 }
 
-dialog[data-service-modal]::backdrop,
-dialog[data-professional-modal]::backdrop,
-dialog[data-customer-profile-modal]::backdrop,
-dialog[data-profile-crop-modal]::backdrop,
-dialog[data-settings-profile-crop-modal]::backdrop,
-dialog[data-location-modal]::backdrop,
-dialog[data-specialty-modal]::backdrop,
-dialog[data-appointment-modal]::backdrop,
-dialog[data-app-alert-dialog]::backdrop,
-[data-settings-modal]::backdrop {
-	will-change: opacity;
+dialog[data-service-modal][open]::backdrop,
+dialog[data-professional-modal][open]::backdrop,
+dialog[data-customer-profile-modal][open]::backdrop,
+dialog[data-profile-crop-modal][open]::backdrop,
+dialog[data-settings-profile-crop-modal][open]::backdrop,
+dialog[data-location-modal][open]::backdrop,
+dialog[data-specialty-modal][open]::backdrop,
+dialog[data-appointment-modal][open]::backdrop,
+dialog[data-app-alert-dialog][open]::backdrop,
+dialog[data-cobros-modal][open]::backdrop,
+dialog[data-atc-chat-modal][open]::backdrop,
+dialog.agenda-preview-shell[open]::backdrop,
+dialog[data-ai-summary-modal][open]::backdrop,
+[data-settings-modal][open]::backdrop {
+	will-change: opacity, backdrop-filter;
+}
+
+/* Keyframes globales reutilizables para drawers (siguiente unificación). */
+@keyframes panel-drawer-in {
+	from {
+		opacity: 0;
+		transform: translateX(100%);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+@keyframes panel-drawer-out {
+	from {
+		opacity: 1;
+		transform: translateX(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateX(100%);
+	}
+}
+
+@keyframes panel-backdrop-in {
+	from {
+		opacity: 0;
+		backdrop-filter: blur(0);
+		-webkit-backdrop-filter: blur(0);
+	}
+	to {
+		opacity: 1;
+		backdrop-filter: blur(var(--modal-backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+	}
+}
+
+@keyframes panel-backdrop-out {
+	from {
+		opacity: 1;
+		backdrop-filter: blur(var(--modal-backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+	}
+	to {
+		opacity: 0;
+		backdrop-filter: blur(0);
+		-webkit-backdrop-filter: blur(0);
+	}
 }
 
 html[data-theme='dark'] dialog[data-service-modal],

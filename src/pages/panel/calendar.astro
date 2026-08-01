@@ -2875,9 +2875,9 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		dialog[data-appointment-modal]::backdrop {
-			background-color: transparent;
-			backdrop-filter: blur(8px);
-			-webkit-backdrop-filter: blur(8px);
+			background-color: var(--modal-backdrop-tint);
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 	}
 
@@ -2906,18 +2906,26 @@ const googleErrorMessage = hasGoogleError
 	@keyframes appointment-backdrop-in {
 		from {
 			opacity: 0;
+			backdrop-filter: blur(0);
+			-webkit-backdrop-filter: blur(0);
 		}
 		to {
 			opacity: 1;
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 	}
 
 	@keyframes appointment-backdrop-out {
 		from {
 			opacity: 1;
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 		to {
 			opacity: 0;
+			backdrop-filter: blur(0);
+			-webkit-backdrop-filter: blur(0);
 		}
 	}
 </style>

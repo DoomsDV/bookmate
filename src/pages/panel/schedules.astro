@@ -1166,9 +1166,9 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	/* Desktop PC: side drawer a la derecha */
 	@media (min-width: 1024px) {
 		.schedule-exception-modal-backdrop.flex {
-			background-color: transparent;
-			backdrop-filter: blur(8px);
-			-webkit-backdrop-filter: blur(8px);
+			background-color: var(--modal-backdrop-tint);
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 			animation: schedule-exception-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
 		}
 

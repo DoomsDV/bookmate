@@ -56,14 +56,26 @@
 </atc-chat-modal>
 
 <script>
-	import { marked } from 'marked';
-
 	type AtcRole = 'user' | 'assistant';
 
 	type AtcMessage = {
 		role: AtcRole;
 		content: string;
 	};
+
+	type MarkedParse = (
+		src: string,
+		options?: { async?: boolean; breaks?: boolean; gfm?: boolean }
+	) => string | Promise<string>;
+
+	let markedParse: MarkedParse | null = null;
+
+	async function ensureMarked(): Promise<MarkedParse> {
+		if (markedParse) return markedParse;
+		const mod = await import('marked');
+		markedParse = mod.marked.parse.bind(mod.marked) as MarkedParse;
+		return markedParse;
+	}
 
 	const ALLOWED_MARKDOWN_TAGS = new Set([
 		'a',
@@ -219,6 +231,8 @@
 			this.applyMobileSheetLock();
 			if (!this.modal.open) this.modal.showModal();
 			this.clearError();
+			// Warm-up del parser markdown (lazy) al abrir, fuera del critical path de la página.
+			void ensureMarked();
 			// En mobile no autofocus: el teclado sube el sheet y lo comprime.
 			if (!this.isMobileSheet()) {
 				queueMicrotask(() => this.input?.focus({ preventScroll: true }));
@@ -307,16 +321,31 @@
 			return text.replace(/\n{3,}/g, '\n\n').trim();
 		}
 
-		private renderMarkdown(content: string) {
-			const html = marked.parse(this.normalizeAssistantMarkdown(content), {
-				async: false,
-				breaks: true,
-				gfm: true,
-			});
-			return this.sanitizeMarkdownHtml(typeof html === 'string' ? html : String(html));
+		private escapePlain(content: string) {
+			return content
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;')
+				.replace(/\n/g, '<br>');
 		}
 
-		private renderMessages() {
+		private async renderMarkdown(content: string) {
+			const normalized = this.normalizeAssistantMarkdown(content);
+			try {
+				const parse = await ensureMarked();
+				const html = parse(normalized, {
+					async: false,
+					breaks: true,
+					gfm: true,
+				});
+				return this.sanitizeMarkdownHtml(typeof html === 'string' ? html : String(html));
+			} catch {
+				return this.escapePlain(normalized);
+			}
+		}
+
+		private async renderMessages() {
 			if (!this.messagesEl) return;
 			const welcome = this.messagesEl.querySelector('[data-atc-chat-welcome]');
 			const thinking = this.messagesEl.querySelector('[data-atc-thinking]');
@@ -330,7 +359,7 @@
 						? 'atc-chat-bubble atc-chat-bubble--user ml-8 rounded-2xl bg-(--primary) px-3.5 py-3 text-sm leading-relaxed text-(--on-primary)'
 						: 'atc-chat-bubble atc-chat-bubble--assistant mr-8 rounded-2xl bg-(--control-surface) px-3.5 py-3 text-sm leading-relaxed text-(--on-surface)';
 				if (message.role === 'assistant') {
-					bubble.innerHTML = this.renderMarkdown(message.content);
+					bubble.innerHTML = await this.renderMarkdown(message.content);
 				} else {
 					bubble.textContent = message.content;
 				}
@@ -391,7 +420,7 @@
 			this.clearError();
 			this.messages.push({ role: 'user', content: message });
 			this.input.value = '';
-			this.renderMessages();
+			await this.renderMessages();
 			this.setBusy(true);
 
 			try {
@@ -419,7 +448,7 @@
 
 				this.messages.push({ role: 'assistant', content: answer });
 				this.setBusy(false);
-				this.renderMessages();
+				await this.renderMessages();
 			} catch (error) {
 				this.setBusy(false);
 				this.showError(error instanceof Error ? error.message : 'Error al consultar ATC.');
@@ -516,18 +545,26 @@
 	@keyframes atc-backdrop-in {
 		from {
 			opacity: 0;
+			backdrop-filter: blur(0);
+			-webkit-backdrop-filter: blur(0);
 		}
 		to {
 			opacity: 1;
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 	}
 
 	@keyframes atc-backdrop-out {
 		from {
 			opacity: 1;
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 		to {
 			opacity: 0;
+			backdrop-filter: blur(0);
+			-webkit-backdrop-filter: blur(0);
 		}
 	}
 
@@ -563,9 +600,9 @@
 		}
 
 		[data-atc-chat-modal]::backdrop {
-			background: transparent;
-			backdrop-filter: blur(8px);
-			-webkit-backdrop-filter: blur(8px);
+			background: var(--modal-backdrop-tint);
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 
 		@keyframes atc-drawer-in {

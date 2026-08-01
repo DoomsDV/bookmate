@@ -258,42 +258,44 @@ const previewInitial = {
 							<span class="ppe-field__hint">Sin el 0 inicial. Ej: 981 123 456</span>
 						</div>
 
-						<div class="ppe-field">
-							<label for="ppe-facebook">Facebook</label>
-							<div class="ppe-social-input">
-								<span class="ppe-social-input__icon" aria-hidden="true">
-									<FacebookIcon />
-								</span>
-								<input
-									id="ppe-facebook"
-									class="ppe-input ppe-social-input__field"
-									type="url"
-									name="facebook_url"
-									placeholder="https://facebook.com/tu-negocio"
-									value={facebookUrl}
-									data-ppe-facebook
-								/>
+						<div class="ppe-field-grid ppe-field-grid--2">
+							<div class="ppe-field">
+								<label for="ppe-facebook">Facebook</label>
+								<div class="ppe-social-input">
+									<span class="ppe-social-input__icon" aria-hidden="true">
+										<FacebookIcon />
+									</span>
+									<input
+										id="ppe-facebook"
+										class="ppe-input ppe-social-input__field"
+										type="url"
+										name="facebook_url"
+										placeholder="https://facebook.com/tu-negocio"
+										value={facebookUrl}
+										data-ppe-facebook
+									/>
+								</div>
+								<span class="ppe-field__hint">URL completa de tu página o perfil.</span>
 							</div>
-							<span class="ppe-field__hint">URL completa de tu página o perfil.</span>
-						</div>
 
-						<div class="ppe-field">
-							<label for="ppe-instagram">Instagram</label>
-							<div class="ppe-social-input">
-								<span class="ppe-social-input__icon" aria-hidden="true">
-									<InstagramIcon />
-								</span>
-								<input
-									id="ppe-instagram"
-									class="ppe-input ppe-social-input__field"
-									type="url"
-									name="instagram_url"
-									placeholder="https://instagram.com/tu-negocio"
-									value={instagramUrl}
-									data-ppe-instagram
-								/>
+							<div class="ppe-field">
+								<label for="ppe-instagram">Instagram</label>
+								<div class="ppe-social-input">
+									<span class="ppe-social-input__icon" aria-hidden="true">
+										<InstagramIcon />
+									</span>
+									<input
+										id="ppe-instagram"
+										class="ppe-input ppe-social-input__field"
+										type="url"
+										name="instagram_url"
+										placeholder="https://instagram.com/tu-negocio"
+										value={instagramUrl}
+										data-ppe-instagram
+									/>
+								</div>
+								<span class="ppe-field__hint">URL completa de tu perfil.</span>
 							</div>
-							<span class="ppe-field__hint">URL completa de tu perfil.</span>
 						</div>
 					</section>
 
@@ -305,11 +307,32 @@ const previewInitial = {
 						data-ppe-panel="apariencia"
 						hidden
 					>
-						<div class="ppe-field">
-							<span class="ppe-field__label">Logo del negocio</span>
+						<div class="ppe-field ppe-field--logo">
+							<div class="ppe-logo-field__head">
+								<span class="ppe-field__label">Logo del negocio</span>
+								<div class="ppe-logo-bg-toggle" role="group" aria-label="Fondo de vista previa del logo">
+									<button
+										type="button"
+										class="ppe-logo-bg-toggle__btn is-active"
+										data-ppe-logo-bg="light"
+										aria-pressed="true"
+									>
+										Claro
+									</button>
+									<button
+										type="button"
+										class="ppe-logo-bg-toggle__btn"
+										data-ppe-logo-bg="dark"
+										aria-pressed="false"
+									>
+										Oscuro
+									</button>
+								</div>
+							</div>
 							<label
 								class={`ppe-dropzone ppe-dropzone--logo ${workspace.logo_url ? 'has-preview' : ''}`}
 								data-ppe-logo-dropzone
+								data-ppe-logo-bg="light"
 							>
 								<input
 									type="file"
@@ -353,6 +376,7 @@ const previewInitial = {
 									<span class="material-symbols-rounded" aria-hidden="true">delete</span>
 								</button>
 							</label>
+							<span class="ppe-field__hint">Usá Claro u Oscuro para ver bien los PNG transparentes.</span>
 						</div>
 
 						<div class="ppe-field">

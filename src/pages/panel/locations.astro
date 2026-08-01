@@ -1847,9 +1847,9 @@ const googleMapsApiKey =
 		}
 
 		dialog[data-location-modal]::backdrop {
-			background-color: transparent;
-			backdrop-filter: blur(8px);
-			-webkit-backdrop-filter: blur(8px);
+			background-color: var(--modal-backdrop-tint);
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 
 		@keyframes location-modal-in {
