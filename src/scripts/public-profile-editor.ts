@@ -1338,12 +1338,12 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		clearLogoPreview();
 	});
 
-	root.querySelectorAll<HTMLButtonElement>('[data-ppe-logo-bg]').forEach((btn) => {
+	root.querySelectorAll<HTMLButtonElement>('button[data-ppe-logo-bg]').forEach((btn) => {
 		btn.addEventListener('click', (event) => {
 			event.preventDefault();
 			const mode = btn.dataset.ppeLogoBg === 'dark' ? 'dark' : 'light';
 			logoDropzone?.setAttribute('data-ppe-logo-bg', mode);
-			root.querySelectorAll<HTMLButtonElement>('[data-ppe-logo-bg]').forEach((item) => {
+			root.querySelectorAll<HTMLButtonElement>('button[data-ppe-logo-bg]').forEach((item) => {
 				const active = item.dataset.ppeLogoBg === mode;
 				item.classList.toggle('is-active', active);
 				item.setAttribute('aria-pressed', active ? 'true' : 'false');
