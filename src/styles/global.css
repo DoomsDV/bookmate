@@ -119,47 +119,48 @@ input[type='search']::-ms-clear {
 :root {
 	--font-body: "Nunito Sans", sans-serif;
 	--font-logo: "Nunito Sans", sans-serif;
-	--background: #fafbfc;
-	--background-accent: #f3f4f6;
-	--page-background: #fafbfc;
-	--surface: rgba(255, 255, 255, 0.92);
-	--surface-container: #eef2f6;
+	/* Modo claro: blanco con un toque cálido muy leve (−20% crema) */
+	--background: #fbfaf9;
+	--background-accent: #f5f4f1;
+	--page-background: #fbfaf9;
+	--surface: rgba(255, 255, 255, 0.96);
+	--surface-container: #f3f1ef;
 	--surface-container-low: #ffffff;
-	--surface-container-high: #e8edf3;
-	--surface-container-highest: #dce3eb;
+	--surface-container-high: #edebe9;
+	--surface-container-highest: #e5e2de;
 	--surface-bright: #ffffff;
-	--bar-outline: #e2e8f0;
+	--bar-outline: #edebe8;
 	--shell-surface: #ffffff;
 	--sidebar-surface: #ffffff;
-	--content-surface: rgba(255, 255, 255, 0.72);
-	--shell-border: #e2e8f0;
+	--content-surface: rgba(255, 255, 255, 0.82);
+	--shell-border: #edebe8;
 	--shell-header-height: 4.5rem;
 	--primary: #426edb;
 	--primary-soft: rgba(66, 110, 219, 0.12);
 	--primary-soft-hover: rgba(66, 110, 219, 0.18);
 	--primary-container: color-mix(in srgb, #426edb 12%, #ffffff);
-	--secondary: #475569;
-	--secondary-container: #e8eef4;
-	--on-surface: #1e293b;
-	--on-surface-variant: #64748b;
+	--secondary: #57534e;
+	--secondary-container: #f1f0ed;
+	--on-surface: #1c1917;
+	--on-surface-variant: #78716c;
 	--hero-gradient: linear-gradient(135deg, #2f6fdd 0%, #3b82f6 45%, #6aa7ff 100%);
 	--hero-shadow: rgba(47, 111, 221, 0.24);
 	--hero-glow: radial-gradient(circle at center, rgba(255, 255, 255, 0.18), transparent 55%);
 	--control-surface: #ffffff;
-	--control-surface-strong: #f8fafc;
+	--control-surface-strong: #f8f7f5;
 	--menu-surface: #ffffff;
 	--card-surface: var(--sidebar-surface);
 	--card-surface-strong: var(--sidebar-surface);
-	--card-border: #e2e8f0;
-	--card-elevation: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.06);
-	--card-elevation-hover: 0 2px 4px rgba(15, 23, 42, 0.05), 0 8px 20px rgba(15, 23, 42, 0.08);
-	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.8);
-	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+	--card-border: #edebe8;
+	--card-elevation: 0 1px 2px rgba(28, 25, 23, 0.04), 0 4px 14px rgba(28, 25, 23, 0.06);
+	--card-elevation-hover: 0 2px 4px rgba(28, 25, 23, 0.05), 0 8px 20px rgba(28, 25, 23, 0.08);
+	--region-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.88);
+	--card-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.92);
 	--sidebar-card-surface: var(--sidebar-surface);
 	--sidebar-hover: rgba(66, 110, 219, 0.08);
-	--status-total-bg: #dbe7f3;
-	--status-total-text: #38506e;
-	--status-total-border: rgba(120, 145, 171, 0.35);
+	--status-total-bg: #efede9;
+	--status-total-text: #44403c;
+	--status-total-border: rgba(120, 113, 108, 0.28);
 	--status-success-bg: #047857;
 	--status-success-text: #ffffff;
 	--status-success-border: rgba(4, 120, 87, 0.32);
@@ -189,21 +190,21 @@ input[type='search']::-ms-clear {
 	--inline-feedback-success-icon: #059669;
 	--inline-feedback-success-close: #047857;
 	--inline-feedback-success-close-hover: #d1fae5;
-	--inline-feedback-success-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+	--inline-feedback-success-shadow: 0 10px 24px rgba(28, 25, 23, 0.08);
 	--inline-feedback-error-bg: #fff1f2;
 	--inline-feedback-error-border: #fecdd3;
 	--inline-feedback-error-fg: #9f1239;
 	--inline-feedback-error-icon: #e11d48;
 	--inline-feedback-error-close: #be123c;
 	--inline-feedback-error-close-hover: #ffe4e6;
-	--inline-feedback-error-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+	--inline-feedback-error-shadow: 0 10px 24px rgba(28, 25, 23, 0.08);
 	--workspace-avatar-outline: rgba(66, 110, 219, 0.26);
 	--workspace-avatar-outline-soft: rgba(66, 110, 219, 0.1);
-	--calendar-surface: #f8fbff;
-	--calendar-outline: rgba(176, 194, 214, 0.72);
-	--calendar-outline-strong: rgba(142, 163, 187, 0.78);
-	--calendar-toolbar-surface: #f2f7fe;
-	--calendar-segmented-surface: #e8f0fb;
+	--calendar-surface: #fbfaf9;
+	--calendar-outline: rgba(176, 172, 166, 0.45);
+	--calendar-outline-strong: rgba(148, 143, 136, 0.52);
+	--calendar-toolbar-surface: #f6f5f2;
+	--calendar-segmented-surface: #f1f0ed;
 	--modal-easing: cubic-bezier(0.4, 0, 0.2, 1);
 	--modal-open-duration: 150ms;
 	--modal-close-duration: 140ms;
@@ -849,12 +850,12 @@ button {
 	border-bottom: 1px solid var(--shell-border);
 }
 
-/* TopBar del panel: opaco arriba; liquid glass al hacer scroll (contenido pasa detrás). */
+/* TopBar del panel: mismo tono que el canvas; liquid glass al hacer scroll. */
 .shell-header-zone:not(.sidebar-account-header) {
 	position: sticky;
 	top: 0;
 	z-index: 40;
-	background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 94%, var(--surface-container, #eef2f6) 6%);
+	background-color: var(--page-background, #fbfaf9);
 	border-bottom-color: color-mix(in srgb, var(--shell-border) 88%, transparent);
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
@@ -867,13 +868,13 @@ button {
 }
 
 .shell-header-zone:not(.sidebar-account-header).is-scrolled {
-	background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 48%, transparent);
+	background-color: color-mix(in srgb, var(--page-background, #fbfaf9) 72%, transparent);
 	border-bottom-color: color-mix(in srgb, var(--shell-border) 45%, transparent);
-	backdrop-filter: blur(18px) saturate(1.3);
-	-webkit-backdrop-filter: blur(18px) saturate(1.3);
+	backdrop-filter: blur(18px) saturate(1.15);
+	-webkit-backdrop-filter: blur(18px) saturate(1.15);
 	box-shadow:
 		0 8px 24px color-mix(in srgb, var(--on-surface) 6%, transparent),
-		inset 0 1px 0 rgba(255, 255, 255, 0.45);
+		inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
 html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {

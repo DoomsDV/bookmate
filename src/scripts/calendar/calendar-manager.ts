@@ -189,6 +189,7 @@ class CalendarManager extends HTMLElement {
 	private pendingFocusAppointmentId: number | null = null;
 	private pendingFocusScrollTime: { hours: number; minutes: number } | null = null;
 	private pendingFocusRetryTimer: number | null = null;
+	private syncingDayHeadersOption = false;
 
 	private calendarEl: HTMLElement | null = null;
 	private calendarStageNode: HTMLElement | null = null;
@@ -397,6 +398,7 @@ class CalendarManager extends HTMLElement {
 
 	private destroyCalendar() {
 		this.clearPendingFocusState();
+		this.teardownMobileStickyChrome();
 		if (this.calendar) {
 			this.calendar.destroy();
 			this.calendar = null;
@@ -612,6 +614,116 @@ class CalendarManager extends HTMLElement {
 		// Mobile: altura natural → scroll del main (no se corta con el bottom bar).
 		// Desktop: host fijo → scroll interno del timegrid (headers sticky).
 		return (isMobile ?? this.isMobileViewport()) ? 'auto' : '100%';
+	}
+
+	/** Mobile timegrid: sin cabecera FC (la reemplaza el chrome sticky). */
+	private shouldHideNativeDayHeaders(isMobile?: boolean, viewType?: string) {
+		const mobile = isMobile ?? this.isMobileViewport();
+		const view = viewType ?? this.calendar?.view.type ?? '';
+		return mobile && this.isTimeGridView(view);
+	}
+
+	private syncMobileDayHeadersOption() {
+		if (!this.calendar || this.syncingDayHeadersOption) return;
+		const next = !this.shouldHideNativeDayHeaders();
+		if (this.calendar.getOption('dayHeaders') === next) return;
+		this.syncingDayHeadersOption = true;
+		try {
+			this.calendar.setOption('dayHeaders', next);
+		} finally {
+			this.syncingDayHeadersOption = false;
+		}
+	}
+
+	private teardownMobileStickyChrome() {
+		if (!this.calendarEl) return;
+		const chrome = this.calendarEl.querySelector<HTMLElement>('[data-calendar-sticky-chrome]');
+		if (!chrome) return;
+		const toolbar = chrome.querySelector<HTMLElement>('.fc-header-toolbar');
+		const harness = this.calendarEl.querySelector<HTMLElement>('.fc-view-harness');
+		if (toolbar) {
+			if (harness) harness.before(toolbar);
+			else this.calendarEl.prepend(toolbar);
+		}
+		chrome.remove();
+	}
+
+	private buildStickyDayCellHtml(date: Date) {
+		const dayName = new Intl.DateTimeFormat('es-ES', { weekday: 'short' })
+			.format(date)
+			.replace('.', '');
+		const dayNumber = date.getDate();
+		const today = new Date();
+		const isToday =
+			date.getFullYear() === today.getFullYear() &&
+			date.getMonth() === today.getMonth() &&
+			date.getDate() === today.getDate();
+		return `
+			<div class="calendar-sticky-days__cell${isToday ? ' is-today' : ''}">
+				<div class="custom-cal-header">
+					<span class="cal-day-name">${dayName}</span>
+					<span class="cal-day-number">${dayNumber}</span>
+				</div>
+			</div>
+		`;
+	}
+
+	private syncStickyDayStrip(chrome: HTMLElement) {
+		if (!this.calendar) return;
+		let strip = chrome.querySelector<HTMLElement>('[data-calendar-sticky-days]');
+		if (!strip) {
+			strip = document.createElement('div');
+			strip.className = 'calendar-sticky-days';
+			strip.setAttribute('data-calendar-sticky-days', '');
+			strip.setAttribute('aria-hidden', 'true');
+			chrome.appendChild(strip);
+		}
+
+		const { activeStart, activeEnd } = this.calendar.view;
+		const days: Date[] = [];
+		const cursor = new Date(activeStart);
+		while (cursor < activeEnd) {
+			days.push(new Date(cursor));
+			cursor.setDate(cursor.getDate() + 1);
+		}
+
+		strip.style.setProperty('--calendar-sticky-day-count', String(Math.max(days.length, 1)));
+		strip.innerHTML = `
+			<div class="calendar-sticky-days__axis"></div>
+			<div class="calendar-sticky-days__cols">
+				${days.map((day) => this.buildStickyDayCellHtml(day)).join('')}
+			</div>
+		`;
+	}
+
+	private syncMobileStickyChrome() {
+		if (!this.calendarEl || !this.calendar) return;
+
+		const useSticky = this.shouldHideNativeDayHeaders();
+		if (!useSticky) {
+			this.teardownMobileStickyChrome();
+			return;
+		}
+
+		let chrome = this.calendarEl.querySelector<HTMLElement>('[data-calendar-sticky-chrome]');
+		const harness = this.calendarEl.querySelector<HTMLElement>('.fc-view-harness');
+		if (!harness) return;
+
+		if (!chrome) {
+			chrome = document.createElement('div');
+			chrome.className = 'calendar-sticky-chrome';
+			chrome.setAttribute('data-calendar-sticky-chrome', '');
+			harness.before(chrome);
+		} else if (chrome.nextElementSibling !== harness) {
+			harness.before(chrome);
+		}
+
+		const toolbar = this.calendarEl.querySelector<HTMLElement>('.fc-header-toolbar');
+		if (toolbar && toolbar.parentElement !== chrome) {
+			chrome.insertBefore(toolbar, chrome.firstChild);
+		}
+
+		this.syncStickyDayStrip(chrome);
 	}
 
 	private isCompactChromeViewport() {
@@ -863,7 +975,11 @@ class CalendarManager extends HTMLElement {
 		}
 
 		this.calendar.updateSize();
-		window.requestAnimationFrame(() => this.syncToolbarButtonGroupClasses());
+		window.requestAnimationFrame(() => {
+			this.syncToolbarButtonGroupClasses();
+			this.syncMobileDayHeadersOption();
+			this.syncMobileStickyChrome();
+		});
 	}
 
 	private syncToolbarButtonGroupClasses() {
@@ -923,6 +1039,7 @@ class CalendarManager extends HTMLElement {
 
 		this.ensureTourToolbarTargets(timeNavChunk, viewChunk);
 		this.syncChromeToolbarPlacement(timeNavChunk, viewChunk, titleChunk);
+		this.syncMobileStickyChrome();
 	}
 
 	/** Targets compactos para la guía (evita resaltar todo el chunk del toolbar). */
@@ -1200,6 +1317,7 @@ class CalendarManager extends HTMLElement {
 			nowIndicator: true,
 			allDaySlot: false,
 			height: this.getCalendarHeightOption(isMobile),
+			dayHeaders: !this.shouldHideNativeDayHeaders(isMobile, isMobile ? MOBILE_DEFAULT_VIEW : DESKTOP_DEFAULT_VIEW),
 			scrollTimeReset: false,
 			slotMinTime: '06:00:00',
 			slotMaxTime: '22:00:00',
@@ -1255,6 +1373,11 @@ class CalendarManager extends HTMLElement {
 			},
 			events: this.buildEventSource,
 			datesSet: () => {
+				this.syncMobileDayHeadersOption();
+				window.requestAnimationFrame(() => {
+					this.syncToolbarButtonGroupClasses();
+					this.syncMobileStickyChrome();
+				});
 				void this.applyPendingFocus(0);
 			},
 			eventsSet: () => {
@@ -1384,6 +1507,7 @@ class CalendarManager extends HTMLElement {
 		this.calendar.render();
 		this.syncToolbarButtonGroupClasses();
 		this.applyResponsiveCalendarLayout(true);
+		this.syncMobileStickyChrome();
 		this.bindMobileThreeDaySwipe(requiredNodes.calendarEl, this.#listeners?.signal);
 	}
 

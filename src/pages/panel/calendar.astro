@@ -2579,44 +2579,73 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		/*
-		 * Cabecera de días fija al scrollear la página (FC height:auto
-		 * no usa scroller interno; top:0 de FC quedaría bajo el TopBar).
-		 * border-collapse:separate es necesario para que sticky en <th> funcione.
+		 * Chrome sticky (toolbar + días) fuera de las celdas FC.
+		 * Evita el bug de sticky en <th> que flotaba los días sobre las 6–7.
 		 */
-		[data-calendar-root] .fc .fc-scrollgrid,
-		[data-calendar-root] .fc .fc-scrollgrid table {
-			border-collapse: separate !important;
-			border-spacing: 0;
-		}
-
-		[data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky,
-		[data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky > * {
-			position: sticky !important;
-			top: var(--shell-header-height) !important;
+		[data-calendar-root] .calendar-sticky-chrome {
+			position: sticky;
+			top: var(--shell-header-height);
 			z-index: 30;
+			display: grid;
+			gap: 0.35rem;
+			margin-inline: -1rem;
+			padding: 0.15rem 1rem 0.35rem;
+			background: var(--page-background, #fbfaf9);
+			border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
 		}
 
-		[data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller-harness,
-		[data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller {
-			overflow: visible !important;
-		}
-
-		[data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky,
-		[data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky > *,
-		[data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller-harness,
-		[data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller,
-		[data-calendar-root] .fc .fc-col-header,
-		[data-calendar-root] .fc .fc-col-header-cell {
-			background: var(--page-background, var(--calendar-surface));
-		}
-
-		html[data-theme='dark'] [data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky,
-		html[data-theme='dark'] [data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky > *,
-		html[data-theme='dark'] [data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller-harness,
-		html[data-theme='dark'] [data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller,
-		html[data-theme='dark'] [data-calendar-root] .fc .fc-col-header,
-		html[data-theme='dark'] [data-calendar-root] .fc .fc-col-header-cell {
+		html[data-theme='dark'] [data-calendar-root] .calendar-sticky-chrome {
 			background: var(--page-background, #191919);
+		}
+
+		@media (min-width: 640px) {
+			[data-calendar-root] .calendar-sticky-chrome {
+				margin-inline: -1.5rem;
+				padding-inline: 1.5rem;
+			}
+		}
+
+		[data-calendar-root] .calendar-sticky-chrome .fc-toolbar.fc-header-toolbar {
+			margin-bottom: 0;
+		}
+
+		[data-calendar-root] .calendar-sticky-days {
+			display: flex;
+			align-items: stretch;
+			min-width: 0;
+		}
+
+		[data-calendar-root] .calendar-sticky-days__axis {
+			flex: 0 0 3.1rem;
+			width: 3.1rem;
+			min-width: 3.1rem;
+		}
+
+		[data-calendar-root] .calendar-sticky-days__cols {
+			flex: 1 1 auto;
+			min-width: 0;
+			display: grid;
+			grid-template-columns: repeat(var(--calendar-sticky-day-count, 3), minmax(0, 1fr));
+		}
+
+		[data-calendar-root] .calendar-sticky-days__cell {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			padding: 0.35rem 0.15rem 0.45rem;
+			border-left: 1px solid color-mix(in srgb, var(--calendar-outline) 70%, transparent);
+		}
+
+		[data-calendar-root] .calendar-sticky-days__cell.is-today .cal-day-number {
+			background: var(--surface-bright, #fff);
+			color: var(--on-surface);
+			border: 1px solid var(--calendar-outline-strong);
+			box-shadow: none;
+		}
+
+		[data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky > * {
+			position: static !important;
+			top: auto !important;
 		}
 
 		.calendar-page-header {
