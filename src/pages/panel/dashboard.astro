@@ -352,8 +352,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 							{roleId === ROLES.ADMIN && (
 								<section
-									class="dashboard-profitability-shell is-loading transition-colors duration-300"
+									class="dashboard-profitability-shell transition-colors duration-300"
 									data-profitability-panel
+									data-dashboard-reveal
+									data-dashboard-reveal-delay="260"
 									aria-busy="true"
 								>
 									<div class="mb-4 flex min-w-0 items-center justify-between gap-2 sm:gap-3 dashboard-profitability-head">
@@ -1859,9 +1861,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		if (panel.dataset.loaded === '1') return;
 		panel.dataset.loaded = '1';
 		panel.hidden = false;
-		panel.classList.remove('hidden', 'is-dismissed', 'is-ready');
-		panel.classList.add('is-loading');
+		panel.classList.remove('hidden', 'is-dismissed', 'is-ready', 'is-loading', 'is-in');
 		panel.setAttribute('aria-busy', 'true');
+		// Sin skeleton: permanece oculto por data-dashboard-reveal hasta tener datos.
 
 		try {
 			const response = await fetch('/api/dashboard/profitability', {
@@ -1927,9 +1929,17 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			panel.hidden = false;
 			panel.classList.remove('hidden', 'is-dismissed', 'is-loading');
 			panel.setAttribute('aria-busy', 'false');
-			// Forzar reflow para que la transición de entrada se note.
-			void panel.offsetWidth;
 			panel.classList.add('is-ready');
+			// Un solo fade-in del bloque completo (sin skeleton previo).
+			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+			if (prefersReducedMotion) {
+				panel.classList.add('is-in');
+			} else {
+				void panel.offsetWidth;
+				window.requestAnimationFrame(() => {
+					if (document.contains(panel)) panel.classList.add('is-in');
+				});
+			}
 		} catch {
 			dismissProfitabilityPanel(panel);
 		}
@@ -1977,6 +1987,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			window.requestAnimationFrame(() => {
 				if (!document.contains(main)) return;
 				revealNodes.forEach((node) => {
+					// Rentabilidad hace su propio fade-in cuando llegan los datos (sin skeleton).
+					if (node.hasAttribute('data-profitability-panel')) return;
 					node.style.animation = '';
 					const delay = Number(node.getAttribute('data-dashboard-reveal-delay') || 0);
 					const safeDelay = Number.isFinite(delay) ? Math.max(0, delay) : 0;
@@ -4927,7 +4939,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-profitability-shell.is-ready .dashboard-profit-value,
 	.dashboard-profitability-shell.is-ready [data-profit-mom],
 	.dashboard-profitability-shell.is-ready [data-profit-count] {
-		animation: dashboard-profit-value-in 320ms ease both;
+		/* El fade-in lo hace data-dashboard-reveal.is-in del bloque completo. */
+		animation: none;
 	}
 
 	.dashboard-profitability-shell.is-dismissed {
