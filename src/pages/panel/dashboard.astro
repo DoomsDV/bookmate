@@ -372,6 +372,16 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											</div>
 											<p class="dashboard-profit-value" data-profit-month-revenue>&nbsp;</p>
 											<p class="dashboard-profit-hint" data-profit-mom>&nbsp;</p>
+											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+												<defs>
+													<linearGradient id="profit-spark-fill-emerald" x1="0" y1="0" x2="0" y2="1">
+														<stop offset="0%" stop-color="var(--profit-accent)" stop-opacity="0.22" />
+														<stop offset="100%" stop-color="var(--profit-accent)" stop-opacity="0" />
+													</linearGradient>
+												</defs>
+												<path class="dashboard-profit-spark__area" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-emerald)" />
+												<path class="dashboard-profit-spark__line" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10" fill="none" />
+											</svg>
 										</article>
 										<article class="dashboard-profit-card" data-profit-accent="violet">
 											<div class="dashboard-profit-card__head">
@@ -380,6 +390,16 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											</div>
 											<p class="dashboard-profit-value" data-profit-avg-ticket>&nbsp;</p>
 											<p class="dashboard-profit-hint" data-profit-count>&nbsp;</p>
+											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+												<defs>
+													<linearGradient id="profit-spark-fill-violet" x1="0" y1="0" x2="0" y2="1">
+														<stop offset="0%" stop-color="var(--profit-accent)" stop-opacity="0.22" />
+														<stop offset="100%" stop-color="var(--profit-accent)" stop-opacity="0" />
+													</linearGradient>
+												</defs>
+												<path class="dashboard-profit-spark__area" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-violet)" />
+												<path class="dashboard-profit-spark__line" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10" fill="none" />
+											</svg>
 										</article>
 										<article class="dashboard-profit-card" data-profit-accent="brand">
 											<div class="dashboard-profit-card__head">
@@ -388,6 +408,16 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											</div>
 											<p class="dashboard-profit-value" data-profit-today>&nbsp;</p>
 											<p class="dashboard-profit-hint">Citas ya atendidas hoy.</p>
+											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+												<defs>
+													<linearGradient id="profit-spark-fill-brand" x1="0" y1="0" x2="0" y2="1">
+														<stop offset="0%" stop-color="var(--profit-accent)" stop-opacity="0.22" />
+														<stop offset="100%" stop-color="var(--profit-accent)" stop-opacity="0" />
+													</linearGradient>
+												</defs>
+												<path class="dashboard-profit-spark__area" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-brand)" />
+												<path class="dashboard-profit-spark__line" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10" fill="none" />
+											</svg>
 										</article>
 										<article class="dashboard-profit-card" data-profit-accent="amber">
 											<div class="dashboard-profit-card__head">
@@ -396,6 +426,16 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											</div>
 											<p class="dashboard-profit-value" data-profit-pending>&nbsp;</p>
 											<p class="dashboard-profit-hint">Citas confirmadas y pendientes.</p>
+											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+												<defs>
+													<linearGradient id="profit-spark-fill-amber" x1="0" y1="0" x2="0" y2="1">
+														<stop offset="0%" stop-color="var(--profit-accent)" stop-opacity="0.22" />
+														<stop offset="100%" stop-color="var(--profit-accent)" stop-opacity="0" />
+													</linearGradient>
+												</defs>
+												<path class="dashboard-profit-spark__area" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-amber)" />
+												<path class="dashboard-profit-spark__line" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10" fill="none" />
+											</svg>
 										</article>
 									</div>
 									</div>
@@ -2582,7 +2622,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		align-items: flex-start;
 		gap: 0.05em;
 		font-size: clamp(2.35rem, 5.5vw, 3.15rem);
-		line-height: 1.08;
+		font-weight: 860;
+		line-height: 1.05;
+		letter-spacing: -0.03em;
 	}
 
 	.dashboard-greeting__word,
@@ -2817,8 +2859,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		gap: 0.95rem;
 		width: 100%;
 		max-width: none;
-		padding: 1.15rem 1.2rem;
-		border-radius: 1.25rem;
+		padding: 1.3rem 1.35rem;
+		border-radius: 1.5rem;
 		border: 1px solid color-mix(in srgb, var(--shell-border, #d0d7e2) 88%, transparent);
 		background: color-mix(in srgb, var(--surface-bright, #ffffff) 92%, var(--page-background, #f4f6f8) 8%);
 		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
@@ -3151,8 +3193,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			gap: 1.05rem;
 			width: 100%;
 			max-width: none;
-			padding: 1.3rem 1.45rem;
-			border-radius: 1.3rem;
+			padding: 1.4rem 1.5rem;
+			border-radius: 1.5rem;
 		}
 
 		.dashboard-ai-strip__eyebrow {
@@ -3189,10 +3231,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		font-size: 0.82rem;
 		font-weight: 600;
 		line-height: 1.4;
-		opacity: 0.92;
+		color: var(--on-surface-variant, #5f6368);
+		opacity: 1;
 		max-width: 36rem;
 		white-space: normal;
 		overflow-wrap: anywhere;
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress__insight {
+		color: color-mix(in srgb, var(--on-surface-variant) 36%, white 64%);
 	}
 
 	.dashboard-day-progress__insight[hidden] {
@@ -4012,11 +4059,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-metric-card {
 		--metric-accent: #2f6fdd;
 		--metric-accent-soft: rgba(47, 111, 221, 0.12);
+		position: relative;
 		min-width: 0;
 		overflow: hidden;
-		border: 0;
-		background: #ffffff;
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
+		border: 1px solid color-mix(in srgb, var(--metric-accent) 12%, transparent);
+		border-radius: 1.5rem;
+		background: color-mix(in srgb, var(--metric-accent) 7%, #ffffff);
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 6px 16px rgba(15, 23, 42, 0.035);
 		transition:
 			transform 180ms ease,
 			box-shadow 180ms ease,
@@ -4032,6 +4081,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: color-mix(in srgb, var(--on-surface-variant) 86%, #516b85 14%);
 		min-width: 0;
 		margin: 0;
+		padding-right: 2.6rem;
 		overflow-wrap: anywhere;
 	}
 
@@ -4041,24 +4091,30 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		justify-content: space-between;
 		gap: 0.75rem;
 		min-width: 0;
+		padding-right: 2.6rem;
 	}
 
 	.dashboard-metric-icon {
+		position: absolute;
+		top: 1.1rem;
+		right: 1.1rem;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.5rem;
-		height: 2.5rem;
-		min-width: 2.5rem;
-		min-height: 2.5rem;
+		width: 2.25rem;
+		height: 2.25rem;
+		min-width: 2.25rem;
+		min-height: 2.25rem;
 		flex-shrink: 0;
 		aspect-ratio: 1 / 1;
 		border-radius: 50%;
-		background: var(--metric-accent-soft);
+		background: #ffffff;
 		color: var(--metric-accent);
-		border: 1px solid color-mix(in srgb, var(--metric-accent) 34%, transparent);
-		font-size: 1.35rem;
+		border: 0;
+		font-size: 1.15rem;
 		line-height: 1;
+		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.05);
+		z-index: 1;
 	}
 
 	.dashboard-metric-value {
@@ -4126,14 +4182,19 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-metric-card {
-		border: 0;
-		background: var(--surface-container-high, #222222);
+		border: 1px solid color-mix(in srgb, var(--metric-accent) 20%, transparent);
+		background: color-mix(in srgb, var(--metric-accent) 12%, var(--surface-container-high, #222222));
 		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-metric-card:hover {
-		background: var(--surface-container-highest, #282828);
+		background: color-mix(in srgb, var(--metric-accent) 16%, var(--surface-container-highest, #282828));
 		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .dashboard-metric-icon {
+		background: var(--surface-container-highest, #282828);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
 	}
 
 	html[data-theme='dark'] .dashboard-metric-label {
@@ -4174,10 +4235,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	html[data-theme='dark'] .dashboard-metric-card[data-metric-accent='orange'] {
 		--metric-accent: #fdba74;
 		--metric-accent-soft: rgba(253, 186, 116, 0.16);
-	}
-
-	html[data-theme='dark'] .dashboard-metric-icon {
-		border: 0;
 	}
 
 	.dashboard-floor {
@@ -4229,11 +4286,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		overflow: hidden;
 		height: 100%;
 		min-height: 11.5rem;
-		border-radius: 1.6rem;
+		border-radius: 1.5rem;
 		padding: 1.5rem 1.5rem;
-		color: #f4f7fc;
-		background: linear-gradient(135deg, #355fbf 0%, #4a74d0 55%, #5b84d8 100%);
-		box-shadow: 0 8px 22px rgba(47, 111, 221, 0.14);
+		color: var(--on-surface, #202124);
+		border: 1px solid color-mix(in srgb, var(--primary) 14%, transparent);
+		background: color-mix(in srgb, var(--primary) 6%, #ffffff);
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 6px 16px rgba(15, 23, 42, 0.035);
 		isolation: isolate;
 		box-sizing: border-box;
 	}
@@ -4255,7 +4313,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		width: 12rem;
 		height: 12rem;
 		border-radius: 999px;
-		background: radial-gradient(circle, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 72%);
+		background: radial-gradient(
+			circle,
+			color-mix(in srgb, var(--primary) 18%, transparent) 0%,
+			transparent 72%
+		);
 		pointer-events: none;
 		z-index: 0;
 	}
@@ -4274,7 +4336,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		font-weight: 800;
 		letter-spacing: 0.12em;
 		text-transform: uppercase;
-		opacity: 0.88;
+		color: color-mix(in srgb, var(--on-surface-variant) 86%, #516b85 14%);
+		opacity: 1;
 	}
 
 	.dashboard-day-progress__metric {
@@ -4288,38 +4351,44 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		letter-spacing: -0.03em;
 		line-height: 1;
 		font-variant-numeric: tabular-nums;
+		color: var(--on-surface, #202124);
 	}
 
 	.dashboard-day-progress__of {
 		font-size: 0.55em;
 		font-weight: 700;
-		opacity: 0.82;
+		opacity: 0.72;
+		color: var(--on-surface-variant, #5f6368);
 	}
 
 	.dashboard-day-progress__unit {
 		font-size: 0.9rem;
 		font-weight: 700;
-		opacity: 0.9;
+		opacity: 0.85;
 		letter-spacing: 0.01em;
+		color: var(--on-surface-variant, #5f6368);
 	}
 
 	.dashboard-day-progress__hint {
 		margin: 0.55rem 0 0;
 		font-size: 0.88rem;
 		font-weight: 600;
-		opacity: 0.9;
+		opacity: 1;
+		color: var(--on-surface-variant, #5f6368);
 	}
 
 	.dashboard-day-progress__icon {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.6rem;
-		height: 2.6rem;
+		width: 2.25rem;
+		height: 2.25rem;
 		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.14);
-		font-size: 1.35rem;
+		background: #ffffff;
+		color: var(--primary);
+		font-size: 1.2rem;
 		flex-shrink: 0;
+		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.05);
 	}
 
 	.dashboard-day-progress__bar {
@@ -4327,7 +4396,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		z-index: 1;
 		height: 0.55rem;
 		border-radius: 999px;
-		background: rgba(255, 255, 255, 0.22);
+		background: color-mix(in srgb, var(--primary) 12%, #e8eaed);
 		overflow: hidden;
 		flex-shrink: 0;
 	}
@@ -4336,22 +4405,67 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		display: block;
 		height: 100%;
 		border-radius: inherit;
-		background: rgba(255, 255, 255, 0.92);
+		background: linear-gradient(
+			90deg,
+			var(--primary) 0%,
+			color-mix(in srgb, var(--primary) 60%, white) 100%
+		);
 		box-shadow: none;
 		transition: width 420ms ease;
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress {
-		background: linear-gradient(135deg, #1a3a8a 0%, #234fa8 58%, #2d5fbc 100%);
-		box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+		color: var(--on-surface, #e3e3e3);
+		border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+		background: color-mix(in srgb, var(--primary) 14%, var(--surface-container-high, #222222));
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress::after {
-		background: radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 72%);
+		background: radial-gradient(
+			circle,
+			color-mix(in srgb, var(--primary) 22%, transparent) 0%,
+			transparent 72%
+		);
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress__eyebrow,
+	html[data-theme='dark'] .dashboard-day-progress__of,
+	html[data-theme='dark'] .dashboard-day-progress__unit,
+	html[data-theme='dark'] .dashboard-day-progress__hint {
+		color: color-mix(in srgb, var(--on-surface-variant) 36%, white 64%);
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress__metric {
+		color: var(--on-surface, #e3e3e3);
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress__icon {
+		background: var(--surface-container-highest, #282828);
+		color: var(--primary);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress__bar {
+		background: color-mix(in srgb, var(--primary) 18%, #2b2d31);
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress__fill {
+		background: linear-gradient(
+			90deg,
+			var(--primary) 0%,
+			color-mix(in srgb, var(--primary) 70%, white) 100%
+		);
 	}
 
 	.dashboard-metric-card--compact {
 		padding: 1.1rem 1.15rem;
+		border-radius: 1.5rem;
+	}
+
+	.dashboard-metric-card--compact .dashboard-metric-icon {
+		top: 1rem;
+		right: 1rem;
 	}
 
 	.dashboard-metric-value--compact {
@@ -4387,7 +4501,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-week-glance {
 		display: grid;
 		grid-template-columns: repeat(7, minmax(0, 1fr));
-		gap: 0.35rem;
+		gap: 0.4rem;
 		margin: 0 0 1.65rem;
 		padding: 0.35rem 0.15rem 0.55rem;
 		flex-shrink: 0;
@@ -4397,12 +4511,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.42rem;
+		gap: 0.35rem;
 		min-width: 0;
-		padding: 0.35rem 0.15rem;
+		padding: 0.55rem 0.2rem 0.5rem;
 		border-radius: 999px;
+		border: 1px solid transparent;
+		background: var(--surface-container, #f1f3f4);
 		color: #5f6368;
-		transition: background-color 160ms ease, color 160ms ease;
+		transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
 	}
 
 	.dashboard-week-glance__label {
@@ -4433,12 +4549,18 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: transparent;
 	}
 
+	.dashboard-week-glance__day.has-appointments:not(.is-today) {
+		border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+		background: color-mix(in srgb, var(--primary) 6%, var(--surface-container, #f1f3f4));
+	}
+
 	.dashboard-week-glance__day.has-appointments .dashboard-week-glance__dot {
 		background: color-mix(in srgb, var(--primary) 70%, #64748b 30%);
 	}
 
 	.dashboard-week-glance__day.is-today {
-		background: color-mix(in srgb, var(--primary) 92%, #1e3a8a 8%);
+		background: var(--primary);
+		border-color: var(--primary);
 		color: #ffffff;
 	}
 
@@ -4452,10 +4574,17 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	html[data-theme='dark'] .dashboard-week-glance__day {
 		color: var(--on-surface-variant, #a7aaa8);
+		background: var(--surface-container, #1e1f22);
+	}
+
+	html[data-theme='dark'] .dashboard-week-glance__day.has-appointments:not(.is-today) {
+		border-color: color-mix(in srgb, var(--primary) 34%, transparent);
+		background: color-mix(in srgb, var(--primary) 12%, var(--surface-container, #1e1f22));
 	}
 
 	html[data-theme='dark'] .dashboard-week-glance__day.is-today {
-		background: color-mix(in srgb, var(--primary) 78%, #0f172a 22%);
+		background: var(--primary);
+		border-color: var(--primary);
 		color: #ffffff;
 	}
 
@@ -4804,11 +4933,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-profit-card {
 		--profit-accent: #426edb;
 		--profit-accent-soft: rgba(66, 110, 219, 0.1);
-		border: 0;
-		border-radius: 1.1rem;
-		background: #ffffff;
-		padding: 1rem 1.1rem;
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
+		position: relative;
+		border: 1px solid color-mix(in srgb, var(--profit-accent) 14%, transparent);
+		border-radius: 1.5rem;
+		background: color-mix(in srgb, var(--profit-accent) 8%, #ffffff);
+		padding: 1.1rem 1.15rem 0.85rem;
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 6px 16px rgba(15, 23, 42, 0.035);
+		overflow: hidden;
 	}
 
 	.dashboard-profit-card__head {
@@ -4816,6 +4947,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		align-items: flex-start;
 		justify-content: space-between;
 		gap: 0.65rem;
+		padding-right: 0.15rem;
 	}
 
 	.dashboard-profit-icon {
@@ -4823,19 +4955,25 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		width: 1.85rem;
-		height: 1.85rem;
-		border-radius: 0.65rem;
-		background: var(--profit-accent-soft);
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 999px;
+		background: #ffffff;
 		color: var(--profit-accent);
-		font-size: 1.05rem;
+		font-size: 1.15rem;
 		line-height: 1;
+		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.05);
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card {
-		border: 0;
-		background: var(--surface-container-high, #222222);
+		border: 1px solid color-mix(in srgb, var(--profit-accent) 22%, transparent);
+		background: color-mix(in srgb, var(--profit-accent) 14%, var(--surface-container-high, #222222));
 		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .dashboard-profit-icon {
+		background: var(--surface-container-highest, #282828);
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
 	}
 
 	.dashboard-profit-card[data-profit-accent='emerald'] {
@@ -4858,6 +4996,26 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		--profit-accent-soft: rgba(245, 158, 11, 0.14);
 	}
 
+	.dashboard-profit-spark {
+		display: block;
+		width: 100%;
+		height: 36px;
+		margin-top: 0.65rem;
+		overflow: visible;
+	}
+
+	.dashboard-profit-spark__line {
+		stroke: var(--profit-accent);
+		stroke-width: 2;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		opacity: 0.75;
+	}
+
+	.dashboard-profit-spark__area {
+		opacity: 1;
+	}
+
 	.dashboard-premium-badge {
 		background: color-mix(in srgb, #f59e0b 14%, #fffbeb 86%);
 		color: #b45309;
@@ -4878,11 +5036,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-profit-value {
-		margin: 0.45rem 0 0;
-		font-size: 1.45rem;
+		margin: 0.55rem 0 0;
+		font-size: 1.7rem;
 		font-weight: 800;
 		line-height: 1.05;
-		letter-spacing: -0.02em;
+		letter-spacing: -0.035em;
 		color: var(--on-surface);
 		font-variant-numeric: tabular-nums lining-nums;
 	}
@@ -5283,7 +5441,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-metric-card {
 			padding: 1rem 0.85rem 1.35rem;
-			border-radius: 1.15rem;
+			border-radius: 1.5rem;
 		}
 
 		.dashboard-metric-card--compact {
@@ -5292,9 +5450,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-metric-value-row {
 			gap: 0.55rem;
+			padding-right: 2.35rem;
 		}
 
 		.dashboard-metric-icon {
+			top: 0.85rem;
+			right: 0.85rem;
 			width: 2rem;
 			height: 2rem;
 			min-width: 2rem;
@@ -5307,7 +5468,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			font-size: 0.68rem;
 			letter-spacing: 0.05em;
 			line-height: 1.25;
-			padding-right: 0;
+			padding-right: 2.35rem;
 		}
 
 		.dashboard-metric-value {
@@ -5415,15 +5576,22 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-metric-card {
 			padding: 0.75rem 0.65rem 1rem;
-			border-radius: 1rem;
+			border-radius: 1.35rem;
 		}
 
 		.dashboard-metric-icon {
+			top: 0.7rem;
+			right: 0.7rem;
 			width: 1.75rem;
 			height: 1.75rem;
 			min-width: 1.75rem;
 			min-height: 1.75rem;
 			font-size: 0.95rem;
+		}
+
+		.dashboard-metric-label,
+		.dashboard-metric-value-row {
+			padding-right: 2.1rem;
 		}
 
 		.dashboard-metric-label {
