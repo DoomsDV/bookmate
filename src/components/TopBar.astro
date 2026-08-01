@@ -314,10 +314,43 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			syncDesktopToggle();
 		};
 
+		let sidebarTransitionTimer: number | null = null;
+		let sidebarTransitionHandler: ((event: TransitionEvent) => void) | null = null;
+
+		const clearSidebarTransitioning = () => {
+			const inner = document.querySelector<HTMLElement>('[data-sidebar-desktop-inner]');
+			inner?.classList.remove('is-transitioning');
+			if (sidebarTransitionTimer !== null) {
+				window.clearTimeout(sidebarTransitionTimer);
+				sidebarTransitionTimer = null;
+			}
+			if (sidebarTransitionHandler && appShell) {
+				appShell.removeEventListener('transitionend', sidebarTransitionHandler);
+				sidebarTransitionHandler = null;
+			}
+		};
+
+		const beginSidebarTransitioning = () => {
+			const inner = document.querySelector<HTMLElement>('[data-sidebar-desktop-inner]');
+			if (!inner || !appShell) return;
+
+			clearSidebarTransitioning();
+			inner.classList.add('is-transitioning');
+
+			sidebarTransitionHandler = (event: TransitionEvent) => {
+				if (event.target !== appShell) return;
+				if (event.propertyName !== 'grid-template-columns') return;
+				clearSidebarTransitioning();
+			};
+			appShell.addEventListener('transitionend', sidebarTransitionHandler);
+			sidebarTransitionTimer = window.setTimeout(clearSidebarTransitioning, 500);
+		};
+
 		const toggleDesktopSidebar = () => {
 			if (!appShell) return;
 			const isCollapsed = appShell.getAttribute('data-sidebar-state') === 'collapsed';
 			const nextState = isCollapsed ? 'expanded' : 'collapsed';
+			beginSidebarTransitioning();
 			appShell.setAttribute('data-sidebar-state', nextState);
 			persistDesktopSidebarState(nextState);
 			syncDesktopToggle();

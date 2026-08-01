@@ -546,17 +546,13 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 }
 
 @media (min-width: 1024px) {
-	/* Motion tokens del sidebar: easing "emphasized" (Material 3) con leve rebote
-	 * al final para que expandir/colapsar se sienta más suave y premium.
-	 */
 	:root {
-		--sidebar-motion: 420ms cubic-bezier(0.34, 1.36, 0.36, 1);
-		--sidebar-motion-fade: 180ms cubic-bezier(0.2, 0, 0, 1);
+		--sidebar-motion: 0ms ease;
+		--sidebar-motion-fade: 0ms ease;
 	}
 
 	.app-shell {
 		grid-template-columns: 17.5rem minmax(0, 1fr);
-		transition: grid-template-columns var(--sidebar-motion);
 		overflow: clip;
 	}
 
@@ -598,7 +594,18 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		overscroll-behavior: contain;
 		scrollbar-width: none;
 		-ms-overflow-style: none;
-		transition: padding var(--sidebar-motion);
+	}
+
+	/* Durante colapsar/expandir: sin scroll para evitar flash de scrollbar. */
+	[data-sidebar-desktop-inner].is-transitioning {
+		overflow: hidden !important;
+		scrollbar-width: none !important;
+	}
+
+	[data-sidebar-desktop-inner].is-transitioning::-webkit-scrollbar {
+		display: none !important;
+		width: 0 !important;
+		height: 0 !important;
 	}
 
 	[data-sidebar-desktop-inner]::-webkit-scrollbar {
@@ -636,7 +643,7 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 	}
 
 	[data-desktop-sidebar] [data-sidebar-brand] {
-		transition: gap var(--sidebar-motion);
+		transition: none;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand] {
@@ -649,7 +656,7 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 	}
 
 	[data-desktop-sidebar] [data-workspace-avatar] {
-		transition: width var(--sidebar-motion), height var(--sidebar-motion);
+		transition: none;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] [data-workspace-avatar] {
@@ -670,27 +677,17 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 	[data-desktop-sidebar] .sidebar-account-chevron,
 	[data-desktop-sidebar] .sidebar-nav-trailing {
 		opacity: 1;
-		max-width: 16rem;
 		overflow: hidden;
-		transform: translateX(0);
-		transition:
-			opacity var(--sidebar-motion-fade) 120ms,
-			transform var(--sidebar-motion-fade) 120ms,
-			max-width var(--sidebar-motion);
+		transition: opacity var(--sidebar-motion-fade);
 	}
 
-	/* Al colapsar los textos se van con un ligero desplazamiento a la izquierda. */
 	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] [data-sidebar-brand-text],
 	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] [data-sidebar-label],
 	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] [data-sidebar-trailing],
 	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] .sidebar-account-chevron,
 	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] .sidebar-nav-trailing {
 		opacity: 0;
-		transform: translateX(-6px);
-		transition:
-			opacity var(--sidebar-motion-fade),
-			transform var(--sidebar-motion-fade),
-			max-width var(--sidebar-motion);
+		transition: opacity var(--sidebar-motion-fade);
 	}
 
 	/* Los labels de una línea recortan (no envuelven) al animar. */
@@ -705,10 +702,7 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 	}
 
 	.sidebar-account-chevron {
-		transition:
-			opacity 140ms ease 60ms,
-			max-width var(--sidebar-motion),
-			margin var(--sidebar-motion);
+		transition: opacity var(--sidebar-motion-fade);
 	}
 
 	/*
@@ -736,19 +730,10 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		width: 100%;
 	}
 
-	/* Item de navegación: pastilla -> círculo, con una sola transición. */
 	[data-desktop-sidebar] .sidebar-nav-link {
 		box-sizing: border-box;
 		width: 100%;
-		transition:
-			width var(--sidebar-motion),
-			height var(--sidebar-motion),
-			min-height var(--sidebar-motion),
-			padding var(--sidebar-motion),
-			margin var(--sidebar-motion),
-			gap var(--sidebar-motion),
-			border-radius var(--sidebar-motion),
-			border-color var(--sidebar-motion);
+		transition: none;
 	}
 
 	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-link {
