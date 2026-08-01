@@ -121,7 +121,14 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 						Ajustes
 					</button>
 
-					<form method="post" action="/api/auth/logout" class="border-t border-black/5" data-logout-form>
+					<form
+						method="post"
+						action="/api/auth/logout"
+						enctype="application/x-www-form-urlencoded"
+						data-astro-reload
+						class="border-t border-black/5"
+						data-logout-form
+					>
 						<input type="hidden" name="fcm_token" value="" data-logout-fcm-token />
 						<button
 							type="submit"

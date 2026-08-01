@@ -322,7 +322,14 @@ const planFooterActive = activePath === "/panel/plan";
 					) : null
 				}
 
-				<form method="post" action="/api/auth/logout" class:list={[showPlanFooter && 'mt-2']} data-logout-form>
+				<form
+					method="post"
+					action="/api/auth/logout"
+					enctype="application/x-www-form-urlencoded"
+					data-astro-reload
+					class:list={[showPlanFooter && 'mt-2']}
+					data-logout-form
+				>
 					<input type="hidden" name="fcm_token" value="" data-logout-fcm-token />
 					<button type="submit" class="more-sheet__logout">
 						<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">logout</span>
