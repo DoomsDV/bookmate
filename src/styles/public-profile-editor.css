@@ -1352,6 +1352,17 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 }
 
 @media (max-width: 1023.98px) {
+	.ppe-main,
+	.ppe-main > public-profile-editor,
+	.ppe-page,
+	.ppe-layout,
+	.ppe-config-pane,
+	.ppe-form-col {
+		width: 100%;
+		max-width: none;
+		box-sizing: border-box;
+	}
+
 	.ppe-header {
 		flex-direction: column;
 		align-items: stretch;
@@ -1409,34 +1420,29 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	}
 
 	.ppe-save-footer {
-		/* Por encima del dock flotante, con hueco visible (no taparlo) */
+		/* Mismo ancho útil que el contenido de main (px-4 / sm:px-6) */
 		--ppe-save-footer-gap: 0.55rem;
 		bottom: calc(
 			var(--mobile-bottom-nav-height, 4.25rem) + var(--ppe-save-footer-gap)
 		);
-		left: 0.75rem;
-		right: 0.75rem;
+		left: 1rem;
+		right: 1rem;
 		width: auto;
 		margin: 0;
-		padding: 0.65rem 0.75rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
-		border-radius: 1.15rem;
-		box-shadow:
-			0 4px 12px rgba(15, 23, 42, 0.08),
-			0 12px 28px rgba(15, 23, 42, 0.12);
-		background: color-mix(in srgb, var(--surface-bright, #fff) 88%, transparent);
-		backdrop-filter: blur(14px);
-		-webkit-backdrop-filter: blur(14px);
-		/* Debajo del bottom-nav para no interceptar taps del dock */
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		box-shadow: none;
+		background: transparent;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
 		z-index: 44;
 	}
 
 	html[data-theme='dark'] .ppe-save-footer {
-		background: color-mix(in srgb, var(--surface-container-high, #222222) 92%, black);
-		border-color: rgba(255, 255, 255, 0.08);
-		box-shadow:
-			0 4px 12px rgba(0, 0, 0, 0.28),
-			0 12px 28px rgba(0, 0, 0, 0.34);
+		background: transparent;
+		border-color: transparent;
+		box-shadow: none;
 	}
 
 	.ppe-page {
@@ -1451,6 +1457,17 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	.ppe-save-footer .ppe-btn {
 		width: 100%;
 		border-radius: 0.85rem;
+		box-shadow:
+			0 4px 12px rgba(15, 23, 42, 0.12),
+			0 12px 28px rgba(15, 23, 42, 0.16);
+	}
+}
+
+@media (min-width: 640px) and (max-width: 1023.98px) {
+	.ppe-save-footer {
+		/* sm:px-6 del main */
+		left: 1.5rem;
+		right: 1.5rem;
 	}
 }
 
