@@ -223,12 +223,12 @@ html[data-theme='dark'] .appointment-customer-results {
 
 .appointment-delete-btn {
 	border-radius: 1rem;
-	border: 1px solid rgba(239, 68, 68, 0.55);
-	background: transparent;
+	border: 1px solid transparent;
+	background: #be123c;
 	padding: 0.72rem 1.15rem;
 	font-size: 0.92rem;
 	font-weight: 800;
-	color: #ef4444;
+	color: #fff;
 	transition: background-color 140ms ease, border-color 140ms ease;
 }
 
@@ -238,8 +238,9 @@ html[data-theme='dark'] .appointment-customer-results {
 }
 
 .appointment-delete-btn:hover {
-	border-color: rgba(239, 68, 68, 0.72);
-	background: rgba(239, 68, 68, 0.1);
+	border-color: transparent;
+	background: #9f1239;
+	color: #fff;
 }
 
 .appointment-cancel-btn {
@@ -288,13 +289,14 @@ html[data-theme='dark'] .appointment-customer-results {
 }
 
 html[data-theme='dark'] .appointment-delete-btn {
-	border-color: rgba(251, 113, 133, 0.68);
-	background: transparent;
-	color: #fda4af;
+	border-color: transparent;
+	background: #be123c;
+	color: #fff;
 }
 
 html[data-theme='dark'] .appointment-delete-btn:hover {
-	background: rgba(251, 113, 133, 0.18);
+	background: #9f1239;
+	color: #fff;
 }
 
 html[data-theme='dark'] .appointment-cancel-btn {

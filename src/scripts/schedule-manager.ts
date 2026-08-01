@@ -286,7 +286,7 @@ class ScheduleManager extends HTMLElement {
 	private bindHeaderScrollCompact(signal: AbortSignal): void {
 		this.headerScrollHero = this.querySelector<HTMLElement>('[data-schedule-header-hero]');
 		this.headerStickyBar = this.querySelector<HTMLElement>('[data-schedule-header-sticky]');
-		this.headerScrollRoot = this.querySelector('main');
+		this.headerScrollRoot = this.resolveHeaderScrollRoot();
 		if (!this.headerScrollHero || !this.headerStickyBar || !this.headerScrollRoot) return;
 
 		this.headerHeroObserver = new IntersectionObserver(
@@ -308,6 +308,19 @@ class ScheduleManager extends HTMLElement {
 			this.headerHeroObserver = null;
 			this.setHeaderStickyPinned(false);
 		});
+	}
+
+	/** Desktop: main scrollea. Mobile: el canvas del shell (TopBar sticky incluido). */
+	private resolveHeaderScrollRoot(): HTMLElement | null {
+		const main = this.querySelector<HTMLElement>('main.schedule-page-main, main');
+		if (!main) return null;
+
+		if (window.matchMedia('(max-width: 1023.98px)').matches) {
+			const canvas = main.parentElement;
+			if (canvas instanceof HTMLElement) return canvas;
+		}
+
+		return main;
 	}
 
 	private setHeaderStickyPinned(pinned: boolean): void {

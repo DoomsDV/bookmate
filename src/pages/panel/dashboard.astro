@@ -16,7 +16,7 @@ import '../../styles/global.css';
 
 const token = Astro.locals.token ?? '';
 const roleId = Number(Astro.locals.roleId ?? 0);
-const showTeamOverview = roleId !== ROLES.PROFESIONAL;
+const showTeamOverview = false;
 const showAlertsPanel = roleId === ROLES.ADMIN || roleId === ROLES.RECEPCIONISTA;
 const PAGE_SIZE = 5;
 const rawPage = Number(Astro.url.searchParams.get('page') || '1');
@@ -2487,11 +2487,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-ai-strip__glow::after,
 		html[data-theme='dark'] .dashboard-ai-strip__glow::before,
 		html[data-theme='dark'] .dashboard-ai-strip__glow::after {
-			filter: none;
+			filter: blur(28px);
+			opacity: 0.55;
 		}
 
 		.dashboard-ai-strip:not(.is-generating) .dashboard-ai-strip__glow {
-			display: none;
+			display: block;
+			opacity: 0.85;
 		}
 
 		.dashboard-ai-orb {
@@ -2810,7 +2812,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-cita-fab {
 			position: fixed;
 			right: max(1rem, env(safe-area-inset-right, 0px));
-			bottom: calc(5.15rem + env(safe-area-inset-bottom, 0px));
+			bottom: calc(5.55rem + env(safe-area-inset-bottom, 0px));
 			z-index: 44;
 			display: inline-flex;
 			align-items: center;
@@ -2868,7 +2870,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-ai-strip {
 		position: relative;
 		isolation: isolate;
-		overflow: visible;
+		overflow: hidden;
 		display: flex;
 		flex-direction: column;
 		align-items: stretch;
@@ -2877,9 +2879,38 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		max-width: none;
 		padding: 1.3rem 1.35rem;
 		border-radius: 1.5rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border, #d0d7e2) 88%, transparent);
-		background: color-mix(in srgb, var(--surface-bright, #ffffff) 92%, var(--page-background, #f4f6f8) 8%);
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
+		/* Glass IA: borde suave (sin azul sólido) + fondo translúcido */
+		border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--shell-border, #d0d7e2) 40%);
+		background:
+			linear-gradient(
+				145deg,
+				color-mix(in srgb, var(--primary) 8%, transparent) 0%,
+				transparent 42%,
+				color-mix(in srgb, #67e8f9 6%, transparent) 100%
+			),
+			color-mix(in srgb, var(--surface-bright, #ffffff) 52%, transparent);
+		-webkit-backdrop-filter: blur(16px) saturate(1.28);
+		backdrop-filter: blur(16px) saturate(1.28);
+		box-shadow:
+			0 8px 28px color-mix(in srgb, var(--primary) 7%, transparent),
+			inset 0 1px 0 rgba(255, 255, 255, 0.55);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-strip {
+		border-color: color-mix(in srgb, var(--primary) 26%, rgba(255, 255, 255, 0.1));
+		background:
+			linear-gradient(
+				145deg,
+				color-mix(in srgb, var(--primary) 14%, transparent) 0%,
+				transparent 48%,
+				color-mix(in srgb, #22d3ee 8%, transparent) 100%
+			),
+			color-mix(in srgb, var(--surface-container-high, #222222) 40%, transparent);
+		-webkit-backdrop-filter: blur(18px) saturate(1.35);
+		backdrop-filter: blur(18px) saturate(1.35);
+		box-shadow:
+			0 10px 32px rgba(0, 0, 0, 0.28),
+			inset 0 1px 0 rgba(255, 255, 255, 0.12);
 	}
 
 	.dashboard-ai-strip__glow {
@@ -2899,17 +2930,17 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		filter: blur(40px);
 	}
 
-	/* Aurora inferior suave, sin neón */
+	/* Aurora inferior suave (toque IA permanente, sin neón) */
 	.dashboard-ai-strip__glow::before {
 		left: -20%;
 		right: -10%;
 		bottom: -58%;
 		height: 88%;
 		background:
-			radial-gradient(ellipse 55% 48% at 30% 74%, rgba(147, 197, 253, 0.22), transparent 72%),
-			radial-gradient(ellipse 48% 42% at 70% 80%, rgba(196, 181, 253, 0.14), transparent 70%),
-			radial-gradient(ellipse 42% 38% at 52% 96%, rgba(165, 243, 252, 0.16), transparent 68%);
-		opacity: 0.65;
+			radial-gradient(ellipse 55% 48% at 30% 74%, rgba(147, 197, 253, 0.28), transparent 72%),
+			radial-gradient(ellipse 48% 42% at 70% 80%, rgba(103, 232, 249, 0.16), transparent 70%),
+			radial-gradient(ellipse 42% 38% at 52% 96%, rgba(165, 243, 252, 0.14), transparent 68%);
+		opacity: 0.72;
 	}
 
 	.dashboard-ai-strip__glow::after {
@@ -2917,8 +2948,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		right: -8%;
 		bottom: -42%;
 		height: 62%;
-		background: radial-gradient(ellipse 50% 45% at 60% 80%, rgba(191, 219, 254, 0.12), transparent 72%);
-		opacity: 0.5;
+		background: radial-gradient(ellipse 50% 45% at 60% 80%, rgba(191, 219, 254, 0.16), transparent 72%);
+		opacity: 0.55;
 	}
 
 	.dashboard-ai-strip__head,
@@ -2943,10 +2974,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		width: 1.55rem;
 		height: 1.55rem;
 		flex-shrink: 0;
-		border-radius: 0.45rem;
-		background: transparent;
-		border: 0;
-		box-shadow: none;
+		border-radius: 0.55rem;
+		background: color-mix(in srgb, var(--primary) 16%, transparent);
+		border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
 	}
 
 	.dashboard-ai-strip__icon {
@@ -3088,8 +3119,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-ai-strip.is-generating {
-		border-color: color-mix(in srgb, var(--shell-border, #d0d7e2) 82%, transparent);
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.05);
+		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border, #d0d7e2) 35%);
+		box-shadow:
+			0 8px 28px color-mix(in srgb, var(--primary) 10%, transparent),
+			inset 0 1px 0 rgba(255, 255, 255, 0.5);
 	}
 
 	.dashboard-ai-strip.is-generating .dashboard-ai-strip__glow::before {
@@ -3200,8 +3233,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-strip.is-generating {
-		border-color: color-mix(in srgb, var(--primary) 35%, transparent);
-		box-shadow: 0 4px 28px color-mix(in srgb, var(--primary) 12%, transparent);
+		border-color: color-mix(in srgb, var(--primary) 38%, rgba(255, 255, 255, 0.08));
+		box-shadow:
+			0 10px 34px color-mix(in srgb, var(--primary) 14%, transparent),
+			inset 0 1px 0 rgba(255, 255, 255, 0.12);
 	}
 
 	@media (min-width: 641px) {
@@ -5030,7 +5065,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		border: 1px solid color-mix(in srgb, var(--profit-accent) 14%, transparent);
 		border-radius: 1.5rem;
 		background: color-mix(in srgb, var(--profit-accent) 8%, #ffffff);
-		padding: 1.1rem 1.15rem 0.85rem;
+		padding: 0.85rem 0.95rem 0.45rem;
 		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 6px 16px rgba(15, 23, 42, 0.035);
 		overflow: hidden;
 	}
@@ -5048,12 +5083,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		width: 2.25rem;
-		height: 2.25rem;
+		width: 1.85rem;
+		height: 1.85rem;
 		border-radius: 999px;
 		background: #ffffff;
 		color: var(--profit-accent);
-		font-size: 1.15rem;
+		font-size: 1.05rem;
 		line-height: 1;
 		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.05);
 	}
@@ -5092,8 +5127,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-profit-spark {
 		display: block;
 		width: 100%;
-		height: 36px;
-		margin-top: 0.65rem;
+		height: 28px;
+		margin-top: 0.35rem;
 		overflow: visible;
 	}
 
@@ -5180,7 +5215,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-profit-value {
-		margin: 0.55rem 0 0;
+		margin: 0.3rem 0 0;
 		font-size: 1.7rem;
 		font-weight: 800;
 		line-height: 1.05;
@@ -5190,7 +5225,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-profit-hint {
-		margin: 0.3rem 0 0;
+		margin: 0.2rem 0 0;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.2rem;
@@ -5530,7 +5565,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-profit-metrics-track > .dashboard-profit-card {
 			flex: 0 0 min(88%, 16.5rem);
 			scroll-snap-align: start;
-			min-height: 7.25rem;
+			min-height: 0;
 			min-width: 0;
 			max-width: 100%;
 			box-sizing: border-box;
@@ -5765,7 +5800,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		.dashboard-profit-card {
-			padding: 0.9rem 0.95rem;
+			padding: 0.75rem 0.85rem 0.35rem;
 		}
 
 		.dashboard-day-progress {

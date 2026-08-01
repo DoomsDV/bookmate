@@ -546,17 +546,80 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	.schedule-page-header__sticky-bar {
 		position: sticky;
+		/* Desktop: el scroll es el main (TopBar queda fuera). */
 		top: 0;
-		z-index: 20;
-		margin: 0 -0.25rem;
-		padding: 0 0.25rem 0.65rem;
-		background: var(--page-background);
-		transition: box-shadow 240ms ease;
+		z-index: 30;
+		/* Full-bleed respecto al padding del main (px-4 / sm:px-6) */
+		width: auto;
+		margin-inline: -1rem;
+		padding: 0.55rem 1rem 0.7rem;
+		/* Mismo tono glass que el TopBar; sin líneas divisoras */
+		background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 94%, var(--surface-container, #eef2f6) 6%);
+		border: 0;
+		border-bottom: 0;
+		box-shadow: none;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		transition:
+			background-color 220ms ease,
+			backdrop-filter 220ms ease,
+			padding-top 220ms ease;
+	}
+
+	@media (min-width: 640px) {
+		.schedule-page-header__sticky-bar {
+			margin-inline: -1.5rem;
+			padding-inline: 1.5rem;
+		}
+	}
+
+	/* Mobile: el canvas scrollea junto al TopBar sticky → anclar debajo del header. */
+	@media (max-width: 1023.98px) {
+		.schedule-page-header__sticky-bar {
+			top: var(--shell-header-height);
+		}
 	}
 
 	.schedule-page-header__sticky-bar.is-scrolled {
 		padding-top: 0.75rem;
-		box-shadow: 0 1px 0 color-mix(in srgb, var(--shell-border) 45%, transparent);
+		background-color: color-mix(in srgb, var(--surface-bright, #ffffff) 48%, transparent);
+		backdrop-filter: blur(18px) saturate(1.3);
+		-webkit-backdrop-filter: blur(18px) saturate(1.3);
+		border: 0;
+		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .schedule-page-header__sticky-bar {
+		background-color: var(--page-background, #191919);
+		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .schedule-page-header__sticky-bar.is-scrolled {
+		background-color: color-mix(in srgb, var(--page-background, #131314) 42%, transparent);
+		backdrop-filter: blur(20px) saturate(1.35);
+		-webkit-backdrop-filter: blur(20px) saturate(1.35);
+		border: 0;
+		box-shadow: none;
+	}
+
+	/* Sin línea entre TopBar y la barra sticky: un solo bloque visual */
+	body:has([data-schedule-header-sticky]) .shell-header-zone:not(.sidebar-account-header),
+	body:has([data-schedule-header-sticky]) .shell-header-zone:not(.sidebar-account-header).is-scrolled,
+	html[data-theme='dark'] body:has([data-schedule-header-sticky]) .shell-header-zone:not(.sidebar-account-header),
+	html[data-theme='dark'] body:has([data-schedule-header-sticky]) .shell-header-zone:not(.sidebar-account-header).is-scrolled {
+		border-bottom: 0 !important;
+		border-bottom-color: transparent !important;
+		box-shadow: none !important;
+	}
+
+	.schedule-page-header__sticky-bar,
+	.schedule-page-header__sticky-bar.is-scrolled,
+	html[data-theme='dark'] .schedule-page-header__sticky-bar,
+	html[data-theme='dark'] .schedule-page-header__sticky-bar.is-scrolled {
+		border: 0 !important;
+		border-top: 0 !important;
+		border-bottom: 0 !important;
+		box-shadow: none !important;
 	}
 
 	.schedule-page-header__toolbar {
@@ -714,11 +777,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		.schedule-page-header__hero {
 			padding-top: 1rem;
 		}
-	}
-
-	html[data-theme='dark'] .schedule-page-header__sticky-bar.is-scrolled {
-		background: var(--page-background);
-		box-shadow: 0 1px 0 color-mix(in srgb, var(--shell-border) 65%, transparent);
 	}
 
 	.schedule-template-callout {
@@ -992,14 +1050,14 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		height: 1.9rem;
 		border-radius: 999px;
 		border: 0;
-		color: color-mix(in srgb, var(--on-surface-variant) 58%, #dc2626 42%);
-		background: transparent;
+		color: #fff;
+		background: #be123c;
 		transition: background-color 140ms ease, color 140ms ease;
 	}
 
 	.schedule-slot-remove-btn:hover {
-		color: #dc2626;
-		background: rgba(239, 68, 68, 0.12);
+		color: #fff;
+		background: #9f1239;
 	}
 
 	.schedule-slot-remove-btn:disabled {
@@ -1047,37 +1105,36 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	@media (max-width: 639px) {
 		[data-weekly-planner] .schedule-slot-row {
-			margin-bottom: 0.65rem;
-			padding: 0.75rem;
-			border: 1px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
-			border-radius: 0.85rem;
-			border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
-			background: color-mix(in srgb, var(--surface-bright) 94%, var(--control-surface) 6%);
-			box-shadow:
-				0 1px 2px rgba(15, 23, 42, 0.06),
-				0 4px 12px rgba(15, 23, 42, 0.08);
+			margin-bottom: 0.55rem;
+			padding: 0.45rem 0 0.75rem;
+			border: 0;
+			border-radius: 0;
+			border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 55%, transparent);
+			background: transparent;
+			box-shadow: none;
 		}
 
 		[data-weekly-planner] .schedule-slot-row:last-child {
 			margin-bottom: 0;
+			padding-bottom: 0.1rem;
+			border-bottom: 0;
 		}
 
 		html[data-theme='dark'] [data-weekly-planner] .schedule-slot-row {
-			border-color: color-mix(in srgb, var(--shell-border) 82%, transparent);
-			background: color-mix(in srgb, var(--sidebar-surface) 90%, #000 10%);
-			box-shadow:
-				0 1px 2px rgba(0, 0, 0, 0.22),
-				0 4px 14px rgba(0, 0, 0, 0.28);
+			border-color: color-mix(in srgb, var(--shell-border) 50%, transparent);
+			background: transparent;
+			box-shadow: none;
 		}
 	}
 
 	html[data-theme='dark'] .schedule-slot-remove-btn {
-		color: color-mix(in srgb, var(--on-surface-variant) 58%, #fecdd3 42%);
+		color: #fff;
+		background: #be123c;
 	}
 
 	html[data-theme='dark'] .schedule-slot-remove-btn:hover {
-		background: rgba(251, 113, 133, 0.2);
-		color: #fecdd3;
+		background: #9f1239;
+		color: #fff;
 	}
 
 	[data-schedule-tabs] {

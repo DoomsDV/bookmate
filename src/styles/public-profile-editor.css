@@ -106,40 +106,6 @@ public-profile-editor {
 	display: none !important;
 }
 
-/*
- * Preferencia de pestaña en <html> (script del <head>): evita FOUC
- * General → pestaña guardada antes de que hidrate el módulo TS.
- */
-html[data-ppe-tab-pref] .ppe-tab.is-active {
-	color: var(--on-surface-variant);
-	border-bottom-color: transparent;
-	background: transparent;
-}
-
-html[data-ppe-tab-pref='general'] .ppe-tab[data-ppe-tab='general'],
-html[data-ppe-tab-pref='apariencia'] .ppe-tab[data-ppe-tab='apariencia'],
-html[data-ppe-tab-pref='galeria'] .ppe-tab[data-ppe-tab='galeria'],
-html[data-ppe-tab-pref='horario'] .ppe-tab[data-ppe-tab='horario'] {
-	color: var(--primary);
-	border-bottom-color: var(--primary);
-}
-
-html[data-ppe-tab-pref] .ppe-panel {
-	display: none !important;
-}
-
-/* Incluye [hidden]: gana a .ppe-panel[hidden] hasta que JS quite el atributo. */
-html[data-ppe-tab-pref='general'] .ppe-panel[data-ppe-panel='general'],
-html[data-ppe-tab-pref='apariencia'] .ppe-panel[data-ppe-panel='apariencia'],
-html[data-ppe-tab-pref='galeria'] .ppe-panel[data-ppe-panel='galeria'],
-html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'],
-html[data-ppe-tab-pref='general'] .ppe-panel[data-ppe-panel='general'][hidden],
-html[data-ppe-tab-pref='apariencia'] .ppe-panel[data-ppe-panel='apariencia'][hidden],
-html[data-ppe-tab-pref='galeria'] .ppe-panel[data-ppe-panel='galeria'][hidden],
-html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'][hidden] {
-	display: grid !important;
-}
-
 @media (min-width: 1024px) {
 	/* Main no scrollea: solo la columna izquierda (.ppe-config-pane) */
 	.app-shell > :last-child > main.ppe-main {

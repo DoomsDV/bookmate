@@ -168,14 +168,16 @@ const mapPreviewLocations = (raw: unknown): PublicProfilePreviewLocation[] => {
 
 export const initializePublicProfileEditor = (root: HTMLElement) => {
 	if (root.dataset.ppeBound === '1') return;
-	root.dataset.ppeBound = '1';
 
 	let bootstrap: Bootstrap;
 	try {
-		bootstrap = JSON.parse(String(root.dataset.ppeBootstrap || '{}')) as Bootstrap;
+		// getAttribute: más fiable que dataset con JSON grande en el atributo.
+		bootstrap = JSON.parse(String(root.getAttribute('data-ppe-bootstrap') || '{}')) as Bootstrap;
 	} catch {
 		return;
 	}
+
+	root.dataset.ppeBound = '1';
 
 	const form = root.querySelector<HTMLFormElement>('[data-ppe-form]');
 	const slugInput = root.querySelector<HTMLInputElement>('[data-ppe-slug]');
@@ -255,8 +257,6 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const lightboxCaption = root.querySelector<HTMLElement>('[data-ppe-lightbox-caption]');
 	const lightboxPrev = root.querySelector<HTMLButtonElement>('[data-ppe-lightbox-prev]');
 	const lightboxNext = root.querySelector<HTMLButtonElement>('[data-ppe-lightbox-next]');
-	const tabButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ppe-tab]'));
-	const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-ppe-panel]'));
 
 	const cropModal = root.querySelector<HTMLDialogElement>('[data-ppe-crop-modal]');
 	const cropSheet = root.querySelector<HTMLElement>('[data-ppe-crop-sheet]');
@@ -364,23 +364,20 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		bannerDropzone?.classList.toggle('has-preview', Boolean(url));
 	};
 
-	const PPE_TAB_IDS = new Set(
-		tabButtons.map((btn) => String(btn.dataset.ppeTab || '')).filter(Boolean)
-	);
-
 	const activateTab = (tabId: string) => {
-		const nextId = PPE_TAB_IDS.has(tabId) ? tabId : 'general';
-		for (const btn of tabButtons) {
+		const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ppe-tab]'));
+		const panelEls = Array.from(root.querySelectorAll<HTMLElement>('[data-ppe-panel]'));
+		const ids = new Set(buttons.map((btn) => String(btn.dataset.ppeTab || '')).filter(Boolean));
+		const nextId = ids.has(tabId) ? tabId : 'general';
+		for (const btn of buttons) {
 			const active = btn.dataset.ppeTab === nextId;
 			btn.classList.toggle('is-active', active);
 			btn.setAttribute('aria-selected', active ? 'true' : 'false');
 			btn.tabIndex = active ? 0 : -1;
 		}
-		for (const panel of panels) {
+		for (const panel of panelEls) {
 			panel.hidden = panel.dataset.ppePanel !== nextId;
 		}
-		// Solo en esta visita a la página (no localStorage): ayuda al CSS de pestañas.
-		document.documentElement.setAttribute('data-ppe-tab-pref', nextId);
 	};
 
 	const restoreActiveTab = () => {
@@ -1509,25 +1506,28 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		document.documentElement.classList.remove('ppe-preview-open');
 	});
 
-	tabButtons.forEach((btn) => {
-		btn.addEventListener('click', () => {
-			const tabId = String(btn.dataset.ppeTab || 'general');
-			activateTab(tabId);
-		});
+	/* Delegación en el root: sobrevive si Astro remonta nodos internos. */
+	root.addEventListener('click', (event) => {
+		const btn = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-ppe-tab]');
+		if (!btn || !root.contains(btn) || !btn.closest('.ppe-tabs')) return;
+		activateTab(String(btn.dataset.ppeTab || 'general'));
 	});
 
-	root.querySelector<HTMLElement>('.ppe-tabs')?.addEventListener('keydown', (event) => {
+	root.addEventListener('keydown', (event) => {
 		const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
 		if (!keys.includes(event.key)) return;
-		const current = tabButtons.findIndex((btn) => btn.classList.contains('is-active'));
+		const tabsNav = (event.target as HTMLElement | null)?.closest('.ppe-tabs');
+		if (!tabsNav || !root.contains(tabsNav)) return;
+		const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ppe-tab]'));
+		const current = buttons.findIndex((btn) => btn.classList.contains('is-active'));
 		if (current < 0) return;
 		event.preventDefault();
 		let next = current;
-		if (event.key === 'ArrowLeft') next = (current - 1 + tabButtons.length) % tabButtons.length;
-		if (event.key === 'ArrowRight') next = (current + 1) % tabButtons.length;
+		if (event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+		if (event.key === 'ArrowRight') next = (current + 1) % buttons.length;
 		if (event.key === 'Home') next = 0;
-		if (event.key === 'End') next = tabButtons.length - 1;
-		const target = tabButtons[next];
+		if (event.key === 'End') next = buttons.length - 1;
+		const target = buttons[next];
 		if (!target) return;
 		activateTab(String(target.dataset.ppeTab || 'general'));
 		target.focus();

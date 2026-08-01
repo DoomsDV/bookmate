@@ -472,17 +472,20 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 							<div class="cobros-modal-actions" data-cobros-actions-default>
 								<button
 									type="button"
-									class="cobros-modal-btn cobros-modal-btn--ghost"
+									class="cobros-modal-btn cobros-modal-btn--ghost cobros-modal-btn--icon"
 									data-cobros-reject
+									aria-label="Rechazar seña"
 								>
-									Rechazar
+									<span class="material-symbols-rounded" aria-hidden="true">close</span>
+									<span class="cobros-modal-btn__label" data-cobros-reject-label>Rechazar</span>
 								</button>
 								<button
 									type="button"
 									class="cobros-modal-btn cobros-modal-btn--primary"
 									data-cobros-approve
 								>
-									Aprobar seña
+									<span class="material-symbols-rounded" aria-hidden="true">check</span>
+									<span class="cobros-modal-btn__label">Aprobar</span>
 								</button>
 							</div>
 							<div class="cobros-modal-actions hidden" data-cobros-actions-reject>
@@ -988,7 +991,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 	.cobros-modal-actions {
 		display: flex;
-		flex-direction: column-reverse;
+		flex-direction: row;
+		align-items: stretch;
 		gap: 0.65rem;
 		width: 100%;
 	}
@@ -999,7 +1003,6 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 	@media (min-width: 640px) {
 		.cobros-modal-actions {
-			flex-direction: row;
 			justify-content: flex-end;
 			align-items: center;
 			gap: 0.75rem;
@@ -1010,6 +1013,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
+		gap: 0.4rem;
 		min-height: 3rem;
 		width: 100%;
 		border-radius: 999px;
@@ -1021,10 +1025,36 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
 	}
 
+	.cobros-modal-btn .material-symbols-rounded {
+		font-size: 1.25rem;
+		line-height: 1;
+	}
+
 	@media (min-width: 640px) {
 		.cobros-modal-btn {
 			min-width: 9.5rem;
 			width: auto;
+		}
+	}
+
+	/* Mobile: Rechazar = solo X (como eliminar); Aprobar = check + texto */
+	@media (max-width: 639px) {
+		.cobros-modal-actions[data-cobros-actions-default] .cobros-modal-btn--primary {
+			flex: 1 1 auto;
+			width: auto;
+			min-width: 0;
+		}
+
+		.cobros-modal-actions[data-cobros-actions-default] .cobros-modal-btn--icon {
+			flex: 0 0 3.1rem;
+			width: 3.1rem;
+			min-width: 3.1rem;
+			padding: 0;
+			border-radius: 1rem;
+		}
+
+		.cobros-modal-actions[data-cobros-actions-default] .cobros-modal-btn--icon .cobros-modal-btn__label {
+			display: none;
 		}
 	}
 
@@ -1034,9 +1064,27 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	.cobros-modal-btn--ghost {
-		background: transparent;
-		border-color: color-mix(in srgb, #f43f5e 45%, var(--shell-border));
-		color: #e11d48;
+		background: #be123c;
+		border-color: transparent;
+		color: #fff;
+	}
+
+	.cobros-modal-btn--ghost:hover {
+		background: #9f1239;
+		border-color: transparent;
+		color: #fff;
+	}
+
+	html[data-theme='dark'] .cobros-modal-btn--ghost {
+		background: #be123c;
+		border-color: transparent;
+		color: #fff;
+	}
+
+	html[data-theme='dark'] .cobros-modal-btn--ghost:hover {
+		background: #9f1239;
+		border-color: transparent;
+		color: #fff;
 	}
 
 	.cobros-modal-btn--muted {

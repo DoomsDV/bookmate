@@ -274,13 +274,6 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 										class="w-full rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-medium outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 									/>
 								</label>
-								<p
-									class="m-0 text-[0.8rem] font-medium italic leading-snug text-(--on-surface-variant)"
-									data-service-hidden-price-hint
-									aria-live="polite"
-								>
-									Se verá así: "Nombre del servicio - A evaluar"
-								</p>
 								<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="hidden_public_price_label"></span>
 							</div>
 						</div>
@@ -704,16 +697,6 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				},
 				{ signal },
 			);
-			this.els.hiddenPublicPriceLabel?.addEventListener(
-				"input",
-				this.syncServiceHiddenPricePreview,
-				{ signal },
-			);
-			this.formEls.name?.addEventListener(
-				"input",
-				this.syncServiceHiddenPricePreview,
-				{ signal },
-			);
 			void this.loadOrgHiddenPriceDefault();
 			this.formEls.duration?.addEventListener(
 				"input",
@@ -892,7 +875,6 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 					custom && custom !== this.orgHiddenPriceDefault ? custom : "";
 			}
 			this.toggleHidePublicPriceFields(hidePublicPrice);
-			this.syncServiceHiddenPricePreview();
 			const requiresDeposit =
 				String(service?.requires_deposit ?? "0") === "1" ||
 				service?.requires_deposit === true;
@@ -931,7 +913,6 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			if (this.els.depositType) this.els.depositType.value = "PERCENT";
 			if (this.els.depositValue) this.els.depositValue.value = "";
 			this.syncDepositValueField("");
-			this.syncServiceHiddenPricePreview();
 			this.setCoverState({ existingUrl: null, pendingBase64: null });
 		}
 
@@ -1158,24 +1139,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			if (this.els.hiddenPublicPriceLabel) {
 				this.els.hiddenPublicPriceLabel.placeholder = `Ej: ${defaultLabel} (Texto por defecto)`;
 			}
-			this.syncServiceHiddenPricePreview();
 		}
-
-		private syncServiceHiddenPricePreview = () => {
-			const hint = this.querySelector<HTMLElement>(
-				"[data-service-hidden-price-hint]",
-			);
-			if (!hint) return;
-
-			const name =
-				String(this.formEls.name?.value || "").trim() ||
-				"Nombre del servicio";
-			const custom = String(
-				this.els.hiddenPublicPriceLabel?.value || "",
-			).trim();
-			const label = custom || this.orgHiddenPriceDefault || "A evaluar";
-			hint.textContent = `Se verá así: "${name} - ${label}"`;
-		};
 
 		private handleHidePublicPriceToggle = () => {
 			const enabled = Boolean(this.els.hidePublicPriceToggle?.checked);

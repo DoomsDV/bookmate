@@ -642,25 +642,29 @@ const previewInitial = {
 <script>
 	import { initializePublicProfileEditor } from '../scripts/public-profile-editor';
 
+	let deferObserver: MutationObserver | null = null;
+
 	const boot = () => {
 		document.querySelectorAll<HTMLElement>('public-profile-editor[data-ppe-root]').forEach((el) => {
 			initializePublicProfileEditor(el);
 		});
+		return Boolean(document.querySelector('public-profile-editor[data-ppe-root][data-ppe-bound="1"]'));
 	};
 
-	boot();
-	document.addEventListener('astro:page-load', boot);
-	document.addEventListener('astro:after-swap', boot);
+	const watchUntilBound = () => {
+		if (boot() || typeof MutationObserver === 'undefined') return;
+		if (deferObserver) return;
+		deferObserver = new MutationObserver(() => {
+			if (!boot()) return;
+			deferObserver?.disconnect();
+			deferObserver = null;
+		});
+		if (document.body) {
+			deferObserver.observe(document.body, { childList: true, subtree: true });
+		}
+	};
 
-	// server:defer: el island llega después del primer boot(); reintentar al insertarse.
-	if (typeof MutationObserver !== 'undefined') {
-		const observer = new MutationObserver(() => boot());
-		const start = () => {
-			if (document.body) {
-				observer.observe(document.body, { childList: true, subtree: true });
-			}
-		};
-		if (document.body) start();
-		else document.addEventListener('DOMContentLoaded', start, { once: true });
-	}
+	watchUntilBound();
+	document.addEventListener('astro:page-load', watchUntilBound);
+	document.addEventListener('astro:after-swap', watchUntilBound);
 </script>

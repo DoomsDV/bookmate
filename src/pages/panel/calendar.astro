@@ -1879,10 +1879,10 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		.calendar-fab-stack .calendar-refresh-btn {
-			width: 2.85rem;
-			height: 2.85rem;
-			min-width: 2.85rem;
-			min-height: 2.85rem;
+			width: 3.55rem;
+			height: 3.55rem;
+			min-width: 3.55rem;
+			min-height: 3.55rem;
 			padding: 0;
 			border-radius: 999px;
 			border: 1px solid var(--shell-border);
@@ -1891,6 +1891,10 @@ const googleErrorMessage = hasGoogleError
 			box-shadow:
 				0 6px 16px rgb(0 0 0 / 0.12),
 				0 1px 4px rgb(0 0 0 / 0.08);
+		}
+
+		.calendar-fab-stack .calendar-refresh-btn .material-symbols-rounded {
+			font-size: 1.35rem;
 		}
 
 		.calendar-fab-stack .calendar-create-btn {
@@ -2346,12 +2350,12 @@ const googleErrorMessage = hasGoogleError
 
 	.appointment-delete-btn {
 		border-radius: 1rem;
-		border: 1px solid rgba(239, 68, 68, 0.55);
-		background: transparent;
+		border: 1px solid transparent;
+		background: #be123c;
 		padding: 0.72rem 1.15rem;
 		font-size: 0.92rem;
 		font-weight: 800;
-		color: #ef4444;
+		color: #fff;
 		transition: background-color 140ms ease, border-color 140ms ease;
 	}
 
@@ -2361,8 +2365,9 @@ const googleErrorMessage = hasGoogleError
 	}
 
 	.appointment-delete-btn:hover {
-		border-color: rgba(239, 68, 68, 0.72);
-		background: rgba(239, 68, 68, 0.1);
+		border-color: transparent;
+		background: #9f1239;
+		color: #fff;
 	}
 
 	.appointment-cancel-btn {
@@ -2411,13 +2416,14 @@ const googleErrorMessage = hasGoogleError
 	}
 
 	html[data-theme='dark'] .appointment-delete-btn {
-		border-color: rgba(251, 113, 133, 0.68);
-		background: transparent;
-		color: #fda4af;
+		border-color: transparent;
+		background: #be123c;
+		color: #fff;
 	}
 
 	html[data-theme='dark'] .appointment-delete-btn:hover {
-		background: rgba(251, 113, 133, 0.18);
+		background: #9f1239;
+		color: #fff;
 	}
 
 	html[data-theme='dark'] .appointment-cancel-btn {
@@ -2533,16 +2539,19 @@ const googleErrorMessage = hasGoogleError
 			flex: 1 1 auto;
 		}
 
-		/* Mobile: reserva bottom nav; el main scrollea (calendario altura natural) */
+		/* Mobile: reserva bottom nav; scrollea el canvas (TopBar sticky + glass) */
+		.app-shell > :last-child:has([data-calendar-main]) > .grid {
+			height: auto;
+			min-height: 0;
+			display: block;
+		}
+
 		.calendar-main[data-calendar-main] {
 			padding-top: 0.35rem;
 			padding-bottom: calc(5.15rem + env(safe-area-inset-bottom, 0px));
-			height: 100%;
-			max-height: 100%;
-			overflow-x: hidden;
-			overflow-y: auto;
-			-webkit-overflow-scrolling: touch;
-			overscroll-behavior: contain;
+			height: auto;
+			max-height: none;
+			overflow: visible;
 		}
 
 		[data-calendar-root].material-region,
@@ -2567,6 +2576,47 @@ const googleErrorMessage = hasGoogleError
 		[data-calendar-root] .fc .fc-view-harness {
 			height: auto !important;
 			min-height: 0 !important;
+		}
+
+		/*
+		 * Cabecera de días fija al scrollear la página (FC height:auto
+		 * no usa scroller interno; top:0 de FC quedaría bajo el TopBar).
+		 * border-collapse:separate es necesario para que sticky en <th> funcione.
+		 */
+		[data-calendar-root] .fc .fc-scrollgrid,
+		[data-calendar-root] .fc .fc-scrollgrid table {
+			border-collapse: separate !important;
+			border-spacing: 0;
+		}
+
+		[data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky,
+		[data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky > * {
+			position: sticky !important;
+			top: var(--shell-header-height) !important;
+			z-index: 30;
+		}
+
+		[data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller-harness,
+		[data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller {
+			overflow: visible !important;
+		}
+
+		[data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky,
+		[data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky > *,
+		[data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller-harness,
+		[data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller,
+		[data-calendar-root] .fc .fc-col-header,
+		[data-calendar-root] .fc .fc-col-header-cell {
+			background: var(--page-background, var(--calendar-surface));
+		}
+
+		html[data-theme='dark'] [data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky,
+		html[data-theme='dark'] [data-calendar-root] .fc .fc-scrollgrid-section-header.fc-scrollgrid-section-sticky > *,
+		html[data-theme='dark'] [data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller-harness,
+		html[data-theme='dark'] [data-calendar-root] .fc .fc-scrollgrid-section-header .fc-scroller,
+		html[data-theme='dark'] [data-calendar-root] .fc .fc-col-header,
+		html[data-theme='dark'] [data-calendar-root] .fc .fc-col-header-cell {
+			background: var(--page-background, #191919);
 		}
 
 		.calendar-page-header {

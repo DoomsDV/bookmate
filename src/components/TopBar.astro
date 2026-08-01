@@ -461,6 +461,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		const topBar = document.querySelector<HTMLElement>('[data-shell-topbar]');
 		const scrollRoots = [
 			document.querySelector<HTMLElement>('.app-shell > :last-child > main'),
+			document.querySelector<HTMLElement>('.app-shell > :last-child'),
 			document.querySelector<HTMLElement>('[data-ppe-config-pane]'),
 		].filter((node): node is HTMLElement => Boolean(node));
 
