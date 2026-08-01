@@ -786,10 +786,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	<AppAlert />
 
 	<dialog
-		class="dashboard-ai-modal dashboard-ai-drawer m-0 max-h-none w-full max-w-none border-0 bg-transparent p-0 text-(--on-surface) shadow-none open:flex open:flex-row open:items-stretch open:justify-end"
+		class="dashboard-ai-modal dashboard-ai-drawer m-0 max-h-none w-full max-w-none border-0 bg-transparent p-0 text-(--on-surface) shadow-none open:flex"
 		data-ai-summary-modal
 	>
-		<div class="dashboard-ai-drawer__panel relative flex h-[100dvh] max-h-[100dvh] w-[min(32rem,100vw)] flex-col overflow-hidden border-l border-(--shell-border) bg-(--surface-bright) shadow-[-18px_0_48px_rgba(0,0,0,0.22)]">
+		<div class="dashboard-ai-drawer__panel relative flex flex-col overflow-hidden border-(--shell-border) bg-(--surface-bright)">
+			<div class="dashboard-ai-drawer__handle" aria-hidden="true">
+				<span class="dashboard-ai-drawer__handle-pill"></span>
+			</div>
 			<div class="dashboard-ai-modal__mesh" aria-hidden="true"></div>
 			<div class="dashboard-ai-modal__header shrink-0 z-10 px-4 py-4 sm:px-6 sm:py-5">
 				<div class="flex items-start justify-between gap-4">
@@ -3875,9 +3878,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: transparent;
 	}
 
-	/* Misma animación que el modal de Cita rápida: drawer lateral desde la derecha. */
 	dialog[data-ai-summary-modal][open] {
-		animation: ai-summary-drawer-in var(--modal-open-duration) var(--modal-easing);
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-end;
+		animation: ai-summary-sheet-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-ai-summary-modal]::backdrop {
@@ -3892,11 +3898,58 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	dialog[data-ai-summary-modal].is-closing {
-		animation: ai-summary-drawer-out var(--modal-close-duration) var(--modal-easing) forwards;
+		animation: ai-summary-sheet-out var(--modal-close-duration) var(--modal-easing) forwards;
 	}
 
 	dialog[data-ai-summary-modal].is-closing::backdrop {
 		animation: ai-summary-backdrop-out var(--modal-close-duration) var(--modal-easing) forwards;
+	}
+
+	.dashboard-ai-drawer__panel {
+		width: 100%;
+		max-width: 100%;
+		height: min(92dvh, calc(100dvh - 1rem));
+		max-height: min(92dvh, calc(100dvh - 1rem));
+		border-left: 0;
+		border-top: 1px solid var(--shell-border);
+		border-radius: 1.5rem 1.5rem 0 0;
+		box-shadow: 0 -18px 60px rgba(15, 23, 42, 0.18);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+	}
+
+	.dashboard-ai-drawer__handle {
+		display: flex;
+		justify-content: center;
+		padding: 0.55rem 0 0.1rem;
+	}
+
+	.dashboard-ai-drawer__handle-pill {
+		width: 2.35rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 42%, transparent);
+	}
+
+	@keyframes ai-summary-sheet-in {
+		from {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes ai-summary-sheet-out {
+		from {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(100%);
+		}
 	}
 
 	@keyframes ai-summary-drawer-in {
@@ -3904,7 +3957,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			opacity: 0;
 			transform: translateX(100%);
 		}
-
 		to {
 			opacity: 1;
 			transform: translateX(0);
@@ -3916,7 +3968,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			opacity: 1;
 			transform: translateX(0);
 		}
-
 		to {
 			opacity: 0;
 			transform: translateX(100%);
@@ -3926,31 +3977,59 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	@keyframes ai-summary-backdrop-in {
 		from {
 			opacity: 0;
-			backdrop-filter: blur(0);
-			-webkit-backdrop-filter: blur(0);
 		}
 		to {
 			opacity: 1;
-			backdrop-filter: blur(var(--modal-backdrop-blur));
-			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 	}
 
 	@keyframes ai-summary-backdrop-out {
 		from {
 			opacity: 1;
-			backdrop-filter: blur(var(--modal-backdrop-blur));
-			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 		to {
 			opacity: 0;
-			backdrop-filter: blur(0);
-			-webkit-backdrop-filter: blur(0);
+		}
+	}
+
+	/* Desktop: drawer lateral desde la derecha (como Servicios / Cita). */
+	@media (min-width: 1024px) {
+		dialog[data-ai-summary-modal][open] {
+			flex-direction: row;
+			align-items: stretch;
+			justify-content: flex-end;
+			animation-name: ai-summary-drawer-in;
+		}
+
+		dialog[data-ai-summary-modal].is-closing {
+			animation-name: ai-summary-drawer-out;
+		}
+
+		.dashboard-ai-drawer__panel {
+			width: min(32rem, 100vw);
+			max-width: min(32rem, 100vw);
+			height: 100dvh;
+			max-height: 100dvh;
+			border-top: 0;
+			border-left: 1px solid var(--shell-border);
+			border-radius: 0;
+			box-shadow: -18px 0 48px rgba(0, 0, 0, 0.22);
+			padding-bottom: 0;
+		}
+
+		.dashboard-ai-drawer__handle {
+			display: none;
 		}
 	}
 
 	html[data-theme='dark'] .dashboard-ai-drawer__panel {
-		box-shadow: -18px 0 48px rgba(0, 0, 0, 0.45);
+		box-shadow: 0 -18px 60px rgba(0, 0, 0, 0.45);
+	}
+
+	@media (min-width: 1024px) {
+		html[data-theme='dark'] .dashboard-ai-drawer__panel {
+			box-shadow: -18px 0 48px rgba(0, 0, 0, 0.45);
+		}
 	}
 
 	html[data-theme='dark'] .dashboard-ai-preview-highlights li {
