@@ -508,9 +508,6 @@ class AgendaScanPreview extends HTMLElement {
 		`;
 
 		el.innerHTML = `
-			<button type="button" class="agenda-preview-row__delete" data-row-delete aria-label="Eliminar cita">
-				<span class="material-symbols-rounded" aria-hidden="true">delete</span>
-			</button>
 			<div class="agenda-preview-row__lead" data-field="name">
 				<span class="agenda-preview-row__avatar" data-row-avatar aria-hidden="true">${this.escape(this.clientInitial(row.customer_name))}</span>
 				<input
@@ -521,6 +518,9 @@ class AgendaScanPreview extends HTMLElement {
 					placeholder="Nombre del cliente"
 					aria-label="Cliente"
 				/>
+				<button type="button" class="agenda-preview-row__delete" data-row-delete aria-label="Eliminar cita">
+					<span class="material-symbols-rounded" aria-hidden="true">delete</span>
+				</button>
 			</div>
 			<div class="agenda-preview-row__grid">
 				${field(

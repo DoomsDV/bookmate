@@ -458,8 +458,13 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.agenda-preview-apply {
-		padding: 0.5rem 0.9rem;
-		border-radius: 0.6rem;
+		align-self: flex-end;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.55rem;
+		padding: 0.55rem 0.9rem;
+		border-radius: 0.7rem;
 		border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--shell-border));
 		background: color-mix(in srgb, var(--primary) 10%, transparent);
 		color: var(--primary);
@@ -467,6 +472,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		font-weight: 800;
 		cursor: pointer;
 		white-space: nowrap;
+		box-sizing: border-box;
 	}
 
 	.agenda-preview-body {
@@ -611,7 +617,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		gap: 0.55rem;
 		min-width: 0;
 		min-height: 2rem;
-		padding-right: 2.2rem;
 	}
 
 	.agenda-preview-row__avatar {
@@ -837,9 +842,9 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.agenda-preview-row__delete {
-		position: absolute;
-		top: 0.55rem;
-		right: 0.55rem;
+		position: static;
+		flex-shrink: 0;
+		margin-left: auto;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -850,7 +855,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		background: transparent;
 		color: #f87171;
 		cursor: pointer;
-		flex-shrink: 0;
 		z-index: 1;
 		transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
 	}
@@ -1090,7 +1094,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 		.agenda-preview-row__lead {
 			min-height: 2.15rem;
-			padding-right: 2.4rem;
 		}
 
 		.agenda-preview-row__lead-name {
