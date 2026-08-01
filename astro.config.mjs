@@ -27,6 +27,8 @@ export default defineConfig({
   // 2. Le pasamos la URL dinámica a Astro
   site: getSiteUrl(),
   output: 'server',
+  // Astro 7 default is 'jsx' (strips inter-element spaces); keep HTML-aware spacing.
+  compressHTML: true,
   devToolbar: {
     enabled: false,
   },
