@@ -590,7 +590,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.agenda-preview-row:hover {
-		border-color: color-mix(in srgb, var(--primary) 22%, var(--shell-border));
 		box-shadow: 0 6px 18px color-mix(in srgb, #000 12%, transparent);
 	}
 
@@ -635,31 +634,35 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	.agenda-preview-row__lead-name {
 		min-width: 0;
 		flex: 1;
-		height: 2rem;
+		height: 2.15rem;
 		margin: 0;
-		padding: 0;
-		border: 0;
-		border-radius: 0;
-		background: transparent;
+		padding: 0 0.65rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 85%, transparent);
+		border-radius: 0.65rem;
+		background: color-mix(in srgb, var(--surface-bright) 88%, #000 12%);
 		box-shadow: none;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		font-size: 0.92rem;
 		font-weight: 800;
-		line-height: 2rem;
+		line-height: 2.05rem;
 		color: var(--on-surface);
 		box-sizing: border-box;
 		appearance: none;
 		-webkit-appearance: none;
+		transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
 	}
 
-	.agenda-preview-row__lead-name:hover,
+	.agenda-preview-row__lead-name:hover {
+		outline: none;
+		background: color-mix(in srgb, var(--surface-bright) 78%, #000 22%);
+	}
+
 	.agenda-preview-row__lead-name:focus {
 		outline: none;
-		border: 0;
-		box-shadow: none;
-		background: transparent;
+		border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 14%, transparent);
 	}
 
 	.agenda-preview-row__grid {
@@ -879,12 +882,11 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		cursor: pointer;
 		box-sizing: border-box;
 		flex-shrink: 0;
-		transition: background 140ms ease, border-color 140ms ease;
+		transition: background 140ms ease;
 	}
 
 	.agenda-preview-addrow:hover {
 		background: color-mix(in srgb, var(--primary) 12%, transparent);
-		border-color: color-mix(in srgb, var(--primary) 58%, var(--shell-border));
 	}
 
 	.agenda-preview-error {
