@@ -114,10 +114,22 @@ class AgendaScanPreview extends HTMLElement {
 			event.preventDefault();
 			this.close();
 		}, { signal });
+		document.addEventListener('keydown', (event) => {
+			if (event.key === 'Escape' && shell?.open) {
+				event.preventDefault();
+				this.close();
+			}
+		}, { signal });
 
 		this.querySelector('[data-agenda-default-date]')?.addEventListener('change', () => this.applyDefaults(false), { signal });
-		this.querySelector('[data-agenda-default-professional]')?.addEventListener('change', () => this.applyDefaults(false), { signal });
-		this.querySelector('[data-agenda-default-location]')?.addEventListener('change', () => this.applyDefaults(false), { signal });
+		this.querySelector('[data-agenda-default-professional]')?.addEventListener('change', () => {
+			this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
+			this.applyDefaults(false);
+		}, { signal });
+		this.querySelector('[data-agenda-default-location]')?.addEventListener('change', () => {
+			this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
+			this.applyDefaults(false);
+		}, { signal });
 	}
 
 	disconnectedCallback() {
@@ -260,18 +272,24 @@ class AgendaScanPreview extends HTMLElement {
 				'— Sucursal —'
 			);
 		}
+		this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
 	}
 
 	private setupImage(imageDataUrl: string) {
 		const pane = this.querySelector<HTMLElement>('[data-agenda-preview-image-pane]');
 		const img = this.querySelector<HTMLImageElement>('[data-agenda-preview-image]');
+		const dialog = this.querySelector<HTMLElement>('.agenda-preview-dialog');
 		if (!pane || !img) return;
 		if (imageDataUrl) {
 			img.src = imageDataUrl;
-			pane.style.removeProperty('display');
+			pane.classList.add('is-visible');
+			pane.style.display = '';
+			dialog?.classList.add('has-image');
 		} else {
 			img.removeAttribute('src');
-			pane.style.display = 'none';
+			pane.classList.remove('is-visible');
+			pane.style.display = '';
+			dialog?.classList.remove('has-image');
 		}
 		this.setZoom(1);
 	}
@@ -348,57 +366,103 @@ class AgendaScanPreview extends HTMLElement {
 		this.updateCounts();
 	}
 
+	private clientInitial(name: string) {
+		const trimmed = name.trim();
+		if (!trimmed) return '?';
+		const parts = trimmed.split(/\s+/).filter(Boolean);
+		if (parts.length >= 2) {
+			return `${parts[0][0] || ''}${parts[1][0] || ''}`.toUpperCase();
+		}
+		return trimmed.slice(0, 1).toUpperCase();
+	}
+
 	private buildRowElement(row: PreviewRowState) {
 		const el = document.createElement('div');
 		el.className = 'agenda-preview-row';
 		el.dataset.uid = row.uid;
-		const invalid = !this.isRowValid(row);
 		el.dataset.confidence = row.confidence;
-		el.classList.toggle('is-invalid', invalid && row.confidence !== 'low');
+
+		const field = (
+			key: string,
+			label: string,
+			icon: string,
+			controlHtml: string,
+			extraClass = ''
+		) => `
+			<div class="agenda-preview-row__field ${extraClass}" data-field="${key}">
+				<label>${label}</label>
+				<div class="agenda-preview-row__control">
+					<span class="material-symbols-rounded agenda-preview-row__icon" aria-hidden="true">${icon}</span>
+					${controlHtml}
+				</div>
+			</div>
+		`;
 
 		el.innerHTML = `
 			<button type="button" class="agenda-preview-row__delete" data-row-delete aria-label="Eliminar cita">
 				<span class="material-symbols-rounded" aria-hidden="true">delete</span>
 			</button>
-			<div class="agenda-preview-row__field">
-				<label>Hora</label>
-				<input type="time" data-row-time value="${row.time}" />
+			<div class="agenda-preview-row__lead" data-field="name">
+				<span class="agenda-preview-row__avatar" data-row-avatar aria-hidden="true">${this.escape(this.clientInitial(row.customer_name))}</span>
+				<input
+					type="text"
+					class="agenda-preview-row__lead-name"
+					data-row-name
+					value="${this.escape(row.customer_name)}"
+					placeholder="Nombre del cliente"
+					aria-label="Cliente"
+				/>
 			</div>
-			<div class="agenda-preview-row__field">
-				<label>Fecha</label>
-				<input type="date" data-row-date value="${row.date}" />
-			</div>
-			<div class="agenda-preview-row__field agenda-preview-row__field--full agenda-preview-row__field--name">
-				<label>Cliente</label>
-				<input type="text" data-row-name value="${this.escape(row.customer_name)}" placeholder="Nombre del cliente" />
-			</div>
-			<div class="agenda-preview-row__field">
-				<label>Teléfono</label>
-				<input type="tel" data-row-phone value="${this.escape(row.customer_phone)}" placeholder="Opcional" />
-			</div>
-			<div class="agenda-preview-row__field">
-				<label>Servicio</label>
-				<select data-row-service>${this.optionList(
-					this.#services.map((s) => ({ id: s.id_service, name: s.name })),
-					row.ser_id_service,
-					'— Servicio —'
-				)}</select>
-			</div>
-			<div class="agenda-preview-row__field">
-				<label>Profesional</label>
-				<select data-row-professional>${this.optionList(
-					this.#professionals.map((p) => ({ id: p.id_professional, name: p.name })),
-					row.pro_id_professional,
-					'— Profesional —'
-				)}</select>
-			</div>
-			<div class="agenda-preview-row__field">
-				<label>Sucursal</label>
-				<select data-row-location>${this.optionList(
-					this.#locations.map((l) => ({ id: l.id_location, name: l.name })),
-					row.loc_id_location,
-					'— Sucursal —'
-				)}</select>
+			<div class="agenda-preview-row__grid">
+				${field(
+					'time',
+					'Hora',
+					'schedule',
+					`<input type="time" data-row-time value="${row.time}" />`,
+					'agenda-preview-row__field--time'
+				)}
+				${field(
+					'date',
+					'Fecha',
+					'calendar_month',
+					`<input type="date" data-row-date value="${row.date}" />`
+				)}
+				${field(
+					'phone',
+					'Teléfono',
+					'call',
+					`<input type="tel" data-row-phone value="${this.escape(row.customer_phone)}" placeholder="Opcional" />`
+				)}
+				${field(
+					'service',
+					'Servicio',
+					'design_services',
+					`<select data-row-service>${this.optionList(
+						this.#services.map((s) => ({ id: s.id_service, name: s.name })),
+						row.ser_id_service,
+						'— Servicio —'
+					)}</select>`
+				)}
+				${field(
+					'professional',
+					'Profesional',
+					'badge',
+					`<select data-row-professional>${this.optionList(
+						this.#professionals.map((p) => ({ id: p.id_professional, name: p.name })),
+						row.pro_id_professional,
+						'— Profesional —'
+					)}</select>`
+				)}
+				${field(
+					'location',
+					'Sucursal',
+					'storefront',
+					`<select data-row-location>${this.optionList(
+						this.#locations.map((l) => ({ id: l.id_location, name: l.name })),
+						row.loc_id_location,
+						'— Sucursal —'
+					)}</select>`
+				)}
 			</div>
 		`;
 
@@ -421,18 +485,46 @@ class AgendaScanPreview extends HTMLElement {
 
 		bind('[data-row-time]', (v) => (row.time = v));
 		bind('[data-row-date]', (v) => (row.date = v));
-		bind('[data-row-name]', (v) => (row.customer_name = v));
+		bind('[data-row-name]', (v) => {
+			row.customer_name = v;
+			const avatar = el.querySelector<HTMLElement>('[data-row-avatar]');
+			if (avatar) avatar.textContent = this.clientInitial(v);
+		});
 		bind('[data-row-phone]', (v) => (row.customer_phone = v));
 		bind('[data-row-service]', (v) => (row.ser_id_service = toInt(v)));
 		bind('[data-row-professional]', (v) => (row.pro_id_professional = toInt(v)));
 		bind('[data-row-location]', (v) => (row.loc_id_location = toInt(v)));
 
+		el.querySelectorAll('.agenda-preview-row__check').forEach((node) => node.remove());
+		this.refreshRowState(el, row);
 		return el;
 	}
 
+	private syncPlaceholderState(root: ParentNode = this) {
+		root.querySelectorAll<HTMLSelectElement>('select').forEach((select) => {
+			select.classList.toggle('is-placeholder', !select.value);
+		});
+	}
+
 	private refreshRowState(el: HTMLElement, row: PreviewRowState) {
-		const invalid = !this.isRowValid(row);
-		el.classList.toggle('is-invalid', invalid && row.confidence !== 'low');
+		const filled: Record<string, boolean> = {
+			time: Boolean(row.time),
+			date: Boolean(row.date),
+			name: Boolean(row.customer_name.trim()),
+			phone: Boolean(row.customer_phone.trim()),
+			service: row.ser_id_service > 0,
+			professional: row.pro_id_professional > 0,
+			location: row.loc_id_location > 0,
+		};
+
+		for (const [key, isFilled] of Object.entries(filled)) {
+			const node = el.querySelector(`[data-field="${key}"]`);
+			if (!node) continue;
+			node.classList.toggle('is-valid', isFilled);
+			node.classList.remove('is-missing');
+		}
+
+		this.syncPlaceholderState(el);
 		this.updateCounts();
 	}
 
@@ -440,9 +532,21 @@ class AgendaScanPreview extends HTMLElement {
 		const total = this.#rows.length;
 		const valid = this.#rows.filter((row) => this.isRowValid(row)).length;
 		const countNode = this.querySelector<HTMLElement>('[data-agenda-preview-count]');
-		const saveCountNode = this.querySelector<HTMLElement>('[data-agenda-save-count]');
 		if (countNode) countNode.textContent = String(total);
-		if (saveCountNode) saveCountNode.textContent = String(valid);
+
+		const saveLabel = this.querySelector<HTMLElement>('[data-agenda-save-label]');
+		if (saveLabel) {
+			if (total === 0) {
+				saveLabel.textContent = 'Completar y guardar';
+			} else if (valid === 0) {
+				saveLabel.textContent = 'Completá los datos para guardar';
+			} else if (valid === total) {
+				saveLabel.textContent = 'Completar y guardar';
+			} else {
+				saveLabel.textContent = `Guardar ${valid} de ${total} citas`;
+			}
+		}
+
 		const saveButton = this.querySelector<HTMLButtonElement>('[data-agenda-preview-save]');
 		if (saveButton) saveButton.disabled = valid === 0 || this.#saving;
 	}

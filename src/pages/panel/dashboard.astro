@@ -2937,7 +2937,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		display: block;
 		height: 0.72rem;
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--primary) 12%, #dbe4f3 88%);
+		background: color-mix(in srgb, var(--on-surface) 10%, var(--surface-variant) 90%);
 		overflow: hidden;
 		position: relative;
 	}
@@ -2954,10 +2954,24 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: linear-gradient(
 			90deg,
 			transparent 0%,
-			color-mix(in srgb, #ffffff 72%, var(--primary) 28%) 45%,
+			color-mix(in srgb, var(--on-surface) 22%, transparent) 45%,
 			transparent 100%
 		);
-		opacity: 0.75;
+		opacity: 0.7;
+	}
+
+	html[data-theme='dark'] .dashboard-ai-strip__skel-line {
+		background: color-mix(in srgb, var(--on-surface) 12%, #2a2d33 88%);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-strip__skel-line::after {
+		background: linear-gradient(
+			90deg,
+			transparent 0%,
+			color-mix(in srgb, #ffffff 18%, var(--primary) 22%) 45%,
+			transparent 100%
+		);
+		opacity: 0.55;
 	}
 
 	.dashboard-ai-strip__action {
@@ -3127,76 +3141,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
-	html[data-theme='dark'] .dashboard-ai-strip {
-		border: 1px solid color-mix(in srgb, var(--shell-border, #3a3a3a) 80%, transparent);
-		background: var(--surface-container-high, #222222);
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__glow::before {
-		background:
-			radial-gradient(ellipse 55% 48% at 30% 74%, rgba(59, 130, 246, 0.18), transparent 72%),
-			radial-gradient(ellipse 48% 42% at 70% 80%, rgba(139, 92, 246, 0.12), transparent 70%),
-			radial-gradient(ellipse 42% 38% at 52% 96%, rgba(34, 211, 238, 0.12), transparent 68%);
-		opacity: 0.7;
-		filter: blur(42px);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__glow::after {
-		background: radial-gradient(ellipse 50% 45% at 60% 80%, rgba(99, 102, 241, 0.1), transparent 72%);
-		opacity: 0.55;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__badge {
-		background: transparent;
-		border: 0;
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__icon {
-		color: color-mix(in srgb, var(--primary) 70%, #93c5fd 30%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__eyebrow {
-		color: color-mix(in srgb, var(--primary) 62%, #a5b4fc 38%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__text {
-		color: var(--on-surface, #e3e3e3);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__skel-line {
-		background: color-mix(in srgb, var(--surface-container, #2b2b2b) 70%, #3a3a3a 30%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__skel-line::after {
-		background: linear-gradient(
-			90deg,
-			transparent 0%,
-			color-mix(in srgb, #ffffff 12%, transparent) 48%,
-			transparent 100%
-		);
-		opacity: 0.85;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__action {
-		border: 0;
-		background: transparent;
-		color: color-mix(in srgb, var(--primary) 42%, #a5b4fc 58%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__action:hover {
-		background: transparent;
-		color: color-mix(in srgb, var(--primary) 35%, #c7d2fe 65%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__action:focus-visible {
-		outline-color: var(--primary);
-	}
-
 	html[data-theme='dark'] .dashboard-ai-strip.is-generating {
-		border-color: color-mix(in srgb, var(--shell-border, #3a3a3a) 85%, transparent);
-		box-shadow: none;
+		border-color: color-mix(in srgb, var(--primary) 35%, transparent);
+		box-shadow: 0 4px 28px color-mix(in srgb, var(--primary) 12%, transparent);
 	}
 
 	@media (min-width: 641px) {
