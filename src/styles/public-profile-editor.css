@@ -819,12 +819,13 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 	border-radius: 9999px;
 	object-fit: cover;
 	border: 3px solid color-mix(in srgb, var(--on-surface) 12%, transparent);
-	/* Mismo fondo que workspace-avatar--empty: se ve detrás de PNG transparentes. */
-	background: var(--surface-container-high);
+	/* Igual que workspace-avatar--empty (light). */
+	background: var(--surface-container-high, #e8edf3);
 }
 
 html[data-theme='dark'] .ppe-dropzone__preview--logo {
-	background: var(--surface-container-highest);
+	/* Igual que workspace-avatar--empty (dark): #2c2c2c, no negro. */
+	background: var(--surface-container-highest, #2c2c2c);
 }
 
 .ppe-dropzone__preview--banner {

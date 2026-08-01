@@ -805,7 +805,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			} else {
 				logoBase64 = base64;
 				logoName = file.name;
-				logoMime = file.type || 'image/jpeg';
+				logoMime = file.type || 'image/png';
 				logoCleared = false;
 				if (logoObjectUrl) URL.revokeObjectURL(logoObjectUrl);
 				logoObjectUrl = URL.createObjectURL(file);
@@ -1123,7 +1123,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		if (logoBase64) {
 			payload.logo_base64 = logoBase64;
 			payload.logo_name = logoName || 'logo.jpg';
-			payload.logo_mime = logoMime || 'image/jpeg';
+			payload.logo_mime = logoMime || 'image/png';
 		} else if (logoCleared) {
 			payload.clear_logo = 1;
 		}

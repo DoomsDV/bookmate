@@ -888,7 +888,11 @@ const planFooterActive = activePath === "/panel/plan";
 		position: absolute;
 		inset: 0;
 		z-index: 1;
-		background: var(--surface-bright);
+		background: var(--surface-container-high, #e8edf3);
+	}
+
+	:global(html[data-theme='dark']) .workspace-logo-image {
+		background: var(--surface-container-highest, #2c2c2c);
 	}
 
 	.workspace-logo-image.is-hidden {

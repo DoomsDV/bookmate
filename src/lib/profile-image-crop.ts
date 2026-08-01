@@ -28,6 +28,15 @@ export function buildCroppedProfileFileName(originalName: string): string {
 	return `${base}.jpg`;
 }
 
+export function buildCroppedLogoFileName(originalName: string): string {
+	const base =
+		originalName
+			.replace(/\.[^.]+$/, '')
+			.replace(/-recortada$/i, '')
+			.trim() || 'logo';
+	return `${base}.png`;
+}
+
 export type ProfileCropMode = 'logo' | 'banner' | 'cover';
 
 const waitForLayout = (el: HTMLElement) =>
@@ -162,6 +171,8 @@ export class ProfileImageCropper {
 
 		const isBanner = this.mode === 'banner';
 		const isCover = this.mode === 'cover';
+		const isLogo = !isBanner && !isCover;
+		// Logo: PNG con alpha. JPEG convertía transparencias a negro opaco.
 		const blob = await this.instance.result({
 			type: 'blob',
 			size: isBanner
@@ -169,9 +180,9 @@ export class ProfileImageCropper {
 				: isCover
 					? { ...COVER_IMAGE_OUTPUT }
 					: { width: this.outputSize, height: this.outputSize },
-			format: 'jpeg',
-			quality: 0.9,
-			circle: !isBanner && !isCover,
+			format: isLogo ? 'png' : 'jpeg',
+			quality: isLogo ? 1 : 0.9,
+			circle: isLogo,
 		});
 
 		if (!(blob instanceof Blob)) {
@@ -180,14 +191,15 @@ export class ProfileImageCropper {
 
 		const stem =
 			originalName.replace(/\.[^.]+$/, '').trim() ||
-			(isCover ? 'portada' : isBanner ? 'banner' : 'perfil');
-		const name =
-			isBanner || isCover
+			(isCover ? 'portada' : isBanner ? 'banner' : 'logo');
+		const name = isLogo
+			? buildCroppedLogoFileName(originalName)
+			: isBanner || isCover
 				? `${stem}.jpg`
 				: buildCroppedProfileFileName(originalName);
 
 		return new File([blob], name, {
-			type: 'image/jpeg',
+			type: isLogo ? 'image/png' : 'image/jpeg',
 		});
 	}
 
