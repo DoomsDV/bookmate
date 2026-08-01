@@ -819,7 +819,12 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 	border-radius: 9999px;
 	object-fit: cover;
 	border: 3px solid color-mix(in srgb, var(--on-surface) 12%, transparent);
-	background: transparent;
+	/* Mismo fondo que workspace-avatar--empty: se ve detrás de PNG transparentes. */
+	background: var(--surface-container-high);
+}
+
+html[data-theme='dark'] .ppe-dropzone__preview--logo {
+	background: var(--surface-container-highest);
 }
 
 .ppe-dropzone__preview--banner {
