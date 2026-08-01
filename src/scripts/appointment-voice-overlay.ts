@@ -33,6 +33,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#statusFadeTimer: number | null = null;
 	#autoCloseTimer: number | null = null;
 	#closeTimer: number | null = null;
+	#settleOpenHandler: ((event: AnimationEvent) => void) | null = null;
 	#draftAbortController: AbortController | null = null;
 	#session = 0;
 	#tab: VoiceTab = 'voice';
@@ -190,23 +191,46 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	}
 
 	open(options: { mode?: VoiceOverlayMode } = {}) {
-		this.cancelAll(false);
-		this.#session += 1;
-		this.#mode = options.mode === 'inline' ? 'inline' : 'navigate';
-		this.stopElapsedTimer();
-		this.setTab('voice');
-		this.setState('idle');
-		this.setError('');
-		this.setTranscript('');
-		this.#visualizer?.setMode('idle');
 		const shell = this.querySelector<HTMLDialogElement>('[data-voice-overlay-shell]');
 		if (!shell) return;
+
+		this.#mode = options.mode === 'inline' ? 'inline' : 'navigate';
 		if (this.#closeTimer) {
 			window.clearTimeout(this.#closeTimer);
 			this.#closeTimer = null;
 		}
-		shell.classList.remove('is-closing');
+		shell.classList.remove('is-closing', 'is-settled');
+
+		// Cortar sesión previa de inmediato; el resto del UI reset va tras showModal.
+		this.cancelAll(false);
+		this.#session += 1;
+		this.stopElapsedTimer();
+
+		if (this.#settleOpenHandler) {
+			shell.removeEventListener('animationend', this.#settleOpenHandler);
+			this.#settleOpenHandler = null;
+		}
+		this.#settleOpenHandler = (event: AnimationEvent) => {
+			if (event.target !== shell) return;
+			shell.classList.add('is-settled');
+			if (this.#settleOpenHandler) {
+				shell.removeEventListener('animationend', this.#settleOpenHandler);
+				this.#settleOpenHandler = null;
+			}
+		};
+		shell.addEventListener('animationend', this.#settleOpenHandler);
+
+		// Abrir primero para que la animación no espere el reset visual del overlay.
 		if (!shell.open) shell.showModal();
+
+		requestAnimationFrame(() => {
+			if (!this.isConnected) return;
+			this.setTab('voice');
+			this.setState('idle');
+			this.setError('');
+			this.setTranscript('');
+			this.#visualizer?.setMode('idle');
+		});
 	}
 
 	close() {
@@ -224,7 +248,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		const finishClose = () => {
 			window.clearTimeout(this.#closeTimer);
 			this.#closeTimer = null;
-			shell.classList.remove('is-closing');
+			shell.classList.remove('is-closing', 'is-settled');
 			if (shell.open) shell.close();
 		};
 
@@ -235,6 +259,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		}
 
 		shell.classList.add('is-closing');
+		shell.classList.remove('is-settled');
 		this.#closeTimer = window.setTimeout(finishClose, 140);
 	}
 

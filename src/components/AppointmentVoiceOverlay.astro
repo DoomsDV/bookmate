@@ -212,11 +212,17 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 	.appointment-voice-shell[open] {
 		display: block;
+		will-change: transform, opacity;
+	}
+
+	.appointment-voice-shell[open].is-settled {
+		will-change: auto;
 	}
 
 	@media (max-width: 639px) {
 		.appointment-voice-shell::backdrop {
 			background: rgba(15, 23, 42, 0.42);
+			/* Blur estático: solo se anima opacity. */
 			backdrop-filter: blur(6px);
 			-webkit-backdrop-filter: blur(6px);
 		}
@@ -237,7 +243,12 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.appointment-voice-shell[open]::backdrop {
+		will-change: opacity;
 		animation: appointment-voice-backdrop-in var(--modal-open-duration, 150ms) var(--modal-easing, cubic-bezier(0.4, 0, 0.2, 1));
+	}
+
+	.appointment-voice-shell[open].is-settled::backdrop {
+		will-change: auto;
 	}
 
 	.appointment-voice-shell.is-closing {

@@ -135,6 +135,7 @@ class AppointmentModal extends HTMLElement {
 	selectedCustomer: CustomerOption | null = null;
 	lastLoadedCustomerProfessionalId: number | null = null;
 	closeTimer: number | null = null;
+	#settleOpenHandler: ((event: AnimationEvent) => void) | null = null;
 
 	modal: HTMLDialogElement | null = null;
 	modalTitle: HTMLElement | null = null;
@@ -512,35 +513,43 @@ class AppointmentModal extends HTMLElement {
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return;
 
+		// Reset liviano síncrono (evita flash del formulario anterior) y abrir shell de inmediato.
 		this.clearFormErrors();
 		this.setCreateMode();
 		this.resetFormValues();
-
-		const initialStart = context.start ?? new Date();
-		const initialEnd = context.end ?? new Date(initialStart.getTime() + 60 * 60 * 1000);
-		requiredNodes.startInput.value = formatDateTimeLocal(initialStart);
-		requiredNodes.endInput.value = formatDateTimeLocal(initialEnd);
-		this.syncDateBounds();
-		this.syncDateDisplayInputs();
-
-		if (this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0) {
-			setSearchableSelectValue(requiredNodes.modalProfessional, this.currentProfessionalId);
-		} else if (context.professionalId && context.professionalId > 0) {
-			setSearchableSelectValue(requiredNodes.modalProfessional, context.professionalId);
-		} else if (this.professionals.length > 0) {
-			setSearchableSelectValue(requiredNodes.modalProfessional, this.professionals[0].id);
-		}
-
-		if (context.locationId && context.locationId > 0) {
-			requiredNodes.modalLocation.value = String(context.locationId);
-		} else if (this.locations.length > 0) {
-			requiredNodes.modalLocation.value = String(this.locations[0].id);
-		}
-
-		this.ensureModalProfessionalValue();
-		this.refreshServicesForProfessional(this.getSelectedProfessionalId());
-		void this.loadCustomersForCurrentProfessional(true);
 		this.openModalShell();
+
+		const prepareForm = () => {
+			if (!this.isConnected) return;
+
+			const initialStart = context.start ?? new Date();
+			const initialEnd = context.end ?? new Date(initialStart.getTime() + 60 * 60 * 1000);
+			requiredNodes.startInput.value = formatDateTimeLocal(initialStart);
+			requiredNodes.endInput.value = formatDateTimeLocal(initialEnd);
+			this.syncDateBounds();
+			this.syncDateDisplayInputs();
+
+			if (this.roleId === ROLES.PROFESIONAL && this.currentProfessionalId > 0) {
+				setSearchableSelectValue(requiredNodes.modalProfessional, this.currentProfessionalId);
+			} else if (context.professionalId && context.professionalId > 0) {
+				setSearchableSelectValue(requiredNodes.modalProfessional, context.professionalId);
+			} else if (this.professionals.length > 0) {
+				setSearchableSelectValue(requiredNodes.modalProfessional, this.professionals[0].id);
+			}
+
+			if (context.locationId && context.locationId > 0) {
+				requiredNodes.modalLocation.value = String(context.locationId);
+			} else if (this.locations.length > 0) {
+				requiredNodes.modalLocation.value = String(this.locations[0].id);
+			}
+
+			this.ensureModalProfessionalValue();
+			this.refreshServicesForProfessional(this.getSelectedProfessionalId());
+			void this.loadCustomersForCurrentProfessional(true);
+		};
+
+		// Diferir selects/carga de clientes al siguiente frame para no bloquear el primer paint.
+		requestAnimationFrame(prepareForm);
 	}
 
 	async openEdit(appointmentId: number) {
@@ -1547,12 +1556,28 @@ class AppointmentModal extends HTMLElement {
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return;
 
-		requiredNodes.modal.classList.remove('is-closing');
+		const modal = requiredNodes.modal;
+		modal.classList.remove('is-closing', 'is-settled');
 		if (this.closeTimer) {
 			window.clearTimeout(this.closeTimer);
 			this.closeTimer = null;
 		}
-		if (!requiredNodes.modal.open) requiredNodes.modal.showModal();
+
+		if (this.#settleOpenHandler) {
+			modal.removeEventListener('animationend', this.#settleOpenHandler);
+			this.#settleOpenHandler = null;
+		}
+		this.#settleOpenHandler = (event: AnimationEvent) => {
+			if (event.target !== modal) return;
+			modal.classList.add('is-settled');
+			if (this.#settleOpenHandler) {
+				modal.removeEventListener('animationend', this.#settleOpenHandler);
+				this.#settleOpenHandler = null;
+			}
+		};
+		modal.addEventListener('animationend', this.#settleOpenHandler);
+
+		if (!modal.open) modal.showModal();
 	}
 
 	closeModal = () => {
@@ -1560,11 +1585,12 @@ class AppointmentModal extends HTMLElement {
 		if (!requiredNodes || !requiredNodes.modal.open) return;
 
 		requiredNodes.modal.classList.add('is-closing');
+		requiredNodes.modal.classList.remove('is-settled');
 
 		this.closeTimer = window.setTimeout(() => {
 			if (!this.isConnected) return;
 			requiredNodes.modal.close();
-			requiredNodes.modal.classList.remove('is-closing');
+			requiredNodes.modal.classList.remove('is-closing', 'is-settled');
 			this.closeTimer = null;
 			this.clearFormErrors();
 			this.setModalLoading(false);
@@ -1850,7 +1876,7 @@ class AppointmentModal extends HTMLElement {
 			});
 	}
 
-	openCreateWithAiDraft(draft: AppointmentAiDraft, context: OpenCreateContext = {}) {
+	openCreateWithAiDraft(draft: AppointmentAiDraft, _context: OpenCreateContext = {}) {
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes) return;
 
@@ -1858,7 +1884,10 @@ class AppointmentModal extends HTMLElement {
 		this.setCreateMode();
 		this.resetFormValues();
 		this.openModalShell();
-		this.fillFormFromAiDraft(draft);
+		requestAnimationFrame(() => {
+			if (!this.isConnected) return;
+			this.fillFormFromAiDraft(draft);
+		});
 	}
 
 	buildPayloadFromForm(): BuildPayloadResult {

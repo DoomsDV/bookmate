@@ -345,7 +345,8 @@ dialog[data-atc-chat-modal][open]::backdrop,
 dialog.agenda-preview-shell[open]::backdrop,
 dialog[data-ai-summary-modal][open]::backdrop,
 [data-settings-modal][open]::backdrop {
-	will-change: opacity, backdrop-filter;
+	/* Solo opacity: animar backdrop-filter fuerza re-raster cada frame. */
+	will-change: opacity;
 }
 
 /* Keyframes globales reutilizables para drawers (siguiente unificación). */

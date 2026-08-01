@@ -29,8 +29,19 @@ dialog[data-appointment-modal][open] {
 	display: flex;
 }
 
+dialog[data-appointment-modal][open].is-settled {
+	will-change: auto;
+}
+
 dialog[data-appointment-modal]::backdrop {
+	/* Blur estático: solo se anima opacity (blur animado es muy costoso). */
+	backdrop-filter: blur(var(--modal-backdrop-blur));
+	-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 	animation: appointment-backdrop-in var(--modal-open-duration) var(--modal-easing);
+}
+
+dialog[data-appointment-modal][open].is-settled::backdrop {
+	will-change: auto;
 }
 
 dialog[data-appointment-modal].is-closing {
@@ -483,26 +494,18 @@ html[data-theme='dark']
 @keyframes appointment-backdrop-in {
 	from {
 		opacity: 0;
-		backdrop-filter: blur(0);
-		-webkit-backdrop-filter: blur(0);
 	}
 	to {
 		opacity: 1;
-		backdrop-filter: blur(var(--modal-backdrop-blur));
-		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 	}
 }
 
 @keyframes appointment-backdrop-out {
 	from {
 		opacity: 1;
-		backdrop-filter: blur(var(--modal-backdrop-blur));
-		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 	}
 	to {
 		opacity: 0;
-		backdrop-filter: blur(0);
-		-webkit-backdrop-filter: blur(0);
 	}
 }
 
