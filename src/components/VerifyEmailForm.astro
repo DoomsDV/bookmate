@@ -1,4 +1,6 @@
 ---
+import '../styles/auth.css';
+
 interface Props {
 	error?: string;
 	email?: string;
@@ -20,55 +22,75 @@ const {
 } = Astro.props;
 
 const notice = registered
-	? 'Te enviamos un código de 6 dígitos. Revisa tu bandeja de entrada para activar tu cuenta.'
+	? 'Te enviamos un código de 6 dígitos. Revisá tu bandeja de entrada para activar tu cuenta.'
 	: resent
-		? 'Te enviamos un nuevo código de verificación. Revisa tu bandeja de entrada.'
+		? 'Te enviamos un nuevo código de verificación. Revisá tu bandeja de entrada.'
 		: pendingLogin
-			? 'Debes verificar tu correo antes de iniciar sesión. Ingresa el código de 6 dígitos o solicita uno nuevo con "Reenviar código".'
+			? 'Debés verificar tu correo antes de iniciar sesión. Ingresá el código de 6 dígitos o solicitá uno nuevo con "Reenviar código".'
 			: '';
 ---
 
-<section class="m3-container auth-dark">
-	<aside class="m3-sidebar">
-		<div class="m3-sidebar-inner">
-			<div class="m3-brand">
-				<a href="/" class="m3-brand-link" aria-label="Ir al inicio">
-					<img src="/icons/icon-512x512.png" alt="Hasel Logo" class="m3-logo" />
-				</a>
-			</div>
+<section class="auth-page">
+	<div class="auth-fx" aria-hidden="true">
+		<div class="auth-atmosphere"></div>
+		<div class="auth-vignette"></div>
+		<div class="auth-orb auth-orb-a"></div>
+		<div class="auth-orb auth-orb-b"></div>
+		<div class="auth-deco auth-deco-1"></div>
+		<div class="auth-deco auth-deco-2"></div>
+		<div class="auth-deco auth-deco-3"></div>
+		<div class="auth-deco auth-deco-4"></div>
+		<div class="auth-deco auth-deco-5"></div>
+		<div class="auth-deco auth-deco-6"></div>
+		<div class="auth-deco auth-deco-7"></div>
+		<div class="auth-deco auth-wave auth-wave-1"></div>
+		<div class="auth-deco auth-wave auth-wave-2"></div>
+	</div>
 
-			<div class="m3-stepper-header">
-				<h2 class="m3-step-maintitle">Confirma tu correo</h2>
-				<p class="m3-step-maindesc">
-					Protegemos cada espacio nuevo validando que el correo registrado realmente te pertenece.
-				</p>
-			</div>
-
+	<header class="auth-topbar">
+		<div class="auth-topbar-inner">
+			<a href="/" class="auth-brand" aria-label="Hasel — Inicio">
+				<img
+					src="/icons/icon-64.png"
+					alt=""
+					class="auth-brand-logo"
+					width="40"
+					height="40"
+					loading="eager"
+					decoding="async"
+				/>
+				<span class="auth-brand-wordmark">Hasel</span>
+			</a>
+			<a href="/auth/login" class="auth-topbar-cta">Iniciar sesión</a>
 		</div>
-	</aside>
+	</header>
 
-	<main class="m3-content">
-		<div class="m3-form-wrapper">
-			<div class="m3-form-header">
-				<div class="m3-panel-icon">
-					<span class="material-symbols-rounded">password</span>
-				</div>
-				<div class="m3-panel-titles">
-					<h1 class="m3-panel-title">Código de verificación</h1>
-					<p class="m3-panel-subtitle">Ingresa el código enviado a tu correo para activar la cuenta.</p>
-				</div>
-			</div>
+	<div class="auth-shell">
+		<main class="auth-card">
+			<header class="auth-card-header">
+				<img
+					src="/icons/icon-512x512.png"
+					alt="Hasel"
+					class="auth-card-logo"
+					width="72"
+					height="72"
+					loading="eager"
+					decoding="async"
+				/>
+				<h1 class="auth-title">Confirmá tu correo</h1>
+				<p class="auth-subtitle">Ingresá el código de 6 dígitos que enviamos a tu correo.</p>
+			</header>
 
 			{notice && (
-				<div class="m3-info-banner" role="status">
-					<span class="material-symbols-rounded">info</span>
+				<div class="auth-banner auth-banner-info" role="status">
+					<span class="material-symbols-rounded" aria-hidden="true">info</span>
 					<span>{notice}</span>
 				</div>
 			)}
 
 			{error && (
-				<div class="m3-error-banner" role="alert">
-					<span class="material-symbols-rounded">error</span>
+				<div class="auth-banner auth-banner-error" role="alert">
+					<span class="material-symbols-rounded" aria-hidden="true">error</span>
 					<span>{error}</span>
 				</div>
 			)}
@@ -76,67 +98,74 @@ const notice = registered
 			<form method="post" action="/api/auth/verify-email" data-astro-reload data-verify-email-form>
 				<input type="hidden" name="action" value="verify" />
 
-				<div class="m3-panel">
-					<div class="m3-field">
-						<label class="m3-label" for="email">Correo electrónico <span class="m3-label-required">*</span></label>
-						<input
-							type="email"
-							id="email"
-							name="email"
-							placeholder="Ej: usuario@empresa.com"
-							value={email}
-							class:list={['m3-input', emailError && 'is-invalid']}
-							autocomplete="email"
-							autocapitalize="none"
-							spellcheck="false"
-							required
-							data-email-input
-						/>
-						{emailError && <span class="m3-field-error">{emailError}</span>}
-					</div>
-
-					<div class="m3-field m3-code-field">
-						<label class="m3-label" for="code">Código de 6 dígitos <span class="m3-label-required">*</span></label>
-						<input
-							type="text"
-							id="code"
-							name="code"
-							placeholder="000000"
-							class:list={['m3-input', 'm3-code-input', codeError && 'is-invalid']}
-							inputmode="numeric"
-							autocomplete="one-time-code"
-							maxlength="6"
-							pattern="[0-9]{6}"
-							required
-							data-code-input
-						/>
-						{codeError && <span class="m3-field-error">{codeError}</span>}
-					</div>
-
-					<div class="m3-actions">
-						<button type="submit" class="m3-btn-primary">
-							Verificar correo
-							<span class="material-symbols-rounded">check_circle</span>
-						</button>
-					</div>
+				<div class="auth-field">
+					<label class="auth-label" for="email">Correo electrónico</label>
+					<input
+						type="email"
+						id="email"
+						name="email"
+						placeholder="Ej: usuario@empresa.com"
+						value={email}
+						class:list={['auth-input', emailError && 'is-invalid']}
+						autocomplete="email"
+						autocapitalize="none"
+						spellcheck="false"
+						inputmode="email"
+						required
+						data-email-input
+					/>
+					{emailError && <span class="auth-field-error">{emailError}</span>}
 				</div>
-			</form>
 
-			<form method="post" action="/api/auth/verify-email" data-astro-reload data-resend-form class="m3-resend-form">
-				<input type="hidden" name="action" value="resend" />
-				<input type="hidden" name="email" value={email} data-resend-email />
-				<button type="submit" class="m3-btn-tonal">
-					Reenviar código
-					<span class="material-symbols-rounded">refresh</span>
+				<div class="auth-field">
+					<label class="auth-label" for="code">Código de 6 dígitos</label>
+					<input
+						type="text"
+						id="code"
+						name="code"
+						placeholder="000000"
+						class:list={['auth-input', 'auth-code-input', codeError && 'is-invalid']}
+						inputmode="numeric"
+						autocomplete="one-time-code"
+						maxlength="6"
+						pattern="[0-9]{6}"
+						required
+						data-code-input
+					/>
+					{codeError && <span class="auth-field-error">{codeError}</span>}
+				</div>
+
+				<button type="submit" class="auth-btn auth-btn-primary auth-submit">
+					Verificar correo
 				</button>
 			</form>
 
-			<div class="m3-card-footer">
-				<div class="m3-footer-divider"></div>
-				<a href="/auth/login" class="m3-link-accent">¿Ya verificaste tu cuenta? <strong>Iniciar sesión</strong></a>
-			</div>
-		</div>
-	</main>
+			<form
+				method="post"
+				action="/api/auth/verify-email"
+				data-astro-reload
+				data-resend-form
+				style="margin-top: 0.85rem;"
+			>
+				<input type="hidden" name="action" value="resend" />
+				<input type="hidden" name="email" value={email} data-resend-email />
+				<button type="submit" class="auth-btn auth-btn-tonal auth-btn-block">
+					Reenviar código
+				</button>
+			</form>
+
+			<footer class="auth-card-footer">
+				<p class="auth-footer-text">
+					¿Ya verificaste tu cuenta?
+					<a href="/auth/login" class="auth-footer-link"><strong>Iniciar sesión</strong></a>
+				</p>
+			</footer>
+		</main>
+	</div>
+
+	<footer class="auth-page-footer" aria-label="Copyright">
+		<p>Hasel &copy; 2026</p>
+	</footer>
 </section>
 
 <script is:inline>
@@ -177,343 +206,3 @@ const notice = registered
 		document.addEventListener('astro:page-load', setupVerifyEmailForm);
 	}
 </script>
-
-<style>
-.m3-container {
-	display: flex;
-	flex-direction: column;
-	min-height: 100svh;
-	background-color: #050505;
-	font-family: var(--font-body);
-}
-
-.m3-sidebar {
-	position: relative;
-	display: none;
-	overflow: hidden;
-	background-color: #050505;
-	color: #f8fafc;
-	padding: 3.5rem 4rem;
-}
-
-.m3-sidebar::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 60%);
-	pointer-events: none;
-}
-
-.m3-sidebar-inner {
-	position: relative;
-	z-index: 1;
-	display: flex;
-	height: 100%;
-	flex-direction: column;
-}
-
-.m3-brand {
-	margin-bottom: 3.25rem;
-}
-
-.m3-brand-link {
-	display: inline-flex;
-	align-items: center;
-	line-height: 0;
-}
-
-.m3-logo {
-	height: 3.5rem;
-	width: auto;
-	object-fit: contain;
-	filter: drop-shadow(0 8px 20px rgba(59, 130, 246, 0.25));
-}
-
-.m3-stepper-header {
-	margin-bottom: 3rem;
-	max-width: 18rem;
-}
-
-.m3-security-badge {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 4rem;
-	height: 4rem;
-	border-radius: 9999px;
-	background: radial-gradient(circle at 30% 30%, rgba(96, 165, 250, 0.22), rgba(37, 99, 235, 0.14));
-	border: 1px solid rgba(96, 165, 250, 0.18);
-	box-shadow: 0 10px 30px rgba(37, 99, 235, 0.12);
-	color: #60a5fa;
-	margin-top: 1.5rem;
-}
-
-.m3-security-badge .material-symbols-rounded {
-	font-size: 1.65rem;
-}
-
-.m3-step-maintitle {
-	margin: 0 0 1.35rem;
-	color: #ffffff;
-	font-size: clamp(2rem, 5vw, 2.5rem);
-	font-weight: 700;
-	line-height: 1.1;
-}
-
-.m3-step-maindesc {
-	margin: 0;
-	color: #94a3b8;
-	font-size: 1.05rem;
-	line-height: 1.6;
-}
-
-.m3-content {
-	display: flex;
-	flex: 1;
-	align-items: center;
-	justify-content: center;
-	padding: 2rem 1.5rem;
-}
-
-.m3-form-wrapper {
-	width: 100%;
-	max-width: 28rem;
-}
-
-.m3-form-header {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 1rem;
-	margin-bottom: 2rem;
-	text-align: center;
-}
-
-.m3-panel-icon {
-	display: flex;
-	width: 3.5rem;
-	height: 3.5rem;
-	align-items: center;
-	justify-content: center;
-	border-radius: 50%;
-	background-color: #eff6ff;
-	color: #2563eb;
-}
-
-.m3-panel-icon .material-symbols-rounded {
-	font-size: 1.75rem;
-}
-
-.m3-panel-title {
-	margin: 0 0 0.25rem;
-	color: #0f172a;
-	font-size: 1.75rem;
-	font-weight: 700;
-}
-
-.m3-panel-subtitle {
-	margin: 0;
-	color: #64748b;
-	font-size: 1rem;
-	line-height: 1.5;
-}
-
-.m3-error-banner,
-.m3-info-banner {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	margin-bottom: 1rem;
-	border-radius: 0.75rem;
-	padding: 1rem 1.25rem;
-	font-weight: 600;
-}
-
-.m3-error-banner {
-	border: 1px solid #fecdd3;
-	background-color: #fff1f2;
-	color: #be123c;
-}
-
-.m3-info-banner {
-	border: 1px solid #bfdbfe;
-	background-color: #eff6ff;
-	color: #1d4ed8;
-}
-
-.m3-panel {
-	animation: m3fade 0.3s cubic-bezier(0.2, 0, 0, 1);
-}
-
-@keyframes m3fade {
-	from {
-		opacity: 0;
-		transform: translateY(10px);
-	}
-
-	to {
-		opacity: 1;
-		transform: translateY(0);
-	}
-}
-
-.m3-field {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-}
-
-.m3-code-field {
-	margin-top: 1.25rem;
-}
-
-.m3-label {
-	margin-left: 0.25rem;
-	color: #334155;
-	font-size: 0.9rem;
-	font-weight: 600;
-}
-
-.m3-label-required {
-	color: #fb7185;
-}
-
-.m3-input {
-	box-sizing: border-box;
-	width: 100%;
-	border: 1px solid #cbd5e1;
-	border-radius: 0.75rem;
-	background-color: #f8fafc;
-	color: #0f172a;
-	font: inherit;
-	font-size: 1rem;
-	outline: none;
-	padding: 0.875rem 1rem;
-	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.m3-code-input {
-	font-size: 1.65rem;
-	font-weight: 800;
-	letter-spacing: 0.55rem;
-	text-align: center;
-}
-
-.m3-input:focus {
-	border-color: #2563eb;
-	background-color: #ffffff;
-	box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-}
-
-.m3-input.is-invalid {
-	border-color: #e11d48;
-	background-color: #fff1f2;
-}
-
-.m3-field-error {
-	margin-left: 0.25rem;
-	color: #e11d48;
-	font-size: 0.85rem;
-	font-weight: 500;
-}
-
-.m3-actions {
-	display: flex;
-	align-items: center;
-	margin-top: 2rem;
-}
-
-.m3-btn-primary,
-.m3-btn-tonal {
-	display: inline-flex;
-	width: 100%;
-	align-items: center;
-	justify-content: center;
-	gap: 0.5rem;
-	border: none;
-	border-radius: 9999px;
-	cursor: pointer;
-	font: inherit;
-	font-size: 1rem;
-	font-weight: 600;
-	padding: 0.875rem 2rem;
-	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.m3-btn-primary {
-	background-color: #2563eb;
-	color: #ffffff;
-}
-
-.m3-btn-primary:hover {
-	background-color: #1d4ed8;
-	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-	transform: translateY(-1px);
-}
-
-.m3-btn-tonal {
-	background-color: #f1f5f9;
-	color: #0f172a;
-}
-
-.m3-btn-tonal:hover {
-	background-color: #e2e8f0;
-}
-
-.m3-resend-form {
-	margin-top: 0.9rem;
-}
-
-.m3-card-footer {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 1.5rem;
-	margin-top: 2.5rem;
-	padding-top: 1.5rem;
-}
-
-.m3-footer-divider {
-	width: 40px;
-	height: 2px;
-	border-radius: 1px;
-	background: #e2e8f0;
-}
-
-.m3-link-accent {
-	color: #475569;
-	text-align: center;
-	text-decoration: none;
-	font-size: 0.95rem;
-}
-
-.m3-link-accent strong {
-	color: #2563eb;
-	transition: color 0.2s;
-}
-
-.m3-link-accent:hover strong {
-	color: #1d4ed8;
-	text-decoration: underline;
-}
-
-@media (min-width: 1024px) {
-	.m3-container {
-		flex-direction: row;
-		height: 100svh;
-		overflow: hidden;
-	}
-
-	.m3-sidebar {
-		display: flex;
-		width: 40%;
-		max-width: 28rem;
-		flex-direction: column;
-	}
-
-	.m3-content {
-		padding: 3rem 4rem;
-	}
-}
-</style>
-
