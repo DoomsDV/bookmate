@@ -794,34 +794,6 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			}
 		};
 
-		private watchGeolocationPermissionGranted = (
-			onGranted: () => void,
-			requestId: number,
-		) => {
-			if (!navigator.permissions?.query) {
-				if (requestId === this.geolocationRequestSeq) onGranted();
-				return;
-			}
-
-			void navigator.permissions
-				.query({ name: "geolocation" })
-				.then((status) => {
-					if (status.state === "granted") {
-						if (requestId === this.geolocationRequestSeq) onGranted();
-						return;
-					}
-					if (status.state === "denied") return;
-
-					const onChange = () => {
-						if (status.state !== "granted") return;
-						status.removeEventListener("change", onChange);
-						if (requestId === this.geolocationRequestSeq) onGranted();
-					};
-					status.addEventListener("change", onChange);
-				})
-				.catch(() => undefined);
-		};
-
 		private setMapStatus = (message: string, isError = false) => {
 			if (!this.els.mapStatus) return;
 			this.els.mapStatus.textContent = message;
@@ -1374,15 +1346,23 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			if (this.formEls.status) this.formEls.status.disabled = false;
 		};
 
+		private waitForMapLoaded = (): Promise<void> =>
+			new Promise((resolve) => {
+				if (!this.mapInstance) {
+					resolve();
+					return;
+				}
+				if (this.mapInstance.loaded()) {
+					resolve();
+					return;
+				}
+				this.mapInstance.once("load", () => resolve());
+			});
+
 		private tryApplyCurrentGeolocation = async () => {
 			if (this.mode !== "create") return;
 
 			const requestId = ++this.geolocationRequestSeq;
-			const startMapSpinner = () => {
-				if (requestId !== this.geolocationRequestSeq) return;
-				this.setMapGeolocationLoading(true);
-				this.setMapStatus("Obteniendo tu ubicación...");
-			};
 
 			try {
 				const permission = await this.getGeolocationPermissionState();
@@ -1390,17 +1370,9 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					this.setMapStatus(this.mapIdleMessage);
 					return;
 				}
-				if (permission === "granted") {
-					startMapSpinner();
-				} else {
-					this.setMapStatus(
-						"Permite el acceso a tu ubicación para ubicar la sucursal en el mapa.",
-					);
-					this.watchGeolocationPermissionGranted(
-						startMapSpinner,
-						requestId,
-					);
-				}
+
+				this.setMapGeolocationLoading(true);
+				this.setMapStatus("Obteniendo tu ubicación...");
 
 				const point = await getBrowserGeolocation();
 				if (
@@ -1409,15 +1381,24 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				) {
 					return;
 				}
-				if (!point || this.selectedCoordinates) {
-					if (!this.selectedCoordinates) {
-						this.setMapStatus(this.mapIdleMessage);
-					}
+
+				if (!point) {
+					this.setMapStatus(this.mapIdleMessage);
+					return;
+				}
+
+				if (this.selectedCoordinates) return;
+
+				await this.waitForMapLoaded();
+				if (
+					requestId !== this.geolocationRequestSeq ||
+					this.mode !== "create"
+				) {
 					return;
 				}
 
 				const accuracy = point.accuracy ?? Number.POSITIVE_INFINITY;
-				if (accuracy > 1_500) {
+				if (accuracy > 5_000) {
 					this.setMapStatus(
 						"No pudimos ubicarte con precisión en este dispositivo. Haz clic en el mapa para marcar la sucursal.",
 					);
@@ -1431,6 +1412,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					zoom,
 				});
 				this.layoutMapContainer();
+				this.focusMapOnCoordinates(zoom);
 
 				const precisionHint =
 					accuracy <= 150
@@ -1440,9 +1422,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					`${precisionHint} Puedes ajustar el punto haciendo clic en el mapa.`,
 				);
 			} finally {
-				if (requestId === this.geolocationRequestSeq) {
-					this.setMapGeolocationLoading(false);
-				}
+				this.setMapGeolocationLoading(false);
 			}
 		};
 

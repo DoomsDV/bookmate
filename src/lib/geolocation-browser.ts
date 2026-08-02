@@ -30,26 +30,24 @@ const isBetterReading = (
 	return nextAcc < currentAcc;
 };
 
-/**
- * Obtiene la mejor lectura posible del GPS/Wi‑Fi del dispositivo.
- * Usa `watchPosition` unos segundos para refinar la precisión en lugar de
- * quedarse con la primera posición cacheada (suele ser muy imprecisa en PC).
- */
-export const getBrowserGeolocation = (
-	options: PositionOptions = {},
-	watchMs = 8_000,
-): Promise<GeolocationPoint | null> => {
-	if (!hasBrowserGeolocation()) return Promise.resolve(null);
+const readCurrentPosition = (
+	options: PositionOptions,
+): Promise<GeolocationPoint | null> =>
+	new Promise((resolve) => {
+		navigator.geolocation.getCurrentPosition(
+			(position) => resolve(toPoint(position)),
+			() => resolve(null),
+			options,
+		);
+	});
 
-	const merged: PositionOptions = {
-		enableHighAccuracy: true,
-		maximumAge: 0,
-		timeout: 15_000,
-		...options,
-	};
-
-	return new Promise((resolve) => {
-		let best: GeolocationPoint | null = null;
+const refineWithWatch = (
+	options: PositionOptions,
+	watchMs: number,
+	seed: GeolocationPoint | null,
+): Promise<GeolocationPoint | null> =>
+	new Promise((resolve) => {
+		let best = seed;
 		let watchId: number | null = null;
 		let settled = false;
 
@@ -65,10 +63,8 @@ export const getBrowserGeolocation = (
 			const point = toPoint(position);
 			if (!point) return;
 			if (isBetterReading(point, best)) best = point;
-
 			const accuracy = point.accuracy ?? Number.POSITIVE_INFINITY;
-			// Lectura suficientemente buena: no esperar más.
-			if (accuracy <= 40) finish(point);
+			if (accuracy <= 80) finish(best);
 		};
 
 		const timeoutId = window.setTimeout(() => finish(best), watchMs);
@@ -76,14 +72,47 @@ export const getBrowserGeolocation = (
 		watchId = navigator.geolocation.watchPosition(
 			consider,
 			() => finish(best),
-			merged,
-		);
-
-		// Lectura rápida inicial por si watch tarda en disparar.
-		navigator.geolocation.getCurrentPosition(
-			consider,
-			() => undefined,
-			merged,
+			options,
 		);
 	});
+
+/**
+ * Obtiene la mejor lectura posible del GPS/Wi‑Fi del dispositivo.
+ * Siempre resuelve antes de `maxWaitMs` (evita colgar el UI en PC sin GPS).
+ */
+export const getBrowserGeolocation = (
+	options: PositionOptions = {},
+	maxWaitMs = 10_000,
+): Promise<GeolocationPoint | null> => {
+	if (!hasBrowserGeolocation()) return Promise.resolve(null);
+
+	const positionOptions: PositionOptions = {
+		enableHighAccuracy: true,
+		maximumAge: 0,
+		timeout: Math.min(8_000, maxWaitMs),
+		...options,
+	};
+
+	const collect = async (): Promise<GeolocationPoint | null> => {
+		const first = await readCurrentPosition(positionOptions);
+		if (!first) return null;
+
+		const accuracy = first.accuracy ?? Number.POSITIVE_INFINITY;
+		if (accuracy <= 120) return first;
+
+		const remaining = Math.max(1_500, maxWaitMs - 2_500);
+		const refined = await refineWithWatch(
+			positionOptions,
+			Math.min(remaining, 4_000),
+			first,
+		);
+		return refined ?? first;
+	};
+
+	return Promise.race([
+		collect(),
+		new Promise<GeolocationPoint | null>((resolve) => {
+			window.setTimeout(() => resolve(null), maxWaitMs);
+		}),
+	]);
 };
