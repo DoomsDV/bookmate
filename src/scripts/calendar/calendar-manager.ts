@@ -637,15 +637,7 @@ class CalendarManager extends HTMLElement {
 
 	private teardownMobileStickyChrome() {
 		if (!this.calendarEl) return;
-		const chrome = this.calendarEl.querySelector<HTMLElement>('[data-calendar-sticky-chrome]');
-		if (!chrome) return;
-		const toolbar = chrome.querySelector<HTMLElement>('.fc-header-toolbar');
-		const harness = this.calendarEl.querySelector<HTMLElement>('.fc-view-harness');
-		if (toolbar) {
-			if (harness) harness.before(toolbar);
-			else this.calendarEl.prepend(toolbar);
-		}
-		chrome.remove();
+		this.calendarEl.querySelector<HTMLElement>('[data-calendar-sticky-chrome]')?.remove();
 	}
 
 	private buildStickyDayCellHtml(date: Date) {
@@ -718,9 +710,10 @@ class CalendarManager extends HTMLElement {
 			harness.before(chrome);
 		}
 
-		const toolbar = this.calendarEl.querySelector<HTMLElement>('.fc-header-toolbar');
-		if (toolbar && toolbar.parentElement !== chrome) {
-			chrome.insertBefore(toolbar, chrome.firstChild);
+		// El toolbar (mes / Día·3 días·Lista) scrollea; solo la franja de días queda sticky.
+		const trappedToolbar = chrome.querySelector<HTMLElement>('.fc-header-toolbar');
+		if (trappedToolbar) {
+			chrome.before(trappedToolbar);
 		}
 
 		this.syncStickyDayStrip(chrome);

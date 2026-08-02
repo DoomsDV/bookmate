@@ -2579,18 +2579,18 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		/*
-		 * Chrome sticky (toolbar + días) fuera de las celdas FC.
-		 * Evita el bug de sticky en <th> que flotaba los días sobre las 6–7.
+		 * Solo la franja de días es sticky (fuera de las celdas FC).
+		 * El toolbar (mes / vistas) scrollea con el contenido.
 		 */
 		[data-calendar-root] .calendar-sticky-chrome {
 			position: sticky;
 			top: var(--shell-header-height);
 			z-index: 30;
 			display: grid;
-			gap: 0.35rem;
+			gap: 0;
 			margin-inline: -1rem;
-			padding: 0.15rem 1rem 0.35rem;
-			background: var(--page-background, #fdfcfa);
+			padding: 0 1rem 0.2rem;
+			background: var(--page-background, #fefdfc);
 			border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
 		}
 
@@ -2603,10 +2603,6 @@ const googleErrorMessage = hasGoogleError
 				margin-inline: -1.5rem;
 				padding-inline: 1.5rem;
 			}
-		}
-
-		[data-calendar-root] .calendar-sticky-chrome .fc-toolbar.fc-header-toolbar {
-			margin-bottom: 0;
 		}
 
 		[data-calendar-root] .calendar-sticky-days {
