@@ -1,9 +1,15 @@
 export type ScheduleMisalignedReason =
+	| 'LOCATION_CLOSED'
 	| 'DAY_BLOCKED'
 	| 'TIME_OUTSIDE_SCHEDULE'
 	| 'WRONG_LOCATION';
 
-const REASON_SET = new Set<string>(['DAY_BLOCKED', 'TIME_OUTSIDE_SCHEDULE', 'WRONG_LOCATION']);
+const REASON_SET = new Set<string>([
+	'LOCATION_CLOSED',
+	'DAY_BLOCKED',
+	'TIME_OUTSIDE_SCHEDULE',
+	'WRONG_LOCATION',
+]);
 
 export const normalizeScheduleMisalignedReason = (
 	value: unknown
@@ -25,6 +31,8 @@ type MisalignedMessageContext = {
 
 export const getScheduleMisalignedTitle = (reason: ScheduleMisalignedReason | null) => {
 	switch (reason) {
+		case 'LOCATION_CLOSED':
+			return 'Sucursal cerrada ese día';
 		case 'DAY_BLOCKED':
 			return 'Día bloqueado en la agenda';
 		case 'WRONG_LOCATION':
@@ -43,6 +51,8 @@ export const getScheduleMisalignedMessage = (
 	const locationLabel = String(context.locationName || '').trim() || 'la sucursal de la cita';
 
 	switch (reason) {
+		case 'LOCATION_CLOSED':
+			return `${locationLabel[0].toUpperCase() + locationLabel.slice(1)} tiene un cierre general vigente para ese día (feriado o mantenimiento). La cita sigue activa pero ya no puede atenderse. Reprogramá la cita o quitá el cierre en Sucursales → Días festivos y cierres.`;
 		case 'DAY_BLOCKED':
 			return 'Este día está marcado como bloqueado en excepciones de horario. La cita sigue activa, pero ya no coincide con la agenda. Reprograma la cita o quita el bloqueo del día en Horarios → Excepciones.';
 		case 'WRONG_LOCATION':
@@ -56,6 +66,8 @@ export const getScheduleMisalignedMessage = (
 
 export const getScheduleMisalignedListSuffix = (reason: ScheduleMisalignedReason | null) => {
 	switch (reason) {
+		case 'LOCATION_CLOSED':
+			return '· sucursal cerrada';
 		case 'DAY_BLOCKED':
 			return '· día bloqueado';
 		case 'WRONG_LOCATION':
@@ -82,6 +94,8 @@ export const getScheduleMisalignedBannerCaption = (count: number) => {
 
 export const getScheduleMisalignedBannerReasonLabel = (reason: ScheduleMisalignedReason | null) => {
 	switch (reason) {
+		case 'LOCATION_CLOSED':
+			return 'Sucursal cerrada';
 		case 'DAY_BLOCKED':
 			return 'Día bloqueado';
 		case 'WRONG_LOCATION':
@@ -102,6 +116,8 @@ export const getScheduleMisalignedBannerAction = (count: number) => {
 
 export const getScheduleMisalignedConfirmTitle = (reason: ScheduleMisalignedReason | null) => {
 	switch (reason) {
+		case 'LOCATION_CLOSED':
+			return 'Sucursal cerrada ese día';
 		case 'DAY_BLOCKED':
 			return 'Día bloqueado para el profesional';
 		case 'WRONG_LOCATION':
@@ -120,6 +136,8 @@ export const getScheduleMisalignedConfirmMessage = (
 	const locationLabel = String(context.locationName || '').trim() || 'esa sucursal';
 
 	switch (reason) {
+		case 'LOCATION_CLOSED':
+			return `${locationLabel[0].toUpperCase() + locationLabel.slice(1)} tiene un cierre general vigente para ese día (feriado o mantenimiento). Si guardás de todos modos, la cita quedará fuera de la agenda. ¿Querés continuar?`;
 		case 'DAY_BLOCKED':
 			return 'El profesional tiene ese día bloqueado en excepciones de horario. Si guardás de todos modos, la cita quedará fuera de su agenda. ¿Querés continuar?';
 		case 'WRONG_LOCATION':

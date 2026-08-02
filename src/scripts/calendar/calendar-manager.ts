@@ -1307,6 +1307,98 @@ class CalendarManager extends HTMLElement {
 		this.querySelector('.calendar-page-header')?.classList.add('calendar-page-header--chrome-docked');
 	}
 
+	private closureRanges: Array<{ start: number; end: number; fullDay: boolean; name: string }> = [];
+
+	private updateClosureCache(events: EventInput[]) {
+		this.closureRanges = events.map((ev) => {
+			const start = new Date(String(ev.start || '')).getTime();
+			const end = new Date(String(ev.end || ev.start || '')).getTime();
+			const props = (ev.extendedProps as { fullDay?: boolean; name?: string }) || {};
+			return {
+				start: Number.isFinite(start) ? start : 0,
+				end: Number.isFinite(end) ? end : 0,
+				fullDay: Boolean(props.fullDay),
+				name: String(props.name || ''),
+			};
+		});
+	}
+
+	private isRangeInsideClosure(rangeStart: Date, rangeEnd: Date) {
+		const s = rangeStart.getTime();
+		const e = rangeEnd.getTime();
+		return this.closureRanges.some((r) => s < r.end && e > r.start);
+	}
+
+	private async fetchLocationClosureEvents(
+		locationId: number,
+		startIso: string,
+		endIso: string
+	): Promise<EventInput[]> {
+		const fromDate = startIso.slice(0, 10);
+		const toDate = endIso.slice(0, 10);
+		const url = new URL(`/api/locations/${locationId}/closures`, window.location.origin);
+		url.searchParams.set('from_date', fromDate);
+		url.searchParams.set('to_date', toDate);
+
+		const response = await fetch(url.toString(), {
+			headers: { Accept: 'application/json' },
+		});
+		const body: { status?: string; data?: unknown } = await response
+			.json()
+			.catch(() => ({}));
+		if (!response.ok || body.status !== 'success' || !Array.isArray(body.data)) {
+			return [];
+		}
+		return body.data.flatMap((raw: unknown) => {
+			if (!raw || typeof raw !== 'object') return [];
+			const item = raw as Record<string, unknown>;
+			const startDate = String(item.start_date || '').trim();
+			const endDate = String(item.end_date || '').trim();
+			const isFullDay = Number(item.is_full_day) === 1;
+			const name = String(item.name || 'Cerrado').trim() || 'Cerrado';
+			if (!startDate || !endDate) return [];
+
+			if (isFullDay) {
+				const inclusiveEnd = new Date(endDate + 'T00:00:00');
+				inclusiveEnd.setDate(inclusiveEnd.getDate() + 1);
+				return [
+					{
+						id: `closure-${item.id_location_closure}`,
+						title: `Cerrado · ${name}`,
+						start: startDate,
+						end: inclusiveEnd.toISOString().slice(0, 10),
+						display: 'background' as const,
+						allDay: true,
+						classNames: ['fc-closure-bg', 'fc-closure-bg--full'],
+						extendedProps: { closure: true, fullDay: true, name },
+					},
+				];
+			}
+
+			const startTime = String(item.start_time || '').trim();
+			const endTime = String(item.end_time || '').trim();
+			if (!startTime || !endTime) return [];
+
+			const events: EventInput[] = [];
+			const cursor = new Date(startDate + 'T00:00:00');
+			const stop = new Date(endDate + 'T00:00:00');
+			while (cursor <= stop) {
+				const day = cursor.toISOString().slice(0, 10);
+				events.push({
+					id: `closure-${item.id_location_closure}-${day}`,
+					title: `Cerrado · ${name}`,
+					start: `${day}T${startTime}:00`,
+					end: `${day}T${endTime}:00`,
+					display: 'background' as const,
+					classNames: ['fc-closure-bg', 'fc-closure-bg--partial'],
+					extendedProps: { closure: true, fullDay: false, name },
+				});
+				cursor.setDate(cursor.getDate() + 1);
+			}
+			return events;
+		});
+	}
+
 	private buildEventSource = (
 		info: { startStr: string; endStr: string },
 		successCallback: (eventInputs: EventInput[]) => void,
@@ -1329,6 +1421,15 @@ class CalendarManager extends HTMLElement {
 					pro_id: professionalId > 0 ? professionalId : undefined,
 					loc_id: locationId > 0 ? locationId : undefined,
 				})) as ApiCalendarEvent[];
+
+				let closureEvents: EventInput[] = [];
+				if (locationId > 0) {
+					try {
+						closureEvents = await this.fetchLocationClosureEvents(locationId, info.startStr, info.endStr);
+					} catch (error) {
+						console.error('[calendar-manager] closures error', error);
+					}
+				}
 
 				let googleEvents: ApiCalendarEvent[] = [];
 				if (this.isGoogleConnected) {
@@ -1379,7 +1480,8 @@ class CalendarManager extends HTMLElement {
 					};
 				});
 				this.updateScheduleMisalignedBanner(appointmentEvents);
-				successCallback(normalizedEvents);
+				this.updateClosureCache(closureEvents);
+				successCallback([...normalizedEvents, ...closureEvents]);
 			} catch (error) {
 				const message =
 					error instanceof Error ? error.message : 'No fue posible cargar el calendario.';
@@ -1410,6 +1512,7 @@ class CalendarManager extends HTMLElement {
 			eventDurationEditable: (info) => !isCalendarEventLocked(info.event),
 			selectable: true,
 			selectMirror: true,
+			selectAllow: (span) => !this.isRangeInsideClosure(span.start, span.end),
 			nowIndicator: true,
 			allDaySlot: false,
 			height: this.getCalendarHeightOption(isMobile),

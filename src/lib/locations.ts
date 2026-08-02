@@ -26,6 +26,7 @@ export interface Location {
 	longitude: number | null;
 	is_active: 0 | 1;
 	created_at: string;
+	current_closure_name: string | null;
 }
 
 export interface LocationsListMeta {
@@ -179,6 +180,12 @@ const normalizeLocation = (value: unknown): Location | null => {
 
 	if (!Number.isFinite(idLocation)) return null;
 
+	const closureNameRaw = source.current_closure_name;
+	const currentClosureName =
+		typeof closureNameRaw === 'string' && closureNameRaw.trim().length > 0
+			? closureNameRaw.trim()
+			: null;
+
 	return {
 		id_location: idLocation,
 		name: String(source.name || '').trim(),
@@ -189,6 +196,7 @@ const normalizeLocation = (value: unknown): Location | null => {
 		longitude: toNullableNumber(source.longitude),
 		is_active: source.is_active === 1 || source.is_active === '1' || source.is_active === true ? 1 : 0,
 		created_at: String(source.created_at || ''),
+		current_closure_name: currentClosureName,
 	};
 };
 

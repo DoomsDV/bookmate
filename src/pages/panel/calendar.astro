@@ -1495,6 +1495,39 @@ const googleErrorMessage = hasGoogleError
 		outline-offset: -1px;
 	}
 
+	[data-calendar-root] .fc .fc-bg-event.fc-closure-bg {
+		background: repeating-linear-gradient(
+			45deg,
+			rgba(249, 115, 22, 0.16),
+			rgba(249, 115, 22, 0.16) 6px,
+			rgba(249, 115, 22, 0.28) 6px,
+			rgba(249, 115, 22, 0.28) 12px
+		);
+		opacity: 1;
+	}
+
+	[data-calendar-root] .fc .fc-bg-event.fc-closure-bg .fc-event-title {
+		color: #9a3412;
+		font-weight: 800;
+		font-size: 0.78rem;
+		letter-spacing: 0.02em;
+		text-transform: uppercase;
+	}
+
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-bg-event.fc-closure-bg {
+		background: repeating-linear-gradient(
+			45deg,
+			rgba(251, 146, 60, 0.14),
+			rgba(251, 146, 60, 0.14) 6px,
+			rgba(251, 146, 60, 0.24) 6px,
+			rgba(251, 146, 60, 0.24) 12px
+		);
+	}
+
+	html[data-theme='dark'] [data-calendar-root] .fc .fc-bg-event.fc-closure-bg .fc-event-title {
+		color: #ffd7a8;
+	}
+
 	[data-calendar-root] .fc .fc-event.fc-event-focus-highlight {
 		box-shadow:
 			inset 0 0 0 2px rgb(217 119 6 / 95%),

@@ -63,6 +63,18 @@ const locationMapPreview = (location: Location) => {
 			{showCreateAction && (
 				<button
 					type="button"
+					class="locations-org-closures-btn hidden sm:inline-flex items-center justify-center gap-2"
+					data-open-org-closures
+					title="Cierres generales para todas las sucursales"
+				>
+					<span class="material-symbols-rounded text-[1.15rem]" aria-hidden="true">event_busy</span>
+					<span>Cierres generales</span>
+				</button>
+			)}
+
+			{showCreateAction && (
+				<button
+					type="button"
 					class="locations-create-btn hidden sm:inline-flex items-center justify-center gap-2"
 					data-open-location-modal
 				>
@@ -236,24 +248,34 @@ const locationMapPreview = (location: Location) => {
 							<span class="material-symbols-rounded text-[1.25rem]">storefront</span>
 						</div>
 
-						<span
-							class:list={[
-								'locations-card-status',
-								location.is_active === 1
-									? 'locations-card-status--active'
-									: 'locations-card-status--inactive',
-							]}
-						>
+						{location.current_closure_name && location.is_active === 1 ? (
+							<span
+								class="locations-card-status locations-card-status--closed"
+								title={`Cerrado: ${location.current_closure_name}`}
+							>
+								<span class="size-1.5 rounded-full locations-summary-dot--closed"></span>
+								Cerrada
+							</span>
+						) : (
 							<span
 								class:list={[
-									'size-1.5 rounded-full',
+									'locations-card-status',
 									location.is_active === 1
-										? 'locations-summary-dot--active'
-										: 'locations-summary-dot--inactive',
+										? 'locations-card-status--active'
+										: 'locations-card-status--inactive',
 								]}
-							></span>
-							{location.is_active === 1 ? 'Activa' : 'Inactiva'}
-						</span>
+							>
+								<span
+									class:list={[
+										'size-1.5 rounded-full',
+										location.is_active === 1
+											? 'locations-summary-dot--active'
+											: 'locations-summary-dot--inactive',
+									]}
+								></span>
+								{location.is_active === 1 ? 'Activa' : 'Inactiva'}
+							</span>
+						)}
 					</div>
 
 					<div class="locations-card-body">
@@ -548,6 +570,37 @@ const locationMapPreview = (location: Location) => {
 		color: #8d3e4a;
 	}
 
+	.locations-card-status--closed {
+		background: rgba(249, 115, 22, 0.15);
+		color: #9a4a12;
+	}
+
+	.locations-summary-dot--closed {
+		display: inline-block;
+		background: #f97316;
+	}
+
+	.locations-org-closures-btn {
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: transparent;
+		padding: 0.62rem 1rem;
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
+		transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+	}
+
+	.locations-org-closures-btn:hover {
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+		color: var(--on-surface);
+	}
+
+	.locations-org-closures-btn:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+		outline-offset: 3px;
+	}
+
 	.locations-card-value {
 		font-weight: 700;
 	}
@@ -616,6 +669,21 @@ const locationMapPreview = (location: Location) => {
 	html[data-theme='dark'] .locations-card-status--inactive {
 		background: rgba(255, 182, 193, 0.12);
 		color: #ffc8d2;
+	}
+
+	html[data-theme='dark'] .locations-card-status--closed {
+		background: rgba(251, 146, 60, 0.16);
+		color: #ffd7a8;
+	}
+
+	html[data-theme='dark'] .locations-org-closures-btn {
+		border-color: rgba(255, 255, 255, 0.12);
+		color: var(--on-surface-variant);
+	}
+
+	html[data-theme='dark'] .locations-org-closures-btn:hover {
+		background: rgba(255, 255, 255, 0.06);
+		color: var(--on-surface);
 	}
 </style>
 

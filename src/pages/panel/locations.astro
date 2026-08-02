@@ -274,6 +274,34 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 						data-field-error="longitude"></span>
 				</div>
 
+				<section
+					class="location-closures-section"
+					data-closures-section
+					hidden
+				>
+					<div class="location-closures-header">
+						<div>
+							<h3 class="location-closures-title">Días festivos y cierres</h3>
+							<p class="location-closures-desc">
+								Días en los que esta sucursal permanece cerrada. Se aplica a todos los profesionales.
+							</p>
+						</div>
+						<button
+							type="button"
+							class="location-closures-add-btn"
+							data-add-closure-btn
+						>
+							<span class="material-symbols-rounded text-[1.05rem]">add</span>
+							<span>Añadir cierre</span>
+						</button>
+					</div>
+					<div class="location-closures-list" data-closures-list>
+						<p class="location-closures-empty" data-closures-empty>
+							No hay cierres cargados para esta sucursal.
+						</p>
+					</div>
+				</section>
+
 				<label
 					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface) pt-1"
 					data-location-status-wrap
@@ -352,6 +380,182 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				</div>
 			</form>
 		</dialog>
+
+		<dialog class="closures-org-dialog" data-org-closures-dialog>
+			<div class="closures-org-dialog__header">
+				<div class="flex items-center gap-4 min-w-0">
+					<div
+						class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)"
+					>
+						<span class="material-symbols-rounded text-[1.4rem]">event_busy</span>
+					</div>
+					<div class="min-w-0">
+						<h2 class="closures-org-dialog__title">Cierres generales</h2>
+						<p class="closures-org-dialog__desc">
+							Feriados o cierres que aplican a todas las sucursales activas.
+						</p>
+					</div>
+				</div>
+				<button
+					type="button"
+					class="closures-org-dialog__close"
+					data-close-org-closures
+					aria-label="Cerrar"
+				>
+					<span class="material-symbols-rounded text-[1.3rem]">close</span>
+				</button>
+			</div>
+			<div class="closures-org-dialog__body">
+				<button
+					type="button"
+					class="location-closures-add-btn location-closures-add-btn--wide"
+					data-add-org-closure-btn
+				>
+					<span class="material-symbols-rounded text-[1.05rem]">add</span>
+					<span>Nuevo cierre general</span>
+				</button>
+				<div class="closures-org-dialog__list" data-org-closures-list>
+					<p class="location-closures-empty" data-org-closures-empty>
+						No hay cierres generales cargados.
+					</p>
+				</div>
+			</div>
+		</dialog>
+
+		<dialog class="closure-form-dialog" data-closure-form-dialog>
+			<form class="closure-form" data-closure-form>
+				<div class="closure-form__header">
+					<h2 class="closure-form__title" data-closure-form-title>Añadir cierre</h2>
+					<button
+						type="button"
+						class="closure-form__close"
+						data-close-closure-form
+						aria-label="Cerrar"
+					>
+						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+					</button>
+				</div>
+
+				<div class="closure-form__body">
+					<div
+						class="closure-form__error"
+						data-closure-form-error
+						hidden
+					></div>
+
+					<label class="closure-form__label">
+						Nombre / Motivo
+						<span class="text-rose-500">*</span>
+						<input
+							type="text"
+							name="name"
+							maxlength="120"
+							required
+							class="closure-form__input"
+							placeholder="Ej: Navidad, Fumigación"
+							data-closure-name
+						/>
+					</label>
+
+					<div class="closure-form__row">
+						<label class="closure-form__label">
+							Fecha inicio
+							<span class="text-rose-500">*</span>
+							<input
+								type="date"
+								name="start_date"
+								required
+								class="closure-form__input"
+								data-closure-start-date
+							/>
+						</label>
+						<label class="closure-form__label">
+							Fecha fin
+							<span class="text-rose-500">*</span>
+							<input
+								type="date"
+								name="end_date"
+								required
+								class="closure-form__input"
+								data-closure-end-date
+							/>
+						</label>
+					</div>
+
+					<label class="closure-form__checkbox">
+						<input
+							type="checkbox"
+							name="is_full_day"
+							checked
+							data-closure-full-day
+						/>
+						<span>Día completo</span>
+					</label>
+
+					<div class="closure-form__row" data-closure-partial-row hidden>
+						<label class="closure-form__label">
+							Hora inicio
+							<input
+								type="time"
+								name="start_time"
+								class="closure-form__input"
+								data-closure-start-time
+							/>
+						</label>
+						<label class="closure-form__label">
+							Hora fin
+							<input
+								type="time"
+								name="end_time"
+								class="closure-form__input"
+								data-closure-end-time
+							/>
+						</label>
+					</div>
+
+					<fieldset class="closure-form__scope" data-closure-scope-wrap>
+						<legend>Alcance</legend>
+						<label class="closure-form__radio">
+							<input
+								type="radio"
+								name="apply_all_locations"
+								value="0"
+								checked
+								data-closure-scope-single
+							/>
+							<span>Solo esta sucursal</span>
+						</label>
+						<label class="closure-form__radio">
+							<input
+								type="radio"
+								name="apply_all_locations"
+								value="1"
+								data-closure-scope-all
+							/>
+							<span>Aplicar a todas las sucursales</span>
+						</label>
+					</fieldset>
+				</div>
+
+				<div class="closure-form__footer">
+					<button
+						type="button"
+						class="modal-action-secondary"
+						data-close-closure-form
+					>
+						Cancelar
+					</button>
+					<button
+						type="submit"
+						class="modal-action-primary"
+						data-submit-closure
+					>
+						<span class="material-symbols-rounded text-[1.2rem]">check</span>
+						<span>Guardar cierre</span>
+					</button>
+				</div>
+			</form>
+		</dialog>
 	</location-manager>
 
 	<AppAlert />
@@ -360,6 +564,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 <script>
 	import { reloadPageWithFlash } from "../../lib/flash";
 	import { getBrowserGeolocation } from "../../lib/geolocation-browser";
+	import { initLocationClosuresUI } from "../../scripts/location-closures-ui";
 	import {
 		createBrandMarker,
 		getStadiaStyleUrl,
@@ -1268,6 +1473,9 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 
 		private closeModal = () => {
 			if (!this.els.modal?.open) return;
+			this.dispatchEvent(
+				new CustomEvent("location-modal:closed", { bubbles: true }),
+			);
 			this.locationReadRequestSeq += 1;
 			this.citiesRequestSeq += 1;
 			this.geolocationRequestSeq += 1;
@@ -1344,6 +1552,12 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			this.els.deleteBtn?.removeAttribute("disabled");
 			this.els.statusWrap?.removeAttribute("hidden");
 			if (this.formEls.status) this.formEls.status.disabled = false;
+			this.dispatchEvent(
+				new CustomEvent("location-modal:edit-opened", {
+					bubbles: true,
+					detail: { locationId },
+				}),
+			);
 		};
 
 		private waitForMapLoaded = (): Promise<void> =>
@@ -1686,6 +1900,19 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 	if (!customElements.get("location-manager")) {
 		customElements.define("location-manager", LocationManager);
 	}
+
+	const startClosuresUI = () => {
+		try {
+			initLocationClosuresUI();
+		} catch {}
+	};
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", startClosuresUI, { once: true });
+	} else {
+		startClosuresUI();
+	}
+	document.addEventListener("astro:page-load", startClosuresUI);
 </script>
 
 <style is:global>
@@ -1859,5 +2086,555 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		to {
 			opacity: 0;
 		}
+	}
+
+	/* --- Closures section --- */
+	.location-closures-section {
+		display: grid;
+		gap: 0.85rem;
+		border-top: 1px solid var(--shell-border);
+		padding-top: 1.2rem;
+		margin-top: 0.25rem;
+	}
+
+	.location-closures-header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.location-closures-title {
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.location-closures-desc {
+		margin: 0.15rem 0 0;
+		font-size: 0.82rem;
+		color: var(--on-surface-variant);
+	}
+
+	.location-closures-add-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.55rem 0.95rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--on-surface);
+		cursor: pointer;
+		transition: background 140ms ease, border-color 140ms ease;
+	}
+
+	.location-closures-add-btn:hover {
+		background: color-mix(in srgb, var(--on-surface) 6%, var(--surface-bright));
+	}
+
+	.location-closures-add-btn--wide {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.location-closures-list {
+		display: grid;
+		gap: 0.55rem;
+	}
+
+	.location-closures-item {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.9rem;
+		padding: 0.75rem 0.9rem;
+		border-radius: 0.9rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+	}
+
+	.location-closures-item__meta {
+		display: grid;
+		gap: 0.15rem;
+	}
+
+	.location-closures-item__name {
+		font-size: 0.95rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.location-closures-item__dates {
+		font-size: 0.82rem;
+		color: var(--on-surface-variant);
+	}
+
+	.location-closures-item__badges {
+		display: inline-flex;
+		gap: 0.4rem;
+		margin-top: 0.25rem;
+		flex-wrap: wrap;
+	}
+
+	.location-closures-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.18rem 0.5rem;
+		border-radius: 999px;
+		background: rgba(148, 163, 184, 0.18);
+		color: var(--on-surface-variant);
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+	}
+
+	.location-closures-badge--org {
+		background: rgba(249, 115, 22, 0.14);
+		color: #9a4a12;
+	}
+
+	html[data-theme='dark'] .location-closures-badge--org {
+		background: rgba(251, 146, 60, 0.16);
+		color: #ffd7a8;
+	}
+
+	.location-closures-item__actions {
+		display: inline-flex;
+		gap: 0.3rem;
+	}
+
+	.location-closures-item__delete {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 0.6rem;
+		border: 1px solid transparent;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+		transition: background 140ms ease, color 140ms ease;
+	}
+
+	.location-closures-item__delete:hover {
+		background: rgba(244, 63, 94, 0.12);
+		color: #b91c1c;
+	}
+
+	.location-closures-empty {
+		margin: 0;
+		padding: 0.85rem 1rem;
+		border-radius: 0.9rem;
+		border: 1px dashed var(--shell-border);
+		background: color-mix(in srgb, var(--on-surface) 3%, transparent);
+		color: var(--on-surface-variant);
+		font-size: 0.85rem;
+		text-align: center;
+	}
+
+	/* --- Closure form dialog (centrado; no hereda el drawer lateral) --- */
+	dialog.closure-form-dialog {
+		position: fixed;
+		inset: 0;
+		margin: auto;
+		width: min(30rem, calc(100vw - 2rem));
+		max-width: min(30rem, calc(100vw - 2rem));
+		max-height: min(90dvh, calc(100dvh - 2rem));
+		height: fit-content;
+		border: 1px solid var(--shell-border);
+		border-radius: 1.4rem;
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		padding: 0;
+		overflow: hidden;
+		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+		animation: closure-form-in 180ms var(--modal-easing, ease);
+	}
+
+	dialog.closure-form-dialog[open] {
+		display: flex;
+		flex-direction: column;
+	}
+
+	dialog.closure-form-dialog::backdrop {
+		background: var(--modal-backdrop-tint, rgba(0, 0, 0, 0.45));
+		backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
+	}
+
+	@keyframes closure-form-in {
+		from {
+			opacity: 0;
+			transform: translateY(8px) scale(0.98);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@media (max-width: 639px) {
+		dialog.closure-form-dialog {
+			inset: auto 0 0 0;
+			top: auto;
+			margin: 0;
+			width: 100%;
+			max-width: none;
+			max-height: min(88dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
+			border-radius: 1.6rem 1.6rem 0 0;
+			animation-name: closure-form-sheet-in;
+		}
+
+		@keyframes closure-form-sheet-in {
+			from {
+				opacity: 0;
+				transform: translateY(100%);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+	}
+
+	.closure-form {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		max-height: inherit;
+		width: 100%;
+	}
+
+	.closure-form__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-shrink: 0;
+		padding: 1rem 1.2rem;
+		border-bottom: 1px solid var(--shell-border);
+	}
+
+	.closure-form__title {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 800;
+	}
+
+	.closure-form__close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.1rem;
+		height: 2.1rem;
+		border-radius: 999px;
+		border: 0;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+	}
+
+	.closure-form__close:hover {
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+	}
+
+	.closure-form__body {
+		display: grid;
+		gap: 0.85rem;
+		padding: 1rem 1.2rem;
+		overflow-y: auto;
+		min-height: 0;
+	}
+
+	.closure-form__error {
+		border-radius: 0.75rem;
+		background: rgba(244, 63, 94, 0.1);
+		color: #b91c1c;
+		padding: 0.6rem 0.85rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+	}
+
+	.closure-form__label {
+		display: grid;
+		gap: 0.35rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--on-surface);
+	}
+
+	.closure-form__input {
+		width: 100%;
+		border-radius: 0.75rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.65rem 0.85rem;
+		font-size: 0.9rem;
+		color: var(--on-surface);
+		font-weight: 500;
+		outline: none;
+		transition: border-color 140ms ease, box-shadow 140ms ease;
+	}
+
+	.closure-form__input:focus {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 15%, transparent);
+	}
+
+	.closure-form__row {
+		display: grid;
+		gap: 0.75rem;
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.closure-form__checkbox,
+	.closure-form__radio {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--on-surface);
+		cursor: pointer;
+	}
+
+	.closure-form__scope {
+		display: grid;
+		gap: 0.4rem;
+		border: 1px solid var(--shell-border);
+		border-radius: 0.9rem;
+		padding: 0.7rem 0.9rem;
+	}
+
+	.closure-form__scope legend {
+		font-size: 0.78rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--on-surface-variant);
+		padding: 0 0.3rem;
+	}
+
+	.closure-form__footer {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.5rem;
+		padding: 0.9rem 1.2rem;
+		border-top: 1px solid var(--shell-border);
+	}
+
+	/* --- Org closures side drawer (misma UX que editar sucursal) --- */
+	dialog.closures-org-dialog {
+		position: fixed;
+		inset: auto 0 0 0;
+		top: auto;
+		margin: 0;
+		width: 100%;
+		max-width: none;
+		max-height: min(85dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
+		height: auto;
+		display: none;
+		flex-direction: column;
+		overflow: hidden;
+		border: 1px solid var(--shell-border);
+		border-radius: 1.8rem 1.8rem 0 0;
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		padding: 0;
+		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
+		animation: closures-org-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
+	}
+
+	dialog.closures-org-dialog[open] {
+		display: flex;
+	}
+
+	dialog.closures-org-dialog::backdrop {
+		background: var(--modal-backdrop-tint, rgba(0, 0, 0, 0.4));
+		backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
+		animation: location-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
+	}
+
+	dialog.closures-org-dialog.is-closing {
+		animation: closures-org-out var(--modal-close-duration, 160ms) var(--modal-easing, ease) forwards;
+	}
+
+	dialog.closures-org-dialog.is-closing::backdrop {
+		animation: location-backdrop-out var(--modal-close-duration, 160ms) var(--modal-easing, ease) forwards;
+	}
+
+	@keyframes closures-org-in {
+		from {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes closures-org-out {
+		from {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+	}
+
+	@media (min-width: 640px) and (max-width: 1023px) {
+		dialog.closures-org-dialog {
+			inset: 0;
+			margin: auto;
+			width: min(32rem, calc(100vw - 2rem));
+			max-width: min(32rem, calc(100vw - 2rem));
+			max-height: 90vh;
+			height: auto;
+			border-radius: 1.8rem;
+		}
+
+		@keyframes closures-org-in {
+			from {
+				opacity: 0;
+				transform: translateY(10px) scale(0.98);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		@keyframes closures-org-out {
+			from {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+			to {
+				opacity: 0;
+				transform: translateY(8px) scale(0.98);
+			}
+		}
+	}
+
+	@media (min-width: 1024px) {
+		dialog.closures-org-dialog {
+			inset: 0 0 0 auto;
+			height: 100dvh;
+			max-height: 100dvh;
+			width: max(50vw, 40rem);
+			max-width: max(50vw, 40rem);
+			border-radius: 0;
+			border-top: 0;
+			border-right: 0;
+			border-bottom: 0;
+			box-shadow: none;
+		}
+
+		@keyframes closures-org-in {
+			from {
+				opacity: 0;
+				transform: translateX(100%);
+			}
+			to {
+				opacity: 1;
+				transform: translateX(0);
+			}
+		}
+
+		@keyframes closures-org-out {
+			from {
+				opacity: 1;
+				transform: translateX(0);
+			}
+			to {
+				opacity: 0;
+				transform: translateX(100%);
+			}
+		}
+	}
+
+	.closures-org-dialog__header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-shrink: 0;
+		padding: 1rem 1.25rem;
+		border-bottom: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+	}
+
+	@media (min-width: 640px) {
+		.closures-org-dialog__header {
+			padding: 1.1rem 1.75rem;
+		}
+	}
+
+	.closures-org-dialog__title {
+		margin: 0;
+		font-size: 1.2rem;
+		font-weight: 800;
+		letter-spacing: -0.01em;
+		color: var(--on-surface);
+	}
+
+	.closures-org-dialog__desc {
+		margin: 0.2rem 0 0;
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--on-surface-variant);
+	}
+
+	.closures-org-dialog__close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		flex-shrink: 0;
+		border-radius: 999px;
+		border: 0;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+		transition: background 140ms ease, color 140ms ease;
+	}
+
+	.closures-org-dialog__close:hover {
+		background: var(--surface-variant);
+		color: var(--on-surface);
+	}
+
+	.closures-org-dialog__body {
+		display: grid;
+		gap: 1rem;
+		align-content: start;
+		flex: 1 1 auto;
+		min-height: 0;
+		padding: 1.25rem 1.25rem 1.75rem;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		background: color-mix(in srgb, var(--surface) 30%, transparent);
+	}
+
+	@media (min-width: 640px) {
+		.closures-org-dialog__body {
+			padding: 1.5rem 1.75rem 2rem;
+		}
+	}
+
+	.closures-org-dialog__list {
+		display: grid;
+		gap: 0.55rem;
 	}
 </style>
