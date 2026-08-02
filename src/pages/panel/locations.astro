@@ -669,9 +669,9 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				this.mapInstance.setStyle(
 					getStadiaStyleUrl(nextTheme, this.stadiaKey),
 				);
-				// El pin es DOM overlay; re-sincronizar por si el canvas se recrea.
+				// El pin es DOM overlay; re-sincronizar tras recrear el canvas.
 				this.mapInstance.once("idle", () => {
-					if (this.selectedCoordinates) this.syncMapMarker();
+					this.syncMapMarker();
 				});
 			} catch {
 				// ignore
@@ -880,21 +880,59 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			}
 		};
 
-		/** Reposiciona o crea el pin; se llama también tras resize/load del modal. */
+		/** Crea o reposiciona el pin (sin recrear en cada frame/resize). */
 		private syncMapMarker = (coords?: Coordinates | null) => {
 			const point = coords ?? this.selectedCoordinates;
 			if (!this.mapInstance || !this.mapLibre || !point) return;
+
 			if (!this.mapMarker) {
 				this.mapMarker = createBrandMarker(this.mapLibre, point, {
 					color: "#FB7185",
 					title: "Ubicación de la sucursal",
 				}).addTo(this.mapInstance);
-			} else {
-				this.mapMarker.setLngLat([point.lng, point.lat]);
-				if (!this.mapMarker.getElement().isConnected) {
-					this.mapMarker.addTo(this.mapInstance);
-				}
+				return;
 			}
+
+			this.mapMarker.setLngLat([point.lng, point.lat]);
+			if (!this.mapMarker.getElement().isConnected) {
+				this.mapMarker.addTo(this.mapInstance);
+			}
+		};
+
+		private layoutMapContainer = () => {
+			if (!this.mapInstance) return;
+			try {
+				this.mapInstance.resize();
+			} catch {
+				// ignore
+			}
+		};
+
+		private focusMapOnCoordinates = (zoom = 15) => {
+			if (!this.mapInstance || !this.selectedCoordinates) return;
+			this.mapInstance.easeTo({
+				center: [
+					this.selectedCoordinates.lng,
+					this.selectedCoordinates.lat,
+				],
+				zoom,
+				duration: 0,
+			});
+			this.syncMapMarker(this.selectedCoordinates);
+		};
+
+		private layoutMapViewport = () => {
+			this.layoutMapContainer();
+			if (!this.mapInstance) return;
+			if (this.selectedCoordinates) {
+				this.focusMapOnCoordinates(15);
+				return;
+			}
+			this.mapInstance.setCenter([
+				this.defaultMapCenter.lng,
+				this.defaultMapCenter.lat,
+			]);
+			this.mapInstance.setZoom(12);
 		};
 
 		private ensureMapReady = async () => {
@@ -942,36 +980,24 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					this.setSelectedCoordinates(lat, lng, { center: false });
 				});
 
-				// Tras load/resize el modal ya tiene tamaño real: re-sincronizar pin.
-				this.mapInstance.on("load", () => {
-					if (this.selectedCoordinates) this.syncMapMarker();
-				});
-				this.mapInstance.on("resize", () => {
-					if (this.selectedCoordinates) this.syncMapMarker();
+				this.mapInstance.once("load", () => {
+					this.layoutMapContainer();
+					if (this.selectedCoordinates) {
+						this.focusMapOnCoordinates(15);
+					}
 				});
 			}
 
-			const layoutMap = () => {
-				if (!this.mapInstance) return;
-				try {
-					this.mapInstance.resize();
-				} catch {
-					// ignore
-				}
-				const target =
-					this.selectedCoordinates ?? this.defaultMapCenter;
-				this.mapInstance.setCenter([target.lng, target.lat]);
-				if (this.selectedCoordinates) {
-					this.mapInstance.setZoom(15);
-					this.syncMapMarker(this.selectedCoordinates);
-				}
-			};
-
-			// El dialog anima al abrir: dos frames + timeout para medir el container.
+			// El dialog anima al abrir: solo redimensionar; no recentrar si viene geolocalización.
 			requestAnimationFrame(() => {
 				requestAnimationFrame(() => {
-					layoutMap();
-					window.setTimeout(layoutMap, 120);
+					this.layoutMapContainer();
+					window.setTimeout(() => {
+						this.layoutMapContainer();
+						if (this.selectedCoordinates) {
+							this.focusMapOnCoordinates(15);
+						}
+					}, 120);
 				});
 			});
 
@@ -1390,12 +1416,28 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					return;
 				}
 
+				const accuracy = point.accuracy ?? Number.POSITIVE_INFINITY;
+				if (accuracy > 1_500) {
+					this.setMapStatus(
+						"No pudimos ubicarte con precisión en este dispositivo. Haz clic en el mapa para marcar la sucursal.",
+					);
+					return;
+				}
+
+				const zoom =
+					accuracy <= 50 ? 17 : accuracy <= 150 ? 16 : 15;
 				this.setSelectedCoordinates(point.latitude, point.longitude, {
 					center: true,
-					zoom: 16,
+					zoom,
 				});
+				this.layoutMapContainer();
+
+				const precisionHint =
+					accuracy <= 150
+						? "Ubicación detectada."
+						: `Ubicación aproximada (±${Math.round(accuracy)} m).`;
 				this.setMapStatus(
-					"Ubicación actual detectada. Puedes ajustar el punto haciendo clic en el mapa.",
+					`${precisionHint} Puedes ajustar el punto haciendo clic en el mapa.`,
 				);
 			} finally {
 				if (requestId === this.geolocationRequestSeq) {
@@ -1413,7 +1455,10 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			try {
 				await this.ensureDepartmentsLoaded();
 				await this.ensureMapReady();
-				void this.tryApplyCurrentGeolocation();
+				await this.tryApplyCurrentGeolocation();
+				if (!this.selectedCoordinates) {
+					this.layoutMapViewport();
+				}
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error
@@ -1682,10 +1727,10 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		height: 100% !important;
 	}
 
-	.location-map-shell .maplibregl-marker,
-	.location-map-shell .bookmate-map-marker {
-		z-index: 3;
-		position: absolute;
+	/* El pin no debe capturar drag/zoom del mapa. */
+	.location-map-shell .maplibregl-marker {
+		z-index: 1;
+		pointer-events: none;
 	}
 
 	dialog[data-location-modal] {

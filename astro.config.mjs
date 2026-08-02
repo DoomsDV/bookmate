@@ -85,7 +85,7 @@ export default defineConfig({
     plugins: [tailwindcss()],
     // MapLibre v6 is ESM-only; keep it out of the dep optimizer so the worker
     // sibling is not rewritten to a broken `/node_modules/.vite/deps/*.mjs`
-    // stub with empty MIME. The app sets the worker via `?worker&url`.
+    // stub with empty MIME. The app sets the worker via `?url`.
     ssr: {
       noExternal: ['maplibre-gl'],
     },

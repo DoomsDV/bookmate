@@ -3,7 +3,7 @@ import {
 	closeFilterPopoverSheet,
 	toggleFilterPopoverSheet,
 } from '../lib/panel-filter-popover';
-import { buildStadiaStaticMapUrl } from '../lib/maplibre-loader';
+import { buildStadiaStaticMapUrl, renderBrandMapMarkerOverlay } from '../lib/maplibre-loader';
 import { updateAppPaginationDom } from '../lib/pagination';
 
 type LocationItem = {
@@ -63,13 +63,14 @@ const buildLocationCover = (location: LocationItem) => {
 					decoding="async"
 					data-location-map-preview
 				/>
+				${renderBrandMapMarkerOverlay()}
 			</div>
 		`;
 	}
 
 	return `
 		<div class="locations-card-cover locations-card-cover--brand" aria-hidden="true">
-			<span class="material-symbols-rounded locations-card-cover-icon">location_on</span>
+			${renderBrandMapMarkerOverlay()}
 		</div>
 	`;
 };

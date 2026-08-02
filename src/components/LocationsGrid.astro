@@ -1,6 +1,6 @@
 ---
 import type { Location } from '../lib/locations';
-import { buildStadiaStaticMapUrl } from '../lib/maplibre-loader';
+import { buildBrandMarkerSvgHtml, buildStadiaStaticMapUrl } from '../lib/maplibre-loader';
 import AppPagination from './AppPagination.astro';
 
 interface Props {
@@ -215,10 +215,19 @@ const locationMapPreview = (location: Location) => {
 								decoding="async"
 								data-location-map-preview
 							/>
+							<span
+								class="bookmate-map-marker-overlay"
+								aria-hidden="true"
+								set:html={buildBrandMarkerSvgHtml()}
+							/>
 						</div>
 					) : (
 						<div class="locations-card-cover locations-card-cover--brand" aria-hidden="true">
-							<span class="material-symbols-rounded locations-card-cover-icon">location_on</span>
+							<span
+								class="bookmate-map-marker-overlay"
+								aria-hidden="true"
+								set:html={buildBrandMarkerSvgHtml()}
+							/>
 						</div>
 					)}
 
@@ -460,10 +469,29 @@ const locationMapPreview = (location: Location) => {
 			);
 	}
 
-	.locations-card-cover-icon {
-		font-size: 2rem;
-		color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
-		opacity: 0.9;
+	.locations-card-cover .bookmate-map-marker-overlay {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 28px;
+		height: 36px;
+		transform: translate(-50%, -100%);
+		pointer-events: none;
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+		z-index: 1;
+	}
+
+	.locations-card-cover .bookmate-map-marker-overlay svg {
+		display: block;
+		width: 28px;
+		height: 36px;
+	}
+
+	.locations-card-cover--brand .bookmate-map-marker-overlay {
+		position: relative;
+		left: auto;
+		top: auto;
+		transform: none;
 	}
 
 	.locations-card-cover img {
