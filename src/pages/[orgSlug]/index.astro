@@ -44,10 +44,7 @@ const whatsappHref = (phone: string) => {
 	return `https://wa.me/${digits}`;
 };
 
-const googleMapsApiKey =
-	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
-	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
-	'';
+const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 
 let hub: PublicOrgHub | null = null;
 let loadError = '';
@@ -151,7 +148,7 @@ const serializedProfessionals = professionals.length
 	<main
 		class="hub-root"
 		data-hub-root
-		data-google-maps-api-key={googleMapsApiKey}
+		data-stadia-key={stadiaMapsKey}
 		data-hub-professionals={serializedProfessionals}
 	>
 		{
@@ -870,138 +867,67 @@ const serializedProfessionals = professionals.length
 </Layout>
 
 <script>
-	type GoogleMapsNamespace = {
-		Map: new (
-			el: HTMLElement,
-			opts: Record<string, unknown>
-		) => {
-			setCenter: (c: { lat: number; lng: number }) => void;
-			setOptions?: (opts: Record<string, unknown>) => void;
-		};
-		Marker: new (opts: Record<string, unknown>) => unknown;
-		event?: {
-			trigger?: (instance: unknown, name: string) => void;
-			addListenerOnce?: (instance: unknown, name: string, handler: () => void) => void;
-		};
-	};
-
-	type WindowWithGoogleMaps = Window & {
-		google?: { maps?: GoogleMapsNamespace };
-		__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
-	};
+	// MapLibre types are imported lazily via the loader.
+	type MapLibreMap = InstanceType<
+		Awaited<ReturnType<typeof import('../../lib/maplibre-loader')['loadMapLibre']>>['Map']
+	>;
 
 	type HubMapHandle = {
-		map: {
-			setCenter: (c: { lat: number; lng: number }) => void;
-			setOptions?: (opts: Record<string, unknown>) => void;
-		};
+		map: MapLibreMap;
 		center: { lat: number; lng: number };
 	};
 
 	const VALID_TABS = new Set(['overview', 'galeria', 'equipo', 'sucursales']);
 
-	const HUB_MAP_DARK_STYLES = [
-		{ elementType: 'geometry', stylers: [{ color: '#1a1a1a' }] },
-		{ elementType: 'labels.text.stroke', stylers: [{ color: '#1a1a1a' }] },
-		{ elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
-		{ featureType: 'poi', stylers: [{ visibility: 'off' }] },
-		{ featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
-		{ featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#1f2420' }] },
-		{ featureType: 'poi.park', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-		{ featureType: 'transit', stylers: [{ visibility: 'off' }] },
-		{ featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2a2a2a' }] },
-		{ featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#222222' }] },
-		{ featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#6b7280' }] },
-		{ featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-		{ featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#333333' }] },
-		{ featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111827' }] },
-		{ featureType: 'water', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-		{
-			featureType: 'administrative',
-			elementType: 'labels.text.fill',
-			stylers: [{ color: '#6b7280' }],
-		},
-	];
+	let hubMapLibreModule:
+		| Awaited<ReturnType<typeof import('../../lib/maplibre-loader')['loadMapLibre']>>
+		| null = null;
 
-	const HUB_MAP_LIGHT_STYLES = [
-		{ featureType: 'poi', stylers: [{ visibility: 'off' }] },
-		{ featureType: 'poi.business', stylers: [{ visibility: 'off' }] },
-		{ featureType: 'transit', stylers: [{ visibility: 'off' }] },
-		{ featureType: 'road', elementType: 'labels.icon', stylers: [{ visibility: 'off' }] },
-	];
-
-	const isHubDarkTheme = () => document.documentElement.dataset.theme === 'dark';
-
-	const hubMapThemeOptions = (dark: boolean) => ({
-		backgroundColor: dark ? '#141414' : '#eef2f7',
-		styles: dark ? HUB_MAP_DARK_STYLES : HUB_MAP_LIGHT_STYLES,
-	});
-
-	const loadGoogleMaps = async (apiKey: string): Promise<GoogleMapsNamespace> => {
-		const win = window as WindowWithGoogleMaps;
-		if (win.google?.maps) return win.google.maps;
-		if (win.__bookmateGoogleMapsLoader) return win.__bookmateGoogleMapsLoader;
-
-		win.__bookmateGoogleMapsLoader = new Promise<GoogleMapsNamespace>((resolve, reject) => {
-			const existing = document.querySelector<HTMLScriptElement>('script[data-google-maps-loader]');
-			if (existing) {
-				existing.addEventListener(
-					'load',
-					() => {
-						const maps = (window as WindowWithGoogleMaps).google?.maps;
-						maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
-					},
-					{ once: true }
-				);
-				existing.addEventListener(
-					'error',
-					() => reject(new Error('No fue posible cargar Google Maps.')),
-					{ once: true }
-				);
-				return;
-			}
-
-			const script = document.createElement('script');
-			script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&v=weekly`;
-			script.async = true;
-			script.defer = true;
-			script.dataset.googleMapsLoader = 'true';
-			script.addEventListener(
-				'load',
-				() => {
-					const maps = (window as WindowWithGoogleMaps).google?.maps;
-					maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
-				},
-				{ once: true }
-			);
-			script.addEventListener(
-				'error',
-				() => reject(new Error('No fue posible cargar Google Maps.')),
-				{ once: true }
-			);
-			document.head.appendChild(script);
-		});
-
-		try {
-			return await win.__bookmateGoogleMapsLoader;
-		} catch (error) {
-			win.__bookmateGoogleMapsLoader = null;
-			throw error;
+	const loadHubMapLibre = async () => {
+		if (!hubMapLibreModule) {
+			const mod = await import('../../lib/maplibre-loader');
+			hubMapLibreModule = await mod.loadMapLibre();
 		}
+		return hubMapLibreModule;
+	};
+
+	const getHubStyleUrl = async (key: string) => {
+		const mod = await import('../../lib/maplibre-loader');
+		return mod.getStadiaStyleUrl(mod.resolveMapTheme(), key);
+	};
+
+	const placeHubMarker = async (
+		maplibregl: Awaited<ReturnType<typeof loadHubMapLibre>>,
+		map: MapLibreMap,
+		coords: { lat: number; lng: number },
+		title?: string
+	) => {
+		const mod = await import('../../lib/maplibre-loader');
+		return mod
+			.createBrandMarker(maplibregl, coords, { color: '#FB7185', title })
+			.addTo(map);
 	};
 
 	const hubMapInstances = new WeakMap<HTMLElement, HubMapHandle>();
 	const hubMapInstanceList: HubMapHandle[] = [];
 
-	const syncHubMapsTheme = () => {
-		const opts = hubMapThemeOptions(isHubDarkTheme());
+	const syncHubMapsTheme = async () => {
+		if (!hubMapInstanceList.length) return;
+		const canvas = document.querySelector<HTMLElement>('[data-hub-root]');
+		const apiKey = String(canvas?.dataset.stadiaKey || '').trim();
+		if (!apiKey) return;
+		const styleUrl = await getHubStyleUrl(apiKey);
 		hubMapInstanceList.forEach((entry) => {
-			entry.map.setOptions?.(opts);
+			try {
+				entry.map.setStyle(styleUrl);
+			} catch {
+				// ignore
+			}
 		});
 	};
 
 	const initHubMaps = async (root: HTMLElement) => {
-		const apiKey = String(root.dataset.googleMapsApiKey || '').trim();
+		const apiKey = String(root.dataset.stadiaKey || '').trim();
 		const canvases = Array.from(root.querySelectorAll<HTMLElement>('[data-hub-map]'));
 		if (!canvases.length) return;
 
@@ -1021,16 +947,24 @@ const serializedProfessionals = professionals.length
 		}
 
 		try {
-			const maps = await loadGoogleMaps(apiKey);
-			const dark = isHubDarkTheme();
+			const maplibregl = await loadHubMapLibre();
+			const styleUrl = await getHubStyleUrl(apiKey);
 			canvases.forEach((canvas) => {
 				const existing = hubMapInstances.get(canvas);
 				if (existing) {
-					existing.map.setOptions?.(hubMapThemeOptions(dark));
+					try {
+						existing.map.setStyle(styleUrl);
+					} catch {
+						// ignore
+					}
 					markMapSettled(canvas);
 					window.setTimeout(() => {
-						maps.event?.trigger?.(existing.map, 'resize');
-						existing.map.setCenter(existing.center);
+						try {
+							existing.map.resize();
+						} catch {
+							// ignore
+						}
+						existing.map.setCenter([existing.center.lng, existing.center.lat]);
 					}, 80);
 					return;
 				}
@@ -1051,20 +985,15 @@ const serializedProfessionals = professionals.length
 				}
 
 				const center = { lat, lng };
-				const map = new maps.Map(mount, {
-					center,
+				const map = new maplibregl.Map({
+					container: mount,
+					style: styleUrl,
+					center: [lng, lat],
 					zoom: 16,
-					disableDefaultUI: true,
-					gestureHandling: 'none',
-					keyboardShortcuts: false,
-					clickableIcons: false,
-					...hubMapThemeOptions(dark),
+					interactive: false,
+					attributionControl: { compact: true },
 				});
-				new maps.Marker({
-					map,
-					position: center,
-					title: String(canvas.dataset.title || 'Sucursal'),
-				});
+				void placeHubMarker(maplibregl, map, center, String(canvas.dataset.title || 'Sucursal'));
 				const handle: HubMapHandle = { map, center };
 				hubMapInstances.set(canvas, handle);
 				hubMapInstanceList.push(handle);
@@ -1076,14 +1005,16 @@ const serializedProfessionals = professionals.length
 					revealed = true;
 					markMapSettled(canvas);
 				};
-				if (maps.event?.addListenerOnce) {
-					maps.event.addListenerOnce(map, 'idle', reveal);
-				}
+				map.once('idle', reveal);
 				window.setTimeout(reveal, 1400);
 
 				window.setTimeout(() => {
-					maps.event?.trigger?.(map, 'resize');
-					map.setCenter(center);
+					try {
+						map.resize();
+					} catch {
+						// ignore
+					}
+					map.setCenter([lng, lat]);
 				}, 80);
 			});
 		} catch {
@@ -1313,11 +1244,11 @@ const serializedProfessionals = professionals.length
 					sucursalesPanel.setAttribute('aria-busy', 'true');
 				}
 
-				const apiKey = String(root.dataset.googleMapsApiKey || '').trim();
+				const apiKey = String(root.dataset.stadiaKey || '').trim();
 				const startedAt = Date.now();
 				if (apiKey) {
 					try {
-						await loadGoogleMaps(apiKey);
+						await loadHubMapLibre();
 					} catch {
 						/* initHubMaps maneja el error visual */
 					}
@@ -1582,7 +1513,7 @@ const serializedProfessionals = professionals.length
 
 		const renderModalMap = async (lat: number, lng: number, title: string) => {
 			if (!mapModalCanvas) return;
-			const apiKey = String(root.dataset.googleMapsApiKey || '').trim();
+			const apiKey = String(root.dataset.stadiaKey || '').trim();
 			if (!apiKey) {
 				setMapModalStatus('Mapa no disponible.');
 				setMapModalLoading(false);
@@ -1592,45 +1523,51 @@ const serializedProfessionals = professionals.length
 			setMapModalLoading(true);
 			setMapModalStatus('');
 			try {
-				const maps = await loadGoogleMaps(apiKey);
+				const maplibregl = await loadHubMapLibre();
+				const styleUrl = await getHubStyleUrl(apiKey);
 				const center = { lat, lng };
-				const dark = isHubDarkTheme();
 				if (modalMapHandle) {
-					modalMapHandle.map.setOptions?.({
-						...hubMapThemeOptions(dark),
-						center,
-					});
-					modalMapHandle.map.setCenter(center);
+					try {
+						modalMapHandle.map.setStyle(styleUrl);
+					} catch {
+						// ignore
+					}
+					modalMapHandle.map.setCenter([lng, lat]);
 					modalMapHandle.center = center;
 					window.setTimeout(() => {
-						maps.event?.trigger?.(modalMapHandle!.map, 'resize');
-						modalMapHandle!.map.setCenter(center);
+						try {
+							modalMapHandle!.map.resize();
+						} catch {
+							// ignore
+						}
+						modalMapHandle!.map.setCenter([lng, lat]);
 					}, 80);
 				} else {
 					mapModalCanvas.innerHTML = '';
-					const map = new maps.Map(mapModalCanvas, {
-						center,
+					const map = new maplibregl.Map({
+						container: mapModalCanvas,
+						style: styleUrl,
+						center: [lng, lat],
 						zoom: 16,
-						disableDefaultUI: false,
-						mapTypeControl: false,
-						streetViewControl: false,
-						fullscreenControl: false,
-						zoomControl: true,
-						gestureHandling: 'greedy',
-						keyboardShortcuts: false,
-						clickableIcons: false,
-						...hubMapThemeOptions(dark),
+						attributionControl: { compact: true },
 					});
-					new maps.Marker({
-						map,
-						position: center,
-						title,
-					});
+					map.addControl(
+						new maplibregl.NavigationControl({ showCompass: false }),
+						'top-right'
+					);
+					const marker = await placeHubMarker(maplibregl, map, center, title);
+					marker.setPopup(
+						new maplibregl.Popup({ closeButton: false, offset: 24 }).setText(title)
+					);
 					modalMapHandle = { map, center };
 					hubMapInstanceList.push(modalMapHandle);
 					window.setTimeout(() => {
-						maps.event?.trigger?.(map, 'resize');
-						map.setCenter(center);
+						try {
+							map.resize();
+						} catch {
+							// ignore
+						}
+						map.setCenter([lng, lat]);
 					}, 120);
 				}
 			} catch {

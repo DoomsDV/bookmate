@@ -9,6 +9,13 @@ import {
 	toDateStart,
 } from '../lib/booking-datetime';
 import {
+	createBrandMarker,
+	getStadiaStyleUrl,
+	loadMapLibre,
+	resolveMapTheme,
+	type MapLibreModule,
+} from '../lib/maplibre-loader';
+import {
 	mergePublicBookingLocations,
 	normalizePublicBookingLocations,
 } from '../lib/public-booking-locations';
@@ -101,17 +108,6 @@ type CreatedAppointmentApiData = {
 };
 
 type Coordinates = { lat: number; lng: number };
-
-type GoogleMapsNamespace = {
-	Map: new (container: HTMLElement, options: Record<string, unknown>) => any;
-	Marker: new (options: Record<string, unknown>) => any;
-	event?: { trigger?: (instance: unknown, eventName: string) => void };
-};
-
-type WindowWithGoogleMaps = Window & {
-	google?: { maps?: GoogleMapsNamespace };
-	__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
-};
 
 const toPositiveInt = (value: unknown, fallback = 1) => {
 	const parsed = Number(value);
@@ -226,20 +222,6 @@ const readApiMessage = (data: any, fallbackMessage: string) => {
 	const message = typeof data?.message === 'string' ? data.message.trim() : '';
 	return message || fallbackMessage;
 };
-
-const darkMapStyles = [
-	{ elementType: 'geometry', stylers: [{ color: '#1d1f24' }] },
-	{ elementType: 'labels.text.fill', stylers: [{ color: '#c9d1d9' }] },
-	{ elementType: 'labels.text.stroke', stylers: [{ color: '#1d1f24' }] },
-	{ featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2a2d33' }] },
-	{ featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#3a3f47' }] },
-	{ featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9aa4b2' }] },
-	{ featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#23262c' }] },
-	{ featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#8a94a3' }] },
-	{ featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#23262c' }] },
-	{ featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111827' }] },
-	{ featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4f8cc9' }] },
-];
 
 class PublicBookingClientError extends Error {
 	status: number;
@@ -391,7 +373,7 @@ export const initializePublicBookingPage = () => {
 		bookingLocations.find((location) => location.id_location === configuredLocationId) ??
 		bookingLocations[0] ??
 		null;
-	const mapsApiKey = String(root.dataset.googleMapsApiKey || '').trim();
+	const stadiaKey = String(root.dataset.stadiaKey || '').trim();
 	const today = getTodayStart();
 
 	let step: WizardStep = 1;
@@ -413,8 +395,9 @@ export const initializePublicBookingPage = () => {
 	let pendingSipapHold: ReturnType<typeof unwrapSipapHold> | null = null;
 	let customerValidationSeq = 0;
 	let validatedCustomerPhoneE164 = '';
-	let mapInstance: any = null;
-	let mapMarker: any = null;
+	let mapLibre: MapLibreModule | null = null;
+	let mapInstance: InstanceType<MapLibreModule['Map']> | null = null;
+	let mapMarker: InstanceType<MapLibreModule['Marker']> | null = null;
 	let mapOpenSeq = 0;
 
 	const draftStorageKey = proBookingDraftKey(organizationSlug, professionalSlug);
@@ -551,45 +534,12 @@ export const initializePublicBookingPage = () => {
 		return matchedGroup?.location ?? selectedLocation;
 	};
 
-	const loadGoogleMaps = async (): Promise<GoogleMapsNamespace> => {
-		if (!mapsApiKey) {
-			throw new Error('No se encontró la API key de Google Maps para mostrar la ubicación.');
+	const ensureMapLibre = async (): Promise<MapLibreModule> => {
+		if (!stadiaKey) {
+			throw new Error('No se encontró la API key de Stadia Maps para mostrar la ubicación.');
 		}
-
-		const win = window as WindowWithGoogleMaps;
-		if (win.google?.maps) return win.google.maps;
-		if (win.__bookmateGoogleMapsLoader) return win.__bookmateGoogleMapsLoader;
-
-		win.__bookmateGoogleMapsLoader = new Promise<GoogleMapsNamespace>((resolve, reject) => {
-			const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-maps-loader]');
-			if (existingScript) {
-				existingScript.addEventListener('load', () => {
-					const maps = (window as WindowWithGoogleMaps).google?.maps;
-					maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
-				}, { once: true });
-				existingScript.addEventListener('error', () => reject(new Error('No fue posible cargar Google Maps.')), { once: true });
-				return;
-			}
-
-			const script = document.createElement('script');
-			script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsApiKey)}&v=weekly`;
-			script.async = true;
-			script.defer = true;
-			script.dataset.googleMapsLoader = 'true';
-			script.addEventListener('load', () => {
-				const maps = (window as WindowWithGoogleMaps).google?.maps;
-				maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
-			}, { once: true });
-			script.addEventListener('error', () => reject(new Error('No fue posible cargar Google Maps.')), { once: true });
-			document.head.appendChild(script);
-		});
-
-		try {
-			return await win.__bookmateGoogleMapsLoader;
-		} catch (error) {
-			win.__bookmateGoogleMapsLoader = null;
-			throw error;
-		}
+		if (!mapLibre) mapLibre = await loadMapLibre();
+		return mapLibre;
 	};
 
 	type OpenLocationMapOptions = {
@@ -656,41 +606,45 @@ export const initializePublicBookingPage = () => {
 			const locationTitle =
 				String(mapLocation.name || location?.name || '').trim() || 'Ubicación';
 
-			const maps = await loadGoogleMaps();
+			const maplibregl = await ensureMapLibre();
 			if (!isActiveMapOpen(mapLocation.id_location)) return;
 
 			if (!mapInstance) {
-				mapInstance = new maps.Map(mapCanvas, {
-					center: coords,
+				mapInstance = new maplibregl.Map({
+					container: mapCanvas,
+					style: getStadiaStyleUrl(resolveMapTheme(), stadiaKey),
+					center: [coords.lng, coords.lat],
 					zoom: 16,
-					disableDefaultUI: false,
-					mapTypeControl: false,
-					streetViewControl: false,
-					fullscreenControl: false,
-					gestureHandling: 'cooperative',
-					styles: darkMapStyles,
+					attributionControl: { compact: true },
+					cooperativeGestures: true,
 				});
-				mapMarker = new maps.Marker({
-					map: mapInstance,
-					position: coords,
+				mapInstance.addControl(
+					new maplibregl.NavigationControl({ showCompass: false }),
+					'top-right'
+				);
+				mapMarker = createBrandMarker(maplibregl, coords, {
+					color: '#FB7185',
 					title: locationTitle,
-				});
+				})
+					.setPopup(new maplibregl.Popup({ closeButton: false, offset: 24 }).setText(locationTitle))
+					.addTo(mapInstance);
 			} else {
-				mapInstance.setOptions?.({
-					styles: darkMapStyles,
-					gestureHandling: 'cooperative',
-					fullscreenControl: false,
-				});
-				mapInstance.setCenter(coords);
+				mapInstance.setCenter([coords.lng, coords.lat]);
 				mapInstance.setZoom(16);
-				mapMarker?.setPosition?.(coords);
-				mapMarker?.setTitle?.(locationTitle);
+				mapMarker?.setLngLat([coords.lng, coords.lat]);
+				mapMarker?.setPopup(
+					new maplibregl.Popup({ closeButton: false, offset: 24 }).setText(locationTitle)
+				);
 			}
 
 			window.setTimeout(() => {
 				if (!isActiveMapOpen(mapLocation.id_location)) return;
-				maps.event?.trigger?.(mapInstance, 'resize');
-				mapInstance?.setCenter?.(coords);
+				try {
+					mapInstance?.resize();
+				} catch {
+					// ignore
+				}
+				mapInstance?.setCenter([coords!.lng, coords!.lat]);
 				if (openSeq === mapOpenSeq) {
 					setMapLoading(false);
 				}
@@ -1615,42 +1569,12 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
-	const buildLocationStaticMapUrl = (location: BookingLocation): string | null => {
-		if (!mapsApiKey) return null;
-		const coords = getLocationCoordinatesFrom(location);
-		if (!coords) return null;
-		const size = '480x360';
-		const marker = `color:0xA8C7FA%7C${coords.lat},${coords.lng}`;
-		// Precarga liviana (Static Maps). El JS interactivo solo se carga en el modal.
-		return (
-			`https://maps.googleapis.com/maps/api/staticmap` +
-			`?center=${coords.lat},${coords.lng}` +
-			`&zoom=15&size=${size}&scale=2&maptype=roadmap` +
-			`&markers=${marker}` +
-			`&style=feature:all%7Celement:geometry%7Ccolor:0x1d1d1f` +
-			`&style=feature:all%7Celement:labels.text.fill%7Ccolor:0xc4c6d0` +
-			`&style=feature:all%7Celement:labels.text.stroke%7Ccolor:0x1d1d1f` +
-			`&style=feature:road%7Celement:geometry%7Ccolor:0x2e2e32` +
-			`&style=feature:water%7Celement:geometry%7Ccolor:0x0f172a` +
-			`&style=feature:poi%7Cvisibility:off` +
-			`&key=${encodeURIComponent(mapsApiKey)}`
-		);
-	};
-
 	const buildLocationCardContent = (location: BookingLocation, options?: { showMap?: boolean }) => {
 		const name = String(location.name || 'Sucursal').trim() || 'Sucursal';
 		const address = String(location.address || '').trim();
 		const showMap = options?.showMap !== false && canShowLocationMap(location);
-		const staticMapUrl = showMap ? buildLocationStaticMapUrl(location) : null;
-		const previewInner = staticMapUrl
-			? `<span class="public-location-card__map-skeleton" aria-hidden="true"></span><img class="public-location-card__map-img" src="${escapeHtml(staticMapUrl)}" alt="" loading="lazy" decoding="async" data-location-map-img />`
-			: '';
 		const preview = showMap
-			? `<button type="button" class="public-location-card__preview${
-					staticMapUrl ? ' is-map-loading' : ' public-location-card__preview--brand'
-				}" data-location-map-trigger aria-label="Ver mapa de ${escapeHtml(name)}">
-					${previewInner}
-				</button>`
+			? `<button type="button" class="public-location-card__preview public-location-card__preview--brand" data-location-map-trigger aria-label="Ver mapa de ${escapeHtml(name)}"><span class="public-location-card__preview-icon material-symbols-rounded" aria-hidden="true">location_on</span><span class="public-location-card__preview-label">Ver ubicación</span></button>`
 			: '';
 		return `
 			${preview}

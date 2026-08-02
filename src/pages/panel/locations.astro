@@ -12,14 +12,11 @@ const canManageLocations = Number(Astro.locals.roleId ?? 0) === ROLES.ADMIN;
 const rawPage = Number(Astro.url.searchParams.get("page") || "1");
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
-const googleMapsApiKey =
-	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
-	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
-	"";
+const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 ---
 
 <Layout>
-	<location-manager data-google-maps-api-key={googleMapsApiKey} data-can-manage={canManageLocations ? "true" : "false"}>
+	<location-manager data-stadia-key={stadiaMapsKey} data-can-manage={canManageLocations ? "true" : "false"}>
 		<div class="min-h-screen bg-(--page-background) transition-colors duration-300">
 			<div
 				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -364,6 +361,14 @@ const googleMapsApiKey =
 	import { reloadPageWithFlash } from "../../lib/flash";
 	import { getBrowserGeolocation } from "../../lib/geolocation-browser";
 	import {
+		createBrandMarker,
+		getStadiaStyleUrl,
+		loadMapLibre,
+		resolveMapTheme,
+		type MapLibreModule,
+		type MapTheme,
+	} from "../../lib/maplibre-loader";
+	import {
 		destroySearchableSelect,
 		rebuildSearchableSelect,
 		setSearchableSelectDisabled,
@@ -371,6 +376,8 @@ const googleMapsApiKey =
 
 	type LocationMode = "create" | "edit";
 	type Coordinates = { lat: number; lng: number };
+	type MapLibreMap = InstanceType<MapLibreModule["Map"]>;
+	type MapLibreMarker = InstanceType<MapLibreModule["Marker"]>;
 	type DepartmentOption = { id_department: number; description?: string };
 	type CityOption = { id_city: number; description?: string };
 
@@ -382,21 +389,6 @@ const googleMapsApiKey =
 		is_active: 0 | 1;
 		latitude?: number;
 		longitude?: number;
-	};
-
-	type GoogleMapsNamespace = {
-		Map: new (
-			container: HTMLElement,
-			options: Record<string, unknown>,
-		) => any;
-		Marker: new (options: Record<string, unknown>) => any;
-		Point: new (x: number, y: number) => unknown;
-		event?: { trigger?: (instance: unknown, eventName: string) => void };
-	};
-
-	type WindowWithGoogleMaps = Window & {
-		google?: { maps?: GoogleMapsNamespace };
-		__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
 	};
 
 	type SelectOptionsConfig<T> = {
@@ -425,59 +417,18 @@ const googleMapsApiKey =
 		private departmentsLoadPromise: Promise<void> | null = null;
 		private citiesByDepartment = new Map<number, CityOption[]>();
 
-		private mapsApiKey = "";
+		private stadiaKey = "";
 		private defaultMapCenter: Coordinates = {
 			lat: -25.28646,
 			lng: -57.647,
 		};
 		private readonly mapIdleMessage =
 			"Haz clic en el mapa para registrar coordenadas exactas. En móvil, usa dos dedos para mover o hacer zoom.";
-		private readonly darkMapStyles = [
-			{ elementType: "geometry", stylers: [{ color: "#1d1d1f" }] },
-			{ elementType: "labels.text.fill", stylers: [{ color: "#c4c6d0" }] },
-			{ elementType: "labels.text.stroke", stylers: [{ color: "#1d1d1f" }] },
-			{
-				featureType: "road",
-				elementType: "geometry",
-				stylers: [{ color: "#2e2e32" }],
-			},
-			{
-				featureType: "road",
-				elementType: "geometry.stroke",
-				stylers: [{ color: "#1d1d1f" }],
-			},
-			{
-				featureType: "road",
-				elementType: "labels.text.fill",
-				stylers: [{ color: "#c4c6d0" }],
-			},
-			{
-				featureType: "road.highway",
-				elementType: "geometry",
-				stylers: [{ color: "#3a3a40" }],
-			},
-			{
-				featureType: "water",
-				elementType: "geometry",
-				stylers: [{ color: "#0f172a" }],
-			},
-			{
-				featureType: "water",
-				elementType: "labels.text.fill",
-				stylers: [{ color: "#64748b" }],
-			},
-			{
-				featureType: "poi",
-				stylers: [{ visibility: "off" }],
-			},
-			{
-				featureType: "transit",
-				stylers: [{ visibility: "off" }],
-			},
-		];
 		private selectedCoordinates: Coordinates | null = null;
-		private mapInstance: any = null;
-		private mapMarker: any = null;
+		private mapLibre: MapLibreModule | null = null;
+		private mapInstance: MapLibreMap | null = null;
+		private mapMarker: MapLibreMarker | null = null;
+		private mapCurrentTheme: MapTheme = "dark";
 
 		private els!: {
 			modal: HTMLDialogElement | null;
@@ -596,9 +547,7 @@ const googleMapsApiKey =
 					this.querySelectorAll<HTMLElement>("[data-field-error]"),
 			};
 
-			this.mapsApiKey = String(
-				this.dataset.googleMapsApiKey || "",
-			).trim();
+			this.stadiaKey = String(this.dataset.stadiaKey || "").trim();
 
 			this.addEventListener("click", this.handleRootClick, { signal });
 			this.addEventListener("keydown", this.handleRootKeydown, {
@@ -662,38 +611,30 @@ const googleMapsApiKey =
 			this.freezeMapForBackground();
 		};
 
-		/** Evita trabajo de tiles/gestures de Maps en segundo plano. */
+		/** Detiene interacciones cuando la pestaña queda en segundo plano. */
 		private freezeMapForBackground = () => {
-			if (!this.mapInstance?.setOptions) {
-				this.destroyMapInstance();
-				return;
-			}
+			if (!this.mapInstance) return;
 			try {
-				this.mapInstance.setOptions({
-					gestureHandling: "none",
-					draggable: false,
-					scrollwheel: false,
-					disableDoubleClickZoom: true,
-				});
+				this.mapInstance.dragPan.disable();
+				this.mapInstance.scrollZoom.disable();
+				this.mapInstance.doubleClickZoom.disable();
+				this.mapInstance.touchZoomRotate.disable();
 			} catch {
 				this.destroyMapInstance();
 			}
 		};
 
 		private unfreezeMapFromBackground = () => {
-			if (!this.mapInstance?.setOptions) return;
+			if (!this.mapInstance) return;
 			if (!this.els.modal?.open) {
 				this.destroyMapInstance();
 				return;
 			}
-			const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
 			try {
-				this.mapInstance.setOptions({
-					gestureHandling: isCoarsePointer ? "cooperative" : "greedy",
-					draggable: true,
-					scrollwheel: true,
-					disableDoubleClickZoom: false,
-				});
+				this.mapInstance.dragPan.enable();
+				this.mapInstance.scrollZoom.enable();
+				this.mapInstance.doubleClickZoom.enable();
+				this.mapInstance.touchZoomRotate.enable();
 			} catch {
 				// ignore
 			}
@@ -701,19 +642,16 @@ const googleMapsApiKey =
 
 		private destroyMapInstance = () => {
 			try {
-				this.mapMarker?.setMap?.(null);
+				this.mapMarker?.remove();
 			} catch {
 				// ignore
 			}
 			this.mapMarker = null;
 
-			const maps = (window as any).google?.maps;
-			if (this.mapInstance && maps?.event?.clearInstanceListeners) {
-				try {
-					maps.event.clearInstanceListeners(this.mapInstance);
-				} catch {
-					// ignore
-				}
+			try {
+				this.mapInstance?.remove();
+			} catch {
+				// ignore
 			}
 			this.mapInstance = null;
 
@@ -722,15 +660,22 @@ const googleMapsApiKey =
 			}
 		};
 
-		private isDarkTheme = () =>
-			document.documentElement.dataset.theme === "dark";
-
-		private getMapStyles = () =>
-			this.isDarkTheme() ? this.darkMapStyles : [];
-
 		private syncMapTheme = () => {
-			if (!this.mapInstance?.setOptions) return;
-			this.mapInstance.setOptions({ styles: this.getMapStyles() });
+			if (!this.mapInstance) return;
+			const nextTheme = resolveMapTheme();
+			if (nextTheme === this.mapCurrentTheme) return;
+			this.mapCurrentTheme = nextTheme;
+			try {
+				this.mapInstance.setStyle(
+					getStadiaStyleUrl(nextTheme, this.stadiaKey),
+				);
+				// El pin es DOM overlay; re-sincronizar por si el canvas se recrea.
+				this.mapInstance.once("idle", () => {
+					if (this.selectedCoordinates) this.syncMapMarker();
+				});
+			} catch {
+				// ignore
+			}
 		};
 
 		private handleRootClick = (event: MouseEvent) => {
@@ -907,7 +852,7 @@ const googleMapsApiKey =
 				if (this.formEls.latitude) this.formEls.latitude.value = "";
 				if (this.formEls.longitude) this.formEls.longitude.value = "";
 				this.setMapStatus(this.mapIdleMessage);
-				if (this.mapMarker) this.mapMarker.setMap(null);
+				if (this.mapMarker) this.mapMarker.remove();
 				this.mapMarker = null;
 				return;
 			}
@@ -923,158 +868,112 @@ const googleMapsApiKey =
 				this.formEls.longitude.value = coords.lng.toFixed(6);
 			this.setMapStatus("");
 
-			if (!this.mapInstance) return;
-			if (!this.mapMarker) {
-				const maps = (window as WindowWithGoogleMaps).google?.maps;
-				if (!maps) return;
-				this.mapMarker = new maps.Marker({
-					map: this.mapInstance,
-					position: coords,
-					icon: {
-						path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
-						fillColor: "#FB7185",
-						fillOpacity: 1,
-						strokeColor: "#9F1239",
-						strokeWeight: 1.25,
-						scale: 1.55,
-						anchor: new maps.Point(12, 22),
-					},
-				});
-			} else {
-				this.mapMarker.setMap(this.mapInstance);
-				this.mapMarker.setPosition(coords);
-			}
+			if (!this.mapInstance || !this.mapLibre) return;
+			this.syncMapMarker(coords);
 
 			if (options.center !== false) {
-				this.mapInstance.setCenter(coords);
-				this.mapInstance.setZoom(options.zoom ?? 15);
+				this.mapInstance.easeTo({
+					center: [coords.lng, coords.lat],
+					zoom: options.zoom ?? 15,
+					duration: 220,
+				});
 			}
 		};
 
-		private loadGoogleMaps = async (): Promise<GoogleMapsNamespace> => {
-			if (!this.mapsApiKey) {
-				throw new Error(
-					"No se encontró la API key de Google Maps para el mapa de sucursales.",
-				);
-			}
-
-			const win = window as WindowWithGoogleMaps;
-			if (win.google?.maps) return win.google.maps;
-			if (win.__bookmateGoogleMapsLoader)
-				return win.__bookmateGoogleMapsLoader;
-
-			win.__bookmateGoogleMapsLoader = new Promise<GoogleMapsNamespace>(
-				(resolve, reject) => {
-					const handleLoad = () => {
-						const maps = (window as WindowWithGoogleMaps).google
-							?.maps;
-						if (!maps) {
-							reject(
-								new Error(
-									"Google Maps cargó, pero no se encontró la librería maps.",
-								),
-							);
-							return;
-						}
-						resolve(maps);
-					};
-
-					const existingScript =
-						document.querySelector<HTMLScriptElement>(
-							"script[data-google-maps-loader]",
-						);
-					if (existingScript) {
-						existingScript.addEventListener("load", handleLoad, {
-							once: true,
-						});
-						existingScript.addEventListener(
-							"error",
-							() =>
-								reject(
-									new Error(
-										"No fue posible cargar Google Maps.",
-									),
-								),
-							{ once: true },
-						);
-						return;
-					}
-
-					const script = document.createElement("script");
-					script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(this.mapsApiKey)}&v=weekly`;
-					script.async = true;
-					script.defer = true;
-					script.dataset.googleMapsLoader = "true";
-					script.addEventListener("load", handleLoad, { once: true });
-					script.addEventListener(
-						"error",
-						() =>
-							reject(
-								new Error("No fue posible cargar Google Maps."),
-							),
-						{ once: true },
-					);
-					document.head.appendChild(script);
-				},
-			);
-
-			try {
-				return await win.__bookmateGoogleMapsLoader;
-			} catch (error) {
-				win.__bookmateGoogleMapsLoader = null;
-				throw error;
+		/** Reposiciona o crea el pin; se llama también tras resize/load del modal. */
+		private syncMapMarker = (coords?: Coordinates | null) => {
+			const point = coords ?? this.selectedCoordinates;
+			if (!this.mapInstance || !this.mapLibre || !point) return;
+			if (!this.mapMarker) {
+				this.mapMarker = createBrandMarker(this.mapLibre, point, {
+					color: "#FB7185",
+					title: "Ubicación de la sucursal",
+				}).addTo(this.mapInstance);
+			} else {
+				this.mapMarker.setLngLat([point.lng, point.lat]);
+				if (!this.mapMarker.getElement().isConnected) {
+					this.mapMarker.addTo(this.mapInstance);
+				}
 			}
 		};
 
 		private ensureMapReady = async () => {
 			if (!this.els.mapContainer) return;
 
-			const maps = await this.loadGoogleMaps();
+			if (!this.stadiaKey) {
+				throw new Error(
+					"No se encontró la API key de Stadia Maps para el mapa de sucursales.",
+				);
+			}
+
+			if (!this.mapLibre) {
+				this.mapLibre = await loadMapLibre();
+			}
+			const maplibregl = this.mapLibre;
+
 			if (!this.mapInstance) {
 				const isCoarsePointer = window.matchMedia(
 					"(pointer: coarse)",
 				).matches;
-				this.mapInstance = new maps.Map(this.els.mapContainer, {
-					center: this.defaultMapCenter,
+				this.mapCurrentTheme = resolveMapTheme();
+				this.mapInstance = new maplibregl.Map({
+					container: this.els.mapContainer,
+					style: getStadiaStyleUrl(
+						this.mapCurrentTheme,
+						this.stadiaKey,
+					),
+					center: [
+						this.defaultMapCenter.lng,
+						this.defaultMapCenter.lat,
+					],
 					zoom: 12,
-					styles: this.getMapStyles(),
-					mapTypeControl: false,
-					streetViewControl: false,
-					fullscreenControl: false,
-					gestureHandling: isCoarsePointer
-						? "cooperative"
-						: "greedy",
+					attributionControl: { compact: true },
+					cooperativeGestures: isCoarsePointer,
 				});
 
-				this.mapInstance.addListener("click", (event: unknown) => {
-					const source = event as {
-						latLng?: { lat?: () => number; lng?: () => number };
-					};
-					const latitude = source?.latLng?.lat?.();
-					const longitude = source?.latLng?.lng?.();
-					if (
-						!Number.isFinite(latitude) ||
-						!Number.isFinite(longitude)
-					)
-						return;
-					this.setSelectedCoordinates(
-						Number(latitude),
-						Number(longitude),
-						{ center: false },
-					);
+				this.mapInstance.addControl(
+					new maplibregl.NavigationControl({ showCompass: false }),
+					"top-right",
+				);
+
+				this.mapInstance.on("click", (event) => {
+					const { lat, lng } = event.lngLat;
+					if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+					this.setSelectedCoordinates(lat, lng, { center: false });
+				});
+
+				// Tras load/resize el modal ya tiene tamaño real: re-sincronizar pin.
+				this.mapInstance.on("load", () => {
+					if (this.selectedCoordinates) this.syncMapMarker();
+				});
+				this.mapInstance.on("resize", () => {
+					if (this.selectedCoordinates) this.syncMapMarker();
 				});
 			}
 
-			window.setTimeout(() => {
+			const layoutMap = () => {
 				if (!this.mapInstance) return;
-				this.syncMapTheme();
-				if (maps.event?.trigger)
-					maps.event.trigger(this.mapInstance, "resize");
-				this.mapInstance.setCenter(
-					this.selectedCoordinates ?? this.defaultMapCenter,
-				);
-				if (this.selectedCoordinates) this.mapInstance.setZoom(15);
-			}, 60);
+				try {
+					this.mapInstance.resize();
+				} catch {
+					// ignore
+				}
+				const target =
+					this.selectedCoordinates ?? this.defaultMapCenter;
+				this.mapInstance.setCenter([target.lng, target.lat]);
+				if (this.selectedCoordinates) {
+					this.mapInstance.setZoom(15);
+					this.syncMapMarker(this.selectedCoordinates);
+				}
+			};
+
+			// El dialog anima al abrir: dos frames + timeout para medir el container.
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => {
+					layoutMap();
+					window.setTimeout(layoutMap, 120);
+				});
+			});
 
 			if (this.selectedCoordinates) {
 				this.setSelectedCoordinates(
@@ -1520,7 +1419,7 @@ const googleMapsApiKey =
 					error instanceof Error
 						? error.message
 						: "No fue posible cargar recursos del formulario.";
-				if (errorMessage.toLowerCase().includes("google maps")) {
+				if (errorMessage.toLowerCase().includes("stadia maps")) {
 					this.setMapStatus(errorMessage, true);
 					return;
 				}
@@ -1595,7 +1494,7 @@ const googleMapsApiKey =
 					error instanceof Error
 						? error.message
 						: "No fue posible obtener la sucursal.";
-				if (errorMessage.toLowerCase().includes("google maps")) {
+				if (errorMessage.toLowerCase().includes("stadia maps")) {
 					this.setMapStatus(errorMessage, true);
 				} else {
 					this.setCreateMode();
@@ -1767,6 +1666,26 @@ const googleMapsApiKey =
 <style is:global>
 	location-manager {
 		display: block;
+	}
+
+	/* MapLibre: el mapa debe llenar el shell y el pin quedar sobre el canvas. */
+	.location-map-shell [data-location-map],
+	.location-map-shell .maplibregl-map {
+		width: 100%;
+		height: 100%;
+		min-height: 16.25rem;
+	}
+
+	.location-map-shell .maplibregl-canvas-container,
+	.location-map-shell .maplibregl-canvas {
+		width: 100% !important;
+		height: 100% !important;
+	}
+
+	.location-map-shell .maplibregl-marker,
+	.location-map-shell .bookmate-map-marker {
+		z-index: 3;
+		position: absolute;
 	}
 
 	dialog[data-location-modal] {

@@ -152,7 +152,8 @@ public-profile-editor {
 		overflow-y: auto;
 		overscroll-behavior: contain;
 		padding-right: 0.35rem;
-		padding-bottom: 5.75rem;
+		/* El footer de guardar ya no es overlay: basta margen corto al final */
+		padding-bottom: 1.25rem;
 		scrollbar-gutter: stable;
 		align-content: start;
 	}
@@ -1184,25 +1185,23 @@ html[data-theme='dark'] .ppe-preview-hub {
 	font-size: 0.78rem;
 }
 
-/* Toasts (FlashMessage) por encima del footer fijo "Guardar cambios" */
+/* Toasts: en desktop el Guardar ya no tapa el viewport; en móvil respeta el dock */
 body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
-	bottom: calc(4.75rem + env(safe-area-inset-bottom, 0px));
+	bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
 }
 
 @media (max-width: 1023px) {
 	body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
-		/* Solo el dock: Guardar ya no es fixed encima */
 		bottom: calc(var(--mobile-bottom-nav-height, 4.25rem) + 0.85rem);
 	}
 }
 
-/* Pie fijo: anclado al viewport (no entre acordeones) */
+/* Pie de guardar: en el flujo del editor (no overlay) para no tapar campos al zoom */
 .ppe-save-footer {
-	position: fixed;
+	position: relative;
 	z-index: 45;
-	left: 0;
-	right: 0;
-	bottom: 0;
+	flex-shrink: 0;
+	width: 100%;
 	display: flex;
 	flex-wrap: wrap;
 	align-items: center;
@@ -1214,6 +1213,7 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	background: color-mix(in srgb, var(--surface-bright) 92%, transparent);
 	backdrop-filter: blur(10px);
 	box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.08);
+	box-sizing: border-box;
 }
 
 /* Más específico que .ppe-btn { display: inline-flex } */
@@ -1426,30 +1426,14 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	}
 }
 
-@media (min-width: 640px) and (max-width: 1023.98px) {
-	.ppe-save-footer {
+@media (min-width: 1024px) {
+	/* Anclado al fondo del editor (flex), sin fixed al viewport */
+	.ppe-main > public-profile-editor > .ppe-save-footer,
+	public-profile-editor .ppe-save-footer {
+		position: relative;
 		left: auto;
 		right: auto;
-	}
-}
-
-@media (min-width: 1024px) {
-	.ppe-save-footer {
-		left: 17.5rem;
-	}
-
-	[data-app-shell][data-sidebar-state='collapsed'] ~ * .ppe-save-footer,
-	[data-app-shell][data-sidebar-state='collapsed'] .ppe-save-footer {
-		left: 5.5rem;
-	}
-
-	/* El footer vive dentro del editor, hijo del main del shell */
-	.app-shell[data-sidebar-state='expanded'] public-profile-editor .ppe-save-footer {
-		left: 17.5rem;
-	}
-
-	.app-shell[data-sidebar-state='collapsed'] public-profile-editor .ppe-save-footer {
-		left: 5.5rem;
+		bottom: auto;
 	}
 }
 
