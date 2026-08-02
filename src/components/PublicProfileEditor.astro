@@ -640,11 +640,15 @@ const previewInitial = {
 </public-profile-editor>
 
 <script>
-	import { initializePublicProfileEditor } from '../scripts/public-profile-editor';
+	import {
+		ensurePublicProfileTabDelegation,
+		initializePublicProfileEditor,
+	} from '../scripts/public-profile-editor';
 
 	let deferObserver: MutationObserver | null = null;
 
 	const boot = () => {
+		ensurePublicProfileTabDelegation();
 		document.querySelectorAll<HTMLElement>('public-profile-editor[data-ppe-root]').forEach((el) => {
 			initializePublicProfileEditor(el);
 		});

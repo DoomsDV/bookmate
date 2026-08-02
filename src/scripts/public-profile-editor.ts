@@ -166,7 +166,79 @@ const mapPreviewLocations = (raw: unknown): PublicProfilePreviewLocation[] => {
 		.filter((item): item is PublicProfilePreviewLocation => item !== null);
 };
 
+/** Cambia pestaña/panel sin depender del bootstrap ni del resto del init. */
+export const activatePublicProfileTab = (root: HTMLElement, tabId: string) => {
+	const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ppe-tab]'));
+	const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-ppe-panel]'));
+	const ids = new Set(
+		buttons.map((btn) => String(btn.getAttribute('data-ppe-tab') || '')).filter(Boolean)
+	);
+	const nextId = ids.has(tabId) ? tabId : 'general';
+
+	for (const btn of buttons) {
+		const active = btn.getAttribute('data-ppe-tab') === nextId;
+		btn.classList.toggle('is-active', active);
+		btn.setAttribute('aria-selected', active ? 'true' : 'false');
+		btn.tabIndex = active ? 0 : -1;
+	}
+
+	for (const panel of panels) {
+		const show = panel.getAttribute('data-ppe-panel') === nextId;
+		panel.toggleAttribute('hidden', !show);
+		panel.classList.toggle('hidden', !show);
+	}
+};
+
+let ppeTabDelegationBound = false;
+
+/** Delegación global: funciona aunque el init del editor falle a mitad. */
+export const ensurePublicProfileTabDelegation = () => {
+	if (ppeTabDelegationBound || typeof document === 'undefined') return;
+	ppeTabDelegationBound = true;
+
+	document.addEventListener(
+		'click',
+		(event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			const btn = target.closest<HTMLButtonElement>('public-profile-editor [data-ppe-tab]');
+			if (!btn) return;
+			const root = btn.closest<HTMLElement>('public-profile-editor[data-ppe-root]');
+			if (!root || !btn.closest('.ppe-tabs')) return;
+			event.preventDefault();
+			event.stopPropagation();
+			activatePublicProfileTab(root, String(btn.getAttribute('data-ppe-tab') || 'general'));
+		},
+		true
+	);
+
+	document.addEventListener('keydown', (event) => {
+		const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
+		if (!keys.includes(event.key)) return;
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const tabsNav = target.closest('.ppe-tabs');
+		const root = tabsNav?.closest<HTMLElement>('public-profile-editor[data-ppe-root]');
+		if (!tabsNav || !root) return;
+
+		const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ppe-tab]'));
+		const current = buttons.findIndex((btn) => btn.classList.contains('is-active'));
+		if (current < 0) return;
+		event.preventDefault();
+		let next = current;
+		if (event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
+		if (event.key === 'ArrowRight') next = (current + 1) % buttons.length;
+		if (event.key === 'Home') next = 0;
+		if (event.key === 'End') next = buttons.length - 1;
+		const nextBtn = buttons[next];
+		if (!nextBtn) return;
+		activatePublicProfileTab(root, String(nextBtn.getAttribute('data-ppe-tab') || 'general'));
+		nextBtn.focus();
+	});
+};
+
 export const initializePublicProfileEditor = (root: HTMLElement) => {
+	ensurePublicProfileTabDelegation();
 	if (root.dataset.ppeBound === '1') return;
 
 	let bootstrap: Bootstrap;
@@ -177,6 +249,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		return;
 	}
 
+	// Evita listeners duplicados del form; las pestañas van por delegación global.
 	root.dataset.ppeBound = '1';
 
 	const form = root.querySelector<HTMLFormElement>('[data-ppe-form]');
@@ -365,19 +438,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	};
 
 	const activateTab = (tabId: string) => {
-		const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ppe-tab]'));
-		const panelEls = Array.from(root.querySelectorAll<HTMLElement>('[data-ppe-panel]'));
-		const ids = new Set(buttons.map((btn) => String(btn.dataset.ppeTab || '')).filter(Boolean));
-		const nextId = ids.has(tabId) ? tabId : 'general';
-		for (const btn of buttons) {
-			const active = btn.dataset.ppeTab === nextId;
-			btn.classList.toggle('is-active', active);
-			btn.setAttribute('aria-selected', active ? 'true' : 'false');
-			btn.tabIndex = active ? 0 : -1;
-		}
-		for (const panel of panelEls) {
-			panel.hidden = panel.dataset.ppePanel !== nextId;
-		}
+		activatePublicProfileTab(root, tabId);
 	};
 
 	const restoreActiveTab = () => {
@@ -1504,33 +1565,6 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	});
 	previewModal?.addEventListener('cancel', () => {
 		document.documentElement.classList.remove('ppe-preview-open');
-	});
-
-	/* Delegación en el root: sobrevive si Astro remonta nodos internos. */
-	root.addEventListener('click', (event) => {
-		const btn = (event.target as HTMLElement | null)?.closest<HTMLButtonElement>('[data-ppe-tab]');
-		if (!btn || !root.contains(btn) || !btn.closest('.ppe-tabs')) return;
-		activateTab(String(btn.dataset.ppeTab || 'general'));
-	});
-
-	root.addEventListener('keydown', (event) => {
-		const keys = ['ArrowLeft', 'ArrowRight', 'Home', 'End'];
-		if (!keys.includes(event.key)) return;
-		const tabsNav = (event.target as HTMLElement | null)?.closest('.ppe-tabs');
-		if (!tabsNav || !root.contains(tabsNav)) return;
-		const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ppe-tab]'));
-		const current = buttons.findIndex((btn) => btn.classList.contains('is-active'));
-		if (current < 0) return;
-		event.preventDefault();
-		let next = current;
-		if (event.key === 'ArrowLeft') next = (current - 1 + buttons.length) % buttons.length;
-		if (event.key === 'ArrowRight') next = (current + 1) % buttons.length;
-		if (event.key === 'Home') next = 0;
-		if (event.key === 'End') next = buttons.length - 1;
-		const target = buttons[next];
-		if (!target) return;
-		activateTab(String(target.dataset.ppeTab || 'general'));
-		target.focus();
 	});
 
 	galleryGrid?.addEventListener('click', (event) => {

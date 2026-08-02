@@ -102,7 +102,8 @@ public-profile-editor {
 	min-width: 0;
 }
 
-.ppe-panel[hidden] {
+.ppe-panel[hidden],
+.ppe-panel.hidden {
 	display: none !important;
 }
 
@@ -1190,10 +1191,8 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 
 @media (max-width: 1023px) {
 	body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
-		/* dock + hueco + footer guardar + margen */
-		bottom: calc(
-			var(--mobile-bottom-nav-height, 4.25rem) + 0.55rem + 4.5rem + 0.75rem
-		);
+		/* Solo el dock: Guardar ya no es fixed encima */
+		bottom: calc(var(--mobile-bottom-nav-height, 4.25rem) + 0.85rem);
 	}
 }
 
@@ -1385,35 +1384,33 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 		max-height: none;
 	}
 
+	.ppe-page {
+		/* Sin reserva enorme: el Guardar vive en el flujo debajo del form */
+		padding-bottom: 0.5rem;
+	}
+
 	.ppe-save-footer {
-		/* Mismo ancho útil que el contenido de main (px-4 / sm:px-6) */
-		--ppe-save-footer-gap: 0.55rem;
-		bottom: calc(
-			var(--mobile-bottom-nav-height, 4.25rem) + var(--ppe-save-footer-gap)
-		);
-		left: 1rem;
-		right: 1rem;
-		width: auto;
-		margin: 0;
-		padding: 0;
+		/* Flujo normal: debajo del contenido, sin tapar campos ni el dock */
+		position: static;
+		left: auto;
+		right: auto;
+		bottom: auto;
+		width: 100%;
+		margin: 1rem 0 0;
+		padding: 0 0 calc(var(--mobile-bottom-nav-height, 4.25rem) + 0.75rem);
 		border: 0;
 		border-radius: 0;
 		box-shadow: none;
 		background: transparent;
 		backdrop-filter: none;
 		-webkit-backdrop-filter: none;
-		z-index: 44;
+		z-index: auto;
 	}
 
 	html[data-theme='dark'] .ppe-save-footer {
 		background: transparent;
 		border-color: transparent;
 		box-shadow: none;
-	}
-
-	.ppe-page {
-		/* Espacio para Guardar + hueco + dock flotante */
-		padding-bottom: calc(var(--mobile-bottom-nav-height, 4.25rem) + 5.25rem);
 	}
 
 	.ppe-save-footer__hint {
@@ -1431,9 +1428,8 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 
 @media (min-width: 640px) and (max-width: 1023.98px) {
 	.ppe-save-footer {
-		/* sm:px-6 del main */
-		left: 1.5rem;
-		right: 1.5rem;
+		left: auto;
+		right: auto;
 	}
 }
 
