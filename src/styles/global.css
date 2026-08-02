@@ -1572,8 +1572,10 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 	}
 }
 
-/* Auth dark mode overrides.
-   Keeps the existing split layout, only replacing the light form surface. */
+/* Auth dark mode overrides for split-layout auth pages
+   (register, forgot/reset password, verify-email, invite, create-org).
+   Login uses a dedicated centered layout in LoginForm.astro (.login-page)
+   and intentionally does not use .m3-container.auth-dark. */
 .m3-container.auth-dark {
 	background-color: #0a0a0a;
 	border-radius: 0;

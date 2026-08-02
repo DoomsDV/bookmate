@@ -805,7 +805,7 @@ const jsonLd = [
 		--md-sys-motion-duration-short: 200ms;
 		--md-sys-motion-duration-medium: 400ms;
 
-		--landing-max: 1120px;
+		--landing-max: 100%;
 		--landing-pad-x: 1.25rem;
 		--landing-topbar-h: 4.25rem;
 
@@ -847,20 +847,19 @@ const jsonLd = [
 
 	@media (min-width: 1024px) {
 		.landing-root {
+			--landing-max: 85%;
 			--landing-pad-x: 2.75rem;
 		}
 	}
 
 	@media (min-width: 1280px) {
 		.landing-root {
-			--landing-max: 1240px;
 			--landing-pad-x: 3.5rem;
 		}
 	}
 
 	@media (min-width: 1440px) {
 		.landing-root {
-			--landing-max: 1280px;
 			--landing-pad-x: 4.5rem;
 		}
 	}
