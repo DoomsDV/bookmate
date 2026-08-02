@@ -35,9 +35,9 @@ const {
 		<!-- Circles / dots -->
 		<div class="login-deco login-deco-6"></div>
 		<div class="login-deco login-deco-7"></div>
-		<!-- Wavy lines (CSS, sized explicitly to avoid SVG overflow) -->
-		<div class="login-deco login-deco-wave1"></div>
-		<div class="login-deco login-deco-wave2"></div>
+		<!-- Wavy scribbles (mask-image apuntando a SVG externo) -->
+		<div class="login-deco login-wave login-wave-1"></div>
+		<div class="login-deco login-wave login-wave-2"></div>
 	</div>
 
 	<header class="login-topbar">
@@ -61,6 +61,15 @@ const {
 	<div class="login-shell">
 		<main class="login-card">
 			<header class="login-card-header">
+				<img
+					src="/icons/icon-512x512.png"
+					alt="Hasel"
+					class="login-card-logo"
+					width="72"
+					height="72"
+					loading="eager"
+					decoding="async"
+				/>
 				<h1 class="login-title">Iniciar sesión</h1>
 				<p class="login-subtitle">Ingresá tus datos para acceder a tu cuenta.</p>
 			</header>
@@ -397,35 +406,89 @@ const {
 		animation: login-float 8s ease-in-out infinite 4s;
 	}
 
-	/* Waves without data: URLs (avoids Vite/Firefox resolving file://) */
-	.login-deco-wave1,
-	.login-deco-wave2 {
-		height: 1.1rem;
+	/* Wavy scribbles via mask-image (SVG in /public/decor/) */
+	.login-wave,
+	.login-scribble {
 		background: transparent;
 		border: none;
-		opacity: 0.55;
-		background:
-			radial-gradient(ellipse 18% 70% at 8% 55%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
-			radial-gradient(ellipse 18% 70% at 28% 40%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
-			radial-gradient(ellipse 18% 70% at 48% 60%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
-			radial-gradient(ellipse 18% 70% at 68% 38%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
-			radial-gradient(ellipse 18% 70% at 88% 55%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%);
+		max-width: none;
+		max-height: none;
+		background-color: rgba(168, 199, 255, 0.55);
+		mask-repeat: no-repeat;
+		mask-size: 100% 100%;
+		mask-position: center;
+		-webkit-mask-repeat: no-repeat;
+		-webkit-mask-size: 100% 100%;
+		-webkit-mask-position: center;
 	}
 
-	.login-deco-wave1 {
-		--_deco-rotate: rotate(6deg);
-		top: 72%;
-		right: 5%;
-		width: 7.5rem;
-		animation: login-float 11s ease-in-out infinite 2s;
+	.login-wave {
+		mask-image: url('/decor/wave.svg');
+		-webkit-mask-image: url('/decor/wave.svg');
 	}
 
-	.login-deco-wave2 {
-		--_deco-rotate: rotate(-4deg);
-		top: 24%;
+	.login-scribble {
+		mask-image: url('/decor/scribble.svg');
+		-webkit-mask-image: url('/decor/scribble.svg');
+	}
+
+	.login-wave-1 {
+		--_deco-rotate: rotate(8deg);
+		top: 18%;
+		left: 5%;
+		width: 10rem;
+		height: 2rem;
+		animation: login-float 11s ease-in-out infinite;
+	}
+
+	.login-wave-2 {
+		--_deco-rotate: rotate(-6deg);
+		top: 68%;
+		right: 6%;
+		width: 12rem;
+		height: 2.4rem;
+		opacity: 0.65;
+		animation: login-float 13s ease-in-out infinite 1.2s;
+	}
+
+	.login-wave-3 {
+		--_deco-rotate: rotate(-14deg);
+		bottom: 8%;
 		left: 12%;
-		width: 5.5rem;
-		animation: login-float 9s ease-in-out infinite 3.5s;
+		width: 8rem;
+		height: 1.6rem;
+		opacity: 0.5;
+		animation: login-float 9s ease-in-out infinite 2.4s;
+	}
+
+	.login-wave-4 {
+		--_deco-rotate: rotate(4deg);
+		top: 40%;
+		right: 3%;
+		width: 6.5rem;
+		height: 1.5rem;
+		opacity: 0.45;
+		animation: login-float 10s ease-in-out infinite 3.6s;
+	}
+
+	.login-scribble-1 {
+		--_deco-rotate: rotate(-8deg);
+		top: 10%;
+		right: 14%;
+		width: 8rem;
+		height: 2.4rem;
+		opacity: 0.55;
+		animation: login-float 12s ease-in-out infinite 1.8s;
+	}
+
+	.login-scribble-2 {
+		--_deco-rotate: rotate(6deg);
+		bottom: 22%;
+		right: 20%;
+		width: 7rem;
+		height: 2.1rem;
+		opacity: 0.4;
+		animation: login-float 14s ease-in-out infinite 3s;
 	}
 
 	@keyframes login-float {
@@ -525,7 +588,7 @@ const {
 		position: relative;
 		z-index: 2;
 		width: 100%;
-		max-width: 28rem;
+		max-width: 36rem;
 		padding: 2.25rem 1.75rem 2rem;
 		border-radius: var(--login-radius);
 		background: rgba(28, 27, 31, 0.45);
@@ -567,8 +630,19 @@ const {
 	/* ─── Card Content ─── */
 
 	.login-card-header {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
 		text-align: center;
 		margin-bottom: 1.75rem;
+	}
+
+	.login-card-logo {
+		width: 4.5rem;
+		height: 4.5rem;
+		object-fit: contain;
+		margin-bottom: 0.85rem;
+		filter: drop-shadow(0 8px 20px rgba(66, 110, 219, 0.28));
 	}
 
 	.login-title {
@@ -648,10 +722,10 @@ const {
 		min-height: 3rem;
 		padding: 0.8rem 1rem;
 		border-radius: 0.85rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		background: rgba(255, 255, 255, 0.025);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		background: transparent;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
 		color: var(--login-on-surface);
 		caret-color: var(--login-primary);
 		font: inherit;
@@ -671,7 +745,7 @@ const {
 
 	.login-input:focus {
 		border-color: rgba(168, 199, 255, 0.5);
-		background: rgba(255, 255, 255, 0.05);
+		background: rgba(255, 255, 255, 0.02);
 		box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.2);
 	}
 
@@ -758,8 +832,8 @@ const {
 		width: 1.2rem;
 		height: 1.2rem;
 		border-radius: 0.3rem;
-		border: 1.5px solid rgba(255, 255, 255, 0.18);
-		background: rgba(255, 255, 255, 0.025);
+		border: 1.5px solid rgba(255, 255, 255, 0.14);
+		background: transparent;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -927,6 +1001,12 @@ const {
 			margin-bottom: 0.85rem;
 		}
 
+		.login-card-logo {
+			width: 3.25rem;
+			height: 3.25rem;
+			margin-bottom: 0.55rem;
+		}
+
 		.login-title {
 			font-size: 1.35rem;
 			margin-bottom: 0.25rem;
@@ -1012,6 +1092,12 @@ const {
 
 		.login-card-header {
 			margin-bottom: 0.65rem;
+		}
+
+		.login-card-logo {
+			width: 2.85rem;
+			height: 2.85rem;
+			margin-bottom: 0.4rem;
 		}
 	}
 

@@ -64,8 +64,8 @@ const currentStep = normalizeStep(step);
 		<div class="register-deco register-deco-5"></div>
 		<div class="register-deco register-deco-6"></div>
 		<div class="register-deco register-deco-7"></div>
-		<div class="register-deco register-deco-wave1"></div>
-		<div class="register-deco register-deco-wave2"></div>
+		<div class="register-deco register-wave register-wave-1"></div>
+		<div class="register-deco register-wave register-wave-2"></div>
 	</div>
 
 	<!-- Hidden nodes for JS textMap updates (sidebar removed) -->
@@ -94,6 +94,18 @@ const currentStep = normalizeStep(step);
 
 	<div class="register-shell">
 		<main class="register-card">
+			<div class="register-card-logo-wrap">
+				<img
+					src="/icons/icon-512x512.png"
+					alt="Hasel"
+					class="register-card-logo"
+					width="72"
+					height="72"
+					loading="eager"
+					decoding="async"
+				/>
+			</div>
+
 			<nav class="register-stepper" aria-label="Pasos del registro">
 				<div
 					class:list={['register-step', { 'is-active': currentStep === 'admin' }]}
@@ -113,7 +125,7 @@ const currentStep = normalizeStep(step);
 			</nav>
 
 			<header class="register-card-header">
-				<div class="register-panel-icon" data-panel-icon>
+				<div class="register-panel-icon sr-only" data-panel-icon aria-hidden="true">
 					<span class="material-symbols-rounded">person</span>
 				</div>
 				<div class="register-panel-titles">
@@ -895,34 +907,89 @@ const currentStep = normalizeStep(step);
 		animation: register-float 8s ease-in-out infinite 4s;
 	}
 
-	/* Waves without data: URLs (avoids Vite/Firefox resolving file://) */
-	.register-deco-wave1,
-	.register-deco-wave2 {
-		height: 1.1rem;
+	/* Wavy scribbles via mask-image (SVG in /public/decor/) */
+	.register-wave,
+	.register-scribble {
+		background: transparent;
 		border: none;
+		max-width: none;
+		max-height: none;
+		background-color: rgba(168, 199, 255, 0.55);
+		mask-repeat: no-repeat;
+		mask-size: 100% 100%;
+		mask-position: center;
+		-webkit-mask-repeat: no-repeat;
+		-webkit-mask-size: 100% 100%;
+		-webkit-mask-position: center;
+	}
+
+	.register-wave {
+		mask-image: url('/decor/wave.svg');
+		-webkit-mask-image: url('/decor/wave.svg');
+	}
+
+	.register-scribble {
+		mask-image: url('/decor/scribble.svg');
+		-webkit-mask-image: url('/decor/scribble.svg');
+	}
+
+	.register-wave-1 {
+		--_deco-rotate: rotate(8deg);
+		top: 18%;
+		left: 5%;
+		width: 10rem;
+		height: 2rem;
+		animation: register-float 11s ease-in-out infinite;
+	}
+
+	.register-wave-2 {
+		--_deco-rotate: rotate(-6deg);
+		top: 68%;
+		right: 6%;
+		width: 12rem;
+		height: 2.4rem;
+		opacity: 0.65;
+		animation: register-float 13s ease-in-out infinite 1.2s;
+	}
+
+	.register-wave-3 {
+		--_deco-rotate: rotate(-14deg);
+		bottom: 8%;
+		left: 14%;
+		width: 8rem;
+		height: 1.6rem;
+		opacity: 0.5;
+		animation: register-float 9s ease-in-out infinite 2.4s;
+	}
+
+	.register-wave-4 {
+		--_deco-rotate: rotate(4deg);
+		top: 42%;
+		right: 3%;
+		width: 6.5rem;
+		height: 1.5rem;
+		opacity: 0.45;
+		animation: register-float 10s ease-in-out infinite 3.6s;
+	}
+
+	.register-scribble-1 {
+		--_deco-rotate: rotate(-8deg);
+		top: 8%;
+		right: 16%;
+		width: 8rem;
+		height: 2.4rem;
 		opacity: 0.55;
-		background:
-			radial-gradient(ellipse 18% 70% at 8% 55%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
-			radial-gradient(ellipse 18% 70% at 28% 40%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
-			radial-gradient(ellipse 18% 70% at 48% 60%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
-			radial-gradient(ellipse 18% 70% at 68% 38%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
-			radial-gradient(ellipse 18% 70% at 88% 55%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%);
+		animation: register-float 12s ease-in-out infinite 1.8s;
 	}
 
-	.register-deco-wave1 {
+	.register-scribble-2 {
 		--_deco-rotate: rotate(6deg);
-		top: 72%;
-		right: 5%;
-		width: 7.5rem;
-		animation: register-float 11s ease-in-out infinite 2s;
-	}
-
-	.register-deco-wave2 {
-		--_deco-rotate: rotate(-4deg);
-		top: 24%;
-		left: 12%;
-		width: 5.5rem;
-		animation: register-float 9s ease-in-out infinite 3.5s;
+		bottom: 24%;
+		right: 18%;
+		width: 7rem;
+		height: 2.1rem;
+		opacity: 0.4;
+		animation: register-float 14s ease-in-out infinite 3s;
 	}
 
 	@keyframes register-float {
@@ -1149,33 +1216,33 @@ const currentStep = normalizeStep(step);
 
 	.register-card-header {
 		display: flex;
-		align-items: flex-start;
-		gap: 1rem;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		gap: 0;
 		margin-bottom: 1.5rem;
 	}
 
-	.register-panel-icon {
-		width: 3rem;
-		height: 3rem;
-		min-width: 3rem;
-		border-radius: 9999px;
-		background: rgba(66, 110, 219, 0.22);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
-		color: #a8c7ff;
-		border: 1px solid rgba(168, 199, 255, 0.28);
+	.register-card-logo-wrap {
 		display: flex;
-		align-items: center;
 		justify-content: center;
-		flex-shrink: 0;
+		align-items: center;
+		width: 100%;
+		margin: 0 0 1rem;
 	}
 
-	.register-panel-icon .material-symbols-rounded {
-		font-size: 1.45rem;
+	.register-card-logo {
+		display: block;
+		width: 4.5rem;
+		height: 4.5rem;
+		margin: 0;
+		object-fit: contain;
+		filter: drop-shadow(0 8px 20px rgba(66, 110, 219, 0.28));
 	}
 
 	.register-panel-titles {
 		min-width: 0;
+		width: 100%;
 	}
 
 	.register-title {
@@ -1281,10 +1348,10 @@ const currentStep = normalizeStep(step);
 		min-height: 3rem;
 		padding: 0.8rem 1rem;
 		border-radius: 0.85rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		background: rgba(255, 255, 255, 0.025);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		background: transparent;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
 		color: var(--reg-on-surface);
 		caret-color: var(--reg-primary);
 		font: inherit;
@@ -1304,7 +1371,7 @@ const currentStep = normalizeStep(step);
 
 	.register-input:focus {
 		border-color: rgba(168, 199, 255, 0.5);
-		background: rgba(255, 255, 255, 0.05);
+		background: rgba(255, 255, 255, 0.02);
 		box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.2);
 	}
 
@@ -1339,7 +1406,7 @@ const currentStep = normalizeStep(step);
 		appearance: none;
 		-webkit-appearance: none;
 		color-scheme: dark;
-		background-color: rgba(255, 255, 255, 0.025);
+		background-color: transparent;
 		background-image: none;
 		padding-right: 2.5rem;
 	}
@@ -1421,12 +1488,12 @@ const currentStep = normalizeStep(step);
 		align-items: center;
 		justify-content: center;
 		padding: 0 0.95rem;
-		border: 1px solid rgba(255, 255, 255, 0.1);
+		border: 1px solid rgba(255, 255, 255, 0.08);
 		border-right: 0;
 		border-radius: 0.85rem 0 0 0.85rem;
-		background: rgba(255, 255, 255, 0.025);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
+		background: transparent;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
 		color: var(--reg-on-surface-variant);
 		font-size: 0.95rem;
 		font-weight: 700;
@@ -1731,19 +1798,16 @@ const currentStep = normalizeStep(step);
 		}
 
 		.register-card-header {
-			gap: 0.55rem;
 			margin-bottom: 0.7rem;
-			align-items: center;
 		}
 
-		.register-panel-icon {
-			width: 2.15rem;
-			height: 2.15rem;
-			min-width: 2.15rem;
+		.register-card-logo-wrap {
+			margin-bottom: 0.65rem;
 		}
 
-		.register-panel-icon .material-symbols-rounded {
-			font-size: 1.1rem;
+		.register-card-logo {
+			width: 3.25rem;
+			height: 3.25rem;
 		}
 
 		.register-title {
@@ -1858,8 +1922,13 @@ const currentStep = normalizeStep(step);
 			display: none;
 		}
 
-		.register-panel-icon {
-			display: none;
+		.register-card-logo-wrap {
+			margin-bottom: 0.5rem;
+		}
+
+		.register-card-logo {
+			width: 2.75rem;
+			height: 2.75rem;
 		}
 
 		.register-page-footer,
