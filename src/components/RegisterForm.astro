@@ -51,60 +51,86 @@ const normalizeStep = (value: string) =>
 const currentStep = normalizeStep(step);
 ---
 
-<section class="m3-container auth-dark">
-	<aside class="m3-sidebar">
-		<div class="m3-sidebar-inner">
-			<div class="m3-brand">
-				<a href="/" class="m3-brand-link" aria-label="Ir al inicio">
-					<img src="/icons/icon-512x512.png" alt="Hasel Logo" class="m3-logo" />
-				</a>
-			</div>
+<section class="register-page" data-register-page>
+	<div class="register-fx" aria-hidden="true">
+		<div class="register-atmosphere"></div>
+		<div class="register-vignette"></div>
+		<div class="register-orb register-orb-a"></div>
+		<div class="register-orb register-orb-b"></div>
+		<div class="register-deco register-deco-1"></div>
+		<div class="register-deco register-deco-2"></div>
+		<div class="register-deco register-deco-3"></div>
+		<div class="register-deco register-deco-4"></div>
+		<div class="register-deco register-deco-5"></div>
+		<div class="register-deco register-deco-6"></div>
+		<div class="register-deco register-deco-7"></div>
+		<div class="register-deco register-deco-wave1"></div>
+		<div class="register-deco register-deco-wave2"></div>
+	</div>
 
-			<div class="m3-stepper-header">
-				<h2 class="m3-step-maintitle" data-sidebar-title>Paso 1</h2>
-				<p class="m3-step-maindesc" data-sidebar-desc>
-					Ingresa tu información personal para comenzar con la configuración de tu espacio.
-				</p>
-			</div>
+	<!-- Hidden nodes for JS textMap updates (sidebar removed) -->
+	<span class="sr-only" data-sidebar-title>Paso 1</span>
+	<span class="sr-only" data-sidebar-desc>
+		Ingresa tu información personal para comenzar con la configuración de tu espacio.
+	</span>
 
-			<div class="m3-vertical-stepper">
-				<div class="m3-step" data-step-indicator="admin" class:list={[{ 'is-active': currentStep === 'admin' }]}>
-					<div class="m3-step-node">1</div>
-					<div class="m3-step-content">
-						<span class="m3-step-label">Datos del Administrador</span>
-					</div>
-					<div class="m3-step-line"></div>
-				</div>
-
-				<div class="m3-step" data-step-indicator="organization" class:list={[{ 'is-active': currentStep === 'organization' }]}>
-					<div class="m3-step-node">2</div>
-					<div class="m3-step-content">
-						<span class="m3-step-label">Datos de Organización</span>
-					</div>
-				</div>
-			</div>
+	<header class="register-topbar">
+		<div class="register-topbar-inner">
+			<a href="/" class="register-brand" aria-label="Hasel — Inicio">
+				<img
+					src="/icons/icon-64.png"
+					alt=""
+					class="register-brand-logo"
+					width="40"
+					height="40"
+					loading="eager"
+					decoding="async"
+				/>
+				<span class="register-brand-wordmark">Hasel</span>
+			</a>
+			<a href="/auth/login" class="register-topbar-cta">Iniciar sesión</a>
 		</div>
-	</aside>
+	</header>
 
-	<main class="m3-content">
-		<div class="m3-form-wrapper">
-			<div class="m3-form-header">
-				<div class="m3-panel-icon" data-panel-icon>
+	<div class="register-shell">
+		<main class="register-card">
+			<nav class="register-stepper" aria-label="Pasos del registro">
+				<div
+					class:list={['register-step', { 'is-active': currentStep === 'admin' }]}
+					data-step-indicator="admin"
+				>
+					<div class="register-step-node">1</div>
+					<span class="register-step-label">Datos</span>
+				</div>
+				<div class="register-step-line" aria-hidden="true"></div>
+				<div
+					class:list={['register-step', { 'is-active': currentStep === 'organization' }]}
+					data-step-indicator="organization"
+				>
+					<div class="register-step-node">2</div>
+					<span class="register-step-label">Organización</span>
+				</div>
+			</nav>
+
+			<header class="register-card-header">
+				<div class="register-panel-icon" data-panel-icon>
 					<span class="material-symbols-rounded">person</span>
 				</div>
-				<div class="m3-panel-titles">
-					<h3 class="m3-panel-title" data-panel-title>Tus datos personales</h3>
-					<p class="m3-panel-subtitle" data-panel-desc>Al crear el espacio, se te asignará el rol de administrador de la organización</p>
+				<div class="register-panel-titles">
+					<h1 class="register-title" data-panel-title>Tus datos personales</h1>
+					<p class="register-subtitle" data-panel-desc>
+						Al crear el espacio, se te asignará el rol de administrador de la organización
+					</p>
 				</div>
-			</div>
+			</header>
 
 			<div
-				class:list={['m3-error-banner', !error && 'is-hidden']}
+				class:list={['register-error-banner', !error && 'is-hidden']}
 				data-error-banner
 				role="alert"
 				aria-live="polite"
 			>
-				<span class="material-symbols-rounded">error</span>
+				<span class="material-symbols-rounded" aria-hidden="true">error</span>
 				<span data-error-text>{error}</span>
 			</div>
 
@@ -112,82 +138,166 @@ const currentStep = normalizeStep(step);
 				<input type="hidden" name="step" value={currentStep} data-step-input />
 
 				<!-- PANEL: ADMIN -->
-				<div data-step-panel="admin" class:list={['m3-panel', currentStep !== 'admin' && 'is-hidden']}>
-					<div class="m3-grid-2">
-						<div class="m3-field">
-							<label class="m3-label" for="first_name">Nombres <span class="m3-label-required">*</span></label>
-							<input type="text" id="first_name" name="first_name" class:list={['m3-input', firstNameError && 'is-invalid']} placeholder="Ej: Juan" value={firstName} autocomplete="given-name" required />
-							{firstNameError && <span class="m3-field-error">{firstNameError}</span>}
+				<div data-step-panel="admin" class:list={['register-panel', currentStep !== 'admin' && 'is-hidden']}>
+					<div class="register-grid-2">
+						<div class="register-field">
+							<label class="register-label" for="first_name"
+								>Nombres <span class="register-label-required">*</span></label
+							>
+							<input
+								type="text"
+								id="first_name"
+								name="first_name"
+								class:list={['register-input', firstNameError && 'is-invalid']}
+								placeholder="Ej: Juan"
+								value={firstName}
+								autocomplete="given-name"
+								required
+							/>
+							{firstNameError && <span class="register-field-error">{firstNameError}</span>}
 						</div>
-						<div class="m3-field">
-							<label class="m3-label" for="last_name">Apellidos <span class="m3-label-required">*</span></label>
-							<input type="text" id="last_name" name="last_name" class:list={['m3-input', lastNameError && 'is-invalid']} placeholder="Ej: Pérez" value={lastName} autocomplete="family-name" required />
-							{lastNameError && <span class="m3-field-error">{lastNameError}</span>}
+						<div class="register-field">
+							<label class="register-label" for="last_name"
+								>Apellidos <span class="register-label-required">*</span></label
+							>
+							<input
+								type="text"
+								id="last_name"
+								name="last_name"
+								class:list={['register-input', lastNameError && 'is-invalid']}
+								placeholder="Ej: Pérez"
+								value={lastName}
+								autocomplete="family-name"
+								required
+							/>
+							{lastNameError && <span class="register-field-error">{lastNameError}</span>}
 						</div>
 					</div>
 
-					<div class="m3-grid-2">
-						<div class="m3-field">
-							<label class="m3-label" for="email">Correo electrónico <span class="m3-label-required">*</span></label>
-							<input type="email" id="email" name="email" class:list={['m3-input', emailError && 'is-invalid']} placeholder="Ej: juan@empresa.com" value={email} autocomplete="email" autocapitalize="none" spellcheck="false" required />
-							{emailError && <span class="m3-field-error">{emailError}</span>}
+					<div class="register-grid-2">
+						<div class="register-field">
+							<label class="register-label" for="email"
+								>Correo electrónico <span class="register-label-required">*</span></label
+							>
+							<input
+								type="email"
+								id="email"
+								name="email"
+								class:list={['register-input', emailError && 'is-invalid']}
+								placeholder="Ej: juan@empresa.com"
+								value={email}
+								autocomplete="email"
+								autocapitalize="none"
+								spellcheck="false"
+								required
+							/>
+							{emailError && <span class="register-field-error">{emailError}</span>}
 						</div>
-						<div class="m3-field">
-							<label class="m3-label" for="password">Contraseña <span class="m3-label-required">*</span></label>
-							<div class="m3-input-affix">
-								<input type="password" id="password" name="password" class:list={['m3-input', passwordError && 'is-invalid']} placeholder="Tu contraseña" autocomplete="new-password" required />
-								<button type="button" class="m3-icon-btn" data-password-toggle aria-label="Mostrar contraseña">
-									<span class="material-symbols-rounded" data-password-icon>visibility_off</span>
+						<div class="register-field">
+							<label class="register-label" for="password"
+								>Contraseña <span class="register-label-required">*</span></label
+							>
+							<div class="register-input-affix">
+								<input
+									type="password"
+									id="password"
+									name="password"
+									class:list={['register-input', passwordError && 'is-invalid']}
+									placeholder="Tu contraseña"
+									autocomplete="new-password"
+									required
+								/>
+								<button
+									type="button"
+									class="register-icon-btn"
+									data-password-toggle
+									aria-label="Mostrar contraseña"
+								>
+									<span class="material-symbols-rounded" data-password-icon aria-hidden="true"
+										>visibility_off</span
+									>
 								</button>
 							</div>
-							<div class="m3-password-strength is-hidden" data-password-strength aria-live="polite">
-								<div class="m3-password-strength-bars">
-									<span class="m3-password-strength-segment" data-password-segment></span>
-									<span class="m3-password-strength-segment" data-password-segment></span>
-									<span class="m3-password-strength-segment" data-password-segment></span>
-									<span class="m3-password-strength-segment" data-password-segment></span>
+							<div class="register-password-strength is-hidden" data-password-strength aria-live="polite">
+								<div class="register-password-strength-bars">
+									<span class="register-password-strength-segment" data-password-segment></span>
+									<span class="register-password-strength-segment" data-password-segment></span>
+									<span class="register-password-strength-segment" data-password-segment></span>
+									<span class="register-password-strength-segment" data-password-segment></span>
 								</div>
-								<p class="m3-password-strength-text" data-password-strength-text>Poco segura</p>
+								<p class="register-password-strength-text" data-password-strength-text>Poco segura</p>
 							</div>
-							{passwordError && <span class="m3-field-error">{passwordError}</span>}
+							{passwordError && <span class="register-field-error">{passwordError}</span>}
 						</div>
 					</div>
 
-					<div class="m3-actions m3-actions--between">
+					<div class="register-actions register-actions--between">
 						<a
 							href="/auth/login?redirectTo=%2Fauth%2Fcreate-organization"
-							class="m3-link-accent m3-link-accent--inline"
+							class="register-link-accent register-link-accent--inline"
 						>
 							¿Ya tienes una cuenta? <strong>Crea tu organización</strong>
 						</a>
-						<button type="button" data-next-step class="m3-btn-primary">
-							Siguiente Paso
-						</button>
+						<button type="button" data-next-step class="register-btn-primary">Siguiente Paso</button>
 					</div>
 				</div>
 
 				<!-- PANEL: ORGANIZATION -->
-				<div data-step-panel="organization" class:list={['m3-panel', currentStep !== 'organization' && 'is-hidden']}>
-					<div class="m3-grid-2">
-						<div class="m3-field">
-							<label class="m3-label" for="business_name">Nombre de la Organización <span class="m3-label-required">*</span></label>
-							<input type="text" id="business_name" name="business_name" class:list={['m3-input', businessNameError && 'is-invalid']} placeholder="Ej: Clínica Dental San José" value={businessName} autocomplete="organization" required />
-							<p class="m3-field-help">Este será el nombre de tu organización o como te verán las personas.</p>
-							{businessNameError && <span class="m3-field-error">{businessNameError}</span>}
+				<div
+					data-step-panel="organization"
+					class:list={['register-panel', currentStep !== 'organization' && 'is-hidden']}
+				>
+					<div class="register-grid-2">
+						<div class="register-field">
+							<label class="register-label" for="business_name"
+								>Nombre de la Organización <span class="register-label-required">*</span></label
+							>
+							<input
+								type="text"
+								id="business_name"
+								name="business_name"
+								class:list={['register-input', businessNameError && 'is-invalid']}
+								placeholder="Ej: Clínica Dental San José"
+								value={businessName}
+								autocomplete="organization"
+								required
+							/>
+							<p class="register-field-help">
+								Este será el nombre de tu organización o como te verán las personas.
+							</p>
+							{businessNameError && <span class="register-field-error">{businessNameError}</span>}
 						</div>
-						<div class="m3-field">
-							<label class="m3-label" for="company_email">Correo de la compañía <span class="m3-label-required">*</span></label>
-							<input type="email" id="company_email" name="company_email" class:list={['m3-input', companyEmailError && 'is-invalid']} placeholder="Ej: contacto@tuempresa.com" value={companyEmail} autocomplete="email" autocapitalize="none" spellcheck="false" required />
-							<p class="m3-field-help">Este correo será el contacto principal de tu organización para notificaciones y comunicación institucional.</p>
-							{companyEmailError && <span class="m3-field-error">{companyEmailError}</span>}
+						<div class="register-field">
+							<label class="register-label" for="company_email"
+								>Correo de la compañía <span class="register-label-required">*</span></label
+							>
+							<input
+								type="email"
+								id="company_email"
+								name="company_email"
+								class:list={['register-input', companyEmailError && 'is-invalid']}
+								placeholder="Ej: contacto@tuempresa.com"
+								value={companyEmail}
+								autocomplete="email"
+								autocapitalize="none"
+								spellcheck="false"
+								required
+							/>
+							<p class="register-field-help">
+								Este correo será el contacto principal de tu organización para notificaciones y
+								comunicación institucional.
+							</p>
+							{companyEmailError && <span class="register-field-error">{companyEmailError}</span>}
 						</div>
 					</div>
 
-					<div class="m3-grid-2">
-						<div class="m3-field">
-							<label class="m3-label" for="phone">Teléfono de corporativo <span class="m3-label-required">*</span></label>
-							<div class:list={['m3-phone-group', phoneError && 'is-invalid']}>
-								<span class="m3-phone-prefix">+595</span>
+					<div class="register-grid-2">
+						<div class="register-field">
+							<label class="register-label" for="phone"
+								>Teléfono de corporativo <span class="register-label-required">*</span></label
+							>
+							<div class:list={['register-phone-group', phoneError && 'is-invalid']}>
+								<span class="register-phone-prefix">+595</span>
 								<input
 									type="tel"
 									id="phone"
@@ -195,7 +305,7 @@ const currentStep = normalizeStep(step);
 									inputmode="numeric"
 									autocomplete="tel-national"
 									maxlength="11"
-									class:list={['m3-input', 'm3-phone-input', phoneError && 'is-invalid']}
+									class:list={['register-input', 'register-phone-input', phoneError && 'is-invalid']}
 									placeholder="981 123 456"
 									value={phone}
 									autocapitalize="none"
@@ -203,49 +313,57 @@ const currentStep = normalizeStep(step);
 									required
 								/>
 							</div>
-							{phoneError && <span class="m3-field-error">{phoneError}</span>}
+							{phoneError && <span class="register-field-error">{phoneError}</span>}
 						</div>
-						<div class="m3-field">
-							<label class="m3-label" for="id_org_specialty">Especialidad de la organización <span class="m3-label-required">*</span></label>
+						<div class="register-field">
+							<label class="register-label" for="id_org_specialty"
+								>Especialidad de la organización <span class="register-label-required">*</span></label
+							>
 							<select
 								id="id_org_specialty"
 								name="id_org_specialty"
-								class:list={['m3-input', 'm3-select', orgSpecialtyIdError && 'is-invalid']}
+								class:list={['register-input', 'register-select', orgSpecialtyIdError && 'is-invalid']}
 								required
 								disabled={orgSpecialties.length === 0}
 							>
 								<option value="">Selecciona una especialidad</option>
 								{orgSpecialties.map((specialty) => (
-									<option value={String(specialty.id_org_specialty)} selected={String(specialty.id_org_specialty) === orgSpecialtyId}>
+									<option
+										value={String(specialty.id_org_specialty)}
+										selected={String(specialty.id_org_specialty) === orgSpecialtyId}
+									>
 										{specialty.name}
 									</option>
 								))}
 							</select>
-
-							{specialtiesLoadError && <span class="m3-field-error">{specialtiesLoadError}</span>}
-							{orgSpecialtyIdError && <span class="m3-field-error">{orgSpecialtyIdError}</span>}
+							{specialtiesLoadError && (
+								<span class="register-field-error">{specialtiesLoadError}</span>
+							)}
+							{orgSpecialtyIdError && <span class="register-field-error">{orgSpecialtyIdError}</span>}
 						</div>
 					</div>
 
-					<div class="m3-actions m3-actions--between">
-						<button type="button" data-prev-step class="m3-btn-tonal">
-							Atrás
-						</button>
-						<button type="submit" class="m3-btn-primary" disabled={orgSpecialties.length === 0}>
+					<div class="register-actions register-actions--between">
+						<button type="button" data-prev-step class="register-btn-tonal">Atrás</button>
+						<button type="submit" class="register-btn-primary" disabled={orgSpecialties.length === 0}>
 							Finalizar Registro
 						</button>
 					</div>
 				</div>
 			</form>
 
-			<div class="m3-card-footer">
-				<div class="m3-footer-divider"></div>
-				<a href="/auth/login" class="m3-link-accent">
-					¿Solo quieres entrar? <strong>Iniciar sesión</strong>
-				</a>
-			</div>
-		</div>
-	</main>
+			<footer class="register-card-footer">
+				<p class="register-footer-text">
+					¿Solo quieres entrar?
+					<a href="/auth/login" class="register-footer-link"><strong>Iniciar sesión</strong></a>
+				</p>
+			</footer>
+		</main>
+	</div>
+
+	<footer class="register-page-footer" aria-label="Copyright">
+		<p>Hasel &copy; 2026</p>
+	</footer>
 </section>
 
 <script is:inline>
@@ -254,7 +372,7 @@ const currentStep = normalizeStep(step);
 		if (!form || form.dataset.enhanced) return;
 		form.dataset.enhanced = 'true';
 
-		const formWrapper = form.closest('.m3-form-wrapper');
+		const formWrapper = form.closest('.register-card');
 		const errorBanner = formWrapper?.querySelector('[data-error-banner]');
 		const errorText = formWrapper?.querySelector('[data-error-text]');
 		const stepInput = form.querySelector('[data-step-input]');
@@ -266,11 +384,10 @@ const currentStep = normalizeStep(step);
 		const submitButton = form.querySelector('button[type="submit"]');
 		const panels = {
 			admin: form.querySelector('[data-step-panel="admin"]'),
-			organization: form.querySelector('[data-step-panel="organization"]')
+			organization: form.querySelector('[data-step-panel="organization"]'),
 		};
-		const indicators = form.closest('.m3-container').querySelectorAll('[data-step-indicator]');
-		
-		// DOM Texts to update
+		const indicators = form.closest('[data-register-page]')?.querySelectorAll('[data-step-indicator]');
+
 		const sidebarTitle = document.querySelector('[data-sidebar-title]');
 		const sidebarDesc = document.querySelector('[data-sidebar-desc]');
 		const panelIcon = document.querySelector('[data-panel-icon] span');
@@ -285,15 +402,15 @@ const currentStep = normalizeStep(step);
 				sbd: 'Ingresa tu información personal para comenzar con la configuración de tu espacio.',
 				pi: 'person',
 				pt: 'Tus datos personales',
-				pd: 'Al crear el espacio, se te asignará el rol de administrador de la organización'
+				pd: 'Al crear el espacio, se te asignará el rol de administrador de la organización',
 			},
 			organization: {
 				sbt: 'Paso 2',
 				sbd: 'Configuremos los detalles de tu organización y tu espacio de trabajo principal.',
 				pi: 'domain',
 				pt: 'Datos de Organización',
-				pd: 'Completa el contacto corporativo y la especialidad principal de tu organización'
-			}
+				pd: 'Completa el contacto corporativo y la especialidad principal de tu organización',
+			},
 		};
 
 		const toParaguayLocalPhoneDigits = (rawValue) => {
@@ -343,7 +460,9 @@ const currentStep = normalizeStep(step);
 		const getServerErrorMessage = (data) => {
 			const fieldErrors = Array.isArray(data?.fieldErrors)
 				? data.fieldErrors
-				: (Array.isArray(data?.errors) ? data.errors : []);
+				: Array.isArray(data?.errors)
+					? data.errors
+					: [];
 			return (
 				normalizeErrorText(data?.error) ||
 				normalizeErrorText(data?.message) ||
@@ -418,7 +537,7 @@ const currentStep = normalizeStep(step);
 				panel?.classList.toggle('is-hidden', key !== currentStep);
 			});
 
-			indicators.forEach(ind => {
+			indicators?.forEach((ind) => {
 				ind.classList.toggle('is-active', ind.dataset.stepIndicator === currentStep);
 			});
 
@@ -488,9 +607,10 @@ const currentStep = normalizeStep(step);
 				email: String(formData.get('email') || '').trim(),
 				password: String(formData.get('password') || ''),
 				business_name: String(formData.get('business_name') || '').trim(),
-				phone: orgPhoneInput instanceof HTMLInputElement
-					? toParaguayE164Phone(orgPhoneInput.value)
-					: String(formData.get('phone') || '').trim(),
+				phone:
+					orgPhoneInput instanceof HTMLInputElement
+						? toParaguayE164Phone(orgPhoneInput.value)
+						: String(formData.get('phone') || '').trim(),
 				company_email: String(formData.get('company_email') || '').trim(),
 				id_org_specialty: Number(String(formData.get('id_org_specialty') || '').trim()),
 				step: currentStep,
@@ -551,737 +671,1011 @@ const currentStep = normalizeStep(step);
 </script>
 
 <style>
-/* Material 3 Design System - Split Screen Layout */
-.m3-container {
-	display: flex;
-	flex-direction: column;
-	min-height: 100vh;
-	min-height: 100svh;
-	font-family: var(--font-body);
-	background-color: #050505;
-}
-
-@media (min-width: 1024px) {
-	.m3-container {
-		flex-direction: row;
-		height: 100vh;
-		height: 100svh;
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
 		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
 	}
-}
 
-/* Left Sidebar - Dark/Premium Theme */
-.m3-sidebar {
-	background-color: #050505; /* Deep elegant slate */
-	color: #f8fafc;
-	padding: 2.5rem 1.5rem;
-	position: relative;
-	overflow: hidden;
-}
+	.is-hidden {
+		display: none !important;
+	}
 
-.m3-sidebar::before {
-	content: '';
-	position: absolute;
-	top: 0; left: 0; right: 0; bottom: 0;
-	background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 60%);
-	pointer-events: none;
-}
+	.register-page {
+		--reg-bg: #0b0d12;
+		--reg-primary: #426edb;
+		--reg-primary-hover: #5a82e8;
+		--reg-on-primary: #ffffff;
+		--reg-surface: #1c1b1f;
+		--reg-surface-high: #201f23;
+		--reg-surface-highest: #2a292d;
+		--reg-on-surface: #e5e2e1;
+		--reg-on-surface-variant: #c4c6d0;
+		--reg-outline: #44474e;
+		--reg-outline-soft: rgba(68, 71, 78, 0.55);
+		--reg-error: #ffb4ab;
+		--reg-error-container: rgba(127, 29, 29, 0.28);
+		--reg-radius: 28px;
+		--reg-shell: 100%;
+		--reg-pad-x: 1.25rem;
 
-@media (min-width: 1024px) {
-	.m3-sidebar {
-		width: 40%;
-		max-width: 28rem;
-		padding: 3.5rem 4rem;
+		position: relative;
+		isolation: isolate;
+		overflow-x: clip;
+		min-height: 100vh;
+		min-height: 100dvh;
 		display: flex;
 		flex-direction: column;
+		font-family: var(--font-body, 'Nunito Sans', system-ui, sans-serif);
+		color: var(--reg-on-surface);
+		background-color: var(--reg-bg);
+		background-image:
+			radial-gradient(ellipse 85% 60% at 90% 6%, rgba(45, 110, 255, 0.2), transparent 58%),
+			radial-gradient(ellipse 70% 45% at 12% 88%, rgba(66, 110, 219, 0.1), transparent 60%),
+			linear-gradient(165deg, #0b0d12 0%, #101522 45%, #0b0d12 100%);
+		-webkit-font-smoothing: antialiased;
 	}
-}
 
-.m3-sidebar-inner {
-	position: relative;
-	z-index: 1;
-	display: flex;
-	flex-direction: column;
-	height: 100%;
-}
-
-.m3-brand {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	margin-bottom: 3.25rem;
-}
-
-.m3-logo {
-	height: 3rem;
-	width: auto;
-	object-fit: contain;
-}
-
-.m3-brand-link {
-	display: inline-flex;
-	align-items: center;
-	line-height: 0;
-}
-
-@media (min-width: 1024px) {
-	.m3-brand .m3-logo {
-		height: 3.85rem;
-		filter: drop-shadow(0 8px 20px rgba(59, 130, 246, 0.25));
+	:global(html:has(.register-page)),
+	:global(body:has(.register-page)) {
+		margin: 0;
+		padding: 0;
+		background: var(--reg-bg, #0b0d12);
 	}
-}
 
-.m3-brand-name {
-	font-size: 1.5rem;
-	font-weight: 800;
-	letter-spacing: -0.02em;
-	color: #ffffff;
-}
-
-.m3-stepper-header {
-	margin-bottom: 3rem;
-}
-
-.m3-step-maintitle {
-	font-size: 2.5rem;
-	font-weight: 700;
-	margin-bottom: 1rem;
-	color: #ffffff;
-}
-
-.m3-step-maindesc {
-	font-size: 1.05rem;
-	line-height: 1.6;
-	color: #94a3b8;
-}
-
-.m3-vertical-stepper {
-	display: flex;
-	flex-direction: column;
-	gap: 0;
-}
-
-.m3-step {
-	display: flex;
-	align-items: flex-start;
-	position: relative;
-	padding-bottom: 2.5rem;
-	opacity: 0.6;
-	transition: opacity 0.3s ease;
-}
-
-.m3-step:last-child {
-	padding-bottom: 0;
-}
-
-.m3-step.is-active {
-	opacity: 1;
-}
-
-.m3-step-node {
-	width: 2.5rem;
-	height: 2.5rem;
-	border-radius: 50%;
-	background-color: transparent;
-	border: 2px solid #475569;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	font-weight: 700;
-	font-size: 1rem;
-	color: #94a3b8;
-	z-index: 2;
-	transition: all 0.3s ease;
-}
-
-.m3-step.is-active .m3-step-node {
-	background-color: #3b82f6; /* Primary blue */
-	border-color: #3b82f6;
-	color: #ffffff;
-	box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
-}
-
-.m3-step-content {
-	margin-left: 1.5rem;
-	padding-top: 0.4rem;
-}
-
-.m3-step-label {
-	font-size: 1.1rem;
-	font-weight: 600;
-	color: inherit;
-}
-
-.m3-step-line {
-	position: absolute;
-	top: 2.5rem;
-	left: 1.25rem; /* center of node */
-	bottom: 0;
-	width: 2px;
-	background-color: #334155;
-	transform: translateX(-50%);
-	z-index: 1;
-}
-
-/* Right Content - Clean Material 3 Surface */
-.m3-content {
-	flex: 1;
-	background-color: #0a0a0a;
-	padding: 2.5rem 1.5rem;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-@media (min-width: 1024px) {
-	.m3-content {
-		padding: 3rem 4rem;
-		overflow-y: auto;
-		box-shadow: -10px 0 30px rgba(0,0,0,0.03);
+	@media (min-width: 768px) {
+		.register-page {
+			--reg-pad-x: 2rem;
+		}
 	}
-}
 
-.m3-form-wrapper {
-	width: 100%;
-	max-width: 40rem;
-}
-
-.m3-back-btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.5rem;
-	color: #64748b;
-	text-decoration: none;
-	font-weight: 600;
-	font-size: 0.95rem;
-	margin-bottom: 2rem;
-	transition: color 0.2s;
-}
-
-.m3-back-btn:hover {
-	color: #1e293b;
-}
-
-.m3-form-header {
-	display: flex;
-	align-items: center;
-	gap: 1.25rem;
-	margin-bottom: 2.5rem;
-}
-
-.m3-panel-icon {
-	width: 3.5rem;
-	height: 3.5rem;
-	min-width: 3.5rem;
-	min-height: 3.5rem;
-	flex: 0 0 3.5rem;
-	background-color: #eff6ff;
-	color: #2563eb;
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.m3-panel-titles {
-	min-width: 0;
-}
-
-.m3-panel-icon .material-symbols-rounded {
-	font-size: 1.75rem;
-}
-
-.m3-panel-title {
-	font-size: 1.75rem;
-	font-weight: 700;
-	color: #0f172a;
-	margin: 0 0 0.25rem 0;
-}
-
-.m3-panel-subtitle {
-	font-size: 1rem;
-	color: #64748b;
-	margin: 0;
-}
-
-/* Material 3 Form Elements */
-.is-hidden { display: none !important; }
-
-.m3-panel {
-	animation: m3fade 0.3s cubic-bezier(0.2, 0, 0, 1);
-}
-
-@keyframes m3fade {
-	from { opacity: 0; transform: translateY(10px); }
-	to { opacity: 1; transform: translateY(0); }
-}
-
-.m3-grid-2 {
-	display: grid;
-	grid-template-columns: 1fr;
-	gap: 1.5rem;
-	margin-bottom: 1.5rem;
-}
-
-@media (min-width: 640px) {
-	.m3-grid-2 {
-		grid-template-columns: 1fr 1fr;
+	@media (min-width: 1024px) {
+		.register-page {
+			--reg-shell: 85%;
+			--reg-pad-x: 2.75rem;
+		}
 	}
-}
 
-.m3-field {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-}
+	/* ─── Effects ─── */
 
-.m3-field-help {
-	font-size: 0.8rem;
-	line-height: 1.35;
-	color: #64748b;
-	margin: 0.1rem 0 0;
-	margin-left: 0.25rem;
-}
-
-.m3-password-strength {
-	display: grid;
-	gap: 0.35rem;
-	margin-top: 0.35rem;
-}
-
-.m3-password-strength.is-hidden {
-	display: none;
-}
-
-.m3-password-strength-bars {
-	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	gap: 0.35rem;
-}
-
-.m3-password-strength-segment {
-	height: 0.28rem;
-	border-radius: 9999px;
-	background-color: #e2e8f0;
-	transition: background-color 0.2s ease;
-}
-
-.m3-password-strength-segment.is-active {
-	background-color: #f59e0b;
-}
-
-.m3-password-strength[data-tone='weak'] .m3-password-strength-segment.is-active {
-	background-color: #dc2626;
-}
-
-.m3-password-strength[data-tone='warning'] .m3-password-strength-segment.is-active {
-	background-color: #f59e0b;
-}
-
-.m3-password-strength[data-tone='good'] .m3-password-strength-segment.is-active {
-	background-color: #0ea5e9;
-}
-
-.m3-password-strength[data-tone='strong'] .m3-password-strength-segment.is-active {
-	background-color: #059669;
-}
-
-.m3-password-strength-text {
-	margin: 0;
-	font-size: 0.82rem;
-	font-weight: 600;
-	color: #64748b;
-	text-align: right;
-}
-
-.m3-label {
-	font-size: 0.9rem;
-	font-weight: 600;
-	color: #334155;
-	margin-left: 0.25rem;
-}
-
-.m3-label-required {
-	color: #e11d48;
-	font-weight: 800;
-}
-
-.m3-input {
-	box-sizing: border-box;
-	width: 100%;
-	background-color: #f8fafc;
-	border: 1px solid #cbd5e1;
-	border-radius: 0.75rem;
-	padding: 0.875rem 1rem;
-	font-size: 1rem;
-	line-height: 1.4;
-	color: #0f172a;
-	caret-color: #2563eb;
-	-webkit-text-fill-color: currentColor;
-	font-family: inherit;
-	transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
-	outline: none;
-}
-
-.m3-input:focus {
-	background-color: #ffffff;
-	border-color: #2563eb;
-	box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-}
-
-.m3-input.is-invalid {
-	border-color: #e11d48;
-	background-color: #fff1f2;
-}
-
-.m3-input.is-invalid:focus {
-	box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.1);
-}
-
-.m3-select {
-	cursor: pointer;
-}
-
-.m3-input-affix {
-	position: relative;
-	display: flex;
-	align-items: center;
-}
-
-.m3-input-affix .m3-input {
-	padding-right: 3rem;
-}
-
-.m3-phone-group {
-	display: flex;
-	width: 100%;
-	border-radius: 0.75rem;
-}
-
-.m3-phone-prefix {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0 0.95rem;
-	border: 1px solid #cbd5e1;
-	border-right: 0;
-	border-radius: 0.75rem 0 0 0.75rem;
-	background-color: #f1f5f9;
-	color: #64748b;
-	font-size: 0.95rem;
-	font-weight: 700;
-	white-space: nowrap;
-	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.m3-phone-input {
-	border-top-left-radius: 0;
-	border-bottom-left-radius: 0;
-}
-
-.m3-phone-input:focus {
-	box-shadow: none;
-}
-
-.m3-phone-group:focus-within .m3-phone-prefix,
-.m3-phone-group:focus-within .m3-phone-input {
-	border-color: #2563eb;
-}
-
-.m3-phone-group:focus-within {
-	box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1);
-	border-radius: 0.75rem;
-}
-
-.m3-phone-group.is-invalid .m3-phone-prefix {
-	border-color: #e11d48;
-	background-color: #fff1f2;
-	color: #be123c;
-}
-
-.m3-phone-group.is-invalid:focus-within {
-	box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.1);
-}
-
-.m3-select:disabled {
-	background-color: #f1f5f9;
-	color: #94a3b8;
-	cursor: not-allowed;
-}
-
-.m3-icon-btn {
-	position: absolute;
-	right: 0.5rem;
-	background: none;
-	border: none;
-	color: #64748b;
-	width: 2.25rem;
-	height: 2.25rem;
-	border-radius: 50%;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	cursor: pointer;
-	transition: background-color 0.2s;
-}
-
-.m3-icon-btn:hover {
-	background-color: #e2e8f0;
-	color: #0f172a;
-}
-
-.m3-field-error {
-	font-size: 0.85rem;
-	color: #e11d48;
-	font-weight: 500;
-	margin-left: 0.25rem;
-}
-
-.m3-error-banner {
-	background-color: #fff1f2;
-	border: 1px solid #fecdd3;
-	color: #be123c;
-	padding: 1rem 1.25rem;
-	border-radius: 0.75rem;
-	margin-bottom: 2rem;
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	font-weight: 600;
-}
-
-.m3-actions {
-	display: flex;
-	align-items: center;
-	margin-top: 2.5rem;
-	padding-top: 2rem;
-	border-top: 1px solid #f1f5f9;
-}
-
-.m3-actions--end {
-	justify-content: flex-end;
-}
-
-.m3-actions--between {
-	justify-content: space-between;
-}
-
-/* Material 3 Buttons */
-.m3-btn-primary {
-	background-color: #2563eb;
-	color: #ffffff;
-	border: none;
-	border-radius: 9999px; /* Fully rounded capsule */
-	padding: 0.875rem 2rem;
-	font-size: 1rem;
-	font-weight: 600;
-	font-family: inherit;
-	cursor: pointer;
-	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-	box-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
-}
-
-.m3-btn-primary:hover {
-	background-color: #1d4ed8;
-	box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
-	transform: translateY(-1px);
-}
-
-.m3-btn-primary:disabled,
-.m3-btn-tonal:disabled {
-	opacity: 0.6;
-	cursor: not-allowed;
-	transform: none;
-	box-shadow: none;
-}
-
-.m3-btn-primary:disabled:hover {
-	background-color: #2563eb;
-	transform: none;
-	box-shadow: none;
-}
-
-.m3-btn-tonal {
-	background-color: #f1f5f9;
-	color: #0f172a;
-	border: none;
-	border-radius: 9999px;
-	padding: 0.875rem 2rem;
-	font-size: 1rem;
-	font-weight: 600;
-	font-family: inherit;
-	cursor: pointer;
-	transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
-}
-
-.m3-btn-tonal:hover {
-	background-color: #e2e8f0;
-}
-
-.m3-card-footer {
-    margin-top: 2.5rem;
-    padding-top: 1.5rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1.5rem;
-}
-
-.m3-footer-divider {
-    width: 40px;
-    height: 2px;
-    background: #e2e8f0;
-    border-radius: 1px;
-}
-
-.m3-link-accent {
-    color: #475569;
-    text-decoration: none;
-    font-size: 0.95rem;
-}
-
-.m3-link-accent strong {
-    color: #2563eb;
-    transition: color 0.2s;
-}
-
-.m3-link-accent:hover strong {
-    color: #1d4ed8;
-    text-decoration: underline;
-}
-
-.m3-link-accent--inline {
-	flex: 1;
-	min-width: 0;
-	padding-right: 1rem;
-	text-align: left;
-	line-height: 1.4;
-}
-
-@media (max-width: 640px) {
-	.m3-grid-2 {
-		gap: 0.75rem;
-		margin-bottom: 0.75rem;
+	.register-fx {
+		position: absolute;
+		inset: 0;
+		overflow: hidden;
+		pointer-events: none;
+		z-index: 0;
+		contain: paint;
 	}
-	.m3-field {
-		gap: 0.35rem;
+
+	.register-atmosphere {
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(circle at 50% 42%, rgba(90, 150, 255, 0.12), transparent 38%);
 	}
-	.m3-label {
-		font-size: 0.83rem;
+
+	.register-vignette {
+		position: absolute;
+		inset: 0;
+		background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
 	}
-	.m3-field-help {
-		font-size: 0.72rem;
-		line-height: 1.25;
+
+	.register-orb {
+		position: absolute;
+		border-radius: 9999px;
+		opacity: 0.6;
+		animation: register-orb-drift 22s ease-in-out infinite;
 	}
-	.m3-input {
-		padding: 0.72rem 0.85rem;
-		font-size: 0.95rem;
+
+	.register-orb-a {
+		top: -10%;
+		right: -8%;
+		width: min(52vw, 36rem);
+		height: min(52vw, 36rem);
+		background: radial-gradient(
+			circle,
+			rgba(55, 120, 255, 0.32) 0%,
+			rgba(30, 70, 200, 0.12) 40%,
+			transparent 70%
+		);
 	}
-	.m3-phone-prefix {
-		padding: 0 0.72rem;
-		font-size: 0.85rem;
+
+	.register-orb-b {
+		bottom: 4%;
+		left: -10%;
+		width: min(40vw, 26rem);
+		height: min(40vw, 26rem);
+		background: radial-gradient(circle, rgba(100, 160, 255, 0.18) 0%, transparent 68%);
+		animation-duration: 28s;
+		animation-direction: reverse;
+		opacity: 0.5;
 	}
-	.m3-btn-primary, .m3-btn-tonal {
-		width: 100%;
+
+	.register-deco {
+		display: none;
+		position: absolute;
+		box-sizing: border-box;
+		max-width: 8rem;
+		max-height: 6rem;
+	}
+
+	@media (min-width: 1024px) {
+		.register-deco {
+			display: block;
+		}
+	}
+
+	.register-deco-1 {
+		--_deco-rotate: rotate(12deg);
+		top: 18%;
+		left: 7%;
+		width: 4.5rem;
+		height: 4.5rem;
+		border-radius: 1rem;
+		border: 1.5px solid rgba(66, 110, 219, 0.4);
+		animation: register-float 8s ease-in-out infinite;
+	}
+
+	.register-deco-2 {
+		--_deco-rotate: rotate(-8deg);
+		bottom: 28%;
+		right: 6%;
+		width: 5.5rem;
+		height: 3.5rem;
+		border-radius: 0.85rem;
+		border: 1.5px solid rgba(66, 110, 219, 0.32);
+		animation: register-float 10s ease-in-out infinite 1.5s;
+	}
+
+	.register-deco-3 {
+		--_deco-rotate: rotate(-15deg);
+		top: 55%;
+		left: 4%;
+		width: 3rem;
+		height: 5rem;
+		border-radius: 0.75rem;
+		border: 1px solid rgba(66, 110, 219, 0.25);
+		animation: register-float 12s ease-in-out infinite 3s;
+	}
+
+	.register-deco-4 {
+		--_deco-rotate: rotate(22deg);
+		top: 32%;
+		right: 10%;
+		width: 3rem;
+		height: 3rem;
+		border-radius: 0.7rem;
+		background: rgba(66, 110, 219, 0.12);
+		border: 1px solid rgba(66, 110, 219, 0.2);
+		animation: register-float 9s ease-in-out infinite 0.8s;
+	}
+
+	.register-deco-5 {
+		--_deco-rotate: rotate(-6deg);
+		bottom: 16%;
+		left: 9%;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 0.5rem;
+		background: rgba(66, 110, 219, 0.14);
+		border: 1px solid rgba(66, 110, 219, 0.22);
+		animation: register-float 7s ease-in-out infinite 2.2s;
+	}
+
+	.register-deco-6 {
+		--_deco-rotate: rotate(0deg);
+		top: 12%;
+		right: 18%;
+		width: 1.25rem;
+		height: 1.25rem;
+		border-radius: 9999px;
+		background: rgba(66, 110, 219, 0.28);
+		animation: register-float 6s ease-in-out infinite 0.5s;
+	}
+
+	.register-deco-7 {
+		--_deco-rotate: rotate(0deg);
+		bottom: 38%;
+		left: 15%;
+		width: 0.85rem;
+		height: 0.85rem;
+		border-radius: 9999px;
+		background: rgba(66, 110, 219, 0.35);
+		animation: register-float 8s ease-in-out infinite 4s;
+	}
+
+	.register-deco-wave1,
+	.register-deco-wave2 {
+		height: 1.35rem;
+		border: none;
+		opacity: 0.55;
+		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 24' fill='none'%3E%3Cpath d='M1 12c8-10 16 10 24 0s16 10 24 0 16 10 24 0 16 10 24 0 16 10 24 0' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+		mask-size: 100% 100%;
+		mask-repeat: no-repeat;
+		-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 24' fill='none'%3E%3Cpath d='M1 12c8-10 16 10 24 0s16 10 24 0 16 10 24 0 16 10 24 0 16 10 24 0' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+		-webkit-mask-size: 100% 100%;
+		-webkit-mask-repeat: no-repeat;
+		background-color: rgba(66, 110, 219, 0.55);
+	}
+
+	.register-deco-wave1 {
+		--_deco-rotate: rotate(6deg);
+		top: 72%;
+		right: 5%;
+		width: 7.5rem;
+		animation: register-float 11s ease-in-out infinite 2s;
+	}
+
+	.register-deco-wave2 {
+		--_deco-rotate: rotate(-4deg);
+		top: 24%;
+		left: 12%;
+		width: 5.5rem;
+		animation: register-float 9s ease-in-out infinite 3.5s;
+	}
+
+	@keyframes register-float {
+		0%,
+		100% {
+			transform: translate3d(0, 0, 0) var(--_deco-rotate, rotate(0deg));
+		}
+		50% {
+			transform: translate3d(0, -6px, 0) var(--_deco-rotate, rotate(0deg));
+		}
+	}
+
+	@keyframes register-orb-drift {
+		0%,
+		100% {
+			transform: translate3d(0, 0, 0);
+		}
+		50% {
+			transform: translate3d(1.5%, -2%, 0);
+		}
+	}
+
+	/* ─── Topbar ─── */
+
+	.register-topbar {
+		position: relative;
+		z-index: 2;
+		padding: 1rem var(--reg-pad-x) 0.5rem;
+	}
+
+	.register-topbar-inner {
+		width: var(--reg-shell);
+		max-width: 100%;
+		margin: 0 auto;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.register-brand {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.65rem;
+		text-decoration: none;
+		color: var(--reg-on-surface);
+	}
+
+	.register-brand-logo {
+		width: 2.25rem;
+		height: 2.25rem;
+		object-fit: contain;
+	}
+
+	.register-brand-wordmark {
+		font-size: 1.35rem;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		line-height: 1;
+	}
+
+	.register-topbar-cta {
+		display: inline-flex;
+		align-items: center;
 		justify-content: center;
-		padding: 0.85rem 0.95rem;
+		min-height: 2.5rem;
+		padding: 0.55rem 1.15rem;
+		border-radius: 9999px;
+		background: var(--reg-primary);
+		color: var(--reg-on-primary);
+		font-size: 0.92rem;
+		font-weight: 700;
+		text-decoration: none;
+		transition: background-color 180ms ease, transform 180ms ease;
+	}
+
+	.register-topbar-cta:hover {
+		background: var(--reg-primary-hover);
+		transform: translateY(-1px);
+	}
+
+	/* ─── Shell & Card ─── */
+
+	.register-shell {
+		position: relative;
+		z-index: 2;
+		flex: 1;
+		width: var(--reg-shell);
+		max-width: 100%;
+		margin: 0 auto;
+		padding: 1.25rem var(--reg-pad-x) 2rem;
+		display: flex;
+		align-items: flex-start;
+		justify-content: center;
+	}
+
+	@media (min-width: 900px) {
+		.register-shell {
+			align-items: center;
+		}
+	}
+
+	.register-card {
+		position: relative;
+		z-index: 2;
+		width: 100%;
+		max-width: 44rem;
+		padding: 1.75rem 1.35rem 1.75rem;
+		border-radius: var(--reg-radius);
+		background: #1c1b1f;
+		border: 1px solid var(--reg-outline-soft);
+		border-top-color: rgba(66, 110, 219, 0.38);
+		box-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.4),
+			0 24px 56px rgba(0, 0, 0, 0.4),
+			0 0 80px rgba(66, 110, 219, 0.06),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+		animation: register-card-in 360ms cubic-bezier(0.2, 0, 0, 1);
+	}
+
+	@media (min-width: 640px) {
+		.register-card {
+			padding: 2.5rem 2.5rem 2.25rem;
+		}
+	}
+
+	@keyframes register-card-in {
+		from {
+			opacity: 0;
+			transform: translateY(12px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	/* ─── Horizontal Stepper ─── */
+
+	.register-stepper {
+		display: flex;
+		align-items: flex-start;
+		justify-content: center;
+		gap: 0;
+		margin-bottom: 1.75rem;
+	}
+
+	.register-step {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.45rem;
+		opacity: 0.5;
+		transition: opacity 200ms ease;
+		min-width: 5.5rem;
+	}
+
+	.register-step.is-active {
+		opacity: 1;
+	}
+
+	.register-step-node {
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: 9999px;
+		border: 2px solid var(--reg-outline);
+		background: var(--reg-surface-high);
+		color: var(--reg-on-surface-variant);
+		display: flex;
+		align-items: center;
+		justify-content: center;
 		font-size: 0.95rem;
+		font-weight: 700;
+		transition: all 200ms ease;
 	}
-	.m3-actions--between {
-		flex-direction: column-reverse;
-		gap: 0.75rem;
+
+	.register-step.is-active .register-step-node {
+		background: var(--reg-primary);
+		border-color: var(--reg-primary);
+		color: var(--reg-on-primary);
+		box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.22);
 	}
-	.m3-link-accent--inline {
-		padding-right: 0;
+
+	.register-step-label {
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--reg-on-surface-variant);
 		text-align: center;
 	}
-}
 
-.m3-mobile-brand {
-	display: none;
-}
+	.register-step.is-active .register-step-label {
+		color: var(--reg-on-surface);
+	}
 
-@media (max-width: 1023px) {
-	.m3-container {
-		min-height: 100vh;
-		min-height: 100dvh;
-	}
-	.m3-sidebar {
-		display: none;
-	}
-	.m3-content {
-		min-height: 100vh;
-		min-height: 100dvh;
-		padding: clamp(0.9rem, 2.6vh, 1.5rem) 1rem;
-		align-items: center;
-		overflow-y: auto;
-		-webkit-overflow-scrolling: touch;
-	}
-	.m3-form-wrapper {
-		margin-top: 0;
-		width: 100%;
-		display: flex;
-		flex-direction: column;
-		justify-content: center;
-		gap: 0.8rem;
-	}
-	.m3-form-header {
-		gap: 0.85rem;
-		margin-bottom: 0.95rem;
+	.register-step-line {
+		width: 3.5rem;
+		height: 2px;
+		margin-top: 1.05rem;
+		background: var(--reg-outline);
 		flex-shrink: 0;
+		align-self: flex-start;
 	}
-	.m3-panel-icon {
+
+	@media (min-width: 640px) {
+		.register-step-line {
+			width: 5rem;
+		}
+		.register-step {
+			min-width: 7rem;
+		}
+	}
+
+	/* ─── Card Header ─── */
+
+	.register-card-header {
+		display: flex;
+		align-items: flex-start;
+		gap: 1rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.register-panel-icon {
 		width: 3rem;
 		height: 3rem;
 		min-width: 3rem;
-		min-height: 3rem;
-		flex-basis: 3rem;
+		border-radius: 9999px;
+		background: rgba(66, 110, 219, 0.14);
+		color: #a8c7ff;
+		border: 1px solid rgba(96, 165, 250, 0.18);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
 	}
-	.m3-panel-title {
-		font-size: 1.55rem;
-		margin-bottom: 0.15rem;
-	}
-	.m3-panel-subtitle {
-		font-size: 0.94rem;
-		line-height: 1.35;
-	}
-	.m3-error-banner {
-		padding: 0.75rem 0.9rem;
-		margin-bottom: 0.9rem;
-		font-size: 0.85rem;
-	}
-	.m3-actions {
-		margin-top: 1rem;
-		padding-top: 0.85rem;
-	}
-	.m3-card-footer {
-		margin-top: 0.85rem;
-		padding-top: 0.75rem;
-		gap: 0.55rem;
-	}
-	.m3-footer-divider {
-		width: 34px;
-	}
-	.m3-link-accent {
-		font-size: 0.88rem;
-	}
-}
 
-@media (max-width: 1023px) and (max-height: 760px) {
-	.m3-mobile-brand {
-		margin-bottom: 0.4rem;
+	.register-panel-icon .material-symbols-rounded {
+		font-size: 1.45rem;
 	}
-	.m3-form-header {
-		margin-bottom: 0.7rem;
+
+	.register-panel-titles {
+		min-width: 0;
 	}
-	.m3-panel-title {
-		font-size: 1.4rem;
+
+	.register-title {
+		margin: 0 0 0.3rem;
+		font-size: clamp(1.35rem, 2.2vw, 1.65rem);
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		color: var(--reg-on-surface);
+		line-height: 1.2;
 	}
-	.m3-panel-subtitle {
+
+	.register-subtitle {
+		margin: 0;
+		font-size: 0.92rem;
+		line-height: 1.45;
+		color: var(--reg-on-surface-variant);
+	}
+
+	/* ─── Error Banner ─── */
+
+	.register-error-banner {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.65rem;
+		padding: 0.9rem 1rem;
+		border-radius: 0.85rem;
+		margin-bottom: 1.25rem;
+		font-size: 0.92rem;
+		font-weight: 600;
+		line-height: 1.4;
+		background: var(--reg-error-container);
+		border: 1px solid rgba(255, 180, 171, 0.35);
+		color: var(--reg-error);
+	}
+
+	.register-error-banner .material-symbols-rounded {
+		font-size: 1.25rem;
+		flex-shrink: 0;
+	}
+
+	/* ─── Form ─── */
+
+	.register-panel {
+		animation: register-fade 280ms cubic-bezier(0.2, 0, 0, 1);
+	}
+
+	@keyframes register-fade {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.register-grid-2 {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1.15rem;
+		margin-bottom: 1.15rem;
+	}
+
+	@media (min-width: 640px) {
+		.register-grid-2 {
+			grid-template-columns: 1fr 1fr;
+			gap: 1.25rem;
+		}
+	}
+
+	.register-field {
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+	}
+
+	.register-label {
 		font-size: 0.88rem;
+		font-weight: 600;
+		color: var(--reg-on-surface);
+		margin-left: 0.15rem;
 	}
-	.m3-card-footer {
+
+	.register-label-required {
+		color: var(--reg-error);
+		font-weight: 800;
+	}
+
+	.register-field-help {
+		margin: 0.1rem 0 0;
+		margin-left: 0.15rem;
+		font-size: 0.78rem;
+		line-height: 1.35;
+		color: rgba(196, 198, 208, 0.7);
+	}
+
+	.register-input {
+		box-sizing: border-box;
+		width: 100%;
+		min-height: 3rem;
+		padding: 0.8rem 1rem;
+		border-radius: 0.85rem;
+		border: 1px solid var(--reg-outline);
+		background: color-mix(in srgb, var(--reg-surface-high) 70%, #0b0d12);
+		color: var(--reg-on-surface);
+		caret-color: var(--reg-primary);
+		font: inherit;
+		font-size: 1rem;
+		line-height: 1.4;
+		outline: none;
+		transition:
+			background-color 180ms ease,
+			border-color 180ms ease,
+			box-shadow 180ms ease;
+		-webkit-text-fill-color: currentColor;
+	}
+
+	.register-input::placeholder {
+		color: color-mix(in srgb, var(--reg-on-surface-variant) 65%, transparent);
+	}
+
+	.register-input:focus {
+		border-color: var(--reg-primary);
+		background: color-mix(in srgb, var(--reg-surface-high) 55%, #0b0d12);
+		box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.22);
+	}
+
+	.register-input.is-invalid {
+		border-color: var(--reg-error);
+		background: var(--reg-error-container);
+	}
+
+	.register-input.is-invalid:focus {
+		box-shadow: 0 0 0 4px rgba(255, 180, 171, 0.18);
+	}
+
+	.register-select {
+		cursor: pointer;
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23c4c6d0' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 0.9rem center;
+		background-size: 1rem;
+		padding-right: 2.5rem;
+	}
+
+	.register-select:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
+	}
+
+	.register-select option {
+		background: #1c1b1f;
+		color: var(--reg-on-surface);
+	}
+
+	.register-input-affix {
+		position: relative;
+		display: flex;
+		align-items: center;
+	}
+
+	.register-input-affix .register-input {
+		padding-right: 3rem;
+	}
+
+	.register-icon-btn {
+		position: absolute;
+		right: 0.4rem;
+		width: 2.35rem;
+		height: 2.35rem;
+		border: none;
+		border-radius: 9999px;
+		background: transparent;
+		color: var(--reg-on-surface-variant);
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		cursor: pointer;
+		transition: background-color 160ms ease, color 160ms ease;
+	}
+
+	.register-icon-btn:hover {
+		background: color-mix(in srgb, var(--reg-surface-highest) 80%, transparent);
+		color: var(--reg-on-surface);
+	}
+
+	.register-icon-btn .material-symbols-rounded {
+		font-size: 1.25rem;
+	}
+
+	.register-field-error {
+		font-size: 0.84rem;
+		font-weight: 500;
+		color: var(--reg-error);
+		margin-left: 0.15rem;
+	}
+
+	/* Phone group */
+	.register-phone-group {
+		display: flex;
+		width: 100%;
+		border-radius: 0.85rem;
+	}
+
+	.register-phone-prefix {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: 0 0.95rem;
+		border: 1px solid var(--reg-outline);
+		border-right: 0;
+		border-radius: 0.85rem 0 0 0.85rem;
+		background: var(--reg-surface-highest);
+		color: var(--reg-on-surface-variant);
+		font-size: 0.95rem;
+		font-weight: 700;
+		white-space: nowrap;
+		transition: border-color 180ms ease;
+	}
+
+	.register-phone-input {
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+
+	.register-phone-input:focus {
+		box-shadow: none;
+	}
+
+	.register-phone-group:focus-within .register-phone-prefix,
+	.register-phone-group:focus-within .register-phone-input {
+		border-color: var(--reg-primary);
+	}
+
+	.register-phone-group:focus-within {
+		box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.22);
+		border-radius: 0.85rem;
+	}
+
+	.register-phone-group.is-invalid .register-phone-prefix {
+		border-color: var(--reg-error);
+		background: var(--reg-error-container);
+		color: var(--reg-error);
+	}
+
+	.register-phone-group.is-invalid:focus-within {
+		box-shadow: 0 0 0 4px rgba(255, 180, 171, 0.18);
+	}
+
+	/* Password strength */
+	.register-password-strength {
+		display: grid;
+		gap: 0.35rem;
+		margin-top: 0.35rem;
+	}
+
+	.register-password-strength.is-hidden {
 		display: none;
 	}
-}
+
+	.register-password-strength-bars {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		gap: 0.35rem;
+	}
+
+	.register-password-strength-segment {
+		height: 0.28rem;
+		border-radius: 9999px;
+		background-color: var(--reg-outline);
+		transition: background-color 0.2s ease;
+	}
+
+	.register-password-strength[data-tone='weak'] .register-password-strength-segment.is-active {
+		background-color: #dc2626;
+	}
+
+	.register-password-strength[data-tone='warning'] .register-password-strength-segment.is-active {
+		background-color: #f59e0b;
+	}
+
+	.register-password-strength[data-tone='good'] .register-password-strength-segment.is-active {
+		background-color: #0ea5e9;
+	}
+
+	.register-password-strength[data-tone='strong'] .register-password-strength-segment.is-active {
+		background-color: #059669;
+	}
+
+	.register-password-strength-text {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--reg-on-surface-variant);
+		text-align: right;
+	}
+
+	/* Actions */
+	.register-actions {
+		display: flex;
+		align-items: center;
+		margin-top: 1.75rem;
+		padding-top: 1.35rem;
+		border-top: 1px solid var(--reg-outline-soft);
+		gap: 1rem;
+	}
+
+	.register-actions--between {
+		justify-content: space-between;
+	}
+
+	.register-btn-primary {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 3rem;
+		padding: 0.8rem 1.75rem;
+		border: none;
+		border-radius: 9999px;
+		background: var(--reg-primary);
+		color: var(--reg-on-primary);
+		font: inherit;
+		font-size: 1rem;
+		font-weight: 700;
+		cursor: pointer;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+		transition: background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+	}
+
+	.register-btn-primary:hover {
+		background: var(--reg-primary-hover);
+		transform: translateY(-1px);
+		box-shadow: 0 8px 20px rgba(66, 110, 219, 0.28);
+	}
+
+	.register-btn-primary:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
+		transform: none;
+		box-shadow: none;
+	}
+
+	.register-btn-primary:disabled:hover {
+		background: var(--reg-primary);
+		transform: none;
+		box-shadow: none;
+	}
+
+	.register-btn-tonal {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 3rem;
+		padding: 0.8rem 1.75rem;
+		border: 1px solid var(--reg-outline);
+		border-radius: 9999px;
+		background: var(--reg-surface-highest);
+		color: var(--reg-on-surface);
+		font: inherit;
+		font-size: 1rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: background-color 180ms ease, border-color 180ms ease;
+	}
+
+	.register-btn-tonal:hover {
+		background: color-mix(in srgb, var(--reg-surface-highest) 70%, #fff 8%);
+		border-color: color-mix(in srgb, var(--reg-outline) 70%, #fff 15%);
+	}
+
+	.register-link-accent {
+		color: var(--reg-on-surface-variant);
+		text-decoration: none;
+		font-size: 0.92rem;
+		line-height: 1.4;
+	}
+
+	.register-link-accent strong {
+		color: color-mix(in srgb, var(--reg-primary) 72%, #a8c7ff);
+		font-weight: 700;
+		transition: color 160ms ease;
+	}
+
+	.register-link-accent:hover strong {
+		color: #a8c7ff;
+		text-decoration: underline;
+	}
+
+	.register-link-accent--inline {
+		flex: 1;
+		min-width: 0;
+		padding-right: 0.75rem;
+		text-align: left;
+	}
+
+	/* Card footer */
+	.register-card-footer {
+		margin-top: 1.5rem;
+		padding-top: 1.15rem;
+		border-top: 1px solid var(--reg-outline-soft);
+		text-align: center;
+	}
+
+	.register-footer-text {
+		margin: 0;
+		font-size: 0.94rem;
+		color: var(--reg-on-surface-variant);
+	}
+
+	.register-footer-link {
+		color: inherit;
+		text-decoration: none;
+		margin-left: 0.2rem;
+	}
+
+	.register-footer-link strong {
+		color: color-mix(in srgb, var(--reg-primary) 72%, #a8c7ff);
+		font-weight: 700;
+	}
+
+	.register-footer-link:hover strong {
+		color: #a8c7ff;
+		text-decoration: underline;
+	}
+
+	/* Page footer */
+	.register-page-footer {
+		position: relative;
+		z-index: 1;
+		width: var(--reg-shell);
+		max-width: 100%;
+		margin: 0 auto;
+		text-align: center;
+		padding: 0.75rem var(--reg-pad-x) 1.5rem;
+		box-sizing: border-box;
+	}
+
+	.register-page-footer p {
+		margin: 0;
+		font-size: 0.82rem;
+		color: rgba(196, 198, 208, 0.45);
+		letter-spacing: 0.01em;
+	}
+
+	/* ─── Responsive ─── */
+
+	@media (max-width: 640px) {
+		.register-step {
+			min-width: 4.5rem;
+		}
+
+		.register-step-node {
+			width: 2rem;
+			height: 2rem;
+			font-size: 0.88rem;
+		}
+
+		.register-step-label {
+			font-size: 0.72rem;
+		}
+
+		.register-step-line {
+			width: 2.25rem;
+			margin-top: 0.95rem;
+		}
+
+		.register-card-header {
+			gap: 0.75rem;
+			margin-bottom: 1.15rem;
+		}
+
+		.register-panel-icon {
+			width: 2.65rem;
+			height: 2.65rem;
+			min-width: 2.65rem;
+		}
+
+		.register-panel-icon .material-symbols-rounded {
+			font-size: 1.25rem;
+		}
+
+		.register-grid-2 {
+			gap: 0.85rem;
+			margin-bottom: 0.85rem;
+		}
+
+		.register-actions--between {
+			flex-direction: column-reverse;
+			gap: 0.75rem;
+		}
+
+		.register-btn-primary,
+		.register-btn-tonal {
+			width: 100%;
+		}
+
+		.register-link-accent--inline {
+			padding-right: 0;
+			text-align: center;
+		}
+
+		.register-actions {
+			margin-top: 1.15rem;
+			padding-top: 1rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.register-orb,
+		.register-deco,
+		.register-card,
+		.register-panel,
+		.register-topbar-cta,
+		.register-btn-primary {
+			animation: none;
+			transition: none;
+		}
+	}
 </style>
