@@ -1,7 +1,7 @@
 <atc-chat-modal>
 	<dialog
 		data-atc-chat-modal
-		class="m-0 mt-auto mb-0 h-[min(34rem,92svh)] w-screen max-w-none open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:h-[min(36rem,90vh)] sm:w-[min(28rem,calc(100vw-2rem))] sm:max-w-[min(28rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[min(28rem,100%)] lg:max-w-[min(28rem,100%)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+		class="m-0 mt-auto mb-0 h-[min(34rem,92svh)] w-screen max-w-none open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:h-[min(36rem,90vh)] sm:w-[min(32rem,calc(100vw-2rem))] sm:max-w-[min(32rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[min(32rem,100%)] lg:max-w-[min(32rem,100%)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 	>
 		<header class="flex shrink-0 items-start justify-between gap-3 border-b border-(--shell-border) px-4 py-3 sm:px-5 sm:py-4">
 			<div class="flex min-w-0 items-center gap-3">
@@ -227,12 +227,24 @@
 
 		private open() {
 			if (!this.modal) return;
-			this.modal.classList.remove('is-closing');
+			this.modal.classList.remove('is-closing', 'is-settled');
 			this.applyMobileSheetLock();
 			if (!this.modal.open) this.modal.showModal();
 			this.clearError();
-			// Warm-up del parser markdown (lazy) al abrir, fuera del critical path de la página.
-			void ensureMarked();
+			const settleMs = Number.parseInt(
+				getComputedStyle(this.modal).getPropertyValue('--modal-open-duration') || '220',
+				10
+			);
+			window.setTimeout(() => {
+				this.modal?.classList.add('is-settled');
+			}, Number.isFinite(settleMs) ? settleMs : 220);
+			// Warm-up markdown en idle para no competir con la apertura.
+			const warmMarked = () => void ensureMarked();
+			if ('requestIdleCallback' in window) {
+				window.requestIdleCallback(warmMarked, { timeout: 1500 });
+			} else {
+				window.setTimeout(warmMarked, 300);
+			}
 			// En mobile no autofocus: el teclado sube el sheet y lo comprime.
 			if (!this.isMobileSheet()) {
 				queueMicrotask(() => this.input?.focus({ preventScroll: true }));
@@ -242,6 +254,7 @@
 		private close() {
 			if (!this.modal?.open || this.modal.classList.contains('is-closing')) return;
 			this.modal.classList.add('is-closing');
+			this.modal.classList.remove('is-settled');
 			window.setTimeout(() => {
 				this.modal?.close();
 				this.modal?.classList.remove('is-closing');
@@ -478,14 +491,15 @@
 	}
 
 	[data-atc-chat-modal]::backdrop {
-		background: rgba(15, 17, 21, 0.6);
-		backdrop-filter: none;
-		-webkit-backdrop-filter: none;
+		/* Blur estático: animar backdrop-filter fuerza re-raster y causa lag. */
+		background: var(--modal-backdrop-tint);
+		backdrop-filter: blur(var(--modal-backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		animation: atc-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
 	}
 
 	html[data-theme='dark'] [data-atc-chat-modal]::backdrop {
-		background: rgba(0, 0, 0, 0.58);
+		background: var(--modal-backdrop-tint);
 	}
 
 	[data-atc-chat-modal].is-closing {
@@ -545,26 +559,18 @@
 	@keyframes atc-backdrop-in {
 		from {
 			opacity: 0;
-			backdrop-filter: blur(0);
-			-webkit-backdrop-filter: blur(0);
 		}
 		to {
 			opacity: 1;
-			backdrop-filter: blur(var(--modal-backdrop-blur));
-			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 	}
 
 	@keyframes atc-backdrop-out {
 		from {
 			opacity: 1;
-			backdrop-filter: blur(var(--modal-backdrop-blur));
-			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 		to {
 			opacity: 0;
-			backdrop-filter: blur(0);
-			-webkit-backdrop-filter: blur(0);
 		}
 	}
 
@@ -578,6 +584,10 @@
 			max-width: none;
 			height: min(34rem, 92svh);
 			max-height: 92svh;
+		}
+
+		/* Tras la animación: fijar transform para que el teclado no desplace el sheet. */
+		[data-atc-chat-modal][open].is-settled {
 			transform: none;
 		}
 	}
@@ -588,8 +598,8 @@
 			inset: 0 0 0 auto;
 			height: 100dvh;
 			max-height: 100dvh;
-			width: min(28rem, 100%);
-			max-width: min(28rem, 100%);
+			width: min(32rem, 100vw);
+			max-width: min(32rem, 100vw);
 			border-radius: 0;
 			box-shadow: none;
 			animation-name: atc-drawer-in;
