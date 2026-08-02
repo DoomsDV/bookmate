@@ -1771,11 +1771,20 @@ const googleMapsApiKey =
 
 	dialog[data-location-modal] {
 		position: fixed;
-		inset: 0;
+		inset: auto 0 0 0;
+		top: auto;
+		margin: 0;
+		width: 100%;
+		max-width: none;
+		max-height: min(85dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
+		height: auto;
 		animation: location-modal-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-location-modal]::backdrop {
+		background: var(--modal-backdrop-tint);
+		backdrop-filter: blur(var(--modal-backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		animation: location-backdrop-in var(--modal-open-duration) var(--modal-easing);
 	}
 
@@ -1812,6 +1821,15 @@ const googleMapsApiKey =
 	}
 
 	@media (min-width: 640px) and (max-width: 1023px) {
+		dialog[data-location-modal] {
+			inset: 0;
+			margin: auto;
+			width: min(48rem, calc(100vw - 2rem));
+			max-width: min(48rem, calc(100vw - 2rem));
+			max-height: 90vh;
+			height: auto;
+		}
+
 		@keyframes location-modal-in {
 			from {
 				opacity: 0;

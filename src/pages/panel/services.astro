@@ -1476,11 +1476,20 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 	dialog[data-service-modal] {
 		position: fixed;
-		inset: 0;
+		inset: auto 0 0 0;
+		top: auto;
+		margin: 0;
+		width: 100%;
+		max-width: none;
+		max-height: min(85dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
+		height: auto;
 		animation: service-modal-in var(--modal-open-duration) var(--modal-easing);
 	}
 
 	dialog[data-service-modal]::backdrop {
+		background: var(--modal-backdrop-tint);
+		backdrop-filter: blur(var(--modal-backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		animation: service-backdrop-in var(--modal-open-duration) var(--modal-easing);
 	}
 
@@ -1716,8 +1725,17 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 	}
 
-	/* Tablet: modal centrado (sin tocar layout) */
+	/* Tablet: modal centrado */
 	@media (min-width: 640px) and (max-width: 1023px) {
+		dialog[data-service-modal] {
+			inset: 0;
+			margin: auto;
+			width: min(48rem, calc(100vw - 2rem));
+			max-width: min(48rem, calc(100vw - 2rem));
+			max-height: 90vh;
+			height: auto;
+		}
+
 		@keyframes service-modal-in {
 			from {
 				opacity: 0;
