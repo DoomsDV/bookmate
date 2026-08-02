@@ -397,20 +397,19 @@ const {
 		animation: login-float 8s ease-in-out infinite 4s;
 	}
 
-	/* Wavy lines via repeating radial mask — fixed size, never inherits text color */
+	/* Waves without data: URLs (avoids Vite/Firefox resolving file://) */
 	.login-deco-wave1,
 	.login-deco-wave2 {
-		height: 1.35rem;
+		height: 1.1rem;
 		background: transparent;
 		border: none;
 		opacity: 0.55;
-		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 24' fill='none'%3E%3Cpath d='M1 12c8-10 16 10 24 0s16 10 24 0 16 10 24 0 16 10 24 0 16 10 24 0' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
-		mask-size: 100% 100%;
-		mask-repeat: no-repeat;
-		-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 24' fill='none'%3E%3Cpath d='M1 12c8-10 16 10 24 0s16 10 24 0 16 10 24 0 16 10 24 0 16 10 24 0' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
-		-webkit-mask-size: 100% 100%;
-		-webkit-mask-repeat: no-repeat;
-		background-color: rgba(66, 110, 219, 0.55);
+		background:
+			radial-gradient(ellipse 18% 70% at 8% 55%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
+			radial-gradient(ellipse 18% 70% at 28% 40%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
+			radial-gradient(ellipse 18% 70% at 48% 60%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
+			radial-gradient(ellipse 18% 70% at 68% 38%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%),
+			radial-gradient(ellipse 18% 70% at 88% 55%, transparent 55%, rgba(66, 110, 219, 0.7) 56%, transparent 62%);
 	}
 
 	.login-deco-wave1 {
@@ -649,10 +648,10 @@ const {
 		min-height: 3rem;
 		padding: 0.8rem 1rem;
 		border-radius: 0.85rem;
-		border: 1px solid rgba(255, 255, 255, 0.14);
-		background: rgba(255, 255, 255, 0.06);
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
+		border: 1px solid rgba(255, 255, 255, 0.1);
+		background: rgba(255, 255, 255, 0.025);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
 		color: var(--login-on-surface);
 		caret-color: var(--login-primary);
 		font: inherit;
@@ -671,9 +670,9 @@ const {
 	}
 
 	.login-input:focus {
-		border-color: rgba(168, 199, 255, 0.55);
-		background: rgba(255, 255, 255, 0.1);
-		box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.22);
+		border-color: rgba(168, 199, 255, 0.5);
+		background: rgba(255, 255, 255, 0.05);
+		box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.2);
 	}
 
 	.login-input.is-invalid {
@@ -759,8 +758,8 @@ const {
 		width: 1.2rem;
 		height: 1.2rem;
 		border-radius: 0.3rem;
-		border: 1.5px solid rgba(255, 255, 255, 0.22);
-		background: rgba(255, 255, 255, 0.06);
+		border: 1.5px solid rgba(255, 255, 255, 0.18);
+		background: rgba(255, 255, 255, 0.025);
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -807,11 +806,9 @@ const {
 		width: 100%;
 		margin-top: 1.5rem;
 		min-height: 3.1rem;
-		border: 1px solid rgba(255, 255, 255, 0.22);
+		border: none;
 		border-radius: 9999px;
-		background: rgba(66, 110, 219, 0.55);
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
+		background: var(--login-primary);
 		color: var(--login-on-primary);
 		font: inherit;
 		font-size: 1rem;
@@ -820,18 +817,14 @@ const {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		box-shadow:
-			0 1px 2px rgba(0, 0, 0, 0.25),
-			inset 0 1px 0 rgba(255, 255, 255, 0.15);
-		transition: background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease,
-			border-color 180ms ease;
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+		transition: background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
 	}
 
 	.login-submit:hover {
-		background: rgba(90, 130, 232, 0.72);
-		border-color: rgba(255, 255, 255, 0.32);
+		background: var(--login-primary-hover);
 		transform: translateY(-1px);
-		box-shadow: 0 8px 24px rgba(66, 110, 219, 0.35);
+		box-shadow: 0 8px 20px rgba(66, 110, 219, 0.28);
 	}
 
 	.login-submit:active {
@@ -887,6 +880,139 @@ const {
 		font-size: 0.82rem;
 		color: rgba(196, 198, 208, 0.45);
 		letter-spacing: 0.01em;
+	}
+
+	/* ─── Mobile compact (fit without scroll) ─── */
+
+	@media (max-width: 640px) {
+		.login-page {
+			--login-pad-x: 0.85rem;
+		}
+
+		.login-topbar {
+			padding: 0.55rem var(--login-pad-x) 0.25rem;
+		}
+
+		.login-brand-logo {
+			width: 1.85rem;
+			height: 1.85rem;
+		}
+
+		.login-brand-wordmark {
+			font-size: 1.15rem;
+		}
+
+		.login-topbar-cta {
+			min-height: 2.1rem;
+			padding: 0.35rem 0.9rem;
+			font-size: 0.82rem;
+		}
+
+		.login-shell {
+			padding: 0.35rem var(--login-pad-x) 0.5rem;
+			align-items: center;
+			justify-content: center;
+		}
+
+		.login-card {
+			width: 100%;
+			height: auto;
+			align-self: center;
+			flex: 0 0 auto;
+			padding: 1.15rem 1.1rem 1rem;
+			border-radius: 1.35rem;
+		}
+
+		.login-card-header {
+			margin-bottom: 0.85rem;
+		}
+
+		.login-title {
+			font-size: 1.35rem;
+			margin-bottom: 0.25rem;
+		}
+
+		.login-subtitle {
+			font-size: 0.85rem;
+			line-height: 1.35;
+		}
+
+		.login-field + .login-field {
+			margin-top: 0.7rem;
+		}
+
+		.login-field {
+			gap: 0.28rem;
+		}
+
+		.login-label {
+			font-size: 0.8rem;
+		}
+
+		.login-input {
+			min-height: 2.55rem;
+			padding: 0.55rem 0.85rem;
+			font-size: 0.95rem;
+			border-radius: 0.7rem;
+		}
+
+		.login-actions-row {
+			margin-top: 0.7rem;
+			gap: 0.4rem;
+		}
+
+		.login-checkbox-label,
+		.login-link {
+			font-size: 0.8rem;
+		}
+
+		.login-submit {
+			margin-top: 0.9rem;
+			min-height: 2.65rem;
+			font-size: 0.95rem;
+		}
+
+		.login-card-footer {
+			margin-top: 0.9rem;
+			padding-top: 0.75rem;
+		}
+
+		.login-footer-text {
+			font-size: 0.84rem;
+		}
+
+		.login-error-banner,
+		.login-success-banner {
+			padding: 0.65rem 0.75rem;
+			margin-bottom: 0.75rem;
+			font-size: 0.84rem;
+		}
+
+		.login-page-footer {
+			padding: 0.35rem var(--login-pad-x) 0.65rem;
+		}
+
+		.login-page-footer p {
+			font-size: 0.72rem;
+		}
+	}
+
+	@media (max-width: 640px) and (max-height: 760px) {
+		.login-subtitle {
+			display: none;
+		}
+
+		.login-page-footer {
+			display: none;
+		}
+
+		.login-card {
+			padding: 1rem 1rem 0.85rem;
+		}
+
+		.login-card-header {
+			margin-bottom: 0.65rem;
+		}
 	}
 
 	/* ─── Reduced Motion ─── */
