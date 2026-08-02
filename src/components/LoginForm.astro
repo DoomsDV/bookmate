@@ -35,13 +35,9 @@ const {
 		<!-- Circles / dots -->
 		<div class="login-deco login-deco-6"></div>
 		<div class="login-deco login-deco-7"></div>
-		<!-- SVG wavy lines -->
-		<svg class="login-deco login-deco-wave1" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-			<path d="M2 20c10-14 20 14 30 0s20 14 30 0 20 14 30 0 20 14 30 0" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-		</svg>
-		<svg class="login-deco login-deco-wave2" viewBox="0 0 80 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-			<path d="M2 15c8-10 16 10 24 0s16 10 24 0 16 10 24 0" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-		</svg>
+		<!-- Wavy lines (CSS, sized explicitly to avoid SVG overflow) -->
+		<div class="login-deco login-deco-wave1"></div>
+		<div class="login-deco login-deco-wave2"></div>
 	</div>
 
 	<header class="login-topbar">
@@ -250,6 +246,7 @@ const {
 		overflow: hidden;
 		pointer-events: none;
 		z-index: 0;
+		contain: paint;
 	}
 
 	.login-atmosphere {
@@ -301,6 +298,10 @@ const {
 	.login-deco {
 		display: none;
 		position: absolute;
+		box-sizing: border-box;
+		max-width: 8rem;
+		max-height: 6rem;
+		flex-shrink: 0;
 	}
 
 	@media (min-width: 1024px) {
@@ -311,110 +312,124 @@ const {
 
 	/* Outlined rectangles */
 	.login-deco-1 {
+		--_deco-rotate: rotate(12deg);
 		top: 18%;
 		left: 7%;
 		width: 4.5rem;
 		height: 4.5rem;
 		border-radius: 1rem;
-		border: 1.5px solid color-mix(in srgb, var(--login-primary) 40%, transparent);
+		border: 1.5px solid rgba(66, 110, 219, 0.4);
 		background: transparent;
-		transform: rotate(12deg);
 		animation: login-float 8s ease-in-out infinite;
 	}
 
 	.login-deco-2 {
+		--_deco-rotate: rotate(-8deg);
 		bottom: 28%;
 		right: 6%;
 		width: 5.5rem;
 		height: 3.5rem;
 		border-radius: 0.85rem;
-		border: 1.5px solid color-mix(in srgb, var(--login-primary) 32%, transparent);
+		border: 1.5px solid rgba(66, 110, 219, 0.32);
 		background: transparent;
-		transform: rotate(-8deg);
 		animation: login-float 10s ease-in-out infinite 1.5s;
 	}
 
 	.login-deco-3 {
+		--_deco-rotate: rotate(-15deg);
 		top: 55%;
 		left: 4%;
 		width: 3rem;
 		height: 5rem;
 		border-radius: 0.75rem;
-		border: 1px solid color-mix(in srgb, var(--login-primary) 25%, transparent);
+		border: 1px solid rgba(66, 110, 219, 0.25);
 		background: transparent;
-		transform: rotate(-15deg);
 		animation: login-float 12s ease-in-out infinite 3s;
 	}
 
 	/* Filled squares */
 	.login-deco-4 {
+		--_deco-rotate: rotate(22deg);
 		top: 32%;
 		right: 10%;
 		width: 3rem;
 		height: 3rem;
 		border-radius: 0.7rem;
-		background: color-mix(in srgb, var(--login-primary) 12%, transparent);
-		border: 1px solid color-mix(in srgb, var(--login-primary) 20%, transparent);
-		transform: rotate(22deg);
+		background: rgba(66, 110, 219, 0.12);
+		border: 1px solid rgba(66, 110, 219, 0.2);
 		animation: login-float 9s ease-in-out infinite 0.8s;
 	}
 
 	.login-deco-5 {
+		--_deco-rotate: rotate(-6deg);
 		bottom: 16%;
 		left: 9%;
 		width: 2.25rem;
 		height: 2.25rem;
 		border-radius: 0.5rem;
-		background: color-mix(in srgb, var(--login-primary) 14%, transparent);
-		border: 1px solid color-mix(in srgb, var(--login-primary) 22%, transparent);
-		transform: rotate(-6deg);
+		background: rgba(66, 110, 219, 0.14);
+		border: 1px solid rgba(66, 110, 219, 0.22);
 		animation: login-float 7s ease-in-out infinite 2.2s;
 	}
 
 	/* Circles / dots */
 	.login-deco-6 {
+		--_deco-rotate: rotate(0deg);
 		top: 12%;
 		right: 18%;
 		width: 1.25rem;
 		height: 1.25rem;
 		border-radius: 9999px;
-		background: color-mix(in srgb, var(--login-primary) 28%, transparent);
+		background: rgba(66, 110, 219, 0.28);
 		animation: login-float 6s ease-in-out infinite 0.5s;
 	}
 
 	.login-deco-7 {
+		--_deco-rotate: rotate(0deg);
 		bottom: 38%;
 		left: 15%;
 		width: 0.85rem;
 		height: 0.85rem;
 		border-radius: 9999px;
-		background: color-mix(in srgb, var(--login-primary) 35%, transparent);
+		background: rgba(66, 110, 219, 0.35);
 		animation: login-float 8s ease-in-out infinite 4s;
 	}
 
-	/* SVG wavy lines */
+	/* Wavy lines via repeating radial mask — fixed size, never inherits text color */
+	.login-deco-wave1,
+	.login-deco-wave2 {
+		height: 1.35rem;
+		background: transparent;
+		border: none;
+		opacity: 0.55;
+		mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 24' fill='none'%3E%3Cpath d='M1 12c8-10 16 10 24 0s16 10 24 0 16 10 24 0 16 10 24 0 16 10 24 0' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+		mask-size: 100% 100%;
+		mask-repeat: no-repeat;
+		-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 24' fill='none'%3E%3Cpath d='M1 12c8-10 16 10 24 0s16 10 24 0 16 10 24 0 16 10 24 0 16 10 24 0' stroke='%23fff' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+		-webkit-mask-size: 100% 100%;
+		-webkit-mask-repeat: no-repeat;
+		background-color: rgba(66, 110, 219, 0.55);
+	}
+
 	.login-deco-wave1 {
+		--_deco-rotate: rotate(6deg);
 		top: 72%;
 		right: 5%;
 		width: 7.5rem;
-		height: auto;
-		color: color-mix(in srgb, var(--login-primary) 30%, transparent);
-		transform: rotate(6deg);
 		animation: login-float 11s ease-in-out infinite 2s;
 	}
 
 	.login-deco-wave2 {
+		--_deco-rotate: rotate(-4deg);
 		top: 24%;
 		left: 12%;
 		width: 5.5rem;
-		height: auto;
-		color: color-mix(in srgb, var(--login-primary) 25%, transparent);
-		transform: rotate(-4deg);
 		animation: login-float 9s ease-in-out infinite 3.5s;
 	}
 
 	@keyframes login-float {
-		0%, 100% {
+		0%,
+		100% {
 			transform: translate3d(0, 0, 0) var(--_deco-rotate, rotate(0deg));
 		}
 		50% {
@@ -494,7 +509,7 @@ const {
 
 	.login-shell {
 		position: relative;
-		z-index: 1;
+		z-index: 2;
 		flex: 1;
 		width: var(--login-shell);
 		max-width: 100%;
@@ -507,13 +522,14 @@ const {
 
 	.login-card {
 		position: relative;
+		z-index: 2;
 		width: 100%;
 		max-width: 28rem;
 		padding: 2.25rem 1.75rem 2rem;
 		border-radius: var(--login-radius);
-		background: color-mix(in srgb, var(--login-surface) 92%, #0b0d12);
+		background: #1c1b1f;
 		border: 1px solid var(--login-outline-soft);
-		border-top-color: color-mix(in srgb, var(--login-primary) 38%, var(--login-outline-soft));
+		border-top-color: rgba(66, 110, 219, 0.38);
 		box-shadow:
 			0 1px 2px rgba(0, 0, 0, 0.4),
 			0 24px 56px rgba(0, 0, 0, 0.4),
@@ -836,14 +852,18 @@ const {
 	.login-page-footer {
 		position: relative;
 		z-index: 1;
+		width: var(--login-shell);
+		max-width: 100%;
+		margin: 0 auto;
 		text-align: center;
-		padding: 1rem var(--login-pad-x) 1.5rem;
+		padding: 0.75rem var(--login-pad-x) 1.5rem;
+		box-sizing: border-box;
 	}
 
 	.login-page-footer p {
 		margin: 0;
 		font-size: 0.82rem;
-		color: color-mix(in srgb, var(--login-on-surface-variant) 55%, transparent);
+		color: rgba(196, 198, 208, 0.45);
 		letter-spacing: 0.01em;
 	}
 
