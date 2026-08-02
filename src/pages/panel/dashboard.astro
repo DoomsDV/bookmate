@@ -111,50 +111,8 @@ const progressHint =
 			? 'Todos los turnos de hoy ya fueron completados.'
 			: `${todayTotal - todayCompleted} por atender todavía.`;
 
-type SecondaryMetric = {
-	label: string;
-	value: number | null;
-	description: string;
-	zeroStateDescription?: string;
-	zeroStateActionLabel?: string;
-	zeroStateActionHref?: string;
-	icon: string;
-	accent: string;
-};
-
-const secondaryMetrics: SecondaryMetric[] = [
-	{
-		label: 'Próximas citas',
-		value: dashboard.kpis.pending_appointments,
-		description: 'Turnos por atender desde ahora.',
-		zeroStateDescription: 'Agenda al día.',
-		zeroStateActionLabel: 'Crear cita',
-		zeroStateActionHref: '/panel/calendar',
-		icon: 'schedule',
-		accent: 'green',
-	},
-	...(roleId !== ROLES.RECEPCIONISTA
-		? [
-				{
-					label: 'Mis clientes',
-					value: dashboard.kpis.my_customers,
-					description: 'Con historial de citas contigo.',
-					icon: 'groups',
-					accent: 'green',
-				} satisfies SecondaryMetric,
-			]
-		: dashboard.kpis.total_customers !== null
-			? [
-					{
-						label: 'Total clientes',
-						value: dashboard.kpis.total_customers,
-						description: 'Base registrada en el negocio.',
-						icon: 'hub',
-						accent: 'orange',
-					} satisfies SecondaryMetric,
-				]
-			: []),
-];
+const totalCustomersLabel =
+	dashboard.kpis.total_customers !== null ? String(dashboard.kpis.total_customers) : '—';
 
 const weekDayLabelsByJs = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'] as const;
 const asuncionDateParts = new Intl.DateTimeFormat('en-CA', {
@@ -269,7 +227,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 				<TopBar />
 
 				<main class="w-full max-w-full min-w-0 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
-					<div class="mx-auto w-full max-w-[92rem] min-w-0">
+					<div class="w-full min-w-0">
 						<section class="dashboard-main-stack grid w-full min-w-0 gap-5 sm:gap-8" data-dashboard-main>
 							<section class="dashboard-summary-card mb-0 transition-all duration-300">
 								<div class="flex flex-col justify-between gap-3 lg:flex-row lg:items-center lg:gap-4">
@@ -385,24 +343,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												<path class="dashboard-profit-spark__line" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10" fill="none" />
 											</svg>
 										</article>
-										<article class="dashboard-profit-card" data-profit-accent="violet">
-											<div class="dashboard-profit-card__head">
-												<p class="dashboard-profit-label">Promedio por turno</p>
-												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">confirmation_number</span>
-											</div>
-											<p class="dashboard-profit-value" data-profit-avg-ticket>&nbsp;</p>
-											<p class="dashboard-profit-hint" data-profit-count>&nbsp;</p>
-											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
-												<defs>
-													<linearGradient id="profit-spark-fill-violet" x1="0" y1="0" x2="0" y2="1">
-														<stop offset="0%" stop-color="var(--profit-accent)" stop-opacity="0.22" />
-														<stop offset="100%" stop-color="var(--profit-accent)" stop-opacity="0" />
-													</linearGradient>
-												</defs>
-												<path class="dashboard-profit-spark__area" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-violet)" />
-												<path class="dashboard-profit-spark__line" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10" fill="none" />
-											</svg>
-										</article>
 										<article class="dashboard-profit-card" data-profit-accent="brand">
 											<div class="dashboard-profit-card__head">
 												<p class="dashboard-profit-label">Ingresos de hoy</p>
@@ -439,6 +379,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												<path class="dashboard-profit-spark__line" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10" fill="none" />
 											</svg>
 										</article>
+										<article class="dashboard-profit-card" data-profit-accent="green">
+											<div class="dashboard-profit-card__head">
+												<p class="dashboard-profit-label">Total clientes</p>
+												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">groups</span>
+											</div>
+											<p class="dashboard-profit-value dashboard-profit-value--static">{totalCustomersLabel}</p>
+											<p class="dashboard-profit-hint">Base registrada en el negocio.</p>
+										</article>
 									</div>
 									</div>
 								</section>
@@ -466,6 +414,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 								</div>
 							)}
 
+							<div class="dashboard-ops-duo">
 							<div
 								class="dashboard-ai-strip"
 								data-ai-summary-card
@@ -509,86 +458,44 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 										{loadError}
 									</div>
 								) : (
-									<>
-										<div class="dashboard-floor dashboard-floor--today">
-											<article class="dashboard-day-progress" aria-label="Progreso del día">
-												<div class="dashboard-day-progress__inner">
-													<div class="dashboard-day-progress__top">
-														<div>
-															<p class="dashboard-day-progress__eyebrow">Progreso del día</p>
-															<p class="dashboard-day-progress__metric">
-																<span data-day-completed>{todayCompleted}</span>
-																<span class="dashboard-day-progress__of"> de {todayTotal}</span>
-																<span class="dashboard-day-progress__unit">turnos completados</span>
-															</p>
-															<p class="dashboard-day-progress__hint">{progressHint}</p>
-														</div>
-														<span class="dashboard-day-progress__icon material-symbols-rounded" aria-hidden="true">
-															event_available
-														</span>
+									<div class="dashboard-floor dashboard-floor--today">
+										<article class="dashboard-day-progress" aria-label="Progreso del día">
+											<div class="dashboard-day-progress__inner">
+												<div class="dashboard-day-progress__top">
+													<div>
+														<p class="dashboard-day-progress__eyebrow">Progreso del día</p>
+														<p class="dashboard-day-progress__metric">
+															<span data-day-completed>{todayCompleted}</span>
+															<span class="dashboard-day-progress__of"> de {todayTotal}</span>
+															<span class="dashboard-day-progress__unit">turnos completados</span>
+														</p>
+														<p class="dashboard-day-progress__hint">{progressHint}</p>
 													</div>
-													<div
-														class="dashboard-day-progress__bar"
-														role="progressbar"
-														aria-valuemin="0"
-														aria-valuemax={Math.max(todayTotal, 1)}
-														aria-valuenow={todayCompleted}
-														aria-label={`${todayCompleted} de ${todayTotal} turnos completados`}
-													>
-														<span class="dashboard-day-progress__fill" style={`width: ${dayProgressPct}%`}></span>
-													</div>
-													<p class="dashboard-day-progress__insight" data-day-progress-insight hidden></p>
+													<span class="dashboard-day-progress__icon material-symbols-rounded" aria-hidden="true">
+														event_available
+													</span>
 												</div>
-											</article>
-
-											<div class="dashboard-side-metrics">
-												{
-													secondaryMetrics.map((metric) => {
-														const numericValue = Number(metric.value ?? 0);
-														const isZeroState = Number.isFinite(numericValue) && numericValue === 0;
-														const supportingText =
-															isZeroState && metric.zeroStateDescription
-																? metric.zeroStateDescription
-																: metric.description;
-
-														return (
-															<article
-																class="dashboard-metric-card dashboard-metric-card--compact flex h-full min-w-0 flex-col rounded-4xl p-5 transition-all duration-300"
-																data-metric-accent={metric.accent}
-															>
-																<p class="dashboard-metric-label mb-2 text-[0.7rem] font-extrabold uppercase tracking-widest leading-tight">
-																	{metric.label}
-																</p>
-																<div class="dashboard-metric-content">
-																	<div class="dashboard-metric-value-row mb-1">
-																		<p class="dashboard-metric-value dashboard-metric-value--compact">
-																			{metric.value}
-																		</p>
-																		<span class="dashboard-metric-icon material-symbols-rounded" aria-hidden="true">
-																			{metric.icon}
-																		</span>
-																	</div>
-																	<p class="dashboard-metric-description text-[0.8rem] font-semibold leading-snug">
-																		{supportingText}
-																	</p>
-																	{
-																		isZeroState && metric.zeroStateActionHref && metric.zeroStateActionLabel ? (
-																			<div class="dashboard-metric-zero-link-wrap mt-auto">
-																				<a href={metric.zeroStateActionHref} class="dashboard-metric-zero-link">
-																					{metric.zeroStateActionLabel}
-																					<span class="material-symbols-rounded text-[0.95rem]">chevron_right</span>
-																				</a>
-																			</div>
-																		) : null
-																	}
-																</div>
-															</article>
-														);
-													})
-												}
+												<div
+													class="dashboard-day-progress__bar"
+													role="progressbar"
+													aria-valuemin="0"
+													aria-valuemax={Math.max(todayTotal, 1)}
+													aria-valuenow={todayCompleted}
+													aria-label={`${todayCompleted} de ${todayTotal} turnos completados`}
+												>
+													<span class="dashboard-day-progress__fill" style={`width: ${dayProgressPct}%`}></span>
+												</div>
+												<p class="dashboard-day-progress__insight" data-day-progress-insight hidden></p>
 											</div>
-										</div>
+										</article>
+									</div>
+								)
+							}
+							</div>
 
+							{
+								!loadError && (
+									<>
 									<div class:list={['dashboard-floor', 'dashboard-floor--action', showAlertsPanel && 'dashboard-floor--split']}>
 										<div
 											id="dashboard-upcoming-appointments"
@@ -599,9 +506,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 													<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Próximas citas</h2>
 													<p class="dashboard-appointments-subtitle">Siguientes 7 días</p>
 												</div>
-												<span class="dashboard-appointments-count whitespace-nowrap rounded-full bg-[#E8EAED] dark:bg-[#2B2D31] px-3 py-1.5 text-[0.75rem] font-black text-[#5f6368] dark:text-[#C4C7C5] tracking-wide shadow-sm transition-colors duration-300">
-													{appointmentsCountText}
-												</span>
+												<div class="dashboard-appointments-actions flex shrink-0 items-center gap-2">
+													<a href="/panel/calendar" class="dashboard-upcoming-create-cta">
+														<span class="material-symbols-rounded text-[1.05rem]" aria-hidden="true">add</span>
+														Crear cita
+													</a>
+													<span class="dashboard-appointments-count whitespace-nowrap rounded-full bg-[#E8EAED] dark:bg-[#2B2D31] px-3 py-1.5 text-[0.75rem] font-black text-[#5f6368] dark:text-[#C4C7C5] tracking-wide shadow-sm transition-colors duration-300">
+														{appointmentsCountText}
+													</span>
+												</div>
 											</div>
 
 											<div class="dashboard-week-glance" aria-label="Próximos 7 días">
@@ -1885,15 +1798,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			};
 
 			setText('[data-profit-month-revenue]', formatGs(data.month_revenue));
-			setText('[data-profit-avg-ticket]', formatGs(data.month_avg_ticket));
 			setText('[data-profit-today]', formatGs(data.today_revenue));
 			setText('[data-profit-pending]', formatGs(data.pending_expected_revenue));
-
-			const completedCount = Number(data.month_completed_count) || 0;
-			setText(
-				'[data-profit-count]',
-				completedCount === 1 ? '1 turno este mes' : `${completedCount} turnos este mes`
-			);
 
 			const momNode = panel.querySelector<HTMLElement>('[data-profit-mom]');
 			if (momNode) {
@@ -2435,16 +2341,16 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background:
 			radial-gradient(ellipse 70% 50% at 6% 36%, rgba(147, 197, 253, 0.03), transparent 62%),
 			radial-gradient(ellipse 80% 55% at 55% 18%, rgba(186, 230, 253, 0.04), transparent 60%),
-			radial-gradient(ellipse 70% 50% at 92% 42%, rgba(232, 229, 224, 0.1), transparent 55%),
+			radial-gradient(ellipse 70% 50% at 92% 42%, rgba(232, 229, 224, 0.07), transparent 55%),
 			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(199, 210, 254, 0.025), transparent 58%),
-			radial-gradient(ellipse 60% 45% at 35% 88%, rgba(244, 242, 238, 0.14), transparent 62%),
+			radial-gradient(ellipse 60% 45% at 35% 88%, rgba(244, 242, 238, 0.1), transparent 62%),
 			linear-gradient(
 				165deg,
-				#fcfcfb 0%,
-				#fafaf8 32%,
-				#f8f7f5 58%,
-				#f9f8f6 82%,
-				#fbfaf9 100%
+				#fefefe 0%,
+				#fdfcfa 32%,
+				#fcfbfa 58%,
+				#fdfcfa 82%,
+				#fefefe 100%
 			);
 		transition: background 300ms ease;
 	}
@@ -2867,6 +2773,41 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
+	.dashboard-ops-duo {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 1.15rem;
+		align-items: stretch;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.dashboard-ops-duo > .dashboard-ai-strip,
+	.dashboard-ops-duo > .dashboard-floor--today {
+		min-width: 0;
+		height: 100%;
+	}
+
+	@media (min-width: 1280px) {
+		.dashboard-ops-duo {
+			grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+			gap: 1.25rem;
+		}
+
+		.dashboard-ops-duo > .dashboard-ai-strip {
+			height: 100%;
+			min-height: 11.5rem;
+		}
+
+		.dashboard-ops-duo .dashboard-day-progress {
+			min-height: 100%;
+		}
+
+		.dashboard-ops-duo .dashboard-ai-strip__text {
+			max-width: none;
+		}
+	}
+
 	.dashboard-ai-strip {
 		position: relative;
 		isolation: isolate;
@@ -3071,7 +3012,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		gap: 0.15rem;
 		width: auto;
 		min-height: 0;
-		margin: 0.1rem 0 0;
+		margin: auto 0 0;
 		padding: 0.15rem 0;
 		border: 0;
 		border-radius: 0.35rem;
@@ -4183,187 +4124,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
-	.dashboard-metric-card {
-		--metric-accent: #2f6fdd;
-		--metric-accent-soft: rgba(47, 111, 221, 0.12);
-		position: relative;
-		min-width: 0;
-		overflow: hidden;
-		border: 1px solid color-mix(in srgb, var(--metric-accent) 12%, transparent);
-		border-radius: 1.5rem;
-		background: color-mix(in srgb, var(--metric-accent) 7%, #ffffff);
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 6px 16px rgba(15, 23, 42, 0.035);
-		transition:
-			transform 180ms ease,
-			box-shadow 180ms ease,
-			background-color 180ms ease;
-	}
-
-	.dashboard-metric-card:hover {
-		transform: translateY(-2px);
-		box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06), 0 12px 24px rgba(15, 23, 42, 0.05);
-	}
-
-	.dashboard-metric-label {
-		color: color-mix(in srgb, var(--on-surface-variant) 86%, #516b85 14%);
-		min-width: 0;
-		margin: 0;
-		padding-right: 2.6rem;
-		overflow-wrap: anywhere;
-	}
-
-	.dashboard-metric-value-row {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		min-width: 0;
-		padding-right: 2.6rem;
-	}
-
-	.dashboard-metric-icon {
-		position: absolute;
-		top: 1.1rem;
-		right: 1.1rem;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2.25rem;
-		height: 2.25rem;
-		min-width: 2.25rem;
-		min-height: 2.25rem;
-		flex-shrink: 0;
-		aspect-ratio: 1 / 1;
-		border-radius: 50%;
-		background: #ffffff;
-		color: var(--metric-accent);
-		border: 0;
-		font-size: 1.15rem;
-		line-height: 1;
-		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.05);
-		z-index: 1;
-	}
-
-	.dashboard-metric-value {
-		color: var(--metric-accent);
-		font-size: clamp(2.7rem, 1.95vw + 1.9rem, 3.65rem);
-		font-weight: 780;
-		line-height: 0.95;
-		letter-spacing: -0.04em;
-		font-variant-numeric: tabular-nums lining-nums;
-	}
-
-	.dashboard-metric-content {
-		display: flex;
-		flex: 1 1 auto;
-		flex-direction: column;
-		gap: 0.2rem;
-		min-height: 0;
-	}
-
-	.dashboard-metric-description {
-		color: color-mix(in srgb, var(--on-surface-variant) 88%, #45607d 12%);
-		letter-spacing: 0.005em;
-	}
-
-	.dashboard-metric-zero-link-wrap {
-		margin-top: auto;
-	}
-
-	.dashboard-metric-zero-link {
-		margin-top: 0.45rem;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.1rem;
-		min-height: 2.75rem;
-		padding: 0.45rem 0.6rem;
-		border-radius: 0.7rem;
-		text-decoration: none;
-		font-size: 0.76rem;
-		font-weight: 800;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-		color: color-mix(in srgb, var(--metric-accent) 86%, #ffffff 14%);
-		transition: color 140ms ease, transform 140ms ease, background-color 140ms ease;
-	}
-
-	.dashboard-metric-zero-link:hover {
-		transform: translateX(1px);
-		background: color-mix(in srgb, var(--metric-accent) 12%, transparent);
-		color: color-mix(in srgb, var(--metric-accent) 72%, #111827 28%);
-	}
-
-	.dashboard-metric-card[data-metric-accent='violet'] {
-		--metric-accent: #7c3aed;
-		--metric-accent-soft: rgba(124, 58, 237, 0.13);
-	}
-
-	.dashboard-metric-card[data-metric-accent='green'] {
-		--metric-accent: #15803d;
-		--metric-accent-soft: rgba(21, 128, 61, 0.12);
-	}
-
-	.dashboard-metric-card[data-metric-accent='orange'] {
-		--metric-accent: #c2410c;
-		--metric-accent-soft: rgba(194, 65, 12, 0.13);
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card {
-		border: 1px solid color-mix(in srgb, var(--metric-accent) 20%, transparent);
-		background: color-mix(in srgb, var(--metric-accent) 12%, var(--surface-container-high, #222222));
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card:hover {
-		background: color-mix(in srgb, var(--metric-accent) 16%, var(--surface-container-highest, #282828));
-		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-metric-icon {
-		background: var(--surface-container-highest, #282828);
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
-	}
-
-	html[data-theme='dark'] .dashboard-metric-label {
-		color: color-mix(in srgb, var(--on-surface-variant) 36%, white 64%);
-	}
-
-	html[data-theme='dark'] .dashboard-metric-description {
-		color: color-mix(in srgb, var(--on-surface-variant) 34%, white 66%);
-	}
-
-	html[data-theme='dark'] .dashboard-metric-zero-link {
-		color: color-mix(in srgb, var(--metric-accent) 82%, #ffffff 18%);
-	}
-
-	html[data-theme='dark'] .dashboard-metric-zero-link:hover {
-		background: color-mix(in srgb, var(--metric-accent) 16%, transparent);
-		color: color-mix(in srgb, var(--metric-accent) 92%, #ffffff 8%);
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card[data-metric-accent='violet'] {
-		--metric-accent: #c4b5fd;
-		--metric-accent-soft: rgba(196, 181, 253, 0.16);
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card[data-metric-accent='green'] {
-		--metric-accent: #baf7c8;
-		--metric-accent-soft: rgba(186, 247, 200, 0.17);
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card[data-metric-accent='green'] .dashboard-metric-zero-link {
-		color: #cffff0;
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card[data-metric-accent='green'] .dashboard-metric-zero-link:hover {
-		color: #e6ffed;
-	}
-
-	html[data-theme='dark'] .dashboard-metric-card[data-metric-accent='orange'] {
-		--metric-accent: #fdba74;
-		--metric-accent-soft: rgba(253, 186, 116, 0.16);
-	}
-
 	.dashboard-floor {
 		display: grid;
 		grid-template-columns: 1fr;
@@ -4384,26 +4144,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-height: 0;
 		min-width: 0;
 		height: 100%;
-	}
-
-	.dashboard-side-metrics {
-		display: grid;
-		grid-template-columns: 1fr;
-		grid-template-rows: repeat(2, minmax(0, 1fr));
-		gap: 0.85rem;
-		min-width: 0;
-		min-height: 0;
-		height: 100%;
-		width: 100%;
-		max-width: 100%;
-	}
-
-	.dashboard-side-metrics:has(> :only-child) {
-		grid-template-rows: 1fr;
-	}
-
-	.dashboard-side-metrics > .dashboard-metric-card {
-		min-height: 0;
 	}
 
 	.dashboard-day-progress {
@@ -4583,20 +4323,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			var(--primary) 0%,
 			color-mix(in srgb, var(--primary) 70%, white) 100%
 		);
-	}
-
-	.dashboard-metric-card--compact {
-		padding: 1.1rem 1.15rem;
-		border-radius: 1.5rem;
-	}
-
-	.dashboard-metric-card--compact .dashboard-metric-icon {
-		top: 1rem;
-		right: 1rem;
-	}
-
-	.dashboard-metric-value--compact {
-		font-size: clamp(1.7rem, 3.4vw, 2.15rem) !important;
 	}
 
 	.dashboard-report-shell.dashboard-floor__panel {
@@ -4898,29 +4624,21 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	@media (min-width: 1024px) {
-		.dashboard-floor--today,
 		.dashboard-floor--action.dashboard-floor--split {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 			gap: var(--dashboard-floor-gap);
-		}
-
-		.dashboard-floor--today {
-			min-height: 12.75rem;
-		}
-
-		.dashboard-floor--action.dashboard-floor--split {
 			min-height: 0;
 			align-items: start;
 		}
 
-		.dashboard-side-metrics {
+		.dashboard-floor--today {
 			grid-template-columns: 1fr;
-			grid-template-rows: repeat(2, minmax(0, 1fr));
+			min-height: 0;
 		}
 
-		.dashboard-floor--today .dashboard-day-progress,
-		.dashboard-floor--today .dashboard-side-metrics {
-			height: 100%;
+		.dashboard-floor--today .dashboard-day-progress {
+			width: 100%;
+			height: auto;
 		}
 	}
 
@@ -4942,9 +4660,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			padding 280ms ease;
 	}
 
-	.dashboard-profitability-shell.is-loading .dashboard-profit-value,
-	.dashboard-profitability-shell.is-loading [data-profit-mom],
-	.dashboard-profitability-shell.is-loading [data-profit-count] {
+	.dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
+	.dashboard-profitability-shell.is-loading [data-profit-mom] {
 		color: transparent !important;
 		border-radius: 0.55rem;
 		background: linear-gradient(
@@ -4959,22 +4676,20 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		animation: dashboard-profit-skeleton 1.4s ease-in-out infinite;
 	}
 
-	.dashboard-profitability-shell.is-loading .dashboard-profit-value {
+	.dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static) {
 		min-height: 1.55rem;
 		max-width: 7.5rem;
 		margin-top: 0.55rem;
 	}
 
-	.dashboard-profitability-shell.is-loading [data-profit-mom],
-	.dashboard-profitability-shell.is-loading [data-profit-count] {
+	.dashboard-profitability-shell.is-loading [data-profit-mom] {
 		min-height: 0.95rem;
 		max-width: 9.5rem;
 		margin-top: 0.55rem;
 	}
 
-	.dashboard-profitability-shell.is-ready .dashboard-profit-value,
-	.dashboard-profitability-shell.is-ready [data-profit-mom],
-	.dashboard-profitability-shell.is-ready [data-profit-count] {
+	.dashboard-profitability-shell.is-ready .dashboard-profit-value:not(.dashboard-profit-value--static),
+	.dashboard-profitability-shell.is-ready [data-profit-mom] {
 		/* El fade-in lo hace data-dashboard-reveal.is-in del bloque completo. */
 		animation: none;
 	}
@@ -5018,9 +4733,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		box-shadow: none;
 	}
 
-	html[data-theme='dark'] .dashboard-profitability-shell.is-loading .dashboard-profit-value,
-	html[data-theme='dark'] .dashboard-profitability-shell.is-loading [data-profit-mom],
-	html[data-theme='dark'] .dashboard-profitability-shell.is-loading [data-profit-count] {
+	html[data-theme='dark'] .dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
+	html[data-theme='dark'] .dashboard-profitability-shell.is-loading [data-profit-mom] {
 		background: linear-gradient(
 			110deg,
 			rgba(255, 255, 255, 0.05) 0%,
@@ -5053,8 +4767,38 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	@media (max-width: 1023px) {
 		.dashboard-profit-metrics-track {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			gap: 1rem;
+			display: flex;
+			grid-template-columns: none;
+			gap: 0.65rem;
+			width: 100%;
+			max-width: 100%;
+			min-width: 0;
+			overflow-x: auto;
+			overscroll-behavior-x: contain;
+			scroll-snap-type: x mandatory;
+			scroll-padding-inline: 0;
+			-webkit-overflow-scrolling: touch;
+			scrollbar-width: none;
+			padding: 0.05rem 0 0.45rem;
+			margin-inline: 0;
+			box-sizing: border-box;
+		}
+
+		.dashboard-profit-metrics-track::-webkit-scrollbar {
+			display: none;
+		}
+
+		.dashboard-profit-metrics-track > .dashboard-profit-card {
+			flex: 0 0 min(72%, 17.5rem);
+			scroll-snap-align: start;
+			min-height: 0;
+			min-width: 0;
+			max-width: 100%;
+			box-sizing: border-box;
+		}
+
+		.dashboard-profit-metrics-track > .dashboard-profit-card:last-child {
+			scroll-snap-align: end;
 		}
 	}
 
@@ -5122,6 +4866,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-profit-card[data-profit-accent='amber'] {
 		--profit-accent: #b45309;
 		--profit-accent-soft: rgba(245, 158, 11, 0.14);
+	}
+
+	.dashboard-profit-card[data-profit-accent='green'] {
+		--profit-accent: #15803d;
+		--profit-accent-soft: rgba(21, 128, 61, 0.12);
 	}
 
 	.dashboard-profit-spark {
@@ -5267,6 +5016,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		--profit-accent-soft: rgba(232, 197, 107, 0.14);
 	}
 
+	html[data-theme='dark'] .dashboard-profit-card[data-profit-accent='green'] {
+		--profit-accent: #86efac;
+		--profit-accent-soft: rgba(134, 239, 172, 0.16);
+	}
+
 	html[data-theme='dark'] .dashboard-premium-badge {
 		background: color-mix(in srgb, #c9a227 14%, transparent);
 		color: #f0d78c;
@@ -5322,6 +5076,43 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		font-size: 0.8rem;
 		font-weight: 600;
 		color: var(--on-surface-variant);
+	}
+
+	.dashboard-upcoming-create-cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2rem;
+		min-height: 2.15rem;
+		padding: 0.35rem 0.75rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--primary) 28%, transparent);
+		background: color-mix(in srgb, var(--primary) 8%, #ffffff);
+		color: var(--primary);
+		text-decoration: none;
+		font-size: 0.78rem;
+		font-weight: 800;
+		letter-spacing: 0.02em;
+		white-space: nowrap;
+		transition:
+			background-color 140ms ease,
+			border-color 140ms ease,
+			transform 140ms ease;
+	}
+
+	.dashboard-upcoming-create-cta:hover {
+		background: color-mix(in srgb, var(--primary) 14%, #ffffff);
+		border-color: color-mix(in srgb, var(--primary) 42%, transparent);
+		transform: translateY(-1px);
+	}
+
+	html[data-theme='dark'] .dashboard-upcoming-create-cta {
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		border-color: color-mix(in srgb, var(--primary) 36%, transparent);
+		color: color-mix(in srgb, var(--primary) 70%, white 30%);
+	}
+
+	html[data-theme='dark'] .dashboard-upcoming-create-cta:hover {
+		background: color-mix(in srgb, var(--primary) 22%, transparent);
 	}
 
 	.dashboard-report-row {
@@ -5540,39 +5331,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			font-size: 0.68rem;
 		}
 
-		.dashboard-profit-metrics-track {
-			display: flex;
-			grid-template-columns: none;
-			gap: 0.65rem;
-			width: 100%;
-			max-width: 100%;
-			min-width: 0;
-			overflow-x: auto;
-			overscroll-behavior-x: contain;
-			scroll-snap-type: x mandatory;
-			scroll-padding-inline: 0;
-			-webkit-overflow-scrolling: touch;
-			scrollbar-width: none;
-			padding: 0.05rem 0 0.45rem;
-			margin-inline: 0;
-			box-sizing: border-box;
-		}
-
-		.dashboard-profit-metrics-track::-webkit-scrollbar {
-			display: none;
-		}
-
 		.dashboard-profit-metrics-track > .dashboard-profit-card {
 			flex: 0 0 min(88%, 16.5rem);
-			scroll-snap-align: start;
-			min-height: 0;
-			min-width: 0;
-			max-width: 100%;
-			box-sizing: border-box;
-		}
-
-		.dashboard-profit-metrics-track > .dashboard-profit-card:last-child {
-			scroll-snap-align: end;
 		}
 
 		.dashboard-profit-value {
@@ -5588,27 +5348,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			min-width: 0;
 		}
 
-		.dashboard-side-metrics {
-			display: grid;
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			grid-template-rows: none;
-			gap: 0.65rem;
-			height: auto;
-			width: 100%;
-			max-width: 100%;
-			min-width: 0;
-			overflow: visible;
-			padding: 0;
-		}
-
-		.dashboard-side-metrics > .dashboard-metric-card {
-			flex: unset;
-			width: auto;
-			min-width: 0;
-			height: auto;
-			scroll-snap-align: unset;
-		}
-
 		.dashboard-day-progress {
 			min-height: 0;
 			padding: 1.2rem 1.15rem;
@@ -5616,52 +5355,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-day-progress__metric {
 			font-size: clamp(1.75rem, 8vw, 2.2rem);
-		}
-
-		.dashboard-metric-card {
-			padding: 1rem 0.85rem 1.35rem;
-			border-radius: 1.5rem;
-		}
-
-		.dashboard-metric-card--compact {
-			padding: 0.9rem 0.8rem 1rem;
-		}
-
-		.dashboard-metric-value-row {
-			gap: 0.55rem;
-			padding-right: 2.35rem;
-		}
-
-		.dashboard-metric-icon {
-			top: 0.85rem;
-			right: 0.85rem;
-			width: 2rem;
-			height: 2rem;
-			min-width: 2rem;
-			min-height: 2rem;
-			font-size: 1.05rem;
-		}
-
-		.dashboard-metric-label {
-			min-width: 0;
-			font-size: 0.68rem;
-			letter-spacing: 0.05em;
-			line-height: 1.25;
-			padding-right: 2.35rem;
-		}
-
-		.dashboard-metric-value {
-			font-size: clamp(2.1rem, 8.4vw, 2.55rem);
-			line-height: 1;
-		}
-
-		.dashboard-metric-value--compact {
-			font-size: clamp(1.55rem, 6.5vw, 1.95rem) !important;
-		}
-
-		.dashboard-metric-description {
-			font-size: 0.86rem;
-			line-height: 1.45;
 		}
 
 		.dashboard-week-glance {
@@ -5681,6 +5374,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-appointments-count {
 			padding: 0.3rem 0.7rem;
+			font-size: 0.72rem;
+		}
+
+		.dashboard-upcoming-create-cta {
+			min-height: 2rem;
+			padding: 0.28rem 0.6rem;
 			font-size: 0.72rem;
 		}
 
@@ -5749,51 +5448,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	@media (max-width: 380px) {
-		.dashboard-side-metrics {
-			gap: 0.55rem;
-		}
-
-		.dashboard-metric-card {
-			padding: 0.75rem 0.65rem 1rem;
-			border-radius: 1.35rem;
-		}
-
-		.dashboard-metric-icon {
-			top: 0.7rem;
-			right: 0.7rem;
-			width: 1.75rem;
-			height: 1.75rem;
-			min-width: 1.75rem;
-			min-height: 1.75rem;
-			font-size: 0.95rem;
-		}
-
-		.dashboard-metric-label,
-		.dashboard-metric-value-row {
-			padding-right: 2.1rem;
-		}
-
-		.dashboard-metric-label {
-			font-size: 0.62rem;
-			letter-spacing: 0.03em;
-			line-height: 1.2;
-		}
-
-		.dashboard-metric-value {
-			font-size: clamp(1.75rem, 7.2vw, 2rem);
-		}
-
-		.dashboard-metric-description {
-			font-size: 0.78rem;
-			line-height: 1.35;
-		}
-
-		.dashboard-metric-zero-link {
-			min-height: 2.35rem;
-			padding: 0.35rem 0.45rem;
-			font-size: 0.68rem;
-		}
-
 		/* Mantener carrusel horizontal también en pantallas muy angostas */
 		.dashboard-profit-metrics-track > .dashboard-profit-card {
 			flex: 0 0 min(86%, 15.5rem);
@@ -5972,12 +5626,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-ai-card.is-generating,
 		.dashboard-ai-loading-icon,
 		.dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after,
-		.dashboard-profitability-shell.is-loading .dashboard-profit-value,
+		.dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
 		.dashboard-profitability-shell.is-loading [data-profit-mom],
-		.dashboard-profitability-shell.is-loading [data-profit-count],
-		.dashboard-profitability-shell.is-ready .dashboard-profit-value,
-		.dashboard-profitability-shell.is-ready [data-profit-mom],
-		.dashboard-profitability-shell.is-ready [data-profit-count] {
+		.dashboard-profitability-shell.is-ready .dashboard-profit-value:not(.dashboard-profit-value--static),
+		.dashboard-profitability-shell.is-ready [data-profit-mom] {
 			animation: none;
 		}
 
@@ -6003,9 +5655,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	html[data-page-hidden] .dashboard-ai-card.is-generating,
 	html[data-page-hidden] .dashboard-ai-loading-icon,
 	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after,
-	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-value,
-	html[data-page-hidden] .dashboard-profitability-shell.is-loading [data-profit-mom],
-	html[data-page-hidden] .dashboard-profitability-shell.is-loading [data-profit-count] {
+	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
+	html[data-page-hidden] .dashboard-profitability-shell.is-loading [data-profit-mom] {
 		animation-play-state: paused !important;
 	}
 </style>

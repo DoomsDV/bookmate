@@ -21,7 +21,7 @@ import type {
 	PublicProfilePreviewProfessional,
 } from '../lib/public-profile-preview-events';
 import { buildOrgHubUrl } from '../lib/public-profile-url';
-import { getPublicProfileSpecialtyLabel } from '../lib/public-booking';
+import { getPublicProfileSpecialtyLabel } from '../lib/public-profile-labels';
 import { isReservedOrgSlug } from '../lib/reserved-org-slugs';
 
 type GalleryItem = { id: number; url: string; sort_order?: number };
