@@ -15,7 +15,6 @@ import {
 	isReservationPast,
 	parseApiDateTime,
 } from '../../lib/booking-datetime';
-import { buildStaticMapUrl, getCoords } from '../../scripts/public-user-booking/picker-ui';
 import '../../styles/global.css';
 import '../../styles/public-booking.css';
 
@@ -71,10 +70,7 @@ const rebookHref =
 		: professionalSlug
 			? `/p/${professionalSlug}`
 			: '/';
-const googleMapsApiKey =
-	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
-	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
-	'';
+const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 
 let reservationLocations: PublicBookingLocation[] = [];
 let professionalImageUrl = '';
@@ -116,14 +112,6 @@ const professionalDisplayName = String(reservation?.professional_name || '').tri
 const organizationDisplayName = organizationName || organizationSlug || 'Hasel';
 const locationAddress = String(reservation?.location_address || '').trim();
 const durationLabel = durationMinutes > 0 ? `${durationMinutes} min` : '';
-const currentLocationRecord =
-	reservation &&
-	reservationLocations.find((loc) => Number(loc.id_location) === Number(reservation.loc_id_location));
-const locationStaticMapUrl =
-	googleMapsApiKey && currentLocationRecord
-		? buildStaticMapUrl(String(googleMapsApiKey), getCoords(currentLocationRecord))
-		: null;
-
 const serializedLocations = reservation
 	? JSON.stringify(reservationLocations).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
 	: '';
@@ -136,7 +124,7 @@ const serializedLocations = reservation
 			class="reservation-manage"
 			data-reservation-root
 			data-token={token}
-			data-google-maps-api-key={googleMapsApiKey}
+			data-stadia-key={stadiaMapsKey}
 		>
 			{loadError || !reservation ? (
 				<div class="reservation-state">
@@ -218,21 +206,10 @@ const serializedLocations = reservation
 							{isCancelled || isPastReservation ? (
 								<div class="reservation-manage__location">
 									<span
-										class={`reservation-manage__location-map${locationStaticMapUrl ? '' : ' reservation-manage__location-map--brand'}`}
+										class="reservation-manage__location-map reservation-manage__location-map--brand"
 										aria-hidden="true"
 									>
-										{locationStaticMapUrl ? (
-											<img
-												src={locationStaticMapUrl}
-												alt=""
-												loading="lazy"
-												decoding="async"
-												class="reservation-manage__location-map-img"
-												data-manage-location-map
-											/>
-										) : (
-											<span class="material-symbols-rounded">location_on</span>
-										)}
+										<span class="material-symbols-rounded">location_on</span>
 									</span>
 									<span class="reservation-manage__location-text">
 										<span class="reservation-manage__micro">Sucursal</span>
@@ -256,21 +233,10 @@ const serializedLocations = reservation
 									aria-label={`Ver mapa de ${reservation.location_name}`}
 								>
 									<span
-										class={`reservation-manage__location-map${locationStaticMapUrl ? '' : ' reservation-manage__location-map--brand'}`}
+										class="reservation-manage__location-map reservation-manage__location-map--brand"
 										aria-hidden="true"
 									>
-										{locationStaticMapUrl ? (
-											<img
-												src={locationStaticMapUrl}
-												alt=""
-												loading="lazy"
-												decoding="async"
-												class="reservation-manage__location-map-img"
-												data-manage-location-map
-											/>
-										) : (
-											<span class="material-symbols-rounded">location_on</span>
-										)}
+										<span class="material-symbols-rounded">location_on</span>
 									</span>
 									<span class="reservation-manage__location-text">
 										<span class="reservation-manage__micro">Sucursal</span>

@@ -18,9 +18,15 @@ import {
 	mountPublicSlotBranches,
 } from '../lib/public-booking-slots-ui';
 import {
+	createBrandMarker,
+	getStadiaStyleUrl,
+	loadMapLibre,
+	resolveMapTheme,
+	type MapLibreModule,
+} from '../lib/maplibre-loader';
+import {
 	bindMapImageLifecycle,
 	bindVerticalStackGestures,
-	buildStaticMapUrl,
 	escapeHtml,
 	getCoords,
 	isMobileStack,
@@ -67,17 +73,6 @@ type PublicReservationDetail = {
 
 type Coordinates = { lat: number; lng: number };
 
-type GoogleMapsNamespace = {
-	Map: new (container: HTMLElement, options: Record<string, unknown>) => any;
-	Marker: new (options: Record<string, unknown>) => any;
-	event?: { trigger?: (instance: unknown, eventName: string) => void };
-};
-
-type WindowWithGoogleMaps = Window & {
-	google?: { maps?: GoogleMapsNamespace };
-	__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
-};
-
 type RescheduleStep = 1 | 2 | 3 | 4;
 
 const RESCHEDULE_MODAL_TITLES: Record<RescheduleStep, string> = {
@@ -95,20 +90,6 @@ const RESCHEDULE_STEP_LABELS: Record<RescheduleStep, string> = {
 };
 
 const RESCHEDULE_STEP_COUNT = 4;
-
-const darkMapStyles = [
-	{ elementType: 'geometry', stylers: [{ color: '#1d1f24' }] },
-	{ elementType: 'labels.text.fill', stylers: [{ color: '#c9d1d9' }] },
-	{ elementType: 'labels.text.stroke', stylers: [{ color: '#1d1f24' }] },
-	{ featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2a2d33' }] },
-	{ featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#3a3f47' }] },
-	{ featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9aa4b2' }] },
-	{ featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#23262c' }] },
-	{ featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#8a94a3' }] },
-	{ featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#23262c' }] },
-	{ featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111827' }] },
-	{ featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4f8cc9' }] },
-];
 
 const toPositiveInt = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);
@@ -229,7 +210,7 @@ export const initializePublicReservationPage = () => {
 	const locations = normalizePublicBookingLocations(
 		parseJsonScript<unknown[]>('reservation-locations-json') || []
 	);
-	const mapsApiKey = String(root.dataset.googleMapsApiKey || '').trim();
+	const stadiaKey = String(root.dataset.stadiaKey || '').trim();
 
 	const form = root.querySelector<HTMLFormElement>('[data-reservation-form]');
 	const dateInput = root.querySelector<HTMLInputElement>('[data-reservation-date]');
@@ -322,8 +303,9 @@ export const initializePublicReservationPage = () => {
 	let visibleMonth = new Date(initialDate.getFullYear(), initialDate.getMonth(), 1);
 	let isLoadingSlots = false;
 	let rescheduleStep: RescheduleStep = 1;
-	let mapInstance: any = null;
-	let mapMarker: any = null;
+	let mapLibre: MapLibreModule | null = null;
+	let mapInstance: InstanceType<MapLibreModule['Map']> | null = null;
+	let mapMarker: InstanceType<MapLibreModule['Marker']> | null = null;
 	let locationStackFocusIndex = 0;
 	let locationsRenderAbort: AbortController | null = null;
 	const availableDatesCache = new Map<string, Set<string>>();
@@ -521,61 +503,12 @@ export const initializePublicReservationPage = () => {
 		};
 	};
 
-	const loadGoogleMaps = async (): Promise<GoogleMapsNamespace> => {
-		if (!mapsApiKey) {
-			throw new Error('No se encontró la API key de Google Maps para mostrar la ubicación.');
+	const ensureMapLibre = async (): Promise<MapLibreModule> => {
+		if (!stadiaKey) {
+			throw new Error('No se encontró la API key de Stadia Maps para mostrar la ubicación.');
 		}
-
-		const win = window as WindowWithGoogleMaps;
-		if (win.google?.maps) return win.google.maps;
-		if (win.__bookmateGoogleMapsLoader) return win.__bookmateGoogleMapsLoader;
-
-		win.__bookmateGoogleMapsLoader = new Promise<GoogleMapsNamespace>((resolve, reject) => {
-			const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-maps-loader]');
-			if (existingScript) {
-				existingScript.addEventListener(
-					'load',
-					() => {
-						const maps = (window as WindowWithGoogleMaps).google?.maps;
-						maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
-					},
-					{ once: true }
-				);
-				existingScript.addEventListener(
-					'error',
-					() => reject(new Error('No fue posible cargar Google Maps.')),
-					{ once: true }
-				);
-				return;
-			}
-
-			const script = document.createElement('script');
-			script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsApiKey)}&v=weekly`;
-			script.async = true;
-			script.defer = true;
-			script.dataset.googleMapsLoader = 'true';
-			script.addEventListener(
-				'load',
-				() => {
-					const maps = (window as WindowWithGoogleMaps).google?.maps;
-					maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
-				},
-				{ once: true }
-			);
-			script.addEventListener(
-				'error',
-				() => reject(new Error('No fue posible cargar Google Maps.')),
-				{ once: true }
-			);
-			document.head.appendChild(script);
-		});
-
-		try {
-			return await win.__bookmateGoogleMapsLoader;
-		} catch (error) {
-			win.__bookmateGoogleMapsLoader = null;
-			throw error;
-		}
+		if (!mapLibre) mapLibre = await loadMapLibre();
+		return mapLibre;
 	};
 
 	const openLocationMap = async (location: BookingLocation) => {
@@ -616,33 +549,41 @@ export const initializePublicReservationPage = () => {
 
 			const locationTitle = getLocationLabel(mapLocation);
 
-			const maps = await loadGoogleMaps();
+			const maplibregl = await ensureMapLibre();
 			if (!mapInstance) {
-				mapInstance = new maps.Map(mapCanvas, {
-					center: coords,
+				mapInstance = new maplibregl.Map({
+					container: mapCanvas,
+					style: getStadiaStyleUrl(resolveMapTheme(), stadiaKey),
+					center: [coords.lng, coords.lat],
 					zoom: 16,
-					disableDefaultUI: false,
-					mapTypeControl: false,
-					streetViewControl: false,
-					fullscreenControl: true,
-					styles: darkMapStyles,
+					attributionControl: { compact: true },
 				});
-				mapMarker = new maps.Marker({
-					map: mapInstance,
-					position: coords,
+				mapInstance.addControl(
+					new maplibregl.NavigationControl({ showCompass: false }),
+					'top-right'
+				);
+				mapMarker = createBrandMarker(maplibregl, coords, {
+					color: '#FB7185',
 					title: locationTitle,
-				});
+				})
+					.setPopup(new maplibregl.Popup({ closeButton: false, offset: 24 }).setText(locationTitle))
+					.addTo(mapInstance);
 			} else {
-				mapInstance.setOptions?.({ styles: darkMapStyles });
-				mapInstance.setCenter(coords);
+				mapInstance.setCenter([coords.lng, coords.lat]);
 				mapInstance.setZoom(16);
-				mapMarker?.setPosition?.(coords);
-				mapMarker?.setTitle?.(locationTitle);
+				mapMarker?.setLngLat([coords.lng, coords.lat]);
+				mapMarker?.setPopup(
+					new maplibregl.Popup({ closeButton: false, offset: 24 }).setText(locationTitle)
+				);
 			}
 
 			window.setTimeout(() => {
-				maps.event?.trigger?.(mapInstance, 'resize');
-				mapInstance?.setCenter?.(coords);
+				try {
+					mapInstance?.resize();
+				} catch {
+					// ignore
+				}
+				mapInstance?.setCenter([coords.lng, coords.lat]);
 				setMapLoading(false);
 			}, 80);
 		} catch (error) {
@@ -664,30 +605,9 @@ export const initializePublicReservationPage = () => {
 			}
 		}
 		if (!locationMapWrap) return;
-		const staticMapUrl = buildStaticMapUrl(mapsApiKey, getCoords(location));
-		if (staticMapUrl) {
-			locationMapWrap.classList.remove('reservation-manage__location-map--brand');
-			const existingImg = locationMapWrap.querySelector<HTMLImageElement>(
-				'[data-manage-location-map]'
-			);
-			if (existingImg) {
-				existingImg.src = staticMapUrl;
-				existingImg.hidden = false;
-			} else {
-				const img = document.createElement('img');
-				img.src = staticMapUrl;
-				img.alt = '';
-				img.loading = 'lazy';
-				img.decoding = 'async';
-				img.className = 'reservation-manage__location-map-img';
-				img.setAttribute('data-manage-location-map', '');
-				locationMapWrap.replaceChildren(img);
-			}
-		} else {
-			locationMapWrap.classList.add('reservation-manage__location-map--brand');
-			locationMapWrap.innerHTML =
-				'<span class="material-symbols-rounded">location_on</span>';
-		}
+		// Placeholder brand: sin Static Maps, el mapa real se abre en modal MapLibre.
+		locationMapWrap.classList.add('reservation-manage__location-map--brand');
+		locationMapWrap.innerHTML = '<span class="material-symbols-rounded">location_on</span>';
 	};
 
 	const capitalizeLabel = (value: string) =>
@@ -946,18 +866,9 @@ export const initializePublicReservationPage = () => {
 	const buildLocationCardContent = (location: BookingLocation) => {
 		const name = getLocationLabel(location);
 		const address = String(location.address || '').trim();
-		const coords = getCoords(location);
-		const staticMapUrl = buildStaticMapUrl(mapsApiKey, coords);
-		const showMap = Boolean(mapsApiKey);
-		const previewInner = staticMapUrl
-			? `<span class="public-location-card__map-skeleton" aria-hidden="true"></span><img class="public-location-card__map-img" src="${escapeHtml(staticMapUrl)}" alt="" loading="lazy" decoding="async" data-location-map-img />`
-			: '';
+		const showMap = Boolean(getCoords(location));
 		const preview = showMap
-			? `<button type="button" class="public-location-card__preview${
-					staticMapUrl ? ' is-map-loading' : ' public-location-card__preview--brand'
-				}" data-location-map-trigger aria-label="Ver mapa de ${escapeHtml(name)}">
-					${previewInner}
-				</button>`
+			? `<button type="button" class="public-location-card__preview public-location-card__preview--brand" data-location-map-trigger aria-label="Ver mapa de ${escapeHtml(name)}"><span class="public-location-card__preview-icon material-symbols-rounded" aria-hidden="true">location_on</span><span class="public-location-card__preview-label">Ver ubicación</span></button>`
 			: '';
 		return `
 			${preview}

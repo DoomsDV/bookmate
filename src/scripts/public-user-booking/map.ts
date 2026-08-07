@@ -1,3 +1,11 @@
+import {
+	createBrandMarker,
+	getStadiaStyleUrl,
+	loadMapLibre,
+	resolveMapTheme,
+	type MapLibreModule,
+} from '../../lib/maplibre-loader';
+
 export type MapLocation = {
 	id_location: number;
 	name?: string;
@@ -7,17 +15,8 @@ export type MapLocation = {
 };
 
 type Coordinates = { lat: number; lng: number };
-
-type GoogleMapsNamespace = {
-	Map: new (container: HTMLElement, options: Record<string, unknown>) => any;
-	Marker: new (options: Record<string, unknown>) => any;
-	event?: { trigger?: (instance: unknown, eventName: string) => void };
-};
-
-type WindowWithGoogleMaps = Window & {
-	google?: { maps?: GoogleMapsNamespace };
-	__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
-};
+type MapLibreMap = InstanceType<MapLibreModule['Map']>;
+type MapLibreMarker = InstanceType<MapLibreModule['Marker']>;
 
 class PublicLocationMapError extends Error {
 	status: number;
@@ -28,20 +27,6 @@ class PublicLocationMapError extends Error {
 		this.status = status;
 	}
 }
-
-const darkMapStyles = [
-	{ elementType: 'geometry', stylers: [{ color: '#1d1f24' }] },
-	{ elementType: 'labels.text.fill', stylers: [{ color: '#c9d1d9' }] },
-	{ elementType: 'labels.text.stroke', stylers: [{ color: '#1d1f24' }] },
-	{ featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2a2d33' }] },
-	{ featureType: 'road', elementType: 'geometry.stroke', stylers: [{ color: '#3a3f47' }] },
-	{ featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#9aa4b2' }] },
-	{ featureType: 'poi', elementType: 'geometry', stylers: [{ color: '#23262c' }] },
-	{ featureType: 'poi', elementType: 'labels.text.fill', stylers: [{ color: '#8a94a3' }] },
-	{ featureType: 'transit', elementType: 'geometry', stylers: [{ color: '#23262c' }] },
-	{ featureType: 'water', elementType: 'geometry', stylers: [{ color: '#111827' }] },
-	{ featureType: 'water', elementType: 'labels.text.fill', stylers: [{ color: '#4f8cc9' }] },
-];
 
 const toPositiveInt = (value: unknown, fallback = 0) => {
 	const parsed = Number(value);
@@ -90,7 +75,7 @@ export const createPublicUserMapController = (options: {
 	signal: AbortSignal;
 	onLocationUpdated?: (updated: MapLocation) => void;
 }): PublicUserMapController | null => {
-	const mapsApiKey = String(options.root.dataset.googleMapsApiKey || '').trim();
+	const stadiaKey = String(options.root.dataset.stadiaKey || '').trim();
 	const mapModal = options.root.querySelector<HTMLDialogElement>('[data-public-map-modal]');
 	const mapCanvasWrap = options.root.querySelector<HTMLElement>('.public-map-canvas-wrap');
 	const mapCanvas = options.root.querySelector<HTMLElement>('[data-public-map-canvas]');
@@ -101,8 +86,9 @@ export const createPublicUserMapController = (options: {
 
 	if (!mapModal || !mapCanvas || !mapCloseButton) return null;
 
-	let mapInstance: any = null;
-	let mapMarker: any = null;
+	let mapLibre: MapLibreModule | null = null;
+	let mapInstance: MapLibreMap | null = null;
+	let mapMarker: MapLibreMarker | null = null;
 	let mapOpenSeq = 0;
 
 	const setMapStatus = (message: string) => {
@@ -160,61 +146,12 @@ export const createPublicUserMapController = (options: {
 		};
 	};
 
-	const loadGoogleMaps = async (): Promise<GoogleMapsNamespace> => {
-		if (!mapsApiKey) {
-			throw new Error('No se encontró la API key de Google Maps para mostrar la ubicación.');
+	const ensureMapLibre = async (): Promise<MapLibreModule> => {
+		if (!stadiaKey) {
+			throw new Error('No se encontró la API key de Stadia Maps para mostrar la ubicación.');
 		}
-
-		const win = window as WindowWithGoogleMaps;
-		if (win.google?.maps) return win.google.maps;
-		if (win.__bookmateGoogleMapsLoader) return win.__bookmateGoogleMapsLoader;
-
-		win.__bookmateGoogleMapsLoader = new Promise<GoogleMapsNamespace>((resolve, reject) => {
-			const existingScript = document.querySelector<HTMLScriptElement>('script[data-google-maps-loader]');
-			if (existingScript) {
-				existingScript.addEventListener(
-					'load',
-					() => {
-						const maps = (window as WindowWithGoogleMaps).google?.maps;
-						maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
-					},
-					{ once: true }
-				);
-				existingScript.addEventListener(
-					'error',
-					() => reject(new Error('No fue posible cargar Google Maps.')),
-					{ once: true }
-				);
-				return;
-			}
-
-			const script = document.createElement('script');
-			script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(mapsApiKey)}&v=weekly`;
-			script.async = true;
-			script.defer = true;
-			script.dataset.googleMapsLoader = 'true';
-			script.addEventListener(
-				'load',
-				() => {
-					const maps = (window as WindowWithGoogleMaps).google?.maps;
-					maps ? resolve(maps) : reject(new Error('No fue posible cargar Google Maps.'));
-				},
-				{ once: true }
-			);
-			script.addEventListener(
-				'error',
-				() => reject(new Error('No fue posible cargar Google Maps.')),
-				{ once: true }
-			);
-			document.head.appendChild(script);
-		});
-
-		try {
-			return await win.__bookmateGoogleMapsLoader;
-		} catch (error) {
-			win.__bookmateGoogleMapsLoader = null;
-			throw error;
-		}
+		if (!mapLibre) mapLibre = await loadMapLibre();
+		return mapLibre;
 	};
 
 	const openLocationMap = async (
@@ -273,36 +210,44 @@ export const createPublicUserMapController = (options: {
 			const locationTitle =
 				String(mapLocation.name || location?.name || '').trim() || 'Ubicación';
 
-			const maps = await loadGoogleMaps();
+			const maplibregl = await ensureMapLibre();
 			if (!isActiveMapOpen(mapLocation.id_location)) return;
 
 			if (!mapInstance) {
-				mapInstance = new maps.Map(mapCanvas, {
-					center: coords,
+				mapInstance = new maplibregl.Map({
+					container: mapCanvas,
+					style: getStadiaStyleUrl(resolveMapTheme(), stadiaKey),
+					center: [coords.lng, coords.lat],
 					zoom: 16,
-					disableDefaultUI: false,
-					mapTypeControl: false,
-					streetViewControl: false,
-					fullscreenControl: true,
-					styles: darkMapStyles,
+					attributionControl: { compact: true },
 				});
-				mapMarker = new maps.Marker({
-					map: mapInstance,
-					position: coords,
+				mapInstance.addControl(
+					new maplibregl.NavigationControl({ showCompass: false }),
+					'top-right'
+				);
+				mapMarker = createBrandMarker(maplibregl, coords, {
+					color: '#FB7185',
 					title: locationTitle,
-				});
+				})
+					.setPopup(new maplibregl.Popup({ closeButton: false, offset: 24 }).setText(locationTitle))
+					.addTo(mapInstance);
 			} else {
-				mapInstance.setOptions?.({ styles: darkMapStyles });
-				mapInstance.setCenter(coords);
+				mapInstance.setCenter([coords.lng, coords.lat]);
 				mapInstance.setZoom(16);
-				mapMarker?.setPosition?.(coords);
-				mapMarker?.setTitle?.(locationTitle);
+				mapMarker?.setLngLat([coords.lng, coords.lat]);
+				mapMarker?.setPopup(
+					new maplibregl.Popup({ closeButton: false, offset: 24 }).setText(locationTitle)
+				);
 			}
 
 			window.setTimeout(() => {
 				if (!isActiveMapOpen(mapLocation.id_location)) return;
-				maps.event?.trigger?.(mapInstance, 'resize');
-				mapInstance?.setCenter?.(coords);
+				try {
+					mapInstance?.resize();
+				} catch {
+					// ignore
+				}
+				mapInstance?.setCenter([coords!.lng, coords!.lat]);
 				if (openSeq === mapOpenSeq) setMapLoading(false);
 			}, 80);
 		} catch (error) {

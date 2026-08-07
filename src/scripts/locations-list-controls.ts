@@ -3,6 +3,7 @@ import {
 	closeFilterPopoverSheet,
 	toggleFilterPopoverSheet,
 } from '../lib/panel-filter-popover';
+import { buildStadiaStaticMapUrl, renderBrandMapMarkerOverlay } from '../lib/maplibre-loader';
 import { updateAppPaginationDom } from '../lib/pagination';
 
 type LocationItem = {
@@ -10,6 +11,8 @@ type LocationItem = {
 	name?: string | null;
 	address?: string | null;
 	is_active?: 0 | 1;
+	latitude?: number | null;
+	longitude?: number | null;
 	city?: { name?: string | null } | null;
 	department?: { name?: string | null } | null;
 };
@@ -32,6 +35,45 @@ const escapeHtml = (value: string) =>
 		.replaceAll("'", '&#39;');
 
 const getListRoot = () => document.querySelector<HTMLElement>('[data-locations-list]');
+
+const getStadiaKey = () => {
+	const fromView = document.querySelector<HTMLElement>('.locations-view')?.dataset.stadiaKey;
+	return String(fromView || '').trim();
+};
+
+const buildLocationCover = (location: LocationItem) => {
+	const lat = Number(location.latitude);
+	const lng = Number(location.longitude);
+	const coords =
+		Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+	const mapPreviewUrl = buildStadiaStaticMapUrl(getStadiaKey(), coords, {
+		theme: 'dark',
+		width: 480,
+		height: 270,
+		zoom: 15,
+	});
+
+	if (mapPreviewUrl) {
+		return `
+			<div class="locations-card-cover">
+				<img
+					src="${escapeHtml(mapPreviewUrl)}"
+					alt=""
+					loading="lazy"
+					decoding="async"
+					data-location-map-preview
+				/>
+				${renderBrandMapMarkerOverlay()}
+			</div>
+		`;
+	}
+
+	return `
+		<div class="locations-card-cover locations-card-cover--brand" aria-hidden="true">
+			${renderBrandMapMarkerOverlay()}
+		</div>
+	`;
+};
 
 const readStateFromUrl = () => {
 	const url = new URL(window.location.href);
@@ -79,7 +121,8 @@ const renderLocationCard = (location: LocationItem) => {
 			role="button"
 			aria-label="Editar sucursal ${escapeHtml(name)}"
 		>
-			<div class="flex items-start justify-between gap-4">
+			${buildLocationCover(location)}
+			<div class="flex items-start justify-between gap-2">
 				<div class="locations-card-icon">
 					<span class="material-symbols-rounded text-[1.25rem]">storefront</span>
 				</div>
@@ -91,14 +134,14 @@ const renderLocationCard = (location: LocationItem) => {
 			<div class="locations-card-body">
 				<div>
 					<h3 class="locations-card-title line-clamp-1">${escapeHtml(name)}</h3>
-					<p class="mt-1 text-[0.9rem] text-(--on-surface-variant) line-clamp-1">${escapeHtml(address)}</p>
+					<p class="mt-1 text-[0.85rem] text-(--on-surface-variant) line-clamp-1">${escapeHtml(address)}</p>
 				</div>
-				<dl class="locations-card-metrics mt-1">
-					<div class="flex items-center justify-between text-[0.92rem]">
+				<dl class="locations-card-metrics">
+					<div class="flex items-center justify-between text-[0.8rem]">
 						<dt class="locations-card-term">Ciudad</dt>
 						<dd class="locations-card-value">${escapeHtml(city)}</dd>
 					</div>
-					<div class="flex items-center justify-between text-[0.92rem]">
+					<div class="flex items-center justify-between text-[0.8rem]">
 						<dt class="locations-card-term">Depto.</dt>
 						<dd class="locations-card-value">${escapeHtml(department)}</dd>
 					</div>
@@ -155,7 +198,7 @@ const updateEmptyOrGrid = (locations: LocationItem[], isActive: number | null) =
 	}
 
 	results.innerHTML = `
-		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-locations-grid>
+		<div class="material-cards-grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4" data-locations-grid>
 			${locations.map(renderLocationCard).join('')}
 		</div>
 	`;

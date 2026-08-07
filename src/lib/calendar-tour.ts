@@ -45,14 +45,20 @@ function buildTourSteps(): DriveStep[] {
 	const steps: DriveStep[] = [];
 	const filtersTarget = getFiltersTourTarget();
 
+	const isMobile = window.innerWidth < 768;
+
 	if (filtersTarget) {
 		steps.push({
 			element: filtersTarget,
 			popover: {
-				title: 'Filtros',
-				description: hasProfessionalFilter()
-					? 'Acota la vista del calendario por profesional y sucursal. Así puedes revisar la agenda de una persona, de una ubicación o de todo el equipo.'
-					: 'Acota la vista del calendario por sucursal para ver solo las reservas de una ubicación concreta.',
+				title: isMobile ? 'Agenda' : 'Filtros',
+				description: isMobile
+					? hasProfessionalFilter()
+						? 'Abrí este menú para cambiar la vista (Día, 3 días o Lista) y filtrar por profesional o sucursal.'
+						: 'Abrí este menú para cambiar la vista (Día, 3 días o Lista) y filtrar por sucursal.'
+					: hasProfessionalFilter()
+						? 'Acota la vista del calendario por profesional y sucursal. Así puedes revisar la agenda de una persona, de una ubicación o de todo el equipo.'
+						: 'Acota la vista del calendario por sucursal para ver solo las reservas de una ubicación concreta.',
 				side: 'bottom',
 				align: 'start',
 			},
@@ -86,7 +92,8 @@ function buildTourSteps(): DriveStep[] {
 		});
 	}
 
-	if (document.querySelector(VIEW_SWITCH_SELECTOR)) {
+	// Desktop: vistas en el toolbar. Mobile: ya cubiertas por el menú Agenda.
+	if (!isMobile && document.querySelector(VIEW_SWITCH_SELECTOR)) {
 		steps.push({
 			element: VIEW_SWITCH_SELECTOR,
 			popover: {
@@ -130,8 +137,10 @@ export function maybeShowCalendarTour() {
 			return;
 		}
 
-		const toolbarReady =
-			document.querySelector(NAV_SELECTOR) && document.querySelector(VIEW_SWITCH_SELECTOR);
+		const isMobile = window.innerWidth < 768;
+		const toolbarReady = isMobile
+			? Boolean(document.querySelector(NAV_SELECTOR))
+			: Boolean(document.querySelector(NAV_SELECTOR) && document.querySelector(VIEW_SWITCH_SELECTOR));
 
 		if (!toolbarReady && attempt < 12) {
 			window.setTimeout(() => tryStart(attempt + 1), 120);

@@ -83,14 +83,28 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    // MapLibre v6 is ESM-only; keep it out of the dep optimizer so the worker
+    // sibling is not rewritten to a broken `/node_modules/.vite/deps/*.mjs`
+    // stub with empty MIME. The app sets the worker via `?url`.
+    ssr: {
+      noExternal: ['maplibre-gl'],
+    },
     optimizeDeps: {
+      exclude: ['maplibre-gl'],
       include: [
         '@fullcalendar/core',
         '@fullcalendar/core/locales/es',
         '@fullcalendar/interaction',
         '@fullcalendar/daygrid',
         '@fullcalendar/timegrid',
-        '@fullcalendar/list'
+        '@fullcalendar/list',
+        // Client scripts loaded on panel routes; prebundle to avoid stale
+        // optimize-dep 504 / empty MIME in the browser after cache churn.
+        'driver.js',
+        'croppie',
+        'marked',
+        'firebase/app',
+        'firebase/messaging',
       ]
     }
   }

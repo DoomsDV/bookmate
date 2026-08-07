@@ -37,27 +37,6 @@ export const createContinueButton = (
 	return button;
 };
 
-export const buildStaticMapUrl = (
-	mapsApiKey: string,
-	coords: { lat: number; lng: number } | null
-): string | null => {
-	if (!mapsApiKey || !coords) return null;
-	const marker = `color:0xA8C7FA%7C${coords.lat},${coords.lng}`;
-	return (
-		`https://maps.googleapis.com/maps/api/staticmap` +
-		`?center=${coords.lat},${coords.lng}` +
-		`&zoom=15&size=480x360&scale=2&maptype=roadmap` +
-		`&markers=${marker}` +
-		`&style=feature:all%7Celement:geometry%7Ccolor:0x1d1d1f` +
-		`&style=feature:all%7Celement:labels.text.fill%7Ccolor:0xc4c6d0` +
-		`&style=feature:all%7Celement:labels.text.stroke%7Ccolor:0x1d1d1f` +
-		`&style=feature:road%7Celement:geometry%7Ccolor:0x2e2e32` +
-		`&style=feature:water%7Celement:geometry%7Ccolor:0x0f172a` +
-		`&style=feature:poi%7Cvisibility:off` +
-		`&key=${encodeURIComponent(mapsApiKey)}`
-	);
-};
-
 export const getCoords = (location: {
 	latitude?: number;
 	longitude?: number;
@@ -84,22 +63,6 @@ export const bindMapImageLifecycle = (
 		},
 		{ signal: options.signal }
 	);
-
-	const mapImg = card.querySelector<HTMLImageElement>('[data-location-map-img]');
-	const revealMap = () => {
-		mapTrigger?.classList.remove('is-map-loading');
-	};
-	mapImg?.addEventListener('load', revealMap, { once: true, signal: options.signal });
-	mapImg?.addEventListener(
-		'error',
-		() => {
-			mapImg.remove();
-			mapTrigger?.classList.remove('is-map-loading');
-			mapTrigger?.classList.add('public-location-card__preview--brand');
-		},
-		{ once: true, signal: options.signal }
-	);
-	if (mapImg?.complete && mapImg.naturalWidth > 0) revealMap();
 };
 
 export const syncStackLayers = (

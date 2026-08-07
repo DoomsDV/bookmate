@@ -53,11 +53,9 @@ import {
 import {
 	bindMapImageLifecycle,
 	bindVerticalStackGestures,
-	buildStaticMapUrl,
 	createContinueButton,
 	escapeHtml,
 	getCarouselPageSize,
-	getCoords,
 	isMobileStack,
 	syncStackLayers,
 	triggerPickerHaptic,
@@ -190,7 +188,6 @@ export const initializePublicUserBookingPage = () => {
 		return;
 	}
 
-	const mapsApiKey = String(root.dataset.googleMapsApiKey || '').trim();
 	let locationStackFocusIndex = 0;
 	let orgStackFocusIndex = 0;
 	let serviceStackFocusIndex = 0;
@@ -535,14 +532,8 @@ export const initializePublicUserBookingPage = () => {
 		const name = String(location.name || 'Sucursal').trim() || 'Sucursal';
 		const address = String(location.address || '').trim();
 		const showMap = Boolean(mapController?.canShowLocationMap(location));
-		const staticMapUrl = showMap ? buildStaticMapUrl(mapsApiKey, getCoords(location)) : null;
-		const previewInner = staticMapUrl
-			? `<span class="public-location-card__map-skeleton" aria-hidden="true"></span><img class="public-location-card__map-img" src="${escapeHtml(staticMapUrl)}" alt="" loading="lazy" decoding="async" data-location-map-img />`
-			: '';
 		const preview = showMap
-			? `<button type="button" class="public-location-card__preview${
-					staticMapUrl ? ' is-map-loading' : ' public-location-card__preview--brand'
-				}" data-location-map-trigger aria-label="Ver mapa de ${escapeHtml(name)}">${previewInner}</button>`
+			? `<button type="button" class="public-location-card__preview public-location-card__preview--brand" data-location-map-trigger aria-label="Ver mapa de ${escapeHtml(name)}"><span class="public-location-card__preview-icon material-symbols-rounded" aria-hidden="true">location_on</span><span class="public-location-card__preview-label">Ver ubicación</span></button>`
 			: '';
 		return `
 			${preview}

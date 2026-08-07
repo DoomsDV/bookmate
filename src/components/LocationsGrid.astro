@@ -1,5 +1,6 @@
 ---
 import type { Location } from '../lib/locations';
+import { buildBrandMarkerSvgHtml, buildStadiaStaticMapUrl } from '../lib/maplibre-loader';
 import AppPagination from './AppPagination.astro';
 
 interface Props {
@@ -23,9 +24,23 @@ const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
 
 const activeCount = locations.filter((item) => item.is_active === 1).length;
 const inactiveCount = locations.length - activeCount;
+const stadiaKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
+
+const locationMapPreview = (location: Location) => {
+	const lat = Number(location.latitude);
+	const lng = Number(location.longitude);
+	const coords =
+		Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+	return buildStadiaStaticMapUrl(stadiaKey, coords, {
+		theme: 'dark',
+		width: 480,
+		height: 270,
+		zoom: 15,
+	});
+};
 ---
 
-<section class="locations-view">
+<section class="locations-view" data-stadia-key={stadiaKey}>
 	<header class="mb-4 flex flex-wrap items-center justify-between gap-3">
 		<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
 			Sucursales
@@ -44,6 +59,18 @@ const inactiveCount = locations.length - activeCount;
 				<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--inactive"></span>
 				Inactivas: <span data-locations-inactive-count>{inactiveCount}</span>
 			</span>
+
+			{showCreateAction && (
+				<button
+					type="button"
+					class="locations-org-closures-btn hidden sm:inline-flex items-center justify-center gap-2"
+					data-open-org-closures
+					title="Cierres generales para todas las sucursales"
+				>
+					<span class="material-symbols-rounded text-[1.15rem]" aria-hidden="true">event_busy</span>
+					<span>Cierres generales</span>
+				</button>
+			)}
 
 			{showCreateAction && (
 				<button
@@ -179,8 +206,10 @@ const inactiveCount = locations.length - activeCount;
 			</p>
 		</div>
 	) : (
-		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-locations-grid>
-			{locations.map((location) => (
+		<div class="material-cards-grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4" data-locations-grid>
+			{locations.map((location) => {
+				const mapPreviewUrl = locationMapPreview(location);
+				return (
 				<article
 					class="locations-card group cursor-pointer"
 					data-location-card
@@ -189,29 +218,64 @@ const inactiveCount = locations.length - activeCount;
 					role="button"
 					aria-label={`Editar sucursal ${location.name || location.id_location}`}
 				>
-					<div class="flex items-start justify-between gap-4">
+					{mapPreviewUrl ? (
+						<div class="locations-card-cover">
+							<img
+								src={mapPreviewUrl}
+								alt=""
+								loading="lazy"
+								decoding="async"
+								data-location-map-preview
+							/>
+							<span
+								class="bookmate-map-marker-overlay"
+								aria-hidden="true"
+								set:html={buildBrandMarkerSvgHtml()}
+							/>
+						</div>
+					) : (
+						<div class="locations-card-cover locations-card-cover--brand" aria-hidden="true">
+							<span
+								class="bookmate-map-marker-overlay"
+								aria-hidden="true"
+								set:html={buildBrandMarkerSvgHtml()}
+							/>
+						</div>
+					)}
+
+					<div class="flex items-start justify-between gap-2">
 						<div class="locations-card-icon">
 							<span class="material-symbols-rounded text-[1.25rem]">storefront</span>
 						</div>
 
-						<span
-							class:list={[
-								'locations-card-status',
-								location.is_active === 1
-									? 'locations-card-status--active'
-									: 'locations-card-status--inactive',
-							]}
-						>
+						{location.current_closure_name && location.is_active === 1 ? (
+							<span
+								class="locations-card-status locations-card-status--closed"
+								title={`Cerrado: ${location.current_closure_name}`}
+							>
+								<span class="size-1.5 rounded-full locations-summary-dot--closed"></span>
+								Cerrada
+							</span>
+						) : (
 							<span
 								class:list={[
-									'size-1.5 rounded-full',
+									'locations-card-status',
 									location.is_active === 1
-										? 'locations-summary-dot--active'
-										: 'locations-summary-dot--inactive',
+										? 'locations-card-status--active'
+										: 'locations-card-status--inactive',
 								]}
-							></span>
-							{location.is_active === 1 ? 'Activa' : 'Inactiva'}
-						</span>
+							>
+								<span
+									class:list={[
+										'size-1.5 rounded-full',
+										location.is_active === 1
+											? 'locations-summary-dot--active'
+											: 'locations-summary-dot--inactive',
+									]}
+								></span>
+								{location.is_active === 1 ? 'Activa' : 'Inactiva'}
+							</span>
+						)}
 					</div>
 
 					<div class="locations-card-body">
@@ -219,24 +283,25 @@ const inactiveCount = locations.length - activeCount;
 							<h3 class="locations-card-title line-clamp-1">
 								{location.name || `Sucursal #${location.id_location}`}
 							</h3>
-							<p class="mt-1 text-[0.9rem] text-(--on-surface-variant) line-clamp-1">
+							<p class="mt-1 text-[0.85rem] text-(--on-surface-variant) line-clamp-1">
 								{location.address || 'Dirección no disponible'}
 							</p>
 						</div>
 
-						<dl class="locations-card-metrics mt-1">
-							<div class="flex items-center justify-between text-[0.92rem]">
+						<dl class="locations-card-metrics">
+							<div class="flex items-center justify-between text-[0.8rem]">
 								<dt class="locations-card-term">Ciudad</dt>
 								<dd class="locations-card-value">{location.city?.name || '-'}</dd>
 							</div>
-							<div class="flex items-center justify-between text-[0.92rem]">
+							<div class="flex items-center justify-between text-[0.8rem]">
 								<dt class="locations-card-term">Depto.</dt>
 								<dd class="locations-card-value">{location.department?.name || '-'}</dd>
 							</div>
 						</dl>
 					</div>
 				</article>
-			))}
+				);
+			})}
 		</div>
 	)}
 	</div>
@@ -394,6 +459,91 @@ const inactiveCount = locations.length - activeCount;
 
 	.locations-card {
 		cursor: pointer;
+		gap: 0.55rem;
+		padding: 0.72rem 0.8rem 0.85rem;
+		border-radius: 0.8rem;
+	}
+
+	.locations-card-cover {
+		position: relative;
+		margin: -0.05rem -0.05rem 0.4rem;
+		overflow: hidden;
+		border-radius: 0.65rem;
+		aspect-ratio: 16 / 9;
+		background: color-mix(in srgb, var(--surface-container-high) 80%, transparent);
+	}
+
+	.locations-card-cover--brand {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background:
+			radial-gradient(
+				ellipse 80% 70% at 20% 15%,
+				color-mix(in srgb, var(--primary) 28%, transparent),
+				transparent 60%
+			),
+			linear-gradient(
+				145deg,
+				color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
+				var(--surface-container-highest) 55%,
+				color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
+			);
+	}
+
+	.locations-card-cover .bookmate-map-marker-overlay {
+		position: absolute;
+		left: 50%;
+		top: 50%;
+		width: 28px;
+		height: 36px;
+		transform: translate(-50%, -100%);
+		pointer-events: none;
+		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+		z-index: 1;
+	}
+
+	.locations-card-cover .bookmate-map-marker-overlay svg {
+		display: block;
+		width: 28px;
+		height: 36px;
+	}
+
+	.locations-card-cover--brand .bookmate-map-marker-overlay {
+		position: relative;
+		left: auto;
+		top: auto;
+		transform: none;
+	}
+
+	.locations-card-cover img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.locations-card .locations-card-icon {
+		width: 1.9rem;
+		height: 1.9rem;
+		border-radius: 0.6rem;
+	}
+
+	.locations-card .locations-card-icon .material-symbols-rounded {
+		font-size: 1rem;
+	}
+
+	.locations-card .locations-card-body {
+		gap: 0.4rem;
+	}
+
+	.locations-card .locations-card-title {
+		font-size: 0.92rem;
+	}
+
+	.locations-card .locations-card-metrics {
+		gap: 0.25rem;
+		font-size: 0.8rem;
 	}
 
 	.locations-card-status {
@@ -420,8 +570,51 @@ const inactiveCount = locations.length - activeCount;
 		color: #8d3e4a;
 	}
 
+	.locations-card-status--closed {
+		background: rgba(249, 115, 22, 0.15);
+		color: #9a4a12;
+	}
+
+	.locations-summary-dot--closed {
+		display: inline-block;
+		background: #f97316;
+	}
+
+	.locations-org-closures-btn {
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: transparent;
+		padding: 0.62rem 1rem;
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
+		transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
+	}
+
+	.locations-org-closures-btn:hover {
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+		color: var(--on-surface);
+	}
+
+	.locations-org-closures-btn:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+		outline-offset: 3px;
+	}
+
 	.locations-card-value {
 		font-weight: 700;
+	}
+
+	@media (max-width: 639px) {
+		.locations-card {
+			gap: 0.45rem;
+			padding: 0.65rem 0.7rem 0.75rem;
+		}
+
+		.locations-card-cover {
+			margin: -0.02rem -0.02rem 0.3rem;
+			border-radius: 0.55rem;
+		}
 	}
 
 	html[data-theme='dark'] .locations-summary-pill--active {
@@ -476,6 +669,21 @@ const inactiveCount = locations.length - activeCount;
 	html[data-theme='dark'] .locations-card-status--inactive {
 		background: rgba(255, 182, 193, 0.12);
 		color: #ffc8d2;
+	}
+
+	html[data-theme='dark'] .locations-card-status--closed {
+		background: rgba(251, 146, 60, 0.16);
+		color: #ffd7a8;
+	}
+
+	html[data-theme='dark'] .locations-org-closures-btn {
+		border-color: rgba(255, 255, 255, 0.12);
+		color: var(--on-surface-variant);
+	}
+
+	html[data-theme='dark'] .locations-org-closures-btn:hover {
+		background: rgba(255, 255, 255, 0.06);
+		color: var(--on-surface);
 	}
 </style>
 

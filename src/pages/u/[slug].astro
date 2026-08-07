@@ -64,10 +64,7 @@ const metaDescription = profile
 	: 'Reservá turnos online con profesionales en Hasel.';
 const ogImageAlt = profile ? `Foto de perfil de ${professionalName}` : 'Hasel — reservas online';
 const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : resolveOgImageUrl('', siteOrigin);
-const googleMapsApiKey =
-	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
-	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
-	'';
+const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 ---
 
 <Layout
@@ -101,7 +98,7 @@ const googleMapsApiKey =
 					data-public-user-booking-root
 					data-booting
 					data-public-slug={publicSlug}
-					data-google-maps-api-key={googleMapsApiKey}
+					data-stadia-key={stadiaMapsKey}
 				>
 					<script type="application/json" id="public-user-profile-json" set:html={serializedProfile}></script>
 

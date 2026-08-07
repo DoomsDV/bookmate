@@ -682,12 +682,23 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		background: color-mix(in srgb, var(--on-surface-variant) 35%, transparent);
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-desktop-inner] {
+	/*
+	 * Preferencia en <html> (head) + estado del shell. Usamos :is() para que
+	 * el primer paint con data-sidebar-pref=collapsed ya oculte textos: si no,
+	 * el grid queda en 5.5rem con el nombre aún visible y se apila en vertical.
+	 */
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-sidebar-desktop-inner] {
 		padding-left: 0.875rem;
 		padding-right: 0.875rem;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand-block] {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-sidebar-brand-block] {
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -698,7 +709,10 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		transition: none;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand] {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-sidebar-brand] {
 		justify-content: center;
 		align-items: center;
 		gap: 0;
@@ -711,7 +725,10 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		transition: none;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] [data-workspace-avatar] {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-workspace-avatar] {
 		width: 3rem;
 		height: 3rem;
 	}
@@ -733,11 +750,26 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		transition: opacity var(--sidebar-motion-fade);
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] [data-sidebar-brand-text],
-	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] [data-sidebar-label],
-	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] [data-sidebar-trailing],
-	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] .sidebar-account-chevron,
-	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] .sidebar-nav-trailing {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-desktop-sidebar] [data-sidebar-brand-text],
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-desktop-sidebar] [data-sidebar-label],
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-desktop-sidebar] [data-sidebar-trailing],
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-desktop-sidebar] .sidebar-account-chevron,
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-desktop-sidebar] .sidebar-nav-trailing {
 		opacity: 0;
 		transition: opacity var(--sidebar-motion-fade);
 	}
@@ -747,9 +779,10 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		white-space: nowrap;
 	}
 
-	/* La marca (nombre de la organización) SÍ puede envolver a varias líneas. */
+	/* Marca: hasta 2 líneas; nunca una letra por línea en anchos estrechos. */
 	[data-desktop-sidebar] [data-sidebar-brand-text] {
 		max-width: 12rem;
+		min-width: 0;
 		white-space: normal;
 	}
 
@@ -762,21 +795,45 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 	 * max-width:0 solo no alcanza: con white-space:nowrap el min-width:auto
 	 * del ítem flex gana y empuja el ícono fuera del centro.
 	 */
-	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-brand-text],
-	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-label],
-	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-trailing],
-	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-footer] > :not(.sidebar-nav-icon),
-	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-account-chevron,
-	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-trailing {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-sidebar-brand-text],
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-sidebar-label],
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-sidebar-trailing],
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-sidebar-footer] > :not(.sidebar-nav-icon),
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) .sidebar-account-chevron,
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) .sidebar-nav-trailing {
 		display: none;
 	}
 
 	/* Submenú Equipo: se oculta al colapsar (sin dejar hueco). */
-	[data-app-shell][data-sidebar-state="collapsed"] [data-team-submenu] {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-team-submenu] {
 		display: none;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] [data-desktop-sidebar] nav > ul > li {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-desktop-sidebar] nav > ul > li {
 		display: flex;
 		justify-content: center;
 		width: 100%;
@@ -788,7 +845,10 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		transition: none;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-link {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) .sidebar-nav-link {
 		display: flex;
 		width: 2.75rem;
 		height: 2.75rem;
@@ -801,7 +861,10 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		overflow: hidden;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] [data-sidebar-footer] {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) [data-sidebar-footer] {
 		border-color: transparent;
 		border-radius: 9999px;
 		justify-content: center;
@@ -810,11 +873,17 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		padding: 0;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-summary {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) .sidebar-nav-summary {
 		justify-content: center;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-summary-main {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) .sidebar-nav-summary-main {
 		display: flex;
 		justify-content: center;
 		align-items: center;
@@ -824,7 +893,10 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		flex: 0 0 auto;
 	}
 
-	[data-app-shell][data-sidebar-state="collapsed"] .sidebar-nav-icon {
+	:is(
+		html[data-sidebar-pref='collapsed'] [data-app-shell],
+		[data-app-shell][data-sidebar-state='collapsed']
+	) .sidebar-nav-icon {
 		display: inline-flex;
 		width: 1.25rem;
 		height: 1.25rem;
@@ -1572,161 +1644,8 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 	}
 }
 
-/* Auth dark mode overrides.
-   Keeps the existing split layout, only replacing the light form surface. */
-.m3-container.auth-dark {
-	background-color: #0a0a0a;
-	border-radius: 0;
-}
-
-.m3-container.auth-dark .m3-sidebar {
-	background-color: #0a0a0a;
-}
-
-.m3-container.auth-dark .m3-sidebar::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background: radial-gradient(circle at top right, rgba(37, 99, 235, 0.15), transparent 60%);
-	pointer-events: none;
-}
-
-.m3-container.auth-dark .m3-sidebar-inner {
-	justify-content: flex-start;
-}
-
-.m3-container.auth-dark .m3-stepper-header {
-	flex: none;
-	justify-content: flex-start;
-}
-
-.m3-container.auth-dark .m3-content {
-	background:
-		radial-gradient(circle at 50% 18%, rgba(37, 99, 235, 0.08), transparent 34%),
-		#0a0a0a;
-	border-radius: 0;
-}
-
-@media (min-width: 1024px) {
-	.m3-container.auth-dark .m3-content {
-		border-top-left-radius: 0;
-		border-bottom-left-radius: 0;
-		border-left: 1px solid #262626;
-		box-shadow: -10px 0 30px rgba(0, 0, 0, 0.4);
-	}
-}
-
-.m3-container.auth-dark .m3-panel-icon {
-	background-color: rgba(37, 99, 235, 0.14);
-	color: #60a5fa;
-	border: 1px solid rgba(96, 165, 250, 0.18);
-}
-
-.m3-container.auth-dark .m3-panel-title {
-	color: #f8fafc;
-}
-
-.m3-container.auth-dark .m3-panel-subtitle,
-.m3-container.auth-dark .m3-field-help,
-.m3-container.auth-dark .m3-password-strength-text {
-	color: #94a3b8;
-}
-
-.m3-container.auth-dark .m3-label {
-	color: #e2e8f0;
-}
-
-.m3-container.auth-dark .m3-input,
-.m3-container.auth-dark .m3-select {
-	background-color: #121212;
-	border-color: #262626;
-	color: #f8fafc;
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.02);
-}
-
-.m3-container.auth-dark .m3-input::placeholder {
-	color: #77859a;
-}
-
-.m3-container.auth-dark .m3-input:focus,
-.m3-container.auth-dark .m3-select:focus {
-	background-color: #0a0a0a;
-	border-color: #3b82f6;
-	box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
-}
-
-.m3-container.auth-dark .m3-input.is-invalid {
-	background-color: rgba(127, 29, 29, 0.22);
-	border-color: #fb7185;
-}
-
-.m3-container.auth-dark .m3-input.is-invalid:focus {
-	box-shadow: 0 0 0 4px rgba(251, 113, 133, 0.14);
-}
-
-.m3-container.auth-dark .m3-icon-btn {
-	color: #94a3b8;
-}
-
-.m3-container.auth-dark .m3-icon-btn:hover {
-	background-color: #1e293b;
-	color: #e2e8f0;
-}
-
-.m3-container.auth-dark .m3-checkbox-label,
-.m3-container.auth-dark .m3-link-accent {
-	color: #cbd5e1;
-}
-
-.m3-container.auth-dark .m3-checkbox-box {
-	background-color: #121212;
-	border-color: #334155;
-}
-
-.m3-container.auth-dark .m3-footer-divider,
-.m3-container.auth-dark .m3-password-strength-segment {
-	background: #262626;
-}
-
-.m3-container.auth-dark .m3-actions {
-	border-top-color: rgba(148, 163, 184, 0.16);
-}
-
-.m3-container.auth-dark .m3-phone-prefix {
-	background-color: #121212;
-	border-color: #262626;
-	color: #cbd5e1;
-}
-
-.m3-container.auth-dark .m3-phone-group:focus-within .m3-phone-prefix,
-.m3-container.auth-dark .m3-phone-group:focus-within .m3-phone-input {
-	border-color: #3b82f6;
-}
-
-.m3-container.auth-dark .m3-phone-group:focus-within {
-	box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.16);
-}
-
-.m3-container.auth-dark .m3-phone-group.is-invalid .m3-phone-prefix {
-	background-color: rgba(127, 29, 29, 0.22);
-	border-color: #fb7185;
-	color: #fecdd3;
-}
-
-.m3-container.auth-dark .m3-select:disabled {
-	background-color: #121212;
-	color: #64748b;
-}
-
-.m3-container.auth-dark .m3-error-banner {
-	background-color: rgba(127, 29, 29, 0.22);
-	border-color: rgba(251, 113, 133, 0.35);
-	color: #fecdd3;
-}
-
-.m3-container.auth-dark .m3-mobile-brand .m3-logo {
-	filter: drop-shadow(0 8px 20px rgba(59, 130, 246, 0.28));
-}
+/* Nota: los overrides .m3-container.auth-dark fueron eliminados tras migrar
+   todos los formularios auth al sistema compartido src/styles/auth.css. */
 
 .material-region {
 	border-radius: 1.5rem;
@@ -2100,8 +2019,13 @@ html[data-theme='dark'] :is(
 	font-size: 0.95rem;
 	line-height: 1.25;
 	color: var(--on-surface);
-	overflow-wrap: break-word;
-	word-break: break-word;
+	/* Máx. 2 líneas; evita apilar una letra por renglón en anchos estrechos. */
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	overflow: hidden;
+	overflow-wrap: anywhere;
+	word-break: normal;
 }
 
 .workspace-account-subtitle {

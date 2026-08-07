@@ -37,10 +37,7 @@ const toSafePageStatus = (status: number, hasProfile: boolean) => {
 const initialLocationId = parseLocationId(
 	Astro.url.searchParams.get('loc_id') ?? Astro.url.searchParams.get('loc')
 );
-const googleMapsApiKey =
-	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
-	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
-	'';
+const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 
 let profile: PublicBookingProfile | null = null;
 let loadError = '';
@@ -127,7 +124,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 					data-organization-slug={organizationSlug}
 					data-professional-slug={professionalSlug}
 					data-location-id={String(initialLocationId)}
-					data-google-maps-api-key={googleMapsApiKey}
+					data-stadia-key={stadiaMapsKey}
 				>
 					<script type="application/json" id="public-booking-profile-json" set:html={serializedProfile}></script>
 					<script type="application/json" id="public-booking-locations-json" set:html={serializedLocations}></script>

@@ -2388,6 +2388,35 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	visibility: hidden;
 }
 
+/* Placeholder cuando no hay miniatura estática (MapLibre carga el mapa on-demand) */
+.public-location-card__preview--brand {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	padding: 0.75rem;
+	background: color-mix(in srgb, var(--primary) 14%, var(--surface-container));
+	color: var(--on-surface);
+	text-align: center;
+}
+
+.public-location-card__preview-icon {
+	font-size: 1.85rem;
+	color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
+}
+
+.public-location-card__preview-label {
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	color: var(--on-surface-variant);
+}
+
+.public-location-card__preview--brand:hover .public-location-card__preview-icon {
+	color: color-mix(in srgb, var(--primary) 92%, #3b82f6);
+}
+
 .public-location-card__main {
 	display: flex;
 	min-width: 0;

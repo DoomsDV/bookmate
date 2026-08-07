@@ -104,12 +104,15 @@ const dayProgressPct =
 
 const greetingSubtitle = `${organizationName} · ${dashboardDate}`;
 
-const progressHint =
-	todayTotal === 0
-		? 'Sin turnos programados para hoy.'
-		: todayCompleted === todayTotal
-			? 'Todos los turnos de hoy ya fueron completados.'
-			: `${todayTotal - todayCompleted} por atender todavía.`;
+const dayProgressEmpty = todayTotal === 0;
+const progressHint = dayProgressEmpty
+	? ''
+	: todayCompleted === todayTotal
+		? 'Todos los turnos de hoy ya fueron completados.'
+		: `${todayTotal - todayCompleted} por atender todavía.`;
+const dayProgressMetricLabel = dayProgressEmpty
+	? 'Aún no tenés turnos programados para hoy'
+	: `${todayCompleted} de ${todayTotal} turnos completados`;
 
 const totalCustomersLabel =
 	dashboard.kpis.total_customers !== null ? String(dashboard.kpis.total_customers) : '—';
@@ -195,6 +198,8 @@ const safeCurrentPage = Math.min(
 );
 const canPrevPage = safeCurrentPage > 1;
 const canNextPage = safeCurrentPage < totalAppointmentPages;
+const showAppointmentPagination =
+	appointmentPagination.total_records > 0 && totalAppointmentPages > 1;
 const appointmentsCountText =
 	appointmentPagination.total_records === 1
 		? '1 cita'
@@ -325,58 +330,58 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 									<div class="dashboard-carousel">
 									<div class="dashboard-profit-metrics-track">
-										<article class="dashboard-profit-card" data-profit-accent="emerald">
+										<article class="dashboard-profit-card" data-profit-accent="emerald" data-profit-spark-card="mom">
 											<div class="dashboard-profit-card__head">
 												<p class="dashboard-profit-label">Ingresos del mes</p>
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">payments</span>
 											</div>
 											<p class="dashboard-profit-value" data-profit-month-revenue>&nbsp;</p>
 											<p class="dashboard-profit-hint" data-profit-mom>&nbsp;</p>
-											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true" data-profit-spark>
 												<defs>
 													<linearGradient id="profit-spark-fill-emerald" x1="0" y1="0" x2="0" y2="1">
 														<stop offset="0%" stop-color="var(--profit-accent)" stop-opacity="0.22" />
 														<stop offset="100%" stop-color="var(--profit-accent)" stop-opacity="0" />
 													</linearGradient>
 												</defs>
-												<path class="dashboard-profit-spark__area" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-emerald)" />
-												<path class="dashboard-profit-spark__line" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10" fill="none" />
+												<path class="dashboard-profit-spark__area" data-profit-spark-area d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-emerald)" />
+												<path class="dashboard-profit-spark__line" data-profit-spark-line d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18" fill="none" />
 											</svg>
 										</article>
-										<article class="dashboard-profit-card" data-profit-accent="brand">
+										<article class="dashboard-profit-card" data-profit-accent="brand" data-profit-spark-card="today">
 											<div class="dashboard-profit-card__head">
 												<p class="dashboard-profit-label">Ingresos de hoy</p>
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">today</span>
 											</div>
 											<p class="dashboard-profit-value" data-profit-today>&nbsp;</p>
 											<p class="dashboard-profit-hint">Citas ya atendidas hoy.</p>
-											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true" data-profit-spark>
 												<defs>
 													<linearGradient id="profit-spark-fill-brand" x1="0" y1="0" x2="0" y2="1">
 														<stop offset="0%" stop-color="var(--profit-accent)" stop-opacity="0.22" />
 														<stop offset="100%" stop-color="var(--profit-accent)" stop-opacity="0" />
 													</linearGradient>
 												</defs>
-												<path class="dashboard-profit-spark__area" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-brand)" />
-												<path class="dashboard-profit-spark__line" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10" fill="none" />
+												<path class="dashboard-profit-spark__area" data-profit-spark-area d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-brand)" />
+												<path class="dashboard-profit-spark__line" data-profit-spark-line d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18" fill="none" />
 											</svg>
 										</article>
-										<article class="dashboard-profit-card" data-profit-accent="amber">
+										<article class="dashboard-profit-card" data-profit-accent="amber" data-profit-spark-card="pending">
 											<div class="dashboard-profit-card__head">
 												<p class="dashboard-profit-label">Esperado (futuro)</p>
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">trending_up</span>
 											</div>
 											<p class="dashboard-profit-value" data-profit-pending>&nbsp;</p>
 											<p class="dashboard-profit-hint">Citas confirmadas y pendientes.</p>
-											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true">
+											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true" data-profit-spark>
 												<defs>
 													<linearGradient id="profit-spark-fill-amber" x1="0" y1="0" x2="0" y2="1">
 														<stop offset="0%" stop-color="var(--profit-accent)" stop-opacity="0.22" />
 														<stop offset="100%" stop-color="var(--profit-accent)" stop-opacity="0" />
 													</linearGradient>
 												</defs>
-												<path class="dashboard-profit-spark__area" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-amber)" />
-												<path class="dashboard-profit-spark__line" d="M0 24 C 15 10, 25 26, 40 18 S 70 6, 85 14 S 110 22, 120 10" fill="none" />
+												<path class="dashboard-profit-spark__area" data-profit-spark-area d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-amber)" />
+												<path class="dashboard-profit-spark__line" data-profit-spark-line d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18" fill="none" />
 											</svg>
 										</article>
 										<article class="dashboard-profit-card" data-profit-accent="green">
@@ -459,33 +464,47 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 									</div>
 								) : (
 									<div class="dashboard-floor dashboard-floor--today">
-										<article class="dashboard-day-progress" aria-label="Progreso del día">
+										<article
+											class:list={['dashboard-day-progress', dayProgressEmpty && 'is-empty']}
+											aria-label="Progreso del día"
+										>
 											<div class="dashboard-day-progress__inner">
 												<div class="dashboard-day-progress__top">
 													<div>
 														<p class="dashboard-day-progress__eyebrow">Progreso del día</p>
-														<p class="dashboard-day-progress__metric">
-															<span data-day-completed>{todayCompleted}</span>
-															<span class="dashboard-day-progress__of"> de {todayTotal}</span>
-															<span class="dashboard-day-progress__unit">turnos completados</span>
-														</p>
-														<p class="dashboard-day-progress__hint">{progressHint}</p>
+														{dayProgressEmpty ? (
+															<p class="dashboard-day-progress__metric dashboard-day-progress__metric--empty">
+																Aún no tenés turnos programados para hoy
+															</p>
+														) : (
+															<>
+																<p class="dashboard-day-progress__metric">
+																	<span data-day-completed>{todayCompleted}</span>
+																	<span class="dashboard-day-progress__of"> de {todayTotal}</span>
+																	<span class="dashboard-day-progress__unit">turnos completados</span>
+																</p>
+																{progressHint ? (
+																	<p class="dashboard-day-progress__hint">{progressHint}</p>
+																) : null}
+															</>
+														)}
 													</div>
 													<span class="dashboard-day-progress__icon material-symbols-rounded" aria-hidden="true">
-														event_available
+														{dayProgressEmpty ? 'event_busy' : 'event_available'}
 													</span>
 												</div>
-												<div
-													class="dashboard-day-progress__bar"
-													role="progressbar"
-													aria-valuemin="0"
-													aria-valuemax={Math.max(todayTotal, 1)}
-													aria-valuenow={todayCompleted}
-													aria-label={`${todayCompleted} de ${todayTotal} turnos completados`}
-												>
-													<span class="dashboard-day-progress__fill" style={`width: ${dayProgressPct}%`}></span>
-												</div>
-												<p class="dashboard-day-progress__insight" data-day-progress-insight hidden></p>
+												{!dayProgressEmpty ? (
+													<div
+														class="dashboard-day-progress__bar"
+														role="progressbar"
+														aria-valuemin="0"
+														aria-valuemax={Math.max(todayTotal, 1)}
+														aria-valuenow={todayCompleted}
+														aria-label={dayProgressMetricLabel}
+													>
+														<span class="dashboard-day-progress__fill" style={`width: ${dayProgressPct}%`}></span>
+													</div>
+												) : null}
 											</div>
 										</article>
 									</div>
@@ -548,7 +567,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 														<div class="w-14 h-14 bg-white dark:bg-[#2B2D31] rounded-full flex items-center justify-center mx-auto mb-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] dark:shadow-[0_4px_15px_rgba(0,0,0,0.2)] transition-colors duration-300">
 															<span class="material-symbols-rounded text-[#BDC1C6] dark:text-[#C4C7C5] text-2xl">event_busy</span>
 														</div>
-														<p class="text-base font-bold text-[#5f6368] dark:text-[#C4C7C5]">No hay citas programadas para los siguientes 7 días.</p>
+														<p class="text-base font-bold text-[#5f6368] dark:text-[#C4C7C5]">Agenda libre.</p>
+														<a href="/panel/calendar" class="dashboard-appointments-see-all">
+															Ver agenda
+														</a>
 													</div>
 												) : (
 													<div class="dashboard-report-list">
@@ -591,26 +613,28 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 																);
 															})
 														}
+														<a href="/panel/calendar" class="dashboard-appointments-see-all dashboard-appointments-see-all--list">
+															Ver agenda
+														</a>
 													</div>
 												)
 											}
 
-											<AppPagination
-												class="dashboard-appointments-pagination"
-												currentPage={safeCurrentPage}
-												totalPages={totalAppointmentPages}
-												totalRecords={appointmentPagination.total_records}
-												recordLabel="citas"
-												ariaLabel="Paginación próximas citas"
-												prevHref={canPrevPage ? toPageHref(safeCurrentPage - 1) : undefined}
-												nextHref={canNextPage ? toPageHref(safeCurrentPage + 1) : undefined}
-												pageHrefs={appointmentPageHrefs}
-											/>
-
-											<a href="/panel/calendar" class="dashboard-appointments-see-all">
-												Ver todas en la agenda
-												<span class="material-symbols-rounded text-[1.05rem]" aria-hidden="true">arrow_forward</span>
-											</a>
+											{
+												showAppointmentPagination ? (
+													<AppPagination
+														class="dashboard-appointments-pagination"
+														currentPage={safeCurrentPage}
+														totalPages={totalAppointmentPages}
+														totalRecords={appointmentPagination.total_records}
+														recordLabel="citas"
+														ariaLabel="Paginación próximas citas"
+														prevHref={canPrevPage ? toPageHref(safeCurrentPage - 1) : undefined}
+														nextHref={canNextPage ? toPageHref(safeCurrentPage + 1) : undefined}
+														pageHrefs={appointmentPageHrefs}
+													/>
+												) : null
+											}
 										</div>
 
 										{showAlertsPanel && (
@@ -661,12 +685,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												>
 													<span class="material-symbols-rounded dashboard-alerts-empty__icon" aria-hidden="true">task_alt</span>
 													<p class="dashboard-alerts-empty__text">Todo al día. No hay tareas urgentes.</p>
-													<div class="dashboard-alerts-empty__actions">
-														<a href="/panel/calendar" class="dashboard-alerts-empty__cta">
-															<span class="material-symbols-rounded" aria-hidden="true">add</span>
-															Crear cita
-														</a>
-													</div>
 												</div>
 											</aside>
 										)}
@@ -1210,7 +1228,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		const lineNode = card.querySelector<HTMLElement>('[data-ai-summary-line]');
 		const moreButton = card.querySelector<HTMLButtonElement>('[data-open-ai-summary-modal]');
-		const insightNode = document.querySelector<HTMLElement>('[data-day-progress-insight]');
 		const fallbackShort =
 			sanitizeAiSummary(card.getAttribute('data-default-summary-short')) || DEFAULT_AI_SUMMARY_SHORT;
 		const fallbackFull =
@@ -1242,24 +1259,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 				? sentenceParts.slice(0, 3).join('\n')
 				: truncatePreviewText(rawPreview, 220);
 		lineNode.textContent = lineText;
-
-		if (insightNode) {
-			const suggestion =
-				sanitizeAiSummary(sections.find((section) => section.type === 'sugerencia')?.text) ||
-				truncatePreviewText(summaryShort, 110);
-			if (suggestion && !textsAreRedundant(suggestion, progressHintFromDom())) {
-				insightNode.textContent = suggestion;
-				insightNode.hidden = false;
-			} else {
-				insightNode.textContent = '';
-				insightNode.hidden = true;
-			}
-		}
-	};
-
-	const progressHintFromDom = (): string => {
-		const hint = document.querySelector('.dashboard-day-progress__hint');
-		return sanitizeAiSummary(hint?.textContent || '');
 	};
 
 	const toRecord = (value: unknown): Record<string, unknown> =>
@@ -1768,6 +1767,35 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}, 280);
 	};
 
+	type ProfitSparkTrend = 'up' | 'down' | 'flat';
+
+	/** Curvas decorativas alineadas a la tendencia (y bajo = valor alto en el SVG). */
+	const buildProfitSparkPaths = (trend: ProfitSparkTrend): { line: string; area: string } => {
+		const line =
+			trend === 'up'
+				? 'M0 24 C 18 22, 32 20, 48 16 S 78 10, 96 8 S 112 6, 120 5'
+				: trend === 'down'
+					? 'M0 6 C 18 8, 32 10, 48 14 S 78 22, 96 24 S 112 26, 120 28'
+					: 'M0 18 C 20 16, 40 20, 60 18 S 100 16, 120 18';
+		return { line, area: `${line} L 120 32 L 0 32 Z` };
+	};
+
+	const applyProfitSpark = (card: HTMLElement | null, trend: ProfitSparkTrend) => {
+		if (!card) return;
+		const { line, area } = buildProfitSparkPaths(trend);
+		const lineNode = card.querySelector<SVGPathElement>('[data-profit-spark-line]');
+		const areaNode = card.querySelector<SVGPathElement>('[data-profit-spark-area]');
+		if (lineNode) lineNode.setAttribute('d', line);
+		if (areaNode) areaNode.setAttribute('d', area);
+		card.dataset.profitSparkTrend = trend;
+	};
+
+	const sparkTrendFromAmount = (amount: unknown): ProfitSparkTrend => {
+		const value = Number(amount);
+		if (!Number.isFinite(value) || value <= 0) return 'flat';
+		return 'up';
+	};
+
 	const loadProfitability = async () => {
 		const panel = document.querySelector<HTMLElement>('[data-profitability-panel]');
 		if (!panel) return;
@@ -1801,19 +1829,25 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			setText('[data-profit-today]', formatGs(data.today_revenue));
 			setText('[data-profit-pending]', formatGs(data.pending_expected_revenue));
 
+			const momCard = panel.querySelector<HTMLElement>('[data-profit-spark-card="mom"]');
 			const momNode = panel.querySelector<HTMLElement>('[data-profit-mom]');
 			if (momNode) {
 				const mom = data.mom_delta_pct;
 				if (mom === null || mom === undefined || !Number.isFinite(Number(mom))) {
 					momNode.textContent = 'Sin comparación con el mes anterior.';
 					momNode.className = 'dashboard-profit-hint';
+					applyProfitSpark(momCard, sparkTrendFromAmount(data.month_revenue));
 				} else {
 					const value = Number(mom);
 					const sign = value > 0 ? '+' : '';
+					const trend: ProfitSparkTrend =
+						value > 0 ? 'up' : value < 0 ? 'down' : 'flat';
 					momNode.className =
-						value >= 0
+						value > 0
 							? 'dashboard-profit-hint dashboard-profit-hint--up'
-							: 'dashboard-profit-hint dashboard-profit-hint--down';
+							: value < 0
+								? 'dashboard-profit-hint dashboard-profit-hint--down'
+								: 'dashboard-profit-hint';
 					momNode.replaceChildren();
 					if (value < 0) {
 						const arrow = document.createElement('span');
@@ -1829,8 +1863,18 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 						momNode.appendChild(arrow);
 					}
 					momNode.appendChild(document.createTextNode(`${sign}${value}% vs. mes anterior`));
+					applyProfitSpark(momCard, trend);
 				}
 			}
+
+			applyProfitSpark(
+				panel.querySelector<HTMLElement>('[data-profit-spark-card="today"]'),
+				sparkTrendFromAmount(data.today_revenue),
+			);
+			applyProfitSpark(
+				panel.querySelector<HTMLElement>('[data-profit-spark-card="pending"]'),
+				sparkTrendFromAmount(data.pending_expected_revenue),
+			);
 
 			panel.hidden = false;
 			panel.classList.remove('hidden', 'is-dismissed', 'is-loading');
@@ -3218,26 +3262,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
-	.dashboard-day-progress__insight {
-		margin: 0;
-		font-size: 0.82rem;
-		font-weight: 600;
-		line-height: 1.4;
-		color: var(--on-surface-variant, #5f6368);
-		opacity: 1;
-		max-width: 36rem;
-		white-space: normal;
-		overflow-wrap: anywhere;
-	}
-
-	html[data-theme='dark'] .dashboard-day-progress__insight {
-		color: color-mix(in srgb, var(--on-surface-variant) 36%, white 64%);
-	}
-
-	.dashboard-day-progress__insight[hidden] {
-		display: none !important;
-	}
-
 	.dashboard-ai-card {
 		position: relative;
 		overflow: visible;
@@ -4221,6 +4245,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: var(--on-surface, #202124);
 	}
 
+	.dashboard-day-progress__metric--empty {
+		display: block;
+		font-size: clamp(1.05rem, 2.4vw, 1.25rem);
+		font-weight: 700;
+		letter-spacing: -0.015em;
+		line-height: 1.35;
+		max-width: 20rem;
+	}
+
 	.dashboard-day-progress__of {
 		font-size: 0.55em;
 		font-weight: 700;
@@ -4241,7 +4274,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		font-size: 0.88rem;
 		font-weight: 600;
 		opacity: 1;
-		color: var(--on-surface-variant, #5f6368);
+		color: color-mix(in srgb, var(--on-surface-variant, #5f6368) 78%, var(--on-surface) 22%);
 	}
 
 	.dashboard-day-progress__icon {
@@ -4300,7 +4333,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	html[data-theme='dark'] .dashboard-day-progress__of,
 	html[data-theme='dark'] .dashboard-day-progress__unit,
 	html[data-theme='dark'] .dashboard-day-progress__hint {
-		color: color-mix(in srgb, var(--on-surface-variant) 36%, white 64%);
+		color: color-mix(in srgb, var(--on-surface-variant) 28%, #e8eaed 72%);
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__metric {
@@ -4747,7 +4780,37 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-appointments-see-all {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		margin: 0.85rem auto 0;
+		padding: 0;
+		border: 0;
+		background: none;
+		width: auto;
+		color: var(--primary);
+		font-size: 0.88rem;
+		font-weight: 750;
+		letter-spacing: 0.01em;
+		text-decoration: none;
+		white-space: nowrap;
+	}
+
+	.dashboard-appointments-see-all:hover {
+		text-decoration: underline;
+		text-underline-offset: 0.14em;
+	}
+
+	.dashboard-appointments-see-all--list {
 		display: none;
+	}
+
+	@media (max-width: 1023px) {
+		.dashboard-appointments-see-all--list {
+			display: inline-flex;
+			width: 100%;
+			margin-top: 1rem;
+		}
 	}
 
 	.dashboard-carousel {
@@ -4980,7 +5043,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		gap: 0.2rem;
 		font-size: 0.78rem;
 		font-weight: 600;
-		color: var(--on-surface-variant);
+		color: color-mix(in srgb, var(--on-surface-variant) 72%, var(--on-surface) 28%);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-hint {
+		color: color-mix(in srgb, var(--on-surface-variant) 42%, #e8eaed 58%);
 	}
 
 	.dashboard-profit-hint__arrow {
@@ -5357,6 +5424,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			font-size: clamp(1.75rem, 8vw, 2.2rem);
 		}
 
+		.dashboard-day-progress__metric--empty {
+			font-size: clamp(1rem, 4.2vw, 1.15rem);
+		}
+
 		.dashboard-week-glance {
 			gap: 0.15rem;
 			margin-bottom: 1.55rem;
@@ -5415,27 +5486,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-report-list > .dashboard-report-card:nth-child(n + 4) {
 			display: none;
-		}
-
-		.dashboard-appointments-see-all {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			gap: 0.35rem;
-			width: 100%;
-			margin-top: 1.35rem;
-			padding: 0.75rem 1rem;
-			border-radius: 999px;
-			border: 1px solid color-mix(in srgb, var(--primary) 28%, var(--shell-border) 72%);
-			background: color-mix(in srgb, var(--primary) 8%, transparent);
-			color: var(--primary);
-			font-size: 0.88rem;
-			font-weight: 800;
-			text-decoration: none;
-		}
-
-		.dashboard-appointments-see-all:hover {
-			background: color-mix(in srgb, var(--primary) 14%, transparent);
 		}
 
 		.dashboard-floor--action.dashboard-floor--split {

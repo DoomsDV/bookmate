@@ -12,14 +12,11 @@ const canManageLocations = Number(Astro.locals.roleId ?? 0) === ROLES.ADMIN;
 const rawPage = Number(Astro.url.searchParams.get("page") || "1");
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
-const googleMapsApiKey =
-	import.meta.env.PUBLIC_G_MAPS_API_KEY ??
-	import.meta.env.PUBLIC_G_MAPS_API_KEYS ??
-	"";
+const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 ---
 
 <Layout>
-	<location-manager data-google-maps-api-key={googleMapsApiKey} data-can-manage={canManageLocations ? "true" : "false"}>
+	<location-manager data-stadia-key={stadiaMapsKey} data-can-manage={canManageLocations ? "true" : "false"}>
 		<div class="min-h-screen bg-(--page-background) transition-colors duration-300">
 			<div
 				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -277,6 +274,34 @@ const googleMapsApiKey =
 						data-field-error="longitude"></span>
 				</div>
 
+				<section
+					class="location-closures-section"
+					data-closures-section
+					hidden
+				>
+					<div class="location-closures-header">
+						<div>
+							<h3 class="location-closures-title">Días festivos y cierres</h3>
+							<p class="location-closures-desc">
+								Días en los que esta sucursal permanece cerrada. Se aplica a todos los profesionales.
+							</p>
+						</div>
+						<button
+							type="button"
+							class="location-closures-add-btn"
+							data-add-closure-btn
+						>
+							<span class="material-symbols-rounded text-[1.05rem]">add</span>
+							<span>Añadir cierre</span>
+						</button>
+					</div>
+					<div class="location-closures-list" data-closures-list>
+						<p class="location-closures-empty" data-closures-empty>
+							No hay cierres cargados para esta sucursal.
+						</p>
+					</div>
+				</section>
+
 				<label
 					class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface) pt-1"
 					data-location-status-wrap
@@ -355,6 +380,182 @@ const googleMapsApiKey =
 				</div>
 			</form>
 		</dialog>
+
+		<dialog class="closures-org-dialog" data-org-closures-dialog>
+			<div class="closures-org-dialog__header">
+				<div class="flex items-center gap-4 min-w-0">
+					<div
+						class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)"
+					>
+						<span class="material-symbols-rounded text-[1.4rem]">event_busy</span>
+					</div>
+					<div class="min-w-0">
+						<h2 class="closures-org-dialog__title">Cierres generales</h2>
+						<p class="closures-org-dialog__desc">
+							Feriados o cierres que aplican a todas las sucursales activas.
+						</p>
+					</div>
+				</div>
+				<button
+					type="button"
+					class="closures-org-dialog__close"
+					data-close-org-closures
+					aria-label="Cerrar"
+				>
+					<span class="material-symbols-rounded text-[1.3rem]">close</span>
+				</button>
+			</div>
+			<div class="closures-org-dialog__body">
+				<button
+					type="button"
+					class="location-closures-add-btn location-closures-add-btn--wide"
+					data-add-org-closure-btn
+				>
+					<span class="material-symbols-rounded text-[1.05rem]">add</span>
+					<span>Nuevo cierre general</span>
+				</button>
+				<div class="closures-org-dialog__list" data-org-closures-list>
+					<p class="location-closures-empty" data-org-closures-empty>
+						No hay cierres generales cargados.
+					</p>
+				</div>
+			</div>
+		</dialog>
+
+		<dialog class="closure-form-dialog" data-closure-form-dialog>
+			<form class="closure-form" data-closure-form>
+				<div class="closure-form__header">
+					<h2 class="closure-form__title" data-closure-form-title>Añadir cierre</h2>
+					<button
+						type="button"
+						class="closure-form__close"
+						data-close-closure-form
+						aria-label="Cerrar"
+					>
+						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+					</button>
+				</div>
+
+				<div class="closure-form__body">
+					<div
+						class="closure-form__error"
+						data-closure-form-error
+						hidden
+					></div>
+
+					<label class="closure-form__label">
+						Nombre / Motivo
+						<span class="text-rose-500">*</span>
+						<input
+							type="text"
+							name="name"
+							maxlength="120"
+							required
+							class="closure-form__input"
+							placeholder="Ej: Navidad, Fumigación"
+							data-closure-name
+						/>
+					</label>
+
+					<div class="closure-form__row">
+						<label class="closure-form__label">
+							Fecha inicio
+							<span class="text-rose-500">*</span>
+							<input
+								type="date"
+								name="start_date"
+								required
+								class="closure-form__input"
+								data-closure-start-date
+							/>
+						</label>
+						<label class="closure-form__label">
+							Fecha fin
+							<span class="text-rose-500">*</span>
+							<input
+								type="date"
+								name="end_date"
+								required
+								class="closure-form__input"
+								data-closure-end-date
+							/>
+						</label>
+					</div>
+
+					<label class="closure-form__checkbox">
+						<input
+							type="checkbox"
+							name="is_full_day"
+							checked
+							data-closure-full-day
+						/>
+						<span>Día completo</span>
+					</label>
+
+					<div class="closure-form__row" data-closure-partial-row hidden>
+						<label class="closure-form__label">
+							Hora inicio
+							<input
+								type="time"
+								name="start_time"
+								class="closure-form__input"
+								data-closure-start-time
+							/>
+						</label>
+						<label class="closure-form__label">
+							Hora fin
+							<input
+								type="time"
+								name="end_time"
+								class="closure-form__input"
+								data-closure-end-time
+							/>
+						</label>
+					</div>
+
+					<fieldset class="closure-form__scope" data-closure-scope-wrap>
+						<legend>Alcance</legend>
+						<label class="closure-form__radio">
+							<input
+								type="radio"
+								name="apply_all_locations"
+								value="0"
+								checked
+								data-closure-scope-single
+							/>
+							<span>Solo esta sucursal</span>
+						</label>
+						<label class="closure-form__radio">
+							<input
+								type="radio"
+								name="apply_all_locations"
+								value="1"
+								data-closure-scope-all
+							/>
+							<span>Aplicar a todas las sucursales</span>
+						</label>
+					</fieldset>
+				</div>
+
+				<div class="closure-form__footer">
+					<button
+						type="button"
+						class="modal-action-secondary"
+						data-close-closure-form
+					>
+						Cancelar
+					</button>
+					<button
+						type="submit"
+						class="modal-action-primary"
+						data-submit-closure
+					>
+						<span class="material-symbols-rounded text-[1.2rem]">check</span>
+						<span>Guardar cierre</span>
+					</button>
+				</div>
+			</form>
+		</dialog>
 	</location-manager>
 
 	<AppAlert />
@@ -363,6 +564,15 @@ const googleMapsApiKey =
 <script>
 	import { reloadPageWithFlash } from "../../lib/flash";
 	import { getBrowserGeolocation } from "../../lib/geolocation-browser";
+	import { initLocationClosuresUI } from "../../scripts/location-closures-ui";
+	import {
+		createBrandMarker,
+		getStadiaStyleUrl,
+		loadMapLibre,
+		resolveMapTheme,
+		type MapLibreModule,
+		type MapTheme,
+	} from "../../lib/maplibre-loader";
 	import {
 		destroySearchableSelect,
 		rebuildSearchableSelect,
@@ -371,6 +581,8 @@ const googleMapsApiKey =
 
 	type LocationMode = "create" | "edit";
 	type Coordinates = { lat: number; lng: number };
+	type MapLibreMap = InstanceType<MapLibreModule["Map"]>;
+	type MapLibreMarker = InstanceType<MapLibreModule["Marker"]>;
 	type DepartmentOption = { id_department: number; description?: string };
 	type CityOption = { id_city: number; description?: string };
 
@@ -382,21 +594,6 @@ const googleMapsApiKey =
 		is_active: 0 | 1;
 		latitude?: number;
 		longitude?: number;
-	};
-
-	type GoogleMapsNamespace = {
-		Map: new (
-			container: HTMLElement,
-			options: Record<string, unknown>,
-		) => any;
-		Marker: new (options: Record<string, unknown>) => any;
-		Point: new (x: number, y: number) => unknown;
-		event?: { trigger?: (instance: unknown, eventName: string) => void };
-	};
-
-	type WindowWithGoogleMaps = Window & {
-		google?: { maps?: GoogleMapsNamespace };
-		__bookmateGoogleMapsLoader?: Promise<GoogleMapsNamespace> | null;
 	};
 
 	type SelectOptionsConfig<T> = {
@@ -425,59 +622,18 @@ const googleMapsApiKey =
 		private departmentsLoadPromise: Promise<void> | null = null;
 		private citiesByDepartment = new Map<number, CityOption[]>();
 
-		private mapsApiKey = "";
+		private stadiaKey = "";
 		private defaultMapCenter: Coordinates = {
 			lat: -25.28646,
 			lng: -57.647,
 		};
 		private readonly mapIdleMessage =
 			"Haz clic en el mapa para registrar coordenadas exactas. En móvil, usa dos dedos para mover o hacer zoom.";
-		private readonly darkMapStyles = [
-			{ elementType: "geometry", stylers: [{ color: "#1d1d1f" }] },
-			{ elementType: "labels.text.fill", stylers: [{ color: "#c4c6d0" }] },
-			{ elementType: "labels.text.stroke", stylers: [{ color: "#1d1d1f" }] },
-			{
-				featureType: "road",
-				elementType: "geometry",
-				stylers: [{ color: "#2e2e32" }],
-			},
-			{
-				featureType: "road",
-				elementType: "geometry.stroke",
-				stylers: [{ color: "#1d1d1f" }],
-			},
-			{
-				featureType: "road",
-				elementType: "labels.text.fill",
-				stylers: [{ color: "#c4c6d0" }],
-			},
-			{
-				featureType: "road.highway",
-				elementType: "geometry",
-				stylers: [{ color: "#3a3a40" }],
-			},
-			{
-				featureType: "water",
-				elementType: "geometry",
-				stylers: [{ color: "#0f172a" }],
-			},
-			{
-				featureType: "water",
-				elementType: "labels.text.fill",
-				stylers: [{ color: "#64748b" }],
-			},
-			{
-				featureType: "poi",
-				stylers: [{ visibility: "off" }],
-			},
-			{
-				featureType: "transit",
-				stylers: [{ visibility: "off" }],
-			},
-		];
 		private selectedCoordinates: Coordinates | null = null;
-		private mapInstance: any = null;
-		private mapMarker: any = null;
+		private mapLibre: MapLibreModule | null = null;
+		private mapInstance: MapLibreMap | null = null;
+		private mapMarker: MapLibreMarker | null = null;
+		private mapCurrentTheme: MapTheme = "dark";
 
 		private els!: {
 			modal: HTMLDialogElement | null;
@@ -596,9 +752,7 @@ const googleMapsApiKey =
 					this.querySelectorAll<HTMLElement>("[data-field-error]"),
 			};
 
-			this.mapsApiKey = String(
-				this.dataset.googleMapsApiKey || "",
-			).trim();
+			this.stadiaKey = String(this.dataset.stadiaKey || "").trim();
 
 			this.addEventListener("click", this.handleRootClick, { signal });
 			this.addEventListener("keydown", this.handleRootKeydown, {
@@ -662,38 +816,30 @@ const googleMapsApiKey =
 			this.freezeMapForBackground();
 		};
 
-		/** Evita trabajo de tiles/gestures de Maps en segundo plano. */
+		/** Detiene interacciones cuando la pestaña queda en segundo plano. */
 		private freezeMapForBackground = () => {
-			if (!this.mapInstance?.setOptions) {
-				this.destroyMapInstance();
-				return;
-			}
+			if (!this.mapInstance) return;
 			try {
-				this.mapInstance.setOptions({
-					gestureHandling: "none",
-					draggable: false,
-					scrollwheel: false,
-					disableDoubleClickZoom: true,
-				});
+				this.mapInstance.dragPan.disable();
+				this.mapInstance.scrollZoom.disable();
+				this.mapInstance.doubleClickZoom.disable();
+				this.mapInstance.touchZoomRotate.disable();
 			} catch {
 				this.destroyMapInstance();
 			}
 		};
 
 		private unfreezeMapFromBackground = () => {
-			if (!this.mapInstance?.setOptions) return;
+			if (!this.mapInstance) return;
 			if (!this.els.modal?.open) {
 				this.destroyMapInstance();
 				return;
 			}
-			const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
 			try {
-				this.mapInstance.setOptions({
-					gestureHandling: isCoarsePointer ? "cooperative" : "greedy",
-					draggable: true,
-					scrollwheel: true,
-					disableDoubleClickZoom: false,
-				});
+				this.mapInstance.dragPan.enable();
+				this.mapInstance.scrollZoom.enable();
+				this.mapInstance.doubleClickZoom.enable();
+				this.mapInstance.touchZoomRotate.enable();
 			} catch {
 				// ignore
 			}
@@ -701,19 +847,16 @@ const googleMapsApiKey =
 
 		private destroyMapInstance = () => {
 			try {
-				this.mapMarker?.setMap?.(null);
+				this.mapMarker?.remove();
 			} catch {
 				// ignore
 			}
 			this.mapMarker = null;
 
-			const maps = (window as any).google?.maps;
-			if (this.mapInstance && maps?.event?.clearInstanceListeners) {
-				try {
-					maps.event.clearInstanceListeners(this.mapInstance);
-				} catch {
-					// ignore
-				}
+			try {
+				this.mapInstance?.remove();
+			} catch {
+				// ignore
 			}
 			this.mapInstance = null;
 
@@ -722,15 +865,22 @@ const googleMapsApiKey =
 			}
 		};
 
-		private isDarkTheme = () =>
-			document.documentElement.dataset.theme === "dark";
-
-		private getMapStyles = () =>
-			this.isDarkTheme() ? this.darkMapStyles : [];
-
 		private syncMapTheme = () => {
-			if (!this.mapInstance?.setOptions) return;
-			this.mapInstance.setOptions({ styles: this.getMapStyles() });
+			if (!this.mapInstance) return;
+			const nextTheme = resolveMapTheme();
+			if (nextTheme === this.mapCurrentTheme) return;
+			this.mapCurrentTheme = nextTheme;
+			try {
+				this.mapInstance.setStyle(
+					getStadiaStyleUrl(nextTheme, this.stadiaKey),
+				);
+				// El pin es DOM overlay; re-sincronizar tras recrear el canvas.
+				this.mapInstance.once("idle", () => {
+					this.syncMapMarker();
+				});
+			} catch {
+				// ignore
+			}
 		};
 
 		private handleRootClick = (event: MouseEvent) => {
@@ -849,34 +999,6 @@ const googleMapsApiKey =
 			}
 		};
 
-		private watchGeolocationPermissionGranted = (
-			onGranted: () => void,
-			requestId: number,
-		) => {
-			if (!navigator.permissions?.query) {
-				if (requestId === this.geolocationRequestSeq) onGranted();
-				return;
-			}
-
-			void navigator.permissions
-				.query({ name: "geolocation" })
-				.then((status) => {
-					if (status.state === "granted") {
-						if (requestId === this.geolocationRequestSeq) onGranted();
-						return;
-					}
-					if (status.state === "denied") return;
-
-					const onChange = () => {
-						if (status.state !== "granted") return;
-						status.removeEventListener("change", onChange);
-						if (requestId === this.geolocationRequestSeq) onGranted();
-					};
-					status.addEventListener("change", onChange);
-				})
-				.catch(() => undefined);
-		};
-
 		private setMapStatus = (message: string, isError = false) => {
 			if (!this.els.mapStatus) return;
 			this.els.mapStatus.textContent = message;
@@ -907,7 +1029,7 @@ const googleMapsApiKey =
 				if (this.formEls.latitude) this.formEls.latitude.value = "";
 				if (this.formEls.longitude) this.formEls.longitude.value = "";
 				this.setMapStatus(this.mapIdleMessage);
-				if (this.mapMarker) this.mapMarker.setMap(null);
+				if (this.mapMarker) this.mapMarker.remove();
 				this.mapMarker = null;
 				return;
 			}
@@ -923,158 +1045,138 @@ const googleMapsApiKey =
 				this.formEls.longitude.value = coords.lng.toFixed(6);
 			this.setMapStatus("");
 
-			if (!this.mapInstance) return;
-			if (!this.mapMarker) {
-				const maps = (window as WindowWithGoogleMaps).google?.maps;
-				if (!maps) return;
-				this.mapMarker = new maps.Marker({
-					map: this.mapInstance,
-					position: coords,
-					icon: {
-						path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
-						fillColor: "#FB7185",
-						fillOpacity: 1,
-						strokeColor: "#9F1239",
-						strokeWeight: 1.25,
-						scale: 1.55,
-						anchor: new maps.Point(12, 22),
-					},
-				});
-			} else {
-				this.mapMarker.setMap(this.mapInstance);
-				this.mapMarker.setPosition(coords);
-			}
+			if (!this.mapInstance || !this.mapLibre) return;
+			this.syncMapMarker(coords);
 
 			if (options.center !== false) {
-				this.mapInstance.setCenter(coords);
-				this.mapInstance.setZoom(options.zoom ?? 15);
+				this.mapInstance.easeTo({
+					center: [coords.lng, coords.lat],
+					zoom: options.zoom ?? 15,
+					duration: 220,
+				});
 			}
 		};
 
-		private loadGoogleMaps = async (): Promise<GoogleMapsNamespace> => {
-			if (!this.mapsApiKey) {
-				throw new Error(
-					"No se encontró la API key de Google Maps para el mapa de sucursales.",
-				);
+		/** Crea o reposiciona el pin (sin recrear en cada frame/resize). */
+		private syncMapMarker = (coords?: Coordinates | null) => {
+			const point = coords ?? this.selectedCoordinates;
+			if (!this.mapInstance || !this.mapLibre || !point) return;
+
+			if (!this.mapMarker) {
+				this.mapMarker = createBrandMarker(this.mapLibre, point, {
+					color: "#FB7185",
+					title: "Ubicación de la sucursal",
+				}).addTo(this.mapInstance);
+				return;
 			}
 
-			const win = window as WindowWithGoogleMaps;
-			if (win.google?.maps) return win.google.maps;
-			if (win.__bookmateGoogleMapsLoader)
-				return win.__bookmateGoogleMapsLoader;
+			this.mapMarker.setLngLat([point.lng, point.lat]);
+			if (!this.mapMarker.getElement().isConnected) {
+				this.mapMarker.addTo(this.mapInstance);
+			}
+		};
 
-			win.__bookmateGoogleMapsLoader = new Promise<GoogleMapsNamespace>(
-				(resolve, reject) => {
-					const handleLoad = () => {
-						const maps = (window as WindowWithGoogleMaps).google
-							?.maps;
-						if (!maps) {
-							reject(
-								new Error(
-									"Google Maps cargó, pero no se encontró la librería maps.",
-								),
-							);
-							return;
-						}
-						resolve(maps);
-					};
-
-					const existingScript =
-						document.querySelector<HTMLScriptElement>(
-							"script[data-google-maps-loader]",
-						);
-					if (existingScript) {
-						existingScript.addEventListener("load", handleLoad, {
-							once: true,
-						});
-						existingScript.addEventListener(
-							"error",
-							() =>
-								reject(
-									new Error(
-										"No fue posible cargar Google Maps.",
-									),
-								),
-							{ once: true },
-						);
-						return;
-					}
-
-					const script = document.createElement("script");
-					script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(this.mapsApiKey)}&v=weekly`;
-					script.async = true;
-					script.defer = true;
-					script.dataset.googleMapsLoader = "true";
-					script.addEventListener("load", handleLoad, { once: true });
-					script.addEventListener(
-						"error",
-						() =>
-							reject(
-								new Error("No fue posible cargar Google Maps."),
-							),
-						{ once: true },
-					);
-					document.head.appendChild(script);
-				},
-			);
-
+		private layoutMapContainer = () => {
+			if (!this.mapInstance) return;
 			try {
-				return await win.__bookmateGoogleMapsLoader;
-			} catch (error) {
-				win.__bookmateGoogleMapsLoader = null;
-				throw error;
+				this.mapInstance.resize();
+			} catch {
+				// ignore
 			}
+		};
+
+		private focusMapOnCoordinates = (zoom = 15) => {
+			if (!this.mapInstance || !this.selectedCoordinates) return;
+			this.mapInstance.easeTo({
+				center: [
+					this.selectedCoordinates.lng,
+					this.selectedCoordinates.lat,
+				],
+				zoom,
+				duration: 0,
+			});
+			this.syncMapMarker(this.selectedCoordinates);
+		};
+
+		private layoutMapViewport = () => {
+			this.layoutMapContainer();
+			if (!this.mapInstance) return;
+			if (this.selectedCoordinates) {
+				this.focusMapOnCoordinates(15);
+				return;
+			}
+			this.mapInstance.setCenter([
+				this.defaultMapCenter.lng,
+				this.defaultMapCenter.lat,
+			]);
+			this.mapInstance.setZoom(12);
 		};
 
 		private ensureMapReady = async () => {
 			if (!this.els.mapContainer) return;
 
-			const maps = await this.loadGoogleMaps();
+			if (!this.stadiaKey) {
+				throw new Error(
+					"No se encontró la API key de Stadia Maps para el mapa de sucursales.",
+				);
+			}
+
+			if (!this.mapLibre) {
+				this.mapLibre = await loadMapLibre();
+			}
+			const maplibregl = this.mapLibre;
+
 			if (!this.mapInstance) {
 				const isCoarsePointer = window.matchMedia(
 					"(pointer: coarse)",
 				).matches;
-				this.mapInstance = new maps.Map(this.els.mapContainer, {
-					center: this.defaultMapCenter,
+				this.mapCurrentTheme = resolveMapTheme();
+				this.mapInstance = new maplibregl.Map({
+					container: this.els.mapContainer,
+					style: getStadiaStyleUrl(
+						this.mapCurrentTheme,
+						this.stadiaKey,
+					),
+					center: [
+						this.defaultMapCenter.lng,
+						this.defaultMapCenter.lat,
+					],
 					zoom: 12,
-					styles: this.getMapStyles(),
-					mapTypeControl: false,
-					streetViewControl: false,
-					fullscreenControl: false,
-					gestureHandling: isCoarsePointer
-						? "cooperative"
-						: "greedy",
+					attributionControl: { compact: true },
+					cooperativeGestures: isCoarsePointer,
 				});
 
-				this.mapInstance.addListener("click", (event: unknown) => {
-					const source = event as {
-						latLng?: { lat?: () => number; lng?: () => number };
-					};
-					const latitude = source?.latLng?.lat?.();
-					const longitude = source?.latLng?.lng?.();
-					if (
-						!Number.isFinite(latitude) ||
-						!Number.isFinite(longitude)
-					)
-						return;
-					this.setSelectedCoordinates(
-						Number(latitude),
-						Number(longitude),
-						{ center: false },
-					);
+				this.mapInstance.addControl(
+					new maplibregl.NavigationControl({ showCompass: false }),
+					"top-right",
+				);
+
+				this.mapInstance.on("click", (event) => {
+					const { lat, lng } = event.lngLat;
+					if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+					this.setSelectedCoordinates(lat, lng, { center: false });
+				});
+
+				this.mapInstance.once("load", () => {
+					this.layoutMapContainer();
+					if (this.selectedCoordinates) {
+						this.focusMapOnCoordinates(15);
+					}
 				});
 			}
 
-			window.setTimeout(() => {
-				if (!this.mapInstance) return;
-				this.syncMapTheme();
-				if (maps.event?.trigger)
-					maps.event.trigger(this.mapInstance, "resize");
-				this.mapInstance.setCenter(
-					this.selectedCoordinates ?? this.defaultMapCenter,
-				);
-				if (this.selectedCoordinates) this.mapInstance.setZoom(15);
-			}, 60);
+			// El dialog anima al abrir: solo redimensionar; no recentrar si viene geolocalización.
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => {
+					this.layoutMapContainer();
+					window.setTimeout(() => {
+						this.layoutMapContainer();
+						if (this.selectedCoordinates) {
+							this.focusMapOnCoordinates(15);
+						}
+					}, 120);
+				});
+			});
 
 			if (this.selectedCoordinates) {
 				this.setSelectedCoordinates(
@@ -1371,6 +1473,9 @@ const googleMapsApiKey =
 
 		private closeModal = () => {
 			if (!this.els.modal?.open) return;
+			this.dispatchEvent(
+				new CustomEvent("location-modal:closed", { bubbles: true }),
+			);
 			this.locationReadRequestSeq += 1;
 			this.citiesRequestSeq += 1;
 			this.geolocationRequestSeq += 1;
@@ -1447,17 +1552,31 @@ const googleMapsApiKey =
 			this.els.deleteBtn?.removeAttribute("disabled");
 			this.els.statusWrap?.removeAttribute("hidden");
 			if (this.formEls.status) this.formEls.status.disabled = false;
+			this.dispatchEvent(
+				new CustomEvent("location-modal:edit-opened", {
+					bubbles: true,
+					detail: { locationId },
+				}),
+			);
 		};
+
+		private waitForMapLoaded = (): Promise<void> =>
+			new Promise((resolve) => {
+				if (!this.mapInstance) {
+					resolve();
+					return;
+				}
+				if (this.mapInstance.loaded()) {
+					resolve();
+					return;
+				}
+				this.mapInstance.once("load", () => resolve());
+			});
 
 		private tryApplyCurrentGeolocation = async () => {
 			if (this.mode !== "create") return;
 
 			const requestId = ++this.geolocationRequestSeq;
-			const startMapSpinner = () => {
-				if (requestId !== this.geolocationRequestSeq) return;
-				this.setMapGeolocationLoading(true);
-				this.setMapStatus("Obteniendo tu ubicación...");
-			};
 
 			try {
 				const permission = await this.getGeolocationPermissionState();
@@ -1465,17 +1584,9 @@ const googleMapsApiKey =
 					this.setMapStatus(this.mapIdleMessage);
 					return;
 				}
-				if (permission === "granted") {
-					startMapSpinner();
-				} else {
-					this.setMapStatus(
-						"Permite el acceso a tu ubicación para ubicar la sucursal en el mapa.",
-					);
-					this.watchGeolocationPermissionGranted(
-						startMapSpinner,
-						requestId,
-					);
-				}
+
+				this.setMapGeolocationLoading(true);
+				this.setMapStatus("Obteniendo tu ubicación...");
 
 				const point = await getBrowserGeolocation();
 				if (
@@ -1484,24 +1595,48 @@ const googleMapsApiKey =
 				) {
 					return;
 				}
-				if (!point || this.selectedCoordinates) {
-					if (!this.selectedCoordinates) {
-						this.setMapStatus(this.mapIdleMessage);
-					}
+
+				if (!point) {
+					this.setMapStatus(this.mapIdleMessage);
 					return;
 				}
 
+				if (this.selectedCoordinates) return;
+
+				await this.waitForMapLoaded();
+				if (
+					requestId !== this.geolocationRequestSeq ||
+					this.mode !== "create"
+				) {
+					return;
+				}
+
+				const accuracy = point.accuracy ?? Number.POSITIVE_INFINITY;
+				if (accuracy > 5_000) {
+					this.setMapStatus(
+						"No pudimos ubicarte con precisión en este dispositivo. Haz clic en el mapa para marcar la sucursal.",
+					);
+					return;
+				}
+
+				const zoom =
+					accuracy <= 50 ? 17 : accuracy <= 150 ? 16 : 15;
 				this.setSelectedCoordinates(point.latitude, point.longitude, {
 					center: true,
-					zoom: 16,
+					zoom,
 				});
+				this.layoutMapContainer();
+				this.focusMapOnCoordinates(zoom);
+
+				const precisionHint =
+					accuracy <= 150
+						? "Ubicación detectada."
+						: `Ubicación aproximada (±${Math.round(accuracy)} m).`;
 				this.setMapStatus(
-					"Ubicación actual detectada. Puedes ajustar el punto haciendo clic en el mapa.",
+					`${precisionHint} Puedes ajustar el punto haciendo clic en el mapa.`,
 				);
 			} finally {
-				if (requestId === this.geolocationRequestSeq) {
-					this.setMapGeolocationLoading(false);
-				}
+				this.setMapGeolocationLoading(false);
 			}
 		};
 
@@ -1514,13 +1649,16 @@ const googleMapsApiKey =
 			try {
 				await this.ensureDepartmentsLoaded();
 				await this.ensureMapReady();
-				void this.tryApplyCurrentGeolocation();
+				await this.tryApplyCurrentGeolocation();
+				if (!this.selectedCoordinates) {
+					this.layoutMapViewport();
+				}
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error
 						? error.message
 						: "No fue posible cargar recursos del formulario.";
-				if (errorMessage.toLowerCase().includes("google maps")) {
+				if (errorMessage.toLowerCase().includes("stadia maps")) {
 					this.setMapStatus(errorMessage, true);
 					return;
 				}
@@ -1595,7 +1733,7 @@ const googleMapsApiKey =
 					error instanceof Error
 						? error.message
 						: "No fue posible obtener la sucursal.";
-				if (errorMessage.toLowerCase().includes("google maps")) {
+				if (errorMessage.toLowerCase().includes("stadia maps")) {
 					this.setMapStatus(errorMessage, true);
 				} else {
 					this.setCreateMode();
@@ -1762,11 +1900,44 @@ const googleMapsApiKey =
 	if (!customElements.get("location-manager")) {
 		customElements.define("location-manager", LocationManager);
 	}
+
+	const startClosuresUI = () => {
+		try {
+			initLocationClosuresUI();
+		} catch {}
+	};
+
+	if (document.readyState === "loading") {
+		document.addEventListener("DOMContentLoaded", startClosuresUI, { once: true });
+	} else {
+		startClosuresUI();
+	}
+	document.addEventListener("astro:page-load", startClosuresUI);
 </script>
 
 <style is:global>
 	location-manager {
 		display: block;
+	}
+
+	/* MapLibre: el mapa debe llenar el shell y el pin quedar sobre el canvas. */
+	.location-map-shell [data-location-map],
+	.location-map-shell .maplibregl-map {
+		width: 100%;
+		height: 100%;
+		min-height: 16.25rem;
+	}
+
+	.location-map-shell .maplibregl-canvas-container,
+	.location-map-shell .maplibregl-canvas {
+		width: 100% !important;
+		height: 100% !important;
+	}
+
+	/* El pin no debe capturar drag/zoom del mapa. */
+	.location-map-shell .maplibregl-marker {
+		z-index: 1;
+		pointer-events: none;
 	}
 
 	dialog[data-location-modal] {
@@ -1915,5 +2086,555 @@ const googleMapsApiKey =
 		to {
 			opacity: 0;
 		}
+	}
+
+	/* --- Closures section --- */
+	.location-closures-section {
+		display: grid;
+		gap: 0.85rem;
+		border-top: 1px solid var(--shell-border);
+		padding-top: 1.2rem;
+		margin-top: 0.25rem;
+	}
+
+	.location-closures-header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.location-closures-title {
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.location-closures-desc {
+		margin: 0.15rem 0 0;
+		font-size: 0.82rem;
+		color: var(--on-surface-variant);
+	}
+
+	.location-closures-add-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.55rem 0.95rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--on-surface);
+		cursor: pointer;
+		transition: background 140ms ease, border-color 140ms ease;
+	}
+
+	.location-closures-add-btn:hover {
+		background: color-mix(in srgb, var(--on-surface) 6%, var(--surface-bright));
+	}
+
+	.location-closures-add-btn--wide {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.location-closures-list {
+		display: grid;
+		gap: 0.55rem;
+	}
+
+	.location-closures-item {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.9rem;
+		padding: 0.75rem 0.9rem;
+		border-radius: 0.9rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+	}
+
+	.location-closures-item__meta {
+		display: grid;
+		gap: 0.15rem;
+	}
+
+	.location-closures-item__name {
+		font-size: 0.95rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.location-closures-item__dates {
+		font-size: 0.82rem;
+		color: var(--on-surface-variant);
+	}
+
+	.location-closures-item__badges {
+		display: inline-flex;
+		gap: 0.4rem;
+		margin-top: 0.25rem;
+		flex-wrap: wrap;
+	}
+
+	.location-closures-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		padding: 0.18rem 0.5rem;
+		border-radius: 999px;
+		background: rgba(148, 163, 184, 0.18);
+		color: var(--on-surface-variant);
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.02em;
+	}
+
+	.location-closures-badge--org {
+		background: rgba(249, 115, 22, 0.14);
+		color: #9a4a12;
+	}
+
+	html[data-theme='dark'] .location-closures-badge--org {
+		background: rgba(251, 146, 60, 0.16);
+		color: #ffd7a8;
+	}
+
+	.location-closures-item__actions {
+		display: inline-flex;
+		gap: 0.3rem;
+	}
+
+	.location-closures-item__delete {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 0.6rem;
+		border: 1px solid transparent;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+		transition: background 140ms ease, color 140ms ease;
+	}
+
+	.location-closures-item__delete:hover {
+		background: rgba(244, 63, 94, 0.12);
+		color: #b91c1c;
+	}
+
+	.location-closures-empty {
+		margin: 0;
+		padding: 0.85rem 1rem;
+		border-radius: 0.9rem;
+		border: 1px dashed var(--shell-border);
+		background: color-mix(in srgb, var(--on-surface) 3%, transparent);
+		color: var(--on-surface-variant);
+		font-size: 0.85rem;
+		text-align: center;
+	}
+
+	/* --- Closure form dialog (centrado; no hereda el drawer lateral) --- */
+	dialog.closure-form-dialog {
+		position: fixed;
+		inset: 0;
+		margin: auto;
+		width: min(30rem, calc(100vw - 2rem));
+		max-width: min(30rem, calc(100vw - 2rem));
+		max-height: min(90dvh, calc(100dvh - 2rem));
+		height: fit-content;
+		border: 1px solid var(--shell-border);
+		border-radius: 1.4rem;
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		padding: 0;
+		overflow: hidden;
+		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+		animation: closure-form-in 180ms var(--modal-easing, ease);
+	}
+
+	dialog.closure-form-dialog[open] {
+		display: flex;
+		flex-direction: column;
+	}
+
+	dialog.closure-form-dialog::backdrop {
+		background: var(--modal-backdrop-tint, rgba(0, 0, 0, 0.45));
+		backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
+	}
+
+	@keyframes closure-form-in {
+		from {
+			opacity: 0;
+			transform: translateY(8px) scale(0.98);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0) scale(1);
+		}
+	}
+
+	@media (max-width: 639px) {
+		dialog.closure-form-dialog {
+			inset: auto 0 0 0;
+			top: auto;
+			margin: 0;
+			width: 100%;
+			max-width: none;
+			max-height: min(88dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
+			border-radius: 1.6rem 1.6rem 0 0;
+			animation-name: closure-form-sheet-in;
+		}
+
+		@keyframes closure-form-sheet-in {
+			from {
+				opacity: 0;
+				transform: translateY(100%);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+	}
+
+	.closure-form {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		max-height: inherit;
+		width: 100%;
+	}
+
+	.closure-form__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		flex-shrink: 0;
+		padding: 1rem 1.2rem;
+		border-bottom: 1px solid var(--shell-border);
+	}
+
+	.closure-form__title {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 800;
+	}
+
+	.closure-form__close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.1rem;
+		height: 2.1rem;
+		border-radius: 999px;
+		border: 0;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+	}
+
+	.closure-form__close:hover {
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+	}
+
+	.closure-form__body {
+		display: grid;
+		gap: 0.85rem;
+		padding: 1rem 1.2rem;
+		overflow-y: auto;
+		min-height: 0;
+	}
+
+	.closure-form__error {
+		border-radius: 0.75rem;
+		background: rgba(244, 63, 94, 0.1);
+		color: #b91c1c;
+		padding: 0.6rem 0.85rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+	}
+
+	.closure-form__label {
+		display: grid;
+		gap: 0.35rem;
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--on-surface);
+	}
+
+	.closure-form__input {
+		width: 100%;
+		border-radius: 0.75rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.65rem 0.85rem;
+		font-size: 0.9rem;
+		color: var(--on-surface);
+		font-weight: 500;
+		outline: none;
+		transition: border-color 140ms ease, box-shadow 140ms ease;
+	}
+
+	.closure-form__input:focus {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 15%, transparent);
+	}
+
+	.closure-form__row {
+		display: grid;
+		gap: 0.75rem;
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.closure-form__checkbox,
+	.closure-form__radio {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--on-surface);
+		cursor: pointer;
+	}
+
+	.closure-form__scope {
+		display: grid;
+		gap: 0.4rem;
+		border: 1px solid var(--shell-border);
+		border-radius: 0.9rem;
+		padding: 0.7rem 0.9rem;
+	}
+
+	.closure-form__scope legend {
+		font-size: 0.78rem;
+		font-weight: 800;
+		text-transform: uppercase;
+		letter-spacing: 0.04em;
+		color: var(--on-surface-variant);
+		padding: 0 0.3rem;
+	}
+
+	.closure-form__footer {
+		display: flex;
+		justify-content: flex-end;
+		gap: 0.5rem;
+		padding: 0.9rem 1.2rem;
+		border-top: 1px solid var(--shell-border);
+	}
+
+	/* --- Org closures side drawer (misma UX que editar sucursal) --- */
+	dialog.closures-org-dialog {
+		position: fixed;
+		inset: auto 0 0 0;
+		top: auto;
+		margin: 0;
+		width: 100%;
+		max-width: none;
+		max-height: min(85dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
+		height: auto;
+		display: none;
+		flex-direction: column;
+		overflow: hidden;
+		border: 1px solid var(--shell-border);
+		border-radius: 1.8rem 1.8rem 0 0;
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		padding: 0;
+		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.2);
+		animation: closures-org-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
+	}
+
+	dialog.closures-org-dialog[open] {
+		display: flex;
+	}
+
+	dialog.closures-org-dialog::backdrop {
+		background: var(--modal-backdrop-tint, rgba(0, 0, 0, 0.4));
+		backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
+		animation: location-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
+	}
+
+	dialog.closures-org-dialog.is-closing {
+		animation: closures-org-out var(--modal-close-duration, 160ms) var(--modal-easing, ease) forwards;
+	}
+
+	dialog.closures-org-dialog.is-closing::backdrop {
+		animation: location-backdrop-out var(--modal-close-duration, 160ms) var(--modal-easing, ease) forwards;
+	}
+
+	@keyframes closures-org-in {
+		from {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes closures-org-out {
+		from {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		to {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+	}
+
+	@media (min-width: 640px) and (max-width: 1023px) {
+		dialog.closures-org-dialog {
+			inset: 0;
+			margin: auto;
+			width: min(32rem, calc(100vw - 2rem));
+			max-width: min(32rem, calc(100vw - 2rem));
+			max-height: 90vh;
+			height: auto;
+			border-radius: 1.8rem;
+		}
+
+		@keyframes closures-org-in {
+			from {
+				opacity: 0;
+				transform: translateY(10px) scale(0.98);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+		}
+
+		@keyframes closures-org-out {
+			from {
+				opacity: 1;
+				transform: translateY(0) scale(1);
+			}
+			to {
+				opacity: 0;
+				transform: translateY(8px) scale(0.98);
+			}
+		}
+	}
+
+	@media (min-width: 1024px) {
+		dialog.closures-org-dialog {
+			inset: 0 0 0 auto;
+			height: 100dvh;
+			max-height: 100dvh;
+			width: max(50vw, 40rem);
+			max-width: max(50vw, 40rem);
+			border-radius: 0;
+			border-top: 0;
+			border-right: 0;
+			border-bottom: 0;
+			box-shadow: none;
+		}
+
+		@keyframes closures-org-in {
+			from {
+				opacity: 0;
+				transform: translateX(100%);
+			}
+			to {
+				opacity: 1;
+				transform: translateX(0);
+			}
+		}
+
+		@keyframes closures-org-out {
+			from {
+				opacity: 1;
+				transform: translateX(0);
+			}
+			to {
+				opacity: 0;
+				transform: translateX(100%);
+			}
+		}
+	}
+
+	.closures-org-dialog__header {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+		flex-shrink: 0;
+		padding: 1rem 1.25rem;
+		border-bottom: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+	}
+
+	@media (min-width: 640px) {
+		.closures-org-dialog__header {
+			padding: 1.1rem 1.75rem;
+		}
+	}
+
+	.closures-org-dialog__title {
+		margin: 0;
+		font-size: 1.2rem;
+		font-weight: 800;
+		letter-spacing: -0.01em;
+		color: var(--on-surface);
+	}
+
+	.closures-org-dialog__desc {
+		margin: 0.2rem 0 0;
+		font-size: 0.85rem;
+		font-weight: 500;
+		color: var(--on-surface-variant);
+	}
+
+	.closures-org-dialog__close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		flex-shrink: 0;
+		border-radius: 999px;
+		border: 0;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+		transition: background 140ms ease, color 140ms ease;
+	}
+
+	.closures-org-dialog__close:hover {
+		background: var(--surface-variant);
+		color: var(--on-surface);
+	}
+
+	.closures-org-dialog__body {
+		display: grid;
+		gap: 1rem;
+		align-content: start;
+		flex: 1 1 auto;
+		min-height: 0;
+		padding: 1.25rem 1.25rem 1.75rem;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		background: color-mix(in srgb, var(--surface) 30%, transparent);
+	}
+
+	@media (min-width: 640px) {
+		.closures-org-dialog__body {
+			padding: 1.5rem 1.75rem 2rem;
+		}
+	}
+
+	.closures-org-dialog__list {
+		display: grid;
+		gap: 0.55rem;
 	}
 </style>

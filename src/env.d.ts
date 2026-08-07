@@ -3,6 +3,11 @@
 /// <reference types="vite-plugin-pwa/info" />
 /// <reference types="vite-plugin-pwa/client" />
 
+declare module 'maplibre-gl/dist/maplibre-gl-worker.mjs?url' {
+	const workerUrl: string;
+	export default workerUrl;
+}
+
 declare namespace App {
     interface Locals {
         token?: string;
@@ -105,6 +110,7 @@ interface ImportMetaEnv {
     readonly PUBLIC_BOOKMATE_PROFILE_PLACEHOLDER_IMAGE_URL?: string;
     readonly PUBLIC_G_MAPS_API_KEY?: string;
     readonly PUBLIC_G_MAPS_API_KEYS?: string;
+    readonly PUBLIC_STADIA_MAPS_KEY?: string;
     readonly PUBLIC_FIREBASE_API_KEY?: string;
     readonly PUBLIC_FIREBASE_AUTH_DOMAIN?: string;
     readonly PUBLIC_FIREBASE_PROJECT_ID?: string;

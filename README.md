@@ -71,6 +71,7 @@ Minimum required values:
 - `ORDS_API_BASE_URL`
 - `ORDS_PUBLIC_API_BASE_URL`
 - `PUBLIC_BOOKMATE_PUBLIC_DOMAIN`
-- `PUBLIC_G_MAPS_API_KEY` (required for branch map in locations)
+- `PUBLIC_STADIA_MAPS_KEY` (required for MapLibre + Stadia Maps tiles: branch map picker and public location modals)
+- `PUBLIC_G_MAPS_API_KEY` (legacy Google Maps key; kept for backwards compatibility, no longer used by the app)
 
 Optional endpoint-specific overrides are documented in `.env.example`.
