@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'react';
 import {
 	PUBLIC_PROFILE_PREVIEW_EVENT,
 	type PublicProfilePreviewState,
@@ -70,20 +70,20 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 
 	const hubBody = (
 		<>
-			<header class="ppe-preview-topbar" aria-hidden="true">
-				<span class="ppe-preview-topbar__brand">
+			<header className="ppe-preview-topbar" aria-hidden="true">
+				<span className="ppe-preview-topbar__brand">
 					<img src="/icons/icon-64.png" alt="" width="22" height="22" />
 					Hasel
 				</span>
-				<span class="ppe-preview-topbar__theme">
-					<span class="material-symbols-rounded">light_mode</span>
+				<span className="ppe-preview-topbar__theme">
+					<span className="material-symbols-rounded">light_mode</span>
 				</span>
 			</header>
 
-			<div class="hub-shell">
-				<section class="hub-hero">
+			<div className="hub-shell">
+				<section className="hub-hero">
 					<div
-						class={`hub-hero__banner ${state.bannerUrl ? 'hub-hero__banner--photo' : ''}`}
+						className={`hub-hero__banner ${state.bannerUrl ? 'hub-hero__banner--photo' : ''}`}
 						aria-hidden="true"
 						style={
 							state.bannerUrl
@@ -91,50 +91,50 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 								: undefined
 						}
 					>
-						{!state.bannerUrl ? <span class="hub-hero__orb hub-hero__orb--a" /> : null}
+						{!state.bannerUrl ? <span className="hub-hero__orb hub-hero__orb--a" /> : null}
 					</div>
-					<div class="hub-hero__profile">
-						<div class="hub-hero__avatar-row">
+					<div className="hub-hero__profile">
+						<div className="hub-hero__avatar-row">
 							{state.logoUrl ? (
 								<img
 									src={state.logoUrl}
 									alt=""
-									class="hub-hero__logo"
+									className="hub-hero__logo"
 									width="72"
 									height="72"
 								/>
 							) : (
-								<div class="hub-hero__logo hub-hero__logo--placeholder" aria-hidden="true">
+								<div className="hub-hero__logo hub-hero__logo--placeholder" aria-hidden="true">
 									{state.initials}
 								</div>
 							)}
-							<div class="hub-hero__actions">
+							<div className="hub-hero__actions">
 								{state.facebookUrl ? (
-									<span class="hub-icon-btn" title="Facebook">
-										<FacebookIcon class="hub-icon-btn__svg" />
+									<span className="hub-icon-btn" title="Facebook">
+										<FacebookIcon className="hub-icon-btn__svg" />
 									</span>
 								) : null}
 								{state.instagramUrl ? (
-									<span class="hub-icon-btn" title="Instagram">
-										<InstagramIcon class="hub-icon-btn__svg" />
+									<span className="hub-icon-btn" title="Instagram">
+										<InstagramIcon className="hub-icon-btn__svg" />
 									</span>
 								) : null}
-								<span class="hub-icon-btn" title="Compartir">
-									<span class="material-symbols-rounded" aria-hidden="true">
+								<span className="hub-icon-btn" title="Compartir">
+									<span className="material-symbols-rounded" aria-hidden="true">
 										ios_share
 									</span>
 								</span>
 							</div>
 						</div>
-						<div class="hub-hero__meta">
-							<h2 class="hub-hero__name">{state.organizationName}</h2>
-							{handle ? <p class="hub-hero__handle">{handle}</p> : null}
-							{shortTagline ? <p class="hub-hero__tagline">{shortTagline}</p> : null}
+						<div className="hub-hero__meta">
+							<h2 className="hub-hero__name">{state.organizationName}</h2>
+							{handle ? <p className="hub-hero__handle">{handle}</p> : null}
+							{shortTagline ? <p className="hub-hero__tagline">{shortTagline}</p> : null}
 							{(locationLabel || teamCount > 0 || servicesCount > 0) ? (
-								<ul class="hub-hero__facts">
+								<ul className="hub-hero__facts">
 									{locationLabel ? (
 										<li>
-											<span class="material-symbols-rounded" aria-hidden="true">
+											<span className="material-symbols-rounded" aria-hidden="true">
 												location_on
 											</span>
 											{locationLabel}
@@ -142,7 +142,7 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 									) : null}
 									{teamCount > 0 ? (
 										<li>
-											<span class="material-symbols-rounded" aria-hidden="true">
+											<span className="material-symbols-rounded" aria-hidden="true">
 												group
 											</span>
 											{teamCount} profesional{teamCount === 1 ? '' : 'es'}
@@ -150,7 +150,7 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 									) : null}
 									{servicesCount > 0 ? (
 										<li>
-											<span class="material-symbols-rounded" aria-hidden="true">
+											<span className="material-symbols-rounded" aria-hidden="true">
 												category
 											</span>
 											{servicesCount} servicio{servicesCount === 1 ? '' : 's'}
@@ -159,15 +159,15 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 								</ul>
 							) : null}
 						</div>
-						<div class="hub-hero__cta-row">
+						<div className="hub-hero__cta-row">
 							{state.whatsappVisible ? (
-								<span class="hub-btn hub-btn--outline hub-wa-link">
-									<WhatsAppIcon class="hub-btn__brand-icon" />
+								<span className="hub-btn hub-btn--outline hub-wa-link">
+									<WhatsAppIcon className="hub-btn__brand-icon" />
 									WhatsApp
 								</span>
 							) : null}
-							<span class="hub-btn hub-btn--filled">
-								<span class="material-symbols-rounded" aria-hidden="true">
+							<span className="hub-btn hub-btn--filled">
+								<span className="material-symbols-rounded" aria-hidden="true">
 									event
 								</span>
 								Reservar
@@ -176,8 +176,8 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 					</div>
 				</section>
 
-				<div class="hub-section">
-					<nav class="hub-tabs" aria-label="Vista previa de secciones">
+				<div className="hub-section">
+					<nav className="hub-tabs" aria-label="Vista previa de secciones">
 						{(
 							[
 								['overview', 'Overview'],
@@ -189,7 +189,7 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 							<button
 								key={id}
 								type="button"
-								class={`hub-tab ${activeTab === id ? 'is-active' : ''}`}
+								className={`hub-tab ${activeTab === id ? 'is-active' : ''}`}
 								aria-selected={activeTab === id}
 								onClick={() => setActiveTab(id)}
 							>
@@ -199,61 +199,61 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 					</nav>
 				</div>
 
-				<div class="hub-section hub-panels">
+				<div className="hub-section hub-panels">
 					<section
-						class={`hub-panel ${activeTab === 'overview' ? 'is-active' : ''}`}
+						className={`hub-panel ${activeTab === 'overview' ? 'is-active' : ''}`}
 						hidden={activeTab !== 'overview'}
 					>
-						<div class="hub-overview-stack">
+						<div className="hub-overview-stack">
 							{state.businessHoursRows?.length ? (
-								<div class="hub-pin-block hub-hours">
-									<p class="hub-pin-block__label hub-hours__heading">
-										<span class="hub-hours__heading-title">
-											<span class="material-symbols-rounded" aria-hidden="true">
+								<div className="hub-pin-block hub-hours">
+									<p className="hub-pin-block__label hub-hours__heading">
+										<span className="hub-hours__heading-title">
+											<span className="material-symbols-rounded" aria-hidden="true">
 												schedule
 											</span>
 											Horario
 										</span>
 										{hoursLiveStatus ? (
 											<span
-												class={`hub-hours__live ${
+												className={`hub-hours__live ${
 													hoursLiveStatus === 'open' ? 'is-open' : 'is-closed'
 												}`}
 											>
-												<span class="hub-hours__live-dot" aria-hidden="true" />
+												<span className="hub-hours__live-dot" aria-hidden="true" />
 												{hoursLiveStatus === 'open'
 													? 'Abierto ahora'
 													: 'Cerrado ahora'}
 											</span>
 										) : null}
 									</p>
-									<ul class="hub-hours__list">
+									<ul className="hub-hours__list">
 										{state.businessHoursRows.map((row) => (
 											<li
 												key={`${row.label}-${row.value}`}
-												class={[
+												className={[
 													row.closed ? 'is-closed' : '',
 													row.isToday ? 'is-today' : '',
 												]
 													.filter(Boolean)
 													.join(' ')}
 											>
-												<span class="hub-hours__day">{row.label}</span>
-												<span class="hub-hours__value">
+												<span className="hub-hours__day">{row.label}</span>
+												<span className="hub-hours__value">
 													{row.closed
 														? 'Cerrado'
 														: (row.slots || []).flatMap((slot, slotIndex) =>
 																slotIndex > 0
 																	? [
 																			<span
-																				class="hub-hours__sep"
+																				className="hub-hours__sep"
 																				aria-hidden="true"
 																				key={`sep-${slotIndex}`}
 																			>
 																				|
 																			</span>,
 																			<span
-																				class="hub-hours__slot"
+																				className="hub-hours__slot"
 																				key={`slot-${slotIndex}`}
 																			>
 																				{slot}
@@ -261,7 +261,7 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 																		]
 																	: [
 																			<span
-																				class="hub-hours__slot"
+																				className="hub-hours__slot"
 																				key={`slot-${slotIndex}`}
 																			>
 																				{slot}
@@ -275,36 +275,36 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 								</div>
 							) : null}
 							{state.serviceCategories?.length ? (
-								<div class="hub-pin-block">
-									<p class="hub-pin-block__label">
-										<span class="material-symbols-rounded" aria-hidden="true">
+								<div className="hub-pin-block">
+									<p className="hub-pin-block__label">
+										<span className="material-symbols-rounded" aria-hidden="true">
 											keep
 										</span>
 										Servicios
 									</p>
-									<ul class="hub-categories__list">
+									<ul className="hub-categories__list">
 										{state.serviceCategories.slice(0, 8).map((category) => (
 											<li key={category}>
-												<span class="hub-category-tag">{category}</span>
+												<span className="hub-category-tag">{category}</span>
 											</li>
 										))}
 									</ul>
 								</div>
 							) : (
-								<p class="hub-empty">Todavía no hay servicios destacados.</p>
+								<p className="hub-empty">Todavía no hay servicios destacados.</p>
 							)}
 						</div>
 					</section>
 
 					<section
-						class={`hub-panel ${activeTab === 'galeria' ? 'is-active' : ''}`}
+						className={`hub-panel ${activeTab === 'galeria' ? 'is-active' : ''}`}
 						hidden={activeTab !== 'galeria'}
 					>
-						<h3 class="hub-section-title">Galería</h3>
+						<h3 className="hub-section-title">Galería</h3>
 						{galleryBlocks.length ? (
-							<div class="hub-gallery-blocks" aria-label="Fotos del negocio">
+							<div className="hub-gallery-blocks" aria-label="Fotos del negocio">
 								{galleryBlocks.map((block, blockIndex) => (
-									<ul class="hub-gallery-block" key={`block-${blockIndex}`}>
+									<ul className="hub-gallery-block" key={`block-${blockIndex}`}>
 										{block.map((url, imageIndex) => (
 											<li key={`${url}-${imageIndex}`}>
 												<img
@@ -318,56 +318,56 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 								))}
 							</div>
 						) : (
-							<p class="hub-empty">Todavía no hay fotos.</p>
+							<p className="hub-empty">Todavía no hay fotos.</p>
 						)}
 					</section>
 
 					<section
-						class={`hub-panel ${activeTab === 'equipo' ? 'is-active' : ''}`}
+						className={`hub-panel ${activeTab === 'equipo' ? 'is-active' : ''}`}
 						hidden={activeTab !== 'equipo'}
 					>
-						<h3 class="hub-section-title">Equipo</h3>
+						<h3 className="hub-section-title">Equipo</h3>
 						{professionals.length ? (
-							<div class="hub-team-grid" aria-label="Profesionales">
+							<div className="hub-team-grid" aria-label="Profesionales">
 								{professionals.map((pro) => (
-									<div class="hub-pro-card" key={pro.id}>
-										<div class="hub-pro-card__top">
-											<span class="hub-pro-card__status">
-												<span class="hub-pro-card__status-dot" aria-hidden="true" />
+									<div className="hub-pro-card" key={pro.id}>
+										<div className="hub-pro-card__top">
+											<span className="hub-pro-card__status">
+												<span className="hub-pro-card__status-dot" aria-hidden="true" />
 												Agenda abierta
 											</span>
 										</div>
-										<div class="hub-pro-card__main">
+										<div className="hub-pro-card__main">
 											<div
-												class={`hub-pro-card__avatar${pro.imageUrl ? '' : ' hub-pro-card__avatar--ph'}`}
+												className={`hub-pro-card__avatar${pro.imageUrl ? '' : ' hub-pro-card__avatar--ph'}`}
 											>
 												{pro.imageUrl ? (
 													<img
 														src={pro.imageUrl}
 														alt=""
-														class="hub-pro-card__photo is-ready"
+														className="hub-pro-card__photo is-ready"
 														width="96"
 														height="96"
 														loading="lazy"
 														decoding="async"
 													/>
 												) : (
-													<span class="hub-pro-card__initials" aria-hidden="true">
+													<span className="hub-pro-card__initials" aria-hidden="true">
 														{pro.initials}
 													</span>
 												)}
 												<span
-													class="hub-pro-card__status-dot hub-pro-card__status-dot--avatar"
+													className="hub-pro-card__status-dot hub-pro-card__status-dot--avatar"
 													aria-hidden="true"
 												/>
 											</div>
-											<div class="hub-pro-card__text">
-												<h3 class="hub-pro-card__name">{pro.fullName}</h3>
-												<p class="hub-pro-card__specialty">{pro.specialty}</p>
+											<div className="hub-pro-card__text">
+												<h3 className="hub-pro-card__name">{pro.fullName}</h3>
+												<p className="hub-pro-card__specialty">{pro.specialty}</p>
 											</div>
 										</div>
-										<span class="hub-pro-card__btn">
-											<span class="material-symbols-rounded" aria-hidden="true">
+										<span className="hub-pro-card__btn">
+											<span className="material-symbols-rounded" aria-hidden="true">
 												event
 											</span>
 											Reservar
@@ -376,29 +376,29 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 								))}
 							</div>
 						) : (
-							<p class="hub-empty">Todavía no hay profesionales.</p>
+							<p className="hub-empty">Todavía no hay profesionales.</p>
 						)}
 					</section>
 
 					<section
-						class={`hub-panel ${activeTab === 'sucursales' ? 'is-active' : ''}`}
+						className={`hub-panel ${activeTab === 'sucursales' ? 'is-active' : ''}`}
 						hidden={activeTab !== 'sucursales'}
 					>
-						<h3 class="hub-section-title">Sucursales</h3>
+						<h3 className="hub-section-title">Sucursales</h3>
 						{locations.length ? (
-							<div class="hub-locations-grid" aria-label="Sucursales">
+							<div className="hub-locations-grid" aria-label="Sucursales">
 								{locations.map((loc) => (
-									<article class="hub-location-card" key={loc.id}>
-										<div class="hub-location-card__map hub-location-card__map--empty">
-											<span class="material-symbols-rounded" aria-hidden="true">
+									<article className="hub-location-card" key={loc.id}>
+										<div className="hub-location-card__map hub-location-card__map--empty">
+											<span className="material-symbols-rounded" aria-hidden="true">
 												location_on
 											</span>
 										</div>
-										<div class="hub-location-card__body">
-											<div class="hub-location-card__info">
-												<h3 class="hub-location-card__name">{loc.name}</h3>
+										<div className="hub-location-card__body">
+											<div className="hub-location-card__info">
+												<h3 className="hub-location-card__name">{loc.name}</h3>
 												{loc.address ? (
-													<p class="hub-location-card__address">{loc.address}</p>
+													<p className="hub-location-card__address">{loc.address}</p>
 												) : null}
 											</div>
 										</div>
@@ -406,7 +406,7 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 								))}
 							</div>
 						) : (
-							<p class="hub-empty">Todavía no hay sucursales.</p>
+							<p className="hub-empty">Todavía no hay sucursales.</p>
 						)}
 					</section>
 				</div>
@@ -416,22 +416,22 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 
 	if (isLive) {
 		return (
-			<div class="hub-root ppe-preview-hub ppe-preview-hub--live">{hubBody}</div>
+			<div className="hub-root ppe-preview-hub ppe-preview-hub--live">{hubBody}</div>
 		);
 	}
 
 	return (
-		<div class="ppe-phone">
-			<div class="ppe-phone__bezel" aria-hidden="true">
-				<span class="ppe-phone__btn ppe-phone__btn--silent" />
-				<span class="ppe-phone__btn ppe-phone__btn--vol-up" />
-				<span class="ppe-phone__btn ppe-phone__btn--vol-down" />
-				<span class="ppe-phone__btn ppe-phone__btn--power" />
-				<span class="ppe-phone__island">
-					<span class="ppe-phone__island-lens" />
+		<div className="ppe-phone">
+			<div className="ppe-phone__bezel" aria-hidden="true">
+				<span className="ppe-phone__btn ppe-phone__btn--silent" />
+				<span className="ppe-phone__btn ppe-phone__btn--vol-up" />
+				<span className="ppe-phone__btn ppe-phone__btn--vol-down" />
+				<span className="ppe-phone__btn ppe-phone__btn--power" />
+				<span className="ppe-phone__island">
+					<span className="ppe-phone__island-lens" />
 				</span>
-				<div class="ppe-phone__screen hub-root ppe-preview-hub">{hubBody}</div>
-				<span class="ppe-phone__home" />
+				<div className="ppe-phone__screen hub-root ppe-preview-hub">{hubBody}</div>
+				<span className="ppe-phone__home" />
 			</div>
 		</div>
 	);

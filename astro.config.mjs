@@ -1,7 +1,9 @@
 // @ts-check
 import { defineConfig } from 'astro/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import vercel from '@astrojs/vercel';
-import preact from '@astrojs/preact';
+import react from '@astrojs/react';
 import tailwindcss from '@tailwindcss/vite';
 import AstroPWA from '@vite-pwa/astro';
 
@@ -21,6 +23,8 @@ const getSiteUrl = () => {
   }
   return 'http://localhost:4321';
 };
+
+const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
 // https://astro.build/config
 export default defineConfig({
@@ -47,7 +51,7 @@ export default defineConfig({
   
   adapter: vercel(),
   
-  integrations: [preact(), // <-- Agregamos y configuramos la PWA aquí
+  integrations: [react(),
   AstroPWA({
     // prompt: evita location.reload() automático al activar un SW nuevo
     // (con autoUpdate el login/auth se recargaba solo al entrar).
@@ -56,7 +60,7 @@ export default defineConfig({
       name: 'Hasel',
       short_name: 'Hasel',
       start_url: '/panel/dashboard',
-      description: 'Aplicación de reservas con Astro, Preact y Tailwind',
+      description: 'Aplicación de reservas con Astro, React y Tailwind',
       theme_color: '#ffffff',
       background_color: '#ffffff',
       display: 'standalone',
@@ -83,6 +87,11 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    resolve: {
+      alias: {
+        '@': path.resolve(projectRoot, 'src'),
+      },
+    },
     // MapLibre v6 is ESM-only; keep it out of the dep optimizer so the worker
     // sibling is not rewritten to a broken `/node_modules/.vite/deps/*.mjs`
     // stub with empty MIME. The app sets the worker via `?url`.

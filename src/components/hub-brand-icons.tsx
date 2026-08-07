@@ -1,12 +1,12 @@
 type IconProps = {
-	class?: string;
+	className?: string;
 };
 
 /** Logos oficiales (Simple Icons) — no usar Material Symbols para marcas. */
-export function FacebookIcon({ class: className = '' }: IconProps) {
+export function FacebookIcon({ className = '' }: IconProps) {
 	return (
 		<svg
-			class={className}
+			className={className}
 			viewBox="0 0 24 24"
 			width="20"
 			height="20"
@@ -18,10 +18,10 @@ export function FacebookIcon({ class: className = '' }: IconProps) {
 	);
 }
 
-export function InstagramIcon({ class: className = '' }: IconProps) {
+export function InstagramIcon({ className = '' }: IconProps) {
 	return (
 		<svg
-			class={className}
+			className={className}
 			viewBox="0 0 24 24"
 			width="20"
 			height="20"
@@ -33,10 +33,10 @@ export function InstagramIcon({ class: className = '' }: IconProps) {
 	);
 }
 
-export function WhatsAppIcon({ class: className = '' }: IconProps) {
+export function WhatsAppIcon({ className = '' }: IconProps) {
 	return (
 		<svg
-			class={className}
+			className={className}
 			viewBox="0 0 24 24"
 			width="20"
 			height="20"
