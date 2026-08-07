@@ -218,19 +218,19 @@ input[type='search']::-ms-clear {
 }
 
 html[data-theme='dark'] {
-	--background: #191919;
-	--background-accent: #161616;
-	--page-background: #191919;
-	--surface: rgba(28, 28, 28, 0.94);
-	--surface-container: #1c1c1c;
-	--surface-container-low: #1c1c1c;
-	--surface-container-high: #242424;
-	--surface-container-highest: #2c2c2c;
-	--surface-bright: #1c1c1c;
+	--background: #0e0e10;
+	--background-accent: #0b0b0d;
+	--page-background: #0e0e10;
+	--surface: rgba(18, 18, 20, 0.94);
+	--surface-container: #121214;
+	--surface-container-low: #121214;
+	--surface-container-high: #1a1a1c;
+	--surface-container-highest: #222224;
+	--surface-bright: #121214;
 	--bar-outline: rgba(255, 255, 255, 0.08);
-	--shell-surface: #191919;
-	--sidebar-surface: #1c1c1c;
-	--content-surface: rgba(28, 28, 28, 0.88);
+	--shell-surface: #0e0e10;
+	--sidebar-surface: #121214;
+	--content-surface: rgba(18, 18, 20, 0.88);
 	--shell-border: rgba(255, 255, 255, 0.08);
 	--primary: #426edb;
 	--primary-soft: rgba(66, 110, 219, 0.14);
@@ -240,12 +240,12 @@ html[data-theme='dark'] {
 	--secondary-container: rgba(160, 160, 160, 0.12);
 	--on-surface: #ffffff;
 	--on-surface-variant: #a0a0a0;
-	--hero-gradient: linear-gradient(135deg, #1c1c1c 0%, #191919 100%);
+	--hero-gradient: linear-gradient(135deg, #121214 0%, #0e0e10 100%);
 	--hero-shadow: rgba(0, 0, 0, 0.5);
 	--hero-glow: radial-gradient(circle at center, rgba(26, 115, 232, 0.03), transparent 60%);
-	--control-surface: #242424;
-	--control-surface-strong: #2c2c2c;
-	--menu-surface: rgba(28, 28, 28, 0.98);
+	--control-surface: #1a1a1c;
+	--control-surface-strong: #222224;
+	--menu-surface: rgba(18, 18, 20, 0.98);
 	--card-surface: var(--sidebar-surface);
 	--card-surface-strong: var(--sidebar-surface);
 	--card-border: rgba(255, 255, 255, 0.08);
@@ -287,11 +287,11 @@ html[data-theme='dark'] {
 	--inline-feedback-error-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
 	--workspace-avatar-outline: rgba(66, 110, 219, 0.28);
 	--workspace-avatar-outline-soft: rgba(66, 110, 219, 0.1);
-	--calendar-surface: #1f2228;
+	--calendar-surface: #14171f;
 	--calendar-outline: rgba(97, 105, 121, 0.58);
 	--calendar-outline-strong: rgba(129, 140, 158, 0.68);
-	--calendar-toolbar-surface: #262b34;
-	--calendar-segmented-surface: #303743;
+	--calendar-toolbar-surface: #1b202b;
+	--calendar-segmented-surface: #252c3a;
 }
 
 html {
@@ -973,13 +973,13 @@ button {
 }
 
 html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header) {
-	background-color: var(--sidebar-surface, #1c1c1c);
+	background-color: var(--sidebar-surface, #121214);
 	border-bottom-color: color-mix(in srgb, var(--shell-border) 40%, transparent);
 	box-shadow: none;
 }
 
 html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrolled {
-	background-color: color-mix(in srgb, var(--sidebar-surface, #1c1c1c) 72%, transparent);
+	background-color: color-mix(in srgb, var(--sidebar-surface, #121214) 72%, transparent);
 	border-bottom-color: rgba(255, 255, 255, 0.12);
 	backdrop-filter: blur(20px) saturate(1.35);
 	-webkit-backdrop-filter: blur(20px) saturate(1.35);
@@ -1392,8 +1392,8 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrol
 }
 
 html[data-theme='dark'] .modal-action-primary {
-	border-color: color-mix(in srgb, var(--primary) 58%, #131314 42%);
-	background: color-mix(in srgb, var(--primary) 78%, #131314 22%);
+	border-color: color-mix(in srgb, var(--primary) 58%, #0e0e10 42%);
+	background: color-mix(in srgb, var(--primary) 78%, #0e0e10 22%);
 }
 
 html[data-theme='dark'] .modal-action-primary:hover {
@@ -1401,13 +1401,13 @@ html[data-theme='dark'] .modal-action-primary:hover {
 }
 
 html[data-theme='dark'] .modal-action-secondary {
-	background: var(--surface-container, #1e1f22);
+	background: var(--surface-container, #121214);
 	border-color: rgba(255, 255, 255, 0.14);
 	color: var(--on-surface-variant);
 }
 
 html[data-theme='dark'] .modal-action-secondary:hover {
-	background: var(--surface-container-high, #282a2c);
+	background: var(--surface-container-high, #1a1a1c);
 	border-color: rgba(255, 255, 255, 0.22);
 	color: var(--on-surface);
 }
@@ -1605,7 +1605,7 @@ html[data-theme='dark'] .modal-action-danger:hover {
 }
 
 html[data-theme='dark'] .app-pagination__pill {
-	background: #252525;
+	background: #121214;
 	box-shadow: none;
 }
 
@@ -1955,7 +1955,7 @@ html[data-theme='dark'] :is(
 	.specialties-card,
 	.professionals-card
 ) {
-	background: #252525;
+	background: #121214;
 	border: none;
 	box-shadow: none;
 }
@@ -1967,7 +1967,7 @@ html[data-theme='dark'] :is(
 	.specialties-card,
 	.professionals-card
 ):hover {
-	background: #252525;
+	background: #121214;
 	border: none;
 	box-shadow: none;
 }

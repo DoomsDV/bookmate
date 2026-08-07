@@ -52,7 +52,7 @@ html[data-theme='dark'] .hub-root {
 		radial-gradient(ellipse 70% 50% at 6% 36%, rgba(59, 130, 246, 0.028), transparent 62%),
 		radial-gradient(ellipse 80% 55% at 55% 18%, rgba(56, 189, 248, 0.04), transparent 60%),
 		radial-gradient(ellipse 75% 55% at 78% 82%, rgba(45, 212, 191, 0.04), transparent 58%),
-		var(--page-background, #131314);
+		var(--page-background, #0e0e10);
 }
 
 html[data-theme='dark'] .hub-root::before {
@@ -106,7 +106,7 @@ html[data-theme='dark'] .hub-root::before {
 			radial-gradient(ellipse 70% 50% at 6% 36%, rgba(59, 130, 246, 0.015), transparent 62%),
 			radial-gradient(ellipse 80% 55% at 55% 18%, rgba(56, 189, 248, 0.02), transparent 60%),
 			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(45, 212, 191, 0.02), transparent 58%),
-			var(--page-background, #131314);
+			var(--page-background, #0e0e10);
 	}
 
 	html[data-theme='dark'] .hub-root::before {
@@ -1756,7 +1756,7 @@ html[data-theme='dark'] .hub-pro-card {
 
 html[data-theme='dark'] .hub-pro-card:hover {
 	border-color: color-mix(in srgb, #fff 12%, transparent);
-	background: #1c1c1c;
+	background: #121214;
 	box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
 }
 
@@ -2095,7 +2095,7 @@ html[data-theme='dark'] .hub-pro-card:hover .hub-pro-card__btn {
 }
 
 html[data-theme='dark'] .hub-side-card {
-	background: var(--surface-container, #1c1c1c);
+	background: var(--surface-container, #121214);
 }
 
 .hub-side-card__title {
@@ -2167,7 +2167,7 @@ html[data-theme='dark'] .hub-side-card {
 }
 
 html[data-theme='dark'] .hub-map-modal {
-	background: #1c1c1c;
+	background: #121214;
 }
 
 .hub-map-modal::backdrop {
@@ -2267,7 +2267,7 @@ html[data-theme='dark'] .hub-map-modal__canvas-wrap {
 }
 
 html[data-theme='dark'] .hub-map-modal__loading {
-	background: color-mix(in srgb, #1c1c1c 82%, transparent);
+	background: color-mix(in srgb, #121214 82%, transparent);
 }
 
 .hub-map-modal__loading[hidden] {
