@@ -352,7 +352,7 @@ const serializedLocations = reservation
 					</article>
 
 					<dialog
-						class="public-map-modal rounded-[28px] border-0 bg-(--surface-container-high) p-0 text-(--on-surface) shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop:bg-black/70"
+						class="public-map-modal rounded-[28px] border-0 bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_64px_rgba(0,0,0,0.55)] backdrop:bg-black/70"
 						data-public-map-modal
 					>
 						<div class="grid gap-5 p-6">
@@ -622,6 +622,7 @@ const serializedLocations = reservation
 	font-family: var(--font-body);
 	/* Misma paleta Material 3 dark que la reserva pública */
 	--surface-background: #1b1b1b;
+	--surface-bright: #121214;
 	--surface-container-lowest: #141414;
 	--surface-container-low: #1b1b1b;
 	--surface-container: #1b1b1b;
@@ -1683,7 +1684,6 @@ button.reservation-manage__location:hover {
 .reservation-reschedule-body .public-location-card {
 	height: auto;
 	min-height: 0;
-	cursor: pointer;
 }
 
 @media (min-width: 640px) {

@@ -133,12 +133,6 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 						<div class="public-booking-profile__inner">
 							<article class="public-booking-profile__card">
 								<div class="public-booking-profile__body">
-									<div class="public-booking-profile__text">
-										<h1 class="public-booking-profile__title">{profile.full_name}</h1>
-										{specialtyLabel ? (
-											<p class="public-booking-profile__meta">{specialtyLabel}</p>
-										) : null}
-									</div>
 									<div class="public-booking-profile__media">
 										{profile.image_url ? (
 											<img
@@ -156,6 +150,12 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 												<span class="material-symbols-rounded">account_circle</span>
 											</div>
 										)}
+									</div>
+									<div class="public-booking-profile__text">
+										<h1 class="public-booking-profile__title">{profile.full_name}</h1>
+										{specialtyLabel ? (
+											<p class="public-booking-profile__meta">{specialtyLabel}</p>
+										) : null}
 									</div>
 								</div>
 							</article>
@@ -189,7 +189,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 							<span class="public-services-hint__desktop">Dale click al servicio que querés reservar</span>
 							<span class="public-services-hint__mobile">Deslizá para elegir un servicio</span>
 						</p>
-				<div class="mt-6 grid gap-4 sm:grid-cols-2 public-services-grid" data-services-grid aria-busy="true">
+				<div class="mt-6 grid gap-4 sm:grid-cols-2 public-services-grid is-service-grid" data-services-grid aria-busy="true">
 						{Array.from({ length: 4 }).map(() => (
 							<div class="public-service-card public-service-card--skeleton" aria-hidden="true">
 								<span class="public-service-skeleton-cover"></span>
@@ -206,12 +206,6 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 					</section>
 
 					<section data-step-panel="2" class="public-booking-panel hidden">
-						<div class="public-booking-back-row">
-							<button type="button" data-back-to-services class="public-booking-back-link">
-								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-								Volver
-							</button>
-						</div>
 						<div>
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">¿Dónde querés atenderte?</h2>
 							<p class="mt-2 text-base text-(--on-surface-variant)">
@@ -220,15 +214,17 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 							</p>
 						</div>
 						<div class="mt-6 grid gap-3 public-locations-grid" data-locations-grid aria-busy="true"></div>
+						<div class="public-booking-actions">
+							<div class="public-booking-back-row">
+								<button type="button" data-back-to-services class="public-booking-back-link">
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+									Volver
+								</button>
+							</div>
+						</div>
 					</section>
 
 					<section data-step-panel="3" class="public-booking-panel hidden">
-						<div class="public-booking-back-row">
-							<button type="button" data-back-to-locations class="public-booking-back-link">
-								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-								Volver
-							</button>
-						</div>
 						<div>
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Selecciona una fecha</h2>
 						</div>
@@ -248,23 +244,26 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 							</div>
 							<div class="public-booking-calendar__grid" data-calendar-grid></div>
 						</div>
-						<button
-							type="button"
-							class="public-booking-continue"
-							data-calendar-continue
-							disabled
-						>
-							Continuar
-						</button>
+						<div class="public-booking-actions">
+							<div class="public-booking-back-row">
+								<button type="button" data-back-to-locations class="public-booking-back-link">
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+									Volver
+								</button>
+							</div>
+							<button
+								type="button"
+								class="public-booking-continue"
+								data-calendar-continue
+								disabled
+							>
+								<span class="public-booking-continue__label">Continuar</span>
+								<span class="material-symbols-rounded public-booking-continue__icon" aria-hidden="true">chevron_right</span>
+							</button>
+						</div>
 					</section>
 
 					<section data-step-panel="4" class="public-booking-panel hidden">
-						<div class="public-booking-back-row">
-							<button type="button" data-back-to-calendar class="public-booking-back-link">
-								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-								Volver
-							</button>
-						</div>
 						<div>
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)" data-summary-date-inline></h2>
 							<p class="mt-1 text-base text-(--on-surface-variant)">
@@ -304,15 +303,17 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 								Volver al calendario
 							</button>
 						</div>
+						<div class="public-booking-actions">
+							<div class="public-booking-back-row">
+								<button type="button" data-back-to-calendar class="public-booking-back-link">
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+									Volver
+								</button>
+							</div>
+						</div>
 					</section>
 
 					<section data-step-panel="5" class="public-booking-panel hidden">
-						<div class="public-booking-back-row">
-							<button type="button" data-back-to-slots class="public-booking-back-link">
-								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-								Volver
-							</button>
-						</div>
 						<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Confirma tus datos</h2>
 						<div class="mt-5 grid gap-5 lg:grid-cols-[1fr_22rem] lg:gap-8">
 							<form class="contents lg:grid lg:gap-5" data-customer-form>
@@ -342,7 +343,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 									<span class="material-symbols-rounded" aria-hidden="true">info</span>
 									<span>No cierres esta página hasta confirmar. Si salís o cerrás el navegador, la cita no se reservará.</span>
 								</p>
-								<div class="order-3 grid gap-3 lg:order-none lg:mt-3">
+								<div class="order-3 grid gap-3 lg:order-none lg:mt-3" data-booking-primary-actions>
 									<button type="submit" data-submit-booking data-submit-confirm data-booking-primary-action class="booking-primary-action inline-flex h-12 w-full items-center justify-center rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60">Confirmar reserva</button>
 									<button type="button" data-pay-deposit-submit data-booking-primary-action class="booking-primary-action is-hidden inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60"><span>Confirmar y transferir seña</span><span aria-hidden="true">🔒</span></button>
 								</div>
@@ -357,6 +358,14 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 									<li class="public-booking-summary__row public-booking-summary__row--deposit hidden" data-summary-deposit-wrap><span class="public-booking-summary__label">Seña requerida</span><span class="public-booking-summary__deposit" data-summary-deposit></span></li>
 								</ul>
 							</aside>
+						</div>
+						<div class="public-booking-actions">
+							<div class="public-booking-back-row">
+								<button type="button" data-back-to-slots class="public-booking-back-link">
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+									Volver
+								</button>
+							</div>
 						</div>
 					</section>
 
@@ -450,15 +459,15 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 <style is:global>
 	html:has(.public-booking-shell),
 	html:has(.public-booking-shell) body {
-		background: #1b1b1b;
+		background: #121214;
 	}
 
 	.public-booking-shell {
 		/* Material 3 Dark Theme Colors */
-		--surface-background: #1b1b1b;
+		--surface-background: #121214;
 		--surface-container-lowest: #141414;
-		--surface-container-low: #1b1b1b;
-		--surface-container: #1b1b1b;
+		--surface-container-low: #121214;
+		--surface-container: #121214;
 		--surface-container-high: #252528;
 		--surface-container-highest: #2e2e32;
 		

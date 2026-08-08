@@ -1,10 +1,34 @@
 /* Estilos compartidos — reserva pública (u/[slug] y [org]/p/[pro]) */
 
+html:has(.public-booking-shell),
+html:has(.public-booking-shell) body {
+	overflow-x: clip;
+	max-width: 100%;
+}
+
 .public-booking-shell {
 	min-height: 100vh;
 	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
+	overflow-x: clip;
 	background: var(--surface-background);
 	color: var(--on-surface);
+	/* Sucursales: misma superficie que panel admin (.locations-card → --sidebar-surface). */
+	--surface-bright: #121214;
+	--public-location-card-surface: #121214;
+	--public-location-card-media-bg: color-mix(in srgb, #426edb 16%, #121214 84%);
+	--public-location-card-media-placeholder: radial-gradient(
+			ellipse 80% 70% at 20% 15%,
+			color-mix(in srgb, var(--primary) 28%, transparent),
+			transparent 60%
+		),
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--primary-container) 55%, #121214),
+			#222224 55%,
+			color-mix(in srgb, var(--primary-container) 35%, #121214)
+		);
 }
 
 /* Evita flash del paso 1 mientras se restaura el borrador de sesión. */
@@ -20,9 +44,11 @@
 
 .public-booking-shell__canvas {
 	width: 100%;
-	max-width: 42rem;
+	max-width: min(42rem, 100%);
 	margin-inline: auto;
 	padding: 0.35rem 1rem 2.5rem;
+	box-sizing: border-box;
+	min-width: 0;
 }
 
 @media (min-width: 640px) {
@@ -43,16 +69,25 @@
 	position: relative;
 	display: grid;
 	gap: 0;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	overflow-x: clip;
+	overflow-y: visible;
 	background: transparent;
 	border-radius: 0;
 	box-shadow: none;
-	overflow: visible;
 }
 
 /* Header del profesional — carta de presentación (hero), igual en todos los pasos.
    Misma columna que el canvas: max-width + padding horizontal idénticos. */
 .public-booking-profile {
 	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	overflow-x: clip;
 	padding: 0;
 	border-bottom: 1px solid transparent;
 	background: var(--surface-background);
@@ -69,10 +104,11 @@
 	justify-content: center;
 	gap: 0.85rem;
 	width: 100%;
-	max-width: 42rem;
+	max-width: min(42rem, 100%);
 	margin-inline: auto;
 	padding: 1.5rem 1rem 0.5rem;
 	box-sizing: border-box;
+	min-width: 0;
 	text-align: center;
 	transition:
 		padding 320ms cubic-bezier(0.32, 0.72, 0, 1),
@@ -97,6 +133,8 @@
 	display: grid;
 	gap: 0.3rem;
 	min-width: 0;
+	width: 100%;
+	max-width: 100%;
 }
 
 .public-booking-profile__eyebrow {
@@ -186,8 +224,8 @@
 
 /* —— Card estilo referencia (solo páginas de reserva pública) —— */
 .public-booking-profile--card .public-booking-profile__inner {
-	align-items: stretch;
-	text-align: left;
+	align-items: center;
+	text-align: center;
 	gap: 0;
 	padding-top: 0.85rem;
 	padding-bottom: 0.75rem;
@@ -198,10 +236,10 @@
 	display: grid;
 	align-content: center;
 	gap: 0;
-	min-height: 10rem;
-	padding: 1rem;
-	border-radius: 1.65rem;
-	overflow: hidden;
+	min-height: 0;
+	padding: 1rem 0;
+	border-radius: 0;
+	overflow: visible;
 	background: transparent;
 	box-shadow: none;
 }
@@ -212,12 +250,13 @@ html[data-theme='dark'] .public-booking-profile__card {
 }
 
 .public-booking-profile__body {
-	display: grid;
-	grid-template-columns: minmax(0, 1.15fr) minmax(7.5rem, 0.85fr);
+	display: flex;
+	flex-direction: column;
 	align-items: center;
-	gap: 0.75rem;
-	min-height: 8.5rem;
-	margin-top: 3rem;
+	gap: 0.85rem;
+	min-height: 0;
+	margin-top: 0;
+	text-align: center;
 }
 
 /* Paso 1: sin espacio extra (aún no hay Volver) */
@@ -231,6 +270,7 @@ html[data-theme='dark'] .public-booking-profile__card {
 	gap: 0.35rem;
 	padding-top: 0;
 	z-index: 1;
+	text-align: center;
 }
 
 .public-booking-profile--card .public-booking-profile__eyebrow {
@@ -252,30 +292,33 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__e
 	font-weight: 800;
 	letter-spacing: -0.03em;
 	line-height: 1.12;
-	color: #0f172a;
+	color: #ffffff;
+	overflow-wrap: anywhere;
 }
 
 html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__title {
-	color: #f8fafc;
+	color: #ffffff;
 }
 
-.public-booking-profile__meta {
+.public-booking-profile--card .public-booking-profile__meta {
 	margin: 0.15rem 0 0;
 	font-size: 0.92rem;
 	font-weight: 500;
-	color: color-mix(in srgb, #334155 72%, var(--primary));
+	color: #c4c6d0;
+	max-width: 100%;
+	overflow-wrap: anywhere;
 }
 
-html[data-theme='dark'] .public-booking-profile__meta {
-	color: color-mix(in srgb, white 68%, var(--primary));
+html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__meta {
+	color: #c4c6d0;
 }
 
 .public-booking-profile__media {
 	position: relative;
 	display: flex;
 	align-items: center;
-	justify-content: flex-end;
-	min-height: 8.75rem;
+	justify-content: center;
+	min-height: 0;
 	z-index: 0;
 }
 
@@ -314,14 +357,11 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	}
 
 	.public-booking-profile__card {
-		min-height: 11rem;
-		padding: 1.15rem;
-		border-radius: 1.85rem;
+		padding: 1.15rem 0;
 	}
 
 	.public-booking-profile__body {
-		min-height: 9.25rem;
-		grid-template-columns: minmax(0, 1.2fr) minmax(9rem, 0.8fr);
+		gap: 1rem;
 	}
 
 	.public-booking-profile--card .public-booking-profile__title {
@@ -376,12 +416,14 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	.public-booking-stepper__mobile [data-step-compact-label] {
 		flex: 0 0 auto;
 		min-width: 0;
-		white-space: nowrap;
+		max-width: 100%;
+		white-space: normal;
+		overflow-wrap: anywhere;
 		text-align: center;
 		font-size: 0.7rem;
 		font-weight: 600;
 		letter-spacing: 0.02em;
-		line-height: 1;
+		line-height: 1.25;
 		color: var(--on-surface-variant);
 	}
 
@@ -421,6 +463,9 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 .public-booking-panel {
 	padding: 0.35rem 0 1.75rem;
 	border-top: 0;
+	min-width: 0;
+	max-width: 100%;
+	box-sizing: border-box;
 }
 
 @media (min-width: 640px) {
@@ -580,8 +625,22 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 }
 
 @media (max-width: 639px) {
+	/* Acercar stepper al header de perfil (u/[slug] y [org]/p/[pro]) */
+	.public-booking-profile--card .public-booking-profile__inner {
+		padding-bottom: 0.4rem;
+	}
+
+	.public-booking-profile--card .public-booking-profile__card {
+		padding-bottom: 0.55rem;
+	}
+
 	.public-booking-shell__canvas {
+		padding-top: 0.1rem;
 		padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	.public-booking-stepper {
+		margin-top: 0.15rem;
 	}
 
 	/* Paso fecha: compactar para que Continuar se vea entero de un vistazo */
@@ -590,8 +649,7 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		padding-bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
 	}
 
-	.public-booking-panel[data-step-panel='3'] > div:first-child,
-	.public-booking-panel[data-step-panel='3'] .public-booking-back-row {
+	.public-booking-panel[data-step-panel='3'] > div:first-child {
 		margin-bottom: 0.4rem;
 	}
 
@@ -627,8 +685,17 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		font-size: 0.78rem;
 	}
 
-	.public-booking-panel[data-step-panel='3'] .public-booking-continue {
+	.public-booking-panel[data-step-panel='3'] .public-booking-actions {
 		margin-top: 0.7rem;
+	}
+
+	.public-booking-panel:has(.public-booking-actions:not(.hidden)) {
+		padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	.public-booking-actions {
+		position: relative;
+		z-index: 2;
 	}
 }
 
@@ -639,8 +706,7 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		padding-bottom: 1.25rem;
 	}
 
-	.public-booking-panel[data-step-panel='3'] > div:first-child,
-	.public-booking-panel[data-step-panel='3'] .public-booking-back-row {
+	.public-booking-panel[data-step-panel='3'] > div:first-child {
 		margin-bottom: 0.45rem;
 	}
 
@@ -707,12 +773,13 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	}
 
 	.public-booking-profile--card .public-booking-profile__card {
-		min-height: 9.5rem;
-		padding: 0.9rem 1rem;
+		min-height: 0;
+		padding: 0.9rem 0;
 	}
 
 	.public-booking-profile--card .public-booking-profile__body {
-		min-height: 7.5rem;
+		min-height: 0;
+		gap: 0.75rem;
 	}
 
 	.public-booking-profile--card .public-booking-avatar {
@@ -770,6 +837,17 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 
 .public-booking-calendar__month::first-letter {
 	text-transform: uppercase;
+}
+
+@media (min-width: 640px) {
+	.public-booking-calendar__toolbar {
+		justify-content: center;
+		gap: 0.875rem;
+	}
+
+	.public-booking-calendar__month {
+		flex: 0 1 auto;
+	}
 }
 
 .calendar-nav-btn {
@@ -1103,8 +1181,12 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		flex-direction: column;
 		grid-template-columns: none;
 		gap: 1rem;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
 		overscroll-behavior: contain;
-		touch-action: pan-x;
+		touch-action: pan-y;
 	}
 
 	/* Grid móvil (u/[slug] y skeletons): misma fila cover | body que el stack. */
@@ -1140,6 +1222,10 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	.public-service-stack-shell {
 		position: relative;
 		isolation: isolate;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
 		overscroll-behavior: contain;
 		touch-action: none;
 	}
@@ -1292,13 +1378,21 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		flex-direction: column;
 		grid-template-columns: none;
 		gap: 1rem;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
 		overscroll-behavior: contain;
-		touch-action: pan-x;
+		touch-action: pan-y;
 	}
 
 	.public-location-stack-shell {
 		position: relative;
 		isolation: isolate;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
 		overscroll-behavior: contain;
 		touch-action: none;
 	}
@@ -1330,13 +1424,18 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		right: 0;
 		top: 0;
 		margin: 0;
+		width: 100%;
+		max-width: 100%;
+		box-sizing: border-box;
 		height: auto;
 		display: grid;
 		grid-template-columns: 4.5rem minmax(0, 1fr);
 		align-items: center;
 		column-gap: 0.7rem;
 		row-gap: 0;
-		padding: 0.65rem 0.75rem;
+		padding: 0.65rem 2.35rem 0.65rem 0.65rem;
+		border: 1.5px solid color-mix(in srgb, var(--outline-variant) 85%, transparent);
+		background: var(--surface-container-high);
 		transform-origin: center top;
 		backdrop-filter: none;
 		-webkit-backdrop-filter: none;
@@ -1351,18 +1450,32 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		box-shadow: none;
 	}
 
-	/* Cover Flow plano anclado al inicio: foco al 100% (borde azul) y vecinos al 90%/80%
-	   en gris oscuro, con el mismo lenguaje visual que los horarios inactivos.
-	   Posiciones fijas (con espacio de peek) para que Continuar no salte. */
+	/* Mismo lenguaje visual que .public-service-stack (borde + tint primary en foco). */
 	.public-location-stack .public-location-card.is-focus {
 		transform: translateY(2.65rem) scale(1);
 		opacity: 1;
-		z-index: 4;
+		z-index: 3;
 		filter: none;
 		border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
 		background: color-mix(in srgb, var(--primary-container) 28%, var(--surface-container-high));
 		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
 		pointer-events: auto;
+	}
+
+	.public-location-stack .public-location-card.is-selected {
+		border: 1.5px solid color-mix(in srgb, var(--outline-variant) 85%, transparent);
+		background: var(--surface-container-high);
+		box-shadow: none;
+	}
+
+	.public-location-stack .public-location-card.is-selected.is-focus {
+		border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
+		background: color-mix(in srgb, var(--primary-container) 28%, var(--surface-container-high));
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+	}
+
+	.public-location-stack .public-location-card:not(.is-selected):has(.public-location-card__preview:hover) {
+		background: var(--surface-container-high);
 	}
 
 	.public-location-stack .public-location-card__check {
@@ -1373,7 +1486,7 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	.public-location-stack .public-location-card.is-near-up {
 		transform: translateY(0) scale(0.94);
 		opacity: 0.62;
-		z-index: 3;
+		z-index: 2;
 		filter: none;
 		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
 		background: color-mix(in srgb, var(--surface-container-high) 32%, transparent);
@@ -1383,7 +1496,7 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	.public-location-stack .public-location-card.is-near-down {
 		transform: translateY(9.2rem) scale(0.96);
 		opacity: 0.88;
-		z-index: 3;
+		z-index: 2;
 		filter: none;
 		border-color: color-mix(in srgb, var(--outline-variant) 30%, transparent);
 		background: color-mix(in srgb, var(--surface-container-high) 42%, transparent);
@@ -1395,7 +1508,7 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		opacity: 0.35;
 		z-index: 2;
 		filter: none;
-		border-color: color-mix(in srgb, var(--outline-variant) 22%, transparent);
+		border-color: color-mix(in srgb, var(--outline-variant) 20%, transparent);
 		background: color-mix(in srgb, var(--surface-container-high) 22%, transparent);
 		pointer-events: auto;
 	}
@@ -1405,7 +1518,7 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		opacity: 0.35;
 		z-index: 2;
 		filter: none;
-		border-color: color-mix(in srgb, var(--outline-variant) 22%, transparent);
+		border-color: color-mix(in srgb, var(--outline-variant) 20%, transparent);
 		background: color-mix(in srgb, var(--surface-container-high) 22%, transparent);
 		pointer-events: auto;
 	}
@@ -1423,7 +1536,7 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	}
 
 	.public-location-stack .public-location-card.is-far {
-		transform: translateY(9.2rem) scale(0.86);
+		transform: translateY(9.2rem) scale(0.9);
 		opacity: 0;
 		z-index: 1;
 		pointer-events: none;
@@ -1437,28 +1550,66 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	.public-location-stack .public-location-card.is-focus:hover {
 		border-color: color-mix(in srgb, var(--primary) 88%, #3b82f6);
 		background: color-mix(in srgb, var(--primary-container) 34%, var(--surface-container-high));
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
 	}
 
 	/* Móvil: preview como thumb a la izquierda (mismo patrón que servicios). */
 	.public-location-stack .public-location-card__preview {
 		display: block;
+		grid-column: 1;
+		grid-row: 1;
 		width: 4.5rem;
 		height: 4.5rem;
 		max-height: 4.5rem;
 		aspect-ratio: 1;
 		margin: 0;
+		border: none;
 		border-radius: 0.65rem;
+		background: color-mix(in srgb, var(--surface-container-highest) 70%, transparent);
 		flex-shrink: 0;
+		z-index: 2;
+	}
+
+	.public-location-stack .public-location-card__preview:hover {
+		border: 1.5px solid color-mix(in srgb, var(--primary) 45%, var(--outline-variant));
+		box-shadow: none;
 	}
 
 	.public-location-stack .public-location-card__main {
+		grid-column: 2;
+		grid-row: 1;
+		align-self: stretch;
 		padding: 0;
 		min-width: 0;
+		z-index: 1;
+	}
+
+	.public-location-stack .public-location-card__body {
+		gap: 0.25rem;
 	}
 
 	.public-location-stack .public-location-card__name {
 		font-size: 0.95rem;
+		font-weight: 500;
 		line-height: 1.25;
+		white-space: normal;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+	}
+
+	.public-location-stack .public-location-card__address-text {
+		white-space: normal;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+	}
+
+	.public-location-stack .public-location-card__address {
+		align-items: flex-start;
+		font-size: 0.875rem;
 	}
 
 	.public-location-stack__continue {
@@ -1492,8 +1643,12 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		flex-direction: column;
 		grid-template-columns: none;
 		gap: 1rem;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
 		overscroll-behavior: contain;
-		touch-action: pan-x;
+		touch-action: pan-y;
 	}
 
 	.public-location-stack .public-org-card--business {
@@ -1633,6 +1788,134 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 
 	.public-services-grid.is-service-stack {
 		display: grid;
+	}
+
+	.public-services-grid.is-service-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+		align-items: stretch;
+	}
+
+	.public-orgs-grid.is-org-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+		align-items: stretch;
+	}
+
+	/* Paginated desktop grid: flatten page shell so cards share the outer 2-col grid
+	   (same cell sizing as a full 2×2 page; a lone last-page card stays half-width). */
+	.public-services-grid.is-service-grid:has(> .public-services-grid__page) {
+		grid-template-rows: repeat(2, minmax(6.75rem, auto));
+		grid-auto-rows: auto;
+	}
+
+	.public-orgs-grid.is-org-grid:has(> .public-services-grid__page) {
+		grid-template-rows: repeat(2, minmax(5.5rem, auto));
+		grid-auto-rows: auto;
+	}
+
+	.public-services-grid__page {
+		display: contents;
+	}
+
+	.public-services-grid.is-service-grid:has(> .public-services-grid__page)
+		> .public-services-grid__pagination:not([hidden]) {
+		grid-row: 3;
+	}
+
+	.public-orgs-grid.is-org-grid:has(> .public-services-grid__page)
+		> .public-services-grid__pagination:not([hidden]) {
+		grid-row: 3;
+	}
+
+	.public-services-grid.is-service-grid:has(> .public-services-grid__page) > .public-booking-continue {
+		grid-row: 3;
+	}
+
+	.public-services-grid.is-service-grid:has(> .public-services-grid__page)
+		> .public-services-grid__pagination:not([hidden])
+		~ .public-booking-continue {
+		grid-row: 4;
+	}
+
+	.public-services-grid.is-service-grid .public-services-grid__page > .public-service-card {
+		grid-column: span 1;
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.public-orgs-grid.is-org-grid .public-services-grid__page > .public-org-card {
+		grid-column: span 1;
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.public-services-grid__pagination {
+		grid-column: 1 / -1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.65rem;
+		margin-top: -0.15rem;
+		color: color-mix(in srgb, var(--on-surface-variant) 72%, transparent);
+		font-size: 0.875rem;
+		font-weight: 650;
+		letter-spacing: 0.01em;
+		user-select: none;
+	}
+
+	.public-services-grid__pagination[hidden] {
+		display: none;
+	}
+
+	.public-services-grid__pagination-label {
+		min-width: 4.5rem;
+		text-align: center;
+	}
+
+	.public-services-grid__pagination-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		margin: 0;
+		padding: 0;
+		border: 1px solid color-mix(in srgb, var(--outline-variant) 48%, transparent);
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-container-high) 72%, transparent);
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+		cursor: pointer;
+		transition:
+			background 0.15s ease,
+			color 0.15s ease,
+			opacity 0.15s ease,
+			border-color 0.15s ease;
+	}
+
+	.public-services-grid__pagination-btn .material-symbols-rounded {
+		font-size: 1.2rem;
+		line-height: 1;
+	}
+
+	.public-services-grid__pagination-btn:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--surface-container-highest) 88%, transparent);
+		border-color: color-mix(in srgb, var(--primary) 36%, transparent);
+		color: var(--on-surface);
+	}
+
+	.public-services-grid__pagination-btn:disabled {
+		opacity: 0.28;
+		cursor: default;
+	}
+
+	.public-locations-grid.is-location-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 1rem;
+		align-items: stretch;
 	}
 
 	.public-services-grid.is-service-carousel {
@@ -1816,12 +2099,201 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	.public-location-stack__continue {
 		display: none;
 	}
+
+	/* Desktop: grid de servicios con tarjetas horizontales (como panel admin). */
+	.public-services-grid.is-service-grid .public-service-card {
+		display: flex;
+		flex-direction: row;
+		align-items: stretch;
+		gap: 0;
+		height: 100%;
+		min-height: 6.75rem;
+		padding: 0;
+		overflow: hidden;
+	}
+
+	.public-services-grid.is-service-grid .public-service-card__cover,
+	.public-services-grid.is-service-grid .public-service-skeleton-cover {
+		flex: 0 0 35%;
+		max-width: 40%;
+		min-width: 5.25rem;
+		width: auto;
+		height: auto;
+		min-height: 6.75rem;
+		aspect-ratio: unset;
+		margin: 0;
+		border-radius: 0;
+	}
+
+	.public-services-grid.is-service-grid .public-service-card__body {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		justify-content: center;
+		gap: 0.45rem;
+		min-width: 0;
+		padding: 0.95rem 1.1rem 1rem 0.95rem;
+	}
+
+	.public-services-grid.is-service-grid .public-service-card__title {
+		padding-right: 1.75rem;
+		font-size: 1rem;
+		line-height: 1.3;
+	}
+
+	.public-services-grid.is-service-grid .public-service-card__title-row {
+		align-items: center;
+	}
+
+	.public-services-grid.is-service-grid .public-service-card__check {
+		top: 0.65rem;
+		right: 0.65rem;
+	}
+
+	.public-services-grid.is-service-grid .public-service-card__deposit-badge--cover {
+		display: inline-flex;
+	}
+
+	.public-services-grid.is-service-grid .public-service-card__deposit-badge--inline {
+		display: none;
+	}
+
+	.public-services-grid.is-service-grid .public-service-card--skeleton {
+		display: flex;
+		flex-direction: row;
+		align-items: stretch;
+		padding: 0;
+		overflow: hidden;
+		min-height: 6.75rem;
+	}
+
+	.public-services-grid.is-service-grid .public-service-card--skeleton .public-service-card__body {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		justify-content: center;
+		padding: 0.95rem 1.1rem 1rem 0.95rem;
+	}
+
+	/* Desktop: grid de sucursales con tarjetas horizontales (mismo lenguaje que servicios). */
+	.public-locations-grid.is-location-grid .public-location-card {
+		display: grid;
+		grid-template-columns: minmax(5.25rem, 35%) minmax(0, 1fr);
+		grid-template-rows: minmax(6.75rem, 1fr);
+		align-items: stretch;
+		gap: 0;
+		height: 100%;
+		min-height: 6.75rem;
+		padding: 0;
+		overflow: hidden;
+		border: 1.5px solid color-mix(in srgb, var(--outline-variant) 85%, transparent);
+		background: var(--surface-container-high);
+		box-shadow: none;
+		transition:
+			border-color 0.15s ease,
+			background 0.15s ease,
+			box-shadow 0.15s ease;
+	}
+
+	.public-locations-grid.is-location-grid .public-location-card:hover {
+		border-color: color-mix(in srgb, var(--primary) 45%, var(--outline-variant));
+		background: var(--surface-container-highest);
+	}
+
+	.public-locations-grid.is-location-grid
+		.public-location-card:not(.is-selected):has(.public-location-card__preview:hover) {
+		border-color: color-mix(in srgb, var(--primary) 45%, var(--outline-variant));
+		background: var(--surface-container-highest);
+	}
+
+	.public-locations-grid.is-location-grid .public-location-card.is-selected {
+		border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
+		background: color-mix(in srgb, var(--primary-container) 28%, var(--surface-container-high));
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+	}
+
+	.public-locations-grid.is-location-grid .public-location-card__preview {
+		grid-column: 1;
+		grid-row: 1;
+		width: 100%;
+		height: 100%;
+		min-height: 6.75rem;
+		max-width: none;
+		aspect-ratio: unset;
+		margin: 0;
+		border-radius: 0;
+		border-width: 0;
+		z-index: 2;
+		background: color-mix(in srgb, var(--surface-container-highest) 70%, transparent);
+	}
+
+	.public-locations-grid.is-location-grid .public-location-card__preview.is-map-loading,
+	.public-locations-grid.is-location-grid .public-location-card__preview--brand,
+	.public-locations-grid.is-location-grid .public-location-card__map-skeleton {
+		background: color-mix(in srgb, var(--surface-container-highest) 70%, transparent);
+	}
+
+	.public-locations-grid.is-location-grid .public-location-card__preview:hover {
+		border-width: 0;
+		box-shadow: none;
+	}
+
+	.public-locations-grid.is-location-grid .public-location-card__main {
+		grid-column: 2;
+		grid-row: 1;
+		display: flex;
+		align-items: center;
+		align-self: stretch;
+		min-width: 0;
+		padding: 0.95rem 1.1rem 1rem 0.95rem;
+		z-index: 1;
+	}
+
+	.public-locations-grid.is-location-grid .public-location-card__body {
+		gap: 0.45rem;
+	}
+
+	.public-locations-grid.is-location-grid .public-location-card__name {
+		padding-right: 1.75rem;
+		font-size: 1rem;
+		line-height: 1.3;
+		white-space: normal;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+		text-overflow: unset;
+	}
+
+	.public-locations-grid.is-location-grid .public-location-card__address {
+		align-items: flex-start;
+	}
+
+	.public-locations-grid.is-location-grid .public-location-card__address-text {
+		white-space: normal;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 2;
+		overflow: hidden;
+		text-overflow: unset;
+	}
+
+	.public-locations-grid.is-location-grid .public-location-card__check {
+		top: 0.65rem;
+		right: 0.65rem;
+	}
+
+	/* Sin overlay hover en desktop: el pin de marca basta (como panel admin). */
+	.public-locations-grid.is-location-grid .public-location-card__preview-hint {
+		display: none;
+	}
 }
 
 .public-booking-continue {
-	display: flex;
+	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	gap: 0.35rem;
 	width: fit-content;
 	max-width: 100%;
 	min-width: 0;
@@ -1844,6 +2316,17 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	align-self: center;
 }
 
+.public-booking-continue__icon {
+	font-size: 1.25rem;
+	line-height: 1;
+}
+
+.public-service-stack__continue,
+.public-location-stack__continue,
+.public-slot-roulette__continue {
+	gap: 0.35rem;
+}
+
 .public-booking-continue:hover:not(:disabled) {
 	filter: brightness(1.05);
 }
@@ -1858,20 +2341,38 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	cursor: default;
 }
 
-/* Carruseles: el botón vive dentro del grid; forzar centrado en todo el ancho. */
+/* Grid/carruseles: el botón vive dentro del grid; forzar centrado en todo el ancho. */
+.public-services-grid.is-service-grid > .public-booking-continue,
+.public-services-grid.is-service-grid > .public-services-grid__pagination,
+.public-orgs-grid.is-org-grid > .public-services-grid__pagination,
 .public-services-grid.is-service-carousel > .public-booking-continue,
+.public-locations-grid.is-location-grid > .public-booking-continue,
 .public-locations-grid.is-location-carousel > .public-booking-continue {
 	display: flex;
 	width: fit-content;
 	margin-inline: auto;
 	justify-self: center;
 	align-self: center;
+	grid-column: 1 / -1;
 }
 
 @media (max-width: 639px) {
 	/* En móvil servicio/sucursal ya tienen su Continuar del stack. */
 	.public-services-grid .public-booking-continue,
 	.public-locations-grid .public-booking-continue {
+		display: none;
+	}
+
+	/* Si sync movió Continuar al footer, ocultar copia huérfana en el stack/grid. */
+	.public-booking-panel:has(.public-booking-actions:not(.hidden) > .public-service-stack__continue)
+		.public-services-grid
+		> .public-service-stack__continue,
+	.public-booking-panel:has(.public-booking-actions:not(.hidden) > .public-location-stack__continue)
+		.public-locations-grid
+		> .public-location-stack__continue,
+	.public-booking-panel:has(.public-booking-actions:not(.hidden) > .public-location-stack__continue)
+		[data-user-locations-root]
+		.public-location-stack__continue {
 		display: none;
 	}
 
@@ -1882,6 +2383,76 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		justify-self: stretch;
 		align-self: stretch;
 		padding: 0.85rem 1.25rem;
+	}
+
+	.public-booking-actions {
+		display: flex;
+		align-items: stretch;
+		gap: 0.65rem;
+		width: 100%;
+		margin-top: 1rem;
+	}
+
+	.public-booking-actions.hidden {
+		display: none;
+	}
+
+	.public-booking-actions .public-booking-back-row {
+		flex: 0 0 auto;
+		margin: 0 !important;
+	}
+
+	.public-booking-actions .public-booking-back-row.hidden {
+		display: none;
+	}
+
+	.public-booking-actions .public-booking-back-link {
+		min-height: 3.15rem;
+		padding: 0.85rem 1rem 0.85rem 0.75rem;
+		border: 1px solid var(--outline, #79747e);
+		background: transparent;
+		box-shadow: none;
+		border-radius: 999px;
+		white-space: nowrap;
+	}
+
+	html[data-theme='dark'] .public-booking-actions .public-booking-back-link {
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.public-booking-actions .public-booking-back-link:hover {
+		background: var(--surface-container-highest);
+		color: var(--on-surface);
+	}
+
+	html[data-theme='dark'] .public-booking-actions .public-booking-back-link:hover {
+		background: var(--surface-container-highest);
+		color: var(--on-surface);
+	}
+
+	.public-booking-actions > .public-booking-continue,
+	.public-booking-actions > .public-service-stack__continue,
+	.public-booking-actions > .public-location-stack__continue,
+	.public-booking-actions > .public-slot-roulette__continue,
+	.public-booking-actions > [data-booking-primary-actions] {
+		flex: 1 1 0;
+		min-width: 0;
+		margin: 0 !important;
+		width: auto;
+		align-self: stretch;
+		justify-self: stretch;
+	}
+
+	.public-booking-actions > [data-booking-primary-actions] {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.public-booking-actions [data-booking-primary-actions] .booking-primary-action {
+		width: 100%;
+		margin: 0;
 	}
 }
 
@@ -2012,26 +2583,13 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	margin: 0 0 0.85rem;
 }
 
-.public-booking-panel:not(.hidden) > .public-booking-back-row {
-	position: absolute;
-	top: 0.55rem;
-	left: 1rem;
-	z-index: 20;
-	margin: 0 !important;
-	padding: 0;
-	height: 0;
-	overflow: visible;
-	pointer-events: none;
-}
-
-.public-booking-panel:not(.hidden) > .public-booking-back-row .public-booking-back-link {
-	pointer-events: auto;
-}
-
 @media (min-width: 640px) {
-	.public-booking-panel:not(.hidden) > .public-booking-back-row {
-		top: 0.75rem;
-		left: 1.25rem;
+	.public-booking-back-row {
+		display: none !important;
+	}
+
+	.public-booking-actions {
+		display: contents;
 	}
 }
 
@@ -2201,6 +2759,23 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	color: var(--primary);
 }
 
+@media (min-width: 640px) {
+	.step-item-done.step-item-clickable {
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.step-item-done.step-item-clickable:hover {
+		background: color-mix(in srgb, var(--primary) 12%, var(--surface-container-highest));
+		color: var(--on-surface);
+	}
+
+	.step-item-done.step-item-clickable:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+		outline-offset: 2px;
+	}
+}
+
 .public-slot-location {
 	display: grid;
 	gap: 0.2rem;
@@ -2273,6 +2848,7 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	box-shadow: none !important;
 }
 
+/* Cards de sucursal — ver variables en .public-booking-shell */
 .public-location-card {
 	position: relative;
 	display: grid;
@@ -2284,29 +2860,35 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	height: 100%;
 	padding: 0.65rem 1.15rem 1rem;
 	border-radius: 1rem;
-	border: 1.5px solid color-mix(in srgb, var(--outline-variant) 85%, transparent);
-	background: var(--surface-container-high);
+	border: none;
+	background: var(--public-location-card-surface, var(--sidebar-surface, #121214));
 	text-align: left;
 	overflow: hidden;
-	transition: border-color 0.15s ease, background 0.15s ease;
+	cursor: pointer;
+	transition: box-shadow 0.15s ease;
 	box-sizing: border-box;
+	box-shadow: none;
+}
+
+/* Un solo cursor en toda la card; hijos heredan (evita parpadeo default/pointer). */
+.public-location-card__preview,
+.public-location-card__main {
+	cursor: inherit;
 }
 
 .public-location-card:hover {
-	border-color: color-mix(in srgb, var(--primary) 45%, var(--outline-variant));
-	background: var(--surface-container-highest);
+	background: var(--public-location-card-surface, var(--sidebar-surface, #121214));
 }
 
-/* Sobre el mapa: el borde va al preview; la card vuelve a su estado base (salvo selección). */
+/* Sobre el mapa: el preview lleva el hover; la card mantiene superficie admin. */
 .public-location-card:not(.is-selected):has(.public-location-card__preview:hover) {
-	border-color: color-mix(in srgb, var(--outline-variant) 85%, transparent);
-	background: var(--surface-container-high);
+	background: var(--public-location-card-surface, var(--sidebar-surface, #121214));
 }
 
 .public-location-card.is-selected {
-	border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
-	background: color-mix(in srgb, var(--primary-container) 28%, var(--surface-container-high));
-	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+	border: none;
+	background: var(--public-location-card-surface, var(--sidebar-surface, #121214));
+	box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--primary) 55%, #ffffff 45%);
 }
 
 .public-location-card__check {
@@ -2335,26 +2917,54 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	aspect-ratio: 4 / 3;
 	overflow: hidden;
 	border-radius: 0.75rem;
-	background:
-		radial-gradient(
-			ellipse 80% 70% at 20% 15%,
-			color-mix(in srgb, var(--primary) 28%, transparent),
-			transparent 60%
-		),
-		linear-gradient(
-			145deg,
-			color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
-			var(--surface-container-highest) 55%,
-			color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
-		);
-	cursor: pointer;
+	background: var(--public-location-card-media-bg, color-mix(in srgb, #426edb 16%, #121214 84%));
+	isolation: isolate;
 	color: inherit;
 	box-sizing: border-box;
 	transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
+.public-location-card__preview.is-map-loading {
+	background: var(
+		--public-location-card-media-placeholder,
+		var(--public-location-card-media-bg, color-mix(in srgb, #426edb 16%, #121214 84%))
+	);
+}
+
+.public-location-card__preview-dim {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	pointer-events: none;
+	background: transparent;
+}
+
+.public-location-card__preview-hint {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	padding: 0.75rem;
+	pointer-events: none;
+	opacity: 0;
+	text-align: center;
+	transition: opacity 0.15s ease;
+}
+
+.public-location-card__preview:hover .public-location-card__preview-hint {
+	opacity: 1;
+}
+
+.public-location-card__preview .bookmate-map-marker-overlay {
+	z-index: 4;
+}
+
 .public-location-card__preview:hover {
-	border-color: color-mix(in srgb, var(--primary) 78%, #3b82f6);
+	border-color: color-mix(in srgb, var(--primary) 55%, #ffffff 45%);
 	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
 }
 
@@ -2363,7 +2973,10 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	inset: 0;
 	z-index: 1;
 	pointer-events: none;
-	background: color-mix(in srgb, var(--on-surface) 8%, var(--surface-container-highest));
+	background: var(
+		--public-location-card-media-placeholder,
+		var(--public-location-card-media-bg, color-mix(in srgb, #426edb 16%, #121214 84%))
+	);
 	animation: public-service-skeleton-pulse 1.2s ease-in-out infinite;
 }
 
@@ -2396,7 +3009,10 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	justify-content: center;
 	gap: 0.35rem;
 	padding: 0.75rem;
-	background: color-mix(in srgb, var(--primary) 14%, var(--surface-container));
+	background: var(
+		--public-location-card-media-placeholder,
+		var(--public-location-card-media-bg, color-mix(in srgb, #426edb 16%, #121214 84%))
+	);
 	color: var(--on-surface);
 	text-align: center;
 }
@@ -2418,6 +3034,7 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 }
 
 .public-location-card__main {
+	position: relative;
 	display: flex;
 	min-width: 0;
 	align-items: flex-start;
@@ -2426,7 +3043,6 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	border: 0;
 	background: transparent;
 	text-align: left;
-	cursor: pointer;
 	color: inherit;
 	font: inherit;
 }
@@ -2486,7 +3102,7 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	padding: 0;
 	border: 0;
 	border-radius: 1.75rem;
-	background: var(--surface-container-high);
+	background: var(--surface-bright);
 	color: var(--on-surface);
 	box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
 	overflow: hidden;
@@ -2599,7 +3215,8 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 		padding-bottom: calc(0.85rem + env(safe-area-inset-bottom, 0px));
 	}
 
-	.public-booking-panel[data-step-panel='4'] .public-booking-back-row {
+	.public-booking-panel[data-step-panel='4'] > div:first-child,
+	.public-booking-panel[data-step-panel='4'] > .grid:first-child {
 		margin-bottom: 0.35rem;
 	}
 

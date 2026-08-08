@@ -185,6 +185,14 @@ export const parseCoordinates = (
 	return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 };
 
+/** Textos de UI de MapLibre en español (tono vos, Paraguay). */
+export const MAPLIBRE_ES_UI_LOCALE = {
+	'CooperativeGesturesHandler.WindowsHelpText':
+		'Usá Ctrl + scroll para hacer zoom en el mapa',
+	'CooperativeGesturesHandler.MacHelpText': 'Usá ⌘ + scroll para hacer zoom en el mapa',
+	'CooperativeGesturesHandler.MobileHelpText': 'Usá dos dedos para mover el mapa',
+} as const;
+
 export const BRAND_MAP_MARKER_COLOR = '#FB7185';
 
 /** SVG del pin de marca (mismo aspecto en modal MapLibre y covers del grid). */

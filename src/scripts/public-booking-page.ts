@@ -12,6 +12,7 @@ import {
 	createBrandMarker,
 	getStadiaStyleUrl,
 	loadMapLibre,
+	MAPLIBRE_ES_UI_LOCALE,
 	resolveMapTheme,
 	type MapLibreModule,
 } from '../lib/maplibre-loader';
@@ -37,6 +38,7 @@ import {
 	type PublicBookingDraft,
 	type PublicBookingDraftStep,
 } from '../lib/public-booking-draft';
+import { bindPublicBookingStepIndicator } from '../lib/public-booking-stepper';
 import {
 	bindSipapCopyButtons,
 	bindSipapReceiptUpload,
@@ -48,6 +50,16 @@ import {
 	unwrapSipapHold,
 	type PublicDepositSettings,
 } from './public-deposit-sipap';
+import {
+	setContinueButtonContent,
+	buildPublicLocationCardContent,
+	bindMapImageLifecycle,
+	bindPickerUserGesture,
+	getServiceGridInitialPageIndex,
+	mountPaginatedServiceGrid,
+	syncPublicBookingMobileActions,
+	triggerPickerHaptic,
+} from './public-user-booking/picker-ui';
 
 type WizardStep = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -254,6 +266,7 @@ export const initializePublicBookingPage = () => {
 	const pageController = new AbortController();
 	bookingPageControllers.set(root, pageController);
 	const { signal } = pageController;
+	bindPickerUserGesture(root, signal);
 
 	const profile = parseProfileFromDom(root);
 	if (!profile) return;
@@ -617,6 +630,7 @@ export const initializePublicBookingPage = () => {
 					zoom: 16,
 					attributionControl: { compact: true },
 					cooperativeGestures: true,
+					locale: MAPLIBRE_ES_UI_LOCALE,
 				});
 				mapInstance.addControl(
 					new maplibregl.NavigationControl({ showCompass: false }),
@@ -870,6 +884,8 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
+	let refreshStepIndicatorClickable = () => {};
+
 	const setStep = (nextStep: WizardStep) => {
 		step = nextStep;
 
@@ -915,14 +931,26 @@ export const initializePublicBookingPage = () => {
 			});
 		}
 
+		if (step === 4 && availableSlotGroups.length > 0 && !isLoadingSlots) {
+			renderSlots();
+		}
+
 		// Persistir el paso al instante (Volver + F5 no debe saltar adelante).
 		if (step <= 5) draftPersister.flush();
+
+		refreshStepIndicatorClickable();
+		syncPublicBookingMobileActions(root);
 	};
 
-	const getSelectedSlotKey = () =>
-		selectedLocation && selectedTime
-			? `${selectedLocation.id_location}:${selectedTime}`
-			: '';
+	const getSelectedSlotKey = () => {
+		if (!selectedTime) return '';
+		const locationId =
+			selectedLocation?.id_location ??
+			availableSlotGroups.find((group) => group.slots.includes(selectedTime))?.location
+				.id_location ??
+			0;
+		return locationId ? `${locationId}:${selectedTime}` : '';
+	};
 
 	const formatLocationLabel = (location: BookingLocation | null) => {
 		if (!location) return 'Ubicación no disponible';
@@ -1008,28 +1036,13 @@ export const initializePublicBookingPage = () => {
 
 	let servicesExpanded = false;
 	let serviceStackFocusIndex = 0;
-	let serviceCarouselPage = 0;
-	let locationCarouselPage = 0;
+	let serviceGridPageIndex = 0;
 	let serviceStackBound = false;
 	let locationStackFocusIndex = 0;
 
 	const isMobileServicesStack = () =>
 		typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
 	const isMobileLocationsStack = () => isMobileServicesStack();
-	/** Tablet/PC angosto: 2 por slide (1 fila). Desktop ≥1024: 4 por slide. */
-	const getCarouselPageSize = () =>
-		typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches ? 4 : 2;
-
-	/** Mejora progresiva: Android vibra; iOS ignora sin romper. */
-	const triggerPickerHaptic = () => {
-		try {
-			if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
-				navigator.vibrate(12);
-			}
-		} catch {
-			/* ignore unsupported / blocked */
-		}
-	};
 
 	const selectServiceAndAdvance = (service: BookingService) => {
 		selectedService = service;
@@ -1107,7 +1120,7 @@ export const initializePublicBookingPage = () => {
 		const button = document.createElement('button');
 		button.type = 'button';
 		button.className = 'public-booking-continue';
-		button.textContent = 'Continuar';
+		setContinueButtonContent(button);
 		button.disabled = Boolean(options?.disabled);
 		button.addEventListener('click', onClick, { signal });
 		return button;
@@ -1190,6 +1203,7 @@ export const initializePublicBookingPage = () => {
 	const renderServicesStack = () => {
 		const services = profile.services;
 		servicesGrid.classList.add('is-service-stack');
+		servicesGrid.classList.remove('is-service-carousel', 'is-service-grid');
 
 		const selectedIndex = selectedService
 			? services.findIndex((service) => service.id_service === selectedService.id_service)
@@ -1349,7 +1363,7 @@ export const initializePublicBookingPage = () => {
 		const continueButton = document.createElement('button');
 		continueButton.type = 'button';
 		continueButton.className = 'public-service-stack__continue';
-		continueButton.textContent = 'Continuar';
+		setContinueButtonContent(continueButton);
 		continueButton.addEventListener('click', continueWithFocused, { signal });
 
 		servicesGrid.appendChild(stackShell);
@@ -1358,39 +1372,22 @@ export const initializePublicBookingPage = () => {
 
 	const renderServicesGrid = () => {
 		servicesGrid.classList.remove('is-service-stack');
-		servicesGrid.classList.add('is-service-carousel');
+		servicesGrid.classList.add('is-service-grid');
 
-		const PAGE_SIZE = getCarouselPageSize();
 		const services = profile.services;
-		const pageCount = Math.max(1, Math.ceil(services.length / PAGE_SIZE));
-
-		const selectedIndex = selectedService
-			? services.findIndex((service) => service.id_service === selectedService.id_service)
-			: -1;
-		if (selectedIndex >= 0) {
-			serviceCarouselPage = Math.floor(selectedIndex / PAGE_SIZE);
-		} else {
-			serviceCarouselPage = Math.min(Math.max(0, serviceCarouselPage), pageCount - 1);
-		}
-
-		const carousel = document.createElement('div');
-		carousel.className = 'public-services-carousel';
-
-		const viewport = document.createElement('div');
-		viewport.className = 'public-services-carousel__viewport';
-
-		const track = document.createElement('div');
-		track.className = 'public-services-carousel__track';
-		track.style.transform = `translateX(-${serviceCarouselPage * 100}%)`;
-
-		for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
-			const page = document.createElement('div');
-			page.className = 'public-services-carousel__page';
-			page.setAttribute('role', 'group');
-			page.setAttribute('aria-label', `Servicios ${pageIndex + 1} de ${pageCount}`);
-
-			const pageServices = services.slice(pageIndex * PAGE_SIZE, pageIndex * PAGE_SIZE + PAGE_SIZE);
-			for (const service of pageServices) {
+		const initialPageIndex = getServiceGridInitialPageIndex(
+			services,
+			selectedService?.id_service ?? null,
+			serviceGridPageIndex
+		);
+		const { pageShell, pagination } = mountPaginatedServiceGrid({
+			services,
+			initialPageIndex,
+			signal,
+			onPageIndexChange: (pageIndex) => {
+				serviceGridPageIndex = pageIndex;
+			},
+			renderCard: (service) => {
 				const button = document.createElement('button');
 				button.type = 'button';
 				button.dataset.serviceId = String(service.id_service);
@@ -1398,81 +1395,11 @@ export const initializePublicBookingPage = () => {
 				button.className = `public-service-card${isSelected ? ' is-selected' : ''}`;
 				button.innerHTML = buildServiceCardInnerHtml(service);
 				button.addEventListener('click', () => pickService(service), { signal });
-				page.appendChild(button);
-			}
-			track.appendChild(page);
-		}
+				return button;
+			},
+		});
 
-		viewport.appendChild(track);
-
-		const stage = document.createElement('div');
-		stage.className = 'public-services-carousel__stage';
-		stage.appendChild(viewport);
-
-		if (pageCount > 1) {
-			const prevBtn = document.createElement('button');
-			prevBtn.type = 'button';
-			prevBtn.className = 'public-services-carousel__arrow public-services-carousel__arrow--prev';
-			prevBtn.setAttribute('aria-label', 'Servicios anteriores');
-			prevBtn.innerHTML =
-				'<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>';
-
-			const nextBtn = document.createElement('button');
-			nextBtn.type = 'button';
-			nextBtn.className = 'public-services-carousel__arrow public-services-carousel__arrow--next';
-			nextBtn.setAttribute('aria-label', 'Servicios siguientes');
-			nextBtn.innerHTML =
-				'<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>';
-
-			const dots = document.createElement('div');
-			dots.className = 'public-services-carousel__dots';
-			dots.setAttribute('role', 'navigation');
-			dots.setAttribute('aria-label', 'Páginas de servicios');
-
-			const syncCarouselUi = () => {
-				track.style.transform = `translateX(-${serviceCarouselPage * 100}%)`;
-				prevBtn.disabled = serviceCarouselPage <= 0;
-				nextBtn.disabled = serviceCarouselPage >= pageCount - 1;
-				const dotButtons = Array.from(
-					dots.querySelectorAll<HTMLButtonElement>('[data-carousel-dot]')
-				);
-				for (const dot of dotButtons) {
-					const index = Number(dot.dataset.carouselDot ?? -1);
-					const active = index === serviceCarouselPage;
-					dot.classList.toggle('is-active', active);
-					dot.setAttribute('aria-current', active ? 'true' : 'false');
-				}
-			};
-
-			const goToPage = (nextPage: number) => {
-				const clamped = Math.min(Math.max(0, nextPage), pageCount - 1);
-				if (clamped === serviceCarouselPage) return;
-				serviceCarouselPage = clamped;
-				syncCarouselUi();
-			};
-
-			for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
-				const dot = document.createElement('button');
-				dot.type = 'button';
-				dot.className = 'public-services-carousel__dot';
-				dot.dataset.carouselDot = String(pageIndex);
-				dot.setAttribute('aria-label', `Ir a página ${pageIndex + 1}`);
-				dot.addEventListener('click', () => goToPage(pageIndex), { signal });
-				dots.appendChild(dot);
-			}
-
-			prevBtn.addEventListener('click', () => goToPage(serviceCarouselPage - 1), { signal });
-			nextBtn.addEventListener('click', () => goToPage(serviceCarouselPage + 1), { signal });
-
-			stage.prepend(prevBtn);
-			stage.append(nextBtn);
-			carousel.append(stage, dots);
-			syncCarouselUi();
-		} else {
-			carousel.appendChild(stage);
-		}
-
-		servicesGrid.appendChild(carousel);
+		servicesGrid.append(pageShell, pagination);
 		servicesGrid.appendChild(
 			createContinueButton(
 				() => {
@@ -1490,7 +1417,7 @@ export const initializePublicBookingPage = () => {
 	const renderServices = () => {
 		servicesGrid.innerHTML = '';
 		servicesGrid.removeAttribute('aria-busy');
-		servicesGrid.classList.remove('is-service-carousel');
+		servicesGrid.classList.remove('is-service-carousel', 'is-service-grid');
 		if (profile.services.length === 0) {
 			servicesGrid.classList.remove('is-service-stack');
 			const emptyState = document.createElement('p');
@@ -1506,6 +1433,7 @@ export const initializePublicBookingPage = () => {
 		} else {
 			renderServicesGrid();
 		}
+		syncPublicBookingMobileActions(root);
 	};
 
 	if (!serviceStackBound && typeof window !== 'undefined') {
@@ -1517,6 +1445,7 @@ export const initializePublicBookingPage = () => {
 			renderServices();
 			renderLocations();
 			renderSlots();
+			syncPublicBookingMobileActions(root);
 		};
 		const bindMedia = (media: MediaQueryList) => {
 			if (typeof media.addEventListener === 'function') {
@@ -1569,28 +1498,13 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
-	const buildLocationCardContent = (location: BookingLocation, options?: { showMap?: boolean }) => {
-		const name = String(location.name || 'Sucursal').trim() || 'Sucursal';
-		const address = String(location.address || '').trim();
-		const showMap = options?.showMap !== false && canShowLocationMap(location);
-		const preview = showMap
-			? `<button type="button" class="public-location-card__preview public-location-card__preview--brand" data-location-map-trigger aria-label="Ver mapa de ${escapeHtml(name)}"><span class="public-location-card__preview-icon material-symbols-rounded" aria-hidden="true">location_on</span><span class="public-location-card__preview-label">Ver ubicación</span></button>`
-			: '';
-		return `
-			${preview}
-			<button type="button" class="public-location-card__main">
-				<span class="public-location-card__body">
-					<span class="public-location-card__name">${escapeHtml(name)}</span>
-					${
-						address
-							? `<span class="public-location-card__address"><span class="material-symbols-rounded" aria-hidden="true">location_on</span><span class="public-location-card__address-text">${escapeHtml(address)}</span></span>`
-							: ''
-					}
-				</span>
-			</button>
-			<span class="material-symbols-rounded public-location-card__check" aria-hidden="true">check_circle</span>
-		`;
-	};
+	const buildLocationCardContent = (location: BookingLocation, options?: { showMap?: boolean }) =>
+		buildPublicLocationCardContent(location, {
+			showMap: options?.showMap,
+			stadiaKey,
+			mapTheme: 'dark',
+			canShowMap: canShowLocationMap(location),
+		});
 
 	const syncLocationStackLayers = (stack: HTMLElement, focusedIndex: number) => {
 		const cards = Array.from(stack.querySelectorAll<HTMLElement>('[data-location-stack-index]'));
@@ -1625,166 +1539,28 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
-	const bindLocationMapTrigger = (card: HTMLElement, location: BookingLocation) => {
-		const mapTrigger = card.querySelector<HTMLButtonElement>('[data-location-map-trigger]');
-		mapTrigger?.addEventListener(
-			'click',
-			(event) => {
-				event.preventDefault();
-				event.stopPropagation();
-				void openLocationMap(location, { fetchCoordinates: true });
-			},
-			{ signal }
-		);
-
-		const mapImg = card.querySelector<HTMLImageElement>('[data-location-map-img]');
-		const revealMap = () => {
-			mapTrigger?.classList.remove('is-map-loading');
-		};
-		mapImg?.addEventListener(
-			'load',
-			() => {
-				revealMap();
-			},
-			{ once: true, signal }
-		);
-		mapImg?.addEventListener(
-			'error',
-			() => {
-				mapImg.remove();
-				mapTrigger?.classList.remove('is-map-loading');
-				mapTrigger?.classList.add('public-location-card__preview--brand');
-			},
-			{ once: true, signal }
-		);
-		if (mapImg?.complete && mapImg.naturalWidth > 0) {
-			revealMap();
-		}
-	};
-
 	const renderLocationsGrid = (locations: BookingLocation[]) => {
-		locationsGrid.classList.remove('is-location-stack');
-		locationsGrid.classList.add('is-location-carousel');
+		locationsGrid.classList.remove('is-location-stack', 'is-location-carousel');
+		locationsGrid.classList.add('is-location-grid');
 
-		const PAGE_SIZE = getCarouselPageSize();
-		const pageCount = Math.max(1, Math.ceil(locations.length / PAGE_SIZE));
+		for (const location of locations) {
+			const isSelected = selectedLocation?.id_location === location.id_location;
+			const card = document.createElement('div');
+			card.dataset.locationId = String(location.id_location);
+			card.className = `public-location-card${isSelected ? ' is-selected' : ''}`;
+			card.innerHTML = buildLocationCardContent(location, { showMap: true });
 
-		const selectedIndex = selectedLocation
-			? locations.findIndex((location) => location.id_location === selectedLocation.id_location)
-			: -1;
-		if (selectedIndex >= 0) {
-			locationCarouselPage = Math.floor(selectedIndex / PAGE_SIZE);
-		} else {
-			locationCarouselPage = Math.min(Math.max(0, locationCarouselPage), pageCount - 1);
+			const mainButton = card.querySelector<HTMLButtonElement>('.public-location-card__main');
+			mainButton?.addEventListener('click', () => pickLocation(location), { signal });
+			bindMapImageLifecycle(card, {
+				signal,
+				onOpenMap: () => {
+					void openLocationMap(location, { fetchCoordinates: true });
+				},
+			});
+			locationsGrid.appendChild(card);
 		}
 
-		const carousel = document.createElement('div');
-		carousel.className = 'public-locations-carousel';
-
-		const viewport = document.createElement('div');
-		viewport.className = 'public-locations-carousel__viewport';
-
-		const track = document.createElement('div');
-		track.className = 'public-locations-carousel__track';
-		track.style.transform = `translateX(-${locationCarouselPage * 100}%)`;
-
-		for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
-			const page = document.createElement('div');
-			page.className = 'public-locations-carousel__page';
-			page.setAttribute('role', 'group');
-			page.setAttribute('aria-label', `Sucursales ${pageIndex + 1} de ${pageCount}`);
-
-			const pageLocations = locations.slice(
-				pageIndex * PAGE_SIZE,
-				pageIndex * PAGE_SIZE + PAGE_SIZE
-			);
-			for (const location of pageLocations) {
-				const isSelected = selectedLocation?.id_location === location.id_location;
-				const card = document.createElement('div');
-				card.dataset.locationId = String(location.id_location);
-				card.className = `public-location-card${isSelected ? ' is-selected' : ''}`;
-				card.innerHTML = buildLocationCardContent(location, { showMap: true });
-
-				const mainButton = card.querySelector<HTMLButtonElement>('.public-location-card__main');
-				mainButton?.addEventListener('click', () => pickLocation(location), {
-					signal,
-				});
-				bindLocationMapTrigger(card, location);
-				page.appendChild(card);
-			}
-			track.appendChild(page);
-		}
-
-		viewport.appendChild(track);
-
-		const stage = document.createElement('div');
-		stage.className = 'public-locations-carousel__stage';
-		stage.appendChild(viewport);
-
-		if (pageCount > 1) {
-			const prevBtn = document.createElement('button');
-			prevBtn.type = 'button';
-			prevBtn.className = 'public-locations-carousel__arrow public-locations-carousel__arrow--prev';
-			prevBtn.setAttribute('aria-label', 'Sucursales anteriores');
-			prevBtn.innerHTML =
-				'<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>';
-
-			const nextBtn = document.createElement('button');
-			nextBtn.type = 'button';
-			nextBtn.className = 'public-locations-carousel__arrow public-locations-carousel__arrow--next';
-			nextBtn.setAttribute('aria-label', 'Sucursales siguientes');
-			nextBtn.innerHTML =
-				'<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>';
-
-			const dots = document.createElement('div');
-			dots.className = 'public-locations-carousel__dots';
-			dots.setAttribute('role', 'navigation');
-			dots.setAttribute('aria-label', 'Páginas de sucursales');
-
-			const syncCarouselUi = () => {
-				track.style.transform = `translateX(-${locationCarouselPage * 100}%)`;
-				prevBtn.disabled = locationCarouselPage <= 0;
-				nextBtn.disabled = locationCarouselPage >= pageCount - 1;
-				const dotButtons = Array.from(
-					dots.querySelectorAll<HTMLButtonElement>('[data-carousel-dot]')
-				);
-				for (const dot of dotButtons) {
-					const index = Number(dot.dataset.carouselDot ?? -1);
-					const active = index === locationCarouselPage;
-					dot.classList.toggle('is-active', active);
-					dot.setAttribute('aria-current', active ? 'true' : 'false');
-				}
-			};
-
-			const goToPage = (nextPage: number) => {
-				const clamped = Math.min(Math.max(0, nextPage), pageCount - 1);
-				if (clamped === locationCarouselPage) return;
-				locationCarouselPage = clamped;
-				syncCarouselUi();
-			};
-
-			for (let pageIndex = 0; pageIndex < pageCount; pageIndex++) {
-				const dot = document.createElement('button');
-				dot.type = 'button';
-				dot.className = 'public-locations-carousel__dot';
-				dot.dataset.carouselDot = String(pageIndex);
-				dot.setAttribute('aria-label', `Ir a página ${pageIndex + 1}`);
-				dot.addEventListener('click', () => goToPage(pageIndex), { signal });
-				dots.appendChild(dot);
-			}
-
-			prevBtn.addEventListener('click', () => goToPage(locationCarouselPage - 1), { signal });
-			nextBtn.addEventListener('click', () => goToPage(locationCarouselPage + 1), { signal });
-
-			stage.prepend(prevBtn);
-			stage.append(nextBtn);
-			carousel.append(stage, dots);
-			syncCarouselUi();
-		} else {
-			carousel.appendChild(stage);
-		}
-
-		locationsGrid.appendChild(carousel);
 		locationsGrid.appendChild(
 			createContinueButton(
 				() => {
@@ -1868,7 +1644,12 @@ export const initializePublicBookingPage = () => {
 				},
 				{ signal }
 			);
-			bindLocationMapTrigger(card, location);
+			bindMapImageLifecycle(card, {
+				signal,
+				onOpenMap: () => {
+					void openLocationMap(location, { fetchCoordinates: true });
+				},
+			});
 			stack.appendChild(card);
 		}
 
@@ -1962,7 +1743,7 @@ export const initializePublicBookingPage = () => {
 		const continueButton = document.createElement('button');
 		continueButton.type = 'button';
 		continueButton.className = 'public-location-stack__continue';
-		continueButton.textContent = 'Continuar';
+		setContinueButtonContent(continueButton);
 		continueButton.addEventListener('click', continueWithFocused, { signal });
 
 		locationsGrid.appendChild(stackShell);
@@ -1972,7 +1753,7 @@ export const initializePublicBookingPage = () => {
 	const renderLocations = () => {
 		locationsGrid.innerHTML = '';
 		locationsGrid.removeAttribute('aria-busy');
-		locationsGrid.classList.remove('is-location-carousel');
+		locationsGrid.classList.remove('is-location-carousel', 'is-location-grid');
 
 		const locations =
 			bookingLocations.length > 0
@@ -1996,6 +1777,7 @@ export const initializePublicBookingPage = () => {
 		} else {
 			renderLocationsGrid(locations);
 		}
+		syncPublicBookingMobileActions(root);
 	};
 
 	renderCalendar = () => {
@@ -2140,6 +1922,7 @@ export const initializePublicBookingPage = () => {
 				)
 			);
 		}
+		syncPublicBookingMobileActions(root);
 	};
 
 	const selectSlotAndAdvance = (group: LocationSlotGroup, slot: string) => {
@@ -2488,7 +2271,7 @@ export const initializePublicBookingPage = () => {
 		const continueButton = document.createElement('button');
 		continueButton.type = 'button';
 		continueButton.className = 'public-slot-roulette__continue';
-		continueButton.textContent = 'Continuar';
+		setContinueButtonContent(continueButton);
 		continueButton.addEventListener('click', continueWithFocused, { signal });
 
 		section.appendChild(shell);
@@ -2664,8 +2447,6 @@ export const initializePublicBookingPage = () => {
 		availableSlotGroups = [];
 		isLoadingSlots = false;
 		servicesExpanded = false;
-		serviceCarouselPage = 0;
-		locationCarouselPage = 0;
 		resetPendingAppointment();
 		stopSipapHoldCountdown(root);
 		customerForm.reset();
@@ -2720,6 +2501,26 @@ export const initializePublicBookingPage = () => {
 		},
 		{ signal }
 	);
+
+	const navigateToStepFromIndicator = (targetStep: number) => {
+		if (targetStep >= step || step > 5) return;
+		if (targetStep === 1) {
+			setStep(1);
+			return;
+		}
+		if (targetStep === 2) {
+			setStep(hasMultipleLocations() ? 2 : 1);
+			return;
+		}
+		setStep(targetStep as WizardStep);
+	};
+
+	refreshStepIndicatorClickable = bindPublicBookingStepIndicator({
+		stepItems,
+		getCurrentStep: () => step,
+		onNavigateToStep: navigateToStepFromIndicator,
+		signal,
+	}).refreshClickableState;
 
 	backToServices.addEventListener('click', () => setStep(1), { signal });
 	backToLocations.addEventListener(

@@ -1,5 +1,21 @@
 /** Helpers compartidos para stack/carrusel de sucursales y servicios en u/[slug]. */
 
+import {
+	buildStadiaStaticMapUrl,
+	LOCATION_CARD_STATIC_MAP_OPTIONS,
+	renderBrandMapMarkerOverlay,
+	resolveMapTheme,
+	type MapTheme,
+} from '../../lib/maplibre-loader';
+
+export type PublicLocationCardInput = {
+	id_location?: number;
+	name?: string;
+	address?: string;
+	latitude?: number;
+	longitude?: number;
+};
+
 export const escapeHtml = (value: string) =>
 	String(value || '')
 		.replace(/&/g, '&amp;')
@@ -14,14 +30,192 @@ export const isMobileStack = () =>
 export const getCarouselPageSize = () =>
 	typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches ? 4 : 2;
 
+export const PICKER_GRID_PAGE_SIZE = 4;
+export const SERVICE_GRID_PAGE_SIZE = PICKER_GRID_PAGE_SIZE;
+export const ORG_GRID_PAGE_SIZE = PICKER_GRID_PAGE_SIZE;
+
+const getPickerGridInitialPageIndex = (
+	itemCount: number,
+	selectedIndex: number,
+	savedPageIndex: number,
+	pageSize: number
+) => {
+	const pageCount = Math.max(1, Math.ceil(itemCount / pageSize));
+	if (selectedIndex >= 0) {
+		return Math.min(Math.floor(selectedIndex / pageSize), pageCount - 1);
+	}
+	return Math.min(Math.max(0, savedPageIndex), pageCount - 1);
+};
+
+export const getServiceGridInitialPageIndex = (
+	services: ReadonlyArray<{ id_service: number }>,
+	selectedServiceId: number | null,
+	savedPageIndex: number
+) => {
+	const selectedIndex = selectedServiceId
+		? services.findIndex((service) => service.id_service === selectedServiceId)
+		: -1;
+	return getPickerGridInitialPageIndex(
+		services.length,
+		selectedIndex,
+		savedPageIndex,
+		SERVICE_GRID_PAGE_SIZE
+	);
+};
+
+export const getOrgGridInitialPageIndex = (
+	groups: ReadonlyArray<{ org_id_organization: number }>,
+	selectedOrgId: number | null,
+	savedPageIndex: number
+) => {
+	const selectedIndex = selectedOrgId
+		? groups.findIndex((group) => group.org_id_organization === selectedOrgId)
+		: -1;
+	return getPickerGridInitialPageIndex(
+		groups.length,
+		selectedIndex,
+		savedPageIndex,
+		ORG_GRID_PAGE_SIZE
+	);
+};
+
+export const mountPaginatedGrid = <T>(options: {
+	items: T[];
+	pageSize: number;
+	initialPageIndex: number;
+	signal: AbortSignal;
+	renderCard: (item: T) => HTMLElement;
+	onPageIndexChange: (pageIndex: number) => void;
+}) => {
+	const pageCount = Math.max(1, Math.ceil(options.items.length / options.pageSize));
+	let pageIndex = Math.min(Math.max(0, options.initialPageIndex), pageCount - 1);
+
+	const pageShell = document.createElement('div');
+	pageShell.className = 'public-services-grid__page';
+
+	const pagination = document.createElement('div');
+	pagination.className = 'public-services-grid__pagination';
+	pagination.hidden = pageCount <= 1;
+
+	const prevButton = document.createElement('button');
+	prevButton.type = 'button';
+	prevButton.className = 'public-services-grid__pagination-btn public-services-grid__pagination-btn--prev';
+	prevButton.setAttribute('aria-label', 'Página anterior');
+	prevButton.innerHTML =
+		'<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>';
+
+	const pageLabel = document.createElement('span');
+	pageLabel.className = 'public-services-grid__pagination-label';
+	pageLabel.setAttribute('aria-live', 'polite');
+
+	const nextButton = document.createElement('button');
+	nextButton.type = 'button';
+	nextButton.className = 'public-services-grid__pagination-btn public-services-grid__pagination-btn--next';
+	nextButton.setAttribute('aria-label', 'Página siguiente');
+	nextButton.innerHTML =
+		'<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>';
+
+	const renderPage = () => {
+		pageShell.replaceChildren();
+		const start = pageIndex * options.pageSize;
+		for (const item of options.items.slice(start, start + options.pageSize)) {
+			pageShell.appendChild(options.renderCard(item));
+		}
+		pageLabel.textContent = `${pageIndex + 1} de ${pageCount}`;
+		prevButton.disabled = pageIndex <= 0;
+		nextButton.disabled = pageIndex >= pageCount - 1;
+		options.onPageIndexChange(pageIndex);
+	};
+
+	const goToPage = (nextIndex: number) => {
+		const clamped = Math.min(Math.max(0, nextIndex), pageCount - 1);
+		if (clamped === pageIndex) return;
+		pageIndex = clamped;
+		renderPage();
+	};
+
+	prevButton.addEventListener('click', () => goToPage(pageIndex - 1), { signal: options.signal });
+	nextButton.addEventListener('click', () => goToPage(pageIndex + 1), { signal: options.signal });
+
+	pagination.append(prevButton, pageLabel, nextButton);
+	renderPage();
+
+	return { pageShell, pagination };
+};
+
+export const mountPaginatedServiceGrid = <T extends { id_service: number }>(options: {
+	services: T[];
+	initialPageIndex: number;
+	signal: AbortSignal;
+	renderCard: (service: T) => HTMLButtonElement;
+	onPageIndexChange: (pageIndex: number) => void;
+}) =>
+	mountPaginatedGrid({
+		items: options.services,
+		pageSize: SERVICE_GRID_PAGE_SIZE,
+		initialPageIndex: options.initialPageIndex,
+		signal: options.signal,
+		renderCard: options.renderCard,
+		onPageIndexChange: options.onPageIndexChange,
+	});
+
+export const mountPaginatedOrgGrid = <T extends { org_id_organization: number }>(options: {
+	groups: T[];
+	initialPageIndex: number;
+	signal: AbortSignal;
+	renderCard: (group: T) => HTMLButtonElement;
+	onPageIndexChange: (pageIndex: number) => void;
+}) =>
+	mountPaginatedGrid({
+		items: options.groups,
+		pageSize: ORG_GRID_PAGE_SIZE,
+		initialPageIndex: options.initialPageIndex,
+		signal: options.signal,
+		renderCard: options.renderCard,
+		onPageIndexChange: options.onPageIndexChange,
+	});
+
+let pickerUserGestureSeen = false;
+
+/** Reinicia el gate de vibración (nueva instancia de página). */
+export const resetPickerUserGesture = () => {
+	pickerUserGestureSeen = false;
+};
+
+/**
+ * Marca interacción real del usuario. Chrome bloquea vibrate sin gesto previo
+ * (Intervention en consola aunque el try/catch no lance).
+ */
+export const markPickerUserGesture = () => {
+	pickerUserGestureSeen = true;
+};
+
+/** Escucha pointer/touch/teclado en fase capture para marcar gesto antes de handlers hijos. */
+export const bindPickerUserGesture = (root: ParentNode, signal?: AbortSignal) => {
+	resetPickerUserGesture();
+	const mark = () => markPickerUserGesture();
+	const opts: AddEventListenerOptions = { capture: true, passive: true, signal };
+	root.addEventListener('pointerdown', mark, opts);
+	root.addEventListener('touchstart', mark, opts);
+	root.addEventListener('keydown', mark, opts);
+};
+
 export const triggerPickerHaptic = () => {
+	if (!pickerUserGestureSeen) return;
 	try {
 		if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
 			navigator.vibrate(12);
 		}
 	} catch {
-		/* ignore */
+		/* ignore unsupported / blocked */
 	}
+};
+
+export const CONTINUE_BUTTON_INNER_HTML =
+	'<span class="public-booking-continue__label">Continuar</span><span class="material-symbols-rounded public-booking-continue__icon" aria-hidden="true">chevron_right</span>';
+
+export const setContinueButtonContent = (button: HTMLButtonElement) => {
+	button.innerHTML = CONTINUE_BUTTON_INNER_HTML;
 };
 
 export const createContinueButton = (
@@ -31,7 +225,7 @@ export const createContinueButton = (
 	const button = document.createElement('button');
 	button.type = 'button';
 	button.className = options.className || 'public-booking-continue';
-	button.textContent = 'Continuar';
+	setContinueButtonContent(button);
 	button.disabled = Boolean(options.disabled);
 	button.addEventListener('click', onClick, { signal: options.signal });
 	return button;
@@ -44,6 +238,75 @@ export const getCoords = (location: {
 	const lat = Number(location.latitude);
 	const lng = Number(location.longitude);
 	return Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
+};
+
+export const buildPublicLocationMapPreviewUrl = (
+	location: PublicLocationCardInput,
+	stadiaKey: string,
+	theme?: MapTheme
+) => {
+	const key = String(stadiaKey || '').trim();
+	if (!key) return null;
+	return buildStadiaStaticMapUrl(key, getCoords(location), {
+		theme: theme ?? resolveMapTheme(),
+		...LOCATION_CARD_STATIC_MAP_OPTIONS,
+	});
+};
+
+const buildPublicLocationBrandPreviewHtml = (name: string) => {
+	const nameEsc = escapeHtml(name);
+	return `<button type="button" class="public-location-card__preview public-location-card__preview--brand" data-location-map-trigger aria-label="Ver mapa de ${nameEsc}"><span class="public-location-card__preview-icon material-symbols-rounded" aria-hidden="true">location_on</span><span class="public-location-card__preview-label">Ver ubicación</span></button>`;
+};
+
+export const buildPublicLocationCardContent = (
+	location: PublicLocationCardInput,
+	options: {
+		showMap?: boolean;
+		canShowMap?: boolean;
+		stadiaKey?: string;
+		mapTheme?: MapTheme;
+	} = {}
+) => {
+	const name = String(location.name || 'Sucursal').trim() || 'Sucursal';
+	const address = String(location.address || '').trim();
+	const canShowMap = options.canShowMap !== false && toPositiveInt(location.id_location, 0) > 0;
+	const showMap = options.showMap !== false && canShowMap;
+
+	let preview = '';
+	if (showMap) {
+		const mapPreviewUrl = buildPublicLocationMapPreviewUrl(
+			location,
+			options.stadiaKey || '',
+			options.mapTheme
+		);
+		if (mapPreviewUrl) {
+			const nameEsc = escapeHtml(name);
+			const { width, height } = LOCATION_CARD_STATIC_MAP_OPTIONS;
+			preview = `<button type="button" class="public-location-card__preview is-map-loading" data-location-map-trigger aria-label="Ver mapa de ${nameEsc}"><span class="public-location-card__map-skeleton" aria-hidden="true"></span><img class="public-location-card__map-img" data-location-map-img src="${escapeHtml(mapPreviewUrl)}" alt="" loading="lazy" decoding="async" width="${width}" height="${height}" />${renderBrandMapMarkerOverlay()}<span class="public-location-card__preview-dim" aria-hidden="true"></span><span class="public-location-card__preview-hint"><span class="public-location-card__preview-label">Ver ubicación</span></span></button>`;
+		} else {
+			preview = buildPublicLocationBrandPreviewHtml(name);
+		}
+	}
+
+	return `
+		${preview}
+		<button type="button" class="public-location-card__main">
+			<span class="public-location-card__body">
+				<span class="public-location-card__name">${escapeHtml(name)}</span>
+				${
+					address
+						? `<span class="public-location-card__address"><span class="material-symbols-rounded" aria-hidden="true">location_on</span><span class="public-location-card__address-text">${escapeHtml(address)}</span></span>`
+						: ''
+				}
+			</span>
+		</button>
+		<span class="material-symbols-rounded public-location-card__check" aria-hidden="true">check_circle</span>
+	`;
+};
+
+const toPositiveInt = (value: unknown, fallback = 0) => {
+	const parsed = Number(value);
+	return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 };
 
 export const bindMapImageLifecycle = (
@@ -63,6 +326,30 @@ export const bindMapImageLifecycle = (
 		},
 		{ signal: options.signal }
 	);
+
+	const mapImg = card.querySelector<HTMLImageElement>('[data-location-map-img]');
+	if (!mapTrigger || !mapImg) return;
+
+	const revealMap = () => {
+		mapTrigger.classList.remove('is-map-loading');
+	};
+
+	mapImg.addEventListener('load', revealMap, { once: true, signal: options.signal });
+	mapImg.addEventListener(
+		'error',
+		() => {
+			mapImg.remove();
+			mapTrigger.classList.remove('is-map-loading');
+			mapTrigger.classList.add('public-location-card__preview--brand');
+			mapTrigger.innerHTML =
+				'<span class="public-location-card__preview-icon material-symbols-rounded" aria-hidden="true">location_on</span><span class="public-location-card__preview-label">Ver ubicación</span>';
+		},
+		{ once: true, signal: options.signal }
+	);
+
+	if (mapImg.complete && mapImg.naturalWidth > 0) {
+		revealMap();
+	}
 };
 
 export const syncStackLayers = (
@@ -253,4 +540,165 @@ export const bindVerticalStackGestures = (
 	return {
 		shouldSuppressClick: () => Date.now() < suppressClickUntil,
 	};
+};
+
+const MOBILE_ACTIONS_CONTINUE_SELECTORS = [
+	'.public-booking-continue',
+	'.public-service-stack__continue',
+	'.public-location-stack__continue',
+	'.public-slot-roulette__continue',
+].join(',');
+
+type ActionsRestoreSlot = {
+	parent: HTMLElement;
+	nextSibling: ChildNode | null;
+};
+
+const actionsRestoreSlots = new WeakMap<HTMLElement, ActionsRestoreSlot>();
+
+const rememberActionsRestoreSlot = (node: HTMLElement) => {
+	if (actionsRestoreSlots.has(node)) return;
+	const parent = node.parentElement;
+	if (!parent) return;
+	actionsRestoreSlots.set(node, { parent, nextSibling: node.nextSibling });
+};
+
+const restoreActionsNode = (node: HTMLElement) => {
+	const slot = actionsRestoreSlots.get(node);
+	if (!slot) return;
+	if (slot.nextSibling && slot.nextSibling.parentElement === slot.parent) {
+		slot.parent.insertBefore(node, slot.nextSibling);
+		return;
+	}
+	slot.parent.appendChild(node);
+};
+
+const restorePublicBookingMobileActions = (root: ParentNode) => {
+	for (const node of root.querySelectorAll<HTMLElement>('[data-public-booking-actions-node]')) {
+		restoreActionsNode(node);
+		node.removeAttribute('data-public-booking-actions-node');
+	}
+};
+
+const moveIntoActions = (node: HTMLElement, actions: HTMLElement) => {
+	if (node.parentElement === actions) return;
+	rememberActionsRestoreSlot(node);
+	node.dataset.publicBookingActionsNode = '1';
+	actions.appendChild(node);
+};
+
+const isDynamicStackContinue = (node: HTMLElement) =>
+	node.matches(
+		'.public-service-stack__continue, .public-location-stack__continue, .public-slot-roulette__continue'
+	);
+
+const detachOrRemoveMobileActionNode = (node: HTMLElement) => {
+	node.removeAttribute('data-public-booking-actions-node');
+	const slot = actionsRestoreSlots.get(node);
+	if (slot?.parent?.isConnected) {
+		// Tras re-render del stack, el grid ya tiene un Continuar nuevo; no restaurar el huérfano del footer.
+		if (isDynamicStackContinue(node)) {
+			const siblings = slot.parent.querySelectorAll<HTMLElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS);
+			if (Array.from(siblings).some((candidate) => candidate !== node)) {
+				node.remove();
+				actionsRestoreSlots.delete(node);
+				return;
+			}
+		}
+		restoreActionsNode(node);
+		return;
+	}
+	node.remove();
+	actionsRestoreSlots.delete(node);
+};
+
+/** Elimina Continuar duplicados fuera del footer (p. ej. stack + footer tras re-render). */
+const removeDuplicateMobileContinues = (panel: HTMLElement, actions: HTMLElement) => {
+	const kept = actions.querySelector<HTMLElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS);
+	if (!kept) return;
+	for (const selector of MOBILE_ACTIONS_CONTINUE_SELECTORS.split(',')) {
+		for (const node of panel.querySelectorAll<HTMLElement>(selector.trim())) {
+			if (node === kept || actions.contains(node)) continue;
+			node.remove();
+			actionsRestoreSlots.delete(node);
+		}
+	}
+};
+
+/** Limpia Continuar/CTA dinámicos del footer antes de re-sync (evita duplicados tras re-render). */
+const prepareMobileActionsFooter = (actions: HTMLElement) => {
+	for (const child of [...actions.children]) {
+		if (!(child instanceof HTMLElement)) continue;
+		if (child.classList.contains('public-booking-back-row')) continue;
+		// Botón fijo del markup (p. ej. calendario en pro/[slug]).
+		if (child.hasAttribute('data-calendar-continue')) continue;
+
+		const isMovable =
+			child.matches(MOBILE_ACTIONS_CONTINUE_SELECTORS) ||
+			child.hasAttribute('data-booking-primary-actions');
+		if (!isMovable) continue;
+
+		detachOrRemoveMobileActionNode(child);
+	}
+};
+
+const findMobileContinueButton = (
+	panel: HTMLElement,
+	actions: HTMLElement
+): HTMLButtonElement | null => {
+	for (const selector of MOBILE_ACTIONS_CONTINUE_SELECTORS.split(',')) {
+		const trimmed = selector.trim();
+		for (const node of panel.querySelectorAll<HTMLButtonElement>(trimmed)) {
+			if (!actions.contains(node)) return node;
+		}
+	}
+	return actions.querySelector<HTMLButtonElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS);
+};
+
+const findMobilePrimaryActions = (
+	panel: HTMLElement,
+	actions: HTMLElement
+): HTMLElement | null => {
+	const outside = panel.querySelector<HTMLElement>('[data-booking-primary-actions]');
+	if (outside && !actions.contains(outside)) return outside;
+	return actions.querySelector<HTMLElement>('[data-booking-primary-actions]');
+};
+
+/** Agrupa Volver + Continuar en fila inferior en móvil; restaura layout en desktop. */
+export const syncPublicBookingMobileActions = (root: ParentNode = document) => {
+	if (!isMobileStack()) {
+		restorePublicBookingMobileActions(root);
+		return;
+	}
+
+	for (const panel of root.querySelectorAll<HTMLElement>('.public-booking-panel')) {
+		let actions = panel.querySelector<HTMLElement>('.public-booking-actions');
+		if (!actions) {
+			actions = document.createElement('div');
+			actions.className = 'public-booking-actions';
+			panel.appendChild(actions);
+		} else {
+			prepareMobileActionsFooter(actions);
+		}
+
+		const backRow = panel.querySelector<HTMLElement>('.public-booking-back-row');
+		const continueBtn = findMobileContinueButton(panel, actions);
+		const primaryActions = findMobilePrimaryActions(panel, actions);
+		const backVisible = Boolean(backRow && !backRow.classList.contains('hidden'));
+		const hasPrimary = Boolean(continueBtn || primaryActions);
+
+		if (!backVisible && !hasPrimary) continue;
+
+		if (backRow && backRow.parentElement !== actions) {
+			rememberActionsRestoreSlot(backRow);
+			backRow.dataset.publicBookingActionsNode = '1';
+			actions.prepend(backRow);
+		}
+
+		if (continueBtn) moveIntoActions(continueBtn, actions);
+		if (primaryActions) moveIntoActions(primaryActions, actions);
+		removeDuplicateMobileContinues(panel, actions);
+
+		actions.classList.toggle('hidden', !backVisible && !hasPrimary);
+	}
 };

@@ -106,11 +106,6 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 						<div class="public-booking-profile__inner">
 							<article class="public-booking-profile__card">
 								<div class="public-booking-profile__body">
-									<div class="public-booking-profile__text">
-										<p class="public-booking-profile__eyebrow">Agendar cita con</p>
-										<h1 class="public-booking-profile__title">{profile.full_name}</h1>
-										<p class="public-booking-profile__meta">Elegí dónde atenderte y reservá tu turno</p>
-									</div>
 									<div class="public-booking-profile__media">
 										{profile.image_url ? (
 											<img
@@ -128,6 +123,11 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 												<span class="material-symbols-rounded">account_circle</span>
 											</div>
 										)}
+									</div>
+									<div class="public-booking-profile__text">
+										<p class="public-booking-profile__eyebrow">Agendar cita con</p>
+										<h1 class="public-booking-profile__title">{profile.full_name}</h1>
+										<p class="public-booking-profile__meta">Elegí dónde atenderte y reservá tu turno</p>
 									</div>
 								</div>
 							</article>
@@ -160,12 +160,6 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 					<div class="hidden rounded-2xl mb-3 px-5 py-4 text-sm font-medium shadow-sm transition-all" data-booking-toast></div>
 
 					<section data-step-panel="1" class="public-booking-panel">
-						<div class="public-booking-back-row hidden" data-back-to-orgs-wrap>
-							<button type="button" data-back-to-orgs class="public-booking-back-link">
-								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-								Volver
-							</button>
-						</div>
 						<div class="grid gap-2">
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)" data-step1-title>
 								¿Dónde querés atenderte?
@@ -176,15 +170,17 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 							</p>
 						</div>
 						<div class="mt-6 grid gap-4" data-user-locations-root></div>
+						<div class="public-booking-actions">
+							<div class="public-booking-back-row hidden" data-back-to-orgs-wrap>
+								<button type="button" data-back-to-orgs class="public-booking-back-link">
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+									Volver
+								</button>
+							</div>
+						</div>
 					</section>
 
 					<section data-step-panel="2" class="public-booking-panel hidden">
-						<div class="public-booking-back-row">
-							<button type="button" data-back-to-locations class="public-booking-back-link">
-								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-								Volver
-							</button>
-						</div>
 						<div class="grid gap-2">
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">¿Qué servicio desea?</h2>
 							<p class="mt-0 text-base text-(--on-surface-variant)" data-step-services-hint>
@@ -192,16 +188,18 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 								<span class="public-services-hint__mobile">Deslizá para elegir un servicio</span>
 							</p>
 						</div>
-						<div class="mt-6 grid gap-4 sm:grid-cols-2 public-services-grid" data-services-grid aria-busy="true"></div>
+						<div class="mt-6 grid gap-4 sm:grid-cols-2 public-services-grid is-service-grid" data-services-grid aria-busy="true"></div>
+						<div class="public-booking-actions">
+							<div class="public-booking-back-row">
+								<button type="button" data-back-to-locations class="public-booking-back-link">
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+									Volver
+								</button>
+							</div>
+						</div>
 					</section>
 
 					<section data-step-panel="3" class="public-booking-panel hidden">
-						<div class="public-booking-back-row">
-							<button type="button" data-back-to-services class="public-booking-back-link">
-								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-								Volver
-							</button>
-						</div>
 						<div class="grid gap-2">
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Seleccioná una fecha</h2>
 						</div>
@@ -221,15 +219,17 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 							</div>
 							<div class="public-booking-calendar__grid" data-calendar-grid></div>
 						</div>
+						<div class="public-booking-actions">
+							<div class="public-booking-back-row">
+								<button type="button" data-back-to-services class="public-booking-back-link">
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+									Volver
+								</button>
+							</div>
+						</div>
 					</section>
 
 					<section data-step-panel="4" class="public-booking-panel hidden">
-						<div class="public-booking-back-row">
-							<button type="button" data-back-to-calendar class="public-booking-back-link">
-								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-								Volver
-							</button>
-						</div>
 						<div class="grid gap-2">
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)" data-summary-date-inline></h2>
 							<p class="mt-1 text-base text-(--on-surface-variant)">
@@ -269,15 +269,17 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 								Volver al calendario
 							</button>
 						</div>
+						<div class="public-booking-actions">
+							<div class="public-booking-back-row">
+								<button type="button" data-back-to-calendar class="public-booking-back-link">
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+									Volver
+								</button>
+							</div>
+						</div>
 					</section>
 
 					<section data-step-panel="5" class="public-booking-panel hidden">
-						<div class="public-booking-back-row">
-							<button type="button" data-back-to-slots class="public-booking-back-link">
-								<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-								Volver
-							</button>
-						</div>
 						<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Confirmá tus datos</h2>
 						<div class="mt-5 grid gap-5 lg:grid-cols-[1fr_22rem] lg:gap-8">
 							<form class="contents lg:grid lg:gap-5" data-customer-form>
@@ -321,7 +323,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 									<span class="material-symbols-rounded" aria-hidden="true">info</span>
 									<span>No cierres esta página hasta confirmar. Si salís o cerrás el navegador, la cita no se reservará.</span>
 								</p>
-								<div class="order-3 grid gap-3 lg:order-none lg:mt-3">
+								<div class="order-3 grid gap-3 lg:order-none lg:mt-3" data-booking-primary-actions>
 									<button type="submit" data-submit-booking class="booking-primary-action inline-flex h-12 w-full items-center justify-center rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60">
 										Confirmar reserva
 									</button>
@@ -341,6 +343,14 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 									<li class="public-booking-summary__row public-booking-summary__row--deposit hidden" data-summary-deposit-wrap><span class="public-booking-summary__label">Seña requerida</span><span class="public-booking-summary__deposit" data-summary-deposit></span></li>
 								</ul>
 							</aside>
+						</div>
+						<div class="public-booking-actions">
+							<div class="public-booking-back-row">
+								<button type="button" data-back-to-slots class="public-booking-back-link">
+									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+									Volver
+								</button>
+							</div>
 						</div>
 					</section>
 
@@ -431,14 +441,14 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 <style is:global>
 	html:has(.public-booking-shell),
 	html:has(.public-booking-shell) body {
-		background: #1b1b1b;
+		background: #121214;
 	}
 
 	.public-booking-shell {
-		--surface-background: #1b1b1b;
+		--surface-background: #121214;
 		--surface-container-lowest: #141414;
-		--surface-container-low: #1b1b1b;
-		--surface-container: #1b1b1b;
+		--surface-container-low: #121214;
+		--surface-container: #121214;
 		--surface-container-high: #252528;
 		--surface-container-highest: #2e2e32;
 		--outline: #44474e;

@@ -32,7 +32,7 @@ if (!loadError) {
 ---
 
 <Layout>
-	<main class="mx-auto flex min-h-[60vh] max-w-lg items-center px-6 py-16">
+	<main class="public-booking-shell mx-auto flex min-h-[60vh] max-w-lg items-center px-6 py-16">
 		<section class="w-full rounded-3xl border border-rose-200 bg-rose-50 px-8 py-10 text-rose-900 shadow-sm">
 			<h1 class="text-2xl font-semibold tracking-tight">No fue posible abrir esta agenda</h1>
 			<p class="mt-3 text-base font-medium text-rose-800">{loadError}</p>
@@ -45,3 +45,16 @@ if (!loadError) {
 		</section>
 	</main>
 </Layout>
+
+<style is:global>
+	html:has(.public-booking-shell),
+	html:has(.public-booking-shell) body {
+		background: #121214;
+	}
+
+	.public-booking-shell {
+		--surface-background: #121214;
+		min-height: 100vh;
+		background: var(--surface-background);
+	}
+</style>

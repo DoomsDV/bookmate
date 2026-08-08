@@ -1,4 +1,5 @@
 import { appendLocationSlotHeader } from './public-booking-locations';
+import { setContinueButtonContent, triggerPickerHaptic } from '../scripts/public-user-booking/picker-ui';
 
 export type PublicSlotBranchLocation = {
 	id_location: number;
@@ -38,16 +39,6 @@ export const formatSlotLabelAmPm = (slot: string) => {
 
 export const isMobileSlotRouletteViewport = () =>
 	typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
-
-const triggerPickerHaptic = () => {
-	try {
-		if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
-			navigator.vibrate(12);
-		}
-	} catch {
-		/* ignore */
-	}
-};
 
 const syncSlotRouletteLayers = (
 	roulette: HTMLElement,
@@ -381,7 +372,7 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 			const continueButton = document.createElement('button');
 			continueButton.type = 'button';
 			continueButton.className = 'public-slot-roulette__continue';
-			continueButton.textContent = 'Continuar';
+			setContinueButtonContent(continueButton);
 			continueButton.addEventListener('click', () => {
 				const slot = group.slots[focusedIndex];
 				if (slot) onSelect(locationId, slot, group.location);
