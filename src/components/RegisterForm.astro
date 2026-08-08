@@ -1,4 +1,5 @@
 ---
+import '../styles/auth.css';
 import type { OrgSpecialtyOption } from '../lib/auth';
 
 interface Props {
@@ -51,61 +52,32 @@ const normalizeStep = (value: string) =>
 const currentStep = normalizeStep(step);
 ---
 
-<section class="register-page" data-register-page>
-	<div class="register-fx" aria-hidden="true">
-		<div class="register-atmosphere"></div>
-		<div class="register-vignette"></div>
-		<div class="register-orb register-orb-a"></div>
-		<div class="register-orb register-orb-b"></div>
-		<div class="register-deco register-deco-1"></div>
-		<div class="register-deco register-deco-2"></div>
-		<div class="register-deco register-deco-3"></div>
-		<div class="register-deco register-deco-4"></div>
-		<div class="register-deco register-deco-5"></div>
-		<div class="register-deco register-deco-6"></div>
-		<div class="register-deco register-deco-7"></div>
-		<div class="register-deco register-wave register-wave-1"></div>
-		<div class="register-deco register-wave register-wave-2"></div>
-	</div>
-
+<section class="auth-page" data-register-page>
 	<!-- Hidden nodes for JS textMap updates (sidebar removed) -->
 	<span class="sr-only" data-sidebar-title>Paso 1</span>
 	<span class="sr-only" data-sidebar-desc>
 		Ingresa tu información personal para comenzar con la configuración de tu espacio.
 	</span>
 
-	<header class="register-topbar">
-		<div class="register-topbar-inner">
-			<a href="/" class="register-brand" aria-label="Hasel — Inicio">
+	<header class="auth-topbar">
+		<div class="auth-topbar-inner">
+			<a href="/" class="auth-brand" aria-label="Hasel — Inicio">
 				<img
 					src="/icons/icon-64.png"
 					alt=""
-					class="register-brand-logo"
+					class="auth-brand-logo"
 					width="40"
 					height="40"
 					loading="eager"
 					decoding="async"
 				/>
-				<span class="register-brand-wordmark">Hasel</span>
+				<span class="auth-brand-wordmark">Hasel</span>
 			</a>
-			<a href="/auth/login" class="register-topbar-cta">Iniciar sesión</a>
 		</div>
 	</header>
 
-	<div class="register-shell">
-		<main class="register-card">
-			<div class="register-card-logo-wrap">
-				<img
-					src="/icons/icon-512x512.png"
-					alt="Hasel"
-					class="register-card-logo"
-					width="72"
-					height="72"
-					loading="eager"
-					decoding="async"
-				/>
-			</div>
-
+	<div class="auth-shell">
+		<main class="auth-card register-card">
 			<nav class="register-stepper" aria-label="Pasos del registro">
 				<div
 					class:list={['register-step', { 'is-active': currentStep === 'admin' }]}
@@ -124,20 +96,20 @@ const currentStep = normalizeStep(step);
 				</div>
 			</nav>
 
-			<header class="register-card-header">
+			<header class="auth-card-header register-card-header">
 				<div class="register-panel-icon sr-only" data-panel-icon aria-hidden="true">
 					<span class="material-symbols-rounded">person</span>
 				</div>
 				<div class="register-panel-titles">
-					<h1 class="register-title" data-panel-title>Tus datos personales</h1>
-					<p class="register-subtitle" data-panel-desc>
+					<h1 class="auth-title register-title" data-panel-title>Tus datos personales</h1>
+					<p class="auth-subtitle register-subtitle" data-panel-desc>
 						Al crear el espacio, se te asignará el rol de administrador de la organización
 					</p>
 				</div>
 			</header>
 
 			<div
-				class:list={['register-error-banner', !error && 'is-hidden']}
+				class:list={['auth-banner auth-banner-error register-error-banner', !error && 'is-hidden']}
 				data-error-banner
 				role="alert"
 				aria-live="polite"
@@ -151,51 +123,51 @@ const currentStep = normalizeStep(step);
 
 				<!-- PANEL: ADMIN -->
 				<div data-step-panel="admin" class:list={['register-panel', currentStep !== 'admin' && 'is-hidden']}>
-					<div class="register-grid-2">
-						<div class="register-field">
-							<label class="register-label" for="first_name"
-								>Nombres <span class="register-label-required">*</span></label
+					<div class="auth-form-grid auth-form-grid--2 register-grid-2">
+						<div class="auth-field">
+							<label class="auth-label" for="first_name"
+								>Nombres <span class="auth-label-required">*</span></label
 							>
 							<input
 								type="text"
 								id="first_name"
 								name="first_name"
-								class:list={['register-input', firstNameError && 'is-invalid']}
+								class:list={['auth-input', firstNameError && 'is-invalid']}
 								placeholder="Ej: Juan"
 								value={firstName}
 								autocomplete="given-name"
 								required
 							/>
-							{firstNameError && <span class="register-field-error">{firstNameError}</span>}
+							{firstNameError && <span class="auth-field-error">{firstNameError}</span>}
 						</div>
-						<div class="register-field">
-							<label class="register-label" for="last_name"
-								>Apellidos <span class="register-label-required">*</span></label
+						<div class="auth-field">
+							<label class="auth-label" for="last_name"
+								>Apellidos <span class="auth-label-required">*</span></label
 							>
 							<input
 								type="text"
 								id="last_name"
 								name="last_name"
-								class:list={['register-input', lastNameError && 'is-invalid']}
+								class:list={['auth-input', lastNameError && 'is-invalid']}
 								placeholder="Ej: Pérez"
 								value={lastName}
 								autocomplete="family-name"
 								required
 							/>
-							{lastNameError && <span class="register-field-error">{lastNameError}</span>}
+							{lastNameError && <span class="auth-field-error">{lastNameError}</span>}
 						</div>
 					</div>
 
-					<div class="register-grid-2">
-						<div class="register-field">
-							<label class="register-label" for="email"
-								>Correo electrónico <span class="register-label-required">*</span></label
+					<div class="auth-form-grid auth-form-grid--2 register-grid-2">
+						<div class="auth-field">
+							<label class="auth-label" for="email"
+								>Correo electrónico <span class="auth-label-required">*</span></label
 							>
 							<input
 								type="email"
 								id="email"
 								name="email"
-								class:list={['register-input', emailError && 'is-invalid']}
+								class:list={['auth-input', emailError && 'is-invalid']}
 								placeholder="Ej: juan@empresa.com"
 								value={email}
 								autocomplete="email"
@@ -203,25 +175,25 @@ const currentStep = normalizeStep(step);
 								spellcheck="false"
 								required
 							/>
-							{emailError && <span class="register-field-error">{emailError}</span>}
+							{emailError && <span class="auth-field-error">{emailError}</span>}
 						</div>
-						<div class="register-field">
-							<label class="register-label" for="password"
-								>Contraseña <span class="register-label-required">*</span></label
+						<div class="auth-field">
+							<label class="auth-label" for="password"
+								>Contraseña <span class="auth-label-required">*</span></label
 							>
-							<div class="register-input-affix">
+							<div class="auth-input-affix">
 								<input
 									type="password"
 									id="password"
 									name="password"
-									class:list={['register-input', passwordError && 'is-invalid']}
+									class:list={['auth-input', passwordError && 'is-invalid']}
 									placeholder="Tu contraseña"
 									autocomplete="new-password"
 									required
 								/>
 								<button
 									type="button"
-									class="register-icon-btn"
+									class="auth-icon-btn"
 									data-password-toggle
 									aria-label="Mostrar contraseña"
 								>
@@ -230,27 +202,23 @@ const currentStep = normalizeStep(step);
 									>
 								</button>
 							</div>
-							<div class="register-password-strength is-hidden" data-password-strength aria-live="polite">
-								<div class="register-password-strength-bars">
-									<span class="register-password-strength-segment" data-password-segment></span>
-									<span class="register-password-strength-segment" data-password-segment></span>
-									<span class="register-password-strength-segment" data-password-segment></span>
-									<span class="register-password-strength-segment" data-password-segment></span>
+							<div class="auth-strength is-hidden" data-password-strength aria-live="polite">
+								<div class="auth-strength-bars">
+									<span class="auth-strength-segment" data-password-segment></span>
+									<span class="auth-strength-segment" data-password-segment></span>
+									<span class="auth-strength-segment" data-password-segment></span>
+									<span class="auth-strength-segment" data-password-segment></span>
 								</div>
-								<p class="register-password-strength-text" data-password-strength-text>Poco segura</p>
+								<p class="auth-strength-text" data-password-strength-text>Poco segura</p>
 							</div>
-							{passwordError && <span class="register-field-error">{passwordError}</span>}
+							{passwordError && <span class="auth-field-error">{passwordError}</span>}
 						</div>
 					</div>
 
-					<div class="register-actions register-actions--between">
-						<a
-							href="/auth/login?redirectTo=%2Fauth%2Fcreate-organization"
-							class="register-link-accent register-link-accent--inline"
-						>
-							¿Ya tienes una cuenta? <strong>Crea tu organización</strong>
-						</a>
-						<button type="button" data-next-step class="register-btn-primary">Siguiente Paso</button>
+					<div class="register-actions register-actions--primary">
+						<button type="button" data-next-step class="auth-btn auth-btn-primary register-btn-primary">
+							Siguiente Paso
+						</button>
 					</div>
 				</div>
 
@@ -259,35 +227,35 @@ const currentStep = normalizeStep(step);
 					data-step-panel="organization"
 					class:list={['register-panel', currentStep !== 'organization' && 'is-hidden']}
 				>
-					<div class="register-grid-2">
-						<div class="register-field">
-							<label class="register-label" for="business_name"
-								>Nombre de la Organización <span class="register-label-required">*</span></label
+					<div class="auth-form-grid auth-form-grid--2 register-grid-2">
+						<div class="auth-field">
+							<label class="auth-label" for="business_name"
+								>Nombre de la Organización <span class="auth-label-required">*</span></label
 							>
 							<input
 								type="text"
 								id="business_name"
 								name="business_name"
-								class:list={['register-input', businessNameError && 'is-invalid']}
+								class:list={['auth-input', businessNameError && 'is-invalid']}
 								placeholder="Ej: Clínica Dental San José"
 								value={businessName}
 								autocomplete="organization"
 								required
 							/>
-							<p class="register-field-help">
+							<p class="auth-field-help">
 								Este será el nombre de tu organización o como te verán las personas.
 							</p>
-							{businessNameError && <span class="register-field-error">{businessNameError}</span>}
+							{businessNameError && <span class="auth-field-error">{businessNameError}</span>}
 						</div>
-						<div class="register-field">
-							<label class="register-label" for="company_email"
-								>Correo de la compañía <span class="register-label-required">*</span></label
+						<div class="auth-field">
+							<label class="auth-label" for="company_email"
+								>Correo de la compañía <span class="auth-label-required">*</span></label
 							>
 							<input
 								type="email"
 								id="company_email"
 								name="company_email"
-								class:list={['register-input', companyEmailError && 'is-invalid']}
+								class:list={['auth-input', companyEmailError && 'is-invalid']}
 								placeholder="Ej: contacto@tuempresa.com"
 								value={companyEmail}
 								autocomplete="email"
@@ -295,21 +263,21 @@ const currentStep = normalizeStep(step);
 								spellcheck="false"
 								required
 							/>
-							<p class="register-field-help">
+							<p class="auth-field-help">
 								Este correo será el contacto principal de tu organización para notificaciones y
 								comunicación institucional.
 							</p>
-							{companyEmailError && <span class="register-field-error">{companyEmailError}</span>}
+							{companyEmailError && <span class="auth-field-error">{companyEmailError}</span>}
 						</div>
 					</div>
 
-					<div class="register-grid-2">
-						<div class="register-field">
-							<label class="register-label" for="phone"
-								>Teléfono de corporativo <span class="register-label-required">*</span></label
+					<div class="auth-form-grid auth-form-grid--2 register-grid-2">
+						<div class="auth-field">
+							<label class="auth-label" for="phone"
+								>Teléfono de corporativo <span class="auth-label-required">*</span></label
 							>
-							<div class:list={['register-phone-group', phoneError && 'is-invalid']}>
-								<span class="register-phone-prefix">+595</span>
+							<div class:list={['auth-phone-group', phoneError && 'is-invalid']}>
+								<span class="auth-phone-prefix">+595</span>
 								<input
 									type="tel"
 									id="phone"
@@ -317,7 +285,7 @@ const currentStep = normalizeStep(step);
 									inputmode="numeric"
 									autocomplete="tel-national"
 									maxlength="11"
-									class:list={['register-input', 'register-phone-input', phoneError && 'is-invalid']}
+									class:list={['auth-input', 'auth-phone-input', phoneError && 'is-invalid']}
 									placeholder="981 123 456"
 									value={phone}
 									autocapitalize="none"
@@ -325,17 +293,17 @@ const currentStep = normalizeStep(step);
 									required
 								/>
 							</div>
-							{phoneError && <span class="register-field-error">{phoneError}</span>}
+							{phoneError && <span class="auth-field-error">{phoneError}</span>}
 						</div>
-						<div class="register-field">
-							<label class="register-label" for="id_org_specialty"
-								>Especialidad de la organización <span class="register-label-required">*</span></label
+						<div class="auth-field">
+							<label class="auth-label" for="id_org_specialty"
+								>Especialidad de la organización <span class="auth-label-required">*</span></label
 							>
-							<div class="register-select-wrap">
+							<div class="auth-select-wrap">
 								<select
 									id="id_org_specialty"
 									name="id_org_specialty"
-									class:list={['register-input', 'register-select', orgSpecialtyIdError && 'is-invalid']}
+									class:list={['auth-input', 'auth-select', orgSpecialtyIdError && 'is-invalid']}
 									required
 									disabled={orgSpecialties.length === 0}
 								>
@@ -351,32 +319,40 @@ const currentStep = normalizeStep(step);
 								</select>
 							</div>
 							{specialtiesLoadError && (
-								<span class="register-field-error">{specialtiesLoadError}</span>
+								<span class="auth-field-error">{specialtiesLoadError}</span>
 							)}
-							{orgSpecialtyIdError && <span class="register-field-error">{orgSpecialtyIdError}</span>}
+							{orgSpecialtyIdError && <span class="auth-field-error">{orgSpecialtyIdError}</span>}
 						</div>
 					</div>
 
-					<div class="register-actions register-actions--between">
-						<button type="button" data-prev-step class="register-btn-tonal">Atrás</button>
-						<button type="submit" class="register-btn-primary" disabled={orgSpecialties.length === 0}>
+					<div class="auth-actions auth-actions--between register-actions">
+						<button type="button" data-prev-step class="auth-btn auth-btn-tonal">Atrás</button>
+						<button
+							type="submit"
+							class="auth-btn auth-btn-primary register-btn-primary"
+							disabled={orgSpecialties.length === 0}
+						>
 							Finalizar Registro
 						</button>
 					</div>
 				</div>
 			</form>
 
-			<footer class="register-card-footer">
-				<p class="register-footer-text">
+			<footer class="auth-card-footer register-card-footer">
+				<p class="auth-footer-text">
 					¿Solo quieres entrar?
-					<a href="/auth/login" class="register-footer-link"><strong>Iniciar sesión</strong></a>
+					<a href="/auth/login" class="auth-footer-link"><strong>Iniciar sesión</strong></a>
 				</p>
 			</footer>
 		</main>
 	</div>
 
-	<footer class="register-page-footer" aria-label="Copyright">
-		<p>Hasel &copy; 2026</p>
+	<footer class="auth-page-footer" aria-label="Pie de página">
+		<p>
+			Hasel &copy; 2026
+			<span class="auth-page-footer-sep" aria-hidden="true">|</span>
+			<a href="/politicas-y-privacidad" class="auth-page-footer-link">Políticas de privacidad</a>
+		</p>
 	</footer>
 </section>
 
@@ -701,458 +677,145 @@ const currentStep = normalizeStep(step);
 		display: none !important;
 	}
 
-	.register-page {
-		--reg-bg: #0b0d12;
-		--reg-primary: #426edb;
-		--reg-primary-hover: #5a82e8;
-		--reg-on-primary: #ffffff;
-		--reg-surface: #1c1b1f;
-		--reg-surface-high: #201f23;
-		--reg-surface-highest: #2a292d;
-		--reg-on-surface: #e5e2e1;
-		--reg-on-surface-variant: #c4c6d0;
-		--reg-outline: #44474e;
-		--reg-outline-soft: rgba(68, 71, 78, 0.55);
-		--reg-error: #ffb4ab;
-		--reg-error-container: rgba(127, 29, 29, 0.28);
-		--reg-radius: 28px;
-		--reg-shell: 100%;
-		--reg-pad-x: 1.25rem;
-
-		position: relative;
-		isolation: isolate;
-		overflow-x: clip;
-		min-height: 100vh;
-		min-height: 100dvh;
-		display: flex;
-		flex-direction: column;
-		font-family: var(--font-body, 'Nunito Sans', system-ui, sans-serif);
-		color: var(--reg-on-surface);
-		color-scheme: dark;
-		background-color: var(--reg-bg);
-		background-image:
-			radial-gradient(ellipse 85% 60% at 90% 6%, rgba(45, 110, 255, 0.2), transparent 58%),
-			radial-gradient(ellipse 70% 45% at 12% 88%, rgba(66, 110, 219, 0.1), transparent 60%),
-			linear-gradient(165deg, #0b0d12 0%, #101522 45%, #0b0d12 100%);
-		-webkit-font-smoothing: antialiased;
+	.register-card {
+		max-width: 32rem;
+		min-height: 28rem;
+		padding: 2rem 1.65rem 1.85rem;
+		background: rgba(20, 24, 32, 0.12);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		backdrop-filter: blur(24px) saturate(1.15);
+		-webkit-backdrop-filter: blur(24px) saturate(1.15);
+		box-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.12),
+			0 16px 40px rgba(0, 0, 0, 0.16),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
 	}
 
-	:global(html:has(.register-page)),
-	:global(body:has(.register-page)) {
-		margin: 0;
-		padding: 0;
-		background: var(--reg-bg, #0b0d12);
-		color-scheme: dark;
-	}
-
-	@media (min-width: 768px) {
-		.register-page {
-			--reg-pad-x: 2rem;
-		}
-	}
-
-	@media (min-width: 1024px) {
-		.register-page {
-			--reg-shell: 85%;
-			--reg-pad-x: 2.75rem;
-		}
-	}
-
-	/* ─── Effects ─── */
-
-	.register-fx {
-		position: absolute;
-		inset: 0;
-		overflow: hidden;
-		pointer-events: none;
-		z-index: 0;
-		contain: paint;
-	}
-
-	.register-atmosphere {
-		position: absolute;
-		inset: 0;
-		background:
-			radial-gradient(circle at 50% 42%, rgba(90, 150, 255, 0.18), transparent 38%),
-			radial-gradient(circle at 22% 70%, rgba(66, 110, 219, 0.12), transparent 32%);
-	}
-
-	.register-vignette {
-		position: absolute;
-		inset: 0;
-		background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 50%, rgba(0, 0, 0, 0.4) 100%);
-	}
-
-	.register-orb {
-		position: absolute;
-		border-radius: 9999px;
-		opacity: 0.6;
-		animation: register-orb-drift 22s ease-in-out infinite;
-	}
-
-	.register-orb-a {
-		top: -10%;
-		right: -8%;
-		width: min(52vw, 36rem);
-		height: min(52vw, 36rem);
-		background: radial-gradient(
-			circle,
-			rgba(55, 120, 255, 0.42) 0%,
-			rgba(30, 70, 200, 0.16) 40%,
-			transparent 70%
-		);
-	}
-
-	.register-orb-b {
-		bottom: 4%;
-		left: -10%;
-		width: min(40vw, 26rem);
-		height: min(40vw, 26rem);
-		background: radial-gradient(circle, rgba(100, 160, 255, 0.26) 0%, transparent 68%);
-		animation-duration: 28s;
-		animation-direction: reverse;
-		opacity: 0.6;
-	}
-
-	.register-deco {
-		display: none;
-		position: absolute;
-		box-sizing: border-box;
-		max-width: 8rem;
-		max-height: 6rem;
-	}
-
-	@media (min-width: 1024px) {
-		.register-deco {
-			display: block;
-		}
-	}
-
-	.register-deco-1 {
-		--_deco-rotate: rotate(12deg);
-		top: 18%;
-		left: 7%;
-		width: 4.5rem;
-		height: 4.5rem;
-		border-radius: 1rem;
-		border: 1.5px solid rgba(66, 110, 219, 0.4);
-		animation: register-float 8s ease-in-out infinite;
-	}
-
-	.register-deco-2 {
-		--_deco-rotate: rotate(-8deg);
-		bottom: 28%;
-		right: 6%;
-		width: 5.5rem;
-		height: 3.5rem;
-		border-radius: 0.85rem;
-		border: 1.5px solid rgba(66, 110, 219, 0.32);
-		animation: register-float 10s ease-in-out infinite 1.5s;
-	}
-
-	.register-deco-3 {
-		--_deco-rotate: rotate(-15deg);
-		top: 55%;
-		left: 4%;
-		width: 3rem;
-		height: 5rem;
-		border-radius: 0.75rem;
-		border: 1px solid rgba(66, 110, 219, 0.25);
-		animation: register-float 12s ease-in-out infinite 3s;
-	}
-
-	.register-deco-4 {
-		--_deco-rotate: rotate(22deg);
-		top: 32%;
-		right: 10%;
-		width: 3rem;
-		height: 3rem;
-		border-radius: 0.7rem;
-		background: rgba(66, 110, 219, 0.12);
-		border: 1px solid rgba(66, 110, 219, 0.2);
-		animation: register-float 9s ease-in-out infinite 0.8s;
-	}
-
-	.register-deco-5 {
-		--_deco-rotate: rotate(-6deg);
-		bottom: 16%;
-		left: 9%;
-		width: 2.25rem;
-		height: 2.25rem;
-		border-radius: 0.5rem;
-		background: rgba(66, 110, 219, 0.14);
-		border: 1px solid rgba(66, 110, 219, 0.22);
-		animation: register-float 7s ease-in-out infinite 2.2s;
-	}
-
-	.register-deco-6 {
-		--_deco-rotate: rotate(0deg);
-		top: 12%;
-		right: 18%;
-		width: 1.25rem;
-		height: 1.25rem;
-		border-radius: 9999px;
-		background: rgba(66, 110, 219, 0.28);
-		animation: register-float 6s ease-in-out infinite 0.5s;
-	}
-
-	.register-deco-7 {
-		--_deco-rotate: rotate(0deg);
-		bottom: 38%;
-		left: 15%;
-		width: 0.85rem;
-		height: 0.85rem;
-		border-radius: 9999px;
-		background: rgba(66, 110, 219, 0.35);
-		animation: register-float 8s ease-in-out infinite 4s;
-	}
-
-	/* Wavy scribbles via mask-image (SVG in /public/decor/) */
-	.register-wave,
-	.register-scribble {
-		background: transparent;
-		border: none;
-		max-width: none;
-		max-height: none;
-		background-color: rgba(168, 199, 255, 0.55);
-		mask-repeat: no-repeat;
-		mask-size: 100% 100%;
-		mask-position: center;
-		-webkit-mask-repeat: no-repeat;
-		-webkit-mask-size: 100% 100%;
-		-webkit-mask-position: center;
-	}
-
-	.register-wave {
-		mask-image: url('/decor/wave.svg');
-		-webkit-mask-image: url('/decor/wave.svg');
-	}
-
-	.register-scribble {
-		mask-image: url('/decor/scribble.svg');
-		-webkit-mask-image: url('/decor/scribble.svg');
-	}
-
-	.register-wave-1 {
-		--_deco-rotate: rotate(8deg);
-		top: 18%;
-		left: 5%;
-		width: 10rem;
-		height: 2rem;
-		animation: register-float 11s ease-in-out infinite;
-	}
-
-	.register-wave-2 {
-		--_deco-rotate: rotate(-6deg);
-		top: 68%;
-		right: 6%;
-		width: 12rem;
-		height: 2.4rem;
-		opacity: 0.65;
-		animation: register-float 13s ease-in-out infinite 1.2s;
-	}
-
-	.register-wave-3 {
-		--_deco-rotate: rotate(-14deg);
-		bottom: 8%;
-		left: 14%;
-		width: 8rem;
-		height: 1.6rem;
-		opacity: 0.5;
-		animation: register-float 9s ease-in-out infinite 2.4s;
-	}
-
-	.register-wave-4 {
-		--_deco-rotate: rotate(4deg);
-		top: 42%;
-		right: 3%;
-		width: 6.5rem;
-		height: 1.5rem;
-		opacity: 0.45;
-		animation: register-float 10s ease-in-out infinite 3.6s;
-	}
-
-	.register-scribble-1 {
-		--_deco-rotate: rotate(-8deg);
-		top: 8%;
-		right: 16%;
-		width: 8rem;
-		height: 2.4rem;
-		opacity: 0.55;
-		animation: register-float 12s ease-in-out infinite 1.8s;
-	}
-
-	.register-scribble-2 {
-		--_deco-rotate: rotate(6deg);
-		bottom: 24%;
-		right: 18%;
-		width: 7rem;
-		height: 2.1rem;
-		opacity: 0.4;
-		animation: register-float 14s ease-in-out infinite 3s;
-	}
-
-	@keyframes register-float {
-		0%,
-		100% {
-			transform: translate3d(0, 0, 0) var(--_deco-rotate, rotate(0deg));
-		}
-		50% {
-			transform: translate3d(0, -6px, 0) var(--_deco-rotate, rotate(0deg));
-		}
-	}
-
-	@keyframes register-orb-drift {
-		0%,
-		100% {
-			transform: translate3d(0, 0, 0);
-		}
-		50% {
-			transform: translate3d(1.5%, -2%, 0);
-		}
-	}
-
-	/* ─── Topbar ─── */
-
-	.register-topbar {
-		position: relative;
-		z-index: 2;
-		padding: 1rem var(--reg-pad-x) 0.5rem;
-	}
-
-	.register-topbar-inner {
-		width: var(--reg-shell);
-		max-width: 100%;
-		margin: 0 auto;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-	}
-
-	.register-brand {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.65rem;
-		text-decoration: none;
-		color: var(--reg-on-surface);
-	}
-
-	.register-brand-logo {
-		width: 2.25rem;
-		height: 2.25rem;
-		object-fit: contain;
-	}
-
-	.register-brand-wordmark {
-		font-size: 1.35rem;
-		font-weight: 800;
-		letter-spacing: -0.03em;
-		line-height: 1;
-	}
-
-	.register-topbar-cta {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 2.5rem;
-		padding: 0.55rem 1.15rem;
-		border-radius: 9999px;
-		background: var(--reg-primary);
-		color: var(--reg-on-primary);
-		font-size: 0.92rem;
-		font-weight: 700;
-		text-decoration: none;
-		transition: background-color 180ms ease, transform 180ms ease;
-	}
-
-	.register-topbar-cta:hover {
-		background: var(--reg-primary-hover);
-		transform: translateY(-1px);
-	}
-
-	/* ─── Shell & Card ─── */
-
-	.register-shell {
-		position: relative;
-		z-index: 2;
-		flex: 1;
-		width: var(--reg-shell);
-		max-width: 100%;
-		margin: 0 auto;
-		padding: 1.25rem var(--reg-pad-x) 2rem;
-		display: flex;
+	:global(.auth-page[data-register-page] .auth-shell) {
+		padding: 0.75rem var(--auth-pad-x) 0.35rem;
 		align-items: flex-start;
-		justify-content: center;
+	}
+
+	:global(.auth-page[data-register-page] .auth-page-footer) {
+		padding: 0.35rem var(--auth-pad-x) 0.85rem;
 	}
 
 	@media (min-width: 900px) {
-		.register-shell {
+		:global(.auth-page[data-register-page] .auth-shell) {
 			align-items: center;
 		}
 	}
 
-	.register-card {
-		position: relative;
-		z-index: 2;
+	.register-card-header {
+		margin-bottom: 1.25rem;
+	}
+
+	.register-card-header :global(.auth-title) {
+		margin-bottom: 0.35rem;
+		font-size: clamp(1.25rem, 2vw, 1.45rem);
+	}
+
+	.register-card-header :global(.auth-subtitle) {
+		font-size: 0.88rem;
+		line-height: 1.4;
+	}
+
+	.register-panel-titles {
 		width: 100%;
-		max-width: 44rem;
-		padding: 1.75rem 1.35rem 1.75rem;
-		border-radius: var(--reg-radius);
-		background: rgba(28, 27, 31, 0.45);
-		border: 1px solid rgba(255, 255, 255, 0.12);
-		border-top-color: rgba(168, 199, 255, 0.35);
-		backdrop-filter: blur(22px) saturate(1.35);
-		-webkit-backdrop-filter: blur(22px) saturate(1.35);
-		box-shadow:
-			0 1px 2px rgba(0, 0, 0, 0.35),
-			0 24px 56px rgba(0, 0, 0, 0.35),
-			0 0 80px rgba(66, 110, 219, 0.1),
-			inset 0 1px 0 rgba(255, 255, 255, 0.1);
-		animation: register-card-in 360ms cubic-bezier(0.2, 0, 0, 1);
 	}
 
-	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-		.register-card {
-			background: rgba(28, 27, 31, 0.92);
-		}
+	.register-grid-2 {
+		margin-bottom: 1rem;
 	}
 
-	@media (min-width: 640px) {
-		.register-card {
-			padding: 2.5rem 2.5rem 2.25rem;
-		}
+	.register-card :global(.auth-form-grid) {
+		gap: 1.15rem;
 	}
 
-	@keyframes register-card-in {
-		from {
-			opacity: 0;
-			transform: translateY(12px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
+	.register-card :global(.auth-field) {
+		gap: 0.5rem;
 	}
 
-	/* ─── Horizontal Stepper ─── */
+	.register-card :global(.auth-input) {
+		min-height: 3rem;
+		padding: 0.75rem 1rem;
+		font-size: 0.95rem;
+	}
+
+	.register-card :global(.auth-actions) {
+		margin-top: 1.15rem;
+		padding-top: 0;
+		border-top: none;
+		gap: 0.75rem;
+	}
+
+	.register-card :global(.auth-card-footer) {
+		margin-top: 0.75rem;
+		padding-top: 0;
+		border-top: none;
+	}
+
+	.register-card-footer {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+	}
+
+	.register-card-footer :global(.auth-footer-text) {
+		margin: 0;
+		font-size: 0.94rem;
+		color: var(--auth-on-surface-variant);
+		line-height: 1.45;
+		text-wrap: pretty;
+	}
+
+	.register-actions--primary {
+		margin-top: 1.15rem;
+	}
+
+	.register-actions--primary :global(.auth-btn) {
+		width: 100%;
+	}
+
+	.register-actions.auth-actions--between {
+		margin-top: 1.15rem;
+		padding-top: 0;
+		border-top: none;
+		gap: 0.75rem;
+	}
+
+	.register-card :global(.auth-btn) {
+		min-height: 3rem;
+		padding: 0.75rem 1.35rem;
+		font-size: 0.95rem;
+	}
+
+	.auth-label-required {
+		color: var(--auth-error);
+		font-weight: 800;
+	}
+
+	.register-error-banner.is-hidden {
+		display: none !important;
+	}
 
 	.register-stepper {
 		display: flex;
 		align-items: flex-start;
 		justify-content: center;
 		gap: 0;
-		margin-bottom: 1.75rem;
+		margin-bottom: 1.15rem;
 	}
 
 	.register-step {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.45rem;
+		gap: 0.3rem;
 		opacity: 0.5;
 		transition: opacity 200ms ease;
-		min-width: 5.5rem;
+		min-width: 4.75rem;
 	}
 
 	.register-step.is-active {
@@ -1160,132 +823,69 @@ const currentStep = normalizeStep(step);
 	}
 
 	.register-step-node {
-		width: 2.25rem;
-		height: 2.25rem;
+		width: 1.9rem;
+		height: 1.9rem;
 		border-radius: 9999px;
 		border: 1.5px solid rgba(255, 255, 255, 0.2);
 		background: rgba(255, 255, 255, 0.06);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
-		color: var(--reg-on-surface-variant);
+		color: var(--auth-on-surface-variant);
 		display: flex;
 		align-items: center;
 		justify-content: center;
 		font-size: 0.95rem;
 		font-weight: 700;
-		transition: all 200ms ease;
+		transition:
+			background-color 200ms ease,
+			border-color 200ms ease,
+			color 200ms ease;
 	}
 
 	.register-step.is-active .register-step-node {
-		background: rgba(66, 110, 219, 0.65);
+		background: var(--auth-primary);
 		border-color: rgba(168, 199, 255, 0.45);
-		color: var(--reg-on-primary);
-		box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.22);
+		color: var(--auth-on-primary);
 	}
 
 	.register-step-label {
 		font-size: 0.8rem;
 		font-weight: 600;
-		color: var(--reg-on-surface-variant);
+		color: var(--auth-on-surface-variant);
 		text-align: center;
 	}
 
 	.register-step.is-active .register-step-label {
-		color: var(--reg-on-surface);
+		color: var(--auth-on-surface);
 	}
 
 	.register-step-line {
-		width: 3.5rem;
+		width: 3rem;
 		height: 2px;
-		margin-top: 1.05rem;
+		margin-top: 0.85rem;
 		background: rgba(255, 255, 255, 0.14);
 		flex-shrink: 0;
 		align-self: flex-start;
 	}
 
 	@media (min-width: 640px) {
+		.register-card {
+			padding: 2.15rem 1.85rem 2rem;
+			min-height: 30rem;
+		}
+
 		.register-step-line {
-			width: 5rem;
+			width: 4rem;
 		}
+
 		.register-step {
-			min-width: 7rem;
+			min-width: 6rem;
 		}
 	}
 
-	/* ─── Card Header ─── */
-
-	.register-card-header {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
-		gap: 0;
-		margin-bottom: 1.5rem;
+	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+		.register-card {
+			background: rgba(20, 24, 32, 0.88);
+		}
 	}
-
-	.register-card-logo-wrap {
-		display: flex;
-		justify-content: center;
-		align-items: center;
-		width: 100%;
-		margin: 0 0 1rem;
-	}
-
-	.register-card-logo {
-		display: block;
-		width: 4.5rem;
-		height: 4.5rem;
-		margin: 0;
-		object-fit: contain;
-		filter: drop-shadow(0 8px 20px rgba(66, 110, 219, 0.28));
-	}
-
-	.register-panel-titles {
-		min-width: 0;
-		width: 100%;
-	}
-
-	.register-title {
-		margin: 0 0 0.3rem;
-		font-size: clamp(1.35rem, 2.2vw, 1.65rem);
-		font-weight: 800;
-		letter-spacing: -0.03em;
-		color: var(--reg-on-surface);
-		line-height: 1.2;
-	}
-
-	.register-subtitle {
-		margin: 0;
-		font-size: 0.92rem;
-		line-height: 1.45;
-		color: var(--reg-on-surface-variant);
-	}
-
-	/* ─── Error Banner ─── */
-
-	.register-error-banner {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.65rem;
-		padding: 0.9rem 1rem;
-		border-radius: 0.85rem;
-		margin-bottom: 1.25rem;
-		font-size: 0.92rem;
-		font-weight: 600;
-		line-height: 1.4;
-		background: rgba(127, 29, 29, 0.35);
-		border: 1px solid rgba(255, 180, 171, 0.35);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
-		color: var(--reg-error);
-	}
-
-	.register-error-banner .material-symbols-rounded {
-		font-size: 1.25rem;
-		flex-shrink: 0;
-	}
-
-	/* ─── Form ─── */
 
 	.register-panel {
 		animation: register-fade 280ms cubic-bezier(0.2, 0, 0, 1);
@@ -1302,475 +902,54 @@ const currentStep = normalizeStep(step);
 		}
 	}
 
-	.register-grid-2 {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: 1.15rem;
-		margin-bottom: 1.15rem;
+	.register-actions.auth-actions--between :global(.auth-btn) {
+		flex-shrink: 0;
 	}
 
-	@media (min-width: 640px) {
-		.register-grid-2 {
-			grid-template-columns: 1fr 1fr;
-			gap: 1.25rem;
-		}
-	}
-
-	.register-field {
-		display: flex;
-		flex-direction: column;
-		gap: 0.45rem;
-	}
-
-	.register-label {
-		font-size: 0.88rem;
-		font-weight: 600;
-		color: var(--reg-on-surface);
-		margin-left: 0.15rem;
-	}
-
-	.register-label-required {
-		color: var(--reg-error);
-		font-weight: 800;
-	}
-
-	.register-field-help {
-		margin: 0.1rem 0 0;
-		margin-left: 0.15rem;
-		font-size: 0.78rem;
-		line-height: 1.35;
-		color: rgba(196, 198, 208, 0.7);
-	}
-
-	.register-input {
-		box-sizing: border-box;
-		width: 100%;
-		min-height: 3rem;
-		padding: 0.8rem 1rem;
-		border-radius: 0.85rem;
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		background: transparent;
-		backdrop-filter: none;
-		-webkit-backdrop-filter: none;
-		color: var(--reg-on-surface);
-		caret-color: var(--reg-primary);
-		font: inherit;
-		font-size: 1rem;
-		line-height: 1.4;
-		outline: none;
-		transition:
-			background-color 180ms ease,
-			border-color 180ms ease,
-			box-shadow 180ms ease;
-		-webkit-text-fill-color: currentColor;
-	}
-
-	.register-input::placeholder {
-		color: color-mix(in srgb, var(--reg-on-surface-variant) 65%, transparent);
-	}
-
-	.register-input:focus {
-		border-color: rgba(168, 199, 255, 0.5);
-		background: rgba(255, 255, 255, 0.02);
-		box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.2);
-	}
-
-	.register-input.is-invalid {
-		border-color: rgba(255, 180, 171, 0.55);
-		background: rgba(127, 29, 29, 0.28);
-	}
-
-	.register-input.is-invalid:focus {
-		box-shadow: 0 0 0 4px rgba(255, 180, 171, 0.18);
-	}
-
-	.register-select-wrap {
-		position: relative;
-	}
-
-	.register-select-wrap::after {
-		content: '';
-		position: absolute;
-		right: 1.1rem;
-		top: 50%;
-		width: 0.5rem;
-		height: 0.5rem;
-		border-right: 2px solid rgba(196, 198, 208, 0.85);
-		border-bottom: 2px solid rgba(196, 198, 208, 0.85);
-		transform: translateY(-65%) rotate(45deg);
-		pointer-events: none;
-	}
-
-	.register-select {
-		cursor: pointer;
-		appearance: none;
-		-webkit-appearance: none;
-		color-scheme: dark;
-		background-color: transparent;
-		background-image: none;
-		padding-right: 2.5rem;
-	}
-
-	.register-select:disabled {
-		opacity: 0.55;
-		cursor: not-allowed;
-	}
-
-	.register-select-wrap:has(.register-select:disabled)::after {
-		opacity: 0.45;
-	}
-
-	.register-select option,
-	.register-select optgroup {
-		background-color: #1c1b1f;
-		background: #1c1b1f;
-		color: #e5e2e1;
-	}
-
-	.register-select option:checked,
-	.register-select option:hover,
-	.register-select option:focus {
-		background-color: #2a292d;
-		color: #ffffff;
-	}
-
-	.register-input-affix {
-		position: relative;
-		display: flex;
-		align-items: center;
-	}
-
-	.register-input-affix .register-input {
-		padding-right: 3rem;
-	}
-
-	.register-icon-btn {
-		position: absolute;
-		right: 0.4rem;
-		width: 2.35rem;
-		height: 2.35rem;
-		border: none;
-		border-radius: 9999px;
-		background: transparent;
-		color: var(--reg-on-surface-variant);
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		cursor: pointer;
-		transition: background-color 160ms ease, color 160ms ease;
-	}
-
-	.register-icon-btn:hover {
-		background: rgba(255, 255, 255, 0.1);
-		color: var(--reg-on-surface);
-	}
-
-	.register-icon-btn .material-symbols-rounded {
-		font-size: 1.25rem;
-	}
-
-	.register-field-error {
-		font-size: 0.84rem;
-		font-weight: 500;
-		color: var(--reg-error);
-		margin-left: 0.15rem;
-	}
-
-	/* Phone group */
-	.register-phone-group {
-		display: flex;
-		width: 100%;
-		border-radius: 0.85rem;
-	}
-
-	.register-phone-prefix {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0 0.95rem;
-		border: 1px solid rgba(255, 255, 255, 0.08);
-		border-right: 0;
-		border-radius: 0.85rem 0 0 0.85rem;
-		background: transparent;
-		backdrop-filter: none;
-		-webkit-backdrop-filter: none;
-		color: var(--reg-on-surface-variant);
-		font-size: 0.95rem;
-		font-weight: 700;
-		white-space: nowrap;
-		transition: border-color 180ms ease, background-color 180ms ease;
-	}
-
-	.register-phone-input {
-		border-top-left-radius: 0;
-		border-bottom-left-radius: 0;
-	}
-
-	.register-phone-input:focus {
+	.register-btn-primary.auth-btn-primary {
 		box-shadow: none;
 	}
 
-	.register-phone-group:focus-within .register-phone-prefix,
-	.register-phone-group:focus-within .register-phone-input {
-		border-color: rgba(168, 199, 255, 0.55);
-	}
-
-	.register-phone-group:focus-within {
-		box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.22);
-		border-radius: 0.85rem;
-	}
-
-	.register-phone-group.is-invalid .register-phone-prefix {
-		border-color: rgba(255, 180, 171, 0.55);
-		background: rgba(127, 29, 29, 0.28);
-		color: var(--reg-error);
-	}
-
-	.register-phone-group.is-invalid:focus-within {
-		box-shadow: 0 0 0 4px rgba(255, 180, 171, 0.18);
-	}
-
-	/* Password strength */
-	.register-password-strength {
-		display: grid;
-		gap: 0.35rem;
-		margin-top: 0.35rem;
-	}
-
-	.register-password-strength.is-hidden {
-		display: none;
-	}
-
-	.register-password-strength-bars {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 0.35rem;
-	}
-
-	.register-password-strength-segment {
-		height: 0.28rem;
-		border-radius: 9999px;
-		background-color: rgba(255, 255, 255, 0.14);
-		transition: background-color 0.2s ease;
-	}
-
-	.register-password-strength[data-tone='weak'] .register-password-strength-segment.is-active {
-		background-color: #dc2626;
-	}
-
-	.register-password-strength[data-tone='warning'] .register-password-strength-segment.is-active {
-		background-color: #f59e0b;
-	}
-
-	.register-password-strength[data-tone='good'] .register-password-strength-segment.is-active {
-		background-color: #0ea5e9;
-	}
-
-	.register-password-strength[data-tone='strong'] .register-password-strength-segment.is-active {
-		background-color: #059669;
-	}
-
-	.register-password-strength-text {
-		margin: 0;
-		font-size: 0.82rem;
-		font-weight: 600;
-		color: var(--reg-on-surface-variant);
-		text-align: right;
-	}
-
-	/* Actions */
-	.register-actions {
-		display: flex;
-		align-items: center;
-		margin-top: 1.75rem;
-		padding-top: 1.35rem;
-		border-top: 1px solid rgba(255, 255, 255, 0.1);
-		gap: 1rem;
-	}
-
-	.register-actions--between {
-		justify-content: space-between;
-	}
-
-	.register-btn-primary {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 3rem;
-		padding: 0.8rem 1.75rem;
-		border: none;
-		border-radius: 9999px;
-		background: var(--reg-primary);
-		color: var(--reg-on-primary);
-		font: inherit;
-		font-size: 1rem;
-		font-weight: 700;
-		cursor: pointer;
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
-		transition: background-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
-	}
-
-	.register-actions:has([data-next-step]) {
-		margin-top: 1rem;
-		margin-bottom: 1rem;
-	}
-
-	.register-btn-primary:hover {
-		background: var(--reg-primary-hover);
-		transform: translateY(-1px);
-		box-shadow: 0 8px 20px rgba(66, 110, 219, 0.28);
-	}
-
-	.register-btn-primary:disabled {
-		opacity: 0.55;
-		cursor: not-allowed;
+	.register-btn-primary.auth-btn-primary:hover {
+		background: var(--auth-primary-hover);
+		box-shadow: none;
 		transform: none;
-		box-shadow: none;
 	}
 
-	.register-btn-primary:disabled:hover {
-		background: var(--reg-primary);
-		transform: none;
-		box-shadow: none;
+	.register-btn-primary.auth-btn-primary:active {
+		transform: scale(0.98);
 	}
-
-	.register-btn-tonal {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 3rem;
-		padding: 0.8rem 1.75rem;
-		border: 1px solid rgba(255, 255, 255, 0.18);
-		border-radius: 9999px;
-		background: rgba(255, 255, 255, 0.08);
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
-		color: var(--reg-on-surface);
-		font: inherit;
-		font-size: 1rem;
-		font-weight: 700;
-		cursor: pointer;
-		transition: background-color 180ms ease, border-color 180ms ease;
-	}
-
-	.register-btn-tonal:hover {
-		background: rgba(255, 255, 255, 0.14);
-		border-color: rgba(255, 255, 255, 0.28);
-	}
-
-	.register-link-accent {
-		color: var(--reg-on-surface-variant);
-		text-decoration: none;
-		font-size: 0.92rem;
-		line-height: 1.4;
-	}
-
-	.register-link-accent strong {
-		color: color-mix(in srgb, var(--reg-primary) 72%, #a8c7ff);
-		font-weight: 700;
-		transition: color 160ms ease;
-	}
-
-	.register-link-accent:hover strong {
-		color: #a8c7ff;
-		text-decoration: underline;
-	}
-
-	.register-link-accent--inline {
-		flex: 1;
-		min-width: 0;
-		padding-right: 0.75rem;
-		text-align: left;
-	}
-
-	/* Card footer */
-	.register-card-footer {
-		margin-top: 1.5rem;
-		padding-top: 1.15rem;
-		border-top: 1px solid rgba(255, 255, 255, 0.1);
-		text-align: center;
-	}
-
-	.register-footer-text {
-		margin: 0;
-		font-size: 0.94rem;
-		color: var(--reg-on-surface-variant);
-	}
-
-	.register-footer-link {
-		color: inherit;
-		text-decoration: none;
-		margin-left: 0.2rem;
-	}
-
-	.register-footer-link strong {
-		color: color-mix(in srgb, var(--reg-primary) 72%, #a8c7ff);
-		font-weight: 700;
-	}
-
-	.register-footer-link:hover strong {
-		color: #a8c7ff;
-		text-decoration: underline;
-	}
-
-	/* Page footer */
-	.register-page-footer {
-		position: relative;
-		z-index: 1;
-		width: var(--reg-shell);
-		max-width: 100%;
-		margin: 0 auto;
-		text-align: center;
-		padding: 0.75rem var(--reg-pad-x) 1.5rem;
-		box-sizing: border-box;
-	}
-
-	.register-page-footer p {
-		margin: 0;
-		font-size: 0.82rem;
-		color: rgba(196, 198, 208, 0.45);
-		letter-spacing: 0.01em;
-	}
-
-	/* ─── Mobile compact (fit without scroll) ─── */
 
 	@media (max-width: 640px) {
-		.register-page {
-			--reg-pad-x: 0.85rem;
+		:global(.auth-page[data-register-page] .auth-shell) {
+			padding: 0.65rem var(--auth-pad-x) 0.25rem;
 		}
 
-		.register-topbar {
-			padding: 0.5rem var(--reg-pad-x) 0.2rem;
-		}
-
-		.register-brand-logo {
-			width: 1.85rem;
-			height: 1.85rem;
-		}
-
-		.register-brand-wordmark {
-			font-size: 1.15rem;
-		}
-
-		.register-topbar-cta {
-			min-height: 2.1rem;
-			padding: 0.35rem 0.85rem;
-			font-size: 0.8rem;
-		}
-
-		.register-shell {
-			padding: 0.3rem var(--reg-pad-x) 0.45rem;
-			align-items: center;
-			justify-content: center;
+		:global(.auth-page[data-register-page] .auth-page-footer) {
+			padding: 0.25rem var(--auth-pad-x) 0.65rem;
 		}
 
 		.register-card {
-			width: 100%;
-			height: auto;
-			align-self: center;
-			flex: 0 0 auto;
-			padding: 0.9rem 0.95rem 0.85rem;
-			border-radius: 1.25rem;
+			max-width: none;
+			min-height: 0;
+			background: transparent;
+			border: none;
+			backdrop-filter: none;
+			-webkit-backdrop-filter: none;
+			box-shadow: none;
+			border-radius: 0;
+			padding: 0;
+		}
+
+		.register-card-header {
+			align-items: center;
+			text-align: center;
+			gap: 0.35rem;
+			margin-bottom: 1rem;
+		}
+
+		.register-card-header :global(.auth-title) {
+			margin-bottom: 0.2rem;
 		}
 
 		.register-stepper {
@@ -1778,14 +957,13 @@ const currentStep = normalizeStep(step);
 		}
 
 		.register-step {
-			min-width: 4rem;
-			gap: 0.25rem;
+			min-width: 3.75rem;
 		}
 
 		.register-step-node {
-			width: 1.75rem;
-			height: 1.75rem;
-			font-size: 0.78rem;
+			width: 1.65rem;
+			height: 1.65rem;
+			font-size: 0.75rem;
 		}
 
 		.register-step-label {
@@ -1793,204 +971,53 @@ const currentStep = normalizeStep(step);
 		}
 
 		.register-step-line {
-			width: 2rem;
-			margin-top: 0.8rem;
+			width: 1.75rem;
+			margin-top: 0.72rem;
 		}
 
-		.register-card-header {
-			margin-bottom: 0.7rem;
-		}
-
-		.register-card-logo-wrap {
+		.register-grid-2 {
 			margin-bottom: 0.65rem;
 		}
 
-		.register-card-logo {
-			width: 3.25rem;
-			height: 3.25rem;
+		.register-card :global(.auth-form-grid) {
+			gap: 0.75rem;
 		}
 
-		.register-title {
-			font-size: 1.15rem;
-			margin-bottom: 0.1rem;
+		.register-card :global(.auth-field) {
+			gap: 0.35rem;
 		}
 
-		.register-subtitle {
-			font-size: 0.78rem;
-			line-height: 1.3;
-			display: -webkit-box;
-			-webkit-line-clamp: 2;
-			-webkit-box-orient: vertical;
-			overflow: hidden;
-		}
-
-		.register-grid-2 {
-			gap: 0.55rem;
-			margin-bottom: 0.55rem;
-		}
-
-		.register-field {
-			gap: 0.22rem;
-		}
-
-		.register-label {
-			font-size: 0.76rem;
-		}
-
-		.register-field-help {
-			display: none;
-		}
-
-		.register-input {
+		.register-card :global(.auth-input) {
 			min-height: 2.45rem;
-			padding: 0.5rem 0.75rem;
+			padding: 0.5rem 0.8rem;
 			font-size: 0.92rem;
-			border-radius: 0.65rem;
 		}
 
-		.register-phone-prefix {
-			padding: 0 0.65rem;
-			font-size: 0.82rem;
-			border-radius: 0.65rem 0 0 0.65rem;
+		.register-card :global(.auth-field-help) {
+			display: none;
 		}
 
-		.register-error-banner {
-			padding: 0.55rem 0.7rem;
-			margin-bottom: 0.6rem;
-			font-size: 0.8rem;
-		}
-
-		.register-password-strength {
-			margin-top: 0.2rem;
-			gap: 0.2rem;
-		}
-
-		.register-password-strength-text {
-			font-size: 0.72rem;
-		}
-
-		.register-actions {
-			margin-top: 0.7rem;
-			padding-top: 0.65rem;
-			gap: 0.45rem;
-		}
-
-		.register-actions:has([data-next-step]) {
+		.register-actions--primary {
 			margin-top: 1rem;
-			margin-bottom: 1rem;
 		}
 
-		.register-actions--between {
+		.register-card-footer :global(.auth-footer-text) {
+			font-size: 0.88rem;
+		}
+
+		.register-actions.auth-actions--between {
 			flex-direction: column-reverse;
-			gap: 0.45rem;
+			align-items: stretch;
 		}
 
-		.register-btn-primary,
-		.register-btn-tonal {
+		.register-actions.auth-actions--between :global(.auth-btn) {
 			width: 100%;
-			min-height: 2.55rem;
-			padding: 0.55rem 1rem;
-			font-size: 0.92rem;
-		}
-
-		.register-link-accent--inline {
-			padding-right: 0;
-			text-align: center;
-			font-size: 0.8rem;
-		}
-
-		.register-card-footer {
-			margin-top: 0.65rem;
-			padding-top: 0.55rem;
-		}
-
-		.register-footer-text {
-			font-size: 0.8rem;
-		}
-
-		.register-page-footer {
-			padding: 0.25rem var(--reg-pad-x) 0.55rem;
-		}
-
-		.register-page-footer p {
-			font-size: 0.7rem;
-		}
-	}
-
-	@media (max-width: 640px) and (max-height: 780px) {
-		.register-subtitle {
-			display: none;
-		}
-
-		.register-card-logo-wrap {
-			margin-bottom: 0.5rem;
-		}
-
-		.register-card-logo {
-			width: 2.75rem;
-			height: 2.75rem;
-		}
-
-		.register-page-footer,
-		.register-card-footer {
-			display: none;
-		}
-
-		.register-card {
-			padding: 0.75rem 0.85rem 0.7rem;
-		}
-
-		.register-stepper {
-			margin-bottom: 0.55rem;
-		}
-
-		.register-card-header {
-			margin-bottom: 0.5rem;
-		}
-
-		.register-title {
-			font-size: 1.05rem;
-		}
-
-		.register-grid-2 {
-			gap: 0.45rem;
-			margin-bottom: 0.45rem;
-		}
-
-		.register-input {
-			min-height: 2.3rem;
-			padding: 0.42rem 0.7rem;
-		}
-
-		.register-actions {
-			margin-top: 0.55rem;
-			padding-top: 0.5rem;
-		}
-
-		.register-actions:has([data-next-step]) {
-			margin-top: 1rem;
-			margin-bottom: 1rem;
-		}
-
-		.register-btn-primary,
-		.register-btn-tonal {
-			min-height: 2.4rem;
-		}
-
-		.register-link-accent--inline {
-			font-size: 0.74rem;
 		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.register-orb,
-		.register-deco,
-		.register-card,
-		.register-panel,
-		.register-topbar-cta,
-		.register-btn-primary {
+		.register-panel {
 			animation: none;
-			transition: none;
 		}
 	}
 </style>

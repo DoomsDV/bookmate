@@ -2,7 +2,7 @@
    Auth shared design system
    Usado por: ForgotPassword, ResetPassword, VerifyEmail, AcceptInvite,
               CreateOrganization, select-org (páginas auth secundarias).
-   Login / Register mantienen sus estilos scoped propios por ahora.
+   Login usa auth.css + overrides en LoginForm. Register usa auth.css + overrides en RegisterForm.
    ========================================================================== */
 
 .auth-page {
