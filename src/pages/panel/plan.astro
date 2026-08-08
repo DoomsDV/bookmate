@@ -2365,6 +2365,12 @@ const defaultCardHint = defaultCard
 	[data-billing-profile-section].hidden {
 		display: none !important;
 	}
+	/* Resumen colapsado: solo móvil; en PC se edita desde el botón del ojo */
+	@media (min-width: 768px) {
+		[data-billing-profile-section] {
+			display: none !important;
+		}
+	}
 	.plan-billing-profile-collapsed-copy {
 		display: flex;
 		align-items: center;
@@ -2725,13 +2731,15 @@ const defaultCardHint = defaultCard
 		display: none;
 		align-items: center;
 		gap: 0.35rem;
-		border: 0;
-		background: transparent;
-		padding: 0.35rem 0.5rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 32%, transparent);
+		border-radius: 0.7rem;
+		background: color-mix(in srgb, var(--primary) 6%, transparent);
+		padding: 0.4rem 0.75rem;
 		font-size: 0.84rem;
 		font-weight: 700;
 		color: var(--primary);
 		cursor: pointer;
+		transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
 	}
 	.plan-billing-view-link .material-symbols-rounded {
 		font-size: 1.15rem;
@@ -2739,6 +2747,14 @@ const defaultCardHint = defaultCard
 	@media (min-width: 768px) {
 		.plan-billing-view-link:not(.hidden) {
 			display: inline-flex;
+		}
+		.plan-billing-view-link:hover {
+			background: color-mix(in srgb, var(--primary) 14%, transparent);
+			border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+		}
+		.plan-billing-view-link:focus-visible {
+			outline: 2px solid var(--primary);
+			outline-offset: 2px;
 		}
 	}
 	.plan-ghost-card {
