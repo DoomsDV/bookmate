@@ -2,9 +2,7 @@
 import Layout from '../../layouts/Layout.astro';
 import AppAlert from '../../components/AppAlert.astro';
 import {
-	getPublicProfileWithOrds,
 	getPublicReservationWithOrds,
-	normalizePublicBookingLocations,
 	PublicBookingApiError,
 	type PublicBookingLocation,
 	type PublicReservationDetail,
@@ -72,27 +70,14 @@ const rebookHref =
 			: '/';
 const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 
-let reservationLocations: PublicBookingLocation[] = [];
-let professionalImageUrl = '';
-let organizationName = '';
-let serviceImageUrl = '';
-let durationMinutes = 0;
-
-if (reservation && organizationSlug && professionalSlug) {
-	try {
-		const profile = await getPublicProfileWithOrds(organizationSlug, professionalSlug);
-		reservationLocations = normalizePublicBookingLocations(profile.locations);
-		professionalImageUrl = String(profile.image_url || '').trim();
-		organizationName = String(profile.organization_name || '').trim();
-		durationMinutes = Number(reservation.duration_minutes || 0) || 0;
-		const matchedService = Array.isArray(profile.services)
-			? profile.services.find((svc) => Number(svc.id_service) === Number(reservation.ser_id_service))
-			: null;
-		serviceImageUrl = String(matchedService?.image_url || '').trim();
-	} catch {
-		reservationLocations = [];
-	}
-}
+// locations[]/professional_image_url/service_image_url ya vienen en el detalle
+// de la reserva (Fase 6 N+1): evita el 2do fetch que antes hacía getPublicProfileWithOrds
+// solo para obtener estos campos.
+let reservationLocations: PublicBookingLocation[] =
+	reservation?.locations && reservation.locations.length > 0 ? reservation.locations : [];
+const professionalImageUrl = String(reservation?.professional_image_url || '').trim();
+const serviceImageUrl = String(reservation?.service_image_url || '').trim();
+const durationMinutes = Number(reservation?.duration_minutes || 0) || 0;
 
 if (reservation && reservationLocations.length === 0) {
 	reservationLocations = [
@@ -104,12 +89,9 @@ if (reservation && reservationLocations.length === 0) {
 	];
 }
 
-if (reservation && !durationMinutes) {
-	durationMinutes = Number(reservation.duration_minutes || 0) || 0;
-}
-
 const professionalDisplayName = String(reservation?.professional_name || '').trim();
-const organizationDisplayName = organizationName || organizationSlug || 'Hasel';
+const organizationDisplayName =
+	String(reservation?.organization_name || '').trim() || organizationSlug || 'Hasel';
 const locationAddress = String(reservation?.location_address || '').trim();
 const durationLabel = durationMinutes > 0 ? `${durationMinutes} min` : '';
 const serializedLocations = reservation

@@ -180,9 +180,12 @@ export interface PublicReservationDetail {
 	pro_id_professional: number;
 	professional_name: string;
 	professional_slug?: string;
+	professional_image_url?: string;
 	organization_slug?: string;
+	organization_name?: string;
 	ser_id_service: number;
 	service_name: string;
+	service_image_url?: string;
 	duration_minutes: number;
 	customer_name: string;
 	customer_phone: string;
@@ -197,6 +200,8 @@ export interface PublicReservationDetail {
 	refund_amount?: number | null;
 	refund_alias?: string | null;
 	refund_preview?: PublicReservationRefundPreview | null;
+	/** Sucursales activas de la organización (evita un 2do fetch al perfil público). */
+	locations?: PublicBookingLocation[];
 }
 
 export interface PublicReservationUpdatePayload {
@@ -825,9 +830,12 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 		pro_id_professional: professionalId,
 		professional_name: String(source.professional_name || '').trim(),
 		professional_slug: String(source.professional_slug || '').trim() || undefined,
+		professional_image_url: String(source.professional_image_url || '').trim() || undefined,
 		organization_slug: String(source.organization_slug || source.org_slug || '').trim() || undefined,
+		organization_name: String(source.organization_name || '').trim() || undefined,
 		ser_id_service: serviceId,
 		service_name: String(source.service_name || '').trim(),
+		service_image_url: String(source.service_image_url || '').trim() || undefined,
 		duration_minutes: durationMinutes,
 		customer_name: String(source.customer_name || '').trim(),
 		customer_phone: String(source.customer_phone || '').trim(),
@@ -853,6 +861,7 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 				policy_summary: String(p.policy_summary || '').trim() || null,
 			};
 		})(),
+		locations: normalizePublicBookingLocations(source.locations) as PublicBookingLocation[],
 	};
 };
 

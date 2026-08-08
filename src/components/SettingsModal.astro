@@ -2418,10 +2418,25 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (this.isAdmin && this.els.paymentsForm) {
 				this.setPaymentsPanelState({ loading: true, ready: false });
 			}
+			// profile/me + workspace + payments son independientes entre sí: se
+			// disparan todas a la vez en vez de esperar profile antes de pedir workspace.
 			const paymentsPromise =
 				this.isAdmin && this.els.paymentsForm ? this.loadPayments() : Promise.resolve();
+			const profilePromise = this.requestApi(
+				'/api/profile/me',
+				{ method: 'GET', headers: { Accept: 'application/json' } },
+				'No fue posible cargar perfil.'
+			);
+			const workspacePromise = this.isAdmin
+				? this.requestApi(
+						'/api/workspace',
+						{ method: 'GET', headers: { Accept: 'application/json' } },
+						'No fue posible cargar negocio.'
+					)
+				: Promise.resolve(null);
+
 			try {
-				const profileRes = await this.requestApi('/api/profile/me', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar perfil.');
+				const [profileRes, workspaceRes] = await Promise.all([profilePromise, workspacePromise]);
 				this.fillProfile(profileRes.data || {});
 
 				if (this.els.preferencesForm) {
@@ -2432,8 +2447,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 					}
 				}
 
-				if (this.isAdmin) {
-					const workspaceRes = await this.requestApi('/api/workspace', { method: 'GET', headers: { Accept: 'application/json' } }, 'No fue posible cargar negocio.');
+				if (this.isAdmin && workspaceRes) {
 					this.fillWorkspace((workspaceRes.data as unknown as WorkspaceSettingsData | null) ?? null);
 				}
 			} catch (error) {

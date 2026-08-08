@@ -1117,46 +1117,66 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}
 	};
 
+	// Cada upload inserta una fila real en org_gallery_image y devuelve el listado
+	// completo re-consultado de la base (fn_gallery_array), por lo que subir varias
+	// fotos en paralelo es seguro: no hay lectura-modificación-escritura de un blob
+	// compartido que pueda perder actualizaciones entre requests concurrentes.
+	const GALLERY_UPLOAD_CONCURRENCY = 3;
+
 	const uploadGalleryFiles = async (items: PendingGalleryFile[]) => {
 		if (!items.length) return;
 
 		let uploaded = 0;
-		for (const item of items) {
+		let aborted = false;
+
+		const uploadOne = async (item: PendingGalleryFile) => {
 			if (!isAcceptedProfileImage(item.file)) {
 				showFeedback('Usá imágenes JPG o PNG en la galería.', 'error');
-				continue;
+				return;
 			}
 			const formData = new FormData();
 			formData.append('file', item.file);
 			formData.append('compress', item.compress ? 'true' : 'false');
-			try {
-				const response = await fetch('/api/workspace/gallery', {
-					method: 'POST',
-					body: formData,
-					headers: { Accept: 'application/json' },
-				});
-				const data = (await response.json()) as {
-					status?: string;
-					message?: string;
-					data?: { gallery_images?: GalleryItem[] };
-				};
-				if (!response.ok || data.status !== 'success') {
-					throw new Error(data.message || 'No se pudo subir la foto.');
-				}
-				galleryItems = Array.isArray(data.data?.gallery_images)
-					? data.data.gallery_images
-					: galleryItems;
-				uploaded += 1;
-				renderGalleryGrid();
-				syncPreview();
-			} catch (error) {
+			const response = await fetch('/api/workspace/gallery', {
+				method: 'POST',
+				body: formData,
+				headers: { Accept: 'application/json' },
+			});
+			const data = (await response.json()) as {
+				status?: string;
+				message?: string;
+				data?: { gallery_images?: GalleryItem[] };
+			};
+			if (!response.ok || data.status !== 'success') {
+				throw new Error(data.message || 'No se pudo subir la foto.');
+			}
+			galleryItems = Array.isArray(data.data?.gallery_images)
+				? data.data.gallery_images
+				: galleryItems;
+			uploaded += 1;
+			renderGalleryGrid();
+			syncPreview();
+		};
+
+		for (
+			let start = 0;
+			start < items.length && !aborted;
+			start += GALLERY_UPLOAD_CONCURRENCY
+		) {
+			const batch = items.slice(start, start + GALLERY_UPLOAD_CONCURRENCY);
+			const results = await Promise.allSettled(batch.map(uploadOne));
+			const failure = results.find(
+				(result): result is PromiseRejectedResult => result.status === 'rejected'
+			);
+			if (failure) {
 				showFeedback(
-					error instanceof Error ? error.message : 'No se pudo subir la foto.',
+					failure.reason instanceof Error ? failure.reason.message : 'No se pudo subir la foto.',
 					'error'
 				);
-				break;
+				aborted = true;
 			}
 		}
+
 		if (uploaded > 0) {
 			showFeedback(
 				uploaded === 1

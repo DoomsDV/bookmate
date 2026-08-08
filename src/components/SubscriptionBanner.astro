@@ -57,13 +57,60 @@
 		canceledAt: string | null;
 	}
 
+	// Single-flight + TTL corto para /api/subscription (mismo patrón que
+	// cobros-pending-badge.ts): evita repetir el fetch en cada navegación
+	// cuando SideNav ya resolvió el plan vía SSR y esta data sigue fresca.
+	const SUB_FETCH_TTL_MS = 30_000;
+	const SUB_FETCH_GLOBAL_KEY = '__haselSubscriptionFetch';
+
+	type SubscriptionFetchState = {
+		inflight: Promise<any | null> | null;
+		cachedData: any | null;
+		cachedAt: number;
+	};
+
 	declare global {
 		interface Window {
 			HaselSubscription?: SubscriptionState & {
 				hasFeature: (code: string) => boolean;
 			};
+			[SUB_FETCH_GLOBAL_KEY]?: SubscriptionFetchState;
 		}
 	}
+
+	const getSubFetchState = (): SubscriptionFetchState => {
+		if (!window[SUB_FETCH_GLOBAL_KEY]) {
+			window[SUB_FETCH_GLOBAL_KEY] = { inflight: null, cachedData: null, cachedAt: 0 };
+		}
+		return window[SUB_FETCH_GLOBAL_KEY]!;
+	};
+
+	const fetchSubscriptionData = async (): Promise<any | null> => {
+		const state = getSubFetchState();
+		const now = Date.now();
+		if (state.cachedData && now - state.cachedAt < SUB_FETCH_TTL_MS) {
+			return state.cachedData;
+		}
+		if (state.inflight) return state.inflight;
+
+		state.inflight = (async () => {
+			try {
+				const res = await fetch('/api/subscription', { headers: { Accept: 'application/json' } });
+				if (!res.ok) return null;
+				const body = await res.json().catch(() => null);
+				if (!body || body.status !== 'success' || !body.data) return null;
+				state.cachedData = body.data;
+				state.cachedAt = Date.now();
+				return body.data;
+			} catch {
+				return null;
+			} finally {
+				state.inflight = null;
+			}
+		})();
+
+		return state.inflight;
+	};
 
 	class SubscriptionBanner extends HTMLElement {
 		connectedCallback() {
@@ -71,15 +118,8 @@
 		}
 
 		private async load() {
-			try {
-				const res = await fetch('/api/subscription', { headers: { Accept: 'application/json' } });
-				if (!res.ok) return;
-				const body = await res.json().catch(() => null);
-				if (!body || body.status !== 'success' || !body.data) return;
-				this.apply(body.data);
-			} catch {
-				/* silencioso: el banner es no crítico */
-			}
+			const data = await fetchSubscriptionData();
+			if (data) this.apply(data);
 		}
 
 		private apply(data: any) {

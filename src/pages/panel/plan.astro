@@ -34,34 +34,30 @@ let loadError = '';
 if (!token) {
 	loadError = 'No hay sesion valida para consultar tu plan.';
 } else {
-	try {
-		catalog = await getPlansWithOrds(token);
-	} catch (error) {
+	// Las 4 llamadas son independientes entre sí: se resuelven en paralelo en vez
+	// de una tras otra (cada catch preserva el mismo fallback que tenía secuencialmente).
+	const catalogPromise = getPlansWithOrds(token).catch((error) => {
 		loadError =
 			error instanceof SubscriptionApiError
 				? error.message
 				: 'No fue posible cargar la información de tu plan.';
-	}
+		return null;
+	});
+	// Tarjetas/perfil de facturación: solo admin (para el cobro recurrente).
+	const cardsPromise: Promise<PaymentCard[]> = isAdmin
+		? listCardsWithOrds(token).catch(() => [])
+		: Promise.resolve([]);
+	const billingProfilePromise: Promise<BillingProfileData | null> = isAdmin
+		? getBillingProfileWithOrds(token).catch(() => null)
+		: Promise.resolve(null);
+	const billingPromise = listInvoicesWithOrds(token).catch(() => null);
 
-	// Tarjetas catastradas (solo admin; para el cobro recurrente).
-	if (isAdmin) {
-		try {
-			cards = await listCardsWithOrds(token);
-		} catch {
-			cards = [];
-		}
-		try {
-			billingProfile = await getBillingProfileWithOrds(token);
-		} catch {
-			billingProfile = null;
-		}
-	}
-
-	try {
-		billing = await listInvoicesWithOrds(token);
-	} catch {
-		billing = null;
-	}
+	[catalog, cards, billingProfile, billing] = await Promise.all([
+		catalogPromise,
+		cardsPromise,
+		billingProfilePromise,
+		billingPromise,
+	]);
 }
 
 const hasCard = cards.length > 0;
