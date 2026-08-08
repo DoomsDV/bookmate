@@ -12,7 +12,13 @@ const pendingLogin = Astro.url.searchParams.get('pending_login') === '1';
 const resent = Astro.url.searchParams.get('resent') === '1';
 ---
 
-<Layout>
+<Layout
+	pageTitle="Verificar correo | Hasel"
+	metaDescription="Confirmá tu correo electrónico con el código de verificación de Hasel."
+	canonicalPath="/auth/verify-email"
+	ogImage="/icons/icon-512x512.png"
+	robots="noindex, nofollow"
+>
 	<VerifyEmailForm
 		error={error}
 		email={email}

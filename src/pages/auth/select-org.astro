@@ -39,24 +39,14 @@ const autoSubmitPreferredOrg =
 	preferredOrgIndex >= 0 && organizations.length > 1 && !pendingInvitation;
 ---
 
-<Layout>
+<Layout
+	pageTitle="Seleccionar organización | Hasel"
+	metaDescription="Elegí con qué organización trabajar en tu sesión de Hasel."
+	canonicalPath="/auth/select-org"
+	ogImage="/icons/icon-512x512.png"
+	robots="noindex, nofollow"
+>
 	<section class="auth-page" data-select-org-root>
-		<div class="auth-fx" aria-hidden="true">
-			<div class="auth-atmosphere"></div>
-			<div class="auth-vignette"></div>
-			<div class="auth-orb auth-orb-a"></div>
-			<div class="auth-orb auth-orb-b"></div>
-			<div class="auth-deco auth-deco-1"></div>
-			<div class="auth-deco auth-deco-2"></div>
-			<div class="auth-deco auth-deco-3"></div>
-			<div class="auth-deco auth-deco-4"></div>
-			<div class="auth-deco auth-deco-5"></div>
-			<div class="auth-deco auth-deco-6"></div>
-			<div class="auth-deco auth-deco-7"></div>
-			<div class="auth-deco auth-wave auth-wave-1"></div>
-			<div class="auth-deco auth-wave auth-wave-2"></div>
-		</div>
-
 		<header class="auth-topbar">
 			<div class="auth-topbar-inner">
 				<a href="/" class="auth-brand" aria-label="Hasel — Inicio">
@@ -71,22 +61,12 @@ const autoSubmitPreferredOrg =
 					/>
 					<span class="auth-brand-wordmark">Hasel</span>
 				</a>
-				<a href="/auth/login" class="auth-topbar-cta">Volver al login</a>
 			</div>
 		</header>
 
 		<div class="auth-shell">
-			<main class="auth-card">
-				<header class="auth-card-header">
-					<img
-						src="/icons/icon-512x512.png"
-						alt="Hasel"
-						class="auth-card-logo"
-						width="72"
-						height="72"
-						loading="eager"
-						decoding="async"
-					/>
+			<main class="auth-card select-org-card">
+				<header class="auth-card-header select-org-card-header">
 					<h1 class="auth-title">Seleccionar organización</h1>
 					<p class="auth-subtitle">
 						Elegí con cuál organización trabajar en esta sesión. Luego podés cambiar desde el panel.
@@ -140,7 +120,7 @@ const autoSubmitPreferredOrg =
 											<span class="auth-org-name">{org.organization_name}</span>
 											<span class="auth-org-role">{org.role_name}</span>
 										</span>
-										<span class="material-symbols-rounded" aria-hidden="true" style="color: var(--auth-on-surface-variant); flex-shrink: 0;">
+										<span class="select-org-chevron material-symbols-rounded" aria-hidden="true">
 											chevron_right
 										</span>
 									</label>
@@ -149,29 +129,26 @@ const autoSubmitPreferredOrg =
 						})}
 					</ul>
 
-					<div class="auth-actions auth-actions--between">
+					<div class="auth-actions auth-actions--between select-org-actions">
 						<a href="/auth/login" class="auth-btn auth-btn-tonal" data-select-org-back>
 							Volver al login
 						</a>
-						<button type="submit" class="auth-btn auth-btn-primary" data-select-org-submit>
+						<button type="submit" class="auth-btn auth-btn-primary select-org-submit" data-select-org-submit>
 							Continuar
 						</button>
 					</div>
 				</form>
 
-				<footer class="auth-card-footer">
-					<p class="auth-footer-text" style="margin-bottom: 0.75rem;">
+				<footer class="auth-card-footer select-org-card-footer">
+					<p class="auth-footer-text">
 						¿Querés registrar un espacio de trabajo nuevo?
+						<a
+							href={CREATE_ORGANIZATION_PATH}
+							class="auth-footer-link"
+							title="Registrá un espacio nuevo con el acceso que acabas de iniciar"
+							><strong>Crear organización</strong></a
+						>
 					</p>
-					<a
-						href={CREATE_ORGANIZATION_PATH}
-						class="auth-btn auth-btn-tonal"
-						title="Registrá un espacio nuevo con el acceso que acabas de iniciar"
-						style="text-decoration: none;"
-					>
-						<span class="material-symbols-rounded" aria-hidden="true" style="margin-right: 0.4rem;">domain_add</span>
-						Crear organización
-					</a>
 				</footer>
 			</main>
 		</div>
@@ -256,3 +233,113 @@ const autoSubmitPreferredOrg =
 		document.addEventListener('astro:page-load', setupSelectOrgForm);
 	}
 </script>
+
+<style>
+	.select-org-card {
+		max-width: 32rem;
+		background: rgba(20, 24, 32, 0.12);
+		border: 1px solid rgba(255, 255, 255, 0.08);
+		backdrop-filter: blur(24px) saturate(1.15);
+		-webkit-backdrop-filter: blur(24px) saturate(1.15);
+		box-shadow:
+			0 1px 2px rgba(0, 0, 0, 0.12),
+			0 16px 40px rgba(0, 0, 0, 0.16),
+			inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	}
+
+	@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+		.select-org-card {
+			background: rgba(20, 24, 32, 0.88);
+		}
+	}
+
+	:global(.auth-page[data-select-org-root] .auth-shell) {
+		padding: 0.75rem var(--auth-pad-x) 0.35rem;
+	}
+
+	:global(.auth-page[data-select-org-root] .auth-page-footer) {
+		padding: 0.35rem var(--auth-pad-x) 0.85rem;
+	}
+
+	.select-org-card-header {
+		margin-bottom: 1.25rem;
+	}
+
+	.select-org-card :global(.auth-org-list) {
+		margin-bottom: 0.25rem;
+	}
+
+	.select-org-chevron {
+		color: var(--auth-on-surface-variant);
+		flex-shrink: 0;
+	}
+
+	.select-org-card :global(.auth-actions) {
+		margin-top: 1.15rem;
+		padding-top: 0;
+		border-top: none;
+		gap: 0.75rem;
+	}
+
+	.select-org-card :global(.auth-card-footer) {
+		margin-top: 0.75rem;
+		padding-top: 0;
+		border-top: none;
+		text-align: center;
+	}
+
+	.select-org-submit.auth-btn-primary {
+		box-shadow: none;
+	}
+
+	.select-org-submit.auth-btn-primary:hover {
+		background: var(--auth-primary-hover);
+		box-shadow: none;
+		transform: none;
+	}
+
+	.select-org-submit.auth-btn-primary:active {
+		transform: scale(0.98);
+	}
+
+	@media (max-width: 640px) {
+		:global(.auth-page[data-select-org-root] .auth-shell) {
+			padding: 0.65rem var(--auth-pad-x) 0.25rem;
+		}
+
+		:global(.auth-page[data-select-org-root] .auth-page-footer) {
+			padding: 0.25rem var(--auth-pad-x) 0.65rem;
+		}
+
+		.select-org-card {
+			max-width: none;
+			background: transparent;
+			border: none;
+			backdrop-filter: none;
+			-webkit-backdrop-filter: none;
+			box-shadow: none;
+			border-radius: 0;
+			padding: 0;
+		}
+
+		.select-org-card-header {
+			align-items: center;
+			text-align: center;
+			gap: 0.35rem;
+			margin-bottom: 1rem;
+		}
+
+		.select-org-actions {
+			flex-direction: column-reverse;
+			align-items: stretch;
+		}
+
+		.select-org-actions :global(.auth-btn) {
+			width: 100%;
+		}
+
+		.select-org-card-footer :global(.auth-footer-text) {
+			font-size: 0.88rem;
+		}
+	}
+</style>

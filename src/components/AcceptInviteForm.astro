@@ -10,23 +10,7 @@ const { token = '', error = '' } = Astro.props;
 const safeToken = String(token || '').trim();
 ---
 
-<section class="auth-page" data-accept-invite-root data-token={safeToken}>
-	<div class="auth-fx" aria-hidden="true">
-		<div class="auth-atmosphere"></div>
-		<div class="auth-vignette"></div>
-		<div class="auth-orb auth-orb-a"></div>
-		<div class="auth-orb auth-orb-b"></div>
-		<div class="auth-deco auth-deco-1"></div>
-		<div class="auth-deco auth-deco-2"></div>
-		<div class="auth-deco auth-deco-3"></div>
-		<div class="auth-deco auth-deco-4"></div>
-		<div class="auth-deco auth-deco-5"></div>
-		<div class="auth-deco auth-deco-6"></div>
-		<div class="auth-deco auth-deco-7"></div>
-		<div class="auth-deco auth-wave auth-wave-1"></div>
-		<div class="auth-deco auth-wave auth-wave-2"></div>
-	</div>
-
+<section class="auth-page" data-auth-flow data-accept-invite-root data-token={safeToken}>
 	<header class="auth-topbar">
 		<div class="auth-topbar-inner">
 			<a href="/" class="auth-brand" aria-label="Hasel — Inicio">
@@ -41,22 +25,12 @@ const safeToken = String(token || '').trim();
 				/>
 				<span class="auth-brand-wordmark">Hasel</span>
 			</a>
-			<a href="/auth/login" class="auth-topbar-cta">Iniciar sesión</a>
 		</div>
 	</header>
 
 	<div class="auth-shell">
-		<main class="auth-card">
+		<main class="auth-card auth-card--flow">
 			<header class="auth-card-header">
-				<img
-					src="/icons/icon-512x512.png"
-					alt="Hasel"
-					class="auth-card-logo"
-					width="72"
-					height="72"
-					loading="eager"
-					decoding="async"
-				/>
 				<h1 class="auth-title">Aceptar invitación</h1>
 				<p class="auth-subtitle" data-invite-desc>Estamos validando tu enlace de invitación…</p>
 				<p class="auth-subtitle" data-invite-org-label style="margin-top: 0.4rem; font-weight: 600; color: var(--auth-on-surface);"></p>
@@ -83,7 +57,7 @@ const safeToken = String(token || '').trim();
 				<p class="auth-field-help" data-invite-login-hint style="margin-bottom: 0.9rem;">
 					Ya tienes una cuenta con este correo. Iniciá sesión para unirte a la organización.
 				</p>
-				<a class="auth-btn auth-btn-primary auth-btn-block" data-invite-login-link href="/auth/login">
+				<a class="auth-btn auth-btn-primary auth-btn--flat auth-btn-block" data-invite-login-link href="/auth/login">
 					Iniciar sesión y aceptar
 				</a>
 			</div>
@@ -120,7 +94,7 @@ const safeToken = String(token || '').trim();
 					/>
 				</div>
 
-				<button type="submit" class="auth-btn auth-btn-primary auth-submit" data-invite-submit>
+				<button type="submit" class="auth-btn auth-btn-primary auth-btn--flat auth-submit" data-invite-submit>
 					Crear cuenta y unirme
 				</button>
 			</form>

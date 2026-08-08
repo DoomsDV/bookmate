@@ -44,23 +44,7 @@ const backHref = fromMultiOrgSelection ? '/auth/select-org' : '/panel/dashboard'
 const backLabel = fromMultiOrgSelection ? 'Elegir otra organización' : 'Volver al panel';
 ---
 
-<section class="auth-page" data-create-org-root>
-	<div class="auth-fx" aria-hidden="true">
-		<div class="auth-atmosphere"></div>
-		<div class="auth-vignette"></div>
-		<div class="auth-orb auth-orb-a"></div>
-		<div class="auth-orb auth-orb-b"></div>
-		<div class="auth-deco auth-deco-1"></div>
-		<div class="auth-deco auth-deco-2"></div>
-		<div class="auth-deco auth-deco-3"></div>
-		<div class="auth-deco auth-deco-4"></div>
-		<div class="auth-deco auth-deco-5"></div>
-		<div class="auth-deco auth-deco-6"></div>
-		<div class="auth-deco auth-deco-7"></div>
-		<div class="auth-deco auth-wave auth-wave-1"></div>
-		<div class="auth-deco auth-wave auth-wave-2"></div>
-	</div>
-
+<section class="auth-page" data-auth-flow data-create-org-root>
 	<header class="auth-topbar">
 		<div class="auth-topbar-inner">
 			<a href="/" class="auth-brand" aria-label="Hasel — Inicio">
@@ -75,22 +59,12 @@ const backLabel = fromMultiOrgSelection ? 'Elegir otra organización' : 'Volver 
 				/>
 				<span class="auth-brand-wordmark">Hasel</span>
 			</a>
-			<a href={backHref} class="auth-topbar-cta">{backLabel}</a>
 		</div>
 	</header>
 
 	<div class="auth-shell">
-		<main class="auth-card auth-card--wide">
+		<main class="auth-card auth-card--flow-wide">
 			<header class="auth-card-header">
-				<img
-					src="/icons/icon-512x512.png"
-					alt="Hasel"
-					class="auth-card-logo"
-					width="72"
-					height="72"
-					loading="eager"
-					decoding="async"
-				/>
 				<h1 class="auth-title">Crear tu organización</h1>
 				<p class="auth-subtitle">Configurá los datos de tu nuevo espacio de trabajo.</p>
 			</header>
@@ -191,13 +165,18 @@ const backLabel = fromMultiOrgSelection ? 'Elegir otra organización' : 'Volver 
 					</div>
 				</div>
 
-				<div class="auth-actions auth-actions--between">
-					<a href={backHref} class="auth-btn auth-btn-tonal">{backLabel}</a>
-					<button type="submit" class="auth-btn auth-btn-primary" disabled={orgSpecialties.length === 0}>
+				<div class="auth-actions">
+					<button type="submit" class="auth-btn auth-btn-primary auth-btn--flat auth-btn-block" disabled={orgSpecialties.length === 0}>
 						Crear organización
 					</button>
 				</div>
 			</form>
+
+			<footer class="auth-card-footer">
+				<p class="auth-footer-text">
+					<a href={backHref} class="auth-footer-link"><strong>{backLabel}</strong></a>
+				</p>
+			</footer>
 		</main>
 	</div>
 
