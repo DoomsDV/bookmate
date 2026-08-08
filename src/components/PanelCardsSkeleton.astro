@@ -4,9 +4,10 @@ interface Props {
 	cardClass: string;
 	bodyClass: string;
 	count?: number;
+	horizontal?: boolean;
 }
 
-const { label, cardClass, bodyClass, count = 6 } = Astro.props;
+const { label, cardClass, bodyClass, count = 6, horizontal = false } = Astro.props;
 const placeholders = Array.from({ length: count }, (_, i) => i);
 ---
 
@@ -24,27 +25,55 @@ const placeholders = Array.from({ length: count }, (_, i) => i);
 
 	<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
 		{
-			placeholders.map(() => (
-				<article class:list={[cardClass, 'panel-skeleton-card', 'pointer-events-none']} aria-hidden="true">
-					<div class="flex items-start justify-between gap-4">
-						<div class="panel-skeleton-line size-11 rounded-[0.85rem]"></div>
-						<div class="panel-skeleton-line h-6 w-16 rounded-full"></div>
-					</div>
-					<div class={bodyClass}>
-						<div class="panel-skeleton-line h-5 w-40 max-w-full rounded-md"></div>
-						<div class="grid gap-2.5 mt-1">
-							<div class="flex items-center justify-between gap-3">
-								<div class="panel-skeleton-line h-3.5 w-16 rounded"></div>
-								<div class="panel-skeleton-line h-3.5 w-14 rounded"></div>
+			placeholders.map(() =>
+				horizontal ? (
+					<article
+						class:list={[cardClass, 'panel-horizontal-card', 'panel-skeleton-card', 'pointer-events-none']}
+						aria-hidden="true"
+					>
+						<div class="panel-horizontal-card__media panel-horizontal-card__media--placeholder" aria-hidden="true"></div>
+						<div class:list={['panel-horizontal-card__body', bodyClass]}>
+							<div class="panel-horizontal-card__header">
+								<div class="panel-horizontal-card__title-block grid gap-1.5">
+									<div class="panel-skeleton-line h-5 w-32 max-w-full rounded-md"></div>
+									<div class="panel-skeleton-line h-3.5 w-40 max-w-full rounded"></div>
+								</div>
+								<div class="panel-skeleton-line h-6 w-16 shrink-0 rounded-full"></div>
 							</div>
-							<div class="flex items-center justify-between gap-3">
-								<div class="panel-skeleton-line h-3.5 w-14 rounded"></div>
-								<div class="panel-skeleton-line h-3.5 w-20 rounded"></div>
+							<div class="grid gap-2.5 mt-auto">
+								<div class="flex items-center justify-between gap-3">
+									<div class="panel-skeleton-line h-3.5 w-16 rounded"></div>
+									<div class="panel-skeleton-line h-3.5 w-14 rounded"></div>
+								</div>
+								<div class="flex items-center justify-between gap-3">
+									<div class="panel-skeleton-line h-3.5 w-14 rounded"></div>
+									<div class="panel-skeleton-line h-3.5 w-20 rounded"></div>
+								</div>
 							</div>
 						</div>
-					</div>
-				</article>
-			))
+					</article>
+				) : (
+					<article class:list={[cardClass, 'panel-skeleton-card', 'pointer-events-none']} aria-hidden="true">
+						<div class="flex items-start justify-between gap-4">
+							<div class="panel-skeleton-line size-11 shrink-0 rounded-full"></div>
+							<div class="panel-skeleton-line h-6 w-16 rounded-full"></div>
+						</div>
+						<div class={bodyClass}>
+							<div class="panel-skeleton-line h-5 w-40 max-w-full rounded-md"></div>
+							<div class="grid gap-2.5 mt-1">
+								<div class="flex items-center justify-between gap-3">
+									<div class="panel-skeleton-line h-3.5 w-16 rounded"></div>
+									<div class="panel-skeleton-line h-3.5 w-14 rounded"></div>
+								</div>
+								<div class="flex items-center justify-between gap-3">
+									<div class="panel-skeleton-line h-3.5 w-14 rounded"></div>
+									<div class="panel-skeleton-line h-3.5 w-20 rounded"></div>
+								</div>
+							</div>
+						</div>
+					</article>
+				)
+			)
 		}
 	</div>
 </section>

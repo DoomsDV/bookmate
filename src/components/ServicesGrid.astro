@@ -42,28 +42,32 @@ const inactiveCount = services.length - activeCount;
 ---
 
 <section class="services-view">
-	<header class="mb-4 flex flex-wrap items-center justify-between gap-3">
-		<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
-			Servicios{' '}
-			<span class="font-semibold text-(--on-surface-variant)" data-services-summary>
-				({totalRecords})
-			</span>
-		</h2>
+	<header class="mb-0 lg:mb-4 flex flex-wrap items-center justify-between gap-2 lg:gap-3">
+		<div class="page-title-row flex flex-wrap items-center gap-2 lg:gap-3 min-w-0">
+			<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
+				Servicios{' '}
+				<span class="font-semibold text-(--on-surface-variant)" data-services-summary>
+					({totalRecords})
+				</span>
+			</h2>
 
-		<div class="flex flex-wrap items-center justify-end gap-2">
-			<span class="services-summary-pill services-summary-pill--active">
-				<span class="size-2 rounded-full services-summary-dot services-summary-dot--active"></span>
-				Activos: <span data-services-active-count>{activeCount}</span>
-			</span>
-			<span
-				class="services-summary-pill services-summary-pill--inactive"
-				data-services-inactive-pill
-				hidden={inactiveCount <= 0}
-			>
-				<span class="size-2 rounded-full services-summary-dot services-summary-dot--inactive"></span>
-				Inactivos: <span data-services-inactive-count>{inactiveCount}</span>
-			</span>
+			<div class="page-title-row__badges flex flex-wrap items-center gap-2">
+				<span class="services-summary-pill services-summary-pill--active">
+					<span class="size-2 rounded-full services-summary-dot services-summary-dot--active"></span>
+					Activos: <span data-services-active-count>{activeCount}</span>
+				</span>
+				<span
+					class="services-summary-pill services-summary-pill--inactive"
+					data-services-inactive-pill
+					hidden={inactiveCount <= 0}
+				>
+					<span class="size-2 rounded-full services-summary-dot services-summary-dot--inactive"></span>
+					Inactivos: <span data-services-inactive-count>{inactiveCount}</span>
+				</span>
+			</div>
+		</div>
 
+		<div class="panel-page-header__actions flex flex-wrap items-center justify-end gap-2 shrink-0">
 			{showCreateAction && (
 				<button
 					type="button"
@@ -231,68 +235,86 @@ const inactiveCount = services.length - activeCount;
 				</p>
 			</div>
 		) : (
-			<div class="material-cards-grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4" data-services-grid>
-				{services.map((service) => (
+			<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-services-grid>
+				{services.map((service) => {
+					const imageUrl = String(service.image_url || '').trim();
+					return (
 					<article
-						class="services-card group cursor-pointer"
+						class="services-card panel-horizontal-card group cursor-pointer relative overflow-hidden"
 						data-service-card
 						data-service-id={service.id_service}
 						tabindex="0"
 						role="button"
 						aria-label={`Editar servicio ${service.name || service.id_service}`}
 					>
-						{service.image_url ? (
-							<div class="services-card-cover">
-								<img src={service.image_url} alt="" loading="lazy" />
-							</div>
-						) : (
-							<div class="services-card-cover services-card-cover--brand" aria-hidden="true"></div>
-						)}
-						<div class="flex items-start justify-between gap-2">
-							<div class="services-card-icon">
-								<span class="material-symbols-rounded text-[1.25rem]">design_services</span>
-							</div>
-
+						<div
+							class:list={[
+								'panel-horizontal-card__media',
+								!imageUrl && 'panel-horizontal-card__media--placeholder',
+							]}
+							data-service-card-media
+						>
+							{imageUrl ? (
+								<img
+									src={imageUrl}
+									alt=""
+									class="panel-horizontal-card__media-image"
+									loading="lazy"
+									decoding="async"
+									onerror="this.classList.add('is-hidden'); this.parentElement?.classList.add('panel-horizontal-card__media--placeholder');"
+								/>
+							) : null}
 							<span
-								class:list={[
-									'services-card-status',
-									service.is_active === 1
-										? 'services-card-status--active'
-										: 'services-card-status--inactive',
-								]}
+								class="material-symbols-rounded panel-horizontal-card__media-icon"
+								aria-hidden="true"
 							>
-								<span
-									class:list={[
-										'size-1.5 rounded-full',
-										service.is_active === 1
-											? 'services-summary-dot--active'
-											: 'services-summary-dot--inactive',
-									]}
-								></span>
-								{service.is_active === 1 ? 'Activo' : 'Inactivo'}
+								design_services
 							</span>
 						</div>
 
-						<div class="services-card-body">
-							<h3 class="services-card-title">
-								{service.name || `Servicio #${service.id_service}`}
-							</h3>
-
-							<dl class="services-card-metrics">
-								<div class="flex items-center justify-between text-[0.8rem]">
-									<dt class="services-card-term">Duración</dt>
-									<dd class="services-card-value services-card-value--duration">{toDurationLabel(service.duration_minutes)}</dd>
+						<div class="panel-horizontal-card__body services-card-body">
+							<div class="panel-horizontal-card__header">
+								<div class="panel-horizontal-card__title-block">
+									<h3 class="services-card-title line-clamp-1">
+										{service.name || `Servicio #${service.id_service}`}
+									</h3>
 								</div>
-								<div class="flex items-center justify-between text-[0.8rem]">
+								<span
+									class:list={[
+										'services-card-status shrink-0',
+										service.is_active === 1
+											? 'services-card-status--active'
+											: 'services-card-status--inactive',
+									]}
+								>
+									<span
+										class:list={[
+											'size-1.5 rounded-full',
+											service.is_active === 1
+												? 'services-summary-dot--active'
+												: 'services-summary-dot--inactive',
+										]}
+									></span>
+									{service.is_active === 1 ? 'Activo' : 'Inactivo'}
+								</span>
+							</div>
+
+							<dl class="shrink-0 grid gap-0.5">
+								<div class="flex items-center justify-between text-[0.92rem]">
+									<dt class="services-card-term">Duración</dt>
+									<dd class="services-card-value">{toDurationLabel(service.duration_minutes)}</dd>
+								</div>
+								<div class="flex items-center justify-between text-[0.92rem]">
 									<dt class="services-card-term">Precio</dt>
-									<dd class="services-card-value services-card-value--price">
+									<dd class="services-card-value">
 										{service.price ? currencyFormatter.format(service.price) : '--'}
 									</dd>
 								</div>
 							</dl>
 						</div>
 					</article>
-				))}
+					);
+				})}
 			</div>
 		)}
 	</div>
@@ -301,7 +323,13 @@ const inactiveCount = services.length - activeCount;
 <style is:global>
 	.services-view {
 		display: grid;
-		gap: 1.2rem;
+		gap: 0.75rem;
+	}
+
+	@media (min-width: 1024px) {
+		.services-view {
+			gap: 1.2rem;
+		}
 	}
 
 	.services-summary-pill {
@@ -438,60 +466,6 @@ const inactiveCount = services.length - activeCount;
 		cursor: pointer;
 	}
 
-	.services-card-cover {
-		position: relative;
-		margin: 0 0 0.4rem;
-		overflow: hidden;
-		border-radius: 0.65rem;
-		aspect-ratio: 16 / 9;
-		background: color-mix(in srgb, var(--surface-container-high) 80%, transparent);
-	}
-
-	.services-card-cover--brand {
-		background:
-			radial-gradient(
-				ellipse 80% 70% at 20% 15%,
-				color-mix(in srgb, var(--primary) 28%, transparent),
-				transparent 60%
-			),
-			linear-gradient(
-				145deg,
-				color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
-				var(--surface-container-highest) 55%,
-				color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
-			);
-	}
-
-	.services-card-cover img {
-		display: block;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.services-card .services-card-icon {
-		width: 1.9rem;
-		height: 1.9rem;
-		border-radius: 0.6rem;
-	}
-
-	.services-card .services-card-icon .material-symbols-rounded {
-		font-size: 1rem;
-	}
-
-	.services-card .services-card-body {
-		gap: 0.4rem;
-	}
-
-	.services-card .services-card-title {
-		font-size: 0.92rem;
-	}
-
-	.services-card .services-card-metrics {
-		gap: 0.25rem;
-		font-size: 0.8rem;
-	}
-
 	.services-card-status {
 		display: inline-flex;
 		align-items: center;
@@ -516,15 +490,6 @@ const inactiveCount = services.length - activeCount;
 		color: #8d3e4a;
 	}
 
-	.services-card-value--duration {
-		font-weight: 500;
-	}
-
-	.services-card-value--price {
-		font-weight: 700;
-		color: var(--on-surface);
-	}
-
 	html[data-theme='dark'] .services-summary-pill--active {
 		background: rgba(110, 231, 183, 0.16);
 		color: #b8f5d5;
@@ -545,35 +510,6 @@ const inactiveCount = services.length - activeCount;
 	}
 
 	@media (max-width: 639px) {
-		.services-card-cover {
-			margin: 0 0 0.45rem;
-			border-radius: 0.7rem;
-			aspect-ratio: 16 / 9;
-		}
-
-		.services-card .services-card-icon {
-			width: 1.75rem;
-			height: 1.75rem;
-			border-radius: 0.55rem;
-		}
-
-		.services-card .services-card-icon .material-symbols-rounded {
-			font-size: 0.95rem;
-		}
-
-		.services-card .services-card-body {
-			gap: 0.35rem;
-		}
-
-		.services-card .services-card-title {
-			font-size: 0.9rem;
-		}
-
-		.services-card .services-card-metrics {
-			gap: 0.2rem;
-			font-size: 0.78rem;
-		}
-
 		.services-card-status {
 			padding: 0.2rem 0.5rem;
 			font-size: 0.62rem;
@@ -606,14 +542,6 @@ const inactiveCount = services.length - activeCount;
 	html[data-theme='dark'] .services-card-status--inactive {
 		background: rgba(255, 182, 193, 0.12);
 		color: #ffc8d2;
-	}
-
-	html[data-theme='dark'] .services-card-value--duration {
-		color: color-mix(in srgb, var(--on-surface-variant) 86%, #d1d5db 14%);
-	}
-
-	html[data-theme='dark'] .services-card-value--price {
-		color: var(--on-surface);
 	}
 
 	.services-status-filter-btn.is-active {

@@ -6,6 +6,7 @@ import {
 import type { PublicOrgHub } from '../lib/public-org-hub';
 import { getPublicProfileSpecialtyLabel } from '../lib/public-profile-labels';
 import type { WorkspaceSettingsData } from '../lib/workspace-settings-shared';
+import { formatParaguayMobilePhoneInput } from '../lib/paraguay-phone';
 import {
 	buildOrgHubUrl,
 	resolvePublicSiteOrigin,
@@ -30,6 +31,7 @@ const whatsappDigits = String(workspace.public_whatsapp || '').replace(/\D/g, ''
 const whatsappLocal = whatsappDigits.startsWith('595')
 	? whatsappDigits.slice(3)
 	: whatsappDigits;
+const whatsappLocalDisplay = formatParaguayMobilePhoneInput(whatsappLocal);
 const descriptionValue = String(workspace.description || '').slice(0, DESC_MAX);
 const galleryImages = workspace.gallery_images || [];
 const facebookUrl = String(workspace.facebook_url || '').trim();
@@ -271,10 +273,11 @@ const previewInitial = {
 									class="ppe-input ppe-phone-input__field"
 									type="tel"
 									inputmode="numeric"
+									autocomplete="tel-national"
 									name="public_whatsapp_local"
 									maxlength="20"
 									placeholder="981 123 456"
-									value={whatsappLocal}
+									value={whatsappLocalDisplay}
 									data-ppe-whatsapp
 								/>
 							</div>

@@ -33,28 +33,32 @@ const inactiveCount = specialties.length - activeCount;
 ---
 
 <section class="specialties-view">
-	<header class="mb-4 flex flex-wrap items-center justify-between gap-3">
-		<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
-			Especialidades{' '}
-			<span class="font-semibold text-(--on-surface-variant)" data-specialties-summary>
-				({totalRecords})
-			</span>
-		</h2>
+	<header class="mb-0 lg:mb-4 flex flex-wrap items-center justify-between gap-2 lg:gap-3">
+		<div class="page-title-row flex flex-wrap items-center gap-2 lg:gap-3 min-w-0">
+			<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
+				Especialidades{' '}
+				<span class="font-semibold text-(--on-surface-variant)" data-specialties-summary>
+					({totalRecords})
+				</span>
+			</h2>
 
-		<div class="flex flex-wrap items-center justify-end gap-2">
-			<span class="specialties-summary-pill specialties-summary-pill--active">
-				<span class="size-2 rounded-full specialties-summary-dot specialties-summary-dot--active"></span>
-				Activas: <span data-specialties-active-count>{activeCount}</span>
-			</span>
-			<span
-				class="specialties-summary-pill specialties-summary-pill--inactive"
-				data-specialties-inactive-pill
-				hidden={inactiveCount <= 0}
-			>
-				<span class="size-2 rounded-full specialties-summary-dot specialties-summary-dot--inactive"></span>
-				Inactivas: <span data-specialties-inactive-count>{inactiveCount}</span>
-			</span>
+			<div class="page-title-row__badges flex flex-wrap items-center gap-2">
+				<span class="specialties-summary-pill specialties-summary-pill--active">
+					<span class="size-2 rounded-full specialties-summary-dot specialties-summary-dot--active"></span>
+					Activas: <span data-specialties-active-count>{activeCount}</span>
+				</span>
+				<span
+					class="specialties-summary-pill specialties-summary-pill--inactive"
+					data-specialties-inactive-pill
+					hidden={inactiveCount <= 0}
+				>
+					<span class="size-2 rounded-full specialties-summary-dot specialties-summary-dot--inactive"></span>
+					Inactivas: <span data-specialties-inactive-count>{inactiveCount}</span>
+				</span>
+			</div>
+		</div>
 
+		<div class="panel-page-header__actions flex flex-wrap items-center justify-end gap-2 shrink-0">
 			{showCreateAction && (
 				<button
 					type="button"
@@ -270,7 +274,13 @@ const inactiveCount = specialties.length - activeCount;
 <style is:global>
 	.specialties-view {
 		display: grid;
-		gap: 1.2rem;
+		gap: 0.75rem;
+	}
+
+	@media (min-width: 1024px) {
+		.specialties-view {
+			gap: 1.2rem;
+		}
 	}
 
 	.specialties-summary-pill {

@@ -164,7 +164,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 													aria-selected="true"
 												>
 													<span class="material-symbols-rounded schedule-tab__icon" aria-hidden="true">calendar_view_week</span>
-													Plantilla semanal
+													<span class="schedule-tab__label">Plantilla semanal</span>
 												</button>
 												<button
 													type="button"
@@ -174,7 +174,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 													aria-selected="false"
 												>
 													<span class="material-symbols-rounded schedule-tab__icon" aria-hidden="true">event_busy</span>
-													Excepciones del calendario
+													<span class="schedule-tab__label">Excepciones del calendario</span>
 												</button>
 											</div>
 											<button
@@ -1126,6 +1126,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		font-weight: 600;
 		color: var(--on-surface-variant);
 		min-width: 0;
+		overflow: hidden;
 	}
 
 	.schedule-slot-field input,
@@ -1139,6 +1140,14 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	.schedule-slot-field input[type='time'] {
 		display: block;
 		font-variant-numeric: tabular-nums;
+		-webkit-min-logical-width: 0;
+		min-width: 0;
+	}
+
+	.schedule-slot-field input[type='time']::-webkit-calendar-picker-indicator {
+		margin: 0;
+		padding: 0;
+		flex-shrink: 0;
 	}
 
 	.schedule-slot-field input[type='time']::-webkit-datetime-edit,
@@ -1217,7 +1226,12 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	@media (max-width: 1023px) {
 		[data-weekly-planner] .schedule-slot-row {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			column-gap: clamp(0.45rem, 2.5vw, 0.75rem);
+		}
+
+		[data-weekly-planner] .schedule-slot-row > * {
+			min-width: 0;
 		}
 
 		[data-weekly-planner] .schedule-slot-field--location {
@@ -1249,11 +1263,17 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		[data-weekly-planner] .schedule-slot-field select {
 			padding-block: 0.45rem;
 		}
+
+		[data-weekly-planner] .schedule-slot-field input[type='time'] {
+			width: 100%;
+			min-width: 0;
+			max-width: 100%;
+			padding-inline: 0.45rem;
+		}
 	}
 
 	@media (max-width: 639px) {
 		[data-weekly-planner] .schedule-slot-row {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 			margin-bottom: 0.55rem;
 			padding: 0.45rem 0 0.75rem;
 			border: 0;
@@ -1261,36 +1281,11 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 			border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 55%, transparent);
 			background: transparent;
 			box-shadow: none;
+			column-gap: 0.4rem;
 		}
 
-		[data-weekly-planner] .schedule-slot-field--location {
-			grid-column: 1 / -1;
-			grid-row: 1 / 2;
-			padding-right: 2.35rem;
-		}
-
-		[data-weekly-planner] .schedule-slot-field--start {
-			grid-column: 1 / 2;
-			grid-row: 2 / 3;
-		}
-
-		[data-weekly-planner] .schedule-slot-field--end {
-			grid-column: 2 / 3;
-			grid-row: 2 / 3;
-		}
-
-		[data-weekly-planner] .schedule-slot-remove-wrap {
-			grid-column: 2 / 3;
-			grid-row: 1 / 2;
-			align-self: end;
-			justify-self: end;
-			padding-bottom: 0.2rem;
-			z-index: 1;
-		}
-
-		[data-weekly-planner] .schedule-slot-field input,
-		[data-weekly-planner] .schedule-slot-field select {
-			padding-block: 0.45rem;
+		[data-weekly-planner] .schedule-slot-field input[type='time'] {
+			padding-inline: 0.35rem;
 		}
 
 		[data-weekly-planner] .schedule-slot-row:last-child {
@@ -1315,7 +1310,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	.schedule-tab {
-		display: inline-flex;
+		display: flex;
 		align-items: center;
 		justify-content: center;
 		gap: 0.35rem;
@@ -1328,8 +1323,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		font-size: 0.78rem;
 		font-weight: 700;
 		line-height: 1.25;
-		text-align: center;
-		text-wrap: balance;
 		transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
 	}
 
@@ -1337,6 +1330,13 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		flex-shrink: 0;
 		font-size: 1.05rem;
 		line-height: 1;
+	}
+
+	.schedule-tab__label {
+		min-width: 0;
+		flex: 1 1 0;
+		text-align: center;
+		text-wrap: balance;
 	}
 
 	@media (min-width: 640px) {
@@ -1352,6 +1352,10 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 			border-radius: 999px;
 			padding: 0.45rem 1rem;
 			font-size: 0.88rem;
+		}
+
+		.schedule-tab__label {
+			flex: 0 1 auto;
 			text-wrap: nowrap;
 		}
 	}
@@ -1811,7 +1815,23 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	.schedule-exception-modal .schedule-slot-field select {
 		width: 100%;
 		min-width: 0;
+		max-width: 100%;
 		box-sizing: border-box;
+	}
+
+	.schedule-exception-modal .schedule-slot-field input[type='time'] {
+		-webkit-min-logical-width: 0;
+		min-width: 0;
+	}
+
+	@media (max-width: 639px) {
+		.schedule-exception-modal .schedule-slot-row {
+			column-gap: 0.4rem;
+		}
+
+		.schedule-exception-modal .schedule-slot-field input[type='time'] {
+			padding-inline: 0.35rem;
+		}
 	}
 
 	@media (min-width: 640px) {

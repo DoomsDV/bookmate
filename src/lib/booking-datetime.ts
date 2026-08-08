@@ -25,6 +25,17 @@ export const formatApiDate = (date: Date) =>
 /** HH:mm para comparar con slots de la API. */
 export const formatApiTime = (date: Date) => `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 
+/** Etiqueta de hora en columna del calendario: "10" + "A.M." (valor interno sigue en 24h). */
+export const formatHourLabelAmPm = (hour24: number): { hour: string; meridiem: string } => {
+	if (!Number.isInteger(hour24) || hour24 < 0 || hour24 > 23) {
+		return { hour: '', meridiem: '' };
+	}
+	return {
+		hour: String(hour24 % 12 || 12),
+		meridiem: hour24 < 12 ? 'A.M.' : 'P.M.',
+	};
+};
+
 /**
  * YYYY-MM-DDTHH:mm:ss — formato enviado a Oracle (SUBSTR 1..19 tras reemplazar T por espacio).
  * Sin offset: el backend ignora la zona y usa la hora literal.

@@ -102,6 +102,15 @@ const STADIA_STATIC_STYLES: Record<MapTheme, string> = {
 	light: 'alidade_smooth',
 };
 
+/** Miniatura en cards horizontales (~35% ancho; CSS ~108–160px). Sin @2x: suficiente en grid. */
+export const LOCATION_CARD_STATIC_MAP_OPTIONS = {
+	width: 160,
+	height: 160,
+	zoom: 15,
+	retina: false,
+	includeMarker: false,
+} as const;
+
 /**
  * Miniatura Static Maps de Stadia (panel / covers).
  * Devuelve `null` si faltan key o coordenadas.
@@ -125,7 +134,7 @@ export const buildStadiaStaticMapUrl = (
 	if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) return null;
 
 	const theme = options.theme || 'dark';
-	const width = Math.max(256, Math.min(1024, Math.round(options.width ?? 480)));
+	const width = Math.max(64, Math.min(1024, Math.round(options.width ?? 480)));
 	const height = Math.max(64, Math.min(1024, Math.round(options.height ?? 270)));
 	const zoom = Math.max(0, Math.min(18, Math.round(options.zoom ?? 15)));
 	const scale = options.retina === false ? '' : '@2x';

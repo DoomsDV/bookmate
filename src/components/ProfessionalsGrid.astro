@@ -52,28 +52,32 @@ const inactiveCount = professionals.filter(
 ---
 
 <section class="professionals-view">
-	<header class="mb-4 flex flex-wrap items-center justify-between gap-3">
-		<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
-			Personal{' '}
-			<span class="font-semibold text-(--on-surface-variant)" data-professionals-summary>
-				({totalRecords})
-			</span>
-		</h2>
+	<header class="mb-0 lg:mb-4 flex flex-wrap items-center justify-between gap-2 lg:gap-3">
+		<div class="page-title-row flex flex-wrap items-center gap-2 lg:gap-3 min-w-0">
+			<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
+				Personal{' '}
+				<span class="font-semibold text-(--on-surface-variant)" data-professionals-summary>
+					({totalRecords})
+				</span>
+			</h2>
 
-		<div class="flex flex-wrap items-center justify-end gap-2">
-			<span class="professionals-summary-pill professionals-summary-pill--active">
-				<span class="size-2 rounded-full professionals-summary-dot professionals-summary-dot--active"></span>
-				Activos: <span data-professionals-active-count>{activeCount}</span>
-			</span>
-			<span
-				class="professionals-summary-pill professionals-summary-pill--inactive"
-				data-professionals-inactive-pill
-				hidden={inactiveCount <= 0}
-			>
-				<span class="size-2 rounded-full professionals-summary-dot professionals-summary-dot--inactive"></span>
-				Inactivos: <span data-professionals-inactive-count>{inactiveCount}</span>
-			</span>
+			<div class="page-title-row__badges flex flex-wrap items-center gap-2">
+				<span class="professionals-summary-pill professionals-summary-pill--active">
+					<span class="size-2 rounded-full professionals-summary-dot professionals-summary-dot--active"></span>
+					Activos: <span data-professionals-active-count>{activeCount}</span>
+				</span>
+				<span
+					class="professionals-summary-pill professionals-summary-pill--inactive"
+					data-professionals-inactive-pill
+					hidden={inactiveCount <= 0}
+				>
+					<span class="size-2 rounded-full professionals-summary-dot professionals-summary-dot--inactive"></span>
+					Inactivos: <span data-professionals-inactive-count>{inactiveCount}</span>
+				</span>
+			</div>
+		</div>
 
+		<div class="panel-page-header__actions flex flex-wrap items-center justify-end gap-2 shrink-0">
 			{showCreateAction && (
 				<button
 					type="button"
@@ -332,7 +336,13 @@ const inactiveCount = professionals.filter(
 <style is:global>
 	.professionals-view {
 		display: grid;
-		gap: 1.2rem;
+		gap: 0.75rem;
+	}
+
+	@media (min-width: 1024px) {
+		.professionals-view {
+			gap: 1.2rem;
+		}
 	}
 
 	.professionals-summary-pill {
@@ -467,46 +477,6 @@ const inactiveCount = professionals.filter(
 
 	.professionals-card {
 		cursor: pointer;
-	}
-
-	.professionals-card-avatar {
-		position: relative;
-		display: flex;
-		width: 2.75rem;
-		height: 2.75rem;
-		flex-shrink: 0;
-		align-items: center;
-		justify-content: center;
-		overflow: hidden;
-		border-radius: 50%;
-		isolation: isolate;
-	}
-
-	.professionals-card-avatar-image {
-		display: block;
-		width: 100%;
-		height: 100%;
-		border-radius: 50%;
-		object-fit: cover;
-		object-position: center;
-		background: transparent;
-	}
-
-	.professionals-card-avatar-icon {
-		font-size: 1.25rem;
-		line-height: 1;
-	}
-
-	.professionals-card-avatar-icon--fallback {
-		display: none;
-	}
-
-	.professionals-card-avatar--placeholder .professionals-card-avatar-icon--fallback {
-		display: inline-flex;
-	}
-
-	.professionals-card-avatar-image.is-hidden {
-		display: none;
 	}
 
 	.professionals-card-status {

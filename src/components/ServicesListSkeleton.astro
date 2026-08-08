@@ -14,17 +14,22 @@ const placeholders = Array.from({ length: 6 }, (_, i) => i);
 		<div class="panel-skeleton-line h-11 w-full sm:w-40 rounded-full"></div>
 	</header>
 
-	<div class="material-cards-grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4">
+	<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
 		{
 			placeholders.map(() => (
-				<article class="services-card panel-skeleton-card pointer-events-none" aria-hidden="true">
-					<div class="flex items-start justify-between gap-4">
-						<div class="panel-skeleton-line size-11 rounded-[0.85rem]"></div>
-						<div class="panel-skeleton-line h-6 w-16 rounded-full"></div>
-					</div>
-					<div class="services-card-body">
-						<div class="panel-skeleton-line h-5 w-40 max-w-full rounded-md"></div>
-						<div class="grid gap-2.5 mt-1">
+				<article
+					class="services-card panel-horizontal-card panel-skeleton-card pointer-events-none"
+					aria-hidden="true"
+				>
+					<div class="panel-horizontal-card__media panel-horizontal-card__media--placeholder" aria-hidden="true"></div>
+					<div class="panel-horizontal-card__body services-card-body">
+						<div class="panel-horizontal-card__header">
+							<div class="panel-horizontal-card__title-block">
+								<div class="panel-skeleton-line h-5 w-32 max-w-full rounded-md"></div>
+							</div>
+							<div class="panel-skeleton-line h-6 w-16 shrink-0 rounded-full"></div>
+						</div>
+						<div class="grid gap-2.5 mt-auto">
 							<div class="flex items-center justify-between gap-3">
 								<div class="panel-skeleton-line h-3.5 w-16 rounded"></div>
 								<div class="panel-skeleton-line h-3.5 w-14 rounded"></div>

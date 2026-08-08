@@ -26,7 +26,7 @@
 		</header>
 
 		<div class="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5" data-atc-chat-messages>
-			<div class="rounded-2xl bg-(--control-surface) px-3.5 py-3 text-sm leading-relaxed text-(--on-surface-variant)" data-atc-chat-welcome>
+			<div class="atc-chat-welcome" data-atc-chat-welcome>
 				Hola. Soy el asistente de atención al cliente de Hasel. Preguntame sobre el producto y te respondo con la documentación cargada.
 			</div>
 		</div>
@@ -48,7 +48,7 @@
 					data-atc-chat-send
 					aria-label="Enviar pregunta"
 				>
-					<span class="material-symbols-rounded text-[1.2rem]">send</span>
+					<span class="material-symbols-rounded text-[1.25rem]">arrow_upward</span>
 				</button>
 			</div>
 		</form>
@@ -56,11 +56,46 @@
 </atc-chat-modal>
 
 <script>
+	import { BUSINESS_HOURS_TIME_ZONE } from '../lib/business-hours';
+
 	type AtcRole = 'user' | 'assistant';
 
 	type AtcMessage = {
 		role: AtcRole;
 		content: string;
+		sentAt: number;
+	};
+
+	const atcTimeFormatter = new Intl.DateTimeFormat('es-PY', {
+		timeZone: BUSINESS_HOURS_TIME_ZONE,
+		hour: '2-digit',
+		minute: '2-digit',
+		hour12: false,
+	});
+
+	const atcDateFormatter = new Intl.DateTimeFormat('es-PY', {
+		timeZone: BUSINESS_HOURS_TIME_ZONE,
+		day: '2-digit',
+		month: '2-digit',
+		year: 'numeric',
+	});
+
+	const atcDayKeyFormatter = new Intl.DateTimeFormat('en-CA', {
+		timeZone: BUSINESS_HOURS_TIME_ZONE,
+		year: 'numeric',
+		month: '2-digit',
+		day: '2-digit',
+	});
+
+	const formatAtcMessageTime = (sentAt: number) => {
+		const date = new Date(sentAt);
+		if (Number.isNaN(date.getTime())) return '';
+
+		const time = atcTimeFormatter.format(date);
+		const isToday = atcDayKeyFormatter.format(date) === atcDayKeyFormatter.format(new Date());
+		if (isToday) return time;
+
+		return `${atcDateFormatter.format(date)} ${time}`;
 	};
 
 	type MarkedParse = (
@@ -459,6 +494,32 @@
 			}
 		}
 
+		private createMessageNode(message: AtcMessage, bodyHtml: string) {
+			const wrapper = document.createElement('div');
+			wrapper.dataset.atcMsg = message.role;
+			wrapper.className = `atc-chat-message atc-chat-message--${message.role}`;
+
+			const bubble = document.createElement('div');
+			bubble.className = `atc-chat-bubble atc-chat-bubble--${message.role}`;
+
+			const body = document.createElement('div');
+			body.className = 'atc-chat-bubble__body';
+			if (message.role === 'assistant') {
+				body.innerHTML = bodyHtml;
+			} else {
+				body.textContent = message.content;
+			}
+
+			const time = document.createElement('time');
+			time.className = 'atc-chat-bubble__time';
+			time.dateTime = new Date(message.sentAt).toISOString();
+			time.textContent = formatAtcMessageTime(message.sentAt);
+
+			bubble.append(body, time);
+			wrapper.appendChild(bubble);
+			return wrapper;
+		}
+
 		private async renderMessages() {
 			if (!this.messagesEl) return;
 			const welcome = this.messagesEl.querySelector('[data-atc-chat-welcome]');
@@ -466,18 +527,9 @@
 			this.messagesEl.querySelectorAll('[data-atc-msg]').forEach((node) => node.remove());
 
 			for (const message of this.messages) {
-				const bubble = document.createElement('div');
-				bubble.dataset.atcMsg = message.role;
-				bubble.className =
-					message.role === 'user'
-						? 'atc-chat-bubble atc-chat-bubble--user ml-8 rounded-2xl bg-(--primary) px-3.5 py-3 text-sm leading-relaxed text-(--on-primary)'
-						: 'atc-chat-bubble atc-chat-bubble--assistant mr-8 rounded-2xl bg-(--control-surface) px-3.5 py-3 text-sm leading-relaxed text-(--on-surface)';
-				if (message.role === 'assistant') {
-					bubble.innerHTML = await this.renderMarkdown(message.content);
-				} else {
-					bubble.textContent = message.content;
-				}
-				this.messagesEl.appendChild(bubble);
+				const bodyHtml =
+					message.role === 'assistant' ? await this.renderMarkdown(message.content) : '';
+				this.messagesEl.appendChild(this.createMessageNode(message, bodyHtml));
 			}
 
 			if (welcome instanceof HTMLElement) {
@@ -497,8 +549,7 @@
 
 			const bubble = document.createElement('div');
 			bubble.dataset.atcThinking = 'true';
-			bubble.className =
-				'atc-thinking mr-8 flex items-center gap-2.5 rounded-2xl bg-(--control-surface) px-3.5 py-3 text-sm text-(--on-surface-variant)';
+			bubble.className = 'atc-thinking';
 			bubble.setAttribute('aria-live', 'polite');
 			bubble.setAttribute('aria-busy', 'true');
 			bubble.innerHTML = `
@@ -532,7 +583,7 @@
 			if (!message) return;
 
 			this.clearError();
-			this.messages.push({ role: 'user', content: message });
+			this.messages.push({ role: 'user', content: message, sentAt: Date.now() });
 			this.input.value = '';
 			await this.renderMessages();
 			this.setBusy(true);
@@ -560,7 +611,7 @@
 				const answer = String(payload?.data?.response || '').trim();
 				if (!answer) throw new Error('La respuesta vino vacía.');
 
-				this.messages.push({ role: 'assistant', content: answer });
+				this.messages.push({ role: 'assistant', content: answer, sentAt: Date.now() });
 				this.setBusy(false);
 				await this.renderMessages();
 			} catch (error) {
@@ -588,6 +639,7 @@
 
 <style is:global>
 	[data-atc-chat-modal] {
+		--atc-assistant-bubble-bg: var(--surface-container-highest);
 		animation: atc-modal-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
 	}
 
@@ -739,55 +791,140 @@
 		}
 	}
 
-	.atc-chat-bubble--assistant > :first-child {
+	[data-atc-chat-messages] {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.atc-chat-message {
+		display: flex;
+		max-width: 85%;
+	}
+
+	.atc-chat-message--user {
+		align-self: flex-end;
+		margin-left: auto;
+	}
+
+	.atc-chat-message--assistant {
+		align-self: flex-start;
+		margin-right: auto;
+	}
+
+	.atc-chat-bubble {
+		position: relative;
+		width: 100%;
+		border-radius: 1.05rem;
+		padding: 0.55rem 0.65rem 0.35rem;
+		overflow-wrap: anywhere;
+		font-size: 0.875rem;
+		line-height: 1.45;
+		min-width: 4.5rem;
+	}
+
+	.atc-chat-bubble--user {
+		background: var(--primary);
+		color: #f8fbff;
+		border-bottom-right-radius: 0.3rem;
+		box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 20%, transparent);
+	}
+
+	.atc-chat-bubble--assistant {
+		background: var(--atc-assistant-bubble-bg);
+		color: var(--on-surface);
+		border-bottom-left-radius: 0.3rem;
+		box-shadow: 0 1px 2px color-mix(in srgb, var(--on-surface) 5%, transparent);
+	}
+
+	.atc-chat-welcome {
+		align-self: flex-start;
+		max-width: 85%;
+		border-radius: 1.05rem;
+		border-bottom-left-radius: 0.3rem;
+		background: var(--atc-assistant-bubble-bg);
+		padding: 0.55rem 0.65rem;
+		font-size: 0.875rem;
+		line-height: 1.45;
+		color: var(--on-surface);
+		box-shadow: 0 1px 2px color-mix(in srgb, var(--on-surface) 5%, transparent);
+	}
+
+	.atc-chat-bubble__body {
+		white-space: pre-wrap;
+	}
+
+	.atc-chat-bubble__time {
+		display: block;
+		margin-top: 0.15rem;
+		margin-left: auto;
+		padding-top: 0.1rem;
+		font-size: 0.68rem;
+		font-weight: 500;
+		line-height: 1.2;
+		text-align: right;
+		white-space: nowrap;
+		opacity: 0.78;
+	}
+
+	.atc-chat-bubble--user .atc-chat-bubble__time {
+		color: color-mix(in srgb, #f8fbff 78%, transparent);
+	}
+
+	.atc-chat-bubble--assistant .atc-chat-bubble__time {
+		color: var(--on-surface-variant);
+		opacity: 0.82;
+	}
+
+	.atc-chat-bubble--assistant .atc-chat-bubble__body > :first-child {
 		margin-top: 0;
 	}
 
-	.atc-chat-bubble--assistant > :last-child {
+	.atc-chat-bubble--assistant .atc-chat-bubble__body > :last-child {
 		margin-bottom: 0;
 	}
 
-	.atc-chat-bubble--assistant p,
-	.atc-chat-bubble--assistant ul,
-	.atc-chat-bubble--assistant ol,
-	.atc-chat-bubble--assistant blockquote,
-	.atc-chat-bubble--assistant pre {
+	.atc-chat-bubble--assistant .atc-chat-bubble__body p,
+	.atc-chat-bubble--assistant .atc-chat-bubble__body ul,
+	.atc-chat-bubble--assistant .atc-chat-bubble__body ol,
+	.atc-chat-bubble--assistant .atc-chat-bubble__body blockquote,
+	.atc-chat-bubble--assistant .atc-chat-bubble__body pre {
 		margin: 0.5rem 0;
 	}
 
-	.atc-chat-bubble--assistant ul,
-	.atc-chat-bubble--assistant ol {
+	.atc-chat-bubble--assistant .atc-chat-bubble__body ul,
+	.atc-chat-bubble--assistant .atc-chat-bubble__body ol {
 		padding-left: 1.2rem;
 	}
 
-	.atc-chat-bubble--assistant li + li {
+	.atc-chat-bubble--assistant .atc-chat-bubble__body li + li {
 		margin-top: 0.2rem;
 	}
 
-	.atc-chat-bubble--assistant h1,
-	.atc-chat-bubble--assistant h2,
-	.atc-chat-bubble--assistant h3,
-	.atc-chat-bubble--assistant h4,
-	.atc-chat-bubble--assistant h5,
-	.atc-chat-bubble--assistant h6 {
+	.atc-chat-bubble--assistant .atc-chat-bubble__body h1,
+	.atc-chat-bubble--assistant .atc-chat-bubble__body h2,
+	.atc-chat-bubble--assistant .atc-chat-bubble__body h3,
+	.atc-chat-bubble--assistant .atc-chat-bubble__body h4,
+	.atc-chat-bubble--assistant .atc-chat-bubble__body h5,
+	.atc-chat-bubble--assistant .atc-chat-bubble__body h6 {
 		margin: 0.6rem 0 0.3rem;
 		font-size: 0.95rem;
 		font-weight: 850;
 		line-height: 1.3;
 	}
 
-	.atc-chat-bubble--assistant strong {
+	.atc-chat-bubble--assistant .atc-chat-bubble__body strong {
 		font-weight: 850;
 	}
 
-	.atc-chat-bubble--assistant a {
+	.atc-chat-bubble--assistant .atc-chat-bubble__body a {
 		color: var(--primary);
 		font-weight: 800;
 		text-decoration: underline;
 		text-underline-offset: 0.16em;
 	}
 
-	.atc-chat-bubble--assistant code {
+	.atc-chat-bubble--assistant .atc-chat-bubble__body code {
 		border-radius: 0.35rem;
 		background: color-mix(in srgb, var(--on-surface) 9%, transparent);
 		padding: 0.08rem 0.24rem;
@@ -795,14 +932,14 @@
 		font-size: 0.86em;
 	}
 
-	.atc-chat-bubble--assistant pre {
+	.atc-chat-bubble--assistant .atc-chat-bubble__body pre {
 		overflow-x: auto;
 		border-radius: 0.65rem;
 		background: color-mix(in srgb, var(--on-surface) 9%, transparent);
 		padding: 0.7rem;
 	}
 
-	.atc-chat-bubble--assistant pre code {
+	.atc-chat-bubble--assistant .atc-chat-bubble__body pre code {
 		background: transparent;
 		padding: 0;
 	}
@@ -810,7 +947,17 @@
 	.atc-thinking {
 		display: flex;
 		align-items: center;
-		gap: 0.5rem;
+		gap: 0.625rem;
+		align-self: flex-start;
+		max-width: 85%;
+		margin-right: auto;
+		border-radius: 1.05rem;
+		border-bottom-left-radius: 0.3rem;
+		background: var(--atc-assistant-bubble-bg);
+		padding: 0.55rem 0.65rem;
+		font-size: 0.875rem;
+		color: var(--on-surface-variant);
+		box-shadow: 0 1px 2px color-mix(in srgb, var(--on-surface) 5%, transparent);
 	}
 
 	.atc-thinking-label {

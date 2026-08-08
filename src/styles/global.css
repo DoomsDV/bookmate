@@ -1925,8 +1925,8 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 	box-shadow: var(--card-elevation) !important;
 }
 
-/* Cards del panel: estilo unificado (clientes, especialidades, personal) */
-:is(.customer-card, .specialties-card, .professionals-card) {
+/* Cards del panel: estilo unificado (clientes, especialidades, personal, servicios, sucursales) */
+:is(.customer-card, .specialties-card, .professionals-card, .services-card, .locations-card) {
 	display: flex;
 	flex-direction: column;
 	gap: 0.95rem;
@@ -1938,24 +1938,143 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 	transition: transform 170ms ease, box-shadow 170ms ease;
 }
 
-/* Sucursales / Servicios: padding compacto fijo (cover + body; sin flip por cascade) */
-:is(.locations-card, .services-card) {
-	display: flex;
-	flex-direction: column;
-	gap: 0.55rem;
-	border-radius: 0.8rem;
-	padding: 0.72rem 0.8rem 0.85rem;
-	border: none;
-	background: var(--sidebar-surface);
-	box-shadow: var(--card-elevation);
-	transition: transform 170ms ease, box-shadow 170ms ease;
+/* Horizontal cards: servicios y sucursales (media flush izquierda) */
+.panel-horizontal-card {
+	flex-direction: row;
+	align-items: stretch;
+	gap: 0;
+	padding: 0;
+	min-height: 6.75rem;
+	overflow: hidden;
 }
 
-@media (max-width: 639px) {
-	:is(.locations-card, .services-card) {
-		gap: 0.45rem;
-		padding: 0.65rem 0.7rem 0.75rem;
-	}
+.panel-horizontal-card__media {
+	position: relative;
+	flex: 0 0 35%;
+	max-width: 40%;
+	min-width: 5.25rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	background: color-mix(in srgb, #426edb 18%, var(--sidebar-surface) 82%);
+	isolation: isolate;
+}
+
+/* Servicios sin foto: mismo degradado que .service-cover-dropzone (modal Imagen de portada). */
+.services-card .panel-horizontal-card__media--placeholder {
+	background:
+		radial-gradient(
+			ellipse 80% 70% at 20% 15%,
+			color-mix(in srgb, var(--primary) 28%, transparent),
+			transparent 60%
+		),
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
+			var(--surface-container-highest) 55%,
+			color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
+		);
+}
+
+/* Sucursales sin mapa o mientras carga el preview: mismo degradado que servicios. */
+.locations-card .panel-horizontal-card__media--placeholder,
+.locations-card .panel-horizontal-card__media:has([data-location-map-preview]:not(.is-loaded)) {
+	background:
+		radial-gradient(
+			ellipse 80% 70% at 20% 15%,
+			color-mix(in srgb, var(--primary) 28%, transparent),
+			transparent 60%
+		),
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
+			var(--surface-container-highest) 55%,
+			color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
+		);
+}
+
+.panel-horizontal-card__media-image {
+	position: absolute;
+	inset: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+}
+
+.panel-horizontal-card__media-image[data-location-map-preview] {
+	opacity: 0;
+	transition: opacity 180ms ease;
+}
+
+.panel-horizontal-card__media-image[data-location-map-preview].is-loaded {
+	opacity: 1;
+}
+
+.panel-horizontal-card__media-icon {
+	display: none;
+	font-size: 1.65rem;
+	line-height: 1;
+	color: #426edb;
+}
+
+.panel-horizontal-card__media-image.is-hidden {
+	display: none;
+}
+
+.bookmate-map-marker-overlay {
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	z-index: 1;
+	display: block;
+	width: 28px;
+	height: 36px;
+	pointer-events: none;
+	transform: translate(-50%, -100%);
+	filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+}
+
+.bookmate-map-marker-overlay svg {
+	display: block;
+	width: 28px;
+	height: 36px;
+}
+
+.panel-horizontal-card__media--placeholder .bookmate-map-marker-overlay {
+	position: relative;
+	left: auto;
+	top: auto;
+	transform: none;
+}
+
+.panel-horizontal-card__body {
+	display: flex;
+	flex-direction: column;
+	flex: 1;
+	min-width: 0;
+	gap: 0.65rem;
+	padding: 0.95rem 1.1rem 1rem 0.95rem;
+}
+
+.panel-horizontal-card__header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.45rem;
+}
+
+.panel-horizontal-card__title-block {
+	min-width: 0;
+	flex: 1;
+	display: grid;
+	gap: 0.2rem;
+}
+
+.panel-horizontal-card__body > dl {
+	margin-top: auto;
 }
 
 :is(
@@ -1980,11 +2099,46 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 	outline-offset: 2px;
 }
 
-:is(
-	.services-card-icon,
-	.locations-card-icon,
-	.specialties-card-icon
-) {
+html[data-theme='dark'] .panel-horizontal-card__media {
+	background: color-mix(in srgb, #426edb 16%, #121214 84%);
+}
+
+/* Servicios sin foto: restaurar degradado (gana sobre la regla sólida anterior). */
+html[data-theme='dark'] .services-card .panel-horizontal-card__media--placeholder {
+	background:
+		radial-gradient(
+			ellipse 80% 70% at 20% 15%,
+			color-mix(in srgb, var(--primary) 28%, transparent),
+			transparent 60%
+		),
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--primary-container) 55%, #121214),
+			var(--surface-container-highest) 55%,
+			color-mix(in srgb, var(--primary-container) 35%, #121214)
+		);
+}
+
+/* Sucursales sin mapa o mientras carga el preview (especificidad 0,3,1 > regla sólida dark). */
+html[data-theme='dark'] .locations-card .panel-horizontal-card__media--placeholder,
+html[data-theme='dark'] .locations-card .panel-horizontal-card__media:has([data-location-map-preview]:not(.is-loaded)) {
+	background:
+		radial-gradient(
+			ellipse 80% 70% at 20% 15%,
+			color-mix(in srgb, var(--primary) 28%, transparent),
+			transparent 60%
+		),
+		linear-gradient(
+			145deg,
+			color-mix(in srgb, var(--primary-container) 55%, #121214),
+			var(--surface-container-highest) 55%,
+			color-mix(in srgb, var(--primary-container) 35%, #121214)
+		);
+}
+
+
+
+.specialties-card-icon {
 	display: inline-flex;
 	height: 2.75rem;
 	width: 2.75rem;
@@ -2100,6 +2254,11 @@ html[data-theme='dark'] .customer-card-subtitle {
 	gap: 0.85rem;
 }
 
+.panel-horizontal-card .panel-horizontal-card__body {
+	display: flex;
+	flex-direction: column;
+}
+
 :is(
 	.services-card-title,
 	.locations-card-title,
@@ -2181,6 +2340,50 @@ html[data-theme='dark'] :is(
 .professionals-card-avatar--placeholder {
 	background: color-mix(in srgb, #426edb 22%, transparent);
 	color: #426edb;
+}
+
+.professionals-card-avatar {
+	position: relative;
+	display: flex;
+	width: 2.75rem;
+	height: 2.75rem;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	border-radius: 50%;
+	isolation: isolate;
+}
+
+.professionals-card-avatar-image {
+	display: block;
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	object-fit: cover;
+	object-position: center;
+	background: transparent;
+}
+
+.professionals-card-avatar-icon {
+	font-size: 1.25rem;
+	line-height: 1;
+}
+
+.professionals-card-avatar-icon--fallback {
+	display: none;
+}
+
+.professionals-card-avatar--placeholder .professionals-card-avatar-icon--fallback {
+	display: inline-flex;
+}
+
+.professionals-card-avatar-image.is-hidden {
+	display: none;
+}
+
+.services-card-value {
+	font-weight: 700;
 }
 
 .sidebar-account-header {

@@ -20,6 +20,7 @@ import type {
 	PublicProfilePreviewLocation,
 	PublicProfilePreviewProfessional,
 } from '../lib/public-profile-preview-events';
+import { formatParaguayMobilePhoneInput } from '../lib/paraguay-phone';
 import { buildOrgHubUrl } from '../lib/public-profile-url';
 import { getPublicProfileSpecialtyLabel } from '../lib/public-profile-labels';
 import { isReservedOrgSlug } from '../lib/reserved-org-slugs';
@@ -281,6 +282,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const waToggle = root.querySelector<HTMLInputElement>('[data-ppe-wa-toggle]');
 	const waField = root.querySelector<HTMLElement>('[data-ppe-wa-field]');
 	const waInput = root.querySelector<HTMLInputElement>('[data-ppe-whatsapp]');
+	if (waInput?.value) {
+		waInput.value = formatParaguayMobilePhoneInput(waInput.value);
+	}
 	const facebookInput = root.querySelector<HTMLInputElement>('[data-ppe-facebook]');
 	const instagramInput = root.querySelector<HTMLInputElement>('[data-ppe-instagram]');
 	const hoursList = root.querySelector<HTMLElement>('[data-ppe-hours-list]');
@@ -1416,8 +1420,15 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		syncPreview();
 	});
 	descInput?.addEventListener('input', syncPreview);
+	const handleWhatsappInput = () => {
+		if (waInput) {
+			waInput.value = formatParaguayMobilePhoneInput(waInput.value);
+		}
+		syncPreview();
+	};
+
 	waToggle?.addEventListener('change', syncPreview);
-	waInput?.addEventListener('input', syncPreview);
+	waInput?.addEventListener('input', handleWhatsappInput);
 	facebookInput?.addEventListener('input', syncPreview);
 	instagramInput?.addEventListener('input', syncPreview);
 	cropCompress?.addEventListener('change', syncCropCompressHint);

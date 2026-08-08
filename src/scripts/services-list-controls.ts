@@ -81,6 +81,8 @@ const syncUrl = (state: { page: number; search: string; isActive: number | null 
 	}
 };
 
+const SERVICE_ICON = 'design_services';
+
 const renderServiceCard = (service: ServiceItem) => {
 	const name = service.name || `Servicio #${service.id_service}`;
 	const isActive = service.is_active === 1;
@@ -88,40 +90,54 @@ const renderServiceCard = (service: ServiceItem) => {
 	const dotClass = isActive ? 'services-summary-dot--active' : 'services-summary-dot--inactive';
 	const statusLabel = isActive ? 'Activo' : 'Inactivo';
 	const price = service.price ? currencyFormatter.format(service.price) : '--';
-	const coverUrl = String(service.image_url || '').trim();
-	const coverHtml = coverUrl
-		? `<div class="services-card-cover"><img src="${escapeHtml(coverUrl)}" alt="" loading="lazy" /></div>`
-		: `<div class="services-card-cover services-card-cover--brand" aria-hidden="true"></div>`;
+	const imageUrl = String(service.image_url || '').trim();
+
+	const mediaClasses = imageUrl
+		? 'panel-horizontal-card__media'
+		: 'panel-horizontal-card__media panel-horizontal-card__media--placeholder';
+
+	const imageHtml = imageUrl
+		? `<img
+				src="${escapeHtml(imageUrl)}"
+				alt=""
+				class="panel-horizontal-card__media-image"
+				loading="lazy"
+				decoding="async"
+				onerror="this.classList.add('is-hidden'); this.parentElement?.classList.add('panel-horizontal-card__media--placeholder');"
+			/>`
+		: '';
 
 	return `
 		<article
-			class="services-card group cursor-pointer"
+			class="services-card panel-horizontal-card group cursor-pointer relative overflow-hidden"
 			data-service-card
 			data-service-id="${service.id_service}"
 			tabindex="0"
 			role="button"
 			aria-label="Editar servicio ${escapeHtml(name)}"
 		>
-			${coverHtml}
-			<div class="flex items-start justify-between gap-2">
-				<div class="services-card-icon">
-					<span class="material-symbols-rounded text-[1.25rem]">design_services</span>
-				</div>
-				<span class="services-card-status ${statusClass}">
-					<span class="size-1.5 rounded-full ${dotClass}"></span>
-					${statusLabel}
-				</span>
+			<div class="${mediaClasses}" data-service-card-media>
+				${imageHtml}
+				<span class="material-symbols-rounded panel-horizontal-card__media-icon" aria-hidden="true">${SERVICE_ICON}</span>
 			</div>
-			<div class="services-card-body">
-				<h3 class="services-card-title">${escapeHtml(name)}</h3>
-				<dl class="services-card-metrics">
-					<div class="flex items-center justify-between text-[0.8rem]">
-						<dt class="services-card-term">Duración</dt>
-						<dd class="services-card-value services-card-value--duration">${toDurationLabel(service.duration_minutes)}</dd>
+			<div class="panel-horizontal-card__body services-card-body">
+				<div class="panel-horizontal-card__header">
+					<div class="panel-horizontal-card__title-block">
+						<h3 class="services-card-title line-clamp-1">${escapeHtml(name)}</h3>
 					</div>
-					<div class="flex items-center justify-between text-[0.8rem]">
+					<span class="services-card-status shrink-0 ${statusClass}">
+						<span class="size-1.5 rounded-full ${dotClass}"></span>
+						${statusLabel}
+					</span>
+				</div>
+				<dl class="shrink-0 grid gap-0.5">
+					<div class="flex items-center justify-between text-[0.92rem]">
+						<dt class="services-card-term">Duración</dt>
+						<dd class="services-card-value">${toDurationLabel(service.duration_minutes)}</dd>
+					</div>
+					<div class="flex items-center justify-between text-[0.92rem]">
 						<dt class="services-card-term">Precio</dt>
-						<dd class="services-card-value services-card-value--price">${price}</dd>
+						<dd class="services-card-value">${price}</dd>
 					</div>
 				</dl>
 			</div>
@@ -189,7 +205,7 @@ const updateEmptyOrGrid = (
 	}
 
 	results.innerHTML = `
-		<div class="material-cards-grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4" data-services-grid>
+		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-services-grid>
 			${services.map(renderServiceCard).join('')}
 		</div>
 	`;

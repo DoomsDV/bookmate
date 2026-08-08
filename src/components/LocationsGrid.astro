@@ -1,8 +1,9 @@
 ---
 import type { Location } from '../lib/locations';
 import {
-	buildBrandMarkerSvgHtml,
 	buildStadiaStaticMapUrl,
+	LOCATION_CARD_STATIC_MAP_OPTIONS,
+	renderBrandMapMarkerOverlay,
 	resolveMapThemeFromStorage,
 } from '../lib/maplibre-loader';
 import AppPagination from './AppPagination.astro';
@@ -38,33 +39,42 @@ const locationMapPreview = (location: Location) => {
 		Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 	return buildStadiaStaticMapUrl(stadiaKey, coords, {
 		theme: mapTheme,
-		width: 480,
-		height: 270,
-		zoom: 15,
+		...LOCATION_CARD_STATIC_MAP_OPTIONS,
 	});
 };
 ---
 
+{stadiaKey ? (
+	<link rel="dns-prefetch" href="https://tiles.stadiamaps.com" />
+) : null}
+{stadiaKey ? (
+	<link rel="preconnect" href="https://tiles.stadiamaps.com" crossorigin />
+) : null}
+
 <section class="locations-view" data-stadia-key={stadiaKey}>
-	<header class="mb-4 flex flex-wrap items-center justify-between gap-3">
-		<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
-			Sucursales
-		</h2>
+	<header class="mb-0 lg:mb-4 flex flex-wrap items-center justify-between gap-2 lg:gap-3">
+		<div class="page-title-row flex flex-wrap items-center gap-2 lg:gap-3 min-w-0">
+			<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
+				Sucursales
+			</h2>
 
-		<div class="flex flex-wrap items-center justify-end gap-2">
-			<span class="locations-summary-pill locations-summary-pill--active">
-				<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--active"></span>
-				Activas: <span data-locations-active-count>{activeCount}</span>
-			</span>
-			<span
-				class="locations-summary-pill locations-summary-pill--inactive"
-				data-locations-inactive-pill
-				hidden={inactiveCount <= 0}
-			>
-				<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--inactive"></span>
-				Inactivas: <span data-locations-inactive-count>{inactiveCount}</span>
-			</span>
+			<div class="page-title-row__badges flex flex-wrap items-center gap-2">
+				<span class="locations-summary-pill locations-summary-pill--active">
+					<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--active"></span>
+					Activas: <span data-locations-active-count>{activeCount}</span>
+				</span>
+				<span
+					class="locations-summary-pill locations-summary-pill--inactive"
+					data-locations-inactive-pill
+					hidden={inactiveCount <= 0}
+				>
+					<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--inactive"></span>
+					Inactivas: <span data-locations-inactive-count>{inactiveCount}</span>
+				</span>
+			</div>
+		</div>
 
+		<div class="panel-page-header__actions flex flex-wrap items-center justify-end gap-2 shrink-0">
 			{showCreateAction && (
 				<button
 					type="button"
@@ -211,7 +221,7 @@ const locationMapPreview = (location: Location) => {
 			</p>
 		</div>
 	) : (
-		<div class="material-cards-grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4" data-locations-grid>
+		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-locations-grid>
 			{locations.map((location) => {
 				const lat = Number(location.latitude);
 				const lng = Number(location.longitude);
@@ -219,91 +229,95 @@ const locationMapPreview = (location: Location) => {
 				const mapPreviewUrl = locationMapPreview(location);
 				return (
 				<article
-					class="locations-card group cursor-pointer"
+					class="locations-card panel-horizontal-card group cursor-pointer relative overflow-hidden"
 					data-location-card
 					data-location-id={location.id_location}
 					tabindex="0"
 					role="button"
 					aria-label={`Editar sucursal ${location.name || location.id_location}`}
 				>
-					{mapPreviewUrl ? (
-						<div class="locations-card-cover">
-							<img
-								src={mapPreviewUrl}
-								alt=""
-								loading="lazy"
-								decoding="async"
-								data-location-map-preview
-								data-map-lat={hasCoords ? lat : undefined}
-								data-map-lng={hasCoords ? lng : undefined}
-							/>
-							<span
-								class="bookmate-map-marker-overlay"
-								aria-hidden="true"
-								set:html={buildBrandMarkerSvgHtml()}
-							/>
-						</div>
-					) : (
-						<div class="locations-card-cover locations-card-cover--brand" aria-hidden="true">
-							<span
-								class="bookmate-map-marker-overlay"
-								aria-hidden="true"
-								set:html={buildBrandMarkerSvgHtml()}
-							/>
-						</div>
-					)}
-
-					<div class="flex items-start justify-between gap-2">
-						<div class="locations-card-icon">
-							<span class="material-symbols-rounded text-[1.25rem]">storefront</span>
-						</div>
-
-						{location.current_closure_name && location.is_active === 1 ? (
-							<span
-								class="locations-card-status locations-card-status--closed"
-								title={`Cerrado: ${location.current_closure_name}`}
-							>
-								<span class="size-1.5 rounded-full locations-summary-dot--closed"></span>
-								Cerrada
-							</span>
+					<div
+						class:list={[
+							'panel-horizontal-card__media',
+							!mapPreviewUrl && 'panel-horizontal-card__media--placeholder',
+						]}
+					>
+						{mapPreviewUrl ? (
+							<>
+								<img
+									src={mapPreviewUrl}
+									alt=""
+									class="panel-horizontal-card__media-image"
+									width={LOCATION_CARD_STATIC_MAP_OPTIONS.width}
+									height={LOCATION_CARD_STATIC_MAP_OPTIONS.height}
+									loading="lazy"
+									decoding="async"
+									fetchpriority="low"
+									data-location-map-preview
+									data-map-lat={hasCoords ? lat : undefined}
+									data-map-lng={hasCoords ? lng : undefined}
+									onload="this.classList.add('is-loaded')"
+									onerror="this.classList.add('is-hidden'); this.parentElement?.classList.add('panel-horizontal-card__media--placeholder');"
+								/>
+								<Fragment set:html={renderBrandMapMarkerOverlay()} />
+							</>
 						) : (
-							<span
-								class:list={[
-									'locations-card-status',
-									location.is_active === 1
-										? 'locations-card-status--active'
-										: 'locations-card-status--inactive',
-								]}
-							>
-								<span
-									class:list={[
-										'size-1.5 rounded-full',
-										location.is_active === 1
-											? 'locations-summary-dot--active'
-											: 'locations-summary-dot--inactive',
-									]}
-								></span>
-								{location.is_active === 1 ? 'Activa' : 'Inactiva'}
-							</span>
+							<Fragment set:html={renderBrandMapMarkerOverlay()} />
 						)}
+						<span
+							class="material-symbols-rounded panel-horizontal-card__media-icon"
+							aria-hidden="true"
+						>
+							storefront
+						</span>
 					</div>
 
-					<div class="locations-card-body">
-						<div>
-							<h3 class="locations-card-title line-clamp-1">
-								{location.name || `Sucursal #${location.id_location}`}
-							</h3>
-							<p class="mt-1 text-[0.85rem] text-(--on-surface-variant) line-clamp-1">
-								{location.address || 'Dirección no disponible'}
-							</p>
+					<div class="panel-horizontal-card__body locations-card-body">
+						<div class="panel-horizontal-card__header">
+							<div class="panel-horizontal-card__title-block">
+								<h3 class="locations-card-title line-clamp-1">
+									{location.name || `Sucursal #${location.id_location}`}
+								</h3>
+								<p class="customer-card-subtitle line-clamp-1">
+									{location.address || 'Dirección no disponible'}
+								</p>
+							</div>
+							{location.current_closure_name && location.is_active === 1 ? (
+								<span
+									class="locations-card-status locations-card-status--closed shrink-0"
+									title={`Cerrado: ${location.current_closure_name}`}
+								>
+									<span class="size-1.5 rounded-full locations-summary-dot--closed"></span>
+									Cerrada
+								</span>
+							) : (
+								<span
+									class:list={[
+										'locations-card-status shrink-0',
+										location.is_active === 1
+											? 'locations-card-status--active'
+											: 'locations-card-status--inactive',
+									]}
+								>
+									<span
+										class:list={[
+											'size-1.5 rounded-full',
+											location.is_active === 1
+												? 'locations-summary-dot--active'
+												: 'locations-summary-dot--inactive',
+										]}
+									></span>
+									{location.is_active === 1 ? 'Activa' : 'Inactiva'}
+								</span>
+							)}
 						</div>
 
-						<dl class="locations-card-metrics">
-							<div class="flex items-center justify-between text-[0.8rem]">
+						<dl class="shrink-0 grid gap-0.5">
+							<div class="flex items-center justify-between text-[0.92rem]">
 								<dt class="locations-card-term">Ciudad</dt>
 								<dd class="locations-card-value">{location.city?.name || '-'}</dd>
 							</div>
-							<div class="flex items-center justify-between text-[0.8rem]">
+							<div class="flex items-center justify-between text-[0.92rem]">
 								<dt class="locations-card-term">Depto.</dt>
 								<dd class="locations-card-value">{location.department?.name || '-'}</dd>
 							</div>
@@ -334,7 +348,13 @@ const locationMapPreview = (location: Location) => {
 <style is:global>
 	.locations-view {
 		display: grid;
-		gap: 1.2rem;
+		gap: 0.75rem;
+	}
+
+	@media (min-width: 1024px) {
+		.locations-view {
+			gap: 1.2rem;
+		}
 	}
 
 	.locations-summary-pill {
@@ -471,88 +491,6 @@ const locationMapPreview = (location: Location) => {
 		cursor: pointer;
 	}
 
-	.locations-card-cover {
-		position: relative;
-		margin: 0 0 0.4rem;
-		overflow: hidden;
-		border-radius: 0.65rem;
-		aspect-ratio: 16 / 9;
-		background: color-mix(in srgb, var(--surface-container-high) 80%, transparent);
-	}
-
-	.locations-card-cover--brand {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		background:
-			radial-gradient(
-				ellipse 80% 70% at 20% 15%,
-				color-mix(in srgb, var(--primary) 28%, transparent),
-				transparent 60%
-			),
-			linear-gradient(
-				145deg,
-				color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
-				var(--surface-container-highest) 55%,
-				color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
-			);
-	}
-
-	.locations-card-cover .bookmate-map-marker-overlay {
-		position: absolute;
-		left: 50%;
-		top: 50%;
-		width: 28px;
-		height: 36px;
-		transform: translate(-50%, -100%);
-		pointer-events: none;
-		filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
-		z-index: 1;
-	}
-
-	.locations-card-cover .bookmate-map-marker-overlay svg {
-		display: block;
-		width: 28px;
-		height: 36px;
-	}
-
-	.locations-card-cover--brand .bookmate-map-marker-overlay {
-		position: relative;
-		left: auto;
-		top: auto;
-		transform: none;
-	}
-
-	.locations-card-cover img {
-		display: block;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-
-	.locations-card .locations-card-icon {
-		width: 1.9rem;
-		height: 1.9rem;
-		border-radius: 0.6rem;
-	}
-
-	.locations-card .locations-card-icon .material-symbols-rounded {
-		font-size: 1rem;
-	}
-
-	.locations-card .locations-card-body {
-		gap: 0.4rem;
-	}
-
-	.locations-card .locations-card-title {
-		font-size: 0.92rem;
-	}
-
-	.locations-card .locations-card-metrics {
-		gap: 0.25rem;
-		font-size: 0.8rem;
-	}
-
 	.locations-card-status {
 		display: inline-flex;
 		align-items: center;
@@ -613,9 +551,9 @@ const locationMapPreview = (location: Location) => {
 	}
 
 	@media (max-width: 639px) {
-		.locations-card-cover {
-			margin: 0 0 0.3rem;
-			border-radius: 0.55rem;
+		.locations-card-status {
+			padding: 0.2rem 0.5rem;
+			font-size: 0.62rem;
 		}
 	}
 

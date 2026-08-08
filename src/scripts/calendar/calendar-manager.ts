@@ -32,6 +32,7 @@ import {
 	type StoredAppointmentAiDraft,
 } from '../../lib/appointment-ai-types';
 import { showFlashMessage } from '../../lib/flash';
+import { formatHourLabelAmPm } from '../../lib/booking-datetime';
 import {
 	getScheduleMisalignedBannerAction,
 	getScheduleMisalignedBannerCaption,
@@ -192,6 +193,8 @@ class CalendarManager extends HTMLElement {
 	private syncingDayHeadersOption = false;
 	private stickyChromeScrollBound = false;
 	private stickyChromeScrollRaf = 0;
+	private nowIndicatorObserver: MutationObserver | null = null;
+	private hasAppliedInitialScrollToNow = false;
 
 	private calendarEl: HTMLElement | null = null;
 	private calendarStageNode: HTMLElement | null = null;
@@ -300,6 +303,68 @@ class CalendarManager extends HTMLElement {
 		void this.bootstrap();
 	}
 
+	private clearNowIndicatorSpan() {
+		this.nowIndicatorObserver?.disconnect();
+		this.nowIndicatorObserver = null;
+		this.calendarEl?.style.removeProperty('--cal-now-indicator-top');
+	}
+
+	private bindNowIndicatorObserver(lineEl: HTMLElement) {
+		this.nowIndicatorObserver?.disconnect();
+		this.nowIndicatorObserver = new MutationObserver(() => {
+			this.applyNowIndicatorTop(lineEl);
+		});
+		this.nowIndicatorObserver.observe(lineEl, {
+			attributes: true,
+			attributeFilter: ['style'],
+		});
+	}
+
+	private applyNowIndicatorTop(lineEl: HTMLElement) {
+		const top = lineEl.style.top;
+		if (top) {
+			this.calendarEl?.style.setProperty('--cal-now-indicator-top', top);
+		} else {
+			this.calendarEl?.style.removeProperty('--cal-now-indicator-top');
+		}
+	}
+
+	private syncNowIndicatorSpan(retry = 0) {
+		if (!this.calendarEl) return;
+
+		this.nowIndicatorObserver?.disconnect();
+		this.nowIndicatorObserver = null;
+
+		if (!this.calendar || !this.isTimeGridView(this.calendar.view.type)) {
+			this.clearNowIndicatorSpan();
+			return;
+		}
+
+		const lineEl = this.calendarEl.querySelector<HTMLElement>('.fc-timegrid-now-indicator-line');
+		if (!lineEl) {
+			this.calendarEl.style.removeProperty('--cal-now-indicator-top');
+			if (retry < 4) {
+				window.requestAnimationFrame(() => this.syncNowIndicatorSpan(retry + 1));
+				return;
+			}
+			return;
+		}
+
+		const top = lineEl.style.top;
+		if (!top && retry < 4) {
+			window.requestAnimationFrame(() => this.syncNowIndicatorSpan(retry + 1));
+			return;
+		}
+
+		if (!top) {
+			this.clearNowIndicatorSpan();
+			return;
+		}
+
+		this.applyNowIndicatorTop(lineEl);
+		this.bindNowIndicatorObserver(lineEl);
+	}
+
 	disconnectedCallback() {
 		this.#bound = false;
 		this.#listeners?.abort();
@@ -309,6 +374,7 @@ class CalendarManager extends HTMLElement {
 			this.#bindRetryTimer = null;
 		}
 		this.#bindRetryAttempts = 0;
+		this.clearNowIndicatorSpan();
 		this.setSheetOpen(this.filtersSheet, false);
 		this.restoreFiltersSheetHome();
 		document.body.style.overflow = '';
@@ -407,6 +473,8 @@ class CalendarManager extends HTMLElement {
 
 	private destroyCalendar() {
 		this.clearPendingFocusState();
+		this.clearNowIndicatorSpan();
+		this.hasAppliedInitialScrollToNow = false;
 		this.teardownMobileStickyChrome();
 		if (this.calendar) {
 			this.calendar.destroy();
@@ -434,6 +502,36 @@ class CalendarManager extends HTMLElement {
 
 	private isTimeGridView(viewType: string) {
 		return viewType.includes('timeGrid');
+	}
+
+	private viewIncludesToday() {
+		if (!this.calendar) return false;
+
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+
+		const rangeStart = new Date(this.calendar.view.activeStart);
+		rangeStart.setHours(0, 0, 0, 0);
+
+		const rangeEnd = new Date(this.calendar.view.activeEnd);
+		rangeEnd.setHours(0, 0, 0, 0);
+
+		return today >= rangeStart && today < rangeEnd;
+	}
+
+	private maybeScrollToNowOnInitialLoad() {
+		if (this.hasAppliedInitialScrollToNow) return;
+		if (!this.calendar) return;
+		if (this.pendingFocusAppointmentId !== null) return;
+		if (!this.isTimeGridView(this.calendar.view.type)) return;
+		if (!this.viewIncludesToday()) return;
+
+		this.hasAppliedInitialScrollToNow = true;
+		window.requestAnimationFrame(() => {
+			window.requestAnimationFrame(() => {
+				this.scrollCalendarToNow(false);
+			});
+		});
 	}
 
 	private schedulePendingFocusRetry(attempt: number) {
@@ -1018,18 +1116,18 @@ class CalendarManager extends HTMLElement {
 		if (!this.calendar) return;
 		this.calendar.today();
 		window.requestAnimationFrame(() => {
-			this.scrollCalendarToNow();
+			this.scrollCalendarToNow(true);
 		});
 	};
 
-	private scrollCalendarToNow() {
+	private scrollCalendarToNow(smooth = true) {
 		if (!this.calendar || !this.calendarEl) return;
 		if (!this.isTimeGridView(this.calendar.view.type)) return;
 
 		const now = new Date();
 		this.calendar.scrollToTime({
 			hours: now.getHours(),
-			minutes: Math.max(0, now.getMinutes() - 20),
+			minutes: Math.max(0, now.getMinutes() - 60),
 		});
 
 		const indicator =
@@ -1038,7 +1136,11 @@ class CalendarManager extends HTMLElement {
 		if (!indicator) return;
 
 		window.setTimeout(() => {
-			indicator.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+			indicator.scrollIntoView({
+				block: 'center',
+				inline: 'nearest',
+				behavior: smooth ? 'smooth' : 'auto',
+			});
 		}, 40);
 	}
 
@@ -1080,6 +1182,7 @@ class CalendarManager extends HTMLElement {
 			this.syncSheetViewOptions();
 			this.syncMobileDayHeadersOption();
 			this.syncMobileStickyChrome();
+			this.syncNowIndicatorSpan();
 		});
 	}
 
@@ -1557,6 +1660,13 @@ class CalendarManager extends HTMLElement {
 			scrollTimeReset: false,
 			slotMinTime: '06:00:00',
 			slotMaxTime: '22:00:00',
+			slotLabelContent: (args) => {
+				const { hour, meridiem } = formatHourLabelAmPm(args.date.getHours());
+				if (!hour || !meridiem) return { html: '' };
+				return {
+					html: `<span class="cal-hour-label"><span class="cal-hour-label__hour">${hour}</span><span class="cal-hour-label__meridiem">${meridiem}</span></span>`,
+				};
+			},
 			headerToolbar: this.getHeaderToolbar(isMobile),
 			customButtons: {
 				goToday: {
@@ -1613,6 +1723,8 @@ class CalendarManager extends HTMLElement {
 				window.requestAnimationFrame(() => {
 					this.syncToolbarButtonGroupClasses();
 					this.syncMobileStickyChrome();
+					this.syncNowIndicatorSpan();
+					this.maybeScrollToNowOnInitialLoad();
 				});
 				void this.applyPendingFocus(0);
 			},

@@ -5,6 +5,7 @@ import {
 } from '../lib/panel-filter-popover';
 import {
 	buildStadiaStaticMapUrl,
+	LOCATION_CARD_STATIC_MAP_OPTIONS,
 	renderBrandMapMarkerOverlay,
 	resolveMapTheme,
 	type MapCoordinates,
@@ -18,6 +19,7 @@ type LocationItem = {
 	is_active?: 0 | 1;
 	latitude?: number | null;
 	longitude?: number | null;
+	current_closure_name?: string | null;
 	city?: { name?: string | null } | null;
 	department?: { name?: string | null } | null;
 };
@@ -49,9 +51,7 @@ const getStadiaKey = () => {
 const buildMapPreviewUrl = (coords: MapCoordinates | null) =>
 	buildStadiaStaticMapUrl(getStadiaKey(), coords, {
 		theme: resolveMapTheme(),
-		width: 480,
-		height: 270,
-		zoom: 15,
+		...LOCATION_CARD_STATIC_MAP_OPTIONS,
 	});
 
 const syncLocationMapPreviews = () => {
@@ -62,41 +62,47 @@ const syncLocationMapPreviews = () => {
 		if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 		const url = buildStadiaStaticMapUrl(getStadiaKey(), { lat, lng }, {
 			theme,
-			width: 480,
-			height: 270,
-			zoom: 15,
+			...LOCATION_CARD_STATIC_MAP_OPTIONS,
 		});
 		if (url && img.src !== url) img.src = url;
+		if (img.complete) img.classList.add('is-loaded');
 	});
 };
 
-const buildLocationCover = (location: LocationItem) => {
+const buildLocationMedia = (location: LocationItem) => {
 	const lat = Number(location.latitude);
 	const lng = Number(location.longitude);
 	const coords =
 		Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 	const mapPreviewUrl = buildMapPreviewUrl(coords);
+	const hasMap = Boolean(mapPreviewUrl);
+	const mediaClasses = hasMap
+		? 'panel-horizontal-card__media'
+		: 'panel-horizontal-card__media panel-horizontal-card__media--placeholder';
 
-	if (mapPreviewUrl) {
-		return `
-			<div class="locations-card-cover">
-				<img
-					src="${escapeHtml(mapPreviewUrl)}"
-					alt=""
-					loading="lazy"
-					decoding="async"
-					data-location-map-preview
-					data-map-lat="${coords!.lat}"
-					data-map-lng="${coords!.lng}"
-				/>
-				${renderBrandMapMarkerOverlay()}
-			</div>
-		`;
-	}
+	const { width: mapW, height: mapH } = LOCATION_CARD_STATIC_MAP_OPTIONS;
+	const imageHtml = hasMap
+		? `<img
+				src="${escapeHtml(mapPreviewUrl!)}"
+				alt=""
+				class="panel-horizontal-card__media-image"
+				width="${mapW}"
+				height="${mapH}"
+				loading="lazy"
+				decoding="async"
+				fetchpriority="low"
+				data-location-map-preview
+				data-map-lat="${coords!.lat}"
+				data-map-lng="${coords!.lng}"
+				onload="this.classList.add('is-loaded')"
+				onerror="this.classList.add('is-hidden'); this.parentElement?.classList.add('panel-horizontal-card__media--placeholder');"
+			/>${renderBrandMapMarkerOverlay()}`
+		: renderBrandMapMarkerOverlay();
 
 	return `
-		<div class="locations-card-cover locations-card-cover--brand" aria-hidden="true">
-			${renderBrandMapMarkerOverlay()}
+		<div class="${mediaClasses}">
+			${imageHtml}
+			<span class="material-symbols-rounded panel-horizontal-card__media-icon" aria-hidden="true">storefront</span>
 		</div>
 	`;
 };
@@ -131,43 +137,52 @@ const syncUrl = (state: { page: number; isActive: number | null }) => {
 const renderLocationCard = (location: LocationItem) => {
 	const name = location.name || `Sucursal #${location.id_location}`;
 	const isActive = location.is_active === 1;
-	const statusClass = isActive ? 'locations-card-status--active' : 'locations-card-status--inactive';
-	const dotClass = isActive ? 'locations-summary-dot--active' : 'locations-summary-dot--inactive';
-	const statusLabel = isActive ? 'Activa' : 'Inactiva';
+	const isClosed = Boolean(location.current_closure_name) && isActive;
+	const statusClass = isClosed
+		? 'locations-card-status--closed'
+		: isActive
+			? 'locations-card-status--active'
+			: 'locations-card-status--inactive';
+	const dotClass = isClosed
+		? 'locations-summary-dot--closed'
+		: isActive
+			? 'locations-summary-dot--active'
+			: 'locations-summary-dot--inactive';
+	const statusLabel = isClosed ? 'Cerrada' : isActive ? 'Activa' : 'Inactiva';
+	const statusTitle = isClosed
+		? ` title="Cerrado: ${escapeHtml(String(location.current_closure_name))}"`
+		: '';
 	const address = location.address || 'Dirección no disponible';
 	const city = location.city?.name || '-';
 	const department = location.department?.name || '-';
 
 	return `
 		<article
-			class="locations-card group cursor-pointer"
+			class="locations-card panel-horizontal-card group cursor-pointer relative overflow-hidden"
 			data-location-card
 			data-location-id="${location.id_location}"
 			tabindex="0"
 			role="button"
 			aria-label="Editar sucursal ${escapeHtml(name)}"
 		>
-			${buildLocationCover(location)}
-			<div class="flex items-start justify-between gap-2">
-				<div class="locations-card-icon">
-					<span class="material-symbols-rounded text-[1.25rem]">storefront</span>
+			${buildLocationMedia(location)}
+			<div class="panel-horizontal-card__body locations-card-body">
+				<div class="panel-horizontal-card__header">
+					<div class="panel-horizontal-card__title-block">
+						<h3 class="locations-card-title line-clamp-1">${escapeHtml(name)}</h3>
+						<p class="customer-card-subtitle line-clamp-1">${escapeHtml(address)}</p>
+					</div>
+					<span class="locations-card-status shrink-0 ${statusClass}"${statusTitle}>
+						<span class="size-1.5 rounded-full ${dotClass}"></span>
+						${statusLabel}
+					</span>
 				</div>
-				<span class="locations-card-status ${statusClass}">
-					<span class="size-1.5 rounded-full ${dotClass}"></span>
-					${statusLabel}
-				</span>
-			</div>
-			<div class="locations-card-body">
-				<div>
-					<h3 class="locations-card-title line-clamp-1">${escapeHtml(name)}</h3>
-					<p class="mt-1 text-[0.85rem] text-(--on-surface-variant) line-clamp-1">${escapeHtml(address)}</p>
-				</div>
-				<dl class="locations-card-metrics">
-					<div class="flex items-center justify-between text-[0.8rem]">
+				<dl class="shrink-0 grid gap-0.5">
+					<div class="flex items-center justify-between text-[0.92rem]">
 						<dt class="locations-card-term">Ciudad</dt>
 						<dd class="locations-card-value">${escapeHtml(city)}</dd>
 					</div>
-					<div class="flex items-center justify-between text-[0.8rem]">
+					<div class="flex items-center justify-between text-[0.92rem]">
 						<dt class="locations-card-term">Depto.</dt>
 						<dd class="locations-card-value">${escapeHtml(department)}</dd>
 					</div>
@@ -224,7 +239,7 @@ const updateEmptyOrGrid = (locations: LocationItem[], isActive: number | null) =
 	}
 
 	results.innerHTML = `
-		<div class="material-cards-grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4" data-locations-grid>
+		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-locations-grid>
 			${locations.map(renderLocationCard).join('')}
 		</div>
 	`;
@@ -348,6 +363,10 @@ export const initLocationsListControls = () => {
 
 	syncLocationMapPreviewsOnPage();
 	document.addEventListener('astro:page-load', syncLocationMapPreviewsOnPage);
+
+	document.querySelectorAll<HTMLImageElement>('[data-location-map-preview]').forEach((img) => {
+		if (img.complete && img.naturalWidth > 0) img.classList.add('is-loaded');
+	});
 
 	const themeObserver = new MutationObserver(() => {
 		syncLocationMapPreviews();
