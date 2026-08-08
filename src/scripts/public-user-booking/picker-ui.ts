@@ -214,8 +214,18 @@ export const triggerPickerHaptic = () => {
 export const CONTINUE_BUTTON_INNER_HTML =
 	'<span class="public-booking-continue__label">Continuar</span><span class="material-symbols-rounded public-booking-continue__icon" aria-hidden="true">chevron_right</span>';
 
+export const SUBMIT_BOOKING_BUTTON_INNER_HTML =
+	'<span class="material-symbols-rounded booking-primary-action__icon" aria-hidden="true">event_available</span><span class="booking-primary-action__label">Confirmar reserva</span>';
+
 export const setContinueButtonContent = (button: HTMLButtonElement) => {
 	button.innerHTML = CONTINUE_BUTTON_INNER_HTML;
+};
+
+export const setSubmitBookingButtonContent = (
+	button: HTMLButtonElement,
+	options: { loading?: boolean } = {}
+) => {
+	button.innerHTML = options.loading ? 'Confirmando...' : SUBMIT_BOOKING_BUTTON_INNER_HTML;
 };
 
 export const createContinueButton = (

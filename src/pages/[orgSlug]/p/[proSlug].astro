@@ -344,7 +344,10 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 									<span>No cierres esta página hasta confirmar. Si salís o cerrás el navegador, la cita no se reservará.</span>
 								</p>
 								<div class="order-3 grid gap-3 lg:order-none lg:mt-3" data-booking-primary-actions>
-									<button type="submit" data-submit-booking data-submit-confirm data-booking-primary-action class="booking-primary-action inline-flex h-12 w-full items-center justify-center rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60">Confirmar reserva</button>
+									<button type="submit" data-submit-booking data-submit-confirm data-booking-primary-action class="booking-primary-action inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60">
+										<span class="material-symbols-rounded booking-primary-action__icon" aria-hidden="true">event_available</span>
+										<span class="booking-primary-action__label">Confirmar reserva</span>
+									</button>
 									<button type="button" data-pay-deposit-submit data-booking-primary-action class="booking-primary-action is-hidden inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60"><span>Confirmar y transferir seña</span><span aria-hidden="true">🔒</span></button>
 								</div>
 							</form>

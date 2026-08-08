@@ -1,9 +1,10 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
+import '../styles/legal-page.css';
 
 const updatedAt = '14 de julio de 2026';
-const pageTitle = 'Políticas de cancelación y reembolso — Hasel';
+const pageTitle = 'Políticas de cancelación y reembolso - Hasel';
 const pageDescription =
 	'Cómo funcionan las señas por SIPAP, las políticas Flexible, Moderada y Estricta, y los reembolsos en Hasel.';
 
@@ -17,24 +18,38 @@ const toc = [
 ] as const;
 ---
 
-<Layout pageTitle={pageTitle} metaDescription={pageDescription}>
+<Layout
+	pageTitle={pageTitle}
+	metaDescription={pageDescription}
+	canonicalPath="/politicas-de-cancelacion-y-reembolso"
+>
 	<main class="policy-root">
-		<div class="policy-shell">
-			<header class="policy-navbar">
-				<a href="/" class="policy-brand no-underline">
+		<a href="#policy-content" class="policy-skip-link">Saltar al contenido principal</a>
+		<div class="policy-scroll-sentinel" data-scroll-sentinel aria-hidden="true"></div>
+
+		<header class="policy-topbar" data-policy-topbar>
+			<div class="policy-topbar-inner">
+				<a href="/" class="policy-brand no-underline" aria-label="Hasel - Inicio">
 					<img
-						src="/icons/icon-512x512.png"
-						alt="Logo Hasel"
+						src="/icons/icon-64.png"
+						alt=""
 						class="policy-brand-logo"
+						width="64"
+						height="64"
 						loading="eager"
 						decoding="async"
 					/>
-					<span>Hasel</span>
+					<span class="policy-brand-text">Hasel</span>
 				</a>
-				<a href="/" class="policy-home-link no-underline">Volver al inicio</a>
-			</header>
+				<a href="/" class="policy-back-link m3-btn m3-btn-tonal no-underline">
+					<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+					Volver al inicio
+				</a>
+			</div>
+		</header>
 
-			<header class="policy-hero">
+		<div class="policy-shell">
+			<header class="policy-doc-header" id="policy-content">
 				<p class="policy-kicker">Documentación legal</p>
 				<h1>Políticas de cancelación y reembolso</h1>
 				<p class="policy-lead">
@@ -215,399 +230,35 @@ const toc = [
 					</section>
 				</article>
 			</div>
+
+			<footer class="policy-footer">
+				<div class="policy-footer-brand">
+					<p class="policy-footer-copy">© {new Date().getFullYear()} Hasel</p>
+					<p class="policy-footer-tagline">Software de reservas</p>
+				</div>
+				<div class="policy-footer-links">
+					<p class="policy-footer-support">
+						<span>¿Necesitás ayuda? Escribinos al correo</span>
+						<a href="mailto:support@hasel.app" class="policy-footer-link no-underline">support@hasel.app</a>
+					</p>
+					<nav class="policy-footer-nav" aria-label="Enlaces legales">
+						<a href="/politicas-y-privacidad" class="policy-footer-link no-underline">
+							Políticas y privacidad
+						</a>
+						<a
+							href="/politicas-de-cancelacion-y-reembolso"
+							class="policy-footer-link no-underline"
+							aria-current="page"
+						>
+							Cancelación y reembolso
+						</a>
+					</nav>
+				</div>
+			</footer>
 		</div>
 	</main>
 </Layout>
 
 <script>
-	const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-policy-section]'));
-	const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]'));
-	const mobileDetails = document.querySelector<HTMLDetailsElement>('.policy-toc-mobile');
-
-	const setActive = (id: string) => {
-		for (const link of links) {
-			link.classList.toggle('is-active', link.dataset.tocLink === id);
-		}
-	};
-
-	for (const link of links) {
-		link.addEventListener('click', () => {
-			if (mobileDetails) mobileDetails.open = false;
-		});
-	}
-
-	if (sections.length && 'IntersectionObserver' in window) {
-		const visible = new Map<string, number>();
-		const observer = new IntersectionObserver(
-			(entries) => {
-				for (const entry of entries) {
-					const id = entry.target.id;
-					if (!id) continue;
-					if (entry.isIntersecting) visible.set(id, entry.intersectionRatio);
-					else visible.delete(id);
-				}
-				let bestId = '';
-				let bestRatio = 0;
-				for (const [id, ratio] of visible) {
-					if (ratio >= bestRatio) {
-						bestRatio = ratio;
-						bestId = id;
-					}
-				}
-				if (bestId) setActive(bestId);
-			},
-			{ rootMargin: '-20% 0px -55% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }
-		);
-		for (const section of sections) observer.observe(section);
-		setActive(sections[0]?.id || '');
-	}
+	import '../scripts/legal-page.ts';
 </script>
-
-<style>
-	:root {
-		--policy-bg: #0a0a0b;
-		--policy-text: #f4f4f5;
-		--policy-muted: #a1a1aa;
-		--policy-heading: #fafafa;
-		--policy-border: rgba(255, 255, 255, 0.1);
-		--policy-border-soft: rgba(255, 255, 255, 0.06);
-		--policy-primary: #3a6fd7;
-		--policy-primary-soft: #bfd6ff;
-		--policy-callout-bg: rgba(255, 255, 255, 0.04);
-		--policy-toc-active: #e4e4e7;
-	}
-
-	.policy-root {
-		min-height: 100vh;
-		background: var(--policy-bg);
-		color: var(--policy-text);
-		font-family: 'Inter', system-ui, -apple-system, sans-serif;
-	}
-
-	.policy-shell {
-		width: min(1120px, 100%);
-		margin: 0 auto;
-		padding: 1rem 1.15rem 4rem;
-	}
-
-	.policy-navbar {
-		position: sticky;
-		top: 0.75rem;
-		z-index: 20;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		margin: 0.5rem 0 1.5rem;
-		padding: 0.55rem 0.75rem;
-		border: 1px solid var(--policy-border);
-		border-radius: 999px;
-		background: rgba(10, 10, 11, 0.82);
-		backdrop-filter: blur(12px);
-	}
-
-	.policy-brand,
-	.policy-home-link {
-		display: inline-flex;
-		align-items: center;
-		color: var(--policy-text);
-		text-decoration: none;
-	}
-
-	.policy-brand {
-		gap: 0.5rem;
-		font-size: 1.05rem;
-		font-weight: 700;
-	}
-
-	.policy-brand-logo {
-		width: 1.85rem;
-		height: 1.85rem;
-		border-radius: 999px;
-		object-fit: contain;
-	}
-
-	.policy-home-link {
-		border-radius: 999px;
-		background: var(--policy-primary);
-		padding: 0.5rem 0.95rem;
-		font-size: 0.875rem;
-		font-weight: 650;
-	}
-
-	.policy-hero {
-		padding: 2rem 0 2.25rem;
-		border-bottom: 1px solid var(--policy-border-soft);
-	}
-
-	.policy-kicker {
-		margin: 0 0 0.75rem;
-		color: var(--policy-primary-soft);
-		font-size: 0.8rem;
-		font-weight: 650;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-	}
-
-	.policy-hero h1 {
-		margin: 0 0 1rem;
-		max-width: 16ch;
-		color: var(--policy-heading);
-		font-size: clamp(2.35rem, 6.5vw, 3.75rem);
-		font-weight: 750;
-		letter-spacing: -0.04em;
-		line-height: 1.3;
-	}
-
-	.policy-lead {
-		margin: 0 0 1rem;
-		max-width: 62ch;
-		color: var(--policy-muted);
-		font-size: clamp(1.02rem, 1.8vw, 1.15rem);
-		line-height: 1.7;
-	}
-
-	.policy-updated {
-		margin: 0;
-		color: #8b8b96;
-		font-size: 0.88rem;
-		font-weight: 500;
-	}
-
-	.policy-layout {
-		display: grid;
-		gap: 1.5rem;
-		padding-top: 1.5rem;
-	}
-
-	.policy-toc-desktop {
-		display: none;
-	}
-
-	.policy-toc-mobile {
-		border: 1px solid var(--policy-border);
-		border-radius: 0.75rem;
-		background: transparent;
-		padding: 0;
-	}
-
-	.policy-toc-mobile summary {
-		cursor: pointer;
-		list-style: none;
-		padding: 0.85rem 1rem;
-		color: var(--policy-heading);
-		font-size: 0.92rem;
-		font-weight: 650;
-	}
-
-	.policy-toc-mobile summary::-webkit-details-marker {
-		display: none;
-	}
-
-	.policy-toc-mobile summary::after {
-		content: 'expand_more';
-		float: right;
-		font-family: 'Material Symbols Rounded';
-		font-size: 1.2rem;
-		color: var(--policy-muted);
-	}
-
-	.policy-toc-mobile[open] summary::after {
-		content: 'expand_less';
-	}
-
-	.policy-toc-mobile .policy-toc-nav {
-		display: grid;
-		gap: 0.15rem;
-		padding: 0 0.5rem 0.75rem;
-		border-top: 1px solid var(--policy-border-soft);
-	}
-
-	.policy-toc-title {
-		margin: 0 0 0.75rem;
-		color: #8b8b96;
-		font-size: 0.75rem;
-		font-weight: 650;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-	}
-
-	.policy-toc-link {
-		display: block;
-		padding: 0.45rem 0.65rem;
-		border-left: 2px solid transparent;
-		color: var(--policy-muted);
-		font-size: 0.9rem;
-		font-weight: 500;
-		line-height: 1.35;
-		text-decoration: none;
-		transition: color 0.15s ease, border-color 0.15s ease;
-	}
-
-	.policy-toc-link:hover {
-		color: var(--policy-heading);
-	}
-
-	.policy-toc-link.is-active {
-		border-left-color: var(--policy-primary);
-		color: var(--policy-toc-active);
-		font-weight: 600;
-	}
-
-	.policy-article {
-		min-width: 0;
-		max-width: 46rem;
-	}
-
-	.policy-section {
-		padding: 2.25rem 0;
-		border-bottom: 1px solid var(--policy-border-soft);
-		scroll-margin-top: 5.5rem;
-	}
-
-	.policy-section--last {
-		border-bottom: 0;
-		padding-bottom: 1rem;
-	}
-
-	.policy-section h2 {
-		margin: 0 0 1.1rem;
-		color: var(--policy-heading);
-		font-size: clamp(1.35rem, 2.5vw, 1.65rem);
-		font-weight: 700;
-		letter-spacing: -0.02em;
-		line-height: 1.25;
-	}
-
-	.policy-section h3 {
-		margin: 1.5rem 0 0.65rem;
-		color: var(--policy-heading);
-		font-size: 1.05rem;
-		font-weight: 650;
-	}
-
-	.policy-section p {
-		margin: 0;
-		color: var(--policy-muted);
-		font-size: 1rem;
-		line-height: 1.75;
-	}
-
-	.policy-section p + p {
-		margin-top: 1rem;
-	}
-
-	.policy-section strong {
-		color: #d4d4d8;
-		font-weight: 650;
-	}
-
-	.policy-callout {
-		margin: 1.25rem 0;
-		padding: 0.95rem 1rem 0.95rem 1.05rem;
-		border-left: 3px solid var(--policy-primary);
-		background: var(--policy-callout-bg);
-		border-radius: 0 0.5rem 0.5rem 0;
-	}
-
-	.policy-callout p {
-		margin: 0;
-		color: #c4c4cc;
-		font-size: 0.96rem;
-		line-height: 1.65;
-	}
-
-	.policy-callout strong {
-		color: var(--policy-heading);
-	}
-
-	.policy-table-wrap {
-		margin: 1.35rem 0 1.5rem;
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.policy-table {
-		width: 100%;
-		min-width: 28rem;
-		border-collapse: collapse;
-		background: transparent;
-	}
-
-	.policy-table th,
-	.policy-table td {
-		padding: 0.85rem 0.9rem;
-		border: 1px solid var(--policy-border);
-		text-align: left;
-		font-size: 0.92rem;
-		line-height: 1.45;
-		vertical-align: top;
-	}
-
-	.policy-table thead th {
-		color: var(--policy-heading);
-		font-weight: 650;
-		background: rgba(255, 255, 255, 0.03);
-	}
-
-	.policy-table tbody th {
-		color: var(--policy-heading);
-		font-weight: 600;
-		width: 22%;
-	}
-
-	.policy-table td {
-		color: var(--policy-muted);
-	}
-
-	.policy-inline-link {
-		color: var(--policy-primary-soft);
-		font-weight: 600;
-		text-decoration: underline;
-		text-underline-offset: 0.18em;
-	}
-
-	.policy-inline-link:hover {
-		color: #ffffff;
-	}
-
-	@media (min-width: 960px) {
-		.policy-shell {
-			padding: 1.25rem 1.5rem 5rem;
-		}
-
-		.policy-hero {
-			padding: 3rem 0 2.75rem;
-		}
-
-		.policy-hero h1 {
-			line-height: 1.12;
-		}
-
-		.policy-layout {
-			grid-template-columns: 15.5rem minmax(0, 1fr);
-			gap: 3rem;
-			align-items: start;
-			padding-top: 2.5rem;
-		}
-
-		.policy-toc {
-			position: sticky;
-			top: 5.25rem;
-		}
-
-		.policy-toc-mobile {
-			display: none;
-		}
-
-		.policy-toc-desktop {
-			display: grid;
-			gap: 0.1rem;
-		}
-
-		.policy-section {
-			padding: 2.75rem 0;
-			scroll-margin-top: 6rem;
-		}
-	}
-</style>

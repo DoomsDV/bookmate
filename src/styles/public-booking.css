@@ -2541,8 +2541,14 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 }
 
 .booking-primary-action {
+	gap: 0.35rem;
 	background: var(--primary-container) !important;
 	color: var(--on-primary-container) !important;
+}
+
+.booking-primary-action__icon {
+	font-size: 1.25rem;
+	line-height: 1;
 }
 
 .booking-primary-action:hover:not(:disabled) {

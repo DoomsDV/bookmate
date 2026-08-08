@@ -52,6 +52,7 @@ import {
 } from './public-deposit-sipap';
 import {
 	setContinueButtonContent,
+	setSubmitBookingButtonContent,
 	buildPublicLocationCardContent,
 	bindMapImageLifecycle,
 	bindPickerUserGesture,
@@ -2881,7 +2882,7 @@ export const initializePublicBookingPage = () => {
 
 		isSubmitting = true;
 		submitButton.disabled = true;
-		submitButton.textContent = 'Confirmando...';
+		setSubmitBookingButtonContent(submitButton, { loading: true });
 
 		try {
 			await fetchJson<{ message?: string; data?: CreatedAppointmentApiData | null }>(
@@ -2918,7 +2919,7 @@ export const initializePublicBookingPage = () => {
 		} finally {
 			isSubmitting = false;
 			submitButton.disabled = false;
-			submitButton.textContent = 'Confirmar reserva';
+			setSubmitBookingButtonContent(submitButton);
 		}
 	}, { signal });
 

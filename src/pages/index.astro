@@ -2,58 +2,56 @@
 import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
 const siteOrigin = String(Astro.site ?? Astro.url.origin).replace(/\/+$/, '');
-const pageTitle = 'Hasel — Software de citas, agenda y reservas online para tu negocio';
+const pageTitle = 'Hasel - Software de citas, agenda y reservas online para tu negocio';
 const metaDescription =
 	'Organizá citas, equipo y clientes en un solo panel. Tus clientes reservan 24/7 con tu enlace personalizado. Probá Premium gratis 14 días.';
 
 const usefulServices = [
 	{
 		icon: 'event_available',
-		title: 'Automatización Inteligente de Citas',
-		text: 'Tus clientes reservan 24/7. Recordatorios automáticos para reducir cancelaciones. Pagos integrados.',
+		title: 'Citas automáticas',
+		text: 'Tus clientes reservan 24/7. Recordatorios automáticos para reducir cancelaciones.',
+		variant: 'featured',
+		image: '/landing/salon.jpg',
+		imageAlt: 'Recepción de salón con agenda digital',
 	},
 	{
 		icon: 'show_chart',
-		title: 'Inteligencia de Negocio y Rentabilidad',
-		text: 'Mirá ingresos, ticket promedio y tendencias en métricas simples. Con datos claros, tomás decisiones informadas al instante.',
+		title: 'Métricas claras',
+		text: 'Ingresos, ticket promedio y tendencias en números simples para decidir con datos.',
+		variant: 'tint',
 	},
 	{
 		icon: 'apartment',
-		title: 'Gestión de Equipo y Múltiples Ubicaciones',
-		text: 'Monitorizá disponibilidad en tiempo real. Asigná turnos y gestioná todas tus sucursales desde un solo lugar.',
-	},
-	{
-		icon: 'notifications_active',
-		title: 'Alertas Proactivas y Sugerencias',
-		text: 'Notificaciones sobre nuevas citas, modificaciones o cancelaciones. Sugerencias de marketing basadas en IA para potenciar tus servicios.',
+		title: 'Equipo y sucursales',
+		text: 'Disponibilidad en tiempo real, turnos y varias ubicaciones desde un solo panel.',
+		variant: 'default',
 	},
 	{
 		icon: 'desktop_windows',
-		title: 'Tu Propia Página de Reservas',
-		text: 'Proyectá una imagen profesional con un sitio de reservas autogestionable. Tus clientes ven la disponibilidad real y eligen el horario al instante.',
-	},
-	{
-		icon: 'folder_shared',
-		title: 'Historial y Fichas de Clientes Centralizadas',
-		text: 'Registrá cada cliente, su historial de citas, servicios y notas privadas para una atención personalizada en cada visita.',
+		title: 'Página de reservas',
+		text: 'Link propio con disponibilidad real. Tus clientes eligen horario sin llamarte.',
+		variant: 'visual',
+		image: '/landing/barber.jpg',
+		imageAlt: 'Interior de barbería con espejo y sillón',
 	},
 ] as const;
 
 const steps = [
 	{
-		step: '1',
-		title: 'Configurá en minutos',
-		text: 'Definí tus servicios, horarios y profesionales en un panel intuitivo. Tu negocio listo para operar al instante.',
+		icon: 'tune',
+		title: 'Configurá servicios y horarios',
+		text: 'Definí tu catálogo, profesionales y disponibilidad en minutos.',
 	},
 	{
-		step: '2',
+		icon: 'share',
 		title: 'Compartí tu enlace',
-		text: 'Pegá tu enlace en WhatsApp, Instagram o tu bio. Tus clientes ven tu disponibilidad real y agendan solos 24/7.',
+		text: 'Pegalo en WhatsApp, Instagram o tu bio. Reservas sin ida y vuelta.',
 	},
 	{
-		step: '3',
-		title: 'Todo bajo control',
-		text: 'El calendario se actualiza solo. Recibí alertas al instante y dejá que Hasel envíe los recordatorios automáticos por vos.',
+		icon: 'calendar_month',
+		title: 'Controlá desde el calendario',
+		text: 'Todo se actualiza solo. Hasel envía recordatorios por vos.',
 	},
 ];
 
@@ -97,15 +95,12 @@ const jsonLd = [
 	jsonLd={jsonLd}
 >
 	<main class="landing-root">
-		<div class="landing-fx" aria-hidden="true">
-			<div class="landing-atmosphere"></div>
-			<div class="landing-orb landing-orb-a"></div>
-			<div class="landing-orb landing-orb-c"></div>
-		</div>
+		<a href="#hero-heading" class="landing-skip-link">Saltar al contenido principal</a>
+		<div class="landing-scroll-sentinel" data-scroll-sentinel aria-hidden="true"></div>
 
 		<header class="landing-topbar" data-landing-topbar>
 			<div class="landing-topbar-inner">
-				<a href="/" class="brand no-underline" aria-label="Hasel — Inicio">
+				<a href="/" class="brand no-underline" aria-label="Hasel - Inicio">
 					<img
 						src="/icons/icon-64.png"
 						alt=""
@@ -140,13 +135,13 @@ const jsonLd = [
 						<span>14 días Premium de prueba</span>
 					</p>
 					<h1 id="hero-heading" class="m3-display" data-hero-reveal data-hero-reveal-delay="0">
-						Tu calendario, equipo y reservas públicas en una sola plataforma
+						Tu negocio organizado.<br />Tus clientes agendando solos.
 					</h1>
-					<p class="m3-body-large" data-hero-reveal data-hero-reveal-delay="160">
-						Tus clientes reservan 24/7; vos gestionás el día desde un solo lugar.
+					<p class="m3-body-large" data-hero-reveal data-hero-reveal-delay="120">
+						Calendario, equipo y link de reservas para WhatsApp. Todo en un solo panel.
 					</p>
 
-					<div class="hero-actions">
+					<div class="hero-actions" data-hero-reveal data-hero-reveal-delay="180">
 						<a href="/auth/register" class="m3-btn m3-btn-filled m3-btn-large no-underline">
 							Empezar gratis
 						</a>
@@ -154,130 +149,132 @@ const jsonLd = [
 					</div>
 				</div>
 
-				<div class="hero-monitor" data-hero-reveal data-hero-reveal-delay="220">
-					<div class="hero-monitor__bezel">
-						<div class="hero-monitor__screen">
-							<div
-								class="hero-calendar-split"
-								data-calendar-compare
-								style="--split: 50%; --skew: 14%"
-								aria-label="Compará el calendario en modo claro y oscuro. Deslizá para revelar."
-							>
-								<div class="hero-calendar-split__pane hero-calendar-split__pane--light">
-									<picture>
-										<source type="image/avif" srcset="/calendar/desktop/calendario-light.avif" />
-										<source type="image/webp" srcset="/calendar/desktop/calendario-light.webp" />
-										<img
-											src="/calendar/desktop/calendario-light.png"
-											alt="Calendario Hasel en modo claro"
-											width="1883"
-											height="957"
-											loading="eager"
-											decoding="async"
-											draggable="false"
-										/>
-									</picture>
-								</div>
-								<div class="hero-calendar-split__pane hero-calendar-split__pane--dark">
-									<picture>
-										<source type="image/avif" srcset="/calendar/desktop/calendario-dark.avif" />
-										<source type="image/webp" srcset="/calendar/desktop/calendario-dark.webp" />
-										<img
-											src="/calendar/desktop/calendario-dark.png"
-											alt="Calendario Hasel en modo oscuro"
-											width="1879"
-											height="961"
-											loading="eager"
-											decoding="async"
-											draggable="false"
-										/>
-									</picture>
-								</div>
+				<div class="hero-visual" data-hero-reveal data-hero-reveal-delay="220">
+					<div class="hero-monitor">
+						<div class="hero-monitor__bezel">
+							<div class="hero-monitor__screen">
 								<div
-									class="hero-calendar-split__handle"
-									data-calendar-handle
-									role="slider"
-									tabindex="0"
-									aria-orientation="horizontal"
-									aria-valuemin="0"
-									aria-valuemax="100"
-									aria-valuenow="50"
-									aria-label="Deslizá para comparar modo claro y oscuro"
+									class="hero-calendar-split"
+									data-calendar-compare
+									style="--split: 50%; --skew: 14%"
+									aria-label="Compará el calendario en modo claro y oscuro. Deslizá para revelar."
 								>
-									<span class="hero-calendar-split__handle-line" aria-hidden="true"></span>
-									<span class="hero-calendar-split__handle-knob material-symbols-rounded" aria-hidden="true"
-										>code</span
+									<div class="hero-calendar-split__pane hero-calendar-split__pane--light">
+										<picture>
+											<source type="image/avif" srcset="/calendar/desktop/calendario-light.avif" />
+											<source type="image/webp" srcset="/calendar/desktop/calendario-light.webp" />
+											<img
+												src="/calendar/desktop/calendario-light.png"
+												alt="Calendario Hasel en modo claro"
+												width="1883"
+												height="957"
+												loading="eager"
+												decoding="async"
+												draggable="false"
+											/>
+										</picture>
+									</div>
+									<div class="hero-calendar-split__pane hero-calendar-split__pane--dark">
+										<picture>
+											<source type="image/avif" srcset="/calendar/desktop/calendario-dark.avif" />
+											<source type="image/webp" srcset="/calendar/desktop/calendario-dark.webp" />
+											<img
+												src="/calendar/desktop/calendario-dark.png"
+												alt="Calendario Hasel en modo oscuro"
+												width="1879"
+												height="961"
+												loading="eager"
+												decoding="async"
+												draggable="false"
+											/>
+										</picture>
+									</div>
+									<div
+										class="hero-calendar-split__handle"
+										data-calendar-handle
+										role="slider"
+										tabindex="0"
+										aria-orientation="horizontal"
+										aria-valuemin="0"
+										aria-valuemax="100"
+										aria-valuenow="50"
+										aria-label="Deslizá para comparar modo claro y oscuro"
 									>
+										<span class="hero-calendar-split__handle-line" aria-hidden="true"></span>
+										<span class="hero-calendar-split__handle-knob material-symbols-rounded" aria-hidden="true"
+											>compare_arrows</span
+										>
+									</div>
+									<span class="hero-calendar-split__label hero-calendar-split__label--light">Claro</span>
+									<span class="hero-calendar-split__label hero-calendar-split__label--dark">Oscuro</span>
 								</div>
-								<span class="hero-calendar-split__label hero-calendar-split__label--light">Light</span>
-								<span class="hero-calendar-split__label hero-calendar-split__label--dark">Dark</span>
 							</div>
 						</div>
+						<div class="hero-monitor__stand" aria-hidden="true">
+							<span class="hero-monitor__neck"></span>
+							<span class="hero-monitor__base"></span>
+						</div>
 					</div>
-					<div class="hero-monitor__stand" aria-hidden="true">
-						<span class="hero-monitor__neck"></span>
-						<span class="hero-monitor__base"></span>
-					</div>
-				</div>
 
-				<div class="hero-phone" data-hero-reveal data-hero-reveal-delay="220">
-					<div class="hero-phone__bezel">
-						<span class="hero-phone__island" aria-hidden="true"></span>
-						<div class="hero-phone__screen">
-							<div
-								class="hero-calendar-split hero-calendar-split--mobile"
-								data-calendar-compare
-								style="--split: 50%; --skew: 12%"
-								aria-label="Compará el calendario móvil en modo claro y oscuro. Deslizá para revelar."
-							>
-								<div class="hero-calendar-split__pane hero-calendar-split__pane--light">
-									<picture>
-										<source type="image/avif" srcset="/calendar/mobile/calendario-light.avif" />
-										<source type="image/webp" srcset="/calendar/mobile/calendario-light.webp" />
-										<img
-											src="/calendar/mobile/calendario-light.png"
-											alt="Calendario Hasel móvil en modo claro"
-											width="780"
-											height="1691"
-											loading="eager"
-											decoding="async"
-											draggable="false"
-										/>
-									</picture>
-								</div>
-								<div class="hero-calendar-split__pane hero-calendar-split__pane--dark">
-									<picture>
-										<source type="image/avif" srcset="/calendar/mobile/calendario-dark.avif" />
-										<source type="image/webp" srcset="/calendar/mobile/calendario-dark.webp" />
-										<img
-											src="/calendar/mobile/calendario-dark.png"
-											alt="Calendario Hasel móvil en modo oscuro"
-											width="780"
-											height="1691"
-											loading="eager"
-											decoding="async"
-											draggable="false"
-										/>
-									</picture>
-								</div>
+					<div class="hero-phone">
+						<div class="hero-phone__bezel">
+							<span class="hero-phone__island" aria-hidden="true"></span>
+							<div class="hero-phone__screen">
 								<div
-									class="hero-calendar-split__handle"
-									data-calendar-handle
-									role="slider"
-									tabindex="0"
-									aria-orientation="horizontal"
-									aria-valuemin="0"
-									aria-valuemax="100"
-									aria-valuenow="50"
-									aria-label="Deslizá para comparar modo claro y oscuro"
+									class="hero-calendar-split hero-calendar-split--mobile"
+									data-calendar-compare
+									style="--split: 50%; --skew: 12%"
+									aria-label="Compará el calendario móvil en modo claro y oscuro. Deslizá para revelar."
 								>
-									<span class="hero-calendar-split__handle-line" aria-hidden="true"></span>
-									<span class="hero-calendar-split__handle-knob material-symbols-rounded" aria-hidden="true"
-										>code</span
+									<div class="hero-calendar-split__pane hero-calendar-split__pane--light">
+										<picture>
+											<source type="image/avif" srcset="/calendar/mobile/calendario-light.avif" />
+											<source type="image/webp" srcset="/calendar/mobile/calendario-light.webp" />
+											<img
+												src="/calendar/mobile/calendario-light.png"
+												alt="Calendario Hasel móvil en modo claro"
+												width="780"
+												height="1691"
+												loading="eager"
+												decoding="async"
+												draggable="false"
+											/>
+										</picture>
+									</div>
+									<div class="hero-calendar-split__pane hero-calendar-split__pane--dark">
+										<picture>
+											<source type="image/avif" srcset="/calendar/mobile/calendario-dark.avif" />
+											<source type="image/webp" srcset="/calendar/mobile/calendario-dark.webp" />
+											<img
+												src="/calendar/mobile/calendario-dark.png"
+												alt="Calendario Hasel móvil en modo oscuro"
+												width="780"
+												height="1691"
+												loading="eager"
+												decoding="async"
+												draggable="false"
+											/>
+										</picture>
+									</div>
+									<div
+										class="hero-calendar-split__handle"
+										data-calendar-handle
+										role="slider"
+										tabindex="0"
+										aria-orientation="horizontal"
+										aria-valuemin="0"
+										aria-valuemax="100"
+										aria-valuenow="50"
+										aria-label="Deslizá para comparar modo claro y oscuro"
 									>
+										<span class="hero-calendar-split__handle-line" aria-hidden="true"></span>
+										<span class="hero-calendar-split__handle-knob material-symbols-rounded" aria-hidden="true"
+											>compare_arrows</span
+										>
+									</div>
+									<span class="hero-calendar-split__label hero-calendar-split__label--light">Claro</span>
+									<span class="hero-calendar-split__label hero-calendar-split__label--dark">Oscuro</span>
 								</div>
-								<span class="hero-calendar-split__label hero-calendar-split__label--light">Light</span>
-								<span class="hero-calendar-split__label hero-calendar-split__label--dark">Dark</span>
 							</div>
 						</div>
 					</div>
@@ -285,92 +282,99 @@ const jsonLd = [
 			</section>
 
 			<section id="funciones" class="m3-section features-section" aria-labelledby="funciones-heading">
-				<div class="features-intro">
-					<h2 id="funciones-heading" class="m3-headline features-heading reveal-on-scroll">
-						<span class="features-heading-lead">Todo lo que necesitás</span>
-						<span class="features-heading-muted">para operar y crecer</span>
+				<div class="features-intro reveal-on-scroll">
+					<h2 id="funciones-heading" class="m3-headline">
+						Todo lo que necesitás para operar y crecer
 					</h2>
+					<p class="m3-body features-lead">
+						Desde la primera reserva hasta el seguimiento del cliente, sin planillas ni mensajes perdidos.
+					</p>
 				</div>
 
-				<div class="features-carousel" data-features-carousel>
-					<div
-						class="features-panel"
-						data-features-panel
-						tabindex="0"
-						role="region"
-						aria-roledescription="carrusel"
-						aria-label="Funciones de Hasel"
-					>
-						{
-							usefulServices.map((service) => (
-								<article class="features-card" data-feature-card>
-									<span class="features-card-icon" aria-hidden="true">
+				<div class="features-bento" data-features-bento>
+					{
+						usefulServices.map((service, index) => (
+							<article
+								class:list={[
+									'features-bento__cell',
+									`features-bento__cell--${service.variant}`,
+									'reveal-on-scroll',
+								]}
+								style={`--reveal-i: ${index}`}
+							>
+								{'image' in service && service.image ? (
+									<img
+										class="features-bento__photo"
+										src={service.image}
+										alt={service.imageAlt}
+										width={800}
+										height={600}
+										loading="lazy"
+										decoding="async"
+									/>
+								) : null}
+								<div class="features-bento__content">
+									<span class="features-bento__icon" aria-hidden="true">
 										<span class="material-symbols-rounded">{service.icon}</span>
 									</span>
-									<h3 class="features-card-title">{service.title}</h3>
-									<p class="features-card-text">{service.text}</p>
-								</article>
-							))
-						}
-					</div>
-					<div class="features-dots" data-features-dots role="tablist" aria-label="Páginas del carrusel">
-						{
-							usefulServices.map((_, index) => (
-								<button
-									type="button"
-									class:list={['features-dot', index === 0 && 'is-active']}
-									data-features-dot
-									aria-label={`Ir a la función ${index + 1}`}
-									aria-current={index === 0 ? 'true' : undefined}
-								/>
-							))
-						}
-					</div>
+									<h3 class="features-bento__title">{service.title}</h3>
+									<p class="features-bento__text">{service.text}</p>
+								</div>
+							</article>
+						))
+					}
 				</div>
 			</section>
 
-			<section id="como-funciona" class="m3-section m3-section-tonal" aria-labelledby="como-funciona-heading">
+			<section id="como-funciona" class="m3-section workflow-section" aria-labelledby="como-funciona-heading">
 				<div class="workflow-intro reveal-on-scroll">
-					<p class="m3-chip m3-chip-secondary">
-						<span class="material-symbols-rounded" aria-hidden="true">bolt</span>
-						<span>Listo para usar</span>
-					</p>
 					<h2 id="como-funciona-heading" class="m3-headline">Cómo funciona Hasel</h2>
+					<p class="m3-body workflow-lead">Tres pasos y ya estás recibiendo reservas.</p>
 				</div>
 
-				<ol class="workflow-steps">
+				<ol class="workflow-rail">
 					{
-						steps.map((item, index) => (
-							<li class="workflow-step reveal-on-scroll">
-								<div class="workflow-step-copy">
-									<span class="workflow-step-num" aria-hidden="true">
-										{item.step}
-									</span>
+						steps.map((item) => (
+							<li class="workflow-rail__step reveal-on-scroll">
+								<span class="workflow-rail__icon material-symbols-rounded" aria-hidden="true">
+									{item.icon}
+								</span>
+								<div class="workflow-rail__copy">
 									<h3 class="m3-title">{item.title}</h3>
 									<p class="m3-body">{item.text}</p>
 								</div>
-								{index < steps.length - 1 ? (
-									<span class="workflow-step-arrow material-symbols-rounded" aria-hidden="true">
-										arrow_forward
-									</span>
-								) : null}
 							</li>
 						))
 					}
 				</ol>
 			</section>
 
-			<section id="precios" class="m3-cta-card" aria-labelledby="cta-heading">
-				<div class="cta-content">
+			<section id="precios" class="m3-cta-split" aria-labelledby="cta-heading">
+				<div class="cta-split__copy reveal-on-scroll">
 					<h2 id="cta-heading" class="m3-headline">
-						Empezá con 14&nbsp;días de <span class="cta-premium">Premium</span>
+						Probá <span class="cta-premium">Premium</span> 14 días, sin tarjeta
 					</h2>
 					<p class="m3-body-large">
-						Creá tu espacio, configurá horarios y compartí tu página pública. Tus clientes reservan; vos
-						controlás todo desde el calendario.
+						Creá tu espacio, configurá horarios y compartí tu página pública hoy mismo.
 					</p>
+				</div>
+				<div class="cta-split__panel reveal-on-scroll">
+					<ul class="cta-checklist">
+						<li>
+							<span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+							Calendario compartido con tu equipo
+						</li>
+						<li>
+							<span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+							Página pública de reservas
+						</li>
+						<li>
+							<span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
+							Recordatorios automáticos
+						</li>
+					</ul>
 					<a href="/auth/register" class="m3-btn m3-btn-filled m3-btn-large no-underline cta-btn">
-						Crear mi espacio gratis
+						Empezar gratis
 						<span class="material-symbols-rounded" aria-hidden="true">arrow_forward</span>
 					</a>
 				</div>
@@ -430,17 +434,23 @@ const jsonLd = [
 			const { signal } = landingAbort;
 
 			const nav = document.querySelector('[data-landing-topbar]');
+			const sentinel = document.querySelector('[data-scroll-sentinel]');
 			const getOffset = () => {
 				const navHeight = nav instanceof HTMLElement ? nav.getBoundingClientRect().height : 0;
 				return navHeight + 12;
 			};
 
-			const syncTopbar = () => {
-				if (!(nav instanceof HTMLElement)) return;
-				nav.classList.toggle('is-scrolled', window.scrollY > 12);
-			};
-			syncTopbar();
-			window.addEventListener('scroll', syncTopbar, { passive: true, signal });
+			if (nav instanceof HTMLElement && sentinel instanceof HTMLElement && 'IntersectionObserver' in window) {
+				const topObserver = new IntersectionObserver(
+					([entry]) => {
+						if (!entry) return;
+						nav.classList.toggle('is-scrolled', !entry.isIntersecting);
+					},
+					{ root: null, threshold: 0, rootMargin: '-1px 0px 0px 0px' }
+				);
+				topObserver.observe(sentinel);
+				signal.addEventListener('abort', () => topObserver.disconnect());
+			}
 
 			const scrollToHash = (hash, behavior = 'smooth') => {
 				if (!hash || !hash.startsWith('#')) return;
@@ -539,113 +549,12 @@ const jsonLd = [
 							revealObserver.unobserve(entry.target);
 						}
 					},
-					{ rootMargin: '0px 0px -12% 0px', threshold: 0.18 }
+					{ rootMargin: '0px 0px -10% 0px', threshold: 0.15 }
 				);
 				revealNodes.forEach((node) => revealObserver.observe(node));
 				signal.addEventListener('abort', () => revealObserver.disconnect());
 			} else {
 				revealNodes.forEach((node) => node.classList.add('is-visible'));
-			}
-
-			const featuresPanel = root.querySelector('[data-features-panel]');
-			const featureCards = Array.from(root.querySelectorAll('[data-feature-card]')).filter(
-				(node) => node instanceof HTMLElement
-			);
-
-			const playFeatureCards = () => {
-				featureCards.forEach((card) => {
-					card.classList.remove('is-in');
-					card.style.animation = 'none';
-				});
-				void (featuresPanel instanceof HTMLElement ? featuresPanel.offsetWidth : 0);
-
-				const stepMs = prefersReducedMotion ? 90 : 420;
-				featureCards.forEach((card, index) => {
-					later(() => {
-						card.style.animation = '';
-						card.classList.add('is-in');
-					}, 40 + index * stepMs);
-				});
-			};
-
-			if (featuresPanel instanceof HTMLElement && featureCards.length) {
-				if ('IntersectionObserver' in window) {
-					const featuresObserver = new IntersectionObserver(
-						(entries) => {
-							for (const entry of entries) {
-								if (!entry.isIntersecting) continue;
-								playFeatureCards();
-								featuresObserver.disconnect();
-								break;
-							}
-						},
-						{ rootMargin: '0px 0px -8% 0px', threshold: 0.12 }
-					);
-					featuresObserver.observe(featuresPanel);
-					signal.addEventListener('abort', () => featuresObserver.disconnect());
-
-					/* Si al volver con View Transitions el panel ya está a la vista, forzar entrada. */
-					const rect = featuresPanel.getBoundingClientRect();
-					const visible =
-						rect.top < window.innerHeight * 0.92 && rect.bottom > window.innerHeight * 0.08;
-					if (visible) {
-						later(playFeatureCards, 80);
-						featuresObserver.disconnect();
-					}
-				} else {
-					playFeatureCards();
-				}
-
-				const dots = Array.from(root.querySelectorAll('[data-features-dot]')).filter(
-					(node) => node instanceof HTMLButtonElement
-				);
-
-				const setActiveDot = (index) => {
-					dots.forEach((dot, i) => {
-						const active = i === index;
-						dot.classList.toggle('is-active', active);
-						if (active) dot.setAttribute('aria-current', 'true');
-						else dot.removeAttribute('aria-current');
-					});
-				};
-
-				const syncDotsFromScroll = () => {
-					if (window.matchMedia('(min-width: 700px)').matches) return;
-					const cardWidth = featureCards[0]?.getBoundingClientRect().width || 1;
-					const gap =
-						Number.parseFloat(
-							getComputedStyle(featuresPanel).columnGap || getComputedStyle(featuresPanel).gap
-						) || 0;
-					const index = Math.round(featuresPanel.scrollLeft / (cardWidth + gap));
-					setActiveDot(Math.min(featureCards.length - 1, Math.max(0, index)));
-				};
-
-				let scrollRaf = 0;
-				featuresPanel.addEventListener(
-					'scroll',
-					() => {
-						cancelAnimationFrame(scrollRaf);
-						scrollRaf = requestAnimationFrame(syncDotsFromScroll);
-					},
-					{ passive: true, signal }
-				);
-
-				dots.forEach((dot, index) => {
-					dot.addEventListener(
-						'click',
-						() => {
-							const card = featureCards[index];
-							if (!(card instanceof HTMLElement)) return;
-							card.scrollIntoView({
-								behavior: prefersReducedMotion ? 'auto' : 'smooth',
-								inline: 'start',
-								block: 'nearest',
-							});
-							setActiveDot(index);
-						},
-						{ signal }
-					);
-				});
 			}
 
 			root.querySelectorAll('[data-calendar-compare]').forEach((compareRoot) => {
@@ -745,80 +654,40 @@ const jsonLd = [
 			window.__haselLandingPageBound = true;
 			document.addEventListener('astro:page-load', initLandingPage);
 		}
-		/* Al volver con ClientRouter el script se reinyecta: reiniciar animaciones ya. */
 		initLandingPage();
 	})();
 </script>
 
 <style>
-	/* Material Design 3 — tokens scoped to landing (no :root leak) */
 	.landing-root {
-		--md-sys-color-primary: #a8c7ff;
-		--md-sys-color-on-primary: #003062;
-		--md-sys-color-primary-container: #00468c;
-		--md-sys-color-on-primary-container: #d6e3ff;
-		--md-sys-color-secondary: #bbc7db;
-		--md-sys-color-on-secondary: #253140;
-		--md-sys-color-secondary-container: #3b4858;
-		--md-sys-color-on-secondary-container: #d7e3f8;
-		--md-sys-color-surface: #131313;
-		--md-sys-color-surface-dim: #131313;
-		--md-sys-color-surface-bright: #393939;
-		--md-sys-color-surface-container-lowest: #0e0e0e;
-		--md-sys-color-surface-container-low: #1c1b1f;
-		--md-sys-color-surface-container: #201f23;
-		--md-sys-color-surface-container-high: #2a292d;
-		--md-sys-color-surface-container-highest: #353438;
-		--md-sys-color-on-surface: #e5e2e1;
-		--md-sys-color-on-surface-variant: #c4c6d0;
-		--md-sys-color-outline: #8e9099;
-		--md-sys-color-outline-variant: #44474e;
-		--md-sys-color-inverse-surface: #e5e2e1;
-		--md-sys-color-inverse-on-surface: #313030;
-		--md-sys-color-error: #ffb4ab;
-		--md-sys-color-on-error: #690005;
-		--md-sys-color-error-container: #93000a;
-		--md-sys-color-on-error-container: #ffdad6;
-		--md-sys-color-success: #7dd3a0;
-		--md-sys-color-on-success-container: #b8f0cd;
-		--md-sys-color-tertiary-container: #5c4033;
-		--md-sys-color-on-tertiary-container: #ffdbcb;
-
-		/* Brand filled action (Marketing CTA — not pure M3 on-dark primary) */
-		--md-brand-filled: #426edb;
-		--md-brand-filled-hover: #5a82e8;
-		--md-brand-on-filled: #ffffff;
-
-		--md-sys-shape-corner-extra-small: 4px;
-		--md-sys-shape-corner-small: 8px;
-		--md-sys-shape-corner-medium: 12px;
-		--md-sys-shape-corner-large: 16px;
-		--md-sys-shape-corner-extra-large: 28px;
-		--md-sys-shape-corner-full: 9999px;
-
-		--md-sys-elevation-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 1px 3px 1px rgba(0, 0, 0, 0.15);
-		--md-sys-elevation-2: 0 1px 2px rgba(0, 0, 0, 0.3), 0 2px 6px 2px rgba(0, 0, 0, 0.15);
-		--md-sys-elevation-3: 0 4px 8px 3px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.3);
-
-		--md-sys-motion-easing-standard: cubic-bezier(0.2, 0, 0, 1);
-		--md-sys-motion-easing-emphasized: cubic-bezier(0.2, 0, 0, 1);
-		--md-sys-motion-duration-short: 200ms;
-		--md-sys-motion-duration-medium: 400ms;
-
-		--landing-max: 100%;
+		--accent: #426edb;
+		--accent-hover: #5a82e8;
+		--accent-soft: rgba(66, 110, 219, 0.14);
+		--accent-on: #ffffff;
+		--surface: #0c0e14;
+		--surface-raised: #141820;
+		--surface-overlay: #1a2030;
+		--text-primary: #eef0f4;
+		--text-secondary: #a8adb8;
+		--text-muted: #7a8190;
+		--border: rgba(255, 255, 255, 0.08);
+		--border-strong: rgba(255, 255, 255, 0.14);
+		--radius-sm: 8px;
+		--radius-md: 14px;
+		--radius-lg: 20px;
+		--radius-pill: 9999px;
+		--ease: cubic-bezier(0.16, 1, 0.3, 1);
+		--landing-max: 72rem;
 		--landing-pad-x: 1.25rem;
-		--landing-topbar-h: 4.25rem;
+		--landing-topbar-h: 4rem;
 
 		position: relative;
 		overflow-x: clip;
-		min-height: 100vh;
 		min-height: 100dvh;
-		background-color: #0b0d12;
-		background-image:
-			radial-gradient(ellipse 85% 60% at 90% 6%, rgba(45, 110, 255, 0.2), transparent 58%),
-			radial-gradient(ellipse 70% 45% at 78% 82%, rgba(66, 110, 219, 0.08), transparent 60%),
-			linear-gradient(165deg, #0b0d12 0%, #101522 45%, #0b0d12 100%);
-		color: var(--md-sys-color-on-surface);
+		background:
+			radial-gradient(ellipse 120% 70% at 50% -15%, rgba(66, 110, 219, 0.07), transparent 55%),
+			var(--surface);
+		color: var(--text-primary);
 		font-family: var(--font-body, 'Nunito Sans', system-ui, sans-serif);
 		-webkit-font-smoothing: antialiased;
 	}
@@ -826,7 +695,7 @@ const jsonLd = [
 	:global(html:has(.landing-root)),
 	:global(body:has(.landing-root)) {
 		overflow-x: clip;
-		background: #0b0d12;
+		background: var(--surface);
 		margin: 0;
 		padding: 0;
 	}
@@ -836,7 +705,60 @@ const jsonLd = [
 	}
 
 	:global(html:has(.landing-root)) {
-		scroll-padding-top: calc(var(--landing-topbar-h, 4.25rem) + 0.75rem);
+		scroll-padding-top: calc(var(--landing-topbar-h) + 0.75rem);
+	}
+
+	.landing-root [id]:not(#soporte) {
+		scroll-margin-top: calc(var(--landing-topbar-h) + 0.75rem);
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.landing-skip-link {
+		position: fixed;
+		top: 0.65rem;
+		left: 0.65rem;
+		z-index: 100;
+		padding: 0.55rem 0.9rem;
+		border-radius: var(--radius-sm);
+		background: var(--accent);
+		color: var(--accent-on);
+		font-size: 0.8125rem;
+		font-weight: 700;
+		text-decoration: none;
+		transform: translateY(-160%);
+		opacity: 0;
+		pointer-events: none;
+		transition:
+			transform 200ms var(--ease),
+			opacity 200ms var(--ease);
+	}
+
+	.landing-skip-link:focus {
+		transform: translateY(0);
+		opacity: 1;
+		pointer-events: auto;
+		outline: 2px solid #fff;
+		outline-offset: 2px;
+	}
+
+	.landing-scroll-sentinel {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 1px;
+		height: 1px;
+		pointer-events: none;
 	}
 
 	@media (min-width: 768px) {
@@ -847,75 +769,8 @@ const jsonLd = [
 
 	@media (min-width: 1024px) {
 		.landing-root {
-			--landing-max: 85%;
-			--landing-pad-x: 2.75rem;
+			--landing-pad-x: 2.5rem;
 		}
-	}
-
-	@media (min-width: 1280px) {
-		.landing-root {
-			--landing-pad-x: 3.5rem;
-		}
-	}
-
-	@media (min-width: 1440px) {
-		.landing-root {
-			--landing-pad-x: 4.5rem;
-		}
-	}
-
-	.landing-root [id]:not(#soporte) {
-		scroll-margin-top: calc(var(--landing-topbar-h, 4.25rem) + 0.75rem);
-	}
-
-	/* Contiene blur/orbes para que no estiren el scroll del documento */
-	.landing-fx {
-		position: absolute;
-		inset: 0;
-		overflow: hidden;
-		pointer-events: none;
-		z-index: 0;
-		isolation: isolate;
-		contain: paint;
-		transform: translateZ(0);
-	}
-
-	.landing-atmosphere {
-		position: absolute;
-		inset: 0;
-		background: radial-gradient(circle at 78% 12%, rgba(90, 150, 255, 0.1), transparent 38%);
-		opacity: 0.75;
-	}
-
-	.landing-orb {
-		position: absolute;
-		border-radius: var(--md-sys-shape-corner-full);
-		/* Sin filter:blur — el blur expandía el scrollable overflow del documento */
-		opacity: 0.55;
-		animation: landing-orb-drift 22s ease-in-out infinite;
-	}
-
-	.landing-orb-a {
-		top: -12%;
-		right: -6%;
-		width: min(58vw, 40rem);
-		height: min(58vw, 40rem);
-		background: radial-gradient(
-			circle,
-			rgba(55, 120, 255, 0.32) 0%,
-			rgba(30, 70, 200, 0.12) 38%,
-			transparent 70%
-		);
-	}
-
-	.landing-orb-c {
-		bottom: 12%;
-		right: 18%;
-		width: min(42vw, 26rem);
-		height: min(42vw, 26rem);
-		background: radial-gradient(circle, rgba(100, 160, 255, 0.14) 0%, transparent 68%);
-		animation-duration: 32s;
-		opacity: 0.45;
 	}
 
 	.landing-shell {
@@ -923,220 +778,147 @@ const jsonLd = [
 		z-index: 1;
 		width: min(var(--landing-max), 100%);
 		margin: 0 auto;
-		padding: 0.5rem var(--landing-pad-x) 0;
+		padding: 0 var(--landing-pad-x) 0;
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
+		gap: 0;
 	}
 
-	@media (min-width: 768px) {
-		.landing-shell {
-			gap: 2rem;
-			padding-bottom: 0;
-		}
-	}
-
-	/* ——— Top app bar ——— */
+	/* Top bar */
 	.landing-topbar {
 		position: sticky;
 		top: 0;
-		z-index: 50;
+		z-index: 40;
 		width: 100%;
-		padding: 0.75rem var(--landing-pad-x);
-		background: color-mix(in srgb, var(--md-sys-color-surface) 72%, transparent);
-		backdrop-filter: blur(16px);
-		-webkit-backdrop-filter: blur(16px);
+		padding: 0.65rem var(--landing-pad-x);
+		background: color-mix(in srgb, var(--surface) 80%, transparent);
+		backdrop-filter: blur(14px);
+		-webkit-backdrop-filter: blur(14px);
 		border-bottom: 1px solid transparent;
 		transition:
-			background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
-			border-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
-			box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+			background-color 200ms var(--ease),
+			border-color 200ms var(--ease);
 	}
 
 	.landing-topbar.is-scrolled {
-		border-bottom-color: color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
-		box-shadow: var(--md-sys-elevation-1);
+		border-bottom-color: var(--border);
+		background: color-mix(in srgb, var(--surface) 92%, transparent);
+	}
+
+	@media (prefers-reduced-transparency: reduce) {
+		.landing-topbar {
+			background: var(--surface);
+			backdrop-filter: none;
+			-webkit-backdrop-filter: none;
+		}
+
+		.landing-topbar.is-scrolled {
+			background: var(--surface);
+		}
 	}
 
 	.landing-topbar-inner {
 		width: min(var(--landing-max), 100%);
 		margin: 0 auto;
-		padding: 0;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem;
+		min-height: 2.75rem;
 	}
 
 	.landing-topbar-links {
 		display: none;
 		align-items: center;
-		justify-content: center;
-		gap: 0.15rem;
-		min-width: 0;
+		gap: 0.1rem;
 	}
 
 	.landing-topbar-link {
-		color: var(--md-sys-color-on-surface-variant);
+		color: var(--text-secondary);
 		font-size: 0.875rem;
 		font-weight: 600;
-		letter-spacing: 0.01em;
-		padding: 0.5rem 0.85rem;
-		border-radius: var(--md-sys-shape-corner-full);
+		padding: 0.45rem 0.75rem;
+		border-radius: var(--radius-pill);
 		white-space: nowrap;
 		transition:
-			color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
-			background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+			color 200ms var(--ease),
+			background-color 200ms var(--ease);
 	}
 
 	.landing-topbar-link:hover {
-		color: var(--md-sys-color-on-surface);
-		background: color-mix(in srgb, var(--md-sys-color-on-surface) 8%, transparent);
+		color: var(--text-primary);
+		background: rgba(255, 255, 255, 0.06);
+	}
+
+	.landing-topbar-link:focus-visible,
+	.brand:focus-visible,
+	.m3-footer-link:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 3px;
 	}
 
 	.brand {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.55rem;
-		color: var(--md-sys-color-on-surface);
-		min-width: 0;
+		gap: 0.5rem;
+		color: var(--text-primary);
 		flex-shrink: 0;
 	}
 
 	.brand-logo {
 		height: 2rem;
 		width: 2rem;
-		flex-shrink: 0;
+		border-radius: var(--radius-pill);
 		object-fit: contain;
-		border-radius: var(--md-sys-shape-corner-full);
 	}
 
 	.brand-text {
 		font-weight: 800;
-		font-size: 1.2rem;
+		font-size: 1.15rem;
 		letter-spacing: -0.02em;
 	}
 
 	.nav-actions {
 		display: flex;
 		align-items: center;
-		gap: 0.25rem;
+		gap: 0.2rem;
 		flex-shrink: 0;
 	}
 
-	.nav-actions .m3-btn {
-		white-space: nowrap;
-	}
-
-	/* Tablet: solo marca + CTAs; el menú central aún no cabe */
-	@media (min-width: 768px) and (max-width: 1099px) {
-		.landing-topbar-inner {
-			display: flex;
-			justify-content: space-between;
-			gap: 0.75rem;
-		}
-
-		.landing-topbar-links {
-			display: none;
-		}
-
-		.nav-actions .m3-btn-nav {
-			padding-inline: 0.85rem;
-		}
-	}
-
-	@media (min-width: 1100px) {
+	@media (min-width: 1024px) {
 		.landing-topbar-inner {
 			display: grid;
-			grid-template-columns: auto minmax(0, 1fr) auto;
+			grid-template-columns: auto 1fr auto;
 			align-items: center;
-			gap: 0.75rem;
 		}
 
 		.landing-topbar-links {
 			display: flex;
-			flex-wrap: nowrap;
 			justify-self: center;
-			gap: 0.1rem;
-		}
-
-		.landing-topbar-link {
-			padding: 0.45rem 0.7rem;
-			font-size: 0.84rem;
 		}
 	}
 
-	@media (min-width: 1280px) {
-		.landing-topbar-links {
-			gap: 0.25rem;
-		}
-
-		.landing-topbar-link {
-			padding: 0.5rem 0.85rem;
-			font-size: 0.875rem;
-		}
-	}
-
-	@media (min-width: 1024px) {
-		.landing-topbar {
-			background: transparent;
-			backdrop-filter: none;
-			-webkit-backdrop-filter: none;
-			padding: 1rem var(--landing-pad-x) 0.5rem;
-		}
-
-		.landing-topbar.is-scrolled {
-			background: transparent;
-			border-bottom-color: transparent;
-			box-shadow: none;
-			padding-block: 0.65rem 0.35rem;
-		}
-
-		.landing-topbar-inner {
-			border-radius: var(--md-sys-shape-corner-full);
-			border: 1px solid transparent;
-			padding-block: 0.35rem;
-			padding-inline: 0.85rem 0.75rem;
-			transition:
-				background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
-				border-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
-				box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
-		}
-
-		.landing-topbar.is-scrolled .landing-topbar-inner {
-			background: color-mix(in srgb, var(--md-sys-color-surface-container) 88%, transparent);
-			border-color: color-mix(in srgb, var(--md-sys-color-outline-variant) 70%, transparent);
-			backdrop-filter: blur(20px);
-			-webkit-backdrop-filter: blur(20px);
-			box-shadow: var(--md-sys-elevation-2);
-			padding-block: 0.45rem;
-			padding-inline: 1rem 0.85rem;
-		}
-	}
-
-	/* ——— Buttons (M3) ——— */
+	/* Buttons */
 	.m3-btn {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.5rem;
+		gap: 0.45rem;
 		min-height: 2.5rem;
-		padding: 0.625rem 1.5rem;
-		border-radius: var(--md-sys-shape-corner-full);
+		padding: 0.6rem 1.35rem;
+		border-radius: var(--radius-pill);
 		border: 1px solid transparent;
 		font-family: inherit;
 		font-size: 0.875rem;
 		font-weight: 700;
-		letter-spacing: 0.01em;
 		line-height: 1.25;
 		text-decoration: none;
 		cursor: pointer;
+		white-space: nowrap;
 		transition:
-			background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
-			box-shadow var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
-			border-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
-			color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
-			transform var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+			background-color 200ms var(--ease),
+			transform 200ms var(--ease),
+			box-shadow 200ms var(--ease);
 	}
 
 	.m3-btn:hover {
@@ -1144,120 +926,150 @@ const jsonLd = [
 	}
 
 	.m3-btn:active {
-		transform: translateY(0);
+		transform: scale(0.98);
+	}
+
+	.m3-btn:focus-visible {
+		outline: 2px solid var(--accent);
+		outline-offset: 3px;
+	}
+
+	.m3-btn-filled:focus-visible {
+		outline-color: #fff;
 	}
 
 	.m3-btn-large {
 		min-height: 3rem;
-		padding: 0.85rem 1.75rem;
-		font-size: 0.95rem;
+		padding: 0.8rem 1.65rem;
+		font-size: 0.9375rem;
 	}
 
 	.m3-btn-nav {
 		min-height: 2.35rem;
-		padding: 0.5rem 1.05rem;
+		padding: 0.45rem 1rem;
 		font-size: 0.8125rem;
 	}
 
 	.m3-btn-filled {
-		background: var(--md-brand-filled);
-		color: var(--md-brand-on-filled);
-		box-shadow: var(--md-sys-elevation-1);
+		background: var(--accent);
+		color: var(--accent-on);
+		box-shadow: 0 1px 2px rgba(12, 20, 40, 0.35);
 	}
 
 	.m3-btn-filled:hover {
-		background: var(--md-brand-filled-hover);
-		box-shadow: var(--md-sys-elevation-2);
+		background: var(--accent-hover);
 	}
 
 	.m3-btn-tonal {
-		background: var(--md-sys-color-secondary-container);
-		color: var(--md-sys-color-on-secondary-container);
+		background: var(--surface-overlay);
+		color: var(--text-primary);
+		border-color: var(--border);
 	}
 
 	.m3-btn-tonal:hover {
-		background: color-mix(in srgb, var(--md-sys-color-secondary-container) 82%, white 18%);
+		background: color-mix(in srgb, var(--surface-overlay) 85%, white 15%);
 	}
 
 	.m3-btn-text {
 		background: transparent;
-		color: var(--md-sys-color-primary);
+		color: var(--text-secondary);
 		box-shadow: none;
 	}
 
 	.m3-btn-text:hover {
-		background: color-mix(in srgb, var(--md-sys-color-primary) 12%, transparent);
+		color: var(--text-primary);
+		background: rgba(255, 255, 255, 0.06);
 		transform: none;
-		box-shadow: none;
 	}
 
 	@media (max-width: 480px) {
 		.nav-actions .m3-btn-text {
-			padding-inline: 0.55rem;
+			padding-inline: 0.5rem;
 			font-size: 0.78rem;
 		}
 
 		.nav-actions .m3-btn-filled {
-			padding-inline: 0.85rem;
+			padding-inline: 0.8rem;
 			font-size: 0.78rem;
 		}
 	}
 
-	/* ——— Chips ——— */
+	/* Chips */
 	.m3-chip {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.4rem;
+		gap: 0.35rem;
 		margin: 0;
-		padding: 0.4rem 0.9rem 0.4rem 0.65rem;
-		border-radius: var(--md-sys-shape-corner-full);
-		border: 1px solid var(--md-sys-color-outline-variant);
-		background: var(--md-sys-color-surface-container-high);
-		color: var(--md-sys-color-on-surface);
+		padding: 0.35rem 0.8rem 0.35rem 0.6rem;
+		border-radius: var(--radius-pill);
 		font-size: 0.8125rem;
 		font-weight: 700;
 		line-height: 1.2;
 	}
 
 	.m3-chip-primary {
-		background: var(--md-sys-color-primary-container);
-		color: var(--md-sys-color-on-primary-container);
-		border-color: transparent;
-	}
-
-	.m3-chip-secondary {
-		background: var(--md-sys-color-secondary-container);
-		color: var(--md-sys-color-on-secondary-container);
-		border-color: transparent;
+		background: var(--accent-soft);
+		color: #c5d4ff;
+		border: 1px solid rgba(66, 110, 219, 0.35);
 	}
 
 	.m3-chip .material-symbols-rounded {
-		font-size: 1.05rem;
+		font-size: 1rem;
 	}
 
-	/* ——— Type scale ——— */
+	/* Type */
 	.m3-display {
 		margin: 0;
-		font-size: clamp(2.15rem, 6.2vw, 3.75rem);
+		font-size: clamp(2rem, 5.5vw, 3.35rem);
 		font-weight: 800;
-		line-height: 1.22;
+		line-height: 1.12;
 		letter-spacing: -0.03em;
-		color: var(--md-sys-color-on-surface);
+		color: var(--text-primary);
 		text-wrap: balance;
 	}
 
-	@media (max-width: 899px) {
-		.m3-hero .m3-display {
-			max-width: 12.5em;
-		}
+	.m3-headline {
+		margin: 0;
+		font-size: clamp(1.65rem, 3.2vw, 2.35rem);
+		font-weight: 800;
+		letter-spacing: -0.025em;
+		line-height: 1.15;
+		color: var(--text-primary);
+		text-wrap: balance;
+	}
+
+	.m3-title {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: var(--text-primary);
+	}
+
+	.m3-body-large {
+		margin: 0;
+		max-width: 36rem;
+		font-size: clamp(1rem, 1.5vw, 1.0625rem);
+		line-height: 1.55;
+		color: var(--text-secondary);
+		text-wrap: pretty;
+	}
+
+	.m3-body {
+		margin: 0;
+		font-size: 0.9375rem;
+		line-height: 1.55;
+		color: var(--text-secondary);
+		text-wrap: pretty;
 	}
 
 	@keyframes hero-text-enter {
 		from {
 			opacity: 0;
+			transform: translateY(12px);
 		}
 		to {
 			opacity: 1;
+			transform: translateY(0);
 		}
 	}
 
@@ -1267,47 +1079,14 @@ const jsonLd = [
 
 	[data-hero-reveal].is-in {
 		opacity: 1;
-		animation: hero-text-enter 0.95s cubic-bezier(0.2, 0, 0, 1) both;
+		animation: hero-text-enter 0.7s var(--ease) both;
 	}
 
-	.m3-headline {
-		margin: 0;
-		font-size: clamp(1.75rem, 3.5vw, 2.5rem);
-		font-weight: 800;
-		letter-spacing: -0.025em;
-		line-height: 1.2;
-		color: var(--md-sys-color-on-surface);
-		text-wrap: balance;
-	}
-
-	.m3-title {
-		margin: 0;
-		font-size: 1.2rem;
-		font-weight: 700;
-		letter-spacing: -0.01em;
-		color: var(--md-sys-color-on-surface);
-	}
-
-	.m3-body-large {
-		margin: 0;
-		max-width: 42rem;
-		font-size: clamp(1rem, 1.6vw, 1.125rem);
-		line-height: 1.55;
-		color: var(--md-sys-color-on-surface-variant);
-	}
-
-	.m3-body {
-		margin: 0;
-		font-size: 0.95rem;
-		line-height: 1.55;
-		color: var(--md-sys-color-on-surface-variant);
-	}
-
-	/* ——— Hero ——— */
+	/* Hero */
 	.m3-hero {
 		display: grid;
-		gap: 2rem;
-		padding: 1.25rem 0 1.5rem;
+		gap: 1.75rem;
+		padding: 1.25rem 0 1.75rem;
 		align-items: center;
 	}
 
@@ -1315,90 +1094,87 @@ const jsonLd = [
 		display: flex;
 		flex-direction: column;
 		align-items: flex-start;
-		gap: 1.25rem;
+		gap: 1.1rem;
 		min-width: 0;
 	}
 
 	.hero-actions {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.75rem;
-		margin-top: 0.15rem;
+		gap: 0.65rem;
 	}
 
-	/* ——— Hero monitor + calendar compare ——— */
-	.hero-monitor {
+	.hero-visual {
 		width: 100%;
+		min-width: 0;
+	}
+
+	.hero-monitor {
 		display: none;
 		flex-direction: column;
 		align-items: center;
-		min-width: 0;
+		width: 100%;
 	}
 
 	.hero-phone {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		width: min(100%, 15.75rem);
-		margin: 0.35rem auto 0;
-		min-width: 0;
+		width: min(100%, 14rem);
+		margin: 0 auto;
+	}
+
+	@media (max-width: 380px) {
+		.hero-phone {
+			width: min(100%, 12.5rem);
+		}
+
+		.m3-hero-content {
+			gap: 0.95rem;
+		}
+	}
+
+	.hero-phone__bezel,
+	.hero-monitor__bezel {
+		width: 100%;
+		padding: 0.5rem;
+		border-radius: 1.5rem;
+		background: linear-gradient(160deg, #343842 0%, #181b22 55%, #101218 100%);
+		border: 1px solid var(--border-strong);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.07),
+			0 20px 50px rgba(0, 0, 0, 0.45);
 	}
 
 	.hero-phone__bezel {
 		position: relative;
-		width: 100%;
-		padding: 0.42rem;
 		border-radius: 1.85rem;
-		background:
-			linear-gradient(160deg, #3a3d46 0%, #1c1e24 42%, #12141a 100%);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		box-shadow:
-			0 1px 0 rgba(255, 255, 255, 0.08) inset,
-			0 18px 40px rgba(0, 0, 0, 0.45),
-			0 4px 12px rgba(0, 0, 0, 0.3);
 	}
 
 	.hero-phone__island {
 		position: absolute;
 		z-index: 6;
-		top: 0.72rem;
+		top: 0.7rem;
 		left: 50%;
 		transform: translateX(-50%);
 		width: 28%;
-		height: 0.72rem;
-		border-radius: 999px;
-		background: #050608;
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.04);
+		height: 0.7rem;
+		border-radius: var(--radius-pill);
+		background: #08090c;
 		pointer-events: none;
 	}
 
-	.hero-phone__screen {
+	.hero-phone__screen,
+	.hero-monitor__screen {
 		position: relative;
-		border-radius: 1.45rem;
+		border-radius: 1rem;
 		overflow: hidden;
-		background: #050608;
+		background: #08090c;
 		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55) inset;
-	}
-
-	.hero-monitor__bezel {
-		width: 100%;
-		padding: 0.55rem;
-		border-radius: 1.15rem;
-		background:
-			linear-gradient(160deg, #3a3d46 0%, #1c1e24 42%, #12141a 100%);
-		border: 1px solid rgba(255, 255, 255, 0.1);
-		box-shadow:
-			0 1px 0 rgba(255, 255, 255, 0.08) inset,
-			0 18px 40px rgba(0, 0, 0, 0.45),
-			0 4px 12px rgba(0, 0, 0, 0.3);
 	}
 
 	.hero-monitor__screen {
-		position: relative;
-		border-radius: 0.65rem;
-		overflow: hidden;
-		background: #050608;
-		box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55) inset;
+		border-radius: 0.75rem;
 	}
 
 	.hero-monitor__stand {
@@ -1406,48 +1182,35 @@ const jsonLd = [
 		flex-direction: column;
 		align-items: center;
 		width: 100%;
-		margin-top: -1px;
 		pointer-events: none;
 	}
 
 	.hero-monitor__neck {
-		display: block;
-		width: 18%;
-		max-width: 4.5rem;
-		min-width: 2.4rem;
-		height: 1.15rem;
-		background: linear-gradient(90deg, #1a1c22, #2c3038 50%, #1a1c22);
-		border-radius: 0 0 0.2rem 0.2rem;
-		box-shadow: 0 2px 6px rgba(0, 0, 0, 0.35);
+		width: 16%;
+		height: 1rem;
+		background: linear-gradient(90deg, #181a20, #2a2e38 50%, #181a20);
+		border-radius: 0 0 0.15rem 0.15rem;
 	}
 
 	.hero-monitor__base {
-		display: block;
-		width: 42%;
-		max-width: 11rem;
-		min-width: 6.5rem;
-		height: 0.55rem;
+		width: 38%;
+		height: 0.5rem;
 		margin-top: -1px;
 		border-radius: 999px 999px 40% 40%;
-		background: linear-gradient(180deg, #2e323b 0%, #15171c 100%);
-		border: 1px solid rgba(255, 255, 255, 0.06);
-		box-shadow: 0 8px 18px rgba(0, 0, 0, 0.4);
+		background: linear-gradient(180deg, #2a2e38, #12141a);
+		border: 1px solid var(--border);
 	}
 
 	.hero-calendar-split {
 		--split: 50%;
 		--skew: 14%;
-		/* Ángulo aproximado para aspect-ratio ~16/10 con skew 14% */
 		--split-angle: 12.5deg;
 		position: relative;
 		isolation: isolate;
 		width: 100%;
 		aspect-ratio: 16 / 10;
 		overflow: hidden;
-		border-radius: 0;
-		border: none;
-		background: var(--md-sys-color-surface-container);
-		box-shadow: none;
+		background: var(--surface-raised);
 		touch-action: none;
 		cursor: ew-resize;
 		user-select: none;
@@ -1458,18 +1221,6 @@ const jsonLd = [
 		--skew: 12%;
 		--split-angle: 10deg;
 		aspect-ratio: 780 / 1691;
-	}
-
-	.hero-calendar-split--mobile .hero-calendar-split__handle-knob {
-		width: 2rem;
-		height: 2rem;
-		font-size: 1rem;
-		transform: rotate(-10deg);
-	}
-
-	.hero-calendar-split--mobile .hero-calendar-split__label {
-		font-size: 0.6rem;
-		padding: 0.22rem 0.5rem;
 	}
 
 	.hero-calendar-split.is-dragging {
@@ -1493,14 +1244,12 @@ const jsonLd = [
 		height: 100%;
 		object-fit: cover;
 		object-position: left top;
-		user-select: none;
 		pointer-events: none;
-		-webkit-user-drag: none;
+		user-select: none;
 	}
 
 	.hero-calendar-split__pane--light {
 		z-index: 1;
-		/* Solape ligero con dark para evitar franja blanca por antialiasing */
 		clip-path: polygon(
 			0 0,
 			calc(var(--split) + 0.65%) 0,
@@ -1511,7 +1260,6 @@ const jsonLd = [
 
 	.hero-calendar-split__pane--dark {
 		z-index: 2;
-		/* Diagonal: tope en --split, base en --split - --skew. Derecha = dark. */
 		clip-path: polygon(
 			calc(var(--split) - 0.65%) 0,
 			100% 0,
@@ -1530,7 +1278,6 @@ const jsonLd = [
 		transform: translateX(-50%) rotate(var(--split-angle));
 		display: grid;
 		place-items: center;
-		touch-action: none;
 		cursor: ew-resize;
 		outline: none;
 	}
@@ -1540,70 +1287,56 @@ const jsonLd = [
 	}
 
 	.hero-calendar-split__handle-knob {
-		position: relative;
-		z-index: 1;
 		display: grid;
 		place-items: center;
-		width: 2.35rem;
-		height: 2.35rem;
-		border-radius: var(--md-sys-shape-corner-full);
-		background: #ffffff;
-		color: #1c1c1e;
-		font-size: 1.15rem;
-		/* Compensa la rotación del handle para que el ícono quede derecho */
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: var(--radius-pill);
+		background: #fff;
+		color: #1a1c22;
+		font-size: 1.1rem;
 		transform: rotate(-12.5deg);
-		box-shadow:
-			0 4px 14px rgba(0, 0, 0, 0.35),
-			0 0 0 1px rgba(0, 0, 0, 0.08);
+		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 		pointer-events: none;
 	}
 
 	.hero-calendar-split__handle:focus-visible .hero-calendar-split__handle-knob {
-		outline: 2px solid var(--md-brand-filled);
+		outline: 2px solid var(--accent);
 		outline-offset: 3px;
 	}
 
 	.hero-calendar-split__label {
 		position: absolute;
 		z-index: 4;
-		padding: 0.28rem 0.65rem;
-		border-radius: var(--md-sys-shape-corner-full);
-		font-size: 0.68rem;
-		font-weight: 800;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
+		padding: 0.25rem 0.55rem;
+		border-radius: var(--radius-sm);
+		font-size: 0.6875rem;
+		font-weight: 700;
+		letter-spacing: 0.01em;
 		pointer-events: none;
 	}
 
 	.hero-calendar-split__label--light {
-		top: 0.75rem;
-		left: 0.75rem;
-		background: rgba(255, 255, 255, 0.88);
+		top: 0.65rem;
+		left: 0.65rem;
+		background: rgba(255, 255, 255, 0.9);
 		color: #1a1a1a;
-		border: 1px solid rgba(0, 0, 0, 0.08);
 	}
 
 	.hero-calendar-split__label--dark {
-		top: auto;
-		bottom: 0.75rem;
-		right: 0.75rem;
-		background: rgba(20, 20, 24, 0.88);
-		color: #e8e8ea;
-		border: 1px solid rgba(255, 255, 255, 0.12);
+		bottom: 0.65rem;
+		right: 0.65rem;
+		background: rgba(16, 18, 24, 0.9);
+		color: #e8eaef;
 	}
 
 	@media (min-width: 900px) {
 		.m3-hero {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
-			gap: 3.25rem;
+			grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+			gap: 3rem;
+			padding: 1.75rem 0 3rem;
+			min-height: 0;
 			align-items: center;
-			min-height: min(62vh, 34rem);
-			padding: 2rem 0 3.25rem;
-			max-width: none;
-		}
-
-		.m3-hero-content {
-			padding-right: 0.5rem;
 		}
 
 		.hero-phone {
@@ -1612,83 +1345,28 @@ const jsonLd = [
 
 		.hero-monitor {
 			display: flex;
-			margin-left: 0.75rem;
+			align-self: center;
+			width: 100%;
 		}
 
 		.hero-monitor__bezel {
 			padding: 0.65rem;
 			border-radius: 1.35rem;
 		}
-
-		.hero-monitor__screen {
-			border-radius: 0.75rem;
-		}
-
-		.hero-calendar-split {
-			aspect-ratio: 16 / 10.2;
-			min-height: 16.5rem;
-		}
 	}
 
-	@media (min-width: 1280px) {
-		.m3-hero {
-			gap: 3.75rem;
-			padding-left: 0.5rem;
-		}
-
-		.hero-monitor {
-			margin-left: 1.25rem;
-		}
-
-		.hero-monitor__bezel {
-			padding: 0.7rem;
-		}
-	}
-
-	@keyframes landing-orb-drift {
-		0%,
-		100% {
-			transform: translate3d(0, 0, 0) scale(1);
-		}
-		50% {
-			transform: translate3d(8%, 4%, 0) scale(1.08);
-		}
-	}
-
-	/* ——— Sections ——— */
+	/* Sections */
 	.m3-section {
-		display: flex;
-		flex-direction: column;
-		gap: 1.75rem;
-		padding: 2rem 0;
-	}
-
-	@media (min-width: 768px) {
-		.m3-section {
-			gap: 2.5rem;
-			padding: 3rem 0;
-		}
-	}
-
-	.m3-section-tonal {
-		padding: 1.75rem 1.25rem;
-		border-radius: var(--md-sys-shape-corner-extra-large);
-		background: var(--md-sys-color-surface-container-low);
-		border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 50%, transparent);
-	}
-
-	@media (min-width: 768px) {
-		.m3-section-tonal {
-			padding: 2.5rem 2rem;
-		}
+		padding: 3rem 0;
 	}
 
 	.reveal-on-scroll {
-		opacity: 0.2;
-		transform: translateY(16px);
+		opacity: 0;
+		transform: translateY(18px);
 		transition:
-			opacity 0.65s var(--md-sys-motion-easing-emphasized),
-			transform 0.65s var(--md-sys-motion-easing-emphasized);
+			opacity 0.65s var(--ease),
+			transform 0.65s var(--ease);
+		transition-delay: calc(var(--reveal-i, 0) * 60ms);
 	}
 
 	.reveal-on-scroll.is-visible {
@@ -1698,418 +1376,381 @@ const jsonLd = [
 
 	@media (prefers-reduced-motion: reduce) {
 		.reveal-on-scroll,
-		.landing-orb,
-		.features-heading.reveal-on-scroll,
 		[data-hero-reveal] {
-			animation: none;
-			opacity: 1;
-			translate: none;
-			transform: none;
-			transition: none;
-			transition-delay: 0ms;
+			animation: none !important;
+			opacity: 1 !important;
+			transform: none !important;
+			transition: none !important;
 		}
 
-		.features-card {
-			animation: none;
-			transition: none;
-		}
-
-		.features-card.is-in {
-			opacity: 1;
-			transform: none;
-			animation: none;
+		[data-hero-reveal].is-in {
+			animation: none !important;
 		}
 	}
 
-	/* ——— Features grid ——— */
+	/* Features bento */
 	.features-section {
-		gap: 1.5rem;
+		padding-top: 2.5rem;
+		border-top: 1px solid var(--border);
 	}
 
 	.features-intro {
 		display: grid;
-		justify-items: center;
-		text-align: center;
+		gap: 0.75rem;
+		max-width: 38rem;
+		margin-bottom: 1.35rem;
 	}
 
-	.features-heading {
-		display: grid;
-		gap: 0.2rem;
-		justify-items: center;
-		margin: 0;
+	.features-lead {
+		max-width: 34rem;
 	}
 
-	.features-heading.reveal-on-scroll {
-		opacity: 0;
-		transform: translateY(28px);
-		transition:
-			opacity 0.85s var(--md-sys-motion-easing-emphasized),
-			transform 0.85s var(--md-sys-motion-easing-emphasized);
+	.features-bento {
+		display: flex;
+		gap: 0.65rem;
+		overflow-x: auto;
+		overflow-y: hidden;
+		scroll-snap-type: x mandatory;
+		scroll-padding-inline: var(--landing-pad-x);
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		margin-inline: calc(var(--landing-pad-x) * -1);
+		padding-inline: var(--landing-pad-x);
+		padding-bottom: 0.35rem;
+		mask-image: linear-gradient(to right, #000 calc(100% - 2.5rem), transparent);
 	}
 
-	.features-heading.reveal-on-scroll.is-visible {
-		opacity: 1;
-		transform: translateY(0);
-	}
-
-	.features-heading-lead {
-		color: var(--md-sys-color-on-surface);
-	}
-
-	.features-heading-muted {
-		color: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 88%, transparent);
-		font-weight: 650;
-	}
-
-	@keyframes feature-card-enter {
-		from {
-			opacity: 0;
-			transform: translateY(40px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
+	@supports (mask-image: linear-gradient(to right, #000, transparent)) {
+		.features-bento {
+			padding-right: calc(var(--landing-pad-x) + 0.5rem);
 		}
 	}
 
-	.features-panel {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: 1px;
-		overflow: hidden;
-		border-radius: var(--md-sys-shape-corner-extra-large);
-		border: 0;
-		background: var(--md-sys-color-surface);
-		box-shadow: none;
-	}
-
-	.features-dots {
+	.features-bento::-webkit-scrollbar {
 		display: none;
 	}
 
-	.features-card {
+	.features-bento__cell {
+		position: relative;
+		overflow: hidden;
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--border);
+		background: var(--surface-raised);
+		flex: 0 0 min(82vw, 17.5rem);
+		scroll-snap-align: start;
+		min-height: 8.75rem;
+		transition:
+			border-color 200ms var(--ease),
+			transform 200ms var(--ease);
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.features-bento__cell:hover {
+			border-color: var(--border-strong);
+			transform: translateY(-2px);
+		}
+	}
+
+	.features-bento__photo {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		opacity: 0.55;
+	}
+
+	.features-bento__cell--featured .features-bento__photo {
+		opacity: 0.45;
+	}
+
+	.features-bento__cell--featured::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(180deg, transparent 20%, rgba(12, 14, 20, 0.92) 85%);
+		pointer-events: none;
+	}
+
+	.features-bento__cell--visual .features-bento__photo {
+		opacity: 0.5;
+	}
+
+	.features-bento__cell--visual::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(135deg, rgba(12, 14, 20, 0.75), rgba(12, 14, 20, 0.35));
+	}
+
+	.features-bento__cell--tint {
+		background: linear-gradient(145deg, rgba(66, 110, 219, 0.18), var(--surface-raised));
+	}
+
+	.features-bento__cell--featured {
+		flex-basis: min(86vw, 19rem);
+		min-height: 10.5rem;
+	}
+
+	.features-bento__content {
+		position: relative;
+		z-index: 1;
 		display: grid;
-		gap: 0.75rem;
+		gap: 0.45rem;
+		padding: 1rem 1rem 1.1rem;
+		align-content: end;
+		min-height: 100%;
+	}
+
+	.features-bento__cell:not(.features-bento__cell--featured):not(.features-bento__cell--visual)
+		.features-bento__content {
 		align-content: start;
-		padding: 1.35rem 1.25rem 1.45rem;
-		background: var(--md-sys-color-surface-container);
-		text-align: left;
-		opacity: 0;
-		transform: translateY(40px);
-		transition: background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
 	}
 
-	.features-card:hover {
-		background: var(--md-sys-color-surface-container-high);
-	}
-
-	.features-card.is-in {
-		/* Solo la animación controla opacidad/posición: así cada card entra cuando recibe la clase. */
-		animation: feature-card-enter 0.55s cubic-bezier(0.2, 0, 0, 1) both;
-	}
-
-	.features-card-icon {
+	.features-bento__icon {
 		display: grid;
 		place-items: center;
-		width: 2.55rem;
-		height: 2.55rem;
-		border-radius: 0.7rem;
-		border: 1.5px solid #4ba3ff;
-		color: #4ba3ff;
-		background: color-mix(in srgb, #4ba3ff 10%, transparent);
-		box-shadow: 0 0 0 1px color-mix(in srgb, #4ba3ff 12%, transparent);
+		width: 2.4rem;
+		height: 2.4rem;
+		border-radius: var(--radius-sm);
+		background: var(--accent-soft);
+		color: #8eb4ff;
+		border: 1px solid rgba(66, 110, 219, 0.3);
 	}
 
-	.features-card-icon .material-symbols-rounded {
-		font-size: 1.3rem;
-		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+	.features-bento__icon .material-symbols-rounded {
+		font-size: 1.2rem;
 	}
 
-	.features-card-title {
+	.features-bento__title {
 		margin: 0;
-		font-size: 1.05rem;
+		font-size: 1rem;
 		font-weight: 800;
 		letter-spacing: -0.02em;
-		line-height: 1.3;
-		color: var(--md-sys-color-on-surface);
+		color: var(--text-primary);
 	}
 
-	.features-card-text {
+	.features-bento__text {
 		margin: 0;
-		font-size: 0.9rem;
-		line-height: 1.55;
-		color: var(--md-sys-color-on-surface-variant);
+		font-size: 0.8125rem;
+		line-height: 1.45;
+		color: var(--text-secondary);
+		max-width: 28rem;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
 	}
 
-	@media (max-width: 699px) {
-		.features-carousel {
+	@media (min-width: 640px) {
+		.features-bento {
 			display: grid;
-			gap: 0.9rem;
-			width: 100%;
-		}
-
-		.features-panel {
-			display: flex;
-			gap: 0.85rem;
-			overflow-x: auto;
-			overflow-y: hidden;
-			scroll-snap-type: x mandatory;
-			scroll-padding-inline: var(--landing-pad-x);
-			padding: 0.1rem var(--landing-pad-x) 0.35rem;
-			margin-inline: calc(var(--landing-pad-x) * -1);
-			border-radius: 0;
-			background: transparent;
-			-webkit-overflow-scrolling: touch;
-			scrollbar-width: none;
-			overscroll-behavior-x: contain;
-		}
-
-		.features-panel::-webkit-scrollbar {
-			display: none;
-		}
-
-		.features-card {
-			flex: 0 0 min(78vw, 18.5rem);
-			scroll-snap-align: start;
-			border-radius: var(--md-sys-shape-corner-extra-large);
-			min-height: 13.5rem;
-		}
-
-		.features-dots {
-			display: flex;
-			justify-content: center;
-			align-items: center;
-			gap: 0.45rem;
-		}
-
-		.features-dot {
-			width: 0.45rem;
-			height: 0.45rem;
-			padding: 0;
-			border: 0;
-			border-radius: 999px;
-			background: color-mix(in srgb, var(--md-sys-color-on-surface) 28%, transparent);
-			cursor: pointer;
-			transition:
-				width var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard),
-				background-color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
-		}
-
-		.features-dot.is-active {
-			width: 1.15rem;
-			background: #4ba3ff;
-		}
-	}
-
-	@media (min-width: 700px) {
-		.features-panel {
 			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 0.75rem;
+			overflow: visible;
+			margin-inline: 0;
+			padding-inline: 0;
+			padding-right: 0;
+			padding-bottom: 0;
+			scroll-snap-type: none;
+			mask-image: none;
 		}
 
-		.features-card {
-			padding: 1.55rem 1.45rem 1.65rem;
-			min-height: 100%;
+		.features-bento__cell {
+			flex: unset;
+			min-height: 9.5rem;
+			scroll-snap-align: unset;
 		}
 
-		.features-dots {
-			display: none;
+		.features-bento__cell--featured {
+			flex-basis: unset;
+			grid-row: span 2;
+			min-height: 16rem;
+		}
+
+		.features-bento__content {
+			padding: 1.15rem 1.1rem 1.25rem;
+			gap: 0.5rem;
+		}
+
+		.features-bento__title {
+			font-size: 1.05rem;
+		}
+
+		.features-bento__text {
+			font-size: 0.875rem;
+			line-height: 1.5;
+			-webkit-line-clamp: unset;
+			overflow: visible;
+			display: block;
 		}
 	}
 
 	@media (min-width: 1024px) {
-		.features-section {
-			gap: 2rem;
+		.features-bento {
+			grid-template-columns: 1.15fr 1fr 1fr;
+			grid-template-rows: auto auto;
+			gap: 0.85rem;
 		}
 
-		.features-panel {
-			grid-template-columns: repeat(3, minmax(0, 1fr));
+		.features-bento__cell--featured {
+			grid-column: 1;
+			grid-row: 1 / 3;
+			min-height: 18rem;
 		}
 
-		.features-card {
-			padding: 1.75rem 1.6rem 1.85rem;
-		}
-
-		.features-card-title {
-			font-size: 1.1rem;
+		.features-bento__cell--visual {
+			grid-column: 2 / 4;
+			grid-row: 2;
+			min-height: 11rem;
 		}
 	}
 
-	/* ——— Workflow ——— */
+	/* Workflow */
+	.workflow-section {
+		padding-block: 3.5rem;
+		border-top: 1px solid var(--border);
+	}
+
 	.workflow-intro {
 		display: grid;
-		gap: 0.85rem;
-		justify-items: center;
-		text-align: center;
+		gap: 0.5rem;
+		margin-bottom: 2rem;
+		max-width: 32rem;
 	}
 
-	.workflow-steps {
+	.workflow-lead {
+		color: var(--text-muted);
+	}
+
+	.workflow-rail {
 		list-style: none;
 		margin: 0;
 		padding: 0;
 		display: grid;
 		gap: 1rem;
-		min-width: 0;
 	}
 
-	.workflow-step {
-		position: relative;
-		min-width: 0;
-	}
-
-	.workflow-step-copy {
+	.workflow-rail__step {
 		display: grid;
-		gap: 0.45rem;
-		width: 100%;
-		padding: 1.35rem 1.35rem 1.5rem;
+		grid-template-columns: auto 1fr;
+		gap: 1rem;
+		align-items: start;
+		padding: 1.25rem 1.15rem;
+		border-radius: var(--radius-lg);
+		border: 1px solid var(--border);
+		background: var(--surface-raised);
+	}
+
+	.workflow-rail__icon {
+		display: grid;
+		place-items: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: var(--radius-md);
+		background: var(--accent-soft);
+		color: #8eb4ff;
+		font-size: 1.35rem;
+	}
+
+	.workflow-rail__copy {
+		display: grid;
+		gap: 0.35rem;
 		min-width: 0;
-		border-radius: var(--md-sys-shape-corner-extra-large);
-		background: var(--md-sys-color-surface-container);
-		border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 45%, transparent);
-		text-align: left;
-	}
-
-	.workflow-step-num {
-		display: block;
-		color: var(--md-sys-color-primary);
-		font-size: 2.75rem;
-		font-weight: 800;
-		letter-spacing: -0.03em;
-		line-height: 0.95;
-		font-variant-numeric: tabular-nums;
-		opacity: 0.9;
-	}
-
-	.workflow-step-arrow {
-		display: none;
 	}
 
 	@media (min-width: 900px) {
-		.workflow-steps {
-			--workflow-gap-x: 3.5rem;
+		.workflow-rail {
 			grid-template-columns: repeat(3, minmax(0, 1fr));
-			gap: 1rem var(--workflow-gap-x);
+			gap: 1rem;
 			align-items: stretch;
 		}
 
-		.workflow-step {
-			display: flex;
-		}
-
-		.workflow-step-copy {
-			justify-items: center;
-			text-align: center;
-			padding: 1.6rem 1.35rem 1.7rem;
-		}
-
-		.workflow-step-num {
-			font-size: 3.25rem;
-		}
-
-		.workflow-step-arrow {
-			display: grid;
-			place-items: center;
-			position: absolute;
-			z-index: 2;
-			top: 50%;
-			left: calc(100% + var(--workflow-gap-x) / 2);
-			transform: translate(-50%, -50%);
-			width: 2.15rem;
-			height: 2.15rem;
-			border-radius: var(--md-sys-shape-corner-full);
-			background: var(--md-sys-color-secondary-container);
-			color: var(--md-sys-color-on-secondary-container);
-			font-size: 1.15rem;
-			border: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 50%, transparent);
+		.workflow-rail__step {
+			grid-template-columns: 1fr;
+			padding: 1.5rem 1.25rem;
 		}
 	}
 
-	/* ——— CTA ——— */
-	.m3-cta-card {
-		position: relative;
-		isolation: isolate;
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		text-align: center;
-		gap: 1.75rem;
-		padding: 2.5rem 1.5rem;
-		border-radius: var(--md-sys-shape-corner-extra-large);
+	/* CTA split */
+	.m3-cta-split {
+		display: grid;
+		gap: 1.5rem;
+		padding: 2.5rem 1.25rem;
+		margin-bottom: 1rem;
+		border-radius: var(--radius-lg);
+		border: 1px solid rgba(66, 110, 219, 0.25);
 		background:
-			radial-gradient(ellipse 90% 120% at 100% 0%, rgba(70, 130, 255, 0.22), transparent 55%),
-			linear-gradient(145deg, #101826 0%, #18243c 48%, #121c30 100%);
-		border: 1px solid color-mix(in srgb, var(--md-sys-color-primary) 24%, transparent);
-		box-shadow:
-			var(--md-sys-elevation-2),
-			0 0 40px rgba(50, 110, 255, 0.08);
+			radial-gradient(ellipse 80% 80% at 100% 0%, rgba(66, 110, 219, 0.15), transparent 55%),
+			var(--surface-raised);
 	}
 
-	.m3-cta-card::before {
-		content: '';
-		position: absolute;
-		inset: -20%;
-		z-index: -1;
-		background: radial-gradient(circle at 70% 30%, rgba(110, 170, 255, 0.1), transparent 45%);
-		pointer-events: none;
-	}
-
-	@media (min-width: 640px) {
-		.m3-cta-card {
-			padding: 3.25rem 2rem;
-		}
-	}
-
-	.cta-content {
-		width: 100%;
-		max-width: 36rem;
-		margin-inline: auto;
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		text-align: center;
-		gap: 1.15rem;
-	}
-
-	.cta-content .m3-headline,
-	.cta-content .m3-body-large {
-		text-align: center;
+	.cta-split__copy {
+		display: grid;
+		gap: 0.75rem;
 	}
 
 	.cta-premium {
-		color: #e8c76a;
+		color: #8eb4ff;
+	}
+
+	.cta-split__panel {
+		display: grid;
+		gap: 1.25rem;
+		padding: 1.25rem;
+		border-radius: var(--radius-md);
+		background: rgba(0, 0, 0, 0.22);
+		border: 1px solid var(--border);
+	}
+
+	.cta-checklist {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.65rem;
+	}
+
+	.cta-checklist li {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: var(--text-secondary);
+	}
+
+	.cta-checklist .material-symbols-rounded {
+		font-size: 1.15rem;
+		color: #8eb4ff;
+		flex-shrink: 0;
 	}
 
 	.cta-btn {
-		margin-top: 0.25rem;
-		align-self: center;
+		align-self: flex-start;
 	}
 
-	.m3-cta-card .m3-body-large {
-		color: var(--md-sys-color-on-surface-variant);
-	}
-
-	@media (min-width: 900px) {
-		.m3-cta-card {
-			padding: 3.25rem 3rem;
+	@media (min-width: 768px) {
+		.m3-cta-split {
+			grid-template-columns: 1fr 1fr;
+			align-items: center;
+			padding: 2.75rem 2rem;
+			gap: 2rem;
 		}
 	}
 
-	/* ——— Footer ——— */
+	/* Footer */
 	.m3-footer {
 		width: 100%;
-		max-width: 22rem;
-		margin: 0 auto;
-		padding: 2rem 0.5rem 1.25rem;
-		color: var(--md-sys-color-on-surface-variant);
+		padding: 2rem 0 1.5rem;
+		color: var(--text-muted);
 		font-size: 0.875rem;
-		line-height: 1.45;
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		text-align: center;
 		gap: 1.15rem;
-		scroll-margin-top: 0;
+		border-top: 1px solid var(--border);
 	}
 
 	.m3-footer-brand,
@@ -2125,8 +1766,7 @@ const jsonLd = [
 
 	.m3-footer-brand {
 		display: grid;
-		gap: 0.2rem;
-		justify-items: center;
+		gap: 0.15rem;
 	}
 
 	.m3-footer-copy,
@@ -2135,77 +1775,60 @@ const jsonLd = [
 	}
 
 	.m3-footer-copy {
-		color: var(--md-sys-color-on-surface);
+		color: var(--text-primary);
 		font-weight: 700;
-	}
-
-	.m3-footer-tagline {
-		font-size: 0.8rem;
-		opacity: 0.85;
 	}
 
 	.m3-footer-support {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.3rem;
+		gap: 0.25rem;
 	}
 
 	.m3-footer-nav {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
-		gap: 0.75rem;
+		gap: 0.65rem;
 	}
 
 	.m3-footer-link {
-		color: var(--md-sys-color-primary);
+		color: var(--accent);
 		font-weight: 700;
-		font-size: 0.875rem;
-		padding: 0.2rem 0.35rem;
-		border-radius: var(--md-sys-shape-corner-small);
-		transition: color var(--md-sys-motion-duration-short) var(--md-sys-motion-easing-standard);
+		transition: color 200ms var(--ease);
 	}
 
 	.m3-footer-link:hover {
-		color: var(--md-sys-color-on-primary-container);
+		color: var(--accent-hover);
 	}
 
 	@media (min-width: 640px) {
-		.m3-footer {
-			max-width: 36rem;
-		}
-
 		.m3-footer-support {
 			flex-direction: row;
 			flex-wrap: wrap;
 			justify-content: center;
-			column-gap: 0.35rem;
+			gap: 0.35rem;
 		}
 
 		.m3-footer-nav {
 			flex-direction: row;
-			justify-content: center;
 			flex-wrap: wrap;
+			justify-content: center;
 			gap: 0.35rem 1.25rem;
 		}
 	}
 
 	@media (min-width: 1024px) {
 		.m3-footer {
-			max-width: var(--landing-max);
-			width: 100%;
 			flex-direction: row;
 			align-items: center;
 			justify-content: space-between;
-			gap: 1.5rem;
-			border-top: 1px solid color-mix(in srgb, var(--md-sys-color-outline-variant) 55%, transparent);
-			padding: 2.25rem var(--landing-pad-x);
+			text-align: left;
+			padding-bottom: 2rem;
 		}
 
 		.m3-footer-brand {
-			width: auto;
-			justify-items: start;
 			text-align: left;
 		}
 
@@ -2213,18 +1836,14 @@ const jsonLd = [
 			display: flex;
 			flex-direction: column;
 			align-items: flex-end;
-			gap: 0.55rem;
+			gap: 0.5rem;
 		}
 
 		.m3-footer-support {
-			width: auto;
-			flex-direction: row;
 			justify-content: flex-end;
-			text-align: right;
 		}
 
 		.m3-footer-nav {
-			width: auto;
 			justify-content: flex-end;
 		}
 	}

@@ -1,47 +1,66 @@
 ---
 import Layout from '../layouts/Layout.astro';
 import '../styles/global.css';
+import '../styles/legal-page.css';
 
-const updatedAt = '15 de mayo de 2026';
-const pageTitle = 'Políticas y privacidad — Hasel';
+const updatedAt = '8 de agosto de 2026';
+const pageTitle = 'Políticas y privacidad - Hasel';
 const pageDescription =
-	'Qué datos trata Hasel, para qué los usa y cómo se administran en la plataforma.';
+	'Qué datos trata Hasel, para qué los usa, con quién los comparte y cuáles son tus derechos como usuario.';
 
 const toc = [
 	{ id: 'responsable', label: 'Responsable del sitio' },
+	{ id: 'alcance', label: 'Alcance' },
 	{ id: 'datos', label: 'Datos que tratamos' },
 	{ id: 'finalidad', label: 'Finalidad del tratamiento' },
-	{ id: 'manejo', label: 'Cómo se maneja la información' },
+	{ id: 'comparticion', label: 'Compartición de datos' },
+	{ id: 'cookies', label: 'Cookies y almacenamiento local' },
+	{ id: 'manejo', label: 'Uso interno de la información' },
 	{ id: 'seguridad', label: 'Seguridad y conservación' },
 	{ id: 'servicios-externos', label: 'Servicios externos' },
 	{ id: 'derechos', label: 'Derechos y consultas' },
 ] as const;
 ---
 
-<Layout pageTitle={pageTitle} metaDescription={pageDescription}>
+<Layout
+	pageTitle={pageTitle}
+	metaDescription={pageDescription}
+	canonicalPath="/politicas-y-privacidad"
+>
 	<main class="policy-root">
-		<div class="policy-shell">
-			<header class="policy-navbar">
-				<a href="/" class="policy-brand no-underline">
+		<a href="#policy-content" class="policy-skip-link">Saltar al contenido principal</a>
+		<div class="policy-scroll-sentinel" data-scroll-sentinel aria-hidden="true"></div>
+
+		<header class="policy-topbar" data-policy-topbar>
+			<div class="policy-topbar-inner">
+				<a href="/" class="policy-brand no-underline" aria-label="Hasel - Inicio">
 					<img
-						src="/icons/icon-512x512.png"
-						alt="Logo Hasel"
+						src="/icons/icon-64.png"
+						alt=""
 						class="policy-brand-logo"
+						width="64"
+						height="64"
 						loading="eager"
 						decoding="async"
 					/>
-					<span>Hasel</span>
+					<span class="policy-brand-text">Hasel</span>
 				</a>
-				<a href="/" class="policy-home-link no-underline">Volver al inicio</a>
-			</header>
+				<a href="/" class="policy-back-link m3-btn m3-btn-tonal no-underline">
+					<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+					Volver al inicio
+				</a>
+			</div>
+		</header>
 
-			<header class="policy-hero">
+		<div class="policy-shell">
+			<header class="policy-doc-header" id="policy-content">
 				<p class="policy-kicker">Documentación legal</p>
 				<h1>Políticas y privacidad de Hasel</h1>
 				<p class="policy-lead">
-					En Hasel cuidamos la información de los negocios que usan la plataforma para organizar
-					servicios, clientes, equipos, horarios y citas. Esta página explica de forma simple qué
-					datos tratamos, para qué los usamos y cómo se administran dentro del proyecto.
+					Hasel es un software de reservas y agenda para negocios en Paraguay y la región. Esta
+					política explica qué datos personales y operativos tratamos, con qué finalidad, con quién
+					los compartimos y cómo los protegemos. Aplica al sitio web, al panel administrativo, a las
+					páginas públicas de reserva y a las funciones conectadas del servicio.
 				</p>
 				<p class="policy-updated">Última actualización: {updatedAt}</p>
 			</header>
@@ -79,83 +98,477 @@ const toc = [
 							Este sitio web y la aplicación Hasel son operados y administrados por Daniel Ramon
 							Villasanti Vergara, responsable principal del proyecto y CEO de Hasel.
 						</p>
+						<p>
+							Para consultas sobre privacidad o tratamiento de datos podés escribir a
+							<a href="mailto:support@hasel.app" class="policy-inline-link">support@hasel.app</a>.
+						</p>
+					</section>
+
+					<section id="alcance" class="policy-section" data-policy-section>
+						<h2>Alcance</h2>
+						<p>
+							Esta política cubre el tratamiento de datos realizado por Hasel como proveedor de la
+							plataforma. Incluye a las personas que crean o administran una cuenta de negocio, a
+							los miembros del equipo invitados, a los clientes finales que reservan turnos por las
+							páginas públicas y a quienes navegan el sitio informativo.
+						</p>
+						<p>
+							Cuando un negocio usa Hasel para gestionar clientes y citas, actúa como responsable
+							frente a sus propios clientes respecto de la información que carga en el panel. Hasel
+							procesa esos datos en nombre del negocio para prestar el servicio contratado.
+						</p>
+						<aside class="policy-callout" role="note">
+							<p>
+								<strong>Las señas por SIPAP no pasan por Hasel.</strong> El pago y, cuando
+								corresponda, el reembolso se realizan directamente entre el cliente y el negocio.
+								Hasel facilita la reserva, el comprobante y el seguimiento del estado. Más detalle
+								en
+								<a href="/politicas-de-cancelacion-y-reembolso" class="policy-inline-link">
+									Políticas de cancelación y reembolso
+								</a>.
+							</p>
+						</aside>
 					</section>
 
 					<section id="datos" class="policy-section" data-policy-section>
-						<h2>Datos que podemos tratar</h2>
+						<h2>Datos que tratamos</h2>
 						<p>
-							Hasel puede procesar datos necesarios para operar la agenda y el panel
-							administrativo, incluyendo información de cuentas, negocios, sucursales, servicios,
-							especialidades, profesionales, horarios, clientes, citas y estados operativos.
+							Tratamos únicamente los datos necesarios para operar la plataforma. Dependiendo de
+							cómo uses Hasel, pueden incluirse las categorías siguientes.
+						</p>
+
+						<h3>Datos que proporcionás o cargás</h3>
+						<div class="policy-table-wrap">
+							<table class="policy-table">
+								<thead>
+									<tr>
+										<th scope="col">Categoría</th>
+										<th scope="col">Ejemplos concretos</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<th scope="row">Cuenta de usuario</th>
+										<td>
+											Nombre, apellido, correo electrónico, contraseña (almacenada de forma
+											segura, no en texto plano), teléfono de contacto, foto de perfil y slug
+											público opcional (<code>/u/[slug]</code>).
+										</td>
+									</tr>
+									<tr>
+										<th scope="row">Negocio y espacio de trabajo</th>
+										<td>
+											Nombre comercial, especialidad, correo de la empresa, sucursales,
+											direcciones, coordenadas, horarios, servicios, precios, equipo,
+											profesionales, logos, banners, galería de fotos, descripción pública,
+											WhatsApp, enlaces a redes sociales y configuración operativa.
+										</td>
+									</tr>
+									<tr>
+										<th scope="row">Clientes y citas</th>
+										<td>
+											Nombre y teléfono del cliente, historial de turnos, estados, notas
+											operativas, adjuntos de cita, política de cancelación aceptada y datos
+											relacionados con señas o reembolsos.
+										</td>
+									</tr>
+									<tr>
+										<th scope="row">Reservas públicas</th>
+										<td>
+											En páginas como <code>/u/[slug]</code>, <code>/[orgSlug]/p/[proSlug]</code>
+											o perfiles públicos: nombre, teléfono (WhatsApp), servicio, sucursal,
+											profesional, fecha y hora elegidas, y aceptación de políticas cuando
+											corresponda.
+										</td>
+									</tr>
+									<tr>
+										<th scope="row">Cobros y señas SIPAP</th>
+										<td>
+											Datos bancarios SIPAP del negocio (banco, titular, documento, alias),
+											código de referencia <code>HASEL-…</code>, comprobantes de transferencia
+											(imagen o PDF), resultados de validación u OCR, alias SIPAP del cliente
+											para reembolsos y estado del cobro o devolución.
+										</td>
+									</tr>
+									<tr>
+										<th scope="row">Suscripción Hasel</th>
+										<td>
+											Plan contratado, datos de facturación (nombre o razón social, CI o RUC,
+											correo de facturación), historial de facturas y referencias de tarjeta
+											enmascaradas (marca, últimos dígitos, emisor). Los datos completos de
+											tarjeta se ingresan en el formulario seguro de Pagopar; Hasel no almacena
+											el número completo ni el CVV.
+										</td>
+									</tr>
+									<tr>
+										<th scope="row">Integraciones opcionales</th>
+										<td>
+											Si conectás Google Calendar: tokens OAuth y metadatos necesarios para
+											consultar disponibilidad. Si activás notificaciones push: token de
+											dispositivo de Firebase Cloud Messaging.
+										</td>
+									</tr>
+									<tr>
+										<th scope="row">Asistentes e IA</th>
+										<td>
+											Mensajes que enviás al chat de agenda, consultas al asistente ATC,
+											borradores por voz o imagen para crear citas, y contenido de comprobantes
+											enviado a OCR automatizado.
+										</td>
+									</tr>
+									<tr>
+										<th scope="row">Comunicaciones</th>
+										<td>
+											Número de teléfono y contenido de plantillas enviadas por WhatsApp
+											(confirmaciones, recordatorios, reembolsos u otros avisos operativos
+											habilitados por el negocio).
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+
+						<h3>Datos que se generan o registran automáticamente</h3>
+						<p>
+							Al usar la plataforma también podemos registrar: dirección IP y datos derivados del
+							encabezado de la solicitud (por ejemplo, para limitar intentos abusivos), tokens de
+							sesión JWT, fecha y hora de acceso, identificadores técnicos de la cuenta u
+							organización activa, preferencias de interfaz (como tema claro u oscuro), registros
+							de errores o actividad operativa necesarios para soporte y continuidad del servicio,
+							y metadatos técnicos del navegador o dispositivo cuando son relevantes para
+							seguridad o compatibilidad.
 						</p>
 						<p>
-							También podemos registrar información técnica básica, como fecha y hora de acceso,
-							identificadores de sesión, preferencias de la aplicación, notificaciones y datos
-							mínimos para seguridad, soporte y mejora del servicio.
+							Hasel <strong>no utiliza Google Analytics ni herramientas equivalentes de analítica
+							web de terceros</strong> en el código actual de la aplicación. Tampoco vendemos datos
+							de navegación con fines publicitarios.
 						</p>
 					</section>
 
 					<section id="finalidad" class="policy-section" data-policy-section>
 						<h2>Finalidad del tratamiento</h2>
+						<p>Usamos la información para las finalidades siguientes, según corresponda:</p>
+						<ul class="policy-list">
+							<li>
+								<strong>Prestar el servicio:</strong> crear y administrar cuentas, organizaciones,
+								agenda, calendario, clientes, servicios, reservas públicas y panel operativo.
+							</li>
+							<li>
+								<strong>Autenticación y seguridad:</strong> iniciar sesión, renovar tokens,
+								verificar correo, limitar abusos, proteger cuentas y mantener la integridad de la
+								plataforma.
+							</li>
+							<li>
+								<strong>Comunicaciones operativas:</strong> enviar confirmaciones, recordatorios,
+								avisos de cancelación, instrucciones de seña, solicitudes de alias para reembolso
+								u otras notificaciones vinculadas al turno, por WhatsApp, correo o notificación
+								push cuando estén habilitadas.
+							</li>
+							<li>
+								<strong>Cobros de seña SIPAP:</strong> mostrar datos de transferencia, recibir
+								comprobantes, aplicar OCR para conciliar montos y códigos de referencia, y
+								gestionar estados de revisión, aprobación o reembolso dentro del panel Cobros.
+							</li>
+							<li>
+								<strong>Suscripción a Hasel:</strong> procesar pagos recurrentes del plan mediante
+								Pagopar, emitir facturación, administrar tarjetas tokenizadas y el estado de la
+								suscripción.
+							</li>
+							<li>
+								<strong>Funciones de inteligencia artificial:</strong> responder consultas sobre
+								agenda, clientes, turnos o disponibilidad; transcribir audio o interpretar
+								imágenes para acelerar la carga de citas; y analizar comprobantes de pago cuando
+								el negocio habilita esas funciones.
+							</li>
+							<li>
+								<strong>Integraciones:</strong> sincronizar o consultar Google Calendar si el
+								usuario lo autoriza, y entregar mapas de ubicación de sucursales cuando el
+								visitante los visualiza.
+							</li>
+							<li>
+								<strong>Soporte, cumplimiento y mejora:</strong> atender consultas, resolver
+								incidentes, conservar registros necesarios y mejorar estabilidad, usabilidad y
+								rendimiento del producto.
+							</li>
+						</ul>
+					</section>
+
+					<section id="comparticion" class="policy-section" data-policy-section>
+						<h2>Compartición de datos</h2>
 						<p>
-							Usamos la información para permitir el funcionamiento de Hasel: gestionar reservas,
-							mostrar disponibilidad, organizar equipos, consultar el estado del negocio, enviar
-							notificaciones relevantes y mantener la seguridad de la cuenta.
+							Compartimos datos personales solo cuando es necesario para operar Hasel, cumplir
+							obligaciones legales o responder a solicitudes válidas de autoridad. No vendemos
+							información personal ni la cedemos a terceros con fines publicitarios ajenos al
+							servicio.
 						</p>
+
+						<h3>Proveedores tecnológicos</h3>
 						<p>
-							Cuando se usan funciones de asistencia inteligente, la información enviada al
-							asistente se utiliza para responder consultas sobre agenda, clientes, turnos o
-							disponibilidad dentro del contexto autorizado por el usuario.
+							Hasel se apoya en proveedores que procesan datos en nuestro nombre, bajo instrucciones
+							contractuales y medidas de seguridad razonables:
+						</p>
+						<ul class="policy-list">
+							<li>
+								<strong>Oracle Cloud Infrastructure:</strong> base de datos (Oracle Autonomous
+								Database), API (ORDS) y almacenamiento de archivos (Object Storage) para
+								comprobantes, imágenes, logos y adjuntos.
+							</li>
+							<li>
+								<strong>Vercel:</strong> hosting y despliegue del frontend y rutas serverless de
+								la aplicación.
+							</li>
+							<li>
+								<strong>Pagopar:</strong> procesamiento de pagos de la suscripción Hasel y
+								tokenización de tarjetas. No se usa Pagopar para cobrar señas del comercio; esas
+								se cobran por SIPAP directo al negocio.
+							</li>
+							<li>
+								<strong>Meta (WhatsApp Business API):</strong> envío de mensajes transaccionales
+								o plantillas aprobados vinculados a citas y reembolsos.
+							</li>
+							<li>
+								<strong>Google Firebase:</strong> entrega de notificaciones push al panel cuando
+								el usuario las autoriza.
+							</li>
+							<li>
+								<strong>Microsoft Azure OpenAI:</strong> procesamiento de texto, voz e imágenes
+								para asistentes de agenda, transcripción, borradores de citas y OCR de
+								comprobantes SIPAP.
+							</li>
+							<li>
+								<strong>Google:</strong> OAuth y API de Google Calendar, solo si el usuario
+								conecta esa integración de forma explícita.
+							</li>
+							<li>
+								<strong>Stadia Maps:</strong> mapas embebidos en páginas públicas de reserva para
+								mostrar la ubicación de sucursales.
+							</li>
+						</ul>
+
+						<h3>Acceso dentro del ecosistema Hasel</h3>
+						<p>
+							Los miembros de un negocio acceden a la información de su organización según su rol
+							y permisos. Los clientes finales ven únicamente la información necesaria en la página
+							pública de reserva o en el enlace de gestión de su turno.
+						</p>
+
+						<aside class="policy-callout" role="note">
+							<p>
+								<strong>No vendemos datos personales.</strong> Tampoco los compartimos con
+								anunciantes, brokers de datos ni afiliados comerciales ajenos a la operación del
+								servicio.
+							</p>
+						</aside>
+					</section>
+
+					<section id="cookies" class="policy-section" data-policy-section>
+						<h2>Cookies y almacenamiento local</h2>
+						<p>
+							Hasel utiliza cookies y tecnologías similares para mantener la sesión, recordar
+							preferencias y habilitar funciones del producto. Algunas son estrictamente
+							necesarias; otras mejoran la experiencia pero no son imprescindibles para usar el
+							servicio.
+						</p>
+
+						<div class="policy-table-wrap">
+							<table class="policy-table">
+								<thead>
+									<tr>
+										<th scope="col">Nombre o tipo</th>
+										<th scope="col">Finalidad</th>
+										<th scope="col">Duración aproximada</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<th scope="row"><code>access_token</code>, <code>refresh_token</code></th>
+										<td>Autenticación segura de la sesión (cookies HttpOnly).</td>
+										<td>Sesión activa y renovación periódica.</td>
+									</tr>
+									<tr>
+										<th scope="row"><code>org_id</code>, <code>org_name</code>, <code>org_slug</code>, <code>org_logo_url</code></th>
+										<td>Recordar la organización activa en el panel.</td>
+										<td>Hasta 30 días.</td>
+									</tr>
+									<tr>
+										<th scope="row"><code>bookmate-theme</code></th>
+										<td>Preferencia de tema claro u oscuro.</td>
+										<td>Hasta 1 año.</td>
+									</tr>
+									<tr>
+										<th scope="row"><code>fcm_device_token</code>, <code>fcm_prompt_pending</code></th>
+										<td>Gestionar notificaciones push y solicitud de permiso.</td>
+										<td>Mientras la función esté activa.</td>
+									</tr>
+									<tr>
+										<th scope="row">Cookies flash y de selección de organización</th>
+										<td>Mensajes temporales de la interfaz y flujo de login multi-organización.</td>
+										<td>Corta duración o de sesión.</td>
+									</tr>
+									<tr>
+										<th scope="row"><code>localStorage</code> y <code>sessionStorage</code></th>
+										<td>
+											Preferencias de interfaz (sidebar, pestañas del editor público, calendario),
+											borradores temporales de IA y estado de avisos ya mostrados en el
+											dispositivo.
+										</td>
+										<td>Hasta que el usuario los borre o expire la sesión del navegador.</td>
+									</tr>
+									<tr>
+										<th scope="row">Service Worker (PWA)</th>
+										<td>
+											Instalación como aplicación, caché de recursos estáticos y recepción de
+											notificaciones push en segundo plano.
+										</td>
+										<td>Mientras la PWA esté instalada.</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+
+						<p>
+							Podés limitar o eliminar cookies desde la configuración del navegador. Si desactivás
+							las cookies estrictamente necesarias, es posible que no puedas iniciar sesión o usar
+							partes del panel.
 						</p>
 					</section>
 
 					<section id="manejo" class="policy-section" data-policy-section>
-						<h2>Cómo se maneja la información en el proyecto</h2>
+						<h2>Uso interno de la información</h2>
 						<p>
-							Los datos se organizan por módulos funcionales de la plataforma, como panel,
-							calendario, clientes, servicios, sucursales, equipo, horarios y herramientas de IA.
-							El acceso se limita a usuarios autenticados y a los permisos necesarios para operar
-							cada espacio de trabajo.
+							Los datos se organizan por módulos funcionales de la plataforma: panel, calendario,
+							clientes, servicios, sucursales, equipo, cobros, suscripción, perfil público y
+							herramientas de IA. El acceso se limita a usuarios autenticados y a los permisos
+							asignados dentro de cada espacio de trabajo.
 						</p>
-						<aside class="policy-callout" role="note">
-							<p>
-								<strong>No vendemos información personal.</strong> Los datos se usan para
-								prestar el servicio, cumplir solicitudes del usuario, mantener continuidad
-								operativa y mejorar la experiencia de la aplicación.
-							</p>
-						</aside>
+						<p>
+							Hasel no utiliza la información de clientes finales de un negocio para competir con
+							ese negocio ni para contactarlos con fines comerciales propios ajenos al servicio
+							contratado.
+						</p>
 					</section>
 
 					<section id="seguridad" class="policy-section" data-policy-section>
 						<h2>Seguridad y conservación</h2>
 						<p>
-							Aplicamos controles razonables de acceso, autenticación y separación lógica de
-							datos para reducir riesgos de acceso no autorizado. La información se conserva
-							mientras sea necesaria para operar el servicio, cumplir obligaciones aplicables o
-							atender solicitudes del usuario.
+							Aplicamos medidas técnicas y organizativas razonables para proteger la información
+							frente a acceso no autorizado, pérdida, alteración o divulgación indebida. Entre
+							ellas:
+						</p>
+						<ul class="policy-list">
+							<li>Contraseñas almacenadas con hash seguro, no en texto plano.</li>
+							<li>
+								Tokens de sesión JWT y cookies de autenticación con atributos HttpOnly y Secure
+								en producción.
+							</li>
+							<li>Comunicaciones cifradas mediante HTTPS/TLS.</li>
+							<li>Separación lógica de datos por organización y control de acceso por rol.</li>
+							<li>
+								Limitación de intentos (rate limiting) en operaciones sensibles, con registro de
+								IP cuando corresponde.
+							</li>
+							<li>
+								Cifrado de ciertos datos sensibles en reposo cuando la plataforma lo requiere.
+							</li>
+							<li>
+								Almacenamiento de archivos en Oracle Cloud Object Storage con rutas organizadas
+								por negocio.
+							</li>
+						</ul>
+						<p>
+							Hasel <strong>no exige autenticación multifactor (MFA)</strong> de forma general en
+							la versión actual del producto. Recomendamos usar contraseñas robustas y únicas, y
+							mantener actualizado el correo de recuperación de la cuenta.
+						</p>
+						<p>
+							Conservamos la información mientras sea necesaria para prestar el servicio, cumplir
+							obligaciones legales o contractuales, resolver disputas, atender reclamos y mantener
+							registros operativos razonables. Cuando un dato deja de ser necesario, lo eliminamos
+							o anonimizamos conforme a los procesos internos aplicables, salvo retención exigida
+							por ley.
 						</p>
 					</section>
 
 					<section id="servicios-externos" class="policy-section" data-policy-section>
-						<h2>Servicios externos</h2>
+						<h2>Servicios externos e integraciones</h2>
 						<p>
-							Hasel puede apoyarse en proveedores tecnológicos para infraestructura,
-							autenticación, notificaciones, hosting, análisis operativo o funciones de
-							inteligencia artificial. Estos servicios se utilizan únicamente para habilitar
-							funcionalidades del producto.
+							Al usar Hasel podés interactuar con servicios de terceros sujetos a sus propias
+							políticas de privacidad. Hasel no controla el tratamiento que esos proveedores
+							realizan fuera de lo estrictamente necesario para la integración habilitada.
+						</p>
+						<ul class="policy-list">
+							<li>
+								<strong>Pagopar:</strong> procesa pagos de suscripción. Consultá sus condiciones
+								al ingresar datos de tarjeta en el formulario seguro embebido.
+							</li>
+							<li>
+								<strong>WhatsApp / Meta:</strong> entrega mensajes al teléfono del cliente o del
+								negocio según plantillas y reglas de la plataforma Meta.
+							</li>
+							<li>
+								<strong>Firebase / Google:</strong> tokens push y, si corresponde, conexión con
+								Google Calendar.
+							</li>
+							<li>
+								<strong>Azure OpenAI:</strong> procesamiento temporal de prompts, audio, imágenes
+								o comprobantes para funciones de IA descritas en esta política.
+							</li>
+							<li>
+								<strong>Stadia Maps:</strong> carga de mapas al visualizar ubicaciones en reservas
+								públicas.
+							</li>
+						</ul>
+						<p>
+							Si conectás una integración opcional, autorizás el intercambio mínimo de datos
+							necesario para que funcione. Podés desconectar Google Calendar desde el panel cuando
+							la integración esté disponible en tu cuenta.
 						</p>
 					</section>
 
 					<section id="derechos" class="policy-section policy-section--last" data-policy-section>
 						<h2>Derechos y consultas</h2>
 						<p>
-							Los usuarios pueden solicitar revisión, actualización o eliminación de información
-							asociada a su cuenta o negocio, según corresponda al uso de la plataforma y a las
-							obligaciones operativas vigentes.
+							Como titular de datos personales, podés solicitar, según corresponda y dentro de los
+							límites legales y operativos:
+						</p>
+						<ul class="policy-list">
+							<li><strong>Acceso:</strong> conocer qué datos tratamos sobre vos o tu negocio.</li>
+							<li><strong>Rectificación:</strong> corregir datos inexactos o incompletos.</li>
+							<li>
+								<strong>Supresión:</strong> pedir la eliminación de información cuando ya no sea
+								necesaria para prestar el servicio y no exista obligación legal de conservarla
+								(derecho al olvido, en la medida aplicable).
+							</li>
+							<li>
+								<strong>Limitación u oposición:</strong> cuando el tratamiento no sea estrictamente
+								necesario para la ejecución del contrato o exista un motivo legítimo conforme a
+								ley.
+							</li>
+							<li>
+								<strong>Portabilidad:</strong> solicitar una copia de datos estructurados cuando
+								sea técnicamente viable, especialmente respecto de la información de cuenta o
+								clientes exportable desde el panel.
+							</li>
+						</ul>
+						<p>
+							Las solicitudes pueden requerir verificación de identidad. Algunos datos no pueden
+							eliminarse de inmediato si deben conservarse por obligación legal, resolución de
+							disputas, registros de facturación o continuidad de un turno ya confirmado.
 						</p>
 						<p>
-							Para consultas sobre privacidad o tratamiento de datos, el usuario puede
-							comunicarse por los canales oficiales habilitados por Hasel.
+							Los clientes finales que reservaron con un negocio también pueden contactar
+							directamente a ese negocio. Si la consulta involucra datos procesados por Hasel en
+							nombre del comercio, podemos canalizar la solicitud con la organización correspondiente.
+						</p>
+						<p>
+							Para ejercer tus derechos o hacer consultas sobre privacidad, escribinos a
+							<a href="mailto:support@hasel.app" class="policy-inline-link">support@hasel.app</a>.
+							Intentaremos responder en un plazo razonable.
+						</p>
+						<p>
+							Esta política puede actualizarse cuando cambien funciones, proveedores o requisitos
+							legales. Publicaremos la versión vigente en esta página e indicaremos la fecha de
+							última actualización.
 						</p>
 						<p>
 							Las reglas de señas, cancelación y devoluciones se detallan en
@@ -166,353 +579,31 @@ const toc = [
 					</section>
 				</article>
 			</div>
+
+			<footer class="policy-footer">
+				<div class="policy-footer-brand">
+					<p class="policy-footer-copy">© {new Date().getFullYear()} Hasel</p>
+					<p class="policy-footer-tagline">Software de reservas</p>
+				</div>
+				<div class="policy-footer-links">
+					<p class="policy-footer-support">
+						<span>¿Necesitás ayuda? Escribinos al correo</span>
+						<a href="mailto:support@hasel.app" class="policy-footer-link no-underline">support@hasel.app</a>
+					</p>
+					<nav class="policy-footer-nav" aria-label="Enlaces legales">
+						<a href="/politicas-y-privacidad" class="policy-footer-link no-underline" aria-current="page">
+							Políticas y privacidad
+						</a>
+						<a href="/politicas-de-cancelacion-y-reembolso" class="policy-footer-link no-underline">
+							Cancelación y reembolso
+						</a>
+					</nav>
+				</div>
+			</footer>
 		</div>
 	</main>
 </Layout>
 
 <script>
-	const sections = Array.from(document.querySelectorAll<HTMLElement>('[data-policy-section]'));
-	const links = Array.from(document.querySelectorAll<HTMLAnchorElement>('[data-toc-link]'));
-	const mobileDetails = document.querySelector<HTMLDetailsElement>('.policy-toc-mobile');
-
-	const setActive = (id: string) => {
-		for (const link of links) {
-			link.classList.toggle('is-active', link.dataset.tocLink === id);
-		}
-	};
-
-	for (const link of links) {
-		link.addEventListener('click', () => {
-			if (mobileDetails) mobileDetails.open = false;
-		});
-	}
-
-	if (sections.length && 'IntersectionObserver' in window) {
-		const visible = new Map<string, number>();
-		const observer = new IntersectionObserver(
-			(entries) => {
-				for (const entry of entries) {
-					const id = entry.target.id;
-					if (!id) continue;
-					if (entry.isIntersecting) visible.set(id, entry.intersectionRatio);
-					else visible.delete(id);
-				}
-				let bestId = '';
-				let bestRatio = 0;
-				for (const [id, ratio] of visible) {
-					if (ratio >= bestRatio) {
-						bestRatio = ratio;
-						bestId = id;
-					}
-				}
-				if (bestId) setActive(bestId);
-			},
-			{ rootMargin: '-20% 0px -55% 0px', threshold: [0, 0.25, 0.5, 0.75, 1] }
-		);
-		for (const section of sections) observer.observe(section);
-		setActive(sections[0]?.id || '');
-	}
+	import '../scripts/legal-page.ts';
 </script>
-
-<style>
-	:root {
-		--policy-bg: #0a0a0b;
-		--policy-text: #f4f4f5;
-		--policy-muted: #a1a1aa;
-		--policy-heading: #fafafa;
-		--policy-border: rgba(255, 255, 255, 0.1);
-		--policy-border-soft: rgba(255, 255, 255, 0.06);
-		--policy-primary: #3a6fd7;
-		--policy-primary-soft: #bfd6ff;
-		--policy-callout-bg: rgba(255, 255, 255, 0.04);
-		--policy-toc-active: #e4e4e7;
-	}
-
-	.policy-root {
-		min-height: 100vh;
-		background: var(--policy-bg);
-		color: var(--policy-text);
-		font-family: 'Inter', system-ui, -apple-system, sans-serif;
-	}
-
-	.policy-shell {
-		width: min(1120px, 100%);
-		margin: 0 auto;
-		padding: 1rem 1.15rem 4rem;
-	}
-
-	.policy-navbar {
-		position: sticky;
-		top: 0.75rem;
-		z-index: 20;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		margin: 0.5rem 0 1.5rem;
-		padding: 0.55rem 0.75rem;
-		border: 1px solid var(--policy-border);
-		border-radius: 999px;
-		background: rgba(10, 10, 11, 0.82);
-		backdrop-filter: blur(12px);
-	}
-
-	.policy-brand,
-	.policy-home-link {
-		display: inline-flex;
-		align-items: center;
-		color: var(--policy-text);
-		text-decoration: none;
-	}
-
-	.policy-brand {
-		gap: 0.5rem;
-		font-size: 1.05rem;
-		font-weight: 700;
-	}
-
-	.policy-brand-logo {
-		width: 1.85rem;
-		height: 1.85rem;
-		border-radius: 999px;
-		object-fit: contain;
-	}
-
-	.policy-home-link {
-		border-radius: 999px;
-		background: var(--policy-primary);
-		padding: 0.5rem 0.95rem;
-		font-size: 0.875rem;
-		font-weight: 650;
-	}
-
-	.policy-hero {
-		padding: 2rem 0 2.25rem;
-		border-bottom: 1px solid var(--policy-border-soft);
-	}
-
-	.policy-kicker {
-		margin: 0 0 0.75rem;
-		color: var(--policy-primary-soft);
-		font-size: 0.8rem;
-		font-weight: 650;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-	}
-
-	.policy-hero h1 {
-		margin: 0 0 1rem;
-		max-width: 14ch;
-		color: var(--policy-heading);
-		font-size: clamp(2.35rem, 6.5vw, 3.75rem);
-		font-weight: 750;
-		letter-spacing: -0.04em;
-		line-height: 1.22;
-	}
-
-	.policy-lead {
-		margin: 0 0 1rem;
-		max-width: 62ch;
-		color: var(--policy-muted);
-		font-size: clamp(1.02rem, 1.8vw, 1.15rem);
-		line-height: 1.7;
-	}
-
-	.policy-updated {
-		margin: 0;
-		color: #8b8b96;
-		font-size: 0.88rem;
-		font-weight: 500;
-	}
-
-	.policy-layout {
-		display: grid;
-		gap: 1.5rem;
-		padding-top: 1.5rem;
-	}
-
-	.policy-toc-desktop {
-		display: none;
-	}
-
-	.policy-toc-mobile {
-		border: 1px solid var(--policy-border);
-		border-radius: 0.75rem;
-		background: transparent;
-		padding: 0;
-	}
-
-	.policy-toc-mobile summary {
-		cursor: pointer;
-		list-style: none;
-		padding: 0.85rem 1rem;
-		color: var(--policy-heading);
-		font-size: 0.92rem;
-		font-weight: 650;
-	}
-
-	.policy-toc-mobile summary::-webkit-details-marker {
-		display: none;
-	}
-
-	.policy-toc-mobile summary::after {
-		content: 'expand_more';
-		float: right;
-		font-family: 'Material Symbols Rounded';
-		font-size: 1.2rem;
-		color: var(--policy-muted);
-	}
-
-	.policy-toc-mobile[open] summary::after {
-		content: 'expand_less';
-	}
-
-	.policy-toc-mobile .policy-toc-nav {
-		display: grid;
-		gap: 0.15rem;
-		padding: 0 0.5rem 0.75rem;
-		border-top: 1px solid var(--policy-border-soft);
-	}
-
-	.policy-toc-title {
-		margin: 0 0 0.75rem;
-		color: #8b8b96;
-		font-size: 0.75rem;
-		font-weight: 650;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-	}
-
-	.policy-toc-link {
-		display: block;
-		padding: 0.45rem 0.65rem;
-		border-left: 2px solid transparent;
-		color: var(--policy-muted);
-		font-size: 0.9rem;
-		font-weight: 500;
-		line-height: 1.35;
-		text-decoration: none;
-		transition: color 0.15s ease, border-color 0.15s ease;
-	}
-
-	.policy-toc-link:hover {
-		color: var(--policy-heading);
-	}
-
-	.policy-toc-link.is-active {
-		border-left-color: var(--policy-primary);
-		color: var(--policy-toc-active);
-		font-weight: 600;
-	}
-
-	.policy-article {
-		min-width: 0;
-		max-width: 46rem;
-	}
-
-	.policy-section {
-		padding: 2.25rem 0;
-		border-bottom: 1px solid var(--policy-border-soft);
-		scroll-margin-top: 5.5rem;
-	}
-
-	.policy-section--last {
-		border-bottom: 0;
-		padding-bottom: 1rem;
-	}
-
-	.policy-section h2 {
-		margin: 0 0 1.1rem;
-		color: var(--policy-heading);
-		font-size: clamp(1.35rem, 2.5vw, 1.65rem);
-		font-weight: 700;
-		letter-spacing: -0.02em;
-		line-height: 1.25;
-	}
-
-	.policy-section p {
-		margin: 0;
-		color: var(--policy-muted);
-		font-size: 1rem;
-		line-height: 1.75;
-	}
-
-	.policy-section p + p {
-		margin-top: 1rem;
-	}
-
-	.policy-section strong {
-		color: #d4d4d8;
-		font-weight: 650;
-	}
-
-	.policy-callout {
-		margin: 1.25rem 0;
-		padding: 0.95rem 1rem 0.95rem 1.05rem;
-		border-left: 3px solid var(--policy-primary);
-		background: var(--policy-callout-bg);
-		border-radius: 0 0.5rem 0.5rem 0;
-	}
-
-	.policy-callout p {
-		margin: 0;
-		color: #c4c4cc;
-		font-size: 0.96rem;
-		line-height: 1.65;
-	}
-
-	.policy-callout strong {
-		color: var(--policy-heading);
-	}
-
-	.policy-inline-link {
-		color: var(--policy-primary-soft);
-		font-weight: 600;
-		text-decoration: underline;
-		text-underline-offset: 0.18em;
-	}
-
-	.policy-inline-link:hover {
-		color: #ffffff;
-	}
-
-	@media (min-width: 960px) {
-		.policy-shell {
-			padding: 1.25rem 1.5rem 5rem;
-		}
-
-		.policy-hero {
-			padding: 3rem 0 2.75rem;
-		}
-
-		.policy-hero h1 {
-			line-height: 1.12;
-		}
-
-		.policy-layout {
-			grid-template-columns: 15.5rem minmax(0, 1fr);
-			gap: 3rem;
-			align-items: start;
-			padding-top: 2.5rem;
-		}
-
-		.policy-toc {
-			position: sticky;
-			top: 5.25rem;
-		}
-
-		.policy-toc-mobile {
-			display: none;
-		}
-
-		.policy-toc-desktop {
-			display: grid;
-			gap: 0.1rem;
-		}
-
-		.policy-section {
-			padding: 2.75rem 0;
-			scroll-margin-top: 6rem;
-		}
-	}
-</style>
