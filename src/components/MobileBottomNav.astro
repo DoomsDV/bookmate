@@ -53,67 +53,6 @@ const isActive = (href?: string) => {
 	data-mobile-bottom-nav
 	transition:persist="mobile-bottom-nav"
 >
-	<svg class="mobile-bottom-nav__glass-filter" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-		<defs>
-			<filter
-				id="mobile-bottom-nav-glass-filter"
-				color-interpolation-filters="sRGB"
-				x="0%"
-				y="0%"
-				width="100%"
-				height="100%"
-			>
-				<feImage
-					data-glass-fe-image
-					x="0"
-					y="0"
-					width="100%"
-					height="100%"
-					preserveAspectRatio="none"
-					result="map"
-				/>
-				<feDisplacementMap
-					data-glass-fe-red
-					in="SourceGraphic"
-					in2="map"
-					result="dispRed"
-				/>
-				<feColorMatrix
-					in="dispRed"
-					type="matrix"
-					values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0"
-					result="red"
-				/>
-				<feDisplacementMap
-					data-glass-fe-green
-					in="SourceGraphic"
-					in2="map"
-					result="dispGreen"
-				/>
-				<feColorMatrix
-					in="dispGreen"
-					type="matrix"
-					values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
-					result="green"
-				/>
-				<feDisplacementMap
-					data-glass-fe-blue
-					in="SourceGraphic"
-					in2="map"
-					result="dispBlue"
-				/>
-				<feColorMatrix
-					in="dispBlue"
-					type="matrix"
-					values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
-					result="blue"
-				/>
-				<feBlend in="red" in2="green" mode="screen" result="rg" />
-				<feBlend in="rg" in2="blue" mode="screen" result="output" />
-				<feGaussianBlur data-glass-fe-blur in="output" stdDeviation="15" />
-			</filter>
-		</defs>
-	</svg>
 	<div class="mobile-bottom-nav__glass" aria-hidden="true"></div>
 	<span class="mobile-bottom-nav__pill" data-mobile-nav-pill aria-hidden="true"></span>
 	<div class="mobile-bottom-nav__content">
@@ -168,108 +107,6 @@ const isActive = (href?: string) => {
 </nav>
 
 <script>
-	const GLASS_FILTER_ID = 'mobile-bottom-nav-glass-filter';
-	const GLASS = {
-		borderRadius: 24,
-		borderWidth: 0.07,
-		brightness: 60,
-		opacity: 0.8,
-		blur: 11,
-		displace: 15,
-		distortionScale: -150,
-		redOffset: 5,
-		greenOffset: 15,
-		blueOffset: 25,
-		mixBlendMode: 'screen',
-		saturation: 1,
-		xChannel: 'R',
-		yChannel: 'G',
-	} as const;
-
-	const supportsSvgBackdropFilter = () => {
-		if (typeof window === 'undefined' || typeof document === 'undefined') return false;
-		const ua = navigator.userAgent;
-		const isWebkit = /Safari/.test(ua) && !/Chrome/.test(ua);
-		const isFirefox = /Firefox/.test(ua);
-		if (isWebkit || isFirefox) return false;
-		const div = document.createElement('div');
-		div.style.backdropFilter = `url(#${GLASS_FILTER_ID})`;
-		return div.style.backdropFilter !== '';
-	};
-
-	const buildDisplacementMap = (width: number, height: number) => {
-		const edgeSize = Math.min(width, height) * (GLASS.borderWidth * 0.5);
-		const redGradId = 'mobile-bottom-nav-red-grad';
-		const blueGradId = 'mobile-bottom-nav-blue-grad';
-		const svg = `
-			<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-				<defs>
-					<linearGradient id="${redGradId}" x1="100%" y1="0%" x2="0%" y2="0%">
-						<stop offset="0%" stop-color="#0000"/>
-						<stop offset="100%" stop-color="red"/>
-					</linearGradient>
-					<linearGradient id="${blueGradId}" x1="0%" y1="0%" x2="0%" y2="100%">
-						<stop offset="0%" stop-color="#0000"/>
-						<stop offset="100%" stop-color="blue"/>
-					</linearGradient>
-				</defs>
-				<rect x="0" y="0" width="${width}" height="${height}" fill="black"></rect>
-				<rect x="0" y="0" width="${width}" height="${height}" rx="${GLASS.borderRadius}" fill="url(#${redGradId})" />
-				<rect x="0" y="0" width="${width}" height="${height}" rx="${GLASS.borderRadius}" fill="url(#${blueGradId})" style="mix-blend-mode: ${GLASS.mixBlendMode}" />
-				<rect x="${edgeSize}" y="${edgeSize}" width="${width - edgeSize * 2}" height="${height - edgeSize * 2}" rx="${GLASS.borderRadius}" fill="hsl(0 0% ${GLASS.brightness}% / ${GLASS.opacity})" style="filter:blur(${GLASS.blur}px)" />
-			</svg>
-		`;
-		return `data:image/svg+xml,${encodeURIComponent(svg)}`;
-	};
-
-	const syncGlassDisplacement = (nav: HTMLElement) => {
-		const feImage = nav.querySelector<SVGFEImageElement>('[data-glass-fe-image]');
-		if (!feImage) return;
-
-		const rect = nav.getBoundingClientRect();
-		const width = Math.max(1, Math.round(rect.width));
-		const height = Math.max(1, Math.round(rect.height));
-		feImage.setAttribute('href', buildDisplacementMap(width, height));
-
-		const channels: Array<{ sel: string; offset: number }> = [
-			{ sel: '[data-glass-fe-red]', offset: GLASS.redOffset },
-			{ sel: '[data-glass-fe-green]', offset: GLASS.greenOffset },
-			{ sel: '[data-glass-fe-blue]', offset: GLASS.blueOffset },
-		];
-		channels.forEach(({ sel, offset }) => {
-			const node = nav.querySelector<SVGFEDisplacementMapElement>(sel);
-			if (!node) return;
-			node.setAttribute('scale', String(GLASS.distortionScale + offset));
-			node.setAttribute('xChannelSelector', GLASS.xChannel);
-			node.setAttribute('yChannelSelector', GLASS.yChannel);
-		});
-
-		const blur = nav.querySelector<SVGFEGaussianBlurElement>('[data-glass-fe-blur]');
-		blur?.setAttribute('stdDeviation', String(GLASS.displace));
-	};
-
-	let glassResizeObserver: ResizeObserver | null = null;
-
-	const initMobileBottomNavGlass = () => {
-		const nav = document.querySelector<HTMLElement>('[data-mobile-bottom-nav]');
-		if (!nav || !nav.querySelector('.mobile-bottom-nav__glass')) return;
-
-		const svgSupported = supportsSvgBackdropFilter();
-		const modeClass = svgSupported ? 'is-glass-svg' : 'is-glass-fallback';
-		nav.classList.remove('is-glass-svg', 'is-glass-fallback');
-		nav.classList.add(modeClass);
-		nav.dataset.glassReady = '1';
-
-		if (!svgSupported) return;
-
-		syncGlassDisplacement(nav);
-		if (glassResizeObserver) glassResizeObserver.disconnect();
-		glassResizeObserver = new ResizeObserver(() => {
-			requestAnimationFrame(() => syncGlassDisplacement(nav));
-		});
-		glassResizeObserver.observe(nav);
-	};
-
 	const normalizePath = (path: string) => {
 		if (!path || path === '/') return '/';
 		return path.endsWith('/') ? path.slice(0, -1) : path;
@@ -419,10 +256,8 @@ const isActive = (href?: string) => {
 		nav.dataset.pillReady = '1';
 	};
 
-	initMobileBottomNavGlass();
 	initMobileBottomNavPill();
 	document.addEventListener('astro:page-load', () => {
-		initMobileBottomNavGlass();
 		initMobileBottomNavPill();
 	});
 </script>
@@ -448,7 +283,6 @@ const isActive = (href?: string) => {
 
 		.mobile-bottom-nav {
 			--mobile-bottom-nav-radius: 24px;
-			--glass-saturation: 1;
 			display: block;
 			position: fixed;
 			left: 0;
@@ -467,17 +301,7 @@ const isActive = (href?: string) => {
 			isolation: isolate;
 		}
 
-		.mobile-bottom-nav__glass-filter {
-			position: absolute;
-			width: 0;
-			height: 0;
-			overflow: hidden;
-			pointer-events: none;
-			opacity: 0;
-			z-index: -1;
-		}
-
-		/* Glass base — visible sin JS; is-glass-svg mejora en Chromium */
+		/* Glass translúcido estable (sin SVG liquid / sin flip por JS) */
 		.mobile-bottom-nav__glass {
 			position: absolute;
 			inset: 0;
@@ -517,35 +341,6 @@ const isActive = (href?: string) => {
 			min-height: var(--mobile-bottom-nav-dock-height);
 			padding: 0.5rem 0.55rem;
 			box-sizing: border-box;
-		}
-
-		/* React Bits GlassSurface — SVG displacement (Chromium) */
-		.mobile-bottom-nav.is-glass-svg .mobile-bottom-nav__glass {
-			border: 1px solid color-mix(in srgb, white 55%, var(--shell-border) 45%);
-			background: hsl(0 0% 100% / 0);
-			-webkit-backdrop-filter: url(#mobile-bottom-nav-glass-filter) saturate(var(--glass-saturation, 1));
-			backdrop-filter: url(#mobile-bottom-nav-glass-filter) saturate(var(--glass-saturation, 1));
-			box-shadow:
-				0 0 2px 1px color-mix(in oklch, black, transparent 85%) inset,
-				0 0 10px 4px color-mix(in oklch, black, transparent 90%) inset,
-				0 4px 16px rgba(17, 17, 26, 0.05),
-				0 8px 24px rgba(17, 17, 26, 0.05),
-				0 16px 56px rgba(17, 17, 26, 0.05),
-				0 4px 16px rgba(17, 17, 26, 0.05) inset,
-				0 8px 24px rgba(17, 17, 26, 0.05) inset,
-				0 16px 56px rgba(17, 17, 26, 0.05) inset;
-		}
-
-		html[data-theme='dark'] .mobile-bottom-nav.is-glass-svg .mobile-bottom-nav__glass {
-			border-color: rgba(255, 255, 255, 0.14);
-			background: hsl(0 0% 0% / 0);
-			box-shadow:
-				0 0 2px 1px color-mix(in oklch, white, transparent 65%) inset,
-				0 0 10px 4px color-mix(in oklch, white, transparent 85%) inset,
-				0 4px 16px rgba(0, 0, 0, 0.22),
-				0 8px 24px rgba(0, 0, 0, 0.28),
-				0 4px 16px rgba(0, 0, 0, 0.12) inset,
-				0 8px 24px rgba(0, 0, 0, 0.16) inset;
 		}
 
 		body:has([data-mobile-bottom-nav]) .app-shell > :last-child > main,

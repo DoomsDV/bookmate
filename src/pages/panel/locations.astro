@@ -441,23 +441,19 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					></div>
 
 					<label class="closure-form__label">
-						Nombre / Motivo
-						<span class="text-rose-500">*</span>
-						<input
-							type="text"
-							name="name"
-							maxlength="120"
-							required
-							class="closure-form__input"
-							placeholder="Ej: Navidad, Fumigación"
-							data-closure-name
-						/>
+						<span class="closure-form__label-text">
+							Nombre / Motivo
+							<span class="text-rose-500">*</span>
+						</span>
+					<select name="name" data-closure-name></select>
 					</label>
 
 					<div class="closure-form__row">
 						<label class="closure-form__label">
-							Fecha inicio
-							<span class="text-rose-500">*</span>
+							<span class="closure-form__label-text">
+								Fecha inicio
+								<span class="text-rose-500">*</span>
+							</span>
 							<input
 								type="date"
 								name="start_date"
@@ -467,8 +463,10 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 							/>
 						</label>
 						<label class="closure-form__label">
-							Fecha fin
-							<span class="text-rose-500">*</span>
+							<span class="closure-form__label-text">
+								Fecha fin
+								<span class="text-rose-500">*</span>
+							</span>
 							<input
 								type="date"
 								name="end_date"
@@ -510,28 +508,25 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 						</label>
 					</div>
 
-					<fieldset class="closure-form__scope" data-closure-scope-wrap>
-						<legend>Alcance</legend>
-						<label class="closure-form__radio">
+					<div class="closure-form__scope" data-closure-scope-wrap>
+						<label class="closure-form__checkbox">
 							<input
-								type="radio"
+								type="checkbox"
 								name="apply_all_locations"
-								value="0"
-								checked
-								data-closure-scope-single
-							/>
-							<span>Solo esta sucursal</span>
-						</label>
-						<label class="closure-form__radio">
-							<input
-								type="radio"
-								name="apply_all_locations"
-								value="1"
-								data-closure-scope-all
+								data-closure-apply-all
 							/>
 							<span>Aplicar a todas las sucursales</span>
 						</label>
-					</fieldset>
+						<label class="closure-form__label" data-closure-locations-wrap>
+							<span class="closure-form__label-text">Sucursales</span>
+							<select
+								name="location_ids"
+								multiple
+								class="w-full"
+								data-closure-locations
+							></select>
+						</label>
+					</div>
 				</div>
 
 				<div class="closure-form__footer">
@@ -2247,11 +2242,12 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		height: fit-content;
 		border: 1px solid var(--shell-border);
 		border-radius: 1.4rem;
-		background: var(--surface-bright);
+		background-color: var(--surface-bright);
+		background-image: none;
 		color: var(--on-surface);
 		padding: 0;
 		overflow: hidden;
-		box-shadow: 0 24px 80px rgba(0, 0, 0, 0.28);
+		box-shadow: var(--modal-shadow-dialog);
 		animation: closure-form-in 180ms var(--modal-easing, ease);
 	}
 
@@ -2307,14 +2303,16 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		min-height: 0;
 		max-height: inherit;
 		width: 100%;
+		background-color: var(--surface-bright);
+		background-image: none;
 	}
 
 	.closure-form__body {
 		display: grid;
 		gap: 0.85rem;
 		padding: 1rem 1.2rem;
-		overflow-y: auto;
-		min-height: 0;
+		background-color: var(--surface-bright);
+		background-image: none;
 	}
 
 	.closure-form__error {
@@ -2334,6 +2332,12 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		color: var(--on-surface);
 	}
 
+	.closure-form__label-text {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2rem;
+	}
+
 	.closure-form__input {
 		width: 100%;
 		border-radius: 0.75rem;
@@ -2345,6 +2349,28 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		font-weight: 500;
 		outline: none;
 		transition: border-color 140ms ease, box-shadow 140ms ease;
+		color-scheme: light;
+	}
+
+	.closure-form__input[type='date'],
+	.closure-form__input[type='time'] {
+		font-variant-numeric: tabular-nums;
+	}
+
+	.closure-form__input[type='date']::-webkit-calendar-picker-indicator,
+	.closure-form__input[type='time']::-webkit-calendar-picker-indicator {
+		cursor: pointer;
+		opacity: 0.82;
+	}
+
+	html[data-theme='dark'] .closure-form__input {
+		color-scheme: dark;
+	}
+
+	html[data-theme='dark'] .closure-form__input[type='date']::-webkit-calendar-picker-indicator,
+	html[data-theme='dark'] .closure-form__input[type='time']::-webkit-calendar-picker-indicator {
+		filter: invert(0.92) brightness(0.9);
+		opacity: 0.92;
 	}
 
 	.closure-form__input:focus {
@@ -2371,19 +2397,74 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 
 	.closure-form__scope {
 		display: grid;
-		gap: 0.4rem;
-		border: 1px solid var(--shell-border);
-		border-radius: 0.9rem;
-		padding: 0.7rem 0.9rem;
+		gap: 0.65rem;
 	}
 
-	.closure-form__scope legend {
-		font-size: 0.78rem;
-		font-weight: 800;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
-		color: var(--on-surface-variant);
-		padding: 0 0.3rem;
+	dialog[data-closure-form-dialog] .ts-wrapper {
+		font-size: 0.95rem;
+	}
+
+	/* Single-value (nombre) */
+	dialog[data-closure-form-dialog] .ts-wrapper:not(.multi) .ts-control {
+		min-height: 3rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--card-surface);
+		padding: 0.55rem 0.75rem;
+		box-shadow: none;
+		cursor: text;
+	}
+
+	dialog[data-closure-form-dialog] .ts-wrapper:not(.multi).focus .ts-control {
+		border-color: var(--primary);
+		box-shadow: none;
+	}
+
+	dialog[data-closure-form-dialog] .ts-wrapper.multi .ts-control {
+		min-height: 3.35rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--card-surface);
+		padding: 0.55rem 0.75rem;
+		box-shadow: none;
+	}
+
+	dialog[data-closure-form-dialog] .ts-wrapper.multi.focus .ts-control {
+		border-color: var(--primary);
+		box-shadow: none;
+	}
+
+	dialog[data-closure-form-dialog] .ts-wrapper .ts-control > input {
+		font-size: 0.95rem;
+		color: var(--on-surface);
+	}
+
+	dialog[data-closure-form-dialog] .ts-wrapper.multi .ts-control > div {
+		background: var(--primary-soft);
+		color: var(--primary);
+		border: 1px solid var(--primary-container);
+		border-radius: 9999px;
+		padding: 0.15rem 0.45rem;
+		font-weight: 700;
+	}
+
+	dialog[data-closure-form-dialog] .ts-wrapper .ts-dropdown {
+		border: 1px solid var(--shell-border);
+		border-radius: 0.75rem;
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		overflow: hidden;
+		max-height: 11rem;
+	}
+
+	dialog[data-closure-form-dialog] .ts-wrapper .ts-dropdown .ts-dropdown-content {
+		max-height: 11rem;
+		overflow-y: auto;
+	}
+
+	dialog[data-closure-form-dialog] .ts-wrapper .ts-dropdown .option.active {
+		background: var(--primary-soft);
+		color: var(--primary);
 	}
 
 	.closure-form__footer {
@@ -2496,8 +2577,8 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			inset: 0 0 0 auto;
 			height: 100dvh;
 			max-height: 100dvh;
-			width: max(50vw, 40rem);
-			max-width: max(50vw, 40rem);
+			width: min(32rem, 100%);
+			max-width: min(32rem, 100%);
 			border-radius: 0;
 			border-top: 0;
 			border-right: 0;

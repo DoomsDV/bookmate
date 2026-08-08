@@ -1,3 +1,4 @@
+import TomSelect from 'tom-select';
 import { showFlashMessage } from '../lib/flash';
 
 const showAppAlert = ({ type, message }: { type: 'success' | 'error'; message: string }) =>
@@ -17,6 +18,11 @@ interface ClosureItem {
 	location_count?: number;
 }
 
+interface LocationLovItem {
+	id_location: number;
+	name: string;
+}
+
 const $ = <T extends HTMLElement>(selector: string, root: ParentNode = document) =>
 	root.querySelector(selector) as T | null;
 
@@ -31,7 +37,9 @@ const fmtWindow = (item: ClosureItem) =>
 
 function buildItemHTML(item: ClosureItem, opts: { canDeleteGroup: boolean }) {
 	const scopeBadge = item.closure_group_id
-		? '<span class="location-closures-badge location-closures-badge--org"><span class="material-symbols-rounded text-[0.9rem]">public</span>Todas</span>'
+		? item.location_count && item.location_count > 0
+			? `<span class="location-closures-badge location-closures-badge--org"><span class="material-symbols-rounded text-[0.9rem]">public</span>${item.location_count} sucursales</span>`
+			: '<span class="location-closures-badge location-closures-badge--org"><span class="material-symbols-rounded text-[0.9rem]">public</span>Varias</span>'
 		: '<span class="location-closures-badge"><span class="material-symbols-rounded text-[0.9rem]">store</span>Esta sucursal</span>';
 
 	const windowBadge = item.is_full_day
@@ -109,6 +117,12 @@ class LocationClosuresUI {
 	private editModalOpen = false;
 	private abortController: AbortController | null = null;
 	private orgCloseTimer: number | null = null;
+	private locationsTom: TomSelect | null = null;
+	private locationsLoaded = false;
+	private locationsLoadPromise: Promise<void> | null = null;
+	private nameTom: TomSelect | null = null;
+	private namesLoaded = false;
+	private namesLoadPromise: Promise<void> | null = null;
 
 	constructor(root: HTMLElement) {
 		this.root = root;
@@ -122,6 +136,14 @@ class LocationClosuresUI {
 		}
 		this.abortController?.abort();
 		this.abortController = null;
+		if (this.locationsTom) {
+			this.locationsTom.destroy();
+			this.locationsTom = null;
+		}
+		if (this.nameTom) {
+			this.nameTom.destroy();
+			this.nameTom = null;
+		}
 	}
 
 	/** Siempre resuelve nodos vivos del DOM (evita refs stale tras HMR / server:defer). */
@@ -143,7 +165,7 @@ class LocationClosuresUI {
 			formEl: $('[data-closure-form]', root) as HTMLFormElement | null,
 			formTitle: $('[data-closure-form-title]', root),
 			formError: $('[data-closure-form-error]', root),
-			inputName: $('[data-closure-name]', root) as HTMLInputElement | null,
+			inputName: $('[data-closure-name]', root) as HTMLSelectElement | null,
 			inputStart: $('[data-closure-start-date]', root) as HTMLInputElement | null,
 			inputEnd: $('[data-closure-end-date]', root) as HTMLInputElement | null,
 			inputFullDay: $('[data-closure-full-day]', root) as HTMLInputElement | null,
@@ -151,8 +173,9 @@ class LocationClosuresUI {
 			inputStartTime: $('[data-closure-start-time]', root) as HTMLInputElement | null,
 			inputEndTime: $('[data-closure-end-time]', root) as HTMLInputElement | null,
 			scopeWrap: $('[data-closure-scope-wrap]', root),
-			scopeSingle: $('[data-closure-scope-single]', root) as HTMLInputElement | null,
-			scopeAll: $('[data-closure-scope-all]', root) as HTMLInputElement | null,
+			applyAll: $('[data-closure-apply-all]', root) as HTMLInputElement | null,
+			locationsWrap: $('[data-closure-locations-wrap]', root),
+			locationsSelect: $('[data-closure-locations]', root) as HTMLSelectElement | null,
 		};
 	}
 
@@ -247,6 +270,7 @@ class LocationClosuresUI {
 			(event) => {
 				const target = event.target as HTMLElement;
 				if (target.matches('[data-closure-full-day]')) this.syncPartialVisibility();
+				if (target.matches('[data-closure-apply-all]')) this.syncLocationsVisibility();
 			},
 			{ signal }
 		);
@@ -276,6 +300,119 @@ class LocationClosuresUI {
 		if (els.inputEndTime) els.inputEndTime.required = !full;
 	}
 
+	private syncLocationsVisibility() {
+		const els = this.els();
+		if (!els) return;
+		const applyAll = els.applyAll?.checked ?? false;
+		if (els.locationsWrap) {
+			if (applyAll) els.locationsWrap.setAttribute('hidden', '');
+			else els.locationsWrap.removeAttribute('hidden');
+		}
+		if (applyAll) {
+			this.locationsTom?.clear(true);
+		}
+	}
+
+	private ensureNamesControl() {
+		const els = this.els();
+		if (!els?.inputName || this.nameTom) return;
+		this.nameTom = new TomSelect(els.inputName, {
+			create: true,
+			createOnBlur: true,
+			persist: false,
+			maxOptions: 200,
+			placeholder: 'Ej: Navidad, Fumigación',
+			allowEmptyOption: false,
+			sortField: { field: 'text', direction: 'asc' },
+			createFilter: (input: string) => input.trim().length > 0,
+		});
+	}
+
+	private async ensureNamesLoaded() {
+		this.ensureNamesControl();
+		if (this.namesLoaded) return;
+		if (this.namesLoadPromise) return this.namesLoadPromise;
+
+		this.namesLoadPromise = (async () => {
+			try {
+				const body = await fetchJson<{ status: string; names?: string[] }>('/api/closures/names');
+				const names: string[] = Array.isArray(body.names) ? body.names : [];
+				if (this.nameTom) {
+					this.nameTom.clearOptions();
+					for (const n of names) {
+						this.nameTom.addOption({ value: n, text: n });
+					}
+					this.nameTom.refreshOptions(false);
+				}
+				this.namesLoaded = true;
+			} catch {
+				// Si falla, el usuario igual puede escribir un nombre nuevo
+			}
+		})().finally(() => {
+			this.namesLoadPromise = null;
+		});
+		return this.namesLoadPromise;
+	}
+
+	private ensureLocationsControl() {
+		const els = this.els();
+		if (!els?.locationsSelect || this.locationsTom) return;
+		this.locationsTom = new TomSelect(els.locationsSelect, {
+			plugins: { remove_button: { title: 'Quitar' } },
+			placeholder: 'Busca o selecciona sucursales...',
+			create: false,
+			persist: false,
+			maxOptions: 200,
+			closeAfterSelect: false,
+			hideSelected: true,
+		});
+	}
+
+	private async ensureLocationsLoaded() {
+		this.ensureLocationsControl();
+		if (this.locationsLoaded) return;
+		if (this.locationsLoadPromise) return this.locationsLoadPromise;
+
+		this.locationsTom?.disable();
+		this.locationsLoadPromise = (async () => {
+			const body = await fetchJson<{
+				data?: { locations?: LocationLovItem[] };
+				locations?: LocationLovItem[];
+			}>('/api/schedules/meta');
+			const rows = Array.isArray(body.data?.locations)
+				? body.data.locations
+				: Array.isArray(body.locations)
+					? body.locations
+					: [];
+			this.locationsTom?.clear(true);
+			this.locationsTom?.clearOptions();
+			rows.forEach((loc) => {
+				const id = Number(loc.id_location);
+				const name = String(loc.name || '').trim();
+				if (!Number.isInteger(id) || id <= 0 || !name) return;
+				this.locationsTom?.addOption({ value: String(id), text: name });
+			});
+			this.locationsTom?.refreshOptions(false);
+			this.locationsLoaded = true;
+		})().finally(() => {
+			this.locationsTom?.enable();
+			this.locationsLoadPromise = null;
+		});
+		return this.locationsLoadPromise;
+	}
+
+	private setSelectedLocations(ids: number[]) {
+		if (!this.locationsTom) return;
+		this.locationsTom.setValue(ids.map(String) as string[], true);
+	}
+
+	private getSelectedLocationIds(): number[] {
+		if (!this.locationsTom) return [];
+		const val = this.locationsTom.getValue();
+		const arr = Array.isArray(val) ? val : String(val || '').split(',');
+		return arr.map(Number).filter((n) => Number.isInteger(n) && n > 0);
+	}
+
 	private setFormError(msg: string | null) {
 		const formError = this.els()?.formError;
 		if (!formError) return;
@@ -288,35 +425,44 @@ class LocationClosuresUI {
 		}
 	}
 
-	private resetForm(mode: 'location' | 'org') {
+	private async resetForm(mode: 'location' | 'org') {
 		const els = this.els();
 		if (!els) return;
 		this.setFormError(null);
 		els.formEl?.reset();
 		if (els.inputFullDay) els.inputFullDay.checked = true;
 		this.syncPartialVisibility();
+		els.scopeWrap?.removeAttribute('hidden');
+
+		await Promise.all([this.ensureLocationsLoaded(), this.ensureNamesLoaded()]);
+		this.locationsTom?.clear(true);
+		this.nameTom?.clear(true);
+		this.nameTom?.setValue('', true);
+
 		if (mode === 'org') {
-			if (els.scopeAll) els.scopeAll.checked = true;
-			if (els.scopeSingle) els.scopeSingle.checked = false;
-			els.scopeWrap?.setAttribute('hidden', '');
+			if (els.applyAll) els.applyAll.checked = true;
 			if (els.formTitle) els.formTitle.textContent = 'Nuevo cierre general';
 		} else {
-			if (els.scopeSingle) els.scopeSingle.checked = true;
-			if (els.scopeAll) els.scopeAll.checked = false;
-			els.scopeWrap?.removeAttribute('hidden');
+			if (els.applyAll) els.applyAll.checked = false;
 			if (els.formTitle) els.formTitle.textContent = 'Añadir cierre';
+			if (this.currentLocationId > 0) {
+				this.setSelectedLocations([this.currentLocationId]);
+			}
 		}
+		this.syncLocationsVisibility();
+
 		const today = new Date().toISOString().slice(0, 10);
-		if (els.inputStart && !els.inputStart.value) els.inputStart.value = today;
-		if (els.inputEnd && !els.inputEnd.value) els.inputEnd.value = today;
+		if (els.inputStart) els.inputStart.value = today;
+		if (els.inputEnd) els.inputEnd.value = today;
 	}
 
 	private openForm(mode: 'location' | 'org') {
 		const formDialog = this.els()?.formDialog;
 		if (!formDialog?.isConnected) return;
 		this.orgMode = mode === 'org';
-		this.resetForm(mode);
-		if (!formDialog.open) formDialog.showModal();
+		void this.resetForm(mode).then(() => {
+			if (!formDialog.open) formDialog.showModal();
+		});
 	}
 
 	private closeForm() {
@@ -433,11 +579,12 @@ class LocationClosuresUI {
 		const els = this.els();
 		if (!els) return;
 		this.setFormError(null);
-		const name = (els.inputName?.value || '').trim();
+		const name = (this.nameTom ? String(this.nameTom.getValue() || '') : (els.inputName?.value || '')).trim();
 		const startDate = (els.inputStart?.value || '').trim();
 		const endDate = (els.inputEnd?.value || '').trim();
 		const isFullDay = els.inputFullDay?.checked ? 1 : 0;
-		const applyAll = this.orgMode || (els.scopeAll?.checked ?? false) ? 1 : 0;
+		const applyAll = els.applyAll?.checked ? 1 : 0;
+		const locationIds = applyAll === 1 ? [] : this.getSelectedLocationIds();
 
 		if (!name) {
 			this.setFormError('El nombre es obligatorio.');
@@ -451,6 +598,10 @@ class LocationClosuresUI {
 			this.setFormError('La fecha fin no puede ser anterior a la fecha inicio.');
 			return;
 		}
+		if (applyAll === 0 && locationIds.length === 0) {
+			this.setFormError('Seleccioná al menos una sucursal.');
+			return;
+		}
 
 		const payload: Record<string, unknown> = {
 			name,
@@ -459,6 +610,7 @@ class LocationClosuresUI {
 			is_full_day: isFullDay,
 			apply_all_locations: applyAll,
 		};
+		if (applyAll === 0) payload.location_ids = locationIds;
 
 		if (!isFullDay) {
 			const startTime = (els.inputStartTime?.value || '').trim();
@@ -476,11 +628,13 @@ class LocationClosuresUI {
 		}
 
 		try {
-			const url =
-				applyAll === 1
-					? '/api/closures/org'
-					: `/api/locations/${this.currentLocationId}/closures`;
-			if (applyAll !== 1 && !this.currentLocationId) {
+			const useOrgEndpoint = applyAll === 1 || locationIds.length > 0;
+			const singleId =
+				locationIds.length === 1 ? locationIds[0] : this.currentLocationId;
+			const url = useOrgEndpoint
+				? '/api/closures/org'
+				: `/api/locations/${singleId}/closures`;
+			if (!useOrgEndpoint && !singleId) {
 				this.setFormError('No hay sucursal activa para crear el cierre.');
 				return;
 			}

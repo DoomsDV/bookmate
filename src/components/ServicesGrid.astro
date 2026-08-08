@@ -436,13 +436,11 @@ const inactiveCount = services.length - activeCount;
 
 	.services-card {
 		cursor: pointer;
-		gap: 0.55rem;
-		padding: 0.72rem 0.8rem 0.85rem;
-		border-radius: 0.8rem;
 	}
 
 	.services-card-cover {
-		margin: -0.05rem -0.05rem 0.4rem;
+		position: relative;
+		margin: 0 0 0.4rem;
 		overflow: hidden;
 		border-radius: 0.65rem;
 		aspect-ratio: 16 / 9;
@@ -547,12 +545,6 @@ const inactiveCount = services.length - activeCount;
 	}
 
 	@media (max-width: 639px) {
-		.services-card {
-			gap: 0.55rem;
-			padding: 0.85rem 0.95rem 0.95rem;
-			border-radius: 0.85rem;
-		}
-
 		.services-card-cover {
 			margin: 0 0 0.45rem;
 			border-radius: 0.7rem;

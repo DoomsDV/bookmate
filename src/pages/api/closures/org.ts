@@ -29,14 +29,22 @@ const parsePayload = (body: any): CreateLocationClosurePayload => {
 	const endDate = String(body?.end_date || '').trim();
 	const isFullDayRaw = Number(body?.is_full_day);
 	const isFullDay: 0 | 1 = isFullDayRaw === 0 ? 0 : 1;
+	const applyAllRaw = Number(body?.apply_all_locations);
+	const locationIds = Array.isArray(body?.location_ids)
+		? body.location_ids.map((v: unknown) => Number(v)).filter((n: number) => Number.isInteger(n) && n > 0)
+		: [];
+	// Compat: org endpoint sin location_ids sigue siendo "todas".
+	const applyAll: 0 | 1 =
+		applyAllRaw === 1 || (applyAllRaw !== 0 && locationIds.length === 0) ? 1 : 0;
 
 	const payload: CreateLocationClosurePayload = {
 		name,
 		start_date: startDate,
 		end_date: endDate,
 		is_full_day: isFullDay,
-		apply_all_locations: 1,
+		apply_all_locations: applyAll,
 	};
+	if (locationIds.length > 0 && applyAll === 0) payload.location_ids = locationIds;
 
 	if (isFullDay === 0) {
 		const start = String(body?.start_time || '').trim();

@@ -120,7 +120,7 @@ const positionFixedDropdown = (instance: TomSelect) => {
 	applyDropdownMaxHeight(instance, maxHeight);
 };
 
-const bindFixedDropdownPosition = (instance: TomSelect) => {
+export const bindFixedDropdownPosition = (instance: TomSelect) => {
 	if (!usesFixedDropdown(instance)) return;
 
 	const reposition = () => positionFixedDropdown(instance);

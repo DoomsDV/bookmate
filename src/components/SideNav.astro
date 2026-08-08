@@ -330,6 +330,7 @@ if (showPlanFooter) {
 							data-side-nav-close
 							class:list={[
 								"more-sheet__link",
+								"more-sheet__link--plan",
 								planFooterActive && "is-active",
 							]}
 							aria-label="Ver plan y facturación"
@@ -524,7 +525,7 @@ if (showPlanFooter) {
 					data-sidebar-item
 					data-sidebar-footer
 					class:list={[
-						"sidebar-nav-link mt-auto flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
+						"sidebar-nav-link sidebar-nav-link--plan mt-auto flex items-center gap-3 rounded-[1rem] px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
 						planFooterActive
 							? "is-active bg-(--primary-container) text-(--primary) font-bold"
 							: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
@@ -746,6 +747,39 @@ if (showPlanFooter) {
 
 	.more-sheet__footer {
 		padding-inline: 0.2rem;
+	}
+
+	/* Mismo fondo que las cards de servicios (.services-card → --sidebar-surface) */
+	.more-sheet__link--plan {
+		background: var(--sidebar-surface);
+		border: 1px solid var(--shell-border);
+		box-shadow: var(--card-elevation);
+	}
+	.more-sheet__link--plan:hover {
+		background: color-mix(in srgb, var(--sidebar-surface) 88%, var(--on-surface) 12%);
+	}
+	.more-sheet__link--plan.is-active {
+		background: color-mix(in srgb, var(--primary) 16%, var(--sidebar-surface));
+		border-color: color-mix(in srgb, var(--primary) 35%, var(--shell-border));
+		color: var(--primary);
+	}
+
+	.sidebar-nav-link--plan {
+		/* En el rail del sidebar, elevar respecto a --sidebar-surface */
+		background: var(--control-surface, var(--surface-container-high));
+		border: 1px solid var(--shell-border);
+		box-shadow: var(--card-elevation);
+	}
+	.sidebar-nav-link--plan:hover {
+		background: color-mix(in srgb, var(--control-surface, var(--surface-container-high)) 88%, var(--on-surface) 12%);
+	}
+	.sidebar-nav-link--plan.is-active {
+		border-color: color-mix(in srgb, var(--primary) 35%, var(--shell-border));
+	}
+
+	:global(html[data-theme='dark']) .more-sheet__link--plan {
+		/* Misma superficie que .services-card sobre el sheet */
+		background: var(--sidebar-surface);
 	}
 
 	.more-sheet__logout {

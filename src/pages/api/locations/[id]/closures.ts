@@ -40,6 +40,9 @@ const parsePayload = (body: any): CreateLocationClosurePayload => {
 	const isFullDay: 0 | 1 = isFullDayRaw === 0 ? 0 : 1;
 	const applyAllRaw = Number(body?.apply_all_locations);
 	const applyAll: 0 | 1 = applyAllRaw === 1 ? 1 : 0;
+	const locationIds = Array.isArray(body?.location_ids)
+		? body.location_ids.map((v: unknown) => Number(v)).filter((n: number) => Number.isInteger(n) && n > 0)
+		: [];
 
 	const payload: CreateLocationClosurePayload = {
 		name,
@@ -48,6 +51,7 @@ const parsePayload = (body: any): CreateLocationClosurePayload => {
 		is_full_day: isFullDay,
 		apply_all_locations: applyAll,
 	};
+	if (locationIds.length > 0) payload.location_ids = locationIds;
 
 	if (isFullDay === 0) {
 		const start = String(body?.start_time || '').trim();

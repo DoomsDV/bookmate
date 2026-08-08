@@ -36,6 +36,7 @@ export interface CreateLocationClosurePayload {
 	start_time?: string | null;
 	end_time?: string | null;
 	apply_all_locations?: 0 | 1;
+	location_ids?: number[];
 }
 
 export interface LocationClosureFieldError {
@@ -189,17 +190,30 @@ export async function createLocationClosure(
 	payload: CreateLocationClosurePayload
 ): Promise<{ inserted_ids: number[]; closure_group_id: string | null; message: string }> {
 	const applyAll = payload.apply_all_locations === 1;
-	if (!applyAll && (!Number.isInteger(locationId) || (locationId as number) <= 0)) {
+	const locationIds = Array.isArray(payload.location_ids)
+		? payload.location_ids.filter((id) => Number.isInteger(id) && id > 0)
+		: [];
+	const useOrgEndpoint = applyAll || locationIds.length > 0;
+
+	if (!useOrgEndpoint && (!Number.isInteger(locationId) || (locationId as number) <= 0)) {
 		throw new LocationClosuresApiError('ID de sucursal inválido.', 400);
 	}
-	const url = applyAll ? ORG_CLOSURES_URL : closuresUrlForLocation(locationId as number);
+	if (!applyAll && locationIds.length === 0 && (!Number.isInteger(locationId) || (locationId as number) <= 0)) {
+		throw new LocationClosuresApiError('Seleccioná al menos una sucursal.', 400);
+	}
+
+	const url = useOrgEndpoint ? ORG_CLOSURES_URL : closuresUrlForLocation(locationId as number);
+	const bodyPayload =
+		locationIds.length > 0
+			? { ...payload, location_ids: locationIds, apply_all_locations: applyAll ? 1 : 0 }
+			: payload;
 
 	const body = await request<ApiSuccess<unknown>>(
 		url,
 		{
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(payload),
+			body: JSON.stringify(bodyPayload),
 		},
 		token
 	);

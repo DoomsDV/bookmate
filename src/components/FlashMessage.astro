@@ -90,6 +90,36 @@ const flashBaseClass =
 			opacity: 1;
 		}
 	}
+
+	/*
+	 * Stack en top layer via popover=manual (sobre dialogs showModal).
+	 * Hay que anular el UA ([popover] { inset:0; margin:auto; width:fit-content }).
+	 */
+	[data-flash-stack],
+	[data-flash-stack]:popover-open {
+		position: fixed !important;
+		top: auto !important;
+		right: 0 !important;
+		bottom: 1.25rem !important;
+		left: 0 !important;
+		inset: auto 0 1.25rem 0 !important;
+		width: 100% !important;
+		max-width: none !important;
+		height: fit-content !important;
+		margin: 0 !important;
+		padding: 0 1rem !important;
+		border: none !important;
+		background: transparent !important;
+		overflow: visible !important;
+		color: inherit;
+		display: flex !important;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.75rem;
+		pointer-events: none;
+		box-sizing: border-box;
+		z-index: 2147483646;
+	}
 </style>
 
 <script>
@@ -150,14 +180,24 @@ const flashBaseClass =
 	};
 
 	const ensureFlashStack = () => {
-		let stack = document.querySelector('[data-flash-stack]');
-		if (stack) return stack;
+		let stack = document.querySelector<HTMLElement>('[data-flash-stack]');
+		if (!stack) {
+			stack = document.createElement('div');
+			stack.setAttribute('data-flash-stack', 'true');
+			// Top layer: por encima de dialogs showModal() (blur/backdrop).
+			stack.setAttribute('popover', 'manual');
+			document.body.appendChild(stack);
+		}
 
-		stack = document.createElement('div');
-		stack.setAttribute('data-flash-stack', 'true');
-		stack.className =
-			'pointer-events-none fixed inset-x-0 bottom-5 z-[10000] flex flex-col items-center gap-3 px-4';
-		document.body.appendChild(stack);
+		if (typeof stack.showPopover === 'function') {
+			try {
+				// Re-mostrar promueve el stack al tope del top layer (sobre modales abiertos).
+				stack.showPopover();
+			} catch {
+				/* ignore: fallback a fixed + z-index */
+			}
+		}
+
 		return stack;
 	};
 
