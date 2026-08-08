@@ -266,6 +266,38 @@ const plansToShow =
 	}) ?? [];
 
 const premiumMarketing = planMarketing('PREMIUM');
+const currentPlanCatalog =
+	catalog?.plans.find((p) => p.is_current || p.code === current?.plan_code) ?? null;
+const hasCurrentFounderDeal =
+	!!currentPlanCatalog &&
+	currentPlanCatalog.founder_discount_percent > 0 &&
+	currentPlanCatalog.checkout_price_amount > 0 &&
+	currentPlanCatalog.checkout_price_amount < currentPlanCatalog.price_amount;
+const currentOriginalMonthlyTotal =
+	hasCurrentFounderDeal && current
+		? currentPlanCatalog.price_amount + current.addons_monthly_amount
+		: 0;
+const basePlan = catalog?.plans.find((p) => p.code === 'BASE') ?? null;
+const canDowngradeToBase =
+	isAdmin &&
+	isAtMaxPlan &&
+	!cancelScheduled &&
+	!current?.billing_exempt &&
+	!current?.pending_plan_code &&
+	!!basePlan;
+
+const DOWNGRADE_KEEP_FEATURES = [
+	'CUSTOMERS',
+	'WEB_BOOKING',
+	'SERVICES',
+	'AI_MORNING_DIGEST',
+	'PROFITABILITY_ANALYTICS',
+] as const;
+const DOWNGRADE_LOSE_FEATURES = [
+	'VOICE_RECEPTION',
+	'DEPOSIT_COLLECTION',
+	'APPOINTMENT_HISTORY',
+] as const;
 const formatMaskedCard = (masked: string | null) => {
 	const raw = String(masked || '').replace(/\s+/g, '');
 	if (!raw) return '•••• •••• •••• ••••';
@@ -277,6 +309,14 @@ const cardTone = (brand: string | null) => {
 	if (b.includes('visa')) return 'visa';
 	return 'generic';
 };
+const cardBrandLabel = (brand: string | null) => {
+	const b = String(brand || '').toLowerCase();
+	if (b.includes('master')) return 'Mastercard';
+	if (b.includes('visa')) return 'Visa';
+	return brand || 'Tarjeta';
+};
+const nextChargeEstimate = billing?.next_charge_estimate ?? current?.next_charge_estimate ?? 0;
+const billingProfileComplete = billingProfile?.is_complete === 1;
 const defaultCard = cards.find((c) => c.is_default) || cards[0] || null;
 const defaultCardLabel = defaultCard
 	? `${defaultCard.brand || 'Tarjeta'} · ${formatMaskedCard(defaultCard.masked_number)}`
@@ -320,6 +360,9 @@ const defaultCardHint = defaultCard
 									<button type="button" class="plan-tab" data-plan-tab="billing" aria-selected="false">
 										Facturación
 									</button>
+									<button type="button" class="plan-tab" data-plan-tab="history" aria-selected="false">
+										Historial de pagos
+									</button>
 								</nav>
 
 								<div data-plan-panel="plan" class="grid gap-6 sm:gap-8">
@@ -335,6 +378,9 @@ const defaultCardHint = defaultCard
 													<>
 														<span class="plan-status-sep" aria-hidden="true">·</span>
 														<div class="plan-status-price">
+															{hasCurrentFounderDeal ? (
+																<span class="plan-status-price-old">{formatGs(currentOriginalMonthlyTotal)}</span>
+															) : null}
 															<span class="plan-status-amount">{formatGs(current.monthly_total)}</span>
 															<span class="plan-status-period">/ mes</span>
 														</div>
@@ -498,33 +544,23 @@ const defaultCardHint = defaultCard
 									</section>
 								) : null}
 
-								{isAtMaxPlan ? (
+								{isAtMaxPlan && showPaymentMethod ? (
 									<section class="plan-mgmt-section">
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Gestión de tu suscripción</h2>
 											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
-												Consultá cobros, facturación y método de pago desde la pestaña Facturación.
+												Consultá facturación y método de pago desde la pestaña Facturación.
 											</p>
 										</div>
 										<div class="plan-mgmt-actions">
 											<button type="button" class="plan-mgmt-link" data-plan-tab-jump="billing">
-												<span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+												<span class="material-symbols-rounded" aria-hidden="true">credit_card</span>
 												<span class="grid gap-0.5 text-left">
-													<strong>Historial de pagos</strong>
-													<small>Cobros, estados y montos de tu suscripción</small>
+													<strong>Método de pago</strong>
+													<small>Tarjeta registrada y datos de facturación</small>
 												</span>
 												<span class="material-symbols-rounded plan-mgmt-chevron" aria-hidden="true">chevron_right</span>
 											</button>
-											{showPaymentMethod ? (
-												<button type="button" class="plan-mgmt-link" data-plan-tab-jump="billing">
-													<span class="material-symbols-rounded" aria-hidden="true">credit_card</span>
-													<span class="grid gap-0.5 text-left">
-														<strong>Método de pago</strong>
-														<small>Tarjeta registrada y datos de facturación</small>
-													</span>
-													<span class="material-symbols-rounded plan-mgmt-chevron" aria-hidden="true">chevron_right</span>
-												</button>
-											) : null}
 										</div>
 									</section>
 								) : null}
@@ -812,6 +848,22 @@ const defaultCardHint = defaultCard
 									</section>
 								)}
 
+								{canDowngradeToBase ? (
+									<section class="grid gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-5">
+										<div class="grid gap-1">
+											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Cambiar de plan</h2>
+											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+												Podés cambiarte al Plan Base en cualquier momento. Se aplicará en tu próximo ciclo de facturación.
+											</p>
+										</div>
+										<div>
+											<button type="button" class="plan-btn plan-btn-outline plan-btn--auto" data-downgrade-open>
+												Pasar al Plan Base
+											</button>
+										</div>
+									</section>
+								) : null}
+
 								{canTerminate ? (
 									<section class="grid gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-5">
 										<div class="grid gap-1">
@@ -831,7 +883,101 @@ const defaultCardHint = defaultCard
 
 								{/* ---- Pestaña Facturación ---- */}
 								<div data-plan-panel="billing" class="hidden grid gap-6 sm:gap-8">
-									<section class="plan-billing-summary">
+									{/* 1. Tarjeta / método de pago (primero) */}
+									{showPaymentMethod && (
+										<section class="grid gap-4" data-payment-section>
+											<div class="grid gap-1">
+												<h2 class="m-0 text-lg font-bold text-(--on-surface)">Método de pago</h2>
+											</div>
+
+											<div class="plan-plastic-grid" data-cards-list>
+												{cards.length === 0 ? (
+													<button
+														type="button"
+														class="plan-card-silhouette"
+														data-add-card
+														data-cards-empty
+														aria-label="Agregar tarjeta"
+													>
+														<span class="plan-card-silhouette-inner" aria-hidden="true">
+															<span class="plan-card-silhouette-chip"></span>
+															<span class="plan-card-silhouette-line plan-card-silhouette-line--long"></span>
+															<span class="plan-card-silhouette-line plan-card-silhouette-line--mid"></span>
+															<span class="plan-card-silhouette-line plan-card-silhouette-line--short"></span>
+														</span>
+														<span class="plan-card-silhouette-cta">
+															<span class="material-symbols-rounded" aria-hidden="true">add_card</span>
+															Agregar tarjeta
+														</span>
+													</button>
+												) : (
+													cards.map((card) => (
+														<article class={`plan-plastic-card plan-plastic-${cardTone(card.brand)} ${card.is_default ? 'plan-plastic-default' : ''}`}>
+															<div class="plan-plastic-shine" aria-hidden="true"></div>
+															<div class="plan-plastic-top">
+																<div class="plan-plastic-chip" aria-hidden="true"></div>
+																<span class="plan-plastic-brand">{cardBrandLabel(card.brand)}</span>
+															</div>
+															<p class="plan-plastic-number">{formatMaskedCard(card.masked_number)}</p>
+															<div class="plan-plastic-bottom">
+																{card.is_default ? (
+																	<span class="plan-plastic-default-badge">Predeterminada</span>
+																) : (
+																	<span class="plan-plastic-provider">{card.provider}</span>
+																)}
+																<button
+																	type="button"
+																	class="plan-plastic-del"
+																	data-card-delete
+																	data-card-id={String(card.id)}
+																	aria-label="Eliminar tarjeta"
+																>
+																	<span class="material-symbols-rounded">delete</span>
+																</button>
+															</div>
+														</article>
+													))
+												)}
+											</div>
+
+											{cards.length > 0 ? (
+												<div class="plan-payment-actions">
+													<button type="button" class="plan-btn plan-btn-soft" data-add-card>
+														<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
+														Agregar otra tarjeta
+													</button>
+													<p class="plan-payment-secure">
+														<span class="material-symbols-rounded" aria-hidden="true">lock</span>
+														Pagos 100% seguros vía Pagopar.
+													</p>
+												</div>
+											) : (
+												<p class="plan-payment-secure plan-payment-secure--solo">
+													<span class="material-symbols-rounded" aria-hidden="true">lock</span>
+													Pagos 100% seguros vía Pagopar.
+												</p>
+											)}
+										</section>
+									)}
+
+									{/* 2. Resumen — compacto en mobile */}
+									<div class="plan-billing-compact md:hidden">
+										<p class="plan-billing-compact-text">
+											Próximo cargo: <strong>{formatGs(nextChargeEstimate)}</strong>
+										</p>
+										<button
+											type="button"
+											class="plan-billing-compact-detail"
+											data-billing-detail-open
+											aria-label="Ver detalle de facturación"
+										>
+											<span class="material-symbols-rounded" aria-hidden="true">info</span>
+											Ver detalle
+										</button>
+									</div>
+
+									{/* 2. Resumen — completo en desktop (sin cambios) */}
+									<section class="plan-billing-summary hidden md:grid">
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Resumen de facturación</h2>
 											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
@@ -874,21 +1020,35 @@ const defaultCardHint = defaultCard
 													<small>Después de aplicar el saldo a favor</small>
 												</div>
 												<strong class="plan-billing-total-amount">
-													{formatGs(billing?.next_charge_estimate ?? current.next_charge_estimate)}
+													{formatGs(nextChargeEstimate)}
 												</strong>
 											</div>
 										</div>
 									</section>
 
-									{/* ---- Método de pago (cobro recurrente con tarjeta) ---- */}
+									{/* 3. Datos de facturación (al fondo) */}
 									{showPaymentMethod && (
-										<section class="grid gap-4" data-payment-section>
-											<div class="grid gap-1">
-												<h2 class="m-0 text-lg font-bold text-(--on-surface)">Método de pago</h2>
+										<section class="grid gap-4" data-billing-profile-section>
+											<div
+												class={`plan-billing-profile-collapsed ${billingProfileComplete ? '' : 'hidden'}`}
+												data-billing-profile-collapsed
+											>
+												<div class="plan-billing-profile-collapsed-copy">
+													<span class="material-symbols-rounded plan-billing-profile-icon" aria-hidden="true">receipt_long</span>
+													<div class="grid gap-0.5 min-w-0">
+														<span class="plan-billing-profile-collapsed-title">Datos de facturación registrados</span>
+														<span class="plan-billing-profile-collapsed-hint" data-billing-profile-summary>
+															{billingProfile?.billing_name || ''} · {billingProfile?.billing_doc_type || 'CI'} {billingProfile?.billing_doc_number || ''}
+														</span>
+													</div>
+												</div>
+												<button type="button" class="plan-btn plan-btn-soft plan-billing-profile-edit" data-billing-profile-edit>
+													Editar
+												</button>
 											</div>
 
 											<form
-												class="grid gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 sm:p-5"
+												class={`grid gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 sm:p-5 ${billingProfileComplete ? 'hidden' : ''}`}
 												data-billing-profile-form
 												autocomplete="off"
 												novalidate
@@ -964,72 +1124,22 @@ const defaultCardHint = defaultCard
 														Guardar datos de facturación
 													</button>
 													<p
-														class={`m-0 text-[0.82rem] font-semibold ${billingProfile?.is_complete === 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-(--on-surface-variant)'}`}
+														class={`m-0 text-[0.82rem] font-semibold ${billingProfileComplete ? 'text-emerald-600 dark:text-emerald-400' : 'text-(--on-surface-variant)'}`}
 														data-billing-profile-status
-														data-complete={billingProfile?.is_complete === 1 ? '1' : '0'}
+														data-complete={billingProfileComplete ? '1' : '0'}
 													>
-														{billingProfile?.is_complete === 1
+														{billingProfileComplete
 															? 'Datos listos para facturar.'
 															: 'Pendiente de completar.'}
 													</p>
 												</div>
 											</form>
-
-											<div class="plan-plastic-grid" data-cards-list>
-												{cards.length === 0 ? (
-													<div class="plan-card-empty" data-cards-empty>
-														<span class="material-symbols-rounded text-[1.5rem] text-(--on-surface-variant)">credit_card_off</span>
-														<p class="m-0 text-[0.9rem] font-semibold text-(--on-surface-variant)">
-															Todavía no registraste ninguna tarjeta.
-														</p>
-													</div>
-												) : (
-													cards.map((card) => (
-														<article class={`plan-plastic-card plan-plastic-${cardTone(card.brand)} ${card.is_default ? 'plan-plastic-default' : ''}`}>
-															<div class="plan-plastic-shine" aria-hidden="true"></div>
-															<div class="plan-plastic-top">
-																<div class="plan-plastic-meta">
-																	<span class="plan-plastic-issuer">{card.issuer || card.brand || 'Tarjeta'}</span>
-																	<span class="plan-plastic-type">{card.card_type || 'Crédito / Débito'}</span>
-																</div>
-																<span class="plan-plastic-brand">{card.brand || 'Card'}</span>
-															</div>
-															<div class="plan-plastic-chip" aria-hidden="true"></div>
-															<p class="plan-plastic-number">{formatMaskedCard(card.masked_number)}</p>
-															<div class="plan-plastic-bottom">
-																{card.is_default ? (
-																	<span class="plan-plastic-default-badge">Predeterminada</span>
-																) : (
-																	<span class="plan-plastic-provider">{card.provider}</span>
-																)}
-																<button
-																	type="button"
-																	class="plan-plastic-del"
-																	data-card-delete
-																	data-card-id={String(card.id)}
-																	aria-label="Eliminar tarjeta"
-																>
-																	<span class="material-symbols-rounded">delete</span>
-																</button>
-															</div>
-														</article>
-													))
-												)}
-											</div>
-
-											<div class="plan-payment-actions">
-												<button type="button" class="plan-btn plan-btn-soft" data-add-card>
-													<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
-													{cards.length === 0 ? 'Agregar tarjeta' : 'Agregar otra tarjeta'}
-												</button>
-												<p class="plan-payment-secure">
-													<span class="material-symbols-rounded" aria-hidden="true">lock</span>
-													Pagos 100% seguros vía Pagopar.
-												</p>
-											</div>
 										</section>
 									)}
+								</div>
 
+								{/* ---- Pestaña Historial ---- */}
+								<div data-plan-panel="history" class="hidden grid gap-6 sm:gap-8">
 									<section class="grid gap-4">
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Historial de pagos</h2>
@@ -1121,6 +1231,73 @@ const defaultCardHint = defaultCard
 		</div>
 	</div>
 
+	{/* Modal de retención — downgrade Premium → Base */}
+	{canDowngradeToBase && current && basePlan ? (
+		<div class="plan-modal-backdrop hidden" data-downgrade-modal>
+			<div
+				class="plan-modal plan-downgrade-modal"
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="plan-downgrade-title"
+			>
+				<h3 id="plan-downgrade-title" class="m-0 text-lg font-bold text-(--on-surface)">
+					¿Seguro que querés cambiar al Plan Base?
+				</h3>
+				<div class="plan-downgrade-compare">
+					<div class="plan-downgrade-col plan-downgrade-col--keep">
+						<p class="plan-downgrade-col-title m-0">Plan Base</p>
+						<ul class="plan-downgrade-list">
+							{DOWNGRADE_KEEP_FEATURES.map((code) => (
+								<li>
+									<span class="material-symbols-rounded plan-downgrade-icon-keep" aria-hidden="true">check_circle</span>
+									<span>{featureLabel(code)}</span>
+								</li>
+							))}
+						</ul>
+					</div>
+					<div class="plan-downgrade-col plan-downgrade-col--lose">
+						<p class="plan-downgrade-col-title m-0">Lo que perdés</p>
+						<ul class="plan-downgrade-list">
+							{DOWNGRADE_LOSE_FEATURES.map((code) => (
+								<li>
+									<span class="material-symbols-rounded plan-downgrade-icon-lose" aria-hidden="true">cancel</span>
+									<span class="plan-downgrade-lose-text">{featureLabel(code)}</span>
+								</li>
+							))}
+							<li>
+								<span class="material-symbols-rounded plan-downgrade-icon-lose" aria-hidden="true">cancel</span>
+								<span class="plan-downgrade-lose-text">
+									{formatGb(current.storage_limit_bytes)} → {formatGb(basePlan.storage_limit_bytes)} de almacenamiento
+								</span>
+							</li>
+						</ul>
+					</div>
+				</div>
+				<p class="m-0 text-[0.84rem] font-medium text-(--on-surface-variant)">
+					El cambio se programa para el{' '}
+					{current.current_period_end
+						? formatDateEs(current.current_period_end)
+						: 'fin de tu ciclo actual'}
+					. Hasta entonces seguís con {current.plan_name}.
+				</p>
+				<div class="grid gap-2">
+					<button type="button" class="plan-btn plan-btn-primary" data-downgrade-keep>
+						Mantener mi plan {current.plan_name}
+					</button>
+					<button
+						type="button"
+						class="plan-btn plan-btn-ghost"
+						data-downgrade-confirm
+						data-plan-code={basePlan.code}
+						data-plan-name={basePlan.name}
+					>
+						Sí, pasar al Plan Base
+					</button>
+				</div>
+			</div>
+		</div>
+	) : null}
+
 	{/* Modal de confirmación de cobro — bottom sheet en mobile/tablet */}
 	<div class="plan-modal-backdrop plan-pay-modal-backdrop hidden" data-pay-modal>
 		<div class="plan-modal plan-pay-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-pay-title">
@@ -1201,6 +1378,60 @@ const defaultCardHint = defaultCard
 		</div>
 	</div>
 
+	{/* Modal detalle de facturación — solo mobile */}
+	<div class="plan-modal-backdrop plan-billing-detail-backdrop hidden" data-billing-detail-modal>
+		<div class="plan-modal plan-billing-detail-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-billing-detail-title">
+			<div class="plan-sheet-handle" aria-hidden="true"><span></span></div>
+			<div class="grid gap-3">
+				<h3 id="plan-billing-detail-title" class="m-0 text-lg font-bold text-(--on-surface)">Resumen de facturación</h3>
+				<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">
+					Próximo cobro y desglose de tu suscripción.
+				</p>
+			</div>
+			<div class="plan-billing-ticket">
+				<div class="plan-billing-row">
+					<span class="plan-billing-concept">Próxima facturación</span>
+					<span class="plan-billing-amount">
+						{formatDateEs(billing?.next_billing_at || current?.next_billing_at)}
+					</span>
+				</div>
+				<div class="plan-billing-row">
+					<span class="plan-billing-concept">
+						Plan
+						<small>({billing?.plan_name || current?.plan_name})</small>
+					</span>
+					<span class="plan-billing-amount">
+						{formatGs(billing?.plan_monthly_amount ?? current?.plan_monthly_amount ?? 0)}
+					</span>
+				</div>
+				<div class="plan-billing-row">
+					<span class="plan-billing-concept">Almacenamiento</span>
+					<span class="plan-billing-amount">
+						{formatGs(billing?.addons_monthly_amount ?? current?.addons_monthly_amount ?? 0)}
+					</span>
+				</div>
+				<div class="plan-billing-row plan-billing-row--credit">
+					<span class="plan-billing-concept">Saldo a favor</span>
+					<span class="plan-billing-amount">
+						{(billing?.account_balance ?? current?.account_balance ?? 0) > 0
+							? `− ${formatGs(billing?.account_balance ?? current?.account_balance ?? 0)}`
+							: formatGs(billing?.account_balance ?? current?.account_balance ?? 0)}
+					</span>
+				</div>
+				<div class="plan-billing-total">
+					<div class="plan-billing-total-copy">
+						<span class="plan-billing-total-label">Estimado próximo cargo</span>
+						<small>Después de aplicar el saldo a favor</small>
+					</div>
+					<strong class="plan-billing-total-amount">
+						{formatGs(nextChargeEstimate)}
+					</strong>
+				</div>
+			</div>
+			<button type="button" class="plan-btn plan-btn-ghost" data-billing-detail-close>Cerrar</button>
+		</div>
+	</div>
+
 	<AppAlert />
 </Layout>
 
@@ -1265,6 +1496,12 @@ const defaultCardHint = defaultCard
 		flex-wrap: wrap;
 		align-items: baseline;
 		gap: 0.3rem;
+	}
+	.plan-status-price-old {
+		font-size: 1rem;
+		font-weight: 650;
+		color: var(--on-surface-variant);
+		text-decoration: line-through;
 	}
 	.plan-status-amount {
 		font-size: 1.35rem;
@@ -1333,6 +1570,9 @@ const defaultCardHint = defaultCard
 	.plan-payment-secure .material-symbols-rounded {
 		font-size: 0.95rem;
 		opacity: 0.9;
+	}
+	.plan-payment-secure--solo {
+		margin-top: -0.15rem;
 	}
 	.plan-field-error {
 		margin: 0;
@@ -1832,7 +2072,7 @@ const defaultCardHint = defaultCard
 	.plan-btn-outline:hover { background: color-mix(in srgb, var(--primary) 8%, transparent); }
 	.plan-btn-current { background: color-mix(in srgb, var(--on-surface-variant) 16%, transparent); color: var(--on-surface-variant); }
 	.plan-btn-soft { width: auto; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); }
-	.plan-btn-primary.plan-btn--auto { width: auto; }
+	.plan-btn--auto { width: auto; }
 	.plan-btn-danger {
 		width: auto;
 		background: transparent;
@@ -2061,6 +2301,81 @@ const defaultCardHint = defaultCard
 		background: var(--surface-bright, #fff);
 		padding: 1.25rem 1.35rem;
 	}
+	.plan-billing-compact {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.85rem 1rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright, #fff);
+	}
+	.plan-billing-compact-text {
+		margin: 0;
+		font-size: 0.9rem;
+		font-weight: 650;
+		color: var(--on-surface-variant);
+	}
+	.plan-billing-compact-text strong {
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+	.plan-billing-compact-detail {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		border: 0;
+		background: transparent;
+		padding: 0.25rem 0.35rem;
+		font-size: 0.8rem;
+		font-weight: 700;
+		color: var(--primary);
+		cursor: pointer;
+		white-space: nowrap;
+	}
+	.plan-billing-compact-detail .material-symbols-rounded {
+		font-size: 1.05rem;
+	}
+	.plan-billing-profile-collapsed {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.85rem;
+		padding: 0.95rem 1.1rem;
+		border-radius: 1.1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright, #fff);
+	}
+	.plan-billing-profile-collapsed-copy {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		min-width: 0;
+	}
+	.plan-billing-profile-icon {
+		flex-shrink: 0;
+		font-size: 1.35rem;
+		color: var(--primary);
+	}
+	.plan-billing-profile-collapsed-title {
+		font-size: 0.92rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+	.plan-billing-profile-collapsed-hint {
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.plan-billing-profile-edit {
+		flex-shrink: 0;
+		padding: 0.45rem 0.85rem;
+		font-size: 0.82rem;
+	}
 	.plan-billing-ticket {
 		display: grid;
 		gap: 0;
@@ -2204,6 +2519,78 @@ const defaultCardHint = defaultCard
 		border-radius: 1.25rem; background: var(--surface-bright, #fff);
 		padding: 1.5rem; display: grid; gap: 1.1rem;
 	}
+	.plan-downgrade-modal {
+		max-width: 42rem;
+	}
+	.plan-downgrade-compare {
+		display: grid;
+		gap: 0.85rem;
+	}
+	@media (min-width: 640px) {
+		.plan-downgrade-compare {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+	.plan-downgrade-col {
+		display: grid;
+		gap: 0.65rem;
+		padding: 0.95rem 1rem;
+		border-radius: 1rem;
+		border: 1px solid color-mix(in srgb, var(--on-surface) 10%, transparent);
+		background: color-mix(in srgb, var(--on-surface) 3%, transparent);
+	}
+	.plan-downgrade-col-title {
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: #52525b;
+	}
+	:global(.dark) .plan-downgrade-col-title {
+		color: #e4e4e7;
+	}
+	.plan-downgrade-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.55rem;
+	}
+	.plan-downgrade-list li {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+		font-size: 0.86rem;
+		font-weight: 500;
+		line-height: 1.35;
+	}
+	.plan-downgrade-col--keep .plan-downgrade-list li {
+		color: #a1a1aa;
+	}
+	:global(.dark) .plan-downgrade-col--keep .plan-downgrade-list li {
+		color: #d4d4d8;
+	}
+	.plan-downgrade-col--lose .plan-downgrade-list li {
+		color: #71717a;
+	}
+	:global(.dark) .plan-downgrade-col--lose .plan-downgrade-list li {
+		color: #a1a1aa;
+	}
+	.plan-downgrade-icon-keep {
+		font-size: 1.05rem;
+		color: #34d399;
+		flex-shrink: 0;
+		margin-top: 0.05rem;
+	}
+	.plan-downgrade-icon-lose {
+		font-size: 1.05rem;
+		color: #fb7185;
+		flex-shrink: 0;
+		margin-top: 0.05rem;
+	}
+	.plan-downgrade-lose-text {
+		opacity: 0.9;
+	}
 	.plan-pay-receipt {
 		display: grid;
 		gap: 0.85rem;
@@ -2285,11 +2672,68 @@ const defaultCardHint = defaultCard
 	.plan-iframe-loading.hidden { display: none; }
 
 	/* Método de pago — tarjetas tipo plástico */
-	.plan-card-empty {
-		display: flex; align-items: center; gap: 0.75rem;
-		border: 1px dashed var(--shell-border); border-radius: 1rem;
-		padding: 1.1rem 1.25rem;
+	.plan-card-silhouette {
+		position: relative;
+		display: grid;
+		gap: 0.65rem;
+		width: 100%;
+		max-width: 17.5rem;
+		aspect-ratio: 1.68 / 1;
+		padding: 0;
+		border: 0;
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--on-surface-variant) 6%, var(--surface-bright, #fff));
+		box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--on-surface-variant) 18%, transparent);
+		cursor: pointer;
+		transition: box-shadow 0.15s ease, transform 0.15s ease;
+		overflow: hidden;
 		grid-column: 1 / -1;
+		justify-self: start;
+	}
+	.plan-card-silhouette:hover {
+		box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--primary) 45%, transparent),
+			0 6px 18px color-mix(in srgb, var(--primary) 10%, transparent);
+		transform: translateY(-1px);
+	}
+	.plan-card-silhouette:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 2px;
+	}
+	.plan-card-silhouette-inner {
+		display: grid;
+		gap: 0.55rem;
+		padding: 1.05rem 1.15rem 0.5rem;
+	}
+	.plan-card-silhouette-chip {
+		width: 2.05rem;
+		height: 1.45rem;
+		border-radius: 0.3rem;
+		background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
+	}
+	.plan-card-silhouette-line {
+		display: block;
+		height: 0.55rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 12%, transparent);
+	}
+	.plan-card-silhouette-line--long { width: 72%; }
+	.plan-card-silhouette-line--mid { width: 48%; }
+	.plan-card-silhouette-line--short { width: 32%; }
+	.plan-card-silhouette-cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		margin: 0 1rem 0.95rem;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.65rem;
+		font-size: 0.82rem;
+		font-weight: 750;
+		color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
+	}
+	.plan-card-silhouette-cta .material-symbols-rounded {
+		font-size: 1.1rem;
 	}
 	.plan-plastic-grid {
 		display: grid;
@@ -2341,25 +2785,11 @@ const defaultCardHint = defaultCard
 		gap: 0.75rem;
 	}
 	.plan-plastic-meta { display: grid; gap: 0.15rem; min-width: 0; }
-	.plan-plastic-issuer {
-		font-size: 0.82rem;
-		font-weight: 700;
-		letter-spacing: 0.01em;
-		white-space: nowrap;
-		overflow: hidden;
-		text-overflow: ellipsis;
-	}
-	.plan-plastic-type {
-		font-size: 0.68rem;
-		font-weight: 600;
-		opacity: 0.78;
-		text-transform: capitalize;
-	}
 	.plan-plastic-brand {
 		flex-shrink: 0;
-		font-size: 0.85rem;
-		font-weight: 800;
-		letter-spacing: 0.04em;
+		font-size: 0.95rem;
+		font-weight: 850;
+		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		opacity: 0.95;
 	}
@@ -2369,13 +2799,14 @@ const defaultCardHint = defaultCard
 		border-radius: 0.3rem;
 		background: linear-gradient(135deg, #fde68a, #d97706 55%, #b45309);
 		box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);
+		flex-shrink: 0;
 	}
 	.plan-plastic-number {
-		margin: 0;
+		margin: 0.15rem 0 0;
 		font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-		font-size: 0.95rem;
+		font-size: 1.02rem;
 		font-weight: 650;
-		letter-spacing: 0.06em;
+		letter-spacing: 0.08em;
 	}
 	.plan-plastic-bottom {
 		display: flex;
@@ -2488,10 +2919,16 @@ const defaultCardHint = defaultCard
 		background: #fff;
 	}
 
-	/* Bottom sheet en mobile + tablet (pago + uPay) */
+	/* Bottom sheet en mobile + tablet (pago + uPay + detalle facturación) */
+	@media (min-width: 768px) {
+		.plan-billing-detail-backdrop {
+			display: none !important;
+		}
+	}
 	@media (max-width: 1023px) {
 		.plan-pay-modal-backdrop:not(.hidden),
-		.plan-card-modal-backdrop:not(.hidden) {
+		.plan-card-modal-backdrop:not(.hidden),
+		.plan-billing-detail-backdrop:not(.hidden) {
 			display: flex;
 			align-items: flex-end;
 			justify-content: center;
@@ -2502,6 +2939,19 @@ const defaultCardHint = defaultCard
 			max-width: 100%;
 			height: auto;
 			max-height: min(92dvh, 40rem);
+			margin: 0;
+			overflow-y: auto;
+			border-radius: 1.8rem 1.8rem 0 0;
+			padding: 0.35rem 1.15rem calc(1rem + env(safe-area-inset-bottom, 0px));
+			gap: 1rem;
+			animation: plan-card-sheet-in 180ms cubic-bezier(0.4, 0, 0.2, 1);
+			box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
+		}
+		.plan-billing-detail-sheet {
+			width: 100%;
+			max-width: 100%;
+			height: auto;
+			max-height: min(88dvh, 36rem);
 			margin: 0;
 			overflow-y: auto;
 			border-radius: 1.8rem 1.8rem 0 0;
@@ -2526,6 +2976,7 @@ const defaultCardHint = defaultCard
 		}
 		.plan-pay-sheet .plan-sheet-handle,
 		.plan-card-sheet .plan-sheet-handle,
+		.plan-billing-detail-sheet .plan-sheet-handle,
 		.plan-sheet-handle {
 			display: flex;
 			padding-top: 0.15rem;

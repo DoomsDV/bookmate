@@ -31,9 +31,10 @@ export function initPlanPage() {
 
 	let hasCard = root.dataset.hasCard === '1';
 
-	// ---- Pestañas Plan | Facturación ----
+	// ---- Pestañas Plan | Facturación | Historial ----
+	const VALID_TABS = new Set(['plan', 'billing', 'history']);
 	const setTab = (tab: string) => {
-		const key = tab === 'billing' ? 'billing' : 'plan';
+		const key = VALID_TABS.has(tab) ? tab : 'plan';
 		document.querySelectorAll<HTMLButtonElement>('[data-plan-tab]').forEach((btn) => {
 			const active = btn.dataset.planTab === key;
 			btn.classList.toggle('is-active', active);
@@ -52,7 +53,7 @@ export function initPlanPage() {
 		btn.addEventListener('click', () => setTab(btn.dataset.planTab || 'plan'));
 	});
 	const initialTab = new URLSearchParams(window.location.search).get('tab');
-	if (initialTab === 'billing') setTab('billing');
+	if (initialTab && VALID_TABS.has(initialTab) && initialTab !== 'plan') setTab(initialTab);
 
 	document.querySelectorAll<HTMLButtonElement>('[data-plan-tab-jump]').forEach((btn) => {
 		btn.addEventListener('click', () => {
@@ -173,11 +174,37 @@ export function initPlanPage() {
 	const billingForm = document.querySelector<HTMLFormElement>('[data-billing-profile-form]');
 	const billingStatus = document.querySelector<HTMLElement>('[data-billing-profile-status]');
 	const billingSaveBtn = document.querySelector<HTMLButtonElement>('[data-billing-profile-save]');
+	const billingProfileCollapsed = document.querySelector<HTMLElement>('[data-billing-profile-collapsed]');
+	const billingProfileSummary = document.querySelector<HTMLElement>('[data-billing-profile-summary]');
+	const billingProfileEditBtn = document.querySelector<HTMLButtonElement>('[data-billing-profile-edit]');
 
 	const BILLING_FIELDS = ['billing_name', 'billing_doc_number', 'billing_email'] as const;
 	type BillingField = (typeof BILLING_FIELDS)[number];
 
 	const isBillingComplete = () => billingStatus?.dataset.complete === '1';
+
+	const updateBillingProfileSummary = () => {
+		if (!billingProfileSummary || !billingForm) return;
+		const fd = new FormData(billingForm);
+		const name = String(fd.get('billing_name') || '').trim();
+		const docType = String(fd.get('billing_doc_type') || 'CI').trim().toUpperCase();
+		const docNumber = String(fd.get('billing_doc_number') || '').trim();
+		billingProfileSummary.textContent = `${name} · ${docType} ${docNumber}`;
+	};
+
+	const collapseBillingProfile = () => {
+		if (!billingForm || !billingProfileCollapsed) return;
+		updateBillingProfileSummary();
+		billingForm.classList.add('hidden');
+		billingProfileCollapsed.classList.remove('hidden');
+	};
+
+	const expandBillingProfile = () => {
+		if (!billingForm || !billingProfileCollapsed) return;
+		billingForm.classList.remove('hidden');
+		billingProfileCollapsed.classList.add('hidden');
+		billingForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	};
 
 	const setBillingComplete = (complete: boolean) => {
 		if (!billingStatus) return;
@@ -186,6 +213,12 @@ export function initPlanPage() {
 		billingStatus.classList.toggle('text-emerald-600', complete);
 		billingStatus.classList.toggle('dark:text-emerald-400', complete);
 		billingStatus.classList.toggle('text-(--on-surface-variant)', !complete);
+		if (complete) {
+			collapseBillingProfile();
+		} else {
+			expandBillingProfile();
+			billingProfileCollapsed?.classList.add('hidden');
+		}
 	};
 
 	const clearBillingFieldError = (field: BillingField) => {
@@ -293,6 +326,25 @@ export function initPlanPage() {
 	billingForm?.addEventListener('submit', (event) => {
 		event.preventDefault();
 		void saveBillingProfile();
+	});
+
+	billingProfileEditBtn?.addEventListener('click', expandBillingProfile);
+
+	// ---- Modal detalle facturación (mobile) ----
+	const billingDetailModal = document.querySelector<HTMLElement>('[data-billing-detail-modal]');
+	const openBillingDetail = () => {
+		if (window.matchMedia('(min-width: 768px)').matches) return;
+		billingDetailModal?.classList.remove('hidden');
+		document.body.style.overflow = 'hidden';
+	};
+	const closeBillingDetail = () => {
+		billingDetailModal?.classList.add('hidden');
+		document.body.style.overflow = '';
+	};
+	document.querySelector<HTMLButtonElement>('[data-billing-detail-open]')?.addEventListener('click', openBillingDetail);
+	document.querySelector<HTMLButtonElement>('[data-billing-detail-close]')?.addEventListener('click', closeBillingDetail);
+	billingDetailModal?.addEventListener('click', (event) => {
+		if (event.target === billingDetailModal) closeBillingDetail();
 	});
 
 	for (const field of BILLING_FIELDS) {
@@ -488,6 +540,24 @@ export function initPlanPage() {
 
 	document.querySelectorAll<HTMLButtonElement>('[data-terminate-sub]').forEach((btn) => {
 		btn.addEventListener('click', () => void terminateSubscription(btn));
+	});
+
+	// --- Downgrade Premium → Base (modal de retención) ---
+	const downgradeModal = document.querySelector<HTMLElement>('[data-downgrade-modal]');
+	const closeDowngradeModal = () => downgradeModal?.classList.add('hidden');
+	document.querySelectorAll<HTMLButtonElement>('[data-downgrade-open]').forEach((btn) => {
+		btn.addEventListener('click', () => downgradeModal?.classList.remove('hidden'));
+	});
+	document.querySelector<HTMLButtonElement>('[data-downgrade-keep]')?.addEventListener('click', closeDowngradeModal);
+	downgradeModal?.addEventListener('click', (event) => {
+		if (event.target === downgradeModal) closeDowngradeModal();
+	});
+	document.querySelector<HTMLButtonElement>('[data-downgrade-confirm]')?.addEventListener('click', (event) => {
+		const btn = event.currentTarget as HTMLButtonElement;
+		const code = btn.dataset.planCode || 'BASE';
+		const name = btn.dataset.planName || 'Base';
+		closeDowngradeModal();
+		void changePlan(code, name, btn, true);
 	});
 
 	document.querySelectorAll<HTMLButtonElement>('[data-undo-cancel]').forEach((btn) => {
