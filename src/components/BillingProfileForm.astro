@@ -89,6 +89,9 @@ const wrapperClass = isInline
 					placeholder="facturacion@tuempresa.com"
 					class={fieldClass}
 				/>
+				<p class="m-0 text-[0.78rem] font-medium leading-snug text-(--on-surface-variant)">
+					Ahí te enviamos la factura de tu suscripción Hasel.
+				</p>
 				<p class="plan-field-error" data-field-error="billing_email" role="alert"></p>
 			</label>
 
@@ -171,6 +174,9 @@ const wrapperClass = isInline
 							placeholder="facturacion@tuempresa.com"
 							class={fieldClass}
 						/>
+						<p class="m-0 text-[0.78rem] font-medium leading-snug text-(--on-surface-variant)">
+							Ahí te enviamos la factura de tu suscripción Hasel.
+						</p>
 						<p class="plan-field-error" data-field-error="billing_email" role="alert"></p>
 					</label>
 				</div>
@@ -178,7 +184,7 @@ const wrapperClass = isInline
 
 			<div class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-5 sm:py-5">
 				<div class="modal-footer plan-billing-drawer-footer">
-					<button type="button" class="modal-action-secondary" data-billing-profile-drawer-close>
+					<button type="button" class="modal-action-secondary hidden sm:inline-flex" data-billing-profile-drawer-close>
 						Cancelar
 					</button>
 					<p
@@ -230,24 +236,19 @@ const wrapperClass = isInline
 		color: var(--on-surface-variant);
 		pointer-events: none;
 	}
-	/* Cancelar a la izquierda: no ocultarlo en mobile (global.css esconde .modal-action-secondary). */
-	.plan-billing-drawer-footer .modal-action-secondary {
-		display: inline-flex;
-	}
-	@media (max-width: 767px) {
-		.plan-billing-drawer-footer {
-			gap: 0.65rem;
-		}
+	@media (min-width: 640px) {
 		.plan-billing-drawer-footer .modal-action-secondary {
-			flex: 1 1 auto;
+			display: inline-flex;
 		}
+	}
+	@media (max-width: 639px) {
 		.plan-billing-drawer-footer .modal-footer-actions {
 			flex: 1 1 auto;
 			margin-left: 0;
+			width: 100%;
 		}
 		.plan-billing-drawer-footer .modal-action-primary {
 			width: 100%;
-			flex: 1 1 auto;
 		}
 	}
 </style>

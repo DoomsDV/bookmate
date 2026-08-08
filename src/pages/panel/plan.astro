@@ -247,6 +247,10 @@ const canTerminate =
 // Método de pago (cobro recurrente con tarjeta): solo admin y planes facturables.
 const showPaymentMethod = isAdmin && !!current && !current.billing_exempt;
 
+const PLAN_TABS = new Set(['plan', 'billing', 'history']);
+const tabParam = Astro.url.searchParams.get('tab') || 'plan';
+const activeTab = PLAN_TABS.has(tabParam) ? tabParam : 'plan';
+
 const isAtMaxPlan =
 	!!current &&
 	current.plan_code === 'PREMIUM' &&
@@ -341,8 +345,8 @@ const defaultCardHint = defaultCard
 			<div class="grid min-h-full grid-rows-[auto_1fr] bg-(--page-background) transition-colors duration-300">
 				<TopBar />
 
-				<main class="w-full max-w-full overflow-x-hidden px-4 py-4 sm:px-8 sm:py-8 lg:px-10">
-					<div class="mx-auto max-w-6xl grid gap-6 sm:gap-8">
+				<main class="w-full max-w-full overflow-x-hidden px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
+					<div class="grid w-full gap-6 sm:gap-8">
 						<header class="grid gap-1">
 							<p class="text-xs font-bold uppercase tracking-[0.2em] text-(--on-surface-variant)">Facturación</p>
 							<h1 class="m-0 text-3xl font-extrabold tracking-tight text-(--on-surface) sm:text-4xl">Plan y suscripción</h1>
@@ -355,18 +359,33 @@ const defaultCardHint = defaultCard
 						) : current && catalog ? (
 							<>
 								<nav class="plan-tabs" data-plan-tabs aria-label="Secciones de plan">
-									<button type="button" class="plan-tab is-active" data-plan-tab="plan" aria-selected="true">
+									<button
+										type="button"
+										class:list={['plan-tab', activeTab === 'plan' && 'is-active']}
+										data-plan-tab="plan"
+										aria-selected={activeTab === 'plan' ? 'true' : 'false'}
+									>
 										Plan
 									</button>
-									<button type="button" class="plan-tab" data-plan-tab="billing" aria-selected="false">
+									<button
+										type="button"
+										class:list={['plan-tab', activeTab === 'billing' && 'is-active']}
+										data-plan-tab="billing"
+										aria-selected={activeTab === 'billing' ? 'true' : 'false'}
+									>
 										Facturación
 									</button>
-									<button type="button" class="plan-tab" data-plan-tab="history" aria-selected="false">
+									<button
+										type="button"
+										class:list={['plan-tab', activeTab === 'history' && 'is-active']}
+										data-plan-tab="history"
+										aria-selected={activeTab === 'history' ? 'true' : 'false'}
+									>
 										Historial de pagos
 									</button>
 								</nav>
 
-								<div data-plan-panel="plan" class="grid gap-6 sm:gap-8">
+								<div data-plan-panel="plan" class:list={['grid', 'gap-6', 'sm:gap-8', activeTab !== 'plan' && 'hidden']}>
 								{/* ---- Estado actual ---- */}
 								<section class={`plan-status-card plan-tone-${statusMeta.tone}`}>
 									<span class="plan-status-corner" aria-hidden="true">{statusMeta.label}</span>
@@ -850,139 +869,107 @@ const defaultCardHint = defaultCard
 								</div>
 
 								{/* ---- Pestaña Facturación ---- */}
-								<div data-plan-panel="billing" class="hidden grid gap-6 sm:gap-8">
+								<div data-plan-panel="billing" class:list={['grid', 'gap-6', 'sm:gap-8', activeTab !== 'billing' && 'hidden']}>
 									{/* 1. Tarjeta / método de pago (primero) */}
 									{showPaymentMethod && (
-										<section class="grid gap-4" data-payment-section>
-											<div class="grid gap-1">
+										<section class="grid gap-4" data-payment-section data-billing-complete={billingProfileComplete ? '1' : '0'}>
+											<div class="flex flex-wrap items-center justify-between gap-2">
 												<h2 class="m-0 text-lg font-bold text-(--on-surface)">Método de pago</h2>
+												<button
+													type="button"
+													class:list={['plan-billing-view-link', !billingProfileComplete && 'hidden']}
+													data-billing-view
+													aria-label="Ver y editar datos de facturación"
+												>
+													<span class="material-symbols-rounded" aria-hidden="true">visibility</span>
+													Datos de facturación
+												</button>
 											</div>
 
-											<div class="plan-plastic-grid" data-cards-list>
-												{cards.length === 0 ? (
-													<div class="plan-payment-mock" data-cards-empty>
-														<div
-															class="plan-plastic-card plan-plastic-mock plan-plastic-mock--inactive"
-															aria-label="Sin método de pago activo"
-														>
-															{/* Mobile: toda la tarjeta es el CTA */}
-															<button
-																type="button"
-																class="plan-plastic-mock-hit md:hidden"
-																data-add-card
-															>
-																<span class="plan-plastic-mock-hit-icon material-symbols-rounded" aria-hidden="true">add</span>
-																<span class="plan-plastic-mock-hit-label">Agregar método de pago</span>
-																<span class="plan-plastic-mock-hit-hint">Ningún método de pago activo</span>
-															</button>
-															<button
-																type="button"
-																class="plan-plastic-mock-scan md:hidden"
-																data-scan-card
-																aria-label="Escanear tarjeta con cámara"
-															>
-																<span class="material-symbols-rounded" aria-hidden="true">photo_camera</span>
-															</button>
+											{/* Mobile empty: tarjeta full-width (solo si no hay tarjetas) */}
+											{cards.length === 0 ? (
+												<div class="plan-payment-empty-card plan-only-mobile" aria-label="Sin método de pago activo">
+													<button type="button" class="plan-payment-empty-hit" data-add-card>
+														<span class="plan-payment-empty-hit-icon material-symbols-rounded" aria-hidden="true">add</span>
+														<span class="plan-payment-empty-hit-label">Agregar método de pago</span>
+													</button>
+													<button
+														type="button"
+														class="plan-payment-empty-scan"
+														data-scan-card
+														aria-label="Escanear tarjeta con cámara"
+													>
+														<span class="material-symbols-rounded" aria-hidden="true">photo_camera</span>
+													</button>
+												</div>
+											) : null}
 
-															{/* Desktop: tarjeta apagada + CTA */}
-															<div class="plan-plastic-mock-inactive hidden md:flex">
-																<p class="plan-plastic-mock-empty-text">Ningún método de pago activo</p>
-																<button
-																	type="button"
-																	class="plan-btn plan-btn-primary plan-btn--auto plan-plastic-mock-cta"
-																	data-add-card
-																>
-																	<span class="material-symbols-rounded align-middle text-[1.1rem]" aria-hidden="true">add_card</span>
-																	Agregar método de pago
-																</button>
-															</div>
+											{/* Grilla multitarjeta (PC siempre; móvil solo si ya hay tarjetas) */}
+											<div
+												class:list={['plan-plastic-grid', cards.length === 0 && 'plan-plastic-grid--pc-only']}
+												data-cards-list
+											>
+												{cards.map((card) => (
+													<article class={`plan-plastic-card plan-plastic-${cardTone(card.brand)} ${card.is_default ? 'plan-plastic-default' : ''}`}>
+														<div class="plan-plastic-shine" aria-hidden="true"></div>
+														<div class="plan-plastic-top">
+															<div class="plan-plastic-chip" aria-hidden="true"></div>
+															<span class="plan-plastic-brand">{cardBrandLabel(card.brand)}</span>
 														</div>
-														<div class="plan-payment-mock-aside">
-															{billingProfileComplete ? (
-																<div class="plan-payment-mock-actions plan-payment-mock-actions--desktop-only">
-																	<button
-																		type="button"
-																		class="plan-payment-mock-btn"
-																		data-billing-view
-																		aria-label="Ver y editar datos de facturación"
-																	>
-																		<span class="material-symbols-rounded" aria-hidden="true">visibility</span>
-																	</button>
-																</div>
-															) : null}
-															{!billingProfileComplete ? (
-																<div class="plan-payment-pc-gate plan-payment-pc-gate--desktop" data-billing-load-wrap>
-																	<p class="plan-payment-pc-gate-text">
-																		Completá tus datos de facturación antes de registrar una tarjeta.
-																	</p>
-																	<button type="button" class="plan-btn plan-btn-soft" data-billing-load>
-																		<span class="material-symbols-rounded align-middle text-[1.1rem]" aria-hidden="true">receipt_long</span>
-																		Cargar datos de facturación
-																	</button>
-																</div>
-															) : null}
+														<p class="plan-plastic-number">{formatMaskedCard(card.masked_number)}</p>
+														<div class="plan-plastic-bottom">
+															{card.is_default ? (
+																<span class="plan-plastic-default-badge">Predeterminada</span>
+															) : (
+																<span class="plan-plastic-provider">{card.provider}</span>
+															)}
+															<button
+																type="button"
+																class="plan-plastic-del"
+																data-card-delete
+																data-card-id={String(card.id)}
+																aria-label="Eliminar tarjeta"
+															>
+																<span class="material-symbols-rounded">delete</span>
+															</button>
 														</div>
-													</div>
-												) : (
-													cards.map((card) => (
-														<article class={`plan-plastic-card plan-plastic-${cardTone(card.brand)} ${card.is_default ? 'plan-plastic-default' : ''}`}>
-															<div class="plan-plastic-shine" aria-hidden="true"></div>
-															<div class="plan-plastic-top">
-																<div class="plan-plastic-chip" aria-hidden="true"></div>
-																<span class="plan-plastic-brand">{cardBrandLabel(card.brand)}</span>
-															</div>
-															<p class="plan-plastic-number">{formatMaskedCard(card.masked_number)}</p>
-															<div class="plan-plastic-bottom">
-																{card.is_default ? (
-																	<span class="plan-plastic-default-badge">Predeterminada</span>
-																) : (
-																	<span class="plan-plastic-provider">{card.provider}</span>
-																)}
-																<button
-																	type="button"
-																	class="plan-plastic-del"
-																	data-card-delete
-																	data-card-id={String(card.id)}
-																	aria-label="Eliminar tarjeta"
-																>
-																	<span class="material-symbols-rounded">delete</span>
-																</button>
-															</div>
-														</article>
-													))
-												)}
+													</article>
+												))}
+
+												{/* Ghost card PC — paso 1 facturación / paso 2 agregar tarjeta */}
+												<button
+													type="button"
+													class:list={['plan-ghost-card', !billingProfileComplete && 'plan-ghost-card--billing']}
+													data-ghost-card
+													aria-label={billingProfileComplete ? 'Agregar nueva tarjeta' : 'Completá tu facturación'}
+												>
+													<span
+														class="material-symbols-rounded plan-ghost-card-icon"
+														data-ghost-icon
+														aria-hidden="true"
+													>{billingProfileComplete ? 'add' : 'lock'}</span>
+													<span class="plan-ghost-card-label" data-ghost-label>
+														{billingProfileComplete ? 'Agregar nueva tarjeta' : 'Completá tu facturación'}
+													</span>
+													<span
+														class:list={['plan-ghost-card-hint', billingProfileComplete && 'hidden']}
+														data-ghost-hint
+													>
+														Requerido para agregar tarjetas.
+													</span>
+													<span
+														class:list={['plan-ghost-card-cta', billingProfileComplete && 'hidden']}
+														data-ghost-cta
+														aria-hidden="true"
+													>
+														Completar facturación
+													</span>
+												</button>
 											</div>
 
 											{cards.length > 0 ? (
-												<div class="plan-payment-actions">
-													<div
-														class={`flex-wrap items-center gap-2 ${billingProfileComplete ? 'hidden md:flex' : 'hidden'}`}
-														data-billing-payment-ready
-													>
-														<button type="button" class="plan-btn plan-btn-soft" data-add-card>
-															<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
-															Agregar otra tarjeta
-														</button>
-														<button
-															type="button"
-															class="plan-btn plan-btn-soft plan-billing-view-btn"
-															data-billing-view
-															aria-label="Ver y editar datos de facturación"
-														>
-															<span class="material-symbols-rounded" aria-hidden="true">visibility</span>
-														</button>
-													</div>
-													<div class={`${billingProfileComplete ? 'hidden' : ''} hidden md:block`} data-billing-load-wrap>
-														<button type="button" class="plan-btn plan-btn-soft" data-billing-load>
-															<span class="material-symbols-rounded align-middle text-[1.1rem]" aria-hidden="true">receipt_long</span>
-															Cargar datos de facturación
-														</button>
-													</div>
-													<button
-														type="button"
-														class="plan-btn plan-btn-soft md:hidden"
-														data-add-card
-													>
+												<div class="plan-payment-actions md:hidden">
+													<button type="button" class="plan-btn plan-btn-soft" data-add-card>
 														<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
 														Agregar otra tarjeta
 													</button>
@@ -1091,7 +1078,7 @@ const defaultCardHint = defaultCard
 								</div>
 
 								{/* ---- Pestaña Historial ---- */}
-								<div data-plan-panel="history" class="hidden grid gap-6 sm:gap-8">
+								<div data-plan-panel="history" class:list={['grid', 'gap-6', 'sm:gap-8', activeTab !== 'history' && 'hidden']}>
 									<section class="grid gap-4">
 										<div class="grid gap-1">
 											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Historial de pagos</h2>
@@ -1377,11 +1364,21 @@ const defaultCardHint = defaultCard
 	<div class="plan-modal-backdrop plan-billing-detail-backdrop hidden" data-billing-detail-modal>
 		<div class="plan-modal plan-billing-detail-sheet" role="dialog" aria-modal="true" aria-labelledby="plan-billing-detail-title">
 			<div class="plan-sheet-handle" aria-hidden="true"><span></span></div>
-			<div class="grid gap-3">
-				<h3 id="plan-billing-detail-title" class="m-0 text-lg font-bold text-(--on-surface)">Resumen de facturación</h3>
-				<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">
-					Próximo cobro y desglose de tu suscripción.
-				</p>
+			<div class="plan-billing-detail-head">
+				<div class="grid gap-1 min-w-0">
+					<h3 id="plan-billing-detail-title" class="m-0 text-lg font-bold text-(--on-surface)">Resumen de facturación</h3>
+					<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">
+						Próximo cobro y desglose de tu suscripción.
+					</p>
+				</div>
+				<button
+					type="button"
+					class="panel-modal-header__close"
+					data-billing-detail-close
+					aria-label="Cerrar"
+				>
+					<span class="material-symbols-rounded">close</span>
+				</button>
 			</div>
 			<div class="plan-billing-ticket">
 				<div class="plan-billing-row">
@@ -2705,232 +2702,179 @@ const defaultCardHint = defaultCard
 	}
 	.plan-iframe-loading.hidden { display: none; }
 
-	/* Método de pago — maqueta sin tarjetas */
-	.plan-payment-mock {
-		display: flex;
-		flex-direction: column;
-		align-items: stretch;
-		justify-content: flex-start;
-		gap: 0.85rem;
-		width: 100%;
-		max-width: none;
-		grid-column: 1 / -1;
-		justify-self: stretch;
-	}
-	.plan-payment-mock-aside {
+	/* Método de pago — empty mobile + banner/ghost PC */
+	.plan-billing-view-link {
 		display: none;
-		gap: 0.75rem;
-		justify-items: center;
-	}
-	.plan-plastic-mock--inactive {
-		position: relative;
-		display: flex;
 		align-items: center;
-		justify-content: center;
+		gap: 0.35rem;
+		border: 0;
+		background: transparent;
+		padding: 0.35rem 0.5rem;
+		font-size: 0.84rem;
+		font-weight: 700;
+		color: var(--primary);
+		cursor: pointer;
+	}
+	.plan-billing-view-link .material-symbols-rounded {
+		font-size: 1.15rem;
+	}
+	@media (min-width: 768px) {
+		.plan-billing-view-link:not(.hidden) {
+			display: inline-flex;
+		}
+	}
+	.plan-payment-empty-card {
+		position: relative;
+		display: block;
 		width: 100%;
-		max-width: none;
 		aspect-ratio: 1.586 / 1;
-		padding: 0;
 		border-radius: 1.15rem;
-		border: 1.5px dashed color-mix(in srgb, var(--on-surface-variant) 28%, transparent);
-		background:
-			linear-gradient(
-				160deg,
-				color-mix(in srgb, var(--surface-bright, #121214) 88%, #fff 12%) 0%,
-				color-mix(in srgb, var(--page-background, #0a0a0b) 92%, #fff 8%) 100%
-			);
-		box-shadow: none;
-		opacity: 1;
-		filter: none;
+		border: 1.5px dashed rgba(255, 255, 255, 0.14);
+		background: rgba(255, 255, 255, 0.04);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
 		overflow: hidden;
 		isolation: isolate;
 	}
-	:global(.dark) .plan-plastic-mock--inactive,
-	:global(html[data-theme='dark']) .plan-plastic-mock--inactive {
-		border-color: rgba(255, 255, 255, 0.12);
-		background:
-			linear-gradient(
-				160deg,
-				rgba(255, 255, 255, 0.045) 0%,
-				rgba(255, 255, 255, 0.02) 100%
-			);
-		backdrop-filter: blur(10px);
-		-webkit-backdrop-filter: blur(10px);
+	.plan-only-mobile {
+		display: block;
 	}
-	.plan-plastic-mock-hit {
+	@media (min-width: 768px) {
+		.plan-only-mobile {
+			display: none !important;
+		}
+	}
+	.plan-payment-empty-hit {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 0.45rem;
+		gap: 0.4rem;
 		width: 100%;
 		height: 100%;
-		min-height: 100%;
-		padding: 1.25rem 1.5rem;
+		padding: 1.5rem 1.25rem;
 		border: 0;
 		background: transparent;
 		cursor: pointer;
 		text-align: center;
 		color: var(--on-surface);
-		transition: background 0.15s ease;
 	}
-	.plan-plastic-mock-hit:hover {
-		background: color-mix(in srgb, var(--primary) 6%, transparent);
+	.plan-payment-empty-hit:active {
+		background: color-mix(in srgb, var(--primary) 8%, transparent);
 	}
-	.plan-plastic-mock-hit:focus-visible {
+	.plan-payment-empty-hit:focus-visible {
 		outline: 2px solid var(--primary);
 		outline-offset: -4px;
 		border-radius: 1.15rem;
 	}
-	.plan-plastic-mock-hit-icon {
-		font-size: 2.35rem;
+	.plan-payment-empty-hit-icon {
+		font-size: 2.5rem;
 		line-height: 1;
 		color: var(--primary);
-		opacity: 0.95;
 	}
-	.plan-plastic-mock-hit-label {
+	.plan-payment-empty-hit-label {
 		font-size: 0.95rem;
 		font-weight: 750;
-		letter-spacing: 0.01em;
 		color: var(--on-surface);
 	}
-	.plan-plastic-mock-hit-hint {
-		font-size: 0.78rem;
-		font-weight: 550;
-		color: var(--on-surface-variant);
-	}
-	.plan-plastic-mock-scan {
+	.plan-payment-empty-scan {
 		position: absolute;
-		top: 0.75rem;
-		right: 0.75rem;
-		z-index: 2;
+		top: 0.7rem;
+		right: 0.7rem;
+		z-index: 3;
 		display: inline-grid;
 		place-items: center;
-		width: 2.5rem;
-		height: 2.5rem;
-		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 28%, transparent);
+		width: 2.4rem;
+		height: 2.4rem;
+		border: 1px solid rgba(255, 255, 255, 0.14);
 		border-radius: 999px;
-		background: color-mix(in srgb, var(--surface-bright, #121214) 72%, transparent);
+		background: rgba(18, 18, 20, 0.55);
 		color: var(--on-surface-variant);
 		cursor: pointer;
-		transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
 	}
-	.plan-plastic-mock-scan:hover {
+	.plan-payment-empty-scan:hover,
+	.plan-payment-empty-scan:active {
 		color: var(--primary);
 		border-color: color-mix(in srgb, var(--primary) 45%, transparent);
-		background: color-mix(in srgb, var(--primary) 10%, transparent);
 	}
-	.plan-plastic-mock-scan:focus-visible {
-		outline: 2px solid var(--primary);
-		outline-offset: 2px;
+	.plan-payment-empty-scan .material-symbols-rounded {
+		font-size: 1.15rem;
 	}
-	.plan-plastic-mock-scan .material-symbols-rounded {
-		font-size: 1.2rem;
-	}
-	.plan-plastic-mock-inactive {
+	.plan-ghost-card {
 		display: none;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.85rem;
-		width: 100%;
-		padding: 0.35rem 0.5rem;
-		text-align: center;
-	}
-	.plan-plastic-mock-empty-text {
-		margin: 0;
-		font-size: 0.86rem;
-		font-weight: 600;
-		line-height: 1.35;
-		letter-spacing: 0.01em;
-		color: var(--on-surface-variant);
-	}
-	.plan-plastic-mock-cta {
-		font-size: 0.82rem;
-		padding: 0.58rem 0.95rem;
-		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
-	}
-	.plan-payment-mock-actions {
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		gap: 1rem;
-	}
-	.plan-payment-mock-actions--desktop-only {
-		display: none;
-	}
-	.plan-payment-mock-btn {
-		display: inline-grid;
-		place-items: center;
-		width: 3.25rem;
-		height: 3.25rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--primary) 12%, var(--surface-bright, #fff));
-		color: var(--primary);
-		cursor: pointer;
-		transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
-	}
-	.plan-payment-mock-btn:hover {
-		background: color-mix(in srgb, var(--primary) 18%, var(--surface-bright, #fff));
-		border-color: color-mix(in srgb, var(--primary) 65%, transparent);
-		transform: translateY(-1px);
-	}
-	.plan-payment-mock-btn:focus-visible {
-		outline: 2px solid var(--primary);
-		outline-offset: 2px;
-	}
-	.plan-payment-mock-btn .material-symbols-rounded {
-		font-size: 1.45rem;
 	}
 	@media (min-width: 768px) {
-		.plan-payment-mock {
-			align-items: flex-start;
-			gap: 1rem;
-			max-width: 17.5rem;
-			justify-self: start;
-		}
-		.plan-plastic-mock--inactive {
+		.plan-ghost-card {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 0.4rem;
+			flex: 0 0 17.5rem;
+			width: 100%;
 			max-width: 17.5rem;
 			aspect-ratio: 1.68 / 1;
-			border-style: solid;
-			border-color: color-mix(in srgb, var(--on-surface-variant) 18%, transparent);
-			background:
-				linear-gradient(145deg, #0b1220 0%, #1e293b 38%, #334155 72%, #475569 100%);
-			box-shadow:
-				0 10px 20px rgba(0, 0, 0, 0.2),
-				inset 0 1px 0 rgba(255, 255, 255, 0.05);
-			opacity: 0.9;
-			filter: saturate(0.7);
-			backdrop-filter: none;
-			-webkit-backdrop-filter: none;
+			padding: 1rem;
+			border-radius: 1rem;
+			border: 1.5px dashed color-mix(in srgb, var(--on-surface-variant) 34%, transparent);
+			background: color-mix(in srgb, var(--on-surface-variant) 5%, transparent);
+			color: var(--on-surface);
+			cursor: pointer;
+			text-align: center;
+			transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
 		}
-		.plan-plastic-mock-inactive {
-			display: flex;
+		.plan-ghost-card:hover {
+			border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+			background: color-mix(in srgb, var(--primary) 8%, transparent);
+			transform: translateY(-1px);
 		}
-		.plan-plastic-mock-empty-text {
-			color: rgba(248, 250, 252, 0.68);
+		.plan-ghost-card:focus-visible {
+			outline: 2px solid var(--primary);
+			outline-offset: 2px;
 		}
-		.plan-payment-mock-aside {
-			display: grid;
-			justify-items: start;
-			width: 100%;
+		.plan-ghost-card--billing {
+			border-color: color-mix(in srgb, var(--primary) 32%, var(--shell-border));
+			background: color-mix(in srgb, var(--primary) 7%, transparent);
 		}
-		.plan-payment-mock-actions {
-			justify-content: flex-start;
+		.plan-ghost-card--billing:hover {
+			border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+			background: color-mix(in srgb, var(--primary) 12%, transparent);
 		}
-		.plan-payment-mock-actions--desktop-only {
-			display: flex;
+		.plan-ghost-card-icon {
+			font-size: 2rem;
+			color: var(--primary);
 		}
-		.plan-payment-pc-gate {
-			justify-items: start;
-			text-align: left;
+		.plan-ghost-card-label {
+			font-size: 0.88rem;
+			font-weight: 750;
 		}
-		.plan-payment-pc-gate-text {
-			text-align: left;
+		.plan-ghost-card-hint {
+			font-size: 0.74rem;
+			font-weight: 550;
+			color: var(--on-surface-variant);
 		}
-		.plan-payment-pc-gate--desktop {
-			display: grid;
+		.plan-ghost-card-hint.hidden {
+			display: none;
+		}
+		.plan-ghost-card-cta {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			margin-top: 0.35rem;
+			padding: 0.28rem 1rem;
+			border-radius: 999px;
+			background: color-mix(in srgb, var(--primary) 14%, transparent);
+			color: var(--primary);
+			font-size: 0.8rem;
+			font-weight: 650;
+			letter-spacing: 0.01em;
+			pointer-events: none;
+		}
+		.plan-ghost-card-cta.hidden {
+			display: none;
+		}
+		.plan-ghost-card:hover .plan-ghost-card-cta {
+			background: color-mix(in srgb, var(--primary) 22%, transparent);
 		}
 	}
 
@@ -2977,15 +2921,17 @@ const defaultCardHint = defaultCard
 		color: var(--on-surface-variant);
 	}
 	.plan-plastic-grid {
-		display: grid;
+		display: flex;
+		flex-wrap: wrap;
 		gap: 0.9rem;
-		grid-template-columns: 1fr;
-		justify-content: stretch;
+		align-items: stretch;
+	}
+	.plan-plastic-grid--pc-only {
+		display: none;
 	}
 	@media (min-width: 768px) {
-		.plan-plastic-grid {
-			grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 17.5rem));
-			justify-content: start;
+		.plan-plastic-grid--pc-only {
+			display: flex;
 		}
 	}
 	.plan-plastic-card {
@@ -2994,6 +2940,7 @@ const defaultCardHint = defaultCard
 		gap: 0.65rem;
 		width: 100%;
 		max-width: none;
+		flex: 1 1 100%;
 		aspect-ratio: 1.586 / 1;
 		padding: 0.95rem 1.05rem 0.85rem;
 		border-radius: 1.15rem;
@@ -3004,6 +2951,7 @@ const defaultCardHint = defaultCard
 	}
 	@media (min-width: 768px) {
 		.plan-plastic-card {
+			flex: 0 0 17.5rem;
 			max-width: 17.5rem;
 			aspect-ratio: 1.68 / 1;
 			border-radius: 1rem;
@@ -3213,6 +3161,12 @@ const defaultCardHint = defaultCard
 			gap: 1rem;
 			animation: plan-card-sheet-in 180ms cubic-bezier(0.4, 0, 0.2, 1);
 			box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.28);
+		}
+		.plan-billing-detail-head {
+			display: flex;
+			align-items: flex-start;
+			justify-content: space-between;
+			gap: 0.75rem;
 		}
 		.plan-card-sheet {
 			/* Ancho típico del formulario uPay; no estira a pantalla completa */

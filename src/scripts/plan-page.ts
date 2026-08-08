@@ -53,7 +53,7 @@ export function initPlanPage() {
 		btn.addEventListener('click', () => setTab(btn.dataset.planTab || 'plan'));
 	});
 	const initialTab = new URLSearchParams(window.location.search).get('tab');
-	if (initialTab && VALID_TABS.has(initialTab) && initialTab !== 'plan') setTab(initialTab);
+	if (initialTab && VALID_TABS.has(initialTab)) setTab(initialTab);
 
 	document.querySelectorAll<HTMLButtonElement>('[data-plan-tab-jump]').forEach((btn) => {
 		btn.addEventListener('click', () => {
@@ -177,9 +177,9 @@ export function initPlanPage() {
 	const billingProfileCollapsed = document.querySelector<HTMLElement>('[data-billing-profile-collapsed]');
 	const billingProfileSummary = document.querySelector<HTMLElement>('[data-billing-profile-summary]');
 	const billingProfileEditBtn = document.querySelector<HTMLButtonElement>('[data-billing-profile-edit]');
-	const billingLoadWraps = document.querySelectorAll<HTMLElement>('[data-billing-load-wrap]');
-	const billingPaymentReady = document.querySelector<HTMLElement>('[data-billing-payment-ready]');
 	const billingViewBtns = document.querySelectorAll<HTMLButtonElement>('[data-billing-view]');
+	const ghostCard = document.querySelector<HTMLButtonElement>('[data-ghost-card]');
+	const paymentSection = document.querySelector<HTMLElement>('[data-payment-section]');
 
 	const isDesktopBilling = () => window.matchMedia('(min-width: 768px)').matches;
 
@@ -235,31 +235,35 @@ export function initPlanPage() {
 		billingProfileCollapsed.classList.remove('hidden');
 	};
 
+	const updateGhostCard = (complete: boolean) => {
+		if (!ghostCard) return;
+		const icon = ghostCard.querySelector<HTMLElement>('[data-ghost-icon]');
+		const label = ghostCard.querySelector<HTMLElement>('[data-ghost-label]');
+		const hint = ghostCard.querySelector<HTMLElement>('[data-ghost-hint]');
+		const cta = ghostCard.querySelector<HTMLElement>('[data-ghost-cta]');
+		ghostCard.classList.toggle('plan-ghost-card--billing', !complete);
+		if (icon) icon.textContent = complete ? 'add' : 'lock';
+		if (label) label.textContent = complete ? 'Agregar nueva tarjeta' : 'Completá tu facturación';
+		if (hint) {
+			hint.textContent = 'Requerido para agregar tarjetas.';
+			hint.classList.toggle('hidden', complete);
+		}
+		cta?.classList.toggle('hidden', complete);
+		ghostCard.setAttribute(
+			'aria-label',
+			complete ? 'Agregar nueva tarjeta' : 'Completá tu facturación'
+		);
+		paymentSection?.setAttribute('data-billing-complete', complete ? '1' : '0');
+	};
+
 	const updatePaymentBillingUI = () => {
 		const complete = isBillingComplete();
 		const desktop = isDesktopBilling();
-		billingLoadWraps.forEach((wrap) => {
-			const hide = complete || !desktop;
-			wrap.classList.toggle('hidden', hide);
-			wrap.classList.toggle('md:grid', !hide);
-			wrap.classList.toggle('md:block', !hide);
-		});
-		if (billingPaymentReady) {
-			billingPaymentReady.classList.toggle('hidden', !complete || !desktop);
-			billingPaymentReady.classList.toggle('md:flex', complete && desktop);
-		}
-		document.querySelectorAll<HTMLButtonElement>('[data-add-card]').forEach((btn) => {
-			if (!desktop) return;
-			if (btn.classList.contains('plan-plastic-mock-hit')) return;
-			btn.classList.toggle('md:hidden', !complete);
-		});
 		billingViewBtns.forEach((btn) => {
 			const showOnDesktop = complete && desktop;
 			btn.classList.toggle('hidden', !showOnDesktop);
-			if (btn.classList.contains('plan-payment-mock-btn')) {
-				btn.classList.toggle('md:inline-grid', showOnDesktop);
-			}
 		});
+		updateGhostCard(complete);
 	};
 
 	const setBillingComplete = (complete: boolean) => {
@@ -428,6 +432,11 @@ export function initPlanPage() {
 
 	billingProfileEditBtn?.addEventListener('click', () => openBillingDrawer());
 
+	ghostCard?.addEventListener('click', () => {
+		if (isBillingComplete()) void addCard();
+		else openBillingDrawer();
+	});
+
 	document.querySelectorAll<HTMLButtonElement>('[data-billing-load]').forEach((btn) => {
 		btn.addEventListener('click', () => openBillingDrawer());
 	});
@@ -465,7 +474,9 @@ export function initPlanPage() {
 		document.body.style.overflow = '';
 	};
 	document.querySelector<HTMLButtonElement>('[data-billing-detail-open]')?.addEventListener('click', openBillingDetail);
-	document.querySelector<HTMLButtonElement>('[data-billing-detail-close]')?.addEventListener('click', closeBillingDetail);
+	document.querySelectorAll<HTMLButtonElement>('[data-billing-detail-close]').forEach((btn) => {
+		btn.addEventListener('click', closeBillingDetail);
+	});
 	billingDetailModal?.addEventListener('click', (event) => {
 		if (event.target === billingDetailModal) closeBillingDetail();
 	});
