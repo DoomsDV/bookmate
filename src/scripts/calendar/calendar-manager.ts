@@ -370,9 +370,11 @@ class CalendarManager extends HTMLElement {
 
 	private setCalendarLoading(value: boolean) {
 		this.calendarStageNode?.classList.toggle('is-loading', value);
+		this.calendarStageNode?.setAttribute('aria-busy', value ? 'true' : 'false');
 		if (this.loadingNode) {
 			this.loadingNode.classList.toggle('hidden', !value);
 			this.loadingNode.setAttribute('aria-hidden', value ? 'false' : 'true');
+			this.loadingNode.setAttribute('aria-busy', value ? 'true' : 'false');
 		}
 		setSearchableSelectDisabled(this.professionalFilter, value || this.roleId === ROLES.PROFESIONAL);
 		setSearchableSelectDisabled(this.locationFilter, value);
@@ -599,8 +601,8 @@ class CalendarManager extends HTMLElement {
 	private getHeaderToolbar(isMobile: boolean) {
 		return isMobile
 			? {
-					// Vistas viven en el sheet Agenda; toolbar = mes/año + nav + filtros.
-					left: 'title prev,goToday,next',
+					// Vistas viven en el sheet Agenda; toolbar = mes/año (izq) · flechas · Hoy · filtros (der).
+					left: 'title prev next,goToday',
 					center: '',
 					right: '',
 				}
@@ -614,7 +616,7 @@ class CalendarManager extends HTMLElement {
 	private getMobileTitleFormat() {
 		return {
 			year: 'numeric' as const,
-			month: 'short' as const,
+			month: 'long' as const,
 		};
 	}
 
@@ -1162,8 +1164,14 @@ class CalendarManager extends HTMLElement {
 				if (child.hasAttribute('data-calendar-filters-control')) continue;
 				if (child.hasAttribute('data-calendar-tour-help')) continue;
 				if (child.hasAttribute('data-calendar-time-nav-end')) continue;
-				// En mobile el título vive fuera del tour (mes/año · flechas · filtro · guía).
+				// En mobile el título y «Hoy» viven fuera del tour (mes/año · flechas · Hoy · filtro · guía).
 				if (child.classList.contains('fc-toolbar-title')) continue;
+				if (
+					child.classList.contains('fc-goToday-button') ||
+					child.classList.contains('fc-today-button')
+				) {
+					continue;
+				}
 				navTour.appendChild(child);
 			}
 		}
@@ -1186,7 +1194,7 @@ class CalendarManager extends HTMLElement {
 	}
 
 	/**
-	 * Mobile: mes/año + flechas + filtro + guía en toolbar FC; refresh encima del FAB.
+	 * Mobile: mes/año (izq) · flechas · Hoy · filtro · guía (der); refresh encima del FAB.
 	 * Desktop: una fila — nav+filtros | título | vistas+acciones.
 	 */
 	private syncChromeToolbarPlacement(
@@ -1221,18 +1229,18 @@ class CalendarManager extends HTMLElement {
 			fabStack.remove();
 		};
 
-		/** Mobile: mes/año · flechas · filtro · guía, todos pegados a la derecha. */
+		/** Mobile: mes/año (izq) · flechas · Hoy · filtro · guía (der). */
 		const dockMobileChromeRow = () => {
 			if (!navChunk) return;
 			const navTour = navChunk.querySelector<HTMLElement>('[data-calendar-tour-nav]');
 
 			// Sacá el título si quedó dentro del tour/flechas.
 			if (titleEl && titleEl.parentElement !== navChunk) {
-				navChunk.appendChild(titleEl);
+				navChunk.insertBefore(titleEl, navChunk.firstChild);
 			}
 			if (navTour) {
 				navTour.querySelectorAll('.fc-toolbar-title').forEach((node) => {
-					navChunk.appendChild(node);
+					navChunk.insertBefore(node, navChunk.firstChild);
 				});
 			}
 
@@ -1240,11 +1248,28 @@ class CalendarManager extends HTMLElement {
 				(titleEl && navChunk.contains(titleEl) ? titleEl : null) ||
 				navChunk.querySelector<HTMLElement>('.fc-toolbar-title');
 
-			// Orden estricto: título → flechas → filtro → guía
-			if (titleNode) navChunk.appendChild(titleNode);
-			if (navTour) navChunk.appendChild(navTour);
-			if (filters) navChunk.appendChild(filters);
-			if (guide) navChunk.appendChild(guide);
+			if (titleNode) {
+				titleNode.classList.add('calendar-mobile-month-title');
+				if (titleNode !== navChunk.firstElementChild) {
+					navChunk.insertBefore(titleNode, navChunk.firstChild);
+				}
+			}
+
+			let endWrap = navChunk.querySelector<HTMLElement>('[data-calendar-time-nav-end]');
+			if (!endWrap) {
+				endWrap = document.createElement('div');
+				endWrap.className = 'calendar-time-nav-end';
+				endWrap.setAttribute('data-calendar-time-nav-end', '');
+			}
+
+			const goTodayBtn = navChunk.querySelector<HTMLElement>('.fc-goToday-button, .fc-today-button');
+
+			if (navTour && navTour.parentElement !== endWrap) endWrap.appendChild(navTour);
+			if (goTodayBtn && goTodayBtn.parentElement !== endWrap) endWrap.appendChild(goTodayBtn);
+			if (filters && filters.parentElement !== endWrap) endWrap.appendChild(filters);
+			if (guide && guide.parentElement !== endWrap) endWrap.appendChild(guide);
+
+			if (endWrap.parentElement !== navChunk) navChunk.appendChild(endWrap);
 		};
 
 		const restoreTitleToChunk = () => {
@@ -1264,6 +1289,17 @@ class CalendarManager extends HTMLElement {
 			if (filters.parentElement !== navChunk || filters !== navChunk.firstElementChild) {
 				navChunk.insertBefore(filters, navChunk.firstChild);
 			}
+		};
+
+		const unwrapTimeNavEnd = () => {
+			if (!navChunk) return;
+			const endWrap = navChunk.querySelector<HTMLElement>('[data-calendar-time-nav-end]');
+			if (!endWrap) return;
+			while (endWrap.firstChild) {
+				navChunk.insertBefore(endWrap.firstChild, endWrap);
+			}
+			endWrap.remove();
+			titleEl?.classList.remove('calendar-mobile-month-title');
 		};
 
 		if (this.isMobileViewport()) {
@@ -1286,6 +1322,7 @@ class CalendarManager extends HTMLElement {
 		}
 
 		unwrapFabStack();
+		unwrapTimeNavEnd();
 		restoreTitleToChunk();
 		dockFiltersToNav();
 

@@ -1,5 +1,6 @@
 ---
 import PublicProfileEditor from './PublicProfileEditor.astro';
+import { setOrganizationCacheCookies } from '../lib/auth';
 import { getWorkspaceSettingsWithOrds } from '../lib/workspace-settings';
 
 /**
@@ -15,6 +16,7 @@ try {
 		throw new Error('No hay sesión válida para cargar el perfil público.');
 	}
 	workspace = await getWorkspaceSettingsWithOrds(token);
+	setOrganizationCacheCookies(Astro.cookies, Astro.url, workspace);
 } catch (error) {
 	loadError =
 		error instanceof Error

@@ -88,6 +88,7 @@ const ORGANIZATION_CACHE_COOKIE_KEYS = {
 	name: 'org_name',
 	slug: 'org_slug',
 	logoUrl: 'org_logo_url',
+	logoChecked: 'org_logo_checked',
 } as const;
 
 export interface AuthSuccessResponse {
@@ -1228,6 +1229,12 @@ export const setOrganizationCacheCookies = (
 	cookies.set(ORGANIZATION_CACHE_COOKIE_KEYS.name, safeName, baseOptions);
 	cookies.set(ORGANIZATION_CACHE_COOKIE_KEYS.slug, safeSlug, baseOptions);
 	cookies.set(ORGANIZATION_CACHE_COOKIE_KEYS.logoUrl, safeLogoUrl, baseOptions);
+
+	if (safeLogoUrl) {
+		cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.logoChecked, { path: '/' });
+	} else {
+		cookies.set(ORGANIZATION_CACHE_COOKIE_KEYS.logoChecked, '1', baseOptions);
+	}
 };
 
 export const clearSessionCookies = (
@@ -1242,6 +1249,7 @@ export const clearSessionCookies = (
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.name, { path: '/' });
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.slug, { path: '/' });
 	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.logoUrl, { path: '/' });
+	cookies.delete(ORGANIZATION_CACHE_COOKIE_KEYS.logoChecked, { path: '/' });
 	clearOrgSelectionCookie(cookies);
 };
 

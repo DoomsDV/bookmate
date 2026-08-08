@@ -10,7 +10,38 @@ type ScheduleSaveInfoState = {
 
 const states = new WeakMap<HTMLElement, ScheduleSaveInfoState>();
 
+let saveInfoSheet: HTMLDialogElement | null = null;
+let saveInfoSheetTrigger: HTMLButtonElement | null = null;
+
+const supportsHoverPopover = () => window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+const getSaveInfoSheet = () => {
+	if (!saveInfoSheet) {
+		saveInfoSheet = document.querySelector<HTMLDialogElement>('[data-schedule-save-info-sheet]');
+	}
+	return saveInfoSheet;
+};
+
+const closeSaveInfoSheet = () => {
+	const sheet = getSaveInfoSheet();
+	if (!sheet?.open) return;
+	sheet.close();
+	saveInfoSheetTrigger?.setAttribute('aria-expanded', 'false');
+	saveInfoSheetTrigger = null;
+};
+
+const openSaveInfoSheet = (button: HTMLButtonElement) => {
+	const sheet = getSaveInfoSheet();
+	if (!sheet) return;
+
+	closeAllScheduleSaveInfo();
+	saveInfoSheetTrigger = button;
+	sheet.showModal();
+	button.setAttribute('aria-expanded', 'true');
+};
+
 const closeAllScheduleSaveInfo = () => {
+	closeSaveInfoSheet();
 	document.querySelectorAll<HTMLElement>('[data-schedule-save-info]').forEach((wrap) => {
 		states.get(wrap)?.setOpen(false);
 	});
@@ -25,6 +56,11 @@ const ensureGlobalHandlers = () => {
 		const target = event.target;
 		if (!(target instanceof Node)) return;
 
+		if (target instanceof Element && target.closest('[data-close-schedule-save-info]')) {
+			closeSaveInfoSheet();
+			return;
+		}
+
 		document.querySelectorAll<HTMLElement>('[data-schedule-save-info]').forEach((wrap) => {
 			const state = states.get(wrap);
 			if (!state || wrap.contains(target)) return;
@@ -34,6 +70,16 @@ const ensureGlobalHandlers = () => {
 
 	document.addEventListener('keydown', (event) => {
 		if (event.key === 'Escape') closeAllScheduleSaveInfo();
+	});
+
+	const sheet = getSaveInfoSheet();
+	sheet?.addEventListener('close', () => {
+		saveInfoSheetTrigger?.setAttribute('aria-expanded', 'false');
+		saveInfoSheetTrigger = null;
+	});
+
+	sheet?.addEventListener('click', (event) => {
+		if (event.target === sheet) closeSaveInfoSheet();
 	});
 };
 
@@ -63,6 +109,8 @@ function initScheduleSaveInfoTooltip(scope: ParentNode = document) {
 		};
 
 		state.setOpen = (open: boolean) => {
+			if (!supportsHoverPopover()) return;
+
 			popover.classList.toggle('is-visible', open);
 			button.setAttribute('aria-expanded', open ? 'true' : 'false');
 
@@ -97,11 +145,20 @@ function initScheduleSaveInfoTooltip(scope: ParentNode = document) {
 
 			event.preventDefault();
 			event.stopPropagation();
-			state.tapPinned = !state.tapPinned;
-			state.setOpen(state.tapPinned);
+
+			const sheet = getSaveInfoSheet();
+			if (sheet?.open && saveInfoSheetTrigger === button) {
+				closeSaveInfoSheet();
+				return;
+			}
+
+			openSaveInfoSheet(button);
 		});
 
-		hoverMedia.addEventListener('change', () => state.setOpen(false));
+		hoverMedia.addEventListener('change', () => {
+			state.setOpen(false);
+			if (saveInfoSheetTrigger === button) closeSaveInfoSheet();
+		});
 	}
 }
 

@@ -3125,4 +3125,71 @@ html[data-theme='dark'] dialog[data-ai-summary-modal] .dashboard-ai-drawer__pane
 	}
 }
 
+/*
+ * iOS Safari: evita zoom al enfocar campos con font-size < 16px.
+ * Alcance: panel Hasel (.app-shell presente) + modales/sheets del panel.
+ */
+@media (max-width: 1023.98px) {
+	body:has(.app-shell) :is(
+			.app-shell,
+			dialog,
+			.calendar-filters-sheet,
+			.calendar-help-sheet,
+			.panel-status-filter-sheet,
+			.customers-pro-filter-sheet,
+			.services-status-filter-sheet,
+			.schedule-pro-filter-sheet,
+			.schedule-save-info-sheet,
+			.cobros-period-filter-sheet
+		)
+		:is(
+			input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='hidden']):not([type='file']),
+			select,
+			textarea
+		) {
+		font-size: 16px;
+	}
+
+	body:has(.app-shell)
+		:is(
+			.app-shell,
+			dialog,
+			.calendar-filters-sheet,
+			.panel-status-filter-sheet,
+			.customers-pro-filter-sheet,
+			.services-status-filter-sheet,
+			.schedule-pro-filter-sheet,
+			.schedule-save-info-sheet,
+			.cobros-period-filter-sheet
+		)
+		:is(
+			input[type='time'],
+			input[type='date'],
+			input[type='datetime-local']
+		)::-webkit-datetime-edit,
+	body:has(.app-shell)
+		:is(
+			.app-shell,
+			dialog,
+			.calendar-filters-sheet,
+			.panel-status-filter-sheet,
+			.customers-pro-filter-sheet,
+			.services-status-filter-sheet,
+			.schedule-pro-filter-sheet,
+			.schedule-save-info-sheet,
+			.cobros-period-filter-sheet
+		)
+		:is(
+			input[type='time'],
+			input[type='date'],
+			input[type='datetime-local']
+		)::-webkit-datetime-edit-fields-wrapper {
+		font-size: 16px;
+	}
+
+	body:has(.app-shell) :is(.app-shell, dialog) .ts-control,
+	body:has(.app-shell) :is(.app-shell, dialog) .ts-control > input {
+		font-size: 16px;
+	}
+}
 

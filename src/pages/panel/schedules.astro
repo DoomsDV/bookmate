@@ -82,8 +82,9 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 																class="schedule-pro-filter-btn schedule-save-info-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
 																data-schedule-save-info-btn
 																aria-label="Información antes de guardar horarios"
+																aria-haspopup="dialog"
 																aria-expanded="false"
-																aria-controls="schedule-save-info-popover"
+																aria-controls="schedule-save-info-sheet"
 															>
 																<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">info</span>
 															</button>
@@ -446,6 +447,42 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 						aria-label="Profesionales"
 					></div>
 				</dialog>
+				<dialog
+					id="schedule-save-info-sheet"
+					class="schedule-save-info-sheet"
+					data-schedule-save-info-sheet
+					aria-labelledby="schedule-save-info-title"
+				>
+					<div class="schedule-save-info-sheet__handle" aria-hidden="true">
+						<span></span>
+					</div>
+					<div class="schedule-save-info-sheet__header">
+						<h2 id="schedule-save-info-title" class="m-0 text-[1.05rem] font-extrabold tracking-tight">
+							Antes de guardar
+						</h2>
+						<button
+							type="button"
+							class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface)"
+							data-close-schedule-save-info
+							aria-label="Cerrar información"
+						>
+							<span class="material-symbols-rounded text-[1.3rem]">close</span>
+						</button>
+					</div>
+					<div class="schedule-save-info-sheet__body">
+						<ul class="schedule-save-info-sheet__list">
+							<li>
+								Al guardar la plantilla, las citas ya agendadas no se mueven solas.
+							</li>
+							<li>
+								Si hay citas futuras desalineadas, el sistema te avisará antes de guardar.
+							</li>
+							<li>
+								Revisa el calendario y reprograma manualmente; avisa al cliente si cambias fecha u hora.
+							</li>
+						</ul>
+					</div>
+				</dialog>
 			) : null
 		}
 	</schedule-manager>
@@ -461,6 +498,11 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 <style is:global>
 	schedule-manager {
 		display: block;
+	}
+
+	[data-weekly-planner] {
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.schedule-error-anchor {
@@ -745,13 +787,30 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		}
 	}
 
-	@media (max-width: 639px) {
-		.schedule-page-header__save {
-			padding-inline: 0.85rem;
+	@media (max-width: 1023px) {
+		.schedule-page-header__toolbar .schedule-save-info-btn,
+		.schedule-page-header__toolbar .schedule-pro-filter-btn,
+		.schedule-page-header__toolbar .schedule-page-header__save {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+			box-sizing: border-box;
+			width: 2.75rem;
+			height: 2.75rem;
+			min-width: 2.75rem;
+			min-height: 2.75rem;
+			padding: 0;
+			border-radius: 1rem;
+			gap: 0;
 		}
 
 		.schedule-page-header__save [data-save-schedule-label] {
 			display: none;
+		}
+
+		.schedule-page-header__save .material-symbols-rounded {
+			font-size: 1.25rem;
 		}
 	}
 
@@ -833,6 +892,97 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		}
 	}
 
+	@media (hover: none), (pointer: coarse) {
+		.schedule-save-info-popover {
+			display: none !important;
+		}
+	}
+
+	.schedule-save-info-sheet {
+		position: fixed;
+		inset: auto 0 0;
+		z-index: 80;
+		margin: 0;
+		width: 100vw;
+		max-width: none;
+		max-height: min(72dvh, 28rem);
+		border: 1px solid var(--shell-border);
+		border-bottom: 0;
+		border-radius: 1.6rem 1.6rem 0 0;
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		padding: 0;
+		overflow: hidden;
+		box-shadow: 0 -12px 40px rgb(0 0 0 / 0.18);
+	}
+
+	.schedule-save-info-sheet[open] {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.schedule-save-info-sheet::backdrop {
+		background: var(--modal-backdrop-scrim);
+	}
+
+	.schedule-save-info-sheet__handle {
+		display: flex;
+		justify-content: center;
+		padding: 0.65rem 0 0.15rem;
+	}
+
+	.schedule-save-info-sheet__handle span {
+		display: block;
+		width: 2.4rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 45%, transparent);
+	}
+
+	.schedule-save-info-sheet__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.35rem 1rem 0.75rem;
+		border-bottom: 1px solid var(--shell-border);
+	}
+
+	.schedule-save-info-sheet__body {
+		padding: 0.85rem 1rem max(1rem, env(safe-area-inset-bottom));
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		min-height: 0;
+	}
+
+	.schedule-save-info-sheet__list {
+		margin: 0;
+		padding: 0;
+		list-style: none;
+		display: grid;
+		gap: 0.65rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+
+	.schedule-save-info-sheet__list li {
+		position: relative;
+		padding-left: 0.9rem;
+	}
+
+	.schedule-save-info-sheet__list li::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0.55em;
+		width: 0.3rem;
+		height: 0.3rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 72%, transparent);
+	}
+
 	.schedule-save-btn {
 		border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
 		background: var(--primary);
@@ -858,6 +1008,8 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		border: 1px solid #cbd5e1;
 		border-radius: 1rem;
 		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.schedule-day-toggle {
@@ -958,6 +1110,8 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		gap: 0.65rem 0.75rem;
 		padding: 0.35rem 0;
 		border-bottom: 1px solid rgba(148, 163, 184, 0.18);
+		min-width: 0;
+		max-width: 100%;
 	}
 
 	.schedule-slot-row:last-child {
@@ -971,6 +1125,26 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		font-size: 0.75rem;
 		font-weight: 600;
 		color: var(--on-surface-variant);
+		min-width: 0;
+	}
+
+	.schedule-slot-field input,
+	.schedule-slot-field select {
+		width: 100%;
+		min-width: 0;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.schedule-slot-field input[type='time'] {
+		display: block;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.schedule-slot-field input[type='time']::-webkit-datetime-edit,
+	.schedule-slot-field input[type='time']::-webkit-datetime-edit-fields-wrapper {
+		min-width: 0;
+		padding: 0;
 	}
 
 	.schedule-slot-field--location {
@@ -1052,6 +1226,16 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 			padding-right: 2.35rem;
 		}
 
+		[data-weekly-planner] .schedule-slot-field--start {
+			grid-column: 1 / 2;
+			grid-row: 2 / 3;
+		}
+
+		[data-weekly-planner] .schedule-slot-field--end {
+			grid-column: 2 / 3;
+			grid-row: 2 / 3;
+		}
+
 		[data-weekly-planner] .schedule-slot-remove-wrap {
 			grid-column: 2 / 3;
 			grid-row: 1 / 2;
@@ -1063,14 +1247,13 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 		[data-weekly-planner] .schedule-slot-field input,
 		[data-weekly-planner] .schedule-slot-field select {
-			width: 100%;
-			min-width: 0;
-			box-sizing: border-box;
+			padding-block: 0.45rem;
 		}
 	}
 
 	@media (max-width: 639px) {
 		[data-weekly-planner] .schedule-slot-row {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
 			margin-bottom: 0.55rem;
 			padding: 0.45rem 0 0.75rem;
 			border: 0;
@@ -1078,6 +1261,36 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 			border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 55%, transparent);
 			background: transparent;
 			box-shadow: none;
+		}
+
+		[data-weekly-planner] .schedule-slot-field--location {
+			grid-column: 1 / -1;
+			grid-row: 1 / 2;
+			padding-right: 2.35rem;
+		}
+
+		[data-weekly-planner] .schedule-slot-field--start {
+			grid-column: 1 / 2;
+			grid-row: 2 / 3;
+		}
+
+		[data-weekly-planner] .schedule-slot-field--end {
+			grid-column: 2 / 3;
+			grid-row: 2 / 3;
+		}
+
+		[data-weekly-planner] .schedule-slot-remove-wrap {
+			grid-column: 2 / 3;
+			grid-row: 1 / 2;
+			align-self: end;
+			justify-self: end;
+			padding-bottom: 0.2rem;
+			z-index: 1;
+		}
+
+		[data-weekly-planner] .schedule-slot-field input,
+		[data-weekly-planner] .schedule-slot-field select {
+			padding-block: 0.45rem;
 		}
 
 		[data-weekly-planner] .schedule-slot-row:last-child {
@@ -1631,9 +1844,15 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		}
 	}
 
+	@media (min-width: 640px) and (max-width: 1023px) {
+		[data-weekly-planner] .schedule-slot-field input[type='time'] {
+			padding-inline: 0.65rem;
+		}
+	}
+
 	@media (min-width: 1024px) {
 		.schedule-slot-row {
-			grid-template-columns: minmax(0, 1fr) 10.5rem 10.5rem auto;
+			grid-template-columns: minmax(0, 1fr) minmax(5.25rem, 10.5rem) minmax(5.25rem, 10.5rem) auto;
 			align-items: end;
 			column-gap: 0.75rem;
 		}

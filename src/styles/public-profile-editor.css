@@ -1340,19 +1340,18 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	}
 
 	.ppe-page {
-		/* Sin reserva enorme: el Guardar vive en el flujo debajo del form */
-		padding-bottom: 0.5rem;
+		padding-bottom: 0;
 	}
 
 	.ppe-save-footer {
-		/* Flujo normal: debajo del contenido, sin tapar campos ni el dock */
+		/* Flujo normal: debajo del contenido; solo reserva el dock flotante */
 		position: static;
 		left: auto;
 		right: auto;
 		bottom: auto;
 		width: 100%;
 		margin: 0.75rem 0 0;
-		padding: 0.5rem 0 calc(var(--mobile-bottom-nav-height, 4.25rem) + 0.5rem);
+		padding: 0.5rem 0 calc(var(--mobile-bottom-nav-height, 4.25rem) + 0.25rem);
 		border: 0;
 		border-radius: 0;
 		box-shadow: none;

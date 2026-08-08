@@ -1625,6 +1625,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	renderBusinessHours();
 	restoreActiveTab();
 	syncPreview();
+	syncSidebarLogo(currentLogoUrl);
 	captureSavedSnapshot();
 	void checkSlug();
 	void enrichPreviewFromHub();

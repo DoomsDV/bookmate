@@ -343,8 +343,8 @@ const isActive = (href?: string) => {
 			box-sizing: border-box;
 		}
 
-		body:has([data-mobile-bottom-nav]) .app-shell > :last-child > main,
-		body:has([data-mobile-bottom-nav]) .dashboard-content-canvas > main {
+		body:has([data-mobile-bottom-nav]) .app-shell > :last-child > main:not(.ppe-main),
+		body:has([data-mobile-bottom-nav]) .dashboard-content-canvas > main:not(.ppe-main) {
 			padding-bottom: calc(6.6rem + env(safe-area-inset-bottom, 0px));
 		}
 	}
