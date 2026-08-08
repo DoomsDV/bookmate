@@ -171,19 +171,56 @@ export function initPlanPage() {
 	};
 
 	// ---- Datos de facturación (perfil fiscal Hasel) ----
-	const billingForm = document.querySelector<HTMLFormElement>('[data-billing-profile-form]');
-	const billingStatus = document.querySelector<HTMLElement>('[data-billing-profile-status]');
-	const billingSaveBtn = document.querySelector<HTMLButtonElement>('[data-billing-profile-save]');
+	const billingFormInline = document.querySelector<HTMLFormElement>('[data-billing-profile-form]');
+	const billingFormDrawer = document.querySelector<HTMLFormElement>('[data-billing-profile-form-drawer]');
+	const billingDrawer = document.querySelector<HTMLDialogElement>('[data-billing-profile-drawer]');
 	const billingProfileCollapsed = document.querySelector<HTMLElement>('[data-billing-profile-collapsed]');
 	const billingProfileSummary = document.querySelector<HTMLElement>('[data-billing-profile-summary]');
 	const billingProfileEditBtn = document.querySelector<HTMLButtonElement>('[data-billing-profile-edit]');
+	const billingLoadWraps = document.querySelectorAll<HTMLElement>('[data-billing-load-wrap]');
+	const billingPaymentReady = document.querySelector<HTMLElement>('[data-billing-payment-ready]');
+	const billingViewBtns = document.querySelectorAll<HTMLButtonElement>('[data-billing-view]');
+
+	const isDesktopBilling = () => window.matchMedia('(min-width: 768px)').matches;
+
+	const getBillingForm = (): HTMLFormElement | null => billingFormDrawer ?? billingFormInline;
+
+	const getBillingStatuses = () =>
+		document.querySelectorAll<HTMLElement>('[data-billing-profile-status]');
+
+	const getBillingSaveBtns = () =>
+		document.querySelectorAll<HTMLButtonElement>('[data-billing-profile-save]');
 
 	const BILLING_FIELDS = ['billing_name', 'billing_doc_number', 'billing_email'] as const;
 	type BillingField = (typeof BILLING_FIELDS)[number];
 
-	const isBillingComplete = () => billingStatus?.dataset.complete === '1';
+	const isBillingComplete = () => {
+		const status = getBillingStatuses()[0];
+		return status?.dataset.complete === '1';
+	};
+
+	const syncBillingFormValues = (from: HTMLFormElement | null, to: HTMLFormElement | null) => {
+		if (!from || !to) return;
+		const fd = new FormData(from);
+		for (const field of BILLING_FIELDS) {
+			const value = String(fd.get(field) || '');
+			const control = to.querySelector<HTMLInputElement | HTMLSelectElement>(`[name="${field}"]`);
+			if (control) control.value = value;
+		}
+		const docType = String(fd.get('billing_doc_type') || 'CI');
+		const docControl = to.querySelector<HTMLSelectElement>('[name="billing_doc_type"]');
+		if (docControl) docControl.value = docType;
+	};
+
+	const syncAllBillingForms = () => {
+		const active = getBillingForm();
+		if (!active) return;
+		if (billingFormInline && active !== billingFormInline) syncBillingFormValues(active, billingFormInline);
+		if (billingFormDrawer && active !== billingFormDrawer) syncBillingFormValues(active, billingFormDrawer);
+	};
 
 	const updateBillingProfileSummary = () => {
+		const billingForm = getBillingForm();
 		if (!billingProfileSummary || !billingForm) return;
 		const fd = new FormData(billingForm);
 		const name = String(fd.get('billing_name') || '').trim();
@@ -193,35 +230,57 @@ export function initPlanPage() {
 	};
 
 	const collapseBillingProfile = () => {
-		if (!billingForm || !billingProfileCollapsed) return;
+		if (!billingProfileCollapsed) return;
 		updateBillingProfileSummary();
-		billingForm.classList.add('hidden');
 		billingProfileCollapsed.classList.remove('hidden');
 	};
 
-	const expandBillingProfile = () => {
-		if (!billingForm || !billingProfileCollapsed) return;
-		billingForm.classList.remove('hidden');
-		billingProfileCollapsed.classList.add('hidden');
-		billingForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+	const updatePaymentBillingUI = () => {
+		const complete = isBillingComplete();
+		const desktop = isDesktopBilling();
+		billingLoadWraps.forEach((wrap) => {
+			const hide = complete || !desktop;
+			wrap.classList.toggle('hidden', hide);
+			wrap.classList.toggle('md:grid', !hide);
+			wrap.classList.toggle('md:block', !hide);
+		});
+		if (billingPaymentReady) {
+			billingPaymentReady.classList.toggle('hidden', !complete || !desktop);
+			billingPaymentReady.classList.toggle('md:flex', complete && desktop);
+		}
+		document.querySelectorAll<HTMLButtonElement>('[data-add-card]').forEach((btn) => {
+			if (!desktop) return;
+			if (btn.classList.contains('plan-plastic-mock-hit')) return;
+			btn.classList.toggle('md:hidden', !complete);
+		});
+		billingViewBtns.forEach((btn) => {
+			const showOnDesktop = complete && desktop;
+			btn.classList.toggle('hidden', !showOnDesktop);
+			if (btn.classList.contains('plan-payment-mock-btn')) {
+				btn.classList.toggle('md:inline-grid', showOnDesktop);
+			}
+		});
 	};
 
 	const setBillingComplete = (complete: boolean) => {
-		if (!billingStatus) return;
-		billingStatus.dataset.complete = complete ? '1' : '0';
-		billingStatus.textContent = complete ? 'Datos listos para facturar.' : 'Pendiente de completar.';
-		billingStatus.classList.toggle('text-emerald-600', complete);
-		billingStatus.classList.toggle('dark:text-emerald-400', complete);
-		billingStatus.classList.toggle('text-(--on-surface-variant)', !complete);
+		getBillingStatuses().forEach((billingStatus) => {
+			billingStatus.dataset.complete = complete ? '1' : '0';
+			billingStatus.textContent = complete ? 'Datos listos para facturar.' : 'Pendiente de completar.';
+			billingStatus.classList.toggle('text-emerald-600', complete);
+			billingStatus.classList.toggle('dark:text-emerald-400', complete);
+			billingStatus.classList.toggle('text-(--on-surface-variant)', !complete);
+		});
 		if (complete) {
-			collapseBillingProfile();
-		} else {
-			expandBillingProfile();
+			if (!isDesktopBilling()) collapseBillingProfile();
+		} else if (!isDesktopBilling()) {
 			billingProfileCollapsed?.classList.add('hidden');
 		}
+		syncAllBillingForms();
+		updatePaymentBillingUI();
 	};
 
-	const clearBillingFieldError = (field: BillingField) => {
+	const clearBillingFieldError = (field: BillingField, form?: HTMLFormElement | null) => {
+		const billingForm = form ?? getBillingForm();
 		if (!billingForm) return;
 		const control = billingForm.querySelector<HTMLElement>(`[name="${field}"]`);
 		const errorEl = billingForm.querySelector<HTMLElement>(`[data-field-error="${field}"]`);
@@ -232,11 +291,13 @@ export function initPlanPage() {
 		}
 	};
 
-	const clearAllBillingFieldErrors = () => {
-		for (const field of BILLING_FIELDS) clearBillingFieldError(field);
+	const clearAllBillingFieldErrors = (form?: HTMLFormElement | null) => {
+		const billingForm = form ?? getBillingForm();
+		for (const field of BILLING_FIELDS) clearBillingFieldError(field, billingForm);
 	};
 
-	const setBillingFieldError = (field: BillingField, message: string) => {
+	const setBillingFieldError = (field: BillingField, message: string, form?: HTMLFormElement | null) => {
+		const billingForm = form ?? getBillingForm();
 		if (!billingForm) return;
 		const control = billingForm.querySelector<HTMLElement>(`[name="${field}"]`);
 		const errorEl = billingForm.querySelector<HTMLElement>(`[data-field-error="${field}"]`);
@@ -247,7 +308,8 @@ export function initPlanPage() {
 		}
 	};
 
-	const readBillingPayload = () => {
+	const readBillingPayload = (form?: HTMLFormElement | null) => {
+		const billingForm = form ?? getBillingForm();
 		if (!billingForm) return null;
 		const fd = new FormData(billingForm);
 		return {
@@ -279,24 +341,50 @@ export function initPlanPage() {
 		return errors;
 	};
 
+	const openBillingDrawer = () => {
+		if (!billingDrawer) return;
+		syncBillingFormValues(billingFormInline, billingFormDrawer);
+		billingDrawer.classList.remove('is-closing', 'is-settled');
+		if (!billingDrawer.open) billingDrawer.showModal();
+		const settleMs = Number.parseInt(
+			getComputedStyle(billingDrawer).getPropertyValue('--modal-open-duration') || '220',
+			10
+		);
+		window.setTimeout(() => billingDrawer?.classList.add('is-settled'), Number.isFinite(settleMs) ? settleMs : 220);
+	};
+
+	const closeBillingDrawer = () => {
+		if (!billingDrawer?.open || billingDrawer.classList.contains('is-closing')) return;
+		billingDrawer.classList.add('is-closing');
+		billingDrawer.classList.remove('is-settled');
+		window.setTimeout(() => {
+			billingDrawer?.close();
+			billingDrawer?.classList.remove('is-closing');
+			syncBillingFormValues(billingFormDrawer, billingFormInline);
+		}, 200);
+	};
+
 	async function saveBillingProfile(opts?: { silent?: boolean }) {
-		const payload = readBillingPayload();
-		if (!payload) return false;
-		clearAllBillingFieldErrors();
+		const billingForm = getBillingForm();
+		const payload = readBillingPayload(billingForm);
+		if (!payload || !billingForm) return false;
+		clearAllBillingFieldErrors(billingForm);
 		const fieldErrors = validateBillingFields(payload);
 		const errorKeys = Object.keys(fieldErrors) as BillingField[];
 		if (errorKeys.length > 0) {
 			for (const field of errorKeys) {
-				setBillingFieldError(field, fieldErrors[field] || 'Campo obligatorio');
+				setBillingFieldError(field, fieldErrors[field] || 'Campo obligatorio', billingForm);
 			}
-			const firstInvalid = billingForm?.querySelector<HTMLElement>('.plan-field-invalid');
+			const firstInvalid = billingForm.querySelector<HTMLElement>('.plan-field-invalid');
 			firstInvalid?.focus();
 			if (!opts?.silent) {
 				flash('Completá los campos marcados para continuar.', 'error');
 			}
 			return false;
 		}
-		if (billingSaveBtn) billingSaveBtn.disabled = true;
+		getBillingSaveBtns().forEach((btn) => {
+			btn.disabled = true;
+		});
 		try {
 			const res = await fetch('/api/billing-profile', {
 				method: 'PUT',
@@ -307,10 +395,14 @@ export function initPlanPage() {
 			if (!res.ok || data?.status !== 'success') {
 				throw new Error(data?.message || 'No fue posible guardar los datos de facturación.');
 			}
-			setBillingComplete(Number(data?.data?.is_complete) === 1);
+			const complete = Number(data?.data?.is_complete) === 1;
+			setBillingComplete(complete);
+			syncBillingFormValues(billingForm, billingFormInline);
+			syncBillingFormValues(billingForm, billingFormDrawer);
 			if (!opts?.silent) {
 				flash(data?.message || 'Datos de facturación guardados correctamente.', 'success');
 			}
+			if (complete) closeBillingDrawer();
 			return true;
 		} catch (error) {
 			flash(
@@ -319,16 +411,47 @@ export function initPlanPage() {
 			);
 			return false;
 		} finally {
-			if (billingSaveBtn) billingSaveBtn.disabled = false;
+			getBillingSaveBtns().forEach((btn) => {
+				btn.disabled = false;
+			});
 		}
 	}
 
-	billingForm?.addEventListener('submit', (event) => {
-		event.preventDefault();
-		void saveBillingProfile();
+	document.querySelectorAll<HTMLFormElement>(
+		'[data-billing-profile-form], [data-billing-profile-form-drawer]'
+	).forEach((form) => {
+		form.addEventListener('submit', (event) => {
+			event.preventDefault();
+			void saveBillingProfile();
+		});
 	});
 
-	billingProfileEditBtn?.addEventListener('click', expandBillingProfile);
+	billingProfileEditBtn?.addEventListener('click', () => openBillingDrawer());
+
+	document.querySelectorAll<HTMLButtonElement>('[data-billing-load]').forEach((btn) => {
+		btn.addEventListener('click', () => openBillingDrawer());
+	});
+	billingViewBtns.forEach((btn) => {
+		btn.addEventListener('click', () => openBillingDrawer());
+	});
+	billingDrawer?.addEventListener('click', (event) => {
+		if (event.target === billingDrawer) closeBillingDrawer();
+	});
+	billingDrawer?.addEventListener('cancel', (event) => {
+		event.preventDefault();
+		closeBillingDrawer();
+	});
+	document.querySelectorAll<HTMLButtonElement>('[data-billing-profile-drawer-close]').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			closeBillingDrawer();
+		});
+	});
+
+	updatePaymentBillingUI();
+	window.matchMedia('(min-width: 768px)').addEventListener('change', () => {
+		syncAllBillingForms();
+		updatePaymentBillingUI();
+	});
 
 	// ---- Modal detalle facturación (mobile) ----
 	const billingDetailModal = document.querySelector<HTMLElement>('[data-billing-detail-modal]');
@@ -348,21 +471,21 @@ export function initPlanPage() {
 	});
 
 	for (const field of BILLING_FIELDS) {
-		const control = billingForm?.querySelector<HTMLElement>(`[name="${field}"]`);
-		control?.addEventListener('input', () => clearBillingFieldError(field));
-		control?.addEventListener('change', () => clearBillingFieldError(field));
+		document
+			.querySelectorAll<HTMLElement>(`[data-billing-profile-form] [name="${field}"], [data-billing-profile-form-drawer] [name="${field}"]`)
+			.forEach((control) => {
+				control.addEventListener('input', () => clearBillingFieldError(field));
+				control.addEventListener('change', () => clearBillingFieldError(field));
+			});
 	}
 
 	// ---- Registrar tarjeta (catastro uPay) ----
 	async function addCard() {
-		if (billingForm && !isBillingComplete()) {
-			const saved = await saveBillingProfile({ silent: true });
-			if (!saved || !isBillingComplete()) {
-				flash('Completá y guardá los datos de facturación antes de registrar la tarjeta.', 'warning');
-				setTab('billing');
-				billingForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-				return;
-			}
+		if (!isBillingComplete()) {
+			flash('Completá y guardá los datos de facturación antes de registrar la tarjeta.', 'warning');
+			openBillingDrawer();
+			setTab('billing');
+			return;
 		}
 		flash('Preparando el formulario seguro…', 'info');
 		try {
@@ -549,6 +672,7 @@ export function initPlanPage() {
 		btn.addEventListener('click', () => downgradeModal?.classList.remove('hidden'));
 	});
 	document.querySelector<HTMLButtonElement>('[data-downgrade-keep]')?.addEventListener('click', closeDowngradeModal);
+	document.querySelector<HTMLButtonElement>('[data-downgrade-close]')?.addEventListener('click', closeDowngradeModal);
 	downgradeModal?.addEventListener('click', (event) => {
 		if (event.target === downgradeModal) closeDowngradeModal();
 	});
@@ -603,6 +727,11 @@ export function initPlanPage() {
 	// --- Método de pago ---
 	document.querySelectorAll<HTMLButtonElement>('[data-add-card]').forEach((btn) => {
 		btn.addEventListener('click', () => void addCard());
+	});
+	document.querySelectorAll<HTMLButtonElement>('[data-scan-card]').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			flash('Próximamente', 'info');
+		});
 	});
 	document.querySelectorAll<HTMLButtonElement>('[data-card-delete]').forEach((btn) => {
 		btn.addEventListener('click', () => void deleteCard(btn.dataset.cardId || '', btn));

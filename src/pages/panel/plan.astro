@@ -3,6 +3,7 @@ import { ROLES } from '../../config/roles';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
 import AppAlert from '../../components/AppAlert.astro';
+import BillingProfileForm from '../../components/BillingProfileForm.astro';
 import Layout from '../../layouts/Layout.astro';
 import { panelPageTitle } from '../../lib/panel-page-title';
 import {
@@ -393,26 +394,14 @@ const defaultCardHint = defaultCard
 												<p class="plan-status-hint">{statusMeta.hint}</p>
 											) : null}
 										</div>
-										<div class="plan-status-side">
-											<span class="plan-status-side-label">Almacenamiento</span>
-											<span class="plan-status-side-value">
-												{formatGb(current.storage_used_bytes)} / {current.storage_limit_bytes > 0 ? formatGb(current.storage_limit_bytes) : 'No incluido'}
-											</span>
-											<div class="plan-storage-track"><div class="plan-storage-fill" style={`width:${storagePct}%`}></div></div>
-											{current.addons_monthly_amount > 0 && !current.billing_exempt ? (
-												<span class="plan-status-side-note">
-													Plan {formatGs(current.plan_monthly_amount)}
-													{' + '}
-													almacenamiento {formatGs(current.addons_monthly_amount)}
-												</span>
-											) : null}
-											{current.next_billing_at && !current.billing_exempt ? (
+										{current.next_billing_at && !current.billing_exempt ? (
+											<div class="plan-status-side">
 												<p class="plan-status-billing">
 													<span class="plan-status-billing-label">Próxima facturación</span>
 													<strong>{formatDateEs(current.next_billing_at)}</strong>
 												</p>
-											) : null}
-										</div>
+											</div>
+										) : null}
 									</div>
 
 									{current.pending_plan_code ? (
@@ -540,27 +529,6 @@ const defaultCardHint = defaultCard
 														: `${storagePct}% del espacio incluido en uso.`}
 												</p>
 											</article>
-										</div>
-									</section>
-								) : null}
-
-								{isAtMaxPlan && showPaymentMethod ? (
-									<section class="plan-mgmt-section">
-										<div class="grid gap-1">
-											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Gestión de tu suscripción</h2>
-											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
-												Consultá facturación y método de pago desde la pestaña Facturación.
-											</p>
-										</div>
-										<div class="plan-mgmt-actions">
-											<button type="button" class="plan-mgmt-link" data-plan-tab-jump="billing">
-												<span class="material-symbols-rounded" aria-hidden="true">credit_card</span>
-												<span class="grid gap-0.5 text-left">
-													<strong>Método de pago</strong>
-													<small>Tarjeta registrada y datos de facturación</small>
-												</span>
-												<span class="material-symbols-rounded plan-mgmt-chevron" aria-hidden="true">chevron_right</span>
-											</button>
 										</div>
 									</section>
 								) : null}
@@ -892,24 +860,69 @@ const defaultCardHint = defaultCard
 
 											<div class="plan-plastic-grid" data-cards-list>
 												{cards.length === 0 ? (
-													<button
-														type="button"
-														class="plan-card-silhouette"
-														data-add-card
-														data-cards-empty
-														aria-label="Agregar tarjeta"
-													>
-														<span class="plan-card-silhouette-inner" aria-hidden="true">
-															<span class="plan-card-silhouette-chip"></span>
-															<span class="plan-card-silhouette-line plan-card-silhouette-line--long"></span>
-															<span class="plan-card-silhouette-line plan-card-silhouette-line--mid"></span>
-															<span class="plan-card-silhouette-line plan-card-silhouette-line--short"></span>
-														</span>
-														<span class="plan-card-silhouette-cta">
-															<span class="material-symbols-rounded" aria-hidden="true">add_card</span>
-															Agregar tarjeta
-														</span>
-													</button>
+													<div class="plan-payment-mock" data-cards-empty>
+														<div
+															class="plan-plastic-card plan-plastic-mock plan-plastic-mock--inactive"
+															aria-label="Sin método de pago activo"
+														>
+															{/* Mobile: toda la tarjeta es el CTA */}
+															<button
+																type="button"
+																class="plan-plastic-mock-hit md:hidden"
+																data-add-card
+															>
+																<span class="plan-plastic-mock-hit-icon material-symbols-rounded" aria-hidden="true">add</span>
+																<span class="plan-plastic-mock-hit-label">Agregar método de pago</span>
+																<span class="plan-plastic-mock-hit-hint">Ningún método de pago activo</span>
+															</button>
+															<button
+																type="button"
+																class="plan-plastic-mock-scan md:hidden"
+																data-scan-card
+																aria-label="Escanear tarjeta con cámara"
+															>
+																<span class="material-symbols-rounded" aria-hidden="true">photo_camera</span>
+															</button>
+
+															{/* Desktop: tarjeta apagada + CTA */}
+															<div class="plan-plastic-mock-inactive hidden md:flex">
+																<p class="plan-plastic-mock-empty-text">Ningún método de pago activo</p>
+																<button
+																	type="button"
+																	class="plan-btn plan-btn-primary plan-btn--auto plan-plastic-mock-cta"
+																	data-add-card
+																>
+																	<span class="material-symbols-rounded align-middle text-[1.1rem]" aria-hidden="true">add_card</span>
+																	Agregar método de pago
+																</button>
+															</div>
+														</div>
+														<div class="plan-payment-mock-aside">
+															{billingProfileComplete ? (
+																<div class="plan-payment-mock-actions plan-payment-mock-actions--desktop-only">
+																	<button
+																		type="button"
+																		class="plan-payment-mock-btn"
+																		data-billing-view
+																		aria-label="Ver y editar datos de facturación"
+																	>
+																		<span class="material-symbols-rounded" aria-hidden="true">visibility</span>
+																	</button>
+																</div>
+															) : null}
+															{!billingProfileComplete ? (
+																<div class="plan-payment-pc-gate plan-payment-pc-gate--desktop" data-billing-load-wrap>
+																	<p class="plan-payment-pc-gate-text">
+																		Completá tus datos de facturación antes de registrar una tarjeta.
+																	</p>
+																	<button type="button" class="plan-btn plan-btn-soft" data-billing-load>
+																		<span class="material-symbols-rounded align-middle text-[1.1rem]" aria-hidden="true">receipt_long</span>
+																		Cargar datos de facturación
+																	</button>
+																</div>
+															) : null}
+														</div>
+													</div>
 												) : (
 													cards.map((card) => (
 														<article class={`plan-plastic-card plan-plastic-${cardTone(card.brand)} ${card.is_default ? 'plan-plastic-default' : ''}`}>
@@ -942,7 +955,34 @@ const defaultCardHint = defaultCard
 
 											{cards.length > 0 ? (
 												<div class="plan-payment-actions">
-													<button type="button" class="plan-btn plan-btn-soft" data-add-card>
+													<div
+														class={`flex-wrap items-center gap-2 ${billingProfileComplete ? 'hidden md:flex' : 'hidden'}`}
+														data-billing-payment-ready
+													>
+														<button type="button" class="plan-btn plan-btn-soft" data-add-card>
+															<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
+															Agregar otra tarjeta
+														</button>
+														<button
+															type="button"
+															class="plan-btn plan-btn-soft plan-billing-view-btn"
+															data-billing-view
+															aria-label="Ver y editar datos de facturación"
+														>
+															<span class="material-symbols-rounded" aria-hidden="true">visibility</span>
+														</button>
+													</div>
+													<div class={`${billingProfileComplete ? 'hidden' : ''} hidden md:block`} data-billing-load-wrap>
+														<button type="button" class="plan-btn plan-btn-soft" data-billing-load>
+															<span class="material-symbols-rounded align-middle text-[1.1rem]" aria-hidden="true">receipt_long</span>
+															Cargar datos de facturación
+														</button>
+													</div>
+													<button
+														type="button"
+														class="plan-btn plan-btn-soft md:hidden"
+														data-add-card
+													>
 														<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
 														Agregar otra tarjeta
 													</button>
@@ -961,7 +1001,7 @@ const defaultCardHint = defaultCard
 									)}
 
 									{/* 2. Resumen — compacto en mobile */}
-									<div class="plan-billing-compact md:hidden">
+									<div class="plan-billing-compact flex md:hidden">
 										<p class="plan-billing-compact-text">
 											Próximo cargo: <strong>{formatGs(nextChargeEstimate)}</strong>
 										</p>
@@ -1026,9 +1066,9 @@ const defaultCardHint = defaultCard
 										</div>
 									</section>
 
-									{/* 3. Datos de facturación (al fondo) */}
+									{/* 3. Datos de facturación — resumen mobile (formulario en bottom sheet) */}
 									{showPaymentMethod && (
-										<section class="grid gap-4" data-billing-profile-section>
+										<section class="grid gap-4 md:hidden" data-billing-profile-section>
 											<div
 												class={`plan-billing-profile-collapsed ${billingProfileComplete ? '' : 'hidden'}`}
 												data-billing-profile-collapsed
@@ -1046,94 +1086,6 @@ const defaultCardHint = defaultCard
 													Editar
 												</button>
 											</div>
-
-											<form
-												class={`grid gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 sm:p-5 ${billingProfileComplete ? 'hidden' : ''}`}
-												data-billing-profile-form
-												autocomplete="off"
-												novalidate
-											>
-												<div class="grid gap-1">
-													<h3 class="m-0 text-[1rem] font-bold text-(--on-surface)">Datos de facturación</h3>
-													<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">
-														A nombre de quién Hasel emite la factura de tu suscripción. Completalo antes de registrar la tarjeta.
-													</p>
-												</div>
-
-												<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_name">
-													<span>Razón social / Nombre <span class="text-rose-500">*</span></span>
-													<input
-														type="text"
-														name="billing_name"
-														maxlength="200"
-														required
-														value={billingProfile?.billing_name || ''}
-														placeholder="Nombre o razón social"
-														class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-													/>
-													<p class="plan-field-error" data-field-error="billing_name" role="alert"></p>
-												</label>
-
-												<div class="grid gap-3 sm:grid-cols-2">
-													<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_doc_type">
-														<span>Tipo de documento <span class="text-rose-500">*</span></span>
-														<div class="plan-billing-select">
-															<select
-																name="billing_doc_type"
-																required
-																class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 pr-10 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-															>
-																<option value="CI" selected={billingProfile?.billing_doc_type !== 'RUC'}>C.I.</option>
-																<option value="RUC" selected={billingProfile?.billing_doc_type === 'RUC'}>RUC</option>
-															</select>
-															<span class="material-symbols-rounded plan-billing-select__chevron" aria-hidden="true">expand_more</span>
-														</div>
-													</label>
-													<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_doc_number">
-														<span>Número de documento <span class="text-rose-500">*</span></span>
-														<input
-															type="text"
-															name="billing_doc_number"
-															maxlength="40"
-															required
-															value={billingProfile?.billing_doc_number || ''}
-															placeholder="C.I. o RUC"
-															class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-														/>
-														<p class="plan-field-error" data-field-error="billing_doc_number" role="alert"></p>
-													</label>
-												</div>
-
-												<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_email">
-													<span>Email de factura <span class="text-rose-500">*</span></span>
-													<input
-														type="email"
-														name="billing_email"
-														maxlength="255"
-														required
-														value={billingProfile?.billing_email || ''}
-														placeholder="facturacion@tuempresa.com"
-														class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-													/>
-													<p class="plan-field-error" data-field-error="billing_email" role="alert"></p>
-												</label>
-
-												<div class="flex flex-wrap items-center gap-3">
-													<button type="submit" class="plan-btn plan-btn-soft inline-flex items-center gap-2" data-billing-profile-save>
-														<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">save</span>
-														Guardar datos de facturación
-													</button>
-													<p
-														class={`m-0 text-[0.82rem] font-semibold ${billingProfileComplete ? 'text-emerald-600 dark:text-emerald-400' : 'text-(--on-surface-variant)'}`}
-														data-billing-profile-status
-														data-complete={billingProfileComplete ? '1' : '0'}
-													>
-														{billingProfileComplete
-															? 'Datos listos para facturar.'
-															: 'Pendiente de completar.'}
-													</p>
-												</div>
-											</form>
 										</section>
 									)}
 								</div>
@@ -1240,9 +1192,14 @@ const defaultCardHint = defaultCard
 				aria-modal="true"
 				aria-labelledby="plan-downgrade-title"
 			>
-				<h3 id="plan-downgrade-title" class="m-0 text-lg font-bold text-(--on-surface)">
-					¿Seguro que querés cambiar al Plan Base?
-				</h3>
+				<div class="plan-modal-head">
+					<h3 id="plan-downgrade-title" class="m-0 text-lg font-bold text-(--on-surface)">
+						¿Seguro que querés cambiar al Plan Base?
+					</h3>
+					<button type="button" class="panel-modal-header__close" data-downgrade-close aria-label="Cerrar">
+						<span class="material-symbols-rounded">close</span>
+					</button>
+				</div>
 				<div class="plan-downgrade-compare">
 					<div class="plan-downgrade-col plan-downgrade-col--keep">
 						<p class="plan-downgrade-col-title m-0">Plan Base</p>
@@ -1377,6 +1334,44 @@ const defaultCardHint = defaultCard
 			</div>
 		</div>
 	</div>
+
+	{/* Drawer datos de facturación — PC (mismo tamaño que ATC) */}
+	{showPaymentMethod && (
+		<dialog
+			data-billing-profile-drawer
+			class="plan-billing-profile-drawer m-0 mt-auto mb-0 h-[min(34rem,92svh)] w-screen max-w-none open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:h-[min(36rem,90vh)] sm:w-[min(32rem,calc(100vw-2rem))] sm:max-w-[min(32rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[min(32rem,100%)] lg:max-w-[min(32rem,100%)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+			aria-labelledby="plan-billing-profile-drawer-title"
+		>
+			<header class="flex shrink-0 items-start justify-between gap-3 border-b border-(--shell-border) px-4 py-3 sm:px-5 sm:py-4">
+				<div class="flex min-w-0 items-center gap-3">
+					<div class="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
+						<span class="material-symbols-rounded text-[1.35rem]" aria-hidden="true">receipt_long</span>
+					</div>
+					<div class="min-w-0">
+						<h2 id="plan-billing-profile-drawer-title" class="text-[1.05rem] font-extrabold tracking-tight text-(--on-surface)">
+							Datos de facturación
+						</h2>
+						<p class="truncate text-[0.82rem] font-medium text-(--on-surface-variant)">
+							Requeridos para registrar tu tarjeta
+						</p>
+					</div>
+				</div>
+				<button
+					type="button"
+					class="flex size-10 shrink-0 items-center justify-center rounded-full border border-(--shell-border) text-(--on-surface-variant) transition hover:bg-(--control-surface)"
+					data-billing-profile-drawer-close
+					aria-label="Cerrar datos de facturación"
+				>
+					<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">close</span>
+				</button>
+			</header>
+			<BillingProfileForm
+				variant="drawer"
+				billingProfile={billingProfile}
+				billingProfileComplete={billingProfileComplete}
+			/>
+		</dialog>
+	)}
 
 	{/* Modal detalle de facturación — solo mobile */}
 	<div class="plan-modal-backdrop plan-billing-detail-backdrop hidden" data-billing-detail-modal>
@@ -1572,7 +1567,17 @@ const defaultCardHint = defaultCard
 		opacity: 0.9;
 	}
 	.plan-payment-secure--solo {
-		margin-top: -0.15rem;
+		margin-top: 0;
+		justify-self: center;
+		width: 100%;
+		justify-content: center;
+	}
+	@media (min-width: 768px) {
+		.plan-payment-secure--solo {
+			justify-self: start;
+			justify-content: flex-start;
+			width: auto;
+		}
 	}
 	.plan-field-error {
 		margin: 0;
@@ -2294,7 +2299,6 @@ const defaultCardHint = defaultCard
 		box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
 	}
 	.plan-billing-summary {
-		display: grid;
 		gap: 1rem;
 		border-radius: 1.25rem;
 		border: 1px solid var(--shell-border);
@@ -2302,7 +2306,6 @@ const defaultCardHint = defaultCard
 		padding: 1.25rem 1.35rem;
 	}
 	.plan-billing-compact {
-		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem;
@@ -2375,6 +2378,26 @@ const defaultCardHint = defaultCard
 		flex-shrink: 0;
 		padding: 0.45rem 0.85rem;
 		font-size: 0.82rem;
+	}
+	.plan-billing-view-btn {
+		padding: 0.55rem 0.75rem;
+	}
+	.plan-payment-pc-gate {
+		display: grid;
+		gap: 0.55rem;
+		justify-items: center;
+		text-align: center;
+	}
+	.plan-payment-pc-gate-text {
+		margin: 0;
+		max-width: 17.5rem;
+		font-size: 0.84rem;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+		text-align: center;
+	}
+	.plan-payment-pc-gate--desktop {
+		display: none;
 	}
 	.plan-billing-ticket {
 		display: grid;
@@ -2521,6 +2544,17 @@ const defaultCardHint = defaultCard
 	}
 	.plan-downgrade-modal {
 		max-width: 42rem;
+	}
+	.plan-modal-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+	.plan-modal-head h3 {
+		flex: 1;
+		min-width: 0;
+		padding-right: 0.25rem;
 	}
 	.plan-downgrade-compare {
 		display: grid;
@@ -2671,89 +2705,309 @@ const defaultCardHint = defaultCard
 	}
 	.plan-iframe-loading.hidden { display: none; }
 
-	/* Método de pago — tarjetas tipo plástico */
-	.plan-card-silhouette {
-		position: relative;
-		display: grid;
-		gap: 0.65rem;
+	/* Método de pago — maqueta sin tarjetas */
+	.plan-payment-mock {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+		gap: 0.85rem;
 		width: 100%;
-		max-width: 17.5rem;
-		aspect-ratio: 1.68 / 1;
-		padding: 0;
-		border: 0;
-		border-radius: 1rem;
-		background: color-mix(in srgb, var(--on-surface-variant) 6%, var(--surface-bright, #fff));
-		box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--on-surface-variant) 18%, transparent);
-		cursor: pointer;
-		transition: box-shadow 0.15s ease, transform 0.15s ease;
-		overflow: hidden;
+		max-width: none;
 		grid-column: 1 / -1;
-		justify-self: start;
+		justify-self: stretch;
 	}
-	.plan-card-silhouette:hover {
-		box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--primary) 45%, transparent),
-			0 6px 18px color-mix(in srgb, var(--primary) 10%, transparent);
-		transform: translateY(-1px);
+	.plan-payment-mock-aside {
+		display: none;
+		gap: 0.75rem;
+		justify-items: center;
 	}
-	.plan-card-silhouette:focus-visible {
+	.plan-plastic-mock--inactive {
+		position: relative;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		max-width: none;
+		aspect-ratio: 1.586 / 1;
+		padding: 0;
+		border-radius: 1.15rem;
+		border: 1.5px dashed color-mix(in srgb, var(--on-surface-variant) 28%, transparent);
+		background:
+			linear-gradient(
+				160deg,
+				color-mix(in srgb, var(--surface-bright, #121214) 88%, #fff 12%) 0%,
+				color-mix(in srgb, var(--page-background, #0a0a0b) 92%, #fff 8%) 100%
+			);
+		box-shadow: none;
+		opacity: 1;
+		filter: none;
+		overflow: hidden;
+		isolation: isolate;
+	}
+	:global(.dark) .plan-plastic-mock--inactive,
+	:global(html[data-theme='dark']) .plan-plastic-mock--inactive {
+		border-color: rgba(255, 255, 255, 0.12);
+		background:
+			linear-gradient(
+				160deg,
+				rgba(255, 255, 255, 0.045) 0%,
+				rgba(255, 255, 255, 0.02) 100%
+			);
+		backdrop-filter: blur(10px);
+		-webkit-backdrop-filter: blur(10px);
+	}
+	.plan-plastic-mock-hit {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		width: 100%;
+		height: 100%;
+		min-height: 100%;
+		padding: 1.25rem 1.5rem;
+		border: 0;
+		background: transparent;
+		cursor: pointer;
+		text-align: center;
+		color: var(--on-surface);
+		transition: background 0.15s ease;
+	}
+	.plan-plastic-mock-hit:hover {
+		background: color-mix(in srgb, var(--primary) 6%, transparent);
+	}
+	.plan-plastic-mock-hit:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: -4px;
+		border-radius: 1.15rem;
+	}
+	.plan-plastic-mock-hit-icon {
+		font-size: 2.35rem;
+		line-height: 1;
+		color: var(--primary);
+		opacity: 0.95;
+	}
+	.plan-plastic-mock-hit-label {
+		font-size: 0.95rem;
+		font-weight: 750;
+		letter-spacing: 0.01em;
+		color: var(--on-surface);
+	}
+	.plan-plastic-mock-hit-hint {
+		font-size: 0.78rem;
+		font-weight: 550;
+		color: var(--on-surface-variant);
+	}
+	.plan-plastic-mock-scan {
+		position: absolute;
+		top: 0.75rem;
+		right: 0.75rem;
+		z-index: 2;
+		display: inline-grid;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 28%, transparent);
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-bright, #121214) 72%, transparent);
+		color: var(--on-surface-variant);
+		cursor: pointer;
+		transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+	}
+	.plan-plastic-mock-scan:hover {
+		color: var(--primary);
+		border-color: color-mix(in srgb, var(--primary) 45%, transparent);
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
+	}
+	.plan-plastic-mock-scan:focus-visible {
 		outline: 2px solid var(--primary);
 		outline-offset: 2px;
 	}
-	.plan-card-silhouette-inner {
-		display: grid;
-		gap: 0.55rem;
-		padding: 1.05rem 1.15rem 0.5rem;
+	.plan-plastic-mock-scan .material-symbols-rounded {
+		font-size: 1.2rem;
 	}
-	.plan-card-silhouette-chip {
-		width: 2.05rem;
-		height: 1.45rem;
-		border-radius: 0.3rem;
-		background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
-	}
-	.plan-card-silhouette-line {
-		display: block;
-		height: 0.55rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface-variant) 12%, transparent);
-	}
-	.plan-card-silhouette-line--long { width: 72%; }
-	.plan-card-silhouette-line--mid { width: 48%; }
-	.plan-card-silhouette-line--short { width: 32%; }
-	.plan-card-silhouette-cta {
-		display: inline-flex;
+	.plan-plastic-mock-inactive {
+		display: none;
+		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 0.35rem;
-		margin: 0 1rem 0.95rem;
-		padding: 0.5rem 0.75rem;
-		border-radius: 0.65rem;
-		font-size: 0.82rem;
-		font-weight: 750;
-		color: var(--primary);
-		background: color-mix(in srgb, var(--primary) 10%, transparent);
+		gap: 0.85rem;
+		width: 100%;
+		padding: 0.35rem 0.5rem;
+		text-align: center;
 	}
-	.plan-card-silhouette-cta .material-symbols-rounded {
-		font-size: 1.1rem;
+	.plan-plastic-mock-empty-text {
+		margin: 0;
+		font-size: 0.86rem;
+		font-weight: 600;
+		line-height: 1.35;
+		letter-spacing: 0.01em;
+		color: var(--on-surface-variant);
+	}
+	.plan-plastic-mock-cta {
+		font-size: 0.82rem;
+		padding: 0.58rem 0.95rem;
+		box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+	}
+	.plan-payment-mock-actions {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 1rem;
+	}
+	.plan-payment-mock-actions--desktop-only {
+		display: none;
+	}
+	.plan-payment-mock-btn {
+		display: inline-grid;
+		place-items: center;
+		width: 3.25rem;
+		height: 3.25rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, var(--surface-bright, #fff));
+		color: var(--primary);
+		cursor: pointer;
+		transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+	}
+	.plan-payment-mock-btn:hover {
+		background: color-mix(in srgb, var(--primary) 18%, var(--surface-bright, #fff));
+		border-color: color-mix(in srgb, var(--primary) 65%, transparent);
+		transform: translateY(-1px);
+	}
+	.plan-payment-mock-btn:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 2px;
+	}
+	.plan-payment-mock-btn .material-symbols-rounded {
+		font-size: 1.45rem;
+	}
+	@media (min-width: 768px) {
+		.plan-payment-mock {
+			align-items: flex-start;
+			gap: 1rem;
+			max-width: 17.5rem;
+			justify-self: start;
+		}
+		.plan-plastic-mock--inactive {
+			max-width: 17.5rem;
+			aspect-ratio: 1.68 / 1;
+			border-style: solid;
+			border-color: color-mix(in srgb, var(--on-surface-variant) 18%, transparent);
+			background:
+				linear-gradient(145deg, #0b1220 0%, #1e293b 38%, #334155 72%, #475569 100%);
+			box-shadow:
+				0 10px 20px rgba(0, 0, 0, 0.2),
+				inset 0 1px 0 rgba(255, 255, 255, 0.05);
+			opacity: 0.9;
+			filter: saturate(0.7);
+			backdrop-filter: none;
+			-webkit-backdrop-filter: none;
+		}
+		.plan-plastic-mock-inactive {
+			display: flex;
+		}
+		.plan-plastic-mock-empty-text {
+			color: rgba(248, 250, 252, 0.68);
+		}
+		.plan-payment-mock-aside {
+			display: grid;
+			justify-items: start;
+			width: 100%;
+		}
+		.plan-payment-mock-actions {
+			justify-content: flex-start;
+		}
+		.plan-payment-mock-actions--desktop-only {
+			display: flex;
+		}
+		.plan-payment-pc-gate {
+			justify-items: start;
+			text-align: left;
+		}
+		.plan-payment-pc-gate-text {
+			text-align: left;
+		}
+		.plan-payment-pc-gate--desktop {
+			display: grid;
+		}
+	}
+
+	/* Método de pago — tarjetas tipo plástico */
+	.plan-card-add-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.45rem;
+		width: 100%;
+		max-width: 17.5rem;
+		aspect-ratio: 1.68 / 1;
+		padding: 1rem;
+		border: 1.5px dashed color-mix(in srgb, var(--on-surface-variant) 32%, transparent);
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--on-surface-variant) 4%, var(--surface-bright, #fff));
+		cursor: pointer;
+		transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease;
+		grid-column: 1 / -1;
+		justify-self: start;
+	}
+	.plan-card-add-empty:hover {
+		border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+		background: color-mix(in srgb, var(--primary) 7%, var(--surface-bright, #fff));
+		transform: translateY(-1px);
+	}
+	.plan-card-add-empty:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 2px;
+	}
+	.plan-card-add-empty-icon {
+		font-size: 2rem;
+		color: var(--primary);
+	}
+	.plan-card-add-empty-label {
+		font-size: 0.9rem;
+		font-weight: 750;
+		color: var(--on-surface);
+	}
+	.plan-card-add-empty-hint {
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
 	}
 	.plan-plastic-grid {
 		display: grid;
 		gap: 0.9rem;
-		grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 17.5rem));
-		justify-content: start;
+		grid-template-columns: 1fr;
+		justify-content: stretch;
+	}
+	@media (min-width: 768px) {
+		.plan-plastic-grid {
+			grid-template-columns: repeat(auto-fill, minmax(min(100%, 17.5rem), 17.5rem));
+			justify-content: start;
+		}
 	}
 	.plan-plastic-card {
 		position: relative;
 		display: grid;
 		gap: 0.65rem;
 		width: 100%;
-		max-width: 17.5rem;
-		aspect-ratio: 1.68 / 1;
+		max-width: none;
+		aspect-ratio: 1.586 / 1;
 		padding: 0.95rem 1.05rem 0.85rem;
-		border-radius: 1rem;
+		border-radius: 1.15rem;
 		overflow: hidden;
 		color: #f8fafc;
 		box-shadow: 0 10px 22px rgba(0, 0, 0, 0.26);
 		isolation: isolate;
+	}
+	@media (min-width: 768px) {
+		.plan-plastic-card {
+			max-width: 17.5rem;
+			aspect-ratio: 1.68 / 1;
+			border-radius: 1rem;
+		}
 	}
 	.plan-plastic-shine {
 		pointer-events: none;
@@ -3020,6 +3274,72 @@ const defaultCardHint = defaultCard
 	@media (prefers-reduced-motion: reduce) {
 		.plan-pay-sheet,
 		.plan-card-sheet { animation: none; }
+	}
+
+	/* Drawer datos de facturación — mismo patrón que ATC */
+	.plan-billing-profile-drawer {
+		animation: plan-billing-drawer-modal-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
+	}
+	.plan-billing-profile-drawer::backdrop {
+		background: var(--modal-backdrop-scrim);
+		backdrop-filter: blur(var(--modal-backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+		animation: plan-billing-drawer-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
+	}
+	.plan-billing-profile-drawer.is-closing {
+		animation: plan-billing-drawer-modal-out var(--modal-close-duration, 200ms) var(--modal-easing, ease) forwards;
+	}
+	.plan-billing-profile-drawer.is-closing::backdrop {
+		animation: plan-billing-drawer-backdrop-out var(--modal-close-duration, 200ms) var(--modal-easing, ease) forwards;
+	}
+	@keyframes plan-billing-drawer-modal-in {
+		from { opacity: 0; transform: translateY(100%); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+	@keyframes plan-billing-drawer-modal-out {
+		from { opacity: 1; transform: translateY(0); }
+		to { opacity: 0; transform: translateY(100%); }
+	}
+	@keyframes plan-billing-drawer-backdrop-in {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+	@keyframes plan-billing-drawer-backdrop-out {
+		from { opacity: 1; }
+		to { opacity: 0; }
+	}
+	@media (min-width: 640px) {
+		@keyframes plan-billing-drawer-modal-in {
+			from { opacity: 0; transform: translateY(10px) scale(0.98); }
+			to { opacity: 1; transform: translateY(0) scale(1); }
+		}
+		@keyframes plan-billing-drawer-modal-out {
+			from { opacity: 1; transform: translateY(0) scale(1); }
+			to { opacity: 0; transform: translateY(8px) scale(0.98); }
+		}
+	}
+	@media (min-width: 1024px) {
+		.plan-billing-profile-drawer {
+			inset: 0 0 0 auto;
+			height: 100dvh;
+			max-height: 100dvh;
+			width: min(32rem, 100vw);
+			max-width: min(32rem, 100vw);
+			border-radius: 0;
+			box-shadow: none;
+			animation-name: plan-billing-drawer-side-in;
+		}
+		.plan-billing-profile-drawer.is-closing {
+			animation-name: plan-billing-drawer-side-out;
+		}
+		@keyframes plan-billing-drawer-side-in {
+			from { opacity: 0; transform: translateX(100%); }
+			to { opacity: 1; transform: translateX(0); }
+		}
+		@keyframes plan-billing-drawer-side-out {
+			from { opacity: 1; transform: translateX(0); }
+			to { opacity: 0; transform: translateX(100%); }
+		}
 	}
 </style>
 

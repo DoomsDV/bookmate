@@ -1,0 +1,253 @@
+---
+import type { BillingProfileData } from '../lib/billing-profile';
+
+interface Props {
+	billingProfile: BillingProfileData | null;
+	billingProfileComplete: boolean;
+	variant: 'inline' | 'drawer';
+}
+
+const { billingProfile, billingProfileComplete, variant } = Astro.props;
+const isInline = variant === 'inline';
+const formHidden = isInline && billingProfileComplete;
+const fieldClass =
+	'rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2 text-[0.9rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10';
+const labelClass = 'grid gap-1 text-[0.84rem] font-bold text-(--on-surface)';
+const wrapperClass = isInline
+	? `grid gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 sm:p-5 ${formHidden ? 'hidden' : ''}`
+	: 'relative flex min-h-0 flex-1 flex-col overflow-hidden bg-(--surface)/30';
+---
+
+<form
+	class={wrapperClass}
+	data-billing-profile-form={isInline ? true : undefined}
+	data-billing-profile-form-drawer={!isInline ? true : undefined}
+	autocomplete="off"
+	novalidate
+>
+	{isInline ? (
+		<>
+			<div class="grid gap-1">
+				<h3 class="m-0 text-[1rem] font-bold text-(--on-surface)">Datos de facturación</h3>
+				<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">
+					A nombre de quién Hasel emite la factura de tu suscripción. Completalo antes de registrar la tarjeta.
+				</p>
+			</div>
+
+			<label class={labelClass} data-billing-field="billing_name">
+				<span>Razón social / Nombre <span class="text-rose-500">*</span></span>
+				<input
+					type="text"
+					name="billing_name"
+					maxlength="200"
+					required
+					value={billingProfile?.billing_name || ''}
+					placeholder="Nombre o razón social"
+					class={fieldClass}
+				/>
+				<p class="plan-field-error" data-field-error="billing_name" role="alert"></p>
+			</label>
+
+			<div class="grid gap-2.5 sm:grid-cols-2">
+				<label class={labelClass} data-billing-field="billing_doc_type">
+					<span>Tipo de documento <span class="text-rose-500">*</span></span>
+					<div class="plan-billing-select">
+						<select
+							name="billing_doc_type"
+							required
+							class={`${fieldClass} w-full cursor-pointer appearance-none pr-10`}
+						>
+							<option value="CI" selected={billingProfile?.billing_doc_type !== 'RUC'}>C.I.</option>
+							<option value="RUC" selected={billingProfile?.billing_doc_type === 'RUC'}>RUC</option>
+						</select>
+						<span class="material-symbols-rounded plan-billing-select__chevron" aria-hidden="true">expand_more</span>
+					</div>
+				</label>
+				<label class={labelClass} data-billing-field="billing_doc_number">
+					<span>Número de documento <span class="text-rose-500">*</span></span>
+					<input
+						type="text"
+						name="billing_doc_number"
+						maxlength="40"
+						required
+						value={billingProfile?.billing_doc_number || ''}
+						placeholder="C.I. o RUC"
+						class={fieldClass}
+					/>
+					<p class="plan-field-error" data-field-error="billing_doc_number" role="alert"></p>
+				</label>
+			</div>
+
+			<label class={labelClass} data-billing-field="billing_email">
+				<span>Email de factura <span class="text-rose-500">*</span></span>
+				<input
+					type="email"
+					name="billing_email"
+					maxlength="255"
+					required
+					value={billingProfile?.billing_email || ''}
+					placeholder="facturacion@tuempresa.com"
+					class={fieldClass}
+				/>
+				<p class="plan-field-error" data-field-error="billing_email" role="alert"></p>
+			</label>
+
+			<div class="plan-billing-profile-footer modal-footer mt-2 border-t border-(--shell-border) pt-3">
+				<p
+					class={`m-0 text-[0.82rem] font-semibold ${billingProfileComplete ? 'text-emerald-600 dark:text-emerald-400' : 'text-(--on-surface-variant)'}`}
+					data-billing-profile-status
+					data-complete={billingProfileComplete ? '1' : '0'}
+				>
+					{billingProfileComplete ? 'Datos listos para facturar.' : 'Pendiente de completar.'}
+				</p>
+				<div class="modal-footer-actions">
+					<button type="submit" class="modal-action-primary" data-billing-profile-save>
+						<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">save</span>
+						Guardar
+					</button>
+				</div>
+			</div>
+		</>
+	) : (
+		<>
+			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5">
+				<div class="grid gap-2.5">
+					<p class="m-0 text-[0.82rem] font-medium leading-snug text-(--on-surface-variant)">
+						Completalo antes de registrar la tarjeta.
+					</p>
+
+					<label class={labelClass} data-billing-field="billing_name">
+						<span>Razón social / Nombre <span class="text-rose-500">*</span></span>
+						<input
+							type="text"
+							name="billing_name"
+							maxlength="200"
+							required
+							value={billingProfile?.billing_name || ''}
+							placeholder="Nombre o razón social"
+							class={fieldClass}
+						/>
+						<p class="plan-field-error" data-field-error="billing_name" role="alert"></p>
+					</label>
+
+					<div class="grid gap-2.5 sm:grid-cols-2">
+						<label class={labelClass} data-billing-field="billing_doc_type">
+							<span>Tipo de documento <span class="text-rose-500">*</span></span>
+							<div class="plan-billing-select">
+								<select
+									name="billing_doc_type"
+									required
+									class={`${fieldClass} w-full cursor-pointer appearance-none pr-10`}
+								>
+									<option value="CI" selected={billingProfile?.billing_doc_type !== 'RUC'}>C.I.</option>
+									<option value="RUC" selected={billingProfile?.billing_doc_type === 'RUC'}>RUC</option>
+								</select>
+								<span class="material-symbols-rounded plan-billing-select__chevron" aria-hidden="true">expand_more</span>
+							</div>
+						</label>
+						<label class={labelClass} data-billing-field="billing_doc_number">
+							<span>Número de documento <span class="text-rose-500">*</span></span>
+							<input
+								type="text"
+								name="billing_doc_number"
+								maxlength="40"
+								required
+								value={billingProfile?.billing_doc_number || ''}
+								placeholder="C.I. o RUC"
+								class={fieldClass}
+							/>
+							<p class="plan-field-error" data-field-error="billing_doc_number" role="alert"></p>
+						</label>
+					</div>
+
+					<label class={labelClass} data-billing-field="billing_email">
+						<span>Email de factura <span class="text-rose-500">*</span></span>
+						<input
+							type="email"
+							name="billing_email"
+							maxlength="255"
+							required
+							value={billingProfile?.billing_email || ''}
+							placeholder="facturacion@tuempresa.com"
+							class={fieldClass}
+						/>
+						<p class="plan-field-error" data-field-error="billing_email" role="alert"></p>
+					</label>
+				</div>
+			</div>
+
+			<div class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-5 sm:py-5">
+				<div class="modal-footer plan-billing-drawer-footer">
+					<button type="button" class="modal-action-secondary" data-billing-profile-drawer-close>
+						Cancelar
+					</button>
+					<p
+						class="sr-only"
+						data-billing-profile-status
+						data-complete={billingProfileComplete ? '1' : '0'}
+					>
+						{billingProfileComplete ? 'Datos listos para facturar.' : 'Pendiente de completar.'}
+					</p>
+					<div class="modal-footer-actions">
+						<button type="submit" class="modal-action-primary" data-billing-profile-save>
+							<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">save</span>
+							Guardar
+						</button>
+					</div>
+				</div>
+			</div>
+		</>
+	)}
+</form>
+
+{/* Estilos propios: el CSS scoped de plan.astro no aplica a este componente hijo. */}
+<style>
+	.plan-field-error {
+		margin: 0;
+		font-size: 0.78rem;
+		font-weight: 650;
+		color: #e11d48;
+		display: none;
+	}
+	.plan-field-error.is-visible {
+		display: block;
+	}
+	.plan-field-invalid {
+		border-color: #e11d48 !important;
+		box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
+	}
+	.plan-billing-select {
+		position: relative;
+		display: block;
+	}
+	.plan-billing-select__chevron {
+		position: absolute;
+		top: 50%;
+		right: 0.75rem;
+		transform: translateY(-50%);
+		font-size: 1.35rem;
+		line-height: 1;
+		color: var(--on-surface-variant);
+		pointer-events: none;
+	}
+	/* Cancelar a la izquierda: no ocultarlo en mobile (global.css esconde .modal-action-secondary). */
+	.plan-billing-drawer-footer .modal-action-secondary {
+		display: inline-flex;
+	}
+	@media (max-width: 767px) {
+		.plan-billing-drawer-footer {
+			gap: 0.65rem;
+		}
+		.plan-billing-drawer-footer .modal-action-secondary {
+			flex: 1 1 auto;
+		}
+		.plan-billing-drawer-footer .modal-footer-actions {
+			flex: 1 1 auto;
+			margin-left: 0;
+		}
+		.plan-billing-drawer-footer .modal-action-primary {
+			width: 100%;
+			flex: 1 1 auto;
+		}
+	}
+</style>
