@@ -14,7 +14,7 @@ const ENABLE_GOOGLE_CALENDAR = false;
 
 const GOOGLE_PROVIDER = 'google_calendar';
 const token = Astro.locals.token ?? '';
-const initialLoadError = token ? '' : 'No hay sesi�n v�lida para consultar el calendario.';
+const initialLoadError = token ? '' : 'No hay sesión válida para consultar el calendario.';
 const googleSuccessFlag = String(Astro.url.searchParams.get('success') || '').trim();
 const googleErrorFlag = String(Astro.url.searchParams.get('error') || '').trim();
 const googleDebugParam = String(Astro.url.searchParams.get('debug') || '').trim();
@@ -75,24 +75,24 @@ const hasGoogleSuccess =
 	(googleSuccessFlag === 'google_connected' || googleSuccessFlag === 'google_disconnected');
 const googleSuccessMessage =
 	googleSuccessFlag === 'google_connected'
-		? 'Google Calendar se conect� correctamente.'
+		? 'Google Calendar se conectó correctamente.'
 		: googleSuccessFlag === 'google_disconnected'
-			? 'Google Calendar se desconect� correctamente.'
+			? 'Google Calendar se desconectó correctamente.'
 			: '';
 
 const hasGoogleError = ENABLE_GOOGLE_CALENDAR && Boolean(googleErrorFlag);
 const googleErrorMessageMap: Record<string, string> = {
-	google_connect_failed: 'No fue posible iniciar la conexi�n con Google.',
-	google_oauth_error: 'Google devolvi� un error durante la autorizaci�n OAuth.',
-	google_missing_code: 'Google no envi� el c�digo de autorizaci�n.',
-	google_token_exchange_failed: 'Google no devolvi� tokens v�lidos al canjear el c�digo.',
-	google_ords_payload_invalid: 'No se pudo construir el body JSON para guardar la integraci�n.',
-	google_ords_save_failed: 'Google respondi�, pero no se pudieron guardar los tokens en ORDS.',
-	google_callback_failed: 'No fue posible completar la conexi�n con Google Calendar.',
+	google_connect_failed: 'No fue posible iniciar la conexión con Google.',
+	google_oauth_error: 'Google devolvió un error durante la autorización OAuth.',
+	google_missing_code: 'Google no envió el código de autorización.',
+	google_token_exchange_failed: 'Google no devolvió tokens válidos al canjear el código.',
+	google_ords_payload_invalid: 'No se pudo construir el body JSON para guardar la integración.',
+	google_ords_save_failed: 'Google respondió, pero no se pudieron guardar los tokens en ORDS.',
+	google_callback_failed: 'No fue posible completar la conexión con Google Calendar.',
 	google_disconnect_failed: 'No fue posible desconectar Google Calendar.',
 };
 const googleErrorMessage = hasGoogleError
-	? (googleErrorMessageMap[googleErrorFlag] || 'Ocurri� un error con la integraci�n de Google Calendar.')
+	? (googleErrorMessageMap[googleErrorFlag] || 'Ocurrió un error con la integración de Google Calendar.')
 	: '';
 ---
 
@@ -1857,13 +1857,21 @@ const googleErrorMessage = hasGoogleError
 		justify-content: center;
 	}
 
-	.calendar-filters-sheet__backdrop,
+	.calendar-filters-sheet__backdrop {
+		position: absolute;
+		inset: 0;
+		border: 0;
+		background: var(--modal-backdrop-scrim);
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		cursor: pointer;
+	}
+
 	.calendar-help-sheet__backdrop {
 		position: absolute;
 		inset: 0;
 		border: 0;
-		/* Mismo overlay que dialog::backdrop / settings */
-		background: rgba(15, 17, 21, 0.6);
+		background: var(--modal-backdrop-scrim);
 		cursor: pointer;
 	}
 
@@ -2149,6 +2157,8 @@ const googleErrorMessage = hasGoogleError
 		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__backdrop {
 			pointer-events: auto;
 			background: transparent;
+			backdrop-filter: none !important;
+			-webkit-backdrop-filter: none !important;
 			cursor: default;
 		}
 
@@ -2165,7 +2175,7 @@ const googleErrorMessage = hasGoogleError
 			border-bottom: 1px solid var(--shell-border);
 			background: var(--surface-bright);
 			background-image: none;
-			box-shadow: 0 14px 40px rgb(15 23 42 / 0.16);
+			box-shadow: var(--modal-shadow-popover);
 			animation: calendar-filters-popover-in 160ms cubic-bezier(0.2, 0, 0, 1);
 			transform-origin: top left;
 		}
@@ -2217,7 +2227,7 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		html[data-theme='dark'] .calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__panel {
-			box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
+			box-shadow: var(--modal-shadow-popover);
 		}
 
 		.calendar-help-sheet.is-open {
@@ -3131,7 +3141,7 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		dialog[data-appointment-modal]::backdrop {
-			background-color: var(--modal-backdrop-tint);
+			background-color: var(--modal-backdrop-scrim);
 			backdrop-filter: blur(var(--modal-backdrop-blur));
 			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}

@@ -267,12 +267,6 @@ const { currentOrgMemberId = 0 } = Astro.props;
 		font-family: var(--font-body);
 	}
 
-	.org-switcher-dialog::backdrop {
-		background: var(--modal-backdrop-tint);
-		backdrop-filter: blur(var(--modal-backdrop-blur));
-		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
-	}
-
 	.org-switcher-panel {
 		position: relative;
 		display: flex;
@@ -528,10 +522,6 @@ const { currentOrgMemberId = 0 } = Astro.props;
 	.org-switcher-dialog .m3-btn-tonal:hover {
 		filter: brightness(1.06);
 		color: #ffffff;
-	}
-
-	html[data-theme='dark'] .org-switcher-dialog::backdrop {
-		background: rgba(0, 0, 0, 0.58);
 	}
 
 	html[data-theme='dark'] .org-switcher-panel {

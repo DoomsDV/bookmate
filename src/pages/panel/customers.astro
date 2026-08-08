@@ -749,7 +749,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 
 		dialog[data-customer-profile-modal]::backdrop {
-			background-color: var(--modal-backdrop-tint);
+			background-color: var(--modal-backdrop-scrim);
 			backdrop-filter: blur(var(--modal-backdrop-blur));
 			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
@@ -1439,16 +1439,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		color: var(--on-surface);
 		padding: 0;
 		overflow: hidden;
-		box-shadow: 0 -12px 40px rgb(0 0 0 / 0.18);
+		box-shadow: var(--modal-shadow-sheet);
 	}
 
 	.customers-pro-filter-sheet[open] {
 		display: flex;
 		flex-direction: column;
-	}
-
-	.customers-pro-filter-sheet::backdrop {
-		background: rgb(0 0 0 / 0.4);
 	}
 
 	.customers-pro-filter-sheet__handle {
@@ -1523,12 +1519,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	.customers-pro-filter-option.is-selected {
-		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		background: color-mix(in srgb, var(--primary) 8%, transparent);
 		color: var(--primary);
 	}
 
 	.customers-pro-filter-option.is-selected:hover {
-		background: color-mix(in srgb, var(--primary) 18%, transparent);
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
 	}
 
 	.customers-pro-filter-option .material-symbols-rounded {
@@ -1562,7 +1558,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 			border-radius: 1rem;
 			background: var(--surface-bright);
 			background-image: none;
-			box-shadow: 0 14px 40px rgb(15 23 42 / 0.16);
+			box-shadow: var(--modal-shadow-popover);
 			animation: customers-pro-filter-popover-in 160ms cubic-bezier(0.2, 0, 0, 1);
 			transform-origin: top right;
 		}
@@ -1604,9 +1600,5 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 			padding: 0.7rem 0.8rem;
 			font-size: 0.9rem;
 		}
-	}
-
-	html[data-theme='dark'] .customers-pro-filter-sheet.is-desktop-popover {
-		box-shadow: 0 16px 40px rgb(0 0 0 / 0.45);
 	}
 </style>

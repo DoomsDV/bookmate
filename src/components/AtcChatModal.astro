@@ -492,14 +492,14 @@
 
 	[data-atc-chat-modal]::backdrop {
 		/* Blur estático: animar backdrop-filter fuerza re-raster y causa lag. */
-		background: var(--modal-backdrop-tint);
+		background: var(--modal-backdrop-scrim);
 		backdrop-filter: blur(var(--modal-backdrop-blur));
 		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		animation: atc-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
 	}
 
 	html[data-theme='dark'] [data-atc-chat-modal]::backdrop {
-		background: var(--modal-backdrop-tint);
+		background: var(--modal-backdrop-scrim);
 	}
 
 	[data-atc-chat-modal].is-closing {
@@ -610,7 +610,7 @@
 		}
 
 		[data-atc-chat-modal]::backdrop {
-			background: var(--modal-backdrop-tint);
+			background: var(--modal-backdrop-scrim);
 			backdrop-filter: blur(var(--modal-backdrop-blur));
 			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}

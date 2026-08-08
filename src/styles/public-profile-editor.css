@@ -10,24 +10,21 @@ public-profile-editor {
 
 .ppe-header {
 	display: flex;
-	flex-wrap: wrap;
-	align-items: flex-start;
+	align-items: flex-end;
 	justify-content: space-between;
-	gap: 0.85rem;
-}
-
-.ppe-header__title {
-	margin: 0;
-	font-size: 1.35rem;
-	font-weight: 800;
-	letter-spacing: -0.02em;
+	gap: 0.65rem 0.85rem;
+	min-width: 0;
+	border-bottom: 1px solid var(--shell-border);
+	flex-shrink: 0;
 }
 
 .ppe-header__actions {
 	display: inline-flex;
 	flex-wrap: nowrap;
 	align-items: center;
+	flex-shrink: 0;
 	gap: 0.55rem;
+	padding-bottom: 0.15rem;
 }
 
 .ppe-header__actions > .ppe-btn {
@@ -56,15 +53,22 @@ public-profile-editor {
 
 .ppe-tabs {
 	display: flex;
-	flex-wrap: wrap;
+	flex: 1 1 auto;
+	flex-wrap: nowrap;
 	gap: 0.15rem;
-	margin: 0.15rem 0 0.25rem;
-	border-bottom: 1px solid var(--shell-border);
+	margin: 0;
+	min-width: 0;
 	min-height: 2.75rem;
 	align-items: flex-end;
-	/* Evita que un overflow anidado colapse la altura en desktop */
-	overflow: visible;
-	flex-shrink: 0;
+	overflow-x: auto;
+	overflow-y: visible;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	overscroll-behavior-x: contain;
+}
+
+.ppe-tabs::-webkit-scrollbar {
+	display: none;
 }
 
 .ppe-tab {
@@ -158,13 +162,12 @@ public-profile-editor {
 		align-content: start;
 	}
 
-	/* Pestañas siempre visibles al scrollear el formulario */
-	.ppe-config-pane > .ppe-tabs {
+	/* Pestañas + acciones siempre visibles al scrollear el formulario */
+	.ppe-config-pane > .ppe-header {
 		position: sticky;
 		top: 0;
 		z-index: 4;
 		background: var(--page-background, var(--surface, #121212));
-		overflow: visible;
 	}
 
 	.ppe-phone-col {
@@ -555,45 +558,6 @@ public-profile-editor {
 	max-width: 18rem;
 }
 
-.ppe-logo-field__head {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.5rem 0.75rem;
-}
-
-.ppe-logo-bg-toggle {
-	display: inline-flex;
-	align-items: center;
-	padding: 0.15rem;
-	border-radius: 999px;
-	border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
-	background: color-mix(in srgb, var(--surface-variant) 55%, var(--surface-bright));
-}
-
-.ppe-logo-bg-toggle__btn {
-	appearance: none;
-	border: 0;
-	margin: 0;
-	padding: 0.3rem 0.7rem;
-	border-radius: 999px;
-	background: transparent;
-	color: var(--on-surface-variant);
-	font: inherit;
-	font-size: 0.72rem;
-	font-weight: 800;
-	letter-spacing: 0.02em;
-	cursor: pointer;
-	line-height: 1.2;
-}
-
-.ppe-logo-bg-toggle__btn.is-active {
-	background: var(--surface-bright);
-	color: var(--on-surface);
-	box-shadow: 0 1px 2px color-mix(in srgb, #000 18%, transparent);
-}
-
 .ppe-dropzone {
 	position: relative;
 	display: grid;
@@ -617,40 +581,35 @@ public-profile-editor {
 .ppe-dropzone--logo {
 	max-width: 18rem;
 	min-height: 12rem;
-}
-
-.ppe-dropzone--logo[data-ppe-logo-bg='light'] {
+	--ppe-logo-checker: #e8eaed;
+	--ppe-logo-checker-bg: #f5f6f8;
 	background:
-		linear-gradient(45deg, #e8eaed 25%, transparent 25%) 0 0 / 14px 14px,
-		linear-gradient(-45deg, #e8eaed 25%, transparent 25%) 0 7px / 14px 14px,
-		linear-gradient(45deg, transparent 75%, #e8eaed 75%) 7px -7px / 14px 14px,
-		linear-gradient(-45deg, transparent 75%, #e8eaed 75%) -7px 0 / 14px 14px,
-		#f5f6f8;
+		linear-gradient(45deg, var(--ppe-logo-checker) 25%, transparent 25%) 0 0 / 14px 14px,
+		linear-gradient(-45deg, var(--ppe-logo-checker) 25%, transparent 25%) 0 7px / 14px 14px,
+		linear-gradient(45deg, transparent 75%, var(--ppe-logo-checker) 75%) 7px -7px / 14px 14px,
+		linear-gradient(-45deg, transparent 75%, var(--ppe-logo-checker) 75%) -7px 0 / 14px 14px,
+		var(--ppe-logo-checker-bg);
 }
 
-.ppe-dropzone--logo[data-ppe-logo-bg='dark'] {
-	background:
-		linear-gradient(45deg, #2a2c31 25%, transparent 25%) 0 0 / 14px 14px,
-		linear-gradient(-45deg, #2a2c31 25%, transparent 25%) 0 7px / 14px 14px,
-		linear-gradient(45deg, transparent 75%, #2a2c31 75%) 7px -7px / 14px 14px,
-		linear-gradient(-45deg, transparent 75%, #2a2c31 75%) -7px 0 / 14px 14px,
-		#1a1b1e;
+html[data-theme='dark'] .ppe-dropzone--logo {
+	--ppe-logo-checker: #2a2c31;
+	--ppe-logo-checker-bg: #1a1b1e;
 }
 
-.ppe-dropzone--logo[data-ppe-logo-bg='light']:hover {
+html[data-theme='light'] .ppe-dropzone--logo:hover {
 	border-color: color-mix(in srgb, var(--primary) 55%, var(--on-surface-variant));
 }
 
-.ppe-dropzone--logo[data-ppe-logo-bg='dark']:hover {
+html[data-theme='dark'] .ppe-dropzone--logo:hover {
 	border-color: color-mix(in srgb, var(--primary) 55%, #6b7280);
 }
 
-.ppe-dropzone:hover {
+.ppe-dropzone:not(.ppe-dropzone--logo):hover {
 	border-color: color-mix(in srgb, var(--primary) 55%, var(--on-surface-variant));
 	background: color-mix(in srgb, var(--primary) 6%, transparent);
 }
 
-.ppe-dropzone.is-dragging {
+.ppe-dropzone:not(.ppe-dropzone--logo).is-dragging {
 	border-color: var(--primary);
 	background: color-mix(in srgb, var(--primary) 10%, transparent);
 	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
@@ -672,24 +631,12 @@ public-profile-editor {
 	/* Conserva el fondo claro/oscuro (no lo pisa el gris genérico de .has-preview). */
 	border-style: solid;
 	border-color: var(--shell-border);
-}
-
-.ppe-dropzone--logo.has-preview[data-ppe-logo-bg='light'] {
 	background:
-		linear-gradient(45deg, #e8eaed 25%, transparent 25%) 0 0 / 14px 14px,
-		linear-gradient(-45deg, #e8eaed 25%, transparent 25%) 0 7px / 14px 14px,
-		linear-gradient(45deg, transparent 75%, #e8eaed 75%) 7px -7px / 14px 14px,
-		linear-gradient(-45deg, transparent 75%, #e8eaed 75%) -7px 0 / 14px 14px,
-		#f5f6f8;
-}
-
-.ppe-dropzone--logo.has-preview[data-ppe-logo-bg='dark'] {
-	background:
-		linear-gradient(45deg, #2a2c31 25%, transparent 25%) 0 0 / 14px 14px,
-		linear-gradient(-45deg, #2a2c31 25%, transparent 25%) 0 7px / 14px 14px,
-		linear-gradient(45deg, transparent 75%, #2a2c31 75%) 7px -7px / 14px 14px,
-		linear-gradient(-45deg, transparent 75%, #2a2c31 75%) -7px 0 / 14px 14px,
-		#1a1b1e;
+		linear-gradient(45deg, var(--ppe-logo-checker) 25%, transparent 25%) 0 0 / 14px 14px,
+		linear-gradient(-45deg, var(--ppe-logo-checker) 25%, transparent 25%) 0 7px / 14px 14px,
+		linear-gradient(45deg, transparent 75%, var(--ppe-logo-checker) 75%) 7px -7px / 14px 14px,
+		linear-gradient(-45deg, transparent 75%, var(--ppe-logo-checker) 75%) -7px 0 / 14px 14px,
+		var(--ppe-logo-checker-bg);
 }
 
 .ppe-dropzone--banner.has-preview {
@@ -1196,7 +1143,7 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	}
 }
 
-/* Pie de guardar: en el flujo del editor (no overlay) para no tapar campos al zoom */
+/* Pie de guardar: continúa el fondo de página; solo separador superior */
 .ppe-save-footer {
 	position: relative;
 	z-index: 45;
@@ -1207,13 +1154,18 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	align-items: center;
 	justify-content: space-between;
 	gap: 0.75rem;
-	padding: 0.75rem 1rem;
-	padding-bottom: max(0.75rem, env(safe-area-inset-bottom, 0px));
-	border-top: 1px solid var(--shell-border);
-	background: color-mix(in srgb, var(--surface-bright) 92%, transparent);
-	backdrop-filter: blur(10px);
-	box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.08);
+	padding-block: 0.55rem;
+	border-top: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+	background: var(--page-background, var(--background));
+	box-shadow: none;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
 	box-sizing: border-box;
+}
+
+.ppe-save-footer__hint {
+	flex: 1 1 auto;
+	min-width: 0;
 }
 
 /* Más específico que .ppe-btn { display: inline-flex } */
@@ -1328,45 +1280,20 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 		box-sizing: border-box;
 	}
 
-	.ppe-header {
-		flex-direction: column;
-		align-items: stretch;
-		gap: 0.75rem;
-	}
-
-	.ppe-header__actions {
-		display: flex;
-		width: 100%;
-	}
-
-	/* Móvil: CTA full-width a la vista previa inmersiva */
+	/* Móvil: ojo para vista previa inmersiva; enlace público oculto */
 	.ppe-btn.ppe-preview-trigger--header {
 		display: inline-flex;
-		width: 100%;
-		padding-inline: 1.05rem;
+		width: 2.75rem;
+		padding-inline: 0;
 		justify-content: center;
 	}
 
 	.ppe-preview-trigger__label {
-		display: inline;
+		display: none;
 	}
 
-	/* En PC sirve; en móvil preferimos el modal controlado */
 	.ppe-open-public {
 		display: none !important;
-	}
-
-	.ppe-tabs {
-		flex-wrap: nowrap;
-		overflow-x: auto;
-		overflow-y: visible;
-		-webkit-overflow-scrolling: touch;
-		scrollbar-width: none;
-		overscroll-behavior-x: contain;
-	}
-
-	.ppe-tabs::-webkit-scrollbar {
-		display: none;
 	}
 
 	.ppe-layout {
@@ -1396,8 +1323,8 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 		right: auto;
 		bottom: auto;
 		width: 100%;
-		margin: 1rem 0 0;
-		padding: 0 0 calc(var(--mobile-bottom-nav-height, 4.25rem) + 0.75rem);
+		margin: 0.75rem 0 0;
+		padding: 0.5rem 0 calc(var(--mobile-bottom-nav-height, 4.25rem) + 0.5rem);
 		border: 0;
 		border-radius: 0;
 		box-shadow: none;
@@ -1407,12 +1334,6 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 		z-index: auto;
 	}
 
-	html[data-theme='dark'] .ppe-save-footer {
-		background: transparent;
-		border-color: transparent;
-		box-shadow: none;
-	}
-
 	.ppe-save-footer__hint {
 		display: none;
 	}
@@ -1420,9 +1341,6 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	.ppe-save-footer .ppe-btn {
 		width: 100%;
 		border-radius: 0.85rem;
-		box-shadow:
-			0 4px 12px rgba(15, 23, 42, 0.12),
-			0 12px 28px rgba(15, 23, 42, 0.16);
 	}
 }
 
@@ -1434,6 +1352,10 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 		left: auto;
 		right: auto;
 		bottom: auto;
+		/* Borde superior a ancho completo del main (compensa px-6 del shell) */
+		margin-inline: -1.5rem;
+		padding-inline: 1.5rem;
+		padding-block: 0.55rem;
 	}
 }
 
@@ -1495,7 +1417,7 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 }
 
 .ppe-crop-modal::backdrop {
-	background: rgba(0, 0, 0, 0.55);
+	/* Hereda scrim + blur neutro de dialog::backdrop */
 }
 
 .ppe-crop-modal__sheet {
@@ -1901,8 +1823,8 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	margin: 0.75rem 0 0;
 	padding: 0;
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
-	gap: 0.55rem;
+	grid-template-columns: repeat(auto-fill, minmax(8.75rem, 1fr));
+	gap: 0.65rem;
 }
 
 .ppe-gallery-item {

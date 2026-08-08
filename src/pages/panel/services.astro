@@ -1487,7 +1487,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 	}
 
 	dialog[data-service-modal]::backdrop {
-		background: var(--modal-backdrop-tint);
+		background: var(--modal-backdrop-scrim);
 		backdrop-filter: blur(var(--modal-backdrop-blur));
 		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		animation: service-backdrop-in var(--modal-open-duration) var(--modal-easing);
@@ -1774,7 +1774,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 
 		dialog[data-service-modal]::backdrop {
-			background-color: var(--modal-backdrop-tint);
+			background-color: var(--modal-backdrop-scrim);
 			backdrop-filter: blur(var(--modal-backdrop-blur));
 			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}

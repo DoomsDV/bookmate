@@ -13,6 +13,7 @@ import { DashboardApiError, getMainDashboardWithOrds, type DashboardMainData } f
 import { getMyProfileWithOrds } from '../../lib/my-profile';
 import Layout from '../../layouts/Layout.astro';
 import '../../styles/global.css';
+import '../../styles/dashboard-ai-strip.css';
 
 const token = Astro.locals.token ?? '';
 const roleId = Number(Astro.locals.roleId ?? 0);
@@ -95,7 +96,10 @@ const hourAsuncion = Number(
 const greetingWord =
 	hourAsuncion < 12 ? 'Buenos días' : hourAsuncion < 19 ? 'Buenas tardes' : 'Buenas noches';
 const greetingTitle = userFirstName ? `${greetingWord}, ${userFirstName}` : greetingWord;
+const greetingLine = userFirstName ? `${greetingWord},` : greetingWord;
 const greetingHasName = Boolean(userFirstName);
+
+const toGreetingChars = (value: string) => Array.from(value);
 
 const todayTotal = dashboard.kpis.today_appointments;
 const todayCompleted = Math.min(todayTotal, dashboard.kpis.today_completed_appointments || 0);
@@ -233,7 +237,16 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 				<main class="w-full max-w-full min-w-0 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
 					<div class="w-full min-w-0">
-						<section class="dashboard-main-stack grid w-full min-w-0 gap-5 sm:gap-8" data-dashboard-main>
+						<section
+							class="dashboard-main-stack grid w-full min-w-0 gap-5 sm:gap-8"
+							data-dashboard-main
+							data-fade-content
+							data-fc-blur="true"
+							data-fc-duration="1000"
+							data-fc-easing="ease-out"
+							data-fc-opacity="0"
+							data-fc-immediate="true"
+						>
 							<section class="dashboard-summary-card mb-0 transition-all duration-300">
 								<div class="flex flex-col justify-between gap-3 lg:flex-row lg:items-center lg:gap-4">
 									<div class="flex min-w-0 flex-col gap-2 lg:flex-row lg:items-center lg:gap-4">
@@ -241,24 +254,34 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											<h1
 												class="dashboard-greeting__title font-extrabold text-[#202124] dark:text-[#E3E3E3] tracking-tight"
 												data-dashboard-greeting
-												data-dashboard-reveal
-												data-dashboard-reveal-delay="0"
 												aria-label={greetingTitle}
 											>
+												<span class="dashboard-greeting__word dashboard-greeting__split" aria-hidden="true">
+													{toGreetingChars(greetingLine).map((char, index) => (
+														<span
+															class="dashboard-greeting__char"
+															style={`--char-i: ${index}`}
+														>
+															{char === ' ' ? '\u00A0' : char}
+														</span>
+													))}
+												</span>
 												{greetingHasName ? (
-													<>
-														<span class="dashboard-greeting__word">{greetingWord},</span>
-														<span class="dashboard-greeting__name">{userFirstName}</span>
-													</>
-												) : (
-													greetingWord
-												)}
+													<span class="dashboard-greeting__name dashboard-greeting__split" aria-hidden="true">
+														{toGreetingChars(userFirstName).map((char, index) => (
+															<span
+																class="dashboard-greeting__char"
+																style={`--char-i: ${toGreetingChars(greetingLine).length + index}`}
+															>
+																{char === ' ' ? '\u00A0' : char}
+															</span>
+														))}
+													</span>
+												) : null}
 											</h1>
 											<p
 												class="dashboard-greeting__sub font-medium text-[#5f6368] dark:text-[#C4C7C5]"
 												data-dashboard-greeting-sub
-												data-dashboard-reveal
-												data-dashboard-reveal-delay="90"
 											>
 												{greetingSubtitle}
 											</p>
@@ -266,10 +289,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 										{showTeamOverview && (
 										<div
-											class="dashboard-team-chip dashboard-team-chip--pill dashboard-deferred h-fit lg:ml-8"
+											class="dashboard-team-chip dashboard-team-chip--pill h-fit lg:ml-8"
 											data-team-card
-											data-dashboard-reveal
-											data-dashboard-reveal-delay="180"
 										>
 											<div class="flex items-center gap-3">
 												<div class="flex -space-x-2" data-team-avatar-stack aria-label="Vista previa del equipo">
@@ -286,11 +307,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 										)}
 									</div>
 
-									<div
-										class="dashboard-header-actions dashboard-deferred"
-										data-dashboard-reveal
-										data-dashboard-reveal-delay="180"
-									>
+									<div class="dashboard-header-actions">
 										{FEATURE_FLAGS.APPOINTMENT_AI_VOICE && (
 											<button
 												type="button"
@@ -298,8 +315,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												data-open-appointment-voice
 												data-appointment-voice-mode="inline"
 											>
-												<span class="material-symbols-rounded text-lg" aria-hidden="true">auto_awesome</span>
-												<span>Cita rápida</span>
+												<span class="material-symbols-rounded text-lg dashboard-ai-strip__icon dashboard-ai-strip__shiny" aria-hidden="true">auto_awesome</span>
+												<span class="dashboard-ai-strip__shiny">Agenda rápida</span>
 											</button>
 										)}
 										<a
@@ -317,8 +334,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 								<section
 									class="dashboard-profitability-shell transition-colors duration-300"
 									data-profitability-panel
-									data-dashboard-reveal
-									data-dashboard-reveal-delay="260"
 									aria-busy="true"
 								>
 									<div class="mb-4 flex min-w-0 items-center justify-between gap-2 sm:gap-3 dashboard-profitability-head">
@@ -399,10 +414,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 							{showTeamOverview && (
 								<div
-									class="dashboard-team-chip dashboard-team-chip--compact dashboard-deferred"
+									class="dashboard-team-chip dashboard-team-chip--compact"
 									data-team-card
-									data-dashboard-reveal
-									data-dashboard-reveal-delay="140"
 								>
 									<div class="dashboard-team-chip__row">
 										<div class="dashboard-team-chip__avatars flex -space-x-2" data-team-avatar-stack aria-label="Vista previa del equipo">
@@ -420,42 +433,47 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 							)}
 
 							<div class="dashboard-ops-duo">
-							<div
-								class="dashboard-ai-strip"
-								data-ai-summary-card
-								data-role-id={String(roleId)}
-								data-default-summary-short={defaultAiSummaryShort}
-								data-default-summary-full={defaultAiSummaryFull}
-								aria-live="polite"
-								aria-busy="false"
-							>
-								<div class="dashboard-ai-strip__glow" aria-hidden="true"></div>
-								<div class="dashboard-ai-strip__head">
-									<span class="dashboard-ai-strip__badge" aria-hidden="true">
-										<span class="dashboard-ai-strip__icon material-symbols-rounded">auto_awesome</span>
-									</span>
-									<div class="dashboard-ai-strip__meta">
-										<p class="dashboard-ai-strip__eyebrow">Resumen inteligente del día</p>
+								<div
+									class="dashboard-ai-strip"
+									data-ai-summary-card
+									data-role-id={String(roleId)}
+									data-default-summary-short={defaultAiSummaryShort}
+									data-default-summary-full={defaultAiSummaryFull}
+									aria-live="polite"
+									aria-busy="false"
+								>
+									<div class="dashboard-ai-strip__body">
+										<div class="dashboard-ai-strip__head">
+											<span class="dashboard-ai-strip__badge" aria-hidden="true">
+												<span class="dashboard-ai-strip__icon dashboard-ai-strip__shiny material-symbols-rounded">
+													auto_awesome
+												</span>
+											</span>
+											<div class="dashboard-ai-strip__meta">
+												<p class="dashboard-ai-strip__eyebrow dashboard-ai-strip__shiny">
+													Resumen inteligente del día
+												</p>
+											</div>
+										</div>
+										<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
+											<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--lg"></span>
+											<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--md"></span>
+											<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--sm"></span>
+										</div>
+										<p class="dashboard-ai-strip__text" data-ai-summary-line>
+											{defaultAiSummaryShort}
+										</p>
+										<button
+											type="button"
+											class="dashboard-ai-strip__action"
+											data-open-ai-summary-modal
+											hidden
+										>
+											<span class="dashboard-ai-strip__action-label">Ver análisis completo</span>
+											<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
+										</button>
 									</div>
 								</div>
-								<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
-									<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--lg"></span>
-									<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--md"></span>
-									<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--sm"></span>
-								</div>
-								<p class="dashboard-ai-strip__text" data-ai-summary-line>
-									{defaultAiSummaryShort}
-								</p>
-								<button
-									type="button"
-									class="dashboard-ai-strip__action"
-									data-open-ai-summary-modal
-									hidden
-								>
-									<span class="dashboard-ai-strip__action-label">Ver análisis completo</span>
-									<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
-								</button>
-							</div>
 
 							{
 								loadError ? (
@@ -638,7 +656,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 										</div>
 
 										{showAlertsPanel && (
-											<aside class="dashboard-alerts-shell dashboard-floor__panel rounded-4xl p-5 transition-colors duration-300" data-dashboard-alerts>
+											<aside
+												class="dashboard-alerts-shell dashboard-floor__panel rounded-4xl p-5 transition-colors duration-300"
+												data-dashboard-alerts
+											>
 												<div class="mb-4 flex shrink-0 items-center justify-between gap-2">
 													<h2 class="text-lg font-bold text-[#202124] dark:text-[#E3E3E3]">Pendientes</h2>
 												</div>
@@ -701,9 +722,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 							class="dashboard-cita-fab"
 							data-open-appointment-voice
 							data-appointment-voice-mode="inline"
-							aria-label="Cita rápida"
+							aria-label="Agenda rápida"
 						>
-							<span class="material-symbols-rounded" aria-hidden="true">auto_awesome</span>
+							<span class="material-symbols-rounded dashboard-ai-strip__icon dashboard-ai-strip__shiny" aria-hidden="true">auto_awesome</span>
 						</button>
 					)}
 				</main>
@@ -726,7 +747,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			<div class="dashboard-ai-drawer__handle" aria-hidden="true">
 				<span class="dashboard-ai-drawer__handle-pill"></span>
 			</div>
-			<div class="dashboard-ai-modal__mesh" aria-hidden="true"></div>
 			<div class="dashboard-ai-modal__header shrink-0 z-10 px-4 py-4 sm:px-6 sm:py-5">
 				<div class="flex items-start justify-between gap-4">
 					<h2 class="text-[1.12rem] font-bold tracking-tight text-(--on-surface)">
@@ -757,6 +777,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	import '../../scripts/appointment-voice-overlay';
 	import '../../scripts/calendar/appointment-modal';
 	import '../../scripts/appointment-voice-host';
+	import { initFadeContent } from '../../lib/fade-content';
+	import { initDashboardGreeting } from '../../lib/dashboard-greeting';
 
 	const normalizeAiSummaryBase = (value: unknown): string =>
 		String(value ?? '')
@@ -1258,6 +1280,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			sentenceParts.length > 1
 				? sentenceParts.slice(0, 3).join('\n')
 				: truncatePreviewText(rawPreview, 220);
+
 		lineNode.textContent = lineText;
 	};
 
@@ -1652,7 +1675,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		card.setAttribute('aria-busy', 'true');
 		card.classList.add('is-generating');
-		lineNode.textContent = 'Generando resumen inteligente…';
+		lineNode.textContent = 'Generando resumen inteligente.';
 
 		try {
 			const response = await fetch('/api/dashboard/ai-summary', {
@@ -1688,8 +1711,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 				summaryFull: fallbackFull,
 				sections: fallbackSections,
 			});
-		} finally {
-			card.classList.remove('is-generating');
 		}
 	};
 
@@ -1802,9 +1823,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		if (panel.dataset.loaded === '1') return;
 		panel.dataset.loaded = '1';
 		panel.hidden = false;
-		panel.classList.remove('hidden', 'is-dismissed', 'is-ready', 'is-loading', 'is-in');
+		panel.classList.remove('hidden', 'is-dismissed', 'is-loading', 'is-ready');
 		panel.setAttribute('aria-busy', 'true');
-		// Sin skeleton: permanece oculto por data-dashboard-reveal hasta tener datos.
 
 		try {
 			const response = await fetch('/api/dashboard/profitability', {
@@ -1880,16 +1900,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			panel.classList.remove('hidden', 'is-dismissed', 'is-loading');
 			panel.setAttribute('aria-busy', 'false');
 			panel.classList.add('is-ready');
-			// Un solo fade-in del bloque completo (sin skeleton previo).
-			const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-			if (prefersReducedMotion) {
-				panel.classList.add('is-in');
-			} else {
-				void panel.offsetWidth;
-				window.requestAnimationFrame(() => {
-					if (document.contains(panel)) panel.classList.add('is-in');
-				});
-			}
 		} catch {
 			dismissProfitabilityPanel(panel);
 		}
@@ -1898,65 +1908,16 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	const playDashboardIntro = () => {
 		const main = document.querySelector<HTMLElement>('[data-dashboard-main]');
 		if (!main) return;
-
-		const summary = main.querySelector<HTMLElement>('.dashboard-summary-card');
-		// Stagger M3: cada bloque entra con un pequeño offset tras el saludo.
-		[...main.children]
-			.filter((child): child is HTMLElement => child instanceof HTMLElement && child !== summary)
-			.forEach((child, index) => {
-				if (!child.hasAttribute('data-dashboard-reveal')) {
-					child.setAttribute('data-dashboard-reveal', '');
-					child.setAttribute('data-dashboard-reveal-delay', String(260 + index * 70));
-				}
-			});
-
-		const revealNodes = Array.from(main.querySelectorAll<HTMLElement>('[data-dashboard-reveal]'));
-		if (!revealNodes.length) return;
-
-		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-		const clearReveal = () => {
-			revealNodes.forEach((node) => {
-				node.classList.remove('is-in');
-				node.style.animation = 'none';
-			});
-		};
-
-		if (prefersReducedMotion) {
-			revealNodes.forEach((node) => {
-				if (node.hasAttribute('data-profitability-panel')) return;
-				node.style.animation = '';
-				node.classList.add('is-in');
-			});
-			return;
-		}
-
-		clearReveal();
-		void main.offsetWidth;
-
-		window.requestAnimationFrame(() => {
-			window.requestAnimationFrame(() => {
-				if (!document.contains(main)) return;
-				revealNodes.forEach((node) => {
-					// Rentabilidad hace su propio fade-in cuando llegan los datos (sin skeleton).
-					if (node.hasAttribute('data-profitability-panel')) return;
-					node.style.animation = '';
-					const delay = Number(node.getAttribute('data-dashboard-reveal-delay') || 0);
-					const safeDelay = Number.isFinite(delay) ? Math.max(0, delay) : 0;
-					window.setTimeout(() => {
-						if (document.contains(node)) node.classList.add('is-in');
-					}, safeDelay + 40);
-				});
-			});
-		});
+		initFadeContent(main, { immediate: true });
+		initDashboardGreeting(main);
 	};
 
 	const initializeDashboardPage = () => {
 		playDashboardIntro();
-		loadAiSummary();
 		loadTeamOverview();
 		loadProfitability();
 		loadDashboardCobrosAlert();
+		loadAiSummary();
 		syncDashboardAlertsEmpty();
 		scrollToUpcomingAppointmentsIfNeeded();
 	};
@@ -2055,58 +2016,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
-	.dashboard-ai-modal-mark {
-		position: relative;
-		overflow: visible;
-	}
-
-	.dashboard-ai-modal-mark::before {
-		content: '';
-		position: absolute;
-		inset: -0.2rem;
-		border-radius: inherit;
-		background: radial-gradient(
-			circle,
-			color-mix(in srgb, var(--primary) 34%, transparent) 0%,
-			transparent 72%
-		);
-		opacity: 0.55;
-		animation: dashboard-ai-mark-glow 2.8s ease-in-out infinite;
-		pointer-events: none;
-	}
-
-	.dashboard-ai-modal-mark__icon {
-		position: relative;
-		z-index: 1;
-		animation: dashboard-ai-mark-sparkle 4.5s ease-in-out infinite;
-	}
-
-	@keyframes dashboard-ai-mark-glow {
-		0%,
-		100% {
-			opacity: 0.35;
-			transform: scale(0.94);
-		}
-
-		50% {
-			opacity: 0.85;
-			transform: scale(1.08);
-		}
-	}
-
-	@keyframes dashboard-ai-mark-sparkle {
-		0%,
-		100% {
-			transform: scale(1) rotate(0deg);
-			filter: drop-shadow(0 0 0 transparent);
-		}
-
-		50% {
-			transform: scale(1.06) rotate(8deg);
-			filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 42%, transparent));
-		}
-	}
-
 	dialog[data-ai-summary-modal].dashboard-ai-modal {
 		position: fixed;
 		inset: 0;
@@ -2121,10 +2030,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-ai-drawer__panel {
 		will-change: transform;
-	}
-
-	.dashboard-ai-modal__mesh {
-		display: none;
+		background: var(--surface-bright);
+		background-image: none;
 	}
 
 	.dashboard-ai-modal__header,
@@ -2195,18 +2102,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		border-radius: 0;
 		background: transparent;
 		flex-shrink: 0;
-	}
-
-	.dashboard-ai-section--panorama .dashboard-ai-section__icon {
-		color: #3b82f6;
-	}
-
-	.dashboard-ai-section--contexto .dashboard-ai-section__icon {
-		color: #f59e0b;
-	}
-
-	.dashboard-ai-section--sugerencia .dashboard-ai-section__icon {
-		color: #60a5fa;
+		color: var(--primary);
 	}
 
 	.dashboard-ai-section__icon .material-symbols-rounded {
@@ -2224,18 +2120,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		font-weight: 700;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-	}
-
-	.dashboard-ai-section--panorama .dashboard-ai-section__title {
-		color: #3b82f6;
-	}
-
-	.dashboard-ai-section--contexto .dashboard-ai-section__title {
-		color: #d97706;
-	}
-
-	.dashboard-ai-section--sugerencia .dashboard-ai-section__title {
-		color: #60a5fa;
+		color: var(--on-surface-variant);
 	}
 
 	.dashboard-ai-section__text {
@@ -2243,7 +2128,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		font-size: 0.92rem;
 		font-weight: 500;
 		line-height: 1.62;
-		color: #475569;
+		color: color-mix(in srgb, var(--on-surface) 90%, transparent);
 	}
 
 	.dashboard-ai-highlight {
@@ -2271,7 +2156,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		font-size: 0.92rem;
 		font-weight: 500;
 		line-height: 1.62;
-		color: #475569;
+		color: color-mix(in srgb, var(--on-surface) 90%, transparent);
 	}
 
 	.dashboard-ai-section__list li::before {
@@ -2283,77 +2168,56 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: transparent;
 	}
 
-	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__icon {
-		color: #60a5fa;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--contexto .dashboard-ai-section__icon {
-		color: #fbbf24;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--sugerencia .dashboard-ai-section__icon {
-		color: #93c5fd;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__title {
-		color: #60a5fa;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--contexto .dashboard-ai-section__title {
-		color: #fbbf24;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--sugerencia .dashboard-ai-section__title {
-		color: #93c5fd;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section__text,
-	html[data-theme='dark'] .dashboard-ai-section__list li {
-		color: color-mix(in srgb, var(--on-surface) 82%, #cbd5e1 18%);
-	}
-
 	@media (prefers-reduced-motion: reduce) {
-		.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger,
-		.dashboard-ai-modal-mark::before,
-		.dashboard-ai-modal-mark__icon {
+		.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger {
 			animation: none !important;
 			opacity: 1;
 			transform: none;
 		}
 	}
 
-	/* Intro dashboard: M3 Enter (Fade and Scale) + staggered. */
-	@keyframes dashboard-material-enter {
-		from {
-			opacity: 0;
-			transform: scale(0.92) translateY(10px);
+	/* React Bits FadeContent — single fade for the whole dashboard stack. */
+	[data-fade-content] {
+		opacity: var(--fc-opacity, 0);
+		filter: blur(var(--fc-blur, 0px));
+		transform: translateZ(0);
+		transition:
+			opacity var(--fc-duration, 1000ms) var(--fc-easing, ease-out) var(--fc-delay, 0ms),
+			filter var(--fc-duration, 1000ms) var(--fc-easing, ease-out) var(--fc-delay, 0ms);
+		will-change: opacity, filter;
+	}
+
+	[data-fade-content].is-visible {
+		opacity: 1;
+		filter: blur(0px);
+	}
+
+	/* Fallback si el JS no corre: no dejar el dashboard invisible. */
+	@supports (opacity: 1) {
+		[data-fade-content]:not(.is-visible) {
+			animation: dashboard-fade-fallback 0.01s ease-out 1.2s forwards;
 		}
+	}
+
+	@keyframes dashboard-fade-fallback {
 		to {
 			opacity: 1;
-			transform: scale(1) translateY(0);
+			filter: blur(0);
 		}
-	}
-
-	[data-dashboard-main] [data-dashboard-reveal] {
-		opacity: 0;
-		transform: scale(0.92) translateY(10px);
-		transform-origin: center top;
-		will-change: opacity, transform;
-	}
-
-	[data-dashboard-main] [data-dashboard-reveal].is-in {
-		opacity: 1;
-		animation: dashboard-material-enter 0.55s cubic-bezier(0.2, 0, 0, 1) both;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		[data-dashboard-main] [data-dashboard-reveal],
-		[data-dashboard-main] [data-dashboard-reveal].is-in {
-			animation: none !important;
+		[data-fade-content],
+		[data-fade-content].is-visible {
 			opacity: 1;
-			transform: none;
+			filter: none;
+			transition: none;
 			will-change: auto;
 		}
+	}
+
+	html[data-page-hidden] [data-fade-content] {
+		transition: none !important;
 	}
 </style>
 
@@ -2383,11 +2247,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		isolation: isolate;
 		/* Base casi blanca; acentos mínimos */
 		background:
-			radial-gradient(ellipse 70% 50% at 6% 36%, rgba(147, 197, 253, 0.025), transparent 62%),
-			radial-gradient(ellipse 80% 55% at 55% 18%, rgba(186, 230, 253, 0.03), transparent 60%),
-			radial-gradient(ellipse 70% 50% at 92% 42%, rgba(232, 229, 224, 0.045), transparent 55%),
-			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(199, 210, 254, 0.02), transparent 58%),
-			radial-gradient(ellipse 60% 45% at 35% 88%, rgba(244, 242, 238, 0.06), transparent 62%),
+			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(167, 243, 208, 0.026), transparent 58%),
+			radial-gradient(ellipse 60% 45% at 35% 88%, rgba(204, 251, 241, 0.06), transparent 62%),
 			linear-gradient(
 				165deg,
 				#ffffff 0%,
@@ -2406,9 +2267,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		z-index: 0;
 		pointer-events: none;
 		background:
-			radial-gradient(ellipse 40% 30% at 10% 46%, rgba(96, 165, 250, 0.025), transparent 72%),
-			radial-gradient(ellipse 52% 38% at 88% 58%, rgba(228, 224, 218, 0.08), transparent 68%),
-			radial-gradient(ellipse 45% 40% at 72% 90%, rgba(165, 180, 252, 0.025), transparent 70%);
+			radial-gradient(ellipse 45% 40% at 72% 90%, rgba(52, 211, 153, 0.025), transparent 70%);
 		filter: blur(44px);
 		opacity: 0.3;
 	}
@@ -2419,31 +2278,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			filter: none;
 			opacity: 0.35;
 			background:
-				radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.03), transparent 70%),
-				radial-gradient(ellipse 62% 48% at 92% 55%, rgba(228, 224, 218, 0.1), transparent 68%),
-				radial-gradient(ellipse 58% 50% at 70% 92%, rgba(165, 180, 252, 0.025), transparent 72%);
+				radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.025), transparent 72%);
 		}
 
 		html[data-theme='dark'] .dashboard-content-canvas::before {
 			filter: none;
 			opacity: 0.45;
 			background:
-				radial-gradient(ellipse 55% 42% at 8% 40%, rgba(96, 165, 250, 0.07), transparent 70%),
-				radial-gradient(ellipse 62% 48% at 92% 55%, rgba(34, 211, 238, 0.08), transparent 68%),
 				radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.09), transparent 72%);
-		}
-
-		.dashboard-ai-strip__glow::before,
-		.dashboard-ai-strip__glow::after,
-		html[data-theme='dark'] .dashboard-ai-strip__glow::before,
-		html[data-theme='dark'] .dashboard-ai-strip__glow::after {
-			filter: blur(28px);
-			opacity: 0.55;
-		}
-
-		.dashboard-ai-strip:not(.is-generating) .dashboard-ai-strip__glow {
-			display: block;
-			opacity: 0.85;
 		}
 
 		.dashboard-ai-orb {
@@ -2460,8 +2302,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	html[data-theme='dark'] .dashboard-canvas,
 	html[data-theme='dark'] .dashboard-content-canvas {
 		background:
-			radial-gradient(ellipse 70% 50% at 6% 36%, rgba(59, 130, 246, 0.05), transparent 62%),
-			radial-gradient(ellipse 80% 55% at 55% 18%, rgba(56, 189, 248, 0.08), transparent 60%),
 			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(45, 212, 191, 0.08), transparent 58%),
 			var(--page-background, #0e0e10);
 	}
@@ -2469,8 +2309,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	html[data-theme='dark'] .dashboard-content-canvas::before {
 		opacity: 0.3;
 		background:
-			radial-gradient(ellipse 40% 30% at 10% 46%, rgba(96, 165, 250, 0.05), transparent 72%),
-			radial-gradient(ellipse 52% 38% at 88% 58%, rgba(34, 211, 238, 0.07), transparent 68%),
 			radial-gradient(ellipse 45% 40% at 72% 90%, rgba(52, 211, 153, 0.08), transparent 70%);
 	}
 
@@ -2514,8 +2352,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 	}
 
-	.dashboard-ai-chat-cta span {
+	.dashboard-ai-chat-cta span:not(.dashboard-ai-strip__shiny) {
 		color: inherit;
+	}
+
+	.dashboard-ai-chat-cta .dashboard-ai-strip__shiny {
+		color: transparent;
+		-webkit-text-fill-color: transparent;
 	}
 
 	.dashboard-ai-chat-cta:hover {
@@ -2600,11 +2443,54 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		display: block;
 	}
 
+	.dashboard-greeting__split {
+		overflow: hidden;
+	}
+
+	.dashboard-greeting__char {
+		display: inline-block;
+		opacity: 0;
+		transform: translate3d(0, 0.55em, 0);
+		animation: dashboard-greeting-char 420ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+		animation-delay: calc(var(--char-i, 0) * 16ms);
+	}
+
+	@keyframes dashboard-greeting-char {
+		to {
+			opacity: 1;
+			transform: translate3d(0, 0, 0);
+		}
+	}
+
 	.dashboard-greeting__sub {
 		font-size: clamp(0.9rem, 2vw, 1rem);
 		line-height: 1.4;
 		overflow-wrap: anywhere;
 		word-break: break-word;
+		opacity: 0;
+		transform: translate3d(0, 6px, 0);
+		transition:
+			opacity 0.35s cubic-bezier(0.2, 0, 0, 1),
+			transform 0.35s cubic-bezier(0.2, 0, 0, 1);
+	}
+
+	.dashboard-greeting__sub.is-in {
+		opacity: 1;
+		transform: none;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.dashboard-greeting__char {
+			opacity: 1;
+			transform: none;
+			animation: none;
+		}
+
+		.dashboard-greeting__sub {
+			opacity: 1;
+			transform: none;
+			transition: none;
+		}
 	}
 
 	.dashboard-team-chip {
@@ -2782,10 +2668,17 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
 		}
 
-		.dashboard-cita-fab .material-symbols-rounded {
+		.dashboard-cita-fab .material-symbols-rounded:not(.dashboard-ai-strip__shiny) {
 			font-size: 1.45rem;
 			line-height: 1;
 			color: inherit;
+		}
+
+		.dashboard-cita-fab .material-symbols-rounded.dashboard-ai-strip__shiny {
+			font-size: 1.45rem;
+			line-height: 1;
+			color: transparent;
+			-webkit-text-fill-color: transparent;
 		}
 
 		.dashboard-cita-fab:hover {
@@ -2817,10 +2710,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
+	.dashboard-main-stack {
+		--dashboard-duo-columns: 1fr;
+		--dashboard-duo-gap: 1.15rem;
+	}
+
 	.dashboard-ops-duo {
 		display: grid;
-		grid-template-columns: 1fr;
-		gap: 1.15rem;
+		grid-template-columns: var(--dashboard-duo-columns);
+		gap: var(--dashboard-duo-gap);
 		align-items: stretch;
 		width: 100%;
 		min-width: 0;
@@ -2830,21 +2728,37 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-ops-duo > .dashboard-floor--today {
 		min-width: 0;
 		height: 100%;
+		align-self: stretch;
 	}
 
 	@media (min-width: 1280px) {
-		.dashboard-ops-duo {
-			grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-			gap: 1.25rem;
+		.dashboard-main-stack {
+			--dashboard-duo-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+			--dashboard-duo-gap: 1.25rem;
 		}
 
 		.dashboard-ops-duo > .dashboard-ai-strip {
+			display: flex;
+			flex-direction: column;
 			height: 100%;
 			min-height: 11.5rem;
 		}
 
-		.dashboard-ops-duo .dashboard-day-progress {
-			min-height: 100%;
+		.dashboard-ops-duo > .dashboard-ai-strip .dashboard-ai-strip__body {
+			flex: 1 1 auto;
+			min-height: 0;
+		}
+
+		.dashboard-ops-duo > .dashboard-floor--today {
+			display: flex;
+			flex-direction: column;
+			min-height: 0;
+		}
+
+		.dashboard-ops-duo > .dashboard-floor--today .dashboard-day-progress {
+			flex: 1 1 auto;
+			height: 100%;
+			min-height: 11.5rem;
 		}
 
 		.dashboard-ops-duo .dashboard-ai-strip__text {
@@ -2852,415 +2766,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
-	.dashboard-ai-strip {
-		position: relative;
-		isolation: isolate;
-		overflow: hidden;
-		display: flex;
-		flex-direction: column;
-		align-items: stretch;
-		gap: 0.95rem;
-		width: 100%;
-		max-width: none;
-		padding: 1.3rem 1.35rem;
-		border-radius: 1.5rem;
-		/* Glass IA: borde suave (sin azul sólido) + fondo translúcido */
-		border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--shell-border, #d0d7e2) 40%);
-		background:
-			linear-gradient(
-				145deg,
-				color-mix(in srgb, var(--primary) 8%, transparent) 0%,
-				transparent 42%,
-				color-mix(in srgb, #67e8f9 6%, transparent) 100%
-			),
-			color-mix(in srgb, var(--surface-bright, #ffffff) 52%, transparent);
-		-webkit-backdrop-filter: blur(16px) saturate(1.28);
-		backdrop-filter: blur(16px) saturate(1.28);
-		box-shadow:
-			0 8px 28px color-mix(in srgb, var(--primary) 7%, transparent),
-			inset 0 1px 0 rgba(255, 255, 255, 0.55);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip {
-		border-color: color-mix(in srgb, var(--primary) 26%, rgba(255, 255, 255, 0.1));
-		background:
-			linear-gradient(
-				145deg,
-				color-mix(in srgb, var(--primary) 14%, transparent) 0%,
-				transparent 48%,
-				color-mix(in srgb, #22d3ee 8%, transparent) 100%
-			),
-			color-mix(in srgb, var(--surface-container-high, #222222) 40%, transparent);
-		-webkit-backdrop-filter: blur(18px) saturate(1.35);
-		backdrop-filter: blur(18px) saturate(1.35);
-		box-shadow:
-			0 10px 32px rgba(0, 0, 0, 0.28),
-			inset 0 1px 0 rgba(255, 255, 255, 0.12);
-	}
-
-	.dashboard-ai-strip__glow {
-		position: absolute;
-		inset: 0;
-		z-index: 0;
-		overflow: hidden;
-		border-radius: inherit;
-		pointer-events: none;
-	}
-
-	.dashboard-ai-strip__glow::before,
-	.dashboard-ai-strip__glow::after {
-		content: '';
-		position: absolute;
-		pointer-events: none;
-		filter: blur(40px);
-	}
-
-	/* Aurora inferior suave (toque IA permanente, sin neón) */
-	.dashboard-ai-strip__glow::before {
-		left: -20%;
-		right: -10%;
-		bottom: -58%;
-		height: 88%;
-		background:
-			radial-gradient(ellipse 55% 48% at 30% 74%, rgba(147, 197, 253, 0.28), transparent 72%),
-			radial-gradient(ellipse 48% 42% at 70% 80%, rgba(103, 232, 249, 0.16), transparent 70%),
-			radial-gradient(ellipse 42% 38% at 52% 96%, rgba(165, 243, 252, 0.14), transparent 68%);
-		opacity: 0.72;
-	}
-
-	.dashboard-ai-strip__glow::after {
-		left: 40%;
-		right: -8%;
-		bottom: -42%;
-		height: 62%;
-		background: radial-gradient(ellipse 50% 45% at 60% 80%, rgba(191, 219, 254, 0.16), transparent 72%);
-		opacity: 0.55;
-	}
-
-	.dashboard-ai-strip__head,
-	.dashboard-ai-strip__skeleton,
-	.dashboard-ai-strip__text,
-	.dashboard-ai-strip__action {
-		position: relative;
-		z-index: 1;
-	}
-
-	.dashboard-ai-strip__head {
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
-		min-width: 0;
-	}
-
-	.dashboard-ai-strip__badge {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 1.55rem;
-		height: 1.55rem;
-		flex-shrink: 0;
-		border-radius: 0.55rem;
-		background: color-mix(in srgb, var(--primary) 16%, transparent);
-		border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-	}
-
-	.dashboard-ai-strip__icon {
-		font-size: 1.2rem;
-		color: var(--primary);
-		line-height: 1;
-	}
-
-	.dashboard-ai-strip__meta {
-		position: relative;
-		min-width: 0;
-		flex: 1 1 auto;
-		text-align: left;
-	}
-
-	.dashboard-ai-strip__eyebrow {
-		margin: 0;
-		font-size: 0.92rem;
-		font-weight: 700;
-		letter-spacing: -0.01em;
-		text-transform: none;
-		color: color-mix(in srgb, var(--primary) 78%, #1d4ed8 22%);
-		line-height: 1.25;
-	}
-
-	.dashboard-ai-strip__text {
-		margin: 0;
-		min-width: 0;
-		font-size: 0.95rem;
-		font-weight: 550;
-		line-height: 1.55;
-		color: color-mix(in srgb, var(--on-surface) 90%, #0f172a 10%);
-		text-align: left;
-		white-space: pre-line;
-	}
-
-	.dashboard-ai-strip__skeleton {
-		display: none;
-		flex-direction: column;
-		gap: 0.55rem;
-		width: 100%;
-		padding-top: 0.05rem;
-	}
-
-	.dashboard-ai-strip__skel-line {
-		display: block;
-		height: 0.72rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface) 10%, var(--surface-variant) 90%);
-		overflow: hidden;
-		position: relative;
-	}
-
-	.dashboard-ai-strip__skel-line--lg { width: 100%; }
-	.dashboard-ai-strip__skel-line--md { width: 88%; }
-	.dashboard-ai-strip__skel-line--sm { width: 64%; }
-
-	.dashboard-ai-strip__skel-line::after {
-		content: '';
-		position: absolute;
-		inset: 0;
-		transform: translateX(-120%);
-		background: linear-gradient(
-			90deg,
-			transparent 0%,
-			color-mix(in srgb, var(--on-surface) 22%, transparent) 45%,
-			transparent 100%
-		);
-		opacity: 0.7;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__skel-line {
-		background: color-mix(in srgb, var(--on-surface) 12%, #2a2d33 88%);
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip__skel-line::after {
-		background: linear-gradient(
-			90deg,
-			transparent 0%,
-			color-mix(in srgb, #ffffff 18%, var(--primary) 22%) 45%,
-			transparent 100%
-		);
-		opacity: 0.55;
-	}
-
-	.dashboard-ai-strip__action {
-		display: inline-flex;
-		align-items: center;
-		justify-content: flex-start;
-		align-self: flex-start;
-		gap: 0.15rem;
-		width: auto;
-		min-height: 0;
-		margin: auto 0 0;
-		padding: 0.15rem 0;
-		border: 0;
-		border-radius: 0.35rem;
-		background: transparent;
-		color: color-mix(in srgb, var(--primary) 72%, var(--on-surface-variant) 28%);
-		font-size: 0.82rem;
-		font-weight: 600;
-		letter-spacing: 0.01em;
-		text-transform: none;
-		cursor: pointer;
-		text-decoration: none;
-		text-align: left;
-		transition:
-			color 160ms ease,
-			opacity 160ms ease;
-	}
-
-	.dashboard-ai-strip__action[hidden] {
-		display: none !important;
-	}
-
-	.dashboard-ai-strip__action-label {
-		text-decoration: none;
-	}
-
-	.dashboard-ai-strip__action .material-symbols-rounded {
-		font-size: 1.05rem;
-		line-height: 1;
-		opacity: 0.8;
-		transition: transform 160ms ease;
-	}
-
-	.dashboard-ai-strip__action:hover {
-		background: transparent;
-		color: var(--primary);
-	}
-
-	.dashboard-ai-strip__action:hover .material-symbols-rounded {
-		transform: translateX(2px);
-	}
-
-	.dashboard-ai-strip__action:focus-visible {
-		outline: 2px solid var(--primary);
-		outline-offset: 3px;
-	}
-
-	.dashboard-ai-strip.is-generating {
-		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border, #d0d7e2) 35%);
-		box-shadow:
-			0 8px 28px color-mix(in srgb, var(--primary) 10%, transparent),
-			inset 0 1px 0 rgba(255, 255, 255, 0.5);
-	}
-
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__glow::before {
-		animation: dashboard-ai-strip-glow 3.2s ease-in-out infinite;
-	}
-
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__head,
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__skeleton,
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__action {
-		position: relative;
-		z-index: 1;
-	}
-
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__icon {
-		animation: dashboard-ai-strip-pulse 1.15s ease-in-out infinite;
-	}
-
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__badge {
-		animation: dashboard-ai-strip-badge-glow 1.6s ease-in-out infinite;
-	}
-
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__text {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border: 0;
-	}
-
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__skeleton {
-		display: flex;
-	}
-
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-line::after {
-		animation: dashboard-ai-strip-shimmer 1.55s ease-in-out infinite;
-	}
-
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-line--md::after {
-		animation-delay: 120ms;
-	}
-
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-line--sm::after {
-		animation-delay: 240ms;
-	}
-
-	.dashboard-ai-strip.is-generating .dashboard-ai-strip__action {
-		opacity: 0.45;
-		pointer-events: none;
-	}
-
-	@keyframes dashboard-ai-strip-sparkle {
-		0%,
-		100% {
-			opacity: 0.72;
-			transform: scale(1);
-		}
-		50% {
-			opacity: 1;
-			transform: scale(1.06);
-		}
-	}
-
-	@keyframes dashboard-ai-strip-pulse {
-		0%,
-		100% {
-			opacity: 0.55;
-			transform: scale(1);
-		}
-		50% {
-			opacity: 1;
-			transform: scale(1.1);
-		}
-	}
-
-	@keyframes dashboard-ai-strip-badge-glow {
-		0%,
-		100% {
-			box-shadow: none;
-			opacity: 0.85;
-		}
-		50% {
-			box-shadow: none;
-			opacity: 1;
-		}
-	}
-
-	@keyframes dashboard-ai-strip-shimmer {
-		0% {
-			transform: translateX(-120%);
-		}
-		100% {
-			transform: translateX(130%);
-		}
-	}
-
-	@keyframes dashboard-ai-strip-glow {
-		0%,
-		100% {
-			opacity: 0.55;
-		}
-		50% {
-			opacity: 1;
-		}
-	}
-
-	html[data-theme='dark'] .dashboard-ai-strip.is-generating {
-		border-color: color-mix(in srgb, var(--primary) 38%, rgba(255, 255, 255, 0.08));
-		box-shadow:
-			0 10px 34px color-mix(in srgb, var(--primary) 14%, transparent),
-			inset 0 1px 0 rgba(255, 255, 255, 0.12);
-	}
-
-	@media (min-width: 641px) {
-		.dashboard-ai-strip {
-			gap: 1.05rem;
-			width: 100%;
-			max-width: none;
-			padding: 1.4rem 1.5rem;
-			border-radius: 1.5rem;
-		}
-
-		.dashboard-ai-strip__eyebrow {
-			font-size: 0.98rem;
-		}
-
-		.dashboard-ai-strip__text {
-			font-size: 0.98rem;
-			max-width: 52rem;
-		}
-
-		.dashboard-ai-strip__action {
-			font-size: 0.84rem;
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.dashboard-ai-strip__icon,
-		.dashboard-ai-strip.is-generating .dashboard-ai-strip__glow::before,
-		.dashboard-ai-strip.is-generating .dashboard-ai-strip__icon,
-		.dashboard-ai-strip.is-generating .dashboard-ai-strip__badge,
-		.dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-line::after {
-			animation: none;
-		}
-
-		.dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-line::after {
-			transform: none;
-			opacity: 0.35;
-		}
-	}
 
 	.dashboard-ai-card {
 		position: relative;
@@ -3657,227 +3162,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: color-mix(in srgb, var(--on-surface) 94%, #0f172a 6%);
 	}
 
-	.dashboard-ai-sections {
-		display: grid;
-		gap: 0.75rem;
-	}
-
-	.dashboard-ai-sections--modal {
-		gap: 0;
-	}
-
-	.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger {
-		opacity: 0;
-		transform: translateY(10px);
-		animation: dashboard-ai-section-enter 460ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
-		animation-delay: calc(var(--ai-section-index, 0) * 150ms);
-	}
-
-	@keyframes dashboard-ai-section-enter {
-		from {
-			opacity: 0;
-			transform: translateY(10px);
-		}
-
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
-
-	.dashboard-ai-modal-mark {
-		position: relative;
-		overflow: visible;
-	}
-
-	.dashboard-ai-modal-mark::before {
-		content: '';
-		position: absolute;
-		inset: -0.2rem;
-		border-radius: inherit;
-		background: radial-gradient(
-			circle,
-			color-mix(in srgb, var(--primary) 34%, transparent) 0%,
-			transparent 72%
-		);
-		opacity: 0.55;
-		animation: dashboard-ai-mark-glow 2.8s ease-in-out infinite;
-		pointer-events: none;
-	}
-
-	.dashboard-ai-modal-mark__icon {
-		position: relative;
-		z-index: 1;
-		animation: dashboard-ai-mark-sparkle 4.5s ease-in-out infinite;
-	}
-
-	@keyframes dashboard-ai-mark-glow {
-		0%,
-		100% {
-			opacity: 0.35;
-			transform: scale(0.94);
-		}
-
-		50% {
-			opacity: 0.85;
-			transform: scale(1.08);
-		}
-	}
-
-	@keyframes dashboard-ai-mark-sparkle {
-		0%,
-		100% {
-			transform: scale(1) rotate(0deg);
-			filter: drop-shadow(0 0 0 transparent);
-		}
-
-		50% {
-			transform: scale(1.06) rotate(8deg);
-			filter: drop-shadow(0 0 10px color-mix(in srgb, var(--primary) 42%, transparent));
-		}
-	}
-
-	.dashboard-ai-sections--modal .dashboard-ai-section {
-		padding: 1.45rem 0 1.35rem;
-		border: 0;
-		border-radius: 0;
-		background: transparent;
-		box-shadow: none;
-		overflow: visible;
-	}
-
-	.dashboard-ai-sections--modal .dashboard-ai-section + .dashboard-ai-section {
-		border-top: 1px solid color-mix(in srgb, var(--shell-border) 22%, transparent);
-	}
-
-	.dashboard-ai-sections--modal .dashboard-ai-section__header {
-		margin-bottom: 0.85rem;
-	}
-
-	.dashboard-ai-sections--modal .dashboard-ai-section__text,
-	.dashboard-ai-sections--modal .dashboard-ai-section__list li {
-		font-size: 0.92rem;
-		line-height: 1.62;
-		font-weight: 500;
-	}
-
-	.dashboard-ai-section {
-		position: relative;
-		overflow: visible;
-		border: 0;
-		border-radius: 0;
-		background: transparent;
-		padding: 0;
-		box-shadow: none;
-	}
-
-	.dashboard-ai-section--panorama,
-	.dashboard-ai-section--contexto,
-	.dashboard-ai-section--sugerencia {
-		border: 0;
-		background: transparent;
-		box-shadow: none;
-	}
-
-	.dashboard-ai-section__header {
-		display: flex;
-		align-items: center;
-		gap: 0.55rem;
-		margin-bottom: 0.75rem;
-	}
-
-	.dashboard-ai-section__icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: auto;
-		height: auto;
-		border-radius: 0;
-		background: transparent;
-		flex-shrink: 0;
-	}
-
-	.dashboard-ai-section--panorama .dashboard-ai-section__icon {
-		color: #3b82f6;
-	}
-
-	.dashboard-ai-section--contexto .dashboard-ai-section__icon {
-		color: #f59e0b;
-	}
-
-	.dashboard-ai-section--sugerencia .dashboard-ai-section__icon {
-		color: #60a5fa;
-	}
-
-	.dashboard-ai-section__icon .material-symbols-rounded {
-		font-size: 1.1rem;
-	}
-
-	.dashboard-ai-section--sugerencia .dashboard-ai-section__icon .material-symbols-rounded {
-		font-size: 1.2rem;
-	}
-
-	.dashboard-ai-section__title {
-		margin: 0;
-		font-size: 0.67rem;
-		font-weight: 700;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-	}
-
-	.dashboard-ai-section--panorama .dashboard-ai-section__title {
-		color: #3b82f6;
-	}
-
-	.dashboard-ai-section--contexto .dashboard-ai-section__title {
-		color: #d97706;
-	}
-
-	.dashboard-ai-section--sugerencia .dashboard-ai-section__title {
-		color: #60a5fa;
-	}
-
-	.dashboard-ai-section__text {
-		margin: 0;
-		font-size: 0.92rem;
-		font-weight: 500;
-		line-height: 1.62;
-		color: #475569;
-	}
-
-	.dashboard-ai-highlight {
-		font-weight: 700;
-		color: inherit;
-	}
-
-	.dashboard-ai-highlight--panorama,
-	.dashboard-ai-highlight--contexto,
-	.dashboard-ai-highlight--sugerencia {
-		color: inherit;
-	}
-
-	.dashboard-ai-section__list {
-		margin: 0;
-		padding: 0;
-		list-style: none;
-		display: grid;
-		gap: 0.72rem;
-	}
-
-	.dashboard-ai-section__list li {
-		position: relative;
-		padding-left: 0;
-		font-size: 0.92rem;
-		font-weight: 500;
-		line-height: 1.62;
-		color: #475569;
-	}
-
-	.dashboard-ai-section__list li::before {
-		content: none;
-		display: none;
-	}
-
 	dialog[data-ai-summary-modal] {
 		position: fixed;
 		inset: 0;
@@ -3900,14 +3184,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	dialog[data-ai-summary-modal]::backdrop {
-		background-color: var(--modal-backdrop-tint);
-		backdrop-filter: blur(var(--modal-backdrop-blur));
-		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		animation: ai-summary-backdrop-in var(--modal-open-duration) var(--modal-easing);
-	}
-
-	html[data-theme='dark'] dialog[data-ai-summary-modal]::backdrop {
-		background-color: var(--modal-backdrop-tint);
 	}
 
 	dialog[data-ai-summary-modal].is-closing {
@@ -3926,7 +3203,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		border-left: 0;
 		border-top: 1px solid var(--shell-border);
 		border-radius: 1.5rem 1.5rem 0 0;
-		box-shadow: 0 -18px 60px rgba(15, 23, 42, 0.18);
+		box-shadow: var(--modal-shadow-sheet);
+		background: var(--surface-bright);
+		background-image: none;
 		padding-bottom: env(safe-area-inset-bottom, 0px);
 	}
 
@@ -4026,7 +3305,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			border-top: 0;
 			border-left: 1px solid var(--shell-border);
 			border-radius: 0;
-			box-shadow: -18px 0 48px rgba(0, 0, 0, 0.22);
+			box-shadow: none;
 			padding-bottom: 0;
 		}
 
@@ -4036,12 +3315,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-drawer__panel {
-		box-shadow: 0 -18px 60px rgba(0, 0, 0, 0.45);
+		background: var(--surface-container-high, #222222);
+		background-image: none;
+		box-shadow: var(--modal-shadow-sheet);
 	}
 
 	@media (min-width: 1024px) {
 		html[data-theme='dark'] .dashboard-ai-drawer__panel {
-			box-shadow: -18px 0 48px rgba(0, 0, 0, 0.45);
+			box-shadow: none;
 		}
 	}
 
@@ -4063,30 +3344,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		--ai-card-bg: transparent;
 		background: transparent;
 		box-shadow: none;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__icon {
-		color: #60a5fa;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--contexto .dashboard-ai-section__icon {
-		color: #fbbf24;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--sugerencia .dashboard-ai-section__icon {
-		color: #93c5fd;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--panorama .dashboard-ai-section__title {
-		color: #60a5fa;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--contexto .dashboard-ai-section__title {
-		color: #fbbf24;
-	}
-
-	html[data-theme='dark'] .dashboard-ai-section--sugerencia .dashboard-ai-section__title {
-		color: #93c5fd;
 	}
 
 	html[data-theme='dark'] .dashboard-ai-card.is-generating {
@@ -4132,16 +3389,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: color-mix(in srgb, var(--on-surface-variant) 42%, white 58%);
 	}
 
-	html[data-theme='dark'] .dashboard-ai-text,
-	html[data-theme='dark'] .dashboard-ai-section__text,
-	html[data-theme='dark'] .dashboard-ai-section__list li {
+	html[data-theme='dark'] .dashboard-ai-text {
 		color: color-mix(in srgb, var(--on-surface) 82%, #cbd5e1 18%);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger,
-		.dashboard-ai-modal-mark::before,
-		.dashboard-ai-modal-mark__icon {
+		.dashboard-ai-sections--modal.dashboard-ai-sections--animate .dashboard-ai-section--stagger {
 			animation: none !important;
 			opacity: 1;
 			transform: none;
@@ -4675,6 +3928,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 	}
 
+	@media (min-width: 1280px) {
+		.dashboard-floor--action.dashboard-floor--split {
+			grid-template-columns: var(--dashboard-duo-columns);
+			gap: var(--dashboard-duo-gap);
+		}
+	}
+
 	.dashboard-profitability-shell {
 		border: 0;
 		background: transparent;
@@ -4723,7 +3983,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-profitability-shell.is-ready .dashboard-profit-value:not(.dashboard-profit-value--static),
 	.dashboard-profitability-shell.is-ready [data-profit-mom] {
-		/* El fade-in lo hace data-dashboard-reveal.is-in del bloque completo. */
 		animation: none;
 	}
 
@@ -5363,10 +4622,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			line-height: 1.4;
 		}
 
-		.dashboard-ai-strip {
-			margin-block: 0;
-		}
-
 		.dashboard-profitability-shell {
 			border: 0;
 			background: transparent;
@@ -5509,10 +4764,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-day-progress {
 			padding: 1.05rem 0.95rem;
-		}
-
-		.dashboard-ai-strip {
-			padding-inline: 0.95rem;
 		}
 	}
 
@@ -5693,12 +4944,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	/* Pausar animaciones infinitas al backgroundear (calor en PWA iOS/Android). */
-	html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__glow::before,
-	html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__icon,
-	html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__badge,
-	html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-line::after,
-	html[data-page-hidden] .dashboard-ai-modal-mark::before,
-	html[data-page-hidden] .dashboard-ai-modal-mark__icon,
+	:global(html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__icon),
+	:global(html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__badge),
+	:global(html[data-page-hidden] .dashboard-ai-strip.is-generating .dashboard-ai-strip__skel-line::after),
 	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-shimmer-top::after,
 	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-orb,
 	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-sparkle,

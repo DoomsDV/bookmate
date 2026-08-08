@@ -1425,19 +1425,6 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		clearLogoPreview();
 	});
 
-	root.querySelectorAll<HTMLButtonElement>('button[data-ppe-logo-bg]').forEach((btn) => {
-		btn.addEventListener('click', (event) => {
-			event.preventDefault();
-			const mode = btn.dataset.ppeLogoBg === 'dark' ? 'dark' : 'light';
-			logoDropzone?.setAttribute('data-ppe-logo-bg', mode);
-			root.querySelectorAll<HTMLButtonElement>('button[data-ppe-logo-bg]').forEach((item) => {
-				const active = item.dataset.ppeLogoBg === mode;
-				item.classList.toggle('is-active', active);
-				item.setAttribute('aria-pressed', active ? 'true' : 'false');
-			});
-		});
-	});
-
 	bannerInput?.addEventListener('change', () => {
 		const file = bannerInput.files?.[0];
 		if (file) void openCrop(file, 'banner');

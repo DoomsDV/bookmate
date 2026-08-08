@@ -115,9 +115,55 @@ const previewInitial = {
 		<div class="ppe-layout">
 			<div class="ppe-config-pane" data-ppe-config-pane>
 				<header class="ppe-header">
-					<div>
-						<h1 class="ppe-header__title">Perfil Público</h1>
-					</div>
+					<nav class="ppe-tabs" role="tablist" aria-label="Secciones del perfil">
+						<button
+							type="button"
+							class="ppe-tab is-active"
+							role="tab"
+							id="ppe-tab-general"
+							aria-selected="true"
+							aria-controls="ppe-panel-general"
+							data-ppe-tab="general"
+						>
+							General
+						</button>
+						<button
+							type="button"
+							class="ppe-tab"
+							role="tab"
+							id="ppe-tab-apariencia"
+							aria-selected="false"
+							aria-controls="ppe-panel-apariencia"
+							data-ppe-tab="apariencia"
+							tabindex="-1"
+						>
+							Apariencia
+						</button>
+						<button
+							type="button"
+							class="ppe-tab"
+							role="tab"
+							id="ppe-tab-galeria"
+							aria-selected="false"
+							aria-controls="ppe-panel-galeria"
+							data-ppe-tab="galeria"
+							tabindex="-1"
+						>
+							Galería
+						</button>
+						<button
+							type="button"
+							class="ppe-tab"
+							role="tab"
+							id="ppe-tab-horario"
+							aria-selected="false"
+							aria-controls="ppe-panel-horario"
+							data-ppe-tab="horario"
+							tabindex="-1"
+						>
+							Horario
+						</button>
+					</nav>
 					<div class="ppe-header__actions">
 						<button
 							type="button"
@@ -141,56 +187,6 @@ const previewInitial = {
 						</a>
 					</div>
 				</header>
-
-				<nav class="ppe-tabs" role="tablist" aria-label="Secciones del perfil">
-					<button
-						type="button"
-						class="ppe-tab is-active"
-						role="tab"
-						id="ppe-tab-general"
-						aria-selected="true"
-						aria-controls="ppe-panel-general"
-						data-ppe-tab="general"
-					>
-						General
-					</button>
-					<button
-						type="button"
-						class="ppe-tab"
-						role="tab"
-						id="ppe-tab-apariencia"
-						aria-selected="false"
-						aria-controls="ppe-panel-apariencia"
-						data-ppe-tab="apariencia"
-						tabindex="-1"
-					>
-						Apariencia
-					</button>
-					<button
-						type="button"
-						class="ppe-tab"
-						role="tab"
-						id="ppe-tab-galeria"
-						aria-selected="false"
-						aria-controls="ppe-panel-galeria"
-						data-ppe-tab="galeria"
-						tabindex="-1"
-					>
-						Galería
-					</button>
-					<button
-						type="button"
-						class="ppe-tab"
-						role="tab"
-						id="ppe-tab-horario"
-						aria-selected="false"
-						aria-controls="ppe-panel-horario"
-						data-ppe-tab="horario"
-						tabindex="-1"
-					>
-						Horario
-					</button>
-				</nav>
 
 				<form class="ppe-form-col" id="ppe-form" data-ppe-form>
 					<section
@@ -335,31 +331,10 @@ const previewInitial = {
 						hidden
 					>
 						<div class="ppe-field ppe-field--logo">
-							<div class="ppe-logo-field__head">
-								<span class="ppe-field__label">Logo del negocio</span>
-								<div class="ppe-logo-bg-toggle" role="group" aria-label="Fondo de vista previa del logo">
-									<button
-										type="button"
-										class="ppe-logo-bg-toggle__btn"
-										data-ppe-logo-bg="light"
-										aria-pressed="false"
-									>
-										Claro
-									</button>
-									<button
-										type="button"
-										class="ppe-logo-bg-toggle__btn is-active"
-										data-ppe-logo-bg="dark"
-										aria-pressed="true"
-									>
-										Oscuro
-									</button>
-								</div>
-							</div>
+							<span class="ppe-field__label">Logo del negocio</span>
 							<label
 								class={`ppe-dropzone ppe-dropzone--logo ${workspace.logo_url ? 'has-preview' : ''}`}
 								data-ppe-logo-dropzone
-								data-ppe-logo-bg="dark"
 							>
 								<input
 									type="file"
@@ -403,7 +378,6 @@ const previewInitial = {
 									<span class="material-symbols-rounded" aria-hidden="true">delete</span>
 								</button>
 							</label>
-							<span class="ppe-field__hint">Usá Claro u Oscuro para ver bien los PNG transparentes.</span>
 						</div>
 
 						<div class="ppe-field">

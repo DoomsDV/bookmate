@@ -698,9 +698,6 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		display: flex;
 		flex-direction: column;
 	}
-	.cobros-period-filter-sheet::backdrop {
-		background: rgb(0 0 0 / 0.4);
-	}
 	.cobros-period-filter-sheet__handle {
 		display: flex;
 		justify-content: center;
@@ -1210,7 +1207,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	dialog[data-cobros-modal]::backdrop {
-		background: rgb(0 0 0 / 0.4);
+		background: var(--modal-backdrop-scrim);
+		backdrop-filter: blur(var(--modal-backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		animation: cobros-backdrop-in 180ms ease;
 	}
 
@@ -1316,7 +1315,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 		/* Glass: blur + velo liviano (no negro sólido) */
 		dialog[data-cobros-modal]::backdrop {
-			background: var(--modal-backdrop-tint);
+			background: var(--modal-backdrop-scrim);
 			backdrop-filter: blur(var(--modal-backdrop-blur));
 			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
@@ -1441,9 +1440,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 			box-shadow: 0 24px 60px rgb(0 0 0 / 0.25);
 		}
 		.cobros-viewer::backdrop {
-			background: rgb(0 0 0 / 0.4);
-			backdrop-filter: blur(6px);
-			-webkit-backdrop-filter: blur(6px);
+			background: var(--modal-backdrop-scrim);
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
 	}
 </style>

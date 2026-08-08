@@ -10,6 +10,7 @@ export interface SplitTextProps {
   text: string;
   className?: string;
   delay?: number;
+  startDelay?: number;
   duration?: number;
   ease?: string | ((t: number) => number);
   splitType?: 'chars' | 'words' | 'lines' | 'words, chars';
@@ -17,6 +18,7 @@ export interface SplitTextProps {
   to?: gsap.TweenVars;
   threshold?: number;
   rootMargin?: string;
+  immediate?: boolean;
   tag?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6' | 'p' | 'span';
   textAlign?: React.CSSProperties['textAlign'];
   onLetterAnimationComplete?: () => void;
@@ -26,6 +28,7 @@ const SplitText: React.FC<SplitTextProps> = ({
   text,
   className = '',
   delay = 50,
+  startDelay = 0,
   duration = 1.25,
   ease = 'power3.out',
   splitType = 'chars',
@@ -33,6 +36,7 @@ const SplitText: React.FC<SplitTextProps> = ({
   to = { opacity: 1, y: 0 },
   threshold = 0.1,
   rootMargin = '-100px',
+  immediate = false,
   tag = 'p',
   textAlign = 'center',
   onLetterAnimationComplete
@@ -73,17 +77,6 @@ const SplitText: React.FC<SplitTextProps> = ({
         el._rbsplitInstance = undefined;
       }
 
-      const startPct = (1 - threshold) * 100;
-      const marginMatch = /^(-?\d+(?:\.\d+)?)(px|em|rem|%)?$/.exec(rootMargin);
-      const marginValue = marginMatch ? parseFloat(marginMatch[1]) : 0;
-      const marginUnit = marginMatch ? marginMatch[2] || 'px' : 'px';
-      const sign =
-        marginValue === 0
-          ? ''
-          : marginValue < 0
-            ? `-=${Math.abs(marginValue)}${marginUnit}`
-            : `+=${marginValue}${marginUnit}`;
-      const start = `top ${startPct}%${sign}`;
       let targets: Element[] = [];
       const assignTargets = (self: GSAPSplitText) => {
         if (splitType.includes('chars') && (self as GSAPSplitText).chars?.length)
@@ -102,29 +95,41 @@ const SplitText: React.FC<SplitTextProps> = ({
         reduceWhiteSpace: false,
         onSplit: (self: GSAPSplitText) => {
           assignTargets(self);
-          return gsap.fromTo(
-            targets,
-            { ...from },
-            {
-              ...to,
-              duration,
-              ease,
-              stagger: delay / 1000,
-              scrollTrigger: {
-                trigger: el,
-                start,
-                once: true,
-                fastScrollEnd: true,
-                anticipatePin: 0.4
-              },
-              onComplete: () => {
-                animationCompletedRef.current = true;
-                onCompleteRef.current?.();
-              },
-              willChange: 'transform, opacity',
-              force3D: true
-            }
-          );
+          const tweenVars: gsap.TweenVars = {
+            ...to,
+            duration,
+            ease,
+            delay: startDelay / 1000,
+            stagger: delay / 1000,
+            onComplete: () => {
+              animationCompletedRef.current = true;
+              onCompleteRef.current?.();
+            },
+            willChange: 'transform, opacity',
+            force3D: true
+          };
+
+          if (!immediate) {
+            const startPct = (1 - threshold) * 100;
+            const marginMatch = /^(-?\d+(?:\.\d+)?)(px|em|rem|%)?$/.exec(rootMargin);
+            const marginValue = marginMatch ? parseFloat(marginMatch[1]) : 0;
+            const marginUnit = marginMatch ? marginMatch[2] || 'px' : 'px';
+            const sign =
+              marginValue === 0
+                ? ''
+                : marginValue < 0
+                  ? `-=${Math.abs(marginValue)}${marginUnit}`
+                  : `+=${marginValue}${marginUnit}`;
+            tweenVars.scrollTrigger = {
+              trigger: el,
+              start: `top ${startPct}%${sign}`,
+              once: true,
+              fastScrollEnd: true,
+              anticipatePin: 0.4
+            };
+          }
+
+          return gsap.fromTo(targets, { ...from }, tweenVars);
         }
       });
       el._rbsplitInstance = splitInstance;
@@ -142,6 +147,7 @@ const SplitText: React.FC<SplitTextProps> = ({
       dependencies: [
         text,
         delay,
+        startDelay,
         duration,
         ease,
         splitType,
@@ -149,6 +155,7 @@ const SplitText: React.FC<SplitTextProps> = ({
         JSON.stringify(to),
         threshold,
         rootMargin,
+        immediate,
         fontsLoaded
       ],
       scope: ref

@@ -101,6 +101,15 @@ export default defineConfig({
     optimizeDeps: {
       exclude: ['maplibre-gl'],
       include: [
+        // Root vite.optimizeDeps.include can shadow @astrojs/react's
+        // per-environment includes (Vite Environment API). Without these,
+        // react-dom/client is served as raw CJS and hydration fails with
+        // "does not provide an export named 'createRoot'".
+        'react',
+        'react/jsx-runtime',
+        'react/jsx-dev-runtime',
+        'react-dom',
+        'react-dom/client',
         '@fullcalendar/core',
         '@fullcalendar/core/locales/es',
         '@fullcalendar/interaction',

@@ -18,7 +18,7 @@
 	},
 	"dependencies": {
 		"@astrojs/check": "^0.9.10",
-		"@astrojs/react": "^4.4.2",
+		"@astrojs/react": "^6.0.2",
 		"@astrojs/sitemap": "^3.7.3",
 		"@astrojs/vercel": "^11.0.4",
 		"@fullcalendar/core": "^6.1.20",
@@ -51,13 +51,17 @@
 		"@types/react": "^19.2.0",
 		"@types/react-dom": "^19.2.0",
 		"@vite-pwa/astro": "^1.2.0",
-		"shadcn": "^4.16.2"
+		"shadcn": "^4.16.2",
+		"jsrepo": "^3.8.1"
 	},
 	"pnpm": {
 		"peerDependencyRules": {
 			"allowedVersions": {
 				"@vite-pwa/astro>astro": "7"
 			}
+		},
+		"overrides": {
+			"@vitejs/plugin-react": "6.0.5"
 		},
 		"onlyBuiltDependencies": [
 			"esbuild",

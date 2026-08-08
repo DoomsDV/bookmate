@@ -313,7 +313,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 											</div>
 
 										<div
-											class="schedule-exception-modal-backdrop fixed inset-0 z-[100] hidden items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4 lg:items-stretch lg:justify-end lg:bg-transparent lg:p-0"
+											class="schedule-exception-modal-backdrop fixed inset-0 z-[100] hidden items-end justify-center p-0 sm:items-center sm:p-4 lg:items-stretch lg:justify-end lg:p-0"
 											data-exception-modal
 											role="dialog"
 											aria-modal="true"
@@ -573,7 +573,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		}
 	}
 
-	/* Mobile: el canvas scrollea junto al TopBar sticky → anclar debajo del header. */
+	/* Mobile: el canvas scrollea junto al TopBar sticky ? anclar debajo del header. */
 	@media (max-width: 1023.98px) {
 		.schedule-page-header__sticky-bar {
 			top: var(--shell-header-height);
@@ -675,10 +675,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	.schedule-pro-filter-sheet[open] {
 		display: flex;
 		flex-direction: column;
-	}
-
-	.schedule-pro-filter-sheet::backdrop {
-		background: rgb(0 0 0 / 0.4);
 	}
 
 	.schedule-pro-filter-sheet__handle {
@@ -1231,9 +1227,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	/* Desktop PC: side drawer a la derecha */
 	@media (min-width: 1024px) {
 		.schedule-exception-modal-backdrop.flex {
-			background-color: var(--modal-backdrop-tint);
-			backdrop-filter: blur(var(--modal-backdrop-blur));
-			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 			animation: schedule-exception-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
 		}
 

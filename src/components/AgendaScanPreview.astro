@@ -122,14 +122,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.agenda-preview-shell::backdrop {
-		background-color: var(--modal-backdrop-tint);
-		backdrop-filter: blur(var(--modal-backdrop-blur));
-		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		animation: agenda-preview-backdrop-in var(--modal-open-duration) var(--modal-easing);
-	}
-
-	html[data-theme='dark'] .agenda-preview-shell::backdrop {
-		background-color: rgba(0, 0, 0, 0.5);
 	}
 
 	.agenda-preview-shell.is-closing {
@@ -257,17 +250,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			animation-name: agenda-preview-drawer-out;
 		}
 
-		.agenda-preview-shell::backdrop {
-			background-color: var(--modal-backdrop-tint);
-			backdrop-filter: blur(var(--modal-backdrop-blur));
-			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
-		}
-
-		html[data-theme='dark'] .agenda-preview-shell::backdrop {
-			background-color: var(--modal-backdrop-tint);
-		}
-
-		.agenda-preview-dialog {
+		.agenda-preview-shell.is-closing {
 			width: min(40rem, 100vw);
 			height: 100%;
 			max-height: 100dvh;

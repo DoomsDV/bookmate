@@ -1953,7 +1953,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 	}
 
 	dialog[data-location-modal]::backdrop {
-		background: var(--modal-backdrop-tint);
+		background: var(--modal-backdrop-scrim);
 		backdrop-filter: blur(var(--modal-backdrop-blur));
 		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		animation: location-backdrop-in var(--modal-open-duration) var(--modal-easing);
@@ -2038,7 +2038,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		}
 
 		dialog[data-location-modal]::backdrop {
-			background-color: var(--modal-backdrop-tint);
+			background-color: var(--modal-backdrop-scrim);
 			backdrop-filter: blur(var(--modal-backdrop-blur));
 			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
@@ -2264,7 +2264,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 	}
 
 	dialog.closure-form-dialog::backdrop {
-		background: var(--modal-backdrop-tint, rgba(0, 0, 0, 0.45));
+		background: var(--modal-backdrop-scrim);
 		backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
 		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
 	}
@@ -2456,7 +2456,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 	}
 
 	dialog.closures-org-dialog::backdrop {
-		background: var(--modal-backdrop-tint, rgba(0, 0, 0, 0.4));
+		background: var(--modal-backdrop-scrim);
 		backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
 		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur, 2px));
 		animation: location-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
