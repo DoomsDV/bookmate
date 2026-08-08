@@ -9,6 +9,7 @@ import {
     FLASH_MESSAGE_COOKIE,
     FLASH_TYPE_COOKIE,
 } from '../lib/flash-server';
+import '../styles/fonts.css';
 // 1. Importamos la información de la PWA
 import { pwaInfo } from 'virtual:pwa-info';
 
@@ -81,21 +82,22 @@ if (flashTypeFromCookie) {
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link
             rel="preload"
-            href="/fonts/nunito-sans-v19-latin-800.woff2"
-            as="font"
-            type="font/woff2"
-            crossorigin
-        />
-        <link
-            rel="preload"
             href="/fonts/nunito-sans-v19-latin-regular.woff2"
             as="font"
             type="font/woff2"
             crossorigin
+            fetchpriority="high"
         />
         <link
             rel="preload"
             href="/fonts/nunito-sans-v19-latin-700.woff2"
+            as="font"
+            type="font/woff2"
+            crossorigin
+        />
+        <link
+            rel="preload"
+            href="/fonts/nunito-sans-v19-latin-800.woff2"
             as="font"
             type="font/woff2"
             crossorigin
@@ -156,6 +158,11 @@ if (flashTypeFromCookie) {
                 const storedTheme = localStorage.getItem('bookmate-theme');
                 const theme = storedTheme === 'dark' || storedTheme === 'light' ? storedTheme : 'dark';
                 document.documentElement.dataset.theme = theme;
+                try {
+                    document.cookie = 'bookmate-theme=' + theme + ';path=/;max-age=31536000;SameSite=Lax';
+                } catch (e) {
+                    /* ignore */
+                }
             };
 
             /** Solo desktop: recuerda sidebar colapsado/expandido entre páginas y refrescos. */
@@ -187,21 +194,47 @@ if (flashTypeFromCookie) {
                 });
             };
 
-            /** Pestaña activa del editor Perfil Público: solo en la visita actual (sin localStorage). */
-            const PPE_TAB_KEY_LEGACY = 'hasel-ppe-active-tab';
+            /** Pestaña activa del editor Perfil Público (persiste al recargar; se limpia al salir). */
+            const PPE_TAB_KEY = 'hasel-ppe-active-tab';
+            const PPE_TAB_IDS = ['general', 'apariencia', 'galeria', 'horario'];
             const clearPpeTabPref = () => {
                 document.documentElement.removeAttribute('data-ppe-tab-pref');
                 try {
-                    localStorage.removeItem(PPE_TAB_KEY_LEGACY);
+                    localStorage.removeItem(PPE_TAB_KEY);
                 } catch (e) {
                     /* ignore */
                 }
+            };
+            const applyPpeTabPref = () => {
+                let stored = null;
+                try {
+                    stored = localStorage.getItem(PPE_TAB_KEY);
+                } catch (e) {
+                    stored = null;
+                }
+                if (!stored || PPE_TAB_IDS.indexOf(stored) === -1) {
+                    document.documentElement.removeAttribute('data-ppe-tab-pref');
+                    return;
+                }
+                document.documentElement.setAttribute('data-ppe-tab-pref', stored);
+                // Si el island ya está en el DOM, alinear hidden/is-active (FOUC + server:defer).
+                document.querySelectorAll('[data-ppe-panel]').forEach((panel) => {
+                    panel.hidden = panel.getAttribute('data-ppe-panel') !== stored;
+                });
+                document.querySelectorAll('[data-ppe-tab]').forEach((btn) => {
+                    const active = btn.getAttribute('data-ppe-tab') === stored;
+                    btn.classList.toggle('is-active', active);
+                    btn.setAttribute('aria-selected', active ? 'true' : 'false');
+                    btn.tabIndex = active ? 0 : -1;
+                });
             };
             const syncPpeTabPrefForRoute = () => {
                 const path = String(location.pathname || '');
                 if (path.indexOf('/panel/perfil-publico') === -1) {
                     clearPpeTabPref();
+                    return;
                 }
+                applyPpeTabPref();
             };
 
             /** Pestaña del hub público vía hash (#galeria, #equipo…) — evita flash Overview. */
@@ -230,8 +263,16 @@ if (flashTypeFromCookie) {
                 syncPpeTabPrefForRoute();
                 applyHubTabPref();
             });
-            // Al salir de perfil-publico, olvidar la pestaña para la próxima visita.
-            document.addEventListener('astro:before-preparation', clearPpeTabPref);
+            // Al salir de perfil-publico (navegación SPA), olvidar la pestaña para la próxima visita.
+            document.addEventListener('astro:before-preparation', (event) => {
+                const from = String(event.from?.pathname || location.pathname || '');
+                const to = String(event.to?.pathname || '');
+                const leavingPpe = from.indexOf('/panel/perfil-publico') !== -1;
+                const stayingOnPpe = to.indexOf('/panel/perfil-publico') !== -1;
+                if (leavingPpe && !stayingOnPpe) {
+                    clearPpeTabPref();
+                }
+            });
         </script>
         
         <meta name="generator" content={Astro.generator} />
@@ -293,11 +334,12 @@ if (flashTypeFromCookie) {
     </body>
 </html>
 
-<style>
+<style is:inline>
     html,
     body {
         margin: 0;
         width: 100%;
         min-height: 100%;
+        font-family: "Nunito Sans", sans-serif;
     }
 </style>

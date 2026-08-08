@@ -108,8 +108,16 @@
 		}
 
 		private updatePlanLabels(state: SubscriptionState) {
+			const next = `Plan ${state.planName}`;
+			try {
+				document.cookie = `hasel_plan_name=${encodeURIComponent(state.planName)};path=/;max-age=604800;SameSite=Lax`;
+				sessionStorage.setItem('hasel-plan-name', state.planName);
+			} catch {
+				/* ignore quota / private mode */
+			}
 			document.querySelectorAll<HTMLElement>('[data-plan-label]').forEach((el) => {
-				el.textContent = `Plan ${state.planName}`;
+				if (el.textContent?.trim() === next) return;
+				el.textContent = next;
 			});
 		}
 

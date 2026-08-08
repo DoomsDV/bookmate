@@ -956,7 +956,7 @@ class ScheduleManager extends HTMLElement {
 			removeButton.className = 'schedule-slot-remove-btn';
 			removeButton.setAttribute('aria-label', `Eliminar turno ${index + 1} de ${dayState.name}`);
 			removeButton.innerHTML =
-				'<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">close</span><span class="sr-only">Quitar</span>';
+				'<span class="material-symbols-rounded" aria-hidden="true">close</span><span class="sr-only">Quitar</span>';
 			removeWrap.appendChild(removeButton);
 
 			row.append(locationLabel, startLabel, endLabel, removeWrap);
@@ -1858,7 +1858,7 @@ class ScheduleManager extends HTMLElement {
 			slotsWrap.appendChild(empty);
 		}
 
-		for (const slot of this.exceptionModalSlots) {
+		for (const [slotIndex, slot] of this.exceptionModalSlots.entries()) {
 			const row = document.createElement('div');
 			row.className = 'schedule-slot-row';
 
@@ -1910,8 +1910,9 @@ class ScheduleManager extends HTMLElement {
 			removeButton.dataset.excSlotRemove = 'true';
 			removeButton.dataset.slotUid = slot.uid;
 			removeButton.className = 'schedule-slot-remove-btn';
+			removeButton.setAttribute('aria-label', `Eliminar turno ${slotIndex + 1}`);
 			removeButton.innerHTML =
-				'<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">close</span>';
+				'<span class="material-symbols-rounded" aria-hidden="true">close</span><span class="sr-only">Quitar</span>';
 			removeWrap.appendChild(removeButton);
 
 			row.append(locationLabel, startLabel, endLabel, removeWrap);
@@ -1965,7 +1966,8 @@ class ScheduleManager extends HTMLElement {
 			saveButton.type = 'button';
 			saveButton.dataset.excAction = 'save';
 			saveButton.className = 'modal-action-primary';
-			saveButton.textContent = 'Guardar excepción';
+			saveButton.innerHTML =
+				'<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">save</span><span>Guardar excepción</span>';
 			primaryActions.appendChild(saveButton);
 		}
 

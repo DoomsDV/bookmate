@@ -10,6 +10,7 @@ import {
 } from '../../lib/public-profile-url';
 import { ROLES } from '../../config/roles';
 import Layout from '../../layouts/Layout.astro';
+import { panelPageTitle } from '../../lib/panel-page-title';
 import '../../styles/global.css';
 import 'tom-select/dist/css/tom-select.css';
 
@@ -27,7 +28,7 @@ const publicProfilePrefix = buildPublicProfilePrefix(
 const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfilePrefix);
 ---
 
-<Layout>
+<Layout pageTitle={panelPageTitle('Personal')}>
 	<professional-manager
 		data-public-profile-prefix={publicProfilePrefix}
 		data-current-user-id={String(currentUserId)}
@@ -64,18 +65,18 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 		class="professional-modal m-0 mt-auto mb-0 w-screen max-w-none max-h-[min(92dvh,100%)] open:flex open:flex-col overflow-hidden rounded-t-[1.35rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(15,23,42,0.16)] sm:m-auto sm:w-[min(44rem,calc(100vw-2rem))] sm:max-w-[min(44rem,calc(100vw-2rem))] sm:max-h-[90vh] sm:rounded-[1.65rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 		data-professional-modal
 	>
-		<div class="professional-modal__header shrink-0 z-10 px-4 py-3 sm:px-6 sm:py-4">
+		<div class="panel-modal-header professional-modal__header">
 			<div class="professional-modal__mesh" aria-hidden="true"></div>
-			<div class="relative z-10 flex items-start justify-between gap-3 sm:gap-4">
-				<div class="flex min-w-0 items-center gap-2.5 sm:gap-3">
-					<div class="flex size-9 shrink-0 items-center justify-center rounded-xl bg-(--primary-soft) text-(--primary) shadow-sm ring-1 ring-(--shell-border) sm:size-10">
-						<span class="material-symbols-rounded text-[1.15rem] sm:text-[1.25rem]">badge</span>
+			<div class="panel-modal-header__row relative z-10">
+				<div class="panel-modal-header__leading">
+					<div class="panel-modal-header__icon shadow-sm ring-1 ring-(--shell-border)">
+						<span class="material-symbols-rounded">badge</span>
 					</div>
-					<div class="min-w-0">
-						<h2 class="text-[1rem] font-bold tracking-tight text-(--on-surface) sm:text-[1.08rem]" data-professional-modal-title>Crear personal</h2>
+					<div class="panel-modal-header__text">
+						<h2 class="panel-modal-header__title" data-professional-modal-title>Crear personal</h2>
 					</div>
 				</div>
-				<div class="flex shrink-0 items-center gap-2">
+				<div class="panel-modal-header__actions">
 					<button
 						type="button"
 						class="schedule-exceptions-help inline-flex shrink-0 items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-[0.82rem] font-bold text-(--on-surface-variant) transition hover:border-(--primary)/35 hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
@@ -85,8 +86,8 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 						<span class="material-symbols-rounded text-[1.1rem]">help</span>
 						<span class="hidden sm:inline">Guía</span>
 					</button>
-					<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-close-professional-modal aria-label="Cerrar modal">
-						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+					<button type="button" class="panel-modal-header__close" data-close-professional-modal aria-label="Cerrar modal">
+						<span class="material-symbols-rounded">close</span>
 					</button>
 				</div>
 			</div>
@@ -380,7 +381,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 					Cancelar
 				</button>
 				<button type="submit" class="modal-action-primary" data-submit-professional>
-					<span class="material-symbols-rounded text-[1.2rem]" data-submit-professional-icon>check</span>
+					<span class="material-symbols-rounded text-[1.2rem]" data-submit-professional-icon aria-hidden="true">check</span>
 					<span data-submit-professional-label>Crear personal</span>
 				</button>
 				</div>
@@ -1860,7 +1861,6 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 	.professional-modal__header {
 		position: relative;
 		overflow: hidden;
-		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 55%, transparent);
 	}
 
 	.professional-modal__mesh {

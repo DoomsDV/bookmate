@@ -76,6 +76,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 				<footer class="agenda-preview-footer">
 					<button type="button" class="agenda-preview-save" data-agenda-preview-save>
+						<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">save</span>
 						<span data-agenda-save-label>Completar y guardar</span>
 					</button>
 				</footer>
@@ -901,6 +902,10 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.agenda-preview-save {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
 		flex: 0 1 auto;
 		width: auto;
 		min-width: 14rem;

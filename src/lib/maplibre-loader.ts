@@ -147,11 +147,14 @@ export const buildStadiaStaticMapUrl = (
 	return `https://tiles.stadiamaps.com/static/${style}.png?${params.toString()}`;
 };
 
+/** SSR / cookie / localStorage: mismo criterio que `setBookmateTheme` (default dark). */
+export const resolveMapThemeFromStorage = (stored?: string | null): MapTheme =>
+	stored === 'light' ? 'light' : 'dark';
+
 export const resolveMapTheme = (root?: Element | null): MapTheme => {
 	if (typeof document === 'undefined') return 'dark';
 	const explicit = (root ?? document.documentElement).getAttribute('data-theme');
-	if (explicit === 'light') return 'light';
-	if (explicit === 'dark') return 'dark';
+	if (explicit === 'light' || explicit === 'dark') return explicit;
 	try {
 		return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
 	} catch {

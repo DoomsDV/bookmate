@@ -16,13 +16,13 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		<div class="flex min-w-0 items-center gap-2 sm:gap-3">
 			<button
 				type="button"
-				class="hidden size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) lg:flex sm:size-11"
+				class="hidden size-9 shrink-0 items-center justify-center rounded-xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) lg:flex sm:size-10"
 					aria-label="Alternar menú lateral"
 				aria-controls="app-side-nav"
 				aria-expanded="false"
 				data-nav-toggle
 			>
-				<span class="material-symbols-rounded text-[1.2rem]">menu</span>
+				<span class="material-symbols-rounded text-[1.1rem]">menu</span>
 			</button>
 
 			<div class="min-w-0">
@@ -32,14 +32,14 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			</div>
 		</div>
 
-		<div class="topbar-actions flex min-w-0 shrink items-center justify-end gap-1.5 sm:gap-3">
+		<div class="topbar-actions flex min-w-0 shrink items-center justify-end gap-1 sm:gap-2">
 			<slot name="actions-before" />
 
 			<button
 				id="pwa-install-btn"
 				type="button"
 				data-pwa-install-trigger
-				class="hidden items-center gap-2 rounded-full border border-(--primary) bg-(--primary-container) px-4 py-2 text-sm font-semibold text-(--on-primary-container) transition hover:bg-(--primary) hover:text-(--on-primary)"
+				class="hidden items-center gap-1.5 rounded-full border border-(--primary) bg-(--primary-container) px-3 py-1.5 text-sm font-semibold text-(--on-primary-container) transition hover:bg-(--primary) hover:text-(--on-primary)"
 				aria-label="Instalar aplicación para recibir notificaciones"
 			>
 				<span class="material-symbols-rounded text-[1rem]">download</span>
@@ -63,7 +63,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 			<button
 				type="button"
-				class="topbar-action-btn flex size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:size-11"
+				class="topbar-action-btn flex size-9 shrink-0 items-center justify-center rounded-xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:size-10"
 				aria-label="Atención al cliente"
 				title="Atención al cliente"
 				data-atc-button
@@ -73,7 +73,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 			<button
 				type="button"
-				class="topbar-action-btn flex size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:hidden"
+				class="topbar-action-btn flex size-9 shrink-0 items-center justify-center rounded-xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:hidden"
 				aria-label="Cambiar tema"
 				aria-pressed="false"
 				data-theme-toggle-mobile
@@ -83,7 +83,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 			<button
 				type="button"
-				class="topbar-action-btn hidden size-10 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:flex sm:size-11"
+				class="topbar-action-btn hidden size-9 shrink-0 items-center justify-center rounded-xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:flex sm:size-10"
 				aria-label="Cambiar tema"
 				title="Cambiar tema"
 				aria-pressed="false"
@@ -95,15 +95,15 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 			<details class="group relative hidden shrink-0 lg:block" data-profile-menu>
 				<summary
-					class="topbar-action-btn flex size-10 cursor-pointer list-none items-center justify-center rounded-2xl border border-(--primary-container) bg-(--primary-soft) text-(--primary) outline-none transition duration-200 hover:bg-(--primary-soft-hover) focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:size-11"
+					class="topbar-action-btn flex size-9 cursor-pointer list-none items-center justify-center rounded-xl border border-(--primary-container) bg-(--primary-soft) text-(--primary) outline-none transition duration-200 hover:bg-(--primary-soft-hover) focus-visible:ring-2 focus-visible:ring-(--primary) focus-visible:ring-offset-2 focus-visible:ring-offset-transparent sm:size-10"
 					aria-label={`Abrir menu de ${userName}`}
 					data-settings-menu-trigger
 				>
-					<span class="material-symbols-rounded text-[1.2rem]">settings</span>
+					<span class="material-symbols-rounded text-[1.1rem]">settings</span>
 				</summary>
 
 				<div
-					class="absolute right-0 top-[calc(100%+0.75rem)] z-50 w-[min(15rem,calc(100vw-3rem))] overflow-hidden rounded-[1.35rem] border border-(--shell-border) bg-(--menu-surface) py-2 shadow-[0_22px_60px_rgba(15,23,42,0.16)] sm:min-w-52 sm:w-auto"
+					class="profile-menu-panel absolute right-0 top-[calc(100%+0.75rem)] z-50 w-[min(15rem,calc(100vw-3rem))] overflow-hidden rounded-[1.35rem] border border-(--shell-border) py-2 shadow-[0_22px_60px_rgba(15,23,42,0.16)] sm:min-w-52 sm:w-auto"
 				>
 					<div class="border-b border-black/5 px-4 py-3">
 						<p class="text-sm font-semibold text-(--on-surface)">{userName}</p>
@@ -380,6 +380,11 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			const isDark = theme === 'dark';
 			document.documentElement.dataset.theme = theme;
 			localStorage.setItem('bookmate-theme', theme);
+			try {
+				document.cookie = `bookmate-theme=${theme};path=/;max-age=31536000;SameSite=Lax`;
+			} catch {
+				/* ignore */
+			}
 			const nextThemeLabel = isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro';
 			
 			[themeToggle, themeToggleMobile].forEach(t => {

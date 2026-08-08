@@ -12,6 +12,7 @@ import TopBar from '../../components/TopBar.astro';
 import { DashboardApiError, getMainDashboardWithOrds, type DashboardMainData } from '../../lib/dashboard';
 import { getMyProfileWithOrds } from '../../lib/my-profile';
 import Layout from '../../layouts/Layout.astro';
+import { panelPageTitle } from '../../lib/panel-page-title';
 import '../../styles/global.css';
 import '../../styles/dashboard-ai-strip.css';
 
@@ -223,7 +224,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 ---
 
-<Layout>
+<Layout pageTitle={panelPageTitle('Dashboard')}>
 	<div class="dashboard-canvas min-h-screen w-full max-w-full overflow-x-hidden transition-colors duration-300">
 		<div
 			class="app-shell grid min-h-screen overflow-hidden bg-transparent"
@@ -747,18 +748,18 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			<div class="dashboard-ai-drawer__handle" aria-hidden="true">
 				<span class="dashboard-ai-drawer__handle-pill"></span>
 			</div>
-			<div class="dashboard-ai-modal__header shrink-0 z-10 px-4 py-4 sm:px-6 sm:py-5">
-				<div class="flex items-start justify-between gap-4">
-					<h2 class="text-[1.12rem] font-bold tracking-tight text-(--on-surface)">
+			<div class="panel-modal-header dashboard-ai-modal__header">
+				<div class="panel-modal-header__row">
+					<h2 class="panel-modal-header__title">
 						✨ Resumen del día
 					</h2>
 					<button
 						type="button"
-						class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)"
+						class="panel-modal-header__close"
 						data-close-ai-summary-modal
 						aria-label="Cerrar resumen"
 					>
-						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+						<span class="material-symbols-rounded">close</span>
 					</button>
 				</div>
 			</div>
@@ -2038,10 +2039,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-ai-modal__body {
 		position: relative;
 		z-index: 1;
-	}
-
-	.dashboard-ai-modal__header {
-		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 28%, transparent);
 	}
 
 	.dashboard-ai-sections--modal .dashboard-ai-section {

@@ -40,18 +40,18 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 	data-settings-modal
 		class="m-0 mt-auto mb-0 h-[92dvh] w-screen max-w-none sm:m-auto sm:h-[min(46rem,90vh)] sm:w-[min(54rem,calc(100vw-2rem))] sm:max-w-[min(54rem,calc(100vw-2rem))] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none sm:rounded-[1.8rem] border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[70vw] lg:max-w-[70vw] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 >
-	<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6">
-		<div class="flex items-start justify-between gap-4">
-			<div class="flex items-center gap-4">
-				<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
-					<span class="material-symbols-rounded text-[1.4rem]">settings</span>
+	<div class="panel-modal-header panel-modal-header--shadow">
+		<div class="panel-modal-header__row">
+			<div class="panel-modal-header__leading">
+				<div class="panel-modal-header__icon">
+					<span class="material-symbols-rounded">settings</span>
 				</div>
-				<div>
-					<h2 class="text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)">Ajustes</h2>
-					<p class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5 hidden sm:block">Perfil y preferencias de la cuenta.</p>
+				<div class="panel-modal-header__text">
+					<h2 class="panel-modal-header__title">Ajustes</h2>
+					<p class="panel-modal-header__subtitle">Perfil y preferencias de la cuenta.</p>
 				</div>
 			</div>
-			<div class="flex shrink-0 items-center gap-2">
+			<div class="panel-modal-header__actions">
 				<button
 					type="button"
 					class="settings-toolbar-help inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-(--shell-border) bg-(--surface-bright) px-[1.05rem] py-[0.72rem] text-[0.9rem] font-bold text-(--on-surface) transition focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
@@ -62,8 +62,8 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 					<span class="material-symbols-rounded text-[1.12rem]">help</span>
 					<span class="hidden sm:inline">Guía</span>
 				</button>
-				<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-settings-close aria-label="Cerrar modal">
-					<span class="material-symbols-rounded text-[1.3rem]">close</span>
+				<button type="button" class="panel-modal-header__close" data-settings-close aria-label="Cerrar modal">
+					<span class="material-symbols-rounded">close</span>
 				</button>
 			</div>
 		</div>
@@ -285,7 +285,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 							Cancelar
 						</button>
 						<button type="submit" class="modal-action-primary">
-							<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">save</span>
+							<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
 							Guardar perfil
 						</button>
 							</div>
@@ -406,7 +406,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 						Cancelar
 					</button>
 					<button type="button" data-settings-appearance-save class="modal-action-primary">
-						<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">save</span>
+						<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
 						Guardar apariencia
 					</button>
 						</div>
@@ -471,7 +471,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 									<button type="button" class="modal-action-secondary" data-settings-close-action>
 										Cancelar
 									</button>
-									<button type="submit" class="modal-action-primary"><span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">store</span>Guardar negocio</button>
+									<button type="submit" class="modal-action-primary"><span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>Guardar negocio</button>
 										</div>
 									</div>
 								</div>
@@ -628,7 +628,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 														Cancelar
 													</button>
 													<button type="submit" class="modal-action-primary">
-														<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">save</span>
+														<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
 														Guardar cobros
 													</button>
 												</div>
@@ -846,7 +846,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										Cancelar
 									</button>
 									<button type="submit" class="modal-action-primary">
-										<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">settings</span>
+										<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
 										Guardar sistema
 									</button>
 										</div>
@@ -2366,6 +2366,11 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			const safeTheme = theme === 'dark' ? 'dark' : 'light';
 			document.documentElement.dataset.theme = safeTheme;
 			localStorage.setItem('bookmate-theme', safeTheme);
+			try {
+				document.cookie = `bookmate-theme=${safeTheme};path=/;max-age=31536000;SameSite=Lax`;
+			} catch {
+				/* ignore */
+			}
 		}
 
 		private reloadAfterWorkspaceSave() {

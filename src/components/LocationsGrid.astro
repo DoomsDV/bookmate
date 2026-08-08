@@ -1,6 +1,10 @@
 ---
 import type { Location } from '../lib/locations';
-import { buildBrandMarkerSvgHtml, buildStadiaStaticMapUrl } from '../lib/maplibre-loader';
+import {
+	buildBrandMarkerSvgHtml,
+	buildStadiaStaticMapUrl,
+	resolveMapThemeFromStorage,
+} from '../lib/maplibre-loader';
 import AppPagination from './AppPagination.astro';
 
 interface Props {
@@ -25,6 +29,7 @@ const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
 const activeCount = locations.filter((item) => item.is_active === 1).length;
 const inactiveCount = locations.length - activeCount;
 const stadiaKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
+const mapTheme = resolveMapThemeFromStorage(Astro.cookies.get('bookmate-theme')?.value);
 
 const locationMapPreview = (location: Location) => {
 	const lat = Number(location.latitude);
@@ -32,7 +37,7 @@ const locationMapPreview = (location: Location) => {
 	const coords =
 		Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 	return buildStadiaStaticMapUrl(stadiaKey, coords, {
-		theme: 'dark',
+		theme: mapTheme,
 		width: 480,
 		height: 270,
 		zoom: 15,
@@ -208,6 +213,9 @@ const locationMapPreview = (location: Location) => {
 	) : (
 		<div class="material-cards-grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3 lg:grid-cols-4" data-locations-grid>
 			{locations.map((location) => {
+				const lat = Number(location.latitude);
+				const lng = Number(location.longitude);
+				const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
 				const mapPreviewUrl = locationMapPreview(location);
 				return (
 				<article
@@ -226,6 +234,8 @@ const locationMapPreview = (location: Location) => {
 								loading="lazy"
 								decoding="async"
 								data-location-map-preview
+								data-map-lat={hasCoords ? lat : undefined}
+								data-map-lng={hasCoords ? lng : undefined}
 							/>
 							<span
 								class="bookmate-map-marker-overlay"

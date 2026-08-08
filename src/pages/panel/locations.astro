@@ -6,6 +6,7 @@ import SideNav from "../../components/SideNav.astro";
 import TopBar from "../../components/TopBar.astro";
 import { ROLES } from "../../config/roles";
 import Layout from "../../layouts/Layout.astro";
+import { panelPageTitle } from "../../lib/panel-page-title";
 import "../../styles/global.css";
 
 const canManageLocations = Number(Astro.locals.roleId ?? 0) === ROLES.ADMIN;
@@ -15,7 +16,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 ---
 
-<Layout>
+<Layout pageTitle={panelPageTitle('Sucursales')}>
 	<location-manager data-stadia-key={stadiaMapsKey} data-can-manage={canManageLocations ? "true" : "false"}>
 		<div class="min-h-screen bg-(--page-background) transition-colors duration-300">
 			<div
@@ -54,34 +55,25 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:max-h-[90vh] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 			data-location-modal
 		>
-			<div
-				class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-4"
-			>
-				<div class="flex items-start justify-between gap-4">
-					<div class="flex items-center gap-4">
-						<div
-							class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)"
-						>
-							<span class="material-symbols-rounded text-[1.4rem]"
-								>storefront</span
-							>
+			<div class="panel-modal-header">
+				<div class="panel-modal-header__row">
+					<div class="panel-modal-header__leading">
+						<div class="panel-modal-header__icon">
+							<span class="material-symbols-rounded">storefront</span>
 						</div>
-						<div>
-							<h2
-								class="text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)"
-								data-location-modal-title
-							>
+						<div class="panel-modal-header__text">
+							<h2 class="panel-modal-header__title" data-location-modal-title>
 								Crear sucursal
 							</h2>
 						</div>
 					</div>
 					<button
 						type="button"
-						class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)"
+						class="panel-modal-header__close"
 						data-close-location-modal
 						aria-label="Cerrar modal"
 					>
-						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+						<span class="material-symbols-rounded">close</span>
 					</button>
 				</div>
 			</div>
@@ -369,7 +361,8 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 							>
 								<span
 									class="material-symbols-rounded text-[1.2rem]"
-									data-submit-location-icon>check</span
+									data-submit-location-icon
+									aria-hidden="true">check</span
 								>
 								<span data-submit-location-label
 									>Crear sucursal</span
@@ -382,28 +375,28 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		</dialog>
 
 		<dialog class="closures-org-dialog" data-org-closures-dialog>
-			<div class="closures-org-dialog__header">
-				<div class="flex items-center gap-4 min-w-0">
-					<div
-						class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)"
+			<div class="panel-modal-header closures-org-dialog__header">
+				<div class="panel-modal-header__row">
+					<div class="panel-modal-header__leading">
+						<div class="panel-modal-header__icon">
+							<span class="material-symbols-rounded">event_busy</span>
+						</div>
+						<div class="panel-modal-header__text">
+							<h2 class="panel-modal-header__title closures-org-dialog__title">Cierres generales</h2>
+							<p class="panel-modal-header__subtitle closures-org-dialog__desc">
+								Feriados o cierres que aplican a todas las sucursales activas.
+							</p>
+						</div>
+					</div>
+					<button
+						type="button"
+						class="panel-modal-header__close closures-org-dialog__close"
+						data-close-org-closures
+						aria-label="Cerrar"
 					>
-						<span class="material-symbols-rounded text-[1.4rem]">event_busy</span>
-					</div>
-					<div class="min-w-0">
-						<h2 class="closures-org-dialog__title">Cierres generales</h2>
-						<p class="closures-org-dialog__desc">
-							Feriados o cierres que aplican a todas las sucursales activas.
-						</p>
-					</div>
+						<span class="material-symbols-rounded">close</span>
+					</button>
 				</div>
-				<button
-					type="button"
-					class="closures-org-dialog__close"
-					data-close-org-closures
-					aria-label="Cerrar"
-				>
-					<span class="material-symbols-rounded text-[1.3rem]">close</span>
-				</button>
 			</div>
 			<div class="closures-org-dialog__body">
 				<button
@@ -424,16 +417,20 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 
 		<dialog class="closure-form-dialog" data-closure-form-dialog>
 			<form class="closure-form" data-closure-form>
-				<div class="closure-form__header">
-					<h2 class="closure-form__title" data-closure-form-title>Añadir cierre</h2>
-					<button
-						type="button"
-						class="closure-form__close"
-						data-close-closure-form
-						aria-label="Cerrar"
-					>
-						<span class="material-symbols-rounded text-[1.3rem]">close</span>
-					</button>
+				<div class="panel-modal-header">
+					<div class="panel-modal-header__row">
+						<div class="panel-modal-header__text">
+							<h2 class="panel-modal-header__title" data-closure-form-title>Añadir cierre</h2>
+						</div>
+						<button
+							type="button"
+							class="panel-modal-header__close"
+							data-close-closure-form
+							aria-label="Cerrar"
+						>
+							<span class="material-symbols-rounded">close</span>
+						</button>
+					</div>
 				</div>
 
 				<div class="closure-form__body">
@@ -550,7 +547,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 						class="modal-action-primary"
 						data-submit-closure
 					>
-						<span class="material-symbols-rounded text-[1.2rem]">check</span>
+						<span class="material-symbols-rounded text-[1.2rem]" aria-hidden="true">save</span>
 						<span>Guardar cierre</span>
 					</button>
 				</div>
@@ -2312,38 +2309,6 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		width: 100%;
 	}
 
-	.closure-form__header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		flex-shrink: 0;
-		padding: 1rem 1.2rem;
-		border-bottom: 1px solid var(--shell-border);
-	}
-
-	.closure-form__title {
-		margin: 0;
-		font-size: 1.05rem;
-		font-weight: 800;
-	}
-
-	.closure-form__close {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2.1rem;
-		height: 2.1rem;
-		border-radius: 999px;
-		border: 0;
-		background: transparent;
-		color: var(--on-surface-variant);
-		cursor: pointer;
-	}
-
-	.closure-form__close:hover {
-		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
-	}
-
 	.closure-form__body {
 		display: grid;
 		gap: 0.85rem;
@@ -2561,58 +2526,6 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				transform: translateX(100%);
 			}
 		}
-	}
-
-	.closures-org-dialog__header {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 1rem;
-		flex-shrink: 0;
-		padding: 1rem 1.25rem;
-		border-bottom: 1px solid var(--shell-border);
-		background: var(--surface-bright);
-	}
-
-	@media (min-width: 640px) {
-		.closures-org-dialog__header {
-			padding: 1.1rem 1.75rem;
-		}
-	}
-
-	.closures-org-dialog__title {
-		margin: 0;
-		font-size: 1.2rem;
-		font-weight: 800;
-		letter-spacing: -0.01em;
-		color: var(--on-surface);
-	}
-
-	.closures-org-dialog__desc {
-		margin: 0.2rem 0 0;
-		font-size: 0.85rem;
-		font-weight: 500;
-		color: var(--on-surface-variant);
-	}
-
-	.closures-org-dialog__close {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2.25rem;
-		height: 2.25rem;
-		flex-shrink: 0;
-		border-radius: 999px;
-		border: 0;
-		background: transparent;
-		color: var(--on-surface-variant);
-		cursor: pointer;
-		transition: background 140ms ease, color 140ms ease;
-	}
-
-	.closures-org-dialog__close:hover {
-		background: var(--surface-variant);
-		color: var(--on-surface);
 	}
 
 	.closures-org-dialog__body {

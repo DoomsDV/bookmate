@@ -54,6 +54,14 @@ export function initPlanPage() {
 	const initialTab = new URLSearchParams(window.location.search).get('tab');
 	if (initialTab === 'billing') setTab('billing');
 
+	document.querySelectorAll<HTMLButtonElement>('[data-plan-tab-jump]').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			const target = btn.dataset.planTabJump || 'billing';
+			setTab(target);
+			document.querySelector('[data-plan-tabs]')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+		});
+	});
+
 	// ---- Modal de confirmación de cobro ----
 	const payModal = document.querySelector<HTMLElement>('[data-pay-modal]');
 	const modalTitle = document.querySelector<HTMLElement>('[data-pay-title]');
@@ -299,6 +307,7 @@ export function initPlanPage() {
 			const saved = await saveBillingProfile({ silent: true });
 			if (!saved || !isBillingComplete()) {
 				flash('Completá y guardá los datos de facturación antes de registrar la tarjeta.', 'warning');
+				setTab('billing');
 				billingForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
 				return;
 			}

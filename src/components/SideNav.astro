@@ -1,5 +1,6 @@
 ---
 import { canAccessPath } from "../config/roles";
+import { getSubscriptionWithOrds } from "../lib/subscription";
 import OrgSwitcherModal from "./OrgSwitcherModal.astro";
 import MobileBottomNav from "./MobileBottomNav.astro";
 
@@ -101,6 +102,32 @@ const mobileSheetPrimaryItems = visiblePrimaryItems.filter(
 );
 const showPlanFooter = canAccessPath("/panel/plan", currentRoleId);
 const planFooterActive = activePath === "/panel/plan";
+
+let planDisplayName = "Plan";
+if (showPlanFooter) {
+	const cachedPlanName = String(Astro.cookies.get("hasel_plan_name")?.value || "").trim();
+	if (cachedPlanName) {
+		planDisplayName = `Plan ${cachedPlanName}`;
+	} else {
+		const token = String(Astro.locals.token ?? "").trim();
+		if (token) {
+			try {
+				const sub = await getSubscriptionWithOrds(token);
+				const name = String(sub.plan.name || sub.plan.code || "").trim();
+				if (name) {
+					planDisplayName = `Plan ${name}`;
+					Astro.cookies.set("hasel_plan_name", name, {
+						path: "/",
+						maxAge: 60 * 60 * 24 * 7,
+						sameSite: "lax",
+					});
+				}
+			} catch {
+				/* mantiene "Plan" */
+			}
+		}
+	}
+}
 ---
 
 {/* Sync inmediato del shell (antes del paint del sidebar) — solo desktop */}
@@ -302,17 +329,17 @@ const planFooterActive = activePath === "/panel/plan";
 							href="/panel/plan"
 							data-side-nav-close
 							class:list={[
-								"more-sheet__plan",
+								"more-sheet__link",
 								planFooterActive && "is-active",
 							]}
 							aria-label="Ver plan y facturación"
 						>
-							<span class="material-symbols-rounded more-sheet__plan-icon" aria-hidden="true">
+							<span class="material-symbols-rounded more-sheet__icon" aria-hidden="true">
 								workspace_premium
 							</span>
 							<span class="min-w-0 flex-1">
 								<span class="block truncate text-[0.98rem] font-bold" data-plan-label>
-									Plan
+									{planDisplayName}
 								</span>
 								<span class="block text-[0.78rem] font-medium text-(--on-surface-variant)">
 									Ver plan y facturación
@@ -346,7 +373,7 @@ const planFooterActive = activePath === "/panel/plan";
 	data-desktop-sidebar
 >
 	<div
-		class="shell-header-zone sidebar-account-header shrink-0 px-6 pb-4 pt-5"
+		class="shell-header-zone sidebar-account-header flex shrink-0 items-center px-6"
 		data-sidebar-brand-block
 	>
 		<button
@@ -359,7 +386,7 @@ const planFooterActive = activePath === "/panel/plan";
 		>
 			<div
 				class:list={[
-					"workspace-avatar flex size-14 shrink-0 items-center justify-center overflow-hidden rounded-full text-lg font-bold",
+					"workspace-avatar flex size-11 shrink-0 items-center justify-center overflow-hidden rounded-full text-base font-bold",
 					workspaceLogoUrl ? "workspace-avatar--has-logo" : "workspace-avatar--empty",
 				]}
 				data-workspace-avatar
@@ -497,10 +524,10 @@ const planFooterActive = activePath === "/panel/plan";
 					data-sidebar-item
 					data-sidebar-footer
 					class:list={[
-						"sidebar-nav-link mt-auto flex items-center gap-3 rounded-2xl border border-(--shell-border) px-4 py-3 no-underline transition",
+						"sidebar-nav-link mt-auto flex items-center gap-3 rounded-full px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
 						planFooterActive
-							? "is-active bg-(--primary-container) text-(--primary)"
-							: "text-(--on-surface) hover:bg-(--sidebar-hover)",
+							? "is-active bg-(--primary-container) text-(--primary) font-bold"
+							: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
 					]}
 					aria-label="Ver plan y facturación"
 				>
@@ -509,7 +536,7 @@ const planFooterActive = activePath === "/panel/plan";
 					</span>
 					<span class="min-w-0 flex-1" data-sidebar-label>
 						<span class="sidebar-nav-label block truncate text-[0.9rem] font-bold" data-plan-label>
-							Plan
+							{planDisplayName}
 						</span>
 						<span class="block text-[0.75rem] font-medium text-(--on-surface-variant)">
 							Ver plan y facturación
@@ -721,43 +748,6 @@ const planFooterActive = activePath === "/panel/plan";
 		padding-inline: 0.2rem;
 	}
 
-	.more-sheet__plan {
-		display: flex;
-		min-height: 3.35rem;
-		min-width: 0;
-		align-items: center;
-		gap: 0.8rem;
-		padding: 0.8rem 0.95rem;
-		border-radius: 1rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
-		background: color-mix(in srgb, var(--surface-container, var(--control-surface)) 55%, transparent);
-		color: var(--on-surface);
-		text-decoration: none;
-		transition:
-			background-color 0.16s ease,
-			border-color 0.16s ease,
-			color 0.16s ease;
-	}
-
-	.more-sheet__plan:hover {
-		background: color-mix(in srgb, var(--on-surface) 5%, var(--surface-container, var(--control-surface)));
-	}
-
-	.more-sheet__plan.is-active {
-		background: color-mix(in srgb, var(--primary) 14%, transparent);
-		color: var(--primary);
-		border-color: color-mix(in srgb, var(--primary) 24%, var(--shell-border));
-	}
-
-	.more-sheet__plan-icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 1.4rem;
-		line-height: 1;
-		color: var(--primary);
-	}
-
 	.more-sheet__logout {
 		display: flex;
 		width: 100%;
@@ -805,17 +795,6 @@ const planFooterActive = activePath === "/panel/plan";
 
 	:global(html[data-theme='dark']) .more-sheet__link.is-active .more-sheet__icon {
 		color: #9eb8ff;
-	}
-
-	:global(html[data-theme='dark']) .more-sheet__plan {
-		background: rgba(255, 255, 255, 0.03);
-		border-color: rgba(255, 255, 255, 0.08);
-	}
-
-	:global(html[data-theme='dark']) .more-sheet__plan.is-active {
-		background: rgba(66, 110, 219, 0.16);
-		color: #9eb8ff;
-		border-color: rgba(66, 110, 219, 0.28);
 	}
 
 	:global(html[data-theme='dark']) .more-sheet__logout {

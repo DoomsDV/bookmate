@@ -4,6 +4,7 @@ import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
 import AppAlert from '../../components/AppAlert.astro';
 import Layout from '../../layouts/Layout.astro';
+import { panelPageTitle } from '../../lib/panel-page-title';
 import {
 	getPlansWithOrds,
 	listCardsWithOrds,
@@ -244,6 +245,27 @@ const canTerminate =
 
 // Método de pago (cobro recurrente con tarjeta): solo admin y planes facturables.
 const showPaymentMethod = isAdmin && !!current && !current.billing_exempt;
+
+const isAtMaxPlan =
+	!!current &&
+	current.plan_code === 'PREMIUM' &&
+	!['TRIAL', 'TRIAL_EXPIRED', 'READ_ONLY'].includes(effState);
+
+const showUpgradeOnly =
+	!!current &&
+	current.plan_code === 'BASE' &&
+	!['TRIAL_EXPIRED', 'READ_ONLY'].includes(effState) &&
+	!isContinuity;
+
+const showFullPlanCatalog = !isAtMaxPlan && !showUpgradeOnly;
+const plansToShow =
+	catalog?.plans.filter((plan) => {
+		if (showUpgradeOnly) return plan.code === 'PREMIUM';
+		if (showFullPlanCatalog) return true;
+		return false;
+	}) ?? [];
+
+const premiumMarketing = planMarketing('PREMIUM');
 const formatMaskedCard = (masked: string | null) => {
 	const raw = String(masked || '').replace(/\s+/g, '');
 	if (!raw) return '•••• •••• •••• ••••';
@@ -265,7 +287,7 @@ const defaultCardHint = defaultCard
 	: 'Se debitará automáticamente cada mes.';
 ---
 
-<Layout pageTitle="Plan y facturación · Hasel">
+<Layout pageTitle={panelPageTitle('Plan y facturación')}>
 	<div
 		class="plan-canvas min-h-screen w-full max-w-full overflow-x-hidden bg-(--page-background) transition-colors duration-300"
 		data-has-card={hasCard ? '1' : '0'}
@@ -442,11 +464,89 @@ const defaultCardHint = defaultCard
 									)}
 								</section>
 
-								{/* ---- Planes ---- */}
+								{isAtMaxPlan ? (
+									<section class="plan-usage-section">
+										<div class="grid gap-1">
+											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Tu uso este mes</h2>
+											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+												Consultá cuánto espacio estás usando y si necesitás sumar almacenamiento adicional.
+											</p>
+										</div>
+										<div class="plan-usage-grid">
+											<article class="plan-usage-card">
+												<div class="plan-usage-card-head">
+													<span class="plan-usage-icon material-symbols-rounded" aria-hidden="true">cloud</span>
+													<div class="grid gap-0.5">
+														<span class="plan-usage-label">Almacenamiento</span>
+														<span class="plan-usage-value">
+															{formatGb(current.storage_used_bytes)}
+															{' / '}
+															{current.storage_limit_bytes > 0 ? formatGb(current.storage_limit_bytes) : 'No incluido'}
+														</span>
+													</div>
+												</div>
+												<div class="plan-storage-track plan-usage-track">
+													<div class="plan-storage-fill" style={`width:${storagePct}%`}></div>
+												</div>
+												<p class="plan-usage-footnote m-0">
+													{storagePct >= 90
+														? 'Estás cerca del límite. Podés sumar espacio extra en almacenamiento adicional.'
+														: `${storagePct}% del espacio incluido en uso.`}
+												</p>
+											</article>
+										</div>
+									</section>
+								) : null}
+
+								{isAtMaxPlan ? (
+									<section class="plan-mgmt-section">
+										<div class="grid gap-1">
+											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Gestión de tu suscripción</h2>
+											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+												Consultá cobros, facturación y método de pago desde la pestaña Facturación.
+											</p>
+										</div>
+										<div class="plan-mgmt-actions">
+											<button type="button" class="plan-mgmt-link" data-plan-tab-jump="billing">
+												<span class="material-symbols-rounded" aria-hidden="true">receipt_long</span>
+												<span class="grid gap-0.5 text-left">
+													<strong>Historial de pagos</strong>
+													<small>Cobros, estados y montos de tu suscripción</small>
+												</span>
+												<span class="material-symbols-rounded plan-mgmt-chevron" aria-hidden="true">chevron_right</span>
+											</button>
+											{showPaymentMethod ? (
+												<button type="button" class="plan-mgmt-link" data-plan-tab-jump="billing">
+													<span class="material-symbols-rounded" aria-hidden="true">credit_card</span>
+													<span class="grid gap-0.5 text-left">
+														<strong>Método de pago</strong>
+														<small>Tarjeta registrada y datos de facturación</small>
+													</span>
+													<span class="material-symbols-rounded plan-mgmt-chevron" aria-hidden="true">chevron_right</span>
+												</button>
+											) : null}
+										</div>
+									</section>
+								) : null}
+
+								{/* ---- Planes / upgrade ---- */}
+								{plansToShow.length > 0 ? (
 								<section class="grid gap-4">
-									<h2 class="m-0 text-lg font-bold text-(--on-surface)">Elegí tu plan</h2>
-									<div class="plan-cards-carousel md:grid md:grid-cols-2 md:gap-4">
-										{catalog.plans.map((plan) => {
+									<div class="grid gap-1">
+										<h2 class="m-0 text-lg font-bold text-(--on-surface)">
+											{showUpgradeOnly ? 'Potenciá tu negocio' : 'Elegí tu plan'}
+										</h2>
+										{showUpgradeOnly ? (
+											<p class="m-0 text-[0.88rem] font-medium text-(--on-surface-variant)">
+												Pasá a Premium y desbloqueá herramientas que no están en el plan Base.
+											</p>
+										) : null}
+									</div>
+									<div class:list={[
+										'plan-cards-carousel md:grid md:gap-4',
+										showUpgradeOnly ? 'plan-cards-carousel--single md:grid-cols-1 md:max-w-xl' : 'md:grid-cols-2',
+									]}>
+										{plansToShow.map((plan) => {
 											const marketing = planMarketing(plan.code);
 											const hasFounderDeal =
 												plan.founder_discount_percent > 0 &&
@@ -479,11 +579,16 @@ const defaultCardHint = defaultCard
 													: 'activate';
 											const isDowngradeCta = planAction === 'schedule';
 											return (
-											<article class={`plan-card ${plan.is_current ? 'plan-card-current' : ''} ${plan.code === 'PREMIUM' ? 'plan-card-featured' : ''}`}>
+											<article class:list={[
+												'plan-card',
+												plan.is_current && 'plan-card-current',
+												(plan.code === 'PREMIUM' || showUpgradeOnly) && 'plan-card-featured',
+												showUpgradeOnly && 'plan-card-upgrade',
+											]}>
 												{plan.is_current ? (
 													<span class="plan-ribbon plan-ribbon--included">Incluido</span>
 												) : plan.code === 'PREMIUM' ? (
-													<span class="plan-ribbon">Recomendado</span>
+													<span class="plan-ribbon">{showUpgradeOnly ? 'Tu próximo paso' : 'Recomendado'}</span>
 												) : null}
 												<div class="plan-card-head grid gap-1">
 													<span class="plan-card-name text-sm font-bold uppercase tracking-wide text-(--on-surface-variant)">{plan.name}</span>
@@ -552,6 +657,22 @@ const defaultCardHint = defaultCard
 														</ul>
 													</div>
 												)}
+												{showUpgradeOnly && premiumMarketing ? (
+													<div class="plan-upgrade-missing">
+														<p class="plan-upgrade-missing-title m-0">Lo que te estás perdiendo en Base</p>
+														<ul class="plan-upgrade-missing-list">
+															{premiumMarketing.benefits.map((benefit) => (
+																<li>
+																	<span class="material-symbols-rounded" aria-hidden="true">lock_open</span>
+																	<span>
+																		<strong>{benefit.title}</strong>
+																		<small>{benefit.description}</small>
+																	</span>
+																</li>
+															))}
+														</ul>
+													</div>
+												) : null}
 												<div class="plan-card-cta mt-auto">
 													{plan.is_current ? (
 														<button type="button" class="plan-btn plan-btn-current" disabled>Plan actual</button>
@@ -570,11 +691,13 @@ const defaultCardHint = defaultCard
 														>
 															{current.billing_exempt
 																? 'Cambiar a este plan'
-																: current.plan_code === 'FREE' || effState === 'READ_ONLY'
-																	? `Renovar con ${plan.name}`
-																	: plan.code === 'BASE' && current.plan_code === 'PREMIUM'
-																		? `Pasar a ${plan.name}`
-																		: `Elegir ${plan.name}`}
+																: showUpgradeOnly
+																	? 'Mejorar a Premium'
+																	: current.plan_code === 'FREE' || effState === 'READ_ONLY'
+																		? `Renovar con ${plan.name}`
+																		: plan.code === 'BASE' && current.plan_code === 'PREMIUM'
+																			? `Pasar a ${plan.name}`
+																			: `Elegir ${plan.name}`}
 														</button>
 													) : (
 														<button type="button" class="plan-btn plan-btn-current" disabled>Solo el administrador puede cambiarlo</button>
@@ -590,153 +713,7 @@ const defaultCardHint = defaultCard
 										</p>
 									)}
 								</section>
-
-								{/* ---- Método de pago (cobro recurrente con tarjeta) ---- */}
-								{showPaymentMethod && (
-									<section class="grid gap-4" data-payment-section>
-										<div class="grid gap-1">
-											<h2 class="m-0 text-lg font-bold text-(--on-surface)">Método de pago</h2>
-										</div>
-
-										<form
-											class="grid gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 sm:p-5"
-											data-billing-profile-form
-											autocomplete="off"
-											novalidate
-										>
-											<div class="grid gap-1">
-												<h3 class="m-0 text-[1rem] font-bold text-(--on-surface)">Datos de facturación</h3>
-												<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">
-													A nombre de quién Hasel emite la factura de tu suscripción. Completalo antes de registrar la tarjeta.
-												</p>
-											</div>
-
-											<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_name">
-												<span>Razón social / Nombre <span class="text-rose-500">*</span></span>
-												<input
-													type="text"
-													name="billing_name"
-													maxlength="200"
-													required
-													value={billingProfile?.billing_name || ''}
-													placeholder="Nombre o razón social"
-													class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-												/>
-												<p class="plan-field-error" data-field-error="billing_name" role="alert"></p>
-											</label>
-
-											<div class="grid gap-3 sm:grid-cols-2">
-												<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_doc_type">
-													<span>Tipo de documento <span class="text-rose-500">*</span></span>
-													<select
-														name="billing_doc_type"
-														required
-														class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-													>
-														<option value="CI" selected={billingProfile?.billing_doc_type !== 'RUC'}>C.I.</option>
-														<option value="RUC" selected={billingProfile?.billing_doc_type === 'RUC'}>RUC</option>
-													</select>
-												</label>
-												<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_doc_number">
-													<span>Número de documento <span class="text-rose-500">*</span></span>
-													<input
-														type="text"
-														name="billing_doc_number"
-														maxlength="40"
-														required
-														value={billingProfile?.billing_doc_number || ''}
-														placeholder="C.I. o RUC"
-														class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-													/>
-													<p class="plan-field-error" data-field-error="billing_doc_number" role="alert"></p>
-												</label>
-											</div>
-
-											<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_email">
-												<span>Email de factura <span class="text-rose-500">*</span></span>
-												<input
-													type="email"
-													name="billing_email"
-													maxlength="255"
-													required
-													value={billingProfile?.billing_email || ''}
-													placeholder="facturacion@tuempresa.com"
-													class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-												/>
-												<p class="plan-field-error" data-field-error="billing_email" role="alert"></p>
-											</label>
-
-											<div class="flex flex-wrap items-center gap-3">
-												<button type="submit" class="plan-btn plan-btn-soft" data-billing-profile-save>
-													<span class="material-symbols-rounded align-middle text-[1.1rem]">save</span>
-													Guardar datos de facturación
-												</button>
-												<p
-													class={`m-0 text-[0.82rem] font-semibold ${billingProfile?.is_complete === 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-(--on-surface-variant)'}`}
-													data-billing-profile-status
-													data-complete={billingProfile?.is_complete === 1 ? '1' : '0'}
-												>
-													{billingProfile?.is_complete === 1
-														? 'Datos listos para facturar.'
-														: 'Pendiente de completar.'}
-												</p>
-											</div>
-										</form>
-
-										<div class="plan-plastic-grid" data-cards-list>
-											{cards.length === 0 ? (
-												<div class="plan-card-empty" data-cards-empty>
-													<span class="material-symbols-rounded text-[1.5rem] text-(--on-surface-variant)">credit_card_off</span>
-													<p class="m-0 text-[0.9rem] font-semibold text-(--on-surface-variant)">
-														Todavía no registraste ninguna tarjeta.
-													</p>
-												</div>
-											) : (
-												cards.map((card) => (
-													<article class={`plan-plastic-card plan-plastic-${cardTone(card.brand)} ${card.is_default ? 'plan-plastic-default' : ''}`}>
-														<div class="plan-plastic-shine" aria-hidden="true"></div>
-														<div class="plan-plastic-top">
-															<div class="plan-plastic-meta">
-																<span class="plan-plastic-issuer">{card.issuer || card.brand || 'Tarjeta'}</span>
-																<span class="plan-plastic-type">{card.card_type || 'Crédito / Débito'}</span>
-															</div>
-															<span class="plan-plastic-brand">{card.brand || 'Card'}</span>
-														</div>
-														<div class="plan-plastic-chip" aria-hidden="true"></div>
-														<p class="plan-plastic-number">{formatMaskedCard(card.masked_number)}</p>
-														<div class="plan-plastic-bottom">
-															{card.is_default ? (
-																<span class="plan-plastic-default-badge">Predeterminada</span>
-															) : (
-																<span class="plan-plastic-provider">{card.provider}</span>
-															)}
-															<button
-																type="button"
-																class="plan-plastic-del"
-																data-card-delete
-																data-card-id={String(card.id)}
-																aria-label="Eliminar tarjeta"
-															>
-																<span class="material-symbols-rounded">delete</span>
-															</button>
-														</div>
-													</article>
-												))
-											)}
-										</div>
-
-										<div class="plan-payment-actions">
-											<button type="button" class="plan-btn plan-btn-soft" data-add-card>
-												<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
-												{cards.length === 0 ? 'Agregar tarjeta' : 'Agregar otra tarjeta'}
-											</button>
-											<p class="plan-payment-secure">
-												<span class="material-symbols-rounded" aria-hidden="true">lock</span>
-												Pagos 100% seguros vía Pagopar.
-											</p>
-										</div>
-									</section>
-								)}
+								) : null}
 
 								{/* ---- Add-ons de storage ---- */}
 								{(catalog.storage_addons.length > 0 || current.active_storage_addons.length > 0) && (
@@ -902,6 +879,156 @@ const defaultCardHint = defaultCard
 											</div>
 										</div>
 									</section>
+
+									{/* ---- Método de pago (cobro recurrente con tarjeta) ---- */}
+									{showPaymentMethod && (
+										<section class="grid gap-4" data-payment-section>
+											<div class="grid gap-1">
+												<h2 class="m-0 text-lg font-bold text-(--on-surface)">Método de pago</h2>
+											</div>
+
+											<form
+												class="grid gap-4 rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 sm:p-5"
+												data-billing-profile-form
+												autocomplete="off"
+												novalidate
+											>
+												<div class="grid gap-1">
+													<h3 class="m-0 text-[1rem] font-bold text-(--on-surface)">Datos de facturación</h3>
+													<p class="m-0 text-[0.85rem] font-medium text-(--on-surface-variant)">
+														A nombre de quién Hasel emite la factura de tu suscripción. Completalo antes de registrar la tarjeta.
+													</p>
+												</div>
+
+												<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_name">
+													<span>Razón social / Nombre <span class="text-rose-500">*</span></span>
+													<input
+														type="text"
+														name="billing_name"
+														maxlength="200"
+														required
+														value={billingProfile?.billing_name || ''}
+														placeholder="Nombre o razón social"
+														class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+													/>
+													<p class="plan-field-error" data-field-error="billing_name" role="alert"></p>
+												</label>
+
+												<div class="grid gap-3 sm:grid-cols-2">
+													<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_doc_type">
+														<span>Tipo de documento <span class="text-rose-500">*</span></span>
+														<div class="plan-billing-select">
+															<select
+																name="billing_doc_type"
+																required
+																class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 pr-10 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+															>
+																<option value="CI" selected={billingProfile?.billing_doc_type !== 'RUC'}>C.I.</option>
+																<option value="RUC" selected={billingProfile?.billing_doc_type === 'RUC'}>RUC</option>
+															</select>
+															<span class="material-symbols-rounded plan-billing-select__chevron" aria-hidden="true">expand_more</span>
+														</div>
+													</label>
+													<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_doc_number">
+														<span>Número de documento <span class="text-rose-500">*</span></span>
+														<input
+															type="text"
+															name="billing_doc_number"
+															maxlength="40"
+															required
+															value={billingProfile?.billing_doc_number || ''}
+															placeholder="C.I. o RUC"
+															class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+														/>
+														<p class="plan-field-error" data-field-error="billing_doc_number" role="alert"></p>
+													</label>
+												</div>
+
+												<label class="grid gap-1.5 text-[0.88rem] font-bold text-(--on-surface)" data-billing-field="billing_email">
+													<span>Email de factura <span class="text-rose-500">*</span></span>
+													<input
+														type="email"
+														name="billing_email"
+														maxlength="255"
+														required
+														value={billingProfile?.billing_email || ''}
+														placeholder="facturacion@tuempresa.com"
+														class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-3 py-2.5 text-[0.92rem] font-semibold text-(--on-surface) outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+													/>
+													<p class="plan-field-error" data-field-error="billing_email" role="alert"></p>
+												</label>
+
+												<div class="flex flex-wrap items-center gap-3">
+													<button type="submit" class="plan-btn plan-btn-soft inline-flex items-center gap-2" data-billing-profile-save>
+														<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">save</span>
+														Guardar datos de facturación
+													</button>
+													<p
+														class={`m-0 text-[0.82rem] font-semibold ${billingProfile?.is_complete === 1 ? 'text-emerald-600 dark:text-emerald-400' : 'text-(--on-surface-variant)'}`}
+														data-billing-profile-status
+														data-complete={billingProfile?.is_complete === 1 ? '1' : '0'}
+													>
+														{billingProfile?.is_complete === 1
+															? 'Datos listos para facturar.'
+															: 'Pendiente de completar.'}
+													</p>
+												</div>
+											</form>
+
+											<div class="plan-plastic-grid" data-cards-list>
+												{cards.length === 0 ? (
+													<div class="plan-card-empty" data-cards-empty>
+														<span class="material-symbols-rounded text-[1.5rem] text-(--on-surface-variant)">credit_card_off</span>
+														<p class="m-0 text-[0.9rem] font-semibold text-(--on-surface-variant)">
+															Todavía no registraste ninguna tarjeta.
+														</p>
+													</div>
+												) : (
+													cards.map((card) => (
+														<article class={`plan-plastic-card plan-plastic-${cardTone(card.brand)} ${card.is_default ? 'plan-plastic-default' : ''}`}>
+															<div class="plan-plastic-shine" aria-hidden="true"></div>
+															<div class="plan-plastic-top">
+																<div class="plan-plastic-meta">
+																	<span class="plan-plastic-issuer">{card.issuer || card.brand || 'Tarjeta'}</span>
+																	<span class="plan-plastic-type">{card.card_type || 'Crédito / Débito'}</span>
+																</div>
+																<span class="plan-plastic-brand">{card.brand || 'Card'}</span>
+															</div>
+															<div class="plan-plastic-chip" aria-hidden="true"></div>
+															<p class="plan-plastic-number">{formatMaskedCard(card.masked_number)}</p>
+															<div class="plan-plastic-bottom">
+																{card.is_default ? (
+																	<span class="plan-plastic-default-badge">Predeterminada</span>
+																) : (
+																	<span class="plan-plastic-provider">{card.provider}</span>
+																)}
+																<button
+																	type="button"
+																	class="plan-plastic-del"
+																	data-card-delete
+																	data-card-id={String(card.id)}
+																	aria-label="Eliminar tarjeta"
+																>
+																	<span class="material-symbols-rounded">delete</span>
+																</button>
+															</div>
+														</article>
+													))
+												)}
+											</div>
+
+											<div class="plan-payment-actions">
+												<button type="button" class="plan-btn plan-btn-soft" data-add-card>
+													<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
+													{cards.length === 0 ? 'Agregar tarjeta' : 'Agregar otra tarjeta'}
+												</button>
+												<p class="plan-payment-secure">
+													<span class="material-symbols-rounded" aria-hidden="true">lock</span>
+													Pagos 100% seguros vía Pagopar.
+												</p>
+											</div>
+										</section>
+									)}
 
 									<section class="grid gap-4">
 										<div class="grid gap-1">
@@ -1220,6 +1347,18 @@ const defaultCardHint = defaultCard
 	.plan-field-invalid {
 		border-color: #e11d48 !important;
 		box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.12);
+	}
+	.plan-billing-select {
+		position: relative;
+		display: flex;
+		align-items: center;
+	}
+	.plan-billing-select__chevron {
+		position: absolute;
+		right: 0.75rem;
+		font-size: 1.35rem;
+		color: var(--on-surface-variant);
+		pointer-events: none;
 	}
 	.plan-price-tag {
 		display: inline-flex;
@@ -1707,6 +1846,176 @@ const defaultCardHint = defaultCard
 		display: grid; gap: 1rem;
 		border-radius: 1.1rem; border: 1px solid var(--shell-border);
 		background: var(--surface-bright, #fff); padding: 1.25rem;
+	}
+
+	.plan-usage-section,
+	.plan-mgmt-section {
+		display: grid;
+		gap: 1rem;
+	}
+
+	.plan-usage-grid {
+		display: grid;
+		gap: 1rem;
+		max-width: 32rem;
+	}
+
+	.plan-usage-card {
+		display: grid;
+		gap: 0.85rem;
+		padding: 1.15rem 1.2rem;
+		border-radius: 1.15rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright, #fff);
+	}
+
+	.plan-usage-card-head {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.85rem;
+	}
+
+	.plan-usage-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 0.85rem;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+		font-size: 1.35rem;
+		flex-shrink: 0;
+	}
+
+	.plan-usage-label {
+		font-size: 0.78rem;
+		font-weight: 750;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.plan-usage-value {
+		font-size: 1.05rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.plan-usage-track {
+		height: 0.55rem;
+	}
+
+	.plan-usage-footnote {
+		font-size: 0.82rem;
+		font-weight: 550;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+
+	.plan-mgmt-actions {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.plan-mgmt-link {
+		display: flex;
+		align-items: center;
+		gap: 0.9rem;
+		width: 100%;
+		padding: 1rem 1.1rem;
+		border-radius: 1.1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright, #fff);
+		color: var(--on-surface);
+		cursor: pointer;
+		text-align: left;
+		transition: border-color 0.15s ease, background 0.15s ease;
+	}
+
+	.plan-mgmt-link:hover {
+		border-color: color-mix(in srgb, var(--primary) 35%, var(--shell-border));
+		background: color-mix(in srgb, var(--primary) 4%, var(--surface-bright, #fff));
+	}
+
+	.plan-mgmt-link > .material-symbols-rounded:first-child {
+		font-size: 1.4rem;
+		color: var(--primary);
+	}
+
+	.plan-mgmt-link strong {
+		font-size: 0.95rem;
+		font-weight: 800;
+	}
+
+	.plan-mgmt-link small {
+		font-size: 0.8rem;
+		font-weight: 550;
+		color: var(--on-surface-variant);
+	}
+
+	.plan-mgmt-chevron {
+		margin-left: auto;
+		color: var(--on-surface-variant);
+	}
+
+	.plan-cards-carousel--single .plan-card-upgrade {
+		border-color: color-mix(in srgb, var(--primary) 35%, var(--shell-border));
+		box-shadow: 0 18px 40px -28px color-mix(in srgb, var(--primary) 55%, transparent);
+	}
+
+	.plan-upgrade-missing {
+		display: grid;
+		gap: 0.75rem;
+		padding: 0.95rem 1rem;
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--primary) 7%, transparent);
+		border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+	}
+
+	.plan-upgrade-missing-title {
+		font-size: 0.82rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--primary);
+	}
+
+	.plan-upgrade-missing-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 0.7rem;
+	}
+
+	.plan-upgrade-missing-list li {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.65rem;
+	}
+
+	.plan-upgrade-missing-list .material-symbols-rounded {
+		font-size: 1.1rem;
+		color: var(--primary);
+		margin-top: 0.1rem;
+		flex-shrink: 0;
+	}
+
+	.plan-upgrade-missing-list strong {
+		display: block;
+		font-size: 0.9rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.plan-upgrade-missing-list small {
+		display: block;
+		margin-top: 0.15rem;
+		font-size: 0.8rem;
+		font-weight: 550;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
 	}
 
 	/* Mismo overlay que [data-settings-modal]::backdrop (sin blur extra). */

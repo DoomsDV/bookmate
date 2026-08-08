@@ -3,7 +3,12 @@ import {
 	closeFilterPopoverSheet,
 	toggleFilterPopoverSheet,
 } from '../lib/panel-filter-popover';
-import { buildStadiaStaticMapUrl, renderBrandMapMarkerOverlay } from '../lib/maplibre-loader';
+import {
+	buildStadiaStaticMapUrl,
+	renderBrandMapMarkerOverlay,
+	resolveMapTheme,
+	type MapCoordinates,
+} from '../lib/maplibre-loader';
 import { updateAppPaginationDom } from '../lib/pagination';
 
 type LocationItem = {
@@ -41,17 +46,36 @@ const getStadiaKey = () => {
 	return String(fromView || '').trim();
 };
 
+const buildMapPreviewUrl = (coords: MapCoordinates | null) =>
+	buildStadiaStaticMapUrl(getStadiaKey(), coords, {
+		theme: resolveMapTheme(),
+		width: 480,
+		height: 270,
+		zoom: 15,
+	});
+
+const syncLocationMapPreviews = () => {
+	const theme = resolveMapTheme();
+	document.querySelectorAll<HTMLImageElement>('[data-location-map-preview]').forEach((img) => {
+		const lat = Number(img.dataset.mapLat);
+		const lng = Number(img.dataset.mapLng);
+		if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+		const url = buildStadiaStaticMapUrl(getStadiaKey(), { lat, lng }, {
+			theme,
+			width: 480,
+			height: 270,
+			zoom: 15,
+		});
+		if (url && img.src !== url) img.src = url;
+	});
+};
+
 const buildLocationCover = (location: LocationItem) => {
 	const lat = Number(location.latitude);
 	const lng = Number(location.longitude);
 	const coords =
 		Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
-	const mapPreviewUrl = buildStadiaStaticMapUrl(getStadiaKey(), coords, {
-		theme: 'dark',
-		width: 480,
-		height: 270,
-		zoom: 15,
-	});
+	const mapPreviewUrl = buildMapPreviewUrl(coords);
 
 	if (mapPreviewUrl) {
 		return `
@@ -62,6 +86,8 @@ const buildLocationCover = (location: LocationItem) => {
 					loading="lazy"
 					decoding="async"
 					data-location-map-preview
+					data-map-lat="${coords!.lat}"
+					data-map-lng="${coords!.lng}"
 				/>
 				${renderBrandMapMarkerOverlay()}
 			</div>
@@ -308,11 +334,28 @@ const loadLocations = async (state: { page: number; isActive: number | null }) =
 	}
 };
 
+const syncLocationMapPreviewsOnPage = () => {
+	syncLocationMapPreviews();
+};
+
 export const initLocationsListControls = () => {
-	if ((window as unknown as { __locationsListControlsInit?: boolean }).__locationsListControlsInit) {
+	const win = window as unknown as { __locationsListControlsInit?: boolean };
+	if (win.__locationsListControlsInit) {
+		syncLocationMapPreviewsOnPage();
 		return;
 	}
-	(window as unknown as { __locationsListControlsInit?: boolean }).__locationsListControlsInit = true;
+	win.__locationsListControlsInit = true;
+
+	syncLocationMapPreviewsOnPage();
+	document.addEventListener('astro:page-load', syncLocationMapPreviewsOnPage);
+
+	const themeObserver = new MutationObserver(() => {
+		syncLocationMapPreviews();
+	});
+	themeObserver.observe(document.documentElement, {
+		attributes: true,
+		attributeFilter: ['data-theme'],
+	});
 
 	const sheet = document.querySelector<HTMLDialogElement>('[data-locations-status-filter-sheet]');
 	const getTrigger = () =>

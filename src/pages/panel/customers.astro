@@ -6,6 +6,7 @@ import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
 import { ROLES } from '../../config/roles';
 import Layout from '../../layouts/Layout.astro';
+import { panelPageTitle } from '../../lib/panel-page-title';
 import '../../styles/global.css';
 
 const token = Astro.locals.token ?? '';
@@ -16,7 +17,7 @@ const canFilterByProfessional =
 const initialLoadError = token ? '' : 'No hay sesion valida para consultar clientes.';
 ---
 
-<Layout>
+<Layout pageTitle={panelPageTitle('Clientes')}>
 	<customer-manager data-role-id={String(roleId)}>
 		<div class="min-h-screen bg-(--page-background) transition-colors duration-300">
 			<div
@@ -244,23 +245,18 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 				class="customer-profile-modal__panel relative flex max-h-[85vh] w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:max-h-[90vh] sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 				data-customer-profile-panel
 			>
-			<div
-				class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6"
-			>
-				<div class="flex items-start justify-between gap-4">
-					<div class="flex min-w-0 items-center gap-4">
+			<div class="panel-modal-header panel-modal-header--shadow">
+				<div class="panel-modal-header__row">
+					<div class="panel-modal-header__leading">
 						<div
-							class="customer-card-avatar customer-card-avatar--tone-1 size-12 text-[0.85rem]"
+							class="customer-card-avatar customer-card-avatar--tone-1 panel-modal-header__avatar"
 							data-customer-profile-avatar
 							aria-hidden="true"
 						>
 							?
 						</div>
-						<div class="min-w-0">
-							<h2
-								class="truncate text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)"
-								data-customer-profile-name
-							>
+						<div class="panel-modal-header__text">
+							<h2 class="panel-modal-header__title truncate" data-customer-profile-name>
 								Cliente
 							</h2>
 							<p
@@ -281,11 +277,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 					</div>
 					<button
 						type="button"
-						class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)"
+						class="panel-modal-header__close"
 						data-close-customer-profile-modal
 						aria-label="Cerrar modal"
 					>
-						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+						<span class="material-symbols-rounded">close</span>
 					</button>
 				</div>
 			</div>
@@ -807,7 +803,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		display: inline-flex;
 		align-items: center;
 		gap: 0.35rem;
-		margin-top: 0.55rem;
+		margin: 0.1rem 0 0;
 		max-width: 100%;
 		padding: 0.3rem 0.7rem;
 		border-radius: 999px;

@@ -4,13 +4,14 @@ import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
 import Layout from '../../layouts/Layout.astro';
+import { panelPageTitle } from '../../lib/panel-page-title';
 import '../../styles/global.css';
 
 const token = Astro.locals.token ?? '';
 const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobros.';
 ---
 
-<Layout>
+<Layout pageTitle={panelPageTitle('Cobros')}>
 	<cobros-manager>
 		<div class="min-h-screen bg-(--page-background) transition-colors duration-300">
 			<div
@@ -362,14 +363,16 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 					class="cobros-modal__panel relative flex max-h-[92dvh] w-full max-w-none flex-col overflow-hidden rounded-t-[1.5rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:max-h-[min(90vh,40rem)] sm:w-[min(28rem,calc(100vw-2rem))] sm:max-w-[28rem] sm:rounded-[1.5rem] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[min(26rem,100vw)] lg:max-w-[26rem] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 					data-cobros-modal-panel
 				>
-					<header class="flex shrink-0 items-start justify-between gap-3 border-b border-(--shell-border) px-5 py-4">
-						<div>
-							<h2 id="cobros-modal-title" class="m-0 text-lg font-bold" data-cobros-modal-title>Validar comprobante</h2>
-							<p class="mt-1 text-sm text-(--on-surface-variant)" data-cobros-modal-subtitle></p>
+					<header class="panel-modal-header">
+						<div class="panel-modal-header__row">
+							<div class="panel-modal-header__text">
+								<h2 id="cobros-modal-title" class="panel-modal-header__title" data-cobros-modal-title>Validar comprobante</h2>
+								<p class="panel-modal-header__subtitle" data-cobros-modal-subtitle></p>
+							</div>
+							<button type="button" class="panel-modal-header__close" data-cobros-modal-close aria-label="Cerrar">
+								<span class="material-symbols-rounded">close</span>
+							</button>
 						</div>
-						<button type="button" class="grid size-10 place-items-center rounded-full hover:bg-(--control-surface)" data-cobros-modal-close aria-label="Cerrar">
-							<span class="material-symbols-rounded">close</span>
-						</button>
 					</header>
 					<div class="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto overscroll-contain p-5">
 						<div

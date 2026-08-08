@@ -68,61 +68,13 @@ input[type='search']::-ms-clear {
 	font-variation-settings: 'FILL' 0, 'wght' 600, 'GRAD' 0, 'opsz' 20;
 }
 
-@font-face {
-	font-family: "Nunito Sans";
-	font-style: normal;
-	font-weight: 400;
-	font-display: swap;
-	src: url("/fonts/nunito-sans-v19-latin-regular.woff2") format("woff2");
-}
-
-@font-face {
-	font-family: "Nunito Sans";
-	font-style: normal;
-	font-weight: 500;
-	font-display: swap;
-	src: url("/fonts/nunito-sans-v19-latin-500.woff2") format("woff2");
-}
-
-@font-face {
-	font-family: "Nunito Sans";
-	font-style: normal;
-	font-weight: 600;
-	font-display: swap;
-	src: url("/fonts/nunito-sans-v19-latin-600.woff2") format("woff2");
-}
-
-@font-face {
-	font-family: "Nunito Sans";
-	font-style: normal;
-	font-weight: 700;
-	font-display: swap;
-	src: url("/fonts/nunito-sans-v19-latin-700.woff2") format("woff2");
-}
-
-@font-face {
-	font-family: "Nunito Sans";
-	font-style: normal;
-	font-weight: 800;
-	font-display: swap;
-	src: url("/fonts/nunito-sans-v19-latin-800.woff2") format("woff2");
-}
-
-@font-face {
-	font-family: "Nunito Sans";
-	font-style: normal;
-	font-weight: 900;
-	font-display: swap;
-	src: url("/fonts/nunito-sans-v19-latin-900.woff2") format("woff2");
-}
-
 :root {
 	--font-body: "Nunito Sans", sans-serif;
 	--font-logo: "Nunito Sans", sans-serif;
-	/* Modo claro: casi blanco (−30% crema residual) */
-	--background: #fefdfc;
+	/* Modo claro: gris neutro de prueba */
+	--background: #f6f7f9;
 	--background-accent: #faf9f8;
-	--page-background: #fefdfc;
+	--page-background: #f6f7f9;
 	--surface: rgba(255, 255, 255, 0.97);
 	--surface-container: #f9f8f7;
 	--surface-container-low: #ffffff;
@@ -134,7 +86,7 @@ input[type='search']::-ms-clear {
 	--sidebar-surface: #ffffff;
 	--content-surface: rgba(255, 255, 255, 0.86);
 	--shell-border: #f6f5f4;
-	--shell-header-height: 4.5rem;
+	--shell-header-height: 3.75rem;
 	--primary: #426edb;
 	--primary-soft: rgba(66, 110, 219, 0.12);
 	--primary-soft-hover: rgba(66, 110, 219, 0.18);
@@ -762,8 +714,8 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 		html[data-sidebar-pref='collapsed'] [data-app-shell],
 		[data-app-shell][data-sidebar-state='collapsed']
 	) [data-workspace-avatar] {
-		width: 3rem;
-		height: 3rem;
+		width: 2.5rem;
+		height: 2.5rem;
 	}
 
 	/*
@@ -963,7 +915,7 @@ button {
 
 @media (min-width: 640px) {
 	:root {
-		--shell-header-height: 5.25rem;
+		--shell-header-height: 4.25rem;
 	}
 }
 
@@ -1023,11 +975,190 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrol
 
 .shell-header-zone.sidebar-account-header {
 	height: auto;
+	min-height: var(--shell-header-height);
 	width: 100%;
-	padding-block: 0.65rem;
+	padding-block: 0;
 	box-sizing: border-box;
 	background-color: var(--sidebar-surface);
 	border-bottom-color: transparent;
+}
+
+/* Headers de modales del panel: al menos la altura del topbar; crece si hay subtítulo/badge. */
+.panel-modal-header {
+	box-sizing: border-box;
+	min-height: var(--shell-header-height);
+	flex-shrink: 0;
+	z-index: 10;
+	display: flex;
+	align-items: center;
+	padding-block: 0.75rem;
+	padding-inline: 1rem;
+	border-bottom: 1px solid var(--shell-border);
+	background-color: var(--surface-bright);
+}
+
+@media (min-width: 640px) {
+	.panel-modal-header {
+		padding-block: 0.875rem;
+		padding-inline: 1.75rem;
+	}
+}
+
+.panel-modal-header--shadow {
+	box-shadow: 0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent);
+}
+
+.panel-modal-header__row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	width: 100%;
+	min-width: 0;
+}
+
+@media (min-width: 640px) {
+	.panel-modal-header__row {
+		gap: 1rem;
+	}
+}
+
+.panel-modal-header__leading {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	min-width: 0;
+}
+
+@media (min-width: 640px) {
+	.panel-modal-header__leading {
+		gap: 1rem;
+	}
+}
+
+.panel-modal-header__icon {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 0.75rem;
+	background: var(--primary-soft);
+	color: var(--primary);
+}
+
+@media (min-width: 640px) {
+	.panel-modal-header__icon {
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 0.875rem;
+	}
+}
+
+.panel-modal-header__icon .material-symbols-rounded {
+	font-size: 1.15rem;
+	line-height: 1;
+}
+
+@media (min-width: 640px) {
+	.panel-modal-header__icon .material-symbols-rounded {
+		font-size: 1.25rem;
+	}
+}
+
+.panel-modal-header__avatar {
+	flex-shrink: 0;
+	width: 2.25rem;
+	height: 2.25rem;
+	font-size: 0.75rem;
+}
+
+@media (min-width: 640px) {
+	.panel-modal-header__avatar {
+		width: 2.5rem;
+		height: 2.5rem;
+		font-size: 0.8rem;
+	}
+}
+
+.panel-modal-header__text {
+	min-width: 0;
+}
+
+.panel-modal-header__title {
+	margin: 0;
+	font-size: 1rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	line-height: 1.15;
+	color: var(--on-surface);
+}
+
+@media (min-width: 640px) {
+	.panel-modal-header__title {
+		font-size: 1.0625rem;
+	}
+}
+
+.panel-modal-header__subtitle {
+	margin: 0.1rem 0 0;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	line-height: 1.15;
+	color: var(--on-surface-variant);
+	display: none;
+}
+
+@media (min-width: 640px) {
+	.panel-modal-header__subtitle {
+		display: block;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+}
+
+.panel-modal-header__actions {
+	display: flex;
+	flex-shrink: 0;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+@media (min-width: 640px) {
+	.panel-modal-header__actions {
+		gap: 0.625rem;
+	}
+}
+
+.panel-modal-header__close {
+	display: inline-flex;
+	flex-shrink: 0;
+	align-items: center;
+	justify-content: center;
+	width: 2.25rem;
+	height: 2.25rem;
+	border-radius: 9999px;
+	color: var(--on-surface-variant);
+	transition:
+		background-color 140ms ease,
+		color 140ms ease;
+}
+
+.panel-modal-header__close:hover {
+	background-color: var(--surface-variant);
+	color: var(--on-surface);
+}
+
+.panel-modal-header__close:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
+}
+
+.panel-modal-header__close .material-symbols-rounded {
+	font-size: 1.3rem;
+	line-height: 1;
 }
 
 .topbar-brand-link {
@@ -1035,21 +1166,21 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrol
 	align-items: center;
 	justify-content: flex-start;
 	width: auto;
-	height: 2.5rem;
-	padding: 0.1rem 0;
-	transform: translateY(2px);
+	height: 2.25rem;
+	padding: 0;
+	transform: translateY(1px);
 }
 
 @media (min-width: 640px) {
 	.topbar-brand-link {
-		height: 2.75rem;
+		height: 2.5rem;
 		padding: 0;
 	}
 }
 
 .topbar-brand-wordmark {
 	color: var(--on-surface);
-	font-size: 0.95rem;
+	font-size: 0.9rem;
 	font-weight: 900;
 	letter-spacing: 0.24em;
 	line-height: 1;
@@ -1073,10 +1204,18 @@ html[data-theme='dark'] .shell-header-zone:not(.sidebar-account-header).is-scrol
 	}
 
 	.topbar-action-btn {
-		width: 2.35rem;
-		height: 2.35rem;
-		border-radius: 0.9rem;
+		width: 2.15rem;
+		height: 2.15rem;
+		border-radius: 0.8rem;
 	}
+}
+
+.profile-menu-panel {
+	background: var(--menu-surface);
+}
+
+html[data-theme='dark'] .profile-menu-panel {
+	background: #121214;
 }
 
 .material-symbols-rounded {

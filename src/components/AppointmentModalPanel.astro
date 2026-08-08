@@ -17,20 +17,20 @@ const { showVoiceButton = false }: Props = Astro.props;
 				class="appointment-modal__panel relative flex max-h-[80vh] w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:max-h-[90vh] sm:w-[min(42rem,calc(100vw-2rem))] sm:max-w-[min(42rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 				data-appointment-panel
 			>
-			<div class="shrink-0 z-10 shadow-sm border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-6 ">
-				<div class="flex items-start justify-between gap-4">
-					<div class="flex items-center gap-4">
-						<div class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)">
-							<span class="material-symbols-rounded text-[1.4rem]">calendar_add_on</span>
+			<div class="panel-modal-header panel-modal-header--shadow">
+				<div class="panel-modal-header__row">
+					<div class="panel-modal-header__leading">
+						<div class="panel-modal-header__icon">
+							<span class="material-symbols-rounded">calendar_add_on</span>
 						</div>
-						<div>
-							<h2 class="text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)" data-appointment-modal-title>Crear cita</h2>
-							<p class="text-[0.9rem] font-medium text-(--on-surface-variant) mt-0.5 hidden sm:block" data-appointment-modal-description>
+						<div class="panel-modal-header__text">
+							<h2 class="panel-modal-header__title" data-appointment-modal-title>Crear cita</h2>
+							<p class="panel-modal-header__subtitle" data-appointment-modal-description>
 								Completa los datos para registrar una nueva reserva.
 							</p>
 						</div>
 					</div>
-					<div class="flex items-center gap-2.5">
+					<div class="panel-modal-header__actions">
 						{showVoiceButton && FEATURE_FLAGS.APPOINTMENT_AI_VOICE && (
 							<button
 								type="button"
@@ -45,8 +45,8 @@ const { showVoiceButton = false }: Props = Astro.props;
 								<span class="appointment-modal-voice-btn__mic material-symbols-rounded" aria-hidden="true">mic</span>
 							</button>
 						)}
-						<button type="button" class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)" data-close-appointment-modal aria-label="Cerrar modal">
-							<span class="material-symbols-rounded text-[1.3rem]">close</span>
+						<button type="button" class="panel-modal-header__close" data-close-appointment-modal aria-label="Cerrar modal">
+							<span class="material-symbols-rounded">close</span>
 						</button>
 					</div>
 				</div>
@@ -630,7 +630,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 							class="appointment-submit-btn"
 							data-submit-appointment
 						>
-							<span class="material-symbols-rounded text-[1.2rem]" data-submit-appointment-icon>check</span>
+							<span class="material-symbols-rounded text-[1.2rem]" data-submit-appointment-icon aria-hidden="true">check</span>
 							<span data-submit-appointment-label>Crear cita</span>
 						</button>
 					</div>

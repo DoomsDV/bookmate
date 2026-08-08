@@ -166,8 +166,15 @@ const mapPreviewLocations = (raw: unknown): PublicProfilePreviewLocation[] => {
 		.filter((item): item is PublicProfilePreviewLocation => item !== null);
 };
 
+const PPE_TAB_KEY = 'hasel-ppe-active-tab';
+const PPE_TAB_IDS = new Set(['general', 'apariencia', 'galeria', 'horario']);
+
 /** Cambia pestaña/panel sin depender del bootstrap ni del resto del init. */
-export const activatePublicProfileTab = (root: HTMLElement, tabId: string) => {
+export const activatePublicProfileTab = (
+	root: HTMLElement,
+	tabId: string,
+	options?: { persist?: boolean }
+) => {
 	const buttons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-ppe-tab]'));
 	const panels = Array.from(root.querySelectorAll<HTMLElement>('[data-ppe-panel]'));
 	const ids = new Set(
@@ -186,6 +193,17 @@ export const activatePublicProfileTab = (root: HTMLElement, tabId: string) => {
 		const show = panel.getAttribute('data-ppe-panel') === nextId;
 		panel.toggleAttribute('hidden', !show);
 		panel.classList.toggle('hidden', !show);
+	}
+
+	if (typeof document !== 'undefined') {
+		document.documentElement.setAttribute('data-ppe-tab-pref', nextId);
+	}
+	if (options?.persist !== false) {
+		try {
+			localStorage.setItem(PPE_TAB_KEY, nextId);
+		} catch {
+			/* ignore */
+		}
 	}
 };
 
@@ -442,8 +460,14 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	};
 
 	const restoreActiveTab = () => {
-		// Al entrar / volver a perfil-publico siempre General.
-		activateTab('general');
+		let stored: string | null = null;
+		try {
+			stored = localStorage.getItem(PPE_TAB_KEY);
+		} catch {
+			stored = null;
+		}
+		const tabId = stored && PPE_TAB_IDS.has(stored) ? stored : 'general';
+		activatePublicProfileTab(root, tabId, { persist: false });
 	};
 
 	const syncLightbox = () => {

@@ -8,6 +8,7 @@ import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
 import { FEATURE_FLAGS } from '../../config/feature-flags';
 import Layout from '../../layouts/Layout.astro';
+import { panelPageTitle } from '../../lib/panel-page-title';
 import '../../styles/global.css';
 
 const ENABLE_GOOGLE_CALENDAR = false;
@@ -96,7 +97,7 @@ const googleErrorMessage = hasGoogleError
 	: '';
 ---
 
-<Layout>
+<Layout pageTitle={panelPageTitle('Calendario')}>
 	<calendar-manager data-google-connected={ENABLE_GOOGLE_CALENDAR && isGoogleConnected ? 'true' : 'false'}>
 		<div class="min-h-screen bg-(--page-background) transition-colors duration-300">
 			<div
@@ -1789,12 +1790,12 @@ const googleErrorMessage = hasGoogleError
 	}
 
 	.calendar-topbar-actions .calendar-tour-help {
-		width: 2.5rem;
-		height: 2.5rem;
-		min-width: 2.5rem;
-		min-height: 2.5rem;
+		width: 2.25rem;
+		height: 2.25rem;
+		min-width: 2.25rem;
+		min-height: 2.25rem;
 		padding: 0;
-		border-radius: 1rem;
+		border-radius: 0.75rem;
 		border: 1px solid var(--shell-border);
 		background: var(--control-surface);
 		color: var(--on-surface-variant);

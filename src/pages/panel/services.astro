@@ -7,6 +7,7 @@ import TopBar from "../../components/TopBar.astro";
 import { FEATURE_FLAGS } from "../../config/feature-flags";
 import { ROLES } from "../../config/roles";
 import Layout from "../../layouts/Layout.astro";
+import { panelPageTitle } from "../../lib/panel-page-title";
 import "../../styles/global.css";
 
 const canManageServices = Number(Astro.locals.roleId ?? 0) === ROLES.ADMIN;
@@ -14,7 +15,7 @@ const rawPage = Number(Astro.url.searchParams.get("page") || "1");
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 ---
 
-<Layout>
+<Layout pageTitle={panelPageTitle('Servicios')}>
 	<service-manager data-can-manage={canManageServices ? "true" : "false"}>
 		<div class="min-h-screen bg-(--page-background) transition-colors duration-300">
 			<div
@@ -47,34 +48,25 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			data-service-modal
 		>
 
-			<div
-				class="shrink-0 z-10 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7 sm:py-4"
-			>
-				<div class="flex items-start justify-between gap-4">
-					<div class="flex items-center gap-4">
-						<div
-							class="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-(--primary-soft) text-(--primary)"
-						>
-							<span class="material-symbols-rounded text-[1.4rem]"
-								>design_services</span
-							>
+			<div class="panel-modal-header">
+				<div class="panel-modal-header__row">
+					<div class="panel-modal-header__leading">
+						<div class="panel-modal-header__icon">
+							<span class="material-symbols-rounded">design_services</span>
 						</div>
-						<div>
-							<h2
-								class="text-[1.2rem] font-extrabold tracking-tight text-(--on-surface)"
-								data-service-modal-title
-							>
+						<div class="panel-modal-header__text">
+							<h2 class="panel-modal-header__title" data-service-modal-title>
 								Crear servicio
 							</h2>
 						</div>
 					</div>
 					<button
 						type="button"
-						class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface) focus:outline-none focus:ring-2 focus:ring-(--primary)"
+						class="panel-modal-header__close"
 						data-close-service-modal
 						aria-label="Cerrar modal"
 					>
-						<span class="material-symbols-rounded text-[1.3rem]">close</span>
+						<span class="material-symbols-rounded">close</span>
 					</button>
 				</div>
 			</div>
@@ -415,7 +407,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 							>
 								<span
 									class="material-symbols-rounded text-[1.2rem]"
-									data-submit-service-icon>check</span
+									data-submit-service-icon
+									aria-hidden="true">check</span
 								>
 								<span data-submit-service-label>Crear servicio</span
 								>

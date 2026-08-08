@@ -111,6 +111,34 @@ public-profile-editor {
 	display: none !important;
 }
 
+/*
+ * Preferencia de pestaña en <html> (script del <head>): evita FOUC
+ * General → pestaña guardada antes de que hidrate el módulo del editor.
+ */
+html[data-ppe-tab-pref] .ppe-tab.is-active {
+	color: var(--on-surface-variant);
+	border-bottom-color: transparent;
+}
+
+html[data-ppe-tab-pref='general'] .ppe-tab[data-ppe-tab='general'],
+html[data-ppe-tab-pref='apariencia'] .ppe-tab[data-ppe-tab='apariencia'],
+html[data-ppe-tab-pref='galeria'] .ppe-tab[data-ppe-tab='galeria'],
+html[data-ppe-tab-pref='horario'] .ppe-tab[data-ppe-tab='horario'] {
+	color: var(--primary);
+	border-bottom-color: var(--primary);
+}
+
+html[data-ppe-tab-pref] .ppe-panel {
+	display: none !important;
+}
+
+html[data-ppe-tab-pref='general'] .ppe-panel[data-ppe-panel='general'],
+html[data-ppe-tab-pref='apariencia'] .ppe-panel[data-ppe-panel='apariencia'],
+html[data-ppe-tab-pref='galeria'] .ppe-panel[data-ppe-panel='galeria'],
+html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
+	display: grid !important;
+}
+
 @media (min-width: 1024px) {
 	/* Main no scrollea: solo la columna izquierda (.ppe-config-pane) */
 	.app-shell > :last-child > main.ppe-main {
@@ -1154,7 +1182,7 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	align-items: center;
 	justify-content: space-between;
 	gap: 0.75rem;
-	padding-block: 0.55rem;
+	padding-block: 0.45rem 0.2rem;
 	border-top: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
 	background: var(--page-background, var(--background));
 	box-shadow: none;
@@ -1352,10 +1380,21 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 		left: auto;
 		right: auto;
 		bottom: auto;
-		/* Borde superior a ancho completo del main (compensa px-6 del shell) */
-		margin-inline: -1.5rem;
-		padding-inline: 1.5rem;
-		padding-block: 0.55rem;
+		/* Mismo inset horizontal que .ppe-config-pane (overflow:hidden anula margin negativo) */
+		margin-inline: 0;
+		padding-inline: 0;
+		padding-right: 0.35rem;
+		padding-block: 0.45rem 0.15rem;
+		flex-wrap: nowrap;
+	}
+
+	.ppe-save-footer [data-ppe-save] {
+		margin-inline-start: auto;
+		flex-shrink: 0;
+	}
+
+	.app-shell > :last-child > main.ppe-main {
+		padding-bottom: 0.5rem;
 	}
 }
 
