@@ -180,6 +180,7 @@ export function initPlanPage() {
 	const billingViewBtns = document.querySelectorAll<HTMLButtonElement>('[data-billing-view]');
 	const ghostCard = document.querySelector<HTMLButtonElement>('[data-ghost-card]');
 	const paymentSection = document.querySelector<HTMLElement>('[data-payment-section]');
+	const billingProfileSection = document.querySelector<HTMLElement>('[data-billing-profile-section]');
 
 	const isDesktopBilling = () => window.matchMedia('(min-width: 768px)').matches;
 
@@ -229,12 +230,6 @@ export function initPlanPage() {
 		billingProfileSummary.textContent = `${name} · ${docType} ${docNumber}`;
 	};
 
-	const collapseBillingProfile = () => {
-		if (!billingProfileCollapsed) return;
-		updateBillingProfileSummary();
-		billingProfileCollapsed.classList.remove('hidden');
-	};
-
 	const updateGhostCard = (complete: boolean) => {
 		if (!ghostCard) return;
 		const icon = ghostCard.querySelector<HTMLElement>('[data-ghost-icon]');
@@ -243,7 +238,7 @@ export function initPlanPage() {
 		const cta = ghostCard.querySelector<HTMLElement>('[data-ghost-cta]');
 		ghostCard.classList.toggle('plan-ghost-card--billing', !complete);
 		if (icon) icon.textContent = complete ? 'add' : 'lock';
-		if (label) label.textContent = complete ? 'Agregar nueva tarjeta' : 'Completá tu facturación';
+		if (label) label.textContent = complete ? 'Agregar nueva tarjeta' : 'Completá tus datos de facturación';
 		if (hint) {
 			hint.textContent = 'Requerido para agregar tarjetas.';
 			hint.classList.toggle('hidden', complete);
@@ -251,7 +246,7 @@ export function initPlanPage() {
 		cta?.classList.toggle('hidden', complete);
 		ghostCard.setAttribute(
 			'aria-label',
-			complete ? 'Agregar nueva tarjeta' : 'Completá tu facturación'
+			complete ? 'Agregar nueva tarjeta' : 'Completá tus datos de facturación'
 		);
 		paymentSection?.setAttribute('data-billing-complete', complete ? '1' : '0');
 	};
@@ -263,6 +258,9 @@ export function initPlanPage() {
 			const showOnDesktop = complete && desktop;
 			btn.classList.toggle('hidden', !showOnDesktop);
 		});
+		billingProfileSection?.classList.toggle('hidden', !complete);
+		billingProfileCollapsed?.classList.toggle('hidden', !complete);
+		if (complete) updateBillingProfileSummary();
 		updateGhostCard(complete);
 	};
 
@@ -274,11 +272,6 @@ export function initPlanPage() {
 			billingStatus.classList.toggle('dark:text-emerald-400', complete);
 			billingStatus.classList.toggle('text-(--on-surface-variant)', !complete);
 		});
-		if (complete) {
-			if (!isDesktopBilling()) collapseBillingProfile();
-		} else if (!isDesktopBilling()) {
-			billingProfileCollapsed?.classList.add('hidden');
-		}
 		syncAllBillingForms();
 		updatePaymentBillingUI();
 	};

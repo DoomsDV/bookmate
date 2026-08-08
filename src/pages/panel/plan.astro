@@ -220,7 +220,7 @@ const STATUS_META: Record<string, { label: string; tone: string; hint: string }>
 	FOUNDER: {
 		label: 'Fundador',
 		tone: 'founder',
-		hint: '50% off de por vida (Miembro Fundador)',
+		hint: '50% de descuento de por vida (Miembro Fundador)',
 	},
 	NONE: { label: 'Sin plan', tone: 'warning', hint: 'No encontramos una suscripción activa.' },
 };
@@ -408,7 +408,7 @@ const defaultCardHint = defaultCard
 												) : null}
 											</div>
 											{effState === 'FOUNDER' || current.is_founder ? (
-												<span class="plan-status-deal">50% off de por vida</span>
+												<span class="plan-status-deal">50% de descuento de por vida</span>
 											) : statusMeta.hint ? (
 												<p class="plan-status-hint">{statusMeta.hint}</p>
 											) : null}
@@ -886,29 +886,8 @@ const defaultCardHint = defaultCard
 												</button>
 											</div>
 
-											{/* Mobile empty: tarjeta full-width (solo si no hay tarjetas) */}
-											{cards.length === 0 ? (
-												<div class="plan-payment-empty-card plan-only-mobile" aria-label="Sin método de pago activo">
-													<button type="button" class="plan-payment-empty-hit" data-add-card>
-														<span class="plan-payment-empty-hit-icon material-symbols-rounded" aria-hidden="true">add</span>
-														<span class="plan-payment-empty-hit-label">Agregar método de pago</span>
-													</button>
-													<button
-														type="button"
-														class="plan-payment-empty-scan"
-														data-scan-card
-														aria-label="Escanear tarjeta con cámara"
-													>
-														<span class="material-symbols-rounded" aria-hidden="true">photo_camera</span>
-													</button>
-												</div>
-											) : null}
-
-											{/* Grilla multitarjeta (PC siempre; móvil solo si ya hay tarjetas) */}
-											<div
-												class:list={['plan-plastic-grid', cards.length === 0 && 'plan-plastic-grid--pc-only']}
-												data-cards-list
-											>
+											{/* Grilla multitarjeta + ghost (mismo bloque en móvil y PC) */}
+											<div class="plan-plastic-grid" data-cards-list>
 												{cards.map((card) => (
 													<article class={`plan-plastic-card plan-plastic-${cardTone(card.brand)} ${card.is_default ? 'plan-plastic-default' : ''}`}>
 														<div class="plan-plastic-shine" aria-hidden="true"></div>
@@ -936,20 +915,37 @@ const defaultCardHint = defaultCard
 													</article>
 												))}
 
-												{/* Ghost card PC — paso 1 facturación / paso 2 agregar tarjeta */}
+												{/* Ghost — paso 1 facturación / paso 2 agregar tarjeta (móvil + PC) */}
 												<button
 													type="button"
 													class:list={['plan-ghost-card', !billingProfileComplete && 'plan-ghost-card--billing']}
 													data-ghost-card
-													aria-label={billingProfileComplete ? 'Agregar nueva tarjeta' : 'Completá tu facturación'}
+													aria-label={billingProfileComplete ? 'Agregar nueva tarjeta' : 'Completá tus datos de facturación'}
 												>
+													<svg class="plan-ghost-card-frame" aria-hidden="true">
+														<rect
+															x="1"
+															y="1"
+															width="100%"
+															height="100%"
+															rx="24"
+															ry="24"
+															pathLength="100"
+															fill="none"
+															stroke="currentColor"
+															stroke-width="1.25"
+															stroke-dasharray="5.5 4.5"
+															stroke-linecap="round"
+															vector-effect="non-scaling-stroke"
+														/>
+													</svg>
 													<span
 														class="material-symbols-rounded plan-ghost-card-icon"
 														data-ghost-icon
 														aria-hidden="true"
 													>{billingProfileComplete ? 'add' : 'lock'}</span>
 													<span class="plan-ghost-card-label" data-ghost-label>
-														{billingProfileComplete ? 'Agregar nueva tarjeta' : 'Completá tu facturación'}
+														{billingProfileComplete ? 'Agregar nueva tarjeta' : 'Completá tus datos de facturación'}
 													</span>
 													<span
 														class:list={['plan-ghost-card-hint', billingProfileComplete && 'hidden']}
@@ -967,23 +963,10 @@ const defaultCardHint = defaultCard
 												</button>
 											</div>
 
-											{cards.length > 0 ? (
-												<div class="plan-payment-actions md:hidden">
-													<button type="button" class="plan-btn plan-btn-soft" data-add-card>
-														<span class="material-symbols-rounded align-middle text-[1.1rem]">add_card</span>
-														Agregar otra tarjeta
-													</button>
-													<p class="plan-payment-secure">
-														<span class="material-symbols-rounded" aria-hidden="true">lock</span>
-														Pagos 100% seguros vía Pagopar.
-													</p>
-												</div>
-											) : (
-												<p class="plan-payment-secure plan-payment-secure--solo">
-													<span class="material-symbols-rounded" aria-hidden="true">lock</span>
-													Pagos 100% seguros vía Pagopar.
-												</p>
-											)}
+											<p class="plan-payment-secure plan-payment-secure--solo">
+												<span class="material-symbols-rounded" aria-hidden="true">lock</span>
+												Pagos 100% seguros vía Pagopar.
+											</p>
 										</section>
 									)}
 
@@ -1053,11 +1036,14 @@ const defaultCardHint = defaultCard
 										</div>
 									</section>
 
-									{/* 3. Datos de facturación — resumen mobile (formulario en bottom sheet) */}
+									{/* 3. Datos de facturación — solo si ya hay datos (móvil + PC) */}
 									{showPaymentMethod && (
-										<section class="grid gap-4 md:hidden" data-billing-profile-section>
+										<section
+											class:list={['grid', 'gap-4', !billingProfileComplete && 'hidden']}
+											data-billing-profile-section
+										>
 											<div
-												class={`plan-billing-profile-collapsed ${billingProfileComplete ? '' : 'hidden'}`}
+												class:list={['plan-billing-profile-collapsed', !billingProfileComplete && 'hidden']}
 												data-billing-profile-collapsed
 											>
 												<div class="plan-billing-profile-collapsed-copy">
@@ -1432,9 +1418,8 @@ const defaultCardHint = defaultCard
 		position: relative;
 		overflow: hidden;
 		border-radius: 1.25rem;
-		border: 1px solid var(--shell-border);
-		border-top: 4px solid var(--primary);
-		background: color-mix(in srgb, var(--primary) 4%, var(--surface-bright, #fff));
+		border: 1px solid color-mix(in srgb, var(--primary) 30%, transparent);
+		background: color-mix(in srgb, var(--primary) 5%, var(--surface-bright, #fff));
 		padding: 1.5rem;
 		display: grid;
 		gap: 1.25rem;
@@ -1474,7 +1459,15 @@ const defaultCardHint = defaultCard
 		font-size: 1.55rem;
 		font-weight: 800;
 		line-height: 1.15;
-		color: var(--on-surface);
+		background: linear-gradient(
+			100deg,
+			color-mix(in srgb, var(--primary) 88%, #fff) 0%,
+			var(--primary) 45%,
+			color-mix(in srgb, var(--primary) 65%, #60a5fa) 100%
+		);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
 	}
 	.plan-status-sep {
 		font-size: 1.15rem;
@@ -1651,10 +1644,35 @@ const defaultCardHint = defaultCard
 		color: var(--on-surface-variant);
 	}
 
-	.plan-tone-danger { border-top-color: #e11d48; }
-	.plan-tone-warning { border-top-color: #f59e0b; }
+	.plan-tone-danger {
+		border-color: color-mix(in srgb, #e11d48 35%, transparent);
+		background: color-mix(in srgb, #e11d48 5%, var(--surface-bright, #fff));
+		box-shadow: none;
+	}
+	.plan-tone-danger .plan-status-title {
+		background: linear-gradient(100deg, #fb7185 0%, #e11d48 55%, #be123c 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+	}
+	.plan-tone-warning {
+		border-color: color-mix(in srgb, #f59e0b 35%, transparent);
+		background: color-mix(in srgb, #f59e0b 5%, var(--surface-bright, #fff));
+		box-shadow: none;
+	}
+	.plan-tone-warning .plan-status-title {
+		background: linear-gradient(100deg, #fbbf24 0%, #f59e0b 55%, #d97706 100%);
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+	}
 	.plan-tone-ok,
-	.plan-tone-founder { border-top-color: var(--primary); }
+	.plan-tone-founder,
+	.plan-tone-trial {
+		border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+		background: color-mix(in srgb, var(--primary) 5%, var(--surface-bright, #fff));
+		box-shadow: none;
+	}
 	.plan-badge {
 		display: inline-flex; align-items: center;
 		padding: 0.3rem 0.7rem; border-radius: 999px;
@@ -1722,11 +1740,7 @@ const defaultCardHint = defaultCard
 		.plan-status-card {
 			padding: 1.25rem 1.15rem 1.2rem;
 			border-radius: 1.35rem;
-			border: 1px solid var(--shell-border);
-			border-top: 4px solid var(--primary);
-			background: color-mix(in srgb, var(--primary) 5%, var(--surface-bright, #fff));
 			color: var(--on-surface);
-			box-shadow: none;
 			gap: 0.95rem;
 		}
 
@@ -2347,6 +2361,10 @@ const defaultCardHint = defaultCard
 		border: 1px solid var(--shell-border);
 		background: var(--surface-bright, #fff);
 	}
+	.plan-billing-profile-collapsed.hidden,
+	[data-billing-profile-section].hidden {
+		display: none !important;
+	}
 	.plan-billing-profile-collapsed-copy {
 		display: flex;
 		align-items: center;
@@ -2702,7 +2720,7 @@ const defaultCardHint = defaultCard
 	}
 	.plan-iframe-loading.hidden { display: none; }
 
-	/* Método de pago — empty mobile + banner/ghost PC */
+	/* Método de pago — ghost unificado (móvil + PC) */
 	.plan-billing-view-link {
 		display: none;
 		align-items: center;
@@ -2723,158 +2741,145 @@ const defaultCardHint = defaultCard
 			display: inline-flex;
 		}
 	}
-	.plan-payment-empty-card {
+	.plan-ghost-card {
 		position: relative;
-		display: block;
-		width: 100%;
-		aspect-ratio: 1.586 / 1;
-		border-radius: 1.15rem;
-		border: 1.5px dashed rgba(255, 255, 255, 0.14);
-		background: rgba(255, 255, 255, 0.04);
-		backdrop-filter: blur(12px);
-		-webkit-backdrop-filter: blur(12px);
-		overflow: hidden;
-		isolation: isolate;
-	}
-	.plan-only-mobile {
-		display: block;
-	}
-	@media (min-width: 768px) {
-		.plan-only-mobile {
-			display: none !important;
-		}
-	}
-	.plan-payment-empty-hit {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		gap: 0.4rem;
-		width: 100%;
-		height: 100%;
-		padding: 1.5rem 1.25rem;
+		gap: 0.12rem;
+		flex: 0 0 auto;
+		width: 80%;
+		max-width: 80%;
+		min-width: 0;
+		height: auto;
+		margin-inline: auto;
+		aspect-ratio: 1.68 / 1;
+		padding: 0.45rem 0.7rem;
 		border: 0;
-		background: transparent;
+		border-radius: 1.5rem;
+		background: color-mix(in srgb, var(--on-surface-variant) 5%, transparent);
+		color: var(--on-surface);
 		cursor: pointer;
 		text-align: center;
-		color: var(--on-surface);
+		appearance: none;
+		-webkit-appearance: none;
+		box-sizing: border-box;
+		overflow: visible;
+		isolation: isolate;
+		transition: background 0.15s ease, transform 0.15s ease, color 0.15s ease;
 	}
-	.plan-payment-empty-hit:active {
+	.plan-ghost-card-frame {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		width: 100%;
+		height: 100%;
+		overflow: visible;
+		pointer-events: none;
+		color: color-mix(in srgb, var(--on-surface-variant) 55%, transparent);
+	}
+	.plan-ghost-card-frame rect {
+		width: calc(100% - 2px);
+		height: calc(100% - 2px);
+	}
+	.plan-ghost-card > *:not(.plan-ghost-card-frame) {
+		position: relative;
+		z-index: 1;
+	}
+	.plan-ghost-card:hover,
+	.plan-ghost-card:active {
 		background: color-mix(in srgb, var(--primary) 8%, transparent);
 	}
-	.plan-payment-empty-hit:focus-visible {
-		outline: 2px solid var(--primary);
-		outline-offset: -4px;
-		border-radius: 1.15rem;
+	.plan-ghost-card:hover .plan-ghost-card-frame,
+	.plan-ghost-card:active .plan-ghost-card-frame {
+		color: color-mix(in srgb, var(--primary) 70%, transparent);
 	}
-	.plan-payment-empty-hit-icon {
-		font-size: 2.5rem;
+	.plan-ghost-card:focus-visible {
+		outline: 2px solid var(--primary);
+		outline-offset: 2px;
+	}
+	.plan-ghost-card--billing {
+		background: color-mix(in srgb, var(--primary) 7%, transparent);
+	}
+	.plan-ghost-card--billing .plan-ghost-card-frame {
+		color: color-mix(in srgb, var(--primary) 55%, transparent);
+	}
+	.plan-ghost-card--billing:hover,
+	.plan-ghost-card--billing:active {
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+	}
+	.plan-ghost-card--billing:hover .plan-ghost-card-frame,
+	.plan-ghost-card--billing:active .plan-ghost-card-frame {
+		color: color-mix(in srgb, var(--primary) 75%, transparent);
+	}
+	.plan-ghost-card-icon {
+		font-size: 1.35rem;
 		line-height: 1;
 		color: var(--primary);
 	}
-	.plan-payment-empty-hit-label {
-		font-size: 0.95rem;
+	.plan-ghost-card-label {
+		font-size: 0.8rem;
 		font-weight: 750;
-		color: var(--on-surface);
+		line-height: 1.2;
 	}
-	.plan-payment-empty-scan {
-		position: absolute;
-		top: 0.7rem;
-		right: 0.7rem;
-		z-index: 3;
-		display: inline-grid;
-		place-items: center;
-		width: 2.4rem;
-		height: 2.4rem;
-		border: 1px solid rgba(255, 255, 255, 0.14);
-		border-radius: 999px;
-		background: rgba(18, 18, 20, 0.55);
+	.plan-ghost-card-hint {
+		font-size: 0.7rem;
+		font-weight: 550;
+		line-height: 1.25;
 		color: var(--on-surface-variant);
-		cursor: pointer;
 	}
-	.plan-payment-empty-scan:hover,
-	.plan-payment-empty-scan:active {
-		color: var(--primary);
-		border-color: color-mix(in srgb, var(--primary) 45%, transparent);
-	}
-	.plan-payment-empty-scan .material-symbols-rounded {
-		font-size: 1.15rem;
-	}
-	.plan-ghost-card {
+	.plan-ghost-card-hint.hidden {
 		display: none;
+	}
+	.plan-ghost-card-cta {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		margin-top: 0.2rem;
+		padding: 0.28rem 0.7rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		color: var(--primary);
+		font-size: 0.7rem;
+		font-weight: 650;
+		letter-spacing: 0.01em;
+		pointer-events: none;
+	}
+	.plan-ghost-card-cta.hidden {
+		display: none;
+	}
+	.plan-ghost-card:hover .plan-ghost-card-cta,
+	.plan-ghost-card:active .plan-ghost-card-cta {
+		background: color-mix(in srgb, var(--primary) 22%, transparent);
 	}
 	@media (min-width: 768px) {
 		.plan-ghost-card {
-			display: flex;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			gap: 0.4rem;
 			flex: 0 0 17.5rem;
-			width: 100%;
+			width: 17.5rem;
 			max-width: 17.5rem;
+			margin-inline: 0;
 			aspect-ratio: 1.68 / 1;
+			gap: 0.4rem;
 			padding: 1rem;
-			border-radius: 1rem;
-			border: 1.5px dashed color-mix(in srgb, var(--on-surface-variant) 34%, transparent);
-			background: color-mix(in srgb, var(--on-surface-variant) 5%, transparent);
-			color: var(--on-surface);
-			cursor: pointer;
-			text-align: center;
-			transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+			border-radius: 1.5rem;
 		}
 		.plan-ghost-card:hover {
-			border-color: color-mix(in srgb, var(--primary) 55%, transparent);
-			background: color-mix(in srgb, var(--primary) 8%, transparent);
 			transform: translateY(-1px);
-		}
-		.plan-ghost-card:focus-visible {
-			outline: 2px solid var(--primary);
-			outline-offset: 2px;
-		}
-		.plan-ghost-card--billing {
-			border-color: color-mix(in srgb, var(--primary) 32%, var(--shell-border));
-			background: color-mix(in srgb, var(--primary) 7%, transparent);
-		}
-		.plan-ghost-card--billing:hover {
-			border-color: color-mix(in srgb, var(--primary) 55%, transparent);
-			background: color-mix(in srgb, var(--primary) 12%, transparent);
 		}
 		.plan-ghost-card-icon {
 			font-size: 2rem;
-			color: var(--primary);
 		}
 		.plan-ghost-card-label {
-			font-size: 0.88rem;
-			font-weight: 750;
+			font-size: 1rem;
 		}
 		.plan-ghost-card-hint {
-			font-size: 0.74rem;
-			font-weight: 550;
-			color: var(--on-surface-variant);
-		}
-		.plan-ghost-card-hint.hidden {
-			display: none;
+			font-size: 0.875rem;
 		}
 		.plan-ghost-card-cta {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
 			margin-top: 0.35rem;
-			padding: 0.28rem 1rem;
-			border-radius: 999px;
-			background: color-mix(in srgb, var(--primary) 14%, transparent);
-			color: var(--primary);
+			padding: 0.5rem 1rem;
 			font-size: 0.8rem;
-			font-weight: 650;
-			letter-spacing: 0.01em;
-			pointer-events: none;
-		}
-		.plan-ghost-card-cta.hidden {
-			display: none;
-		}
-		.plan-ghost-card:hover .plan-ghost-card-cta {
-			background: color-mix(in srgb, var(--primary) 22%, transparent);
 		}
 	}
 
@@ -2925,13 +2930,15 @@ const defaultCardHint = defaultCard
 		flex-wrap: wrap;
 		gap: 0.9rem;
 		align-items: stretch;
-	}
-	.plan-plastic-grid--pc-only {
-		display: none;
+		justify-content: center;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		box-sizing: border-box;
 	}
 	@media (min-width: 768px) {
-		.plan-plastic-grid--pc-only {
-			display: flex;
+		.plan-plastic-grid {
+			justify-content: flex-start;
 		}
 	}
 	.plan-plastic-card {
