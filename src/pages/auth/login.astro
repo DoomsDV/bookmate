@@ -14,7 +14,13 @@ const successMessage = invitationAccepted
 	: '';
 ---
 
-<Layout>
+<Layout
+	pageTitle="Iniciar sesión | Hasel"
+	metaDescription="Accedé a tu panel de Hasel para gestionar citas, equipo y reservas online."
+	canonicalPath="/auth/login"
+	ogImage="/icons/icon-512x512.png"
+	robots="noindex, nofollow"
+>
 	<LoginForm
 		error={error}
 		successMessage={successMessage}
