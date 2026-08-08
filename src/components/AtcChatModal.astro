@@ -112,6 +112,8 @@
 		private busy = false;
 		private abort: AbortController | null = null;
 		private lockedSheetHeightPx = 0;
+		private panelScrollTops: Map<HTMLElement, number> | null = null;
+		private viewportRestoreCleanup: (() => void) | null = null;
 
 		connectedCallback() {
 			this.modal = this.querySelector('[data-atc-chat-modal]');
@@ -140,7 +142,14 @@
 				{ signal }
 			);
 
-			this.modal?.addEventListener('close', () => this.clearMobileSheetLock(), { signal });
+			this.modal?.addEventListener(
+				'close',
+				() => {
+					this.clearMobileSheetLock();
+					this.unlockPanelScroll();
+				},
+				{ signal }
+			);
 
 			this.modal?.addEventListener(
 				'cancel',
@@ -184,6 +193,7 @@
 				'focus',
 				() => {
 					this.applyMobileSheetLock();
+					this.restorePanelScrollLayout();
 					this.messagesEl?.scrollTo({ top: this.messagesEl.scrollHeight });
 				},
 				{ signal }
@@ -192,6 +202,7 @@
 
 		disconnectedCallback() {
 			this.clearMobileSheetLock();
+			this.unlockPanelScroll();
 			this.abort?.abort();
 			this.abort = null;
 		}
@@ -200,12 +211,99 @@
 			return window.matchMedia('(max-width: 639px)').matches;
 		}
 
+		private isPanelMobile() {
+			return window.matchMedia('(max-width: 1023.98px)').matches;
+		}
+
+		private getPanelScrollRoots(): HTMLElement[] {
+			return [
+				document.querySelector<HTMLElement>('.app-shell > :last-child'),
+				document.querySelector<HTMLElement>('.app-shell > :last-child > main'),
+			].filter((node): node is HTMLElement => Boolean(node));
+		}
+
+		/** Altura estable del layout viewport (no se encoge con el teclado en iOS). */
+		private getLayoutViewportHeight() {
+			return document.documentElement.clientHeight || window.innerHeight;
+		}
+
+		private lockPanelScroll() {
+			if (!this.isPanelMobile() || this.panelScrollTops) return;
+
+			const roots = this.getPanelScrollRoots();
+			this.panelScrollTops = new Map(roots.map((root) => [root, root.scrollTop]));
+			document.documentElement.classList.add('atc-chat-modal-open');
+		}
+
+		private cancelViewportRestore() {
+			this.viewportRestoreCleanup?.();
+			this.viewportRestoreCleanup = null;
+		}
+
+		private restorePanelScrollLayout(saved = this.panelScrollTops) {
+			if (!saved) return;
+
+			window.scrollTo(0, 0);
+			for (const [root, scrollTop] of saved) {
+				root.scrollTop = scrollTop;
+			}
+		}
+
+		private schedulePanelScrollRestore() {
+			const saved = this.panelScrollTops;
+			if (!saved) return;
+
+			this.cancelViewportRestore();
+
+			const restore = () => {
+				window.scrollTo(0, 0);
+				for (const [root, scrollTop] of saved) {
+					root.scrollTop = scrollTop;
+				}
+			};
+
+			restore();
+			requestAnimationFrame(restore);
+			window.setTimeout(restore, 120);
+			window.setTimeout(restore, 320);
+
+			const vv = window.visualViewport;
+			if (!vv) return;
+
+			let ticks = 0;
+			const onViewportChange = () => {
+				restore();
+				ticks += 1;
+				if (ticks >= 8) cleanup();
+			};
+			const cleanup = () => {
+				vv.removeEventListener('resize', onViewportChange);
+				vv.removeEventListener('scroll', onViewportChange);
+				if (this.viewportRestoreCleanup === cleanup) {
+					this.viewportRestoreCleanup = null;
+				}
+			};
+
+			vv.addEventListener('resize', onViewportChange);
+			vv.addEventListener('scroll', onViewportChange);
+			window.setTimeout(cleanup, 900);
+			this.viewportRestoreCleanup = cleanup;
+		}
+
+		private unlockPanelScroll() {
+			if (!this.panelScrollTops) return;
+
+			document.documentElement.classList.remove('atc-chat-modal-open');
+			this.schedulePanelScrollRestore();
+			this.panelScrollTops = null;
+		}
+
 		private applyMobileSheetLock() {
 			if (!this.modal || !this.isMobileSheet()) return;
 			if (!this.lockedSheetHeightPx) {
 				this.lockedSheetHeightPx = Math.min(
 					34 * 16,
-					Math.round(window.innerHeight * 0.92)
+					Math.round(this.getLayoutViewportHeight() * 0.92)
 				);
 			}
 			this.modal.style.height = `${this.lockedSheetHeightPx}px`;
@@ -228,6 +326,7 @@
 		private open() {
 			if (!this.modal) return;
 			this.modal.classList.remove('is-closing', 'is-settled');
+			this.lockPanelScroll();
 			this.applyMobileSheetLock();
 			if (!this.modal.open) this.modal.showModal();
 			this.clearError();
@@ -253,12 +352,14 @@
 
 		private close() {
 			if (!this.modal?.open || this.modal.classList.contains('is-closing')) return;
+			this.input?.blur();
 			this.modal.classList.add('is-closing');
 			this.modal.classList.remove('is-settled');
 			window.setTimeout(() => {
 				this.modal?.close();
 				this.modal?.classList.remove('is-closing');
 				this.clearMobileSheetLock();
+				this.unlockPanelScroll();
 			}, 200);
 		}
 

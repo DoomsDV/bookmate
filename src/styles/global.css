@@ -544,6 +544,10 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 	overflow: hidden;
 }
 
+html.atc-chat-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
+	overflow: hidden;
+}
+
 /* Mobile: el canvas scrollea (TopBar sticky + glass sobre el contenido). */
 @media (max-width: 1023.98px) {
 	.app-shell > :last-child:not(:has(.ppe-main)) {
@@ -564,6 +568,10 @@ html.ai-summary-modal-open .app-shell > :last-child > main {
 	}
 
 	html.ai-summary-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
+		overflow: hidden;
+	}
+
+	html.atc-chat-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
 		overflow: hidden;
 	}
 }
