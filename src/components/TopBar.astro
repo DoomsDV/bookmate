@@ -46,21 +46,6 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 				<span class="hidden sm:inline">Instalar App</span>
 			</button>
 
-			<script is:inline>
-				window.addEventListener('beforeinstallprompt', (e) => {
-					// Prevenir automáticamente el prompt nativo
-					e.preventDefault();
-					// Guardarlo para que pueda ser invocado por el botón
-					window.deferredPrompt = e;
-					// Mostrar el botón en el DOM
-					const installBtn = document.getElementById('pwa-install-btn');
-					if (installBtn) {
-						installBtn.classList.remove('hidden');
-						installBtn.classList.add('flex');
-					}
-				});
-			</script>
-
 			<button
 				type="button"
 				class="topbar-action-btn flex size-9 shrink-0 items-center justify-center rounded-xl border border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--control-surface-strong) sm:size-10"
@@ -153,21 +138,35 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		FCM_DEVICE_TOKEN_STORAGE_KEY,
 		FCM_PROMPT_SHOWN_SESSION_KEY,
 		IOS_INSTALL_GUIDE_SHOWN_SESSION_KEY,
-		isInstalledPwaContext,
+		canOfferPwaInstall,
 		isIosBrowser,
 		showIosPwaInstallGuide,
 	} from '../lib/fcm-client';
 
+	const showPwaInstallButton = (installBtn: HTMLElement) => {
+		installBtn.classList.remove('hidden');
+		installBtn.classList.add('flex');
+	};
+
 	const initializeTopBar = () => {
-		// PWA Install Button Handler for SPA transitions (Astro View Transitions)
 		const installBtn = document.getElementById('pwa-install-btn');
+		const canShowInstall = canOfferPwaInstall();
 		const deferredPrompt = (window as any).deferredPrompt;
-		const canUseNativeInstall = Boolean(deferredPrompt);
-		const showIosGuide = isIosBrowser() && !isInstalledPwaContext();
+		const canUseNativeInstall = canShowInstall && Boolean(deferredPrompt);
+		const showIosGuide = canShowInstall && isIosBrowser();
 
 		if (installBtn && (canUseNativeInstall || showIosGuide)) {
-			installBtn.classList.remove('hidden');
-			installBtn.classList.add('flex');
+			showPwaInstallButton(installBtn);
+		}
+
+		if (canShowInstall && !(window as any).__bookmatePwaInstallPromptBound) {
+			window.addEventListener('beforeinstallprompt', (event) => {
+				event.preventDefault();
+				(window as any).deferredPrompt = event;
+				const btn = document.getElementById('pwa-install-btn');
+				if (btn) showPwaInstallButton(btn);
+			});
+			(window as any).__bookmatePwaInstallPromptBound = true;
 		}
 		
 		if (installBtn) {
@@ -182,7 +181,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 					return;
 				}
 
-				if (isIosBrowser() && !isInstalledPwaContext()) {
+				if (isIosBrowser() && canOfferPwaInstall()) {
 					await showIosPwaInstallGuide();
 				}
 			});

@@ -42,6 +42,14 @@ export const isInstalledPwaContext = () => {
 	return isStandaloneDisplayMode || isIosStandalone || isAndroidTwa;
 };
 
+/** Instalación PWA solo en producción HTTPS (no localhost ni HTTP plano). */
+export const isHttpsContext = () => {
+	if (typeof window === 'undefined') return false;
+	return window.location.protocol === 'https:';
+};
+
+export const canOfferPwaInstall = () => isHttpsContext() && !isInstalledPwaContext();
+
 /** iPhone/iPad (incluye iPadOS desktop UA). */
 export const isIosBrowser = () => {
 	if (typeof window === 'undefined') return false;
