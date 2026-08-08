@@ -564,9 +564,11 @@ export interface AppointmentBulkResult {
 }
 
 /**
- * Guardado masivo de citas (escaneo de agenda). Reutiliza el create unitario
- * fila por fila para conservar toda la validacion/enforcement del backend.
- * No aborta el lote si una fila falla; devuelve resultado por fila.
+ * Guardado masivo de citas (escaneo de agenda). Una sola llamada HTTP al
+ * endpoint ORDS /appointments/bulk, que resuelve identidad/suscripcion una
+ * vez y procesa todas las filas dentro de la misma conexion PL/SQL (sin un
+ * round-trip HTTP por fila). No aborta el lote si una fila falla; el backend
+ * devuelve resultado por fila.
  */
 export const createAppointmentsBulkWithOrds = async (
 	token: string,
@@ -578,26 +580,45 @@ export const createAppointmentsBulkWithOrds = async (
 		throw new AppointmentsApiError('No hay citas para guardar.', 400);
 	}
 
-	const results: AppointmentBulkRowResult[] = [];
-	let created = 0;
-	let failed = 0;
+	const response = await fetch(`${APPOINTMENTS_URL}/bulk`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({ appointments: rows }),
+	});
 
-	for (let index = 0; index < rows.length; index += 1) {
-		try {
-			const { id_appointment } = await createAppointmentWithOrds(token, rows[index]);
-			created += 1;
-			results.push({ index, status: 'created', id_appointment });
-		} catch (error) {
-			failed += 1;
-			const message =
-				error instanceof AppointmentsApiError
-					? error.message
-					: 'No fue posible crear la cita.';
-			results.push({ index, status: 'error', message });
-		}
+	const { data } = await parseJsonResponse(response);
+	const bulkData = data as unknown as
+		| (AppointmentSuccessResponse & Partial<AppointmentBulkResult>)
+		| null;
+
+	// El status HTTP puede ser 400 cuando ninguna fila se creo (created = 0),
+	// asi que la forma del body (status success + results[]) es lo que decide
+	// si es un resultado por lote o un error real (auth, suscripcion, payload).
+	if (!bulkData || bulkData.status !== 'success' || !Array.isArray(bulkData.results)) {
+		throw toApiError(response, data, 'No fue posible guardar las citas.');
 	}
 
-	return { created, failed, results };
+	const results: AppointmentBulkRowResult[] = bulkData.results.map((row) => {
+		const rawRow = row as Partial<AppointmentBulkRowResult>;
+		return {
+			index: toNumber(rawRow.index, 0),
+			status: rawRow.status === 'created' ? 'created' : 'error',
+			...(rawRow.id_appointment !== undefined
+				? { id_appointment: toNumber(rawRow.id_appointment, 0) }
+				: {}),
+			...(rawRow.message ? { message: String(rawRow.message) } : {}),
+		};
+	});
+
+	return {
+		created: toNumber(bulkData.created, 0),
+		failed: toNumber(bulkData.failed, 0),
+		results,
+	};
 };
 
 export const updateAppointmentWithOrds = async (
