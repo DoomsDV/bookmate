@@ -1,4 +1,5 @@
 import { prepareReceiptUploadFile } from '../lib/pdf-receipt-to-image';
+import { createIdempotencyKey } from '../lib/idempotency';
 
 export type RefundPolicyCode = 'FLEXIBLE' | 'MODERATE' | 'STRICT';
 
@@ -282,6 +283,11 @@ export const bindSipapReceiptUpload = (
 
 	if (!form || !submitBtn || !fileInput || !tokenInput) return;
 
+	// Idempotency-Key: se reutiliza mientras el reintento sea sobre el MISMO archivo (retry
+	// por fallo de red); si el usuario elige otro archivo se genera una key nueva.
+	let idemKey: string | null = null;
+	let idemFileSignature: string | null = null;
+
 	const upload = async () => {
 		const token = String(tokenInput.value || '').trim();
 		const file = fileInput.files?.[0];
@@ -313,6 +319,12 @@ export const bindSipapReceiptUpload = (
 			return;
 		}
 
+		const fileSignature = `${file.name}|${file.size}|${file.lastModified}`;
+		if (!idemKey || idemFileSignature !== fileSignature) {
+			idemKey = createIdempotencyKey();
+			idemFileSignature = fileSignature;
+		}
+
 		setSipapReceiptStatus(root, null, 'uploading');
 		try {
 			// PDF → JPEG silencioso para OCR; si falla el render, se sube el PDF (MANUAL_REVIEW).
@@ -331,7 +343,11 @@ export const bindSipapReceiptUpload = (
 				`/api/public/reservations/${encodeURIComponent(token)}/receipt`,
 				{
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+					headers: {
+						'Content-Type': 'application/json',
+						Accept: 'application/json',
+						'Idempotency-Key': idemKey,
+					},
 					body: JSON.stringify({
 						file_base64,
 						filename: resolvedName,
@@ -347,6 +363,8 @@ export const bindSipapReceiptUpload = (
 				options?.onError?.(message);
 				return;
 			}
+			idemKey = null;
+			idemFileSignature = null;
 			const result: SipapReceiptUploadResult = {
 				message: String(data.message || '').trim(),
 				...(data.data && typeof data.data === 'object' ? data.data : {}),

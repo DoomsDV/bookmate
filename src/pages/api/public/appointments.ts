@@ -10,6 +10,7 @@ import {
 	publicBookingErrorResponse,
 	toPositiveInt,
 } from '../../../lib/public-api-handlers';
+import { readIdempotencyKeyHeader } from '../../../lib/idempotency';
 
 const parsePayload = (source: any): PublicCreateAppointmentPayload => {
 	const payload: PublicCreateAppointmentPayload = {
@@ -62,7 +63,8 @@ export const POST: APIRoute = async ({ request }) => {
 	try {
 		const body = await parseRequestBody(request);
 		const payload = parsePayload(body);
-		const created = await createPublicAppointmentWithOrds(payload);
+		const idempotencyKey = readIdempotencyKeyHeader(request);
+		const created = await createPublicAppointmentWithOrds(payload, idempotencyKey);
 
 		return Response.json(
 			{

@@ -8,6 +8,7 @@ import {
 	sortTimeSlotsChronologically,
 	toDateStart,
 } from '../lib/booking-datetime';
+import { createIdempotencyKey } from '../lib/idempotency';
 import {
 	createBrandMarker,
 	getStadiaStyleUrl,
@@ -407,6 +408,22 @@ export const initializePublicBookingPage = () => {
 	let isValidatingCustomer = false;
 	let pendingAppointmentId = 0;
 	let pendingSipapHold: ReturnType<typeof unwrapSipapHold> | null = null;
+	// Idempotency-Key: se reutiliza mientras el reintento sea sobre el MISMO payload (retry
+	// por fallo de red); si el usuario cambia de selección se genera una key nueva.
+	let bookingIdemKey: string | null = null;
+	let bookingIdemPayloadJson: string | null = null;
+	const getBookingIdemKey = (payload: unknown) => {
+		const payloadJson = JSON.stringify(payload);
+		if (!bookingIdemKey || bookingIdemPayloadJson !== payloadJson) {
+			bookingIdemKey = createIdempotencyKey();
+			bookingIdemPayloadJson = payloadJson;
+		}
+		return bookingIdemKey;
+	};
+	const clearBookingIdemKey = () => {
+		bookingIdemKey = null;
+		bookingIdemPayloadJson = null;
+	};
 	let customerValidationSeq = 0;
 	let validatedCustomerPhoneE164 = '';
 	let mapLibre: MapLibreModule | null = null;
@@ -2728,6 +2745,7 @@ export const initializePublicBookingPage = () => {
 				headers: {
 					'Content-Type': 'application/json',
 					Accept: 'application/json',
+					'Idempotency-Key': getBookingIdemKey(holdPayload),
 				},
 				body: JSON.stringify(holdPayload),
 			},
@@ -2741,6 +2759,7 @@ export const initializePublicBookingPage = () => {
 		if (!String(hold.payment_reference || '').trim()) {
 			throw new Error('No fue posible obtener el código de transferencia.');
 		}
+		clearBookingIdemKey();
 		pendingAppointmentId = appointmentId;
 		pendingSipapHold = hold;
 		return hold;
@@ -2892,11 +2911,13 @@ export const initializePublicBookingPage = () => {
 					headers: {
 						'Content-Type': 'application/json',
 						Accept: 'application/json',
+						'Idempotency-Key': getBookingIdemKey(payload),
 					},
 					body: JSON.stringify(payload),
 				},
 				'No fue posible confirmar tu reserva.'
 			);
+			clearBookingIdemKey();
 
 			ticketProfessional.textContent = profile.full_name;
 			ticketService.textContent = selectedService.name;
@@ -2907,6 +2928,7 @@ export const initializePublicBookingPage = () => {
 			setStep(6);
 		} catch (error) {
 			if (error instanceof PublicBookingClientError && error.status === 409) {
+				clearBookingIdemKey();
 				showToast(error.message, 'error');
 				await loadAvailableSlots(selectedDate);
 				setStep(4);

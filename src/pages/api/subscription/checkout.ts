@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import { ROLES } from '../../../config/roles';
 import {
 	createSubscriptionCheckoutWithOrds,
+	readIdempotencyKeyHeader,
 	SubscriptionApiError,
 	type CheckoutPayload,
 } from '../../../lib/subscription';
@@ -60,7 +61,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		requireAdminRole(locals.roleId);
 		const body = await request.json().catch(() => ({}));
 		const payload = parsePayload(body);
-		const result = await createSubscriptionCheckoutWithOrds(token, payload);
+		const idempotencyKey = readIdempotencyKeyHeader(request);
+		const result = await createSubscriptionCheckoutWithOrds(token, payload, idempotencyKey);
 		return Response.json({ status: 'success', data: result }, { status: 200 });
 	} catch (error) {
 		return toErrorResponse(error, 'No fue posible iniciar el pago de la suscripción.');

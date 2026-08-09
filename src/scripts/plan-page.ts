@@ -1,3 +1,5 @@
+import { createIdempotencyKey } from '../lib/idempotency';
+
 interface FlashApi {
 	show: (opts: { message: string; type?: 'success' | 'error' | 'info' | 'warning'; autoHideMs?: number }) => void;
 }
@@ -81,6 +83,10 @@ export function initPlanPage() {
 	const payCardHint = document.querySelector<HTMLElement>('[data-pay-card-hint]');
 	const confirmPayBtn = document.querySelector<HTMLButtonElement>('[data-confirm-pay]');
 	let pending: PendingTarget | null = null;
+	// Idempotency-Key del intento de cobro en curso: se genera una sola vez al abrir el modal
+	// y se reutiliza en reintentos por fallo de red (para que el backend haga replay en vez de
+	// cobrar de nuevo). Se descarta al cancelar o tras un resultado definitivo (éxito o rechazo).
+	let pendingIdemKey: string | null = null;
 
 	type ConfirmReceipt = {
 		title: string;
@@ -93,6 +99,8 @@ export function initPlanPage() {
 
 	const openConfirm = (target: PendingTarget, receipt: ConfirmReceipt) => {
 		pending = target;
+		pendingIdemKey = createIdempotencyKey();
+		if (confirmPayBtn) confirmPayBtn.disabled = false;
 		if (modalTitle) modalTitle.textContent = receipt.title;
 
 		const hasToday = receipt.todayAmount !== null && receipt.todayAmount !== undefined;
@@ -146,6 +154,7 @@ export function initPlanPage() {
 	};
 	const closeConfirm = () => {
 		pending = null;
+		pendingIdemKey = null;
 		payModal?.classList.add('hidden');
 	};
 
@@ -566,16 +575,35 @@ export function initPlanPage() {
 	// ---- Activar suscripción (cobro recurrente con la tarjeta default) ----
 	async function activate(target: PendingTarget) {
 		modalLoading?.classList.remove('hidden');
+		if (confirmPayBtn) confirmPayBtn.disabled = true;
+
+		// La key se genera al abrir el modal (openConfirm) y se mantiene fija durante los
+		// reintentos de esta misma operación; si por algún motivo no existe, se genera aquí.
+		const idemKey = pendingIdemKey || (pendingIdemKey = createIdempotencyKey());
+
+		let res: Response;
 		try {
 			const body =
 				target.kind === 'PLAN'
 					? { target_type: 'PLAN', plan_code: target.code }
 					: { target_type: 'STORAGE_ADDON', addon_code: target.code };
-			const res = await fetch('/api/subscription/activate', {
+			res = await fetch('/api/subscription/activate', {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
+				headers: { 'Content-Type': 'application/json', 'Idempotency-Key': idemKey },
 				body: JSON.stringify(body),
 			});
+		} catch {
+			// Fallo de red/timeout: no sabemos si el servidor llegó a procesar el cobro. No
+			// cerramos el modal ni descartamos la key — el usuario puede tocar el botón de
+			// nuevo para reintentar con la MISMA key, y el backend hace replay en vez de
+			// cobrar de nuevo (ver PKG_AOX_UTIL.pr_idempotency_begin / pr_charge_target).
+			modalLoading?.classList.add('hidden');
+			if (confirmPayBtn) confirmPayBtn.disabled = false;
+			flash('No pudimos confirmar el cobro. Revisá tu conexión y tocá el botón de nuevo para reintentar.', 'error');
+			return;
+		}
+
+		try {
 			const data = await res.json().catch(() => ({}));
 			if (!res.ok || data?.status !== 'success') {
 				throw new Error(data?.message || 'No fue posible procesar el cobro.');
@@ -596,7 +624,10 @@ export function initPlanPage() {
 				setTimeout(() => window.location.reload(), 1200);
 			}
 		} catch (error) {
+			// Rechazo definitivo del servidor (validación, tarjeta rechazada, etc.): se
+			// descarta la key. El próximo intento del usuario arranca con una key nueva.
 			modalLoading?.classList.add('hidden');
+			if (confirmPayBtn) confirmPayBtn.disabled = false;
 			closeConfirm();
 			flash(error instanceof Error ? error.message : 'No fue posible procesar el cobro.', 'error');
 		}

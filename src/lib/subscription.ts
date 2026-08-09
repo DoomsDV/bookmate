@@ -1,4 +1,7 @@
 import { resolveOrdsApiUrl } from './env-urls';
+import { readIdempotencyKeyHeader } from './idempotency';
+
+export { readIdempotencyKeyHeader };
 
 export const SUBSCRIPTION_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_SUBSCRIPTION_URL,
@@ -133,6 +136,7 @@ export class SubscriptionApiError extends Error {
 		this.details = details;
 	}
 }
+
 
 interface SubscriptionSuccessResponse {
 	status: 'success';
@@ -558,7 +562,8 @@ export const getPlansWithOrds = async (token: string): Promise<PlansCatalog> => 
 
 export const createSubscriptionCheckoutWithOrds = async (
 	token: string,
-	payload: CheckoutPayload
+	payload: CheckoutPayload,
+	idempotencyKey?: string
 ): Promise<CheckoutResult> => {
 	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
 	const response = await fetch(SUBSCRIPTION_CHECKOUT_URL, {
@@ -567,6 +572,7 @@ export const createSubscriptionCheckoutWithOrds = async (
 			Authorization: `Bearer ${token}`,
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
+			...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
 		},
 		body: JSON.stringify(payload),
 	});
@@ -870,7 +876,8 @@ export const deleteCardWithOrds = async (token: string, cardId: number): Promise
 
 export const activateSubscriptionWithOrds = async (
 	token: string,
-	payload: { target_type?: 'PLAN' | 'STORAGE_ADDON'; plan_code?: string; addon_code?: string }
+	payload: { target_type?: 'PLAN' | 'STORAGE_ADDON'; plan_code?: string; addon_code?: string },
+	idempotencyKey?: string
 ): Promise<ActivateResult> => {
 	if (!token) throw new SubscriptionApiError('Token de acceso requerido.', 401);
 	const response = await fetch(SUBSCRIPTION_ACTIVATE_URL, {
@@ -879,6 +886,7 @@ export const activateSubscriptionWithOrds = async (
 			Authorization: `Bearer ${token}`,
 			Accept: 'application/json',
 			'Content-Type': 'application/json',
+			...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
 		},
 		body: JSON.stringify(payload),
 	});

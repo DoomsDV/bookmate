@@ -757,12 +757,16 @@ export const getPublicLocationWithOrds = async (locationId: number): Promise<Pub
 	} satisfies PublicBookingLocation;
 };
 
-export const createPublicAppointmentWithOrds = async (payload: PublicCreateAppointmentPayload) => {
+export const createPublicAppointmentWithOrds = async (
+	payload: PublicCreateAppointmentPayload,
+	idempotencyKey?: string
+) => {
 	const response = await fetch(`${PUBLIC_BOOKING_API_BASE_URL}/appointments`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
 			Accept: 'application/json',
+			...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
 		},
 		body: JSON.stringify(payload),
 	});
@@ -1007,7 +1011,8 @@ export interface PublicReceiptUploadResult {
 
 export const uploadPublicReceiptWithOrds = async (
 	token: string,
-	payload: PublicReceiptUploadPayload
+	payload: PublicReceiptUploadPayload,
+	idempotencyKey?: string
 ): Promise<PublicReceiptUploadResult> => {
 	const safeToken = String(token || '').trim();
 	if (!safeToken) {
@@ -1022,6 +1027,7 @@ export const uploadPublicReceiptWithOrds = async (
 		headers: {
 			'Content-Type': 'application/json',
 			Accept: 'application/json',
+			...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
 		},
 		body: JSON.stringify({
 			file_base64: payload.file_base64,

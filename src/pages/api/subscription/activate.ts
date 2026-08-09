@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 
 import { ROLES } from '../../../config/roles';
-import { activateSubscriptionWithOrds, SubscriptionApiError } from '../../../lib/subscription';
+import { activateSubscriptionWithOrds, readIdempotencyKeyHeader, SubscriptionApiError } from '../../../lib/subscription';
 
 const toErrorResponse = (error: unknown, fallbackMessage: string) => {
 	const subscriptionError =
@@ -25,7 +25,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 			targetType === 'STORAGE_ADDON'
 				? { target_type: 'STORAGE_ADDON' as const, addon_code: String(body?.addon_code ?? '').trim().toUpperCase() }
 				: { target_type: 'PLAN' as const, plan_code: String(body?.plan_code ?? '').trim().toUpperCase() };
-		const result = await activateSubscriptionWithOrds(locals.token, payload);
+		const idempotencyKey = readIdempotencyKeyHeader(request);
+		const result = await activateSubscriptionWithOrds(locals.token, payload, idempotencyKey);
 		return Response.json({ status: 'success', data: result }, { status: 200 });
 	} catch (error) {
 		return toErrorResponse(error, 'No fue posible activar la suscripción.');

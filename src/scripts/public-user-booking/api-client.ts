@@ -117,12 +117,19 @@ export const validateCustomerPhone = async (phoneE164: string, orgId: number) =>
 	};
 };
 
-export const createPublicAppointment = async (payload: Record<string, unknown>) => {
+export const createPublicAppointment = async (
+	payload: Record<string, unknown>,
+	idempotencyKey?: string
+) => {
 	const { data } = await fetchJson<Record<string, unknown>>(
 		'/api/public/appointments',
 		{
 			method: 'POST',
-			headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+			headers: {
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+				...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+			},
 			body: JSON.stringify(payload),
 		},
 		'No fue posible confirmar la reserva.'

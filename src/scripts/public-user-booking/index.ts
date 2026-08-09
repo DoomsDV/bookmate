@@ -24,6 +24,7 @@ import {
 	type PublicBookingDraftStep,
 } from '../../lib/public-booking-draft';
 import { bindPublicBookingStepIndicator } from '../../lib/public-booking-stepper';
+import { createIdempotencyKey } from '../../lib/idempotency';
 import {
 	buildApiAppointmentTimes,
 	createPublicAppointment,
@@ -290,6 +291,11 @@ export const initializePublicUserBookingPage = () => {
 	let isSubmitting = false;
 	let isValidatingCustomer = false;
 	let pendingAppointmentId = 0;
+	// Idempotency-Key: se reutiliza mientras el reintento sea sobre el MISMO payload (retry
+	// por fallo de red); si el usuario cambia de selección (otro horario, otro servicio, etc.)
+	// se genera una key nueva junto con el nuevo payload.
+	let bookingIdemKey: string | null = null;
+	let bookingIdemPayloadJson: string | null = null;
 	let validatedCustomerPhoneE164 = '';
 	let toastTimer: number | null = null;
 
@@ -1987,12 +1993,25 @@ export const initializePublicUserBookingPage = () => {
 		const payload = await buildAppointmentPayload(reserveForDeposit);
 		if (!payload) return;
 
+		// Misma selección que el intento anterior (retry tras error) -> reusar la key para
+		// que el backend haga replay en vez de duplicar la reserva. Selección distinta ->
+		// key nueva.
+		const payloadJson = JSON.stringify(payload);
+		if (bookingIdemKey && bookingIdemPayloadJson === payloadJson) {
+			// reusar bookingIdemKey
+		} else {
+			bookingIdemKey = createIdempotencyKey();
+			bookingIdemPayloadJson = payloadJson;
+		}
+
 		isSubmitting = true;
 		submitButton.disabled = true;
 		payDepositButton.disabled = true;
 
 		try {
-			const created = await createPublicAppointment(payload);
+			const created = await createPublicAppointment(payload, bookingIdemKey);
+			bookingIdemKey = null;
+			bookingIdemPayloadJson = null;
 			if (reserveForDeposit) {
 				pendingAppointmentId = created.appointment_id;
 				finalizeDepositHold(created.hold);
