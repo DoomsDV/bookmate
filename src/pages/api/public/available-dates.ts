@@ -3,6 +3,7 @@ import type { APIRoute } from 'astro';
 import { getPublicAvailableDatesWithOrds } from '../../../lib/public-booking';
 import {
 	publicBookingErrorResponse,
+	publicCachedJsonResponse,
 	toPositiveInt,
 } from '../../../lib/public-api-handlers';
 
@@ -25,13 +26,10 @@ export const GET: APIRoute = async ({ request }) => {
 			exclude_app_id: excludeAppId > 0 ? excludeAppId : undefined,
 		});
 
-		return Response.json(
-			{
-				status: 'success',
-				data: dates,
-			},
-			{ status: 200 }
-		);
+		return publicCachedJsonResponse({
+			status: 'success',
+			data: dates,
+		});
 	} catch (error) {
 		return publicBookingErrorResponse(error, 'No fue posible cargar fechas disponibles.');
 	}

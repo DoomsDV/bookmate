@@ -869,7 +869,7 @@ const serializedProfessionals = professionals.length
 <script>
 	// MapLibre types are imported lazily via the loader.
 	type MapLibreMap = InstanceType<
-		Awaited<ReturnType<typeof import('../../lib/maplibre-loader')['loadMapLibre']>>['Map']
+		Awaited<ReturnType<typeof import('../../lib/maplibre-interactive')['loadMapLibre']>>['Map']
 	>;
 
 	type HubMapHandle = {
@@ -880,19 +880,19 @@ const serializedProfessionals = professionals.length
 	const VALID_TABS = new Set(['overview', 'galeria', 'equipo', 'sucursales']);
 
 	let hubMapLibreModule:
-		| Awaited<ReturnType<typeof import('../../lib/maplibre-loader')['loadMapLibre']>>
+		| Awaited<ReturnType<typeof import('../../lib/maplibre-interactive')['loadMapLibre']>>
 		| null = null;
 
 	const loadHubMapLibre = async () => {
 		if (!hubMapLibreModule) {
-			const mod = await import('../../lib/maplibre-loader');
+			const mod = await import('../../lib/maplibre-interactive');
 			hubMapLibreModule = await mod.loadMapLibre();
 		}
 		return hubMapLibreModule;
 	};
 
 	const getHubStyleUrl = async (key: string) => {
-		const mod = await import('../../lib/maplibre-loader');
+		const mod = await import('../../lib/maplibre-interactive');
 		return mod.getStadiaStyleUrl(mod.resolveMapTheme(), key);
 	};
 
@@ -902,7 +902,7 @@ const serializedProfessionals = professionals.length
 		coords: { lat: number; lng: number },
 		title?: string
 	) => {
-		const mod = await import('../../lib/maplibre-loader');
+		const mod = await import('../../lib/maplibre-interactive');
 		return mod
 			.createBrandMarker(maplibregl, coords, { color: '#FB7185', title })
 			.addTo(map);

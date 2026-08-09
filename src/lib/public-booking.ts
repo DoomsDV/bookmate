@@ -12,6 +12,14 @@ const toPositiveInt = (value: unknown, fallback = 0) => {
 	return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
 };
 
+const ORDS_FETCH_TIMEOUT_MS = 8000;
+
+const ordsFetch = (input: RequestInfo | URL, init: RequestInit = {}) =>
+	fetch(input, {
+		...init,
+		signal: init.signal ?? AbortSignal.timeout(ORDS_FETCH_TIMEOUT_MS),
+	});
+
 const normalizePublicDomainOrigin = (value: string) => {
 	const trimmed = String(value || '').trim();
 	if (!trimmed) return '';
@@ -579,7 +587,7 @@ export const resolvePublicProfileSlugWithOrds = async (
 		throw new PublicBookingApiError('Slug de profesional requerido.', 400);
 	}
 
-	const response = await fetch(
+	const response = await ordsFetch(
 		`${PUBLIC_BOOKING_API_BASE_URL}/profile/resolve/${encodeURIComponent(safeSlug)}`,
 		{
 			method: 'GET',
@@ -606,7 +614,7 @@ export const getPublicProfileWithOrds = async (
 		throw new PublicBookingApiError('Slug de organización y profesional requeridos.', 400);
 	}
 
-	const response = await fetch(
+	const response = await ordsFetch(
 		`${PUBLIC_BOOKING_API_BASE_URL}/profile/${encodeURIComponent(safeOrgSlug)}/${encodeURIComponent(safeProSlug)}`,
 		{
 			method: 'GET',
@@ -660,7 +668,7 @@ export const getPublicAvailableSlotsWithOrds = async (params: {
 		slotsUrl.searchParams.set('exclude_app_id', String(excludeAppId));
 	}
 
-	const response = await fetch(slotsUrl.toString(), {
+	const response = await ordsFetch(slotsUrl.toString(), {
 		method: 'GET',
 		headers: { Accept: 'application/json' },
 	});
@@ -715,7 +723,7 @@ export const getPublicAvailableDatesWithOrds = async (params: {
 		datesUrl.searchParams.set('exclude_app_id', String(excludeAppId));
 	}
 
-	const response = await fetch(datesUrl.toString(), {
+	const response = await ordsFetch(datesUrl.toString(), {
 		method: 'GET',
 		headers: { Accept: 'application/json' },
 	});
@@ -739,7 +747,7 @@ export const getPublicLocationWithOrds = async (locationId: number): Promise<Pub
 		throw new PublicBookingApiError('id de ubicación requerido.', 400);
 	}
 
-	const response = await fetch(resolvePublicLocationApiUrl(safeLocationId), {
+	const response = await ordsFetch(resolvePublicLocationApiUrl(safeLocationId), {
 		method: 'GET',
 		headers: { Accept: 'application/json' },
 	});
@@ -761,7 +769,7 @@ export const createPublicAppointmentWithOrds = async (
 	payload: PublicCreateAppointmentPayload,
 	idempotencyKey?: string
 ) => {
-	const response = await fetch(`${PUBLIC_BOOKING_API_BASE_URL}/appointments`, {
+	const response = await ordsFetch(`${PUBLIC_BOOKING_API_BASE_URL}/appointments`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -875,7 +883,7 @@ export const getPublicReservationWithOrds = async (token: string): Promise<Publi
 		throw new PublicBookingApiError('Token de reserva requerido.', 400);
 	}
 
-	const response = await fetch(resolvePublicReservationApiUrl(safeToken), {
+	const response = await ordsFetch(resolvePublicReservationApiUrl(safeToken), {
 		method: 'GET',
 		headers: { Accept: 'application/json' },
 	});
@@ -898,7 +906,7 @@ export const updatePublicReservationWithOrds = async (
 		throw new PublicBookingApiError('Token de reserva requerido.', 400);
 	}
 
-	const response = await fetch(resolvePublicReservationApiUrl(safeToken), {
+	const response = await ordsFetch(resolvePublicReservationApiUrl(safeToken), {
 		method: 'PUT',
 		headers: {
 			'Content-Type': 'application/json',
@@ -926,7 +934,7 @@ export const cancelPublicReservationWithOrds = async (
 	const alias = String(options?.refund_alias || '').trim();
 	if (alias) body.refund_alias = alias;
 
-	const response = await fetch(resolvePublicReservationApiUrl(safeToken), {
+	const response = await ordsFetch(resolvePublicReservationApiUrl(safeToken), {
 		method: 'DELETE',
 		headers: {
 			Accept: 'application/json',
@@ -953,7 +961,7 @@ export const submitRefundAliasWithOrds = async (token: string, refundAlias: stri
 		throw new PublicBookingApiError('Indica tu alias SIPAP.', 400);
 	}
 
-	const response = await fetch(`${resolvePublicReservationApiUrl(safeToken)}/refund-alias`, {
+	const response = await ordsFetch(`${resolvePublicReservationApiUrl(safeToken)}/refund-alias`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -976,7 +984,7 @@ export const submitRefundClaimWithOrds = async (token: string, notes?: string) =
 		throw new PublicBookingApiError('Token de reserva requerido.', 400);
 	}
 
-	const response = await fetch(`${resolvePublicReservationApiUrl(safeToken)}/refund-claim`, {
+	const response = await ordsFetch(`${resolvePublicReservationApiUrl(safeToken)}/refund-claim`, {
 		method: 'POST',
 		headers: {
 			Accept: 'application/json',
@@ -1022,7 +1030,7 @@ export const uploadPublicReceiptWithOrds = async (
 		throw new PublicBookingApiError('Debes enviar el comprobante.', 400);
 	}
 
-	const response = await fetch(`${resolvePublicReservationApiUrl(safeToken)}/receipt`, {
+	const response = await ordsFetch(`${resolvePublicReservationApiUrl(safeToken)}/receipt`, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',
@@ -1054,7 +1062,7 @@ export const uploadPublicReceiptWithOrds = async (
 export const validatePublicCustomerWithOrds = async (
 	payload: PublicValidateCustomerPayload
 ): Promise<PublicValidateCustomerResult> => {
-	const response = await fetch(PUBLIC_VALIDATE_CUSTOMER_API_URL, {
+	const response = await ordsFetch(PUBLIC_VALIDATE_CUSTOMER_API_URL, {
 		method: 'POST',
 		headers: {
 			'Content-Type': 'application/json',

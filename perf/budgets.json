@@ -1,0 +1,35 @@
+{
+  "coreWebVitals": {
+    "LCP": { "targetMs": 2500, "warnMs": 2500 },
+    "INP": { "targetMs": 200, "warnMs": 200 },
+    "CLS": { "target": 0.1, "warn": 0.1 },
+    "TBT": { "targetMs": 200, "warnMs": 300 },
+    "FCP": { "targetMs": 1800, "warnMs": 2500 },
+    "TTFB": { "targetMs": 800, "warnMs": 1200 }
+  },
+  "lighthouse": {
+    "performanceScore": { "min": 0.85, "warn": 0.75 },
+    "interactive": { "maxMs": 3500, "warnMs": 4500 }
+  },
+  "jsTransferGzipKb": {
+    "landing": { "max": 150, "warn": 200 },
+    "publicBooking": { "max": 300, "warn": 400 },
+    "panelCalendar": { "max": 450, "warn": 550 }
+  },
+  "k6": {
+    "httpReqFailedRate": 0.01,
+    "bffP95Ms": 2000,
+    "ordsP95Ms": 800
+  },
+  "stagingBaseline": {
+    "measuredAt": "2026-08-09",
+    "url": "https://staging.hasel.app",
+    "note": "Post-mejoras P0; LCP landing/login aún por optimizar imágenes hero",
+    "routes": {
+      "landing": { "performanceScore": 66, "lcpMs": 5058, "tbtMs": 0, "cls": 0 },
+      "auth_login": { "performanceScore": 83, "lcpMs": 4609, "tbtMs": 0, "cls": 0 },
+      "public_user": { "performanceScore": 75, "lcpMs": 3498, "tbtMs": 556, "cls": 0 },
+      "public_booking": { "performanceScore": 95, "lcpMs": 2779, "tbtMs": 44, "cls": 0, "lcpPass": false }
+    }
+  }
+}

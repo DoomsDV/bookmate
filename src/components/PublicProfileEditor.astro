@@ -516,7 +516,7 @@ const previewInitial = {
 			</div>
 
 			<aside class="ppe-phone-col" data-ppe-phone-col aria-label="Vista previa">
-				<PublicProfilePreview client:load initial={previewInitial} />
+				<PublicProfilePreview client:visible initial={previewInitial} />
 			</aside>
 		</div>
 	</div>
@@ -539,7 +539,7 @@ const previewInitial = {
 			</button>
 		</div>
 		<div class="ppe-preview-modal__scroll">
-			<PublicProfilePreview client:load initial={previewInitial} variant="live" />
+			<PublicProfilePreview client:visible initial={previewInitial} variant="live" />
 		</div>
 	</dialog>
 

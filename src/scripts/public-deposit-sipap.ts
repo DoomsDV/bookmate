@@ -1,4 +1,3 @@
-import { prepareReceiptUploadFile } from '../lib/pdf-receipt-to-image';
 import { createIdempotencyKey } from '../lib/idempotency';
 
 export type RefundPolicyCode = 'FLEXIBLE' | 'MODERATE' | 'STRICT';
@@ -327,8 +326,11 @@ export const bindSipapReceiptUpload = (
 
 		setSipapReceiptStatus(root, null, 'uploading');
 		try {
-			// PDF → JPEG silencioso para OCR; si falla el render, se sube el PDF (MANUAL_REVIEW).
-			const uploadFile = await prepareReceiptUploadFile(file);
+			let uploadFile = file;
+			if (isPdf) {
+				const { prepareReceiptUploadFile } = await import('../lib/pdf-receipt-to-image');
+				uploadFile = await prepareReceiptUploadFile(file);
+			}
 			const uploadIsPdf =
 				uploadFile.type === 'application/pdf' ||
 				String(uploadFile.name || '')

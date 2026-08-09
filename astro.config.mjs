@@ -9,6 +9,20 @@ import AstroPWA from '@vite-pwa/astro';
 
 import sitemap from '@astrojs/sitemap';
 
+const enableBundleVisualizer = process.env.PERF_BUNDLE === '1';
+
+// @ts-expect-error optional dev-only plugin
+let visualizerPlugin = null;
+if (enableBundleVisualizer) {
+	const { visualizer } = await import('rollup-plugin-visualizer');
+	visualizerPlugin = visualizer({
+		filename: 'perf/reports/bundle-stats.html',
+		gzipSize: true,
+		brotliSize: true,
+		open: false,
+	});
+}
+
 // 1. Obtenemos la URL dinámica de Vercel si existe, si no, usamos la oficial o localhost.
 const getSiteUrl = () => {
   const siteUrl = String(process.env.SITE_URL || process.env.PUBLIC_SITE_URL || '').trim();
@@ -86,7 +100,10 @@ export default defineConfig({
   }), sitemap()],
 
   vite: {
-    plugins: [tailwindcss()],
+    plugins: [
+      tailwindcss(),
+      ...(visualizerPlugin ? [visualizerPlugin] : []),
+    ],
     resolve: {
       alias: {
         '@': path.resolve(projectRoot, 'src'),

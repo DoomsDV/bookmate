@@ -1,4 +1,7 @@
 import { PublicUserProfileApiError } from './public-user-profile';
+import { publicCachedJsonResponse } from './public-api-handlers';
+
+export { publicCachedJsonResponse };
 
 const toSafeApiStatus = (value: number) => {
 	if (value === 555) return 502;

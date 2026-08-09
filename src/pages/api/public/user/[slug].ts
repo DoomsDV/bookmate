@@ -4,7 +4,7 @@ import {
 	getPublicUserProfileWithOrds,
 	PublicUserProfileApiError,
 } from '../../../../lib/public-user-profile';
-import { publicUserProfileErrorResponse } from '../../../../lib/public-user-api-handlers';
+import { publicCachedJsonResponse, publicUserProfileErrorResponse } from '../../../../lib/public-user-api-handlers';
 
 export const GET: APIRoute = async ({ params }) => {
 	try {
@@ -14,13 +14,10 @@ export const GET: APIRoute = async ({ params }) => {
 		}
 
 		const profile = await getPublicUserProfileWithOrds(publicSlug);
-		return Response.json(
-			{
-				status: 'success',
-				data: profile,
-			},
-			{ status: 200 }
-		);
+		return publicCachedJsonResponse({
+			status: 'success',
+			data: profile,
+		});
 	} catch (error) {
 		return publicUserProfileErrorResponse(error, 'No fue posible cargar el perfil público.');
 	}

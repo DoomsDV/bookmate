@@ -19,6 +19,19 @@ const toSafeApiStatus = (value: number) => {
 	return Number.isInteger(value) && value >= 400 && value <= 599 ? value : 500;
 };
 
+export const PUBLIC_READ_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=300';
+
+export const publicCachedJsonResponse = (
+	body: Record<string, unknown>,
+	status = 200,
+) =>
+	Response.json(body, {
+		status,
+		headers: {
+			'Cache-Control': PUBLIC_READ_CACHE_CONTROL,
+		},
+	});
+
 export const publicBookingErrorResponse = (error: unknown, fallbackMessage: string) => {
 	const bookingError =
 		error instanceof PublicBookingApiError

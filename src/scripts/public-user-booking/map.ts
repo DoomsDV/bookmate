@@ -4,7 +4,7 @@ import {
 	loadMapLibre,
 	resolveMapTheme,
 	type MapLibreModule,
-} from '../../lib/maplibre-loader';
+} from '../../lib/maplibre-interactive';
 
 export type MapLocation = {
 	id_location: number;

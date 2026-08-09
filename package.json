@@ -14,7 +14,20 @@
 		"build": "astro build",
 		"preview": "astro preview",
 		"astro": "astro",
-		"clean:caches": "node -e \"const fs=require('fs');for (const p of ['node_modules/.vite','.astro']){try{fs.rmSync(p,{recursive:true,force:true});console.log('removed',p);}catch{}}\""
+		"clean:caches": "node -e \"const fs=require('fs');for (const p of ['node_modules/.vite','.astro']){try{fs.rmSync(p,{recursive:true,force:true});console.log('removed',p);}catch{}}\"",
+		"perf:hydration": "node scripts/audit-hydration.mjs",
+		"perf:lhci": "lhci autorun",
+		"perf:lighthouse": "node scripts/run-lighthouse-local.mjs",
+		"perf:bundle": "node -e \"require('fs').mkdirSync('perf/reports',{recursive:true})\" && cross-env PERF_BUNDLE=1 astro build && node scripts/analyze-bundles.mjs",
+		"perf:k6:smoke": "k6 run perf/k6/smoke.js",
+		"perf:k6:read": "k6 run perf/k6/public-read.js",
+		"perf:k6:booking": "k6 run perf/k6/public-booking.js",
+		"perf:k6:ords": "k6 run perf/k6/ords-direct.js",
+		"perf:k6:panel": "k6 run perf/k6/panel-read.js",
+		"perf:k6:compare": "k6 run perf/k6/public-read.js && k6 run perf/k6/ords-direct.js",
+		"perf:k6:staging": "k6 run perf/k6/public-read-staging.js",
+		"perf:all": "pnpm run perf:hydration && pnpm run perf:lhci",
+		"perf:serve": "astro dev --host 127.0.0.1 --port 4321"
 	},
 	"dependencies": {
 		"@astrojs/check": "^0.9.10",
@@ -49,11 +62,17 @@
 		"zod": "^3.25.76"
 	},
 	"devDependencies": {
+		"@lhci/cli": "^0.14.0",
 		"@types/node": "^25.5.2",
 		"@types/react": "^19.2.0",
 		"@types/react-dom": "^19.2.0",
 		"@vite-pwa/astro": "^1.2.0",
-		"shadcn": "^4.16.2"
+		"cross-env": "^7.0.3",
+		"lighthouse": "^13.4.1",
+		"puppeteer": "^24.16.0",
+		"rollup-plugin-visualizer": "^5.14.0",
+		"shadcn": "^4.16.2",
+		"web-vitals": "^4.2.4"
 	},
 	"pnpm": {
 		"peerDependencyRules": {

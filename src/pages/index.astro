@@ -94,6 +94,15 @@ const jsonLd = [
 	ogImage="/icons/icon-512x512.png"
 	jsonLd={jsonLd}
 >
+	<link
+		slot="head"
+		rel="preload"
+		as="image"
+		type="image/avif"
+		href="/calendar/desktop/calendario-light.avif"
+		fetchpriority="high"
+	/>
+	<link slot="head" rel="preload" as="image" type="image/webp" href="/calendar/desktop/calendario-light.webp" />
 	<main class="landing-root">
 		<a href="#hero-heading" class="landing-skip-link">Saltar al contenido principal</a>
 		<div class="landing-scroll-sentinel" data-scroll-sentinel aria-hidden="true"></div>

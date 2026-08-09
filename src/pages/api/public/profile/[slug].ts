@@ -4,7 +4,7 @@ import {
 	getPublicProfileWithOrdsLegacy,
 	PublicBookingApiError,
 } from '../../../../lib/public-booking';
-import { publicBookingErrorResponse } from '../../../../lib/public-api-handlers';
+import { publicBookingErrorResponse, publicCachedJsonResponse } from '../../../../lib/public-api-handlers';
 
 export const GET: APIRoute = async ({ params }) => {
 	try {
@@ -14,13 +14,10 @@ export const GET: APIRoute = async ({ params }) => {
 		}
 
 		const profile = await getPublicProfileWithOrdsLegacy(slug);
-		return Response.json(
-			{
-				status: 'success',
-				data: profile,
-			},
-			{ status: 200 }
-		);
+		return publicCachedJsonResponse({
+			status: 'success',
+			data: profile,
+		});
 	} catch (error) {
 		return publicBookingErrorResponse(error, 'No fue posible cargar el perfil del profesional.');
 	}

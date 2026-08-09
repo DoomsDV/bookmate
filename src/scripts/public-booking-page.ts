@@ -16,7 +16,7 @@ import {
 	MAPLIBRE_ES_UI_LOCALE,
 	resolveMapTheme,
 	type MapLibreModule,
-} from '../lib/maplibre-loader';
+} from '../lib/maplibre-interactive';
 import {
 	mergePublicBookingLocations,
 	normalizePublicBookingLocations,

@@ -9,7 +9,7 @@ import {
 	renderBrandMapMarkerOverlay,
 	resolveMapTheme,
 	type MapCoordinates,
-} from '../lib/maplibre-loader';
+} from '../lib/maplibre-static';
 import { updateAppPaginationDom } from '../lib/pagination';
 
 type LocationItem = {

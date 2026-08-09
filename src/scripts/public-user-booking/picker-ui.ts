@@ -6,7 +6,7 @@ import {
 	renderBrandMapMarkerOverlay,
 	resolveMapTheme,
 	type MapTheme,
-} from '../../lib/maplibre-loader';
+} from '../../lib/maplibre-static';
 
 export type PublicLocationCardInput = {
 	id_location?: number;

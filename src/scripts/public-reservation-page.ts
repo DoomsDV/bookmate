@@ -23,7 +23,7 @@ import {
 	loadMapLibre,
 	resolveMapTheme,
 	type MapLibreModule,
-} from '../lib/maplibre-loader';
+} from '../lib/maplibre-interactive';
 import {
 	bindMapImageLifecycle,
 	bindVerticalStackGestures,

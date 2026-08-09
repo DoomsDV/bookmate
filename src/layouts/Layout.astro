@@ -302,6 +302,7 @@ if (flashTypeFromCookie) {
                 set:html={JSON.stringify(jsonLd)}
             />
         )}
+        <slot name="head" />
     </head>
     <body
         {...(hasSession
@@ -331,6 +332,12 @@ if (flashTypeFromCookie) {
                 <FlashMessage message="" />
             )
         }
+        {import.meta.env.DEV && (
+            <script>
+                import { initWebVitalsReporter } from '../lib/web-vitals-reporter';
+                initWebVitalsReporter();
+            </script>
+        )}
     </body>
 </html>
 
