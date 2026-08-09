@@ -128,16 +128,60 @@ input[type='search']::-ms-clear {
 	--flash-danger-accent: #e11d48;
 	--flash-success-text: #34d399;
 	--flash-danger-text: #fb7185;
-	--flash-bg: #1f2937;
-	--flash-fg: #f3f4f6;
-	--flash-fg-muted: #9ca3af;
-	--flash-border: rgba(156, 163, 175, 0.24);
-	--flash-shadow: 0 12px 32px rgba(15, 23, 42, 0.24);
-	--flash-icon-success: #34d399;
-	--flash-icon-error: #fb7185;
-	--flash-icon-info: #60a5fa;
-	--flash-icon-warning: #fbbf24;
-	--flash-close-hover: rgba(255, 255, 255, 0.08);
+	--flash-bg: #f4f4f5;
+	--flash-fg: #27272a;
+	--flash-fg-muted: #71717a;
+	--flash-border: rgba(113, 113, 122, 0.22);
+	--flash-shadow: 0 12px 32px rgba(24, 24, 27, 0.1);
+	--flash-icon-success: #059669;
+	--flash-icon-error: #e11d48;
+	--flash-icon-info: #52525b;
+	--flash-icon-warning: #d97706;
+	--flash-close-hover: rgba(24, 24, 27, 0.06);
+	--flash-success-bg: var(--inline-feedback-success-bg);
+	--flash-success-border: var(--inline-feedback-success-border);
+	--flash-success-fg: var(--inline-feedback-success-fg);
+	--flash-success-title: #065f46;
+	--flash-success-text: #047857;
+	--flash-success-badge-bg: #059669;
+	--flash-success-badge-fg: #ffffff;
+	--flash-success-icon: var(--inline-feedback-success-icon);
+	--flash-success-close: var(--inline-feedback-success-close);
+	--flash-success-close-hover: var(--inline-feedback-success-close-hover);
+	--flash-success-shadow: 0 10px 28px rgba(5, 150, 105, 0.12);
+	--flash-error-bg: var(--inline-feedback-error-bg);
+	--flash-error-border: var(--inline-feedback-error-border);
+	--flash-error-fg: var(--inline-feedback-error-fg);
+	--flash-error-title: #9f1239;
+	--flash-error-text: #be123c;
+	--flash-error-badge-bg: #e11d48;
+	--flash-error-badge-fg: #ffffff;
+	--flash-error-icon: var(--inline-feedback-error-icon);
+	--flash-error-close: var(--inline-feedback-error-close);
+	--flash-error-close-hover: var(--inline-feedback-error-close-hover);
+	--flash-error-shadow: 0 10px 28px rgba(225, 29, 72, 0.1);
+	--flash-info-bg: #eff6ff;
+	--flash-info-border: #bfdbfe;
+	--flash-info-fg: #1e40af;
+	--flash-info-title: #1e3a8a;
+	--flash-info-text: #2563eb;
+	--flash-info-badge-bg: #2563eb;
+	--flash-info-badge-fg: #ffffff;
+	--flash-info-icon: #2563eb;
+	--flash-info-close: #1d4ed8;
+	--flash-info-close-hover: #dbeafe;
+	--flash-info-shadow: 0 10px 28px rgba(37, 99, 235, 0.1);
+	--flash-warning-bg: #fffbeb;
+	--flash-warning-border: #fde68a;
+	--flash-warning-fg: #92400e;
+	--flash-warning-title: #78350f;
+	--flash-warning-text: #b45309;
+	--flash-warning-badge-bg: #d97706;
+	--flash-warning-badge-fg: #ffffff;
+	--flash-warning-icon: #d97706;
+	--flash-warning-close: #b45309;
+	--flash-warning-close-hover: #fef3c7;
+	--flash-warning-shadow: 0 10px 28px rgba(217, 119, 6, 0.12);
 	--inline-feedback-success-bg: #ecfdf5;
 	--inline-feedback-success-border: #a7f3d0;
 	--inline-feedback-success-fg: #065f46;
@@ -231,6 +275,60 @@ html[data-theme='dark'] {
 	--flash-danger-accent: #fb7185;
 	--flash-success-text: #6ee7b7;
 	--flash-danger-text: #fda4af;
+	--flash-bg: #1c1c1e;
+	--flash-fg: #fafafa;
+	--flash-fg-muted: #a1a1aa;
+	--flash-border: rgba(161, 161, 170, 0.22);
+	--flash-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+	--flash-icon-success: #34d399;
+	--flash-icon-error: #fb7185;
+	--flash-icon-info: #a1a1aa;
+	--flash-icon-warning: #fbbf24;
+	--flash-close-hover: rgba(255, 255, 255, 0.08);
+	--flash-success-bg: var(--inline-feedback-success-bg);
+	--flash-success-border: var(--inline-feedback-success-border);
+	--flash-success-fg: var(--inline-feedback-success-fg);
+	--flash-success-title: #a7f3d0;
+	--flash-success-text: #6ee7b7;
+	--flash-success-badge-bg: #10b981;
+	--flash-success-badge-fg: #ffffff;
+	--flash-success-icon: var(--inline-feedback-success-icon);
+	--flash-success-close: var(--inline-feedback-success-close);
+	--flash-success-close-hover: var(--inline-feedback-success-close-hover);
+	--flash-success-shadow: 0 12px 32px rgba(0, 0, 0, 0.28);
+	--flash-error-bg: var(--inline-feedback-error-bg);
+	--flash-error-border: var(--inline-feedback-error-border);
+	--flash-error-fg: var(--inline-feedback-error-fg);
+	--flash-error-title: #fecdd3;
+	--flash-error-text: #fda4af;
+	--flash-error-badge-bg: #f43f5e;
+	--flash-error-badge-fg: #ffffff;
+	--flash-error-icon: var(--inline-feedback-error-icon);
+	--flash-error-close: var(--inline-feedback-error-close);
+	--flash-error-close-hover: var(--inline-feedback-error-close-hover);
+	--flash-error-shadow: var(--inline-feedback-error-shadow);
+	--flash-info-bg: #172554;
+	--flash-info-border: rgba(96, 165, 250, 0.28);
+	--flash-info-fg: #bfdbfe;
+	--flash-info-title: #dbeafe;
+	--flash-info-text: #93c5fd;
+	--flash-info-badge-bg: #3b82f6;
+	--flash-info-badge-fg: #ffffff;
+	--flash-info-icon: #60a5fa;
+	--flash-info-close: #93c5fd;
+	--flash-info-close-hover: rgba(59, 130, 246, 0.18);
+	--flash-info-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+	--flash-warning-bg: #2a2212;
+	--flash-warning-border: rgba(251, 191, 36, 0.28);
+	--flash-warning-fg: #fde68a;
+	--flash-warning-title: #fef3c7;
+	--flash-warning-text: #fcd34d;
+	--flash-warning-badge-bg: #f59e0b;
+	--flash-warning-badge-fg: #ffffff;
+	--flash-warning-icon: #fbbf24;
+	--flash-warning-close: #fcd34d;
+	--flash-warning-close-hover: #3d3018;
+	--flash-warning-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
 	--inline-feedback-success-bg: #163428;
 	--inline-feedback-success-border: #236647;
 	--inline-feedback-success-fg: #a7f3d0;
@@ -1311,45 +1409,209 @@ html[data-theme='dark'] .profile-menu-panel {
 }
 
 .flash-message {
-	--flash-bg: #1f2937;
-	--flash-fg: #f3f4f6;
-	--flash-fg-muted: #9ca3af;
-	--flash-border: rgba(156, 163, 175, 0.24);
-	--flash-shadow: 0 12px 32px rgba(15, 23, 42, 0.24);
-	--flash-icon-success: #34d399;
-	--flash-icon-error: #fb7185;
-	--flash-icon-info: #60a5fa;
-	--flash-icon-warning: #fbbf24;
-	--flash-close-hover: rgba(255, 255, 255, 0.08);
+	display: flex;
+	align-items: center;
+	gap: 0.875rem;
+	padding: 0.875rem 1rem 0.875rem 0.875rem;
+	border-radius: 9999px;
+	min-width: min(100%, 18rem);
+	max-width: min(calc(100vw - 2rem), 32rem);
 	background: var(--flash-bg);
 	color: var(--flash-fg);
 	border: 1px solid var(--flash-border);
 	box-shadow: var(--flash-shadow);
 }
 
-.flash-message__icon--success {
-	color: var(--flash-icon-success);
+.flash-message--expand {
+	width: 100%;
+	max-width: 100%;
+	border-radius: 1rem;
+	padding: 1rem 1.1rem;
 }
 
-.flash-message__icon--error {
-	color: var(--flash-icon-error);
+.flash-message--success {
+	background: var(--flash-success-bg);
+	border-color: var(--flash-success-border);
+	box-shadow: var(--flash-success-shadow);
 }
 
-.flash-message__icon--info {
-	color: var(--flash-icon-info);
+.flash-message--error {
+	background: var(--flash-error-bg);
+	border-color: var(--flash-error-border);
+	box-shadow: var(--flash-error-shadow);
 }
 
-.flash-message__icon--warning {
-	color: var(--flash-icon-warning);
+.flash-message--info {
+	background: var(--flash-info-bg);
+	border-color: var(--flash-info-border);
+	box-shadow: var(--flash-info-shadow);
+}
+
+.flash-message--warning {
+	background: var(--flash-warning-bg);
+	border-color: var(--flash-warning-border);
+	box-shadow: var(--flash-warning-shadow);
+}
+
+.flash-message__icon-badge {
+	flex-shrink: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 9999px;
+	color: var(--flash-badge-fg, #fff);
+	background: var(--flash-badge-bg, var(--flash-fg-muted));
+}
+
+.flash-message__icon-badge .material-symbols-rounded {
+	font-size: 1.2rem;
+	line-height: 1;
+	font-weight: 600;
+}
+
+.flash-message--success .flash-message__icon-badge {
+	--flash-badge-bg: var(--flash-success-badge-bg);
+	--flash-badge-fg: var(--flash-success-badge-fg);
+}
+
+.flash-message--error .flash-message__icon-badge {
+	--flash-badge-bg: var(--flash-error-badge-bg);
+	--flash-badge-fg: var(--flash-error-badge-fg);
+}
+
+.flash-message--info .flash-message__icon-badge {
+	--flash-badge-bg: var(--flash-info-badge-bg);
+	--flash-badge-fg: var(--flash-info-badge-fg);
+}
+
+.flash-message--warning .flash-message__icon-badge {
+	--flash-badge-bg: var(--flash-warning-badge-bg);
+	--flash-badge-fg: var(--flash-warning-badge-fg);
+}
+
+.flash-message__body {
+	flex: 1;
+	min-width: 0;
+	display: grid;
+	gap: 0.15rem;
+	text-align: left;
+}
+
+.flash-message__title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	line-height: 1.25;
+	color: var(--flash-title, var(--flash-fg));
+}
+
+.flash-message__text {
+	margin: 0;
+	font-size: 0.8125rem;
+	font-weight: 500;
+	line-height: 1.35;
+	color: var(--flash-text, var(--flash-fg-muted));
+}
+
+.flash-message--success .flash-message__title {
+	--flash-title: var(--flash-success-title);
+}
+
+.flash-message--success .flash-message__text {
+	--flash-text: var(--flash-success-text);
+}
+
+.flash-message--error .flash-message__title {
+	--flash-title: var(--flash-error-title);
+}
+
+.flash-message--error .flash-message__text {
+	--flash-text: var(--flash-error-text);
+}
+
+.flash-message--info .flash-message__title {
+	--flash-title: var(--flash-info-title);
+}
+
+.flash-message--info .flash-message__text {
+	--flash-text: var(--flash-info-text);
+}
+
+.flash-message--warning .flash-message__title {
+	--flash-title: var(--flash-warning-title);
+}
+
+.flash-message--warning .flash-message__text {
+	--flash-text: var(--flash-warning-text);
 }
 
 .flash-message__close {
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	margin: -0.25rem -0.25rem -0.25rem 0;
+	padding: 0.35rem;
+	border: none;
+	border-radius: 9999px;
+	background: transparent;
 	color: var(--flash-fg-muted);
+	cursor: pointer;
+	transition:
+		background 160ms ease,
+		color 160ms ease;
 }
 
 .flash-message__close:hover {
 	background: var(--flash-close-hover);
 	color: var(--flash-fg);
+}
+
+.flash-message__close:focus-visible {
+	outline: 2px solid color-mix(in srgb, var(--flash-fg) 35%, transparent);
+	outline-offset: 2px;
+}
+
+.flash-message__close .material-symbols-rounded {
+	font-size: 1.1rem;
+	line-height: 1;
+}
+
+.flash-message--success .flash-message__close {
+	color: var(--flash-success-close);
+}
+
+.flash-message--success .flash-message__close:hover {
+	background: var(--flash-success-close-hover);
+	color: var(--flash-success-title);
+}
+
+.flash-message--error .flash-message__close {
+	color: var(--flash-error-close);
+}
+
+.flash-message--error .flash-message__close:hover {
+	background: var(--flash-error-close-hover);
+	color: var(--flash-error-title);
+}
+
+.flash-message--info .flash-message__close {
+	color: var(--flash-info-close);
+}
+
+.flash-message--info .flash-message__close:hover {
+	background: var(--flash-info-close-hover);
+	color: var(--flash-info-title);
+}
+
+.flash-message--warning .flash-message__close {
+	color: var(--flash-warning-close);
+}
+
+.flash-message--warning .flash-message__close:hover {
+	background: var(--flash-warning-close-hover);
+	color: var(--flash-warning-title);
 }
 
 .inline-feedback {

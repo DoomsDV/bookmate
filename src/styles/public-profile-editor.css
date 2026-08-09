@@ -596,8 +596,20 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 	color: var(--on-surface-variant);
 }
 
+.ppe-appearance-row {
+	display: grid;
+	gap: 0.85rem;
+	grid-template-columns: 1fr;
+}
+
 .ppe-field--logo {
 	max-width: 18rem;
+}
+
+@media (min-width: 640px) {
+	.ppe-field--banner {
+		max-width: 50%;
+	}
 }
 
 .ppe-dropzone {

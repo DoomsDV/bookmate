@@ -6,6 +6,16 @@ export type FlashMessageDetail = {
 	autoHideMs?: number;
 };
 
+export const FLASH_TONE_META: Record<
+	FlashMessageType,
+	{ title: string; icon: string }
+> = {
+	success: { title: 'Listo', icon: 'check' },
+	error: { title: 'Error', icon: 'close' },
+	info: { title: 'Información', icon: 'info' },
+	warning: { title: 'Atención', icon: 'priority_high' },
+};
+
 const FLASH_NAV_STASH_KEY = 'bookmate_flash_nav_stash';
 
 const pendingFlashMessages: FlashMessageDetail[] = [];
