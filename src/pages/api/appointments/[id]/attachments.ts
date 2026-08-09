@@ -22,9 +22,26 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) =>
 		createError: createAppointmentsError,
 	});
 
+// Hardening (auditoría ORDS R2/R4): debe coincidir con ATTACHMENT_MAX_BYTES en PL/SQL
+// (PKG_AOX_APPOINTMENT_API.pr_upload_attachment). El límite real y autoritativo vive
+// en PL/SQL; esto solo evita reenviar/parsear payloads enormes en el BFF.
+const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+const MAX_ATTACHMENT_CONTENT_LENGTH = Math.ceil((MAX_ATTACHMENT_BYTES * 4) / 3) + 4096;
+
+const assertContentLengthWithinLimit = (request: Request) => {
+	const contentLength = Number(request.headers.get('content-length') || 0);
+	if (contentLength > 0 && contentLength > MAX_ATTACHMENT_CONTENT_LENGTH) {
+		throw new AppointmentsApiError(
+			`El archivo adjunto supera el tamaño máximo permitido (${Math.floor(MAX_ATTACHMENT_BYTES / 1024 / 1024)} MB).`,
+			413
+		);
+	}
+};
+
 export const POST: APIRoute = async ({ request, params, locals }) => {
 	try {
 		const token = requireToken(locals.token);
+		assertContentLengthWithinLimit(request);
 		const appointmentId = toPositiveInt(params.id, 0);
 		if (!appointmentId) {
 			throw new AppointmentsApiError('ID de cita invalido.', 400);
