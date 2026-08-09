@@ -3,13 +3,28 @@ import {
 	type AppointmentAiDraft,
 	type StoredAppointmentAiDraft,
 } from '../lib/appointment-ai-types';
-import { showAppointmentQuickTour } from '../lib/appointment-voice-tour';
 import { destroyActiveBookmateTour } from '../lib/product-tour';
 import { AppointmentVoiceVisualizer } from './appointment-voice-visualizer';
 
 type VoiceOverlayMode = 'navigate' | 'inline';
 type VoiceUiState = 'idle' | 'recording' | 'paused' | 'collapsing' | 'processing' | 'success';
 type VoiceTab = 'voice' | 'scan';
+
+type VoiceUiNodes = {
+	recordButton: HTMLButtonElement | null;
+	restartButton: HTMLButtonElement | null;
+	stopButton: HTMLButtonElement | null;
+	primaryIcon: HTMLElement | null;
+	liveLabel: HTMLElement | null;
+	controlsNode: HTMLElement | null;
+	livebar: HTMLElement | null;
+	actionsNode: HTMLElement | null;
+	processingNode: HTMLElement | null;
+	stageNode: HTMLElement | null;
+	statusNode: HTMLElement | null;
+	subtitle: HTMLElement | null;
+	helpButton: HTMLButtonElement | null;
+};
 
 const MAX_RECORDING_MS = 60_000;
 const MAX_SCAN_IMAGE_BYTES = 12 * 1024 * 1024;
@@ -34,10 +49,12 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#autoCloseTimer: number | null = null;
 	#closeTimer: number | null = null;
 	#settleOpenHandler: ((event: AnimationEvent) => void) | null = null;
+	#settleOpenFallback: number | null = null;
 	#draftAbortController: AbortController | null = null;
 	#session = 0;
 	#tab: VoiceTab = 'voice';
 	#scanAbortController: AbortController | null = null;
+	#ui: VoiceUiNodes | null = null;
 
 	private static readonly STATUS_LABELS: Record<VoiceUiState, string> = {
 		idle: 'Toca el micrófono y describe la cita.',
@@ -53,6 +70,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.#bound = true;
 		this.#listeners = new AbortController();
 		const signal = this.#listeners.signal;
+		this.#ui = this.cacheUiNodes();
 
 		const visualizerRoot = this.querySelector<HTMLElement>('[data-voice-overlay-visualizer]');
 		if (visualizerRoot) {
@@ -78,7 +96,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			'click',
 			(event) => {
 				event.preventDefault();
-				showAppointmentQuickTour(this.#tab);
+				void this.openQuickTour();
 			},
 			{ signal }
 		);
@@ -188,6 +206,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.cancelAll(true);
 		this.#visualizer?.destroy();
 		this.#visualizer = null;
+		this.#ui = null;
 	}
 
 	open(options: { mode?: VoiceOverlayMode } = {}) {
@@ -206,31 +225,66 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		this.#session += 1;
 		this.stopElapsedTimer();
 
+		if (this.#settleOpenFallback) {
+			window.clearTimeout(this.#settleOpenFallback);
+			this.#settleOpenFallback = null;
+		}
 		if (this.#settleOpenHandler) {
 			shell.removeEventListener('animationend', this.#settleOpenHandler);
 			this.#settleOpenHandler = null;
 		}
-		this.#settleOpenHandler = (event: AnimationEvent) => {
-			if (event.target !== shell) return;
+		const settleOpen = () => {
 			shell.classList.add('is-settled');
 			if (this.#settleOpenHandler) {
 				shell.removeEventListener('animationend', this.#settleOpenHandler);
 				this.#settleOpenHandler = null;
 			}
+			if (this.#settleOpenFallback) {
+				window.clearTimeout(this.#settleOpenFallback);
+				this.#settleOpenFallback = null;
+			}
+		};
+		this.#settleOpenHandler = (event: AnimationEvent) => {
+			if (event.target !== shell) return;
+			settleOpen();
 		};
 		shell.addEventListener('animationend', this.#settleOpenHandler);
+		this.#settleOpenFallback = window.setTimeout(settleOpen, 220);
 
 		// Abrir primero para que la animación no espere el reset visual del overlay.
 		if (!shell.open) shell.showModal();
 
+		// Un solo reset: setTab → setState('idle') pone visualizer estático (sin rAF).
 		requestAnimationFrame(() => {
 			if (!this.isConnected) return;
 			this.setTab('voice');
-			this.setState('idle');
 			this.setError('');
 			this.setTranscript('');
-			this.#visualizer?.setMode('idle');
 		});
+	}
+
+	private cacheUiNodes(): VoiceUiNodes {
+		return {
+			recordButton: this.querySelector<HTMLButtonElement>('[data-voice-overlay-record]'),
+			restartButton: this.querySelector<HTMLButtonElement>('[data-voice-overlay-restart]'),
+			stopButton: this.querySelector<HTMLButtonElement>('[data-voice-overlay-stop]'),
+			primaryIcon: this.querySelector<HTMLElement>('[data-voice-overlay-primary-icon]'),
+			liveLabel: this.querySelector<HTMLElement>('[data-voice-overlay-live-label]'),
+			controlsNode: this.querySelector<HTMLElement>('[data-voice-overlay-controls]'),
+			livebar: this.querySelector<HTMLElement>('[data-voice-overlay-livebar]'),
+			actionsNode: this.querySelector<HTMLElement>('[data-voice-overlay-actions]'),
+			processingNode: this.querySelector<HTMLElement>('[data-voice-overlay-processing]'),
+			stageNode: this.querySelector<HTMLElement>('[data-voice-overlay-stage]'),
+			statusNode: this.querySelector<HTMLElement>('[data-voice-overlay-status]'),
+			subtitle: this.querySelector<HTMLElement>('[data-voice-overlay-subtitle]'),
+			helpButton: this.querySelector<HTMLButtonElement>('[data-voice-overlay-tour-help]'),
+		};
+	}
+
+	private async openQuickTour() {
+		const { showAppointmentQuickTour } = await import('../lib/appointment-voice-tour');
+		if (!this.isConnected) return;
+		showAppointmentQuickTour(this.#tab);
 	}
 
 	close() {
@@ -241,6 +295,15 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		}
 
 		if (shell.classList.contains('is-closing')) return;
+
+		if (this.#settleOpenFallback) {
+			window.clearTimeout(this.#settleOpenFallback);
+			this.#settleOpenFallback = null;
+		}
+		if (this.#settleOpenHandler) {
+			shell.removeEventListener('animationend', this.#settleOpenHandler);
+			this.#settleOpenHandler = null;
+		}
 
 		// Cortar micrófono/visualizer de inmediato para que el cierre se sienta al toque.
 		this.cancelAll(true);
@@ -308,13 +371,13 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			button.setAttribute('aria-selected', isActive ? 'true' : 'false');
 		});
 
-		const subtitle = this.querySelector<HTMLElement>('[data-voice-overlay-subtitle]');
+		const subtitle = this.#ui?.subtitle;
 		if (subtitle) {
 			subtitle.textContent =
 				tab === 'scan' ? 'Escaneá tu agenda escrita a mano' : 'Describe la cita con tu voz';
 		}
 
-		const helpButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-tour-help]');
+		const helpButton = this.#ui?.helpButton;
 		if (helpButton) {
 			helpButton.setAttribute(
 				'aria-label',
@@ -518,7 +581,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	};
 
 	private updateStatus(state: VoiceUiState) {
-		const statusNode = this.querySelector<HTMLElement>('[data-voice-overlay-status]');
+		const statusNode = this.#ui?.statusNode;
 		if (!statusNode) return;
 
 		const nextText = AppointmentVoiceOverlay.STATUS_LABELS[state];
@@ -642,16 +705,17 @@ class AppointmentVoiceOverlay extends HTMLElement {
 
 	private setState(state: VoiceUiState) {
 		this.dataset.voiceState = state;
-		const recordButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-record]');
-		const restartButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-restart]');
-		const stopButton = this.querySelector<HTMLButtonElement>('[data-voice-overlay-stop]');
-		const primaryIcon = this.querySelector<HTMLElement>('[data-voice-overlay-primary-icon]');
-		const liveLabel = this.querySelector<HTMLElement>('[data-voice-overlay-live-label]');
-		const controlsNode = this.querySelector<HTMLElement>('[data-voice-overlay-controls]');
-		const livebar = this.querySelector<HTMLElement>('[data-voice-overlay-livebar]');
-		const actionsNode = this.querySelector<HTMLElement>('[data-voice-overlay-actions]');
-		const processingNode = this.querySelector<HTMLElement>('[data-voice-overlay-processing]');
-		const stageNode = this.querySelector<HTMLElement>('[data-voice-overlay-stage]');
+		const ui = this.#ui;
+		const recordButton = ui?.recordButton ?? null;
+		const restartButton = ui?.restartButton ?? null;
+		const stopButton = ui?.stopButton ?? null;
+		const primaryIcon = ui?.primaryIcon ?? null;
+		const liveLabel = ui?.liveLabel ?? null;
+		const controlsNode = ui?.controlsNode ?? null;
+		const livebar = ui?.livebar ?? null;
+		const actionsNode = ui?.actionsNode ?? null;
+		const processingNode = ui?.processingNode ?? null;
+		const stageNode = ui?.stageNode ?? null;
 
 		const isLive = state === 'recording' || state === 'paused';
 		const isBusy = state === 'processing' || state === 'collapsing' || state === 'success';
@@ -699,13 +763,11 @@ class AppointmentVoiceOverlay extends HTMLElement {
 
 		processingNode?.classList.toggle('hidden', state !== 'processing');
 
-		if (state === 'idle') {
-			this.#visualizer?.setAnalyser(null);
+		if (state === 'idle' || state === 'paused') {
+			if (state === 'idle') this.#visualizer?.setAnalyser(null);
 			this.#visualizer?.setMode('idle');
 		} else if (state === 'recording') {
 			this.#visualizer?.setMode('live');
-		} else if (state === 'paused') {
-			this.#visualizer?.setMode('idle');
 		} else if (state === 'processing' || state === 'collapsing') {
 			this.#visualizer?.setAnalyser(null);
 		} else if (state === 'success') {

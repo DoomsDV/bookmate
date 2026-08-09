@@ -210,12 +210,13 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		color: var(--on-surface);
 	}
 
-	.appointment-voice-shell[open] {
+	.appointment-voice-shell[open]:not(.is-settled) {
 		display: block;
 		will-change: transform, opacity;
 	}
 
 	.appointment-voice-shell[open].is-settled {
+		display: block;
 		will-change: auto;
 	}
 
@@ -242,8 +243,11 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.appointment-voice-shell[open]::backdrop {
-		will-change: opacity;
 		animation: appointment-voice-backdrop-in var(--modal-open-duration, 150ms) var(--modal-easing, cubic-bezier(0.4, 0, 0.2, 1));
+	}
+
+	.appointment-voice-shell[open]:not(.is-settled)::backdrop {
+		will-change: opacity;
 	}
 
 	.appointment-voice-shell[open].is-settled::backdrop {
@@ -943,11 +947,9 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		background:
 			linear-gradient(
 				165deg,
-				color-mix(in srgb, #ffffff 28%, transparent),
-				color-mix(in srgb, var(--surface-variant) 55%, transparent)
+				color-mix(in srgb, #ffffff 72%, var(--surface-variant) 28%),
+				color-mix(in srgb, var(--surface-variant) 88%, #ffffff 12%)
 			);
-		backdrop-filter: blur(10px) saturate(1.25);
-		-webkit-backdrop-filter: blur(10px) saturate(1.25);
 		color: var(--on-surface);
 		box-shadow:
 			0 10px 28px rgba(15, 23, 42, 0.1),
@@ -959,6 +961,19 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			border-color 160ms ease,
 			opacity 160ms ease,
 			box-shadow 160ms ease;
+	}
+
+	/* Blur glass solo al grabar: en idle el backdrop-filter suma costo al abrir. */
+	appointment-voice-overlay[data-voice-state='recording'] .appointment-voice-ctrl,
+	appointment-voice-overlay[data-voice-state='paused'] .appointment-voice-ctrl {
+		background:
+			linear-gradient(
+				165deg,
+				color-mix(in srgb, #ffffff 28%, transparent),
+				color-mix(in srgb, var(--surface-variant) 55%, transparent)
+			);
+		backdrop-filter: blur(10px) saturate(1.25);
+		-webkit-backdrop-filter: blur(10px) saturate(1.25);
 	}
 
 	.appointment-voice-ctrl--side {
@@ -1028,6 +1043,11 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		box-shadow:
 			0 10px 26px rgba(66, 133, 244, 0.28),
 			inset 0 1px 0 rgba(255, 255, 255, 0.28);
+	}
+
+	/* Pulse solo tras settle: no competir con la animación de apertura. */
+	appointment-voice-overlay[data-voice-state='idle']:has(.appointment-voice-shell[open].is-settled)
+		.appointment-voice-ctrl--primary {
 		animation: appointment-voice-mic-button-pulse 2.4s ease-in-out infinite;
 	}
 
@@ -1104,7 +1124,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		filter: blur(28px);
 		opacity: 0.54;
 		animation: appointment-voice-blob-drift 9s ease-in-out infinite;
-		will-change: transform, opacity;
 	}
 
 	/* Pausar blobs/magic cuando no se graba ni procesa (idle consume GPU). */
@@ -1197,7 +1216,11 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			scale(var(--magic-scale))
 			rotate(var(--magic-rotate));
 		transform-origin: center;
-		transition: transform 70ms linear, opacity 180ms ease;
+		transition: opacity 180ms ease;
+	}
+
+	.appointment-voice-visual[data-visualizer-mode='live'] .appointment-voice-visual__magic,
+	.appointment-voice-visual[data-visualizer-mode='collapsing'] .appointment-voice-visual__magic {
 		will-change: transform;
 	}
 

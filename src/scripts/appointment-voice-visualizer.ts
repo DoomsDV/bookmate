@@ -8,6 +8,7 @@ type DotState = {
 
 const COLLAPSE_MS = 640;
 const RESTING_DOT: DotState = { y: 0, scaleX: 1, scaleY: 1 };
+const IDLE_VOICE_LEVEL = 0.05;
 
 export class AppointmentVoiceVisualizer {
 	#root: HTMLElement;
@@ -49,15 +50,26 @@ export class AppointmentVoiceVisualizer {
 			this.stop();
 			this.#level = 0;
 			this.#emitLevel(0);
+			this.resetMagicGlow();
 			this.resetDots();
 			return;
 		}
 
-		if (mode === 'idle' || mode === 'live') {
-			this.#current = this.createDotStates();
-			this.#target = this.createDotStates();
-			this.applyDots();
+		if (mode === 'idle') {
+			// Idle estático: sin rAF. El look lo lleva CSS; vars en reposo.
+			this.stop();
+			this.#level = IDLE_VOICE_LEVEL;
+			this.#phase = 0;
+			this.resetMagicGlow();
+			this.#emitLevel(IDLE_VOICE_LEVEL);
+			this.resetDots();
+			return;
 		}
+
+		// live: arrancar loop de animación
+		this.#current = this.createDotStates();
+		this.#target = this.createDotStates();
+		this.applyDots();
 
 		if (!this.#raf) {
 			this.#tick();
@@ -104,6 +116,7 @@ export class AppointmentVoiceVisualizer {
 		this.stop();
 		this.#level = 0;
 		this.#emitLevel(0);
+		this.resetMagicGlow();
 		this.resetDots();
 	}
 
@@ -125,11 +138,6 @@ export class AppointmentVoiceVisualizer {
 			}
 			const rms = Math.sqrt(sum / this.#dataArray.length);
 			this.#level += (Math.min(1, rms * 9.2) - this.#level) * 0.48;
-			return;
-		}
-
-		if (this.#mode === 'idle') {
-			this.#level += (0.05 - this.#level) * 0.06;
 			return;
 		}
 
@@ -162,19 +170,7 @@ export class AppointmentVoiceVisualizer {
 		const collapseScale = 1 - collapse;
 
 		this.#target.forEach((_, index) => {
-			const idleWave = Math.sin(this.#phase * 1.25 + index * 0.86);
 			const alternate = index % 2 === 0 ? -1 : 1;
-
-			if (this.#mode === 'idle') {
-				const y = idleWave * 3.4;
-				this.#target[index] = {
-					y,
-					scaleX: 1 + Math.abs(idleWave) * 0.04,
-					scaleY: 1 + Math.abs(idleWave) * 0.08,
-				};
-				return;
-			}
-
 			const energy = this.#mode === 'live' ? this.readDotEnergy(index) : this.#level;
 			const lift = (8 + energy * 34) * alternate;
 			const pulse = Math.sin(this.#phase * 2.6 + index * 0.72) * (3 + energy * 6);
@@ -188,7 +184,7 @@ export class AppointmentVoiceVisualizer {
 	}
 
 	private smoothDots() {
-		const easing = this.#mode === 'live' ? 0.42 : this.#mode === 'idle' ? 0.16 : 0.14;
+		const easing = this.#mode === 'live' ? 0.42 : 0.14;
 		this.#current.forEach((current, index) => {
 			const target = this.#target[index] ?? RESTING_DOT;
 			current.y += (target.y - current.y) * easing;
@@ -198,6 +194,7 @@ export class AppointmentVoiceVisualizer {
 	}
 
 	private applyDots() {
+		if (this.#dots.length === 0) return;
 		this.#dots.forEach((dot, index) => {
 			const state = this.#current[index] ?? RESTING_DOT;
 			dot.style.setProperty('--dot-y', `${state.y.toFixed(2)}px`);
@@ -219,6 +216,13 @@ export class AppointmentVoiceVisualizer {
 		this.#root.style.setProperty('--magic-y', `${driftY.toFixed(2)}px`);
 		this.#root.style.setProperty('--magic-scale', scale.toFixed(3));
 		this.#root.style.setProperty('--magic-rotate', `${rotate.toFixed(2)}deg`);
+	}
+
+	private resetMagicGlow() {
+		this.#root.style.setProperty('--magic-x', '0px');
+		this.#root.style.setProperty('--magic-y', '0px');
+		this.#root.style.setProperty('--magic-scale', '1');
+		this.#root.style.setProperty('--magic-rotate', '0deg');
 	}
 
 	private resetDots() {
@@ -252,7 +256,11 @@ export class AppointmentVoiceVisualizer {
 	}
 
 	#tick = () => {
-		if (this.#mode === 'off' || (typeof document !== 'undefined' && document.hidden)) {
+		if (
+			this.#mode === 'off' ||
+			this.#mode === 'idle' ||
+			(typeof document !== 'undefined' && document.hidden)
+		) {
 			this.stop();
 			return;
 		}
@@ -262,12 +270,7 @@ export class AppointmentVoiceVisualizer {
 		}
 
 		this.readLevel();
-		this.#phase +=
-			this.#mode === 'live'
-				? 0.11 + this.#level * 0.2
-				: this.#mode === 'collapsing'
-					? 0.055
-					: 0.032;
+		this.#phase += this.#mode === 'live' ? 0.11 + this.#level * 0.2 : 0.055;
 
 		this.updateDotTargets();
 		this.smoothDots();
@@ -278,4 +281,3 @@ export class AppointmentVoiceVisualizer {
 		this.#raf = requestAnimationFrame(this.#tick);
 	};
 }
-
