@@ -1,4 +1,5 @@
 import { createIdempotencyKey } from '../lib/idempotency';
+import { initPlanHistoryFilters } from './plan-history-filters';
 
 interface FlashApi {
 	show: (opts: { message: string; type?: 'success' | 'error' | 'info' | 'warning'; autoHideMs?: number }) => void;
@@ -56,6 +57,8 @@ export function initPlanPage() {
 	});
 	const initialTab = new URLSearchParams(window.location.search).get('tab');
 	if (initialTab && VALID_TABS.has(initialTab)) setTab(initialTab);
+
+	initPlanHistoryFilters(root);
 
 	document.querySelectorAll<HTMLButtonElement>('[data-plan-tab-jump]').forEach((btn) => {
 		btn.addEventListener('click', () => {

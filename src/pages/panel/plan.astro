@@ -271,6 +271,7 @@ const showPaymentMethod = isAdmin && !!current && !current.billing_exempt;
 const PLAN_TABS = new Set(['plan', 'billing', 'history']);
 const tabParam = Astro.url.searchParams.get('tab') || 'plan';
 const activeTab = PLAN_TABS.has(tabParam) ? tabParam : 'plan';
+const historyInvoices = billing?.invoices ?? [];
 
 const isAtMaxPlan =
 	!!current &&
@@ -369,7 +370,6 @@ const defaultCardHint = defaultCard
 				<main class="w-full max-w-full overflow-x-hidden px-4 py-4 sm:px-6 sm:py-8 lg:px-8">
 					<div class="grid w-full gap-6 sm:gap-8">
 						<header class="grid gap-1">
-							<p class="text-xs font-bold uppercase tracking-[0.2em] text-(--on-surface-variant)">Facturación</p>
 							<h1 class="m-0 text-3xl font-extrabold tracking-tight text-(--on-surface) sm:text-4xl">Plan y suscripción</h1>
 						</header>
 
@@ -958,7 +958,7 @@ const defaultCardHint = defaultCard
 															fill="none"
 															stroke="currentColor"
 															stroke-width="1.25"
-															stroke-dasharray="5.5 4.5"
+															stroke-dasharray="2.5 2"
 															stroke-linecap="round"
 															vector-effect="non-scaling-stroke"
 														/>
@@ -1097,80 +1097,323 @@ const defaultCardHint = defaultCard
 											</p>
 										</div>
 
-										{(billing?.invoices?.length ?? 0) === 0 ? (
-											<div class="plan-billing-empty">
-												<span class="material-symbols-rounded text-[1.5rem] text-(--on-surface-variant)">receipt_long</span>
-												<p class="m-0 text-[0.9rem] font-semibold text-(--on-surface-variant)">
+										<select
+											data-plan-history-date-preset
+											hidden
+											class="hidden"
+											aria-hidden="true"
+											tabindex="-1"
+										>
+											<option value="none">Todo el historial</option>
+											<option value="this_month">Este mes</option>
+											<option value="last_month">Mes pasado</option>
+											<option value="custom">Personalizado</option>
+										</select>
+
+										<div class="flex items-start gap-2">
+											<div class="hidden min-w-0 flex-1 flex-wrap gap-2 md:flex" role="tablist" aria-label="Estado">
+												<button type="button" data-plan-history-tab="all" class="plan-history-tab is-active">Todos</button>
+												<button type="button" data-plan-history-tab="paid" class="plan-history-tab">Pagados</button>
+												<button type="button" data-plan-history-tab="pending" class="plan-history-tab">Pendientes</button>
+												<button type="button" data-plan-history-tab="failed" class="plan-history-tab">Fallidos</button>
+												<button type="button" data-plan-history-tab="void" class="plan-history-tab">Anulados</button>
+											</div>
+											<button
+												type="button"
+												class="plan-history-period-filter-btn relative ml-auto flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+												data-plan-history-open-period
+												aria-label="Filtrar por periodo"
+												aria-haspopup="dialog"
+												aria-controls="plan-history-period-filter-sheet"
+												aria-pressed="false"
+											>
+												<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
+												<span class="plan-history-period-filter-badge hidden" data-plan-history-period-badge aria-hidden="true"></span>
+											</button>
+										</div>
+
+										<div
+											class="plan-history-results overflow-hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright)"
+											data-plan-history-results
+										>
+											<div class="plan-invoice-table-wrap hidden md:block" data-plan-history-table-wrap>
+												<table class="plan-invoice-table">
+													<thead>
+														<tr>
+															<th>Fecha</th>
+															<th>Detalle</th>
+															<th>Monto</th>
+															<th>Estado</th>
+														</tr>
+													</thead>
+													<tbody>
+														{historyInvoices.map((inv) => {
+															const st = invoiceStatusMeta(inv.status);
+															const invoiceTs = inv.paid_at || inv.created_at;
+															return (
+																<tr
+																	data-plan-history-row
+																	data-invoice-status={inv.status}
+																	data-invoice-ts={invoiceTs}
+																>
+																	<td>{formatDateTimeEs(invoiceTs)}</td>
+																	<td>
+																		<span class="plan-invoice-desc">{inv.description || inv.invoice_type}</span>
+																		{inv.credit_applied > 0 ? (
+																			<small class="plan-invoice-credit">
+																				Crédito aplicado: {formatGs(inv.credit_applied)}
+																			</small>
+																		) : null}
+																	</td>
+																	<td class="plan-invoice-amount">{formatGs(inv.amount)}</td>
+																	<td>
+																		<span class={`plan-inv-badge plan-inv-${st.tone}`}>{st.label}</span>
+																	</td>
+																</tr>
+															);
+														})}
+													</tbody>
+												</table>
+											</div>
+
+											<div class="hidden plan-history-empty" data-plan-history-empty role="status">
+												<div class="plan-history-empty__icon" aria-hidden="true">
+													<span class="material-symbols-rounded">receipt_long</span>
+												</div>
+												<h2 class="plan-history-empty__title" data-plan-history-empty-title>No hay pagos</h2>
+												<p class="plan-history-empty__copy" data-plan-history-empty-copy>
 													Todavía no hay pagos registrados.
 												</p>
 											</div>
-										) : (
-											<>
-												<div class="plan-invoice-table-wrap hidden md:block">
-													<table class="plan-invoice-table">
-														<thead>
-															<tr>
-																<th>Fecha</th>
-																<th>Detalle</th>
-																<th>Monto</th>
-																<th>Estado</th>
-															</tr>
-														</thead>
-														<tbody>
-															{billing!.invoices.map((inv) => {
-																const st = invoiceStatusMeta(inv.status);
-																return (
-																	<tr>
-																		<td>
-																			{formatDateTimeEs(inv.paid_at || inv.created_at)}
-																		</td>
-																		<td>
-																			<span class="plan-invoice-desc">{inv.description || inv.invoice_type}</span>
-																			{inv.credit_applied > 0 ? (
-																				<small class="plan-invoice-credit">
-																					Crédito aplicado: {formatGs(inv.credit_applied)}
-																				</small>
-																			) : null}
-																		</td>
-																		<td class="plan-invoice-amount">{formatGs(inv.amount)}</td>
-																		<td>
-																			<span class={`plan-inv-badge plan-inv-${st.tone}`}>{st.label}</span>
-																		</td>
-																	</tr>
-																);
-															})}
-														</tbody>
-													</table>
-												</div>
-												<div class="grid gap-3 md:hidden">
-													{billing!.invoices.map((inv) => {
-														const st = invoiceStatusMeta(inv.status);
-														return (
-															<article class="plan-invoice-card">
-																<div class="flex items-start justify-between gap-3">
-																	<div class="grid gap-1">
-																		<span class="text-[0.95rem] font-bold text-(--on-surface)">
-																			{inv.description || inv.invoice_type}
+
+											<div class="plan-history-cards grid gap-3 md:hidden" data-plan-history-cards>
+												{historyInvoices.map((inv) => {
+													const st = invoiceStatusMeta(inv.status);
+													const invoiceTs = inv.paid_at || inv.created_at;
+													return (
+														<article
+															class="plan-invoice-card"
+															data-plan-history-row
+															data-invoice-status={inv.status}
+															data-invoice-ts={invoiceTs}
+														>
+															<div class="flex items-start justify-between gap-3">
+																<div class="grid gap-1">
+																	<span class="text-[0.95rem] font-bold text-(--on-surface)">
+																		{inv.description || inv.invoice_type}
+																	</span>
+																	<span class="text-[0.8rem] font-medium text-(--on-surface-variant)">
+																		{formatDateTimeEs(invoiceTs)}
+																	</span>
+																	{inv.credit_applied > 0 ? (
+																		<span class="text-[0.78rem] font-medium text-(--primary)">
+																			Crédito: {formatGs(inv.credit_applied)}
 																		</span>
-																		<span class="text-[0.8rem] font-medium text-(--on-surface-variant)">
-																			{formatDateTimeEs(inv.paid_at || inv.created_at)}
-																		</span>
-																		{inv.credit_applied > 0 ? (
-																			<span class="text-[0.78rem] font-medium text-(--primary)">
-																				Crédito: {formatGs(inv.credit_applied)}
-																			</span>
-																		) : null}
-																	</div>
-																	<span class={`plan-inv-badge plan-inv-${st.tone}`}>{st.label}</span>
+																	) : null}
 																</div>
-																<span class="text-lg font-extrabold text-(--on-surface)">{formatGs(inv.amount)}</span>
-															</article>
-														);
-													})}
-												</div>
-											</>
-										)}
+																<span class={`plan-inv-badge plan-inv-${st.tone}`}>{st.label}</span>
+															</div>
+															<span class="text-lg font-extrabold text-(--on-surface)">{formatGs(inv.amount)}</span>
+														</article>
+													);
+												})}
+											</div>
+										</div>
 									</section>
+
+									<dialog
+										id="plan-history-period-filter-sheet"
+										class="plan-history-period-filter-sheet"
+										data-plan-history-period-sheet
+										aria-labelledby="plan-history-period-filter-title"
+									>
+										<div class="plan-history-period-filter-sheet__handle" aria-hidden="true">
+											<span></span>
+										</div>
+										<div class="plan-history-period-filter-sheet__header">
+											<h2 id="plan-history-period-filter-title" class="m-0 text-[1.05rem] font-extrabold tracking-tight">
+												<span class="md:hidden">Filtros</span>
+												<span class="hidden md:inline">Periodo</span>
+											</h2>
+											<button
+												type="button"
+												class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface)"
+												data-plan-history-close-period
+												aria-label="Cerrar filtro"
+											>
+												<span class="material-symbols-rounded text-[1.3rem]">close</span>
+											</button>
+										</div>
+										<div class="plan-history-period-filter-sheet__body">
+											<div class="plan-history-filter-group md:hidden">
+												<label class="plan-history-filter-group__label" for="plan-history-status-select">Estado</label>
+												<div class="plan-history-filter-select">
+													<select id="plan-history-status-select" data-plan-history-status-select aria-label="Estado">
+														<option value="all">Todos</option>
+														<option value="paid">Pagados</option>
+														<option value="pending">Pendientes</option>
+														<option value="failed">Fallidos</option>
+														<option value="void">Anulados</option>
+													</select>
+													<span class="material-symbols-rounded plan-history-filter-select__chevron" aria-hidden="true">expand_more</span>
+												</div>
+											</div>
+											<p class="plan-history-filter-group__label md:hidden">Periodo</p>
+											<div class="plan-history-period-filter-sheet__list" role="listbox" aria-label="Periodo">
+												<button type="button" class="plan-history-period-option is-selected" data-plan-history-period-option="none" role="option">
+													<span>Todo el historial</span>
+													<span class="material-symbols-rounded" aria-hidden="true">check</span>
+												</button>
+												<button type="button" class="plan-history-period-option" data-plan-history-period-option="this_month" role="option">
+													<span>Este mes</span>
+													<span class="material-symbols-rounded" aria-hidden="true">check</span>
+												</button>
+												<button type="button" class="plan-history-period-option" data-plan-history-period-option="last_month" role="option">
+													<span>Mes pasado</span>
+													<span class="material-symbols-rounded" aria-hidden="true">check</span>
+												</button>
+												<button type="button" class="plan-history-period-option" data-plan-history-period-option="custom" role="option">
+													<span>Personalizado</span>
+													<span class="material-symbols-rounded" aria-hidden="true">check</span>
+												</button>
+											</div>
+											<div class="plan-history-period-custom hidden" data-plan-history-custom-dates>
+												<label class="grid gap-1.5 text-[0.85rem] font-bold text-(--on-surface)">
+													Desde
+													<span class="plan-history-date-field">
+														<input
+															type="text"
+															class="plan-history-date-field__text"
+															data-plan-history-date-from-text
+															inputmode="numeric"
+															autocomplete="off"
+															placeholder="dd/mm/aaaa"
+															maxlength="10"
+															aria-label="Fecha desde"
+														/>
+														<input type="hidden" data-plan-history-date-from value="" />
+														<button
+															type="button"
+															class="plan-history-date-field__pick"
+															data-plan-history-date-from-pick
+															aria-label="Elegir fecha desde"
+														>
+															<span class="material-symbols-rounded" aria-hidden="true">calendar_month</span>
+														</button>
+													</span>
+												</label>
+												<label class="grid gap-1.5 text-[0.85rem] font-bold text-(--on-surface)">
+													Hasta
+													<span class="plan-history-date-field">
+														<input
+															type="text"
+															class="plan-history-date-field__text"
+															data-plan-history-date-to-text
+															inputmode="numeric"
+															autocomplete="off"
+															placeholder="dd/mm/aaaa"
+															maxlength="10"
+															aria-label="Fecha hasta"
+														/>
+														<input type="hidden" data-plan-history-date-to value="" />
+														<button
+															type="button"
+															class="plan-history-date-field__pick"
+															data-plan-history-date-to-pick
+															aria-label="Elegir fecha hasta"
+														>
+															<span class="material-symbols-rounded" aria-hidden="true">calendar_month</span>
+														</button>
+													</span>
+												</label>
+												<p class="hidden m-0 text-[0.82rem] font-semibold text-rose-500" data-plan-history-date-error></p>
+												<button
+													type="button"
+													class="plan-history-period-apply"
+													data-plan-history-apply-period
+												>
+													Aplicar
+												</button>
+											</div>
+
+											<dialog
+												class="plan-history-date-picker"
+												data-plan-history-date-picker
+												aria-labelledby="plan-history-date-picker-label"
+											>
+												<div class="dtp-card">
+													<div class="dtp-head">
+														<div class="dtp-head-row">
+															<p class="dtp-target-label" id="plan-history-date-picker-label" data-plan-history-dp-label>
+																Seleccionando fecha
+															</p>
+															<button
+																type="button"
+																class="dtp-icon-btn"
+																data-plan-history-dp-close
+																aria-label="Cerrar selector de fecha"
+															>
+																<span class="material-symbols-rounded text-[1.1rem]">close</span>
+															</button>
+														</div>
+
+														<div class="dtp-nav-row">
+															<div class="inline-flex items-center gap-1.5">
+																<select
+																	data-plan-history-dp-month
+																	class="dtp-select"
+																	aria-label="Seleccionar mes"
+																></select>
+																<select
+																	data-plan-history-dp-year
+																	class="dtp-select dtp-select--year"
+																	aria-label="Seleccionar año"
+																></select>
+															</div>
+															<div class="inline-flex items-center gap-1">
+																<button
+																	type="button"
+																	class="dtp-icon-btn"
+																	data-plan-history-dp-prev
+																	aria-label="Mes anterior"
+																>
+																	<span class="material-symbols-rounded text-[1.05rem]">chevron_left</span>
+																</button>
+																<button
+																	type="button"
+																	class="dtp-icon-btn"
+																	data-plan-history-dp-next
+																	aria-label="Mes siguiente"
+																>
+																	<span class="material-symbols-rounded text-[1.05rem]">chevron_right</span>
+																</button>
+															</div>
+														</div>
+
+														<div class="dtp-weekdays">
+															<span>Lun</span>
+															<span>Mar</span>
+															<span>Mié</span>
+															<span>Jue</span>
+															<span>Vie</span>
+															<span>Sáb</span>
+															<span>Dom</span>
+														</div>
+														<div class="dtp-days-grid" data-plan-history-dp-days></div>
+													</div>
+
+													<div class="dtp-foot">
+														<div class="dtp-foot-row plan-history-dp-foot-row">
+															<button type="button" class="dtp-action-btn" data-plan-history-dp-today>Hoy</button>
+															<button type="button" class="dtp-action-btn dtp-action-btn--primary" data-plan-history-dp-apply>
+																Hecho
+															</button>
+														</div>
+													</div>
+												</div>
+											</dialog>
+										</div>
+									</dialog>
 								</div>
 							</>
 						) : null}
@@ -2528,13 +2771,341 @@ const defaultCardHint = defaultCard
 		color: var(--on-surface);
 		text-align: right;
 	}
-	.plan-billing-empty {
+	.plan-history-tab {
+		border-radius: 999px;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.55rem 1rem;
+		font-size: 0.88rem;
+		font-weight: 700;
+		color: var(--on-surface);
+		cursor: pointer;
+	}
+	.plan-history-tab.is-active {
+		background: var(--primary-container);
+		color: var(--primary);
+		border-color: transparent;
+	}
+	[data-plan-history-table-wrap].is-empty,
+	[data-plan-history-cards].hidden {
+		display: none !important;
+	}
+	.plan-history-empty.hidden {
+		display: none;
+	}
+	.plan-history-empty {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		padding: 1.75rem 1.25rem;
+		text-align: center;
+		background: transparent;
+	}
+	.plan-history-empty__icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 3.5rem;
+		height: 3.5rem;
+		margin-bottom: 0.5rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+		color: var(--on-surface-variant);
+	}
+	.plan-history-empty__icon .material-symbols-rounded {
+		font-size: 1.75rem;
+	}
+	.plan-history-empty__title {
+		margin: 0;
+		font-size: 1.1rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+	.plan-history-empty__copy {
+		margin: 0;
+		max-width: 18rem;
+		font-size: 0.95rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+	.plan-history-period-filter-btn.is-active {
+		border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+		color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 10%, var(--surface-bright));
+	}
+	.plan-history-period-filter-badge {
+		position: absolute;
+		top: 0.45rem;
+		right: 0.45rem;
+		width: 0.45rem;
+		height: 0.45rem;
+		border-radius: 999px;
+		background: var(--primary);
+		box-shadow: 0 0 0 2px var(--surface-bright);
+	}
+	.plan-history-period-filter-sheet {
+		position: fixed;
+		inset: auto 0 0;
+		z-index: 80;
+		margin: 0;
+		width: 100vw;
+		max-width: none;
+		max-height: min(72dvh, 28rem);
+		border: 1px solid var(--shell-border);
+		border-bottom: 0;
+		border-radius: 1.6rem 1.6rem 0 0;
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		padding: 0;
+		overflow: hidden;
+		box-shadow: 0 -12px 40px rgb(0 0 0 / 0.18);
+	}
+	.plan-history-period-filter-sheet[open] {
+		display: flex;
+		flex-direction: column;
+	}
+	.plan-history-period-filter-sheet__handle {
+		display: flex;
+		justify-content: center;
+		padding: 0.65rem 0 0.15rem;
+	}
+	.plan-history-period-filter-sheet__handle span {
+		display: block;
+		width: 2.4rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 45%, transparent);
+	}
+	.plan-history-period-filter-sheet__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.35rem 1rem 0.75rem;
+		border-bottom: 1px solid var(--shell-border);
+	}
+	.plan-history-period-filter-sheet__body {
+		display: grid;
+		gap: 0.75rem;
+		padding: 0.75rem 0.85rem max(0.95rem, env(safe-area-inset-bottom));
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		min-height: 0;
+	}
+	.plan-history-period-filter-sheet__list {
+		display: grid;
+		gap: 0.35rem;
+	}
+	.plan-history-filter-group {
+		display: grid;
+		gap: 0.4rem;
+	}
+	.plan-history-filter-group__label {
+		display: block;
+		margin: 0;
+		padding: 0 0.25rem;
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+	.plan-history-filter-select {
+		position: relative;
+		display: flex;
+		align-items: center;
+	}
+	.plan-history-filter-select select {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 100%;
+		height: 3rem;
+		padding: 0 2.75rem 0 1rem;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		font-size: 0.95rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	}
+	.plan-history-filter-select select:focus {
+		outline: none;
+		border-color: var(--primary);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 12%, transparent);
+	}
+	.plan-history-filter-select__chevron {
+		position: absolute;
+		right: 0.85rem;
+		font-size: 1.4rem;
+		color: var(--on-surface-variant);
+		pointer-events: none;
+	}
+	.plan-history-period-option {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		width: 100%;
+		border: 1px solid transparent;
+		border-radius: 1rem;
+		background: transparent;
+		padding: 0.85rem 0.95rem;
+		text-align: left;
+		font-size: 0.95rem;
+		font-weight: 700;
+		color: var(--on-surface);
+		cursor: pointer;
+	}
+	.plan-history-period-option:hover {
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+	}
+	.plan-history-period-option.is-selected {
+		border-color: transparent;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+	}
+	.plan-history-period-option.is-selected:hover {
+		background: color-mix(in srgb, var(--primary) 18%, transparent);
+	}
+	.plan-history-period-option .material-symbols-rounded {
+		font-size: 1.2rem;
+		opacity: 0;
+	}
+	.plan-history-period-option.is-selected .material-symbols-rounded {
+		opacity: 1;
+	}
+	.plan-history-period-custom {
+		display: grid;
+		gap: 0.75rem;
+		padding-top: 0.25rem;
+		border-top: 1px solid var(--shell-border);
+	}
+	.plan-history-period-custom.hidden {
+		display: none;
+	}
+	.plan-history-date-field {
+		position: relative;
+		display: block;
+	}
+	.plan-history-date-field__text {
+		width: 100%;
+		border-radius: 1rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.75rem 2.75rem 0.75rem 0.95rem;
+		font-size: 0.95rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.02em;
+		color: var(--on-surface);
+		outline: none;
+		transition: border-color 140ms ease, box-shadow 140ms ease;
+	}
+	.plan-history-date-field__text::placeholder {
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		color: color-mix(in srgb, var(--on-surface-variant) 78%, transparent);
+	}
+	.plan-history-date-field__text:hover {
+		border-color: color-mix(in srgb, var(--on-surface-variant) 55%, var(--shell-border));
+	}
+	.plan-history-date-field__text:focus {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent);
+	}
+	.plan-history-date-field__text.is-invalid {
+		border-color: color-mix(in srgb, #f43f5e 55%, var(--shell-border));
+	}
+	.plan-history-dp-foot-row {
+		justify-content: space-between;
+		width: 100%;
+	}
+	.plan-history-date-field__pick {
+		position: absolute;
+		top: 50%;
+		right: 0.35rem;
+		transform: translateY(-50%);
 		display: grid;
 		place-items: center;
-		gap: 0.5rem;
-		padding: 2rem 1rem;
-		border-radius: 1.1rem;
-		border: 1px dashed var(--shell-border);
+		width: 2.25rem;
+		height: 2.25rem;
+		border: 0;
+		border-radius: 0.75rem;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+	}
+	.plan-history-date-field__pick:hover {
+		background: color-mix(in srgb, var(--surface-variant) 60%, transparent);
+		color: var(--on-surface);
+	}
+	.plan-history-date-field__pick .material-symbols-rounded {
+		font-size: 1.2rem;
+	}
+	html[data-theme='dark'] .plan-history-date-field__text {
+		background: var(--surface-container, #1e1f22);
+		border-color: rgba(255, 255, 255, 0.16);
+	}
+	html[data-theme='dark'] .plan-history-date-field__text:hover {
+		border-color: rgba(255, 255, 255, 0.26);
+	}
+	.plan-history-period-apply {
+		display: inline-flex;
+		width: 100%;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.75rem;
+		border-radius: 999px;
+		border: 1px solid color-mix(in srgb, var(--primary) 72%, #123e7a 28%);
+		background: var(--primary);
+		font-size: 0.92rem;
+		font-weight: 780;
+		color: #f8fbff;
+		cursor: pointer;
+	}
+	@media (min-width: 640px) {
+		.plan-history-period-filter-sheet:not(.is-desktop-popover) {
+			inset: 0;
+			margin: auto;
+			width: min(24rem, calc(100vw - 2rem));
+			max-height: min(70vh, 26rem);
+			height: fit-content;
+			border-bottom: 1px solid var(--shell-border);
+			border-radius: 1.6rem;
+			background: var(--surface-bright);
+			background-image: none;
+			box-shadow: 0 8px 28px rgb(0 0 0 / 0.28);
+		}
+		.plan-history-period-filter-sheet:not(.is-desktop-popover) .plan-history-period-filter-sheet__handle {
+			display: none;
+		}
+		.plan-history-period-filter-sheet:not(.is-desktop-popover) .plan-history-period-filter-sheet__header {
+			padding: 1rem 1rem 0.85rem;
+		}
+	}
+	@media (min-width: 768px) {
+		.plan-history-period-filter-sheet.is-desktop-popover {
+			border: 1px solid var(--shell-border);
+			border-radius: 1rem;
+			overflow: hidden;
+		}
+	}
+	@media (max-width: 767px) {
+		.plan-history-results {
+			border: 0;
+			background: transparent;
+			border-radius: 0;
+			overflow: visible;
+			box-shadow: none;
+		}
+		.plan-history-cards {
+			padding: 0;
+		}
 	}
 	.plan-invoice-table-wrap {
 		overflow-x: auto;
