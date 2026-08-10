@@ -32,6 +32,7 @@ type LocationsListMeta = {
 };
 
 const PAGE_SIZE = 9;
+const EAGER_MAP_COUNT = 3;
 
 const escapeHtml = (value: string) =>
 	value
@@ -54,6 +55,22 @@ const buildMapPreviewUrl = (coords: MapCoordinates | null) =>
 		...LOCATION_CARD_STATIC_MAP_OPTIONS,
 	});
 
+const markMapPreviewLoaded = (img: HTMLImageElement) => {
+	img.classList.add('is-loaded');
+	img.closest('.panel-horizontal-card__media')?.classList.remove('is-map-loading');
+};
+
+const markMapPreviewLoading = (img: HTMLImageElement) => {
+	img.classList.remove('is-loaded');
+	img.closest('.panel-horizontal-card__media')?.classList.add('is-map-loading');
+};
+
+const hydrateMapPreviews = () => {
+	document.querySelectorAll<HTMLImageElement>('[data-location-map-preview]').forEach((img) => {
+		if (img.complete && img.naturalWidth > 0) markMapPreviewLoaded(img);
+	});
+};
+
 const syncLocationMapPreviews = () => {
 	const theme = resolveMapTheme();
 	document.querySelectorAll<HTMLImageElement>('[data-location-map-preview]').forEach((img) => {
@@ -64,38 +81,43 @@ const syncLocationMapPreviews = () => {
 			theme,
 			...LOCATION_CARD_STATIC_MAP_OPTIONS,
 		});
-		if (url && img.src !== url) img.src = url;
-		if (img.complete) img.classList.add('is-loaded');
+		if (url && img.src !== url) {
+			markMapPreviewLoading(img);
+			img.src = url;
+		} else if (img.complete && img.naturalWidth > 0) {
+			markMapPreviewLoaded(img);
+		}
 	});
 };
 
-const buildLocationMedia = (location: LocationItem) => {
+const buildLocationMedia = (location: LocationItem, index = 0) => {
 	const lat = Number(location.latitude);
 	const lng = Number(location.longitude);
 	const coords =
 		Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 	const mapPreviewUrl = buildMapPreviewUrl(coords);
 	const hasMap = Boolean(mapPreviewUrl);
+	const isEagerMap = index < EAGER_MAP_COUNT && hasMap;
 	const mediaClasses = hasMap
-		? 'panel-horizontal-card__media'
+		? 'panel-horizontal-card__media is-map-loading'
 		: 'panel-horizontal-card__media panel-horizontal-card__media--placeholder';
 
 	const { width: mapW, height: mapH } = LOCATION_CARD_STATIC_MAP_OPTIONS;
 	const imageHtml = hasMap
-		? `<img
+		? `<span class="panel-horizontal-card__map-skeleton" aria-hidden="true"></span><img
 				src="${escapeHtml(mapPreviewUrl!)}"
 				alt=""
 				class="panel-horizontal-card__media-image"
 				width="${mapW}"
 				height="${mapH}"
-				loading="lazy"
+				loading="${isEagerMap ? 'eager' : 'lazy'}"
 				decoding="async"
-				fetchpriority="low"
+				fetchpriority="${isEagerMap ? 'high' : 'low'}"
 				data-location-map-preview
 				data-map-lat="${coords!.lat}"
 				data-map-lng="${coords!.lng}"
-				onload="this.classList.add('is-loaded')"
-				onerror="this.classList.add('is-hidden'); this.parentElement?.classList.add('panel-horizontal-card__media--placeholder');"
+				onload="this.classList.add('is-loaded'); this.closest('.panel-horizontal-card__media')?.classList.remove('is-map-loading')"
+				onerror="this.classList.add('is-hidden'); const m=this.closest('.panel-horizontal-card__media'); m?.classList.add('panel-horizontal-card__media--placeholder'); m?.classList.remove('is-map-loading');"
 			/>${renderBrandMapMarkerOverlay()}`
 		: renderBrandMapMarkerOverlay();
 
@@ -134,7 +156,7 @@ const syncUrl = (state: { page: number; isActive: number | null }) => {
 	}
 };
 
-const renderLocationCard = (location: LocationItem) => {
+const renderLocationCard = (location: LocationItem, index = 0) => {
 	const name = location.name || `Sucursal #${location.id_location}`;
 	const isActive = location.is_active === 1;
 	const isClosed = Boolean(location.current_closure_name) && isActive;
@@ -165,7 +187,7 @@ const renderLocationCard = (location: LocationItem) => {
 			role="button"
 			aria-label="Editar sucursal ${escapeHtml(name)}"
 		>
-			${buildLocationMedia(location)}
+			${buildLocationMedia(location, index)}
 			<div class="panel-horizontal-card__body locations-card-body">
 				<div class="panel-horizontal-card__header">
 					<div class="panel-horizontal-card__title-block">
@@ -240,7 +262,7 @@ const updateEmptyOrGrid = (locations: LocationItem[], isActive: number | null) =
 
 	results.innerHTML = `
 		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-locations-grid>
-			${locations.map(renderLocationCard).join('')}
+			${locations.map((location, index) => renderLocationCard(location, index)).join('')}
 		</div>
 	`;
 };
@@ -339,6 +361,7 @@ const loadLocations = async (state: { page: number; isActive: number | null }) =
 		});
 		updateSummaryPills(locations);
 		updateEmptyOrGrid(locations, state.isActive);
+		hydrateMapPreviews();
 		updateFilterUi(state.isActive);
 		updatePagination(normalizedMeta);
 	} catch (error) {
@@ -364,9 +387,7 @@ export const initLocationsListControls = () => {
 	syncLocationMapPreviewsOnPage();
 	document.addEventListener('astro:page-load', syncLocationMapPreviewsOnPage);
 
-	document.querySelectorAll<HTMLImageElement>('[data-location-map-preview]').forEach((img) => {
-		if (img.complete && img.naturalWidth > 0) img.classList.add('is-loaded');
-	});
+	hydrateMapPreviews();
 
 	const themeObserver = new MutationObserver(() => {
 		syncLocationMapPreviews();

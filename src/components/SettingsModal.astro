@@ -662,7 +662,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 											</div>
 										</label>
 
-										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+										<label
+											class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
+											data-settings-tour-system-slot
+										>
 											<span>Intervalo de reserva (slots) <span class="text-rose-500">*</span></span>
 											<div class="relative">
 												<select
@@ -676,7 +679,11 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 											</span>
 										</label>
 
-										<div data-settings-system-slot-preview class="grid gap-2">
+										<div
+											data-settings-system-slot-preview
+											data-settings-tour-system-slot-preview
+											class="grid gap-2"
+										>
 											<p class="text-[0.85rem] font-semibold text-(--on-surface-variant)">
 												Ejemplo en la página pública
 											</p>
@@ -704,7 +711,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 											</p>
 										</div>
 
-										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+										<label
+											class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
+											data-settings-tour-system-reminder
+										>
 											<span>Tiempo de recordatorio <span class="text-rose-500">*</span></span>
 											<div class="relative">
 												<select
@@ -718,7 +728,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 											</span>
 										</label>
 
-										<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+										<label
+											class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
+											data-settings-tour-system-alert
+										>
 											<span>Alertas de citas no respondidas <span class="text-rose-500">*</span></span>
 											<div class="relative">
 												<select
@@ -773,6 +786,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										<div
 											class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
 											data-settings-push-notifications
+											data-settings-tour-system-push
 										>
 											<div class="flex items-start justify-between gap-4">
 												<div class="grid min-w-0 flex-1 gap-1.5">
@@ -808,6 +822,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										<div
 											class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
 											data-settings-system-notify-all
+											data-settings-tour-system-notify-all
 										>
 											<div class="flex items-start justify-between gap-4">
 												<div class="grid min-w-0 flex-1 gap-1.5">
@@ -1005,6 +1020,11 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		showSettingsModalTour,
 	} from '../lib/settings-modal-tour';
 	import { destroyActiveBookmateTour } from '../lib/product-tour';
+	import {
+		destroySearchableSelect,
+		ensureSearchableSelect,
+		syncSearchableSelect,
+	} from '../scripts/searchable-select';
 	import {
 		disablePushNotifications,
 		enablePushNotifications,
@@ -1217,9 +1237,11 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 				?.querySelector<HTMLInputElement>('[data-payments-deposits-toggle]')
 				?.addEventListener('change', this.syncPaymentsDetailsVisibility, { signal });
 			this.bindScrollHints(signal);
+			this.bindSettingsSelects();
 		}
 
 		disconnectedCallback() {
+			this.destroySettingsSelects();
 			this.abortController?.abort();
 			this.abortController = null;
 			this.clearSlugSuggestTimer();
@@ -1236,6 +1258,21 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		}
 
 		private updateScrollHints = () => {};
+
+		private bindSettingsSelects() {
+			const modal = this.els.modal;
+			if (!modal) return;
+
+			this.querySelectorAll<HTMLSelectElement>('select').forEach((select) => {
+				ensureSearchableSelect(select, { dropdownParent: modal });
+			});
+		}
+
+		private destroySettingsSelects() {
+			this.querySelectorAll<HTMLSelectElement>('select').forEach((select) => {
+				destroySearchableSelect(select);
+			});
+		}
 
 		private bindScrollHints(signal: AbortSignal) {
 			const content = this.querySelector<HTMLElement>('[data-settings-content]');
@@ -1344,6 +1381,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 				getActiveTab: () => this.getActiveTabId(),
 				activateProfileTab: () => this.setActiveTab('profile'),
 				activatePaymentsTab: () => this.setActiveTab('payments'),
+				activateSystemTab: () => this.setActiveTab('system'),
 				revealPaymentsDetailsForTour: () => {
 					const restore = revealPaymentsDetailsForTour();
 					return () => {
@@ -2150,6 +2188,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			} else if (options[0]) {
 				select.value = String(options[0].id);
 			}
+			syncSearchableSelect(select);
 		}
 
 		private getSystemSelectValue(selector: string) {
@@ -2707,6 +2746,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			} else {
 				select.value = '';
 			}
+			syncSearchableSelect(select);
 		}
 
 		private fillPayments(data: any) {
@@ -3334,6 +3374,36 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 	}
 
 	@media (max-width: 768px) {
+		[data-settings-modal] {
+			width: 100%;
+			max-width: 100%;
+		}
+
+		[data-settings-modal] .settings-content {
+			overflow-x: clip;
+		}
+
+		[data-settings-modal] label,
+		[data-settings-modal] form,
+		[data-settings-modal] .settings-panel,
+		[data-settings-modal] .relative {
+			min-width: 0;
+			max-width: 100%;
+		}
+
+		[data-settings-modal] select,
+		[data-settings-modal] .bookmate-searchable-select.ts-wrapper {
+			width: 100%;
+			max-width: 100%;
+			min-width: 0;
+			box-sizing: border-box;
+		}
+
+		[data-settings-modal] .bookmate-searchable-select-dropdown {
+			max-width: calc(100vw - 2rem);
+			box-sizing: border-box;
+		}
+
 		.settings-nav {
 			position: relative;
 		}

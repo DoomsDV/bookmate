@@ -2466,7 +2466,7 @@ const googleErrorMessage = hasGoogleError
 
 		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__backdrop {
 			pointer-events: auto;
-			background: transparent;
+			background-color: transparent !important;
 			backdrop-filter: none !important;
 			-webkit-backdrop-filter: none !important;
 			cursor: default;
@@ -2483,11 +2483,14 @@ const googleErrorMessage = hasGoogleError
 			border-radius: 1rem;
 			border: 1px solid var(--shell-border);
 			border-bottom: 1px solid var(--shell-border);
-			background: var(--surface-bright);
-			background-image: none;
+			background-color: var(--surface-bright, #ffffff) !important;
+			background-image: none !important;
+			backdrop-filter: none !important;
+			-webkit-backdrop-filter: none !important;
 			box-shadow: var(--modal-shadow-popover);
 			animation: calendar-filters-popover-in 160ms cubic-bezier(0.2, 0, 0, 1);
 			transform-origin: top left;
+			isolation: isolate;
 		}
 
 		.calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__header {
@@ -2537,6 +2540,7 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		html[data-theme='dark'] .calendar-filters-sheet.is-desktop-popover .calendar-filters-sheet__panel {
+			background-color: var(--surface-bright, #121214) !important;
 			box-shadow: var(--modal-shadow-popover);
 		}
 

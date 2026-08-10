@@ -427,6 +427,9 @@ function handlePopoverRender(
 
 	activeTourPopover = popoverDom.wrapper;
 	mountPopoverInTourShell(popoverDom.wrapper);
+	if (document.querySelector('.driver-active-element')) {
+		pinPopoverNearActiveElement(popoverDom.wrapper, preferredSide);
+	}
 	scheduleTourLayoutSync(() => syncTourLayout(activeDriver, preferredSide, hostSelector));
 }
 
@@ -459,7 +462,7 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 
 	activeTourDriver = driver({
 		allowClose: true,
-		animate: !(useShell || needsScrollSync),
+		animate: false,
 		showProgress: true,
 		progressText: '{{current}} de {{total}}',
 		showButtons: ['next', 'previous'],

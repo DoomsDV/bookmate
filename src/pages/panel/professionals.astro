@@ -97,7 +97,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			<div class="pointer-events-none fixed inset-0 z-10 hidden items-center justify-center bg-(--surface-bright)/80 backdrop-blur-[2px] transition-all" data-professional-loading>
 				<div class="inline-flex items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-5 py-3.5 text-[0.95rem] font-extrabold text-(--on-surface) shadow-[0_12px_32px_rgba(0,0,0,0.12)]">
 					<span class="material-symbols-rounded animate-spin text-[1.2rem] text-(--primary)">progress_activity</span>
-					<div>Procesando...</div>
+					<div data-professional-loading-message>Procesando...</div>
 				</div>
 			</div>
 
@@ -456,6 +456,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			accountStatusActiveBtn: HTMLButtonElement | null;
 			accountStatusInactiveBtn: HTMLButtonElement | null;
 			loading: HTMLElement | null;
+			loadingMessage: HTMLElement | null;
 			error: HTMLElement | null;
 			errorMessage: HTMLElement | null;
 			errorFeedback: HTMLElement | null;
@@ -555,6 +556,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				accountStatusActiveBtn: this.querySelector<HTMLButtonElement>('[data-member-account-status="1"]'),
 				accountStatusInactiveBtn: this.querySelector<HTMLButtonElement>('[data-member-account-status="0"]'),
 				loading: this.querySelector<HTMLElement>('[data-professional-loading]'),
+				loadingMessage: this.querySelector<HTMLElement>('[data-professional-loading-message]'),
 				error: this.querySelector<HTMLElement>('[data-form-error]'),
 				errorMessage: this.querySelector<HTMLElement>('[data-form-error-message]'),
 				errorFeedback: this.querySelector<HTMLElement>('[data-professional-form-feedback]'),
@@ -1052,9 +1054,8 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 		}
 
 		private setLoadingMessage(message: string) {
-			if (!this.els.loading) return;
-			const textNode = this.els.loading.querySelector('div')?.lastChild;
-			if (textNode) textNode.textContent = ` ${message}`;
+			if (!this.els.loadingMessage) return;
+			this.els.loadingMessage.textContent = message;
 		}
 
 		private showFormError(message: string) {
@@ -1773,7 +1774,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 					);
 					if (reactivateId > 0) {
 						this.showFormError(baseMessage);
-						void this.openEditModal(reactivateId);
+						await this.openEditModal(reactivateId);
 					} else {
 						this.showFormError(baseMessage);
 					}

@@ -7,10 +7,17 @@ const PAYMENTS_ENABLE_SELECTOR = '[data-payments-tour-enable]';
 const PAYMENTS_POLICY_SELECTOR = '[data-payments-tour-policy]';
 const PAYMENTS_SIPAP_SELECTOR = '[data-payments-tour-sipap]';
 const PAYMENTS_DETAILS_SELECTOR = '[data-payments-details]';
+const SYSTEM_SLOT_SELECTOR = '[data-settings-tour-system-slot]';
+const SYSTEM_SLOT_PREVIEW_SELECTOR = '[data-settings-tour-system-slot-preview]';
+const SYSTEM_REMINDER_SELECTOR = '[data-settings-tour-system-reminder]';
+const SYSTEM_ALERT_SELECTOR = '[data-settings-tour-system-alert]';
+const SYSTEM_PUSH_SELECTOR = '[data-settings-tour-system-push]';
+const SYSTEM_NOTIFY_ALL_SELECTOR = '[data-settings-tour-system-notify-all]';
 
 export type SettingsModalTourContext = {
 	activateProfileTab?: () => void;
 	activatePaymentsTab?: () => void;
+	activateSystemTab?: () => void;
 	getActiveTab?: () => string;
 	/** Muestra temporalmente los bloques de política/SIPAP; debe devolver un restore. */
 	revealPaymentsDetailsForTour?: () => (() => void) | void;
@@ -22,6 +29,10 @@ function isPublicProfileFieldVisible() {
 
 function isPaymentsTourAvailable() {
 	return Boolean(document.querySelector(PAYMENTS_ENABLE_SELECTOR));
+}
+
+function isSystemTourAvailable() {
+	return Boolean(document.querySelector(SYSTEM_SLOT_SELECTOR));
 }
 
 function buildProfileTourSteps(): DriveStep[] {
@@ -86,6 +97,90 @@ function buildPaymentsTourSteps(): DriveStep[] {
 	return steps;
 }
 
+function buildSystemTourSteps(): DriveStep[] {
+	if (!isSystemTourAvailable()) return [];
+
+	const steps: DriveStep[] = [
+		{
+			element: SYSTEM_SLOT_SELECTOR,
+			popover: {
+				title: 'Intervalo de reserva (slots)',
+				description:
+					'Elegí cada cuántos minutos se ofrecen turnos en la reserva online (por ejemplo, cada 30 o 60 minutos). Debe coincidir con la duración típica de tus servicios.',
+				side: 'bottom',
+				align: 'start',
+			},
+		},
+	];
+
+	if (document.querySelector(SYSTEM_SLOT_PREVIEW_SELECTOR)) {
+		steps.push({
+			element: SYSTEM_SLOT_PREVIEW_SELECTOR,
+			popover: {
+				title: 'Vista previa de horarios',
+				description:
+					'Así ve el cliente los horarios disponibles en tu página pública. Cambiá el intervalo arriba y el ejemplo se actualiza al instante.',
+				side: 'bottom',
+				align: 'start',
+			},
+		});
+	}
+
+	if (document.querySelector(SYSTEM_REMINDER_SELECTOR)) {
+		steps.push({
+			element: SYSTEM_REMINDER_SELECTOR,
+			popover: {
+				title: 'Tiempo de recordatorio',
+				description:
+					'Define cuántas horas antes del turno se envía por WhatsApp el mensaje de reconfirmación al cliente (ej. 24 horas antes).',
+				side: 'bottom',
+				align: 'start',
+			},
+		});
+	}
+
+	if (document.querySelector(SYSTEM_ALERT_SELECTOR)) {
+		steps.push({
+			element: SYSTEM_ALERT_SELECTOR,
+			popover: {
+				title: 'Citas no respondidas',
+				description:
+					'Si el cliente no responde al recordatorio, podés mantener la cita o cancelarla automáticamente. Al cancelar, también podés configurar cuánto tiempo esperar su respuesta.',
+				side: 'bottom',
+				align: 'start',
+			},
+		});
+	}
+
+	if (document.querySelector(SYSTEM_PUSH_SELECTOR)) {
+		steps.push({
+			element: SYSTEM_PUSH_SELECTOR,
+			popover: {
+				title: 'Notificaciones push',
+				description:
+					'Activá avisos en este dispositivo para enterarte al instante de citas nuevas, cambios y cancelaciones.',
+				side: 'top',
+				align: 'start',
+			},
+		});
+	}
+
+	if (document.querySelector(SYSTEM_NOTIFY_ALL_SELECTOR)) {
+		steps.push({
+			element: SYSTEM_NOTIFY_ALL_SELECTOR,
+			popover: {
+				title: 'Notificaciones de todo el equipo',
+				description:
+					'Además de tus propias citas, recibí avisos de reservas de otros profesionales del negocio. Requiere tener activadas las notificaciones push.',
+				side: 'top',
+				align: 'start',
+			},
+		});
+	}
+
+	return steps;
+}
+
 function runSettingsTour(steps: DriveStep[], onDestroyed?: () => void) {
 	if (steps.length === 0) return;
 
@@ -124,12 +219,22 @@ function showPaymentsTour(context: SettingsModalTourContext) {
 	});
 }
 
+function showSystemTour(context: SettingsModalTourContext) {
+	context.activateSystemTab?.();
+	requestAnimationFrame(() => {
+		const steps = buildSystemTourSteps();
+		if (steps.length === 0) return;
+		runSettingsTour(steps);
+	});
+}
+
 /**
- * Tabs con recorrido definido: Mi perfil (enlace personal) y Pagos (señas SIPAP).
+ * Tabs con recorrido definido: Mi perfil, Pagos (señas SIPAP) y Sistema.
  */
 export function hasSettingsModalTourForTab(tab: string): boolean {
 	if (tab === 'payments') return isPaymentsTourAvailable();
 	if (tab === 'profile') return isPublicProfileFieldVisible();
+	if (tab === 'system') return isSystemTourAvailable();
 	return false;
 }
 
@@ -137,6 +242,7 @@ export function hasSettingsModalTourForTab(tab: string): boolean {
  * Guía contextual del modal de ajustes.
  * En Pagos: cobro de señas → políticas → datos SIPAP.
  * En Mi perfil: enlace personal (si está disponible).
+ * En Sistema: slots, recordatorios, alertas y notificaciones.
  */
 export function showSettingsModalTour(context: SettingsModalTourContext = {}) {
 	const tab = context.getActiveTab?.() ?? 'profile';
@@ -144,6 +250,12 @@ export function showSettingsModalTour(context: SettingsModalTourContext = {}) {
 	if (tab === 'payments') {
 		if (!isPaymentsTourAvailable()) return;
 		showPaymentsTour(context);
+		return;
+	}
+
+	if (tab === 'system') {
+		if (!isSystemTourAvailable()) return;
+		showSystemTour(context);
 		return;
 	}
 

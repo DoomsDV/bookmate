@@ -32,6 +32,8 @@ const inactiveCount = locations.length - activeCount;
 const stadiaKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 const mapTheme = resolveMapThemeFromStorage(Astro.cookies.get('bookmate-theme')?.value);
 
+const EAGER_MAP_COUNT = 3;
+
 const locationMapPreview = (location: Location) => {
 	const lat = Number(location.latitude);
 	const lng = Number(location.longitude);
@@ -42,6 +44,11 @@ const locationMapPreview = (location: Location) => {
 		...LOCATION_CARD_STATIC_MAP_OPTIONS,
 	});
 };
+
+const eagerMapPreloadUrls = locations
+	.slice(0, EAGER_MAP_COUNT)
+	.map(locationMapPreview)
+	.filter((url): url is string => Boolean(url));
 ---
 
 {stadiaKey ? (
@@ -50,6 +57,9 @@ const locationMapPreview = (location: Location) => {
 {stadiaKey ? (
 	<link rel="preconnect" href="https://tiles.stadiamaps.com" crossorigin />
 ) : null}
+{eagerMapPreloadUrls.map((url) => (
+	<link rel="preload" as="image" href={url} />
+))}
 
 <section class="locations-view" data-stadia-key={stadiaKey}>
 	<header class="mb-0 lg:mb-4 flex flex-wrap items-center justify-between gap-2 lg:gap-3">
@@ -222,11 +232,12 @@ const locationMapPreview = (location: Location) => {
 		</div>
 	) : (
 		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-locations-grid>
-			{locations.map((location) => {
+			{locations.map((location, index) => {
 				const lat = Number(location.latitude);
 				const lng = Number(location.longitude);
 				const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
 				const mapPreviewUrl = locationMapPreview(location);
+				const isEagerMap = index < EAGER_MAP_COUNT && Boolean(mapPreviewUrl);
 				return (
 				<article
 					class="locations-card panel-horizontal-card group cursor-pointer relative overflow-hidden"
@@ -240,24 +251,26 @@ const locationMapPreview = (location: Location) => {
 						class:list={[
 							'panel-horizontal-card__media',
 							!mapPreviewUrl && 'panel-horizontal-card__media--placeholder',
+							mapPreviewUrl && 'is-map-loading',
 						]}
 					>
 						{mapPreviewUrl ? (
 							<>
+								<span class="panel-horizontal-card__map-skeleton" aria-hidden="true"></span>
 								<img
 									src={mapPreviewUrl}
 									alt=""
 									class="panel-horizontal-card__media-image"
 									width={LOCATION_CARD_STATIC_MAP_OPTIONS.width}
 									height={LOCATION_CARD_STATIC_MAP_OPTIONS.height}
-									loading="lazy"
+									loading={isEagerMap ? 'eager' : 'lazy'}
 									decoding="async"
-									fetchpriority="low"
+									fetchpriority={isEagerMap ? 'high' : 'low'}
 									data-location-map-preview
 									data-map-lat={hasCoords ? lat : undefined}
 									data-map-lng={hasCoords ? lng : undefined}
-									onload="this.classList.add('is-loaded')"
-									onerror="this.classList.add('is-hidden'); this.parentElement?.classList.add('panel-horizontal-card__media--placeholder');"
+									onload="this.classList.add('is-loaded'); this.closest('.panel-horizontal-card__media')?.classList.remove('is-map-loading')"
+									onerror="this.classList.add('is-hidden'); const m=this.closest('.panel-horizontal-card__media'); m?.classList.add('panel-horizontal-card__media--placeholder'); m?.classList.remove('is-map-loading');"
 								/>
 								<Fragment set:html={renderBrandMapMarkerOverlay()} />
 							</>

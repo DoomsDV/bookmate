@@ -1334,12 +1334,28 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 		box-sizing: border-box;
 	}
 
-	/* Móvil: ojo para vista previa inmersiva; enlace público oculto */
+	/* Móvil: ojo flotante sobre el bottom bar; enlace público oculto */
+	.ppe-header__actions {
+		position: fixed;
+		right: max(1rem, env(safe-area-inset-right, 0px));
+		bottom: calc(var(--mobile-bottom-nav-height, 4.25rem) + 0.65rem);
+		z-index: 44;
+		padding-bottom: 0;
+	}
+
+	.ppe-tabs {
+		width: 100%;
+		box-sizing: border-box;
+	}
+
 	.ppe-btn.ppe-preview-trigger--header {
 		display: inline-flex;
 		width: 2.75rem;
+		height: 2.75rem;
 		padding-inline: 0;
 		justify-content: center;
+		border-radius: 999px;
+		box-shadow: 0 4px 16px rgba(15, 23, 42, 0.14);
 	}
 
 	.ppe-preview-trigger__label {
