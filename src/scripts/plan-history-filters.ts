@@ -57,7 +57,6 @@ export const initPlanHistoryFilters = (root: HTMLElement) => {
 	const periodFilterBtn = panel.querySelector<HTMLButtonElement>('[data-plan-history-open-period]');
 	const periodFilterBadge = panel.querySelector<HTMLElement>('[data-plan-history-period-badge]');
 	const periodSheet = panel.querySelector<HTMLDialogElement>('[data-plan-history-period-sheet]');
-	const statusSelect = panel.querySelector<HTMLSelectElement>('[data-plan-history-status-select]');
 
 	const totalInvoices = panel.querySelectorAll(
 		'[data-plan-history-table-wrap] [data-plan-history-row]'
@@ -80,15 +79,21 @@ export const initPlanHistoryFilters = (root: HTMLElement) => {
 		dateErrorEl.classList.remove('hidden');
 	};
 
+	const syncStatusOptions = () => {
+		panel.querySelectorAll<HTMLButtonElement>('[data-plan-history-status-option]').forEach((btn) => {
+			const selected = (btn.dataset.planHistoryStatusOption || 'all') === statusFilter;
+			btn.classList.toggle('is-selected', selected);
+			btn.setAttribute('aria-selected', selected ? 'true' : 'false');
+		});
+	};
+
 	const syncTabs = () => {
 		panel.querySelectorAll<HTMLButtonElement>('[data-plan-history-tab]').forEach((btn) => {
 			const active = (btn.dataset.planHistoryTab || 'all') === statusFilter;
 			btn.classList.toggle('is-active', active);
 			btn.setAttribute('aria-selected', active ? 'true' : 'false');
 		});
-		if (statusSelect && statusSelect.value !== statusFilter) {
-			statusSelect.value = statusFilter;
-		}
+		syncStatusOptions();
 	};
 
 	const syncTextFromNative = () => {
@@ -383,10 +388,6 @@ export const initPlanHistoryFilters = (root: HTMLElement) => {
 		});
 	});
 
-	statusSelect?.addEventListener('change', () => {
-		applyStatusOption((statusSelect.value || 'all') as PlanHistoryStatusFilter);
-	});
-
 	periodFilterBtn?.addEventListener('click', openPeriodSheet);
 	if (periodSheet) {
 		bindFilterPopoverChrome({
@@ -477,6 +478,14 @@ export const initPlanHistoryFilters = (root: HTMLElement) => {
 		}
 		if (target.closest('[data-plan-history-close-period]')) {
 			closePeriodSheet();
+			return;
+		}
+
+		const statusOption = target.closest<HTMLButtonElement>('[data-plan-history-status-option]');
+		if (statusOption) {
+			applyStatusOption(
+				(statusOption.dataset.planHistoryStatusOption || 'all') as PlanHistoryStatusFilter
+			);
 			return;
 		}
 

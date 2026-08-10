@@ -1246,16 +1246,28 @@ const defaultCardHint = defaultCard
 										</div>
 										<div class="plan-history-period-filter-sheet__body">
 											<div class="plan-history-filter-group md:hidden">
-												<label class="plan-history-filter-group__label" for="plan-history-status-select">Estado</label>
-												<div class="plan-history-filter-select">
-													<select id="plan-history-status-select" data-plan-history-status-select aria-label="Estado">
-														<option value="all">Todos</option>
-														<option value="paid">Pagados</option>
-														<option value="pending">Pendientes</option>
-														<option value="failed">Fallidos</option>
-														<option value="void">Anulados</option>
-													</select>
-													<span class="material-symbols-rounded plan-history-filter-select__chevron" aria-hidden="true">expand_more</span>
+												<p class="plan-history-filter-group__label">Estado</p>
+												<div class="plan-history-period-filter-sheet__list" role="listbox" aria-label="Estado">
+													<button type="button" class="plan-history-period-option is-selected" data-plan-history-status-option="all" role="option">
+														<span>Todos</span>
+														<span class="material-symbols-rounded" aria-hidden="true">check</span>
+													</button>
+													<button type="button" class="plan-history-period-option" data-plan-history-status-option="paid" role="option">
+														<span>Pagados</span>
+														<span class="material-symbols-rounded" aria-hidden="true">check</span>
+													</button>
+													<button type="button" class="plan-history-period-option" data-plan-history-status-option="pending" role="option">
+														<span>Pendientes</span>
+														<span class="material-symbols-rounded" aria-hidden="true">check</span>
+													</button>
+													<button type="button" class="plan-history-period-option" data-plan-history-status-option="failed" role="option">
+														<span>Fallidos</span>
+														<span class="material-symbols-rounded" aria-hidden="true">check</span>
+													</button>
+													<button type="button" class="plan-history-period-option" data-plan-history-status-option="void" role="option">
+														<span>Anulados</span>
+														<span class="material-symbols-rounded" aria-hidden="true">check</span>
+													</button>
 												</div>
 											</div>
 											<p class="plan-history-filter-group__label md:hidden">Periodo</p>
@@ -2912,38 +2924,6 @@ const defaultCardHint = defaultCard
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--on-surface-variant);
-	}
-	.plan-history-filter-select {
-		position: relative;
-		display: flex;
-		align-items: center;
-	}
-	.plan-history-filter-select select {
-		-webkit-appearance: none;
-		appearance: none;
-		width: 100%;
-		height: 3rem;
-		padding: 0 2.75rem 0 1rem;
-		border-radius: 1rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright);
-		color: var(--on-surface);
-		font-size: 0.95rem;
-		font-weight: 700;
-		cursor: pointer;
-		transition: border-color 0.15s ease, box-shadow 0.15s ease;
-	}
-	.plan-history-filter-select select:focus {
-		outline: none;
-		border-color: var(--primary);
-		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 12%, transparent);
-	}
-	.plan-history-filter-select__chevron {
-		position: absolute;
-		right: 0.85rem;
-		font-size: 1.4rem;
-		color: var(--on-surface-variant);
-		pointer-events: none;
 	}
 	.plan-history-period-option {
 		display: flex;
