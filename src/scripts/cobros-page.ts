@@ -326,8 +326,6 @@ export const initCobrosPage = () => {
 		renderDatePickerDays();
 	};
 
-	let datePickerAnchor: HTMLElement | null = null;
-
 	const positionDatePicker = () => {
 		if (!datePicker?.open) return;
 		const anchor = datePickerAnchor;
