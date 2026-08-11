@@ -65,6 +65,7 @@ export interface DashboardProfitabilityData {
 	last_month_revenue: number;
 	mom_delta_pct: number | null;
 	pending_expected_revenue: number;
+	total_clients: number;
 	top_services: DashboardProfitabilityRow[];
 	by_professional: DashboardProfitabilityRow[];
 	generated_at_local: string;
@@ -422,6 +423,7 @@ const normalizeProfitabilityData = (value: unknown): DashboardProfitabilityData 
 				? null
 				: Number(momRaw),
 		pending_expected_revenue: Math.max(0, toNumber(source.pending_expected_revenue, 0)),
+		total_clients: Math.max(0, Math.floor(toNumber(source.total_clients, 0))),
 		top_services: Array.isArray(source.top_services)
 			? source.top_services
 					.map(normalizeProfitabilityRow)

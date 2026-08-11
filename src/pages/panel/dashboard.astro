@@ -119,9 +119,6 @@ const dayProgressMetricLabel = dayProgressEmpty
 	? 'Aún no tenés turnos programados para hoy'
 	: `${todayCompleted} de ${todayTotal} turnos completados`;
 
-const totalCustomersLabel =
-	dashboard.kpis.total_customers !== null ? String(dashboard.kpis.total_customers) : '—';
-
 const weekDayLabelsByJs = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'] as const;
 const asuncionDateParts = new Intl.DateTimeFormat('en-CA', {
 	timeZone: APP_TZ,
@@ -331,7 +328,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 								</div>
 							</section>
 
-							{roleId === ROLES.ADMIN && (
+							{(roleId === ROLES.ADMIN || roleId === ROLES.PROFESIONAL) && (
 								<section
 									class="dashboard-profitability-shell transition-colors duration-300"
 									data-profitability-panel
@@ -340,7 +337,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 									<div class="mb-4 flex min-w-0 items-center justify-between gap-2 sm:gap-3 dashboard-profitability-head">
 										<div class="flex min-w-0 items-center gap-1.5 sm:gap-2">
 											<span class="material-symbols-rounded shrink-0 text-[1.3rem] text-(--primary)" aria-hidden="true">trending_up</span>
-											<h2 class="dashboard-profitability-title min-w-0 text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Rentabilidad del mes</h2>
+											<h2 class="dashboard-profitability-title min-w-0 text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">
+												{roleId === ROLES.PROFESIONAL ? 'Tu rentabilidad del mes' : 'Rentabilidad del mes'}
+											</h2>
 										</div>
 									</div>
 
@@ -405,8 +404,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												<p class="dashboard-profit-label">Total clientes</p>
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">groups</span>
 											</div>
-											<p class="dashboard-profit-value dashboard-profit-value--static">{totalCustomersLabel}</p>
-											<p class="dashboard-profit-hint">Base registrada en el negocio.</p>
+											<p class="dashboard-profit-value" data-profit-total-clients>&nbsp;</p>
+											<p class="dashboard-profit-hint">
+												{roleId === ROLES.PROFESIONAL
+													? 'Pacientes únicos que atendiste.'
+													: 'Base registrada en el negocio.'}
+											</p>
 										</article>
 									</div>
 									</div>
@@ -1849,6 +1852,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			setText('[data-profit-month-revenue]', formatGs(data.month_revenue));
 			setText('[data-profit-today]', formatGs(data.today_revenue));
 			setText('[data-profit-pending]', formatGs(data.pending_expected_revenue));
+			setText('[data-profit-total-clients]', String(Number(data.total_clients ?? 0)));
 
 			const momCard = panel.querySelector<HTMLElement>('[data-profit-spark-card="mom"]');
 			const momNode = panel.querySelector<HTMLElement>('[data-profit-mom]');
