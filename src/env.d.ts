@@ -106,6 +106,11 @@ interface ImportMetaEnv {
     readonly GOOGLE_CLIENT_SECRET?: string;
     readonly GOOGLE_REDIRECT_URI?: string;
 
+    readonly ESIGN_API_BASE_URL?: string;
+    readonly ESIGN_API_KEY?: string;
+    readonly ESIGN_CALLBACK_SERVICE_TOKEN?: string;
+    readonly CRON_SECRET?: string;
+
     readonly PUBLIC_BOOKMATE_PUBLIC_DOMAIN?: string;
     readonly PUBLIC_BOOKMATE_PROFILE_PLACEHOLDER_IMAGE_URL?: string;
     readonly PUBLIC_G_MAPS_API_KEY?: string;

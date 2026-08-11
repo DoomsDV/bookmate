@@ -1270,6 +1270,9 @@ export const isPublicPath = (pathname: string) => {
 		pathname.startsWith('/auth') ||
 		pathname.startsWith('/api/auth') ||
 		pathname.startsWith('/api/public') ||
+		// Server-to-server: PL/SQL (webhook X-Service-Token) y Vercel Cron
+		// (Authorization: Bearer CRON_SECRET). Cada endpoint valida su propio secreto.
+		pathname.startsWith('/api/internal') ||
 		pathname === '/p' ||
 		pathname.startsWith('/p/') ||
 		pathname === '/u' ||
