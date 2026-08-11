@@ -3,11 +3,13 @@ import AppPagination from '../../components/AppPagination.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
+import { ROLES } from '../../config/roles';
 import Layout from '../../layouts/Layout.astro';
 import { panelPageTitle } from '../../lib/panel-page-title';
 import '../../styles/global.css';
 
 const token = Astro.locals.token ?? '';
+const isAdmin = Number(Astro.locals.roleId ?? 0) === ROLES.ADMIN;
 const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobros.';
 ---
 
@@ -156,9 +158,17 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 							<p class="mt-2 text-(--on-surface-variant)">
 								El cobro de señas SIPAP está disponible en el plan Premium.
 							</p>
-							<a href="/panel/plan" class="mt-4 inline-flex h-11 items-center rounded-full bg-(--primary) px-5 text-sm font-semibold text-(--on-primary) no-underline">
-								Ver planes
-							</a>
+							{
+								isAdmin ? (
+									<a href="/panel/plan" class="mt-4 inline-flex h-11 items-center rounded-full bg-(--primary) px-5 text-sm font-semibold text-(--on-primary) no-underline">
+										Ver planes
+									</a>
+								) : (
+									<p class="mt-4 text-sm font-medium text-(--on-surface-variant)">
+										Pedile al administrador del negocio que revise el plan.
+									</p>
+								)
+							}
 						</section>
 					</main>
 				</div>

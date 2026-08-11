@@ -284,6 +284,8 @@ class ScheduleManager extends HTMLElement {
 	}
 
 	private bindHeaderScrollCompact(signal: AbortSignal): void {
+		if (this.dataset.professionalView === 'true') return;
+
 		this.headerScrollHero = this.querySelector<HTMLElement>('[data-schedule-header-hero]');
 		this.headerStickyBar = this.querySelector<HTMLElement>('[data-schedule-header-sticky]');
 		this.headerScrollRoot = this.resolveHeaderScrollRoot();

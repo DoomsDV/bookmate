@@ -5,9 +5,15 @@
 //   * Publica window.HaselSubscription y dispara el evento `hasel:subscription`.
 //   * Aplica gates de entitlements en el DOM: [data-requires-feature], [data-requires-write].
 //   * Actualiza la etiqueta de plan del SideNav ([data-plan-label]).
+
+interface Props {
+	isAdmin?: boolean;
+}
+
+const { isAdmin = false } = Astro.props;
 ---
 
-<subscription-banner></subscription-banner>
+<subscription-banner data-is-admin={isAdmin ? 'true' : 'false'}></subscription-banner>
 
 <style is:global>
 	.hasel-sub-banner {
@@ -113,7 +119,10 @@
 	};
 
 	class SubscriptionBanner extends HTMLElement {
+		private isAdmin = false;
+
 		connectedCallback() {
+			this.isAdmin = this.dataset.isAdmin === 'true';
 			void this.load();
 		}
 
@@ -241,10 +250,14 @@
 			const banner = document.createElement('div');
 			banner.className = `hasel-sub-banner hasel-sub-banner-${tone}`;
 			banner.setAttribute('role', 'status');
+			const ctaHtml =
+				this.isAdmin && ctaLabel
+					? `<a href="/panel/plan">${ctaLabel}</a>`
+					: '';
 			banner.innerHTML =
 				`<span class="material-symbols-rounded">${icon}</span>` +
-				`<span>${message}</span>` +
-				`<a href="/panel/plan">${ctaLabel}</a>`;
+				`<span>${message}${this.isAdmin || !ctaLabel ? '' : ' Contactá al administrador del negocio.'}</span>` +
+				ctaHtml;
 
 			// Insertamos al inicio del body, en flujo normal (empuja el contenido).
 			document.body.insertBefore(banner, document.body.firstChild);

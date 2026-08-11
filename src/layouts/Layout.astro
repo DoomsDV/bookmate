@@ -5,6 +5,7 @@ import FcmManager from '../components/FcmManager.astro';
 import OrgNotificationDeepLink from '../components/OrgNotificationDeepLink.astro';
 import SessionGuard from '../components/SessionGuard.astro';
 import SubscriptionBanner from '../components/SubscriptionBanner.astro';
+import { ROLES } from '../config/roles';
 import {
     FLASH_MESSAGE_COOKIE,
     FLASH_TYPE_COOKIE,
@@ -31,6 +32,7 @@ const flashType: FlashType = validFlashTypes.includes(flashTypeRaw as FlashType)
     ? (flashTypeRaw as FlashType)
     : 'info';
 const hasSession = Boolean(Astro.locals.token ?? '');
+const isAdmin = Number(Astro.locals.roleId ?? 0) === ROLES.ADMIN;
 
 interface Props {
     pageTitle?: string;
@@ -314,7 +316,7 @@ if (flashTypeFromCookie) {
         {hasSession && (
             <>
                 <SessionGuard />
-                <SubscriptionBanner />
+                <SubscriptionBanner isAdmin={isAdmin} />
                 <FcmManager />
                 <OrgNotificationDeepLink />
             </>
