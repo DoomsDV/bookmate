@@ -66,10 +66,30 @@ const appointmentCreateSchema = baseAppointmentSchema.superRefine((payload, ctx)
 	}
 });
 
+const sessionNotesObjectSchema = z
+	.object({
+		consultation_reason: z.string().max(3500).optional(),
+		procedure_notes: z.string().max(4000).optional(),
+		recommendations: z.string().max(3500).optional(),
+	})
+	.superRefine((payload, ctx) => {
+		const hasContent = [payload.consultation_reason, payload.procedure_notes, payload.recommendations]
+			.map((value) => String(value ?? '').trim())
+			.some(Boolean);
+		if (!hasContent) {
+			ctx.addIssue({
+				code: z.ZodIssueCode.custom,
+				message: 'Ingresa al menos un campo de notas de la sesión.',
+			});
+		}
+	});
+
+const sessionNotesSchema = z.union([sessionNotesObjectSchema, z.string().max(10000)]);
+
 const appointmentUpdateSchema = baseAppointmentSchema
 	.extend({
 		status: appointmentStatusSchema,
-		session_notes: z.string().max(10000).optional(),
+		session_notes: sessionNotesSchema.optional(),
 	})
 	.superRefine((payload, ctx) => {
 		validateCustomerIdentity(payload, ctx);

@@ -11,6 +11,7 @@ import {
 	normalizeScheduleMisalignedReason,
 	type ScheduleMisalignedReason,
 } from './schedule-misaligned';
+import { normalizeSessionNotesHistory } from './session-notes';
 
 export type { AttendanceStatus, ScheduleMisalignedReason };
 export { isAttendanceReconfirmed, normalizeAttendanceStatus };
@@ -65,8 +66,14 @@ export interface AppointmentAttachment {
 	created_at?: string;
 }
 
-export interface AppointmentHistory {
-	notes: string | null;
+export interface SessionNotes {
+	consultation_reason?: string | null;
+	procedure_notes?: string | null;
+	recommendations?: string | null;
+}
+
+export interface AppointmentHistory extends SessionNotes {
+	notes?: string | null;
 	attachments: AppointmentAttachment[];
 }
 
@@ -121,7 +128,7 @@ export interface AppointmentCreatePayload {
 export interface AppointmentUpdatePayload extends AppointmentCreatePayload {
 	status: 'PENDIENTE' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO';
 	// Fase 4: notas de la sesion, se guardan al pasar a COMPLETADO (solo Premium).
-	session_notes?: string;
+	session_notes?: SessionNotes | string;
 }
 
 interface AppointmentSuccessResponse {
@@ -357,18 +364,22 @@ const normalizeAttachment = (value: unknown): AppointmentAttachment | null => {
 
 const normalizeAppointmentHistory = (value: unknown): AppointmentHistory => {
 	if (!value || typeof value !== 'object') {
-		return { notes: null, attachments: [] };
+		return {
+			consultation_reason: null,
+			procedure_notes: null,
+			recommendations: null,
+			notes: null,
+			attachments: [],
+		};
 	}
 	const source = value as Record<string, unknown>;
-	const rawNotes = source.notes;
-	const notes =
-		typeof rawNotes === 'string' && rawNotes.trim().length > 0 ? rawNotes : null;
+	const notes = normalizeSessionNotesHistory(source);
 	const attachments = Array.isArray(source.attachments)
 		? source.attachments
 				.map(normalizeAttachment)
 				.filter((item): item is AppointmentAttachment => item !== null)
 		: [];
-	return { notes, attachments };
+	return { ...notes, attachments };
 };
 
 const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null => {

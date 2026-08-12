@@ -530,24 +530,79 @@ const { showVoiceButton = false }: Props = Astro.props;
 						class="appointment-history__body grid gap-5"
 						data-appointment-history-body
 					>
-						<label class="grid gap-1.5 text-[0.9rem] font-bold text-(--on-surface)" data-appointment-notes-edit-wrap>
-							Notas de la sesión
-							<textarea
-								name="session_notes"
-								data-appointment-session-notes
-								rows="4"
-								maxlength="10000"
-								placeholder="Anota lo realizado, observaciones o recomendaciones…"
-								class="resize-y rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-							></textarea>
-						</label>
+						<div class="grid gap-4" data-appointment-notes-edit-wrap>
+							<label class="grid gap-1.5 text-[0.9rem] font-bold text-(--on-surface)">
+								Motivo de consulta / Requerimiento inicial
+								<textarea
+									name="consultation_reason"
+									data-appointment-session-consultation-reason
+									rows="3"
+									maxlength="3500"
+									placeholder="¿Por qué vino el cliente o qué solicitó?"
+									class="resize-y rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+								></textarea>
+							</label>
 
-						<div class="hidden grid gap-1.5" data-appointment-notes-readonly-wrap hidden>
-							<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">Notas de la sesión</span>
-							<p
-								class="m-0 whitespace-pre-line rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug text-(--on-surface)"
-								data-appointment-history-notes
-							></p>
+							<label class="grid gap-1.5 text-[0.9rem] font-bold text-(--on-surface)">
+								Procedimiento / Trabajo realizado
+								<textarea
+									name="procedure_notes"
+									data-appointment-session-procedure-notes
+									rows="4"
+									maxlength="4000"
+									placeholder="Detalle de lo realizado durante la sesión."
+									class="resize-y rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+								></textarea>
+							</label>
+
+							<label class="grid gap-1.5 text-[0.9rem] font-bold text-(--on-surface)">
+								Recomendaciones / Próximos pasos
+								<textarea
+									name="recommendations"
+									data-appointment-session-recommendations
+									rows="3"
+									maxlength="3500"
+									placeholder="Indicaciones para el cliente o pendientes para la próxima cita."
+									class="resize-y rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+								></textarea>
+							</label>
+						</div>
+
+						<div class="hidden grid gap-3" data-appointment-notes-readonly-wrap hidden>
+							<div class="grid gap-1.5" data-appointment-history-consultation-wrap hidden>
+								<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">
+									Motivo de consulta / Requerimiento inicial
+								</span>
+								<p
+									class="m-0 whitespace-pre-line rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug text-(--on-surface)"
+									data-appointment-history-consultation-reason
+								></p>
+							</div>
+							<div class="grid gap-1.5" data-appointment-history-procedure-wrap hidden>
+								<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">
+									Procedimiento / Trabajo realizado
+								</span>
+								<p
+									class="m-0 whitespace-pre-line rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug text-(--on-surface)"
+									data-appointment-history-procedure-notes
+								></p>
+							</div>
+							<div class="grid gap-1.5" data-appointment-history-recommendations-wrap hidden>
+								<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">
+									Recomendaciones / Próximos pasos
+								</span>
+								<p
+									class="m-0 whitespace-pre-line rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug text-(--on-surface)"
+									data-appointment-history-recommendations
+								></p>
+							</div>
+							<div class="grid gap-1.5 hidden" data-appointment-history-legacy-wrap hidden>
+								<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">Notas de la sesión</span>
+								<p
+									class="m-0 whitespace-pre-line rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug text-(--on-surface)"
+									data-appointment-history-notes
+								></p>
+							</div>
 						</div>
 
 						<div class="grid gap-2" data-appointment-attachments-wrap>
@@ -564,7 +619,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 									Arrastrá tus archivos aquí o hacé clic para buscar
 								</span>
 								<span class="appointment-dropzone__hint">
-									Formatos: JPG, PNG, PDF. Máx 20MB · Hasta 3 archivos
+									Formatos: JPG, PNG, PDF. Máx 20MB · Hasta 10 archivos
 								</span>
 							</button>
 							<input

@@ -4,6 +4,7 @@ import type {
 	CustomerProfile,
 	CustomerTopService,
 } from '../lib/customers';
+import { hasAnySessionNote, SESSION_NOTE_FIELDS } from '../lib/session-notes';
 import { updateAppPaginationDom } from '../lib/pagination';
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 type ProfessionalLov = { id_professional: number; display_name: string };
@@ -1022,22 +1023,43 @@ class CustomerManager extends HTMLElement {
 			} else {
 				const notesBlock = document.createElement('div');
 				notesBlock.className = 'customer-profile-history-block';
-				const notesTitle = document.createElement('p');
-				notesTitle.className = 'customer-profile-history-block__label';
-				notesTitle.textContent = 'Notas de la sesión';
-				notesBlock.appendChild(notesTitle);
 
-				const notes = String(appointment.notes || '').trim();
-				if (notes) {
-					const notesText = document.createElement('p');
-					notesText.className = 'customer-profile-history-notes';
-					notesText.textContent = notes;
-					notesBlock.appendChild(notesText);
+				const structuredFields = SESSION_NOTE_FIELDS.map((field) => ({
+					label: field.label,
+					value: String(appointment[field.key] || '').trim(),
+				})).filter((field) => field.value.length > 0);
+
+				if (structuredFields.length > 0) {
+					for (const field of structuredFields) {
+						const section = document.createElement('div');
+						section.className = 'customer-profile-history-note-section';
+						const label = document.createElement('p');
+						label.className = 'customer-profile-history-block__label';
+						label.textContent = field.label;
+						const text = document.createElement('p');
+						text.className = 'customer-profile-history-notes';
+						text.textContent = field.value;
+						section.append(label, text);
+						notesBlock.appendChild(section);
+					}
 				} else {
-					const noNotes = document.createElement('p');
-					noNotes.className = 'customer-profile-history-muted';
-					noNotes.textContent = 'Sin notas registradas.';
-					notesBlock.appendChild(noNotes);
+					const notesTitle = document.createElement('p');
+					notesTitle.className = 'customer-profile-history-block__label';
+					notesTitle.textContent = 'Notas de la sesión';
+					notesBlock.appendChild(notesTitle);
+
+					const legacyNotes = String(appointment.notes || '').trim();
+					if (legacyNotes) {
+						const notesText = document.createElement('p');
+						notesText.className = 'customer-profile-history-notes';
+						notesText.textContent = legacyNotes;
+						notesBlock.appendChild(notesText);
+					} else if (!hasAnySessionNote(appointment)) {
+						const noNotes = document.createElement('p');
+						noNotes.className = 'customer-profile-history-muted';
+						noNotes.textContent = 'Sin notas registradas.';
+						notesBlock.appendChild(noNotes);
+					}
 				}
 				body.appendChild(notesBlock);
 

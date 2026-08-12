@@ -6,6 +6,12 @@ import {
 	parseParaguayMobilePhone,
 } from '../../lib/paraguay-phone';
 import {
+	buildSessionNotesPayload,
+	hasAnySessionNote,
+	normalizeSessionNotesHistory,
+	type SessionNotes,
+} from '../../lib/session-notes';
+import {
 	getScheduleMisalignedConfirmMessage,
 	getScheduleMisalignedConfirmTitle,
 	getScheduleMisalignedMessage,
@@ -190,9 +196,18 @@ class AppointmentModal extends HTMLElement {
 	notesLockText: HTMLElement | null = null;
 	dropzone: HTMLElement | null = null;
 	notesEditWrap: HTMLElement | null = null;
-	sessionNotesInput: HTMLTextAreaElement | null = null;
+	sessionConsultationReasonInput: HTMLTextAreaElement | null = null;
+	sessionProcedureNotesInput: HTMLTextAreaElement | null = null;
+	sessionRecommendationsInput: HTMLTextAreaElement | null = null;
 	notesHint: HTMLElement | null = null;
 	notesReadonlyWrap: HTMLElement | null = null;
+	historyConsultationWrap: HTMLElement | null = null;
+	historyConsultationReason: HTMLElement | null = null;
+	historyProcedureWrap: HTMLElement | null = null;
+	historyProcedureNotes: HTMLElement | null = null;
+	historyRecommendationsWrap: HTMLElement | null = null;
+	historyRecommendations: HTMLElement | null = null;
+	historyLegacyWrap: HTMLElement | null = null;
 	historyNotes: HTMLElement | null = null;
 	attachmentsList: HTMLElement | null = null;
 	attachmentEmpty: HTMLElement | null = null;
@@ -322,11 +337,36 @@ class AppointmentModal extends HTMLElement {
 			this.form?.querySelector<HTMLElement>('[data-appointment-dropzone]') ?? null;
 		this.notesEditWrap =
 			this.form?.querySelector<HTMLElement>('[data-appointment-notes-edit-wrap]') ?? null;
-		this.sessionNotesInput =
-			this.form?.querySelector<HTMLTextAreaElement>('[data-appointment-session-notes]') ?? null;
+		this.sessionConsultationReasonInput =
+			this.form?.querySelector<HTMLTextAreaElement>(
+				'[data-appointment-session-consultation-reason]'
+			) ?? null;
+		this.sessionProcedureNotesInput =
+			this.form?.querySelector<HTMLTextAreaElement>('[data-appointment-session-procedure-notes]') ??
+			null;
+		this.sessionRecommendationsInput =
+			this.form?.querySelector<HTMLTextAreaElement>(
+				'[data-appointment-session-recommendations]'
+			) ?? null;
 		this.notesHint = null;
 		this.notesReadonlyWrap =
 			this.form?.querySelector<HTMLElement>('[data-appointment-notes-readonly-wrap]') ?? null;
+		this.historyConsultationWrap =
+			this.form?.querySelector<HTMLElement>('[data-appointment-history-consultation-wrap]') ?? null;
+		this.historyConsultationReason =
+			this.form?.querySelector<HTMLElement>('[data-appointment-history-consultation-reason]') ??
+			null;
+		this.historyProcedureWrap =
+			this.form?.querySelector<HTMLElement>('[data-appointment-history-procedure-wrap]') ?? null;
+		this.historyProcedureNotes =
+			this.form?.querySelector<HTMLElement>('[data-appointment-history-procedure-notes]') ?? null;
+		this.historyRecommendationsWrap =
+			this.form?.querySelector<HTMLElement>('[data-appointment-history-recommendations-wrap]') ??
+			null;
+		this.historyRecommendations =
+			this.form?.querySelector<HTMLElement>('[data-appointment-history-recommendations]') ?? null;
+		this.historyLegacyWrap =
+			this.form?.querySelector<HTMLElement>('[data-appointment-history-legacy-wrap]') ?? null;
 		this.historyNotes =
 			this.form?.querySelector<HTMLElement>('[data-appointment-history-notes]') ?? null;
 		this.attachmentsList =
@@ -1111,9 +1151,9 @@ class AppointmentModal extends HTMLElement {
 		}
 
 		const notesBlocked = locked || this.isImmutableReadOnly;
-		if (this.sessionNotesInput) {
-			this.sessionNotesInput.readOnly = notesBlocked;
-			this.sessionNotesInput.disabled = locked;
+		for (const input of this.getSessionNoteInputs()) {
+			input.readOnly = notesBlocked;
+			input.disabled = locked;
 		}
 		if (this.attachmentAddButton) {
 			this.attachmentAddButton.disabled = locked || this.isUploadingAttachment;
@@ -1126,7 +1166,105 @@ class AppointmentModal extends HTMLElement {
 		this.syncDropzoneVisibility();
 	}
 
-	private static readonly MAX_ATTACHMENTS = 3;
+	private getSessionNoteInputs() {
+		return [
+			this.sessionConsultationReasonInput,
+			this.sessionProcedureNotesInput,
+			this.sessionRecommendationsInput,
+		].filter((input): input is HTMLTextAreaElement => input instanceof HTMLTextAreaElement);
+	}
+
+	private readSessionNotesFromInputs(): SessionNotes {
+		return {
+			consultation_reason: this.sessionConsultationReasonInput?.value ?? '',
+			procedure_notes: this.sessionProcedureNotesInput?.value ?? '',
+			recommendations: this.sessionRecommendationsInput?.value ?? '',
+		};
+	}
+
+	private setSessionNotesOnInputs(notes: SessionNotes) {
+		if (this.sessionConsultationReasonInput) {
+			this.sessionConsultationReasonInput.value = notes.consultation_reason ?? '';
+		}
+		if (this.sessionProcedureNotesInput) {
+			this.sessionProcedureNotesInput.value = notes.procedure_notes ?? '';
+		}
+		if (this.sessionRecommendationsInput) {
+			this.sessionRecommendationsInput.value = notes.recommendations ?? '';
+		}
+	}
+
+	private clearSessionNotesInputs() {
+		for (const input of this.getSessionNoteInputs()) {
+			input.value = '';
+			input.readOnly = false;
+			input.disabled = false;
+		}
+	}
+
+	private renderReadonlySessionNotes(notes: ReturnType<typeof normalizeSessionNotesHistory>) {
+		const showBlock = (
+			wrap: HTMLElement | null,
+			node: HTMLElement | null,
+			value: string | null | undefined
+		) => {
+			const text = String(value ?? '').trim();
+			if (!wrap || !node) return;
+			if (!text) {
+				wrap.classList.add('hidden');
+				wrap.setAttribute('hidden', '');
+				node.textContent = '';
+				return;
+			}
+			node.textContent = text;
+			wrap.classList.remove('hidden');
+			wrap.removeAttribute('hidden');
+		};
+
+		const structured = Boolean(
+			String(notes.consultation_reason ?? '').trim() ||
+				String(notes.procedure_notes ?? '').trim() ||
+				String(notes.recommendations ?? '').trim()
+		);
+
+		if (structured) {
+			showBlock(
+				this.historyConsultationWrap,
+				this.historyConsultationReason,
+				notes.consultation_reason
+			);
+			showBlock(this.historyProcedureWrap, this.historyProcedureNotes, notes.procedure_notes);
+			showBlock(
+				this.historyRecommendationsWrap,
+				this.historyRecommendations,
+				notes.recommendations
+			);
+			this.historyLegacyWrap?.classList.add('hidden');
+			this.historyLegacyWrap?.setAttribute('hidden', '');
+			if (this.historyNotes) this.historyNotes.textContent = '';
+			return;
+		}
+
+		this.historyConsultationWrap?.classList.add('hidden');
+		this.historyConsultationWrap?.setAttribute('hidden', '');
+		this.historyProcedureWrap?.classList.add('hidden');
+		this.historyProcedureWrap?.setAttribute('hidden', '');
+		this.historyRecommendationsWrap?.classList.add('hidden');
+		this.historyRecommendationsWrap?.setAttribute('hidden', '');
+
+		const legacy = String(notes.notes ?? '').trim();
+		if (legacy && this.historyLegacyWrap && this.historyNotes) {
+			this.historyNotes.textContent = legacy;
+			this.historyLegacyWrap.classList.remove('hidden');
+			this.historyLegacyWrap.removeAttribute('hidden');
+		} else {
+			this.historyLegacyWrap?.classList.add('hidden');
+			this.historyLegacyWrap?.setAttribute('hidden', '');
+			if (this.historyNotes) this.historyNotes.textContent = '';
+		}
+	}
+
+	private static readonly MAX_ATTACHMENTS = 10;
 
 	private syncAttachmentEmptyVisibility() {
 		const locked = this.historyEnabled && !this.isNotesSectionUnlocked();
@@ -1176,12 +1314,13 @@ class AppointmentModal extends HTMLElement {
 		this.notesEditWrap?.classList.add('hidden');
 		this.notesReadonlyWrap?.setAttribute('hidden', '');
 		this.notesReadonlyWrap?.classList.add('hidden');
-		if (this.sessionNotesInput) {
-			this.sessionNotesInput.value = '';
-			this.sessionNotesInput.readOnly = false;
-			this.sessionNotesInput.disabled = false;
-		}
-		if (this.historyNotes) this.historyNotes.textContent = '';
+		this.clearSessionNotesInputs();
+		this.renderReadonlySessionNotes({
+			consultation_reason: null,
+			procedure_notes: null,
+			recommendations: null,
+			notes: null,
+		});
 		this.attachmentsList?.replaceChildren();
 		this.attachmentEmpty?.classList.remove('hidden');
 		this.clearAttachmentError();
@@ -1293,19 +1432,19 @@ class AppointmentModal extends HTMLElement {
 		this.historySection.classList.remove('hidden');
 
 		const status = String(appointment.status || '').trim().toUpperCase();
-		const savedNotes = appointment.history?.notes ?? null;
+		const savedNotes = normalizeSessionNotesHistory(appointment.history ?? {});
 		const showReadonlyNotes =
 			(status === 'CANCELADO' || (status === 'COMPLETADO' && this.isImmutableReadOnly)) &&
-			Boolean(savedNotes);
+			hasAnySessionNote(savedNotes);
 
-		if (showReadonlyNotes && this.notesReadonlyWrap && this.historyNotes) {
-			this.historyNotes.textContent = savedNotes;
+		if (showReadonlyNotes && this.notesReadonlyWrap) {
+			this.renderReadonlySessionNotes(savedNotes);
 			this.notesReadonlyWrap.removeAttribute('hidden');
 			this.notesReadonlyWrap.classList.remove('hidden');
 			this.notesEditWrap?.setAttribute('hidden', '');
 			this.notesEditWrap?.classList.add('hidden');
-		} else if (this.notesEditWrap && this.sessionNotesInput) {
-			this.sessionNotesInput.value = savedNotes ?? '';
+		} else if (this.notesEditWrap) {
+			this.setSessionNotesOnInputs(savedNotes);
 			this.notesEditWrap.removeAttribute('hidden');
 			this.notesEditWrap.classList.remove('hidden');
 			this.notesReadonlyWrap?.setAttribute('hidden', '');
@@ -1459,14 +1598,14 @@ class AppointmentModal extends HTMLElement {
 
 		const remaining = maxFiles - this.currentAttachments.length;
 		if (remaining <= 0) {
-			this.showAttachmentError('Ya alcanzaste el máximo de 3 archivos.');
+			this.showAttachmentError('Ya alcanzaste el máximo de 10 archivos.');
 			return;
 		}
 		if (queue.length > remaining) {
 			this.showAttachmentError(
 				remaining === 1
-					? 'Solo podés subir 1 archivo más (máximo 3).'
-					: `Solo podés subir ${remaining} archivos más (máximo 3).`
+					? 'Solo podés subir 1 archivo más (máximo 10).'
+					: `Solo podés subir ${remaining} archivos más (máximo 10).`
 			);
 			return;
 		}
@@ -1966,9 +2105,9 @@ class AppointmentModal extends HTMLElement {
 			this.historyEnabled &&
 			!!this.notesEditWrap &&
 			!this.notesEditWrap.hasAttribute('hidden') &&
-			!!this.sessionNotesInput;
+			this.getSessionNoteInputs().length > 0;
 		const sessionNotes = includeSessionNotes
-			? String(this.sessionNotesInput?.value ?? '')
+			? buildSessionNotesPayload(this.readSessionNotesFromInputs())
 			: undefined;
 
 		return {

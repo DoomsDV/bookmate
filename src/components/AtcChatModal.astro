@@ -1,7 +1,7 @@
 <atc-chat-modal>
 	<dialog
 		data-atc-chat-modal
-		class="m-0 mt-auto mb-0 h-[min(34rem,92svh)] w-screen max-w-none open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:h-[min(36rem,90vh)] sm:w-[min(32rem,calc(100vw-2rem))] sm:max-w-[min(32rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[min(32rem,100%)] lg:max-w-[min(32rem,100%)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+		class="m-0 mt-auto mb-0 h-[90svh] w-screen max-w-none open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:h-[min(36rem,90vh)] sm:w-[min(32rem,calc(100vw-2rem))] sm:max-w-[min(32rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[min(32rem,100%)] lg:max-w-[min(32rem,100%)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 	>
 		<header class="flex shrink-0 items-start justify-between gap-3 border-b border-(--shell-border) px-4 py-3 sm:px-5 sm:py-4">
 			<div class="flex min-w-0 items-center gap-3">
@@ -27,13 +27,19 @@
 
 		<div class="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5" data-atc-chat-messages>
 			<div class="atc-chat-welcome" data-atc-chat-welcome>
-				Hola. Soy el asistente de atención al cliente de Hasel. Preguntame sobre el producto y te respondo con la documentación cargada.
+				¡Hola! ¿En qué puedo ayudarte con Hasel hoy?
 			</div>
 		</div>
 
 		<div class="hidden shrink-0 px-4 pb-2 text-sm text-red-600 sm:px-5" data-atc-chat-error></div>
 
-		<form class="shrink-0 border-t border-(--shell-border) px-3 py-3 sm:px-4" data-atc-chat-form>
+		<div class="atc-chat-composer shrink-0 border-t border-(--shell-border)">
+			<div class="atc-chat-suggestions-wrap" data-atc-chat-suggestions-wrap>
+				<p class="atc-chat-suggestions-label">Podés empezar con</p>
+				<div class="atc-chat-suggestions" data-atc-chat-suggestions aria-label="Preguntas sugeridas"></div>
+			</div>
+
+			<form class="px-3 py-3 sm:px-4" data-atc-chat-form>
 			<div class="flex items-end gap-2">
 				<textarea
 					rows="1"
@@ -51,12 +57,14 @@
 					<span class="material-symbols-rounded text-[1.25rem]">arrow_upward</span>
 				</button>
 			</div>
-		</form>
+			</form>
+		</div>
 	</dialog>
 </atc-chat-modal>
 
 <script>
 	import { BUSINESS_HOURS_TIME_ZONE } from '../lib/business-hours';
+	import { ATC_CHAT_SUGGESTED_QUESTIONS } from '../lib/atc-chat-ui';
 
 	type AtcRole = 'user' | 'assistant';
 
@@ -139,6 +147,8 @@
 	class AtcChatModal extends HTMLElement {
 		private modal: HTMLDialogElement | null = null;
 		private messagesEl: HTMLElement | null = null;
+		private suggestionsWrapEl: HTMLElement | null = null;
+		private suggestionsEl: HTMLElement | null = null;
 		private errorEl: HTMLElement | null = null;
 		private form: HTMLFormElement | null = null;
 		private input: HTMLTextAreaElement | null = null;
@@ -153,6 +163,8 @@
 		connectedCallback() {
 			this.modal = this.querySelector('[data-atc-chat-modal]');
 			this.messagesEl = this.querySelector('[data-atc-chat-messages]');
+			this.suggestionsWrapEl = this.querySelector('[data-atc-chat-suggestions-wrap]');
+			this.suggestionsEl = this.querySelector('[data-atc-chat-suggestions]');
 			this.errorEl = this.querySelector('[data-atc-chat-error]');
 			this.form = this.querySelector('[data-atc-chat-form]');
 			this.input = this.querySelector('[data-atc-chat-input]');
@@ -173,9 +185,15 @@
 					if (target?.closest('[data-atc-chat-close]')) {
 						this.close();
 					}
+					const suggestionButton = target?.closest<HTMLButtonElement>('[data-atc-chat-suggestion]');
+					if (suggestionButton) {
+						this.handleSuggestedQuestion(suggestionButton);
+					}
 				},
 				{ signal }
 			);
+
+			this.renderSuggestedQuestions();
 
 			this.modal?.addEventListener(
 				'close',
@@ -336,10 +354,7 @@
 		private applyMobileSheetLock() {
 			if (!this.modal || !this.isMobileSheet()) return;
 			if (!this.lockedSheetHeightPx) {
-				this.lockedSheetHeightPx = Math.min(
-					34 * 16,
-					Math.round(this.getLayoutViewportHeight() * 0.92)
-				);
+				this.lockedSheetHeightPx = Math.round(this.getLayoutViewportHeight() * 0.9);
 			}
 			this.modal.style.height = `${this.lockedSheetHeightPx}px`;
 			this.modal.style.maxHeight = `${this.lockedSheetHeightPx}px`;
@@ -536,6 +551,10 @@
 				welcome.classList.toggle('hidden', this.messages.length > 0);
 			}
 
+			if (this.suggestionsWrapEl) {
+				this.suggestionsWrapEl.classList.toggle('hidden', this.messages.length > 0);
+			}
+
 			// Mantener el indicador de pensamiento al final de la lista
 			if (thinking) {
 				this.messagesEl.appendChild(thinking);
@@ -570,6 +589,11 @@
 			this.busy = next;
 			if (this.sendBtn) this.sendBtn.disabled = next;
 			if (this.input) this.input.disabled = next;
+			this.messagesEl
+				?.querySelectorAll<HTMLButtonElement>('[data-atc-chat-suggestion]')
+				.forEach((button) => {
+					button.disabled = next;
+				});
 			if (next) {
 				this.appendThinking();
 			} else {
@@ -577,14 +601,59 @@
 			}
 		}
 
-		private async submitMessage() {
+		private renderSuggestedQuestions() {
+			if (!this.suggestionsEl) return;
+			this.suggestionsEl.replaceChildren();
+
+			const fragment = document.createDocumentFragment();
+			for (const [index, suggestion] of ATC_CHAT_SUGGESTED_QUESTIONS.entries()) {
+				const button = document.createElement('button');
+				button.type = 'button';
+				button.className = 'atc-chat-suggestion-btn';
+				button.style.setProperty('--chip-index', String(index));
+				button.dataset.atcChatSuggestion = suggestion.message;
+				button.dataset.atcChatSuggestionLabel = suggestion.label;
+				button.setAttribute('aria-label', suggestion.label);
+				button.disabled = this.busy;
+
+				const iconWrap = document.createElement('span');
+				iconWrap.className = 'atc-chat-suggestion-btn__icon';
+
+				const icon = document.createElement('span');
+				icon.className = 'material-symbols-rounded';
+				icon.setAttribute('aria-hidden', 'true');
+				icon.textContent = suggestion.icon;
+				iconWrap.appendChild(icon);
+
+				const label = document.createElement('span');
+				label.className = 'atc-chat-suggestion-btn__label';
+				label.textContent = suggestion.label;
+
+				button.append(iconWrap, label);
+				fragment.appendChild(button);
+			}
+
+			this.suggestionsEl.appendChild(fragment);
+		}
+
+		private handleSuggestedQuestion(button: HTMLButtonElement) {
+			const message = String(button.dataset.atcChatSuggestion || '').trim();
+			const label = String(button.dataset.atcChatSuggestionLabel || message).trim();
+			if (!message || this.busy) return;
+			void this.submitMessage(message, label);
+		}
+
+		private async submitMessage(override?: string, displayOverride?: string) {
 			if (this.busy || !this.input) return;
-			const message = this.input.value.trim();
+			const message = (override ?? this.input.value).trim();
+			const displayMessage = (displayOverride ?? message).trim();
 			if (!message) return;
 
 			this.clearError();
-			this.messages.push({ role: 'user', content: message, sentAt: Date.now() });
-			this.input.value = '';
+			this.messages.push({ role: 'user', content: displayMessage, sentAt: Date.now() });
+			if (!override) {
+				this.input.value = '';
+			}
 			await this.renderMessages();
 			this.setBusy(true);
 
@@ -735,8 +804,8 @@
 			margin: 0;
 			width: 100%;
 			max-width: none;
-			height: min(34rem, 92svh);
-			max-height: 92svh;
+			height: 90svh;
+			max-height: 90svh;
 		}
 
 		/* Tras la animación: fijar transform para que el teclado no desplace el sheet. */
@@ -848,6 +917,127 @@
 		line-height: 1.45;
 		color: var(--on-surface);
 		box-shadow: 0 1px 2px color-mix(in srgb, var(--on-surface) 5%, transparent);
+	}
+
+	.atc-chat-composer {
+		background: var(--surface-bright);
+	}
+
+	.atc-chat-suggestions-wrap {
+		width: 100%;
+		max-width: 100%;
+		padding: 0.7rem 1rem 0.35rem;
+	}
+
+	@media (min-width: 640px) {
+		.atc-chat-suggestions-wrap {
+			padding: 0.75rem 1.25rem 0.4rem;
+		}
+	}
+
+	.atc-chat-suggestions-wrap.hidden {
+		display: none;
+	}
+
+	.atc-chat-suggestions-label {
+		margin: 0 0 0.5rem;
+		padding-left: 0.05rem;
+		font-size: 0.7rem;
+		font-weight: 650;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+	}
+
+	.atc-chat-suggestions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-start;
+		align-items: flex-start;
+		gap: 0.42rem;
+	}
+
+	.atc-chat-suggestion-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.42rem;
+		width: auto;
+		max-width: 100%;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 88%, transparent);
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-bright) 94%, var(--primary) 6%);
+		padding: 0.36rem 0.78rem 0.36rem 0.38rem;
+		color: color-mix(in srgb, var(--on-surface) 88%, var(--on-surface-variant) 12%);
+		font-size: 0.79rem;
+		font-weight: 600;
+		line-height: 1.35;
+		text-align: left;
+		cursor: pointer;
+		box-shadow: none;
+		transition:
+			background-color 160ms ease,
+			border-color 160ms ease,
+			color 160ms ease,
+			transform 160ms ease;
+		animation: atc-chip-in 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+		animation-delay: calc(var(--chip-index, 0) * 55ms + 40ms);
+	}
+
+	.atc-chat-suggestion-btn:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--primary-soft) 28%, var(--surface-bright) 72%);
+		border-color: color-mix(in srgb, var(--primary) 18%, var(--shell-border) 82%);
+		color: var(--on-surface);
+		transform: translateY(-1px);
+		box-shadow: 0 2px 8px color-mix(in srgb, var(--on-surface) 4%, transparent);
+	}
+
+	.atc-chat-suggestion-btn:active:not(:disabled) {
+		transform: scale(0.98);
+	}
+
+	.atc-chat-suggestion-btn:disabled {
+		cursor: not-allowed;
+		opacity: 0.5;
+	}
+
+	.atc-chat-suggestion-btn__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.5rem;
+		height: 1.5rem;
+		flex-shrink: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 9%, var(--surface-bright) 91%);
+		color: color-mix(in srgb, var(--primary) 70%, var(--on-surface-variant) 30%);
+	}
+
+	.atc-chat-suggestion-btn__icon .material-symbols-rounded {
+		font-size: 0.92rem;
+		font-variation-settings: 'FILL' 0, 'wght' 480, 'opsz' 20;
+	}
+
+	.atc-chat-suggestion-btn__label {
+		padding-right: 0.08rem;
+		white-space: normal;
+		text-wrap: balance;
+	}
+
+	@keyframes atc-chip-in {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.atc-chat-suggestion-btn {
+			animation: none;
+		}
 	}
 
 	.atc-chat-bubble__body {

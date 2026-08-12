@@ -33,8 +33,14 @@ export type AppointmentAttachment = {
 	created_at?: string;
 };
 
-export type AppointmentHistory = {
-	notes: string | null;
+export type SessionNotes = {
+	consultation_reason?: string | null;
+	procedure_notes?: string | null;
+	recommendations?: string | null;
+};
+
+export type AppointmentHistory = SessionNotes & {
+	notes?: string | null;
 	attachments: AppointmentAttachment[];
 };
 
@@ -75,7 +81,7 @@ export type AppointmentFormPayload = {
 	start_time: string;
 	end_time: string;
 	status: AppointmentStatus;
-	session_notes?: string;
+	session_notes?: SessionNotes | string;
 	acknowledge_schedule_misalignment?: boolean;
 	notify_customer?: boolean;
 };

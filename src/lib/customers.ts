@@ -1,4 +1,5 @@
 import { resolveOrdsApiUrl } from './env-urls';
+import { hasAnySessionNote, normalizeSessionNotesHistory } from './session-notes';
 
 export const CUSTOMERS_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_CUSTOMERS_URL,
@@ -46,6 +47,9 @@ export interface CustomerAppointmentSummary {
 	has_history_notes?: boolean;
 	attachment_count?: number;
 	has_history?: boolean;
+	consultation_reason?: string | null;
+	procedure_notes?: string | null;
+	recommendations?: string | null;
 	notes?: string | null;
 	attachments?: CustomerAppointmentAttachment[];
 }
@@ -303,11 +307,7 @@ const normalizeAppointmentSummary = (value: unknown): CustomerAppointmentSummary
 
 	const endTime = String(source.end_time || '').trim();
 	const appointmentId = toNumber(source.id_appointment, 0);
-	const notesRaw = source.notes;
-	const notes =
-		notesRaw === null || notesRaw === undefined
-			? null
-			: String(notesRaw).trim() || null;
+	const sessionNotes = normalizeSessionNotesHistory(source);
 	const attachmentsRaw = source.attachments;
 	const attachments = Array.isArray(attachmentsRaw)
 		? attachmentsRaw
@@ -327,16 +327,25 @@ const normalizeAppointmentSummary = (value: unknown): CustomerAppointmentSummary
 		...(Number.isInteger(appointmentId) && appointmentId > 0
 			? { id_appointment: appointmentId }
 			: {}),
-		has_history_notes: source.has_history_notes === true || Boolean(notes),
+		has_history_notes: source.has_history_notes === true || hasAnySessionNote(sessionNotes),
 		attachment_count: Math.max(
 			0,
 			Math.floor(toNumber(source.attachment_count, attachments?.length ?? 0))
 		),
 		has_history:
 			source.has_history === true ||
-			Boolean(notes) ||
+			hasAnySessionNote(sessionNotes) ||
 			(attachments !== undefined && attachments.length > 0),
-		...(notes !== null ? { notes } : notesRaw === null ? { notes: null } : {}),
+		...(sessionNotes.consultation_reason !== null
+			? { consultation_reason: sessionNotes.consultation_reason }
+			: {}),
+		...(sessionNotes.procedure_notes !== null
+			? { procedure_notes: sessionNotes.procedure_notes }
+			: {}),
+		...(sessionNotes.recommendations !== null
+			? { recommendations: sessionNotes.recommendations }
+			: {}),
+		...(sessionNotes.notes !== null ? { notes: sessionNotes.notes } : {}),
 		...(attachments ? { attachments } : {}),
 	};
 };
