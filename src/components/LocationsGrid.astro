@@ -94,6 +94,7 @@ const eagerMapPreloadUrls = locations
 				>
 					<span class="material-symbols-rounded text-[1.15rem]" aria-hidden="true">event_busy</span>
 					<span>Cierres generales</span>
+					<span class="locations-org-closures-btn__badge" aria-hidden="true">Nuevo</span>
 				</button>
 			)}
 
@@ -549,6 +550,24 @@ const eagerMapPreloadUrls = locations
 		transition: background 140ms ease, color 140ms ease, border-color 140ms ease;
 	}
 
+	.locations-org-closures-btn__badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.18rem 0.5rem;
+		border-radius: 999px;
+		font-size: 0.62rem;
+		font-weight: 800;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		line-height: 1.15;
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		color: var(--primary);
+	}
+
+	.locations-org-closures-btn:hover .locations-org-closures-btn__badge {
+		background: color-mix(in srgb, var(--primary) 20%, transparent);
+	}
+
 	.locations-org-closures-btn:hover {
 		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
 		color: var(--on-surface);
@@ -633,6 +652,10 @@ const eagerMapPreloadUrls = locations
 	html[data-theme='dark'] .locations-org-closures-btn:hover {
 		background: rgba(255, 255, 255, 0.06);
 		color: var(--on-surface);
+	}
+
+	html[data-theme='dark'] .locations-org-closures-btn__badge {
+		background: color-mix(in srgb, var(--primary) 22%, transparent);
 	}
 </style>
 

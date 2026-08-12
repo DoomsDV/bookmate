@@ -1,5 +1,7 @@
 import TomSelect from 'tom-select';
 import { showFlashMessage } from '../lib/flash';
+import { showOrgClosuresTour } from '../lib/org-closures-tour';
+import { destroyActiveBookmateTour } from '../lib/product-tour';
 
 const showAppAlert = ({ type, message }: { type: 'success' | 'error'; message: string }) =>
 	showFlashMessage({ type, message });
@@ -233,6 +235,11 @@ class LocationClosuresUI {
 				}
 				if (target.closest('[data-close-org-closures]')) {
 					this.closeOrgDialog();
+					return;
+				}
+				if (target.closest('[data-org-closures-tour-help]')) {
+					event.preventDefault();
+					showOrgClosuresTour();
 					return;
 				}
 				if (target.closest('[data-add-closure-btn]')) {
@@ -483,6 +490,7 @@ class LocationClosuresUI {
 	}
 
 	private closeOrgDialog() {
+		destroyActiveBookmateTour();
 		const orgDialog = this.els()?.orgDialog;
 		if (!orgDialog?.open || !orgDialog.isConnected) return;
 		orgDialog.classList.add('is-closing');

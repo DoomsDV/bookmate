@@ -44,9 +44,12 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 							<option value="">—</option>
 						</select>
 					</div>
-					<button type="button" class="agenda-preview-apply" data-agenda-apply-defaults>
-						Aplicar a todas
-					</button>
+					<div class="agenda-preview-defaults__field agenda-preview-defaults__field--service">
+						<label>Servicio</label>
+						<select data-agenda-default-service>
+							<option value="">—</option>
+						</select>
+					</div>
 				</div>
 
 				<div class="agenda-preview-body">
@@ -138,8 +141,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		display: flex;
 		flex-direction: column;
 		width: 100%;
-		height: min(92dvh, calc(100dvh - 0.75rem));
-		max-height: min(92dvh, calc(100dvh - 0.75rem));
+		height: 100dvh;
+		max-height: 100dvh;
 		background: var(--surface-bright);
 		border: 1px solid var(--shell-border);
 		border-bottom: 0;
@@ -267,6 +270,42 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 		.agenda-preview-sheet-handle {
 			display: none;
+		}
+
+		.agenda-preview-dialog {
+			height: 100dvh;
+			max-height: 100dvh;
+			border-radius: 0;
+			border-bottom: 1px solid var(--shell-border);
+		}
+
+		.agenda-preview-header {
+			padding-left: 1.75rem;
+			padding-right: 1.75rem;
+		}
+
+		.agenda-preview-defaults {
+			padding-left: 1.75rem;
+			padding-right: 1.75rem;
+		}
+
+		.agenda-preview-rows {
+			padding: 0.35rem 1.75rem 0;
+		}
+
+		.agenda-preview-addrow {
+			margin-left: 1.75rem;
+			margin-right: 1.75rem;
+		}
+
+		.agenda-preview-error {
+			margin-left: 1.75rem;
+			margin-right: 1.75rem;
+		}
+
+		.agenda-preview-footer {
+			padding-left: 1.75rem;
+			padding-right: 1.75rem;
 		}
 	}
 
@@ -441,24 +480,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		font-weight: 600;
 	}
 
-	.agenda-preview-apply {
-		align-self: flex-end;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-height: 2.55rem;
-		padding: 0.55rem 0.9rem;
-		border-radius: 0.7rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 40%, var(--shell-border));
-		background: color-mix(in srgb, var(--primary) 10%, transparent);
-		color: var(--primary);
-		font-size: 0.8rem;
-		font-weight: 800;
-		cursor: pointer;
-		white-space: nowrap;
-		box-sizing: border-box;
-	}
-
 	.agenda-preview-body {
 		display: flex;
 		flex-direction: column;
@@ -556,10 +577,10 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	.agenda-preview-rows {
 		flex: 1;
 		overflow-y: auto;
-		padding: 0.75rem 0.9rem;
+		padding: 0 1rem;
 		display: flex;
 		flex-direction: column;
-		gap: 0.6rem;
+		gap: 0;
 		background: transparent;
 		contain: layout paint;
 	}
@@ -571,16 +592,24 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		display: flex;
 		flex-direction: column;
 		gap: 0.55rem;
-		padding: 0.7rem 0.75rem 0.75rem;
-		border-radius: 0.9rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 75%, transparent);
-		background: color-mix(in srgb, var(--surface-variant) 42%, var(--surface-bright));
-		box-shadow: 0 1px 0 color-mix(in srgb, var(--on-surface) 3%, transparent);
-		transition: border-color 160ms ease, box-shadow 160ms ease;
+		padding: 0.85rem 0 0.9rem 0.9rem;
+		margin-left: 0;
+		border: 0;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 72%, transparent);
+		border-left: 3px solid var(--agenda-confidence);
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
+		transition: background-color 160ms ease;
+	}
+
+	.agenda-preview-row:last-child {
+		border-bottom: 0;
 	}
 
 	.agenda-preview-row:hover {
-		box-shadow: 0 6px 18px color-mix(in srgb, #000 12%, transparent);
+		background: color-mix(in srgb, var(--surface-variant) 28%, transparent);
+		box-shadow: none;
 	}
 
 	.agenda-preview-row[data-confidence='high'] {
@@ -623,35 +652,37 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	.agenda-preview-row__lead-name {
 		min-width: 0;
 		flex: 1;
-		height: 2.15rem;
+		height: auto;
+		min-height: 2rem;
 		margin: 0;
-		padding: 0 0.65rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 85%, transparent);
-		border-radius: 0.65rem;
-		background: color-mix(in srgb, var(--surface-bright) 88%, #000 12%);
+		padding: 0.15rem 0;
+		border: 0;
+		border-bottom: 1px solid transparent;
+		border-radius: 0;
+		background: transparent;
 		box-shadow: none;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
 		font-size: 0.92rem;
 		font-weight: 800;
-		line-height: 2.05rem;
+		line-height: 1.35;
 		color: var(--on-surface);
 		box-sizing: border-box;
 		appearance: none;
 		-webkit-appearance: none;
-		transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+		transition: border-color 140ms ease, color 140ms ease;
 	}
 
 	.agenda-preview-row__lead-name:hover {
 		outline: none;
-		background: color-mix(in srgb, var(--surface-bright) 78%, #000 22%);
+		background: transparent;
 	}
 
 	.agenda-preview-row__lead-name:focus {
 		outline: none;
-		border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 14%, transparent);
+		border-bottom-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+		box-shadow: none;
 	}
 
 	.agenda-preview-row__grid {
@@ -682,14 +713,15 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		align-items: center;
 		gap: 0.5rem;
 		min-width: 0;
-		min-height: 3.1rem;
-		padding: 0.75rem 0.85rem;
-		border-radius: 0.75rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 85%, transparent);
-		background: color-mix(in srgb, var(--surface-bright) 88%, #000 12%);
+		min-height: 2.5rem;
+		padding: 0.35rem 0;
+		border: 0;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 65%, transparent);
+		border-radius: 0;
+		background: transparent;
 		box-sizing: border-box;
 		overflow: visible;
-		transition: border-color 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+		transition: border-color 140ms ease, background-color 140ms ease;
 	}
 
 	.agenda-preview-row__icon {
@@ -783,8 +815,9 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.agenda-preview-row__control:focus-within {
-		border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 14%, transparent);
+		border-bottom-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+		box-shadow: none;
+		background: color-mix(in srgb, var(--surface-variant) 18%, transparent);
 	}
 
 	.agenda-preview-row__control input:focus,
@@ -794,14 +827,15 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.agenda-preview-row__field.is-valid .agenda-preview-row__control {
-		border-color: color-mix(in srgb, var(--agenda-valid) 42%, var(--shell-border));
+		border-bottom-color: color-mix(in srgb, var(--agenda-valid) 42%, var(--shell-border));
 		box-shadow: none;
-		background: color-mix(in srgb, var(--agenda-valid) 5%, var(--surface-bright));
+		background: transparent;
 	}
 
 	.agenda-preview-row__field.is-valid .agenda-preview-row__control:focus-within {
-		border-color: color-mix(in srgb, var(--agenda-valid) 55%, var(--shell-border));
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--agenda-valid) 10%, transparent);
+		border-bottom-color: color-mix(in srgb, var(--agenda-valid) 55%, var(--shell-border));
+		box-shadow: none;
+		background: color-mix(in srgb, var(--agenda-valid) 6%, transparent);
 	}
 
 	.agenda-preview-row__field--time input {
@@ -855,8 +889,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	}
 
 	.agenda-preview-addrow {
-		margin: 0.65rem 0.9rem 0.85rem;
-		display: inline-flex;
+		display: none;
+		margin: 0.5rem 1rem 0.75rem;
 		align-items: center;
 		justify-content: center;
 		gap: 0.3rem;
@@ -945,8 +979,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			max-height: none;
 			height: auto;
 			align-self: stretch;
-			padding-left: 0.75rem;
-			padding-right: 0.75rem;
+			padding: 0.75rem 1.25rem 0.75rem 1.5rem;
 			border-bottom: 0;
 			border-right: 1px solid color-mix(in srgb, var(--shell-border) 60%, transparent);
 		}
@@ -956,9 +989,38 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			min-width: 0;
 		}
 
+		.agenda-preview-header {
+			padding-left: 2rem;
+			padding-right: 2rem;
+		}
+
+		.agenda-preview-defaults {
+			padding-left: 2rem;
+			padding-right: 2rem;
+		}
+
+		.agenda-preview-rows {
+			padding: 0.5rem 2rem 0;
+		}
+
+		.agenda-preview-addrow {
+			margin-left: 2rem;
+			margin-right: 2rem;
+		}
+
+		.agenda-preview-error {
+			margin-left: 2rem;
+			margin-right: 2rem;
+		}
+
+		.agenda-preview-footer {
+			padding-left: 2rem;
+			padding-right: 2rem;
+		}
+
 		.agenda-preview-row {
-			padding: 0.75rem 0.85rem 0.8rem;
-			gap: 0.55rem;
+			padding: 0.9rem 0 1rem 1rem;
+			gap: 0.6rem;
 		}
 	}
 
@@ -1028,13 +1090,17 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			height: 2.2rem;
 		}
 
-		/* Filtros: Profesional | Sucursal; CTA full-width. */
+		/* Filtros: Profesional | Sucursal; Servicio a ancho completo. */
 		.agenda-preview-defaults {
 			display: grid;
 			grid-template-columns: 1fr 1fr;
 			align-items: end;
 			gap: 0.6rem 0.65rem;
 			padding: 0.9rem 1rem 0.95rem;
+		}
+
+		.agenda-preview-defaults__field--service {
+			grid-column: 1 / -1;
 		}
 
 		.agenda-preview-defaults__field {
@@ -1054,30 +1120,20 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			padding-right: 2.1rem;
 		}
 
-		.agenda-preview-apply {
-			grid-column: 1 / -1;
-			width: 100%;
-			padding: 0.8rem 1rem;
-			font-size: 0.9rem;
-			border-radius: 0.8rem;
-		}
-
 		/* En mobile la imagen no se muestra: prioriza editar las citas. */
 		.agenda-preview-image-pane,
 		.agenda-preview-image-pane.is-visible {
 			display: none;
 		}
 
-		/* Contenido de las citas con más aire. */
 		.agenda-preview-rows {
-			padding: 0.9rem 1rem;
-			gap: 0.75rem;
+			padding: 0 1rem;
+			gap: 0;
 		}
 
 		.agenda-preview-row {
-			padding: 0.9rem 0.95rem 1rem;
-			border-radius: 1rem;
-			gap: 0.7rem;
+			padding: 0.95rem 0 1rem 0.9rem;
+			gap: 0.65rem;
 		}
 
 		.agenda-preview-row__lead {
@@ -1086,11 +1142,13 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 		.agenda-preview-row__lead-name {
 			font-size: 0.96rem;
+			min-height: 2.15rem;
+			padding: 0.2rem 0;
 		}
 
 		.agenda-preview-row__grid {
 			grid-template-columns: 1fr 1fr;
-			gap: 0.6rem;
+			gap: 0.55rem 0.65rem;
 		}
 
 		.agenda-preview-row__field[data-field='phone'],
@@ -1123,9 +1181,9 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-row__control {
-			min-height: 3.25rem;
-			padding: 0.8rem 0.95rem;
-			border-radius: 0.85rem;
+			min-height: 2.75rem;
+			padding: 0.45rem 0;
+			border-radius: 0;
 			gap: 0;
 		}
 

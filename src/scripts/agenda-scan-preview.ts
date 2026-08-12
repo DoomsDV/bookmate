@@ -103,11 +103,6 @@ class AgendaScanPreview extends HTMLElement {
 			this.addRow();
 		}, { signal });
 
-		this.querySelector('[data-agenda-apply-defaults]')?.addEventListener('click', (event) => {
-			event.preventDefault();
-			this.applyDefaults(true);
-		}, { signal });
-
 		this.querySelector('[data-agenda-preview-save]')?.addEventListener('click', (event) => {
 			event.preventDefault();
 			void this.save();
@@ -131,11 +126,15 @@ class AgendaScanPreview extends HTMLElement {
 
 		this.querySelector('[data-agenda-default-professional]')?.addEventListener('change', () => {
 			this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
-			this.applyDefaults(false);
+			this.applyDefaults(true);
 		}, { signal });
 		this.querySelector('[data-agenda-default-location]')?.addEventListener('change', () => {
 			this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
-			this.applyDefaults(false);
+			this.applyDefaults(true);
+		}, { signal });
+		this.querySelector('[data-agenda-default-service]')?.addEventListener('change', () => {
+			this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
+			this.applyDefaults(true);
 		}, { signal });
 	}
 
@@ -300,6 +299,7 @@ class AgendaScanPreview extends HTMLElement {
 	private populateDefaultsSelects() {
 		const proSelect = this.querySelector<HTMLSelectElement>('[data-agenda-default-professional]');
 		const locSelect = this.querySelector<HTMLSelectElement>('[data-agenda-default-location]');
+		const serviceSelect = this.querySelector<HTMLSelectElement>('[data-agenda-default-service]');
 		if (proSelect) {
 			proSelect.innerHTML = this.optionList(
 				this.#professionals.map((p) => ({ id: p.id_professional, name: p.name })),
@@ -314,7 +314,23 @@ class AgendaScanPreview extends HTMLElement {
 				'— Sucursal —'
 			);
 		}
+		if (serviceSelect) {
+			serviceSelect.innerHTML = this.optionList(
+				this.#services.map((s) => ({ id: s.id_service, name: s.name })),
+				this.defaultServiceIdFromRows(),
+				'— Servicio —'
+			);
+		}
 		this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
+	}
+
+	private defaultServiceIdFromRows() {
+		if (this.#services.length === 1) return this.#services[0].id_service;
+		const ids = new Set(
+			this.#rows.map((row) => row.ser_id_service).filter((id) => id > 0)
+		);
+		if (ids.size === 1) return [...ids][0];
+		return 0;
 	}
 
 	private setupImage(imageDataUrl: string) {
@@ -419,10 +435,18 @@ class AgendaScanPreview extends HTMLElement {
 			location: toInt(
 				this.querySelector<HTMLSelectElement>('[data-agenda-default-location]')?.value
 			),
+			service: toInt(
+				this.querySelector<HTMLSelectElement>('[data-agenda-default-service]')?.value
+			),
 		};
 	}
 
 	private applyDefaults(overwriteAll: boolean) {
+		this.syncDefaultsToRows(overwriteAll);
+		this.renderRows();
+	}
+
+	private syncDefaultsToRows(overwriteAll: boolean) {
 		const defaults = this.defaultsValues();
 		for (const row of this.#rows) {
 			if (defaults.professional && (overwriteAll || !row.pro_id_professional)) {
@@ -431,8 +455,10 @@ class AgendaScanPreview extends HTMLElement {
 			if (defaults.location && (overwriteAll || !row.loc_id_location)) {
 				row.loc_id_location = defaults.location;
 			}
+			if (defaults.service && (overwriteAll || !row.ser_id_service)) {
+				row.ser_id_service = defaults.service;
+			}
 		}
-		this.renderRows();
 	}
 
 	private addRow() {
@@ -443,7 +469,7 @@ class AgendaScanPreview extends HTMLElement {
 			customer_phone: '',
 			date: '',
 			time: '',
-			ser_id_service: 0,
+			ser_id_service: defaults.service,
 			pro_id_professional: defaults.professional,
 			loc_id_location: defaults.location,
 			confidence: 'high',
@@ -679,6 +705,7 @@ class AgendaScanPreview extends HTMLElement {
 
 	private async save() {
 		if (this.#saving) return;
+		this.syncDefaultsToRows(true);
 		const validRows = this.#rows.filter((row) => this.isRowValid(row));
 		if (validRows.length === 0) {
 			this.setError('Completá al menos una cita con cliente, servicio, profesional, sucursal, fecha y hora.');

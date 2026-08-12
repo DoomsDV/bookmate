@@ -2246,49 +2246,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-content-canvas {
 		position: relative;
 		isolation: isolate;
-		/* Base casi blanca; acentos mínimos */
-		background:
-			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(167, 243, 208, 0.026), transparent 58%),
-			radial-gradient(ellipse 60% 45% at 35% 88%, rgba(204, 251, 241, 0.06), transparent 62%),
-			linear-gradient(
-				165deg,
-				#ffffff 0%,
-				#fefefe 32%,
-				#fefdfc 58%,
-				#fefefe 82%,
-				#ffffff 100%
-			);
+		background: #ffffff;
 		transition: background 300ms ease;
 	}
 
-	.dashboard-content-canvas::before {
-		content: '';
-		position: absolute;
-		inset: 0;
-		z-index: 0;
-		pointer-events: none;
-		background:
-			radial-gradient(ellipse 45% 40% at 72% 90%, rgba(52, 211, 153, 0.025), transparent 70%);
-		filter: blur(44px);
-		opacity: 0.3;
-	}
-
-	/* Touch/iOS (+ viewport estrecho): gradientes pre-difuminados sin filter (blur fullscreen calienta WebKit). */
 	@media (hover: none) and (pointer: coarse), (max-width: 1023px) {
-		.dashboard-content-canvas::before {
-			filter: none;
-			opacity: 0.35;
-			background:
-				radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.025), transparent 72%);
-		}
-
-		html[data-theme='dark'] .dashboard-content-canvas::before {
-			filter: none;
-			opacity: 0.45;
-			background:
-				radial-gradient(ellipse 58% 50% at 70% 92%, rgba(52, 211, 153, 0.09), transparent 72%);
-		}
-
 		.dashboard-ai-orb {
 			filter: none !important;
 			animation: none !important;
@@ -2302,15 +2264,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	html[data-theme='dark'] .dashboard-canvas,
 	html[data-theme='dark'] .dashboard-content-canvas {
-		background:
-			radial-gradient(ellipse 75% 55% at 78% 82%, rgba(45, 212, 191, 0.08), transparent 58%),
-			var(--page-background, #0e0e10);
-	}
-
-	html[data-theme='dark'] .dashboard-content-canvas::before {
-		opacity: 0.3;
-		background:
-			radial-gradient(ellipse 45% 40% at 72% 90%, rgba(52, 211, 153, 0.08), transparent 70%);
+		background: var(--page-background, #0e0e10);
 	}
 
 	.dashboard-primary-cta {

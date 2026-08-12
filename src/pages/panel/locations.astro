@@ -382,21 +382,32 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 						<div class="panel-modal-header__icon">
 							<span class="material-symbols-rounded">event_busy</span>
 						</div>
-						<div class="panel-modal-header__text">
+						<div class="panel-modal-header__text" data-org-closures-tour-intro>
 							<h2 class="panel-modal-header__title closures-org-dialog__title">Cierres generales</h2>
 							<p class="panel-modal-header__subtitle closures-org-dialog__desc">
 								Feriados o cierres que aplican a todas las sucursales activas.
 							</p>
 						</div>
 					</div>
-					<button
-						type="button"
-						class="panel-modal-header__close closures-org-dialog__close"
-						data-close-org-closures
-						aria-label="Cerrar"
-					>
-						<span class="material-symbols-rounded">close</span>
-					</button>
+					<div class="panel-modal-header__actions">
+						<button
+							type="button"
+							class="schedule-exceptions-help inline-flex shrink-0 items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-[0.82rem] font-bold text-(--on-surface-variant) transition hover:border-(--primary)/35 hover:text-(--primary) focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
+							data-org-closures-tour-help
+							aria-label="Guía de cierres generales"
+						>
+							<span class="material-symbols-rounded text-[1.1rem]">help</span>
+							<span class="hidden sm:inline">Guía</span>
+						</button>
+						<button
+							type="button"
+							class="panel-modal-header__close closures-org-dialog__close"
+							data-close-org-closures
+							aria-label="Cerrar"
+						>
+							<span class="material-symbols-rounded">close</span>
+						</button>
+					</div>
 				</div>
 			</div>
 			<div class="closures-org-dialog__body">
