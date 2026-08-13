@@ -652,6 +652,11 @@ professional-manager:has(.app-shell) {
 	scrollbar-gutter: stable;
 }
 
+/* Perfil público: el pane ya scrollea; no reservar un segundo riel a la derecha. */
+.app-shell > :last-child > main.ppe-main {
+	scrollbar-gutter: auto;
+}
+
 html.ai-summary-modal-open .app-shell > :last-child > main {
 	overflow: hidden;
 }
@@ -1068,6 +1073,10 @@ button {
 		border-color 220ms ease,
 		box-shadow 220ms ease,
 		backdrop-filter 220ms ease;
+}
+
+html.is-theme-swapping .shell-header-zone:not(.sidebar-account-header) {
+	transition: none;
 }
 
 .shell-header-zone:not(.sidebar-account-header).is-scrolled {

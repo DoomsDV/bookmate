@@ -18,7 +18,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 
 <Layout pageTitle={panelPageTitle('Sucursales')}>
 	<location-manager data-stadia-key={stadiaMapsKey} data-can-manage={canManageLocations ? "true" : "false"}>
-		<div class="min-h-screen bg-(--page-background) transition-colors duration-300">
+		<div class="min-h-screen bg-(--page-background)">
 			<div
 				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
 				data-app-shell
@@ -2413,23 +2413,33 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 	}
 
 	dialog[data-closure-form-dialog] .ts-wrapper {
-		font-size: 0.95rem;
+		font-size: 0.9rem;
 	}
 
-	/* Single-value (nombre) */
+	/* Single-value (nombre): mismo cuerpo que .closure-form__input.
+	   Tom Select pone 13px / #303030 / line-height 18px y el texto queda
+	   chico, gris y pegado arriba al escribir un valor nuevo. */
 	dialog[data-closure-form-dialog] .ts-wrapper:not(.multi) .ts-control {
-		min-height: 3rem;
-		border-radius: 1rem;
+		display: flex;
+		align-items: center;
+		flex-wrap: nowrap;
+		min-height: 2.75rem;
+		height: 2.75rem;
+		border-radius: 0.75rem;
 		border: 1px solid var(--shell-border);
-		background: var(--card-surface);
-		padding: 0.55rem 0.75rem;
+		background: var(--surface-bright);
+		padding: 0.65rem 0.85rem;
 		box-shadow: none;
 		cursor: text;
+		color: var(--on-surface);
+		font-size: 0.9rem;
+		font-weight: 500;
+		line-height: 1.25;
 	}
 
 	dialog[data-closure-form-dialog] .ts-wrapper:not(.multi).focus .ts-control {
 		border-color: var(--primary);
-		box-shadow: none;
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 15%, transparent);
 	}
 
 	dialog[data-closure-form-dialog] .ts-wrapper.multi .ts-control {
@@ -2446,9 +2456,41 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		box-shadow: none;
 	}
 
-	dialog[data-closure-form-dialog] .ts-wrapper .ts-control > input {
-		font-size: 0.95rem;
+	dialog[data-closure-form-dialog] .ts-wrapper:not(.multi) .ts-control,
+	dialog[data-closure-form-dialog] .ts-wrapper:not(.multi) .ts-control input {
 		color: var(--on-surface);
+		font-size: 0.9rem;
+		font-weight: 500;
+		line-height: 1.25;
+	}
+
+	dialog[data-closure-form-dialog] .ts-wrapper .ts-control > input {
+		flex: 1 1 auto;
+		width: 100%;
+		min-width: 0;
+		align-self: center;
+		font-size: 0.9rem;
+		font-weight: 500;
+		color: var(--on-surface);
+	}
+
+	dialog[data-closure-form-dialog] .ts-wrapper:not(.multi) .ts-control > input::placeholder {
+		color: var(--on-surface-variant);
+		opacity: 0.72;
+	}
+
+	dialog[data-closure-form-dialog] .ts-wrapper:not(.multi) .item {
+		display: flex;
+		align-items: center;
+		margin: 0;
+		padding: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		color: var(--on-surface);
+		font-size: 0.9rem;
+		font-weight: 500;
+		line-height: 1.25;
 	}
 
 	dialog[data-closure-form-dialog] .ts-wrapper.multi .ts-control > div {

@@ -70,10 +70,14 @@ if (flashMessageFromCookie) {
 if (flashTypeFromCookie) {
     Astro.cookies.delete(FLASH_TYPE_COOKIE, { path: '/' });
 }
+
+const themeCookie = String(Astro.cookies.get('bookmate-theme')?.value || '').trim();
+const initialTheme = themeCookie === 'light' || themeCookie === 'dark' ? themeCookie : 'dark';
+const themeColor = initialTheme === 'dark' ? '#0e0e10' : '#f6f7f9';
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme={initialTheme}>
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
@@ -109,7 +113,7 @@ if (flashTypeFromCookie) {
             rel="stylesheet"
         />
 
-        <meta name="theme-color" content="#fefdfc" />
+        <meta name="theme-color" content={themeColor} />
         
         { pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} /> }
 
@@ -258,12 +262,21 @@ if (flashTypeFromCookie) {
             syncPpeTabPrefForRoute();
             applyHubTabPref();
 
-            // 2. Se ejecuta cada vez que ClientRouter intercambia el contenido de la página
+            // 2. Copiar tema al documento entrante ANTES del paint (after-swap llega tarde).
+            document.addEventListener('astro:before-swap', (event) => {
+                const theme = document.documentElement.dataset.theme;
+                if (theme) event.newDocument.documentElement.dataset.theme = theme;
+                document.documentElement.classList.add('is-theme-swapping');
+                event.newDocument.documentElement.classList.add('is-theme-swapping');
+            });
+
+            // 3. Se ejecuta cada vez que ClientRouter intercambia el contenido de la página
             document.addEventListener('astro:after-swap', () => {
                 setBookmateTheme();
                 applySidebarState();
                 syncPpeTabPrefForRoute();
                 applyHubTabPref();
+                document.documentElement.classList.remove('is-theme-swapping');
             });
             // Al salir de perfil-publico (navegación SPA), olvidar la pestaña para la próxima visita.
             document.addEventListener('astro:before-preparation', (event) => {
