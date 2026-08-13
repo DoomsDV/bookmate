@@ -171,7 +171,7 @@ function buildSystemTourSteps(): DriveStep[] {
 			popover: {
 				title: 'Notificaciones de todo el equipo',
 				description:
-					'Además de tus propias citas, recibí avisos de reservas de otros profesionales del negocio. Requiere tener activadas las notificaciones push.',
+					'Además de tus propias citas, ves en la campanita (y por push, si está activo) las reservas de otros profesionales del negocio.',
 				side: 'top',
 				align: 'start',
 			},

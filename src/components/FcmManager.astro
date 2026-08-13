@@ -13,6 +13,7 @@ const hasSession = Boolean(Astro.locals.token ?? '');
 				refreshPushTokenSilently,
 				runPushOnboardingIfNeeded,
 			} from '../lib/fcm-client';
+			import { subscribeInboxForegroundMessages } from '../scripts/firebase-messaging';
 
 			const logoutAfterAppInstalled = async () => {
 				if ((window as any).__bookmateInstallLogoutRunning) return;
@@ -58,6 +59,7 @@ const hasSession = Boolean(Astro.locals.token ?? '');
 			};
 
 			void initializeFcmManager();
+			void subscribeInboxForegroundMessages();
 
 			if (!(window as any).__bookmateAppInstalledLogoutBound) {
 				window.addEventListener('appinstalled', () => {
@@ -69,6 +71,7 @@ const hasSession = Boolean(Astro.locals.token ?? '');
 			if (!(window as any).__bookmateFcmManagerBound) {
 				document.addEventListener('astro:page-load', () => {
 					void initializeFcmManager();
+					void subscribeInboxForegroundMessages();
 				});
 				(window as any).__bookmateFcmManagerBound = true;
 			}

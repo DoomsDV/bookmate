@@ -96,6 +96,10 @@ interface ImportMetaEnv {
     readonly ORDS_CUSTOMERS_URL?: string;
     readonly ORDS_COBROS_URL?: string;
     readonly ORDS_COBROS_PENDING_COUNT_URL?: string;
+    readonly ORDS_INBOX_URL?: string;
+    readonly ORDS_INBOX_UNREAD_COUNT_URL?: string;
+    readonly ORDS_INBOX_READ_ALL_URL?: string;
+    readonly ORDS_INBOX_HOLIDAY_HINT_URL?: string;
     readonly ORDS_DAYS_URL?: string;
     readonly ORDS_PROFESSIONALS_LOV_URL?: string;
     readonly ORDS_LOCATIONS_LOV_URL?: string;

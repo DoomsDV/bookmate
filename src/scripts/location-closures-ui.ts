@@ -211,6 +211,21 @@ class LocationClosuresUI {
 			{ signal }
 		);
 
+		document.addEventListener(
+			'hasel:open-org-closure',
+			(event: Event) => {
+				const detail = (event as CustomEvent<{
+					name?: string;
+					startDate?: string;
+					endDate?: string;
+					fullDay?: boolean;
+					applyAll?: boolean;
+				}>).detail;
+				void this.openOrgFormPrefill(detail || {});
+			},
+			{ signal }
+		);
+
 		// Delegación en location-manager: el botón vive en LocationsListIsland (server:defer).
 		this.root.addEventListener(
 			'click',
@@ -472,6 +487,41 @@ class LocationClosuresUI {
 		});
 	}
 
+	async openOrgFormPrefill(prefill: {
+		name?: string;
+		startDate?: string;
+		endDate?: string;
+		fullDay?: boolean;
+		applyAll?: boolean;
+	}) {
+		const formDialog = this.els()?.formDialog;
+		if (!formDialog?.isConnected) return;
+		this.orgMode = true;
+		await this.resetForm('org');
+		const els = this.els();
+		if (!els) return;
+
+		const name = String(prefill.name || '').trim();
+		if (name) {
+			this.nameTom?.addOption({ value: name, text: name });
+			this.nameTom?.setValue(name, true);
+			if (els.inputName) {
+				els.inputName.value = name;
+			}
+		}
+
+		if (prefill.startDate && els.inputStart) els.inputStart.value = prefill.startDate;
+		if (prefill.endDate && els.inputEnd) els.inputEnd.value = prefill.endDate;
+		if (els.inputFullDay) {
+			els.inputFullDay.checked = prefill.fullDay !== false;
+			this.syncPartialVisibility();
+		}
+		if (els.applyAll) els.applyAll.checked = prefill.applyAll !== false;
+		this.syncLocationsVisibility();
+
+		if (!formDialog.open) formDialog.showModal();
+	}
+
 	private closeForm() {
 		const formDialog = this.els()?.formDialog;
 		if (formDialog?.open) formDialog.close();
@@ -667,14 +717,41 @@ class LocationClosuresUI {
 
 let activeClosuresUI: LocationClosuresUI | null = null;
 
+const consumeClosureQuery = (ui: LocationClosuresUI) => {
+	const params = new URLSearchParams(window.location.search);
+	if (params.get('open_org_closure') !== '1') return;
+
+	const name = String(params.get('name') || '').trim();
+	const startDate = String(params.get('start') || '').trim();
+	const endDate = String(params.get('end') || '').trim() || startDate;
+	void ui.openOrgFormPrefill({
+		name,
+		startDate,
+		endDate,
+		fullDay: params.get('full_day') !== '0',
+		applyAll: params.get('apply_all') !== '0',
+	});
+
+	const cleaned = new URL(window.location.href);
+	['open_org_closure', 'name', 'start', 'end', 'full_day', 'apply_all'].forEach((key) => {
+		cleaned.searchParams.delete(key);
+	});
+	const next = `${cleaned.pathname}${cleaned.search}${cleaned.hash}`;
+	window.history.replaceState({}, '', next);
+};
+
 export function initLocationClosuresUI() {
 	const root = document.querySelector('location-manager') as HTMLElement | null;
 	if (!root?.isConnected) return;
 
 	const existing = (root as any).__closuresUi as LocationClosuresUI | undefined;
-	if (existing && activeClosuresUI === existing && root.isConnected) return;
+	if (existing && activeClosuresUI === existing && root.isConnected) {
+		consumeClosureQuery(existing);
+		return;
+	}
 
 	activeClosuresUI?.destroy();
 	activeClosuresUI = new LocationClosuresUI(root);
 	(root as any).__closuresUi = activeClosuresUI;
+	consumeClosureQuery(activeClosuresUI);
 }

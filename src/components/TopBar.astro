@@ -1,6 +1,7 @@
 ---
 import SettingsModal from './SettingsModal.astro';
 import AtcChatModal from './AtcChatModal.astro';
+import InboxBell from './InboxBell.astro';
 
 interface Props {
 	userName?: string;
@@ -34,6 +35,8 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 
 		<div class="topbar-actions flex min-w-0 shrink items-center justify-end gap-1 sm:gap-2">
 			<slot name="actions-before" />
+
+			<InboxBell />
 
 			<button
 				id="pwa-install-btn"
@@ -130,7 +133,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 </header>
 
 <SettingsModal roleId={roleId} organizationSlug={organizationSlug} />
-<AtcChatModal />
+<AtcChatModal userName={userName} />
 
 <script>
 	import { maybeShowSettingsMenuTour } from '../lib/settings-menu-tour';
@@ -222,6 +225,21 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 		const closeProfileMenus = () => {
 			profileMenus.forEach(menu => menu.removeAttribute('open'));
 		};
+
+		document.querySelectorAll<HTMLDetailsElement>('[data-inbox-menu]').forEach((menu) => {
+			on(menu, 'toggle', () => {
+				if (menu.open) closeProfileMenus();
+			});
+		});
+
+		profileMenus.forEach((menu) => {
+			on(menu, 'toggle', () => {
+				if (!menu.open) return;
+				document.querySelectorAll<HTMLDetailsElement>('[data-inbox-menu]').forEach((inbox) => {
+					inbox.removeAttribute('open');
+				});
+			});
+		});
 
 		// Sidebar Actions
 		const setNavTogglesExpanded = (expanded: boolean) => {

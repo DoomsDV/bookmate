@@ -1,5 +1,5 @@
 import { getApp, getApps, initializeApp, type FirebaseOptions } from 'firebase/app';
-import { getMessaging, getToken, isSupported } from 'firebase/messaging';
+import { getMessaging, getToken, isSupported, onMessage } from 'firebase/messaging';
 
 const firebaseConfig: FirebaseOptions = {
 	apiKey: String(import.meta.env.PUBLIC_FIREBASE_API_KEY || '').trim(),
@@ -124,4 +124,24 @@ export const getFcmTokenFromFirebase = async (): Promise<string> => {
 	});
 
 	return String(token || '').trim();
+};
+
+let foregroundInboxBound = false;
+
+export const subscribeInboxForegroundMessages = async () => {
+	if (typeof window === 'undefined' || foregroundInboxBound) return;
+
+	try {
+		ensureFirebaseConfig();
+		const supported = await isSupported().catch(() => false);
+		if (!supported) return;
+
+		const messaging = getMessaging(getClientFirebaseApp());
+		onMessage(messaging, () => {
+			document.dispatchEvent(new CustomEvent('hasel:inbox-changed'));
+		});
+		foregroundInboxBound = true;
+	} catch {
+		/* FCM opcional: la campanita sigue por polling */
+	}
 };

@@ -21,6 +21,7 @@ export interface MyProfileProfessional {
 	id_professional: number;
 	phone_number: string;
 	specialty: string;
+	profile_image_url?: string;
 }
 
 export interface MyProfileData {
@@ -121,6 +122,7 @@ const normalizeProfessionalProfile = (value: unknown): MyProfileProfessional | u
 		id_professional: idProfessional,
 		phone_number: String(source.phone_number || '').trim(),
 		specialty: String(source.specialty || '').trim(),
+		profile_image_url: String(source.profile_image_url || '').trim() || undefined,
 	};
 };
 

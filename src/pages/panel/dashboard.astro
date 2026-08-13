@@ -20,6 +20,7 @@ const token = Astro.locals.token ?? '';
 const roleId = Number(Astro.locals.roleId ?? 0);
 const showTeamOverview = false;
 const showAlertsPanel = roleId === ROLES.ADMIN || roleId === ROLES.RECEPCIONISTA;
+const showHolidayHint = showAlertsPanel;
 const PAGE_SIZE = 5;
 const rawPage = Number(Astro.url.searchParams.get('page') || '1');
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
@@ -222,7 +223,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 ---
 
 <Layout pageTitle={panelPageTitle('Dashboard')}>
-	<div class="dashboard-canvas min-h-screen w-full max-w-full overflow-x-hidden transition-colors duration-300">
+	<div class="dashboard-canvas min-h-screen w-full max-w-full overflow-x-hidden">
 		<div
 			class="app-shell grid min-h-screen overflow-hidden bg-transparent"
 			data-app-shell
@@ -230,7 +231,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		>
 			<SideNav currentPath={Astro.url.pathname} />
 
-			<div class="dashboard-content-canvas grid min-h-full min-w-0 max-w-full grid-rows-[auto_1fr] overflow-x-hidden transition-colors duration-300">
+			<div class="dashboard-content-canvas grid min-h-full min-w-0 max-w-full grid-rows-[auto_1fr] overflow-x-hidden">
 				<TopBar />
 
 				<main class="w-full max-w-full min-w-0 overflow-x-hidden px-4 py-5 sm:px-6 sm:py-7 lg:px-8">
@@ -478,6 +479,22 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 										</button>
 									</div>
 								</div>
+
+							{
+								showHolidayHint ? (
+									<div class="dashboard-holiday-hint" data-holiday-hint hidden>
+										<span class="dashboard-holiday-hint__icon material-symbols-rounded" aria-hidden="true">celebration</span>
+										<div class="dashboard-holiday-hint__copy">
+											<p class="dashboard-holiday-hint__eyebrow">Feriado próximo</p>
+											<p class="dashboard-holiday-hint__text" data-holiday-hint-text></p>
+										</div>
+										<div class="dashboard-holiday-hint__actions">
+											<a class="dashboard-holiday-hint__cta" data-holiday-hint-closure href="/panel/locations">Crear cierre</a>
+											<a class="dashboard-holiday-hint__link" href="/panel/schedules">Horarios</a>
+										</div>
+									</div>
+								) : null
+							}
 
 							{
 								loadError ? (
@@ -783,6 +800,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	import '../../scripts/appointment-voice-host';
 	import { initFadeContent } from '../../lib/fade-content';
 	import { initDashboardGreeting } from '../../lib/dashboard-greeting';
+	import { buildClosurePrefillUrl } from '../../lib/inbox-client';
 
 	const normalizeAiSummaryBase = (value: unknown): string =>
 		String(value ?? '')
@@ -1917,12 +1935,48 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		initDashboardGreeting(main);
 	};
 
+	const loadHolidayHint = async () => {
+		const card = document.querySelector<HTMLElement>('[data-holiday-hint]');
+		if (!card) return;
+		try {
+			const response = await fetch('/api/inbox/holiday-hint', { headers: { Accept: 'application/json' } });
+			const payload = await response.json().catch(() => ({}));
+			const data = payload?.data;
+			if (!response.ok || payload?.status !== 'success' || !data?.name || !data?.holiday_date) {
+				card.hidden = true;
+				return;
+			}
+			const days = Math.max(0, Number(data.days_until) || 0);
+			const name = String(data.name || '').trim();
+			const when =
+				days === 0
+					? `Hoy es el feriado de ${name}.`
+					: days === 1
+						? `Mañana es el feriado de ${name}.`
+						: `Faltan ${days} días para el feriado de ${name}.`;
+			const text = `${when} Recuerda configurar los horarios de tu sucursal o crear un cierre general si no vas a atender.`;
+			const textNode = card.querySelector<HTMLElement>('[data-holiday-hint-text]');
+			if (textNode) textNode.textContent = text;
+			const closureLink = card.querySelector<HTMLAnchorElement>('[data-holiday-hint-closure]');
+			if (closureLink) {
+				closureLink.href = buildClosurePrefillUrl({
+					closure_name: String(data.closure_name || `Feriado Nacional: ${name}`),
+					holiday_date: String(data.holiday_date),
+				});
+			}
+			card.hidden = false;
+		} catch {
+			card.hidden = true;
+		}
+	};
+
 	const initializeDashboardPage = () => {
 		playDashboardIntro();
 		loadTeamOverview();
 		loadProfitability();
 		loadDashboardCobrosAlert();
 		loadAiSummary();
+		void loadHolidayHint();
 		syncDashboardAlertsEmpty();
 		scrollToUpcomingAppointmentsIfNeeded();
 	};
@@ -2246,8 +2300,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-content-canvas {
 		position: relative;
 		isolation: isolate;
-		background: #ffffff;
-		transition: background 300ms ease;
+		background: var(--page-background, #f6f7f9);
 	}
 
 	@media (hover: none) and (pointer: coarse), (max-width: 1023px) {
@@ -2677,6 +2730,105 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		align-items: stretch;
 		width: 100%;
 		min-width: 0;
+	}
+
+	.dashboard-ops-duo > [data-holiday-hint] {
+		grid-column: 1 / -1;
+	}
+
+	@media (min-width: 1280px) {
+		.dashboard-ops-duo {
+			grid-template-areas:
+				'ai today'
+				'holiday holiday';
+		}
+
+		.dashboard-ops-duo > .dashboard-ai-strip {
+			grid-area: ai;
+		}
+
+		.dashboard-ops-duo > .dashboard-floor--today {
+			grid-area: today;
+		}
+
+		.dashboard-ops-duo > [data-holiday-hint] {
+			grid-area: holiday;
+		}
+	}
+
+	.dashboard-holiday-hint {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: flex-start;
+		gap: 0.85rem 1.1rem;
+		width: 100%;
+		min-width: 0;
+		padding: 1rem 1.15rem;
+		border-radius: 1.4rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--shell-border));
+		background: color-mix(in srgb, var(--primary) 8%, var(--surface-bright));
+	}
+
+	.dashboard-holiday-hint[hidden] {
+		display: none;
+	}
+
+	.dashboard-holiday-hint__icon {
+		font-size: 1.35rem;
+		color: var(--primary);
+		margin-top: 0.1rem;
+	}
+
+	.dashboard-holiday-hint__copy {
+		flex: 1 1 14rem;
+		min-width: 0;
+	}
+
+	.dashboard-holiday-hint__eyebrow {
+		margin: 0;
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--primary);
+	}
+
+	.dashboard-holiday-hint__text {
+		margin: 0.25rem 0 0;
+		font-size: 0.88rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--on-surface);
+	}
+
+	.dashboard-holiday-hint__actions {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.55rem;
+	}
+
+	.dashboard-holiday-hint__cta,
+	.dashboard-holiday-hint__link {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		padding: 0.45rem 0.9rem;
+		font-size: 0.78rem;
+		font-weight: 700;
+		text-decoration: none;
+	}
+
+	.dashboard-holiday-hint__cta {
+		background: var(--primary);
+		color: var(--on-primary);
+	}
+
+	.dashboard-holiday-hint__link {
+		border: 1px solid var(--shell-border);
+		color: var(--on-surface);
+		background: var(--control-surface);
 	}
 
 	.dashboard-ops-duo > .dashboard-ai-strip,
