@@ -1118,7 +1118,14 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	private isNotesSectionUnlocked() {
-		return this.getCurrentAppointmentStatus() === 'COMPLETADO';
+		if (this.isImmutableReadOnly) return false;
+		return this.getCurrentAppointmentStatus() !== 'CANCELADO';
+	}
+
+	private hasSessionTabContent() {
+		return (
+			hasAnySessionNote(this.readSessionNotesFromInputs()) || this.currentAttachments.length > 0
+		);
 	}
 
 	private syncNotesLockState() {
@@ -1129,9 +1136,7 @@ class AppointmentModal extends HTMLElement {
 			return;
 		}
 
-		const status = this.getCurrentAppointmentStatus();
-		const unlocked = status === 'COMPLETADO';
-		const locked = !unlocked;
+		const locked = !this.isNotesSectionUnlocked();
 
 		this.historyBody?.classList.toggle('is-locked', locked);
 		if (this.notesLock) {
@@ -1145,14 +1150,11 @@ class AppointmentModal extends HTMLElement {
 		}
 		if (this.notesLockText) {
 			this.notesLockText.textContent =
-				status === 'CANCELADO'
-					? 'Las notas y archivos no están disponibles en citas canceladas'
-					: 'Las notas y archivos se habilitan al cambiar el estado a Completado';
+				'Las notas y archivos no están disponibles en citas canceladas';
 		}
 
-		const notesBlocked = locked || this.isImmutableReadOnly;
 		for (const input of this.getSessionNoteInputs()) {
-			input.readOnly = notesBlocked;
+			input.readOnly = locked;
 			input.disabled = locked;
 		}
 		if (this.attachmentAddButton) {
@@ -1268,8 +1270,7 @@ class AppointmentModal extends HTMLElement {
 
 	private syncAttachmentEmptyVisibility() {
 		const locked = this.historyEnabled && !this.isNotesSectionUnlocked();
-		const showEmpty = !locked && this.currentAttachments.length === 0;
-		if (showEmpty) {
+		if (!locked) {
 			this.attachmentEmpty?.classList.remove('hidden');
 			this.attachmentEmpty?.removeAttribute('hidden');
 		} else {
@@ -1578,15 +1579,24 @@ class AppointmentModal extends HTMLElement {
 	private isAllowedAttachmentFile(file: File) {
 		const mime = String(file.type || '').toLowerCase();
 		const name = String(file.name || '').toLowerCase();
-		if (mime === 'image/jpeg' || mime === 'image/png' || mime === 'application/pdf') return true;
-		return /\.(jpe?g|png|pdf)$/.test(name);
+		if (
+			mime === 'image/jpeg' ||
+			mime === 'image/png' ||
+			mime === 'image/heic' ||
+			mime === 'image/heif' ||
+			mime === 'image/avif' ||
+			mime === 'application/pdf'
+		) {
+			return true;
+		}
+		return /\.(jpe?g|png|pdf|heic|heif|avif)$/.test(name);
 	}
 
 	private async uploadAttachmentFiles(files: File[]) {
 		if (!this.client || this.editingAppointmentId <= 0 || this.isUploadingAttachment) return;
 		if (!this.isNotesSectionUnlocked()) {
 			this.showAttachmentError(
-				'Las notas y archivos se habilitan al cambiar el estado a Completado.'
+				'Las notas y archivos no están disponibles en citas canceladas.'
 			);
 			return;
 		}
@@ -1612,7 +1622,9 @@ class AppointmentModal extends HTMLElement {
 
 		for (const file of queue) {
 			if (!this.isAllowedAttachmentFile(file)) {
-				this.showAttachmentError('Solo se permiten archivos JPG, PNG o PDF.');
+				this.showAttachmentError(
+					'Solo se permiten archivos JPG, PNG, PDF, HEIC o AVIF.'
+				);
 				return;
 			}
 			if (file.size > maxBytes) {
@@ -2622,6 +2634,20 @@ class AppointmentModal extends HTMLElement {
 
 		const payload = result.payload;
 
+		if (this.mode === 'edit' && this.activeTab === 'notes' && this.historyEnabled) {
+			const currentStatus = this.getCurrentAppointmentStatus();
+			if (
+				this.hasSessionTabContent() &&
+				currentStatus !== 'COMPLETADO' &&
+				currentStatus !== 'CANCELADO'
+			) {
+				const confirmed = await this.confirmCompleteOnSessionSave();
+				if (!confirmed) return;
+				payload.status = 'COMPLETADO';
+				if (this.statusInput) this.statusInput.value = 'COMPLETADO';
+			}
+		}
+
 		// Fase C2: cancelar con seña pagada → confirmar reembolso vs pedir reprogramar.
 		if (
 			this.mode === 'edit' &&
@@ -2647,9 +2673,13 @@ class AppointmentModal extends HTMLElement {
 				return;
 			}
 		} else if (payload.status !== 'CANCELADO') {
-			const notifyDecision = await this.confirmNotifyCustomerOnSave();
-			if (!notifyDecision) return;
-			payload.notify_customer = notifyDecision.notifyCustomer;
+			if (this.activeTab === 'notes') {
+				payload.notify_customer = false;
+			} else {
+				const notifyDecision = await this.confirmNotifyCustomerOnSave();
+				if (!notifyDecision) return;
+				payload.notify_customer = notifyDecision.notifyCustomer;
+			}
 		}
 
 		this.setSubmittingState(true, this.mode === 'edit' ? 'Guardando...' : 'Creando...');
@@ -2684,6 +2714,23 @@ class AppointmentModal extends HTMLElement {
 		const locationId = toPositiveInt(this.modalLocation?.value, 0);
 		if (locationId <= 0) return '';
 		return this.locations.find((item) => item.id === locationId)?.name || '';
+	}
+
+	private async confirmCompleteOnSessionSave(): Promise<boolean> {
+		const message =
+			'Al guardar la ficha, esta reserva se marcará como Completada en el sistema.';
+
+		if (window.BookmateAlert?.confirm) {
+			return window.BookmateAlert.confirm({
+				type: 'info',
+				title: 'Marcar consulta como completada',
+				message,
+				confirmText: 'Guardar ficha',
+				cancelText: 'Volver',
+			});
+		}
+
+		return window.confirm(`${message}\n\n¿Continuar?`);
 	}
 
 	private async confirmNotifyCustomerOnSave(): Promise<

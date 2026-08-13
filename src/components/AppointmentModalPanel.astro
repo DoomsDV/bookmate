@@ -618,21 +618,18 @@ const { showVoiceButton = false }: Props = Astro.props;
 								<span class="appointment-dropzone__title" data-appointment-attachment-add-label>
 									Arrastrá tus archivos aquí o hacé clic para buscar
 								</span>
-								<span class="appointment-dropzone__hint">
-									Formatos: JPG, PNG, PDF. Máx 20MB · Hasta 10 archivos
-								</span>
 							</button>
 							<input
 								type="file"
 								class="hidden"
-								accept=".jpg,.jpeg,.png,.pdf,image/jpeg,image/png,application/pdf"
+								accept=".jpg,.jpeg,.png,.pdf,.heic,.heif,.avif,image/jpeg,image/png,image/heic,image/heif,image/avif,application/pdf"
 								data-appointment-attachment-input
 							/>
 
 							<ul class="m-0 grid list-none gap-2 p-0" data-appointment-attachments></ul>
 
 							<p class="m-0 text-[0.82rem] font-medium text-(--on-surface-variant)" data-appointment-attachment-empty>
-								Todavía no hay archivos adjuntos.
+								Formatos: JPG, PNG, PDF, HEIC, AVIF. Máx 20MB · Hasta 10 archivos
 							</p>
 
 							<p
@@ -650,7 +647,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 					>
 						<span class="material-symbols-rounded appointment-history-lock__icon" aria-hidden="true">lock</span>
 						<span class="appointment-history-lock__text">
-							Las notas y archivos se habilitan al cambiar el estado a Completado
+							Las notas y archivos no están disponibles en citas canceladas
 						</span>
 					</div>
 				</div>
