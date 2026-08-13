@@ -19,6 +19,15 @@ export const LOCATION_CARD_STATIC_MAP_OPTIONS = {
 	includeMarker: false,
 } as const;
 
+/** Banner 16:9 en cards del hub público (pestaña Sucursales). */
+export const HUB_LOCATION_CARD_STATIC_MAP_OPTIONS = {
+	width: 640,
+	height: 360,
+	zoom: 15,
+	retina: false,
+	includeMarker: false,
+} as const;
+
 /**
  * Miniatura Static Maps de Stadia (panel / covers).
  * Devuelve `null` si faltan key o coordenadas.

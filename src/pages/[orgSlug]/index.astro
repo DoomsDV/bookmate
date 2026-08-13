@@ -15,6 +15,12 @@ import {
 	resolvePublicSiteOrigin,
 } from '../../lib/public-profile-url';
 import { isReservedOrgSlug } from '../../lib/reserved-org-slugs';
+import {
+	buildStadiaStaticMapUrl,
+	HUB_LOCATION_CARD_STATIC_MAP_OPTIONS,
+	renderBrandMapMarkerOverlay,
+	resolveMapThemeFromStorage,
+} from '../../lib/maplibre-static';
 import '../../styles/global.css';
 import '../../styles/public-org-hub.css';
 
@@ -45,6 +51,7 @@ const whatsappHref = (phone: string) => {
 };
 
 const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
+const mapTheme = resolveMapThemeFromStorage(Astro.cookies.get('bookmate-theme')?.value);
 
 let hub: PublicOrgHub | null = null;
 let loadError = '';
@@ -151,6 +158,12 @@ const serializedProfessionals = professionals.length
 		data-stadia-key={stadiaMapsKey}
 		data-hub-professionals={serializedProfessionals}
 	>
+		{stadiaMapsKey ? (
+			<>
+				<link rel="dns-prefetch" href="https://tiles.stadiamaps.com" />
+				<link rel="preconnect" href="https://tiles.stadiamaps.com" crossorigin />
+			</>
+		) : null}
 		{
 			hub ? (
 				<>
@@ -634,9 +647,20 @@ const serializedProfessionals = professionals.length
 									<div class="hub-locations-grid" data-hub-locations-grid>
 										{locations.map((loc) => {
 											const mapsUrl = buildGoogleMapsUrl(loc);
+											const latitude = Number(loc.latitude);
+											const longitude = Number(loc.longitude);
 											const hasCoords =
-												Number.isFinite(Number(loc.latitude)) &&
-												Number.isFinite(Number(loc.longitude));
+												Number.isFinite(latitude) && Number.isFinite(longitude);
+											const mapPreviewUrl = hasCoords
+												? buildStadiaStaticMapUrl(
+														stadiaMapsKey,
+														{ lat: latitude, lng: longitude },
+														{
+															theme: mapTheme,
+															...HUB_LOCATION_CARD_STATIC_MAP_OPTIONS,
+														}
+													)
+												: null;
 											const prosHere = professionals.filter((pro) =>
 												pro.location_ids.includes(loc.id_location)
 											);
@@ -665,12 +689,12 @@ const serializedProfessionals = professionals.length
 													data-hub-location-card
 												>
 													<div class="hub-location-card__map-frame">
-														{hasCoords ? (
+														{mapPreviewUrl ? (
 															<div
 																class="hub-location-card__map is-loading"
 																data-hub-map
-																data-lat={String(loc.latitude)}
-																data-lng={String(loc.longitude)}
+																data-lat={String(latitude)}
+																data-lng={String(longitude)}
 																data-title={loc.name}
 																aria-hidden={mapsUrl ? 'true' : undefined}
 																aria-label={mapsUrl ? undefined : `Mapa de ${loc.name}`}
@@ -679,10 +703,31 @@ const serializedProfessionals = professionals.length
 																	class="hub-skel hub-location-card__map-skel"
 																	aria-hidden="true"
 																></span>
-																<div
-																	class="hub-location-card__map-canvas"
-																	data-hub-map-canvas
-																></div>
+																<img
+																	class="hub-location-card__map-img"
+																	data-hub-map-img
+																	data-lat={String(latitude)}
+																	data-lng={String(longitude)}
+																	src={mapPreviewUrl}
+																	alt=""
+																	width={HUB_LOCATION_CARD_STATIC_MAP_OPTIONS.width}
+																	height={HUB_LOCATION_CARD_STATIC_MAP_OPTIONS.height}
+																	loading="eager"
+																	decoding="async"
+																	onload="this.classList.add('is-loaded'); this.closest('[data-hub-map]')?.classList.remove('is-loading')"
+																	onerror="this.hidden=true; const m=this.closest('[data-hub-map]'); m?.classList.remove('is-loading'); m?.classList.add('hub-location-card__map--empty')"
+																/>
+																<Fragment set:html={renderBrandMapMarkerOverlay()} />
+															</div>
+														) : hasCoords ? (
+															<div class="hub-location-card__map hub-location-card__map--empty">
+																<span
+																	class="material-symbols-rounded"
+																	aria-hidden="true"
+																>
+																	map
+																</span>
+																<span>Mapa no disponible</span>
 															</div>
 														) : (
 															<div class="hub-location-card__map hub-location-card__map--empty">
@@ -867,7 +912,12 @@ const serializedProfessionals = professionals.length
 </Layout>
 
 <script>
-	// MapLibre types are imported lazily via the loader.
+	import {
+		buildStadiaStaticMapUrl,
+		HUB_LOCATION_CARD_STATIC_MAP_OPTIONS,
+		resolveMapTheme,
+	} from '../../lib/maplibre-static';
+
 	type MapLibreMap = InstanceType<
 		Awaited<ReturnType<typeof import('../../lib/maplibre-interactive')['loadMapLibre']>>['Map']
 	>;
@@ -875,6 +925,7 @@ const serializedProfessionals = professionals.length
 	type HubMapHandle = {
 		map: MapLibreMap;
 		center: { lat: number; lng: number };
+		disconnectResize?: () => void;
 	};
 
 	const VALID_TABS = new Set(['overview', 'galeria', 'equipo', 'sucursales']);
@@ -908,13 +959,62 @@ const serializedProfessionals = professionals.length
 			.addTo(map);
 	};
 
-	const hubMapInstances = new WeakMap<HTMLElement, HubMapHandle>();
 	const hubMapInstanceList: HubMapHandle[] = [];
 
+	const markHubMapImageReady = (img: HTMLImageElement) => {
+		img.classList.add('is-loaded');
+		img.closest('[data-hub-map]')?.classList.remove('is-loading');
+	};
+
+	const markHubMapImageFailed = (img: HTMLImageElement) => {
+		img.hidden = true;
+		const canvas = img.closest<HTMLElement>('[data-hub-map]');
+		canvas?.classList.remove('is-loading');
+		canvas?.classList.add('hub-location-card__map--empty');
+	};
+
+	const bindHubMapImage = (img: HTMLImageElement) => {
+		if (img.dataset.bound === '1') {
+			if (img.complete && img.naturalWidth > 0) markHubMapImageReady(img);
+			return;
+		}
+		img.dataset.bound = '1';
+		if (img.complete && img.naturalWidth > 0) {
+			markHubMapImageReady(img);
+			return;
+		}
+		img.addEventListener('load', () => markHubMapImageReady(img), { once: true });
+		img.addEventListener('error', () => markHubMapImageFailed(img), { once: true });
+	};
+
+	/** Miniaturas estáticas: no dependen de WebGL ni del tamaño del panel oculto. */
+	const hydrateHubMapImages = (root: HTMLElement) => {
+		const apiKey = String(root.dataset.stadiaKey || '').trim();
+		const theme = resolveMapTheme();
+		root.querySelectorAll<HTMLImageElement>('[data-hub-map-img]').forEach((img) => {
+			const lat = Number(img.dataset.lat);
+			const lng = Number(img.dataset.lng);
+			if (apiKey && Number.isFinite(lat) && Number.isFinite(lng)) {
+				const url = buildStadiaStaticMapUrl(apiKey, { lat, lng }, {
+					theme,
+					...HUB_LOCATION_CARD_STATIC_MAP_OPTIONS,
+				});
+				if (url && img.getAttribute('src') !== url) {
+					img.closest('[data-hub-map]')?.classList.add('is-loading');
+					img.classList.remove('is-loaded');
+					img.src = url;
+				}
+			}
+			img.loading = 'eager';
+			bindHubMapImage(img);
+		});
+	};
+
 	const syncHubMapsTheme = async () => {
+		const root = document.querySelector<HTMLElement>('[data-hub-root]');
+		if (root) hydrateHubMapImages(root);
 		if (!hubMapInstanceList.length) return;
-		const canvas = document.querySelector<HTMLElement>('[data-hub-root]');
-		const apiKey = String(canvas?.dataset.stadiaKey || '').trim();
+		const apiKey = String(root?.dataset.stadiaKey || '').trim();
 		if (!apiKey) return;
 		const styleUrl = await getHubStyleUrl(apiKey);
 		hubMapInstanceList.forEach((entry) => {
@@ -923,108 +1023,35 @@ const serializedProfessionals = professionals.length
 			} catch {
 				// ignore
 			}
+			window.setTimeout(() => {
+				void import('../../lib/maplibre-interactive').then((mod) => {
+					mod.layoutMapLibreMap(entry.map, entry.center);
+				});
+			}, 80);
 		});
 	};
 
-	const initHubMaps = async (root: HTMLElement) => {
-		const apiKey = String(root.dataset.stadiaKey || '').trim();
-		const canvases = Array.from(root.querySelectorAll<HTMLElement>('[data-hub-map]'));
-		if (!canvases.length) return;
+	const destroyHubMaps = () => {
+		hubMapInstanceList.forEach((entry) => {
+			entry.disconnectResize?.();
+			try {
+				entry.map.remove();
+			} catch {
+				// ignore
+			}
+		});
+		hubMapInstanceList.length = 0;
+	};
 
-		const markMapSettled = (canvas: HTMLElement) => {
-			canvas.classList.remove('is-loading');
-		};
+	let hubThemeObserver: MutationObserver | null = null;
+	let hubHashHandler: (() => void) | null = null;
 
-		if (!apiKey) {
-			canvases.forEach((canvas) => {
-				if (canvas.dataset.mapReady === '1') return;
-				markMapSettled(canvas);
-				canvas.classList.add('hub-location-card__map--empty');
-				canvas.innerHTML =
-					'<span class="material-symbols-rounded" aria-hidden="true">map</span><span>Mapa no disponible</span>';
-			});
-			return;
-		}
-
-		try {
-			const maplibregl = await loadHubMapLibre();
-			const styleUrl = await getHubStyleUrl(apiKey);
-			canvases.forEach((canvas) => {
-				const existing = hubMapInstances.get(canvas);
-				if (existing) {
-					try {
-						existing.map.setStyle(styleUrl);
-					} catch {
-						// ignore
-					}
-					markMapSettled(canvas);
-					window.setTimeout(() => {
-						try {
-							existing.map.resize();
-						} catch {
-							// ignore
-						}
-						existing.map.setCenter([existing.center.lng, existing.center.lat]);
-					}, 80);
-					return;
-				}
-
-				const lat = Number(canvas.dataset.lat);
-				const lng = Number(canvas.dataset.lng);
-				if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
-					markMapSettled(canvas);
-					return;
-				}
-
-				let mount = canvas.querySelector<HTMLElement>('[data-hub-map-canvas]');
-				if (!mount) {
-					mount = document.createElement('div');
-					mount.className = 'hub-location-card__map-canvas';
-					mount.dataset.hubMapCanvas = 'true';
-					canvas.appendChild(mount);
-				}
-
-				const center = { lat, lng };
-				const map = new maplibregl.Map({
-					container: mount,
-					style: styleUrl,
-					center: [lng, lat],
-					zoom: 16,
-					interactive: false,
-					attributionControl: { compact: true },
-				});
-				void placeHubMarker(maplibregl, map, center, String(canvas.dataset.title || 'Sucursal'));
-				const handle: HubMapHandle = { map, center };
-				hubMapInstances.set(canvas, handle);
-				hubMapInstanceList.push(handle);
-				canvas.dataset.mapReady = '1';
-
-				let revealed = false;
-				const reveal = () => {
-					if (revealed) return;
-					revealed = true;
-					markMapSettled(canvas);
-				};
-				map.once('idle', reveal);
-				window.setTimeout(reveal, 1400);
-
-				window.setTimeout(() => {
-					try {
-						map.resize();
-					} catch {
-						// ignore
-					}
-					map.setCenter([lng, lat]);
-				}, 80);
-			});
-		} catch {
-			canvases.forEach((canvas) => {
-				if (canvas.dataset.mapReady === '1') return;
-				markMapSettled(canvas);
-				canvas.classList.add('hub-location-card__map--empty');
-				canvas.innerHTML =
-					'<span class="material-symbols-rounded" aria-hidden="true">error</span><span>No se pudo cargar el mapa</span>';
-			});
+	const teardownHubPageListeners = () => {
+		hubThemeObserver?.disconnect();
+		hubThemeObserver = null;
+		if (hubHashHandler) {
+			window.removeEventListener('hashchange', hubHashHandler);
+			hubHashHandler = null;
 		}
 	};
 
@@ -1037,7 +1064,8 @@ const serializedProfessionals = professionals.length
 
 	const initHubPage = () => {
 		const root = document.querySelector<HTMLElement>('[data-hub-root]');
-		if (!root) return;
+		if (!root || root.dataset.hubPageReady === '1') return;
+		root.dataset.hubPageReady = '1';
 
 		const toastEl = root.querySelector<HTMLElement>('[data-hub-toast]');
 		let toastTimer: number | null = null;
@@ -1108,7 +1136,6 @@ const serializedProfessionals = professionals.length
 		const sucursalesPanel = root.querySelector<HTMLElement>('[data-hub-panel="sucursales"]');
 		let activeLocId = 0;
 		let teamRevealPromise: Promise<void> | null = null;
-		let locationsRevealPromise: Promise<void> | null = null;
 
 		/** En PC, Reservar abre la agenda en una pestaña nueva. */
 		const syncProCardTargets = () => {
@@ -1225,50 +1252,15 @@ const serializedProfessionals = professionals.length
 		};
 
 		const revealLocationsGrid = async () => {
-			if (!locationsGrid || !sucursalesPanel) {
-				await initHubMaps(root);
-				return;
+			if (locationsGrid && locationsSkeleton) {
+				locationsSkeleton.hidden = true;
+				locationsGrid.hidden = false;
 			}
-			if (sucursalesPanel.dataset.locationsReady === '1') {
-				await initHubMaps(root);
-				return;
-			}
-			if (locationsRevealPromise) {
-				await locationsRevealPromise;
-				return;
-			}
-			locationsRevealPromise = (async () => {
-				if (locationsSkeleton) {
-					locationsGrid.hidden = true;
-					locationsSkeleton.hidden = false;
-					sucursalesPanel.setAttribute('aria-busy', 'true');
-				}
-
-				const apiKey = String(root.dataset.stadiaKey || '').trim();
-				const startedAt = Date.now();
-				if (apiKey) {
-					try {
-						await loadHubMapLibre();
-					} catch {
-						/* initHubMaps maneja el error visual */
-					}
-				}
-				const elapsed = Date.now() - startedAt;
-				if (elapsed < 240) {
-					await new Promise<void>((resolve) => {
-						window.setTimeout(resolve, 240 - elapsed);
-					});
-				}
-
-				if (locationsSkeleton) {
-					locationsSkeleton.hidden = true;
-					locationsGrid.hidden = false;
-				}
-				await initHubMaps(root);
+			if (sucursalesPanel) {
 				sucursalesPanel.dataset.locationsReady = '1';
 				sucursalesPanel.removeAttribute('aria-busy');
-			})();
-			await locationsRevealPromise;
+			}
+			hydrateHubMapImages(root);
 		};
 
 		const applyLocationFilter = (locId: number, locName = '') => {
@@ -1352,16 +1344,24 @@ const serializedProfessionals = professionals.length
 			.trim();
 		setActiveTab(VALID_TABS.has(hashTab) ? hashTab : 'overview', { updateHash: false });
 
-		if (root.dataset.themeSyncBound !== '1') {
-			root.dataset.themeSyncBound = '1';
-			const themeObserver = new MutationObserver(() => {
-				syncHubMapsTheme();
-			});
-			themeObserver.observe(document.documentElement, {
-				attributes: true,
-				attributeFilter: ['data-theme'],
-			});
-		}
+		hubHashHandler = () => {
+			if (!root.isConnected) return;
+			const next = String(window.location.hash || '')
+				.replace(/^#/, '')
+				.trim();
+			if (VALID_TABS.has(next)) {
+				setActiveTab(next, { updateHash: false });
+			}
+		};
+		window.addEventListener('hashchange', hubHashHandler);
+
+		hubThemeObserver = new MutationObserver(() => {
+			syncHubMapsTheme();
+		});
+		hubThemeObserver.observe(document.documentElement, {
+			attributes: true,
+			attributeFilter: ['data-theme'],
+		});
 
 
 		tabs.forEach((tab) => {
@@ -1523,24 +1523,21 @@ const serializedProfessionals = professionals.length
 			setMapModalLoading(true);
 			setMapModalStatus('');
 			try {
+				const mapLibreMod = await import('../../lib/maplibre-interactive');
 				const maplibregl = await loadHubMapLibre();
 				const styleUrl = await getHubStyleUrl(apiKey);
 				const center = { lat, lng };
+				await mapLibreMod.whenMapContainerReady(mapModalCanvas);
 				if (modalMapHandle) {
 					try {
 						modalMapHandle.map.setStyle(styleUrl);
 					} catch {
 						// ignore
 					}
-					modalMapHandle.map.setCenter([lng, lat]);
 					modalMapHandle.center = center;
+					mapLibreMod.layoutMapLibreMap(modalMapHandle.map, center);
 					window.setTimeout(() => {
-						try {
-							modalMapHandle!.map.resize();
-						} catch {
-							// ignore
-						}
-						modalMapHandle!.map.setCenter([lng, lat]);
+						mapLibreMod.layoutMapLibreMap(modalMapHandle!.map, center);
 					}, 80);
 				} else {
 					mapModalCanvas.innerHTML = '';
@@ -1559,15 +1556,14 @@ const serializedProfessionals = professionals.length
 					marker.setPopup(
 						new maplibregl.Popup({ closeButton: false, offset: 24 }).setText(title)
 					);
-					modalMapHandle = { map, center };
+					const disconnectResize = mapLibreMod.observeMapContainerResize(
+						mapModalCanvas,
+						map
+					);
+					modalMapHandle = { map, center, disconnectResize };
 					hubMapInstanceList.push(modalMapHandle);
 					window.setTimeout(() => {
-						try {
-							map.resize();
-						} catch {
-							// ignore
-						}
-						map.setCenter([lng, lat]);
+						mapLibreMod.layoutMapLibreMap(map, center);
 					}, 120);
 				}
 			} catch {
@@ -1659,4 +1655,8 @@ const serializedProfessionals = professionals.length
 
 	initHubPage();
 	document.addEventListener('astro:page-load', initHubPage);
+	document.addEventListener('astro:before-swap', () => {
+		teardownHubPageListeners();
+		destroyHubMaps();
+	});
 </script>

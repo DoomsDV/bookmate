@@ -146,6 +146,9 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 		flex-direction: column;
 		overflow: hidden;
 		min-height: 0;
+		scrollbar-gutter: auto;
+		padding-right: 0;
+		padding-inline-end: 0;
 	}
 
 	.ppe-main > public-profile-editor {
@@ -183,11 +186,18 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 		overflow-x: hidden;
 		overflow-y: auto;
 		overscroll-behavior: contain;
-		padding-right: 0.35rem;
+		padding-right: 0;
+		padding-inline-end: 0;
 		/* El footer de guardar ya no es overlay: basta margen corto al final */
 		padding-bottom: 1.25rem;
-		scrollbar-gutter: stable;
+		scrollbar-gutter: auto;
 		align-content: start;
+	}
+
+	/* Inset del contenido a la izquierda del scrollbar, no después de él. */
+	.ppe-config-pane > .ppe-header,
+	.ppe-config-pane > .ppe-form-col {
+		padding-inline-end: 0.75rem;
 	}
 
 	/* Pestañas + acciones siempre visibles al scrollear el formulario */
@@ -604,6 +614,17 @@ html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] {
 
 .ppe-field--logo {
 	max-width: 18rem;
+}
+
+@media (max-width: 767px) {
+	.ppe-field--logo {
+		max-width: none;
+	}
+
+	.ppe-dropzone--logo {
+		width: 100%;
+		margin-inline: auto;
+	}
 }
 
 @media (min-width: 640px) {
@@ -1222,16 +1243,60 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	min-width: 0;
 }
 
-/* Más específico que .ppe-btn { display: inline-flex } */
+/*
+ * Ojito / FAB de preview: no existe en desktop (lg / 1024px).
+ * Mismo corte que MobileBottomNav (max-width: 1023px): solo cuando hay dock.
+ * !important gana a .ppe-btn { display: inline-flex } y a [hidden] de Tailwind.
+ */
 .ppe-btn.ppe-preview-trigger--header {
-	/* En desktop ya está la preview del teléfono; el ojo solo en móvil */
-	display: none;
+	display: none !important;
 	width: 2.75rem;
 	padding-inline: 0;
 }
 
 .ppe-preview-trigger__label {
 	display: none;
+}
+
+@media (min-width: 1024px) {
+	.ppe-btn.ppe-preview-trigger--header {
+		display: none !important;
+		position: static;
+		visibility: hidden;
+		pointer-events: none;
+	}
+
+	.ppe-header__actions {
+		position: static;
+	}
+}
+
+/* FAB solo con el dock (MobileBottomNav: max-width 1023px), no en 1023.98px. */
+@media (max-width: 1023px) {
+	.ppe-header__actions {
+		display: none !important;
+	}
+
+	.ppe-btn.ppe-preview-trigger--header {
+		display: inline-flex !important;
+		position: fixed;
+		right: max(1rem, env(safe-area-inset-right, 0px));
+		bottom: calc(var(--mobile-bottom-nav-height, 4.25rem) + 1.15rem);
+		z-index: 46;
+		visibility: visible;
+		pointer-events: auto;
+		width: 2.75rem;
+		height: 2.75rem;
+		padding-inline: 0;
+		justify-content: center;
+		border-radius: 999px;
+		border: 2px solid var(--page-background, #0e0e10);
+		background: var(--primary, #426edb);
+		color: #fff;
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--on-surface) 12%, transparent),
+			0 8px 20px color-mix(in srgb, var(--primary, #426edb) 48%, transparent);
+	}
 }
 
 /* Modal inmersivo: tapa shell, bottom-nav y footer de guardar */
@@ -1334,32 +1399,14 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 		box-sizing: border-box;
 	}
 
-	/* Móvil: ojo flotante sobre el bottom bar; enlace público oculto */
-	.ppe-header__actions {
-		position: fixed;
-		right: max(1rem, env(safe-area-inset-right, 0px));
-		bottom: calc(var(--mobile-bottom-nav-height, 4.25rem) + 0.65rem);
-		z-index: 44;
-		padding-bottom: 0;
-	}
-
 	.ppe-tabs {
 		width: 100%;
 		box-sizing: border-box;
 	}
 
-	.ppe-btn.ppe-preview-trigger--header {
-		display: inline-flex;
-		width: 2.75rem;
-		height: 2.75rem;
-		padding-inline: 0;
-		justify-content: center;
-		border-radius: 999px;
-		box-shadow: 0 4px 16px rgba(15, 23, 42, 0.14);
-	}
-
-	.ppe-preview-trigger__label {
-		display: none;
+	.ppe-header__actions {
+		display: none !important;
+		position: static;
 	}
 
 	.ppe-open-public {
@@ -1421,10 +1468,9 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 		left: auto;
 		right: auto;
 		bottom: auto;
-		/* Mismo inset horizontal que .ppe-config-pane (overflow:hidden anula margin negativo) */
 		margin-inline: 0;
 		padding-inline: 0;
-		padding-right: 0.35rem;
+		padding-inline-end: 0.75rem;
 		padding-block: 0.45rem 0.15rem;
 		flex-wrap: nowrap;
 	}
@@ -1436,6 +1482,9 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 
 	.app-shell > :last-child > main.ppe-main {
 		padding-bottom: 0.5rem;
+		scrollbar-gutter: auto;
+		padding-right: 0;
+		padding-inline-end: 0;
 	}
 }
 

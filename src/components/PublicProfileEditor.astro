@@ -167,16 +167,6 @@ const previewInitial = {
 						</button>
 					</nav>
 					<div class="ppe-header__actions">
-						<button
-							type="button"
-							class="ppe-btn ppe-btn-secondary ppe-preview-trigger--header"
-							data-ppe-open-preview
-							aria-label="Ver vista previa"
-							title="Ver vista previa"
-						>
-							<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">visibility</span>
-							<span class="ppe-preview-trigger__label">Ver vista previa</span>
-						</button>
 						<a
 							class="ppe-btn ppe-btn-secondary ppe-open-public"
 							href={hubUrl || '#'}
@@ -199,7 +189,7 @@ const previewInitial = {
 						data-ppe-panel="general"
 					>
 						<div class="ppe-field">
-							<span class="ppe-field__label">URL pública <span class="text-rose-500">*</span></span>
+							<span class="ppe-field__label">URL de negocio <span class="text-rose-500">*</span></span>
 							<div class="ppe-slug-row" data-ppe-slug-row>
 								<span class="ppe-slug-prefix" title={`${domainLabel}/`}>{domainLabel}/</span>
 								<div class="ppe-slug-input-wrap">
@@ -600,6 +590,17 @@ const previewInitial = {
 			</div>
 		</div>
 	</dialog>
+
+	<button
+		type="button"
+		class="ppe-btn ppe-btn-primary ppe-preview-trigger--header"
+		data-ppe-open-preview
+		aria-label="Ver vista previa"
+		title="Ver vista previa"
+	>
+		<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">visibility</span>
+		<span class="ppe-preview-trigger__label">Ver vista previa</span>
+	</button>
 
 	<dialog class="ppe-lightbox" data-ppe-lightbox aria-label="Foto de la galería">
 		<button type="button" class="ppe-lightbox__close" data-ppe-lightbox-close aria-label="Cerrar">

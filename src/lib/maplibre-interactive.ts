@@ -16,6 +16,7 @@ export {
 	coordsToLngLat,
 	createBrandMarkerElement,
 	LOCATION_CARD_STATIC_MAP_OPTIONS,
+	HUB_LOCATION_CARD_STATIC_MAP_OPTIONS,
 	parseCoordinates,
 	renderBrandMapMarkerOverlay,
 	resolveMapTheme,
@@ -63,9 +64,9 @@ const configureWorker = async (maplibregl: MapLibreModule) => {
 	maplibregl.setWorkerUrl(resolveWorkerUrl(workerUrl));
 };
 
-export const whenMapIdle = (
-	map: InstanceType<MapLibreModule['Map']>,
-): Promise<void> =>
+export type MapLibreMap = InstanceType<MapLibreModule['Map']>;
+
+export const whenMapIdle = (map: MapLibreMap): Promise<void> =>
 	new Promise((resolve) => {
 		if (map.loaded() && !map.isMoving()) {
 			resolve();
@@ -77,6 +78,57 @@ export const whenMapIdle = (
 		};
 		map.once('idle', finish);
 	});
+
+const containerHasSize = (el: HTMLElement) =>
+	el.clientWidth >= 2 && el.clientHeight >= 2;
+
+/** Espera a que el contenedor tenga layout real (pestaña/hash/dialog). */
+export const whenMapContainerReady = (
+	el: HTMLElement,
+	timeoutMs = 4000,
+): Promise<void> =>
+	new Promise((resolve) => {
+		if (containerHasSize(el)) {
+			resolve();
+			return;
+		}
+		let done = false;
+		const finish = () => {
+			if (done) return;
+			done = true;
+			ro.disconnect();
+			window.clearTimeout(timer);
+			resolve();
+		};
+		const ro = new ResizeObserver(() => {
+			if (containerHasSize(el)) finish();
+		});
+		ro.observe(el);
+		const timer = window.setTimeout(finish, timeoutMs);
+	});
+
+export const layoutMapLibreMap = (
+	map: MapLibreMap,
+	center?: MapCoordinates,
+) => {
+	try {
+		map.resize();
+	} catch {
+		// ignore
+	}
+	if (center) {
+		map.setCenter([center.lng, center.lat]);
+	}
+};
+
+export const observeMapContainerResize = (container: HTMLElement, map: MapLibreMap) => {
+	const ro = new ResizeObserver(() => {
+		if (!containerHasSize(container)) return;
+		layoutMapLibreMap(map);
+	});
+	ro.observe(container);
+	return () => ro.disconnect();
+};
 
 export const loadMapLibre = (): Promise<MapLibreModule> => {
 	if (!mapLibrePromise) {

@@ -17,7 +17,7 @@ if (roleId !== ROLES.ADMIN) {
 ---
 
 <Layout pageTitle={panelPageTitle('Perfil Público')}>
-	<div class="min-h-screen bg-(--page-background) transition-colors duration-300">
+	<div class="min-h-screen bg-(--page-background)">
 		<div
 			class="app-shell grid min-h-screen overflow-hidden bg-transparent"
 			data-app-shell
@@ -28,7 +28,7 @@ if (roleId !== ROLES.ADMIN) {
 			<div class="grid h-full min-h-0 grid-rows-[auto_1fr]">
 				<TopBar />
 
-				<main class="ppe-main h-full min-h-0 px-4 py-4 sm:px-6 sm:py-6">
+				<main class="ppe-main h-full min-h-0 ps-4 pe-0 py-4 sm:ps-6 sm:py-6">
 					<PublicProfileEditorIsland server:defer>
 						<PublicProfileEditorSkeleton slot="fallback" />
 					</PublicProfileEditorIsland>
