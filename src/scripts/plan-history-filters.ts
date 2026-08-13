@@ -57,6 +57,7 @@ export const initPlanHistoryFilters = (root: HTMLElement) => {
 	const periodFilterBtn = panel.querySelector<HTMLButtonElement>('[data-plan-history-open-period]');
 	const periodFilterBadge = panel.querySelector<HTMLElement>('[data-plan-history-period-badge]');
 	const periodSheet = panel.querySelector<HTMLDialogElement>('[data-plan-history-period-sheet]');
+	const statusSelect = panel.querySelector<HTMLSelectElement>('[data-plan-history-status-select]');
 
 	const totalInvoices = panel.querySelectorAll(
 		'[data-plan-history-table-wrap] [data-plan-history-row]'
@@ -80,20 +81,9 @@ export const initPlanHistoryFilters = (root: HTMLElement) => {
 	};
 
 	const syncStatusOptions = () => {
-		panel.querySelectorAll<HTMLButtonElement>('[data-plan-history-status-option]').forEach((btn) => {
-			const selected = (btn.dataset.planHistoryStatusOption || 'all') === statusFilter;
-			btn.classList.toggle('is-selected', selected);
-			btn.setAttribute('aria-selected', selected ? 'true' : 'false');
-		});
-	};
-
-	const syncTabs = () => {
-		panel.querySelectorAll<HTMLButtonElement>('[data-plan-history-tab]').forEach((btn) => {
-			const active = (btn.dataset.planHistoryTab || 'all') === statusFilter;
-			btn.classList.toggle('is-active', active);
-			btn.setAttribute('aria-selected', active ? 'true' : 'false');
-		});
-		syncStatusOptions();
+		if (statusSelect && statusSelect.value !== statusFilter) {
+			statusSelect.value = statusFilter;
+		}
 	};
 
 	const syncTextFromNative = () => {
@@ -171,9 +161,7 @@ export const initPlanHistoryFilters = (root: HTMLElement) => {
 	};
 
 	const updatePeriodFilterUi = () => {
-		const mobileFilters =
-			typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-		const active = datePreset !== 'none' || (mobileFilters && statusFilter !== 'all');
+		const active = datePreset !== 'none' || statusFilter !== 'all';
 		periodFilterBadge?.classList.toggle('hidden', !active);
 		periodFilterBtn?.classList.toggle('is-active', active);
 		periodFilterBtn?.setAttribute('aria-pressed', active ? 'true' : 'false');
@@ -222,7 +210,7 @@ export const initPlanHistoryFilters = (root: HTMLElement) => {
 
 	const applyStatusOption = (next: PlanHistoryStatusFilter) => {
 		statusFilter = next;
-		syncTabs();
+		syncStatusOptions();
 		updatePeriodFilterUi();
 		applyFilters();
 	};
@@ -382,13 +370,10 @@ export const initPlanHistoryFilters = (root: HTMLElement) => {
 		closeDatePicker();
 	};
 
-	panel.querySelectorAll<HTMLButtonElement>('[data-plan-history-tab]').forEach((btn) => {
-		btn.addEventListener('click', () => {
-			applyStatusOption((btn.dataset.planHistoryTab || 'all') as PlanHistoryStatusFilter);
-		});
-	});
-
 	periodFilterBtn?.addEventListener('click', openPeriodSheet);
+	statusSelect?.addEventListener('change', () => {
+		applyStatusOption((statusSelect.value || 'all') as PlanHistoryStatusFilter);
+	});
 	if (periodSheet) {
 		bindFilterPopoverChrome({
 			sheet: periodSheet,
@@ -481,14 +466,6 @@ export const initPlanHistoryFilters = (root: HTMLElement) => {
 			return;
 		}
 
-		const statusOption = target.closest<HTMLButtonElement>('[data-plan-history-status-option]');
-		if (statusOption) {
-			applyStatusOption(
-				(statusOption.dataset.planHistoryStatusOption || 'all') as PlanHistoryStatusFilter
-			);
-			return;
-		}
-
 		const option = target.closest<HTMLButtonElement>('[data-plan-history-period-option]');
 		if (option) {
 			applyPeriodOption(
@@ -524,7 +501,7 @@ export const initPlanHistoryFilters = (root: HTMLElement) => {
 	});
 
 	if (datePresetEl) datePresetEl.value = datePreset;
-	syncTabs();
+	syncStatusOptions();
 	updatePeriodFilterUi();
 	applyFilters();
 };

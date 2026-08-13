@@ -248,9 +248,9 @@ export function initPlanPage() {
 		const label = ghostCard.querySelector<HTMLElement>('[data-ghost-label]');
 		const hint = ghostCard.querySelector<HTMLElement>('[data-ghost-hint]');
 		const cta = ghostCard.querySelector<HTMLElement>('[data-ghost-cta]');
-		ghostCard.classList.toggle('plan-ghost-card--billing', !complete);
+		ghostCard.classList.toggle('plan-add-card--billing', !complete);
 		if (icon) icon.textContent = complete ? 'add' : 'lock';
-		if (label) label.textContent = complete ? 'Agregar nueva tarjeta' : 'Completá tus datos de facturación';
+		if (label) label.textContent = complete ? 'Agregar tarjeta' : 'Completá tus datos de facturación';
 		if (hint) {
 			hint.textContent = 'Requerido para agregar tarjetas.';
 			hint.classList.toggle('hidden', complete);
@@ -258,7 +258,7 @@ export function initPlanPage() {
 		cta?.classList.toggle('hidden', complete);
 		ghostCard.setAttribute(
 			'aria-label',
-			complete ? 'Agregar nueva tarjeta' : 'Completá tus datos de facturación'
+			complete ? 'Agregar tarjeta' : 'Completá tus datos de facturación'
 		);
 		paymentSection?.setAttribute('data-billing-complete', complete ? '1' : '0');
 	};
