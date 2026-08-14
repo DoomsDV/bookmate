@@ -411,6 +411,22 @@ html[data-theme='dark']
 		width: 100%;
 		flex: 1 1 auto;
 	}
+
+	.appointment-modal-tablist {
+		padding: 0.12rem;
+	}
+
+	.appointment-modal-tab {
+		min-height: 1.95rem;
+		padding: 0.22rem 0.55rem;
+		font-size: 0.8rem;
+		gap: 0.28rem;
+	}
+
+	.appointment-modal-tab__badge {
+		padding: 0.08rem 0.32rem;
+		font-size: 0.54rem;
+	}
 }
 
 @keyframes appointment-modal-in {
@@ -661,12 +677,22 @@ html[data-theme='dark'] .appointment-modal-voice-btn__divider {
 	outline-offset: 2px;
 }
 
-.appointment-modal-tab__premium {
+.appointment-modal-tab__badge {
 	display: inline-flex;
 	align-items: center;
-	justify-content: center;
+	padding: 0.12rem 0.42rem;
+	border-radius: 999px;
+	font-size: 0.58rem;
+	font-weight: 800;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	line-height: 1.15;
+	background: color-mix(in srgb, var(--primary) 14%, transparent);
 	color: var(--primary);
-	opacity: 0.85;
+}
+
+.appointment-modal-tab.is-active .appointment-modal-tab__badge {
+	background: color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
 .appointment-modal-tab-panel[hidden],
@@ -701,19 +727,29 @@ html[data-theme='dark'] .appointment-modal-voice-btn__divider {
 	gap: 0.35rem;
 	min-width: 0;
 	max-width: 100%;
+	line-height: 1.05rem;
 }
 
 .appointment-wa-reminder__icon.material-symbols-rounded {
-	display: block;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	flex-shrink: 0;
-	width: 1em;
-	height: 1em;
+	width: 1.05rem;
+	height: 1.05rem;
 	margin: 0;
+	padding: 0;
 	font-size: 1.05rem;
 	line-height: 1;
-	/* Material Symbols queda ópticamente alto respecto al texto */
-	translate: 0 0.08em;
+	translate: none;
+	vertical-align: middle;
 	color: var(--on-surface-variant);
+}
+
+.appointment-wa-reminder__row [data-appointment-wa-reminder-label] {
+	display: inline-flex;
+	align-items: center;
+	line-height: 1.05rem;
 }
 
 .appointment-wa-reminder.is-pending .appointment-wa-reminder__icon {
@@ -861,4 +897,26 @@ dialog[data-appointment-modal]:has([data-appointment-tabs]:not(.hidden):not([hid
 	.appointment-modal__panel > div:first-child {
 	border-bottom-width: 0;
 	box-shadow: none;
+}
+
+dialog[data-appointment-modal] [data-modal-professional-wrap] .bookmate-searchable-select.ts-wrapper.single .ts-control,
+dialog[data-appointment-modal] [data-modal-professional-wrap] .bookmate-searchable-select.ts-wrapper.single .ts-control > input,
+dialog[data-appointment-modal] [data-modal-professional-wrap] .bookmate-searchable-select.ts-wrapper.single .item,
+dialog[data-appointment-modal] [data-modal-status-wrap] .bookmate-searchable-select.ts-wrapper.single .ts-control,
+dialog[data-appointment-modal] [data-modal-status-wrap] .bookmate-searchable-select.ts-wrapper.single .ts-control > input,
+dialog[data-appointment-modal] [data-modal-status-wrap] .bookmate-searchable-select.ts-wrapper.single .item {
+	font-weight: 500;
+}
+
+dialog[data-appointment-modal] [data-modal-status-wrap],
+dialog[data-appointment-modal] [data-modal-status-wrap] .ts-wrapper,
+dialog[data-appointment-modal] [data-modal-professional-wrap] .ts-wrapper {
+	width: 100%;
+	min-width: 0;
+	max-width: 100%;
+}
+
+dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
+	max-width: calc(100vw - 1.5rem);
+	box-sizing: border-box;
 }

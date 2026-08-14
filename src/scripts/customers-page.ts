@@ -930,22 +930,249 @@ class CustomerManager extends HTMLElement {
 		const normalized = String(status || '').trim().toUpperCase();
 		if (normalized === 'COMPLETADO') return 'Completado';
 		if (normalized === 'CONFIRMADO') return 'Confirmado';
-		if (normalized === 'CANCELADO') return 'Cancelado';
+		if (normalized === 'CANCELADO' || normalized === 'AUSENTE') return 'Cancelado';
 		if (normalized === 'PENDIENTE') return 'Pendiente';
 		return normalized || '—';
 	}
 
-	private getAppointmentStatusBadgeClass(status: string) {
+	private getAppointmentStatusClass(status: string) {
 		const normalized = String(status || '').trim().toUpperCase();
-		if (normalized === 'COMPLETADO') return 'is-completed';
-		if (normalized === 'CONFIRMADO') return 'is-confirmed';
-		if (normalized === 'CANCELADO') return 'is-cancelled';
-		if (normalized === 'PENDIENTE') return 'is-pending';
+		if (normalized === 'COMPLETADO' || normalized === 'CONFIRMADO') return 'is-done';
+		if (normalized === 'CANCELADO' || normalized === 'AUSENTE') return 'is-cancelled';
+		if (normalized === 'PENDIENTE') return 'is-upcoming';
 		return 'is-neutral';
+	}
+
+	private getAppointmentStatusIcon(status: string) {
+		const statusClass = this.getAppointmentStatusClass(status);
+		if (statusClass === 'is-done') return 'check';
+		if (statusClass === 'is-cancelled') return 'close';
+		if (statusClass === 'is-upcoming') return 'schedule';
+		return 'radio_button_unchecked';
+	}
+
+	private parseAppointmentDate(value: string) {
+		const date = new Date(String(value || '').trim());
+		return Number.isNaN(date.getTime()) ? null : date;
+	}
+
+	private getMonthYearKey(date: Date) {
+		return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+	}
+
+	private formatMonthYearHeading(date: Date) {
+		const month = new Intl.DateTimeFormat('es-PY', { month: 'long' }).format(date);
+		const capitalized = month ? month.charAt(0).toUpperCase() + month.slice(1) : 'Mes';
+		return `${capitalized} ${date.getFullYear()}`;
+	}
+
+	private formatTimelineWhen(value: string) {
+		const date = this.parseAppointmentDate(value);
+		if (!date) return '—';
+
+		const datePart = new Intl.DateTimeFormat('es-PY', {
+			day: '2-digit',
+			month: 'short',
+		}).format(date);
+		const timePart = new Intl.DateTimeFormat('es-PY', {
+			hour: '2-digit',
+			minute: '2-digit',
+		}).format(date);
+
+		return `${datePart} · ${timePart}`;
 	}
 
 	private shouldHideHistoryProfessionalName() {
 		return this.selectedProfessionalId > 0 || this.roleId === ROLES.PROFESIONAL;
+	}
+
+	private fillHistoryItemBody(
+		body: HTMLElement,
+		appointment: CustomerAppointmentSummary,
+		historyEnabled: boolean
+	) {
+		if (!historyEnabled) {
+			const premium = document.createElement('p');
+			premium.className = 'customer-profile-history-muted';
+			premium.textContent =
+				'Las notas y archivos de la sesión están disponibles en el plan Premium.';
+			body.appendChild(premium);
+			return;
+		}
+
+		const notesBlock = document.createElement('div');
+		notesBlock.className = 'customer-profile-history-block';
+
+		const structuredFields = SESSION_NOTE_FIELDS.map((field) => ({
+			label: field.label,
+			value: String(appointment[field.key] || '').trim(),
+		})).filter((field) => field.value.length > 0);
+
+		if (structuredFields.length > 0) {
+			for (const field of structuredFields) {
+				const section = document.createElement('div');
+				section.className = 'customer-profile-history-note-section';
+				const label = document.createElement('p');
+				label.className = 'customer-profile-history-block__label';
+				label.textContent = field.label;
+				const text = document.createElement('p');
+				text.className = 'customer-profile-history-notes';
+				text.textContent = field.value;
+				section.append(label, text);
+				notesBlock.appendChild(section);
+			}
+		} else {
+			const notesTitle = document.createElement('p');
+			notesTitle.className = 'customer-profile-history-block__label';
+			notesTitle.textContent = 'Notas de la sesión';
+			notesBlock.appendChild(notesTitle);
+
+			const legacyNotes = String(appointment.notes || '').trim();
+			if (legacyNotes) {
+				const notesText = document.createElement('p');
+				notesText.className = 'customer-profile-history-notes';
+				notesText.textContent = legacyNotes;
+				notesBlock.appendChild(notesText);
+			} else if (!hasAnySessionNote(appointment)) {
+				const noNotes = document.createElement('p');
+				noNotes.className = 'customer-profile-history-muted';
+				noNotes.textContent = 'Sin notas registradas.';
+				notesBlock.appendChild(noNotes);
+			}
+		}
+		body.appendChild(notesBlock);
+
+		const filesBlock = document.createElement('div');
+		filesBlock.className = 'customer-profile-history-block';
+		const filesTitle = document.createElement('p');
+		filesTitle.className = 'customer-profile-history-block__label';
+		filesTitle.textContent = 'Archivos adjuntos';
+		filesBlock.appendChild(filesTitle);
+
+		const attachments = Array.isArray(appointment.attachments) ? appointment.attachments : [];
+		if (attachments.length > 0) {
+			const list = document.createElement('ul');
+			list.className = 'customer-profile-history-attachments';
+			for (const file of attachments) {
+				const li = document.createElement('li');
+				const link = document.createElement('a');
+				link.href = file.url;
+				link.target = '_blank';
+				link.rel = 'noopener noreferrer';
+				const icon = document.createElement('span');
+				icon.className = 'material-symbols-rounded text-[1.05rem]';
+				icon.setAttribute('aria-hidden', 'true');
+				icon.textContent = String(file.mime_type || '').startsWith('image/')
+					? 'image'
+					: 'description';
+				const label = document.createElement('span');
+				label.className = 'customer-profile-history-attachments__name';
+				label.textContent = file.file_name;
+				link.append(icon, label);
+				li.appendChild(link);
+				list.appendChild(li);
+			}
+			filesBlock.appendChild(list);
+		} else {
+			const noFiles = document.createElement('p');
+			noFiles.className = 'customer-profile-history-muted';
+			noFiles.textContent = 'Sin archivos adjuntos.';
+			filesBlock.appendChild(noFiles);
+		}
+		body.appendChild(filesBlock);
+	}
+
+	private createHistoryTimelineItem(
+		appointment: CustomerAppointmentSummary,
+		options: { hideProfessional: boolean; historyEnabled: boolean }
+	) {
+		const statusClass = this.getAppointmentStatusClass(appointment.status);
+		const statusLabel = this.formatAppointmentStatusLabel(appointment.status);
+		const when = this.formatTimelineWhen(appointment.start_time);
+		const serviceName = appointment.service_name || 'Servicio';
+		const professionalName = options.hideProfessional
+			? ''
+			: String(appointment.professional_name || '').trim();
+
+		const item = document.createElement('article');
+		item.className = `customer-profile-timeline__item ${statusClass}`;
+
+		const toggle = document.createElement('button');
+		toggle.type = 'button';
+		toggle.className = 'customer-profile-timeline__toggle';
+		toggle.setAttribute('aria-expanded', 'false');
+		toggle.setAttribute(
+			'aria-label',
+			[serviceName, statusLabel, when, professionalName].filter(Boolean).join(', ')
+		);
+
+		const node = document.createElement('span');
+		node.className = 'material-symbols-rounded customer-profile-timeline__node';
+		node.title = statusLabel;
+		node.setAttribute('aria-hidden', 'true');
+		node.textContent = this.getAppointmentStatusIcon(appointment.status);
+
+		const content = document.createElement('span');
+		content.className = 'customer-profile-timeline__content';
+
+		const titleRow = document.createElement('span');
+		titleRow.className = 'customer-profile-timeline__title-row';
+
+		const title = document.createElement('span');
+		title.className = 'customer-profile-timeline__title';
+		title.textContent = serviceName;
+		titleRow.appendChild(title);
+
+		const hasNotes = appointment.has_history_notes === true;
+		const attachmentCount = Math.max(0, Math.floor(Number(appointment.attachment_count || 0)));
+		if (hasNotes || attachmentCount > 0) {
+			const marks = document.createElement('span');
+			marks.className = 'customer-profile-timeline__marks';
+			if (hasNotes) {
+				const noteIcon = document.createElement('span');
+				noteIcon.className = 'material-symbols-rounded';
+				noteIcon.title = 'Notas';
+				noteIcon.setAttribute('aria-hidden', 'true');
+				noteIcon.textContent = 'notes';
+				marks.appendChild(noteIcon);
+			}
+			if (attachmentCount > 0) {
+				const fileIcon = document.createElement('span');
+				fileIcon.className = 'material-symbols-rounded';
+				fileIcon.title =
+					attachmentCount === 1 ? '1 archivo' : `${attachmentCount} archivos`;
+				fileIcon.setAttribute('aria-hidden', 'true');
+				fileIcon.textContent = 'attach_file';
+				marks.appendChild(fileIcon);
+			}
+			titleRow.appendChild(marks);
+		}
+
+		const subtitleParts = [when, professionalName].filter(Boolean);
+		const subtitle = document.createElement('span');
+		subtitle.className = 'customer-profile-timeline__subtitle';
+		subtitle.textContent = subtitleParts.join(' · ');
+
+		content.append(titleRow, subtitle);
+
+		const chevron = document.createElement('span');
+		chevron.className = 'material-symbols-rounded customer-profile-timeline__chevron';
+		chevron.setAttribute('aria-hidden', 'true');
+		chevron.textContent = 'expand_more';
+
+		toggle.append(node, content, chevron);
+
+		const body = document.createElement('div');
+		body.className = 'customer-profile-timeline__body';
+		this.fillHistoryItemBody(body, appointment, options.historyEnabled);
+
+		toggle.addEventListener('click', () => {
+			const isOpen = item.classList.toggle('is-open');
+			toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+		});
+
+		item.append(toggle, body);
+		return item;
 	}
 
 	private renderAppointmentHistory(
@@ -965,152 +1192,32 @@ class CustomerManager extends HTMLElement {
 		this.profileHistoryEmpty?.classList.add('hidden');
 
 		const hideProfessional = this.shouldHideHistoryProfessionalName();
+		let currentKey = '';
+		let groupEl: HTMLElement | null = null;
+		let headingIndex = 0;
 
 		for (const appointment of appointments) {
-			const item = document.createElement('article');
-			item.className = 'customer-profile-history-item';
+			const date = this.parseAppointmentDate(appointment.start_time);
+			const key = date ? this.getMonthYearKey(date) : '__unknown';
 
-			const toggle = document.createElement('button');
-			toggle.type = 'button';
-			toggle.className = 'customer-profile-history-item__toggle';
-			toggle.setAttribute('aria-expanded', 'false');
+			if (key !== currentKey || !groupEl) {
+				currentKey = key;
+				headingIndex += 1;
+				groupEl = document.createElement('section');
+				groupEl.className = 'customer-profile-timeline__group';
 
-			const main = document.createElement('div');
-			main.className = 'customer-profile-history-item__main';
-
-			const titleRow = document.createElement('div');
-			titleRow.className = 'customer-profile-history-item__title-row';
-
-			const title = document.createElement('div');
-			title.className = 'customer-profile-history-item__title';
-			title.textContent = appointment.service_name || 'Servicio';
-
-			const statusBadge = document.createElement('span');
-			statusBadge.className = `customer-profile-history-status ${this.getAppointmentStatusBadgeClass(appointment.status)}`;
-			statusBadge.textContent = this.formatAppointmentStatusLabel(appointment.status);
-
-			titleRow.append(title, statusBadge);
-
-			const meta = document.createElement('div');
-			meta.className = 'customer-profile-history-item__meta';
-			const metaParts = [
-				this.formatDateTime(appointment.start_time),
-				hideProfessional ? '' : appointment.professional_name,
-			].filter((part) => Boolean(String(part || '').trim()));
-			meta.textContent = metaParts.join(' · ');
-
-			main.append(titleRow, meta);
-			const badges = this.buildHistoryBadges(appointment);
-			if (badges) main.appendChild(badges);
-
-			const chevron = document.createElement('span');
-			chevron.className =
-				'material-symbols-rounded customer-profile-history-item__chevron text-[1.2rem]';
-			chevron.setAttribute('aria-hidden', 'true');
-			chevron.textContent = 'expand_more';
-
-			toggle.append(main, chevron);
-
-			const body = document.createElement('div');
-			body.className = 'customer-profile-history-item__body';
-
-			if (!historyEnabled) {
-				const premium = document.createElement('p');
-				premium.className = 'customer-profile-history-muted';
-				premium.textContent =
-					'Las notas y archivos de la sesión están disponibles en el plan Premium.';
-				body.appendChild(premium);
-			} else {
-				const notesBlock = document.createElement('div');
-				notesBlock.className = 'customer-profile-history-block';
-
-				const structuredFields = SESSION_NOTE_FIELDS.map((field) => ({
-					label: field.label,
-					value: String(appointment[field.key] || '').trim(),
-				})).filter((field) => field.value.length > 0);
-
-				if (structuredFields.length > 0) {
-					for (const field of structuredFields) {
-						const section = document.createElement('div');
-						section.className = 'customer-profile-history-note-section';
-						const label = document.createElement('p');
-						label.className = 'customer-profile-history-block__label';
-						label.textContent = field.label;
-						const text = document.createElement('p');
-						text.className = 'customer-profile-history-notes';
-						text.textContent = field.value;
-						section.append(label, text);
-						notesBlock.appendChild(section);
-					}
-				} else {
-					const notesTitle = document.createElement('p');
-					notesTitle.className = 'customer-profile-history-block__label';
-					notesTitle.textContent = 'Notas de la sesión';
-					notesBlock.appendChild(notesTitle);
-
-					const legacyNotes = String(appointment.notes || '').trim();
-					if (legacyNotes) {
-						const notesText = document.createElement('p');
-						notesText.className = 'customer-profile-history-notes';
-						notesText.textContent = legacyNotes;
-						notesBlock.appendChild(notesText);
-					} else if (!hasAnySessionNote(appointment)) {
-						const noNotes = document.createElement('p');
-						noNotes.className = 'customer-profile-history-muted';
-						noNotes.textContent = 'Sin notas registradas.';
-						notesBlock.appendChild(noNotes);
-					}
-				}
-				body.appendChild(notesBlock);
-
-				const filesBlock = document.createElement('div');
-				filesBlock.className = 'customer-profile-history-block';
-				const filesTitle = document.createElement('p');
-				filesTitle.className = 'customer-profile-history-block__label';
-				filesTitle.textContent = 'Archivos adjuntos';
-				filesBlock.appendChild(filesTitle);
-
-				const attachments = Array.isArray(appointment.attachments)
-					? appointment.attachments
-					: [];
-				if (attachments.length > 0) {
-					const list = document.createElement('ul');
-					list.className = 'customer-profile-history-attachments';
-					for (const file of attachments) {
-						const li = document.createElement('li');
-						const link = document.createElement('a');
-						link.href = file.url;
-						link.target = '_blank';
-						link.rel = 'noopener noreferrer';
-						const icon = document.createElement('span');
-						icon.className = 'material-symbols-rounded text-[1.05rem]';
-						icon.setAttribute('aria-hidden', 'true');
-						icon.textContent = String(file.mime_type || '').startsWith('image/')
-							? 'image'
-							: 'description';
-						const label = document.createElement('span');
-						label.textContent = file.file_name;
-						link.append(icon, label);
-						li.appendChild(link);
-						list.appendChild(li);
-					}
-					filesBlock.appendChild(list);
-				} else {
-					const noFiles = document.createElement('p');
-					noFiles.className = 'customer-profile-history-muted';
-					noFiles.textContent = 'Sin archivos adjuntos.';
-					filesBlock.appendChild(noFiles);
-				}
-				body.appendChild(filesBlock);
+				const heading = document.createElement('h4');
+				heading.className = 'customer-profile-timeline__heading';
+				heading.id = `customer-history-month-${headingIndex}`;
+				heading.textContent = date ? this.formatMonthYearHeading(date) : 'Sin fecha';
+				groupEl.setAttribute('aria-labelledby', heading.id);
+				groupEl.appendChild(heading);
+				this.profileHistoryList.appendChild(groupEl);
 			}
 
-			toggle.addEventListener('click', () => {
-				const isOpen = item.classList.toggle('is-open');
-				toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-			});
-
-			item.append(toggle, body);
-			this.profileHistoryList.appendChild(item);
+			groupEl.appendChild(
+				this.createHistoryTimelineItem(appointment, { hideProfessional, historyEnabled })
+			);
 		}
 	}
 

@@ -548,6 +548,20 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		z-index: 25;
 	}
 
+	/* El sticky bar es full-bleed (cancela px-4 / sm:px-6 del main).
+	   Inset solo el ancla para alinear el banner con el contenido, sin tocar el header. */
+	.schedule-page-header__sticky-bar .schedule-error-anchor {
+		left: 1rem;
+		right: 1rem;
+	}
+
+	@media (min-width: 640px) {
+		.schedule-page-header__sticky-bar .schedule-error-anchor {
+			left: 1.5rem;
+			right: 1.5rem;
+		}
+	}
+
 	.schedule-error-anchor:not(:has(.schedule-error-banner:not(.hidden))) {
 		display: none;
 	}

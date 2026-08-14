@@ -65,16 +65,48 @@ const positionFixedDropdown = (instance: TomSelect) => {
 		Math.max(80, available || DROPDOWN_MIN_PX)
 	);
 
+	const clampBox = (
+		left: number,
+		width: number,
+		containerLeft: number,
+		containerWidth: number,
+		margin = 12
+	) => {
+		const maxWidth = Math.max(DROPDOWN_MIN_PX, containerWidth - margin * 2);
+		const nextWidth = Math.min(Math.max(width, DROPDOWN_MIN_PX), maxWidth);
+		const minLeft = containerLeft + margin;
+		const maxLeft = containerLeft + containerWidth - nextWidth - margin;
+		return {
+			left: Math.min(Math.max(left, minLeft), Math.max(minLeft, maxLeft)),
+			width: nextWidth,
+		};
+	};
+
+	const applyBox = (styles: Record<string, string>) => {
+		Object.assign(instance.dropdown.style, styles);
+		instance.dropdown.style.setProperty('width', styles.width, 'important');
+		instance.dropdown.style.setProperty('max-width', styles.width, 'important');
+		instance.dropdown.style.setProperty('left', styles.left, 'important');
+		instance.dropdown.style.setProperty('right', 'auto', 'important');
+	};
+
 	// `position: fixed` inside <dialog> (or any transformed ancestor) is relative to that
 	// element, not the viewport — convert coordinates when the parent is an HTMLElement.
 	if (parent instanceof HTMLElement) {
 		const parentRect = parent.getBoundingClientRect();
-		const left = `${rect.left - parentRect.left + parent.scrollLeft}px`;
+		const box = clampBox(
+			rect.left - parentRect.left + parent.scrollLeft,
+			rect.width,
+			parent.scrollLeft,
+			parent.clientWidth
+		);
+		const left = `${box.left}px`;
+		const width = `${box.width}px`;
 
 		if (openUpward) {
-			Object.assign(instance.dropdown.style, {
+			applyBox({
 				position: 'absolute',
-				width: `${rect.width}px`,
+				width,
 				top: 'auto',
 				bottom: `${parentRect.bottom - rect.top + parent.scrollTop + DROPDOWN_GAP_PX}px`,
 				left,
@@ -82,9 +114,9 @@ const positionFixedDropdown = (instance: TomSelect) => {
 				zIndex: '1000',
 			});
 		} else {
-			Object.assign(instance.dropdown.style, {
+			applyBox({
 				position: 'absolute',
-				width: `${rect.width}px`,
+				width,
 				top: `${rect.bottom - parentRect.top + parent.scrollTop + DROPDOWN_GAP_PX}px`,
 				bottom: 'auto',
 				left,
@@ -96,23 +128,28 @@ const positionFixedDropdown = (instance: TomSelect) => {
 		return;
 	}
 
+	const viewportWidth = document.documentElement.clientWidth || window.innerWidth;
+	const box = clampBox(rect.left, rect.width, 0, viewportWidth);
+	const left = `${box.left}px`;
+	const width = `${box.width}px`;
+
 	if (openUpward) {
-		Object.assign(instance.dropdown.style, {
+		applyBox({
 			position: 'fixed',
-			width: `${rect.width}px`,
+			width,
 			top: 'auto',
 			bottom: `${getLayoutViewportHeight() - rect.top + DROPDOWN_GAP_PX}px`,
-			left: `${rect.left}px`,
+			left,
 			right: 'auto',
 			zIndex: '1000',
 		});
 	} else {
-		Object.assign(instance.dropdown.style, {
+		applyBox({
 			position: 'fixed',
-			width: `${rect.width}px`,
+			width,
 			top: `${rect.bottom + DROPDOWN_GAP_PX}px`,
 			bottom: 'auto',
-			left: `${rect.left}px`,
+			left,
 			right: 'auto',
 			zIndex: '1000',
 		});
@@ -127,7 +164,12 @@ export const bindFixedDropdownPosition = (instance: TomSelect) => {
 	const onScroll = () => reposition();
 	const onResize = () => reposition();
 
+	// Tom Select only positions when dropdownParent === 'body'. For a <dialog> parent the
+	// default CSS is left:0; width:100% of the dialog — override before the menu is shown.
+	instance.positionDropdown = reposition;
+
 	instance.on('dropdown_open', () => {
+		reposition();
 		window.requestAnimationFrame(reposition);
 	});
 	window.addEventListener('scroll', onScroll, true);
@@ -148,6 +190,7 @@ type SearchableSelectOptions = {
 	maxOptions?: number;
 	closeAfterSelect?: boolean;
 	dropdownParent?: 'body' | HTMLElement;
+	searchable?: boolean;
 };
 
 export const getSearchableSelect = (select: HTMLSelectElement | null | undefined) =>
@@ -164,20 +207,22 @@ export const ensureSearchableSelect = (
 
 	select.className = 'bookmate-searchable-select';
 
+	const searchable = options.searchable !== false;
 	const instance = new TomSelect(select, {
 		allowEmptyOption: true,
 		create: false,
 		persist: false,
-		plugins: ['dropdown_input'],
+		plugins: searchable ? ['dropdown_input'] : [],
 		maxOptions: options.maxOptions ?? 500,
 		closeAfterSelect: options.closeAfterSelect ?? true,
 		placeholder: options.placeholder,
-		controlInput: '<input type="text" autocomplete="off" />',
+		controlInput: searchable ? '<input type="text" autocomplete="off" />' : null,
 		dropdownParent: options.dropdownParent ?? null,
 		dropdownClass: 'ts-dropdown bookmate-searchable-select-dropdown',
 	});
 
 	instance.on('dropdown_open', () => {
+		if (!searchable) return;
 		const controlInput = instance.control_input;
 		if (!(controlInput instanceof HTMLInputElement)) return;
 		if (instance.isDisabled) return;

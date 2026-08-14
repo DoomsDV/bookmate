@@ -541,7 +541,7 @@ const eagerMapPreloadUrls = locations
 
 	.locations-org-closures-btn {
 		border-radius: 999px;
-		border: 1px solid var(--shell-border);
+		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 28%, transparent);
 		background: transparent;
 		padding: 0.62rem 1rem;
 		font-size: 0.9rem;
@@ -570,6 +570,7 @@ const eagerMapPreloadUrls = locations
 
 	.locations-org-closures-btn:hover {
 		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+		border-color: color-mix(in srgb, var(--on-surface-variant) 42%, transparent);
 		color: var(--on-surface);
 	}
 
@@ -645,12 +646,13 @@ const eagerMapPreloadUrls = locations
 	}
 
 	html[data-theme='dark'] .locations-org-closures-btn {
-		border-color: rgba(255, 255, 255, 0.12);
+		border-color: rgba(255, 255, 255, 0.22);
 		color: var(--on-surface-variant);
 	}
 
 	html[data-theme='dark'] .locations-org-closures-btn:hover {
 		background: rgba(255, 255, 255, 0.06);
+		border-color: rgba(255, 255, 255, 0.34);
 		color: var(--on-surface);
 	}
 

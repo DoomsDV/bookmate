@@ -74,14 +74,26 @@
 		display: none;
 		width: min(24.5rem, calc(100vw - 1.5rem));
 		overflow: hidden;
+		isolation: isolate;
 		border-radius: 1.35rem;
 		border: 1px solid var(--shell-border);
-		background: var(--menu-surface);
+		background-color: var(--menu-surface);
+		background-image: linear-gradient(
+			180deg,
+			color-mix(in srgb, var(--on-surface) 3%, var(--menu-surface)) 0%,
+			var(--menu-surface) 48%
+		);
 		box-shadow: 0 22px 60px rgba(15, 23, 42, 0.16);
 	}
 
 	html[data-theme='dark'] .inbox-panel {
-		background: #121214;
+		background-color: #18181a;
+		background-image: linear-gradient(
+			180deg,
+			#1c1c1e 0%,
+			#18181a 52%,
+			#171719 100%
+		);
 	}
 
 	.inbox-bell[open] .inbox-panel {
@@ -125,23 +137,35 @@
 	}
 
 	.inbox-panel__scroll {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
 		overflow: auto;
 		min-height: 8rem;
 	}
 
 	.inbox-panel__empty {
-		margin: 0;
+		margin: auto;
 		padding: 1.6rem 1.1rem;
+		width: 100%;
 		text-align: center;
 		font-size: 0.86rem;
 		font-weight: 600;
 		color: var(--on-surface-variant);
 	}
 
+	.inbox-panel__empty[hidden] {
+		display: none;
+	}
+
 	.inbox-panel__list {
 		display: flex;
 		flex-direction: column;
 		padding: 0.35rem 0.4rem 0.55rem;
+	}
+
+	.inbox-panel__list:empty {
+		display: none;
 	}
 
 	.inbox-item {

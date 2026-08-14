@@ -14,6 +14,7 @@ import {
 import {
 	getScheduleMisalignedConfirmMessage,
 	getScheduleMisalignedConfirmTitle,
+	SCHEDULE_MISALIGNED_CONFIRM_ACTION,
 	getScheduleMisalignedMessage,
 	getScheduleMisalignedTitle,
 	isScheduleMisalignedConflictError,
@@ -180,6 +181,7 @@ class AppointmentModal extends HTMLElement {
 	waReminder: HTMLElement | null = null;
 	waReminderIcon: HTMLElement | null = null;
 	waReminderLabel: HTMLElement | null = null;
+	attendanceLabelSource: AppointmentDetail | null = null;
 	attendanceReplyRow: HTMLElement | null = null;
 	attendanceReplyAt: HTMLElement | null = null;
 	scheduleMisalignedWrap: HTMLElement | null = null;
@@ -432,6 +434,11 @@ class AppointmentModal extends HTMLElement {
 			placeholder: 'Buscar profesional...',
 			dropdownParent: requiredNodes.modal,
 		});
+		ensureSearchableSelect(requiredNodes.statusInput, {
+			placeholder: 'Estado',
+			dropdownParent: requiredNodes.modal,
+			searchable: false,
+		});
 
 		requiredNodes.form.addEventListener('submit', this.handleSubmit, { signal });
 		requiredNodes.modal.addEventListener('click', this.handleBackdropClick, { signal });
@@ -500,6 +507,7 @@ class AppointmentModal extends HTMLElement {
 			this.modal.close();
 		}
 		destroySearchableSelect(this.modalProfessional);
+		destroySearchableSelect(this.statusInput);
 	}
 
 	scheduleBindRetry() {
@@ -969,8 +977,8 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.endDisplayInput.value = '';
 		requiredNodes.startInput.min = '';
 		requiredNodes.endInput.min = '';
-		requiredNodes.statusInput.value = 'CONFIRMADO';
-		requiredNodes.statusInput.disabled = true;
+		setSearchableSelectValue(requiredNodes.statusInput, 'CONFIRMADO');
+		setSearchableSelectDisabled(requiredNodes.statusInput, true);
 		if (requiredNodes.paymentStatusInput) requiredNodes.paymentStatusInput.value = 'NONE';
 		this.selectedCustomer = null;
 		this.customers = [];
@@ -984,6 +992,7 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	hideAttendanceBlock() {
+		this.attendanceLabelSource = null;
 		this.waReminder?.setAttribute('hidden', '');
 		this.waReminder?.classList.add('hidden');
 		this.waReminder?.classList.remove('is-confirmed', 'is-pending');
@@ -991,10 +1000,15 @@ class AppointmentModal extends HTMLElement {
 		this.attendanceReplyRow?.classList.add('hidden');
 		if (this.attendanceReplyAt) this.attendanceReplyAt.textContent = '';
 		if (this.waReminderIcon) this.waReminderIcon.textContent = 'schedule';
-		if (this.waReminderLabel) {
-			this.waReminderLabel.textContent =
-				'Recordatorio de WhatsApp: Pendiente de envío';
-		}
+		this.syncWaReminderLabel();
+	}
+
+	private syncWaReminderLabel() {
+		if (!this.waReminderLabel) return;
+		this.waReminderLabel.textContent = getAttendanceReminderLabel(
+			this.attendanceLabelSource,
+			this.getCurrentAppointmentStatus()
+		);
 	}
 
 	hideScheduleMisalignedBlock() {
@@ -1038,12 +1052,11 @@ class AppointmentModal extends HTMLElement {
 
 	showAttendanceBlock(appointment: AppointmentDetail) {
 		this.hideAttendanceBlock();
+		this.attendanceLabelSource = appointment;
 
 		if (isAttendanceReconfirmed(appointment)) {
 			if (this.waReminderIcon) this.waReminderIcon.textContent = 'check_circle';
-			if (this.waReminderLabel) {
-				this.waReminderLabel.textContent = getAttendanceReminderLabel(appointment);
-			}
+			this.syncWaReminderLabel();
 			this.waReminder?.classList.add('is-confirmed');
 			this.waReminder?.removeAttribute('hidden');
 			this.waReminder?.classList.remove('hidden');
@@ -1063,9 +1076,7 @@ class AppointmentModal extends HTMLElement {
 				this.waReminderIcon.textContent =
 					status === 'NOT_REQUESTED' ? 'schedule_send' : 'schedule';
 			}
-			if (this.waReminderLabel) {
-				this.waReminderLabel.textContent = getAttendanceReminderLabel(appointment);
-			}
+			this.syncWaReminderLabel();
 			this.waReminder?.classList.add('is-pending');
 			this.waReminder?.removeAttribute('hidden');
 			this.waReminder?.classList.remove('hidden');
@@ -1117,9 +1128,12 @@ class AppointmentModal extends HTMLElement {
 		return String(this.statusInput?.value || '').trim().toUpperCase();
 	}
 
-	private isNotesSectionUnlocked() {
-		if (this.isImmutableReadOnly) return false;
-		return this.getCurrentAppointmentStatus() !== 'CANCELADO';
+	private isCancelledStatus() {
+		return this.getCurrentAppointmentStatus() === 'CANCELADO';
+	}
+
+	private canEditSessionNotes() {
+		return !this.isImmutableReadOnly && !this.isCancelledStatus();
 	}
 
 	private hasSessionTabContent() {
@@ -1136,11 +1150,12 @@ class AppointmentModal extends HTMLElement {
 			return;
 		}
 
-		const locked = !this.isNotesSectionUnlocked();
+		const cancelled = this.isCancelledStatus();
+		const editable = this.canEditSessionNotes();
 
-		this.historyBody?.classList.toggle('is-locked', locked);
+		this.historyBody?.classList.toggle('is-locked', cancelled);
 		if (this.notesLock) {
-			if (locked) {
+			if (cancelled) {
 				this.notesLock.removeAttribute('hidden');
 				this.notesLock.classList.remove('hidden');
 			} else {
@@ -1154,15 +1169,15 @@ class AppointmentModal extends HTMLElement {
 		}
 
 		for (const input of this.getSessionNoteInputs()) {
-			input.readOnly = locked;
-			input.disabled = locked;
+			input.readOnly = !editable;
+			input.disabled = !editable;
 		}
 		if (this.attachmentAddButton) {
-			this.attachmentAddButton.disabled = locked || this.isUploadingAttachment;
-			this.attachmentAddButton.setAttribute('aria-disabled', locked ? 'true' : 'false');
+			this.attachmentAddButton.disabled = !editable || this.isUploadingAttachment;
+			this.attachmentAddButton.setAttribute('aria-disabled', editable ? 'false' : 'true');
 		}
 		if (this.attachmentInput) {
-			this.attachmentInput.disabled = locked || this.isUploadingAttachment;
+			this.attachmentInput.disabled = !editable || this.isUploadingAttachment;
 		}
 		this.syncAttachmentEmptyVisibility();
 		this.syncDropzoneVisibility();
@@ -1269,8 +1284,8 @@ class AppointmentModal extends HTMLElement {
 	private static readonly MAX_ATTACHMENTS = 10;
 
 	private syncAttachmentEmptyVisibility() {
-		const locked = this.historyEnabled && !this.isNotesSectionUnlocked();
-		if (!locked) {
+		const showHint = this.historyEnabled && this.canEditSessionNotes();
+		if (showHint) {
 			this.attachmentEmpty?.classList.remove('hidden');
 			this.attachmentEmpty?.removeAttribute('hidden');
 		} else {
@@ -1281,9 +1296,9 @@ class AppointmentModal extends HTMLElement {
 
 	private syncDropzoneVisibility() {
 		if (!this.attachmentAddButton) return;
-		const locked = this.historyEnabled && !this.isNotesSectionUnlocked();
+		const editable = this.historyEnabled && this.canEditSessionNotes();
 		const atLimit = this.currentAttachments.length >= AppointmentModal.MAX_ATTACHMENTS;
-		const hide = !locked && atLimit;
+		const hide = !editable || atLimit;
 		this.attachmentAddButton.classList.toggle('hidden', hide);
 		if (hide) this.attachmentAddButton.setAttribute('hidden', '');
 		else this.attachmentAddButton.removeAttribute('hidden');
@@ -1344,7 +1359,7 @@ class AppointmentModal extends HTMLElement {
 
 	private setUploadingAttachment(value: boolean) {
 		this.isUploadingAttachment = value;
-		const locked = this.historyEnabled && !this.isNotesSectionUnlocked();
+		const locked = this.historyEnabled && !this.canEditSessionNotes();
 		if (this.attachmentAddButton) {
 			this.attachmentAddButton.disabled = value || locked;
 		}
@@ -1407,17 +1422,19 @@ class AppointmentModal extends HTMLElement {
 			size.textContent = this.formatFileSize(attachment.size_bytes);
 			item.appendChild(size);
 
-			const removeButton = document.createElement('button');
-			removeButton.type = 'button';
-			removeButton.className =
-				'shrink-0 inline-flex size-7 items-center justify-center rounded-full text-(--on-surface-variant) transition hover:bg-rose-500/10 hover:text-rose-600 disabled:opacity-50';
-			removeButton.setAttribute('aria-label', `Eliminar ${attachment.file_name}`);
-			removeButton.innerHTML =
-				'<span class="material-symbols-rounded text-[1.05rem]" aria-hidden="true">delete</span>';
-			removeButton.addEventListener('click', () =>
-				void this.handleAttachmentDelete(attachment.id_attachment)
-			);
-			item.appendChild(removeButton);
+			if (this.canEditSessionNotes()) {
+				const removeButton = document.createElement('button');
+				removeButton.type = 'button';
+				removeButton.className =
+					'shrink-0 inline-flex size-7 items-center justify-center rounded-full text-(--on-surface-variant) transition hover:bg-rose-500/10 hover:text-rose-600 disabled:opacity-50';
+				removeButton.setAttribute('aria-label', `Eliminar ${attachment.file_name}`);
+				removeButton.innerHTML =
+					'<span class="material-symbols-rounded text-[1.05rem]" aria-hidden="true">delete</span>';
+				removeButton.addEventListener('click', () =>
+					void this.handleAttachmentDelete(attachment.id_attachment)
+				);
+				item.appendChild(removeButton);
+			}
 
 			this.attachmentsList.appendChild(item);
 		}
@@ -1434,9 +1451,7 @@ class AppointmentModal extends HTMLElement {
 
 		const status = String(appointment.status || '').trim().toUpperCase();
 		const savedNotes = normalizeSessionNotesHistory(appointment.history ?? {});
-		const showReadonlyNotes =
-			(status === 'CANCELADO' || (status === 'COMPLETADO' && this.isImmutableReadOnly)) &&
-			hasAnySessionNote(savedNotes);
+		const showReadonlyNotes = status === 'COMPLETADO' && this.isImmutableReadOnly;
 
 		if (showReadonlyNotes && this.notesReadonlyWrap) {
 			this.renderReadonlySessionNotes(savedNotes);
@@ -1460,6 +1475,7 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	handleStatusChange = () => {
+		this.syncWaReminderLabel();
 		if (!this.historyEnabled) return;
 		const status = this.getCurrentAppointmentStatus();
 		if (status === 'CANCELADO') {
@@ -1534,20 +1550,20 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	handleAttachmentAddClick = () => {
-		if (this.isUploadingAttachment || !this.isNotesSectionUnlocked()) return;
+		if (this.isUploadingAttachment || !this.canEditSessionNotes()) return;
 		this.clearAttachmentError();
 		this.attachmentInput?.click();
 	};
 
 	handleDropzoneDragEnter = (event: DragEvent) => {
 		event.preventDefault();
-		if (!this.isNotesSectionUnlocked() || this.isUploadingAttachment) return;
+		if (!this.canEditSessionNotes() || this.isUploadingAttachment) return;
 		this.dropzone?.classList.add('is-dragover');
 	};
 
 	handleDropzoneDragOver = (event: DragEvent) => {
 		event.preventDefault();
-		if (!this.isNotesSectionUnlocked() || this.isUploadingAttachment) return;
+		if (!this.canEditSessionNotes() || this.isUploadingAttachment) return;
 		this.dropzone?.classList.add('is-dragover');
 	};
 
@@ -1561,7 +1577,7 @@ class AppointmentModal extends HTMLElement {
 	handleDropzoneDrop = (event: DragEvent) => {
 		event.preventDefault();
 		this.dropzone?.classList.remove('is-dragover');
-		if (!this.isNotesSectionUnlocked() || this.isUploadingAttachment) return;
+		if (!this.canEditSessionNotes() || this.isUploadingAttachment) return;
 		const files = event.dataTransfer?.files;
 		if (!files?.length) return;
 		void this.uploadAttachmentFiles(Array.from(files));
@@ -1594,9 +1610,11 @@ class AppointmentModal extends HTMLElement {
 
 	private async uploadAttachmentFiles(files: File[]) {
 		if (!this.client || this.editingAppointmentId <= 0 || this.isUploadingAttachment) return;
-		if (!this.isNotesSectionUnlocked()) {
+		if (!this.canEditSessionNotes()) {
 			this.showAttachmentError(
-				'Las notas y archivos no están disponibles en citas canceladas.'
+				this.isCancelledStatus()
+					? 'Las notas y archivos no están disponibles en citas canceladas.'
+					: 'Esta cita ya finalizó y no se puede modificar.'
 			);
 			return;
 		}
@@ -1659,7 +1677,7 @@ class AppointmentModal extends HTMLElement {
 
 	private async handleAttachmentDelete(attachmentId: number) {
 		if (!this.client || this.editingAppointmentId <= 0 || this.isUploadingAttachment) return;
-		if (!this.isNotesSectionUnlocked()) return;
+		if (!this.canEditSessionNotes()) return;
 
 		const confirmMessage = '¿Eliminar este archivo adjunto? Esta acción no se puede deshacer.';
 		const confirmed = window.BookmateAlert?.confirm
@@ -1869,8 +1887,8 @@ class AppointmentModal extends HTMLElement {
 		this.syncSubmitLabel();
 		this.syncDeleteButtonVisibility();
 		if (this.statusInput) {
-			this.statusInput.value = 'CONFIRMADO';
-			this.statusInput.disabled = true;
+			setSearchableSelectValue(this.statusInput, 'CONFIRMADO');
+			setSearchableSelectDisabled(this.statusInput, true);
 		}
 		if (this.paymentStatusInput) this.paymentStatusInput.value = 'NONE';
 		this.syncPaymentStatusLabel('NONE', null);
@@ -1891,7 +1909,7 @@ class AppointmentModal extends HTMLElement {
 		this.activeTab = 'details';
 		this.syncSubmitLabel();
 		this.syncDeleteButtonVisibility();
-		if (this.statusInput) this.statusInput.disabled = false;
+		if (this.statusInput) setSearchableSelectDisabled(this.statusInput, false);
 		this.modalStatusWrap?.removeAttribute('hidden');
 		this.modalStatusWrap?.classList.remove('hidden');
 		this.hideAttendanceBlock();
@@ -1926,7 +1944,7 @@ class AppointmentModal extends HTMLElement {
 			preferredServiceId: toPositiveInt(appointment.ser_id_service, 0),
 			includePreferredIfMissing: true,
 		});
-		requiredNodes.statusInput.value = String(appointment.status || 'CONFIRMADO');
+		setSearchableSelectValue(requiredNodes.statusInput, String(appointment.status || 'CONFIRMADO'));
 		this.editingPaymentStatus = String(appointment.payment_status || 'NONE').trim().toUpperCase() || 'NONE';
 		this.editingDepositAmount =
 			appointment.deposit_amount != null && Number(appointment.deposit_amount) > 0
@@ -2644,7 +2662,7 @@ class AppointmentModal extends HTMLElement {
 				const confirmed = await this.confirmCompleteOnSessionSave();
 				if (!confirmed) return;
 				payload.status = 'COMPLETADO';
-				if (this.statusInput) this.statusInput.value = 'COMPLETADO';
+				if (this.statusInput) setSearchableSelectValue(this.statusInput, 'COMPLETADO');
 			}
 		}
 
@@ -2656,7 +2674,7 @@ class AppointmentModal extends HTMLElement {
 		) {
 			const decision = await this.confirmBusinessCancelWithDeposit();
 			if (decision === 'reschedule') {
-				if (this.statusInput) this.statusInput.value = 'CONFIRMADO';
+				if (this.statusInput) setSearchableSelectValue(this.statusInput, 'CONFIRMADO');
 				this.handleStatusChange();
 				if (window.BookmateAlert?.alert) {
 					await window.BookmateAlert.alert({
@@ -2718,12 +2736,12 @@ class AppointmentModal extends HTMLElement {
 
 	private async confirmCompleteOnSessionSave(): Promise<boolean> {
 		const message =
-			'Al guardar la ficha, esta reserva se marcará como Completada en el sistema.';
+			'Al guardar la ficha, esta sesión se marcará como Completada en el sistema.';
 
 		if (window.BookmateAlert?.confirm) {
 			return window.BookmateAlert.confirm({
 				type: 'info',
-				title: 'Marcar consulta como completada',
+				title: 'Marcar sesión como completada',
 				message,
 				confirmText: 'Guardar ficha',
 				cancelText: 'Volver',
@@ -2799,7 +2817,7 @@ class AppointmentModal extends HTMLElement {
 				type: 'warning',
 				title,
 				message,
-				confirmText: 'Guardar de todos modos',
+				confirmText: SCHEDULE_MISALIGNED_CONFIRM_ACTION,
 				cancelText: 'Cancelar',
 			});
 		}

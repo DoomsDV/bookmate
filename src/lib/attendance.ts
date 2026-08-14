@@ -53,21 +53,36 @@ export const isAttendanceAwaitingReconfirmation = (value: unknown) => {
 	return status === 'NOT_REQUESTED' || status === 'SENT' || status === 'EXPIRED';
 };
 
-export const getAttendanceReminderLabel = (value: unknown) => {
+const resolveAppointmentStatus = (value: unknown, appointmentStatus?: string | null) => {
+	if (appointmentStatus != null && String(appointmentStatus).trim() !== '') {
+		return String(appointmentStatus).trim().toUpperCase();
+	}
+	if (!value || typeof value !== 'object') return '';
+	return String((value as Record<string, unknown>).status || '')
+		.trim()
+		.toUpperCase();
+};
+
+export const getAttendanceReminderLabel = (
+	value: unknown,
+	appointmentStatus?: string | null
+) => {
 	const status = getAttendanceStatusFromValue(value);
+	let detail = 'Pendiente de envío';
 	if (status === 'CONFIRMED') {
-		return 'Recordatorio de WhatsApp: Confirmado por el cliente';
+		detail = 'Confirmado por el cliente';
+	} else if (status === 'DECLINED') {
+		detail = 'Rechazado por el cliente';
+	} else if (status === 'SENT') {
+		detail = 'Enviado, pendiente de respuesta';
+	} else if (status === 'EXPIRED') {
+		detail = 'Sin respuesta del cliente';
 	}
-	if (status === 'DECLINED') {
-		return 'Recordatorio de WhatsApp: Rechazado por el cliente';
-	}
-	if (status === 'SENT') {
-		return 'Recordatorio de WhatsApp: Enviado, pendiente de respuesta';
-	}
-	if (status === 'EXPIRED') {
-		return 'Recordatorio de WhatsApp: Sin respuesta del cliente';
-	}
-	return 'Recordatorio de WhatsApp: Pendiente de envío';
+	const automatic =
+		resolveAppointmentStatus(value, appointmentStatus) === 'CONFIRMADO'
+			? ' (automático)'
+			: '';
+	return `WhatsApp: ${detail}${automatic}`;
 };
 
 export const isAttendanceDeclined = (value: unknown) => {

@@ -86,7 +86,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 				</div>
 
 				<div
-					class="appointment-modal-tabs shrink-0 hidden border-b border-(--shell-border) bg-(--surface-bright) px-4 pt-1 pb-3 sm:px-7"
+					class="appointment-modal-tabs shrink-0 hidden border-b border-(--shell-border) bg-(--surface-bright) px-4 pt-0 pb-1.5 sm:px-7 sm:pt-1 sm:pb-3"
 					data-appointment-tabs
 					hidden
 				>
@@ -118,19 +118,13 @@ const { showVoiceButton = false }: Props = Astro.props;
 							tabindex="-1"
 						>
 							<span>Notas y Archivos</span>
-							<span
-								class="appointment-modal-tab__premium"
-								title="Premium"
-								aria-label="Premium"
-							>
-								<span class="material-symbols-rounded text-[0.9rem]" aria-hidden="true">workspace_premium</span>
-							</span>
+							<span class="appointment-modal-tab__badge" aria-hidden="true">Nuevo</span>
 						</button>
 					</div>
 				</div>
 
 				<div
-					class="flex-1 overflow-y-auto overscroll-contain min-h-0"
+					class="flex-1 overflow-x-hidden overflow-y-auto overscroll-contain min-h-0"
 					data-appointment-form-scroll
 				>
 				<div
@@ -140,7 +134,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 					aria-labelledby="appointment-tab-details"
 					data-appointment-tab-panel="details"
 				>
-				<div class="px-7 py-7 grid gap-5">
+				<div class="px-7 py-7 grid min-w-0 gap-5">
 					<div class="grid gap-5 sm:grid-cols-2">
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span class="inline-flex items-center gap-1">
@@ -208,8 +202,8 @@ const { showVoiceButton = false }: Props = Astro.props;
 					</div>
 
 					<div class="grid gap-5 sm:grid-cols-2">
-						<div class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-modal-professional-wrap>
-							<span class="inline-flex items-center gap-1">
+						<div class="grid min-w-0 gap-1.5 text-[0.95rem] font-medium text-(--on-surface)" data-modal-professional-wrap>
+							<span class="inline-flex items-center gap-1 font-bold">
 								Profesional
 								<span class="text-rose-500">*</span>
 							</span>
@@ -217,7 +211,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 								name="pro_id_professional"
 								data-modal-professional
 								required
-								class="cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+								class="cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-medium outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
 							>
 								<option value="">Selecciona un profesional</option>
 							</select>
@@ -278,12 +272,12 @@ const { showVoiceButton = false }: Props = Astro.props;
 						<input type="hidden" name="payment_status" value="NONE" data-modal-payment-status />
 					</div>
 
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-modal-status-wrap hidden>
-							Estado
+					<label class="grid w-full min-w-0 gap-1.5 text-[0.95rem] font-medium text-(--on-surface)" data-modal-status-wrap hidden>
+							<span class="font-bold">Estado</span>
 							<select
 								name="status"
 								data-modal-status
-								class="cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+								class="w-full min-w-0 max-w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-medium outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
 							>
 								<option value="PENDIENTE">Pendiente</option>
 								<option value="CONFIRMADO">Confirmado</option>
@@ -322,7 +316,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 								data-appointment-wa-reminder-icon
 							>schedule</span>
 							<span data-appointment-wa-reminder-label>
-								Recordatorio de WhatsApp: Pendiente de envío
+								WhatsApp: Pendiente de envío (automático)
 							</span>
 						</span>
 						<span
@@ -532,7 +526,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 					>
 						<div class="grid gap-4" data-appointment-notes-edit-wrap>
 							<label class="grid gap-1.5 text-[0.9rem] font-bold text-(--on-surface)">
-								Motivo de consulta / Requerimiento inicial
+								Motivo de la reserva
 								<textarea
 									name="consultation_reason"
 									data-appointment-session-consultation-reason
@@ -562,7 +556,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 									data-appointment-session-recommendations
 									rows="3"
 									maxlength="3500"
-									placeholder="Indicaciones para el cliente o pendientes para la próxima cita."
+									placeholder="Indicaciones para el cliente o pendientes para la próxima reserva."
 									class="resize-y rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 								></textarea>
 							</label>
@@ -571,7 +565,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 						<div class="hidden grid gap-3" data-appointment-notes-readonly-wrap hidden>
 							<div class="grid gap-1.5" data-appointment-history-consultation-wrap hidden>
 								<span class="text-[0.82rem] font-bold text-(--on-surface-variant)">
-									Motivo de consulta / Requerimiento inicial
+									Motivo de la reserva
 								</span>
 								<p
 									class="m-0 whitespace-pre-line rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.92rem] font-medium leading-snug text-(--on-surface)"

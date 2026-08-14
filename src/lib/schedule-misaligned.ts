@@ -27,7 +27,17 @@ export const isScheduleMisalignedFlag = (value: unknown) =>
 
 type MisalignedMessageContext = {
 	locationName?: string;
+	professionalName?: string;
+	timeLabel?: string;
 };
+
+const displayName = (value: unknown, fallback: string) => {
+	const label = String(value || '').trim();
+	return label || fallback;
+};
+
+const displayLocation = (value: unknown) => displayName(value, 'esa sucursal');
+const displayProfessional = (value: unknown) => displayName(value, 'El profesional');
 
 export const getScheduleMisalignedTitle = (reason: ScheduleMisalignedReason | null) => {
 	switch (reason) {
@@ -107,6 +117,35 @@ export const getScheduleMisalignedBannerReasonLabel = (reason: ScheduleMisaligne
 	}
 };
 
+export const getScheduleMisalignedListExplanation = (
+	reason: ScheduleMisalignedReason | null,
+	context: MisalignedMessageContext = {}
+) => {
+	const location = displayLocation(context.locationName);
+	const professional = displayProfessional(context.professionalName);
+	const professionalIsNamed = Boolean(String(context.professionalName || '').trim());
+	const professionalSubject = professionalIsNamed ? professional : 'El profesional';
+	const timeText = String(context.timeLabel || '').trim();
+	const timePhrase = timeText ? ` a las ${timeText}` : ' a esa hora';
+
+	switch (reason) {
+		case 'LOCATION_CLOSED':
+			return String(context.locationName || '').trim()
+				? `La sucursal ${location} está cerrada${timePhrase} (feriado, mantenimiento u otro cierre). No se puede atender ahí.`
+				: `La sucursal está cerrada${timePhrase} (feriado, mantenimiento u otro cierre). No se puede atender ahí.`;
+		case 'DAY_BLOCKED':
+			return `${professionalSubject} tiene ese día bloqueado en su agenda: no atiende citas ese día.`;
+		case 'WRONG_LOCATION':
+			return String(context.locationName || '').trim()
+				? `${professionalSubject} sí tiene turno${timePhrase}, pero no en ${location}. Ese horario está asignado a otra sucursal.`
+				: `${professionalSubject} sí tiene turno${timePhrase}, pero en otra sucursal.`;
+		case 'TIME_OUTSIDE_SCHEDULE':
+			return `${professionalSubject} no tiene turnos${timePhrase} ese día. Esa franja no está en su plantilla semanal ni en una excepción.`;
+		default:
+			return `${professionalSubject} no puede atender esta cita con el horario o la sucursal actuales.`;
+	}
+};
+
 export const getScheduleMisalignedBannerAction = (count: number) => {
 	if (Math.max(0, Math.floor(count)) === 1) {
 		return 'Buscá la alerta ⚠ en el calendario para reprogramarla.';
@@ -129,6 +168,10 @@ export const getScheduleMisalignedConfirmTitle = (reason: ScheduleMisalignedReas
 	}
 };
 
+const CONFIRM_ASK = '¿Querés guardar este turno como una excepción?';
+
+export const SCHEDULE_MISALIGNED_CONFIRM_ACTION = 'Aprobar excepción';
+
 export const getScheduleMisalignedConfirmMessage = (
 	reason: ScheduleMisalignedReason | null,
 	context: MisalignedMessageContext = {}
@@ -137,15 +180,15 @@ export const getScheduleMisalignedConfirmMessage = (
 
 	switch (reason) {
 		case 'LOCATION_CLOSED':
-			return `${locationLabel[0].toUpperCase() + locationLabel.slice(1)} tiene un cierre general vigente para ese día (feriado o mantenimiento). Si guardás de todos modos, la cita quedará fuera de la agenda. ¿Querés continuar?`;
+			return `${locationLabel[0].toUpperCase() + locationLabel.slice(1)} está cerrada ese día. ${CONFIRM_ASK}`;
 		case 'DAY_BLOCKED':
-			return 'El profesional tiene ese día bloqueado en excepciones de horario. Si guardás de todos modos, la cita quedará fuera de su agenda. ¿Querés continuar?';
+			return `El profesional no atiende ese día. ${CONFIRM_ASK}`;
 		case 'WRONG_LOCATION':
-			return `El profesional no atiende en ${locationLabel} en ese horario (sí puede tener turnos en otra sucursal). Si guardás de todos modos, la cita quedará fuera de su agenda. ¿Querés continuar?`;
+			return `El profesional no atiende en ${locationLabel} en ese horario. ${CONFIRM_ASK}`;
 		case 'TIME_OUTSIDE_SCHEDULE':
-			return 'El profesional no atiende ese día o la hora no cae en sus turnos (plantilla semanal o excepción). Si guardás de todos modos, la cita quedará fuera de su agenda. ¿Querés continuar?';
+			return `El horario seleccionado está fuera de la disponibilidad habitual. ${CONFIRM_ASK}`;
 		default:
-			return 'La fecha u hora elegida no coincide con la agenda del profesional. Si guardás de todos modos, la cita quedará fuera de su agenda. ¿Querés continuar?';
+			return `El horario seleccionado está fuera de la disponibilidad habitual. ${CONFIRM_ASK}`;
 	}
 };
 

@@ -63,6 +63,7 @@ export type AppointmentDetail = {
 	end_time: string;
 	schedule_misaligned?: boolean;
 	schedule_misaligned_reason?: ScheduleMisalignedReason | null;
+	schedule_exception_approved?: boolean;
 	history_enabled?: boolean;
 	history?: AppointmentHistory;
 	payment_status?: string | null;

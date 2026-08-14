@@ -34,12 +34,13 @@ import {
 import { showFlashMessage } from '../../lib/flash';
 import { formatHourLabelAmPm } from '../../lib/booking-datetime';
 import {
-	getScheduleMisalignedBannerAction,
 	getScheduleMisalignedBannerCaption,
-	getScheduleMisalignedBannerReasonLabel,
 	getScheduleMisalignedBannerTitle,
 	getScheduleMisalignedConfirmMessage,
 	getScheduleMisalignedConfirmTitle,
+	SCHEDULE_MISALIGNED_CONFIRM_ACTION,
+	getScheduleMisalignedListExplanation,
+	getScheduleMisalignedTitle,
 	isScheduleMisalignedConflictError,
 	isScheduleMisalignedFlag,
 	normalizeScheduleMisalignedReason,
@@ -111,6 +112,10 @@ const isGoogleEvent = (event: ApiCalendarEvent) =>
 const isScheduleMisalignedEvent = (event: ApiCalendarEvent | EventApi) =>
 	isScheduleMisalignedFlag(event?.extendedProps?.schedule_misaligned);
 
+const isScheduleExceptionApprovedEvent = (event: ApiCalendarEvent | EventApi) =>
+	isScheduleMisalignedFlag(event?.extendedProps?.schedule_exception_approved) &&
+	!isScheduleMisalignedEvent(event);
+
 const getEventScheduleMisalignedReason = (event: ApiCalendarEvent | EventApi) =>
 	normalizeScheduleMisalignedReason(event?.extendedProps?.schedule_misaligned_reason);
 
@@ -135,6 +140,15 @@ const formatMisalignedWhenLabelCompact = (startRaw: unknown) => {
 	}).format(startDate);
 
 	return `${datePart} ${startTime}`;
+};
+
+const formatMisalignedTimeOnly = (startRaw: unknown) => {
+	const startDate = new Date(String(startRaw || '').trim());
+	if (Number.isNaN(startDate.getTime())) return '';
+	return new Intl.DateTimeFormat('es-ES', {
+		hour: '2-digit',
+		minute: '2-digit',
+	}).format(startDate);
 };
 
 const getAppointmentStatus = (event: {
@@ -207,11 +221,24 @@ class CalendarManager extends HTMLElement {
 	private filtersSheet: HTMLElement | null = null;
 	private filtersSheetHome: HTMLElement | null = null;
 	private helpSheet: HTMLElement | null = null;
+	private conflictsSheet: HTMLElement | null = null;
+	private conflictsOpenButton: HTMLButtonElement | null = null;
+	private conflictsCountNode: HTMLElement | null = null;
+	private conflictsTitleNode: HTMLElement | null = null;
+	private conflictsCaptionNode: HTMLElement | null = null;
+	private conflictsListNode: HTMLElement | null = null;
+	private misalignedAppointments: Array<{
+		id: number;
+		itemTitle: string;
+		whenLabel: string;
+		reasonTitle: string;
+		reasonExplanation: string;
+		start: Date | null;
+	}> = [];
 	private filtersCountNode: HTMLElement | null = null;
 	private professionalFilterWrap: HTMLElement | null = null;
 	private professionalFilter: HTMLSelectElement | null = null;
 	private locationFilter: HTMLSelectElement | null = null;
-	private scheduleMisalignedBanner: HTMLElement | null = null;
 	private appointmentModal: HTMLElement | null = null;
 
 	connectedCallback() {
@@ -228,13 +255,16 @@ class CalendarManager extends HTMLElement {
 		this.filtersOpenButton = this.querySelector<HTMLButtonElement>('[data-calendar-filters-open]');
 		this.filtersSheet = this.querySelector<HTMLElement>('[data-calendar-filters-sheet]');
 		this.helpSheet = this.querySelector<HTMLElement>('[data-calendar-help-sheet]');
+		this.conflictsSheet = this.querySelector<HTMLElement>('[data-calendar-conflicts-sheet]');
+		this.conflictsOpenButton = this.querySelector<HTMLButtonElement>('[data-schedule-conflicts-open]');
+		this.conflictsCountNode = this.querySelector<HTMLElement>('[data-schedule-conflicts-count]');
+		this.conflictsTitleNode = this.querySelector<HTMLElement>('[data-schedule-conflicts-title]');
+		this.conflictsCaptionNode = this.querySelector<HTMLElement>('[data-schedule-conflicts-caption]');
+		this.conflictsListNode = this.querySelector<HTMLElement>('[data-schedule-conflicts-list]');
 		this.filtersCountNode = this.querySelector<HTMLElement>('[data-calendar-filters-count]');
 		this.professionalFilterWrap = this.querySelector<HTMLElement>('[data-professional-filter-wrap]');
 		this.professionalFilter = this.querySelector<HTMLSelectElement>('[data-professional-filter]');
 		this.locationFilter = this.querySelector<HTMLSelectElement>('[data-location-filter]');
-		this.scheduleMisalignedBanner = this.querySelector<HTMLElement>(
-			'[data-schedule-misaligned-banner]'
-		);
 		this.appointmentModal =
 			this.querySelector<HTMLElement>('appointment-modal') ??
 			document.querySelector<HTMLElement>('appointment-modal');
@@ -278,6 +308,14 @@ class CalendarManager extends HTMLElement {
 			});
 		this.querySelectorAll<HTMLElement>('[data-calendar-help-close]').forEach((el) => {
 			el.addEventListener('click', this.closeHelpSheet, { signal });
+		});
+		this.conflictsOpenButton?.addEventListener('click', this.openConflictsSheet, { signal });
+		this.querySelectorAll<HTMLElement>('[data-calendar-conflicts-close]').forEach((el) => {
+			el.addEventListener('click', this.closeConflictsSheet, { signal });
+		});
+		document.addEventListener('pointerdown', this.handleConflictsMenuPointerDown, {
+			signal,
+			capture: true,
 		});
 		this.querySelector<HTMLElement>('[data-calendar-tour-start]')?.addEventListener(
 			'click',
@@ -376,6 +414,7 @@ class CalendarManager extends HTMLElement {
 		this.#bindRetryAttempts = 0;
 		this.clearNowIndicatorSpan();
 		this.setSheetOpen(this.filtersSheet, false);
+		this.setSheetOpen(this.conflictsSheet, false);
 		this.restoreFiltersSheetHome();
 		document.body.style.overflow = '';
 		destroySearchableSelect(this.professionalFilter);
@@ -561,6 +600,14 @@ class CalendarManager extends HTMLElement {
 		);
 	}
 
+	private getAppointmentEventElement(appointmentId: number): HTMLElement | null {
+		if (!this.calendarEl || appointmentId <= 0) return null;
+		const matches = Array.from(
+			this.calendarEl.querySelectorAll<HTMLElement>(`[data-appointment-id="${appointmentId}"]`)
+		);
+		return matches.find((el) => el.getClientRects().length > 0) ?? matches[0] ?? null;
+	}
+
 	private scrollScrollableAncestorsToElement(element: HTMLElement) {
 		let parent = element.parentElement;
 		while (parent && parent !== document.documentElement) {
@@ -586,25 +633,30 @@ class CalendarManager extends HTMLElement {
 		}
 	}
 
-	private scrollEventIntoView(event: EventApi) {
-		const element = event.el;
-		if (!(element instanceof HTMLElement)) return false;
-
+	private scrollElementIntoView(element: HTMLElement) {
 		const scroller =
 			(element.closest('.fc-timegrid-body .fc-scroller') as HTMLElement | null) ??
 			(element.closest('.fc-scroller') as HTMLElement | null);
 
-		if (scroller) {
+		if (scroller && scroller.scrollHeight > scroller.clientHeight + 2) {
 			const scrollerRect = scroller.getBoundingClientRect();
 			const elementRect = element.getBoundingClientRect();
 			const delta =
 				elementRect.top - scrollerRect.top - scrollerRect.height / 2 + elementRect.height / 2;
-			scroller.scrollBy({ top: delta, behavior: 'smooth' });
+			scroller.scrollTo({ top: scroller.scrollTop + delta, behavior: 'smooth' });
 		}
 
 		element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
 		this.scrollScrollableAncestorsToElement(element);
-		return true;
+
+		for (const root of this.resolveCalendarScrollRoots()) {
+			if (root.scrollHeight <= root.clientHeight + 2) continue;
+			const rootRect = root.getBoundingClientRect();
+			const elementRect = element.getBoundingClientRect();
+			const delta =
+				elementRect.top - rootRect.top - rootRect.height / 2 + elementRect.height / 2;
+			root.scrollBy({ top: delta, behavior: 'smooth' });
+		}
 	}
 
 	private applyPendingFocusScrollTime() {
@@ -618,25 +670,25 @@ class CalendarManager extends HTMLElement {
 		});
 	}
 
-	private highlightFocusedEvent(event: EventApi) {
+	private highlightFocusedEvent(event: EventApi, element: HTMLElement) {
 		event.setProp('borderColor', '#d97706');
-		if (event.el instanceof HTMLElement) {
-			event.el.classList.add('fc-event-focus-highlight');
-			window.setTimeout(() => {
-				event.el?.classList.remove('fc-event-focus-highlight');
-			}, 2400);
-		}
+		element.classList.add('fc-event-focus-highlight');
+		window.setTimeout(() => {
+			element.classList.remove('fc-event-focus-highlight');
+		}, 2400);
 	}
 
-	private completePendingFocusForEvent(event: EventApi) {
+	private completePendingFocusForEvent(event: EventApi, mountedEl?: HTMLElement, attempt = 0) {
 		if (this.pendingFocusAppointmentId === null) return;
 		if (toPositiveInt(event.id, 0) !== this.pendingFocusAppointmentId) return;
 
 		const run = () => {
-			const freshEvent = this.getPendingFocusEvent();
-			const target = freshEvent?.el ? freshEvent : event;
-			if (!(target.el instanceof HTMLElement)) {
-				this.schedulePendingFocusRetry(0);
+			if (this.pendingFocusAppointmentId === null) return;
+			const targetEl =
+				(mountedEl?.isConnected ? mountedEl : null) ??
+				this.getAppointmentEventElement(this.pendingFocusAppointmentId);
+			if (!(targetEl instanceof HTMLElement)) {
+				this.schedulePendingFocusRetry(attempt);
 				return;
 			}
 
@@ -644,20 +696,20 @@ class CalendarManager extends HTMLElement {
 				this.applyPendingFocusScrollTime();
 			}
 
-			this.scrollEventIntoView(target);
-			this.highlightFocusedEvent(target);
+			this.scrollElementIntoView(targetEl);
+			this.highlightFocusedEvent(event, targetEl);
 			this.clearPendingFocusState();
 		};
 
 		window.requestAnimationFrame(() => {
 			window.requestAnimationFrame(() => {
-				window.setTimeout(run, 60);
+				window.setTimeout(run, 80);
 			});
 		});
 	}
 
-	private tryCompletePendingFocus(event: EventApi) {
-		this.completePendingFocusForEvent(event);
+	private tryCompletePendingFocus(event: EventApi, mountedEl?: HTMLElement) {
+		this.completePendingFocusForEvent(event, mountedEl, 0);
 	}
 
 	private applyPendingFocus(attempt = 0) {
@@ -670,22 +722,9 @@ class CalendarManager extends HTMLElement {
 		}
 
 		const viewType = this.calendar.view.type;
-
-		if (viewType.startsWith('list')) {
-			if (targetEvent.el) {
-				this.completePendingFocusForEvent(targetEvent);
-				return;
-			}
-			this.schedulePendingFocusRetry(attempt);
-			return;
-		}
-
-		if (this.isTimeGridView(viewType)) {
-			if (targetEvent.el) {
-				this.completePendingFocusForEvent(targetEvent);
-				return;
-			}
-			this.schedulePendingFocusRetry(attempt);
+		const targetEl = this.getAppointmentEventElement(this.pendingFocusAppointmentId);
+		if ((viewType.startsWith('list') || this.isTimeGridView(viewType)) && targetEl) {
+			this.completePendingFocusForEvent(targetEvent, targetEl, attempt);
 			return;
 		}
 
@@ -976,13 +1015,20 @@ class CalendarManager extends HTMLElement {
 			}
 			this.filtersOpenButton?.setAttribute('aria-expanded', open ? 'true' : 'false');
 		}
+		if (sheet === this.conflictsSheet) {
+			this.conflictsOpenButton?.setAttribute('aria-expanded', open ? 'true' : 'false');
+			if (open) {
+				this.conflictsSheet?.classList.remove('is-closing');
+			}
+		}
 		sheet.classList.toggle('is-open', open);
 		sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
 		const helpOpen = Boolean(this.helpSheet?.classList.contains('is-open'));
 		const filtersOpen = Boolean(this.filtersSheet?.classList.contains('is-open'));
+		const conflictsOpen = Boolean(this.conflictsSheet?.classList.contains('is-open'));
 		const filtersLockScroll =
 			filtersOpen && !this.filtersSheet?.classList.contains('is-desktop-popover');
-		document.body.style.overflow = helpOpen || filtersLockScroll ? 'hidden' : '';
+		document.body.style.overflow = helpOpen || filtersLockScroll || conflictsOpen ? 'hidden' : '';
 	}
 
 	private syncFiltersSheetTitle = () => {
@@ -1045,8 +1091,258 @@ class CalendarManager extends HTMLElement {
 		this.setSheetOpen(this.helpSheet, false);
 	};
 
+	private openConflictsSheet = () => {
+		if (this.conflictsSheet?.classList.contains('is-open')) {
+			this.closeConflictsSheet();
+			return;
+		}
+
+		this.closeHelpSheet();
+		this.closeFiltersSheet();
+		this.syncConflictsSheetHeader();
+		this.renderConflictsSheetList();
+		this.setSheetOpen(this.conflictsSheet, true);
+		this.conflictsSheet
+			?.querySelector<HTMLElement>('[data-calendar-conflicts-close].panel-modal-header__close')
+			?.focus();
+	};
+
+	private closeConflictsSheetThen(afterClose?: () => void) {
+		const finish = () => {
+			this.closeConflictMenus();
+			this.conflictsSheet?.classList.remove('is-closing');
+			this.setSheetOpen(this.conflictsSheet, false);
+			if (!afterClose) return;
+			window.requestAnimationFrame(() => {
+				this.calendar?.updateSize();
+				afterClose();
+			});
+		};
+
+		if (!this.conflictsSheet?.classList.contains('is-open')) {
+			this.setSheetOpen(this.conflictsSheet, false);
+			afterClose?.();
+			return;
+		}
+
+		if (this.isDesktopConflictsDrawer()) {
+			this.conflictsSheet.classList.add('is-closing');
+			window.setTimeout(finish, 220);
+			return;
+		}
+
+		finish();
+	}
+
+	private closeConflictsSheet = () => {
+		this.closeConflictsSheetThen();
+	};
+
+	private isDesktopConflictsDrawer = () =>
+		typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches;
+
+	private syncConflictsSheetHeader() {
+		const count = this.misalignedAppointments.length;
+		if (this.conflictsTitleNode) {
+			this.conflictsTitleNode.textContent = getScheduleMisalignedBannerTitle(count);
+		}
+		if (this.conflictsCaptionNode) {
+			this.conflictsCaptionNode.textContent = count > 0 ? getScheduleMisalignedBannerCaption(count) : '';
+		}
+	}
+
+	private renderConflictsSheetList() {
+		if (!this.conflictsListNode) return;
+
+		this.conflictsListNode.replaceChildren();
+
+		if (this.misalignedAppointments.length <= 0) {
+			const empty = document.createElement('p');
+			empty.className = 'calendar-conflicts-empty';
+			empty.textContent = 'No hay citas con conflicto de horario en este momento.';
+			this.conflictsListNode.appendChild(empty);
+			return;
+		}
+
+		const list = document.createElement('ul');
+		list.className = 'calendar-conflicts-list';
+
+		const appendIconLabel = (button: HTMLButtonElement, iconName: string, label: string) => {
+			const icon = document.createElement('span');
+			icon.className = 'material-symbols-rounded';
+			icon.setAttribute('aria-hidden', 'true');
+			icon.textContent = iconName;
+			button.append(icon, document.createTextNode(label));
+		};
+
+		for (const item of this.misalignedAppointments) {
+			const listItem = document.createElement('li');
+			listItem.className = 'calendar-conflicts-item';
+
+			const head = document.createElement('div');
+			head.className = 'calendar-conflicts-item__head';
+
+			const title = document.createElement('p');
+			title.className = 'calendar-conflicts-item__title';
+			title.textContent = item.itemTitle;
+
+			const menu = document.createElement('div');
+			menu.className = 'calendar-conflicts-item__menu';
+
+			const menuBtn = document.createElement('button');
+			menuBtn.type = 'button';
+			menuBtn.className = 'calendar-conflicts-item__menu-btn';
+			menuBtn.setAttribute('aria-label', `Más acciones para ${item.itemTitle}`);
+			menuBtn.setAttribute('aria-haspopup', 'menu');
+			menuBtn.setAttribute('aria-expanded', 'false');
+			menuBtn.setAttribute('data-conflicts-menu-trigger', '');
+			const menuIcon = document.createElement('span');
+			menuIcon.className = 'material-symbols-rounded';
+			menuIcon.setAttribute('aria-hidden', 'true');
+			menuIcon.textContent = 'more_vert';
+			menuBtn.appendChild(menuIcon);
+			menuBtn.addEventListener('click', (event) => {
+				event.stopPropagation();
+				this.toggleConflictMenu(menu);
+			});
+
+			const panel = document.createElement('div');
+			panel.className = 'calendar-conflicts-item__menu-panel';
+			panel.setAttribute('role', 'menu');
+			panel.hidden = true;
+
+			const dismissBtn = document.createElement('button');
+			dismissBtn.type = 'button';
+			dismissBtn.className = 'calendar-conflicts-item__menu-item';
+			dismissBtn.setAttribute('role', 'menuitem');
+			appendIconLabel(dismissBtn, 'notifications_off', 'Descartar advertencia');
+			dismissBtn.addEventListener('click', (event) => {
+				event.stopPropagation();
+				this.closeConflictMenus();
+				void this.dismissScheduleMisalignment(item.id, menuBtn);
+			});
+
+			panel.appendChild(dismissBtn);
+			menu.append(menuBtn, panel);
+			head.append(title, menu);
+
+			const meta = document.createElement('p');
+			meta.className = 'calendar-conflicts-item__meta';
+			meta.textContent = item.whenLabel;
+
+			const reason = document.createElement('p');
+			reason.className = 'calendar-conflicts-item__reason';
+			reason.textContent = item.reasonTitle;
+
+			const explanation = document.createElement('p');
+			explanation.className = 'calendar-conflicts-item__explanation';
+			explanation.textContent = item.reasonExplanation;
+
+			const actions = document.createElement('div');
+			actions.className = 'calendar-conflicts-item__actions';
+
+			const focusBtn = document.createElement('button');
+			focusBtn.type = 'button';
+			focusBtn.className = 'calendar-conflicts-item__btn';
+			appendIconLabel(focusBtn, 'calendar_month', 'Ver en calendario');
+			focusBtn.addEventListener('click', () => {
+				this.closeConflictsSheetThen(() => {
+					this.focusMisalignedAppointment(item.id);
+				});
+			});
+
+			const editBtn = document.createElement('button');
+			editBtn.type = 'button';
+			editBtn.className = 'calendar-conflicts-item__btn calendar-conflicts-item__btn--primary';
+			appendIconLabel(editBtn, 'edit_calendar', 'Reprogramar');
+			editBtn.addEventListener('click', () => {
+				this.closeConflictsSheetThen(() => {
+					const modal = hasAppointmentModalApi(this.appointmentModal) ? this.appointmentModal : null;
+					void modal?.openEdit(item.id);
+				});
+			});
+
+			actions.append(focusBtn, editBtn);
+			listItem.append(head, meta, reason, explanation, actions);
+			list.appendChild(listItem);
+		}
+
+		this.conflictsListNode.appendChild(list);
+	}
+
+	private closeConflictMenus(except: HTMLElement | null = null) {
+		this.conflictsListNode
+			?.querySelectorAll<HTMLElement>('.calendar-conflicts-item__menu')
+			.forEach((menu) => {
+				if (except && menu === except) return;
+				menu.classList.remove('is-open');
+				menu
+					.querySelector<HTMLButtonElement>('[data-conflicts-menu-trigger]')
+					?.setAttribute('aria-expanded', 'false');
+				const panel = menu.querySelector<HTMLElement>('.calendar-conflicts-item__menu-panel');
+				if (panel) panel.hidden = true;
+			});
+	}
+
+	private toggleConflictMenu(menu: HTMLElement) {
+		const isOpen = menu.classList.contains('is-open');
+		this.closeConflictMenus();
+		if (isOpen) return;
+		menu.classList.add('is-open');
+		menu
+			.querySelector<HTMLButtonElement>('[data-conflicts-menu-trigger]')
+			?.setAttribute('aria-expanded', 'true');
+		const panel = menu.querySelector<HTMLElement>('.calendar-conflicts-item__menu-panel');
+		if (panel) panel.hidden = false;
+	}
+
+	private handleConflictsMenuPointerDown = (event: PointerEvent) => {
+		const openMenu = this.conflictsListNode?.querySelector('.calendar-conflicts-item__menu.is-open');
+		if (!openMenu) return;
+		if (event.target instanceof Node && openMenu.contains(event.target)) return;
+		this.closeConflictMenus();
+	};
+
+	private async dismissScheduleMisalignment(appointmentId: number, trigger: HTMLButtonElement) {
+		if (!this.client || appointmentId <= 0) return;
+		if (trigger.disabled) return;
+
+		const confirmed = window.BookmateAlert?.confirm
+			? await window.BookmateAlert.confirm({
+					type: 'warning',
+					title: '¿Descartar esta advertencia?',
+					message:
+						'La cita quedará como excepción aprobada y dejará de aparecer como conflicto. El horario no cambia. Esta acción queda registrada y en el calendario se verá con un borde verde.',
+					confirmText: 'Descartar advertencia',
+					cancelText: 'Cancelar',
+				})
+			: window.confirm(
+					'¿Descartar esta advertencia?\n\nLa cita quedará como excepción aprobada y dejará de aparecer como conflicto. El horario no cambia.'
+				);
+
+		if (!confirmed) return;
+
+		trigger.disabled = true;
+		this.setCalendarLoading(true);
+		try {
+			await this.client.approveScheduleException(appointmentId);
+			this.reloadCalendarEvents();
+		} catch (error) {
+			trigger.disabled = false;
+			const message =
+				error instanceof Error ? error.message : 'No fue posible descartar la advertencia.';
+			this.showPageError(message);
+			await showErrorAlert(message);
+		} finally {
+			this.setCalendarLoading(false);
+		}
+	}
+
 	private syncFiltersSheetMode() {
 		// En resize: cerrar el panel para no dejar un sheet “atascado” entre mobile/desktop.
+		if (this.conflictsSheet?.classList.contains('is-open')) {
+			this.closeConflictsSheet();
+		}
 		if (this.filtersSheet?.classList.contains('is-open')) {
 			this.closeFiltersSheet();
 		} else if (this.filtersSheet) {
@@ -1103,6 +1399,19 @@ class CalendarManager extends HTMLElement {
 
 	private handleSheetKeydown = (event: KeyboardEvent) => {
 		if (event.key !== 'Escape') return;
+		const openMenu = this.conflictsListNode?.querySelector<HTMLElement>(
+			'.calendar-conflicts-item__menu.is-open'
+		);
+		if (openMenu) {
+			event.preventDefault();
+			this.closeConflictMenus();
+			openMenu.querySelector<HTMLButtonElement>('[data-conflicts-menu-trigger]')?.focus();
+			return;
+		}
+		if (this.conflictsSheet?.classList.contains('is-open')) {
+			this.closeConflictsSheet();
+			return;
+		}
 		if (this.helpSheet?.classList.contains('is-open')) {
 			this.closeHelpSheet();
 			return;
@@ -1297,7 +1606,8 @@ class CalendarManager extends HTMLElement {
 	}
 
 	/**
-	 * Mobile: mes/año (izq) · flechas · Hoy · filtro · guía (der); refresh encima del FAB.
+	 * Mobile: mes/año (izq) · flechas · Hoy · filtro · guía (der); conflictos + refresh encima del FAB.
+	 * Desktop: una fila — nav+filtros | título | vistas+acciones.
 	 * Desktop: una fila — nav+filtros | título | vistas+acciones.
 	 */
 	private syncChromeToolbarPlacement(
@@ -1307,6 +1617,7 @@ class CalendarManager extends HTMLElement {
 	) {
 		const home = this.querySelector<HTMLElement>('[data-calendar-chrome-home]');
 		const filters = this.querySelector<HTMLElement>('[data-calendar-filters-control]');
+		const conflicts = this.querySelector<HTMLElement>('[data-schedule-conflicts-open]');
 		const refresh = this.querySelector<HTMLElement>('[data-refresh-calendar]');
 		const guide = this.querySelector<HTMLElement>('[data-calendar-tour-help]');
 		const create = this.querySelector<HTMLElement>('[data-open-appointment-modal]');
@@ -1367,10 +1678,10 @@ class CalendarManager extends HTMLElement {
 
 			const goTodayBtn = navChunk.querySelector<HTMLElement>('.fc-goToday-button, .fc-today-button');
 
-			if (navTour && navTour.parentElement !== endWrap) endWrap.appendChild(navTour);
-			if (goTodayBtn && goTodayBtn.parentElement !== endWrap) endWrap.appendChild(goTodayBtn);
-			if (filters && filters.parentElement !== endWrap) endWrap.appendChild(filters);
-			if (guide && guide.parentElement !== endWrap) endWrap.appendChild(guide);
+			if (navTour) endWrap.appendChild(navTour);
+			if (goTodayBtn) endWrap.appendChild(goTodayBtn);
+			if (filters) endWrap.appendChild(filters);
+			if (guide) endWrap.appendChild(guide);
 
 			if (endWrap.parentElement !== navChunk) navChunk.appendChild(endWrap);
 		};
@@ -1415,8 +1726,9 @@ class CalendarManager extends HTMLElement {
 				fabStack.setAttribute('data-calendar-fab-stack', '');
 			}
 			if (fabStack.parentElement !== home) home.appendChild(fabStack);
-			if (refresh && refresh.parentElement !== fabStack) fabStack.appendChild(refresh);
-			if (create && create.parentElement !== fabStack) fabStack.appendChild(create);
+			if (conflicts) fabStack.appendChild(conflicts);
+			if (refresh) fabStack.appendChild(refresh);
+			if (create) fabStack.appendChild(create);
 			this.querySelectorAll('[data-calendar-chrome-actions]').forEach((node) => {
 				if (!node.childElementCount) node.remove();
 			});
@@ -1437,9 +1749,10 @@ class CalendarManager extends HTMLElement {
 				actionsWrap.setAttribute('data-calendar-chrome-actions', '');
 				viewChunk.appendChild(actionsWrap);
 			}
-			if (refresh && refresh.parentElement !== actionsWrap) actionsWrap.appendChild(refresh);
-			if (guide && guide.parentElement !== actionsWrap) actionsWrap.appendChild(guide);
-			if (create && create.parentElement !== actionsWrap) actionsWrap.appendChild(create);
+			if (conflicts) actionsWrap.appendChild(conflicts);
+			if (refresh) actionsWrap.appendChild(refresh);
+			if (guide) actionsWrap.appendChild(guide);
+			if (create) actionsWrap.appendChild(create);
 			if (actionsWrap.parentElement !== viewChunk) viewChunk.appendChild(actionsWrap);
 		}
 
@@ -1591,17 +1904,22 @@ class CalendarManager extends HTMLElement {
 					const appointmentStatus = getAppointmentStatus(event);
 					const locked = isCalendarEventLocked(event);
 					const misaligned = isScheduleMisalignedEvent(event);
+					const exceptionApproved = isScheduleExceptionApprovedEvent(event);
 					const baseTitle = String(event?.title || '').trim();
 					const displayTitle =
 						misaligned && !baseTitle.startsWith(MISALIGNED_TITLE_PREFIX)
 							? `${MISALIGNED_TITLE_PREFIX}${baseTitle}`
 							: baseTitle;
+					const classNames = [
+						...(misaligned ? ['fc-event-schedule-misaligned'] : []),
+						...(exceptionApproved ? ['fc-event-schedule-exception'] : []),
+					];
 
 					return {
 						...event,
 						id: String(event?.id ?? ''),
 						title: displayTitle,
-						classNames: misaligned ? ['fc-event-schedule-misaligned'] : undefined,
+						classNames: classNames.length > 0 ? classNames : undefined,
 						extendedProps: {
 							...(event?.extendedProps ?? {}),
 							...(appointmentStatus ? { status: appointmentStatus } : {}),
@@ -1619,7 +1937,7 @@ class CalendarManager extends HTMLElement {
 							: {}),
 					};
 				});
-				this.updateScheduleMisalignedBanner(appointmentEvents);
+				this.updateScheduleMisalignedAlerts(appointmentEvents);
 				this.updateClosureCache(closureEvents);
 				successCallback([...normalizedEvents, ...closureEvents]);
 			} catch (error) {
@@ -1765,8 +2083,8 @@ class CalendarManager extends HTMLElement {
 			},
 			eventDidMount: (arg) => {
 				const source = String(arg.event.extendedProps?.source || '').trim().toLowerCase();
-
-				this.tryCompletePendingFocus(arg.event);
+				arg.el.setAttribute('data-appointment-id', String(arg.event.id));
+				this.tryCompletePendingFocus(arg.event, arg.el);
 
 				if (isImmutableAppointmentEvent(arg.event)) {
 					arg.el.classList.add('fc-event-locked');
@@ -2008,7 +2326,7 @@ class CalendarManager extends HTMLElement {
 							type: 'warning',
 							title,
 							message,
-							confirmText: 'Guardar de todos modos',
+							confirmText: SCHEDULE_MISALIGNED_CONFIRM_ACTION,
 							cancelText: 'Cancelar',
 						})
 					: window.confirm(`${title}\n\n${message}`);
@@ -2176,16 +2494,38 @@ class CalendarManager extends HTMLElement {
 				const rawTitle = String(event.title || '')
 					.trim()
 					.replace(/^⚠\s*/, '');
+				const props = (event?.extendedProps ?? {}) as Record<string, unknown>;
+				const customerName = String(props.customer_name || '').trim();
+				const serviceName = String(props.service_name || '').trim();
+				const titleParts = rawTitle.split(' - ');
+				const resolvedCustomer = customerName || String(titleParts[0] || '').trim();
+				const resolvedService =
+					serviceName || String(titleParts.slice(1).join(' - ') || '').trim();
+				const locationName = String(props.location_name || '').trim();
+				const professionalName = String(props.professional_name || '').trim();
 				const reason = getEventScheduleMisalignedReason(event);
 				const whenLabel = formatMisalignedWhenLabelCompact(event.start);
-				const reasonLabel = getScheduleMisalignedBannerReasonLabel(reason);
+				const timeLabel = formatMisalignedTimeOnly(event.start);
 				const appointmentLabel = rawTitle || 'Cita sin título';
+				const itemTitle =
+					resolvedCustomer && resolvedService
+						? `${resolvedCustomer} · ${resolvedService}`
+						: appointmentLabel;
+
+				const startDate = new Date(String(event.start || ''));
+				const start = Number.isNaN(startDate.getTime()) ? null : startDate;
 
 				return {
 					id: appointmentId,
-					appointmentLabel,
+					itemTitle,
 					whenLabel,
-					reasonLabel,
+					reasonTitle: getScheduleMisalignedTitle(reason),
+					reasonExplanation: getScheduleMisalignedListExplanation(reason, {
+						locationName,
+						professionalName,
+						timeLabel,
+					}),
+					start,
 				};
 			})
 			.filter((item) => item.id > 0);
@@ -2193,6 +2533,16 @@ class CalendarManager extends HTMLElement {
 
 	private mountScheduleMisalignedVisual(arg: { el: HTMLElement; event: EventApi }) {
 		if (isGoogleEvent(arg.event)) return;
+
+		if (isScheduleExceptionApprovedEvent(arg.event)) {
+			arg.el.classList.add('fc-event-schedule-exception');
+			arg.el.classList.remove('fc-event-schedule-misaligned');
+			if (!arg.el.getAttribute('title')) {
+				arg.el.title = 'Excepción de horario aprobada';
+			}
+			return;
+		}
+
 		if (!isScheduleMisalignedEvent(arg.event)) return;
 
 		arg.el.classList.add('fc-event-schedule-misaligned');
@@ -2209,71 +2559,58 @@ class CalendarManager extends HTMLElement {
 	private focusMisalignedAppointment(appointmentId: number) {
 		if (!this.calendar || appointmentId <= 0) return;
 
-		this.calendarEl?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-
-		const targetEvent = this.calendar
-			.getEvents()
-			.find((item) => toPositiveInt(item.id, 0) === appointmentId);
-		if (!targetEvent?.start) return;
+		const liveEvent =
+			this.calendar.getEventById(String(appointmentId)) ??
+			this.calendar.getEvents().find((item) => toPositiveInt(item.id, 0) === appointmentId) ??
+			null;
+		const listed = this.misalignedAppointments.find((item) => item.id === appointmentId);
+		const start = liveEvent?.start ?? listed?.start ?? null;
+		if (!start) return;
 
 		this.clearPendingFocusState();
 		this.pendingFocusAppointmentId = appointmentId;
 		this.pendingFocusScrollTime = {
-			hours: targetEvent.start.getHours(),
-			minutes: Math.max(0, targetEvent.start.getMinutes() - 15),
+			hours: start.getHours(),
+			minutes: Math.max(0, start.getMinutes() - 15),
 		};
 
 		const viewType = this.calendar.view.type;
 		const targetViewType = this.getFocusTargetViewType(viewType);
-		const alreadyOnTargetView =
-			viewType === targetViewType ||
-			(this.isTimeGridView(viewType) && this.isTimeGridView(targetViewType));
 
-		if (!alreadyOnTargetView || viewType === 'dayGridMonth' || viewType === 'dayGridDay') {
-			this.calendar.changeView(targetViewType, targetEvent.start);
+		if (viewType !== targetViewType || viewType === 'dayGridMonth' || viewType === 'dayGridDay') {
+			this.calendar.changeView(targetViewType, start);
 			return;
 		}
 
+		this.calendar.gotoDate(start);
 		void this.applyPendingFocus(0);
 	}
 
-	private updateScheduleMisalignedBanner(events: ApiCalendarEvent[]) {
-		if (!this.scheduleMisalignedBanner) return;
-
+	private updateScheduleMisalignedAlerts(events: ApiCalendarEvent[]) {
 		const misaligned = this.getMisalignedAppointments(events);
+		this.misalignedAppointments = misaligned;
 
-		if (misaligned.length <= 0) {
-			this.scheduleMisalignedBanner.classList.add('hidden');
-			this.scheduleMisalignedBanner.replaceChildren();
-			return;
+		const count = misaligned.length;
+		const hasConflicts = count > 0;
+
+		if (this.conflictsCountNode) {
+			this.conflictsCountNode.textContent = String(count);
+			this.conflictsCountNode.classList.toggle('hidden', !hasConflicts);
 		}
 
-		this.scheduleMisalignedBanner.classList.remove('hidden');
-		this.scheduleMisalignedBanner.replaceChildren();
+		this.conflictsOpenButton?.classList.toggle('hidden', !hasConflicts);
 
-		const title = document.createElement('p');
-		title.className = 'calendar-misaligned-banner__title';
-		title.textContent = getScheduleMisalignedBannerTitle(misaligned.length);
+		const label = hasConflicts
+			? `${count} ${count === 1 ? 'cita' : 'citas'} con conflicto de horario`
+			: 'Citas con conflicto de horario';
+		this.conflictsOpenButton?.setAttribute('aria-label', label);
 
-		const caption = document.createElement('p');
-		caption.className = 'calendar-misaligned-banner__caption';
-		caption.textContent = getScheduleMisalignedBannerCaption(misaligned.length);
-
-		const list = document.createElement('ul');
-		list.className = 'calendar-misaligned-banner__list';
-
-		for (const item of misaligned) {
-			const listItem = document.createElement('li');
-			listItem.className = 'calendar-misaligned-banner__item';
-			listItem.textContent = `${item.appointmentLabel} (${item.whenLabel}) · ${item.reasonLabel}`;
-			list.appendChild(listItem);
+		if (this.conflictsSheet?.classList.contains('is-open') && !hasConflicts) {
+			this.closeConflictsSheet();
+		} else if (this.conflictsSheet?.classList.contains('is-open')) {
+			this.syncConflictsSheetHeader();
+			this.renderConflictsSheetList();
 		}
-
-		const action = document.createElement('p');
-		action.className = 'calendar-misaligned-banner__action';
-		action.textContent = getScheduleMisalignedBannerAction(misaligned.length);
-
-		this.scheduleMisalignedBanner.append(title, caption, list, action);
 	}
 
 	private applyScheduleReviewFromUrl(requiredNodes: RequiredNodes) {

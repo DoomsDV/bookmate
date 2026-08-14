@@ -45,6 +45,7 @@ export interface AppointmentCalendarEventExtendedProps {
 	pro_id_professional: number;
 	schedule_misaligned?: boolean;
 	schedule_misaligned_reason?: ScheduleMisalignedReason | null;
+	schedule_exception_approved?: boolean;
 }
 
 export interface AppointmentCalendarEvent {
@@ -96,6 +97,7 @@ export interface AppointmentDetail {
 	end_time: string;
 	schedule_misaligned?: boolean;
 	schedule_misaligned_reason?: ScheduleMisalignedReason | null;
+	schedule_exception_approved?: boolean;
 	history_enabled: boolean;
 	history: AppointmentHistory;
 	payment_status?: string | null;
@@ -255,6 +257,9 @@ const normalizeExtendedProps = (value: unknown, resourceId: number) => {
 			service_name: '',
 			location_name: '',
 			pro_id_professional: resourceId,
+			schedule_misaligned: false,
+			schedule_misaligned_reason: null,
+			schedule_exception_approved: false,
 		};
 	}
 
@@ -284,6 +289,7 @@ const normalizeExtendedProps = (value: unknown, resourceId: number) => {
 			: resourceId,
 		schedule_misaligned: scheduleMisaligned,
 		schedule_misaligned_reason: scheduleMisalignedReason,
+		schedule_exception_approved: isScheduleMisalignedFlag(source.schedule_exception_approved),
 	};
 };
 
@@ -291,6 +297,7 @@ const applyScheduleMisalignedFields = (
 	target: {
 		schedule_misaligned?: boolean;
 		schedule_misaligned_reason?: ScheduleMisalignedReason | null;
+		schedule_exception_approved?: boolean;
 	},
 	source: Record<string, unknown>,
 	status: string,
@@ -306,6 +313,7 @@ const applyScheduleMisalignedFields = (
 	if (!isActiveStatus || !isFutureOrToday) {
 		target.schedule_misaligned = false;
 		target.schedule_misaligned_reason = null;
+		target.schedule_exception_approved = false;
 		return;
 	}
 
@@ -313,6 +321,7 @@ const applyScheduleMisalignedFields = (
 	target.schedule_misaligned_reason = target.schedule_misaligned
 		? normalizeScheduleMisalignedReason(source.schedule_misaligned_reason)
 		: null;
+	target.schedule_exception_approved = isScheduleMisalignedFlag(source.schedule_exception_approved);
 };
 
 const normalizeCalendarEvent = (value: unknown): AppointmentCalendarEvent | null => {
@@ -662,6 +671,33 @@ export const updateAppointmentWithOrds = async (
 			typeof data.message === 'string' && data.message.trim()
 				? data.message
 				: 'Cita actualizada correctamente.',
+	};
+};
+
+export const approveScheduleExceptionWithOrds = async (token: string, appointmentId: number) => {
+	ensureToken(token);
+	if (!Number.isInteger(appointmentId) || appointmentId <= 0) {
+		throw new AppointmentsApiError('ID de cita invalido.', 400);
+	}
+
+	const response = await fetch(`${APPOINTMENTS_URL}/${appointmentId}/schedule-exception`, {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+		},
+	});
+
+	const { data } = await parseJsonResponse(response);
+	if (!response.ok || !data || typeof data !== 'object' || data.status !== 'success') {
+		throw toApiError(response, data, 'No fue posible descartar la advertencia.');
+	}
+
+	return {
+		message:
+			typeof data.message === 'string' && data.message.trim()
+				? data.message
+				: 'Advertencia descartada. La cita queda como excepcion aprobada.',
 	};
 };
 

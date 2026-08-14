@@ -192,6 +192,20 @@ export class AppointmentsClient {
 		};
 	}
 
+	async approveScheduleException(appointmentId: number) {
+		const response = await fetch(`/api/appointments/${appointmentId}/schedule-exception`, {
+			method: 'POST',
+			headers: { Accept: 'application/json' },
+		});
+		const data = await parseJsonResponse(response);
+		ensureSuccess(response, data, 'No fue posible descartar la advertencia.');
+		return {
+			message:
+				(typeof data.message === 'string' && data.message.trim()) ||
+				'Advertencia descartada. La cita queda como excepcion aprobada.',
+		};
+	}
+
 	async uploadAttachment(
 		appointmentId: number,
 		payload: { file_base64: string; filename: string; mime_type: string }

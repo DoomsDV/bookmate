@@ -37,6 +37,12 @@ const formatDateRange = (start: string, end: string) => {
 const fmtWindow = (item: ClosureItem) =>
 	item.is_full_day ? 'Día completo' : `${item.start_time ?? ''} – ${item.end_time ?? ''}`;
 
+const TOM_SELECT_ES_RENDER = {
+	option_create: (data: { input?: string }, escape: (str: string) => string) =>
+		`<div class="create">Agregar «<strong>${escape(data.input ?? '')}</strong>»…</div>`,
+	no_results: () => '<div class="no-results">Sin resultados</div>',
+};
+
 function buildItemHTML(item: ClosureItem, opts: { canDeleteGroup: boolean }) {
 	const scopeBadge = item.closure_group_id
 		? item.location_count && item.location_count > 0
@@ -347,6 +353,7 @@ class LocationClosuresUI {
 			allowEmptyOption: false,
 			sortField: { field: 'text', direction: 'asc' },
 			createFilter: (input: string) => input.trim().length > 0,
+			render: TOM_SELECT_ES_RENDER,
 		});
 	}
 
@@ -387,6 +394,7 @@ class LocationClosuresUI {
 			maxOptions: 200,
 			closeAfterSelect: false,
 			hideSelected: true,
+			render: TOM_SELECT_ES_RENDER,
 		});
 	}
 

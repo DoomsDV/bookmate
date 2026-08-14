@@ -18,7 +18,7 @@ export const SESSION_NOTE_FIELDS: ReadonlyArray<{
 }> = [
 	{
 		key: 'consultation_reason',
-		label: 'Motivo de consulta / Requerimiento inicial',
+		label: 'Motivo de la reserva',
 		placeholder: '¿Por qué vino el cliente o qué solicitó?',
 		maxLength: 3500,
 	},
@@ -31,7 +31,7 @@ export const SESSION_NOTE_FIELDS: ReadonlyArray<{
 	{
 		key: 'recommendations',
 		label: 'Recomendaciones / Próximos pasos',
-		placeholder: 'Indicaciones para el cliente o pendientes para la próxima cita.',
+		placeholder: 'Indicaciones para el cliente o pendientes para la próxima reserva.',
 		maxLength: 3500,
 	},
 ];
