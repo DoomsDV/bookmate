@@ -4,6 +4,11 @@ import type {
 	CustomerProfile,
 	CustomerTopService,
 } from '../lib/customers';
+import {
+	ATTACHMENT_LIST_CLASS,
+	createAttachmentListItem,
+} from '../lib/attachment-list-item';
+import { bindFileViewer, type FileViewerHandle } from '../lib/file-viewer';
 import { hasAnySessionNote, SESSION_NOTE_FIELDS } from '../lib/session-notes';
 import { updateAppPaginationDom } from '../lib/pagination';
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
@@ -98,6 +103,7 @@ class CustomerManager extends HTMLElement {
 	private profileTabPanels: NodeListOf<HTMLElement> | null = null;
 	private activeProfileTab: 'summary' | 'history' = 'summary';
 	private currentProfileHistoryEnabled = false;
+	private fileViewer: FileViewerHandle | null = null;
 
 	private professionals: ProfessionalLov[] = [];
 
@@ -181,6 +187,7 @@ class CustomerManager extends HTMLElement {
 		this.roleId = Number(this.dataset.roleId || 0);
 		this.#listeners = new AbortController();
 		const signal = this.#listeners.signal;
+		this.fileViewer = bindFileViewer(this, signal);
 
 		this.professionalSelect?.addEventListener('change', this.handleProfessionalChange, { signal });
 		this.searchInput?.addEventListener('input', this.handleSearchInput, { signal });
@@ -211,6 +218,7 @@ class CustomerManager extends HTMLElement {
 
 	disconnectedCallback() {
 		this.#bound = false;
+		this.fileViewer?.close();
 		this.#listeners?.abort();
 		this.#listeners = null;
 		if (this.#profileCloseTimer !== null) {
@@ -566,6 +574,7 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private closeProfileModal() {
+		this.fileViewer?.close();
 		if (!this.profileModal?.open) return;
 		this.profileModal.classList.add('is-closing');
 		if (this.#profileCloseTimer !== null) window.clearTimeout(this.#profileCloseTimer);
@@ -1052,25 +1061,18 @@ class CustomerManager extends HTMLElement {
 		const attachments = Array.isArray(appointment.attachments) ? appointment.attachments : [];
 		if (attachments.length > 0) {
 			const list = document.createElement('ul');
-			list.className = 'customer-profile-history-attachments';
+			list.className = `customer-profile-history-attachments ${ATTACHMENT_LIST_CLASS}`;
 			for (const file of attachments) {
-				const li = document.createElement('li');
-				const link = document.createElement('a');
-				link.href = file.url;
-				link.target = '_blank';
-				link.rel = 'noopener noreferrer';
-				const icon = document.createElement('span');
-				icon.className = 'material-symbols-rounded text-[1.05rem]';
-				icon.setAttribute('aria-hidden', 'true');
-				icon.textContent = String(file.mime_type || '').startsWith('image/')
-					? 'image'
-					: 'description';
-				const label = document.createElement('span');
-				label.className = 'customer-profile-history-attachments__name';
-				label.textContent = file.file_name;
-				link.append(icon, label);
-				li.appendChild(link);
-				list.appendChild(li);
+				list.appendChild(
+					createAttachmentListItem(file, {
+						onPreview: () =>
+							this.fileViewer?.open({
+								url: file.url,
+								name: file.file_name,
+								mimeType: file.mime_type,
+							}),
+					})
+				);
 			}
 			filesBlock.appendChild(list);
 		} else {

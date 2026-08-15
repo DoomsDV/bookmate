@@ -1,4 +1,5 @@
 ---
+import FileViewer from './FileViewer.astro';
 import { FEATURE_FLAGS } from '../config/feature-flags';
 import '../styles/appointment-modal.css';
 
@@ -685,4 +686,5 @@ const { showVoiceButton = false }: Props = Astro.props;
 			</form>
 			</div>
 		</dialog>
+		<FileViewer label="Archivo adjunto" />
 		</appointment-modal>

@@ -3,6 +3,7 @@ export type InboxActionType = 'OPEN_URL' | 'OPEN_CLOSURE';
 
 export interface InboxClosurePayload {
 	name?: string;
+	id_holiday?: number;
 	start_date?: string;
 	end_date?: string;
 	is_full_day?: number;
@@ -41,6 +42,7 @@ export interface HolidayHint {
 export const buildClosurePrefillUrl = (hint: {
 	closure_name: string;
 	holiday_date: string;
+	id_holiday?: number;
 	orgMemberId?: number;
 }) => {
 	const params = new URLSearchParams({
@@ -51,6 +53,9 @@ export const buildClosurePrefillUrl = (hint: {
 		full_day: '1',
 		apply_all: '1',
 	});
+	if (hint.id_holiday && hint.id_holiday > 0) {
+		params.set('id_holiday', String(hint.id_holiday));
+	}
 	if (hint.orgMemberId && hint.orgMemberId > 0) {
 		params.set('org_member_id', String(hint.orgMemberId));
 	}

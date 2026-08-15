@@ -1288,15 +1288,33 @@ const googleErrorMessage = hasGoogleError
 
 		[data-calendar-root] .fc .fc-toolbar.fc-header-toolbar {
 			display: flex;
+			flex-wrap: wrap;
 			align-items: center;
 			justify-content: space-between;
-			gap: 0.65rem;
+			gap: 0.45rem 0.65rem;
 			position: relative;
 			margin-bottom: 0.55rem;
 			min-height: 2.875rem;
 		}
 
-		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title] .fc-toolbar-title {
+		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title],
+		[data-calendar-root] .fc .fc-toolbar-chunk:has(> .fc-toolbar-title) {
+			position: static !important;
+			left: auto !important;
+			top: auto !important;
+			transform: none !important;
+			order: -1;
+			flex: 1 0 100%;
+			width: 100%;
+			max-width: none;
+			justify-content: center;
+			overflow: hidden;
+			pointer-events: auto;
+			z-index: auto;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title] .fc-toolbar-title,
+		[data-calendar-root] .fc .fc-toolbar-chunk:has(> .fc-toolbar-title) .fc-toolbar-title {
 			display: block;
 			max-width: 100%;
 			overflow: hidden;
@@ -1309,21 +1327,23 @@ const googleErrorMessage = hasGoogleError
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav {
 			position: relative;
 			z-index: 1;
-			flex: 1 1 0;
+			flex: 1 1 auto;
 			min-width: 0;
 			justify-content: flex-start;
 			flex-wrap: nowrap;
 			gap: 0.4rem;
+			padding-right: 0;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch {
 			position: relative;
 			z-index: 1;
-			flex: 1 1 0;
+			flex: 1 1 auto;
 			min-width: 0;
 			justify-content: flex-end;
 			flex-wrap: nowrap;
 			gap: 0.65rem;
+			padding-left: 0;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch > * {
@@ -1372,59 +1392,8 @@ const googleErrorMessage = hasGoogleError
 		}
 	}
 
-	/* Anchos intermedios: título en su propia fila (evita solaparse con las vistas) */
-	@media (min-width: 768px) and (max-width: 1279px) {
-		[data-calendar-root] .fc .fc-toolbar.fc-header-toolbar {
-			flex-wrap: wrap;
-			row-gap: 0.45rem;
-		}
-
-		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title] {
-			position: static;
-			transform: none;
-			order: -1;
-			flex: 1 0 100%;
-			width: 100%;
-			max-width: none;
-			justify-content: center;
-			pointer-events: auto;
-			z-index: auto;
-		}
-
-		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav,
-		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch {
-			padding-left: 0;
-			padding-right: 0;
-		}
-	}
-
-	/* Pantallas anchas: una sola fila con título centrado absoluto */
-	@media (min-width: 1280px) {
-		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title] {
-			position: absolute;
-			left: 50%;
-			top: 50%;
-			transform: translate(-50%, -50%);
-			justify-content: center;
-			max-width: min(14rem, 22vw);
-			pointer-events: none;
-			z-index: 0;
-		}
-
-		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title] .fc-toolbar-title {
-			pointer-events: auto;
-		}
-
-		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav {
-			padding-right: min(8rem, 14vw);
-		}
-
-		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch {
-			padding-left: min(8rem, 14vw);
-		}
-	}
-
 	[data-calendar-root] .fc .fc-toolbar-title {
+		position: static;
 		font-size: clamp(1.05rem, 1.5vw, 1.65rem);
 		font-weight: 800;
 		letter-spacing: 0.01em;

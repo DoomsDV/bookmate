@@ -88,8 +88,10 @@ const normalizePayload = (raw: unknown): InboxClosurePayload | null => {
 	}
 	if (!value || typeof value !== 'object') return null;
 	const obj = value as Record<string, unknown>;
+	const holidayId = toPositiveInt(obj.id_holiday, 0);
 	return {
 		name: String(obj.name || '').trim() || undefined,
+		id_holiday: holidayId || undefined,
 		start_date: String(obj.start_date || '').trim() || undefined,
 		end_date: String(obj.end_date || '').trim() || undefined,
 		is_full_day: Number(obj.is_full_day) === 0 ? 0 : 1,
@@ -196,7 +198,7 @@ export const getHolidayHintWithOrds = async (token: string): Promise<HolidayHint
 		name,
 		holiday_date: holidayDate,
 		days_until: Math.max(0, Number(data.days_until) || 0),
-		closure_name: String(data.closure_name || `Feriado Nacional: ${name}`).trim(),
+		closure_name: String(data.closure_name || name).trim(),
 	};
 };
 

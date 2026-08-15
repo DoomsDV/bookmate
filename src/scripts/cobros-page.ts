@@ -13,6 +13,7 @@ import {
 	parseIsoDate,
 	toIsoDate,
 } from '../lib/date-input';
+import { bindFileViewer } from '../lib/file-viewer';
 import { updateAppPaginationDom } from '../lib/pagination';
 
 type CobrosManagerElement = HTMLElement & {
@@ -133,11 +134,7 @@ export const initCobrosPage = () => {
 	const periodFilterBadge = root.querySelector<HTMLElement>('[data-period-filter-badge]');
 	const periodSheet = root.querySelector<HTMLDialogElement>('[data-cobros-period-sheet]');
 	const modal = root.querySelector<HTMLDialogElement>('[data-cobros-modal]');
-	const viewer = root.querySelector<HTMLDialogElement>('[data-cobros-viewer]');
-	const viewerImg = viewer?.querySelector<HTMLImageElement>('[data-cobros-viewer-img]') ?? null;
-	const viewerFrame = viewer?.querySelector<HTMLIFrameElement>('[data-cobros-viewer-frame]') ?? null;
-	const viewerName = viewer?.querySelector<HTMLElement>('[data-cobros-viewer-name]') ?? null;
-	const viewerOpen = viewer?.querySelector<HTMLAnchorElement>('[data-cobros-viewer-open]') ?? null;
+	const fileViewer = bindFileViewer(root);
 	const featureSection = root.querySelector<HTMLElement>('[data-requires-feature="DEPOSIT_COLLECTION"]');
 	const lockedSection = root.querySelector<HTMLElement>('[data-cobros-feature-locked]');
 	const paginationEl = root.querySelector<HTMLElement>('[data-cobros-pagination]');
@@ -613,6 +610,7 @@ export const initCobrosPage = () => {
 	let closeTimer: number | null = null;
 
 	const closeModal = () => {
+		fileViewer?.close();
 		if (!modal?.open) {
 			selected = null;
 			return;
@@ -629,39 +627,12 @@ export const initCobrosPage = () => {
 	};
 
 	const openViewer = (url: string, isPdf: boolean, name: string) => {
-		if (!viewer || !url) return;
-		if (viewerName) viewerName.textContent = name || 'Comprobante';
-		if (viewerOpen) viewerOpen.href = url;
-		if (viewerImg) {
-			viewerImg.classList.toggle('hidden', isPdf);
-			if (isPdf) {
-				viewerImg.removeAttribute('src');
-			} else {
-				viewerImg.src = url;
-			}
-		}
-		if (viewerFrame) {
-			viewerFrame.classList.toggle('hidden', !isPdf);
-			viewerFrame.src = isPdf ? url : 'about:blank';
-		}
-		if (!viewer.open) viewer.showModal();
+		fileViewer?.open({
+			url,
+			name: name || 'Comprobante',
+			mimeType: isPdf ? 'application/pdf' : 'image/jpeg',
+		});
 	};
-
-	const closeViewer = () => {
-		if (!viewer?.open) return;
-		viewer.close();
-		if (viewerFrame) viewerFrame.src = 'about:blank';
-		if (viewerImg) viewerImg.removeAttribute('src');
-	};
-
-	viewer?.querySelector('[data-cobros-viewer-close]')?.addEventListener('click', closeViewer);
-	viewer?.addEventListener('click', (event) => {
-		if (event.target === viewer) closeViewer();
-	});
-	viewer?.addEventListener('cancel', (event) => {
-		event.preventDefault();
-		closeViewer();
-	});
 
 	const totalPages = () => Math.max(1, Math.ceil(Math.max(totalRecords, 0) / PAGE_SIZE));
 

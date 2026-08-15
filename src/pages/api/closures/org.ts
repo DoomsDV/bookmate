@@ -46,6 +46,9 @@ const parsePayload = (body: any): CreateLocationClosurePayload => {
 	};
 	if (locationIds.length > 0 && applyAll === 0) payload.location_ids = locationIds;
 
+	const holidayId = Number(body?.id_holiday);
+	if (Number.isInteger(holidayId) && holidayId > 0) payload.id_holiday = holidayId;
+
 	if (isFullDay === 0) {
 		const start = String(body?.start_time || '').trim();
 		const end = String(body?.end_time || '').trim();

@@ -1,0 +1,157 @@
+---
+interface Props {
+	label?: string;
+}
+
+const { label = 'Archivo' } = Astro.props;
+---
+
+<dialog class="file-viewer" data-file-viewer aria-label={label}>
+	<div class="file-viewer__bar">
+		<p class="file-viewer__name" data-file-viewer-name>{label}</p>
+		<a
+			class="file-viewer__open"
+			href="#"
+			target="_blank"
+			rel="noopener noreferrer"
+			data-file-viewer-open
+		>
+			<span class="material-symbols-rounded text-[1.15rem]" aria-hidden="true">open_in_new</span>
+			Abrir
+		</a>
+		<button type="button" class="file-viewer__close" data-file-viewer-close aria-label="Cerrar">
+			<span class="material-symbols-rounded">close</span>
+		</button>
+	</div>
+	<div class="file-viewer__body">
+		<img alt="" class="file-viewer__img hidden" data-file-viewer-img />
+		<iframe class="file-viewer__frame hidden" title={label} data-file-viewer-frame></iframe>
+	</div>
+</dialog>
+
+<style is:global>
+	.file-viewer {
+		margin: 0;
+		padding: 0;
+		border: 0;
+		width: 100%;
+		max-width: 100%;
+		height: 100%;
+		max-height: 100%;
+		background: var(--surface);
+		color: var(--on-surface);
+		overflow: hidden;
+	}
+	.file-viewer:not([open]) {
+		display: none;
+	}
+	.file-viewer::backdrop {
+		background: rgb(0 0 0 / 0.6);
+	}
+	.file-viewer[open] {
+		display: flex;
+		flex-direction: column;
+	}
+	.file-viewer__bar {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		padding: 0.75rem 1rem;
+		border-bottom: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+	}
+	.file-viewer__name {
+		margin: 0;
+		flex: 1 1 auto;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.95rem;
+		font-weight: 700;
+	}
+	.file-viewer__open {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		height: 2.25rem;
+		padding: 0 0.9rem;
+		border-radius: 999px;
+		background: var(--primary-container);
+		color: var(--on-primary-container);
+		font-size: 0.85rem;
+		font-weight: 600;
+		text-decoration: none;
+	}
+	.file-viewer__close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		height: 2.25rem;
+		width: 2.25rem;
+		border: 0;
+		border-radius: 999px;
+		background: var(--control-surface);
+		color: var(--on-surface);
+		cursor: pointer;
+	}
+	.file-viewer__body {
+		flex: 1 1 auto;
+		min-height: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: rgb(0 0 0 / 0.04);
+		overflow: auto;
+	}
+	.file-viewer__img {
+		max-width: 100%;
+		max-height: 100%;
+		object-fit: contain;
+	}
+	.file-viewer__frame {
+		width: 100%;
+		height: 100%;
+		border: 0;
+	}
+
+	.attachment-preview-btn {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+		cursor: pointer;
+		transition: background 140ms ease;
+	}
+	.attachment-preview-btn:hover {
+		background: color-mix(in srgb, var(--primary) 20%, transparent);
+	}
+	.attachment-preview-btn .material-symbols-rounded {
+		font-size: 1.2rem;
+		line-height: 1;
+		pointer-events: none;
+	}
+
+	@media (min-width: 768px) {
+		.file-viewer {
+			width: min(880px, 92vw);
+			height: min(90vh, 900px);
+			max-height: 90vh;
+			margin: auto;
+			border-radius: 1.25rem;
+			border: 1px solid var(--shell-border);
+			box-shadow: 0 24px 60px rgb(0 0 0 / 0.25);
+		}
+		.file-viewer::backdrop {
+			background: var(--modal-backdrop-scrim);
+			backdrop-filter: blur(var(--modal-backdrop-blur));
+			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+		}
+	}
+</style>

@@ -5,6 +5,8 @@ import {
 	PARAGUAY_MOBILE_PHONE_ERROR,
 	parseParaguayMobilePhone,
 } from '../../lib/paraguay-phone';
+import { createAttachmentListItem } from '../../lib/attachment-list-item';
+import { bindFileViewer, type FileViewerHandle } from '../../lib/file-viewer';
 import {
 	buildSessionNotesPayload,
 	hasAnySessionNote,
@@ -220,6 +222,7 @@ class AppointmentModal extends HTMLElement {
 	historyEnabled = false;
 	currentAttachments: AppointmentAttachment[] = [];
 	isUploadingAttachment = false;
+	fileViewer: FileViewerHandle | null = null;
 	modalProfessionalWrap: HTMLElement | null = null;
 	modalProfessional: HTMLSelectElement | null = null;
 	modalLocation: HTMLSelectElement | null = null;
@@ -429,6 +432,7 @@ class AppointmentModal extends HTMLElement {
 		}
 		this.#listeners = new AbortController();
 		const signal = this.#listeners.signal;
+		this.fileViewer = bindFileViewer(this, signal);
 
 		ensureSearchableSelect(requiredNodes.modalProfessional, {
 			placeholder: 'Buscar profesional...',
@@ -492,6 +496,7 @@ class AppointmentModal extends HTMLElement {
 
 	disconnectedCallback() {
 		this.#bound = false;
+		this.fileViewer?.close();
 		this.#listeners?.abort();
 		this.#listeners = null;
 		if (this.#bindRetryTimer) {
@@ -1373,22 +1378,6 @@ class AppointmentModal extends HTMLElement {
 		}
 	}
 
-	private getAttachmentIcon(mimeType: string) {
-		const type = String(mimeType || '').toLowerCase();
-		if (type.startsWith('image/')) return 'image';
-		if (type === 'application/pdf') return 'picture_as_pdf';
-		if (type.startsWith('video/')) return 'movie';
-		if (type.startsWith('audio/')) return 'audio_file';
-		return 'description';
-	}
-
-	private formatFileSize(bytes: number) {
-		const value = Number(bytes) || 0;
-		if (value < 1024) return `${value} B`;
-		if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
-		return `${(value / (1024 * 1024)).toFixed(1)} MB`;
-	}
-
 	private renderAttachments() {
 		if (!this.attachmentsList) return;
 		this.attachmentsList.replaceChildren();
@@ -1397,46 +1386,21 @@ class AppointmentModal extends HTMLElement {
 
 		if (this.currentAttachments.length === 0) return;
 
+		const canDelete = this.canEditSessionNotes();
 		for (const attachment of this.currentAttachments) {
-			const item = document.createElement('li');
-			item.className =
-				'flex items-center gap-3 rounded-xl border border-(--shell-border) bg-(--surface) px-3 py-2';
-
-			const icon = document.createElement('span');
-			icon.className = 'material-symbols-rounded shrink-0 text-[1.2rem] text-(--on-surface-variant)';
-			icon.setAttribute('aria-hidden', 'true');
-			icon.textContent = this.getAttachmentIcon(attachment.mime_type);
-			item.appendChild(icon);
-
-			const link = document.createElement('a');
-			link.href = attachment.url;
-			link.target = '_blank';
-			link.rel = 'noopener noreferrer';
-			link.className =
-				'min-w-0 flex-1 truncate text-[0.88rem] font-semibold text-(--on-surface) hover:text-(--primary) hover:underline';
-			link.textContent = attachment.file_name;
-			item.appendChild(link);
-
-			const size = document.createElement('span');
-			size.className = 'shrink-0 text-[0.76rem] font-medium text-(--on-surface-variant)';
-			size.textContent = this.formatFileSize(attachment.size_bytes);
-			item.appendChild(size);
-
-			if (this.canEditSessionNotes()) {
-				const removeButton = document.createElement('button');
-				removeButton.type = 'button';
-				removeButton.className =
-					'shrink-0 inline-flex size-7 items-center justify-center rounded-full text-(--on-surface-variant) transition hover:bg-rose-500/10 hover:text-rose-600 disabled:opacity-50';
-				removeButton.setAttribute('aria-label', `Eliminar ${attachment.file_name}`);
-				removeButton.innerHTML =
-					'<span class="material-symbols-rounded text-[1.05rem]" aria-hidden="true">delete</span>';
-				removeButton.addEventListener('click', () =>
-					void this.handleAttachmentDelete(attachment.id_attachment)
-				);
-				item.appendChild(removeButton);
-			}
-
-			this.attachmentsList.appendChild(item);
+			this.attachmentsList.appendChild(
+				createAttachmentListItem(attachment, {
+					onPreview: () =>
+						this.fileViewer?.open({
+							url: attachment.url,
+							name: attachment.file_name,
+							mimeType: attachment.mime_type,
+						}),
+					onDelete: canDelete
+						? () => void this.handleAttachmentDelete(attachment.id_attachment)
+						: undefined,
+				})
+			);
 		}
 	}
 
@@ -1750,6 +1714,7 @@ class AppointmentModal extends HTMLElement {
 	}
 
 	closeModal = () => {
+		this.fileViewer?.close();
 		const requiredNodes = this.getRequiredNodes();
 		if (!requiredNodes || !requiredNodes.modal.open) return;
 

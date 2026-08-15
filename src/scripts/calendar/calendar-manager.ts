@@ -1312,12 +1312,12 @@ class CalendarManager extends HTMLElement {
 					type: 'warning',
 					title: '¿Descartar esta advertencia?',
 					message:
-						'La cita quedará como excepción aprobada y dejará de aparecer como conflicto. El horario no cambia. Esta acción queda registrada y en el calendario se verá con un borde verde.',
-					confirmText: 'Descartar advertencia',
+						'La cita se aprobará como una excepción y dejará de marcar conflicto en tu agenda.',
+					confirmText: 'Descartar',
 					cancelText: 'Cancelar',
 				})
 			: window.confirm(
-					'¿Descartar esta advertencia?\n\nLa cita quedará como excepción aprobada y dejará de aparecer como conflicto. El horario no cambia.'
+					'¿Descartar esta advertencia?\n\nLa cita se aprobará como una excepción y dejará de marcar conflicto en tu agenda.'
 				);
 
 		if (!confirmed) return;

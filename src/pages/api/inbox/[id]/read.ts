@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 
-import { InboxApiError, markInboxReadWithOrds } from '../../../../../lib/inbox';
+import { InboxApiError, markInboxReadWithOrds } from '../../../../lib/inbox';
 
 export const POST: APIRoute = async ({ locals, params }) => {
 	try {

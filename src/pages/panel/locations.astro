@@ -457,7 +457,27 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 							Nombre / Motivo
 							<span class="text-rose-500">*</span>
 						</span>
-					<select name="name" data-closure-name></select>
+						<div class="closure-motive-lov" data-closure-motive-lov>
+							<input type="hidden" name="id_holiday" data-closure-holiday-id />
+							<input
+								type="text"
+								name="name"
+								required
+								autocomplete="off"
+								placeholder="Buscar feriado o escribir un motivo"
+								class="closure-form__input closure-motive-lov__input"
+								data-closure-name
+							/>
+							<button
+								type="button"
+								class="closure-motive-lov__clear hidden"
+								data-closure-motive-clear
+								aria-label="Limpiar motivo"
+							>
+								<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">close</span>
+							</button>
+							<div class="closure-motive-lov__results hidden" data-closure-motive-results></div>
+						</div>
 					</label>
 
 					<div class="closure-form__row">
@@ -2266,6 +2286,8 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 	dialog.closure-form-dialog[open] {
 		display: flex;
 		flex-direction: column;
+		overflow: hidden;
+		border-radius: 1.4rem;
 	}
 
 	dialog.closure-form-dialog::backdrop {
@@ -2294,7 +2316,12 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			max-width: none;
 			max-height: min(88dvh, calc(100dvh - env(safe-area-inset-bottom, 0px)));
 			border-radius: 1.6rem 1.6rem 0 0;
+			overflow: hidden;
 			animation-name: closure-form-sheet-in;
+		}
+
+		dialog.closure-form-dialog[open] {
+			border-radius: 1.6rem 1.6rem 0 0;
 		}
 
 		@keyframes closure-form-sheet-in {
@@ -2315,6 +2342,8 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		min-height: 0;
 		max-height: inherit;
 		width: 100%;
+		overflow: hidden;
+		border-radius: inherit;
 		background-color: var(--surface-bright);
 		background-image: none;
 	}
@@ -2410,6 +2439,99 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 	.closure-form__scope {
 		display: grid;
 		gap: 0.65rem;
+	}
+
+	.closure-motive-lov {
+		position: relative;
+	}
+
+	.closure-motive-lov__input {
+		padding-right: 2.75rem;
+	}
+
+	.closure-motive-lov__clear {
+		position: absolute;
+		right: 0.55rem;
+		top: 50%;
+		transform: translateY(-50%);
+		display: inline-flex;
+		width: 2rem;
+		height: 2rem;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+	}
+
+	.closure-motive-lov__clear.hidden,
+	.closure-motive-lov__results.hidden {
+		display: none;
+	}
+
+	.closure-motive-lov__clear:hover {
+		background: var(--surface-container-low);
+		color: var(--on-surface);
+	}
+
+	.closure-motive-lov__results {
+		position: absolute;
+		z-index: 50;
+		top: calc(100% + 0.4rem);
+		left: 0;
+		right: 0;
+		max-height: 15rem;
+		overflow-y: auto;
+		border: 1px solid var(--shell-border);
+		border-radius: 1rem;
+		background: var(--surface-bright);
+		box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+		padding: 0.35rem;
+	}
+
+	.closure-motive-lov__option,
+	.closure-motive-lov__empty {
+		width: 100%;
+		border: 0;
+		border-radius: 0.8rem;
+		background: transparent;
+		padding: 0.72rem 0.85rem;
+		text-align: left;
+	}
+
+	.closure-motive-lov__option {
+		display: grid;
+		gap: 0.2rem;
+		color: var(--on-surface);
+		cursor: pointer;
+	}
+
+	.closure-motive-lov__option:hover,
+	.closure-motive-lov__option:focus-visible {
+		background: color-mix(in srgb, var(--primary) 10%, var(--surface-container-low) 90%);
+		outline: none;
+	}
+
+	.closure-motive-lov__option.is-disabled {
+		opacity: 0.72;
+	}
+
+	.closure-motive-lov__option-name {
+		font-size: 0.92rem;
+		font-weight: 800;
+	}
+
+	.closure-motive-lov__option-meta,
+	.closure-motive-lov__empty {
+		font-size: 0.82rem;
+		color: var(--on-surface-variant);
+	}
+
+	html[data-theme='dark'] .closure-motive-lov__results {
+		border-color: rgba(255, 255, 255, 0.14);
+		background: var(--surface-container, #1e1f22);
 	}
 
 	dialog[data-closure-form-dialog] .ts-wrapper {

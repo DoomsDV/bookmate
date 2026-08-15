@@ -35,6 +35,25 @@
 	</div>
 </details>
 
+<dialog class="inbox-sheet" data-inbox-sheet aria-label="Notificaciones">
+	<div class="inbox-sheet__handle" aria-hidden="true"><span></span></div>
+	<div class="inbox-panel__head">
+		<div>
+			<p class="inbox-panel__title">Notificaciones</p>
+			<p class="inbox-panel__subtitle">Reservas, cobros y avisos del sistema</p>
+		</div>
+		<button type="button" class="inbox-panel__mark-all" data-inbox-mark-all hidden>
+			Marcar todas como leídas
+		</button>
+	</div>
+	<div class="inbox-panel__scroll">
+		<p class="inbox-panel__empty" data-inbox-empty>
+			No tenés notificaciones.
+		</p>
+		<div class="inbox-panel__list" data-inbox-list></div>
+	</div>
+</dialog>
+
 <style is:global>
 	.inbox-bell summary::-webkit-details-marker,
 	.inbox-bell summary::marker {
@@ -109,6 +128,7 @@
 		gap: 0.75rem;
 		padding: 1rem 1.05rem 0.75rem;
 		border-bottom: 1px solid color-mix(in srgb, var(--on-surface) 8%, transparent);
+		flex-shrink: 0;
 	}
 
 	.inbox-panel__title {
@@ -142,6 +162,7 @@
 		flex-direction: column;
 		overflow: auto;
 		min-height: 8rem;
+		overscroll-behavior: contain;
 	}
 
 	.inbox-panel__empty {
@@ -236,16 +257,84 @@
 		background: var(--primary);
 	}
 
-	@media (max-width: 639px) {
-		.inbox-panel {
+	.inbox-sheet {
+		display: none;
+	}
+
+	@media (max-width: 1023px) {
+		.inbox-bell .inbox-panel {
+			display: none !important;
+		}
+
+		.inbox-sheet {
 			position: fixed;
-			right: 0.75rem;
-			left: 0.75rem;
-			top: auto;
-			bottom: 0;
-			width: auto;
-			max-height: min(78dvh, 34rem);
+			inset: auto 0 0;
+			z-index: 80;
+			margin: 0;
+			width: 100vw;
+			max-width: none;
+			height: 50dvh;
+			max-height: 50dvh;
+			border: 1px solid var(--shell-border);
+			border-bottom: 0;
 			border-radius: 1.6rem 1.6rem 0 0;
+			background: var(--surface-bright);
+			color: var(--on-surface);
+			padding: 0;
+			overflow: hidden;
+			box-shadow: var(--modal-shadow-sheet);
+		}
+
+		.inbox-sheet[open] {
+			display: flex;
+			flex-direction: column;
+			animation: inbox-sheet-in var(--modal-open-duration, 150ms) var(--modal-easing, ease);
+		}
+
+		.inbox-sheet::backdrop {
+			background-color: var(--modal-backdrop-scrim);
+		}
+
+		.inbox-sheet__handle {
+			display: flex;
+			justify-content: center;
+			flex-shrink: 0;
+			padding: 0.65rem 0 0.15rem;
+		}
+
+		.inbox-sheet__handle span {
+			display: block;
+			width: 2.4rem;
+			height: 0.28rem;
+			border-radius: 999px;
+			background: color-mix(in srgb, var(--on-surface-variant) 45%, transparent);
+		}
+
+		.inbox-sheet .inbox-panel__head {
+			padding: 0.35rem 1.1rem 0.85rem;
+		}
+
+		.inbox-sheet .inbox-panel__scroll {
+			flex: 1 1 auto;
+			min-height: 0;
+			padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.inbox-sheet {
+			display: none !important;
+		}
+	}
+
+	@keyframes inbox-sheet-in {
+		from {
+			opacity: 0;
+			transform: translateY(100%);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
 		}
 	}
 </style>

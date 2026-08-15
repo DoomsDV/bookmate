@@ -128,9 +128,19 @@ class LocationClosuresUI {
 	private locationsTom: TomSelect | null = null;
 	private locationsLoaded = false;
 	private locationsLoadPromise: Promise<void> | null = null;
-	private nameTom: TomSelect | null = null;
-	private namesLoaded = false;
-	private namesLoadPromise: Promise<void> | null = null;
+	private motives: {
+		holidays: Array<{
+			id_holiday: number;
+			name: string;
+			holiday_date: string;
+			already_closed: boolean;
+		}>;
+		custom_names: string[];
+	} = { holidays: [], custom_names: [] };
+	private motivesLoaded = false;
+	private motivesLoadPromise: Promise<void> | null = null;
+	private selectedHolidayId = 0;
+	private hideMotiveTimer: number | null = null;
 
 	constructor(root: HTMLElement) {
 		this.root = root;
@@ -148,9 +158,9 @@ class LocationClosuresUI {
 			this.locationsTom.destroy();
 			this.locationsTom = null;
 		}
-		if (this.nameTom) {
-			this.nameTom.destroy();
-			this.nameTom = null;
+		if (this.hideMotiveTimer) {
+			window.clearTimeout(this.hideMotiveTimer);
+			this.hideMotiveTimer = null;
 		}
 	}
 
@@ -173,7 +183,10 @@ class LocationClosuresUI {
 			formEl: $('[data-closure-form]', root) as HTMLFormElement | null,
 			formTitle: $('[data-closure-form-title]', root),
 			formError: $('[data-closure-form-error]', root),
-			inputName: $('[data-closure-name]', root) as HTMLSelectElement | null,
+			inputName: $('[data-closure-name]', root) as HTMLInputElement | null,
+			inputHolidayId: $('[data-closure-holiday-id]', root) as HTMLInputElement | null,
+			motiveClear: $('[data-closure-motive-clear]', root) as HTMLButtonElement | null,
+			motiveResults: $('[data-closure-motive-results]', root),
 			inputStart: $('[data-closure-start-date]', root) as HTMLInputElement | null,
 			inputEnd: $('[data-closure-end-date]', root) as HTMLInputElement | null,
 			inputFullDay: $('[data-closure-full-day]', root) as HTMLInputElement | null,
@@ -222,12 +235,46 @@ class LocationClosuresUI {
 			(event: Event) => {
 				const detail = (event as CustomEvent<{
 					name?: string;
+					idHoliday?: number;
 					startDate?: string;
 					endDate?: string;
 					fullDay?: boolean;
 					applyAll?: boolean;
 				}>).detail;
 				void this.openOrgFormPrefill(detail || {});
+			},
+			{ signal }
+		);
+
+		const motiveInput = this.els()?.inputName;
+		motiveInput?.addEventListener(
+			'focus',
+			() => {
+				void this.ensureMotivesLoaded().then(() => this.renderMotiveResults());
+			},
+			{ signal }
+		);
+		motiveInput?.addEventListener(
+			'input',
+			() => {
+				this.onMotiveInput();
+			},
+			{ signal }
+		);
+		motiveInput?.addEventListener(
+			'blur',
+			() => {
+				if (this.hideMotiveTimer) window.clearTimeout(this.hideMotiveTimer);
+				this.hideMotiveTimer = window.setTimeout(() => this.hideMotiveResults(), 120);
+			},
+			{ signal }
+		);
+		this.els()?.motiveClear?.addEventListener(
+			'click',
+			(event) => {
+				event.preventDefault();
+				this.clearSelectedHoliday({ clearFields: true });
+				this.els()?.inputName?.focus();
 			},
 			{ signal }
 		);
@@ -341,46 +388,181 @@ class LocationClosuresUI {
 		}
 	}
 
-	private ensureNamesControl() {
-		const els = this.els();
-		if (!els?.inputName || this.nameTom) return;
-		this.nameTom = new TomSelect(els.inputName, {
-			create: true,
-			createOnBlur: true,
-			persist: false,
-			maxOptions: 200,
-			placeholder: 'Ej: Navidad, Fumigación',
-			allowEmptyOption: false,
-			sortField: { field: 'text', direction: 'asc' },
-			createFilter: (input: string) => input.trim().length > 0,
-			render: TOM_SELECT_ES_RENDER,
-		});
+	private hideMotiveResults() {
+		this.els()?.motiveResults?.classList.add('hidden');
 	}
 
-	private async ensureNamesLoaded() {
-		this.ensureNamesControl();
-		if (this.namesLoaded) return;
-		if (this.namesLoadPromise) return this.namesLoadPromise;
+	private showMotiveResults() {
+		this.els()?.motiveResults?.classList.remove('hidden');
+	}
 
-		this.namesLoadPromise = (async () => {
+	private formatHolidayDate(iso: string) {
+		if (!iso) return '';
+		const [year, month, day] = iso.split('-');
+		if (!year || !month || !day) return iso;
+		return `${day}/${month}/${year}`;
+	}
+
+	private stripHolidayPrefix(name: string) {
+		return name.replace(/^feriado nacional:\s*/i, '').trim();
+	}
+
+	private setSelectedHoliday(holiday: {
+		id_holiday: number;
+		name: string;
+		holiday_date: string;
+		already_closed: boolean;
+	}) {
+		const els = this.els();
+		if (!els) return;
+		this.selectedHolidayId = holiday.id_holiday;
+		if (els.inputHolidayId) els.inputHolidayId.value = String(holiday.id_holiday);
+		if (els.inputName) els.inputName.value = holiday.name;
+		if (els.inputStart) els.inputStart.value = holiday.holiday_date;
+		if (els.inputEnd) els.inputEnd.value = holiday.holiday_date;
+		if (els.inputFullDay) {
+			els.inputFullDay.checked = true;
+			this.syncPartialVisibility();
+		}
+		els.motiveClear?.classList.remove('hidden');
+		this.hideMotiveResults();
+		if (holiday.already_closed) {
+			this.setFormError('Ya existe un cierre para este feriado.');
+		} else {
+			this.setFormError(null);
+		}
+	}
+
+	private setCustomMotive(name: string) {
+		const els = this.els();
+		if (!els) return;
+		this.selectedHolidayId = 0;
+		if (els.inputHolidayId) els.inputHolidayId.value = '';
+		if (els.inputName) els.inputName.value = name;
+		els.motiveClear?.classList.toggle('hidden', name.trim().length === 0);
+		this.hideMotiveResults();
+		this.setFormError(null);
+	}
+
+	private clearSelectedHoliday(options: { clearFields?: boolean } = {}) {
+		const els = this.els();
+		if (!els) return;
+		this.selectedHolidayId = 0;
+		if (els.inputHolidayId) els.inputHolidayId.value = '';
+		els.motiveClear?.classList.add('hidden');
+		if (options.clearFields && els.inputName) els.inputName.value = '';
+		this.setFormError(null);
+	}
+
+	private onMotiveInput() {
+		const els = this.els();
+		const typed = (els?.inputName?.value || '').trim();
+		if (this.selectedHolidayId > 0) {
+			const selected = this.motives.holidays.find((h) => h.id_holiday === this.selectedHolidayId);
+			if (!selected || typed !== selected.name) {
+				this.clearSelectedHoliday();
+			}
+		}
+		els?.motiveClear?.classList.toggle('hidden', typed.length === 0);
+		this.renderMotiveResults();
+	}
+
+	private renderMotiveResults() {
+		const els = this.els();
+		if (!els?.motiveResults) return;
+		const query = this.stripHolidayPrefix((els.inputName?.value || '').trim()).toLowerCase();
+		const holidays = this.motives.holidays.filter((holiday) => {
+			if (!query) return true;
+			return `${holiday.name} ${this.formatHolidayDate(holiday.holiday_date)}`.toLowerCase().includes(query);
+		});
+		const customs = this.motives.custom_names.filter((name) => {
+			if (!query) return true;
+			return name.toLowerCase().includes(query);
+		});
+
+		els.motiveResults.replaceChildren();
+
+		if (holidays.length === 0 && customs.length === 0) {
+			this.hideMotiveResults();
+			return;
+		}
+
+		for (const holiday of holidays.slice(0, 8)) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = `closure-motive-lov__option${holiday.already_closed ? ' is-disabled' : ''}`;
+			const name = document.createElement('span');
+			name.className = 'closure-motive-lov__option-name';
+			name.textContent = holiday.name;
+			const meta = document.createElement('span');
+			meta.className = 'closure-motive-lov__option-meta';
+			meta.textContent = holiday.already_closed
+				? `${this.formatHolidayDate(holiday.holiday_date)} · Ya registrado`
+				: this.formatHolidayDate(holiday.holiday_date);
+			button.append(name, meta);
+			button.addEventListener('mousedown', (event) => event.preventDefault());
+			button.addEventListener('click', () => this.setSelectedHoliday(holiday));
+			els.motiveResults.appendChild(button);
+		}
+
+		for (const name of customs.slice(0, 6)) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'closure-motive-lov__option';
+			const label = document.createElement('span');
+			label.className = 'closure-motive-lov__option-name';
+			label.textContent = name;
+			const meta = document.createElement('span');
+			meta.className = 'closure-motive-lov__option-meta';
+			meta.textContent = 'Motivo personalizado';
+			button.append(label, meta);
+			button.addEventListener('mousedown', (event) => event.preventDefault());
+			button.addEventListener('click', () => this.setCustomMotive(name));
+			els.motiveResults.appendChild(button);
+		}
+
+		this.showMotiveResults();
+	}
+
+	private async ensureMotivesLoaded() {
+		if (this.motivesLoaded) return;
+		if (this.motivesLoadPromise) return this.motivesLoadPromise;
+
+		this.motivesLoadPromise = (async () => {
 			try {
-				const body = await fetchJson<{ status: string; names?: string[] }>('/api/closures/names');
-				const names: string[] = Array.isArray(body.names) ? body.names : [];
-				if (this.nameTom) {
-					this.nameTom.clearOptions();
-					for (const n of names) {
-						this.nameTom.addOption({ value: n, text: n });
-					}
-					this.nameTom.refreshOptions(false);
-				}
-				this.namesLoaded = true;
+				const body = await fetchJson<{
+					data?: {
+						holidays?: Array<{
+							id_holiday: number;
+							name: string;
+							holiday_date: string;
+							already_closed: boolean | number;
+						}>;
+						custom_names?: string[];
+					};
+				}>('/api/closures/motives');
+				const holidays = Array.isArray(body.data?.holidays) ? body.data.holidays : [];
+				this.motives = {
+					holidays: holidays
+						.map((item) => ({
+							id_holiday: Number(item.id_holiday),
+							name: String(item.name || '').trim(),
+							holiday_date: String(item.holiday_date || '').trim(),
+							already_closed: Boolean(item.already_closed) && item.already_closed !== 0,
+						}))
+						.filter((item) => item.id_holiday > 0 && item.name && item.holiday_date),
+					custom_names: Array.isArray(body.data?.custom_names)
+						? body.data.custom_names.map((name) => String(name || '').trim()).filter(Boolean)
+						: [],
+				};
+				this.motivesLoaded = true;
 			} catch {
-				// Si falla, el usuario igual puede escribir un nombre nuevo
+				this.motives = { holidays: [], custom_names: [] };
 			}
 		})().finally(() => {
-			this.namesLoadPromise = null;
+			this.motivesLoadPromise = null;
 		});
-		return this.namesLoadPromise;
+		return this.motivesLoadPromise;
 	}
 
 	private ensureLocationsControl() {
@@ -464,10 +646,10 @@ class LocationClosuresUI {
 		this.syncPartialVisibility();
 		els.scopeWrap?.removeAttribute('hidden');
 
-		await Promise.all([this.ensureLocationsLoaded(), this.ensureNamesLoaded()]);
+		await Promise.all([this.ensureLocationsLoaded(), this.ensureMotivesLoaded()]);
 		this.locationsTom?.clear(true);
-		this.nameTom?.clear(true);
-		this.nameTom?.setValue('', true);
+		this.clearSelectedHoliday({ clearFields: true });
+		this.hideMotiveResults();
 
 		if (mode === 'org') {
 			if (els.applyAll) els.applyAll.checked = true;
@@ -497,6 +679,7 @@ class LocationClosuresUI {
 
 	async openOrgFormPrefill(prefill: {
 		name?: string;
+		idHoliday?: number;
 		startDate?: string;
 		endDate?: string;
 		fullDay?: boolean;
@@ -509,13 +692,16 @@ class LocationClosuresUI {
 		const els = this.els();
 		if (!els) return;
 
-		const name = String(prefill.name || '').trim();
-		if (name) {
-			this.nameTom?.addOption({ value: name, text: name });
-			this.nameTom?.setValue(name, true);
-			if (els.inputName) {
-				els.inputName.value = name;
-			}
+		const name = this.stripHolidayPrefix(String(prefill.name || '').trim());
+		const idHoliday = Number(prefill.idHoliday || 0);
+		const holiday =
+			(idHoliday > 0 ? this.motives.holidays.find((item) => item.id_holiday === idHoliday) : null) ||
+			this.motives.holidays.find((item) => item.name.toLowerCase() === name.toLowerCase()) ||
+			null;
+		if (holiday) {
+			this.setSelectedHoliday(holiday);
+		} else if (name) {
+			this.setCustomMotive(name);
 		}
 
 		if (prefill.startDate && els.inputStart) els.inputStart.value = prefill.startDate;
@@ -631,6 +817,7 @@ class LocationClosuresUI {
 			const url = `/api/locations/${locationForUrl}/closures/${id}${deleteGroup ? '?delete_group=1' : ''}`;
 			const body = await fetchJson<{ message?: string }>(url, { method: 'DELETE' });
 			showAppAlert({ type: 'success', message: body.message || 'Cierre eliminado.' });
+			this.motivesLoaded = false;
 			await Promise.all([this.reloadLocationClosures(), this.reloadOrgClosures()]);
 			this.notifyRefresh();
 		} catch (error) {
@@ -645,7 +832,8 @@ class LocationClosuresUI {
 		const els = this.els();
 		if (!els) return;
 		this.setFormError(null);
-		const name = (this.nameTom ? String(this.nameTom.getValue() || '') : (els.inputName?.value || '')).trim();
+		const name = this.stripHolidayPrefix((els.inputName?.value || '').trim());
+		const holidayId = Number(els.inputHolidayId?.value || this.selectedHolidayId || 0);
 		const startDate = (els.inputStart?.value || '').trim();
 		const endDate = (els.inputEnd?.value || '').trim();
 		const isFullDay = els.inputFullDay?.checked ? 1 : 0;
@@ -676,6 +864,7 @@ class LocationClosuresUI {
 			is_full_day: isFullDay,
 			apply_all_locations: applyAll,
 		};
+		if (holidayId > 0) payload.id_holiday = holidayId;
 		if (applyAll === 0) payload.location_ids = locationIds;
 
 		if (!isFullDay) {
@@ -711,6 +900,7 @@ class LocationClosuresUI {
 			});
 			showAppAlert({ type: 'success', message: body.message || 'Cierre creado.' });
 			this.closeForm();
+			this.motivesLoaded = false;
 			await Promise.all([this.reloadLocationClosures(), this.reloadOrgClosures()]);
 			this.notifyRefresh();
 		} catch (error) {
@@ -732,8 +922,10 @@ const consumeClosureQuery = (ui: LocationClosuresUI) => {
 	const name = String(params.get('name') || '').trim();
 	const startDate = String(params.get('start') || '').trim();
 	const endDate = String(params.get('end') || '').trim() || startDate;
+	const idHoliday = Number(params.get('id_holiday') || 0);
 	void ui.openOrgFormPrefill({
 		name,
+		idHoliday: idHoliday > 0 ? idHoliday : undefined,
 		startDate,
 		endDate,
 		fullDay: params.get('full_day') !== '0',
@@ -741,7 +933,7 @@ const consumeClosureQuery = (ui: LocationClosuresUI) => {
 	});
 
 	const cleaned = new URL(window.location.href);
-	['open_org_closure', 'name', 'start', 'end', 'full_day', 'apply_all'].forEach((key) => {
+	['open_org_closure', 'name', 'id_holiday', 'start', 'end', 'full_day', 'apply_all'].forEach((key) => {
 		cleaned.searchParams.delete(key);
 	});
 	const next = `${cleaned.pathname}${cleaned.search}${cleaned.hash}`;

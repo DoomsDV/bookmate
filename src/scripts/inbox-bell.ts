@@ -140,6 +140,7 @@ const openItem = (item: InboxItem) => {
 				new CustomEvent('hasel:open-org-closure', {
 					detail: {
 						name: payload.name || '',
+						idHoliday: item.holiday_id || payload.id_holiday || 0,
 						startDate: payload.start_date || holidayDate,
 						endDate: payload.end_date || holidayDate,
 						fullDay: payload.is_full_day !== 0,
@@ -153,6 +154,7 @@ const openItem = (item: InboxItem) => {
 			buildClosurePrefillUrl({
 				closure_name: payload.name || 'Feriado nacional',
 				holiday_date: holidayDate,
+				id_holiday: item.holiday_id || payload.id_holiday || undefined,
 			})
 		);
 		return;
@@ -234,6 +236,24 @@ const closeInboxMenus = () => {
 	document.querySelectorAll<HTMLDetailsElement>('[data-inbox-menu]').forEach((menu) => {
 		menu.removeAttribute('open');
 	});
+	document.querySelectorAll<HTMLDialogElement>('[data-inbox-sheet]').forEach((sheet) => {
+		if (sheet.open) sheet.close();
+	});
+};
+
+const isMobileInbox = () => window.matchMedia('(max-width: 1023px)').matches;
+
+const openInboxSheet = () => {
+	const sheet = document.querySelector<HTMLDialogElement>('[data-inbox-sheet]');
+	if (!sheet) return;
+	document.querySelectorAll<HTMLDetailsElement>('[data-inbox-menu]').forEach((menu) => {
+		menu.removeAttribute('open');
+	});
+	document.querySelectorAll<HTMLDetailsElement>('[data-profile-menu]').forEach((menu) => {
+		menu.removeAttribute('open');
+	});
+	if (!sheet.open) sheet.showModal();
+	void fetchInbox({ force: true });
 };
 
 const startPolling = () => {
@@ -254,9 +274,33 @@ export const initInboxBell = () => {
 	if (state.listenersBound) return;
 	state.listenersBound = true;
 
+	document.addEventListener(
+		'toggle',
+		(event) => {
+			const menu = event.target;
+			if (!(menu instanceof HTMLDetailsElement) || !menu.matches('[data-inbox-menu]')) return;
+			if (!menu.open) return;
+			if (isMobileInbox()) {
+				menu.removeAttribute('open');
+				openInboxSheet();
+				return;
+			}
+			void fetchInbox({ force: true });
+		},
+		true
+	);
+
 	document.addEventListener('click', (event) => {
 		const target = event.target as HTMLElement | null;
 		if (!target) return;
+
+		const trigger = target.closest<HTMLElement>('[data-inbox-trigger]');
+		if (trigger && isMobileInbox()) {
+			event.preventDefault();
+			trigger.closest('details')?.removeAttribute('open');
+			openInboxSheet();
+			return;
+		}
 
 		const markAll = target.closest<HTMLButtonElement>('[data-inbox-mark-all]');
 		if (markAll) {
@@ -272,6 +316,11 @@ export const initInboxBell = () => {
 			const item = getState().items.find((row) => row.id_notification === id);
 			if (!item) return;
 			void markRead(id).then(() => openItem(item));
+			closeInboxMenus();
+			return;
+		}
+
+		if (target.matches('[data-inbox-sheet]')) {
 			closeInboxMenus();
 			return;
 		}

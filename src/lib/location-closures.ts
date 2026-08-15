@@ -12,6 +12,12 @@ export const ORG_CLOSURES_URL = resolveOrdsApiUrl(
 	'/closures/org'
 );
 
+export const CLOSURE_MOTIVES_URL = resolveOrdsApiUrl(
+	undefined,
+	'ORDS_CLOSURE_MOTIVES_URL',
+	'/closures/motives'
+);
+
 export type LocationClosureScope = 'LOCATION' | 'ORG';
 
 export interface LocationClosure {
@@ -37,6 +43,19 @@ export interface CreateLocationClosurePayload {
 	end_time?: string | null;
 	apply_all_locations?: 0 | 1;
 	location_ids?: number[];
+	id_holiday?: number;
+}
+
+export interface ClosureHolidayMotive {
+	id_holiday: number;
+	name: string;
+	holiday_date: string;
+	already_closed: boolean;
+}
+
+export interface ClosureMotives {
+	holidays: ClosureHolidayMotive[];
+	custom_names: string[];
 }
 
 export interface LocationClosureFieldError {
@@ -203,10 +222,15 @@ export async function createLocationClosure(
 	}
 
 	const url = useOrgEndpoint ? ORG_CLOSURES_URL : closuresUrlForLocation(locationId as number);
-	const bodyPayload =
-		locationIds.length > 0
-			? { ...payload, location_ids: locationIds, apply_all_locations: applyAll ? 1 : 0 }
-			: payload;
+	const bodyPayload: CreateLocationClosurePayload = {
+		...payload,
+		...(locationIds.length > 0
+			? { location_ids: locationIds, apply_all_locations: applyAll ? 1 : 0 }
+			: {}),
+	};
+	if (!bodyPayload.id_holiday || bodyPayload.id_holiday <= 0) {
+		delete bodyPayload.id_holiday;
+	}
 
 	const body = await request<ApiSuccess<unknown>>(
 		url,
@@ -251,4 +275,32 @@ export async function deleteLocationClosure(
 		deleted_count: typeof body.deleted_count === 'number' ? body.deleted_count : 0,
 		message: typeof body.message === 'string' ? body.message : 'Cierre eliminado.',
 	};
+}
+
+const normalizeHolidayMotive = (value: unknown): ClosureHolidayMotive | null => {
+	if (!value || typeof value !== 'object') return null;
+	const source = value as Record<string, unknown>;
+	const id = Number(source.id_holiday);
+	const name = String(source.name || '').trim();
+	const holidayDate = String(source.holiday_date || '').trim();
+	if (!Number.isInteger(id) || id <= 0 || !name || !holidayDate) return null;
+	return {
+		id_holiday: id,
+		name,
+		holiday_date: holidayDate,
+		already_closed: source.already_closed === 1 || source.already_closed === '1' || source.already_closed === true,
+	};
+};
+
+export async function listClosureMotives(token: string): Promise<ClosureMotives> {
+	const body = await request<ApiSuccess<unknown>>(CLOSURE_MOTIVES_URL, { method: 'GET' }, token);
+	const data =
+		body.data && typeof body.data === 'object' ? (body.data as Record<string, unknown>) : {};
+	const holidays = Array.isArray(data.holidays)
+		? data.holidays.map(normalizeHolidayMotive).filter((item): item is ClosureHolidayMotive => item !== null)
+		: [];
+	const customNames = Array.isArray(data.custom_names)
+		? data.custom_names.map((item) => String(item || '').trim()).filter(Boolean)
+		: [];
+	return { holidays, custom_names: customNames };
 }

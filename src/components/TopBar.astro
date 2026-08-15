@@ -238,6 +238,9 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 				document.querySelectorAll<HTMLDetailsElement>('[data-inbox-menu]').forEach((inbox) => {
 					inbox.removeAttribute('open');
 				});
+				document.querySelectorAll<HTMLDialogElement>('[data-inbox-sheet]').forEach((sheet) => {
+					if (sheet.open) sheet.close();
+				});
 			});
 		});
 
