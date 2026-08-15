@@ -103,6 +103,7 @@ const parseCatalogs = (value: unknown): WorkspaceCatalogs | undefined => {
 		slot_intervals: parseCatalogOptions(source.slot_intervals),
 		reminder_hours: parseCatalogOptions(source.reminder_hours),
 		cancel_wait_hours: parseCatalogOptions(source.cancel_wait_hours),
+		org_specialties: parseCatalogOptions(source.org_specialties),
 	};
 };
 
@@ -156,6 +157,7 @@ const normalizeWorkspaceSettings = (value: unknown): WorkspaceSettingsData | nul
 	return {
 		id_organization: idOrganization,
 		name: String(source.name || '').trim(),
+		id_org_specialty: toOptionalPositiveInt(source.id_org_specialty),
 		profile_slug: String(source.profile_slug || '').trim(),
 		description: String(source.description || '').trim(),
 		public_whatsapp: String(source.public_whatsapp || '').trim(),

@@ -11,6 +11,7 @@ export interface WorkspaceCatalogs {
 	slot_intervals: WorkspaceCatalogOption[];
 	reminder_hours: WorkspaceCatalogOption[];
 	cancel_wait_hours: WorkspaceCatalogOption[];
+	org_specialties: WorkspaceCatalogOption[];
 }
 
 export interface WorkspaceGalleryImage {
@@ -24,6 +25,7 @@ export interface WorkspaceGalleryImage {
 export interface WorkspaceSettingsData {
 	id_organization: number;
 	name: string;
+	id_org_specialty: number | null;
 	profile_slug: string;
 	description: string;
 	public_whatsapp: string;
@@ -51,6 +53,7 @@ export interface WorkspaceSettingsData {
 
 export interface UpdateWorkspacePayload {
 	name?: string;
+	id_org_specialty?: number;
 	profile_slug?: string;
 	description?: string;
 	public_whatsapp?: string;

@@ -425,6 +425,20 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 								</div>
 								<div class="grid gap-5">
 									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre del negocio <span class="text-rose-500">*</span></span><input name="name" maxlength="100" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+										<span>Categoría del negocio <span class="text-rose-500">*</span></span>
+										<div class="relative">
+											<select
+												name="id_org_specialty"
+												data-settings-org-specialty
+												required
+												class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
+											></select>
+										</div>
+										<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+											Algunos complementos se muestran según la categoría de tu negocio.
+										</span>
+									</label>
 								</div>
 								<input type="hidden" name="profile_slug" />
 								<a
@@ -2171,6 +2185,34 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (phone) phone.value = this.formatParaguayPhoneLocal(phoneNumber);
 		}
 
+		private populateOrgSpecialtySelect(
+			options: Array<{ id: number; label: string }>,
+			selectedId: number | null
+		) {
+			const select = this.querySelector<HTMLSelectElement>('[data-settings-org-specialty]');
+			if (!select) return;
+			select.replaceChildren();
+			const placeholder = document.createElement('option');
+			placeholder.value = '';
+			placeholder.textContent = 'Seleccioná una categoría';
+			select.appendChild(placeholder);
+			const knownIds = new Set(options.map((item) => item.id));
+			for (const option of options) {
+				const node = document.createElement('option');
+				node.value = String(option.id);
+				node.textContent = option.label;
+				select.appendChild(node);
+			}
+			if (selectedId && !knownIds.has(selectedId)) {
+				const current = document.createElement('option');
+				current.value = String(selectedId);
+				current.textContent = 'Categoría actual';
+				select.appendChild(current);
+			}
+			select.value = selectedId && (knownIds.has(selectedId) || selectedId > 0) ? String(selectedId) : '';
+			syncSearchableSelect(select);
+		}
+
 		private populateSystemSelect(
 			select: HTMLSelectElement | null,
 			options: Array<{ id: number; label: string }>,
@@ -2373,6 +2415,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			};
 			
 			setValue('[data-settings-workspace-form] [name="name"]', String(workspace?.name ?? ''));
+			this.populateOrgSpecialtySelect(
+				workspace?.catalogs?.org_specialties ?? [],
+				workspace?.id_org_specialty ?? null
+			);
 			setValue('[data-settings-workspace-form] [name="profile_slug"]', String(workspace?.profile_slug ?? ''));
 			setValue('[data-settings-workspace-form] [name="description"]', String(workspace?.description ?? ''));
 			setValue(

@@ -21,16 +21,43 @@ import '../../styles/global.css';
 
 					<main class="px-4 py-4 sm:px-6 sm:py-6">
 						<section class="grid gap-4 sm:gap-5">
-							<header class="grid gap-2">
-								<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
-									Complementos
-								</h1>
-								<p
-									class="m-0 max-w-2xl text-[0.92rem] leading-snug text-(--on-surface-variant)"
-									data-complementos-lead
-								>
-									Módulos extras para tu clínica. Activálos cuando los necesites.
-								</p>
+							<header class="complementos-header">
+								<div class="grid gap-2 min-w-0">
+									<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
+										Complementos
+									</h1>
+									<p
+										class="m-0 max-w-2xl text-[0.92rem] leading-snug text-(--on-surface-variant)"
+										data-complementos-lead
+									>
+										Módulos extras para tu clínica. Activálos cuando los necesites.
+									</p>
+								</div>
+								<div class="complementos-tablist" role="tablist" aria-label="Secciones de complementos">
+									<button
+										type="button"
+										class="complementos-tab is-active"
+										role="tab"
+										id="complementos-tab-explore"
+										aria-selected="true"
+										aria-controls="complementos-panel-explore"
+										data-complementos-tab="explore"
+									>
+										Explorar
+									</button>
+									<button
+										type="button"
+										class="complementos-tab"
+										role="tab"
+										id="complementos-tab-mine"
+										aria-selected="false"
+										aria-controls="complementos-panel-mine"
+										data-complementos-tab="mine"
+									>
+										Mis módulos
+										<span class="complementos-tab__badge hidden" data-complementos-mine-badge>0</span>
+									</button>
+								</div>
 							</header>
 
 							<div
@@ -66,19 +93,48 @@ import '../../styles/global.css';
 							</div>
 
 							<div
-								class="hidden grid place-items-center gap-2 rounded-2xl border border-dashed border-(--shell-border) bg-(--surface-bright) px-6 py-14 text-center"
-								data-complementos-empty
+								id="complementos-panel-explore"
+								role="tabpanel"
+								aria-labelledby="complementos-tab-explore"
+								data-complementos-panel="explore"
 							>
-								<span class="material-symbols-rounded text-[2rem] text-(--on-surface-variant)" aria-hidden="true">
-									extension
-								</span>
-								<p class="m-0 text-[0.95rem] font-bold text-(--on-surface)">Todavía no hay complementos</p>
-								<p class="m-0 max-w-sm text-[0.85rem] font-medium text-(--on-surface-variant)">
-									Cuando haya módulos disponibles, van a aparecer acá.
-								</p>
+								<div
+									class="hidden grid place-items-center gap-2 rounded-2xl border border-dashed border-(--shell-border) bg-(--surface-bright) px-6 py-14 text-center"
+									data-complementos-empty="explore"
+								>
+									<span class="material-symbols-rounded text-[2rem] text-(--on-surface-variant)" aria-hidden="true">
+										storefront
+									</span>
+									<p class="m-0 text-[0.95rem] font-bold text-(--on-surface)">No hay más módulos para tu rubro</p>
+									<p class="m-0 max-w-sm text-[0.85rem] font-medium text-(--on-surface-variant)">
+										Cuando haya complementos disponibles para tu categoría, van a aparecer acá.
+									</p>
+								</div>
+								<div class="hidden grid gap-4 sm:grid-cols-2" data-complementos-grid="explore"></div>
 							</div>
 
-							<div class="hidden grid gap-4 sm:grid-cols-2" data-complementos-grid></div>
+							<div
+								id="complementos-panel-mine"
+								class="hidden"
+								role="tabpanel"
+								aria-labelledby="complementos-tab-mine"
+								data-complementos-panel="mine"
+								hidden
+							>
+								<div
+									class="hidden grid place-items-center gap-2 rounded-2xl border border-dashed border-(--shell-border) bg-(--surface-bright) px-6 py-14 text-center"
+									data-complementos-empty="mine"
+								>
+									<span class="material-symbols-rounded text-[2rem] text-(--on-surface-variant)" aria-hidden="true">
+										extension
+									</span>
+									<p class="m-0 text-[0.95rem] font-bold text-(--on-surface)">Todavía no activaste ningún complemento</p>
+									<p class="m-0 max-w-sm text-[0.85rem] font-medium text-(--on-surface-variant)">
+										Explorá la tienda y activá el que necesites para tu clínica.
+									</p>
+								</div>
+								<div class="hidden grid gap-4 sm:grid-cols-2" data-complementos-grid="mine"></div>
+							</div>
 						</section>
 					</main>
 				</div>
@@ -89,6 +145,99 @@ import '../../styles/global.css';
 
 <style is:global>
 	/* is:global: las tarjetas se inyectan con JS y no reciben el scope de Astro */
+	.complementos-header {
+		display: grid;
+		gap: 0.9rem;
+	}
+
+	@media (min-width: 720px) {
+		.complementos-header {
+			grid-template-columns: minmax(0, 1fr) auto;
+			align-items: start;
+			gap: 1rem 1.25rem;
+		}
+	}
+
+	.complementos-tablist {
+		display: flex;
+		flex-wrap: nowrap;
+		width: 100%;
+		max-width: 22rem;
+		gap: 0.25rem;
+		padding: 0.25rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+	}
+
+	@media (min-width: 720px) {
+		.complementos-tablist {
+			width: auto;
+			min-width: 16.5rem;
+			justify-self: end;
+		}
+	}
+
+	.complementos-tab {
+		flex: 1 1 0;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		min-height: 2.35rem;
+		padding: 0.4rem 0.75rem;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--on-surface-variant);
+		font-size: 0.84rem;
+		font-weight: 700;
+		white-space: nowrap;
+		cursor: pointer;
+		transition: background-color 140ms ease, color 140ms ease;
+	}
+
+	.complementos-tab:hover {
+		color: var(--on-surface);
+	}
+
+	.complementos-tab.is-active {
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+	}
+
+	.complementos-tab:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+		outline-offset: 2px;
+	}
+
+	.complementos-tab__badge {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.15rem;
+		padding: 0.08rem 0.38rem;
+		border-radius: 999px;
+		font-size: 0.68rem;
+		font-weight: 800;
+		line-height: 1.2;
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		color: var(--primary);
+	}
+
+	.complementos-tab.is-active .complementos-tab__badge {
+		background: color-mix(in srgb, var(--primary) 18%, transparent);
+	}
+
+	html[data-theme='dark'] .complementos-tablist {
+		background: color-mix(in srgb, var(--surface-container) 70%, rgb(255 255 255 / 0.04));
+	}
+
+	html[data-theme='dark'] .complementos-tab.is-active {
+		background: color-mix(in srgb, var(--surface-bright) 92%, rgb(255 255 255 / 0.06));
+		box-shadow: none;
+	}
+
 	.complementos-banner {
 		display: flex;
 		align-items: flex-start;
@@ -173,29 +322,22 @@ import '../../styles/global.css';
 
 	.complementos-card--media {
 		grid-template-columns: 1fr;
+		align-items: center;
+		gap: 1rem;
+		padding: 1.05rem 1.1rem 1.15rem;
 	}
 
 	@media (min-width: 720px) {
 		.complementos-card--media {
-			grid-column: 1 / -1;
-			grid-template-columns: minmax(15rem, 0.95fr) minmax(16rem, 1.1fr);
-			align-items: stretch;
+			grid-template-columns: minmax(7.25rem, 30%) minmax(0, 1fr);
+			gap: 1.15rem 1.4rem;
+			padding: 1.15rem 1.25rem 1.2rem;
 		}
 	}
 
 	.complementos-card:hover {
 		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border));
 		box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
-	}
-
-	.complementos-card.is-muted {
-		opacity: 0.78;
-		box-shadow: none;
-	}
-
-	.complementos-card.is-muted:hover {
-		border-color: var(--shell-border);
-		box-shadow: none;
 	}
 
 	.complementos-card__preview {
@@ -209,47 +351,43 @@ import '../../styles/global.css';
 		overflow: hidden;
 	}
 
-	.complementos-card__preview--odontogram {
-		min-height: 13.5rem;
+	.complementos-card--media .complementos-card__preview {
+		min-height: 0;
+		width: min(11rem, 100%);
+		aspect-ratio: 1;
+		margin: 0 auto;
 		padding: 0;
-		background: #050505;
+		border: 1px solid var(--shell-border);
+		border-radius: 1.15rem;
+		background: color-mix(in srgb, var(--surface-container-high, #1a1a1c) 70%, var(--surface-bright));
 	}
 
-	html[data-theme='light'] .complementos-card__preview--odontogram {
-		background: #ffffff;
+	.complementos-card__preview--odontogram {
+		min-height: 0;
+		padding: 0.55rem;
+		background: transparent;
+		border-color: transparent;
 	}
 
 	.complementos-card__preview-img {
 		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
+		inset: 0.45rem;
+		width: calc(100% - 0.9rem);
+		height: calc(100% - 0.9rem);
+		object-fit: contain;
 		object-position: center;
-	}
-
-	.complementos-card__preview-img--light {
-		display: none;
-	}
-
-	html[data-theme='light'] .complementos-card__preview-img--dark {
-		display: none;
-	}
-
-	html[data-theme='light'] .complementos-card__preview-img--light {
-		display: block;
 	}
 
 	@media (min-width: 720px) {
 		.complementos-card--media .complementos-card__preview {
-			min-height: 100%;
-			border-bottom: none;
-			border-right: 1px solid var(--shell-border);
+			width: 100%;
+			max-width: 12.5rem;
+			margin: 0;
 		}
 
 		.complementos-card--media .complementos-card__body {
 			align-content: center;
-			padding: 1.45rem 1.55rem 1.5rem;
+			padding: 0.15rem 0.15rem 0.1rem 0;
 		}
 	}
 
@@ -257,6 +395,10 @@ import '../../styles/global.css';
 		display: grid;
 		gap: 1.05rem;
 		padding: 1.2rem 1.3rem 1.3rem;
+	}
+
+	.complementos-card--media .complementos-card__body {
+		padding: 0 0.1rem 0.15rem;
 	}
 
 	.complementos-card__title {
@@ -309,13 +451,6 @@ import '../../styles/global.css';
 	.complementos-card__period {
 		font-size: 0.8rem;
 		font-weight: 650;
-		color: color-mix(in srgb, var(--on-surface) 62%, var(--on-surface-variant) 38%);
-	}
-
-	.complementos-card__hint {
-		margin: 0;
-		font-size: 0.82rem;
-		font-weight: 600;
 		color: color-mix(in srgb, var(--on-surface) 62%, var(--on-surface-variant) 38%);
 	}
 

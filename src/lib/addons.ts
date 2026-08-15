@@ -34,6 +34,8 @@ export interface ModuleAddonItem {
 export interface AddonsCatalog {
 	addons_billing_live: boolean;
 	items: ModuleAddonItem[];
+	active_items: ModuleAddonItem[];
+	available_items: ModuleAddonItem[];
 }
 
 export class AddonApiError extends Error {
@@ -102,16 +104,31 @@ const normalizeModuleAddonItem = (value: unknown): ModuleAddonItem | null => {
 	};
 };
 
+const normalizeAddonList = (value: unknown): ModuleAddonItem[] => {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((item) => {
+		const normalized = normalizeModuleAddonItem(item);
+		return normalized ? [normalized] : [];
+	});
+};
+
 const normalizeAddonsCatalog = (value: unknown): AddonsCatalog => {
 	const source = (value ?? {}) as Record<string, unknown>;
-	const itemsRaw = Array.isArray(source.items) ? source.items : [];
+	const items = normalizeAddonList(source.items);
+	const hasSplit =
+		Array.isArray(source.active_items) || Array.isArray(source.available_items);
+	const activeItems = hasSplit
+		? normalizeAddonList(source.active_items)
+		: items.filter((item) => item.is_active_for_org);
+	const availableItems = hasSplit
+		? normalizeAddonList(source.available_items)
+		: items.filter((item) => !item.is_active_for_org);
 
 	return {
 		addons_billing_live: toBool(source.addons_billing_live),
-		items: itemsRaw.flatMap((item) => {
-			const normalized = normalizeModuleAddonItem(item);
-			return normalized ? [normalized] : [];
-		}),
+		items,
+		active_items: activeItems,
+		available_items: availableItems,
 	};
 };
 

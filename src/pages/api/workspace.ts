@@ -77,6 +77,13 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 	const name = String(source?.name ?? '').trim();
 	if (name !== '') payload.name = name;
 
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'id_org_specialty')) {
+		const specialtyId = Number(source?.id_org_specialty ?? 0);
+		if (Number.isInteger(specialtyId) && specialtyId > 0) {
+			payload.id_org_specialty = specialtyId;
+		}
+	}
+
 	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'profile_slug')) {
 		payload.profile_slug = String(source?.profile_slug ?? '').trim();
 	}

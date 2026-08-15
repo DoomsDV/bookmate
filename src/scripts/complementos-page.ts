@@ -20,9 +20,13 @@ type ModuleAddonItem = {
 	status: string | null;
 };
 
+type ComplementosTab = 'explore' | 'mine';
+
 type AddonsCatalogPayload = {
 	addons_billing_live?: boolean | number | string;
 	items?: ModuleAddonItem[];
+	active_items?: ModuleAddonItem[];
+	available_items?: ModuleAddonItem[];
 };
 
 const currency = new Intl.NumberFormat('es-PY');
@@ -44,13 +48,8 @@ const ADDON_COPY: Record<string, string> = {
 const odontogramPreviewHtml = () => `
 		<div class="complementos-card__preview complementos-card__preview--odontogram" aria-hidden="true">
 			<img
-				class="complementos-card__preview-img complementos-card__preview-img--dark"
-				src="/odontograma/odonto-dark.png"
-				alt=""
-			/>
-			<img
-				class="complementos-card__preview-img complementos-card__preview-img--light"
-				src="/odontograma/odonto-light.png"
+				class="complementos-card__preview-img"
+				src="/odontograma/odonto-removebg.png"
 				alt=""
 			/>
 		</div>
@@ -99,26 +98,41 @@ const invalidateSubscriptionCache = () => {
 	}
 };
 
-const parseItems = (payload: unknown): ModuleAddonItem[] => {
+const parseItem = (item: Record<string, unknown>): ModuleAddonItem => ({
+	code: String(item.code || '').trim(),
+	name: String(item.name || '').trim() || 'Complemento',
+	short_description: String(item.short_description || '').trim(),
+	feature_code: String(item.feature_code || '').trim(),
+	price_amount: Number(item.price_amount) || 0,
+	currency: String(item.currency || 'PYG').trim() || 'PYG',
+	billing_period: String(item.billing_period || 'MONTHLY').trim() || 'MONTHLY',
+	audience_code: item.audience_code != null ? String(item.audience_code).trim() || null : null,
+	eligible: toBool(item.eligible),
+	is_active_for_org: toBool(item.is_active_for_org),
+	grant_type: item.grant_type != null ? String(item.grant_type).trim() || null : null,
+	status: item.status != null ? String(item.status).trim() || null : null,
+});
+
+const parseItemList = (value: unknown): ModuleAddonItem[] => {
+	if (!Array.isArray(value)) return [];
+	return (value as Array<Record<string, unknown>>)
+		.map(parseItem)
+		.filter((item) => item.code);
+};
+
+const parseCatalog = (payload: unknown) => {
 	const root = (payload || {}) as { data?: AddonsCatalogPayload; items?: ModuleAddonItem[] };
 	const data = root.data ?? (root as AddonsCatalogPayload);
-	const raw = (
-		Array.isArray(data?.items) ? data.items : Array.isArray(root.items) ? root.items : []
-	) as Array<Record<string, unknown>>;
-	return raw.map((item) => ({
-		code: String(item.code || '').trim(),
-		name: String(item.name || '').trim() || 'Complemento',
-		short_description: String(item.short_description || '').trim(),
-		feature_code: String(item.feature_code || '').trim(),
-		price_amount: Number(item.price_amount) || 0,
-		currency: String(item.currency || 'PYG').trim() || 'PYG',
-		billing_period: String(item.billing_period || 'MONTHLY').trim() || 'MONTHLY',
-		audience_code: item.audience_code != null ? String(item.audience_code).trim() || null : null,
-		eligible: toBool(item.eligible),
-		is_active_for_org: toBool(item.is_active_for_org),
-		grant_type: item.grant_type != null ? String(item.grant_type).trim() || null : null,
-		status: item.status != null ? String(item.status).trim() || null : null,
-	}));
+	const items = parseItemList(data?.items ?? root.items);
+	const hasSplit = Array.isArray(data?.active_items) || Array.isArray(data?.available_items);
+	return {
+		activeItems: hasSplit
+			? parseItemList(data.active_items)
+			: items.filter((item) => item.is_active_for_org),
+		availableItems: hasSplit
+			? parseItemList(data.available_items)
+			: items.filter((item) => !item.is_active_for_org),
+	};
 };
 
 if (!customElements.get('complementos-store')) {
@@ -137,15 +151,29 @@ export const initComplementosPage = () => {
 
 	const errorEl = root.querySelector<HTMLElement>('[data-complementos-error]');
 	const loadingEl = root.querySelector<HTMLElement>('[data-complementos-loading]');
-	const emptyEl = root.querySelector<HTMLElement>('[data-complementos-empty]');
-	const gridEl = root.querySelector<HTMLElement>('[data-complementos-grid]');
 	const bannerEl = root.querySelector<HTMLElement>('[data-complementos-banner]');
 	const leadEl = root.querySelector<HTMLElement>('[data-complementos-lead]');
+	const badgeEl = root.querySelector<HTMLElement>('[data-complementos-mine-badge]');
+	const tabButtons = Array.from(root.querySelectorAll<HTMLButtonElement>('[data-complementos-tab]'));
+	const panels = {
+		explore: root.querySelector<HTMLElement>('[data-complementos-panel="explore"]'),
+		mine: root.querySelector<HTMLElement>('[data-complementos-panel="mine"]'),
+	};
+	const grids = {
+		explore: root.querySelector<HTMLElement>('[data-complementos-grid="explore"]'),
+		mine: root.querySelector<HTMLElement>('[data-complementos-grid="mine"]'),
+	};
+	const empties = {
+		explore: root.querySelector<HTMLElement>('[data-complementos-empty="explore"]'),
+		mine: root.querySelector<HTMLElement>('[data-complementos-empty="mine"]'),
+	};
 
-	let items: ModuleAddonItem[] = [];
+	let activeItems: ModuleAddonItem[] = [];
+	let availableItems: ModuleAddonItem[] = [];
 	let billingLive = false;
 	let busyCode: string | null = null;
 	let loadRequestId = 0;
+	let activeTab: ComplementosTab = 'explore';
 
 	const setError = (message: string) => {
 		if (!errorEl) return;
@@ -156,12 +184,15 @@ export const initComplementosPage = () => {
 
 	const setLoading = (loading: boolean) => {
 		loadingEl?.classList.toggle('hidden', !loading);
+		if (loading) {
+			panels.explore?.classList.add('hidden');
+			panels.mine?.classList.add('hidden');
+		}
 	};
 
 	const renderCard = (item: ModuleAddonItem) => {
 		const active = item.is_active_for_org;
 		const eligible = item.eligible;
-		const muted = !eligible && !active;
 		const price = formatGs(item.price_amount);
 		const period = periodLabel(item.billing_period);
 		const desc =
@@ -221,20 +252,13 @@ export const initComplementosPage = () => {
 					${isBusy ? activatingLabel : activateLabel}
 				</button>
 			`;
-		} else {
-			actions = `
-				<p class="complementos-card__hint flex items-center gap-1.5">
-					<span class="material-symbols-rounded text-[1.05rem]" aria-hidden="true">lock</span>
-					Disponible para clínicas odontológicas.
-				</p>
-			`;
 		}
 
 		const preview = previewForAddon(item.code);
 		const mediaClass = preview ? ' complementos-card--media' : '';
 
 		return `
-			<article class="complementos-card${mediaClass}${muted ? ' is-muted' : ''}" data-addon-card data-addon-code="${escapeHtml(item.code)}">
+			<article class="complementos-card${mediaClass}" data-addon-card data-addon-code="${escapeHtml(item.code)}">
 				${preview}
 				<div class="complementos-card__body">
 					<div>
@@ -255,11 +279,33 @@ export const initComplementosPage = () => {
 				? 'Módulos mensuales extras para tu clínica. Se facturan junto con tu suscripción.'
 				: 'Módulos extras para tu clínica. Activálos cuando los necesites.';
 		}
+		if (badgeEl) {
+			const count = activeItems.length;
+			badgeEl.textContent = String(count);
+			badgeEl.classList.toggle('hidden', count <= 0);
+		}
 	};
 
-	const render = () => {
+	const setActiveTab = (tab: ComplementosTab) => {
+		activeTab = tab;
+		for (const button of tabButtons) {
+			const isActive = button.dataset.complementosTab === tab;
+			button.classList.toggle('is-active', isActive);
+			button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+		}
+		for (const key of ['explore', 'mine'] as const) {
+			const panel = panels[key];
+			if (!panel) continue;
+			const show = key === tab;
+			panel.classList.toggle('hidden', !show);
+			panel.toggleAttribute('hidden', !show);
+		}
+	};
+
+	const renderList = (tab: ComplementosTab, items: ModuleAddonItem[]) => {
+		const gridEl = grids[tab];
+		const emptyEl = empties[tab];
 		if (!gridEl || !emptyEl) return;
-		renderMeta();
 		const hasError = Boolean(errorEl && !errorEl.classList.contains('hidden') && errorEl.textContent?.trim());
 		if (!items.length) {
 			gridEl.classList.add('hidden');
@@ -272,12 +318,21 @@ export const initComplementosPage = () => {
 		gridEl.innerHTML = items.map(renderCard).join('');
 	};
 
+	const render = () => {
+		renderMeta();
+		renderList('explore', availableItems);
+		renderList('mine', activeItems);
+		setActiveTab(activeTab);
+	};
+
 	const load = async () => {
 		const requestId = ++loadRequestId;
 		setError('');
 		setLoading(true);
-		emptyEl?.classList.add('hidden');
-		gridEl?.classList.add('hidden');
+		empties.explore?.classList.add('hidden');
+		empties.mine?.classList.add('hidden');
+		grids.explore?.classList.add('hidden');
+		grids.mine?.classList.add('hidden');
 
 		try {
 			const res = await fetch('/api/addons', {
@@ -287,7 +342,8 @@ export const initComplementosPage = () => {
 			if (requestId !== loadRequestId) return;
 
 			if (res.status === 404) {
-				items = [];
+				activeItems = [];
+				availableItems = [];
 				setError(
 					'Los complementos todavía no están disponibles en este entorno. Probá de nuevo en unos minutos.'
 				);
@@ -300,7 +356,8 @@ export const initComplementosPage = () => {
 					res,
 					'No pudimos cargar los complementos. Intentá de nuevo.'
 				);
-				items = [];
+				activeItems = [];
+				availableItems = [];
 				setError(message);
 				render();
 				return;
@@ -309,12 +366,15 @@ export const initComplementosPage = () => {
 			const payload = await res.json();
 			if (requestId !== loadRequestId) return;
 			billingLive = parseBillingLive(payload);
-			items = parseItems(payload).filter((item) => item.code);
+			const catalog = parseCatalog(payload);
+			activeItems = catalog.activeItems;
+			availableItems = catalog.availableItems;
 			setError('');
 			render();
 		} catch {
 			if (requestId !== loadRequestId) return;
-			items = [];
+			activeItems = [];
+			availableItems = [];
 			setError('No pudimos cargar los complementos. Revisá tu conexión e intentá de nuevo.');
 			render();
 		} finally {
@@ -346,6 +406,13 @@ export const initComplementosPage = () => {
 
 	root.addEventListener('click', (event) => {
 		const target = event.target as HTMLElement | null;
+		const tabBtn = target?.closest<HTMLButtonElement>('[data-complementos-tab]');
+		if (tabBtn) {
+			const next = tabBtn.dataset.complementosTab === 'mine' ? 'mine' : 'explore';
+			setActiveTab(next);
+			return;
+		}
+
 		const activateBtn = target?.closest<HTMLButtonElement>('[data-addon-activate]');
 		const cancelBtn = target?.closest<HTMLButtonElement>('[data-addon-cancel]');
 
@@ -362,6 +429,7 @@ export const initComplementosPage = () => {
 						message: 'Complemento activado. Ya lo podés usar en el perfil del cliente.',
 					});
 					busyCode = null;
+					activeTab = 'mine';
 					await load();
 				} catch (error) {
 					busyCode = null;
