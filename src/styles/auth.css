@@ -592,6 +592,7 @@ body:has(.auth-page) {
 	display: flex;
 	flex-direction: column;
 	gap: 0.45rem;
+	min-width: 0;
 }
 
 .auth-field + .auth-field {
@@ -601,6 +602,7 @@ body:has(.auth-page) {
 .auth-label {
 	font-size: 0.88rem;
 	font-weight: 600;
+	line-height: 1.3;
 	color: var(--auth-on-surface);
 	margin-left: 0.15rem;
 }
@@ -721,6 +723,8 @@ body:has(.auth-page) {
 
 .auth-select-wrap {
 	position: relative;
+	min-width: 0;
+	max-width: 100%;
 }
 
 .auth-select-wrap::after {
@@ -744,6 +748,89 @@ body:has(.auth-page) {
 	background-color: transparent;
 	background-image: none;
 	padding-right: 2.5rem;
+	max-width: 100%;
+}
+
+.auth-select-wrap.is-enhanced .auth-select-native {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+	pointer-events: none;
+}
+
+.auth-select-trigger {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	max-width: 100%;
+	padding-right: 2.5rem;
+	text-align: left;
+	cursor: pointer;
+}
+
+.auth-select-trigger-label {
+	display: block;
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.auth-select-trigger-label.is-placeholder {
+	color: color-mix(in srgb, var(--auth-on-surface-variant) 65%, transparent);
+}
+
+.auth-select-menu {
+	position: fixed;
+	z-index: 80;
+	margin: 0;
+	padding: 0.35rem;
+	list-style: none;
+	overflow-x: hidden;
+	overflow-y: auto;
+	box-sizing: border-box;
+	border-radius: 0.85rem;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	background: #1c1b1f;
+	box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38);
+	overscroll-behavior: contain;
+}
+
+html:has(.auth-select-wrap.is-open),
+body:has(.auth-select-wrap.is-open) {
+	overflow: hidden;
+}
+
+.auth-select-option {
+	padding: 0.62rem 0.75rem;
+	border-radius: 0.55rem;
+	color: var(--auth-on-surface);
+	font-size: 0.92rem;
+	font-weight: 600;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+	word-break: break-word;
+	cursor: pointer;
+}
+
+.auth-select-option:hover,
+.auth-select-option.is-selected {
+	background: #2a292d;
+}
+
+.auth-select-option[aria-disabled='true'] {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.auth-select-wrap.is-open::after {
+	transform: translateY(-35%) rotate(225deg);
 }
 
 .auth-select:disabled {
@@ -773,48 +860,67 @@ body:has(.auth-page) {
 
 .auth-phone-group {
 	display: flex;
+	align-items: stretch;
 	width: 100%;
+	min-height: 3rem;
 	border-radius: 0.85rem;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	background: transparent;
+	overflow: hidden;
+	transition:
+		border-color 180ms ease,
+		background-color 180ms ease,
+		box-shadow 180ms ease;
 }
 
 .auth-phone-prefix {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	padding: 0 0.95rem;
-	border: 1px solid rgba(255, 255, 255, 0.08);
-	border-right: 0;
-	border-radius: 0.85rem 0 0 0.85rem;
+	flex: 0 0 auto;
+	padding: 0 0.85rem;
+	border: 0;
+	border-right: 1px solid rgba(255, 255, 255, 0.08);
 	background: transparent;
 	color: var(--auth-on-surface-variant);
 	font-size: 0.95rem;
 	font-weight: 700;
+	line-height: 1;
 	white-space: nowrap;
-	transition: border-color 180ms ease, background-color 180ms ease;
 }
 
 .auth-phone-input {
-	border-top-left-radius: 0;
-	border-bottom-left-radius: 0;
-}
-
-.auth-phone-input:focus {
+	flex: 1 1 auto;
+	min-width: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
 	box-shadow: none;
+	appearance: none;
+	-webkit-appearance: none;
 }
 
-.auth-phone-group:focus-within .auth-phone-prefix,
-.auth-phone-group:focus-within .auth-phone-input {
-	border-color: rgba(168, 199, 255, 0.55);
+.auth-phone-input:focus,
+.auth-phone-input.is-invalid,
+.auth-phone-input.is-invalid:focus {
+	border: 0;
+	box-shadow: none;
+	background: transparent;
 }
 
 .auth-phone-group:focus-within {
+	border-color: rgba(168, 199, 255, 0.55);
+	background: rgba(255, 255, 255, 0.02);
 	box-shadow: 0 0 0 4px rgba(66, 110, 219, 0.22);
-	border-radius: 0.85rem;
+}
+
+.auth-phone-group.is-invalid {
+	border-color: rgba(255, 180, 171, 0.55);
+	background: rgba(127, 29, 29, 0.28);
 }
 
 .auth-phone-group.is-invalid .auth-phone-prefix {
-	border-color: rgba(255, 180, 171, 0.55);
-	background: rgba(127, 29, 29, 0.28);
+	border-right-color: rgba(255, 180, 171, 0.35);
 	color: var(--auth-error);
 }
 
@@ -1286,6 +1392,7 @@ body:has(.auth-page) {
 
 	.auth-label {
 		font-size: 0.8rem;
+		line-height: 1.35;
 	}
 
 	.auth-input {
@@ -1293,6 +1400,31 @@ body:has(.auth-page) {
 		padding: 0.55rem 0.85rem;
 		font-size: 0.95rem;
 		border-radius: 0.7rem;
+	}
+
+	.auth-phone-group {
+		min-height: 2.75rem;
+		border-radius: 0.7rem;
+	}
+
+	.auth-phone-prefix {
+		padding: 0 0.7rem;
+		font-size: 0.9rem;
+	}
+
+	.auth-phone-input {
+		min-height: 2.75rem;
+		padding-block: 0.55rem;
+		font-size: 1rem;
+		border-radius: 0;
+	}
+
+	.auth-select-menu {
+		border-radius: 0.7rem;
+	}
+
+	.auth-select-option {
+		font-size: 0.88rem;
 	}
 
 	.auth-code-input {

@@ -156,9 +156,6 @@ const currentStep = normalizeStep(step);
 							/>
 							{lastNameError && <span class="auth-field-error">{lastNameError}</span>}
 						</div>
-					</div>
-
-					<div class="auth-form-grid auth-form-grid--2 register-grid-2">
 						<div class="auth-field">
 							<label class="auth-label" for="email"
 								>Correo electrónico <span class="auth-label-required">*</span></label
@@ -264,14 +261,10 @@ const currentStep = normalizeStep(step);
 								required
 							/>
 							<p class="auth-field-help">
-								Este correo será el contacto principal de tu organización para notificaciones y
-								comunicación institucional.
+								Contacto principal para notificaciones de la organización.
 							</p>
 							{companyEmailError && <span class="auth-field-error">{companyEmailError}</span>}
 						</div>
-					</div>
-
-					<div class="auth-form-grid auth-form-grid--2 register-grid-2">
 						<div class="auth-field">
 							<label class="auth-label" for="phone"
 								>Teléfono de corporativo <span class="auth-label-required">*</span></label
@@ -357,6 +350,130 @@ const currentStep = normalizeStep(step);
 </section>
 
 <script is:inline>
+	function initAuthSelects(root) {
+		const scope = root && root.querySelectorAll ? root : document;
+		scope.querySelectorAll('.auth-select-wrap').forEach((wrap) => {
+			if (wrap.dataset.authSelectReady === '1') return;
+			const select = wrap.querySelector('select.auth-select');
+			if (!select) return;
+
+			wrap.dataset.authSelectReady = '1';
+			wrap.classList.add('is-enhanced');
+
+			const trigger = document.createElement('button');
+			trigger.type = 'button';
+			trigger.className = 'auth-select-trigger auth-input';
+			if (select.classList.contains('is-invalid')) trigger.classList.add('is-invalid');
+			trigger.disabled = select.disabled;
+			trigger.setAttribute('aria-haspopup', 'listbox');
+			trigger.setAttribute('aria-expanded', 'false');
+
+			const label = document.createElement('span');
+			label.className = 'auth-select-trigger-label';
+			trigger.append(label);
+
+			const menu = document.createElement('ul');
+			menu.className = 'auth-select-menu';
+			menu.hidden = true;
+			menu.setAttribute('role', 'listbox');
+
+			select.classList.add('auth-select-native');
+			select.tabIndex = -1;
+			select.setAttribute('aria-hidden', 'true');
+
+			const syncLabel = () => {
+				const option = select.selectedOptions[0];
+				label.textContent = (option && option.textContent.trim()) || 'Selecciona una especialidad';
+				label.classList.toggle('is-placeholder', !select.value);
+			};
+
+			const close = () => {
+				menu.hidden = true;
+				trigger.setAttribute('aria-expanded', 'false');
+				wrap.classList.remove('is-open');
+			};
+
+			const positionMenu = () => {
+				const rect = trigger.getBoundingClientRect();
+				const vv = window.visualViewport;
+				const viewTop = vv ? vv.offsetTop : 0;
+				const viewBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+				const gap = 6;
+				const margin = 10;
+				const spaceBelow = viewBottom - rect.bottom - gap - margin;
+				const spaceAbove = rect.top - viewTop - gap - margin;
+				const openUp = spaceBelow < 168 && spaceAbove > spaceBelow;
+				const maxH = Math.max(96, Math.min(264, openUp ? spaceAbove : spaceBelow));
+				menu.style.left = `${Math.max(margin, rect.left)}px`;
+				menu.style.width = `${rect.width}px`;
+				menu.style.maxWidth = `${rect.width}px`;
+				menu.style.maxHeight = `${maxH}px`;
+				if (openUp) {
+					menu.style.top = 'auto';
+					menu.style.bottom = `${window.innerHeight - rect.top + gap}px`;
+				} else {
+					menu.style.bottom = 'auto';
+					menu.style.top = `${rect.bottom + gap}px`;
+				}
+			};
+
+			const renderOptions = () => {
+				menu.replaceChildren();
+				Array.from(select.options).forEach((option) => {
+					const item = document.createElement('li');
+					item.className = 'auth-select-option';
+					item.setAttribute('role', 'option');
+					item.textContent = option.textContent || '';
+					const selected = option.value === select.value;
+					item.setAttribute('aria-selected', selected ? 'true' : 'false');
+					item.classList.toggle('is-selected', selected);
+					if (option.disabled) item.setAttribute('aria-disabled', 'true');
+					item.addEventListener('click', () => {
+						if (option.disabled) return;
+						select.value = option.value;
+						select.dispatchEvent(new Event('change', { bubbles: true }));
+						syncLabel();
+						close();
+						trigger.focus();
+					});
+					menu.append(item);
+				});
+			};
+
+			const open = () => {
+				if (select.disabled) return;
+				renderOptions();
+				menu.hidden = false;
+				trigger.setAttribute('aria-expanded', 'true');
+				wrap.classList.add('is-open');
+				positionMenu();
+			};
+
+			trigger.addEventListener('click', () => {
+				if (menu.hidden) open();
+				else close();
+			});
+			select.addEventListener('focus', () => trigger.focus());
+			select.addEventListener('invalid', () => {
+				trigger.classList.add('is-invalid');
+				trigger.focus();
+			});
+			document.addEventListener('pointerdown', (event) => {
+				if (!wrap.contains(event.target) && !menu.contains(event.target)) close();
+			});
+			window.addEventListener('resize', () => {
+				if (!menu.hidden) positionMenu();
+			});
+			document.addEventListener('keydown', (event) => {
+				if (event.key === 'Escape') close();
+			});
+
+			wrap.append(trigger);
+			document.body.append(menu);
+			syncLabel();
+		});
+	}
+
 	function setupRegisterForm() {
 		const form = document.querySelector('[data-register-form]');
 		if (!form || form.dataset.enhanced) return;
@@ -652,6 +769,7 @@ const currentStep = normalizeStep(step);
 		});
 
 		updateUI();
+		initAuthSelects(form);
 	}
 
 	if (typeof window !== 'undefined') {
@@ -678,7 +796,7 @@ const currentStep = normalizeStep(step);
 	}
 
 	.register-card {
-		max-width: 32rem;
+		max-width: 36rem;
 		min-height: 28rem;
 		padding: 2rem 1.65rem 1.85rem;
 		background: rgba(20, 24, 32, 0.12);
@@ -701,13 +819,19 @@ const currentStep = normalizeStep(step);
 	}
 
 	@media (min-width: 900px) {
+		:global(.auth-page[data-register-page]) {
+			overflow: hidden;
+			height: 100dvh;
+		}
+
 		:global(.auth-page[data-register-page] .auth-shell) {
 			align-items: center;
+			min-height: 0;
 		}
 	}
 
 	.register-card-header {
-		margin-bottom: 1.25rem;
+		margin-bottom: 1.85rem;
 	}
 
 	.register-card-header :global(.auth-title) {
@@ -725,15 +849,18 @@ const currentStep = normalizeStep(step);
 	}
 
 	.register-grid-2 {
-		margin-bottom: 1rem;
+		margin-bottom: 0;
+		column-gap: 1.5rem;
+		row-gap: 2rem;
 	}
 
 	.register-card :global(.auth-form-grid) {
-		gap: 1.15rem;
+		column-gap: 1.5rem;
+		row-gap: 2rem;
 	}
 
 	.register-card :global(.auth-field) {
-		gap: 0.5rem;
+		gap: 0.55rem;
 	}
 
 	.register-card :global(.auth-input) {
@@ -743,7 +870,7 @@ const currentStep = normalizeStep(step);
 	}
 
 	.register-card :global(.auth-actions) {
-		margin-top: 1.15rem;
+		margin-top: 1.35rem;
 		padding-top: 0;
 		border-top: none;
 		gap: 0.75rem;
@@ -771,7 +898,7 @@ const currentStep = normalizeStep(step);
 	}
 
 	.register-actions--primary {
-		margin-top: 1.15rem;
+		margin-top: 1.85rem;
 	}
 
 	.register-actions--primary :global(.auth-btn) {
@@ -779,7 +906,7 @@ const currentStep = normalizeStep(step);
 	}
 
 	.register-actions.auth-actions--between {
-		margin-top: 1.15rem;
+		margin-top: 1.85rem;
 		padding-top: 0;
 		border-top: none;
 		gap: 0.75rem;
@@ -805,7 +932,7 @@ const currentStep = normalizeStep(step);
 		align-items: flex-start;
 		justify-content: center;
 		gap: 0;
-		margin-bottom: 1.15rem;
+		margin-bottom: 0.9rem;
 	}
 
 	.register-step {
@@ -945,7 +1072,7 @@ const currentStep = normalizeStep(step);
 			align-items: center;
 			text-align: center;
 			gap: 0.35rem;
-			margin-bottom: 1rem;
+			margin-bottom: 1.35rem;
 		}
 
 		.register-card-header :global(.auth-title) {
@@ -976,21 +1103,41 @@ const currentStep = normalizeStep(step);
 		}
 
 		.register-grid-2 {
-			margin-bottom: 0.65rem;
+			margin-bottom: 0;
+			row-gap: 1.25rem;
+			column-gap: 0.85rem;
 		}
 
 		.register-card :global(.auth-form-grid) {
-			gap: 0.75rem;
+			row-gap: 1.25rem;
+			column-gap: 0.85rem;
 		}
 
 		.register-card :global(.auth-field) {
-			gap: 0.35rem;
+			gap: 0.45rem;
 		}
 
 		.register-card :global(.auth-input) {
 			min-height: 2.45rem;
 			padding: 0.5rem 0.8rem;
 			font-size: 0.92rem;
+		}
+
+		.register-card :global(.auth-phone-group) {
+			min-height: 2.75rem;
+			border-radius: 0.7rem;
+		}
+
+		.register-card :global(.auth-phone-prefix) {
+			padding: 0 0.7rem;
+			font-size: 0.9rem;
+		}
+
+		.register-card :global(.auth-phone-input) {
+			min-height: 2.75rem;
+			padding: 0.55rem 0.8rem;
+			font-size: 1rem;
+			border-radius: 0;
 		}
 
 		.register-card :global(.auth-field-help) {

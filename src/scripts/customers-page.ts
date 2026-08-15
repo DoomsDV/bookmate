@@ -1211,10 +1211,20 @@ class CustomerManager extends HTMLElement {
 		this.odontogramStatus.classList.toggle('hidden', !text);
 	}
 
+	private recycleOdontogramCanvas() {
+		const current = this.odontogramCanvas;
+		if (!current?.parentElement) return;
+		const next = current.cloneNode(false) as HTMLCanvasElement;
+		next.removeAttribute('data-engine');
+		current.replaceWith(next);
+		this.odontogramCanvas = next;
+	}
+
 	private disposeOdontogram3d() {
 		this.odontogram3dMountGen += 1;
 		this.odontogram3d?.dispose();
 		this.odontogram3d = null;
+		this.recycleOdontogramCanvas();
 		this.setOdontogramViewerStatus(null);
 	}
 
@@ -1254,6 +1264,7 @@ class CustomerManager extends HTMLElement {
 			}
 
 			this.odontogram3d = handle;
+			this.odontogramCanvas = handle.canvas;
 			handle.setTeeth(this.odontogramTeeth.values());
 			handle.resize();
 		} catch (error) {

@@ -171,6 +171,18 @@ import '../../styles/global.css';
 			opacity 160ms ease;
 	}
 
+	.complementos-card--media {
+		grid-template-columns: 1fr;
+	}
+
+	@media (min-width: 720px) {
+		.complementos-card--media {
+			grid-column: 1 / -1;
+			grid-template-columns: minmax(15rem, 0.95fr) minmax(16rem, 1.1fr);
+			align-items: stretch;
+		}
+	}
+
 	.complementos-card:hover {
 		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border));
 		box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
@@ -198,17 +210,47 @@ import '../../styles/global.css';
 	}
 
 	.complementos-card__preview--odontogram {
-		min-height: 11.5rem;
+		min-height: 13.5rem;
 		padding: 0;
-		background:
-			linear-gradient(180deg, rgb(0 0 0 / 0.18), rgb(0 0 0 / 0.42)),
-			url('/odontograma/odontograma.png') center / cover no-repeat;
+		background: #050505;
 	}
 
 	html[data-theme='light'] .complementos-card__preview--odontogram {
-		background:
-			linear-gradient(180deg, rgb(255 255 255 / 0.04), rgb(0 0 0 / 0.18)),
-			url('/odontograma/odontograma.png') center / cover no-repeat;
+		background: #ffffff;
+	}
+
+	.complementos-card__preview-img {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: center;
+	}
+
+	.complementos-card__preview-img--light {
+		display: none;
+	}
+
+	html[data-theme='light'] .complementos-card__preview-img--dark {
+		display: none;
+	}
+
+	html[data-theme='light'] .complementos-card__preview-img--light {
+		display: block;
+	}
+
+	@media (min-width: 720px) {
+		.complementos-card--media .complementos-card__preview {
+			min-height: 100%;
+			border-bottom: none;
+			border-right: 1px solid var(--shell-border);
+		}
+
+		.complementos-card--media .complementos-card__body {
+			align-content: center;
+			padding: 1.45rem 1.55rem 1.5rem;
+		}
 	}
 
 	.complementos-card__body {

@@ -42,7 +42,18 @@ const ADDON_COPY: Record<string, string> = {
 };
 
 const odontogramPreviewHtml = () => `
-		<div class="complementos-card__preview complementos-card__preview--odontogram" aria-hidden="true"></div>
+		<div class="complementos-card__preview complementos-card__preview--odontogram" aria-hidden="true">
+			<img
+				class="complementos-card__preview-img complementos-card__preview-img--dark"
+				src="/odontograma/odonto-dark.png"
+				alt=""
+			/>
+			<img
+				class="complementos-card__preview-img complementos-card__preview-img--light"
+				src="/odontograma/odonto-light.png"
+				alt=""
+			/>
+		</div>
 	`;
 
 const previewForAddon = (code: string) => {
@@ -219,9 +230,12 @@ export const initComplementosPage = () => {
 			`;
 		}
 
+		const preview = previewForAddon(item.code);
+		const mediaClass = preview ? ' complementos-card--media' : '';
+
 		return `
-			<article class="complementos-card${muted ? ' is-muted' : ''}" data-addon-card data-addon-code="${escapeHtml(item.code)}">
-				${previewForAddon(item.code)}
+			<article class="complementos-card${mediaClass}${muted ? ' is-muted' : ''}" data-addon-card data-addon-code="${escapeHtml(item.code)}">
+				${preview}
 				<div class="complementos-card__body">
 					<div>
 						<h2 class="complementos-card__title">${escapeHtml(item.name)}</h2>

@@ -15,6 +15,7 @@ export type Odontogram3dSelectPoint = {
 };
 
 export type Odontogram3dHandle = {
+	canvas: HTMLCanvasElement;
 	setTeeth: (teeth: Iterable<Odontogram3dTooth>) => void;
 	setSelectedTooth: (toothFdi: number | null) => void;
 	resize: () => void;
@@ -44,6 +45,7 @@ const FINDING_COLORS: Record<Odontogram3dFindingCode, number> = {
 const DEFAULT_TOOTH_COLOR = 0xf4efe6;
 const HOVER_EMISSIVE = 0x2563eb;
 const DRAG_THRESHOLD_PX = 5;
+const FALLBACK_SHADER_PRECISION = { rangeMin: 127, rangeMax: 127, precision: 23 };
 
 /**
  * Nombres exactos del GLB `dientes.glb` (32 meshes, sin subpiezas por cara).
@@ -235,6 +237,64 @@ const applyFinding = (entry: ToothEntry, finding: Odontogram3dFindingCode | null
 	entry.mesh.visible = true;
 };
 
+const replaceCanvas = (canvas: HTMLCanvasElement) => {
+	const next = canvas.cloneNode(false) as HTMLCanvasElement;
+	next.removeAttribute('data-engine');
+	canvas.replaceWith(next);
+	return next;
+};
+
+const patchShaderPrecision = (gl: WebGLRenderingContext | WebGL2RenderingContext) => {
+	const original = gl.getShaderPrecisionFormat.bind(gl);
+	gl.getShaderPrecisionFormat = (shaderType, precisionType) =>
+		original(shaderType, precisionType) ?? FALLBACK_SHADER_PRECISION;
+};
+
+const createRenderer = (canvas: HTMLCanvasElement, conservative = false) => {
+	const attributes: WebGLContextAttributes = {
+		alpha: true,
+		antialias: !conservative,
+		depth: true,
+		stencil: false,
+		premultipliedAlpha: true,
+		preserveDrawingBuffer: false,
+		powerPreference: conservative ? 'default' : 'high-performance',
+		failIfMajorPerformanceCaveat: false,
+	};
+
+	const gl = canvas.getContext('webgl2', attributes);
+	if (!gl || gl.isContextLost()) {
+		throw new Error('No se pudo crear el contexto WebGL.');
+	}
+
+	patchShaderPrecision(gl);
+
+	return new THREE.WebGLRenderer({
+		canvas,
+		context: gl,
+		antialias: Boolean(attributes.antialias),
+		alpha: true,
+		powerPreference: attributes.powerPreference,
+	});
+};
+
+const createRendererWithFallback = (inputCanvas: HTMLCanvasElement) => {
+	let canvas = inputCanvas.hasAttribute('data-engine') ? replaceCanvas(inputCanvas) : inputCanvas;
+
+	try {
+		return { renderer: createRenderer(canvas), canvas };
+	} catch (firstError) {
+		canvas = replaceCanvas(canvas);
+		try {
+			return { renderer: createRenderer(canvas, true), canvas };
+		} catch {
+			throw firstError instanceof Error
+				? firstError
+				: new Error('No se pudo inicializar el visor 3D.');
+		}
+	}
+};
+
 const fitCameraToObject = (
 	camera: THREE.PerspectiveCamera,
 	controls: OrbitControls,
@@ -261,15 +321,10 @@ const fitCameraToObject = (
 export async function mountOdontogram3d(
 	options: MountOdontogram3dOptions
 ): Promise<Odontogram3dHandle> {
-	const { canvas, onToothSelect, onStatus } = options;
+	const { onToothSelect, onStatus } = options;
 	onStatus?.('Cargando modelo 3D…');
 
-	const renderer = new THREE.WebGLRenderer({
-		canvas,
-		antialias: true,
-		alpha: true,
-		powerPreference: 'high-performance',
-	});
+	const { renderer, canvas } = createRendererWithFallback(options.canvas);
 	renderer.setClearColor(0x000000, 0);
 	renderer.outputColorSpace = THREE.SRGBColorSpace;
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -462,7 +517,6 @@ export async function mountOdontogram3d(
 		});
 		scene.clear();
 		renderer.dispose();
-		renderer.forceContextLoss();
 		onStatus?.(null);
 	};
 
@@ -476,7 +530,14 @@ export async function mountOdontogram3d(
 	}
 
 	if (disposed) {
-		return { setTeeth() {}, setSelectedTooth() {}, resize() {}, setAutoRotate() {}, dispose() {} };
+		return {
+			canvas,
+			setTeeth() {},
+			setSelectedTooth() {},
+			resize() {},
+			setAutoRotate() {},
+			dispose() {},
+		};
 	}
 
 	root = gltf.scene;
@@ -538,5 +599,5 @@ export async function mountOdontogram3d(
 		if (hovered) applyHighlight(hovered);
 	};
 
-	return { setTeeth, setSelectedTooth, resize, setAutoRotate, dispose };
+	return { canvas, setTeeth, setSelectedTooth, resize, setAutoRotate, dispose };
 }

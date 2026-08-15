@@ -190,11 +190,132 @@ const backLabel = fromMultiOrgSelection ? 'Elegir otra organización' : 'Volver 
 </section>
 
 <script is:inline>
+	function initAuthSelects(root) {
+		const scope = root && root.querySelectorAll ? root : document;
+		scope.querySelectorAll('.auth-select-wrap').forEach((wrap) => {
+			if (wrap.dataset.authSelectReady === '1') return;
+			const select = wrap.querySelector('select.auth-select');
+			if (!select) return;
+
+			wrap.dataset.authSelectReady = '1';
+			wrap.classList.add('is-enhanced');
+
+			const trigger = document.createElement('button');
+			trigger.type = 'button';
+			trigger.className = 'auth-select-trigger auth-input';
+			if (select.classList.contains('is-invalid')) trigger.classList.add('is-invalid');
+			trigger.disabled = select.disabled;
+			trigger.setAttribute('aria-haspopup', 'listbox');
+			trigger.setAttribute('aria-expanded', 'false');
+
+			const label = document.createElement('span');
+			label.className = 'auth-select-trigger-label';
+			trigger.append(label);
+
+			const menu = document.createElement('ul');
+			menu.className = 'auth-select-menu';
+			menu.hidden = true;
+			menu.setAttribute('role', 'listbox');
+
+			select.classList.add('auth-select-native');
+			select.tabIndex = -1;
+			select.setAttribute('aria-hidden', 'true');
+
+			const syncLabel = () => {
+				const option = select.selectedOptions[0];
+				label.textContent = (option && option.textContent.trim()) || 'Selecciona una especialidad';
+				label.classList.toggle('is-placeholder', !select.value);
+			};
+
+			const close = () => {
+				menu.hidden = true;
+				trigger.setAttribute('aria-expanded', 'false');
+				wrap.classList.remove('is-open');
+			};
+
+			const positionMenu = () => {
+				const rect = trigger.getBoundingClientRect();
+				const vv = window.visualViewport;
+				const viewTop = vv ? vv.offsetTop : 0;
+				const viewBottom = vv ? vv.offsetTop + vv.height : window.innerHeight;
+				const gap = 6;
+				const margin = 10;
+				const spaceBelow = viewBottom - rect.bottom - gap - margin;
+				const spaceAbove = rect.top - viewTop - gap - margin;
+				const openUp = spaceBelow < 168 && spaceAbove > spaceBelow;
+				const maxH = Math.max(96, Math.min(264, openUp ? spaceAbove : spaceBelow));
+				menu.style.left = `${Math.max(margin, rect.left)}px`;
+				menu.style.width = `${rect.width}px`;
+				menu.style.maxWidth = `${rect.width}px`;
+				menu.style.maxHeight = `${maxH}px`;
+				if (openUp) {
+					menu.style.top = 'auto';
+					menu.style.bottom = `${window.innerHeight - rect.top + gap}px`;
+				} else {
+					menu.style.bottom = 'auto';
+					menu.style.top = `${rect.bottom + gap}px`;
+				}
+			};
+
+			const renderOptions = () => {
+				menu.replaceChildren();
+				Array.from(select.options).forEach((option) => {
+					const item = document.createElement('li');
+					item.className = 'auth-select-option';
+					item.setAttribute('role', 'option');
+					item.textContent = option.textContent || '';
+					const selected = option.value === select.value;
+					item.setAttribute('aria-selected', selected ? 'true' : 'false');
+					item.classList.toggle('is-selected', selected);
+					if (option.disabled) item.setAttribute('aria-disabled', 'true');
+					item.addEventListener('click', () => {
+						if (option.disabled) return;
+						select.value = option.value;
+						select.dispatchEvent(new Event('change', { bubbles: true }));
+						syncLabel();
+						close();
+						trigger.focus();
+					});
+					menu.append(item);
+				});
+			};
+
+			const open = () => {
+				if (select.disabled) return;
+				renderOptions();
+				menu.hidden = false;
+				trigger.setAttribute('aria-expanded', 'true');
+				wrap.classList.add('is-open');
+				positionMenu();
+			};
+
+			trigger.addEventListener('click', () => {
+				if (menu.hidden) open();
+				else close();
+			});
+			select.addEventListener('focus', () => trigger.focus());
+			document.addEventListener('pointerdown', (event) => {
+				if (!wrap.contains(event.target) && !menu.contains(event.target)) close();
+			});
+			window.addEventListener('resize', () => {
+				if (!menu.hidden) positionMenu();
+			});
+			document.addEventListener('keydown', (event) => {
+				if (event.key === 'Escape') close();
+			});
+
+			wrap.append(trigger);
+			document.body.append(menu);
+			syncLabel();
+		});
+	}
+
 	function setupCreateOrganizationForm() {
 		const root = document.querySelector('[data-create-org-root]');
 		const form = root?.querySelector('[data-create-org-form]');
 		if (!form || form.dataset.enhanced) return;
 		form.dataset.enhanced = 'true';
+		initAuthSelects(form);
 
 		const errorBanner = root.querySelector('[data-error-banner]');
 		const errorText = root.querySelector('[data-error-text]');
