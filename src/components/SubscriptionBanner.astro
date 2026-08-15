@@ -54,6 +54,7 @@ const { isAdmin = false } = Astro.props;
 
 	interface SubscriptionState {
 		features: string[];
+		addonFeatures: string[];
 		effectiveStatus: EffectiveStatus;
 		canWrite: boolean;
 		planName: string;
@@ -79,6 +80,7 @@ const { isAdmin = false } = Astro.props;
 		interface Window {
 			HaselSubscription?: SubscriptionState & {
 				hasFeature: (code: string) => boolean;
+				hasAddon: (code: string) => boolean;
 			};
 			[SUB_FETCH_GLOBAL_KEY]?: SubscriptionFetchState;
 		}
@@ -136,6 +138,7 @@ const { isAdmin = false } = Astro.props;
 			const plan = data.plan ?? {};
 			const state: SubscriptionState = {
 				features: Array.isArray(data.features) ? data.features : [],
+				addonFeatures: Array.isArray(data.addon_features) ? data.addon_features : [],
 				effectiveStatus: (sub.effective_status || 'NONE') as EffectiveStatus,
 				canWrite: sub.can_write === true || sub.can_write === 1,
 				planName: String(plan.name || plan.code || 'Plan'),
@@ -147,7 +150,9 @@ const { isAdmin = false } = Astro.props;
 
 			window.HaselSubscription = {
 				...state,
-				hasFeature: (code: string) => state.features.includes(code),
+				hasFeature: (code: string) =>
+					state.features.includes(code) || state.addonFeatures.includes(code),
+				hasAddon: (code: string) => state.addonFeatures.includes(code),
 			};
 			document.dispatchEvent(new CustomEvent('hasel:subscription', { detail: window.HaselSubscription }));
 
@@ -172,8 +177,12 @@ const { isAdmin = false } = Astro.props;
 
 		private applyEntitlementGates(state: SubscriptionState) {
 			document.querySelectorAll<HTMLElement>('[data-requires-feature]').forEach((el) => {
+				if (el.hasAttribute('data-requires-addon')) return;
 				const code = el.getAttribute('data-requires-feature') || '';
-				if (code && !state.features.includes(code)) {
+				const entitled =
+					code &&
+					(state.features.includes(code) || state.addonFeatures.includes(code));
+				if (code && !entitled) {
 					el.setAttribute('data-requires-feature-hidden', '');
 				} else {
 					el.removeAttribute('data-requires-feature-hidden');

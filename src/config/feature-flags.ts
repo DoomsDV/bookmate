@@ -34,6 +34,16 @@ export const PLAN_FEATURES = {
 export type PlanFeature = (typeof PLAN_FEATURES)[keyof typeof PLAN_FEATURES];
 
 /**
+ * Features de complementos (addons) — no forman parte del plan Base/Premium.
+ * Fuente: `GET /workspace/subscription` → `data.addon_features` / org_addon ACTIVE.
+ */
+export const ADDON_FEATURES = {
+	ODONTOGRAM_3D: 'ODONTOGRAM_3D',
+} as const;
+
+export type AddonFeature = (typeof ADDON_FEATURES)[keyof typeof ADDON_FEATURES];
+
+/**
  * Alineación flag de UI → entitlement de plan del backend.
  * Permite migrar (Fase 5) los gates globales `FEATURE_FLAGS` a entitlements reales
  * sin renombrar los flags existentes del frontend.

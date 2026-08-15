@@ -40,6 +40,24 @@ const getSiteUrl = () => {
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url));
 
+/** Solo en `astro dev`: alias al shim jsx-dev-runtime (no en build prod). */
+const reactJsxDevRuntimeAlias = () => ({
+  name: 'hasel-react-jsx-dev-runtime-alias',
+  apply: 'serve',
+  config() {
+    return {
+      resolve: {
+        alias: {
+          'react/jsx-dev-runtime': path.resolve(
+            projectRoot,
+            'vite-shims/react-jsx-dev-runtime.js',
+          ),
+        },
+      },
+    };
+  },
+});
+
 // https://astro.build/config
 export default defineConfig({
   // 2. Le pasamos la URL dinámica a Astro
@@ -101,6 +119,7 @@ export default defineConfig({
 
   vite: {
     plugins: [
+      reactJsxDevRuntimeAlias(),
       tailwindcss(),
       ...(visualizerPlugin ? [visualizerPlugin] : []),
     ],
@@ -108,6 +127,7 @@ export default defineConfig({
       alias: {
         '@': path.resolve(projectRoot, 'src'),
       },
+      dedupe: ['react', 'react-dom'],
     },
     // MapLibre v6 is ESM-only; keep it out of the dep optimizer so the worker
     // sibling is not rewritten to a broken `/node_modules/.vite/deps/*.mjs`
@@ -124,6 +144,7 @@ export default defineConfig({
         // "does not provide an export named 'createRoot'".
         'react',
         'react/jsx-runtime',
+        // Prebundles the aliased shim in `astro dev`, not React's CJS stub.
         'react/jsx-dev-runtime',
         'react-dom',
         'react-dom/client',

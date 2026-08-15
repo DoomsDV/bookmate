@@ -1,0 +1,442 @@
+---
+import SideNav from '../../components/SideNav.astro';
+import TopBar from '../../components/TopBar.astro';
+import Layout from '../../layouts/Layout.astro';
+import { panelPageTitle } from '../../lib/panel-page-title';
+import '../../styles/global.css';
+---
+
+<Layout pageTitle={panelPageTitle('Complementos')}>
+	<complementos-store>
+		<div class="min-h-screen bg-(--page-background)">
+			<div
+				class="app-shell grid min-h-screen overflow-hidden bg-transparent"
+				data-app-shell
+				data-sidebar-state="expanded"
+			>
+				<SideNav currentPath={Astro.url.pathname} />
+
+				<div class="grid min-h-full grid-rows-[auto_1fr]">
+					<TopBar />
+
+					<main class="px-4 py-4 sm:px-6 sm:py-6">
+						<section class="grid gap-4 sm:gap-5">
+							<header class="grid gap-2">
+								<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
+									Complementos
+								</h1>
+								<p
+									class="m-0 max-w-2xl text-[0.92rem] leading-snug text-(--on-surface-variant)"
+									data-complementos-lead
+								>
+									Módulos extras para tu clínica. Activálos cuando los necesites.
+								</p>
+							</header>
+
+							<div
+								class="complementos-banner"
+								data-complementos-banner
+								role="status"
+							>
+								<span class="material-symbols-rounded complementos-banner__icon" aria-hidden="true">
+									verified
+								</span>
+								<div class="complementos-banner__copy">
+									<p class="complementos-banner__kicker">Acceso temprano</p>
+									<p class="complementos-banner__text">
+										Activación gratuita. Te avisaremos antes de realizar cualquier cargo futuro.
+									</p>
+								</div>
+							</div>
+
+							<div
+								class="hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.9rem] font-semibold text-(--on-surface-variant)"
+								data-complementos-error
+								role="alert"
+							></div>
+
+							<div
+								class="grid place-items-center gap-3 rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-6 py-14"
+								data-complementos-loading
+							>
+								<span class="material-symbols-rounded animate-pulse text-[2rem] text-(--on-surface-variant)" aria-hidden="true">
+									progress_activity
+								</span>
+								<p class="m-0 text-[0.9rem] font-semibold text-(--on-surface-variant)">Cargando complementos…</p>
+							</div>
+
+							<div
+								class="hidden grid place-items-center gap-2 rounded-2xl border border-dashed border-(--shell-border) bg-(--surface-bright) px-6 py-14 text-center"
+								data-complementos-empty
+							>
+								<span class="material-symbols-rounded text-[2rem] text-(--on-surface-variant)" aria-hidden="true">
+									extension
+								</span>
+								<p class="m-0 text-[0.95rem] font-bold text-(--on-surface)">Todavía no hay complementos</p>
+								<p class="m-0 max-w-sm text-[0.85rem] font-medium text-(--on-surface-variant)">
+									Cuando haya módulos disponibles, van a aparecer acá.
+								</p>
+							</div>
+
+							<div class="hidden grid gap-4 sm:grid-cols-2" data-complementos-grid></div>
+						</section>
+					</main>
+				</div>
+			</div>
+		</div>
+	</complementos-store>
+</Layout>
+
+<style is:global>
+	/* is:global: las tarjetas se inyectan con JS y no reciben el scope de Astro */
+	.complementos-banner {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.85rem;
+		border-radius: 1.15rem;
+		border: 1px solid color-mix(in srgb, #34d399 55%, transparent);
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, #10b981 22%, var(--surface-bright)) 0%,
+			color-mix(in srgb, #0ea5e9 10%, var(--surface-bright)) 100%
+		);
+		box-shadow:
+			inset 0 1px 0 color-mix(in srgb, #6ee7b7 28%, transparent),
+			0 8px 24px color-mix(in srgb, #10b981 12%, transparent);
+		padding: 0.95rem 1.1rem;
+		color: color-mix(in srgb, var(--on-surface) 88%, #6ee7b7 12%);
+	}
+
+	.complementos-banner.is-hidden {
+		display: none;
+	}
+
+	.complementos-banner__icon {
+		flex-shrink: 0;
+		margin-top: 0.08rem;
+		font-size: 1.45rem;
+		line-height: 1;
+		color: #34d399;
+	}
+
+	.complementos-banner__copy {
+		display: grid;
+		gap: 0.18rem;
+		min-width: 0;
+	}
+
+	.complementos-banner__kicker {
+		margin: 0;
+		font-size: 0.72rem;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: #6ee7b7;
+	}
+
+	.complementos-banner__text {
+		margin: 0;
+		font-size: 0.92rem;
+		font-weight: 650;
+		line-height: 1.35;
+		color: color-mix(in srgb, var(--on-surface) 92%, #a7f3d0 8%);
+	}
+
+	html[data-theme='light'] .complementos-banner {
+		background: linear-gradient(135deg, #ecfdf5 0%, #e0f2fe 100%);
+		border-color: color-mix(in srgb, #10b981 38%, #a7f3d0);
+		color: #065f46;
+		box-shadow: none;
+	}
+
+	html[data-theme='light'] .complementos-banner__icon,
+	html[data-theme='light'] .complementos-banner__kicker {
+		color: #047857;
+	}
+
+	html[data-theme='light'] .complementos-banner__text {
+		color: #064e3b;
+	}
+
+	.complementos-card {
+		display: grid;
+		overflow: hidden;
+		align-content: start;
+		border-radius: 1.25rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright, #fff);
+		transition:
+			border-color 160ms ease,
+			box-shadow 160ms ease,
+			opacity 160ms ease;
+	}
+
+	.complementos-card:hover {
+		border-color: color-mix(in srgb, var(--primary) 28%, var(--shell-border));
+		box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+	}
+
+	.complementos-card.is-muted {
+		opacity: 0.78;
+		box-shadow: none;
+	}
+
+	.complementos-card.is-muted:hover {
+		border-color: var(--shell-border);
+		box-shadow: none;
+	}
+
+	.complementos-card__preview {
+		position: relative;
+		padding: 1rem 1.1rem 0.85rem;
+		background:
+			radial-gradient(120% 80% at 50% 0%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 62%),
+			color-mix(in srgb, var(--surface-container-high, #1a1a1c) 88%, var(--surface-bright));
+		border-bottom: 1px solid var(--shell-border);
+		overflow: hidden;
+	}
+
+	.complementos-odonto {
+		display: grid;
+		gap: 0.55rem;
+		padding: 0.7rem 0.75rem;
+		border-radius: 0.95rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 80%, var(--primary) 20%);
+		background: color-mix(in srgb, var(--surface-bright) 82%, black 18%);
+		box-shadow:
+			0 12px 28px rgba(0, 0, 0, 0.18),
+			inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		transform: perspective(900px) rotateX(9deg);
+		transform-origin: center top;
+	}
+
+	.complementos-odonto__arch {
+		display: grid;
+		grid-template-columns: repeat(16, minmax(0, 1fr));
+		gap: 0.16rem;
+	}
+
+	.complementos-odonto__tooth {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		min-height: 1.55rem;
+		border-radius: 0.38rem;
+		border: 1px solid color-mix(in srgb, var(--shell-border) 85%, transparent);
+		background: color-mix(in srgb, var(--surface-container-low, #121214) 40%, var(--surface-bright) 60%);
+		color: color-mix(in srgb, var(--on-surface) 78%, var(--on-surface-variant) 22%);
+		font-size: 0.52rem;
+		font-weight: 800;
+		line-height: 1;
+		animation: complementos-odonto-pulse 4.8s ease-in-out infinite;
+	}
+
+	.complementos-odonto__tooth.is-caries {
+		border-color: color-mix(in srgb, #ef4444 55%, var(--shell-border));
+		background: color-mix(in srgb, #ef4444 22%, var(--surface-bright));
+		color: #fecaca;
+		animation-delay: 0.4s;
+	}
+
+	.complementos-odonto__tooth.is-restoration {
+		border-color: color-mix(in srgb, #3b82f6 55%, var(--shell-border));
+		background: color-mix(in srgb, #3b82f6 24%, var(--surface-bright));
+		color: #bfdbfe;
+		animation-delay: 1.1s;
+	}
+
+	.complementos-odonto__tooth.is-extraction {
+		border-color: color-mix(in srgb, #737373 55%, var(--shell-border));
+		background: color-mix(in srgb, #171717 28%, var(--surface-bright));
+		color: #d4d4d4;
+		animation-delay: 1.8s;
+	}
+
+	.complementos-odonto__tooth.is-crown {
+		border-color: color-mix(in srgb, #eab308 60%, var(--shell-border));
+		background: color-mix(in srgb, #eab308 24%, var(--surface-bright));
+		color: #fde68a;
+		animation-delay: 2.4s;
+	}
+
+	@keyframes complementos-odonto-pulse {
+		0%,
+		70%,
+		100% {
+			filter: brightness(1);
+		}
+		80% {
+			filter: brightness(1.18);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.complementos-odonto__tooth {
+			animation: none;
+		}
+	}
+
+	html[data-theme='light'] .complementos-odonto {
+		background: #fff;
+		box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+	}
+
+	html[data-theme='light'] .complementos-odonto__tooth {
+		color: #334155;
+	}
+
+	html[data-theme='light'] .complementos-odonto__tooth.is-caries {
+		color: #b91c1c;
+	}
+
+	html[data-theme='light'] .complementos-odonto__tooth.is-restoration {
+		color: #1d4ed8;
+	}
+
+	html[data-theme='light'] .complementos-odonto__tooth.is-extraction {
+		color: #171717;
+	}
+
+	html[data-theme='light'] .complementos-odonto__tooth.is-crown {
+		color: #a16207;
+	}
+
+	.complementos-card__body {
+		display: grid;
+		gap: 1.05rem;
+		padding: 1.2rem 1.3rem 1.3rem;
+	}
+
+	.complementos-card__title {
+		margin: 0;
+		font-size: 1.12rem;
+		font-weight: 800;
+		line-height: 1.25;
+		color: var(--on-surface);
+	}
+
+	.complementos-card__desc {
+		margin: 0.35rem 0 0;
+		font-size: 0.9rem;
+		font-weight: 550;
+		line-height: 1.45;
+		color: color-mix(in srgb, var(--on-surface) 74%, var(--on-surface-variant) 26%);
+	}
+
+	.complementos-card__price-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.55rem 0.75rem;
+	}
+
+	.complementos-card__price {
+		font-size: 1.45rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		color: var(--on-surface);
+		line-height: 1;
+	}
+
+	.complementos-card__price.is-struck {
+		font-size: 1.05rem;
+		font-weight: 700;
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, transparent);
+		text-decoration: line-through;
+		text-decoration-thickness: 1.5px;
+	}
+
+	.complementos-card__free {
+		font-size: 1.35rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		line-height: 1;
+		color: #34d399;
+	}
+
+	.complementos-card__period {
+		font-size: 0.8rem;
+		font-weight: 650;
+		color: color-mix(in srgb, var(--on-surface) 62%, var(--on-surface-variant) 38%);
+	}
+
+	.complementos-card__hint {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: color-mix(in srgb, var(--on-surface) 62%, var(--on-surface-variant) 38%);
+	}
+
+	.complementos-card__badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.3rem;
+		border-radius: 999px;
+		padding: 0.28rem 0.65rem;
+		font-size: 0.72rem;
+		font-weight: 750;
+		letter-spacing: 0.02em;
+		background: color-mix(in srgb, #10b981 14%, transparent);
+		color: #34d399;
+	}
+
+	html[data-theme='light'] .complementos-card__badge {
+		color: #059669;
+	}
+
+	html[data-theme='light'] .complementos-card__free {
+		color: #059669;
+	}
+
+	.complementos-btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		min-height: 2.65rem;
+		border-radius: 0.95rem;
+		padding: 0.65rem 1.1rem;
+		font-size: 0.9rem;
+		font-weight: 750;
+		border: none;
+		cursor: pointer;
+		transition:
+			background 140ms ease,
+			color 140ms ease,
+			opacity 140ms ease;
+	}
+
+	.complementos-btn:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
+	}
+
+	.complementos-btn--primary {
+		background: var(--primary);
+		color: var(--on-primary, #fff);
+	}
+
+	.complementos-btn--primary:hover:not(:disabled) {
+		filter: brightness(1.05);
+	}
+
+	.complementos-btn--soft {
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+	}
+
+	.complementos-btn--soft:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--primary) 18%, transparent);
+	}
+</style>
+
+<script>
+	import { initComplementosPage } from '../../scripts/complementos-page';
+
+	const boot = () => {
+		initComplementosPage();
+	};
+
+	boot();
+	document.addEventListener('astro:page-load', boot);
+</script>

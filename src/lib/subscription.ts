@@ -123,6 +123,8 @@ export interface SubscriptionData {
 		limit_bytes: number;
 	};
 	features: string[];
+	addon_features: string[];
+	addons_billing_live: boolean;
 }
 
 export class SubscriptionApiError extends Error {
@@ -200,6 +202,8 @@ const normalizeSubscription = (value: unknown): SubscriptionData | null => {
 			limit_bytes: toNumber(storage.limit_bytes, 0),
 		},
 		features: toStringArray(source.features),
+		addon_features: toStringArray(source.addon_features),
+		addons_billing_live: toBool(source.addons_billing_live),
 	};
 };
 

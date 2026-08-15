@@ -57,6 +57,7 @@ const prefetchHoverPaths = new Set([
 	"/panel/perfil-publico",
 	"/panel/specialties",
 	"/panel/professionals",
+	"/panel/complementos",
 ]);
 
 const getPrefetchMode = (item: NavItem) =>
@@ -76,6 +77,7 @@ const primaryItems: NavItem[] = [
 	{ label: "Servicios", icon: "inventory_2", href: "/panel/services" },
 	{ label: "Sucursales", icon: "storefront", href: "/panel/locations" },
 	{ label: "Perfil Público", icon: "public", href: "/panel/perfil-publico" },
+	{ label: "Complementos", icon: "extension", href: "/panel/complementos" },
 ];
 
 const teamItems: NavItem[] = [
@@ -520,33 +522,35 @@ if (showPlanFooter) {
 
 		{
 			showPlanFooter ? (
-				<a
-					href="/panel/plan"
-					data-sidebar-item
-					data-sidebar-footer
-					class:list={[
-						"sidebar-nav-link sidebar-nav-link--plan mt-auto flex items-center gap-3 rounded-[1rem] px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
-						planFooterActive
-							? "is-active bg-(--primary-container) text-(--primary) font-bold"
-							: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
-					]}
-					aria-label="Ver plan y facturación"
-				>
-					<span class="sidebar-nav-icon material-symbols-rounded shrink-0 text-[1.25rem] leading-none" aria-hidden="true">
-						workspace_premium
-					</span>
-					<span class="min-w-0 flex-1" data-sidebar-label>
-						<span class="sidebar-nav-label block truncate text-[0.9rem] font-bold" data-plan-label>
-							{planDisplayName}
+				<div class="mt-auto grid gap-1" data-sidebar-account-footer>
+					<a
+						href="/panel/plan"
+						data-sidebar-item
+						data-sidebar-footer
+						class:list={[
+							"sidebar-nav-link sidebar-nav-link--plan flex items-center gap-3 rounded-[1rem] px-4 py-2.5 text-[0.9rem] font-semibold no-underline transition",
+							planFooterActive
+								? "is-active bg-(--primary-container) text-(--primary) font-bold"
+								: "text-(--on-surface) font-semibold hover:bg-(--sidebar-hover)",
+						]}
+						aria-label="Ver plan y facturación"
+					>
+						<span class="sidebar-nav-icon material-symbols-rounded shrink-0 text-[1.25rem] leading-none" aria-hidden="true">
+							workspace_premium
 						</span>
-						<span class="block text-[0.75rem] font-medium text-(--on-surface-variant)">
-							Ver plan y facturación
+						<span class="min-w-0 flex-1" data-sidebar-label>
+							<span class="sidebar-nav-label block truncate text-[0.9rem] font-bold" data-plan-label>
+								{planDisplayName}
+							</span>
+							<span class="block text-[0.75rem] font-medium text-(--on-surface-variant)">
+								Ver plan y facturación
+							</span>
 						</span>
-					</span>
-					<span class="material-symbols-rounded shrink-0 text-[1.05rem] text-(--on-surface-variant)" data-sidebar-trailing aria-hidden="true">
-						chevron_right
-					</span>
-				</a>
+						<span class="material-symbols-rounded shrink-0 text-[1.05rem] text-(--on-surface-variant)" data-sidebar-trailing aria-hidden="true">
+							chevron_right
+						</span>
+					</a>
+				</div>
 			) : null
 		}
 	</div>
