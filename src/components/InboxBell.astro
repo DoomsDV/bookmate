@@ -55,6 +55,24 @@
 </dialog>
 
 <style is:global>
+	.inbox-bell {
+		background: transparent;
+		border: 0;
+		padding: 0;
+	}
+
+	.inbox-bell > summary.topbar-action-btn {
+		appearance: none;
+		-webkit-appearance: none;
+		background: var(--control-surface);
+		border: 1px solid var(--shell-border);
+		color: var(--on-surface-variant);
+	}
+
+	.inbox-bell > summary.topbar-action-btn:hover {
+		background: var(--control-surface-strong);
+	}
+
 	.inbox-bell summary::-webkit-details-marker,
 	.inbox-bell summary::marker {
 		display: none;

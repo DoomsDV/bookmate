@@ -9,13 +9,21 @@ const isAuthRoute = (pathname = window.location.pathname) =>
  * Registro PWA sin virtual:pwa-register (compatible con Astro 7 / Vite 8).
  * Usa los mismos paths que genera @vite-pwa/astro.
  */
+const isJavaScriptResponse = (response: Response) => {
+	const type = String(response.headers.get('content-type') || '').toLowerCase();
+	return response.ok && (type.includes('javascript') || type.includes('ecmascript'));
+};
+
 export const initHaselPwaRegister = () => {
 	if (!('serviceWorker' in navigator)) return;
+	// En `astro dev` no hay /dev-sw.js salvo devOptions.enabled; el SSR
+	// devuelve HTML y Chrome loguea "unsupported MIME type ('text/html')".
+	if (import.meta.env.DEV) return;
 
-	const swUrl = import.meta.env.DEV ? '/dev-sw.js?dev-sw' : '/sw.js';
+	const swUrl = '/sw.js';
 	const wb = new Workbox(swUrl, {
 		scope: '/',
-		type: import.meta.env.DEV ? 'classic' : 'module',
+		type: 'module',
 	});
 
 	let shouldReload = false;
@@ -55,7 +63,13 @@ export const initHaselPwaRegister = () => {
 	document.addEventListener('astro:after-swap', flushPendingUpdate);
 	document.addEventListener('astro:page-load', flushPendingUpdate);
 
-	void wb.register().catch(() => {
-		/* SW no disponible en este entorno */
-	});
+	void (async () => {
+		try {
+			const probe = await fetch(swUrl, { method: 'GET', cache: 'no-store' });
+			if (!isJavaScriptResponse(probe)) return;
+			await wb.register();
+		} catch {
+			/* SW no disponible en este entorno */
+		}
+	})();
 };
