@@ -384,50 +384,35 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 						{locations.length ? (
 							<div className="hub-locations-grid" aria-label="Sucursales">
 								{locations.map((loc) => (
-									<article className="hub-location-card" key={loc.id}>
-										<div className="hub-location-card__map-frame">
-											<div className="hub-location-card__map hub-location-card__map--empty">
-												<span className="material-symbols-rounded" aria-hidden="true">
+									<article className="hub-pro-card" key={loc.id}>
+										<div className="hub-pro-card__main">
+											<div className="hub-pro-card__avatar hub-pro-card__avatar--ph">
+												<span
+													className="material-symbols-rounded hub-pro-card__avatar-icon"
+													aria-hidden="true"
+												>
 													location_on
 												</span>
 											</div>
-										</div>
-										<div className="hub-location-card__body">
-											<div className="hub-location-card__info">
-												<h3 className="hub-location-card__name">{loc.name}</h3>
+											<div className="hub-pro-card__text">
+												<h3 className="hub-pro-card__name">{loc.name}</h3>
 												{loc.address ? (
-													<p className="hub-location-card__address">{loc.address}</p>
+													<p className="hub-pro-card__specialty">{loc.address}</p>
 												) : null}
-												<p className="hub-location-card__meta">
+												<p className="hub-pro-card__hint">
 													<span className="material-symbols-rounded" aria-hidden="true">
 														groups
 													</span>
 													Equipo
 												</p>
 											</div>
-											<div className="hub-location-card__actions">
-												<button
-													type="button"
-													className="hub-location-card__map-btn"
-													tabIndex={-1}
-													aria-hidden="true"
-												>
-													<span className="material-symbols-rounded" aria-hidden="true">
-														map
-													</span>
-													<span className="hub-location-card__map-btn-text">Ver mapa</span>
-												</button>
-												<span
-													className="hub-location-card__action"
-													aria-hidden="true"
-													tabIndex={-1}
-												>
-													<span className="material-symbols-rounded" aria-hidden="true">
-														group
-													</span>
-												</span>
-											</div>
 										</div>
+										<span className="hub-pro-card__btn" aria-hidden="true">
+											<span className="material-symbols-rounded" aria-hidden="true">
+												map
+											</span>
+											Ver mapa
+										</span>
 									</article>
 								))}
 							</div>

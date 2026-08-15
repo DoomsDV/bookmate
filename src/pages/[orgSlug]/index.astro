@@ -7,7 +7,6 @@ import { formatBusinessHoursForDisplay } from '../../lib/business-hours';
 import { PublicBookingApiError, getPublicProfileSpecialtyLabel } from '../../lib/public-booking';
 import { buildGoogleMapsUrl } from '../../lib/public-booking-locations';
 import {
-	appendLocIdToBookingPath,
 	getPublicOrgHubWithOrds,
 	type PublicOrgHub,
 } from '../../lib/public-org-hub';
@@ -17,12 +16,6 @@ import {
 	resolvePublicSiteOrigin,
 } from '../../lib/public-profile-url';
 import { isReservedOrgSlug } from '../../lib/reserved-org-slugs';
-import {
-	buildStadiaStaticMapUrl,
-	HUB_LOCATION_CARD_COVER_OPTIONS,
-	renderBrandMapMarkerOverlay,
-	resolveMapThemeFromStorage,
-} from '../../lib/maplibre-static';
 import '../../styles/global.css';
 import '../../styles/public-org-hub.css';
 
@@ -53,7 +46,6 @@ const whatsappHref = (phone: string) => {
 };
 
 const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
-const mapTheme = resolveMapThemeFromStorage(Astro.cookies.get('bookmate-theme')?.value);
 
 let hub: PublicOrgHub | null = null;
 let loadError = '';
@@ -623,25 +615,22 @@ const serializedProfessionals = professionals.length
 											{ length: Math.min(3, Math.max(2, locations.length)) },
 											(_, i) => (
 												<article
-													class="hub-location-card hub-location-card--skeleton"
+													class="hub-pro-card hub-pro-card--skeleton"
 													aria-hidden="true"
 												>
-													<div class="hub-location-card__map-frame">
-														<div class="hub-skel hub-location-card__map"></div>
-													</div>
-													<div class="hub-location-card__body">
-														<div class="hub-location-card__info">
+													<div class="hub-pro-card__main">
+														<span class="hub-pro-card__avatar hub-skel-circle">
+															<span class="hub-skel hub-skel-circle hub-pro-card__avatar-face"></span>
+														</span>
+														<div class="hub-pro-card__text">
 															<span
 																class={`hub-skel hub-skel-line hub-skel-line--title${i % 2 === 1 ? ' hub-skel-line--short' : ''}`}
 															></span>
 															<span class="hub-skel hub-skel-line hub-skel-line--sub"></span>
 															<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
 														</div>
-														<div class="hub-location-card__actions">
-															<span class="hub-skel hub-skel-pill hub-location-card__map-btn-skel"></span>
-															<span class="hub-skel hub-skel-circle"></span>
-														</div>
 													</div>
+													<span class="hub-skel hub-pro-card__btn-skel"></span>
 												</article>
 											)
 										)}
@@ -653,157 +642,62 @@ const serializedProfessionals = professionals.length
 											const longitude = Number(loc.longitude);
 											const hasCoords =
 												Number.isFinite(latitude) && Number.isFinite(longitude);
-											const mapPreviewUrl = hasCoords
-												? buildStadiaStaticMapUrl(
-														stadiaMapsKey,
-														{ lat: latitude, lng: longitude },
-														{
-															theme: mapTheme,
-															...HUB_LOCATION_CARD_COVER_OPTIONS,
-														}
-													)
-												: null;
 											const prosHere = professionals.filter((pro) =>
 												pro.location_ids.includes(loc.id_location)
 											);
 											const canFilterHere = prosHere.length > 0;
-											const reserveHereHref =
-												prosHere.length === 1
-													? appendLocIdToBookingPath(
-															prosHere[0].booking_path,
-															loc.id_location
-														)
-													: '#equipo';
 											const prosMeta =
 												prosHere.length === 0
-													? 'Sin profesionales con agenda'
+													? 'Sin profesionales'
 													: prosHere.length === 1
 														? '1 profesional'
 														: `${prosHere.length} profesionales`;
-											const actionLabel =
-												prosHere.length === 1
-													? 'Reservar en esta sucursal'
-													: 'Ver profesionales';
-											const actionIcon = prosHere.length === 1 ? 'event' : 'group';
 											return (
 												<article
-													class="hub-location-card"
+													class="hub-pro-card"
 													data-hub-location-card
+													data-hub-view-pros-at-location={canFilterHere ? '' : undefined}
+													data-loc-id={canFilterHere ? String(loc.id_location) : undefined}
+													data-loc-name={canFilterHere ? loc.name : undefined}
+													title={canFilterHere ? `Ver profesionales de ${loc.name}` : undefined}
 												>
-													<div class="hub-location-card__map-frame">
-														{mapPreviewUrl ? (
-															<div
-																class="hub-location-card__map is-loading"
-																data-hub-map
-																data-lat={String(latitude)}
-																data-lng={String(longitude)}
-																data-title={loc.name}
-																aria-hidden={mapsUrl ? 'true' : undefined}
-																aria-label={mapsUrl ? undefined : `Mapa de ${loc.name}`}
+													<div class="hub-pro-card__main">
+														<div class="hub-pro-card__avatar hub-pro-card__avatar--ph">
+															<span
+																class="material-symbols-rounded hub-pro-card__avatar-icon"
+																aria-hidden="true"
 															>
-																<span
-																	class="hub-skel hub-location-card__map-skel"
-																	aria-hidden="true"
-																></span>
-																<img
-																	class="hub-location-card__map-img"
-																	data-hub-map-img
-																	data-lat={String(latitude)}
-																	data-lng={String(longitude)}
-																	src={mapPreviewUrl}
-																	sizes="(min-width: 640px) 45vw, 100vw"
-																	alt=""
-																	width={HUB_LOCATION_CARD_COVER_OPTIONS.width}
-																	height={HUB_LOCATION_CARD_COVER_OPTIONS.height}
-																	loading="eager"
-																	decoding="async"
-																	onload="this.classList.add('is-loaded'); this.closest('[data-hub-map]')?.classList.remove('is-loading')"
-																	onerror="this.hidden=true; const m=this.closest('[data-hub-map]'); m?.classList.remove('is-loading'); m?.classList.add('hub-location-card__map--empty')"
-																/>
-																<Fragment set:html={renderBrandMapMarkerOverlay()} />
-															</div>
-														) : hasCoords ? (
-															<div class="hub-location-card__map hub-location-card__map--empty">
-																<span
-																	class="material-symbols-rounded"
-																	aria-hidden="true"
-																>
-																	map
-																</span>
-																<span>Mapa no disponible</span>
-															</div>
-														) : (
-															<div class="hub-location-card__map hub-location-card__map--empty">
-																<span
-																	class="material-symbols-rounded"
-																	aria-hidden="true"
-																>
-																	location_off
-																</span>
-																<span>Sin coordenadas cargadas</span>
-															</div>
-														)}
-													</div>
-													<div class="hub-location-card__body">
-														<div class="hub-location-card__info">
-															<h3 class="hub-location-card__name">{loc.name}</h3>
+																location_on
+															</span>
+														</div>
+														<div class="hub-pro-card__text">
+															<h3 class="hub-pro-card__name">{loc.name}</h3>
 															{loc.address ? (
-																<p class="hub-location-card__address">{loc.address}</p>
+																<p class="hub-pro-card__specialty">{loc.address}</p>
 															) : null}
-															<p class="hub-location-card__meta">
+															<p class="hub-pro-card__hint">
 																<span class="material-symbols-rounded" aria-hidden="true"
 																	>groups</span
 																>
 																{prosMeta}
 															</p>
 														</div>
-														<div class="hub-location-card__actions">
-															{mapsUrl ? (
-																<button
-																	type="button"
-																	class="hub-location-card__map-btn"
-																	data-hub-map-open
-																	data-lat={hasCoords ? String(loc.latitude) : ''}
-																	data-lng={hasCoords ? String(loc.longitude) : ''}
-																	data-title={loc.name}
-																	data-address={loc.address || ''}
-																	data-maps-url={mapsUrl}
-																	aria-label={`Ver mapa de ${loc.name}`}
-																>
-																	<span class="material-symbols-rounded" aria-hidden="true">
-																		map
-																	</span>
-																	<span class="hub-location-card__map-btn-text">Ver mapa</span>
-																</button>
-															) : null}
-															{prosHere.length === 1 ? (
-																<a
-																	href={reserveHereHref}
-																	class="hub-location-card__action no-underline"
-																	aria-label={actionLabel}
-																	title={actionLabel}
-																>
-																	<span class="material-symbols-rounded" aria-hidden="true"
-																		>{actionIcon}</span
-																	>
-																</a>
-															) : (
-																<button
-																	type="button"
-																	class="hub-location-card__action"
-																	data-hub-view-pros-at-location
-																	data-loc-id={canFilterHere ? String(loc.id_location) : '0'}
-																	data-loc-name={canFilterHere ? loc.name : ''}
-																	aria-label={actionLabel}
-																	title={actionLabel}
-																>
-																	<span class="material-symbols-rounded" aria-hidden="true"
-																		>{actionIcon}</span
-																	>
-																</button>
-															)}
-														</div>
 													</div>
+													<button
+														type="button"
+														class="hub-pro-card__btn"
+														data-hub-map-open
+														data-lat={hasCoords ? String(loc.latitude) : ''}
+														data-lng={hasCoords ? String(loc.longitude) : ''}
+														data-title={loc.name}
+														data-address={loc.address || ''}
+														data-maps-url={mapsUrl || ''}
+														aria-label={`Ver mapa de ${loc.name}`}
+														disabled={!mapsUrl}
+													>
+														<span class="material-symbols-rounded" aria-hidden="true">map</span>
+														Ver mapa
+													</button>
 												</article>
 											);
 										})}
@@ -917,12 +811,6 @@ const serializedProfessionals = professionals.length
 </Layout>
 
 <script>
-	import {
-		buildStadiaStaticMapUrl,
-		HUB_LOCATION_CARD_COVER_OPTIONS,
-		resolveMapTheme,
-	} from '../../lib/maplibre-static';
-
 	type MapLibreMap = InstanceType<
 		Awaited<ReturnType<typeof import('../../lib/maplibre-interactive')['loadMapLibre']>>['Map']
 	>;
@@ -966,58 +854,8 @@ const serializedProfessionals = professionals.length
 
 	const hubMapInstanceList: HubMapHandle[] = [];
 
-	const markHubMapImageReady = (img: HTMLImageElement) => {
-		img.classList.add('is-loaded');
-		img.closest('[data-hub-map]')?.classList.remove('is-loading');
-	};
-
-	const markHubMapImageFailed = (img: HTMLImageElement) => {
-		img.hidden = true;
-		const canvas = img.closest<HTMLElement>('[data-hub-map]');
-		canvas?.classList.remove('is-loading');
-		canvas?.classList.add('hub-location-card__map--empty');
-	};
-
-	const bindHubMapImage = (img: HTMLImageElement) => {
-		if (img.dataset.bound === '1') {
-			if (img.complete && img.naturalWidth > 0) markHubMapImageReady(img);
-			return;
-		}
-		img.dataset.bound = '1';
-		if (img.complete && img.naturalWidth > 0) {
-			markHubMapImageReady(img);
-			return;
-		}
-		img.addEventListener('load', () => markHubMapImageReady(img), { once: true });
-		img.addEventListener('error', () => markHubMapImageFailed(img), { once: true });
-	};
-
-	/** Miniaturas estáticas: no dependen de WebGL ni del tamaño del panel oculto. */
-	const hydrateHubMapImages = (root: HTMLElement) => {
-		const apiKey = String(root.dataset.stadiaKey || '').trim();
-		const theme = resolveMapTheme();
-		root.querySelectorAll<HTMLImageElement>('[data-hub-map-img]').forEach((img) => {
-			const lat = Number(img.dataset.lat);
-			const lng = Number(img.dataset.lng);
-			if (apiKey && Number.isFinite(lat) && Number.isFinite(lng)) {
-				const url = buildStadiaStaticMapUrl(apiKey, { lat, lng }, {
-					theme,
-					...HUB_LOCATION_CARD_COVER_OPTIONS,
-				});
-				if (url && img.getAttribute('src') !== url) {
-					img.closest('[data-hub-map]')?.classList.add('is-loading');
-					img.classList.remove('is-loaded');
-					img.src = url;
-				}
-			}
-			img.loading = 'eager';
-			bindHubMapImage(img);
-		});
-	};
-
 	const syncHubMapsTheme = async () => {
 		const root = document.querySelector<HTMLElement>('[data-hub-root]');
-		if (root) hydrateHubMapImages(root);
 		if (!hubMapInstanceList.length) return;
 		const apiKey = String(root?.dataset.stadiaKey || '').trim();
 		if (!apiKey) return;
@@ -1265,7 +1103,6 @@ const serializedProfessionals = professionals.length
 				sucursalesPanel.dataset.locationsReady = '1';
 				sucursalesPanel.removeAttribute('aria-busy');
 			}
-			hydrateHubMapImages(root);
 		};
 
 		const applyLocationFilter = (locId: number, locName = '') => {
@@ -1380,12 +1217,13 @@ const serializedProfessionals = professionals.length
 			});
 		});
 
-		root.querySelectorAll<HTMLElement>('[data-hub-view-pros-at-location]').forEach((btn) => {
-			if (btn.dataset.bound === '1') return;
-			btn.dataset.bound = '1';
-			btn.addEventListener('click', () => {
-				const locId = Number(btn.getAttribute('data-loc-id') || 0);
-				const locName = String(btn.getAttribute('data-loc-name') || '').trim();
+		root.querySelectorAll<HTMLElement>('[data-hub-view-pros-at-location]').forEach((card) => {
+			if (card.dataset.bound === '1') return;
+			card.dataset.bound = '1';
+			card.addEventListener('click', () => {
+				const locId = Number(card.getAttribute('data-loc-id') || 0);
+				const locName = String(card.getAttribute('data-loc-name') || '').trim();
+				if (!locId) return;
 				applyLocationFilter(locId, locName);
 				setActiveTab('equipo', { scrollIntoView: true });
 			});
@@ -1615,7 +1453,8 @@ const serializedProfessionals = professionals.length
 		if (mapModal && mapModal.dataset.bound !== '1') {
 			mapModal.dataset.bound = '1';
 			root.querySelectorAll<HTMLButtonElement>('[data-hub-map-open]').forEach((btn) => {
-				btn.addEventListener('click', () => {
+				btn.addEventListener('click', (event) => {
+					event.stopPropagation();
 					const mapsUrl = String(btn.dataset.mapsUrl || '').trim();
 					const lat = Number(btn.dataset.lat);
 					const lng = Number(btn.dataset.lng);
