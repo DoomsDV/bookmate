@@ -9,9 +9,9 @@ interface PendingKudeItem {
 	cdc: string;
 }
 
-// Vercel Cron Job (ver vercel.json, cada 1 minuto): resuelve los KuDE (PDF)
-// pendientes de las facturas electronicas ya aprobadas por SIFEN, y dispara
-// el email con el adjunto vía callback a ORDS una vez que estan listos.
+// Vercel Cron Job (ver vercel.json, 1 vez al dia — Hobby no permite cada minuto):
+// resuelve los KuDE (PDF) pendientes de las facturas electronicas ya aprobadas
+// por SIFEN, y dispara el email con el adjunto vía callback a ORDS una vez listos.
 // Seguridad: Vercel firma las invocaciones de cron con
 // "Authorization: Bearer $CRON_SECRET" (ver vercel.com/docs/cron-jobs/manage-cron-jobs).
 const assertCronRequest = (request: Request) => {
@@ -55,7 +55,7 @@ export const GET: APIRoute = async ({ request }) => {
 				});
 				sent += 1;
 			}
-			// estado === 'pending': se reintenta en la proxima corrida del cron (1 min).
+			// estado === 'pending': se reintenta en la proxima corrida del cron (diario en Hobby).
 		} catch (error) {
 			errors.push({
 				invoice_id: item.invoice_id,
