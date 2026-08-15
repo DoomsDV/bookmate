@@ -253,7 +253,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 			data-customer-profile-modal
 		>
 			<div
-				class="customer-profile-modal__panel relative flex max-h-[85vh] w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:max-h-[90vh] sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+				class="customer-profile-modal__panel relative flex h-[90dvh] max-h-[90dvh] w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:h-auto sm:max-h-[90vh] sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-[1.8rem] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 				data-customer-profile-panel
 			>
 			<div class="panel-modal-header panel-modal-header--shadow">
@@ -286,19 +286,31 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 							</p>
 						</div>
 					</div>
-					<button
-						type="button"
-						class="panel-modal-header__close"
-						data-close-customer-profile-modal
-						aria-label="Cerrar modal"
-					>
-						<span class="material-symbols-rounded">close</span>
-					</button>
+					<div class="panel-modal-header__actions">
+						<button
+							type="button"
+							class="settings-toolbar-help inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-(--shell-border) bg-(--surface-bright) px-[0.72rem] py-[0.72rem] text-[0.9rem] font-bold text-(--on-surface) transition focus:outline-none focus:ring-2 focus:ring-(--primary)/25 sm:px-[1.05rem]"
+							data-customer-odontogram-tour-help
+							aria-label="Guía del odontograma"
+							hidden
+						>
+							<span class="material-symbols-rounded text-[1.12rem]">help</span>
+							<span class="hidden sm:inline">Guía</span>
+						</button>
+						<button
+							type="button"
+							class="panel-modal-header__close"
+							data-close-customer-profile-modal
+							aria-label="Cerrar modal"
+						>
+							<span class="material-symbols-rounded">close</span>
+						</button>
+					</div>
 				</div>
 			</div>
 
 			<div
-				class="customer-profile-tabs shrink-0 border-b border-(--shell-border) bg-(--surface-bright) px-4 pt-1 pb-3 sm:px-7"
+				class="customer-profile-tabs shrink-0 border-b border-(--shell-border) bg-(--surface-bright) px-4 py-3 sm:px-7"
 				data-customer-profile-tabs
 			>
 				<div class="customer-profile-tablist" role="tablist" aria-label="Secciones del perfil">
@@ -598,6 +610,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 										>
 											<span class="material-symbols-rounded" aria-hidden="true">blur_on</span>
 										</button>
+										<div class="customer-odontogram-cam__arch">
 										<button
 											type="button"
 											class="customer-odontogram-cam__btn customer-odontogram-cam__btn--label"
@@ -628,6 +641,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 												>Max. inf.</span
 											>
 										</button>
+										</div>
 									</div>
 									<div
 										class="customer-odontogram-tip hidden"
@@ -984,9 +998,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		display: flex;
 	}
 
-	/* Misma altura al cambiar entre Resumen e Historial del cliente */
+	/* Mobile: bottom sheet al 90% del viewport */
 	dialog[data-customer-profile-modal][open] .customer-profile-modal__panel {
-		min-height: min(85vh, 36rem);
+		min-height: 90dvh;
 	}
 
 	@media (min-width: 640px) {
@@ -1097,26 +1111,36 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 	}
 
-	dialog[data-customer-profile-modal].is-odontogram-workspace[open] {
-		align-items: stretch;
-		justify-content: stretch;
-		flex-direction: row;
-	}
-
 	dialog[data-customer-profile-modal].is-odontogram-workspace[open] .customer-profile-modal__panel,
 	.customer-profile-modal__panel.is-odontogram-workspace {
-		width: 100vw;
-		max-width: 100vw;
-		height: 100dvh;
-		max-height: 100dvh;
-		min-height: 100dvh;
-		margin: 0;
-		border-radius: 0;
-		border: 0;
+		height: 90dvh;
+		max-height: 90dvh;
+		min-height: 90dvh;
+	}
+
+	@media (min-width: 1024px) {
+		dialog[data-customer-profile-modal].is-odontogram-workspace[open] {
+			align-items: stretch;
+			justify-content: stretch;
+			flex-direction: row;
+		}
+
+		dialog[data-customer-profile-modal].is-odontogram-workspace[open] .customer-profile-modal__panel,
+		.customer-profile-modal__panel.is-odontogram-workspace {
+			width: 100vw;
+			max-width: 100vw;
+			height: 100dvh;
+			max-height: 100dvh;
+			min-height: 100dvh;
+			margin: 0;
+			border-radius: 0;
+			border: 0;
+		}
 	}
 
 	dialog[data-customer-profile-modal].is-odontogram-workspace .customer-profile-modal-body {
-		overflow: hidden;
+		overflow-x: hidden;
+		overflow-y: auto;
 		padding: 0;
 		background: var(--surface-bright);
 	}
@@ -1130,17 +1154,36 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		flex-direction: column;
 		flex: 1 1 auto;
 		min-height: 0;
-		height: 100%;
+		height: auto;
 		gap: 0;
 	}
 
 	dialog[data-customer-profile-modal].is-odontogram-workspace
 		.customer-profile-tab-panel[data-customer-profile-tab-panel='odontogram']:not([hidden]) {
-		flex: 1 1 auto;
+		flex: 0 0 auto;
 		min-height: 0;
+		height: auto;
 		display: flex;
 		flex-direction: column;
-		align-content: stretch;
+		align-content: start;
+	}
+
+	@media (min-width: 1024px) {
+		dialog[data-customer-profile-modal].is-odontogram-workspace .customer-profile-modal-body {
+			overflow: hidden;
+		}
+
+		dialog[data-customer-profile-modal].is-odontogram-workspace [data-customer-profile-body]:not(.hidden) {
+			height: 100%;
+		}
+
+		dialog[data-customer-profile-modal].is-odontogram-workspace
+			.customer-profile-tab-panel[data-customer-profile-tab-panel='odontogram']:not([hidden]) {
+			flex: 1 1 auto;
+			min-height: 0;
+			height: auto;
+			align-content: stretch;
+		}
 	}
 
 	dialog[data-customer-profile-modal].is-odontogram-workspace
@@ -2212,8 +2255,14 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	.customer-profile-tab-panel[data-customer-profile-tab-panel='odontogram']:not([hidden]) {
-		min-height: 100%;
+		min-height: 0;
 		align-content: start;
+	}
+
+	@media (min-width: 1024px) {
+		.customer-profile-tab-panel[data-customer-profile-tab-panel='odontogram']:not([hidden]) {
+			min-height: 100%;
+		}
 	}
 
 	.customer-odontogram-lock {
@@ -2283,12 +2332,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	.customer-odontogram-content {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		grid-template-rows: minmax(62vh, 1fr) auto;
-		flex: 1 1 auto;
+		display: block;
+		flex: 0 0 auto;
 		min-height: 0;
-		height: 100%;
+		height: auto;
 	}
 
 	.customer-odontogram-content.hidden {
@@ -2297,33 +2344,67 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 	@media (min-width: 1024px) {
 		.customer-odontogram-content {
+			display: grid;
 			grid-template-columns: minmax(0, 7fr) minmax(17rem, 3fr);
 			grid-template-rows: minmax(0, 1fr);
+			flex: 1 1 auto;
+			height: 100%;
 		}
 	}
 
 	.customer-odontogram-stage {
-		position: relative;
+		position: sticky;
+		top: 0;
+		z-index: 1;
 		min-height: 0;
 		min-width: 0;
 		background: color-mix(in srgb, var(--surface-container-low) 70%, var(--surface-bright) 30%);
 	}
 
+	@media (min-width: 1024px) {
+		.customer-odontogram-stage {
+			position: relative;
+			z-index: auto;
+		}
+	}
+
 	.customer-odontogram-side {
+		position: relative;
+		z-index: 10;
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
-		min-height: 0;
-		padding: 0.9rem 1rem 1.1rem;
-		border-top: 1px solid var(--shell-border);
+		min-height: calc(90dvh - 8.5rem);
+		padding: 1.15rem 1rem 1.35rem;
+		border-top: 0;
+		border-radius: 1.25rem 1.25rem 0 0;
 		background: var(--surface-bright);
+		box-shadow: 0 -12px 32px rgb(0 0 0 / 0.18);
+	}
+
+	.customer-odontogram-side::before {
+		content: '';
+		display: block;
+		width: 2.25rem;
+		height: 0.28rem;
+		margin: 0 auto 0.35rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 38%, transparent);
 	}
 
 	@media (min-width: 1024px) {
 		.customer-odontogram-side {
+			z-index: auto;
+			min-height: 0;
+			padding: 0.9rem 1rem 1.1rem;
 			border-top: 0;
 			border-left: 1px solid var(--shell-border);
+			border-radius: 0;
 			box-shadow: -12px 0 32px rgb(0 0 0 / 0.06);
+		}
+
+		.customer-odontogram-side::before {
+			display: none;
 		}
 	}
 
@@ -2495,15 +2576,17 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	.customer-odontogram-viewport {
 		position: relative;
 		width: 100%;
-		height: 100%;
-		min-height: 62vh;
+		height: min(58dvh, 32rem);
+		min-height: 0;
+		max-height: 32rem;
 		overflow: hidden;
 		background: color-mix(in srgb, var(--surface-container-low) 62%, var(--surface-bright) 38%);
 	}
 
 	@media (min-width: 1024px) {
 		.customer-odontogram-viewport {
-			min-height: 0;
+			height: 100%;
+			max-height: none;
 		}
 	}
 
@@ -2599,7 +2682,17 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 			transform 140ms ease;
 	}
 
+	.customer-odontogram-cam__arch {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.35rem;
+	}
+
 	.customer-odontogram-cam__btn--label {
+		width: 100%;
+		box-sizing: border-box;
+		justify-content: flex-start;
 		padding: 0.32rem 0.55rem;
 	}
 

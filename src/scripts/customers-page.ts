@@ -9,6 +9,8 @@ import { bindFileViewer, type FileViewerHandle } from '../lib/file-viewer';
 import { hasAnySessionNote, SESSION_NOTE_FIELDS } from '../lib/session-notes';
 import { updateAppPaginationDom } from '../lib/pagination';
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
+import { destroyActiveBookmateTour } from '../lib/product-tour';
+import { showOdontogramTour } from '../lib/odontogram-tour';
 import type { Odontogram3dHandle } from './odontogram-3d';
 type ProfessionalLov = { id_professional: number; display_name: string };
 type Customer = {
@@ -662,6 +664,11 @@ class CustomerManager extends HTMLElement {
 		if (!(target instanceof Element)) return;
 		if (target.closest('[data-close-customer-profile-modal]')) {
 			this.closeProfileModal();
+			return;
+		}
+		if (target.closest('[data-customer-odontogram-tour-help]')) {
+			event.preventDefault();
+			showOdontogramTour();
 		}
 	};
 
@@ -756,6 +763,7 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private closeProfileModal() {
+		destroyActiveBookmateTour({ persistCompletion: false });
 		this.fileViewer?.close();
 		this.closeOdontogramPopover();
 		this.setOdontogramWorkspace(false);
@@ -1132,6 +1140,8 @@ class CustomerManager extends HTMLElement {
 				void this.loadOdontogram(this.activeProfileCustomerId);
 			}
 			this.maybeMountOdontogram3d();
+		} else {
+			this.syncOdontogramTourHelpVisibility();
 		}
 	}
 
@@ -1199,6 +1209,17 @@ class CustomerManager extends HTMLElement {
 
 		this.odontogramLock?.classList.toggle('hidden', !showLock);
 		this.odontogramContent?.classList.toggle('hidden', showLock || this.isOdontogramLoading);
+		this.syncOdontogramTourHelpVisibility();
+	}
+
+	private syncOdontogramTourHelpVisibility() {
+		const helpBtn = this.querySelector<HTMLButtonElement>('[data-customer-odontogram-tour-help]');
+		if (!helpBtn) return;
+		const contentVisible =
+			this.activeProfileTab === 'odontogram' &&
+			!this.isOdontogramLoading &&
+			!this.odontogramContent?.classList.contains('hidden');
+		helpBtn.hidden = !contentVisible;
 	}
 
 	private setOdontogramLoading(value: boolean) {
@@ -1206,6 +1227,7 @@ class CustomerManager extends HTMLElement {
 		this.odontogramLoading?.classList.toggle('hidden', !value);
 		if (value) {
 			this.odontogramContent?.classList.add('hidden');
+			this.syncOdontogramTourHelpVisibility();
 		} else {
 			this.updateOdontogramLockUi();
 			this.maybeMountOdontogram3d();
