@@ -38,9 +38,7 @@ function ensureTourShell(): HTMLDialogElement {
 		shell.setAttribute('aria-hidden', 'true');
 		document.body.appendChild(shell);
 	}
-	// Reabrir siempre para quedar encima de otros `<dialog>` del top layer (p. ej. Ajustes z-index 1200).
-	if (shell.open) shell.close();
-	shell.showModal();
+	if (!shell.open) shell.showModal();
 	return shell;
 }
 
@@ -94,9 +92,6 @@ function reparentTourPopoverToBody(popover?: HTMLElement | null) {
 	if (node.parentElement !== document.body) {
 		document.body.appendChild(node);
 	}
-	// Ocultar mientras driver.js cambia de paso: en body queda detrás de modales nativos.
-	node.style.display = 'none';
-	node.style.visibility = 'hidden';
 }
 
 function mountDriverOverlayInTourShell() {
@@ -394,9 +389,20 @@ function syncTourLayout(
 		return;
 	}
 
-	if (activeTourPopover) mountPopoverInTourShell(activeTourPopover);
+	const shell = document.querySelector<HTMLDialogElement>(TOUR_SHELL_SELECTOR);
+	const popoverAlreadyInShell =
+		Boolean(activeTourPopover) && Boolean(shell) && activeTourPopover?.parentElement === shell;
+
+	if (activeTourPopover && !popoverAlreadyInShell) {
+		mountPopoverInTourShell(activeTourPopover);
+	}
+
 	activeDriver.refresh();
 	scheduleRemoveTourOverlaysAfterDriverPaint();
+
+	if (activeTourPopover) {
+		mountPopoverInTourShell(activeTourPopover);
+	}
 
 	const popover = activeTourPopover;
 	if (!(popover instanceof HTMLElement)) return;
@@ -416,7 +422,6 @@ function syncTourLayout(
 
 function handlePopoverRender(
 	popoverDom: PopoverDOM,
-	activeDriver: Driver,
 	preferredSide: 'top' | 'bottom',
 	hostSelector?: string
 ) {
@@ -430,7 +435,6 @@ function handlePopoverRender(
 	if (document.querySelector('.driver-active-element')) {
 		pinPopoverNearActiveElement(popoverDom.wrapper, preferredSide);
 	}
-	scheduleTourLayoutSync(() => syncTourLayout(activeDriver, preferredSide, hostSelector));
 }
 
 export function hasSeenBookmateTour(storageKey: string) {
@@ -496,9 +500,9 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 			scheduleTourLayoutSync(() => syncTourLayout(activeDriver, preferredSide, hostSelector));
 		},
 		onPopoverRender: useShell
-			? (popoverDom, { driver: activeDriver, state }) => {
+			? (popoverDom, { state }) => {
 					const preferredSide = state.activeStep?.popover?.side === 'top' ? 'top' : 'bottom';
-					handlePopoverRender(popoverDom, activeDriver, preferredSide, hostSelector);
+					handlePopoverRender(popoverDom, preferredSide, hostSelector);
 				}
 			: undefined,
 		onDestroyed: () => {
