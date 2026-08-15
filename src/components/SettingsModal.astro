@@ -112,6 +112,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		</nav>
 
 		<div class="settings-content-shell flex min-h-0 flex-1 flex-col" data-settings-content-shell>
+		<div class="settings-scroll-wrap relative flex min-h-0 flex-1 flex-col">
 		<div class="settings-content relative flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 overscroll-contain" data-settings-content>
 			<div class="settings-feedback-sticky-wrap">
 				<div
@@ -129,7 +130,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 				</div>
 			</div>
 			<section data-settings-panel="profile" class="grid gap-6">
-				<form data-settings-profile-form class="grid gap-8">
+				<form id="settings-profile-form" data-settings-profile-form class="grid gap-5">
 					<div class="settings-profile-hero settings-profile-hero--top">
 						<div class="profile-photo-uploader" data-settings-profile-dropzone>
 							<div class="profile-photo-uploader__stack">
@@ -166,7 +167,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 						<p class="settings-profile-photo-hint">JPG o PNG, máximo 2 MB</p>
 					</div>
 
-					<div class="grid gap-5 border-t border-(--shell-border) border-dashed pt-6">
+					<div class="grid gap-5 border-t border-(--shell-border) border-dashed pt-4">
 						<div class="grid gap-1">
 							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información personal</h3>
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Solo para tu cuenta y acceso interno.</p>
@@ -278,24 +279,11 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 							<span data-settings-profile-field-error="phone_number" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
 					</div>
-					<div class="pt-2">
-						<div class="modal-footer">
-							<div class="modal-footer-actions">
-						<button type="button" class="modal-action-secondary" data-settings-close-action>
-							Cancelar
-						</button>
-						<button type="submit" class="modal-action-primary">
-							<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
-							Guardar perfil
-						</button>
-							</div>
-						</div>
-					</div>
 				</form>
 			</section>
 
 			<section data-settings-panel="security" class="settings-panel hidden gap-6">
-				<form data-settings-security-form class="grid gap-8">
+				<form id="settings-security-form" data-settings-security-form class="grid gap-8">
 					<div class="grid gap-5">
 						<div class="grid gap-1">
 							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cambio de contraseña</h3>
@@ -345,24 +333,11 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 						La nueva contraseña debe tener al menos 8 caracteres.
 					</p>
 					</div>
-					<div class="pt-2 border-t border-(--shell-border) border-dashed">
-						<div class="modal-footer">
-							<div class="modal-footer-actions">
-						<button type="button" class="modal-action-secondary" data-settings-close-action>
-							Cancelar
-						</button>
-						<button type="submit" class="modal-action-primary">
-							<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">key</span>
-							Actualizar contraseña
-						</button>
-							</div>
-						</div>
-					</div>
 				</form>
 			</section>
 
 			<section data-settings-panel="preferences" class="settings-panel hidden gap-8">
-				<form data-settings-preferences-form class="grid gap-6">
+				<form id="settings-preferences-form" data-settings-preferences-form class="grid gap-6">
 					<div class="grid gap-1">
 						<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Tu panel de control</h3>
 						<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Personaliza la apariencia y el comportamiento de tu vista.</p>
@@ -399,26 +374,13 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 						</div>
 					) : null
 				}
-				<div class="border-t border-(--shell-border) border-dashed pt-2">
-					<div class="modal-footer">
-						<div class="modal-footer-actions">
-					<button type="button" class="modal-action-secondary" data-settings-close-action>
-						Cancelar
-					</button>
-					<button type="button" data-settings-appearance-save class="modal-action-primary">
-						<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
-						Guardar apariencia
-					</button>
-						</div>
-					</div>
-				</div>
 			</section>
 
 			{
 				isAdmin ? (
 					<>
 						<section data-settings-panel="workspace" class="settings-panel hidden gap-6">
-							<form data-settings-workspace-form class="grid gap-6">
+							<form id="settings-workspace-form" data-settings-workspace-form class="grid gap-6">
 								<div class="grid gap-1">
 									<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Información del negocio</h3>
 									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Detalles principales de tu organización.</p>
@@ -479,16 +441,6 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										</div>
 									</div>
 								</label>
-								<div class="pt-4 border-t border-(--shell-border) border-dashed">
-									<div class="modal-footer">
-										<div class="modal-footer-actions">
-									<button type="button" class="modal-action-secondary" data-settings-close-action>
-										Cancelar
-									</button>
-									<button type="submit" class="modal-action-primary"><span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>Guardar negocio</button>
-										</div>
-									</div>
-								</div>
 							</form>
 						</section>
 
@@ -503,7 +455,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										<span class="text-[0.9rem] font-semibold">Cargando cobros…</span>
 									</div>
 
-									<form data-settings-payments-form data-payments-body class="hidden grid gap-6">
+									<form id="settings-payments-form" data-settings-payments-form data-payments-body class="hidden grid gap-6">
 										<div class="grid gap-1">
 											<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cobro de señas</h3>
 											<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">
@@ -634,27 +586,13 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										<p data-payments-plan-hint class="hidden text-[0.85rem] font-medium text-amber-700 dark:text-amber-300">
 											Tu plan actual no incluye cobro de señas. Actualizá a Premium en Plan para habilitarlo.
 										</p>
-
-										<div class="pt-4 border-t border-(--shell-border) border-dashed">
-											<div class="modal-footer">
-												<div class="modal-footer-actions">
-													<button type="button" class="modal-action-secondary" data-settings-close-action>
-														Cancelar
-													</button>
-													<button type="submit" class="modal-action-primary">
-														<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
-														Guardar cobros
-													</button>
-												</div>
-											</div>
-										</div>
 									</form>
 								</section>
 							) : null
 						}
 
 						<section data-settings-panel="system" class="settings-panel hidden gap-6">
-							<form data-settings-system-form class="grid gap-6">
+							<form id="settings-system-form" data-settings-system-form class="grid gap-6">
 								<div class="grid gap-8">
 									<div class="grid gap-5">
 										<div class="grid gap-1">
@@ -869,19 +807,6 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 									</div>
 								</div>
 
-								<div class="pt-4 border-t border-(--shell-border) border-dashed">
-									<div class="modal-footer">
-										<div class="modal-footer-actions">
-									<button type="button" class="modal-action-secondary" data-settings-close-action>
-										Cancelar
-									</button>
-									<button type="submit" class="modal-action-primary">
-										<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
-										Guardar sistema
-									</button>
-										</div>
-									</div>
-								</div>
 							</form>
 						</section>
 
@@ -977,6 +902,89 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			<span class="material-symbols-rounded">expand_more</span>
 			<span>Deslizá para ver más</span>
 		</p>
+		</div>
+		<div class="settings-actions" data-settings-actions>
+			<div class="modal-footer" data-settings-footer="profile">
+				<div class="modal-footer-actions">
+					<button type="button" class="modal-action-secondary" data-settings-close-action>
+						Cancelar
+					</button>
+					<button type="submit" class="modal-action-primary" form="settings-profile-form">
+						<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
+						Guardar perfil
+					</button>
+				</div>
+			</div>
+			<div class="modal-footer hidden" data-settings-footer="security">
+				<div class="modal-footer-actions">
+					<button type="button" class="modal-action-secondary" data-settings-close-action>
+						Cancelar
+					</button>
+					<button type="submit" class="modal-action-primary" form="settings-security-form">
+						<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline">key</span>
+						Actualizar contraseña
+					</button>
+				</div>
+			</div>
+			{
+				canEditAppearance ? (
+					<div class="modal-footer hidden" data-settings-footer="preferences">
+						<div class="modal-footer-actions">
+							<button type="button" class="modal-action-secondary" data-settings-close-action>
+								Cancelar
+							</button>
+							<button type="button" data-settings-appearance-save class="modal-action-primary">
+								<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
+								Guardar apariencia
+							</button>
+						</div>
+					</div>
+				) : null
+			}
+			{
+				isAdmin ? (
+					<>
+						<div class="modal-footer hidden" data-settings-footer="workspace">
+							<div class="modal-footer-actions">
+								<button type="button" class="modal-action-secondary" data-settings-close-action>
+									Cancelar
+								</button>
+								<button type="submit" class="modal-action-primary" form="settings-workspace-form">
+									<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
+									Guardar negocio
+								</button>
+							</div>
+						</div>
+						{
+							showPaymentsTab ? (
+								<div class="modal-footer hidden" data-settings-footer="payments">
+									<div class="modal-footer-actions">
+										<button type="button" class="modal-action-secondary" data-settings-close-action>
+											Cancelar
+										</button>
+										<button type="submit" class="modal-action-primary" form="settings-payments-form">
+											<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
+											Guardar cobros
+										</button>
+									</div>
+								</div>
+							) : null
+						}
+						<div class="modal-footer hidden" data-settings-footer="system">
+							<div class="modal-footer-actions">
+								<button type="button" class="modal-action-secondary" data-settings-close-action>
+									Cancelar
+								</button>
+								<button type="submit" class="modal-action-primary" form="settings-system-form">
+									<span class="material-symbols-rounded text-[1.2rem] hidden sm:inline" aria-hidden="true">save</span>
+									Guardar sistema
+								</button>
+							</div>
+						</div>
+					</>
+				) : null
+			}
+		</div>
 		</div>
 	</div>
 </dialog>
@@ -2130,10 +2138,30 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (tabId === 'plan') void this.loadSubscription();
 			if (tabId === 'payments') void this.loadPayments();
 			this.syncTourHelpVisibility(tabId);
+			this.syncSettingsActions(tabId);
 
 			const content = this.querySelector<HTMLElement>('[data-settings-content]');
 			if (content) content.scrollTop = 0;
 			requestAnimationFrame(this.updateScrollHints);
+		}
+
+		private shouldHidePaymentsFooter() {
+			const body = this.querySelector<HTMLElement>('[data-payments-body]');
+			return !body || body.classList.contains('hidden');
+		}
+
+		private syncSettingsActions(tabId = this.getActiveTabId()) {
+			const dock = this.querySelector<HTMLElement>('[data-settings-actions]');
+			if (!dock) return;
+
+			dock.querySelectorAll<HTMLElement>('[data-settings-footer]').forEach((footer) => {
+				footer.classList.toggle('hidden', footer.dataset.settingsFooter !== tabId);
+			});
+
+			const hasFooter = Boolean(dock.querySelector(`[data-settings-footer="${tabId}"]`));
+			const hideDock = !hasFooter || (tabId === 'payments' && this.shouldHidePaymentsFooter());
+			dock.classList.toggle('hidden', hideDock);
+			dock.hidden = hideDock;
 		}
 
 		private syncTourHelpVisibility(tabId = this.getActiveTabId()) {
@@ -2743,6 +2771,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			const body = this.querySelector<HTMLElement>('[data-payments-body]');
 			loading?.classList.toggle('hidden', !opts.loading);
 			body?.classList.toggle('hidden', !opts.ready);
+			this.syncSettingsActions();
 		}
 
 		private syncPaymentsDetailsVisibility = () => {
@@ -3482,6 +3511,14 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			min-height: 0;
 		}
 
+		.settings-scroll-wrap {
+			position: relative;
+			display: flex;
+			flex: 1 1 auto;
+			min-height: 0;
+			flex-direction: column;
+		}
+
 		.settings-content {
 			padding-bottom: 3.75rem;
 		}
@@ -3648,6 +3685,34 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 	.settings-panel.hidden {
 		display: none;
+	}
+
+	.settings-actions {
+		flex: 0 0 auto;
+		border-top: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		padding: 0.9rem 1rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	.settings-actions.hidden,
+	.settings-actions[hidden] {
+		display: none !important;
+	}
+
+	.settings-actions [data-settings-footer].hidden {
+		display: none !important;
+	}
+
+	@media (min-width: 640px) {
+		.settings-actions {
+			padding: 1rem 1.5rem;
+		}
+	}
+
+	@media (min-width: 769px) {
+		.settings-actions {
+			padding: 1.15rem 2rem;
+		}
 	}
 
 	.settings-loading-overlay {
@@ -3924,7 +3989,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		[data-settings-modal] .settings-profile-hero--top {
 			gap: 0.55rem;
 			padding-top: 0.35rem;
-			padding-bottom: 1.25rem;
+			padding-bottom: 0.25rem;
 		}
 
 		[data-settings-modal] .profile-photo-uploader__stack {
