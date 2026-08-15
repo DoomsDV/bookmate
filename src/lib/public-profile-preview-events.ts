@@ -3,7 +3,7 @@ import type { BusinessHoursDisplayRow } from './business-hours';
 export type PublicProfilePreviewProfessional = {
 	id: number;
 	fullName: string;
-	specialty: string;
+	specialty: string | null;
 	imageUrl: string;
 	initials: string;
 };

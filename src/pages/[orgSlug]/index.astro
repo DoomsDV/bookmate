@@ -19,7 +19,7 @@ import {
 import { isReservedOrgSlug } from '../../lib/reserved-org-slugs';
 import {
 	buildStadiaStaticMapUrl,
-	HUB_LOCATION_CARD_STATIC_MAP_OPTIONS,
+	HUB_LOCATION_CARD_COVER_OPTIONS,
 	renderBrandMapMarkerOverlay,
 	resolveMapThemeFromStorage,
 } from '../../lib/maplibre-static';
@@ -509,13 +509,10 @@ const serializedProfessionals = professionals.length
 											{ length: Math.min(4, Math.max(2, professionals.length)) },
 											(_, i) => (
 												<div class="hub-pro-card hub-pro-card--skeleton" aria-hidden="true">
-													<div class="hub-pro-card__top">
-														<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
-													</div>
 													<div class="hub-pro-card__main">
 														<span class="hub-pro-card__avatar hub-skel-circle">
 															<span class="hub-skel hub-skel-circle hub-pro-card__avatar-face"></span>
-															<span class="hub-pro-card__status-dot" aria-hidden="true"></span>
+															<span class="hub-pro-card__status-dot hub-pro-card__status-dot--avatar" aria-hidden="true"></span>
 														</span>
 														<div class="hub-pro-card__text">
 															<span
@@ -533,6 +530,9 @@ const serializedProfessionals = professionals.length
 										{professionals.map((pro) => {
 											const specialty = getPublicProfileSpecialtyLabel(pro.specialty);
 											const initials = initialsFromName(pro.full_name);
+											const cardLabel = specialty
+												? `Reservar con ${pro.full_name}, ${specialty}. Agenda abierta`
+												: `Reservar con ${pro.full_name}. Agenda abierta`;
 											return (
 												<a
 													href={pro.booking_path}
@@ -541,13 +541,8 @@ const serializedProfessionals = professionals.length
 													data-pro-id={String(pro.id_professional)}
 													data-booking-path={pro.booking_path}
 													data-location-ids={pro.location_ids.join(',')}
+													aria-label={cardLabel}
 												>
-													<div class="hub-pro-card__top">
-														<span class="hub-pro-card__status">
-															<span class="hub-pro-card__status-dot" aria-hidden="true"></span>
-															Agenda abierta
-														</span>
-													</div>
 													<div class="hub-pro-card__main">
 														<div
 															class:list={[
@@ -584,9 +579,9 @@ const serializedProfessionals = professionals.length
 														</div>
 														<div class="hub-pro-card__text">
 															<h3 class="hub-pro-card__name">{pro.full_name}</h3>
-															<p class="hub-pro-card__specialty">
-																{specialty || 'Profesional'}
-															</p>
+															{specialty ? (
+																<p class="hub-pro-card__specialty">{specialty}</p>
+															) : null}
 														</div>
 													</div>
 													<span class="hub-pro-card__btn">
@@ -631,7 +626,9 @@ const serializedProfessionals = professionals.length
 													class="hub-location-card hub-location-card--skeleton"
 													aria-hidden="true"
 												>
-													<div class="hub-skel hub-location-card__map"></div>
+													<div class="hub-location-card__map-frame">
+														<div class="hub-skel hub-location-card__map"></div>
+													</div>
 													<div class="hub-location-card__body">
 														<div class="hub-location-card__info">
 															<span
@@ -640,7 +637,10 @@ const serializedProfessionals = professionals.length
 															<span class="hub-skel hub-skel-line hub-skel-line--sub"></span>
 															<span class="hub-skel hub-skel-line hub-skel-line--meta"></span>
 														</div>
-														<span class="hub-skel hub-skel-circle"></span>
+														<div class="hub-location-card__actions">
+															<span class="hub-skel hub-skel-pill hub-location-card__map-btn-skel"></span>
+															<span class="hub-skel hub-skel-circle"></span>
+														</div>
 													</div>
 												</article>
 											)
@@ -659,7 +659,7 @@ const serializedProfessionals = professionals.length
 														{ lat: latitude, lng: longitude },
 														{
 															theme: mapTheme,
-															...HUB_LOCATION_CARD_STATIC_MAP_OPTIONS,
+															...HUB_LOCATION_CARD_COVER_OPTIONS,
 														}
 													)
 												: null;
@@ -711,9 +711,10 @@ const serializedProfessionals = professionals.length
 																	data-lat={String(latitude)}
 																	data-lng={String(longitude)}
 																	src={mapPreviewUrl}
+																	sizes="(min-width: 640px) 45vw, 100vw"
 																	alt=""
-																	width={HUB_LOCATION_CARD_STATIC_MAP_OPTIONS.width}
-																	height={HUB_LOCATION_CARD_STATIC_MAP_OPTIONS.height}
+																	width={HUB_LOCATION_CARD_COVER_OPTIONS.width}
+																	height={HUB_LOCATION_CARD_COVER_OPTIONS.height}
 																	loading="eager"
 																	decoding="async"
 																	onload="this.classList.add('is-loaded'); this.closest('[data-hub-map]')?.classList.remove('is-loading')"
@@ -742,29 +743,6 @@ const serializedProfessionals = professionals.length
 																<span>Sin coordenadas cargadas</span>
 															</div>
 														)}
-														{mapsUrl ? (
-															<button
-																type="button"
-																class="hub-location-card__map-hit"
-																data-hub-map-open
-																data-lat={hasCoords ? String(loc.latitude) : ''}
-																data-lng={hasCoords ? String(loc.longitude) : ''}
-																data-title={loc.name}
-																data-address={loc.address || ''}
-																data-maps-url={mapsUrl}
-																aria-label={`Ver mapa de ${loc.name}`}
-															>
-																<span class="hub-location-card__map-hit-label">
-																	<span
-																		class="material-symbols-rounded"
-																		aria-hidden="true"
-																	>
-																		map
-																	</span>
-																	<span class="hub-location-card__map-hit-text">Ver mapa</span>
-																</span>
-															</button>
-														) : null}
 													</div>
 													<div class="hub-location-card__body">
 														<div class="hub-location-card__info">
@@ -772,34 +750,59 @@ const serializedProfessionals = professionals.length
 															{loc.address ? (
 																<p class="hub-location-card__address">{loc.address}</p>
 															) : null}
-															<p class="hub-location-card__meta">{prosMeta}</p>
+															<p class="hub-location-card__meta">
+																<span class="material-symbols-rounded" aria-hidden="true"
+																	>groups</span
+																>
+																{prosMeta}
+															</p>
 														</div>
-														{prosHere.length === 1 ? (
-															<a
-																href={reserveHereHref}
-																class="hub-location-card__action no-underline"
-																aria-label={actionLabel}
-																title={actionLabel}
-															>
-																<span class="material-symbols-rounded" aria-hidden="true"
-																	>{actionIcon}</span
+														<div class="hub-location-card__actions">
+															{mapsUrl ? (
+																<button
+																	type="button"
+																	class="hub-location-card__map-btn"
+																	data-hub-map-open
+																	data-lat={hasCoords ? String(loc.latitude) : ''}
+																	data-lng={hasCoords ? String(loc.longitude) : ''}
+																	data-title={loc.name}
+																	data-address={loc.address || ''}
+																	data-maps-url={mapsUrl}
+																	aria-label={`Ver mapa de ${loc.name}`}
 																>
-															</a>
-														) : (
-															<button
-																type="button"
-																class="hub-location-card__action"
-																data-hub-view-pros-at-location
-																data-loc-id={canFilterHere ? String(loc.id_location) : '0'}
-																data-loc-name={canFilterHere ? loc.name : ''}
-																aria-label={actionLabel}
-																title={actionLabel}
-															>
-																<span class="material-symbols-rounded" aria-hidden="true"
-																	>{actionIcon}</span
+																	<span class="material-symbols-rounded" aria-hidden="true">
+																		map
+																	</span>
+																	<span class="hub-location-card__map-btn-text">Ver mapa</span>
+																</button>
+															) : null}
+															{prosHere.length === 1 ? (
+																<a
+																	href={reserveHereHref}
+																	class="hub-location-card__action no-underline"
+																	aria-label={actionLabel}
+																	title={actionLabel}
 																>
-															</button>
-														)}
+																	<span class="material-symbols-rounded" aria-hidden="true"
+																		>{actionIcon}</span
+																	>
+																</a>
+															) : (
+																<button
+																	type="button"
+																	class="hub-location-card__action"
+																	data-hub-view-pros-at-location
+																	data-loc-id={canFilterHere ? String(loc.id_location) : '0'}
+																	data-loc-name={canFilterHere ? loc.name : ''}
+																	aria-label={actionLabel}
+																	title={actionLabel}
+																>
+																	<span class="material-symbols-rounded" aria-hidden="true"
+																		>{actionIcon}</span
+																	>
+																</button>
+															)}
+														</div>
 													</div>
 												</article>
 											);
@@ -916,7 +919,7 @@ const serializedProfessionals = professionals.length
 <script>
 	import {
 		buildStadiaStaticMapUrl,
-		HUB_LOCATION_CARD_STATIC_MAP_OPTIONS,
+		HUB_LOCATION_CARD_COVER_OPTIONS,
 		resolveMapTheme,
 	} from '../../lib/maplibre-static';
 
@@ -999,7 +1002,7 @@ const serializedProfessionals = professionals.length
 			if (apiKey && Number.isFinite(lat) && Number.isFinite(lng)) {
 				const url = buildStadiaStaticMapUrl(apiKey, { lat, lng }, {
 					theme,
-					...HUB_LOCATION_CARD_STATIC_MAP_OPTIONS,
+					...HUB_LOCATION_CARD_COVER_OPTIONS,
 				});
 				if (url && img.getAttribute('src') !== url) {
 					img.closest('[data-hub-map]')?.classList.add('is-loading');
@@ -1635,15 +1638,6 @@ const serializedProfessionals = professionals.length
 						lng,
 						hasCoords,
 					});
-				});
-			});
-			root.querySelectorAll<HTMLElement>('[data-hub-location-card]').forEach((card) => {
-				card.addEventListener('click', (event) => {
-					if (!isHubMobileViewport()) return;
-					const target = event.target as HTMLElement | null;
-					if (target?.closest('a, button')) return;
-					const openBtn = card.querySelector<HTMLButtonElement>('[data-hub-map-open]');
-					openBtn?.click();
 				});
 			});
 			mapModalCloseBtns.forEach((btn) => {

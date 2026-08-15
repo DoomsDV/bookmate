@@ -60,7 +60,7 @@ const personInitials = (name: string) => {
 const previewProfessionals = (hub?.professionals || []).map((pro) => ({
 	id: Number(pro.id_professional) || 0,
 	fullName: String(pro.full_name || '').trim(),
-	specialty: getPublicProfileSpecialtyLabel(pro.specialty) || 'Profesional',
+	specialty: getPublicProfileSpecialtyLabel(pro.specialty),
 	imageUrl: String(pro.image_url || '').trim(),
 	initials: personInitials(pro.full_name),
 }));

@@ -51,6 +51,7 @@ type Bootstrap = {
 			full_name?: string;
 			specialty?: string;
 			image_url?: string;
+			service_names?: string[];
 		}>;
 		service_categories?: string[];
 	} | null;
@@ -142,7 +143,7 @@ const mapPreviewProfessionals = (
 			return {
 				id: Number(row.id_professional) || 0,
 				fullName,
-				specialty: getPublicProfileSpecialtyLabel(String(row.specialty || '')) || 'Profesional',
+				specialty: getPublicProfileSpecialtyLabel(String(row.specialty || '')),
 				imageUrl: String(row.image_url || '').trim(),
 				initials: initialsFromName(fullName),
 			} satisfies PublicProfilePreviewProfessional;

@@ -31,6 +31,7 @@ export interface PublicOrgHubProfessional {
 	profile_slug: string;
 	booking_path: string;
 	location_ids: number[];
+	service_names: string[];
 }
 
 export interface PublicOrgHubGalleryImage {
@@ -82,6 +83,14 @@ const normalizeLocationIds = (value: unknown): number[] => {
 	return Array.from(new Set(ids));
 };
 
+const normalizeServiceNames = (value: unknown): string[] => {
+	if (!Array.isArray(value)) return [];
+	return value
+		.map((item) => String(item || '').trim())
+		.filter(Boolean)
+		.slice(0, 3);
+};
+
 const normalizeProfessional = (
 	value: unknown,
 	organizationSlug: string
@@ -107,6 +116,7 @@ const normalizeProfessional = (
 		profile_slug: profileSlug,
 		booking_path: bookingPath || fallbackPath,
 		location_ids: normalizeLocationIds(source.location_ids),
+		service_names: normalizeServiceNames(source.service_names),
 	};
 };
 

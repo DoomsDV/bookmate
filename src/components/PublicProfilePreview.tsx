@@ -331,12 +331,6 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 							<div className="hub-team-grid" aria-label="Profesionales">
 								{professionals.map((pro) => (
 									<div className="hub-pro-card" key={pro.id}>
-										<div className="hub-pro-card__top">
-											<span className="hub-pro-card__status">
-												<span className="hub-pro-card__status-dot" aria-hidden="true" />
-												Agenda abierta
-											</span>
-										</div>
 										<div className="hub-pro-card__main">
 											<div
 												className={`hub-pro-card__avatar${pro.imageUrl ? '' : ' hub-pro-card__avatar--ph'}`}
@@ -363,7 +357,9 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 											</div>
 											<div className="hub-pro-card__text">
 												<h3 className="hub-pro-card__name">{pro.fullName}</h3>
-												<p className="hub-pro-card__specialty">{pro.specialty}</p>
+												{pro.specialty ? (
+													<p className="hub-pro-card__specialty">{pro.specialty}</p>
+												) : null}
 											</div>
 										</div>
 										<span className="hub-pro-card__btn">
@@ -389,10 +385,12 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 							<div className="hub-locations-grid" aria-label="Sucursales">
 								{locations.map((loc) => (
 									<article className="hub-location-card" key={loc.id}>
-										<div className="hub-location-card__map hub-location-card__map--empty">
-											<span className="material-symbols-rounded" aria-hidden="true">
-												location_on
-											</span>
+										<div className="hub-location-card__map-frame">
+											<div className="hub-location-card__map hub-location-card__map--empty">
+												<span className="material-symbols-rounded" aria-hidden="true">
+													location_on
+												</span>
+											</div>
 										</div>
 										<div className="hub-location-card__body">
 											<div className="hub-location-card__info">
@@ -400,6 +398,34 @@ export default function PublicProfilePreview({ initial, variant = 'phone' }: Pro
 												{loc.address ? (
 													<p className="hub-location-card__address">{loc.address}</p>
 												) : null}
+												<p className="hub-location-card__meta">
+													<span className="material-symbols-rounded" aria-hidden="true">
+														groups
+													</span>
+													Equipo
+												</p>
+											</div>
+											<div className="hub-location-card__actions">
+												<button
+													type="button"
+													className="hub-location-card__map-btn"
+													tabIndex={-1}
+													aria-hidden="true"
+												>
+													<span className="material-symbols-rounded" aria-hidden="true">
+														map
+													</span>
+													<span className="hub-location-card__map-btn-text">Ver mapa</span>
+												</button>
+												<span
+													className="hub-location-card__action"
+													aria-hidden="true"
+													tabIndex={-1}
+												>
+													<span className="material-symbols-rounded" aria-hidden="true">
+														group
+													</span>
+												</span>
 											</div>
 										</div>
 									</article>

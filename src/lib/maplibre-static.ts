@@ -19,14 +19,17 @@ export const LOCATION_CARD_STATIC_MAP_OPTIONS = {
 	includeMarker: false,
 } as const;
 
-/** Banner 16:9 en cards del hub público (pestaña Sucursales). */
-export const HUB_LOCATION_CARD_STATIC_MAP_OPTIONS = {
+/** Cover ilustrativo en grilla móvil del hub (pestaña Sucursales). */
+export const HUB_LOCATION_CARD_COVER_OPTIONS = {
 	width: 640,
-	height: 360,
+	height: 240,
 	zoom: 15,
 	retina: false,
 	includeMarker: false,
 } as const;
+
+/** @deprecated Usar HUB_LOCATION_CARD_COVER_OPTIONS (móvil) o LOCATION_CARD_STATIC_MAP_OPTIONS (thumb desktop). */
+export const HUB_LOCATION_CARD_STATIC_MAP_OPTIONS = HUB_LOCATION_CARD_COVER_OPTIONS;
 
 /**
  * Miniatura Static Maps de Stadia (panel / covers).

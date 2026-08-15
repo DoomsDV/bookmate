@@ -16,6 +16,7 @@ export {
 	coordsToLngLat,
 	createBrandMarkerElement,
 	LOCATION_CARD_STATIC_MAP_OPTIONS,
+	HUB_LOCATION_CARD_COVER_OPTIONS,
 	HUB_LOCATION_CARD_STATIC_MAP_OPTIONS,
 	parseCoordinates,
 	renderBrandMapMarkerOverlay,
