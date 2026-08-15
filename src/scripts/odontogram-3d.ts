@@ -14,12 +14,25 @@ export type Odontogram3dSelectPoint = {
 	clientY: number;
 };
 
+export type Odontogram3dArchView = 'upper' | 'lower';
+
+export type Odontogram3dCapture = {
+	dataUrl: string;
+	width: number;
+	height: number;
+};
+
 export type Odontogram3dHandle = {
 	canvas: HTMLCanvasElement;
 	setTeeth: (teeth: Iterable<Odontogram3dTooth>) => void;
 	setSelectedTooth: (toothFdi: number | null) => void;
 	resize: () => void;
 	setAutoRotate: (enabled: boolean) => void;
+	resetView: () => void;
+	setArchView: (arch: Odontogram3dArchView) => void;
+	setRotateLocked: (locked: boolean) => void;
+	setGhostMode: (enabled: boolean) => void;
+	capturePng: () => Odontogram3dCapture | null;
 	dispose: () => void;
 };
 
@@ -27,6 +40,7 @@ export type MountOdontogram3dOptions = {
 	canvas: HTMLCanvasElement;
 	glbUrl?: string;
 	onToothSelect?: (toothFdi: number, point: Odontogram3dSelectPoint) => void;
+	onToothHover?: (toothFdi: number | null, point: Odontogram3dSelectPoint | null) => void;
 	onStatus?: (message: string | null) => void;
 };
 
@@ -45,7 +59,34 @@ const FINDING_COLORS: Record<Odontogram3dFindingCode, number> = {
 const DEFAULT_TOOTH_COLOR = 0xf4efe6;
 const HOVER_EMISSIVE = 0x2563eb;
 const DRAG_THRESHOLD_PX = 5;
+const GHOST_OPACITY = 0.32;
+const EXTRACTION_OPACITY = 0.14;
+const CAMERA_TWEEN_MS = 450;
 const FALLBACK_SHADER_PRECISION = { rangeMin: 127, rangeMax: 127, precision: 23 };
+
+type CameraPose = {
+	position: THREE.Vector3;
+	target: THREE.Vector3;
+	minDistance: number;
+	maxDistance: number;
+	near: number;
+	far: number;
+};
+
+type CameraTween = {
+	fromPosition: THREE.Vector3;
+	toPosition: THREE.Vector3;
+	fromTarget: THREE.Vector3;
+	toTarget: THREE.Vector3;
+	fromMinDistance: number;
+	toMinDistance: number;
+	fromMaxDistance: number;
+	toMaxDistance: number;
+	start: number;
+	duration: number;
+	near: number;
+	far: number;
+};
 
 /**
  * Nombres exactos del GLB `dientes.glb` (32 meshes, sin subpiezas por cara).
@@ -220,21 +261,83 @@ const normalizeFinding = (code: string): Odontogram3dFindingCode | null => {
 	return null;
 };
 
-const applyFinding = (entry: ToothEntry, finding: Odontogram3dFindingCode | null) => {
+const isUpperToothFdi = (fdi: number) => fdi >= 11 && fdi <= 28;
+
+const applyFinding = (
+	entry: ToothEntry,
+	finding: Odontogram3dFindingCode | null,
+	options: { ghost?: boolean; visible?: boolean } = {}
+) => {
 	const { material, baseColor } = entry;
 	const isExtraction = finding === 'EXTRACTION';
+	const ghost = Boolean(options.ghost);
+	const visible = options.visible !== false;
+	const opacity = isExtraction
+		? Math.min(EXTRACTION_OPACITY, ghost ? GHOST_OPACITY : 1)
+		: ghost
+			? GHOST_OPACITY
+			: 1;
+	const transparent = isExtraction || ghost;
 	material.emissive.setHex(0x000000);
 	material.emissiveIntensity = 0;
-	material.transparent = isExtraction;
-	material.opacity = isExtraction ? 0.14 : 1;
-	material.depthWrite = !isExtraction;
+	material.transparent = transparent;
+	material.opacity = opacity;
+	material.depthWrite = !transparent;
 	material.color.copy(
 		isExtraction || !finding ? baseColor : new THREE.Color(FINDING_COLORS[finding])
 	);
 	material.metalness = finding === 'CROWN' ? 0.45 : 0.06;
 	material.roughness = finding === 'CROWN' ? 0.28 : 0.48;
 	material.needsUpdate = true;
-	entry.mesh.visible = true;
+	entry.mesh.visible = visible;
+};
+
+const easeInOutCubic = (t: number) =>
+	t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+const poseFromBox = (
+	camera: THREE.PerspectiveCamera,
+	box: THREE.Box3,
+	mode: 'front' | Odontogram3dArchView
+): CameraPose => {
+	const size = box.getSize(new THREE.Vector3());
+	const center = box.getCenter(new THREE.Vector3());
+	const maxDim = Math.max(size.x, size.y, size.z, 1);
+	const fov = (camera.fov * Math.PI) / 180;
+	const desktop = window.matchMedia('(min-width: 1024px)').matches;
+	const fitFactor = mode === 'front' ? (desktop ? 1.18 : 1.55) : desktop ? 1.08 : 1.38;
+	const distance = (maxDim / 2 / Math.tan(fov / 2)) * fitFactor;
+	const position =
+		mode === 'front'
+			? new THREE.Vector3(center.x, center.y + maxDim * 0.18, center.z + distance)
+			: new THREE.Vector3(
+					center.x,
+					center.y + (mode === 'upper' ? -distance : distance),
+					center.z + distance * 0.18
+				);
+	return {
+		position,
+		target: center,
+		minDistance: distance * 0.35,
+		maxDistance: distance * 3.2,
+		near: Math.max(distance / 100, 0.01),
+		far: distance * 20,
+	};
+};
+
+const applyCameraPoseInstant = (
+	camera: THREE.PerspectiveCamera,
+	controls: OrbitControls,
+	pose: CameraPose
+) => {
+	controls.target.copy(pose.target);
+	camera.position.copy(pose.position);
+	camera.near = pose.near;
+	camera.far = pose.far;
+	camera.updateProjectionMatrix();
+	controls.minDistance = pose.minDistance;
+	controls.maxDistance = pose.maxDistance;
+	controls.update();
 };
 
 const replaceCanvas = (canvas: HTMLCanvasElement) => {
@@ -257,7 +360,7 @@ const createRenderer = (canvas: HTMLCanvasElement, conservative = false) => {
 		depth: true,
 		stencil: false,
 		premultipliedAlpha: true,
-		preserveDrawingBuffer: false,
+		preserveDrawingBuffer: true,
 		powerPreference: conservative ? 'default' : 'high-performance',
 		failIfMajorPerformanceCaveat: false,
 	};
@@ -274,6 +377,7 @@ const createRenderer = (canvas: HTMLCanvasElement, conservative = false) => {
 		context: gl,
 		antialias: Boolean(attributes.antialias),
 		alpha: true,
+		preserveDrawingBuffer: true,
 		powerPreference: attributes.powerPreference,
 	});
 };
@@ -300,28 +404,15 @@ const fitCameraToObject = (
 	controls: OrbitControls,
 	object: THREE.Object3D
 ) => {
-	const box = new THREE.Box3().setFromObject(object);
-	const size = box.getSize(new THREE.Vector3());
-	const center = box.getCenter(new THREE.Vector3());
-	const maxDim = Math.max(size.x, size.y, size.z, 1);
-	const fov = (camera.fov * Math.PI) / 180;
-	const fitFactor = window.matchMedia('(min-width: 1024px)').matches ? 1.18 : 1.55;
-	const distance = (maxDim / 2 / Math.tan(fov / 2)) * fitFactor;
-
-	controls.target.copy(center);
-	camera.position.set(center.x, center.y + maxDim * 0.18, center.z + distance);
-	camera.near = Math.max(distance / 100, 0.01);
-	camera.far = distance * 20;
-	camera.updateProjectionMatrix();
-	controls.minDistance = distance * 0.35;
-	controls.maxDistance = distance * 3.2;
-	controls.update();
+	const pose = poseFromBox(camera, new THREE.Box3().setFromObject(object), 'front');
+	applyCameraPoseInstant(camera, controls, pose);
+	return pose;
 };
 
 export async function mountOdontogram3d(
 	options: MountOdontogram3dOptions
 ): Promise<Odontogram3dHandle> {
-	const { onToothSelect, onStatus } = options;
+	const { onToothSelect, onToothHover, onStatus } = options;
 	onStatus?.('Cargando modelo 3D…');
 
 	const { renderer, canvas } = createRendererWithFallback(options.canvas);
@@ -361,11 +452,92 @@ export async function mountOdontogram3d(
 	let pointerDownY = 0;
 	let dragging = false;
 	let autoRotateLocked = false;
+	let rotateLocked = false;
+	let ghostMode = false;
+	let activeArch: 'both' | Odontogram3dArchView = 'both';
+	let frontPose: CameraPose | null = null;
+	let cameraTween: CameraTween | null = null;
+
+	const canAutoRotate = () => !autoRotateLocked && !rotateLocked && !cameraTween;
 
 	const setAutoRotate = (enabled: boolean) => {
 		if (disposed) return;
 		autoRotateLocked = !enabled;
-		controls.autoRotate = enabled;
+		controls.autoRotate = enabled && !rotateLocked && !cameraTween;
+	};
+
+	const isToothInActiveArch = (fdi: number) => {
+		if (activeArch === 'both') return true;
+		const upper = isUpperToothFdi(fdi);
+		return activeArch === 'upper' ? upper : !upper;
+	};
+
+	const refreshTooth = (entry: ToothEntry) => {
+		applyFinding(entry, findings.get(entry.fdi) ?? null, {
+			ghost: ghostMode,
+			visible: isToothInActiveArch(entry.fdi),
+		});
+	};
+
+	const cancelCameraTween = () => {
+		cameraTween = null;
+		if (canAutoRotate()) controls.autoRotate = true;
+	};
+
+	const startCameraTween = (pose: CameraPose) => {
+		camera.near = pose.near;
+		camera.far = pose.far;
+		camera.updateProjectionMatrix();
+		controls.autoRotate = false;
+		cameraTween = {
+			fromPosition: camera.position.clone(),
+			toPosition: pose.position.clone(),
+			fromTarget: controls.target.clone(),
+			toTarget: pose.target.clone(),
+			fromMinDistance: controls.minDistance,
+			toMinDistance: pose.minDistance,
+			fromMaxDistance: controls.maxDistance,
+			toMaxDistance: pose.maxDistance,
+			start: performance.now(),
+			duration: CAMERA_TWEEN_MS,
+			near: pose.near,
+			far: pose.far,
+		};
+	};
+
+	const applyCameraTweenFrame = () => {
+		if (!cameraTween) return;
+		const t = Math.min(1, (performance.now() - cameraTween.start) / cameraTween.duration);
+		const e = easeInOutCubic(t);
+		camera.position.lerpVectors(cameraTween.fromPosition, cameraTween.toPosition, e);
+		controls.target.lerpVectors(cameraTween.fromTarget, cameraTween.toTarget, e);
+		controls.minDistance =
+			cameraTween.fromMinDistance + (cameraTween.toMinDistance - cameraTween.fromMinDistance) * e;
+		controls.maxDistance =
+			cameraTween.fromMaxDistance + (cameraTween.toMaxDistance - cameraTween.fromMaxDistance) * e;
+		if (t < 1) return;
+		camera.position.copy(cameraTween.toPosition);
+		controls.target.copy(cameraTween.toTarget);
+		controls.minDistance = cameraTween.toMinDistance;
+		controls.maxDistance = cameraTween.toMaxDistance;
+		camera.near = cameraTween.near;
+		camera.far = cameraTween.far;
+		camera.updateProjectionMatrix();
+		cameraTween = null;
+		if (canAutoRotate()) controls.autoRotate = true;
+	};
+
+	const boxForArch = (arch: Odontogram3dArchView) => {
+		const box = new THREE.Box3();
+		let found = false;
+		for (const entry of teeth.values()) {
+			const upper = isUpperToothFdi(entry.fdi);
+			if (arch === 'upper' ? !upper : upper) continue;
+			box.expandByObject(entry.mesh);
+			found = true;
+		}
+		if (found && !box.isEmpty()) return box;
+		return root ? new THREE.Box3().setFromObject(root) : null;
 	};
 
 	const applyHighlight = (entry: ToothEntry) => {
@@ -374,22 +546,34 @@ export async function mountOdontogram3d(
 		entry.material.emissiveIntensity = 0.22;
 	};
 
+	const refreshAllTeeth = () => {
+		for (const entry of teeth.values()) refreshTooth(entry);
+		if (selected) applyHighlight(selected);
+		if (hovered) applyHighlight(hovered);
+	};
+
 	const clearHighlight = (entry: ToothEntry) => {
 		if (selected === entry || hovered === entry) {
 			applyHighlight(entry);
 			return;
 		}
 		entry.outline.visible = false;
-		applyFinding(entry, findings.get(entry.fdi) ?? null);
+		refreshTooth(entry);
 	};
 
-	const setHover = (next: ToothEntry | null) => {
-		if (hovered === next) return;
-		const previous = hovered;
-		hovered = next;
-		if (previous) clearHighlight(previous);
-		if (hovered) applyHighlight(hovered);
-		canvas.style.cursor = hovered ? 'pointer' : 'grab';
+	const setHover = (next: ToothEntry | null, point: Odontogram3dSelectPoint | null = null) => {
+		if (hovered !== next) {
+			const previous = hovered;
+			hovered = next;
+			if (previous) clearHighlight(previous);
+			if (hovered) applyHighlight(hovered);
+			canvas.style.cursor = hovered ? 'pointer' : rotateLocked ? 'default' : 'grab';
+		}
+		if (!hovered || !point) {
+			onToothHover?.(null, null);
+			return;
+		}
+		onToothHover?.(hovered.fdi, point);
 	};
 
 	const setSelectedTooth = (toothFdi: number | null) => {
@@ -415,7 +599,9 @@ export async function mountOdontogram3d(
 
 	const pickTooth = (): ToothEntry | null => {
 		raycaster.setFromCamera(pointer, camera);
-		const meshes = [...teeth.values()].map((entry) => entry.mesh);
+		const meshes = [...teeth.values()]
+			.filter((entry) => entry.mesh.visible)
+			.map((entry) => entry.mesh);
 		const hits = raycaster.intersectObjects(meshes, false);
 		const fdi = hits[0] ? Number(hits[0].object.userData.fdi || 0) : 0;
 		return fdi > 0 ? (teeth.get(fdi) ?? null) : null;
@@ -437,6 +623,7 @@ export async function mountOdontogram3d(
 		if (disposed) return;
 		rafId = window.requestAnimationFrame(tick);
 		controls.update();
+		applyCameraTweenFrame();
 		renderer.render(scene, camera);
 	};
 
@@ -444,6 +631,7 @@ export async function mountOdontogram3d(
 		pointerDownX = event.clientX;
 		pointerDownY = event.clientY;
 		dragging = false;
+		cancelCameraTween();
 		controls.autoRotate = false;
 	};
 
@@ -454,12 +642,17 @@ export async function mountOdontogram3d(
 		) {
 			dragging = true;
 		}
-		if (event.buttons === 0 || !dragging) setHover(pickTooth());
+		if (event.buttons !== 0 && dragging) {
+			setHover(null);
+			return;
+		}
+		const entry = pickTooth();
+		setHover(entry, entry ? { clientX: event.clientX, clientY: event.clientY } : null);
 	};
 
 	const onPointerUp = (event: PointerEvent) => {
 		updatePointer(event);
-		if (!autoRotateLocked) controls.autoRotate = true;
+		if (canAutoRotate()) controls.autoRotate = true;
 		const moved = Math.hypot(event.clientX - pointerDownX, event.clientY - pointerDownY);
 		if (dragging || moved > DRAG_THRESHOLD_PX) return;
 		const entry = pickTooth();
@@ -471,7 +664,7 @@ export async function mountOdontogram3d(
 
 	const onPointerLeave = () => {
 		setHover(null);
-		canvas.style.cursor = 'grab';
+		canvas.style.cursor = rotateLocked ? 'default' : 'grab';
 	};
 
 	const onContextMenu = (event: Event) => event.preventDefault();
@@ -536,6 +729,13 @@ export async function mountOdontogram3d(
 			setSelectedTooth() {},
 			resize() {},
 			setAutoRotate() {},
+			resetView() {},
+			setArchView() {},
+			setRotateLocked() {},
+			setGhostMode() {},
+			capturePng() {
+				return null;
+			},
 			dispose() {},
 		};
 	}
@@ -579,7 +779,8 @@ export async function mountOdontogram3d(
 	}
 
 	scene.add(root);
-	fitCameraToObject(camera, controls, root);
+	frontPose = fitCameraToObject(camera, controls, root);
+	controls.saveState();
 	resize();
 	tick();
 	onStatus?.(null);
@@ -592,12 +793,75 @@ export async function mountOdontogram3d(
 			const finding = normalizeFinding(String(tooth.finding_code || ''));
 			if (fdi > 0 && finding) findings.set(fdi, finding);
 		}
-		for (const entry of teeth.values()) {
-			applyFinding(entry, findings.get(entry.fdi) ?? null);
-		}
-		if (selected) applyHighlight(selected);
-		if (hovered) applyHighlight(hovered);
+		refreshAllTeeth();
 	};
 
-	return { canvas, setTeeth, setSelectedTooth, resize, setAutoRotate, dispose };
+	const resetView = () => {
+		if (disposed || !frontPose) return;
+		activeArch = 'both';
+		refreshAllTeeth();
+		startCameraTween(frontPose);
+	};
+
+	const setArchView = (arch: Odontogram3dArchView) => {
+		if (disposed) return;
+		activeArch = arch;
+		refreshAllTeeth();
+		const box = boxForArch(arch);
+		if (!box) return;
+		startCameraTween(poseFromBox(camera, box, arch));
+	};
+
+	const setRotateLocked = (locked: boolean) => {
+		if (disposed) return;
+		rotateLocked = locked;
+		controls.enableRotate = !locked;
+		controls.autoRotate = canAutoRotate();
+		if (!hovered) canvas.style.cursor = locked ? 'default' : 'grab';
+	};
+
+	const setGhostMode = (enabled: boolean) => {
+		if (disposed) return;
+		ghostMode = enabled;
+		refreshAllTeeth();
+	};
+
+	const capturePng = (): Odontogram3dCapture | null => {
+		if (disposed) return null;
+		renderer.render(scene, camera);
+		const width = canvas.width;
+		const height = canvas.height;
+		if (width < 2 || height < 2) return null;
+		try {
+			const offscreen = document.createElement('canvas');
+			offscreen.width = width;
+			offscreen.height = height;
+			const context = offscreen.getContext('2d');
+			if (!context) return null;
+			context.fillStyle = '#f8f9fa';
+			context.fillRect(0, 0, width, height);
+			context.drawImage(canvas, 0, 0);
+			return {
+				dataUrl: offscreen.toDataURL('image/png'),
+				width,
+				height,
+			};
+		} catch {
+			return null;
+		}
+	};
+
+	return {
+		canvas,
+		setTeeth,
+		setSelectedTooth,
+		resize,
+		setAutoRotate,
+		resetView,
+		setArchView,
+		setRotateLocked,
+		setGhostMode,
+		capturePng,
+		dispose,
+	};
 }

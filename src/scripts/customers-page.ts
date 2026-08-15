@@ -4,10 +4,7 @@ import type {
 	CustomerProfile,
 	CustomerTopService,
 } from '../lib/customers';
-import {
-	ATTACHMENT_LIST_CLASS,
-	createAttachmentListItem,
-} from '../lib/attachment-list-item';
+import { createAttachmentListItem } from '../lib/attachment-list-item';
 import { bindFileViewer, type FileViewerHandle } from '../lib/file-viewer';
 import { hasAnySessionNote, SESSION_NOTE_FIELDS } from '../lib/session-notes';
 import { updateAppPaginationDom } from '../lib/pagination';
@@ -140,8 +137,13 @@ class CustomerManager extends HTMLElement {
 	private odontogramLockAction: HTMLElement | null = null;
 	private odontogramContent: HTMLElement | null = null;
 	private odontogramToolbar: HTMLElement | null = null;
+	private odontogramCam: HTMLElement | null = null;
 	private odontogramCanvas: HTMLCanvasElement | null = null;
 	private odontogramViewport: HTMLElement | null = null;
+	private odontogramTip: HTMLElement | null = null;
+	private odontogramTipTooth: HTMLElement | null = null;
+	private odontogramTipFinding: HTMLElement | null = null;
+	private odontogramExport: HTMLButtonElement | null = null;
 	private odontogramSide: HTMLElement | null = null;
 	private odontogramStatus: HTMLElement | null = null;
 	private odontogramLoading: HTMLElement | null = null;
@@ -168,6 +170,9 @@ class CustomerManager extends HTMLElement {
 	private odontogramLoadRequestId = 0;
 	private odontogram3d: Odontogram3dHandle | null = null;
 	private odontogram3dMountGen = 0;
+	private odontogramRotateLocked = false;
+	private odontogramGhostMode = false;
+	private odontogramExporting = false;
 	private odontogramPopoverDragged = false;
 	private odontogramPopoverDrag: {
 		pointerId: number;
@@ -258,11 +263,22 @@ class CustomerManager extends HTMLElement {
 		);
 		this.odontogramContent = this.querySelector<HTMLElement>('[data-customer-odontogram-content]');
 		this.odontogramToolbar = this.querySelector<HTMLElement>('[data-customer-odontogram-toolbar]');
+		this.odontogramCam = this.querySelector<HTMLElement>('[data-customer-odontogram-cam]');
 		this.odontogramCanvas = this.querySelector<HTMLCanvasElement>(
 			'[data-customer-odontogram-canvas]'
 		);
 		this.odontogramViewport = this.querySelector<HTMLElement>(
 			'[data-customer-odontogram-viewport]'
+		);
+		this.odontogramTip = this.querySelector<HTMLElement>('[data-customer-odontogram-tip]');
+		this.odontogramTipTooth = this.querySelector<HTMLElement>(
+			'[data-customer-odontogram-tip-tooth]'
+		);
+		this.odontogramTipFinding = this.querySelector<HTMLElement>(
+			'[data-customer-odontogram-tip-finding]'
+		);
+		this.odontogramExport = this.querySelector<HTMLButtonElement>(
+			'[data-customer-odontogram-export]'
 		);
 		this.odontogramSide = this.querySelector<HTMLElement>('[data-customer-odontogram-side]');
 		this.odontogramStatus = this.querySelector<HTMLElement>('[data-customer-odontogram-status]');
@@ -342,6 +358,8 @@ class CustomerManager extends HTMLElement {
 		}
 
 		this.odontogramToolbar?.addEventListener('click', this.handleOdontogramToolbarClick, { signal });
+		this.odontogramCam?.addEventListener('click', this.handleOdontogramCamClick, { signal });
+		this.odontogramExport?.addEventListener('click', this.handleOdontogramExportClick, { signal });
 		this.odontogramEventsList?.addEventListener('click', this.handleOdontogramEventsClick, {
 			signal,
 		});
@@ -1224,6 +1242,10 @@ class CustomerManager extends HTMLElement {
 		this.odontogram3dMountGen += 1;
 		this.odontogram3d?.dispose();
 		this.odontogram3d = null;
+		this.odontogramRotateLocked = false;
+		this.odontogramGhostMode = false;
+		this.syncOdontogramCamUi();
+		this.hideOdontogramTip();
 		this.recycleOdontogramCanvas();
 		this.setOdontogramViewerStatus(null);
 	}
@@ -1253,7 +1275,11 @@ class CustomerManager extends HTMLElement {
 			const handle = await mountOdontogram3d({
 				canvas: this.odontogramCanvas,
 				onToothSelect: (toothFdi) => {
+					this.hideOdontogramTip();
 					this.openOdontogramPopover(toothFdi);
+				},
+				onToothHover: (toothFdi, point) => {
+					this.updateOdontogramTip(toothFdi, point);
 				},
 				onStatus: (message) => this.setOdontogramViewerStatus(message),
 			});
@@ -1579,6 +1605,157 @@ class CustomerManager extends HTMLElement {
 		}
 	}
 
+	private syncOdontogramCamUi() {
+		const lockButton = this.odontogramCam?.querySelector<HTMLButtonElement>(
+			'[data-odontogram-cam="lock"]'
+		);
+		const ghostButton = this.odontogramCam?.querySelector<HTMLButtonElement>(
+			'[data-odontogram-cam="ghost"]'
+		);
+		const lockIcon = this.odontogramCam?.querySelector<HTMLElement>(
+			'[data-odontogram-cam-lock-icon]'
+		);
+		const lockLabel = this.odontogramRotateLocked ? 'Desbloquear rotación' : 'Bloquear rotación';
+		if (lockButton) {
+			lockButton.setAttribute('aria-pressed', this.odontogramRotateLocked ? 'true' : 'false');
+			lockButton.setAttribute('title', lockLabel);
+			lockButton.setAttribute('aria-label', lockLabel);
+		}
+		if (lockIcon) lockIcon.textContent = this.odontogramRotateLocked ? 'lock' : 'lock_open';
+		if (ghostButton) {
+			ghostButton.setAttribute('aria-pressed', this.odontogramGhostMode ? 'true' : 'false');
+		}
+	}
+
+	private handleOdontogramCamClick = (event: Event) => {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const button = target.closest<HTMLButtonElement>('[data-odontogram-cam]');
+		if (!button || !this.odontogramCam?.contains(button)) return;
+
+		const action = button.dataset.odontogramCam;
+		if (!action || !this.odontogram3d) return;
+
+		if (action === 'reset') {
+			this.odontogram3d.resetView();
+			return;
+		}
+		if (action === 'upper' || action === 'lower') {
+			this.odontogram3d.setArchView(action);
+			return;
+		}
+		if (action === 'lock') {
+			this.odontogramRotateLocked = !this.odontogramRotateLocked;
+			this.odontogram3d.setRotateLocked(this.odontogramRotateLocked);
+			this.syncOdontogramCamUi();
+			return;
+		}
+		if (action === 'ghost') {
+			this.odontogramGhostMode = !this.odontogramGhostMode;
+			this.odontogram3d.setGhostMode(this.odontogramGhostMode);
+			this.syncOdontogramCamUi();
+		}
+	};
+
+	private hideOdontogramTip() {
+		this.odontogramTip?.classList.add('hidden');
+	}
+
+	private updateOdontogramTip(
+		toothFdi: number | null,
+		point: { clientX: number; clientY: number } | null
+	) {
+		const tip = this.odontogramTip;
+		const viewport = this.odontogramViewport;
+		if (!tip || !viewport) return;
+		if (!toothFdi || !point || this.isOdontogramPopoverOpen()) {
+			tip.classList.add('hidden');
+			return;
+		}
+
+		if (this.odontogramTipTooth) {
+			this.odontogramTipTooth.textContent = `Pieza ${toothFdi}`;
+		}
+
+		const tooth = this.odontogramTeeth.get(toothFdi);
+		if (this.odontogramTipFinding) {
+			if (tooth) {
+				const finding = this.normalizeOdontogramFinding(tooth.finding_code);
+				const label = this.formatOdontogramFindingLabel(String(tooth.finding_code));
+				const faces = this.odontogramFindingNeedsFaces(finding)
+					? this.formatOdontogramFaces(tooth.faces)
+					: '';
+				this.odontogramTipFinding.textContent = faces ? `${label} (${faces})` : label;
+				this.odontogramTipFinding.classList.remove('hidden');
+			} else {
+				this.odontogramTipFinding.textContent = '';
+				this.odontogramTipFinding.classList.add('hidden');
+			}
+		}
+
+		tip.classList.remove('hidden');
+		const rect = viewport.getBoundingClientRect();
+		const tipWidth = tip.offsetWidth || 160;
+		const tipHeight = tip.offsetHeight || 48;
+		const offset = 14;
+		const x = Math.min(
+			Math.max(8, point.clientX - rect.left + offset),
+			Math.max(8, rect.width - tipWidth - 8)
+		);
+		const y = Math.min(
+			Math.max(8, point.clientY - rect.top + offset),
+			Math.max(8, rect.height - tipHeight - 8)
+		);
+		tip.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
+	}
+
+	private handleOdontogramExportClick = () => {
+		void this.exportOdontogramPdf();
+	};
+
+	private async exportOdontogramPdf() {
+		if (this.odontogramExporting) return;
+		this.odontogramExporting = true;
+		if (this.odontogramExport) this.odontogramExport.disabled = true;
+
+		try {
+			const capture = this.odontogram3d?.capturePng() ?? null;
+			const customerName = String(this.profileNameNode?.textContent || 'Cliente').trim() || 'Cliente';
+			const clinicName = String(this.dataset.orgName || '').trim();
+			const logoUrl = String(this.dataset.orgLogoUrl || '').trim();
+			const { downloadOdontogramPdf, loadImageDataUrl } = await import('../lib/odontogram-pdf');
+			const clinicLogoDataUrl = logoUrl ? await loadImageDataUrl(logoUrl) : null;
+			await downloadOdontogramPdf({
+				customerName,
+				customerHc:
+					this.activeProfileCustomerId > 0 ? String(this.activeProfileCustomerId) : '',
+				clinicName,
+				clinicLogoDataUrl,
+				capturedAt: new Date(),
+				image: capture,
+				events: this.odontogramEvents.map((event) => {
+					const finding = this.normalizeOdontogramFinding(event.finding_code);
+					return {
+						date: this.formatOdontogramEventDate(event.created_at),
+						toothFdi: Number(event.tooth_fdi || 0),
+						finding: this.formatOdontogramFindingLabel(String(event.finding_code)),
+						faces: this.odontogramFindingNeedsFaces(finding)
+							? this.formatOdontogramFaces(event.faces)
+							: '',
+						notes: String(event.notes || '').trim(),
+					};
+				}),
+			});
+		} catch (error) {
+			if (import.meta.env.DEV) {
+				console.error('[odontogram-pdf] no se pudo generar el PDF', error);
+			}
+		} finally {
+			this.odontogramExporting = false;
+			if (this.odontogramExport) this.odontogramExport.disabled = false;
+		}
+	}
+
 	private updateOdontogramToolbarUi() {
 		if (!this.odontogramToolbar) return;
 		for (const button of this.odontogramToolbar.querySelectorAll<HTMLButtonElement>(
@@ -1704,6 +1881,7 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private openOdontogramPopover(toothFdi: number) {
+		this.hideOdontogramTip();
 		if (!this.odontogramPopover || toothFdi <= 0) return;
 
 		this.odontogramPopoverTooth = toothFdi;
@@ -1996,6 +2174,7 @@ class CustomerManager extends HTMLElement {
 		notesBlock.className = 'customer-profile-history-block';
 
 		const structuredFields = SESSION_NOTE_FIELDS.map((field) => ({
+			key: field.key,
 			label: field.label,
 			value: String(appointment[field.key] || '').trim(),
 		})).filter((field) => field.value.length > 0);
@@ -2004,13 +2183,16 @@ class CustomerManager extends HTMLElement {
 			for (const field of structuredFields) {
 				const section = document.createElement('div');
 				section.className = 'customer-profile-history-note-section';
-				const label = document.createElement('p');
-				label.className = 'customer-profile-history-block__label';
-				label.textContent = field.label;
+				if (field.key !== 'procedure_notes') {
+					const label = document.createElement('p');
+					label.className = 'customer-profile-history-block__label';
+					label.textContent = field.label;
+					section.appendChild(label);
+				}
 				const text = document.createElement('p');
 				text.className = 'customer-profile-history-notes';
 				text.textContent = field.value;
-				section.append(label, text);
+				section.appendChild(text);
 				notesBlock.appendChild(section);
 			}
 		} else {
@@ -2044,10 +2226,11 @@ class CustomerManager extends HTMLElement {
 		const attachments = Array.isArray(appointment.attachments) ? appointment.attachments : [];
 		if (attachments.length > 0) {
 			const list = document.createElement('ul');
-			list.className = `customer-profile-history-attachments ${ATTACHMENT_LIST_CLASS}`;
+			list.className = 'customer-profile-history-attachments';
 			for (const file of attachments) {
 				list.appendChild(
 					createAttachmentListItem(file, {
+						variant: 'chip',
 						onPreview: () =>
 							this.fileViewer?.open({
 								url: file.url,
