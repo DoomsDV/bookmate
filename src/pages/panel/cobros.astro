@@ -660,6 +660,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		color: var(--primary);
 		background: color-mix(in srgb, var(--primary) 10%, var(--surface-bright));
 	}
+
+	.cobros-period-filter-btn:disabled,
+	.cobros-period-filter-btn.is-disabled {
+		opacity: 0.45;
+		cursor: not-allowed;
+		pointer-events: none;
+	}
 	.cobros-period-filter-badge {
 		position: absolute;
 		top: 0.45rem;

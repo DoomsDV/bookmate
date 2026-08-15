@@ -34,9 +34,11 @@ export const GET: APIRoute = async ({ locals, url }) => {
 		requireStaff(locals.roleId);
 
 		const status = String(url.searchParams.get('status') || 'all').trim() as CobrosStatusFilter;
-		const datePreset = String(
-			url.searchParams.get('date_preset') || 'this_month'
-		).trim() as CobrosDatePreset;
+		const datePreset = (
+			status === 'all'
+				? 'all'
+				: String(url.searchParams.get('date_preset') || 'this_month').trim()
+		) as CobrosDatePreset;
 		const dateFrom = String(url.searchParams.get('date_from') || '').trim() || undefined;
 		const dateTo = String(url.searchParams.get('date_to') || '').trim() || undefined;
 		const page = Number(url.searchParams.get('page') || 1);

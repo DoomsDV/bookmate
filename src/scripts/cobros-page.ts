@@ -152,6 +152,7 @@ export const initCobrosPage = () => {
 	let page = 1;
 	let totalRecords = 0;
 	let activeDateField: 'from' | 'to' | null = null;
+	let datePickerAnchor: HTMLElement | null = null;
 	let pickerViewDate = new Date();
 	let pickerDraftDate = new Date();
 
@@ -175,7 +176,7 @@ export const initCobrosPage = () => {
 			cardsEl?.replaceChildren();
 			emptyEl?.classList.add('hidden');
 		}
-		if (periodFilterBtn) periodFilterBtn.disabled = on;
+		if (periodFilterBtn) periodFilterBtn.disabled = on || statusFilter === 'all';
 	};
 
 	const closePeriodSheet = () => {
@@ -231,8 +232,6 @@ export const initCobrosPage = () => {
 			which === 'from' ? true : syncOne(dateToTextEl, dateToEl, datePreset === 'custom');
 		return fromOk && toOk;
 	};
-
-	let datePickerAnchor: HTMLElement | null = null;
 
 	const ensurePickerMonthOptions = () => {
 		if (!datePickerMonth || datePickerMonth.options.length > 0) return;
@@ -392,10 +391,19 @@ export const initCobrosPage = () => {
 	const updatePeriodFilterUi = () => {
 		const mobileFilters =
 			typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches;
-		const active = datePreset !== 'this_month' || (mobileFilters && statusFilter !== 'all');
+		const datesIgnored = statusFilter === 'all';
+		const active =
+			!datesIgnored && (datePreset !== 'this_month' || (mobileFilters && statusFilter !== 'all'));
 		periodFilterBadge?.classList.toggle('hidden', !active);
 		periodFilterBtn?.classList.toggle('is-active', active);
+		periodFilterBtn?.classList.toggle('is-disabled', datesIgnored);
 		periodFilterBtn?.setAttribute('aria-pressed', active ? 'true' : 'false');
+		if (periodFilterBtn) {
+			periodFilterBtn.disabled = loading || datesIgnored;
+			periodFilterBtn.title = datesIgnored
+				? 'El periodo no aplica en Todos: se muestran todos los meses'
+				: 'Filtrar por periodo';
+		}
 
 		periodSheet?.querySelectorAll<HTMLButtonElement>('[data-period-option]').forEach((btn) => {
 			const selectedOpt = btn.dataset.periodOption === datePreset;
@@ -465,6 +473,7 @@ export const initCobrosPage = () => {
 	const applyStatusOption = (next: CobrosStatusFilter) => {
 		statusFilter = next;
 		page = 1;
+		if (next === 'all') closePeriodSheet();
 		syncTabs();
 		updatePeriodFilterUi();
 		void load();
@@ -756,11 +765,11 @@ export const initCobrosPage = () => {
 		try {
 			const params = new URLSearchParams({
 				status: statusFilter,
-				date_preset: datePreset,
+				date_preset: statusFilter === 'all' ? 'all' : datePreset,
 				page: String(page),
 				limit: String(PAGE_SIZE),
 			});
-			if (datePreset === 'custom') {
+			if (statusFilter !== 'all' && datePreset === 'custom') {
 				if (dateFromEl?.value) params.set('date_from', dateFromEl.value);
 				if (dateToEl?.value) params.set('date_to', dateToEl.value);
 			}
