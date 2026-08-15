@@ -2205,12 +2205,10 @@ class CustomerManager extends HTMLElement {
 			for (const field of structuredFields) {
 				const section = document.createElement('div');
 				section.className = 'customer-profile-history-note-section';
-				if (field.key !== 'procedure_notes') {
-					const label = document.createElement('p');
-					label.className = 'customer-profile-history-block__label';
-					label.textContent = field.label;
-					section.appendChild(label);
-				}
+				const label = document.createElement('p');
+				label.className = 'customer-profile-history-block__label';
+				label.textContent = field.label;
+				section.appendChild(label);
 				const text = document.createElement('p');
 				text.className = 'customer-profile-history-notes';
 				text.textContent = field.value;

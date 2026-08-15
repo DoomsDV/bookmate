@@ -179,14 +179,18 @@ dialog[data-bookmate-tour-shell] .driver-popover * {
 	pointer-events: auto;
 }
 
-/* Popover siempre visible y por encima del overlay dentro del shell */
+/* Popover por encima del overlay dentro del shell; la opacidad la maneja driver.js al animar */
 dialog[data-bookmate-tour-shell] .bookmate-driver-popover.driver-popover {
 	position: fixed !important;
 	overflow: visible;
 	max-height: none;
 	z-index: 2147483647;
-	visibility: visible;
-	opacity: 1;
+}
+
+body.driver-fade dialog[data-bookmate-tour-shell] .bookmate-driver-popover.driver-popover {
+	transition:
+		top var(--driver-animation-duration, 0.32s) ease,
+		left var(--driver-animation-duration, 0.32s) ease;
 }
 
 dialog[data-professional-modal] .driver-active-element {

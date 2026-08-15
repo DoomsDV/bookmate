@@ -22,6 +22,10 @@ export type BookmateTourRunOptions = {
 	overlayOpacity?: number;
 	stagePadding?: number;
 	stageRadius?: number;
+	/** Transición entre pasos (driver.js). Default: true. */
+	animate?: boolean;
+	/** Duración de la transición en ms cuando `animate` es true. Default: 320. */
+	duration?: number;
 	/** Desplaza el objetivo al centro del contenedor con scroll antes de posicionar el popover. */
 	scrollIntoView?: boolean | { rootSelector?: string };
 	/** Destruye la guía si este contenedor se cierra (p. ej. `[data-professional-modal]`). */
@@ -120,8 +124,6 @@ function mountPopoverInTourShell(popoverWrapper: HTMLElement) {
 	}
 
 	popoverWrapper.style.display = 'block';
-	popoverWrapper.style.visibility = 'visible';
-	popoverWrapper.style.opacity = '1';
 
 	const overlay = shell.querySelector('.driver-overlay');
 	if (overlay && popoverWrapper.previousElementSibling !== overlay) {
@@ -370,8 +372,6 @@ function pinPopoverNearActiveElement(popover: HTMLElement, side: 'top' | 'bottom
 	}
 
 	popover.style.display = 'block';
-	popover.style.visibility = 'visible';
-	popover.style.opacity = '1';
 	popover.style.top = `${Math.max(12, top)}px`;
 	popover.style.left = `${left}px`;
 	popover.style.bottom = 'auto';
@@ -389,40 +389,21 @@ function syncTourLayout(
 		return;
 	}
 
-	const shell = document.querySelector<HTMLDialogElement>(TOUR_SHELL_SELECTOR);
-	const popoverAlreadyInShell =
-		Boolean(activeTourPopover) && Boolean(shell) && activeTourPopover?.parentElement === shell;
-
-	if (activeTourPopover && !popoverAlreadyInShell) {
-		mountPopoverInTourShell(activeTourPopover);
-	}
-
-	activeDriver.refresh();
-	scheduleRemoveTourOverlaysAfterDriverPaint();
-
-	if (activeTourPopover) {
-		mountPopoverInTourShell(activeTourPopover);
-	}
-
 	const popover = activeTourPopover;
 	if (!(popover instanceof HTMLElement)) return;
 
-	popover.style.display = 'block';
-	popover.style.visibility = 'visible';
+	mountPopoverInTourShell(popover);
+	activeDriver.refresh();
+	scheduleRemoveTourOverlaysAfterDriverPaint();
 
 	const activeElement = document.querySelector('.driver-active-element');
-	const shouldPin =
-		activeTourUsesTopLayerShell ||
-		isPopoverMispositioned(popover, activeElement);
-
-	if (shouldPin && activeElement instanceof HTMLElement) {
+	if (activeElement instanceof HTMLElement && isPopoverMispositioned(popover, activeElement)) {
 		pinPopoverNearActiveElement(popover, preferredSide);
 	}
 }
 
 function handlePopoverRender(
 	popoverDom: PopoverDOM,
-	preferredSide: 'top' | 'bottom',
 	hostSelector?: string
 ) {
 	if (!isTourHostOpen(hostSelector)) {
@@ -432,9 +413,6 @@ function handlePopoverRender(
 
 	activeTourPopover = popoverDom.wrapper;
 	mountPopoverInTourShell(popoverDom.wrapper);
-	if (document.querySelector('.driver-active-element')) {
-		pinPopoverNearActiveElement(popoverDom.wrapper, preferredSide);
-	}
 }
 
 export function hasSeenBookmateTour(storageKey: string) {
@@ -459,6 +437,8 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 	const needsScrollSync = Boolean(options.scrollIntoView);
 	const hostSelector = options.hostSelector;
 	const overlayOpacity = options.overlayOpacity ?? 0.55;
+	const animate = options.animate ?? true;
+	const duration = options.duration ?? 320;
 	activeTourOverlayOpacity = overlayOpacity;
 	activeTourStorageKey = options.storageKey;
 	activeTourPersistCompletion = options.persistCompletion !== false;
@@ -466,7 +446,8 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 
 	activeTourDriver = driver({
 		allowClose: true,
-		animate: false,
+		animate,
+		duration,
 		showProgress: true,
 		progressText: '{{current}} de {{total}}',
 		showButtons: ['next', 'previous'],
@@ -483,7 +464,6 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 		onDeselected: useShell
 			? () => {
 					reparentTourPopoverToBody(activeTourPopover);
-					activeTourPopover = null;
 				}
 			: undefined,
 		onHighlightStarted: (element) => {
@@ -500,9 +480,8 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 			scheduleTourLayoutSync(() => syncTourLayout(activeDriver, preferredSide, hostSelector));
 		},
 		onPopoverRender: useShell
-			? (popoverDom, { state }) => {
-					const preferredSide = state.activeStep?.popover?.side === 'top' ? 'top' : 'bottom';
-					handlePopoverRender(popoverDom, preferredSide, hostSelector);
+			? (popoverDom) => {
+					handlePopoverRender(popoverDom, hostSelector);
 				}
 			: undefined,
 		onDestroyed: () => {
@@ -531,6 +510,11 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 	if (useShell) {
 		const shell = ensureTourShell();
 		shell.dataset.overlayOpacity = String(overlayOpacity);
+		if (animate) {
+			shell.style.setProperty('--driver-animation-duration', `${duration}ms`);
+		} else {
+			shell.style.removeProperty('--driver-animation-duration');
+		}
 	}
 	if (isTourOverlayDisabled()) {
 		document.body.dataset.bookmateTourOverlay = '0';

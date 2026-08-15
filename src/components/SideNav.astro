@@ -11,6 +11,8 @@ interface NavItem {
 	active?: boolean;
 	/** Si true, muestra badge de pendientes (Cobros). */
 	pendingBadge?: boolean;
+	/** Badge de producto «Nuevo». */
+	newBadge?: boolean;
 	/** Gate de entitlement en cliente. */
 	requiresFeature?: string;
 }
@@ -76,8 +78,8 @@ const primaryItems: NavItem[] = [
 	},
 	{ label: "Servicios", icon: "inventory_2", href: "/panel/services" },
 	{ label: "Sucursales", icon: "storefront", href: "/panel/locations" },
-	{ label: "Perfil Público", icon: "public", href: "/panel/perfil-publico" },
-	{ label: "Complementos", icon: "extension", href: "/panel/complementos" },
+	{ label: "Perfil Público", icon: "public", href: "/panel/perfil-publico", newBadge: true },
+	{ label: "Complementos", icon: "extension", href: "/panel/complementos", newBadge: true },
 ];
 
 const teamItems: NavItem[] = [
@@ -250,14 +252,23 @@ if (showPlanFooter) {
 										{item.icon}
 									</span>
 									<span class="more-sheet__label">
-										<span>{item.label}</span>
-										{item.pendingBadge ? (
-											<span
-												class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-none text-white"
-												data-cobros-nav-badge
-												aria-label="Pendientes de revisión"
-											></span>
-										) : null}
+										<span class="truncate">{item.label}</span>
+										{(item.newBadge || item.pendingBadge) && (
+											<span class="sidebar-nav-badges flex shrink-0 items-center gap-1.5">
+												{item.newBadge ? (
+													<span class="sidebar-nav-new-badge" aria-hidden="true">
+														Nuevo
+													</span>
+												) : null}
+												{item.pendingBadge ? (
+													<span
+														class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-none text-white"
+														data-cobros-nav-badge
+														aria-label="Pendientes de revisión"
+													></span>
+												) : null}
+											</span>
+										)}
 									</span>
 								</a>
 							</li>
@@ -451,14 +462,23 @@ if (showPlanFooter) {
 									{item.icon}
 								</span>
 								<span class="sidebar-nav-label flex min-w-0 flex-1 items-center justify-between gap-2" data-sidebar-label>
-									<span>{item.label}</span>
-									{item.pendingBadge ? (
-										<span
-											class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-none text-white"
-											data-cobros-nav-badge
-											aria-label="Pendientes de revisión"
-										></span>
-									) : null}
+									<span class="truncate">{item.label}</span>
+									{(item.newBadge || item.pendingBadge) && (
+										<span class="sidebar-nav-badges flex shrink-0 items-center gap-1.5">
+											{item.newBadge ? (
+												<span class="sidebar-nav-new-badge" aria-hidden="true">
+													Nuevo
+												</span>
+											) : null}
+											{item.pendingBadge ? (
+												<span
+													class="hidden min-w-5 items-center justify-center rounded-full bg-rose-600 px-1.5 py-0.5 text-[0.68rem] font-extrabold leading-none text-white"
+													data-cobros-nav-badge
+													aria-label="Pendientes de revisión"
+												></span>
+											) : null}
+										</span>
+									)}
 								</span>
 							</a>
 						</li>
@@ -931,6 +951,26 @@ if (showPlanFooter) {
 	.sidebar-nav-label {
 		min-width: 0;
 		line-height: 1.25;
+	}
+
+	.sidebar-nav-new-badge {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		padding: 0.12rem 0.42rem;
+		border-radius: 999px;
+		font-size: 0.58rem;
+		font-weight: 800;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		line-height: 1.15;
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		color: var(--primary);
+	}
+
+	.sidebar-nav-link.is-active .sidebar-nav-new-badge,
+	.more-sheet__link.is-active .sidebar-nav-new-badge {
+		background: color-mix(in srgb, var(--primary) 18%, transparent);
 	}
 </style>
 
