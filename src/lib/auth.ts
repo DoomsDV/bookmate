@@ -1283,6 +1283,8 @@ export const isPublicPath = (pathname: string) => {
 		pathname.startsWith('/r/') ||
 		pathname.startsWith('/_astro') ||
 		pathname === '/favicon.ico' ||
-		pathname === '/favicon.svg'
+		pathname === '/favicon.svg' ||
+		pathname === '/manifest.webmanifest' ||
+		pathname.startsWith('/models/odontogram')
 	);
 };

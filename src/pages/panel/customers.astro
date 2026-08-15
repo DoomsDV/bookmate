@@ -538,85 +538,94 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 							<div data-customer-odontogram-lock-action></div>
 						</div>
 
-						<div class="customer-odontogram-content hidden grid gap-4" data-customer-odontogram-content>
-							<div
-								class="customer-odontogram-toolbar"
-								role="toolbar"
-								aria-label="Herramientas del odontograma"
-								data-customer-odontogram-toolbar
-							>
-								<button
-									type="button"
-									class="customer-odontogram-tool"
-									data-odontogram-tool="CARIES"
-									aria-pressed="false"
-								>
-									<span class="customer-odontogram-tool__swatch customer-odontogram-tool__swatch--caries" aria-hidden="true"></span>
-									Caries
-								</button>
-								<button
-									type="button"
-									class="customer-odontogram-tool"
-									data-odontogram-tool="RESTORATION"
-									aria-pressed="false"
-								>
-									<span class="customer-odontogram-tool__swatch customer-odontogram-tool__swatch--restoration" aria-hidden="true"></span>
-									Restauración
-								</button>
-								<button
-									type="button"
-									class="customer-odontogram-tool"
-									data-odontogram-tool="EXTRACTION"
-									aria-pressed="false"
-								>
-									<span class="customer-odontogram-tool__swatch customer-odontogram-tool__swatch--extraction" aria-hidden="true"></span>
-									Extracción
-								</button>
-								<button
-									type="button"
-									class="customer-odontogram-tool"
-									data-odontogram-tool="CROWN"
-									aria-pressed="false"
-								>
-									<span class="customer-odontogram-tool__swatch customer-odontogram-tool__swatch--crown" aria-hidden="true"></span>
-									Corona
-								</button>
-							</div>
-
-							<div class="customer-odontogram-chart" data-customer-odontogram-chart>
-								<p class="customer-odontogram-arch-label">Arcada superior</p>
-								<div class="customer-odontogram-arch" data-customer-odontogram-upper></div>
-								<p class="customer-odontogram-arch-label">Arcada inferior</p>
-								<div class="customer-odontogram-arch" data-customer-odontogram-lower></div>
-							</div>
-
-							<section class="customer-odontogram-events">
-								<h3 class="customer-profile-section-title">Evolución de tratamientos</h3>
-								<div class="customer-odontogram-events-table-wrap" data-customer-odontogram-events-wrap>
-									<table class="customer-odontogram-events-table">
-										<thead>
-											<tr>
-												<th scope="col">Fecha</th>
-												<th scope="col">Pieza</th>
-												<th scope="col">Hallazgo</th>
-												<th scope="col">Caras</th>
-												<th scope="col">Notas</th>
-											</tr>
-										</thead>
-										<tbody data-customer-odontogram-events-body></tbody>
-									</table>
-								</div>
+						<div class="customer-odontogram-content hidden" data-customer-odontogram-content>
+							<div class="customer-odontogram-stage" data-customer-odontogram-chart>
 								<div
-									class="customer-odontogram-events-empty hidden"
-									data-customer-odontogram-events-empty
-									role="status"
+									class="customer-odontogram-viewport"
+									data-customer-odontogram-viewport
 								>
-									<p class="customer-odontogram-events-empty__title">Sin registros todavía</p>
-									<p class="customer-odontogram-events-empty__copy">
-										Los hallazgos que guardes aparecerán aquí en orden cronológico.
+									<canvas
+										data-customer-odontogram-canvas
+										aria-label="Odontograma 3D"
+									></canvas>
+									<p
+										class="customer-odontogram-viewport__status"
+										data-customer-odontogram-status
+									>
+										Cargando modelo 3D…
 									</p>
 								</div>
-							</section>
+							</div>
+
+							<aside class="customer-odontogram-side" data-customer-odontogram-side>
+								<p class="customer-odontogram-side__label">Comandos rápidos</p>
+								<div
+									class="customer-odontogram-toolbar"
+									role="toolbar"
+									aria-label="Herramientas del odontograma"
+									data-customer-odontogram-toolbar
+								>
+									<button
+										type="button"
+										class="customer-odontogram-tool"
+										data-odontogram-tool="CARIES"
+										aria-pressed="false"
+									>
+										<span class="customer-odontogram-tool__swatch customer-odontogram-tool__swatch--caries" aria-hidden="true"></span>
+										Caries
+									</button>
+									<button
+										type="button"
+										class="customer-odontogram-tool"
+										data-odontogram-tool="RESTORATION"
+										aria-pressed="false"
+									>
+										<span class="customer-odontogram-tool__swatch customer-odontogram-tool__swatch--restoration" aria-hidden="true"></span>
+										Restauración
+									</button>
+									<button
+										type="button"
+										class="customer-odontogram-tool"
+										data-odontogram-tool="EXTRACTION"
+										aria-pressed="false"
+									>
+										<span class="customer-odontogram-tool__swatch customer-odontogram-tool__swatch--extraction" aria-hidden="true"></span>
+										Extracción
+									</button>
+									<button
+										type="button"
+										class="customer-odontogram-tool"
+										data-odontogram-tool="CROWN"
+										aria-pressed="false"
+									>
+										<span class="customer-odontogram-tool__swatch customer-odontogram-tool__swatch--crown" aria-hidden="true"></span>
+										Corona
+									</button>
+								</div>
+								<p class="customer-odontogram-viewport__hint">
+									Elegí un comando o hacé click en una pieza.
+								</p>
+
+								<section class="customer-odontogram-events">
+									<h3 class="customer-profile-section-title">Evolución de tratamientos</h3>
+									<div class="customer-odontogram-events-feed" data-customer-odontogram-events-wrap>
+										<ol
+											class="customer-odontogram-events-list"
+											data-customer-odontogram-events-list
+										></ol>
+									</div>
+									<div
+										class="customer-odontogram-events-empty hidden"
+										data-customer-odontogram-events-empty
+										role="status"
+									>
+										<p class="customer-odontogram-events-empty__title">Sin registros todavía</p>
+										<p class="customer-odontogram-events-empty__copy">
+											Los hallazgos que guardes aparecerán aquí en orden cronológico.
+										</p>
+									</div>
+								</section>
+							</aside>
 						</div>
 
 						<div
@@ -631,58 +640,74 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 							<span>Cargando odontograma...</span>
 						</div>
 
-						<dialog
+						<div
 							class="customer-odontogram-popover"
 							data-customer-odontogram-popover
+							role="dialog"
+							aria-modal="false"
 							aria-labelledby="customer-odontogram-popover-title"
+							aria-hidden="true"
+							hidden
+							inert
 						>
-							<form class="customer-odontogram-popover__form" data-customer-odontogram-popover-form>
-								<div class="customer-odontogram-popover__header">
-									<h4
-										class="customer-odontogram-popover__title"
-										id="customer-odontogram-popover-title"
-										data-customer-odontogram-popover-title
-									>
-										Pieza —
-									</h4>
-									<button
-										type="button"
-										class="customer-odontogram-popover__close"
-										data-close-odontogram-popover
-										aria-label="Cerrar"
-									>
-										<span class="material-symbols-rounded">close</span>
-									</button>
-								</div>
-								<div class="customer-odontogram-faces" data-customer-odontogram-faces>
-									<label class="customer-odontogram-face-toggle">
-										<input type="checkbox" name="occlusal" value="1" />
-										<span>Oclusal</span>
-									</label>
-									<label class="customer-odontogram-face-toggle">
-										<input type="checkbox" name="vestibular" value="1" />
-										<span>Vestibular</span>
-									</label>
-									<label class="customer-odontogram-face-toggle">
-										<input type="checkbox" name="palatal" value="1" />
-										<span data-customer-odontogram-palatal-label>Palatina/Lingual</span>
-									</label>
-									<label class="customer-odontogram-face-toggle">
-										<input type="checkbox" name="mesial" value="1" />
-										<span>Mesial</span>
-									</label>
-									<label class="customer-odontogram-face-toggle">
-										<input type="checkbox" name="distal" value="1" />
-										<span>Distal</span>
-									</label>
+							<div
+								class="customer-odontogram-popover__header"
+								data-customer-odontogram-popover-drag
+								title="Arrastrar"
+							>
+								<h4
+									class="customer-odontogram-popover__title"
+									id="customer-odontogram-popover-title"
+									data-customer-odontogram-popover-title
+								>
+									Pieza —
+								</h4>
+								<button
+									type="button"
+									class="customer-odontogram-popover__close"
+									data-close-odontogram-popover
+									aria-label="Cerrar"
+								>
+									<span class="material-symbols-rounded">close</span>
+								</button>
+							</div>
+							<form
+								class="customer-odontogram-popover__form"
+								data-customer-odontogram-editor
+								data-customer-odontogram-popover-form
+							>
+								<div data-customer-odontogram-faces-section>
+									<p class="customer-odontogram-popover__copy">Seleccionar caras afectadas</p>
+									<div class="customer-odontogram-faces" data-customer-odontogram-faces>
+										<label class="customer-odontogram-face-toggle">
+											<input type="checkbox" name="occlusal" value="1" />
+											<span>Oclusal</span>
+										</label>
+										<label class="customer-odontogram-face-toggle">
+											<input type="checkbox" name="vestibular" value="1" />
+											<span>Vestibular</span>
+										</label>
+										<label class="customer-odontogram-face-toggle">
+											<input type="checkbox" name="palatal" value="1" />
+											<span data-customer-odontogram-palatal-label>Palatina/Lingual</span>
+										</label>
+										<label class="customer-odontogram-face-toggle">
+											<input type="checkbox" name="mesial" value="1" />
+											<span>Mesial</span>
+										</label>
+										<label class="customer-odontogram-face-toggle">
+											<input type="checkbox" name="distal" value="1" />
+											<span>Distal</span>
+										</label>
+									</div>
 								</div>
 								<label class="customer-odontogram-notes-label">
 									<span>Notas</span>
 									<textarea
 										class="customer-odontogram-notes"
 										name="notes"
-										rows="3"
-										placeholder="Observaciones opcionales"
+										rows="2"
+										placeholder="Notas"
 									></textarea>
 								</label>
 								<p
@@ -698,7 +723,19 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 									</button>
 								</div>
 							</form>
-						</dialog>
+							<div class="customer-odontogram-summary hidden" data-customer-odontogram-summary>
+								<ol
+									class="customer-odontogram-summary__list"
+									data-customer-odontogram-summary-list
+								></ol>
+								<p
+									class="customer-odontogram-summary__empty hidden"
+									data-customer-odontogram-summary-empty
+								>
+									Sin registros en esta pieza.
+								</p>
+							</div>
+						</div>
 					</div>
 				</div>
 			</div>
@@ -954,6 +991,63 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 	}
 
+	dialog[data-customer-profile-modal].is-odontogram-workspace[open] {
+		align-items: stretch;
+		justify-content: stretch;
+		flex-direction: row;
+	}
+
+	dialog[data-customer-profile-modal].is-odontogram-workspace[open] .customer-profile-modal__panel,
+	.customer-profile-modal__panel.is-odontogram-workspace {
+		width: 100vw;
+		max-width: 100vw;
+		height: 100dvh;
+		max-height: 100dvh;
+		min-height: 100dvh;
+		margin: 0;
+		border-radius: 0;
+		border: 0;
+	}
+
+	dialog[data-customer-profile-modal].is-odontogram-workspace .customer-profile-modal-body {
+		overflow: hidden;
+		padding: 0;
+		background: var(--surface-bright);
+	}
+
+	dialog[data-customer-profile-modal].is-odontogram-workspace .customer-profile-modal-footer {
+		display: none;
+	}
+
+	dialog[data-customer-profile-modal].is-odontogram-workspace [data-customer-profile-body]:not(.hidden) {
+		display: flex;
+		flex-direction: column;
+		flex: 1 1 auto;
+		min-height: 0;
+		height: 100%;
+		gap: 0;
+	}
+
+	dialog[data-customer-profile-modal].is-odontogram-workspace
+		.customer-profile-tab-panel[data-customer-profile-tab-panel='odontogram']:not([hidden]) {
+		flex: 1 1 auto;
+		min-height: 0;
+		display: flex;
+		flex-direction: column;
+		align-content: stretch;
+	}
+
+	dialog[data-customer-profile-modal].is-odontogram-workspace
+		.customer-odontogram-lock:not(.hidden) {
+		margin: auto;
+		max-width: 28rem;
+	}
+
+	dialog[data-customer-profile-modal].is-odontogram-workspace
+		.customer-odontogram-loading:not(.hidden) {
+		flex: 1 1 auto;
+	}
+
 	@keyframes customer-profile-drawer-in {
 		from {
 			opacity: 0;
@@ -1128,15 +1222,25 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 	.customer-profile-tablist {
 		display: flex;
+		flex-wrap: nowrap;
 		width: 100%;
 		gap: 0.25rem;
 		padding: 0.25rem;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+		overflow-x: auto;
+		overflow-y: hidden;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		overscroll-behavior-x: contain;
+	}
+
+	.customer-profile-tablist::-webkit-scrollbar {
+		display: none;
 	}
 
 	.customer-profile-tab {
-		flex: 1;
+		flex: 0 0 auto;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -1149,6 +1253,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		color: var(--on-surface-variant);
 		font-size: 0.84rem;
 		font-weight: 700;
+		white-space: nowrap;
 		cursor: pointer;
 		transition: background-color 140ms ease, color 140ms ease;
 	}
@@ -1189,7 +1294,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	@media (max-width: 639px) {
 		.customer-profile-tab {
 			min-height: 2.15rem;
-			padding: 0.32rem 0.4rem;
+			padding: 0.32rem 0.55rem;
 			font-size: 0.78rem;
 			gap: 0.22rem;
 		}
@@ -1197,6 +1302,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		.customer-profile-tab__badge {
 			padding: 0.08rem 0.32rem;
 			font-size: 0.54rem;
+		}
+	}
+
+	@media (min-width: 640px) {
+		.customer-profile-tab {
+			flex: 1 1 0;
 		}
 	}
 
@@ -2003,8 +2114,78 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		color: var(--on-surface-variant);
 	}
 
+	.customer-odontogram-content {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: minmax(62vh, 1fr) auto;
+		flex: 1 1 auto;
+		min-height: 0;
+		height: 100%;
+	}
+
 	.customer-odontogram-content.hidden {
 		display: none;
+	}
+
+	@media (min-width: 1024px) {
+		.customer-odontogram-content {
+			grid-template-columns: minmax(0, 7fr) minmax(17rem, 3fr);
+			grid-template-rows: minmax(0, 1fr);
+		}
+	}
+
+	.customer-odontogram-stage {
+		position: relative;
+		min-height: 0;
+		min-width: 0;
+		background: color-mix(in srgb, var(--surface-container-low) 70%, var(--surface-bright) 30%);
+	}
+
+	.customer-odontogram-side {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		min-height: 0;
+		padding: 0.9rem 1rem 1.1rem;
+		border-top: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+	}
+
+	@media (min-width: 1024px) {
+		.customer-odontogram-side {
+			border-top: 0;
+			border-left: 1px solid var(--shell-border);
+			box-shadow: -12px 0 32px rgb(0 0 0 / 0.06);
+		}
+	}
+
+	.customer-odontogram-side__label {
+		margin: 0;
+		font-size: 0.7rem;
+		font-weight: 800;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-odontogram-events {
+		display: flex;
+		flex-direction: column;
+		gap: 0.55rem;
+		min-height: 0;
+		flex: 1 1 auto;
+	}
+
+	@media (min-width: 1024px) {
+		.customer-odontogram-events {
+			overflow: hidden;
+		}
+
+		.customer-odontogram-events-feed {
+			flex: 1 1 auto;
+			min-height: 0;
+			overflow: auto;
+		}
 	}
 
 	.customer-odontogram-loading {
@@ -2028,6 +2209,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		gap: 0.45rem;
 	}
 
+	@media (min-width: 1024px) {
+		.customer-odontogram-toolbar {
+			flex-direction: column;
+			align-items: stretch;
+		}
+	}
+
 	.customer-odontogram-tool {
 		display: inline-flex;
 		align-items: center;
@@ -2045,6 +2233,14 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 			border-color 140ms ease,
 			background-color 140ms ease,
 			box-shadow 140ms ease;
+	}
+
+	@media (min-width: 1024px) {
+		.customer-odontogram-tool {
+			border-radius: 0.85rem;
+			min-height: 2.7rem;
+			padding: 0.55rem 0.85rem;
+		}
 	}
 
 	.customer-odontogram-tool:hover {
@@ -2081,143 +2277,173 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		background: #eab308;
 	}
 
-	.customer-odontogram-chart {
-		display: grid;
-		gap: 0.45rem;
-		padding: 0.85rem;
-		border-radius: 1rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright);
+	.customer-odontogram-viewport {
+		position: relative;
+		width: 100%;
+		height: 100%;
+		min-height: 62vh;
+		overflow: hidden;
+		background: color-mix(in srgb, var(--surface-container-low) 62%, var(--surface-bright) 38%);
 	}
 
-	.customer-odontogram-arch-label {
-		margin: 0;
-		font-size: 0.72rem;
-		font-weight: 700;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
-		color: var(--on-surface-variant);
-	}
-
-	.customer-odontogram-arch {
-		display: grid;
-		grid-template-columns: repeat(16, minmax(0, 1fr));
-		gap: 0.25rem;
-	}
-
-	@media (max-width: 639px) {
-		.customer-odontogram-arch {
-			gap: 0.15rem;
+	@media (min-width: 1024px) {
+		.customer-odontogram-viewport {
+			min-height: 0;
 		}
 	}
 
-	.customer-odontogram-tooth {
+	.customer-odontogram-viewport canvas {
+		display: block;
+		width: 100%;
+		height: 100%;
+		touch-action: none;
+		cursor: grab;
+	}
+
+	.customer-odontogram-viewport canvas:active {
+		cursor: grabbing;
+	}
+
+	.customer-odontogram-viewport__status {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		margin: 0;
+		padding: 1rem;
+		background: color-mix(in srgb, var(--surface-bright) 72%, transparent);
+		color: var(--on-surface-variant);
+		font-size: 0.86rem;
+		font-weight: 700;
+		text-align: center;
+		pointer-events: none;
+	}
+
+	.customer-odontogram-viewport__status.hidden {
+		display: none;
+	}
+
+	.customer-odontogram-viewport__hint {
+		margin: 0;
+		font-size: 0.74rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-odontogram-events-feed {
+		min-height: 0;
+		overflow-x: hidden;
+		overflow-y: auto;
+	}
+
+	.customer-odontogram-events-list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
 		display: flex;
+		flex-direction: column;
+	}
+
+	.customer-odontogram-event {
+		display: grid;
+		grid-template-columns: 1.1rem minmax(0, 1fr);
+		gap: 0.55rem;
+		position: relative;
+		padding: 0.2rem 0 0.85rem;
+	}
+
+	.customer-odontogram-event:not(:last-child)::before {
+		content: '';
+		position: absolute;
+		left: 0.34rem;
+		top: 1.15rem;
+		bottom: 0;
+		width: 1px;
+		background: color-mix(in srgb, var(--shell-border) 88%, transparent);
+	}
+
+	.customer-odontogram-event__rail {
+		display: flex;
+		justify-content: center;
+		padding-top: 0.28rem;
+		z-index: 1;
+	}
+
+	.customer-odontogram-event__body {
+		min-width: 0;
+	}
+
+	.customer-odontogram-event__head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.4rem;
+	}
+
+	.customer-odontogram-event__title {
+		margin: 0;
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: 0.86rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.customer-odontogram-event__void {
+		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-height: 2.1rem;
-		padding: 0.2rem 0.1rem;
-		border: 1px solid var(--shell-border);
-		border-radius: 0.55rem;
-		background: color-mix(in srgb, var(--surface-container-low) 45%, var(--surface-bright) 55%);
-		color: var(--on-surface);
-		font-size: 0.68rem;
-		font-weight: 800;
-		line-height: 1.1;
+		flex-shrink: 0;
+		width: 1.75rem;
+		height: 1.75rem;
+		margin: -0.2rem -0.15rem 0 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0.5rem;
+		background: transparent;
+		color: var(--on-surface-variant);
 		cursor: pointer;
+		opacity: 0;
 		transition:
-			transform 120ms ease,
-			border-color 120ms ease,
-			box-shadow 120ms ease;
+			opacity 140ms ease,
+			background-color 140ms ease,
+			color 140ms ease;
 	}
 
-	@media (min-width: 640px) {
-		.customer-odontogram-tooth {
-			min-height: 2.35rem;
-			font-size: 0.72rem;
+	.customer-odontogram-event__void .material-symbols-rounded {
+		font-size: 1.05rem;
+	}
+
+	.customer-odontogram-event:hover .customer-odontogram-event__void,
+	.customer-odontogram-event:focus-within .customer-odontogram-event__void {
+		opacity: 1;
+	}
+
+	.customer-odontogram-event__void:hover,
+	.customer-odontogram-event__void:focus-visible {
+		background: color-mix(in srgb, #ef4444 12%, transparent);
+		color: #ef4444;
+	}
+
+	@media (max-width: 1023px) {
+		.customer-odontogram-event__void {
+			opacity: 1;
 		}
 	}
 
-	.customer-odontogram-tooth:hover {
-		border-color: color-mix(in srgb, var(--on-surface-variant) 50%, var(--shell-border));
-	}
-
-	.customer-odontogram-tooth:active {
-		transform: scale(0.97);
-	}
-
-	.customer-odontogram-tooth--caries {
-		border-color: color-mix(in srgb, #ef4444 55%, var(--shell-border));
-		background: color-mix(in srgb, #ef4444 18%, var(--surface-bright));
-		color: #b91c1c;
-	}
-
-	.customer-odontogram-tooth--restoration {
-		border-color: color-mix(in srgb, #3b82f6 55%, var(--shell-border));
-		background: color-mix(in srgb, #3b82f6 18%, var(--surface-bright));
-		color: #1d4ed8;
-	}
-
-	.customer-odontogram-tooth--extraction {
-		border-color: color-mix(in srgb, #171717 65%, var(--shell-border));
-		background: color-mix(in srgb, #171717 22%, var(--surface-bright));
-		color: #0a0a0a;
-	}
-
-	.customer-odontogram-tooth--crown {
-		border-color: color-mix(in srgb, #eab308 60%, var(--shell-border));
-		background: color-mix(in srgb, #eab308 22%, var(--surface-bright));
-		color: #a16207;
-	}
-
-	html[data-theme='dark'] .customer-odontogram-tooth--caries {
-		color: #fca5a5;
-	}
-
-	html[data-theme='dark'] .customer-odontogram-tooth--restoration {
-		color: #93c5fd;
-	}
-
-	html[data-theme='dark'] .customer-odontogram-tooth--extraction {
-		color: #e5e5e5;
-	}
-
-	html[data-theme='dark'] .customer-odontogram-tooth--crown {
-		color: #fde047;
-	}
-
-	.customer-odontogram-events-table-wrap {
-		overflow-x: auto;
-		border-radius: 0.9rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright);
-	}
-
-	.customer-odontogram-events-table {
-		width: 100%;
-		border-collapse: collapse;
-		font-size: 0.82rem;
-	}
-
-	.customer-odontogram-events-table th,
-	.customer-odontogram-events-table td {
-		padding: 0.65rem 0.75rem;
-		text-align: left;
-		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 85%, transparent);
-		vertical-align: top;
-	}
-
-	.customer-odontogram-events-table th {
-		font-size: 0.72rem;
-		font-weight: 800;
-		letter-spacing: 0.03em;
-		text-transform: uppercase;
+	.customer-odontogram-event__date {
+		margin: 0.18rem 0 0;
+		font-size: 0.74rem;
+		font-weight: 600;
 		color: var(--on-surface-variant);
-		background: color-mix(in srgb, var(--surface-container-low) 55%, var(--surface-bright) 45%);
 	}
 
-	.customer-odontogram-events-table tr:last-child td {
-		border-bottom: 0;
+	.customer-odontogram-event__meta {
+		margin: 0.28rem 0 0;
+		font-size: 0.78rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+		overflow-wrap: anywhere;
 	}
 
 	.customer-odontogram-events-empty {
@@ -2248,25 +2474,78 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	}
 
 	.customer-odontogram-popover {
-		width: min(22rem, calc(100vw - 2rem));
+		position: fixed;
+		inset: auto;
+		z-index: 80;
+		width: min(18rem, calc(100vw - 2rem));
 		max-width: none;
-		margin: auto;
+		margin: 0;
 		padding: 0;
 		border: 1px solid var(--shell-border);
 		border-radius: 1.1rem;
 		background: var(--surface-bright);
 		color: var(--on-surface);
 		box-shadow: var(--modal-shadow-popover, 0 16px 48px rgb(0 0 0 / 0.18));
+		pointer-events: auto;
 	}
 
-	.customer-odontogram-popover::backdrop {
-		background: color-mix(in srgb, var(--modal-backdrop-scrim, rgb(0 0 0 / 0.45)) 88%, transparent);
+	.customer-odontogram-popover:not(.is-open),
+	.customer-odontogram-popover[hidden] {
+		display: none !important;
+	}
+
+	.customer-odontogram-popover.is-open {
+		display: block;
 	}
 
 	.customer-odontogram-popover__form {
 		display: grid;
-		gap: 0.85rem;
-		padding: 1rem;
+		gap: 0.7rem;
+		padding: 0.55rem 0.9rem 0.9rem;
+	}
+
+	.customer-odontogram-popover__form.hidden {
+		display: none;
+	}
+
+	.customer-odontogram-summary {
+		padding: 0.25rem 0.9rem 0.95rem;
+		max-height: min(22rem, 55vh);
+		overflow: auto;
+	}
+
+	.customer-odontogram-summary.hidden {
+		display: none;
+	}
+
+	.customer-odontogram-summary__list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.customer-odontogram-summary__list.hidden {
+		display: none;
+	}
+
+	.customer-odontogram-summary__empty {
+		margin: 0.35rem 0 0.15rem;
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-odontogram-summary__empty.hidden {
+		display: none;
+	}
+
+	.customer-odontogram-popover__copy {
+		margin: 0;
+		font-size: 0.78rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
 	}
 
 	.customer-odontogram-popover__header {
@@ -2274,6 +2553,14 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem;
+		padding: 0.9rem 0.9rem 0.2rem;
+		cursor: grab;
+		touch-action: none;
+		user-select: none;
+	}
+
+	.customer-odontogram-popover.is-dragging .customer-odontogram-popover__header {
+		cursor: grabbing;
 	}
 
 	.customer-odontogram-popover__title {

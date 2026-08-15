@@ -120,6 +120,7 @@ interface ImportMetaEnv {
     readonly PUBLIC_G_MAPS_API_KEY?: string;
     readonly PUBLIC_G_MAPS_API_KEYS?: string;
     readonly PUBLIC_STADIA_MAPS_KEY?: string;
+    readonly PUBLIC_ODONTOGRAM_GLB_URL?: string;
     readonly PUBLIC_FIREBASE_API_KEY?: string;
     readonly PUBLIC_FIREBASE_AUTH_DOMAIN?: string;
     readonly PUBLIC_FIREBASE_PROJECT_ID?: string;

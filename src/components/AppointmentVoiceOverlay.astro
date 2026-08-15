@@ -566,16 +566,26 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		position: relative;
 		z-index: 1;
 		display: flex;
+		flex-wrap: nowrap;
 		gap: 0.3rem;
 		margin: 0.6rem 1.15rem 0;
 		padding: 0.25rem;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--surface-variant) 70%, transparent);
 		border: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
+		overflow-x: auto;
+		overflow-y: hidden;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		overscroll-behavior-x: contain;
+	}
+
+	.appointment-voice-tabs::-webkit-scrollbar {
+		display: none;
 	}
 
 	.appointment-voice-tab {
-		flex: 1;
+		flex: 0 0 auto;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -587,8 +597,15 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		color: var(--on-surface-variant);
 		font-size: 0.85rem;
 		font-weight: 700;
+		white-space: nowrap;
 		cursor: pointer;
 		transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
+	}
+
+	@media (min-width: 640px) {
+		.appointment-voice-tab {
+			flex: 1 1 0;
+		}
 	}
 
 	.appointment-voice-tab .material-symbols-rounded {

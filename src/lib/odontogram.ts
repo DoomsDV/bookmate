@@ -9,6 +9,9 @@ const ODONTOGRAM_URL_TEMPLATE = resolveOrdsApiUrl(
 export const getOdontogramUrl = (customerId: number | string) =>
 	ODONTOGRAM_URL_TEMPLATE.replace(':id', encodeURIComponent(String(customerId)));
 
+export const getOdontogramVoidUrl = (customerId: number | string, eventId: number | string) =>
+	`${getOdontogramUrl(customerId)}/${encodeURIComponent(String(eventId))}/void`;
+
 export type OdontogramFindingCode = 'CARIES' | 'RESTORATION' | 'EXTRACTION' | 'CROWN';
 
 export interface OdontogramFaces {
@@ -238,4 +241,45 @@ export const addOdontogramEventWithOrds = async (
 		}
 		return normalized;
 	});
+};
+
+export const voidOdontogramEventWithOrds = async (
+	token: string,
+	customerId: number,
+	eventId: number
+): Promise<void> => {
+	if (!token) throw new OdontogramApiError('Token de acceso requerido.', 401);
+	if (!Number.isInteger(customerId) || customerId <= 0) {
+		throw new OdontogramApiError('ID de cliente inválido.', 400);
+	}
+	if (!Number.isInteger(eventId) || eventId <= 0) {
+		throw new OdontogramApiError('Evento de odontograma inválido.', 400);
+	}
+
+	const response = await fetch(getOdontogramVoidUrl(customerId, eventId), {
+		method: 'POST',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+		},
+		body: '{}',
+	});
+
+	let body: OdontogramSuccessResponse | OdontogramFailureResponse | null = null;
+	try {
+		body = await response.json();
+	} catch {
+		throw new OdontogramApiError('No fue posible interpretar la respuesta del servidor.', 502);
+	}
+
+	if (!body || typeof body !== 'object' || body.status !== 'success') {
+		const failure = (body ?? {}) as OdontogramFailureResponse;
+		throw new OdontogramApiError(
+			(typeof failure.message === 'string' && failure.message.trim()) ||
+				'No fue posible anular el registro del odontograma.',
+			response.status && response.status >= 400 ? response.status : 400,
+			failure.details
+		);
+	}
 };

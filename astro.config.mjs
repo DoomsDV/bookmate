@@ -161,6 +161,9 @@ export default defineConfig({
         'marked',
         'firebase/app',
         'firebase/messaging',
+        'three',
+        'three/addons/loaders/GLTFLoader.js',
+        'three/addons/controls/OrbitControls.js',
       ]
     }
   }
