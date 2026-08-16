@@ -357,39 +357,72 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 						</div>
 					</section>
 
-					<section data-step-panel="6" class="public-booking-panel public-booking-confirmed hidden">
-						<div class="public-booking-confirmed__hero">
-							<span class="public-booking-confirmed__icon" aria-hidden="true">
-								<span class="material-symbols-rounded">check_circle</span>
-							</span>
-							<h2 class="public-booking-confirmed__title">Reserva confirmada</h2>
-							<p class="public-booking-confirmed__desc">
-								¡Todo listo! Te enviamos los detalles a tu WhatsApp.
-							</p>
+					<section data-step-panel="6" class="public-booking-panel public-booking-success hidden">
+						<div class="public-booking-success__column">
+							<div class="public-booking-success__hero">
+								<span class="public-booking-success__icon" aria-hidden="true">
+									<span class="material-symbols-rounded">check_circle</span>
+								</span>
+								<h2 class="public-booking-success__title">¡Reserva confirmada!</h2>
+								<p class="public-booking-success__desc">
+									¡Todo listo! Te enviamos los detalles a tu WhatsApp.
+								</p>
+							</div>
+
+							<article class="booking-ticket">
+								<header class="booking-ticket__header">
+									<img
+										alt=""
+										loading="lazy"
+										class="booking-ticket__avatar"
+										data-ticket-avatar-img
+										hidden
+									/>
+									<div
+										class="booking-ticket__avatar booking-ticket__avatar--empty"
+										data-ticket-avatar-empty
+										aria-hidden="true"
+									>
+										<span class="material-symbols-rounded">account_circle</span>
+									</div>
+									<div class="booking-ticket__who">
+										<p class="booking-ticket__name" data-ticket-professional></p>
+										<p class="booking-ticket__org" data-ticket-organization></p>
+									</div>
+									<span class="booking-ticket__status" data-status="confirmed">Confirmado</span>
+								</header>
+								<div class="booking-ticket__service">
+									<p class="booking-ticket__service-name" data-ticket-service></p>
+									<p class="booking-ticket__service-meta" data-ticket-duration hidden></p>
+								</div>
+								<div class="booking-ticket__tear" aria-hidden="true"></div>
+								<div class="booking-ticket__details">
+									<div class="booking-ticket__field">
+										<span class="booking-ticket__label">Fecha</span>
+										<strong class="booking-ticket__value" data-ticket-date></strong>
+									</div>
+									<div class="booking-ticket__field">
+										<span class="booking-ticket__label">Hora</span>
+										<strong class="booking-ticket__value" data-ticket-time></strong>
+									</div>
+									<div class="booking-ticket__field">
+										<span class="booking-ticket__label">Sucursal</span>
+										<strong class="booking-ticket__value" data-ticket-location-name></strong>
+									</div>
+									<div class="booking-ticket__field">
+										<span class="booking-ticket__label">Dirección</span>
+										<strong class="booking-ticket__value" data-ticket-location-address></strong>
+									</div>
+								</div>
+							</article>
+
+							<div class="public-booking-success__actions">
+								<button type="button" data-restart-booking class="public-booking-success__cta">
+									Reservar otra cita
+								</button>
+								<a href="/" class="public-booking-success__home">Volver al inicio</a>
+							</div>
 						</div>
-						<div class="public-booking-confirmed__ticket">
-							<ul class="public-booking-confirmed__rows">
-								<li class="public-booking-confirmed__row">
-									<span class="public-booking-confirmed__label">Profesional</span>
-									<span class="public-booking-confirmed__value" data-ticket-professional></span>
-								</li>
-								<li class="public-booking-confirmed__row">
-									<span class="public-booking-confirmed__label">Servicio</span>
-									<span class="public-booking-confirmed__value" data-ticket-service></span>
-								</li>
-								<li class="public-booking-confirmed__row">
-									<span class="public-booking-confirmed__label">Fecha</span>
-									<span class="public-booking-confirmed__value" data-ticket-date></span>
-								</li>
-								<li class="public-booking-confirmed__row">
-									<span class="public-booking-confirmed__label">Hora</span>
-									<span class="public-booking-confirmed__value" data-ticket-time></span>
-								</li>
-							</ul>
-						</div>
-						<button type="button" data-restart-booking class="public-booking-confirmed__cta">
-							Reservar otra cita
-						</button>
 					</section>
 
 					<PublicSipapDepositPanel stepPanel={7} />

@@ -23,6 +23,7 @@ import {
 	type PublicBookingDraft,
 	type PublicBookingDraftStep,
 } from '../../lib/public-booking-draft';
+import { fillPublicBookingSuccessTicket } from '../../lib/public-booking-success-ticket';
 import { bindPublicBookingStepIndicator } from '../../lib/public-booking-stepper';
 import { createIdempotencyKey } from '../../lib/idempotency';
 import {
@@ -157,10 +158,6 @@ export const initializePublicUserBookingPage = () => {
 	const summaryDate = root.querySelector<HTMLElement>('[data-summary-date]');
 	const summaryTime = root.querySelector<HTMLElement>('[data-summary-time]');
 	const summaryLocation = root.querySelector<HTMLButtonElement>('[data-summary-location]');
-	const ticketProfessional = root.querySelector<HTMLElement>('[data-ticket-professional]');
-	const ticketService = root.querySelector<HTMLElement>('[data-ticket-service]');
-	const ticketDate = root.querySelector<HTMLElement>('[data-ticket-date]');
-	const ticketTime = root.querySelector<HTMLElement>('[data-ticket-time]');
 
 	if (
 		!locationsRoot ||
@@ -183,10 +180,6 @@ export const initializePublicUserBookingPage = () => {
 		!summaryDate ||
 		!summaryTime ||
 		!summaryLocation ||
-		!ticketProfessional ||
-		!ticketService ||
-		!ticketDate ||
-		!ticketTime ||
 		!prevMonthButton ||
 		!nextMonthButton ||
 		!backToLocations ||
@@ -432,6 +425,20 @@ export const initializePublicUserBookingPage = () => {
 
 	let refreshStepIndicatorClickable = () => {};
 
+	const populateSuccessTicket = () => {
+		fillPublicBookingSuccessTicket(root, {
+			professionalName: profile.full_name,
+			organizationName: selectedOrgGroup?.organization_name,
+			serviceName: selectedService?.name || '—',
+			durationMinutes: selectedService?.duration_minutes,
+			dateYmd: selectedDate,
+			time: selectedTime,
+			locationName: selectedContext?.name,
+			locationAddress: selectedContext?.address,
+			imageUrl: profile.image_url,
+		});
+	};
+
 	const setStep = (nextStep: UserBookingWizardStep) => {
 		step = nextStep;
 		for (const panel of stepPanels) {
@@ -476,6 +483,8 @@ export const initializePublicUserBookingPage = () => {
 		}
 
 		if (step <= 5) draftPersister.flush();
+
+		root.classList.toggle('is-booking-success', step === 6);
 
 		refreshStepIndicatorClickable();
 		syncPublicBookingMobileActions(root);
@@ -1950,10 +1959,7 @@ export const initializePublicUserBookingPage = () => {
 
 	const finalizeSuccess = () => {
 		draftPersister.clear();
-		ticketProfessional.textContent = profile.full_name;
-		ticketService.textContent = selectedService?.name || '-';
-		ticketDate.textContent = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
-		ticketTime.textContent = selectedTime || '-';
+		populateSuccessTicket();
 		setStep(6);
 	};
 
@@ -1965,10 +1971,7 @@ export const initializePublicUserBookingPage = () => {
 			professionalName: profile.full_name,
 			depositAmount: calculateDepositAmount(selectedService),
 		});
-		ticketProfessional.textContent = profile.full_name;
-		ticketService.textContent = selectedService?.name || '-';
-		ticketDate.textContent = selectedDate ? formatLongDateFromApiDate(selectedDate) : '-';
-		ticketTime.textContent = selectedTime || '-';
+		populateSuccessTicket();
 		// Persistir el hold para que el paso "Transferí la seña" sobreviva a un F5
 		// o al cierre del navegador dentro de la ventana de pago.
 		writeSipapHold(holdStorageKey, unwrapped as unknown as Record<string, unknown>, {
@@ -2255,10 +2258,16 @@ export const initializePublicUserBookingPage = () => {
 			professionalName: stored.context.professionalName ?? profile.full_name,
 			depositAmount: stored.context.depositAmount,
 		});
-		ticketProfessional.textContent = stored.context.professionalName ?? profile.full_name;
-		ticketService.textContent = stored.context.serviceName ?? '-';
-		ticketDate.textContent = stored.context.date ? formatLongDateFromApiDate(stored.context.date) : '-';
-		ticketTime.textContent = stored.context.time || '-';
+		fillPublicBookingSuccessTicket(root, {
+			professionalName: stored.context.professionalName ?? profile.full_name,
+			organizationName: selectedOrgGroup?.organization_name,
+			serviceName: stored.context.serviceName ?? '—',
+			dateYmd: stored.context.date || '',
+			time: stored.context.time || '',
+			locationName: selectedContext?.name,
+			locationAddress: selectedContext?.address,
+			imageUrl: profile.image_url,
+		});
 		setStep(7);
 		return true;
 	};

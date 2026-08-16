@@ -145,30 +145,30 @@ const serializedLocations = reservation
 						<h1 class="reservation-manage__title">Gestionar reserva</h1>
 
 						<div class="reservation-manage__body">
-							<article class="reservation-ticket">
-								<header class="reservation-ticket__header">
+							<article class="booking-ticket">
+								<header class="booking-ticket__header">
 									{professionalImageUrl ? (
 										<img
 											src={professionalImageUrl}
 											alt={`Foto de ${professionalDisplayName}`}
 											loading="lazy"
-											class="reservation-ticket__avatar"
+											class="booking-ticket__avatar"
 										/>
 									) : (
 										<div
-											class="reservation-ticket__avatar reservation-ticket__avatar--empty"
+											class="booking-ticket__avatar booking-ticket__avatar--empty"
 											aria-label={`Sin foto de ${professionalDisplayName}`}
 											role="img"
 										>
 											<span class="material-symbols-rounded">account_circle</span>
 										</div>
 									)}
-									<div class="reservation-ticket__who">
-										<p class="reservation-ticket__name">{professionalDisplayName}</p>
-										<p class="reservation-ticket__org">{organizationDisplayName}</p>
+									<div class="booking-ticket__who">
+										<p class="booking-ticket__name">{professionalDisplayName}</p>
+										<p class="booking-ticket__org">{organizationDisplayName}</p>
 									</div>
 									<span
-										class="reservation-ticket__status"
+										class="booking-ticket__status"
 										data-status-text
 										data-status={statusMeta.variant}
 									>
@@ -176,65 +176,65 @@ const serializedLocations = reservation
 									</span>
 								</header>
 
-								<div class="reservation-ticket__service">
-									<p class="reservation-ticket__service-name">{reservation.service_name}</p>
+								<div class="booking-ticket__service">
+									<p class="booking-ticket__service-name">{reservation.service_name}</p>
 									{durationLabel && (
-										<p class="reservation-ticket__service-meta">{durationLabel}</p>
+										<p class="booking-ticket__service-meta">{durationLabel}</p>
 									)}
 								</div>
 
 								{serviceIncludes.length > 0 && (
-									<ul class="reservation-ticket__includes">
+									<ul class="booking-ticket__includes">
 										{serviceIncludes.map((item) => (
 											<li>{item}</li>
 										))}
 									</ul>
 								)}
 
-								<div class="reservation-ticket__tear" aria-hidden="true"></div>
+								<div class="booking-ticket__tear" aria-hidden="true"></div>
 
-								<div class="reservation-ticket__details">
-									<div class="reservation-ticket__field">
-										<span class="reservation-ticket__label">Fecha</span>
-										<strong class="reservation-ticket__value" data-current-date>
+								<div class="booking-ticket__details">
+									<div class="booking-ticket__field">
+										<span class="booking-ticket__label">Fecha</span>
+										<strong class="booking-ticket__value" data-current-date>
 											{formattedCurrentDate}
 										</strong>
 									</div>
-									<div class="reservation-ticket__field">
-										<span class="reservation-ticket__label">Hora</span>
-										<strong class="reservation-ticket__value" data-current-time>
+									<div class="booking-ticket__field">
+										<span class="booking-ticket__label">Hora</span>
+										<strong class="booking-ticket__value" data-current-time>
 											{formattedCurrentTime}
 										</strong>
 									</div>
-									<div class="reservation-ticket__field">
-										<span class="reservation-ticket__label">Sucursal</span>
-										<strong class="reservation-ticket__value" data-location-name>
+									<div class="booking-ticket__field">
+										<span class="booking-ticket__label">Sucursal</span>
+										<strong class="booking-ticket__value" data-location-name>
 											{reservation.location_name}
 										</strong>
 									</div>
 									{isCancelled || isPastReservation ? (
-										<div class="reservation-ticket__field">
-											<span class="reservation-ticket__label">Dirección</span>
-											<strong class="reservation-ticket__value" data-location-address>
+										<div class="booking-ticket__field">
+											<span class="booking-ticket__label">Dirección</span>
+											<strong class="booking-ticket__value" data-location-address>
 												{locationAddress || '—'}
 											</strong>
 										</div>
 									) : locationAddress ? (
 										<button
 											type="button"
-											class="reservation-ticket__field reservation-ticket__field--map"
+											class="booking-ticket__field booking-ticket__field--map"
 											data-manage-open-map
 											aria-label={`Ver mapa de ${reservation.location_name}`}
 										>
-											<span class="reservation-ticket__label">Dirección</span>
-											<strong class="reservation-ticket__value" data-location-address>
+											<span class="booking-ticket__label">Dirección</span>
+											<strong class="booking-ticket__value" data-location-address>
 												{locationAddress}
 											</strong>
 										</button>
 									) : (
-										<div class="reservation-ticket__field">
-											<span class="reservation-ticket__label">Dirección</span>
-											<strong class="reservation-ticket__value" data-location-address>
+										<div class="booking-ticket__field">
+											<span class="booking-ticket__label">Dirección</span>
+											<strong class="booking-ticket__value" data-location-address>
 												—
 											</strong>
 										</div>
@@ -726,233 +726,6 @@ const serializedLocations = reservation
 	gap: 1.15rem;
 	padding: 0;
 	background: transparent;
-}
-
-.reservation-ticket {
-	display: grid;
-	gap: 1rem;
-	padding: 1.15rem 1.15rem 1.25rem;
-	border-radius: 1.5rem;
-	background: var(--ticket-surface);
-	border: 0;
-	box-shadow:
-		0 10px 15px -3px rgb(0 0 0 / 0.5),
-		0 4px 6px -4px rgb(0 0 0 / 0.5);
-	overflow: hidden;
-}
-
-.reservation-ticket__header {
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	min-width: 0;
-}
-
-.reservation-ticket__avatar {
-	flex: 0 0 auto;
-	width: 2.75rem;
-	height: 2.75rem;
-	border-radius: 0.85rem;
-	object-fit: cover;
-	background: #2b2b2f;
-}
-
-.reservation-ticket__avatar--empty {
-	display: grid;
-	place-items: center;
-	color: var(--on-surface-variant);
-}
-
-.reservation-ticket__avatar--empty .material-symbols-rounded {
-	font-size: 1.45rem;
-}
-
-.reservation-ticket__who {
-	flex: 1 1 auto;
-	min-width: 0;
-}
-
-.reservation-ticket__name {
-	margin: 0;
-	font-size: 0.98rem;
-	font-weight: 600;
-	line-height: 1.25;
-	color: var(--on-surface);
-}
-
-.reservation-ticket__org {
-	margin: 0.15rem 0 0;
-	font-size: 0.8rem;
-	font-weight: 500;
-	line-height: 1.3;
-	color: var(--on-surface-variant);
-}
-
-.reservation-ticket__status {
-	flex: 0 0 auto;
-	align-self: flex-start;
-	margin-top: 0.1rem;
-	padding: 0.28rem 0.62rem;
-	border-radius: 0.55rem;
-	font-size: 0.72rem;
-	font-weight: 600;
-	letter-spacing: 0.01em;
-	line-height: 1.2;
-	white-space: nowrap;
-	background: color-mix(in srgb, var(--tertiary) 16%, var(--ticket-surface));
-	color: var(--tertiary);
-}
-
-.reservation-ticket__status[data-status='pending'] {
-	background: color-mix(in srgb, #fbbf24 16%, var(--ticket-surface));
-	color: #fbbf24;
-}
-
-.reservation-ticket__status[data-status='cancelled'] {
-	background: color-mix(in srgb, var(--error) 16%, var(--ticket-surface));
-	color: var(--error);
-}
-
-.reservation-ticket__status[data-status='past'] {
-	background: color-mix(in srgb, var(--on-surface-variant) 12%, var(--ticket-surface));
-	color: var(--on-surface-variant);
-}
-
-.reservation-ticket__service-name {
-	margin: 0;
-	font-size: clamp(1.45rem, 4.2vw, 1.85rem);
-	font-weight: 650;
-	letter-spacing: -0.03em;
-	line-height: 1.15;
-	color: var(--on-surface);
-	text-wrap: balance;
-}
-
-.reservation-ticket__service-meta {
-	margin: 0.35rem 0 0;
-	font-size: 0.9rem;
-	font-weight: 500;
-	color: var(--on-surface-variant);
-}
-
-.reservation-ticket__includes {
-	margin: 0;
-	padding: 0;
-	list-style: none;
-	display: grid;
-	gap: 0.2rem;
-	max-height: 4.75rem;
-	overflow: hidden;
-}
-
-.reservation-ticket__includes li {
-	position: relative;
-	margin: 0;
-	padding: 0.1rem 0 0.1rem 0.85rem;
-	font-size: 0.82rem;
-	font-weight: 500;
-	line-height: 1.35;
-	color: var(--on-surface-variant);
-}
-
-.reservation-ticket__includes li::before {
-	content: '';
-	position: absolute;
-	top: 0.55em;
-	left: 0;
-	width: 0.32rem;
-	height: 0.32rem;
-	border-radius: 999px;
-	background: var(--primary);
-}
-
-.reservation-ticket__tear {
-	position: relative;
-	height: 0;
-	margin: 0.15rem -1.15rem 0;
-	border-top: 1px dashed color-mix(in srgb, var(--outline-variant) 85%, transparent);
-}
-
-.reservation-ticket__tear::before,
-.reservation-ticket__tear::after {
-	content: '';
-	position: absolute;
-	top: -0.5rem;
-	width: 1rem;
-	height: 1rem;
-	border-radius: 50%;
-	background: var(--surface-background);
-}
-
-.reservation-ticket__tear::before {
-	left: -0.5rem;
-}
-
-.reservation-ticket__tear::after {
-	right: -0.5rem;
-}
-
-.reservation-ticket__details {
-	display: grid;
-	grid-template-columns: 1fr 1fr;
-	gap: 1rem 1.25rem;
-	padding-top: 1.25rem;
-}
-
-@media (max-width: 380px) {
-	.reservation-ticket__details {
-		grid-template-columns: 1fr 1fr;
-		gap: 0.85rem 0.75rem;
-	}
-}
-
-.reservation-ticket__field {
-	display: grid;
-	gap: 0.35rem;
-	min-width: 0;
-	margin: 0;
-	padding: 0;
-	border: 0;
-	background: transparent;
-	color: inherit;
-	font: inherit;
-	text-align: left;
-}
-
-.reservation-ticket__field--map {
-	cursor: pointer;
-	border-radius: 0.65rem;
-	margin: -0.35rem;
-	padding: 0.35rem;
-	transition: background 0.2s ease;
-}
-
-.reservation-ticket__field--map:hover {
-	background: color-mix(in srgb, var(--primary) 8%, transparent);
-}
-
-.reservation-ticket__field--map:focus-visible {
-	outline: 2px solid var(--primary);
-	outline-offset: 2px;
-}
-
-.reservation-ticket__label {
-	display: block;
-	margin: 0;
-	font-size: 0.75rem;
-	font-weight: 500;
-	line-height: 1.2;
-	color: #71717a;
-}
-
-.reservation-ticket__value {
-	display: block;
-	margin: 0;
-	font-size: clamp(0.95rem, 2.8vw, 1.08rem);
-	font-weight: 600;
-	line-height: 1.25;
-	color: #ffffff;
-	text-wrap: pretty;
 }
 
 .reservation-manage__history-summary {
