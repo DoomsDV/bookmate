@@ -104,7 +104,7 @@ export const parseCoordinates = (
 export const BRAND_MAP_MARKER_COLOR = '#FB7185';
 
 export const buildBrandMarkerSvgHtml = (color = BRAND_MAP_MARKER_COLOR): string =>
-	`<svg viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg" focusable="false">
+	`<svg width="28" height="36" viewBox="0 0 28 36" xmlns="http://www.w3.org/2000/svg" focusable="false">
 		<path fill="${color}" d="M14 0C7.373 0 2 5.373 2 12c0 8.25 10 22 12 22s12-13.75 12-22C26 5.373 20.627 0 14 0z"/>
 		<circle cx="14" cy="12" r="4.5" fill="#fff"/>
 	</svg>`;
@@ -115,16 +115,23 @@ export const renderBrandMapMarkerOverlay = (
 	`<span class="bookmate-map-marker-overlay" aria-hidden="true">${buildBrandMarkerSvgHtml(color)}</span>`;
 
 const MARKER_ELEMENT_CSS = `
+.bookmate-map-marker-wrap,
 .bookmate-map-marker,
 .bookmate-map-marker-overlay{
 	width:28px;
 	height:36px;
+	max-width:28px;
+	max-height:36px;
+	line-height:0;
+}
+.bookmate-map-marker,
+.bookmate-map-marker-overlay{
 	display:block;
 	pointer-events:none;
 	filter:drop-shadow(0 2px 4px rgba(0,0,0,.35));
 }
 .bookmate-map-marker svg,
-.bookmate-map-marker-overlay svg{display:block;width:28px;height:36px}
+.bookmate-map-marker-overlay svg{display:block;width:28px;height:36px;max-width:28px;max-height:36px}
 .bookmate-map-marker-overlay{
 	position:absolute;
 	left:50%;
@@ -137,7 +144,11 @@ const MARKER_ELEMENT_CSS = `
 let markerCssInjected = false;
 
 const ensureMarkerCss = () => {
-	if (markerCssInjected || typeof document === 'undefined') return;
+	if (typeof document === 'undefined') return;
+	if (document.head.querySelector('style[data-bookmate-map-marker]')) {
+		markerCssInjected = true;
+		return;
+	}
 	markerCssInjected = true;
 	const style = document.createElement('style');
 	style.dataset.bookmateMapMarker = 'true';
@@ -150,6 +161,11 @@ export const createBrandMarkerElement = (color = BRAND_MAP_MARKER_COLOR): HTMLDi
 	const el = document.createElement('div');
 	el.className = 'bookmate-map-marker';
 	el.setAttribute('aria-hidden', 'true');
+	el.style.width = '28px';
+	el.style.height = '36px';
+	el.style.display = 'block';
+	el.style.lineHeight = '0';
+	el.style.flexShrink = '0';
 	el.innerHTML = buildBrandMarkerSvgHtml(color);
 	return el;
 };

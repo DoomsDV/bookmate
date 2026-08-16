@@ -3,6 +3,7 @@ import {
 	getStadiaStyleUrl,
 	loadMapLibre,
 	resolveMapTheme,
+	scheduleMapLayout,
 	type MapLibreModule,
 } from '../../lib/maplibre-interactive';
 
@@ -240,14 +241,12 @@ export const createPublicUserMapController = (options: {
 				);
 			}
 
+			if (mapInstance) {
+				scheduleMapLayout(mapInstance, coords);
+			}
 			window.setTimeout(() => {
 				if (!isActiveMapOpen(mapLocation.id_location)) return;
-				try {
-					mapInstance?.resize();
-				} catch {
-					// ignore
-				}
-				mapInstance?.setCenter([coords!.lng, coords!.lat]);
+				if (mapInstance) scheduleMapLayout(mapInstance, coords);
 				if (openSeq === mapOpenSeq) setMapLoading(false);
 			}, 80);
 		} catch (error) {

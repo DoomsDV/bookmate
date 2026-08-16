@@ -22,6 +22,7 @@ import {
 	getStadiaStyleUrl,
 	loadMapLibre,
 	resolveMapTheme,
+	scheduleMapLayout,
 	type MapLibreModule,
 } from '../lib/maplibre-interactive';
 import {
@@ -577,13 +578,11 @@ export const initializePublicReservationPage = () => {
 				);
 			}
 
+			if (mapInstance) {
+				scheduleMapLayout(mapInstance, coords);
+			}
 			window.setTimeout(() => {
-				try {
-					mapInstance?.resize();
-				} catch {
-					// ignore
-				}
-				mapInstance?.setCenter([coords.lng, coords.lat]);
+				if (mapInstance) scheduleMapLayout(mapInstance, coords);
 				setMapLoading(false);
 			}, 80);
 		} catch (error) {

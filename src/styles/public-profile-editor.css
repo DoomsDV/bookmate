@@ -1266,9 +1266,7 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 		border: 2px solid var(--page-background, #0e0e10);
 		background: var(--primary, #426edb);
 		color: #fff;
-		box-shadow:
-			0 0 0 1px color-mix(in srgb, var(--on-surface) 12%, transparent),
-			0 8px 20px color-mix(in srgb, var(--primary, #426edb) 48%, transparent);
+		box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28);
 	}
 }
 

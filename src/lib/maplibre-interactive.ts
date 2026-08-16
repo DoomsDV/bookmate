@@ -81,7 +81,7 @@ export const whenMapIdle = (map: MapLibreMap): Promise<void> =>
 	});
 
 const containerHasSize = (el: HTMLElement) =>
-	el.clientWidth >= 2 && el.clientHeight >= 2;
+	el.clientWidth >= 32 && el.clientHeight >= 32;
 
 /** Espera a que el contenedor tenga layout real (pestaña/hash/dialog). */
 export const whenMapContainerReady = (
@@ -89,10 +89,9 @@ export const whenMapContainerReady = (
 	timeoutMs = 4000,
 ): Promise<void> =>
 	new Promise((resolve) => {
-		if (containerHasSize(el)) {
-			resolve();
-			return;
-		}
+		let lastW = 0;
+		let lastH = 0;
+		let stableTicks = 0;
 		let done = false;
 		const finish = () => {
 			if (done) return;
@@ -101,10 +100,34 @@ export const whenMapContainerReady = (
 			window.clearTimeout(timer);
 			resolve();
 		};
-		const ro = new ResizeObserver(() => {
-			if (containerHasSize(el)) finish();
-		});
+		const check = () => {
+			const w = el.clientWidth;
+			const h = el.clientHeight;
+			if (!containerHasSize(el)) {
+				stableTicks = 0;
+				lastW = w;
+				lastH = h;
+				return;
+			}
+			if (w === lastW && h === lastH) {
+				stableTicks += 1;
+				if (stableTicks >= 2) finish();
+				return;
+			}
+			stableTicks = 1;
+			lastW = w;
+			lastH = h;
+		};
+		const ro = new ResizeObserver(() => check());
 		ro.observe(el);
+		if (containerHasSize(el)) {
+			lastW = el.clientWidth;
+			lastH = el.clientHeight;
+			stableTicks = 1;
+			requestAnimationFrame(() => {
+				if (containerHasSize(el)) finish();
+			});
+		}
 		const timer = window.setTimeout(finish, timeoutMs);
 	});
 
@@ -118,14 +141,34 @@ export const layoutMapLibreMap = (
 		// ignore
 	}
 	if (center) {
-		map.setCenter([center.lng, center.lat]);
+		try {
+			map.jumpTo({ center: [center.lng, center.lat] });
+		} catch {
+			map.setCenter([center.lng, center.lat]);
+		}
 	}
 };
 
-export const observeMapContainerResize = (container: HTMLElement, map: MapLibreMap) => {
+/** Recalcula tamaño y centro tras animaciones de dialog/bottom-sheet. */
+export const scheduleMapLayout = (map: MapLibreMap, center?: MapCoordinates) => {
+	const run = () => layoutMapLibreMap(map, center);
+	run();
+	requestAnimationFrame(() => {
+		run();
+		requestAnimationFrame(run);
+	});
+	window.setTimeout(run, 80);
+	window.setTimeout(run, 360);
+};
+
+export const observeMapContainerResize = (
+	container: HTMLElement,
+	map: MapLibreMap,
+	getCenter?: () => MapCoordinates | undefined,
+) => {
 	const ro = new ResizeObserver(() => {
 		if (!containerHasSize(container)) return;
-		layoutMapLibreMap(map);
+		layoutMapLibreMap(map, getCenter?.());
 	});
 	ro.observe(container);
 	return () => ro.disconnect();
@@ -168,7 +211,11 @@ export const createBrandMarker = (
 ) => {
 	const color = options.color || BRAND_MAP_MARKER_COLOR;
 	const wrapper = document.createElement('div');
+	wrapper.className = 'bookmate-map-marker-wrap';
 	wrapper.style.pointerEvents = 'none';
+	wrapper.style.width = '28px';
+	wrapper.style.height = '36px';
+	wrapper.style.lineHeight = '0';
 	wrapper.appendChild(createBrandMarkerElement(color));
 	const marker = new maplibregl.Marker({
 		element: wrapper,

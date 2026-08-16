@@ -3140,6 +3140,16 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	height: 24rem;
 }
 
+.public-map-canvas-wrap .maplibregl-marker,
+.public-map-canvas-wrap .bookmate-map-marker-wrap,
+.public-map-canvas-wrap .bookmate-map-marker,
+.public-map-canvas-wrap .bookmate-map-marker svg {
+	width: 28px !important;
+	height: 36px !important;
+	max-width: 28px !important;
+	max-height: 36px !important;
+}
+
 @media (max-width: 639px) {
 	.public-map-modal {
 		inset: auto 0 0;

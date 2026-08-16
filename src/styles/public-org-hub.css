@@ -1355,11 +1355,19 @@ html[data-theme='dark'] .hub-pro-card--skeleton .hub-skel {
 	transition: opacity 220ms ease;
 }
 
-.hub-map-modal__canvas .maplibregl-map,
-.hub-map-modal__canvas .maplibregl-canvas-container,
-.hub-map-modal__canvas .maplibregl-canvas {
-	width: 100% !important;
-	height: 100% !important;
+.hub-map-modal__canvas .maplibregl-map {
+	width: 100%;
+	height: 100%;
+}
+
+.hub-map-modal__canvas .maplibregl-marker,
+.hub-map-modal__canvas .bookmate-map-marker-wrap,
+.hub-map-modal__canvas .bookmate-map-marker,
+.hub-map-modal__canvas .bookmate-map-marker svg {
+	width: 28px !important;
+	height: 36px !important;
+	max-width: 28px !important;
+	max-height: 36px !important;
 }
 
 @media (prefers-reduced-motion: reduce) {

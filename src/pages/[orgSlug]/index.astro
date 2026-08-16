@@ -1354,6 +1354,26 @@ const serializedProfessionals = professionals.length
 			mapModalStatus.hidden = !text;
 		};
 
+		const waitForHubMapModalLayout = () =>
+			new Promise<void>((resolve) => {
+				if (!mapModal) {
+					resolve();
+					return;
+				}
+				let done = false;
+				const finish = () => {
+					if (done) return;
+					done = true;
+					mapModal.removeEventListener('animationend', onEnd);
+					resolve();
+				};
+				const onEnd = (event: AnimationEvent) => {
+					if (event.target === mapModal) finish();
+				};
+				mapModal.addEventListener('animationend', onEnd);
+				window.setTimeout(finish, 360);
+			});
+
 		const renderModalMap = async (lat: number, lng: number, title: string) => {
 			if (!mapModalCanvas) return;
 			const apiKey = String(root.dataset.stadiaKey || '').trim();
@@ -1370,6 +1390,7 @@ const serializedProfessionals = professionals.length
 				const maplibregl = await loadHubMapLibre();
 				const styleUrl = await getHubStyleUrl(apiKey);
 				const center = { lat, lng };
+				await waitForHubMapModalLayout();
 				await mapLibreMod.whenMapContainerReady(mapModalCanvas);
 				if (modalMapHandle) {
 					try {
@@ -1378,10 +1399,7 @@ const serializedProfessionals = professionals.length
 						// ignore
 					}
 					modalMapHandle.center = center;
-					mapLibreMod.layoutMapLibreMap(modalMapHandle.map, center);
-					window.setTimeout(() => {
-						mapLibreMod.layoutMapLibreMap(modalMapHandle!.map, center);
-					}, 80);
+					mapLibreMod.scheduleMapLayout(modalMapHandle.map, center);
 				} else {
 					mapModalCanvas.innerHTML = '';
 					const map = new maplibregl.Map({
@@ -1399,15 +1417,18 @@ const serializedProfessionals = professionals.length
 					marker.setPopup(
 						new maplibregl.Popup({ closeButton: false, offset: 24 }).setText(title)
 					);
+					modalMapHandle = { map, center };
 					const disconnectResize = mapLibreMod.observeMapContainerResize(
 						mapModalCanvas,
-						map
+						map,
+						() => modalMapHandle?.center
 					);
-					modalMapHandle = { map, center, disconnectResize };
+					modalMapHandle.disconnectResize = disconnectResize;
 					hubMapInstanceList.push(modalMapHandle);
-					window.setTimeout(() => {
-						mapLibreMod.layoutMapLibreMap(map, center);
-					}, 120);
+					map.once('load', () => {
+						mapLibreMod.scheduleMapLayout(map, center);
+					});
+					mapLibreMod.scheduleMapLayout(map, center);
 				}
 			} catch {
 				setMapModalStatus('No se pudo cargar el mapa.');

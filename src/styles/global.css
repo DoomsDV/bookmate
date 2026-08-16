@@ -2335,23 +2335,39 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 	display: none;
 }
 
+.bookmate-map-marker-wrap,
+.bookmate-map-marker,
+.bookmate-map-marker-overlay {
+	width: 28px;
+	height: 36px;
+	max-width: 28px;
+	max-height: 36px;
+	line-height: 0;
+	flex-shrink: 0;
+}
+
+.bookmate-map-marker,
+.bookmate-map-marker-overlay {
+	display: block;
+	pointer-events: none;
+	filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
+}
+
 .bookmate-map-marker-overlay {
 	position: absolute;
 	left: 50%;
 	top: 50%;
 	z-index: 1;
-	display: block;
-	width: 28px;
-	height: 36px;
-	pointer-events: none;
 	transform: translate(-50%, -100%);
-	filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.35));
 }
 
+.bookmate-map-marker svg,
 .bookmate-map-marker-overlay svg {
 	display: block;
 	width: 28px;
 	height: 36px;
+	max-width: 28px;
+	max-height: 36px;
 }
 
 .panel-horizontal-card__media--placeholder .bookmate-map-marker-overlay {

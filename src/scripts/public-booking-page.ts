@@ -15,6 +15,7 @@ import {
 	loadMapLibre,
 	MAPLIBRE_ES_UI_LOCALE,
 	resolveMapTheme,
+	scheduleMapLayout,
 	type MapLibreModule,
 } from '../lib/maplibre-interactive';
 import {
@@ -669,14 +670,12 @@ export const initializePublicBookingPage = () => {
 				);
 			}
 
+			if (mapInstance) {
+				scheduleMapLayout(mapInstance, coords);
+			}
 			window.setTimeout(() => {
 				if (!isActiveMapOpen(mapLocation.id_location)) return;
-				try {
-					mapInstance?.resize();
-				} catch {
-					// ignore
-				}
-				mapInstance?.setCenter([coords!.lng, coords!.lat]);
+				if (mapInstance) scheduleMapLayout(mapInstance, coords);
 				if (openSeq === mapOpenSeq) {
 					setMapLoading(false);
 				}
