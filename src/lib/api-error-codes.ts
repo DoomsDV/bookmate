@@ -11,9 +11,8 @@ export const NOT_FOUND_API_CODE = 'NOT_FOUND';
 export const CONFLICT_API_CODE = 'CONFLICT';
 export const INTERNAL_ERROR_API_CODE = 'INTERNAL_ERROR';
 
-/** Códigos que deben cerrar sesión y redirigir al login. */
+/** Códigos que deben cerrar sesión y redirigir al login (sin intentar refresh). */
 export const SESSION_TERMINATING_CODES = new Set<string>([
-	SESSION_EXPIRED_API_CODE,
 	ORG_ACCESS_INACTIVE_CODE,
 ]);
 

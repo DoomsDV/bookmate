@@ -386,6 +386,67 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	}
 }
 
+/* Paso seña SIPAP: header compacto solo mientras el panel está visible. No toca pasos 1-5. */
+@media (max-width: 959px) {
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__inner {
+		align-items: stretch;
+		gap: 0;
+		padding: 0.4rem 1rem 0.1rem;
+		text-align: left;
+	}
+
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__card {
+		padding: 0.15rem 0;
+	}
+
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__body {
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-start;
+		gap: 0.65rem;
+		text-align: left;
+	}
+
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__text {
+		align-self: center;
+		gap: 0;
+		text-align: left;
+	}
+
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__eyebrow,
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__meta {
+		display: none;
+	}
+
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__title {
+		overflow: hidden;
+		font-size: 1rem;
+		font-weight: 700;
+		letter-spacing: -0.02em;
+		line-height: 1.2;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-avatar,
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-avatar--empty {
+		width: 32px;
+		height: 32px;
+		box-shadow: none;
+	}
+
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden))
+		.public-booking-profile--card
+		.public-booking-avatar--empty
+		.material-symbols-rounded {
+		font-size: 1.35rem;
+	}
+
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-stepper {
+		margin: 0.15rem 0 0.4rem;
+	}
+}
+
 .public-booking-stepper {
 	display: flex;
 	justify-content: center;

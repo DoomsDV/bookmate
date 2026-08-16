@@ -1,4 +1,4 @@
-import { readApiErrorCode, SESSION_EXPIRED_API_CODE } from '../lib/api-error-codes';
+import { readApiErrorCode } from '../lib/api-error-codes';
 
 type ApiErrorLike = {
 	message: string;
@@ -70,8 +70,6 @@ export const toErrorResponse = <TError extends ApiErrorLike>(
 
 	if (errorCode) {
 		payload.code = errorCode;
-	} else if (resolvedError.status === 401) {
-		payload.code = SESSION_EXPIRED_API_CODE;
 	}
 
 	const scheduleReason = String(

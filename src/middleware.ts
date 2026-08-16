@@ -6,6 +6,7 @@ import {
 	getPendingSelectionAuthToken,
 	isInvitationAcceptRedirect,
 	isPublicPath,
+	isTransientRefreshFailure,
 	refreshWithOrds,
 	setOrganizationCacheCookies,
 	setSessionCookies,
@@ -17,12 +18,18 @@ import {
 	setPanelValidationCache,
 } from './lib/panel-validation-cache';
 import { getCurrentOrganizationWithOrds } from './lib/organization';
-import { SESSION_EXPIRED_API_CODE } from './lib/session-auth-messages';
-import { isOrgSelectionToken, parseTokenClaims } from './lib/token-claims';
+import {
+	ORG_ACCESS_INACTIVE_CODE,
+	SESSION_EXPIRED_API_CODE,
+	isOrgAccessInactiveResponse,
+} from './lib/session-auth-messages';
+import { isAccessJwtExpired, isOrgSelectionToken, parseTokenClaims } from './lib/token-claims';
 
 const isInvitationLoginLanding = (pathname: string, searchParams: URLSearchParams) =>
 	pathname === '/auth/login' &&
 	(searchParams.get('invitationAccepted') === '1' || searchParams.has('invitationAccepted'));
+
+const recoverableRefreshMessage = 'No fue posible renovar la sesión. Reintentá en unos segundos.';
 
 export const onRequest = defineMiddleware(async (context, next) => {
 	const { cookies, redirect, url } = context;
@@ -61,7 +68,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
 			const tempClaims = parseTokenClaims(tempToken);
 
-			if (isKnownRoleId(tempClaims.role_id)) {
+			if (isKnownRoleId(tempClaims.role_id) && !isAccessJwtExpired(tempToken)) {
 				return redirect('/panel/dashboard');
 			}
 		}
@@ -85,6 +92,23 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		return redirect(`/auth/login?redirectTo=${encodeURIComponent(redirectPath)}`);
 	};
 
+	const respondTransientRefreshFailure = () => {
+		if (url.pathname.startsWith('/api/')) {
+			return Response.json(
+				{
+					status: 'error',
+					message: recoverableRefreshMessage,
+				},
+				{ status: 503 }
+			);
+		}
+
+		return new Response(recoverableRefreshMessage, {
+			status: 503,
+			headers: { 'content-type': 'text/plain; charset=utf-8' },
+		});
+	};
+
 	if (
 		url.pathname === '/api/organization/create' ||
 		url.pathname === '/api/auth/accept-invitation'
@@ -102,15 +126,21 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
 	let accessToken = cookies.get('access_token')?.value;
 	const refreshToken = cookies.get('refresh_token')?.value;
+	const accessNeedsRefresh = !accessToken || isAccessJwtExpired(accessToken);
+	let didRefreshAccess = false;
 
-	if (!accessToken && refreshToken) {
+	if (accessNeedsRefresh && refreshToken) {
 		try {
 			const session = await refreshWithOrds(refreshToken);
 			setSessionCookies(cookies, url, session);
 			accessToken = session.access_token;
 			clearPanelValidationCache(cookies);
-		} catch {
-			clearSessionCookies(cookies);
+			didRefreshAccess = true;
+		} catch (error) {
+			if (isTransientRefreshFailure(error)) {
+				return respondTransientRefreshFailure();
+			}
+			// 401 por refresh ya rotado: no borrar cookies (otra request pudo ganar).
 			return redirectToLogin();
 		}
 	}
@@ -119,7 +149,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
 		return redirectToLogin();
 	}
 
-	const claims = parseTokenClaims(accessToken);
+	let claims = parseTokenClaims(accessToken);
 	if (!isKnownRoleId(claims.role_id)) {
 		clearSessionCookies(cookies);
 		return redirectToLogin();
@@ -147,22 +177,104 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	} catch (error) {
 		if (error instanceof PanelAccessError) {
 			clearPanelValidationCache(cookies);
-			clearSessionCookies(cookies);
 
-			if (url.pathname.startsWith('/api/')) {
-				return Response.json(
-					{
-						status: 'error',
-						code: error.code,
-						message: error.message,
-					},
-					{ status: 401 }
-				);
+			const orgInactive = isOrgAccessInactiveResponse({
+				status: error.status,
+				message: error.message,
+				code: error.code,
+			});
+
+			if (orgInactive || error.code === ORG_ACCESS_INACTIVE_CODE) {
+				clearSessionCookies(cookies);
+
+				if (url.pathname.startsWith('/api/')) {
+					return Response.json(
+						{
+							status: 'error',
+							code: error.code,
+							message: error.message,
+						},
+						{ status: 401 }
+					);
+				}
+
+				const loginParams = new URLSearchParams();
+				loginParams.set('error', error.message);
+				return redirect(`/auth/login?${loginParams.toString()}`);
 			}
 
-			const loginParams = new URLSearchParams();
-			loginParams.set('error', error.message);
-			return redirect(`/auth/login?${loginParams.toString()}`);
+			if (error.status >= 500) {
+				if (url.pathname.startsWith('/api/')) {
+					return Response.json(
+						{
+							status: 'error',
+							code: error.code,
+							message: error.message,
+						},
+						{ status: error.status }
+					);
+				}
+
+				return new Response(error.message || recoverableRefreshMessage, {
+					status: error.status,
+					headers: { 'content-type': 'text/plain; charset=utf-8' },
+				});
+			}
+
+			const currentRefresh = cookies.get('refresh_token')?.value;
+			if (!currentRefresh || didRefreshAccess) {
+				return redirectToLogin();
+			}
+
+			try {
+				const session = await refreshWithOrds(currentRefresh);
+				setSessionCookies(cookies, url, session);
+				accessToken = session.access_token;
+				clearPanelValidationCache(cookies);
+				claims = parseTokenClaims(accessToken);
+
+				if (!isKnownRoleId(claims.role_id)) {
+					return redirectToLogin();
+				}
+
+				await validatePanelSessionWithOrds(accessToken);
+				setPanelValidationCache(cookies, claims);
+			} catch (refreshError) {
+				if (refreshError instanceof PanelAccessError) {
+					const retryOrgInactive = isOrgAccessInactiveResponse({
+						status: refreshError.status,
+						message: refreshError.message,
+						code: refreshError.code,
+					});
+					if (retryOrgInactive || refreshError.code === ORG_ACCESS_INACTIVE_CODE) {
+						clearSessionCookies(cookies);
+					} else if (refreshError.status >= 500) {
+						return respondTransientRefreshFailure();
+					}
+					if (url.pathname.startsWith('/api/')) {
+						return Response.json(
+							{
+								status: 'error',
+								code: refreshError.code,
+								message: refreshError.message,
+							},
+							{ status: refreshError.status >= 500 ? refreshError.status : 401 }
+						);
+					}
+					if (retryOrgInactive || refreshError.code === ORG_ACCESS_INACTIVE_CODE) {
+						const loginParams = new URLSearchParams();
+						loginParams.set('error', refreshError.message);
+						return redirect(`/auth/login?${loginParams.toString()}`);
+					}
+					return redirectToLogin();
+				}
+
+				if (isTransientRefreshFailure(refreshError)) {
+					return respondTransientRefreshFailure();
+				}
+
+				return redirectToLogin();
+			}
 		}
 	}
 

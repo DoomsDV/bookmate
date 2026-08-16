@@ -44,7 +44,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		</div>
 
 		<dialog
-			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:max-h-[90vh] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-white/10 bg-(--surface-bright) p-0 text-(--on-surface) shadow-2xl shadow-black/60 sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:max-h-[90vh] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0"
 			data-service-modal
 		>
 
@@ -92,7 +92,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 				{/* fieldset con display:contents evita el bug de flex que aplasta el contenido en drawers */}
 				<fieldset data-form-fieldset class="contents">
-				<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 py-7 lg:px-6">
+				<div class="service-modal-body min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 py-7 lg:px-6">
 				<div class="grid gap-5">
 				<div
 					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
@@ -137,12 +137,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 								Seleccionar imagen
 							</span>
 						</div>
-						<span
-							class="service-cover-dropzone__change hidden"
-							data-service-cover-change
-						>
-							<span class="service-cover-copy-desktop">Hacé clic o arrastrá para cambiar</span>
-							<span class="service-cover-copy-mobile">Tocá para cambiar</span>
+						<span class="service-cover-dropzone__overlay" aria-hidden="true">
+							<span class="material-symbols-rounded">photo_camera</span>
 						</span>
 						<button
 							type="button"
@@ -175,28 +171,29 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 						data-field-error="name"></span>
 				</label>
 
+				<div class="grid gap-3">
 				<div class="grid grid-cols-2 gap-5">
 					<label
 						class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 					>
 						<span class="inline-flex items-center gap-1">
-							Duración <span
-								class="text-(--on-surface-variant) font-medium"
-								>(min)</span
-							>
+							Duración
 							<span class="text-rose-500">*</span>
 						</span>
-						<input
-							type="number"
-							name="duration_minutes"
-							min="1"
-							max="999"
-							step="1"
-							inputmode="numeric"
-							required
-							class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-							placeholder="Ej: 45"
-						/>
+						<div class="service-input-affix">
+							<input
+								type="number"
+								name="duration_minutes"
+								min="1"
+								max="999"
+								step="1"
+								inputmode="numeric"
+								required
+								class="service-input-affix__input"
+								placeholder="30"
+							/>
+							<span class="service-input-affix__suffix">min</span>
+						</div>
 						<span
 							class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
 							data-field-error="duration_minutes"></span>
@@ -211,135 +208,152 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 								>(Opcional)</span
 							>
 						</span>
-						<input
-							type="text"
-							name="price"
-							inputmode="numeric"
-							maxlength="8"
-							class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-							placeholder="Ej: 45.000"
-							data-price-mask
-						/>
+						<div class="service-input-affix">
+							<span class="service-input-affix__prefix">Gs.</span>
+							<input
+								type="text"
+								name="price"
+								inputmode="numeric"
+								maxlength="8"
+								class="service-input-affix__input"
+								placeholder="50.000"
+								data-price-mask
+							/>
+						</div>
 						<span
 							class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
 							data-field-error="price"></span>
 					</label>
 				</div>
 
-				<details class="service-accordion" data-service-accordion="price-visibility">
-					<summary class="service-accordion__summary">
-						<span class="service-accordion__title">Opciones de visibilidad de precio</span>
-						<span class="material-symbols-rounded service-accordion__chevron" aria-hidden="true">expand_more</span>
-					</summary>
-					<div class="service-accordion__body">
-						<div class="grid gap-2 text-[0.95rem] font-bold text-(--on-surface)">
-							<div class="flex items-center justify-between gap-3">
-								<span class="inline-flex min-w-0 items-center gap-1.5">
-									Ocultar precio en reserva pública
-									<button
-										type="button"
-										class="service-field-info"
-										aria-label="El cliente verá el texto por defecto de Ajustes → Negocio. El precio real sigue usándose en el panel y en métricas."
-										data-tooltip="El cliente verá el texto por defecto de Ajustes → Negocio. El precio real sigue usándose en el panel y en métricas."
-									>
-										<span class="material-symbols-rounded" aria-hidden="true">info</span>
-									</button>
-								</span>
+				<div class="service-options-card">
+					<div>
+						<div class="service-switch-row">
+							<span class="inline-flex min-w-0 items-center gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+								Ocultar precio en reserva
+								<button
+									type="button"
+									class="service-field-info"
+									aria-label="El cliente verá el texto por defecto de Ajustes → Negocio. El precio real sigue usándose en el panel y en métricas."
+									data-tooltip="El cliente verá el texto por defecto de Ajustes → Negocio. El precio real sigue usándose en el panel y en métricas."
+								>
+									<span class="material-symbols-rounded" aria-hidden="true">info</span>
+								</button>
+							</span>
+							<label class="service-switch shrink-0">
 								<input
 									type="checkbox"
 									name="hide_public_price"
 									value="1"
 									data-hide-public-price-toggle
-									class="size-5 shrink-0 accent-(--primary)"
-									aria-label="Ocultar precio en reserva pública"
+									class="service-switch__input sr-only"
+									aria-label="Ocultar precio en reserva"
 								/>
-							</div>
-							<div class="grid gap-1 hidden" data-hide-public-price-fields>
-								<label class="grid gap-1">
-									<span class="text-[0.9rem]">Texto personalizado <span class="font-medium text-(--on-surface-variant)">(opcional)</span></span>
-									<input
-										type="text"
-										name="hidden_public_price_label"
-										maxlength="80"
-										data-hidden-public-price-label
-										placeholder="Ej: A evaluar (Texto por defecto)"
-										class="w-full rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] font-medium outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-									/>
-								</label>
-								<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="hidden_public_price_label"></span>
+								<span class="service-switch__track" aria-hidden="true"></span>
+							</label>
+						</div>
+
+						<div class="service-reveal" data-hide-public-price-fields>
+							<div class="service-reveal__inner">
+								<div class="service-options-card__sub">
+									<label class="grid gap-1 text-[0.82rem] font-bold text-(--on-surface)">
+										<span>Texto alternativo</span>
+										<input
+											type="text"
+											name="hidden_public_price_label"
+											maxlength="80"
+											data-hidden-public-price-label
+											placeholder="Ej. A consultar / A evaluar"
+											class="w-full rounded-lg border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-[0.88rem] font-medium outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+										/>
+									</label>
+									<p class="m-0 mt-1.5 text-[0.75rem] font-medium leading-snug text-(--on-surface-variant)">
+										Si lo dejás vacío, usará el texto global del negocio.
+									</p>
+									<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="hidden_public_price_label"></span>
+								</div>
 							</div>
 						</div>
 					</div>
-				</details>
 
-				{
-					FEATURE_FLAGS.SERVICE_DEPOSIT_OPTIONS ? (
-						<details class="service-accordion" data-service-accordion="deposit">
-							<summary class="service-accordion__summary">
-								<span class="service-accordion__title">Opciones de seña</span>
-								<span class="material-symbols-rounded service-accordion__chevron" aria-hidden="true">expand_more</span>
-							</summary>
-							<div class="service-accordion__body">
-								<div class="flex items-center justify-between gap-3 text-[0.95rem] font-bold text-(--on-surface)">
-									<span class="inline-flex min-w-0 items-center gap-1.5">
-										Requiere seña para reservar
-										<button
-											type="button"
-											class="service-field-info"
-											aria-label="Si lo activas, el cliente deberá pagar una seña en la web para confirmar."
-											data-tooltip="Si lo activas, el cliente deberá pagar una seña en la web para confirmar."
-										>
-											<span class="material-symbols-rounded" aria-hidden="true">info</span>
-										</button>
-									</span>
-									<input
-										type="checkbox"
-										name="requires_deposit"
-										value="1"
-										data-requires-deposit-toggle
-										class="size-5 shrink-0 accent-(--primary)"
-										aria-label="Requiere seña para reservar"
-									/>
-								</div>
-
-								<div class="grid gap-3 hidden mt-2" data-deposit-fields>
-									<div class="grid grid-cols-2 gap-3">
-										<label class="grid gap-1 text-[0.95rem] font-bold text-(--on-surface)">
-											<span>Tipo de seña <span class="text-rose-500">*</span></span>
-											<div class="relative">
-												<select
-													name="deposit_type"
-													data-deposit-type
-													class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer"
-												>
-													<option value="PERCENT">Porcentaje (%)</option>
-													<option value="FIXED">Monto fijo (Gs)</option>
-												</select>
-												<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)">
-													<span class="material-symbols-rounded">expand_more</span>
-												</span>
-											</div>
-											<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_type"></span>
-										</label>
-
-										<label class="grid gap-1 text-[0.95rem] font-bold text-(--on-surface)">
-											<span>Valor <span class="text-rose-500">*</span></span>
+					{
+						FEATURE_FLAGS.SERVICE_DEPOSIT_OPTIONS ? (
+							<>
+								<div class="service-options-card__divider"></div>
+								<div>
+									<div class="service-switch-row">
+										<span class="inline-flex min-w-0 items-center gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+											Requiere seña
+											<button
+												type="button"
+												class="service-field-info"
+												aria-label="Si lo activas, el cliente deberá pagar una seña en la web para confirmar."
+												data-tooltip="Si lo activas, el cliente deberá pagar una seña en la web para confirmar."
+											>
+												<span class="material-symbols-rounded" aria-hidden="true">info</span>
+											</button>
+										</span>
+										<label class="service-switch shrink-0">
 											<input
-												type="text"
-												name="deposit_value"
-												data-deposit-value
-												inputmode="numeric"
-												class="w-full min-w-0 rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
-												placeholder="Ej: 50.000"
+												type="checkbox"
+												name="requires_deposit"
+												value="1"
+												data-requires-deposit-toggle
+												class="service-switch__input sr-only"
+												aria-label="Requiere seña"
 											/>
-											<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_value"></span>
+											<span class="service-switch__track" aria-hidden="true"></span>
 										</label>
 									</div>
+
+									<div class="service-reveal" data-deposit-fields>
+										<div class="service-reveal__inner">
+											<div class="service-options-card__sub">
+												<div class="grid grid-cols-2 gap-3">
+													<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+														<span>Tipo <span class="text-rose-500">*</span></span>
+														<div class="relative">
+															<select
+																name="deposit_type"
+																data-deposit-type
+																class="w-full appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 font-bold text-(--on-surface) cursor-pointer"
+															>
+																<option value="PERCENT">Porcentaje (%)</option>
+																<option value="FIXED">Monto fijo (Gs)</option>
+															</select>
+															<span class="pointer-events-none absolute inset-y-0 right-4 flex items-center text-(--on-surface-variant)">
+																<span class="material-symbols-rounded">expand_more</span>
+															</span>
+														</div>
+														<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_type"></span>
+													</label>
+
+													<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+														<span>Valor <span class="text-rose-500">*</span></span>
+														<div class="service-input-affix" data-deposit-value-affix>
+															<span class="service-input-affix__prefix hidden" data-deposit-prefix>Gs.</span>
+															<input
+																type="text"
+																name="deposit_value"
+																data-deposit-value
+																inputmode="numeric"
+																class="service-input-affix__input"
+																placeholder="30"
+															/>
+															<span class="service-input-affix__suffix" data-deposit-suffix>%</span>
+														</div>
+														<span class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400" data-field-error="deposit_value"></span>
+													</label>
+												</div>
+											</div>
+										</div>
+									</div>
 								</div>
-							</div>
-						</details>
-					) : null
-				}
+							</>
+						) : null
+					}
+				</div>
+				</div>
 
 				<label
 					class="grid gap-1.5 border-t border-(--shell-border) pt-5 text-[0.95rem] font-bold text-(--on-surface)"
@@ -902,7 +916,6 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			this.toggleHidePublicPriceFields(false);
 			if (this.els.requiresDepositToggle) this.els.requiresDepositToggle.checked = false;
 			this.toggleDepositFields(false);
-			this.collapseAdvancedAccordions();
 			if (this.els.depositType) this.els.depositType.value = "PERCENT";
 			if (this.els.depositValue) this.els.depositValue.value = "";
 			this.syncDepositValueField("");
@@ -940,10 +953,6 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			}
 			this.els.coverEmpty?.classList.toggle("hidden", Boolean(previewSrc));
 			this.els.coverClear?.classList.toggle("hidden", !previewSrc);
-			this.querySelector("[data-service-cover-change]")?.classList.toggle(
-				"hidden",
-				!previewSrc,
-			);
 			this.els.coverDropzone?.classList.toggle("has-preview", Boolean(previewSrc));
 		}
 
@@ -1090,48 +1099,18 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 
 		private toggleHidePublicPriceFields(isEnabled: boolean) {
-			this.els.hidePublicPriceFields?.classList.toggle("hidden", !isEnabled);
-			this.syncHidePublicPriceHints();
+			this.els.hidePublicPriceFields?.classList.toggle("is-open", isEnabled);
 			if (!isEnabled && this.els.hiddenPublicPriceLabel) {
 				this.els.hiddenPublicPriceLabel.value = "";
-			}
-			if (isEnabled) {
-				this.setAccordionOpen("price-visibility", true);
-				// Dejar vacío para que se vea el placeholder de ayuda.
-				if (this.els.hiddenPublicPriceLabel && !this.els.hiddenPublicPriceLabel.value.trim()) {
-					this.els.hiddenPublicPriceLabel.value = "";
-					this.els.hiddenPublicPriceLabel.placeholder =
-						`Ej: ${this.orgHiddenPriceDefault || "A evaluar"} (Texto por defecto)`;
-				}
 			}
 		}
 
 		private toggleDepositFields(isEnabled: boolean) {
-			this.els.depositFields?.classList.toggle("hidden", !isEnabled);
+			this.els.depositFields?.classList.toggle("is-open", isEnabled);
 			if (!isEnabled) {
 				if (this.els.depositValue) this.els.depositValue.value = "";
 			}
-			if (isEnabled) this.setAccordionOpen("deposit", true);
-		}
-
-		private setAccordionOpen(name: string, open: boolean) {
-			const accordion = this.querySelector<HTMLDetailsElement>(
-				`[data-service-accordion="${name}"]`,
-			);
-			if (!accordion) return;
-			accordion.open = open;
-		}
-
-		private collapseAdvancedAccordions() {
-			this.setAccordionOpen("price-visibility", false);
-			this.setAccordionOpen("deposit", false);
-		}
-
-		private syncHidePublicPriceHints() {
-			const defaultLabel = this.orgHiddenPriceDefault || "A evaluar";
-			if (this.els.hiddenPublicPriceLabel) {
-				this.els.hiddenPublicPriceLabel.placeholder = `Ej: ${defaultLabel} (Texto por defecto)`;
-			}
+			if (isEnabled) this.syncDepositValueAffix();
 		}
 
 		private handleHidePublicPriceToggle = () => {
@@ -1150,10 +1129,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 						?.hidden_public_price_label || "",
 				).trim();
 				this.orgHiddenPriceDefault = label || "A evaluar";
-				this.syncHidePublicPriceHints();
 			} catch {
 				this.orgHiddenPriceDefault = "A evaluar";
-				this.syncHidePublicPriceHints();
 			}
 		}
 
@@ -1172,13 +1149,20 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			return String(Math.min(n, 100));
 		}
 
+		private syncDepositValueAffix() {
+			const isFixed = this.isDepositFixedType();
+			this.querySelector("[data-deposit-prefix]")?.classList.toggle("hidden", !isFixed);
+			this.querySelector("[data-deposit-suffix]")?.classList.toggle("hidden", isFixed);
+		}
+
 		private syncDepositValueField(val: string | number | null | undefined) {
 			if (!this.els.depositValue) return;
 			this.els.depositValue.value = this.formatDepositValue(val);
 			this.els.depositValue.placeholder = this.isDepositFixedType()
-				? "Ej: 50.000"
-				: "Ej: 30";
+				? "50.000"
+				: "30";
 			this.els.depositValue.maxLength = this.isDepositFixedType() ? 12 : 3;
+			this.syncDepositValueAffix();
 		}
 
 		private handleDepositTypeChange = () => {
@@ -1614,29 +1598,31 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		color: var(--on-primary, #fff);
 	}
 
-	.service-cover-dropzone__change {
+	.service-cover-dropzone__overlay {
 		position: absolute;
-		left: 50%;
-		bottom: 0.75rem;
-		transform: translateX(-50%);
+		inset: 0;
 		z-index: 2;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		padding: 0.45rem 0.85rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--surface-bright) 88%, transparent);
-		backdrop-filter: blur(6px);
-		-webkit-backdrop-filter: blur(6px);
-		color: var(--on-surface);
-		font-size: 0.78rem;
-		font-weight: 700;
-		box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
+		display: grid;
+		place-items: center;
+		background: rgba(0, 0, 0, 0.42);
+		color: #fff;
+		opacity: 0;
 		pointer-events: none;
-		white-space: nowrap;
+		transition: opacity 160ms ease;
 	}
 
-	.service-cover-dropzone__change.hidden {
+	.service-cover-dropzone__overlay .material-symbols-rounded {
+		font-size: 1.65rem;
+		line-height: 1;
+	}
+
+	.service-cover-dropzone.has-preview:hover .service-cover-dropzone__overlay,
+	.service-cover-dropzone.has-preview:focus-within .service-cover-dropzone__overlay,
+	.service-cover-dropzone.has-preview:active .service-cover-dropzone__overlay {
+		opacity: 1;
+	}
+
+	.service-cover-dropzone:not(.has-preview) .service-cover-dropzone__overlay {
 		display: none;
 	}
 
@@ -1763,7 +1749,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			width: max(50vw, 40rem);
 			max-width: max(50vw, 40rem);
 			border-radius: 0;
-			box-shadow: none;
+			box-shadow: -24px 0 80px rgba(0, 0, 0, 0.6);
 		}
 
 		dialog[data-service-modal]::backdrop {
@@ -1817,52 +1803,202 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 	}
 
-	.service-accordion {
-		border-radius: 0.85rem;
-		border: 1px solid var(--shell-border);
-		background: color-mix(in srgb, var(--surface-bright) 40%, transparent);
-		overflow: visible;
-		min-height: min-content;
-		flex-shrink: 0;
+	.service-modal-body {
+		scrollbar-width: thin;
+		scrollbar-color: #3f3f46 transparent;
 	}
 
-	.service-accordion__summary {
+	.service-modal-body::-webkit-scrollbar {
+		width: 6px;
+	}
+
+	.service-modal-body::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.service-modal-body::-webkit-scrollbar-thumb {
+		background: #3f3f46;
+		border-radius: 999px;
+	}
+
+	.service-input-affix {
+		display: flex;
+		align-items: center;
+		width: 100%;
+		min-width: 0;
+		border-radius: 0.75rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright);
+		transition:
+			border-color 140ms ease,
+			box-shadow 140ms ease;
+	}
+
+	.service-input-affix:hover {
+		border-color: color-mix(in srgb, var(--on-surface-variant) 40%, var(--shell-border));
+	}
+
+	.service-input-affix:focus-within {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 10%, transparent);
+	}
+
+	.service-input-affix__input {
+		flex: 1 1 auto;
+		min-width: 0;
+		width: 100%;
+		border: 0;
+		background: transparent;
+		padding: 0.75rem 0.7rem;
+		font-size: 0.95rem;
+		font-weight: inherit;
+		color: inherit;
+		outline: none;
+	}
+
+	.service-input-affix__input::-webkit-outer-spin-button,
+	.service-input-affix__input::-webkit-inner-spin-button {
+		-webkit-appearance: none;
+		margin: 0;
+	}
+
+	.service-input-affix__input[type="number"] {
+		-moz-appearance: textfield;
+		appearance: textfield;
+	}
+
+	.service-input-affix__prefix,
+	.service-input-affix__suffix {
+		flex-shrink: 0;
+		padding: 0 0.85rem;
+		font-size: 0.82rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
+		user-select: none;
+	}
+
+	.service-input-affix__prefix {
+		border-right: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+	}
+
+	.service-input-affix__suffix {
+		border-left: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
+	}
+
+	.service-input-affix__prefix.hidden,
+	.service-input-affix__suffix.hidden {
+		display: none;
+	}
+
+	.service-options-card {
+		display: grid;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+	}
+
+	.service-options-card::before,
+	.service-options-card::after,
+	.service-options-card__divider {
+		content: "";
+		display: block;
+		width: 100%;
+		height: 0;
+		margin: 1rem 0;
+		border: 0;
+		border-top: 1px dotted color-mix(in srgb, var(--on-surface) 22%, transparent);
+		background: none;
+	}
+
+	.service-options-card__sub {
+		margin-top: 0.75rem;
+		padding: 0;
+		border-radius: 0;
+		background: transparent;
+	}
+
+	dialog[data-service-modal] [data-service-status-wrap] {
+		border-top: 0;
+		padding-top: 1rem;
+	}
+
+	.service-switch-row {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 0.75rem;
-		padding: 0.7rem 0.85rem;
+	}
+
+	.service-switch {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
 		cursor: pointer;
-		list-style: none;
-		user-select: none;
 	}
 
-	.service-accordion__summary::-webkit-details-marker {
-		display: none;
+	.service-switch__track {
+		position: relative;
+		display: inline-flex;
+		width: 3rem;
+		height: 1.7rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 11%, var(--surface-container-low));
+		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 20%, var(--shell-border));
+		transition: background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 	}
 
-	.service-accordion__title {
-		font-size: 0.95rem;
-		font-weight: 700;
-		color: var(--on-surface);
+	.service-switch__track::after {
+		content: "";
+		position: absolute;
+		top: 2px;
+		left: 2px;
+		width: 1.25rem;
+		height: 1.25rem;
+		border-radius: 50%;
+		background: color-mix(in srgb, var(--surface-bright) 78%, var(--on-surface-variant) 22%);
+		border: 1px solid color-mix(in srgb, var(--on-surface-variant) 18%, var(--shell-border));
+		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.14);
+		transition:
+			transform 0.2s ease,
+			background 0.2s ease,
+			border-color 0.2s ease,
+			box-shadow 0.2s ease;
 	}
 
-	.service-accordion__chevron {
-		flex-shrink: 0;
-		color: var(--on-surface-variant);
-		transition: transform 160ms ease;
+	.service-switch__input:focus-visible + .service-switch__track {
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 28%, transparent);
 	}
 
-	.service-accordion[open] .service-accordion__chevron {
-		transform: rotate(180deg);
+	.service-switch__input:checked + .service-switch__track {
+		background: var(--primary);
+		border-color: color-mix(in srgb, var(--primary) 70%, var(--shell-border));
 	}
 
-	.service-accordion__body {
+	.service-switch__input:checked + .service-switch__track::after {
+		transform: translateX(1.3rem);
+		background: #fff;
+		border-color: color-mix(in srgb, var(--primary) 24%, transparent);
+		box-shadow: 0 1px 4px rgba(15, 23, 42, 0.18);
+	}
+
+	.service-reveal {
 		display: grid;
-		gap: 0.65rem;
-		padding: 0 0.85rem 0.75rem;
-		border-top: 1px solid color-mix(in srgb, var(--shell-border) 80%, transparent);
-		padding-top: 0.7rem;
+		grid-template-rows: 0fr;
+		transition: grid-template-rows 220ms ease;
+	}
+
+	.service-reveal.is-open {
+		grid-template-rows: 1fr;
+	}
+
+	.service-reveal__inner {
+		overflow: hidden;
+		min-height: 0;
+	}
+
+	.service-reveal.is-open .service-reveal__inner {
+		padding-top: 0.35rem;
 	}
 
 	.service-field-info {

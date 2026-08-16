@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 
 import { AuthApiError, refreshWithOrds, setOrganizationCacheCookies, setSessionCookies } from '../../../lib/auth';
 import { getCurrentOrganizationWithOrds } from '../../../lib/organization';
+import { clearPanelValidationCache } from '../../../lib/panel-validation-cache';
 
 export const POST: APIRoute = async ({ cookies, url }) => {
 	try {
@@ -13,6 +14,7 @@ export const POST: APIRoute = async ({ cookies, url }) => {
 
 		const session = await refreshWithOrds(refreshToken);
 		setSessionCookies(cookies, url, session);
+		clearPanelValidationCache(cookies);
 
 		try {
 			const organization = await getCurrentOrganizationWithOrds(session.access_token);
@@ -28,6 +30,7 @@ export const POST: APIRoute = async ({ cookies, url }) => {
 				? error
 				: new AuthApiError('No fue posible refrescar la sesion.', 401);
 
+		// No borrar cookies: otra request pudo rotar el refresh y dejar el par nuevo.
 		return Response.json(
 			{
 				status: 'error',

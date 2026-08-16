@@ -682,6 +682,7 @@ export const syncPublicBookingMobileActions = (root: ParentNode = document) => {
 	}
 
 	for (const panel of root.querySelectorAll<HTMLElement>('.public-booking-panel')) {
+		if (panel.classList.contains('sipap-deposit-panel')) continue;
 		let actions = panel.querySelector<HTMLElement>('.public-booking-actions');
 		if (!actions) {
 			actions = document.createElement('div');

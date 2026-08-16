@@ -123,6 +123,7 @@ export const shouldTreatUnauthorizedAsSessionExpired = (params: {
 	if (params.status !== 401) return false;
 	if (params.refreshFailed) return true;
 	if (isPermissionDeniedMessage(params.message)) return false;
+	if (code === SESSION_EXPIRED_API_CODE) return false;
 	if (code) return false;
-	return isSessionAuthMessage(params.message);
+	return false;
 };

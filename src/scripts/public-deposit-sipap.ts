@@ -53,6 +53,12 @@ export const POLICY_SUMMARIES: Record<RefundPolicyCode, string> = {
 	STRICT: 'Las cancelaciones no tienen reembolso de la seña en ningún caso.',
 };
 
+const SUBMIT_IDLE_LABEL = 'Enviar comprobante';
+const SUBMIT_CONFIRMED_LABEL = 'Confirmado';
+const MAX_RECEIPT_BYTES = 8 * 1024 * 1024;
+const RECEIPT_IMAGE_MIMES = new Set(['image/jpeg', 'image/png']);
+const RECEIPT_PDF_MIMES = new Set(['application/pdf']);
+
 export const normalizePolicyCode = (value: unknown): RefundPolicyCode | null => {
 	const code = String(value || '')
 		.trim()
@@ -77,6 +83,160 @@ export const unwrapSipapHold = (payload: SipapHoldResponse | null | undefined): 
 	}
 
 	return current;
+};
+
+const fieldText = (root: ParentNode, selector: string) => {
+	const value = String(root.querySelector<HTMLElement>(selector)?.textContent || '').trim();
+	return !value || value === '—' ? '' : value;
+};
+
+export const formatSipapTransferClipboard = (root: ParentNode) => {
+	const parts: string[] = [];
+	const bank = fieldText(root, '[data-sipap-bank]');
+	const holder = fieldText(root, '[data-sipap-holder]');
+	const document = fieldText(root, '[data-sipap-document]');
+	const alias = fieldText(root, '[data-sipap-alias]');
+	if (bank) parts.push(bank);
+	if (holder) parts.push(holder);
+	if (document) parts.push(`C.I. ${document}`);
+	if (alias) parts.push(`Alias: ${alias}`);
+	return parts.join(' - ');
+};
+
+export const classifyReceiptFile = (file: File): 'image' | 'pdf' | null => {
+	const name = String(file.name || '').toLowerCase();
+	const type = String(file.type || '').toLowerCase();
+	if (
+		type === 'image/svg+xml' ||
+		type === 'text/html' ||
+		name.endsWith('.svg') ||
+		name.endsWith('.html') ||
+		name.endsWith('.htm')
+	) {
+		return null;
+	}
+	if (RECEIPT_PDF_MIMES.has(type) || name.endsWith('.pdf')) return 'pdf';
+	if (
+		RECEIPT_IMAGE_MIMES.has(type) ||
+		name.endsWith('.jpg') ||
+		name.endsWith('.jpeg') ||
+		name.endsWith('.png')
+	) {
+		return 'image';
+	}
+	return null;
+};
+
+const isAbortError = (error: unknown) =>
+	(error instanceof DOMException && error.name === 'AbortError') ||
+	(error instanceof Error && error.name === 'AbortError');
+
+const isHoldExpired = (root: ParentNode) =>
+	Boolean(root.querySelector('[data-sipap-hold-banner].is-expired'));
+
+const hasSelectedFile = (root: ParentNode) => {
+	const input = root.querySelector<HTMLInputElement>('[data-sipap-upload-input]');
+	return Boolean(input?.files?.[0]);
+};
+
+const previewUrls = new WeakMap<Element, string>();
+
+const revokeReceiptPreviewUrl = (root: ParentNode) => {
+	if (!(root instanceof Element)) return;
+	const url = previewUrls.get(root);
+	if (!url) return;
+	URL.revokeObjectURL(url);
+	previewUrls.delete(root);
+};
+
+const setHoldLive = (root: ParentNode, message: string) => {
+	const live = root.querySelector<HTMLElement>('[data-sipap-hold-live]');
+	if (live) live.textContent = message;
+};
+
+const setHoldVisibleState = (root: ParentNode, state: 'active' | 'expired' | 'unknown') => {
+	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
+	const active = root.querySelector<HTMLElement>('[data-sipap-hold-active]');
+	const expired = root.querySelector<HTMLElement>('[data-sipap-hold-expired]');
+	const unknown = root.querySelector<HTMLElement>('[data-sipap-hold-unknown]');
+	banner?.classList.toggle('is-expired', state === 'expired');
+	if (banner) banner.dataset.sipapHoldState = state;
+	active?.classList.toggle('hidden', state !== 'active');
+	expired?.classList.toggle('hidden', state !== 'expired');
+	unknown?.classList.toggle('hidden', state !== 'unknown');
+};
+
+const lockReceiptDropzone = (root: ParentNode, locked: boolean) => {
+	const dropzone = root.querySelector<HTMLElement>('[data-sipap-dropzone]');
+	const fileInput = root.querySelector<HTMLInputElement>('[data-sipap-upload-input]');
+	const clearBtn = root.querySelector<HTMLButtonElement>('[data-sipap-preview-clear]');
+	dropzone?.classList.toggle('is-locked', locked);
+	dropzone?.setAttribute('aria-disabled', locked ? 'true' : 'false');
+	if (fileInput) fileInput.disabled = locked;
+	if (clearBtn) clearBtn.disabled = locked;
+};
+
+const syncSubmitEnabled = (root: ParentNode, confirmed = false) => {
+	const submitBtn = root.querySelector<HTMLButtonElement>('[data-sipap-upload-submit]');
+	if (!submitBtn) return;
+	if (confirmed) {
+		submitBtn.disabled = true;
+		submitBtn.textContent = SUBMIT_CONFIRMED_LABEL;
+		lockReceiptDropzone(root, true);
+		return;
+	}
+	submitBtn.textContent = SUBMIT_IDLE_LABEL;
+	const locked = isHoldExpired(root);
+	submitBtn.disabled = locked || !hasSelectedFile(root);
+	lockReceiptDropzone(root, locked);
+};
+
+export const resetSipapReceiptPreview = (root: ParentNode) => {
+	revokeReceiptPreviewUrl(root);
+	const fileInput = root.querySelector<HTMLInputElement>('[data-sipap-upload-input]');
+	const dropzone = root.querySelector<HTMLElement>('[data-sipap-dropzone]');
+	const empty = root.querySelector<HTMLElement>('[data-sipap-dropzone-empty]');
+	const preview = root.querySelector<HTMLElement>('[data-sipap-dropzone-preview]');
+	const image = root.querySelector<HTMLImageElement>('[data-sipap-preview-image]');
+	const pdf = root.querySelector<HTMLElement>('[data-sipap-preview-pdf]');
+	const name = root.querySelector<HTMLElement>('[data-sipap-preview-name]');
+	if (fileInput) fileInput.value = '';
+	dropzone?.classList.remove('has-preview', 'is-dragging');
+	dropzone?.parentElement?.classList.remove('has-preview');
+	empty?.classList.remove('hidden');
+	preview?.classList.add('hidden');
+	root.querySelector<HTMLElement>('[data-sipap-preview-clear]')?.classList.add('hidden');
+	image?.classList.add('hidden');
+	if (image) image.removeAttribute('src');
+	pdf?.classList.add('hidden');
+	if (name) name.textContent = '';
+};
+
+const showReceiptPreview = (root: ParentNode, file: File, kind: 'image' | 'pdf') => {
+	revokeReceiptPreviewUrl(root);
+	const dropzone = root.querySelector<HTMLElement>('[data-sipap-dropzone]');
+	const empty = root.querySelector<HTMLElement>('[data-sipap-dropzone-empty]');
+	const preview = root.querySelector<HTMLElement>('[data-sipap-dropzone-preview]');
+	const image = root.querySelector<HTMLImageElement>('[data-sipap-preview-image]');
+	const pdf = root.querySelector<HTMLElement>('[data-sipap-preview-pdf]');
+	const name = root.querySelector<HTMLElement>('[data-sipap-preview-name]');
+	dropzone?.classList.add('has-preview');
+	dropzone?.parentElement?.classList.add('has-preview');
+	empty?.classList.add('hidden');
+	preview?.classList.remove('hidden');
+	root.querySelector<HTMLElement>('[data-sipap-preview-clear]')?.classList.remove('hidden');
+	if (kind === 'image' && image && root instanceof Element) {
+		const url = URL.createObjectURL(file);
+		previewUrls.set(root, url);
+		image.src = url;
+		image.classList.remove('hidden');
+		pdf?.classList.add('hidden');
+		return;
+	}
+	image?.classList.add('hidden');
+	if (image) image.removeAttribute('src');
+	pdf?.classList.remove('hidden');
+	if (name) name.textContent = file.name || 'comprobante.pdf';
 };
 
 export const fillSipapDepositPanel = (
@@ -148,11 +308,12 @@ export const fillSipapDepositPanel = (
 	const token = String(hold.public_manage_token || '').trim();
 	if (tokenInput) tokenInput.value = token;
 
-	const uploadBlock = root.querySelector<HTMLElement>('[data-sipap-upload]');
-	if (uploadBlock) {
-		uploadBlock.classList.toggle('hidden', !token);
+	const uploadSection = root.querySelector<HTMLElement>('[data-sipap-upload-section]');
+	if (uploadSection) {
+		uploadSection.classList.toggle('hidden', !token);
 	}
 
+	resetSipapReceiptPreview(root);
 	setSipapReceiptStatus(root, null);
 	startSipapHoldCountdown(root, hold.payment_expires_at);
 };
@@ -175,32 +336,48 @@ export const stopSipapHoldCountdown = (root: ParentNode) => {
 	}
 };
 
-export const startSipapHoldCountdown = (
-	root: ParentNode,
-	expiresAt?: string | null,
-	fallbackMinutes = 10
-) => {
+const expireSipapHoldUi = (root: ParentNode) => {
+	setHoldVisibleState(root, 'expired');
+	setHoldLive(root, 'Se venció el tiempo para adjuntar el comprobante.');
+	const countdownEl = root.querySelector<HTMLElement>('[data-sipap-countdown]');
+	if (countdownEl) countdownEl.textContent = '00:00';
+	syncSubmitEnabled(root);
+};
+
+export const startSipapHoldCountdown = (root: ParentNode, expiresAt?: string | null) => {
 	const countdownEl = root.querySelector<HTMLElement>('[data-sipap-countdown]');
 	if (!countdownEl || !(root instanceof Element)) return;
 
 	stopSipapHoldCountdown(root);
+	setHoldLive(root, '');
 
 	const parsed = expiresAt ? Date.parse(String(expiresAt)) : Number.NaN;
-	const expiresMs = Number.isFinite(parsed)
-		? parsed
-		: Date.now() + Math.max(1, fallbackMinutes) * 60 * 1000;
+	if (!Number.isFinite(parsed)) {
+		setHoldVisibleState(root, 'unknown');
+		syncSubmitEnabled(root);
+		return;
+	}
 
+	let warnedTwoMinutes = false;
 	const tick = () => {
-		const remaining = expiresMs - Date.now();
+		const remaining = parsed - Date.now();
 		countdownEl.textContent = formatCountdown(remaining);
 		if (remaining <= 0) {
 			stopSipapHoldCountdown(root);
-			countdownEl.textContent = '00:00';
+			expireSipapHoldUi(root);
+			return;
+		}
+		setHoldVisibleState(root, 'active');
+		if (!warnedTwoMinutes && remaining <= 2 * 60 * 1000) {
+			warnedTwoMinutes = true;
+			setHoldLive(root, 'Quedan menos de 2 minutos para adjuntar el comprobante.');
 		}
 	};
 
 	tick();
-	countdownTimers.set(root, window.setInterval(tick, 1000));
+	if (parsed - Date.now() > 0) {
+		countdownTimers.set(root, window.setInterval(tick, 1000));
+	}
 };
 
 export const setSipapReceiptStatus = (
@@ -217,24 +394,25 @@ export const setSipapReceiptStatus = (
 	if (phase === 'uploading') {
 		statusEl.textContent = 'Leyendo comprobante…';
 		statusEl.dataset.state = 'loading';
-		if (submitBtn) submitBtn.disabled = true;
-		if (fileInput) fileInput.disabled = true;
+		if (submitBtn) {
+			submitBtn.disabled = true;
+			submitBtn.textContent = SUBMIT_IDLE_LABEL;
+		}
+		lockReceiptDropzone(root, true);
 		return;
 	}
 
 	if (phase === 'error') {
 		statusEl.textContent = result?.message || 'No fue posible subir el comprobante.';
 		statusEl.dataset.state = 'error';
-		if (submitBtn) submitBtn.disabled = false;
-		if (fileInput) fileInput.disabled = false;
+		syncSubmitEnabled(root);
 		return;
 	}
 
 	if (!result) {
 		statusEl.textContent = '';
 		statusEl.dataset.state = 'idle';
-		if (submitBtn) submitBtn.disabled = false;
-		if (fileInput) fileInput.disabled = false;
+		syncSubmitEnabled(root);
 		return;
 	}
 
@@ -248,11 +426,12 @@ export const setSipapReceiptStatus = (
 
 	statusEl.textContent = text;
 	statusEl.dataset.state = ocr === 'MATCH' ? 'success' : 'review';
-	if (submitBtn) {
-		submitBtn.disabled = ocr === 'MATCH';
-		if (ocr === 'MATCH') submitBtn.textContent = 'Confirmado';
+	if (ocr === 'MATCH') {
+		syncSubmitEnabled(root, true);
+		if (fileInput) fileInput.disabled = true;
+		return;
 	}
-	if (fileInput) fileInput.disabled = ocr === 'MATCH';
+	syncSubmitEnabled(root);
 };
 
 const fileToBase64 = (file: File) =>
@@ -267,6 +446,28 @@ const fileToBase64 = (file: File) =>
 		reader.readAsDataURL(file);
 	});
 
+const assignReceiptFile = (root: ParentNode, fileInput: HTMLInputElement, file: File) => {
+	const kind = classifyReceiptFile(file);
+	if (!kind) {
+		setSipapReceiptStatus(
+			root,
+			{ message: 'Formato no válido. Subí una imagen (JPG/PNG) o un PDF.' },
+			'error'
+		);
+		return false;
+	}
+	if (file.size > MAX_RECEIPT_BYTES) {
+		setSipapReceiptStatus(root, { message: 'El archivo supera 8 MB.' }, 'error');
+		return false;
+	}
+	const transfer = new DataTransfer();
+	transfer.items.add(file);
+	fileInput.files = transfer.files;
+	showReceiptPreview(root, file, kind);
+	setSipapReceiptStatus(root, null);
+	return true;
+};
+
 export const bindSipapReceiptUpload = (
 	root: ParentNode,
 	options?: {
@@ -276,9 +477,11 @@ export const bindSipapReceiptUpload = (
 	}
 ) => {
 	const form = root.querySelector<HTMLElement>('[data-sipap-upload]');
+	const dropzone = root.querySelector<HTMLElement>('[data-sipap-dropzone]');
 	const submitBtn = root.querySelector<HTMLButtonElement>('[data-sipap-upload-submit]');
 	const fileInput = root.querySelector<HTMLInputElement>('[data-sipap-upload-input]');
 	const tokenInput = root.querySelector<HTMLInputElement>('[data-sipap-manage-token]');
+	const clearBtn = root.querySelector<HTMLButtonElement>('[data-sipap-preview-clear]');
 
 	if (!form || !submitBtn || !fileInput || !tokenInput) return;
 
@@ -286,48 +489,50 @@ export const bindSipapReceiptUpload = (
 	// por fallo de red); si el usuario elige otro archivo se genera una key nueva.
 	let idemKey: string | null = null;
 	let idemFileSignature: string | null = null;
+	let isUploading = false;
 
 	const upload = async () => {
-		const token = String(tokenInput.value || '').trim();
-		const file = fileInput.files?.[0];
-		if (!token) {
-			setSipapReceiptStatus(root, { message: 'Falta el token de la reserva.' }, 'error');
-			options?.onError?.('Falta el token de la reserva.');
-			return;
-		}
-		if (!file) {
-			setSipapReceiptStatus(root, { message: 'Elegí el comprobante (imagen o PDF).' }, 'error');
-			options?.onError?.('Elegí el comprobante (imagen o PDF).');
-			return;
-		}
-		const fileName = String(file.name || '').toLowerCase();
-		const isImage = file.type.startsWith('image/');
-		const isPdf = file.type === 'application/pdf' || fileName.endsWith('.pdf');
-		if (!isImage && !isPdf) {
-			setSipapReceiptStatus(
-				root,
-				{ message: 'Formato no válido. Subí una imagen (JPG/PNG) o un PDF.' },
-				'error'
-			);
-			options?.onError?.('Formato no válido. Subí una imagen (JPG/PNG) o un PDF.');
-			return;
-		}
-		if (file.size > 8 * 1024 * 1024) {
-			setSipapReceiptStatus(root, { message: 'El archivo supera 8 MB.' }, 'error');
-			options?.onError?.('El archivo supera 8 MB.');
-			return;
-		}
-
-		const fileSignature = `${file.name}|${file.size}|${file.lastModified}`;
-		if (!idemKey || idemFileSignature !== fileSignature) {
-			idemKey = createIdempotencyKey();
-			idemFileSignature = fileSignature;
-		}
-
-		setSipapReceiptStatus(root, null, 'uploading');
+		if (isUploading || isHoldExpired(root)) return;
+		isUploading = true;
+		submitBtn.disabled = true;
 		try {
+			const token = String(tokenInput.value || '').trim();
+			const file = fileInput.files?.[0];
+			if (!token) {
+				setSipapReceiptStatus(root, { message: 'Falta el token de la reserva.' }, 'error');
+				options?.onError?.('Falta el token de la reserva.');
+				return;
+			}
+			if (!file) {
+				setSipapReceiptStatus(root, { message: 'Elegí el comprobante (imagen o PDF).' }, 'error');
+				options?.onError?.('Elegí el comprobante (imagen o PDF).');
+				return;
+			}
+			const kind = classifyReceiptFile(file);
+			if (!kind) {
+				setSipapReceiptStatus(
+					root,
+					{ message: 'Formato no válido. Subí una imagen (JPG/PNG) o un PDF.' },
+					'error'
+				);
+				options?.onError?.('Formato no válido. Subí una imagen (JPG/PNG) o un PDF.');
+				return;
+			}
+			if (file.size > MAX_RECEIPT_BYTES) {
+				setSipapReceiptStatus(root, { message: 'El archivo supera 8 MB.' }, 'error');
+				options?.onError?.('El archivo supera 8 MB.');
+				return;
+			}
+
+			const fileSignature = `${file.name}|${file.size}|${file.lastModified}`;
+			if (!idemKey || idemFileSignature !== fileSignature) {
+				idemKey = createIdempotencyKey();
+				idemFileSignature = fileSignature;
+			}
+
+			setSipapReceiptStatus(root, null, 'uploading');
 			let uploadFile = file;
-			if (isPdf) {
+			if (kind === 'pdf') {
 				const { prepareReceiptUploadFile } = await import('../lib/pdf-receipt-to-image');
 				uploadFile = await prepareReceiptUploadFile(file);
 			}
@@ -337,10 +542,8 @@ export const bindSipapReceiptUpload = (
 					.toLowerCase()
 					.endsWith('.pdf');
 			const file_base64 = await fileToBase64(uploadFile);
-			const resolvedMime =
-				uploadFile.type || (uploadIsPdf ? 'application/pdf' : 'image/jpeg');
-			const resolvedName =
-				uploadFile.name || (uploadIsPdf ? 'comprobante.pdf' : 'comprobante.jpg');
+			const resolvedMime = uploadFile.type || (uploadIsPdf ? 'application/pdf' : 'image/jpeg');
+			const resolvedName = uploadFile.name || (uploadIsPdf ? 'comprobante.pdf' : 'comprobante.jpg');
 			const response = await fetch(
 				`/api/public/reservations/${encodeURIComponent(token)}/receipt`,
 				{
@@ -374,12 +577,100 @@ export const bindSipapReceiptUpload = (
 			setSipapReceiptStatus(root, result, 'done');
 			options?.onResult?.(result);
 		} catch (error) {
+			if (isAbortError(error)) return;
 			const message =
 				error instanceof Error ? error.message : 'No fue posible subir el comprobante.';
 			setSipapReceiptStatus(root, { message }, 'error');
 			options?.onError?.(message);
+		} finally {
+			isUploading = false;
 		}
 	};
+
+	const onFileChange = () => {
+		if (isHoldExpired(root) || fileInput.disabled) return;
+		const file = fileInput.files?.[0];
+		if (!file) {
+			resetSipapReceiptPreview(root);
+			setSipapReceiptStatus(root, null);
+			return;
+		}
+		if (!assignReceiptFile(root, fileInput, file)) {
+			resetSipapReceiptPreview(root);
+			syncSubmitEnabled(root);
+		}
+	};
+
+	fileInput.addEventListener('change', onFileChange, { signal: options?.signal });
+
+	clearBtn?.addEventListener(
+		'click',
+		(event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			if (clearBtn.disabled || isHoldExpired(root)) return;
+			resetSipapReceiptPreview(root);
+			setSipapReceiptStatus(root, null);
+		},
+		{ signal: options?.signal }
+	);
+
+	if (dropzone) {
+		const setDragging = (dragging: boolean) => {
+			dropzone.classList.toggle('is-dragging', dragging);
+		};
+		dropzone.addEventListener(
+			'dragenter',
+			(event) => {
+				event.preventDefault();
+				if (dropzone.classList.contains('is-locked')) return;
+				setDragging(true);
+			},
+			{ signal: options?.signal }
+		);
+		dropzone.addEventListener(
+			'dragover',
+			(event) => {
+				event.preventDefault();
+				if (dropzone.classList.contains('is-locked')) return;
+				setDragging(true);
+			},
+			{ signal: options?.signal }
+		);
+		dropzone.addEventListener(
+			'dragleave',
+			(event) => {
+				const related = event.relatedTarget;
+				if (related instanceof Node && dropzone.contains(related)) return;
+				setDragging(false);
+			},
+			{ signal: options?.signal }
+		);
+		dropzone.addEventListener(
+			'drop',
+			(event) => {
+				event.preventDefault();
+				setDragging(false);
+				if (dropzone.classList.contains('is-locked') || isHoldExpired(root)) return;
+				const file = event.dataTransfer?.files?.[0];
+				if (!file) return;
+				if (!assignReceiptFile(root, fileInput, file)) {
+					resetSipapReceiptPreview(root);
+					syncSubmitEnabled(root);
+				}
+			},
+			{ signal: options?.signal }
+		);
+		dropzone.addEventListener(
+			'click',
+			(event) => {
+				if (dropzone.classList.contains('is-locked') || fileInput.disabled) {
+					event.preventDefault();
+				}
+			},
+			{ signal: options?.signal }
+		);
+	}
 
 	submitBtn.addEventListener(
 		'click',
@@ -389,6 +680,82 @@ export const bindSipapReceiptUpload = (
 		},
 		{ signal: options?.signal }
 	);
+
+	options?.signal?.addEventListener('abort', () => {
+		revokeReceiptPreviewUrl(root);
+	});
+};
+
+const writeClipboardText = async (text: string) => {
+	try {
+		await navigator.clipboard.writeText(text);
+		return true;
+	} catch {
+		try {
+			const area = document.createElement('textarea');
+			area.value = text;
+			area.setAttribute('readonly', '');
+			area.style.position = 'fixed';
+			area.style.left = '-9999px';
+			document.body.appendChild(area);
+			area.select();
+			const ok = document.execCommand('copy');
+			area.remove();
+			return ok;
+		} catch {
+			return false;
+		}
+	}
+};
+
+const copyTimers = new WeakMap<HTMLButtonElement, number>();
+
+const flashCopied = (button: HTMLButtonElement, root: ParentNode) => {
+	const previous = copyTimers.get(button);
+	if (previous) window.clearTimeout(previous);
+	const icon = button.querySelector<HTMLElement>('[data-sipap-copy-icon]');
+	const label = button.querySelector<HTMLElement>('[data-sipap-copy-label]');
+	const keepLabel = button.hasAttribute('data-sipap-copy-keep-label');
+	if (!button.dataset.sipapCopyIdleIcon && icon) {
+		button.dataset.sipapCopyIdleIcon = icon.textContent || 'content_copy';
+	}
+	if (!button.dataset.sipapCopyIdleLabel && !keepLabel) {
+		button.dataset.sipapCopyIdleLabel = label?.textContent || button.textContent || '';
+	}
+	if (!button.dataset.sipapCopyIdleAria) {
+		button.dataset.sipapCopyIdleAria = button.getAttribute('aria-label') || '';
+	}
+	if (icon) icon.textContent = 'check';
+	if (!keepLabel) {
+		if (label) label.textContent = 'Copiado';
+		if (!icon && !label) button.textContent = 'Copiado';
+	}
+	if (button.dataset.sipapCopyIdleAria) button.setAttribute('aria-label', 'Copiado');
+	button.classList.add('is-copied');
+	setCopyStatus(root, 'Copiado', 'idle');
+	copyTimers.set(
+		button,
+		window.setTimeout(() => {
+			if (icon) icon.textContent = button.dataset.sipapCopyIdleIcon || 'content_copy';
+			if (!keepLabel) {
+				if (label) label.textContent = button.dataset.sipapCopyIdleLabel || '';
+				if (!icon && !label) button.textContent = button.dataset.sipapCopyIdleLabel || '';
+			}
+			if (button.dataset.sipapCopyIdleAria) {
+				button.setAttribute('aria-label', button.dataset.sipapCopyIdleAria);
+			}
+			button.classList.remove('is-copied');
+			setCopyStatus(root, '', 'idle');
+			copyTimers.delete(button);
+		}, 1600)
+	);
+};
+
+const setCopyStatus = (root: ParentNode, message: string, state: 'idle' | 'error' = 'idle') => {
+	const status = root.querySelector<HTMLElement>('[data-sipap-copy-status]');
+	if (!status) return;
+	status.textContent = message;
+	status.dataset.state = state;
 };
 
 export const bindSipapCopyButtons = (root: ParentNode, signal?: AbortSignal) => {
@@ -397,37 +764,23 @@ export const bindSipapCopyButtons = (root: ParentNode, signal?: AbortSignal) => 
 			'click',
 			async () => {
 				const target = String(button.dataset.sipapCopy || '').trim();
-				const source =
-					target === 'reference'
-						? root.querySelector<HTMLElement>('[data-sipap-reference]')
-						: root.querySelector<HTMLElement>(`[data-sipap-${target}]`);
-				const text = String(source?.textContent || '').trim();
-				if (!text || text === '—') return;
-				try {
-					await navigator.clipboard.writeText(text);
-					const icon = button.querySelector<HTMLElement>('[data-sipap-copy-icon]');
-					const label = button.querySelector<HTMLElement>('[data-sipap-copy-label]');
-					if (icon || label) {
-						const prevIcon = icon?.textContent || 'content_copy';
-						const prevLabel = label?.textContent || '';
-						if (icon) icon.textContent = 'check';
-						if (label) label.textContent = 'Copiado';
-						button.classList.add('is-copied');
-						window.setTimeout(() => {
-							if (icon) icon.textContent = prevIcon;
-							if (label) label.textContent = prevLabel;
-							button.classList.remove('is-copied');
-						}, 1600);
-						return;
-					}
-					const prev = button.textContent;
-					button.textContent = 'Copiado';
-					window.setTimeout(() => {
-						button.textContent = prev;
-					}, 1600);
-				} catch {
-					/* ignore */
+				const text =
+					target === 'all'
+						? formatSipapTransferClipboard(root)
+						: target === 'reference'
+							? fieldText(root, '[data-sipap-reference]') ||
+								String(
+									root.querySelector<HTMLInputElement>('[data-sipap-reference-value]')?.value ||
+										''
+								).trim()
+							: fieldText(root, `[data-sipap-${target}]`);
+				if (!text) return;
+				const ok = await writeClipboardText(text);
+				if (!ok) {
+					setCopyStatus(root, 'No se pudo copiar. Seleccioná el texto e intentá de nuevo.', 'error');
+					return;
 				}
+				flashCopied(button, root);
 			},
 			{ signal }
 		);

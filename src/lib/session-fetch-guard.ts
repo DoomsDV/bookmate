@@ -1,8 +1,6 @@
 import {
 	ORG_ACCESS_INACTIVE_MESSAGE,
 	isOrgAccessInactiveResponse,
-	isSessionTerminatingCode,
-	shouldTreatUnauthorizedAsSessionExpired,
 } from './session-auth-messages';
 
 export const SESSION_FETCH_GUARD_HEADER = 'x-bookmate-skip-session-guard';
@@ -11,6 +9,8 @@ const SESSION_RETRY_HEADER = 'x-bookmate-session-retry';
 const REFRESH_PATH = '/api/auth/refresh';
 const LOGOUT_PATH = '/api/auth/logout';
 const LOGIN_PATH = '/auth/login';
+const REFRESH_LOCK_NAME = 'hasel-session-refresh';
+const REFRESH_RACE_RETRY_MS = 200;
 
 const EXCLUDED_API_PREFIXES = [
 	'/api/public/',
@@ -34,10 +34,12 @@ type ApiErrorPayload = {
 	error?: string;
 };
 
+type RefreshOutcome = 'success' | 'rejected' | 'unavailable';
+
 let nativeFetch: typeof fetch | null = null;
 let guardInstalled = false;
 let sessionLogoutInProgress = false;
-let refreshInFlight: Promise<boolean> | null = null;
+let refreshInFlight: Promise<RefreshOutcome> | null = null;
 
 const getRequestUrl = (input: RequestInfo | URL): string => {
 	if (typeof input === 'string') return input;
@@ -76,22 +78,63 @@ const readErrorMessage = (payload: ApiErrorPayload | null) => {
 	return message;
 };
 
-const tryRefreshSession = async (): Promise<boolean> => {
+const isLoginRedirectResponse = (response: Response) => {
+	const status = response.status;
+	if (status !== 301 && status !== 302 && status !== 303 && status !== 307 && status !== 308) {
+		return false;
+	}
+
+	const location = response.headers.get('location');
+	if (!location) return false;
+
+	try {
+		const resolved = new URL(location, window.location.origin);
+		return resolved.pathname === LOGIN_PATH;
+	} catch {
+		return false;
+	}
+};
+
+const classifyRefreshResponse = (response: Response): RefreshOutcome => {
+	if (response.ok) return 'success';
+	if (response.status >= 500 || response.status === 429) return 'unavailable';
+	return 'rejected';
+};
+
+const postRefresh = async () =>
+	(nativeFetch ?? fetch)(REFRESH_PATH, {
+		method: 'POST',
+		credentials: 'include',
+		headers: {
+			Accept: 'application/json',
+			'Content-Type': 'application/json',
+			[SESSION_FETCH_GUARD_HEADER]: '1',
+		},
+		body: '{}',
+	});
+
+const runRefreshAttempt = async (): Promise<RefreshOutcome> => {
+	try {
+		const first = classifyRefreshResponse(await postRefresh());
+		if (first !== 'rejected') return first;
+
+		// Otra pestaña pudo rotar el refresh: reintentar una vez con las cookies nuevas.
+		await new Promise((resolve) => window.setTimeout(resolve, REFRESH_RACE_RETRY_MS));
+		return classifyRefreshResponse(await postRefresh());
+	} catch {
+		return 'unavailable';
+	}
+};
+
+const tryRefreshSession = async (): Promise<RefreshOutcome> => {
 	if (refreshInFlight) return refreshInFlight;
 
 	refreshInFlight = (async () => {
-		const response = await (nativeFetch ?? fetch)(REFRESH_PATH, {
-			method: 'POST',
-			credentials: 'include',
-			headers: {
-				Accept: 'application/json',
-				'Content-Type': 'application/json',
-				[SESSION_FETCH_GUARD_HEADER]: '1',
-			},
-			body: '{}',
-		});
-
-		return response.ok;
+		const locks = typeof navigator !== 'undefined' ? navigator.locks : undefined;
+		if (locks?.request) {
+			return locks.request(REFRESH_LOCK_NAME, runRefreshAttempt);
+		}
+		return runRefreshAttempt();
 	})().finally(() => {
 		refreshInFlight = null;
 	});
@@ -174,33 +217,19 @@ export const handleSessionExpired = async () => {
 	window.location.replace(buildLoginRedirectUrl());
 };
 
-const handleAccessRevokedResponse = async (response: Response) => {
+const handleOrgAccessIfNeeded = async (response: Response) => {
+	if (response.status !== 401 && response.status !== 403) return false;
+
 	const payload = await parseApiErrorPayload(response);
 	const message = readErrorMessage(payload);
 	const code = String(payload?.code || '').trim();
 
-	if (isSessionTerminatingCode(code)) {
-		if (isOrgAccessInactiveResponse({ status: response.status, message, code })) {
-			await handleOrgAccessInactive(message);
-		} else {
-			await handleSessionExpired();
-		}
-		return true;
+	if (!isOrgAccessInactiveResponse({ status: response.status, message, code })) {
+		return false;
 	}
 
-	if (
-		shouldTreatUnauthorizedAsSessionExpired({
-			status: response.status,
-			message,
-			code,
-			refreshFailed: false,
-		})
-	) {
-		await handleSessionExpired();
-		return true;
-	}
-
-	return false;
+	await handleOrgAccessInactive(message);
+	return true;
 };
 
 const guardedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
@@ -219,50 +248,41 @@ const guardedFetch = async (input: RequestInfo | URL, init?: RequestInit): Promi
 
 	let response = await fetchImpl(input, fetchInit);
 
-	if (
-		!sessionLogoutInProgress &&
-		(response.type === 'opaqueredirect' ||
-			response.status === 301 ||
-			response.status === 302 ||
-			response.status === 303 ||
-			response.status === 307 ||
-			response.status === 308)
-	) {
-		await handleSessionExpired();
+	if (sessionLogoutInProgress) {
 		return response;
 	}
 
-	if (
-		(response.status === 403 || response.status === 401) &&
-		!sessionLogoutInProgress &&
-		!isRetry
-	) {
-		if (await handleAccessRevokedResponse(response)) {
-			return response;
-		}
-	}
-
-	if (response.status !== 401 || sessionLogoutInProgress) {
+	if (await handleOrgAccessIfNeeded(response)) {
 		return response;
 	}
 
-	if (!isRetry) {
-		const refreshed = await tryRefreshSession();
-		if (refreshed) {
-			const retryHeaders = new Headers(init?.headers);
-			retryHeaders.set(SESSION_RETRY_HEADER, '1');
-			response = await fetchImpl(input, { ...init, headers: retryHeaders });
-			if (response.status !== 401) {
-				return response;
-			}
-		} else {
-			await handleSessionExpired();
-			return response;
-		}
+	const needsRefresh = !isRetry && (response.status === 401 || isLoginRedirectResponse(response));
+	if (!needsRefresh) {
+		return response;
 	}
 
-	await handleAccessRevokedResponse(response);
+	const refreshOutcome = await tryRefreshSession();
 
+	if (refreshOutcome === 'success') {
+		const retryHeaders = new Headers(init?.headers);
+		retryHeaders.set(SESSION_RETRY_HEADER, '1');
+		response = await fetchImpl(input, {
+			...fetchInit,
+			headers: retryHeaders,
+		});
+
+		if (await handleOrgAccessIfNeeded(response)) {
+			return response;
+		}
+
+		return response;
+	}
+
+	if (refreshOutcome === 'unavailable') {
+		return response;
+	}
+
+	await handleSessionExpired();
 	return response;
 };
 

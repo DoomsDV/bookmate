@@ -44,3 +44,19 @@ export const parseTokenClaims = (token: string): SessionClaims => {
 		organization_id: toInt(payload.organization_id ?? payload.org_id_organization ?? 0),
 	};
 };
+
+/** `exp` del JWT en segundos epoch, o `null` si no es legible. */
+export const getAccessJwtExpirySeconds = (token: string): number | null => {
+	const payload = parseJwtPayload(token);
+	if (!payload) return null;
+	const exp = Number(payload.exp);
+	return Number.isFinite(exp) && exp > 0 ? exp : null;
+};
+
+/** Access vencido (o ilegible). `leewaySeconds` cubre desfase de reloj; 0 evita refrescar en ráfaga. */
+export const isAccessJwtExpired = (token: string, leewaySeconds = 0): boolean => {
+	const exp = getAccessJwtExpirySeconds(token);
+	if (exp === null) return true;
+	const leeway = Number.isFinite(leewaySeconds) ? leewaySeconds : 0;
+	return exp <= Math.floor(Date.now() / 1000) + leeway;
+};

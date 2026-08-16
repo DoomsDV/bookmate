@@ -760,6 +760,12 @@ export const refreshWithOrds = async (refreshToken: string) => {
 	return parseAuthResponse(response);
 };
 
+/** Red / 5xx / rate limit: no borrar cookies ni forzar login. */
+export const isTransientRefreshFailure = (error: unknown): boolean => {
+	if (!(error instanceof AuthApiError)) return true;
+	return error.status >= 500 || error.status === 408 || error.status === 429;
+};
+
 export const logoutWithOrds = async (refreshToken?: string) => {
 	const response = await fetch(LOGOUT_URL, {
 		method: 'POST',
@@ -1198,10 +1204,15 @@ export const setSessionCookies = (
 	session: AuthSuccessResponse
 ) => {
 	const baseOptions = getSessionCookieBaseOptions();
+	const parsedTtl = Number(session.expires_in);
+	const accessMaxAge =
+		Number.isFinite(parsedTtl) && parsedTtl > 0
+			? Math.floor(parsedTtl)
+			: ACCESS_TOKEN_MAX_AGE_SECONDS;
 
 	cookies.set('access_token', session.access_token, {
 		...baseOptions,
-		maxAge: ACCESS_TOKEN_MAX_AGE_SECONDS,
+		maxAge: accessMaxAge,
 	});
 
 	cookies.set('refresh_token', session.refresh_token, {
