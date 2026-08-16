@@ -4,7 +4,7 @@ import {
 	toggleFilterPopoverSheet,
 } from '../lib/panel-filter-popover';
 import {
-	buildStadiaStaticMapUrl,
+	buildStadiaMapPreviewUrl,
 	LOCATION_CARD_STATIC_MAP_OPTIONS,
 	renderBrandMapMarkerOverlay,
 	resolveMapTheme,
@@ -49,8 +49,8 @@ const getStadiaKey = () => {
 	return String(fromView || '').trim();
 };
 
-const buildMapPreviewUrl = (coords: MapCoordinates | null) =>
-	buildStadiaStaticMapUrl(getStadiaKey(), coords, {
+const buildMapPreview = (coords: MapCoordinates | null) =>
+	buildStadiaMapPreviewUrl(getStadiaKey(), coords, {
 		theme: resolveMapTheme(),
 		...LOCATION_CARD_STATIC_MAP_OPTIONS,
 	});
@@ -77,13 +77,14 @@ const syncLocationMapPreviews = () => {
 		const lat = Number(img.dataset.mapLat);
 		const lng = Number(img.dataset.mapLng);
 		if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-		const url = buildStadiaStaticMapUrl(getStadiaKey(), { lat, lng }, {
+		const preview = buildStadiaMapPreviewUrl(getStadiaKey(), { lat, lng }, {
 			theme,
 			...LOCATION_CARD_STATIC_MAP_OPTIONS,
 		});
-		if (url && img.src !== url) {
+		if (preview && img.src !== preview.url) {
 			markMapPreviewLoading(img);
-			img.src = url;
+			img.src = preview.url;
+			img.style.objectPosition = preview.objectPosition;
 		} else if (img.complete && img.naturalWidth > 0) {
 			markMapPreviewLoaded(img);
 		}
@@ -95,8 +96,8 @@ const buildLocationMedia = (location: LocationItem, index = 0) => {
 	const lng = Number(location.longitude);
 	const coords =
 		Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
-	const mapPreviewUrl = buildMapPreviewUrl(coords);
-	const hasMap = Boolean(mapPreviewUrl);
+	const mapPreview = buildMapPreview(coords);
+	const hasMap = Boolean(mapPreview);
 	const isEagerMap = index < EAGER_MAP_COUNT && hasMap;
 	const mediaClasses = hasMap
 		? 'panel-horizontal-card__media is-map-loading'
@@ -105,11 +106,12 @@ const buildLocationMedia = (location: LocationItem, index = 0) => {
 	const { width: mapW, height: mapH } = LOCATION_CARD_STATIC_MAP_OPTIONS;
 	const imageHtml = hasMap
 		? `<span class="panel-horizontal-card__map-skeleton" aria-hidden="true"></span><img
-				src="${escapeHtml(mapPreviewUrl!)}"
+				src="${escapeHtml(mapPreview!.url)}"
 				alt=""
 				class="panel-horizontal-card__media-image"
 				width="${mapW}"
 				height="${mapH}"
+				style="object-position: ${escapeHtml(mapPreview!.objectPosition)}"
 				loading="${isEagerMap ? 'eager' : 'lazy'}"
 				decoding="async"
 				fetchpriority="${isEagerMap ? 'high' : 'low'}"

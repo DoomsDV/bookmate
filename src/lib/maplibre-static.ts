@@ -5,7 +5,7 @@
 export type MapCoordinates = { lat: number; lng: number };
 export type MapTheme = 'dark' | 'light';
 
-const STADIA_STATIC_STYLES: Record<MapTheme, string> = {
+const STADIA_RASTER_STYLES: Record<MapTheme, string> = {
 	dark: 'alidade_smooth_dark',
 	light: 'alidade_smooth',
 };
@@ -31,9 +31,57 @@ export const HUB_LOCATION_CARD_COVER_OPTIONS = {
 /** @deprecated Usar HUB_LOCATION_CARD_COVER_OPTIONS (móvil) o LOCATION_CARD_STATIC_MAP_OPTIONS (thumb desktop). */
 export const HUB_LOCATION_CARD_STATIC_MAP_OPTIONS = HUB_LOCATION_CARD_COVER_OPTIONS;
 
+export type StadiaMapPreview = {
+	url: string;
+	objectPosition: string;
+};
+
+const latLngToTileFloat = (lat: number, lng: number, zoom: number) => {
+	const scale = 2 ** zoom;
+	const x = ((lng + 180) / 360) * scale;
+	const latRad = (lat * Math.PI) / 180;
+	const y =
+		((1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2) * scale;
+	return { x, y };
+};
+
 /**
- * Miniatura Static Maps de Stadia (panel / covers).
- * Devuelve `null` si faltan key o coordenadas.
+ * Miniatura de mapa vía **raster tile** (plan Free de Stadia: Standard Raster Basemaps).
+ * Static Maps (`/static/...`) exige Starter+ y responde 403 en Free.
+ */
+export const buildStadiaMapPreviewUrl = (
+	apiKey: string,
+	coords: MapCoordinates | null | undefined,
+	options: {
+		theme?: MapTheme;
+		width?: number;
+		height?: number;
+		zoom?: number;
+		retina?: boolean;
+		markerColor?: string;
+		includeMarker?: boolean;
+	} = {},
+): StadiaMapPreview | null => {
+	const key = String(apiKey || '').trim();
+	if (!key || !coords) return null;
+	if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) return null;
+
+	const theme = options.theme || 'dark';
+	const zoom = Math.max(0, Math.min(18, Math.round(options.zoom ?? 15)));
+	const { x: xFloat, y: yFloat } = latLngToTileFloat(coords.lat, coords.lng, zoom);
+	const tileX = Math.floor(xFloat);
+	const tileY = Math.floor(yFloat);
+	const style = STADIA_RASTER_STYLES[theme] || STADIA_RASTER_STYLES.dark;
+
+	const params = new URLSearchParams({ api_key: key });
+	const url = `https://tiles.stadiamaps.com/tiles/${style}/${zoom}/${tileX}/${tileY}.png?${params.toString()}`;
+
+	const objectPosition = `${((xFloat - tileX) * 100).toFixed(1)}% ${((yFloat - tileY) * 100).toFixed(1)}%`;
+	return { url, objectPosition };
+};
+
+/**
+ * Devuelve solo la URL de {@link buildStadiaMapPreviewUrl} (compatibilidad).
  */
 export const buildStadiaStaticMapUrl = (
 	apiKey: string,
@@ -48,32 +96,7 @@ export const buildStadiaStaticMapUrl = (
 		/** Si es false, el mapa no incluye pin de Stadia (usar `renderBrandMapMarkerOverlay`). */
 		includeMarker?: boolean;
 	} = {},
-): string | null => {
-	const key = String(apiKey || '').trim();
-	if (!key || !coords) return null;
-	if (!Number.isFinite(coords.lat) || !Number.isFinite(coords.lng)) return null;
-
-	const theme = options.theme || 'dark';
-	const width = Math.max(64, Math.min(1024, Math.round(options.width ?? 480)));
-	const height = Math.max(64, Math.min(1024, Math.round(options.height ?? 270)));
-	const zoom = Math.max(0, Math.min(18, Math.round(options.zoom ?? 15)));
-	const scale = options.retina === false ? '' : '@2x';
-	const style = STADIA_STATIC_STYLES[theme] || STADIA_STATIC_STYLES.dark;
-	const includeMarker = options.includeMarker === true;
-
-	const params = new URLSearchParams({
-		center: `${coords.lat},${coords.lng}`,
-		zoom: String(zoom),
-		size: `${width}x${height}${scale}`,
-		api_key: key,
-	});
-	if (includeMarker) {
-		const markerColor = String(options.markerColor || 'FB7185').replace(/^#/, '');
-		params.append('markers', `${coords.lat},${coords.lng},,${markerColor}`);
-	}
-
-	return `https://tiles.stadiamaps.com/static/${style}.png?${params.toString()}`;
-};
+): string | null => buildStadiaMapPreviewUrl(apiKey, coords, options)?.url ?? null;
 
 /** SSR / cookie / localStorage: mismo criterio que `setBookmateTheme` (default dark). */
 export const resolveMapThemeFromStorage = (stored?: string | null): MapTheme =>

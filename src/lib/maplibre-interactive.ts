@@ -9,9 +9,10 @@ import {
 	type MapTheme,
 } from './maplibre-static';
 
-export type { MapCoordinates, MapTheme } from './maplibre-static';
+export type { MapCoordinates, MapTheme, StadiaMapPreview } from './maplibre-static';
 export {
 	BRAND_MAP_MARKER_COLOR,
+	buildStadiaMapPreviewUrl,
 	buildStadiaStaticMapUrl,
 	coordsToLngLat,
 	createBrandMarkerElement,

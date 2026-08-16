@@ -4,6 +4,7 @@ html:has(.public-booking-shell),
 html:has(.public-booking-shell) body {
 	overflow-x: clip;
 	max-width: 100%;
+	background: #121214;
 }
 
 .public-booking-shell {
@@ -14,6 +15,7 @@ html:has(.public-booking-shell) body {
 	overflow-x: clip;
 	background: var(--surface-background);
 	color: var(--on-surface);
+	--surface-background: #121214;
 	--ticket-surface: #27272a;
 	/* Sucursales: misma superficie que panel admin (.locations-card → --sidebar-surface). */
 	--surface-bright: #121214;
@@ -777,8 +779,33 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	display: none;
 }
 
+/* Centrado vertical en viewport (patrón login / reservation-shell) */
+.public-booking-shell:has(.public-booking-sheet.is-booking-success),
+.public-booking-shell:has(.public-booking-sheet [data-step-panel='6']:not(.hidden)) {
+	min-height: 100dvh;
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	justify-content: safe center;
+	padding-block: clamp(1rem, 4vh, 2rem);
+	box-sizing: border-box;
+}
+
+.public-booking-shell:has(.public-booking-sheet.is-booking-success) .public-booking-sheet,
+.public-booking-shell:has(.public-booking-sheet [data-step-panel='6']:not(.hidden)) .public-booking-sheet {
+	flex: 0 1 auto;
+	width: 100%;
+	min-height: 0;
+}
+
+.public-booking-shell:has(.public-booking-sheet.is-booking-success) .public-booking-shell__canvas,
+.public-booking-shell:has(.public-booking-sheet [data-step-panel='6']:not(.hidden)) .public-booking-shell__canvas {
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
 .public-booking-success {
-	padding: 0.5rem 0 1.5rem;
+	padding: 0;
 	text-align: center;
 }
 
@@ -916,6 +943,12 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	.public-booking-shell__canvas {
 		padding-top: 0.1rem;
 		padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	.public-booking-shell:has(.public-booking-sheet.is-booking-success) .public-booking-shell__canvas,
+	.public-booking-shell:has(.public-booking-sheet [data-step-panel='6']:not(.hidden)) .public-booking-shell__canvas {
+		padding-top: 0;
+		padding-bottom: 0;
 	}
 
 	.public-booking-stepper {

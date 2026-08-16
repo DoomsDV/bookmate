@@ -1,7 +1,7 @@
 ---
 import type { Location } from '../lib/locations';
 import {
-	buildStadiaStaticMapUrl,
+	buildStadiaMapPreviewUrl,
 	LOCATION_CARD_STATIC_MAP_OPTIONS,
 	renderBrandMapMarkerOverlay,
 	resolveMapThemeFromStorage,
@@ -39,7 +39,7 @@ const locationMapPreview = (location: Location) => {
 	const lng = Number(location.longitude);
 	const coords =
 		Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
-	return buildStadiaStaticMapUrl(stadiaKey, coords, {
+	return buildStadiaMapPreviewUrl(stadiaKey, coords, {
 		theme: mapTheme,
 		...LOCATION_CARD_STATIC_MAP_OPTIONS,
 	});
@@ -48,7 +48,8 @@ const locationMapPreview = (location: Location) => {
 const eagerMapPreloadUrls = locations
 	.slice(0, EAGER_MAP_COUNT)
 	.map(locationMapPreview)
-	.filter((url): url is string => Boolean(url));
+	.filter((preview): preview is NonNullable<ReturnType<typeof locationMapPreview>> => Boolean(preview))
+	.map((preview) => preview.url);
 ---
 
 {stadiaKey ? (
@@ -237,8 +238,8 @@ const eagerMapPreloadUrls = locations
 				const lat = Number(location.latitude);
 				const lng = Number(location.longitude);
 				const hasCoords = Number.isFinite(lat) && Number.isFinite(lng);
-				const mapPreviewUrl = locationMapPreview(location);
-				const isEagerMap = index < EAGER_MAP_COUNT && Boolean(mapPreviewUrl);
+				const mapPreview = locationMapPreview(location);
+				const isEagerMap = index < EAGER_MAP_COUNT && Boolean(mapPreview);
 				return (
 				<article
 					class="locations-card panel-horizontal-card group cursor-pointer relative overflow-hidden"
@@ -251,19 +252,20 @@ const eagerMapPreloadUrls = locations
 					<div
 						class:list={[
 							'panel-horizontal-card__media',
-							!mapPreviewUrl && 'panel-horizontal-card__media--placeholder',
-							mapPreviewUrl && 'is-map-loading',
+							!mapPreview && 'panel-horizontal-card__media--placeholder',
+							mapPreview && 'is-map-loading',
 						]}
 					>
-						{mapPreviewUrl ? (
+						{mapPreview ? (
 							<>
 								<span class="panel-horizontal-card__map-skeleton" aria-hidden="true"></span>
 								<img
-									src={mapPreviewUrl}
+									src={mapPreview.url}
 									alt=""
 									class="panel-horizontal-card__media-image"
 									width={LOCATION_CARD_STATIC_MAP_OPTIONS.width}
 									height={LOCATION_CARD_STATIC_MAP_OPTIONS.height}
+									style={`object-position: ${mapPreview.objectPosition}`}
 									loading={isEagerMap ? 'eager' : 'lazy'}
 									decoding="async"
 									fetchpriority={isEagerMap ? 'high' : 'low'}

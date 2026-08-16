@@ -117,10 +117,11 @@ const professionalFirstName =
 const serializedLocations = reservation
 	? JSON.stringify(reservationLocations).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
 	: '';
+const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encontrada | Hasel';
 ---
 
-<Layout>
-	<main class="public-booking-shell reservation-shell relative z-10 mx-auto min-h-screen w-full max-w-3xl px-3 py-6 sm:px-5 md:px-6 lg:py-8">
+<Layout pageTitle={pageTitle} robots="noindex, nofollow">
+	<main class="public-booking-shell reservation-shell relative z-10 mx-auto min-h-dvh w-full max-w-3xl px-3 sm:px-5 md:px-6">
 		<div aria-hidden="true" class="pointer-events-none fixed inset-0 z-[-1] bg-(--surface-background)"></div>
 		<section
 			class="reservation-manage"
@@ -665,10 +666,16 @@ const serializedLocations = reservation
 
 <style is:global>
 .reservation-shell {
+	min-height: 100dvh;
+	display: flex;
+	flex-direction: column;
+	justify-content: safe center;
+	padding-block: clamp(1rem, 4vh, 2rem);
+	box-sizing: border-box;
 	font-family: var(--font-body);
-	--surface-background: #0a0a0a;
+	--surface-background: #121214;
 	--surface-bright: #121214;
-	--surface-container-lowest: #0a0a0a;
+	--surface-container-lowest: #141414;
 	--surface-container-low: #141414;
 	--surface-container: #1b1b1b;
 	--surface-container-high: #252528;
@@ -693,6 +700,7 @@ const serializedLocations = reservation
 }
 
 .reservation-manage {
+	flex: 0 1 auto;
 	width: 100%;
 }
 
@@ -939,9 +947,12 @@ const serializedLocations = reservation
 
 .reservation-state {
 	display: grid;
-	justify-items: start;
+	justify-items: center;
 	gap: 0.75rem;
+	max-width: 36rem;
+	margin-inline: auto;
 	padding: 1.5rem 0;
+	text-align: center;
 }
 
 .reservation-state .material-symbols-rounded {

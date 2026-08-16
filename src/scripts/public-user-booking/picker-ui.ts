@@ -1,7 +1,7 @@
 /** Helpers compartidos para stack/carrusel de sucursales y servicios en u/[slug]. */
 
 import {
-	buildStadiaStaticMapUrl,
+	buildStadiaMapPreviewUrl,
 	LOCATION_CARD_STATIC_MAP_OPTIONS,
 	renderBrandMapMarkerOverlay,
 	resolveMapTheme,
@@ -257,7 +257,7 @@ export const buildPublicLocationMapPreviewUrl = (
 ) => {
 	const key = String(stadiaKey || '').trim();
 	if (!key) return null;
-	return buildStadiaStaticMapUrl(key, getCoords(location), {
+	return buildStadiaMapPreviewUrl(key, getCoords(location), {
 		theme: theme ?? resolveMapTheme(),
 		...LOCATION_CARD_STATIC_MAP_OPTIONS,
 	});
@@ -284,15 +284,16 @@ export const buildPublicLocationCardContent = (
 
 	let preview = '';
 	if (showMap) {
-		const mapPreviewUrl = buildPublicLocationMapPreviewUrl(
+		const mapPreview = buildPublicLocationMapPreviewUrl(
 			location,
 			options.stadiaKey || '',
 			options.mapTheme
 		);
-		if (mapPreviewUrl) {
+		if (mapPreview) {
 			const nameEsc = escapeHtml(name);
 			const { width, height } = LOCATION_CARD_STATIC_MAP_OPTIONS;
-			preview = `<button type="button" class="public-location-card__preview is-map-loading" data-location-map-trigger aria-label="Ver mapa de ${nameEsc}"><span class="public-location-card__map-skeleton" aria-hidden="true"></span><img class="public-location-card__map-img" data-location-map-img src="${escapeHtml(mapPreviewUrl)}" alt="" loading="lazy" decoding="async" width="${width}" height="${height}" />${renderBrandMapMarkerOverlay()}<span class="public-location-card__preview-dim" aria-hidden="true"></span><span class="public-location-card__preview-hint"><span class="public-location-card__preview-label">Ver ubicación</span></span></button>`;
+			const objectPosition = escapeHtml(mapPreview.objectPosition);
+			preview = `<button type="button" class="public-location-card__preview is-map-loading" data-location-map-trigger aria-label="Ver mapa de ${nameEsc}"><span class="public-location-card__map-skeleton" aria-hidden="true"></span><img class="public-location-card__map-img" data-location-map-img src="${escapeHtml(mapPreview.url)}" alt="" loading="lazy" decoding="async" width="${width}" height="${height}" style="object-position: ${objectPosition}" />${renderBrandMapMarkerOverlay()}<span class="public-location-card__preview-dim" aria-hidden="true"></span><span class="public-location-card__preview-hint"><span class="public-location-card__preview-label">Ver ubicación</span></span></button>`;
 		} else {
 			preview = buildPublicLocationBrandPreviewHtml(name);
 		}
