@@ -70,6 +70,7 @@ export type AppointmentDetail = {
 	deposit_amount?: number | null;
 	refund_status?: string | null;
 	refund_amount?: number | null;
+	cancel_reason?: string | null;
 };
 
 export type AppointmentFormPayload = {

@@ -138,6 +138,7 @@ class AppointmentModal extends HTMLElement {
 	editingAppointmentId = 0;
 	editingPaymentStatus: string | null = null;
 	editingDepositAmount: number | null = null;
+	editingCancelReason: string | null = null;
 	isImmutableReadOnly = false;
 	/** Estado bloqueado en solo lectura (cancelada o completada). */
 	immutableReadOnlyStatus: 'CANCELADO' | 'COMPLETADO' | null = null;
@@ -1482,6 +1483,7 @@ class AppointmentModal extends HTMLElement {
 
 	private syncPaymentStatusLabel(status: string | null, depositAmount: number | null) {
 		const label = this.form?.querySelector<HTMLElement>('[data-modal-payment-status-label]');
+		const hint = this.form?.querySelector<HTMLElement>('[data-modal-payment-status-hint]');
 		if (!label) return;
 		const pay = String(status || 'NONE').toUpperCase();
 		const amount =
@@ -1494,12 +1496,35 @@ class AppointmentModal extends HTMLElement {
 				: '';
 		if (pay === 'PAID' || pay === 'PAID_TRANSFER') {
 			label.textContent = amount ? `Seña pagada · ${amount}` : 'Seña pagada';
+			if (hint) {
+				hint.hidden = false;
+				hint.textContent =
+					'Si cancelás con seña pagada, Hasel pedirá el alias al cliente para el reembolso.';
+			}
 		} else if (pay === 'PENDING') {
 			label.textContent = amount ? `Seña pendiente · ${amount}` : 'Seña pendiente';
+			if (hint) {
+				hint.hidden = false;
+				hint.textContent = 'El cliente todavía no pagó la seña.';
+			}
+		} else if (pay === 'EXPIRED') {
+			label.textContent = amount ? `Seña no pagada · ${amount}` : 'Seña no pagada';
+			if (hint) {
+				hint.hidden = false;
+				hint.textContent = 'La seña no se pagó dentro del plazo; el turno se liberó.';
+			}
 		} else if (pay === 'PAID_CASH' || pay === 'EXEMPT') {
 			label.textContent = 'Pagado / exento';
+			if (hint) {
+				hint.hidden = true;
+				hint.textContent = '';
+			}
 		} else {
 			label.textContent = 'No aplica';
+			if (hint) {
+				hint.hidden = true;
+				hint.textContent = '';
+			}
 		}
 	}
 
@@ -1799,6 +1824,21 @@ class AppointmentModal extends HTMLElement {
 		requiredNodes.clearCustomerButton.disabled = false;
 	}
 
+	private cancelledDescriptionCopy() {
+		const reason = String(this.editingCancelReason || '').trim().toUpperCase();
+		const pay = String(this.editingPaymentStatus || '').trim().toUpperCase();
+		if (reason === 'DEPOSIT_EXPIRED' || (pay === 'EXPIRED' && !reason)) {
+			return 'Se canceló porque no se pagó la seña dentro del plazo.';
+		}
+		if (reason === 'CUSTOMER_CANCELLED') {
+			return 'El cliente canceló la reserva.';
+		}
+		if (reason === 'BUSINESS_CANCELLED') {
+			return 'Cancelaste esta reserva.';
+		}
+		return 'Registro histórico: no se puede modificar esta reserva.';
+	}
+
 	private applyImmutableStatusBadge(status: 'CANCELADO' | 'COMPLETADO') {
 		const isCancelled = status === 'CANCELADO';
 
@@ -1807,7 +1847,7 @@ class AppointmentModal extends HTMLElement {
 		}
 		if (this.modalDescription) {
 			this.modalDescription.textContent = isCancelled
-				? 'Registro histórico: no se puede modificar esta reserva.'
+				? this.cancelledDescriptionCopy()
 				: 'Esta cita ya finalizó y no se puede modificar.';
 		}
 
@@ -1870,6 +1910,7 @@ class AppointmentModal extends HTMLElement {
 		this.editingAppointmentId = 0;
 		this.editingPaymentStatus = null;
 		this.editingDepositAmount = null;
+		this.editingCancelReason = null;
 		if (this.modalTitle) this.modalTitle.textContent = 'Crear cita';
 		if (this.modalDescription) {
 			this.modalDescription.textContent = 'Completa los datos para registrar una nueva reserva.';
@@ -1941,6 +1982,7 @@ class AppointmentModal extends HTMLElement {
 			appointment.deposit_amount != null && Number(appointment.deposit_amount) > 0
 				? Number(appointment.deposit_amount)
 				: null;
+		this.editingCancelReason = String(appointment.cancel_reason || '').trim().toUpperCase() || null;
 		if (requiredNodes.paymentStatusInput) {
 			requiredNodes.paymentStatusInput.value = this.editingPaymentStatus;
 		}

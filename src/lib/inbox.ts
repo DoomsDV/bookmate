@@ -15,7 +15,7 @@ export type {
 	InboxListResult,
 	InboxNtype,
 } from './inbox-client';
-export { buildClosurePrefillUrl } from './inbox-client';
+export { buildAppointmentFocusUrl, buildClosurePrefillUrl } from './inbox-client';
 
 export const INBOX_LIST_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_INBOX_URL,

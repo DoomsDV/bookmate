@@ -104,6 +104,7 @@ export interface AppointmentDetail {
 	deposit_amount?: number | null;
 	refund_status?: string | null;
 	refund_amount?: number | null;
+	cancel_reason?: string | null;
 }
 
 export interface AppointmentCalendarFilters {
@@ -452,6 +453,7 @@ const normalizeAppointmentDetail = (value: unknown): AppointmentDetail | null =>
 		deposit_amount: Number(source.deposit_amount ?? NaN) || null,
 		refund_status: String(source.refund_status || '').trim() || null,
 		refund_amount: Number(source.refund_amount ?? NaN) || null,
+		cancel_reason: String(source.cancel_reason || '').trim() || null,
 	};
 
 	applyScheduleMisalignedFields(detail, source, status, startTime);

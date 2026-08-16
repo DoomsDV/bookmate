@@ -1,4 +1,9 @@
-import { buildClosurePrefillUrl, type InboxItem, type InboxNtype } from '../lib/inbox-client';
+import {
+	buildAppointmentFocusUrl,
+	buildClosurePrefillUrl,
+	type InboxItem,
+	type InboxNtype,
+} from '../lib/inbox-client';
 import { subscribeInboxForegroundMessages } from './firebase-messaging';
 
 const POLL_MS = 30_000;
@@ -157,6 +162,20 @@ const openItem = (item: InboxItem) => {
 				id_holiday: item.holiday_id || payload.id_holiday || undefined,
 			})
 		);
+		return;
+	}
+
+	const appointmentId = Number(item.appointment_id || 0);
+	if (appointmentId > 0) {
+		if (window.location.pathname.startsWith('/panel/calendar')) {
+			document.dispatchEvent(
+				new CustomEvent('hasel:focus-appointment', {
+					detail: { appointmentId },
+				})
+			);
+			return;
+		}
+		window.location.assign(buildAppointmentFocusUrl(appointmentId, item.action_url));
 		return;
 	}
 

@@ -61,3 +61,25 @@ export const buildClosurePrefillUrl = (hint: {
 	}
 	return `/panel/locations?${params.toString()}`;
 };
+
+export const buildAppointmentFocusUrl = (
+	appointmentId: number,
+	actionUrl?: string | null
+) => {
+	const fallback = '/panel/calendar';
+	if (!Number.isInteger(appointmentId) || appointmentId <= 0) return fallback;
+
+	const raw = String(actionUrl || '').trim();
+	try {
+		const parsed = new URL(raw || fallback, 'https://hasel.app');
+		const path = parsed.pathname.startsWith('/panel/calendar') ? parsed.pathname : fallback;
+		const params = parsed.pathname.startsWith('/panel/calendar')
+			? new URLSearchParams(parsed.search)
+			: new URLSearchParams();
+		params.set('appointment_id', String(appointmentId));
+		const query = params.toString();
+		return `${path}${query ? `?${query}` : ''}${parsed.hash}`;
+	} catch {
+		return `${fallback}?appointment_id=${appointmentId}`;
+	}
+};

@@ -335,6 +335,9 @@ class CalendarManager extends HTMLElement {
 		document.addEventListener('appointment-voice:success', this.handleAppointmentVoiceSuccess as EventListener, {
 			signal,
 		});
+		document.addEventListener('hasel:focus-appointment', this.handleFocusAppointment as EventListener, {
+			signal,
+		});
 
 		this.syncFiltersSheetMode();
 		this.syncFiltersTrigger();
@@ -2556,16 +2559,9 @@ class CalendarManager extends HTMLElement {
 		arg.el.appendChild(badgeNode);
 	}
 
-	private focusMisalignedAppointment(appointmentId: number) {
+	private focusAppointmentAt(appointmentId: number, start: Date) {
 		if (!this.calendar || appointmentId <= 0) return;
-
-		const liveEvent =
-			this.calendar.getEventById(String(appointmentId)) ??
-			this.calendar.getEvents().find((item) => toPositiveInt(item.id, 0) === appointmentId) ??
-			null;
-		const listed = this.misalignedAppointments.find((item) => item.id === appointmentId);
-		const start = liveEvent?.start ?? listed?.start ?? null;
-		if (!start) return;
+		if (Number.isNaN(start.getTime())) return;
 
 		this.clearPendingFocusState();
 		this.pendingFocusAppointmentId = appointmentId;
@@ -2584,6 +2580,108 @@ class CalendarManager extends HTMLElement {
 
 		this.calendar.gotoDate(start);
 		void this.applyPendingFocus(0);
+	}
+
+	private ensureFiltersShowAppointment(professionalId: number, locationId: number) {
+		let changed = false;
+
+		if (this.roleId !== ROLES.PROFESIONAL && professionalId > 0) {
+			const currentPro = toPositiveInt(this.professionalFilter?.value, 0);
+			if (currentPro > 0 && currentPro !== professionalId) {
+				setSearchableSelectValue(this.professionalFilter, professionalId);
+				changed = true;
+			}
+		}
+
+		if (locationId > 0) {
+			const currentLoc = toPositiveInt(this.locationFilter?.value, 0);
+			if (currentLoc > 0 && currentLoc !== locationId) {
+				setSearchableSelectValue(this.locationFilter, locationId);
+				changed = true;
+			}
+		}
+
+		if (changed) this.syncFiltersTrigger();
+	}
+
+	private async focusAppointmentById(appointmentId: number) {
+		if (appointmentId <= 0) return;
+
+		const liveEvent =
+			this.calendar?.getEventById(String(appointmentId)) ??
+			this.calendar?.getEvents().find((item) => toPositiveInt(item.id, 0) === appointmentId) ??
+			null;
+
+		let start = liveEvent?.start ?? null;
+		let professionalId = toPositiveInt(liveEvent?.extendedProps?.pro_id_professional, 0);
+		let locationId = toPositiveInt(liveEvent?.extendedProps?.loc_id_location, 0);
+
+		if (!start) {
+			try {
+				const appointment = await this.client.getAppointment(appointmentId);
+				start = new Date(appointment.start_time);
+				professionalId = appointment.pro_id_professional;
+				locationId = appointment.loc_id_location;
+			} catch (error) {
+				const message =
+					error instanceof Error ? error.message : 'No fue posible abrir la cita.';
+				showFlashMessage({ message, type: 'error' });
+				return;
+			}
+		}
+
+		if (!start || Number.isNaN(start.getTime())) {
+			showFlashMessage({
+				message: 'No fue posible ubicar la cita en el calendario.',
+				type: 'error',
+			});
+			return;
+		}
+
+		if (!liveEvent) {
+			this.ensureFiltersShowAppointment(professionalId, locationId);
+		}
+
+		this.focusAppointmentAt(appointmentId, start);
+	}
+
+	private handleFocusAppointment = (event: Event) => {
+		const appointmentId = toPositiveInt(
+			(event as CustomEvent<{ appointmentId?: number }>).detail?.appointmentId,
+			0
+		);
+		if (appointmentId > 0) void this.focusAppointmentById(appointmentId);
+	};
+
+	private applyAppointmentFocusFromUrl() {
+		if (typeof window === 'undefined') return;
+
+		const params = new URLSearchParams(window.location.search);
+		const appointmentId = toPositiveInt(params.get('appointment_id'), 0);
+		if (appointmentId <= 0) return;
+
+		params.delete('appointment_id');
+		const nextQuery = params.toString();
+		window.history.replaceState(
+			{},
+			'',
+			`${window.location.pathname}${nextQuery ? `?${nextQuery}` : ''}${window.location.hash}`
+		);
+		void this.focusAppointmentById(appointmentId);
+	}
+
+	private focusMisalignedAppointment(appointmentId: number) {
+		if (!this.calendar || appointmentId <= 0) return;
+
+		const liveEvent =
+			this.calendar.getEventById(String(appointmentId)) ??
+			this.calendar.getEvents().find((item) => toPositiveInt(item.id, 0) === appointmentId) ??
+			null;
+		const listed = this.misalignedAppointments.find((item) => item.id === appointmentId);
+		const start = liveEvent?.start ?? listed?.start ?? null;
+		if (!start) return;
+
+		this.focusAppointmentAt(appointmentId, start);
 	}
 
 	private updateScheduleMisalignedAlerts(events: ApiCalendarEvent[]) {
@@ -2672,6 +2770,7 @@ class CalendarManager extends HTMLElement {
 
 		this.initializeCalendar(requiredNodes);
 		this.applyAiDraftFromStorage(requiredNodes);
+		this.applyAppointmentFocusFromUrl();
 		maybeShowCalendarTour();
 	}
 
