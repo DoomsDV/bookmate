@@ -26,7 +26,6 @@ const PAGE_MARGIN = 16;
 const FOOTER_RESERVE = 28;
 const FRAME_HEIGHT = 86;
 const FRAME_PAD = 4;
-const HEADER_FILL: [number, number, number] = [30, 41, 59];
 const ZEBRA_FILL: [number, number, number] = [244, 246, 248];
 const FRAME_FILL: [number, number, number] = [248, 249, 250];
 const FRAME_STROKE: [number, number, number] = [208, 213, 221];
@@ -189,16 +188,17 @@ export async function downloadOdontogramPdf(input: OdontogramPdfInput) {
 	const drawTableHeader = () => {
 		const headerH = 8;
 		ensureSpace(headerH + 6);
-		doc.setFillColor(...HEADER_FILL);
-		doc.rect(PAGE_MARGIN, y, contentWidth, headerH, 'F');
 		doc.setFont('helvetica', 'bold');
 		doc.setFontSize(8);
-		doc.setTextColor(255, 255, 255);
+		doc.setTextColor(...INK);
 		let x = PAGE_MARGIN + 2;
 		for (const column of columns) {
 			doc.text(column.label, x, y + 5.3);
 			x += column.width;
 		}
+		doc.setDrawColor(...RULE_COLOR);
+		doc.setLineWidth(0.3);
+		doc.line(PAGE_MARGIN, y + headerH, PAGE_MARGIN + contentWidth, y + headerH);
 		y += headerH;
 	};
 

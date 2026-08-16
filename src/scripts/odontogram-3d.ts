@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 export type Odontogram3dFindingCode = 'CARIES' | 'RESTORATION' | 'EXTRACTION' | 'CROWN';
@@ -32,6 +33,7 @@ export type Odontogram3dHandle = {
 	setArchView: (arch: Odontogram3dArchView) => void;
 	setRotateLocked: (locked: boolean) => void;
 	setGhostMode: (enabled: boolean) => void;
+	setGumsVisible: (enabled: boolean) => void;
 	capturePng: () => Odontogram3dCapture | null;
 	dispose: () => void;
 };
@@ -45,22 +47,22 @@ export type MountOdontogram3dOptions = {
 };
 
 const DEFAULT_GLB_URL =
-	'https://objectstorage.sa-saopaulo-1.oraclecloud.com/n/gr7djv0kcgrr/b/bucket-hasel-aoxdev/o/odontograma%2Fdientes.glb';
-const PROXY_GLB_URL = '/api/public/odontogram-model';
-const LEGACY_PROXY_GLB_URL = '/models/odontogram/dientes.glb';
+	'https://objectstorage.sa-saopaulo-1.oraclecloud.com/n/gr7djv0kcgrr/b/bucket-hasel-aoxdev/o/odontograma%2Fboca.glb';
+const PROXY_GLB_URL = '/api/public/odontogram-model?v=boca';
+const LEGACY_PROXY_GLB_URL = '/models/odontogram/dientes.glb?v=boca';
 
 const FINDING_COLORS: Record<Odontogram3dFindingCode, number> = {
-	CARIES: 0xef4444,
-	RESTORATION: 0x3b82f6,
-	EXTRACTION: 0x404040,
-	CROWN: 0xeab308,
+	CARIES: 0xe040fb,
+	RESTORATION: 0x00bcd4,
+	EXTRACTION: 0x9e9e9e,
+	CROWN: 0xffca28,
 };
 
 const DEFAULT_TOOTH_COLOR = 0xf4efe6;
-const HOVER_EMISSIVE = 0x2563eb;
+const HOVER_WIRE_COLOR = 0x60a5fa;
 const DRAG_THRESHOLD_PX = 5;
 const GHOST_OPACITY = 0.32;
-const EXTRACTION_OPACITY = 0.14;
+const EXTRACTION_OPACITY = 0.28;
 const CAMERA_TWEEN_MS = 450;
 const FALLBACK_SHADER_PRECISION = { rangeMin: 127, rangeMax: 127, precision: 23 };
 
@@ -89,56 +91,69 @@ type CameraTween = {
 };
 
 /**
- * Nombres exactos del GLB `dientes.glb` (32 meshes, sin subpiezas por cara).
- * Convención: right/left = lado del paciente; -1 = más mesial del tipo.
+ * Nombres exactos del GLB `boca.glb` (32 dientes FDI, sin subpiezas por cara).
+ * Encías (`encia_superior` / `encia_inferior`) y lengua no tienen FDI.
  */
-const NODE_NAME_TO_FDI: Record<string, number> = {
-	canine_lower_left: 33,
-	canine_lower_right: 43,
-	canine_upper_left: 23,
-	canine_upper_right: 13,
-	'incisor_lower_left-1': 31,
-	'incisor_lower_left-2': 32,
-	incisor_lower_right1: 41,
-	'incisor_lower_right-2': 42,
-	incisor_upper_left2: 22,
-	'incisor_upper_left-1': 21,
-	incisor_upper_right1: 11,
-	'incisor_upper_right-2': 12,
-	'molar_lower_left-1': 36,
-	'molar_lower_left-2': 37,
-	'molar_lower_left-3': 38,
-	'molar_lower_right-1': 46,
-	'molar_lower_right-2': 47,
-	'molar_lower_right-3': 48,
-	'molar_upper_left-1': 26,
-	'molar_upper_left-2': 27,
-	'molar_upper_left-3': 28,
-	'molar_upper_right-1': 16,
-	'molar_upper_right-2': 17,
-	'molar_upper_right-3': 18,
-	'premolar_lower_left-1': 34,
-	'premolar_lower_left-2': 35,
-	'premolar_lower_right-1': 44,
-	'premolar_lower_right-2': 45,
-	'premolar_upper_left-1': 24,
-	'premolar_upper_left-2': 25,
-	'premolar_upper_right-1': 14,
-	'premolar_upper_right-2': 15,
-};
+const PERMANENT_FDI = [
+	11, 12, 13, 14, 15, 16, 17, 18, 21, 22, 23, 24, 25, 26, 27, 28, 31, 32, 33, 34, 35, 36, 37, 38,
+	41, 42, 43, 44, 45, 46, 47, 48,
+] as const;
+
+const NODE_NAME_TO_FDI: Record<string, number> = Object.fromEntries(
+	PERMANENT_FDI.map((fdi) => [`diente_${fdi}`, fdi])
+);
 
 type ToothEntry = {
 	fdi: number;
 	mesh: THREE.Mesh;
 	material: THREE.MeshStandardMaterial;
 	baseColor: THREE.Color;
-	outline: THREE.LineSegments;
+	baseRoughness: number;
+	baseMetalness: number;
+	outline: THREE.Mesh | null;
 };
 
 const isMesh = (object: THREE.Object3D): object is THREE.Mesh =>
 	(object as THREE.Mesh).isMesh === true;
 
 const normalizeNodeName = (name: string) => String(name || '').trim().toLowerCase();
+
+type SoftTissueKind = 'upper-gum' | 'lower-gum' | 'tongue';
+
+const ancestryNames = (object: THREE.Object3D) => {
+	const names: string[] = [];
+	let current: THREE.Object3D | null = object;
+	while (current) {
+		const name = normalizeNodeName(current.name);
+		if (name) names.push(name);
+		current = current.parent;
+	}
+	return names;
+};
+
+const classifySoftTissue = (object: THREE.Object3D): SoftTissueKind | null => {
+	const names = ancestryNames(object);
+	if (names.some((name) => name.includes('tongue') || name.includes('lengua'))) return 'tongue';
+	if (
+		names.some(
+			(name) =>
+				name.includes('encia_superior') || name === 'upper_gum_grp' || name.includes('up_gum')
+		)
+	) {
+		return 'upper-gum';
+	}
+	if (
+		names.some(
+			(name) =>
+				name.includes('encia_inferior') ||
+				name === 'below_gum_grp' ||
+				name.includes('lower_gum')
+		)
+	) {
+		return 'lower-gum';
+	}
+	return null;
+};
 
 const parseFdiFromName = (name: string): number | null => {
 	const normalized = normalizeNodeName(name);
@@ -216,6 +231,7 @@ const fetchGlbBuffer = async (url: string) => {
 		method: 'GET',
 		mode: sameOrigin ? 'same-origin' : 'cors',
 		credentials: 'omit',
+		cache: 'no-store',
 	});
 	if (!response.ok) {
 		throw new Error(`GLB HTTP ${response.status} (${url})`);
@@ -233,6 +249,13 @@ const loadGltf = async (loader: GLTFLoader, urls: string[]) => {
 	for (const url of urls) {
 		try {
 			const buffer = await fetchGlbBuffer(url);
+			if (import.meta.env.DEV) {
+				console.info(
+					'[odontogram-3d] modelo cargado',
+					url,
+					`${Math.round(buffer.byteLength / 1024)} KB`
+				);
+			}
 			return await loader.parseAsync(buffer, '');
 		} catch (error) {
 			lastError = error;
@@ -250,6 +273,100 @@ const sourceColor = (material: THREE.Material | THREE.Material[]): THREE.Color =
 		return first.color.clone();
 	}
 	return new THREE.Color(DEFAULT_TOOTH_COLOR);
+};
+
+const firstMaterial = (material: THREE.Material | THREE.Material[]) =>
+	Array.isArray(material) ? material[0] : material;
+
+const forceOpaqueMaterial = (material: THREE.Material | THREE.Material[]) => {
+	const list = Array.isArray(material) ? material : [material];
+	for (const item of list) {
+		item.transparent = false;
+		item.opacity = 1;
+		item.depthWrite = true;
+		item.alphaTest = 0;
+		if ('alphaMap' in item) {
+			(item as THREE.MeshStandardMaterial).alphaMap = null;
+		}
+		item.needsUpdate = true;
+	}
+};
+
+const cloneToothMaterial = (
+	source: THREE.Material | THREE.Material[]
+): THREE.MeshStandardMaterial => {
+	const first = firstMaterial(source);
+	if (first instanceof THREE.MeshStandardMaterial) {
+		const cloned = first.clone();
+		if (cloned.map) cloned.map.colorSpace = THREE.SRGBColorSpace;
+		forceOpaqueMaterial(cloned);
+		return cloned;
+	}
+	const fallback = new THREE.MeshStandardMaterial({
+		color: sourceColor(source),
+		roughness: 0.48,
+		metalness: 0.06,
+	});
+	forceOpaqueMaterial(fallback);
+	return fallback;
+};
+
+const isConstrainedGpu = () => {
+	if (typeof window === 'undefined') return true;
+	return (
+		window.matchMedia('(pointer: coarse)').matches ||
+		window.matchMedia('(max-width: 1023px)').matches
+	);
+};
+
+const nextAnimationFrame = () =>
+	new Promise<void>((resolve) => {
+		window.requestAnimationFrame(() => resolve());
+	});
+
+const enableMeshShadows = (object: THREE.Object3D, enabled: boolean) => {
+	if (!isMesh(object) || !enabled) return;
+	object.castShadow = true;
+	object.receiveShadow = true;
+};
+
+const createToothOutline = (mesh: THREE.Mesh) => {
+	const outline = new THREE.Mesh(
+		mesh.geometry,
+		new THREE.MeshBasicMaterial({
+			color: HOVER_WIRE_COLOR,
+			wireframe: true,
+			depthTest: true,
+			depthWrite: false,
+			polygonOffset: true,
+			polygonOffsetFactor: -1,
+			polygonOffsetUnits: -1,
+		})
+	);
+	outline.visible = false;
+	outline.renderOrder = 2;
+	outline.raycast = () => undefined;
+	return outline;
+};
+
+const fitShadowCamera = (light: THREE.DirectionalLight, object: THREE.Object3D) => {
+	const box = new THREE.Box3().setFromObject(object);
+	const size = box.getSize(new THREE.Vector3());
+	const center = box.getCenter(new THREE.Vector3());
+	const maxDim = Math.max(size.x, size.y, size.z, 1);
+	light.position.copy(center).add(new THREE.Vector3(maxDim * 0.8, maxDim * 1.2, maxDim));
+	light.target.position.copy(center);
+	light.target.updateMatrixWorld();
+	const cam = light.shadow.camera;
+	cam.near = Math.max(maxDim * 0.05, 0.01);
+	cam.far = maxDim * 4;
+	cam.left = -maxDim;
+	cam.right = maxDim;
+	cam.top = maxDim;
+	cam.bottom = -maxDim;
+	cam.updateProjectionMatrix();
+	light.shadow.bias = -0.0005;
+	light.shadow.normalBias = 0.02;
 };
 
 const normalizeFinding = (code: string): Odontogram3dFindingCode | null => {
@@ -280,14 +397,13 @@ const applyFinding = (
 	const transparent = isExtraction || ghost;
 	material.emissive.setHex(0x000000);
 	material.emissiveIntensity = 0;
+	material.envMapIntensity = 1;
 	material.transparent = transparent;
 	material.opacity = opacity;
 	material.depthWrite = !transparent;
-	material.color.copy(
-		isExtraction || !finding ? baseColor : new THREE.Color(FINDING_COLORS[finding])
-	);
-	material.metalness = finding === 'CROWN' ? 0.45 : 0.06;
-	material.roughness = finding === 'CROWN' ? 0.28 : 0.48;
+	material.color.copy(!finding ? baseColor : new THREE.Color(FINDING_COLORS[finding]));
+	material.metalness = finding === 'CROWN' ? 0.45 : entry.baseMetalness;
+	material.roughness = finding === 'CROWN' ? Math.min(entry.baseRoughness, 0.28) : entry.baseRoughness;
 	material.needsUpdate = true;
 	entry.mesh.visible = visible;
 };
@@ -382,8 +498,26 @@ const createRenderer = (canvas: HTMLCanvasElement, conservative = false) => {
 	});
 };
 
-const createRendererWithFallback = (inputCanvas: HTMLCanvasElement) => {
+const createRendererWithFallback = (
+	inputCanvas: HTMLCanvasElement,
+	preferConservative = false
+) => {
 	let canvas = inputCanvas.hasAttribute('data-engine') ? replaceCanvas(inputCanvas) : inputCanvas;
+
+	if (preferConservative) {
+		try {
+			return { renderer: createRenderer(canvas, true), canvas };
+		} catch (firstError) {
+			canvas = replaceCanvas(canvas);
+			try {
+				return { renderer: createRenderer(canvas, true), canvas };
+			} catch {
+				throw firstError instanceof Error
+					? firstError
+					: new Error('No se pudo inicializar el visor 3D.');
+			}
+		}
+	}
 
 	try {
 		return { renderer: createRenderer(canvas), canvas };
@@ -415,11 +549,15 @@ export async function mountOdontogram3d(
 	const { onToothSelect, onToothHover, onStatus } = options;
 	onStatus?.('Cargando modelo 3D…');
 
-	const { renderer, canvas } = createRendererWithFallback(options.canvas);
+	const constrainedGpu = isConstrainedGpu();
+	const shadowsEnabled = !constrainedGpu;
+	const { renderer, canvas } = createRendererWithFallback(options.canvas, constrainedGpu);
 	renderer.setClearColor(0x000000, 0);
 	renderer.outputColorSpace = THREE.SRGBColorSpace;
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
-	renderer.toneMappingExposure = 1.05;
+	renderer.toneMappingExposure = 0.95;
+	renderer.shadowMap.enabled = shadowsEnabled;
+	renderer.shadowMap.type = THREE.PCFShadowMap;
 
 	const scene = new THREE.Scene();
 	const camera = new THREE.PerspectiveCamera(38, 1, 0.1, 100);
@@ -429,21 +567,43 @@ export async function mountOdontogram3d(
 	controls.enablePan = true;
 	controls.rotateSpeed = 0.85;
 	controls.zoomSpeed = 0.9;
-	controls.autoRotate = true;
+	controls.autoRotate = false;
 	controls.autoRotateSpeed = 0.55;
 
-	scene.add(new THREE.HemisphereLight(0xffffff, 0x8b8680, 1.05));
-	const keyLight = new THREE.DirectionalLight(0xffffff, 1.15);
+	let pmrem: THREE.PMREMGenerator | null = null;
+	let environmentRT: THREE.WebGLRenderTarget | null = null;
+
+	scene.add(new THREE.HemisphereLight(0xffffff, 0x8b8680, 0.28));
+	const keyLight = new THREE.DirectionalLight(0xffffff, 0.55);
 	keyLight.position.set(2.2, 3.4, 2.8);
+	keyLight.castShadow = shadowsEnabled;
+	if (shadowsEnabled) keyLight.shadow.mapSize.set(512, 512);
 	scene.add(keyLight);
-	const fillLight = new THREE.DirectionalLight(0xe8f0ff, 0.42);
+	scene.add(keyLight.target);
+	const fillLight = new THREE.DirectionalLight(0xe8f0ff, 0.15);
 	fillLight.position.set(-2.6, 1.1, 1.4);
 	scene.add(fillLight);
+	const upFill = new THREE.DirectionalLight(0xfff4e8, 0.48);
+	upFill.position.set(0, -3.2, 0);
+	scene.add(upFill);
+	scene.add(upFill.target);
+	const backUpFill = new THREE.DirectionalLight(0xfff4e8, 0.3);
+	scene.add(backUpFill);
+	scene.add(backUpFill.target);
+	const headLamp = new THREE.DirectionalLight(0xffffff, 0.5);
+	headLamp.position.set(0, 0.12, 0);
+	headLamp.target.position.set(0, 0, -1);
+	camera.add(headLamp);
+	camera.add(headLamp.target);
+	scene.add(camera);
 
 	const pointer = new THREE.Vector2();
 	const raycaster = new THREE.Raycaster();
 	const teeth = new Map<number, ToothEntry>();
 	const findings = new Map<number, Odontogram3dFindingCode>();
+	const upperGumMeshes: THREE.Object3D[] = [];
+	const lowerGumMeshes: THREE.Object3D[] = [];
+	const tongueMeshes: THREE.Object3D[] = [];
 	let hovered: ToothEntry | null = null;
 	let selected: ToothEntry | null = null;
 	let disposed = false;
@@ -451,9 +611,10 @@ export async function mountOdontogram3d(
 	let pointerDownX = 0;
 	let pointerDownY = 0;
 	let dragging = false;
-	let autoRotateLocked = false;
+	let autoRotateLocked = true;
 	let rotateLocked = false;
 	let ghostMode = false;
+	let gumsVisible = true;
 	let activeArch: 'both' | Odontogram3dArchView = 'both';
 	let frontPose: CameraPose | null = null;
 	let cameraTween: CameraTween | null = null;
@@ -477,6 +638,14 @@ export async function mountOdontogram3d(
 			ghost: ghostMode,
 			visible: isToothInActiveArch(entry.fdi),
 		});
+	};
+
+	const refreshSoftTissue = () => {
+		const showUpper = gumsVisible && activeArch !== 'lower';
+		const showLower = gumsVisible && activeArch !== 'upper';
+		for (const mesh of upperGumMeshes) mesh.visible = showUpper;
+		for (const mesh of lowerGumMeshes) mesh.visible = showLower;
+		for (const mesh of tongueMeshes) mesh.visible = activeArch !== 'upper';
 	};
 
 	const cancelCameraTween = () => {
@@ -540,14 +709,21 @@ export async function mountOdontogram3d(
 		return root ? new THREE.Box3().setFromObject(root) : null;
 	};
 
+	const ensureToothOutline = (entry: ToothEntry) => {
+		if (entry.outline) return entry.outline;
+		const outline = createToothOutline(entry.mesh);
+		entry.mesh.add(outline);
+		entry.outline = outline;
+		return outline;
+	};
+
 	const applyHighlight = (entry: ToothEntry) => {
-		entry.outline.visible = true;
-		entry.material.emissive.setHex(HOVER_EMISSIVE);
-		entry.material.emissiveIntensity = 0.22;
+		ensureToothOutline(entry).visible = true;
 	};
 
 	const refreshAllTeeth = () => {
 		for (const entry of teeth.values()) refreshTooth(entry);
+		refreshSoftTissue();
 		if (selected) applyHighlight(selected);
 		if (hovered) applyHighlight(hovered);
 	};
@@ -557,7 +733,7 @@ export async function mountOdontogram3d(
 			applyHighlight(entry);
 			return;
 		}
-		entry.outline.visible = false;
+		if (entry.outline) entry.outline.visible = false;
 		refreshTooth(entry);
 	};
 
@@ -613,7 +789,7 @@ export async function mountOdontogram3d(
 		const width = host.clientWidth;
 		const height = host.clientHeight;
 		if (width < 2 || height < 2) return;
-		renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+		renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, constrainedGpu ? 1.25 : 1.5));
 		renderer.setSize(width, height, false);
 		camera.aspect = width / height;
 		camera.updateProjectionMatrix();
@@ -696,8 +872,7 @@ export async function mountOdontogram3d(
 		setHover(null);
 		controls.dispose();
 		for (const entry of teeth.values()) {
-			entry.outline.geometry.dispose();
-			if (entry.outline.material instanceof THREE.Material) {
+			if (entry.outline?.material instanceof THREE.Material) {
 				entry.outline.material.dispose();
 			}
 			entry.material.dispose();
@@ -708,6 +883,9 @@ export async function mountOdontogram3d(
 			if (!isMesh(object)) return;
 			object.geometry.dispose();
 		});
+		scene.environment = null;
+		environmentRT?.dispose();
+		pmrem?.dispose();
 		scene.clear();
 		renderer.dispose();
 		onStatus?.(null);
@@ -733,6 +911,7 @@ export async function mountOdontogram3d(
 			setArchView() {},
 			setRotateLocked() {},
 			setGhostMode() {},
+			setGumsVisible() {},
 			capturePng() {
 				return null;
 			},
@@ -742,32 +921,45 @@ export async function mountOdontogram3d(
 
 	root = gltf.scene;
 	root.traverse((object) => {
+		enableMeshShadows(object, shadowsEnabled);
+		if (isMesh(object)) forceOpaqueMaterial(object.material);
+		const softTissue = classifySoftTissue(object);
+		if (softTissue === 'upper-gum') {
+			if (isMesh(object) || normalizeNodeName(object.name) === 'encia_superior') {
+				upperGumMeshes.push(object);
+			}
+			return;
+		}
+		if (softTissue === 'lower-gum') {
+			if (isMesh(object) || normalizeNodeName(object.name) === 'encia_inferior') {
+				lowerGumMeshes.push(object);
+			}
+			return;
+		}
+		if (softTissue === 'tongue') {
+			if (isMesh(object) || normalizeNodeName(object.name) === 'tongue_grp') {
+				tongueMeshes.push(object);
+			}
+			return;
+		}
 		if (!isMesh(object)) return;
 		const fdi = resolveFdi(object);
 		if (!fdi || teeth.has(fdi)) return;
 
-		const baseColor = sourceColor(object.material);
-		const material = new THREE.MeshStandardMaterial({
-			color: baseColor,
-			roughness: 0.48,
-			metalness: 0.06,
-		});
+		const material = cloneToothMaterial(object.material);
+		const baseColor = material.color.clone();
 		object.material = material;
 		object.userData.fdi = fdi;
 
-		const outline = new THREE.LineSegments(
-			new THREE.EdgesGeometry(object.geometry, 28),
-			new THREE.LineBasicMaterial({
-				color: HOVER_EMISSIVE,
-				transparent: true,
-				opacity: 0.92,
-				depthTest: true,
-			})
-		);
-		outline.visible = false;
-		object.add(outline);
-
-		teeth.set(fdi, { fdi, mesh: object, material, baseColor, outline });
+		teeth.set(fdi, {
+			fdi,
+			mesh: object,
+			material,
+			baseColor,
+			baseRoughness: material.roughness,
+			baseMetalness: material.metalness,
+			outline: null,
+		});
 	});
 
 	if (import.meta.env.DEV) {
@@ -778,7 +970,42 @@ export async function mountOdontogram3d(
 		});
 	}
 
+	await nextAnimationFrame();
+	if (disposed) {
+		return {
+			canvas,
+			setTeeth() {},
+			setSelectedTooth() {},
+			resize() {},
+			setAutoRotate() {},
+			resetView() {},
+			setArchView() {},
+			setRotateLocked() {},
+			setGhostMode() {},
+			setGumsVisible() {},
+			capturePng() {
+				return null;
+			},
+			dispose() {},
+		};
+	}
+
+	pmrem = new THREE.PMREMGenerator(renderer);
+	const room = new RoomEnvironment();
+	environmentRT = pmrem.fromScene(room, 0.04);
+	room.dispose();
+	scene.environment = environmentRT.texture;
+
 	scene.add(root);
+	fitShadowCamera(keyLight, root);
+	const modelCenter = keyLight.target.position.clone();
+	const keyOffset = keyLight.position.distanceTo(modelCenter) || 1;
+	upFill.position.copy(modelCenter).add(new THREE.Vector3(0, -keyOffset * 0.85, 0));
+	upFill.target.position.copy(modelCenter);
+	upFill.target.updateMatrixWorld();
+	backUpFill.position.copy(modelCenter).add(new THREE.Vector3(0, -keyOffset * 0.55, -keyOffset * 0.75));
+	backUpFill.target.position.copy(modelCenter);
+	backUpFill.target.updateMatrixWorld();
 	frontPose = fitCameraToObject(camera, controls, root);
 	controls.saveState();
 	resize();
@@ -826,6 +1053,12 @@ export async function mountOdontogram3d(
 		refreshAllTeeth();
 	};
 
+	const setGumsVisible = (enabled: boolean) => {
+		if (disposed) return;
+		gumsVisible = enabled;
+		refreshSoftTissue();
+	};
+
 	const capturePng = (): Odontogram3dCapture | null => {
 		if (disposed) return null;
 		renderer.render(scene, camera);
@@ -861,6 +1094,7 @@ export async function mountOdontogram3d(
 		setArchView,
 		setRotateLocked,
 		setGhostMode,
+		setGumsVisible,
 		capturePng,
 		dispose,
 	};

@@ -146,6 +146,13 @@ class CustomerManager extends HTMLElement {
 	private odontogramTipTooth: HTMLElement | null = null;
 	private odontogramTipFinding: HTMLElement | null = null;
 	private odontogramExport: HTMLButtonElement | null = null;
+	private odontogramExportDialog: HTMLDialogElement | null = null;
+	private odontogramExportPreview: HTMLImageElement | null = null;
+	private odontogramExportPreviewEmpty: HTMLElement | null = null;
+	private odontogramExportPreviewWrap: HTMLElement | null = null;
+	private odontogramExportInclude3d: HTMLInputElement | null = null;
+	private odontogramExportCancel: HTMLButtonElement | null = null;
+	private odontogramExportConfirm: HTMLButtonElement | null = null;
 	private odontogramSide: HTMLElement | null = null;
 	private odontogramStatus: HTMLElement | null = null;
 	private odontogramLoading: HTMLElement | null = null;
@@ -174,6 +181,7 @@ class CustomerManager extends HTMLElement {
 	private odontogram3dMountGen = 0;
 	private odontogramRotateLocked = false;
 	private odontogramGhostMode = false;
+	private odontogramGumsVisible = true;
 	private odontogramExporting = false;
 	private odontogramPopoverDragged = false;
 	private odontogramPopoverDrag: {
@@ -282,6 +290,27 @@ class CustomerManager extends HTMLElement {
 		this.odontogramExport = this.querySelector<HTMLButtonElement>(
 			'[data-customer-odontogram-export]'
 		);
+		this.odontogramExportDialog = this.querySelector<HTMLDialogElement>(
+			'[data-customer-odontogram-export-dialog]'
+		);
+		this.odontogramExportPreview = this.querySelector<HTMLImageElement>(
+			'[data-odontogram-export-preview]'
+		);
+		this.odontogramExportPreviewEmpty = this.querySelector<HTMLElement>(
+			'[data-odontogram-export-preview-empty]'
+		);
+		this.odontogramExportPreviewWrap = this.querySelector<HTMLElement>(
+			'[data-odontogram-export-preview-wrap]'
+		);
+		this.odontogramExportInclude3d = this.querySelector<HTMLInputElement>(
+			'[data-odontogram-export-include-3d]'
+		);
+		this.odontogramExportCancel = this.querySelector<HTMLButtonElement>(
+			'[data-odontogram-export-cancel]'
+		);
+		this.odontogramExportConfirm = this.querySelector<HTMLButtonElement>(
+			'[data-odontogram-export-confirm]'
+		);
 		this.odontogramSide = this.querySelector<HTMLElement>('[data-customer-odontogram-side]');
 		this.odontogramStatus = this.querySelector<HTMLElement>('[data-customer-odontogram-status]');
 		this.odontogramLoading = this.querySelector<HTMLElement>('[data-customer-odontogram-loading]');
@@ -362,6 +391,23 @@ class CustomerManager extends HTMLElement {
 		this.odontogramToolbar?.addEventListener('click', this.handleOdontogramToolbarClick, { signal });
 		this.odontogramCam?.addEventListener('click', this.handleOdontogramCamClick, { signal });
 		this.odontogramExport?.addEventListener('click', this.handleOdontogramExportClick, { signal });
+		this.odontogramExportDialog?.addEventListener('click', this.handleOdontogramExportDialogClick, {
+			signal,
+		});
+		this.odontogramExportDialog?.addEventListener('cancel', this.handleOdontogramExportDialogCancel, {
+			signal,
+		});
+		this.odontogramExportCancel?.addEventListener('click', this.closeOdontogramExportDialog, {
+			signal,
+		});
+		this.odontogramExportConfirm?.addEventListener('click', this.handleOdontogramExportConfirm, {
+			signal,
+		});
+		this.odontogramExportInclude3d?.addEventListener(
+			'change',
+			this.syncOdontogramExportPreviewState,
+			{ signal }
+		);
 		this.odontogramEventsList?.addEventListener('click', this.handleOdontogramEventsClick, {
 			signal,
 		});
@@ -1266,6 +1312,7 @@ class CustomerManager extends HTMLElement {
 		this.odontogram3d = null;
 		this.odontogramRotateLocked = false;
 		this.odontogramGhostMode = false;
+		this.odontogramGumsVisible = true;
 		this.syncOdontogramCamUi();
 		this.hideOdontogramTip();
 		this.recycleOdontogramCanvas();
@@ -1634,10 +1681,17 @@ class CustomerManager extends HTMLElement {
 		const ghostButton = this.odontogramCam?.querySelector<HTMLButtonElement>(
 			'[data-odontogram-cam="ghost"]'
 		);
+		const gumsButton = this.odontogramCam?.querySelector<HTMLButtonElement>(
+			'[data-odontogram-cam="gums"]'
+		);
 		const lockIcon = this.odontogramCam?.querySelector<HTMLElement>(
 			'[data-odontogram-cam-lock-icon]'
 		);
+		const gumsIcon = this.odontogramCam?.querySelector<HTMLElement>(
+			'[data-odontogram-cam-gums-icon]'
+		);
 		const lockLabel = this.odontogramRotateLocked ? 'Desbloquear rotación' : 'Bloquear rotación';
+		const gumsLabel = this.odontogramGumsVisible ? 'Ocultar encías' : 'Mostrar encías';
 		if (lockButton) {
 			lockButton.setAttribute('aria-pressed', this.odontogramRotateLocked ? 'true' : 'false');
 			lockButton.setAttribute('title', lockLabel);
@@ -1647,6 +1701,12 @@ class CustomerManager extends HTMLElement {
 		if (ghostButton) {
 			ghostButton.setAttribute('aria-pressed', this.odontogramGhostMode ? 'true' : 'false');
 		}
+		if (gumsButton) {
+			gumsButton.setAttribute('aria-pressed', this.odontogramGumsVisible ? 'true' : 'false');
+			gumsButton.setAttribute('title', gumsLabel);
+			gumsButton.setAttribute('aria-label', gumsLabel);
+		}
+		if (gumsIcon) gumsIcon.textContent = this.odontogramGumsVisible ? 'visibility' : 'visibility_off';
 	}
 
 	private handleOdontogramCamClick = (event: Event) => {
@@ -1675,6 +1735,12 @@ class CustomerManager extends HTMLElement {
 		if (action === 'ghost') {
 			this.odontogramGhostMode = !this.odontogramGhostMode;
 			this.odontogram3d.setGhostMode(this.odontogramGhostMode);
+			this.syncOdontogramCamUi();
+			return;
+		}
+		if (action === 'gums') {
+			this.odontogramGumsVisible = !this.odontogramGumsVisible;
+			this.odontogram3d.setGumsVisible(this.odontogramGumsVisible);
 			this.syncOdontogramCamUi();
 		}
 	};
@@ -1732,16 +1798,65 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private handleOdontogramExportClick = () => {
-		void this.exportOdontogramPdf();
+		this.openOdontogramExportDialog();
 	};
 
-	private async exportOdontogramPdf() {
+	private handleOdontogramExportDialogClick = (event: MouseEvent) => {
+		if (event.target === this.odontogramExportDialog) this.closeOdontogramExportDialog();
+	};
+
+	private handleOdontogramExportDialogCancel = (event: Event) => {
+		event.preventDefault();
+		this.closeOdontogramExportDialog();
+	};
+
+	private syncOdontogramExportPreviewState = () => {
+		const include3d = this.odontogramExportInclude3d?.checked !== false;
+		this.odontogramExportPreviewWrap?.classList.toggle('is-off', !include3d);
+	};
+
+	private refreshOdontogramExportPreview() {
+		const capture = this.odontogram3d?.capturePng() ?? null;
+		if (this.odontogramExportPreview) {
+			if (capture?.dataUrl) {
+				this.odontogramExportPreview.src = capture.dataUrl;
+				this.odontogramExportPreview.classList.remove('hidden');
+			} else {
+				this.odontogramExportPreview.removeAttribute('src');
+				this.odontogramExportPreview.classList.add('hidden');
+			}
+		}
+		this.odontogramExportPreviewEmpty?.classList.toggle('hidden', Boolean(capture?.dataUrl));
+		this.syncOdontogramExportPreviewState();
+	}
+
+	private openOdontogramExportDialog() {
+		if (!this.odontogramExportDialog) {
+			void this.exportOdontogramPdf(true);
+			return;
+		}
+		if (this.odontogramExportInclude3d) this.odontogramExportInclude3d.checked = true;
+		this.refreshOdontogramExportPreview();
+		if (!this.odontogramExportDialog.open) this.odontogramExportDialog.showModal();
+	}
+
+	private closeOdontogramExportDialog = () => {
+		if (this.odontogramExportDialog?.open) this.odontogramExportDialog.close();
+	};
+
+	private handleOdontogramExportConfirm = () => {
+		const include3d = this.odontogramExportInclude3d?.checked !== false;
+		void this.exportOdontogramPdf(include3d);
+	};
+
+	private async exportOdontogramPdf(include3d = true) {
 		if (this.odontogramExporting) return;
 		this.odontogramExporting = true;
 		if (this.odontogramExport) this.odontogramExport.disabled = true;
+		if (this.odontogramExportConfirm) this.odontogramExportConfirm.disabled = true;
 
 		try {
-			const capture = this.odontogram3d?.capturePng() ?? null;
+			const capture = include3d ? (this.odontogram3d?.capturePng() ?? null) : null;
 			const customerName = String(this.profileNameNode?.textContent || 'Cliente').trim() || 'Cliente';
 			const clinicName = String(this.dataset.orgName || '').trim();
 			const logoUrl = String(this.dataset.orgLogoUrl || '').trim();
@@ -1768,6 +1883,7 @@ class CustomerManager extends HTMLElement {
 					};
 				}),
 			});
+			this.closeOdontogramExportDialog();
 		} catch (error) {
 			if (import.meta.env.DEV) {
 				console.error('[odontogram-pdf] no se pudo generar el PDF', error);
@@ -1775,6 +1891,7 @@ class CustomerManager extends HTMLElement {
 		} finally {
 			this.odontogramExporting = false;
 			if (this.odontogramExport) this.odontogramExport.disabled = false;
+			if (this.odontogramExportConfirm) this.odontogramExportConfirm.disabled = false;
 		}
 	}
 

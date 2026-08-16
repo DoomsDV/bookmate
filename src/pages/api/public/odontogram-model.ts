@@ -1,12 +1,13 @@
 import type { APIRoute } from 'astro';
 
 const DEFAULT_GLB_URL =
-	'https://objectstorage.sa-saopaulo-1.oraclecloud.com/n/gr7djv0kcgrr/b/bucket-hasel-aoxdev/o/odontograma%2Fdientes.glb';
+	'https://objectstorage.sa-saopaulo-1.oraclecloud.com/n/gr7djv0kcgrr/b/bucket-hasel-aoxdev/o/odontograma%2Fboca.glb';
 
 const isRemoteGlbUrl = (value: string) =>
 	/^https?:\/\//i.test(value) &&
 	!value.includes('/models/odontogram/') &&
-	!value.includes('/api/public/odontogram-model');
+	!value.includes('/api/public/odontogram-model') &&
+	!value.includes('dientes.glb');
 
 const isGlbBuffer = (buffer: ArrayBuffer) => {
 	if (buffer.byteLength < 12) return false;
