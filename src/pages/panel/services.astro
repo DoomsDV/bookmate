@@ -171,6 +171,26 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 						data-field-error="name"></span>
 				</label>
 
+				<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+					<span>
+						Qué incluye
+						<span class="font-medium text-(--on-surface-variant)"> (opcional)</span>
+					</span>
+					<textarea
+						name="public_includes"
+						maxlength="2000"
+						rows="3"
+						class="w-full min-w-0 resize-y rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-normal outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
+						placeholder="Una línea por ítem. Ej: Relajación profunda"
+					></textarea>
+					<span class="text-xs font-medium text-(--on-surface-variant)">
+						Se muestra en la reserva pública solo si hay al menos un ítem.
+					</span>
+					<span
+						class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+						data-field-error="public_includes"></span>
+				</label>
+
 				<div class="grid gap-3">
 				<div class="grid grid-cols-2 gap-5">
 					<label
@@ -492,6 +512,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		image_name?: string;
 		image_mime?: string;
 		clear_image?: 0 | 1;
+		public_includes?: string | null;
 	};
 
 	type ServiceDetail = {
@@ -505,6 +526,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		requires_deposit?: 0 | 1 | boolean | null;
 		deposit_type?: "PERCENT" | "FIXED" | string | null;
 		deposit_value?: number | null;
+		public_includes?: string | null;
 	};
 
 	class ServiceManager extends HTMLElement {
@@ -559,6 +581,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		private formEls!: {
 			fieldset: HTMLFieldSetElement | null;
 			name: HTMLInputElement | null;
+			publicIncludes: HTMLTextAreaElement | null;
 			duration: HTMLInputElement | null;
 			status: HTMLSelectElement | null;
 			fieldErrors: HTMLElement[];
@@ -625,6 +648,9 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				) || null,
 				name: this.els.form?.querySelector<HTMLInputElement>(
 					'[name="name"]',
+				) || null,
+				publicIncludes: this.els.form?.querySelector<HTMLTextAreaElement>(
+					'[name="public_includes"]',
 				) || null,
 				duration: this.els.form?.querySelector<HTMLInputElement>(
 					'[name="duration_minutes"]',
@@ -860,6 +886,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		private fillForm(service: ServiceDetail) {
 			if (this.formEls.name)
 				this.formEls.name.value = String(service?.name || "");
+			if (this.formEls.publicIncludes)
+				this.formEls.publicIncludes.value = String(service?.public_includes || "");
 			if (this.formEls.duration)
 				this.formEls.duration.value =
 					typeof service?.duration_minutes === "number"
@@ -907,6 +935,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		private resetFormValues() {
 			[
 				this.formEls.name,
+				this.formEls.publicIncludes,
 				this.formEls.duration,
 				this.els.priceInput,
 			].forEach((el) => el && (el.value = ""));
@@ -1320,6 +1349,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				);
 			}
 
+			const publicIncludes = String(formData.get("public_includes") || "").trim();
 			const payload: ServiceSubmitPayload = {
 				name,
 				duration_minutes: duration,
@@ -1327,6 +1357,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				hide_public_price: hidePublicPrice as 0 | 1,
 				hidden_public_price_label:
 					hidePublicPrice === 1 ? hiddenPriceLabel || null : null,
+				public_includes: publicIncludes || null,
 			};
 			if (priceRaw) payload.price = Number(priceRaw);
 

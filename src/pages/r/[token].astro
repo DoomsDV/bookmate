@@ -11,7 +11,9 @@ import {
 } from '../../lib/public-booking';
 import { buildPublicProfilePath } from '../../lib/public-profile-url';
 import {
-	formatFriendlyDateTime,
+	formatFriendlyTime,
+	formatReservationStatusLabel,
+	formatTicketDate,
 	isReservationPast,
 	parseApiDateTime,
 } from '../../lib/booking-datetime';
@@ -35,7 +37,15 @@ try {
 }
 
 const serializedReservation = reservation
-	? JSON.stringify(reservation).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
+	? JSON.stringify((() => {
+			const {
+				service_includes: _includes,
+				visit_history: _history,
+				last_recommendations: _recs,
+				...manageReservation
+			} = reservation;
+			return manageReservation;
+		})()).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
 	: '';
 
 const isCancelled =
@@ -46,10 +56,10 @@ const refundPending = isCancelled && refundStatus === 'PENDING';
 const refundSent = isCancelled && refundStatus === 'SENT';
 const canClaimRefund =
 	refundPending &&
-	Number((reservation as any)?.can_claim_refund || 0) === 1 &&
-	Number((reservation as any)?.refund_claim_open || 0) === 0;
+	Number(reservation?.can_claim_refund || 0) === 1 &&
+	Number(reservation?.refund_claim_open || 0) === 0;
 const claimAlreadyOpen =
-	refundPending && Number((reservation as any)?.refund_claim_open || 0) === 1;
+	refundPending && Number(reservation?.refund_claim_open || 0) === 1;
 const refundAmountLabel =
 	reservation?.refund_amount != null
 		? new Intl.NumberFormat('es-PY', {
@@ -59,9 +69,13 @@ const refundAmountLabel =
 			}).format(Number(reservation.refund_amount) || 0)
 		: '';
 const reservationStart = reservation ? parseApiDateTime(reservation.start_time) : null;
-const formattedCurrentDate = reservationStart ? formatFriendlyDateTime(reservationStart) : '';
+const formattedCurrentDate = reservationStart ? formatTicketDate(reservationStart) : '';
+const formattedCurrentTime = reservationStart ? `${formatFriendlyTime(reservationStart)} hs` : '';
 const isPastReservation =
 	Boolean(reservation) && !isCancelled && isReservationPast(reservation);
+const statusMeta = formatReservationStatusLabel(reservation?.status || '', {
+	isPast: isPastReservation,
+});
 const professionalSlug = String(reservation?.professional_slug || '').trim();
 const organizationSlug = String(reservation?.organization_slug || '').trim();
 const rebookHref =
@@ -78,7 +92,6 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 let reservationLocations: PublicBookingLocation[] =
 	reservation?.locations && reservation.locations.length > 0 ? reservation.locations : [];
 const professionalImageUrl = String(reservation?.professional_image_url || '').trim();
-const serviceImageUrl = String(reservation?.service_image_url || '').trim();
 const durationMinutes = Number(reservation?.duration_minutes || 0) || 0;
 
 if (reservation && reservationLocations.length === 0) {
@@ -96,6 +109,11 @@ const organizationDisplayName =
 	String(reservation?.organization_name || '').trim() || organizationSlug || 'Hasel';
 const locationAddress = String(reservation?.location_address || '').trim();
 const durationLabel = durationMinutes > 0 ? `${durationMinutes} min` : '';
+const serviceIncludes = reservation?.service_includes?.filter(Boolean) ?? [];
+const visitHistory = reservation?.visit_history ?? [];
+const visitHistoryCount = Number(reservation?.visit_history_count ?? visitHistory.length) || 0;
+const professionalFirstName =
+	professionalDisplayName.split(/\s+/).find(Boolean) || professionalDisplayName || 'este profesional';
 const serializedLocations = reservation
 	? JSON.stringify(reservationLocations).replace(/</g, '\\u003c').replace(/-->/g, '--\\>')
 	: '';
@@ -123,122 +141,116 @@ const serializedLocations = reservation
 					<script type="application/json" id="reservation-locations-json" set:html={serializedLocations}></script>
 
 					<article class="public-booking-sheet reservation-manage__sheet">
-						<header class="public-booking-profile reservation-manage__profile">
-							<div class="public-booking-profile__inner">
-								{professionalImageUrl ? (
-									<img
-										src={professionalImageUrl}
-										alt={`Foto de ${professionalDisplayName}`}
-										loading="lazy"
-										class="public-booking-avatar"
-									/>
-								) : (
-									<div
-										class="public-booking-avatar public-booking-avatar--empty"
-										aria-label={`Sin foto de ${professionalDisplayName}`}
-										role="img"
-									>
-										<span class="material-symbols-rounded">account_circle</span>
-									</div>
-								)}
-								<div class="public-booking-profile__text">
-									<p class="public-booking-profile__eyebrow">{organizationDisplayName}</p>
-									<h1 class="public-booking-profile__title">{professionalDisplayName}</h1>
-									<p class="public-booking-profile__subtitle">Gestionar reserva</p>
-								</div>
-							</div>
-						</header>
+						<div class="reservation-manage__column">
+						<h1 class="reservation-manage__title">Gestionar reserva</h1>
 
 						<div class="reservation-manage__body">
-							<div class="reservation-manage__hero">
-								<div class="reservation-manage__schedule">
-									<span class="reservation-manage__schedule-icon material-symbols-rounded" aria-hidden="true">
-										calendar_month
+							<article class="reservation-ticket">
+								<header class="reservation-ticket__header">
+									{professionalImageUrl ? (
+										<img
+											src={professionalImageUrl}
+											alt={`Foto de ${professionalDisplayName}`}
+											loading="lazy"
+											class="reservation-ticket__avatar"
+										/>
+									) : (
+										<div
+											class="reservation-ticket__avatar reservation-ticket__avatar--empty"
+											aria-label={`Sin foto de ${professionalDisplayName}`}
+											role="img"
+										>
+											<span class="material-symbols-rounded">account_circle</span>
+										</div>
+									)}
+									<div class="reservation-ticket__who">
+										<p class="reservation-ticket__name">{professionalDisplayName}</p>
+										<p class="reservation-ticket__org">{organizationDisplayName}</p>
+									</div>
+									<span
+										class="reservation-ticket__status"
+										data-status-text
+										data-status={statusMeta.variant}
+									>
+										{statusMeta.label}
 									</span>
-									<div class="reservation-manage__schedule-text">
-										<span class="reservation-manage__micro">Horario actual</span>
-										<strong class="reservation-manage__schedule-value" data-current-date>
+								</header>
+
+								<div class="reservation-ticket__service">
+									<p class="reservation-ticket__service-name">{reservation.service_name}</p>
+									{durationLabel && (
+										<p class="reservation-ticket__service-meta">{durationLabel}</p>
+									)}
+								</div>
+
+								{serviceIncludes.length > 0 && (
+									<ul class="reservation-ticket__includes">
+										{serviceIncludes.map((item) => (
+											<li>{item}</li>
+										))}
+									</ul>
+								)}
+
+								<div class="reservation-ticket__tear" aria-hidden="true"></div>
+
+								<div class="reservation-ticket__details">
+									<div class="reservation-ticket__field">
+										<span class="reservation-ticket__label">Fecha</span>
+										<strong class="reservation-ticket__value" data-current-date>
 											{formattedCurrentDate}
 										</strong>
 									</div>
-									<span class="reservation-manage__status" data-status-text>{reservation.status}</span>
-								</div>
-
-								<div class="reservation-manage__service">
-									{serviceImageUrl ? (
-										<img
-											src={serviceImageUrl}
-											alt=""
-											loading="lazy"
-											class="reservation-manage__service-thumb"
-										/>
-									) : (
-										<span class="reservation-manage__service-thumb reservation-manage__service-thumb--empty" aria-hidden="true">
-											<span class="material-symbols-rounded">spa</span>
-										</span>
-									)}
-									<div class="reservation-manage__service-text">
-										<span class="reservation-manage__micro">Servicio</span>
-										<strong class="reservation-manage__service-name">{reservation.service_name}</strong>
-										{durationLabel && (
-											<span class="reservation-manage__service-meta">{durationLabel}</span>
-										)}
+									<div class="reservation-ticket__field">
+										<span class="reservation-ticket__label">Hora</span>
+										<strong class="reservation-ticket__value" data-current-time>
+											{formattedCurrentTime}
+										</strong>
 									</div>
+									<div class="reservation-ticket__field">
+										<span class="reservation-ticket__label">Sucursal</span>
+										<strong class="reservation-ticket__value" data-location-name>
+											{reservation.location_name}
+										</strong>
+									</div>
+									{isCancelled || isPastReservation ? (
+										<div class="reservation-ticket__field">
+											<span class="reservation-ticket__label">Dirección</span>
+											<strong class="reservation-ticket__value" data-location-address>
+												{locationAddress || '—'}
+											</strong>
+										</div>
+									) : locationAddress ? (
+										<button
+											type="button"
+											class="reservation-ticket__field reservation-ticket__field--map"
+											data-manage-open-map
+											aria-label={`Ver mapa de ${reservation.location_name}`}
+										>
+											<span class="reservation-ticket__label">Dirección</span>
+											<strong class="reservation-ticket__value" data-location-address>
+												{locationAddress}
+											</strong>
+										</button>
+									) : (
+										<div class="reservation-ticket__field">
+											<span class="reservation-ticket__label">Dirección</span>
+											<strong class="reservation-ticket__value" data-location-address>
+												—
+											</strong>
+										</div>
+									)}
 								</div>
-							</div>
+							</article>
 
-							{isCancelled || isPastReservation ? (
-								<div class="reservation-manage__location">
-									<span
-										class="reservation-manage__location-map reservation-manage__location-map--brand"
-										aria-hidden="true"
-									>
-										<span class="material-symbols-rounded">location_on</span>
+							{visitHistoryCount > 0 && (
+								<p class="reservation-manage__history-summary">
+									<span>
+										Citas previas con {professionalFirstName}: {visitHistoryCount}
 									</span>
-									<span class="reservation-manage__location-text">
-										<span class="reservation-manage__micro">Sucursal</span>
-										<strong class="reservation-manage__location-name" data-location-name>
-											{reservation.location_name}
-										</strong>
-										<span
-											class="reservation-manage__location-address"
-											data-location-address
-											hidden={!locationAddress}
-										>
-											{locationAddress}
-										</span>
-									</span>
-								</div>
-							) : (
-								<button
-									type="button"
-									class="reservation-manage__location"
-									data-manage-open-map
-									aria-label={`Ver mapa de ${reservation.location_name}`}
-								>
-									<span
-										class="reservation-manage__location-map reservation-manage__location-map--brand"
-										aria-hidden="true"
-									>
-										<span class="material-symbols-rounded">location_on</span>
-									</span>
-									<span class="reservation-manage__location-text">
-										<span class="reservation-manage__micro">Sucursal</span>
-										<strong class="reservation-manage__location-name" data-location-name>
-											{reservation.location_name}
-										</strong>
-										<span
-											class="reservation-manage__location-address"
-											data-location-address
-											hidden={!locationAddress}
-										>
-											{locationAddress}
-										</span>
-									</span>
-									<span class="reservation-manage__location-chevron material-symbols-rounded" aria-hidden="true">
-										chevron_right
-									</span>
-								</button>
+									<button type="button" data-open-visit-history-modal>
+										Ver historial completo
+									</button>
+								</p>
 							)}
 
 							{isCancelled ? (
@@ -326,12 +338,12 @@ const serializedLocations = reservation
 										<span class="material-symbols-rounded" aria-hidden="true">event_repeat</span>
 										Reprogramar reserva
 									</button>
-									<button type="button" class="reservation-danger" data-cancel-reservation>
-										<span class="material-symbols-rounded" aria-hidden="true">event_busy</span>
+									<button type="button" class="reservation-manage__cancel" data-cancel-reservation>
 										Cancelar reserva
 									</button>
 								</div>
 							)}
+						</div>
 						</div>
 					</article>
 
@@ -372,6 +384,56 @@ const serializedLocations = reservation
 							></p>
 						</div>
 					</dialog>
+
+					{visitHistoryCount > 0 && (
+						<dialog class="reservation-history-modal" data-visit-history-modal>
+							<div class="reservation-history-modal__sheet">
+								<div class="reservation-history-modal__handle" aria-hidden="true">
+									<span></span>
+								</div>
+								<div class="reservation-history-modal__header">
+									<div>
+										<h2 class="reservation-history-modal__title">
+											Citas con {professionalFirstName}
+										</h2>
+										<p class="reservation-history-modal__subtitle">
+											{visitHistoryCount} {visitHistoryCount === 1 ? 'visita previa' : 'visitas previas'}
+										</p>
+									</div>
+									<button
+										type="button"
+										class="reservation-history-modal__close"
+										data-visit-history-close
+										aria-label="Cerrar historial"
+									>
+										<span class="material-symbols-rounded">close</span>
+									</button>
+								</div>
+								<div class="reservation-history-modal__scroll">
+									<ul class="reservation-history-modal__list">
+										{visitHistory.map((visit) => {
+											const visitStart = parseApiDateTime(visit.start_time);
+											const visitStatus = formatReservationStatusLabel(visit.status, {
+												isPast: String(visit.status).toUpperCase() === 'CONFIRMADO',
+											});
+											return (
+												<li class="reservation-history-modal__item">
+													<span class="reservation-history-modal__service">
+														{visit.service_name}
+													</span>
+													<span class="reservation-history-modal__meta">
+														{visitStart ? formatTicketDate(visitStart) : visit.start_time}
+														{' · '}
+														{visitStatus.label}
+													</span>
+												</li>
+											);
+										})}
+									</ul>
+								</div>
+							</div>
+						</dialog>
+					)}
 
 					{!isCancelled && !isPastReservation && (
 					<>
@@ -604,18 +666,17 @@ const serializedLocations = reservation
 <style is:global>
 .reservation-shell {
 	font-family: var(--font-body);
-	/* Misma paleta Material 3 dark que la reserva pública */
-	--surface-background: #1b1b1b;
+	--surface-background: #0a0a0a;
 	--surface-bright: #121214;
-	--surface-container-lowest: #141414;
-	--surface-container-low: #1b1b1b;
+	--surface-container-lowest: #0a0a0a;
+	--surface-container-low: #141414;
 	--surface-container: #1b1b1b;
 	--surface-container-high: #252528;
 	--surface-container-highest: #2e2e32;
 	--outline: #44474e;
-	--outline-variant: #44474e;
-	--on-surface: #e2e2e9;
-	--on-surface-variant: #c4c6d0;
+	--outline-variant: #52525b;
+	--on-surface: #fafafa;
+	--on-surface-variant: #a1a1aa;
 	--primary: #a8c7fa;
 	--on-primary: #062e6f;
 	--primary-container: #0842a0;
@@ -628,6 +689,7 @@ const serializedLocations = reservation
 	--error: #ffb4ab;
 	--error-container: #93000a;
 	--on-error-container: #ffdad6;
+	--ticket-surface: #27272a;
 }
 
 .reservation-manage {
@@ -643,254 +705,457 @@ const serializedLocations = reservation
 	box-shadow: none;
 }
 
-.reservation-manage__profile {
-	margin: 0 0 1.25rem;
-	padding: 0;
-	background: transparent;
+.reservation-manage__column {
+	width: 100%;
+	max-width: 36rem;
+	margin-inline: auto;
 }
 
-@media (max-width: 430px) {
-	.reservation-shell {
-		padding-top: 0.85rem;
-	}
-
-	.reservation-shell .reservation-manage__profile {
-		margin-bottom: 1rem;
-	}
-
-	.reservation-shell .reservation-manage__profile .public-booking-profile__inner {
-		gap: 0.7rem;
-		padding-top: 0.65rem;
-		padding-bottom: 0.35rem;
-	}
-
-	.reservation-shell .reservation-manage__profile .public-booking-avatar {
-		width: 8.1rem;
-		height: 8.1rem;
-	}
-
-	.reservation-shell
-		.reservation-manage__profile
-		.public-booking-avatar--empty
-		.material-symbols-rounded {
-		font-size: 2.97rem;
-	}
+.reservation-manage__title {
+	margin: 0 0 1.15rem;
+	font-size: clamp(1.35rem, 3.2vw, 1.7rem);
+	font-weight: 600;
+	letter-spacing: -0.03em;
+	line-height: 1.15;
+	color: var(--on-surface);
+	text-wrap: balance;
 }
 
 .reservation-manage__body {
 	display: grid;
-	gap: 1rem;
+	gap: 1.15rem;
 	padding: 0;
 	background: transparent;
 }
 
-.reservation-manage__hero {
+.reservation-ticket {
 	display: grid;
-	gap: 0.85rem;
+	gap: 1rem;
+	padding: 1.15rem 1.15rem 1.25rem;
+	border-radius: 1.5rem;
+	background: var(--ticket-surface);
+	border: 0;
+	box-shadow:
+		0 10px 15px -3px rgb(0 0 0 / 0.5),
+		0 4px 6px -4px rgb(0 0 0 / 0.5);
+	overflow: hidden;
 }
 
-.reservation-manage__micro {
-	display: block;
-	margin: 0 0 0.2rem;
-	font-size: 0.7rem;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: #9ca3af;
-}
-
-.reservation-manage__schedule {
+.reservation-ticket__header {
 	display: flex;
-	align-items: flex-start;
-	gap: 0.85rem;
-	padding: 1.1rem 1.15rem;
-	border-radius: 1.35rem;
-	border: 1px solid color-mix(in srgb, var(--outline-variant) 65%, transparent);
-	background: #1e1e1e;
-}
-
-.reservation-manage__schedule-icon {
-	flex: 0 0 auto;
-	margin-top: 0.15rem;
-	font-size: 1.55rem;
-	color: var(--primary);
-}
-
-.reservation-manage__schedule-text {
-	flex: 1 1 auto;
+	align-items: center;
+	gap: 0.75rem;
 	min-width: 0;
 }
 
-.reservation-manage__schedule-value {
-	display: block;
-	font-size: clamp(1.15rem, 3.4vw, 1.45rem);
-	font-weight: 700;
-	line-height: 1.25;
-	letter-spacing: -0.02em;
-	color: var(--on-surface);
-}
-
-.reservation-manage__status {
+.reservation-ticket__avatar {
 	flex: 0 0 auto;
-	align-self: center;
-	padding: 0.35rem 0.7rem;
-	border-radius: 999px;
-	background: color-mix(in srgb, var(--primary) 16%, #1e1e1e);
-	border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent);
-	color: var(--primary);
-	font-size: 0.68rem;
-	font-weight: 800;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	white-space: nowrap;
-}
-
-.reservation-manage__service {
-	display: flex;
-	align-items: center;
-	gap: 0.9rem;
-	padding: 0.9rem 1rem;
-	border-radius: 1.35rem;
-	border: 1px solid color-mix(in srgb, var(--outline-variant) 65%, transparent);
-	background: #1e1e1e;
-}
-
-.reservation-manage__service-thumb {
-	flex: 0 0 auto;
-	width: 4.25rem;
-	height: 4.25rem;
-	border-radius: 1rem;
+	width: 2.75rem;
+	height: 2.75rem;
+	border-radius: 0.85rem;
 	object-fit: cover;
 	background: #2b2b2f;
 }
 
-.reservation-manage__service-thumb--empty {
-	display: inline-grid;
+.reservation-ticket__avatar--empty {
+	display: grid;
 	place-items: center;
 	color: var(--on-surface-variant);
 }
 
-.reservation-manage__service-thumb--empty .material-symbols-rounded {
-	font-size: 1.6rem;
+.reservation-ticket__avatar--empty .material-symbols-rounded {
+	font-size: 1.45rem;
 }
 
-.reservation-manage__service-text {
-	min-width: 0;
+.reservation-ticket__who {
 	flex: 1 1 auto;
+	min-width: 0;
 }
 
-.reservation-manage__service-name {
-	display: block;
-	font-size: 1.08rem;
-	font-weight: 700;
+.reservation-ticket__name {
+	margin: 0;
+	font-size: 0.98rem;
+	font-weight: 600;
 	line-height: 1.25;
 	color: var(--on-surface);
 }
 
-.reservation-manage__service-meta {
-	display: block;
-	margin-top: 0.2rem;
-	font-size: 0.88rem;
+.reservation-ticket__org {
+	margin: 0.15rem 0 0;
+	font-size: 0.8rem;
+	font-weight: 500;
+	line-height: 1.3;
 	color: var(--on-surface-variant);
 }
 
-.reservation-manage__location {
-	display: flex;
-	align-items: center;
-	gap: 0.85rem;
-	width: 100%;
-	padding: 0.85rem 1rem;
-	border-radius: 1.35rem;
-	border: 1px solid color-mix(in srgb, var(--outline-variant) 65%, transparent);
-	background: #1e1e1e;
-	color: inherit;
-	font: inherit;
-	text-align: left;
-	cursor: default;
-}
-
-button.reservation-manage__location {
-	cursor: pointer;
-	transition: border-color 0.15s ease, background 0.15s ease;
-}
-
-button.reservation-manage__location:hover {
-	border-color: color-mix(in srgb, var(--primary) 40%, var(--outline-variant));
-	background: color-mix(in srgb, var(--primary) 8%, #1e1e1e);
-}
-
-.reservation-manage__location-map {
-	position: relative;
+.reservation-ticket__status {
 	flex: 0 0 auto;
-	width: 4.25rem;
-	height: 4.25rem;
-	overflow: hidden;
-	border-radius: 0.95rem;
-	background:
-		radial-gradient(
-			ellipse 80% 70% at 20% 15%,
-			color-mix(in srgb, var(--primary) 28%, transparent),
-			transparent 60%
-		),
-		linear-gradient(
-			145deg,
-			color-mix(in srgb, var(--primary-container) 55%, var(--surface-container-high)),
-			var(--surface-container-highest) 55%,
-			color-mix(in srgb, var(--primary-container) 35%, var(--surface-container-high))
-		);
+	align-self: flex-start;
+	margin-top: 0.1rem;
+	padding: 0.28rem 0.62rem;
+	border-radius: 0.55rem;
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	line-height: 1.2;
+	white-space: nowrap;
+	background: color-mix(in srgb, var(--tertiary) 16%, var(--ticket-surface));
+	color: var(--tertiary);
 }
 
-.reservation-manage__location-map--brand {
-	display: grid;
-	place-items: center;
-	color: var(--primary);
+.reservation-ticket__status[data-status='pending'] {
+	background: color-mix(in srgb, #fbbf24 16%, var(--ticket-surface));
+	color: #fbbf24;
 }
 
-.reservation-manage__location-map--brand .material-symbols-rounded {
-	font-size: 1.55rem;
+.reservation-ticket__status[data-status='cancelled'] {
+	background: color-mix(in srgb, var(--error) 16%, var(--ticket-surface));
+	color: var(--error);
 }
 
-.reservation-manage__location-map-img {
-	display: block;
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
+.reservation-ticket__status[data-status='past'] {
+	background: color-mix(in srgb, var(--on-surface-variant) 12%, var(--ticket-surface));
+	color: var(--on-surface-variant);
 }
 
-.reservation-manage__location-text {
-	flex: 1 1 auto;
-	min-width: 0;
-}
-
-.reservation-manage__location-name {
-	display: block;
-	font-size: 1rem;
-	font-weight: 700;
+.reservation-ticket__service-name {
+	margin: 0;
+	font-size: clamp(1.45rem, 4.2vw, 1.85rem);
+	font-weight: 650;
+	letter-spacing: -0.03em;
+	line-height: 1.15;
 	color: var(--on-surface);
+	text-wrap: balance;
 }
 
-.reservation-manage__location-address {
-	display: block;
-	margin-top: 0.15rem;
-	font-size: 0.88rem;
+.reservation-ticket__service-meta {
+	margin: 0.35rem 0 0;
+	font-size: 0.9rem;
+	font-weight: 500;
+	color: var(--on-surface-variant);
+}
+
+.reservation-ticket__includes {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 0.2rem;
+	max-height: 4.75rem;
+	overflow: hidden;
+}
+
+.reservation-ticket__includes li {
+	position: relative;
+	margin: 0;
+	padding: 0.1rem 0 0.1rem 0.85rem;
+	font-size: 0.82rem;
+	font-weight: 500;
 	line-height: 1.35;
 	color: var(--on-surface-variant);
 }
 
-.reservation-manage__location-address[hidden] {
+.reservation-ticket__includes li::before {
+	content: '';
+	position: absolute;
+	top: 0.55em;
+	left: 0;
+	width: 0.32rem;
+	height: 0.32rem;
+	border-radius: 999px;
+	background: var(--primary);
+}
+
+.reservation-ticket__tear {
+	position: relative;
+	height: 0;
+	margin: 0.15rem -1.15rem 0;
+	border-top: 1px dashed color-mix(in srgb, var(--outline-variant) 85%, transparent);
+}
+
+.reservation-ticket__tear::before,
+.reservation-ticket__tear::after {
+	content: '';
+	position: absolute;
+	top: -0.5rem;
+	width: 1rem;
+	height: 1rem;
+	border-radius: 50%;
+	background: var(--surface-background);
+}
+
+.reservation-ticket__tear::before {
+	left: -0.5rem;
+}
+
+.reservation-ticket__tear::after {
+	right: -0.5rem;
+}
+
+.reservation-ticket__details {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1rem 1.25rem;
+	padding-top: 1.25rem;
+}
+
+@media (max-width: 380px) {
+	.reservation-ticket__details {
+		grid-template-columns: 1fr 1fr;
+		gap: 0.85rem 0.75rem;
+	}
+}
+
+.reservation-ticket__field {
+	display: grid;
+	gap: 0.35rem;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	color: inherit;
+	font: inherit;
+	text-align: left;
+}
+
+.reservation-ticket__field--map {
+	cursor: pointer;
+	border-radius: 0.65rem;
+	margin: -0.35rem;
+	padding: 0.35rem;
+	transition: background 0.2s ease;
+}
+
+.reservation-ticket__field--map:hover {
+	background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+
+.reservation-ticket__field--map:focus-visible {
+	outline: 2px solid var(--primary);
+	outline-offset: 2px;
+}
+
+.reservation-ticket__label {
+	display: block;
+	margin: 0;
+	font-size: 0.75rem;
+	font-weight: 500;
+	line-height: 1.2;
+	color: #71717a;
+}
+
+.reservation-ticket__value {
+	display: block;
+	margin: 0;
+	font-size: clamp(0.95rem, 2.8vw, 1.08rem);
+	font-weight: 600;
+	line-height: 1.25;
+	color: #ffffff;
+	text-wrap: pretty;
+}
+
+.reservation-manage__history-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	margin: 0;
+	font-size: 0.88rem;
+	font-weight: 500;
+	line-height: 1.35;
+	color: var(--on-surface-variant);
+}
+
+.reservation-manage__history-summary button {
+	flex: 0 0 auto;
+	border: 0;
+	background: transparent;
+	color: var(--primary);
+	font: inherit;
+	font-size: 0.84rem;
+	font-weight: 500;
+	cursor: pointer;
+	text-decoration: none;
+	text-underline-offset: 0.15em;
+	transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+
+.reservation-manage__history-summary button:hover,
+.reservation-manage__history-summary button:focus-visible {
+	color: var(--primary-hover);
+	text-decoration: underline;
+}
+
+.reservation-manage__history-summary button:focus-visible {
+	outline: 2px solid var(--primary);
+	outline-offset: 2px;
+	border-radius: 0.25rem;
+}
+
+.reservation-history-modal {
+	position: fixed;
+	inset: 0;
+	width: min(92vw, 44rem);
+	max-width: min(92vw, 44rem);
+	max-height: min(92vh, 48rem);
+	margin: auto;
+	padding: 0;
+	border: 0;
+	border-radius: 1.75rem;
+	background: var(--surface-bright);
+	color: var(--on-surface);
+	box-shadow: 0 24px 64px rgb(0 0 0 / 0.55);
+	overflow: hidden;
+	z-index: 80;
+}
+
+.reservation-history-modal::backdrop {
+	background: rgb(0 0 0 / 0.7);
+}
+
+.reservation-history-modal__sheet {
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	min-height: 0;
+	max-height: inherit;
+	padding: 1.35rem 1.35rem 1.5rem;
+	overflow: hidden;
+}
+
+.reservation-history-modal__scroll {
+	flex: 1 1 auto;
+	min-height: 0;
+	overflow-x: hidden;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+}
+
+.reservation-history-modal__handle {
 	display: none;
 }
 
-.reservation-manage__location-chevron {
+.reservation-history-modal__header {
+	display: flex;
 	flex: 0 0 auto;
-	color: #64748b;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.reservation-history-modal__title {
+	margin: 0;
 	font-size: 1.25rem;
+	font-weight: 600;
+	letter-spacing: -0.02em;
+	line-height: 1.25;
+	color: var(--on-surface);
+}
+
+.reservation-history-modal__subtitle {
+	margin: 0.25rem 0 0;
+	font-size: 0.875rem;
+	line-height: 1.35;
+	color: var(--on-surface-variant);
+}
+
+.reservation-history-modal__close {
+	display: grid;
+	flex: 0 0 auto;
+	place-items: center;
+	width: 2.5rem;
+	height: 2.5rem;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: var(--on-surface-variant);
+	cursor: pointer;
+	transition: background 0.2s ease, color 0.2s ease;
+}
+
+.reservation-history-modal__close:hover {
+	background: var(--surface-container-highest);
+	color: var(--on-surface);
+}
+
+.reservation-history-modal__close:focus-visible {
+	outline: 2px solid var(--primary);
+	outline-offset: 2px;
+}
+
+.reservation-history-modal__list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: grid;
+	gap: 0;
+}
+
+.reservation-history-modal__item {
+	display: grid;
+	gap: 0.2rem;
+	padding: 0.75rem 0;
+	border-top: 1px solid color-mix(in srgb, var(--outline-variant) 45%, transparent);
+}
+
+.reservation-history-modal__item:first-child {
+	padding-top: 0;
+	border-top: 0;
+}
+
+.reservation-history-modal__service {
+	font-size: 0.95rem;
+	font-weight: 650;
+	line-height: 1.3;
+	color: var(--on-surface);
+}
+
+.reservation-history-modal__meta {
+	font-size: 0.8rem;
+	line-height: 1.35;
+	color: var(--on-surface-variant);
 }
 
 .reservation-manage__actions {
 	display: grid;
-	gap: 0.7rem;
-	margin-top: 0.35rem;
+	grid-template-columns: 1fr;
+	gap: 0.35rem;
+	width: 100%;
+	margin-top: 0.15rem;
+}
+
+.reservation-manage__cancel {
+	display: flex;
+	box-sizing: border-box;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 2.75rem;
+	padding: 0.55rem 1rem;
+	border: 0;
+	border-radius: 999px;
+	background: transparent;
+	color: #fca5a5;
+	font: inherit;
+	font-weight: 500;
+	cursor: pointer;
+	transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.reservation-manage__cancel:hover {
+	background: color-mix(in srgb, #fca5a5 8%, transparent);
+	color: #fecaca;
+}
+
+.reservation-manage__cancel:active {
+	transform: scale(0.98);
+}
+
+.reservation-manage__cancel:focus-visible {
+	outline: 2px solid #fca5a5;
+	outline-offset: 2px;
 }
 
 .reservation-manage__notice {
@@ -944,7 +1209,7 @@ button.reservation-manage__location:hover {
 	padding: 0.85rem 1.35rem;
 	cursor: pointer;
 	text-decoration: none;
-	transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease;
+	transition: background 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, transform 0.15s ease;
 }
 
 .reservation-primary-action {
@@ -954,6 +1219,16 @@ button.reservation-manage__location:hover {
 
 .reservation-primary-action:hover:not(:disabled) {
 	background: var(--primary-hover);
+}
+
+.reservation-primary-action:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.reservation-primary-action:focus-visible,
+.reservation-secondary-action:focus-visible {
+	outline: 2px solid var(--primary);
+	outline-offset: 2px;
 }
 
 .reservation-primary-action:disabled {
@@ -976,15 +1251,10 @@ button.reservation-manage__location:hover {
 	background: var(--surface-container-highest);
 }
 
-.reservation-manage__actions .reservation-primary-action,
-.reservation-manage__actions .reservation-danger {
+.reservation-manage__actions .reservation-primary-action {
+	display: flex;
+	box-sizing: border-box;
 	width: 100%;
-}
-
-@media (min-width: 640px) {
-	.reservation-manage__actions {
-		grid-template-columns: 1.2fr 1fr;
-	}
 }
 
 .reservation-card {
@@ -1610,6 +1880,111 @@ button.reservation-manage__location:hover {
 
 	.reservation-reschedule-stepper [data-reschedule-step-indicator] {
 		gap: 0.85rem;
+	}
+}
+
+/* Historial: bottom sheet en mobile, modal centrado en desktop */
+@media (max-width: 639px) {
+	.reservation-history-modal {
+		inset: auto 0 0;
+		width: 100vw;
+		max-width: none;
+		max-height: min(82dvh, 40rem);
+		margin: 0;
+		border-radius: 1.6rem 1.6rem 0 0;
+		box-shadow: 0 -12px 40px rgb(0 0 0 / 0.35);
+		transform: translateY(0);
+	}
+
+	.reservation-history-modal[open] {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		max-height: min(82dvh, 40rem);
+		overflow: hidden;
+		animation: reservation-history-modal-in 300ms cubic-bezier(0.32, 0.72, 0, 1) both;
+	}
+
+	.reservation-history-modal__sheet {
+		flex: 1 1 auto;
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		gap: 0.85rem;
+		padding: 0.35rem 1.1rem calc(1.1rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	.reservation-history-modal__handle {
+		display: flex;
+		flex: 0 0 auto;
+		justify-content: center;
+		padding: 0.45rem 0 0.1rem;
+	}
+
+	.reservation-history-modal__handle span {
+		display: block;
+		width: 2.4rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 45%, transparent);
+	}
+
+	.reservation-history-modal__scroll {
+		flex: 1 1 auto;
+		min-height: 0;
+	}
+}
+
+@keyframes reservation-history-modal-in {
+	from {
+		transform: translateY(100%);
+	}
+	to {
+		transform: translateY(0);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.reservation-history-modal[open] {
+		animation: none;
+	}
+}
+
+@media (min-width: 640px) {
+	.reservation-shell .reservation-history-modal {
+		inset: unset;
+		top: 50%;
+		left: 50%;
+		right: auto;
+		bottom: auto;
+		width: min(92vw, 44rem);
+		max-width: min(92vw, 44rem);
+		max-height: min(85vh, 32rem);
+		margin: 0;
+		transform: translate(-50%, -50%);
+	}
+
+	.reservation-shell .reservation-history-modal[open] {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		animation: none;
+		transform: translate(-50%, -50%);
+		height: auto;
+		max-height: min(85vh, 32rem);
+	}
+
+	.reservation-shell .reservation-history-modal__sheet {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow: hidden;
+	}
+
+	.reservation-shell .reservation-history-modal__scroll {
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow-y: auto;
+		max-height: min(55vh, 24rem);
 	}
 }
 

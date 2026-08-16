@@ -2,8 +2,10 @@ import {
 	buildApiAppointmentTimes,
 	formatApiDate,
 	formatApiTime,
-	formatFriendlyDateTime,
+	formatFriendlyTime,
 	formatLongDateFromApiDate,
+	formatReservationStatusLabel,
+	formatTicketDate,
 	getTodayStart,
 	isReservationPast,
 	isValidApiTimeSlot,
@@ -131,13 +133,41 @@ export const initializePublicReservationPage = () => {
 	const token = root.dataset.token || '';
 	const reservationStart = parseApiDateTime(reservation.start_time);
 	const currentDate = root.querySelector<HTMLElement>('[data-current-date]');
-	if (currentDate && reservationStart) {
-		currentDate.textContent = formatFriendlyDateTime(reservationStart);
+	const currentTime = root.querySelector<HTMLElement>('[data-current-time]');
+	const statusText = root.querySelector<HTMLElement>('[data-status-text]');
+
+	const applyTicketSummary = (start: Date, status: string, isPast: boolean) => {
+		if (currentDate) currentDate.textContent = formatTicketDate(start);
+		if (currentTime) currentTime.textContent = `${formatFriendlyTime(start)} hs`;
+		if (statusText) {
+			const meta = formatReservationStatusLabel(status, { isPast });
+			statusText.textContent = meta.label;
+			statusText.dataset.status = meta.variant;
+		}
+	};
+
+	const historyModal = root.querySelector<HTMLDialogElement>('[data-visit-history-modal]');
+	const historyOpenButton = root.querySelector<HTMLButtonElement>('[data-open-visit-history-modal]');
+	const historyCloseButton = root.querySelector<HTMLButtonElement>('[data-visit-history-close]');
+	if (historyModal && historyOpenButton) {
+		const closeHistoryModal = () => historyModal.close();
+		historyOpenButton.addEventListener('click', () => historyModal.showModal());
+		historyCloseButton?.addEventListener('click', closeHistoryModal);
+		historyModal.addEventListener('click', (event) => {
+			if (event.target === historyModal) closeHistoryModal();
+		});
+		historyModal.addEventListener('cancel', (event) => {
+			event.preventDefault();
+			closeHistoryModal();
+		});
 	}
 
 	const isCancelledReservation =
 		String(reservation.status || '').trim().toUpperCase() === 'CANCELADO';
 	const isPastReservation = isReservationPast(reservation);
+	if (reservationStart) {
+		applyTicketSummary(reservationStart, reservation.status || '', isPastReservation);
+	}
 	const refundStatus = String(reservation.refund_status || '').trim().toUpperCase();
 
 	const formatMoney = (amount: number) =>
@@ -229,8 +259,7 @@ export const initializePublicReservationPage = () => {
 	const openRescheduleButton = root.querySelector<HTMLButtonElement>('[data-open-reschedule-modal]');
 	const locationName = root.querySelector<HTMLElement>('[data-location-name]');
 	const locationAddressEl = root.querySelector<HTMLElement>('[data-location-address]');
-	const locationMapWrap = root.querySelector<HTMLElement>('.reservation-manage__location-map');
-	const statusText = root.querySelector<HTMLElement>('[data-status-text]');
+	const manageOpenMapButton = root.querySelector<HTMLButtonElement>('[data-manage-open-map]');
 	const calendarMonth = root.querySelector<HTMLElement>('[data-calendar-month]');
 	const calendarGrid = root.querySelector<HTMLElement>('[data-calendar-grid]');
 	const prevMonthButton = root.querySelector<HTMLButtonElement>('[data-calendar-prev]');
@@ -592,21 +621,15 @@ export const initializePublicReservationPage = () => {
 	};
 
 	const updateLocationSummary = (location: BookingLocation) => {
-		if (locationName) locationName.textContent = getLocationLabel(location);
+		const label = getLocationLabel(location);
+		if (locationName) locationName.textContent = label;
 		const address = String(location.address || '').trim();
 		if (locationAddressEl) {
-			if (address) {
-				locationAddressEl.textContent = address;
-				locationAddressEl.hidden = false;
-			} else {
-				locationAddressEl.textContent = '';
-				locationAddressEl.hidden = true;
-			}
+			locationAddressEl.textContent = address || '—';
 		}
-		if (!locationMapWrap) return;
-		// Placeholder brand: sin Static Maps, el mapa real se abre en modal MapLibre.
-		locationMapWrap.classList.add('reservation-manage__location-map--brand');
-		locationMapWrap.innerHTML = '<span class="material-symbols-rounded">location_on</span>';
+		if (manageOpenMapButton) {
+			manageOpenMapButton.setAttribute('aria-label', `Ver mapa de ${label}`);
+		}
 	};
 
 	const capitalizeLabel = (value: string) =>
@@ -890,7 +913,6 @@ export const initializePublicReservationPage = () => {
 		locationInput.value = String(location.id_location);
 		selectedSlot = '';
 		slotInput.value = '';
-		updateLocationSummary(location);
 		const rootEl = stack || locationsGrid;
 		for (const card of rootEl.querySelectorAll<HTMLElement>('.public-location-card')) {
 			const id = Number(card.dataset.locationId || 0);
@@ -1107,12 +1129,11 @@ export const initializePublicReservationPage = () => {
 			selectedSlotKey: getSelectedSlotKey(),
 			useRoulette: isMobileSlotRouletteViewport(),
 			showLocationHeader: false,
-			onSelect: (locationId, slot, location) => {
+			onSelect: (locationId, slot) => {
 				selectedSlot = slot;
 				selectedLocationId = locationId;
 				slotInput.value = slot;
 				locationInput.value = String(locationId);
-				updateLocationSummary(location);
 				updateFooterButtons();
 			},
 		});
@@ -1185,8 +1206,6 @@ export const initializePublicReservationPage = () => {
 				selectedLocationId = availableSlotGroups[0]?.location.id_location || 0;
 			}
 			locationInput.value = selectedLocationId ? String(selectedLocationId) : '';
-			const selectedLoc = getSelectedLocationGroup()?.location;
-			if (selectedLoc) updateLocationSummary(selectedLoc);
 			await enrichLocationsWithCoordinates();
 		} catch (error) {
 			availableSlotGroups = [];
@@ -1291,8 +1310,11 @@ export const initializePublicReservationPage = () => {
 		const nextStart = parseApiDateTime(updated.start_time);
 		if (!nextStart) return false;
 
-		if (statusText) statusText.textContent = String(updated.status || reservation.status || '');
-		if (currentDate) currentDate.textContent = formatFriendlyDateTime(nextStart);
+		applyTicketSummary(
+			nextStart,
+			updated.status || reservation.status || '',
+			isReservationPast(updated)
+		);
 		const matchedLocation =
 			getLocationTargets().find((loc) => loc.id_location === reservation.loc_id_location) || {
 				id_location: reservation.loc_id_location,
@@ -1360,7 +1382,6 @@ export const initializePublicReservationPage = () => {
 
 	openRescheduleButton.addEventListener('click', openRescheduleModal);
 
-	const manageOpenMapButton = root.querySelector<HTMLButtonElement>('[data-manage-open-map]');
 	manageOpenMapButton?.addEventListener('click', () => {
 		const currentLocId = toPositiveInt(locationInput.value, selectedLocationId);
 		const target =

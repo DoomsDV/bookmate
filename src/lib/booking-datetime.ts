@@ -113,13 +113,56 @@ export const formatShortDateFromApiDate = (ymd: string) => {
 export const formatHumanDateTime = (date: Date) =>
 	`${pad2(date.getDate())}-${pad2(date.getMonth() + 1)}-${date.getFullYear()} ${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
 
-/** Fecha/hora amigable: "Miércoles 29 de julio, 11:00 hs." */
-export const formatFriendlyDateTime = (date: Date) => {
-	const cap = (value: string) => (value ? value.charAt(0).toUpperCase() + value.slice(1) : value);
+const capitalizeLabel = (value: string) =>
+	value ? value.charAt(0).toUpperCase() + value.slice(1) : value;
+
+/** Fecha compacta para ticket: "19 Ago. 2026". */
+export const formatTicketDate = (date: Date) => {
+	const month = new Intl.DateTimeFormat('es-PY', { month: 'short' })
+		.format(date)
+		.replace(/\.$/, '');
+	const capMonth = month ? month.charAt(0).toUpperCase() + month.slice(1) : month;
+	return `${date.getDate()} ${capMonth}. ${date.getFullYear()}`;
+};
+
+/** Fecha amigable: "Miércoles 29 de julio". */
+export const formatFriendlyDate = (date: Date) => {
 	const weekday = new Intl.DateTimeFormat('es-PY', { weekday: 'long' }).format(date);
 	const month = new Intl.DateTimeFormat('es-PY', { month: 'long' }).format(date);
-	const time = `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
-	return `${cap(weekday)} ${date.getDate()} de ${month}, ${time} hs.`;
+	return `${capitalizeLabel(weekday)} ${date.getDate()} de ${month}`;
+};
+
+/** Hora amigable: "11:00". */
+export const formatFriendlyTime = (date: Date) =>
+	`${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+
+/** Fecha/hora amigable: "Miércoles 29 de julio, 11:00 hs." */
+export const formatFriendlyDateTime = (date: Date) =>
+	`${formatFriendlyDate(date)}, ${formatFriendlyTime(date)} hs.`;
+
+export type ReservationStatusVariant = 'confirmed' | 'pending' | 'cancelled' | 'past';
+
+export const formatReservationStatusLabel = (
+	status: string,
+	options?: { isPast?: boolean }
+): { label: string; variant: ReservationStatusVariant } => {
+	const normalized = String(status || '').trim().toUpperCase();
+	if (options?.isPast && normalized !== 'CANCELADO' && normalized !== 'AUSENTE') {
+		return { label: 'Finalizada', variant: 'past' };
+	}
+	if (normalized === 'CANCELADO' || normalized === 'AUSENTE') {
+		return { label: 'Cancelado', variant: 'cancelled' };
+	}
+	if (normalized === 'PENDIENTE') {
+		return { label: 'Pendiente', variant: 'pending' };
+	}
+	if (normalized === 'COMPLETADO') {
+		return { label: 'Completado', variant: 'past' };
+	}
+	if (normalized === 'CONFIRMADO') {
+		return { label: 'Confirmado', variant: 'confirmed' };
+	}
+	return { label: capitalizeLabel(normalized.toLowerCase()) || '—', variant: 'confirmed' };
 };
 
 export const isApiDateOnOrAfter = (date: Date, reference: Date) =>

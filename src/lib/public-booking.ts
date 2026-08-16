@@ -208,8 +208,20 @@ export interface PublicReservationDetail {
 	refund_amount?: number | null;
 	refund_alias?: string | null;
 	refund_preview?: PublicReservationRefundPreview | null;
+	can_claim_refund?: number | null;
+	refund_claim_open?: number | null;
+	service_includes?: string[];
+	visit_history?: PublicVisitHistoryItem[];
+	visit_history_count?: number;
+	last_recommendations?: string | null;
 	/** Sucursales activas de la organización (evita un 2do fetch al perfil público). */
 	locations?: PublicBookingLocation[];
+}
+
+export interface PublicVisitHistoryItem {
+	start_time: string;
+	service_name: string;
+	status: string;
 }
 
 export interface PublicReservationUpdatePayload {
@@ -873,6 +885,24 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 				policy_summary: String(p.policy_summary || '').trim() || null,
 			};
 		})(),
+		can_claim_refund: Number(source.can_claim_refund ?? 0) === 1 ? 1 : 0,
+		refund_claim_open: Number(source.refund_claim_open ?? 0) === 1 ? 1 : 0,
+		service_includes: Array.isArray(source.service_includes)
+			? source.service_includes.map((item) => String(item || '').trim()).filter(Boolean)
+			: [],
+		visit_history: Array.isArray(source.visit_history)
+			? source.visit_history.flatMap((item) => {
+					if (!item || typeof item !== 'object') return [];
+					const row = item as Record<string, unknown>;
+					const startTime = String(row.start_time || '').trim();
+					const serviceName = String(row.service_name || '').trim();
+					const status = String(row.status || '').trim();
+					if (!startTime || !serviceName) return [];
+					return [{ start_time: startTime, service_name: serviceName, status }];
+				})
+			: [],
+		visit_history_count: Number(source.visit_history_count ?? 0) || 0,
+		last_recommendations: String(source.last_recommendations || '').trim() || null,
 		locations: normalizePublicBookingLocations(source.locations) as PublicBookingLocation[],
 	};
 };
