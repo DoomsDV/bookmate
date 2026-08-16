@@ -391,9 +391,10 @@ const parseAuthResponse = async (response: Response) => {
 	if (!response.ok || !isSuccessResponse(data)) {
 		const failureData = (data ?? {}) as AuthFailureResponse;
 		const fieldErrors = getFailureFieldErrors(failureData);
+		const status = response.ok ? 400 : response.status || 400;
 		throw new AuthApiError(
 			getFailureMessage(failureData, 'No fue posible autenticar la solicitud.'),
-			response.status || 400,
+			status,
 			getFailureDetails(failureData),
 			fieldErrors,
 			getEmailVerificationFailureOptions(failureData)
@@ -749,13 +750,25 @@ export const clearOrgSelectionCookie = (
 };
 
 export const refreshWithOrds = async (refreshToken: string) => {
-	const response = await fetch(REFRESH_URL, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-		body: JSON.stringify({ refresh_token: refreshToken }),
-	});
+	let response: Response;
+	try {
+		response = await fetch(REFRESH_URL, {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+			},
+			body: JSON.stringify({ refresh_token: refreshToken }),
+		});
+	} catch (error) {
+		console.error('[auth/refresh] No se pudo contactar ORDS', {
+			url: REFRESH_URL,
+			error,
+		});
+		throw new AuthApiError(
+			'No pudimos conectar con el servidor de autenticación. Probá de nuevo en unos segundos.',
+			503
+		);
+	}
 
 	return parseAuthResponse(response);
 };

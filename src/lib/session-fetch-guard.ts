@@ -95,10 +95,16 @@ const isLoginRedirectResponse = (response: Response) => {
 	}
 };
 
-const classifyRefreshResponse = (response: Response): RefreshOutcome => {
-	if (response.ok) return 'success';
+const classifyRefreshResponse = async (response: Response): Promise<RefreshOutcome> => {
 	if (response.status >= 500 || response.status === 429) return 'unavailable';
-	return 'rejected';
+	if (!response.ok) return 'rejected';
+
+	const payload = await parseApiErrorPayload(response);
+	if (payload && String(payload.status || '').toLowerCase() === 'error') {
+		return 'rejected';
+	}
+
+	return 'success';
 };
 
 const postRefresh = async () =>
@@ -115,7 +121,7 @@ const postRefresh = async () =>
 
 const runRefreshAttempt = async (): Promise<RefreshOutcome> => {
 	try {
-		const first = classifyRefreshResponse(await postRefresh());
+		const first = await classifyRefreshResponse(await postRefresh());
 		if (first !== 'rejected') return first;
 
 		// Otra pestaña pudo rotar el refresh: reintentar una vez con las cookies nuevas.
