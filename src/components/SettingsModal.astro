@@ -173,10 +173,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Solo para tu cuenta y acceso interno.</p>
 						</div>
 						<div class="grid gap-5 sm:grid-cols-2">
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre <span class="text-rose-500">*</span></span><input name="first_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
-							<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Apellido <span class="text-rose-500">*</span></span><input name="last_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+							<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre <span class="text-rose-500">*</span></span><input name="first_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+							<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Apellido <span class="text-rose-500">*</span></span><input name="last_name" maxlength="50" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
 						</div>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electrónico<input name="email" readonly class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-4 py-3 text-[0.95rem] outline-none text-(--on-surface-variant) cursor-not-allowed" /></label>
+						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">Correo electrónico<input name="email" readonly class="rounded-xl border border-(--shell-border) bg-(--control-surface) px-4 py-3 text-[0.95rem] outline-none text-(--on-surface-variant) cursor-not-allowed" /></label>
 
 						{!isAdmin ? (
 							<div
@@ -224,7 +224,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 							</p>
 						</div>
 
-						<label class="settings-public-profile-field" data-settings-public-profile-field>
+						<label class="settings-field settings-public-profile-field" data-settings-public-profile-field>
 							<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">Enlace personal <span class="text-rose-500">*</span></span>
 							<div class="flex min-w-0">
 								<span
@@ -251,13 +251,13 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 									<span class="material-symbols-rounded text-[1.1rem]" data-copy-settings-profile-url-icon>content_copy</span>
 								</button>
 							</div>
-							<span class="text-[0.84rem] font-semibold text-(--on-surface-variant)">
+							<span class="settings-field__help text-[0.84rem] font-semibold text-(--on-surface-variant)">
 								Este será tu enlace directo para que los clientes te encuentren en Hasel.
 							</span>
 							<span data-settings-profile-field-error="public_slug" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
 
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span>Teléfono público <span class="text-rose-500">*</span></span>
 							<div class="flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
 								<span class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
@@ -273,7 +273,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 									class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
 								/>
 							</div>
-							<span class="text-[0.85rem] font-medium leading-relaxed text-(--on-surface-variant)">
+							<span class="settings-field__help text-[0.85rem] font-medium leading-relaxed text-(--on-surface-variant)">
 								Teléfono de contacto de tu cuenta en Hasel. Se aplica en todos tus negocios.
 							</span>
 							<span data-settings-profile-field-error="phone_number" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
@@ -289,7 +289,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 							<h3 class="text-[1.05rem] font-bold text-(--on-surface)">Cambio de contraseña</h3>
 							<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Asegúrate de usar una contraseña fuerte y segura.</p>
 						</div>
-					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+					<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span>Contraseña actual <span class="text-rose-500">*</span></span>
 						<input
 							type="password"
@@ -306,7 +306,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 						</a>
 					</label>
 					<div class="grid gap-5 sm:grid-cols-2">
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span>Nueva contraseña <span class="text-rose-500">*</span></span>
 						<input
 							type="password"
@@ -317,7 +317,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 							class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 						/>
 					</label>
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span>Confirmar nueva contraseña <span class="text-rose-500">*</span></span>
 						<input
 							type="password"
@@ -329,7 +329,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 						/>
 					</label>
 					</div>
-					<p class="text-[0.85rem] font-medium text-(--on-surface-variant) -mt-2">
+					<p class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) -mt-2">
 						La nueva contraseña debe tener al menos 8 caracteres.
 					</p>
 					</div>
@@ -343,11 +343,11 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 						<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Personaliza la apariencia y el comportamiento de tu vista.</p>
 					</div>
 					<div class="grid gap-5">
-						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Tema del panel <span class="text-rose-500">*</span></span>
+						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Tema del panel <span class="text-rose-500">*</span></span>
 							<div class="relative">
 								<select name="panel_theme" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
 							<option value="light">Claro</option>
-							<option value="dark">Oscuro</option>
+							<option value="dark" selected>Oscuro</option>
 						</select>
 							</div>
 					</label>
@@ -386,8 +386,8 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 									<p class="text-[0.9rem] font-medium text-(--on-surface-variant)">Detalles principales de tu organización.</p>
 								</div>
 								<div class="grid gap-5">
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre del negocio <span class="text-rose-500">*</span></span><input name="name" maxlength="100" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
-									<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+									<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"><span>Nombre del negocio <span class="text-rose-500">*</span></span><input name="name" maxlength="100" required class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" /></label>
+									<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 										<span>Categoría del negocio <span class="text-rose-500">*</span></span>
 										<div class="relative">
 											<select
@@ -397,27 +397,14 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 												class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
 											></select>
 										</div>
-										<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+										<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant)">
 											Algunos complementos se muestran según la categoría de tu negocio.
 										</span>
 									</label>
 								</div>
 								<input type="hidden" name="profile_slug" />
-								<a
-									href="/panel/perfil-publico"
-									class="flex items-start gap-3 rounded-2xl border border-(--shell-border) bg-(--control-surface) px-4 py-3.5 transition hover:border-(--primary)/40 hover:bg-(--surface-bright)"
-								>
-									<span class="material-symbols-rounded mt-0.5 text-(--primary)" aria-hidden="true">public</span>
-									<span class="grid min-w-0 gap-0.5">
-										<span class="text-[0.95rem] font-bold text-(--on-surface)">Perfil Público</span>
-										<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
-											Configurá logo, descripción y enlace en Perfil Público
-										</span>
-									</span>
-									<span class="material-symbols-rounded ml-auto mt-0.5 text-(--on-surface-variant)" aria-hidden="true">chevron_right</span>
-								</a>
 								<div class="border-t border-(--shell-border) border-dashed" role="separator"></div>
-								<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+								<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 									<span>Texto por defecto para precios ocultos <span class="text-rose-500">*</span></span>
 									<input
 										name="hidden_public_price_label"
@@ -427,7 +414,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										data-hidden-price-label-input
 										class="rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10"
 									/>
-									<span class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+									<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant)">
 										Se muestra en la reserva pública cuando un servicio oculta el precio y no tiene texto propio.
 									</span>
 									<div class="mt-2 grid gap-2">
@@ -538,11 +525,13 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 											</div>
 
 											<div data-payments-tour-sipap class="grid gap-4">
-												<p class="text-[0.95rem] font-bold text-(--on-surface)">Datos para recibir la transferencia (SIPAP)</p>
-												<p class="text-[0.85rem] font-medium text-(--on-surface-variant) -mt-2">
-													Completá todos los datos para activar el cobro.
-												</p>
-												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+												<div class="grid gap-1">
+													<p class="text-[0.95rem] font-bold text-(--on-surface)">Datos para recibir la transferencia (SIPAP)</p>
+													<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">
+														Completá todos los datos para activar el cobro.
+													</p>
+												</div>
+												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 													<span>Banco / Financiera <span class="text-rose-500">*</span></span>
 													<select
 														name="bank_id"
@@ -552,7 +541,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 														<option value="">Elegí tu banco</option>
 													</select>
 												</label>
-												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 													<span>Titular de la cuenta <span class="text-rose-500">*</span></span>
 													<input
 														name="account_holder"
@@ -561,7 +550,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 														placeholder="Nombre del titular"
 													/>
 												</label>
-												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 													<span>Documento (C.I. o RUC) <span class="text-rose-500">*</span></span>
 													<input
 														name="document_id"
@@ -570,7 +559,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 														placeholder="Ej. 1234567 o 80012345-6"
 													/>
 												</label>
-												<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+												<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 													<span>Alias bancario <span class="text-rose-500">*</span></span>
 													<input
 														name="bank_alias"
@@ -604,7 +593,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 											</p>
 										</div>
 
-										<label class="hidden grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+										<label class="settings-field hidden grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 											<span>Formato de hora <span class="text-rose-500">*</span></span>
 											<div class="relative">
 												<select name="time_format" class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10">
@@ -615,7 +604,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										</label>
 
 										<label
-											class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
+											class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 											data-settings-tour-system-slot
 										>
 											<span>Intervalo de reserva (slots) <span class="text-rose-500">*</span></span>
@@ -626,7 +615,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 													class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
 												></select>
 											</div>
-											<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
+											<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
 												Frecuencia con la que se muestran horarios en la página pública.
 											</span>
 										</label>
@@ -664,7 +653,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										</div>
 
 										<label
-											class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
+											class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 											data-settings-tour-system-reminder
 										>
 											<span>Tiempo de recordatorio <span class="text-rose-500">*</span></span>
@@ -675,13 +664,13 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 													class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
 												></select>
 											</div>
-											<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
+											<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
 												Cuándo se envía el mensaje de reconfirmación al cliente.
 											</span>
 										</label>
 
 										<label
-											class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
+											class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)"
 											data-settings-tour-system-alert
 										>
 											<span>Alertas de citas no respondidas <span class="text-rose-500">*</span></span>
@@ -695,13 +684,13 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 													<option value="CANCEL">Cancelar la cita automáticamente</option>
 												</select>
 											</div>
-											<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
+											<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
 												Acción cuando el cliente no responde al recordatorio.
 											</span>
 										</label>
 
 										<label
-											class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface) hidden"
+											class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface) hidden"
 											data-settings-system-cancel-wait-field
 										>
 											<span>Tiempo límite de espera <span class="text-rose-500">*</span></span>
@@ -712,7 +701,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 													class="w-full cursor-pointer appearance-none rounded-xl border border-(--shell-border) bg-(--surface-bright) px-4 py-3 text-[0.95rem] font-semibold outline-none transition hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%3E%3Cpath%20d%3D%22M7%2010l5%205%205-5%22%20stroke%3D%22%236b7280%22%20stroke-width%3D%222%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%2F%3E%3C%2Fsvg%3E')] bg-position-[calc(100%-12px)_center] bg-no-repeat pr-10"
 												></select>
 											</div>
-											<span class="text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
+											<span class="settings-field__help text-[0.85rem] font-medium text-(--on-surface-variant) mt-0.5">
 												Es el tiempo que se da al cliente de reconfirmar antes de la cancelación automática.
 											</span>
 										</label>
@@ -725,15 +714,9 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 									></div>
 
 									<div class="grid gap-5">
-										<div class="grid gap-1">
-											<h4 class="text-[0.98rem] font-bold text-(--on-surface)">
-												Notificaciones
-											</h4>
-											<p class="text-[0.85rem] font-medium text-(--on-surface-variant)">
-												La campanita del panel siempre muestra avisos. El interruptor de abajo
-												activa el aviso en este dispositivo cuando Hasel está en segundo plano.
-											</p>
-										</div>
+										<h4 class="text-[0.98rem] font-bold text-(--on-surface)">
+											Notificaciones
+										</h4>
 
 										<div
 											class="settings-push-card rounded-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-4 shadow-sm"
@@ -744,10 +727,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 												<div class="grid min-w-0 flex-1 gap-1.5">
 													<div class="flex items-center gap-2">
 														<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">notifications_active</span>
-														<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Notificaciones</h4>
+														<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Notificaciones en este dispositivo</h4>
 													</div>
 													<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
-														Recibí avisos de nuevas citas, cambios y cancelaciones en este dispositivo.
+														Recibí alertas de tus turnos (nuevos, cambios y cancelaciones).
 													</p>
 													<p
 														class="hidden text-[0.82rem] font-semibold text-amber-700 dark:text-amber-400"
@@ -781,13 +764,11 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 													<div class="flex items-center gap-2">
 														<span class="material-symbols-rounded text-[1.25rem] text-(--primary)">group</span>
 														<h4 class="text-[0.98rem] font-bold text-(--on-surface)">
-															Recibir notificaciones de todos los profesionales
+															Notificaciones de todo el equipo
 														</h4>
 													</div>
 													<p class="text-[0.86rem] font-medium leading-relaxed text-(--on-surface-variant)">
-														También ves en la campanita las citas nuevas, cambios y cancelaciones
-														de otros profesionales. Si el push de arriba está activo, te llegan
-														además en este dispositivo.
+														Recibí también las alertas de los demás profesionales en este dispositivo.
 													</p>
 												</div>
 												<label class="settings-switch shrink-0">
@@ -862,27 +843,30 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 									<p data-settings-plan-status-hint class="mt-3 mb-0 hidden rounded-xl bg-(--surface-variant)/60 px-3 py-2 text-[0.85rem] font-medium text-(--on-surface-variant)"></p>
 								</div>
 
-								<div class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-5 grid gap-3">
-									<div class="flex items-center justify-between">
-										<div class="flex items-center gap-2">
-											<span class="material-symbols-rounded text-(--on-surface-variant)">database</span>
-											<span class="text-[0.95rem] font-bold text-(--on-surface)">Almacenamiento</span>
+								<article class="settings-plan-usage-card grid gap-[0.85rem] rounded-[1.15rem] border border-(--shell-border) bg-(--surface-bright) px-[1.2rem] py-[1.15rem]">
+									<div class="settings-plan-usage-card-head flex items-start gap-[0.85rem]">
+										<span
+											class="settings-plan-usage-icon material-symbols-rounded inline-flex size-10 shrink-0 items-center justify-center rounded-[0.85rem] bg-[color-mix(in_srgb,var(--primary)_12%,transparent)] text-[1.35rem] leading-none text-(--primary)"
+											aria-hidden="true"
+										>cloud</span>
+										<div class="grid min-w-0 gap-0.5">
+											<span class="settings-plan-usage-label text-[0.78rem] font-bold uppercase tracking-[0.05em] text-(--on-surface-variant)">Almacenamiento</span>
+											<span class="settings-plan-usage-value text-[1.05rem] font-extrabold text-(--on-surface)" data-settings-plan-storage-label>—</span>
 										</div>
-										<span class="text-[0.85rem] font-semibold text-(--on-surface-variant)" data-settings-plan-storage-label>—</span>
 									</div>
-									<div class="h-2.5 w-full overflow-hidden rounded-full bg-(--surface-variant)">
-										<div data-settings-plan-storage-bar class="h-full rounded-full bg-(--primary) transition-all" style="width:0%"></div>
+									<div
+										class="settings-plan-storage-track settings-plan-usage-track h-[0.55rem] w-full overflow-hidden rounded-full bg-[color-mix(in_srgb,var(--on-surface-variant)_38%,transparent)]"
+										role="progressbar"
+										aria-label="Almacenamiento utilizado"
+										aria-valuemin="0"
+										aria-valuemax="100"
+										aria-valuenow="0"
+										data-settings-plan-storage-track
+									>
+										<div data-settings-plan-storage-bar class="settings-plan-storage-fill h-full min-w-0 rounded-full bg-(--primary)" style="width:0%"></div>
 									</div>
-									<p class="m-0 text-[0.8rem] font-medium text-(--on-surface-variant)" data-settings-plan-storage-hint></p>
-								</div>
-
-								<div class="rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-5 grid gap-3">
-									<div class="flex items-center gap-2">
-										<span class="material-symbols-rounded text-(--on-surface-variant)">check_circle</span>
-										<span class="text-[0.95rem] font-bold text-(--on-surface)">Funciones incluidas</span>
-									</div>
-									<ul data-settings-plan-features class="m-0 grid gap-2 p-0 list-none"></ul>
-								</div>
+									<p class="settings-plan-usage-footnote m-0 text-[0.82rem] font-medium leading-[1.45] text-(--on-surface-variant)" data-settings-plan-storage-hint></p>
+								</article>
 
 								<a
 									href="/panel/plan"
@@ -1046,6 +1030,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 	import {
 		destroySearchableSelect,
 		ensureSearchableSelect,
+		setSearchableSelectValue,
 		syncSearchableSelect,
 	} from '../scripts/searchable-select';
 	import {
@@ -1261,6 +1246,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 				?.addEventListener('change', this.syncPaymentsDetailsVisibility, { signal });
 			this.bindScrollHints(signal);
 			this.bindSettingsSelects();
+			this.syncPanelThemeSelect();
 		}
 
 		disconnectedCallback() {
@@ -1433,6 +1419,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			}
 			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
 			this.resetModalScroll();
+			this.syncPanelThemeSelect();
 			void this.loadData();
 			requestAnimationFrame(() => {
 				this.resetModalScroll();
@@ -1454,7 +1441,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			let hintMessage = '';
 			if (!state.pwaInstalled) {
 				hintMessage = isIosBrowser()
-					? 'En iPhone: Compartir → Agregar a pantalla de inicio. Después abrí Hasel desde el inicio.'
+					? 'En iPhone: Primero elegí "Compartir" > "Agregar a pantalla de inicio" y abrí la app desde ahí.'
 					: 'Instalá Hasel en tu dispositivo para gestionar las notificaciones desde aquí.';
 			} else if (!state.browserSupported) {
 				hintMessage = 'Este navegador no admite notificaciones push.';
@@ -2135,6 +2122,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			this.els.tabButtons.forEach((btn) => btn.classList.toggle('is-active', btn.dataset.settingsTab === tabId));
 			this.els.panels.forEach((panel) => panel.classList.toggle('hidden', panel.dataset.settingsPanel !== tabId));
 			if (tabId === 'profile' || tabId === 'system') this.syncPushNotificationToggle();
+			if (tabId === 'preferences') this.syncPanelThemeSelect();
 			if (tabId === 'plan') void this.loadSubscription();
 			if (tabId === 'payments') void this.loadPayments();
 			this.syncTourHelpVisibility(tabId);
@@ -2312,7 +2300,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			return Number.isInteger(minutes) && minutes > 0 ? minutes : 30;
 		}
 
-		private buildExampleSlotTimes(minutes: number, count = 5) {
+		private buildExampleSlotTimes(minutes: number, count = 4) {
 			let totalMinutes = 9 * 60;
 			const times: string[] = [];
 			for (let index = 0; index < count; index += 1) {
@@ -2468,6 +2456,24 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			if (logoFile) logoFile.value = '';
 		}
 
+		private resolveActivePanelTheme(): 'light' | 'dark' {
+			const fromDom = document.documentElement.dataset.theme;
+			if (fromDom === 'dark' || fromDom === 'light') return fromDom;
+			try {
+				const stored = localStorage.getItem('bookmate-theme');
+				if (stored === 'dark' || stored === 'light') return stored;
+			} catch {
+				/* ignore quota / private mode */
+			}
+			return 'dark';
+		}
+
+		private syncPanelThemeSelect() {
+			const panelTheme = this.els.preferencesForm?.querySelector<HTMLSelectElement>('[name="panel_theme"]');
+			if (!panelTheme) return;
+			setSearchableSelectValue(panelTheme, this.resolveActivePanelTheme());
+		}
+
 		private getPanelAppearanceValues(): { theme: 'light' | 'dark' } {
 			const theme: 'light' | 'dark' =
 				this.els.preferencesForm?.querySelector<HTMLSelectElement>('[name="panel_theme"]')?.value === 'dark'
@@ -2553,13 +2559,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 				const [profileRes, workspaceRes] = await Promise.all([profilePromise, workspacePromise]);
 				this.fillProfile(profileRes.data || {});
 
-				if (this.els.preferencesForm) {
-					const panelTheme = this.els.preferencesForm.querySelector<HTMLSelectElement>('[name="panel_theme"]');
-					if (panelTheme) {
-						const storedTheme = localStorage.getItem('bookmate-theme');
-						panelTheme.value = storedTheme === 'dark' || storedTheme === 'light' ? storedTheme : 'dark';
-					}
-				}
+				this.syncPanelThemeSelect();
 
 				if (this.isAdmin && workspaceRes) {
 					this.fillWorkspace((workspaceRes.data as unknown as WorkspaceSettingsData | null) ?? null);
@@ -2609,19 +2609,37 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		}
 
 		private formatBytes(bytes: number): string {
+			return this.formatStorageUsed(bytes);
+		}
+
+		private formatStorageUsed(bytes: number): string {
 			const value = Number(bytes) || 0;
-			if (value <= 0) return '0 MB';
-			const gb = value / 1073741824;
-			if (gb >= 1) return `${gb.toFixed(gb >= 10 ? 0 : 1)} GB`;
-			const mb = value / 1048576;
-			return `${mb.toFixed(mb >= 10 ? 0 : 1)} MB`;
+			if (value <= 0) return '0 KB';
+			const kb = value / 1024;
+			const mb = value / (1024 * 1024);
+			const gb = value / (1024 * 1024 * 1024);
+			if (gb >= 1) {
+				const rounded = Math.round(gb * 10) / 10;
+				return `${Number.isInteger(rounded) ? rounded : rounded.toFixed(1)} GB`;
+			}
+			if (mb >= 1) {
+				const rounded = mb < 10 ? Math.round(mb * 10) / 10 : Math.round(mb);
+				return `${rounded} MB`;
+			}
+			return `${Math.max(1, Math.round(kb))} KB`;
+		}
+
+		private formatStorageLimit(bytes: number): string {
+			const value = Number(bytes) || 0;
+			if (value <= 0) return '0 GB';
+			const gb = value / 1024 / 1024 / 1024;
+			return `${Number.isInteger(gb) ? gb : gb.toFixed(1)} GB`;
 		}
 
 		private renderSubscription(data: any) {
 			const sub = data?.subscription ?? {};
 			const plan = data?.plan ?? {};
 			const storage = data?.storage ?? {};
-			const features: string[] = Array.isArray(data?.features) ? data.features : [];
 
 			const nameEl = this.querySelector<HTMLElement>('[data-settings-plan-name]');
 			if (nameEl) nameEl.textContent = String(plan.name || plan.code || 'Plan');
@@ -2712,57 +2730,35 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 			const usedBytes = Number(storage.used_bytes) || 0;
 			const limitBytes = Number(storage.limit_bytes) || 0;
-			const pct = limitBytes > 0 ? Math.min(100, Math.round((usedBytes / limitBytes) * 100)) : 0;
+			const pctExact = limitBytes > 0 ? Math.min(100, (usedBytes / limitBytes) * 100) : 0;
+			const pct = Math.min(100, Math.round(pctExact));
+			const pctLabel =
+				usedBytes > 0 && pctExact > 0 && pctExact < 1 ? '< 1' : String(pct);
+			const barWidth = usedBytes > 0 ? Math.min(100, Math.max(pctExact, 2)) : 0;
 			const storageLabel = this.querySelector<HTMLElement>('[data-settings-plan-storage-label]');
 			if (storageLabel) {
 				storageLabel.textContent =
 					limitBytes > 0
-						? `${this.formatBytes(usedBytes)} de ${this.formatBytes(limitBytes)}`
-						: 'No incluido en este plan';
+						? `${this.formatStorageUsed(usedBytes)} / ${this.formatStorageLimit(limitBytes)}`
+						: 'No incluido';
 			}
 			const bar = this.querySelector<HTMLElement>('[data-settings-plan-storage-bar]');
 			if (bar) {
-				bar.style.width = `${pct}%`;
-				bar.className = `h-full rounded-full transition-all ${pct >= 90 ? 'bg-rose-500' : pct >= 70 ? 'bg-amber-500' : 'bg-(--primary)'}`;
+				bar.style.width = `${barWidth}%`;
+				bar.classList.toggle('settings-plan-storage-fill--active', usedBytes > 0);
+			}
+			const track = this.querySelector<HTMLElement>('[data-settings-plan-storage-track]');
+			if (track) {
+				track.setAttribute('aria-valuenow', String(pct));
 			}
 			const storageHint = this.querySelector<HTMLElement>('[data-settings-plan-storage-hint]');
 			if (storageHint) {
 				storageHint.textContent =
-					limitBytes > 0 ? `${pct}% utilizado` : 'Actualizá a Premium para guardar archivos por cita.';
-			}
-
-			const FEATURE_LABELS: Record<string, string> = {
-				WEB_BOOKING: 'Reservas web 24/7',
-				NOTIFICATIONS: 'Notificaciones al instante',
-				CUSTOMERS: 'Gestión de clientes',
-				SERVICES: 'Servicios y catálogo',
-				TEAM_MULTI_BRANCH: 'Equipo y sucursales sin límites',
-				AI_MORNING_DIGEST: 'Resumen Inteligente (IA)',
-				VOICE_RECEPTION: 'Recepción Inteligente por voz',
-				DEPOSIT_COLLECTION: 'Cobro seguro por señas',
-				APPOINTMENT_HISTORY: 'Historial completo del cliente',
-				PROFITABILITY_ANALYTICS: 'Análisis de rentabilidad',
-			};
-			const list = this.querySelector<HTMLElement>('[data-settings-plan-features]');
-			if (list) {
-				list.replaceChildren();
-				if (features.length === 0) {
-					const li = document.createElement('li');
-					li.className = 'text-[0.88rem] font-medium text-(--on-surface-variant)';
-					li.textContent = 'Sin funciones activas.';
-					list.appendChild(li);
-				}
-				for (const code of features) {
-					const li = document.createElement('li');
-					li.className = 'flex items-center gap-2 text-[0.9rem] font-semibold text-(--on-surface)';
-					const icon = document.createElement('span');
-					icon.className = 'material-symbols-rounded text-[1.05rem] text-emerald-500';
-					icon.textContent = 'check';
-					const span = document.createElement('span');
-					span.textContent = FEATURE_LABELS[code] || code;
-					li.append(icon, span);
-					list.appendChild(li);
-				}
+					limitBytes <= 0
+						? 'Actualizá a Premium para guardar archivos por cita.'
+						: pct >= 90
+							? 'Estás cerca del límite. Podés sumar espacio extra en almacenamiento adicional.'
+							: `${pctLabel}% del espacio incluido en uso.`;
 			}
 		}
 
@@ -3449,10 +3445,112 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		font-size: 1.25rem;
 	}
 
+	[data-settings-modal] .settings-plan-usage-card {
+		display: grid;
+		gap: 0.85rem;
+		padding: 1.15rem 1.2rem;
+		border-radius: 1.15rem;
+		border: 1px solid var(--shell-border);
+		background: var(--surface-bright, #fff);
+	}
+
+	[data-settings-modal] .settings-plan-usage-card-head {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.85rem;
+	}
+
+	[data-settings-modal] .settings-plan-usage-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 0.85rem;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+		font-size: 1.35rem;
+		line-height: 1;
+		flex-shrink: 0;
+	}
+
+	[data-settings-modal] .settings-plan-usage-label {
+		font-size: 0.78rem;
+		font-weight: 700;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	[data-settings-modal] .settings-plan-usage-value {
+		font-size: 1.05rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	[data-settings-modal] .settings-plan-storage-track {
+		width: 100%;
+		height: 0.55rem;
+		overflow: hidden;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 38%, transparent);
+	}
+
+	[data-settings-modal] .settings-plan-storage-fill {
+		height: 100%;
+		min-width: 0;
+		border-radius: 999px;
+		background: var(--primary);
+		transition: width 0.3s ease;
+	}
+
+	[data-settings-modal] .settings-plan-storage-fill--active {
+		min-width: 0.45rem;
+	}
+
+	[data-settings-modal] .settings-plan-usage-footnote {
+		font-size: 0.82rem;
+		font-weight: 500;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+
 	@media (max-width: 768px) {
 		[data-settings-modal] {
+			--settings-space-micro: 0.375rem;
+			--settings-space-mini: 0.5rem;
+			--settings-space-macro: 1.75rem;
+			--settings-space-section: 2rem;
 			width: 100%;
 			max-width: 100%;
+		}
+
+		[data-settings-modal] .settings-field {
+			gap: var(--settings-space-micro);
+		}
+
+		[data-settings-modal] .settings-field__help {
+			margin-top: 0.125rem;
+			line-height: 1.45;
+		}
+
+		[data-settings-modal] form .grid.gap-4,
+		[data-settings-modal] form .grid.gap-5 {
+			gap: var(--settings-space-macro);
+		}
+
+		[data-settings-modal] [role="separator"].border-dashed {
+			display: none;
+		}
+
+		[data-settings-modal] .border-dashed {
+			border-top-color: transparent;
+		}
+
+		[data-settings-modal] .border-dashed.pt-4,
+		[data-settings-modal] .border-dashed.pt-6,
+		[data-settings-modal] .border-dashed.pt-8 {
+			padding-top: var(--settings-space-section);
 		}
 
 		[data-settings-modal] .settings-content {

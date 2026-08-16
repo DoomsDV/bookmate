@@ -40,7 +40,7 @@ export function createAttachmentListItem(
 	const item = document.createElement('li');
 	item.className = isChip
 		? 'inline-flex w-fit shrink-0 items-center gap-1.5 rounded-full border border-(--shell-border) bg-(--surface-bright) px-2.5 py-1'
-		: 'flex items-center gap-3 rounded-xl border border-(--shell-border) bg-(--surface) px-3 py-2';
+		: 'flex min-w-0 items-center gap-3 rounded-xl border border-(--shell-border) bg-(--surface) px-3 py-2';
 
 	const icon = document.createElement('span');
 	icon.className = isChip
@@ -54,18 +54,25 @@ export function createAttachmentListItem(
 	link.href = attachment.url;
 	link.target = '_blank';
 	link.rel = 'noopener noreferrer';
-	link.className = isChip
-		? 'w-fit text-[0.74rem] font-semibold text-(--on-surface) hover:text-(--primary)'
-		: 'min-w-0 flex-1 truncate text-[0.88rem] font-semibold text-(--on-surface) hover:text-(--primary) hover:underline';
-	link.textContent = isChip ? shortenAttachmentName(attachment.file_name) : attachment.file_name;
 	link.title = attachment.file_name;
-	item.appendChild(link);
 
-	if (!isChip) {
+	if (isChip) {
+		link.className =
+			'w-fit text-[0.74rem] font-semibold text-(--on-surface) hover:text-(--primary)';
+		link.textContent = shortenAttachmentName(attachment.file_name);
+		item.appendChild(link);
+	} else {
+		const meta = document.createElement('div');
+		meta.className = 'min-w-0 flex-1 grid gap-0.5';
+		link.className =
+			'min-w-0 truncate text-[0.88rem] font-semibold text-(--on-surface) hover:text-(--primary) hover:underline';
+		link.textContent = attachment.file_name;
+		meta.appendChild(link);
 		const size = document.createElement('span');
-		size.className = 'shrink-0 text-[0.76rem] font-medium text-(--on-surface-variant)';
+		size.className = 'truncate text-[0.76rem] font-medium text-(--on-surface-variant)';
 		size.textContent = formatFileSize(attachment.size_bytes);
-		item.appendChild(size);
+		meta.appendChild(size);
+		item.appendChild(meta);
 	}
 
 	if (options?.onPreview) {

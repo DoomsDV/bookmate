@@ -520,12 +520,25 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 
 	const renderGalleryGrid = () => {
 		if (!galleryGrid) return;
+		const addTile = galleryDropzone;
 		galleryGrid.replaceChildren();
-		for (const item of galleryItems) {
+		galleryItems.forEach((item, index) => {
 			const li = document.createElement('li');
 			li.className = 'ppe-gallery-item';
 			li.dataset.ppeGalleryItem = '';
 			li.dataset.id = String(item.id);
+			li.draggable = true;
+
+			const handle = document.createElement('span');
+			handle.className = 'ppe-gallery-item__handle';
+			handle.dataset.ppeGalleryHandle = '';
+			handle.setAttribute('role', 'img');
+			handle.setAttribute('aria-label', 'Reordenar foto');
+			const handleIcon = document.createElement('span');
+			handleIcon.className = 'material-symbols-rounded';
+			handleIcon.setAttribute('aria-hidden', 'true');
+			handleIcon.textContent = 'drag_indicator';
+			handle.appendChild(handleIcon);
 
 			const openBtn = document.createElement('button');
 			openBtn.type = 'button';
@@ -551,9 +564,17 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			removeIcon.textContent = 'delete';
 			removeBtn.appendChild(removeIcon);
 
-			li.append(openBtn, removeBtn);
+			if (index === 0) {
+				const badge = document.createElement('span');
+				badge.className = 'ppe-gallery-item__badge';
+				badge.textContent = 'Principal';
+				li.append(handle, badge, openBtn, removeBtn);
+			} else {
+				li.append(handle, openBtn, removeBtn);
+			}
 			galleryGrid.appendChild(li);
-		}
+		});
+		if (addTile) galleryGrid.appendChild(addTile);
 		if (galleryCount) galleryCount.textContent = `(${galleryItems.length})`;
 		if (lightbox?.open) {
 			if (!galleryItems.length) {
@@ -563,6 +584,59 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				syncLightbox();
 			}
 		}
+	};
+
+	const persistGalleryOrder = async (ids: number[], previous: GalleryItem[]) => {
+		try {
+			const response = await fetch('/api/workspace/gallery', {
+				method: 'PUT',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+				},
+				body: JSON.stringify({ ids }),
+			});
+			const data = (await response.json()) as {
+				status?: string;
+				message?: string;
+				data?: { gallery_images?: GalleryItem[] };
+			};
+			if (!response.ok || data.status !== 'success') {
+				throw new Error(data.message || 'No se pudo reordenar la galería.');
+			}
+			if (Array.isArray(data.data?.gallery_images)) {
+				galleryItems = data.data.gallery_images;
+				renderGalleryGrid();
+				syncPreview();
+			}
+		} catch (error) {
+			galleryItems = previous;
+			renderGalleryGrid();
+			syncPreview();
+			showFeedback(
+				error instanceof Error ? error.message : 'No se pudo reordenar la galería.',
+				'error'
+			);
+		}
+	};
+
+	const moveGalleryItem = (fromId: number, toId: number) => {
+		if (!fromId || !toId || fromId === toId) return;
+		const from = galleryItems.findIndex((item) => item.id === fromId);
+		const to = galleryItems.findIndex((item) => item.id === toId);
+		if (from < 0 || to < 0) return;
+		const previous = [...galleryItems];
+		const next = [...galleryItems];
+		const [moved] = next.splice(from, 1);
+		if (!moved) return;
+		next.splice(to, 0, moved);
+		galleryItems = next;
+		renderGalleryGrid();
+		syncPreview();
+		void persistGalleryOrder(
+			next.map((item) => item.id),
+			previous
+		);
 	};
 
 	const renderBusinessHours = () => {
@@ -596,16 +670,15 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			track.setAttribute('aria-hidden', 'true');
 			switchEl.append(toggle, track);
 			toggleWrap.appendChild(switchEl);
-			if (day.closed) {
-				const toggleText = document.createElement('span');
-				toggleText.className = 'ppe-hours-toggle__label';
-				toggleText.textContent = 'Cerrado';
-				toggleWrap.appendChild(toggleText);
-			}
 
 			li.append(name, toggleWrap);
 
-			if (!day.closed) {
+			if (day.closed) {
+				const closedLabel = document.createElement('span');
+				closedLabel.className = 'ppe-hours-closed';
+				closedLabel.textContent = 'Cerrado';
+				li.appendChild(closedLabel);
+			} else {
 				const intervalsWrap = document.createElement('div');
 				intervalsWrap.className = 'ppe-hours-intervals';
 				const canAdd = day.intervals.length < BUSINESS_HOURS_MAX_INTERVALS;
@@ -687,13 +760,33 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const getDay = (dayNum: number): BusinessHoursDay =>
 		businessHours.days[dayNum - 1] || emptyBusinessHours().days[dayNum - 1];
 
+	const copyMondayToWeekdays = () => {
+		const monday = getDay(1);
+		for (let dayNum = 2; dayNum <= 5; dayNum += 1) {
+			businessHours.days[dayNum - 1] = {
+				day: dayNum,
+				closed: monday.closed,
+				intervals: monday.intervals.map((interval) => ({ ...interval })),
+			};
+		}
+		renderBusinessHours();
+		syncPreview();
+	};
+
+	const syncWhatsappField = () => {
+		if (!waField) return;
+		const enabled = Boolean(waToggle?.checked);
+		waField.hidden = !enabled;
+		waField.classList.toggle('hidden', !enabled);
+	};
+
 	const syncPreview = () => {
 		const rawDescription = String(descInput?.value || '');
 		const description = rawDescription.trim();
 		const showWa = Boolean(waToggle?.checked) && digitsOnly(waInput?.value || '').length >= 6;
 
 		if (descCount) descCount.textContent = String(rawDescription.length);
-		waField?.classList.toggle('hidden', !waToggle?.checked);
+		syncWhatsappField();
 
 		const slug = normalizeSlugInput(slugInput?.value || '');
 		if (openPublic) {
@@ -974,29 +1067,85 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 	const UNSAVED_LEAVE_MESSAGE =
 		'Tenés cambios sin guardar en el Perfil Público. Si salís o actualizás la página, se van a perder.';
 
+	let leavePromptOpen = false;
+	let allowUnload = false;
+
+	const confirmLeaveUnsaved = async (): Promise<boolean> => {
+		if (leavePromptOpen) return false;
+		leavePromptOpen = true;
+		try {
+			if (window.BookmateAlert?.confirm) {
+				return window.BookmateAlert.confirm({
+					type: 'warning',
+					title: 'Cambios sin guardar',
+					message: `${UNSAVED_LEAVE_MESSAGE} ¿Querés salir de todos modos?`,
+					confirmText: 'Salir',
+					cancelText: 'Cancelar',
+				});
+			}
+			return false;
+		} finally {
+			leavePromptOpen = false;
+		}
+	};
+
+	const leaveTo = async (href: string) => {
+		const ok = await confirmLeaveUnsaved();
+		if (!ok) return;
+		allowUnload = true;
+		captureSavedSnapshot();
+		window.location.assign(href);
+	};
+
 	const onBeforeUnload = (event: BeforeUnloadEvent) => {
-		if (!hasUnsavedChanges()) return;
+		if (allowUnload || !hasUnsavedChanges()) return;
 		event.preventDefault();
-		event.returnValue = UNSAVED_LEAVE_MESSAGE;
+		event.returnValue = '';
 	};
 
 	const onAstroBeforePreparation = (event: Event) => {
-		if (!hasUnsavedChanges()) return;
-		const ok = window.confirm(
-			`${UNSAVED_LEAVE_MESSAGE}\n\n¿Querés salir de todos modos?`
-		);
-		if (!ok) {
-			event.preventDefault();
+		if (allowUnload || !hasUnsavedChanges()) return;
+		const navEvent = event as Event & { preventDefault: () => void; to?: URL };
+		navEvent.preventDefault();
+		const href = navEvent.to instanceof URL ? navEvent.to.href : '';
+		if (href) void leaveTo(href);
+	};
+
+	const onDocumentClick = (event: MouseEvent) => {
+		if (allowUnload || !hasUnsavedChanges()) return;
+		if (event.defaultPrevented || event.button !== 0) return;
+		if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const anchor = target.closest('a[href]');
+		if (!(anchor instanceof HTMLAnchorElement)) return;
+		if (anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+		const href = anchor.getAttribute('href') || '';
+		if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+		let next: URL;
+		try {
+			next = new URL(anchor.href, window.location.href);
+		} catch {
+			return;
 		}
+		if (next.origin !== window.location.origin) return;
+		if (next.pathname === window.location.pathname && next.search === window.location.search) {
+			return;
+		}
+		event.preventDefault();
+		event.stopPropagation();
+		void leaveTo(next.href);
 	};
 
 	window.addEventListener('beforeunload', onBeforeUnload);
 	document.addEventListener('astro:before-preparation', onAstroBeforePreparation);
+	document.addEventListener('click', onDocumentClick, true);
 	document.addEventListener(
 		'astro:before-swap',
 		() => {
 			window.removeEventListener('beforeunload', onBeforeUnload);
 			document.removeEventListener('astro:before-preparation', onAstroBeforePreparation);
+			document.removeEventListener('click', onDocumentClick, true);
 		},
 		{ once: true }
 	);
@@ -1338,6 +1487,13 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}
 	});
 
+	root.querySelector<HTMLButtonElement>('[data-ppe-hours-copy-weekdays]')?.addEventListener(
+		'click',
+		() => {
+			copyMondayToWeekdays();
+		}
+	);
+
 	hoursList?.addEventListener('change', (event) => {
 		const target = event.target as HTMLElement | null;
 		if (!target) return;
@@ -1448,7 +1604,10 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		syncPreview();
 	};
 
-	waToggle?.addEventListener('change', syncPreview);
+	waToggle?.addEventListener('change', () => {
+		syncWhatsappField();
+		syncPreview();
+	});
 	waInput?.addEventListener('input', handleWhatsappInput);
 	facebookInput?.addEventListener('input', syncPreview);
 	instagramInput?.addEventListener('input', syncPreview);
@@ -1612,6 +1771,10 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 
 	galleryGrid?.addEventListener('click', (event) => {
 		const target = event.target as HTMLElement | null;
+		if (target?.closest('[data-ppe-gallery-handle]')) {
+			event.preventDefault();
+			return;
+		}
 		const removeBtn = target?.closest<HTMLElement>('[data-ppe-gallery-remove]');
 		if (removeBtn) {
 			const id = Number(removeBtn.dataset.id || 0);
@@ -1623,6 +1786,46 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			const id = Number(openBtn.dataset.id || 0);
 			if (id > 0) openLightbox(id);
 		}
+	});
+
+	let draggingGalleryId = 0;
+	galleryGrid?.addEventListener('dragstart', (event) => {
+		const item = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+			'[data-ppe-gallery-item]'
+		);
+		if (!item) return;
+		draggingGalleryId = Number(item.dataset.id || 0);
+		item.classList.add('is-dragging');
+		event.dataTransfer?.setData('text/plain', String(draggingGalleryId));
+		if (event.dataTransfer) event.dataTransfer.effectAllowed = 'move';
+	});
+	galleryGrid?.addEventListener('dragend', () => {
+		draggingGalleryId = 0;
+		galleryGrid.querySelectorAll('.is-dragging, .is-drop-target').forEach((el) => {
+			el.classList.remove('is-dragging', 'is-drop-target');
+		});
+	});
+	galleryGrid?.addEventListener('dragover', (event) => {
+		const item = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+			'[data-ppe-gallery-item]'
+		);
+		if (!item || Number(item.dataset.id || 0) === draggingGalleryId) return;
+		event.preventDefault();
+		galleryGrid.querySelectorAll('.is-drop-target').forEach((el) => {
+			if (el !== item) el.classList.remove('is-drop-target');
+		});
+		item.classList.add('is-drop-target');
+	});
+	galleryGrid?.addEventListener('drop', (event) => {
+		const item = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+			'[data-ppe-gallery-item]'
+		);
+		if (!item) return;
+		event.preventDefault();
+		const toId = Number(item.dataset.id || 0);
+		const fromId = draggingGalleryId || Number(event.dataTransfer?.getData('text/plain') || 0);
+		item.classList.remove('is-drop-target');
+		moveGalleryItem(fromId, toId);
 	});
 
 	root.querySelectorAll('[data-ppe-lightbox-close]').forEach((btn) => {

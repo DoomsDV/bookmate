@@ -254,7 +254,7 @@ const previewInitial = {
 							</label>
 						</div>
 
-						<div class={`ppe-field ${whatsappLocal ? '' : 'hidden'}`} data-ppe-wa-field>
+						<div class="ppe-field" data-ppe-wa-field hidden={!whatsappLocal}>
 							<label for="ppe-whatsapp">Número de WhatsApp</label>
 							<div class="ppe-phone-input">
 								<span class="ppe-phone-input__prefix">+595</span>
@@ -353,7 +353,6 @@ const previewInitial = {
 										<span class="ppe-copy-desktop">Arrastrá tu logo aquí</span>
 										<span class="ppe-copy-mobile">Tocá para subir tu logo</span>
 									</span>
-									<span class="ppe-dropzone__meta">JPG o PNG · máx. 5 MB</span>
 									<span class="ppe-dropzone__btn">Seleccionar imagen</span>
 								</div>
 								<span
@@ -372,6 +371,7 @@ const previewInitial = {
 									<span class="material-symbols-rounded" aria-hidden="true">delete</span>
 								</button>
 							</label>
+							<p class="ppe-field__hint">JPG o PNG · máx. 5 MB</p>
 						</div>
 
 						<div class="ppe-field ppe-field--banner">
@@ -401,7 +401,6 @@ const previewInitial = {
 										<span class="ppe-copy-desktop">Arrastrá tu banner aquí</span>
 										<span class="ppe-copy-mobile">Tocá para subir tu banner</span>
 									</span>
-									<span class="ppe-dropzone__meta">JPG o PNG · máx. 5 MB · 2:1</span>
 									<span class="ppe-dropzone__btn">Seleccionar imagen</span>
 								</div>
 								<span
@@ -420,7 +419,7 @@ const previewInitial = {
 									<span class="material-symbols-rounded" aria-hidden="true">delete</span>
 								</button>
 							</label>
-							<p class="ppe-field__hint">JPG o PNG. Recomendado 1200×600 o 1080×566.</p>
+							<p class="ppe-field__hint">Recomendado 1200×600 · 2:1</p>
 						</div>
 						</div>
 					</section>
@@ -443,8 +442,19 @@ const previewInitial = {
 							</p>
 							<ul class="ppe-gallery-grid" data-ppe-gallery-grid>
 								{
-									galleryImages.map((item) => (
-										<li class="ppe-gallery-item" data-ppe-gallery-item data-id={item.id}>
+									galleryImages.map((item, index) => (
+										<li class="ppe-gallery-item" data-ppe-gallery-item data-id={item.id} draggable="true">
+											<span
+												class="ppe-gallery-item__handle"
+												data-ppe-gallery-handle
+												role="img"
+												aria-label="Reordenar foto"
+											>
+												<span class="material-symbols-rounded" aria-hidden="true">drag_indicator</span>
+											</span>
+											{index === 0 ? (
+												<span class="ppe-gallery-item__badge">Principal</span>
+											) : null}
 											<button
 												type="button"
 												class="ppe-gallery-item__open"
@@ -466,23 +476,20 @@ const previewInitial = {
 										</li>
 									))
 								}
+								<li class="ppe-gallery-add" data-ppe-gallery-add>
+									<label class="ppe-gallery-add__hit">
+										<span class="material-symbols-rounded ppe-gallery-add__icon" aria-hidden="true">add</span>
+										<span class="ppe-gallery-add__title">Subir foto</span>
+										<input
+											type="file"
+											accept=".jpg,.jpeg,.png,image/jpeg,image/png"
+											class="sr-only"
+											data-ppe-gallery-input
+											multiple
+										/>
+									</label>
+								</li>
 							</ul>
-							<label class="ppe-dropzone ppe-dropzone--gallery" data-ppe-gallery-add>
-								<span class="material-symbols-rounded ppe-dropzone__icon" aria-hidden="true">image</span>
-								<span class="ppe-dropzone__title">
-									<span class="ppe-copy-desktop">Arrastrá fotos aquí</span>
-									<span class="ppe-copy-mobile">Tocá para agregar fotos</span>
-								</span>
-								<span class="ppe-dropzone__meta">JPG o PNG · máx. 5 MB</span>
-								<span class="ppe-dropzone__btn">Seleccionar imágenes</span>
-								<input
-									type="file"
-									accept=".jpg,.jpeg,.png,image/jpeg,image/png"
-									class="sr-only"
-									data-ppe-gallery-input
-									multiple
-								/>
-							</label>
 						</div>
 					</section>
 
@@ -495,7 +502,12 @@ const previewInitial = {
 						hidden
 					>
 						<div class="ppe-field">
-							<span class="ppe-field__label">Horario comercial</span>
+							<div class="ppe-hours-head">
+								<span class="ppe-field__label">Horario comercial</span>
+								<button type="button" class="ppe-hours-copy" data-ppe-hours-copy-weekdays>
+									Copiar lunes a Lun–Vie
+								</button>
+							</div>
 							<p class="ppe-field__hint">
 								Se muestra en el Overview del perfil. No afecta la disponibilidad de reservas.
 							</p>

@@ -87,7 +87,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 				</div>
 
 				<div
-					class="appointment-modal-tabs shrink-0 hidden border-b border-(--shell-border) bg-(--surface-bright) px-4 pt-0 pb-1.5 sm:px-7 sm:pt-1 sm:pb-3"
+					class="appointment-modal-tabs shrink-0 hidden border-b border-(--shell-border) bg-(--surface-bright)/50 px-0 py-3"
 					data-appointment-tabs
 					hidden
 				>
@@ -95,6 +95,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 						class="appointment-modal-tablist"
 						role="tablist"
 						aria-label="Secciones de la cita"
+						data-appointment-tabs-scroll
 					>
 						<button
 							type="button"
@@ -106,6 +107,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 							data-appointment-tab="details"
 							tabindex="0"
 						>
+							<span class="material-symbols-rounded" aria-hidden="true">event_note</span>
 							Detalles
 						</button>
 						<button
@@ -118,10 +120,12 @@ const { showVoiceButton = false }: Props = Astro.props;
 							data-appointment-tab="notes"
 							tabindex="-1"
 						>
+							<span class="material-symbols-rounded" aria-hidden="true">attach_file</span>
 							<span>Notas y Archivos</span>
 							<span class="appointment-modal-tab__badge" aria-hidden="true">Nuevo</span>
 						</button>
 					</div>
+					<div class="appointment-modal-tabs-scroll-edge" aria-hidden="true"></div>
 				</div>
 
 				<div
@@ -135,7 +139,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 					aria-labelledby="appointment-tab-details"
 					data-appointment-tab-panel="details"
 				>
-				<div class="px-7 py-7 grid min-w-0 gap-5">
+				<div class="grid min-w-0 gap-5 px-4 py-5 sm:px-7 sm:py-7">
 					<div class="grid gap-5 sm:grid-cols-2">
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span class="inline-flex items-center gap-1">
@@ -473,7 +477,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 				</div>
 
 				<div
-					class="mx-7 mb-4 hidden rounded-2xl border border-orange-300/80 bg-orange-50/95 px-4 py-3.5 dark:border-orange-800/70 dark:bg-orange-950/40"
+					class="mx-4 mb-4 hidden rounded-2xl border border-orange-300/80 bg-orange-50/95 px-4 py-3.5 sm:mx-7 dark:border-orange-800/70 dark:bg-orange-950/40"
 					data-appointment-schedule-misaligned-wrap
 					hidden
 					role="alert"
@@ -517,7 +521,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 					hidden
 				>
 				<div
-					class="appointment-history relative px-7 py-7"
+					class="appointment-history relative px-4 py-5 sm:px-7 sm:py-7"
 					data-appointment-history-section
 					hidden
 				>
@@ -650,7 +654,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 				</div>
 
 				<div
-					class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5"
+					class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5"
 					data-appointment-modal-footer-wrap
 				>
 					<div class="appointment-modal-footer" data-appointment-modal-footer>

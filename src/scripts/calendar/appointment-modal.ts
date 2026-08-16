@@ -191,6 +191,7 @@ class AppointmentModal extends HTMLElement {
 	scheduleMisalignedMessage: HTMLElement | null = null;
 	scheduleMisalignedLink: HTMLAnchorElement | null = null;
 	tabsBar: HTMLElement | null = null;
+	tabsScroll: HTMLElement | null = null;
 	tabButtons: NodeListOf<HTMLButtonElement> | null = null;
 	tabPanels: NodeListOf<HTMLElement> | null = null;
 	activeTab: 'details' | 'notes' = 'details';
@@ -327,6 +328,7 @@ class AppointmentModal extends HTMLElement {
 			this.form?.querySelector<HTMLAnchorElement>('[data-appointment-schedule-misaligned-link]') ??
 			null;
 		this.tabsBar = this.form?.querySelector<HTMLElement>('[data-appointment-tabs]') ?? null;
+		this.tabsScroll = this.form?.querySelector<HTMLElement>('[data-appointment-tabs-scroll]') ?? null;
 		this.tabButtons = this.form?.querySelectorAll<HTMLButtonElement>('[data-appointment-tab]') ?? null;
 		this.tabPanels =
 			this.form?.querySelectorAll<HTMLElement>('[data-appointment-tab-panel]') ?? null;
@@ -489,6 +491,11 @@ class AppointmentModal extends HTMLElement {
 		for (const tab of this.tabButtons ?? []) {
 			tab.addEventListener('click', this.handleTabClick, { signal });
 		}
+		this.tabsScroll?.addEventListener('scroll', this.updateTabsScrollHint, {
+			passive: true,
+			signal,
+		});
+		window.addEventListener('resize', this.updateTabsScrollHint, { signal });
 
 		this.setCreateMode();
 		this.resetFormValues();
@@ -1093,6 +1100,7 @@ class AppointmentModal extends HTMLElement {
 		const tab = button?.dataset.appointmentTab;
 		if (tab !== 'details' && tab !== 'notes') return;
 		this.setActiveTab(tab);
+		this.scrollActiveTabIntoView();
 	};
 
 	private setActiveTab(tab: 'details' | 'notes') {
@@ -1115,6 +1123,23 @@ class AppointmentModal extends HTMLElement {
 		const scroll = this.form?.querySelector<HTMLElement>('[data-appointment-form-scroll]');
 		if (scroll) scroll.scrollTop = 0;
 		this.syncSubmitLabel();
+		requestAnimationFrame(this.updateTabsScrollHint);
+	}
+
+	updateTabsScrollHint = () => {
+		if (!this.tabsBar || !this.tabsScroll) return;
+		const hasOverflow = this.tabsScroll.scrollWidth - this.tabsScroll.clientWidth > 8;
+		const canScrollRight =
+			this.tabsScroll.scrollWidth - this.tabsScroll.scrollLeft - this.tabsScroll.clientWidth > 8;
+		this.tabsBar.classList.toggle('has-tabs-scroll', hasOverflow && canScrollRight);
+	};
+
+	private scrollActiveTabIntoView() {
+		if (!this.tabsScroll) return;
+		const active = this.tabsScroll.querySelector<HTMLElement>('.appointment-modal-tab.is-active');
+		if (!active) return;
+		const left = active.offsetLeft - Math.max(16, (this.tabsScroll.clientWidth - active.offsetWidth) / 2);
+		this.tabsScroll.scrollTo({ left: Math.max(0, left), behavior: 'smooth' });
 	}
 
 	private syncSubmitLabel() {
@@ -1313,7 +1338,8 @@ class AppointmentModal extends HTMLElement {
 		this.tabsBar?.removeAttribute('hidden');
 		this.tabsBar?.classList.remove('hidden');
 		this.setActiveTab('details');
-	}
+		requestAnimationFrame(this.updateTabsScrollHint);
+	};
 
 	private hideTabsBar() {
 		this.tabsBar?.setAttribute('hidden', '');

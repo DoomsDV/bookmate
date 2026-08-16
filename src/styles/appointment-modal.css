@@ -412,20 +412,11 @@ html[data-theme='dark']
 		flex: 1 1 auto;
 	}
 
-	.appointment-modal-tablist {
-		padding: 0.12rem;
-	}
-
-	.appointment-modal-tab {
-		min-height: 1.95rem;
-		padding: 0.22rem 0.55rem;
-		font-size: 0.8rem;
-		gap: 0.28rem;
-	}
-
-	.appointment-modal-tab__badge {
-		padding: 0.08rem 0.32rem;
-		font-size: 0.54rem;
+	dialog[data-appointment-modal] [data-appointment-attachments] > li {
+		min-width: 0;
+		width: 100%;
+		max-width: 100%;
+		overflow: hidden;
 	}
 }
 
@@ -628,7 +619,11 @@ html[data-theme='dark'] .appointment-modal-voice-btn__divider {
 	}
 }
 
-/* Tabs: Detalles / Notas y Archivos */
+/* Tabs: mismas píldoras horizontales que Ajustes (mobile) */
+.appointment-modal-tabs {
+	position: relative;
+}
+
 .appointment-modal-tabs[hidden],
 .appointment-modal-tabs.hidden {
 	display: none !important;
@@ -636,17 +631,22 @@ html[data-theme='dark'] .appointment-modal-voice-btn__divider {
 
 .appointment-modal-tablist {
 	display: flex;
+	flex-direction: row;
 	flex-wrap: nowrap;
-	width: 100%;
-	gap: 0.25rem;
-	padding: 0.25rem;
-	border-radius: 999px;
-	background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+	gap: 0.5rem;
 	overflow-x: auto;
 	overflow-y: hidden;
-	-webkit-overflow-scrolling: touch;
-	scrollbar-width: none;
 	overscroll-behavior-x: contain;
+	padding: 0 1rem;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+	-webkit-overflow-scrolling: touch;
+}
+
+@media (min-width: 640px) {
+	.appointment-modal-tablist {
+		padding: 0 1.75rem;
+	}
 }
 
 .appointment-modal-tablist::-webkit-scrollbar {
@@ -654,44 +654,54 @@ html[data-theme='dark'] .appointment-modal-voice-btn__divider {
 }
 
 .appointment-modal-tab {
-	flex: 0 0 auto;
 	display: inline-flex;
+	flex-shrink: 0;
 	align-items: center;
 	justify-content: center;
-	gap: 0.35rem;
+	gap: 0.45rem;
+	width: auto;
 	min-height: 2.35rem;
-	padding: 0.4rem 0.85rem;
-	border: 0;
+	padding: 0.5rem 1.25rem;
+	border: 1px solid color-mix(in srgb, var(--on-surface) 16%, transparent);
 	border-radius: 999px;
-	background: transparent;
+	background: color-mix(in srgb, var(--on-surface) 5%, transparent);
 	color: var(--on-surface-variant);
-	font-size: 0.84rem;
+	font-size: 0.92rem;
 	font-weight: 700;
 	letter-spacing: 0.01em;
 	white-space: nowrap;
 	cursor: pointer;
-	transition: background-color 140ms ease, color 140ms ease;
-}
-
-@media (min-width: 640px) {
-	.appointment-modal-tab {
-		flex: 1 1 0;
-	}
+	transition:
+		background-color 0.2s ease,
+		color 0.2s ease,
+		border-color 0.2s ease;
 }
 
 .appointment-modal-tab:hover {
+	background: color-mix(in srgb, var(--on-surface) 8%, transparent);
 	color: var(--on-surface);
 }
 
 .appointment-modal-tab.is-active {
-	background: var(--surface-bright);
-	color: var(--on-surface);
-	box-shadow: 0 1px 2px rgb(0 0 0 / 0.06);
+	background: color-mix(in srgb, var(--primary) 15%, transparent);
+	border-color: transparent;
+	color: var(--primary);
+	box-shadow: none;
+}
+
+.appointment-modal-tab.is-active:hover {
+	background: color-mix(in srgb, var(--primary) 22%, transparent);
+	color: var(--primary);
 }
 
 .appointment-modal-tab:focus-visible {
 	outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
 	outline-offset: 2px;
+}
+
+.appointment-modal-tab .material-symbols-rounded {
+	font-size: 1.15rem;
+	line-height: 1;
 }
 
 .appointment-modal-tab__badge {
@@ -709,7 +719,35 @@ html[data-theme='dark'] .appointment-modal-voice-btn__divider {
 }
 
 .appointment-modal-tab.is-active .appointment-modal-tab__badge {
-	background: color-mix(in srgb, var(--primary) 18%, transparent);
+	background: color-mix(in srgb, var(--primary) 22%, transparent);
+}
+
+.appointment-modal-tabs-scroll-edge {
+	display: none;
+}
+
+@media (max-width: 768px) {
+	.appointment-modal-tabs-scroll-edge {
+		display: block;
+		pointer-events: none;
+		position: absolute;
+		top: 0;
+		right: 0;
+		bottom: 0;
+		width: 2.75rem;
+		background: linear-gradient(
+			to left,
+			color-mix(in srgb, var(--surface-bright) 96%, transparent),
+			transparent
+		);
+		opacity: 0;
+		transition: opacity 200ms ease;
+		z-index: 2;
+	}
+
+	.appointment-modal-tabs.has-tabs-scroll .appointment-modal-tabs-scroll-edge {
+		opacity: 1;
+	}
 }
 
 .appointment-modal-tab-panel[hidden],
@@ -899,21 +937,6 @@ html[data-theme='dark'] .appointment-history-lock {
 	line-height: 1.3;
 	text-align: center;
 	color: var(--on-surface-variant);
-}
-
-html[data-theme='dark'] .appointment-modal-tablist {
-	background: color-mix(in srgb, var(--surface-container) 70%, rgb(255 255 255 / 0.04));
-}
-
-html[data-theme='dark'] .appointment-modal-tab.is-active {
-	background: color-mix(in srgb, var(--surface-bright) 92%, rgb(255 255 255 / 0.06));
-	box-shadow: none;
-}
-
-dialog[data-appointment-modal]:has([data-appointment-tabs]:not(.hidden):not([hidden]))
-	.appointment-modal__panel > div:first-child {
-	border-bottom-width: 0;
-	box-shadow: none;
 }
 
 dialog[data-appointment-modal] [data-modal-professional-wrap] .bookmate-searchable-select.ts-wrapper.single .ts-control,
