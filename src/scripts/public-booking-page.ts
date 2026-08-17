@@ -40,7 +40,7 @@ import {
 	type PublicBookingDraft,
 	type PublicBookingDraftStep,
 } from '../lib/public-booking-draft';
-import { bindPublicBookingStepIndicator } from '../lib/public-booking-stepper';
+import { bindPublicBookingStepIndicator, BOOKING_PHASE_LABELS, phaseProgressPercent, wizardStepToPhase, type BookingPhase } from '../lib/public-booking-stepper';
 import { fillPublicBookingSuccessTicket } from '../lib/public-booking-success-ticket';
 import {
 	bindSipapCopyButtons,
@@ -324,15 +324,20 @@ export const initializePublicBookingPage = () => {
 	const stepPanels = root.querySelectorAll<HTMLElement>('[data-step-panel]');
 	const prevMonthButton = root.querySelector<HTMLButtonElement>('[data-calendar-prev]');
 	const nextMonthButton = root.querySelector<HTMLButtonElement>('[data-calendar-next]');
-	const calendarContinueButton = root.querySelector<HTMLButtonElement>('[data-calendar-continue]');
+	const calendarContinueButton = root.querySelector<HTMLButtonElement>('[data-datetime-continue]');
 	// Limpia Continuar dinámicos viejos (antes del botón fijo en el markup).
-	for (const orphan of root.querySelectorAll<HTMLButtonElement>('[data-calendar-continue]')) {
+	for (const orphan of root.querySelectorAll<HTMLButtonElement>('[data-datetime-continue], [data-calendar-continue]')) {
 		if (orphan !== calendarContinueButton) orphan.remove();
 	}
 	const backToServices = root.querySelector<HTMLButtonElement>('[data-back-to-services]');
 	const backToLocations = root.querySelector<HTMLButtonElement>('[data-back-to-locations]');
 	const backToCalendarButtons = root.querySelectorAll<HTMLButtonElement>('[data-back-to-calendar]');
 	const backToSlots = root.querySelector<HTMLButtonElement>('[data-back-to-slots]');
+	const headerBackButton = root.querySelector<HTMLButtonElement>('[data-booking-header-back]');
+	const selectionSummary = root.querySelector<HTMLElement>('[data-selection-summary]');
+	const selectionSummaryValue = root.querySelector<HTMLElement>('[data-selection-summary-value]');
+	const selectionSummaryChange = root.querySelector<HTMLButtonElement>('[data-selection-summary-change]');
+	const slotsHint = root.querySelector<HTMLElement>('[data-slots-hint]');
 	const restartButtons = root.querySelectorAll<HTMLButtonElement>('[data-restart-booking]');
 
 	if (
@@ -363,8 +368,8 @@ export const initializePublicBookingPage = () => {
 		!nextMonthButton ||
 		!backToServices ||
 		!backToLocations ||
-		!backToCalendarButtons.length ||
 		!backToSlots ||
+		!calendarContinueButton ||
 		restartButtons.length === 0
 	) {
 		return;
@@ -430,7 +435,8 @@ export const initializePublicBookingPage = () => {
 	const holdStorageKey = proBookingHoldKey(organizationSlug, professionalSlug);
 	const draftPersister = createDraftPersister(draftStorageKey, () => {
 		if (step >= 6 || !selectedService) return null;
-		const draftStep = (step <= 5 ? step : 5) as PublicBookingDraftStep;
+		const rawStep = (step <= 5 ? step : 5) as PublicBookingDraftStep;
+		const draftStep = (rawStep === 4 ? 3 : rawStep) as PublicBookingDraftStep;
 		return {
 			v: 1 as const,
 			step: draftStep,
@@ -446,14 +452,6 @@ export const initializePublicBookingPage = () => {
 	});
 
 	let toastTimer: number | null = null;
-	const stepLabelByNumber: Record<1 | 2 | 3 | 4 | 5, string> = {
-		1: 'Servicio',
-		2: 'Sucursal',
-		3: 'Fecha',
-		4: 'Horario',
-		5: 'Datos',
-	};
-
 	const hasMultipleLocations = () => bookingLocations.length > 1;
 	const stepAfterService = (): WizardStep => (hasMultipleLocations() ? 2 : 3);
 	const stepBeforeDate = (): WizardStep => (hasMultipleLocations() ? 2 : 1);
@@ -912,23 +910,24 @@ export const initializePublicBookingPage = () => {
 	};
 
 	const setStep = (nextStep: WizardStep) => {
-		step = nextStep;
+		step = nextStep === 4 ? 3 : nextStep;
 
 		for (const panel of stepPanels) {
 			const panelStep = Number(panel.dataset.stepPanel || '0');
 			panel.classList.toggle('hidden', panelStep !== step);
 		}
 
+		const phase = wizardStepToPhase(step);
 		for (const item of stepItems) {
-			const itemStep = Number(item.dataset.stepItem || '0');
+			const itemPhase = Number(item.dataset.stepItem || '0') as BookingPhase;
 			item.classList.remove('step-item-default', 'step-item-current', 'step-item-done');
 
-			if (itemStep === step && step <= 5) {
+			if (itemPhase === phase && step <= 5) {
 				item.classList.add('step-item-current');
 				continue;
 			}
 
-			if (itemStep < step || step >= 6) {
+			if (itemPhase < phase || step >= 6) {
 				item.classList.add('step-item-done');
 				continue;
 			}
@@ -936,37 +935,84 @@ export const initializePublicBookingPage = () => {
 			item.classList.add('step-item-default');
 		}
 
-		const cappedStep = (step >= 6 ? 5 : step) as 1 | 2 | 3 | 4 | 5;
 		if (stepCompactLabel) {
 			stepCompactLabel.textContent =
 				step === 7
 					? 'Transferí la seña'
 					: step === 6
 						? 'Reserva confirmada'
-						: `Paso ${cappedStep} de 5: ${stepLabelByNumber[cappedStep]}`;
+						: `Paso ${phase} de 3: ${BOOKING_PHASE_LABELS[phase]}`;
 		}
 		if (stepProgressBar) {
-			const progress = step >= 6 ? 100 : cappedStep * 20;
+			const progress = step >= 6 ? 100 : phaseProgressPercent(phase);
 			stepProgressBar.style.width = `${progress}%`;
 		}
+
+		root.classList.toggle('is-booking-profile-compact', step >= 2);
+		root.classList.toggle('is-booking-success', step === 6);
 
 		if (step === 3) {
 			queueMicrotask(() => {
 				void loadAvailableDatesForVisibleMonth();
+				if (selectedDate && availableSlotGroups.length === 0 && !isLoadingSlots) {
+					void loadAvailableSlots(selectedDate, { skipStepChange: true, preserveSelection: Boolean(selectedTime) });
+				} else if (availableSlotGroups.length > 0 && !isLoadingSlots) {
+					renderSlots();
+				}
 			});
-		}
-
-		if (step === 4 && availableSlotGroups.length > 0 && !isLoadingSlots) {
-			renderSlots();
 		}
 
 		// Persistir el paso al instante (Volver + F5 no debe saltar adelante).
 		if (step <= 5) draftPersister.flush();
 
-		root.classList.toggle('is-booking-success', step === 6);
-
 		refreshStepIndicatorClickable();
+		syncDatetimeContinue();
+		syncHeaderBack();
+		syncSelectionSummary();
 		syncPublicBookingMobileActions(root);
+	};
+
+	const canNavigateBack = () => {
+		if (step <= 1 || step >= 6) return false;
+		if (step === 2 && !hasMultipleLocations()) return false;
+		return true;
+	};
+
+	const goBackOneStep = () => {
+		if (!canNavigateBack()) return;
+		if (step === 2) {
+			setStep(1);
+			return;
+		}
+		if (step === 3) {
+			setStep(stepBeforeDate());
+			return;
+		}
+		if (step === 5) {
+			setStep(3);
+		}
+	};
+
+	const syncHeaderBack = () => {
+		if (!headerBackButton) return;
+		const show = canNavigateBack();
+		headerBackButton.hidden = !show;
+		headerBackButton.toggleAttribute('hidden', !show);
+	};
+
+	const syncSelectionSummary = () => {
+		if (!selectionSummary || !selectionSummaryValue) return;
+		const show = step === 2 && Boolean(selectedService?.name);
+		selectionSummary.hidden = !show;
+		selectionSummary.toggleAttribute('hidden', !show);
+		if (show) {
+			selectionSummaryValue.textContent = selectedService?.name || '';
+		}
+	};
+
+	const syncDatetimeContinue = () => {
+		if (!calendarContinueButton) return;
+		calendarContinueButton.disabled = !selectedDate || !selectedTime || isLoadingSlots;
 	};
 
 	const getSelectedSlotKey = () => {
@@ -1886,14 +1932,14 @@ export const initializePublicBookingPage = () => {
 				refreshSummary();
 				renderCalendar();
 				draftPersister.schedule();
+				syncDatetimeContinue();
+				void loadAvailableSlots(dateKey, { skipStepChange: true });
 			});
 
 			calendarGrid.appendChild(dayButton);
 		}
 
-		if (calendarContinueButton) {
-			calendarContinueButton.disabled = !selectedDate || isLoadingAvailability;
-		}
+		syncDatetimeContinue();
 	};
 
 	const slotFocusByLocation = new Map<number, number>();
@@ -1901,54 +1947,37 @@ export const initializePublicBookingPage = () => {
 	const renderSlots = () => {
 		slotsContainer.innerHTML = '';
 		slotsLoadingNode.classList.toggle('hidden', !isLoadingSlots);
+		slotsHint?.toggleAttribute('hidden', !selectedDate);
 
 		const totalSlots = availableSlotGroups.reduce(
 			(count, group) => count + group.slots.length,
 			0
 		);
-		noSlotsNode.classList.toggle('hidden', isLoadingSlots || totalSlots > 0);
+		noSlotsNode.classList.toggle(
+			'hidden',
+			!selectedDate || isLoadingSlots || totalSlots > 0
+		);
 
-		if (isLoadingSlots) return;
+		if (isLoadingSlots) {
+			syncDatetimeContinue();
+			syncPublicBookingMobileActions(root);
+			return;
+		}
 
 		const selectedSlotKey = getSelectedSlotKey();
-		const useRoulette = isMobileServicesStack();
 		let branchToneIndex = 0;
 
 		for (const group of availableSlotGroups) {
 			if (group.slots.length === 0) continue;
 
 			const section = document.createElement('section');
-			section.className = `public-slot-branch public-slot-branch--tone-${branchToneIndex % 4}${
-				useRoulette ? ' is-slot-roulette' : ''
-			}`;
+			section.className = `public-slot-branch public-slot-branch--tone-${branchToneIndex % 4}`;
 			branchToneIndex += 1;
-
-			if (useRoulette) {
-				mountSlotRoulette(section, group, selectedSlotKey);
-			} else {
-				mountSlotGrid(section, group, selectedSlotKey);
-			}
-
+			mountSlotGrid(section, group, selectedSlotKey);
 			slotsContainer.appendChild(section);
 		}
 
-		if (!useRoulette && totalSlots > 0) {
-			slotsContainer.appendChild(
-				createContinueButton(
-					() => {
-						if (!selectedTime || !selectedLocation) {
-							showToast('Seleccioná un horario para continuar.');
-							return;
-						}
-						selectSlotAndAdvance(
-							{ location: selectedLocation, slots: [selectedTime] },
-							selectedTime
-						);
-					},
-					{ disabled: !selectedTime }
-				)
-			);
-		}
+		syncDatetimeContinue();
 		syncPublicBookingMobileActions(root);
 	};
 
@@ -2059,7 +2088,7 @@ export const initializePublicBookingPage = () => {
 		selectedSlotKey: string
 	) => {
 		const grid = document.createElement('div');
-		grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
+		grid.className = 'public-slot-pill-grid';
 
 		for (const slot of group.slots) {
 			const slotKey = `${group.location.id_location}:${slot}`;
@@ -2073,7 +2102,7 @@ export const initializePublicBookingPage = () => {
 			slotButton.dataset.slotKey = slotKey;
 			const isSelected = selectedSlotKey === slotKey;
 			slotButton.className =
-				'public-slot-time flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition' +
+				'public-slot-time public-slot-time--pill flex min-h-11 items-center justify-center rounded-xl border px-2 py-3 text-sm font-medium cursor-pointer transition' +
 				(isSelected ? ' is-selected' : '');
 
 			slotButton.addEventListener(
@@ -2087,9 +2116,7 @@ export const initializePublicBookingPage = () => {
 					for (const btn of slotsContainer.querySelectorAll<HTMLElement>('.public-slot-time')) {
 						btn.classList.toggle('is-selected', btn.dataset.slotKey === slotKey);
 					}
-					const continueBtn =
-						slotsContainer.querySelector<HTMLButtonElement>('.public-booking-continue');
-					if (continueBtn) continueBtn.disabled = false;
+					syncDatetimeContinue();
 				},
 				{ signal }
 			);
@@ -2393,7 +2420,7 @@ export const initializePublicBookingPage = () => {
 			selectedTime = '';
 		}
 		renderSlots();
-		if (!options?.skipStepChange) setStep(4);
+		if (!options?.skipStepChange && step !== 3) setStep(3);
 
 		try {
 			bookingLocations = await fetchProfileLocations();
@@ -2506,25 +2533,18 @@ export const initializePublicBookingPage = () => {
 		{ signal }
 	);
 
-	calendarContinueButton?.addEventListener(
+	calendarContinueButton.addEventListener(
 		'click',
 		() => {
 			if (!selectedDate) {
 				showToast('Seleccioná una fecha para continuar.');
 				return;
 			}
-			if (!selectedService) {
-				showToast('Selecciona primero un servicio.');
+			if (!selectedTime || !selectedLocation) {
+				showToast('Seleccioná un horario para continuar.');
 				return;
 			}
-			if (!selectedLocation) {
-				selectedLocation = defaultLocation;
-			}
-			if (!selectedLocation && !configuredLocationId) {
-				showToast('Seleccioná una sucursal para ver horarios.');
-				return;
-			}
-			void loadAvailableSlots(selectedDate);
+			setStep(5);
 		},
 		{ signal }
 	);
@@ -2539,6 +2559,10 @@ export const initializePublicBookingPage = () => {
 			setStep(hasMultipleLocations() ? 2 : 1);
 			return;
 		}
+		if (targetStep === 3 || targetStep === 4) {
+			setStep(3);
+			return;
+		}
 		setStep(targetStep as WizardStep);
 	};
 
@@ -2547,18 +2571,22 @@ export const initializePublicBookingPage = () => {
 		getCurrentStep: () => step,
 		onNavigateToStep: navigateToStepFromIndicator,
 		signal,
+		mode: 'phase',
+		phaseToStep: (phase) => {
+			if (phase === 1) return 1;
+			if (phase === 2) return 3;
+			return 5;
+		},
 	}).refreshClickableState;
 
-	backToServices.addEventListener('click', () => setStep(1), { signal });
-	backToLocations.addEventListener(
-		'click',
-		() => setStep(stepBeforeDate()),
-		{ signal }
-	);
+	backToServices.addEventListener('click', () => goBackOneStep(), { signal });
+	backToLocations.addEventListener('click', () => goBackOneStep(), { signal });
 	backToCalendarButtons.forEach((button) => {
-		button.addEventListener('click', () => setStep(3), { signal });
+		button.addEventListener('click', () => goBackOneStep(), { signal });
 	});
-	backToSlots.addEventListener('click', () => setStep(4), { signal });
+	backToSlots.addEventListener('click', () => goBackOneStep(), { signal });
+	headerBackButton?.addEventListener('click', () => goBackOneStep(), { signal });
+	selectionSummaryChange?.addEventListener('click', () => setStep(1), { signal });
 	restartButtons.forEach((button) => {
 		button.addEventListener('click', resetFlow, { signal });
 	});
@@ -2817,8 +2845,8 @@ export const initializePublicBookingPage = () => {
 			if (error instanceof PublicBookingClientError && error.status === 409) {
 				showToast(error.message, 'error');
 				resetPendingAppointment();
-				await loadAvailableSlots(selectedDate);
-				setStep(4);
+				await loadAvailableSlots(selectedDate, { skipStepChange: true });
+				setStep(3);
 				return;
 			}
 			setSubmitError(
@@ -2933,8 +2961,8 @@ export const initializePublicBookingPage = () => {
 			if (error instanceof PublicBookingClientError && error.status === 409) {
 				clearBookingIdemKey();
 				showToast(error.message, 'error');
-				await loadAvailableSlots(selectedDate);
-				setStep(4);
+				await loadAvailableSlots(selectedDate, { skipStepChange: true });
+				setStep(3);
 				return;
 			}
 
@@ -2976,17 +3004,17 @@ export const initializePublicBookingPage = () => {
 	};
 
 	const resolveDraftTargetStep = (draftStep: PublicBookingDraftStep): PublicBookingDraftStep => {
-		let targetStep: PublicBookingDraftStep = draftStep;
+		let targetStep: PublicBookingDraftStep = draftStep === 4 ? 3 : draftStep;
 		if (!selectedService) {
 			targetStep = 1;
 		} else if (hasMultipleLocations() && !selectedLocation) {
 			targetStep = Math.min(targetStep, 2) as PublicBookingDraftStep;
 		} else if (!selectedLocation && !defaultLocation) {
 			targetStep = Math.min(targetStep, hasMultipleLocations() ? 2 : 1) as PublicBookingDraftStep;
-		} else if (targetStep >= 4 && !selectedDate) {
+		} else if (targetStep >= 3 && !selectedDate) {
 			targetStep = 3;
 		} else if (targetStep >= 5 && !selectedTime) {
-			targetStep = selectedDate ? 4 : 3;
+			targetStep = selectedDate ? 3 : 3;
 		} else if (!hasMultipleLocations() && targetStep === 2) {
 			targetStep = 1;
 		}
@@ -3100,9 +3128,9 @@ export const initializePublicBookingPage = () => {
 		}
 
 		const targetStep = resolveDraftTargetStep(draft.step);
-		const expectSlotsSoon = Boolean(selectedDate) && targetStep >= 4;
+		const expectSlotsSoon = Boolean(selectedDate) && targetStep >= 3;
 
-		// Evitar flash de “sin horarios” antes del fetch al restaurar el paso Horario.
+		// Evitar flash de “sin horarios” antes del fetch al restaurar Fecha y Hora.
 		if (expectSlotsSoon) {
 			isLoadingSlots = true;
 		}
@@ -3135,7 +3163,7 @@ export const initializePublicBookingPage = () => {
 		renderLocations();
 		renderCalendar();
 
-		if (selectedDate && selectedLocation && targetStep >= 4) {
+		if (selectedDate && selectedLocation && targetStep >= 3) {
 			await loadAvailableSlots(selectedDate, {
 				preserveSelection: true,
 				skipStepChange: true,
@@ -3147,7 +3175,7 @@ export const initializePublicBookingPage = () => {
 				refreshSummary();
 				renderSlots();
 				draftPersister.flush();
-				setStep(4);
+				setStep(3);
 				return;
 			}
 		} else if (expectSlotsSoon) {

@@ -641,8 +641,9 @@ const prepareMobileActionsFooter = (actions: HTMLElement) => {
 	for (const child of [...actions.children]) {
 		if (!(child instanceof HTMLElement)) continue;
 		if (child.classList.contains('public-booking-back-row')) continue;
-		// Botón fijo del markup (p. ej. calendario en pro/[slug]).
-		if (child.hasAttribute('data-calendar-continue')) continue;
+		// Botón fijo del markup (Fecha y Hora / legado calendario).
+		if (child.hasAttribute('data-datetime-continue') || child.hasAttribute('data-calendar-continue'))
+			continue;
 
 		const isMovable =
 			child.matches(MOBILE_ACTIONS_CONTINUE_SELECTORS) ||
@@ -675,13 +676,8 @@ const findMobilePrimaryActions = (
 	return actions.querySelector<HTMLElement>('[data-booking-primary-actions]');
 };
 
-/** Agrupa Volver + Continuar en fila inferior en móvil; restaura layout en desktop. */
+/** Agrupa Volver + Continuar en la fila de acciones (móvil sticky y desktop). */
 export const syncPublicBookingMobileActions = (root: ParentNode = document) => {
-	if (!isMobileStack()) {
-		restorePublicBookingMobileActions(root);
-		return;
-	}
-
 	for (const panel of root.querySelectorAll<HTMLElement>('.public-booking-panel')) {
 		if (panel.classList.contains('sipap-deposit-panel')) continue;
 		let actions = panel.querySelector<HTMLElement>('.public-booking-actions');
@@ -699,7 +695,10 @@ export const syncPublicBookingMobileActions = (root: ParentNode = document) => {
 		const backVisible = Boolean(backRow && !backRow.classList.contains('hidden'));
 		const hasPrimary = Boolean(continueBtn || primaryActions);
 
-		if (!backVisible && !hasPrimary) continue;
+		if (!backVisible && !hasPrimary) {
+			actions.classList.add('hidden');
+			continue;
+		}
 
 		if (backRow && backRow.parentElement !== actions) {
 			rememberActionsRestoreSlot(backRow);

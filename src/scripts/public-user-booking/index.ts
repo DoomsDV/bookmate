@@ -24,7 +24,7 @@ import {
 	type PublicBookingDraftStep,
 } from '../../lib/public-booking-draft';
 import { fillPublicBookingSuccessTicket } from '../../lib/public-booking-success-ticket';
-import { bindPublicBookingStepIndicator } from '../../lib/public-booking-stepper';
+import { bindPublicBookingStepIndicator, BOOKING_PHASE_LABELS, phaseProgressPercent, wizardStepToPhase, type BookingPhase } from '../../lib/public-booking-stepper';
 import { createIdempotencyKey } from '../../lib/idempotency';
 import {
 	buildApiAppointmentTimes,
@@ -47,7 +47,6 @@ import {
 	type OrganizationBookingGroup,
 } from './org-groups';
 import {
-	USER_BOOKING_STEP_LABELS,
 	parseProfileFromDom,
 	type UserBookingContext,
 	type UserBookingService,
@@ -148,6 +147,12 @@ export const initializePublicUserBookingPage = () => {
 	const backToLocations = root.querySelector<HTMLButtonElement>('[data-back-to-locations]');
 	const backToCalendarButtons = root.querySelectorAll<HTMLButtonElement>('[data-back-to-calendar]');
 	const backToSlots = root.querySelector<HTMLButtonElement>('[data-back-to-slots]');
+	const datetimeContinueButton = root.querySelector<HTMLButtonElement>('[data-datetime-continue]');
+	const headerBackButton = root.querySelector<HTMLButtonElement>('[data-booking-header-back]');
+	const selectionSummary = root.querySelector<HTMLElement>('[data-selection-summary]');
+	const selectionSummaryValue = root.querySelector<HTMLElement>('[data-selection-summary-value]');
+	const selectionSummaryChange = root.querySelector<HTMLButtonElement>('[data-selection-summary-change]');
+	const slotsHint = root.querySelector<HTMLElement>('[data-slots-hint]');
 	const restartButtons = root.querySelectorAll<HTMLButtonElement>('[data-restart-booking]');
 	const summaryServiceInline = root.querySelector<HTMLElement>('[data-summary-service-inline]');
 	const summaryDateInline = root.querySelector<HTMLElement>('[data-summary-date-inline]');
@@ -184,8 +189,8 @@ export const initializePublicUserBookingPage = () => {
 		!nextMonthButton ||
 		!backToLocations ||
 		!backToServices ||
-		!backToCalendarButtons.length ||
 		!backToSlots ||
+		!datetimeContinueButton ||
 		restartButtons.length === 0
 	) {
 		return;
@@ -297,7 +302,8 @@ export const initializePublicUserBookingPage = () => {
 	const holdStorageKey = userBookingHoldKey(publicSlug || 'unknown');
 	const draftPersister = createDraftPersister(draftStorageKey, () => {
 		if (step >= 5 || !selectedService) return null;
-		const draftStep = (step <= 5 ? step : 5) as PublicBookingDraftStep;
+		const rawStep = (step <= 5 ? step : 5) as PublicBookingDraftStep;
+		const draftStep = (rawStep === 4 ? 3 : rawStep) as PublicBookingDraftStep;
 		return {
 			v: 1 as const,
 			step: draftStep,
@@ -440,54 +446,113 @@ export const initializePublicUserBookingPage = () => {
 	};
 
 	const setStep = (nextStep: UserBookingWizardStep) => {
-		step = nextStep;
+		step = nextStep === 4 ? 3 : nextStep;
 		for (const panel of stepPanels) {
 			const panelStep = Number(panel.dataset.stepPanel || '0');
 			panel.classList.toggle('hidden', panelStep !== step);
 		}
+
+		const phase = wizardStepToPhase(step);
 		for (const item of stepItems) {
-			const itemStep = Number(item.dataset.stepItem || '0');
+			const itemPhase = Number(item.dataset.stepItem || '0') as BookingPhase;
 			item.classList.remove('step-item-default', 'step-item-current', 'step-item-done');
-			if (itemStep === step && step <= 5) {
+			if (itemPhase === phase && step <= 5) {
 				item.classList.add('step-item-current');
 				continue;
 			}
-			if (itemStep < step || step >= 6) {
+			if (itemPhase < phase || step >= 6) {
 				item.classList.add('step-item-done');
 				continue;
 			}
 			item.classList.add('step-item-default');
 		}
 
-		const cappedStep = (step >= 6 ? 5 : step) as 1 | 2 | 3 | 4 | 5;
 		if (stepCompactLabel) {
 			stepCompactLabel.textContent =
 				step === 7
 					? 'Transferí la seña'
 					: step === 6
 						? 'Reserva confirmada'
-						: `Paso ${cappedStep} de 5: ${USER_BOOKING_STEP_LABELS[cappedStep]}`;
+						: `Paso ${phase} de 3: ${BOOKING_PHASE_LABELS[phase]}`;
 		}
 		if (stepProgressBar) {
-			stepProgressBar.style.width = `${step >= 6 ? 100 : cappedStep * 20}%`;
+			stepProgressBar.style.width = `${step >= 6 ? 100 : phaseProgressPercent(phase)}%`;
 		}
+
+		root.classList.toggle('is-booking-profile-compact', step >= 2);
+		root.classList.toggle('is-booking-success', step === 6);
 
 		if (step === 3) {
 			queueMicrotask(() => {
 				void loadAvailableDatesForVisibleMonth();
+				if (selectedDate && availableSlotGroups.length === 0 && !isLoadingSlots) {
+					void loadSlots(selectedDate, {
+						skipStepChange: true,
+						preserveSelection: Boolean(selectedTime),
+					});
+				} else if (availableSlotGroups.length > 0 && !isLoadingSlots) {
+					renderSlots();
+				}
 			});
-		}
-
-		if (step === 4 && availableSlotGroups.length > 0 && !isLoadingSlots) {
-			renderSlots();
 		}
 
 		if (step <= 5) draftPersister.flush();
 
-		root.classList.toggle('is-booking-success', step === 6);
-
 		refreshStepIndicatorClickable();
+		syncDatetimeContinue();
+		syncHeaderBack();
+		syncSelectionSummary();
 		syncPublicBookingMobileActions(root);
+	};
+
+	const canNavigateBack = () => {
+		if (step >= 6) return false;
+		if (step === 1) {
+			return servicePickerPhase === 'locations' && orgGroups.length > 1;
+		}
+		return step >= 2 && step <= 5;
+	};
+
+	const goBackOneStep = () => {
+		if (!canNavigateBack()) return;
+		if (step === 1) {
+			backToOrganizationPicker();
+			return;
+		}
+		if (step === 2) {
+			goBackToLocationsStep();
+			return;
+		}
+		if (step === 3) {
+			goBackToServicesStep();
+			return;
+		}
+		if (step === 5) {
+			setStep(3);
+		}
+	};
+
+	const syncHeaderBack = () => {
+		if (!headerBackButton) return;
+		const show = canNavigateBack();
+		headerBackButton.hidden = !show;
+		headerBackButton.toggleAttribute('hidden', !show);
+	};
+
+	const syncSelectionSummary = () => {
+		if (!selectionSummary || !selectionSummaryValue) return;
+		const label = selectedContext ? formatBranchLabel(selectedContext) : '';
+		const show = step === 2 && Boolean(label);
+		selectionSummary.hidden = !show;
+		selectionSummary.toggleAttribute('hidden', !show);
+		if (show) {
+			selectionSummaryValue.textContent = label;
+		}
+	};
+
+	const syncDatetimeContinue = () => {
+		if (!datetimeContinueButton) return;
+		datetimeContinueButton.disabled = !selectedDate || !selectedTime || isLoadingSlots;
 	};
 
 	const refreshSummary = () => {
@@ -530,6 +595,7 @@ export const initializePublicUserBookingPage = () => {
 	const updateStep1Copy = () => {
 		const showBack = servicePickerPhase === 'locations' && orgGroups.length > 1;
 		if (backToOrgsWrap) backToOrgsWrap.classList.toggle('hidden', !showBack);
+		syncHeaderBack();
 		syncPublicBookingMobileActions(root);
 
 		if (servicePickerPhase === 'orgs') {
@@ -1287,6 +1353,18 @@ export const initializePublicUserBookingPage = () => {
 		setStep(5);
 	};
 
+	const softPickSlot = (group: LocationSlotGroup, slot: string, slotKey: string) => {
+		selectedTime = slot;
+		selectedContext = group.location;
+		pendingAppointmentId = 0;
+		refreshSummary();
+		draftPersister.schedule();
+		for (const btn of slotsContainer.querySelectorAll<HTMLElement>('.public-slot-time')) {
+			btn.classList.toggle('is-selected', btn.dataset.slotKey === slotKey);
+		}
+		syncDatetimeContinue();
+	};
+
 	const softSelectSlot = (
 		group: LocationSlotGroup,
 		slot: string,
@@ -1356,7 +1434,7 @@ export const initializePublicUserBookingPage = () => {
 		selectedSlotKey: string
 	) => {
 		const grid = document.createElement('div');
-		grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
+		grid.className = 'public-slot-pill-grid';
 
 		for (const slot of group.slots) {
 			const slotKey = `${group.location.id_location}:${slot}`;
@@ -1370,12 +1448,12 @@ export const initializePublicUserBookingPage = () => {
 			button.setAttribute('aria-label', meridiem ? `${time} ${meridiem}` : slot);
 			button.dataset.slotKey = slotKey;
 			button.className =
-				'public-slot-time flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium transition' +
+				'public-slot-time public-slot-time--pill flex min-h-11 items-center justify-center rounded-xl border px-2 py-3 text-sm font-medium transition' +
 				(isSelected ? ' is-selected' : '');
 			button.addEventListener(
 				'click',
 				() => {
-					selectSlotAndAdvance(group, slot);
+					softPickSlot(group, slot, slotKey);
 				},
 				{ signal }
 			);
@@ -1593,27 +1671,32 @@ export const initializePublicUserBookingPage = () => {
 	const renderSlots = () => {
 		slotsContainer.innerHTML = '';
 		slotsLoadingNode.classList.toggle('hidden', !isLoadingSlots);
+		slotsHint?.toggleAttribute('hidden', !selectedDate);
 
 		const totalSlots = availableSlotGroups.reduce(
 			(count, group) => count + group.slots.length,
 			0
 		);
-		noSlotsNode.classList.toggle('hidden', isLoadingSlots || totalSlots > 0);
-		if (isLoadingSlots) return;
+		noSlotsNode.classList.toggle(
+			'hidden',
+			!selectedDate || isLoadingSlots || totalSlots > 0
+		);
+		if (isLoadingSlots) {
+			syncDatetimeContinue();
+			syncPublicBookingMobileActions(root);
+			return;
+		}
 
 		const selectedSlotKey = getSelectedSlotKey();
-		const useRoulette = isMobileStack();
 		const visibleGroups = availableSlotGroups.filter((group) => group.slots.length > 0);
-		const showLocationHeaders = !useRoulette && visibleGroups.length > 1;
+		const showLocationHeaders = visibleGroups.length > 1;
 		let branchToneIndex = 0;
 
 		for (const group of visibleGroups) {
 			const section = document.createElement('section');
 			section.className = showLocationHeaders
 				? `public-slot-branch public-slot-branch--tone-${branchToneIndex % 4}`
-				: useRoulette
-					? `public-slot-branch public-slot-branch--tone-${branchToneIndex % 4} is-slot-roulette`
-					: 'public-slot-branch';
+				: 'public-slot-branch';
 			branchToneIndex += 1;
 
 			if (showLocationHeaders) {
@@ -1626,14 +1709,10 @@ export const initializePublicUserBookingPage = () => {
 				});
 			}
 
-			if (useRoulette) {
-				mountSlotRoulette(section, group, selectedSlotKey);
-			} else {
-				mountSlotGrid(section, group, selectedSlotKey);
-			}
-
+			mountSlotGrid(section, group, selectedSlotKey);
 			slotsContainer.appendChild(section);
 		}
+		syncDatetimeContinue();
 		syncPublicBookingMobileActions(root);
 	};
 
@@ -1710,7 +1789,7 @@ export const initializePublicUserBookingPage = () => {
 					refreshSummary();
 					renderCalendar();
 					draftPersister.schedule();
-					void loadSlots(dateKey);
+					void loadSlots(dateKey, { skipStepChange: true });
 				},
 				{ signal }
 			);
@@ -1739,7 +1818,7 @@ export const initializePublicUserBookingPage = () => {
 			selectedTime = '';
 		}
 		renderSlots();
-		if (!options?.skipStepChange) setStep(4);
+		if (!options?.skipStepChange && step !== 3) setStep(3);
 
 		try {
 			const locationTargets =
@@ -2108,6 +2187,10 @@ export const initializePublicUserBookingPage = () => {
 			goBackToServicesStep();
 			return;
 		}
+		if (targetStep === 3 || targetStep === 4) {
+			setStep(3);
+			return;
+		}
 		setStep(targetStep as UserBookingWizardStep);
 	};
 
@@ -2116,12 +2199,18 @@ export const initializePublicUserBookingPage = () => {
 		getCurrentStep: () => step,
 		onNavigateToStep: navigateToStepFromIndicator,
 		signal,
+		mode: 'phase',
+		phaseToStep: (phase) => {
+			if (phase === 1) return 1;
+			if (phase === 2) return 3;
+			return 5;
+		},
 	}).refreshClickableState;
 
 	backToLocations.addEventListener(
 		'click',
 		() => {
-			goBackToLocationsStep();
+			goBackOneStep();
 		},
 		{ signal }
 	);
@@ -2129,14 +2218,37 @@ export const initializePublicUserBookingPage = () => {
 	backToServices.addEventListener(
 		'click',
 		() => {
-			goBackToServicesStep();
+			goBackOneStep();
 		},
 		{ signal }
 	);
 	backToCalendarButtons.forEach((button) => {
-		button.addEventListener('click', () => setStep(3), { signal });
+		button.addEventListener('click', () => goBackOneStep(), { signal });
 	});
-	backToSlots.addEventListener('click', () => setStep(4), { signal });
+	backToSlots.addEventListener('click', () => goBackOneStep(), { signal });
+	headerBackButton?.addEventListener('click', () => goBackOneStep(), { signal });
+	selectionSummaryChange?.addEventListener(
+		'click',
+		() => {
+			goBackToLocationsStep();
+		},
+		{ signal }
+	);
+	datetimeContinueButton.addEventListener(
+		'click',
+		() => {
+			if (!selectedDate) {
+				showToast('Seleccioná una fecha para continuar.', 'error');
+				return;
+			}
+			if (!selectedTime || !selectedContext) {
+				showToast('Seleccioná un horario para continuar.', 'error');
+				return;
+			}
+			setStep(5);
+		},
+		{ signal }
+	);
 	restartButtons.forEach((button) => {
 		button.addEventListener('click', resetFlow, { signal });
 	});
@@ -2337,8 +2449,8 @@ export const initializePublicUserBookingPage = () => {
 			if (y && m) visibleMonth = new Date(y, m - 1, 1);
 		}
 
-		// Flujo nuevo: 1 Sucursal, 2 Servicio, 3 Fecha, 4 Horario, 5 Datos
-		let targetStep: PublicBookingDraftStep = draft.step;
+		// Flujo: 1 Sucursal, 2 Servicio, 3 Fecha y Hora, 5 Datos (4 retirado)
+		let targetStep: PublicBookingDraftStep = draft.step === 4 ? 3 : draft.step;
 		if (!selectedContext) {
 			targetStep = 1;
 		} else if (!selectedService) {
@@ -2347,11 +2459,10 @@ export const initializePublicUserBookingPage = () => {
 			targetStep = Math.min(Math.max(targetStep, 2), 3) as PublicBookingDraftStep;
 			if (targetStep < 2) targetStep = 2;
 		} else if (!selectedTime) {
-			targetStep = Math.min(Math.max(targetStep, 3), 4) as PublicBookingDraftStep;
-			if (targetStep < 3) targetStep = 3;
+			targetStep = 3;
 		}
 
-		const expectSlotsSoon = Boolean(selectedDate) && targetStep >= 4;
+		const expectSlotsSoon = Boolean(selectedDate) && targetStep >= 3;
 		if (expectSlotsSoon) {
 			isLoadingSlots = true;
 		}
@@ -2365,7 +2476,7 @@ export const initializePublicUserBookingPage = () => {
 		finishBoot();
 
 		const wantedTime = selectedTime;
-		if (selectedDate && targetStep >= 4) {
+		if (selectedDate && targetStep >= 3) {
 			await loadSlots(selectedDate, { preserveSelection: true, skipStepChange: true });
 			if (signal.aborted) return;
 
@@ -2374,7 +2485,7 @@ export const initializePublicUserBookingPage = () => {
 				refreshSummary();
 				renderSlots();
 				draftPersister.flush();
-				setStep(4);
+				setStep(3);
 				return;
 			}
 		} else if (expectSlotsSoon) {

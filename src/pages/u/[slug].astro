@@ -105,6 +105,15 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 					<script type="application/json" id="public-user-profile-json" set:html={serializedProfile}></script>
 
 					<header class="public-booking-profile public-booking-profile--card" data-booking-profile-header>
+						<button
+							type="button"
+							class="public-booking-header-back"
+							data-booking-header-back
+							hidden
+							aria-label="Volver"
+						>
+							<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
+						</button>
 						<div class="public-booking-profile__inner">
 							<article class="public-booking-profile__card">
 								<div class="public-booking-profile__body">
@@ -140,26 +149,25 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 					<div class="public-booking-stepper">
 						<div class="public-booking-stepper__mobile">
 							<p class="text-sm font-medium tracking-wide text-(--on-surface)" data-step-compact-label aria-live="polite">
-								Paso 1 de 5: Sucursal
+								Paso 1 de 3: Detalles
 							</p>
 							<div class="h-2 flex-1 overflow-hidden rounded-full bg-(--surface-container-highest)" aria-hidden="true">
 								<div
 									class="h-full rounded-full bg-(--primary) transition-[width] duration-500 ease-out"
 									data-step-progress-bar
-									style="width:20%"
+									style="width:33%"
 								></div>
 							</div>
 						</div>
 						<ol data-step-indicator>
-							<li data-step-item="1" class="step-item-current">1. Sucursal</li>
-							<li data-step-item="2" class="step-item-default">2. Servicio</li>
-							<li data-step-item="3" class="step-item-default">3. Fecha</li>
-							<li data-step-item="4" class="step-item-default">4. Horario</li>
-							<li data-step-item="5" class="step-item-default">5. Datos</li>
+							<li data-step-item="1" class="step-item-current">1. Detalles</li>
+							<li data-step-item="2" class="step-item-default">2. Fecha y Hora</li>
+							<li data-step-item="3" class="step-item-default">3. Confirmación</li>
 						</ol>
 					</div>
 
 					<div class="hidden rounded-2xl mb-3 px-5 py-4 text-sm font-medium shadow-sm transition-all" data-booking-toast></div>
+					<span class="sr-only" data-summary-date-inline hidden aria-hidden="true"></span>
 
 					<section data-step-panel="1" class="public-booking-panel">
 						<div class="grid gap-2">
@@ -184,6 +192,15 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 
 					<section data-step-panel="2" class="public-booking-panel hidden">
 						<div class="grid gap-2">
+							<div class="public-booking-selection-summary" data-selection-summary hidden>
+								<span class="public-booking-selection-summary__text">
+									<span class="public-booking-selection-summary__key">Sucursal:</span>
+									<span data-selection-summary-value></span>
+								</span>
+								<button type="button" class="public-booking-selection-summary__change" data-selection-summary-change>
+									Cambiar
+								</button>
+							</div>
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">¿Qué servicio desea?</h2>
 							<p class="mt-0 text-base text-(--on-surface-variant)" data-step-services-hint>
 								<span class="public-services-hint__desktop">Dale click al servicio que querés reservar</span>
@@ -203,7 +220,10 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 
 					<section data-step-panel="3" class="public-booking-panel hidden">
 						<div class="grid gap-2">
-							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Seleccioná una fecha</h2>
+							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Elegí fecha y hora</h2>
+							<p class="text-base text-(--on-surface-variant)">
+								Seleccioná el día y después un horario disponible
+							</p>
 						</div>
 						<div class="public-booking-calendar mt-5">
 							<div class="public-booking-calendar__toolbar">
@@ -221,6 +241,31 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 							</div>
 							<div class="public-booking-calendar__grid" data-calendar-grid></div>
 						</div>
+						<div class="public-booking-datetime-slots mt-4" data-slots-under-calendar>
+							<p class="public-slots-under-calendar__hint text-sm font-medium text-(--on-surface-variant)" data-slots-hint hidden>
+								Horarios disponibles
+							</p>
+							<div data-slots-loading class="public-slots-skeleton mt-3 hidden" aria-busy="true" aria-live="polite">
+								<span class="sr-only">Consultando horarios disponibles…</span>
+								<div class="public-slots-skeleton__grid public-slots-skeleton__grid--pills" aria-hidden="true">
+									<span class="public-slots-skeleton__chip"></span>
+									<span class="public-slots-skeleton__chip"></span>
+									<span class="public-slots-skeleton__chip"></span>
+									<span class="public-slots-skeleton__chip"></span>
+									<span class="public-slots-skeleton__chip"></span>
+									<span class="public-slots-skeleton__chip"></span>
+								</div>
+							</div>
+							<div class="mt-2 grid gap-4" data-slots-container></div>
+							<div data-no-slots class="public-slots-empty mt-4 hidden">
+								<span class="material-symbols-rounded public-slots-empty__icon" aria-hidden="true"
+									>event_busy</span
+								>
+								<p class="public-slots-empty__text">
+									No se encontraron horarios para este día. Elegí otra fecha.
+								</p>
+							</div>
+						</div>
 						<div class="public-booking-actions">
 							<div class="public-booking-back-row">
 								<button type="button" data-back-to-services class="public-booking-back-link">
@@ -228,58 +273,19 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 									Volver
 								</button>
 							</div>
+							<button
+								type="button"
+								class="public-booking-continue"
+								data-datetime-continue
+								disabled
+							>
+								<span class="public-booking-continue__label">Continuar</span>
+								<span class="material-symbols-rounded public-booking-continue__icon" aria-hidden="true">chevron_right</span>
+							</button>
 						</div>
 					</section>
 
-					<section data-step-panel="4" class="public-booking-panel hidden">
-						<div class="grid gap-2">
-							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)" data-summary-date-inline></h2>
-							<p class="mt-1 text-base text-(--on-surface-variant)">
-								<span class="public-slots-hint__desktop">Elegí un horario disponible</span>
-								<span class="public-slots-hint__mobile">Deslizá para seleccionar un horario</span>
-							</p>
-						</div>
-						<div data-slots-loading class="public-slots-skeleton mt-5 hidden" aria-busy="true" aria-live="polite">
-							<span class="sr-only">Consultando horarios disponibles…</span>
-							<div class="public-slots-skeleton__roulette" aria-hidden="true">
-								<span class="public-slots-skeleton__bar public-slots-skeleton__bar--far"></span>
-								<span class="public-slots-skeleton__bar public-slots-skeleton__bar--near"></span>
-								<span class="public-slots-skeleton__bar public-slots-skeleton__bar--focus"></span>
-								<span class="public-slots-skeleton__bar public-slots-skeleton__bar--near"></span>
-								<span class="public-slots-skeleton__bar public-slots-skeleton__bar--far"></span>
-							</div>
-							<div class="public-slots-skeleton__grid" aria-hidden="true">
-								<span class="public-slots-skeleton__chip"></span>
-								<span class="public-slots-skeleton__chip"></span>
-								<span class="public-slots-skeleton__chip"></span>
-								<span class="public-slots-skeleton__chip"></span>
-								<span class="public-slots-skeleton__chip"></span>
-								<span class="public-slots-skeleton__chip"></span>
-								<span class="public-slots-skeleton__chip"></span>
-								<span class="public-slots-skeleton__chip"></span>
-							</div>
-						</div>
-						<div class="mt-2 grid gap-6" data-slots-container></div>
-						<div data-no-slots class="public-slots-empty mt-10 hidden">
-							<span class="material-symbols-rounded public-slots-empty__icon" aria-hidden="true"
-								>event_busy</span
-							>
-							<p class="public-slots-empty__text">
-								No se encontraron horarios para este día. Seleccioná otra fecha para continuar.
-							</p>
-							<button type="button" data-back-to-calendar class="public-slots-empty__action">
-								Volver al calendario
-							</button>
-						</div>
-						<div class="public-booking-actions">
-							<div class="public-booking-back-row">
-								<button type="button" data-back-to-calendar class="public-booking-back-link">
-									<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-									Volver
-								</button>
-							</div>
-						</div>
-					</section>
+					<section data-step-panel="4" class="public-booking-panel hidden" hidden aria-hidden="true"></section>
 
 					<section data-step-panel="5" class="public-booking-panel hidden">
 						<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Confirmá tus datos</h2>
@@ -326,11 +332,11 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 									<span>No cierres esta página hasta confirmar. Si salís o cerrás el navegador, la cita no se reservará.</span>
 								</p>
 								<div class="order-3 grid gap-3 lg:order-none lg:mt-3" data-booking-primary-actions>
-									<button type="submit" data-submit-booking class="booking-primary-action inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60">
+									<button type="submit" data-submit-booking class="booking-primary-action inline-flex min-h-14 h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60">
 										<span class="material-symbols-rounded booking-primary-action__icon" aria-hidden="true">event_available</span>
 										<span class="booking-primary-action__label">Confirmar reserva</span>
 									</button>
-									<button type="button" data-pay-deposit-submit class="booking-primary-action is-hidden inline-flex h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60">
+									<button type="button" data-pay-deposit-submit class="booking-primary-action is-hidden inline-flex min-h-14 h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60">
 										<span>Confirmar y transferir seña</span>
 										<span aria-hidden="true">🔒</span>
 									</button>

@@ -133,6 +133,11 @@ export const clearSipapHold = (key: string) => {
 const isDraftStep = (value: unknown): value is PublicBookingDraftStep =>
 	value === 1 || value === 2 || value === 3 || value === 4 || value === 5;
 
+/** Step 4 (Horario) retirado: al leer drafts antiguos se normaliza a 3 (Fecha y Hora). */
+export const normalizePublicBookingDraftStep = (
+	step: PublicBookingDraftStep
+): PublicBookingDraftStep => (step === 4 ? 3 : step);
+
 const parseDraft = (raw: string | null): PublicBookingDraft | null => {
 	if (!raw) return null;
 	try {
@@ -145,7 +150,7 @@ const parseDraft = (raw: string | null): PublicBookingDraft | null => {
 		if (!Number.isFinite(savedAt) || savedAt <= 0) return null;
 		return {
 			v: 1,
-			step: parsed.step,
+			step: normalizePublicBookingDraftStep(parsed.step),
 			serviceId,
 			orgId: parsed.orgId == null ? null : Number(parsed.orgId) || null,
 			locationId: parsed.locationId == null ? null : Number(parsed.locationId) || null,

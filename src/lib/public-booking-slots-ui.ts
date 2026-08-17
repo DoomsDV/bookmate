@@ -113,6 +113,11 @@ export type MountPublicSlotBranchesOptions = {
 	showRouletteContinue?: boolean;
 	/** Header nombre/dirección de sucursal encima de los slots (default true). */
 	showLocationHeader?: boolean;
+	/**
+	 * Grilla compacta 3 columnas (píldoras bajo el calendario).
+	 * Default true cuando no hay roulette.
+	 */
+	compactPillGrid?: boolean;
 };
 
 /**
@@ -129,6 +134,7 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 		showLocationHeader = true,
 	} = options;
 	const useRoulette = options.useRoulette ?? isMobileSlotRouletteViewport();
+	const compactPillGrid = options.compactPillGrid ?? !useRoulette;
 	const slotFocusByLocation = new Map<number, number>();
 
 	container.innerHTML = '';
@@ -144,7 +150,9 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 		}
 
 		const grid = document.createElement('div');
-		grid.className = 'grid grid-cols-2 gap-3 sm:grid-cols-4';
+		grid.className = compactPillGrid
+			? 'public-slot-pill-grid'
+			: 'grid grid-cols-2 gap-3 sm:grid-cols-4';
 
 		for (const slot of group.slots) {
 			const slotKey = `${group.location.id_location}:${slot}`;
@@ -158,7 +166,9 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 			slotButton.dataset.slotKey = slotKey;
 			const isSelected = selectedSlotKey === slotKey;
 			slotButton.className =
-				'public-slot-time flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition' +
+				(compactPillGrid
+					? 'public-slot-time public-slot-time--pill flex min-h-11 items-center justify-center rounded-xl border px-2 py-3 text-sm font-medium cursor-pointer transition'
+					: 'public-slot-time flex h-11 items-center justify-center rounded-full border px-4 text-sm font-medium cursor-pointer transition') +
 				(isSelected ? ' is-selected' : '');
 
 			slotButton.addEventListener('click', () => {
