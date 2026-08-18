@@ -15,6 +15,7 @@ import {
 	toDateStart,
 } from '../lib/booking-datetime';
 import { formatCustomerCancelNoRefundHint } from '../lib/public-reservation-refund';
+import { parseSipapAlias, sanitizeSipapAliasInput, SIPAP_ALIAS_ERROR } from '../lib/sipap-alias';
 import { normalizePublicBookingLocations } from '../lib/public-booking-locations';
 import {
 	isMobileSlotRouletteViewport,
@@ -184,13 +185,27 @@ export const initializePublicReservationPage = () => {
 		const aliasForm = root.querySelector<HTMLFormElement>('[data-refund-alias-form]');
 		const aliasInput = root.querySelector<HTMLInputElement>('[data-refund-alias-input]');
 		const aliasStatus = root.querySelector<HTMLElement>('[data-refund-alias-status]');
+		const aliasSubmit = root.querySelector<HTMLButtonElement>('[data-refund-alias-submit]');
+		const syncAliasSubmit = () => {
+			if (!aliasInput) return;
+			const cleaned = sanitizeSipapAliasInput(aliasInput.value);
+			if (aliasInput.value !== cleaned) aliasInput.value = cleaned;
+			if (aliasSubmit) aliasSubmit.disabled = !parseSipapAlias(cleaned).isValid;
+		};
+		aliasInput?.addEventListener('input', syncAliasSubmit);
+		aliasInput?.addEventListener('paste', () => {
+			requestAnimationFrame(syncAliasSubmit);
+		});
+		syncAliasSubmit();
+
 		aliasForm?.addEventListener('submit', async (event) => {
 			event.preventDefault();
-			const alias = String(aliasInput?.value || '').trim();
-			if (alias.length < 3) {
-				showToast('Indica un alias SIPAP válido.', 'error');
+			const parsed = parseSipapAlias(aliasInput?.value || '');
+			if (!parsed.isValid) {
+				showToast(parsed.message || SIPAP_ALIAS_ERROR, 'error');
 				return;
 			}
+			const alias = parsed.normalized;
 			if (aliasStatus) aliasStatus.textContent = 'Enviando…';
 			const response = await fetch(
 				`/api/public/reservations/${encodeURIComponent(token)}/refund-alias`,
@@ -1468,13 +1483,28 @@ export const initializePublicReservationPage = () => {
 		showToast(data.message || 'No fue posible actualizar tu cita.', 'error');
 	});
 
+	const cancelRefundModal = root.querySelector<HTMLDialogElement>('[data-cancel-refund-modal]');
+	const cancelRefundForm = root.querySelector<HTMLFormElement>('[data-cancel-refund-form]');
+	const cancelRefundAlias = root.querySelector<HTMLInputElement>('[data-cancel-refund-alias]');
+	const cancelRefundSubmit = root.querySelector<HTMLButtonElement>('[data-cancel-refund-submit]');
+	const cancelRefundSummary = root.querySelector<HTMLElement>('[data-cancel-refund-summary]');
+
+	const syncCancelRefundSubmit = () => {
+		if (!cancelRefundAlias) return;
+		const cleaned = sanitizeSipapAliasInput(cancelRefundAlias.value);
+		if (cancelRefundAlias.value !== cleaned) cancelRefundAlias.value = cleaned;
+		if (cancelRefundSubmit) cancelRefundSubmit.disabled = !parseSipapAlias(cleaned).isValid;
+	};
+
+	cancelRefundAlias?.addEventListener('input', syncCancelRefundSubmit);
+	cancelRefundAlias?.addEventListener('paste', () => {
+		requestAnimationFrame(syncCancelRefundSubmit);
+	});
+	syncCancelRefundSubmit();
+
 	cancelButton.addEventListener('click', async () => {
 		const preview = reservation.refund_preview;
 		const requiresAlias = Boolean(preview?.requires_alias && (preview.amount || 0) > 0);
-		const cancelRefundModal = root.querySelector<HTMLDialogElement>('[data-cancel-refund-modal]');
-		const cancelRefundForm = root.querySelector<HTMLFormElement>('[data-cancel-refund-form]');
-		const cancelRefundAlias = root.querySelector<HTMLInputElement>('[data-cancel-refund-alias]');
-		const cancelRefundSummary = root.querySelector<HTMLElement>('[data-cancel-refund-summary]');
 
 		const doCancel = async (refundAlias?: string) => {
 			const response = await fetch(`/api/public/reservations/${encodeURIComponent(token)}`, {
@@ -1495,11 +1525,16 @@ export const initializePublicReservationPage = () => {
 
 		if (requiresAlias && cancelRefundModal && cancelRefundForm && cancelRefundAlias) {
 			if (cancelRefundSummary) {
-				cancelRefundSummary.textContent = `Te corresponde un reembolso de ${formatMoney(
-					preview?.amount || 0
-				)}. Ingresá tu alias SIPAP para recibirlo.`;
+				const amount = document.createElement('strong');
+				amount.textContent = formatMoney(preview?.amount || 0);
+				cancelRefundSummary.replaceChildren(
+					'Te corresponde un reembolso de ',
+					amount,
+					'. Ingresá tu alias SIPAP para recibirlo.'
+				);
 			}
 			cancelRefundAlias.value = '';
+			syncCancelRefundSubmit();
 			if (!cancelRefundModal.open) cancelRefundModal.showModal();
 
 			const onClose = () => cancelRefundModal.close();
@@ -1509,13 +1544,13 @@ export const initializePublicReservationPage = () => {
 
 			cancelRefundForm.onsubmit = async (event) => {
 				event.preventDefault();
-				const alias = String(cancelRefundAlias.value || '').trim();
-				if (alias.length < 3) {
-					showToast('Indica un alias SIPAP válido.', 'error');
+				const parsed = parseSipapAlias(cancelRefundAlias.value);
+				if (!parsed.isValid) {
+					showToast(parsed.message || SIPAP_ALIAS_ERROR, 'error');
 					return;
 				}
 				cancelRefundModal.close();
-				await doCancel(alias);
+				await doCancel(parsed.normalized);
 			};
 			return;
 		}

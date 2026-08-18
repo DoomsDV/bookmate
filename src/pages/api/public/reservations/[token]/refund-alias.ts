@@ -4,6 +4,7 @@ import {
 	PublicBookingApiError,
 	submitRefundAliasWithOrds,
 } from '../../../../../lib/public-booking';
+import { parseSipapAlias } from '../../../../../lib/sipap-alias';
 import {
 	parseRequestBody,
 	publicBookingErrorResponse,
@@ -15,12 +16,12 @@ export const POST: APIRoute = async ({ request, params }) => {
 	try {
 		const token = parseToken(params.token);
 		const body = await parseRequestBody(request);
-		const alias = String(body?.refund_alias || '').trim();
-		if (!alias) {
-			throw new PublicBookingApiError('Indica tu alias SIPAP.', 400);
+		const parsed = parseSipapAlias(String(body?.refund_alias || ''));
+		if (!parsed.isValid) {
+			throw new PublicBookingApiError(parsed.message, 400);
 		}
 
-		const result = await submitRefundAliasWithOrds(token, alias);
+		const result = await submitRefundAliasWithOrds(token, parsed.normalized);
 		return Response.json(
 			{
 				status: 'success',

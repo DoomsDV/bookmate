@@ -11,6 +11,7 @@ import {
 	parseRequestBody,
 	publicBookingErrorResponse,
 } from '../../../../lib/public-api-handlers';
+import { parseSipapAlias } from '../../../../lib/sipap-alias';
 
 const parseToken = (value: string | undefined) => String(value || '').trim();
 
@@ -76,8 +77,11 @@ export const DELETE: APIRoute = async ({ request, params }) => {
 		if (contentType.includes('application/json')) {
 			try {
 				const body = await parseRequestBody(request);
-				const alias = String(body?.refund_alias || '').trim();
-				if (alias) refundAlias = alias;
+				const parsed = parseSipapAlias(String(body?.refund_alias || ''));
+				if (String(body?.refund_alias || '').trim() && !parsed.isValid) {
+					throw new PublicBookingApiError(parsed.message, 400);
+				}
+				if (parsed.isValid) refundAlias = parsed.normalized;
 			} catch {
 				// ignore body parse errors
 			}
