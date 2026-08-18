@@ -667,6 +667,31 @@ const findMobileContinueButton = (
 	return actions.querySelector<HTMLButtonElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS);
 };
 
+const isFixedDatetimeContinue = (button: HTMLButtonElement) =>
+	button.hasAttribute('data-datetime-continue') || button.hasAttribute('data-calendar-continue');
+
+/**
+ * Continuar del picker (servicio/sucursal/org). Tras syncPublicBookingMobileActions
+ * el botón vive en .public-booking-actions, no dentro del grid.
+ */
+export const findPickerContinueButton = (origin: HTMLElement): HTMLButtonElement | null => {
+	const panel = origin.closest<HTMLElement>('.public-booking-panel');
+	const searchRoot = panel ?? origin;
+	const actions = panel?.querySelector<HTMLElement>('.public-booking-actions');
+	const fromActions = actions?.querySelector<HTMLButtonElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS);
+	const candidate =
+		fromActions && !isFixedDatetimeContinue(fromActions)
+			? fromActions
+			: searchRoot.querySelector<HTMLButtonElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS);
+	if (!candidate || isFixedDatetimeContinue(candidate)) return null;
+	return candidate;
+};
+
+export const setPickerContinueEnabled = (origin: HTMLElement, enabled: boolean) => {
+	const button = findPickerContinueButton(origin);
+	if (button) button.disabled = !enabled;
+};
+
 const findMobilePrimaryActions = (
 	panel: HTMLElement,
 	actions: HTMLElement
@@ -707,7 +732,15 @@ export const syncPublicBookingMobileActions = (root: ParentNode = document) => {
 		}
 
 		if (continueBtn) moveIntoActions(continueBtn, actions);
-		if (primaryActions) moveIntoActions(primaryActions, actions);
+		if (primaryActions) {
+			moveIntoActions(primaryActions, actions);
+			const form = panel.querySelector<HTMLFormElement>('[data-customer-form]');
+			if (form?.id) {
+				for (const btn of primaryActions.querySelectorAll<HTMLButtonElement>('button[type="submit"]')) {
+					btn.setAttribute('form', form.id);
+				}
+			}
+		}
 		removeDuplicateMobileContinues(panel, actions);
 
 		actions.classList.toggle('hidden', !backVisible && !hasPrimary);

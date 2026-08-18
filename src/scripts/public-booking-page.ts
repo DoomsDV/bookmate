@@ -22,6 +22,7 @@ import {
 	mergePublicBookingLocations,
 	normalizePublicBookingLocations,
 } from '../lib/public-booking-locations';
+import { wrapSlotPillGrid } from '../lib/public-booking-slots-ui';
 import {
 	formatParaguayMobilePhoneInput,
 	PARAGUAY_MOBILE_PHONE_ERROR,
@@ -61,6 +62,7 @@ import {
 	bindPickerUserGesture,
 	getServiceGridInitialPageIndex,
 	mountPaginatedServiceGrid,
+	setPickerContinueEnabled,
 	syncPublicBookingMobileActions,
 	triggerPickerHaptic,
 } from './public-user-booking/picker-ui';
@@ -948,7 +950,6 @@ export const initializePublicBookingPage = () => {
 			stepProgressBar.style.width = `${progress}%`;
 		}
 
-		root.classList.toggle('is-booking-profile-compact', step >= 2);
 		root.classList.toggle('is-booking-success', step === 6);
 
 		if (step === 3) {
@@ -1148,8 +1149,7 @@ export const initializePublicBookingPage = () => {
 			const id = Number(card.dataset.serviceId ?? 0);
 			card.classList.toggle('is-selected', id === service.id_service);
 		}
-		const continueBtn = servicesGrid.querySelector<HTMLButtonElement>('.public-booking-continue');
-		if (continueBtn) continueBtn.disabled = false;
+		setPickerContinueEnabled(servicesGrid, true);
 	};
 
 	const selectLocationAndAdvance = (location: BookingLocation) => {
@@ -1185,8 +1185,7 @@ export const initializePublicBookingPage = () => {
 			const id = Number(card.dataset.locationId ?? 0);
 			card.classList.toggle('is-selected', id === location.id_location);
 		}
-		const continueBtn = locationsGrid.querySelector<HTMLButtonElement>('.public-booking-continue');
-		if (continueBtn) continueBtn.disabled = false;
+		setPickerContinueEnabled(locationsGrid, true);
 	};
 
 	const createContinueButton = (onClick: () => void, options?: { disabled?: boolean }) => {
@@ -2123,7 +2122,7 @@ export const initializePublicBookingPage = () => {
 			grid.appendChild(slotButton);
 		}
 
-		section.appendChild(grid);
+		section.appendChild(wrapSlotPillGrid(grid, { signal }));
 	};
 
 	const mountSlotRoulette = (
@@ -2860,8 +2859,8 @@ export const initializePublicBookingPage = () => {
 		}
 	};
 
-	customerForm.addEventListener('submit', async (event) => {
-		event.preventDefault();
+	const confirmBooking = async (event?: Event) => {
+		event?.preventDefault();
 		if (isSubmitting) return;
 		if (calculateDepositAmount(selectedService) > 0) {
 			await beginDepositFlow();
@@ -2974,7 +2973,21 @@ export const initializePublicBookingPage = () => {
 			submitButton.disabled = false;
 			setSubmitBookingButtonContent(submitButton);
 		}
+	};
+
+	customerForm.addEventListener('submit', (event) => {
+		void confirmBooking(event);
 	}, { signal });
+
+	submitButton.addEventListener(
+		'click',
+		(event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			void confirmBooking(event);
+		},
+		{ signal }
+	);
 
 	payDepositButton.addEventListener('click', () => void beginDepositFlow(), { signal });
 	bindSipapCopyButtons(root, signal);

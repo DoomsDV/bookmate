@@ -49,14 +49,16 @@ html:has(.public-booking-shell) body {
 	width: 100%;
 	max-width: min(42rem, 100%);
 	margin-inline: auto;
-	padding: 0.35rem 1rem 2.5rem;
+	--public-booking-pad-x: 1rem;
+	padding: 0.35rem var(--public-booking-pad-x) 2.5rem;
 	box-sizing: border-box;
 	min-width: 0;
 }
 
 @media (min-width: 640px) {
 	.public-booking-shell__canvas {
-		padding: 0.5rem 1.25rem 3rem;
+		--public-booking-pad-x: 1.25rem;
+		padding: 0.5rem var(--public-booking-pad-x) 3rem;
 		max-width: 48rem;
 	}
 }
@@ -126,6 +128,12 @@ html:has(.public-booking-shell) body {
 
 .public-booking-header-back[hidden] {
 	display: none !important;
+}
+
+@media (min-width: 640px) {
+	.public-booking-header-back {
+		display: none !important;
+	}
 }
 
 .public-booking-header-back:hover {
@@ -488,21 +496,18 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 
 /* Paso seña SIPAP: header compacto solo mientras el panel está visible. No toca pasos 1-5. */
 @media (max-width: 959px) {
-	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__inner,
-	.public-booking-sheet.is-booking-profile-compact .public-booking-profile--card .public-booking-profile__inner {
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__inner {
 		align-items: stretch;
 		gap: 0;
 		padding: 0.4rem 1rem 0.1rem;
 		text-align: left;
 	}
 
-	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__card,
-	.public-booking-sheet.is-booking-profile-compact .public-booking-profile__card {
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__card {
 		padding: 0.15rem 0;
 	}
 
-	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__body,
-	.public-booking-sheet.is-booking-profile-compact .public-booking-profile__body {
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile__body {
 		flex-direction: row;
 		align-items: center;
 		justify-content: flex-start;
@@ -510,22 +515,18 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		text-align: left;
 	}
 
-	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__text,
-	.public-booking-sheet.is-booking-profile-compact .public-booking-profile--card .public-booking-profile__text {
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__text {
 		align-self: center;
 		gap: 0;
 		text-align: left;
 	}
 
 	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__eyebrow,
-	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__meta,
-	.public-booking-sheet.is-booking-profile-compact .public-booking-profile--card .public-booking-profile__eyebrow,
-	.public-booking-sheet.is-booking-profile-compact .public-booking-profile--card .public-booking-profile__meta {
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__meta {
 		display: none;
 	}
 
-	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__title,
-	.public-booking-sheet.is-booking-profile-compact .public-booking-profile--card .public-booking-profile__title {
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-profile__title {
 		overflow: hidden;
 		font-size: 1rem;
 		font-weight: 700;
@@ -536,9 +537,7 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	}
 
 	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-avatar,
-	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-avatar--empty,
-	.public-booking-sheet.is-booking-profile-compact .public-booking-profile--card .public-booking-avatar,
-	.public-booking-sheet.is-booking-profile-compact .public-booking-profile--card .public-booking-avatar--empty {
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-profile--card .public-booking-avatar--empty {
 		width: 32px;
 		height: 32px;
 		box-shadow: none;
@@ -547,28 +546,12 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden))
 		.public-booking-profile--card
 		.public-booking-avatar--empty
-		.material-symbols-rounded,
-	.public-booking-sheet.is-booking-profile-compact
-		.public-booking-profile--card
-		.public-booking-avatar--empty
 		.material-symbols-rounded {
 		font-size: 1.35rem;
 	}
 
-	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-stepper,
-	.public-booking-sheet.is-booking-profile-compact .public-booking-stepper {
+	.public-booking-sheet:has(.sipap-deposit-panel:not(.hidden)) .public-booking-stepper {
 		margin: 0.15rem 0 0.4rem;
-	}
-
-	.public-booking-sheet.is-booking-profile-compact .public-booking-header-back {
-		top: max(0.35rem, env(safe-area-inset-top, 0px));
-		left: max(0.35rem, env(safe-area-inset-left, 0px));
-		width: 2.25rem;
-		height: 2.25rem;
-	}
-
-	.public-booking-sheet.is-booking-profile-compact .public-booking-header-back .material-symbols-rounded {
-		font-size: 1.2rem;
 	}
 }
 
@@ -3071,7 +3054,7 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 }
 
 @media (min-width: 640px) {
-	/* Con stepper de 3 fases, Volver sigue visible; Continuar queda como píldora (no full-width). */
+	/* Con stepper de 3 fases, Volver a la izquierda y CTA a la derecha. */
 	.public-booking-actions {
 		display: flex;
 		align-items: center;
@@ -3082,7 +3065,7 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	}
 
 	.public-booking-actions:has(.public-booking-back-row:not(.hidden)) {
-		justify-content: flex-start;
+		justify-content: space-between;
 	}
 
 	.public-booking-actions .public-booking-back-row {
@@ -3101,11 +3084,25 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		margin: 0;
 	}
 
+	.public-booking-actions:has(.public-booking-back-row:not(.hidden)) > .public-booking-continue,
+	.public-booking-actions:has(.public-booking-back-row:not(.hidden)) > .public-service-stack__continue,
+	.public-booking-actions:has(.public-booking-back-row:not(.hidden)) > .public-location-stack__continue,
+	.public-booking-actions:has(.public-booking-back-row:not(.hidden)) > .public-slot-roulette__continue,
+	.public-booking-actions:has(.public-booking-back-row:not(.hidden)) > [data-booking-primary-actions] {
+		margin-left: auto;
+	}
+
 	.public-booking-actions > [data-booking-primary-actions] {
 		display: grid;
 		flex: 0 0 auto;
-		width: min(22rem, 100%);
-		margin-inline: auto;
+		width: fit-content;
+		max-width: 100%;
+		margin-inline: 0;
+	}
+
+	.public-booking-actions [data-booking-primary-actions] .booking-primary-action {
+		width: auto;
+		min-width: 13.5rem;
 	}
 }
 
@@ -3377,9 +3374,16 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	max-width: 100%;
 }
 
+.public-slot-pill-scroller {
+	position: relative;
+	isolation: isolate;
+	min-width: 0;
+	max-width: 100%;
+}
+
 /*
- * Mobile / tablet angosto: carrusel horizontal de exactamente 2 filas.
- * Flex column-wrap es más fiable que grid-auto-flow en viewports reales.
+ * Mobile / tablet angosto: carrusel horizontal.
+ * El primer chip queda entero; a la derecha peek + degradado si hay más horarios.
  */
 @media (max-width: 767px) {
 	.public-booking-panel[data-step-panel='3'] .public-booking-calendar {
@@ -3390,60 +3394,129 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 		padding-bottom: 0.35rem;
 	}
 
+	.public-slot-pill-scroller {
+		margin-right: calc(-1 * var(--public-booking-pad-x, 1rem));
+		width: calc(100% + var(--public-booking-pad-x, 1rem));
+		max-width: none;
+	}
+
+	.public-slot-pill-scroller::before,
+	.public-slot-pill-scroller::after {
+		content: '';
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 1.85rem;
+		z-index: 2;
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 180ms ease;
+	}
+
+	.public-slot-pill-scroller::before {
+		left: 0;
+		background: linear-gradient(
+			to right,
+			var(--surface-background, #121214) 0%,
+			color-mix(in srgb, var(--surface-background, #121214) 72%, transparent) 42%,
+			transparent 100%
+		);
+	}
+
+	.public-slot-pill-scroller::after {
+		right: 0;
+		background: linear-gradient(
+			to left,
+			var(--surface-background, #121214) 0%,
+			color-mix(in srgb, var(--surface-background, #121214) 72%, transparent) 42%,
+			transparent 100%
+		);
+	}
+
+	.public-slot-pill-scroller.has-overflow-start::before,
+	.public-slot-pill-scroller.has-overflow-end::after {
+		opacity: 1;
+	}
+
 	.public-booking-datetime-slots .public-slot-pill-grid,
 	.public-slot-pill-grid {
 		display: flex !important;
-		flex-flow: column wrap !important;
-		align-content: flex-start;
+		flex-flow: row nowrap !important;
+		align-items: stretch;
 		justify-content: flex-start;
-		align-items: flex-start;
 		gap: 0.5rem;
-		/* Exactamente 2 filas de chips + 1 gap (border-box). */
 		box-sizing: border-box;
-		height: calc(2 * 2.75rem + 0.5rem);
+		height: auto;
 		width: 100%;
-		max-width: 100%;
+		max-width: none;
 		overflow-x: auto !important;
 		overflow-y: hidden !important;
+		overflow-anchor: none;
 		-webkit-overflow-scrolling: touch;
 		touch-action: pan-x;
 		scroll-snap-type: x proximity;
+		scroll-padding-inline: 0;
 		padding: 0;
 		overscroll-behavior-x: contain;
+		scrollbar-width: none;
 		grid-template-columns: none !important;
 		grid-auto-flow: unset !important;
 	}
 
+	.public-slot-pill-grid::-webkit-scrollbar {
+		display: none;
+	}
+
 	.public-slot-pill-grid .public-slot-time--pill {
 		flex: 0 0 auto;
-		width: 5.5rem;
+		width: auto;
+		min-width: 6.6rem;
 		min-height: 2.75rem;
+		padding-inline: 0.7rem;
+		white-space: nowrap;
 		scroll-snap-align: start;
 		box-sizing: border-box;
 	}
 
 	.public-slots-skeleton__grid--pills {
 		display: flex !important;
-		flex-flow: column wrap !important;
+		flex-flow: row nowrap !important;
 		align-content: flex-start;
 		gap: 0.5rem;
-		height: calc(2 * 2.75rem + 0.5rem);
+		height: auto;
 		width: 100%;
+		margin-right: calc(-1 * var(--public-booking-pad-x, 1rem));
 		overflow-x: auto;
 		overflow-y: hidden;
 		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+
+	.public-slots-skeleton__grid--pills::-webkit-scrollbar {
+		display: none;
 	}
 
 	.public-slots-skeleton__grid--pills .public-slots-skeleton__chip {
 		flex: 0 0 auto;
-		width: 5.5rem;
+		width: 6.6rem;
 		height: 2.75rem;
 		border-radius: 0.75rem;
 	}
 }
 
-/* Desktop: grilla clásica 3 columnas. */
+/* Desktop: más columnas para bajar la altura del bloque de horarios. */
 @media (min-width: 768px) {
+	.public-slot-pill-scroller {
+		margin-right: 0;
+		width: auto;
+		max-width: 100%;
+	}
+
+	.public-slot-pill-scroller::before,
+	.public-slot-pill-scroller::after {
+		content: none;
+	}
+
 	.public-booking-datetime-slots .public-slot-pill-grid,
 	.public-slot-pill-grid {
 		display: grid !important;
@@ -3452,7 +3525,8 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 		grid-auto-flow: row;
 		grid-template-rows: none;
 		grid-auto-columns: unset;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(5, minmax(0, 1fr));
+		gap: 0.45rem;
 		overflow: visible;
 		max-height: none;
 		scroll-snap-type: none;
@@ -3460,13 +3534,25 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 
 	.public-slot-pill-grid .public-slot-time--pill {
 		width: auto;
+		min-width: 0;
+		min-height: 2.5rem;
+		padding-inline: 0.4rem;
+		white-space: nowrap;
 	}
 
 	.public-slots-skeleton__grid--pills {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(5, minmax(0, 1fr));
 		height: auto;
-		gap: 0.5rem;
+		gap: 0.45rem;
+	}
+}
+
+@media (min-width: 1024px) {
+	.public-booking-datetime-slots .public-slot-pill-grid,
+	.public-slot-pill-grid,
+	.public-slots-skeleton__grid--pills {
+		grid-template-columns: repeat(6, minmax(0, 1fr));
 	}
 }
 

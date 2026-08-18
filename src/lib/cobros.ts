@@ -136,10 +136,7 @@ export const listCobrosWithOrds = async (
 ): Promise<CobrosListResult> => {
 	const url = new URL(COBROS_LIST_URL);
 	url.searchParams.set('status_filter', query.status || 'all');
-	url.searchParams.set(
-		'date_preset',
-		query.status === 'all' ? 'all' : query.date_preset || 'this_month'
-	);
+	url.searchParams.set('date_preset', query.date_preset || 'all');
 	if (query.date_from) url.searchParams.set('date_from', query.date_from);
 	if (query.date_to) url.searchParams.set('date_to', query.date_to);
 	url.searchParams.set('page', String(query.page || 1));

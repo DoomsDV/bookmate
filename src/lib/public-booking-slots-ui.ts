@@ -37,6 +37,61 @@ export const formatSlotLabelAmPm = (slot: string) => {
 	};
 };
 
+const SLOT_PILL_OVERFLOW_PX = 6;
+
+const syncSlotPillScrollerFades = (frame: HTMLElement, scroller: HTMLElement) => {
+	const maxScroll = Math.max(0, scroller.scrollWidth - scroller.clientWidth);
+	const atStart = scroller.scrollLeft <= SLOT_PILL_OVERFLOW_PX;
+	const atEnd = maxScroll - scroller.scrollLeft <= SLOT_PILL_OVERFLOW_PX;
+	frame.classList.toggle('has-overflow', maxScroll > SLOT_PILL_OVERFLOW_PX);
+	frame.classList.toggle('has-overflow-start', !atStart);
+	frame.classList.toggle('has-overflow-end', maxScroll > SLOT_PILL_OVERFLOW_PX && !atEnd);
+};
+
+/** Peek a la derecha + degradados; el primer horario queda entero al cargar. */
+export const wrapSlotPillGrid = (
+	grid: HTMLElement,
+	options?: { signal?: AbortSignal }
+): HTMLElement => {
+	const frame = document.createElement('div');
+	frame.className = 'public-slot-pill-scroller';
+	frame.appendChild(grid);
+
+	const update = () => {
+		if (!grid.isConnected) return;
+		syncSlotPillScrollerFades(frame, grid);
+	};
+	const snapToStart = () => {
+		grid.scrollLeft = 0;
+		update();
+	};
+
+	grid.addEventListener('scroll', update, { signal: options?.signal, passive: true });
+
+	if (typeof ResizeObserver !== 'undefined') {
+		const resizeObserver = new ResizeObserver(() => {
+			if (!grid.isConnected) {
+				resizeObserver.disconnect();
+				return;
+			}
+			update();
+		});
+		resizeObserver.observe(grid);
+		options?.signal?.addEventListener('abort', () => resizeObserver.disconnect(), { once: true });
+	}
+
+	requestAnimationFrame(() => {
+		snapToStart();
+		requestAnimationFrame(snapToStart);
+	});
+	if (typeof document !== 'undefined' && document.fonts?.ready) {
+		void document.fonts.ready.then(() => {
+			if (grid.isConnected) snapToStart();
+		});
+	}
+	return frame;
+};
+
 export const isMobileSlotRouletteViewport = () =>
 	typeof window !== 'undefined' && window.matchMedia('(max-width: 639px)').matches;
 
@@ -180,7 +235,7 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 			grid.appendChild(slotButton);
 		}
 
-		section.appendChild(grid);
+		section.appendChild(compactPillGrid ? wrapSlotPillGrid(grid) : grid);
 	};
 
 	const mountRoulette = (

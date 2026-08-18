@@ -315,7 +315,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 					<section data-step-panel="5" class="public-booking-panel hidden">
 						<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Confirma tus datos</h2>
 						<div class="mt-5 grid gap-5 lg:grid-cols-[1fr_22rem] lg:gap-8">
-							<form class="contents lg:grid lg:gap-5" data-customer-form>
+							<form id="public-booking-customer-form" class="contents lg:grid lg:gap-5" data-customer-form>
 								<label class="grid gap-1.5 text-sm font-medium text-(--on-surface)">
 									<span>Teléfono (WhatsApp) <span class="text-(--error)" aria-hidden="true">*</span></span>
 									<div class="flex h-14 w-full overflow-hidden rounded-xl border border-(--outline) bg-(--surface-container-lowest) transition focus-within:border-(--primary) focus-within:ring-1 focus-within:ring-(--primary)">
@@ -343,7 +343,7 @@ const ogImage = profile ? resolveOgImageUrl(profile.image_url, siteOrigin) : res
 									<span>No cierres esta página hasta confirmar. Si salís o cerrás el navegador, la cita no se reservará.</span>
 								</p>
 								<div class="order-3 grid gap-3 lg:order-none lg:mt-3" data-booking-primary-actions>
-									<button type="submit" data-submit-booking data-submit-confirm data-booking-primary-action class="booking-primary-action inline-flex min-h-14 h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60">
+									<button type="submit" form="public-booking-customer-form" data-submit-booking data-submit-confirm data-booking-primary-action class="booking-primary-action inline-flex min-h-14 h-12 w-full items-center justify-center gap-2 rounded-full px-8 text-base font-medium transition disabled:cursor-not-allowed disabled:opacity-60">
 										<span class="material-symbols-rounded booking-primary-action__icon" aria-hidden="true">event_available</span>
 										<span class="booking-primary-action__label">Confirmar reserva</span>
 									</button>

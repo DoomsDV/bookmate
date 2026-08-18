@@ -5,6 +5,7 @@ import {
 	toDateStart,
 } from '../../lib/booking-datetime';
 import { appendLocationSlotHeader } from '../../lib/public-booking-locations';
+import { wrapSlotPillGrid } from '../../lib/public-booking-slots-ui';
 import {
 	formatParaguayMobilePhoneInput,
 	PARAGUAY_MOBILE_PHONE_ERROR,
@@ -67,6 +68,7 @@ import {
 	setContinueButtonContent,
 	syncStackLayers,
 	triggerPickerHaptic,
+	setPickerContinueEnabled,
 	syncPublicBookingMobileActions,
 } from './picker-ui';
 import {
@@ -479,7 +481,6 @@ export const initializePublicUserBookingPage = () => {
 			stepProgressBar.style.width = `${step >= 6 ? 100 : phaseProgressPercent(phase)}%`;
 		}
 
-		root.classList.toggle('is-booking-profile-compact', step >= 2);
 		root.classList.toggle('is-booking-success', step === 6);
 
 		if (step === 3) {
@@ -700,10 +701,7 @@ export const initializePublicUserBookingPage = () => {
 			const id = Number(card.dataset.serviceId ?? 0);
 			card.classList.toggle('is-selected', id === service.id_service);
 		}
-		const continueBtn = servicesGrid.querySelector<HTMLButtonElement>(
-			'.public-booking-continue, .public-service-stack__continue'
-		);
-		if (continueBtn) continueBtn.disabled = false;
+		setPickerContinueEnabled(servicesGrid, true);
 	};
 
 	const selectLocationAndAdvance = (location: UserBookingContext) => {
@@ -747,10 +745,7 @@ export const initializePublicUserBookingPage = () => {
 				card.classList.toggle('is-selected', index === locationStackFocusIndex);
 			}
 		}
-		const continueBtn = locationsRoot.querySelector<HTMLButtonElement>(
-			'.public-booking-continue, .public-location-stack__continue'
-		);
-		if (continueBtn) continueBtn.disabled = false;
+		setPickerContinueEnabled(locationsRoot, true);
 	};
 
 	const selectOrganizationGroup = (group: OrganizationBookingGroup) => {
@@ -918,10 +913,7 @@ export const initializePublicUserBookingPage = () => {
 				card.classList.toggle('is-selected', index === orgStackFocusIndex);
 			}
 		}
-		const continueBtn = locationsRoot.querySelector<HTMLButtonElement>(
-			'.public-location-stack__continue, .public-booking-continue'
-		);
-		if (continueBtn) continueBtn.disabled = false;
+		setPickerContinueEnabled(locationsRoot, true);
 	};
 
 	const renderOrgsStack = (groups: OrganizationBookingGroup[]) => {
@@ -1460,7 +1452,7 @@ export const initializePublicUserBookingPage = () => {
 			grid.appendChild(button);
 		}
 
-		section.appendChild(grid);
+		section.appendChild(wrapSlotPillGrid(grid, { signal }));
 	};
 
 	const mountSlotRoulette = (

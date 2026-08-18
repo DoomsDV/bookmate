@@ -51,6 +51,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 											aria-hidden="true"
 											tabindex="-1"
 										>
+											<option value="all" selected>Todos los meses</option>
 											<option value="this_month">Este mes</option>
 											<option value="last_month">Mes pasado</option>
 											<option value="custom">Personalizado</option>
@@ -214,6 +215,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 					</div>
 					<p class="cobros-filter-group__label md:hidden">Periodo</p>
 					<div class="cobros-period-filter-sheet__list" role="listbox" aria-label="Periodo">
+						<button type="button" class="cobros-period-option" data-period-option="all" role="option">
+							<span>Todos los meses</span>
+							<span class="material-symbols-rounded" aria-hidden="true">check</span>
+						</button>
 						<button type="button" class="cobros-period-option" data-period-option="this_month" role="option">
 							<span>Este mes</span>
 							<span class="material-symbols-rounded" aria-hidden="true">check</span>
