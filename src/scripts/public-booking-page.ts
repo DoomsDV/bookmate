@@ -22,7 +22,12 @@ import {
 	mergePublicBookingLocations,
 	normalizePublicBookingLocations,
 } from '../lib/public-booking-locations';
-import { forEachSlotPeriod, formatSlotLabel24h, wrapSlotPillGrid } from '../lib/public-booking-slots-ui';
+import {
+	forEachSlotPeriod,
+	formatSlotLabel24h,
+	wrapSlotPillGrid,
+} from '../lib/public-booking-slots-ui';
+import { cameFromOrgPublicPage } from '../lib/public-profile-url';
 import {
 	formatParaguayMobilePhoneInput,
 	PARAGUAY_MOBILE_PHONE_ERROR,
@@ -379,6 +384,7 @@ export const initializePublicBookingPage = () => {
 
 	const configuredLocationId = toPositiveInt(root.dataset.locationId, 0);
 	const organizationSlug = String(root.dataset.organizationSlug || '').trim();
+	const fromOrgHub = cameFromOrgPublicPage(organizationSlug);
 	const professionalSlug = String(root.dataset.professionalSlug || '').trim();
 	let bookingLocations = mergeBookingLocations(
 		normalizePublicBookingLocations(
@@ -1002,7 +1008,7 @@ export const initializePublicBookingPage = () => {
 
 	const syncHeaderBack = () => {
 		if (!headerBackButton) return;
-		const show = canNavigateBack();
+		const show = fromOrgHub && canNavigateBack();
 		headerBackButton.hidden = !show;
 		headerBackButton.toggleAttribute('hidden', !show);
 	};

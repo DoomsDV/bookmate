@@ -168,3 +168,54 @@ export const formatPublicProfilePrefixDisplay = (prefix: string): string => {
 	if (normalized.includes('/u/')) return '/u/';
 	return normalized;
 };
+
+export const PUBLIC_BOOKING_FROM_HUB_QUERY = 'from';
+export const PUBLIC_BOOKING_FROM_HUB_VALUE = 'hub';
+
+/** Marca enlaces del hub → agenda para mostrar la flecha atrás en mobile. */
+export const appendPublicBookingFromHubParam = (path: string, origin = ''): string => {
+	const raw = String(path || '').trim();
+	if (!raw || raw.startsWith('#')) return raw;
+
+	try {
+		const base =
+			origin && /^https?:\/\//i.test(origin)
+				? origin
+				: origin
+					? `https://${origin.replace(/^\/+/, '')}`
+					: 'https://hasel.app';
+		const url = new URL(raw, base);
+		url.searchParams.set(PUBLIC_BOOKING_FROM_HUB_QUERY, PUBLIC_BOOKING_FROM_HUB_VALUE);
+		return `${url.pathname}${url.search}${url.hash}`;
+	} catch {
+		return raw.includes('?') ? `${raw}&from=hub` : `${raw}?from=hub`;
+	}
+};
+
+const normalizePathForCompare = (path: string) => {
+	const trimmed = String(path || '').trim().replace(/\/+$/, '');
+	return trimmed || '/';
+};
+
+/** true si el usuario llegó desde /{orgSlug} (query from=hub o referrer del hub). */
+export const cameFromOrgPublicPage = (organizationSlug: string): boolean => {
+	if (typeof window === 'undefined') return false;
+
+	const slug = trimSlashes(organizationSlug);
+	if (!slug) return false;
+
+	const params = new URLSearchParams(window.location.search);
+	if (params.get(PUBLIC_BOOKING_FROM_HUB_QUERY) === PUBLIC_BOOKING_FROM_HUB_VALUE) {
+		return true;
+	}
+
+	try {
+		const ref = new URL(document.referrer);
+		if (ref.origin !== window.location.origin) return false;
+		const hubPath = normalizePathForCompare(buildOrgHubPath(slug));
+		const refPath = normalizePathForCompare(ref.pathname);
+		return refPath === hubPath;
+	} catch {
+		return false;
+	}
+};

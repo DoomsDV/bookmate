@@ -1,5 +1,6 @@
 import { resolveOrdsPublicApiUrl } from './env-urls';
 import { normalizePublicBookingLocations } from './public-booking-locations';
+import type { PublicReservationNoRefundReason } from './public-reservation-refund';
 
 export { normalizePublicBookingLocations } from './public-booking-locations';
 export {
@@ -186,12 +187,19 @@ export interface PublicValidateCustomerResult {
 	customer: PublicValidatedCustomer | null;
 }
 
+export type { PublicReservationNoRefundReason } from './public-reservation-refund';
+export {
+	formatCustomerCancelNoRefundHint,
+	inferNoRefundReason,
+} from './public-reservation-refund';
+
 export interface PublicReservationRefundPreview {
 	amount: number;
 	requires_alias: boolean;
 	policy_code?: string | null;
 	policy_label?: string | null;
 	policy_summary?: string | null;
+	no_refund_reason?: PublicReservationNoRefundReason | null;
 }
 
 export interface PublicReservationDetail {
@@ -898,6 +906,13 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 				policy_code: String(p.policy_code || '').trim() || null,
 				policy_label: String(p.policy_label || '').trim() || null,
 				policy_summary: String(p.policy_summary || '').trim() || null,
+				no_refund_reason: (() => {
+					const reason = String(p.no_refund_reason || '').trim().toUpperCase();
+					if (reason === 'WITHIN_24H' || reason === 'POLICY_STRICT') {
+						return reason as PublicReservationNoRefundReason;
+					}
+					return null;
+				})(),
 			};
 		})(),
 		can_claim_refund: Number(source.can_claim_refund ?? 0) === 1 ? 1 : 0,

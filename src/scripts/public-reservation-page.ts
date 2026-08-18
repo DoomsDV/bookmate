@@ -14,6 +14,7 @@ import {
 	sortTimeSlotsChronologically,
 	toDateStart,
 } from '../lib/booking-datetime';
+import { formatCustomerCancelNoRefundHint } from '../lib/public-reservation-refund';
 import { normalizePublicBookingLocations } from '../lib/public-booking-locations';
 import {
 	isMobileSlotRouletteViewport,
@@ -69,6 +70,7 @@ type PublicReservationDetail = {
 		policy_code?: string | null;
 		policy_label?: string | null;
 		policy_summary?: string | null;
+		no_refund_reason?: 'WITHIN_24H' | 'POLICY_STRICT' | null;
 	} | null;
 	can_claim_refund?: number | null;
 	refund_claim_open?: number | null;
@@ -1518,10 +1520,10 @@ export const initializePublicReservationPage = () => {
 			return;
 		}
 
-		const noRefundHint =
-			preview && (preview.amount || 0) === 0 && Number(reservation.deposit_amount || 0) > 0
-				? ' Según la política de seña, no corresponde reembolso.'
-				: '';
+		const noRefundHint = formatCustomerCancelNoRefundHint(preview, {
+			depositAmount: Number(reservation.deposit_amount || 0),
+			startTime: reservation.start_time,
+		});
 
 		const confirmed = window.BookmateAlert?.confirm
 			? await window.BookmateAlert.confirm({

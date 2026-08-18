@@ -11,6 +11,7 @@ import {
 	type PublicOrgHub,
 } from '../../lib/public-org-hub';
 import {
+	appendPublicBookingFromHubParam,
 	buildOrgHubPath,
 	resolveOgImageUrl,
 	resolvePublicSiteOrigin,
@@ -103,7 +104,9 @@ const businessHoursRows = hub?.business_hours
 const businessHoursLiveStatus =
 	businessHoursRows.find((row) => row.liveStatus)?.liveStatus ?? null;
 const singlePro = professionals.length === 1 ? professionals[0] : null;
-const reserveHref = singlePro?.booking_path || '#equipo';
+const bookingFromHub = (path: string) =>
+	appendPublicBookingFromHubParam(path, siteOrigin || Astro.url.origin);
+const reserveHref = singlePro ? bookingFromHub(singlePro.booking_path) : '#equipo';
 const hubUrl = siteOrigin ? `${siteOrigin}${canonicalPath}` : canonicalPath;
 const waHref = hub ? whatsappHref(hub.public_whatsapp) : '';
 const profileHandle = organizationSlug ? `@${organizationSlug}` : '';
@@ -527,7 +530,7 @@ const serializedProfessionals = professionals.length
 												: `Reservar con ${pro.full_name}. Agenda abierta`;
 											return (
 												<a
-													href={pro.booking_path}
+													href={bookingFromHub(pro.booking_path)}
 													class="hub-pro-card"
 													data-hub-pro-card
 													data-pro-id={String(pro.id_professional)}
