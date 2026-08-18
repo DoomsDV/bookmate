@@ -22,7 +22,7 @@ import {
 	mergePublicBookingLocations,
 	normalizePublicBookingLocations,
 } from '../lib/public-booking-locations';
-import { wrapSlotPillGrid } from '../lib/public-booking-slots-ui';
+import { forEachSlotPeriod, formatSlotLabel24h, wrapSlotPillGrid } from '../lib/public-booking-slots-ui';
 import {
 	formatParaguayMobilePhoneInput,
 	PARAGUAY_MOBILE_PHONE_ERROR,
@@ -847,6 +847,16 @@ export const initializePublicBookingPage = () => {
 			.filter((value) => /^\d{4}-\d{2}-\d{2}$/.test(value));
 	};
 
+	const clearSelectedDateTime = () => {
+		selectedDate = '';
+		selectedTime = '';
+		availableSlotGroups = [];
+		isLoadingSlots = false;
+		refreshSummary();
+		draftPersister.schedule();
+		renderSlots();
+	};
+
 	const loadAvailableDatesForVisibleMonth = async () => {
 		if (!selectedService || !selectedLocation) {
 			renderCalendar();
@@ -861,9 +871,7 @@ export const initializePublicBookingPage = () => {
 		if (availableDatesCache.has(cacheKey)) {
 			const dates = availableDatesCache.get(cacheKey)!;
 			if (selectedDate.startsWith(ymPrefix) && !dates.has(selectedDate)) {
-				selectedDate = '';
-				refreshSummary();
-				draftPersister.schedule();
+				clearSelectedDateTime();
 			}
 			renderCalendar();
 			return;
@@ -880,9 +888,7 @@ export const initializePublicBookingPage = () => {
 			if (reqId !== availableDatesRequestSeq) return;
 			availableDatesCache.set(cacheKey, new Set(dates));
 			if (selectedDate.startsWith(ymPrefix) && !dates.includes(selectedDate)) {
-				selectedDate = '';
-				refreshSummary();
-				draftPersister.schedule();
+				clearSelectedDateTime();
 			}
 		} catch {
 			// Si falla la consulta, no cacheamos: el calendario no bloquea por disponibilidad.
@@ -957,7 +963,7 @@ export const initializePublicBookingPage = () => {
 				void loadAvailableDatesForVisibleMonth();
 				if (selectedDate && availableSlotGroups.length === 0 && !isLoadingSlots) {
 					void loadAvailableSlots(selectedDate, { skipStepChange: true, preserveSelection: Boolean(selectedTime) });
-				} else if (availableSlotGroups.length > 0 && !isLoadingSlots) {
+				} else {
 					renderSlots();
 				}
 			});
@@ -1215,6 +1221,7 @@ export const initializePublicBookingPage = () => {
 			const index = Number(card.dataset.serviceStackIndex ?? -1);
 			card.classList.toggle('is-selected', index === serviceStackFocusIndex);
 		}
+		setPickerContinueEnabled(servicesGrid, true);
 	};
 
 	const buildServiceCardInnerHtml = (service: BookingService) => {
@@ -1434,7 +1441,7 @@ export const initializePublicBookingPage = () => {
 
 		const continueButton = document.createElement('button');
 		continueButton.type = 'button';
-		continueButton.className = 'public-service-stack__continue';
+		continueButton.className = 'public-booking-continue public-service-stack__continue';
 		setContinueButtonContent(continueButton);
 		continueButton.addEventListener('click', continueWithFocused, { signal });
 
@@ -1506,6 +1513,7 @@ export const initializePublicBookingPage = () => {
 			renderServicesGrid();
 		}
 		syncPublicBookingMobileActions(root);
+		if (selectedService) setPickerContinueEnabled(servicesGrid, true);
 	};
 
 	if (!serviceStackBound && typeof window !== 'undefined') {
@@ -1568,6 +1576,7 @@ export const initializePublicBookingPage = () => {
 			const index = Number(card.dataset.locationStackIndex ?? -1);
 			card.classList.toggle('is-selected', index === locationStackFocusIndex);
 		}
+		setPickerContinueEnabled(locationsGrid, true);
 	};
 
 	const buildLocationCardContent = (location: BookingLocation, options?: { showMap?: boolean }) =>
@@ -1814,7 +1823,7 @@ export const initializePublicBookingPage = () => {
 
 		const continueButton = document.createElement('button');
 		continueButton.type = 'button';
-		continueButton.className = 'public-location-stack__continue';
+		continueButton.className = 'public-booking-continue public-location-stack__continue';
 		setContinueButtonContent(continueButton);
 		continueButton.addEventListener('click', continueWithFocused, { signal });
 
@@ -1850,6 +1859,7 @@ export const initializePublicBookingPage = () => {
 			renderLocationsGrid(locations);
 		}
 		syncPublicBookingMobileActions(root);
+		if (selectedLocation) setPickerContinueEnabled(locationsGrid, true);
 	};
 
 	renderCalendar = () => {
@@ -1945,17 +1955,25 @@ export const initializePublicBookingPage = () => {
 
 	const renderSlots = () => {
 		slotsContainer.innerHTML = '';
+		if (!selectedDate) {
+			availableSlotGroups = [];
+			isLoadingSlots = false;
+			slotsLoadingNode.classList.add('hidden');
+			slotsHint?.toggleAttribute('hidden', true);
+			noSlotsNode.classList.add('hidden');
+			syncDatetimeContinue();
+			syncPublicBookingMobileActions(root);
+			return;
+		}
+
 		slotsLoadingNode.classList.toggle('hidden', !isLoadingSlots);
-		slotsHint?.toggleAttribute('hidden', !selectedDate);
 
 		const totalSlots = availableSlotGroups.reduce(
 			(count, group) => count + group.slots.length,
 			0
 		);
-		noSlotsNode.classList.toggle(
-			'hidden',
-			!selectedDate || isLoadingSlots || totalSlots > 0
-		);
+		slotsHint?.toggleAttribute('hidden', !isLoadingSlots && totalSlots > 0);
+		noSlotsNode.classList.toggle('hidden', isLoadingSlots || totalSlots > 0);
 
 		if (isLoadingSlots) {
 			syncDatetimeContinue();
@@ -2086,43 +2104,61 @@ export const initializePublicBookingPage = () => {
 		group: LocationSlotGroup,
 		selectedSlotKey: string
 	) => {
-		const grid = document.createElement('div');
-		grid.className = 'public-slot-pill-grid';
+		const periods = document.createElement('div');
+		periods.className = 'public-slot-periods';
 
-		for (const slot of group.slots) {
-			const slotKey = `${group.location.id_location}:${slot}`;
-			const slotButton = document.createElement('button');
-			slotButton.type = 'button';
-			const { time, meridiem } = formatSlotLabelAmPm(slot);
-			slotButton.innerHTML = meridiem
-				? `<span class="public-slot-time__label">${escapeHtml(time)} <span class="public-slot-time__meridiem">${escapeHtml(meridiem)}</span></span>`
-				: `<span class="public-slot-time__label">${escapeHtml(slot)}</span>`;
-			slotButton.setAttribute('aria-label', meridiem ? `${time} ${meridiem}` : slot);
-			slotButton.dataset.slotKey = slotKey;
-			const isSelected = selectedSlotKey === slotKey;
-			slotButton.className =
-				'public-slot-time public-slot-time--pill flex min-h-11 items-center justify-center rounded-xl border px-2 py-3 text-sm font-medium cursor-pointer transition' +
-				(isSelected ? ' is-selected' : '');
+		forEachSlotPeriod(group.slots, (period) => {
+			const block = document.createElement('div');
+			block.className = 'public-slot-period';
+			block.dataset.slotPeriod = period.key;
 
-			slotButton.addEventListener(
-				'click',
-				() => {
-					selectedTime = slot;
-					selectedLocation = group.location;
-					resetPendingAppointment();
-					refreshSummary();
-					draftPersister.schedule();
-					for (const btn of slotsContainer.querySelectorAll<HTMLElement>('.public-slot-time')) {
-						btn.classList.toggle('is-selected', btn.dataset.slotKey === slotKey);
-					}
-					syncDatetimeContinue();
-				},
-				{ signal }
-			);
-			grid.appendChild(slotButton);
-		}
+			const heading = document.createElement('p');
+			heading.className = 'public-slot-period__label';
+			heading.textContent = period.label;
+			block.appendChild(heading);
 
-		section.appendChild(wrapSlotPillGrid(grid, { signal }));
+			const grid = document.createElement('div');
+			grid.className = 'public-slot-pill-grid';
+
+			for (const slot of period.slots) {
+				const slotKey = `${group.location.id_location}:${slot}`;
+				const slotButton = document.createElement('button');
+				slotButton.type = 'button';
+				const time = formatSlotLabel24h(slot);
+				slotButton.innerHTML = `<span class="public-slot-time__label">${escapeHtml(time)}</span>`;
+				slotButton.setAttribute(
+					'aria-label',
+					`${time} de la ${period.key === 'morning' ? 'mañana' : 'tarde'}`
+				);
+				slotButton.dataset.slotKey = slotKey;
+				const isSelected = selectedSlotKey === slotKey;
+				slotButton.className =
+					'public-slot-time public-slot-time--pill flex min-h-11 items-center justify-center rounded-xl border px-2 py-3 text-sm font-medium cursor-pointer transition' +
+					(isSelected ? ' is-selected' : '');
+
+				slotButton.addEventListener(
+					'click',
+					() => {
+						selectedTime = slot;
+						selectedLocation = group.location;
+						resetPendingAppointment();
+						refreshSummary();
+						draftPersister.schedule();
+						for (const btn of slotsContainer.querySelectorAll<HTMLElement>('.public-slot-time')) {
+							btn.classList.toggle('is-selected', btn.dataset.slotKey === slotKey);
+						}
+						syncDatetimeContinue();
+					},
+					{ signal }
+				);
+				grid.appendChild(slotButton);
+			}
+
+			block.appendChild(wrapSlotPillGrid(grid, { signal }));
+			periods.appendChild(block);
+		});
+
+		section.appendChild(periods);
 	};
 
 	const mountSlotRoulette = (
@@ -2323,7 +2359,7 @@ export const initializePublicBookingPage = () => {
 
 		const continueButton = document.createElement('button');
 		continueButton.type = 'button';
-		continueButton.className = 'public-slot-roulette__continue';
+		continueButton.className = 'public-booking-continue public-slot-roulette__continue';
 		setContinueButtonContent(continueButton);
 		continueButton.addEventListener('click', continueWithFocused, { signal });
 
@@ -2487,6 +2523,9 @@ export const initializePublicBookingPage = () => {
 			);
 		} finally {
 			isLoadingSlots = false;
+			if (selectedDate !== targetDate) {
+				availableSlotGroups = [];
+			}
 			renderSlots();
 		}
 	};
@@ -3081,6 +3120,7 @@ export const initializePublicBookingPage = () => {
 	};
 
 	const restoreDraft = async () => {
+		if (signal.aborted) return;
 		// La seña (hold) tiene prioridad: si hay uno vigente, retomamos "Transferí la seña".
 		if (restoreSipapHold()) {
 			finishBoot();

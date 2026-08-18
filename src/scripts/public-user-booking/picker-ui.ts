@@ -598,17 +598,19 @@ const moveIntoActions = (node: HTMLElement, actions: HTMLElement) => {
 	actions.appendChild(node);
 };
 
-const isDynamicStackContinue = (node: HTMLElement) =>
-	node.matches(
-		'.public-service-stack__continue, .public-location-stack__continue, .public-slot-roulette__continue'
-	);
+const isFixedDatetimeContinue = (node: HTMLElement) =>
+	node.hasAttribute('data-datetime-continue') || node.hasAttribute('data-calendar-continue');
+
+/** Continuar dinámico (grid o stack). El de Fecha/Hora del markup no se descarta. */
+const isDynamicPickerContinue = (node: HTMLElement) =>
+	node.matches(MOBILE_ACTIONS_CONTINUE_SELECTORS) && !isFixedDatetimeContinue(node);
 
 const detachOrRemoveMobileActionNode = (node: HTMLElement) => {
 	node.removeAttribute('data-public-booking-actions-node');
 	const slot = actionsRestoreSlots.get(node);
 	if (slot?.parent?.isConnected) {
-		// Tras re-render del stack, el grid ya tiene un Continuar nuevo; no restaurar el huérfano del footer.
-		if (isDynamicStackContinue(node)) {
+		// Tras re-render, el grid ya tiene un Continuar nuevo; no restaurar el huérfano del footer.
+		if (isDynamicPickerContinue(node)) {
 			const siblings = slot.parent.querySelectorAll<HTMLElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS);
 			if (Array.from(siblings).some((candidate) => candidate !== node)) {
 				node.remove();
@@ -654,21 +656,45 @@ const prepareMobileActionsFooter = (actions: HTMLElement) => {
 	}
 };
 
+const pickerContinueSelectorPriority = (panel: HTMLElement) => {
+	const prefersStack = Boolean(
+		panel.querySelector('.is-service-stack, .is-location-stack, .is-org-stack')
+	);
+	const stackSelectors = [
+		'.public-service-stack__continue',
+		'.public-location-stack__continue',
+		'.public-slot-roulette__continue',
+		'.public-booking-continue',
+	];
+	const gridSelectors = [
+		'.public-booking-continue',
+		'.public-service-stack__continue',
+		'.public-location-stack__continue',
+		'.public-slot-roulette__continue',
+	];
+	return prefersStack ? stackSelectors : gridSelectors;
+};
+
+const pickBestContinueButton = (nodes: HTMLButtonElement[]) => {
+	const eligible = nodes.filter((node) => !isFixedDatetimeContinue(node));
+	return eligible.find((node) => !node.disabled) ?? eligible[0] ?? null;
+};
+
 const findMobileContinueButton = (
 	panel: HTMLElement,
 	actions: HTMLElement
 ): HTMLButtonElement | null => {
-	for (const selector of MOBILE_ACTIONS_CONTINUE_SELECTORS.split(',')) {
-		const trimmed = selector.trim();
-		for (const node of panel.querySelectorAll<HTMLButtonElement>(trimmed)) {
-			if (!actions.contains(node)) return node;
-		}
+	for (const selector of pickerContinueSelectorPriority(panel)) {
+		const outside = Array.from(panel.querySelectorAll<HTMLButtonElement>(selector)).filter(
+			(node) => !actions.contains(node)
+		);
+		const found = pickBestContinueButton(outside);
+		if (found) return found;
 	}
-	return actions.querySelector<HTMLButtonElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS);
+	return pickBestContinueButton(
+		Array.from(actions.querySelectorAll<HTMLButtonElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS))
+	);
 };
-
-const isFixedDatetimeContinue = (button: HTMLButtonElement) =>
-	button.hasAttribute('data-datetime-continue') || button.hasAttribute('data-calendar-continue');
 
 /**
  * Continuar del picker (servicio/sucursal/org). Tras syncPublicBookingMobileActions
@@ -678,13 +704,13 @@ export const findPickerContinueButton = (origin: HTMLElement): HTMLButtonElement
 	const panel = origin.closest<HTMLElement>('.public-booking-panel');
 	const searchRoot = panel ?? origin;
 	const actions = panel?.querySelector<HTMLElement>('.public-booking-actions');
-	const fromActions = actions?.querySelector<HTMLButtonElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS);
-	const candidate =
-		fromActions && !isFixedDatetimeContinue(fromActions)
-			? fromActions
-			: searchRoot.querySelector<HTMLButtonElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS);
-	if (!candidate || isFixedDatetimeContinue(candidate)) return null;
-	return candidate;
+	const fromActions = pickBestContinueButton(
+		Array.from(actions?.querySelectorAll<HTMLButtonElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS) ?? [])
+	);
+	if (fromActions) return fromActions;
+	return pickBestContinueButton(
+		Array.from(searchRoot.querySelectorAll<HTMLButtonElement>(MOBILE_ACTIONS_CONTINUE_SELECTORS))
+	);
 };
 
 export const setPickerContinueEnabled = (origin: HTMLElement, enabled: boolean) => {
@@ -706,6 +732,11 @@ export const syncPublicBookingMobileActions = (root: ParentNode = document) => {
 	for (const panel of root.querySelectorAll<HTMLElement>('.public-booking-panel')) {
 		if (panel.classList.contains('sipap-deposit-panel')) continue;
 		let actions = panel.querySelector<HTMLElement>('.public-booking-actions');
+		const panelHidden = panel.classList.contains('hidden') || panel.hasAttribute('hidden');
+		if (panelHidden) {
+			actions?.classList.add('hidden');
+			continue;
+		}
 		if (!actions) {
 			actions = document.createElement('div');
 			actions.className = 'public-booking-actions';

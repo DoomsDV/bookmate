@@ -5,7 +5,7 @@ import {
 	toDateStart,
 } from '../../lib/booking-datetime';
 import { appendLocationSlotHeader } from '../../lib/public-booking-locations';
-import { wrapSlotPillGrid } from '../../lib/public-booking-slots-ui';
+import { forEachSlotPeriod, formatSlotLabel24h, wrapSlotPillGrid } from '../../lib/public-booking-slots-ui';
 import {
 	formatParaguayMobilePhoneInput,
 	PARAGUAY_MOBILE_PHONE_ERROR,
@@ -356,6 +356,16 @@ export const initializePublicUserBookingPage = () => {
 			: orgGroup.locations;
 	};
 
+	const clearSelectedDateTime = () => {
+		selectedDate = '';
+		selectedTime = '';
+		availableSlotGroups = [];
+		isLoadingSlots = false;
+		refreshSummary();
+		draftPersister.schedule();
+		renderSlots();
+	};
+
 	const loadAvailableDatesForVisibleMonth = async () => {
 		if (!selectedService || !selectedOrgGroup) {
 			renderCalendar();
@@ -370,10 +380,7 @@ export const initializePublicUserBookingPage = () => {
 		if (availableDatesCache.has(cacheKey)) {
 			const dates = availableDatesCache.get(cacheKey)!;
 			if (selectedDate.startsWith(ymPrefix) && !dates.has(selectedDate)) {
-				selectedDate = '';
-				selectedTime = '';
-				refreshSummary();
-				draftPersister.schedule();
+				clearSelectedDateTime();
 			}
 			renderCalendar();
 			return;
@@ -415,10 +422,7 @@ export const initializePublicUserBookingPage = () => {
 			if (anyOk) {
 				availableDatesCache.set(cacheKey, merged);
 				if (selectedDate.startsWith(ymPrefix) && !merged.has(selectedDate)) {
-					selectedDate = '';
-					selectedTime = '';
-					refreshSummary();
-					draftPersister.schedule();
+					clearSelectedDateTime();
 				}
 			}
 		} catch {
@@ -491,7 +495,7 @@ export const initializePublicUserBookingPage = () => {
 						skipStepChange: true,
 						preserveSelection: Boolean(selectedTime),
 					});
-				} else if (availableSlotGroups.length > 0 && !isLoadingSlots) {
+				} else {
 					renderSlots();
 				}
 			});
@@ -865,7 +869,7 @@ export const initializePublicUserBookingPage = () => {
 		stackShell.appendChild(stack);
 		const continueButton = document.createElement('button');
 		continueButton.type = 'button';
-		continueButton.className = 'public-location-stack__continue';
+		continueButton.className = 'public-booking-continue public-location-stack__continue';
 		setContinueButtonContent(continueButton);
 		continueButton.addEventListener('click', continueWithFocused, { signal });
 		grid.append(stackShell, continueButton);
@@ -995,7 +999,7 @@ export const initializePublicUserBookingPage = () => {
 		stackShell.appendChild(stack);
 		const continueButton = document.createElement('button');
 		continueButton.type = 'button';
-		continueButton.className = 'public-location-stack__continue';
+		continueButton.className = 'public-booking-continue public-location-stack__continue';
 		setContinueButtonContent(continueButton);
 		continueButton.addEventListener('click', continueWithFocused, { signal });
 		grid.append(stackShell, continueButton);
@@ -1107,6 +1111,7 @@ export const initializePublicUserBookingPage = () => {
 			renderLocationsGrid(locations);
 		}
 		syncPublicBookingMobileActions(root);
+		if (selectedContext) setPickerContinueEnabled(locationsRoot, true);
 	};
 
 	const renderLocationsGrid = (locations: UserBookingContext[]) => {
@@ -1222,7 +1227,7 @@ export const initializePublicUserBookingPage = () => {
 		stackShell.appendChild(stack);
 		const continueButton = document.createElement('button');
 		continueButton.type = 'button';
-		continueButton.className = 'public-service-stack__continue';
+		continueButton.className = 'public-booking-continue public-service-stack__continue';
 		setContinueButtonContent(continueButton);
 		continueButton.addEventListener('click', continueWithFocused, { signal });
 		servicesGrid.append(stackShell, continueButton);
@@ -1307,6 +1312,7 @@ export const initializePublicUserBookingPage = () => {
 			renderServicesGrid(services, depositsEnabled);
 		}
 		syncPublicBookingMobileActions(root);
+		if (selectedService) setPickerContinueEnabled(servicesGrid, true);
 	};
 
 	const getSelectedSlotKey = () => {
@@ -1425,34 +1431,52 @@ export const initializePublicUserBookingPage = () => {
 		group: LocationSlotGroup,
 		selectedSlotKey: string
 	) => {
-		const grid = document.createElement('div');
-		grid.className = 'public-slot-pill-grid';
+		const periods = document.createElement('div');
+		periods.className = 'public-slot-periods';
 
-		for (const slot of group.slots) {
-			const slotKey = `${group.location.id_location}:${slot}`;
-			const isSelected = selectedSlotKey === slotKey;
-			const button = document.createElement('button');
-			button.type = 'button';
-			const { time, meridiem } = formatSlotLabelAmPm(slot);
-			button.innerHTML = meridiem
-				? `<span class="public-slot-time__label">${escapeHtml(time)} <span class="public-slot-time__meridiem">${escapeHtml(meridiem)}</span></span>`
-				: `<span class="public-slot-time__label">${escapeHtml(slot)}</span>`;
-			button.setAttribute('aria-label', meridiem ? `${time} ${meridiem}` : slot);
-			button.dataset.slotKey = slotKey;
-			button.className =
-				'public-slot-time public-slot-time--pill flex min-h-11 items-center justify-center rounded-xl border px-2 py-3 text-sm font-medium transition' +
-				(isSelected ? ' is-selected' : '');
-			button.addEventListener(
-				'click',
-				() => {
-					softPickSlot(group, slot, slotKey);
-				},
-				{ signal }
-			);
-			grid.appendChild(button);
-		}
+		forEachSlotPeriod(group.slots, (period) => {
+			const block = document.createElement('div');
+			block.className = 'public-slot-period';
+			block.dataset.slotPeriod = period.key;
 
-		section.appendChild(wrapSlotPillGrid(grid, { signal }));
+			const heading = document.createElement('p');
+			heading.className = 'public-slot-period__label';
+			heading.textContent = period.label;
+			block.appendChild(heading);
+
+			const grid = document.createElement('div');
+			grid.className = 'public-slot-pill-grid';
+
+			for (const slot of period.slots) {
+				const slotKey = `${group.location.id_location}:${slot}`;
+				const isSelected = selectedSlotKey === slotKey;
+				const button = document.createElement('button');
+				button.type = 'button';
+				const time = formatSlotLabel24h(slot);
+				button.innerHTML = `<span class="public-slot-time__label">${escapeHtml(time)}</span>`;
+				button.setAttribute(
+					'aria-label',
+					`${time} de la ${period.key === 'morning' ? 'mañana' : 'tarde'}`
+				);
+				button.dataset.slotKey = slotKey;
+				button.className =
+					'public-slot-time public-slot-time--pill flex min-h-11 items-center justify-center rounded-xl border px-2 py-3 text-sm font-medium transition' +
+					(isSelected ? ' is-selected' : '');
+				button.addEventListener(
+					'click',
+					() => {
+						softPickSlot(group, slot, slotKey);
+					},
+					{ signal }
+				);
+				grid.appendChild(button);
+			}
+
+			block.appendChild(wrapSlotPillGrid(grid, { signal }));
+			periods.appendChild(block);
+		});
+
+		section.appendChild(periods);
 	};
 
 	const mountSlotRoulette = (
@@ -1652,7 +1676,7 @@ export const initializePublicUserBookingPage = () => {
 
 		const continueButton = document.createElement('button');
 		continueButton.type = 'button';
-		continueButton.className = 'public-slot-roulette__continue';
+		continueButton.className = 'public-booking-continue public-slot-roulette__continue';
 		setContinueButtonContent(continueButton);
 		continueButton.addEventListener('click', continueWithFocused, { signal });
 
@@ -1662,17 +1686,25 @@ export const initializePublicUserBookingPage = () => {
 
 	const renderSlots = () => {
 		slotsContainer.innerHTML = '';
+		if (!selectedDate) {
+			availableSlotGroups = [];
+			isLoadingSlots = false;
+			slotsLoadingNode.classList.add('hidden');
+			slotsHint?.toggleAttribute('hidden', true);
+			noSlotsNode.classList.add('hidden');
+			syncDatetimeContinue();
+			syncPublicBookingMobileActions(root);
+			return;
+		}
+
 		slotsLoadingNode.classList.toggle('hidden', !isLoadingSlots);
-		slotsHint?.toggleAttribute('hidden', !selectedDate);
 
 		const totalSlots = availableSlotGroups.reduce(
 			(count, group) => count + group.slots.length,
 			0
 		);
-		noSlotsNode.classList.toggle(
-			'hidden',
-			!selectedDate || isLoadingSlots || totalSlots > 0
-		);
+		slotsHint?.toggleAttribute('hidden', !isLoadingSlots && totalSlots > 0);
+		noSlotsNode.classList.toggle('hidden', isLoadingSlots || totalSlots > 0);
 		if (isLoadingSlots) {
 			syncDatetimeContinue();
 			syncPublicBookingMobileActions(root);
@@ -1881,6 +1913,9 @@ export const initializePublicUserBookingPage = () => {
 			showToast(error instanceof Error ? error.message : 'No fue posible consultar horarios.', 'error');
 		} finally {
 			isLoadingSlots = false;
+			if (selectedDate !== targetDate) {
+				availableSlotGroups = [];
+			}
 			renderSlots();
 		}
 	};
@@ -2377,6 +2412,7 @@ export const initializePublicUserBookingPage = () => {
 	};
 
 	const restoreDraft = async () => {
+		if (signal.aborted) return;
 		// La seña (hold) tiene prioridad: si hay uno vigente, retomamos "Transferí la seña".
 		if (restoreSipapHold()) {
 			finishBoot();

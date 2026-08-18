@@ -105,15 +105,6 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 					<script type="application/json" id="public-user-profile-json" set:html={serializedProfile}></script>
 
 					<header class="public-booking-profile public-booking-profile--card" data-booking-profile-header>
-						<button
-							type="button"
-							class="public-booking-header-back"
-							data-booking-header-back
-							hidden
-							aria-label="Volver"
-						>
-							<span class="material-symbols-rounded" aria-hidden="true">arrow_back</span>
-						</button>
 						<div class="public-booking-profile__inner">
 							<article class="public-booking-profile__card">
 								<div class="public-booking-profile__body">
@@ -221,9 +212,6 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 					<section data-step-panel="3" class="public-booking-panel hidden">
 						<div class="grid gap-2">
 							<h2 class="text-2xl font-normal tracking-tight text-(--on-surface)">Elegí fecha y hora</h2>
-							<p class="text-base text-(--on-surface-variant)">
-								Seleccioná el día y después un horario disponible
-							</p>
 						</div>
 						<div class="public-booking-calendar mt-5">
 							<div class="public-booking-calendar__toolbar">

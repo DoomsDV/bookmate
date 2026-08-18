@@ -390,6 +390,18 @@ html[data-theme='dark'] .public-booking-profile__card {
 	color: color-mix(in srgb, var(--primary) 82%, #7eb0e6);
 }
 
+/* u/[slug]: "Agendar cita con" solo en fase 1 (Detalles: sucursal + servicio). */
+[data-public-user-booking-root] .public-booking-profile__eyebrow {
+	display: none;
+}
+
+[data-public-user-booking-root]:has(.public-booking-panel[data-step-panel='1']:not(.hidden))
+	.public-booking-profile__eyebrow,
+[data-public-user-booking-root]:has(.public-booking-panel[data-step-panel='2']:not(.hidden))
+	.public-booking-profile__eyebrow {
+	display: block;
+}
+
 html[data-theme='dark'] .public-booking-profile--card .public-booking-profile__eyebrow {
 	color: color-mix(in srgb, var(--primary) 55%, #93c5fd);
 }
@@ -645,6 +657,12 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 
 .public-booking-panel.hidden {
 	display: none !important;
+}
+
+.public-booking-panel.hidden .public-booking-actions,
+.public-booking-panel[hidden] .public-booking-actions {
+	display: none !important;
+	pointer-events: none !important;
 }
 
 /* Ticket físico compartido (Gestionar reserva + Success Screen) */
@@ -1039,13 +1057,79 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 }
 
 @media (max-width: 639px) {
-	/* Acercar stepper al header de perfil (u/[slug] y [org]/p/[pro]) */
+	/* Acercar stepper al header (todos los pasos, Detalles incluido). */
 	.public-booking-profile--card .public-booking-profile__inner {
 		padding-bottom: 0.4rem;
 	}
 
 	.public-booking-profile--card .public-booking-profile__card {
 		padding-bottom: 0.55rem;
+	}
+
+	/* Compacto móvil solo fuera de Detalles (paneles 1 y 2 = sucursal/servicio
+	   en u/[slug] y en [org]/p/[pro]). Fecha = 3, Confirmación = 5.
+	   Seña SIPAP (7) conserva su compacto propio de 32px. */
+	.public-booking-sheet:not(:has(.public-booking-panel[data-step-panel='1']:not(.hidden))):not(:has(.public-booking-panel[data-step-panel='2']:not(.hidden))):not(:has(.sipap-deposit-panel:not(.hidden))) {
+		.public-booking-profile--card .public-booking-profile__inner {
+			align-items: stretch;
+			padding-top: 0.55rem;
+			padding-bottom: 0.35rem;
+			text-align: left;
+		}
+
+		.public-booking-profile--card .public-booking-profile__card {
+			padding: 0.4rem 0;
+		}
+
+		.public-booking-profile--card .public-booking-profile__body {
+			flex-direction: row;
+			align-items: center;
+			justify-content: flex-start;
+			gap: 0.8rem;
+			text-align: left;
+		}
+
+		.public-booking-profile--card .public-booking-profile__media {
+			flex: 0 0 auto;
+		}
+
+		.public-booking-profile--card .public-booking-profile__text {
+			flex: 1 1 auto;
+			align-self: center;
+			width: auto;
+			min-width: 0;
+			gap: 0.12rem;
+			text-align: left;
+		}
+
+		.public-booking-profile--card .public-booking-profile__eyebrow {
+			font-size: 0.8125rem;
+			line-height: 1.25;
+			text-align: left;
+		}
+
+		.public-booking-profile--card .public-booking-profile__title {
+			font-size: 1.5rem;
+			line-height: 1.18;
+		}
+
+		.public-booking-profile--card .public-booking-profile__meta {
+			margin-top: 0.06rem;
+			font-size: 0.75rem;
+			font-weight: 400;
+			line-height: 1.3;
+			color: color-mix(in srgb, #c4c6d0 48%, transparent);
+		}
+
+		.public-booking-profile--card .public-booking-avatar,
+		.public-booking-profile--card .public-booking-avatar--empty {
+			width: 5.25rem;
+			height: 5.25rem;
+		}
+
+		.public-booking-profile--card .public-booking-avatar--empty .material-symbols-rounded {
+			font-size: 2.35rem;
+		}
 	}
 
 	.public-booking-shell__canvas {
@@ -1669,8 +1753,9 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 
 	.public-service-stack {
 		position: relative;
-		/* Altura fija (con espacio de peek) para que Continuar no salte al deslizar. */
+		/* Con has-prev: reserva peek superior. Sin prev (índice 0): más baja para no dejar hueco. */
 		height: 15.75rem;
+		transition: height 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
@@ -1836,8 +1921,9 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 
 	.public-location-stack {
 		position: relative;
-		/* Altura fija (con espacio de peek) para que Continuar no salte al deslizar. */
+		/* Con has-prev: reserva peek superior. Sin prev (índice 0): más baja para no dejar hueco. */
 		height: 15.75rem;
+		transition: height 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 		perspective: 900px;
 		touch-action: none;
 		overscroll-behavior: contain;
@@ -2215,6 +2301,54 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	.public-location-stack .public-org-card__title {
 		font-size: 0.95rem;
 		line-height: 1.25;
+	}
+
+	/* Índice 0: sin peek de card anterior. Cierra el hueco bajo el hint.
+	   Índice ≥1 (.has-prev): se mantienen altura 15.75rem y translateY(2.65rem). */
+	.public-service-stack:not(.has-prev),
+	.public-location-stack:not(.has-prev):not(.is-single) {
+		height: 13.1rem;
+	}
+
+	.public-service-stack:not(.has-prev) .public-service-card.is-focus {
+		transform: translateY(0) scale(1);
+	}
+
+	.public-service-stack:not(.has-prev) .public-service-card.is-near-down {
+		transform: translateY(6.55rem) scale(0.96);
+	}
+
+	.public-service-stack:not(.has-prev) .public-service-card.is-far {
+		transform: translateY(6.55rem) scale(0.9);
+	}
+
+	.public-location-stack:not(.has-prev):not(.is-single) .public-location-card.is-focus {
+		transform: translateY(0) scale(1);
+	}
+
+	.public-location-stack:not(.has-prev):not(.is-single) .public-location-card.is-near-down {
+		transform: translateY(6.55rem) scale(0.96);
+	}
+
+	.public-location-stack:not(.has-prev):not(.is-single) .public-location-card.is-far-down,
+	.public-location-stack:not(.has-prev):not(.is-single) .public-location-card.is-far {
+		transform: translateY(6.55rem) scale(0.9);
+	}
+
+	.public-location-stack:not(.has-prev) .public-org-card--business.is-focus {
+		transform: translateY(0) scale(1);
+	}
+
+	.public-location-stack:not(.has-prev) .public-org-card--business.is-near-down {
+		transform: translateY(6.55rem) scale(0.96);
+	}
+
+	.public-location-stack:not(.has-prev) .public-org-card--business.is-far-down {
+		transform: translateY(6.55rem) scale(0.9);
+	}
+
+	.public-location-stack:not(.has-prev) .public-org-card--business.is-far {
+		transform: translateY(6.55rem) scale(0.86);
 	}
 }
 
@@ -2773,7 +2907,10 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	filter: brightness(0.96);
 }
 
-.public-booking-continue:disabled {
+.public-booking-continue:disabled,
+.public-service-stack__continue:disabled,
+.public-location-stack__continue:disabled,
+.public-slot-roulette__continue:disabled {
 	opacity: 0.42;
 	cursor: default;
 }
@@ -2901,6 +3038,15 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 		width: auto;
 		align-self: stretch;
 		justify-self: stretch;
+	}
+
+	.public-booking-actions > .public-booking-continue,
+	.public-booking-actions > .public-service-stack__continue,
+	.public-booking-actions > .public-location-stack__continue,
+	.public-booking-actions > .public-slot-roulette__continue {
+		display: inline-flex;
+		background: var(--primary, #426edb);
+		color: var(--on-primary, #fff);
 	}
 
 	.public-booking-actions > [data-booking-primary-actions] {
@@ -3366,6 +3512,29 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	max-width: 100%;
 }
 
+.public-slot-periods {
+	display: grid;
+	gap: 0.85rem;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.public-slot-period {
+	display: grid;
+	gap: 0.4rem;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.public-slot-period__label {
+	margin: 0;
+	padding: 0;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	color: var(--on-surface-variant);
+}
+
 .public-booking-datetime-slots .public-slot-pill-grid {
 	display: grid;
 	gap: 0.5rem;
@@ -3470,7 +3639,7 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 	.public-slot-pill-grid .public-slot-time--pill {
 		flex: 0 0 auto;
 		width: auto;
-		min-width: 6.6rem;
+		min-width: 5.15rem;
 		min-height: 2.75rem;
 		padding-inline: 0.7rem;
 		white-space: nowrap;
@@ -3498,7 +3667,7 @@ html[data-theme='dark'] .public-booking-back-link:hover {
 
 	.public-slots-skeleton__grid--pills .public-slots-skeleton__chip {
 		flex: 0 0 auto;
-		width: 6.6rem;
+		width: 5.15rem;
 		height: 2.75rem;
 		border-radius: 0.75rem;
 	}

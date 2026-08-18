@@ -21,18 +21,59 @@ const escapeHtml = (value: string) =>
 		.replace(/>/g, '&gt;')
 		.replace(/"/g, '&quot;');
 
-/** Etiqueta visible HH:mm + A.M./P.M. (el valor interno del slot sigue en 24h). */
-export const formatSlotLabelAmPm = (slot: string) => {
+export type SlotDayPeriod = 'morning' | 'afternoon';
+
+export const SLOT_DAY_PERIODS: ReadonlyArray<{ key: SlotDayPeriod; label: string }> = [
+	{ key: 'morning', label: 'Mañana' },
+	{ key: 'afternoon', label: 'Tarde' },
+];
+
+/** Mañana hasta las 11:59; tarde desde mediodía (incluye noche). */
+export const getSlotDayPeriod = (slot: string): SlotDayPeriod => {
+	const match = String(slot || '')
+		.trim()
+		.match(/^(\d{1,2}):/);
+	const hour = Number(match?.[1]);
+	return Number.isFinite(hour) && hour < 12 ? 'morning' : 'afternoon';
+};
+
+export const forEachSlotPeriod = (
+	slots: string[],
+	callback: (period: { key: SlotDayPeriod; label: string; slots: string[] }) => void
+) => {
+	for (const period of SLOT_DAY_PERIODS) {
+		const periodSlots = slots.filter((slot) => getSlotDayPeriod(slot) === period.key);
+		if (periodSlots.length === 0) continue;
+		callback({ key: period.key, label: period.label, slots: periodSlots });
+	}
+};
+
+/** Etiqueta visible HH:mm (24h). Mañana/Tarde ya cubren el periodo. */
+export const formatSlotLabel24h = (slot: string) => {
 	const match = String(slot || '')
 		.trim()
 		.match(/^(\d{1,2}):(\d{2})$/);
-	if (!match) return { time: slot, meridiem: '' };
+	if (!match) return String(slot || '');
 	const hour = Number(match[1]);
 	if (!Number.isFinite(hour) || hour < 0 || hour > 23) {
-		return { time: slot, meridiem: '' };
+		return String(slot || '');
+	}
+	return `${String(hour).padStart(2, '0')}:${match[2]}`;
+};
+
+/** Etiqueta visible HH:mm + A.M./P.M. (el valor interno del slot sigue en 24h). */
+export const formatSlotLabelAmPm = (slot: string) => {
+	const time = formatSlotLabel24h(slot);
+	const match = String(slot || '')
+		.trim()
+		.match(/^(\d{1,2}):(\d{2})$/);
+	if (!match) return { time, meridiem: '' };
+	const hour = Number(match[1]);
+	if (!Number.isFinite(hour) || hour < 0 || hour > 23) {
+		return { time, meridiem: '' };
 	}
 	return {
-		time: `${String(hour).padStart(2, '0')}:${match[2]}`,
+		time,
 		meridiem: hour < 12 ? 'A.M.' : 'P.M.',
 	};
 };
@@ -213,11 +254,12 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 			const slotKey = `${group.location.id_location}:${slot}`;
 			const slotButton = document.createElement('button');
 			slotButton.type = 'button';
-			const { time, meridiem } = formatSlotLabelAmPm(slot);
-			slotButton.innerHTML = meridiem
-				? `<span class="public-slot-time__label">${escapeHtml(time)} <span class="public-slot-time__meridiem">${escapeHtml(meridiem)}</span></span>`
-				: `<span class="public-slot-time__label">${escapeHtml(slot)}</span>`;
-			slotButton.setAttribute('aria-label', meridiem ? `${time} ${meridiem}` : slot);
+			const time = formatSlotLabel24h(slot);
+			slotButton.innerHTML = `<span class="public-slot-time__label">${escapeHtml(time)}</span>`;
+			slotButton.setAttribute(
+				'aria-label',
+				`${time} de la ${getSlotDayPeriod(slot) === 'morning' ? 'mañana' : 'tarde'}`
+			);
 			slotButton.dataset.slotKey = slotKey;
 			const isSelected = selectedSlotKey === slotKey;
 			slotButton.className =
@@ -436,7 +478,7 @@ export const mountPublicSlotBranches = (options: MountPublicSlotBranchesOptions)
 		if (showRouletteContinue) {
 			const continueButton = document.createElement('button');
 			continueButton.type = 'button';
-			continueButton.className = 'public-slot-roulette__continue';
+			continueButton.className = 'public-booking-continue public-slot-roulette__continue';
 			setContinueButtonContent(continueButton);
 			continueButton.addEventListener('click', () => {
 				const slot = group.slots[focusedIndex];
