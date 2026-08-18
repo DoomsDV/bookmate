@@ -1,4 +1,8 @@
 import { createIdempotencyKey } from '../lib/idempotency';
+import {
+	reconcileReceiptUpload,
+	type ReceiptUploadPayload,
+} from '../lib/public-receipt-reconcile';
 
 export type RefundPolicyCode = 'FLEXIBLE' | 'MODERATE' | 'STRICT';
 
@@ -392,7 +396,7 @@ export const setSipapReceiptStatus = (
 	if (!statusEl) return;
 
 	if (phase === 'uploading') {
-		statusEl.textContent = 'Leyendo comprobante…';
+		statusEl.textContent = result?.message?.trim() || 'Leyendo comprobante…';
 		statusEl.dataset.state = 'loading';
 		if (submitBtn) {
 			submitBtn.disabled = true;
@@ -491,6 +495,32 @@ export const bindSipapReceiptUpload = (
 	let idemFileSignature: string | null = null;
 	let isUploading = false;
 
+	const applyUploadSuccess = (result: SipapReceiptUploadResult) => {
+		idemKey = null;
+		idemFileSignature = null;
+		setSipapReceiptStatus(root, result, 'done');
+		options?.onResult?.(result);
+	};
+
+	const tryReconcileUpload = async (
+		token: string,
+		key: string,
+		payload: ReceiptUploadPayload
+	): Promise<boolean> => {
+		const reconciled = await reconcileReceiptUpload(token, key, payload, {
+			signal: options?.signal,
+			onVerifying: () =>
+				setSipapReceiptStatus(
+					root,
+					{ message: 'Verificando comprobante…' },
+					'uploading'
+				),
+		});
+		if (!reconciled) return false;
+		applyUploadSuccess(reconciled);
+		return true;
+	};
+
 	const upload = async () => {
 		if (isUploading || isHoldExpired(root)) return;
 		isUploading = true;
@@ -544,38 +574,51 @@ export const bindSipapReceiptUpload = (
 			const file_base64 = await fileToBase64(uploadFile);
 			const resolvedMime = uploadFile.type || (uploadIsPdf ? 'application/pdf' : 'image/jpeg');
 			const resolvedName = uploadFile.name || (uploadIsPdf ? 'comprobante.pdf' : 'comprobante.jpg');
-			const response = await fetch(
-				`/api/public/reservations/${encodeURIComponent(token)}/receipt`,
-				{
-					method: 'POST',
-					headers: {
-						'Content-Type': 'application/json',
-						Accept: 'application/json',
-						'Idempotency-Key': idemKey,
-					},
-					body: JSON.stringify({
-						file_base64,
-						filename: resolvedName,
-						mime_type: resolvedMime,
-					}),
-					signal: options?.signal,
-				}
-			);
+			const payload: ReceiptUploadPayload = {
+				file_base64,
+				filename: resolvedName,
+				mime_type: resolvedMime,
+			};
+
+			let response: Response;
+			try {
+				response = await fetch(
+					`/api/public/reservations/${encodeURIComponent(token)}/receipt`,
+					{
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+							Accept: 'application/json',
+							'Idempotency-Key': idemKey,
+						},
+						body: JSON.stringify(payload),
+						signal: options?.signal,
+					}
+				);
+			} catch (fetchError) {
+				if (isAbortError(fetchError)) return;
+				if (await tryReconcileUpload(token, idemKey, payload)) return;
+				const message =
+					fetchError instanceof Error
+						? fetchError.message
+						: 'No fue posible subir el comprobante.';
+				setSipapReceiptStatus(root, { message }, 'error');
+				options?.onError?.(message);
+				return;
+			}
+
 			const data = await response.json().catch(() => ({}));
 			if (!response.ok || data.status !== 'success') {
+				if (await tryReconcileUpload(token, idemKey, payload)) return;
 				const message = String(data.message || 'No fue posible subir el comprobante.');
 				setSipapReceiptStatus(root, { message }, 'error');
 				options?.onError?.(message);
 				return;
 			}
-			idemKey = null;
-			idemFileSignature = null;
-			const result: SipapReceiptUploadResult = {
+			applyUploadSuccess({
 				message: String(data.message || '').trim(),
 				...(data.data && typeof data.data === 'object' ? data.data : {}),
-			};
-			setSipapReceiptStatus(root, result, 'done');
-			options?.onResult?.(result);
+			});
 		} catch (error) {
 			if (isAbortError(error)) return;
 			const message =

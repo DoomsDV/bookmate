@@ -6,7 +6,7 @@ import {
 } from '../../../../../lib/public-booking';
 import {
 	parseRequestBody,
-	publicBookingErrorResponse,
+	publicReceiptUploadErrorResponse,
 } from '../../../../../lib/public-api-handlers';
 import { readIdempotencyKeyHeader } from '../../../../../lib/idempotency';
 
@@ -62,6 +62,6 @@ export const POST: APIRoute = async ({ request, params }) => {
 			{ status: 200 }
 		);
 	} catch (error) {
-		return publicBookingErrorResponse(error, 'No fue posible subir el comprobante.');
+		return publicReceiptUploadErrorResponse(error, 'No fue posible subir el comprobante.');
 	}
 };

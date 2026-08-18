@@ -32,6 +32,20 @@ export const publicCachedJsonResponse = (
 		},
 	});
 
+export const isUpstreamTimeoutError = (error: unknown): boolean => {
+	if (!error || typeof error !== 'object') return false;
+	const err = error as Error;
+	const name = String(err.name || '');
+	if (name === 'TimeoutError' || name === 'AbortError') return true;
+	const message = String(err.message || '').toLowerCase();
+	return (
+		message.includes('timed out') ||
+		message.includes('timeout') ||
+		message.includes('aborted') ||
+		message.includes('abort')
+	);
+};
+
 export const publicBookingErrorResponse = (error: unknown, fallbackMessage: string) => {
 	const bookingError =
 		error instanceof PublicBookingApiError
@@ -46,4 +60,22 @@ export const publicBookingErrorResponse = (error: unknown, fallbackMessage: stri
 		},
 		{ status: toSafeApiStatus(bookingError.status) }
 	);
+};
+
+export const publicReceiptUploadErrorResponse = (error: unknown, fallbackMessage: string) => {
+	if (isUpstreamTimeoutError(error)) {
+		return Response.json(
+			{
+				status: 'error',
+				code: 'UPSTREAM_TIMEOUT',
+				message: 'El comprobante sigue procesándose. Esperá unos segundos.',
+				...(import.meta.env.DEV
+					? { details: { name: (error as Error).name || 'TimeoutError' } }
+					: {}),
+			},
+			{ status: 504 }
+		);
+	}
+
+	return publicBookingErrorResponse(error, fallbackMessage);
 };

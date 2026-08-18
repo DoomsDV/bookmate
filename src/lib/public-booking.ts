@@ -14,10 +14,25 @@ const toPositiveInt = (value: unknown, fallback = 0) => {
 
 const ORDS_FETCH_TIMEOUT_MS = 8000;
 
-const ordsFetch = (input: RequestInfo | URL, init: RequestInit = {}) =>
+const parsePositiveIntEnv = (value: unknown, fallback: number) => {
+	const parsed = Number(value);
+	return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
+/** Upload receipt: OCI + OCR síncrono; default 60s (configurable). */
+export const ORDS_RECEIPT_UPLOAD_TIMEOUT_MS = parsePositiveIntEnv(
+	import.meta.env.ORDS_RECEIPT_UPLOAD_TIMEOUT_MS,
+	60000
+);
+
+const ordsFetch = (
+	input: RequestInfo | URL,
+	init: RequestInit = {},
+	timeoutMs = ORDS_FETCH_TIMEOUT_MS
+) =>
 	fetch(input, {
 		...init,
-		signal: init.signal ?? AbortSignal.timeout(ORDS_FETCH_TIMEOUT_MS),
+		signal: init.signal ?? AbortSignal.timeout(timeoutMs),
 	});
 
 const normalizePublicDomainOrigin = (value: string) => {
@@ -1060,19 +1075,23 @@ export const uploadPublicReceiptWithOrds = async (
 		throw new PublicBookingApiError('Debes enviar el comprobante.', 400);
 	}
 
-	const response = await ordsFetch(`${resolvePublicReservationApiUrl(safeToken)}/receipt`, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/json',
-			Accept: 'application/json',
-			...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+	const response = await ordsFetch(
+		`${resolvePublicReservationApiUrl(safeToken)}/receipt`,
+		{
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json',
+				Accept: 'application/json',
+				...(idempotencyKey ? { 'Idempotency-Key': idempotencyKey } : {}),
+			},
+			body: JSON.stringify({
+				file_base64: payload.file_base64,
+				filename: payload.filename || 'comprobante.jpg',
+				mime_type: payload.mime_type || 'image/jpeg',
+			}),
 		},
-		body: JSON.stringify({
-			file_base64: payload.file_base64,
-			filename: payload.filename || 'comprobante.jpg',
-			mime_type: payload.mime_type || 'image/jpeg',
-		}),
-	});
+		ORDS_RECEIPT_UPLOAD_TIMEOUT_MS
+	);
 
 	const data = await parseApiResponse(response, 'No fue posible subir el comprobante.');
 	const raw = (data.data ?? data) as Record<string, unknown>;
