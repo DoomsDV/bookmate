@@ -66,6 +66,62 @@ const addMinutesWallClock = (date: string, time: string, minutes: number) => {
 const buildIso = (date: string, time: string) =>
 	`${date}T${normalizeTime(time)}:00${ASUNCION_OFFSET}`;
 
+const MONTH_NAMES = [
+	'Enero',
+	'Febrero',
+	'Marzo',
+	'Abril',
+	'Mayo',
+	'Junio',
+	'Julio',
+	'Agosto',
+	'Septiembre',
+	'Octubre',
+	'Noviembre',
+	'Diciembre',
+];
+
+const TIME_SLOTS = (() => {
+	const slots: string[] = [];
+	for (let hour = 6; hour <= 22; hour += 1) {
+		for (const minute of [0, 15, 30, 45]) {
+			if (hour === 22 && minute > 0) break;
+			slots.push(`${pad2(hour)}:${pad2(minute)}`);
+		}
+	}
+	return slots;
+})();
+
+const formatDisplayDate = (iso: string) => {
+	const match = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	if (!match) return '';
+	return `${match[3]}/${match[2]}/${match[1]}`;
+};
+
+const parseIsoDate = (iso: string): Date | null => {
+	const match = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+	if (!match) return null;
+	const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+	return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const toIsoDate = (date: Date) =>
+	`${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+
+const snapTime = (raw: string): string | null => {
+	const value = String(raw || '').trim().replace('.', ':').replace(',', ':');
+	if (!value) return null;
+	const match = value.match(/^(\d{1,2})(?::(\d{0,2}))?$/);
+	if (!match) return null;
+	const hour = Number(match[1]);
+	if (!Number.isInteger(hour) || hour > 23) return null;
+	const typedMinutes = match[2];
+	let minute = !typedMinutes ? 0 : Number(typedMinutes.padEnd(2, '0').slice(0, 2));
+	if (!Number.isInteger(minute) || minute > 59) return null;
+	minute = Math.min(45, Math.round(minute / 15) * 15);
+	return `${pad2(hour)}:${pad2(minute)}`;
+};
+
 class AgendaScanPreview extends HTMLElement {
 	#bound = false;
 	#listeners: AbortController | null = null;
@@ -85,6 +141,13 @@ class AgendaScanPreview extends HTMLElement {
 	#dragStartY = 0;
 	#panStartX = 0;
 	#panStartY = 0;
+	#calView = new Date();
+	#activeDateRow: PreviewRowState | null = null;
+	#activeDateEl: HTMLElement | null = null;
+	#activeTimeRow: PreviewRowState | null = null;
+	#activeTimeEl: HTMLElement | null = null;
+	#activeTimeInput: HTMLInputElement | null = null;
+	#outsideClose: ((event: Event) => void) | null = null;
 
 	connectedCallback() {
 		if (this.#bound) return;
@@ -130,10 +193,22 @@ class AgendaScanPreview extends HTMLElement {
 			this.close();
 		}, { signal });
 		document.addEventListener('keydown', (event) => {
-			if (event.key === 'Escape' && shell?.open) {
-				event.preventDefault();
-				this.close();
+			if (event.key !== 'Escape' || !shell?.open) return;
+			event.preventDefault();
+			if (this.isPopoverOpen()) {
+				this.closePopovers(true);
+				return;
 			}
+			this.close();
+		}, { signal });
+
+		this.querySelector('[data-agenda-cal-prev]')?.addEventListener('click', () => {
+			this.#calView = new Date(this.#calView.getFullYear(), this.#calView.getMonth() - 1, 1);
+			this.renderCalendarDays();
+		}, { signal });
+		this.querySelector('[data-agenda-cal-next]')?.addEventListener('click', () => {
+			this.#calView = new Date(this.#calView.getFullYear(), this.#calView.getMonth() + 1, 1);
+			this.renderCalendarDays();
 		}, { signal });
 
 		this.querySelector('[data-agenda-default-professional]')?.addEventListener('change', () => {
@@ -151,6 +226,7 @@ class AgendaScanPreview extends HTMLElement {
 	}
 
 	disconnectedCallback() {
+		this.closePopovers();
 		this.#bound = false;
 		this.#listeners?.abort();
 		this.#listeners = null;
@@ -193,6 +269,7 @@ class AgendaScanPreview extends HTMLElement {
 	}
 
 	close() {
+		this.closePopovers();
 		const shell = this.querySelector<HTMLDialogElement>('[data-agenda-preview-shell]');
 		if (!shell?.open) return;
 
@@ -510,6 +587,7 @@ class AgendaScanPreview extends HTMLElement {
 	}
 
 	private renderRows() {
+		this.closePopovers();
 		const container = this.querySelector<HTMLElement>('[data-agenda-preview-rows]');
 		if (!container) return;
 		container.innerHTML = '';
@@ -579,14 +657,14 @@ class AgendaScanPreview extends HTMLElement {
 					'time',
 					'Hora',
 					'schedule',
-					`<input type="time" data-row-time value="${this.escape(row.time)}" aria-label="Hora" />`,
+					`<input type="text" inputmode="numeric" autocomplete="off" spellcheck="false" class="agenda-preview-timeinput" data-row-time value="${this.escape(row.time)}" placeholder="hh:mm" aria-label="Hora" aria-autocomplete="list" aria-expanded="false" aria-controls="agenda-preview-times-list" />`,
 					'agenda-preview-row__field--time'
 				)}
 				${field(
 					'date',
 					'Fecha',
 					'calendar_month',
-					`<input type="date" data-row-date value="${this.escape(row.date)}" aria-label="Fecha" />`
+					`<button type="button" class="agenda-preview-datebtn${row.date ? '' : ' is-empty'}" data-row-date aria-haspopup="dialog" aria-label="Fecha">${this.escape(formatDisplayDate(row.date) || 'Elegir fecha')}</button>`
 				)}
 			</div>
 			${field(
@@ -633,8 +711,38 @@ class AgendaScanPreview extends HTMLElement {
 			}, signal ? { signal } : undefined);
 		};
 
-		bind('[data-row-time]', (v) => (row.time = v));
-		bind('[data-row-date]', (v) => (row.date = v));
+		el.querySelector('[data-row-date]')?.addEventListener('click', (event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			this.openCalendar(row, event.currentTarget as HTMLElement, el);
+		}, signal ? { signal } : undefined);
+
+		const timeInput = el.querySelector<HTMLInputElement>('[data-row-time]');
+		timeInput?.addEventListener('focus', () => {
+			this.openTimes(row, timeInput, el);
+		}, signal ? { signal } : undefined);
+		timeInput?.addEventListener('input', () => {
+			this.renderTimeOptions(timeInput.value, row.time);
+		}, signal ? { signal } : undefined);
+		timeInput?.addEventListener('keydown', (event) => {
+			if (event.key === 'Enter') {
+				event.preventDefault();
+				this.commitTime(row, timeInput, el);
+				this.closePopovers();
+			}
+			if (event.key === 'Escape') {
+				event.preventDefault();
+				this.closePopovers(true);
+			}
+		}, signal ? { signal } : undefined);
+		timeInput?.addEventListener('blur', () => {
+			window.setTimeout(() => {
+				if (this.#activeTimeInput !== timeInput) return;
+				this.commitTime(row, timeInput, el);
+				this.closePopovers();
+			}, 140);
+		}, signal ? { signal } : undefined);
+
 		bind('[data-row-name]', (v) => {
 			row.customer_name = v;
 			const avatar = el.querySelector<HTMLElement>('[data-row-avatar]');
@@ -647,6 +755,197 @@ class AgendaScanPreview extends HTMLElement {
 		el.querySelectorAll('.agenda-preview-row__check').forEach((node) => node.remove());
 		this.refreshRowState(el, row);
 		return el;
+	}
+
+	private isPopoverOpen() {
+		const cal = this.querySelector<HTMLElement>('[data-agenda-cal]');
+		const times = this.querySelector<HTMLElement>('[data-agenda-times]');
+		return Boolean((cal && !cal.hidden) || (times && !times.hidden));
+	}
+
+	private bindOutsideClose() {
+		if (this.#outsideClose) return;
+		this.#outsideClose = (event: Event) => {
+			const target = event.target;
+			if (!(target instanceof Node)) return;
+			const cal = this.querySelector('[data-agenda-cal]');
+			const times = this.querySelector('[data-agenda-times]');
+			if (cal?.contains(target) || times?.contains(target)) return;
+			if (this.#activeDateEl?.contains(target) || this.#activeTimeEl?.contains(target)) return;
+			if (this.#activeTimeRow && this.#activeTimeInput) {
+				const rowEl = this.#activeTimeInput.closest<HTMLElement>('.agenda-preview-row');
+				if (rowEl) this.commitTime(this.#activeTimeRow, this.#activeTimeInput, rowEl);
+			}
+			this.closePopovers();
+		};
+		document.addEventListener('pointerdown', this.#outsideClose);
+	}
+
+	private unbindOutsideClose() {
+		if (!this.#outsideClose) return;
+		document.removeEventListener('pointerdown', this.#outsideClose);
+		this.#outsideClose = null;
+	}
+
+	private closePopovers(restoreTime = false) {
+		const cal = this.querySelector<HTMLElement>('[data-agenda-cal]');
+		const times = this.querySelector<HTMLElement>('[data-agenda-times]');
+		if (cal) cal.hidden = true;
+		if (times) times.hidden = true;
+		this.#activeDateEl?.closest('[data-field]')?.classList.remove('is-open');
+		this.#activeTimeEl?.closest('[data-field]')?.classList.remove('is-open');
+		if (this.#activeTimeInput) {
+			this.#activeTimeInput.setAttribute('aria-expanded', 'false');
+			if (restoreTime && this.#activeTimeRow) {
+				this.#activeTimeInput.value = this.#activeTimeRow.time;
+			}
+		}
+		this.#activeDateRow = null;
+		this.#activeDateEl = null;
+		this.#activeTimeRow = null;
+		this.#activeTimeEl = null;
+		this.#activeTimeInput = null;
+		this.unbindOutsideClose();
+	}
+
+	private positionPopover(popover: HTMLElement, anchor: HTMLElement) {
+		popover.hidden = false;
+		const rect = anchor.getBoundingClientRect();
+		const width = popover.offsetWidth;
+		const height = popover.offsetHeight;
+		let left = rect.left;
+		if (left + width > window.innerWidth - 8) {
+			left = Math.max(8, window.innerWidth - width - 8);
+		}
+		let top = rect.bottom + 6;
+		if (top + height > window.innerHeight - 8) {
+			top = Math.max(8, rect.top - height - 6);
+		}
+		popover.style.left = `${left}px`;
+		popover.style.top = `${top}px`;
+	}
+
+	private openCalendar(row: PreviewRowState, button: HTMLElement, rowEl: HTMLElement) {
+		const cal = this.querySelector<HTMLElement>('[data-agenda-cal]');
+		if (!cal) return;
+		this.closePopovers();
+		this.#activeDateRow = row;
+		this.#activeDateEl = button;
+		button.closest('[data-field]')?.classList.add('is-open');
+		this.#calView = parseIsoDate(row.date) || new Date();
+		this.renderCalendarDays();
+		this.positionPopover(cal, button);
+		this.bindOutsideClose();
+		void rowEl;
+	}
+
+	private renderCalendarDays() {
+		const grid = this.querySelector<HTMLElement>('[data-agenda-cal-days]');
+		const label = this.querySelector<HTMLElement>('[data-agenda-cal-label]');
+		if (!grid) return;
+		const year = this.#calView.getFullYear();
+		const month = this.#calView.getMonth();
+		if (label) label.textContent = `${MONTH_NAMES[month]} ${year}`;
+
+		const selected = this.#activeDateRow?.date || '';
+		const today = toIsoDate(new Date());
+		const first = new Date(year, month, 1);
+		const startOffset = first.getDay() === 0 ? 6 : first.getDay() - 1;
+		const cursor = new Date(year, month, 1 - startOffset);
+
+		grid.innerHTML = '';
+		for (let i = 0; i < 42; i += 1) {
+			const iso = toIsoDate(cursor);
+			const day = document.createElement('button');
+			day.type = 'button';
+			day.className = 'agenda-preview-cal__day';
+			if (cursor.getMonth() !== month) day.classList.add('agenda-preview-cal__day--out');
+			if (iso === today) day.classList.add('agenda-preview-cal__day--today');
+			if (iso === selected) day.classList.add('agenda-preview-cal__day--selected');
+			day.textContent = String(cursor.getDate());
+			day.addEventListener('click', () => this.selectDate(iso));
+			grid.appendChild(day);
+			cursor.setDate(cursor.getDate() + 1);
+		}
+	}
+
+	private selectDate(iso: string) {
+		const row = this.#activeDateRow;
+		const button = this.#activeDateEl;
+		if (!row || !button) return;
+		row.date = iso;
+		button.textContent = formatDisplayDate(iso) || 'Elegir fecha';
+		button.classList.toggle('is-empty', !iso);
+		const rowEl = button.closest<HTMLElement>('.agenda-preview-row');
+		if (rowEl) this.refreshRowState(rowEl, row);
+		this.closePopovers();
+	}
+
+	private openTimes(row: PreviewRowState, input: HTMLInputElement, rowEl: HTMLElement) {
+		const list = this.querySelector<HTMLElement>('[data-agenda-times]');
+		if (!list) return;
+		if (this.#activeTimeInput === input && !list.hidden) {
+			this.renderTimeOptions(input.value, row.time);
+			return;
+		}
+		this.closePopovers();
+		this.#activeTimeRow = row;
+		this.#activeTimeInput = input;
+		this.#activeTimeEl = input;
+		input.closest('[data-field]')?.classList.add('is-open');
+		input.setAttribute('aria-expanded', 'true');
+		this.renderTimeOptions(input.value, row.time);
+		this.positionPopover(list, input);
+		this.bindOutsideClose();
+		const active = list.querySelector<HTMLElement>('.is-active');
+		active?.scrollIntoView({ block: 'nearest' });
+		void rowEl;
+	}
+
+	private renderTimeOptions(query: string, selected: string) {
+		const list = this.querySelector<HTMLElement>('[data-agenda-times]');
+		if (!list) return;
+		const digits = String(query || '').replace(/\D/g, '');
+		const slots = TIME_SLOTS.filter((slot) => {
+			if (!query.trim()) return true;
+			return slot.startsWith(query.trim()) || slot.replace(':', '').startsWith(digits);
+		});
+		list.innerHTML = '';
+		for (const slot of slots.length ? slots : TIME_SLOTS) {
+			const option = document.createElement('button');
+			option.type = 'button';
+			option.className = 'agenda-preview-times__opt';
+			option.setAttribute('role', 'option');
+			if (slot === selected || slot === snapTime(query)) option.classList.add('is-active');
+			option.textContent = slot;
+			option.addEventListener('pointerdown', (event) => {
+				event.preventDefault();
+				this.selectTime(slot);
+			});
+			list.appendChild(option);
+		}
+	}
+
+	private selectTime(slot: string) {
+		const row = this.#activeTimeRow;
+		const input = this.#activeTimeInput;
+		if (!row || !input) return;
+		row.time = slot;
+		input.value = slot;
+		const rowEl = input.closest<HTMLElement>('.agenda-preview-row');
+		if (rowEl) this.refreshRowState(rowEl, row);
+		this.closePopovers();
+	}
+
+	private commitTime(row: PreviewRowState, input: HTMLInputElement, rowEl: HTMLElement) {
+		const snapped = snapTime(input.value);
+		if (snapped) {
+			row.time = snapped;
+			input.value = snapped;
+		} else {
+			input.value = row.time;
+		}
+		this.refreshRowState(rowEl, row);
 	}
 
 	private syncPlaceholderState(root: ParentNode = this) {
@@ -675,6 +974,11 @@ class AgendaScanPreview extends HTMLElement {
 
 		this.applyGlobalLocation();
 		const ready = this.isRowValid(row);
+		const dateBtn = el.querySelector<HTMLElement>('[data-row-date]');
+		if (dateBtn) {
+			dateBtn.textContent = formatDisplayDate(row.date) || 'Elegir fecha';
+			dateBtn.classList.toggle('is-empty', !row.date);
+		}
 		el.classList.toggle('is-incomplete', !ready);
 		el.setAttribute('aria-label', ready ? 'Listo' : 'Datos faltantes');
 		this.syncPlaceholderState(el);
