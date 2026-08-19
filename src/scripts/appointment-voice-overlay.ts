@@ -1,3 +1,4 @@
+import { prepareAgendaScanImage } from '../lib/agenda-scan-image';
 import {
 	APPOINTMENT_AI_DRAFT_STORAGE_KEY,
 	type AppointmentAiDraft,
@@ -218,12 +219,11 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			window.clearTimeout(this.#closeTimer);
 			this.#closeTimer = null;
 		}
-		shell.classList.remove('is-closing', 'is-settled');
 
-		// Cortar sesión previa de inmediato; el resto del UI reset va tras showModal.
 		this.cancelAll(false);
 		this.#session += 1;
 		this.stopElapsedTimer();
+		this.setTab('voice');
 
 		if (this.#settleOpenFallback) {
 			window.clearTimeout(this.#settleOpenFallback);
@@ -233,6 +233,16 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			shell.removeEventListener('animationend', this.#settleOpenHandler);
 			this.#settleOpenHandler = null;
 		}
+
+		const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		if (prefersReducedMotion) {
+			shell.classList.remove('is-closing');
+			shell.classList.add('is-settled');
+			if (!shell.open) shell.showModal();
+			return;
+		}
+
+		shell.classList.remove('is-closing', 'is-settled');
 		const settleOpen = () => {
 			shell.classList.add('is-settled');
 			if (this.#settleOpenHandler) {
@@ -251,16 +261,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		shell.addEventListener('animationend', this.#settleOpenHandler);
 		this.#settleOpenFallback = window.setTimeout(settleOpen, 220);
 
-		// Abrir primero para que la animación no espere el reset visual del overlay.
 		if (!shell.open) shell.showModal();
-
-		// Un solo reset: setTab → setState('idle') pone visualizer estático (sin rAF).
-		requestAnimationFrame(() => {
-			if (!this.isConnected) return;
-			this.setTab('voice');
-			this.setError('');
-			this.setTranscript('');
-		});
 	}
 
 	private cacheUiNodes(): VoiceUiNodes {
@@ -412,26 +413,25 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		}
 
 		const session = this.#session;
-		this.setProcessingLabel('Analizando tu agenda…');
+		this.setProcessingLabel('Optimizando imagen…');
 		this.setState('processing');
 		this.#scanAbortController = new AbortController();
-
-		let imageDataUrl = '';
-		try {
-			imageDataUrl = await this.readFileAsDataUrl(file);
-		} catch {
-			imageDataUrl = '';
-		}
+		const signal = this.#scanAbortController.signal;
 
 		try {
+			const prepared = await prepareAgendaScanImage(file, { signal });
+			if (!this.isSessionActive(session)) return;
+
+			this.setProcessingLabel('Analizando tu agenda…');
+
 			const formData = new FormData();
-			formData.append('image', file, file.name || 'agenda.jpg');
+			formData.append('image', prepared, prepared.name || 'agenda.jpg');
 
 			const response = await fetch('/api/ai/appointments/image-draft', {
 				method: 'POST',
 				body: formData,
 				credentials: 'same-origin',
-				signal: this.#scanAbortController.signal,
+				signal,
 			});
 
 			if (!this.isSessionActive(session)) return;
@@ -454,6 +454,13 @@ class AppointmentVoiceOverlay extends HTMLElement {
 				return;
 			}
 
+			let imageDataUrl = '';
+			try {
+				imageDataUrl = await this.readFileAsDataUrl(prepared);
+			} catch {
+				imageDataUrl = '';
+			}
+
 			document.dispatchEvent(
 				new CustomEvent('agenda-scan:success', {
 					detail: { appointments, imageDataUrl },
@@ -463,6 +470,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 			this.close();
 		} catch (error) {
 			if (error instanceof DOMException && error.name === 'AbortError') return;
+			if (error instanceof Error && error.name === 'AbortError') return;
 			if (!this.isSessionActive(session)) return;
 			this.setState('idle');
 			this.setError(error instanceof Error ? error.message : 'No fue posible leer la agenda.');

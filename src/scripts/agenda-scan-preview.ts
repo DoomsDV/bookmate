@@ -46,9 +46,15 @@ const extractDateTime = (startIso: string | null | undefined): { date: string; t
 	return { date: match[1], time: match[2] };
 };
 
+const normalizeTime = (time: string) => {
+	const match = String(time || '').trim().match(/^(\d{1,2}):(\d{2})/);
+	if (!match) return time;
+	return `${pad2(Number(match[1]))}:${match[2]}`;
+};
+
 const addMinutesWallClock = (date: string, time: string, minutes: number) => {
 	const [y, mo, d] = date.split('-').map(Number);
-	const [h, mi] = time.split(':').map(Number);
+	const [h, mi] = normalizeTime(time).split(':').map(Number);
 	const base = new Date(Date.UTC(y, mo - 1, d, h, mi));
 	base.setUTCMinutes(base.getUTCMinutes() + minutes);
 	return {
@@ -57,7 +63,8 @@ const addMinutesWallClock = (date: string, time: string, minutes: number) => {
 	};
 };
 
-const buildIso = (date: string, time: string) => `${date}T${time}:00${ASUNCION_OFFSET}`;
+const buildIso = (date: string, time: string) =>
+	`${date}T${normalizeTime(time)}:00${ASUNCION_OFFSET}`;
 
 class AgendaScanPreview extends HTMLElement {
 	#bound = false;
@@ -108,8 +115,13 @@ class AgendaScanPreview extends HTMLElement {
 			void this.save();
 		}, { signal });
 
-		this.querySelector('[data-agenda-zoom-in]')?.addEventListener('click', () => this.setZoom(this.#zoom + 0.25), { signal });
-		this.querySelector('[data-agenda-zoom-out]')?.addEventListener('click', () => this.setZoom(this.#zoom - 0.25), { signal });
+		const bindZoom = (selector: string, delta: number) => {
+			const button = this.querySelector<HTMLButtonElement>(selector);
+			button?.addEventListener('pointerdown', (event) => event.preventDefault(), { signal });
+			button?.addEventListener('click', () => this.setZoom(this.#zoom + delta), { signal });
+		};
+		bindZoom('[data-agenda-zoom-in]', 0.25);
+		bindZoom('[data-agenda-zoom-out]', -0.25);
 		this.bindImagePan(signal);
 
 		const shell = this.querySelector<HTMLDialogElement>('[data-agenda-preview-shell]');
@@ -461,6 +473,14 @@ class AgendaScanPreview extends HTMLElement {
 		}
 	}
 
+	private applyGlobalLocation() {
+		const location = this.defaultsValues().location;
+		if (!location) return;
+		for (const row of this.#rows) {
+			row.loc_id_location = location;
+		}
+	}
+
 	private addRow() {
 		const defaults = this.defaultsValues();
 		this.#rows.push({
@@ -534,71 +554,66 @@ class AgendaScanPreview extends HTMLElement {
 		`;
 
 		el.innerHTML = `
-			<div class="agenda-preview-row__lead" data-field="name">
-				<span class="agenda-preview-row__avatar" data-row-avatar aria-hidden="true">${this.escape(this.clientInitial(row.customer_name))}</span>
-				<input
-					type="text"
-					class="agenda-preview-row__lead-name"
-					data-row-name
-					value="${this.escape(row.customer_name)}"
-					placeholder="Nombre del cliente"
-					aria-label="Cliente"
-				/>
-				<button type="button" class="agenda-preview-row__delete" data-row-delete aria-label="Eliminar cita">
-					<span class="material-symbols-rounded" aria-hidden="true">delete</span>
-				</button>
+			<div class="agenda-preview-row__client">
+				<div class="agenda-preview-row__lead" data-field="name">
+					<span class="agenda-preview-row__avatar" data-row-avatar aria-hidden="true">${this.escape(this.clientInitial(row.customer_name))}</span>
+					<input
+						type="text"
+						class="agenda-preview-row__lead-name"
+						data-row-name
+						value="${this.escape(row.customer_name)}"
+						placeholder="Nombre del cliente"
+						aria-label="Cliente"
+					/>
+				</div>
+				${field(
+					'phone',
+					'Teléfono',
+					'call',
+					`<input type="tel" data-row-phone value="${this.escape(row.customer_phone)}" placeholder="Añadir teléfono" aria-label="Teléfono" />`,
+					'agenda-preview-row__field--compact agenda-preview-row__field--phone'
+				)}
 			</div>
-			<div class="agenda-preview-row__grid">
+			<div class="agenda-preview-row__datetime">
 				${field(
 					'time',
 					'Hora',
 					'schedule',
-					`<input type="time" data-row-time value="${row.time}" />`,
+					`<input type="time" data-row-time value="${this.escape(row.time)}" aria-label="Hora" />`,
 					'agenda-preview-row__field--time'
 				)}
 				${field(
 					'date',
 					'Fecha',
 					'calendar_month',
-					`<input type="date" data-row-date value="${row.date}" />`
+					`<input type="date" data-row-date value="${this.escape(row.date)}" aria-label="Fecha" />`
 				)}
-				${field(
-					'phone',
-					'Teléfono',
-					'call',
-					`<input type="tel" data-row-phone value="${this.escape(row.customer_phone)}" placeholder="Opcional" />`
-				)}
-				${field(
-					'service',
-					'Servicio',
-					'design_services',
-					`<select data-row-service>${this.optionList(
-						this.#services.map((s) => ({ id: s.id_service, name: s.name })),
-						row.ser_id_service,
-						'— Servicio —'
-					)}</select>`
-				)}
+			</div>
+			${field(
+				'service',
+				'Servicio',
+				'design_services',
+				`<select data-row-service aria-label="Servicio">${this.optionList(
+					this.#services.map((s) => ({ id: s.id_service, name: s.name })),
+					row.ser_id_service,
+					'— Servicio —'
+				)}</select>`
+			)}
+			<div class="agenda-preview-row__pro">
 				${field(
 					'professional',
 					'Profesional',
 					'badge',
-					`<select data-row-professional>${this.optionList(
+					`<select data-row-professional aria-label="Profesional">${this.optionList(
 						this.#professionals.map((p) => ({ id: p.id_professional, name: p.name })),
 						row.pro_id_professional,
 						'— Profesional —'
 					)}</select>`
 				)}
-				${field(
-					'location',
-					'Sucursal',
-					'storefront',
-					`<select data-row-location>${this.optionList(
-						this.#locations.map((l) => ({ id: l.id_location, name: l.name })),
-						row.loc_id_location,
-						'— Sucursal —'
-					)}</select>`
-				)}
 			</div>
+			<button type="button" class="agenda-preview-row__delete" data-row-delete aria-label="Eliminar cita">
+				<span class="material-symbols-rounded" aria-hidden="true">delete</span>
+			</button>
 		`;
 
 		const signal = this.#listeners?.signal;
@@ -628,7 +643,6 @@ class AgendaScanPreview extends HTMLElement {
 		bind('[data-row-phone]', (v) => (row.customer_phone = v));
 		bind('[data-row-service]', (v) => (row.ser_id_service = toInt(v)));
 		bind('[data-row-professional]', (v) => (row.pro_id_professional = toInt(v)));
-		bind('[data-row-location]', (v) => (row.loc_id_location = toInt(v)));
 
 		el.querySelectorAll('.agenda-preview-row__check').forEach((node) => node.remove());
 		this.refreshRowState(el, row);
@@ -659,13 +673,19 @@ class AgendaScanPreview extends HTMLElement {
 			node.classList.remove('is-missing');
 		}
 
+		this.applyGlobalLocation();
+		const ready = this.isRowValid(row);
+		el.classList.toggle('is-incomplete', !ready);
+		el.setAttribute('aria-label', ready ? 'Listo' : 'Datos faltantes');
 		this.syncPlaceholderState(el);
 		this.updateCounts();
 	}
 
 	private updateCounts() {
+		this.applyGlobalLocation();
 		const total = this.#rows.length;
-		const valid = this.#rows.filter((row) => this.isRowValid(row)).length;
+		const hasLocation = this.defaultsValues().location > 0;
+		const valid = hasLocation ? this.#rows.filter((row) => this.isRowValid(row)).length : 0;
 		const countNode = this.querySelector<HTMLElement>('[data-agenda-preview-count]');
 		if (countNode) countNode.textContent = String(total);
 
@@ -705,7 +725,8 @@ class AgendaScanPreview extends HTMLElement {
 
 	private async save() {
 		if (this.#saving) return;
-		this.syncDefaultsToRows(true);
+		this.syncDefaultsToRows(false);
+		this.applyGlobalLocation();
 		const validRows = this.#rows.filter((row) => this.isRowValid(row));
 		if (validRows.length === 0) {
 			this.setError('Completá al menos una cita con cliente, servicio, profesional, sucursal, fecha y hora.');
