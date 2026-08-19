@@ -142,8 +142,16 @@ export const initCobrosPage = () => {
 	const nextPageBtn = root.querySelector<HTMLButtonElement>('[data-cobros-next]');
 
 	const PAGE_SIZE = 9;
-	let statusFilter: CobrosStatusFilter = 'all';
+	const STATUS_FILTERS: CobrosStatusFilter[] = ['all', 'pending', 'approved', 'refunded', 'expired'];
+	const urlParams = new URLSearchParams(window.location.search);
+	const statusFromUrl = String(urlParams.get('status') || '').trim().toLowerCase();
+	let statusFilter: CobrosStatusFilter = STATUS_FILTERS.includes(statusFromUrl as CobrosStatusFilter)
+		? (statusFromUrl as CobrosStatusFilter)
+		: 'all';
 	let datePreset: CobrosDatePreset = 'all';
+	const appointmentFromUrl = Number(urlParams.get('appointment') || 0);
+	let pendingAppointmentId =
+		Number.isInteger(appointmentFromUrl) && appointmentFromUrl > 0 ? appointmentFromUrl : 0;
 	let items: CobroItem[] = [];
 	let selected: CobroItem | null = null;
 	let busy = false;
@@ -515,6 +523,18 @@ export const initCobrosPage = () => {
 		return `${safe || 'comprobante'}.${ext}`;
 	};
 
+	let waiveConfirmReady = false;
+
+	const resetWaiveUi = () => {
+		waiveConfirmReady = false;
+		const wrap = modal?.querySelector<HTMLElement>('[data-cobros-waive-wrap]');
+		const btn = modal?.querySelector<HTMLButtonElement>('[data-cobros-waive]');
+		const input = modal?.querySelector<HTMLInputElement>('[data-cobros-waive-reason]');
+		wrap?.classList.add('hidden');
+		if (btn) btn.textContent = 'Omitir reembolso';
+		if (input) input.value = '';
+	};
+
 	const openModal = (item: CobroItem) => {
 		selected = item;
 		if (!modal) return;
@@ -589,9 +609,13 @@ export const initCobrosPage = () => {
 		modal.querySelector<HTMLElement>('[data-cobros-modal-actions]')?.classList.toggle('hidden', !canReview);
 		modal.querySelector<HTMLElement>('[data-cobros-refund-block]')?.classList.toggle('hidden', !isRefund);
 		modal
+			.querySelector<HTMLElement>('[data-cobros-refund-actions]')
+			?.classList.toggle('hidden', !(canMarkSent || canWaive));
+		modal
 			.querySelector<HTMLElement>('[data-cobros-mark-refund-sent]')
 			?.classList.toggle('hidden', !canMarkSent);
-		modal.querySelector<HTMLElement>('[data-cobros-waive-wrap]')?.classList.toggle('hidden', !canWaive);
+		modal.querySelector<HTMLButtonElement>('[data-cobros-waive]')?.classList.toggle('hidden', !canWaive);
+		resetWaiveUi();
 
 		const claimNote = modal.querySelector<HTMLElement>('[data-cobros-claim-note]');
 		if (claimNote) {
@@ -624,6 +648,7 @@ export const initCobrosPage = () => {
 			return;
 		}
 		setRejectMode(false);
+		resetWaiveUi();
 		modal.classList.add('is-closing');
 		if (closeTimer !== null) window.clearTimeout(closeTimer);
 		closeTimer = window.setTimeout(() => {
@@ -798,6 +823,11 @@ export const initCobrosPage = () => {
 					return;
 				}
 			}
+			if (pendingAppointmentId) {
+				const match = items.find((item) => item.id_appointment === pendingAppointmentId);
+				pendingAppointmentId = 0;
+				if (match) openModal(match);
+			}
 		} catch (error) {
 			if (requestId !== loadRequestId) return;
 			items = [];
@@ -912,7 +942,7 @@ export const initCobrosPage = () => {
 		}
 		busy = true;
 		const statusEl = modal?.querySelector<HTMLElement>('[data-cobros-modal-status]');
-		if (statusEl) statusEl.textContent = 'Guardando waiver…';
+		if (statusEl) statusEl.textContent = 'Omitiendo el reembolso…';
 		try {
 			const response = await fetch(`/api/cobros/${selected.id_transaction}/waive-refund`, {
 				method: 'POST',
@@ -921,7 +951,7 @@ export const initCobrosPage = () => {
 			});
 			const payload = await response.json().catch(() => ({}));
 			if (!response.ok || payload.status !== 'success') {
-				throw new Error(String(payload.message || 'No fue posible renunciar al reembolso.'));
+				throw new Error(String(payload.message || 'No fue posible omitir el reembolso.'));
 			}
 			closeModal();
 			await load();
@@ -929,7 +959,7 @@ export const initCobrosPage = () => {
 		} catch (error) {
 			if (statusEl) {
 				statusEl.textContent =
-					error instanceof Error ? error.message : 'No fue posible renunciar al reembolso.';
+					error instanceof Error ? error.message : 'No fue posible omitir el reembolso.';
 			}
 		} finally {
 			busy = false;
@@ -1119,7 +1149,17 @@ export const initCobrosPage = () => {
 	modal
 		?.querySelector('[data-cobros-mark-refund-sent]')
 		?.addEventListener('click', () => void markRefundSent());
-	modal?.querySelector('[data-cobros-waive]')?.addEventListener('click', () => void waiveRefund());
+	modal?.querySelector('[data-cobros-waive]')?.addEventListener('click', () => {
+		if (!waiveConfirmReady) {
+			waiveConfirmReady = true;
+			modal?.querySelector<HTMLElement>('[data-cobros-waive-wrap]')?.classList.remove('hidden');
+			const btn = modal?.querySelector<HTMLButtonElement>('[data-cobros-waive]');
+			if (btn) btn.textContent = 'Confirmar omisión';
+			modal?.querySelector<HTMLInputElement>('[data-cobros-waive-reason]')?.focus();
+			return;
+		}
+		void waiveRefund();
+	});
 	modal?.addEventListener('click', (event) => {
 		if (event.target === modal) closeModal();
 	});
@@ -1128,8 +1168,6 @@ export const initCobrosPage = () => {
 		closeModal();
 	});
 
-	// Default tab: todos
-	statusFilter = 'all';
 	if (datePresetEl) datePresetEl.value = datePreset;
 	syncTabs();
 	updatePeriodFilterUi();

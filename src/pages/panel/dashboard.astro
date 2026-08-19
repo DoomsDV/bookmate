@@ -3573,12 +3573,19 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-report-shell.dashboard-floor__panel {
 		display: flex;
 		flex-direction: column;
+		max-height: 600px;
+		overflow: hidden;
 	}
 
 	.dashboard-report-shell.dashboard-floor__panel .dashboard-report-list {
 		flex: 1 1 auto;
+		min-height: 0;
 		align-content: start;
 		align-items: stretch;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		padding-right: 0.15rem;
+		-webkit-overflow-scrolling: touch;
 	}
 
 	.dashboard-report-shell.dashboard-floor__panel .dashboard-report-card {

@@ -258,7 +258,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 					</label>
 
 					<div
-						class="rounded-xl border border-(--shell-border)/80 bg-(--surface-variant)/20 px-3.5 py-2.5"
+						class="grid gap-1.5 rounded-xl border border-(--shell-border)/80 bg-(--surface-variant)/20 px-3.5 py-2.5"
 						data-modal-payment-status-wrap
 					>
 						<div class="flex flex-wrap items-center gap-x-2 gap-y-1.5">
@@ -270,8 +270,14 @@ const { showVoiceButton = false }: Props = Astro.props;
 								<span class="material-symbols-rounded text-[0.95rem]" aria-hidden="true">payments</span>
 								<span data-modal-payment-status-label>No aplica</span>
 							</span>
-							<span class="text-[0.8rem] font-medium leading-snug text-(--on-surface-variant)" data-modal-payment-status-hint hidden></span>
 						</div>
+						<span class="text-[0.8rem] font-medium leading-snug text-(--on-surface-variant)" data-modal-payment-status-hint hidden></span>
+						<a
+							href="/panel/cobros"
+							class="hidden w-fit text-[0.84rem] font-bold text-(--primary) underline underline-offset-2"
+							data-modal-refund-link
+							hidden
+						>Gestionar reembolso en Cobros</a>
 						<input type="hidden" name="payment_status" value="NONE" data-modal-payment-status />
 					</div>
 

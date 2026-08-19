@@ -9,16 +9,6 @@ const { label = 'Archivo' } = Astro.props;
 <dialog class="file-viewer" data-file-viewer aria-label={label}>
 	<div class="file-viewer__bar">
 		<p class="file-viewer__name" data-file-viewer-name>{label}</p>
-		<a
-			class="file-viewer__open"
-			href="#"
-			target="_blank"
-			rel="noopener noreferrer"
-			data-file-viewer-open
-		>
-			<span class="material-symbols-rounded text-[1.15rem]" aria-hidden="true">open_in_new</span>
-			Abrir
-		</a>
 		<button type="button" class="file-viewer__close" data-file-viewer-close aria-label="Cerrar">
 			<span class="material-symbols-rounded">close</span>
 		</button>
@@ -69,19 +59,6 @@ const { label = 'Archivo' } = Astro.props;
 		white-space: nowrap;
 		font-size: 0.95rem;
 		font-weight: 700;
-	}
-	.file-viewer__open {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-		height: 2.25rem;
-		padding: 0 0.9rem;
-		border-radius: 999px;
-		background: var(--primary-container);
-		color: var(--on-primary-container);
-		font-size: 0.85rem;
-		font-weight: 600;
-		text-decoration: none;
 	}
 	.file-viewer__close {
 		display: inline-flex;

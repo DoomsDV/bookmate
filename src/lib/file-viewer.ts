@@ -23,7 +23,6 @@ export function bindFileViewer(root: ParentNode, signal?: AbortSignal): FileView
 	const img = viewer.querySelector<HTMLImageElement>('[data-file-viewer-img]');
 	const frame = viewer.querySelector<HTMLIFrameElement>('[data-file-viewer-frame]');
 	const nameEl = viewer.querySelector<HTMLElement>('[data-file-viewer-name]');
-	const openLink = viewer.querySelector<HTMLAnchorElement>('[data-file-viewer-open]');
 	const listenerOpts = signal ? { signal } : undefined;
 
 	const close = () => {
@@ -34,7 +33,6 @@ export function bindFileViewer(root: ParentNode, signal?: AbortSignal): FileView
 			img.removeAttribute('src');
 			img.alt = '';
 		}
-		if (openLink) openLink.href = '#';
 	};
 
 	const open = (options: FileViewerOpenOptions) => {
@@ -43,7 +41,6 @@ export function bindFileViewer(root: ParentNode, signal?: AbortSignal): FileView
 		const name = String(options.name || '').trim() || 'Archivo';
 		const isPdf = isPdfFile(url, options.mimeType);
 		if (nameEl) nameEl.textContent = name;
-		if (openLink) openLink.href = url;
 		if (img) {
 			img.alt = name;
 			img.classList.toggle('hidden', isPdf);

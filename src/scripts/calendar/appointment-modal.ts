@@ -138,6 +138,8 @@ class AppointmentModal extends HTMLElement {
 	editingAppointmentId = 0;
 	editingPaymentStatus: string | null = null;
 	editingDepositAmount: number | null = null;
+	editingRefundStatus: string | null = null;
+	editingRefundAmount: number | null = null;
 	editingCancelReason: string | null = null;
 	isImmutableReadOnly = false;
 	/** Estado bloqueado en solo lectura (cancelada o completada). */
@@ -1481,11 +1483,35 @@ class AppointmentModal extends HTMLElement {
 		this.syncNotesLockState();
 	};
 
+	private hasRefundToGuide(): boolean {
+		const refund = String(this.editingRefundStatus || '').trim().toUpperCase();
+		if (refund === 'PENDING' || refund === 'AWAITING_ALIAS' || refund === 'SENT') {
+			return true;
+		}
+		return (this.editingRefundAmount || 0) > 0 && refund !== 'NOT_APPLICABLE' && refund !== 'WAIVED';
+	}
+
+	private syncRefundGuideLink() {
+		const link = this.form?.querySelector<HTMLAnchorElement>('[data-modal-refund-link]');
+		if (!link) return;
+		const show = this.isCancelledStatus() && this.hasRefundToGuide();
+		link.hidden = !show;
+		link.classList.toggle('hidden', !show);
+		if (show && this.editingAppointmentId > 0) {
+			link.href = `/panel/cobros?status=refunded&appointment=${this.editingAppointmentId}`;
+		} else {
+			link.href = '/panel/cobros';
+		}
+	}
+
 	private syncPaymentStatusLabel(status: string | null, depositAmount: number | null) {
 		const label = this.form?.querySelector<HTMLElement>('[data-modal-payment-status-label]');
 		const hint = this.form?.querySelector<HTMLElement>('[data-modal-payment-status-hint]');
 		if (!label) return;
 		const pay = String(status || 'NONE').toUpperCase();
+		const refund = String(this.editingRefundStatus || '').trim().toUpperCase();
+		const cancelled = this.isCancelledStatus();
+		const guideRefund = cancelled && this.hasRefundToGuide();
 		const amount =
 			depositAmount != null && depositAmount > 0
 				? new Intl.NumberFormat('es-PY', {
@@ -1497,9 +1523,22 @@ class AppointmentModal extends HTMLElement {
 		if (pay === 'PAID' || pay === 'PAID_TRANSFER') {
 			label.textContent = amount ? `Seña pagada · ${amount}` : 'Seña pagada';
 			if (hint) {
-				hint.hidden = false;
-				hint.textContent =
-					'Si cancelás con seña pagada, Hasel pedirá el alias al cliente para el reembolso.';
+				if (guideRefund) {
+					hint.hidden = false;
+					hint.textContent =
+						refund === 'AWAITING_ALIAS'
+							? 'Esperamos el alias SIPAP del cliente para transferir el reembolso.'
+							: refund === 'SENT'
+								? 'El reembolso ya está marcado como enviado.'
+								: 'Corresponde reembolsar esta seña al cliente.';
+				} else if (cancelled) {
+					hint.hidden = false;
+					hint.textContent = 'Esta seña no tiene reembolso.';
+				} else {
+					hint.hidden = false;
+					hint.textContent =
+						'Si cancelás con seña pagada, Hasel pedirá el alias al cliente para el reembolso.';
+				}
 			}
 		} else if (pay === 'PENDING') {
 			label.textContent = amount ? `Seña pendiente · ${amount}` : 'Seña pendiente';
@@ -1526,6 +1565,7 @@ class AppointmentModal extends HTMLElement {
 				hint.textContent = '';
 			}
 		}
+		this.syncRefundGuideLink();
 	}
 
 	private hasPaidDepositForRefund(): boolean {
@@ -1910,6 +1950,8 @@ class AppointmentModal extends HTMLElement {
 		this.editingAppointmentId = 0;
 		this.editingPaymentStatus = null;
 		this.editingDepositAmount = null;
+		this.editingRefundStatus = null;
+		this.editingRefundAmount = null;
 		this.editingCancelReason = null;
 		if (this.modalTitle) this.modalTitle.textContent = 'Crear cita';
 		if (this.modalDescription) {
@@ -1983,6 +2025,11 @@ class AppointmentModal extends HTMLElement {
 				? Number(appointment.deposit_amount)
 				: null;
 		this.editingCancelReason = String(appointment.cancel_reason || '').trim().toUpperCase() || null;
+		this.editingRefundStatus = String(appointment.refund_status || '').trim().toUpperCase() || null;
+		this.editingRefundAmount =
+			appointment.refund_amount != null && Number(appointment.refund_amount) > 0
+				? Number(appointment.refund_amount)
+				: null;
 		if (requiredNodes.paymentStatusInput) {
 			requiredNodes.paymentStatusInput.value = this.editingPaymentStatus;
 		}
@@ -1999,6 +2046,7 @@ class AppointmentModal extends HTMLElement {
 		const status = String(appointment.status || '').trim().toUpperCase();
 		if (status === 'CANCELADO' || status === 'COMPLETADO') {
 			this.setImmutableReadOnlyMode(status);
+			this.syncPaymentStatusLabel(this.editingPaymentStatus, this.editingDepositAmount);
 		}
 
 		this.renderHistorySection(appointment);

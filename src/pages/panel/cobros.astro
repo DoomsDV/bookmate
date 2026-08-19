@@ -445,32 +445,16 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 							</div>
 						</div>
 
-						<div class="hidden grid gap-3" data-cobros-refund-block>
-							<div class="grid gap-1 text-sm">
-								<span class="text-(--on-surface-variant)">Estado reembolso</span>
-								<strong data-cobros-modal-refund-status>—</strong>
+						<div class="hidden grid gap-4" data-cobros-refund-block>
+							<div class="grid gap-1 min-w-0">
+								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Estado reembolso</span>
+								<strong class="text-[0.98rem] font-bold leading-snug" data-cobros-modal-refund-status>—</strong>
 							</div>
-							<div class="grid gap-1 text-sm">
-								<span class="text-(--on-surface-variant)">Alias SIPAP del cliente</span>
-								<strong class="font-mono break-all" data-cobros-modal-refund-alias>—</strong>
+							<div class="grid gap-1 min-w-0">
+								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Alias SIPAP del cliente</span>
+								<strong class="break-all font-mono text-[0.98rem] font-bold leading-snug" data-cobros-modal-refund-alias>—</strong>
 							</div>
-							<button
-								type="button"
-								class="hidden inline-flex h-12 items-center justify-center rounded-full bg-(--primary) px-5 text-base font-semibold text-(--on-primary)"
-								data-cobros-mark-refund-sent
-							>
-								Marcar reembolso enviado
-							</button>
 							<p class="hidden text-sm font-semibold text-amber-700" data-cobros-claim-note></p>
-							<div class="hidden grid gap-2" data-cobros-waive-wrap>
-								<label class="grid gap-1 text-sm font-semibold">
-									Renunciar al reembolso (motivo)
-									<input type="text" maxlength="400" placeholder="Ej. cliente aceptó crédito / error de monto" class="cobros-select" data-cobros-waive-reason />
-								</label>
-								<button type="button" class="inline-flex h-11 items-center justify-center rounded-full border border-(--shell-border) px-5 text-sm font-semibold" data-cobros-waive>
-									Marcar como renunciado (WAIVED)
-								</button>
-							</div>
 						</div>
 					</div>
 
@@ -524,6 +508,36 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 								</button>
 							</div>
 						</div>
+						<div class="hidden grid gap-3" data-cobros-refund-actions>
+							<div class="hidden grid gap-1.5" data-cobros-waive-wrap>
+								<label class="grid gap-1.5 text-sm font-semibold">
+									Motivo para omitir el reembolso
+									<input
+										type="text"
+										maxlength="400"
+										placeholder="Ej. el cliente aceptó un crédito"
+										class="cobros-select"
+										data-cobros-waive-reason
+									/>
+								</label>
+							</div>
+							<div class="cobros-modal-actions cobros-modal-actions--refund">
+								<button
+									type="button"
+									class="cobros-modal-btn cobros-modal-btn--primary"
+									data-cobros-mark-refund-sent
+								>
+									Marcar como enviado
+								</button>
+								<button
+									type="button"
+									class="cobros-modal-btn cobros-modal-btn--text"
+									data-cobros-waive
+								>
+									Omitir reembolso
+								</button>
+							</div>
+						</div>
 						<p class="text-sm text-(--on-surface-variant)" data-cobros-modal-status></p>
 					</footer>
 				</div>
@@ -563,7 +577,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	[data-cobros-table-wrap].is-empty,
 	[data-cobros-cards].hidden,
 	[data-cobros-results].hidden,
-	.cobros-loading.hidden {
+	.cobros-loading.hidden,
+	[data-cobros-refund-actions].hidden,
+	[data-cobros-waive-wrap].hidden,
+	[data-cobros-mark-refund-sent].hidden,
+	[data-cobros-waive].hidden {
 		display: none !important;
 	}
 
@@ -1104,6 +1122,36 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		background: #9f1239;
 	}
 
+	.cobros-modal-actions--refund {
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+		gap: 0.35rem;
+	}
+
+	.cobros-modal-actions--refund .cobros-modal-btn {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.cobros-modal-btn--text {
+		background: transparent;
+		border-color: transparent;
+		min-height: 2.5rem;
+		font-size: 0.92rem;
+		font-weight: 650;
+		color: var(--on-surface-variant);
+	}
+
+	.cobros-modal-btn--text:hover {
+		background: transparent;
+		color: var(--on-surface);
+	}
+
+	.cobros-modal-footer {
+		padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+	}
+
 	.cobros-reject-reveal {
 		max-height: 0;
 		opacity: 0;
@@ -1176,7 +1224,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		display: none;
 	}
 
-	.cobros-modal-footer [data-cobros-modal-actions]:not(.hidden) + [data-cobros-modal-status]:not(:empty) {
+	.cobros-modal-footer [data-cobros-modal-actions]:not(.hidden) + [data-cobros-modal-status]:not(:empty),
+	.cobros-modal-footer [data-cobros-refund-actions]:not(.hidden) + [data-cobros-modal-status]:not(:empty) {
 		margin-top: 0.75rem;
 	}
 
