@@ -1,9 +1,4 @@
 import { showFlashMessage } from '../lib/flash';
-import {
-	bindFilterPopoverChrome,
-	closeFilterPopoverSheet,
-	toggleFilterPopoverSheet,
-} from '../lib/panel-filter-popover';
 import { showScheduleExceptionModalTour } from '../lib/schedule-exception-modal-tour';
 import {
 	maybeShowScheduleExceptionsTour,
@@ -56,6 +51,7 @@ type DayState = {
 	slots: SlotDraft[];
 };
 type DayNodeRefs = {
+	article: HTMLElement;
 	summaryNode: HTMLElement;
 	toggleInput: HTMLInputElement;
 	toggleLabel: HTMLLabelElement;
@@ -64,6 +60,11 @@ type DayNodeRefs = {
 	slotsContainer: HTMLElement;
 	addButton: HTMLButtonElement | null;
 };
+
+const toDayIndexLabel = (dayOfWeek: number) => String(dayOfWeek).padStart(2, '0');
+
+const toSlotCountLabel = (count: number) =>
+	count === 1 ? '1 turno' : `${count} turnos`;
 
 const buildCrossOrgOverlapMessage = (params: {
 	dayName: string;
@@ -103,10 +104,8 @@ class ScheduleManager extends HTMLElement {
 
 	private canEdit = false;
 	private professionalSelect: HTMLSelectElement | null = null;
-	private proFilterButton: HTMLButtonElement | null = null;
-	private proFilterBadge: HTMLElement | null = null;
-	private proFilterSheet: HTMLDialogElement | null = null;
-	private proFilterList: HTMLElement | null = null;
+	private proSelectTrigger: HTMLButtonElement | null = null;
+	private proSelectMenu: HTMLElement | null = null;
 	private professionalLabel: HTMLElement | null = null;
 	private plannerNode: HTMLElement | null = null;
 	private saveButton: HTMLButtonElement | null = null;
@@ -176,10 +175,8 @@ class ScheduleManager extends HTMLElement {
 		this.canEdit = this.dataset.canEdit === 'true';
 
 		this.professionalSelect = this.querySelector<HTMLSelectElement>('[data-professional-select]');
-		this.proFilterButton = this.querySelector<HTMLButtonElement>('[data-open-schedule-pro-filter]');
-		this.proFilterBadge = this.querySelector<HTMLElement>('[data-schedule-pro-filter-badge]');
-		this.proFilterSheet = this.querySelector<HTMLDialogElement>('[data-schedule-pro-filter-sheet]');
-		this.proFilterList = this.querySelector<HTMLElement>('[data-schedule-pro-filter-list]');
+		this.proSelectTrigger = this.querySelector<HTMLButtonElement>('[data-schedule-pro-select-trigger]');
+		this.proSelectMenu = this.querySelector<HTMLElement>('[data-schedule-pro-select-menu]');
 		this.professionalLabel = this.querySelector<HTMLElement>('[data-schedule-professional-label]');
 		this.plannerNode = this.querySelector<HTMLElement>('[data-weekly-planner]');
 		this.saveButton = this.querySelector<HTMLButtonElement>('[data-save-schedule]');
@@ -229,15 +226,11 @@ class ScheduleManager extends HTMLElement {
 		const signal = this.#listenerController.signal;
 
 		this.professionalSelect.addEventListener('change', this.handleProfessionalChange, { signal });
-		this.proFilterButton?.addEventListener('click', this.handleOpenProFilter, { signal });
-		this.proFilterSheet?.addEventListener('click', this.handleProFilterSheetClick, { signal });
-		if (this.proFilterSheet) {
-			bindFilterPopoverChrome({
-				sheet: this.proFilterSheet,
-				getTrigger: () => this.proFilterButton,
-				signal,
-			});
-		}
+		this.proSelectTrigger?.addEventListener('click', this.handleProSelectTriggerClick, { signal });
+		this.proSelectMenu?.addEventListener('click', this.handleProSelectMenuClick, { signal });
+		document.addEventListener('pointerdown', this.handleProSelectOutsidePointer, { signal });
+		document.addEventListener('keydown', this.handleProSelectKeydown, { signal });
+		this.addEventListener('click', this.handleThemedSelectClick, { signal });
 		this.plannerNode.addEventListener('change', this.handlePlannerChange, { signal });
 		this.plannerNode.addEventListener('click', this.handlePlannerClick, { signal });
 		if (this.saveButton && this.canEdit) {
@@ -279,7 +272,8 @@ class ScheduleManager extends HTMLElement {
 		this.headerHeroObserver = null;
 		this.#listenerController?.abort();
 		this.#listenerController = null;
-		this.closeProFilterSheet();
+		this.setProSelectOpen(false);
+		this.closeThemedSelects();
 		this.dayNodes.clear();
 	}
 
@@ -468,37 +462,84 @@ class ScheduleManager extends HTMLElement {
 		}
 	};
 
-	private handleOpenProFilter = (event: MouseEvent): void => {
-		if (this.roleId === ROLES.PROFESIONAL || !this.proFilterSheet || !this.proFilterButton) return;
-		if (this.isMetaLoading || this.isScheduleLoading || this.isSaving) return;
+	private handleProSelectTriggerClick = (event: MouseEvent): void => {
 		event.preventDefault();
-		event.stopPropagation();
-		toggleFilterPopoverSheet(this.proFilterSheet, this.proFilterButton);
+		if (!this.proSelectTrigger || this.proSelectTrigger.disabled) return;
+		this.setProSelectOpen(this.proSelectMenu?.hidden !== false);
 	};
 
-	private handleProFilterSheetClick = (event: MouseEvent): void => {
+	private handleProSelectMenuClick = (event: MouseEvent): void => {
 		const target = event.target;
-		if (!(target instanceof Element) || !this.proFilterSheet) return;
-
-		if (target.closest('[data-close-schedule-pro-filter]')) {
-			this.closeProFilterSheet();
-			return;
-		}
-
-		const option = target.closest<HTMLButtonElement>('[data-schedule-pro-filter-option]');
-		if (option && this.proFilterList?.contains(option)) {
-			const nextId = Number(option.dataset.scheduleProFilterOption || 0);
-			void this.selectProfessional(nextId);
-			this.closeProFilterSheet();
-			return;
-		}
-
-		if (this.proFilterSheet.classList.contains('is-desktop-popover')) return;
-		if (event.target === this.proFilterSheet) this.closeProFilterSheet();
+		if (!(target instanceof Element)) return;
+		const option = target.closest<HTMLButtonElement>('[data-schedule-pro-select-option]');
+		if (!option || !this.proSelectMenu?.contains(option)) return;
+		const nextId = Number(option.dataset.scheduleProSelectOption || 0);
+		this.setProSelectOpen(false);
+		if (!this.professionalSelect || nextId <= 0) return;
+		this.professionalSelect.value = String(nextId);
+		void this.handleProfessionalChange();
 	};
 
-	private closeProFilterSheet(): void {
-		closeFilterPopoverSheet(this.proFilterSheet, this.proFilterButton);
+	private handleProSelectOutsidePointer = (event: PointerEvent): void => {
+		const target = event.target;
+		if (!(target instanceof Node)) return;
+		if (
+			this.proSelectMenu &&
+			!this.proSelectMenu.hidden &&
+			!this.proSelectTrigger?.contains(target) &&
+			!this.proSelectMenu.contains(target)
+		) {
+			this.setProSelectOpen(false);
+		}
+		if (!(target instanceof Element) || !target.closest('.schedule-themed-select')) {
+			this.closeThemedSelects();
+		}
+	};
+
+	private handleProSelectKeydown = (event: KeyboardEvent): void => {
+		if (event.key !== 'Escape') return;
+		if (this.proSelectMenu && !this.proSelectMenu.hidden) {
+			this.setProSelectOpen(false);
+			this.proSelectTrigger?.focus();
+		}
+		this.closeThemedSelects();
+	};
+
+	private setProSelectOpen(open: boolean): void {
+		if (!this.proSelectMenu || !this.proSelectTrigger) return;
+		this.proSelectMenu.hidden = !open;
+		this.proSelectTrigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+		this.proSelectTrigger.closest('.schedule-pro-select')?.classList.toggle('is-open', open);
+		if (open) this.renderProSelectMenu();
+	}
+
+	private syncProSelectLabel(): void {
+		if (!this.professionalLabel) return;
+		const selected = this.professionals.find(
+			(item) => item.id_professional === this.selectedProfessionalId
+		);
+		this.professionalLabel.textContent = selected?.display_name || 'Selecciona un profesional';
+	}
+
+	private renderProSelectMenu(): void {
+		if (!this.proSelectMenu || this.roleId === ROLES.PROFESIONAL) return;
+		this.clearNode(this.proSelectMenu);
+		const fragment = document.createDocumentFragment();
+
+		for (const professional of this.professionals) {
+			const option = document.createElement('button');
+			option.type = 'button';
+			option.className = 'schedule-pro-select__option';
+			option.dataset.scheduleProSelectOption = String(professional.id_professional);
+			option.setAttribute('role', 'option');
+			const selected = professional.id_professional === this.selectedProfessionalId;
+			option.classList.toggle('is-selected', selected);
+			option.setAttribute('aria-selected', selected ? 'true' : 'false');
+			option.textContent = professional.display_name;
+			fragment.appendChild(option);
+		}
+
+		this.proSelectMenu.appendChild(fragment);
 	}
 
 	private handleProfessionalChange = async (): Promise<void> => {
@@ -513,11 +554,9 @@ class ScheduleManager extends HTMLElement {
 		if (!Number.isInteger(nextProfessionalId) || nextProfessionalId <= 0) {
 			this.professionalSelect.value =
 				this.selectedProfessionalId > 0 ? String(this.selectedProfessionalId) : '';
-			this.updateProFilterUi();
 			return;
 		}
 		if (nextProfessionalId === this.selectedProfessionalId) {
-			this.updateProFilterUi();
 			return;
 		}
 
@@ -526,16 +565,15 @@ class ScheduleManager extends HTMLElement {
 			if (!canContinue) {
 				this.professionalSelect.value =
 					this.selectedProfessionalId > 0 ? String(this.selectedProfessionalId) : '';
-				this.updateProFilterUi();
 				return;
 			}
 		}
 
 		this.selectedProfessionalId = nextProfessionalId;
 		this.professionalSelect.value = String(nextProfessionalId);
+		this.syncProSelectLabel();
 		this.dayStates = this.buildEmptyDayStates();
 		this.exceptionSummaryMap = new Map();
-		this.updateProFilterUi();
 		this.renderPlanner();
 		this.setDirty(false);
 		await this.loadScheduleByProfessional(this.selectedProfessionalId);
@@ -662,6 +700,120 @@ class ScheduleManager extends HTMLElement {
 		return option;
 	}
 
+	private mountThemedSelect(select: HTMLSelectElement, triggerClass: string): HTMLElement {
+		select.classList.add('sr-only');
+		select.tabIndex = -1;
+		select.setAttribute('aria-hidden', 'true');
+
+		const root = document.createElement('div');
+		root.className = 'schedule-themed-select';
+
+		const trigger = document.createElement('button');
+		trigger.type = 'button';
+		trigger.className = triggerClass;
+		trigger.dataset.themedSelectTrigger = 'true';
+		trigger.setAttribute('aria-haspopup', 'listbox');
+		trigger.setAttribute('aria-expanded', 'false');
+
+		const value = document.createElement('span');
+		value.className = 'schedule-themed-select__value';
+		value.dataset.themedSelectValue = 'true';
+
+		const chevron = document.createElement('span');
+		chevron.className = 'schedule-themed-select__chevron material-symbols-rounded';
+		chevron.setAttribute('aria-hidden', 'true');
+		chevron.textContent = 'expand_more';
+
+		trigger.append(value, chevron);
+
+		const menu = document.createElement('div');
+		menu.className = 'schedule-themed-select__menu';
+		menu.hidden = true;
+		menu.setAttribute('role', 'listbox');
+		menu.dataset.themedSelectMenu = 'true';
+
+		root.append(select, trigger, menu);
+		this.syncThemedSelect(root);
+		return root;
+	}
+
+	private syncThemedSelect(root: HTMLElement): void {
+		const select = root.querySelector('select');
+		const valueNode = root.querySelector('[data-themed-select-value]');
+		const menu = root.querySelector('[data-themed-select-menu]');
+		const trigger = root.querySelector<HTMLButtonElement>('[data-themed-select-trigger]');
+		if (!select || !valueNode || !menu) return;
+
+		const selected = select.selectedOptions[0];
+		valueNode.textContent = selected?.textContent?.trim() || 'Selecciona sucursal';
+		if (trigger) trigger.disabled = select.disabled;
+
+		this.clearNode(menu);
+		for (const option of Array.from(select.options)) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'schedule-themed-select__option';
+			button.dataset.themedSelectOption = option.value;
+			button.setAttribute('role', 'option');
+			button.setAttribute('aria-selected', option.selected ? 'true' : 'false');
+			button.classList.toggle('is-selected', option.selected);
+			button.textContent = option.textContent;
+			menu.appendChild(button);
+		}
+	}
+
+	private setThemedSelectOpen(root: HTMLElement, open: boolean): void {
+		const menu = root.querySelector<HTMLElement>('[data-themed-select-menu]');
+		const trigger = root.querySelector<HTMLButtonElement>('[data-themed-select-trigger]');
+		if (!menu || !trigger) return;
+		menu.hidden = !open;
+		trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
+		root.classList.toggle('is-open', open);
+		if (open) this.syncThemedSelect(root);
+	}
+
+	private closeThemedSelects(except?: HTMLElement | null): void {
+		for (const root of this.querySelectorAll<HTMLElement>('.schedule-themed-select.is-open')) {
+			if (except && root === except) continue;
+			this.setThemedSelectOpen(root, false);
+		}
+	}
+
+	private handleThemedSelectClick = (event: MouseEvent): void => {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+
+		const option = target.closest<HTMLButtonElement>('[data-themed-select-option]');
+		if (option) {
+			const root = option.closest<HTMLElement>('.schedule-themed-select');
+			const select = root?.querySelector('select');
+			if (!root || !select || select.disabled) return;
+			event.preventDefault();
+			select.value = option.dataset.themedSelectOption || '';
+			select.dispatchEvent(new Event('change', { bubbles: true }));
+			this.syncThemedSelect(root);
+			this.closeThemedSelects();
+			return;
+		}
+
+		const trigger = target.closest<HTMLButtonElement>('[data-themed-select-trigger]');
+		if (!trigger || trigger.disabled) return;
+		const root = trigger.closest<HTMLElement>('.schedule-themed-select');
+		if (!root) return;
+		event.preventDefault();
+		const willOpen = !root.classList.contains('is-open');
+		this.closeThemedSelects();
+		if (willOpen) this.setThemedSelectOpen(root, true);
+	};
+
+	private syncThemedSelectTriggers(): void {
+		for (const root of this.querySelectorAll<HTMLElement>('.schedule-themed-select')) {
+			const select = root.querySelector('select');
+			const trigger = root.querySelector<HTMLButtonElement>('[data-themed-select-trigger]');
+			if (select && trigger) trigger.disabled = select.disabled;
+		}
+	}
+
 	private renderProfessionalOptions(): void {
 		if (!this.professionalSelect) return;
 
@@ -681,71 +833,9 @@ class ScheduleManager extends HTMLElement {
 			this.professionalSelect.value = String(this.selectedProfessionalId);
 		}
 
-		this.renderProFilterList();
-		this.updateProFilterUi();
-	}
-
-	private renderProFilterList(): void {
-		if (!this.proFilterList || this.roleId === ROLES.PROFESIONAL) return;
-
-		this.clearNode(this.proFilterList);
-		const fragment = document.createDocumentFragment();
-
-		for (const professional of this.professionals) {
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.className = 'schedule-pro-filter-option';
-			button.dataset.scheduleProFilterOption = String(professional.id_professional);
-			button.setAttribute('role', 'option');
-			const selected = professional.id_professional === this.selectedProfessionalId;
-			button.classList.toggle('is-selected', selected);
-			button.setAttribute('aria-selected', selected ? 'true' : 'false');
-
-			const label = document.createElement('span');
-			label.textContent = professional.display_name;
-
-			const check = document.createElement('span');
-			check.className = 'material-symbols-rounded';
-			check.setAttribute('aria-hidden', 'true');
-			check.textContent = 'check';
-
-			button.append(label, check);
-			fragment.appendChild(button);
-		}
-
-		this.proFilterList.appendChild(fragment);
-	}
-
-	private updateProFilterUi(): void {
-		const selected = this.professionals.find(
-			(item) => item.id_professional === this.selectedProfessionalId
-		);
-		const active = this.roleId !== ROLES.PROFESIONAL && this.selectedProfessionalId > 0;
-
-		if (this.professionalLabel) {
-			this.professionalLabel.textContent = selected?.display_name || 'Selecciona un profesional';
-		}
-
-		this.proFilterBadge?.classList.toggle('hidden', !active);
-		this.proFilterButton?.classList.toggle('is-active', active);
-		this.proFilterButton?.setAttribute('aria-pressed', active ? 'true' : 'false');
-		if (this.proFilterButton) {
-			this.proFilterButton.setAttribute(
-				'aria-label',
-				active && selected
-					? `Filtrar por profesional, ${selected.display_name}`
-					: 'Filtrar por profesional'
-			);
-		}
-
-		if (!this.proFilterList) return;
-		for (const option of this.proFilterList.querySelectorAll<HTMLButtonElement>(
-			'[data-schedule-pro-filter-option]'
-		)) {
-			const optionId = Number(option.dataset.scheduleProFilterOption || 0);
-			const isSelected = optionId === this.selectedProfessionalId;
-			option.classList.toggle('is-selected', isSelected);
-			option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+		this.syncProSelectLabel();
+		if (this.proSelectMenu && !this.proSelectMenu.hidden) {
+			this.renderProSelectMenu();
 		}
 	}
 
@@ -789,26 +879,33 @@ class ScheduleManager extends HTMLElement {
 
 		for (const dayState of this.dayStates) {
 			const article = document.createElement('article');
-			article.className =
-				'schedule-day-card px-3.5 py-3.5 sm:px-4 sm:py-4';
+			article.className = 'schedule-day-card';
 			article.dataset.dayCard = String(dayState.day_of_week);
 
-			const titleWrap = document.createElement('div');
-			titleWrap.className = 'min-w-0';
+			const inner = document.createElement('div');
+			inner.className = 'schedule-day-card__inner';
 
-			const headLine = document.createElement('div');
-			headLine.className = 'schedule-day-card__headline';
+			const mast = document.createElement('header');
+			mast.className = 'schedule-day-card__mast';
+
+			const index = document.createElement('span');
+			index.className = 'schedule-day-card__index';
+			index.textContent = toDayIndexLabel(dayState.day_of_week);
+
+			const identity = document.createElement('div');
+			identity.className = 'schedule-day-card__identity';
 
 			const title = document.createElement('h3');
-			title.className =
-				'schedule-day-card__title text-[1.08rem] font-extrabold leading-tight text-[color:var(--on-surface)]';
+			title.className = 'schedule-day-card__title';
 			title.textContent = dayState.name;
 
 			const summary = document.createElement('p');
-			summary.className = 'mt-0.5 text-xs font-medium text-[color:var(--on-surface-variant)]';
+			summary.className = 'schedule-day-card__summary';
+
+			identity.append(title, summary);
 
 			const toggleLabel = document.createElement('label');
-			toggleLabel.className = 'settings-switch schedule-day-switch shrink-0 inline-flex items-center gap-2';
+			toggleLabel.className = 'settings-switch schedule-day-switch';
 			const toggleInput = document.createElement('input');
 			toggleInput.type = 'checkbox';
 			toggleInput.dataset.dayToggle = 'true';
@@ -822,34 +919,34 @@ class ScheduleManager extends HTMLElement {
 			toggleText.textContent = 'Abierto';
 			toggleLabel.append(toggleInput, toggleTrack, toggleText);
 
-			headLine.append(title, toggleLabel);
-			titleWrap.append(headLine, summary);
+			mast.append(index, identity, toggleLabel);
 
 			const slotSection = document.createElement('div');
-			slotSection.className = 'mt-3 grid gap-3';
+			slotSection.className = 'schedule-day-card__rail';
 
 			const slotsContainer = document.createElement('div');
-			slotsContainer.className = 'grid gap-3';
+			slotsContainer.className = 'schedule-day-card__shifts';
 			slotSection.appendChild(slotsContainer);
 
 			let addButton: HTMLButtonElement | null = null;
 			if (this.canEdit) {
-				const addWrap = document.createElement('div');
 				addButton = document.createElement('button');
 				addButton.type = 'button';
 				addButton.dataset.slotAdd = 'true';
 				addButton.dataset.dayOfWeek = String(dayState.day_of_week);
-				addButton.className =
-					'inline-flex h-9 items-center justify-center rounded-xl border border-[color:var(--primary-container)] bg-[color:var(--primary-soft)] px-3.5 py-1.5 text-[0.9rem] font-bold text-[color:var(--primary)] transition hover:bg-[color:var(--primary-soft-hover)] disabled:cursor-not-allowed disabled:opacity-60';
-				addButton.textContent = '+ Agregar turno';
-				addWrap.appendChild(addButton);
-				slotSection.appendChild(addWrap);
+				addButton.className = 'schedule-day-card__add';
+				addButton.setAttribute('aria-label', `Agregar turno el ${dayState.name}`);
+				addButton.innerHTML =
+					'<span>Agregar turno</span><span class="schedule-day-card__add-mark" aria-hidden="true"><span class="material-symbols-rounded">add</span></span>';
+				slotSection.appendChild(addButton);
 			}
 
-			article.append(titleWrap, slotSection);
+			inner.append(mast, slotSection);
+			article.appendChild(inner);
 			fragment.appendChild(article);
 
 			this.dayNodes.set(dayState.day_of_week, {
+				article,
 				summaryNode: summary,
 				toggleInput,
 				toggleLabel,
@@ -875,9 +972,11 @@ class ScheduleManager extends HTMLElement {
 		refs.toggleInput.checked = dayState.enabled;
 		refs.toggleLabel.classList.toggle('is-on', dayState.enabled);
 		refs.toggleText.textContent = dayState.enabled ? 'Abierto' : 'Cerrado';
+		refs.article.classList.toggle('schedule-day-card--open', dayState.enabled);
+		refs.article.classList.toggle('schedule-day-card--closed', !dayState.enabled);
 		refs.summaryNode.textContent = dayState.enabled
-			? `${dayState.slots.length} turno(s) configurado(s)`
-			: 'Dia libre';
+			? toSlotCountLabel(dayState.slots.length)
+			: 'Día libre';
 
 		if (!dayState.enabled) {
 			refs.slotSection.classList.add('hidden');
@@ -896,20 +995,20 @@ class ScheduleManager extends HTMLElement {
 		for (let index = 0; index < dayState.slots.length; index += 1) {
 			const slot = dayState.slots[index];
 			const row = document.createElement('div');
-			row.className = 'schedule-slot-row';
+			row.className = 'schedule-shift';
 			row.dataset.slotRow = 'true';
 
-			const locationLabel = document.createElement('label');
-			locationLabel.className =
-				'schedule-slot-field schedule-slot-field--location';
+			const body = document.createElement('div');
+			body.className = 'schedule-shift__body';
+
+			const locationLabel = document.createElement('div');
+			locationLabel.className = 'schedule-shift__field schedule-shift__field--location';
 			locationLabel.append('Sucursal');
 
 			const locationSelect = document.createElement('select');
 			locationSelect.dataset.slotLocation = 'true';
 			locationSelect.dataset.dayOfWeek = String(dayState.day_of_week);
 			locationSelect.dataset.slotUid = slot.uid;
-			locationSelect.className =
-				'rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] shadow-sm outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60';
 			locationSelect.appendChild(this.createOption('', 'Selecciona sucursal'));
 			for (const location of this.locations) {
 				locationSelect.appendChild(
@@ -917,10 +1016,15 @@ class ScheduleManager extends HTMLElement {
 				);
 			}
 			locationSelect.value = slot.loc_id_location || '';
-			locationLabel.appendChild(locationSelect);
+			locationLabel.appendChild(
+				this.mountThemedSelect(locationSelect, 'schedule-shift__control schedule-themed-select__trigger')
+			);
+
+			const times = document.createElement('div');
+			times.className = 'schedule-shift__times';
 
 			const startLabel = document.createElement('label');
-			startLabel.className = 'schedule-slot-field schedule-slot-field--start';
+			startLabel.className = 'schedule-shift__field';
 			startLabel.append('Inicio');
 
 			const startInput = document.createElement('input');
@@ -929,12 +1033,11 @@ class ScheduleManager extends HTMLElement {
 			startInput.dataset.slotStart = 'true';
 			startInput.dataset.dayOfWeek = String(dayState.day_of_week);
 			startInput.dataset.slotUid = slot.uid;
-			startInput.className =
-				'rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] shadow-sm outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60';
+			startInput.className = 'schedule-shift__control';
 			startLabel.appendChild(startInput);
 
 			const endLabel = document.createElement('label');
-			endLabel.className = 'schedule-slot-field schedule-slot-field--end';
+			endLabel.className = 'schedule-shift__field';
 			endLabel.append('Fin');
 
 			const endInput = document.createElement('input');
@@ -943,25 +1046,30 @@ class ScheduleManager extends HTMLElement {
 			endInput.dataset.slotEnd = 'true';
 			endInput.dataset.dayOfWeek = String(dayState.day_of_week);
 			endInput.dataset.slotUid = slot.uid;
-			endInput.className =
-				'rounded-xl border border-[color:var(--shell-border)] bg-[color:var(--surface-bright)] px-3 py-2 text-sm font-semibold text-[color:var(--on-surface)] shadow-sm outline-none transition focus:border-[color:var(--primary)] disabled:cursor-not-allowed disabled:opacity-60';
+			endInput.className = 'schedule-shift__control';
 			endLabel.appendChild(endInput);
 
+			times.append(startLabel, endLabel);
+
 			const removeWrap = document.createElement('div');
-			removeWrap.className = 'schedule-slot-remove-wrap';
+			removeWrap.className = 'schedule-shift__remove-wrap';
 
 			const removeButton = document.createElement('button');
 			removeButton.type = 'button';
 			removeButton.dataset.slotRemove = 'true';
 			removeButton.dataset.dayOfWeek = String(dayState.day_of_week);
 			removeButton.dataset.slotUid = slot.uid;
-			removeButton.className = 'schedule-slot-remove-btn';
+			removeButton.className = 'schedule-shift__remove';
 			removeButton.setAttribute('aria-label', `Eliminar turno ${index + 1} de ${dayState.name}`);
 			removeButton.innerHTML =
 				'<span class="material-symbols-rounded" aria-hidden="true">close</span><span class="sr-only">Quitar</span>';
 			removeWrap.appendChild(removeButton);
 
-			row.append(locationLabel, startLabel, endLabel, removeWrap);
+			const locationRow = document.createElement('div');
+			locationRow.className = 'schedule-shift__location';
+			locationRow.append(locationLabel, removeWrap);
+			body.append(locationRow, times);
+			row.appendChild(body);
 			fragment.appendChild(row);
 		}
 		
@@ -995,6 +1103,8 @@ class ScheduleManager extends HTMLElement {
 			const isOnlySlot = !dayState || dayState.slots.length <= 1;
 			removeButton.disabled = blocked || isOnlySlot;
 		}
+
+		this.syncThemedSelectTriggers();
 	}
 
 	private updateControlsState(): void {
@@ -1009,12 +1119,15 @@ class ScheduleManager extends HTMLElement {
 		if (this.saveButton) {
 			this.saveButton.disabled = blocked || this.selectedProfessionalId <= 0;
 		}
-		if (this.proFilterButton) {
-			this.proFilterButton.disabled =
+		if (this.professionalSelect && this.roleId !== ROLES.PROFESIONAL) {
+			const selectBlocked =
 				this.isMetaLoading ||
 				this.isScheduleLoading ||
 				this.isSaving ||
 				this.professionals.length === 0;
+			this.professionalSelect.disabled = selectBlocked;
+			if (this.proSelectTrigger) this.proSelectTrigger.disabled = selectBlocked;
+			if (selectBlocked) this.setProSelectOpen(false);
 		}
 
 		if (this.saveLabel) {
@@ -1025,7 +1138,6 @@ class ScheduleManager extends HTMLElement {
 					: 'Guardar horarios';
 		}
 
-		this.updateProFilterUi();
 		this.updateViewVisibility();
 
 		this.updatePlannerInteractivity();
@@ -1559,7 +1671,6 @@ class ScheduleManager extends HTMLElement {
 			const dayButton = document.createElement('button');
 			dayButton.type = 'button';
 			dayButton.dataset.exceptionDate = dateKey;
-			dayButton.textContent = String(day);
 			dayButton.className = [
 				'schedule-cal-day',
 				`schedule-cal-day--${tone}`,
@@ -1568,6 +1679,16 @@ class ScheduleManager extends HTMLElement {
 			]
 				.filter(Boolean)
 				.join(' ');
+
+			const dayNum = document.createElement('span');
+			dayNum.className = 'schedule-cal-day__num';
+			dayNum.textContent = String(day);
+
+			const dayJewel = document.createElement('span');
+			dayJewel.className = 'schedule-cal-day__jewel';
+			dayJewel.setAttribute('aria-hidden', 'true');
+
+			dayButton.append(dayNum, dayJewel);
 			this.exceptionCalGridNode.appendChild(dayButton);
 		}
 	}
@@ -1864,14 +1985,12 @@ class ScheduleManager extends HTMLElement {
 			const row = document.createElement('div');
 			row.className = 'schedule-slot-row';
 
-			const locationLabel = document.createElement('label');
+			const locationLabel = document.createElement('div');
 			locationLabel.className = 'schedule-slot-field schedule-slot-field--location';
 			locationLabel.append('Sucursal');
 			const locationSelect = document.createElement('select');
 			locationSelect.dataset.excSlotLocation = 'true';
 			locationSelect.dataset.slotUid = slot.uid;
-			locationSelect.className =
-				'rounded-xl border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-sm font-semibold';
 			locationSelect.appendChild(this.createOption('', 'Selecciona sucursal'));
 			for (const location of this.locations) {
 				locationSelect.appendChild(
@@ -1879,7 +1998,12 @@ class ScheduleManager extends HTMLElement {
 				);
 			}
 			locationSelect.value = slot.loc_id_location || '';
-			locationLabel.appendChild(locationSelect);
+			locationLabel.appendChild(
+				this.mountThemedSelect(
+					locationSelect,
+					'schedule-slot-themed-trigger schedule-themed-select__trigger'
+				)
+			);
 
 			const startLabel = document.createElement('label');
 			startLabel.className = 'schedule-slot-field schedule-slot-field--start';

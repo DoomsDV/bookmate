@@ -45,34 +45,25 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 								) : (
 									<div
 										class:list={[
-											'grid gap-4 sm:gap-6',
-											isProfessional && 'schedule-page-header--professional',
+											'grid',
+											isProfessional
+												? 'gap-3 schedule-page-header--professional'
+												: 'schedule-page-header--owner',
 										]}
 										data-schedule-page-header
 									>
 										{
 											!isProfessional ? (
-												<div
-													data-schedule-header-hero
-													aria-hidden="true"
-													class="pointer-events-none h-px w-full shrink-0"
-												></div>
-											) : null
-										}
-										<select
-											data-professional-select
-											hidden
-											class="hidden"
-											aria-hidden="true"
-											tabindex="-1"
-										></select>
-
-										{
-											!isProfessional ? (
-												<div
-													class="schedule-page-header__sticky-bar"
-													data-schedule-header-sticky
-												>
+												<div class="schedule-page-chrome">
+													<div
+														data-schedule-header-hero
+														aria-hidden="true"
+														class="schedule-page-chrome__sentinel"
+													></div>
+													<div
+														class="schedule-page-header__sticky-bar"
+														data-schedule-header-sticky
+													>
 													<div
 														class="schedule-page-header__toolbar"
 														data-schedule-header-toolbar
@@ -81,16 +72,41 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 															class="schedule-page-header__professional flex min-w-0 flex-1 items-center gap-2"
 															data-schedule-professional-field
 														>
-															<div class="min-w-0 flex-1">
-																<p class="text-[0.78rem] font-bold uppercase tracking-wide text-(--on-surface-variant)">
+															<div class="schedule-pro-select min-w-0 flex-1">
+																<p class="schedule-pro-select__label" id="schedule-professional-label">
 																	Profesional
 																</p>
-																<p
-																	class="truncate text-[0.98rem] font-extrabold text-(--on-surface)"
-																	data-schedule-professional-label
-																>
-																	Selecciona un profesional
-																</p>
+																<div class="schedule-pro-select__control">
+																	<select
+																		id="schedule-professional-select"
+																		class="sr-only"
+																		data-professional-select
+																		tabindex="-1"
+																		aria-hidden="true"
+																	></select>
+																	<button
+																		type="button"
+																		class="schedule-pro-select__trigger"
+																		data-schedule-pro-select-trigger
+																		aria-labelledby="schedule-professional-label"
+																		aria-haspopup="listbox"
+																		aria-expanded="false"
+																		aria-controls="schedule-pro-select-menu"
+																	>
+																		<span class="schedule-pro-select__value" data-schedule-professional-label>
+																			Selecciona un profesional
+																		</span>
+																		<span class="schedule-pro-select__chevron material-symbols-rounded" aria-hidden="true">expand_more</span>
+																	</button>
+																	<div
+																		id="schedule-pro-select-menu"
+																		class="schedule-pro-select__menu"
+																		data-schedule-pro-select-menu
+																		hidden
+																		role="listbox"
+																		aria-labelledby="schedule-professional-label"
+																	></div>
+																</div>
 															</div>
 															<div class="schedule-save-info shrink-0" data-schedule-save-info>
 																<button
@@ -125,23 +141,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 																	</ul>
 																</div>
 															</div>
-															<button
-																type="button"
-																class="schedule-pro-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
-																data-open-schedule-pro-filter
-																aria-label="Filtrar por profesional"
-																aria-haspopup="dialog"
-																aria-controls="schedule-pro-filter-sheet"
-																aria-expanded="false"
-																aria-pressed="false"
-															>
-																<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
-																<span
-																	class="schedule-pro-filter-badge hidden"
-																	data-schedule-pro-filter-badge
-																	aria-hidden="true"
-																></span>
-															</button>
 														</div>
 														{
 															canManageSchedules && (
@@ -166,8 +165,17 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 															hidden
 														></div>
 													</div>
+													</div>
 												</div>
-											) : null
+											) : (
+												<select
+													data-professional-select
+													hidden
+													class="hidden"
+													aria-hidden="true"
+													tabindex="-1"
+												></select>
+											)
 										}
 
 										<div class="schedule-page-header__tabs-row relative">
@@ -221,11 +229,12 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 										<div class="mt-0.5">
 												<div data-schedule-view-template>
-													<p class="mb-2 text-[0.88rem] font-medium text-(--on-surface-variant)">
+													<p class="schedule-week-kicker">
+														<span>Plantilla</span>
 														Horario habitual que se repite cada semana.
 													</p>
 													<div
-														class="schedule-loading-skeleton hidden grid gap-4 sm:gap-5"
+														class="schedule-loading-skeleton hidden grid gap-5 sm:gap-6"
 														data-schedule-loading-template
 														aria-busy="true"
 														aria-label="Cargando plantilla semanal"
@@ -233,115 +242,128 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 														{
 															[0, 1, 2].map(() => (
 																<article
-																	class="schedule-day-card panel-skeleton-card pointer-events-none p-4 sm:p-5"
+																	class="schedule-day-card panel-skeleton-card pointer-events-none"
 																	aria-hidden="true"
 																>
-																	<div class="flex items-center justify-between gap-3">
-																		<div class="panel-skeleton-line h-5 w-24 rounded-md"></div>
-																		<div class="panel-skeleton-line h-7 w-24 rounded-full"></div>
-																	</div>
-																	<div class="panel-skeleton-line mt-3 h-3.5 w-36 rounded"></div>
-																	<div class="mt-4 grid gap-3">
-																		<div class="grid grid-cols-[1fr_5.5rem_5.5rem] gap-2 sm:grid-cols-[1fr_6rem_6rem_auto]">
-																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
-																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
-																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
-																			<div class="panel-skeleton-line hidden size-11 rounded-2xl sm:block"></div>
+																	<div class="schedule-day-card__inner">
+																		<div class="schedule-day-card__mast">
+																			<div class="panel-skeleton-line h-8 w-8 rounded-xl"></div>
+																			<div class="min-w-0 flex-1 grid gap-2">
+																				<div class="panel-skeleton-line h-5 w-24 rounded-md"></div>
+																				<div class="panel-skeleton-line h-3 w-16 rounded"></div>
+																			</div>
+																			<div class="panel-skeleton-line h-7 w-24 rounded-full"></div>
 																		</div>
-																		<div class="grid grid-cols-[1fr_5.5rem_5.5rem] gap-2 sm:grid-cols-[1fr_6rem_6rem_auto]">
-																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
-																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
-																			<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
-																			<div class="panel-skeleton-line hidden size-11 rounded-2xl sm:block"></div>
+																		<div class="schedule-day-card__rail">
+																			<div class="schedule-shift">
+																				<div class="min-w-0 grid gap-2">
+																					<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
+																					<div class="grid grid-cols-2 gap-2">
+																						<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
+																						<div class="panel-skeleton-line h-11 w-full rounded-2xl"></div>
+																					</div>
+																				</div>
+																			</div>
+																			<div class="panel-skeleton-line mt-1 h-10 w-40 rounded-full"></div>
 																		</div>
 																	</div>
-																	<div class="panel-skeleton-line mt-4 h-10 w-36 rounded-full"></div>
 																</article>
 															))
 														}
 													</div>
 													<div data-schedule-template-content>
-														<div class="grid gap-4 sm:gap-5" data-weekly-planner></div>
+														<div class="grid gap-5 sm:gap-6" data-weekly-planner></div>
 													</div>
 												</div>
 
 												<div class="hidden" data-schedule-view-exceptions>
-													<p class="mb-3 text-[0.88rem] font-medium text-(--on-surface-variant)">
+													<p class="schedule-week-kicker">
+														<span>Excepciones</span>
 														Cambios puntuales por fecha. La excepción reemplaza la plantilla solo ese día.
 													</p>
 
 													<div
-														class="schedule-loading-skeleton schedule-exception-calendar hidden"
+														class="schedule-loading-skeleton schedule-exc-plate hidden"
 														data-schedule-loading-exceptions
 														aria-busy="true"
 														aria-label="Cargando excepciones del calendario"
 													>
-														<div class="schedule-exception-calendar__toolbar">
-															<div class="panel-skeleton-line size-9 rounded-full"></div>
-															<div class="panel-skeleton-line mx-auto h-5 w-36 rounded-md"></div>
-															<div class="panel-skeleton-line size-9 rounded-full"></div>
-														</div>
-														<div class="schedule-exception-calendar__weekdays" aria-hidden="true">
-															<span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span>
-															<span>Vie</span><span>Sáb</span><span>Dom</span>
-														</div>
-														<div class="schedule-exception-calendar__grid" aria-hidden="true">
-															{Array.from({ length: 35 }).map(() => (
-																<div class="panel-skeleton-line min-h-[2.55rem] w-full rounded-[0.75rem]"></div>
-															))}
+														<div class="schedule-exc-plate__inner">
+															<div class="schedule-exc-plate__mast">
+																<div class="panel-skeleton-line h-6 w-40 rounded-md"></div>
+																<div class="panel-skeleton-line h-9 w-20 rounded-full"></div>
+															</div>
+															<div class="schedule-exc-legend">
+																<div class="panel-skeleton-line h-7 w-24 rounded-full"></div>
+																<div class="panel-skeleton-line h-7 w-24 rounded-full"></div>
+																<div class="panel-skeleton-line h-7 w-28 rounded-full"></div>
+															</div>
+															<div class="schedule-exception-calendar__weekdays" aria-hidden="true">
+																<span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span>
+																<span>Vie</span><span>Sáb</span><span>Dom</span>
+															</div>
+															<div class="schedule-exception-calendar__grid" aria-hidden="true">
+																{Array.from({ length: 35 }).map(() => (
+																	<div class="panel-skeleton-line min-h-[2.35rem] w-full rounded-[0.85rem]"></div>
+																))}
+															</div>
 														</div>
 													</div>
 
 													<div data-schedule-exceptions-content>
 														<div
-															class="mb-3 flex flex-wrap gap-3 text-[0.82rem] font-semibold text-(--on-surface-variant)"
-															data-exception-legend
-														>
-															<span class="inline-flex items-center gap-1.5">
-																<span class="schedule-cal-dot schedule-cal-dot--normal"></span>
-																Usa plantilla
-															</span>
-															<span class="inline-flex items-center gap-1.5">
-																<span class="schedule-cal-dot schedule-cal-dot--blocked"></span>
-																Bloqueado
-															</span>
-															<span class="inline-flex items-center gap-1.5">
-																<span class="schedule-cal-dot schedule-cal-dot--override"></span>
-																Horario especial
-															</span>
-														</div>
-
-														<div
-															class="schedule-exception-calendar"
+															class="schedule-exc-plate"
 															data-exception-calendar-panel
 														>
-															<div class="schedule-exception-calendar__toolbar">
-																<button
-																	type="button"
-																	class="schedule-cal-nav"
-																	data-exception-cal-prev
-																	aria-label="Mes anterior"
-																>
-																	<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
-																</button>
-																<p
-																	class="schedule-exception-calendar__month"
-																	data-exception-cal-month
-																></p>
-																<button
-																	type="button"
-																	class="schedule-cal-nav"
-																	data-exception-cal-next
-																	aria-label="Mes siguiente"
-																>
-																	<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
-																</button>
+															<div class="schedule-exc-plate__inner">
+																<header class="schedule-exc-plate__mast">
+																	<p
+																		class="schedule-exception-calendar__month"
+																		data-exception-cal-month
+																	></p>
+																	<div class="schedule-exc-nav">
+																		<button
+																			type="button"
+																			class="schedule-cal-nav"
+																			data-exception-cal-prev
+																			aria-label="Mes anterior"
+																		>
+																			<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
+																		</button>
+																		<button
+																			type="button"
+																			class="schedule-cal-nav"
+																			data-exception-cal-next
+																			aria-label="Mes siguiente"
+																		>
+																			<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
+																		</button>
+																	</div>
+																</header>
+
+																<div class="schedule-exc-legend" data-exception-legend>
+																	<span class="schedule-exc-chip">
+																		<span class="schedule-cal-dot schedule-cal-dot--normal"></span>
+																		Usa plantilla
+																	</span>
+																	<span class="schedule-exc-chip">
+																		<span class="schedule-cal-dot schedule-cal-dot--blocked"></span>
+																		Bloqueado
+																	</span>
+																	<span class="schedule-exc-chip">
+																		<span class="schedule-cal-dot schedule-cal-dot--override"></span>
+																		Horario especial
+																	</span>
+																</div>
+
+																<div class="schedule-exception-calendar">
+																	<div class="schedule-exception-calendar__weekdays">
+																		<span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span>
+																		<span>Vie</span><span>Sáb</span><span>Dom</span>
+																	</div>
+																	<div class="schedule-exception-calendar__grid" data-exception-cal-grid></div>
+																</div>
 															</div>
-															<div class="schedule-exception-calendar__weekdays">
-																<span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span>
-																<span>Vie</span><span>Sáb</span><span>Dom</span>
-															</div>
-															<div class="schedule-exception-calendar__grid" data-exception-cal-grid></div>
 														</div>
 													</div>
 												</div>
@@ -449,35 +471,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 		{
 			!isProfessional ? (
-				<dialog
-					id="schedule-pro-filter-sheet"
-					class="schedule-pro-filter-sheet"
-					data-schedule-pro-filter-sheet
-					aria-labelledby="schedule-pro-filter-title"
-				>
-					<div class="schedule-pro-filter-sheet__handle" aria-hidden="true">
-						<span></span>
-					</div>
-					<div class="schedule-pro-filter-sheet__header">
-						<h2 id="schedule-pro-filter-title" class="m-0 text-[1.05rem] font-extrabold tracking-tight">
-							Filtros
-						</h2>
-						<button
-							type="button"
-							class="flex size-9 shrink-0 items-center justify-center rounded-full text-(--on-surface-variant) transition-colors hover:bg-(--surface-variant) hover:text-(--on-surface)"
-							data-close-schedule-pro-filter
-							aria-label="Cerrar filtro"
-						>
-							<span class="material-symbols-rounded text-[1.3rem]">close</span>
-						</button>
-					</div>
-					<div
-						class="schedule-pro-filter-sheet__list"
-						data-schedule-pro-filter-list
-						role="listbox"
-						aria-label="Profesionales"
-					></div>
-				</dialog>
 				<dialog
 					id="schedule-save-info-sheet"
 					class="schedule-save-info-sheet"
@@ -621,8 +614,35 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		gap: 0.75rem;
 	}
 
+	.schedule-page-header--owner {
+		gap: 0;
+	}
+
+	.schedule-page-header--owner .schedule-page-header__tabs-row {
+		margin-top: 0.55rem;
+	}
+
 	.schedule-page-header__tabs-row {
 		min-width: 0;
+	}
+
+	/* Un solo plano con el TopBar: mismo tono, full-bleed, sin costura. */
+	.schedule-page-chrome {
+		--schedule-chrome: var(--sidebar-surface, var(--page-background, #fefdfc));
+		--schedule-chrome-ease: cubic-bezier(0.32, 0.72, 0, 1);
+		display: grid;
+		gap: 0;
+		width: auto;
+		margin-inline: -1rem;
+		margin-top: -1px;
+		background-color: var(--schedule-chrome);
+	}
+
+	.schedule-page-chrome__sentinel {
+		height: 1px;
+		width: 100%;
+		pointer-events: none;
+		overflow: hidden;
 	}
 
 	.schedule-page-header__sticky-bar {
@@ -630,31 +650,41 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		/* Desktop: el scroll es el main (TopBar queda fuera). */
 		top: 0;
 		z-index: 30;
-		/* Full-bleed respecto al padding del main (px-4 / sm:px-6) */
 		width: auto;
-		margin-inline: -1rem;
-		padding: 0.55rem 1rem 0.7rem;
-		/* Mismo tono que el TopBar / canvas; sin líneas divisoras */
-		background-color: var(--page-background, #fefdfc);
+		margin: 0;
+		padding: 0.85rem 1rem 1rem;
+		overflow: visible;
+		background-color: var(--schedule-chrome);
 		border: 0;
-		border-bottom: 0;
 		box-shadow: none;
 		backdrop-filter: none;
 		-webkit-backdrop-filter: none;
-		transition:
-			background-color 220ms ease,
-			backdrop-filter 220ms ease,
-			padding-top 220ms ease;
+		transition: background-color 560ms var(--schedule-chrome-ease);
+	}
+
+	.schedule-page-header__sticky-bar::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: -0.55rem;
+		height: 0.55rem;
+		pointer-events: none;
+		z-index: 1;
+		background: linear-gradient(to bottom, var(--schedule-chrome), transparent);
 	}
 
 	@media (min-width: 640px) {
-		.schedule-page-header__sticky-bar {
+		.schedule-page-chrome {
 			margin-inline: -1.5rem;
+		}
+
+		.schedule-page-header__sticky-bar {
 			padding-inline: 1.5rem;
 		}
 	}
 
-	/* Mobile: el canvas scrollea junto al TopBar sticky ? anclar debajo del header. */
+	/* Mobile: el canvas scrollea junto al TopBar sticky — anclar debajo del header. */
 	@media (max-width: 1023.98px) {
 		.schedule-page-header__sticky-bar {
 			top: var(--shell-header-height);
@@ -662,35 +692,43 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	.schedule-page-header__sticky-bar.is-scrolled {
-		padding-top: 0.75rem;
-		background-color: color-mix(in srgb, var(--page-background, #fefdfc) 72%, transparent);
+		background-color: color-mix(in srgb, var(--schedule-chrome) 72%, transparent);
 		backdrop-filter: blur(18px) saturate(1.15);
 		-webkit-backdrop-filter: blur(18px) saturate(1.15);
-		border: 0;
-		box-shadow: none;
 	}
 
-	html[data-theme='dark'] .schedule-page-header__sticky-bar {
-		background-color: var(--page-background, #0e0e10);
-		box-shadow: none;
+	.schedule-page-header__sticky-bar.is-scrolled::after {
+		background: linear-gradient(
+			to bottom,
+			color-mix(in srgb, var(--schedule-chrome) 72%, transparent),
+			transparent
+		);
+	}
+
+	html[data-theme='dark'] .schedule-page-chrome {
+		--schedule-chrome: var(--sidebar-surface, #121214);
 	}
 
 	html[data-theme='dark'] .schedule-page-header__sticky-bar.is-scrolled {
-		background-color: color-mix(in srgb, var(--page-background, #0e0e10) 42%, transparent);
+		background-color: color-mix(in srgb, var(--schedule-chrome) 72%, transparent);
 		backdrop-filter: blur(20px) saturate(1.35);
 		-webkit-backdrop-filter: blur(20px) saturate(1.35);
-		border: 0;
-		box-shadow: none;
 	}
 
-	/* Sin línea entre TopBar y la barra sticky: un solo bloque visual */
+	/* Sin línea entre TopBar y la barra de profesional: un solo bloque. */
 	body:has([data-schedule-header-sticky]) .shell-header-zone:not(.sidebar-account-header),
 	body:has([data-schedule-header-sticky]) .shell-header-zone:not(.sidebar-account-header).is-scrolled,
 	html[data-theme='dark'] body:has([data-schedule-header-sticky]) .shell-header-zone:not(.sidebar-account-header),
 	html[data-theme='dark'] body:has([data-schedule-header-sticky]) .shell-header-zone:not(.sidebar-account-header).is-scrolled {
+		background-color: var(--sidebar-surface, #121214);
 		border-bottom: 0 !important;
 		border-bottom-color: transparent !important;
 		box-shadow: none !important;
+	}
+
+	body:has([data-schedule-header-sticky]) .shell-header-zone:not(.sidebar-account-header).is-scrolled,
+	html[data-theme='dark'] body:has([data-schedule-header-sticky]) .shell-header-zone:not(.sidebar-account-header).is-scrolled {
+		background-color: color-mix(in srgb, var(--sidebar-surface, #121214) 72%, transparent);
 	}
 
 	.schedule-page-header__sticky-bar,
@@ -714,120 +752,153 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		min-width: 0;
 	}
 
-	.schedule-page-header__save {
-		flex-shrink: 0;
-	}
-
-	.schedule-pro-filter-btn.is-active {
-		border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
-		color: var(--primary);
-		background: color-mix(in srgb, var(--primary) 10%, var(--surface-bright));
-	}
-
-	.schedule-pro-filter-badge {
-		position: absolute;
-		top: 0.45rem;
-		right: 0.45rem;
-		width: 0.45rem;
-		height: 0.45rem;
-		border-radius: 999px;
-		background: var(--primary);
-		box-shadow: 0 0 0 2px var(--surface-bright);
-	}
-
-	.schedule-pro-filter-sheet {
-		position: fixed;
-		inset: auto 0 0;
-		z-index: 80;
-		margin: 0;
-		width: 100vw;
-		max-width: none;
-		max-height: min(72dvh, 28rem);
-		border: 1px solid var(--shell-border);
-		border-bottom: 0;
-		border-radius: 1.6rem 1.6rem 0 0;
-		background: var(--surface-bright);
-		color: var(--on-surface);
-		padding: 0;
-		overflow: hidden;
-		box-shadow: 0 -12px 40px rgb(0 0 0 / 0.18);
-	}
-
-	.schedule-pro-filter-sheet[open] {
-		display: flex;
-		flex-direction: column;
-	}
-
-	.schedule-pro-filter-sheet__handle {
-		display: flex;
-		justify-content: center;
-		padding: 0.65rem 0 0.15rem;
-	}
-
-	.schedule-pro-filter-sheet__handle span {
-		display: block;
-		width: 2.4rem;
-		height: 0.28rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface-variant) 45%, transparent);
-	}
-
-	.schedule-pro-filter-sheet__header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		padding: 0.35rem 1rem 0.75rem;
-		border-bottom: 1px solid var(--shell-border);
-	}
-
-	.schedule-pro-filter-sheet__list {
+	.schedule-pro-select {
+		--pro-select-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		display: grid;
-		gap: 0.35rem;
-		padding: 0.75rem 0.85rem max(0.95rem, env(safe-area-inset-bottom));
+		gap: 0.12rem;
+		min-width: 0;
+	}
+
+	.schedule-pro-select__label {
+		margin: 0;
+		font-size: 0.72rem;
+		font-weight: 750;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.schedule-pro-select__control {
+		position: relative;
+		min-width: 0;
+	}
+
+	.schedule-pro-select__trigger {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.2rem;
+		width: auto;
+		max-width: 100%;
+		min-width: 0;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: var(--on-surface);
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.schedule-pro-select__trigger:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
+	}
+
+	.schedule-pro-select__trigger:focus-visible {
+		outline: none;
+		box-shadow: 0 1px 0 color-mix(in srgb, var(--primary) 55%, transparent);
+	}
+
+	.schedule-pro-select__value {
+		flex: 0 1 auto;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.98rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		line-height: 1.25;
+	}
+
+	.schedule-pro-select__chevron {
+		flex: 0 0 auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.15rem;
+		height: 1.15rem;
+		color: var(--on-surface-variant);
+		font-size: 1.15rem;
+		line-height: 1;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+		transition: transform 320ms var(--pro-select-ease);
+	}
+
+	.schedule-pro-select.is-open .schedule-pro-select__chevron {
+		transform: rotate(180deg);
+	}
+
+	.schedule-pro-select__menu {
+		position: absolute;
+		top: calc(100% + 0.45rem);
+		left: 0;
+		z-index: 40;
+		display: grid;
+		gap: 0.2rem;
+		min-width: min(18.5rem, calc(100vw - 2rem));
+		max-height: min(18rem, 52dvh);
+		padding: 0.35rem;
 		overflow-y: auto;
 		overscroll-behavior: contain;
-		min-height: 0;
+		border: 0;
+		border-radius: 1.05rem;
+		background: var(--surface-bright);
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent),
+			0 16px 32px color-mix(in srgb, #0e1014 12%, transparent);
 	}
 
-	.schedule-pro-filter-option {
+	.schedule-pro-select__menu[hidden] {
+		display: none;
+	}
+
+	.schedule-pro-select__option {
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
 		width: 100%;
+		min-height: 2.35rem;
+		padding: 0.5rem 0.7rem;
 		border: 0;
-		border-radius: 1rem;
+		border-radius: 0.75rem;
 		background: transparent;
-		padding: 0.85rem 0.95rem;
-		text-align: left;
-		font-size: 0.95rem;
-		font-weight: 700;
 		color: var(--on-surface);
+		font-size: 0.9rem;
+		font-weight: 700;
+		letter-spacing: -0.015em;
+		text-align: left;
 		cursor: pointer;
-		transition: background-color 120ms ease, color 120ms ease;
 	}
 
-	.schedule-pro-filter-option:hover {
-		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+	.schedule-pro-select__option:hover,
+	.schedule-pro-select__option:focus-visible {
+		outline: none;
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
 	}
 
-	.schedule-pro-filter-option.is-selected {
+	.schedule-pro-select__option.is-selected {
 		background: color-mix(in srgb, var(--primary) 12%, transparent);
 		color: var(--primary);
 	}
 
-	.schedule-pro-filter-option.is-selected:hover {
-		background: color-mix(in srgb, var(--primary) 18%, transparent);
+	html[data-theme='dark'] .schedule-pro-select__menu {
+		background: #1c1d22;
+		box-shadow:
+			0 0 0 1px rgba(255, 255, 255, 0.08),
+			0 18px 36px rgba(0, 0, 0, 0.42);
 	}
 
-	.schedule-pro-filter-option .material-symbols-rounded {
-		font-size: 1.2rem;
-		opacity: 0;
+	html[data-theme='dark'] .schedule-pro-select__option:hover,
+	html[data-theme='dark'] .schedule-pro-select__option:focus-visible {
+		background: rgba(255, 255, 255, 0.06);
 	}
 
-	.schedule-pro-filter-option.is-selected .material-symbols-rounded {
-		opacity: 1;
+	html[data-theme='dark'] .schedule-pro-select__option.is-selected {
+		background: color-mix(in srgb, var(--primary) 20%, transparent);
+		color: #93b4ff;
+	}
+
+	.schedule-page-header__save {
+		flex-shrink: 0;
 	}
 
 	.schedule-page-header__save.hidden {
@@ -835,8 +906,13 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.schedule-page-header__sticky-bar {
+		.schedule-page-header__sticky-bar,
+		.schedule-pro-select__chevron {
 			transition: none;
+		}
+
+		.schedule-pro-select.is-open .schedule-pro-select__chevron {
+			transform: none;
 		}
 	}
 
@@ -1056,13 +1132,471 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		filter: brightness(1.08);
 	}
 
+	.schedule-week-kicker {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.55rem 0.7rem;
+		margin: 0 0 0.95rem;
+		font-size: 0.82rem;
+		font-weight: 600;
+		letter-spacing: -0.01em;
+		color: var(--on-surface-variant);
+	}
+
+	.schedule-week-kicker span {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.22rem 0.58rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+		color: var(--on-surface);
+		font-size: 0.62rem;
+		font-weight: 750;
+		letter-spacing: 0.16em;
+		text-transform: uppercase;
+	}
+
 	.schedule-day-card {
-		background: #ffffff;
-		border: 1px solid #cbd5e1;
-		border-radius: 1rem;
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+		--schedule-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		min-width: 0;
 		max-width: 100%;
+		padding: 0.28rem;
+		border: 0;
+		border-radius: 1.55rem;
+		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+		animation: schedule-day-card-enter 720ms var(--schedule-ease) both;
+		transition:
+			transform 420ms var(--schedule-ease),
+			box-shadow 420ms var(--schedule-ease);
+	}
+
+	.schedule-day-card:nth-child(1) { animation-delay: 0ms; }
+	.schedule-day-card:nth-child(2) { animation-delay: 50ms; }
+	.schedule-day-card:nth-child(3) { animation-delay: 100ms; }
+	.schedule-day-card:nth-child(4) { animation-delay: 150ms; }
+	.schedule-day-card:nth-child(5) { animation-delay: 200ms; }
+	.schedule-day-card:nth-child(6) { animation-delay: 250ms; }
+	.schedule-day-card:nth-child(7) { animation-delay: 300ms; }
+
+	@keyframes schedule-day-card-enter {
+		from {
+			opacity: 0;
+			transform: translateY(14px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	.schedule-day-card.panel-skeleton-card {
+		animation: none;
+	}
+
+	.schedule-day-card__inner {
+		display: grid;
+		gap: 1rem;
+		min-width: 0;
+		padding: 0.95rem 0.95rem 0.9rem;
+		border-radius: calc(1.55rem - 0.28rem);
+		background: var(--surface-bright);
+		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 42%, transparent);
+	}
+
+	.schedule-day-card__mast {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		min-width: 0;
+	}
+
+	.schedule-day-card__index {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.15rem;
+		height: 2.15rem;
+		flex-shrink: 0;
+		border-radius: 0.85rem;
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+		color: var(--on-surface-variant);
+		font-size: 0.68rem;
+		font-weight: 780;
+		letter-spacing: 0.06em;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.schedule-day-card__identity {
+		flex: 1 1 auto;
+		min-width: 0;
+		display: grid;
+		gap: 0.18rem;
+	}
+
+	.schedule-day-card__title {
+		margin: 0;
+		font-size: 1.18rem;
+		font-weight: 780;
+		letter-spacing: -0.035em;
+		line-height: 1.15;
+		color: var(--on-surface);
+	}
+
+	.schedule-day-card__summary {
+		margin: 0;
+		font-size: 0.78rem;
+		font-weight: 650;
+		letter-spacing: -0.01em;
+		color: var(--on-surface-variant);
+	}
+
+	.schedule-day-card__rail {
+		display: grid;
+		gap: 0.7rem;
+		min-width: 0;
+	}
+
+	.schedule-day-card__shifts {
+		display: grid;
+		gap: 0.85rem;
+		min-width: 0;
+	}
+
+	.schedule-shift {
+		display: grid;
+		min-width: 0;
+		padding: 0;
+		border-radius: 0;
+		background: transparent;
+	}
+
+	.schedule-shift + .schedule-shift {
+		padding-top: 0.85rem;
+		box-shadow: inset 0 1px 0 color-mix(in srgb, var(--on-surface) 8%, transparent);
+	}
+
+	.schedule-shift__body {
+		display: grid;
+		gap: 0.55rem;
+		min-width: 0;
+	}
+
+	.schedule-shift__times {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		gap: 0.5rem;
+		min-width: 0;
+	}
+
+	.schedule-shift__field {
+		display: grid;
+		gap: 0.28rem;
+		min-width: 0;
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.schedule-shift__control {
+		width: 100%;
+		min-width: 0;
+		max-width: 100%;
+		box-sizing: border-box;
+		border: 0;
+		border-radius: 0.95rem;
+		background-color: color-mix(in srgb, var(--on-surface) 4%, transparent);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 7%, transparent);
+		padding: 0.62rem 0.75rem;
+		color: var(--on-surface);
+		font-size: 0.88rem;
+		font-weight: 700;
+		letter-spacing: -0.015em;
+		outline: none;
+		transition: box-shadow 320ms var(--schedule-ease);
+	}
+
+	button.schedule-shift__control {
+		min-height: 2.45rem;
+		padding-right: 0.7rem;
+	}
+
+	.schedule-shift__control:focus-visible {
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 55%, transparent);
+	}
+
+	.schedule-themed-select {
+		position: relative;
+		min-width: 0;
+	}
+
+	.schedule-themed-select__trigger {
+		display: flex;
+		align-items: center;
+		gap: 0.35rem;
+		width: 100%;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.schedule-themed-select__trigger:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
+	}
+
+	.schedule-themed-select__value {
+		flex: 1 1 auto;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.schedule-themed-select__chevron {
+		flex: 0 0 auto;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.15rem;
+		height: 1.15rem;
+		color: var(--on-surface-variant);
+		font-size: 1.15rem;
+		line-height: 1;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+		transition: transform 320ms var(--schedule-ease, cubic-bezier(0.32, 0.72, 0, 1));
+	}
+
+	.schedule-themed-select.is-open .schedule-themed-select__chevron {
+		transform: rotate(180deg);
+	}
+
+	.schedule-themed-select__menu {
+		position: absolute;
+		top: calc(100% + 0.35rem);
+		left: 0;
+		right: 0;
+		z-index: 40;
+		display: grid;
+		gap: 0.2rem;
+		max-height: min(16rem, 48dvh);
+		padding: 0.35rem;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		border: 0;
+		border-radius: 1.05rem;
+		background: var(--surface-bright);
+		box-shadow:
+			0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent),
+			0 16px 32px color-mix(in srgb, #0e1014 12%, transparent);
+	}
+
+	.schedule-themed-select__menu[hidden] {
+		display: none;
+	}
+
+	.schedule-themed-select__option {
+		display: flex;
+		align-items: center;
+		width: 100%;
+		min-height: 2.25rem;
+		padding: 0.45rem 0.7rem;
+		border: 0;
+		border-radius: 0.75rem;
+		background: transparent;
+		color: var(--on-surface);
+		font-size: 0.88rem;
+		font-weight: 700;
+		letter-spacing: -0.015em;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.schedule-themed-select__option:hover,
+	.schedule-themed-select__option:focus-visible {
+		outline: none;
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+	}
+
+	.schedule-themed-select__option.is-selected {
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+	}
+
+	.schedule-shift:has(.schedule-themed-select.is-open) {
+		position: relative;
+		z-index: 4;
+	}
+
+	.schedule-slot-themed-trigger {
+		width: 100%;
+		min-height: 2.45rem;
+		box-sizing: border-box;
+		border: 0;
+		border-radius: 0.85rem;
+		background: var(--surface-bright);
+		box-shadow: 0 0 0 1px var(--shell-border);
+		padding: 0.5rem 0.7rem;
+		color: var(--on-surface);
+		font-size: 0.9rem;
+		font-weight: 700;
+	}
+
+	html[data-theme='dark'] .schedule-themed-select__menu {
+		background: #1c1d22;
+		box-shadow:
+			0 0 0 1px rgba(255, 255, 255, 0.08),
+			0 18px 36px rgba(0, 0, 0, 0.42);
+	}
+
+	html[data-theme='dark'] .schedule-themed-select__option:hover,
+	html[data-theme='dark'] .schedule-themed-select__option:focus-visible {
+		background: rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] .schedule-themed-select__option.is-selected {
+		background: color-mix(in srgb, var(--primary) 20%, transparent);
+		color: #93b4ff;
+	}
+
+	html[data-theme='dark'] .schedule-slot-themed-trigger {
+		background: rgba(255, 255, 255, 0.04);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+	}
+
+	.schedule-shift__field input[type='time'] {
+		display: block;
+		font-variant-numeric: tabular-nums;
+		-webkit-min-logical-width: 0;
+	}
+
+	.schedule-shift__field input[type='time']::-webkit-calendar-picker-indicator {
+		margin: 0;
+		padding: 0;
+		flex-shrink: 0;
+		opacity: 0.55;
+	}
+
+	.schedule-shift__location {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-items: end;
+		gap: 0.45rem;
+		min-width: 0;
+	}
+
+	.schedule-shift__remove-wrap {
+		display: flex;
+		align-items: center;
+		align-self: end;
+		height: 2.45rem;
+		padding: 0;
+	}
+
+	.schedule-shift__remove {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.85rem;
+		height: 1.85rem;
+		padding: 0;
+		border: 0;
+		border-radius: 999px;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+		transition:
+			transform 320ms var(--schedule-ease),
+			background 320ms var(--schedule-ease),
+			color 320ms var(--schedule-ease),
+			opacity 320ms var(--schedule-ease);
+	}
+
+	.schedule-shift__remove .material-symbols-rounded {
+		font-size: 1rem;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+	}
+
+	.schedule-shift__remove:hover:not(:disabled) {
+		color: #dc2626;
+		background: rgba(239, 68, 68, 0.12);
+		transform: scale(1.04);
+	}
+
+	.schedule-shift__remove:active:not(:disabled) {
+		transform: scale(0.96);
+	}
+
+	.schedule-shift__remove:focus-visible {
+		outline: none;
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
+	}
+
+	.schedule-shift__remove:disabled {
+		opacity: 0.38;
+		cursor: not-allowed;
+	}
+
+	.schedule-day-card__add {
+		display: inline-flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.65rem;
+		width: max-content;
+		max-width: 100%;
+		min-height: 2.65rem;
+		padding: 0.28rem 0.28rem 0.28rem 0.95rem;
+		border: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+		font-size: 0.86rem;
+		font-weight: 750;
+		letter-spacing: -0.015em;
+		cursor: pointer;
+		transition:
+			transform 420ms var(--schedule-ease),
+			background 420ms var(--schedule-ease);
+	}
+
+	.schedule-day-card__add-mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.05rem;
+		height: 2.05rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 16%, transparent);
+		transition: transform 420ms var(--schedule-ease);
+	}
+
+	.schedule-day-card__add-mark .material-symbols-rounded {
+		font-size: 1.05rem;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+	}
+
+	.schedule-day-card__add:hover:not(:disabled) {
+		background: color-mix(in srgb, var(--primary) 16%, transparent);
+	}
+
+	.schedule-day-card__add:hover:not(:disabled) .schedule-day-card__add-mark {
+		transform: scale(1.06);
+	}
+
+	.schedule-day-card__add:active:not(:disabled) {
+		transform: scale(0.98);
+	}
+
+	.schedule-day-card__add:disabled {
+		opacity: 0.55;
+		cursor: not-allowed;
+	}
+
+	.schedule-day-card--closed .schedule-day-card__index {
+		opacity: 0.62;
 	}
 
 	.schedule-day-toggle {
@@ -1071,38 +1605,26 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		accent-color: var(--primary);
 	}
 
-	.schedule-day-card__headline {
-		display: flex;
-		flex-wrap: nowrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.65rem 0.85rem;
-		width: 100%;
-	}
-
-	.schedule-day-card__title {
-		margin: 0;
-	}
-
 	.schedule-day-switch__label {
 		user-select: none;
 		font-size: 0.78rem;
-		font-weight: 700;
+		font-weight: 750;
 		color: var(--on-surface-variant);
 		min-width: 3.4rem;
-		transition: color 160ms ease;
+		transition: color 320ms var(--schedule-ease);
 	}
 
 	.schedule-day-switch.is-on .schedule-day-switch__label {
 		color: #426edb;
 	}
 
-	/* Mismo estilo activo que el toggle de Horario del perfil público */
 	.settings-switch.schedule-day-switch {
 		position: relative;
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4rem;
+		flex-shrink: 0;
+		margin-top: 0.2rem;
 		cursor: pointer;
 	}
 
@@ -1120,7 +1642,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		border: 0;
 		background: color-mix(in srgb, var(--on-surface-variant) 35%, transparent);
 		box-shadow: none;
-		transition: background 160ms ease;
+		transition: background 320ms var(--schedule-ease);
 	}
 
 	.schedule-day-switch .settings-switch__track::after {
@@ -1133,8 +1655,8 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		border-radius: 999px;
 		background: #fff;
 		border: 0;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
-		transition: transform 160ms ease;
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.16);
+		transition: transform 320ms var(--schedule-ease);
 	}
 
 	.schedule-day-switch .settings-switch__input:focus-visible + .settings-switch__track {
@@ -1150,7 +1672,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		transform: translateX(0.8rem);
 		background: #fff;
 		border-color: transparent;
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
 	}
 
 	.schedule-day-switch .settings-switch__input:disabled + .settings-switch__track {
@@ -1268,89 +1789,196 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	html[data-theme='dark'] .schedule-day-card {
-		background: var(--sidebar-surface);
-		border-color: var(--shell-border);
-		box-shadow: none;
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] .schedule-day-card__inner {
+		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] .schedule-day-card__index,
+	html[data-theme='dark'] .schedule-week-kicker span {
+		background: rgba(255, 255, 255, 0.04);
+	}
+
+	html[data-theme='dark'] .schedule-shift + .schedule-shift {
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+	}
+
+	html[data-theme='dark'] .schedule-shift__control {
+		background-color: rgba(255, 255, 255, 0.045);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07);
+	}
+
+	html[data-theme='dark'] .schedule-day-card__add {
+		background: color-mix(in srgb, var(--primary) 18%, transparent);
+	}
+
+	html[data-theme='dark'] .schedule-day-card__add-mark {
+		background: color-mix(in srgb, var(--primary) 22%, transparent);
 	}
 
 	html[data-theme='dark'] .schedule-slot-row {
 		border-bottom-color: rgba(148, 163, 184, 0.24);
 	}
 
-	@media (max-width: 1023px) {
-		[data-weekly-planner] .schedule-slot-row {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-			column-gap: clamp(0.45rem, 2.5vw, 0.75rem);
+	@media (max-width: 639px) {
+		.schedule-week-kicker {
+			margin-bottom: 0.55rem;
 		}
 
-		[data-weekly-planner] .schedule-slot-row > * {
-			min-width: 0;
+		[data-weekly-planner],
+		[data-schedule-loading-template] {
+			gap: 0.7rem;
+			margin-inline: -0.35rem;
 		}
 
-		[data-weekly-planner] .schedule-slot-field--location {
-			grid-column: 1 / -1;
-			grid-row: 1 / 2;
-			padding-right: 2.35rem;
+		.schedule-day-card {
+			padding: 0.18rem;
+			border-radius: 1.25rem;
 		}
 
-		[data-weekly-planner] .schedule-slot-field--start {
-			grid-column: 1 / 2;
-			grid-row: 2 / 3;
+		.schedule-day-card__inner {
+			gap: 0.6rem;
+			padding: 0.62rem 0.62rem 0.58rem;
+			border-radius: calc(1.25rem - 0.18rem);
 		}
 
-		[data-weekly-planner] .schedule-slot-field--end {
-			grid-column: 2 / 3;
-			grid-row: 2 / 3;
+		.schedule-day-card__mast {
+			gap: 0.5rem;
 		}
 
-		[data-weekly-planner] .schedule-slot-remove-wrap {
-			grid-column: 2 / 3;
-			grid-row: 1 / 2;
-			align-self: end;
-			justify-self: end;
-			padding-bottom: 0.2rem;
-			z-index: 1;
+		.schedule-day-card__rail,
+		.schedule-day-card__shifts {
+			gap: 0.45rem;
 		}
 
-		[data-weekly-planner] .schedule-slot-field input,
-		[data-weekly-planner] .schedule-slot-field select {
-			padding-block: 0.45rem;
+		.schedule-shift + .schedule-shift {
+			padding-top: 0.7rem;
 		}
 
-		[data-weekly-planner] .schedule-slot-field input[type='time'] {
-			width: 100%;
-			min-width: 0;
-			max-width: 100%;
-			padding-inline: 0.45rem;
+		.schedule-shift__remove-wrap {
+			height: 2.2rem;
+		}
+
+		.schedule-shift__body {
+			gap: 0.4rem;
+		}
+
+		.schedule-shift__times {
+			gap: 0.4rem;
+		}
+
+		.schedule-shift__control {
+			padding: 0.5rem 0.55rem;
+			font-size: 0.84rem;
+		}
+
+		button.schedule-shift__control {
+			min-height: 2.2rem;
+			padding-right: 0.55rem;
+		}
+
+		.schedule-exc-plate {
+			padding: 0.18rem;
+			border-radius: 1.25rem;
+			margin-inline: -0.35rem;
+			width: calc(100% + 0.7rem);
+		}
+
+		.schedule-exc-plate__inner {
+			gap: 0.6rem;
+			padding: 0.62rem 0.58rem 0.58rem;
+			border-radius: calc(1.25rem - 0.18rem);
+		}
+
+		.schedule-exception-calendar__month {
+			font-size: 1.05rem;
+		}
+
+		.schedule-exc-chip {
+			padding: 0.22rem 0.48rem;
+			font-size: 0.68rem;
+		}
+
+		.schedule-cal-day {
+			min-height: 2.2rem;
+			border-radius: 0.7rem;
+			padding: 0.2rem 0.08rem 0.24rem;
 		}
 	}
 
-	@media (max-width: 639px) {
-		[data-weekly-planner] .schedule-slot-row {
-			margin-bottom: 0.55rem;
-			padding: 0.45rem 0 0.75rem;
-			border: 0;
-			border-radius: 0;
-			border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 55%, transparent);
-			background: transparent;
-			box-shadow: none;
-			column-gap: 0.4rem;
+	@media (min-width: 1024px) {
+		.schedule-day-card__inner {
+			grid-template-columns: 11.75rem minmax(0, 1fr);
+			align-items: start;
+			gap: 1.15rem 1.4rem;
+			padding: 1.05rem 1.05rem 1rem;
 		}
 
-		[data-weekly-planner] .schedule-slot-field input[type='time'] {
-			padding-inline: 0.35rem;
+		.schedule-day-card__mast {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.85rem;
 		}
 
-		[data-weekly-planner] .schedule-slot-row:last-child {
-			margin-bottom: 0;
-			padding-bottom: 0.1rem;
-			border-bottom: 0;
+		.schedule-day-card__title {
+			font-size: 1.42rem;
 		}
 
-		html[data-theme='dark'] [data-weekly-planner] .schedule-slot-row {
-			border-color: color-mix(in srgb, var(--shell-border) 50%, transparent);
-			background: transparent;
-			box-shadow: none;
+		.schedule-day-card--closed .schedule-day-card__inner {
+			grid-template-columns: minmax(0, 1fr);
+		}
+
+		.schedule-day-card--closed .schedule-day-card__mast {
+			flex-direction: row;
+			align-items: center;
+		}
+
+		.schedule-day-card:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+		}
+
+		.schedule-exc-plate__inner {
+			gap: 1rem;
+			padding: 1.05rem 1.05rem 1rem;
+		}
+
+		.schedule-exception-calendar__month {
+			font-size: 1.42rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.schedule-day-card,
+		.schedule-day-card__add,
+		.schedule-day-card__add-mark,
+		.schedule-shift__remove,
+		.schedule-shift__control,
+		.schedule-day-switch__label,
+		.schedule-day-switch .settings-switch__track,
+		.schedule-day-switch .settings-switch__track::after,
+		.schedule-exc-plate,
+		.schedule-cal-nav,
+		.schedule-cal-day {
+			animation: none;
+			transition: none;
+		}
+
+		.schedule-day-card:hover,
+		.schedule-day-card:active,
+		.schedule-day-card__add:hover,
+		.schedule-day-card__add:active,
+		.schedule-shift__remove:hover,
+		.schedule-shift__remove:active,
+		.schedule-cal-nav:hover,
+		.schedule-cal-nav:active,
+		.schedule-cal-day:hover,
+		.schedule-cal-day:active {
+			transform: none;
 		}
 	}
 
@@ -1599,15 +2227,91 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		color: var(--primary);
 	}
 
+	.schedule-exc-plate {
+		--exc-ease: cubic-bezier(0.32, 0.72, 0, 1);
+		width: 100%;
+		padding: 0.28rem;
+		border: 0;
+		border-radius: 1.55rem;
+		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+		animation: schedule-exc-plate-enter 720ms var(--exc-ease) both;
+	}
+
+	.schedule-exc-plate.panel-skeleton-card,
+	.schedule-exc-plate.schedule-loading-skeleton {
+		animation: none;
+	}
+
+	@keyframes schedule-exc-plate-enter {
+		from {
+			opacity: 0;
+			transform: translateY(14px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	.schedule-exc-plate__inner {
+		display: grid;
+		gap: 0.85rem;
+		min-width: 0;
+		padding: 0.95rem 0.9rem 0.9rem;
+		border-radius: calc(1.55rem - 0.28rem);
+		background: var(--surface-bright);
+		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 42%, transparent);
+	}
+
+	.schedule-exc-plate__mast {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		min-width: 0;
+	}
+
+	.schedule-exc-nav {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.15rem;
+		flex-shrink: 0;
+		padding: 0.18rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 4.5%, transparent);
+	}
+
+	.schedule-exc-legend {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		min-width: 0;
+	}
+
+	.schedule-exc-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.28rem 0.58rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 4.5%, transparent);
+		color: var(--on-surface-variant);
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+	}
+
 	.schedule-cal-dot {
-		width: 0.65rem;
-		height: 0.65rem;
+		width: 0.42rem;
+		height: 0.42rem;
 		border-radius: 999px;
 		display: inline-block;
+		flex-shrink: 0;
 	}
 
 	.schedule-cal-dot--normal {
-		background: #94a3b8;
+		background: color-mix(in srgb, var(--on-surface-variant) 55%, transparent);
 	}
 
 	.schedule-cal-dot--blocked {
@@ -1619,25 +2323,23 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	.schedule-exception-calendar {
+		display: grid;
+		gap: 0.4rem;
 		width: 100%;
-		padding: 0.35rem 0 0.75rem;
+		min-width: 0;
+		padding: 0;
 		background: transparent;
-	}
-
-	.schedule-exception-calendar__toolbar {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		margin-bottom: 0.75rem;
 	}
 
 	.schedule-exception-calendar__month {
 		margin: 0;
-		flex: 1;
-		text-align: center;
-		font-size: 1rem;
-		font-weight: 800;
+		min-width: 0;
+		flex: 1 1 auto;
+		text-align: left;
+		font-size: 1.18rem;
+		font-weight: 780;
+		letter-spacing: -0.035em;
+		line-height: 1.15;
 		color: var(--on-surface);
 	}
 
@@ -1648,12 +2350,11 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	.schedule-exception-calendar__weekdays {
 		display: grid;
 		grid-template-columns: repeat(7, minmax(0, 1fr));
-		gap: 0.25rem;
-		margin-bottom: 0.35rem;
+		gap: 0.28rem;
 		text-align: center;
-		font-size: 0.72rem;
-		font-weight: 700;
-		letter-spacing: 0.04em;
+		font-size: 0.62rem;
+		font-weight: 750;
+		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--on-surface-variant);
 	}
@@ -1661,148 +2362,139 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	.schedule-exception-calendar__grid {
 		display: grid;
 		grid-template-columns: repeat(7, minmax(0, 1fr));
-		gap: 0.25rem;
+		gap: 0.28rem;
 	}
 
 	.schedule-cal-nav {
 		display: inline-grid;
 		place-items: center;
 		flex: 0 0 auto;
-		width: 2.25rem;
-		height: 2.25rem;
+		width: 2.05rem;
+		height: 2.05rem;
 		padding: 0;
+		border: 0;
 		border-radius: 999px;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 85%, transparent);
-		background: var(--control-surface);
+		background: transparent;
 		color: var(--on-surface-variant);
 		cursor: pointer;
 		transition:
-			background 0.15s ease,
-			color 0.15s ease,
-			border-color 0.15s ease;
+			transform 320ms var(--exc-ease),
+			opacity 320ms var(--exc-ease);
 	}
 
 	.schedule-cal-nav:hover {
-		background: var(--surface-bright);
 		color: var(--on-surface);
-		border-color: color-mix(in srgb, var(--primary) 40%, var(--shell-border));
+		transform: scale(1.06);
+	}
+
+	.schedule-cal-nav:active {
+		transform: scale(0.96);
 	}
 
 	.schedule-cal-nav .material-symbols-rounded {
 		font-size: 1.2rem;
 		line-height: 1;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
 	}
 
 	.schedule-cal-day {
 		display: flex;
+		flex-direction: column;
 		min-height: 2.55rem;
 		width: 100%;
 		margin: 0;
 		align-items: center;
 		justify-content: center;
-		border-radius: 0.75rem;
-		border: 1px solid color-mix(in srgb, var(--shell-border) 90%, transparent);
-		background: var(--control-surface);
-		font-size: 0.82rem;
-		font-weight: 700;
+		gap: 0.16rem;
+		padding: 0.28rem 0.1rem 0.32rem;
+		border: 0;
+		border-radius: 0.85rem;
+		background: color-mix(in srgb, var(--on-surface) 4.5%, transparent);
+		box-shadow: none;
 		color: var(--on-surface);
 		cursor: pointer;
-		transition:
-			background 0.15s ease,
-			color 0.15s ease,
-			border-color 0.15s ease,
-			box-shadow 0.15s ease;
+		transition: transform 320ms var(--exc-ease);
+	}
+
+	.schedule-cal-day__num {
+		font-size: 0.82rem;
+		font-weight: 750;
+		letter-spacing: -0.02em;
+		font-variant-numeric: tabular-nums;
+		line-height: 1;
+	}
+
+	.schedule-cal-day__jewel {
+		width: 0.28rem;
+		height: 0.28rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface-variant) 32%, transparent);
 	}
 
 	.schedule-cal-day--empty {
 		visibility: hidden;
 		pointer-events: none;
-		border-color: transparent;
 		background: transparent;
 	}
 
-	.schedule-cal-day--blocked:not(.schedule-cal-day--past) {
-		border-color: color-mix(in srgb, #ef4444 55%, var(--shell-border));
-		color: #dc2626;
-		background: color-mix(in srgb, #ef4444 8%, var(--control-surface));
+	.schedule-cal-day--blocked .schedule-cal-day__jewel {
+		background: #ef4444;
 	}
 
-	.schedule-cal-day--override:not(.schedule-cal-day--past) {
-		border-color: color-mix(in srgb, #f59e0b 55%, var(--shell-border));
-		color: #d97706;
-		background: color-mix(in srgb, #f59e0b 8%, var(--control-surface));
+	.schedule-cal-day--override .schedule-cal-day__jewel {
+		background: #f59e0b;
 	}
 
 	.schedule-cal-day--today:not(.schedule-cal-day--past) {
-		border-color: color-mix(in srgb, var(--primary) 55%, var(--shell-border));
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 42%, transparent);
+	}
+
+	.schedule-cal-day--today:not(.schedule-cal-day--past) .schedule-cal-day__num {
 		color: var(--primary);
 	}
 
+	.schedule-cal-day--today:not(.schedule-cal-day--past):not(.schedule-cal-day--blocked):not(
+			.schedule-cal-day--override
+		)
+		.schedule-cal-day__jewel {
+		background: var(--primary);
+	}
+
 	.schedule-cal-day--past {
-		background: color-mix(in srgb, var(--control-surface) 70%, transparent);
-		border-color: color-mix(in srgb, var(--shell-border) 55%, transparent);
-		color: color-mix(in srgb, var(--on-surface-variant) 70%, transparent);
-		box-shadow: none;
+		opacity: 0.48;
 		cursor: pointer;
 	}
 
-	.schedule-cal-day--past.schedule-cal-day--blocked {
-		border-color: color-mix(in srgb, #ef4444 35%, var(--shell-border));
-		color: color-mix(in srgb, #ef4444 55%, var(--on-surface-variant));
-	}
-
-	.schedule-cal-day--past.schedule-cal-day--override {
-		border-color: color-mix(in srgb, #f59e0b 35%, var(--shell-border));
-		color: color-mix(in srgb, #f59e0b 55%, var(--on-surface-variant));
-	}
-
 	.schedule-cal-day:not(.schedule-cal-day--empty):hover {
-		border-color: var(--primary);
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 18%, transparent);
+		transform: scale(1.05);
 	}
 
-	html[data-theme='dark'] .schedule-cal-nav {
-		background: #2b2b2f;
-		border-color: color-mix(in srgb, var(--shell-border) 70%, transparent);
+	.schedule-cal-day:not(.schedule-cal-day--empty):active {
+		transform: scale(0.96);
 	}
 
-	html[data-theme='dark'] .schedule-cal-nav:hover {
-		background: var(--surface-container-highest, #333338);
+	html[data-theme='dark'] .schedule-exc-plate {
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
 	}
 
+	html[data-theme='dark'] .schedule-exc-plate__inner {
+		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] .schedule-exc-nav,
+	html[data-theme='dark'] .schedule-exc-chip,
 	html[data-theme='dark'] .schedule-cal-day {
-		background: #2b2b2f;
-		border-color: color-mix(in srgb, var(--shell-border) 75%, transparent);
+		background: rgba(255, 255, 255, 0.04);
 	}
 
-	html[data-theme='dark'] .schedule-cal-day--blocked:not(.schedule-cal-day--past) {
-		background: color-mix(in srgb, #ef4444 16%, #2b2b2f);
-		border-color: color-mix(in srgb, #f87171 70%, transparent);
-		color: #fecaca;
+	html[data-theme='dark'] .schedule-cal-day--empty {
+		background: transparent;
 	}
 
-	html[data-theme='dark'] .schedule-cal-day--override:not(.schedule-cal-day--past) {
-		background: color-mix(in srgb, #f59e0b 16%, #2b2b2f);
-		border-color: color-mix(in srgb, #fbbf24 70%, transparent);
-		color: #fde68a;
-	}
-
-	html[data-theme='dark'] .schedule-cal-day--past {
-		background: #222225;
-		border-color: color-mix(in srgb, var(--shell-border) 40%, transparent);
-		color: #6b6b70;
-	}
-
-	html[data-theme='dark'] .schedule-cal-day--past.schedule-cal-day--blocked {
-		background: #222225;
-		border-color: color-mix(in srgb, #7f1d1d 70%, transparent);
-		color: #9ca3af;
-	}
-
-	html[data-theme='dark'] .schedule-cal-day--past.schedule-cal-day--override {
-		background: #222225;
-		border-color: color-mix(in srgb, #78350f 70%, transparent);
-		color: #9ca3af;
+	html[data-theme='dark'] .schedule-cal-day--today:not(.schedule-cal-day--past) {
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 48%, transparent);
 	}
 
 	.schedule-modal-close {
@@ -1914,12 +2606,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 			grid-row: 1 / 2;
 			align-self: end;
 			padding-bottom: 0;
-		}
-	}
-
-	@media (min-width: 640px) and (max-width: 1023px) {
-		[data-weekly-planner] .schedule-slot-field input[type='time'] {
-			padding-inline: 0.65rem;
 		}
 	}
 
