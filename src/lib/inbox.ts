@@ -35,6 +35,12 @@ export const INBOX_READ_ALL_URL = resolveOrdsApiUrl(
 	'/inbox/read-all'
 );
 
+export const INBOX_DISMISS_ALL_URL = resolveOrdsApiUrl(
+	import.meta.env.ORDS_INBOX_DISMISS_ALL_URL,
+	'ORDS_INBOX_DISMISS_ALL_URL',
+	'/inbox/dismiss-all'
+);
+
 export const INBOX_HOLIDAY_HINT_URL = resolveOrdsApiUrl(
 	import.meta.env.ORDS_INBOX_HOLIDAY_HINT_URL,
 	'ORDS_INBOX_HOLIDAY_HINT_URL',
@@ -179,6 +185,30 @@ export const markAllInboxReadWithOrds = async (token: string) => {
 		body: '{}',
 	});
 	await parseResponse(response, 'No fue posible marcar las notificaciones.');
+};
+
+export const dismissInboxWithOrds = async (token: string, notificationId: number) => {
+	const response = await fetch(`${INBOX_LIST_URL}/${notificationId}/dismiss`, {
+		method: 'POST',
+		headers: {
+			...authHeaders(token),
+			'Content-Type': 'application/json',
+		},
+		body: '{}',
+	});
+	await parseResponse(response, 'No fue posible eliminar la notificación.');
+};
+
+export const dismissAllInboxWithOrds = async (token: string) => {
+	const response = await fetch(INBOX_DISMISS_ALL_URL, {
+		method: 'POST',
+		headers: {
+			...authHeaders(token),
+			'Content-Type': 'application/json',
+		},
+		body: '{}',
+	});
+	await parseResponse(response, 'No fue posible eliminar las notificaciones.');
 };
 
 export const getHolidayHintWithOrds = async (token: string): Promise<HolidayHint | null> => {

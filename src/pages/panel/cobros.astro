@@ -90,11 +90,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 												{Array.from({ length: 3 }).map(() => (
 													<article class="cobros-loading__card">
 														<div class="cobros-loading__row">
-															<div class="panel-skeleton-line h-4 w-28 rounded"></div>
-															<div class="panel-skeleton-line h-6 w-16 rounded-full"></div>
+															<div class="panel-skeleton-line h-4 w-32 rounded"></div>
+															<div class="panel-skeleton-line h-6 w-20 rounded-full"></div>
 														</div>
-														<div class="panel-skeleton-line mt-3 h-5 w-40 max-w-full rounded-md"></div>
-														<div class="panel-skeleton-line mt-2 h-3.5 w-48 max-w-[85%] rounded"></div>
+														<div class="panel-skeleton-line mt-3 h-3 w-24 max-w-[50%] rounded"></div>
+														<div class="panel-skeleton-line mt-3 h-8 w-36 max-w-full rounded-md"></div>
+														<div class="panel-skeleton-line mt-2 h-3.5 w-40 max-w-[70%] rounded"></div>
 														<div class="panel-skeleton-line mt-4 h-11 w-full rounded-full md:hidden"></div>
 													</article>
 												))}
@@ -612,9 +613,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	.cobros-loading__card {
-		border-radius: 1.15rem;
-		border: 1px solid var(--shell-border);
-		background: var(--surface-bright);
+		border-radius: 1.35rem;
+		border: 0;
+		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
 		padding: 1rem 1.05rem;
 	}
 
@@ -949,6 +951,174 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 			overflow: hidden;
 		}
 	}
+	:global(.cobros-cards) {
+		gap: 0.85rem;
+	}
+
+	:global(.cobros-card) {
+		--cobros-ease: cubic-bezier(0.32, 0.72, 0, 1);
+		padding: 0.28rem;
+		border: 0;
+		border-radius: 1.45rem;
+		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+	}
+
+	:global(.cobros-card__inner) {
+		display: grid;
+		gap: 0.85rem;
+		padding: 1rem 1.05rem 1.05rem;
+		border-radius: calc(1.45rem - 0.28rem);
+		background: var(--surface-bright);
+		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent);
+	}
+
+	:global(.cobros-card__head) {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	:global(.cobros-card__who) {
+		min-width: 0;
+		display: grid;
+		gap: 0.18rem;
+	}
+
+	:global(.cobros-card__name) {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 750;
+		letter-spacing: -0.025em;
+		line-height: 1.2;
+		color: var(--on-surface);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	:global(.cobros-card__service) {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	:global(.cobros-card__amount) {
+		margin: 0;
+		font-size: clamp(1.55rem, 6vw, 1.85rem);
+		font-weight: 800;
+		letter-spacing: -0.045em;
+		line-height: 1;
+		font-variant-numeric: tabular-nums lining-nums;
+		color: var(--on-surface);
+	}
+
+	:global(.cobros-card__when) {
+		margin: 0;
+		font-size: 0.8rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	:global(.cobros-card__cta) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.7rem;
+		width: 100%;
+		min-height: 2.85rem;
+		margin: 0.1rem 0 0;
+		padding: 0.28rem 0.28rem 0.28rem 1rem;
+		border: 0;
+		border-radius: 999px;
+		background: var(--primary);
+		color: var(--on-primary);
+		font: inherit;
+		font-size: 0.92rem;
+		font-weight: 750;
+		cursor: pointer;
+		transition:
+			transform 420ms var(--cobros-ease),
+			opacity 420ms var(--cobros-ease);
+	}
+
+	:global(.cobros-card__cta:active) {
+		transform: scale(0.98);
+	}
+
+	:global(.cobros-card__cta:focus-visible) {
+		outline: 2px solid var(--primary);
+		outline-offset: 3px;
+	}
+
+	:global(.cobros-card__cta-icon) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.15rem;
+		height: 2.15rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, #ffffff 18%, transparent);
+		transition: transform 420ms var(--cobros-ease);
+	}
+
+	:global(.cobros-card__cta .material-symbols-rounded) {
+		font-size: 1.05rem;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+	}
+
+	:global(.cobros-card__cta:hover .cobros-card__cta-icon) {
+		transform: translateX(2px);
+	}
+
+	:global(html[data-theme='dark'] .cobros-card) {
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+	}
+
+	:global(html[data-theme='dark'] .cobros-card__inner) {
+		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	}
+
+	:global(html[data-theme='dark'] .cobros-chip--pending) {
+		background: color-mix(in srgb, #fbbf24 16%, transparent);
+		color: #fcd34d;
+	}
+
+	:global(html[data-theme='dark'] .cobros-chip--approved) {
+		background: color-mix(in srgb, #4ade80 14%, transparent);
+		color: #86efac;
+	}
+
+	:global(html[data-theme='dark'] .cobros-chip--refund) {
+		background: color-mix(in srgb, #60a5fa 16%, transparent);
+		color: #93c5fd;
+	}
+
+	:global(html[data-theme='dark'] .cobros-chip--sent),
+	:global(html[data-theme='dark'] .cobros-chip--other) {
+		background: rgba(255, 255, 255, 0.08);
+		color: #d1d5db;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		:global(.cobros-card__cta),
+		:global(.cobros-card__cta-icon) {
+			transition: none;
+		}
+
+		:global(.cobros-card__cta:active),
+		:global(.cobros-card__cta:hover .cobros-card__cta-icon) {
+			transform: none;
+		}
+	}
+
 	:global(.cobros-chip) {
 		display: inline-flex;
 		align-items: center;

@@ -282,7 +282,7 @@ const isActive = (href?: string) => {
 		}
 
 		.mobile-bottom-nav {
-			--mobile-bottom-nav-radius: 24px;
+			--mobile-bottom-nav-radius: 28px;
 			display: block;
 			position: fixed;
 			left: 0;
@@ -301,34 +301,29 @@ const isActive = (href?: string) => {
 			isolation: isolate;
 		}
 
-		/* Glass translúcido estable (sin SVG liquid / sin flip por JS) */
 		.mobile-bottom-nav__glass {
 			position: absolute;
 			inset: 0;
 			border-radius: inherit;
 			pointer-events: none;
 			z-index: 0;
-			border: 1px solid color-mix(in srgb, white 55%, var(--shell-border) 45%);
-			background: color-mix(in srgb, var(--surface-bright, #ffffff) 42%, transparent);
-			-webkit-backdrop-filter: blur(12px) saturate(1.8) brightness(1.1);
-			backdrop-filter: blur(12px) saturate(1.8) brightness(1.1);
+			border: 1px solid color-mix(in srgb, var(--on-surface) 10%, transparent);
+			background: color-mix(in srgb, var(--surface-bright, #ffffff) 28%, transparent);
+			-webkit-backdrop-filter: blur(28px) saturate(1.6);
+			backdrop-filter: blur(28px) saturate(1.6);
 			box-shadow:
-				0 8px 32px rgba(31, 38, 135, 0.12),
-				0 2px 16px rgba(31, 38, 135, 0.06),
-				inset 0 1px 0 rgba(255, 255, 255, 0.4),
-				inset 0 -1px 0 rgba(255, 255, 255, 0.2);
+				0 10px 28px color-mix(in srgb, #1e293b 14%, transparent),
+				inset 0 1px 0 rgba(255, 255, 255, 0.22);
 		}
 
 		html[data-theme='dark'] .mobile-bottom-nav__glass {
-			border-color: rgba(255, 255, 255, 0.14);
-			background: color-mix(in srgb, var(--surface-container-high, #222222) 38%, transparent);
-			-webkit-backdrop-filter: blur(20px) saturate(1.4) brightness(1.15);
-			backdrop-filter: blur(20px) saturate(1.4) brightness(1.15);
+			border-color: rgba(255, 255, 255, 0.1);
+			background: rgba(16, 18, 22, 0.46);
+			-webkit-backdrop-filter: blur(36px) saturate(1.55);
+			backdrop-filter: blur(36px) saturate(1.55);
 			box-shadow:
-				0 4px 12px rgba(0, 0, 0, 0.22),
-				0 16px 40px rgba(0, 0, 0, 0.28),
-				inset 0 1px 0 rgba(255, 255, 255, 0.16),
-				inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+				0 12px 32px rgba(0, 0, 0, 0.28),
+				inset 0 1px 0 rgba(255, 255, 255, 0.08);
 		}
 
 		.mobile-bottom-nav__content {

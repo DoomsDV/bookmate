@@ -733,8 +733,7 @@ export const initCobrosPage = () => {
 			tableBody.appendChild(tr);
 
 			const card = document.createElement('article');
-			card.className =
-				'grid gap-3.5 rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-4 shadow-sm';
+			card.className = 'cobros-card';
 			const ctaLabel =
 				item.ui_status === 'refund_pending' ||
 				item.ui_status === 'refund_awaiting_alias' ||
@@ -744,30 +743,23 @@ export const initCobrosPage = () => {
 						? 'Validar comprobante'
 						: 'Ver detalle';
 			card.innerHTML = `
-				<div class="flex items-start justify-between gap-3">
-					<div class="grid min-w-0 gap-0.5">
-						<span class="text-[0.7rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Cliente</span>
-						<p class="m-0 truncate text-[1.02rem] font-semibold text-(--on-surface)">${item.customer_name || '—'}</p>
-					</div>
-					<span class="${statusChipClass(item)}">${statusLabel(item)}</span>
+				<div class="cobros-card__inner">
+					<header class="cobros-card__head">
+						<div class="cobros-card__who">
+							<p class="cobros-card__name">${item.customer_name || '—'}</p>
+							<p class="cobros-card__service">${item.service_name || '—'}</p>
+						</div>
+						<span class="${statusChipClass(item)}">${statusLabel(item)}</span>
+					</header>
+					<p class="cobros-card__amount">${formatMoney(item.amount, item.currency)}</p>
+					<p class="cobros-card__when">${formatDateTime(item.start_time || item.created_at)}</p>
+					<button type="button" class="cobros-card__cta" data-cobros-open="${item.id_transaction}">
+						<span class="cobros-card__cta-label">${ctaLabel}</span>
+						<span class="cobros-card__cta-icon" aria-hidden="true">
+							<span class="material-symbols-rounded">arrow_forward</span>
+						</span>
+					</button>
 				</div>
-				<div class="grid grid-cols-2 gap-x-4 gap-y-3">
-					<div class="grid min-w-0 gap-0.5">
-						<span class="text-[0.7rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Monto</span>
-						<p class="m-0 text-[1.08rem] font-semibold tabular-nums text-(--on-surface)">${formatMoney(item.amount, item.currency)}</p>
-					</div>
-					<div class="grid min-w-0 gap-0.5">
-						<span class="text-[0.7rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Servicio</span>
-						<p class="m-0 truncate text-[0.95rem] font-semibold text-(--on-surface)">${item.service_name || '—'}</p>
-					</div>
-					<div class="col-span-2 grid min-w-0 gap-0.5">
-						<span class="text-[0.7rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Fecha</span>
-						<p class="m-0 text-[0.92rem] font-medium text-(--on-surface)">${formatDateTime(item.start_time || item.created_at)}</p>
-					</div>
-				</div>
-				<button type="button" class="inline-flex h-12 w-full cursor-pointer items-center justify-center rounded-full bg-(--primary) px-5 text-base font-semibold text-(--on-primary)" data-cobros-open="${item.id_transaction}">
-					${ctaLabel}
-				</button>
 			`;
 			cardsEl.appendChild(card);
 		}

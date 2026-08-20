@@ -48,7 +48,14 @@ export const isHttpsContext = () => {
 	return window.location.protocol === 'https:';
 };
 
-export const canOfferPwaInstall = () => isHttpsContext() && !isInstalledPwaContext();
+export const isLocalDevelopmentHost = () => {
+	if (typeof window === 'undefined') return false;
+	const host = window.location.hostname.toLowerCase();
+	return host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '::1';
+};
+
+export const canOfferPwaInstall = () =>
+	isHttpsContext() && !isLocalDevelopmentHost() && !isInstalledPwaContext();
 
 /** iPhone/iPad (incluye iPadOS desktop UA). */
 export const isIosBrowser = () => {
@@ -113,6 +120,8 @@ export const showFcmAlert = async (title: string, message: string) => {
 
 /** Misma alerta del sistema, con pasos visuales para «Agregar a inicio» en iOS. */
 export const showIosPwaInstallGuide = async () => {
+	if (!canOfferPwaInstall()) return;
+
 	const messageHtml = `
 		<p class="app-alert-install-lead">Para recibir recordatorios de tus citas al instante, instalá la app:</p>
 		<ol class="app-alert-install-steps">
@@ -264,7 +273,7 @@ const requestBrowserNotificationPermission = async (options?: { fromSettings?: b
 
 export const enablePushNotifications = async (options?: { fromSettings?: boolean }) => {
 	if (!isInstalledPwaContext()) {
-		if (isIosBrowser()) {
+		if (isIosBrowser() && canOfferPwaInstall()) {
 			await showIosPwaInstallGuide();
 			throw new Error(
 				'Instalá Hasel en tu iPhone (Compartir → Agregar a pantalla de inicio) y abrila desde el inicio para activar notificaciones.'
@@ -317,7 +326,7 @@ export const runPushOnboardingIfNeeded = async () => {
 	await waitForBookmateAlert();
 
 	if (!isInstalledPwaContext()) {
-		if (!isIosBrowser()) return false;
+		if (!isIosBrowser() || !canOfferPwaInstall()) return false;
 		if (sessionStorage.getItem(IOS_INSTALL_GUIDE_SHOWN_SESSION_KEY) === '1') return true;
 		sessionStorage.setItem(IOS_INSTALL_GUIDE_SHOWN_SESSION_KEY, '1');
 		await showIosPwaInstallGuide();

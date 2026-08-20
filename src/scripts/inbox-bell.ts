@@ -106,21 +106,29 @@ const renderList = (state: InboxState) => {
 		list.innerHTML = state.items
 			.map((item) => {
 				const unreadClass = item.unread ? ' is-unread' : '';
-				return `<button type="button" class="inbox-item${unreadClass}" data-inbox-item="${item.id_notification}">
-					<span class="inbox-item__icon material-symbols-rounded" aria-hidden="true">${iconForType(item.ntype)}</span>
-					<span class="inbox-item__body">
-						<span class="inbox-item__title">${escapeHtml(item.title)}</span>
-						${item.body ? `<span class="inbox-item__text">${escapeHtml(item.body)}</span>` : ''}
-						<span class="inbox-item__time">${escapeHtml(formatRelative(item.created_at))}</span>
-					</span>
-					${item.unread ? '<span class="inbox-item__dot" aria-hidden="true"></span>' : ''}
-				</button>`;
+				return `<div class="inbox-item${unreadClass}">
+					<button type="button" class="inbox-item__open" data-inbox-item="${item.id_notification}">
+						<span class="inbox-item__icon material-symbols-rounded" aria-hidden="true">${iconForType(item.ntype)}</span>
+						<span class="inbox-item__body">
+							<span class="inbox-item__title">${escapeHtml(item.title)}</span>
+							${item.body ? `<span class="inbox-item__text">${escapeHtml(item.body)}</span>` : ''}
+							<span class="inbox-item__time">${escapeHtml(formatRelative(item.created_at))}</span>
+						</span>
+						${item.unread ? '<span class="inbox-item__dot" aria-hidden="true"></span>' : ''}
+					</button>
+					<button type="button" class="inbox-item__dismiss" data-inbox-dismiss="${item.id_notification}" aria-label="Eliminar notificación">
+						<span class="material-symbols-rounded" aria-hidden="true">close</span>
+					</button>
+				</div>`;
 			})
 			.join('');
 	});
 
 	document.querySelectorAll<HTMLButtonElement>('[data-inbox-mark-all]').forEach((btn) => {
 		btn.hidden = state.unreadCount === 0;
+	});
+	document.querySelectorAll<HTMLButtonElement>('[data-inbox-dismiss-all]').forEach((btn) => {
+		btn.hidden = state.items.length === 0;
 	});
 };
 
@@ -251,6 +259,36 @@ const markAllRead = async () => {
 	}
 };
 
+const dismissItem = async (id: number) => {
+	const state = getState();
+	const item = state.items.find((row) => row.id_notification === id);
+	state.items = state.items.filter((row) => row.id_notification !== id);
+	if (item?.unread) {
+		state.unreadCount = Math.max(0, state.unreadCount - 1);
+	}
+	applyBadge(state.unreadCount);
+	renderList(state);
+	try {
+		await fetch(`/api/inbox/${id}/dismiss`, { method: 'POST', headers: { Accept: 'application/json' } });
+	} catch {
+		/* ignore */
+	}
+};
+
+const dismissAll = async () => {
+	if (!window.confirm('¿Borrar todas las notificaciones?')) return;
+	const state = getState();
+	state.items = [];
+	state.unreadCount = 0;
+	applyBadge(0);
+	renderList(state);
+	try {
+		await fetch('/api/inbox/dismiss-all', { method: 'POST', headers: { Accept: 'application/json' } });
+	} catch {
+		/* ignore */
+	}
+};
+
 const closeInboxMenus = () => {
 	document.querySelectorAll<HTMLDetailsElement>('[data-inbox-menu]').forEach((menu) => {
 		menu.removeAttribute('open');
@@ -325,6 +363,22 @@ export const initInboxBell = () => {
 		if (markAll) {
 			event.preventDefault();
 			void markAllRead();
+			return;
+		}
+
+		const dismissAllBtn = target.closest<HTMLButtonElement>('[data-inbox-dismiss-all]');
+		if (dismissAllBtn) {
+			event.preventDefault();
+			void dismissAll();
+			return;
+		}
+
+		const dismissBtn = target.closest<HTMLButtonElement>('[data-inbox-dismiss]');
+		if (dismissBtn) {
+			event.preventDefault();
+			event.stopPropagation();
+			const id = Number(dismissBtn.getAttribute('data-inbox-dismiss') || 0);
+			if (id > 0) void dismissItem(id);
 			return;
 		}
 

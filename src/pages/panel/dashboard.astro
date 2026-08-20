@@ -104,6 +104,8 @@ const toGreetingChars = (value: string) => Array.from(value);
 
 const todayTotal = dashboard.kpis.today_appointments;
 const todayCompleted = Math.min(todayTotal, dashboard.kpis.today_completed_appointments || 0);
+const todayRemaining = Math.max(0, todayTotal - todayCompleted);
+const pendingAppointments = Math.max(0, dashboard.kpis.pending_appointments || 0);
 const dayProgressPct =
 	todayTotal > 0 ? Math.min(100, Math.round((todayCompleted / todayTotal) * 100)) : 0;
 
@@ -118,6 +120,12 @@ const progressHint = dayProgressEmpty
 const dayProgressMetricLabel = dayProgressEmpty
 	? 'Aún no tenés turnos programados para hoy'
 	: `${todayCompleted} de ${todayTotal} turnos completados`;
+const dayProgressSlotCap = 10;
+const dayProgressSlotCount = dayProgressEmpty ? 0 : Math.min(todayTotal, dayProgressSlotCap);
+const dayProgressFilledSlots = dayProgressEmpty
+	? 0
+	: Math.round((todayCompleted / Math.max(todayTotal, 1)) * dayProgressSlotCount);
+const dayProgressSlots = Array.from({ length: dayProgressSlotCount }, (_, index) => index < dayProgressFilledSlots);
 
 const weekDayLabelsByJs = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sa'] as const;
 const asuncionDateParts = new Intl.DateTimeFormat('en-CA', {
@@ -166,16 +174,6 @@ const getStatusLabel = (status: string) => {
 		default:
 			return status || 'Estado';
 	}
-};
-
-const getCustomerInitials = (name: string) => {
-	const parts = String(name || '')
-		.trim()
-		.split(/\s+/)
-		.filter(Boolean);
-	if (parts.length === 0) return '?';
-	if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-	return `${parts[0][0] || ''}${parts[parts.length - 1][0] || ''}`.toUpperCase();
 };
 
 const formatUpcomingAppointmentDate = (value: string) => {
@@ -330,7 +328,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 							{(roleId === ROLES.ADMIN || roleId === ROLES.PROFESIONAL) && (
 								<section
-									class="dashboard-profitability-shell transition-colors duration-300"
+									class="dashboard-profitability-shell is-loading transition-colors duration-300"
 									data-profitability-panel
 									aria-busy="true"
 								>
@@ -345,71 +343,125 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 									<div class="dashboard-carousel">
 									<div class="dashboard-profit-metrics-track">
-										<article class="dashboard-profit-card" data-profit-accent="emerald" data-profit-spark-card="mom">
+										<article class="dashboard-profit-card" data-profit-accent="emerald">
 											<div class="dashboard-profit-card__head">
-												<p class="dashboard-profit-label">Ingresos del mes</p>
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">payments</span>
+												<p class="dashboard-profit-label">Ingresos del mes</p>
 											</div>
-											<p class="dashboard-profit-value" data-profit-month-revenue>&nbsp;</p>
-											<p class="dashboard-profit-hint" data-profit-mom>&nbsp;</p>
-											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true" data-profit-spark>
-												<defs>
-													<linearGradient id="profit-spark-fill-emerald" x1="0" y1="0" x2="0" y2="1">
-														<stop offset="0%" stop-color="var(--profit-accent)" stop-opacity="0.22" />
-														<stop offset="100%" stop-color="var(--profit-accent)" stop-opacity="0" />
-													</linearGradient>
-												</defs>
-												<path class="dashboard-profit-spark__area" data-profit-spark-area d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-emerald)" />
-												<path class="dashboard-profit-spark__line" data-profit-spark-line d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18" fill="none" />
-											</svg>
+											<div class="dashboard-profit-card__hero">
+												<p class="dashboard-profit-value" data-profit-month-revenue>&nbsp;</p>
+												<div class="dashboard-profit-viz dashboard-profit-viz--bars" aria-hidden="true">
+													<span class="dashboard-profit-viz__col">
+														<span class="dashboard-profit-viz__bar" data-profit-bar="last"></span>
+													</span>
+													<span class="dashboard-profit-viz__col">
+														<span class="dashboard-profit-viz__bar is-now" data-profit-bar="month"></span>
+													</span>
+												</div>
+											</div>
+											<ul class="dashboard-profit-stats">
+												<li class="dashboard-profit-stat">
+													<span class="dashboard-profit-stat__label">Mes anterior</span>
+													<span class="dashboard-profit-stat__value" data-profit-last-month>&nbsp;</span>
+												</li>
+												<li class="dashboard-profit-stat">
+													<span class="dashboard-profit-stat__label">Ticket promedio</span>
+													<span class="dashboard-profit-stat__value" data-profit-avg-ticket>&nbsp;</span>
+												</li>
+												<li class="dashboard-profit-stat">
+													<span class="dashboard-profit-stat__label">Citas cobradas</span>
+													<span class="dashboard-profit-stat__value">
+														<span data-profit-month-count>&nbsp;</span>
+														<span class="dashboard-profit-stat__delta" data-profit-mom hidden></span>
+													</span>
+												</li>
+											</ul>
 										</article>
-										<article class="dashboard-profit-card" data-profit-accent="brand" data-profit-spark-card="today">
+										<article class="dashboard-profit-card" data-profit-accent="brand">
 											<div class="dashboard-profit-card__head">
-												<p class="dashboard-profit-label">Ingresos de hoy</p>
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">today</span>
+												<p class="dashboard-profit-label">Ingresos de hoy</p>
 											</div>
-											<p class="dashboard-profit-value" data-profit-today>&nbsp;</p>
-											<p class="dashboard-profit-hint">Citas ya atendidas hoy.</p>
-											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true" data-profit-spark>
-												<defs>
-													<linearGradient id="profit-spark-fill-brand" x1="0" y1="0" x2="0" y2="1">
-														<stop offset="0%" stop-color="var(--profit-accent)" stop-opacity="0.22" />
-														<stop offset="100%" stop-color="var(--profit-accent)" stop-opacity="0" />
-													</linearGradient>
-												</defs>
-												<path class="dashboard-profit-spark__area" data-profit-spark-area d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-brand)" />
-												<path class="dashboard-profit-spark__line" data-profit-spark-line d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18" fill="none" />
-											</svg>
-										</article>
-										<article class="dashboard-profit-card" data-profit-accent="amber" data-profit-spark-card="pending">
-											<div class="dashboard-profit-card__head">
-												<p class="dashboard-profit-label">Esperado (futuro)</p>
-												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">trending_up</span>
+											<div class="dashboard-profit-card__hero">
+												<p class="dashboard-profit-value" data-profit-today>&nbsp;</p>
+												<svg class="dashboard-profit-viz dashboard-profit-viz--ring" viewBox="0 0 36 36" aria-hidden="true">
+													<circle class="dashboard-profit-viz__track" cx="18" cy="18" r="14" pathLength="100"></circle>
+													<circle
+														class="dashboard-profit-viz__arc"
+														cx="18"
+														cy="18"
+														r="14"
+														pathLength="100"
+														style={`--ring:${todayTotal > 0 ? dayProgressPct : 0}`}
+													></circle>
+												</svg>
 											</div>
-											<p class="dashboard-profit-value" data-profit-pending>&nbsp;</p>
-											<p class="dashboard-profit-hint">Citas confirmadas y pendientes.</p>
-											<svg class="dashboard-profit-spark" viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true" data-profit-spark>
-												<defs>
-													<linearGradient id="profit-spark-fill-amber" x1="0" y1="0" x2="0" y2="1">
-														<stop offset="0%" stop-color="var(--profit-accent)" stop-opacity="0.22" />
-														<stop offset="100%" stop-color="var(--profit-accent)" stop-opacity="0" />
-													</linearGradient>
-												</defs>
-												<path class="dashboard-profit-spark__area" data-profit-spark-area d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18 L 120 32 L 0 32 Z" fill="url(#profit-spark-fill-amber)" />
-												<path class="dashboard-profit-spark__line" data-profit-spark-line d="M0 18 C 20 17, 40 19, 60 18 S 100 17, 120 18" fill="none" />
-											</svg>
+											<ul class="dashboard-profit-stats">
+												<li class="dashboard-profit-stat">
+													<span class="dashboard-profit-stat__label">Atendidas</span>
+													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayCompleted}</span>
+												</li>
+												<li class="dashboard-profit-stat">
+													<span class="dashboard-profit-stat__label">Programadas</span>
+													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayTotal}</span>
+												</li>
+												<li class="dashboard-profit-stat">
+													<span class="dashboard-profit-stat__label">Restantes</span>
+													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayRemaining}</span>
+												</li>
+											</ul>
 										</article>
-										<article class="dashboard-profit-card" data-profit-accent="green">
+										<article class="dashboard-profit-card" data-profit-accent="amber">
 											<div class="dashboard-profit-card__head">
-												<p class="dashboard-profit-label">Total clientes</p>
+												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">schedule</span>
+												<p class="dashboard-profit-label">Esperado</p>
+											</div>
+											<div class="dashboard-profit-card__hero">
+												<p class="dashboard-profit-value" data-profit-pending>&nbsp;</p>
+												<div class="dashboard-profit-viz dashboard-profit-viz--pipe" aria-hidden="true">
+													<span class="dashboard-profit-viz__pipe">
+														<span class="dashboard-profit-viz__fill" data-profit-pipe="pending"></span>
+													</span>
+												</div>
+											</div>
+											<ul class="dashboard-profit-stats">
+												<li class="dashboard-profit-stat">
+													<span class="dashboard-profit-stat__label">Por confirmar</span>
+													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{pendingAppointments}</span>
+												</li>
+												<li class="dashboard-profit-stat">
+													<span class="dashboard-profit-stat__label">Cobrado este mes</span>
+													<span class="dashboard-profit-stat__value" data-profit-pipe-label>&nbsp;</span>
+												</li>
+											</ul>
+										</article>
+										<article class="dashboard-profit-card" data-profit-accent="violet">
+											<div class="dashboard-profit-card__head">
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">groups</span>
+												<p class="dashboard-profit-label">Clientes</p>
 											</div>
-											<p class="dashboard-profit-value" data-profit-total-clients>&nbsp;</p>
-											<p class="dashboard-profit-hint">
-												{roleId === ROLES.PROFESIONAL
-													? 'Pacientes únicos que atendiste.'
-													: 'Base registrada en el negocio.'}
-											</p>
+											<div class="dashboard-profit-card__hero">
+												<p class="dashboard-profit-value" data-profit-total-clients>&nbsp;</p>
+												<div class="dashboard-profit-viz dashboard-profit-viz--dots" data-profit-client-dots aria-hidden="true">
+													{Array.from({ length: 8 }).map((_, index) => (
+														<span class="dashboard-profit-viz__dot" data-dot-index={index}></span>
+													))}
+												</div>
+											</div>
+											<ul class="dashboard-profit-stats">
+												<li class="dashboard-profit-stat">
+													<span class="dashboard-profit-stat__label">Nuevos este mes</span>
+													<span class="dashboard-profit-stat__value" data-profit-new-clients>&nbsp;</span>
+												</li>
+												<li class="dashboard-profit-stat">
+													<span class="dashboard-profit-stat__label">Atendidos este mes</span>
+													<span class="dashboard-profit-stat__value" data-profit-active-clients>&nbsp;</span>
+												</li>
+												<li class="dashboard-profit-stat">
+													<span class="dashboard-profit-stat__label">Con cita (7 días)</span>
+													<span class="dashboard-profit-stat__value" data-profit-upcoming-clients>&nbsp;</span>
+												</li>
+											</ul>
 										</article>
 									</div>
 									</div>
@@ -447,35 +499,37 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 									aria-busy="false"
 								>
 									<div class="dashboard-ai-strip__body">
-										<div class="dashboard-ai-strip__head">
-											<span class="dashboard-ai-strip__badge" aria-hidden="true">
-												<span class="dashboard-ai-strip__icon dashboard-ai-strip__shiny material-symbols-rounded">
-													auto_awesome
+										<div class="dashboard-ai-strip__copy">
+											<div class="dashboard-ai-strip__head">
+												<span class="dashboard-ai-strip__badge" aria-hidden="true">
+													<span class="dashboard-ai-strip__icon dashboard-ai-strip__shiny material-symbols-rounded">
+														auto_awesome
+													</span>
 												</span>
-											</span>
-											<div class="dashboard-ai-strip__meta">
 												<p class="dashboard-ai-strip__eyebrow dashboard-ai-strip__shiny">
 													Resumen inteligente del día
 												</p>
 											</div>
+											<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
+												<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--lg"></span>
+												<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--md"></span>
+												<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--sm"></span>
+											</div>
+											<p class="dashboard-ai-strip__text" data-ai-summary-line>
+												{defaultAiSummaryShort}
+											</p>
+											<button
+												type="button"
+												class="dashboard-ai-strip__action"
+												data-open-ai-summary-modal
+												hidden
+											>
+												<span class="dashboard-ai-strip__action-label">Ver análisis completo</span>
+												<span class="dashboard-ai-strip__action-icon" aria-hidden="true">
+													<span class="material-symbols-rounded">arrow_outward</span>
+												</span>
+											</button>
 										</div>
-										<div class="dashboard-ai-strip__skeleton" aria-hidden="true">
-											<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--lg"></span>
-											<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--md"></span>
-											<span class="dashboard-ai-strip__skel-line dashboard-ai-strip__skel-line--sm"></span>
-										</div>
-										<p class="dashboard-ai-strip__text" data-ai-summary-line>
-											{defaultAiSummaryShort}
-										</p>
-										<button
-											type="button"
-											class="dashboard-ai-strip__action"
-											data-open-ai-summary-modal
-											hidden
-										>
-											<span class="dashboard-ai-strip__action-label">Ver análisis completo</span>
-											<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
-										</button>
 									</div>
 								</div>
 
@@ -488,45 +542,80 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 									<div class="dashboard-floor dashboard-floor--today">
 										<article
 											class:list={['dashboard-day-progress', dayProgressEmpty && 'is-empty']}
+											style={`--day-progress:${dayProgressPct}`}
 											aria-label="Progreso del día"
 										>
 											<div class="dashboard-day-progress__inner">
-												<div class="dashboard-day-progress__top">
-													<div>
-														<p class="dashboard-day-progress__eyebrow">Progreso del día</p>
-														{dayProgressEmpty ? (
-															<p class="dashboard-day-progress__metric dashboard-day-progress__metric--empty">
-																Aún no tenés turnos programados para hoy
+												<header class="dashboard-day-progress__head">
+													<div class="dashboard-day-progress__title">
+														<span class="dashboard-day-progress__icon" aria-hidden="true">
+															<span class="material-symbols-rounded">
+																{dayProgressEmpty ? 'event_busy' : 'event_available'}
+															</span>
+														</span>
+														<div class="dashboard-day-progress__copy">
+															<p class="dashboard-day-progress__kicker">Hoy</p>
+															<h2 class="dashboard-day-progress__eyebrow">Progreso del día</h2>
+														</div>
+													</div>
+													{!dayProgressEmpty ? (
+														<span class="dashboard-day-progress__pct">{dayProgressPct}%</span>
+													) : null}
+												</header>
+
+												{dayProgressEmpty ? (
+													<p class="dashboard-day-progress__metric dashboard-day-progress__metric--empty">
+														Aún no tenés turnos programados para hoy
+													</p>
+												) : (
+													<div class="dashboard-day-progress__split">
+														<div class="dashboard-day-progress__hero">
+															<p class="dashboard-day-progress__metric">
+																<span data-day-completed>{todayCompleted}</span>
+																<span class="dashboard-day-progress__of">/{todayTotal}</span>
 															</p>
-														) : (
-															<>
-																<p class="dashboard-day-progress__metric">
-																	<span data-day-completed>{todayCompleted}</span>
-																	<span class="dashboard-day-progress__of"> de {todayTotal}</span>
-																	<span class="dashboard-day-progress__unit">turnos completados</span>
-																</p>
+															<p class="dashboard-day-progress__unit">turnos atendidos</p>
+															<div
+																class="dashboard-day-progress__rail"
+																style={`--slots:${dayProgressSlotCount}`}
+																role="progressbar"
+																aria-valuemin="0"
+																aria-valuemax={Math.max(todayTotal, 1)}
+																aria-valuenow={todayCompleted}
+																aria-label={dayProgressMetricLabel}
+															>
+																{
+																	dayProgressSlots.map((filled, index) => (
+																		<span
+																			class:list={['dashboard-day-progress__slot', filled && 'is-done']}
+																			style={`--i:${index}`}
+																		></span>
+																	))
+																}
+															</div>
+														</div>
+
+														<ul class="dashboard-day-progress__islands">
+															<li class="dashboard-day-progress__island is-done">
+																<strong>{todayCompleted}</strong>
+																<span>Completados</span>
+															</li>
+															<li class:list={['dashboard-day-progress__island', 'is-left', todayRemaining === 0 && 'is-clear']}>
+																<strong>{todayRemaining}</strong>
+																<span>Restantes</span>
+															</li>
+															<li class="dashboard-day-progress__island is-plan">
+																<div class="dashboard-day-progress__plan">
+																	<strong>{todayTotal}</strong>
+																	<span>Programados</span>
+																</div>
 																{progressHint ? (
 																	<p class="dashboard-day-progress__hint">{progressHint}</p>
 																) : null}
-															</>
-														)}
+															</li>
+														</ul>
 													</div>
-													<span class="dashboard-day-progress__icon material-symbols-rounded" aria-hidden="true">
-														{dayProgressEmpty ? 'event_busy' : 'event_available'}
-													</span>
-												</div>
-												{!dayProgressEmpty ? (
-													<div
-														class="dashboard-day-progress__bar"
-														role="progressbar"
-														aria-valuemin="0"
-														aria-valuemax={Math.max(todayTotal, 1)}
-														aria-valuenow={todayCompleted}
-														aria-label={dayProgressMetricLabel}
-													>
-														<span class="dashboard-day-progress__fill" style={`width: ${dayProgressPct}%`}></span>
-													</div>
-												) : null}
+												)}
 											</div>
 										</article>
 									</div>
@@ -540,7 +629,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 									<div class:list={['dashboard-floor', 'dashboard-floor--action', showAlertsPanel && 'dashboard-floor--split']}>
 										<div
 											id="dashboard-upcoming-appointments"
-											class="dashboard-report-shell dashboard-floor__panel rounded-4xl p-6 transition-colors duration-300"
+											class="dashboard-report-shell dashboard-floor__panel rounded-4xl p-4 sm:p-6 transition-colors duration-300"
 										>
 											<div class="mb-4 flex items-center justify-between gap-3">
 												<div class="min-w-0">
@@ -603,43 +692,48 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 																);
 
 																return (
-																	<article class="dashboard-report-card">
-																		<div class="dashboard-report-row">
-																			<div class="dashboard-report-identity">
-																				<span class="dashboard-report-avatar" aria-hidden="true">
-																					{getCustomerInitials(appointment.customer_name)}
-																				</span>
-																				<div class="dashboard-report-main">
-																					<h3 class="dashboard-report-title">{appointment.customer_name}</h3>
-																					<p class="dashboard-report-meta">
-																						{appointmentDateLabel}
-																						{appointmentDateLabel ? ' · ' : ''}
-																						{appointment.time_start} - {appointment.time_end}
-																					</p>
-																				</div>
-																			</div>
-																			<span
-																				class:list={[
-																					'dashboard-report-status',
-																					appointment.status === 'CONFIRMADO' ? 'dashboard-report-status--confirmed' :
-																					appointment.status === 'PENDIENTE' ? 'dashboard-report-status--pending' :
-																					appointment.status === 'CANCELADO' ? 'dashboard-report-status--canceled' :
-																					'dashboard-report-status--default'
-																				]}
-																			>
-																				{getStatusLabel(appointment.status)}
-																			</span>
+																	<article
+																		class:list={[
+																			'dashboard-report-card',
+																			appointment.status === 'CONFIRMADO' && 'is-confirmed',
+																			appointment.status === 'PENDIENTE' && 'is-pending',
+																			appointment.status === 'CANCELADO' && 'is-canceled',
+																		]}
+																	>
+																		<div class="dashboard-report-time">
+																			<span class="dashboard-report-time__hour">{appointment.time_start}</span>
+																			<span class="dashboard-report-time__day">{appointmentDateLabel || appointment.time_end}</span>
 																		</div>
-																		<p class="dashboard-report-service">{appointment.service_name}</p>
+																		<div class="dashboard-report-main">
+																			<h3 class="dashboard-report-title">{appointment.customer_name}</h3>
+																			<p class="dashboard-report-service">{appointment.service_name}</p>
+																			<p class="dashboard-report-meta">{appointment.time_start} - {appointment.time_end}</p>
+																		</div>
+																		<span
+																			class:list={[
+																				'dashboard-report-status',
+																				appointment.status === 'CONFIRMADO' ? 'dashboard-report-status--confirmed' :
+																				appointment.status === 'PENDIENTE' ? 'dashboard-report-status--pending' :
+																				appointment.status === 'CANCELADO' ? 'dashboard-report-status--canceled' :
+																				'dashboard-report-status--default'
+																			]}
+																		>
+																			{getStatusLabel(appointment.status)}
+																		</span>
 																	</article>
 																);
 															})
 														}
-														<a href="/panel/calendar" class="dashboard-appointments-see-all dashboard-appointments-see-all--list">
-															Ver agenda
-														</a>
 													</div>
 												)
+											}
+
+											{
+												dashboard.upcoming_appointments.length > 0 ? (
+													<a href="/panel/calendar" class="dashboard-appointments-see-all dashboard-appointments-see-all--list">
+														Ver agenda
+													</a>
+												) : null
 											}
 
 											{
@@ -661,11 +755,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 										{showAlertsPanel && (
 											<aside
-												class="dashboard-alerts-shell dashboard-floor__panel rounded-4xl p-5 transition-colors duration-300"
+												class="dashboard-alerts-shell dashboard-floor__panel rounded-4xl p-4 sm:p-6 transition-colors duration-300"
 												data-dashboard-alerts
 											>
-												<div class="mb-4 flex shrink-0 items-center justify-between gap-2">
-													<h2 class="text-lg font-bold text-[#202124] dark:text-[#E3E3E3]">Pendientes</h2>
+												<div class="dashboard-alerts-head">
+													<div class="min-w-0">
+														<h2 class="text-xl font-bold text-[#202124] dark:text-[#E3E3E3]">Pendientes</h2>
+														<p class="dashboard-appointments-subtitle">Confirmaciones y cobros</p>
+													</div>
 												</div>
 
 												<ul
@@ -708,8 +805,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 													]}
 													data-dashboard-alerts-empty
 												>
-													<span class="material-symbols-rounded dashboard-alerts-empty__icon" aria-hidden="true">task_alt</span>
-													<p class="dashboard-alerts-empty__text">Todo al día. No hay tareas urgentes.</p>
+													<div class="dashboard-alerts-empty__well">
+														<span class="dashboard-alerts-empty__icon material-symbols-rounded" aria-hidden="true">task_alt</span>
+														<p class="dashboard-alerts-empty__title">Todo al día</p>
+														<p class="dashboard-alerts-empty__text">No hay confirmaciones ni cobros por revisar.</p>
+													</div>
 												</div>
 											</aside>
 										)}
@@ -1792,42 +1892,14 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}, 280);
 	};
 
-	type ProfitSparkTrend = 'up' | 'down' | 'flat';
-
-	/** Curvas decorativas alineadas a la tendencia (y bajo = valor alto en el SVG). */
-	const buildProfitSparkPaths = (trend: ProfitSparkTrend): { line: string; area: string } => {
-		const line =
-			trend === 'up'
-				? 'M0 24 C 18 22, 32 20, 48 16 S 78 10, 96 8 S 112 6, 120 5'
-				: trend === 'down'
-					? 'M0 6 C 18 8, 32 10, 48 14 S 78 22, 96 24 S 112 26, 120 28'
-					: 'M0 18 C 20 16, 40 20, 60 18 S 100 16, 120 18';
-		return { line, area: `${line} L 120 32 L 0 32 Z` };
-	};
-
-	const applyProfitSpark = (card: HTMLElement | null, trend: ProfitSparkTrend) => {
-		if (!card) return;
-		const { line, area } = buildProfitSparkPaths(trend);
-		const lineNode = card.querySelector<SVGPathElement>('[data-profit-spark-line]');
-		const areaNode = card.querySelector<SVGPathElement>('[data-profit-spark-area]');
-		if (lineNode) lineNode.setAttribute('d', line);
-		if (areaNode) areaNode.setAttribute('d', area);
-		card.dataset.profitSparkTrend = trend;
-	};
-
-	const sparkTrendFromAmount = (amount: unknown): ProfitSparkTrend => {
-		const value = Number(amount);
-		if (!Number.isFinite(value) || value <= 0) return 'flat';
-		return 'up';
-	};
-
 	const loadProfitability = async () => {
 		const panel = document.querySelector<HTMLElement>('[data-profitability-panel]');
 		if (!panel) return;
 		if (panel.dataset.loaded === '1') return;
 		panel.dataset.loaded = '1';
 		panel.hidden = false;
-		panel.classList.remove('hidden', 'is-dismissed', 'is-loading', 'is-ready');
+		panel.classList.remove('hidden', 'is-dismissed', 'is-ready');
+		panel.classList.add('is-loading');
 		panel.setAttribute('aria-busy', 'true');
 
 		try {
@@ -1853,53 +1925,64 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			setText('[data-profit-today]', formatGs(data.today_revenue));
 			setText('[data-profit-pending]', formatGs(data.pending_expected_revenue));
 			setText('[data-profit-total-clients]', String(Number(data.total_clients ?? 0)));
+			setText('[data-profit-new-clients]', String(Number(data.new_clients_month ?? 0)));
+			setText('[data-profit-active-clients]', String(Number(data.active_clients_month ?? 0)));
+			setText('[data-profit-upcoming-clients]', String(Number(data.upcoming_clients_7d ?? 0)));
+			setText('[data-profit-last-month]', formatGs(data.last_month_revenue));
+			setText('[data-profit-avg-ticket]', formatGs(data.month_avg_ticket));
+			setText('[data-profit-month-count]', String(Number(data.month_completed_count ?? 0)));
+			setText('[data-profit-pipe-label]', formatGs(data.month_revenue));
 
-			const momCard = panel.querySelector<HTMLElement>('[data-profit-spark-card="mom"]');
+			const monthRevenue = Math.max(0, Number(data.month_revenue) || 0);
+			const lastMonthRevenue = Math.max(0, Number(data.last_month_revenue) || 0);
+			const pendingRevenue = Math.max(0, Number(data.pending_expected_revenue) || 0);
+			const clientCount = Math.max(0, Math.floor(Number(data.total_clients) || 0));
+			const barMax = Math.max(monthRevenue, lastMonthRevenue, 1);
+			const barRatio = (value: number) => Math.max(0.08, value / barMax);
+
+			const lastBar = panel.querySelector<HTMLElement>('[data-profit-bar="last"]');
+			const monthBar = panel.querySelector<HTMLElement>('[data-profit-bar="month"]');
+			if (lastBar) lastBar.style.transform = `scaleY(${barRatio(lastMonthRevenue)})`;
+			if (monthBar) monthBar.style.transform = `scaleY(${barRatio(monthRevenue)})`;
+
+			const pipelineTotal = monthRevenue + pendingRevenue;
+			const pendingRatio = pipelineTotal > 0 ? pendingRevenue / pipelineTotal : 0;
+			const pendingFill = panel.querySelector<HTMLElement>('[data-profit-pipe="pending"]');
+			if (pendingFill) pendingFill.style.transform = `scaleX(${Math.max(0.06, pendingRatio)})`;
+
+			const dots = panel.querySelectorAll<HTMLElement>('[data-profit-client-dots] .dashboard-profit-viz__dot');
+			const filledDots = Math.min(dots.length, clientCount);
+			dots.forEach((dot, index) => {
+				dot.classList.toggle('is-filled', index < filledDots);
+			});
+
 			const momNode = panel.querySelector<HTMLElement>('[data-profit-mom]');
 			if (momNode) {
 				const mom = data.mom_delta_pct;
 				if (mom === null || mom === undefined || !Number.isFinite(Number(mom))) {
-					momNode.textContent = 'Sin comparación con el mes anterior.';
-					momNode.className = 'dashboard-profit-hint';
-					applyProfitSpark(momCard, sparkTrendFromAmount(data.month_revenue));
+					momNode.hidden = true;
+					momNode.replaceChildren();
 				} else {
 					const value = Number(mom);
 					const sign = value > 0 ? '+' : '';
-					const trend: ProfitSparkTrend =
-						value > 0 ? 'up' : value < 0 ? 'down' : 'flat';
+					momNode.hidden = false;
 					momNode.className =
 						value > 0
-							? 'dashboard-profit-hint dashboard-profit-hint--up'
+							? 'dashboard-profit-stat__delta is-up'
 							: value < 0
-								? 'dashboard-profit-hint dashboard-profit-hint--down'
-								: 'dashboard-profit-hint';
+								? 'dashboard-profit-stat__delta is-down'
+								: 'dashboard-profit-stat__delta';
 					momNode.replaceChildren();
-					if (value < 0) {
+					if (value !== 0) {
 						const arrow = document.createElement('span');
-						arrow.className = 'material-symbols-rounded dashboard-profit-hint__arrow';
+						arrow.className = 'material-symbols-rounded dashboard-profit-stat__arrow';
 						arrow.setAttribute('aria-hidden', 'true');
-						arrow.textContent = 'arrow_downward';
-						momNode.appendChild(arrow);
-					} else if (value > 0) {
-						const arrow = document.createElement('span');
-						arrow.className = 'material-symbols-rounded dashboard-profit-hint__arrow';
-						arrow.setAttribute('aria-hidden', 'true');
-						arrow.textContent = 'arrow_upward';
+						arrow.textContent = value > 0 ? 'arrow_upward' : 'arrow_downward';
 						momNode.appendChild(arrow);
 					}
-					momNode.appendChild(document.createTextNode(`${sign}${value}% vs. mes anterior`));
-					applyProfitSpark(momCard, trend);
+					momNode.appendChild(document.createTextNode(`${sign}${value}%`));
 				}
 			}
-
-			applyProfitSpark(
-				panel.querySelector<HTMLElement>('[data-profit-spark-card="today"]'),
-				sparkTrendFromAmount(data.today_revenue),
-			);
-			applyProfitSpark(
-				panel.querySelector<HTMLElement>('[data-profit-spark-card="pending"]'),
-				sparkTrendFromAmount(data.pending_expected_revenue),
-			);
 
 			panel.hidden = false;
 			panel.classList.remove('hidden', 'is-dismissed', 'is-loading');
@@ -3378,28 +3461,32 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-floor--action .dashboard-alerts-shell {
-		height: auto;
-		align-self: start;
+		height: 100%;
+		align-self: stretch;
 	}
 
 	.dashboard-day-progress {
+		--day-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		position: relative;
 		display: flex;
-		align-items: center;
+		align-items: stretch;
 		overflow: hidden;
 		height: 100%;
 		min-height: 11.5rem;
-		border-radius: 1.5rem;
-		padding: 1.5rem 1.5rem;
+		padding: 0.32rem;
+		border: 0;
+		border-radius: 1.75rem;
 		color: var(--on-surface, #202124);
-		border: 1px solid color-mix(in srgb, var(--primary) 14%, transparent);
-		background: color-mix(in srgb, var(--primary) 6%, #ffffff);
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 6px 16px rgba(15, 23, 42, 0.035);
+		background: color-mix(in srgb, var(--on-surface) 4.5%, #f3f4f6);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
 		isolation: isolate;
 		box-sizing: border-box;
+		transition:
+			transform 520ms var(--day-ease),
+			box-shadow 520ms var(--day-ease);
 	}
 
-	.dashboard-day-progress__inner {
+		.dashboard-day-progress__inner {
 		position: relative;
 		z-index: 1;
 		display: flex;
@@ -3407,167 +3494,347 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		justify-content: center;
 		gap: 1.15rem;
 		width: 100%;
+		min-height: 100%;
+		overflow: hidden;
+		padding: 1.15rem 1.25rem 1.2rem;
+		border-radius: calc(1.75rem - 0.32rem);
+		background:
+			radial-gradient(22rem 14rem at 8% -20%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 62%),
+			#ffffff;
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.82);
 	}
 
-	.dashboard-day-progress::after {
-		content: '';
-		position: absolute;
-		inset: auto -18% -42% auto;
-		width: 12rem;
-		height: 12rem;
-		border-radius: 999px;
-		background: radial-gradient(
-			circle,
-			color-mix(in srgb, var(--primary) 18%, transparent) 0%,
-			transparent 72%
-		);
-		pointer-events: none;
-		z-index: 0;
-	}
-
-	.dashboard-day-progress__top {
+	.dashboard-day-progress__head {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		justify-content: space-between;
-		gap: 1rem;
+		gap: 0.75rem;
+		animation: dashboard-day-rise 720ms var(--day-ease) both;
+	}
+
+	.dashboard-day-progress__title {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		min-width: 0;
+	}
+
+	.dashboard-day-progress__copy {
+		display: flex;
+		flex-direction: column;
+		gap: 0.18rem;
+		min-width: 0;
+	}
+
+	.dashboard-day-progress__kicker {
 		margin: 0;
+		width: fit-content;
+		padding: 0.16rem 0.48rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+		font-size: 0.6rem;
+		font-weight: 800;
+		letter-spacing: 0.18em;
+		line-height: 1;
+		text-transform: uppercase;
 	}
 
 	.dashboard-day-progress__eyebrow {
-		margin: 0 0 0.4rem;
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 750;
+		letter-spacing: -0.025em;
+		line-height: 1.15;
+		text-transform: none;
+		color: var(--on-surface, #202124);
+	}
+
+	.dashboard-day-progress__pct {
+		flex-shrink: 0;
+		padding: 0.28rem 0.62rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5);
+		color: color-mix(in srgb, var(--on-surface-variant) 70%, var(--on-surface) 30%);
 		font-size: 0.72rem;
 		font-weight: 800;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: color-mix(in srgb, var(--on-surface-variant) 86%, #516b85 14%);
-		opacity: 1;
+		letter-spacing: 0.02em;
+		font-variant-numeric: tabular-nums lining-nums;
+	}
+
+	.dashboard-day-progress__split {
+		display: grid;
+		grid-template-columns: minmax(10.5rem, 0.42fr) minmax(0, 1fr);
+		align-items: center;
+		gap: 1.15rem 1.5rem;
+		animation: dashboard-day-rise 780ms var(--day-ease) 70ms both;
+	}
+
+	.dashboard-day-progress__hero {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.45rem;
+		min-width: 0;
 	}
 
 	.dashboard-day-progress__metric {
 		margin: 0;
 		display: flex;
 		align-items: baseline;
-		flex-wrap: wrap;
-		gap: 0.2rem 0.35rem;
-		font-size: clamp(2.1rem, 4vw, 2.7rem);
+		gap: 0.12rem;
+		font-size: clamp(2.55rem, 5vw, 3.55rem);
 		font-weight: 800;
-		letter-spacing: -0.03em;
-		line-height: 1;
-		font-variant-numeric: tabular-nums;
+		letter-spacing: -0.055em;
+		line-height: 0.88;
+		font-variant-numeric: tabular-nums lining-nums;
 		color: var(--on-surface, #202124);
 	}
 
 	.dashboard-day-progress__metric--empty {
 		display: block;
-		font-size: clamp(1.05rem, 2.4vw, 1.25rem);
+		max-width: 22rem;
+		font-size: clamp(1.05rem, 2.4vw, 1.28rem);
 		font-weight: 700;
-		letter-spacing: -0.015em;
+		letter-spacing: -0.02em;
 		line-height: 1.35;
-		max-width: 20rem;
+		animation: dashboard-day-rise 720ms var(--day-ease) 50ms both;
 	}
 
 	.dashboard-day-progress__of {
-		font-size: 0.55em;
-		font-weight: 700;
-		opacity: 0.72;
-		color: var(--on-surface-variant, #5f6368);
+		font-size: 0.42em;
+		font-weight: 750;
+		letter-spacing: -0.03em;
+		color: color-mix(in srgb, var(--on-surface-variant) 72%, var(--on-surface) 28%);
 	}
 
 	.dashboard-day-progress__unit {
-		font-size: 0.9rem;
-		font-weight: 700;
-		opacity: 0.85;
+		margin: 0;
+		font-size: 0.78rem;
+		font-weight: 650;
 		letter-spacing: 0.01em;
-		color: var(--on-surface-variant, #5f6368);
+		color: color-mix(in srgb, var(--on-surface-variant) 78%, var(--on-surface) 22%);
+	}
+
+	.dashboard-day-progress__rail {
+		display: grid;
+		grid-template-columns: repeat(var(--slots, 1), minmax(0, 1fr));
+		gap: 0.28rem;
+		width: 100%;
+		max-width: 16rem;
+		margin-top: 0.45rem;
+	}
+
+	.dashboard-day-progress__slot {
+		position: relative;
+		height: 0.7rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 8%, #e8eaed);
+		box-shadow: inset 0 1px 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
+		overflow: hidden;
+	}
+
+	.dashboard-day-progress__slot.is-done::after {
+		content: '';
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background: linear-gradient(
+			90deg,
+			color-mix(in srgb, var(--primary) 82%, #93c5fd 18%),
+			var(--primary)
+		);
+		transform-origin: left center;
+		animation: dashboard-day-slot 720ms var(--day-ease) calc(var(--i, 0) * 70ms) both;
+	}
+
+	.dashboard-day-progress__islands {
+		display: grid;
+		grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+		gap: 0.55rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.dashboard-day-progress__island {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
+		gap: 0.18rem;
+		min-width: 0;
+		padding: 0.72rem 0.8rem 0.7rem;
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--on-surface) 4%, #f6f7f8);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+		animation: dashboard-day-rise 760ms var(--day-ease) both;
+	}
+
+	.dashboard-day-progress__island.is-done {
+		background: color-mix(in srgb, var(--primary) 10%, #f7f8fb);
+		animation-delay: 110ms;
+	}
+
+	.dashboard-day-progress__island.is-left {
+		background: color-mix(in srgb, #b45309 8%, #f8f6f2);
+		animation-delay: 160ms;
+	}
+
+	.dashboard-day-progress__island.is-left.is-clear {
+		background: color-mix(in srgb, #15803d 8%, #f4f8f5);
+	}
+
+	.dashboard-day-progress__island.is-plan {
+		grid-column: 1 / -1;
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.8rem;
+		animation-delay: 210ms;
+	}
+
+	.dashboard-day-progress__island strong {
+		font-size: 1.28rem;
+		font-weight: 800;
+		letter-spacing: -0.035em;
+		line-height: 1;
+		font-variant-numeric: tabular-nums lining-nums;
+		color: var(--on-surface);
+	}
+
+	.dashboard-day-progress__island span {
+		font-size: 0.7rem;
+		font-weight: 650;
+		letter-spacing: 0.01em;
+		color: color-mix(in srgb, var(--on-surface-variant) 78%, var(--on-surface) 22%);
+	}
+
+	.dashboard-day-progress__plan {
+		display: flex;
+		flex-direction: column;
+		gap: 0.16rem;
 	}
 
 	.dashboard-day-progress__hint {
-		margin: 0.55rem 0 0;
-		font-size: 0.88rem;
-		font-weight: 600;
-		opacity: 1;
-		color: color-mix(in srgb, var(--on-surface-variant, #5f6368) 78%, var(--on-surface) 22%);
+		margin: 0;
+		max-width: 16rem;
+		text-align: right;
+		font-size: 0.78rem;
+		font-weight: 650;
+		line-height: 1.35;
+		color: color-mix(in srgb, var(--on-surface-variant, #5f6368) 76%, var(--on-surface) 24%);
 	}
 
 	.dashboard-day-progress__icon {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.25rem;
-		height: 2.25rem;
-		border-radius: 999px;
-		background: #ffffff;
+		width: 2.35rem;
+		height: 2.35rem;
+		border-radius: 0.85rem;
+		background: color-mix(in srgb, var(--primary) 14%, #ffffff);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 		color: var(--primary);
+		flex-shrink: 0;
+	}
+
+	.dashboard-day-progress__icon .material-symbols-rounded {
 		font-size: 1.2rem;
-		flex-shrink: 0;
-		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.05);
+		font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
 	}
 
-	.dashboard-day-progress__bar {
-		position: relative;
-		z-index: 1;
-		height: 0.55rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--primary) 12%, #e8eaed);
-		overflow: hidden;
-		flex-shrink: 0;
+	@keyframes dashboard-day-rise {
+		from {
+			opacity: 0;
+			transform: translateY(10px);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
 	}
 
-	.dashboard-day-progress__fill {
-		display: block;
-		height: 100%;
-		border-radius: inherit;
-		background: linear-gradient(
-			90deg,
-			var(--primary) 0%,
-			color-mix(in srgb, var(--primary) 60%, white) 100%
-		);
-		box-shadow: none;
-		transition: width 420ms ease;
+	@keyframes dashboard-day-slot {
+		from {
+			opacity: 0;
+			transform: scaleX(0);
+		}
+
+		to {
+			opacity: 1;
+			transform: scaleX(1);
+		}
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress {
 		color: var(--on-surface, #e3e3e3);
-		border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
-		background: color-mix(in srgb, var(--primary) 14%, var(--surface-container-high, #222222));
-		box-shadow: none;
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
 	}
 
-	html[data-theme='dark'] .dashboard-day-progress::after {
-		background: radial-gradient(
-			circle,
-			color-mix(in srgb, var(--primary) 22%, transparent) 0%,
-			transparent 72%
-		);
+	html[data-theme='dark'] .dashboard-day-progress__inner {
+		background:
+			radial-gradient(24rem 16rem at 6% -30%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 64%),
+			color-mix(in srgb, var(--surface-container-high, #1c1d22) 90%, #0a0b0e 10%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__eyebrow,
-	html[data-theme='dark'] .dashboard-day-progress__of,
-	html[data-theme='dark'] .dashboard-day-progress__unit,
-	html[data-theme='dark'] .dashboard-day-progress__hint {
-		color: color-mix(in srgb, var(--on-surface-variant) 28%, #e8eaed 72%);
-	}
-
 	html[data-theme='dark'] .dashboard-day-progress__metric {
 		color: var(--on-surface, #e3e3e3);
 	}
 
+	html[data-theme='dark'] .dashboard-day-progress__of,
+	html[data-theme='dark'] .dashboard-day-progress__unit,
+	html[data-theme='dark'] .dashboard-day-progress__hint,
+	html[data-theme='dark'] .dashboard-day-progress__island span {
+		color: color-mix(in srgb, var(--on-surface-variant) 42%, #e8eaed 58%);
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress__pct {
+		background: rgba(255, 255, 255, 0.05);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		color: color-mix(in srgb, var(--on-surface-variant) 40%, #e8eaed 60%);
+	}
+
 	html[data-theme='dark'] .dashboard-day-progress__icon {
-		background: var(--surface-container-highest, #282828);
-		color: var(--primary);
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+		background: color-mix(in srgb, var(--primary) 18%, #1a1c21);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		color: color-mix(in srgb, var(--primary) 72%, white 28%);
 	}
 
-	html[data-theme='dark'] .dashboard-day-progress__bar {
-		background: color-mix(in srgb, var(--primary) 18%, #2b2d31);
+	html[data-theme='dark'] .dashboard-day-progress__slot {
+		background: rgba(255, 255, 255, 0.07);
+		box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.18);
 	}
 
-	html[data-theme='dark'] .dashboard-day-progress__fill {
-		background: linear-gradient(
-			90deg,
-			var(--primary) 0%,
-			color-mix(in srgb, var(--primary) 70%, white) 100%
-		);
+	html[data-theme='dark'] .dashboard-day-progress__island {
+		background: rgba(255, 255, 255, 0.035);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress__island.is-done {
+		background: color-mix(in srgb, var(--primary) 16%, rgba(255, 255, 255, 0.03));
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress__island.is-left {
+		background: color-mix(in srgb, #f5b56b 12%, rgba(255, 255, 255, 0.03));
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress__island.is-left.is-clear {
+		background: color-mix(in srgb, #86efac 10%, rgba(255, 255, 255, 0.03));
+	}
+
+	html[data-theme='dark'] .dashboard-day-progress__island strong {
+		color: var(--on-surface, #e3e3e3);
+	}
+
+	@media (min-width: 1024px) {
+		.dashboard-day-progress:hover {
+			transform: translateY(-2px);
+		}
 	}
 
 	.dashboard-report-shell.dashboard-floor__panel {
@@ -3578,13 +3845,13 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-report-shell.dashboard-floor__panel .dashboard-report-list {
-		flex: 1 1 auto;
+		flex: 0 1 auto;
 		min-height: 0;
+		max-height: 100%;
 		align-content: start;
 		align-items: stretch;
 		overflow-y: auto;
 		overscroll-behavior: contain;
-		padding-right: 0.15rem;
 		-webkit-overflow-scrolling: touch;
 	}
 
@@ -3696,17 +3963,35 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-alerts-shell {
 		display: flex;
 		flex-direction: column;
-		border: 0;
+		border: 1px solid color-mix(in srgb, var(--on-surface) 8%, transparent);
 		background: #ffffff;
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.72),
+			0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent),
+			0 12px 28px color-mix(in srgb, #1e293b 6%, transparent);
 		min-height: 0;
 		box-sizing: border-box;
 	}
 
+	.dashboard-alerts-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: 1.15rem;
+		flex-shrink: 0;
+	}
+
+	.dashboard-alerts-list {
+		flex: 1 1 auto;
+		align-content: start;
+		min-height: 0;
+	}
+
 	html[data-theme='dark'] .dashboard-alerts-shell {
-		background: var(--surface-container-high, #222222);
-		border: 0;
-		box-shadow: none;
+		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+		border: 1px solid rgba(255, 255, 255, 0.06);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
 	}
 
 	.dashboard-alert-item {
@@ -3799,31 +4084,72 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-alerts-empty {
 		display: flex;
-		flex-direction: column;
-		align-items: center;
-		justify-content: center;
-		gap: 0.55rem;
+		flex: 1 1 auto;
+		align-items: stretch;
+		justify-content: stretch;
+		min-height: 12rem;
 		margin: 0;
-		padding: 0.35rem 0.75rem 0.5rem;
-		text-align: center;
+		padding: 0.15rem;
 	}
 
 	.dashboard-alerts-empty.hidden {
 		display: none;
 	}
 
+	.dashboard-alerts-empty__well {
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.4rem;
+		width: 100%;
+		min-height: 100%;
+		padding: 1.5rem 1.15rem;
+		border-radius: 1.1rem;
+		background: color-mix(in srgb, var(--on-surface) 4%, #f4f6f8);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+		text-align: center;
+	}
+
+	html[data-theme='dark'] .dashboard-alerts-empty__well {
+		background: color-mix(in srgb, #14151a 82%, #000 18%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	}
+
 	.dashboard-alerts-empty__icon {
-		font-size: 1.75rem;
-		color: color-mix(in srgb, var(--primary) 70%, #64748b 30%);
-		opacity: 0.85;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.6rem;
+		height: 2.6rem;
+		margin-bottom: 0.25rem;
+		border-radius: 0.85rem;
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		color: var(--primary);
+		font-size: 1.45rem;
+	}
+
+	html[data-theme='dark'] .dashboard-alerts-empty__icon {
+		background: color-mix(in srgb, var(--primary) 18%, #1f2126);
+		color: color-mix(in srgb, var(--primary) 70%, white 30%);
+	}
+
+	.dashboard-alerts-empty__title {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 750;
+		letter-spacing: -0.02em;
+		color: var(--on-surface);
 	}
 
 	.dashboard-alerts-empty__text {
 		margin: 0;
-		font-size: 0.88rem;
+		max-width: 16rem;
+		font-size: 0.84rem;
 		font-weight: 600;
+		line-height: 1.45;
 		color: var(--on-surface-variant);
-		max-width: 14rem;
 	}
 
 	.dashboard-alerts-empty__actions {
@@ -3875,10 +4201,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	@media (min-width: 1024px) {
 		.dashboard-floor--action.dashboard-floor--split {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
 			gap: var(--dashboard-floor-gap);
 			min-height: 0;
-			align-items: start;
+			align-items: stretch;
 		}
 
 		.dashboard-floor--today {
@@ -3900,6 +4226,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-profitability-shell {
+		container-type: inline-size;
+		container-name: profit;
 		border: 0;
 		background: transparent;
 		box-shadow: none;
@@ -3918,9 +4246,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
-	.dashboard-profitability-shell.is-loading [data-profit-mom] {
+	.dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
 		color: transparent !important;
-		border-radius: 0.55rem;
+		border-radius: 0.45rem;
 		background: linear-gradient(
 			110deg,
 			color-mix(in srgb, var(--on-surface-variant) 10%, transparent) 0%,
@@ -3934,19 +4262,18 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	.dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static) {
-		min-height: 1.55rem;
-		max-width: 7.5rem;
-		margin-top: 0.55rem;
+		min-height: 1.7rem;
+		max-width: 8.2rem;
+		margin-top: 0.7rem;
 	}
 
-	.dashboard-profitability-shell.is-loading [data-profit-mom] {
-		min-height: 0.95rem;
-		max-width: 9.5rem;
-		margin-top: 0.55rem;
+	.dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
+		min-height: 0.9rem;
+		min-width: 3.4rem;
 	}
 
 	.dashboard-profitability-shell.is-ready .dashboard-profit-value:not(.dashboard-profit-value--static),
-	.dashboard-profitability-shell.is-ready [data-profit-mom] {
+	.dashboard-profitability-shell.is-ready .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
 		animation: none;
 	}
 
@@ -3990,7 +4317,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
-	html[data-theme='dark'] .dashboard-profitability-shell.is-loading [data-profit-mom] {
+	html[data-theme='dark'] .dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
 		background: linear-gradient(
 			110deg,
 			rgba(255, 255, 255, 0.05) 0%,
@@ -4032,7 +4359,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-appointments-see-all--list {
 			display: inline-flex;
 			width: 100%;
-			margin-top: 1rem;
+			margin-top: 0.7rem;
 		}
 	}
 
@@ -4040,72 +4367,110 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		width: 100%;
 		max-width: 100%;
 		min-width: 0;
-		overflow: hidden;
+		overflow: visible;
 	}
 
 	.dashboard-profit-metrics-track {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		gap: 1.25rem;
-		min-width: 0;
+		display: flex;
+		grid-template-columns: none;
+		gap: 0.65rem;
+		width: 100%;
 		max-width: 100%;
+		min-width: 0;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		scroll-snap-type: x mandatory;
+		scroll-padding-inline: 0;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		padding: 0.45rem 0 0.55rem;
+		margin-inline: 0;
+		box-sizing: border-box;
 	}
 
-	@media (max-width: 1023px) {
-		.dashboard-profit-metrics-track {
-			display: flex;
-			grid-template-columns: none;
-			gap: 0.65rem;
-			width: 100%;
-			max-width: 100%;
-			min-width: 0;
-			overflow-x: auto;
-			overscroll-behavior-x: contain;
-			scroll-snap-type: x mandatory;
-			scroll-padding-inline: 0;
-			-webkit-overflow-scrolling: touch;
-			scrollbar-width: none;
-			padding: 0.05rem 0 0.45rem;
-			margin-inline: 0;
-			box-sizing: border-box;
-		}
+	.dashboard-profit-metrics-track::-webkit-scrollbar {
+		display: none;
+	}
 
-		.dashboard-profit-metrics-track::-webkit-scrollbar {
-			display: none;
+	.dashboard-profit-metrics-track > .dashboard-profit-card {
+		flex: 0 0 min(72%, 17.5rem);
+		scroll-snap-align: start;
+		min-height: 0;
+		min-width: 0;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.dashboard-profit-metrics-track > .dashboard-profit-card:last-child {
+		scroll-snap-align: end;
+	}
+
+	@container profit (min-width: 70rem) {
+		.dashboard-profit-metrics-track {
+			display: grid;
+			grid-template-columns: repeat(4, minmax(0, 1fr));
+			gap: 1.25rem;
+			overflow: visible;
+			scroll-snap-type: none;
+			padding: 0;
 		}
 
 		.dashboard-profit-metrics-track > .dashboard-profit-card {
-			flex: 0 0 min(72%, 17.5rem);
-			scroll-snap-align: start;
-			min-height: 0;
-			min-width: 0;
-			max-width: 100%;
-			box-sizing: border-box;
+			flex: none;
+			scroll-snap-align: unset;
+			max-width: none;
 		}
 
 		.dashboard-profit-metrics-track > .dashboard-profit-card:last-child {
-			scroll-snap-align: end;
+			scroll-snap-align: unset;
 		}
 	}
 
 	.dashboard-profit-card {
 		--profit-accent: #426edb;
-		--profit-accent-soft: rgba(66, 110, 219, 0.1);
+		--profit-accent-soft: rgba(66, 110, 219, 0.12);
 		position: relative;
-		border: 1px solid color-mix(in srgb, var(--profit-accent) 14%, transparent);
-		border-radius: 1.5rem;
-		background: color-mix(in srgb, var(--profit-accent) 8%, #ffffff);
-		padding: 0.85rem 0.95rem 0.45rem;
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03), 0 6px 16px rgba(15, 23, 42, 0.035);
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		border: 1px solid color-mix(in srgb, var(--on-surface) 8%, transparent);
+		border-radius: 1.35rem;
+		background: #ffffff;
+		padding: 1rem 1.05rem 0.95rem;
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.72),
+			0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent),
+			0 12px 28px color-mix(in srgb, #1e293b 6%, transparent);
 		overflow: hidden;
+		transition:
+			transform 320ms cubic-bezier(0.32, 0.72, 0, 1),
+			border-color 320ms cubic-bezier(0.32, 0.72, 0, 1),
+			box-shadow 320ms cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	.dashboard-profit-card:hover {
+		border-color: color-mix(in srgb, var(--profit-accent) 28%, transparent);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.8),
+			0 1px 0 color-mix(in srgb, var(--profit-accent) 10%, transparent),
+			0 16px 34px color-mix(in srgb, #1e293b 8%, transparent);
+	}
+
+	@container profit (min-width: 70rem) {
+		.dashboard-profit-card:hover {
+			transform: translateY(-2px);
+		}
+	}
+
+	.dashboard-profit-card:active {
+		transform: translateY(0) scale(0.99);
 	}
 
 	.dashboard-profit-card__head {
 		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
+		align-items: center;
 		gap: 0.65rem;
-		padding-right: 0.15rem;
+		min-width: 0;
 	}
 
 	.dashboard-profit-icon {
@@ -4113,25 +4478,28 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		width: 1.85rem;
-		height: 1.85rem;
-		border-radius: 999px;
-		background: #ffffff;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 0.7rem;
+		background: var(--profit-accent-soft);
 		color: var(--profit-accent);
-		font-size: 1.05rem;
+		font-size: 1.1rem;
 		line-height: 1;
-		box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 4px 10px rgba(15, 23, 42, 0.05);
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card {
-		border: 1px solid color-mix(in srgb, var(--profit-accent) 22%, transparent);
-		background: color-mix(in srgb, var(--profit-accent) 14%, var(--surface-container-high, #222222));
-		box-shadow: none;
+		border: 1px solid rgba(255, 255, 255, 0.06);
+		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-card:hover {
+		border-color: color-mix(in srgb, var(--profit-accent) 32%, rgba(255, 255, 255, 0.08));
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 	}
 
 	html[data-theme='dark'] .dashboard-profit-icon {
-		background: var(--surface-container-highest, #282828);
-		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.28);
+		background: color-mix(in srgb, var(--profit-accent) 16%, #1f2126);
 	}
 
 	.dashboard-profit-card[data-profit-accent='emerald'] {
@@ -4159,74 +4527,34 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		--profit-accent-soft: rgba(21, 128, 61, 0.12);
 	}
 
-	.dashboard-profit-spark {
-		display: block;
-		width: 100%;
-		height: 28px;
-		margin-top: 0.35rem;
-		overflow: visible;
-	}
-
-	.dashboard-profit-spark__line {
-		stroke: var(--profit-accent);
-		stroke-width: 2;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-		opacity: 0.75;
-		stroke-dasharray: 200;
-		stroke-dashoffset: 200;
-		animation: dashboard-profit-spark-draw 1.4s cubic-bezier(0.22, 1, 0.36, 1) 220ms forwards;
-	}
-
-	.dashboard-profit-spark__area {
-		opacity: 0;
-		animation: dashboard-profit-spark-fill 900ms ease-out 900ms forwards;
-	}
-
-	.dashboard-profit-card[data-profit-accent='emerald'] .dashboard-profit-spark__line {
-		animation-delay: 220ms;
-	}
-	.dashboard-profit-card[data-profit-accent='violet'] .dashboard-profit-spark__line {
-		animation-delay: 320ms;
-	}
-	.dashboard-profit-card[data-profit-accent='brand'] .dashboard-profit-spark__line {
-		animation-delay: 420ms;
-	}
-	.dashboard-profit-card[data-profit-accent='amber'] .dashboard-profit-spark__line {
-		animation-delay: 520ms;
-	}
-
-	.dashboard-profit-card[data-profit-accent='emerald'] .dashboard-profit-spark__area {
-		animation-delay: 900ms;
-	}
-	.dashboard-profit-card[data-profit-accent='violet'] .dashboard-profit-spark__area {
-		animation-delay: 1000ms;
-	}
-	.dashboard-profit-card[data-profit-accent='brand'] .dashboard-profit-spark__area {
-		animation-delay: 1100ms;
-	}
-	.dashboard-profit-card[data-profit-accent='amber'] .dashboard-profit-spark__area {
-		animation-delay: 1200ms;
-	}
-
-	@keyframes dashboard-profit-spark-draw {
-		to {
-			stroke-dashoffset: 0;
-		}
-	}
-
-	@keyframes dashboard-profit-spark-fill {
-		to {
-			opacity: 1;
-		}
-	}
-
 	@media (prefers-reduced-motion: reduce) {
-		.dashboard-profit-spark__line,
-		.dashboard-profit-spark__area {
+		.dashboard-profit-card,
+		.dashboard-day-progress,
+		.dashboard-day-progress__head,
+		.dashboard-day-progress__split,
+		.dashboard-day-progress__metric--empty,
+		.dashboard-day-progress__island,
+		.dashboard-profit-viz__bar,
+		.dashboard-profit-viz__fill,
+		.dashboard-profit-viz__dot {
+			transition: none;
 			animation: none;
-			stroke-dashoffset: 0;
-			opacity: 1;
+		}
+
+		.dashboard-day-progress__slot.is-done::after {
+			animation: none;
+			transform: scaleX(1);
+		}
+
+		.dashboard-profit-viz__arc {
+			animation: none;
+			stroke-dasharray: var(--ring, 0) 100;
+		}
+
+		.dashboard-profit-card:hover,
+		.dashboard-profit-card:active,
+		.dashboard-day-progress:hover {
+			transform: none;
 		}
 	}
 
@@ -4242,63 +4570,270 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-profit-label {
 		margin: 0;
-		font-size: 0.74rem;
-		font-weight: 800;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: color-mix(in srgb, var(--on-surface-variant) 86%, #516b85 14%);
+		min-width: 0;
+		font-size: 0.92rem;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+		text-transform: none;
+		color: var(--on-surface);
+	}
+
+	.dashboard-profit-card__hero {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 0.7rem;
+		margin-top: 0.85rem;
+		min-width: 0;
 	}
 
 	.dashboard-profit-value {
-		margin: 0.3rem 0 0;
-		font-size: 1.7rem;
+		margin: 0;
+		min-width: 0;
+		font-size: 1.65rem;
 		font-weight: 800;
 		line-height: 1.05;
-		letter-spacing: -0.035em;
+		letter-spacing: -0.04em;
 		color: var(--on-surface);
 		font-variant-numeric: tabular-nums lining-nums;
 	}
 
-	.dashboard-profit-hint {
-		margin: 0.2rem 0 0;
-		display: inline-flex;
-		align-items: center;
-		gap: 0.2rem;
-		font-size: 0.78rem;
-		font-weight: 600;
-		color: color-mix(in srgb, var(--on-surface-variant) 72%, var(--on-surface) 28%);
+	.dashboard-profit-viz {
+		flex: 0 0 auto;
+		display: block;
 	}
 
-	html[data-theme='dark'] .dashboard-profit-hint {
+	.dashboard-profit-viz--bars {
+		display: flex;
+		align-items: stretch;
+		gap: 0.28rem;
+		width: 2.15rem;
+		height: 2.55rem;
+	}
+
+	.dashboard-profit-viz__col {
+		display: flex;
+		align-items: flex-end;
+		flex: 1 1 0;
+		min-width: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--profit-accent) 12%, transparent);
+		overflow: hidden;
+	}
+
+	.dashboard-profit-viz__bar {
+		display: block;
+		width: 100%;
+		height: 100%;
+		border-radius: inherit;
+		background: color-mix(in srgb, var(--profit-accent) 42%, #94a3b8 58%);
+		transform: scaleY(0.1);
+		transform-origin: bottom center;
+		transition: transform 720ms cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	.dashboard-profit-viz__bar.is-now {
+		background: var(--profit-accent);
+	}
+
+	.dashboard-profit-viz--ring {
+		width: 2.55rem;
+		height: 2.55rem;
+		transform: rotate(-90deg);
+	}
+
+	.dashboard-profit-viz__track,
+	.dashboard-profit-viz__arc {
+		fill: none;
+		stroke-width: 4.4;
+		stroke-linecap: round;
+	}
+
+	.dashboard-profit-viz__track {
+		stroke: color-mix(in srgb, var(--profit-accent) 16%, transparent);
+	}
+
+	.dashboard-profit-viz__arc {
+		stroke: var(--profit-accent);
+		stroke-dasharray: 0 100;
+		animation: dashboard-profit-ring-in 800ms cubic-bezier(0.32, 0.72, 0, 1) 120ms forwards;
+	}
+
+	.dashboard-profitability-shell.is-ready .dashboard-profit-viz__arc {
+		stroke-dasharray: var(--ring, 0) 100;
+	}
+
+	@keyframes dashboard-profit-ring-in {
+		to {
+			stroke-dasharray: var(--ring, 0) 100;
+		}
+	}
+
+	.dashboard-profit-viz--pipe {
+		display: flex;
+		align-items: center;
+		width: 4.4rem;
+		height: 2.55rem;
+	}
+
+	.dashboard-profit-viz__pipe {
+		position: relative;
+		display: block;
+		width: 100%;
+		height: 0.55rem;
+		overflow: hidden;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--profit-accent) 16%, transparent);
+	}
+
+	.dashboard-profit-viz__fill {
+		position: absolute;
+		inset: 0;
+		border-radius: inherit;
+		background: var(--profit-accent);
+		transform: scaleX(0.08);
+		transform-origin: left center;
+		transition: transform 720ms cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	.dashboard-profit-viz--dots {
+		display: grid;
+		grid-template-columns: repeat(4, 0.42rem);
+		grid-template-rows: repeat(2, 0.42rem);
+		gap: 0.28rem;
+		align-content: center;
+		height: 2.55rem;
+	}
+
+	.dashboard-profit-viz__dot {
+		width: 0.42rem;
+		height: 0.42rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--profit-accent) 18%, transparent);
+		transform: scale(0.86);
+		transition:
+			background-color 420ms cubic-bezier(0.32, 0.72, 0, 1),
+			transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	.dashboard-profit-viz__dot.is-filled {
+		background: var(--profit-accent);
+		transform: scale(1);
+	}
+
+	.dashboard-profit-caption {
+		margin: 0.9rem 0 0;
+		padding: 0.75rem 0 0;
+		border-top: 1px solid color-mix(in srgb, var(--on-surface) 8%, transparent);
+		font-size: 0.74rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, var(--on-surface) 20%);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-caption {
+		border-top-color: rgba(255, 255, 255, 0.07);
 		color: color-mix(in srgb, var(--on-surface-variant) 42%, #e8eaed 58%);
 	}
 
-	.dashboard-profit-hint__arrow {
-		font-size: 0.95rem;
+	.dashboard-profitability-shell.is-loading .dashboard-profit-viz {
+		opacity: 0.35;
+	}
+
+	html[data-theme='dark'] .dashboard-profit-viz__col,
+	html[data-theme='dark'] .dashboard-profit-viz__pipe {
+		background: color-mix(in srgb, var(--profit-accent) 22%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-viz__track {
+		stroke: color-mix(in srgb, var(--profit-accent) 28%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-viz__dot:not(.is-filled) {
+		background: color-mix(in srgb, var(--profit-accent) 28%, transparent);
+	}
+
+	.dashboard-profit-stats {
+		display: grid;
+		gap: 0.42rem;
+		margin: 0.9rem 0 0;
+		padding: 0.75rem 0 0;
+		list-style: none;
+		border-top: 1px solid color-mix(in srgb, var(--on-surface) 8%, transparent);
+	}
+
+	.dashboard-profit-stat {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.65rem;
+		min-width: 0;
+	}
+
+	.dashboard-profit-stat__label {
+		min-width: 0;
+		font-size: 0.74rem;
+		font-weight: 600;
+		color: color-mix(in srgb, var(--on-surface-variant) 80%, var(--on-surface) 20%);
+	}
+
+	.dashboard-profit-stat__value {
+		display: inline-flex;
+		align-items: center;
+		justify-content: flex-end;
+		gap: 0.3rem;
+		min-width: 0;
+		font-size: 0.78rem;
+		font-weight: 750;
+		letter-spacing: -0.015em;
+		text-align: right;
+		color: var(--on-surface);
+		font-variant-numeric: tabular-nums lining-nums;
+	}
+
+	.dashboard-profit-stat__delta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.05rem;
+		font-size: 0.68rem;
+		font-weight: 750;
+		color: color-mix(in srgb, var(--on-surface-variant) 78%, #94a3b8 22%);
+	}
+
+	.dashboard-profit-stat__delta.is-up {
+		color: #15803d;
+	}
+
+	.dashboard-profit-stat__delta.is-down {
+		color: #b42318;
+	}
+
+	.dashboard-profit-stat__arrow {
+		font-size: 0.85rem;
 		line-height: 1;
 	}
 
-	.dashboard-profit-hint--up {
-		color: color-mix(in srgb, #15803d 72%, var(--on-surface-variant) 28%);
+	html[data-theme='dark'] .dashboard-profit-stats {
+		border-top-color: rgba(255, 255, 255, 0.07);
 	}
 
-	.dashboard-profit-hint--down {
-		color: color-mix(in srgb, var(--on-surface-variant) 78%, #94a3b8 22%);
+	html[data-theme='dark'] .dashboard-profit-stat__label {
+		color: color-mix(in srgb, var(--on-surface-variant) 42%, #e8eaed 58%);
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card[data-profit-accent='emerald'] {
 		--profit-accent: #34d399;
-		--profit-accent-soft: rgba(52, 211, 153, 0.16);
+		--profit-accent-soft: rgba(52, 211, 153, 0.14);
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card[data-profit-accent='violet'] {
 		--profit-accent: #c4b5fd;
-		--profit-accent-soft: rgba(196, 181, 253, 0.16);
+		--profit-accent-soft: rgba(196, 181, 253, 0.14);
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card[data-profit-accent='brand'] {
 		--profit-accent: #8bb0ff;
-		--profit-accent-soft: rgba(66, 110, 219, 0.18);
+		--profit-accent-soft: rgba(66, 110, 219, 0.16);
 	}
 
 	html[data-theme='dark'] .dashboard-profit-card[data-profit-accent='amber'] {
@@ -4308,7 +4843,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	html[data-theme='dark'] .dashboard-profit-card[data-profit-accent='green'] {
 		--profit-accent: #86efac;
-		--profit-accent-soft: rgba(134, 239, 172, 0.16);
+		--profit-accent-soft: rgba(134, 239, 172, 0.14);
+	}
+
+	html[data-theme='dark'] .dashboard-profit-stat__delta.is-up {
+		color: #86efac;
+	}
+
+	html[data-theme='dark'] .dashboard-profit-stat__delta.is-down {
+		color: #f5a8a2;
 	}
 
 	html[data-theme='dark'] .dashboard-premium-badge {
@@ -4320,45 +4863,93 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		color: #e8c56b;
 	}
 
-	html[data-theme='dark'] .dashboard-profit-hint--up {
-		color: color-mix(in srgb, #86efac 55%, var(--on-surface-variant) 45%);
-	}
-
-	html[data-theme='dark'] .dashboard-profit-hint--down {
-		color: color-mix(in srgb, var(--on-surface-variant) 70%, #94a3b8 30%);
-	}
-
 	.dashboard-report-list {
-		display: grid;
-		grid-template-columns: 1fr;
-		gap: 0.85rem;
+		display: flex;
+		flex-direction: column;
 		width: 100%;
 		max-width: 100%;
+		padding: 0.3rem;
+		border-radius: 1.15rem;
+		background: color-mix(in srgb, var(--on-surface) 4%, #f4f6f8);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+	}
+
+	html[data-theme='dark'] .dashboard-report-list {
+		background: color-mix(in srgb, #121318 78%, #000 22%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 	}
 
 	.dashboard-report-shell {
-		border: 0;
+		border: 1px solid color-mix(in srgb, var(--on-surface) 8%, transparent);
 		background: #ffffff;
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 6px 16px rgba(15, 23, 42, 0.04);
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.72),
+			0 1px 0 color-mix(in srgb, var(--on-surface) 4%, transparent),
+			0 12px 28px color-mix(in srgb, #1e293b 6%, transparent);
 		scroll-margin-top: 0.75rem;
 	}
 
 	html[data-theme='dark'] .dashboard-report-shell {
-		background: var(--surface-container-high, #222222);
-		border: 0;
-		box-shadow: none;
+		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+		border: 1px solid rgba(255, 255, 255, 0.06);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
 	}
 
 	.dashboard-report-card {
+		display: grid;
+		grid-template-columns: auto minmax(0, 1fr) auto;
+		align-items: center;
+		gap: 0.85rem 0.9rem;
+		min-width: 0;
+		padding: 0.85rem 0.8rem;
+		border: 0;
+		border-radius: 0.95rem;
+		background: transparent;
+		box-shadow: none;
+		transition: background-color 280ms cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	.dashboard-report-card + .dashboard-report-card {
+		box-shadow: inset 0 1px 0 color-mix(in srgb, var(--on-surface) 8%, transparent);
+	}
+
+	.dashboard-report-card:hover {
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+	}
+
+	.dashboard-report-time {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
-		min-width: 0;
-		padding: 0.95rem 1rem;
-		border-radius: 1rem;
-		border: 0;
-		background: #f4f6f8;
-		box-shadow: none;
+		align-items: flex-start;
+		justify-content: center;
+		gap: 0.12rem;
+		min-width: 3.4rem;
+		padding-left: 0.55rem;
+		border-left: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+	}
+
+	.dashboard-report-card.is-pending .dashboard-report-time {
+		border-left-color: color-mix(in srgb, #d97706 70%, transparent);
+	}
+
+	.dashboard-report-card.is-canceled .dashboard-report-time {
+		border-left-color: color-mix(in srgb, #b42318 55%, transparent);
+	}
+
+	.dashboard-report-time__hour {
+		font-size: 0.98rem;
+		font-weight: 800;
+		letter-spacing: -0.03em;
+		line-height: 1;
+		font-variant-numeric: tabular-nums lining-nums;
+		color: var(--on-surface);
+	}
+
+	.dashboard-report-time__day {
+		font-size: 0.68rem;
+		font-weight: 650;
+		letter-spacing: 0.01em;
+		color: var(--on-surface-variant);
 	}
 
 	.dashboard-appointments-subtitle {
@@ -4405,50 +4996,18 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		background: color-mix(in srgb, var(--primary) 22%, transparent);
 	}
 
-	.dashboard-report-row {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 0.65rem;
-		min-width: 0;
-	}
-
-	.dashboard-report-identity {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.7rem;
-		min-width: 0;
-		flex: 1 1 0;
-	}
-
-	.dashboard-report-avatar {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		flex-shrink: 0;
-		width: 2.25rem;
-		height: 2.25rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--primary) 12%, #e8eefc 88%);
-		color: color-mix(in srgb, var(--primary) 78%, #1e3a8a 22%);
-		font-size: 0.72rem;
-		font-weight: 800;
-		letter-spacing: 0.04em;
-		line-height: 1;
-	}
-
 	.dashboard-report-main {
 		min-width: 0;
-		flex: 1 1 auto;
 		display: grid;
-		gap: 0.2rem;
+		gap: 0.12rem;
 	}
 
 	.dashboard-report-title {
 		margin: 0;
-		font-size: 0.95rem;
-		font-weight: 600;
-		line-height: 1.35;
+		font-size: 0.94rem;
+		font-weight: 700;
+		letter-spacing: -0.015em;
+		line-height: 1.3;
 		color: #202124;
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -4457,19 +5016,22 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-report-meta {
 		margin: 0;
-		font-size: 0.8rem;
-		font-weight: 500;
-		line-height: 1.35;
+		font-size: 0.72rem;
+		font-weight: 600;
+		line-height: 1.3;
 		color: #80868b;
+		font-variant-numeric: tabular-nums;
 	}
 
 	.dashboard-report-service {
 		margin: 0;
-		font-size: 0.88rem;
+		font-size: 0.8rem;
 		font-weight: 600;
-		line-height: 1.4;
-		color: #202124;
-		word-break: break-word;
+		line-height: 1.35;
+		color: color-mix(in srgb, var(--on-surface) 72%, #5f6368 28%);
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.dashboard-report-status {
@@ -4477,15 +5039,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		align-self: flex-start;
+		align-self: center;
 		white-space: nowrap;
 		border-radius: 999px;
 		border: 0;
-		padding: 0.22rem 0.5rem;
-		font-size: 0.6rem;
-		font-weight: 800;
-		letter-spacing: 0.04em;
-		text-transform: uppercase;
+		padding: 0.22rem 0.55rem;
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0;
+		text-transform: none;
 		box-shadow: none;
 	}
 
@@ -4515,8 +5077,20 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	html[data-theme='dark'] .dashboard-report-card {
 		border: 0;
-		background: #121214;
+		background: transparent;
 		box-shadow: none;
+	}
+
+	html[data-theme='dark'] .dashboard-report-card + .dashboard-report-card {
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] .dashboard-report-card:hover {
+		background: rgba(255, 255, 255, 0.04);
+	}
+
+	html[data-theme='dark'] .dashboard-report-time__hour {
+		color: var(--on-surface, #e3e3e3);
 	}
 
 	html[data-theme='dark'] .dashboard-report-title {
@@ -4529,11 +5103,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	html[data-theme='dark'] .dashboard-report-service {
 		color: var(--on-surface, #e3e3e3);
-	}
-
-	html[data-theme='dark'] .dashboard-report-avatar {
-		background: color-mix(in srgb, var(--primary) 22%, transparent);
-		color: color-mix(in srgb, var(--primary) 70%, white 30%);
 	}
 
 	html[data-theme='dark'] .dashboard-report-status {
@@ -4567,7 +5136,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	@media (min-width: 640px) {
 		.dashboard-report-card {
-			padding: 1rem 1.1rem;
+			padding: 0.9rem 0.85rem;
 		}
 
 		.dashboard-report-title {
@@ -4621,30 +5190,61 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			flex: 0 0 min(88%, 16.5rem);
 		}
 
+		.dashboard-profit-card__hero {
+			gap: 0.5rem;
+		}
+
 		.dashboard-profit-value {
 			font-size: clamp(1.15rem, 5.2vw, 1.45rem);
 			overflow-wrap: anywhere;
 			word-break: break-word;
 		}
 
+		.dashboard-profit-viz--pipe {
+			width: 3.6rem;
+		}
+
 		.dashboard-profit-label {
-			font-size: 0.68rem;
-			letter-spacing: 0.04em;
+			font-size: 0.86rem;
+			letter-spacing: -0.01em;
 			line-height: 1.25;
 			min-width: 0;
 		}
 
 		.dashboard-day-progress {
 			min-height: 0;
-			padding: 1.2rem 1.15rem;
+			padding: 0.24rem;
+		}
+
+		.dashboard-day-progress__inner {
+			padding: 0.75rem 0.8rem;
+			gap: 0.8rem;
+		}
+
+		.dashboard-day-progress__island {
+			padding: 0.58rem 0.65rem 0.55rem;
+		}
+
+		.dashboard-day-progress__split {
+			grid-template-columns: 1fr;
+			gap: 0.95rem;
+		}
+
+		.dashboard-day-progress__rail {
+			max-width: none;
 		}
 
 		.dashboard-day-progress__metric {
-			font-size: clamp(1.75rem, 8vw, 2.2rem);
+			font-size: clamp(2.15rem, 11vw, 2.7rem);
 		}
 
 		.dashboard-day-progress__metric--empty {
 			font-size: clamp(1rem, 4.2vw, 1.15rem);
+		}
+
+		.dashboard-day-progress__hint {
+			text-align: left;
+			max-width: none;
 		}
 
 		.dashboard-week-glance {
@@ -4673,22 +5273,21 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			font-size: 0.72rem;
 		}
 
-		.dashboard-report-row {
-			flex-wrap: wrap;
-			align-items: center;
-			gap: 0.4rem 0.55rem;
-		}
-
-		.dashboard-report-identity {
-			flex: 1 1 auto;
-			min-width: 0;
+		.dashboard-report-card {
+			grid-template-columns: auto minmax(0, 1fr);
+			gap: 0.55rem 0.7rem;
+			padding: 0.75rem 0.65rem;
 		}
 
 		.dashboard-report-status {
-			flex: 0 0 auto;
-			padding: 0.18rem 0.45rem;
-			font-size: 0.56rem;
-			letter-spacing: 0.03em;
+			grid-column: 2;
+			justify-self: start;
+			padding: 0.16rem 0.45rem;
+			font-size: 0.66rem;
+		}
+
+		.dashboard-report-meta {
+			display: none;
 		}
 
 		.dashboard-report-title {
@@ -4727,7 +5326,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		}
 
 		.dashboard-day-progress {
-			padding: 1.05rem 0.95rem;
+			padding: 0.22rem;
+		}
+
+		.dashboard-day-progress__inner {
+			padding: 0.7rem 0.72rem;
+		}
+
+		.dashboard-day-progress__island {
+			padding: 0.5rem 0.58rem;
 		}
 	}
 
@@ -4892,9 +5499,9 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-ai-loading-icon,
 		.dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after,
 		.dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
-		.dashboard-profitability-shell.is-loading [data-profit-mom],
+		.dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static),
 		.dashboard-profitability-shell.is-ready .dashboard-profit-value:not(.dashboard-profit-value--static),
-		.dashboard-profitability-shell.is-ready [data-profit-mom] {
+		.dashboard-profitability-shell.is-ready .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
 			animation: none;
 		}
 
@@ -4918,7 +5525,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	html[data-page-hidden] .dashboard-ai-loading-icon,
 	html[data-page-hidden] .dashboard-ai-card.is-generating .dashboard-ai-skeleton-line::after,
 	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-value:not(.dashboard-profit-value--static),
-	html[data-page-hidden] .dashboard-profitability-shell.is-loading [data-profit-mom] {
+	html[data-page-hidden] .dashboard-profitability-shell.is-loading .dashboard-profit-stat__value:not(.dashboard-profit-value--static) {
 		animation-play-state: paused !important;
 	}
 </style>

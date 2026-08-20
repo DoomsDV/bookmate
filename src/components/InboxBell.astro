@@ -22,9 +22,14 @@
 				<p class="inbox-panel__title">Notificaciones</p>
 				<p class="inbox-panel__subtitle">Reservas, cobros y avisos del sistema</p>
 			</div>
-			<button type="button" class="inbox-panel__mark-all" data-inbox-mark-all hidden>
-				Marcar todas como leídas
-			</button>
+			<div class="inbox-panel__actions">
+				<button type="button" class="inbox-panel__mark-all" data-inbox-mark-all hidden>
+					Marcar todas como leídas
+				</button>
+				<button type="button" class="inbox-panel__dismiss-all" data-inbox-dismiss-all hidden>
+					Borrar todas
+				</button>
+			</div>
 		</div>
 		<div class="inbox-panel__scroll">
 			<p class="inbox-panel__empty" data-inbox-empty>
@@ -42,9 +47,14 @@
 			<p class="inbox-panel__title">Notificaciones</p>
 			<p class="inbox-panel__subtitle">Reservas, cobros y avisos del sistema</p>
 		</div>
-		<button type="button" class="inbox-panel__mark-all" data-inbox-mark-all hidden>
-			Marcar todas como leídas
-		</button>
+		<div class="inbox-panel__actions">
+			<button type="button" class="inbox-panel__mark-all" data-inbox-mark-all hidden>
+				Marcar todas como leídas
+			</button>
+			<button type="button" class="inbox-panel__dismiss-all" data-inbox-dismiss-all hidden>
+				Borrar todas
+			</button>
+		</div>
 	</div>
 	<div class="inbox-panel__scroll">
 		<p class="inbox-panel__empty" data-inbox-empty>
@@ -156,8 +166,16 @@
 		color: var(--on-surface-variant);
 	}
 
-	.inbox-panel__mark-all {
+	.inbox-panel__actions {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		gap: 0.35rem;
 		flex-shrink: 0;
+	}
+
+	.inbox-panel__mark-all,
+	.inbox-panel__dismiss-all {
 		border: 0;
 		background: transparent;
 		padding: 0;
@@ -165,6 +183,10 @@
 		font-weight: 700;
 		color: var(--primary);
 		cursor: pointer;
+	}
+
+	.inbox-panel__dismiss-all {
+		color: var(--on-surface-variant);
 	}
 
 	.inbox-panel__scroll {
@@ -203,15 +225,11 @@
 
 	.inbox-item {
 		display: flex;
-		align-items: flex-start;
-		gap: 0.7rem;
+		align-items: stretch;
+		gap: 0.15rem;
 		width: 100%;
-		border: 0;
 		border-radius: 1rem;
 		background: transparent;
-		padding: 0.7rem 0.65rem;
-		text-align: left;
-		cursor: pointer;
 		color: inherit;
 	}
 
@@ -221,6 +239,46 @@
 
 	.inbox-item.is-unread {
 		background: color-mix(in srgb, var(--primary) 10%, transparent);
+	}
+
+	.inbox-item__open {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.7rem;
+		flex: 1;
+		min-width: 0;
+		border: 0;
+		background: transparent;
+		padding: 0.7rem 0.35rem 0.7rem 0.65rem;
+		text-align: left;
+		cursor: pointer;
+		color: inherit;
+	}
+
+	.inbox-item__dismiss {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		align-self: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		margin-right: 0.15rem;
+		border: 0;
+		border-radius: 0.75rem;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+	}
+
+	.inbox-item__dismiss .material-symbols-rounded {
+		font-size: 1.05rem;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+	}
+
+	.inbox-item__dismiss:hover {
+		background: color-mix(in srgb, var(--on-surface) 8%, transparent);
+		color: var(--on-surface);
 	}
 
 	.inbox-item__icon {
