@@ -45,9 +45,8 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 								) : (
 									<div
 										class:list={[
-											'grid',
 											isProfessional
-												? 'gap-3 schedule-page-header--professional'
+												? 'grid gap-3 schedule-page-header--professional'
 												: 'schedule-page-header--owner',
 										]}
 										data-schedule-page-header
@@ -615,7 +614,9 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	.schedule-page-header--owner {
-		gap: 0;
+		--schedule-chrome: var(--sidebar-surface, var(--page-background, #fefdfc));
+		--schedule-chrome-ease: cubic-bezier(0.32, 0.72, 0, 1);
+		display: block;
 	}
 
 	.schedule-page-header--owner .schedule-page-header__tabs-row {
@@ -626,16 +627,9 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		min-width: 0;
 	}
 
-	/* Un solo plano con el TopBar: mismo tono, full-bleed, sin costura. */
+	/* display:contents: si el chrome genera caja, sticky queda preso y se va al scrollear. */
 	.schedule-page-chrome {
-		--schedule-chrome: var(--sidebar-surface, var(--page-background, #fefdfc));
-		--schedule-chrome-ease: cubic-bezier(0.32, 0.72, 0, 1);
-		display: grid;
-		gap: 0;
-		width: auto;
-		margin-inline: -1rem;
-		margin-top: -1px;
-		background-color: var(--schedule-chrome);
+		display: contents;
 	}
 
 	.schedule-page-chrome__sentinel {
@@ -650,8 +644,9 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		/* Desktop: el scroll es el main (TopBar queda fuera). */
 		top: 0;
 		z-index: 30;
-		width: auto;
-		margin: 0;
+		box-sizing: border-box;
+		width: calc(100% + 2rem);
+		margin: -1px -1rem 0;
 		padding: 0.85rem 1rem 1rem;
 		overflow: visible;
 		background-color: var(--schedule-chrome);
@@ -675,11 +670,9 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 	}
 
 	@media (min-width: 640px) {
-		.schedule-page-chrome {
-			margin-inline: -1.5rem;
-		}
-
 		.schedule-page-header__sticky-bar {
+			width: calc(100% + 3rem);
+			margin-inline: -1.5rem;
 			padding-inline: 1.5rem;
 		}
 	}
@@ -705,7 +698,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		);
 	}
 
-	html[data-theme='dark'] .schedule-page-chrome {
+	html[data-theme='dark'] .schedule-page-header--owner {
 		--schedule-chrome: var(--sidebar-surface, #121214);
 	}
 
@@ -1137,7 +1130,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.55rem 0.7rem;
-		margin: 0 0 0.95rem;
+		margin: 1.15rem 0 0.95rem;
 		font-size: 0.82rem;
 		font-weight: 600;
 		letter-spacing: -0.01em;
@@ -1826,6 +1819,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	@media (max-width: 639px) {
 		.schedule-week-kicker {
+			margin-top: 1rem;
 			margin-bottom: 0.55rem;
 		}
 

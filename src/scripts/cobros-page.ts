@@ -40,6 +40,18 @@ const formatDateTimeParts = (d: Date, timeZone?: string) =>
 		...(timeZone ? { timeZone } : {}),
 	}).format(d);
 
+const cobroSortMs = (item: CobroItem) => {
+	const raw = String(item.start_time || item.created_at || '').trim();
+	if (!raw) return 0;
+	const hasOffset = /([zZ]|[+-]\d{2}:?\d{2})$/.test(raw);
+	if (hasOffset) {
+		const instant = new Date(raw);
+		return Number.isNaN(instant.getTime()) ? 0 : instant.getTime();
+	}
+	const wall = parseApiDateTime(raw);
+	return wall ? wall.getTime() : 0;
+};
+
 /** start_time = hora de pared; created_at (…Z) = instante → Asunción. */
 const formatDateTime = (value?: string | null) => {
 	if (!value) return '—';
@@ -159,6 +171,7 @@ export const initCobrosPage = () => {
 	let loadRequestId = 0;
 	let page = 1;
 	let totalRecords = 0;
+	let sortDir: 'asc' | 'desc' = 'desc';
 	let activeDateField: 'from' | 'to' | null = null;
 	let datePickerAnchor: HTMLElement | null = null;
 	let pickerViewDate = new Date();
@@ -475,6 +488,23 @@ export const initCobrosPage = () => {
 		}
 	};
 
+	const syncSortButtons = () => {
+		root.querySelectorAll<HTMLButtonElement>('[data-cobros-sort]').forEach((btn) => {
+			const active = btn.dataset.cobrosSort === sortDir;
+			btn.classList.toggle('is-active', active);
+			btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+		});
+	};
+
+	const applySortDir = (next: 'asc' | 'desc') => {
+		if (next !== 'asc' && next !== 'desc') return;
+		if (next === sortDir) return;
+		sortDir = next;
+		page = 1;
+		syncSortButtons();
+		void load();
+	};
+
 	const applyStatusOption = (next: CobrosStatusFilter) => {
 		statusFilter = next;
 		datePreset = 'all';
@@ -709,7 +739,12 @@ export const initCobrosPage = () => {
 		tableBody.replaceChildren();
 		cardsEl.replaceChildren();
 
-		for (const item of items) {
+		const visibleItems = [...items].sort((a, b) => {
+			const delta = cobroSortMs(a) - cobroSortMs(b);
+			return sortDir === 'asc' ? delta : -delta;
+		});
+
+		for (const item of visibleItems) {
 			const tr = document.createElement('tr');
 			tr.className = 'border-b border-(--shell-border)/70';
 			tr.innerHTML = `
@@ -784,6 +819,7 @@ export const initCobrosPage = () => {
 				date_preset: datePreset,
 				page: String(page),
 				limit: String(PAGE_SIZE),
+				sort_dir: sortDir,
 			});
 			if (datePreset === 'custom') {
 				if (dateFromEl?.value) params.set('date_from', dateFromEl.value);
@@ -961,6 +997,12 @@ export const initCobrosPage = () => {
 	root.querySelectorAll<HTMLButtonElement>('[data-cobros-tab]').forEach((btn) => {
 		btn.addEventListener('click', () => {
 			applyStatusOption((btn.dataset.cobrosTab || 'all') as CobrosStatusFilter);
+		});
+	});
+
+	root.querySelectorAll<HTMLButtonElement>('[data-cobros-sort]').forEach((btn) => {
+		btn.addEventListener('click', () => {
+			applySortDir(btn.dataset.cobrosSort === 'asc' ? 'asc' : 'desc');
 		});
 	});
 

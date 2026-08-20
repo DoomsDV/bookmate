@@ -109,7 +109,33 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 												<table class="w-full min-w-[44rem] border-collapse text-left text-[0.92rem]">
 													<thead>
 														<tr class="border-b border-(--shell-border) text-[0.78rem] uppercase tracking-wide text-(--on-surface-variant)">
-															<th class="px-4 py-3 font-bold">Fecha / Hora</th>
+															<th class="px-4 py-3 font-bold">
+																<div class="cobros-th-date">
+																	<span>Fecha / Hora</span>
+																	<span class="cobros-sort" role="group" aria-label="Ordenar por fecha y hora">
+																		<button
+																			type="button"
+																			class="cobros-sort__btn"
+																			data-cobros-sort="asc"
+																			aria-pressed="false"
+																			aria-label="Más antiguos primero"
+																			title="Más antiguos primero"
+																		>
+																			<span class="material-symbols-rounded" aria-hidden="true">keyboard_arrow_up</span>
+																		</button>
+																		<button
+																			type="button"
+																			class="cobros-sort__btn is-active"
+																			data-cobros-sort="desc"
+																			aria-pressed="true"
+																			aria-label="Más recientes primero"
+																			title="Más recientes primero"
+																		>
+																			<span class="material-symbols-rounded" aria-hidden="true">keyboard_arrow_down</span>
+																		</button>
+																	</span>
+																</div>
+															</th>
 															<th class="px-4 py-3 font-bold">Cliente</th>
 															<th class="px-4 py-3 font-bold">Servicio</th>
 															<th class="px-4 py-3 font-bold">Monto</th>
@@ -576,6 +602,65 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		color: var(--on-surface);
 		outline: none;
 	}
+	.cobros-th-date {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+	}
+
+	.cobros-sort {
+		display: inline-flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0;
+		margin: -0.15rem 0;
+	}
+
+	.cobros-sort__btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.35rem;
+		height: 0.95rem;
+		padding: 0;
+		border: 0;
+		border-radius: 0.35rem;
+		background: transparent;
+		color: color-mix(in srgb, var(--on-surface-variant) 72%, transparent);
+		cursor: pointer;
+		transition:
+			color 420ms cubic-bezier(0.32, 0.72, 0, 1),
+			background-color 420ms cubic-bezier(0.32, 0.72, 0, 1),
+			transform 420ms cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	.cobros-sort__btn .material-symbols-rounded {
+		font-size: 1.05rem;
+		line-height: 1;
+		font-variation-settings: 'wght' 500, 'opsz' 20;
+		pointer-events: none;
+	}
+
+	.cobros-sort__btn:hover {
+		color: var(--on-surface);
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+	}
+
+	.cobros-sort__btn:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 55%, transparent);
+		outline-offset: 1px;
+	}
+
+	.cobros-sort__btn.is-active {
+		color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+	}
+
+	.cobros-sort__btn:active {
+		transform: scale(0.94);
+	}
+
 	[data-cobros-table-wrap].is-empty,
 	[data-cobros-cards].hidden,
 	[data-cobros-results].hidden,

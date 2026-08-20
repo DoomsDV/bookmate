@@ -1,4 +1,5 @@
 ---
+import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 import { getProfessionalDisplayName, isProfessionalAccountActive, type Professional } from '../lib/professionals';
 
 interface Props {
@@ -34,6 +35,13 @@ const toSpecialtyName = (professional: Professional) => {
 
 const toProfileImageUrl = (professional: Professional) => {
 	return String(professional.profile_image_url || '').trim();
+};
+
+const toPhoneLabel = (value?: string | null) => {
+	const raw = String(value || '').trim();
+	if (!raw) return '—';
+	const parsed = parseParaguayMobilePhone(raw);
+	return parsed.isValid ? parsed.pretty : raw;
 };
 
 const cardItems = professionals.map((professional) => ({
@@ -88,40 +96,39 @@ const cardItems = professionals.map((professional) => ({
 		</button>
 	)}
 
-	<div class="flex max-w-xl items-center gap-2">
-		<div class="relative min-w-0 flex-1" data-panel-search>
-			<span
-				class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--on-surface-variant)"
-				aria-hidden="true"
-			>
-				<span class="material-symbols-rounded text-[1.2rem]">search</span>
-			</span>
-			<input
-				type="text"
-				inputmode="search"
-				enterkeyhint="search"
-				data-professionals-search
-				placeholder="Buscar por nombre, email o teléfono"
-				aria-label="Buscar por nombre, email o teléfono"
-				autocomplete="off"
-				value={searchQuery}
-				class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-11 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
-			/>
-			<button
-				type="button"
-				class="panel-search-clear"
-				data-panel-search-clear
-				hidden={String(searchQuery || '').length === 0}
-				aria-label="Limpiar búsqueda"
-			>
-				<span class="material-symbols-rounded" aria-hidden="true">close</span>
-			</button>
+	<div class="professionals-search">
+		<div class="professionals-search__well" data-panel-search>
+			<div class="professionals-search__core">
+				<span class="professionals-search__icon" aria-hidden="true">
+					<span class="material-symbols-rounded">search</span>
+				</span>
+				<input
+					type="text"
+					inputmode="search"
+					enterkeyhint="search"
+					data-professionals-search
+					placeholder="Buscar por nombre, email o teléfono"
+					aria-label="Buscar por nombre, email o teléfono"
+					autocomplete="off"
+					value={searchQuery}
+					class="professionals-search__input"
+				/>
+				<button
+					type="button"
+					class="panel-search-clear professionals-search__clear"
+					data-panel-search-clear
+					hidden={String(searchQuery || '').length === 0}
+					aria-label="Limpiar búsqueda"
+				>
+					<span class="material-symbols-rounded" aria-hidden="true">close</span>
+				</button>
+			</div>
 		</div>
 
 		<button
 			type="button"
 			class:list={[
-				'panel-status-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10',
+				'professionals-search__filter panel-status-filter-btn',
 				hasStatusFilter && 'is-active',
 			]}
 			data-open-professionals-status-filter
@@ -130,7 +137,9 @@ const cardItems = professionals.map((professional) => ({
 			aria-controls="professionals-status-filter-sheet"
 			aria-pressed={hasStatusFilter ? 'true' : 'false'}
 		>
-			<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
+			<span class="professionals-search__filter-icon" aria-hidden="true">
+				<span class="material-symbols-rounded">tune</span>
+			</span>
 			{hasStatusFilter && (
 				<span class="panel-status-filter-badge" data-professionals-status-filter-badge aria-hidden="true"></span>
 			)}
@@ -301,7 +310,7 @@ const cardItems = professionals.map((professional) => ({
 								{toSpecialtyName(item.professional)}
 							</span>
 							<span class="professionals-card__phone">
-								{item.professional.phone_number || '—'}
+								{toPhoneLabel(item.professional.phone_number)}
 							</span>
 						</div>
 					</div>
@@ -321,6 +330,195 @@ const cardItems = professionals.map((professional) => ({
 	@media (min-width: 1024px) {
 		.professionals-view {
 			gap: 1.2rem;
+		}
+	}
+
+	.professionals-search {
+		--pros-search-ease: cubic-bezier(0.32, 0.72, 0, 1);
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		max-width: 36rem;
+		width: 100%;
+	}
+
+	.professionals-search__well {
+		position: relative;
+		min-width: 0;
+		flex: 1 1 auto;
+		padding: 0.28rem;
+		border-radius: 1.35rem;
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 7%, transparent);
+		transition:
+			box-shadow 520ms var(--pros-search-ease),
+			background-color 520ms var(--pros-search-ease),
+			transform 520ms var(--pros-search-ease);
+	}
+
+	.professionals-search__core {
+		position: relative;
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		min-width: 0;
+		padding: 0.22rem 0.28rem 0.22rem 0.22rem;
+		border-radius: calc(1.35rem - 0.28rem);
+		background: var(--surface-bright);
+		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 55%, transparent);
+	}
+
+	.professionals-search__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.05rem;
+		height: 2.05rem;
+		flex-shrink: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 5.5%, transparent);
+		color: var(--on-surface-variant);
+		transition:
+			transform 520ms var(--pros-search-ease),
+			color 520ms var(--pros-search-ease),
+			background-color 520ms var(--pros-search-ease);
+	}
+
+	.professionals-search__icon .material-symbols-rounded {
+		font-size: 1.15rem;
+		line-height: 1;
+		font-variation-settings: 'wght' 380, 'opsz' 20;
+	}
+
+	.professionals-search__input {
+		min-width: 0;
+		flex: 1 1 auto;
+		height: 2.15rem;
+		margin: 0;
+		padding: 0 2.2rem 0 0.1rem;
+		border: 0;
+		background: transparent;
+		color: var(--on-surface);
+		font-size: 0.94rem;
+		font-weight: 650;
+		letter-spacing: -0.015em;
+		outline: none;
+		box-shadow: none;
+	}
+
+	.professionals-search__input::placeholder {
+		color: color-mix(in srgb, var(--on-surface-variant) 72%, transparent);
+		font-weight: 550;
+	}
+
+	.professionals-search__clear {
+		right: 0.35rem;
+	}
+
+	.professionals-search__well:hover {
+		background: color-mix(in srgb, var(--on-surface) 7%, transparent);
+	}
+
+	.professionals-search__well:focus-within {
+		background: color-mix(in srgb, var(--primary) 10%, transparent);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 38%, transparent);
+	}
+
+	.professionals-search__well:focus-within .professionals-search__icon {
+		color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		transform: scale(1.04);
+	}
+
+	.professionals-search__filter {
+		position: relative;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 3.05rem;
+		height: 3.05rem;
+		flex-shrink: 0;
+		padding: 0.28rem;
+		border: 0;
+		border-radius: 1.25rem;
+		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
+		color: var(--on-surface-variant);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 7%, transparent);
+		cursor: pointer;
+		transition:
+			transform 520ms var(--pros-search-ease),
+			background-color 520ms var(--pros-search-ease),
+			box-shadow 520ms var(--pros-search-ease),
+			color 520ms var(--pros-search-ease);
+	}
+
+	.professionals-search__filter-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		height: 100%;
+		border-radius: calc(1.25rem - 0.28rem);
+		background: var(--surface-bright);
+		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 55%, transparent);
+	}
+
+	.professionals-search__filter-icon .material-symbols-rounded {
+		font-size: 1.2rem;
+		line-height: 1;
+		font-variation-settings: 'wght' 380, 'opsz' 20;
+	}
+
+	.professionals-search__filter:hover {
+		color: var(--on-surface);
+		transform: scale(1.02);
+	}
+
+	.professionals-search__filter:active {
+		transform: scale(0.97);
+	}
+
+	.professionals-search__filter:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 50%, transparent);
+		outline-offset: 2px;
+	}
+
+	.professionals-search__filter.panel-status-filter-btn.is-active {
+		color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		border-color: transparent;
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 32%, transparent);
+	}
+
+	html[data-theme='dark'] .professionals-search__well,
+	html[data-theme='dark'] .professionals-search__filter {
+		background: rgba(255, 255, 255, 0.04);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07);
+	}
+
+	html[data-theme='dark'] .professionals-search__core,
+	html[data-theme='dark'] .professionals-search__filter-icon {
+		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] .professionals-search__well:focus-within,
+	html[data-theme='dark'] .professionals-search__filter.is-active {
+		background: color-mix(in srgb, var(--primary) 16%, transparent);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 36%, transparent);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.professionals-search__well,
+		.professionals-search__icon,
+		.professionals-search__filter {
+			transition: none;
+		}
+
+		.professionals-search__well:focus-within .professionals-search__icon,
+		.professionals-search__filter:hover,
+		.professionals-search__filter:active {
+			transform: none;
 		}
 	}
 
@@ -494,12 +692,16 @@ const cardItems = professionals.map((professional) => ({
 	professional-manager .professionals-card .professionals-card-avatar {
 		width: 3.85rem;
 		height: 3.85rem;
-		border-radius: 1.15rem;
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+		border-radius: 50%;
+		background: transparent;
+		isolation: auto;
+		box-shadow: none;
 	}
 
 	professional-manager .professionals-card .professionals-card-avatar-image {
-		border-radius: 1.15rem;
+		border-radius: 50%;
+		background: transparent;
+		transform: scale(1.16);
 	}
 
 	professional-manager .professionals-card--inactive .professionals-card-avatar,
@@ -561,12 +763,18 @@ const cardItems = professionals.map((professional) => ({
 	}
 
 	professional-manager .professionals-card__phone {
-		flex-shrink: 0;
-		font-size: 0.78rem;
-		font-weight: 720;
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: 0.88rem;
+		font-weight: 750;
 		letter-spacing: -0.015em;
+		text-align: right;
 		font-variant-numeric: tabular-nums;
-		color: var(--on-surface);
+		color: color-mix(in srgb, var(--on-surface-variant) 74%, var(--on-surface) 26%);
+	}
+
+	html[data-theme='dark'] professional-manager .professionals-card__phone {
+		color: color-mix(in srgb, var(--on-surface-variant) 86%, #d1d5db 14%);
 	}
 
 	.professionals-card-status {
@@ -630,7 +838,8 @@ const cardItems = professionals.map((professional) => ({
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card .professionals-card-avatar {
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+		background: transparent;
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card__meta {

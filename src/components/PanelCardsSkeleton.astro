@@ -4,13 +4,14 @@ interface Props {
 	cardClass: string;
 	bodyClass: string;
 	count?: number;
+	wide?: boolean;
 	horizontal?: boolean;
 	place?: boolean;
 	seal?: boolean;
 	roster?: boolean;
 }
 
-const { label, cardClass, bodyClass, count = 6, horizontal = false, place = false, seal = false, roster = false } = Astro.props;
+const { label, cardClass, bodyClass, count = 6, wide = false, horizontal = false, place = false, seal = false, roster = false } = Astro.props;
 const placeholders = Array.from({ length: count }, (_, i) => i);
 ---
 
@@ -22,7 +23,7 @@ const placeholders = Array.from({ length: count }, (_, i) => i);
 		<div class="panel-skeleton-line h-11 w-full sm:w-40 rounded-full"></div>
 	</header>
 
-	<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
+	<div class:list={['material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3', wide && 'xl:grid-cols-4']}>
 		{
 			placeholders.map(() =>
 				roster ? (

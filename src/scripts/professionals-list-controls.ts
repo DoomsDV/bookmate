@@ -3,6 +3,7 @@ import {
 	closeFilterPopoverSheet,
 	toggleFilterPopoverSheet,
 } from '../lib/panel-filter-popover';
+import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 import { updateAppPaginationDom } from '../lib/pagination';
 
 type ProfessionalItem = {
@@ -91,7 +92,9 @@ const renderProfessionalCard = (professional: ProfessionalItem) => {
 	const name = getDisplayName(professional);
 	const email = String(professional.user?.email || '').trim() || '—';
 	const specialty = professional.specialty?.name || 'Sin especialidad';
-	const phone = professional.phone_number || '-';
+	const rawPhone = String(professional.phone_number || '').trim();
+	const parsedPhone = parseParaguayMobilePhone(rawPhone);
+	const phone = rawPhone ? (parsedPhone.isValid ? parsedPhone.pretty : rawPhone) : '—';
 	const imageUrl = String(professional.profile_image_url || '').trim();
 	const isPending = professional.membership_status === 'pending_invite';
 	const isActive = isAccountActive(professional);

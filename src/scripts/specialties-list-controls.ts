@@ -152,7 +152,7 @@ const updateEmptyOrGrid = (
 	}
 
 	results.innerHTML = `
-		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-specialties-grid>
+		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3 xl:grid-cols-4" data-specialties-grid>
 			${specialties.map(renderSpecialtyCard).join('')}
 		</div>
 	`;

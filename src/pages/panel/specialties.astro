@@ -40,6 +40,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 									cardClass="specialties-card"
 									bodyClass="specialties-card-body"
 									seal
+									wide
 								/>
 							</SpecialtiesListIsland>
 						</section>
@@ -49,7 +50,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		</div>
 
 		<dialog
-			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:w-[min(48rem,calc(100vw-2rem))] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:max-h-[90vh] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
+			class="m-0 mt-auto mb-0 w-screen max-w-none max-h-[80vh] open:flex open:flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_24px_80px_rgba(0,0,0,0.2)] sm:m-auto sm:w-[min(32rem,calc(100vw-2rem))] sm:max-w-[min(32rem,calc(100vw-2rem))] sm:max-h-[90vh] sm:rounded-[1.8rem] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[min(32rem,100%)] lg:max-w-[min(32rem,100%)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 			data-specialty-modal
 		>
 			<div class="panel-modal-header">
@@ -701,8 +702,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		dialog[data-specialty-modal] {
 			inset: 0;
 			margin: auto;
-			width: min(48rem, calc(100vw - 2rem));
-			max-width: min(48rem, calc(100vw - 2rem));
+			width: min(32rem, calc(100vw - 2rem));
+			max-width: min(32rem, calc(100vw - 2rem));
 			max-height: 90vh;
 			height: auto;
 		}
@@ -737,8 +738,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			inset: 0 0 0 auto;
 			height: 100dvh;
 			max-height: 100dvh;
-			width: max(50vw, 40rem);
-			max-width: max(50vw, 40rem);
+			width: min(32rem, 100vw);
+			max-width: min(32rem, 100vw);
 			border-radius: 0;
 			box-shadow: none;
 		}

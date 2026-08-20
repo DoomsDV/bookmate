@@ -131,6 +131,8 @@ class ScheduleManager extends HTMLElement {
 	private isScheduleLoading = false;
 	private isSaving = false;
 	private isDirty = false;
+	private leavePromptOpen = false;
+	private allowUnload = false;
 
 	private activeView: 'template' | 'exceptions' = 'template';
 	private exceptionCalendarCursor = new Date();
@@ -260,6 +262,11 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionModalActionsNode?.addEventListener('click', this.handleExceptionModalActions, { signal });
 		this.addEventListener('click', this.handleScheduleRootClick, { signal });
 		this.bindHeaderScrollCompact(signal);
+		window.addEventListener('beforeunload', this.handleBeforeUnload, { signal });
+		document.addEventListener('astro:before-preparation', this.handleAstroBeforePreparation, {
+			signal,
+		});
+		document.addEventListener('click', this.handleDocumentNavClick, { capture: true, signal });
 
 		this.updateControlsState();
 		this.renderPlanner();
@@ -1282,19 +1289,81 @@ class ScheduleManager extends HTMLElement {
 		}
 	}
 
-	private async confirmDiscardChanges(): Promise<boolean> {
-		const message = 'Tienes cambios sin guardar. Deseas descartarlos y continuar?';
-		if (window.BookmateAlert?.confirm) {
-			return window.BookmateAlert.confirm({
-				type: 'warning',
-				title: 'Cambios sin guardar',
-				message,
-				confirmText: 'Descartar',
-				cancelText: 'Cancelar',
-			});
-		}
-		return window.confirm(message);
+	private hasUnsavedPageChanges(): boolean {
+		const exceptionOpen = Boolean(
+			this.exceptionModalNode && !this.exceptionModalNode.classList.contains('hidden')
+		);
+		return this.isDirty || (exceptionOpen && this.exceptionModalDirty);
 	}
+
+	private async confirmDiscardChanges(): Promise<boolean> {
+		if (this.leavePromptOpen) return false;
+		this.leavePromptOpen = true;
+		const message = 'Tienes cambios sin guardar. Deseas descartarlos y continuar?';
+		try {
+			if (window.BookmateAlert?.confirm) {
+				return window.BookmateAlert.confirm({
+					type: 'warning',
+					title: 'Cambios sin guardar',
+					message,
+					confirmText: 'Descartar',
+					cancelText: 'Cancelar',
+				});
+			}
+			return window.confirm(message);
+		} finally {
+			this.leavePromptOpen = false;
+		}
+	}
+
+	private leaveTo = async (href: string): Promise<void> => {
+		const canContinue = await this.confirmDiscardChanges();
+		if (!canContinue) return;
+		this.allowUnload = true;
+		this.isDirty = false;
+		this.exceptionModalDirty = false;
+		window.location.assign(href);
+	};
+
+	private handleBeforeUnload = (event: BeforeUnloadEvent): void => {
+		if (this.allowUnload || !this.hasUnsavedPageChanges()) return;
+		event.preventDefault();
+		event.returnValue = '';
+	};
+
+	private handleAstroBeforePreparation = (event: Event): void => {
+		if (this.allowUnload || !this.hasUnsavedPageChanges()) return;
+		const navEvent = event as Event & { preventDefault: () => void; to?: URL };
+		navEvent.preventDefault();
+		const href = navEvent.to instanceof URL ? navEvent.to.href : '';
+		if (href) void this.leaveTo(href);
+	};
+
+	private handleDocumentNavClick = (event: MouseEvent): void => {
+		if (this.allowUnload || !this.hasUnsavedPageChanges()) return;
+		if (event.defaultPrevented || event.button !== 0) return;
+		if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const anchor = target.closest('a[href]');
+		if (!(anchor instanceof HTMLAnchorElement)) return;
+		if (anchor.target === '_blank' || anchor.hasAttribute('download')) return;
+		const href = anchor.getAttribute('href') || '';
+		if (!href || href.startsWith('#') || href.startsWith('javascript:')) return;
+		let next: URL;
+		try {
+			next = new URL(anchor.href, window.location.href);
+		} catch {
+			return;
+		}
+		if (next.origin !== window.location.origin) return;
+		if (next.pathname === window.location.pathname && next.search === window.location.search) {
+			return;
+		}
+		event.preventDefault();
+		event.stopPropagation();
+		void this.leaveTo(next.href);
+	};
 
 	private async loadScheduleByProfessional(professionalId: number): Promise<void> {
 		this.isScheduleLoading = true;

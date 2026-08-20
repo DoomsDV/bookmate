@@ -41,6 +41,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
 		const dateTo = String(url.searchParams.get('date_to') || '').trim() || undefined;
 		const page = Number(url.searchParams.get('page') || 1);
 		const limit = Number(url.searchParams.get('limit') || 9);
+		const sortDir = String(url.searchParams.get('sort_dir') || 'desc').trim().toLowerCase();
 
 		const result = await listCobrosWithOrds(token, {
 			status,
@@ -49,6 +50,7 @@ export const GET: APIRoute = async ({ locals, url }) => {
 			date_to: dateTo,
 			page,
 			limit,
+			sort_dir: sortDir === 'asc' ? 'asc' : 'desc',
 		});
 
 		return Response.json({
