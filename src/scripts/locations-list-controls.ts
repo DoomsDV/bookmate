@@ -5,7 +5,7 @@ import {
 } from '../lib/panel-filter-popover';
 import {
 	buildStadiaMapPreviewUrl,
-	LOCATION_CARD_STATIC_MAP_OPTIONS,
+	LOCATION_PANEL_CARD_MAP_OPTIONS,
 	renderBrandMapMarkerOverlay,
 	resolveMapTheme,
 	type MapCoordinates,
@@ -52,7 +52,7 @@ const getStadiaKey = () => {
 const buildMapPreview = (coords: MapCoordinates | null) =>
 	buildStadiaMapPreviewUrl(getStadiaKey(), coords, {
 		theme: resolveMapTheme(),
-		...LOCATION_CARD_STATIC_MAP_OPTIONS,
+		...LOCATION_PANEL_CARD_MAP_OPTIONS,
 	});
 
 const markMapPreviewLoaded = (img: HTMLImageElement) => {
@@ -79,7 +79,7 @@ const syncLocationMapPreviews = () => {
 		if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 		const preview = buildStadiaMapPreviewUrl(getStadiaKey(), { lat, lng }, {
 			theme,
-			...LOCATION_CARD_STATIC_MAP_OPTIONS,
+			...LOCATION_PANEL_CARD_MAP_OPTIONS,
 		});
 		if (preview && img.src !== preview.url) {
 			markMapPreviewLoading(img);
@@ -100,10 +100,10 @@ const buildLocationMedia = (location: LocationItem, index = 0) => {
 	const hasMap = Boolean(mapPreview);
 	const isEagerMap = index < EAGER_MAP_COUNT && hasMap;
 	const mediaClasses = hasMap
-		? 'panel-horizontal-card__media is-map-loading'
-		: 'panel-horizontal-card__media panel-horizontal-card__media--placeholder';
+		? 'locations-card__media panel-horizontal-card__media is-map-loading'
+		: 'locations-card__media panel-horizontal-card__media panel-horizontal-card__media--placeholder';
 
-	const { width: mapW, height: mapH } = LOCATION_CARD_STATIC_MAP_OPTIONS;
+	const { width: mapW, height: mapH } = LOCATION_PANEL_CARD_MAP_OPTIONS;
 	const imageHtml = hasMap
 		? `<span class="panel-horizontal-card__map-skeleton" aria-hidden="true"></span><img
 				src="${escapeHtml(mapPreview!.url)}"
@@ -158,6 +158,22 @@ const syncUrl = (state: { page: number; isActive: number | null }) => {
 	}
 };
 
+const toPlaceLabel = (value?: string | null) => {
+	const raw = String(value || '').trim();
+	if (!raw || raw === '-') return '';
+	if (raw === raw.toUpperCase()) {
+		return raw
+			.toLowerCase()
+			.replace(/(^|[\s./-])(\S)/g, (_, sep, ch) => sep + String(ch).toUpperCase());
+	}
+	return raw;
+};
+
+const formatPlaceLine = (city?: string | null, department?: string | null) => {
+	const parts = [toPlaceLabel(city), toPlaceLabel(department)].filter(Boolean);
+	return parts.length ? parts.join(' · ') : 'Ubicación no disponible';
+};
+
 const renderLocationCard = (location: LocationItem, index = 0) => {
 	const name = location.name || `Sucursal #${location.id_location}`;
 	const isActive = location.is_active === 1;
@@ -177,61 +193,41 @@ const renderLocationCard = (location: LocationItem, index = 0) => {
 		? ` title="Cerrado: ${escapeHtml(String(location.current_closure_name))}"`
 		: '';
 	const address = location.address || 'Dirección no disponible';
-	const city = location.city?.name || '-';
-	const department = location.department?.name || '-';
+	const placeLine = formatPlaceLine(location.city?.name, location.department?.name);
 
 	return `
 		<article
-			class="locations-card panel-horizontal-card group cursor-pointer relative overflow-hidden"
+			class="locations-card group${isActive ? '' : ' locations-card--inactive'}"
 			data-location-card
 			data-location-id="${location.id_location}"
 			tabindex="0"
 			role="button"
 			aria-label="Editar sucursal ${escapeHtml(name)}"
 		>
-			${buildLocationMedia(location, index)}
-			<div class="panel-horizontal-card__body locations-card-body">
-				<div class="panel-horizontal-card__header">
-					<div class="panel-horizontal-card__title-block">
+			<div class="locations-card__inner">
+				<div class="locations-card__head">
+					<div class="locations-card__title-row">
 						<h3 class="locations-card-title line-clamp-1">${escapeHtml(name)}</h3>
-						<p class="customer-card-subtitle line-clamp-1">${escapeHtml(address)}</p>
+						<span class="locations-card-status ${statusClass}"${statusTitle}>
+							<span class="size-1.5 rounded-full ${dotClass}"></span>
+							${statusLabel}
+						</span>
 					</div>
-					<span class="locations-card-status shrink-0 ${statusClass}"${statusTitle}>
-						<span class="size-1.5 rounded-full ${dotClass}"></span>
-						${statusLabel}
-					</span>
+					<p class="locations-card__address line-clamp-1">${escapeHtml(address)}</p>
+					<div class="locations-card__route">
+						<span class="locations-card__pin" aria-hidden="true">
+							<span class="material-symbols-rounded">location_on</span>
+						</span>
+						<span class="locations-card__place">${escapeHtml(placeLine)}</span>
+						<span class="locations-card__go" aria-hidden="true">
+							<span class="material-symbols-rounded">arrow_forward</span>
+						</span>
+					</div>
 				</div>
-				<dl class="shrink-0 grid gap-0.5">
-					<div class="flex items-center justify-between text-[0.92rem]">
-						<dt class="locations-card-term">Ciudad</dt>
-						<dd class="locations-card-value">${escapeHtml(city)}</dd>
-					</div>
-					<div class="flex items-center justify-between text-[0.92rem]">
-						<dt class="locations-card-term">Depto.</dt>
-						<dd class="locations-card-value">${escapeHtml(department)}</dd>
-					</div>
-				</dl>
+				${buildLocationMedia(location, index)}
 			</div>
 		</article>
 	`;
-};
-
-const updateSummaryPills = (locations: LocationItem[]) => {
-	const root = getListRoot();
-	if (!root) return;
-
-	const activeCount = locations.filter((item) => item.is_active === 1).length;
-	const inactiveCount = locations.length - activeCount;
-
-	const activeNode = root.querySelector('[data-locations-active-count]');
-	if (activeNode) activeNode.textContent = String(activeCount);
-
-	const inactivePill = root.querySelector<HTMLElement>('[data-locations-inactive-pill]');
-	const inactiveCountNode = root.querySelector('[data-locations-inactive-count]');
-	if (inactivePill && inactiveCountNode) {
-		inactiveCountNode.textContent = String(inactiveCount);
-		inactivePill.hidden = inactiveCount <= 0;
-	}
 };
 
 const updateEmptyOrGrid = (locations: LocationItem[], isActive: number | null) => {
@@ -361,7 +357,6 @@ const loadLocations = async (state: { page: number; isActive: number | null }) =
 			page: normalizedMeta.current_page,
 			isActive: state.isActive,
 		});
-		updateSummaryPills(locations);
 		updateEmptyOrGrid(locations, state.isActive);
 		hydrateMapPreviews();
 		updateFilterUi(state.isActive);

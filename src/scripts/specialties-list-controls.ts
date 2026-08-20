@@ -82,28 +82,28 @@ const renderSpecialtyCard = (specialty: SpecialtyItem) => {
 
 	return `
 		<article
-			class="specialties-card group cursor-pointer relative overflow-hidden"
+			class="specialties-card group${isActive ? '' : ' specialties-card--inactive'}"
 			data-specialty-card
 			data-specialty-id="${specialty.id_specialty}"
 			tabindex="0"
 			role="button"
 			aria-label="Editar especialidad ${escapeHtml(name)}"
 		>
-			<div class="relative flex items-start justify-between gap-4">
-				<div class="specialties-card-icon">
-					<span class="material-symbols-rounded text-[1.25rem]">${SPECIALTY_ICON}</span>
-				</div>
-				<span class="specialties-card-status ${statusClass}">
-					<span class="size-1.5 rounded-full ${dotClass}"></span>
-					${statusLabel}
-				</span>
-			</div>
-			<div class="specialties-card-body">
-				<div>
-					<h3 class="specialties-card-title line-clamp-1">${escapeHtml(name)}</h3>
-					<p class="mt-1 text-[0.9rem] text-(--on-surface-variant) line-clamp-2 leading-relaxed">
-						${escapeHtml(description)}
-					</p>
+			<div class="specialties-card__inner">
+				<div class="specialties-card__dossier">
+					<div class="specialties-card-icon" aria-hidden="true">
+						<span class="material-symbols-rounded">${SPECIALTY_ICON}</span>
+					</div>
+					<div class="specialties-card-body">
+						<div class="specialties-card__title-row">
+							<h3 class="specialties-card-title line-clamp-1">${escapeHtml(name)}</h3>
+							<span class="specialties-card-status ${statusClass}">
+								<span class="size-1.5 rounded-full ${dotClass}"></span>
+								${statusLabel}
+							</span>
+						</div>
+						<p class="specialties-card__copy line-clamp-2">${escapeHtml(description)}</p>
+					</div>
 				</div>
 			</div>
 		</article>
@@ -114,24 +114,6 @@ const updateTitleSummary = (totalRecords: number) => {
 	const root = getListRoot();
 	const summaryNode = root?.querySelector('[data-specialties-summary]');
 	if (summaryNode) summaryNode.textContent = `(${totalRecords})`;
-};
-
-const updateSummaryPills = (specialties: SpecialtyItem[]) => {
-	const root = getListRoot();
-	if (!root) return;
-
-	const activeCount = specialties.filter((item) => item.is_active === 1).length;
-	const inactiveCount = specialties.length - activeCount;
-
-	const activeNode = root.querySelector('[data-specialties-active-count]');
-	if (activeNode) activeNode.textContent = String(activeCount);
-
-	const inactivePill = root.querySelector<HTMLElement>('[data-specialties-inactive-pill]');
-	const inactiveCountNode = root.querySelector('[data-specialties-inactive-count]');
-	if (inactivePill && inactiveCountNode) {
-		inactiveCountNode.textContent = String(inactiveCount);
-		inactivePill.hidden = inactiveCount <= 0;
-	}
 };
 
 const updateEmptyOrGrid = (
@@ -278,7 +260,6 @@ const loadSpecialties = async (state: {
 			isActive: state.isActive,
 		});
 		updateTitleSummary(normalizedMeta.total_records);
-		updateSummaryPills(specialties);
 		updateEmptyOrGrid(specialties, state);
 		updateFilterUi(state.isActive);
 		updatePagination(normalizedMeta);

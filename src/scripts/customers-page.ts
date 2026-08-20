@@ -2901,16 +2901,17 @@ class CustomerManager extends HTMLElement {
 			article.dataset.customerCard = 'true';
 			article.dataset.customerId = String(customer.id_customer);
 
-			const headerRow = document.createElement('div');
-			headerRow.className = 'flex items-start justify-between gap-4';
+			const inner = document.createElement('div');
+			inner.className = 'customer-card__inner';
+
+			const identity = document.createElement('div');
+			identity.className = 'customer-card__identity';
 
 			const displayName = customer.full_name || `Cliente #${customer.id_customer}`;
 			const avatar = document.createElement('div');
 			avatar.className = `customer-card-avatar customer-card-avatar--tone-${this.getCustomerAvatarTone(customer)}`;
 			avatar.setAttribute('aria-hidden', 'true');
 			avatar.textContent = this.getCustomerInitials(displayName);
-
-			headerRow.append(avatar);
 
 			const body = document.createElement('div');
 			body.className = 'customer-card-body';
@@ -2927,12 +2928,14 @@ class CustomerManager extends HTMLElement {
 			subtitle.textContent = this.getCustomerCardSubtitle(customer);
 
 			nameBlock.append(name, subtitle);
+			body.append(nameBlock);
+			identity.append(avatar, body);
 
 			const metrics = document.createElement('dl');
 			metrics.className = 'customer-card-metrics';
 
 			const metricRow = document.createElement('div');
-			metricRow.className = 'flex items-center justify-between text-[0.92rem]';
+			metricRow.className = 'customer-card__contact';
 
 			const term = document.createElement('dt');
 			term.className = 'customer-card-term';
@@ -2942,10 +2945,18 @@ class CustomerManager extends HTMLElement {
 			value.className = 'customer-card-value';
 			value.textContent = this.formatCustomerPhone(customer.phone_number);
 
-			metricRow.append(term, value);
+			const go = document.createElement('span');
+			go.className = 'customer-card__go';
+			go.setAttribute('aria-hidden', 'true');
+			const goIcon = document.createElement('span');
+			goIcon.className = 'material-symbols-rounded';
+			goIcon.textContent = 'arrow_forward';
+			go.append(goIcon);
+
+			metricRow.append(term, value, go);
 			metrics.append(metricRow);
-			body.append(nameBlock, metrics);
-			article.append(headerRow, body);
+			inner.append(identity, metrics);
+			article.append(inner);
 			fragment.appendChild(article);
 		}
 

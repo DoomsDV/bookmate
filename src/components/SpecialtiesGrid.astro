@@ -27,9 +27,6 @@ const toDescriptionLabel = (value?: string | null) => {
 	return text || 'Sin descripción';
 };
 
-const activeCount = specialties.filter((item) => item.is_active === 1).length;
-const inactiveCount = specialties.length - activeCount;
-
 ---
 
 <section class="specialties-view">
@@ -41,21 +38,6 @@ const inactiveCount = specialties.length - activeCount;
 					({totalRecords})
 				</span>
 			</h2>
-
-			<div class="page-title-row__badges flex flex-wrap items-center gap-2">
-				<span class="specialties-summary-pill specialties-summary-pill--active">
-					<span class="size-2 rounded-full specialties-summary-dot specialties-summary-dot--active"></span>
-					Activas: <span data-specialties-active-count>{activeCount}</span>
-				</span>
-				<span
-					class="specialties-summary-pill specialties-summary-pill--inactive"
-					data-specialties-inactive-pill
-					hidden={inactiveCount <= 0}
-				>
-					<span class="size-2 rounded-full specialties-summary-dot specialties-summary-dot--inactive"></span>
-					Inactivas: <span data-specialties-inactive-count>{inactiveCount}</span>
-				</span>
-			</div>
 		</div>
 
 		<div class="panel-page-header__actions flex flex-wrap items-center justify-end gap-2 shrink-0">
@@ -222,46 +204,49 @@ const inactiveCount = specialties.length - activeCount;
 		<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-specialties-grid>
 			{specialties.map((specialty) => (
 				<article
-					class="specialties-card group cursor-pointer relative overflow-hidden"
+					class:list={[
+						'specialties-card group',
+						specialty.is_active !== 1 && 'specialties-card--inactive',
+					]}
 					data-specialty-card
 					data-specialty-id={specialty.id_specialty}
 					tabindex="0"
 					role="button"
 					aria-label={`Editar especialidad ${specialty.name || specialty.id_specialty}`}
 				>
-					<div class="relative flex items-start justify-between gap-4">
-						<div class="specialties-card-icon">
-							<span class="material-symbols-rounded text-[1.25rem]">{SPECIALTY_ICON}</span>
-						</div>
-
-						<span
-							class:list={[
-								'specialties-card-status',
-								specialty.is_active === 1
-									? 'specialties-card-status--active'
-									: 'specialties-card-status--inactive',
-							]}
-						>
-							<span
-								class:list={[
-									'size-1.5 rounded-full',
-									specialty.is_active === 1
-										? 'specialties-summary-dot--active'
-										: 'specialties-summary-dot--inactive',
-								]}
-							></span>
-							{specialty.is_active === 1 ? 'Activa' : 'Inactiva'}
-						</span>
-					</div>
-
-					<div class="specialties-card-body">
-						<div>
-							<h3 class="specialties-card-title line-clamp-1">
-								{specialty.name || `Especialidad #${specialty.id_specialty}`}
-							</h3>
-							<p class="mt-1 text-[0.9rem] text-(--on-surface-variant) line-clamp-2 leading-relaxed">
-								{toDescriptionLabel(specialty.description)}
-							</p>
+					<div class="specialties-card__inner">
+						<div class="specialties-card__dossier">
+							<div class="specialties-card-icon" aria-hidden="true">
+								<span class="material-symbols-rounded">{SPECIALTY_ICON}</span>
+							</div>
+							<div class="specialties-card-body">
+								<div class="specialties-card__title-row">
+									<h3 class="specialties-card-title line-clamp-1">
+										{specialty.name || `Especialidad #${specialty.id_specialty}`}
+									</h3>
+									<span
+										class:list={[
+											'specialties-card-status',
+											specialty.is_active === 1
+												? 'specialties-card-status--active'
+												: 'specialties-card-status--inactive',
+										]}
+									>
+										<span
+											class:list={[
+												'size-1.5 rounded-full',
+												specialty.is_active === 1
+													? 'specialties-summary-dot--active'
+													: 'specialties-summary-dot--inactive',
+											]}
+										></span>
+										{specialty.is_active === 1 ? 'Activa' : 'Inactiva'}
+									</span>
+								</div>
+								<p class="specialties-card__copy line-clamp-2">
+									{toDescriptionLabel(specialty.description)}
+								</p>
+							</div>
 						</div>
 					</div>
 				</article>
@@ -281,28 +266,6 @@ const inactiveCount = specialties.length - activeCount;
 		.specialties-view {
 			gap: 1.2rem;
 		}
-	}
-
-	.specialties-summary-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.45rem;
-		border-radius: 999px;
-		border: 0;
-		padding: 0.33rem 0.78rem;
-		font-size: 0.78rem;
-		font-weight: 700;
-		letter-spacing: 0.01em;
-	}
-
-	.specialties-summary-pill--active {
-		background: rgba(16, 185, 129, 0.12);
-		color: #0f6d4a;
-	}
-
-	.specialties-summary-pill--inactive {
-		background: rgba(244, 63, 94, 0.11);
-		color: #8d3e4a;
 	}
 
 	.specialties-summary-dot {
@@ -413,21 +376,130 @@ const inactiveCount = specialties.length - activeCount;
 		color: var(--on-surface-variant);
 	}
 
-	.specialties-card {
+	specialty-manager .specialties-card {
+		--specialties-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		cursor: pointer;
+		gap: 0;
+		padding: 0.28rem;
+		border: 0;
+		border-radius: 1.45rem;
+		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+		overflow: visible;
+		animation: specialties-card-enter 720ms var(--specialties-ease) both;
+		transition:
+			transform 420ms var(--specialties-ease),
+			box-shadow 420ms var(--specialties-ease);
+	}
+
+	specialty-manager .specialties-card:nth-child(1) { animation-delay: 0ms; }
+	specialty-manager .specialties-card:nth-child(2) { animation-delay: 50ms; }
+	specialty-manager .specialties-card:nth-child(3) { animation-delay: 100ms; }
+	specialty-manager .specialties-card:nth-child(4) { animation-delay: 150ms; }
+	specialty-manager .specialties-card:nth-child(n + 5) { animation-delay: 200ms; }
+
+	@keyframes specialties-card-enter {
+		from {
+			opacity: 0;
+			transform: translateY(14px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	specialty-manager .specialties-card.panel-skeleton-card {
+		animation: none;
+	}
+
+	specialty-manager .specialties-card:hover {
+		transform: none;
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
+	}
+
+	specialty-manager .specialties-card__inner {
+		display: grid;
+		height: 100%;
+		padding: 0.95rem 0.95rem 1rem;
+		border-radius: calc(1.45rem - 0.28rem);
+		background: var(--surface-bright);
+		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent);
+	}
+
+	specialty-manager .specialties-card__dossier {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.85rem;
+		min-width: 0;
+	}
+
+	specialty-manager .specialties-card .specialties-card-icon {
+		width: 3.35rem;
+		height: 3.35rem;
+		flex-shrink: 0;
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		color: var(--primary);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
+	}
+
+	specialty-manager .specialties-card .specialties-card-icon .material-symbols-rounded {
+		font-size: 1.45rem;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+	}
+
+	specialty-manager .specialties-card--inactive .specialties-card-icon {
+		opacity: 0.62;
+	}
+
+	specialty-manager .specialties-card .specialties-card-body {
+		flex: 1;
+		min-width: 0;
+		display: grid;
+		gap: 0.38rem;
+	}
+
+	specialty-manager .specialties-card__title-row {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.6rem;
+		min-width: 0;
+	}
+
+	specialty-manager .specialties-card .specialties-card-title {
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: 1.08rem;
+		font-weight: 780;
+		letter-spacing: -0.03em;
+		line-height: 1.2;
+	}
+
+	specialty-manager .specialties-card__copy {
+		margin: 0;
+		padding: 0.55rem 0.7rem;
+		border-radius: 0.9rem;
+		background: color-mix(in srgb, var(--on-surface) 4.5%, transparent);
+		font-size: 0.82rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
 	}
 
 	.specialties-card-status {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.45rem;
+		flex-shrink: 0;
+		gap: 0.35rem;
+		margin-top: 0.12rem;
 		border-radius: 999px;
 		border: 0;
-		padding: 0.24rem 0.6rem;
-		font-size: 0.66rem;
-		font-weight: 800;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		padding: 0.18rem 0.52rem;
+		font-size: 0.68rem;
+		font-weight: 750;
+		letter-spacing: -0.01em;
 		white-space: nowrap;
 	}
 
@@ -439,16 +511,6 @@ const inactiveCount = specialties.length - activeCount;
 	.specialties-card-status--inactive {
 		background: rgba(244, 63, 94, 0.11);
 		color: #8d3e4a;
-	}
-
-	html[data-theme='dark'] .specialties-summary-pill--active {
-		background: rgba(110, 231, 183, 0.16);
-		color: #b8f5d5;
-	}
-
-	html[data-theme='dark'] .specialties-summary-pill--inactive {
-		background: rgba(255, 182, 193, 0.12);
-		color: #ffc8d2;
 	}
 
 	html[data-theme='dark'] .specialties-create-btn {
@@ -476,6 +538,41 @@ const inactiveCount = specialties.length - activeCount;
 	}
 
 
+	specialty-manager .specialties-card:active {
+		transform: scale(0.985);
+	}
+
+	@media (min-width: 1024px) {
+		specialty-manager .specialties-card:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+		}
+	}
+
+	html[data-theme='dark'] specialty-manager .specialties-card {
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] specialty-manager .specialties-card:hover {
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+	}
+
+	html[data-theme='dark'] specialty-manager .specialties-card__inner {
+		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] specialty-manager .specialties-card .specialties-card-icon {
+		background: color-mix(in srgb, var(--primary) 18%, transparent);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+	}
+
+	html[data-theme='dark'] specialty-manager .specialties-card__copy {
+		background: rgba(255, 255, 255, 0.04);
+	}
+
 	html[data-theme='dark'] .specialties-card-status--active {
 		background: rgba(110, 231, 183, 0.16);
 		color: #b8f5d5;
@@ -484,6 +581,18 @@ const inactiveCount = specialties.length - activeCount;
 	html[data-theme='dark'] .specialties-card-status--inactive {
 		background: rgba(255, 182, 193, 0.12);
 		color: #ffc8d2;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		specialty-manager .specialties-card {
+			animation: none;
+			transition: none;
+		}
+
+		specialty-manager .specialties-card:hover,
+		specialty-manager .specialties-card:active {
+			transform: none;
+		}
 	}
 </style>
 

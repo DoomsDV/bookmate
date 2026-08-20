@@ -19,6 +19,15 @@ export const LOCATION_CARD_STATIC_MAP_OPTIONS = {
 	includeMarker: false,
 } as const;
 
+/** Franja de mapa en cards del panel (nombre arriba, mapa abajo). */
+export const LOCATION_PANEL_CARD_MAP_OPTIONS = {
+	width: 480,
+	height: 168,
+	zoom: 15,
+	retina: false,
+	includeMarker: false,
+} as const;
+
 /** Cover ilustrativo en grilla móvil del hub (pestaña Sucursales). */
 export const HUB_LOCATION_CARD_COVER_OPTIONS = {
 	width: 640,

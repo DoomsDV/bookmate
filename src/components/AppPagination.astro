@@ -57,6 +57,7 @@ const pagesAttrs = pagesDataAttr ? { [pagesDataAttr]: '' } : {};
 	aria-label={ariaLabel}
 >
 	<div class="app-pagination__pill">
+		<div class="app-pagination__inner">
 		<p class="app-pagination__summary" {...summaryAttrs}>
 			Página <strong>{safeCurrentPage}</strong> de <strong>{safeTotalPages}</strong>
 			<span aria-hidden="true">-</span>
@@ -69,15 +70,11 @@ const pagesAttrs = pagesDataAttr ? { [pagesDataAttr]: '' } : {};
 				useLinks ? (
 					canPrevPage && prevHref ? (
 						<a class="app-pagination__arrow" href={prevHref} aria-label="Página anterior">
-							<svg viewBox="0 0 24 24" aria-hidden="true">
-								<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
-							</svg>
+							<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
 						</a>
 					) : (
 						<span class="app-pagination__arrow is-disabled" aria-disabled="true">
-							<svg viewBox="0 0 24 24" aria-hidden="true">
-								<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
-							</svg>
+							<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
 						</span>
 					)
 				) : (
@@ -89,9 +86,7 @@ const pagesAttrs = pagesDataAttr ? { [pagesDataAttr]: '' } : {};
 						aria-label="Página anterior"
 						disabled={!canPrevPage}
 					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path d="M15.41 16.59L10.83 12l4.58-4.59L14 6l-6 6 6 6z" />
-						</svg>
+						<span class="material-symbols-rounded" aria-hidden="true">chevron_left</span>
 					</button>
 				)
 			}
@@ -142,15 +137,11 @@ const pagesAttrs = pagesDataAttr ? { [pagesDataAttr]: '' } : {};
 				useLinks ? (
 					canNextPage && nextHref ? (
 						<a class="app-pagination__arrow" href={nextHref} aria-label="Página siguiente">
-							<svg viewBox="0 0 24 24" aria-hidden="true">
-								<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
-							</svg>
+							<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
 						</a>
 					) : (
 						<span class="app-pagination__arrow is-disabled" aria-disabled="true">
-							<svg viewBox="0 0 24 24" aria-hidden="true">
-								<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
-							</svg>
+							<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
 						</span>
 					)
 				) : (
@@ -162,12 +153,11 @@ const pagesAttrs = pagesDataAttr ? { [pagesDataAttr]: '' } : {};
 						aria-label="Página siguiente"
 						disabled={!canNextPage}
 					>
-						<svg viewBox="0 0 24 24" aria-hidden="true">
-							<path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6z" />
-						</svg>
+						<span class="material-symbols-rounded" aria-hidden="true">chevron_right</span>
 					</button>
 				)
 			}
+		</div>
 		</div>
 	</div>
 </nav>

@@ -93,8 +93,8 @@ const renderServiceCard = (service: ServiceItem) => {
 	const imageUrl = String(service.image_url || '').trim();
 
 	const mediaClasses = imageUrl
-		? 'panel-horizontal-card__media'
-		: 'panel-horizontal-card__media panel-horizontal-card__media--placeholder';
+		? 'services-card__media panel-horizontal-card__media'
+		: 'services-card__media panel-horizontal-card__media panel-horizontal-card__media--placeholder';
 
 	const imageHtml = imageUrl
 		? `<img
@@ -109,37 +109,35 @@ const renderServiceCard = (service: ServiceItem) => {
 
 	return `
 		<article
-			class="services-card panel-horizontal-card group cursor-pointer relative overflow-hidden"
+			class="services-card group${isActive ? '' : ' services-card--inactive'}"
 			data-service-card
 			data-service-id="${service.id_service}"
 			tabindex="0"
 			role="button"
 			aria-label="Editar servicio ${escapeHtml(name)}"
 		>
-			<div class="${mediaClasses}" data-service-card-media>
-				${imageHtml}
-				<span class="material-symbols-rounded panel-horizontal-card__media-icon" aria-hidden="true">${SERVICE_ICON}</span>
-			</div>
-			<div class="panel-horizontal-card__body services-card-body">
-				<div class="panel-horizontal-card__header">
-					<div class="panel-horizontal-card__title-block">
-						<h3 class="services-card-title line-clamp-1">${escapeHtml(name)}</h3>
-					</div>
-					<span class="services-card-status shrink-0 ${statusClass}">
+			<div class="services-card__inner">
+				<div class="${mediaClasses}" data-service-card-media>
+					${imageHtml}
+					<span class="material-symbols-rounded panel-horizontal-card__media-icon" aria-hidden="true">${SERVICE_ICON}</span>
+					<span class="services-card-status ${statusClass}">
 						<span class="size-1.5 rounded-full ${dotClass}"></span>
 						${statusLabel}
 					</span>
 				</div>
-				<dl class="shrink-0 grid gap-0.5">
-					<div class="flex items-center justify-between text-[0.92rem]">
-						<dt class="services-card-term">Duración</dt>
-						<dd class="services-card-value">${toDurationLabel(service.duration_minutes)}</dd>
-					</div>
-					<div class="flex items-center justify-between text-[0.92rem]">
-						<dt class="services-card-term">Precio</dt>
-						<dd class="services-card-value">${price}</dd>
-					</div>
-				</dl>
+				<div class="services-card__body services-card-body">
+					<h3 class="services-card-title line-clamp-1">${escapeHtml(name)}</h3>
+					<dl class="services-card__metrics">
+						<div class="services-card__stat">
+							<dt class="services-card-term">Duración</dt>
+							<dd class="services-card-value">${toDurationLabel(service.duration_minutes)}</dd>
+						</div>
+						<div class="services-card__stat">
+							<dt class="services-card-term">Precio</dt>
+							<dd class="services-card-value">${price}</dd>
+						</div>
+					</dl>
+				</div>
 			</div>
 		</article>
 	`;
@@ -149,24 +147,6 @@ const updateTitleSummary = (totalRecords: number) => {
 	const root = getListRoot();
 	const summaryNode = root?.querySelector('[data-services-summary]');
 	if (summaryNode) summaryNode.textContent = `(${totalRecords})`;
-};
-
-const updateSummaryPills = (services: ServiceItem[]) => {
-	const root = getListRoot();
-	if (!root) return;
-
-	const activeCount = services.filter((s) => s.is_active === 1).length;
-	const inactiveCount = services.length - activeCount;
-
-	const activeNode = root.querySelector('[data-services-active-count]');
-	if (activeNode) activeNode.textContent = String(activeCount);
-
-	const inactivePill = root.querySelector<HTMLElement>('[data-services-inactive-pill]');
-	const inactiveCountNode = root.querySelector('[data-services-inactive-count]');
-	if (inactivePill && inactiveCountNode) {
-		inactiveCountNode.textContent = String(inactiveCount);
-		inactivePill.hidden = inactiveCount <= 0;
-	}
 };
 
 const updateEmptyOrGrid = (
@@ -307,7 +287,6 @@ const loadServices = async (state: { page: number; search: string; isActive: num
 			isActive: state.isActive,
 		});
 		updateTitleSummary(normalizedMeta.total_records);
-		updateSummaryPills(services);
 		updateEmptyOrGrid(services, state);
 		updateFilterUi(state.isActive);
 		updatePagination(normalizedMeta);

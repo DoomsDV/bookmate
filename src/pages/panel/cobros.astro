@@ -34,14 +34,29 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
 								) : (
 									<div class="grid gap-3 sm:gap-4">
-										<header class="grid gap-1">
-											<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
-												Cobros{' '}
-												<span class="font-semibold text-(--on-surface-variant)" data-cobros-summary>(0)</span>
-											</h1>
-											<p class="m-0 hidden text-[0.88rem] leading-snug text-(--on-surface-variant) sm:block">
-												Revisá señas SIPAP y validá comprobantes pendientes.
-											</p>
+										<header class="flex items-start justify-between gap-3">
+											<div class="grid min-w-0 gap-1">
+												<h1 class="m-0 text-[1.5rem] font-bold leading-none tracking-tight text-(--on-surface) sm:text-[1.75rem]">
+													Cobros{' '}
+													<span class="font-semibold text-(--on-surface-variant)" data-cobros-summary>(0)</span>
+												</h1>
+												<p class="m-0 hidden text-[0.88rem] leading-snug text-(--on-surface-variant) sm:block">
+													Revisá señas SIPAP y validá comprobantes pendientes.
+												</p>
+											</div>
+											<button
+												type="button"
+												class="cobros-period-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
+												data-open-period-filter
+												aria-label="Filtrar por periodo"
+												aria-haspopup="dialog"
+												aria-controls="cobros-period-filter-sheet"
+												aria-pressed="false"
+												title="Filtrar por periodo"
+											>
+												<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
+												<span class="cobros-period-filter-badge hidden" data-period-filter-badge aria-hidden="true"></span>
+											</button>
 										</header>
 
 										<select
@@ -57,26 +72,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 											<option value="custom">Personalizado</option>
 										</select>
 
-										<div class="flex items-start gap-2">
-											<div class="hidden min-w-0 flex-1 flex-wrap gap-2 md:flex" role="tablist" aria-label="Estado">
-												<button type="button" data-cobros-tab="all" class="cobros-tab is-active">Todos</button>
-												<button type="button" data-cobros-tab="pending" class="cobros-tab">Pendientes</button>
-												<button type="button" data-cobros-tab="approved" class="cobros-tab">Aprobados</button>
-												<button type="button" data-cobros-tab="refunded" class="cobros-tab">Reembolsados</button>
-												<button type="button" data-cobros-tab="expired" class="cobros-tab">Vencidos</button>
-											</div>
-											<button
-												type="button"
-												class="cobros-period-filter-btn relative ml-auto flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
-												data-open-period-filter
-												aria-label="Filtrar por periodo"
-												aria-haspopup="dialog"
-												aria-controls="cobros-period-filter-sheet"
-												aria-pressed="false"
-											>
-												<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
-												<span class="cobros-period-filter-badge hidden" data-period-filter-badge aria-hidden="true"></span>
-											</button>
+										<div class="hidden min-w-0 flex-wrap gap-2 md:flex" role="tablist" aria-label="Estado">
+											<button type="button" data-cobros-tab="all" class="cobros-tab is-active">Todos</button>
+											<button type="button" data-cobros-tab="pending" class="cobros-tab">Pendientes</button>
+											<button type="button" data-cobros-tab="approved" class="cobros-tab">Aprobados</button>
+											<button type="button" data-cobros-tab="refunded" class="cobros-tab">Reembolsados</button>
+											<button type="button" data-cobros-tab="expired" class="cobros-tab">Vencidos</button>
 										</div>
 
 										<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500" data-cobros-error></div>
@@ -962,6 +963,26 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		border-radius: 1.45rem;
 		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
 		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+		animation: cobros-card-enter 720ms var(--cobros-ease) both;
+	}
+
+	:global(.cobros-card:nth-child(1)) { animation-delay: 0ms; }
+	:global(.cobros-card:nth-child(2)) { animation-delay: 50ms; }
+	:global(.cobros-card:nth-child(3)) { animation-delay: 100ms; }
+	:global(.cobros-card:nth-child(4)) { animation-delay: 150ms; }
+	:global(.cobros-card:nth-child(5)) { animation-delay: 200ms; }
+	:global(.cobros-card:nth-child(6)) { animation-delay: 250ms; }
+	:global(.cobros-card:nth-child(n + 7)) { animation-delay: 300ms; }
+
+	@keyframes cobros-card-enter {
+		from {
+			opacity: 0;
+			transform: translateY(14px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
 	}
 
 	:global(.cobros-card__inner) {
@@ -1108,6 +1129,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	@media (prefers-reduced-motion: reduce) {
+		:global(.cobros-card) {
+			animation: none;
+		}
+
 		:global(.cobros-card__cta),
 		:global(.cobros-card__cta-icon) {
 			transition: none;

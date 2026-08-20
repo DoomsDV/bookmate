@@ -2,7 +2,7 @@
 import type { Location } from '../lib/locations';
 import {
 	buildStadiaMapPreviewUrl,
-	LOCATION_CARD_STATIC_MAP_OPTIONS,
+	LOCATION_PANEL_CARD_MAP_OPTIONS,
 	renderBrandMapMarkerOverlay,
 	resolveMapThemeFromStorage,
 } from '../lib/maplibre-static';
@@ -27,8 +27,6 @@ const {
 } = Astro.props;
 const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
 
-const activeCount = locations.filter((item) => item.is_active === 1).length;
-const inactiveCount = locations.length - activeCount;
 const stadiaKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? '');
 const mapTheme = resolveMapThemeFromStorage(Astro.cookies.get('bookmate-theme')?.value);
 
@@ -41,8 +39,22 @@ const locationMapPreview = (location: Location) => {
 		Number.isFinite(lat) && Number.isFinite(lng) ? { lat, lng } : null;
 	return buildStadiaMapPreviewUrl(stadiaKey, coords, {
 		theme: mapTheme,
-		...LOCATION_CARD_STATIC_MAP_OPTIONS,
+		...LOCATION_PANEL_CARD_MAP_OPTIONS,
 	});
+};
+
+const toPlaceLabel = (value?: string | null) => {
+	const raw = String(value || '').trim();
+	if (!raw || raw === '-') return '';
+	if (raw === raw.toUpperCase()) {
+		return raw.toLowerCase().replace(/(^|[\s./-])(\S)/g, (_, sep, ch) => sep + String(ch).toUpperCase());
+	}
+	return raw;
+};
+
+const formatPlaceLine = (city?: string | null, department?: string | null) => {
+	const parts = [toPlaceLabel(city), toPlaceLabel(department)].filter(Boolean);
+	return parts.length ? parts.join(' · ') : 'Ubicación no disponible';
 };
 
 const eagerMapPreloadUrls = locations
@@ -68,21 +80,6 @@ const eagerMapPreloadUrls = locations
 			<h2 class="m-0 text-[1.5rem] sm:text-[1.75rem] font-bold tracking-tight text-(--on-surface) leading-none">
 				Sucursales
 			</h2>
-
-			<div class="page-title-row__badges flex flex-wrap items-center gap-2">
-				<span class="locations-summary-pill locations-summary-pill--active">
-					<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--active"></span>
-					Activas: <span data-locations-active-count>{activeCount}</span>
-				</span>
-				<span
-					class="locations-summary-pill locations-summary-pill--inactive"
-					data-locations-inactive-pill
-					hidden={inactiveCount <= 0}
-				>
-					<span class="size-2 rounded-full locations-summary-dot locations-summary-dot--inactive"></span>
-					Inactivas: <span data-locations-inactive-count>{inactiveCount}</span>
-				</span>
-			</div>
 		</div>
 
 		<div class="panel-page-header__actions flex flex-wrap items-center justify-end gap-2 shrink-0">
@@ -242,65 +239,25 @@ const eagerMapPreloadUrls = locations
 				const isEagerMap = index < EAGER_MAP_COUNT && Boolean(mapPreview);
 				return (
 				<article
-					class="locations-card panel-horizontal-card group cursor-pointer relative overflow-hidden"
+					class:list={[
+						'locations-card group',
+						location.is_active !== 1 && 'locations-card--inactive',
+					]}
 					data-location-card
 					data-location-id={location.id_location}
 					tabindex="0"
 					role="button"
 					aria-label={`Editar sucursal ${location.name || location.id_location}`}
 				>
-					<div
-						class:list={[
-							'panel-horizontal-card__media',
-							!mapPreview && 'panel-horizontal-card__media--placeholder',
-							mapPreview && 'is-map-loading',
-						]}
-					>
-						{mapPreview ? (
-							<>
-								<span class="panel-horizontal-card__map-skeleton" aria-hidden="true"></span>
-								<img
-									src={mapPreview.url}
-									alt=""
-									class="panel-horizontal-card__media-image"
-									width={LOCATION_CARD_STATIC_MAP_OPTIONS.width}
-									height={LOCATION_CARD_STATIC_MAP_OPTIONS.height}
-									style={`object-position: ${mapPreview.objectPosition}`}
-									loading={isEagerMap ? 'eager' : 'lazy'}
-									decoding="async"
-									fetchpriority={isEagerMap ? 'high' : 'low'}
-									data-location-map-preview
-									data-map-lat={hasCoords ? lat : undefined}
-									data-map-lng={hasCoords ? lng : undefined}
-									onload="this.classList.add('is-loaded'); this.closest('.panel-horizontal-card__media')?.classList.remove('is-map-loading')"
-									onerror="this.classList.add('is-hidden'); const m=this.closest('.panel-horizontal-card__media'); m?.classList.add('panel-horizontal-card__media--placeholder'); m?.classList.remove('is-map-loading');"
-								/>
-								<Fragment set:html={renderBrandMapMarkerOverlay()} />
-							</>
-						) : (
-							<Fragment set:html={renderBrandMapMarkerOverlay()} />
-						)}
-						<span
-							class="material-symbols-rounded panel-horizontal-card__media-icon"
-							aria-hidden="true"
-						>
-							storefront
-						</span>
-					</div>
-
-					<div class="panel-horizontal-card__body locations-card-body">
-						<div class="panel-horizontal-card__header">
-							<div class="panel-horizontal-card__title-block">
+					<div class="locations-card__inner">
+						<div class="locations-card__head">
+							<div class="locations-card__title-row">
 								<h3 class="locations-card-title line-clamp-1">
 									{location.name || `Sucursal #${location.id_location}`}
 								</h3>
-								<p class="customer-card-subtitle line-clamp-1">
-									{location.address || 'Dirección no disponible'}
-								</p>
-							</div>
 							{location.current_closure_name && location.is_active === 1 ? (
 								<span
-									class="locations-card-status locations-card-status--closed shrink-0"
+									class="locations-card-status locations-card-status--closed"
 									title={`Cerrado: ${location.current_closure_name}`}
 								>
 									<span class="size-1.5 rounded-full locations-summary-dot--closed"></span>
@@ -309,7 +266,7 @@ const eagerMapPreloadUrls = locations
 							) : (
 								<span
 									class:list={[
-										'locations-card-status shrink-0',
+										'locations-card-status',
 										location.is_active === 1
 											? 'locations-card-status--active'
 											: 'locations-card-status--inactive',
@@ -326,18 +283,62 @@ const eagerMapPreloadUrls = locations
 									{location.is_active === 1 ? 'Activa' : 'Inactiva'}
 								</span>
 							)}
+							</div>
+							<p class="locations-card__address line-clamp-1">
+								{location.address || 'Dirección no disponible'}
+							</p>
+							<div class="locations-card__route">
+								<span class="locations-card__pin" aria-hidden="true">
+									<span class="material-symbols-rounded">location_on</span>
+								</span>
+								<span class="locations-card__place">
+									{formatPlaceLine(location.city?.name, location.department?.name)}
+								</span>
+								<span class="locations-card__go" aria-hidden="true">
+									<span class="material-symbols-rounded">arrow_forward</span>
+								</span>
+							</div>
 						</div>
 
-						<dl class="shrink-0 grid gap-0.5">
-							<div class="flex items-center justify-between text-[0.92rem]">
-								<dt class="locations-card-term">Ciudad</dt>
-								<dd class="locations-card-value">{location.city?.name || '-'}</dd>
-							</div>
-							<div class="flex items-center justify-between text-[0.92rem]">
-								<dt class="locations-card-term">Depto.</dt>
-								<dd class="locations-card-value">{location.department?.name || '-'}</dd>
-							</div>
-						</dl>
+						<div
+							class:list={[
+								'locations-card__media',
+								'panel-horizontal-card__media',
+								!mapPreview && 'panel-horizontal-card__media--placeholder',
+								mapPreview && 'is-map-loading',
+							]}
+						>
+							{mapPreview ? (
+								<>
+									<span class="panel-horizontal-card__map-skeleton" aria-hidden="true"></span>
+									<img
+										src={mapPreview.url}
+										alt=""
+										class="panel-horizontal-card__media-image"
+										width={LOCATION_PANEL_CARD_MAP_OPTIONS.width}
+										height={LOCATION_PANEL_CARD_MAP_OPTIONS.height}
+										style={`object-position: ${mapPreview.objectPosition}`}
+										loading={isEagerMap ? 'eager' : 'lazy'}
+										decoding="async"
+										fetchpriority={isEagerMap ? 'high' : 'low'}
+										data-location-map-preview
+										data-map-lat={hasCoords ? lat : undefined}
+										data-map-lng={hasCoords ? lng : undefined}
+										onload="this.classList.add('is-loaded'); this.closest('.panel-horizontal-card__media')?.classList.remove('is-map-loading')"
+										onerror="this.classList.add('is-hidden'); const m=this.closest('.panel-horizontal-card__media'); m?.classList.add('panel-horizontal-card__media--placeholder'); m?.classList.remove('is-map-loading');"
+									/>
+									<Fragment set:html={renderBrandMapMarkerOverlay()} />
+								</>
+							) : (
+								<Fragment set:html={renderBrandMapMarkerOverlay()} />
+							)}
+							<span
+								class="material-symbols-rounded panel-horizontal-card__media-icon"
+								aria-hidden="true"
+							>
+								storefront
+							</span>
+						</div>
 					</div>
 				</article>
 				);
@@ -371,28 +372,6 @@ const eagerMapPreloadUrls = locations
 		.locations-view {
 			gap: 1.2rem;
 		}
-	}
-
-	.locations-summary-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.45rem;
-		border-radius: 999px;
-		border: 0;
-		padding: 0.33rem 0.78rem;
-		font-size: 0.78rem;
-		font-weight: 700;
-		letter-spacing: 0.01em;
-	}
-
-	.locations-summary-pill--active {
-		background: rgba(16, 185, 129, 0.12);
-		color: #0f6d4a;
-	}
-
-	.locations-summary-pill--inactive {
-		background: rgba(244, 63, 94, 0.11);
-		color: #8d3e4a;
 	}
 
 	.locations-summary-dot {
@@ -503,21 +482,191 @@ const eagerMapPreloadUrls = locations
 		color: var(--on-surface-variant);
 	}
 
-	.locations-card {
+	location-manager .locations-card {
+		--locations-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		cursor: pointer;
+		gap: 0;
+		padding: 0.28rem;
+		border: 0;
+		border-radius: 1.45rem;
+		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+		overflow: visible;
+		animation: locations-card-enter 720ms var(--locations-ease) both;
+		transition:
+			transform 420ms var(--locations-ease),
+			box-shadow 420ms var(--locations-ease);
+	}
+
+	location-manager .locations-card:nth-child(1) { animation-delay: 0ms; }
+	location-manager .locations-card:nth-child(2) { animation-delay: 60ms; }
+	location-manager .locations-card:nth-child(3) { animation-delay: 120ms; }
+	location-manager .locations-card:nth-child(4) { animation-delay: 180ms; }
+	location-manager .locations-card:nth-child(n + 5) { animation-delay: 240ms; }
+
+	@keyframes locations-card-enter {
+		from {
+			opacity: 0;
+			transform: translateY(14px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	location-manager .locations-card.panel-skeleton-card {
+		animation: none;
+	}
+
+	location-manager .locations-card:hover {
+		transform: none;
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
+	}
+
+	location-manager .locations-card__inner {
+		display: grid;
+		gap: 0.85rem;
+		height: 100%;
+		padding: 0.9rem 0.28rem 0.28rem;
+		border-radius: calc(1.45rem - 0.28rem);
+		background: var(--surface-bright);
+		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent);
+	}
+
+	location-manager .locations-card__head {
+		display: grid;
+		gap: 0.38rem;
+		min-width: 0;
+		padding: 0 0.7rem;
+	}
+
+	location-manager .locations-card__title-row {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.65rem;
+		min-width: 0;
+	}
+
+	location-manager .locations-card .locations-card-title {
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: 1.18rem;
+		font-weight: 800;
+		letter-spacing: -0.035em;
+		line-height: 1.15;
+	}
+
+	location-manager .locations-card__address {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--on-surface-variant);
+	}
+
+	location-manager .locations-card__route {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		min-width: 0;
+		margin-top: 0.35rem;
+		padding: 0.28rem 0.28rem 0.28rem 0.28rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 4.5%, transparent);
+	}
+
+	location-manager .locations-card__pin,
+	location-manager .locations-card__go {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.85rem;
+		height: 1.85rem;
+		flex-shrink: 0;
+		border-radius: 999px;
+	}
+
+	location-manager .locations-card__pin {
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+	}
+
+	location-manager .locations-card__go {
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+		color: var(--on-surface);
+		transition: transform 420ms var(--locations-ease);
+	}
+
+	location-manager .locations-card__pin .material-symbols-rounded,
+	location-manager .locations-card__go .material-symbols-rounded {
+		font-size: 1rem;
+		font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+	}
+
+	location-manager .locations-card__go .material-symbols-rounded {
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+	}
+
+	location-manager .locations-card__place {
+		flex: 1 1 auto;
+		min-width: 0;
+		font-size: 0.82rem;
+		font-weight: 720;
+		letter-spacing: -0.015em;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	location-manager .locations-card:hover .locations-card__go {
+		transform: translateX(2px);
+	}
+
+	location-manager .locations-card .locations-card__media,
+	location-manager .locations-card .panel-horizontal-card__media {
+		flex: none;
+		max-width: none;
+		min-width: 0;
+		width: 100%;
+		height: 5.6rem;
+		border-radius: 1.1rem;
+		overflow: hidden;
+	}
+
+	location-manager .locations-card .panel-horizontal-card__media-icon {
+		display: none;
+	}
+
+	location-manager .locations-card .panel-horizontal-card__media--placeholder .panel-horizontal-card__media-icon {
+		display: inline-flex;
+		position: relative;
+		z-index: 1;
+		font-size: 1.45rem;
+		color: color-mix(in srgb, var(--primary) 72%, #ffffff 28%);
+	}
+
+	location-manager .locations-card .panel-horizontal-card__media-image {
+		transition: transform 700ms var(--locations-ease);
+	}
+
+	location-manager .locations-card--inactive .panel-horizontal-card__media-image {
+		opacity: 0.7;
 	}
 
 	.locations-card-status {
 		display: inline-flex;
 		align-items: center;
-		gap: 0.45rem;
+		flex-shrink: 0;
+		gap: 0.35rem;
+		margin-top: 0.12rem;
 		border-radius: 999px;
 		border: 0;
-		padding: 0.24rem 0.6rem;
-		font-size: 0.66rem;
-		font-weight: 800;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		padding: 0.18rem 0.52rem;
+		font-size: 0.68rem;
+		font-weight: 750;
+		letter-spacing: -0.01em;
 		white-space: nowrap;
 	}
 
@@ -581,25 +730,19 @@ const eagerMapPreloadUrls = locations
 		outline-offset: 3px;
 	}
 
-	.locations-card-value {
-		font-weight: 700;
+	location-manager .locations-card:active {
+		transform: scale(0.985);
 	}
 
-	@media (max-width: 639px) {
-		.locations-card-status {
-			padding: 0.2rem 0.5rem;
-			font-size: 0.62rem;
+	@media (min-width: 1024px) {
+		location-manager .locations-card:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
 		}
-	}
 
-	html[data-theme='dark'] .locations-summary-pill--active {
-		background: rgba(110, 231, 183, 0.16);
-		color: #b8f5d5;
-	}
-
-	html[data-theme='dark'] .locations-summary-pill--inactive {
-		background: rgba(255, 182, 193, 0.12);
-		color: #ffc8d2;
+		location-manager .locations-card:hover .panel-horizontal-card__media-image {
+			transform: scale(1.04);
+		}
 	}
 
 	html[data-theme='dark'] .locations-create-btn {
@@ -660,6 +803,45 @@ const eagerMapPreloadUrls = locations
 
 	html[data-theme='dark'] .locations-org-closures-btn__badge {
 		background: color-mix(in srgb, var(--primary) 22%, transparent);
+	}
+
+	html[data-theme='dark'] location-manager .locations-card {
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] location-manager .locations-card:hover {
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+	}
+
+	html[data-theme='dark'] location-manager .locations-card__inner {
+		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] location-manager .locations-card__route {
+		background: rgba(255, 255, 255, 0.04);
+	}
+
+	html[data-theme='dark'] location-manager .locations-card__go {
+		background: rgba(255, 255, 255, 0.06);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		location-manager .locations-card,
+		location-manager .locations-card__go,
+		location-manager .locations-card .panel-horizontal-card__media-image {
+			animation: none;
+			transition: none;
+		}
+
+		location-manager .locations-card:hover,
+		location-manager .locations-card:active,
+		location-manager .locations-card:hover .locations-card__go,
+		location-manager .locations-card:hover .panel-horizontal-card__media-image {
+			transform: none;
+		}
 	}
 </style>
 

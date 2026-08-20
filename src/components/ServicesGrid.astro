@@ -37,8 +37,6 @@ const toDurationLabel = (value?: number | null) => {
 	return `${value} min`;
 };
 
-const activeCount = services.filter((s) => s.is_active === 1).length;
-const inactiveCount = services.length - activeCount;
 ---
 
 <section class="services-view">
@@ -50,21 +48,6 @@ const inactiveCount = services.length - activeCount;
 					({totalRecords})
 				</span>
 			</h2>
-
-			<div class="page-title-row__badges flex flex-wrap items-center gap-2">
-				<span class="services-summary-pill services-summary-pill--active">
-					<span class="size-2 rounded-full services-summary-dot services-summary-dot--active"></span>
-					Activos: <span data-services-active-count>{activeCount}</span>
-				</span>
-				<span
-					class="services-summary-pill services-summary-pill--inactive"
-					data-services-inactive-pill
-					hidden={inactiveCount <= 0}
-				>
-					<span class="size-2 rounded-full services-summary-dot services-summary-dot--inactive"></span>
-					Inactivos: <span data-services-inactive-count>{inactiveCount}</span>
-				</span>
-			</div>
 		</div>
 
 		<div class="panel-page-header__actions flex flex-wrap items-center justify-end gap-2 shrink-0">
@@ -238,51 +221,48 @@ const inactiveCount = services.length - activeCount;
 			<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3" data-services-grid>
 				{services.map((service) => {
 					const imageUrl = String(service.image_url || '').trim();
+					const isActive = service.is_active === 1;
 					return (
 					<article
-						class="services-card panel-horizontal-card group cursor-pointer relative overflow-hidden"
+						class:list={[
+							'services-card group',
+							!isActive && 'services-card--inactive',
+						]}
 						data-service-card
 						data-service-id={service.id_service}
 						tabindex="0"
 						role="button"
 						aria-label={`Editar servicio ${service.name || service.id_service}`}
 					>
-						<div
-							class:list={[
-								'panel-horizontal-card__media',
-								!imageUrl && 'panel-horizontal-card__media--placeholder',
-							]}
-							data-service-card-media
-						>
-							{imageUrl ? (
-								<img
-									src={imageUrl}
-									alt=""
-									class="panel-horizontal-card__media-image"
-									loading="lazy"
-									decoding="async"
-									onerror="this.classList.add('is-hidden'); this.parentElement?.classList.add('panel-horizontal-card__media--placeholder');"
-								/>
-							) : null}
-							<span
-								class="material-symbols-rounded panel-horizontal-card__media-icon"
-								aria-hidden="true"
+						<div class="services-card__inner">
+							<div
+								class:list={[
+									'services-card__media',
+									'panel-horizontal-card__media',
+									!imageUrl && 'panel-horizontal-card__media--placeholder',
+								]}
+								data-service-card-media
 							>
-								design_services
-							</span>
-						</div>
-
-						<div class="panel-horizontal-card__body services-card-body">
-							<div class="panel-horizontal-card__header">
-								<div class="panel-horizontal-card__title-block">
-									<h3 class="services-card-title line-clamp-1">
-										{service.name || `Servicio #${service.id_service}`}
-									</h3>
-								</div>
+								{imageUrl ? (
+									<img
+										src={imageUrl}
+										alt=""
+										class="panel-horizontal-card__media-image"
+										loading="lazy"
+										decoding="async"
+										onerror="this.classList.add('is-hidden'); this.parentElement?.classList.add('panel-horizontal-card__media--placeholder');"
+									/>
+								) : null}
+								<span
+									class="material-symbols-rounded panel-horizontal-card__media-icon"
+									aria-hidden="true"
+								>
+									design_services
+								</span>
 								<span
 									class:list={[
-										'services-card-status shrink-0',
-										service.is_active === 1
+										'services-card-status',
+										isActive
 											? 'services-card-status--active'
 											: 'services-card-status--inactive',
 									]}
@@ -290,27 +270,32 @@ const inactiveCount = services.length - activeCount;
 									<span
 										class:list={[
 											'size-1.5 rounded-full',
-											service.is_active === 1
+											isActive
 												? 'services-summary-dot--active'
 												: 'services-summary-dot--inactive',
 										]}
 									></span>
-									{service.is_active === 1 ? 'Activo' : 'Inactivo'}
+									{isActive ? 'Activo' : 'Inactivo'}
 								</span>
 							</div>
 
-							<dl class="shrink-0 grid gap-0.5">
-								<div class="flex items-center justify-between text-[0.92rem]">
-									<dt class="services-card-term">Duración</dt>
-									<dd class="services-card-value">{toDurationLabel(service.duration_minutes)}</dd>
-								</div>
-								<div class="flex items-center justify-between text-[0.92rem]">
-									<dt class="services-card-term">Precio</dt>
-									<dd class="services-card-value">
-										{service.price ? currencyFormatter.format(service.price) : '--'}
-									</dd>
-								</div>
-							</dl>
+							<div class="services-card__body services-card-body">
+								<h3 class="services-card-title line-clamp-1">
+									{service.name || `Servicio #${service.id_service}`}
+								</h3>
+								<dl class="services-card__metrics">
+									<div class="services-card__stat">
+										<dt class="services-card-term">Duración</dt>
+										<dd class="services-card-value">{toDurationLabel(service.duration_minutes)}</dd>
+									</div>
+									<div class="services-card__stat">
+										<dt class="services-card-term">Precio</dt>
+										<dd class="services-card-value">
+											{service.price ? currencyFormatter.format(service.price) : '--'}
+										</dd>
+									</div>
+								</dl>
+							</div>
 						</div>
 					</article>
 					);
@@ -330,28 +315,6 @@ const inactiveCount = services.length - activeCount;
 		.services-view {
 			gap: 1.2rem;
 		}
-	}
-
-	.services-summary-pill {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.45rem;
-		border-radius: 999px;
-		border: 0;
-		padding: 0.33rem 0.78rem;
-		font-size: 0.78rem;
-		font-weight: 700;
-		letter-spacing: 0.01em;
-	}
-
-	.services-summary-pill--active {
-		background: rgba(16, 185, 129, 0.12);
-		color: #0f6d4a;
-	}
-
-	.services-summary-pill--inactive {
-		background: rgba(244, 63, 94, 0.11);
-		color: #8d3e4a;
 	}
 
 	.services-summary-dot {
@@ -462,42 +425,172 @@ const inactiveCount = services.length - activeCount;
 		color: var(--on-surface-variant);
 	}
 
-	.services-card {
+	service-manager .services-card {
+		--services-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		cursor: pointer;
+		gap: 0;
+		padding: 0.28rem;
+		border: 0;
+		border-radius: 1.45rem;
+		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+		overflow: visible;
+		animation: services-card-enter 720ms var(--services-ease) both;
+		transition:
+			transform 420ms var(--services-ease),
+			box-shadow 420ms var(--services-ease);
+	}
+
+	service-manager .services-card:nth-child(1) { animation-delay: 0ms; }
+	service-manager .services-card:nth-child(2) { animation-delay: 50ms; }
+	service-manager .services-card:nth-child(3) { animation-delay: 100ms; }
+	service-manager .services-card:nth-child(4) { animation-delay: 150ms; }
+	service-manager .services-card:nth-child(5) { animation-delay: 200ms; }
+	service-manager .services-card:nth-child(6) { animation-delay: 250ms; }
+	service-manager .services-card:nth-child(7) { animation-delay: 300ms; }
+	service-manager .services-card:nth-child(8) { animation-delay: 350ms; }
+	service-manager .services-card:nth-child(n + 9) { animation-delay: 400ms; }
+
+	@keyframes services-card-enter {
+		from {
+			opacity: 0;
+			transform: translateY(14px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	service-manager .services-card.panel-skeleton-card {
+		animation: none;
+	}
+
+	service-manager .services-card:hover {
+		transform: none;
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
+	}
+
+	service-manager .services-card__inner {
+		display: grid;
+		gap: 0.85rem;
+		height: 100%;
+		padding: 0.28rem 0.28rem 0.85rem;
+		border-radius: calc(1.45rem - 0.28rem);
+		background: var(--surface-bright);
+		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent);
+	}
+
+	service-manager .services-card .services-card__media,
+	service-manager .services-card .panel-horizontal-card__media {
+		flex: none;
+		max-width: none;
+		min-width: 0;
+		width: 100%;
+		height: 6.2rem;
+		border-radius: 1.1rem;
+		overflow: hidden;
+	}
+
+	service-manager .services-card .panel-horizontal-card__media-icon {
+		display: inline-flex;
+		position: relative;
+		z-index: 1;
+		font-size: 1.55rem;
+		color: color-mix(in srgb, var(--primary) 72%, #ffffff 28%);
+	}
+
+	service-manager .services-card .panel-horizontal-card__media:not(.panel-horizontal-card__media--placeholder) .panel-horizontal-card__media-icon {
+		display: none;
+	}
+
+	service-manager .services-card .panel-horizontal-card__media-image {
+		transition: transform 700ms var(--services-ease);
+	}
+
+	service-manager .services-card--inactive .panel-horizontal-card__media-image,
+	service-manager .services-card--inactive .panel-horizontal-card__media-icon {
+		opacity: 0.7;
+	}
+
+	service-manager .services-card__body {
+		display: grid;
+		gap: 0.75rem;
+		min-width: 0;
+		padding: 0 0.55rem;
+	}
+
+	service-manager .services-card .services-card-title {
+		font-size: 1.08rem;
+		font-weight: 780;
+		letter-spacing: -0.03em;
+		line-height: 1.2;
+	}
+
+	service-manager .services-card__metrics {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.45rem;
+		margin: 0;
+	}
+
+	service-manager .services-card__stat {
+		display: grid;
+		gap: 0.18rem;
+		min-width: 0;
+		padding: 0.55rem 0.65rem;
+		border-radius: 0.9rem;
+		background: color-mix(in srgb, var(--on-surface) 4.5%, transparent);
+	}
+
+	service-manager .services-card .services-card-term {
+		font-size: 0.68rem;
+		font-weight: 650;
+		letter-spacing: 0.01em;
+	}
+
+	service-manager .services-card .services-card-value {
+		margin: 0;
+		font-size: 0.86rem;
+		font-weight: 780;
+		letter-spacing: -0.02em;
+		line-height: 1.15;
+		text-align: left;
+		font-variant-numeric: tabular-nums;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
 	}
 
 	.services-card-status {
+		position: absolute;
+		top: 0.5rem;
+		right: 0.5rem;
+		z-index: 2;
 		display: inline-flex;
 		align-items: center;
-		gap: 0.45rem;
+		gap: 0.35rem;
 		border-radius: 999px;
 		border: 0;
-		padding: 0.24rem 0.6rem;
-		font-size: 0.66rem;
-		font-weight: 800;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
+		padding: 0.28rem 0.58rem;
+		font-size: 0.7rem;
+		font-weight: 750;
+		letter-spacing: -0.01em;
 		white-space: nowrap;
 	}
 
 	.services-card-status--active {
-		background: rgba(16, 185, 129, 0.12);
-		color: #0f6d4a;
+		background: color-mix(in srgb, #22c55e 18%, #0b1220 82%);
+		color: #bbf7d0;
 	}
 
 	.services-card-status--inactive {
-		background: rgba(244, 63, 94, 0.11);
-		color: #8d3e4a;
+		background: color-mix(in srgb, #fb7185 16%, #1a1014 84%);
+		color: #fecdd3;
 	}
 
-	html[data-theme='dark'] .services-summary-pill--active {
-		background: rgba(110, 231, 183, 0.16);
-		color: #b8f5d5;
-	}
-
-	html[data-theme='dark'] .services-summary-pill--inactive {
-		background: rgba(255, 182, 193, 0.12);
-		color: #ffc8d2;
+	service-manager .services-card:active {
+		transform: scale(0.985);
 	}
 
 	html[data-theme='dark'] .services-create-btn {
@@ -510,11 +603,6 @@ const inactiveCount = services.length - activeCount;
 	}
 
 	@media (max-width: 639px) {
-		.services-card-status {
-			padding: 0.2rem 0.5rem;
-			font-size: 0.62rem;
-		}
-
 		html[data-theme='dark'] .services-create-fab {
 			background: color-mix(in srgb, var(--primary) 78%, #0e0e10 22%);
 		}
@@ -534,14 +622,58 @@ const inactiveCount = services.length - activeCount;
 		color: var(--on-surface-variant);
 	}
 
+	@media (min-width: 1024px) {
+		service-manager .services-card:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+		}
+
+		service-manager .services-card:hover .panel-horizontal-card__media-image {
+			transform: scale(1.045);
+		}
+	}
+
+	html[data-theme='dark'] service-manager .services-card {
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] service-manager .services-card:hover {
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+	}
+
+	html[data-theme='dark'] service-manager .services-card__inner {
+		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] service-manager .services-card__stat {
+		background: rgba(255, 255, 255, 0.04);
+	}
+
 	html[data-theme='dark'] .services-card-status--active {
-		background: rgba(110, 231, 183, 0.16);
-		color: #b8f5d5;
+		background: color-mix(in srgb, #22c55e 22%, #0b1220 78%);
+		color: #bbf7d0;
 	}
 
 	html[data-theme='dark'] .services-card-status--inactive {
-		background: rgba(255, 182, 193, 0.12);
-		color: #ffc8d2;
+		background: color-mix(in srgb, #fb7185 18%, #1a1014 82%);
+		color: #fecdd3;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		service-manager .services-card,
+		service-manager .services-card .panel-horizontal-card__media-image {
+			animation: none;
+			transition: none;
+		}
+
+		service-manager .services-card:hover,
+		service-manager .services-card:active,
+		service-manager .services-card:hover .panel-horizontal-card__media-image {
+			transform: none;
+		}
 	}
 
 	.services-status-filter-btn.is-active {

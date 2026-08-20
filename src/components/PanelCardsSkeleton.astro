@@ -5,9 +5,12 @@ interface Props {
 	bodyClass: string;
 	count?: number;
 	horizontal?: boolean;
+	place?: boolean;
+	seal?: boolean;
+	roster?: boolean;
 }
 
-const { label, cardClass, bodyClass, count = 6, horizontal = false } = Astro.props;
+const { label, cardClass, bodyClass, count = 6, horizontal = false, place = false, seal = false, roster = false } = Astro.props;
 const placeholders = Array.from({ length: count }, (_, i) => i);
 ---
 
@@ -15,10 +18,6 @@ const placeholders = Array.from({ length: count }, (_, i) => i);
 	<header class="mb-4 flex flex-col sm:flex-row sm:items-start justify-between gap-4">
 		<div class="flex flex-col gap-2.5">
 			<div class="panel-skeleton-line h-7 w-36 rounded-lg"></div>
-			<div class="flex flex-wrap items-center gap-2">
-				<div class="panel-skeleton-line h-6 w-24 rounded-full"></div>
-				<div class="panel-skeleton-line h-6 w-28 rounded-full"></div>
-			</div>
 		</div>
 		<div class="panel-skeleton-line h-11 w-full sm:w-40 rounded-full"></div>
 	</header>
@@ -26,7 +25,70 @@ const placeholders = Array.from({ length: count }, (_, i) => i);
 	<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
 		{
 			placeholders.map(() =>
-				horizontal ? (
+				roster ? (
+					<article
+						class:list={[cardClass, 'panel-skeleton-card', 'pointer-events-none']}
+						aria-hidden="true"
+					>
+						<div class="professionals-card__inner">
+							<div class="professionals-card__roster">
+								<div class="panel-skeleton-line size-[3.85rem] shrink-0 rounded-[1.15rem]"></div>
+								<div class={bodyClass}>
+									<div class="professionals-card__title-row">
+										<div class="panel-skeleton-line h-5 w-36 max-w-full rounded-md"></div>
+										<div class="panel-skeleton-line h-5 w-14 shrink-0 rounded-full"></div>
+									</div>
+									<div class="panel-skeleton-line h-3.5 w-40 max-w-full rounded"></div>
+								</div>
+							</div>
+							<div class="professionals-card__meta">
+								<div class="panel-skeleton-line h-5 w-24 rounded-full"></div>
+								<div class="panel-skeleton-line h-3.5 w-20 rounded"></div>
+							</div>
+						</div>
+					</article>
+				) : seal ? (
+					<article
+						class:list={[cardClass, 'panel-skeleton-card', 'pointer-events-none']}
+						aria-hidden="true"
+					>
+						<div class="specialties-card__inner">
+							<div class="specialties-card__dossier">
+								<div class="panel-skeleton-line size-[3.35rem] shrink-0 rounded-[1rem]"></div>
+								<div class={bodyClass}>
+									<div class="specialties-card__title-row">
+										<div class="panel-skeleton-line h-5 w-32 max-w-full rounded-md"></div>
+										<div class="panel-skeleton-line h-5 w-14 shrink-0 rounded-full"></div>
+									</div>
+									<div class="panel-skeleton-line h-10 w-full rounded-[0.9rem]"></div>
+								</div>
+							</div>
+						</div>
+					</article>
+				) : place ? (
+					<article
+						class:list={[cardClass, 'panel-skeleton-card', 'pointer-events-none']}
+						aria-hidden="true"
+					>
+						<div class="locations-card__inner">
+							<div class="locations-card__head">
+								<div class="locations-card__title-row">
+									<div class="panel-skeleton-line h-5 w-36 max-w-full rounded-md"></div>
+									<div class="panel-skeleton-line h-5 w-14 shrink-0 rounded-full"></div>
+								</div>
+								<div class="panel-skeleton-line h-3.5 w-48 max-w-full rounded"></div>
+								<div class="locations-card__route">
+									<div class="panel-skeleton-line size-7 shrink-0 rounded-full"></div>
+									<div class="panel-skeleton-line h-3.5 w-28 rounded"></div>
+								</div>
+							</div>
+							<div
+								class="locations-card__media panel-horizontal-card__media panel-horizontal-card__media--placeholder"
+								aria-hidden="true"
+							></div>
+						</div>
+					</article>
+				) : horizontal ? (
 					<article
 						class:list={[cardClass, 'panel-horizontal-card', 'panel-skeleton-card', 'pointer-events-none']}
 						aria-hidden="true"

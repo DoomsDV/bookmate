@@ -153,13 +153,15 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 											<div class="material-cards-grid gap-6 sm:grid-cols-2 sm:gap-8 lg:grid-cols-3">
 												{Array.from({ length: 6 }).map(() => (
 													<article class="customer-card panel-skeleton-card" aria-hidden="true">
-														<div class="flex items-start justify-between gap-4">
-															<div class="panel-skeleton-line size-11 rounded-full"></div>
-														</div>
-														<div class="customer-card-body">
-															<div class="panel-skeleton-line h-5 w-40 max-w-full rounded-md"></div>
-															<div class="panel-skeleton-line h-3.5 w-32 max-w-full rounded"></div>
-															<div class="flex items-center justify-between gap-3 mt-1">
+														<div class="customer-card__inner">
+															<div class="customer-card__identity">
+																<div class="panel-skeleton-line size-12 rounded-[0.9rem]"></div>
+																<div class="customer-card-body">
+																	<div class="panel-skeleton-line h-5 w-40 max-w-full rounded-md"></div>
+																	<div class="panel-skeleton-line h-3.5 w-28 max-w-full rounded"></div>
+																</div>
+															</div>
+															<div class="customer-card__contact">
 																<div class="panel-skeleton-line h-3.5 w-16 rounded"></div>
 																<div class="panel-skeleton-line h-3.5 w-24 rounded"></div>
 															</div>
@@ -1027,12 +1029,192 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		color: var(--on-surface-variant);
 	}
 
-	.customer-card {
+	customer-manager .customer-card {
+		--customer-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		cursor: pointer;
+		gap: 0;
+		padding: 0.28rem;
+		border: 0;
+		border-radius: 1.45rem;
+		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+		animation: customer-card-enter 720ms var(--customer-ease) both;
+		transition:
+			transform 420ms var(--customer-ease),
+			box-shadow 420ms var(--customer-ease);
 	}
 
-	.customer-card-value {
-		font-weight: 700;
+	customer-manager .customer-card:nth-child(1) { animation-delay: 0ms; }
+	customer-manager .customer-card:nth-child(2) { animation-delay: 50ms; }
+	customer-manager .customer-card:nth-child(3) { animation-delay: 100ms; }
+	customer-manager .customer-card:nth-child(4) { animation-delay: 150ms; }
+	customer-manager .customer-card:nth-child(5) { animation-delay: 200ms; }
+	customer-manager .customer-card:nth-child(6) { animation-delay: 250ms; }
+	customer-manager .customer-card:nth-child(n + 7) { animation-delay: 300ms; }
+
+	@keyframes customer-card-enter {
+		from {
+			opacity: 0;
+			transform: translateY(14px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
+	customer-manager .customer-card.panel-skeleton-card {
+		animation: none;
+	}
+
+	customer-manager .customer-card:hover {
+		transform: none;
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
+	}
+
+	customer-manager .customer-card__inner {
+		display: grid;
+		gap: 0.95rem;
+		height: 100%;
+		padding: 1rem 1.05rem 1.05rem;
+		border-radius: calc(1.45rem - 0.28rem);
+		background: var(--surface-bright);
+		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent);
+	}
+
+	customer-manager .customer-card__identity {
+		display: flex;
+		align-items: center;
+		gap: 0.8rem;
+		min-width: 0;
+	}
+
+	customer-manager .customer-card .customer-card-avatar {
+		width: 3rem;
+		height: 3rem;
+		border-radius: 0.9rem;
+		font-size: 0.82rem;
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+	}
+
+	customer-manager .customer-card .customer-card-body {
+		flex: 1;
+		min-width: 0;
+		display: grid;
+		gap: 0.2rem;
+	}
+
+	customer-manager .customer-card .customer-card-title {
+		font-size: 1.08rem;
+		font-weight: 780;
+		letter-spacing: -0.03em;
+		line-height: 1.2;
+	}
+
+	customer-manager .customer-card .customer-card-subtitle {
+		font-size: 0.8rem;
+		font-weight: 600;
+	}
+
+	customer-manager .customer-card .customer-card-metrics {
+		margin: 0;
+	}
+
+	customer-manager .customer-card__contact {
+		display: flex;
+		align-items: center;
+		gap: 0.55rem;
+		min-width: 0;
+		padding: 0.55rem 0.55rem 0.55rem 0.8rem;
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--on-surface) 4.5%, transparent);
+	}
+
+	customer-manager .customer-card .customer-card-term {
+		flex: 0 0 auto;
+		font-size: 0.72rem;
+		font-weight: 650;
+	}
+
+	customer-manager .customer-card .customer-card-value {
+		flex: 1 1 auto;
+		min-width: 0;
+		margin: 0;
+		font-weight: 750;
+		font-size: 0.88rem;
+		letter-spacing: -0.015em;
+		text-align: right;
+		font-variant-numeric: tabular-nums;
+	}
+
+	customer-manager .customer-card__go {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.85rem;
+		height: 1.85rem;
+		flex-shrink: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+		transition: transform 420ms var(--customer-ease);
+	}
+
+	customer-manager .customer-card__go .material-symbols-rounded {
+		font-size: 1rem;
+		font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+	}
+
+	customer-manager .customer-card:hover .customer-card__go {
+		transform: translateX(2px);
+	}
+
+	customer-manager .customer-card:active {
+		transform: scale(0.985);
+	}
+
+	@media (min-width: 1024px) {
+		customer-manager .customer-card:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+		}
+	}
+
+	html[data-theme='dark'] customer-manager .customer-card {
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] customer-manager .customer-card:hover {
+		background: rgba(255, 255, 255, 0.03);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+	}
+
+	html[data-theme='dark'] customer-manager .customer-card__inner {
+		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	}
+
+	html[data-theme='dark'] customer-manager .customer-card .customer-card-avatar {
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+	}
+
+	html[data-theme='dark'] customer-manager .customer-card__contact {
+		background: rgba(255, 255, 255, 0.04);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		customer-manager .customer-card,
+		customer-manager .customer-card__go {
+			animation: none;
+			transition: none;
+		}
+
+		customer-manager .customer-card:hover,
+		customer-manager .customer-card:active,
+		customer-manager .customer-card:hover .customer-card__go {
+			transform: none;
+		}
 	}
 
 	.customer-profile-modal-footer {

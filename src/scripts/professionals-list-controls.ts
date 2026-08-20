@@ -106,7 +106,12 @@ const renderProfessionalCard = (professional: ProfessionalItem) => {
 		: isActive
 			? 'professionals-summary-dot--active'
 			: 'professionals-summary-dot--inactive';
-	const statusLabel = isPending ? 'Invitación pendiente' : isActive ? 'Activo' : 'Inactivo';
+	const statusLabel = isPending ? 'Pendiente' : isActive ? 'Activo' : 'Inactivo';
+	const stateClass = isPending
+		? ' professionals-card--pending'
+		: isActive
+			? ''
+			: ' professionals-card--inactive';
 
 	const avatarClasses = imageUrl
 		? 'professionals-card-avatar'
@@ -128,38 +133,34 @@ const renderProfessionalCard = (professional: ProfessionalItem) => {
 
 	return `
 		<article
-			class="professionals-card group cursor-pointer relative overflow-hidden"
+			class="professionals-card group${stateClass}"
 			data-professional-card
 			data-professional-id="${professional.id_professional}"
 			tabindex="0"
 			role="button"
 			aria-label="Editar personal ${escapeHtml(name)}"
 		>
-			<div class="relative flex items-start justify-between gap-4">
-				<div class="${avatarClasses}" data-professional-card-avatar>
-					${imageHtml}
-					<span class="${iconClasses}" aria-hidden="true">${PROFESSIONAL_ICON}</span>
-				</div>
-				<span class="professionals-card-status ${statusClass}">
-					<span class="size-1.5 rounded-full ${dotClass}"></span>
-					${statusLabel}
-				</span>
-			</div>
-			<div class="professionals-card-body">
-				<div>
-					<h3 class="professionals-card-title line-clamp-1">${escapeHtml(name)}</h3>
-					<p class="mt-1 text-[0.9rem] text-(--on-surface-variant) line-clamp-1">${escapeHtml(email)}</p>
-				</div>
-				<dl class="mt-auto shrink-0 grid gap-0.5">
-					<div class="flex items-center justify-between text-[0.92rem]">
-						<dt class="professionals-card-term">Especialidad</dt>
-						<dd class="professionals-card-value">${escapeHtml(specialty)}</dd>
+			<div class="professionals-card__inner">
+				<div class="professionals-card__roster">
+					<div class="${avatarClasses}" data-professional-card-avatar>
+						${imageHtml}
+						<span class="${iconClasses}" aria-hidden="true">${PROFESSIONAL_ICON}</span>
 					</div>
-					<div class="flex items-center justify-between text-[0.92rem]">
-						<dt class="professionals-card-term">Teléfono</dt>
-						<dd class="professionals-card-value">${escapeHtml(String(phone))}</dd>
+					<div class="professionals-card-body">
+						<div class="professionals-card__title-row">
+							<h3 class="professionals-card-title line-clamp-1">${escapeHtml(name)}</h3>
+							<span class="professionals-card-status ${statusClass}">
+								<span class="size-1.5 rounded-full ${dotClass}"></span>
+								${statusLabel}
+							</span>
+						</div>
+						<p class="professionals-card__email line-clamp-1">${escapeHtml(email)}</p>
 					</div>
-				</dl>
+				</div>
+				<div class="professionals-card__meta">
+					<span class="professionals-card__craft line-clamp-1">${escapeHtml(specialty)}</span>
+					<span class="professionals-card__phone">${escapeHtml(String(phone))}</span>
+				</div>
 			</div>
 		</article>
 	`;
@@ -169,28 +170,6 @@ const updateTitleSummary = (totalRecords: number) => {
 	const root = getListRoot();
 	const summaryNode = root?.querySelector('[data-professionals-summary]');
 	if (summaryNode) summaryNode.textContent = `(${totalRecords})`;
-};
-
-const updateSummaryPills = (professionals: ProfessionalItem[]) => {
-	const root = getListRoot();
-	if (!root) return;
-
-	const activeCount = professionals.filter(
-		(item) => item.membership_status !== 'pending_invite' && isAccountActive(item)
-	).length;
-	const inactiveCount = professionals.filter(
-		(item) => item.membership_status !== 'pending_invite' && !isAccountActive(item)
-	).length;
-
-	const activeNode = root.querySelector('[data-professionals-active-count]');
-	if (activeNode) activeNode.textContent = String(activeCount);
-
-	const inactivePill = root.querySelector<HTMLElement>('[data-professionals-inactive-pill]');
-	const inactiveCountNode = root.querySelector('[data-professionals-inactive-count]');
-	if (inactivePill && inactiveCountNode) {
-		inactiveCountNode.textContent = String(inactiveCount);
-		inactivePill.hidden = inactiveCount <= 0;
-	}
 };
 
 const updateEmptyOrGrid = (
@@ -337,7 +316,6 @@ const loadProfessionals = async (state: {
 			isActive: state.isActive,
 		});
 		updateTitleSummary(normalizedMeta.total_records);
-		updateSummaryPills(professionals);
 		updateEmptyOrGrid(professionals, state);
 		updateFilterUi(state.isActive);
 		updatePagination(normalizedMeta);
