@@ -418,6 +418,7 @@ class CalendarManager extends HTMLElement {
 		}
 		this.#bindRetryAttempts = 0;
 		this.clearNowIndicatorSpan();
+		this.setSheetOpen(this.helpSheet, false);
 		this.setSheetOpen(this.filtersSheet, false);
 		this.setSheetOpen(this.conflictsSheet, false);
 		this.restoreFiltersSheetHome();
@@ -1048,6 +1049,7 @@ class CalendarManager extends HTMLElement {
 			}
 		}
 		sheet.classList.toggle('is-open', open);
+		sheet.toggleAttribute('hidden', !open);
 		sheet.setAttribute('aria-hidden', open ? 'false' : 'true');
 		const helpOpen = Boolean(this.helpSheet?.classList.contains('is-open'));
 		const filtersOpen = Boolean(this.filtersSheet?.classList.contains('is-open'));

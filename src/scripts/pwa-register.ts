@@ -68,9 +68,14 @@ export const initHaselPwaRegister = () => {
 		try {
 			const probe = await fetch(swUrl, { method: 'GET', cache: 'no-store' });
 			if (!isJavaScriptResponse(probe)) return;
-			await wb.register();
-		} catch {
-			/* SW no disponible en este entorno */
+			const registration = await wb.register();
+			if (registration && 'update' in registration) {
+				void registration.update().catch((error: unknown) => {
+					console.warn('[pwa] No se pudo actualizar el service worker.', error);
+				});
+			}
+		} catch (error) {
+			console.warn('[pwa] No se pudo registrar el service worker.', error);
 		}
 	})();
 };

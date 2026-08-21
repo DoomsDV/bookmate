@@ -112,6 +112,7 @@ export default defineConfig({
     workbox: {
       // This app is SSR/MPA, so we do not use SPA app-shell fallback navigation.
       navigateFallback: null,
+      clientsClaim: true,
       // Cachea los assets estáticos generados por Astro/Vite
       globPatterns: ['**/*.{js,css,html,ico,png,svg}']
     }

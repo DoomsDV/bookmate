@@ -388,6 +388,13 @@ html[data-theme='dark'] body {
 	-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 }
 
+/* Si falta el CSS de página (iOS / SW stale), los sheets no deben quedar en el flujo. */
+.calendar-filters-sheet:not(.is-open),
+.calendar-help-sheet:not(.is-open),
+.calendar-conflicts-sheet:not(.is-open) {
+	display: none;
+}
+
 /* Filtros calendario: scrim neutro sin blur (mobile sheet) */
 .calendar-filters-sheet__backdrop {
 	background-color: var(--modal-backdrop-scrim) !important;
