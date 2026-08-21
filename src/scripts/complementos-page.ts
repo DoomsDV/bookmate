@@ -46,12 +46,14 @@ const ADDON_COPY: Record<string, string> = {
 };
 
 const odontogramPreviewHtml = () => `
-		<div class="complementos-card__preview complementos-card__preview--odontogram" aria-hidden="true">
-			<img
-				class="complementos-card__preview-img"
-				src="/odontograma/odonto-removebg.png"
-				alt=""
-			/>
+		<div class="complementos-card__media" aria-hidden="true">
+			<div class="complementos-card__preview complementos-card__preview--odontogram">
+				<img
+					class="complementos-card__preview-img"
+					src="/odontograma/odonto-removebg.png"
+					alt=""
+				/>
+			</div>
 		</div>
 	`;
 
@@ -224,12 +226,10 @@ export const initComplementosPage = () => {
 		let actions = '';
 		if (active) {
 			actions = `
-				<div class="flex flex-wrap items-center gap-2">
-					<span class="complementos-card__badge">
-						<span class="material-symbols-rounded text-[0.95rem]" aria-hidden="true">check_circle</span>
-						${billingLive ? 'Activo' : 'Activo · sin cargo'}
-					</span>
-				</div>
+				<span class="complementos-card__badge">
+					<span class="complementos-card__badge-dot" aria-hidden="true"></span>
+					${billingLive ? 'Activo' : 'Activo · sin cargo'}
+				</span>
 				<button
 					type="button"
 					class="complementos-btn complementos-btn--soft"
@@ -237,7 +237,10 @@ export const initComplementosPage = () => {
 					data-addon-code="${escapeHtml(item.code)}"
 					${isBusy ? 'disabled' : ''}
 				>
-					${isBusy ? 'Desactivando…' : 'Desactivar'}
+					<span>${isBusy ? 'Desactivando…' : 'Desactivar'}</span>
+					<span class="complementos-btn__glyph" aria-hidden="true">
+						<span class="material-symbols-rounded">remove</span>
+					</span>
 				</button>
 			`;
 		} else if (eligible) {
@@ -249,24 +252,34 @@ export const initComplementosPage = () => {
 					data-addon-code="${escapeHtml(item.code)}"
 					${isBusy ? 'disabled' : ''}
 				>
-					${isBusy ? activatingLabel : activateLabel}
+					<span>${isBusy ? activatingLabel : activateLabel}</span>
+					<span class="complementos-btn__glyph" aria-hidden="true">
+						<span class="material-symbols-rounded">arrow_forward</span>
+					</span>
 				</button>
 			`;
 		}
 
 		const preview = previewForAddon(item.code);
 		const mediaClass = preview ? ' complementos-card--media' : '';
+		const activeClass = active ? ' is-active' : '';
+		const eyebrow = billingLive ? 'Módulo mensual' : 'Beta · sin cargo';
 
 		return `
-			<article class="complementos-card${mediaClass}" data-addon-card data-addon-code="${escapeHtml(item.code)}">
-				${preview}
-				<div class="complementos-card__body">
-					<div>
-						<h2 class="complementos-card__title">${escapeHtml(item.name)}</h2>
-						<p class="complementos-card__desc">${escapeHtml(desc)}</p>
+			<article class="complementos-card${mediaClass}${activeClass}" data-addon-card data-addon-code="${escapeHtml(item.code)}">
+				<div class="complementos-card__shell">
+					<div class="complementos-card__core">
+						${preview}
+						<div class="complementos-card__body">
+							<p class="complementos-card__eyebrow">${eyebrow}</p>
+							<div class="complementos-card__copy">
+								<h2 class="complementos-card__title">${escapeHtml(item.name)}</h2>
+								<p class="complementos-card__desc">${escapeHtml(desc)}</p>
+							</div>
+							${priceBlock}
+							${actions}
+						</div>
 					</div>
-					${priceBlock}
-					${actions}
 				</div>
 			</article>
 		`;
