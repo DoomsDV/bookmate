@@ -960,3 +960,60 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 	max-width: calc(100vw - 1.5rem);
 	box-sizing: border-box;
 }
+
+/* Mobile: mismos campos que Datos de facturación (px-3 py-2). Desktop no cambia. */
+@media (max-width: 639px) {
+	dialog[data-appointment-modal] [data-appointment-tab-panel='details'] :is(
+		input[type='text'],
+		input[type='tel'],
+		input[type='email'],
+		input[type='datetime-local'],
+		select
+	) {
+		min-height: 0;
+		height: auto;
+		padding: 0.5rem 0.75rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		line-height: 1.25;
+	}
+
+	dialog[data-appointment-modal] [data-appointment-tab-panel='details'] :is(
+		input[data-start-display],
+		input[data-end-display]
+	) {
+		padding-right: 2.5rem;
+	}
+
+	dialog[data-appointment-modal] .appointment-phone-field {
+		height: auto;
+		min-height: 0;
+	}
+
+	dialog[data-appointment-modal] .appointment-phone-field__prefix {
+		padding-inline: 0.75rem;
+		font-size: 0.9rem;
+	}
+
+	dialog[data-appointment-modal] .appointment-customer-clear {
+		top: 50%;
+		right: 0.45rem;
+		width: 1.75rem;
+		height: 1.75rem;
+		transform: translateY(-50%);
+	}
+
+	dialog[data-appointment-modal] .bookmate-searchable-select.ts-wrapper.single .ts-control {
+		min-height: 0;
+		height: auto;
+		padding: 0.5rem 2.35rem 0.5rem 0.75rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+	}
+
+	dialog[data-appointment-modal] .bookmate-searchable-select.ts-wrapper.single .ts-control > input,
+	dialog[data-appointment-modal] .bookmate-searchable-select.ts-wrapper.single .item {
+		font-size: 0.9rem;
+		font-weight: 600;
+	}
+}

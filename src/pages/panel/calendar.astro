@@ -116,13 +116,13 @@ const googleErrorMessage = hasGoogleError
 						></div>
 					</TopBar>
 
-				<main class="calendar-main px-4 pt-2 pb-4 sm:px-6 sm:py-6 lg:px-8" data-calendar-main>
+				<main class="calendar-main px-3 pt-1 pb-3 md:px-4 md:py-2.5 lg:px-4 lg:py-2" data-calendar-main>
 					<section class="material-region dark:shadow-none" data-calendar-root>
 						{
 							initialLoadError ? (
 								<FlashMessage message={initialLoadError} type="error" expand={true} dismissible={false} />
 							) : (
-								<div class="calendar-page-stack grid gap-3 sm:gap-3.5">
+								<div class="calendar-page-stack grid gap-1.5 md:gap-2">
 									<header class="calendar-page-header">
 										<div class="calendar-page-header__intro grid gap-1 min-w-0">
 											<h1 class="calendar-page-title sr-only">
@@ -1107,8 +1107,16 @@ const googleErrorMessage = hasGoogleError
 	}
 
 	@media (max-width: 767px) {
+		.calendar-loading-skeleton__slots {
+			padding: 0.15rem 0.35rem 0.45rem;
+		}
+
+		.calendar-loading-skeleton__slot-row {
+			min-height: 1.45rem;
+		}
+
 		.calendar-loading-skeleton__event {
-			border-radius: 0.75rem;
+			border-radius: 0.55rem;
 		}
 	}
 
@@ -1291,10 +1299,10 @@ const googleErrorMessage = hasGoogleError
 			flex-wrap: wrap;
 			align-items: center;
 			justify-content: space-between;
-			gap: 0.45rem 0.65rem;
+			gap: 0.3rem 0.5rem;
 			position: relative;
-			margin-bottom: 0.55rem;
-			min-height: 2.875rem;
+			margin-bottom: 0.28rem;
+			min-height: 2.25rem;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk[data-calendar-title],
@@ -1304,10 +1312,10 @@ const googleErrorMessage = hasGoogleError
 			top: auto !important;
 			transform: none !important;
 			order: -1;
-			flex: 1 0 100%;
-			width: 100%;
-			max-width: none;
-			justify-content: center;
+			flex: 0 1 auto;
+			width: auto;
+			max-width: 12.5rem;
+			justify-content: flex-start;
 			overflow: hidden;
 			pointer-events: auto;
 			z-index: auto;
@@ -1320,8 +1328,9 @@ const googleErrorMessage = hasGoogleError
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
-			text-align: center;
-			font-size: clamp(1rem, 1.25vw, 1.35rem);
+			text-align: left;
+			font-size: 1.02rem;
+			letter-spacing: -0.03em;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav {
@@ -1378,17 +1387,105 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-tour-help__label {
-			display: none;
+			display: none !important;
 		}
 
-		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-tour-help {
-			width: 2.75rem;
-			min-width: 2.75rem;
+		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .calendar-refresh-btn,
+		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .calendar-conflicts-trigger,
+		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .calendar-tour-help {
+			box-sizing: border-box;
+			width: 2.15rem;
+			height: 2.15rem;
+			min-width: 2.15rem;
+			min-height: 2.15rem;
+			max-width: 2.15rem;
+			max-height: 2.15rem;
 			padding: 0;
+			margin: 0;
+			gap: 0;
+			border: 1px solid var(--calendar-outline-strong);
+			border-radius: 999px;
+			aspect-ratio: 1;
+			flex: 0 0 2.15rem;
+			align-self: center;
+			line-height: 0;
+		}
+
+		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .material-symbols-rounded {
+			font-size: 1.12rem;
+			line-height: 1;
+			font-variation-settings: 'wght' 380, 'opsz' 20;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-create-btn {
-			padding-inline: 0.95rem;
+			height: 2.15rem;
+			min-height: 2.15rem;
+			padding-inline: 0.75rem;
+			font-size: 0.82rem;
+		}
+
+		[data-calendar-root] .fc .fc-button,
+		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button {
+			height: 2.05rem;
+			font-size: 0.78rem;
+			padding-inline: 0.62rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-slot {
+			height: 1.85rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-axis,
+		[data-calendar-root] .fc .fc-timegrid .fc-scrollgrid-section-header .fc-timegrid-axis {
+			width: 2.65rem;
+			min-width: 2.65rem;
+		}
+
+		[data-calendar-root] .fc .fc-col-header-cell-cushion {
+			padding: 0.28rem 0.2rem !important;
+		}
+
+		[data-calendar-root] .custom-cal-header {
+			gap: 0.08rem;
+		}
+
+		[data-calendar-root] .cal-day-name {
+			font-size: 0.68rem;
+		}
+
+		[data-calendar-root] .cal-day-number,
+		[data-calendar-root] .fc-day-today .cal-day-number {
+			width: 1.7rem;
+			height: 1.7rem;
+			font-size: 0.9rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-axis-cushion,
+		[data-calendar-root] .fc .fc-timegrid-slot-label-cushion {
+			font-size: 0.7rem;
+		}
+
+		[data-calendar-root] .cal-hour-label__hour {
+			font-size: 0.7rem;
+		}
+
+		[data-calendar-root] .cal-hour-label__meridiem {
+			font-size: 0.52rem;
+		}
+
+		[data-calendar-root] .fc .fc-scrollgrid {
+			border-radius: 1rem;
+		}
+
+		.calendar-filters-trigger {
+			min-height: 2.15rem;
+			padding: 0.35rem 0.7rem;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		[data-calendar-root] .fc .fc-toolbar.fc-header-toolbar {
+			flex-wrap: nowrap;
 		}
 	}
 
@@ -2615,45 +2712,41 @@ const googleErrorMessage = hasGoogleError
 	@media (max-width: 767px) {
 		.calendar-fab-stack {
 			position: fixed;
-			right: max(1rem, env(safe-area-inset-right, 0px));
+			right: max(0.7rem, env(safe-area-inset-right, 0px));
 			/* Por encima del bottom nav mobile (~4.25rem + padding + safe-area) */
-			bottom: calc(5.55rem + env(safe-area-inset-bottom, 0px));
+			bottom: calc(5.25rem + env(safe-area-inset-bottom, 0px));
 			z-index: 46;
 			display: flex;
 			flex-direction: column;
 			align-items: center;
-			gap: 0.65rem;
+			gap: 0.42rem;
 			pointer-events: auto;
 		}
 
 		.calendar-fab-stack .calendar-refresh-btn {
-			width: 3.55rem;
-			height: 3.55rem;
-			min-width: 3.55rem;
-			min-height: 3.55rem;
+			width: 3.05rem;
+			height: 3.05rem;
+			min-width: 3.05rem;
+			min-height: 3.05rem;
 			padding: 0;
+			border: 0;
 			border-radius: 999px;
-			border: 1px solid var(--shell-border);
 			background: var(--control-surface);
 			color: var(--on-surface-variant);
-			box-shadow:
-				0 6px 16px rgb(0 0 0 / 0.12),
-				0 1px 4px rgb(0 0 0 / 0.08);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 10%, transparent);
 		}
 
 		.calendar-fab-stack .calendar-conflicts-trigger {
-			width: 3.55rem;
-			height: 3.55rem;
-			min-width: 3.55rem;
-			min-height: 3.55rem;
+			width: 3.05rem;
+			height: 3.05rem;
+			min-width: 3.05rem;
+			min-height: 3.05rem;
 			padding: 0;
+			border: 0;
 			border-radius: 999px;
-			border: 1px solid var(--shell-border);
 			background: var(--control-surface);
 			color: var(--on-surface-variant);
-			box-shadow:
-				0 6px 16px rgb(0 0 0 / 0.12),
-				0 1px 4px rgb(0 0 0 / 0.08);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 10%, transparent);
 		}
 
 		.calendar-fab-stack .calendar-refresh-btn .material-symbols-rounded,
@@ -2668,19 +2761,15 @@ const googleErrorMessage = hasGoogleError
 
 		.calendar-fab-stack .calendar-create-btn {
 			position: static;
-			width: 3.55rem;
-			height: 3.55rem;
+			width: 3.05rem;
+			height: 3.05rem;
 			padding: 0;
 			border-radius: 999px;
-			box-shadow:
-				0 4px 12px rgb(0 0 0 / 0.16),
-				0 1px 3px rgb(0 0 0 / 0.1);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent);
 		}
 
 		html[data-theme='dark'] .calendar-fab-stack .calendar-create-btn {
-			box-shadow:
-				0 4px 12px rgb(0 0 0 / 0.35),
-				0 1px 3px rgb(0 0 0 / 0.22);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 36%, transparent);
 		}
 
 		.calendar-create-btn__label {
@@ -2956,24 +3045,38 @@ const googleErrorMessage = hasGoogleError
 		transition: background-color 140ms ease, border-color 140ms ease, color 140ms ease;
 	}
 
-	@media (min-width: 640px) {
-		.calendar-refresh-btn {
-			width: 2.875rem;
-			height: 2.875rem;
-			min-width: 2.875rem;
-			min-height: 2.875rem;
+	@media (min-width: 768px) {
+		.calendar-refresh-btn,
+		.calendar-conflicts-trigger,
+		.calendar-tour-help {
+			box-sizing: border-box;
+			width: 2.15rem;
+			height: 2.15rem;
+			min-width: 2.15rem;
+			min-height: 2.15rem;
+			max-width: 2.15rem;
+			max-height: 2.15rem;
 			padding: 0;
+			border: 1px solid var(--calendar-outline-strong);
 			border-radius: 999px;
 			aspect-ratio: 1;
-			flex: 0 0 auto;
+			flex: 0 0 2.15rem;
 			align-self: center;
+			line-height: 0;
+		}
+
+		.calendar-refresh-btn .material-symbols-rounded,
+		.calendar-conflicts-trigger .material-symbols-rounded,
+		.calendar-tour-help .material-symbols-rounded {
+			font-size: 1.12rem;
+			line-height: 1;
 		}
 
 		.calendar-create-btn {
-			height: 2.875rem;
-			min-height: 2.875rem;
-			padding-top: 0;
-			padding-bottom: 0;
+			height: 2.15rem;
+			min-height: 2.15rem;
+			padding: 0 0.75rem;
+			font-size: 0.82rem;
 		}
 	}
 
@@ -3383,8 +3486,8 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		.calendar-main[data-calendar-main] {
-			padding-top: 0.35rem;
-			padding-bottom: calc(5.15rem + env(safe-area-inset-bottom, 0px));
+			padding-top: 0.1rem;
+			padding-bottom: calc(4.85rem + env(safe-area-inset-bottom, 0px));
 			height: auto;
 			max-height: none;
 			overflow: visible;
@@ -3424,8 +3527,8 @@ const googleErrorMessage = hasGoogleError
 			z-index: 30;
 			display: grid;
 			gap: 0;
-			margin-inline: -1rem;
-			padding: 0 1rem 0.2rem;
+			margin-inline: -0.75rem;
+			padding: 0 0.75rem 0.06rem;
 			background: var(--page-background, #fefdfc);
 			border-bottom: 0;
 			backdrop-filter: none;
@@ -3488,9 +3591,9 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .calendar-sticky-days__axis {
-			flex: 0 0 3.1rem;
-			width: 3.1rem;
-			min-width: 3.1rem;
+			flex: 0 0 2.4rem;
+			width: 2.4rem;
+			min-width: 2.4rem;
 		}
 
 		[data-calendar-root] .calendar-sticky-days__cols {
@@ -3504,7 +3607,7 @@ const googleErrorMessage = hasGoogleError
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			padding: 0.35rem 0.15rem 0.45rem;
+			padding: 0.16rem 0.08rem 0.2rem;
 			border-left: 1px solid color-mix(in srgb, var(--calendar-outline) 70%, transparent);
 		}
 
@@ -3597,9 +3700,9 @@ const googleErrorMessage = hasGoogleError
 			justify-items: stretch;
 			align-items: center;
 			gap: 0;
-			padding: 0 0 0.45rem;
+			padding: 0 0 0.18rem;
 			border-bottom: 0;
-			margin-bottom: 0.25rem;
+			margin-bottom: 0.08rem;
 		}
 
 		[data-calendar-root] .fc .fc-toolbar-chunk:empty,
@@ -3614,9 +3717,9 @@ const googleErrorMessage = hasGoogleError
 			max-width: 100%;
 			align-items: center;
 			justify-content: space-between;
-			gap: 0.5rem;
+			gap: 0.28rem;
 			min-width: 0;
-			min-height: 2.15rem;
+			min-height: 1.85rem;
 			margin: 0 !important;
 			justify-self: stretch;
 		}
@@ -3630,7 +3733,7 @@ const googleErrorMessage = hasGoogleError
 			display: inline-flex;
 			align-items: center;
 			flex: 0 0 auto;
-			gap: 0.35rem;
+			gap: 0.16rem;
 			min-width: 0;
 		}
 
@@ -3642,10 +3745,10 @@ const googleErrorMessage = hasGoogleError
 			max-width: none;
 			margin: 0;
 			padding: 0;
-			font-size: 1.05rem;
+			font-size: 0.98rem;
 			font-weight: 800;
-			line-height: 1.2;
-			letter-spacing: 0.01em;
+			line-height: 1.15;
+			letter-spacing: -0.03em;
 			text-align: left;
 			text-transform: capitalize;
 			overflow: hidden;
@@ -3742,8 +3845,36 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .fc .fc-event {
-			border-radius: 0.75rem;
-			padding: 0.08rem 0.12rem;
+			border-radius: 0.55rem;
+			padding: 0.04rem 0.1rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-axis,
+		[data-calendar-root] .fc .fc-timegrid .fc-scrollgrid-section-header .fc-timegrid-axis {
+			width: 2.4rem;
+			min-width: 2.4rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-slot {
+			height: 1.55rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-axis-cushion,
+		[data-calendar-root] .fc .fc-timegrid-slot-label-cushion {
+			font-size: 0.66rem;
+			padding-inline: 0.06rem 0.12rem;
+		}
+
+		[data-calendar-root] .cal-hour-label {
+			gap: 0.06rem;
+		}
+
+		[data-calendar-root] .cal-hour-label__hour {
+			font-size: 0.66rem;
+		}
+
+		[data-calendar-root] .cal-hour-label__meridiem {
+			font-size: 0.48rem;
 		}
 	}
 
