@@ -1,7 +1,10 @@
 import type { DriveStep } from 'driver.js';
-import { runBookmateTour } from './product-tour';
+import { runBookmateTour, type BookmateTourRunOptions } from './product-tour';
 
 const PUBLIC_PROFILE_FIELD_SELECTOR = '[data-settings-public-profile-field]';
+const PROFILE_PHOTO_SELECTOR = '[data-settings-tour-photo]';
+const PROFILE_PHONE_SELECTOR = '[data-settings-tour-phone]';
+const PROFILE_PUSH_SELECTOR = '[data-settings-push-notifications]';
 const SETTINGS_MODAL_SELECTOR = '[data-settings-modal]';
 const PAYMENTS_ENABLE_SELECTOR = '[data-payments-tour-enable]';
 const PAYMENTS_POLICY_SELECTOR = '[data-payments-tour-policy]';
@@ -13,6 +16,31 @@ const SYSTEM_REMINDER_SELECTOR = '[data-settings-tour-system-reminder]';
 const SYSTEM_ALERT_SELECTOR = '[data-settings-tour-system-alert]';
 const SYSTEM_PUSH_SELECTOR = '[data-settings-tour-system-push]';
 const SYSTEM_NOTIFY_ALL_SELECTOR = '[data-settings-tour-system-notify-all]';
+
+const SETTINGS_TOUR_OPTIONS: Pick<
+	BookmateTourRunOptions,
+	| 'force'
+	| 'persistCompletion'
+	| 'useTopLayerShell'
+	| 'overlayOpacity'
+	| 'hostSelector'
+	| 'scrollIntoView'
+	| 'stagePadding'
+	| 'stageRadius'
+	| 'animate'
+	| 'duration'
+> = {
+	force: true,
+	persistCompletion: false,
+	useTopLayerShell: true,
+	overlayOpacity: 0,
+	hostSelector: SETTINGS_MODAL_SELECTOR,
+	scrollIntoView: { rootSelector: '[data-settings-content]' },
+	stagePadding: 8,
+	stageRadius: 16,
+	animate: true,
+	duration: 280,
+};
 
 export type SettingsModalTourContext = {
 	activateProfileTab?: () => void;
@@ -35,11 +63,37 @@ function isSystemTourAvailable() {
 	return Boolean(document.querySelector(SYSTEM_SLOT_SELECTOR));
 }
 
-function buildProfileTourSteps(): DriveStep[] {
-	if (!isPublicProfileFieldVisible()) return [];
+function isTourTargetVisible(selector: string) {
+	const el = document.querySelector<HTMLElement>(selector);
+	if (!el) return false;
+	if (el.closest('.hidden')) return false;
+	return el.getClientRects().length > 0;
+}
 
-	return [
-		{
+function afterSettingsLayout(run: () => void) {
+	requestAnimationFrame(() => {
+		requestAnimationFrame(run);
+	});
+}
+
+function buildProfileTourSteps(): DriveStep[] {
+	const steps: DriveStep[] = [];
+
+	if (isTourTargetVisible(PROFILE_PHOTO_SELECTOR)) {
+		steps.push({
+			element: PROFILE_PHOTO_SELECTOR,
+			popover: {
+				title: 'Foto personal',
+				description:
+					'Tocá el lápiz para cambiar tu foto de cuenta. Es la que te identifica en el panel; la foto de la agenda pública la gestiona el negocio.',
+				side: 'bottom',
+				align: 'center',
+			},
+		});
+	}
+
+	if (isTourTargetVisible(PUBLIC_PROFILE_FIELD_SELECTOR)) {
+		steps.push({
 			element: PUBLIC_PROFILE_FIELD_SELECTOR,
 			popover: {
 				title: 'Enlace personal',
@@ -48,8 +102,36 @@ function buildProfileTourSteps(): DriveStep[] {
 				side: 'bottom',
 				align: 'start',
 			},
-		},
-	];
+		});
+	}
+
+	if (isTourTargetVisible(PROFILE_PHONE_SELECTOR)) {
+		steps.push({
+			element: PROFILE_PHONE_SELECTOR,
+			popover: {
+				title: 'Teléfono público',
+				description:
+					'Este número es el contacto de tu cuenta en Hasel y se usa en todos tus negocios.',
+				side: 'top',
+				align: 'start',
+			},
+		});
+	}
+
+	if (isTourTargetVisible(PROFILE_PUSH_SELECTOR)) {
+		steps.push({
+			element: PROFILE_PUSH_SELECTOR,
+			popover: {
+				title: 'Notificaciones',
+				description:
+					'Activá avisos en este dispositivo para enterarte de citas nuevas, cambios y cancelaciones.',
+				side: 'top',
+				align: 'center',
+			},
+		});
+	}
+
+	return steps;
 }
 
 function buildPaymentsTourSteps(): DriveStep[] {
@@ -185,29 +267,26 @@ function runSettingsTour(steps: DriveStep[], onDestroyed?: () => void) {
 	if (steps.length === 0) return;
 
 	runBookmateTour(steps, {
-		force: true,
+		...SETTINGS_TOUR_OPTIONS,
 		storageKey: 'bookmate_settings_modal_tour',
-		persistCompletion: false,
-		useTopLayerShell: true,
-		hostSelector: SETTINGS_MODAL_SELECTOR,
-		scrollIntoView: { rootSelector: '[data-settings-content]' },
 		onDestroyed,
 	});
 }
 
 function showProfileTour(context: SettingsModalTourContext) {
-	const steps = buildProfileTourSteps();
-	if (steps.length === 0) return;
 	context.activateProfileTab?.();
-	runSettingsTour(steps);
+	afterSettingsLayout(() => {
+		const steps = buildProfileTourSteps();
+		if (steps.length === 0) return;
+		runSettingsTour(steps);
+	});
 }
 
 function showPaymentsTour(context: SettingsModalTourContext) {
 	context.activatePaymentsTab?.();
 	const restore = context.revealPaymentsDetailsForTour?.();
 
-	// Esperar un frame para que el panel y los detalles estén visibles antes de medir.
-	requestAnimationFrame(() => {
+	afterSettingsLayout(() => {
 		const steps = buildPaymentsTourSteps();
 		if (steps.length === 0) {
 			if (typeof restore === 'function') restore();
@@ -221,7 +300,7 @@ function showPaymentsTour(context: SettingsModalTourContext) {
 
 function showSystemTour(context: SettingsModalTourContext) {
 	context.activateSystemTab?.();
-	requestAnimationFrame(() => {
+	afterSettingsLayout(() => {
 		const steps = buildSystemTourSteps();
 		if (steps.length === 0) return;
 		runSettingsTour(steps);
@@ -233,7 +312,12 @@ function showSystemTour(context: SettingsModalTourContext) {
  */
 export function hasSettingsModalTourForTab(tab: string): boolean {
 	if (tab === 'payments') return isPaymentsTourAvailable();
-	if (tab === 'profile') return isPublicProfileFieldVisible();
+	if (tab === 'profile') {
+		return (
+			isPublicProfileFieldVisible() ||
+			Boolean(document.querySelector(PROFILE_PHOTO_SELECTOR))
+		);
+	}
 	if (tab === 'system') return isSystemTourAvailable();
 	return false;
 }

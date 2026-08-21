@@ -659,8 +659,9 @@ professional-manager:has(.app-shell) {
 	scrollbar-gutter: stable;
 }
 
-/* Perfil público: el pane ya scrollea; no reservar un segundo riel a la derecha. */
-.app-shell > :last-child > main.ppe-main {
+/* Perfil público / Horarios: el pane ya scrollea; no reservar un segundo riel a la derecha. */
+.app-shell > :last-child > main.ppe-main,
+.app-shell > :last-child > main.schedule-page-main {
 	scrollbar-gutter: auto;
 }
 
@@ -671,13 +672,22 @@ html.panel-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
 
 /* Mobile: el canvas scrollea (TopBar sticky + glass sobre el contenido). */
 @media (max-width: 1023.98px) {
-	.app-shell > :last-child:not(:has(.ppe-main)) {
+	.app-shell > :last-child:not(:has(.ppe-main)):not(:has(.schedule-page-main)) {
 		display: block;
 		overflow-x: hidden;
 		overflow-y: auto;
 		-webkit-overflow-scrolling: touch;
 		overscroll-behavior: contain;
 		scrollbar-gutter: stable;
+	}
+
+	.app-shell > :last-child:has(.schedule-page-main) {
+		display: block;
+		overflow-x: hidden;
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+		overscroll-behavior: contain;
+		scrollbar-gutter: auto;
 	}
 
 	.app-shell > :last-child:not(:has(.ppe-main)) > main {

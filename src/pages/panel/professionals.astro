@@ -1571,7 +1571,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			this.clearErrors();
 			this.toggleFormLoading(false);
 			
-			this.els.modal?.classList.remove('is-closing');
+			this.els.modal?.classList.remove('is-closing', 'bookmate-tour-host');
 			if (this.closeTimer) {
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
@@ -1593,7 +1593,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			this.resetFormValues();
 			this.clearErrors();
 			
-			this.els.modal?.classList.remove('is-closing');
+			this.els.modal?.classList.remove('is-closing', 'bookmate-tour-host');
 			if (this.closeTimer) {
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
@@ -1665,7 +1665,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 
 			this.closeTimer = window.setTimeout(() => {
 				this.els.modal?.close();
-				this.els.modal?.classList.remove('is-closing');
+				this.els.modal?.classList.remove('is-closing', 'bookmate-tour-host');
 				if (this.els.form) this.els.form.reset();
 				this.resetFormValues();
 				this.updateUIMode('create');

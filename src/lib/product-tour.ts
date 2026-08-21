@@ -18,13 +18,13 @@ export type BookmateTourRunOptions = {
 	 * con `showModal()` (top layer). Sin esto, la guía queda detrás del modal.
 	 */
 	useTopLayerShell?: boolean;
-	/** Opacidad del velo de driver.js (0 = sin fondo oscuro). */
+	/** Opacidad del velo de driver.js. Default 0: el encuadre es el anillo CSS. */
 	overlayOpacity?: number;
 	stagePadding?: number;
 	stageRadius?: number;
 	/** Transición entre pasos (driver.js). Default: true. */
 	animate?: boolean;
-	/** Duración de la transición en ms cuando `animate` es true. Default: 320. */
+	/** Duración de la transición en ms cuando `animate` es true. Default: 280. */
 	duration?: number;
 	/** Desplaza el objetivo al centro del contenedor con scroll antes de posicionar el popover. */
 	scrollIntoView?: boolean | { rootSelector?: string };
@@ -34,6 +34,20 @@ export type BookmateTourRunOptions = {
 	onDestroyed?: () => void;
 };
 
+function markOpenTourHosts() {
+	document.querySelectorAll('dialog[open]').forEach((dialog) => {
+		if (isTourShellDialog(dialog)) return;
+		dialog.classList.add('bookmate-tour-host');
+	});
+}
+
+function unmarkClosedTourHosts() {
+	document.querySelectorAll('dialog.bookmate-tour-host').forEach((dialog) => {
+		if (dialog instanceof HTMLDialogElement && dialog.open) return;
+		dialog.classList.remove('bookmate-tour-host');
+	});
+}
+
 function ensureTourShell(): HTMLDialogElement {
 	let shell = document.querySelector<HTMLDialogElement>(TOUR_SHELL_SELECTOR);
 	if (!shell) {
@@ -42,18 +56,29 @@ function ensureTourShell(): HTMLDialogElement {
 		shell.setAttribute('aria-hidden', 'true');
 		document.body.appendChild(shell);
 	}
+	document.documentElement.classList.add('bookmate-tour-shell-open');
+	markOpenTourHosts();
 	if (!shell.open) shell.showModal();
 	return shell;
 }
 
 function closeTourShell() {
 	const shell = document.querySelector<HTMLDialogElement>(TOUR_SHELL_SELECTOR);
-	if (!shell) return;
-	shell.querySelectorAll('.driver-popover, .driver-overlay').forEach((node) => node.remove());
-	delete shell.dataset.overlayOpacity;
+	if (shell) {
+		shell.querySelectorAll('.driver-popover, .driver-overlay').forEach((node) => node.remove());
+		delete shell.dataset.overlayOpacity;
+		if (shell.open) shell.close();
+	}
 	delete document.body.dataset.bookmateTourOverlay;
 	stopOverlayStripObserver();
-	if (shell.open) shell.close();
+	unmarkClosedTourHosts();
+	// El ::backdrop del modal host se recrea al salir del top layer.
+	// El freeze (html + .bookmate-tour-host) tiene que seguir activo en ese frame.
+	requestAnimationFrame(() => {
+		requestAnimationFrame(() => {
+			document.documentElement.classList.remove('bookmate-tour-shell-open');
+		});
+	});
 }
 
 function forceCleanupDriverDom() {
@@ -139,7 +164,7 @@ let activeTourDriver: Driver | null = null;
 let activeTourStorageKey: string | null = null;
 let activeTourPersistCompletion = true;
 let activeTourUsesTopLayerShell = false;
-let activeTourOverlayOpacity = 0.55;
+let activeTourOverlayOpacity = 0;
 let destroyPersistOverride: boolean | null = null;
 
 function isTourOverlayDisabled() {
@@ -154,7 +179,7 @@ function removeTourOverlaysIfDisabled() {
 
 let overlayStripObserver: MutationObserver | null = null;
 
-/** driver.js recrea el overlay en rAF tras `refresh()`; lo volvemos a quitar al instante. */
+/** driver.js crea el SVG en body; con velo a 0 lo quitamos en el mismo frame. */
 function startOverlayStripObserver() {
 	if (!isTourOverlayDisabled()) return;
 	stopOverlayStripObserver();
@@ -436,9 +461,9 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 	const useShell = options.useTopLayerShell === true;
 	const needsScrollSync = Boolean(options.scrollIntoView);
 	const hostSelector = options.hostSelector;
-	const overlayOpacity = options.overlayOpacity ?? 0.55;
+	const overlayOpacity = options.overlayOpacity ?? 0;
 	const animate = options.animate ?? true;
-	const duration = options.duration ?? 320;
+	const duration = options.duration ?? 280;
 	activeTourOverlayOpacity = overlayOpacity;
 	activeTourStorageKey = options.storageKey;
 	activeTourPersistCompletion = options.persistCompletion !== false;
@@ -489,7 +514,7 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 			activeTourPopover = null;
 			activeTourDriver = null;
 			activeTourUsesTopLayerShell = false;
-			activeTourOverlayOpacity = 0.55;
+			activeTourOverlayOpacity = 0;
 			stopOverlayStripObserver();
 			if (useShell) closeTourShell();
 

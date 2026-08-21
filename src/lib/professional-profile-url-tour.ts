@@ -68,8 +68,12 @@ export function showProfessionalProfileUrlTour() {
 		storageKey: 'bookmate_professional_profile_url_tour',
 		persistCompletion: false,
 		useTopLayerShell: true,
+		overlayOpacity: 0,
 		hostSelector: MODAL_HOST_SELECTOR,
 		scrollIntoView: { rootSelector: '[data-professional-modal-scroll]' },
 		stagePadding: 8,
+		stageRadius: 16,
+		animate: true,
+		duration: 280,
 	});
 }

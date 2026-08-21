@@ -54,7 +54,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			<div class="panel-modal-header__actions">
 				<button
 					type="button"
-					class="settings-toolbar-help inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-(--shell-border) bg-(--surface-bright) px-[1.05rem] py-[0.72rem] text-[0.9rem] font-bold text-(--on-surface) transition focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
+					class="settings-toolbar-help inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-(--shell-border) bg-(--surface-bright) px-3 text-[0.82rem] font-bold text-(--on-surface) transition focus:outline-none focus:ring-2 focus:ring-(--primary)/25"
 					data-settings-modal-tour-help
 					aria-label="Guía de la sección actual"
 					hidden
@@ -131,7 +131,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			</div>
 			<section data-settings-panel="profile" class="grid gap-6">
 				<form id="settings-profile-form" data-settings-profile-form class="grid gap-5">
-					<div class="settings-profile-hero settings-profile-hero--top">
+					<div class="settings-profile-hero settings-profile-hero--top" data-settings-tour-photo>
 						<div class="profile-photo-uploader" data-settings-profile-dropzone>
 							<div class="profile-photo-uploader__stack">
 								<div class="profile-photo-uploader__avatar-wrap">
@@ -257,7 +257,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 							<span data-settings-profile-field-error="public_slug" class="hidden text-[0.85rem] font-semibold text-rose-600 dark:text-rose-400 mt-1"></span>
 						</label>
 
-						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
+						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-settings-tour-phone>
 							<span>Teléfono público <span class="text-rose-500">*</span></span>
 							<div class="flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
 								<span class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
@@ -1413,7 +1413,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			this.clearFeedback();
 			this.resetSecurityForm();
 			this.syncPushNotificationToggle();
-			this.els.modal?.classList.remove('is-closing');
+			this.els.modal?.classList.remove('is-closing', 'bookmate-tour-host');
 			if (this.closingTimer) {
 				window.clearTimeout(this.closingTimer);
 				this.closingTimer = null;
@@ -1528,7 +1528,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 			this.closingTimer = window.setTimeout(() => {
 				this.els.modal?.close();
-				this.els.modal?.classList.remove('is-closing');
+				this.els.modal?.classList.remove('is-closing', 'bookmate-tour-host');
 				this.resetSecurityForm();
 				this.releaseProfilePreviewObjectUrl();
 				this.releaseLogoPreviewObjectUrl();
@@ -3225,6 +3225,24 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 	[data-settings-modal][open] {
 		display: flex;
+	}
+
+	[data-settings-modal] .panel-modal-header {
+		height: var(--shell-header-height);
+		min-height: var(--shell-header-height);
+		max-height: var(--shell-header-height);
+		padding-block: 0;
+	}
+
+	[data-settings-modal] .settings-toolbar-help {
+		box-sizing: border-box;
+		height: 2.25rem;
+		padding-block: 0;
+	}
+
+	[data-settings-modal] .settings-toolbar-help .material-symbols-rounded {
+		font-size: 1.12rem;
+		line-height: 1;
 	}
 
 	[data-settings-modal] {

@@ -124,7 +124,12 @@ function buildTourSteps(): DriveStep[] {
 
 export function showCalendarTour(options?: { force?: boolean }) {
 	const steps = buildTourSteps();
-	runBookmateTour(steps, { force: options?.force, storageKey: STORAGE_KEY });
+	runBookmateTour(steps, {
+		force: options?.force,
+		storageKey: STORAGE_KEY,
+		overlayOpacity: 0,
+		duration: 280,
+	});
 }
 
 /** Muestra la guía la primera vez que el calendario termina de inicializarse. */
