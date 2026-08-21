@@ -1,3 +1,5 @@
+import { openPanelModal } from '../lib/panel-scroll-lock';
+
 const GLOBAL_HANDLERS_FLAG = '__scheduleSaveInfoGlobalHandlers';
 
 type ScheduleSaveInfoState = {
@@ -36,7 +38,7 @@ const openSaveInfoSheet = (button: HTMLButtonElement) => {
 
 	closeAllScheduleSaveInfo();
 	saveInfoSheetTrigger = button;
-	sheet.showModal();
+	openPanelModal(sheet);
 	button.setAttribute('aria-expanded', 'true');
 };
 

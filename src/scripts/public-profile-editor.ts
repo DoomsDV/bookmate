@@ -10,6 +10,7 @@ import {
 	type BusinessHoursDay,
 } from '../lib/business-hours';
 import { showFlashMessage } from '../lib/flash';
+import { openPanelModal } from '../lib/panel-scroll-lock';
 import {
 	ProfileImageCropper,
 	isAcceptedProfileImage,
@@ -500,7 +501,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		if (index < 0 || !lightbox) return;
 		lightboxIndex = index;
 		syncLightbox();
-		if (!lightbox.open) lightbox.showModal();
+		if (!lightbox.open) openPanelModal(lightbox);
 	};
 
 	const closeLightbox = () => {
@@ -973,7 +974,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		cropper = null;
 
 		// Abrir primero: Croppie necesita el ancho real del modal para no quedar en negro
-		if (!cropModal.open) cropModal.showModal();
+		if (!cropModal.open) openPanelModal(cropModal);
 		cropper = new ProfileImageCropper(cropMount, 512, mode);
 		try {
 			await cropper.bindFile(file);
@@ -1258,7 +1259,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 		}));
 		renderGalleryPreviewList();
 		if (galleryPreviewModal && !galleryPreviewModal.open) {
-			galleryPreviewModal.showModal();
+			openPanelModal(galleryPreviewModal);
 		}
 	};
 
@@ -1742,7 +1743,7 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 
 	const openPreviewModal = () => {
 		if (!previewModal || previewModal.open) return;
-		previewModal.showModal();
+		openPanelModal(previewModal);
 		document.documentElement.classList.add('ppe-preview-open');
 	};
 

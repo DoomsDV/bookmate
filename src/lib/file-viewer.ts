@@ -1,3 +1,5 @@
+import { openPanelModal } from './panel-scroll-lock';
+
 export type FileViewerOpenOptions = {
 	url: string;
 	name?: string;
@@ -51,7 +53,7 @@ export function bindFileViewer(root: ParentNode, signal?: AbortSignal): FileView
 			frame.classList.toggle('hidden', !isPdf);
 			frame.src = isPdf ? url : 'about:blank';
 		}
-		if (!viewer.open) viewer.showModal();
+		if (!viewer.open) openPanelModal(viewer);
 	};
 
 	viewer.querySelector('[data-file-viewer-close]')?.addEventListener('click', close, listenerOpts);

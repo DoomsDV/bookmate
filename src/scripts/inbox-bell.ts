@@ -5,6 +5,7 @@ import {
 	type InboxNtype,
 } from '../lib/inbox-client';
 import { subscribeInboxForegroundMessages } from './firebase-messaging';
+import { openPanelModal } from '../lib/panel-scroll-lock';
 
 const POLL_MS = 30_000;
 const GLOBAL_KEY = '__haselInboxBell';
@@ -309,7 +310,7 @@ const openInboxSheet = () => {
 	document.querySelectorAll<HTMLDetailsElement>('[data-profile-menu]').forEach((menu) => {
 		menu.removeAttribute('open');
 	});
-	if (!sheet.open) sheet.showModal();
+	if (!sheet.open) openPanelModal(sheet);
 	void fetchInbox({ force: true });
 };
 

@@ -14,6 +14,7 @@ import {
 	toIsoDate,
 } from '../lib/date-input';
 import { bindFileViewer } from '../lib/file-viewer';
+import { openPanelModal } from '../lib/panel-scroll-lock';
 import { updateAppPaginationDom } from '../lib/pagination';
 
 type CobrosManagerElement = HTMLElement & {
@@ -675,7 +676,7 @@ export const initCobrosPage = () => {
 		setRejectMode(false);
 
 		modal.classList.remove('is-closing');
-		if (!modal.open) modal.showModal();
+		if (!modal.open) openPanelModal(modal);
 	};
 
 	let closeTimer: number | null = null;

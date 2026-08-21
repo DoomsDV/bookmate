@@ -1,4 +1,5 @@
 import { createIdempotencyKey } from '../lib/idempotency';
+import { openPanelModal } from '../lib/panel-scroll-lock';
 import { initPlanHistoryFilters } from './plan-history-filters';
 
 interface FlashApi {
@@ -354,7 +355,7 @@ export function initPlanPage() {
 		if (!billingDrawer) return;
 		syncBillingFormValues(billingFormInline, billingFormDrawer);
 		billingDrawer.classList.remove('is-closing', 'is-settled');
-		if (!billingDrawer.open) billingDrawer.showModal();
+		if (!billingDrawer.open) openPanelModal(billingDrawer);
 		const settleMs = Number.parseInt(
 			getComputedStyle(billingDrawer).getPropertyValue('--modal-open-duration') || '220',
 			10

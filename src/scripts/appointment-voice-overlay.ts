@@ -5,6 +5,7 @@ import {
 	type StoredAppointmentAiDraft,
 } from '../lib/appointment-ai-types';
 import { destroyActiveBookmateTour } from '../lib/product-tour';
+import { openPanelModal } from '../lib/panel-scroll-lock';
 import { AppointmentVoiceVisualizer } from './appointment-voice-visualizer';
 
 type VoiceOverlayMode = 'navigate' | 'inline';
@@ -238,7 +239,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		if (prefersReducedMotion) {
 			shell.classList.remove('is-closing');
 			shell.classList.add('is-settled');
-			if (!shell.open) shell.showModal();
+			if (!shell.open) openPanelModal(shell);
 			return;
 		}
 
@@ -261,7 +262,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 		shell.addEventListener('animationend', this.#settleOpenHandler);
 		this.#settleOpenFallback = window.setTimeout(settleOpen, 220);
 
-		if (!shell.open) shell.showModal();
+		if (!shell.open) openPanelModal(shell);
 	}
 
 	private cacheUiNodes(): VoiceUiNodes {

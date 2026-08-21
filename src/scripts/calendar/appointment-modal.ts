@@ -8,6 +8,12 @@ import {
 import { createAttachmentListItem } from '../../lib/attachment-list-item';
 import { bindFileViewer, type FileViewerHandle } from '../../lib/file-viewer';
 import {
+	getLayoutViewportHeight,
+	lockPanelScroll,
+	openPanelModal,
+	restorePanelScrollLayout,
+} from '../../lib/panel-scroll-lock';
+import {
 	buildSessionNotesPayload,
 	hasAnySessionNote,
 	normalizeSessionNotesHistory,
@@ -148,6 +154,8 @@ class AppointmentModal extends HTMLElement {
 	lastLoadedCustomerProfessionalId: number | null = null;
 	closeTimer: number | null = null;
 	#settleOpenHandler: ((event: AnimationEvent) => void) | null = null;
+	private unlockCanvasScroll: (() => void) | null = null;
+	private lockedSheetHeightPx = 0;
 
 	modal: HTMLDialogElement | null = null;
 	modalTitle: HTMLElement | null = null;
@@ -450,6 +458,14 @@ class AppointmentModal extends HTMLElement {
 		});
 
 		requiredNodes.form.addEventListener('submit', this.handleSubmit, { signal });
+		requiredNodes.form.addEventListener(
+			'focusin',
+			() => {
+				this.applyMobileSheetLock();
+				restorePanelScrollLayout();
+			},
+			{ signal }
+		);
 		requiredNodes.modal.addEventListener('click', this.handleBackdropClick, { signal });
 		for (const closeButton of this.closeModalButtons ?? []) {
 			closeButton.addEventListener('click', this.closeModal, { signal });
@@ -521,6 +537,8 @@ class AppointmentModal extends HTMLElement {
 		if (this.modal?.open) {
 			this.modal.close();
 		}
+		this.clearMobileSheetLock();
+		this.releasePanelScrollLock();
 		destroySearchableSelect(this.modalProfessional);
 		destroySearchableSelect(this.statusInput);
 	}
@@ -1801,7 +1819,43 @@ class AppointmentModal extends HTMLElement {
 		};
 		modal.addEventListener('animationend', this.#settleOpenHandler);
 
-		if (!modal.open) modal.showModal();
+		if (!modal.open) {
+			this.acquirePanelScrollLock();
+			this.applyMobileSheetLock();
+			modal.showModal();
+		}
+	}
+
+	private isMobileSheet() {
+		return window.matchMedia('(max-width: 639px)').matches;
+	}
+
+	private acquirePanelScrollLock() {
+		if (this.unlockCanvasScroll) return;
+		this.unlockCanvasScroll = lockPanelScroll();
+	}
+
+	private releasePanelScrollLock() {
+		this.unlockCanvasScroll?.();
+		this.unlockCanvasScroll = null;
+	}
+
+	private applyMobileSheetLock() {
+		const panel = this.modal?.querySelector<HTMLElement>('.appointment-modal__panel');
+		if (!panel || !this.isMobileSheet()) return;
+		if (!this.lockedSheetHeightPx) {
+			this.lockedSheetHeightPx = Math.round(getLayoutViewportHeight() * 0.8);
+		}
+		panel.style.height = `${this.lockedSheetHeightPx}px`;
+		panel.style.maxHeight = `${this.lockedSheetHeightPx}px`;
+	}
+
+	private clearMobileSheetLock() {
+		this.lockedSheetHeightPx = 0;
+		const panel = this.modal?.querySelector<HTMLElement>('.appointment-modal__panel');
+		if (!panel) return;
+		panel.style.height = '';
+		panel.style.maxHeight = '';
 	}
 
 	closeModal = () => {
@@ -1816,6 +1870,8 @@ class AppointmentModal extends HTMLElement {
 			if (!this.isConnected) return;
 			requiredNodes.modal.close();
 			requiredNodes.modal.classList.remove('is-closing', 'is-settled');
+			this.clearMobileSheetLock();
+			this.releasePanelScrollLock();
 			this.closeTimer = null;
 			this.clearFormErrors();
 			this.setModalLoading(false);
@@ -2265,7 +2321,7 @@ class AppointmentModal extends HTMLElement {
 
 	handleCustomerClear = () => {
 		this.clearSelectedCustomer({ clearFields: true });
-		this.customerNameInput?.focus();
+		this.customerNameInput?.focus({ preventScroll: true });
 		void this.loadCustomersForCurrentProfessional(true);
 	};
 
@@ -2404,7 +2460,7 @@ class AppointmentModal extends HTMLElement {
 		);
 
 		if (!requiredNodes.dateTimePicker.open) {
-			requiredNodes.dateTimePicker.showModal();
+			openPanelModal(requiredNodes.dateTimePicker);
 		}
 		requiredNodes.pickerTargetLabel.textContent =
 			field === 'start' ? 'Seleccionando inicio' : 'Seleccionando fin';

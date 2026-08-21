@@ -9,6 +9,7 @@ const { currentOrgMemberId = 0 } = Astro.props;
 <dialog
 	class="org-switcher-dialog"
 	data-org-switcher-dialog
+	data-current-org-member-id={String(currentOrgMemberId)}
 	aria-labelledby="org-switcher-title"
 >
 	<div class="org-switcher-panel">
@@ -54,23 +55,32 @@ const { currentOrgMemberId = 0 } = Astro.props;
 	</div>
 </dialog>
 
-<script is:inline define:vars={{ currentOrgMemberId }}>
+<script>
+	import { openPanelModal } from '../lib/panel-scroll-lock';
+
+	type OrgSwitcherItem = {
+		org_member_id: number;
+		organization_name: string;
+		role_name: string;
+		is_current?: boolean;
+	};
+
 	function setupOrgSwitcherModal() {
-		const dialog = document.querySelector('[data-org-switcher-dialog]');
+		const dialog = document.querySelector<HTMLDialogElement>('[data-org-switcher-dialog]');
 		if (!dialog || dialog.dataset.enhanced) return;
 		dialog.dataset.enhanced = 'true';
 
-		const loadingEl = dialog.querySelector('[data-org-switcher-loading]');
-		const errorEl = dialog.querySelector('[data-org-switcher-error]');
-		const emptyEl = dialog.querySelector('[data-org-switcher-empty]');
-		const listEl = dialog.querySelector('[data-org-switcher-list]');
+		const loadingEl = dialog.querySelector<HTMLElement>('[data-org-switcher-loading]');
+		const errorEl = dialog.querySelector<HTMLElement>('[data-org-switcher-error]');
+		const emptyEl = dialog.querySelector<HTMLElement>('[data-org-switcher-empty]');
+		const listEl = dialog.querySelector<HTMLElement>('[data-org-switcher-list]');
 		const closeButtons = dialog.querySelectorAll('[data-org-switcher-close]');
 		const triggers = document.querySelectorAll('[data-org-switcher-trigger]');
 
-		const currentMemberId = Number(currentOrgMemberId || 0);
-		let organizationsCache = null;
+		const currentMemberId = Number(dialog.getAttribute('data-current-org-member-id') || 0);
+		let organizationsCache: OrgSwitcherItem[] | null = null;
 
-		const setVisible = (element, visible) => {
+		const setVisible = (element: Element | null, visible: boolean) => {
 			element?.classList.toggle('is-hidden', !visible);
 		};
 
@@ -79,10 +89,11 @@ const { currentOrgMemberId = 0 } = Astro.props;
 			setVisible(errorEl, false);
 		};
 
-		const showError = (message) => {
+		const showError = (message: string) => {
 			if (errorEl) {
 				errorEl.innerHTML = `<span class="material-symbols-rounded">error</span><span></span>`;
-				errorEl.querySelector('span:last-child').textContent = message;
+				const last = errorEl.querySelector('span:last-child');
+				if (last) last.textContent = message;
 			}
 			setVisible(errorEl, true);
 			setVisible(loadingEl, false);
@@ -90,14 +101,14 @@ const { currentOrgMemberId = 0 } = Astro.props;
 			setVisible(listEl, false);
 		};
 
-		const escapeHtml = (value) =>
+		const escapeHtml = (value: unknown) =>
 			String(value ?? '')
 				.replace(/&/g, '&amp;')
 				.replace(/</g, '&lt;')
 				.replace(/>/g, '&gt;')
 				.replace(/"/g, '&quot;');
 
-		const renderList = (organizations) => {
+		const renderList = (organizations: OrgSwitcherItem[]) => {
 			if (!listEl) return;
 			listEl.innerHTML = '';
 
@@ -125,7 +136,7 @@ const { currentOrgMemberId = 0 } = Astro.props;
 				listEl.appendChild(item);
 			});
 
-			listEl.querySelectorAll('[data-org-member-id]').forEach((button) => {
+			listEl.querySelectorAll<HTMLButtonElement>('[data-org-member-id]').forEach((button) => {
 				button.addEventListener('click', async () => {
 					const orgMemberId = Number(button.getAttribute('data-org-member-id') || 0);
 					if (!orgMemberId || button.disabled) return;
@@ -189,7 +200,9 @@ const { currentOrgMemberId = 0 } = Astro.props;
 				throw new Error(data?.message || 'No fue posible cargar tus organizaciones.');
 			}
 
-			organizationsCache = Array.isArray(data.organizations) ? data.organizations : [];
+			organizationsCache = Array.isArray(data.organizations)
+				? (data.organizations as OrgSwitcherItem[])
+				: [];
 			return organizationsCache;
 		};
 
@@ -198,7 +211,7 @@ const { currentOrgMemberId = 0 } = Astro.props;
 			setVisible(loadingEl, true);
 			setVisible(emptyEl, false);
 			setVisible(listEl, false);
-			dialog.showModal();
+			openPanelModal(dialog);
 
 			try {
 				const organizations = await loadOrganizations();
@@ -213,7 +226,9 @@ const { currentOrgMemberId = 0 } = Astro.props;
 				setVisible(loadingEl, false);
 				setVisible(listEl, true);
 			} catch (error) {
-				showError(error?.message || 'No fue posible cargar tus organizaciones.');
+				showError(
+					error instanceof Error ? error.message : 'No fue posible cargar tus organizaciones.'
+				);
 			}
 		};
 

@@ -10,6 +10,7 @@ import { hasAnySessionNote, SESSION_NOTE_FIELDS } from '../lib/session-notes';
 import { updateAppPaginationDom } from '../lib/pagination';
 import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 import { destroyActiveBookmateTour } from '../lib/product-tour';
+import { openPanelModal } from '../lib/panel-scroll-lock';
 import { showOdontogramTour } from '../lib/odontogram-tour';
 import type { Odontogram3dHandle } from './odontogram-3d';
 type ProfessionalLov = { id_professional: number; display_name: string };
@@ -531,7 +532,7 @@ class CustomerManager extends HTMLElement {
 		if (!this.proFilterSheet) return;
 		this.proFilterSheet.classList.remove('is-desktop-popover');
 		this.clearProFilterPopoverStyles();
-		this.proFilterSheet.showModal();
+		openPanelModal(this.proFilterSheet);
 		this.proFilterButton?.setAttribute('aria-expanded', 'true');
 		this.#proFilterOutsideBound = false;
 	}
@@ -805,7 +806,7 @@ class CustomerManager extends HTMLElement {
 			this.#profileCloseTimer = null;
 		}
 		this.profileModal.classList.remove('is-closing');
-		if (!this.profileModal.open) this.profileModal.showModal();
+		if (!this.profileModal.open) openPanelModal(this.profileModal);
 	}
 
 	private closeProfileModal() {
@@ -1837,7 +1838,7 @@ class CustomerManager extends HTMLElement {
 		}
 		if (this.odontogramExportInclude3d) this.odontogramExportInclude3d.checked = true;
 		this.refreshOdontogramExportPreview();
-		if (!this.odontogramExportDialog.open) this.odontogramExportDialog.showModal();
+		if (!this.odontogramExportDialog.open) openPanelModal(this.odontogramExportDialog);
 	}
 
 	private closeOdontogramExportDialog = () => {

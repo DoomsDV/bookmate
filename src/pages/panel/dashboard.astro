@@ -883,6 +883,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	import '../../scripts/appointment-voice-host';
 	import { initFadeContent } from '../../lib/fade-content';
 	import { initDashboardGreeting } from '../../lib/dashboard-greeting';
+	import { lockPanelScroll } from '../../lib/panel-scroll-lock';
 
 	const normalizeAiSummaryBase = (value: unknown): string =>
 		String(value ?? '')
@@ -1307,45 +1308,20 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	let aiSummaryModalSections: AiSummarySection[] = [];
 	let aiSummaryModalCloseTimer: number | null = null;
-	let aiSummaryScrollLock: {
-		container: HTMLElement;
-		scrollTop: number;
-		paddingRight: string;
-	} | null = null;
+	let unlockAiSummaryScroll: (() => void) | null = null;
 
 	const getDashboardScrollContainer = (): HTMLElement | null =>
 		document.querySelector<HTMLElement>('.app-shell > :last-child > main') ??
 		document.querySelector<HTMLElement>('.dashboard-content-canvas > main');
 
 	const lockDashboardScrollForAiModal = () => {
-		const container = getDashboardScrollContainer();
-		if (!container || aiSummaryScrollLock) return;
-
-		const scrollTop = container.scrollTop;
-		const scrollbarWidth = Math.max(0, container.offsetWidth - container.clientWidth);
-		const currentPaddingRight = Number.parseFloat(getComputedStyle(container).paddingRight) || 0;
-
-		aiSummaryScrollLock = {
-			container,
-			scrollTop,
-			paddingRight: container.style.paddingRight,
-		};
-
-		document.documentElement.classList.add('ai-summary-modal-open');
-		if (scrollbarWidth > 0) {
-			container.style.paddingRight = `${currentPaddingRight + scrollbarWidth}px`;
-		}
-		container.scrollTop = scrollTop;
+		if (unlockAiSummaryScroll) return;
+		unlockAiSummaryScroll = lockPanelScroll();
 	};
 
 	const unlockDashboardScrollForAiModal = () => {
-		const lock = aiSummaryScrollLock;
-		if (!lock) return;
-		aiSummaryScrollLock = null;
-
-		document.documentElement.classList.remove('ai-summary-modal-open');
-		lock.container.style.paddingRight = lock.paddingRight;
-		lock.container.scrollTop = lock.scrollTop;
+		unlockAiSummaryScroll?.();
+		unlockAiSummaryScroll = null;
 	};
 
 	const applyAiSummaryContent = async (payload: AiSummaryPayload) => {

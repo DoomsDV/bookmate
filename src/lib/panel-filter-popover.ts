@@ -1,3 +1,5 @@
+import { openPanelModal } from './panel-scroll-lock';
+
 const DESKTOP_MQ = '(min-width: 768px)';
 const POPOVER_CLASS = 'is-desktop-popover';
 const DEFAULT_WIDTH_REM = 18.5;
@@ -81,7 +83,7 @@ const openAsPopover = (
 const openAsModal = (sheet: HTMLDialogElement, trigger: HTMLElement) => {
 	sheet.classList.remove(POPOVER_CLASS);
 	clearPopoverStyles(sheet);
-	sheet.showModal();
+	openPanelModal(sheet);
 	trigger.setAttribute('aria-expanded', 'true');
 };
 

@@ -32,6 +32,7 @@ import {
 	type StoredAppointmentAiDraft,
 } from '../../lib/appointment-ai-types';
 import { showFlashMessage } from '../../lib/flash';
+import { lockPanelScroll } from '../../lib/panel-scroll-lock';
 import { formatHourLabelAmPm } from '../../lib/booking-datetime';
 import {
 	getScheduleMisalignedBannerCaption,
@@ -222,6 +223,7 @@ class CalendarManager extends HTMLElement {
 	private filtersSheetHome: HTMLElement | null = null;
 	private helpSheet: HTMLElement | null = null;
 	private conflictsSheet: HTMLElement | null = null;
+	private sheetScrollUnlock: (() => void) | null = null;
 	private conflictsOpenButton: HTMLButtonElement | null = null;
 	private conflictsCountNode: HTMLElement | null = null;
 	private conflictsTitleNode: HTMLElement | null = null;
@@ -419,7 +421,8 @@ class CalendarManager extends HTMLElement {
 		this.setSheetOpen(this.filtersSheet, false);
 		this.setSheetOpen(this.conflictsSheet, false);
 		this.restoreFiltersSheetHome();
-		document.body.style.overflow = '';
+		this.sheetScrollUnlock?.();
+		this.sheetScrollUnlock = null;
 		destroySearchableSelect(this.professionalFilter);
 		destroySearchableSelect(this.locationFilter);
 		this.destroyCalendar();
@@ -611,55 +614,61 @@ class CalendarManager extends HTMLElement {
 		return matches.find((el) => el.getClientRects().length > 0) ?? matches[0] ?? null;
 	}
 
-	private scrollScrollableAncestorsToElement(element: HTMLElement) {
-		let parent = element.parentElement;
-		while (parent && parent !== document.documentElement) {
-			const style = window.getComputedStyle(parent);
-			const scrollableY =
-				(style.overflowY === 'auto' ||
-					style.overflowY === 'scroll' ||
-					style.overflowY === 'overlay') &&
-				parent.scrollHeight > parent.clientHeight + 2;
-
-			if (scrollableY) {
-				const parentRect = parent.getBoundingClientRect();
-				const elementRect = element.getBoundingClientRect();
-				const delta =
-					elementRect.top -
-					parentRect.top -
-					parentRect.height / 2 +
-					elementRect.height / 2;
-				parent.scrollBy({ top: delta, behavior: 'smooth' });
-			}
-
-			parent = parent.parentElement;
-		}
+	private getCalendarCanvasScroller(): HTMLElement | null {
+		return document.querySelector<HTMLElement>('.app-shell > :last-child');
 	}
 
-	private scrollElementIntoView(element: HTMLElement) {
-		const scroller =
+	private getShellHeaderInset(scroller: HTMLElement) {
+		const header =
+			scroller.querySelector<HTMLElement>('.shell-header-zone:not(.sidebar-account-header)') ??
+			document.querySelector<HTMLElement>('.shell-header-zone:not(.sidebar-account-header)');
+		if (header) return Math.max(0, header.getBoundingClientRect().height);
+
+		const raw = getComputedStyle(document.documentElement)
+			.getPropertyValue('--shell-header-height')
+			.trim();
+		const value = Number.parseFloat(raw);
+		if (!Number.isFinite(value)) return 0;
+		return raw.endsWith('rem') ? value * 16 : value;
+	}
+
+	private scrollElementWithinScroller(
+		scroller: HTMLElement,
+		element: HTMLElement,
+		options: { behavior?: ScrollBehavior; topInset?: number } = {}
+	) {
+		if (scroller.scrollHeight <= scroller.clientHeight + 2) return;
+
+		const behavior = options.behavior ?? 'smooth';
+		const topInset = options.topInset ?? 0;
+		const scrollerRect = scroller.getBoundingClientRect();
+		const elementRect = element.getBoundingClientRect();
+		const visibleHeight = Math.max(0, scrollerRect.height - topInset);
+		const delta =
+			elementRect.top -
+			scrollerRect.top -
+			topInset -
+			visibleHeight / 2 +
+			elementRect.height / 2;
+		scroller.scrollTo({ top: scroller.scrollTop + delta, behavior });
+	}
+
+	private scrollElementIntoView(element: HTMLElement, behavior: ScrollBehavior = 'smooth') {
+		const fcScroller =
 			(element.closest('.fc-timegrid-body .fc-scroller') as HTMLElement | null) ??
 			(element.closest('.fc-scroller') as HTMLElement | null);
 
-		if (scroller && scroller.scrollHeight > scroller.clientHeight + 2) {
-			const scrollerRect = scroller.getBoundingClientRect();
-			const elementRect = element.getBoundingClientRect();
-			const delta =
-				elementRect.top - scrollerRect.top - scrollerRect.height / 2 + elementRect.height / 2;
-			scroller.scrollTo({ top: scroller.scrollTop + delta, behavior: 'smooth' });
+		if (fcScroller && fcScroller.scrollHeight > fcScroller.clientHeight + 2) {
+			this.scrollElementWithinScroller(fcScroller, element, { behavior });
+			return;
 		}
 
-		element.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
-		this.scrollScrollableAncestorsToElement(element);
-
-		for (const root of this.resolveCalendarScrollRoots()) {
-			if (root.scrollHeight <= root.clientHeight + 2) continue;
-			const rootRect = root.getBoundingClientRect();
-			const elementRect = element.getBoundingClientRect();
-			const delta =
-				elementRect.top - rootRect.top - rootRect.height / 2 + elementRect.height / 2;
-			root.scrollBy({ top: delta, behavior: 'smooth' });
-		}
+		const canvas = this.getCalendarCanvasScroller();
+		if (!canvas) return;
+		this.scrollElementWithinScroller(canvas, element, {
+			behavior,
+			topInset: this.getShellHeaderInset(canvas),
+		});
 	}
 
 	private applyPendingFocusScrollTime() {
@@ -758,6 +767,20 @@ class CalendarManager extends HTMLElement {
 			year: 'numeric' as const,
 			month: 'long' as const,
 		};
+	}
+
+	private formatMobileToolbarTitle(date: Date) {
+		const month = new Intl.DateTimeFormat('es', { month: 'long' }).format(date);
+		return `${month.charAt(0).toUpperCase()}${month.slice(1)} ${date.getFullYear()}`;
+	}
+
+	private syncCompactToolbarTitle() {
+		if (!this.calendar || !this.calendarEl) return;
+		const title = this.calendarEl.querySelector<HTMLElement>(
+			'.calendar-mobile-month-title, .fc-toolbar-title'
+		);
+		if (!title) return;
+		title.textContent = this.formatMobileToolbarTitle(this.calendar.getDate());
 	}
 
 	private getCalendarHeightOption(isMobile?: boolean) {
@@ -1031,7 +1054,13 @@ class CalendarManager extends HTMLElement {
 		const conflictsOpen = Boolean(this.conflictsSheet?.classList.contains('is-open'));
 		const filtersLockScroll =
 			filtersOpen && !this.filtersSheet?.classList.contains('is-desktop-popover');
-		document.body.style.overflow = helpOpen || filtersLockScroll || conflictsOpen ? 'hidden' : '';
+		const shouldLock = helpOpen || filtersLockScroll || conflictsOpen;
+		if (shouldLock && !this.sheetScrollUnlock) {
+			this.sheetScrollUnlock = lockPanelScroll();
+		} else if (!shouldLock && this.sheetScrollUnlock) {
+			this.sheetScrollUnlock();
+			this.sheetScrollUnlock = null;
+		}
 	}
 
 	private syncFiltersSheetTitle = () => {
@@ -1448,11 +1477,7 @@ class CalendarManager extends HTMLElement {
 		if (!indicator) return;
 
 		window.setTimeout(() => {
-			indicator.scrollIntoView({
-				block: 'center',
-				inline: 'nearest',
-				behavior: smooth ? 'smooth' : 'auto',
-			});
+			this.scrollElementIntoView(indicator, smooth ? 'smooth' : 'auto');
 		}, 40);
 	}
 
@@ -1491,6 +1516,7 @@ class CalendarManager extends HTMLElement {
 		this.calendar.updateSize();
 		window.requestAnimationFrame(() => {
 			this.syncToolbarButtonGroupClasses();
+			this.syncCompactToolbarTitle();
 			this.syncSheetViewOptions();
 			this.syncMobileDayHeadersOption();
 			this.syncMobileStickyChrome();
@@ -1670,6 +1696,7 @@ class CalendarManager extends HTMLElement {
 				if (titleNode !== navChunk.firstElementChild) {
 					navChunk.insertBefore(titleNode, navChunk.firstChild);
 				}
+				this.syncCompactToolbarTitle();
 			}
 
 			let endWrap = navChunk.querySelector<HTMLElement>('[data-calendar-time-nav-end]');
@@ -2043,6 +2070,7 @@ class CalendarManager extends HTMLElement {
 				this.syncMobileDayHeadersOption();
 				window.requestAnimationFrame(() => {
 					this.syncToolbarButtonGroupClasses();
+					this.syncCompactToolbarTitle();
 					this.syncMobileStickyChrome();
 					this.syncNowIndicatorSpan();
 					this.maybeScrollToNowOnInitialLoad();

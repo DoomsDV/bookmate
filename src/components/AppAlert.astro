@@ -41,6 +41,8 @@
 
 
 <script>
+	import { openPanelModal } from '../lib/panel-scroll-lock';
+
 	type AlertDialogMode = 'alert' | 'confirm';
 	type AlertDialogType = 'info' | 'success' | 'warning' | 'error';
 	type AlertDialogOptions = BookmateAlertOptions & { mode?: AlertDialogMode };
@@ -174,7 +176,7 @@
 
 			dialog.dataset.isClosing = '0';
 			dialog.classList.remove('is-closing');
-			if (!dialog.open) dialog.showModal();
+			if (!dialog.open) openPanelModal(dialog);
 
 			return new Promise<boolean>((resolve) => {
 				resolver = resolve;

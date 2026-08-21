@@ -1,4 +1,5 @@
 import type { AgendaScanRow } from '../lib/appointment-ai-types';
+import { openPanelModal } from '../lib/panel-scroll-lock';
 
 interface CatalogProfessional {
 	id_professional: number;
@@ -265,7 +266,7 @@ class AgendaScanPreview extends HTMLElement {
 		this.setError('');
 
 		const shell = this.querySelector<HTMLDialogElement>('[data-agenda-preview-shell]');
-		if (shell && !shell.open) shell.showModal();
+		if (shell && !shell.open) openPanelModal(shell);
 	}
 
 	close() {

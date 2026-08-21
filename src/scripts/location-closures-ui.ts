@@ -2,6 +2,7 @@ import TomSelect from 'tom-select';
 import { showFlashMessage } from '../lib/flash';
 import { showOrgClosuresTour } from '../lib/org-closures-tour';
 import { destroyActiveBookmateTour } from '../lib/product-tour';
+import { openPanelModal } from '../lib/panel-scroll-lock';
 
 const showAppAlert = ({ type, message }: { type: 'success' | 'error'; message: string }) =>
 	showFlashMessage({ type, message });
@@ -673,7 +674,7 @@ class LocationClosuresUI {
 		if (!formDialog?.isConnected) return;
 		this.orgMode = mode === 'org';
 		void this.resetForm(mode).then(() => {
-			if (!formDialog.open) formDialog.showModal();
+			if (!formDialog.open) openPanelModal(formDialog);
 		});
 	}
 
@@ -713,7 +714,7 @@ class LocationClosuresUI {
 		if (els.applyAll) els.applyAll.checked = prefill.applyAll !== false;
 		this.syncLocationsVisibility();
 
-		if (!formDialog.open) formDialog.showModal();
+		if (!formDialog.open) openPanelModal(formDialog);
 	}
 
 	private closeForm() {
@@ -729,7 +730,7 @@ class LocationClosuresUI {
 			this.orgCloseTimer = null;
 		}
 		orgDialog.classList.remove('is-closing');
-		if (!orgDialog.open) orgDialog.showModal();
+		if (!orgDialog.open) openPanelModal(orgDialog);
 		void this.reloadOrgClosures();
 	}
 

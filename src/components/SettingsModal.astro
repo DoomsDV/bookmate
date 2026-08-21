@@ -1044,6 +1044,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		isAcceptedProfileImage,
 		ProfileImageCropper,
 	} from '../lib/profile-image-crop';
+	import { openPanelModal } from '../lib/panel-scroll-lock';
 
 	interface ApiErrorDetail {
 		field?: string;
@@ -1417,7 +1418,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 				window.clearTimeout(this.closingTimer);
 				this.closingTimer = null;
 			}
-			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
+			if (this.els.modal && !this.els.modal.open) openPanelModal(this.els.modal);
 			this.resetModalScroll();
 			this.syncPanelThemeSelect();
 			void this.loadData();
@@ -1773,7 +1774,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 			try {
 				if (!this.els.cropModal.open) {
-					this.els.cropModal.showModal();
+					openPanelModal(this.els.cropModal);
 				}
 				await this.profileImageCropper.bindFile(file);
 			} catch {

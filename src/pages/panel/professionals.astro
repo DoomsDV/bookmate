@@ -442,6 +442,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 	import { reloadPageWithFlash } from '../../lib/flash';
 	import { showProfessionalProfileUrlTour } from '../../lib/professional-profile-url-tour';
 	import { destroyActiveBookmateTour } from '../../lib/product-tour';
+	import { openPanelModal } from '../../lib/panel-scroll-lock';
 
 	type ProfessionalMode = 'create' | 'edit';
 
@@ -1337,7 +1338,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 
 			try {
 				if (!this.els.cropModal.open) {
-					this.els.cropModal.showModal();
+					openPanelModal(this.els.cropModal);
 				}
 				await this.profileImageCropper.bindFile(file);
 			} catch {
@@ -1575,7 +1576,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
 			}
-			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
+			if (this.els.modal && !this.els.modal.open) openPanelModal(this.els.modal);
 			this.resetModalScroll();
 			
 			try {
@@ -1597,7 +1598,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
 			}
-			if (this.els.modal && !this.els.modal.open) this.els.modal.showModal();
+			if (this.els.modal && !this.els.modal.open) openPanelModal(this.els.modal);
 			this.resetModalScroll();
 			this.setLoadingMessage('Cargando...');
 			this.toggleFormLoading(true);

@@ -657,11 +657,8 @@ professional-manager:has(.app-shell) {
 	scrollbar-gutter: auto;
 }
 
-html.ai-summary-modal-open .app-shell > :last-child > main {
-	overflow: hidden;
-}
-
-html.atc-chat-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
+html.panel-modal-open .app-shell > :last-child > main,
+html.panel-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
 	overflow: hidden;
 }
 
@@ -684,11 +681,7 @@ html.atc-chat-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
 		scrollbar-gutter: auto;
 	}
 
-	html.ai-summary-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
-		overflow: hidden;
-	}
-
-	html.atc-chat-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
+	html.panel-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
 		overflow: hidden;
 	}
 }

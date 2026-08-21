@@ -587,6 +587,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 
 <script>
 	import { reloadPageWithFlash } from "../../lib/flash";
+	import { openPanelModal } from "../../lib/panel-scroll-lock";
 	import { getBrowserGeolocation } from "../../lib/geolocation-browser";
 	import { initLocationClosuresUI } from "../../scripts/location-closures-ui";
 	import {
@@ -1491,7 +1492,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
 			}
-			if (!this.els.modal?.open) this.els.modal?.showModal();
+			if (this.els.modal && !this.els.modal.open) openPanelModal(this.els.modal);
 			this.resetModalScroll();
 		};
 
