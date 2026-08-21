@@ -21,9 +21,10 @@ export const initHaselPwaRegister = () => {
 	if (import.meta.env.DEV) return;
 
 	const swUrl = '/sw.js';
+	// generateSW de Workbox emite un SW clásico con importScripts();
+	// type: 'module' rompe en Chrome ("Module scripts don't support importScripts()").
 	const wb = new Workbox(swUrl, {
 		scope: '/',
-		type: 'module',
 	});
 
 	let shouldReload = false;
