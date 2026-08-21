@@ -1036,6 +1036,7 @@ class ScheduleManager extends HTMLElement {
 
 			const startInput = document.createElement('input');
 			startInput.type = 'time';
+			startInput.lang = 'en-GB';
 			startInput.value = slot.start_time;
 			startInput.dataset.slotStart = 'true';
 			startInput.dataset.dayOfWeek = String(dayState.day_of_week);
@@ -1049,6 +1050,7 @@ class ScheduleManager extends HTMLElement {
 
 			const endInput = document.createElement('input');
 			endInput.type = 'time';
+			endInput.lang = 'en-GB';
 			endInput.value = slot.end_time;
 			endInput.dataset.slotEnd = 'true';
 			endInput.dataset.dayOfWeek = String(dayState.day_of_week);

@@ -562,7 +562,7 @@ const googleErrorMessage = hasGoogleError
 														</div>
 													</div>
 													<div class="calendar-loading-skeleton__toolbar-end">
-														<div class="panel-skeleton-line calendar-loading-skeleton__toolbar-pill hidden sm:block"></div>
+														<div class="panel-skeleton-line calendar-loading-skeleton__toolbar-pill"></div>
 														<div class="panel-skeleton-line calendar-loading-skeleton__toolbar-btn"></div>
 														<div class="panel-skeleton-line calendar-loading-skeleton__toolbar-btn"></div>
 													</div>
@@ -581,7 +581,12 @@ const googleErrorMessage = hasGoogleError
 																		]}
 																	>
 																		<div class="panel-skeleton-line calendar-loading-skeleton__day-label"></div>
-																		<div class="panel-skeleton-line calendar-loading-skeleton__day-number"></div>
+																		<div
+																			class:list={[
+																				'panel-skeleton-line calendar-loading-skeleton__day-number',
+																				index === 0 && 'calendar-loading-skeleton__day-number--today',
+																			]}
+																		></div>
 																	</div>
 																))
 															}
@@ -591,19 +596,19 @@ const googleErrorMessage = hasGoogleError
 													<div class="calendar-loading-skeleton__grid" aria-hidden="true">
 														<div class="calendar-loading-skeleton__time-axis">
 															{
-																Array.from({ length: 8 }).map(() => (
+																Array.from({ length: 16 }).map(() => (
 																	<div class="panel-skeleton-line calendar-loading-skeleton__time-label"></div>
 																))
 															}
 														</div>
 														<div class="calendar-loading-skeleton__slots">
 															{
-																Array.from({ length: 10 }).map((_, index) => (
+																Array.from({ length: 16 }).map((_, index) => (
 																	<div class="calendar-loading-skeleton__slot-row">
-																		{index === 2 && (
+																		{index === 3 && (
 																			<div class="panel-skeleton-line calendar-loading-skeleton__event calendar-loading-skeleton__event--a"></div>
 																		)}
-																		{index === 5 && (
+																		{index === 8 && (
 																			<div class="panel-skeleton-line calendar-loading-skeleton__event calendar-loading-skeleton__event--b"></div>
 																		)}
 																	</div>
@@ -927,6 +932,13 @@ const googleErrorMessage = hasGoogleError
 		min-height: 34rem;
 	}
 
+	@media (max-width: 767px) {
+		/* 6:00–22:00 en slots de 1.55rem (2 por hora) + toolbar + días */
+		[data-calendar-root] .calendar-stage.is-loading {
+			min-height: calc(4.2rem + 16 * 3.1rem);
+		}
+	}
+
 	@media (min-width: 768px) {
 		[data-calendar-root] .calendar-stage.is-loading {
 			min-height: 38rem;
@@ -962,6 +974,7 @@ const googleErrorMessage = hasGoogleError
 		height: 1.25rem;
 		width: 7rem;
 		border-radius: 0.375rem;
+		flex: 0 1 auto;
 	}
 
 	@media (min-width: 640px) {
@@ -1039,6 +1052,10 @@ const googleErrorMessage = hasGoogleError
 		border-radius: 999px;
 	}
 
+	.calendar-loading-skeleton__day-number--today {
+		opacity: 0.55;
+	}
+
 	.calendar-loading-skeleton__time-label {
 		height: 0.75rem;
 		width: 2.25rem;
@@ -1110,16 +1127,115 @@ const googleErrorMessage = hasGoogleError
 	}
 
 	@media (max-width: 767px) {
+		.calendar-loading-skeleton {
+			gap: 0.1rem;
+			height: 100%;
+		}
+
+		.calendar-loading-skeleton__toolbar {
+			gap: 0.28rem;
+			min-height: 1.85rem;
+			padding: 0 0 0.18rem;
+		}
+
+		.calendar-loading-skeleton__toolbar-start,
+		.calendar-loading-skeleton__toolbar-end {
+			gap: 0.16rem;
+		}
+
+		.calendar-loading-skeleton__toolbar-nav {
+			gap: 0.05rem;
+		}
+
+		.calendar-loading-skeleton__toolbar-title {
+			height: 0.95rem;
+			width: 6.4rem;
+		}
+
+		.calendar-loading-skeleton__toolbar-btn {
+			width: 1.95rem;
+			height: 1.95rem;
+		}
+
+		.calendar-loading-skeleton__toolbar-pill {
+			height: 1.95rem;
+			width: 2.45rem;
+		}
+
+		.calendar-loading-skeleton__scrollgrid {
+			border-radius: 1rem;
+		}
+
+		.calendar-loading-skeleton__axis,
+		.calendar-loading-skeleton__time-axis {
+			flex-basis: 2.4rem;
+			width: 2.4rem;
+			min-width: 2.4rem;
+		}
+
+		.calendar-loading-skeleton__time-axis {
+			padding: 0.2rem 0.12rem 0.35rem;
+		}
+
+		.calendar-loading-skeleton__time-label {
+			height: 0.55rem;
+			width: 1.65rem;
+		}
+
+		.calendar-loading-skeleton__day-cell {
+			padding: 0.16rem 0.08rem 0.2rem;
+		}
+
+		.calendar-loading-skeleton__day-label {
+			height: 0.5rem;
+			width: 1.35rem;
+		}
+
+		.calendar-loading-skeleton__day-number {
+			width: 1.3rem;
+			height: 1.3rem;
+			margin-top: 0.06rem;
+		}
+
+		.calendar-loading-skeleton__scrollgrid,
+		.calendar-loading-skeleton__grid {
+			flex: 1 1 auto;
+		}
+
 		.calendar-loading-skeleton__slots {
-			padding: 0.15rem 0.35rem 0.45rem;
+			padding: 0;
+			flex: 1 1 auto;
 		}
 
 		.calendar-loading-skeleton__slot-row {
-			min-height: 1.45rem;
+			flex: 1 1 0;
+			min-height: 3.1rem;
+		}
+
+		.calendar-loading-skeleton__slot-row::after {
+			content: '';
+			position: absolute;
+			left: 0;
+			right: 0;
+			top: 50%;
+			border-top: 1px solid color-mix(in srgb, var(--calendar-outline) 22%, transparent);
+			pointer-events: none;
 		}
 
 		.calendar-loading-skeleton__event {
+			top: 0.12rem;
+			height: calc(160% - 0.2rem);
 			border-radius: 0.55rem;
+		}
+
+		.calendar-loading-skeleton__event--a {
+			left: 3%;
+			width: 30%;
+		}
+
+		.calendar-loading-skeleton__event--b {
+			left: 36%;
+			width: 22%;
 		}
 	}
 

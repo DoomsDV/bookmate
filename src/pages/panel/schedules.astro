@@ -1884,7 +1884,24 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		}
 
 		.schedule-shift__times {
-			gap: 0.4rem;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			gap: 0.28rem;
+		}
+
+		.schedule-shift__field input[type='time'] {
+			font-size: 0.74rem;
+			padding: 0.45rem 0.28rem;
+			letter-spacing: -0.02em;
+			overflow: hidden;
+		}
+
+		.schedule-shift__field input[type='time']::-webkit-calendar-picker-indicator {
+			width: 0;
+			height: 0;
+			margin: 0;
+			padding: 0;
+			opacity: 0;
+			pointer-events: none;
 		}
 
 		.schedule-shift__control {

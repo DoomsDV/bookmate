@@ -116,7 +116,7 @@ const bindHoursTimeInput = (input: HTMLInputElement, value: string) => {
 	input.type = 'time';
 	input.step = '60';
 	input.autocomplete = 'off';
-	input.lang = 'es';
+	input.lang = 'en-GB';
 	input.setAttribute('title', 'Formato 24 h (HH:mm)');
 	input.value = normalizeHoursTimeInput(value) || value;
 };

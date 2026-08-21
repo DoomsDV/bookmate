@@ -2494,24 +2494,56 @@ html[data-theme='dark'] .ppe-hours-interval__time {
 	}
 
 	.ppe-hours-interval {
-		gap: 0.3rem;
+		gap: 0.22rem;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.ppe-hours-interval:has(.ppe-hours-remove) {
+		grid-template-columns: minmax(0, 1fr) 2rem;
 	}
 
 	.ppe-hours-interval__range {
-		gap: 0.28rem;
+		grid-template-columns: minmax(0, 1fr) 0.45rem minmax(0, 1fr);
+		gap: 0.12rem;
+	}
+
+	.ppe-hours-interval__sep {
+		width: 0.45rem;
+		font-size: 0.8rem;
 	}
 
 	.ppe-hours-interval__time {
-		min-height: 2.25rem;
-		padding: 0.32rem 0.35rem;
-		border-radius: 0.75rem;
-		font-size: 0.84rem;
+		min-height: 2.1rem;
+		padding: 0.28rem 0.18rem;
+		border-radius: 0.7rem;
+		font-size: 0.74rem;
+		letter-spacing: -0.02em;
+		overflow: hidden;
+	}
+
+	.ppe-hours-interval__time::-webkit-calendar-picker-indicator {
+		width: 0;
+		height: 0;
+		margin: 0;
+		padding: 0;
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.ppe-hours-interval__time::-webkit-datetime-edit,
+	.ppe-hours-interval__time::-webkit-datetime-edit-fields-wrapper,
+	.ppe-hours-interval__time::-webkit-datetime-edit-hour-field,
+	.ppe-hours-interval__time::-webkit-datetime-edit-minute-field,
+	.ppe-hours-interval__time::-webkit-datetime-edit-ampm-field {
+		padding: 0;
+		margin: 0;
+		min-width: 0;
 	}
 
 	.ppe-hours-remove {
-		width: 2.25rem;
-		height: 2.25rem;
-		border-radius: 0.75rem;
+		width: 2rem;
+		height: 2.1rem;
+		border-radius: 0.7rem;
 	}
 
 	.ppe-hours-remove .material-symbols-rounded {
