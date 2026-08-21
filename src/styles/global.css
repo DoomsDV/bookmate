@@ -1959,42 +1959,43 @@ html[data-theme='dark'] .modal-action-danger:hover {
 
 .app-pagination__pill {
 	width: 100%;
-	padding: 0.28rem;
+	padding: 0.55rem 0.7rem 0.55rem 0.9rem;
 	border: 0;
-	border-radius: 1.45rem;
-	background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
-	box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+	border-radius: 1.15rem;
+	background: var(--surface-bright);
+	box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
 }
 
 .app-pagination__inner {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	gap: 1rem;
+	gap: 0.85rem;
 	min-width: 0;
-	padding: 0.65rem 0.65rem 0.65rem 1.05rem;
-	border-radius: calc(1.45rem - 0.28rem);
-	background: var(--surface-bright);
-	box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent);
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
 }
 
 .app-pagination__summary {
 	display: flex;
 	flex-wrap: wrap;
 	align-items: baseline;
-	column-gap: 0.4rem;
+	column-gap: 0.35rem;
 	row-gap: 0.1rem;
 	min-width: 0;
 	margin: 0;
-	font-size: 0.8rem;
-	font-weight: 600;
+	font-size: 0.78rem;
+	font-weight: 550;
 	letter-spacing: -0.01em;
-	line-height: 1.4;
+	line-height: 1.35;
 	color: var(--on-surface-variant, #64748b);
 }
 
 .app-pagination__summary strong {
-	font-weight: 800;
+	font-weight: 760;
 	font-variant-numeric: tabular-nums;
 	color: var(--on-surface, #0f172a);
 }
@@ -2005,9 +2006,10 @@ html[data-theme='dark'] .modal-action-danger:hover {
 	justify-content: center;
 	gap: 0.15rem;
 	flex-shrink: 0;
-	padding: 0.22rem;
-	border-radius: 999px;
-	background: color-mix(in srgb, var(--on-surface) 4.5%, transparent);
+	padding: 0;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
 }
 
 .app-pagination__pages {
@@ -2098,17 +2100,17 @@ html[data-theme='dark'] .modal-action-danger:hover {
 }
 
 html[data-theme='dark'] .app-pagination__pill {
-	background: rgba(255, 255, 255, 0.03);
-	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+	background: #16161a;
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 
 html[data-theme='dark'] .app-pagination__inner {
-	background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
-	box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+	background: transparent;
+	box-shadow: none;
 }
 
 html[data-theme='dark'] .app-pagination__controls {
-	background: rgba(255, 255, 255, 0.04);
+	background: transparent;
 }
 
 html[data-theme='dark'] .app-pagination__arrow {
@@ -2135,11 +2137,15 @@ html[data-theme='dark'] .app-pagination__ellipsis {
 }
 
 @media (max-width: 639px) {
+	.app-pagination__pill {
+		padding: 0.65rem 0.7rem 0.6rem;
+	}
+
 	.app-pagination__inner {
 		flex-direction: column;
 		align-items: stretch;
-		padding: 0.85rem 0.7rem 0.7rem;
-		gap: 0.7rem;
+		padding: 0;
+		gap: 0.55rem;
 	}
 
 	.app-pagination__summary {

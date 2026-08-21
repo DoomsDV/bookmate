@@ -63,6 +63,7 @@ export interface CobrosListQuery {
 	page?: number;
 	limit?: number;
 	sort_dir?: 'asc' | 'desc';
+	sort_by?: 'date' | 'price';
 }
 
 export class CobrosApiError extends Error {
@@ -143,6 +144,7 @@ export const listCobrosWithOrds = async (
 	url.searchParams.set('page', String(query.page || 1));
 	url.searchParams.set('limit', String(query.limit || 9));
 	url.searchParams.set('sort_dir', query.sort_dir === 'asc' ? 'asc' : 'desc');
+	url.searchParams.set('sort_by', query.sort_by === 'price' ? 'price' : 'date');
 
 	const response = await fetch(url.toString(), {
 		method: 'GET',

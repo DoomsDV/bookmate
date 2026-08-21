@@ -380,16 +380,17 @@ const toDescriptionLabel = (value?: string | null) => {
 		--specialties-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		cursor: pointer;
 		gap: 0;
-		padding: 0.28rem;
+		padding: 0.7rem 0.75rem 0.6rem;
 		border: 0;
-		border-radius: 1.45rem;
-		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+		border-radius: 1.15rem;
+		background: var(--surface-bright);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
 		overflow: visible;
-		animation: specialties-card-enter 720ms var(--specialties-ease) both;
+		animation: specialties-card-enter 800ms var(--specialties-ease) both;
 		transition:
-			transform 420ms var(--specialties-ease),
-			box-shadow 420ms var(--specialties-ease);
+			transform 520ms var(--specialties-ease),
+			box-shadow 520ms var(--specialties-ease),
+			background 520ms var(--specialties-ease);
 	}
 
 	specialty-manager .specialties-card:nth-child(1) { animation-delay: 0ms; }
@@ -409,36 +410,41 @@ const toDescriptionLabel = (value?: string | null) => {
 		}
 	}
 
-	specialty-manager .specialties-card.panel-skeleton-card {
+	specialty-manager .specialties-card.panel-skeleton-card,
+	specialty-manager .specialties-card.panel-skeleton-card:hover {
 		animation: none;
+		transform: none !important;
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent) !important;
 	}
 
 	specialty-manager .specialties-card:hover {
 		transform: none;
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 14%, transparent);
 	}
 
 	specialty-manager .specialties-card__inner {
 		display: grid;
 		height: 100%;
-		padding: 0.95rem 0.95rem 1rem;
-		border-radius: calc(1.45rem - 0.28rem);
-		background: var(--surface-bright);
-		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent);
+		min-width: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
 	}
 
 	specialty-manager .specialties-card__dossier {
 		display: flex;
 		align-items: flex-start;
-		gap: 0.85rem;
+		gap: 0.65rem;
 		min-width: 0;
 	}
 
 	specialty-manager .specialties-card .specialties-card-icon {
-		width: 3.35rem;
-		height: 3.35rem;
+		width: 3rem;
+		height: 3rem;
 		flex-shrink: 0;
-		border-radius: 1rem;
+		border-radius: 0.9rem;
 		background: color-mix(in srgb, var(--primary) 14%, transparent);
 		color: var(--primary);
 		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
@@ -471,20 +477,21 @@ const toDescriptionLabel = (value?: string | null) => {
 	specialty-manager .specialties-card .specialties-card-title {
 		flex: 1 1 auto;
 		min-width: 0;
-		font-size: 1.08rem;
-		font-weight: 780;
-		letter-spacing: -0.03em;
+		font-size: 1.06rem;
+		font-weight: 760;
+		letter-spacing: -0.032em;
 		line-height: 1.2;
 	}
 
 	specialty-manager .specialties-card__copy {
 		margin: 0;
-		padding: 0.55rem 0.7rem;
-		border-radius: 0.9rem;
-		background: color-mix(in srgb, var(--on-surface) 4.5%, transparent);
-		font-size: 0.82rem;
-		font-weight: 600;
-		line-height: 1.4;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		font-size: 0.78rem;
+		font-weight: 550;
+		line-height: 1.35;
 		color: var(--on-surface-variant);
 	}
 
@@ -544,24 +551,24 @@ const toDescriptionLabel = (value?: string | null) => {
 
 	@media (min-width: 1024px) {
 		specialty-manager .specialties-card:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+			transform: translateY(-3px);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent);
 		}
 	}
 
 	html[data-theme='dark'] specialty-manager .specialties-card {
-		background: rgba(255, 255, 255, 0.03);
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+		background: #16161a;
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 	}
 
 	html[data-theme='dark'] specialty-manager .specialties-card:hover {
-		background: rgba(255, 255, 255, 0.03);
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+		background: #19191e;
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
 	}
 
 	html[data-theme='dark'] specialty-manager .specialties-card__inner {
-		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		background: transparent;
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] specialty-manager .specialties-card .specialties-card-icon {
@@ -570,7 +577,13 @@ const toDescriptionLabel = (value?: string | null) => {
 	}
 
 	html[data-theme='dark'] specialty-manager .specialties-card__copy {
-		background: rgba(255, 255, 255, 0.04);
+		background: transparent;
+	}
+
+	html[data-theme='dark'] specialty-manager .specialties-card.panel-skeleton-card,
+	html[data-theme='dark'] specialty-manager .specialties-card.panel-skeleton-card:hover {
+		background: #16161a;
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
 	}
 
 	html[data-theme='dark'] .specialties-card-status--active {

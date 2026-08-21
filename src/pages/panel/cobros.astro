@@ -215,8 +215,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 				</div>
 				<div class="cobros-period-filter-sheet__header">
 					<h2 id="cobros-period-filter-title" class="m-0 text-[1.05rem] font-extrabold tracking-tight">
-						<span class="md:hidden">Filtros</span>
-						<span class="hidden md:inline">Periodo</span>
+						Filtros
 					</h2>
 					<button
 						type="button"
@@ -317,6 +316,59 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 						>
 							Aplicar
 						</button>
+					</div>
+
+					<div class="cobros-filter-group">
+						<p class="cobros-filter-group__label">Ordenar</p>
+						<div class="cobros-period-filter-sheet__list" role="listbox" aria-label="Campo de orden">
+							<button
+								type="button"
+								class="cobros-period-option is-selected"
+								data-cobros-sort-by="date"
+								role="option"
+								aria-selected="true"
+							>
+								<span>Fecha de cita</span>
+								<span class="material-symbols-rounded" aria-hidden="true">check</span>
+							</button>
+							<button
+								type="button"
+								class="cobros-period-option"
+								data-cobros-sort-by="price"
+								role="option"
+								aria-selected="false"
+							>
+								<span>Precio</span>
+								<span class="material-symbols-rounded" aria-hidden="true">check</span>
+							</button>
+						</div>
+					</div>
+					<div class="cobros-filter-group">
+						<p class="cobros-filter-group__label">Dirección</p>
+						<div class="cobros-period-filter-sheet__list" role="listbox" aria-label="Dirección de orden">
+							<button
+								type="button"
+								class="cobros-period-option is-selected"
+								data-cobros-sort-dir="desc"
+								role="option"
+								aria-selected="true"
+							>
+								<span data-sort-dir-label-date>Más reciente</span>
+								<span class="hidden" data-sort-dir-label-price>Mayor precio</span>
+								<span class="material-symbols-rounded" aria-hidden="true">check</span>
+							</button>
+							<button
+								type="button"
+								class="cobros-period-option"
+								data-cobros-sort-dir="asc"
+								role="option"
+								aria-selected="false"
+							>
+								<span data-sort-dir-label-date>Más antiguo</span>
+								<span class="hidden" data-sort-dir-label-price>Menor precio</span>
+								<span class="material-symbols-rounded" aria-hidden="true">check</span>
+							</button>
+						</div>
 					</div>
 
 					<dialog
@@ -699,11 +751,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	.cobros-loading__card {
-		border-radius: 1.35rem;
+		border-radius: 1.2rem;
 		border: 0;
-		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
-		padding: 1rem 1.05rem;
+		background: var(--surface-bright);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
+		padding: 0.85rem 0.9rem 0.8rem;
 	}
 
 	.cobros-loading__row {
@@ -887,6 +939,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		color: var(--on-surface-variant);
 		pointer-events: none;
 	}
+	.cobros-period-option .hidden {
+		display: none;
+	}
 	.cobros-period-option {
 		display: flex;
 		align-items: center;
@@ -1043,12 +1098,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 	:global(.cobros-card) {
 		--cobros-ease: cubic-bezier(0.32, 0.72, 0, 1);
-		padding: 0.28rem;
+		padding: 0.85rem 0.9rem 0.8rem;
 		border: 0;
-		border-radius: 1.45rem;
-		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
-		animation: cobros-card-enter 720ms var(--cobros-ease) both;
+		border-radius: 1.2rem;
+		background: var(--surface-bright);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
+		animation: cobros-card-enter 800ms var(--cobros-ease) both;
 	}
 
 	:global(.cobros-card:nth-child(1)) { animation-delay: 0ms; }
@@ -1072,11 +1127,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 	:global(.cobros-card__inner) {
 		display: grid;
-		gap: 0.85rem;
-		padding: 1rem 1.05rem 1.05rem;
-		border-radius: calc(1.45rem - 0.28rem);
-		background: var(--surface-bright);
-		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent);
+		gap: 0.7rem;
+		min-width: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
 	}
 
 	:global(.cobros-card__head) {
@@ -1094,9 +1151,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 	:global(.cobros-card__name) {
 		margin: 0;
-		font-size: 1.05rem;
-		font-weight: 750;
-		letter-spacing: -0.025em;
+		font-size: 1.06rem;
+		font-weight: 760;
+		letter-spacing: -0.032em;
 		line-height: 1.2;
 		color: var(--on-surface);
 		overflow: hidden;
@@ -1106,8 +1163,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 	:global(.cobros-card__service) {
 		margin: 0;
-		font-size: 0.82rem;
-		font-weight: 600;
+		font-size: 0.78rem;
+		font-weight: 550;
 		color: var(--on-surface-variant);
 		overflow: hidden;
 		text-overflow: ellipsis;
@@ -1126,8 +1183,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 
 	:global(.cobros-card__when) {
 		margin: 0;
-		font-size: 0.8rem;
-		font-weight: 600;
+		font-size: 0.78rem;
+		font-weight: 550;
 		color: var(--on-surface-variant);
 	}
 
@@ -1179,17 +1236,22 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	:global(.cobros-card__cta:hover .cobros-card__cta-icon) {
-		transform: translateX(2px);
+		transform: translateX(3px) scale(1.04);
 	}
 
 	:global(html[data-theme='dark'] .cobros-card) {
-		background: rgba(255, 255, 255, 0.03);
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+		background: #16161a;
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 	}
 
 	:global(html[data-theme='dark'] .cobros-card__inner) {
-		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		background: transparent;
+		box-shadow: none;
+	}
+
+	:global(html[data-theme='dark'] .cobros-loading__card) {
+		background: #16161a;
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 	}
 
 	:global(html[data-theme='dark'] .cobros-chip--pending) {

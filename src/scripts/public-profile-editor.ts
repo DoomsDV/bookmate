@@ -649,6 +649,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			li.className = day.closed ? 'ppe-hours-day is-closed' : 'ppe-hours-day is-open';
 			li.dataset.day = String(day.day);
 
+			const mast = document.createElement('div');
+			mast.className = 'ppe-hours-day__mast';
+
 			const name = document.createElement('span');
 			name.className = 'ppe-hours-day__name';
 			name.textContent = dayLabel;
@@ -671,7 +674,8 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			switchEl.append(toggle, track);
 			toggleWrap.appendChild(switchEl);
 
-			li.append(name, toggleWrap);
+			mast.append(name, toggleWrap);
+			li.appendChild(mast);
 
 			if (day.closed) {
 				const closedLabel = document.createElement('span');
@@ -686,7 +690,9 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 				day.intervals.forEach((interval, index) => {
 					const row = document.createElement('div');
 					row.className = 'ppe-hours-interval';
-					const isLast = index === day.intervals.length - 1;
+
+					const range = document.createElement('div');
+					range.className = 'ppe-hours-interval__range';
 
 					const start = document.createElement('input');
 					start.className = 'ppe-input ppe-hours-interval__time';
@@ -707,10 +713,8 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 					end.dataset.index = String(index);
 					end.setAttribute('aria-label', `${dayLabel}: fin turno ${index + 1}`);
 
-					row.append(start, sep, end);
-
-					const actions = document.createElement('div');
-					actions.className = 'ppe-hours-interval__actions';
+					range.append(start, sep, end);
+					row.appendChild(range);
 
 					if (day.intervals.length > 1) {
 						const removeBtn = document.createElement('button');
@@ -721,34 +725,25 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 						removeBtn.setAttribute('aria-label', 'Quitar turno');
 						removeBtn.innerHTML =
 							'<span class="material-symbols-rounded" aria-hidden="true">close</span>';
-						actions.appendChild(removeBtn);
-					} else {
-						const removeSlot = document.createElement('span');
-						removeSlot.className = 'ppe-hours-action-slot';
-						removeSlot.setAttribute('aria-hidden', 'true');
-						actions.appendChild(removeSlot);
+						row.appendChild(removeBtn);
 					}
 
-					if (isLast && canAdd) {
-						const addBtn = document.createElement('button');
-						addBtn.type = 'button';
-						addBtn.className = 'ppe-hours-add';
-						addBtn.setAttribute('data-ppe-hours-add', String(day.day));
-						addBtn.setAttribute('aria-label', `Agregar turno el ${dayLabel}`);
-						addBtn.title = 'Agregar turno';
-						addBtn.innerHTML =
-							'<span class="material-symbols-rounded" aria-hidden="true">add</span>';
-						actions.appendChild(addBtn);
-					} else {
-						const addSlot = document.createElement('span');
-						addSlot.className = 'ppe-hours-action-slot';
-						addSlot.setAttribute('aria-hidden', 'true');
-						actions.appendChild(addSlot);
-					}
-
-					row.appendChild(actions);
 					intervalsWrap.appendChild(row);
 				});
+
+				if (canAdd) {
+					const addBtn = document.createElement('button');
+					addBtn.type = 'button';
+					addBtn.className = 'ppe-hours-add';
+					addBtn.setAttribute('data-ppe-hours-add', String(day.day));
+					addBtn.setAttribute('aria-label', `Agregar turno el ${dayLabel}`);
+					addBtn.title = 'Agregar turno';
+					addBtn.innerHTML =
+						'<span>Agregar turno</span>' +
+						'<span class="ppe-hours-add__mark" aria-hidden="true">' +
+						'<span class="material-symbols-rounded">add</span></span>';
+					intervalsWrap.appendChild(addBtn);
+				}
 
 				li.appendChild(intervalsWrap);
 			}

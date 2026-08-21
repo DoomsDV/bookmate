@@ -501,16 +501,21 @@ const previewInitial = {
 						data-ppe-panel="horario"
 						hidden
 					>
-						<div class="ppe-field">
+						<div class="ppe-field ppe-hours">
 							<div class="ppe-hours-head">
-								<span class="ppe-field__label">Horario comercial</span>
+								<div class="ppe-hours-head__copy">
+									<span class="ppe-field__label">Horario comercial</span>
+									<p class="ppe-field__hint">
+										Se muestra en el Overview del perfil. No afecta la disponibilidad de reservas.
+									</p>
+								</div>
 								<button type="button" class="ppe-hours-copy" data-ppe-hours-copy-weekdays>
-									Copiar lunes a Lun–Vie
+									<span>Copiar lunes a Lun–Vie</span>
+									<span class="ppe-hours-copy__mark" aria-hidden="true">
+										<span class="material-symbols-rounded">content_copy</span>
+									</span>
 								</button>
 							</div>
-							<p class="ppe-field__hint">
-								Se muestra en el Overview del perfil. No afecta la disponibilidad de reservas.
-							</p>
 							<ul class="ppe-hours-list" data-ppe-hours-list></ul>
 						</div>
 					</section>

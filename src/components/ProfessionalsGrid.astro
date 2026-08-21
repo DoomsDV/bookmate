@@ -96,39 +96,40 @@ const cardItems = professionals.map((professional) => ({
 		</button>
 	)}
 
-	<div class="professionals-search">
-		<div class="professionals-search__well" data-panel-search>
-			<div class="professionals-search__core">
-				<span class="professionals-search__icon" aria-hidden="true">
-					<span class="material-symbols-rounded">search</span>
-				</span>
-				<input
-					type="text"
-					inputmode="search"
-					enterkeyhint="search"
-					data-professionals-search
-					placeholder="Buscar por nombre, email o teléfono"
-					aria-label="Buscar por nombre, email o teléfono"
-					autocomplete="off"
-					value={searchQuery}
-					class="professionals-search__input"
-				/>
-				<button
-					type="button"
-					class="panel-search-clear professionals-search__clear"
-					data-panel-search-clear
-					hidden={String(searchQuery || '').length === 0}
-					aria-label="Limpiar búsqueda"
-				>
-					<span class="material-symbols-rounded" aria-hidden="true">close</span>
-				</button>
-			</div>
+	<div class="flex max-w-xl items-center gap-2">
+		<div class="relative min-w-0 flex-1" data-panel-search>
+			<span
+				class="pointer-events-none absolute inset-y-0 left-3.5 flex items-center text-(--on-surface-variant)"
+				aria-hidden="true"
+			>
+				<span class="material-symbols-rounded text-[1.2rem]">search</span>
+			</span>
+			<input
+				type="text"
+				inputmode="search"
+				enterkeyhint="search"
+				data-professionals-search
+				placeholder="Buscar por nombre, email o teléfono"
+				aria-label="Buscar por nombre, email o teléfono"
+				autocomplete="off"
+				value={searchQuery}
+				class="w-full rounded-2xl border border-(--shell-border) bg-(--surface-bright) py-2.5 pl-11 pr-11 text-[0.95rem] font-semibold text-(--on-surface) outline-none transition placeholder:font-medium placeholder:text-(--on-surface-variant)/70 hover:border-(--on-surface-variant) focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10 shadow-sm"
+			/>
+			<button
+				type="button"
+				class="panel-search-clear"
+				data-panel-search-clear
+				hidden={String(searchQuery || '').length === 0}
+				aria-label="Limpiar búsqueda"
+			>
+				<span class="material-symbols-rounded" aria-hidden="true">close</span>
+			</button>
 		</div>
 
 		<button
 			type="button"
 			class:list={[
-				'professionals-search__filter panel-status-filter-btn',
+				'panel-status-filter-btn relative flex size-11 shrink-0 items-center justify-center rounded-2xl border border-(--shell-border) bg-(--surface-bright) text-(--on-surface-variant) shadow-sm transition hover:border-(--on-surface-variant) hover:text-(--on-surface) focus:border-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10',
 				hasStatusFilter && 'is-active',
 			]}
 			data-open-professionals-status-filter
@@ -137,9 +138,7 @@ const cardItems = professionals.map((professional) => ({
 			aria-controls="professionals-status-filter-sheet"
 			aria-pressed={hasStatusFilter ? 'true' : 'false'}
 		>
-			<span class="professionals-search__filter-icon" aria-hidden="true">
-				<span class="material-symbols-rounded">tune</span>
-			</span>
+			<span class="material-symbols-rounded text-[1.25rem]" aria-hidden="true">tune</span>
 			{hasStatusFilter && (
 				<span class="panel-status-filter-badge" data-professionals-status-filter-badge aria-hidden="true"></span>
 			)}
@@ -333,195 +332,6 @@ const cardItems = professionals.map((professional) => ({
 		}
 	}
 
-	.professionals-search {
-		--pros-search-ease: cubic-bezier(0.32, 0.72, 0, 1);
-		display: flex;
-		align-items: center;
-		gap: 0.55rem;
-		max-width: 36rem;
-		width: 100%;
-	}
-
-	.professionals-search__well {
-		position: relative;
-		min-width: 0;
-		flex: 1 1 auto;
-		padding: 0.28rem;
-		border-radius: 1.35rem;
-		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 7%, transparent);
-		transition:
-			box-shadow 520ms var(--pros-search-ease),
-			background-color 520ms var(--pros-search-ease),
-			transform 520ms var(--pros-search-ease);
-	}
-
-	.professionals-search__core {
-		position: relative;
-		display: flex;
-		align-items: center;
-		gap: 0.45rem;
-		min-width: 0;
-		padding: 0.22rem 0.28rem 0.22rem 0.22rem;
-		border-radius: calc(1.35rem - 0.28rem);
-		background: var(--surface-bright);
-		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 55%, transparent);
-	}
-
-	.professionals-search__icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2.05rem;
-		height: 2.05rem;
-		flex-shrink: 0;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface) 5.5%, transparent);
-		color: var(--on-surface-variant);
-		transition:
-			transform 520ms var(--pros-search-ease),
-			color 520ms var(--pros-search-ease),
-			background-color 520ms var(--pros-search-ease);
-	}
-
-	.professionals-search__icon .material-symbols-rounded {
-		font-size: 1.15rem;
-		line-height: 1;
-		font-variation-settings: 'wght' 380, 'opsz' 20;
-	}
-
-	.professionals-search__input {
-		min-width: 0;
-		flex: 1 1 auto;
-		height: 2.15rem;
-		margin: 0;
-		padding: 0 2.2rem 0 0.1rem;
-		border: 0;
-		background: transparent;
-		color: var(--on-surface);
-		font-size: 0.94rem;
-		font-weight: 650;
-		letter-spacing: -0.015em;
-		outline: none;
-		box-shadow: none;
-	}
-
-	.professionals-search__input::placeholder {
-		color: color-mix(in srgb, var(--on-surface-variant) 72%, transparent);
-		font-weight: 550;
-	}
-
-	.professionals-search__clear {
-		right: 0.35rem;
-	}
-
-	.professionals-search__well:hover {
-		background: color-mix(in srgb, var(--on-surface) 7%, transparent);
-	}
-
-	.professionals-search__well:focus-within {
-		background: color-mix(in srgb, var(--primary) 10%, transparent);
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 38%, transparent);
-	}
-
-	.professionals-search__well:focus-within .professionals-search__icon {
-		color: var(--primary);
-		background: color-mix(in srgb, var(--primary) 12%, transparent);
-		transform: scale(1.04);
-	}
-
-	.professionals-search__filter {
-		position: relative;
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 3.05rem;
-		height: 3.05rem;
-		flex-shrink: 0;
-		padding: 0.28rem;
-		border: 0;
-		border-radius: 1.25rem;
-		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
-		color: var(--on-surface-variant);
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 7%, transparent);
-		cursor: pointer;
-		transition:
-			transform 520ms var(--pros-search-ease),
-			background-color 520ms var(--pros-search-ease),
-			box-shadow 520ms var(--pros-search-ease),
-			color 520ms var(--pros-search-ease);
-	}
-
-	.professionals-search__filter-icon {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 100%;
-		height: 100%;
-		border-radius: calc(1.25rem - 0.28rem);
-		background: var(--surface-bright);
-		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 55%, transparent);
-	}
-
-	.professionals-search__filter-icon .material-symbols-rounded {
-		font-size: 1.2rem;
-		line-height: 1;
-		font-variation-settings: 'wght' 380, 'opsz' 20;
-	}
-
-	.professionals-search__filter:hover {
-		color: var(--on-surface);
-		transform: scale(1.02);
-	}
-
-	.professionals-search__filter:active {
-		transform: scale(0.97);
-	}
-
-	.professionals-search__filter:focus-visible {
-		outline: 2px solid color-mix(in srgb, var(--primary) 50%, transparent);
-		outline-offset: 2px;
-	}
-
-	.professionals-search__filter.panel-status-filter-btn.is-active {
-		color: var(--primary);
-		background: color-mix(in srgb, var(--primary) 12%, transparent);
-		border-color: transparent;
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 32%, transparent);
-	}
-
-	html[data-theme='dark'] .professionals-search__well,
-	html[data-theme='dark'] .professionals-search__filter {
-		background: rgba(255, 255, 255, 0.04);
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.07);
-	}
-
-	html[data-theme='dark'] .professionals-search__core,
-	html[data-theme='dark'] .professionals-search__filter-icon {
-		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-	}
-
-	html[data-theme='dark'] .professionals-search__well:focus-within,
-	html[data-theme='dark'] .professionals-search__filter.is-active {
-		background: color-mix(in srgb, var(--primary) 16%, transparent);
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 36%, transparent);
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.professionals-search__well,
-		.professionals-search__icon,
-		.professionals-search__filter {
-			transition: none;
-		}
-
-		.professionals-search__well:focus-within .professionals-search__icon,
-		.professionals-search__filter:hover,
-		.professionals-search__filter:active {
-			transform: none;
-		}
-	}
-
 	.professionals-summary-dot {
 		display: inline-block;
 	}
@@ -634,16 +444,18 @@ const cardItems = professionals.map((professional) => ({
 		--professionals-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		cursor: pointer;
 		gap: 0;
-		padding: 0.28rem;
+		min-height: 10.5rem;
+		padding: 0.95rem 0.9rem 0.85rem;
 		border: 0;
-		border-radius: 1.45rem;
-		background: color-mix(in srgb, var(--on-surface) 4%, var(--surface-bright));
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+		border-radius: 1.2rem;
+		background: var(--surface-bright);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
 		overflow: visible;
-		animation: professionals-card-enter 720ms var(--professionals-ease) both;
+		animation: professionals-card-enter 800ms var(--professionals-ease) both;
 		transition:
-			transform 420ms var(--professionals-ease),
-			box-shadow 420ms var(--professionals-ease);
+			transform 520ms var(--professionals-ease),
+			box-shadow 520ms var(--professionals-ease),
+			background 520ms var(--professionals-ease);
 	}
 
 	professional-manager .professionals-card:nth-child(1) { animation-delay: 0ms; }
@@ -663,39 +475,51 @@ const cardItems = professionals.map((professional) => ({
 		}
 	}
 
-	professional-manager .professionals-card.panel-skeleton-card {
+	professional-manager .professionals-card.panel-skeleton-card,
+	professional-manager .professionals-card.panel-skeleton-card:hover {
 		animation: none;
+		transform: none !important;
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent) !important;
 	}
 
 	professional-manager .professionals-card:hover {
 		transform: none;
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 14%, transparent);
 	}
 
 	professional-manager .professionals-card__inner {
 		display: grid;
-		gap: 0.85rem;
+		grid-template-rows: 1fr auto;
+		gap: 0;
 		height: 100%;
-		padding: 0.95rem 0.95rem 0.9rem;
-		border-radius: calc(1.45rem - 0.28rem);
-		background: var(--surface-bright);
-		box-shadow: inset 0 1px 0 color-mix(in srgb, #ffffff 70%, transparent);
+		min-width: 0;
+		padding: 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: none;
 	}
 
 	professional-manager .professionals-card__roster {
 		display: flex;
-		align-items: flex-start;
-		gap: 0.85rem;
+		align-items: center;
+		gap: 0.75rem;
 		min-width: 0;
 	}
 
 	professional-manager .professionals-card .professionals-card-avatar {
-		width: 3.85rem;
-		height: 3.85rem;
+		width: 3.5rem;
+		height: 3.5rem;
 		border-radius: 50%;
 		background: transparent;
 		isolation: auto;
 		box-shadow: none;
+	}
+
+	professional-manager .professionals-card .professionals-card-avatar--placeholder {
+		background: color-mix(in srgb, var(--primary) 16%, transparent);
+		color: var(--primary);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
 	}
 
 	professional-manager .professionals-card .professionals-card-avatar-image {
@@ -713,7 +537,7 @@ const cardItems = professionals.map((professional) => ({
 		flex: 1;
 		min-width: 0;
 		display: grid;
-		gap: 0.22rem;
+		gap: 0.28rem;
 	}
 
 	professional-manager .professionals-card__title-row {
@@ -727,16 +551,16 @@ const cardItems = professionals.map((professional) => ({
 	professional-manager .professionals-card .professionals-card-title {
 		flex: 1 1 auto;
 		min-width: 0;
-		font-size: 1.08rem;
-		font-weight: 780;
-		letter-spacing: -0.03em;
+		font-size: 1.06rem;
+		font-weight: 760;
+		letter-spacing: -0.032em;
 		line-height: 1.2;
 	}
 
 	professional-manager .professionals-card__email {
 		margin: 0;
 		font-size: 0.78rem;
-		font-weight: 600;
+		font-weight: 550;
 		color: var(--on-surface-variant);
 	}
 
@@ -744,11 +568,13 @@ const cardItems = professionals.map((professional) => ({
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.55rem;
+		gap: 0.65rem;
 		min-width: 0;
-		padding: 0.45rem 0.55rem 0.45rem 0.55rem;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--on-surface) 4.5%, transparent);
+		padding: 0.95rem 0 0;
+		border: 0;
+		border-radius: 0;
+		background: transparent;
+		box-shadow: inset 0 1px 0 color-mix(in srgb, var(--on-surface) 8%, transparent);
 	}
 
 	professional-manager .professionals-card__craft {
@@ -763,12 +589,13 @@ const cardItems = professionals.map((professional) => ({
 	}
 
 	professional-manager .professionals-card__phone {
-		flex: 1 1 auto;
+		flex: 0 0 auto;
 		min-width: 0;
-		font-size: 0.88rem;
-		font-weight: 750;
-		letter-spacing: -0.015em;
+		font-size: 0.9rem;
+		font-weight: 720;
+		letter-spacing: -0.02em;
 		text-align: right;
+		white-space: nowrap;
 		font-variant-numeric: tabular-nums;
 		color: color-mix(in srgb, var(--on-surface-variant) 74%, var(--on-surface) 26%);
 	}
@@ -817,24 +644,24 @@ const cardItems = professionals.map((professional) => ({
 
 	@media (min-width: 1024px) {
 		professional-manager .professionals-card:hover {
-			transform: translateY(-2px);
-			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 18%, transparent);
+			transform: translateY(-3px);
+			box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent);
 		}
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card {
-		background: rgba(255, 255, 255, 0.03);
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+		background: #16161a;
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card:hover {
-		background: rgba(255, 255, 255, 0.03);
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+		background: #19191e;
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card__inner {
-		background: color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
-		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+		background: transparent;
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card .professionals-card-avatar {
@@ -842,8 +669,21 @@ const cardItems = professionals.map((professional) => ({
 		box-shadow: none;
 	}
 
+	html[data-theme='dark'] professional-manager .professionals-card .professionals-card-avatar--placeholder {
+		background: color-mix(in srgb, var(--primary) 20%, #1a1d28 80%);
+		color: color-mix(in srgb, var(--primary) 72%, #ffffff 28%);
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+	}
+
 	html[data-theme='dark'] professional-manager .professionals-card__meta {
-		background: rgba(255, 255, 255, 0.04);
+		background: transparent;
+		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+	}
+
+	html[data-theme='dark'] professional-manager .professionals-card.panel-skeleton-card,
+	html[data-theme='dark'] professional-manager .professionals-card.panel-skeleton-card:hover {
+		background: #16161a;
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
 	}
 
 	html[data-theme='dark'] professional-manager .professionals-card__craft {
