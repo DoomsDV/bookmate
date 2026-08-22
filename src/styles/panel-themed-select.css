@@ -150,7 +150,10 @@
 label:has(.panel-themed-select.is-open),
 .settings-field:has(.panel-themed-select.is-open),
 .schedule-slot-field:has(.panel-themed-select.is-open),
-.schedule-slot-field:has(.schedule-themed-select.is-open) {
+.schedule-slot-field:has(.schedule-themed-select.is-open),
+.agenda-preview-defaults__field:has(.panel-themed-select.is-open),
+.agenda-preview-row:has(.panel-themed-select.is-open),
+.agenda-preview-row__field:has(.panel-themed-select.is-open) {
 	overflow: visible;
 	position: relative;
 	z-index: 8;

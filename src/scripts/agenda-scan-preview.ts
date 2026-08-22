@@ -1,5 +1,13 @@
 import type { AgendaScanRow } from '../lib/appointment-ai-types';
 import { openPanelModal } from '../lib/panel-scroll-lock';
+import {
+	bindPanelThemedSelectRoot,
+	closePanelThemedSelects,
+	destroyPanelThemedSelect,
+	ensurePanelThemedSelect,
+	syncPanelThemedSelect,
+	type PanelThemedSelectOptions,
+} from '../lib/panel-themed-select';
 
 interface CatalogProfessional {
 	id_professional: number;
@@ -30,6 +38,15 @@ interface PreviewRowState {
 
 // Paraguay opera en -03:00 de forma permanente desde 2024.
 const ASUNCION_OFFSET = '-03:00';
+
+const PLACEHOLDER_SERVICE = 'Servicio';
+const PLACEHOLDER_PROFESSIONAL = 'Profesional';
+const PLACEHOLDER_LOCATION = 'Sucursal';
+
+const DEFAULT_THEMED_TRIGGER =
+	'panel-modal-select__trigger panel-themed-select__trigger schedule-themed-select__trigger';
+const ROW_THEMED_TRIGGER =
+	'agenda-preview-row__select-trigger panel-themed-select__trigger schedule-themed-select__trigger';
 
 const uid = () => `row_${Math.random().toString(36).slice(2, 10)}`;
 
@@ -215,19 +232,43 @@ class AgendaScanPreview extends HTMLElement {
 		this.querySelector('[data-agenda-default-professional]')?.addEventListener('change', () => {
 			this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
 			this.applyDefaults(true);
+			this.updateDefaultsSummary();
 		}, { signal });
 		this.querySelector('[data-agenda-default-location]')?.addEventListener('change', () => {
 			this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
 			this.applyDefaults(true);
+			this.updateDefaultsSummary();
 		}, { signal });
 		this.querySelector('[data-agenda-default-service]')?.addEventListener('change', () => {
 			this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
 			this.applyDefaults(true);
+			this.updateDefaultsSummary();
+		}, { signal });
+
+		this.querySelector('[data-agenda-defaults-toggle]')?.addEventListener('click', (event) => {
+			event.preventDefault();
+			this.toggleDefaultsOpen();
+		}, { signal });
+		window.matchMedia('(max-width: 640px)').addEventListener('change', () => {
+			this.syncDefaultsCollapseA11y();
+			this.updateDefaultsSummary();
+		}, { signal });
+		this.setDefaultsOpen(false);
+
+		this.mountDefaultThemedSelects();
+		bindPanelThemedSelectRoot(this, signal);
+		this.addEventListener('click', (event) => {
+			const target = event.target;
+			if (!(target instanceof Element)) return;
+			if (target.closest('[data-panel-themed-select-trigger]')) {
+				this.closeDateTimePopovers();
+			}
 		}, { signal });
 	}
 
 	disconnectedCallback() {
 		this.closePopovers();
+		this.destroyThemedSelects();
 		this.#bound = false;
 		this.#listeners?.abort();
 		this.#listeners = null;
@@ -262,6 +303,7 @@ class AgendaScanPreview extends HTMLElement {
 		this.populateDefaultsSelects();
 		this.setupImage(imageDataUrl);
 		this.applyDefaults(false);
+		this.setDefaultsOpen(false);
 		this.renderRows();
 		this.setError('');
 
@@ -359,14 +401,52 @@ class AgendaScanPreview extends HTMLElement {
 		selected: number,
 		placeholder: string
 	) {
-		// Chrome/móvil ignora padding CSS en <option>; un NBSP da aire sin exagerar.
-		const pad = (label: string) => `\u00A0${label}`;
-		const opts = [`<option value="">${pad(this.escape(placeholder))}</option>`];
+		const opts = [`<option value="">${this.escape(placeholder)}</option>`];
 		for (const item of items) {
 			const sel = item.id === selected ? ' selected' : '';
-			opts.push(`<option value="${item.id}"${sel}>${pad(this.escape(item.name))}</option>`);
+			opts.push(`<option value="${item.id}"${sel}>${this.escape(item.name)}</option>`);
 		}
 		return opts.join('');
+	}
+
+	private themedSelectOptions(select: HTMLSelectElement): PanelThemedSelectOptions {
+		const isDefault = select.matches(
+			'[data-agenda-default-professional], [data-agenda-default-location], [data-agenda-default-service]'
+		);
+		let placeholder = PLACEHOLDER_SERVICE;
+		if (select.matches('[data-agenda-default-professional], [data-row-professional]')) {
+			placeholder = PLACEHOLDER_PROFESSIONAL;
+		} else if (select.matches('[data-agenda-default-location]')) {
+			placeholder = PLACEHOLDER_LOCATION;
+		}
+		return {
+			triggerClass: isDefault ? DEFAULT_THEMED_TRIGGER : ROW_THEMED_TRIGGER,
+			placeholder,
+			hideEmptyOption: true,
+		};
+	}
+
+	private mountThemedSelect(select: HTMLSelectElement | null | undefined) {
+		if (!select) return;
+		ensurePanelThemedSelect(select, this.themedSelectOptions(select));
+	}
+
+	private mountDefaultThemedSelects() {
+		this.mountThemedSelect(this.querySelector('[data-agenda-default-professional]'));
+		this.mountThemedSelect(this.querySelector('[data-agenda-default-location]'));
+		this.mountThemedSelect(this.querySelector('[data-agenda-default-service]'));
+	}
+
+	private mountRowThemedSelects(rowEl: HTMLElement) {
+		rowEl.querySelectorAll<HTMLSelectElement>('select').forEach((select) => {
+			this.mountThemedSelect(select);
+		});
+	}
+
+	private destroyThemedSelects() {
+		this.querySelectorAll<HTMLSelectElement>('select').forEach((select) => {
+			destroyPanelThemedSelect(select);
+		});
 	}
 
 	private escape(value: string) {
@@ -394,24 +474,78 @@ class AgendaScanPreview extends HTMLElement {
 			proSelect.innerHTML = this.optionList(
 				this.#professionals.map((p) => ({ id: p.id_professional, name: p.name })),
 				this.#defaultProfessionalId,
-				'— Profesional —'
+				PLACEHOLDER_PROFESSIONAL
 			);
 		}
 		if (locSelect) {
 			locSelect.innerHTML = this.optionList(
 				this.#locations.map((l) => ({ id: l.id_location, name: l.name })),
 				this.#locations.length === 1 ? this.#locations[0].id_location : 0,
-				'— Sucursal —'
+				PLACEHOLDER_LOCATION
 			);
 		}
 		if (serviceSelect) {
 			serviceSelect.innerHTML = this.optionList(
 				this.#services.map((s) => ({ id: s.id_service, name: s.name })),
 				this.defaultServiceIdFromRows(),
-				'— Servicio —'
+				PLACEHOLDER_SERVICE
 			);
 		}
+		this.mountDefaultThemedSelects();
 		this.syncPlaceholderState(this.querySelector('[data-agenda-preview-defaults]') || this);
+		this.updateDefaultsSummary();
+	}
+
+	private selectedOptionLabel(selector: string) {
+		const select = this.querySelector<HTMLSelectElement>(selector);
+		if (!select?.value) return '';
+		return select.selectedOptions[0]?.textContent?.trim() || '';
+	}
+
+	private updateDefaultsSummary() {
+		const summary = this.querySelector<HTMLElement>('[data-agenda-defaults-summary]');
+		const root = this.querySelector<HTMLElement>('[data-agenda-preview-defaults]');
+		if (!summary) return;
+		const parts = [
+			this.selectedOptionLabel('[data-agenda-default-location]'),
+			this.selectedOptionLabel('[data-agenda-default-professional]'),
+			this.selectedOptionLabel('[data-agenda-default-service]'),
+		].filter(Boolean);
+		const isOpen = root?.classList.contains('is-open') ?? false;
+		summary.textContent = parts.join(' / ');
+		summary.hidden = isOpen || parts.length === 0;
+	}
+
+	private isDefaultsMobile() {
+		return window.matchMedia('(max-width: 640px)').matches;
+	}
+
+	private setDefaultsOpen(open: boolean) {
+		const root = this.querySelector<HTMLElement>('[data-agenda-preview-defaults]');
+		const toggle = this.querySelector<HTMLButtonElement>('[data-agenda-defaults-toggle]');
+		if (!root || !toggle) return;
+		if (!open) closePanelThemedSelects(this);
+		root.classList.toggle('is-open', open);
+		toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+		this.syncDefaultsCollapseA11y();
+		this.updateDefaultsSummary();
+	}
+
+	private toggleDefaultsOpen() {
+		const root = this.querySelector<HTMLElement>('[data-agenda-preview-defaults]');
+		this.setDefaultsOpen(!(root?.classList.contains('is-open') ?? false));
+	}
+
+	private syncDefaultsCollapseA11y() {
+		const panel = this.querySelector<HTMLElement>('[data-agenda-defaults-panel]');
+		const root = this.querySelector<HTMLElement>('[data-agenda-preview-defaults]');
+		if (!panel) return;
+		const collapsedOnMobile = this.isDefaultsMobile() && !root?.classList.contains('is-open');
+		if (collapsedOnMobile) {
+			panel.setAttribute('inert', '');
+		} else {
+			panel.removeAttribute('inert');
+		}
 	}
 
 	private defaultServiceIdFromRows() {
@@ -622,15 +756,19 @@ class AgendaScanPreview extends HTMLElement {
 			icon: string,
 			controlHtml: string,
 			extraClass = ''
-		) => `
+		) => {
+			const hasSelect = controlHtml.includes('<select');
+			return `
 			<div class="agenda-preview-row__field ${extraClass}" data-field="${key}">
 				<label>${label}</label>
 				<div class="agenda-preview-row__control">
 					<span class="material-symbols-rounded agenda-preview-row__icon" aria-hidden="true">${icon}</span>
 					${controlHtml}
+					${hasSelect ? '<span class="agenda-preview-row__chevron material-symbols-rounded" aria-hidden="true">expand_more</span>' : ''}
 				</div>
 			</div>
 		`;
+		};
 
 		el.innerHTML = `
 			<div class="agenda-preview-row__client">
@@ -675,7 +813,7 @@ class AgendaScanPreview extends HTMLElement {
 				`<select data-row-service aria-label="Servicio">${this.optionList(
 					this.#services.map((s) => ({ id: s.id_service, name: s.name })),
 					row.ser_id_service,
-					'— Servicio —'
+					PLACEHOLDER_SERVICE
 				)}</select>`
 			)}
 			<div class="agenda-preview-row__pro">
@@ -686,7 +824,7 @@ class AgendaScanPreview extends HTMLElement {
 					`<select data-row-professional aria-label="Profesional">${this.optionList(
 						this.#professionals.map((p) => ({ id: p.id_professional, name: p.name })),
 						row.pro_id_professional,
-						'— Profesional —'
+						PLACEHOLDER_PROFESSIONAL
 					)}</select>`
 				)}
 			</div>
@@ -754,6 +892,7 @@ class AgendaScanPreview extends HTMLElement {
 		bind('[data-row-professional]', (v) => (row.pro_id_professional = toInt(v)));
 
 		el.querySelectorAll('.agenda-preview-row__check').forEach((node) => node.remove());
+		this.mountRowThemedSelects(el);
 		this.refreshRowState(el, row);
 		return el;
 	}
@@ -761,7 +900,8 @@ class AgendaScanPreview extends HTMLElement {
 	private isPopoverOpen() {
 		const cal = this.querySelector<HTMLElement>('[data-agenda-cal]');
 		const times = this.querySelector<HTMLElement>('[data-agenda-times]');
-		return Boolean((cal && !cal.hidden) || (times && !times.hidden));
+		const themedOpen = this.querySelector('.panel-themed-select.is-open, .schedule-themed-select.is-open');
+		return Boolean((cal && !cal.hidden) || (times && !times.hidden) || themedOpen);
 	}
 
 	private bindOutsideClose() {
@@ -789,6 +929,11 @@ class AgendaScanPreview extends HTMLElement {
 	}
 
 	private closePopovers(restoreTime = false) {
+		closePanelThemedSelects(this);
+		this.closeDateTimePopovers(restoreTime);
+	}
+
+	private closeDateTimePopovers(restoreTime = false) {
 		const cal = this.querySelector<HTMLElement>('[data-agenda-cal]');
 		const times = this.querySelector<HTMLElement>('[data-agenda-times]');
 		if (cal) cal.hidden = true;
@@ -952,6 +1097,8 @@ class AgendaScanPreview extends HTMLElement {
 	private syncPlaceholderState(root: ParentNode = this) {
 		root.querySelectorAll<HTMLSelectElement>('select').forEach((select) => {
 			select.classList.toggle('is-placeholder', !select.value);
+			const themed = select.closest<HTMLElement>('.panel-themed-select, .schedule-themed-select');
+			if (themed) syncPanelThemedSelect(themed, this.themedSelectOptions(select));
 		});
 	}
 
