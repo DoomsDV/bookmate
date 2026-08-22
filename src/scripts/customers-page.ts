@@ -21,6 +21,8 @@ import {
 	formatFindingLabel,
 	formatOdontogramFacesLabels,
 	getCatalogEntry,
+	inferVisualKindFor3d,
+	mergeCatalogEntry,
 	isUpperToothFdi,
 	ODONTOGRAM_CATALOG_CATEGORIES,
 	type OdontogramCatalogEntry,
@@ -1447,7 +1449,7 @@ class CustomerManager extends HTMLElement {
 				tooth_fdi: tooth.tooth_fdi,
 				finding_code: tooth.finding_code,
 				faces: tooth.faces,
-				visual_kind: entry?.visual_kind,
+				visual_kind: inferVisualKindFor3d(entry, tooth.finding_code),
 				color: entry?.color ?? null,
 			};
 		});
@@ -1684,15 +1686,7 @@ class CustomerManager extends HTMLElement {
 
 		this.odontogramEvents = Array.isArray(data.events) ? [...data.events] : [];
 		if (Array.isArray(data.catalog) && data.catalog.length > 0) {
-			this.odontogramCatalogEntries = data.catalog.map((item) => ({
-				code: item.code,
-				label: item.label,
-				clinical_phase: item.clinical_phase,
-				needs_faces: item.needs_faces,
-				color: item.color ?? '#9e9e9e',
-				visual_kind: item.visual_kind ?? 'TINT',
-				priority_rank: item.priority_rank,
-			}));
+			this.odontogramCatalogEntries = data.catalog.map((item) => mergeCatalogEntry(item));
 			this.renderOdontogramCatalog();
 		}
 		this.odontogramEvents.sort((a, b) => {
