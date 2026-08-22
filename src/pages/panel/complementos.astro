@@ -30,7 +30,7 @@ import '../../styles/global.css';
 										class="m-0 max-w-2xl text-[0.92rem] leading-snug text-(--on-surface-variant)"
 										data-complementos-lead
 									>
-										Módulos extras para tu clínica. Activálos cuando los necesites.
+										Módulos extras para tu negocio. Activálos cuando los necesites.
 									</p>
 								</div>
 								<div class="complementos-tablist" role="tablist" aria-label="Secciones de complementos">
@@ -110,7 +110,7 @@ import '../../styles/global.css';
 										Cuando haya complementos disponibles para tu categoría, van a aparecer acá.
 									</p>
 								</div>
-								<div class="hidden grid gap-5 sm:grid-cols-2" data-complementos-grid="explore"></div>
+								<div class="hidden complementos-grid" data-complementos-grid="explore"></div>
 							</div>
 
 							<div
@@ -133,7 +133,7 @@ import '../../styles/global.css';
 										Explorá la tienda y activá el que necesites para tu negocio.
 									</p>
 								</div>
-								<div class="hidden grid gap-5 sm:grid-cols-2" data-complementos-grid="mine"></div>
+								<div class="hidden complementos-grid" data-complementos-grid="mine"></div>
 							</div>
 						</section>
 					</main>
@@ -303,321 +303,390 @@ import '../../styles/global.css';
 		color: var(--on-surface-variant);
 	}
 
+	.complementos-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+		gap: 1.35rem;
+		align-items: stretch;
+	}
+
+	@media (min-width: 880px) {
+		.complementos-grid {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+			gap: 1.6rem;
+		}
+
+		.complementos-card.is-featured {
+			grid-column: 1 / -1;
+		}
+	}
+
+	.complementos-grid.hidden,
+	[data-complementos-grid].hidden {
+		display: none !important;
+	}
+
 	.complementos-card {
 		--complementos-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		display: block;
 		min-width: 0;
+		animation: complementos-card-enter 900ms var(--complementos-ease) both;
+	}
+
+	.complementos-grid .complementos-card:nth-child(1) { animation-delay: 0ms; }
+	.complementos-grid .complementos-card:nth-child(2) { animation-delay: 80ms; }
+	.complementos-grid .complementos-card:nth-child(3) { animation-delay: 140ms; }
+	.complementos-grid .complementos-card:nth-child(n + 4) { animation-delay: 200ms; }
+
+	@keyframes complementos-card-enter {
+		from {
+			opacity: 0;
+			transform: translateY(22px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
 	}
 
 	.complementos-card__shell {
-		padding: 0.28rem;
-		border-radius: 1.65rem;
-		background: color-mix(in srgb, var(--on-surface) 4%, var(--page-background));
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
-		transition: transform 420ms var(--complementos-ease);
+		padding: 0.4rem;
+		border-radius: 2rem;
+		background: color-mix(in srgb, var(--on-surface) 4.5%, var(--page-background));
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
+		transition: transform 640ms var(--complementos-ease);
 	}
 
 	.complementos-card__core {
 		display: grid;
-		align-content: start;
 		min-width: 0;
 		overflow: hidden;
-		border-radius: 1.4rem;
+		border-radius: calc(2rem - 0.4rem);
 		background: var(--surface-bright);
 		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #fff 9%, transparent),
+			inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent),
 			inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
 	}
 
-	.complementos-card--media .complementos-card__core {
-		grid-template-columns: 1fr;
-		gap: 0;
-	}
-
-	@media (min-width: 720px) {
-		.complementos-card--media .complementos-card__core {
-			grid-template-columns: minmax(8.4rem, 38%) minmax(0, 1fr);
+	@media (min-width: 880px) {
+		.complementos-card.is-featured .complementos-card__core {
+			grid-template-columns: minmax(16rem, 46%) minmax(0, 1fr);
 			align-items: stretch;
 		}
 	}
 
 	.complementos-card:hover .complementos-card__shell {
-		transform: translateY(-2px);
+		transform: translateY(-4px);
 	}
 
-	.complementos-card:hover .complementos-card__core {
-		box-shadow:
-			inset 0 1px 0 color-mix(in srgb, #fff 12%, transparent),
-			inset 0 0 0 1px color-mix(in srgb, var(--primary) 22%, transparent);
+	.complementos-card:active .complementos-card__shell {
+		transform: scale(0.985);
 	}
 
-	.complementos-card__media {
-		display: grid;
-		place-items: center;
-		padding: 1rem 1rem 0.15rem;
+	.complementos-card:focus-within .complementos-card__shell {
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 34%, transparent);
 	}
 
-	@media (min-width: 720px) {
-		.complementos-card__media {
-			padding: 0.95rem 0.35rem 0.95rem 0.95rem;
+	.complementos-card__hero {
+		position: relative;
+		isolation: isolate;
+		min-height: 13.5rem;
+		overflow: hidden;
+		background:
+			radial-gradient(70% 80% at 18% 12%, color-mix(in srgb, var(--primary) 22%, transparent), transparent 62%),
+			radial-gradient(55% 60% at 88% 88%, color-mix(in srgb, #10b981 16%, transparent), transparent 58%),
+			#101014;
+	}
+
+	.complementos-card.is-featured .complementos-card__hero {
+		min-height: 16.5rem;
+	}
+
+	@media (min-width: 880px) {
+		.complementos-card.is-featured .complementos-card__hero {
+			min-height: 100%;
 		}
 	}
 
-	.complementos-card__preview {
-		position: relative;
-		width: min(11.5rem, 100%);
-		aspect-ratio: 1;
-		padding: 0.28rem;
-		border-radius: 1.25rem;
-		background: color-mix(in srgb, var(--on-surface) 5%, var(--surface-bright));
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
-	}
-
-	.complementos-card__preview::before {
-		content: '';
+	.complementos-card__hero-img {
 		position: absolute;
-		inset: 0.28rem;
-		border-radius: 1.05rem;
-		background:
-			radial-gradient(80% 70% at 50% 18%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 68%),
-			color-mix(in srgb, var(--surface-container-high, #16161a) 82%, var(--surface-bright));
-		pointer-events: none;
-	}
-
-	.complementos-card__preview-img {
-		position: relative;
-		z-index: 1;
-		display: block;
+		inset: 0;
+		box-sizing: border-box;
 		width: 100%;
 		height: 100%;
-		padding: 0.7rem;
+		padding: 1.15rem;
 		object-fit: contain;
 		object-position: center;
-		transform: scale(1.02);
-		transition: transform 520ms var(--complementos-ease);
+		transition: transform 700ms var(--complementos-ease);
 	}
 
-	.complementos-card:hover .complementos-card__preview-img {
-		transform: scale(1.06);
+	.complementos-card:hover .complementos-card__hero-img {
+		transform: scale(1.03);
+	}
+
+	.complementos-card__hero--initials {
+		display: grid;
+		place-items: center;
+	}
+
+	.complementos-card__hero-mark {
+		position: relative;
+		z-index: 1;
+		font-size: 2.1rem;
+		font-weight: 780;
+		letter-spacing: -0.04em;
+		color: color-mix(in srgb, #fff 82%, var(--primary));
 	}
 
 	.complementos-card__body {
 		display: grid;
 		align-content: start;
-		gap: 0.85rem;
-		padding: 1.05rem 1.15rem 1.15rem;
+		gap: 0.7rem;
+		padding: 1.35rem 1.4rem 1.45rem;
 	}
 
-	@media (min-width: 720px) {
-		.complementos-card--media .complementos-card__body {
+	@media (min-width: 880px) {
+		.complementos-card.is-featured .complementos-card__body {
 			align-content: center;
-			padding: 1.15rem 1.25rem 1.2rem 0.85rem;
+			gap: 0.85rem;
+			padding: 1.85rem 1.9rem 1.95rem 1.55rem;
 		}
 	}
 
 	.complementos-card__eyebrow {
 		margin: 0;
 		width: max-content;
-		padding: 0.22rem 0.55rem;
+		padding: 0.28rem 0.7rem;
 		border-radius: 999px;
 		font-size: 0.62rem;
-		font-weight: 750;
-		letter-spacing: 0.14em;
+		font-weight: 720;
+		letter-spacing: 0.18em;
 		text-transform: uppercase;
-		color: color-mix(in srgb, var(--on-surface) 58%, var(--on-surface-variant));
+		color: color-mix(in srgb, var(--on-surface) 62%, var(--on-surface-variant));
 		background: color-mix(in srgb, var(--on-surface) 5%, transparent);
 		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
 	}
 
-	.complementos-card__copy {
-		min-width: 0;
-	}
-
 	.complementos-card__title {
 		margin: 0;
-		font-size: 1.18rem;
-		font-weight: 800;
-		letter-spacing: -0.03em;
-		line-height: 1.15;
+		font-size: 1.55rem;
+		font-weight: 780;
+		letter-spacing: -0.04em;
+		line-height: 1.05;
 		color: var(--on-surface);
+		text-wrap: balance;
+	}
+
+	@media (min-width: 880px) {
+		.complementos-card.is-featured .complementos-card__title {
+			font-size: 2.05rem;
+		}
 	}
 
 	.complementos-card__desc {
-		margin: 0.4rem 0 0;
-		font-size: 0.88rem;
-		font-weight: 550;
-		line-height: 1.45;
+		margin: 0;
+		max-width: 28rem;
+		font-size: 0.95rem;
+		font-weight: 520;
+		line-height: 1.5;
 		color: var(--on-surface-variant);
+		text-wrap: pretty;
 	}
 
-	.complementos-card__price-row {
+	.complementos-card__meta {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: baseline;
-		gap: 0.4rem 0.65rem;
+		gap: 0.7rem 1rem;
+		margin-top: 0.25rem;
 	}
 
 	.complementos-card__price {
-		font-size: 1.4rem;
-		font-weight: 800;
-		letter-spacing: -0.035em;
-		color: var(--on-surface);
-		line-height: 1;
+		display: inline-flex;
+		align-items: baseline;
+		flex-wrap: wrap;
+		gap: 0.45rem 0.65rem;
+		font-variant-numeric: tabular-nums;
 	}
 
-	.complementos-card__price.is-struck {
-		font-size: 0.92rem;
-		font-weight: 650;
-		color: color-mix(in srgb, var(--on-surface-variant) 72%, transparent);
+	.complementos-card__amount {
+		font-size: 1.55rem;
+		font-weight: 780;
+		letter-spacing: -0.04em;
+		line-height: 1;
+		color: var(--on-surface);
+	}
+
+	.complementos-card__amount.is-struck {
+		font-size: 1rem;
+		font-weight: 620;
+		color: color-mix(in srgb, var(--on-surface-variant) 68%, transparent);
 		text-decoration: line-through;
 		text-decoration-thickness: 1.5px;
 	}
 
 	.complementos-card__free {
-		font-size: 1.35rem;
-		font-weight: 800;
-		letter-spacing: -0.035em;
+		font-size: 1.55rem;
+		font-weight: 780;
+		letter-spacing: -0.04em;
 		line-height: 1;
-		color: #3ee0a8;
-	}
-
-	.complementos-card__period {
-		font-size: 0.74rem;
-		font-weight: 650;
-		letter-spacing: 0.01em;
-		color: color-mix(in srgb, var(--on-surface) 55%, var(--on-surface-variant));
-	}
-
-	.complementos-card__badge {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		width: max-content;
-		border-radius: 999px;
-		padding: 0.28rem 0.7rem;
-		font-size: 0.7rem;
-		font-weight: 750;
-		letter-spacing: 0.04em;
-		color: #3ee0a8;
-		background: color-mix(in srgb, #10b981 10%, transparent);
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, #34d399 28%, transparent);
-	}
-
-	.complementos-card__badge-dot {
-		width: 0.38rem;
-		height: 0.38rem;
-		border-radius: 999px;
-		background: #3ee0a8;
-		box-shadow: 0 0 0 3px color-mix(in srgb, #3ee0a8 18%, transparent);
-	}
-
-	html[data-theme='light'] .complementos-card__shell {
-		background: color-mix(in srgb, var(--on-surface) 3.5%, var(--page-background));
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 7%, transparent);
-	}
-
-	html[data-theme='light'] .complementos-card__core {
-		box-shadow:
-			inset 0 1px 0 rgb(255 255 255 / 0.7),
-			inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 7%, transparent);
-	}
-
-	html[data-theme='light'] .complementos-card:hover .complementos-card__core {
-		box-shadow:
-			inset 0 1px 0 rgb(255 255 255 / 0.85),
-			inset 0 0 0 1px color-mix(in srgb, var(--primary) 26%, transparent);
-	}
-
-	html[data-theme='light'] .complementos-card__badge {
-		color: #047857;
-		background: color-mix(in srgb, #10b981 10%, #fff);
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, #059669 22%, transparent);
-	}
-
-	html[data-theme='light'] .complementos-card__badge-dot {
-		background: #059669;
-		box-shadow: 0 0 0 3px color-mix(in srgb, #059669 14%, transparent);
-	}
-
-	html[data-theme='light'] .complementos-card__free {
 		color: #059669;
 	}
 
-	.complementos-btn {
+	.complementos-card__period {
+		font-size: 0.78rem;
+		font-weight: 620;
+		color: var(--on-surface-variant);
+	}
+
+	.complementos-card__status {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		padding: 0.28rem 0.7rem;
+		border-radius: 999px;
+		font-size: 0.72rem;
+		font-weight: 720;
+		color: #047857;
+		background: color-mix(in srgb, #10b981 10%, transparent);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, #059669 20%, transparent);
+	}
+
+	.complementos-card__status-dot {
+		width: 0.4rem;
+		height: 0.4rem;
+		border-radius: 999px;
+		background: #059669;
+		box-shadow: 0 0 0 4px color-mix(in srgb, #059669 14%, transparent);
+	}
+
+	.complementos-card__cta {
 		display: inline-flex;
 		align-items: center;
 		justify-content: space-between;
-		gap: 0.65rem;
+		gap: 0.75rem;
 		width: 100%;
-		min-height: 2.75rem;
-		margin-top: 0.15rem;
+		max-width: 22rem;
+		min-height: 3.05rem;
+		margin-top: 0.35rem;
+		padding: 0.35rem 0.35rem 0.35rem 1.15rem;
 		border: 0;
 		border-radius: 999px;
-		padding: 0.35rem 0.4rem 0.35rem 1.05rem;
-		font-size: 0.86rem;
-		font-weight: 750;
-		letter-spacing: -0.01em;
+		font-size: 0.92rem;
+		font-weight: 740;
+		letter-spacing: -0.015em;
 		cursor: pointer;
 		transition:
-			transform 280ms var(--complementos-ease),
-			background-color 280ms var(--complementos-ease),
-			color 280ms var(--complementos-ease),
+			transform 420ms var(--complementos-ease),
+			background 420ms var(--complementos-ease),
 			opacity 280ms var(--complementos-ease);
 	}
 
-	.complementos-btn:disabled {
+	.complementos-card__cta:disabled {
 		opacity: 0.5;
 		cursor: not-allowed;
 	}
 
-	.complementos-btn:not(:disabled):active {
-		transform: scale(0.985);
+	.complementos-card__cta:not(:disabled):active {
+		transform: scale(0.98);
 	}
 
-	.complementos-btn__glyph {
+	.complementos-card__cta-glyph {
 		display: grid;
 		place-items: center;
-		width: 1.95rem;
-		height: 1.95rem;
+		width: 2.2rem;
+		height: 2.2rem;
 		border-radius: 999px;
-		transition: transform 320ms var(--complementos-ease);
+		transition: transform 520ms var(--complementos-ease);
 	}
 
-	.complementos-btn__glyph .material-symbols-rounded {
+	.complementos-card__cta-glyph .material-symbols-rounded {
 		font-size: 1.05rem;
 		line-height: 1;
+		font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 20;
 	}
 
-	.complementos-btn:not(:disabled):hover .complementos-btn__glyph {
-		transform: translateX(2px);
+	.complementos-card__cta:not(:disabled):hover .complementos-card__cta-glyph {
+		transform: translateX(3px) translateY(-1px) scale(1.05);
 	}
 
-	.complementos-btn--primary {
+	.complementos-card__cta--primary {
 		background: var(--primary);
 		color: var(--on-primary, #f8fbff);
 	}
 
-	.complementos-btn--primary .complementos-btn__glyph {
+	.complementos-card__cta--primary .complementos-card__cta-glyph {
 		background: color-mix(in srgb, #fff 16%, transparent);
-		color: inherit;
 	}
 
-	.complementos-btn--primary:hover:not(:disabled) {
-		background: color-mix(in srgb, var(--primary) 88%, #fff);
-	}
-
-	.complementos-btn--soft {
+	.complementos-card__cta--soft {
 		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
 		color: var(--on-surface);
 		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
 	}
 
-	.complementos-btn--soft .complementos-btn__glyph {
-		background: color-mix(in srgb, var(--on-surface) 7%, transparent);
+	.complementos-card__cta--soft .complementos-card__cta-glyph {
+		background: color-mix(in srgb, var(--on-surface) 8%, transparent);
 	}
 
-	.complementos-btn--soft:hover:not(:disabled) {
-		background: color-mix(in srgb, var(--on-surface) 9%, transparent);
+	html[data-theme='dark'] .complementos-card__shell {
+		background: color-mix(in srgb, #050505 72%, #1a1a20);
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
+	}
+
+	html[data-theme='dark'] .complementos-card__core {
+		background: #0f0f13;
+		box-shadow:
+			inset 0 1px 0 rgba(255, 255, 255, 0.08),
+			inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+	}
+
+	html[data-theme='dark'] .complementos-card:hover .complementos-card__shell {
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
+	}
+
+	html[data-theme='dark'] .complementos-card__free {
+		color: #3ee0a8;
+	}
+
+	html[data-theme='dark'] .complementos-card__status {
+		color: #3ee0a8;
+		background: color-mix(in srgb, #10b981 12%, transparent);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, #34d399 24%, transparent);
+	}
+
+	html[data-theme='dark'] .complementos-card__status-dot {
+		background: #3ee0a8;
+		box-shadow: 0 0 0 4px color-mix(in srgb, #3ee0a8 16%, transparent);
+	}
+
+	html[data-theme='light'] .complementos-card__hero {
+		background:
+			radial-gradient(70% 80% at 18% 12%, color-mix(in srgb, var(--primary) 18%, transparent), transparent 62%),
+			radial-gradient(55% 60% at 88% 88%, color-mix(in srgb, #10b981 12%, transparent), transparent 58%),
+			#eceff4;
+	}
+
+	html[data-theme='light'] .complementos-card__hero-mark {
+		color: color-mix(in srgb, var(--primary) 70%, #111);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.complementos-card,
+		.complementos-card__shell,
+		.complementos-card__cta,
+		.complementos-card__cta-glyph,
+		.complementos-card__hero-img {
+			animation: none;
+			transition: none;
+		}
+
+		.complementos-card:hover .complementos-card__shell,
+		.complementos-card:active .complementos-card__shell,
+		.complementos-card:hover .complementos-card__cta-glyph,
+		.complementos-card:hover .complementos-card__hero-img {
+			transform: none;
+		}
 	}
 </style>
 

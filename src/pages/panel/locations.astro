@@ -99,7 +99,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				</div>
 
 				<fieldset data-form-fieldset class="contents">
-				<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 py-7 lg:px-6">
+				<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-7 sm:py-7 lg:px-6">
 				<div class="grid gap-5">
 				<div
 					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
@@ -330,7 +330,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				</fieldset>
 
 				<div
-					class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5 lg:px-6"
+					class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5 lg:px-6"
 				>
 					<div class="modal-footer">
 						<button
@@ -424,6 +424,18 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 						No hay cierres generales cargados.
 					</p>
 				</div>
+				<section class="closures-custom-motives" data-custom-motives-section data-org-closures-tour-motives>
+					<div class="closures-custom-motives__head">
+						<h3 class="closures-custom-motives__title">Motivos personalizados</h3>
+						<p class="closures-custom-motives__desc">
+							Se usan al crear un cierre. Borrarlos también elimina los cierres con ese nombre.
+						</p>
+					</div>
+					<div class="closures-custom-motives__list hidden" data-custom-motives-list></div>
+					<p class="location-closures-empty" data-custom-motives-empty>
+						Todavía no hay motivos personalizados.
+					</p>
+				</section>
 			</div>
 		</dialog>
 
@@ -452,14 +464,15 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 						hidden
 					></div>
 
-					<label class="closure-form__label">
-						<span class="closure-form__label-text">
+					<div class="closure-form__field">
+						<label class="closure-form__label-text" for="closure-form-name">
 							Nombre / Motivo
 							<span class="text-rose-500">*</span>
-						</span>
+						</label>
 						<div class="closure-motive-lov" data-closure-motive-lov>
 							<input type="hidden" name="id_holiday" data-closure-holiday-id />
 							<input
+								id="closure-form-name"
 								type="text"
 								name="name"
 								required
@@ -478,35 +491,37 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 							</button>
 							<div class="closure-motive-lov__results hidden" data-closure-motive-results></div>
 						</div>
-					</label>
+					</div>
 
 					<div class="closure-form__row">
-						<label class="closure-form__label">
-							<span class="closure-form__label-text">
+						<div class="closure-form__field">
+							<label class="closure-form__label-text" for="closure-form-start-date">
 								Fecha inicio
 								<span class="text-rose-500">*</span>
-							</span>
+							</label>
 							<input
+								id="closure-form-start-date"
 								type="date"
 								name="start_date"
 								required
 								class="closure-form__input"
 								data-closure-start-date
 							/>
-						</label>
-						<label class="closure-form__label">
-							<span class="closure-form__label-text">
+						</div>
+						<div class="closure-form__field">
+							<label class="closure-form__label-text" for="closure-form-end-date">
 								Fecha fin
 								<span class="text-rose-500">*</span>
-							</span>
+							</label>
 							<input
+								id="closure-form-end-date"
 								type="date"
 								name="end_date"
 								required
 								class="closure-form__input"
 								data-closure-end-date
 							/>
-						</label>
+						</div>
 					</div>
 
 					<label class="closure-form__checkbox">
@@ -520,24 +535,26 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					</label>
 
 					<div class="closure-form__row" data-closure-partial-row hidden>
-						<label class="closure-form__label">
-							Hora inicio
+						<div class="closure-form__field">
+							<label class="closure-form__label-text" for="closure-form-start-time">Hora inicio</label>
 							<input
+								id="closure-form-start-time"
 								type="time"
 								name="start_time"
 								class="closure-form__input"
 								data-closure-start-time
 							/>
-						</label>
-						<label class="closure-form__label">
-							Hora fin
+						</div>
+						<div class="closure-form__field">
+							<label class="closure-form__label-text" for="closure-form-end-time">Hora fin</label>
 							<input
+								id="closure-form-end-time"
 								type="time"
 								name="end_time"
 								class="closure-form__input"
 								data-closure-end-time
 							/>
-						</label>
+						</div>
 					</div>
 
 					<div class="closure-form__scope" data-closure-scope-wrap>
@@ -549,7 +566,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 							/>
 							<span>Aplicar a todas las sucursales</span>
 						</label>
-						<label class="closure-form__label" data-closure-locations-wrap>
+						<div class="closure-form__field" data-closure-locations-wrap>
 							<span class="closure-form__label-text">Sucursales</span>
 							<select
 								name="location_ids"
@@ -557,7 +574,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 								class="w-full"
 								data-closure-locations
 							></select>
-						</label>
+						</div>
 					</div>
 				</div>
 
@@ -2016,6 +2033,24 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		}
 	}
 
+	@media (max-width: 639px) {
+		dialog[data-location-modal] [data-location-form] :is(
+			input[type='text'],
+			select
+		) {
+			min-height: 2.85rem;
+			height: auto;
+			padding: 0.7rem 0.85rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
+		}
+
+		dialog[data-location-modal] [data-location-form] select {
+			padding-right: 2.4rem;
+		}
+	}
+
 	@media (min-width: 640px) and (max-width: 1023px) {
 		dialog[data-location-modal] {
 			inset: 0;
@@ -2366,6 +2401,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		font-weight: 700;
 	}
 
+	.closure-form__field,
 	.closure-form__label {
 		display: grid;
 		gap: 0.35rem;
@@ -2378,6 +2414,8 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		display: inline-flex;
 		align-items: center;
 		gap: 0.2rem;
+		width: max-content;
+		max-width: 100%;
 	}
 
 	.closure-form__input {
@@ -2807,5 +2845,99 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 	.closures-org-dialog__list {
 		display: grid;
 		gap: 0.55rem;
+	}
+
+	.closures-custom-motives {
+		display: grid;
+		gap: 0.7rem;
+		padding-top: 0.95rem;
+		border-top: 1px solid color-mix(in srgb, var(--on-surface) 8%, transparent);
+	}
+
+	.closures-custom-motives__head {
+		display: grid;
+		gap: 0.25rem;
+	}
+
+	.closures-custom-motives__title {
+		margin: 0;
+		font-size: 0.95rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		color: var(--on-surface);
+	}
+
+	.closures-custom-motives__desc {
+		margin: 0;
+		font-size: 0.8rem;
+		font-weight: 550;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+
+	.closures-custom-motives__list {
+		display: grid;
+		gap: 0.45rem;
+	}
+
+	.closures-custom-motives__list.hidden {
+		display: none;
+	}
+
+	.closures-custom-motive {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		min-width: 0;
+		padding: 0.7rem 0.75rem;
+		border-radius: 0.95rem;
+		background: var(--surface-bright);
+		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 8%, transparent);
+	}
+
+	.closures-custom-motive__meta {
+		display: grid;
+		gap: 0.12rem;
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+
+	.closures-custom-motive__name {
+		font-size: 0.88rem;
+		font-weight: 760;
+		letter-spacing: -0.02em;
+		color: var(--on-surface);
+	}
+
+	.closures-custom-motive__count {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	.closures-custom-motive__delete {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		flex: 0 0 auto;
+		border: 0;
+		border-radius: 0.7rem;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+	}
+
+	.closures-custom-motive__delete:hover,
+	.closures-custom-motive__delete:focus-visible {
+		background: color-mix(in srgb, #f43f5e 12%, transparent);
+		color: #fb7185;
+		outline: none;
+	}
+
+	html[data-theme='dark'] .closures-custom-motive {
+		background: #16161a;
+		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.08);
 	}
 </style>

@@ -90,7 +90,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 					</div>
 				</div>
 
-				<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 py-7 lg:px-6">
+				<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-7 sm:py-7 lg:px-6">
 				<div class="grid gap-5">
 					<div class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm" data-form-error></div>
 
@@ -143,7 +143,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				</div>
 				</div>
 
-				<div class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5 lg:px-6">
+				<div class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5 lg:px-6">
 					<div class="modal-footer">
 					<button type="button" class="hidden modal-action-danger" data-delete-specialty aria-label="Eliminar especialidad">
 						<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" aria-hidden="true">delete</span>
@@ -696,6 +696,28 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		to {
 			opacity: 0;
 			transform: translateY(100%);
+		}
+	}
+
+	@media (max-width: 639px) {
+		dialog[data-specialty-modal] [data-specialty-form] :is(
+			input[type='text'],
+			select,
+			textarea
+		) {
+			min-height: 2.85rem;
+			padding: 0.7rem 0.85rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
+		}
+
+		dialog[data-specialty-modal] [data-specialty-form] textarea {
+			min-height: 5.5rem;
+		}
+
+		dialog[data-specialty-modal] [data-specialty-form] select {
+			padding-right: 2.4rem;
 		}
 	}
 

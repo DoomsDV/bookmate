@@ -92,7 +92,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 				{/* fieldset con display:contents evita el bug de flex que aplasta el contenido en drawers */}
 				<fieldset data-form-fieldset class="contents">
-				<div class="service-modal-body min-h-0 flex-1 overflow-y-auto overscroll-contain px-7 py-7 lg:px-6">
+				<div class="service-modal-body min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-7 sm:py-7 lg:px-6">
 				<div class="grid gap-5">
 				<div
 					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
@@ -409,7 +409,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				</div>
 				</div>
 				<div
-					class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-7 py-5 lg:px-6"
+					class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5 lg:px-6"
 				>
 					<div class="modal-footer">
 						<button
@@ -1733,6 +1733,41 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		to {
 			opacity: 0;
 			transform: translateY(100%);
+		}
+	}
+
+	@media (max-width: 639px) {
+		dialog[data-service-modal] .service-modal-body :is(
+			input[type='text'],
+			input[type='number'],
+			select,
+			textarea
+		) {
+			min-height: 2.85rem;
+			padding: 0.7rem 0.85rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
+		}
+
+		dialog[data-service-modal] .service-modal-body textarea {
+			min-height: 5.5rem;
+		}
+
+		dialog[data-service-modal] .service-modal-body select {
+			padding-right: 2.4rem;
+		}
+
+		dialog[data-service-modal] .service-input-affix {
+			min-height: 2.85rem;
+		}
+
+		dialog[data-service-modal] .service-input-affix__input {
+			min-height: 0;
+			padding: 0.55rem 0.7rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
 		}
 	}
 

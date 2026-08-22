@@ -5,6 +5,7 @@ const DIALOG_SELECTOR = '[data-org-closures-dialog]';
 const INTRO_SELECTOR = '[data-org-closures-tour-intro]';
 const ADD_BTN_SELECTOR = '[data-add-org-closure-btn]';
 const LIST_SELECTOR = '[data-org-closures-list]';
+const MOTIVES_SELECTOR = '[data-org-closures-tour-motives]';
 
 function buildTourSteps(): DriveStep[] {
 	const steps: DriveStep[] = [];
@@ -42,6 +43,19 @@ function buildTourSteps(): DriveStep[] {
 				title: 'Cierres cargados',
 				description:
 					'Acá ves los cierres generales. Podés eliminar uno de todas las sucursales a la vez con el ícono de barrido, o quitarlo solo de una sucursal desde su ficha.',
+				side: 'top',
+				align: 'start',
+			},
+		});
+	}
+
+	if (document.querySelector(MOTIVES_SELECTOR)) {
+		steps.push({
+			element: MOTIVES_SELECTOR,
+			popover: {
+				title: 'Motivos personalizados',
+				description:
+					'Acá aparecen los nombres que ya usaste (por ejemplo Fumigación). Si borrás un motivo, se eliminan todos los cierres de la organización con ese nombre.',
 				side: 'top',
 				align: 'start',
 			},

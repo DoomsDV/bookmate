@@ -38,6 +38,27 @@ const formatDateRange = (start: string, end: string) => {
 const fmtWindow = (item: ClosureItem) =>
 	item.is_full_day ? 'Día completo' : `${item.start_time ?? ''} – ${item.end_time ?? ''}`;
 
+type CustomMotiveItem = {
+	name: string;
+	closure_count: number;
+};
+
+const parseCustomMotives = (value: unknown): CustomMotiveItem[] => {
+	if (!Array.isArray(value)) return [];
+	return value.flatMap((item) => {
+		if (typeof item === 'string') {
+			const name = item.trim();
+			return name ? [{ name, closure_count: 0 }] : [];
+		}
+		if (!item || typeof item !== 'object') return [];
+		const source = item as Record<string, unknown>;
+		const name = String(source.name || '').trim();
+		const count = Number(source.closure_count);
+		if (!name) return [];
+		return [{ name, closure_count: Number.isFinite(count) && count > 0 ? count : 0 }];
+	});
+};
+
 const TOM_SELECT_ES_RENDER = {
 	option_create: (data: { input?: string }, escape: (str: string) => string) =>
 		`<div class="create">Agregar «<strong>${escape(data.input ?? '')}</strong>»…</div>`,
@@ -136,7 +157,7 @@ class LocationClosuresUI {
 			holiday_date: string;
 			already_closed: boolean;
 		}>;
-		custom_names: string[];
+		custom_names: CustomMotiveItem[];
 	} = { holidays: [], custom_names: [] };
 	private motivesLoaded = false;
 	private motivesLoadPromise: Promise<void> | null = null;
@@ -180,6 +201,8 @@ class LocationClosuresUI {
 			orgDialog: $('[data-org-closures-dialog]', root) as HTMLDialogElement | null,
 			orgListEl: $('[data-org-closures-list]', root),
 			orgEmptyEl: $('[data-org-closures-empty]', root),
+			customMotivesListEl: $('[data-custom-motives-list]', root),
+			customMotivesEmptyEl: $('[data-custom-motives-empty]', root),
 			formDialog: $('[data-closure-form-dialog]', root) as HTMLDialogElement | null,
 			formEl: $('[data-closure-form]', root) as HTMLFormElement | null,
 			formTitle: $('[data-closure-form-title]', root),
@@ -336,6 +359,13 @@ class LocationClosuresUI {
 					const id = Number(delGroup.getAttribute('data-closure-delete-group') || '0');
 					const loc = Number(delGroup.getAttribute('data-closure-loc') || '0');
 					if (id > 0) void this.deleteClosure(id, loc, true);
+					return;
+				}
+				const delMotive = target.closest('[data-delete-custom-motive]') as HTMLElement | null;
+				if (delMotive) {
+					const name = String(delMotive.getAttribute('data-delete-custom-motive') || '').trim();
+					const count = Number(delMotive.getAttribute('data-motive-count') || '0');
+					if (name) void this.deleteCustomMotive(name, count);
 				}
 			},
 			{ signal }
@@ -476,9 +506,9 @@ class LocationClosuresUI {
 			if (!query) return true;
 			return `${holiday.name} ${this.formatHolidayDate(holiday.holiday_date)}`.toLowerCase().includes(query);
 		});
-		const customs = this.motives.custom_names.filter((name) => {
+		const customs = this.motives.custom_names.filter((item) => {
 			if (!query) return true;
-			return name.toLowerCase().includes(query);
+			return item.name.toLowerCase().includes(query);
 		});
 
 		els.motiveResults.replaceChildren();
@@ -506,19 +536,19 @@ class LocationClosuresUI {
 			els.motiveResults.appendChild(button);
 		}
 
-		for (const name of customs.slice(0, 6)) {
+		for (const item of customs.slice(0, 6)) {
 			const button = document.createElement('button');
 			button.type = 'button';
 			button.className = 'closure-motive-lov__option';
 			const label = document.createElement('span');
 			label.className = 'closure-motive-lov__option-name';
-			label.textContent = name;
+			label.textContent = item.name;
 			const meta = document.createElement('span');
 			meta.className = 'closure-motive-lov__option-meta';
 			meta.textContent = 'Motivo personalizado';
 			button.append(label, meta);
 			button.addEventListener('mousedown', (event) => event.preventDefault());
-			button.addEventListener('click', () => this.setCustomMotive(name));
+			button.addEventListener('click', () => this.setCustomMotive(item.name));
 			els.motiveResults.appendChild(button);
 		}
 
@@ -539,7 +569,7 @@ class LocationClosuresUI {
 							holiday_date: string;
 							already_closed: boolean | number;
 						}>;
-						custom_names?: string[];
+						custom_names?: unknown[];
 					};
 				}>('/api/closures/motives');
 				const holidays = Array.isArray(body.data?.holidays) ? body.data.holidays : [];
@@ -552,9 +582,7 @@ class LocationClosuresUI {
 							already_closed: Boolean(item.already_closed) && item.already_closed !== 0,
 						}))
 						.filter((item) => item.id_holiday > 0 && item.name && item.holiday_date),
-					custom_names: Array.isArray(body.data?.custom_names)
-						? body.data.custom_names.map((name) => String(name || '').trim()).filter(Boolean)
-						: [],
+					custom_names: parseCustomMotives(body.data?.custom_names),
 				};
 				this.motivesLoaded = true;
 			} catch {
@@ -731,7 +759,7 @@ class LocationClosuresUI {
 		}
 		orgDialog.classList.remove('is-closing');
 		if (!orgDialog.open) openPanelModal(orgDialog);
-		void this.reloadOrgClosures();
+		void Promise.all([this.reloadOrgClosures(), this.reloadCustomMotives()]);
 	}
 
 	private closeOrgDialog() {
@@ -764,6 +792,88 @@ class LocationClosuresUI {
 			showAppAlert({
 				type: 'error',
 				message: error instanceof Error ? error.message : 'No fue posible listar los cierres.',
+			});
+		}
+	}
+
+	private async reloadCustomMotives() {
+		this.motivesLoaded = false;
+		await this.ensureMotivesLoaded();
+		this.renderCustomMotivesSection();
+	}
+
+	private renderCustomMotivesSection() {
+		const els = this.els();
+		if (!els?.customMotivesListEl) return;
+		const items = this.motives.custom_names;
+		els.customMotivesListEl.replaceChildren();
+		els.customMotivesListEl.classList.toggle('hidden', items.length === 0);
+		if (els.customMotivesEmptyEl) {
+			els.customMotivesEmptyEl.toggleAttribute('hidden', items.length > 0);
+		}
+		for (const item of items) {
+			const countLabel =
+				item.closure_count === 1 ? '1 cierre' : `${item.closure_count} cierres`;
+			const row = document.createElement('div');
+			row.className = 'closures-custom-motive';
+			row.innerHTML = `
+				<div class="closures-custom-motive__meta">
+					<span class="closures-custom-motive__name">${escapeHtml(item.name)}</span>
+					<span class="closures-custom-motive__count">${escapeHtml(countLabel)}</span>
+				</div>
+				<button
+					type="button"
+					class="closures-custom-motive__delete"
+					data-delete-custom-motive="${escapeHtml(item.name)}"
+					data-motive-count="${item.closure_count}"
+					title="Eliminar motivo"
+					aria-label="Eliminar motivo ${escapeHtml(item.name)}"
+				>
+					<span class="material-symbols-rounded text-[1.1rem]" aria-hidden="true">delete</span>
+				</button>
+			`;
+			els.customMotivesListEl.appendChild(row);
+		}
+	}
+
+	private async deleteCustomMotive(name: string, count: number) {
+		const confirmed = await window.BookmateAlert?.confirm({
+			type: 'error',
+			title: 'Eliminar motivo personalizado',
+			message:
+				count === 1
+					? `Se va a eliminar 1 cierre que usa «${name}». ¿Deseas continuar?`
+					: `Se van a eliminar ${count} cierres que usan «${name}». ¿Deseas continuar?`,
+			confirmText: 'Eliminar',
+			cancelText: 'Cancelar',
+		});
+		if (!confirmed) return;
+
+		try {
+			const body = await fetchJson<{ message?: string; deleted_count?: number }>(
+				'/api/closures/motives',
+				{
+					method: 'DELETE',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ name }),
+				}
+			);
+			showAppAlert({
+				type: 'success',
+				message: body.message || 'Motivo personalizado eliminado.',
+			});
+			this.motivesLoaded = false;
+			await Promise.all([
+				this.reloadCustomMotives(),
+				this.reloadOrgClosures(),
+				this.reloadLocationClosures(),
+			]);
+			this.notifyRefresh();
+		} catch (error) {
+			showAppAlert({
+				type: 'error',
+				message:
+					error instanceof Error ? error.message : 'No fue posible eliminar el motivo personalizado.',
 			});
 		}
 	}
@@ -819,7 +929,11 @@ class LocationClosuresUI {
 			const body = await fetchJson<{ message?: string }>(url, { method: 'DELETE' });
 			showAppAlert({ type: 'success', message: body.message || 'Cierre eliminado.' });
 			this.motivesLoaded = false;
-			await Promise.all([this.reloadLocationClosures(), this.reloadOrgClosures()]);
+			await Promise.all([
+				this.reloadLocationClosures(),
+				this.reloadOrgClosures(),
+				this.reloadCustomMotives(),
+			]);
 			this.notifyRefresh();
 		} catch (error) {
 			showAppAlert({
@@ -902,7 +1016,11 @@ class LocationClosuresUI {
 			showAppAlert({ type: 'success', message: body.message || 'Cierre creado.' });
 			this.closeForm();
 			this.motivesLoaded = false;
-			await Promise.all([this.reloadLocationClosures(), this.reloadOrgClosures()]);
+			await Promise.all([
+				this.reloadLocationClosures(),
+				this.reloadOrgClosures(),
+				this.reloadCustomMotives(),
+			]);
 			this.notifyRefresh();
 		} catch (error) {
 			this.setFormError(error instanceof Error ? error.message : 'No fue posible guardar el cierre.');

@@ -421,7 +421,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 												</div>
 
 												<div
-													class="schedule-exception-modal-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-(--surface)/30 px-4 py-4 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)] sm:px-7 sm:py-5"
+													class="schedule-exception-modal-scroll relative min-h-0 flex-1 overflow-y-auto overscroll-contain bg-(--surface)/30 px-4 py-5 shadow-[inset_0_4px_10px_rgba(0,0,0,0.015)] sm:px-7 sm:py-5"
 												>
 													<div
 														class="schedule-exception-modal-feedback"
@@ -2621,8 +2621,51 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 			column-gap: 0.4rem;
 		}
 
-		.schedule-exception-modal .schedule-slot-field input[type='time'] {
-			padding-inline: 0.35rem;
+		.schedule-exception-modal [data-exception-modal-body] :is(
+			input[type='text'],
+			input[type='time'],
+			select:not(.sr-only),
+			textarea
+		) {
+			min-height: 2.85rem;
+			height: auto;
+			padding: 0.7rem 0.85rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
+		}
+
+		.schedule-exception-modal [data-exception-modal-body] select:not(.sr-only) {
+			padding-right: 2.4rem;
+		}
+
+		.schedule-exception-modal [data-exception-modal-body] textarea {
+			min-height: 5.5rem;
+			resize: vertical;
+		}
+
+		.schedule-exception-modal [data-exception-modal-body] input[type='time'] {
+			height: 2.85rem;
+			min-height: 2.85rem;
+			max-height: 2.85rem;
+			box-sizing: border-box;
+		}
+
+		.schedule-exception-modal .schedule-themed-select {
+			height: 2.85rem;
+			min-height: 2.85rem;
+			max-height: 2.85rem;
+		}
+
+		.schedule-exception-modal .schedule-slot-themed-trigger {
+			min-height: 2.85rem;
+			height: 2.85rem;
+			max-height: 2.85rem;
+			padding: 0.7rem 0.85rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
+			box-sizing: border-box;
 		}
 	}
 

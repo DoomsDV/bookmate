@@ -415,7 +415,10 @@ class ScheduleManager extends HTMLElement {
 			return;
 		}
 
-		if (target instanceof HTMLInputElement && target.matches('[data-exc-note]')) {
+		if (
+			(target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement) &&
+			target.matches('[data-exc-note]')
+		) {
 			this.exceptionModalNote = String(target.value || '');
 			this.exceptionModalDirty = true;
 			return;
@@ -2011,9 +2014,9 @@ class ScheduleManager extends HTMLElement {
 		noteLabel.className = 'grid gap-1 text-[0.88rem] font-bold text-(--on-surface)';
 		noteLabel.append('Nota (opcional)');
 
-		const noteInput = document.createElement('input');
-		noteInput.type = 'text';
+		const noteInput = document.createElement('textarea');
 		noteInput.maxLength = 500;
+		noteInput.rows = 3;
 		noteInput.value = this.exceptionModalNote;
 		noteInput.dataset.excNote = 'true';
 		noteInput.id = 'exception-modal-note';

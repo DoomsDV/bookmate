@@ -119,6 +119,19 @@ const eagerMapPreloadUrls = locations
 	{showCreateAction && (
 		<button
 			type="button"
+			class="locations-closures-fab"
+			data-open-org-closures
+			aria-label="Cierres generales"
+			title="Cierres generales para todas las sucursales"
+		>
+			<span class="material-symbols-rounded" aria-hidden="true">event_busy</span>
+			<span class="locations-closures-fab__pip" aria-hidden="true"></span>
+		</button>
+	)}
+
+	{showCreateAction && (
+		<button
+			type="button"
 			class="locations-create-fab"
 			data-open-location-modal
 			aria-label="Nueva Sucursal"
@@ -411,11 +424,63 @@ const eagerMapPreloadUrls = locations
 		outline-offset: 3px;
 	}
 
-	.locations-create-fab {
+	.locations-create-fab,
+	.locations-closures-fab {
 		display: none;
 	}
 
 	@media (max-width: 639px) {
+		.locations-closures-fab {
+			position: fixed;
+			right: max(1rem, env(safe-area-inset-right, 0px));
+			bottom: calc(8.9rem + env(safe-area-inset-bottom, 0px));
+			z-index: 44;
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			width: 3.05rem;
+			height: 3.05rem;
+			padding: 0;
+			border: 1px solid color-mix(in srgb, var(--on-surface) 12%, transparent);
+			border-radius: 999px;
+			color: var(--on-surface);
+			background: var(--surface-bright);
+			box-shadow: 0 2px 8px rgba(0, 0, 0, 0.22);
+			cursor: pointer;
+			-webkit-tap-highlight-color: transparent;
+			transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
+		}
+
+		.locations-closures-fab .material-symbols-rounded {
+			font-size: 1.35rem;
+			line-height: 1;
+		}
+
+		.locations-closures-fab__pip {
+			position: absolute;
+			top: 0.28rem;
+			right: 0.28rem;
+			width: 0.42rem;
+			height: 0.42rem;
+			border-radius: 999px;
+			background: var(--primary);
+			box-shadow: 0 0 0 2px var(--surface-bright);
+		}
+
+		.locations-closures-fab:hover {
+			filter: brightness(1.04);
+			box-shadow: 0 3px 10px rgba(0, 0, 0, 0.28);
+		}
+
+		.locations-closures-fab:active {
+			transform: scale(0.96);
+		}
+
+		.locations-closures-fab:focus-visible {
+			outline: 2px solid color-mix(in srgb, var(--primary) 42%, white 58%);
+			outline-offset: 3px;
+		}
+
 		.locations-create-fab {
 			position: fixed;
 			right: max(1rem, env(safe-area-inset-right, 0px));
@@ -424,8 +489,8 @@ const eagerMapPreloadUrls = locations
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			width: 3.5rem;
-			height: 3.5rem;
+			width: 3.05rem;
+			height: 3.05rem;
 			padding: 0;
 			border: 0;
 			border-radius: 999px;
@@ -712,9 +777,11 @@ const eagerMapPreloadUrls = locations
 	.locations-org-closures-btn__badge {
 		display: inline-flex;
 		align-items: center;
-		padding: 0.18rem 0.5rem;
+		align-self: center;
+		flex-shrink: 0;
+		padding: 0.12rem 0.42rem;
 		border-radius: 999px;
-		font-size: 0.62rem;
+		font-size: 0.58rem;
 		font-weight: 800;
 		letter-spacing: 0.05em;
 		text-transform: uppercase;
@@ -763,6 +830,17 @@ const eagerMapPreloadUrls = locations
 	}
 
 	@media (max-width: 639px) {
+		html[data-theme='dark'] .locations-closures-fab {
+			background: #16161a;
+			border-color: rgba(255, 255, 255, 0.16);
+			color: var(--on-surface);
+			box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+		}
+
+		html[data-theme='dark'] .locations-closures-fab__pip {
+			box-shadow: 0 0 0 2px #16161a;
+		}
+
 		html[data-theme='dark'] .locations-create-fab {
 			background: color-mix(in srgb, var(--primary) 78%, #0e0e10 22%);
 		}

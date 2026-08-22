@@ -113,7 +113,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 		<div class="settings-content-shell flex min-h-0 flex-1 flex-col" data-settings-content-shell>
 		<div class="settings-scroll-wrap relative flex min-h-0 flex-1 flex-col">
-		<div class="settings-content relative flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 overscroll-contain" data-settings-content>
+		<div class="settings-content relative flex-1 min-h-0 overflow-y-auto px-4 py-5 sm:p-6 overscroll-contain" data-settings-content>
 			<div class="settings-feedback-sticky-wrap">
 				<div
 					data-settings-feedback-host
@@ -226,7 +226,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 						<label class="settings-field settings-public-profile-field" data-settings-public-profile-field>
 							<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">Enlace personal <span class="text-rose-500">*</span></span>
-							<div class="flex min-w-0">
+							<div class="settings-input-affix flex min-w-0">
 								<span
 									data-settings-profile-slug-prefix
 									class="public-profile-url-prefix inline-flex shrink-0 items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-2.5 text-xs font-semibold text-(--on-surface-variant) shadow-sm sm:px-3 sm:text-sm"
@@ -259,7 +259,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 						<label class="settings-field grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)" data-settings-tour-phone>
 							<span>Teléfono público <span class="text-rose-500">*</span></span>
-							<div class="flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
+							<div class="settings-input-affix flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
 								<span class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
 									+595
 								</span>
@@ -3808,7 +3808,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		flex: 0 0 auto;
 		border-top: 1px solid var(--shell-border);
 		background: var(--surface-bright);
-		padding: 0.9rem 1rem calc(0.9rem + env(safe-area-inset-bottom, 0px));
+		padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
 	}
 
 	.settings-actions.hidden,
@@ -3829,6 +3829,76 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 	@media (min-width: 769px) {
 		.settings-actions {
 			padding: 1.15rem 2rem;
+		}
+	}
+
+	@media (max-width: 639px) {
+		[data-settings-modal] .settings-content :is(
+			input[type='text'],
+			input[type='email'],
+			input[type='tel'],
+			input[type='password'],
+			input[type='number'],
+			input:not([type]),
+			select,
+			textarea
+		) {
+			min-height: 2.85rem;
+			height: auto;
+			padding: 0.7rem 0.85rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
+			box-sizing: border-box;
+		}
+
+		[data-settings-modal] .settings-content textarea {
+			min-height: 5.5rem;
+		}
+
+		[data-settings-modal] .settings-content select {
+			padding-right: 2.4rem;
+		}
+
+		[data-settings-modal] .settings-content .bookmate-searchable-select.ts-wrapper.single .ts-control {
+			min-height: 2.85rem;
+			height: 2.85rem;
+			padding: 0 2.4rem 0 0.85rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
+			box-sizing: border-box;
+		}
+
+		[data-settings-modal] .settings-content .bookmate-searchable-select.ts-wrapper.single .item,
+		[data-settings-modal] .settings-content .bookmate-searchable-select.ts-wrapper.single .ts-control > input {
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
+		}
+
+		[data-settings-modal] .settings-content .settings-input-affix {
+			min-height: 2.85rem;
+			height: 2.85rem;
+			max-height: 2.85rem;
+			align-items: stretch;
+			box-sizing: border-box;
+		}
+
+		[data-settings-modal] .settings-content .settings-input-affix > span,
+		[data-settings-modal] .settings-content .settings-input-affix > button {
+			min-height: 0;
+			height: 100%;
+			box-sizing: border-box;
+		}
+
+		[data-settings-modal] .settings-content .settings-input-affix input {
+			min-height: 0;
+			height: 100%;
+			padding: 0.55rem 0.7rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
 		}
 	}
 

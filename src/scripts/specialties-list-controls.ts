@@ -90,20 +90,18 @@ const renderSpecialtyCard = (specialty: SpecialtyItem) => {
 			aria-label="Editar especialidad ${escapeHtml(name)}"
 		>
 			<div class="specialties-card__inner">
-				<div class="specialties-card__dossier">
+				<div class="specialties-card__top">
 					<div class="specialties-card-icon" aria-hidden="true">
 						<span class="material-symbols-rounded">${SPECIALTY_ICON}</span>
 					</div>
-					<div class="specialties-card-body">
-						<div class="specialties-card__title-row">
-							<h3 class="specialties-card-title line-clamp-1">${escapeHtml(name)}</h3>
-							<span class="specialties-card-status ${statusClass}">
-								<span class="size-1.5 rounded-full ${dotClass}"></span>
-								${statusLabel}
-							</span>
-						</div>
-						<p class="specialties-card__copy line-clamp-2">${escapeHtml(description)}</p>
-					</div>
+					<span class="specialties-card-status ${statusClass}">
+						<span class="size-1.5 rounded-full ${dotClass}"></span>
+						${statusLabel}
+					</span>
+				</div>
+				<div class="specialties-card-body">
+					<h3 class="specialties-card-title line-clamp-2">${escapeHtml(name)}</h3>
+					<p class="specialties-card__copy line-clamp-2">${escapeHtml(description)}</p>
 				</div>
 			</div>
 		</article>

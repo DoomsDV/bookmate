@@ -851,20 +851,21 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			<div class="dashboard-ai-drawer__handle" aria-hidden="true">
 				<span class="dashboard-ai-drawer__handle-pill"></span>
 			</div>
-			<div class="panel-modal-header dashboard-ai-modal__header">
-				<div class="panel-modal-header__row">
-					<h2 class="panel-modal-header__title">
-						✨ Resumen del día
-					</h2>
-					<button
-						type="button"
-						class="panel-modal-header__close"
-						data-close-ai-summary-modal
-						aria-label="Cerrar resumen"
-					>
-						<span class="material-symbols-rounded">close</span>
-					</button>
+			<div class="dashboard-ai-modal__header">
+				<div class="dashboard-ai-modal__title-wrap">
+					<div class="dashboard-ai-modal__mark">
+						<span class="material-symbols-rounded">auto_awesome</span>
+					</div>
+					<h2 class="dashboard-ai-modal__title">Resumen del día</h2>
 				</div>
+				<button
+					type="button"
+					class="dashboard-ai-modal__close"
+					data-close-ai-summary-modal
+					aria-label="Cerrar resumen"
+				>
+					<span class="material-symbols-rounded">close</span>
+				</button>
 			</div>
 			<div class="dashboard-ai-modal__body overflow-y-auto overscroll-contain min-h-0 flex-1 px-4 pb-6 pt-1 sm:px-6 sm:pb-7">
 				<div
@@ -2104,6 +2105,99 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		z-index: 1;
 	}
 
+	.dashboard-ai-modal__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.65rem 1.25rem 1rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--shell-border) 72%, transparent);
+		background: transparent;
+	}
+
+	.dashboard-ai-modal__title-wrap {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		min-width: 0;
+		flex: 1;
+	}
+
+	.dashboard-ai-modal__mark {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--primary) 14%, transparent);
+		color: var(--primary);
+		flex-shrink: 0;
+	}
+
+	.dashboard-ai-modal__mark .material-symbols-rounded {
+		font-size: 1.25rem;
+		line-height: 1;
+	}
+
+	.dashboard-ai-modal__title {
+		margin: 0;
+		font-size: 1.05rem;
+		font-weight: 800;
+		color: var(--on-surface);
+		line-height: 1.2;
+	}
+
+	.dashboard-ai-modal__close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.35rem;
+		height: 2.35rem;
+		border: 1px solid color-mix(in srgb, var(--on-surface) 10%, transparent);
+		border-radius: 999px;
+		background: var(--surface-container-high, var(--surface-variant));
+		color: var(--on-surface-variant);
+		cursor: pointer;
+		flex-shrink: 0;
+		transition:
+			background 160ms ease,
+			color 160ms ease,
+			border-color 160ms ease;
+	}
+
+	.dashboard-ai-modal__close:hover {
+		background: color-mix(in srgb, var(--surface-variant) 92%, transparent);
+		border-color: color-mix(in srgb, var(--on-surface) 18%, transparent);
+		color: var(--on-surface);
+	}
+
+	.dashboard-ai-modal__close .material-symbols-rounded {
+		font-size: 1.3rem;
+		line-height: 1;
+	}
+
+	@media (max-width: 480px) {
+		.dashboard-ai-modal__header {
+			padding: 0.4rem 1rem 0.75rem;
+			gap: 0.55rem;
+		}
+
+		.dashboard-ai-modal__mark {
+			width: 2.45rem;
+			height: 2.45rem;
+			border-radius: 0.85rem;
+		}
+
+		.dashboard-ai-modal__title-wrap {
+			gap: 0.65rem;
+		}
+
+		.dashboard-ai-modal__title {
+			font-size: 0.98rem;
+		}
+	}
+
 	.dashboard-ai-sections--modal .dashboard-ai-section {
 		padding: 1.45rem 0 1.35rem;
 		border: 0;
@@ -3337,9 +3431,18 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	}
 
 	html[data-theme='dark'] .dashboard-ai-drawer__panel {
-		background: var(--surface-container-high, #222222);
+		background: var(--surface-bright);
 		background-image: none;
 		box-shadow: var(--modal-shadow-sheet);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-modal__header {
+		background: transparent;
+		border-bottom-color: color-mix(in srgb, var(--shell-border) 72%, transparent);
+	}
+
+	html[data-theme='dark'] .dashboard-ai-modal__title {
+		color: var(--on-surface);
 	}
 
 	@media (min-width: 1024px) {

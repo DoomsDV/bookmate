@@ -76,6 +76,8 @@ const flashToneClass = `flash-message--${type}`;
 
 	/*
 	 * Stack en top layer via popover=manual (sobre dialogs showModal).
+	 * Un z-index alto no alcanza: el drawer usa showModal() y entra a la top layer
+	 * después. Al mostrar un toast se hace hide+show para quedar encima.
 	 * Hay que anular el UA ([popover] { inset:0; margin:auto; width:fit-content }).
 	 */
 	[data-flash-stack],
@@ -130,7 +132,10 @@ const flashToneClass = `flash-message--${type}`;
 				easing: 'cubic-bezier(0.4, 0, 1, 1)',
 				fill: 'forwards',
 			}
-		).onfinish = () => node.remove();
+		).onfinish = () => {
+			node.remove();
+			hideFlashStackIfEmpty(document.querySelector<HTMLElement>('[data-flash-stack]'));
+		};
 	};
 
 	const initMessage = (node: HTMLElement) => {
@@ -146,6 +151,32 @@ const flashToneClass = `flash-message--${type}`;
 		}
 	};
 
+	const isFlashStackOpen = (stack: HTMLElement) => stack.matches(':popover-open');
+
+	const promoteFlashStack = (stack: HTMLElement) => {
+		if (typeof stack.showPopover !== 'function') return;
+		try {
+			// hide + show reordena la top layer: un dialog abierto después
+			// del bootstrap queda encima si solo llamamos showPopover() de nuevo.
+			if (isFlashStackOpen(stack) && typeof stack.hidePopover === 'function') {
+				stack.hidePopover();
+			}
+			stack.showPopover();
+		} catch {
+			/* ignore: fallback a fixed + z-index */
+		}
+	};
+
+	const hideFlashStackIfEmpty = (stack: HTMLElement | null) => {
+		if (!stack || stack.querySelector('[data-flash-message]')) return;
+		if (typeof stack.hidePopover !== 'function' || !isFlashStackOpen(stack)) return;
+		try {
+			stack.hidePopover();
+		} catch {
+			/* ignore */
+		}
+	};
+
 	const ensureFlashStack = () => {
 		let stack = document.querySelector<HTMLElement>('[data-flash-stack]');
 		if (!stack) {
@@ -154,15 +185,6 @@ const flashToneClass = `flash-message--${type}`;
 			stack.setAttribute('popover', 'manual');
 			document.body.appendChild(stack);
 		}
-
-		if (typeof stack.showPopover === 'function') {
-			try {
-				stack.showPopover();
-			} catch {
-				/* ignore: fallback a fixed + z-index */
-			}
-		}
-
 		return stack;
 	};
 
@@ -221,6 +243,7 @@ const flashToneClass = `flash-message--${type}`;
 		if (!node) return;
 		const stack = ensureFlashStack();
 		stack.appendChild(node);
+		promoteFlashStack(stack);
 		initMessage(node);
 	};
 

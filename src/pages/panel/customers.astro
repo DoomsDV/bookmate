@@ -338,12 +338,12 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 						data-customer-profile-tab="history"
 						tabindex="-1"
 					>
-						<span>Historial de reservas</span>
-						<span class="customer-profile-tab__badge" aria-hidden="true">Nuevo</span>
+						<span class="customer-profile-tab__label-full">Historial de reservas</span>
+						<span class="customer-profile-tab__label-short">Historial</span>
 					</button>
 					<button
 						type="button"
-						class="customer-profile-tab"
+						class="customer-profile-tab customer-profile-tab--odontogram"
 						role="tab"
 						id="customer-profile-tab-odontogram"
 						aria-selected="false"
@@ -351,8 +351,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 						data-customer-profile-tab="odontogram"
 						tabindex="-1"
 					>
-						<span class="material-symbols-rounded text-[1rem]" aria-hidden="true">dentistry</span>
-						<span>Odontograma</span>
+						<span class="customer-profile-tab__label-full">Odontograma</span>
+						<span class="customer-profile-tab__label-short">Odonto</span>
+						<span class="customer-profile-tab__badge" aria-hidden="true">Nuevo</span>
 					</button>
 				</div>
 			</div>
@@ -548,7 +549,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 						hidden
 					>
 						<div
-							class="customer-odontogram-lock hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright) p-5 sm:p-6"
+							class="customer-odontogram-lock hidden rounded-2xl border border-(--shell-border) bg-(--surface-bright)"
 							data-customer-odontogram-lock
 						>
 							<div class="customer-odontogram-lock__icon" aria-hidden="true">
@@ -1651,40 +1652,34 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 	.customer-profile-tablist {
 		display: flex;
 		flex-wrap: nowrap;
+		align-items: stretch;
 		width: 100%;
 		min-width: 0;
 		max-width: 100%;
-		gap: 0.25rem;
+		gap: 0.3rem;
 		padding: 0.25rem;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
-		overflow-x: auto;
-		overflow-y: hidden;
-		-webkit-overflow-scrolling: touch;
-		scrollbar-width: none;
-		-ms-overflow-style: none;
-		overscroll-behavior-x: contain;
-		touch-action: pan-x;
-	}
-
-	.customer-profile-tablist::-webkit-scrollbar {
-		display: none;
+		overflow: hidden;
 	}
 
 	.customer-profile-tab {
-		flex: 0 0 auto;
+		position: relative;
+		flex: 1 1 0;
+		min-width: 0;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		gap: 0.32rem;
-		min-height: 2.35rem;
-		padding: 0.4rem 0.65rem;
+		gap: 0.35rem;
+		min-height: 2.25rem;
+		padding: 0.38rem 0.4rem;
 		border: 0;
 		border-radius: 999px;
 		background: transparent;
 		color: var(--on-surface-variant);
 		font-size: 0.84rem;
 		font-weight: 700;
+		line-height: 1.2;
 		white-space: nowrap;
 		cursor: pointer;
 		transition: background-color 140ms ease, color 140ms ease;
@@ -1705,9 +1700,15 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		outline-offset: 2px;
 	}
 
+	.customer-profile-tab__label-short {
+		display: none;
+	}
+
 	.customer-profile-tab__badge {
 		display: inline-flex;
 		align-items: center;
+		align-self: center;
+		flex-shrink: 0;
 		padding: 0.12rem 0.42rem;
 		border-radius: 999px;
 		font-size: 0.58rem;
@@ -1717,16 +1718,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		line-height: 1.15;
 		background: color-mix(in srgb, var(--primary) 14%, transparent);
 		color: var(--primary);
+		pointer-events: none;
 	}
 
 	.customer-profile-tab.is-active .customer-profile-tab__badge {
-		background: color-mix(in srgb, var(--primary) 18%, transparent);
-	}
-
-	@media (min-width: 640px) {
-		.customer-profile-tab {
-			flex: 1 1 0;
-		}
+		background: color-mix(in srgb, var(--primary) 22%, transparent);
 	}
 
 	.customer-profile-tab-panel[hidden],
@@ -1747,21 +1743,27 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 	@media (max-width: 639px) {
 		.customer-profile-tablist {
-			gap: 0.5rem;
 			padding: 0;
 			border-radius: 0;
 			background: transparent;
 		}
 
 		.customer-profile-tab {
-			min-height: 2.15rem;
-			padding: 0.5rem 1.25rem;
-			font-size: 0.92rem;
-			gap: 0.45rem;
+			min-height: 2.1rem;
+			padding: 0.36rem 0.32rem;
+			font-size: 0.76rem;
 			border: 1px solid rgba(255, 255, 255, 0.16);
 			background: rgba(255, 255, 255, 0.05);
 			color: var(--on-surface-variant);
 			box-shadow: none;
+		}
+
+		.customer-profile-tab:not(.customer-profile-tab--odontogram) .customer-profile-tab__label-full {
+			display: none;
+		}
+
+		.customer-profile-tab:not(.customer-profile-tab--odontogram) .customer-profile-tab__label-short {
+			display: inline;
 		}
 
 		html:not([data-theme='dark']) .customer-profile-tab {
@@ -1798,13 +1800,33 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		}
 
 		.customer-profile-tab__badge {
-			padding: 0.08rem 0.32rem;
-			font-size: 0.54rem;
+			position: absolute;
+			top: 0.12rem;
+			right: 0.16rem;
+			z-index: 1;
+			width: 0.38rem;
+			min-width: 0.38rem;
+			height: 0.38rem;
+			padding: 0;
+			overflow: hidden;
+			font-size: 0;
+			line-height: 0;
+			color: transparent;
+			background: var(--primary);
 		}
 
 		.customer-profile-tab.is-active .customer-profile-tab__badge {
-			background: color-mix(in srgb, var(--primary) 22%, transparent);
-			color: var(--primary);
+			background: var(--primary);
+		}
+	}
+
+	@media (max-width: 359px) {
+		.customer-profile-tab--odontogram .customer-profile-tab__label-full {
+			display: none;
+		}
+
+		.customer-profile-tab--odontogram .customer-profile-tab__label-short {
+			display: inline;
 		}
 	}
 
@@ -2542,6 +2564,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		display: grid;
 		gap: 0.75rem;
 		text-align: center;
+		padding: 1.35rem 1.5rem;
+	}
+
+	@media (min-width: 640px) {
+		.customer-odontogram-lock {
+			padding: 1.5rem;
+		}
 	}
 
 	.customer-odontogram-lock.hidden {

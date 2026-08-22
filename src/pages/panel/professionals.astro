@@ -124,7 +124,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				</div>
 			</div>
 
-			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3 sm:px-6 sm:py-4" data-professional-modal-scroll>
+			<div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-7 sm:py-7 lg:px-6" data-professional-modal-scroll>
 
 			<div class="professional-modal-hero">
 				<div class="profile-photo-uploader" data-profile-upload-dropzone>
@@ -171,14 +171,14 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				<div class="sm:col-span-2 grid gap-3 sm:gap-4">
 					<label class="professional-public-profile-field" data-professional-public-profile-field>
 						<span class="inline-flex items-center gap-1 text-[0.95rem] font-bold text-(--on-surface)">URL del perfil público <span class="text-rose-500">*</span></span>
-						<div class="flex min-w-0">
+						<div class="professional-input-affix flex min-w-0">
 							<span
 								class="public-profile-url-prefix inline-flex shrink-0 items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-2.5 text-xs font-semibold text-(--on-surface-variant) shadow-sm sm:px-3 sm:text-sm"
 								title={publicProfilePrefix}
 							>
 								{publicProfilePrefixDisplay}
 							</span>
-							<input type="text" name="profile_slug" maxlength="100" required class="block w-full min-w-0 flex-1 rounded-none border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
+							<input type="text" name="profile_slug" maxlength="100" required class="professional-input-affix__input block w-full min-w-0 flex-1 rounded-none border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition focus:border-(--primary) focus:ring-4 focus:ring-(--primary)/10" placeholder="sarah-gomez"/>
 							<button
 								type="button"
 								class="inline-flex w-12 shrink-0 items-center justify-center rounded-r-2xl border border-l-0 border-(--shell-border) bg-(--control-surface) text-(--on-surface-variant) transition hover:bg-(--surface-container-high) hover:text-(--primary) focus:outline-none focus:ring-4 focus:ring-(--primary)/10"
@@ -197,7 +197,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				<fieldset class="flex flex-col gap-4 border-0 p-0 m-0">
 					<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 						<span class="inline-flex items-center gap-1">Teléfono <span class="text-rose-500">*</span></span>
-						<div class="flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
+						<div class="professional-input-affix flex rounded-2xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
 							<span class="inline-flex items-center rounded-l-2xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
 								+595
 							</span>
@@ -209,7 +209,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 								maxlength="20"
 								required
 								placeholder="981 123 456"
-								class="min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
+								class="professional-input-affix__input min-w-0 flex-1 rounded-none rounded-r-2xl border border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 text-[0.95rem] outline-none transition hover:border-(--on-surface-variant)/40 focus:border-(--primary)"
 							/>
 						</div>
 						<span
@@ -370,7 +370,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			</div>
 			</div>
 			
-			<div class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-4 py-2.5 sm:px-6 sm:py-3.5">
+			<div class="shrink-0 z-20 mt-auto border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5 lg:px-6">
 				<div class="modal-footer">
 				<button type="button" class="hidden modal-action-danger" data-delete-professional aria-label="Eliminar personal">
 					<span class="material-symbols-rounded mr-1.5 align-[-0.22em] text-[1.15rem]" data-delete-professional-icon aria-hidden="true">delete</span>
@@ -2453,6 +2453,48 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 	}
 
 	@media (max-width: 639px) {
+		dialog[data-professional-modal] [data-professional-form] :is(
+			input[type='text'],
+			input[type='tel'],
+			input[type='email'],
+			input[type='number'],
+			select
+		):not(.professional-modal-identity__input) {
+			min-height: 2.85rem;
+			height: auto;
+			padding: 0.7rem 0.85rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
+		}
+
+		dialog[data-professional-modal] [data-professional-form] textarea {
+			min-height: 5.5rem;
+			padding: 0.7rem 0.85rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
+		}
+
+		dialog[data-professional-modal] [data-professional-form] select {
+			padding-right: 2.4rem;
+		}
+
+		dialog[data-professional-modal] [data-professional-form] .professional-input-affix {
+			min-height: 2.85rem;
+			height: 2.85rem;
+			align-items: stretch;
+		}
+
+		dialog[data-professional-modal] [data-professional-form] .professional-input-affix__input {
+			min-height: 0;
+			height: 100%;
+			padding: 0.55rem 0.7rem;
+			font-size: 0.92rem;
+			font-weight: 600;
+			line-height: 1.25;
+		}
+
 		.professional-modal-hero {
 			gap: 0.5rem;
 			margin-bottom: 1.15rem;

@@ -58,7 +58,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 					</button>
 					<button
 						type="button"
-						class="appointment-voice-tab"
+						class="appointment-voice-tab appointment-voice-tab--scan"
 						data-voice-overlay-tab="scan"
 						role="tab"
 						aria-selected="false"
@@ -66,6 +66,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 						<span class="material-symbols-rounded" aria-hidden="true">photo_camera</span>
 						<span>Escanear agenda</span>
 						<span class="appointment-voice-tab__badge" aria-hidden="true">Nuevo</span>
+						<span class="appointment-voice-tab__pip" aria-hidden="true"></span>
 					</button>
 				</div>
 
@@ -566,6 +567,11 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		position: relative;
 		z-index: 1;
 		display: flex;
+		box-sizing: border-box;
+		align-self: stretch;
+		width: auto;
+		max-width: 100%;
+		min-width: 0;
 		flex-wrap: nowrap;
 		gap: 0.3rem;
 		margin: 0.6rem 1.15rem 0;
@@ -573,19 +579,14 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--surface-variant) 70%, transparent);
 		border: 1px solid color-mix(in srgb, var(--shell-border) 70%, transparent);
-		overflow-x: auto;
-		overflow-y: hidden;
-		-webkit-overflow-scrolling: touch;
-		scrollbar-width: none;
-		overscroll-behavior-x: contain;
-	}
-
-	.appointment-voice-tabs::-webkit-scrollbar {
-		display: none;
+		overflow: hidden;
 	}
 
 	.appointment-voice-tab {
-		flex: 0 0 auto;
+		position: relative;
+		box-sizing: border-box;
+		flex: 1 1 50%;
+		min-width: 0;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -598,14 +599,9 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		font-size: 0.85rem;
 		font-weight: 700;
 		white-space: nowrap;
+		overflow: hidden;
 		cursor: pointer;
 		transition: background 150ms ease, color 150ms ease, box-shadow 150ms ease;
-	}
-
-	@media (min-width: 640px) {
-		.appointment-voice-tab {
-			flex: 1 1 0;
-		}
 	}
 
 	.appointment-voice-tab .material-symbols-rounded {
@@ -621,6 +617,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	.appointment-voice-tab__badge {
 		display: inline-flex;
 		align-items: center;
+		align-self: center;
 		flex-shrink: 0;
 		padding: 0.12rem 0.42rem;
 		border-radius: 999px;
@@ -635,6 +632,45 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 	.appointment-voice-tab.is-active .appointment-voice-tab__badge {
 		background: color-mix(in srgb, var(--primary) 18%, transparent);
+	}
+
+	.appointment-voice-tab__pip {
+		display: none;
+	}
+
+	@media (max-width: 1023px) {
+		.appointment-voice-tab__badge {
+			display: none !important;
+			width: 0;
+			min-width: 0;
+			height: 0;
+			margin: 0;
+			padding: 0;
+			overflow: hidden;
+			border: 0;
+			visibility: hidden;
+			position: absolute;
+			pointer-events: none;
+		}
+
+		.appointment-voice-tab--scan {
+			overflow: visible;
+		}
+
+		.appointment-voice-tab__pip {
+			position: absolute;
+			top: 0.12rem;
+			right: 0.16rem;
+			z-index: 1;
+			display: block;
+			width: 0.38rem;
+			min-width: 0.38rem;
+			height: 0.38rem;
+			padding: 0;
+			border-radius: 999px;
+			background: var(--primary);
+			pointer-events: none;
+		}
 	}
 
 	.appointment-voice-body {
@@ -1717,11 +1753,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			gap: 0.22rem;
 			padding: 0.42rem 0.35rem;
 			font-size: 0.78rem;
-		}
-
-		.appointment-voice-tab__badge {
-			padding: 0.08rem 0.32rem;
-			font-size: 0.54rem;
 		}
 
 		.appointment-voice-help {

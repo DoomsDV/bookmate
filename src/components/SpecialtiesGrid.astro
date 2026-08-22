@@ -215,38 +215,36 @@ const toDescriptionLabel = (value?: string | null) => {
 					aria-label={`Editar especialidad ${specialty.name || specialty.id_specialty}`}
 				>
 					<div class="specialties-card__inner">
-						<div class="specialties-card__dossier">
+						<div class="specialties-card__top">
 							<div class="specialties-card-icon" aria-hidden="true">
 								<span class="material-symbols-rounded">{SPECIALTY_ICON}</span>
 							</div>
-							<div class="specialties-card-body">
-								<div class="specialties-card__title-row">
-									<h3 class="specialties-card-title line-clamp-1">
-										{specialty.name || `Especialidad #${specialty.id_specialty}`}
-									</h3>
-									<span
-										class:list={[
-											'specialties-card-status',
-											specialty.is_active === 1
-												? 'specialties-card-status--active'
-												: 'specialties-card-status--inactive',
-										]}
-									>
-										<span
-											class:list={[
-												'size-1.5 rounded-full',
-												specialty.is_active === 1
-													? 'specialties-summary-dot--active'
-													: 'specialties-summary-dot--inactive',
-											]}
-										></span>
-										{specialty.is_active === 1 ? 'Activa' : 'Inactiva'}
-									</span>
-								</div>
-								<p class="specialties-card__copy line-clamp-2">
-									{toDescriptionLabel(specialty.description)}
-								</p>
-							</div>
+							<span
+								class:list={[
+									'specialties-card-status',
+									specialty.is_active === 1
+										? 'specialties-card-status--active'
+										: 'specialties-card-status--inactive',
+								]}
+							>
+								<span
+									class:list={[
+										'size-1.5 rounded-full',
+										specialty.is_active === 1
+											? 'specialties-summary-dot--active'
+											: 'specialties-summary-dot--inactive',
+									]}
+								></span>
+								{specialty.is_active === 1 ? 'Activa' : 'Inactiva'}
+							</span>
+						</div>
+						<div class="specialties-card-body">
+							<h3 class="specialties-card-title line-clamp-2">
+								{specialty.name || `Especialidad #${specialty.id_specialty}`}
+							</h3>
+							<p class="specialties-card__copy line-clamp-2">
+								{toDescriptionLabel(specialty.description)}
+							</p>
 						</div>
 					</div>
 				</article>
@@ -318,8 +316,8 @@ const toDescriptionLabel = (value?: string | null) => {
 			display: inline-flex;
 			align-items: center;
 			justify-content: center;
-			width: 3.5rem;
-			height: 3.5rem;
+			width: 3.05rem;
+			height: 3.05rem;
 			padding: 0;
 			border: 0;
 			border-radius: 999px;
@@ -379,10 +377,11 @@ const toDescriptionLabel = (value?: string | null) => {
 	specialty-manager .specialties-card {
 		--specialties-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		cursor: pointer;
+		min-height: 11.5rem;
 		gap: 0;
-		padding: 0.7rem 0.75rem 0.6rem;
+		padding: 1.15rem 1.15rem 1.2rem;
 		border: 0;
-		border-radius: 1.15rem;
+		border-radius: 1.35rem;
 		background: var(--surface-bright);
 		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
 		overflow: visible;
@@ -391,6 +390,12 @@ const toDescriptionLabel = (value?: string | null) => {
 			transform 520ms var(--specialties-ease),
 			box-shadow 520ms var(--specialties-ease),
 			background 520ms var(--specialties-ease);
+	}
+
+	@media (max-width: 639px) {
+		specialty-manager .specialties-card {
+			min-height: 10.875rem;
+		}
 	}
 
 	specialty-manager .specialties-card:nth-child(1) { animation-delay: 0ms; }
@@ -424,6 +429,8 @@ const toDescriptionLabel = (value?: string | null) => {
 
 	specialty-manager .specialties-card__inner {
 		display: grid;
+		grid-template-rows: auto 1fr;
+		gap: 0.95rem;
 		height: 100%;
 		min-width: 0;
 		padding: 0;
@@ -433,18 +440,19 @@ const toDescriptionLabel = (value?: string | null) => {
 		box-shadow: none;
 	}
 
-	specialty-manager .specialties-card__dossier {
+	specialty-manager .specialties-card__top {
 		display: flex;
 		align-items: flex-start;
-		gap: 0.65rem;
+		justify-content: space-between;
+		gap: 0.75rem;
 		min-width: 0;
 	}
 
 	specialty-manager .specialties-card .specialties-card-icon {
-		width: 3rem;
-		height: 3rem;
+		width: 3.5rem;
+		height: 3.5rem;
 		flex-shrink: 0;
-		border-radius: 0.9rem;
+		border-radius: 1.05rem;
 		background: color-mix(in srgb, var(--primary) 14%, transparent);
 		color: var(--primary);
 		box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22);
@@ -460,26 +468,17 @@ const toDescriptionLabel = (value?: string | null) => {
 	}
 
 	specialty-manager .specialties-card .specialties-card-body {
-		flex: 1;
 		min-width: 0;
 		display: grid;
-		gap: 0.38rem;
-	}
-
-	specialty-manager .specialties-card__title-row {
-		display: flex;
-		align-items: flex-start;
-		justify-content: space-between;
-		gap: 0.6rem;
-		min-width: 0;
+		align-content: start;
+		gap: 0.4rem;
 	}
 
 	specialty-manager .specialties-card .specialties-card-title {
-		flex: 1 1 auto;
 		min-width: 0;
-		font-size: 1.06rem;
+		font-size: 1.18rem;
 		font-weight: 760;
-		letter-spacing: -0.032em;
+		letter-spacing: -0.034em;
 		line-height: 1.2;
 	}
 
@@ -489,9 +488,9 @@ const toDescriptionLabel = (value?: string | null) => {
 		border: 0;
 		border-radius: 0;
 		background: transparent;
-		font-size: 0.78rem;
+		font-size: 0.84rem;
 		font-weight: 550;
-		line-height: 1.35;
+		line-height: 1.45;
 		color: var(--on-surface-variant);
 	}
 
@@ -500,11 +499,11 @@ const toDescriptionLabel = (value?: string | null) => {
 		align-items: center;
 		flex-shrink: 0;
 		gap: 0.35rem;
-		margin-top: 0.12rem;
+		margin-top: 0.2rem;
 		border-radius: 999px;
 		border: 0;
-		padding: 0.18rem 0.52rem;
-		font-size: 0.68rem;
+		padding: 0.28rem 0.62rem;
+		font-size: 0.7rem;
 		font-weight: 750;
 		letter-spacing: -0.01em;
 		white-space: nowrap;

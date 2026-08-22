@@ -45,21 +45,37 @@ const ADDON_COPY: Record<string, string> = {
 	ODONTOGRAM_3D: 'Ficha clínica interactiva 3D y evolución de tratamientos.',
 };
 
-const odontogramPreviewHtml = () => `
-		<div class="complementos-card__media" aria-hidden="true">
-			<div class="complementos-card__preview complementos-card__preview--odontogram">
-				<img
-					class="complementos-card__preview-img"
-					src="/odontograma/odonto-removebg.png"
-					alt=""
-				/>
+const ODONTOGRAM_PREVIEW_SRC =
+	'https://objectstorage.sa-saopaulo-1.oraclecloud.com/n/gr7djv0kcgrr/b/bucket-hasel-aoxdev/o/odontograma%2Fodontograma-full.png';
+
+const addonInitials = (name: string) => {
+	const parts = String(name || '')
+		.trim()
+		.split(/\s+/)
+		.filter(Boolean);
+	if (!parts.length) return 'CM';
+	const first = parts[0]?.[0] || '';
+	const last = parts.length > 1 ? parts[parts.length - 1]?.[0] || '' : parts[0]?.[1] || '';
+	return `${first}${last}`.toUpperCase();
+};
+
+const isOdontogramAddon = (item: ModuleAddonItem) =>
+	String(item.code || '').toUpperCase().includes('ODONTO');
+
+const previewForAddon = (item: ModuleAddonItem) => {
+	if (isOdontogramAddon(item)) {
+		return `
+			<div class="complementos-card__hero complementos-card__hero--odontogram" aria-hidden="true">
+				<img class="complementos-card__hero-img" src="${ODONTOGRAM_PREVIEW_SRC}" alt="" />
 			</div>
+		`;
+	}
+
+	return `
+		<div class="complementos-card__hero complementos-card__hero--initials" aria-hidden="true">
+			<span class="complementos-card__hero-mark">${escapeHtml(addonInitials(item.name))}</span>
 		</div>
 	`;
-
-const previewForAddon = (code: string) => {
-	if (String(code || '').toUpperCase().includes('ODONTO')) return odontogramPreviewHtml();
-	return '';
 };
 
 const parseBillingLive = (payload: unknown): boolean => {
@@ -200,84 +216,78 @@ export const initComplementosPage = () => {
 		const desc =
 			ADDON_COPY[item.code.toUpperCase()] ||
 			item.short_description ||
-			'Módulo mensual para tu clínica.';
+			'Módulo mensual para tu negocio.';
 		const isBusy = busyCode === item.code;
 		const activateLabel = billingLive ? 'Suscribirse' : 'Activar';
 		const activatingLabel = billingLive ? 'Procesando…' : 'Activando…';
 
-		let priceBlock = '';
-		if (billingLive) {
-			priceBlock = `
-				<div class="complementos-card__price-row">
-					<span class="complementos-card__price">${escapeHtml(price)}</span>
+		const priceBlock = billingLive
+			? `<div class="complementos-card__price">
+					<span class="complementos-card__amount">${escapeHtml(price)}</span>
 					<span class="complementos-card__period">${escapeHtml(period.trim() || '/ mes')}</span>
-				</div>
-			`;
-		} else {
-			priceBlock = `
-				<div class="complementos-card__price-row">
-					<span class="complementos-card__price is-struck">${escapeHtml(price)}</span>
+				</div>`
+			: `<div class="complementos-card__price">
+					<span class="complementos-card__amount is-struck">${escapeHtml(price)}</span>
 					<span class="complementos-card__free">Gratis</span>
-					<span class="complementos-card__period">Beta · 0 Gs / mes</span>
-				</div>
-			`;
-		}
+				</div>`;
 
-		let actions = '';
+		let action = '';
 		if (active) {
-			actions = `
-				<span class="complementos-card__badge">
-					<span class="complementos-card__badge-dot" aria-hidden="true"></span>
-					${billingLive ? 'Activo' : 'Activo · sin cargo'}
-				</span>
+			action = `
 				<button
 					type="button"
-					class="complementos-btn complementos-btn--soft"
+					class="complementos-card__cta complementos-card__cta--soft"
 					data-addon-cancel
 					data-addon-code="${escapeHtml(item.code)}"
 					${isBusy ? 'disabled' : ''}
 				>
 					<span>${isBusy ? 'Desactivando…' : 'Desactivar'}</span>
-					<span class="complementos-btn__glyph" aria-hidden="true">
+					<span class="complementos-card__cta-glyph" aria-hidden="true">
 						<span class="material-symbols-rounded">remove</span>
 					</span>
 				</button>
 			`;
 		} else if (eligible) {
-			actions = `
+			action = `
 				<button
 					type="button"
-					class="complementos-btn complementos-btn--primary"
+					class="complementos-card__cta complementos-card__cta--primary"
 					data-addon-activate
 					data-addon-code="${escapeHtml(item.code)}"
 					${isBusy ? 'disabled' : ''}
 				>
 					<span>${isBusy ? activatingLabel : activateLabel}</span>
-					<span class="complementos-btn__glyph" aria-hidden="true">
+					<span class="complementos-card__cta-glyph" aria-hidden="true">
 						<span class="material-symbols-rounded">arrow_forward</span>
 					</span>
 				</button>
 			`;
 		}
 
-		const preview = previewForAddon(item.code);
-		const mediaClass = preview ? ' complementos-card--media' : '';
+		const featuredClass = isOdontogramAddon(item) ? ' is-featured' : '';
 		const activeClass = active ? ' is-active' : '';
 		const eyebrow = billingLive ? 'Módulo mensual' : 'Beta · sin cargo';
+		const status = active
+			? `<span class="complementos-card__status">
+					<span class="complementos-card__status-dot" aria-hidden="true"></span>
+					${billingLive ? 'Activo' : 'Activo · sin cargo'}
+				</span>`
+			: '';
 
 		return `
-			<article class="complementos-card${mediaClass}${activeClass}" data-addon-card data-addon-code="${escapeHtml(item.code)}">
+			<article class="complementos-card${featuredClass}${activeClass}" data-addon-card data-addon-code="${escapeHtml(item.code)}">
 				<div class="complementos-card__shell">
 					<div class="complementos-card__core">
-						${preview}
+						${previewForAddon(item)}
 						<div class="complementos-card__body">
 							<p class="complementos-card__eyebrow">${eyebrow}</p>
-							<div class="complementos-card__copy">
-								<h2 class="complementos-card__title">${escapeHtml(item.name)}</h2>
-								<p class="complementos-card__desc">${escapeHtml(desc)}</p>
+							<h2 class="complementos-card__title">${escapeHtml(item.name)}</h2>
+							<p class="complementos-card__desc">${escapeHtml(desc)}</p>
+							<div class="complementos-card__meta">
+								${priceBlock}
+								${status}
 							</div>
-							${priceBlock}
-							${actions}
+							${action}
 						</div>
 					</div>
 				</div>
@@ -289,8 +299,8 @@ export const initComplementosPage = () => {
 		bannerEl?.classList.toggle('is-hidden', billingLive);
 		if (leadEl) {
 			leadEl.textContent = billingLive
-				? 'Módulos mensuales extras para tu clínica. Se facturan junto con tu suscripción.'
-				: 'Módulos extras para tu clínica. Activálos cuando los necesites.';
+				? 'Módulos mensuales extras para tu negocio. Se facturan junto con tu suscripción.'
+				: 'Módulos extras para tu negocio. Activálos cuando los necesites.';
 		}
 		if (badgeEl) {
 			const count = activeItems.length;

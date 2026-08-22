@@ -53,9 +53,14 @@ export interface ClosureHolidayMotive {
 	already_closed: boolean;
 }
 
+export interface ClosureCustomMotive {
+	name: string;
+	closure_count: number;
+}
+
 export interface ClosureMotives {
 	holidays: ClosureHolidayMotive[];
-	custom_names: string[];
+	custom_names: ClosureCustomMotive[];
 }
 
 export interface LocationClosureFieldError {
@@ -300,7 +305,48 @@ export async function listClosureMotives(token: string): Promise<ClosureMotives>
 		? data.holidays.map(normalizeHolidayMotive).filter((item): item is ClosureHolidayMotive => item !== null)
 		: [];
 	const customNames = Array.isArray(data.custom_names)
-		? data.custom_names.map((item) => String(item || '').trim()).filter(Boolean)
+		? data.custom_names
+				.map((item): ClosureCustomMotive | null => {
+					if (typeof item === 'string') {
+						const name = item.trim();
+						return name ? { name, closure_count: 0 } : null;
+					}
+					if (!item || typeof item !== 'object') return null;
+					const source = item as Record<string, unknown>;
+					const name = String(source.name || '').trim();
+					const count = Number(source.closure_count);
+					if (!name) return null;
+					return {
+						name,
+						closure_count: Number.isFinite(count) && count > 0 ? count : 0,
+					};
+				})
+				.filter((item): item is ClosureCustomMotive => item !== null)
 		: [];
 	return { holidays, custom_names: customNames };
+}
+
+export async function deleteCustomClosureMotive(
+	token: string,
+	name: string
+): Promise<{ deleted_count: number; message: string }> {
+	const motiveName = String(name || '').trim();
+	if (!motiveName) {
+		throw new LocationClosuresApiError('El nombre del motivo es obligatorio.', 400);
+	}
+
+	const body = await request<ApiSuccess<unknown>>(
+		CLOSURE_MOTIVES_URL,
+		{
+			method: 'DELETE',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ name: motiveName }),
+		},
+		token
+	);
+
+	return {
+		deleted_count: typeof body.deleted_count === 'number' ? body.deleted_count : 0,
+		message: typeof body.message === 'string' ? body.message : 'Motivo personalizado eliminado.',
+	};
 }
