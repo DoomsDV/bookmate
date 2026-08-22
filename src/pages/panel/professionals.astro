@@ -443,6 +443,15 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 	import { showProfessionalProfileUrlTour } from '../../lib/professional-profile-url-tour';
 	import { destroyActiveBookmateTour } from '../../lib/product-tour';
 	import { openPanelModal } from '../../lib/panel-scroll-lock';
+	import {
+		bindPanelThemedSelectRoot,
+		destroyPanelThemedSelect,
+		ensurePanelThemedSelect,
+		syncPanelThemedSelect,
+	} from '../../lib/panel-themed-select';
+
+	const PANEL_MODAL_THEMED_TRIGGER =
+		'panel-modal-select__trigger panel-themed-select__trigger schedule-themed-select__trigger';
 
 	type ProfessionalMode = 'create' | 'edit';
 
@@ -657,6 +666,27 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				() => destroyActiveBookmateTour(),
 				{ signal }
 			);
+			if (this.els.modal) {
+				bindPanelThemedSelectRoot(this.els.modal, signal);
+			}
+		}
+
+		private mountSpecialtyThemedSelect() {
+			ensurePanelThemedSelect(this.formEls.specialty, {
+				triggerClass: PANEL_MODAL_THEMED_TRIGGER,
+				hideEmptyOption: false,
+			});
+		}
+
+		private syncSpecialtyThemedSelect() {
+			const root = this.formEls.specialty?.closest<HTMLElement>(
+				'.panel-themed-select, .schedule-themed-select',
+			);
+			if (root) syncPanelThemedSelect(root);
+		}
+
+		private destroySpecialtyThemedSelect() {
+			if (this.formEls.specialty) destroyPanelThemedSelect(this.formEls.specialty);
 		}
 
 		disconnectedCallback() {
@@ -669,6 +699,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 				this.servicesTom = null;
 			}
 			this.closeProfileImageCrop(true);
+			this.destroySpecialtyThemedSelect();
 		}
 
 		private async requestApi<T = any>(url: string, options?: RequestInit): Promise<any> {
@@ -1454,7 +1485,10 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			if (this.specialtiesLoaded) return;
 			if (this.specialtiesLoadPromise) return this.specialtiesLoadPromise;
 
-			if (this.formEls.specialty) this.formEls.specialty.disabled = true;
+			if (this.formEls.specialty) {
+				this.formEls.specialty.disabled = true;
+				this.syncSpecialtyThemedSelect();
+			}
 			
 			this.specialtiesLoadPromise = (async () => {
 				const data = await this.requestApi('/api/specialties?page=1&limit=100');
@@ -1467,10 +1501,14 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 						option.textContent = s.name;
 						this.formEls.specialty?.appendChild(option);
 					});
+					this.syncSpecialtyThemedSelect();
 				}
 				this.specialtiesLoaded = true;
 			})().finally(() => {
-				if (this.formEls.specialty) this.formEls.specialty.disabled = false;
+				if (this.formEls.specialty) {
+					this.formEls.specialty.disabled = false;
+					this.syncSpecialtyThemedSelect();
+				}
 				this.specialtiesLoadPromise = null;
 			});
 			return this.specialtiesLoadPromise;
@@ -1578,6 +1616,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			}
 			if (this.els.modal && !this.els.modal.open) openPanelModal(this.els.modal);
 			this.resetModalScroll();
+			this.mountSpecialtyThemedSelect();
 			
 			try {
 				await Promise.all([this.ensureSpecialtiesLoaded(), this.ensureRolesLoaded(), this.ensureServicesLoaded()]);
@@ -1600,6 +1639,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			}
 			if (this.els.modal && !this.els.modal.open) openPanelModal(this.els.modal);
 			this.resetModalScroll();
+			this.mountSpecialtyThemedSelect();
 			this.setLoadingMessage('Cargando...');
 			this.toggleFormLoading(true);
 
@@ -1638,6 +1678,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 
 				const sId = prof.specialty?.id_specialty;
 				if (formEls.specialty && sId) formEls.specialty.value = String(sId);
+				this.syncSpecialtyThemedSelect();
 				
 				const services = Array.isArray(prof.services) ? prof.services : [];
 				this.editServicesAvailable = Array.isArray(prof.services);
@@ -1664,6 +1705,7 @@ const publicProfilePrefixDisplay = formatPublicProfilePrefixDisplay(publicProfil
 			this.clearSlugSuggestTimer();
 
 			this.closeTimer = window.setTimeout(() => {
+				this.destroySpecialtyThemedSelect();
 				this.els.modal?.close();
 				this.els.modal?.classList.remove('is-closing', 'bookmate-tour-host');
 				if (this.els.form) this.els.form.reset();

@@ -494,9 +494,18 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 	import { reloadPageWithFlash } from "../../lib/flash";
 	import { openPanelModal } from "../../lib/panel-scroll-lock";
 	import {
+		bindPanelThemedSelectRoot,
+		destroyPanelThemedSelect,
+		ensurePanelThemedSelect,
+		syncPanelThemedSelect,
+	} from "../../lib/panel-themed-select";
+	import {
 		isAcceptedCoverImage,
 		ProfileImageCropper,
 	} from "../../lib/profile-image-crop";
+
+	const PANEL_MODAL_THEMED_TRIGGER =
+		"panel-modal-select__trigger panel-themed-select__trigger schedule-themed-select__trigger";
 
 	type ServiceMode = "create" | "edit";
 	type ServiceSubmitPayload = {
@@ -737,6 +746,26 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.handleDurationInput,
 				{ signal },
 			);
+			if (this.els.modal) {
+				bindPanelThemedSelectRoot(this.els.modal, signal);
+			}
+		}
+
+		private mountStatusThemedSelect() {
+			ensurePanelThemedSelect(this.formEls.status, {
+				triggerClass: PANEL_MODAL_THEMED_TRIGGER,
+			});
+		}
+
+		private syncStatusThemedSelect() {
+			const root = this.formEls.status?.closest<HTMLElement>(
+				".panel-themed-select, .schedule-themed-select",
+			);
+			if (root) syncPanelThemedSelect(root);
+		}
+
+		private destroyStatusThemedSelect() {
+			if (this.formEls.status) destroyPanelThemedSelect(this.formEls.status);
 		}
 
 		disconnectedCallback() {
@@ -744,6 +773,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			this.abortController = null;
 			if (this.closeTimer) window.clearTimeout(this.closeTimer);
 			this.closeCoverCrop();
+			this.destroyStatusThemedSelect();
 		}
 
 		private clearErrors() {
@@ -849,6 +879,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.closeTimer = null;
 			}
 			if (this.els.modal && !this.els.modal.open) openPanelModal(this.els.modal);
+			this.mountStatusThemedSelect();
 		}
 
 		private closeModal() {
@@ -858,6 +889,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			this.els.modal.classList.add("is-closing");
 
 			this.closeTimer = window.setTimeout(() => {
+				this.destroyStatusThemedSelect();
 				this.els.modal?.close();
 				this.els.modal?.classList.remove("is-closing");
 				this.els.form?.reset();
@@ -927,6 +959,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.formEls.status.value = String(
 					service?.is_active === 0 ? 0 : 1,
 				);
+			this.syncStatusThemedSelect();
 			this.setCoverState({
 				existingUrl: String(service?.image_url || "").trim() || null,
 				pendingBase64: null,
@@ -941,6 +974,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.els.priceInput,
 			].forEach((el) => el && (el.value = ""));
 			if (this.formEls.status) this.formEls.status.value = "1";
+			this.syncStatusThemedSelect();
 			if (this.els.hidePublicPriceToggle) this.els.hidePublicPriceToggle.checked = false;
 			if (this.els.hiddenPublicPriceLabel) this.els.hiddenPublicPriceLabel.value = "";
 			this.toggleHidePublicPriceFields(false);

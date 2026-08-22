@@ -616,10 +616,14 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		type MapTheme,
 	} from "../../lib/maplibre-interactive";
 	import {
-		destroySearchableSelect,
-		rebuildSearchableSelect,
-		setSearchableSelectDisabled,
-	} from "../../scripts/searchable-select";
+		bindPanelThemedSelectRoot,
+		destroyPanelThemedSelect,
+		ensurePanelThemedSelect,
+		syncPanelThemedSelect,
+	} from "../../lib/panel-themed-select";
+
+	const PANEL_MODAL_THEMED_TRIGGER =
+		"panel-modal-select__trigger panel-themed-select__trigger schedule-themed-select__trigger";
 
 	type LocationMode = "create" | "edit";
 	type Coordinates = { lat: number; lng: number };
@@ -833,6 +837,45 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				{ signal },
 			);
 			window.addEventListener("pagehide", this.handlePageHide, { signal });
+			if (this.els.modal) {
+				bindPanelThemedSelectRoot(this.els.modal, signal);
+			}
+		}
+
+		private mountLocationThemedSelects() {
+			const config = { triggerClass: PANEL_MODAL_THEMED_TRIGGER };
+			ensurePanelThemedSelect(this.formEls.status, config);
+			ensurePanelThemedSelect(this.formEls.department, config);
+			ensurePanelThemedSelect(this.formEls.city, config);
+		}
+
+		private syncLocationThemedSelect(
+			select: HTMLSelectElement | null | undefined,
+		) {
+			if (!select) return;
+			const root = select.closest<HTMLElement>(
+				".panel-themed-select, .schedule-themed-select",
+			);
+			if (root) syncPanelThemedSelect(root);
+		}
+
+		private setThemedSelectDisabled(
+			select: HTMLSelectElement | null | undefined,
+			disabled: boolean,
+		) {
+			if (!select) return;
+			select.disabled = disabled;
+			this.syncLocationThemedSelect(select);
+		}
+
+		private destroyLocationThemedSelects() {
+			for (const select of [
+				this.formEls?.status,
+				this.formEls?.department,
+				this.formEls?.city,
+			]) {
+				if (select) destroyPanelThemedSelect(select);
+			}
 		}
 
 		disconnectedCallback() {
@@ -840,8 +883,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			this.abortController = null;
 			this.themeObserver?.disconnect();
 			this.themeObserver = null;
-			destroySearchableSelect(this.formEls?.department);
-			destroySearchableSelect(this.formEls?.city);
+			this.destroyLocationThemedSelects();
 			if (this.closeTimer) window.clearTimeout(this.closeTimer);
 			this.destroyMapInstance();
 		}
@@ -1232,18 +1274,6 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			this.setMapStatus(this.mapIdleMessage);
 		};
 
-		private getSelectSearchPlaceholder = (
-			selectNode: HTMLSelectElement | null | undefined,
-		) => {
-			if (selectNode === this.formEls.department) {
-				return "Buscar departamento...";
-			}
-			if (selectNode === this.formEls.city) {
-				return "Buscar ciudad...";
-			}
-			return "Buscar...";
-		};
-
 		private setSelectOptions = <T,>(
 			selectNode: HTMLSelectElement | null | undefined,
 			items: T[],
@@ -1251,25 +1281,28 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		) => {
 			if (!selectNode) return;
 
-			const options = [
-				{ value: "", label: config.placeholder },
-				...items.map((item) => ({
-					value: String(config.getValue(item)),
-					label: config.getLabel(item),
-				})),
-			];
-
 			const hasSelectedValue =
 				config.selectedValue !== undefined &&
 				config.selectedValue !== null &&
 				String(config.selectedValue).trim() !== "";
 
-			rebuildSearchableSelect(
-				selectNode,
-				options,
-				{ placeholder: this.getSelectSearchPlaceholder(selectNode) },
-				hasSelectedValue ? String(config.selectedValue) : "",
-			);
+			selectNode.replaceChildren();
+			const placeholder = document.createElement("option");
+			placeholder.value = "";
+			placeholder.textContent = config.placeholder;
+			selectNode.appendChild(placeholder);
+
+			for (const item of items) {
+				const node = document.createElement("option");
+				node.value = String(config.getValue(item));
+				node.textContent = config.getLabel(item);
+				selectNode.appendChild(node);
+			}
+
+			selectNode.value = hasSelectedValue
+				? String(config.selectedValue)
+				: "";
+			this.syncLocationThemedSelect(selectNode);
 		};
 
 		private async requestApi<T = any>(url: string, options: RequestInit, fallbackError: string): Promise<any> {
@@ -1324,7 +1357,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				getValue: (i: DepartmentOption) => i.id_department,
 				getLabel: (i: DepartmentOption) => i.description ?? "",
 			});
-			setSearchableSelectDisabled(this.formEls.department, true);
+			this.setThemedSelectDisabled(this.formEls.department, true);
 
 			this.departmentsLoadPromise = (async () => {
 				const departments =
@@ -1345,7 +1378,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				})
 				.finally(() => {
 					this.departmentsLoadPromise = null;
-					setSearchableSelectDisabled(this.formEls.department, false);
+					this.setThemedSelectDisabled(this.formEls.department, false);
 				});
 
 			return this.departmentsLoadPromise;
@@ -1364,7 +1397,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			const selectedCityId = Number(options?.selectedCityId || 0);
 
 			if (!Number.isInteger(departmentId) || departmentId <= 0) {
-				setSearchableSelectDisabled(citySelect, true);
+				this.setThemedSelectDisabled(citySelect, true);
 				this.setSelectOptions(citySelect, [], {
 					placeholder: "Selecciona un departamento primero",
 					getValue: (i: any) => i.id_city,
@@ -1375,7 +1408,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 
 			const cachedCities = this.citiesByDepartment.get(departmentId);
 			if (Array.isArray(cachedCities)) {
-				setSearchableSelectDisabled(citySelect, cachedCities.length === 0);
+				this.setThemedSelectDisabled(citySelect, cachedCities.length === 0);
 				this.setSelectOptions(citySelect, cachedCities, {
 					placeholder:
 						cachedCities.length > 0
@@ -1391,7 +1424,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			}
 
 			const requestId = ++this.citiesRequestSeq;
-			setSearchableSelectDisabled(citySelect, true);
+			this.setThemedSelectDisabled(citySelect, true);
 			citySelect.setAttribute("data-loading", "true");
 			this.setSelectOptions(citySelect, [], {
 				placeholder: "Cargando ciudades...",
@@ -1406,7 +1439,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				if (requestId !== this.citiesRequestSeq) return;
 
 				this.citiesByDepartment.set(departmentId, cities);
-				setSearchableSelectDisabled(citySelect, cities.length === 0);
+				this.setThemedSelectDisabled(citySelect, cities.length === 0);
 				this.setSelectOptions(citySelect, cities, {
 					placeholder:
 						cities.length > 0
@@ -1419,7 +1452,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 				});
 			} catch (error) {
 				if (requestId !== this.citiesRequestSeq) return;
-				setSearchableSelectDisabled(citySelect, true);
+				this.setThemedSelectDisabled(citySelect, true);
 				this.setSelectOptions(citySelect, [], {
 					placeholder: "No fue posible cargar ciudades",
 					getValue: (i: any) => i.id_city,
@@ -1511,6 +1544,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			}
 			if (this.els.modal && !this.els.modal.open) openPanelModal(this.els.modal);
 			this.resetModalScroll();
+			this.mountLocationThemedSelects();
 		};
 
 		private closeModal = () => {
@@ -1525,11 +1559,10 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			this.els.modal.classList.add("is-closing");
 
 			this.closeTimer = window.setTimeout(() => {
+				this.destroyLocationThemedSelects();
 				this.els.modal?.close();
 				this.els.modal?.classList.remove("is-closing");
 				this.els.form?.reset();
-				destroySearchableSelect(this.formEls?.department);
-				destroySearchableSelect(this.formEls?.city);
 				this.destroyMapInstance();
 				this.setCreateMode();
 				this.setFormLoadingState(false);
@@ -1541,8 +1574,6 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 		private resetFormValues = () => {
 			if (this.formEls.name) this.formEls.name.value = "";
 			if (this.formEls.address) this.formEls.address.value = "";
-			destroySearchableSelect(this.formEls.department);
-			destroySearchableSelect(this.formEls.city);
 			if (this.formEls.department) {
 				this.formEls.department.disabled = false;
 			}
@@ -1556,6 +1587,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			}
 			this.setSelectedCoordinates(null, null);
 			if (this.formEls.status) this.formEls.status.value = "1";
+			this.syncLocationThemedSelect(this.formEls.status);
 		};
 
 		private setCreateMode = () => {
@@ -1575,6 +1607,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			if (this.formEls.status) {
 				this.formEls.status.value = "1";
 				this.formEls.status.disabled = true;
+				this.syncLocationThemedSelect(this.formEls.status);
 			}
 			if (this.els.loading) this.els.loading.classList.add("hidden");
 		};
@@ -1593,7 +1626,10 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 			this.els.deleteBtn?.classList.remove("hidden");
 			this.els.deleteBtn?.removeAttribute("disabled");
 			this.els.statusWrap?.removeAttribute("hidden");
-			if (this.formEls.status) this.formEls.status.disabled = false;
+			if (this.formEls.status) {
+				this.formEls.status.disabled = false;
+				this.syncLocationThemedSelect(this.formEls.status);
+			}
 			this.dispatchEvent(
 				new CustomEvent("location-modal:edit-opened", {
 					bubbles: true,
@@ -1739,6 +1775,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					this.formEls.status.value = String(
 						loc?.is_active === 0 ? 0 : 1,
 					);
+				this.syncLocationThemedSelect(this.formEls.status);
 
 				const lat =
 					typeof loc?.latitude === "number" ? loc.latitude : null;

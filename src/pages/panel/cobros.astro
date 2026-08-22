@@ -116,6 +116,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 																		<button
 																			type="button"
 																			class="cobros-sort__btn"
+																			data-cobros-sort-field="date"
 																			data-cobros-sort="asc"
 																			aria-pressed="false"
 																			aria-label="Más antiguos primero"
@@ -126,6 +127,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 																		<button
 																			type="button"
 																			class="cobros-sort__btn is-active"
+																			data-cobros-sort-field="date"
 																			data-cobros-sort="desc"
 																			aria-pressed="true"
 																			aria-label="Más recientes primero"
@@ -138,7 +140,35 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 															</th>
 															<th class="px-4 py-3 font-bold">Cliente</th>
 															<th class="px-4 py-3 font-bold">Servicio</th>
-															<th class="px-4 py-3 font-bold">Monto</th>
+															<th class="px-4 py-3 font-bold">
+																<div class="cobros-th-date">
+																	<span>Monto</span>
+																	<span class="cobros-sort" role="group" aria-label="Ordenar por monto">
+																		<button
+																			type="button"
+																			class="cobros-sort__btn"
+																			data-cobros-sort-field="price"
+																			data-cobros-sort="asc"
+																			aria-pressed="false"
+																			aria-label="Menor monto primero"
+																			title="Menor monto primero"
+																		>
+																			<span class="material-symbols-rounded" aria-hidden="true">keyboard_arrow_up</span>
+																		</button>
+																		<button
+																			type="button"
+																			class="cobros-sort__btn"
+																			data-cobros-sort-field="price"
+																			data-cobros-sort="desc"
+																			aria-pressed="false"
+																			aria-label="Mayor monto primero"
+																			title="Mayor monto primero"
+																		>
+																			<span class="material-symbols-rounded" aria-hidden="true">keyboard_arrow_down</span>
+																		</button>
+																	</span>
+																</div>
+															</th>
 															<th class="px-4 py-3 font-bold">Estado</th>
 															<th class="px-4 py-3 font-bold"></th>
 														</tr>
@@ -470,72 +500,76 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 							</button>
 						</div>
 					</header>
-					<div class="grid min-h-0 flex-1 content-start gap-5 overflow-y-auto overscroll-contain p-5">
-						<div
-							class="cobros-receipt-row hidden items-center gap-3 rounded-xl border border-(--shell-border) bg-(--control-surface) px-3.5 py-3"
-							data-cobros-receipt-row
-						>
-							<span
-								class="material-symbols-rounded shrink-0 text-[1.4rem] text-(--primary)"
-								aria-hidden="true"
-								data-cobros-receipt-icon
-							>description</span>
-							<div class="min-w-0 flex-1">
-								<p class="m-0 truncate text-sm font-bold text-(--on-surface)" data-cobros-receipt-name>comprobante</p>
-								<p class="m-0 text-xs text-(--on-surface-variant)">Comprobante adjunto</p>
+					<div class="cobros-detail-scroll grid min-h-0 flex-1 content-start gap-4 overflow-y-auto overscroll-contain px-5 pb-5 pt-4">
+						<div class="cobros-detail-receipt hidden" data-cobros-receipt-row>
+							<div class="cobros-detail-receipt__inner">
+								<div class="cobros-detail-receipt__icon" aria-hidden="true">
+									<span class="material-symbols-rounded" data-cobros-receipt-icon>description</span>
+								</div>
+								<div class="cobros-detail-receipt__copy min-w-0 flex-1">
+									<p class="cobros-detail-receipt__name" data-cobros-receipt-name>comprobante</p>
+									<p class="cobros-detail-receipt__meta">Comprobante adjunto</p>
+								</div>
+								<button
+									type="button"
+									class="cobros-detail-receipt__cta group"
+									title="Ver comprobante"
+									aria-label="Ver comprobante"
+									data-cobros-receipt-open
+								>
+									<span class="cobros-detail-receipt__cta-label">Ver</span>
+									<span class="cobros-detail-receipt__cta-icon" aria-hidden="true">
+										<span class="material-symbols-rounded">visibility</span>
+									</span>
+								</button>
 							</div>
-							<button
-								type="button"
-								class="cobros-receipt-open cursor-pointer"
-								title="Ver comprobante"
-								aria-label="Ver comprobante"
-								data-cobros-receipt-open
-							>
-								<span class="material-symbols-rounded" aria-hidden="true">visibility</span>
-							</button>
 						</div>
-						<p class="hidden rounded-xl border border-dashed border-(--shell-border) px-4 py-4 text-sm text-(--on-surface-variant)" data-cobros-modal-no-image>
+						<p class="cobros-detail-empty hidden" data-cobros-modal-no-image>
 							Sin comprobante adjunto.
 						</p>
 
-						<div class="cobros-ticket grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-x-5 sm:gap-y-4" data-cobros-ticket>
-							<div class="grid gap-1 min-w-0">
-								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Cliente</span>
-								<strong class="truncate text-[1.05rem] font-extrabold leading-snug" data-cobros-modal-customer>—</strong>
+						<section class="cobros-detail-sheet" data-cobros-ticket>
+							<div class="cobros-detail-sheet__hero">
+								<span class="cobros-detail-field__label" data-cobros-amount-label>Monto</span>
+								<strong class="cobros-detail-sheet__amount tabular-nums" data-cobros-modal-amount>—</strong>
 							</div>
-							<div class="grid gap-1 min-w-0 sm:text-right">
-								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Monto</span>
-								<strong class="text-[1.15rem] font-extrabold leading-snug tabular-nums" data-cobros-modal-amount>—</strong>
+							<div class="cobros-detail-sheet__grid">
+								<div class="cobros-detail-field">
+									<span class="cobros-detail-field__label">Cliente</span>
+									<strong class="cobros-detail-field__value" data-cobros-modal-customer>—</strong>
+								</div>
+								<div class="cobros-detail-field">
+									<span class="cobros-detail-field__label">Servicio</span>
+									<strong class="cobros-detail-field__value" data-cobros-modal-service>—</strong>
+								</div>
+								<div class="cobros-detail-field cobros-detail-field--wide">
+									<span class="cobros-detail-field__label">Código HASEL</span>
+									<strong class="cobros-detail-field__value cobros-detail-field__value--mono" data-cobros-modal-reference>—</strong>
+								</div>
+								<div class="cobros-detail-field">
+									<span class="cobros-detail-field__label">Profesional</span>
+									<strong class="cobros-detail-field__value" data-cobros-modal-professional>—</strong>
+								</div>
+								<div class="cobros-detail-field">
+									<span class="cobros-detail-field__label">Lugar</span>
+									<strong class="cobros-detail-field__value" data-cobros-modal-location>—</strong>
+								</div>
 							</div>
-							<div class="grid gap-1 min-w-0">
-								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Servicio</span>
-								<strong class="truncate text-[0.98rem] font-bold leading-snug" data-cobros-modal-service>—</strong>
-							</div>
-							<div class="grid gap-1 min-w-0 sm:text-right">
-								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Código HASEL</span>
-								<strong class="truncate font-mono text-[0.92rem] font-bold leading-snug" data-cobros-modal-reference>—</strong>
-							</div>
-							<div class="grid gap-1 min-w-0">
-								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Profesional</span>
-								<strong class="truncate text-[0.98rem] font-bold leading-snug" data-cobros-modal-professional>—</strong>
-							</div>
-							<div class="grid gap-1 min-w-0 sm:text-right">
-								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Lugar</span>
-								<strong class="truncate text-[0.98rem] font-bold leading-snug" data-cobros-modal-location>—</strong>
-							</div>
-						</div>
+						</section>
 
-						<div class="hidden grid gap-4" data-cobros-refund-block>
-							<div class="grid gap-1 min-w-0">
-								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Estado reembolso</span>
-								<strong class="text-[0.98rem] font-bold leading-snug" data-cobros-modal-refund-status>—</strong>
+						<section class="cobros-refund-panel hidden" data-cobros-refund-block>
+							<div class="cobros-refund-panel__inner">
+								<div class="cobros-refund-panel__status">
+									<span class="cobros-detail-field__label">Estado reembolso</span>
+									<strong class="cobros-refund-status" data-cobros-modal-refund-status>—</strong>
+								</div>
+								<div class="cobros-refund-panel__alias">
+									<span class="cobros-detail-field__label">Alias SIPAP del cliente</span>
+									<strong class="cobros-refund-alias" data-cobros-modal-refund-alias>—</strong>
+								</div>
 							</div>
-							<div class="grid gap-1 min-w-0">
-								<span class="text-[0.72rem] font-semibold uppercase tracking-wide text-(--on-surface-variant)">Alias SIPAP del cliente</span>
-								<strong class="break-all font-mono text-[0.98rem] font-bold leading-snug" data-cobros-modal-refund-alias>—</strong>
-							</div>
-							<p class="hidden text-sm font-semibold text-amber-700" data-cobros-claim-note></p>
-						</div>
+							<p class="cobros-refund-claim hidden" data-cobros-claim-note></p>
+						</section>
 					</div>
 
 					<footer class="cobros-modal-footer z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-5 py-4">
@@ -604,10 +638,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 							<div class="cobros-modal-actions cobros-modal-actions--refund">
 								<button
 									type="button"
-									class="cobros-modal-btn cobros-modal-btn--primary"
+									class="cobros-modal-btn cobros-modal-btn--primary cobros-modal-btn--island group"
 									data-cobros-mark-refund-sent
 								>
-									Marcar como enviado
+									<span class="cobros-modal-btn__label">Marcar como enviado</span>
+									<span class="cobros-modal-btn__icon-ring" aria-hidden="true">
+										<span class="material-symbols-rounded">check</span>
+									</span>
 								</button>
 								<button
 									type="button"
@@ -638,6 +675,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		font-weight: 700;
 		color: var(--on-surface);
 		cursor: pointer;
+		user-select: none;
+		-webkit-user-select: none;
 	}
 	.cobros-tab.is-active {
 		background: var(--primary-container);
@@ -718,6 +757,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	[data-cobros-results].hidden,
 	.cobros-loading.hidden,
 	[data-cobros-refund-actions].hidden,
+	[data-cobros-refund-block].hidden,
+	.cobros-refund-panel.hidden,
 	[data-cobros-waive-wrap].hidden,
 	[data-cobros-mark-refund-sent].hidden,
 	[data-cobros-waive].hidden {
@@ -1532,34 +1573,363 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		color: #fcd34d;
 	}
 
-	.cobros-receipt-row {
-		align-self: start;
+	.cobros-detail-scroll {
+		--cobros-detail-ease: cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	/* —— Superficie única: sin doble borde —— */
+	.cobros-detail-receipt__inner,
+	.cobros-detail-sheet,
+	.cobros-refund-panel__inner {
+		border-radius: 1.25rem;
+		background: var(--control-surface);
+	}
+
+	html[data-theme='dark'] .cobros-detail-receipt__inner,
+	html[data-theme='dark'] .cobros-detail-sheet,
+	html[data-theme='dark'] .cobros-refund-panel__inner {
+		background: color-mix(in srgb, var(--control-surface) 92%, #fff 2%);
+	}
+
+	.cobros-detail-receipt {
 		width: 100%;
-		height: fit-content;
+		opacity: 0;
+		transform: translateY(8px);
+		animation: cobros-detail-in 520ms var(--cobros-detail-ease) forwards;
 	}
-	.cobros-receipt-row.hidden {
-		display: none;
+
+	.cobros-detail-receipt__inner {
+		display: flex;
+		align-items: center;
+		gap: 0.85rem;
+		padding: 0.9rem 1rem;
 	}
-	.cobros-receipt-open {
+
+	.cobros-detail-receipt__icon {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		width: 2.25rem;
-		height: 2.25rem;
+		flex-shrink: 0;
+		width: 2.5rem;
+		height: 2.5rem;
+		border-radius: 0.85rem;
+		background: color-mix(in srgb, var(--on-surface) 7%, transparent);
+		color: var(--on-surface-variant);
+	}
+
+	.cobros-detail-receipt__icon .material-symbols-rounded {
+		font-size: 1.25rem;
+		line-height: 1;
+	}
+
+	.cobros-detail-receipt__name {
+		margin: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.9rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		color: var(--on-surface);
+	}
+
+	.cobros-detail-receipt__meta {
+		margin: 0.12rem 0 0;
+		font-size: 0.68rem;
+		font-weight: 600;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.cobros-detail-receipt__cta {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		flex-shrink: 0;
+		padding: 0.4rem 0.4rem 0.4rem 0.85rem;
 		border: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 7%, transparent);
+		color: var(--on-surface);
+		font-size: 0.8rem;
+		font-weight: 700;
+		cursor: pointer;
+		transition: transform 420ms var(--cobros-detail-ease);
+	}
+
+	.cobros-detail-receipt__cta:active {
+		transform: scale(0.98);
+	}
+
+	.cobros-detail-receipt__cta-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 9%, transparent);
+		transition: transform 420ms var(--cobros-detail-ease);
+	}
+
+	.cobros-detail-receipt__cta:hover .cobros-detail-receipt__cta-icon {
+		transform: translate(1px, -1px);
+	}
+
+	.cobros-detail-receipt__cta .material-symbols-rounded {
+		font-size: 1rem;
+		line-height: 1;
+	}
+
+	.cobros-detail-empty {
+		margin: 0;
+		padding: 0.95rem 1rem;
+		border-radius: 1.25rem;
+		background: var(--control-surface);
+		font-size: 0.86rem;
+		font-weight: 600;
+		color: var(--on-surface-variant);
+	}
+
+	.cobros-detail-sheet {
+		overflow: hidden;
+		opacity: 0;
+		transform: translateY(10px);
+		animation: cobros-detail-in 560ms var(--cobros-detail-ease) 60ms forwards;
+	}
+
+	.cobros-detail-sheet__hero {
+		display: grid;
+		gap: 0.35rem;
+		padding: 1.1rem 1.15rem 1rem;
+	}
+
+	.cobros-detail-sheet__amount {
+		font-size: clamp(1.45rem, 4.8vw, 1.72rem);
+		font-weight: 800;
+		line-height: 1.08;
+		letter-spacing: -0.035em;
+		color: var(--on-surface);
+	}
+
+	.cobros-detail-sheet__grid {
+		display: grid;
+		grid-template-columns: 1fr;
+		gap: 0;
+		padding: 0.15rem 0 0.35rem;
+		border-top: 1px solid color-mix(in srgb, var(--on-surface) 5%, transparent);
+	}
+
+	@media (min-width: 480px) {
+		.cobros-detail-sheet__grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+	}
+
+	.cobros-detail-field {
+		display: grid;
+		gap: 0.28rem;
+		min-width: 0;
+		padding: 0.85rem 1.15rem;
+	}
+
+	.cobros-detail-field + .cobros-detail-field {
+		border-top: 1px solid color-mix(in srgb, var(--on-surface) 6%, transparent);
+	}
+
+	@media (min-width: 480px) {
+		.cobros-detail-field + .cobros-detail-field {
+			border-top: 0;
+		}
+
+		.cobros-detail-field:nth-child(3),
+		.cobros-detail-field:nth-child(4) {
+			border-top: 1px solid color-mix(in srgb, var(--on-surface) 6%, transparent);
+		}
+
+		.cobros-detail-field--wide {
+			grid-column: 1 / -1;
+		}
+	}
+
+	.cobros-detail-field__label {
+		font-size: 0.62rem;
+		font-weight: 700;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.cobros-detail-field__value {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.96rem;
+		font-weight: 800;
+		line-height: 1.25;
+		letter-spacing: -0.02em;
+		color: var(--on-surface);
+	}
+
+	.cobros-detail-field__value--mono {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		font-size: 0.88rem;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+	}
+
+	.cobros-refund-panel:not(.hidden) {
+		display: grid;
+		gap: 0.65rem;
+		opacity: 0;
+		transform: translateY(10px);
+		animation: cobros-detail-in 560ms var(--cobros-detail-ease) 120ms forwards;
+	}
+
+	.cobros-refund-panel__inner {
+		display: grid;
+		gap: 0;
+		padding: 0.2rem 0;
+		overflow: hidden;
+	}
+
+	.cobros-refund-panel__status,
+	.cobros-refund-panel__alias {
+		display: grid;
+		gap: 0.35rem;
+		min-width: 0;
+		padding: 0.9rem 1.15rem;
+	}
+
+	.cobros-refund-panel__alias {
+		border-top: 1px solid color-mix(in srgb, var(--on-surface) 6%, transparent);
+	}
+
+	.cobros-refund-status {
+		display: inline-flex;
+		align-items: center;
+		width: fit-content;
+		max-width: 100%;
+		padding: 0.32rem 0.65rem;
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--primary) 12%, transparent);
 		color: var(--primary);
-		cursor: pointer;
-		transition: background 140ms ease;
+		font-size: 0.86rem;
+		font-weight: 800;
+		line-height: 1.2;
+		letter-spacing: -0.01em;
 	}
-	.cobros-receipt-open:hover {
-		background: color-mix(in srgb, var(--primary) 20%, transparent);
+
+	.cobros-refund-panel.is-status-sent .cobros-refund-status {
+		background: color-mix(in srgb, #22c55e 14%, transparent);
+		color: #16a34a;
 	}
-	.cobros-receipt-open .material-symbols-rounded {
-		font-size: 1.2rem;
+
+	html[data-theme='dark'] .cobros-refund-panel.is-status-sent .cobros-refund-status {
+		color: #86efac;
+	}
+
+	.cobros-refund-panel.is-status-pending .cobros-refund-status {
+		background: color-mix(in srgb, #f59e0b 14%, transparent);
+		color: #d97706;
+	}
+
+	html[data-theme='dark'] .cobros-refund-panel.is-status-pending .cobros-refund-status {
+		color: #fcd34d;
+	}
+
+	.cobros-refund-panel.is-status-waived .cobros-refund-status {
+		background: color-mix(in srgb, var(--on-surface-variant) 14%, transparent);
+		color: var(--on-surface-variant);
+	}
+
+	.cobros-refund-alias {
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		font-size: 0.94rem;
+		font-weight: 700;
+		line-height: 1.35;
+		letter-spacing: 0.02em;
+		word-break: break-all;
+		color: var(--on-surface);
+	}
+
+	.cobros-refund-claim {
+		margin: 0;
+		padding: 0.75rem 0.9rem;
+		border-radius: 1rem;
+		background: color-mix(in srgb, #f59e0b 10%, var(--control-surface));
+		font-size: 0.84rem;
+		font-weight: 700;
+		line-height: 1.35;
+		color: #b45309;
+	}
+
+	html[data-theme='dark'] .cobros-refund-claim {
+		color: #fcd34d;
+	}
+
+	@keyframes cobros-detail-in {
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	.cobros-modal-btn--island {
+		justify-content: space-between;
+		padding-right: 0.45rem;
+	}
+
+	.cobros-modal-btn__icon-ring {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.15rem;
+		height: 2.15rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, #fff 18%, transparent);
+		transition: transform 420ms var(--cobros-detail-ease);
+	}
+
+	.cobros-modal-btn--island:hover .cobros-modal-btn__icon-ring {
+		transform: translate(2px, -1px) scale(1.05);
+	}
+
+	.cobros-modal-btn--island .material-symbols-rounded {
+		font-size: 1.15rem;
 		line-height: 1;
-		pointer-events: none;
+	}
+
+	.cobros-modal__panel.is-refund-mode .panel-modal-header__title::before {
+		content: 'Reembolso';
+		display: block;
+		width: fit-content;
+		margin-bottom: 0.35rem;
+		padding: 0.28rem 0.55rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--on-surface) 6%, transparent);
+		color: var(--on-surface-variant);
+		font-size: 0.58rem;
+		font-weight: 700;
+		letter-spacing: 0.18em;
+		text-transform: uppercase;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.cobros-detail-receipt,
+		.cobros-detail-sheet,
+		.cobros-refund-panel {
+			animation: none;
+			opacity: 1;
+			transform: none;
+		}
+
+		.cobros-detail-receipt__cta,
+		.cobros-detail-receipt__cta-icon,
+		.cobros-modal-btn__icon-ring {
+			transition: none;
+		}
 	}
 
 	.cobros-modal-footer [data-cobros-modal-status]:empty {

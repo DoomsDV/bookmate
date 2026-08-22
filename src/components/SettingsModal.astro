@@ -1028,9 +1028,14 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 	} from '../lib/settings-modal-tour';
 	import { destroyActiveBookmateTour } from '../lib/product-tour';
 	import {
+		bindPanelThemedSelectRoot,
+		destroyPanelThemedSelect,
+		ensurePanelThemedSelect,
+		syncPanelThemedSelect,
+	} from '../lib/panel-themed-select';
+	import {
 		destroySearchableSelect,
 		ensureSearchableSelect,
-		setSearchableSelectValue,
 		syncSearchableSelect,
 	} from '../scripts/searchable-select';
 	import {
@@ -1045,6 +1050,21 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		ProfileImageCropper,
 	} from '../lib/profile-image-crop';
 	import { openPanelModal } from '../lib/panel-scroll-lock';
+
+	const PANEL_THEMED_SETTINGS_SELECT =
+		'select[name="panel_theme"], select[data-settings-system-slot-interval], select[data-settings-system-reminder-hours], select[data-settings-system-alert-action], select[name="cwh_id_cancel_wait_hours"]';
+
+	const isPanelThemedSettingsSelect = (select: HTMLSelectElement) =>
+		select.matches(PANEL_THEMED_SETTINGS_SELECT);
+
+	const PANEL_THEMED_SELECT_TRIGGER_CLASS =
+		'panel-modal-select__trigger panel-themed-select__trigger schedule-themed-select__trigger';
+
+	const syncSettingsThemedSelect = (select: HTMLSelectElement | null | undefined) => {
+		if (!select) return;
+		const root = select.closest<HTMLElement>('.panel-themed-select, .schedule-themed-select');
+		if (root) syncPanelThemedSelect(root);
+	};
 
 	interface ApiErrorDetail {
 		field?: string;
@@ -1246,7 +1266,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 				?.querySelector<HTMLInputElement>('[data-payments-deposits-toggle]')
 				?.addEventListener('change', this.syncPaymentsDetailsVisibility, { signal });
 			this.bindScrollHints(signal);
-			this.bindSettingsSelects();
+			this.bindSettingsSelects(signal);
 			this.syncPanelThemeSelect();
 		}
 
@@ -1269,17 +1289,27 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 		private updateScrollHints = () => {};
 
-		private bindSettingsSelects() {
+		private bindSettingsSelects(signal: AbortSignal) {
 			const modal = this.els.modal;
 			if (!modal) return;
 
 			this.querySelectorAll<HTMLSelectElement>('select').forEach((select) => {
+				if (isPanelThemedSettingsSelect(select)) {
+					ensurePanelThemedSelect(select, { triggerClass: PANEL_THEMED_SELECT_TRIGGER_CLASS });
+					return;
+				}
 				ensureSearchableSelect(select, { dropdownParent: modal });
 			});
+
+			bindPanelThemedSelectRoot(modal, signal);
 		}
 
 		private destroySettingsSelects() {
 			this.querySelectorAll<HTMLSelectElement>('select').forEach((select) => {
+				if (isPanelThemedSettingsSelect(select)) {
+					destroyPanelThemedSelect(select);
+					return;
+				}
 				destroySearchableSelect(select);
 			});
 		}
@@ -2248,7 +2278,11 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			} else if (options[0]) {
 				select.value = String(options[0].id);
 			}
-			syncSearchableSelect(select);
+			if (isPanelThemedSettingsSelect(select)) {
+				syncSettingsThemedSelect(select);
+			} else {
+				syncSearchableSelect(select);
+			}
 		}
 
 		private getSystemSelectValue(selector: string) {
@@ -2281,6 +2315,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			const alertSelect = this.querySelector<HTMLSelectElement>('[data-settings-system-alert-action]');
 			if (alertSelect) {
 				alertSelect.value = workspace.unanswered_alert_action === 'CANCEL' ? 'CANCEL' : 'KEEP';
+				syncSettingsThemedSelect(alertSelect);
 			}
 
 			this.refreshSystemCancelWaitField(workspace.cwh_id_cancel_wait_hours);
@@ -2341,7 +2376,10 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 
 			cancelField?.classList.toggle('hidden', !showCancel);
 			if (!showCancel) {
-				if (cancelSelect) cancelSelect.value = '';
+				if (cancelSelect) {
+					cancelSelect.value = '';
+					syncSettingsThemedSelect(cancelSelect);
+				}
 				return;
 			}
 
@@ -2472,7 +2510,8 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 		private syncPanelThemeSelect() {
 			const panelTheme = this.els.preferencesForm?.querySelector<HTMLSelectElement>('[name="panel_theme"]');
 			if (!panelTheme) return;
-			setSearchableSelectValue(panelTheme, this.resolveActivePanelTheme());
+			panelTheme.value = this.resolveActivePanelTheme();
+			syncSettingsThemedSelect(panelTheme);
 		}
 
 		private getPanelAppearanceValues(): { theme: 'light' | 'dark' } {

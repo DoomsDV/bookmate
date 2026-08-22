@@ -171,6 +171,15 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 <script>
 	import { reloadPageWithFlash } from '../../lib/flash';
 	import { openPanelModal } from '../../lib/panel-scroll-lock';
+	import {
+		bindPanelThemedSelectRoot,
+		destroyPanelThemedSelect,
+		ensurePanelThemedSelect,
+		syncPanelThemedSelect,
+	} from '../../lib/panel-themed-select';
+
+	const PANEL_MODAL_THEMED_TRIGGER =
+		'panel-modal-select__trigger panel-themed-select__trigger schedule-themed-select__trigger';
 
 	type SpecialtyMode = 'create' | 'edit';
 	type SpecialtySubmitPayload = {
@@ -213,6 +222,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		};
 
 		private bound = false;
+		private abortController: AbortController | null = null;
 		private closeTimer: number | null = null;
 		private mode: SpecialtyMode = 'create';
 		private editingSpecialtyId = 0;
@@ -249,20 +259,42 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		connectedCallback() {
 			if (this.bound) return;
 			this.bound = true;
-			this.addEventListener('click', this.handleRootClick);
-			this.addEventListener('keydown', this.handleRootKeydown);
-			this.els.form?.addEventListener('submit', this.handleSubmit);
+			this.abortController = new AbortController();
+			const { signal } = this.abortController;
+			this.addEventListener('click', this.handleRootClick, { signal });
+			this.addEventListener('keydown', this.handleRootKeydown, { signal });
+			this.els.form?.addEventListener('submit', this.handleSubmit, { signal });
+			if (this.els.modal) {
+				bindPanelThemedSelectRoot(this.els.modal, signal);
+			}
+		}
+
+		private mountStatusThemedSelect() {
+			ensurePanelThemedSelect(this.formEls.status, {
+				triggerClass: PANEL_MODAL_THEMED_TRIGGER,
+			});
+		}
+
+		private syncStatusThemedSelect() {
+			const root = this.formEls.status?.closest<HTMLElement>(
+				'.panel-themed-select, .schedule-themed-select',
+			);
+			if (root) syncPanelThemedSelect(root);
+		}
+
+		private destroyStatusThemedSelect() {
+			if (this.formEls.status) destroyPanelThemedSelect(this.formEls.status);
 		}
 
 		disconnectedCallback() {
 			this.bound = false;
-			this.removeEventListener('click', this.handleRootClick);
-			this.removeEventListener('keydown', this.handleRootKeydown);
-			this.els.form?.removeEventListener('submit', this.handleSubmit);
+			this.abortController?.abort();
+			this.abortController = null;
 			if (this.closeTimer) {
 				window.clearTimeout(this.closeTimer);
 				this.closeTimer = null;
 			}
+			this.destroyStatusThemedSelect();
 		}
 
 		private clearErrors() {
@@ -382,6 +414,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				this.closeTimer = null;
 			}
 			if (this.els.modal && !this.els.modal.open) openPanelModal(this.els.modal);
+			this.mountStatusThemedSelect();
 		}
 
 		private closeModal() {
@@ -390,6 +423,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			this.els.modal.classList.add('is-closing');
 
 			this.closeTimer = window.setTimeout(() => {
+				this.destroyStatusThemedSelect();
 				this.els.modal?.close();
 				this.els.modal?.classList.remove('is-closing');
 				this.els.form?.reset();
@@ -414,12 +448,14 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			if (this.formEls.status) {
 				this.formEls.status.value = String(specialty?.is_active === 0 ? 0 : 1);
 			}
+			this.syncStatusThemedSelect();
 		}
 
 		private resetFormValues() {
 			if (this.formEls.name) this.formEls.name.value = '';
 			if (this.formEls.description) this.formEls.description.value = '';
 			if (this.formEls.status) this.formEls.status.value = '1';
+			this.syncStatusThemedSelect();
 		}
 
 		private async parseJson(response: Response) {

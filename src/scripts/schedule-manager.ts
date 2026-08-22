@@ -1,5 +1,11 @@
 import { showFlashMessage } from '../lib/flash';
 import { openPanelModal } from '../lib/panel-scroll-lock';
+import {
+	bindPanelThemedSelectRoot,
+	closePanelThemedSelects,
+	mountPanelThemedSelect,
+	syncPanelThemedSelectTriggers,
+} from '../lib/panel-themed-select';
 import { showScheduleExceptionModalTour } from '../lib/schedule-exception-modal-tour';
 import {
 	maybeShowScheduleExceptionsTour,
@@ -233,7 +239,7 @@ class ScheduleManager extends HTMLElement {
 		this.proSelectMenu?.addEventListener('click', this.handleProSelectMenuClick, { signal });
 		document.addEventListener('pointerdown', this.handleProSelectOutsidePointer, { signal });
 		document.addEventListener('keydown', this.handleProSelectKeydown, { signal });
-		this.addEventListener('click', this.handleThemedSelectClick, { signal });
+		bindPanelThemedSelectRoot(this, signal);
 		this.plannerNode.addEventListener('change', this.handlePlannerChange, { signal });
 		this.plannerNode.addEventListener('click', this.handlePlannerClick, { signal });
 		if (this.saveButton && this.canEdit) {
@@ -282,7 +288,7 @@ class ScheduleManager extends HTMLElement {
 		this.#listenerController?.abort();
 		this.#listenerController = null;
 		this.setProSelectOpen(false);
-		this.closeThemedSelects();
+		closePanelThemedSelects(this);
 		this.dayNodes.clear();
 	}
 
@@ -503,8 +509,8 @@ class ScheduleManager extends HTMLElement {
 		) {
 			this.setProSelectOpen(false);
 		}
-		if (!(target instanceof Element) || !target.closest('.schedule-themed-select')) {
-			this.closeThemedSelects();
+		if (!(target instanceof Element) || !target.closest('.panel-themed-select, .schedule-themed-select')) {
+			closePanelThemedSelects(this);
 		}
 	};
 
@@ -514,7 +520,7 @@ class ScheduleManager extends HTMLElement {
 			this.setProSelectOpen(false);
 			this.proSelectTrigger?.focus();
 		}
-		this.closeThemedSelects();
+		closePanelThemedSelects(this);
 	};
 
 	private setProSelectOpen(open: boolean): void {
@@ -710,120 +716,6 @@ class ScheduleManager extends HTMLElement {
 		option.value = value;
 		option.textContent = label;
 		return option;
-	}
-
-	private mountThemedSelect(select: HTMLSelectElement, triggerClass: string): HTMLElement {
-		select.classList.add('sr-only');
-		select.tabIndex = -1;
-		select.setAttribute('aria-hidden', 'true');
-
-		const root = document.createElement('div');
-		root.className = 'schedule-themed-select';
-
-		const trigger = document.createElement('button');
-		trigger.type = 'button';
-		trigger.className = triggerClass;
-		trigger.dataset.themedSelectTrigger = 'true';
-		trigger.setAttribute('aria-haspopup', 'listbox');
-		trigger.setAttribute('aria-expanded', 'false');
-
-		const value = document.createElement('span');
-		value.className = 'schedule-themed-select__value';
-		value.dataset.themedSelectValue = 'true';
-
-		const chevron = document.createElement('span');
-		chevron.className = 'schedule-themed-select__chevron material-symbols-rounded';
-		chevron.setAttribute('aria-hidden', 'true');
-		chevron.textContent = 'expand_more';
-
-		trigger.append(value, chevron);
-
-		const menu = document.createElement('div');
-		menu.className = 'schedule-themed-select__menu';
-		menu.hidden = true;
-		menu.setAttribute('role', 'listbox');
-		menu.dataset.themedSelectMenu = 'true';
-
-		root.append(select, trigger, menu);
-		this.syncThemedSelect(root);
-		return root;
-	}
-
-	private syncThemedSelect(root: HTMLElement): void {
-		const select = root.querySelector('select');
-		const valueNode = root.querySelector('[data-themed-select-value]');
-		const menu = root.querySelector('[data-themed-select-menu]');
-		const trigger = root.querySelector<HTMLButtonElement>('[data-themed-select-trigger]');
-		if (!select || !valueNode || !menu) return;
-
-		const selected = select.selectedOptions[0];
-		valueNode.textContent = selected?.textContent?.trim() || 'Selecciona sucursal';
-		if (trigger) trigger.disabled = select.disabled;
-
-		this.clearNode(menu);
-		for (const option of Array.from(select.options)) {
-			const button = document.createElement('button');
-			button.type = 'button';
-			button.className = 'schedule-themed-select__option';
-			button.dataset.themedSelectOption = option.value;
-			button.setAttribute('role', 'option');
-			button.setAttribute('aria-selected', option.selected ? 'true' : 'false');
-			button.classList.toggle('is-selected', option.selected);
-			button.textContent = option.textContent;
-			menu.appendChild(button);
-		}
-	}
-
-	private setThemedSelectOpen(root: HTMLElement, open: boolean): void {
-		const menu = root.querySelector<HTMLElement>('[data-themed-select-menu]');
-		const trigger = root.querySelector<HTMLButtonElement>('[data-themed-select-trigger]');
-		if (!menu || !trigger) return;
-		menu.hidden = !open;
-		trigger.setAttribute('aria-expanded', open ? 'true' : 'false');
-		root.classList.toggle('is-open', open);
-		if (open) this.syncThemedSelect(root);
-	}
-
-	private closeThemedSelects(except?: HTMLElement | null): void {
-		for (const root of this.querySelectorAll<HTMLElement>('.schedule-themed-select.is-open')) {
-			if (except && root === except) continue;
-			this.setThemedSelectOpen(root, false);
-		}
-	}
-
-	private handleThemedSelectClick = (event: MouseEvent): void => {
-		const target = event.target;
-		if (!(target instanceof Element)) return;
-
-		const option = target.closest<HTMLButtonElement>('[data-themed-select-option]');
-		if (option) {
-			const root = option.closest<HTMLElement>('.schedule-themed-select');
-			const select = root?.querySelector('select');
-			if (!root || !select || select.disabled) return;
-			event.preventDefault();
-			select.value = option.dataset.themedSelectOption || '';
-			select.dispatchEvent(new Event('change', { bubbles: true }));
-			this.syncThemedSelect(root);
-			this.closeThemedSelects();
-			return;
-		}
-
-		const trigger = target.closest<HTMLButtonElement>('[data-themed-select-trigger]');
-		if (!trigger || trigger.disabled) return;
-		const root = trigger.closest<HTMLElement>('.schedule-themed-select');
-		if (!root) return;
-		event.preventDefault();
-		const willOpen = !root.classList.contains('is-open');
-		this.closeThemedSelects();
-		if (willOpen) this.setThemedSelectOpen(root, true);
-	};
-
-	private syncThemedSelectTriggers(): void {
-		for (const root of this.querySelectorAll<HTMLElement>('.schedule-themed-select')) {
-			const select = root.querySelector('select');
-			const trigger = root.querySelector<HTMLButtonElement>('[data-themed-select-trigger]');
-			if (select && trigger) trigger.disabled = select.disabled;
-		}
 	}
 
 	private renderProfessionalOptions(): void {
@@ -1029,7 +921,11 @@ class ScheduleManager extends HTMLElement {
 			}
 			locationSelect.value = slot.loc_id_location || '';
 			locationLabel.appendChild(
-				this.mountThemedSelect(locationSelect, 'schedule-shift__control schedule-themed-select__trigger')
+				mountPanelThemedSelect(locationSelect, {
+					triggerClass:
+						'schedule-shift__control panel-themed-select__trigger schedule-themed-select__trigger',
+					placeholder: 'Selecciona sucursal',
+				})
 			);
 
 			const times = document.createElement('div');
@@ -1118,7 +1014,7 @@ class ScheduleManager extends HTMLElement {
 			removeButton.disabled = blocked || isOnlySlot;
 		}
 
-		this.syncThemedSelectTriggers();
+		syncPanelThemedSelectTriggers(this);
 	}
 
 	private updateControlsState(): void {
@@ -2014,7 +1910,7 @@ class ScheduleManager extends HTMLElement {
 		noteField.className = 'grid gap-1';
 
 		const noteLabel = document.createElement('label');
-		noteLabel.className = 'grid gap-1 text-[0.88rem] font-bold text-(--on-surface)';
+		noteLabel.className = 'grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)';
 		noteLabel.append('Nota (opcional)');
 
 		const noteInput = document.createElement('textarea');
@@ -2023,8 +1919,7 @@ class ScheduleManager extends HTMLElement {
 		noteInput.value = this.exceptionModalNote;
 		noteInput.dataset.excNote = 'true';
 		noteInput.id = 'exception-modal-note';
-		noteInput.className =
-			'rounded-xl border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-[0.9rem] font-medium';
+		noteInput.className = 'schedule-exception-modal__control schedule-exception-modal__control--textarea';
 		noteInput.setAttribute('aria-describedby', 'exception-modal-note-help');
 		noteLabel.appendChild(noteInput);
 
@@ -2076,10 +1971,11 @@ class ScheduleManager extends HTMLElement {
 			}
 			locationSelect.value = slot.loc_id_location || '';
 			locationLabel.appendChild(
-				this.mountThemedSelect(
-					locationSelect,
-					'schedule-slot-themed-trigger schedule-themed-select__trigger'
-				)
+				mountPanelThemedSelect(locationSelect, {
+					triggerClass:
+						'schedule-exception-modal__control schedule-slot-themed-trigger panel-themed-select__trigger schedule-themed-select__trigger',
+					placeholder: 'Selecciona sucursal',
+				})
 			);
 
 			const startLabel = document.createElement('label');
@@ -2090,8 +1986,7 @@ class ScheduleManager extends HTMLElement {
 			startInput.value = slot.start_time;
 			startInput.dataset.excSlotStart = 'true';
 			startInput.dataset.slotUid = slot.uid;
-			startInput.className =
-				'rounded-xl border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-sm font-semibold';
+			startInput.className = 'schedule-exception-modal__control';
 			startLabel.appendChild(startInput);
 
 			const endLabel = document.createElement('label');
@@ -2102,8 +1997,7 @@ class ScheduleManager extends HTMLElement {
 			endInput.value = slot.end_time;
 			endInput.dataset.excSlotEnd = 'true';
 			endInput.dataset.slotUid = slot.uid;
-			endInput.className =
-				'rounded-xl border border-(--shell-border) bg-(--surface-bright) px-3 py-2 text-sm font-semibold';
+			endInput.className = 'schedule-exception-modal__control';
 			endLabel.appendChild(endInput);
 
 			const removeWrap = document.createElement('div');

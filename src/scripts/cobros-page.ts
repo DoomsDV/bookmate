@@ -497,8 +497,10 @@ export const initCobrosPage = () => {
 		root.querySelectorAll<HTMLElement>('[data-sort-dir-label-price]').forEach((el) => {
 			el.classList.toggle('hidden', sortBy !== 'price');
 		});
-		root.querySelectorAll<HTMLButtonElement>('[data-cobros-sort]').forEach((btn) => {
-			const active = sortBy === 'date' && btn.dataset.cobrosSort === sortDir;
+		root.querySelectorAll<HTMLButtonElement>('[data-cobros-sort-field]').forEach((btn) => {
+			const field: CobrosSortBy = btn.dataset.cobrosSortField === 'price' ? 'price' : 'date';
+			const dir = btn.dataset.cobrosSort === 'asc' ? 'asc' : 'desc';
+			const active = sortBy === field && sortDir === dir;
 			btn.classList.toggle('is-active', active);
 			btn.setAttribute('aria-pressed', active ? 'true' : 'false');
 		});
@@ -590,6 +592,33 @@ export const initCobrosPage = () => {
 			item.ui_status === 'refund_sent' ||
 			item.ui_status === 'refund_waived';
 
+		const panel = modal.querySelector<HTMLElement>('[data-cobros-modal-panel]');
+		panel?.classList.toggle('is-refund-mode', isRefund);
+
+		setText(
+			'[data-cobros-amount-label]',
+			isRefund ? 'Monto a reembolsar' : 'Monto de seña'
+		);
+
+		const refundPanel = modal.querySelector<HTMLElement>('[data-cobros-refund-block]');
+		if (refundPanel) {
+			refundPanel.classList.remove(
+				'is-status-sent',
+				'is-status-pending',
+				'is-status-waived'
+			);
+			if (item.ui_status === 'refund_sent') {
+				refundPanel.classList.add('is-status-sent');
+			} else if (
+				item.ui_status === 'refund_pending' ||
+				item.ui_status === 'refund_awaiting_alias'
+			) {
+				refundPanel.classList.add('is-status-pending');
+			} else if (item.ui_status === 'refund_waived') {
+				refundPanel.classList.add('is-status-waived');
+			}
+		}
+
 		setText(
 			'[data-cobros-modal-title]',
 			isRefund ? 'Detalle de reembolso' : 'Validar comprobante'
@@ -624,12 +653,10 @@ export const initCobrosPage = () => {
 		);
 
 		receiptRow?.classList.add('hidden');
-		receiptRow?.classList.remove('flex');
 		noImg?.classList.add('hidden');
 
 		if (receiptUrl) {
 			receiptRow?.classList.remove('hidden');
-			receiptRow?.classList.add('flex');
 			if (receiptIcon) {
 				receiptIcon.textContent = isPdf ? 'picture_as_pdf' : 'image';
 			}
@@ -1006,9 +1033,11 @@ export const initCobrosPage = () => {
 		});
 	});
 
-	root.querySelectorAll<HTMLButtonElement>('[data-cobros-sort]').forEach((btn) => {
+	root.querySelectorAll<HTMLButtonElement>('[data-cobros-sort-field]').forEach((btn) => {
 		btn.addEventListener('click', () => {
-			applySort('date', btn.dataset.cobrosSort === 'asc' ? 'asc' : 'desc');
+			const field: CobrosSortBy = btn.dataset.cobrosSortField === 'price' ? 'price' : 'date';
+			const dir = btn.dataset.cobrosSort === 'asc' ? 'asc' : 'desc';
+			applySort(field, dir);
 		});
 	});
 
