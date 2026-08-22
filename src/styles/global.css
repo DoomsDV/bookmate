@@ -380,7 +380,6 @@ html[data-theme='dark'] body {
 :where(
 	.calendar-help-sheet__backdrop,
 	.plan-modal-backdrop,
-	.schedule-exception-modal-backdrop.flex,
 	.ai-chat-backdrop
 ) {
 	background-color: var(--modal-backdrop-scrim) !important;
@@ -681,12 +680,21 @@ html.panel-modal-open .app-shell > :last-child:not(:has(.ppe-main)) {
 		scrollbar-gutter: stable;
 	}
 
-	.app-shell > :last-child:has(.schedule-page-main) {
+	.app-shell > :last-child:has(.schedule-page-main),
+	.app-shell > :last-child:has(.ppe-main) {
 		display: block;
 		overflow-x: hidden;
 		overflow-y: auto;
 		-webkit-overflow-scrolling: touch;
 		overscroll-behavior: contain;
+		scrollbar-gutter: auto;
+	}
+
+	.app-shell > :last-child:has(.ppe-main) > main.ppe-main {
+		overflow: visible;
+		height: auto;
+		max-height: none;
+		min-height: 0;
 		scrollbar-gutter: auto;
 	}
 
@@ -3525,6 +3533,7 @@ html[data-theme='dark'] .dtp-action-btn--primary:hover {
 	flex-direction: column;
 }
 
+/* Filtro de profesional en Horarios: estilos anticipados; markup pendiente. */
 dialog:is(
 	.panel-status-filter-sheet,
 	.customers-pro-filter-sheet,
@@ -3837,7 +3846,13 @@ html[data-theme='dark'] dialog[data-ai-summary-modal] .dashboard-ai-drawer__pane
 	}
 
 	body:has(.app-shell) :is(.app-shell, dialog) .ts-control,
-	body:has(.app-shell) :is(.app-shell, dialog) .ts-control > input {
+	body:has(.app-shell) :is(.app-shell, dialog) .ts-control > input,
+	body:has(.app-shell) :is(.app-shell, dialog) .bookmate-searchable-select.ts-wrapper.single .ts-control,
+	body:has(.app-shell) :is(.app-shell, dialog) .bookmate-searchable-select.ts-wrapper.single .ts-control > input,
+	body:has(.app-shell) :is(.app-shell, dialog) .bookmate-searchable-select.ts-wrapper.single .item,
+	body:has(.app-shell) :is(.app-shell, dialog) .ts-wrapper:not(.multi) .ts-control,
+	body:has(.app-shell) :is(.app-shell, dialog) .ts-wrapper:not(.multi) .ts-control > input,
+	body:has(.app-shell) :is(.app-shell, dialog) .ts-wrapper:not(.multi) .item {
 		font-size: 16px;
 	}
 }

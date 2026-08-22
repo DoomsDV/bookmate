@@ -2082,7 +2082,7 @@ class CustomerManager extends HTMLElement {
 					: 'Elegí un tratamiento y después marcá las piezas en el modelo 3D.';
 		}
 		this.renderOdontogramCatalog();
-		if (!dialog.open) dialog.showModal();
+		if (!dialog.open) openPanelModal(dialog);
 	}
 
 	private closeOdontogramCatalogDialog() {

@@ -1,4 +1,5 @@
 import { showFlashMessage } from '../lib/flash';
+import { openPanelModal } from '../lib/panel-scroll-lock';
 import { showScheduleExceptionModalTour } from '../lib/schedule-exception-modal-tour';
 import {
 	maybeShowScheduleExceptionsTour,
@@ -154,7 +155,7 @@ class ScheduleManager extends HTMLElement {
 	private exceptionCalGridNode: HTMLElement | null = null;
 	private exceptionCalPrevButton: HTMLButtonElement | null = null;
 	private exceptionCalNextButton: HTMLButtonElement | null = null;
-	private exceptionModalNode: HTMLElement | null = null;
+	private exceptionModalNode: HTMLDialogElement | null = null;
 	private exceptionModalTitleNode: HTMLElement | null = null;
 	private exceptionModalSubtitleNode: HTMLElement | null = null;
 	private exceptionModalBodyNode: HTMLElement | null = null;
@@ -199,7 +200,7 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionCalGridNode = this.querySelector<HTMLElement>('[data-exception-cal-grid]');
 		this.exceptionCalPrevButton = this.querySelector<HTMLButtonElement>('[data-exception-cal-prev]');
 		this.exceptionCalNextButton = this.querySelector<HTMLButtonElement>('[data-exception-cal-next]');
-		this.exceptionModalNode = this.querySelector<HTMLElement>('[data-exception-modal]');
+		this.exceptionModalNode = this.querySelector<HTMLDialogElement>('[data-exception-modal]');
 		this.exceptionModalTitleNode = this.querySelector<HTMLElement>('[data-exception-modal-title]');
 		this.exceptionModalSubtitleNode = this.querySelector<HTMLElement>('[data-exception-modal-subtitle]');
 		this.exceptionModalBodyNode = this.querySelector<HTMLElement>('[data-exception-modal-body]');
@@ -256,6 +257,7 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionCalNextButton?.addEventListener('click', this.handleExceptionMonthNext, { signal });
 		this.exceptionCalGridNode?.addEventListener('click', this.handleExceptionCalendarClick, { signal });
 		this.exceptionModalCloseButton?.addEventListener('click', this.closeExceptionModal, { signal });
+		this.exceptionModalNode?.addEventListener('close', this.handleExceptionModalClosed, { signal });
 		this.exceptionModalNode?.addEventListener('click', this.handleExceptionModalClickRoot, { signal });
 		this.exceptionModalBodyNode?.addEventListener('change', this.handleExceptionModalChange, { signal });
 		this.exceptionModalBodyNode?.addEventListener('click', this.handleExceptionModalClick, { signal });
@@ -1295,9 +1297,7 @@ class ScheduleManager extends HTMLElement {
 	}
 
 	private hasUnsavedPageChanges(): boolean {
-		const exceptionOpen = Boolean(
-			this.exceptionModalNode && !this.exceptionModalNode.classList.contains('hidden')
-		);
+		const exceptionOpen = Boolean(this.exceptionModalNode?.open);
 		return this.isDirty || (exceptionOpen && this.exceptionModalDirty);
 	}
 
@@ -1797,8 +1797,9 @@ class ScheduleManager extends HTMLElement {
 		this.renderExceptionModalLoading();
 		this.renderExceptionModalLoadingActions();
 		this.updateExceptionModalTourHelpVisibility();
-		this.exceptionModalNode.classList.remove('hidden');
-		this.exceptionModalNode.classList.add('flex');
+		if (!this.exceptionModalNode.open) {
+			openPanelModal(this.exceptionModalNode);
+		}
 	}
 
 	private renderExceptionModalLoading(): void {
@@ -1940,15 +1941,17 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionModalTourHelpButton.classList.toggle('inline-flex', showHelp);
 	}
 
-	private closeExceptionModal = (): void => {
-		if (!this.exceptionModalNode) return;
+	private handleExceptionModalClosed = (): void => {
 		this.exceptionModalLoadSeq += 1;
 		this.exceptionModalLoading = false;
 		this.clearExceptionModalError();
-		this.exceptionModalNode.classList.add('hidden');
-		this.exceptionModalNode.classList.remove('flex');
 		this.exceptionModalDateKey = '';
 		this.updateExceptionModalTourHelpVisibility();
+	};
+
+	private closeExceptionModal = (): void => {
+		if (!this.exceptionModalNode?.open) return;
+		this.exceptionModalNode.close();
 	};
 
 	private renderExceptionModalBody(): void {

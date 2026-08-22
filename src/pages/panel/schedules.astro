@@ -368,16 +368,11 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 												</div>
 											</div>
 
-										<div
-											class="schedule-exception-modal-backdrop fixed inset-0 z-[100] hidden items-end justify-center p-0 sm:items-center sm:p-4 lg:items-stretch lg:justify-end lg:p-0"
+										<dialog
+											class="schedule-exception-modal m-0 mt-auto mb-0 w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) border-b-0 bg-(--surface-bright) p-0 text-(--on-surface) shadow-[0_-12px_40px_rgba(0,0,0,0.18)] max-h-[80dvh] open:flex open:flex-col sm:m-auto sm:max-h-[90vh] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-[1.8rem] sm:border-b sm:shadow-xl md:max-w-[min(52rem,calc(100vw-2rem))] lg:m-0 lg:ml-auto lg:mr-0 lg:mt-0 lg:mb-0 lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
 											data-exception-modal
-											role="dialog"
-											aria-modal="true"
 											aria-labelledby="exception-modal-title"
 										>
-											<div
-												class="schedule-exception-modal flex w-full max-w-none flex-col overflow-hidden rounded-t-[1.8rem] rounded-b-none border border-(--shell-border) border-b-0 bg-(--surface-bright) text-(--on-surface) shadow-[0_-12px_40px_rgba(0,0,0,0.18)] max-h-[80dvh] sm:max-h-[90vh] sm:max-w-[min(48rem,calc(100vw-2rem))] sm:rounded-[1.8rem] sm:border-b sm:shadow-xl md:max-w-[min(52rem,calc(100vw-2rem))] lg:h-[100dvh] lg:max-h-[100dvh] lg:w-[max(50vw,40rem)] lg:max-w-[max(50vw,40rem)] lg:rounded-none lg:border-y-0 lg:border-r-0 lg:shadow-none"
-											>
 												<div class="panel-modal-header panel-modal-header--shadow">
 													<div class="panel-modal-header__row">
 														<div class="panel-modal-header__leading">
@@ -457,8 +452,7 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 													class="schedule-exception-modal-footer modal-footer shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5"
 													data-exception-modal-actions
 												></div>
-											</div>
-										</div>
+										</dialog>
 									</div>
 								)
 							}
@@ -2087,17 +2081,34 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		}
 	}
 
-	.schedule-exception-modal-backdrop.flex {
-		display: flex;
+	dialog.schedule-exception-modal[data-exception-modal] {
+		position: fixed;
+		inset: auto 0 0;
+		z-index: 100;
+		margin: 0;
+		max-width: none;
 	}
 
-	.schedule-exception-modal-backdrop.flex .schedule-exception-modal {
+	dialog.schedule-exception-modal[data-exception-modal]::backdrop {
+		background-color: var(--modal-backdrop-scrim);
+		backdrop-filter: blur(var(--modal-backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
+	}
+
+	dialog.schedule-exception-modal[data-exception-modal][open] {
 		animation: schedule-exception-modal-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
 	}
 
-	/* Mobile: bottom nav no debe tapar el CTA del sheet (no es <dialog> top-layer). */
+	@media (min-width: 640px) {
+		dialog.schedule-exception-modal[data-exception-modal] {
+			inset: 0;
+			margin: auto;
+		}
+	}
+
+	/* Mobile: bottom nav no debe tapar el CTA del sheet. */
 	@media (max-width: 1023px) {
-		body:has([data-exception-modal].flex) .mobile-bottom-nav {
+		body:has(dialog[data-exception-modal][open]) .mobile-bottom-nav {
 			visibility: hidden;
 			pointer-events: none;
 		}
@@ -2141,11 +2152,13 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 
 	/* Desktop PC: side drawer a la derecha */
 	@media (min-width: 1024px) {
-		.schedule-exception-modal-backdrop.flex {
+		dialog.schedule-exception-modal[data-exception-modal]::backdrop {
 			animation: schedule-exception-backdrop-in var(--modal-open-duration, 220ms) var(--modal-easing, ease);
 		}
 
-		.schedule-exception-modal-backdrop.flex .schedule-exception-modal {
+		dialog.schedule-exception-modal[data-exception-modal][open] {
+			inset: 0 0 0 auto;
+			margin: 0;
 			height: 100dvh;
 			max-height: 100dvh;
 			width: max(50vw, 40rem);
@@ -2630,7 +2643,6 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 			min-height: 2.85rem;
 			height: auto;
 			padding: 0.7rem 0.85rem;
-			font-size: 0.92rem;
 			font-weight: 600;
 			line-height: 1.25;
 		}
