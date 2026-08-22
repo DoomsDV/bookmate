@@ -3,11 +3,22 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-export type Odontogram3dFindingCode = 'CARIES' | 'RESTORATION' | 'EXTRACTION' | 'CROWN';
+import type { OdontogramVisualKind } from '../lib/odontogram-catalog';
+
+export type Odontogram3dFaces = {
+	occlusal?: boolean | number;
+	vestibular?: boolean | number;
+	palatal?: boolean | number;
+	mesial?: boolean | number;
+	distal?: boolean | number;
+};
 
 export type Odontogram3dTooth = {
 	tooth_fdi: number;
-	finding_code: Odontogram3dFindingCode | string;
+	finding_code: string;
+	faces?: Odontogram3dFaces;
+	visual_kind?: OdontogramVisualKind;
+	color?: string | null;
 };
 
 export type Odontogram3dSelectPoint = {
@@ -51,18 +62,11 @@ const DEFAULT_GLB_URL =
 const PROXY_GLB_URL = '/api/public/odontogram-model?v=boca';
 const LEGACY_PROXY_GLB_URL = '/models/odontogram/dientes.glb?v=boca';
 
-const FINDING_COLORS: Record<Odontogram3dFindingCode, number> = {
-	CARIES: 0xe040fb,
-	RESTORATION: 0x00bcd4,
-	EXTRACTION: 0x9e9e9e,
-	CROWN: 0xffca28,
-};
-
 const DEFAULT_TOOTH_COLOR = 0xf4efe6;
 const HOVER_WIRE_COLOR = 0x60a5fa;
 const DRAG_THRESHOLD_PX = 5;
 const GHOST_OPACITY = 0.32;
-const EXTRACTION_OPACITY = 0.28;
+const GHOST_FINDING_OPACITY = 0.28;
 const CAMERA_TWEEN_MS = 450;
 const FALLBACK_SHADER_PRECISION = { rangeMin: 127, rangeMax: 127, precision: 23 };
 
@@ -103,6 +107,13 @@ const NODE_NAME_TO_FDI: Record<string, number> = Object.fromEntries(
 	PERMANENT_FDI.map((fdi) => [`diente_${fdi}`, fdi])
 );
 
+type ToothVisualState = {
+	finding_code: string;
+	visual_kind: OdontogramVisualKind;
+	color: number;
+	faces: Odontogram3dFaces;
+};
+
 type ToothEntry = {
 	fdi: number;
 	mesh: THREE.Mesh;
@@ -111,6 +122,7 @@ type ToothEntry = {
 	baseRoughness: number;
 	baseMetalness: number;
 	outline: THREE.Mesh | null;
+	faceMarkers: THREE.Group | null;
 };
 
 const isMesh = (object: THREE.Object3D): object is THREE.Mesh =>
@@ -369,43 +381,185 @@ const fitShadowCamera = (light: THREE.DirectionalLight, object: THREE.Object3D) 
 	light.shadow.normalBias = 0.02;
 };
 
-const normalizeFinding = (code: string): Odontogram3dFindingCode | null => {
-	const normalized = String(code || '').trim().toUpperCase();
-	if (normalized === 'CARIES') return 'CARIES';
-	if (normalized === 'RESTORATION') return 'RESTORATION';
-	if (normalized === 'EXTRACTION') return 'EXTRACTION';
-	if (normalized === 'CROWN') return 'CROWN';
-	return null;
+const parseHexColor = (hex: string | null | undefined, fallback = DEFAULT_TOOTH_COLOR) => {
+	if (!hex) return fallback;
+	const normalized = String(hex).trim().replace('#', '');
+	if (!/^[0-9a-fA-F]{6}$/.test(normalized)) return fallback;
+	return Number.parseInt(normalized, 16);
 };
+
+const normalizeVisualKind = (value: unknown): OdontogramVisualKind => {
+	const normalized = String(value || '').trim().toUpperCase();
+	if (
+		normalized === 'FACES' ||
+		normalized === 'GHOST' ||
+		normalized === 'HIDE' ||
+		normalized === 'CROWN'
+	) {
+		return normalized;
+	}
+	return 'TINT';
+};
+
+type FaceKey = keyof Odontogram3dFaces;
 
 const isUpperToothFdi = (fdi: number) => fdi >= 11 && fdi <= 28;
 
+const isFaceMarked = (faces: Odontogram3dFaces | undefined, key: FaceKey) => {
+	const value = faces?.[key];
+	return value === true || value === 1 || value === '1';
+};
+
 const applyFinding = (
 	entry: ToothEntry,
-	finding: Odontogram3dFindingCode | null,
+	state: ToothVisualState | null,
 	options: { ghost?: boolean; visible?: boolean } = {}
 ) => {
+	const visualKind = state?.visual_kind ?? null;
+	const tintColor = state?.color ?? DEFAULT_TOOTH_COLOR;
+	const faces = state?.faces;
 	const { material, baseColor } = entry;
-	const isExtraction = finding === 'EXTRACTION';
 	const ghost = Boolean(options.ghost);
-	const visible = options.visible !== false;
-	const opacity = isExtraction
-		? Math.min(EXTRACTION_OPACITY, ghost ? GHOST_OPACITY : 1)
-		: ghost
-			? GHOST_OPACITY
-			: 1;
-	const transparent = isExtraction || ghost;
+	const archVisible = options.visible !== false;
+	const isHide = visualKind === 'HIDE';
+	const isGhost = visualKind === 'GHOST';
+	const isCrown = visualKind === 'CROWN';
+	const usesFaces = visualKind === 'FACES';
+	const meshVisible = archVisible && !isHide;
+	const opacity = isHide
+		? 0
+		: isGhost
+			? Math.min(GHOST_FINDING_OPACITY, ghost ? GHOST_OPACITY : 1)
+			: ghost
+				? GHOST_OPACITY
+				: 1;
+	const transparent = isHide || isGhost || ghost;
 	material.emissive.setHex(0x000000);
 	material.emissiveIntensity = 0;
 	material.envMapIntensity = 1;
 	material.transparent = transparent;
 	material.opacity = opacity;
 	material.depthWrite = !transparent;
-	material.color.copy(!finding ? baseColor : new THREE.Color(FINDING_COLORS[finding]));
-	material.metalness = finding === 'CROWN' ? 0.45 : entry.baseMetalness;
-	material.roughness = finding === 'CROWN' ? Math.min(entry.baseRoughness, 0.28) : entry.baseRoughness;
+	material.color.copy(!visualKind ? baseColor : new THREE.Color(tintColor));
+	material.metalness = isCrown ? 0.45 : entry.baseMetalness;
+	material.roughness = isCrown ? Math.min(entry.baseRoughness, 0.28) : entry.baseRoughness;
 	material.needsUpdate = true;
-	entry.mesh.visible = visible;
+	entry.mesh.visible = meshVisible;
+
+	if (usesFaces && faces) {
+		const markedFaces = (['occlusal', 'vestibular', 'palatal', 'mesial', 'distal'] as FaceKey[]).some(
+			(key) => isFaceMarked(faces, key)
+		);
+		if (markedFaces) {
+			applyFaceMarkers(entry, faces, tintColor);
+			material.color.copy(baseColor);
+			return;
+		}
+	}
+	clearFaceMarkers(entry);
+};
+
+const clearFaceMarkers = (entry: ToothEntry) => {
+	if (!entry.faceMarkers) return;
+	entry.mesh.remove(entry.faceMarkers);
+	entry.faceMarkers.traverse((object) => {
+		if (!isMesh(object)) return;
+		object.geometry.dispose();
+		const material = object.material;
+		if (Array.isArray(material)) material.forEach((item) => item.dispose());
+		else material.dispose();
+	});
+	entry.faceMarkers = null;
+};
+
+const createFaceMarker = (width: number, height: number, color: number) => {
+	const geometry = new THREE.PlaneGeometry(width, height);
+	const material = new THREE.MeshBasicMaterial({
+		color,
+		transparent: true,
+		opacity: 0.82,
+		depthTest: true,
+		depthWrite: false,
+		side: THREE.DoubleSide,
+	});
+	const mesh = new THREE.Mesh(geometry, material);
+	mesh.renderOrder = 2;
+	return mesh;
+};
+
+const applyFaceMarkers = (
+	entry: ToothEntry,
+	faces: Odontogram3dFaces | undefined,
+	color: number
+) => {
+	clearFaceMarkers(entry);
+	if (!faces) return;
+
+	const geometry = entry.mesh.geometry;
+	if (!geometry.boundingBox) geometry.computeBoundingBox();
+	const box = geometry.boundingBox;
+	if (!box) return;
+
+	const size = box.getSize(new THREE.Vector3());
+	const center = box.getCenter(new THREE.Vector3());
+	const group = new THREE.Group();
+	const patchW = Math.max(size.x, size.z) * 0.34;
+	const patchH = Math.max(size.y, size.z) * 0.28;
+	const offset = 0.012;
+	const quad = Math.trunc(entry.fdi / 10);
+	const mesialSign = quad === 1 || quad === 4 ? -1 : 1;
+	const distalSign = -mesialSign;
+
+	const addMarker = (mesh: THREE.Mesh, position: THREE.Vector3, rotation: THREE.Euler) => {
+		mesh.position.copy(position);
+		mesh.rotation.copy(rotation);
+		group.add(mesh);
+	};
+
+	if (isFaceMarked(faces, 'occlusal')) {
+		const marker = createFaceMarker(patchW, patchH, color);
+		addMarker(
+			marker,
+			new THREE.Vector3(center.x, box.max.y - offset, center.z),
+			new THREE.Euler(-Math.PI / 2, 0, 0)
+		);
+	}
+	if (isFaceMarked(faces, 'vestibular')) {
+		const marker = createFaceMarker(patchW, patchH, color);
+		addMarker(
+			marker,
+			new THREE.Vector3(center.x, center.y, box.max.z - offset),
+			new THREE.Euler(0, 0, 0)
+		);
+	}
+	if (isFaceMarked(faces, 'palatal')) {
+		const marker = createFaceMarker(patchW, patchH, color);
+		addMarker(
+			marker,
+			new THREE.Vector3(center.x, center.y, box.min.z + offset),
+			new THREE.Euler(0, Math.PI, 0)
+		);
+	}
+	if (isFaceMarked(faces, 'mesial')) {
+		const marker = createFaceMarker(patchH, patchW, color);
+		addMarker(
+			marker,
+			new THREE.Vector3(center.x + mesialSign * (size.x * 0.5 - offset), center.y, center.z),
+			new THREE.Euler(0, mesialSign > 0 ? Math.PI / 2 : -Math.PI / 2, 0)
+		);
+	}
+	if (isFaceMarked(faces, 'distal')) {
+		const marker = createFaceMarker(patchH, patchW, color);
+		addMarker(
+			marker,
+			new THREE.Vector3(center.x + distalSign * (size.x * 0.5 - offset), center.y, center.z),
+			new THREE.Euler(0, distalSign > 0 ? Math.PI / 2 : -Math.PI / 2, 0)
+		);
+	}
+
+	if (group.children.length === 0) return;
+	entry.mesh.add(group);
+	entry.faceMarkers = group;
 };
 
 const easeInOutCubic = (t: number) =>
@@ -600,7 +754,7 @@ export async function mountOdontogram3d(
 	const pointer = new THREE.Vector2();
 	const raycaster = new THREE.Raycaster();
 	const teeth = new Map<number, ToothEntry>();
-	const findings = new Map<number, Odontogram3dFindingCode>();
+	const findings = new Map<number, ToothVisualState>();
 	const upperGumMeshes: THREE.Object3D[] = [];
 	const lowerGumMeshes: THREE.Object3D[] = [];
 	const tongueMeshes: THREE.Object3D[] = [];
@@ -959,6 +1113,7 @@ export async function mountOdontogram3d(
 			baseRoughness: material.roughness,
 			baseMetalness: material.metalness,
 			outline: null,
+			faceMarkers: null,
 		});
 	});
 
@@ -1017,8 +1172,14 @@ export async function mountOdontogram3d(
 		findings.clear();
 		for (const tooth of nextTeeth) {
 			const fdi = Number(tooth.tooth_fdi || 0);
-			const finding = normalizeFinding(String(tooth.finding_code || ''));
-			if (fdi > 0 && finding) findings.set(fdi, finding);
+			const findingCode = String(tooth.finding_code || '').trim().toUpperCase();
+			if (fdi <= 0 || !findingCode) continue;
+			findings.set(fdi, {
+				finding_code: findingCode,
+				visual_kind: normalizeVisualKind(tooth.visual_kind),
+				color: parseHexColor(tooth.color),
+				faces: tooth.faces ?? {},
+			});
 		}
 		refreshAllTeeth();
 	};

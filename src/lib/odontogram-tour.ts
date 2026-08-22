@@ -42,7 +42,7 @@ function buildOdontogramTourSteps(): DriveStep[] {
 				description:
 					'Restablecé la vista frontal, bloqueá la rotación, activá la vista fantasma o enfocá solo el maxilar superior o inferior.',
 				side: 'left',
-				align: 'start',
+				align: 'center',
 			},
 		});
 	}
@@ -53,7 +53,21 @@ function buildOdontogramTourSteps(): DriveStep[] {
 			popover: {
 				title: 'Comandos rápidos',
 				description:
-					'Elegí Caries, Restauración, Extracción o Corona y después tocá la pieza. También podés tocar primero el diente y completar el hallazgo en el recuadro.',
+					'Elegí Caries, Restauración, Extracción o Corona y después tocá la pieza. También podés abrir el catálogo completo, o tocar primero un diente y usar «Añadir registro».',
+				side: 'top',
+				align: 'start',
+			},
+		});
+	}
+
+	const catalogButton = document.querySelector('[data-odontogram-open-catalog]');
+	if (catalogButton) {
+		steps.push({
+			element: '[data-odontogram-open-catalog]',
+			popover: {
+				title: 'Catálogo de tratamientos',
+				description:
+					'Abrí el catálogo para ver todos los tratamientos agrupados por diagnóstico, preexistencia o plan. Elegí uno y marcá las piezas en el modelo 3D.',
 				side: 'top',
 				align: 'start',
 			},

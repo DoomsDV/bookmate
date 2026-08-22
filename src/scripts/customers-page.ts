@@ -12,6 +12,19 @@ import { parseParaguayMobilePhone } from '../lib/paraguay-phone';
 import { destroyActiveBookmateTour } from '../lib/product-tour';
 import { openPanelModal } from '../lib/panel-scroll-lock';
 import { showOdontogramTour } from '../lib/odontogram-tour';
+import {
+	clinicalPhaseSwatchClass,
+	defaultClinicalPhaseForFinding,
+	findingNeedsFaces,
+	findingSwatchStyle,
+	formatClinicalPhaseLabel,
+	formatFindingLabel,
+	formatOdontogramFacesLabels,
+	getCatalogEntry,
+	isUpperToothFdi,
+	ODONTOGRAM_CATALOG_CATEGORIES,
+	type OdontogramCatalogEntry,
+} from '../lib/odontogram-catalog';
 import type { Odontogram3dHandle } from './odontogram-3d';
 type ProfessionalLov = { id_professional: number; display_name: string };
 type Customer = {
@@ -25,7 +38,7 @@ type Customer = {
 
 const CUSTOMER_AVATAR_TONES = 6;
 
-type OdontogramFindingCode = 'CARIES' | 'RESTORATION' | 'EXTRACTION' | 'CROWN';
+type OdontogramClinicalPhase = 'FINDING' | 'PREEXISTING' | 'PLAN';
 type OdontogramFaces = {
 	occlusal: 0 | 1;
 	vestibular: 0 | 1;
@@ -35,7 +48,8 @@ type OdontogramFaces = {
 };
 type OdontogramTooth = {
 	tooth_fdi: number;
-	finding_code: OdontogramFindingCode | string;
+	finding_code: string;
+	clinical_phase?: OdontogramClinicalPhase | string;
 	notes: string;
 	faces: OdontogramFaces;
 	updated_at: string;
@@ -43,7 +57,8 @@ type OdontogramTooth = {
 type OdontogramEvent = {
 	id_event: number;
 	tooth_fdi: number;
-	finding_code: OdontogramFindingCode | string;
+	finding_code: string;
+	clinical_phase?: OdontogramClinicalPhase | string;
 	notes: string;
 	created_at: string;
 	faces: OdontogramFaces;
@@ -52,6 +67,7 @@ type OdontogramData = {
 	entitled: boolean | 0 | 1;
 	teeth: OdontogramTooth[];
 	events: OdontogramEvent[];
+	catalog?: OdontogramCatalogEntry[];
 };
 type CustomerMeta = {
 	current_page: number;
@@ -171,7 +187,15 @@ class CustomerManager extends HTMLElement {
 	private odontogramPopoverError: HTMLElement | null = null;
 	private odontogramPalatalLabel: HTMLElement | null = null;
 	private odontogramFacesSection: HTMLElement | null = null;
-	private odontogramActiveTool: OdontogramFindingCode | null = null;
+	private odontogramOcclusalLabel: HTMLElement | null = null;
+	private odontogramSummaryAdd: HTMLButtonElement | null = null;
+	private odontogramCatalogDialog: HTMLDialogElement | null = null;
+	private odontogramCatalogRoot: HTMLElement | null = null;
+	private odontogramCatalogCopy: HTMLElement | null = null;
+	private odontogramCatalogEntries: OdontogramCatalogEntry[] = [...ODONTOGRAM_CATALOG_CATEGORIES.flatMap((c) => c.entries)];
+	private odontogramCatalogContext: 'sidebar' | 'tooth' = 'sidebar';
+	private odontogramActiveTool: string | null = null;
+	private odontogramActiveClinicalPhase: OdontogramClinicalPhase | null = null;
 	private odontogramPopoverTooth = 0;
 	private odontogramApiEntitled: boolean | null = null;
 	private odontogramTeeth = new Map<number, OdontogramTooth>();
@@ -357,6 +381,22 @@ class CustomerManager extends HTMLElement {
 		this.odontogramFacesSection = this.querySelector<HTMLElement>(
 			'[data-customer-odontogram-faces-section]'
 		);
+		this.odontogramOcclusalLabel = this.querySelector<HTMLElement>(
+			'[data-customer-odontogram-occlusal-label]'
+		);
+		this.odontogramSummaryAdd = this.querySelector<HTMLButtonElement>(
+			'[data-customer-odontogram-summary-add]'
+		);
+		this.odontogramCatalogDialog = this.querySelector<HTMLDialogElement>(
+			'[data-customer-odontogram-catalog-dialog]'
+		);
+		this.odontogramCatalogRoot = this.querySelector<HTMLElement>(
+			'[data-customer-odontogram-catalog]'
+		);
+		this.odontogramCatalogCopy = this.querySelector<HTMLElement>(
+			'[data-customer-odontogram-catalog-copy]'
+		);
+		this.renderOdontogramCatalog();
 
 		if (!this.gridNode) return;
 
@@ -412,10 +452,28 @@ class CustomerManager extends HTMLElement {
 		this.odontogramEventsList?.addEventListener('click', this.handleOdontogramEventsClick, {
 			signal,
 		});
+		this.odontogramSummaryList?.addEventListener('click', this.handleOdontogramEventsClick, {
+			signal,
+		});
 		this.odontogramPopoverForm?.addEventListener('submit', this.handleOdontogramPopoverSubmit, {
 			signal,
 		});
 		this.odontogramPopover?.addEventListener('click', this.handleOdontogramPopoverClick, { signal });
+		this.odontogramSummaryAdd?.addEventListener('click', this.handleOdontogramSummaryAddClick, {
+			signal,
+		});
+		this.odontogramCatalogDialog?.addEventListener('click', this.handleOdontogramCatalogDialogClick, {
+			signal,
+		});
+		this.odontogramCatalogDialog?.addEventListener('cancel', this.handleOdontogramCatalogDialogCancel, {
+			signal,
+		});
+		this.odontogramCatalogRoot?.addEventListener('click', this.handleOdontogramCatalogClick, { signal });
+		this.querySelector('[data-odontogram-open-catalog]')?.addEventListener(
+			'click',
+			this.handleOdontogramOpenCatalogClick,
+			{ signal }
+		);
 		this.odontogramPopoverDragHandle?.addEventListener(
 			'pointerdown',
 			this.handleOdontogramPopoverDragStart,
@@ -1213,7 +1271,9 @@ class CustomerManager extends HTMLElement {
 		this.odontogramTeeth.clear();
 		this.odontogramEvents = [];
 		this.odontogramActiveTool = null;
+		this.odontogramActiveClinicalPhase = null;
 		this.odontogramPopoverTooth = 0;
+		this.closeOdontogramCatalogDialog();
 		this.disposeOdontogram3d();
 		this.closeOdontogramPopover();
 		this.setOdontogramLoading(false);
@@ -1330,7 +1390,7 @@ class CustomerManager extends HTMLElement {
 
 	private async ensureOdontogram3dMounted() {
 		if (this.odontogram3d) {
-			this.odontogram3d.setTeeth(this.odontogramTeeth.values());
+			this.odontogram3d.setTeeth(this.enrichTeethFor3d(this.odontogramTeeth.values()));
 			return;
 		}
 		if (!this.odontogramCanvas) return;
@@ -1361,7 +1421,7 @@ class CustomerManager extends HTMLElement {
 
 			this.odontogram3d = handle;
 			this.odontogramCanvas = handle.canvas;
-			handle.setTeeth(this.odontogramTeeth.values());
+			handle.setTeeth(this.enrichTeethFor3d(this.odontogramTeeth.values()));
 			handle.resize();
 		} catch (error) {
 			if (gen !== this.odontogram3dMountGen) return;
@@ -1373,30 +1433,24 @@ class CustomerManager extends HTMLElement {
 	}
 
 	private formatOdontogramFindingLabel(code: string) {
-		const normalized = String(code || '').trim().toUpperCase();
-		if (normalized === 'CARIES') return 'Caries';
-		if (normalized === 'RESTORATION') return 'Restauración';
-		if (normalized === 'EXTRACTION') return 'Extracción';
-		if (normalized === 'CROWN') return 'Corona';
-		return normalized || 'Hallazgo';
+		return formatFindingLabel(code, this.odontogramCatalogEntries);
 	}
 
-	private normalizeOdontogramFinding(code: string | null | undefined): OdontogramFindingCode | null {
-		const normalized = String(code || '').trim().toUpperCase();
-		if (normalized === 'CARIES') return 'CARIES';
-		if (normalized === 'RESTORATION') return 'RESTORATION';
-		if (normalized === 'EXTRACTION') return 'EXTRACTION';
-		if (normalized === 'CROWN') return 'CROWN';
-		return null;
+	private odontogramFindingSwatchStyle(code: string) {
+		return findingSwatchStyle(code, this.odontogramCatalogEntries);
 	}
 
-	private odontogramFindingSwatchClass(code: string) {
-		const finding = this.normalizeOdontogramFinding(code);
-		if (finding === 'CARIES') return 'customer-odontogram-tool__swatch--caries';
-		if (finding === 'RESTORATION') return 'customer-odontogram-tool__swatch--restoration';
-		if (finding === 'EXTRACTION') return 'customer-odontogram-tool__swatch--extraction';
-		if (finding === 'CROWN') return 'customer-odontogram-tool__swatch--crown';
-		return '';
+	private enrichTeethFor3d(teeth: Iterable<OdontogramTooth>) {
+		return [...teeth].map((tooth) => {
+			const entry = getCatalogEntry(tooth.finding_code, this.odontogramCatalogEntries);
+			return {
+				tooth_fdi: tooth.tooth_fdi,
+				finding_code: tooth.finding_code,
+				faces: tooth.faces,
+				visual_kind: entry?.visual_kind,
+				color: entry?.color ?? null,
+			};
+		});
 	}
 
 	private parseApiDate(value: string) {
@@ -1434,19 +1488,15 @@ class CustomerManager extends HTMLElement {
 		return value === 1 || value === true || value === '1';
 	}
 
-	private formatOdontogramFaces(faces: Partial<OdontogramFaces> | null | undefined) {
-		if (!faces) return '';
-		const labels: string[] = [];
-		if (this.isOdontogramFaceMarked(faces.occlusal)) labels.push('Oclusal');
-		if (this.isOdontogramFaceMarked(faces.vestibular)) labels.push('Vestibular');
-		if (this.isOdontogramFaceMarked(faces.palatal)) labels.push('Palatina/Lingual');
-		if (this.isOdontogramFaceMarked(faces.mesial)) labels.push('Mesial');
-		if (this.isOdontogramFaceMarked(faces.distal)) labels.push('Distal');
-		return labels.join(', ');
+	private formatOdontogramFaces(
+		toothFdi: number,
+		faces: Partial<OdontogramFaces> | null | undefined
+	) {
+		return formatOdontogramFacesLabels(toothFdi, faces);
 	}
 
-	private isUpperTooth(toothFdi: number) {
-		return toothFdi >= 11 && toothFdi <= 28;
+	private odontogramFindingNeedsFaces(code: string | null) {
+		return findingNeedsFaces(code, this.odontogramCatalogEntries);
 	}
 
 	private createOdontogramEventItem(
@@ -1455,7 +1505,7 @@ class CustomerManager extends HTMLElement {
 	) {
 		const includeTooth = options.includeTooth !== false;
 		const includeVoid = options.includeVoid !== false;
-		const finding = this.normalizeOdontogramFinding(event.finding_code);
+		const findingCode = String(event.finding_code || '').trim();
 
 		const item = document.createElement('li');
 		item.className = 'customer-odontogram-event';
@@ -1464,7 +1514,10 @@ class CustomerManager extends HTMLElement {
 		const rail = document.createElement('span');
 		rail.className = 'customer-odontogram-event__rail';
 		const dot = document.createElement('span');
-		dot.className = `customer-odontogram-tool__swatch ${this.odontogramFindingSwatchClass(event.finding_code)}`;
+		dot.className = 'customer-odontogram-tool__swatch';
+		const swatchStyle = this.odontogramFindingSwatchStyle(findingCode);
+		if (swatchStyle) Object.assign(dot.style, swatchStyle);
+		else dot.className += ` ${clinicalPhaseSwatchClass(event.clinical_phase)}`;
 		dot.setAttribute('aria-hidden', 'true');
 		rail.appendChild(dot);
 
@@ -1477,7 +1530,10 @@ class CustomerManager extends HTMLElement {
 		const title = document.createElement('p');
 		title.className = 'customer-odontogram-event__title';
 		const findingLabel = this.formatOdontogramFindingLabel(event.finding_code);
-		title.textContent = includeTooth ? `${findingLabel} • Pieza ${event.tooth_fdi}` : findingLabel;
+		const phaseLabel = formatClinicalPhaseLabel(event.clinical_phase);
+		title.textContent = includeTooth
+			? `${findingLabel} • Pieza ${event.tooth_fdi}`
+			: `${findingLabel} (${phaseLabel})`;
 
 		if (includeVoid) {
 			const voidButton = document.createElement('button');
@@ -1500,8 +1556,8 @@ class CustomerManager extends HTMLElement {
 		time.textContent = this.formatOdontogramEventDate(event.created_at);
 		body.append(head, time);
 
-		const faces = this.odontogramFindingNeedsFaces(finding)
-			? this.formatOdontogramFaces(event.faces)
+		const faces = this.odontogramFindingNeedsFaces(findingCode)
+			? this.formatOdontogramFaces(event.tooth_fdi, event.faces)
 			: '';
 		if (faces) {
 			const facesEl = document.createElement('p');
@@ -1547,12 +1603,14 @@ class CustomerManager extends HTMLElement {
 		const hasEvents = events.length > 0;
 		this.odontogramSummaryList.classList.toggle('hidden', !hasEvents);
 		this.odontogramSummaryEmpty?.classList.toggle('hidden', hasEvents);
+		this.odontogramSummaryAdd?.classList.remove('hidden');
+
 		if (!hasEvents) return;
 
 		const fragment = document.createDocumentFragment();
 		for (const event of events) {
 			fragment.appendChild(
-				this.createOdontogramEventItem(event, { includeTooth: false, includeVoid: false })
+				this.createOdontogramEventItem(event, { includeTooth: false, includeVoid: true })
 			);
 		}
 		this.odontogramSummaryList.appendChild(fragment);
@@ -1562,7 +1620,10 @@ class CustomerManager extends HTMLElement {
 		const target = event.target;
 		if (!(target instanceof Element)) return;
 		const button = target.closest<HTMLButtonElement>('[data-odontogram-event-void]');
-		if (!button || !this.odontogramEventsList?.contains(button)) return;
+		if (!button) return;
+		const inEvents = this.odontogramEventsList?.contains(button);
+		const inSummary = this.odontogramSummaryList?.contains(button);
+		if (!inEvents && !inSummary) return;
 		event.preventDefault();
 		const eventId = Number(button.dataset.odontogramEventVoid || 0);
 		if (eventId > 0) void this.voidOdontogramEvent(eventId);
@@ -1622,6 +1683,18 @@ class CustomerManager extends HTMLElement {
 		}
 
 		this.odontogramEvents = Array.isArray(data.events) ? [...data.events] : [];
+		if (Array.isArray(data.catalog) && data.catalog.length > 0) {
+			this.odontogramCatalogEntries = data.catalog.map((item) => ({
+				code: item.code,
+				label: item.label,
+				clinical_phase: item.clinical_phase,
+				needs_faces: item.needs_faces,
+				color: item.color ?? '#9e9e9e',
+				visual_kind: item.visual_kind ?? 'TINT',
+				priority_rank: item.priority_rank,
+			}));
+			this.renderOdontogramCatalog();
+		}
 		this.odontogramEvents.sort((a, b) => {
 			const aTime = this.parseApiDate(a.created_at)?.getTime() ?? 0;
 			const bTime = this.parseApiDate(b.created_at)?.getTime() ?? 0;
@@ -1638,7 +1711,7 @@ class CustomerManager extends HTMLElement {
 		if (this.isOdontogramPopoverOpen() && this.odontogramPopoverTooth > 0 && !this.odontogramActiveTool) {
 			this.renderOdontogramSummary(this.odontogramPopoverTooth);
 		}
-		this.odontogram3d?.setTeeth(this.odontogramTeeth.values());
+		this.odontogram3d?.setTeeth(this.enrichTeethFor3d(this.odontogramTeeth.values()));
 		this.maybeMountOdontogram3d();
 	}
 
@@ -1769,10 +1842,9 @@ class CustomerManager extends HTMLElement {
 		const tooth = this.odontogramTeeth.get(toothFdi);
 		if (this.odontogramTipFinding) {
 			if (tooth) {
-				const finding = this.normalizeOdontogramFinding(tooth.finding_code);
 				const label = this.formatOdontogramFindingLabel(String(tooth.finding_code));
-				const faces = this.odontogramFindingNeedsFaces(finding)
-					? this.formatOdontogramFaces(tooth.faces)
+				const faces = this.odontogramFindingNeedsFaces(tooth.finding_code)
+					? this.formatOdontogramFaces(toothFdi, tooth.faces)
 					: '';
 				this.odontogramTipFinding.textContent = faces ? `${label} (${faces})` : label;
 				this.odontogramTipFinding.classList.remove('hidden');
@@ -1871,18 +1943,15 @@ class CustomerManager extends HTMLElement {
 				clinicLogoDataUrl,
 				capturedAt: new Date(),
 				image: capture,
-				events: this.odontogramEvents.map((event) => {
-					const finding = this.normalizeOdontogramFinding(event.finding_code);
-					return {
-						date: this.formatOdontogramEventDate(event.created_at),
-						toothFdi: Number(event.tooth_fdi || 0),
-						finding: this.formatOdontogramFindingLabel(String(event.finding_code)),
-						faces: this.odontogramFindingNeedsFaces(finding)
-							? this.formatOdontogramFaces(event.faces)
-							: '',
-						notes: String(event.notes || '').trim(),
-					};
-				}),
+				events: this.odontogramEvents.map((event) => ({
+					date: this.formatOdontogramEventDate(event.created_at),
+					toothFdi: Number(event.tooth_fdi || 0),
+					finding: this.formatOdontogramFindingLabel(String(event.finding_code)),
+					faces: this.odontogramFindingNeedsFaces(event.finding_code)
+						? this.formatOdontogramFaces(event.tooth_fdi, event.faces)
+						: '',
+					notes: String(event.notes || '').trim(),
+				})),
 			});
 			this.closeOdontogramExportDialog();
 		} catch (error) {
@@ -1901,12 +1970,143 @@ class CustomerManager extends HTMLElement {
 		for (const button of this.odontogramToolbar.querySelectorAll<HTMLButtonElement>(
 			'[data-odontogram-tool]'
 		)) {
-			const tool = button.dataset.odontogramTool as OdontogramFindingCode | undefined;
+			const tool = button.dataset.odontogramTool;
 			const isActive = Boolean(tool && tool === this.odontogramActiveTool);
 			button.classList.toggle('is-active', isActive);
 			button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
 		}
 	}
+
+	private armOdontogramTool(code: string, clinicalPhase?: OdontogramClinicalPhase) {
+		const entry = getCatalogEntry(code, this.odontogramCatalogEntries);
+		this.odontogramActiveTool = code;
+		this.odontogramActiveClinicalPhase =
+			clinicalPhase ?? entry?.clinical_phase ?? defaultClinicalPhaseForFinding(code, this.odontogramCatalogEntries);
+		this.updateOdontogramToolbarUi();
+	}
+
+	private renderOdontogramCatalog() {
+		const root = this.odontogramCatalogRoot;
+		if (!root) return;
+		this.clearNode(root);
+
+		const categories = ODONTOGRAM_CATALOG_CATEGORIES.map((category) => ({
+			...category,
+			entries: this.odontogramCatalogEntries.filter(
+				(entry) => entry.clinical_phase === category.id
+			),
+		})).filter((category) => category.entries.length > 0);
+
+		const fragment = document.createDocumentFragment();
+		for (const category of categories) {
+			const group = document.createElement('section');
+			group.className = 'customer-odontogram-catalog__group';
+
+			const label = document.createElement('p');
+			label.className = 'customer-odontogram-catalog__label';
+			label.textContent = category.label;
+			group.appendChild(label);
+
+			const items = document.createElement('div');
+			items.className = 'customer-odontogram-catalog__items';
+			for (const entry of category.entries) {
+				const button = document.createElement('button');
+				button.type = 'button';
+				button.className = 'customer-odontogram-catalog__item';
+				button.dataset.odontogramCatalogCode = entry.code;
+
+				const swatch = document.createElement('span');
+				swatch.className = 'customer-odontogram-tool__swatch';
+				const swatchStyle = findingSwatchStyle(entry.code, this.odontogramCatalogEntries);
+				if (swatchStyle) Object.assign(swatch.style, swatchStyle);
+				else swatch.className += ` ${clinicalPhaseSwatchClass(entry.clinical_phase)}`;
+				swatch.setAttribute('aria-hidden', 'true');
+
+				const text = document.createElement('span');
+				text.textContent = entry.label;
+
+				button.append(swatch, text);
+				items.appendChild(button);
+			}
+			group.appendChild(items);
+			fragment.appendChild(group);
+		}
+		root.appendChild(fragment);
+	}
+
+	private openOdontogramCatalog(context: 'sidebar' | 'tooth') {
+		const dialog = this.odontogramCatalogDialog;
+		if (!dialog) return;
+		this.odontogramCatalogContext = context;
+		if (this.odontogramCatalogCopy) {
+			this.odontogramCatalogCopy.textContent =
+				context === 'tooth'
+					? 'Elegí el tratamiento para esta pieza y completá el registro.'
+					: 'Elegí un tratamiento y después marcá las piezas en el modelo 3D.';
+		}
+		this.renderOdontogramCatalog();
+		if (!dialog.open) dialog.showModal();
+	}
+
+	private closeOdontogramCatalogDialog() {
+		if (this.odontogramCatalogDialog?.open) this.odontogramCatalogDialog.close();
+	}
+
+	private selectOdontogramCatalogEntry(code: string) {
+		const entry = getCatalogEntry(code, this.odontogramCatalogEntries);
+		if (!entry) return;
+		this.armOdontogramTool(code, entry.clinical_phase);
+		this.closeOdontogramCatalogDialog();
+
+		if (this.odontogramCatalogContext === 'tooth' && this.odontogramPopoverTooth > 0) {
+			this.setOdontogramPopoverMode('editor');
+			this.resetOdontogramPopoverForm(this.odontogramPopoverTooth);
+			if (!this.isOdontogramPopoverOpen()) {
+				this.openOdontogramPopover(this.odontogramPopoverTooth);
+			}
+			return;
+		}
+
+		if (this.isOdontogramPopoverOpen()) {
+			this.closeOdontogramPopover();
+		}
+	}
+
+	private handleOdontogramOpenCatalogClick = (event: Event) => {
+		event.preventDefault();
+		this.openOdontogramCatalog('sidebar');
+	};
+
+	private handleOdontogramSummaryAddClick = (event: Event) => {
+		event.preventDefault();
+		if (this.odontogramPopoverTooth <= 0) return;
+		this.openOdontogramCatalog('tooth');
+	};
+
+	private handleOdontogramCatalogClick = (event: Event) => {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		const button = target.closest<HTMLButtonElement>('[data-odontogram-catalog-code]');
+		if (!button || !this.odontogramCatalogRoot?.contains(button)) return;
+		event.preventDefault();
+		const code = button.dataset.odontogramCatalogCode;
+		if (!code) return;
+		this.selectOdontogramCatalogEntry(code);
+	};
+
+	private handleOdontogramCatalogDialogClick = (event: MouseEvent) => {
+		const target = event.target;
+		if (!(target instanceof Element)) return;
+		if (target.closest('[data-close-odontogram-catalog]') || target === this.odontogramCatalogDialog) {
+			event.preventDefault();
+			this.closeOdontogramCatalogDialog();
+		}
+	};
+
+	private handleOdontogramCatalogDialogCancel = (event: Event) => {
+		event.preventDefault();
+		this.closeOdontogramCatalogDialog();
+	};
 
 	private handleOdontogramToolbarClick = (event: Event) => {
 		const target = event.target;
@@ -1914,10 +2114,14 @@ class CustomerManager extends HTMLElement {
 		const button = target.closest<HTMLButtonElement>('[data-odontogram-tool]');
 		if (!button || !this.odontogramToolbar?.contains(button)) return;
 
-		const tool = button.dataset.odontogramTool as OdontogramFindingCode | undefined;
+		const tool = button.dataset.odontogramTool;
 		if (!tool) return;
 
 		this.odontogramActiveTool = this.odontogramActiveTool === tool ? null : tool;
+		this.odontogramActiveClinicalPhase = this.odontogramActiveTool
+			? getCatalogEntry(this.odontogramActiveTool, this.odontogramCatalogEntries)?.clinical_phase ??
+				defaultClinicalPhaseForFinding(this.odontogramActiveTool, this.odontogramCatalogEntries)
+			: null;
 		this.updateOdontogramToolbarUi();
 		if (this.isOdontogramPopoverOpen() && this.odontogramPopoverTooth > 0) {
 			this.openOdontogramPopover(this.odontogramPopoverTooth);
@@ -1946,17 +2150,14 @@ class CustomerManager extends HTMLElement {
 		this.odontogramPopoverForm.reset();
 
 		if (this.odontogramPalatalLabel) {
-			this.odontogramPalatalLabel.textContent = this.isUpperTooth(toothFdi)
-				? 'Palatina'
-				: 'Lingual';
+			this.odontogramPalatalLabel.textContent = isUpperToothFdi(toothFdi) ? 'Palatina' : 'Lingual';
+		}
+		if (this.odontogramOcclusalLabel) {
+			this.odontogramOcclusalLabel.textContent = toothFdi % 10 <= 3 ? 'Incisal' : 'Oclusal';
 		}
 
 		this.setOdontogramPopoverError('');
 		this.updateOdontogramPopoverFacesUi();
-	}
-
-	private odontogramFindingNeedsFaces(code: OdontogramFindingCode | null) {
-		return code === 'CARIES' || code === 'RESTORATION';
 	}
 
 	private emptyOdontogramFaces(): OdontogramFaces {
@@ -2196,7 +2397,7 @@ class CustomerManager extends HTMLElement {
 		customerId: number,
 		payload: {
 			tooth_fdi: number;
-			finding_code: OdontogramFindingCode;
+			finding_code: string;
 			notes: string;
 			faces: OdontogramFaces;
 		}

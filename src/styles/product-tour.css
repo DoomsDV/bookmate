@@ -241,6 +241,26 @@ body.driver-fade dialog[data-bookmate-tour-shell] .bookmate-driver-popover.drive
 	}
 }
 
+/* Odontograma: visor y cámara viven en contenedores con overflow hidden */
+[data-customer-odontogram-viewport].driver-active-element {
+	position: relative;
+	z-index: auto;
+	overflow: hidden;
+	outline-offset: -0.55rem;
+}
+
+[data-customer-odontogram-cam].driver-active-element {
+	position: absolute !important;
+	z-index: 2;
+	overflow: visible;
+	outline-offset: 4px;
+}
+
+[data-customer-odontogram-toolbar].driver-active-element,
+.customer-odontogram-events.driver-active-element {
+	overflow: visible;
+}
+
 [data-voice-overlay-record].driver-active-element {
 	border-radius: 999px !important;
 	box-shadow: none;

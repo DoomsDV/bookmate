@@ -728,9 +728,18 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 										<span class="customer-odontogram-tool__swatch customer-odontogram-tool__swatch--crown" aria-hidden="true"></span>
 										Corona
 									</button>
+									<button
+										type="button"
+										class="customer-odontogram-tool customer-odontogram-tool--catalog"
+										data-odontogram-open-catalog
+										aria-haspopup="dialog"
+									>
+										<span class="material-symbols-rounded" aria-hidden="true">menu</span>
+										Ver todos los tratamientos
+									</button>
 								</div>
 								<p class="customer-odontogram-viewport__hint">
-									Elegí un comando o hacé click en una pieza.
+									Elegí un comando, abrí el catálogo o hacé click en una pieza.
 								</p>
 
 								<section class="customer-odontogram-events">
@@ -819,7 +828,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 									<div class="customer-odontogram-faces" data-customer-odontogram-faces>
 										<label class="customer-odontogram-face-toggle">
 											<input type="checkbox" name="occlusal" value="1" />
-											<span>Oclusal</span>
+											<span data-customer-odontogram-occlusal-label>Oclusal</span>
 										</label>
 										<label class="customer-odontogram-face-toggle">
 											<input type="checkbox" name="vestibular" value="1" />
@@ -872,6 +881,14 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 								>
 									Sin registros en esta pieza.
 								</p>
+								<button
+									type="button"
+									class="customer-odontogram-summary__add modal-action-primary"
+									data-customer-odontogram-summary-add
+								>
+									<span class="material-symbols-rounded" aria-hidden="true">add</span>
+									Añadir registro
+								</button>
 							</div>
 						</div>
 					</div>
@@ -906,6 +923,35 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 					Cargando perfil...
 				</div>
 			</div>
+			</div>
+		</dialog>
+
+		<dialog
+			class="customer-odontogram-catalog-dialog"
+			data-customer-odontogram-catalog-dialog
+			aria-labelledby="customer-odontogram-catalog-title"
+		>
+			<div class="customer-odontogram-catalog-dialog__panel">
+				<div class="customer-odontogram-catalog-dialog__head">
+					<h3
+						class="customer-odontogram-catalog-dialog__title"
+						id="customer-odontogram-catalog-title"
+					>
+						Tratamientos
+					</h3>
+					<button
+						type="button"
+						class="customer-odontogram-catalog-dialog__close"
+						data-close-odontogram-catalog
+						aria-label="Cerrar catálogo"
+					>
+						<span class="material-symbols-rounded">close</span>
+					</button>
+				</div>
+				<p class="customer-odontogram-catalog-dialog__copy" data-customer-odontogram-catalog-copy>
+					Elegí un tratamiento y después marcá las piezas en el modelo 3D.
+				</p>
+				<div class="customer-odontogram-catalog" data-customer-odontogram-catalog></div>
 			</div>
 		</dialog>
 
@@ -2876,6 +2922,28 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		background: #ffca28;
 	}
 
+	.customer-odontogram-tool__swatch--finding {
+		background: #ef4444;
+	}
+
+	.customer-odontogram-tool__swatch--preexisting {
+		background: #22c55e;
+	}
+
+	.customer-odontogram-tool__swatch--plan {
+		background: #f59e0b;
+	}
+
+	.customer-odontogram-tool--catalog {
+		justify-content: center;
+		border-style: dashed;
+	}
+
+	.customer-odontogram-tool--catalog .material-symbols-rounded {
+		font-size: 1.05rem;
+		line-height: 1;
+	}
+
 	.customer-odontogram-viewport {
 		position: relative;
 		width: 100%;
@@ -3268,6 +3336,139 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 
 	.customer-odontogram-summary__empty.hidden {
 		display: none;
+	}
+
+	.customer-odontogram-summary__add {
+		display: inline-flex;
+		width: 100%;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		margin-top: 0.65rem;
+		min-height: 2.35rem;
+		padding: 0.45rem 0.75rem;
+		border: 0;
+		border-radius: 0.8rem;
+		font-size: 0.82rem;
+		font-weight: 800;
+		cursor: pointer;
+	}
+
+	.customer-odontogram-summary__add .material-symbols-rounded {
+		font-size: 1rem;
+		line-height: 1;
+	}
+
+	.customer-odontogram-catalog-dialog {
+		margin: auto;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		max-width: min(24rem, calc(100vw - 2rem));
+		width: 100%;
+	}
+
+	.customer-odontogram-catalog-dialog::backdrop {
+		background: transparent;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+	}
+
+	.customer-odontogram-catalog-dialog__panel {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		padding: 1rem;
+		border: 1px solid var(--shell-border);
+		border-radius: 1rem;
+		background: var(--surface-bright);
+		box-shadow: 0 18px 44px rgb(0 0 0 / 0.18);
+	}
+
+	.customer-odontogram-catalog-dialog__head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.5rem;
+	}
+
+	.customer-odontogram-catalog-dialog__title {
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.customer-odontogram-catalog-dialog__close {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border: 0;
+		border-radius: 0.65rem;
+		background: transparent;
+		color: var(--on-surface-variant);
+		cursor: pointer;
+	}
+
+	.customer-odontogram-catalog-dialog__copy {
+		margin: 0;
+		font-size: 0.8rem;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-odontogram-catalog {
+		display: flex;
+		flex-direction: column;
+		gap: 0.85rem;
+		max-height: min(52dvh, 28rem);
+		overflow: auto;
+	}
+
+	.customer-odontogram-catalog__group {
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+	}
+
+	.customer-odontogram-catalog__label {
+		margin: 0;
+		font-size: 0.68rem;
+		font-weight: 800;
+		letter-spacing: 0.05em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-odontogram-catalog__items {
+		display: flex;
+		flex-direction: column;
+		gap: 0.35rem;
+	}
+
+	.customer-odontogram-catalog__item {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.45rem;
+		width: 100%;
+		min-height: 2.4rem;
+		padding: 0.45rem 0.7rem;
+		border: 1px solid var(--shell-border);
+		border-radius: 0.8rem;
+		background: var(--surface-bright);
+		color: var(--on-surface);
+		font-size: 0.82rem;
+		font-weight: 700;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.customer-odontogram-catalog__item:hover,
+	.customer-odontogram-catalog__item:focus-visible {
+		border-color: color-mix(in srgb, var(--primary) 35%, var(--shell-border));
+		background: color-mix(in srgb, var(--primary) 6%, var(--surface-bright));
 	}
 
 	.customer-odontogram-popover__copy {

@@ -352,6 +352,24 @@ function isPopoverOffscreen(popover: HTMLElement) {
 	);
 }
 
+type TourPopoverSide = 'top' | 'bottom' | 'left' | 'right';
+
+function rectsOverlap(a: DOMRect, b: DOMRect, gap = 8): boolean {
+	return !(
+		a.right + gap < b.left ||
+		a.left > b.right + gap ||
+		a.bottom + gap < b.top ||
+		a.top > b.bottom + gap
+	);
+}
+
+function resolveTourPopoverSide(side: DriveStep['popover'] extends { side?: infer S } ? S : never): TourPopoverSide {
+	if (side === 'top' || side === 'bottom' || side === 'left' || side === 'right') {
+		return side;
+	}
+	return 'bottom';
+}
+
 function isPopoverMispositioned(popover: HTMLElement, activeElement: Element | null) {
 	if (isPopoverOffscreen(popover)) return true;
 	if (!(activeElement instanceof HTMLElement)) return false;
@@ -364,6 +382,8 @@ function isPopoverMispositioned(popover: HTMLElement, activeElement: Element | n
 		return true;
 	}
 
+	if (rectsOverlap(pop, target)) return true;
+
 	const popCenterX = pop.left + pop.width / 2;
 	const popCenterY = pop.top + pop.height / 2;
 	const targetCenterX = target.left + target.width / 2;
@@ -373,31 +393,50 @@ function isPopoverMispositioned(popover: HTMLElement, activeElement: Element | n
 	return distance > 240;
 }
 
-function pinPopoverNearActiveElement(popover: HTMLElement, side: 'top' | 'bottom') {
+function pinPopoverNearActiveElement(popover: HTMLElement, side: TourPopoverSide) {
 	const active = document.querySelector('.driver-active-element');
 	if (!(active instanceof HTMLElement)) return;
 
 	const target = active.getBoundingClientRect();
 	const pop = popover.getBoundingClientRect();
 	const gap = 12;
-	const maxLeft = Math.max(12, window.innerWidth - pop.width - 12);
-	const left = Math.min(Math.max(12, target.left + target.width / 2 - pop.width / 2), maxLeft);
+	const margin = 12;
+	const maxLeft = Math.max(margin, window.innerWidth - pop.width - margin);
+	const maxTop = Math.max(margin, window.innerHeight - pop.height - margin);
 
 	let top: number;
-	if (side === 'bottom') {
+	let left: number;
+
+	if (side === 'left') {
+		left = target.left - pop.width - gap;
+		if (left < margin) {
+			left = Math.min(target.right + gap, maxLeft);
+		}
+		top = target.top + target.height / 2 - pop.height / 2;
+		top = Math.min(Math.max(margin, top), maxTop);
+	} else if (side === 'right') {
+		left = target.right + gap;
+		if (left + pop.width > window.innerWidth - margin) {
+			left = Math.max(margin, target.left - pop.width - gap);
+		}
+		top = target.top + target.height / 2 - pop.height / 2;
+		top = Math.min(Math.max(margin, top), maxTop);
+	} else if (side === 'bottom') {
+		left = Math.min(Math.max(margin, target.left + target.width / 2 - pop.width / 2), maxLeft);
 		top = target.bottom + gap;
-		if (top + pop.height > window.innerHeight - 12) {
-			top = Math.max(12, target.top - pop.height - gap);
+		if (top + pop.height > window.innerHeight - margin) {
+			top = Math.max(margin, target.top - pop.height - gap);
 		}
 	} else {
+		left = Math.min(Math.max(margin, target.left + target.width / 2 - pop.width / 2), maxLeft);
 		top = target.top - pop.height - gap;
-		if (top < 12) {
-			top = Math.min(target.bottom + gap, window.innerHeight - pop.height - 12);
+		if (top < margin) {
+			top = Math.min(target.bottom + gap, maxTop);
 		}
 	}
 
 	popover.style.display = 'block';
-	popover.style.top = `${Math.max(12, top)}px`;
+	popover.style.top = `${Math.max(margin, top)}px`;
 	popover.style.left = `${left}px`;
 	popover.style.bottom = 'auto';
 	popover.style.right = 'auto';
@@ -405,7 +444,7 @@ function pinPopoverNearActiveElement(popover: HTMLElement, side: 'top' | 'bottom
 
 function syncTourLayout(
 	activeDriver: Driver,
-	preferredSide: 'top' | 'bottom' = 'bottom',
+	preferredSide: TourPopoverSide = 'bottom',
 	hostSelector?: string
 ) {
 	if (activeDriver !== activeTourDriver) return;
@@ -501,7 +540,7 @@ export function runBookmateTour(steps: DriveStep[], options: BookmateTourRunOpti
 				destroyActiveBookmateTour();
 				return;
 			}
-			const preferredSide = step.popover?.side === 'top' ? 'top' : 'bottom';
+			const preferredSide = resolveTourPopoverSide(step.popover?.side);
 			scheduleTourLayoutSync(() => syncTourLayout(activeDriver, preferredSide, hostSelector));
 		},
 		onPopoverRender: useShell

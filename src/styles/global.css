@@ -3530,9 +3530,10 @@ dialog:is(
 	.customers-pro-filter-sheet,
 	.services-status-filter-sheet,
 	.schedule-pro-filter-sheet,
-	.cobros-period-filter-sheet
+	.cobros-period-filter-sheet,
+	.customer-odontogram-catalog-dialog
 )::backdrop {
-	background-color: var(--modal-backdrop-scrim);
+	background-color: transparent;
 	backdrop-filter: none;
 	-webkit-backdrop-filter: none;
 }
