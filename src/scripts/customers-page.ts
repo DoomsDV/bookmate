@@ -172,6 +172,7 @@ class CustomerManager extends HTMLElement {
 	private odontogramExportInclude3d: HTMLInputElement | null = null;
 	private odontogramExportCancel: HTMLButtonElement | null = null;
 	private odontogramExportConfirm: HTMLButtonElement | null = null;
+	private odontogramSideToggle: HTMLButtonElement | null = null;
 	private odontogramSide: HTMLElement | null = null;
 	private odontogramStatus: HTMLElement | null = null;
 	private odontogramLoading: HTMLElement | null = null;
@@ -209,6 +210,7 @@ class CustomerManager extends HTMLElement {
 	private odontogramRotateLocked = false;
 	private odontogramGhostMode = false;
 	private odontogramGumsVisible = true;
+	private odontogramActiveArch: 'both' | 'upper' | 'lower' = 'both';
 	private odontogramExporting = false;
 	private odontogramPopoverDragged = false;
 	private odontogramPopoverDrag: {
@@ -216,6 +218,7 @@ class CustomerManager extends HTMLElement {
 		offsetX: number;
 		offsetY: number;
 	} | null = null;
+	private odontogramViewportGuideTimer = 0;
 
 	private professionals: ProfessionalLov[] = [];
 
@@ -339,6 +342,9 @@ class CustomerManager extends HTMLElement {
 			'[data-odontogram-export-confirm]'
 		);
 		this.odontogramSide = this.querySelector<HTMLElement>('[data-customer-odontogram-side]');
+		this.odontogramSideToggle = this.querySelector<HTMLButtonElement>(
+			'[data-customer-odontogram-side-toggle]'
+		);
 		this.odontogramStatus = this.querySelector<HTMLElement>('[data-customer-odontogram-status]');
 		this.odontogramLoading = this.querySelector<HTMLElement>('[data-customer-odontogram-loading]');
 		this.odontogramEventsWrap = this.querySelector<HTMLElement>(
@@ -476,6 +482,14 @@ class CustomerManager extends HTMLElement {
 			this.handleOdontogramOpenCatalogClick,
 			{ signal }
 		);
+		this.odontogramSideToggle?.addEventListener('click', this.handleOdontogramSideToggle, {
+			signal,
+		});
+		window.matchMedia('(max-width: 1023px)').addEventListener(
+			'change',
+			this.handleOdontogramSheetMediaChange,
+			{ signal }
+		);
 		this.odontogramPopoverDragHandle?.addEventListener(
 			'pointerdown',
 			this.handleOdontogramPopoverDragStart,
@@ -515,6 +529,10 @@ class CustomerManager extends HTMLElement {
 		if (this.#searchDebounceTimer !== null) {
 			window.clearTimeout(this.#searchDebounceTimer);
 			this.#searchDebounceTimer = null;
+		}
+		if (this.odontogramViewportGuideTimer) {
+			window.clearTimeout(this.odontogramViewportGuideTimer);
+			this.odontogramViewportGuideTimer = 0;
 		}
 	}
 
@@ -1280,6 +1298,7 @@ class CustomerManager extends HTMLElement {
 		this.closeOdontogramPopover();
 		this.setOdontogramLoading(false);
 		this.updateOdontogramToolbarUi();
+		this.setOdontogramSideCollapsed(true);
 		if (this.odontogramEventsList) this.clearNode(this.odontogramEventsList);
 		this.odontogramEventsWrap?.classList.add('hidden');
 		this.odontogramEventsEmpty?.classList.add('hidden');
@@ -1347,6 +1366,7 @@ class CustomerManager extends HTMLElement {
 		this.profileModal?.classList.toggle('is-odontogram-workspace', active);
 		this.profilePanel?.classList.toggle('is-odontogram-workspace', active);
 		if (!active) return;
+		this.setOdontogramSideCollapsed(true);
 		window.requestAnimationFrame(() => {
 			this.odontogram3d?.resize();
 			window.requestAnimationFrame(() => this.odontogram3d?.resize());
@@ -1376,6 +1396,7 @@ class CustomerManager extends HTMLElement {
 		this.odontogramRotateLocked = false;
 		this.odontogramGhostMode = false;
 		this.odontogramGumsVisible = true;
+		this.odontogramActiveArch = 'both';
 		this.syncOdontogramCamUi();
 		this.hideOdontogramTip();
 		this.recycleOdontogramCanvas();
@@ -1775,6 +1796,24 @@ class CustomerManager extends HTMLElement {
 			gumsButton.setAttribute('aria-label', gumsLabel);
 		}
 		if (gumsIcon) gumsIcon.textContent = this.odontogramGumsVisible ? 'visibility' : 'visibility_off';
+		const upperButton = this.odontogramCam?.querySelector<HTMLButtonElement>(
+			'[data-odontogram-cam="upper"]'
+		);
+		const lowerButton = this.odontogramCam?.querySelector<HTMLButtonElement>(
+			'[data-odontogram-cam="lower"]'
+		);
+		if (upperButton) {
+			upperButton.setAttribute(
+				'aria-pressed',
+				this.odontogramActiveArch === 'upper' ? 'true' : 'false'
+			);
+		}
+		if (lowerButton) {
+			lowerButton.setAttribute(
+				'aria-pressed',
+				this.odontogramActiveArch === 'lower' ? 'true' : 'false'
+			);
+		}
 	}
 
 	private handleOdontogramCamClick = (event: Event) => {
@@ -1788,10 +1827,14 @@ class CustomerManager extends HTMLElement {
 
 		if (action === 'reset') {
 			this.odontogram3d.resetView();
+			this.odontogramActiveArch = 'both';
+			this.syncOdontogramCamUi();
 			return;
 		}
 		if (action === 'upper' || action === 'lower') {
 			this.odontogram3d.setArchView(action);
+			this.odontogramActiveArch = action;
+			this.syncOdontogramCamUi();
 			return;
 		}
 		if (action === 'lock') {
@@ -2046,6 +2089,64 @@ class CustomerManager extends HTMLElement {
 		if (this.odontogramCatalogDialog?.open) this.odontogramCatalogDialog.close();
 	}
 
+	private isOdontogramMobileSheet() {
+		return window.matchMedia('(max-width: 1023px)').matches;
+	}
+
+	private setOdontogramSideCollapsed(collapsed: boolean) {
+		const side = this.odontogramSide;
+		if (!side) return;
+
+		const shouldCollapse = collapsed && this.isOdontogramMobileSheet();
+		side.classList.toggle('is-collapsed', shouldCollapse);
+		this.odontogramSideToggle?.setAttribute('aria-expanded', shouldCollapse ? 'false' : 'true');
+		this.odontogramSideToggle?.setAttribute(
+			'aria-label',
+			shouldCollapse ? 'Mostrar comandos' : 'Ocultar comandos'
+		);
+
+		for (const child of side.children) {
+			if (child === this.odontogramSideToggle) continue;
+			child.toggleAttribute('inert', shouldCollapse);
+		}
+
+		if (shouldCollapse) {
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => this.focusOdontogramModel());
+			});
+		}
+	}
+
+	private handleOdontogramSideToggle = () => {
+		if (!this.odontogramSide) return;
+		this.setOdontogramSideCollapsed(!this.odontogramSide.classList.contains('is-collapsed'));
+	};
+
+	private handleOdontogramSheetMediaChange = () => {
+		this.setOdontogramSideCollapsed(this.isOdontogramMobileSheet());
+	};
+
+	private focusOdontogramModel() {
+		const viewport = this.odontogramViewport;
+		const canvas = this.odontogramCanvas;
+		if (!viewport) return;
+
+		if (!this.isOdontogramMobileSheet()) {
+			viewport.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+		}
+		if (canvas && !canvas.hasAttribute('tabindex')) canvas.tabIndex = -1;
+		canvas?.focus({ preventScroll: true });
+
+		viewport.classList.remove('is-guided');
+		void viewport.offsetWidth;
+		viewport.classList.add('is-guided');
+		window.clearTimeout(this.odontogramViewportGuideTimer);
+		this.odontogramViewportGuideTimer = window.setTimeout(() => {
+			viewport.classList.remove('is-guided');
+			this.odontogramViewportGuideTimer = 0;
+		}, 1100);
+	}
+
 	private selectOdontogramCatalogEntry(code: string) {
 		const entry = getCatalogEntry(code, this.odontogramCatalogEntries);
 		if (!entry) return;
@@ -2058,12 +2159,15 @@ class CustomerManager extends HTMLElement {
 			if (!this.isOdontogramPopoverOpen()) {
 				this.openOdontogramPopover(this.odontogramPopoverTooth);
 			}
+			this.setOdontogramSideCollapsed(true);
 			return;
 		}
 
 		if (this.isOdontogramPopoverOpen()) {
 			this.closeOdontogramPopover();
 		}
+
+		this.setOdontogramSideCollapsed(true);
 	}
 
 	private handleOdontogramOpenCatalogClick = (event: Event) => {
@@ -2117,6 +2221,7 @@ class CustomerManager extends HTMLElement {
 				defaultClinicalPhaseForFinding(this.odontogramActiveTool, this.odontogramCatalogEntries)
 			: null;
 		this.updateOdontogramToolbarUi();
+		if (this.odontogramActiveTool) this.setOdontogramSideCollapsed(true);
 		if (this.isOdontogramPopoverOpen() && this.odontogramPopoverTooth > 0) {
 			this.openOdontogramPopover(this.odontogramPopoverTooth);
 		}
