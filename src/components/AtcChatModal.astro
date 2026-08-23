@@ -422,6 +422,63 @@ const userInitials = String(userName || '')
 			return template.innerHTML;
 		}
 
+		private isMarkdownListItem(line: string) {
+			return /^([-*+]|\d+[.)])\s+/.test(line);
+		}
+
+		private lineEndsWithColon(line: string) {
+			// **Acciones:** cierra el bold después de los dos puntos.
+			return line.length >= 3 && /:(?:\*\*)?\s*$/.test(line);
+		}
+
+		private isMarkdownSectionLead(line: string) {
+			return (
+				/^#{1,6}\s/.test(line) ||
+				/^\*\*[^*]{1,80}:\*\*\s*$/.test(line) ||
+				/^\*\*[^*]{1,80}\*\*:\s*$/.test(line)
+			);
+		}
+
+		/** Tras un título que termina en ":", convierte renglones sueltos en viñetas Markdown. */
+		private promoteColonBlocksToLists(text: string) {
+			const lines = text.split('\n');
+			const out: string[] = [];
+			let i = 0;
+
+			while (i < lines.length) {
+				const line = lines[i];
+				const trimmed = line.trim();
+				const endsWithColon = this.lineEndsWithColon(trimmed);
+
+				if (endsWithColon) {
+					let j = i + 1;
+					if (j < lines.length && !lines[j].trim()) j += 1;
+
+					const items: string[] = [];
+					while (j < lines.length) {
+						const item = lines[j].trim();
+						if (!item) break;
+						if (this.isMarkdownListItem(item) || this.isMarkdownSectionLead(item)) break;
+						if (item.length > 180) break;
+						items.push(item.replace(/^[•▪◦–—]\s+/, ''));
+						j += 1;
+					}
+
+					if (items.length >= 2) {
+						out.push(line);
+						for (const item of items) out.push(`- ${item}`);
+						i = j;
+						continue;
+					}
+				}
+
+				out.push(line);
+				i += 1;
+			}
+
+			return out.join('\n');
+		}
+
 		private normalizeAssistantMarkdown(content: string) {
 			let text = String(content || '').trim();
 			if (!text) return '';
@@ -435,6 +492,8 @@ const userInitials = String(userName || '')
 			if (/(?:^|\s)-\s+\S/.test(text) && !/^\s*[-*]\s+/m.test(text)) {
 				text = text.replace(/(?:^|[ \t]+)[-*]\s+/g, '\n- ');
 			}
+
+			text = this.promoteColonBlocksToLists(text);
 
 			return text
 				.replace(/\n{3,}/g, '\n\n')
@@ -1195,7 +1254,16 @@ const userInitials = String(userName || '')
 
 	.atc-chat-bubble--assistant .atc-chat-bubble__body ul,
 	.atc-chat-bubble--assistant .atc-chat-bubble__body ol {
-		padding-left: 1.15rem;
+		padding-left: 1.25rem;
+		list-style-position: outside;
+	}
+
+	.atc-chat-bubble--assistant .atc-chat-bubble__body ul {
+		list-style-type: disc;
+	}
+
+	.atc-chat-bubble--assistant .atc-chat-bubble__body ol {
+		list-style-type: decimal;
 	}
 
 	.atc-chat-bubble--assistant .atc-chat-bubble__body li + li {
@@ -1203,7 +1271,12 @@ const userInitials = String(userName || '')
 	}
 
 	.atc-chat-bubble--assistant .atc-chat-bubble__body li {
+		display: list-item;
 		margin: 0;
+	}
+
+	.atc-chat-bubble--assistant .atc-chat-bubble__body li::marker {
+		color: color-mix(in srgb, var(--on-surface) 58%, transparent);
 	}
 
 	.atc-chat-bubble--assistant .atc-chat-bubble__body br {
