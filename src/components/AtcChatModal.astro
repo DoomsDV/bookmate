@@ -41,7 +41,7 @@ const userInitials = String(userName || '')
 			</button>
 		</header>
 
-		<div class="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5" data-atc-chat-messages>
+		<div class="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5" data-atc-chat-messages>
 			<div class="atc-chat-message atc-chat-message--assistant" data-atc-chat-welcome>
 				<span class="atc-chat-avatar atc-chat-avatar--assistant" aria-hidden="true">
 					<img src="/icons/icon-192x192.png" alt="" width="28" height="28" />
@@ -428,15 +428,19 @@ const userInitials = String(userName || '')
 
 			// Convierte pasos inline "1) ... 2) ..." en lista Markdown con saltos.
 			if (/\d+[.)]\s+/.test(text) && !/^\s*\d+[.)]\s+/m.test(text.split('\n').slice(1).join('\n'))) {
-				text = text.replace(/(?:^|[ \t]+)(\d+)[.)]\s+/g, '\n\n$1. ');
+				text = text.replace(/(?:^|[ \t]+)(\d+)[.)]\s+/g, '\n$1. ');
 			}
 
 			// Viñetas inline "- item - item" → lista.
 			if (/(?:^|\s)-\s+\S/.test(text) && !/^\s*[-*]\s+/m.test(text)) {
-				text = text.replace(/(?:^|[ \t]+)[-*]\s+/g, '\n\n- ');
+				text = text.replace(/(?:^|[ \t]+)[-*]\s+/g, '\n- ');
 			}
 
-			return text.replace(/\n{3,}/g, '\n\n').trim();
+			return text
+				.replace(/\n{3,}/g, '\n\n')
+				.replace(/(^#{1,6}[^\n]+)\n{2,}/gm, '$1\n')
+				.replace(/([^\n])\n{2,}(?=[-*+] |\d+\. )/g, '$1\n')
+				.trim();
 		}
 
 		private escapePlain(content: string) {
@@ -454,7 +458,7 @@ const userInitials = String(userName || '')
 				const parse = await ensureMarked();
 				const html = parse(normalized, {
 					async: false,
-					breaks: true,
+					breaks: false,
 					gfm: true,
 				});
 				return this.sanitizeMarkdownHtml(typeof html === 'string' ? html : String(html));
@@ -712,7 +716,7 @@ const userInitials = String(userName || '')
 				await this.renderMessages();
 			} catch (error) {
 				this.setBusy(false);
-				this.showError(error instanceof Error ? error.message : 'Error al consultar ATC.');
+				this.showError('No pudimos obtener una respuesta. Probá de nuevo en un momento.');
 			} finally {
 				if (this.busy) this.setBusy(false);
 				if (!this.isMobileSheet()) {
@@ -958,10 +962,10 @@ const userInitials = String(userName || '')
 		width: auto;
 		min-width: 0;
 		border-radius: 1.05rem;
-		padding: 0.55rem 0.65rem 0.35rem;
+		padding: 0.5rem 0.65rem 0.32rem;
 		overflow-wrap: anywhere;
 		font-size: 0.875rem;
-		line-height: 1.45;
+		line-height: 1.35;
 		min-width: 4.5rem;
 	}
 
@@ -1143,8 +1147,12 @@ const userInitials = String(userName || '')
 		}
 	}
 
-	.atc-chat-bubble__body {
+	.atc-chat-bubble--user .atc-chat-bubble__body {
 		white-space: pre-wrap;
+	}
+
+	.atc-chat-bubble--assistant .atc-chat-bubble__body {
+		white-space: normal;
 	}
 
 	.atc-chat-bubble__time {
@@ -1182,16 +1190,24 @@ const userInitials = String(userName || '')
 	.atc-chat-bubble--assistant .atc-chat-bubble__body ol,
 	.atc-chat-bubble--assistant .atc-chat-bubble__body blockquote,
 	.atc-chat-bubble--assistant .atc-chat-bubble__body pre {
-		margin: 0.5rem 0;
+		margin: 0.28rem 0;
 	}
 
 	.atc-chat-bubble--assistant .atc-chat-bubble__body ul,
 	.atc-chat-bubble--assistant .atc-chat-bubble__body ol {
-		padding-left: 1.2rem;
+		padding-left: 1.15rem;
 	}
 
 	.atc-chat-bubble--assistant .atc-chat-bubble__body li + li {
-		margin-top: 0.2rem;
+		margin-top: 0.06rem;
+	}
+
+	.atc-chat-bubble--assistant .atc-chat-bubble__body li {
+		margin: 0;
+	}
+
+	.atc-chat-bubble--assistant .atc-chat-bubble__body br {
+		line-height: 1.15;
 	}
 
 	.atc-chat-bubble--assistant .atc-chat-bubble__body h1,
@@ -1200,10 +1216,10 @@ const userInitials = String(userName || '')
 	.atc-chat-bubble--assistant .atc-chat-bubble__body h4,
 	.atc-chat-bubble--assistant .atc-chat-bubble__body h5,
 	.atc-chat-bubble--assistant .atc-chat-bubble__body h6 {
-		margin: 0.6rem 0 0.3rem;
-		font-size: 0.95rem;
-		font-weight: 850;
-		line-height: 1.3;
+		margin: 0.38rem 0 0.1rem;
+		font-size: 0.9rem;
+		font-weight: 800;
+		line-height: 1.25;
 	}
 
 	.atc-chat-bubble--assistant .atc-chat-bubble__body strong {
