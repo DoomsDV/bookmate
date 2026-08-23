@@ -1191,9 +1191,26 @@ class CalendarManager extends HTMLElement {
 		this.conflictsListNode.replaceChildren();
 
 		if (this.misalignedAppointments.length <= 0) {
-			const empty = document.createElement('p');
+			const empty = document.createElement('div');
 			empty.className = 'calendar-conflicts-empty';
-			empty.textContent = 'No hay citas con conflicto de horario en este momento.';
+
+			const icon = document.createElement('div');
+			icon.className = 'calendar-conflicts-empty__icon';
+			icon.setAttribute('aria-hidden', 'true');
+			const iconGlyph = document.createElement('span');
+			iconGlyph.className = 'material-symbols-rounded';
+			iconGlyph.textContent = 'event_available';
+			icon.appendChild(iconGlyph);
+
+			const title = document.createElement('h3');
+			title.className = 'calendar-conflicts-empty__title';
+			title.textContent = 'Sin conflictos de horario';
+
+			const copy = document.createElement('p');
+			copy.className = 'calendar-conflicts-empty__copy';
+			copy.textContent = 'No hay citas con conflicto de horario en este momento.';
+
+			empty.append(icon, title, copy);
 			this.conflictsListNode.appendChild(empty);
 			return;
 		}

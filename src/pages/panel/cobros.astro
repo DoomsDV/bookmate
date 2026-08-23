@@ -546,11 +546,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									<span class="cobros-detail-field__label">Código HASEL</span>
 									<strong class="cobros-detail-field__value cobros-detail-field__value--mono" data-cobros-modal-reference>—</strong>
 								</div>
-								<div class="cobros-detail-field">
+								<div class="cobros-detail-field cobros-detail-field--wide">
 									<span class="cobros-detail-field__label">Profesional</span>
 									<strong class="cobros-detail-field__value" data-cobros-modal-professional>—</strong>
 								</div>
-								<div class="cobros-detail-field">
+								<div class="cobros-detail-field cobros-detail-field--wide">
 									<span class="cobros-detail-field__label">Lugar</span>
 									<strong class="cobros-detail-field__value" data-cobros-modal-location>—</strong>
 								</div>
@@ -1360,6 +1360,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		background: #ffe4e6;
 		color: #be123c;
 	}
+	:global(.cobros-chip--rejected) {
+		background: #fee2e2;
+		color: #b91c1c;
+	}
 	:global(.cobros-chip--other) {
 		background: var(--control-surface);
 		color: var(--on-surface-variant);
@@ -1368,6 +1372,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	:global(html[data-theme='dark'] .cobros-chip--expired) {
 		background: color-mix(in srgb, #f43f5e 16%, transparent);
 		color: #fb7185;
+	}
+
+	:global(html[data-theme='dark'] .cobros-chip--rejected) {
+		background: color-mix(in srgb, #ef4444 18%, transparent);
+		color: #f87171;
 	}
 
 	:global(.cobros-view-btn) {
@@ -1577,12 +1586,24 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		--cobros-detail-ease: cubic-bezier(0.32, 0.72, 0, 1);
 	}
 
-	/* —— Superficie única: sin doble borde —— */
 	.cobros-detail-receipt__inner,
 	.cobros-detail-sheet,
 	.cobros-refund-panel__inner {
 		border-radius: 1.25rem;
-		background: var(--control-surface);
+		border: 1px solid var(--shell-border);
+		background: var(--surface-container);
+	}
+
+	html:not([data-theme='dark']) .cobros-detail-receipt__inner {
+		background: var(--surface-container-high);
+	}
+
+	html:not([data-theme='dark']) .cobros-detail-sheet {
+		background: var(--surface-container);
+	}
+
+	html:not([data-theme='dark']) .cobros-refund-panel__inner {
+		background: var(--surface-container-highest);
 	}
 
 	html[data-theme='dark'] .cobros-detail-receipt__inner,
@@ -1693,7 +1714,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	.cobros-detail-sheet {
-		overflow: hidden;
+		overflow: visible;
 		opacity: 0;
 		transform: translateY(10px);
 		animation: cobros-detail-in 560ms var(--cobros-detail-ease) 60ms forwards;
@@ -1717,7 +1738,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		display: grid;
 		grid-template-columns: 1fr;
 		gap: 0;
-		padding: 0.15rem 0 0.35rem;
+		padding: 0.15rem 0 0.75rem;
 		border-top: 1px solid color-mix(in srgb, var(--on-surface) 5%, transparent);
 	}
 
@@ -1743,8 +1764,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 			border-top: 0;
 		}
 
-		.cobros-detail-field:nth-child(3),
-		.cobros-detail-field:nth-child(4) {
+		.cobros-detail-field:nth-child(n + 3) {
 			border-top: 1px solid color-mix(in srgb, var(--on-surface) 6%, transparent);
 		}
 
@@ -1762,9 +1782,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	.cobros-detail-field__value {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		overflow: visible;
+		text-overflow: unset;
+		white-space: normal;
+		overflow-wrap: anywhere;
 		font-size: 0.96rem;
 		font-weight: 800;
 		line-height: 1.25;

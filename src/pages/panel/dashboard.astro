@@ -369,7 +369,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 													<span class="dashboard-profit-stat__value" data-profit-avg-ticket>&nbsp;</span>
 												</li>
 												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Citas cobradas</span>
+													<span class="dashboard-profit-stat__label">Reservas cobradas</span>
 													<span class="dashboard-profit-stat__value">
 														<span data-profit-month-count>&nbsp;</span>
 														<span class="dashboard-profit-stat__delta" data-profit-mom hidden></span>
@@ -380,7 +380,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 										<article class="dashboard-profit-card" data-profit-accent="brand">
 											<div class="dashboard-profit-card__head">
 												<span class="dashboard-profit-icon material-symbols-rounded" aria-hidden="true">today</span>
-												<p class="dashboard-profit-label">Ingresos de hoy</p>
+												<p class="dashboard-profit-label">Agenda de hoy</p>
 											</div>
 											<div class="dashboard-profit-card__hero">
 												<p class="dashboard-profit-value" data-profit-today>&nbsp;</p>
@@ -398,15 +398,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											</div>
 											<ul class="dashboard-profit-stats">
 												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Atendidas</span>
+													<span class="dashboard-profit-stat__label">Completados</span>
 													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayCompleted}</span>
 												</li>
 												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Programadas</span>
+													<span class="dashboard-profit-stat__label">Programados</span>
 													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayTotal}</span>
 												</li>
 												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Restantes</span>
+													<span class="dashboard-profit-stat__label">Pendientes</span>
 													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{todayRemaining}</span>
 												</li>
 											</ul>
@@ -426,11 +426,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 											</div>
 											<ul class="dashboard-profit-stats">
 												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Por confirmar</span>
+													<span class="dashboard-profit-stat__label">Pendiente de pago</span>
 													<span class="dashboard-profit-stat__value dashboard-profit-value--static">{pendingAppointments}</span>
 												</li>
 												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Cobrado este mes</span>
+													<span class="dashboard-profit-stat__label">Proyección mensual</span>
 													<span class="dashboard-profit-stat__value" data-profit-pipe-label>&nbsp;</span>
 												</li>
 											</ul>
@@ -454,11 +454,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 													<span class="dashboard-profit-stat__value" data-profit-new-clients>&nbsp;</span>
 												</li>
 												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Atendidos este mes</span>
+													<span class="dashboard-profit-stat__label">Clientes activos</span>
 													<span class="dashboard-profit-stat__value" data-profit-active-clients>&nbsp;</span>
 												</li>
 												<li class="dashboard-profit-stat">
-													<span class="dashboard-profit-stat__label">Con cita (7 días)</span>
+													<span class="dashboard-profit-stat__label">Agendados (próx. 7 días)</span>
 													<span class="dashboard-profit-stat__value" data-profit-upcoming-clients>&nbsp;</span>
 												</li>
 											</ul>
@@ -828,7 +828,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 							data-appointment-voice-mode="inline"
 							aria-label="Agenda rápida"
 						>
-							<span class="material-symbols-rounded dashboard-ai-strip__icon dashboard-ai-strip__shiny" aria-hidden="true">auto_awesome</span>
+							<span class="material-symbols-rounded dashboard-cita-fab__icon" aria-hidden="true">auto_awesome</span>
 						</button>
 					)}
 				</main>
@@ -1908,7 +1908,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			setText('[data-profit-last-month]', formatGs(data.last_month_revenue));
 			setText('[data-profit-avg-ticket]', formatGs(data.month_avg_ticket));
 			setText('[data-profit-month-count]', String(Number(data.month_completed_count ?? 0)));
-			setText('[data-profit-pipe-label]', formatGs(data.month_revenue));
 
 			const monthRevenue = Math.max(0, Number(data.month_revenue) || 0);
 			const lastMonthRevenue = Math.max(0, Number(data.last_month_revenue) || 0);
@@ -1917,12 +1916,15 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			const barMax = Math.max(monthRevenue, lastMonthRevenue, 1);
 			const barRatio = (value: number) => Math.max(0.08, value / barMax);
 
+			// Proyección mensual = cobrado hasta ahora + lo esperado (pendiente de pago).
+			const pipelineTotal = monthRevenue + pendingRevenue;
+			setText('[data-profit-pipe-label]', formatGs(pipelineTotal));
+
 			const lastBar = panel.querySelector<HTMLElement>('[data-profit-bar="last"]');
 			const monthBar = panel.querySelector<HTMLElement>('[data-profit-bar="month"]');
 			if (lastBar) lastBar.style.transform = `scaleY(${barRatio(lastMonthRevenue)})`;
 			if (monthBar) monthBar.style.transform = `scaleY(${barRatio(monthRevenue)})`;
 
-			const pipelineTotal = monthRevenue + pendingRevenue;
 			const pendingRatio = pipelineTotal > 0 ? pendingRevenue / pipelineTotal : 0;
 			const pendingFill = panel.querySelector<HTMLElement>('[data-profit-pipe="pending"]');
 			if (pendingFill) pendingFill.style.transform = `scaleX(${Math.max(0.06, pendingRatio)})`;
@@ -2784,17 +2786,11 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 			transition: transform 140ms ease, box-shadow 140ms ease, filter 140ms ease;
 		}
 
-		.dashboard-cita-fab .material-symbols-rounded:not(.dashboard-ai-strip__shiny) {
+		.dashboard-cita-fab .dashboard-cita-fab__icon {
 			font-size: 1.45rem;
 			line-height: 1;
-			color: inherit;
-		}
-
-		.dashboard-cita-fab .material-symbols-rounded.dashboard-ai-strip__shiny {
-			font-size: 1.45rem;
-			line-height: 1;
-			color: transparent;
-			-webkit-text-fill-color: transparent;
+			color: #fff8f1;
+			-webkit-text-fill-color: #fff8f1;
 		}
 
 		.dashboard-cita-fab:hover {

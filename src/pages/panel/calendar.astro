@@ -2491,6 +2491,13 @@ const googleErrorMessage = hasGoogleError
 		color: var(--on-surface, #1f2937);
 	}
 
+	/* Mobile: el sheet de conflictos se achicaba al alto del contenido (a veces 1-2 líneas).
+	   Le damos un piso de alto fijo para que no se vea como un cartelito recortado.
+	   En desktop (>=1024px) esto queda sin efecto porque el panel pasa a height:100dvh. */
+	.calendar-conflicts-sheet__panel {
+		min-height: min(70dvh, 34rem);
+	}
+
 	.calendar-filters-sheet__panel label,
 	.calendar-filters-sheet__panel h2 {
 		color: var(--on-surface, #1f2937);
@@ -2524,6 +2531,8 @@ const googleErrorMessage = hasGoogleError
 
 	.calendar-conflicts-sheet__body {
 		padding: 0;
+		display: flex;
+		flex-direction: column;
 	}
 
 	.calendar-conflicts-list {
@@ -2738,12 +2747,48 @@ const googleErrorMessage = hasGoogleError
 	}
 
 	.calendar-conflicts-empty {
-		padding: 1.25rem 1.05rem;
-		font-size: 0.88rem;
-		font-weight: 600;
-		line-height: 1.45;
-		color: var(--on-surface-variant);
+		display: flex;
+		flex: 1 1 auto;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		min-height: 12rem;
+		padding: 1.75rem 1.25rem;
 		text-align: center;
+		background: transparent;
+	}
+
+	.calendar-conflicts-empty__icon {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 3.5rem;
+		height: 3.5rem;
+		margin-bottom: 0.5rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+		color: var(--on-surface-variant);
+	}
+
+	.calendar-conflicts-empty__icon .material-symbols-rounded {
+		font-size: 1.75rem;
+	}
+
+	.calendar-conflicts-empty__title {
+		margin: 0;
+		font-size: 1.1rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.calendar-conflicts-empty__copy {
+		margin: 0;
+		max-width: 18rem;
+		font-size: 0.95rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
 	}
 
 	.calendar-filters-sheet__footer,
