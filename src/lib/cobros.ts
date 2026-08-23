@@ -27,7 +27,7 @@ export interface CobroItem {
 	currency: string;
 	payment_status?: string | null;
 	ocr_status?: string | null;
-	ui_status?: 'pending' | 'approved' | 'other' | 'refund_pending' | 'refund_sent' | 'refund_awaiting_alias' | string;
+	ui_status?: 'pending' | 'approved' | 'rejected' | 'other' | 'refund_pending' | 'refund_sent' | 'refund_awaiting_alias' | string;
 	payment_reference?: string | null;
 	receipt_url?: string | null;
 	ocr_reference?: string | null;
@@ -36,6 +36,7 @@ export interface CobroItem {
 	receipt_uploaded_at?: string | null;
 	created_at?: string | null;
 	reject_reason?: string | null;
+	reviewed_at?: string | null;
 	refund_status?: string | null;
 	refund_amount?: number | null;
 	refund_alias?: string | null;
@@ -124,6 +125,7 @@ const normalizeItem = (raw: any): CobroItem | null => {
 		receipt_uploaded_at: String(raw?.receipt_uploaded_at || '').trim() || null,
 		created_at: String(raw?.created_at || '').trim() || null,
 		reject_reason: String(raw?.reject_reason || '').trim() || null,
+		reviewed_at: String(raw?.reviewed_at || '').trim() || null,
 		refund_status: String(raw?.refund_status || '').trim() || null,
 		refund_amount: Number(raw?.refund_amount ?? NaN) || null,
 		refund_alias: String(raw?.refund_alias || '').trim() || null,

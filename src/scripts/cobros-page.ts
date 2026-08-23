@@ -58,6 +58,14 @@ const formatDateTime = (value?: string | null) => {
 	return formatDateTimeParts(wall);
 };
 
+const escapeHtml = (value: string) =>
+	value
+		.replaceAll('&', '&amp;')
+		.replaceAll('<', '&lt;')
+		.replaceAll('>', '&gt;')
+		.replaceAll('"', '&quot;')
+		.replaceAll("'", '&#39;');
+
 const isExpiredCobro = (item: CobroItem) => {
 	const pay = String(item.payment_status || '').toUpperCase();
 	const ui = String(item.ui_status || '').toUpperCase();
@@ -67,6 +75,7 @@ const isExpiredCobro = (item: CobroItem) => {
 const statusLabel = (item: CobroItem) => {
 	if (isExpiredCobro(item)) return 'Vencido';
 	if (item.ui_status === 'approved') return 'Aprobado';
+	if (item.ui_status === 'rejected') return 'Rechazado';
 	if (item.ui_status === 'pending') return 'Pendiente de revisión';
 	if (item.ui_status === 'refund_pending') return 'Reembolso pendiente';
 	if (item.ui_status === 'refund_awaiting_alias') return 'Esperando alias';
@@ -83,6 +92,7 @@ const statusLabel = (item: CobroItem) => {
 const statusChipClass = (item: CobroItem) => {
 	if (isExpiredCobro(item)) return 'cobros-chip cobros-chip--expired';
 	if (item.ui_status === 'approved') return 'cobros-chip cobros-chip--approved';
+	if (item.ui_status === 'rejected') return 'cobros-chip cobros-chip--rejected';
 	if (item.ui_status === 'pending') return 'cobros-chip cobros-chip--pending';
 	if (item.ui_status === 'refund_pending' || item.ui_status === 'refund_awaiting_alias') {
 		return 'cobros-chip cobros-chip--refund';
@@ -781,8 +791,8 @@ export const initCobrosPage = () => {
 			tr.className = 'border-b border-(--shell-border)/70';
 			tr.innerHTML = `
 				<td class="px-4 py-3 whitespace-nowrap">${formatDateTime(item.start_time || item.created_at)}</td>
-				<td class="px-4 py-3 font-semibold">${item.customer_name || '—'}</td>
-				<td class="px-4 py-3">${item.service_name || '—'}</td>
+				<td class="px-4 py-3 font-semibold">${escapeHtml(item.customer_name || '—')}</td>
+				<td class="px-4 py-3">${escapeHtml(item.service_name || '—')}</td>
 				<td class="px-4 py-3 font-bold">${formatMoney(item.amount, item.currency)}</td>
 				<td class="px-4 py-3"><span class="${statusChipClass(item)}">${statusLabel(item)}</span></td>
 				<td class="px-4 py-3 text-right">
@@ -813,8 +823,8 @@ export const initCobrosPage = () => {
 				<div class="cobros-card__inner">
 					<header class="cobros-card__head">
 						<div class="cobros-card__who">
-							<p class="cobros-card__name">${item.customer_name || '—'}</p>
-							<p class="cobros-card__service">${item.service_name || '—'}</p>
+							<p class="cobros-card__name">${escapeHtml(item.customer_name || '—')}</p>
+							<p class="cobros-card__service">${escapeHtml(item.service_name || '—')}</p>
 						</div>
 						<span class="${statusChipClass(item)}">${statusLabel(item)}</span>
 					</header>
