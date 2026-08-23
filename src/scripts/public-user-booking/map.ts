@@ -1,5 +1,6 @@
 import {
 	createBrandMarker,
+	createStadiaTransformRequest,
 	getStadiaStyleUrl,
 	loadMapLibre,
 	resolveMapTheme,
@@ -221,6 +222,7 @@ export const createPublicUserMapController = (options: {
 					center: [coords.lng, coords.lat],
 					zoom: 16,
 					attributionControl: { compact: true },
+					transformRequest: createStadiaTransformRequest(stadiaKey),
 				});
 				mapInstance.addControl(
 					new maplibregl.NavigationControl({ showCompass: false }),

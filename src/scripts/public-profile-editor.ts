@@ -184,6 +184,17 @@ export const activatePublicProfileTab = (
 		buttons.map((btn) => String(btn.getAttribute('data-ppe-tab') || '')).filter(Boolean)
 	);
 	const nextId = ids.has(tabId) ? tabId : 'general';
+	const currentId =
+		buttons.find((btn) => btn.classList.contains('is-active'))?.getAttribute('data-ppe-tab') ||
+		'';
+	const alreadyActive = currentId === nextId;
+
+	// Pref primero: el FOUC CSS usa display:none !important según data-ppe-tab-pref.
+	// Si se saca [hidden] antes, Horario puede quedar display:none un instante y la
+	// animación both/forwards deja los días en opacity:0.
+	if (typeof document !== 'undefined') {
+		document.documentElement.setAttribute('data-ppe-tab-pref', nextId);
+	}
 
 	for (const btn of buttons) {
 		const active = btn.getAttribute('data-ppe-tab') === nextId;
@@ -198,15 +209,16 @@ export const activatePublicProfileTab = (
 		panel.classList.toggle('hidden', !show);
 	}
 
-	if (typeof document !== 'undefined') {
-		document.documentElement.setAttribute('data-ppe-tab-pref', nextId);
-	}
 	if (options?.persist !== false) {
 		try {
 			localStorage.setItem(PPE_TAB_KEY, nextId);
 		} catch {
 			/* ignore */
 		}
+	}
+
+	if (!alreadyActive) {
+		root.dispatchEvent(new CustomEvent('ppe:tab-shown', { detail: { tabId: nextId } }));
 	}
 };
 
@@ -752,6 +764,15 @@ export const initializePublicProfileEditor = (root: HTMLElement) => {
 			hoursList.appendChild(li);
 		}
 	};
+
+	root.addEventListener('ppe:tab-shown', (event) => {
+		const tabId = (event as CustomEvent<{ tabId?: string }>).detail?.tabId;
+		if (tabId !== 'horario' || !hoursList) return;
+		// Solo armar el listado si está vacío (carrera init / click). Si ya hay
+		// días, el CSS de panel visible los muestra sin destruir inputs.
+		if (hoursList.childElementCount > 0) return;
+		renderBusinessHours();
+	});
 
 	const getDay = (dayNum: number): BusinessHoursDay =>
 		businessHours.days[dayNum - 1] || emptyBusinessHours().days[dayNum - 1];

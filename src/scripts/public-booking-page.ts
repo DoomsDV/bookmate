@@ -11,6 +11,7 @@ import {
 import { createIdempotencyKey } from '../lib/idempotency';
 import {
 	createBrandMarker,
+	createStadiaTransformRequest,
 	getStadiaStyleUrl,
 	loadMapLibre,
 	MAPLIBRE_ES_UI_LOCALE,
@@ -412,6 +413,27 @@ export const initializePublicBookingPage = () => {
 	let availableDatesRequestSeq = 0;
 	let isLoadingSlots = false;
 	let renderCalendar = () => {};
+
+	const syncCalendarSelectionHint = (
+		calendarRoot: Element | null,
+		message: string | null,
+	) => {
+		if (!calendarRoot) return;
+		calendarRoot.classList.toggle('is-waiting-selection', Boolean(message));
+		let hint = calendarRoot.querySelector<HTMLParagraphElement>('[data-calendar-selection-hint]');
+		if (!message) {
+			if (hint) hint.hidden = true;
+			return;
+		}
+		if (!hint) {
+			hint = document.createElement('p');
+			hint.className = 'public-booking-calendar__hint';
+			hint.dataset.calendarSelectionHint = '';
+			calendarRoot.appendChild(hint);
+		}
+		hint.textContent = message;
+		hint.hidden = false;
+	};
 	let isSubmitting = false;
 	let isValidatingCustomer = false;
 	let pendingAppointmentId = 0;
@@ -650,6 +672,7 @@ export const initializePublicBookingPage = () => {
 					attributionControl: { compact: true },
 					cooperativeGestures: true,
 					locale: MAPLIBRE_ES_UI_LOCALE,
+					transformRequest: createStadiaTransformRequest(stadiaKey),
 				});
 				mapInstance.addControl(
 					new maplibregl.NavigationControl({ showCompass: false }),
@@ -1953,6 +1976,13 @@ export const initializePublicBookingPage = () => {
 
 			calendarGrid.appendChild(dayButton);
 		}
+
+		const selectionHint = !selectedService
+			? 'Elegí un servicio para ver los días disponibles.'
+			: !selectedLocation
+				? 'Elegí una sucursal para ver los días disponibles.'
+				: null;
+		syncCalendarSelectionHint(calendarRoot, selectionHint);
 
 		syncDatetimeContinue();
 	};

@@ -609,6 +609,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 	import { initLocationClosuresUI } from "../../scripts/location-closures-ui";
 	import {
 		createBrandMarker,
+		createStadiaTransformRequest,
 		getStadiaStyleUrl,
 		loadMapLibre,
 		resolveMapTheme,
@@ -1228,6 +1229,7 @@ const stadiaMapsKey = String(import.meta.env.PUBLIC_STADIA_MAPS_KEY ?? "");
 					zoom: 12,
 					attributionControl: { compact: true },
 					cooperativeGestures: isCoarsePointer,
+					transformRequest: createStadiaTransformRequest(this.stadiaKey),
 				});
 
 				this.mapInstance.addControl(

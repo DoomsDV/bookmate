@@ -287,6 +287,27 @@ export const initializePublicUserBookingPage = () => {
 	let availableDatesLoadingKey: string | null = null;
 	let availableDatesRequestSeq = 0;
 	let renderCalendar = () => {};
+
+	const syncCalendarSelectionHint = (
+		calendarRoot: Element | null,
+		message: string | null,
+	) => {
+		if (!calendarRoot) return;
+		calendarRoot.classList.toggle('is-waiting-selection', Boolean(message));
+		let hint = calendarRoot.querySelector<HTMLParagraphElement>('[data-calendar-selection-hint]');
+		if (!message) {
+			if (hint) hint.hidden = true;
+			return;
+		}
+		if (!hint) {
+			hint = document.createElement('p');
+			hint.className = 'public-booking-calendar__hint';
+			hint.dataset.calendarSelectionHint = '';
+			calendarRoot.appendChild(hint);
+		}
+		hint.textContent = message;
+		hint.hidden = false;
+	};
 	let isLoadingSlots = false;
 	let isSubmitting = false;
 	let isValidatingCustomer = false;
@@ -1820,6 +1841,13 @@ export const initializePublicUserBookingPage = () => {
 
 			calendarGrid.appendChild(dayButton);
 		}
+
+		const selectionHint = !selectedService
+			? 'Elegí un servicio para ver los días disponibles.'
+			: !selectedOrgGroup
+				? 'Elegí una sucursal para ver los días disponibles.'
+				: null;
+		syncCalendarSelectionHint(calendarRoot, selectionHint);
 	};
 
 	const loadSlots = async (

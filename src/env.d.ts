@@ -3,7 +3,7 @@
 /// <reference types="vite-plugin-pwa/info" />
 /// <reference types="vite-plugin-pwa/client" />
 
-declare module 'maplibre-gl/dist/maplibre-gl-worker.mjs?url' {
+declare module 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url' {
 	const workerUrl: string;
 	export default workerUrl;
 }

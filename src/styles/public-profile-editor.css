@@ -2196,10 +2196,18 @@ body:has(public-profile-editor .ppe-save-footer) [data-flash-stack] {
 	border-radius: 1rem;
 	background: var(--surface-bright);
 	box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 9%, transparent);
-	animation: ppe-hours-day-enter 800ms var(--ppe-hours-ease) both;
 	transition:
 		box-shadow 520ms var(--ppe-hours-ease),
 		background-color 520ms var(--ppe-hours-ease);
+}
+
+/*
+ * No animar mientras el panel está display:none: fill-mode `both` deja
+ * opacity:0 y al abrir Horario los días no se ven hasta recargar.
+ */
+html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] .ppe-hours-day,
+.ppe-panel[data-ppe-panel='horario']:not([hidden]) .ppe-hours-day {
+	animation: ppe-hours-day-enter 800ms var(--ppe-hours-ease) forwards;
 }
 
 .ppe-hours-day:nth-child(1) { animation-delay: 0ms; }
@@ -2611,6 +2619,8 @@ html[data-theme='dark'] .ppe-hours-remove {
 }
 
 @media (prefers-reduced-motion: reduce) {
+	html[data-ppe-tab-pref='horario'] .ppe-panel[data-ppe-panel='horario'] .ppe-hours-day,
+	.ppe-panel[data-ppe-panel='horario']:not([hidden]) .ppe-hours-day,
 	.ppe-hours-day,
 	.ppe-hours-copy,
 	.ppe-hours-copy__mark,

@@ -1411,6 +1411,7 @@ const serializedProfessionals = professionals.length
 						center: [lng, lat],
 						zoom: 16,
 						attributionControl: { compact: true },
+						transformRequest: mapLibreMod.createStadiaTransformRequest(apiKey),
 					});
 					map.addControl(
 						new maplibregl.NavigationControl({ showCompass: false }),

@@ -2,6 +2,8 @@
  * MapLibre GL interactivo — import dinámico de maplibre-gl (modal / mapas en vivo).
  */
 
+import maplibreWorkerUrl from 'maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url';
+
 import {
 	BRAND_MAP_MARKER_COLOR,
 	createBrandMarkerElement,
@@ -62,8 +64,11 @@ const resolveWorkerUrl = (rawUrl: string): string => {
 const configureWorker = async (maplibregl: MapLibreModule) => {
 	if (workerConfigured || typeof document === 'undefined') return;
 	workerConfigured = true;
-	const workerUrl = (await import('maplibre-gl/dist/maplibre-gl-worker.mjs?url')).default;
-	maplibregl.setWorkerUrl(resolveWorkerUrl(workerUrl));
+	// `?url` copies the raw worker, which imports `./maplibre-gl-shared.mjs`.
+	// After the Vite hash, that sibling 404s and the worker dies: style/sprite
+	// load on the main thread, vector tiles never request, canvas stays gray.
+	// `?worker&url` bundles the worker + shared deps into one chunk.
+	maplibregl.setWorkerUrl(resolveWorkerUrl(maplibreWorkerUrl));
 };
 
 export type MapLibreMap = InstanceType<MapLibreModule['Map']>;
@@ -196,6 +201,25 @@ export const getStadiaStyleUrl = (theme: MapTheme, apiKey: string): string => {
 	const key = String(apiKey || '').trim();
 	if (!key) return base;
 	return `${base}?api_key=${encodeURIComponent(key)}`;
+};
+
+/** Añade `api_key` a glyphs/tiles Stadia que el estilo entrega sin query. */
+export const createStadiaTransformRequest = (apiKey: string) => {
+	const key = String(apiKey || '').trim();
+	return (url: string) => {
+		if (!key) return { url };
+		let parsed: URL;
+		try {
+			parsed = new URL(url);
+		} catch {
+			return { url };
+		}
+		if (!parsed.hostname.endsWith('stadiamaps.com')) return { url };
+		if (!parsed.searchParams.has('api_key')) {
+			parsed.searchParams.set('api_key', key);
+		}
+		return { url: parsed.toString() };
+	};
 };
 
 export const MAPLIBRE_ES_UI_LOCALE = {

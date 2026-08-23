@@ -1282,6 +1282,18 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	margin-bottom: 0.75rem;
 }
 
+.public-booking-calendar__hint {
+	margin: 0.75rem 0 0;
+	font-size: 0.875rem;
+	line-height: 1.4;
+	text-align: center;
+	color: var(--on-surface-variant);
+}
+
+.public-booking-calendar.is-waiting-selection [data-calendar-grid] {
+	opacity: 0.45;
+}
+
 .public-booking-calendar__month {
 	margin: 0;
 	flex: 1;
