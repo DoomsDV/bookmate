@@ -37,6 +37,12 @@ import {
 	isMobileStack,
 	syncStackLayers,
 } from './public-user-booking/picker-ui';
+import {
+	bindSipapCopyButtons,
+	bindSipapReceiptUpload,
+	fillSipapDepositPanel,
+	type PublicDepositSettings,
+} from './public-deposit-sipap';
 
 type BookingLocation = {
 	id_location: number;
@@ -58,11 +64,21 @@ type PublicReservationDetail = {
 	location_name?: string;
 	location_address?: string;
 	ser_id_service: number;
+	service_name?: string;
+	professional_name?: string;
 	start_time: string;
 	end_time?: string;
 	status?: string;
 	duration_minutes?: number;
+	payment_status?: string | null;
 	deposit_amount?: number | null;
+	policy_code_snapshot?: string | null;
+	policy_label?: string | null;
+	ocr_status?: string | null;
+	reject_reason?: string | null;
+	payment_reference?: string | null;
+	payment_expires_at?: string | null;
+	deposit_settings?: PublicDepositSettings | null;
 	refund_status?: string | null;
 	refund_amount?: number | null;
 	refund_preview?: {
@@ -1343,6 +1359,50 @@ export const initializePublicReservationPage = () => {
 		selectedLocationId = reservation.loc_id_location;
 		return true;
 	};
+
+	// Seña pendiente: permite subir/resubir el comprobante SIPAP sin salir de esta
+	// página (evita que el cliente tenga que escribir por WhatsApp ante un rechazo).
+	const depositRoot = root.querySelector<HTMLElement>('[data-reservation-deposit]');
+	const sipapPanel = depositRoot?.querySelector<HTMLElement>('[data-step-panel]') ?? null;
+	if (depositRoot && sipapPanel) {
+		sipapPanel.classList.remove('hidden');
+		fillSipapDepositPanel(
+			sipapPanel,
+			{
+				deposit_amount: reservation.deposit_amount ?? undefined,
+				payment_reference: reservation.payment_reference ?? undefined,
+				payment_expires_at: reservation.payment_expires_at ?? undefined,
+				sipap: reservation.deposit_settings?.sipap ?? undefined,
+				refund_policy: reservation.policy_code_snapshot ?? undefined,
+				refund_policy_label: reservation.policy_label ?? undefined,
+				ocr_status: reservation.ocr_status ?? undefined,
+				reject_reason: reservation.reject_reason ?? undefined,
+				public_manage_token: token,
+			},
+			reservation.deposit_settings ?? undefined,
+			{
+				serviceName: reservation.service_name,
+				professionalName: reservation.professional_name,
+				depositAmount: reservation.deposit_amount ?? undefined,
+			}
+		);
+		bindSipapCopyButtons(depositRoot);
+		bindSipapReceiptUpload(sipapPanel, {
+			onResult: (result) => {
+				depositRoot.querySelector('[data-deposit-reject-notice]')?.remove();
+				const ocr = String(result.ocr_status || '').toUpperCase();
+				showToast(
+					result.message ||
+						(ocr === 'MATCH'
+							? 'Pago verificado. Tu turno quedó confirmado.'
+							: 'Comprobante recibido.'),
+					'success'
+				);
+				void refreshReservationSummary();
+			},
+			onError: (message) => showToast(message, 'error'),
+		});
+	}
 
 	const handleRescheduleNext = async () => {
 		if (rescheduleStep === 1) {

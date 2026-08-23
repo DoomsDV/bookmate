@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import AppAlert from '../../components/AppAlert.astro';
+import PublicSipapDepositPanel from '../../components/PublicSipapDepositPanel.astro';
 import {
 	getPublicReservationWithOrds,
 	PublicBookingApiError,
@@ -76,6 +77,17 @@ const isPastReservation =
 const statusMeta = formatReservationStatusLabel(reservation?.status || '', {
 	isPast: isPastReservation,
 });
+// Seña pendiente (nunca subida, en revisión, o rechazada): ofrecer subir/resubir
+// comprobante sin que el cliente tenga que escribir por WhatsApp.
+const showDepositUpload =
+	!isCancelled &&
+	!isPastReservation &&
+	String(reservation?.payment_status || '').trim().toUpperCase() === 'PENDING' &&
+	Number(reservation?.deposit_amount || 0) > 0;
+const wasReceiptRejected =
+	showDepositUpload &&
+	String(reservation?.ocr_status || '').trim().toUpperCase() === 'MISMATCH' &&
+	Boolean(reservation?.reject_reason);
 const professionalSlug = String(reservation?.professional_slug || '').trim();
 const organizationSlug = String(reservation?.organization_slug || '').trim();
 const rebookHref =
@@ -242,6 +254,22 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 									)}
 								</div>
 							</article>
+
+							{showDepositUpload && (
+								<div class="reservation-manage__deposit" data-reservation-deposit>
+									{wasReceiptRejected && (
+										<div class="reservation-manage__notice reservation-manage__notice--warning" data-deposit-reject-notice>
+											<span class="material-symbols-rounded" aria-hidden="true">error</span>
+											<div>
+												<p class="reservation-manage__notice-title">No pudimos validar tu comprobante</p>
+												<p class="reservation-manage__notice-text">{reservation.reject_reason}</p>
+												<p class="reservation-manage__notice-text">Subí un comprobante nuevo para confirmar tu turno.</p>
+											</div>
+										</div>
+									)}
+									<PublicSipapDepositPanel />
+								</div>
+							)}
 
 							{visitHistoryCount > 0 && (
 								<p class="reservation-manage__history-summary">
@@ -942,6 +970,45 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	display: grid;
 	gap: 0.75rem;
 	padding: 1rem 0 0.25rem;
+}
+
+.reservation-manage__deposit {
+	display: grid;
+	gap: 0.85rem;
+	margin-top: 0.15rem;
+}
+
+.reservation-manage__notice--warning {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.65rem;
+	padding: 0.85rem 1rem;
+	border: 1px solid color-mix(in srgb, #ef4444 35%, transparent);
+	border-radius: 1.1rem;
+	background: color-mix(in srgb, #ef4444 12%, var(--surface-container-lowest, #1a1a1a));
+}
+
+.reservation-manage__notice--warning .material-symbols-rounded {
+	flex-shrink: 0;
+	margin-top: 0.1rem;
+	font-size: 1.3rem;
+	line-height: 1;
+	color: #f87171;
+}
+
+.reservation-manage__notice-title {
+	margin: 0;
+	font-size: 0.92rem;
+	font-weight: 700;
+	line-height: 1.3;
+	color: var(--on-surface);
+}
+
+.reservation-manage__notice-text {
+	margin: 0.25rem 0 0;
+	font-size: 0.85rem;
+	line-height: 1.4;
+	color: var(--on-surface-variant);
 }
 
 .reservation-state {

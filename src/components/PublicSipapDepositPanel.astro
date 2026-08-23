@@ -28,6 +28,9 @@ const { stepPanel = 6 } = Astro.props;
 			<span class="hidden" data-sipap-hold-unknown>
 				Tu turno está reservado. Adjuntá el comprobante para confirmar.
 			</span>
+			<span class="hidden" data-sipap-hold-submitted>
+				Comprobante enviado. Esperando confirmación del comercio.
+			</span>
 		</p>
 	</div>
 	<p class="sr-only" data-sipap-hold-live role="status" aria-live="polite"></p>
@@ -243,7 +246,8 @@ const { stepPanel = 6 } = Astro.props;
 
 	[data-sipap-hold-active].hidden,
 	[data-sipap-hold-expired].hidden,
-	[data-sipap-hold-unknown].hidden {
+	[data-sipap-hold-unknown].hidden,
+	[data-sipap-hold-submitted].hidden {
 		display: none;
 	}
 
@@ -260,6 +264,21 @@ const { stepPanel = 6 } = Astro.props;
 	.sipap-hold-banner.is-expired {
 		border-color: rgb(249 115 22 / 0.35);
 		background: rgb(249 115 22 / 0.16);
+	}
+
+	.sipap-hold-banner.hidden {
+		display: none;
+	}
+
+	/* Comprobante ya subido y en revisión: tono ámbar calmo (el reloj está congelado, no
+	   hay urgencia para el cliente, la pelota está del lado del negocio). */
+	.sipap-hold-banner.is-submitted {
+		border-color: rgb(251 191 36 / 0.3);
+		background: rgb(251 191 36 / 0.12);
+	}
+
+	.sipap-hold-banner.is-submitted .sipap-hold-banner__icon {
+		color: #fbbf24;
 	}
 
 	.sipap-hold-banner__icon {

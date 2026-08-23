@@ -33,6 +33,8 @@ export interface SipapHoldResponse {
 	refund_policy?: string;
 	refund_policy_label?: string;
 	refund_policy_summary?: string;
+	ocr_status?: string | null;
+	reject_reason?: string | null;
 	message?: string;
 	data?: SipapHoldResponse;
 }
@@ -158,16 +160,22 @@ const setHoldLive = (root: ParentNode, message: string) => {
 	if (live) live.textContent = message;
 };
 
-const setHoldVisibleState = (root: ParentNode, state: 'active' | 'expired' | 'unknown') => {
+const setHoldVisibleState = (
+	root: ParentNode,
+	state: 'active' | 'expired' | 'unknown' | 'submitted'
+) => {
 	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
 	const active = root.querySelector<HTMLElement>('[data-sipap-hold-active]');
 	const expired = root.querySelector<HTMLElement>('[data-sipap-hold-expired]');
 	const unknown = root.querySelector<HTMLElement>('[data-sipap-hold-unknown]');
+	const submitted = root.querySelector<HTMLElement>('[data-sipap-hold-submitted]');
 	banner?.classList.toggle('is-expired', state === 'expired');
+	banner?.classList.toggle('is-submitted', state === 'submitted');
 	if (banner) banner.dataset.sipapHoldState = state;
 	active?.classList.toggle('hidden', state !== 'active');
 	expired?.classList.toggle('hidden', state !== 'expired');
 	unknown?.classList.toggle('hidden', state !== 'unknown');
+	submitted?.classList.toggle('hidden', state !== 'submitted');
 };
 
 const lockReceiptDropzone = (root: ParentNode, locked: boolean) => {
@@ -319,6 +327,20 @@ export const fillSipapDepositPanel = (
 
 	resetSipapReceiptPreview(root);
 	setSipapReceiptStatus(root, null);
+
+	// Si ya hay un comprobante subido en revisión (ocr_status presente, distinto de MATCH)
+	// y el negocio todavía no lo rechazó explícitamente (sin reject_reason), el reloj queda
+	// congelado: el cliente ya hizo su parte, no se lo puede penalizar por la demora del
+	// negocio en revisar. Solo vuelve a correr el countdown si hubo un rechazo explícito
+	// (ahí sí hay un payment_expires_at nuevo y un reject_reason que mostrar).
+	const ocrStatus = String(hold.ocr_status || '').toUpperCase();
+	const hasRejection = Boolean(String(hold.reject_reason || '').trim());
+	if (ocrStatus && ocrStatus !== 'MATCH' && !hasRejection) {
+		stopSipapHoldCountdown(root);
+		setHoldVisibleState(root, 'submitted');
+		return;
+	}
+
 	startSipapHoldCountdown(root, hold.payment_expires_at);
 };
 
@@ -430,6 +452,19 @@ export const setSipapReceiptStatus = (
 
 	statusEl.textContent = text;
 	statusEl.dataset.state = ocr === 'MATCH' ? 'success' : 'review';
+
+	// El reloj se congela apenas se sube el comprobante: el cliente ya hizo su parte y no
+	// debe perder el turno por una demora del negocio en revisar (ver también
+	// fillSipapDepositPanel, que aplica el mismo freeze al recargar la página).
+	stopSipapHoldCountdown(root);
+	const banner = root.querySelector<HTMLElement>('[data-sipap-hold-banner]');
+	if (ocr === 'MATCH') {
+		banner?.classList.add('hidden');
+	} else {
+		banner?.classList.remove('hidden');
+		setHoldVisibleState(root, 'submitted');
+	}
+
 	if (ocr === 'MATCH') {
 		syncSubmitEnabled(root, true);
 		if (fileInput) fileInput.disabled = true;

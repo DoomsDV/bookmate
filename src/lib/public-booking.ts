@@ -202,6 +202,21 @@ export interface PublicReservationRefundPreview {
 	no_refund_reason?: PublicReservationNoRefundReason | null;
 }
 
+export interface PublicReservationSipapBankDetails {
+	bank_name?: string | null;
+	account_holder?: string | null;
+	document_id?: string | null;
+	bank_alias?: string | null;
+}
+
+export interface PublicReservationDepositSettings {
+	deposits_enabled?: 0 | 1;
+	refund_policy?: string | null;
+	refund_policy_label?: string | null;
+	refund_policy_summary?: string | null;
+	sipap?: PublicReservationSipapBankDetails | null;
+}
+
 export interface PublicReservationDetail {
 	id_appointment: number;
 	org_id_organization: number;
@@ -239,6 +254,13 @@ export interface PublicReservationDetail {
 	last_recommendations?: string | null;
 	/** Sucursales activas de la organización (evita un 2do fetch al perfil público). */
 	locations?: PublicBookingLocation[];
+	/** Solo presentes cuando payment_status='PENDING' (permite ofrecer subir/resubir comprobante). */
+	ocr_status?: string | null;
+	/** Solo se expone si el último comprobante fue rechazado explícitamente por el comercio. */
+	reject_reason?: string | null;
+	payment_reference?: string | null;
+	payment_expires_at?: string | null;
+	deposit_settings?: PublicReservationDepositSettings | null;
 }
 
 export interface PublicVisitHistoryItem {
@@ -934,6 +956,35 @@ const normalizeReservationDetail = (value: unknown): PublicReservationDetail | n
 		visit_history_count: Number(source.visit_history_count ?? 0) || 0,
 		last_recommendations: String(source.last_recommendations || '').trim() || null,
 		locations: normalizePublicBookingLocations(source.locations) as PublicBookingLocation[],
+		ocr_status: String(source.ocr_status || '').trim() || null,
+		reject_reason: String(source.reject_reason || '').trim() || null,
+		payment_reference: String(source.payment_reference || '').trim() || null,
+		payment_expires_at: String(source.payment_expires_at || '').trim() || null,
+		deposit_settings: (() => {
+			const settings = source.deposit_settings;
+			if (!settings || typeof settings !== 'object') return null;
+			const s = settings as Record<string, unknown>;
+			const sipapSource = s.sipap;
+			const sipap =
+				sipapSource && typeof sipapSource === 'object'
+					? (() => {
+							const b = sipapSource as Record<string, unknown>;
+							return {
+								bank_name: String(b.bank_name || '').trim() || null,
+								account_holder: String(b.account_holder || '').trim() || null,
+								document_id: String(b.document_id || '').trim() || null,
+								bank_alias: String(b.bank_alias || '').trim() || null,
+							};
+						})()
+					: null;
+			return {
+				deposits_enabled: Number(s.deposits_enabled ?? 0) === 1 ? 1 : 0,
+				refund_policy: String(s.refund_policy || '').trim() || null,
+				refund_policy_label: String(s.refund_policy_label || '').trim() || null,
+				refund_policy_summary: String(s.refund_policy_summary || '').trim() || null,
+				sipap,
+			};
+		})(),
 	};
 };
 
