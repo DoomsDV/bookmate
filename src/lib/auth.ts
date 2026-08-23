@@ -1306,8 +1306,16 @@ export const isPublicPath = (pathname: string) => {
 		pathname === '/r' ||
 		pathname.startsWith('/r/') ||
 		pathname.startsWith('/_astro') ||
+		pathname === '/sw.js' ||
+		pathname === '/registerSW.js' ||
+		pathname.startsWith('/workbox-') ||
+		pathname === '/firebase-messaging-sw.js' ||
+		pathname.startsWith('/icons/') ||
+		pathname.startsWith('/fonts/') ||
+		pathname.startsWith('/decor/') ||
 		pathname === '/favicon.ico' ||
 		pathname === '/favicon.svg' ||
+		pathname === '/favicon-32.png' ||
 		pathname === '/manifest.webmanifest' ||
 		pathname.startsWith('/models/odontogram')
 	);

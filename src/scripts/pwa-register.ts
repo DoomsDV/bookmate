@@ -25,6 +25,7 @@ export const initHaselPwaRegister = () => {
 	// type: 'module' rompe en Chrome ("Module scripts don't support importScripts()").
 	const wb = new Workbox(swUrl, {
 		scope: '/',
+		updateViaCache: 'none',
 	});
 
 	let shouldReload = false;

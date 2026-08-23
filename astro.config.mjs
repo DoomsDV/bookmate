@@ -110,11 +110,30 @@ export default defineConfig({
       ]
     },
     workbox: {
-      // This app is SSR/MPA, so we do not use SPA app-shell fallback navigation.
+      // SSR/MPA: sin app-shell. No precachear `/_astro/*` (hashes por deploy):
+      // un solo 404 en install aborta el SW entero (bad-precaching-response)
+      // y el dashboard queda sin hidratar.
       navigateFallback: null,
       clientsClaim: true,
-      // Cachea los assets estáticos generados por Astro/Vite
-      globPatterns: ['**/*.{js,css,html,ico,png,svg}']
+      cleanupOutdatedCaches: true,
+      directoryIndex: null,
+      globPatterns: ['**/*.{ico,png,svg,woff2}', 'manifest.webmanifest'],
+      globIgnores: ['**/_astro/**', '**/sw.js', '**/workbox-*.js', '**/registerSW.js'],
+      runtimeCaching: [
+        {
+          urlPattern: ({ url }) =>
+            url.pathname.startsWith('/_astro/') && /\.(js|css)$/.test(url.pathname),
+          handler: 'CacheFirst',
+          options: {
+            cacheName: 'hasel-astro-assets',
+            cacheableResponse: { statuses: [200] },
+            expiration: {
+              maxEntries: 80,
+              maxAgeSeconds: 60 * 60 * 24 * 30,
+            },
+          },
+        },
+      ],
     }
   }), sitemap()],
 
