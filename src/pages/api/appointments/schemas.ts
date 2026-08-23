@@ -43,14 +43,6 @@ const validateCustomerIdentity = (
 			message: 'El nombre del cliente es obligatorio.',
 		});
 	}
-
-	if (!payload.customer_phone?.trim()) {
-		ctx.addIssue({
-			code: z.ZodIssueCode.custom,
-			path: ['customer_phone'],
-			message: 'El teléfono del cliente es obligatorio.',
-		});
-	}
 };
 
 const appointmentCreateSchema = baseAppointmentSchema.superRefine((payload, ctx) => {

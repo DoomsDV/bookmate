@@ -59,8 +59,8 @@ class AppointmentVoiceOverlay extends HTMLElement {
 	#ui: VoiceUiNodes | null = null;
 
 	private static readonly STATUS_LABELS: Record<VoiceUiState, string> = {
-		idle: 'Toca el micrófono y describe la cita.',
-		recording: 'Escuchando… describe la cita.',
+		idle: 'Toca el micrófono y describe la reserva.',
+		recording: 'Escuchando… describe la reserva.',
 		paused: 'En pausa. Tocá reanudar para seguir.',
 		collapsing: '',
 		processing: '',
@@ -385,7 +385,7 @@ class AppointmentVoiceOverlay extends HTMLElement {
 				'aria-label',
 				tab === 'scan'
 					? 'Guía para escanear agenda escrita a mano'
-					: 'Guía de cita rápida por voz'
+					: 'Guía de reserva rápida por voz'
 			);
 		}
 	}

@@ -25,7 +25,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 							<span class="material-symbols-rounded">calendar_add_on</span>
 						</div>
 						<div class="panel-modal-header__text">
-							<h2 class="panel-modal-header__title" data-appointment-modal-title>Crear cita</h2>
+							<h2 class="panel-modal-header__title" data-appointment-modal-title>Crear reserva</h2>
 							<p class="panel-modal-header__subtitle" data-appointment-modal-description>
 								Completa los datos para registrar una nueva reserva.
 							</p>
@@ -180,10 +180,10 @@ const { showVoiceButton = false }: Props = Astro.props;
 						<label class="grid gap-1.5 text-[0.95rem] font-bold text-(--on-surface)">
 							<span class="inline-flex items-center gap-1">
 								Teléfono
-								<span class="text-rose-500">*</span>
+								<span class="text-[0.8rem] font-semibold text-(--on-surface-variant)">(opcional)</span>
 							</span>
-							<div class="appointment-phone-field flex h-[3.25rem] rounded-xl shadow-sm transition-shadow focus-within:ring-4 focus-within:ring-(--primary)/10">
-								<span class="appointment-phone-field__prefix inline-flex items-center rounded-l-xl border border-r-0 border-(--shell-border) bg-(--control-surface) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
+							<div class="appointment-phone-field flex h-[3.25rem] rounded-xl focus-within:ring-4 focus-within:ring-(--primary)/10">
+								<span class="appointment-phone-field__prefix inline-flex items-center rounded-l-xl border border-r-0 border-(--shell-border) bg-(--surface-bright) px-4 text-[0.95rem] font-semibold text-(--on-surface-variant)">
 									+595
 								</span>
 								<input
@@ -413,36 +413,37 @@ const { showVoiceButton = false }: Props = Astro.props;
 									</div>
 
 									<div class="dtp-nav-row">
-										<div class="inline-flex items-center gap-1.5">
+										<button
+											type="button"
+											data-picker-prev-month
+											class="dtp-icon-btn"
+											aria-label="Mes anterior"
+										>
+											<span class="material-symbols-rounded text-[1.05rem]">chevron_left</span>
+										</button>
+										<p class="dtp-month-label" data-picker-month-label></p>
+										<div class="dtp-nav-selects">
 											<select
 												data-picker-month-select
 												class="dtp-select"
 												aria-label="Seleccionar mes"
+												tabindex="-1"
 											></select>
 											<select
 												data-picker-year-select
 												class="dtp-select dtp-select--year"
 												aria-label="Seleccionar año"
+												tabindex="-1"
 											></select>
 										</div>
-										<div class="inline-flex items-center gap-1">
-											<button
-												type="button"
-												data-picker-prev-month
-												class="dtp-icon-btn"
-												aria-label="Mes anterior"
-											>
-												<span class="material-symbols-rounded text-[1.05rem]">chevron_left</span>
-											</button>
-											<button
-												type="button"
-												data-picker-next-month
-												class="dtp-icon-btn"
-												aria-label="Mes siguiente"
-											>
-												<span class="material-symbols-rounded text-[1.05rem]">chevron_right</span>
-											</button>
-										</div>
+										<button
+											type="button"
+											data-picker-next-month
+											class="dtp-icon-btn"
+											aria-label="Mes siguiente"
+										>
+											<span class="material-symbols-rounded text-[1.05rem]">chevron_right</span>
+										</button>
 									</div>
 
 									<div class="dtp-weekdays">
@@ -686,7 +687,7 @@ const { showVoiceButton = false }: Props = Astro.props;
 							data-submit-appointment
 						>
 							<span class="material-symbols-rounded text-[1.2rem]" data-submit-appointment-icon aria-hidden="true">check</span>
-							<span data-submit-appointment-label>Crear cita</span>
+							<span data-submit-appointment-label>Crear reserva</span>
 						</button>
 					</div>
 				</div>

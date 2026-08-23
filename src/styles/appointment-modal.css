@@ -1015,3 +1015,108 @@ dialog[data-appointment-modal] .bookmate-searchable-select-dropdown {
 		font-weight: 600;
 	}
 }
+
+/* El <dialog> del picker cubre toda la pantalla (fixed inset-0) para centrar la tarjeta.
+   La regla global "fondo plano" (global.css) pinta bg sólido en todo dialog:not(.is-desktop-popover),
+   así que sin esto se ve una plancha blanca arriba/abajo de la tarjeta en vez del formulario
+   difuminado detrás (como pasa en Reservas detectadas). */
+dialog[data-datetime-picker] {
+	background: transparent;
+	background-color: transparent;
+	background-image: none;
+	box-shadow: none;
+}
+
+/* Calendario del modal: look compacto tipo Reservas detectadas. No toca .dtp-* global. */
+dialog[data-datetime-picker] .dtp-card {
+	width: min(22rem, calc(100vw - 2rem));
+	border-radius: 0.85rem;
+	box-shadow: 0 16px 40px rgba(15, 23, 42, 0.22);
+}
+
+dialog[data-datetime-picker] .dtp-head {
+	position: relative;
+	padding: 0.2rem 0 0.15rem;
+}
+
+dialog[data-datetime-picker] .dtp-target-label {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+dialog[data-datetime-picker] .dtp-head-row {
+	justify-content: flex-end;
+	padding: 0.55rem 0.65rem 0;
+}
+
+dialog[data-datetime-picker] .dtp-nav-row {
+	display: grid;
+	grid-template-columns: 1.9rem minmax(0, 1fr) 1.9rem;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.15rem 0.65rem 0.45rem;
+}
+
+dialog[data-datetime-picker] .dtp-month-label {
+	margin: 0;
+	text-align: center;
+	font-size: 0.86rem;
+	font-weight: 800;
+	color: var(--on-surface);
+}
+
+dialog[data-datetime-picker] .dtp-nav-selects {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+}
+
+dialog[data-datetime-picker] .dtp-weekdays {
+	padding: 0 0.55rem;
+	font-size: 0.62rem;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+dialog[data-datetime-picker] .dtp-days-grid {
+	padding: 0.15rem 0.55rem 0.45rem;
+	gap: 0.15rem;
+}
+
+dialog[data-datetime-picker] .dtp-day {
+	height: 1.85rem;
+	border-radius: 0.4rem;
+	font-size: 0.78rem;
+	font-weight: 650;
+}
+
+dialog[data-datetime-picker] .dtp-day--today {
+	box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 45%, transparent);
+}
+
+dialog[data-datetime-picker] .dtp-day--selected,
+dialog[data-datetime-picker] .dtp-day--selected:hover {
+	background: color-mix(in srgb, var(--primary) 18%, transparent);
+	color: var(--primary);
+}
+
+dialog[data-datetime-picker] .dtp-day:hover:not(.dtp-day--disabled):not(.dtp-day--selected) {
+	background: color-mix(in srgb, var(--primary) 12%, transparent);
+	color: var(--primary);
+}
+
+dialog[data-datetime-picker] .dtp-day--disabled,
+dialog[data-datetime-picker] .dtp-day--disabled:hover {
+	color: color-mix(in srgb, var(--on-surface-variant) 35%, transparent);
+	background: transparent;
+}

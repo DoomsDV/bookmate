@@ -1166,7 +1166,7 @@ class AppointmentModal extends HTMLElement {
 	private syncSubmitLabel() {
 		if (!this.submitLabel || this.isSubmitting) return;
 		if (this.mode === 'create') {
-			this.submitLabel.textContent = 'Crear cita';
+			this.submitLabel.textContent = 'Crear reserva';
 			return;
 		}
 		if (this.isImmutableReadOnly) return;
@@ -2009,7 +2009,7 @@ class AppointmentModal extends HTMLElement {
 		this.editingRefundStatus = null;
 		this.editingRefundAmount = null;
 		this.editingCancelReason = null;
-		if (this.modalTitle) this.modalTitle.textContent = 'Crear cita';
+		if (this.modalTitle) this.modalTitle.textContent = 'Crear reserva';
 		if (this.modalDescription) {
 			this.modalDescription.textContent = 'Completa los datos para registrar una nueva reserva.';
 		}
@@ -2031,7 +2031,7 @@ class AppointmentModal extends HTMLElement {
 		this.clearImmutableReadOnlyMode();
 		this.mode = 'edit';
 		this.editingAppointmentId = appointmentId;
-		if (this.modalTitle) this.modalTitle.textContent = 'Editar cita';
+		if (this.modalTitle) this.modalTitle.textContent = 'Editar reserva';
 		if (this.modalDescription) {
 			this.modalDescription.textContent = 'Actualiza los datos de la reserva seleccionada.';
 		}
@@ -2231,22 +2231,14 @@ class AppointmentModal extends HTMLElement {
 		if (!customerId && !customerName) return { error: 'El nombre del cliente es obligatorio.' };
 
 		let customerPhone = '';
-		if (!customerId && !rawCustomerPhone) {
-			this.setFieldError('customer_phone', 'El teléfono del cliente es obligatorio.');
-			return { error: 'Revisa los campos marcados.' };
-		}
-
 		if (rawCustomerPhone) {
 			const parsedPhone = parseParaguayMobilePhone(rawCustomerPhone);
 			if (!parsedPhone.isValid) {
-				if (!customerId) {
-					this.setFieldError('customer_phone', PARAGUAY_MOBILE_PHONE_ERROR);
-					return { error: 'Revisa los campos marcados.' };
-				}
-			} else {
-				customerPhone = parsedPhone.e164;
-				requiredNodes.customerPhoneInput.value = this.formatParaguayPhoneLocal(parsedPhone.e164);
+				this.setFieldError('customer_phone', PARAGUAY_MOBILE_PHONE_ERROR);
+				return { error: 'Revisa los campos marcados.' };
 			}
+			customerPhone = parsedPhone.e164;
+			requiredNodes.customerPhoneInput.value = this.formatParaguayPhoneLocal(parsedPhone.e164);
 		}
 
 		if (!locId || !serviceId || !professionalId) {
@@ -2521,6 +2513,13 @@ class AppointmentModal extends HTMLElement {
 		}
 
 		yearSelect.value = String(viewYear);
+
+		const monthLabel = this.form?.querySelector<HTMLElement>('[data-picker-month-label]');
+		if (monthLabel) {
+			const labelFormatter = new Intl.DateTimeFormat('es-ES', { month: 'long', year: 'numeric' });
+			const label = labelFormatter.format(this.pickerViewDate);
+			monthLabel.textContent = label.charAt(0).toUpperCase() + label.slice(1);
+		}
 	}
 
 	private renderPickerDays(requiredNodes: RequiredNodes) {
@@ -2892,11 +2891,11 @@ class AppointmentModal extends HTMLElement {
 		{ notifyCustomer: boolean } | null
 	> {
 		const isEdit = this.mode === 'edit';
-		const title = isEdit ? 'Guardar cambios' : 'Crear cita';
+		const title = isEdit ? 'Guardar cambios' : 'Crear reserva';
 		const lead = isEdit
-			? '¿Confirmás guardar los cambios de esta cita?'
-			: '¿Confirmás crear esta cita?';
-		const confirmText = isEdit ? 'Guardar' : 'Crear cita';
+			? '¿Confirmás guardar los cambios de esta reserva?'
+			: '¿Confirmás crear esta reserva?';
+		const confirmText = isEdit ? 'Guardar' : 'Crear reserva';
 		const messageHtml = `
 			<p class="app-alert-notify-lead">${lead}</p>
 			<label class="app-alert-notify-row">

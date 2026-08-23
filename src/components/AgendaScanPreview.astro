@@ -4,7 +4,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 {FEATURE_FLAGS.APPOINTMENT_AI_VOICE && (
 	<agenda-scan-preview>
-				<dialog class="agenda-preview-shell" data-agenda-preview-shell aria-label="Revisar citas detectadas">
+				<dialog class="agenda-preview-shell" data-agenda-preview-shell aria-label="Revisar reservas detectadas">
 			<div class="agenda-preview-dialog">
 				<div class="agenda-preview-sheet-handle" aria-hidden="true">
 					<span class="agenda-preview-sheet-handle__pill"></span>
@@ -16,7 +16,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 						</span>
 						<div>
 							<h2 class="agenda-preview-title">
-								Citas detectadas (<span data-agenda-preview-count>0</span>)
+								Reservas detectadas (<span data-agenda-preview-count>0</span>)
 							</h2>
 							<p class="agenda-preview-subtitle">Revisá y corregí antes de guardar</p>
 						</div>
@@ -1809,6 +1809,10 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 		.agenda-preview-defaults.is-open .agenda-preview-defaults__reveal {
 			grid-template-rows: 1fr;
+		}
+
+		/* Recién visible cuando termina la transición (evita el salto/lag en mobile). */
+		.agenda-preview-defaults.is-open.is-settled .agenda-preview-defaults__reveal {
 			overflow: visible;
 		}
 
@@ -1823,8 +1827,11 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-defaults.is-open .agenda-preview-defaults__fields {
-			overflow: visible;
 			padding-top: 0.15rem;
+		}
+
+		.agenda-preview-defaults.is-open.is-settled .agenda-preview-defaults__fields {
+			overflow: visible;
 		}
 
 		.agenda-preview-defaults__field--service {

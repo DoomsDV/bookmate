@@ -7,7 +7,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		<dialog
 			class="appointment-voice-shell"
 			data-voice-overlay-shell
-			aria-label="Cita rápida por voz"
+			aria-label="Reserva rápida por voz"
 		>
 			<div class="appointment-voice-dialog">
 				<div class="appointment-voice-sheet-handle" aria-hidden="true">
@@ -20,8 +20,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 							<span class="material-symbols-rounded">auto_awesome</span>
 						</div>
 						<div>
-							<h2 class="appointment-voice-title">Cita rápida</h2>
-							<p class="appointment-voice-subtitle" data-voice-overlay-subtitle>Describe la cita con tu voz</p>
+							<h2 class="appointment-voice-title">Reserva rápida</h2>
+							<p class="appointment-voice-subtitle" data-voice-overlay-subtitle>Describe la reserva con tu voz</p>
 						</div>
 					</div>
 					<div class="appointment-voice-header-actions">
@@ -29,7 +29,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 							type="button"
 							class="appointment-voice-help"
 							data-voice-overlay-tour-help
-							aria-label="Guía de cita rápida por voz"
+							aria-label="Guía de reserva rápida por voz"
 						>
 							<span class="material-symbols-rounded" aria-hidden="true">help</span>
 							<span class="appointment-voice-help__label">Guía</span>
@@ -45,7 +45,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 					</div>
 				</div>
 
-				<div class="appointment-voice-tabs" role="tablist" aria-label="Modo de cita rápida">
+				<div class="appointment-voice-tabs" role="tablist" aria-label="Modo de reserva rápida">
 					<button
 						type="button"
 						class="appointment-voice-tab is-active"
@@ -72,7 +72,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 				<div class="appointment-voice-body">
 					<p class="appointment-voice-status" data-voice-overlay-status>
-						Toca el micrófono y describe la cita.
+						Toca el micrófono y describe la reserva.
 					</p>
 
 					<div class="appointment-voice-scan" data-voice-overlay-scan>
@@ -230,11 +230,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	@media (max-width: 639px) {
 		.appointment-voice-shell::backdrop {
 			background: var(--modal-backdrop-scrim);
-			backdrop-filter: none;
-			-webkit-backdrop-filter: none;
-		}
-
-		.appointment-voice-shell[open].is-settled::backdrop {
 			backdrop-filter: blur(var(--modal-backdrop-blur));
 			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
@@ -258,10 +253,10 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		animation: appointment-voice-backdrop-in var(--modal-open-duration, 150ms) var(--modal-easing, cubic-bezier(0.4, 0, 0.2, 1));
 	}
 
-	.appointment-voice-shell[open]:not(.is-settled)::backdrop,
+	.appointment-voice-shell[open]::backdrop,
 	.appointment-voice-shell.is-closing::backdrop {
-		backdrop-filter: none;
-		-webkit-backdrop-filter: none;
+		backdrop-filter: blur(var(--modal-backdrop-blur));
+		-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 	}
 
 	.appointment-voice-shell.is-closing {
@@ -387,11 +382,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 		dialog.appointment-voice-shell::backdrop {
 			background: var(--modal-backdrop-scrim);
-			backdrop-filter: none;
-			-webkit-backdrop-filter: none;
-		}
-
-		dialog.appointment-voice-shell[open].is-settled::backdrop {
 			backdrop-filter: blur(var(--modal-backdrop-blur));
 			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
@@ -1676,11 +1666,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 	@media (max-width: 639px) {
 		html[data-theme='dark'] .appointment-voice-shell::backdrop {
 			background: var(--modal-backdrop-scrim);
-			backdrop-filter: none;
-			-webkit-backdrop-filter: none;
-		}
-
-		html[data-theme='dark'] .appointment-voice-shell[open].is-settled::backdrop {
 			backdrop-filter: blur(var(--modal-backdrop-blur));
 			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}
@@ -1693,11 +1678,6 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 		html[data-theme='dark'] dialog.appointment-voice-shell::backdrop {
 			background: var(--modal-backdrop-scrim);
-			backdrop-filter: none;
-			-webkit-backdrop-filter: none;
-		}
-
-		html[data-theme='dark'] dialog.appointment-voice-shell[open].is-settled::backdrop {
 			backdrop-filter: blur(var(--modal-backdrop-blur));
 			-webkit-backdrop-filter: blur(var(--modal-backdrop-blur));
 		}

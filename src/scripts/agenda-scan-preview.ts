@@ -166,6 +166,7 @@ class AgendaScanPreview extends HTMLElement {
 	#activeTimeEl: HTMLElement | null = null;
 	#activeTimeInput: HTMLInputElement | null = null;
 	#outsideClose: ((event: Event) => void) | null = null;
+	#defaultsSettleTimer: number | undefined;
 
 	connectedCallback() {
 		if (this.#bound) return;
@@ -525,10 +526,21 @@ class AgendaScanPreview extends HTMLElement {
 		const toggle = this.querySelector<HTMLButtonElement>('[data-agenda-defaults-toggle]');
 		if (!root || !toggle) return;
 		if (!open) closePanelThemedSelects(this);
+		// El overflow:visible (necesario para que los selects desplieguen su lista) se
+		// activa recién cuando termina la transición de grid-template-rows: si se aplica
+		// de entrada, el contenido se muestra sin recortar durante toda la animación y
+		// se ve un salto/"lag" en mobile en vez de un acordeón fluido.
+		window.clearTimeout(this.#defaultsSettleTimer);
+		root.classList.remove('is-settled');
 		root.classList.toggle('is-open', open);
 		toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
 		this.syncDefaultsCollapseA11y();
 		this.updateDefaultsSummary();
+		if (open) {
+			this.#defaultsSettleTimer = window.setTimeout(() => {
+				root.classList.add('is-settled');
+			}, 240);
+		}
 	}
 
 	private toggleDefaultsOpen() {
@@ -785,9 +797,9 @@ class AgendaScanPreview extends HTMLElement {
 				</div>
 				${field(
 					'phone',
-					'Teléfono',
+					'Teléfono (opcional)',
 					'call',
-					`<input type="tel" data-row-phone value="${this.escape(row.customer_phone)}" placeholder="Añadir teléfono" aria-label="Teléfono" />`,
+					`<input type="tel" data-row-phone value="${this.escape(row.customer_phone)}" placeholder="Teléfono (opcional)" aria-label="Teléfono (opcional)" />`,
 					'agenda-preview-row__field--compact agenda-preview-row__field--phone'
 				)}
 			</div>
