@@ -803,12 +803,16 @@ html[data-theme='dark'] .ppe-dropzone__preview--logo {
 .ppe-dropzone__change {
 	position: absolute;
 	left: 50%;
+	right: auto;
 	bottom: 0.75rem;
 	transform: translateX(-50%);
 	z-index: 2;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
+	justify-self: center;
+	width: fit-content;
+	max-width: calc(100% - 1.5rem);
 	padding: 0.45rem 0.85rem;
 	border-radius: 999px;
 	background: color-mix(in srgb, var(--surface-bright) 88%, transparent);
@@ -817,9 +821,12 @@ html[data-theme='dark'] .ppe-dropzone__preview--logo {
 	color: var(--on-surface);
 	font-size: 0.78rem;
 	font-weight: 700;
+	line-height: 1.25;
+	text-align: center;
+	text-wrap: balance;
+	white-space: normal;
 	box-shadow: 0 6px 18px rgba(0, 0, 0, 0.18);
 	pointer-events: none;
-	white-space: nowrap;
 }
 
 .ppe-dropzone__change.hidden {
