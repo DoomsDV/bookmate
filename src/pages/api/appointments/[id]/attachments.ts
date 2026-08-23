@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 
+import { APPOINTMENT_ATTACHMENT_MAX_BYTES } from '../../../../lib/appointment-attachment';
 import {
 	AppointmentsApiError,
 	uploadAppointmentAttachmentWithOrds,
@@ -23,9 +24,9 @@ const toErrorResponse = (error: unknown, fallbackMessage: string) =>
 	});
 
 // Hardening (auditoría ORDS R2/R4): debe coincidir con ATTACHMENT_MAX_BYTES en PL/SQL
-// (PKG_AOX_APPOINTMENT_API.pr_upload_attachment). El límite real y autoritativo vive
-// en PL/SQL; esto solo evita reenviar/parsear payloads enormes en el BFF.
-const MAX_ATTACHMENT_BYTES = 20 * 1024 * 1024;
+// (PKG_AOX_APPOINTMENT_API.pr_upload_attachment). Vercel corta ~4.5 MB (413) antes
+// de llegar acá; el cliente comprime fotos y, si el JSON sigue grande, sube a ORDS.
+const MAX_ATTACHMENT_BYTES = APPOINTMENT_ATTACHMENT_MAX_BYTES;
 const MAX_ATTACHMENT_CONTENT_LENGTH = Math.ceil((MAX_ATTACHMENT_BYTES * 4) / 3) + 4096;
 
 const assertContentLengthWithinLimit = (request: Request) => {

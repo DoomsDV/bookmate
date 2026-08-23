@@ -1,5 +1,6 @@
 import { ROLES } from '../../config/roles';
 import type { AppointmentAiDraft } from '../../lib/appointment-ai-types';
+import { APPOINTMENT_ATTACHMENT_MAX_BYTES } from '../../lib/appointment-attachment';
 import { formatPersonName } from '../../lib/format-person-name';
 import {
 	PARAGUAY_MOBILE_PHONE_ERROR,
@@ -37,6 +38,7 @@ import {
 	syncSearchableSelect,
 } from '../searchable-select';
 import { AppointmentsClient } from './appointments-client';
+import { prepareAppointmentAttachmentFile } from './prepare-attachment-file';
 import type {
 	ApiFieldError,
 	AppointmentAttachment,
@@ -1692,7 +1694,7 @@ class AppointmentModal extends HTMLElement {
 			return;
 		}
 
-		const maxBytes = 20 * 1024 * 1024;
+		const maxBytes = APPOINTMENT_ATTACHMENT_MAX_BYTES;
 		const maxFiles = AppointmentModal.MAX_ATTACHMENTS;
 		const queue = files.filter(Boolean);
 		if (!queue.length) return;
@@ -1728,11 +1730,12 @@ class AppointmentModal extends HTMLElement {
 		this.setUploadingAttachment(true);
 		try {
 			for (const file of queue) {
-				const base64 = await this.fileToBase64(file);
+				const prepared = await prepareAppointmentAttachmentFile(file);
+				const base64 = await this.fileToBase64(prepared.file);
 				const { attachment } = await this.client.uploadAttachment(this.editingAppointmentId, {
 					file_base64: base64,
-					filename: file.name,
-					mime_type: file.type || 'application/octet-stream',
+					filename: prepared.filename,
+					mime_type: prepared.mimeType,
 				});
 				if (attachment) {
 					this.currentAttachments = [...this.currentAttachments, attachment];

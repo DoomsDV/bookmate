@@ -1,3 +1,7 @@
+import {
+	APPOINTMENT_ATTACHMENT_BFF_SAFE_JSON_BYTES,
+	estimateAttachmentJsonBytes,
+} from '../../lib/appointment-attachment';
 import type {
 	AppointmentAttachment,
 	AppointmentCreatePayload,
@@ -28,11 +32,18 @@ type GoogleCalendarEventsPayload = {
 	events: unknown[];
 };
 
+const PAYLOAD_TOO_LARGE_MESSAGE =
+	'El archivo es demasiado grande para subir por esta vía. Probá una foto más liviana o un PDF de hasta 20 MB.';
+
 const parseJsonResponse = async (response: Response) => {
+	if (response.status === 413) {
+		throw new ApiClientError(PAYLOAD_TOO_LARGE_MESSAGE, 413);
+	}
+
 	try {
 		return (await response.json()) as ApiSuccess | ApiFailure;
 	} catch {
-		throw new ApiClientError('No fue posible interpretar la respuesta del servidor.', 502);
+		throw new ApiClientError('No fue posible interpretar la respuesta del servidor.', response.status || 502);
 	}
 };
 
@@ -210,11 +221,80 @@ export class AppointmentsClient {
 		appointmentId: number,
 		payload: { file_base64: string; filename: string; mime_type: string }
 	) {
-		const response = await fetch(`/api/appointments/${appointmentId}/attachments`, {
+		const estimatedBytes = estimateAttachmentJsonBytes(payload);
+		const useDirect = estimatedBytes > APPOINTMENT_ATTACHMENT_BFF_SAFE_JSON_BYTES;
+
+		if (useDirect) {
+			return this.uploadAttachmentDirect(appointmentId, payload);
+		}
+
+		try {
+			return await this.uploadAttachmentViaBff(appointmentId, payload);
+		} catch (error) {
+			if (error instanceof ApiClientError && error.status === 413) {
+				return this.uploadAttachmentDirect(appointmentId, payload);
+			}
+			throw error;
+		}
+	}
+
+	private async uploadAttachmentViaBff(
+		appointmentId: number,
+		payload: { file_base64: string; filename: string; mime_type: string }
+	) {
+		return this.postAttachmentJson(`/api/appointments/${appointmentId}/attachments`, payload);
+	}
+
+	private async uploadAttachmentDirect(
+		appointmentId: number,
+		payload: { file_base64: string; filename: string; mime_type: string }
+	) {
+		const session = await this.getDirectUpload(appointmentId);
+		try {
+			return await this.postAttachmentJson(session.url, payload, {
+				Authorization: session.authorization,
+			}, { credentials: 'omit' });
+		} catch (error) {
+			if (error instanceof ApiClientError) throw error;
+			throw new ApiClientError(
+				'No fue posible subir el archivo adjunto. Si pesa varios megas, revisá tu conexión e intentá de nuevo.',
+				502
+			);
+		}
+	}
+
+	private async getDirectUpload(appointmentId: number) {
+		const response = await fetch(`/api/appointments/${appointmentId}/attachments/direct-upload`, {
+			method: 'GET',
+			headers: { Accept: 'application/json' },
+			cache: 'no-store',
+		});
+		const data = await parseJsonResponse(response);
+		ensureSuccess(response, data, 'No fue posible preparar la subida del archivo.');
+
+		const payload = (data as ApiSuccess<{ url?: string; authorization?: string }>).data;
+		const url = String(payload?.url || '').trim();
+		const authorization = String(payload?.authorization || '').trim();
+		if (!url || !authorization) {
+			throw new ApiClientError('No fue posible preparar la subida del archivo.', 502);
+		}
+
+		return { url, authorization };
+	}
+
+	private async postAttachmentJson(
+		url: string,
+		payload: { file_base64: string; filename: string; mime_type: string },
+		extraHeaders: Record<string, string> = {},
+		init: Pick<RequestInit, 'credentials'> = {}
+	) {
+		const response = await fetch(url, {
 			method: 'POST',
+			credentials: init.credentials,
 			headers: {
 				'Content-Type': 'application/json',
 				Accept: 'application/json',
+				...extraHeaders,
 			},
 			body: JSON.stringify(payload),
 		});
