@@ -13,6 +13,32 @@ export const FEATURE_FLAGS = {
 
 export type FeatureFlag = keyof typeof FEATURE_FLAGS;
 
+const PRODUCTION_BILLING_HOSTS = new Set(['hasel.app', 'www.hasel.app']);
+
+function publicAppHost() {
+	const raw = String(import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? '').trim().toLowerCase();
+	if (!raw) return '';
+	try {
+		return new URL(raw.includes('://') ? raw : `https://${raw}`).hostname;
+	} catch {
+		return raw.replace(/^https?:\/\//, '').split('/')[0] ?? '';
+	}
+}
+
+/**
+ * UI de plan / facturación de suscripción Hasel (Pagopar plataforma).
+ * Apagada en producción hasta encender el cobro. Staging y local siguen visibles.
+ * Override: PUBLIC_SUBSCRIPTION_BILLING_UI=0|1
+ */
+export const isSubscriptionBillingUiEnabled = (): boolean => {
+	const explicit = String(import.meta.env.PUBLIC_SUBSCRIPTION_BILLING_UI ?? '')
+		.trim()
+		.toLowerCase();
+	if (explicit === '1' || explicit === 'true') return true;
+	if (explicit === '0' || explicit === 'false') return false;
+	return !PRODUCTION_BILLING_HOSTS.has(publicAppHost());
+};
+
 /**
  * Entitlements por plan definidos en el backend (`ref_plan_feature.feature_code`).
  * Fuente de verdad: `GET /workspace/subscription` → `data.features`.

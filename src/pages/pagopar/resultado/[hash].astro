@@ -1,10 +1,16 @@
 ---
+import { isSubscriptionBillingUiEnabled } from '../../../config/feature-flags';
+
 export const prerender = false;
 
 /**
  * Return URL de Pagopar (panel: .../pagopar/resultado/($hash)).
  * Reenvía al checkout de suscripción Hasel que ya hace polling de la factura.
  */
+if (!isSubscriptionBillingUiEnabled()) {
+	return Astro.redirect('/panel/dashboard', 302);
+}
+
 const hash = String(Astro.params.hash ?? '').trim();
 if (!hash) {
 	return Astro.redirect('/panel/plan', 302);

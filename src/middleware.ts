@@ -1,5 +1,6 @@
 import { defineMiddleware } from 'astro:middleware';
 
+import { isSubscriptionBillingUiEnabled } from './config/feature-flags';
 import { canAccessPath, isKnownRoleId } from './config/roles';
 import {
 	clearSessionCookies,
@@ -153,6 +154,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
 	if (!isKnownRoleId(claims.role_id)) {
 		clearSessionCookies(cookies);
 		return redirectToLogin();
+	}
+
+	if (
+		!isSubscriptionBillingUiEnabled() &&
+		(url.pathname === '/panel/plan' || url.pathname.startsWith('/panel/plan/'))
+	) {
+		return redirect('/panel/dashboard');
 	}
 
 	if (!canAccessPath(url.pathname, claims.role_id)) {

@@ -48,6 +48,8 @@ const { isAdmin = false } = Astro.props;
 </style>
 
 <script>
+	import { isSubscriptionBillingUiEnabled } from '../config/feature-flags';
+
 	type EffectiveStatus =
 		| 'TRIAL' | 'TRIAL_EXPIRED' | 'ACTIVE' | 'PAST_DUE'
 		| 'READ_ONLY' | 'CANCELED' | 'FOUNDER' | 'NONE';
@@ -209,6 +211,8 @@ const { isAdmin = false } = Astro.props;
 		}
 
 		private renderBanner(state: SubscriptionState) {
+			if (!isSubscriptionBillingUiEnabled()) return;
+
 			let tone = '';
 			let icon = '';
 			let message = '';

@@ -4,6 +4,7 @@ import FileViewer from '../../components/FileViewer.astro';
 import FlashMessage from '../../components/FlashMessage.astro';
 import SideNav from '../../components/SideNav.astro';
 import TopBar from '../../components/TopBar.astro';
+import { isSubscriptionBillingUiEnabled } from '../../config/feature-flags';
 import { ROLES } from '../../config/roles';
 import Layout from '../../layouts/Layout.astro';
 import { panelPageTitle } from '../../lib/panel-page-title';
@@ -219,15 +220,15 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 								El cobro de señas SIPAP está disponible en el plan Premium.
 							</p>
 							{
-								isAdmin ? (
+								isAdmin && isSubscriptionBillingUiEnabled() ? (
 									<a href="/panel/plan" class="mt-4 inline-flex h-11 items-center rounded-full bg-(--primary) px-5 text-sm font-semibold text-(--on-primary) no-underline">
 										Ver planes
 									</a>
-								) : (
+								) : !isAdmin ? (
 									<p class="mt-4 text-sm font-medium text-(--on-surface-variant)">
 										Pedile al administrador del negocio que revise el plan.
 									</p>
-								)
+								) : null
 							}
 						</section>
 					</main>

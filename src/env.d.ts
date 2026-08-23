@@ -116,6 +116,7 @@ interface ImportMetaEnv {
     readonly CRON_SECRET?: string;
 
     readonly PUBLIC_BOOKMATE_PUBLIC_DOMAIN?: string;
+    readonly PUBLIC_SUBSCRIPTION_BILLING_UI?: string;
     readonly PUBLIC_BOOKMATE_PROFILE_PLACEHOLDER_IMAGE_URL?: string;
     readonly PUBLIC_G_MAPS_API_KEY?: string;
     readonly PUBLIC_G_MAPS_API_KEYS?: string;

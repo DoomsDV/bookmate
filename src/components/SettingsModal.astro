@@ -1,5 +1,5 @@
 ﻿---
-import { FEATURE_FLAGS } from '../config/feature-flags';
+import { FEATURE_FLAGS, isSubscriptionBillingUiEnabled } from '../config/feature-flags';
 import { ROLES } from '../config/roles';
 
 import {
@@ -17,6 +17,7 @@ const { roleId = 0, organizationSlug = '' } = Astro.props;
 const isAdmin = Number(roleId) === ROLES.ADMIN;
 const canEditAppearance = isAdmin;
 const showPaymentsTab = isAdmin && FEATURE_FLAGS.PAYMENTS_SETTINGS;
+const showPlanTab = isAdmin && isSubscriptionBillingUiEnabled();
 const rawPublicProfileDomain = String(
 	import.meta.env.PUBLIC_BOOKMATE_PUBLIC_DOMAIN ?? Astro.url.origin
 ).trim();
@@ -101,9 +102,13 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 							<button type="button" data-settings-tab-trigger data-settings-tab="system" class="settings-tab">
 								<span class="material-symbols-rounded">settings_applications</span>Sistema
 							</button>
-							<button type="button" data-settings-tab-trigger data-settings-tab="plan" class="settings-tab">
-								<span class="material-symbols-rounded">workspace_premium</span>Plan
-							</button>
+							{
+								showPlanTab ? (
+									<button type="button" data-settings-tab-trigger data-settings-tab="plan" class="settings-tab">
+										<span class="material-symbols-rounded">workspace_premium</span>Plan
+									</button>
+								) : null
+							}
 						</>
 					) : null
 				}
@@ -573,7 +578,11 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 										</div>
 
 										<p data-payments-plan-hint class="hidden text-[0.85rem] font-medium text-amber-700 dark:text-amber-300">
-											Tu plan actual no incluye cobro de señas. Actualizá a Premium en Plan para habilitarlo.
+											{
+												showPlanTab
+													? 'Tu plan actual no incluye cobro de señas. Actualizá a Premium en Plan para habilitarlo.'
+													: 'Tu plan actual no incluye cobro de señas.'
+											}
 										</p>
 									</form>
 								</section>
@@ -791,6 +800,8 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 							</form>
 						</section>
 
+						{
+							showPlanTab ? (
 						<section data-settings-panel="plan" class="settings-panel hidden gap-6">
 							<div class="grid gap-1">
 								<h4 class="text-[0.98rem] font-bold text-(--on-surface)">Plan y suscripción</h4>
@@ -877,6 +888,8 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 								</a>
 							</div>
 						</section>
+							) : null
+						}
 					</>
 				) : null
 			}
