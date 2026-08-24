@@ -97,16 +97,20 @@ export const parseSipapAlias = (rawValue: string): SipapAliasParseResult => {
 		};
 	}
 
-	const ruc = parseParaguayRuc(digits);
-	if (ruc) return { isValid: true, kind: 'ruc', normalized: ruc };
-
-	if (digits.length >= 9) {
-		return {
-			isValid: false,
-			kind: null,
-			normalized: '',
-			message: 'Ingresá un RUC paraguayo válido. Ej: 80012345-6',
-		};
+	// El input público saca guiones al tipear. Un número de 5–8 dígitos es CI / alias:
+	// no lo reescribimos como RUC (el DV puede coincidir por casualidad: 6038964 → 603896-4).
+	const typedAsRuc = /-\d$/.test(raw);
+	if (typedAsRuc || digits.length >= 9) {
+		const ruc = parseParaguayRuc(digits);
+		if (ruc) return { isValid: true, kind: 'ruc', normalized: ruc };
+		if (digits.length >= 9) {
+			return {
+				isValid: false,
+				kind: null,
+				normalized: '',
+				message: 'Ingresá un RUC paraguayo válido. Ej: 80012345-6',
+			};
+		}
 	}
 
 	const ci = parseParaguayCi(digits);

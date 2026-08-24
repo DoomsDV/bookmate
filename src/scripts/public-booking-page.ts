@@ -3074,13 +3074,6 @@ export const initializePublicBookingPage = () => {
 			if (ocr === 'MATCH') {
 				clearSipapHold(holdStorageKey);
 			}
-			showToast(
-				result.message ||
-					(ocr === 'MATCH'
-						? 'Pago verificado. Turno confirmado.'
-						: 'Comprobante recibido.'),
-				ocr === 'MATCH' ? 'success' : 'success'
-			);
 		},
 		onError: (message) => showToast(message, 'error'),
 	});

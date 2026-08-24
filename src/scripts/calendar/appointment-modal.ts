@@ -1605,21 +1605,19 @@ class AppointmentModal extends HTMLElement {
 		}).format(this.editingDepositAmount || 0);
 
 		const message =
-			`Este cliente ya pagó una seña de ${amount}.\n\n` +
-			`Si cancelás, le pediremos su alias SIPAP por WhatsApp para que le reintegres el 100%.\n\n` +
-			`Si preferís que cambie la fecha, no cancelés: pedile que reprogramen desde su enlace de reserva (la seña se mantiene).`;
+			`El cliente ya pagó ${amount}. Si cancelás, tendrás que devolverle el dinero (le pediremos sus datos para el reintegro).`;
+		const tip =
+			'Si solo cambian de fecha, pedile que reprograme desde su enlace para mantener la seña.';
 
 		const confirmed = window.BookmateAlert?.confirm
 			? await window.BookmateAlert.confirm({
 					type: 'warning',
-					title: 'Seña pagada — ¿cancelar y reembolsar?',
-					message,
+					title: 'Seña pagada — ¿Cancelar y reembolsar?',
+					messageHtml: `${message}<br><br><span class="app-alert-tip">${tip}</span>`,
 					confirmText: 'Cancelar y reembolsar',
-					cancelText: 'No cancelar (que reprogramen)',
+					cancelText: 'Mantener reserva',
 				})
-			: window.confirm(
-					`${message}\n\nAceptar = cancelar y reembolsar. Cancelar = no cancelar la cita.`
-				);
+			: window.confirm(`${message}\n\n${tip}\n\nAceptar = cancelar y reembolsar.`);
 
 		return confirmed ? 'refund' : 'reschedule';
 	}
@@ -2815,18 +2813,6 @@ class AppointmentModal extends HTMLElement {
 			if (decision === 'reschedule') {
 				if (this.statusInput) setSearchableSelectValue(this.statusInput, 'CONFIRMADO');
 				this.handleStatusChange();
-				if (window.BookmateAlert?.alert) {
-					await window.BookmateAlert.alert({
-						type: 'info',
-						title: 'Cita sin cancelar',
-						message:
-							'Pedile al cliente que reprogramen desde el enlace de su reserva. Así mantiene la seña sin reembolso.',
-					});
-				} else {
-					window.alert(
-						'Pedile al cliente que reprogramen desde el enlace de su reserva. Así mantiene la seña sin reembolso.'
-					);
-				}
 				return;
 			}
 		} else if (payload.status !== 'CANCELADO') {

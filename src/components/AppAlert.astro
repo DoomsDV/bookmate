@@ -220,6 +220,13 @@
 		max-width: 20rem;
 	}
 
+	dialog[data-app-alert-dialog] .app-alert-tip {
+		display: block;
+		font-size: 0.86rem;
+		line-height: 1.4;
+		color: color-mix(in srgb, var(--on-surface-variant) 88%, transparent);
+	}
+
 	dialog[data-app-alert-dialog] [data-app-alert-message]:has(.app-alert-notify-row) {
 		max-width: none;
 		width: 100%;

@@ -1,3 +1,4 @@
+import { showFlashMessage } from '../lib/flash';
 import { createIdempotencyKey } from '../lib/idempotency';
 import {
 	reconcileReceiptUpload,
@@ -59,7 +60,7 @@ export const POLICY_SUMMARIES: Record<RefundPolicyCode, string> = {
 	STRICT: 'Las cancelaciones no tienen reembolso de la seña en ningún caso.',
 };
 
-const SUBMIT_IDLE_LABEL = 'Enviar comprobante';
+const SUBMIT_IDLE_LABEL = 'Confirmar y enviar comprobante';
 const SUBMIT_CONFIRMED_LABEL = 'Confirmado';
 const MAX_RECEIPT_BYTES = 8 * 1024 * 1024;
 const RECEIPT_IMAGE_MIMES = new Set(['image/jpeg', 'image/png']);
@@ -102,10 +103,14 @@ export const formatSipapTransferClipboard = (root: ParentNode) => {
 	const holder = fieldText(root, '[data-sipap-holder]');
 	const document = fieldText(root, '[data-sipap-document]');
 	const alias = fieldText(root, '[data-sipap-alias]');
+	const reference =
+		fieldText(root, '[data-sipap-reference]') ||
+		String(root.querySelector<HTMLInputElement>('[data-sipap-reference-value]')?.value || '').trim();
 	if (bank) parts.push(bank);
 	if (holder) parts.push(holder);
 	if (document) parts.push(`C.I. ${document}`);
 	if (alias) parts.push(`Alias: ${alias}`);
+	if (reference) parts.push(`Concepto: ${reference}`);
 	return parts.join(' - ');
 };
 
@@ -450,8 +455,13 @@ export const setSipapReceiptStatus = (
 		text = result.message || 'Comprobante recibido. El comercio lo revisará.';
 	}
 
-	statusEl.textContent = text;
-	statusEl.dataset.state = ocr === 'MATCH' ? 'success' : 'review';
+	statusEl.textContent = '';
+	statusEl.dataset.state = 'idle';
+	showFlashMessage({
+		type: 'success',
+		message: text,
+		autoHideMs: 5000,
+	});
 
 	// El reloj se congela apenas se sube el comprobante: el cliente ya hizo su parte y no
 	// debe perder el turno por una demora del negocio en revisar (ver también

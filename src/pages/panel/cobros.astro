@@ -112,8 +112,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 														<tr class="border-b border-(--shell-border) text-[0.78rem] uppercase tracking-wide text-(--on-surface-variant)">
 															<th class="px-4 py-3 font-bold">
 																<div class="cobros-th-date">
-																	<span>Fecha / Hora</span>
-																	<span class="cobros-sort" role="group" aria-label="Ordenar por fecha y hora">
+																	<span>Fecha de reserva</span>
+																	<span class="cobros-sort" role="group" aria-label="Ordenar por fecha de reserva">
 																		<button
 																			type="button"
 																			class="cobros-sort__btn"
@@ -359,7 +359,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 								role="option"
 								aria-selected="true"
 							>
-								<span>Fecha de cita</span>
+								<span>Fecha de reserva</span>
 								<span class="material-symbols-rounded" aria-hidden="true">check</span>
 							</button>
 							<button
@@ -602,7 +602,9 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									class="cobros-modal-btn cobros-modal-btn--primary"
 									data-cobros-approve
 								>
-									<span class="material-symbols-rounded" aria-hidden="true">check</span>
+									<span class="material-symbols-rounded" aria-hidden="true" data-cobros-approve-icon
+										>check</span
+									>
 									<span class="cobros-modal-btn__label">Aprobar</span>
 								</button>
 							</div>
@@ -644,7 +646,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 								>
 									<span class="cobros-modal-btn__label">Marcar como enviado</span>
 									<span class="cobros-modal-btn__icon-ring" aria-hidden="true">
-										<span class="material-symbols-rounded">check</span>
+										<span class="material-symbols-rounded" data-cobros-refund-sent-icon>check</span>
 									</span>
 								</button>
 								<button
@@ -1474,6 +1476,23 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	.cobros-modal-btn--primary {
 		background: var(--primary);
 		color: var(--on-primary);
+	}
+
+	.cobros-modal-btn.is-busy,
+	.cobros-modal-btn:disabled {
+		pointer-events: none;
+		opacity: 0.88;
+	}
+
+	.cobros-modal-btn.is-busy [data-cobros-approve-icon],
+	.cobros-modal-btn.is-busy [data-cobros-refund-sent-icon] {
+		animation: cobros-btn-spin 650ms linear infinite;
+	}
+
+	@keyframes cobros-btn-spin {
+		to {
+			transform: rotate(1turn);
+		}
 	}
 
 	.cobros-modal-btn--ghost {

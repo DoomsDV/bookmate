@@ -16,6 +16,7 @@ import {
 import { bindFileViewer } from '../lib/file-viewer';
 import { openPanelModal } from '../lib/panel-scroll-lock';
 import { updateAppPaginationDom } from '../lib/pagination';
+import { showFlashMessage } from '../lib/flash';
 
 type CobrosManagerElement = HTMLElement & {
 	__cobrosBound?: boolean;
@@ -711,6 +712,8 @@ export const initCobrosPage = () => {
 		if (reasonInput) reasonInput.value = item.reject_reason || '';
 		setText('[data-cobros-modal-status]', '');
 		setRejectMode(false);
+		setApproveBusy(false);
+		setRefundSentBusy(false);
 
 		modal.classList.remove('is-closing');
 		if (!modal.open) openPanelModal(modal);
@@ -915,11 +918,46 @@ export const initCobrosPage = () => {
 		void load();
 	};
 
+	const setApproveBusy = (on: boolean) => {
+		const btn = modal?.querySelector<HTMLButtonElement>('[data-cobros-approve]');
+		const icon = btn?.querySelector<HTMLElement>('[data-cobros-approve-icon]');
+		const rejectBtn = modal?.querySelector<HTMLButtonElement>('[data-cobros-reject]');
+		const closeBtn = modal?.querySelector<HTMLButtonElement>('[data-cobros-modal-close]');
+		if (!btn) return;
+		btn.classList.toggle('is-busy', on);
+		btn.disabled = on;
+		btn.setAttribute('aria-busy', on ? 'true' : 'false');
+		if (icon) {
+			icon.textContent = on ? 'progress_activity' : 'check';
+			icon.classList.toggle('animate-spin', on);
+		}
+		if (rejectBtn) rejectBtn.disabled = on;
+		if (closeBtn) closeBtn.disabled = on;
+	};
+
+	const setRefundSentBusy = (on: boolean) => {
+		const btn = modal?.querySelector<HTMLButtonElement>('[data-cobros-mark-refund-sent]');
+		const icon = btn?.querySelector<HTMLElement>('[data-cobros-refund-sent-icon]');
+		const waiveBtn = modal?.querySelector<HTMLButtonElement>('[data-cobros-waive]');
+		const closeBtn = modal?.querySelector<HTMLButtonElement>('[data-cobros-modal-close]');
+		if (!btn) return;
+		btn.classList.toggle('is-busy', on);
+		btn.disabled = on;
+		btn.setAttribute('aria-busy', on ? 'true' : 'false');
+		if (icon) {
+			icon.textContent = on ? 'progress_activity' : 'check';
+			icon.classList.toggle('animate-spin', on);
+		}
+		if (waiveBtn) waiveBtn.disabled = on;
+		if (closeBtn) closeBtn.disabled = on;
+	};
+
 	const approve = async () => {
 		if (!selected || busy) return;
 		busy = true;
+		setApproveBusy(true);
 		const statusEl = modal?.querySelector<HTMLElement>('[data-cobros-modal-status]');
-		if (statusEl) statusEl.textContent = 'Aprobando…';
+		if (statusEl) statusEl.textContent = '';
 		try {
 			const response = await fetch(`/api/cobros/${selected.id_transaction}/approve`, {
 				method: 'POST',
@@ -931,13 +969,20 @@ export const initCobrosPage = () => {
 				throw new Error(String(payload.message || 'No fue posible aprobar.'));
 			}
 			closeModal();
+			showFlashMessage({
+				type: 'success',
+				message: String(payload.message || '').trim() || 'Comprobante aprobado.',
+				autoHideMs: 4000,
+			});
 			await load();
 			document.dispatchEvent(new CustomEvent('hasel:cobros-changed'));
 		} catch (error) {
-			if (statusEl) {
-				statusEl.textContent =
-					error instanceof Error ? error.message : 'No fue posible aprobar.';
-			}
+			setApproveBusy(false);
+			showFlashMessage({
+				type: 'error',
+				message: error instanceof Error ? error.message : 'No fue posible aprobar.',
+				autoHideMs: 5000,
+			});
 		} finally {
 			busy = false;
 		}
@@ -977,8 +1022,9 @@ export const initCobrosPage = () => {
 	const markRefundSent = async () => {
 		if (!selected || busy) return;
 		busy = true;
+		setRefundSentBusy(true);
 		const statusEl = modal?.querySelector<HTMLElement>('[data-cobros-modal-status]');
-		if (statusEl) statusEl.textContent = 'Marcando como enviado…';
+		if (statusEl) statusEl.textContent = '';
 		try {
 			const response = await fetch(`/api/cobros/${selected.id_transaction}/mark-refund-sent`, {
 				method: 'POST',
@@ -990,13 +1036,20 @@ export const initCobrosPage = () => {
 				throw new Error(String(payload.message || 'No fue posible marcar el reembolso.'));
 			}
 			closeModal();
+			showFlashMessage({
+				type: 'success',
+				message: String(payload.message || '').trim() || 'Reembolso marcado como enviado.',
+				autoHideMs: 4000,
+			});
 			await load();
 			document.dispatchEvent(new CustomEvent('hasel:cobros-changed'));
 		} catch (error) {
-			if (statusEl) {
-				statusEl.textContent =
-					error instanceof Error ? error.message : 'No fue posible marcar el reembolso.';
-			}
+			setRefundSentBusy(false);
+			showFlashMessage({
+				type: 'error',
+				message: error instanceof Error ? error.message : 'No fue posible marcar el reembolso.',
+				autoHideMs: 5000,
+			});
 		} finally {
 			busy = false;
 		}
@@ -1228,7 +1281,10 @@ export const initCobrosPage = () => {
 		}
 	});
 
-	modal?.querySelector('[data-cobros-modal-close]')?.addEventListener('click', closeModal);
+	modal?.querySelector('[data-cobros-modal-close]')?.addEventListener('click', () => {
+		if (busy) return;
+		closeModal();
+	});
 	modal?.querySelector('[data-cobros-approve]')?.addEventListener('click', () => void approve());
 	modal?.querySelector('[data-cobros-reject]')?.addEventListener('click', () => setRejectMode(true));
 	modal
@@ -1252,10 +1308,12 @@ export const initCobrosPage = () => {
 		void waiveRefund();
 	});
 	modal?.addEventListener('click', (event) => {
+		if (busy) return;
 		if (event.target === modal) closeModal();
 	});
 	modal?.addEventListener('cancel', (event) => {
 		event.preventDefault();
+		if (busy) return;
 		closeModal();
 	});
 

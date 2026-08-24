@@ -7,7 +7,7 @@ interface Props {
 	stepPanel?: number;
 }
 
-const { stepPanel = 6 } = Astro.props;
+const { stepPanel = 7 } = Astro.props;
 ---
 
 <section
@@ -35,195 +35,177 @@ const { stepPanel = 6 } = Astro.props;
 	</div>
 	<p class="sr-only" data-sipap-hold-live role="status" aria-live="polite"></p>
 
-	<div class="sipap-deposit-layout">
-		<div class="sipap-deposit-main grid min-w-0">
-			<div>
+	<div class="sipap-layout">
+		<div class="sipap-main">
+			<header class="sipap-deposit-intro">
 				<h2 class="sipap-deposit-title tracking-tight">Transferí la seña para confirmar</h2>
-				<p class="sipap-deposit-lead font-medium text-(--on-surface-variant)">
-					Hacé la transferencia SIPAP con el código en el concepto y subí el comprobante acá.
-				</p>
-			</div>
+			</header>
 
-			<div class="sipap-reference-card">
-				<p class="text-sm font-medium text-(--on-surface-variant)">Código para el concepto</p>
-				<div class="sipap-reference-card__code">
-					<p class="sipap-reference-card__value" data-sipap-reference>—</p>
-					<input type="hidden" data-sipap-reference-value />
-					<button
-						type="button"
-						data-sipap-copy="reference"
-						data-sipap-copy-keep-label
-						class="sipap-copy-primary"
-						aria-label="Copiar código"
-					>
-						<span class="material-symbols-rounded" aria-hidden="true" data-sipap-copy-icon
-							>content_copy</span
-						>
-						<span class="sipap-copy-primary__label" data-sipap-copy-label>Copiar código</span>
-					</button>
-				</div>
-				<p class="sipap-reference-card__hint text-(--on-surface-variant)">
-					Pegá este código exactamente en el concepto de la transferencia.
-				</p>
-			</div>
+			<div class="sipap-panel sipap-sheet">
+				<div class="sipap-panel__core">
+					<p class="sipap-panel__kicker">Datos de transferencia</p>
+					<ul class="sipap-transfer-card__list">
+						<li class="sipap-bank-row">
+							<span class="sipap-bank-row__label">Banco</span>
+							<span class="sipap-bank-row__value">
+								<span data-sipap-bank>—</span>
+							</span>
+						</li>
+						<li class="sipap-bank-row">
+							<span class="sipap-bank-row__label">Titular</span>
+							<span class="sipap-bank-row__value">
+								<span data-sipap-holder>—</span>
+							</span>
+						</li>
+						<li class="sipap-bank-row">
+							<span class="sipap-bank-row__label">C.I. / RUC</span>
+							<span class="sipap-bank-row__value">
+								<span data-sipap-document>—</span>
+								<button
+									type="button"
+									data-sipap-copy="document"
+									class="sipap-copy-icon"
+									aria-label="Copiar C.I. / RUC"
+									title="Copiar"
+								>
+									<span class="material-symbols-rounded" aria-hidden="true" data-sipap-copy-icon
+										>content_copy</span
+									>
+								</button>
+							</span>
+						</li>
+						<li class="sipap-bank-row">
+							<span class="sipap-bank-row__label">Alias</span>
+							<span class="sipap-bank-row__value">
+								<span data-sipap-alias>—</span>
+								<button
+									type="button"
+									data-sipap-copy="alias"
+									class="sipap-copy-icon"
+									aria-label="Copiar alias"
+									title="Copiar"
+								>
+									<span class="material-symbols-rounded" aria-hidden="true" data-sipap-copy-icon
+										>content_copy</span
+									>
+								</button>
+							</span>
+						</li>
+					</ul>
 
-			<div class="sipap-bank-card">
-				<p class="text-sm font-bold uppercase tracking-wide text-(--primary)">Datos SIPAP del comercio</p>
-				<ul class="mt-4 grid gap-0 divide-y divide-(--outline-variant)/60">
-					<li class="sipap-bank-row">
-						<span class="sipap-bank-row__label">Banco</span>
-						<span class="sipap-bank-row__value">
-							<span class="material-symbols-rounded sipap-bank-row__icon" aria-hidden="true"
-								>account_balance</span
-							>
-							<span data-sipap-bank>—</span>
-						</span>
-					</li>
-					<li class="sipap-bank-row">
-						<span class="sipap-bank-row__label">Titular</span>
-						<span class="sipap-bank-row__value">
-							<span data-sipap-holder>—</span>
-						</span>
-					</li>
-					<li class="sipap-bank-row">
-						<span class="sipap-bank-row__label">C.I. / RUC</span>
-						<span class="sipap-bank-row__value">
-							<span data-sipap-document>—</span>
+					<div class="sipap-ref-block">
+						<p class="sipap-ref-block__label">
+							Código para el concepto
+							<span class="sipap-ref-optional">(opcional)</span>
+							<span class="sipap-ref-badge">Recomendado</span>
+						</p>
+						<div class="sipap-ref-block__code">
+							<p class="sipap-ref-block__value" data-sipap-reference>—</p>
+							<input type="hidden" data-sipap-reference-value />
 							<button
 								type="button"
-								data-sipap-copy="document"
+								data-sipap-copy="reference"
 								class="sipap-copy-icon"
-								aria-label="Copiar C.I. / RUC"
+								aria-label="Copiar código"
+								aria-describedby="sipap-ref-hint"
 								title="Copiar"
 							>
 								<span class="material-symbols-rounded" aria-hidden="true" data-sipap-copy-icon
 									>content_copy</span
 								>
 							</button>
-						</span>
-					</li>
-					<li class="sipap-bank-row">
-						<span class="sipap-bank-row__label">Alias</span>
-						<span class="sipap-bank-row__value">
-							<span data-sipap-alias>—</span>
-							<button
-								type="button"
-								data-sipap-copy="alias"
-								class="sipap-copy-icon"
-								aria-label="Copiar alias"
-								title="Copiar"
-							>
-								<span class="material-symbols-rounded" aria-hidden="true" data-sipap-copy-icon
-									>content_copy</span
-								>
-							</button>
-						</span>
-					</li>
-				</ul>
-				<button
-					type="button"
-					data-sipap-copy="all"
-					class="sipap-copy-all inline-flex w-full items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold"
-				>
-					<span class="material-symbols-rounded text-[1.15rem]" aria-hidden="true" data-sipap-copy-icon
-						>content_copy</span
-					>
-					<span data-sipap-copy-label>Copiar datos de transferencia</span>
-				</button>
-				<p class="sipap-copy-status" data-sipap-copy-status role="status" aria-live="polite"></p>
-			</div>
-
-			<div class="sipap-upload-section grid gap-3 min-w-0" data-sipap-upload-section>
-				<input type="hidden" data-sipap-manage-token />
-				<div class="sipap-upload-card" data-sipap-upload>
-					<p class="text-sm font-bold text-(--on-surface)" id="sipap-upload-title">Subí el comprobante</p>
-					<p class="mt-1 text-sm text-(--on-surface-variant)" id="sipap-upload-hint">
-						Subí una foto clara del ticket (JPG o PNG) o el comprobante en PDF. Lo leemos al instante para confirmar tu seña.
-					</p>
-					<div class="sipap-dropzone-wrap mt-4">
-						<label
-							class="sipap-dropzone"
-							data-sipap-dropzone
-							aria-labelledby="sipap-upload-title"
-							aria-describedby="sipap-upload-hint"
-						>
-							<input
-								type="file"
-								accept="image/jpeg,image/png,.jpg,.jpeg,.png,application/pdf,.pdf"
-								data-sipap-upload-input
-								class="sr-only"
-							/>
-							<div class="sipap-dropzone__empty" data-sipap-dropzone-empty>
-								<span class="material-symbols-rounded sipap-dropzone__icon" aria-hidden="true"
-									>cloud_upload</span
-								>
-								<span class="sipap-dropzone__title">
-									Hacé clic para subir tu comprobante o arrastralo acá
-								</span>
-								<span class="sipap-dropzone__meta">JPG, PNG o PDF · máx. 8 MB</span>
-							</div>
-							<div class="sipap-dropzone__preview hidden" data-sipap-dropzone-preview>
-								<img
-									alt="Vista previa del comprobante"
-									class="sipap-dropzone__thumb hidden"
-									data-sipap-preview-image
-								/>
-								<div class="sipap-dropzone__pdf hidden" data-sipap-preview-pdf>
-									<span class="material-symbols-rounded" aria-hidden="true">description</span>
-									<span class="sipap-dropzone__filename" data-sipap-preview-name></span>
-								</div>
-							</div>
-						</label>
-						<button
-							type="button"
-							class="sipap-dropzone__clear hidden"
-							data-sipap-preview-clear
-							aria-label="Quitar comprobante"
-						>
-							<span class="material-symbols-rounded" aria-hidden="true">delete</span>
-						</button>
+						</div>
+						<p class="sipap-ref-hint" id="sipap-ref-hint">
+							Pegalo en el concepto de tu transferencia para aprobación automática. Si tu banco no
+							te deja, subí el ticket igual.
+						</p>
 					</div>
-				</div>
 
-				<div class="sipap-submit-dock" data-sipap-submit-dock>
-					<p
-						class="sipap-upload-status"
-						data-sipap-upload-status
-						data-state="idle"
-						role="status"
-						aria-live="polite"
-					></p>
-					<button
-						type="button"
-						data-sipap-upload-submit
-						class="sipap-submit-cta inline-flex h-12 w-full items-center justify-center rounded-full px-6 text-base font-medium"
-						disabled
-					>
-						Enviar comprobante
-					</button>
+					<p class="sr-only" data-sipap-copy-status role="status" aria-live="polite"></p>
+
+					<div class="sipap-upload-section" data-sipap-upload-section>
+						<input type="hidden" data-sipap-manage-token />
+						<div class="sipap-upload-card" data-sipap-upload>
+							<p class="sipap-panel__kicker" id="sipap-upload-title">Comprobante</p>
+							<p class="sipap-panel__lede" id="sipap-upload-hint">JPG, PNG o PDF (máx. 8 MB).</p>
+							<div class="sipap-dropzone-wrap">
+								<label
+									class="sipap-dropzone"
+									data-sipap-dropzone
+									aria-labelledby="sipap-upload-title"
+									aria-describedby="sipap-upload-hint"
+								>
+									<input
+										type="file"
+										accept="image/jpeg,image/png,.jpg,.jpeg,.png,application/pdf,.pdf"
+										data-sipap-upload-input
+										class="sr-only"
+									/>
+									<div class="sipap-dropzone__empty" data-sipap-dropzone-empty>
+										<span class="material-symbols-rounded sipap-dropzone__icon" aria-hidden="true"
+											>cloud_upload</span
+										>
+										<span class="sipap-dropzone__title">Subí el comprobante o arrastralo acá</span>
+									</div>
+									<div class="sipap-dropzone__preview hidden" data-sipap-dropzone-preview>
+										<img
+											alt="Vista previa del comprobante"
+											class="sipap-dropzone__thumb hidden"
+											data-sipap-preview-image
+										/>
+										<div class="sipap-dropzone__pdf hidden" data-sipap-preview-pdf>
+											<span class="material-symbols-rounded" aria-hidden="true">description</span>
+											<span class="sipap-dropzone__filename" data-sipap-preview-name></span>
+										</div>
+									</div>
+								</label>
+								<button
+									type="button"
+									class="sipap-dropzone__clear hidden"
+									data-sipap-preview-clear
+									aria-label="Quitar comprobante"
+								>
+									<span class="material-symbols-rounded" aria-hidden="true">delete</span>
+								</button>
+							</div>
+						</div>
+
+						<div class="sipap-submit-dock" data-sipap-submit-dock>
+							<p
+								class="sipap-upload-status"
+								data-sipap-upload-status
+								data-state="idle"
+								role="status"
+								aria-live="polite"
+							></p>
+							<button
+								type="button"
+								data-sipap-upload-submit
+								class="sipap-submit-cta inline-flex h-12 w-full items-center justify-center rounded-full px-6 text-base font-medium"
+								disabled
+							>
+								Confirmar y enviar comprobante
+							</button>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>
 
-		<aside class="sipap-summary-ticket" aria-label="Resumen de la seña">
-			<p class="text-xs font-bold uppercase tracking-widest text-(--primary)">Resumen</p>
-			<p class="sipap-summary-ticket__amount" data-sipap-amount>—</p>
-			<p class="mt-2 text-sm font-medium text-(--on-surface-variant)" data-sipap-for>
-				Seña por: —
-			</p>
-
-			<div class="sipap-policy-card mt-5">
-				<div class="flex items-start gap-2.5">
+		<aside class="sipap-panel sipap-summary-ticket" aria-label="Resumen de la seña">
+			<div class="sipap-panel__core">
+				<p class="sipap-panel__kicker">Resumen</p>
+				<p class="sipap-summary-ticket__amount" data-sipap-amount>—</p>
+				<p class="sipap-summary-ticket__for" data-sipap-for>Seña por: —</p>
+				<div class="sipap-policy-card">
 					<span class="material-symbols-rounded sipap-policy-card__icon" aria-hidden="true"
 						>verified_user</span
 					>
 					<div class="min-w-0">
-						<p class="text-sm font-semibold text-(--on-surface-variant)">
+						<p class="sipap-policy-card__title">
 							Política: <span data-sipap-policy-label>—</span>
 						</p>
-						<p class="mt-1 text-sm leading-relaxed text-(--on-surface-variant)" data-sipap-policy-summary>
-							—
-						</p>
+						<p class="sipap-policy-card__copy" data-sipap-policy-summary>—</p>
 					</div>
 				</div>
 			</div>
@@ -302,41 +284,101 @@ const { stepPanel = 6 } = Astro.props;
 		color: #f97316;
 	}
 
-	.sipap-deposit-layout {
-		display: grid;
-		gap: 0.85rem;
-		align-items: start;
-		margin-top: 0.75rem;
+	.sipap-deposit-panel {
+		container-type: inline-size;
 	}
 
-	.sipap-deposit-main {
-		gap: 0.85rem;
+	.sipap-layout {
+		display: grid;
+		gap: 1rem;
+		align-items: start;
+		margin-top: 0.85rem;
+	}
+
+	.sipap-main {
+		display: grid;
+		gap: 0.35rem;
+		min-width: 0;
+	}
+
+	.sipap-deposit-intro {
+		margin: 0;
 	}
 
 	.sipap-deposit-title {
 		margin: 0;
+		max-width: 34rem;
 		font-size: 1.25rem;
 		font-weight: 400;
-		line-height: 1.2;
+		letter-spacing: -0.03em;
+		line-height: 1.15;
+		text-wrap: balance;
 	}
 
-	.sipap-deposit-lead {
-		margin: 0.35rem 0 0;
-		font-size: 0.88rem;
-		line-height: 1.35;
+	.sipap-panel {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+		padding: 0;
+		border-radius: 1.15rem;
+		border: 1px solid rgb(255 255 255 / 0.08);
+		background: color-mix(in srgb, #1c1c1c 94%, var(--surface-container-lowest));
+		box-shadow: none;
+	}
+
+	.sipap-panel__core {
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		padding: 0.85rem 1.15rem 1.2rem;
+		border-radius: inherit;
+		background: transparent;
+		box-shadow: none;
+	}
+
+	.sipap-panel__kicker {
+		margin: 0;
+		font-size: 0.78rem;
+		font-weight: 600;
+		letter-spacing: 0.01em;
+		line-height: 1.2;
+		color: color-mix(in srgb, var(--on-surface-variant) 78%, #000);
+	}
+
+	.sipap-panel__lede {
+		margin: 0.3rem 0 0;
+		font-size: 0.78rem;
+		font-weight: 500;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+
+	.sipap-upload-section {
+		display: grid;
+		gap: 0.7rem;
+		min-width: 0;
+		margin-top: 0.95rem;
+		padding-top: 0.9rem;
+		border-top: 1px solid color-mix(in srgb, var(--outline-variant) 55%, transparent);
+	}
+
+	.sipap-upload-section.hidden {
+		display: none;
+	}
+
+	.sipap-dropzone-wrap {
+		position: relative;
+		margin-top: 0.55rem;
+		padding: 1px;
+	}
+
+	.sipap-transfer-card__list {
+		margin: 0.55rem 0 0;
+		padding: 0;
+		list-style: none;
 	}
 
 	@media (min-width: 960px) {
-		.sipap-deposit-layout {
-			grid-template-columns: minmax(0, 1.7fr) minmax(260px, 0.95fr);
-			gap: 1.5rem;
-			margin-top: 1.5rem;
-		}
-
-		.sipap-deposit-main {
-			gap: 1rem;
-		}
-
 		.sipap-hold-banner {
 			align-items: flex-start;
 			gap: 0.65rem;
@@ -354,139 +396,33 @@ const { stepPanel = 6 } = Astro.props;
 			line-height: 1.4;
 		}
 
+		.sipap-layout {
+			gap: 1.25rem;
+			margin-top: 1.1rem;
+		}
+
 		.sipap-deposit-title {
-			font-size: 1.875rem;
+			font-size: 1.75rem;
 		}
 
-		.sipap-deposit-lead {
-			margin-top: 0.5rem;
-			font-size: 1rem;
-		}
-	}
-
-	.sipap-reference-card {
-		padding: 0.85rem 1rem;
-		border-radius: 1.1rem;
-		border: 1px solid color-mix(in srgb, var(--primary) 55%, var(--outline-variant));
-		background: color-mix(in srgb, var(--primary-container) 28%, #121212);
-		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 12%, transparent);
-	}
-
-	.sipap-reference-card__code {
-		display: flex;
-		align-items: center;
-		gap: 0.5rem;
-		min-width: 0;
-		margin-top: 0.35rem;
-	}
-
-	.sipap-reference-card__value {
-		min-width: 0;
-		margin: 0;
-		flex: 1 1 auto;
-		overflow-wrap: anywhere;
-		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-		font-size: 1.15rem;
-		font-weight: 800;
-		letter-spacing: 0.04em;
-		line-height: 1.2;
-		color: var(--on-surface);
-	}
-
-	.sipap-reference-card__hint {
-		margin: 0.4rem 0 0;
-		font-size: 0.75rem;
-		line-height: 1.3;
-	}
-
-	.sipap-copy-primary {
-		display: inline-flex;
-		flex-shrink: 0;
-		align-items: center;
-		justify-content: center;
-		width: 2.75rem;
-		height: 2.75rem;
-		padding: 0;
-		border: 0;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--surface-container-highest) 70%, transparent);
-		color: var(--on-surface);
-		cursor: pointer;
-	}
-
-	.sipap-copy-primary .material-symbols-rounded {
-		font-size: 1.2rem;
-		line-height: 1;
-	}
-
-	.sipap-copy-primary__label {
-		position: absolute;
-		width: 1px;
-		height: 1px;
-		padding: 0;
-		margin: -1px;
-		overflow: hidden;
-		clip: rect(0, 0, 0, 0);
-		white-space: nowrap;
-		border: 0;
-	}
-
-	.sipap-copy-primary:focus-visible {
-		outline: 2px solid color-mix(in srgb, var(--primary) 70%, transparent);
-		outline-offset: 2px;
-	}
-
-	.sipap-copy-primary.is-copied {
-		color: var(--tertiary);
-	}
-
-	@media (min-width: 960px) {
-		.sipap-reference-card {
-			padding: 1.15rem 1.25rem;
-			border-radius: 1.25rem;
+		.sipap-panel__core {
+			padding: 1rem 1.25rem 1.2rem;
 		}
 
-		.sipap-reference-card__value {
-			font-size: 1.5rem;
-		}
-
-		.sipap-reference-card__hint {
-			margin-top: 0.75rem;
-			font-size: 0.875rem;
-		}
-
-		.sipap-copy-primary {
-			width: auto;
-			height: 2.75rem;
-			gap: 0.5rem;
-			padding: 0 1.25rem;
-			background: var(--primary-container);
-			color: var(--on-primary-container);
-			font-size: 0.875rem;
-			font-weight: 600;
-		}
-
-		.sipap-copy-primary__label {
-			position: static;
-			width: auto;
-			height: auto;
-			margin: 0;
-			overflow: visible;
-			clip: unset;
-			clip-path: none;
-			white-space: nowrap;
+		.sipap-panel__lede {
+			font-size: 0.82rem;
 		}
 	}
 
-	.sipap-bank-card {
-		padding: 0.85rem 1rem;
-		border-radius: 1.1rem;
-		border: 1px solid color-mix(in srgb, var(--outline-variant) 70%, transparent);
-		background: color-mix(in srgb, #252525 88%, var(--surface-container-lowest));
-	}
+	@container (min-width: 40rem) {
+		.sipap-layout {
+			grid-template-columns: minmax(0, 1.7fr) minmax(16rem, 0.82fr);
+		}
 
-	.sipap-bank-card ul {
-		margin-top: 0.5rem;
+		.sipap-summary-ticket {
+			position: sticky;
+			top: 1.15rem;
+		}
 	}
 
 	.sipap-bank-row {
@@ -494,10 +430,18 @@ const { stepPanel = 6 } = Astro.props;
 		grid-template-columns: auto minmax(0, 1fr);
 		align-items: center;
 		gap: 0.75rem;
-		padding: 0.5rem 0;
+		padding: 0.38rem 0;
+	}
+
+	.sipap-bank-row + .sipap-bank-row {
+		border-top: 1px solid color-mix(in srgb, var(--outline-variant) 60%, transparent);
 	}
 
 	.sipap-bank-row__label {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.35rem 0.45rem;
 		font-size: 0.82rem;
 		font-weight: 600;
 		color: var(--on-surface-variant);
@@ -516,35 +460,88 @@ const { stepPanel = 6 } = Astro.props;
 		overflow-wrap: anywhere;
 	}
 
-	.sipap-bank-row__icon {
-		display: none;
-		flex-shrink: 0;
-		font-size: 1.15rem;
-		line-height: 1;
+	.sipap-ref-block {
+		margin-top: 0.65rem;
+		padding: 0.5rem 0.65rem;
+		border-radius: 0.9rem;
+		background: color-mix(in srgb, var(--primary) 7%, #1a1a1a);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 16%, transparent);
+	}
+
+	.sipap-ref-block__label {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.3rem 0.45rem;
+		margin: 0;
+		font-size: 0.8rem;
+		font-weight: 650;
+		color: var(--on-surface);
+	}
+
+	.sipap-ref-optional {
+		font-size: 0.75rem;
+		font-weight: 550;
+		color: var(--on-surface-variant);
+	}
+
+	.sipap-ref-block__code {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		min-width: 0;
+		margin-top: 0.35rem;
+	}
+
+	.sipap-ref-block__value {
+		min-width: 0;
+		margin: 0;
+		flex: 1 1 auto;
+		overflow-wrap: anywhere;
+		font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+		font-size: 1.05rem;
+		font-weight: 800;
+		letter-spacing: 0.03em;
+		line-height: 1.2;
+	}
+
+	.sipap-ref-badge {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.12rem 0.45rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--primary) 18%, transparent);
 		color: var(--primary);
-		opacity: 0.9;
+		font-size: 0.62rem;
+		font-weight: 700;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		line-height: 1.2;
+	}
+
+	.sipap-ref-hint {
+		margin: 0.45rem 0 0;
+		font-size: 0.75rem;
+		font-weight: 500;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
 	}
 
 	@media (min-width: 960px) {
-		.sipap-bank-card {
-			padding: 1.15rem 1.25rem;
-			border-radius: 1.25rem;
-		}
-
-		.sipap-bank-card ul {
-			margin-top: 1rem;
+		.sipap-transfer-card__list {
+			margin-top: 0.45rem;
 		}
 
 		.sipap-bank-row {
-			padding: 0.85rem 0;
-		}
-
-		.sipap-bank-row__icon {
-			display: inline;
+			padding: 0.42rem 0;
 		}
 
 		.sipap-bank-row__value {
-			font-size: 0.98rem;
+			font-size: 0.95rem;
+		}
+
+		.sipap-ref-hint {
+			font-size: 0.78rem;
 		}
 	}
 
@@ -585,100 +582,37 @@ const { stepPanel = 6 } = Astro.props;
 		color: var(--tertiary);
 	}
 
-	.sipap-copy-all {
-		height: 2.5rem;
-		margin-top: 0.75rem;
-		border: 1px solid color-mix(in srgb, var(--outline-variant) 80%, transparent);
-		background: color-mix(in srgb, var(--surface-container-highest) 55%, transparent);
-		color: var(--on-surface);
-		cursor: pointer;
-		transition:
-			background 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-			border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-			transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-	}
-
-	.sipap-copy-all:hover {
-		border-color: color-mix(in srgb, var(--primary) 45%, var(--outline-variant));
-		background: color-mix(in srgb, var(--primary) 12%, transparent);
-		color: var(--on-surface);
-	}
-
-	.sipap-copy-all:active {
-		transform: scale(0.98);
-	}
-
-	.sipap-copy-all:focus-visible {
-		outline: 2px solid color-mix(in srgb, var(--primary) 70%, transparent);
-		outline-offset: 2px;
-	}
-
-	.sipap-copy-all.is-copied {
-		border-color: color-mix(in srgb, var(--tertiary) 45%, transparent);
-		color: var(--tertiary);
-	}
-
-	.sipap-copy-status {
-		margin: 0.35rem 0 0;
-		min-height: 1.05rem;
-		font-size: 0.8rem;
-		font-weight: 600;
-		color: var(--on-surface-variant);
-	}
-
 	@media (min-width: 960px) {
 		.sipap-copy-icon {
 			width: 2rem;
 			height: 2rem;
 		}
-
-		.sipap-copy-all {
-			height: 2.75rem;
-			margin-top: 1rem;
-		}
-	}
-
-	.sipap-copy-status[data-state='error'] {
-		color: #f87171;
-	}
-
-	.sipap-upload-card {
-		padding: 0.85rem 1rem;
-		border-radius: 1.1rem;
-		border: 1px solid var(--outline-variant);
-		background: var(--surface-container-lowest);
-	}
-
-	.sipap-upload-card #sipap-upload-hint {
-		font-size: 0.78rem;
-		line-height: 1.3;
-	}
-
-	.sipap-dropzone-wrap {
-		position: relative;
 	}
 
 	.sipap-dropzone {
 		position: relative;
 		display: flex;
+		box-sizing: border-box;
 		width: 100%;
-		min-height: 7.5rem;
+		min-height: 5.25rem;
 		flex-direction: column;
 		align-items: center;
 		justify-content: center;
-		padding: 1.25rem 1rem;
-		border: 2px dashed color-mix(in srgb, var(--outline-variant) 88%, var(--on-surface-variant) 12%);
-		border-radius: 1.1rem;
-		background: color-mix(in srgb, var(--surface) 70%, var(--surface-container-lowest) 30%);
+		padding: 0.75rem 0.9rem;
+		border: 0;
+		border-radius: 0.7rem;
+		background: color-mix(in srgb, #161616 70%, var(--surface-container-lowest) 30%);
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--outline-variant) 82%, #fff 18%);
 		cursor: pointer;
 		transition:
-			border-color 0.2s cubic-bezier(0.16, 1, 0.3, 1),
-			background-color 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+			box-shadow 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+			background-color 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+			transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
 	}
 
 	.sipap-dropzone:hover,
 	.sipap-dropzone.is-dragging {
-		border-color: color-mix(in srgb, var(--primary) 55%, var(--outline-variant));
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary) 55%, var(--outline-variant));
 		background: color-mix(in srgb, var(--primary) 8%, var(--surface-container-lowest));
 	}
 
@@ -695,9 +629,7 @@ const { stepPanel = 6 } = Astro.props;
 
 	.sipap-dropzone.has-preview {
 		padding: 0;
-		overflow: hidden;
-		min-height: 8.5rem;
-		border-style: solid;
+		min-height: 5.75rem;
 	}
 
 	.sipap-dropzone__empty {
@@ -716,38 +648,34 @@ const { stepPanel = 6 } = Astro.props;
 	}
 
 	.sipap-dropzone__icon {
-		font-size: 2.15rem;
+		font-size: 1.55rem;
 		line-height: 1;
 		color: var(--primary);
 	}
 
 	.sipap-dropzone__title {
 		max-width: 22rem;
-		font-size: 0.92rem;
+		font-size: 0.86rem;
 		font-weight: 760;
 		line-height: 1.35;
 		color: var(--on-surface);
-	}
-
-	.sipap-dropzone__meta {
-		font-size: 0.76rem;
-		font-weight: 600;
-		color: var(--on-surface-variant);
 	}
 
 	.sipap-dropzone__preview {
 		position: relative;
 		display: flex;
 		width: 100%;
-		min-height: 8.5rem;
+		min-height: 5.75rem;
 		align-items: center;
 		justify-content: center;
+		overflow: hidden;
+		border-radius: inherit;
 	}
 
 	.sipap-dropzone__thumb {
 		display: block;
 		width: 100%;
-		height: 8.5rem;
+		height: 5.75rem;
 		object-fit: cover;
 	}
 
@@ -813,12 +741,18 @@ const { stepPanel = 6 } = Astro.props;
 	}
 
 	.sipap-submit-cta {
+		height: 3rem;
 		background: var(--primary-container);
 		color: var(--on-primary-container);
 	}
 
 	.sipap-submit-cta:hover:not(:disabled) {
 		filter: brightness(1.08);
+	}
+
+	.sipap-submit-cta:focus-visible {
+		outline: 2px solid color-mix(in srgb, var(--primary) 70%, transparent);
+		outline-offset: 3px;
 	}
 
 	@media (max-width: 959px) {
@@ -832,6 +766,7 @@ const { stepPanel = 6 } = Astro.props;
 			bottom: 0;
 			left: 0;
 			z-index: 24;
+			margin-top: 0;
 			padding: 0.55rem 1rem calc(0.55rem + env(safe-area-inset-bottom, 0px));
 			border-top: 1px solid rgb(255 255 255 / 0.08);
 			background: color-mix(in srgb, #121212 82%, transparent);
@@ -847,28 +782,18 @@ const { stepPanel = 6 } = Astro.props;
 	}
 
 	@media (min-width: 960px) {
-		.sipap-upload-card {
-			padding: 1.15rem 1.25rem;
-			border-radius: 1.25rem;
-		}
-
-		.sipap-upload-card #sipap-upload-hint {
-			font-size: 0.875rem;
-			line-height: 1.4;
-		}
-
 		.sipap-dropzone {
-			min-height: 9.25rem;
+			min-height: 5.75rem;
 		}
 
 		.sipap-dropzone.has-preview,
-		.sipap-dropzone__preview,
-		.sipap-dropzone__thumb {
-			min-height: 10.5rem;
+		.sipap-dropzone__preview {
+			min-height: 6.5rem;
 		}
 
 		.sipap-dropzone__thumb {
-			height: 10.5rem;
+			height: 6.5rem;
+			min-height: 6.5rem;
 		}
 
 		.sipap-dropzone__clear {
@@ -891,10 +816,16 @@ const { stepPanel = 6 } = Astro.props;
 
 	.sipap-upload-status {
 		margin: 0;
-		min-height: 1.2rem;
-		font-size: 0.88rem;
+		min-height: 1.15rem;
+		font-size: 0.8rem;
 		font-weight: 600;
 		color: var(--on-surface-variant);
+	}
+
+	.sipap-upload-status:empty,
+	.sipap-upload-status[data-state='idle'] {
+		display: none;
+		min-height: 0;
 	}
 
 	.sipap-upload-status[data-state='error'] {
@@ -915,27 +846,15 @@ const { stepPanel = 6 } = Astro.props;
 
 	.sipap-summary-ticket {
 		align-self: start;
-		height: fit-content;
-		padding: 1.5rem;
-		border: 1px solid rgb(255 255 255 / 0.1);
-		border-radius: 1.25rem;
-		background: #1e1e1e;
-		box-shadow: 0 25px 50px rgb(0 0 0 / 0.5);
-	}
-
-	@media (min-width: 960px) {
-		.sipap-summary-ticket {
-			position: sticky;
-			top: 1.25rem;
-		}
 	}
 
 	.sipap-summary-ticket__amount {
-		margin: 0.65rem 0 0;
+		margin: 0.85rem 0 0;
 		font-size: 2rem;
 		font-weight: 800;
-		letter-spacing: -0.03em;
-		line-height: 1.1;
+		letter-spacing: -0.045em;
+		line-height: 1;
+		font-variant-numeric: tabular-nums;
 		color: #fff;
 	}
 
@@ -945,25 +864,56 @@ const { stepPanel = 6 } = Astro.props;
 		}
 	}
 
+	.sipap-summary-ticket__for {
+		margin: 0.55rem 0 0;
+		font-size: 0.88rem;
+		font-weight: 550;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+
 	.sipap-policy-card {
-		padding: 0;
-		border: 0;
-		border-radius: 0;
-		background: transparent;
+		display: flex;
+		align-items: flex-start;
+		gap: 0.65rem;
+		margin-top: auto;
+		padding: 0.85rem 0 0;
 	}
 
 	.sipap-policy-card__icon {
 		flex-shrink: 0;
-		font-size: 1.2rem;
+		margin-top: 0.05rem;
+		font-size: 1.15rem;
 		line-height: 1;
 		color: var(--on-surface-variant);
-		opacity: 0.9;
+		opacity: 0.85;
+	}
+
+	.sipap-policy-card__title {
+		margin: 0;
+		font-size: 0.84rem;
+		font-weight: 650;
+		color: var(--on-surface);
+	}
+
+	.sipap-policy-card__copy {
+		margin: 0.35rem 0 0;
+		font-size: 0.8rem;
+		font-weight: 500;
+		line-height: 1.45;
+		color: var(--on-surface-variant);
+	}
+
+	@media (max-width: 959px) {
+		:global(body:has(.sipap-submit-dock) [data-flash-stack]),
+		:global(body:has(.sipap-submit-dock) [data-flash-stack]:popover-open) {
+			bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px)) !important;
+			inset: auto 0 calc(5.75rem + env(safe-area-inset-bottom, 0px)) 0 !important;
+		}
 	}
 
 	@media (prefers-reduced-motion: reduce) {
 		.sipap-copy-icon,
-		.sipap-copy-all,
-		.sipap-copy-primary,
 		.sipap-dropzone,
 		.sipap-dropzone__clear,
 		.sipap-submit-cta {
@@ -971,7 +921,6 @@ const { stepPanel = 6 } = Astro.props;
 		}
 
 		.sipap-copy-icon:hover,
-		.sipap-copy-all:active,
 		.sipap-submit-cta:active:not(:disabled) {
 			transform: none;
 		}

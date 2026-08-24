@@ -1390,16 +1390,8 @@ export const initializePublicReservationPage = () => {
 		);
 		bindSipapCopyButtons(depositRoot);
 		bindSipapReceiptUpload(sipapPanel, {
-			onResult: (result) => {
+			onResult: () => {
 				depositRoot.querySelector('[data-deposit-reject-notice]')?.remove();
-				const ocr = String(result.ocr_status || '').toUpperCase();
-				showToast(
-					result.message ||
-						(ocr === 'MATCH'
-							? 'Pago verificado. Tu turno quedó confirmado.'
-							: 'Comprobante recibido.'),
-					'success'
-				);
 				void refreshReservationSummary();
 			},
 			onError: (message) => showToast(message, 'error'),
