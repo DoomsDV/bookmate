@@ -1845,7 +1845,7 @@ class AppointmentModal extends HTMLElement {
 		const panel = this.modal?.querySelector<HTMLElement>('.appointment-modal__panel');
 		if (!panel || !this.isMobileSheet()) return;
 		if (!this.lockedSheetHeightPx) {
-			this.lockedSheetHeightPx = Math.round(getLayoutViewportHeight() * 0.8);
+			this.lockedSheetHeightPx = Math.round(getLayoutViewportHeight() * 0.9);
 		}
 		panel.style.height = `${this.lockedSheetHeightPx}px`;
 		panel.style.maxHeight = `${this.lockedSheetHeightPx}px`;
