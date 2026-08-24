@@ -102,6 +102,7 @@ class CustomerManager extends HTMLElement {
 	private activeProfileCustomerId = 0;
 	private searchQuery = '';
 	#searchDebounceTimer: number | null = null;
+	#loadRequestId = 0;
 
 	private professionalSelect: HTMLSelectElement | null = null;
 	private searchInput: HTMLInputElement | null = null;
@@ -736,7 +737,7 @@ class CustomerManager extends HTMLElement {
 			if (nextQuery === this.searchQuery) return;
 			this.searchQuery = nextQuery;
 			this.page = 1;
-			void this.loadCustomers();
+			void this.loadCustomers({ silent: true });
 		}, 300);
 	};
 
@@ -917,8 +918,6 @@ class CustomerManager extends HTMLElement {
 			if (showEmpty) this.updateEmptyStateCopy();
 		}
 		this.paginationNode?.classList.toggle('hidden', this.isLoading || !hasCustomers);
-
-		if (this.searchInput) this.searchInput.disabled = this.isLoading;
 
 		if (this.proFilterButton) {
 			this.proFilterButton.disabled =
@@ -3314,8 +3313,10 @@ class CustomerManager extends HTMLElement {
 		}
 	}
 
-	private async loadCustomers() {
-		this.setLoading(true);
+	private async loadCustomers(options: { silent?: boolean } = {}) {
+		const requestId = ++this.#loadRequestId;
+		const silent = options.silent === true;
+		if (!silent) this.setLoading(true);
 		this.clearError();
 
 		try {
@@ -3335,6 +3336,7 @@ class CustomerManager extends HTMLElement {
 				headers: { Accept: 'application/json' },
 			});
 			const data = await this.parseJson<Customer[]>(response);
+			if (requestId !== this.#loadRequestId) return;
 
 			if (!response.ok || data.status !== 'success' || !Array.isArray(data.data)) {
 				throw new Error(this.getBackendMessage(data, 'No fue posible obtener los clientes.'));
@@ -3347,14 +3349,17 @@ class CustomerManager extends HTMLElement {
 
 			this.renderCustomers(data.data);
 			this.renderSummary();
+			this.updateControls();
 		} catch (error) {
+			if (requestId !== this.#loadRequestId) return;
 			this.showError(error instanceof Error ? error.message : 'No fue posible obtener los clientes.');
 			this.renderCustomers([]);
 			this.totalRecords = 0;
 			this.totalPages = 1;
 			this.renderSummary();
+			this.updateControls();
 		} finally {
-			this.setLoading(false);
+			if (requestId === this.#loadRequestId && !silent) this.setLoading(false);
 		}
 	}
 }
