@@ -150,6 +150,15 @@ const parseUpdatePayload = (source: any): UpdateWorkspacePayload => {
 			Number.isInteger(cancelWaitId) && cancelWaitId > 0 ? cancelWaitId : null;
 	}
 
+	if (Object.prototype.hasOwnProperty.call(source ?? {}, 'notify_all_professionals')) {
+		const notifyAll = String(source?.notify_all_professionals ?? '')
+			.trim()
+			.toUpperCase();
+		if (notifyAll === 'Y' || notifyAll === 'N') {
+			payload.notify_all_professionals = notifyAll;
+		}
+	}
+
 	const panelTheme = String(source?.panel_theme ?? '').trim();
 	if (panelTheme !== '') payload.panel_theme = panelTheme;
 
