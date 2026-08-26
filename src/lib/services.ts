@@ -19,6 +19,7 @@ export interface Service {
 	hide_public_price?: 0 | 1;
 	hidden_public_price_label?: string | null;
 	image_url?: string | null;
+	public_includes?: string | null;
 	is_active: 0 | 1;
 	requires_deposit?: 0 | 1;
 	deposit_type?: 'PERCENT' | 'FIXED' | null;
@@ -194,6 +195,10 @@ const normalizeService = (value: unknown): Service | null => {
 		})(),
 		image_url: (() => {
 			const raw = String(source.image_url ?? '').trim();
+			return raw || null;
+		})(),
+		public_includes: (() => {
+			const raw = String(source.public_includes ?? '').trim();
 			return raw || null;
 		})(),
 		is_active: source.is_active === 1 || source.is_active === '1' || source.is_active === true ? 1 : 0,

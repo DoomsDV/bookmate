@@ -12,6 +12,7 @@ type ServiceItem = {
 	price: number;
 	is_active: 0 | 1;
 	image_url?: string | null;
+	public_includes?: string | null;
 };
 
 type ServicesListMeta = {
@@ -49,6 +50,10 @@ const escapeHtml = (value: string) =>
 		.replaceAll("'", '&#39;');
 
 const getListRoot = () => document.querySelector<HTMLElement>('[data-services-list]');
+
+const canManageServices = () => getListRoot()?.dataset.servicesCanManage === 'true';
+
+const isAssignedOnly = () => getListRoot()?.dataset.servicesAssignedOnly === 'true';
 
 const readStateFromUrl = () => {
 	const url = new URL(window.location.href);
@@ -91,6 +96,10 @@ const renderServiceCard = (service: ServiceItem) => {
 	const statusLabel = isActive ? 'Activo' : 'Inactivo';
 	const price = service.price ? currencyFormatter.format(service.price) : '--';
 	const imageUrl = String(service.image_url || '').trim();
+	const includes = String(service.public_includes || '')
+		.replace(/\s+/g, ' ')
+		.trim();
+	const canManage = canManageServices();
 
 	const mediaClasses = imageUrl
 		? 'services-card__media panel-horizontal-card__media'
@@ -107,14 +116,18 @@ const renderServiceCard = (service: ServiceItem) => {
 			/>`
 		: '';
 
+	const includesHtml = includes
+		? `<p class="services-card-includes line-clamp-2">${escapeHtml(includes)}</p>`
+		: '';
+
 	return `
 		<article
-			class="services-card group${isActive ? '' : ' services-card--inactive'}"
+			class="services-card group${isActive ? '' : ' services-card--inactive'}${canManage ? '' : ' services-card--readonly'}"
 			data-service-card
 			data-service-id="${service.id_service}"
 			tabindex="0"
 			role="button"
-			aria-label="Editar servicio ${escapeHtml(name)}"
+			aria-label="${canManage ? 'Editar servicio' : 'Ver servicio'} ${escapeHtml(name)}"
 		>
 			<div class="services-card__inner">
 				<div class="${mediaClasses}" data-service-card-media>
@@ -127,6 +140,7 @@ const renderServiceCard = (service: ServiceItem) => {
 				</div>
 				<div class="services-card__body services-card-body">
 					<h3 class="services-card-title line-clamp-1">${escapeHtml(name)}</h3>
+					${includesHtml}
 					<dl class="services-card__metrics">
 						<div class="services-card__stat">
 							<dt class="services-card-term">Duración</dt>
@@ -164,12 +178,19 @@ const updateEmptyOrGrid = (
 	const hasFilters = hasSearch || hasStatusFilter;
 
 	if (services.length === 0) {
-		const title = hasFilters ? 'No se encontraron servicios' : 'No hay servicios registrados';
+		const assignedOnly = isAssignedOnly();
+		const title = hasFilters
+			? 'No se encontraron servicios'
+			: assignedOnly
+				? 'No tenés servicios asignados'
+				: 'No hay servicios registrados';
 		const copy = hasSearch
 			? 'Probá con otro nombre.'
 			: hasStatusFilter
 				? 'No hay servicios con ese estado.'
-				: 'Aun no has agregado ningun servicio a esta organizacion. Comienza creando tu primera prestacion.';
+				: assignedOnly
+					? 'Cuando el administrador te asigne servicios, aparecerán aquí.'
+					: 'Aun no has agregado ningun servicio a esta organizacion. Comienza creando tu primera prestacion.';
 		const icon = hasFilters ? 'search_off' : 'inbox';
 
 		results.innerHTML = `

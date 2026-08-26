@@ -42,7 +42,7 @@ let dashboard: DashboardMainData = {
 	},
 };
 let loadError = '';
-let userFirstName = '';
+let userDisplayName = '';
 const defaultAiSummaryShort = '¡Buen día! Preparate para una excelente jornada de trabajo.';
 const defaultAiSummaryFull = defaultAiSummaryShort;
 
@@ -68,12 +68,11 @@ if (!token) {
 	}
 
 	if (profileResult.status === 'fulfilled') {
-		userFirstName = String(profileResult.value.first_name || '')
-			.trim()
-			.split(/\s+/)
-			.filter(Boolean)[0] || '';
+		const firstName = String(profileResult.value.first_name || '').trim();
+		const lastName = String(profileResult.value.last_name || '').trim();
+		userDisplayName = `${firstName} ${lastName}`.replace(/\s+/g, ' ').trim();
 	} else {
-		userFirstName = '';
+		userDisplayName = '';
 	}
 }
 
@@ -96,11 +95,19 @@ const hourAsuncion = Number(
 
 const greetingWord =
 	hourAsuncion < 12 ? 'Buenos días' : hourAsuncion < 19 ? 'Buenas tardes' : 'Buenas noches';
-const greetingTitle = userFirstName ? `${greetingWord}, ${userFirstName}` : greetingWord;
-const greetingLine = userFirstName ? `${greetingWord},` : greetingWord;
-const greetingHasName = Boolean(userFirstName);
+const greetingTitle = userDisplayName ? `${greetingWord}, ${userDisplayName}` : greetingWord;
+const greetingLine = userDisplayName ? `${greetingWord},` : greetingWord;
+const greetingHasName = Boolean(userDisplayName);
+const greetingNameWords = userDisplayName.split(/\s+/).filter(Boolean);
 
 const toGreetingChars = (value: string) => Array.from(value);
+const greetingLineChars = toGreetingChars(greetingLine);
+const greetingNamePieces = greetingNameWords.map((word, wordIndex) => {
+	const startIndex =
+		greetingLineChars.length +
+		greetingNameWords.slice(0, wordIndex).reduce((total, item) => total + Array.from(item).length + 1, 0);
+	return { word, startIndex };
+});
 
 const todayTotal = dashboard.kpis.today_appointments;
 const todayCompleted = Math.min(todayTotal, dashboard.kpis.today_completed_appointments || 0);
@@ -253,7 +260,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												aria-label={greetingTitle}
 											>
 												<span class="dashboard-greeting__word dashboard-greeting__split" aria-hidden="true">
-													{toGreetingChars(greetingLine).map((char, index) => (
+													{greetingLineChars.map((char, index) => (
 														<span
 															class="dashboard-greeting__char"
 															style={`--char-i: ${index}`}
@@ -264,12 +271,21 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 												</span>
 												{greetingHasName ? (
 													<span class="dashboard-greeting__name dashboard-greeting__split" aria-hidden="true">
-														{toGreetingChars(userFirstName).map((char, index) => (
-															<span
-																class="dashboard-greeting__char"
-																style={`--char-i: ${toGreetingChars(greetingLine).length + index}`}
-															>
-																{char === ' ' ? '\u00A0' : char}
+														{greetingNamePieces.map((piece, wordIndex) => (
+															<span class="dashboard-greeting__name-piece">
+																{wordIndex > 0 ? (
+																	<span class="dashboard-greeting__gap">{' '}</span>
+																) : null}
+																<span class="dashboard-greeting__name-word">
+																	{Array.from(piece.word).map((char, charIndex) => (
+																		<span
+																			class="dashboard-greeting__char"
+																			style={`--char-i: ${piece.startIndex + charIndex}`}
+																		>
+																			{char}
+																		</span>
+																	))}
+																</span>
 															</span>
 														))}
 													</span>
@@ -2559,6 +2575,20 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 	.dashboard-greeting__word,
 	.dashboard-greeting__name {
 		display: block;
+		max-width: 100%;
+	}
+
+	.dashboard-greeting__name-piece {
+		display: inline;
+	}
+
+	.dashboard-greeting__name-word {
+		display: inline-block;
+		white-space: nowrap;
+	}
+
+	.dashboard-greeting__gap {
+		display: inline;
 	}
 
 	.dashboard-greeting__split {

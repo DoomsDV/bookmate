@@ -127,11 +127,15 @@ export const showIosPwaInstallGuide = async () => {
 		<ol class="app-alert-install-steps">
 			<li>
 				<span class="material-symbols-rounded" aria-hidden="true">ios_share</span>
-				<span>Tocá <strong>Compartir</strong> en Safari</span>
+				<span>Tocá el ícono de <strong>Compartir</strong> (el cuadrado con la flecha hacia arriba) en el navegador</span>
 			</li>
 			<li>
 				<span class="material-symbols-rounded" aria-hidden="true">add_box</span>
-				<span>Elegí <strong>Agregar a pantalla de inicio</strong></span>
+				<span>Elegí <strong>Agregar a Inicio</strong></span>
+			</li>
+			<li>
+				<span class="material-symbols-rounded" aria-hidden="true">expand_more</span>
+				<span>Si no ves la opción, tocá <strong>Ver más</strong> y ahí debería aparecer</span>
 			</li>
 			<li>
 				<span class="material-symbols-rounded" aria-hidden="true">check_circle</span>
@@ -153,7 +157,7 @@ export const showIosPwaInstallGuide = async () => {
 	}
 
 	window.alert(
-		'Para recibir recordatorios, instalá Hasel: tocá Compartir → Agregar a pantalla de inicio. Después abrí la app desde el inicio para activar notificaciones.'
+		'Para recibir recordatorios, instalá Hasel: tocá el ícono de Compartir (el cuadrado con la flecha hacia arriba) → Agregar a Inicio. Si no ves la opción, tocá Ver más. Confirmá con Agregar y abrí la app desde el inicio para activar notificaciones.'
 	);
 };
 
@@ -276,7 +280,7 @@ export const enablePushNotifications = async (options?: { fromSettings?: boolean
 		if (isIosBrowser() && canOfferPwaInstall()) {
 			await showIosPwaInstallGuide();
 			throw new Error(
-				'Instalá Hasel en tu iPhone (Compartir → Agregar a pantalla de inicio) y abrila desde el inicio para activar notificaciones.'
+				'Instalá Hasel en tu iPhone: tocá el ícono de Compartir (el cuadrado con la flecha) → Agregar a Inicio. Si no ves la opción, tocá Ver más. Confirmá con Agregar y abrila desde el inicio para activar notificaciones.'
 			);
 		}
 		throw new Error(

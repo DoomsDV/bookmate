@@ -1485,7 +1485,7 @@ const orgHubSiteOrigin = resolvePublicSiteOrigin(Astro.url.origin);
 			let hintMessage = '';
 			if (!state.pwaInstalled) {
 				hintMessage = isIosBrowser()
-					? 'En iPhone: Primero elegí "Compartir" > "Agregar a pantalla de inicio" y abrí la app desde ahí.'
+					? 'En iPhone: tocá el ícono de Compartir (el cuadrado con la flecha hacia arriba) → Agregar a Inicio. Si no ves la opción, tocá Ver más. Confirmá con Agregar y abrí la app desde el inicio.'
 					: 'Instalá Hasel en tu dispositivo para gestionar las notificaciones desde aquí.';
 			} else if (!state.browserSupported) {
 				hintMessage = 'Este navegador no admite notificaciones push.';

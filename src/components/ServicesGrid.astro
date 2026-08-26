@@ -7,6 +7,7 @@ interface Props {
 	searchQuery?: string;
 	isActiveFilter?: number | null;
 	totalRecords?: number;
+	isProfessional?: boolean;
 }
 
 const {
@@ -15,10 +16,23 @@ const {
 	searchQuery = '',
 	isActiveFilter = null,
 	totalRecords = 0,
+	isProfessional = false,
 } = Astro.props;
 const hasSearch = Boolean(searchQuery);
 const hasStatusFilter = isActiveFilter === 0 || isActiveFilter === 1;
 const hasFilters = hasSearch || hasStatusFilter;
+const emptyTitle = hasFilters
+	? 'No se encontraron servicios'
+	: isProfessional
+		? 'No tenés servicios asignados'
+		: 'No hay servicios registrados';
+const emptyCopy = hasSearch
+	? 'Probá con otro nombre.'
+	: hasStatusFilter
+		? 'No hay servicios con ese estado.'
+		: isProfessional
+			? 'Cuando el administrador te asigne servicios, aparecerán aquí.'
+			: 'Aun no has agregado ningun servicio a esta organizacion. Comienza creando tu primera prestacion.';
 
 const currencyFormatter = new Intl.NumberFormat('es-PY', {
 	style: 'currency',
@@ -207,14 +221,10 @@ const toDurationLabel = (value?: number | null) => {
 					</span>
 				</div>
 				<h3 class="text-[1.1rem] font-bold text-(--on-surface)">
-					{hasFilters ? 'No se encontraron servicios' : 'No hay servicios registrados'}
+					{emptyTitle}
 				</h3>
 				<p class="mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)">
-					{hasSearch
-						? 'Probá con otro nombre.'
-						: hasStatusFilter
-							? 'No hay servicios con ese estado.'
-							: 'Aun no has agregado ningun servicio a esta organizacion. Comienza creando tu primera prestacion.'}
+					{emptyCopy}
 				</p>
 			</div>
 		) : (
@@ -222,17 +232,22 @@ const toDurationLabel = (value?: number | null) => {
 				{services.map((service) => {
 					const imageUrl = String(service.image_url || '').trim();
 					const isActive = service.is_active === 1;
+					const includes = String(service.public_includes || '')
+						.replace(/\s+/g, ' ')
+						.trim();
+					const serviceName = service.name || `Servicio #${service.id_service}`;
 					return (
 					<article
 						class:list={[
 							'services-card group',
 							!isActive && 'services-card--inactive',
+							!showCreateAction && 'services-card--readonly',
 						]}
 						data-service-card
 						data-service-id={service.id_service}
-						tabindex="0"
+						tabindex={0}
 						role="button"
-						aria-label={`Editar servicio ${service.name || service.id_service}`}
+						aria-label={showCreateAction ? `Editar servicio ${serviceName}` : `Ver servicio ${serviceName}`}
 					>
 						<div class="services-card__inner">
 							<div
@@ -281,8 +296,11 @@ const toDurationLabel = (value?: number | null) => {
 
 							<div class="services-card__body services-card-body">
 								<h3 class="services-card-title line-clamp-1">
-									{service.name || `Servicio #${service.id_service}`}
+									{serviceName}
 								</h3>
+								{includes ? (
+									<p class="services-card-includes line-clamp-2">{includes}</p>
+								) : null}
 								<dl class="services-card__metrics">
 									<div class="services-card__stat">
 										<dt class="services-card-term">Duración</dt>
@@ -533,6 +551,18 @@ const toDurationLabel = (value?: number | null) => {
 		line-height: 1.2;
 	}
 
+	service-manager .services-card-includes {
+		margin: 0;
+		font-size: 0.82rem;
+		font-weight: 550;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+
+	service-manager .services-card--readonly {
+		cursor: pointer;
+	}
+
 	service-manager .services-card__metrics {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
@@ -641,6 +671,7 @@ const toDurationLabel = (value?: number | null) => {
 		service-manager .services-card:hover .panel-horizontal-card__media-image {
 			transform: scale(1.045);
 		}
+
 	}
 
 	html[data-theme='dark'] service-manager .services-card {
@@ -652,6 +683,7 @@ const toDurationLabel = (value?: number | null) => {
 		background: #19191e;
 		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.14);
 	}
+
 
 	html[data-theme='dark'] service-manager .services-card__inner {
 		background: transparent;

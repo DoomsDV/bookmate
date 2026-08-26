@@ -350,6 +350,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 						aria-controls="customer-profile-panel-odontogram"
 						data-customer-profile-tab="odontogram"
 						tabindex="-1"
+						hidden
 					>
 						<span class="customer-profile-tab__label-full">Odontograma</span>
 						<span class="customer-profile-tab__label-short">Odonto</span>
@@ -1718,6 +1719,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		border-radius: 999px;
 		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
 		overflow: hidden;
+	}
+
+	.customer-profile-tab[hidden] {
+		display: none !important;
 	}
 
 	.customer-profile-tab {

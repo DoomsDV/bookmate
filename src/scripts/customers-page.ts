@@ -437,6 +437,8 @@ class CustomerManager extends HTMLElement {
 		for (const tab of this.profileTabButtons ?? []) {
 			tab.addEventListener('click', this.handleProfileTabClick, { signal });
 		}
+		document.addEventListener('hasel:subscription', this.handleSubscriptionChange, { signal });
+		this.syncOdontogramTabVisibility();
 
 		this.odontogramToolbar?.addEventListener('click', this.handleOdontogramToolbarClick, { signal });
 		this.odontogramCam?.addEventListener('click', this.handleOdontogramCamClick, { signal });
@@ -1233,26 +1235,59 @@ class CustomerManager extends HTMLElement {
 		const button = event.currentTarget as HTMLButtonElement | null;
 		const tab = button?.dataset.customerProfileTab;
 		if (tab !== 'summary' && tab !== 'history' && tab !== 'odontogram') return;
+		if (tab === 'odontogram' && !this.isOdontogramRubroAvailable()) return;
 		this.setActiveProfileTab(tab);
 	};
 
+	private handleSubscriptionChange = () => {
+		this.syncOdontogramTabVisibility();
+	};
+
+	private isOdontogramRubroAvailable() {
+		const code = window.HaselSubscription?.orgSpecialtyCode;
+		return String(code ?? '').trim().toUpperCase() === 'DENTAL';
+	}
+
+	private syncOdontogramTabVisibility() {
+		const tab =
+			this.activeProfileTab === 'odontogram' && !this.isOdontogramRubroAvailable()
+				? 'summary'
+				: this.activeProfileTab;
+		this.setActiveProfileTab(tab);
+	}
+
 	private setActiveProfileTab(tab: 'summary' | 'history' | 'odontogram') {
+		if (tab === 'odontogram' && !this.isOdontogramRubroAvailable()) {
+			tab = 'summary';
+		}
 		this.activeProfileTab = tab;
 		for (const button of this.profileTabButtons ?? []) {
+			const isOdontogramTab = button.dataset.customerProfileTab === 'odontogram';
+			const available = !isOdontogramTab || this.isOdontogramRubroAvailable();
+			button.hidden = !available;
+			if (!available) {
+				button.classList.remove('is-active');
+				button.setAttribute('aria-selected', 'false');
+				button.tabIndex = -1;
+				continue;
+			}
 			const isActive = button.dataset.customerProfileTab === tab;
 			button.classList.toggle('is-active', isActive);
 			button.setAttribute('aria-selected', isActive ? 'true' : 'false');
 			button.tabIndex = isActive ? 0 : -1;
 		}
 		for (const panel of this.profileTabPanels ?? []) {
-			const isActive = panel.dataset.customerProfileTabPanel === tab;
+			const isOdontogramPanel = panel.dataset.customerProfileTabPanel === 'odontogram';
+			const isActive =
+				panel.dataset.customerProfileTabPanel === tab &&
+				(!isOdontogramPanel || this.isOdontogramRubroAvailable());
 			panel.classList.toggle('hidden', !isActive);
 			if (isActive) panel.removeAttribute('hidden');
 			else panel.setAttribute('hidden', '');
 		}
 
 		const activeTab = [...(this.profileTabButtons ?? [])].find(
-			(button) => button.dataset.customerProfileTab === tab
+			(button) => button.dataset.customerProfileTab === tab && !button.hidden
 		);
 		activeTab?.scrollIntoView({ inline: 'nearest', block: 'nearest' });
 
@@ -1731,6 +1766,7 @@ class CustomerManager extends HTMLElement {
 
 	private async loadOdontogram(customerId: number) {
 		if (customerId <= 0) return;
+		if (!this.isOdontogramRubroAvailable()) return;
 
 		const requestId = ++this.odontogramLoadRequestId;
 		this.setOdontogramLoading(true);

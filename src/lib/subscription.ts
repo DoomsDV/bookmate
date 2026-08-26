@@ -125,6 +125,7 @@ export interface SubscriptionData {
 	features: string[];
 	addon_features: string[];
 	addons_billing_live: boolean;
+	org_specialty_code: string | null;
 }
 
 export class SubscriptionApiError extends Error {
@@ -204,6 +205,7 @@ const normalizeSubscription = (value: unknown): SubscriptionData | null => {
 		features: toStringArray(source.features),
 		addon_features: toStringArray(source.addon_features),
 		addons_billing_live: toBool(source.addons_billing_live),
+		org_specialty_code: toNullableString(source.org_specialty_code),
 	};
 };
 

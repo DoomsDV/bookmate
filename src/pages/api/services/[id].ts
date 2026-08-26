@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 
+import { ROLES } from '../../../config/roles';
 import {
 	ServicesApiError,
 	deleteServiceWithOrds,
@@ -7,6 +8,15 @@ import {
 	updateServiceWithOrds,
 	type CreateServicePayload,
 } from '../../../lib/services';
+import { parseTokenClaims } from '../../../lib/token-claims';
+
+const requireAdmin = (locals: App.Locals, token: string) => {
+	const claims = parseTokenClaims(token);
+	const roleId = Number(locals.roleId ?? claims.role_id ?? 0);
+	if (roleId !== ROLES.ADMIN) {
+		throw new ServicesApiError('Solo un administrador puede gestionar servicios.', 403);
+	}
+};
 
 const parseServiceId = (value: string | undefined) => {
 	const parsed = Number(value);
@@ -149,6 +159,8 @@ export const PUT: APIRoute = async ({ request, params, locals }) => {
 			throw new ServicesApiError('ID de servicio invalido.', 400);
 		}
 
+		requireAdmin(locals, token);
+
 		const body = await parseBody(request);
 		const payload = parseUpdatePayload(body);
 		const updated = await updateServiceWithOrds(token, serviceId, payload);
@@ -173,6 +185,8 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
 		if (!serviceId) {
 			throw new ServicesApiError('ID de servicio invalido.', 400);
 		}
+
+		requireAdmin(locals, token);
 
 		const deleted = await deleteServiceWithOrds(token, serviceId);
 
