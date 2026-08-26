@@ -1,16 +1,26 @@
 import type { APIRoute } from 'astro';
 
+import { ROLES } from '../../config/roles';
 import {
 	ServicesApiError,
 	createServiceWithOrds,
 	listServices,
 	type CreateServicePayload,
 } from '../../lib/services';
+import { parseTokenClaims } from '../../lib/token-claims';
 import {
 	requireToken as requireApiToken,
 	toErrorResponse as toApiErrorResponse,
 	toPositiveInt,
 } from '../../utils/api-helpers';
+
+const requireAdmin = (locals: App.Locals, token: string) => {
+	const claims = parseTokenClaims(token);
+	const roleId = Number(locals.roleId ?? claims.role_id ?? 0);
+	if (roleId !== ROLES.ADMIN) {
+		throw new ServicesApiError('Solo un administrador puede gestionar servicios.', 403);
+	}
+};
 
 const createServicesError = (message: string, status = 400) =>
 	new ServicesApiError(message, status);
@@ -82,6 +92,8 @@ export const POST: APIRoute = async ({ request, locals }) => {
 		if (!token) {
 			throw new ServicesApiError('No hay sesion valida para crear servicios.', 401);
 		}
+
+		requireAdmin(locals, token);
 
 		const body = await parseBody(request);
 		const name = String(body?.name || '').trim();

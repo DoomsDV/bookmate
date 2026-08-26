@@ -11,6 +11,7 @@ import { panelPageTitle } from "../../lib/panel-page-title";
 import "../../styles/global.css";
 
 const canManageServices = Number(Astro.locals.roleId ?? 0) === ROLES.ADMIN;
+const isProfessional = Number(Astro.locals.roleId ?? 0) === ROLES.PROFESIONAL;
 const rawPage = Number(Astro.url.searchParams.get("page") || "1");
 const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 ---
@@ -33,6 +34,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 							<ServicesListIsland
 								server:defer
 								canManageServices={canManageServices}
+								isProfessional={isProfessional}
 								currentPage={currentPage}
 							>
 								<ServicesListSkeleton slot="fallback" />
@@ -91,8 +93,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				</div>
 
 				{/* fieldset con display:contents evita el bug de flex que aplasta el contenido en drawers */}
-				<fieldset data-form-fieldset class="contents">
-				<div class="service-modal-body min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-7 sm:py-7 lg:px-6">
+				<fieldset data-form-fieldset class="contents" disabled={!canManageServices || undefined}>
+				<div class="service-modal-body min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-5 sm:px-7 sm:py-7 lg:px-6" data-service-modal-body inert={!canManageServices || undefined}>
 				<div class="grid gap-5">
 				<div
 					class="hidden rounded-2xl border border-rose-500/20 bg-rose-500/10 px-4 py-3 text-[0.9rem] font-bold text-rose-500 shadow-sm"
@@ -408,6 +410,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 				</div>
 				</div>
+				</fieldset>
 				<div
 					class="z-20 mt-auto shrink-0 border-t border-(--shell-border) bg-(--surface-bright) px-4 py-4 sm:px-7 sm:py-5 lg:px-6"
 				>
@@ -431,12 +434,13 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 								type="button"
 								class="modal-action-secondary"
 								data-close-service-modal
+								data-close-service-modal-label
 							>
-								Cancelar
+								{canManageServices ? 'Cancelar' : 'Cerrar'}
 							</button>
 							<button
 								type="submit"
-								class="modal-action-primary"
+								class:list={['modal-action-primary', !canManageServices && 'hidden']}
 								data-submit-service
 							>
 								<span
@@ -450,7 +454,6 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 						</div>
 					</div>
 				</div>
-				</fieldset>
 			</form>
 		</dialog>
 
@@ -586,6 +589,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			cropModal: HTMLDialogElement | null;
 			cropMount: HTMLElement | null;
 			cropConfirm: HTMLButtonElement | null;
+			modalBody: HTMLElement | null;
 		};
 
 		private formEls!: {
@@ -650,6 +654,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 				cropModal: this.querySelector<HTMLDialogElement>("[data-service-crop-modal]"),
 				cropMount: this.querySelector<HTMLElement>("[data-service-crop-mount]"),
 				cropConfirm: this.querySelector<HTMLButtonElement>("[data-service-crop-confirm]"),
+				modalBody: this.querySelector<HTMLElement>("[data-service-modal-body]"),
 			};
 
 			this.formEls = {
@@ -793,13 +798,28 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			this.els.errorBox.classList.remove("hidden");
 		}
 
+		private syncReadonlyChrome() {
+			const closeLabel = this.querySelector<HTMLElement>(
+				"[data-close-service-modal-label]",
+			);
+			if (closeLabel) {
+				closeLabel.textContent = this.canManage ? "Cancelar" : "Cerrar";
+			}
+			if (this.els.submitBtn) {
+				this.els.submitBtn.classList.toggle("hidden", !this.canManage);
+				if (!this.canManage) this.els.submitBtn.disabled = true;
+			}
+		}
+
 		private updateUIMode(mode: ServiceMode) {
 			this.mode = mode;
 			const isEdit = mode === "edit";
 
 			if (this.els.modalTitle)
 				this.els.modalTitle.textContent = isEdit
-					? "Editar servicio"
+					? this.canManage
+						? "Editar servicio"
+						: "Detalle del servicio"
 					: "Crear servicio";
 
 			if (this.els.submitLabel)
@@ -809,11 +829,12 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			if (this.els.submitIcon)
 				this.els.submitIcon.textContent = isEdit ? "save" : "check";
 
+			this.syncReadonlyChrome();
+
 			if (this.els.deleteBtn) {
-				isEdit
-					? this.els.deleteBtn.classList.remove("hidden")
-					: this.els.deleteBtn.classList.add("hidden");
-				this.els.deleteBtn.disabled = !isEdit;
+				const showDelete = isEdit && this.canManage;
+				this.els.deleteBtn.classList.toggle("hidden", !showDelete);
+				this.els.deleteBtn.disabled = !showDelete;
 			}
 
 			if (this.els.statusWrap) {
@@ -826,7 +847,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 			if (this.formEls.status) {
 				if (isEdit) {
-					this.formEls.status.disabled = false;
+					this.formEls.status.disabled = !this.canManage;
 				} else {
 					this.formEls.status.value = "1";
 					this.formEls.status.disabled = true;
@@ -846,8 +867,10 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 					: this.els.loading.classList.replace("flex", "hidden");
 			}
 			if (this.formEls.fieldset) {
-				this.formEls.fieldset.disabled = isLoading;
+				this.formEls.fieldset.disabled = isLoading || !this.canManage;
 			}
+			this.els.modalBody?.toggleAttribute("inert", isLoading || !this.canManage);
+			this.syncStatusThemedSelect();
 		}
 
 		private setButtonsProcessing(label = "Procesando...") {
@@ -860,8 +883,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		}
 
 		private restoreButtons() {
-			if (this.els.submitBtn) this.els.submitBtn.disabled = false;
 			const isEdit = this.mode === "edit";
+			if (this.els.submitBtn) this.els.submitBtn.disabled = !this.canManage;
 			if (this.els.submitLabel)
 				this.els.submitLabel.textContent = isEdit
 					? "Guardar cambios"
@@ -869,7 +892,8 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			if (this.els.submitIcon)
 				this.els.submitIcon.textContent = isEdit ? "save" : "check";
 			if (this.els.deleteBtn && isEdit)
-				this.els.deleteBtn.disabled = false;
+				this.els.deleteBtn.disabled = !this.canManage;
+			this.syncReadonlyChrome();
 		}
 
 		private openModalShell() {
@@ -1318,12 +1342,12 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 
 			const deleteTrigger = target.closest("[data-delete-service]");
 			if (deleteTrigger && this.contains(deleteTrigger)) {
-				void this.handleDelete();
+				if (this.canManage) void this.handleDelete();
 				return;
 			}
 
 			const card = target.closest("[data-service-card]");
-			if (card && this.contains(card) && this.canManage) {
+			if (card && this.contains(card)) {
 				const id = Number(card.getAttribute("data-service-id") || "0");
 				if (id > 0) void this.openEditModal(id);
 				return;
@@ -1342,7 +1366,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 			if (e.key !== "Enter" && e.key !== " ") return;
 			const target = e.target as Element;
 			const card = target?.closest("[data-service-card]");
-			if (!card || !this.contains(card) || !this.canManage) return;
+			if (!card || !this.contains(card)) return;
 
 			e.preventDefault();
 			const id = Number(card.getAttribute("data-service-id") || "0");
@@ -1467,7 +1491,7 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 		};
 
 		private async handleDelete() {
-			if (!this.editingServiceId || this.mode !== "edit") return;
+			if (!this.canManage || !this.editingServiceId || this.mode !== "edit") return;
 
 			const confirmed = await (window as any).BookmateAlert?.confirm?.({
 				type: "error",
@@ -1515,6 +1539,17 @@ const currentPage = Number.isInteger(rawPage) && rawPage > 0 ? rawPage : 1;
 <style is:global>
 	service-manager {
 		display: block;
+	}
+
+	service-manager[data-can-manage="false"] [data-submit-service],
+	service-manager[data-can-manage="false"] [data-delete-service] {
+		display: none !important;
+	}
+
+	service-manager[data-can-manage="false"] .service-cover-dropzone,
+	service-manager[data-can-manage="false"] .service-cover-dropzone:hover {
+		cursor: default;
+		pointer-events: none;
 	}
 
 	dialog[data-service-modal] {

@@ -10,11 +10,12 @@ import {
 
 interface Props {
 	canManageServices?: boolean;
+	isProfessional?: boolean;
 	currentPage?: number;
 }
 
 const PAGE_SIZE = 9;
-const { canManageServices = false, currentPage: pageProp = 1 } = Astro.props;
+const { canManageServices = false, isProfessional = false, currentPage: pageProp = 1 } = Astro.props;
 
 const token = Astro.locals.token ?? '';
 const rawPage = Number(pageProp || Astro.url.searchParams.get('page') || '1');
@@ -61,13 +62,19 @@ const safeCurrentPage = Math.min(Math.max(1, pagination.current_page), totalPage
 	loadError ? (
 		<FlashMessage message={loadError} type="error" expand={true} dismissible={false} />
 	) : (
-		<div class="grid gap-4" data-services-list>
+		<div
+			class="grid gap-4"
+			data-services-list
+			data-services-can-manage={canManageServices ? 'true' : 'false'}
+			data-services-assigned-only={isProfessional ? 'true' : 'false'}
+		>
 			<ServicesGrid
 				services={services}
 				showCreateAction={canManageServices}
 				searchQuery={searchQuery}
 				isActiveFilter={isActiveFilter}
 				totalRecords={pagination.total_records}
+				isProfessional={isProfessional}
 			/>
 
 			<AppPagination
