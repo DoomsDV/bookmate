@@ -64,6 +64,7 @@ const { isAdmin = false } = Astro.props;
 		trialEndsAt: string | null;
 		graceEndsAt: string | null;
 		canceledAt: string | null;
+		orgSpecialtyCode: string | null;
 	}
 
 	// Single-flight + TTL corto para /api/subscription (mismo patrón que
@@ -148,6 +149,7 @@ const { isAdmin = false } = Astro.props;
 				trialEndsAt: sub.trial_ends_at ?? null,
 				graceEndsAt: sub.grace_ends_at ?? null,
 				canceledAt: sub.canceled_at ?? null,
+				orgSpecialtyCode: String(data.org_specialty_code || '').trim() || null,
 			};
 
 			window.HaselSubscription = {
