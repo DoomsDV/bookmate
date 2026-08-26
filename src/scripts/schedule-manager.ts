@@ -1700,6 +1700,7 @@ class ScheduleManager extends HTMLElement {
 
 	private renderExceptionModalLoading(): void {
 		if (!this.exceptionModalBodyNode) return;
+		this.setExceptionModalBodyEmpty(false);
 		this.clearNode(this.exceptionModalBodyNode);
 
 		const loading = document.createElement('div');
@@ -1850,30 +1851,82 @@ class ScheduleManager extends HTMLElement {
 		this.exceptionModalNode.close();
 	};
 
+	private setExceptionModalBodyEmpty(empty: boolean): void {
+		if (!this.exceptionModalBodyNode) return;
+		this.exceptionModalBodyNode.className = empty
+			? 'schedule-exception-modal-body--empty'
+			: 'grid gap-4';
+	}
+
+	private createExceptionModalEmptyState(icon: string, title: string, copy: string): HTMLElement {
+		const root = document.createElement('div');
+		root.className = 'schedule-exception-empty-state';
+		root.setAttribute('role', 'status');
+
+		const iconWrap = document.createElement('div');
+		iconWrap.className = 'schedule-exception-empty-icon';
+
+		const iconNode = document.createElement('span');
+		iconNode.className = 'material-symbols-rounded text-[2rem]';
+		iconNode.setAttribute('aria-hidden', 'true');
+		iconNode.textContent = icon;
+		iconWrap.appendChild(iconNode);
+
+		const titleNode = document.createElement('h3');
+		titleNode.className = 'text-[1.1rem] font-bold text-(--on-surface)';
+		titleNode.textContent = title;
+
+		const copyNode = document.createElement('p');
+		copyNode.className = 'mt-1.5 max-w-sm text-[0.95rem] leading-relaxed text-(--on-surface-variant)';
+		copyNode.textContent = copy;
+
+		root.append(iconWrap, titleNode, copyNode);
+		return root;
+	}
+
 	private renderExceptionModalBody(): void {
 		if (!this.exceptionModalBodyNode) return;
 		this.clearNode(this.exceptionModalBodyNode);
+		this.setExceptionModalBodyEmpty(false);
 
 		if (this.exceptionModalReadOnly) {
+			if (this.exceptionModalType === 'BLOCKED') {
+				this.setExceptionModalBodyEmpty(true);
+				this.exceptionModalBodyNode.appendChild(
+					this.createExceptionModalEmptyState(
+						'block',
+						'Este día está bloqueado',
+						'No hay turnos disponibles para atender citas.'
+					)
+				);
+				return;
+			}
+
+			if (this.exceptionModalSlots.length === 0) {
+				this.setExceptionModalBodyEmpty(true);
+				this.exceptionModalBodyNode.appendChild(
+					this.createExceptionModalEmptyState(
+						'event_busy',
+						'Sin turnos configurados para este día',
+						'Este profesional no tiene horarios definidos para atender citas.'
+					)
+				);
+				return;
+			}
+
 			const readOnly = document.createElement('div');
 			readOnly.className = 'grid gap-2 text-[0.9rem] text-(--on-surface-variant)';
-			if (this.exceptionModalType === 'BLOCKED') {
-				readOnly.textContent = 'Este día está bloqueado (sin turnos disponibles).';
-			} else if (this.exceptionModalSlots.length === 0) {
-				readOnly.textContent = 'Sin turnos configurados para este día.';
-			} else {
-				const list = document.createElement('ul');
-				list.className = 'grid gap-1';
-				for (const slot of this.exceptionModalSlots) {
-					const item = document.createElement('li');
-					const location = this.locations.find(
-						(loc) => loc.id_location === Number(slot.loc_id_location)
-					);
-					item.textContent = `${location?.name || 'Sucursal'}: ${slot.start_time} - ${slot.end_time}`;
-					list.appendChild(item);
-				}
-				readOnly.appendChild(list);
+			const list = document.createElement('ul');
+			list.className = 'grid gap-1';
+			for (const slot of this.exceptionModalSlots) {
+				const item = document.createElement('li');
+				const location = this.locations.find(
+					(loc) => loc.id_location === Number(slot.loc_id_location)
+				);
+				item.textContent = `${location?.name || 'Sucursal'}: ${slot.start_time} - ${slot.end_time}`;
+				list.appendChild(item);
 			}
+			readOnly.appendChild(list);
 			this.exceptionModalBodyNode.appendChild(readOnly);
 			return;
 		}

@@ -2072,6 +2072,58 @@ const initialLoadError = token ? '' : 'No hay sesión válida para configurar ho
 		}
 	}
 
+	.schedule-exception-modal-scroll {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.schedule-exception-modal-scroll [data-exception-modal-body] {
+		flex: 1 1 auto;
+		min-height: 0;
+	}
+
+	.schedule-exception-modal-body--empty {
+		display: flex;
+	}
+
+	.schedule-exception-empty-state {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		width: 100%;
+		min-height: 16rem;
+		margin: 0;
+		border-radius: 1.35rem;
+		border: 1px solid rgba(148, 163, 184, 0.24);
+		background: color-mix(in srgb, var(--surface-container-low) 72%, var(--surface-bright) 28%);
+		padding: 2.5rem 1.25rem;
+		text-align: center;
+	}
+
+	.schedule-exception-empty-icon {
+		margin-bottom: 0.75rem;
+		display: flex;
+		height: 4rem;
+		width: 4rem;
+		align-items: center;
+		justify-content: center;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-container) 88%, var(--surface-bright) 12%);
+		color: var(--on-surface-variant);
+	}
+
+	html[data-theme='dark'] .schedule-exception-empty-state {
+		border-color: rgba(255, 255, 255, 0.08);
+		background: #121214;
+	}
+
+	html[data-theme='dark'] .schedule-exception-empty-icon {
+		background: rgba(255, 255, 255, 0.05);
+		color: var(--on-surface-variant);
+	}
+
 	.schedule-exception-modal-loading {
 		display: flex;
 		min-height: 10rem;
