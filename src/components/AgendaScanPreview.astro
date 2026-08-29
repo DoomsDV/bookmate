@@ -951,6 +951,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		grid-template-columns: repeat(2, minmax(0, 1fr));
 		gap: 0.45rem 0.5rem;
 		min-width: 0;
+		align-items: stretch;
 	}
 
 	.agenda-preview-row__field[data-field='service'] {
@@ -1065,6 +1066,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		padding: 0.35rem 0.65rem;
 		background: color-mix(in srgb, var(--surface-variant) 48%, var(--surface-bright));
 		box-shadow: none;
+		flex: 1;
 	}
 
 	.agenda-preview-row__control {
@@ -1787,6 +1789,33 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 	}
 
+	/* Pane estrecho (p. ej. imagen lateral en desktop): columnas más flexibles. */
+	@media (min-width: 641px) {
+		@container agenda-rows (max-width: 920px) {
+			.agenda-preview-row {
+				--agenda-table-cols: minmax(0, 1.1fr) minmax(5rem, 0.58fr) minmax(0, 0.92fr) minmax(0, 0.92fr) 2.1rem;
+				gap: 0.3rem 0.45rem;
+				padding-right: 0.85rem;
+			}
+
+			.agenda-preview-row__client,
+			.agenda-preview-row__lead,
+			.agenda-preview-row__datetime,
+			.agenda-preview-row__field[data-field='service'],
+			.agenda-preview-row__pro {
+				min-width: 0;
+			}
+
+			.agenda-preview-row__lead-name {
+				max-width: 100%;
+			}
+
+			.agenda-preview-row__field--phone {
+				max-width: 100%;
+			}
+		}
+	}
+
 	/* Cards solo en mobile: tablet/PC usan la fila horizontal. */
 	@media (max-width: 640px) {
 	@container agenda-rows (max-width: 719px) {
@@ -1977,7 +2006,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		.agenda-preview-rows .agenda-preview-row {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
 			grid-template-areas:
-				'client client delete'
+				'lead lead delete'
+				'phone phone phone'
 				'datetime datetime datetime'
 				'service service service'
 				'pro pro pro';
@@ -2004,8 +2034,13 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-row__lead {
+			grid-area: lead;
 			min-height: 2rem;
 			gap: 0.45rem;
+		}
+
+		.agenda-preview-row__field--phone {
+			grid-area: phone;
 		}
 
 		.agenda-preview-row__lead-name {
@@ -2024,11 +2059,12 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-row__client {
-			gap: 0.65rem;
+			display: contents;
 		}
 
 		.agenda-preview-row__datetime {
 			gap: 0.5rem;
+			align-items: stretch;
 		}
 
 		.agenda-preview-row__pro {
@@ -2091,12 +2127,14 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 
 		.agenda-preview-row__control {
 			min-height: 3rem;
+			flex: 1;
 			padding: 0.4rem 0.75rem;
 			border: 1px solid var(--shell-border);
 			border-radius: 0.75rem;
 			gap: 0;
 			background: var(--surface-bright);
 			box-shadow: none;
+			box-sizing: border-box;
 		}
 
 		.agenda-preview-row__control:focus-within,
