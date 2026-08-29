@@ -1543,7 +1543,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			grid-template-areas: 'client datetime service pro delete';
 			align-items: center;
 			gap: 0.35rem 1rem;
-			padding: 0.95rem 0.1rem;
+			padding: 0.95rem 1.6rem 0.95rem 1.45rem;
 		}
 
 		.agenda-preview-row:hover {
@@ -1563,9 +1563,9 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		.agenda-preview-row__lead-name:focus,
 		.agenda-preview-row__lead-name:focus-visible {
 			border-bottom: 0;
-			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
 			border-radius: 0.4rem;
-			background: color-mix(in srgb, var(--surface-variant) 42%, transparent);
+			background: color-mix(in srgb, var(--surface-variant) 32%, transparent);
 			padding: 0.15rem 0.3rem;
 		}
 
@@ -1573,12 +1573,24 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
 		.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control,
 		.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control:focus-within {
-			padding: 0;
+			padding: 0.15rem 0.35rem;
+			margin-left: -0.35rem;
 			min-height: 1.25rem;
 			border: 0;
-			border-radius: 0;
+			border-radius: 0.35rem;
 			background: transparent;
 			box-shadow: none;
+			transition: background-color 220ms var(--agenda-ease), box-shadow 220ms var(--agenda-ease);
+		}
+
+		.agenda-preview-row__field--phone .agenda-preview-row__control:hover {
+			background: color-mix(in srgb, var(--surface-variant) 28%, transparent);
+		}
+
+		.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
+		.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control:focus-within {
+			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 22%, transparent);
+			background: color-mix(in srgb, var(--surface-variant) 32%, transparent);
 		}
 
 		.agenda-preview-row__field--phone .agenda-preview-row__icon {
