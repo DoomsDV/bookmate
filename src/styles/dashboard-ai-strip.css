@@ -10,11 +10,11 @@
 	align-items: stretch;
 	width: 100%;
 	max-width: none;
-	padding: 0.28rem;
+	padding: 0;
 	border: 0;
 	border-radius: 1.6rem;
-	background: color-mix(in srgb, var(--on-surface) 4%, #f3f4f6);
-	box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+	background: transparent;
+	box-shadow: none;
 }
 
 .dashboard-ai-strip__body {
@@ -28,7 +28,8 @@
 	min-height: 100%;
 	overflow: hidden;
 	padding: 1rem 1.05rem 1.1rem;
-	border-radius: calc(1.6rem - 0.28rem);
+	border: 1px solid color-mix(in srgb, var(--on-surface) 6%, transparent);
+	border-radius: 1.6rem;
 	background:
 		radial-gradient(22rem 14rem at 100% 0%, color-mix(in srgb, var(--primary) 12%, transparent), transparent 58%),
 		#ffffff;
@@ -291,11 +292,12 @@ html[data-theme='dark'] .dashboard-ai-strip__skel-line::after {
 }
 
 html[data-theme='dark'] .dashboard-ai-strip {
-	background: rgba(255, 255, 255, 0.03);
-	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+	background: transparent;
+	box-shadow: none;
 }
 
 html[data-theme='dark'] .dashboard-ai-strip__body {
+	border-color: rgba(255, 255, 255, 0.06);
 	background:
 		radial-gradient(22rem 14rem at 100% 0%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 60%),
 		color-mix(in srgb, var(--surface-container-high, #1c1d22) 92%, #0e1014 8%);
@@ -325,8 +327,8 @@ html[data-theme='dark'] .dashboard-ai-strip__action-icon {
 	background: color-mix(in srgb, var(--primary) 20%, #1a1c21);
 }
 
-.dashboard-ai-strip.is-generating {
-	box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 28%, transparent);
+.dashboard-ai-strip.is-generating .dashboard-ai-strip__body {
+	border-color: color-mix(in srgb, var(--primary) 28%, transparent);
 }
 
 .dashboard-ai-strip.is-generating .dashboard-ai-strip__head,
@@ -416,8 +418,8 @@ html[data-theme='dark'] .dashboard-ai-strip__action-icon {
 	}
 }
 
-html[data-theme='dark'] .dashboard-ai-strip.is-generating {
-	box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 38%, rgba(255, 255, 255, 0.08));
+html[data-theme='dark'] .dashboard-ai-strip.is-generating .dashboard-ai-strip__body {
+	border-color: color-mix(in srgb, var(--primary) 38%, rgba(255, 255, 255, 0.08));
 }
 
 @media (min-width: 641px) {

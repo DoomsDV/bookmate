@@ -1674,7 +1674,9 @@ const googleErrorMessage = hasGoogleError
 	[data-calendar-root] .fc .fc-scrollgrid {
 		border-radius: var(--calendar-radius);
 		overflow: hidden;
-		background: var(--surface-bright);
+		background: color-mix(in srgb, var(--calendar-surface) 88%, transparent);
+		border-left-width: 0;
+		border-right-width: 0;
 	}
 
 	[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button {
@@ -1834,6 +1836,24 @@ const googleErrorMessage = hasGoogleError
 
 	[data-calendar-root] .fc .fc-timegrid-col {
 		background: color-mix(in srgb, var(--calendar-surface) 88%, transparent);
+	}
+
+	/* Evita franja blanca entre columnas y scrollbar (FC reserva gutter + cols no llenan 100%). */
+	[data-calendar-root] .fc .fc-timegrid-cols,
+	[data-calendar-root] .fc .fc-timegrid-slots,
+	[data-calendar-root] .fc .fc-timegrid-slots > table {
+		width: 100% !important;
+		min-width: 100%;
+	}
+
+	[data-calendar-root] .fc .fc-timegrid-body .fc-scroller-harness-liquid,
+	[data-calendar-root] .fc .fc-timegrid-body .fc-scroller-liquid-absolute {
+		right: 0 !important;
+	}
+
+	[data-calendar-root] .fc .fc-scrollgrid-shrink,
+	[data-calendar-root] .fc .fc-scrollgrid-shrink-frame {
+		background: var(--calendar-surface);
 	}
 
 	/* Now indicator estilo Google Calendar: dot + línea a todo el ancho del grid de días */
@@ -3679,6 +3699,24 @@ const googleErrorMessage = hasGoogleError
 		[data-calendar-root] .fc .fc-view-harness {
 			height: auto !important;
 			min-height: 0 !important;
+		}
+
+		/* Sin scroll interno en mobile: el gutter del header sobra y deja franja blanca. */
+		[data-calendar-root] .fc .fc-timegrid-body .fc-scroller {
+			overflow-y: visible !important;
+		}
+
+		[data-calendar-root] .fc .fc-scrollgrid-shrink,
+		[data-calendar-root] .fc .fc-scrollgrid-shrink-frame {
+			width: 0 !important;
+			min-width: 0 !important;
+			padding: 0 !important;
+			border: 0 !important;
+			overflow: hidden;
+		}
+
+		[data-calendar-root] .fc .fc-scrollgrid-shrink-cushion {
+			display: none;
 		}
 
 		/*
