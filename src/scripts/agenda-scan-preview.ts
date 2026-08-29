@@ -39,9 +39,10 @@ interface PreviewRowState {
 // Paraguay opera en -03:00 de forma permanente desde 2024.
 const ASUNCION_OFFSET = '-03:00';
 
-const PLACEHOLDER_SERVICE = 'Servicio';
-const PLACEHOLDER_PROFESSIONAL = 'Profesional';
+const PLACEHOLDER_SERVICE = 'Elegir servicio';
+const PLACEHOLDER_PROFESSIONAL = 'Asignar';
 const PLACEHOLDER_LOCATION = 'Sucursal';
+const MONTHS_SHORT = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC'];
 
 const DEFAULT_THEMED_TRIGGER =
 	'panel-modal-select__trigger panel-themed-select__trigger schedule-themed-select__trigger';
@@ -113,7 +114,9 @@ const TIME_SLOTS = (() => {
 const formatDisplayDate = (iso: string) => {
 	const match = String(iso || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
 	if (!match) return '';
-	return `${match[3]}/${match[2]}/${match[1]}`;
+	const month = MONTHS_SHORT[Number(match[2]) - 1];
+	if (!month) return `${match[3]}/${match[2]}/${match[1]}`;
+	return `${Number(match[3])} ${month} ${match[1]}`;
 };
 
 const parseIsoDate = (iso: string): Date | null => {
@@ -415,8 +418,12 @@ class AgendaScanPreview extends HTMLElement {
 			'[data-agenda-default-professional], [data-agenda-default-location], [data-agenda-default-service]'
 		);
 		let placeholder = PLACEHOLDER_SERVICE;
-		if (select.matches('[data-agenda-default-professional], [data-row-professional]')) {
+		if (select.matches('[data-row-professional]')) {
 			placeholder = PLACEHOLDER_PROFESSIONAL;
+		} else if (select.matches('[data-agenda-default-professional]')) {
+			placeholder = 'Profesional';
+		} else if (select.matches('[data-agenda-default-service]')) {
+			placeholder = 'Servicio';
 		} else if (select.matches('[data-agenda-default-location]')) {
 			placeholder = PLACEHOLDER_LOCATION;
 		}
@@ -475,7 +482,7 @@ class AgendaScanPreview extends HTMLElement {
 			proSelect.innerHTML = this.optionList(
 				this.#professionals.map((p) => ({ id: p.id_professional, name: p.name })),
 				this.#defaultProfessionalId,
-				PLACEHOLDER_PROFESSIONAL
+				'Profesional'
 			);
 		}
 		if (locSelect) {
@@ -489,7 +496,7 @@ class AgendaScanPreview extends HTMLElement {
 			serviceSelect.innerHTML = this.optionList(
 				this.#services.map((s) => ({ id: s.id_service, name: s.name })),
 				this.defaultServiceIdFromRows(),
-				PLACEHOLDER_SERVICE
+				'Servicio'
 			);
 		}
 		this.mountDefaultThemedSelects();
@@ -799,7 +806,7 @@ class AgendaScanPreview extends HTMLElement {
 					'phone',
 					'Teléfono (opcional)',
 					'call',
-					`<input type="tel" data-row-phone value="${this.escape(row.customer_phone)}" placeholder="Teléfono (opcional)" aria-label="Teléfono (opcional)" />`,
+					`<input type="tel" data-row-phone value="${this.escape(row.customer_phone)}" placeholder="Teléfono pendiente" aria-label="Teléfono (opcional)" />`,
 					'agenda-preview-row__field--compact agenda-preview-row__field--phone'
 				)}
 			</div>
@@ -1152,6 +1159,8 @@ class AgendaScanPreview extends HTMLElement {
 		const valid = hasLocation ? this.#rows.filter((row) => this.isRowValid(row)).length : 0;
 		const countNode = this.querySelector<HTMLElement>('[data-agenda-preview-count]');
 		if (countNode) countNode.textContent = String(total);
+		const pendingLabel = this.querySelector<HTMLElement>('[data-agenda-preview-pending-label]');
+		if (pendingLabel) pendingLabel.textContent = total === 1 ? 'pendiente' : 'pendientes';
 
 		const saveLabel = this.querySelector<HTMLElement>('[data-agenda-save-label]');
 		if (saveLabel) {
