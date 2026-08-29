@@ -1982,7 +1982,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 				'service service service'
 				'pro pro pro';
 			align-items: start;
-			gap: 0.4rem 0.45rem;
+			gap: 0.65rem 0.5rem;
 			padding: 0.85rem 0.1rem 0.9rem;
 			border: 0;
 			border-radius: 0;
@@ -2024,15 +2024,15 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-row__client {
-			gap: 0.5rem;
+			gap: 0.65rem;
 		}
 
 		.agenda-preview-row__datetime {
-			gap: 0.4rem;
+			gap: 0.5rem;
 		}
 
 		.agenda-preview-row__pro {
-			gap: 0;
+			gap: 0.65rem;
 		}
 
 		.agenda-preview-row__field[data-field='service'],
@@ -2042,7 +2042,7 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-row__field {
-			gap: 0;
+			gap: 0.2rem;
 		}
 
 		/* Placeholder + valor ya identifican el campo; el label queda solo para a11y. */
@@ -2090,27 +2090,11 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 		}
 
 		.agenda-preview-row__control {
-			min-height: 2.75rem;
-			padding: 0.3rem 0.55rem;
-			border-bottom: 0;
-			border-radius: 0.6rem;
-			gap: 0;
-			background: color-mix(in srgb, var(--surface-variant) 48%, var(--surface-bright));
-			box-shadow: none;
-		}
-
-		/* Caja visible sobre la placa de la card: Hora, Fecha, Servicio, Profesional. */
-		.agenda-preview-row__datetime .agenda-preview-row__control,
-		.agenda-preview-row__field[data-field='service'] .agenda-preview-row__control,
-		.agenda-preview-row__pro .agenda-preview-row__control,
-		.agenda-preview-row__datetime .agenda-preview-row__field.is-valid .agenda-preview-row__control,
-		.agenda-preview-row__field[data-field='service'].is-valid .agenda-preview-row__control,
-		.agenda-preview-row__pro .agenda-preview-row__field.is-valid .agenda-preview-row__control {
-			padding: 0.3rem 0.55rem;
+			min-height: 3rem;
+			padding: 0.4rem 0.75rem;
 			border: 1px solid var(--shell-border);
-			border-radius: 0.6rem;
+			border-radius: 0.75rem;
 			gap: 0;
-			min-height: 2.75rem;
 			background: var(--surface-bright);
 			box-shadow: none;
 		}
@@ -2124,19 +2108,8 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
 		}
 
-		/* Teléfono bajo el nombre: misma caja 2.75rem que Hora/Fecha/Servicio. */
-		.agenda-preview-row__field--phone.agenda-preview-row__field--compact .agenda-preview-row__control,
-		.agenda-preview-row__field--phone .agenda-preview-row__control,
-		.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
-		.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control,
-		.agenda-preview-row__field--phone.is-valid .agenda-preview-row__control:focus-within {
-			padding: 0.3rem 0.55rem;
-			border: 1px solid var(--shell-border);
-			border-radius: 0.6rem;
+		.agenda-preview-row__field--phone .agenda-preview-row__control {
 			gap: 0.35rem;
-			min-height: 2.75rem;
-			background: var(--surface-bright);
-			box-shadow: none;
 		}
 
 		.agenda-preview-row__field--phone .agenda-preview-row__control:focus-within,
@@ -2144,26 +2117,15 @@ import { FEATURE_FLAGS } from '../config/feature-flags';
 			box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 28%, transparent);
 		}
 
-		.agenda-preview-row__control input,
-		.agenda-preview-row__control select,
-		.agenda-preview-row__control .agenda-preview-row__select-trigger {
-			font-size: 0.86rem;
-		}
-
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control input {
-			font-size: 0.8rem;
-		}
-
 		.agenda-preview-row__field--time input {
-			font-size: 0.92rem;
 			font-weight: 800;
 		}
 
 		/* iOS Safari: 16px evita zoom al enfocar (gana a --compact + --phone). */
 		.agenda-preview-row__lead-name,
-		.agenda-preview-row__field--phone input,
-		.agenda-preview-row__field--compact.agenda-preview-row__field--phone .agenda-preview-row__control input,
-		.agenda-preview-row__field--time .agenda-preview-timeinput,
+		.agenda-preview-row__control input,
+		.agenda-preview-row__control select,
+		.agenda-preview-row__control .agenda-preview-row__select-trigger,
 		.agenda-preview-timeinput {
 			font-size: 16px;
 		}
