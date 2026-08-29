@@ -1,3 +1,4 @@
+/** BFF: recibe la imagen y la reenvía a ORDS /ai/appointments/image-draft. */
 import type { APIRoute } from 'astro';
 
 import { AgendaScanError, processAgendaImageDraft } from '../../../../lib/appointment-agenda-ai';
