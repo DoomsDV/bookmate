@@ -1364,11 +1364,8 @@ const googleErrorMessage = hasGoogleError
 		align-items: center;
 	}
 
-	[data-calendar-root] .fc .fc-timegrid-axis {
-		width: 3.1rem;
-		min-width: 3.1rem;
-	}
-
+	[data-calendar-root] .fc .fc-timegrid-axis,
+	[data-calendar-root] .fc .fc-timegrid-slot-label,
 	[data-calendar-root] .fc .fc-timegrid .fc-scrollgrid-section-header .fc-timegrid-axis {
 		width: 3.1rem;
 		min-width: 3.1rem;
@@ -1557,9 +1554,10 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .fc .fc-timegrid-axis,
+		[data-calendar-root] .fc .fc-timegrid-slot-label,
 		[data-calendar-root] .fc .fc-timegrid .fc-scrollgrid-section-header .fc-timegrid-axis {
-			width: 2.65rem;
-			min-width: 2.65rem;
+			width: 2.65rem !important;
+			min-width: 2.65rem !important;
 		}
 
 		[data-calendar-root] .fc .fc-col-header-cell-cushion {
@@ -1846,6 +1844,11 @@ const googleErrorMessage = hasGoogleError
 	[data-calendar-root] .fc .fc-timegrid-slots > table {
 		width: 100% !important;
 		min-width: 100%;
+	}
+
+	[data-calendar-root] .fc .fc-timegrid-cols .fc-timegrid-axis,
+	[data-calendar-root] .fc .fc-timegrid-slots .fc-timegrid-slot-label {
+		box-sizing: border-box;
 	}
 
 	[data-calendar-root] .fc .fc-timegrid-body .fc-scroller-harness-liquid,
@@ -3703,21 +3706,12 @@ const googleErrorMessage = hasGoogleError
 			min-height: 0 !important;
 		}
 
-		/* Sin scroll interno en mobile: el gutter del header sobra y deja franja blanca. */
+		/* Sin scroll interno: la cabecera nativa la reemplaza el chrome sticky. */
 		[data-calendar-root] .fc .fc-timegrid-body .fc-scroller {
 			overflow-y: visible !important;
 		}
 
-		[data-calendar-root] .fc .fc-scrollgrid-shrink,
-		[data-calendar-root] .fc .fc-scrollgrid-shrink-frame {
-			width: 0 !important;
-			min-width: 0 !important;
-			padding: 0 !important;
-			border: 0 !important;
-			overflow: hidden;
-		}
-
-		[data-calendar-root] .fc .fc-scrollgrid-shrink-cushion {
+		[data-calendar-root] .fc .fc-timegrid .fc-scrollgrid-section-header {
 			display: none;
 		}
 
@@ -4054,9 +4048,20 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .fc .fc-timegrid-axis,
-		[data-calendar-root] .fc .fc-timegrid .fc-scrollgrid-section-header .fc-timegrid-axis {
-			width: 2.4rem;
-			min-width: 2.4rem;
+		[data-calendar-root] .fc .fc-timegrid-slot-label,
+		[data-calendar-root] .fc .fc-scrollgrid-shrink.fc-timegrid-axis,
+		[data-calendar-root] .fc .fc-timegrid-axis .fc-scrollgrid-shrink-frame {
+			width: 2.4rem !important;
+			min-width: 2.4rem !important;
+			max-width: 2.4rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-slot-label {
+			overflow: visible;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-cols::after {
+			left: 2.4rem;
 		}
 
 		[data-calendar-root] .fc .fc-timegrid-slot {
@@ -4070,7 +4075,10 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .cal-hour-label {
-			gap: 0.06rem;
+			flex-direction: column;
+			align-items: flex-end;
+			gap: 0;
+			line-height: 1.05;
 		}
 
 		[data-calendar-root] .cal-hour-label__hour {
