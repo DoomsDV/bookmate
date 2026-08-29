@@ -292,8 +292,8 @@ class AgendaScanPreview extends HTMLElement {
 				row.row_confidence || row.confidence || (row.missing_fields?.length ? 'medium' : 'high');
 			return {
 				uid: uid(),
-				customer_name: String(row.customer_name || '').trim(),
-				customer_phone: String(row.customer_phone || '').trim(),
+				customer_name: String(row.customer_name || '').trim().slice(0, 100),
+				customer_phone: String(row.customer_phone || '').trim().slice(0, 11),
 				date,
 				time,
 				ser_id_service: toInt(row.ser_id_service),
@@ -800,13 +800,14 @@ class AgendaScanPreview extends HTMLElement {
 						value="${this.escape(row.customer_name)}"
 						placeholder="Nombre del cliente"
 						aria-label="Cliente"
+						maxlength="100"
 					/>
 				</div>
 				${field(
 					'phone',
 					'Teléfono (opcional)',
 					'call',
-					`<input type="tel" data-row-phone value="${this.escape(row.customer_phone)}" placeholder="Teléfono pendiente" aria-label="Teléfono (opcional)" />`,
+					`<input type="tel" inputmode="tel" autocomplete="tel" data-row-phone value="${this.escape(row.customer_phone.slice(0, 11))}" placeholder="Teléfono pendiente" aria-label="Teléfono (opcional)" maxlength="11" />`,
 					'agenda-preview-row__field--compact agenda-preview-row__field--phone'
 				)}
 			</div>
@@ -902,11 +903,11 @@ class AgendaScanPreview extends HTMLElement {
 		}, signal ? { signal } : undefined);
 
 		bind('[data-row-name]', (v) => {
-			row.customer_name = v;
+			row.customer_name = v.slice(0, 100);
 			const avatar = el.querySelector<HTMLElement>('[data-row-avatar]');
-			if (avatar) avatar.textContent = this.clientInitial(v);
+			if (avatar) avatar.textContent = this.clientInitial(row.customer_name);
 		});
-		bind('[data-row-phone]', (v) => (row.customer_phone = v));
+		bind('[data-row-phone]', (v) => (row.customer_phone = v.slice(0, 11)));
 		bind('[data-row-service]', (v) => (row.ser_id_service = toInt(v)));
 		bind('[data-row-professional]', (v) => (row.pro_id_professional = toInt(v)));
 
