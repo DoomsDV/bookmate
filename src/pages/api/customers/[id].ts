@@ -4,6 +4,7 @@ import { ROLES } from '../../../config/roles';
 import {
 	CustomersApiError,
 	getCustomerProfileWithOrds,
+	updateCustomerProfileWithOrds,
 } from '../../../lib/customers';
 import {
 	ORG_ACCESS_INACTIVE_CODE,
@@ -11,6 +12,7 @@ import {
 } from '../../../lib/panel-access';
 import { listProfessionalsLovWithOrds } from '../../../lib/schedules';
 import {
+	parseRequestBody,
 	requireToken as requireApiToken,
 	toErrorResponse as toApiErrorResponse,
 	toOptionalPositiveInt,
@@ -37,6 +39,12 @@ const getCurrentProfessionalId = async (token: string) => {
 	const professionals = await listProfessionalsLovWithOrds(token, { onlyMe: true });
 	return Number(professionals[0]?.id_professional || 0);
 };
+
+const parseUpdateBody = (request: Request) =>
+	parseRequestBody(request, (formData) => ({
+		full_name: formData.get('full_name'),
+		phone_number: formData.get('phone_number'),
+	}));
 
 export const GET: APIRoute = async ({ locals, params, url }) => {
 	try {
@@ -81,5 +89,50 @@ export const GET: APIRoute = async ({ locals, params, url }) => {
 		);
 	} catch (error) {
 		return toErrorResponse(error, 'No fue posible obtener el perfil del cliente.');
+	}
+};
+
+export const PUT: APIRoute = async ({ locals, params, request }) => {
+	try {
+		const token = requireToken(locals.token);
+		const customerId = parseCustomerId(params.id);
+
+		if (customerId <= 0) {
+			throw new CustomersApiError('ID de cliente invalido.', 400);
+		}
+
+		const roleId = Number(locals.roleId ?? 0);
+		if (roleId !== ROLES.ADMIN && roleId !== ROLES.RECEPCIONISTA) {
+			throw new CustomersApiError('No tienes permisos para editar clientes.', 403);
+		}
+
+		const body = await parseUpdateBody(request);
+		const fullName = String(body.full_name ?? '').trim();
+		const phoneNumberRaw = body.phone_number;
+		const phoneNumber =
+			phoneNumberRaw === null || phoneNumberRaw === undefined
+				? ''
+				: String(phoneNumberRaw).trim();
+
+		if (!fullName) {
+			throw new CustomersApiError('El nombre es obligatorio.', 400, undefined, [
+				{ field: 'full_name', message: 'El nombre es obligatorio.' },
+			]);
+		}
+
+		const updated = await updateCustomerProfileWithOrds(token, customerId, {
+			full_name: fullName,
+			phone_number: phoneNumber,
+		});
+
+		return Response.json(
+			{
+				status: 'success',
+				data: updated,
+			},
+			{ status: 200 }
+		);
+	} catch (error) {
+		return toErrorResponse(error, 'No fue posible actualizar el cliente.');
 	}
 };

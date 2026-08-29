@@ -528,3 +528,82 @@ export const getCustomerProfileWithOrds = async (
 
 	return parseCustomerProfileResponse(response);
 };
+
+export interface CustomerContactUpdatePayload {
+	full_name: string;
+	phone_number?: string | null;
+}
+
+export interface CustomerContactUpdateResult {
+	id_customer: number;
+	full_name: string;
+	phone_number: string;
+}
+
+const parseCustomerUpdateResponse = async (
+	response: Response
+): Promise<CustomerContactUpdateResult> => {
+	let data: CustomersSuccessResponse | CustomersFailureResponse | null = null;
+
+	try {
+		data = await response.json();
+	} catch {
+		throw new CustomersApiError(
+			'No fue posible interpretar la respuesta del servidor de clientes.',
+			502
+		);
+	}
+
+	if (
+		!response.ok ||
+		!data ||
+		typeof data !== 'object' ||
+		data.status !== 'success' ||
+		!('data' in data) ||
+		!data.data ||
+		typeof data.data !== 'object'
+	) {
+		const failureData = (data ?? {}) as CustomersFailureResponse;
+		throw new CustomersApiError(
+			(typeof failureData.message === 'string' && failureData.message.trim()) ||
+				'No fue posible actualizar el cliente.',
+			response.status || 400,
+			failureData.details,
+			parseFieldErrors(failureData.errors)
+		);
+	}
+
+	const source = data.data as unknown as Record<string, unknown>;
+	return {
+		id_customer: toNumber(source.id_customer, 0),
+		full_name: String(source.full_name || '').trim(),
+		phone_number: String(source.phone_number || '').trim(),
+	};
+};
+
+export const updateCustomerProfileWithOrds = async (
+	token: string,
+	customerId: number,
+	payload: CustomerContactUpdatePayload
+): Promise<CustomerContactUpdateResult> => {
+	ensureToken(token);
+
+	if (!Number.isInteger(customerId) || customerId <= 0) {
+		throw new CustomersApiError('ID de cliente invalido.', 400);
+	}
+
+	const response = await fetch(`${CUSTOMERS_URL.replace(/\/+$/, '')}/${customerId}`, {
+		method: 'PUT',
+		headers: {
+			Authorization: `Bearer ${token}`,
+			'Content-Type': 'application/json',
+			Accept: 'application/json',
+		},
+		body: JSON.stringify({
+			full_name: payload.full_name,
+			phone_number: payload.phone_number ?? '',
+		}),
+	});
+
+	return parseCustomerUpdateResponse(response);
+};

@@ -272,6 +272,17 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 							<h2 class="panel-modal-header__title truncate" data-customer-profile-name>
 								Cliente
 							</h2>
+							<input
+								type="text"
+								maxlength="150"
+								class="panel-modal-header__title-input hidden"
+								data-customer-profile-name-input
+								aria-label="Nombre del cliente"
+							/>
+							<span
+								class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+								data-field-error="customer_profile_name"
+							></span>
 							<p
 								class="customer-profile-scope hidden"
 								data-customer-profile-scope
@@ -298,6 +309,34 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 						>
 							<span class="material-symbols-rounded text-[1.12rem]">help</span>
 							<span class="hidden sm:inline">Guía</span>
+						</button>
+						<button
+							type="button"
+							class="panel-modal-header__close"
+							data-edit-customer-profile-toggle
+							aria-label="Editar datos del cliente"
+							hidden
+						>
+							<span class="material-symbols-rounded">edit</span>
+						</button>
+						<button
+							type="button"
+							class="panel-modal-header__close"
+							data-cancel-customer-profile-edit
+							aria-label="Cancelar edicion"
+							hidden
+						>
+							<span class="material-symbols-rounded">close</span>
+						</button>
+						<button
+							type="button"
+							class="panel-modal-header__save"
+							data-save-customer-profile-edit
+							aria-label="Guardar cambios"
+							hidden
+						>
+							<span class="material-symbols-rounded text-[1.12rem]">check</span>
+							<span class="hidden sm:inline">Guardar</span>
 						</button>
 						<button
 							type="button"
@@ -376,13 +415,36 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 						data-customer-profile-tab-panel="summary"
 					>
 					<section class="customer-profile-meta">
-						<div class="customer-profile-field-row">
+						<div class="customer-profile-field-row" data-customer-profile-phone-row>
 							<span class="customer-profile-field-term">Teléfono</span>
 							<span
 								class="customer-profile-field-value customer-profile-field-value--emphasize"
 								data-customer-profile-phone
 							>—</span>
+							<div class="customer-profile-phone-field hidden" data-customer-profile-phone-field>
+								<span class="customer-profile-phone-field__prefix">+595</span>
+								<input
+									type="text"
+									maxlength="11"
+									inputmode="numeric"
+									autocomplete="new-password"
+									autocapitalize="off"
+									autocorrect="off"
+									spellcheck="false"
+									data-lpignore="true"
+									data-1p-ignore="true"
+									data-form-type="other"
+									placeholder="981 123 456"
+									class="customer-profile-phone-field__input"
+									data-customer-profile-phone-input
+									aria-label="Telefono del cliente"
+								/>
+							</div>
 						</div>
+						<span
+							class="hidden text-xs font-semibold text-rose-600 dark:text-rose-400"
+							data-field-error="customer_profile_phone"
+						></span>
 						<div class="customer-profile-field-row">
 							<span class="customer-profile-field-term">Registrado</span>
 							<span
@@ -2375,6 +2437,110 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar clien
 		font-size: 0.95rem;
 		font-weight: 800;
 		color: var(--on-surface);
+	}
+
+	.customer-profile-field-row[data-editing] {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.5rem;
+	}
+
+	.panel-modal-header__title-input {
+		width: 100%;
+		margin: 0;
+		border: 1px solid var(--shell-border);
+		border-radius: 0.6rem;
+		background: var(--surface-bright);
+		padding: 0.15rem 0.5rem;
+		font-size: 1rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		line-height: 1.3;
+		color: var(--on-surface);
+		outline: none;
+	}
+
+	.panel-modal-header__title-input:focus {
+		border-color: var(--primary);
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
+	}
+
+	@media (min-width: 640px) {
+		.panel-modal-header__title-input {
+			font-size: 1.0625rem;
+		}
+	}
+
+	.panel-modal-header__save {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		height: 2.25rem;
+		padding: 0 0.85rem;
+		border-radius: 9999px;
+		background: var(--primary);
+		color: var(--on-primary);
+		font-size: 0.85rem;
+		font-weight: 700;
+		transition: opacity 140ms ease;
+	}
+
+	.panel-modal-header__save:hover {
+		opacity: 0.9;
+	}
+
+	.panel-modal-header__save:focus-visible {
+		outline: none;
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 25%, transparent);
+	}
+
+	.panel-modal-header__save .material-symbols-rounded {
+		font-size: 1.1rem;
+		line-height: 1;
+	}
+
+	.customer-profile-phone-field {
+		display: flex;
+		width: 100%;
+		height: 2.5rem;
+		border-radius: 0.7rem;
+	}
+
+	.customer-profile-phone-field:focus-within {
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 15%, transparent);
+	}
+
+	.customer-profile-phone-field__prefix {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		border: 1px solid var(--shell-border);
+		border-right: none;
+		border-radius: 0.7rem 0 0 0.7rem;
+		background: var(--surface-container-low);
+		padding: 0 0.7rem;
+		font-size: 0.9rem;
+		font-weight: 700;
+		color: var(--on-surface-variant);
+	}
+
+	.customer-profile-phone-field__input {
+		min-width: 0;
+		flex: 1;
+		border: 1px solid var(--shell-border);
+		border-radius: 0 0.7rem 0.7rem 0;
+		background: var(--surface-bright);
+		padding: 0 0.7rem;
+		font-size: 0.9rem;
+		font-weight: 600;
+		color: var(--on-surface);
+		outline: none;
+	}
+
+	.customer-profile-phone-field__input:focus {
+		border-color: var(--primary);
 	}
 
 	.customer-profile-pending-item {
