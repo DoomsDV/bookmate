@@ -141,6 +141,7 @@ class CustomerManager extends HTMLElement {
 	private profileBodyNode: HTMLElement | null = null;
 	private profileNameNode: HTMLElement | null = null;
 	private profileNameInput: HTMLInputElement | null = null;
+	private profileNameEditRow: HTMLElement | null = null;
 	private profileNameErrorNode: HTMLElement | null = null;
 	private profileAvatarNode: HTMLElement | null = null;
 	private profilePhoneNode: HTMLElement | null = null;
@@ -277,6 +278,9 @@ class CustomerManager extends HTMLElement {
 		this.profileNameNode = this.querySelector<HTMLElement>('[data-customer-profile-name]');
 		this.profileNameInput = this.querySelector<HTMLInputElement>(
 			'[data-customer-profile-name-input]'
+		);
+		this.profileNameEditRow = this.querySelector<HTMLElement>(
+			'[data-customer-profile-name-edit-row]'
 		);
 		this.profileNameErrorNode = this.querySelector<HTMLElement>(
 			'[data-field-error="customer_profile_name"]'
@@ -3038,8 +3042,8 @@ class CustomerManager extends HTMLElement {
 		this.profileNameNode?.classList.add('hidden');
 		if (this.profileNameInput) {
 			this.profileNameInput.value = this.activeProfileFullName;
-			this.profileNameInput.classList.remove('hidden');
 		}
+		this.profileNameEditRow?.classList.remove('hidden');
 
 		this.profilePhoneNode?.classList.add('hidden');
 		this.profilePhoneFieldWrap?.classList.remove('hidden');
@@ -3051,8 +3055,6 @@ class CustomerManager extends HTMLElement {
 		if (this.profilePhoneRow) this.profilePhoneRow.setAttribute('data-editing', '1');
 
 		if (this.profileEditToggleBtn) this.profileEditToggleBtn.hidden = true;
-		if (this.profileCancelBtn) this.profileCancelBtn.hidden = false;
-		if (this.profileSaveBtn) this.profileSaveBtn.hidden = false;
 
 		window.setTimeout(() => this.profileNameInput?.focus(), 0);
 	}
@@ -3063,15 +3065,13 @@ class CustomerManager extends HTMLElement {
 		this.clearProfileEditFieldErrors();
 
 		this.profileNameNode?.classList.remove('hidden');
-		this.profileNameInput?.classList.add('hidden');
+		this.profileNameEditRow?.classList.add('hidden');
 
 		this.profilePhoneNode?.classList.remove('hidden');
 		this.profilePhoneFieldWrap?.classList.add('hidden');
 		this.profilePhoneRow?.removeAttribute('data-editing');
 
 		if (this.profileEditToggleBtn) this.profileEditToggleBtn.hidden = !this.canFilterByProfessional();
-		if (this.profileCancelBtn) this.profileCancelBtn.hidden = true;
-		if (this.profileSaveBtn) this.profileSaveBtn.hidden = true;
 		if (this.profileSaveBtn) this.profileSaveBtn.disabled = false;
 	}
 
