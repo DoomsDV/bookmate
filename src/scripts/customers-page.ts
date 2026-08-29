@@ -141,8 +141,10 @@ class CustomerManager extends HTMLElement {
 	private profileBodyNode: HTMLElement | null = null;
 	private profileNameNode: HTMLElement | null = null;
 	private profileNameInput: HTMLInputElement | null = null;
-	private profileNameEditRow: HTMLElement | null = null;
 	private profileNameErrorNode: HTMLElement | null = null;
+	private profileEditForm: HTMLFormElement | null = null;
+	private profileFooterEdit: HTMLElement | null = null;
+	private profileEditStatusNode: HTMLElement | null = null;
 	private profileAvatarNode: HTMLElement | null = null;
 	private profilePhoneNode: HTMLElement | null = null;
 	private profilePhoneRow: HTMLElement | null = null;
@@ -279,12 +281,12 @@ class CustomerManager extends HTMLElement {
 		this.profileNameInput = this.querySelector<HTMLInputElement>(
 			'[data-customer-profile-name-input]'
 		);
-		this.profileNameEditRow = this.querySelector<HTMLElement>(
-			'[data-customer-profile-name-edit-row]'
-		);
 		this.profileNameErrorNode = this.querySelector<HTMLElement>(
 			'[data-field-error="customer_profile_name"]'
 		);
+		this.profileEditForm = this.querySelector<HTMLFormElement>('[data-customer-profile-edit-form]');
+		this.profileFooterEdit = this.querySelector<HTMLElement>('[data-customer-profile-footer-edit]');
+		this.profileEditStatusNode = this.querySelector<HTMLElement>('[data-customer-profile-edit-status]');
 		this.profileAvatarNode = this.querySelector<HTMLElement>('[data-customer-profile-avatar]');
 		this.profilePhoneNode = this.querySelector<HTMLElement>('[data-customer-profile-phone]');
 		this.profilePhoneRow = this.querySelector<HTMLElement>('[data-customer-profile-phone-row]');
@@ -495,6 +497,7 @@ class CustomerManager extends HTMLElement {
 		this.profilePhoneInput?.addEventListener('keydown', this.handleProfileEditKeydown, {
 			signal,
 		});
+		this.profileEditForm?.addEventListener('submit', this.handleProfileEditFormSubmit, { signal });
 		for (const tab of this.profileTabButtons ?? []) {
 			tab.addEventListener('click', this.handleProfileTabClick, { signal });
 		}
@@ -602,6 +605,10 @@ class CustomerManager extends HTMLElement {
 
 	private canFilterByProfessional() {
 		return this.roleId === ROLES.ADMIN || this.roleId === ROLES.RECEPCIONISTA;
+	}
+
+	private canEditCustomerProfile() {
+		return this.canFilterByProfessional();
 	}
 
 	private handleProfessionalChange = () => {
@@ -884,6 +891,10 @@ class CustomerManager extends HTMLElement {
 		event.preventDefault();
 		if (this.isOdontogramPopoverOpen()) {
 			this.closeOdontogramPopover();
+			return;
+		}
+		if (this.isEditingProfile) {
+			this.exitProfileEditMode();
 			return;
 		}
 		this.closeProfileModal();
@@ -1309,6 +1320,7 @@ class CustomerManager extends HTMLElement {
 		const button = event.currentTarget as HTMLButtonElement | null;
 		const tab = button?.dataset.customerProfileTab;
 		if (tab !== 'summary' && tab !== 'history' && tab !== 'odontogram') return;
+		if (this.isEditingProfile && tab !== 'summary') return;
 		if (tab === 'odontogram' && !this.isOdontogramRubroAvailable()) return;
 		this.setActiveProfileTab(tab);
 	};
@@ -3033,17 +3045,45 @@ class CustomerManager extends HTMLElement {
 		node.classList.remove('hidden');
 	}
 
-	private enterProfileEditMode() {
-		if (!this.canFilterByProfessional() || this.isEditingProfile) return;
+	private setProfileEditUiState(editing: boolean) {
+		if (editing) {
+			this.profilePanel?.setAttribute('data-editing-profile', '1');
+			this.profileEditForm?.setAttribute('data-editing', '1');
+		} else {
+			this.profilePanel?.removeAttribute('data-editing-profile');
+			this.profileEditForm?.removeAttribute('data-editing');
+		}
+		if (this.profileFooterEdit) {
+			this.profileFooterEdit.classList.toggle('hidden', !editing);
+		}
+		if (this.profileEditStatusNode) {
+			this.profileEditStatusNode.textContent = editing ? 'Editando datos del cliente' : '';
+		}
+	}
 
+	private setProfileSaveButtonLoading(loading: boolean) {
+		if (!this.profileSaveBtn) return;
+		this.profileSaveBtn.disabled = loading;
+		this.profileSaveBtn.textContent = loading ? 'Guardando…' : 'Guardar cambios';
+	}
+
+	private getProfileAvatarClassName(tone: number) {
+		return `customer-card-avatar customer-card-avatar--tone-${tone} customer-profile-identity__avatar`;
+	}
+
+	private enterProfileEditMode() {
+		if (!this.canEditCustomerProfile() || this.isEditingProfile) return;
+
+		this.setActiveProfileTab('summary');
 		this.isEditingProfile = true;
 		this.clearProfileEditFieldErrors();
+		this.setProfileEditUiState(true);
 
 		this.profileNameNode?.classList.add('hidden');
+		this.profileNameInput?.classList.remove('hidden');
 		if (this.profileNameInput) {
 			this.profileNameInput.value = this.activeProfileFullName;
 		}
-		this.profileNameEditRow?.classList.remove('hidden');
 
 		this.profilePhoneNode?.classList.add('hidden');
 		this.profilePhoneFieldWrap?.classList.remove('hidden');
@@ -3063,17 +3103,25 @@ class CustomerManager extends HTMLElement {
 		this.isEditingProfile = false;
 		this.isSavingProfileEdit = false;
 		this.clearProfileEditFieldErrors();
+		this.setProfileEditUiState(false);
 
 		this.profileNameNode?.classList.remove('hidden');
-		this.profileNameEditRow?.classList.add('hidden');
+		this.profileNameInput?.classList.add('hidden');
 
 		this.profilePhoneNode?.classList.remove('hidden');
 		this.profilePhoneFieldWrap?.classList.add('hidden');
 		this.profilePhoneRow?.removeAttribute('data-editing');
 
-		if (this.profileEditToggleBtn) this.profileEditToggleBtn.hidden = !this.canFilterByProfessional();
-		if (this.profileSaveBtn) this.profileSaveBtn.disabled = false;
+		if (this.profileEditToggleBtn) {
+			this.profileEditToggleBtn.hidden = !this.canEditCustomerProfile();
+		}
+		this.setProfileSaveButtonLoading(false);
 	}
+
+	private handleProfileEditFormSubmit = (event: SubmitEvent) => {
+		event.preventDefault();
+		void this.handleSaveProfileEdit();
+	};
 
 	private handleProfilePhoneEditInput = () => {
 		if (!this.profilePhoneInput) return;
@@ -3092,10 +3140,7 @@ class CustomerManager extends HTMLElement {
 	};
 
 	private handleProfileEditKeydown = (event: KeyboardEvent) => {
-		if (event.key === 'Enter') {
-			event.preventDefault();
-			void this.handleSaveProfileEdit();
-		} else if (event.key === 'Escape') {
+		if (event.key === 'Escape') {
 			event.preventDefault();
 			this.exitProfileEditMode();
 		}
@@ -3128,7 +3173,7 @@ class CustomerManager extends HTMLElement {
 		}
 
 		this.isSavingProfileEdit = true;
-		if (this.profileSaveBtn) this.profileSaveBtn.disabled = true;
+		this.setProfileSaveButtonLoading(true);
 
 		try {
 			const response = await fetch(`/api/customers/${customerId}`, {
@@ -3154,8 +3199,8 @@ class CustomerManager extends HTMLElement {
 					this.showProfileError(
 						this.getBackendMessage(data, 'No fue posible actualizar el cliente.')
 					);
-					this.exitProfileEditMode();
 				}
+				this.setActiveProfileTab('summary');
 				return;
 			}
 
@@ -3165,7 +3210,9 @@ class CustomerManager extends HTMLElement {
 
 			if (this.profileNameNode) this.profileNameNode.textContent = this.activeProfileFullName;
 			if (this.profilePhoneNode) {
-				this.profilePhoneNode.textContent = this.activeProfilePhoneE164 || '—';
+				this.profilePhoneNode.textContent = this.activeProfilePhoneE164
+					? this.formatCustomerPhone(this.activeProfilePhoneE164)
+					: '—';
 			}
 			if (this.profileAvatarNode) {
 				const tone = this.getCustomerAvatarTone({
@@ -3174,7 +3221,7 @@ class CustomerManager extends HTMLElement {
 					phone_number: this.activeProfilePhoneE164,
 					created_at: '',
 				});
-				this.profileAvatarNode.className = `customer-card-avatar customer-card-avatar--tone-${tone} size-12 text-[0.85rem]`;
+				this.profileAvatarNode.className = this.getProfileAvatarClassName(tone);
 				this.profileAvatarNode.textContent = this.getCustomerInitials(this.activeProfileFullName);
 			}
 
@@ -3182,10 +3229,9 @@ class CustomerManager extends HTMLElement {
 			void this.loadCustomers({ silent: true });
 		} catch {
 			this.showProfileError('No fue posible actualizar el cliente.');
-			this.exitProfileEditMode();
 		} finally {
 			this.isSavingProfileEdit = false;
-			if (this.profileSaveBtn) this.profileSaveBtn.disabled = false;
+			this.setProfileSaveButtonLoading(false);
 		}
 	}
 
@@ -3196,7 +3242,9 @@ class CustomerManager extends HTMLElement {
 		this.renderProfileScope();
 		this.activeProfileFullName = profile.full_name || '';
 		this.activeProfilePhoneE164 = profile.phone_number || '';
-		if (this.profileEditToggleBtn) this.profileEditToggleBtn.hidden = !this.canFilterByProfessional();
+		if (this.profileEditToggleBtn) {
+			this.profileEditToggleBtn.hidden = !this.canEditCustomerProfile();
+		}
 
 		if (this.profileNameNode) {
 			this.profileNameNode.textContent = displayName;
@@ -3208,11 +3256,13 @@ class CustomerManager extends HTMLElement {
 				phone_number: profile.phone_number,
 				created_at: profile.created_at,
 			});
-			this.profileAvatarNode.className = `customer-card-avatar customer-card-avatar--tone-${tone} size-12 text-[0.85rem]`;
+			this.profileAvatarNode.className = this.getProfileAvatarClassName(tone);
 			this.profileAvatarNode.textContent = this.getCustomerInitials(displayName);
 		}
 		if (this.profilePhoneNode) {
-			this.profilePhoneNode.textContent = profile.phone_number || '—';
+			this.profilePhoneNode.textContent = profile.phone_number
+				? this.formatCustomerPhone(profile.phone_number)
+				: '—';
 		}
 		if (this.profileRegisteredNode) {
 			this.profileRegisteredNode.textContent = this.formatDate(profile.created_at);
@@ -3280,8 +3330,7 @@ class CustomerManager extends HTMLElement {
 
 		if (this.profileNameNode) this.profileNameNode.textContent = 'Cliente';
 		if (this.profileAvatarNode) {
-			this.profileAvatarNode.className =
-				'customer-card-avatar customer-card-avatar--tone-1 size-12 text-[0.85rem]';
+			this.profileAvatarNode.className = this.getProfileAvatarClassName(1);
 			this.profileAvatarNode.textContent = '?';
 		}
 		if (this.profilePhoneNode) this.profilePhoneNode.textContent = '—';
