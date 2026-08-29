@@ -1364,11 +1364,8 @@ const googleErrorMessage = hasGoogleError
 		align-items: center;
 	}
 
-	[data-calendar-root] .fc .fc-timegrid-axis {
-		width: 3.1rem;
-		min-width: 3.1rem;
-	}
-
+	[data-calendar-root] .fc .fc-timegrid-axis,
+	[data-calendar-root] .fc .fc-timegrid-slot-label,
 	[data-calendar-root] .fc .fc-timegrid .fc-scrollgrid-section-header .fc-timegrid-axis {
 		width: 3.1rem;
 		min-width: 3.1rem;
@@ -1511,7 +1508,8 @@ const googleErrorMessage = hasGoogleError
 
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .calendar-refresh-btn,
 		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .calendar-conflicts-trigger,
-		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .calendar-tour-help {
+		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .calendar-tour-help,
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-filters-trigger {
 			box-sizing: border-box;
 			width: 2.15rem;
 			height: 2.15rem;
@@ -1530,7 +1528,8 @@ const googleErrorMessage = hasGoogleError
 			line-height: 0;
 		}
 
-		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .material-symbols-rounded {
+		[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .calendar-chrome-actions .material-symbols-rounded,
+		[data-calendar-root] .fc .fc-toolbar-chunk--time-nav .calendar-filters-trigger .material-symbols-rounded {
 			font-size: 1.12rem;
 			line-height: 1;
 			font-variation-settings: 'wght' 380, 'opsz' 20;
@@ -1555,9 +1554,10 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .fc .fc-timegrid-axis,
+		[data-calendar-root] .fc .fc-timegrid-slot-label,
 		[data-calendar-root] .fc .fc-timegrid .fc-scrollgrid-section-header .fc-timegrid-axis {
-			width: 2.65rem;
-			min-width: 2.65rem;
+			width: 2.65rem !important;
+			min-width: 2.65rem !important;
 		}
 
 		[data-calendar-root] .fc .fc-col-header-cell-cushion {
@@ -1674,7 +1674,9 @@ const googleErrorMessage = hasGoogleError
 	[data-calendar-root] .fc .fc-scrollgrid {
 		border-radius: var(--calendar-radius);
 		overflow: hidden;
-		background: var(--surface-bright);
+		background: color-mix(in srgb, var(--calendar-surface) 88%, transparent);
+		border-left-width: 0;
+		border-right-width: 0;
 	}
 
 	[data-calendar-root] .fc .fc-toolbar-chunk--view-switch .fc-button-group--segmented .fc-button {
@@ -1834,6 +1836,29 @@ const googleErrorMessage = hasGoogleError
 
 	[data-calendar-root] .fc .fc-timegrid-col {
 		background: color-mix(in srgb, var(--calendar-surface) 88%, transparent);
+	}
+
+	/* Evita franja blanca entre columnas y scrollbar (FC reserva gutter + cols no llenan 100%). */
+	[data-calendar-root] .fc .fc-timegrid-cols,
+	[data-calendar-root] .fc .fc-timegrid-slots,
+	[data-calendar-root] .fc .fc-timegrid-slots > table {
+		width: 100% !important;
+		min-width: 100%;
+	}
+
+	[data-calendar-root] .fc .fc-timegrid-cols .fc-timegrid-axis,
+	[data-calendar-root] .fc .fc-timegrid-slots .fc-timegrid-slot-label {
+		box-sizing: border-box;
+	}
+
+	[data-calendar-root] .fc .fc-timegrid-body .fc-scroller-harness-liquid,
+	[data-calendar-root] .fc .fc-timegrid-body .fc-scroller-liquid-absolute {
+		right: 0 !important;
+	}
+
+	[data-calendar-root] .fc .fc-scrollgrid-shrink,
+	[data-calendar-root] .fc .fc-scrollgrid-shrink-frame {
+		background: var(--calendar-surface);
 	}
 
 	/* Now indicator estilo Google Calendar: dot + línea a todo el ancho del grid de días */
@@ -3008,14 +3033,14 @@ const googleErrorMessage = hasGoogleError
 			color: var(--on-surface);
 		}
 
-		/* Desktop: botón ícono + popover anclado (como Clientes / Documentos) */
+		/* Desktop: ícono circular, mismo tamaño que refresh / conflictos */
 		.calendar-filters-trigger {
-			width: 2.875rem;
-			height: 2.875rem;
-			min-width: 2.875rem;
-			min-height: 2.875rem;
+			width: 2.15rem;
+			height: 2.15rem;
+			min-width: 2.15rem;
+			min-height: 2.15rem;
 			padding: 0;
-			border-radius: 1rem;
+			border-radius: 999px;
 		}
 
 		.calendar-filters-trigger__label {
@@ -3681,6 +3706,15 @@ const googleErrorMessage = hasGoogleError
 			min-height: 0 !important;
 		}
 
+		/* Sin scroll interno: la cabecera nativa la reemplaza el chrome sticky. */
+		[data-calendar-root] .fc .fc-timegrid-body .fc-scroller {
+			overflow-y: visible !important;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid .fc-scrollgrid-section-header {
+			display: none;
+		}
+
 		/*
 		 * Solo la franja de días es sticky (fuera de las celdas FC).
 		 * El toolbar (mes / vistas) scrollea con el contenido.
@@ -4014,9 +4048,20 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .fc .fc-timegrid-axis,
-		[data-calendar-root] .fc .fc-timegrid .fc-scrollgrid-section-header .fc-timegrid-axis {
-			width: 2.4rem;
-			min-width: 2.4rem;
+		[data-calendar-root] .fc .fc-timegrid-slot-label,
+		[data-calendar-root] .fc .fc-scrollgrid-shrink.fc-timegrid-axis,
+		[data-calendar-root] .fc .fc-timegrid-axis .fc-scrollgrid-shrink-frame {
+			width: 2.4rem !important;
+			min-width: 2.4rem !important;
+			max-width: 2.4rem;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-slot-label {
+			overflow: visible;
+		}
+
+		[data-calendar-root] .fc .fc-timegrid-cols::after {
+			left: 2.4rem;
 		}
 
 		[data-calendar-root] .fc .fc-timegrid-slot {
@@ -4030,7 +4075,10 @@ const googleErrorMessage = hasGoogleError
 		}
 
 		[data-calendar-root] .cal-hour-label {
-			gap: 0.06rem;
+			flex-direction: column;
+			align-items: flex-end;
+			gap: 0;
+			line-height: 1.05;
 		}
 
 		[data-calendar-root] .cal-hour-label__hour {

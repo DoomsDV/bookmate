@@ -333,7 +333,7 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 										)}
 										<a
 											href="/panel/calendar"
-											class="dashboard-primary-cta dashboard-header-cta inline-flex w-full items-center justify-center gap-2 rounded-full px-6 py-3 text-sm font-bold no-underline transition sm:w-auto"
+											class="dashboard-primary-cta dashboard-header-cta inline-flex items-center justify-center gap-2 rounded-full text-sm font-bold no-underline"
 										>
 											<span class="material-symbols-rounded text-lg" aria-hidden="true">calendar_month</span>
 											<span>Ir al calendario</span>
@@ -2460,20 +2460,31 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		gap: 0.65rem;
 	}
 
+	.dashboard-header-actions .dashboard-ai-chat-cta,
+	.dashboard-header-actions .dashboard-header-cta {
+		box-sizing: border-box;
+		width: 100%;
+		min-height: 3rem;
+		height: 3rem;
+		padding: 0 1.25rem;
+		font-size: 0.875rem;
+		font-weight: 800;
+		line-height: 1;
+		white-space: nowrap;
+		user-select: none;
+		-webkit-user-select: none;
+		cursor: pointer;
+	}
+
 	.dashboard-ai-chat-cta {
 		--ai-ease: cubic-bezier(0.32, 0.72, 0, 1);
 		display: inline-flex;
-		width: 100%;
 		align-items: center;
 		justify-content: center;
 		gap: 0.5rem;
 		border-radius: 999px;
 		border: 1px solid color-mix(in srgb, var(--primary) 32%, var(--shell-border) 68%);
 		background: color-mix(in srgb, var(--primary) 10%, #ffffff 90%);
-		padding: 0.75rem 1.35rem;
-		font-size: 0.875rem;
-		font-weight: 800;
-		line-height: 1.2;
 		color: var(--primary);
 		transition:
 			background-color 280ms var(--ai-ease),
@@ -2508,6 +2519,10 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	.dashboard-header-cta {
 		min-height: 3rem;
+	}
+
+	.dashboard-header-actions .dashboard-header-cta {
+		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 	}
 
 	.dashboard-ai-chat-cta:focus-visible,
@@ -2547,13 +2562,20 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		.dashboard-header-actions {
 			width: auto;
 			flex-direction: row;
-			align-items: center;
+			align-items: stretch;
 			justify-content: flex-end;
 		}
 
-		.dashboard-ai-chat-cta {
-			width: auto;
-			white-space: nowrap;
+		.dashboard-header-actions:has(.dashboard-ai-chat-cta) {
+			display: grid;
+			grid-auto-flow: column;
+			grid-auto-columns: 1fr;
+		}
+
+		.dashboard-header-actions .dashboard-ai-chat-cta,
+		.dashboard-header-actions .dashboard-header-cta {
+			width: 100%;
+			min-width: 0;
 		}
 	}
 
@@ -3587,12 +3609,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		overflow: hidden;
 		height: 100%;
 		min-height: 11.5rem;
-		padding: 0.32rem;
+		padding: 0;
 		border: 0;
 		border-radius: 1.75rem;
 		color: var(--on-surface, #202124);
-		background: color-mix(in srgb, var(--on-surface) 4.5%, #f3f4f6);
-		box-shadow: 0 0 0 1px color-mix(in srgb, var(--on-surface) 6%, transparent);
+		background: transparent;
+		box-shadow: none;
 		isolation: isolate;
 		box-sizing: border-box;
 		transition:
@@ -3611,7 +3633,8 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 		min-height: 100%;
 		overflow: hidden;
 		padding: 1.15rem 1.25rem 1.2rem;
-		border-radius: calc(1.75rem - 0.32rem);
+		border: 1px solid color-mix(in srgb, var(--on-surface) 6%, transparent);
+		border-radius: 1.75rem;
 		background:
 			radial-gradient(22rem 14rem at 8% -20%, color-mix(in srgb, var(--primary) 16%, transparent), transparent 62%),
 			#ffffff;
@@ -3884,11 +3907,12 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 	html[data-theme='dark'] .dashboard-day-progress {
 		color: var(--on-surface, #e3e3e3);
-		background: rgba(255, 255, 255, 0.03);
-		box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
+		background: transparent;
+		box-shadow: none;
 	}
 
 	html[data-theme='dark'] .dashboard-day-progress__inner {
+		border-color: rgba(255, 255, 255, 0.06);
 		background:
 			radial-gradient(24rem 16rem at 6% -30%, color-mix(in srgb, var(--primary) 20%, transparent), transparent 64%),
 			color-mix(in srgb, var(--surface-container-high, #1c1d22) 90%, #0a0b0e 10%);
@@ -5327,7 +5351,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-day-progress {
 			min-height: 0;
-			padding: 0.24rem;
 		}
 
 		.dashboard-day-progress__inner {
@@ -5437,10 +5460,6 @@ for (let page = 1; page <= totalAppointmentPages; page += 1) {
 
 		.dashboard-profit-card {
 			padding: 0.75rem 0.85rem 0.35rem;
-		}
-
-		.dashboard-day-progress {
-			padding: 0.22rem;
 		}
 
 		.dashboard-day-progress__inner {

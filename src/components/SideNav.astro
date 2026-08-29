@@ -49,8 +49,8 @@ const isItemActive = (item: NavItem) => {
 	return normalizePath(item.href) === activePath;
 };
 
-/** Rutas con shell SSR liviano (datos en cliente). Prefetch solo al hover, no en viewport. */
-const prefetchHoverPaths = new Set([
+/** Rutas con shell SSR liviano (datos en cliente). Prefetch al tap/click, no en viewport. */
+const prefetchTapPaths = new Set([
 	"/panel/dashboard",
 	"/panel/calendar",
 	"/panel/customers",
@@ -64,7 +64,7 @@ const prefetchHoverPaths = new Set([
 ]);
 
 const getPrefetchMode = (item: NavItem) =>
-	prefetchHoverPaths.has(normalizePath(item.href)) ? "hover" : undefined;
+	prefetchTapPaths.has(normalizePath(item.href)) ? "tap" : undefined;
 
 const primaryItems: NavItem[] = [
 	{ label: "Dashboard", icon: "home", href: "/panel/dashboard" },

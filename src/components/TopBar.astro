@@ -373,6 +373,12 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			sidebarTransitionTimer = window.setTimeout(clearSidebarTransitioning, 500);
 		};
 
+		const notifySidebarChange = (state: 'expanded' | 'collapsed') => {
+			document.dispatchEvent(
+				new CustomEvent('hasel:sidebar-change', { detail: { state } }),
+			);
+		};
+
 		const toggleDesktopSidebar = () => {
 			if (!appShell) return;
 			const isCollapsed = appShell.getAttribute('data-sidebar-state') === 'collapsed';
@@ -381,6 +387,7 @@ const organizationSlug = String(Astro.cookies.get('org_slug')?.value || '').trim
 			appShell.setAttribute('data-sidebar-state', nextState);
 			persistDesktopSidebarState(nextState);
 			syncDesktopToggle();
+			notifySidebarChange(nextState);
 		};
 
 		const toggleSideNav = () => {

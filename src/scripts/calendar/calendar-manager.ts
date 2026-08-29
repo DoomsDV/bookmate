@@ -209,6 +209,9 @@ class CalendarManager extends HTMLElement {
 	private stickyChromeScrollBound = false;
 	private stickyChromeScrollRaf = 0;
 	private nowIndicatorObserver: MutationObserver | null = null;
+	private hostResizeObserver: ResizeObserver | null = null;
+	private hostResizeRaf = 0;
+	private lastHostWidth = 0;
 	private hasAppliedInitialScrollToNow = false;
 
 	private calendarEl: HTMLElement | null = null;
@@ -329,6 +332,7 @@ class CalendarManager extends HTMLElement {
 		});
 		requiredNodes.locationFilter.addEventListener('change', this.handleLocationFilterChange, { signal });
 		window.addEventListener('resize', this.handleViewportResize, { signal });
+		document.addEventListener('hasel:sidebar-change', this.handleSidebarChange, { signal });
 		window.addEventListener('scroll', this.handleFiltersPopoverReposition, { signal, capture: true });
 		document.addEventListener('keydown', this.handleSheetKeydown, { signal });
 		this.addEventListener('appointment:changed', this.handleAppointmentChanged as EventListener, {
@@ -520,6 +524,7 @@ class CalendarManager extends HTMLElement {
 	private destroyCalendar() {
 		this.clearPendingFocusState();
 		this.clearNowIndicatorSpan();
+		this.unbindHostResizeObserver();
 		this.hasAppliedInitialScrollToNow = false;
 		this.teardownMobileStickyChrome();
 		if (this.calendar) {
@@ -527,6 +532,48 @@ class CalendarManager extends HTMLElement {
 			this.calendar = null;
 		}
 	}
+
+	private unbindHostResizeObserver() {
+		this.hostResizeObserver?.disconnect();
+		this.hostResizeObserver = null;
+		if (this.hostResizeRaf) {
+			window.cancelAnimationFrame(this.hostResizeRaf);
+			this.hostResizeRaf = 0;
+		}
+		this.lastHostWidth = 0;
+	}
+
+	private bindHostResizeObserver(host: HTMLElement) {
+		this.unbindHostResizeObserver();
+		const pane =
+			this.querySelector<HTMLElement>('[data-calendar-main]') ??
+			host.closest<HTMLElement>('[data-calendar-main]') ??
+			host;
+		this.lastHostWidth = Math.round(pane.getBoundingClientRect().width);
+		this.hostResizeObserver = new ResizeObserver((entries) => {
+			const width = Math.round(entries[0]?.contentRect.width ?? 0);
+			if (!width || width === this.lastHostWidth) return;
+			this.lastHostWidth = width;
+			this.scheduleCalendarSizeSync();
+		});
+		this.hostResizeObserver.observe(pane);
+		if (pane !== host) this.hostResizeObserver.observe(host);
+	}
+
+	private scheduleCalendarSizeSync() {
+		if (this.hostResizeRaf) return;
+		this.hostResizeRaf = window.requestAnimationFrame(() => {
+			this.hostResizeRaf = 0;
+			this.calendar?.updateSize();
+		});
+	}
+
+	private handleSidebarChange = () => {
+		this.scheduleCalendarSizeSync();
+		window.requestAnimationFrame(() => {
+			this.calendar?.updateSize();
+		});
+	};
 
 	private clearPendingFocusRetry() {
 		if (this.pendingFocusRetryTimer) {
@@ -2224,6 +2271,7 @@ class CalendarManager extends HTMLElement {
 		this.syncToolbarButtonGroupClasses();
 		this.applyResponsiveCalendarLayout(true);
 		this.syncMobileStickyChrome();
+		this.bindHostResizeObserver(requiredNodes.calendarEl);
 		this.bindMobileThreeDaySwipe(requiredNodes.calendarEl, this.#listeners?.signal);
 	}
 
