@@ -922,6 +922,13 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	padding-bottom: 0.15rem;
 }
 
+@media (max-width: 959px) {
+	.public-booking-sheet:has([data-step-panel='7']:not(.hidden)) .public-booking-shell__canvas,
+	.public-booking-shell:has(.sipap-deposit-panel:not(.hidden)) .public-booking-shell__canvas {
+		padding-top: 1.75rem;
+	}
+}
+
 .public-booking-success {
 	padding: 0;
 	text-align: center;

@@ -1,10 +1,11 @@
 ---
 /**
  * Paso de seña SIPAP (reserva pública).
- * Móvil: pasos → resumen → CTA sticky con monto. Desktop: resumen + CTA en panel sticky derecho.
+ * Móvil: resumen arriba → título → pasos → CTA sticky con monto + cronómetro.
+ * Desktop: resumen + CTA + cronómetro en el panel sticky derecho.
  * Contratos DOM: no quitar data-sipap-*, data-sipap-submit-dock, ni las clases
  * sipap-layout / sipap-main / sipap-summary-ticket / sipap-hold-banner / sipap-deposit-intro
- * (r/[token] las aplana con display:contents).
+ * (r/[token] aplana layout/intro; el banner vive dentro del dock, no como hijo directo).
  */
 interface Props {
 	stepPanel?: number;
@@ -30,25 +31,6 @@ const copyRows = [
 		{ hidden: variant !== 'manage' },
 	]}
 >
-	<div class="sipap-hold-banner" data-sipap-hold-banner data-sipap-hold-state="active">
-		<span class="material-symbols-rounded sipap-hold-banner__icon" aria-hidden="true">timer</span>
-		<p class="sipap-hold-banner__text">
-			<span data-sipap-hold-active>
-				Tenés
-				<strong class="tabular-nums" data-sipap-countdown>—:—</strong>
-				min para confirmar
-			</span>
-			<span class="hidden" data-sipap-hold-expired>
-				Se venció el tiempo para adjuntar el comprobante.
-			</span>
-			<span class="hidden" data-sipap-hold-unknown>
-				Adjuntá el comprobante para confirmar tu turno.
-			</span>
-			<span class="hidden" data-sipap-hold-submitted>
-				Comprobante enviado. Esperando confirmación del comercio.
-			</span>
-		</p>
-	</div>
 	<p class="sr-only" data-sipap-hold-live role="status" aria-live="polite"></p>
 
 	<header class="sipap-deposit-intro">
@@ -114,6 +96,7 @@ const copyRows = [
 									type="button"
 									class="sipap-ref-block__code"
 									data-sipap-copy="reference"
+									data-sipap-copy-keep-label
 									aria-label="Copiar código"
 									aria-describedby="sipap-ref-hint"
 								>
@@ -243,6 +226,26 @@ const copyRows = [
 					<p id="sipap-submit-hint" class="sipap-submit-hint" data-sipap-submit-hint>
 						Subí el comprobante para habilitar el envío.
 					</p>
+					<div class="sipap-hold-banner" data-sipap-hold-banner data-sipap-hold-state="active">
+						<span class="material-symbols-rounded sipap-hold-banner__icon" aria-hidden="true">timer</span>
+						<p class="sipap-hold-banner__text">
+							<span data-sipap-hold-active>
+								<span class="sipap-hold-banner__lead">Tenés</span>
+								<strong class="tabular-nums" data-sipap-countdown>—:—</strong>
+								<span class="sipap-hold-banner__unit"> min</span>
+								<span class="sipap-hold-banner__tail"> para confirmar</span>
+							</span>
+							<span class="hidden" data-sipap-hold-expired>
+								Se venció el tiempo para adjuntar el comprobante.
+							</span>
+							<span class="hidden" data-sipap-hold-unknown>
+								Adjuntá el comprobante para confirmar tu turno.
+							</span>
+							<span class="hidden" data-sipap-hold-submitted>
+								Comprobante enviado. Esperando confirmación del comercio.
+							</span>
+						</p>
+					</div>
 					<button
 						type="button"
 						data-sipap-upload-submit
@@ -294,7 +297,7 @@ const copyRows = [
 		--sipap-ink: #f4f4f5;
 		--sipap-muted: #a1a1aa;
 		--sipap-line: #27272a;
-		--sipap-dock-space: 7.5rem;
+		--sipap-dock-space: 9.5rem;
 		container-type: inline-size;
 		text-align: left;
 		color: var(--sipap-ink);
@@ -312,32 +315,28 @@ const copyRows = [
 	.sipap-hold-banner {
 		display: flex;
 		align-items: center;
-		gap: 0.55rem;
-		margin-bottom: 1.15rem;
-		padding: 0.7rem 0.9rem;
-		border-radius: 0.9rem;
-		border: 1px solid color-mix(in srgb, var(--sipap-accent) 28%, transparent);
-		background: color-mix(in srgb, var(--sipap-accent) 12%, #18181b);
+		gap: 0.5rem;
+		grid-area: hold;
+		margin: 0;
+		padding: 0.65rem 0.8rem;
+		border-radius: 0.85rem;
+		border: 1px solid rgb(214 158 90 / 0.16);
+		background: #221f1c;
 		color: var(--sipap-ink);
 	}
 
 	.sipap-hold-banner.is-expired {
-		border-color: color-mix(in srgb, var(--sipap-accent) 42%, transparent);
-		background: color-mix(in srgb, var(--sipap-accent) 18%, #18181b);
+		border-color: rgb(214 158 90 / 0.28);
+		background: #2a2218;
 	}
 
 	.sipap-hold-banner.hidden {
 		display: none;
-		margin-bottom: 0;
-	}
-
-	.sipap-hold-banner:not(.hidden) ~ .sipap-deposit-intro {
-		margin-top: 0;
 	}
 
 	.sipap-hold-banner.is-submitted {
-		border-color: color-mix(in srgb, var(--sipap-accent) 32%, transparent);
-		background: color-mix(in srgb, var(--sipap-accent) 12%, #18181b);
+		border-color: color-mix(in srgb, var(--sipap-accent) 22%, transparent);
+		background: color-mix(in srgb, var(--sipap-accent) 8%, #18181b);
 	}
 
 	.sipap-hold-banner.is-submitted .sipap-hold-banner__icon {
@@ -346,14 +345,14 @@ const copyRows = [
 
 	.sipap-hold-banner__icon {
 		flex-shrink: 0;
-		font-size: 1.2rem;
+		font-size: 1.15rem;
 		line-height: 1;
 		color: var(--sipap-accent);
 	}
 
 	.sipap-hold-banner__text {
 		margin: 0;
-		font-size: 0.88rem;
+		font-size: 0.84rem;
 		font-weight: 550;
 		line-height: 1.35;
 		color: inherit;
@@ -726,6 +725,10 @@ const copyRows = [
 		color: var(--sipap-accent);
 	}
 
+	.sipap-ref-block__code.is-copied .sipap-ref-block__action {
+		display: none;
+	}
+
 	.sipap-ref-badge {
 		display: inline-flex;
 		align-items: center;
@@ -924,7 +927,11 @@ const copyRows = [
 
 	.sipap-submit-dock {
 		display: grid;
-		gap: 0.45rem;
+		grid-template-areas:
+			'hint'
+			'hold'
+			'cta';
+		gap: 0.55rem;
 		margin-top: 1.1rem;
 		padding-top: 1rem;
 		border-top: 1px solid var(--sipap-line);
@@ -932,6 +939,7 @@ const copyRows = [
 
 	.sipap-dock-amount {
 		display: none;
+		grid-area: amount;
 		margin: 0;
 		font-size: 1.05rem;
 		font-weight: 800;
@@ -940,6 +948,7 @@ const copyRows = [
 	}
 
 	.sipap-submit-hint {
+		grid-area: hint;
 		margin: 0;
 		font-size: 0.78rem;
 		font-weight: 550;
@@ -952,6 +961,7 @@ const copyRows = [
 	}
 
 	.sipap-submit-dock .sipap-submit-cta {
+		grid-area: cta;
 		height: auto;
 		min-height: 3rem;
 		border: 0;
@@ -1133,24 +1143,61 @@ const copyRows = [
 	}
 
 	@media (max-width: 959px) {
-		.sipap-deposit-panel {
-			padding-bottom: calc(var(--sipap-dock-space) + env(safe-area-inset-bottom, 0px));
+		.sipap-deposit-panel,
+		.sipap-deposit-panel:not(.sipap-deposit-panel--manage) {
+			padding-top: 0.5rem;
+			padding-bottom: calc(var(--sipap-dock-space) + 1.35rem + env(safe-area-inset-bottom, 0px));
+		}
+
+		.sipap-deposit-intro {
+			order: 2;
+			margin-top: 1.15rem;
 		}
 
 		.sipap-deposit-title {
 			font-size: 1.5rem;
 		}
 
+		.sipap-layout {
+			display: contents;
+		}
+
+		.sipap-deposit-panel,
+		.sipap-deposit-panel:not(.sipap-deposit-panel--manage) {
+			display: flex;
+			flex-direction: column;
+		}
+
 		.sipap-summary-ticket {
+			order: 1;
 			border-radius: 1rem;
+			margin-top: 0;
+			margin-bottom: 0;
+		}
+
+		.sipap-main {
+			order: 3;
 		}
 
 		.sipap-summary-ticket__core {
-			padding: 0.9rem 1rem 1rem;
+			padding: 1rem 1.1rem 1.15rem;
+		}
+
+		.sipap-summary-ticket__amount {
+			display: none;
+		}
+
+		.sipap-pro {
+			margin-top: 0.55rem;
+			padding-bottom: 0.7rem;
+		}
+
+		.sipap-summary-ticket__for {
+			margin-top: 0.7rem;
 		}
 
 		.sipap-policy-details {
-			margin-top: 0.55rem;
+			margin-top: 0.7rem;
 		}
 
 		.sipap-submit-dock {
@@ -1159,6 +1206,12 @@ const copyRows = [
 			bottom: 0;
 			left: 0;
 			z-index: 24;
+			grid-template-columns: minmax(0, 1fr) auto;
+			grid-template-areas:
+				'amount hold'
+				'hint hint'
+				'cta cta';
+			align-items: center;
 			margin-top: 0;
 			padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
 			border-top: 1px solid rgb(255 255 255 / 0.08);
@@ -1167,8 +1220,39 @@ const copyRows = [
 			-webkit-backdrop-filter: blur(14px);
 		}
 
+		.sipap-submit-dock:has([data-sipap-hold-banner]:not([data-sipap-hold-state='active']):not(.hidden)) {
+			grid-template-areas:
+				'amount amount'
+				'hint hint'
+				'hold hold'
+				'cta cta';
+		}
+
 		.sipap-dock-amount {
 			display: block;
+		}
+
+		.sipap-hold-banner[data-sipap-hold-state='active'] {
+			justify-content: flex-end;
+			padding: 0;
+			border: 0;
+			background: transparent;
+			gap: 0.28rem;
+		}
+
+		.sipap-hold-banner[data-sipap-hold-state='active'] .sipap-hold-banner__lead,
+		.sipap-hold-banner[data-sipap-hold-state='active'] .sipap-hold-banner__tail {
+			display: none;
+		}
+
+		.sipap-hold-banner[data-sipap-hold-state='active'] .sipap-hold-banner__icon {
+			font-size: 1.05rem;
+		}
+
+		.sipap-hold-banner[data-sipap-hold-state='active'] .sipap-hold-banner__text {
+			font-size: 0.82rem;
+			font-weight: 700;
+			white-space: nowrap;
 		}
 
 		@supports not ((backdrop-filter: blur(14px))) {
@@ -1192,11 +1276,11 @@ const copyRows = [
 
 	@media (min-width: 960px) {
 		.sipap-hold-banner {
-			padding: 0.8rem 1rem;
+			padding: 0.7rem 0.85rem;
 		}
 
 		.sipap-hold-banner__text {
-			font-size: 0.92rem;
+			font-size: 0.86rem;
 		}
 
 		.sipap-layout {
@@ -1241,26 +1325,16 @@ const copyRows = [
 		}
 	}
 
-	.sipap-deposit-panel--manage .sipap-hold-banner {
-		width: 100%;
-		max-width: 100%;
-		margin-bottom: 0.85rem;
-		padding: 0.5rem 0.95rem;
-		border-radius: 999px;
-		border-color: color-mix(in srgb, var(--sipap-accent) 28%, transparent);
-		background: color-mix(in srgb, var(--sipap-accent) 12%, #18181b);
-		color: var(--sipap-ink);
-		box-sizing: border-box;
+	@media (min-width: 960px) {
+		.sipap-deposit-panel--manage .sipap-deposit-intro {
+			margin-top: 0.35rem;
+		}
 	}
 
-	.sipap-deposit-panel--manage .sipap-hold-banner__text {
-		font-size: 0.8rem;
-		font-weight: 600;
-		color: inherit;
-	}
-
-	.sipap-deposit-panel--manage .sipap-deposit-intro {
-		margin-top: 0.35rem;
+	@media (max-width: 959px) {
+		.sipap-deposit-panel--manage .sipap-deposit-intro {
+			margin-top: 1.5rem;
+		}
 	}
 
 	.sipap-deposit-panel--manage .sipap-pro {

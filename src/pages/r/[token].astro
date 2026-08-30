@@ -899,36 +899,25 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 		display: contents;
 	}
 
-	.reservation-manage__dashboard .sipap-hold-banner {
-		grid-column: 1;
-		grid-row: 1;
-		justify-self: stretch;
-		align-self: stretch;
-		width: 100%;
-		max-width: none;
-		box-sizing: border-box;
-		margin-bottom: 0;
-	}
-
 	.reservation-manage__dashboard .booking-ticket {
 		grid-column: 1;
-		grid-row: 2;
+		grid-row: 1;
 	}
 
 	.reservation-manage__dashboard .sipap-deposit-intro {
 		grid-column: 1;
-		grid-row: 3;
+		grid-row: 2;
 		margin-top: 0;
 	}
 
 	.reservation-manage__dashboard .sipap-main {
 		grid-column: 1;
-		grid-row: 4;
+		grid-row: 3;
 	}
 
 	.reservation-manage__dashboard .sipap-summary-ticket {
 		grid-column: 2;
-		grid-row: 2 / span 3;
+		grid-row: 1 / span 3;
 		position: sticky;
 		top: 1.15rem;
 		align-self: start;
@@ -940,6 +929,7 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 		display: flex;
 		flex-direction: column;
 		gap: 0.85rem;
+		padding-bottom: calc(10.75rem + env(safe-area-inset-bottom, 0px));
 	}
 
 	.reservation-manage__dashboard .reservation-manage__deposit,
@@ -948,29 +938,20 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 		display: contents;
 	}
 
-	.reservation-manage__dashboard .sipap-hold-banner {
-		order: 0;
-		align-self: stretch;
-		width: 100%;
-		max-width: none;
-		box-sizing: border-box;
-		margin-bottom: 0;
-	}
-
 	.reservation-manage__dashboard .booking-ticket {
 		order: 1;
 	}
 
-	.reservation-manage__dashboard .sipap-deposit-intro {
+	.reservation-manage__dashboard .sipap-summary-ticket {
 		order: 2;
-		margin: 0.35rem 0 0;
+	}
+
+	.reservation-manage__dashboard .sipap-deposit-intro {
+		order: 3;
+		margin: 0.85rem 0 0;
 	}
 
 	.reservation-manage__dashboard .sipap-main {
-		order: 3;
-	}
-
-	.reservation-manage__dashboard .sipap-summary-ticket {
 		order: 4;
 	}
 }
