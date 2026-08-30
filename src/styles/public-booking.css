@@ -630,14 +630,15 @@ html[data-theme='dark'] .public-booking-profile--card .public-booking-avatar--em
 	flex: 0 0 auto;
 	width: 2.75rem;
 	height: 2.75rem;
-	border-radius: 0.85rem;
+	border-radius: 50%;
 	object-fit: cover;
-	background: #2b2b2f;
+	background: transparent;
 }
 
 .booking-ticket__avatar--empty {
 	display: grid;
 	place-items: center;
+	background: color-mix(in srgb, var(--on-surface-variant) 12%, transparent);
 	color: var(--on-surface-variant);
 }
 

@@ -827,9 +827,13 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 	}
 
 	.reservation-manage__dashboard .sipap-hold-banner {
-		grid-column: 1 / -1;
+		grid-column: 1;
 		grid-row: 1;
-		justify-self: start;
+		justify-self: stretch;
+		align-self: stretch;
+		width: 100%;
+		max-width: none;
+		box-sizing: border-box;
 		margin-bottom: 0;
 	}
 
@@ -873,6 +877,10 @@ const pageTitle = reservation ? 'Gestionar reserva | Hasel' : 'Reserva no encont
 
 	.reservation-manage__dashboard .sipap-hold-banner {
 		order: 0;
+		align-self: stretch;
+		width: 100%;
+		max-width: none;
+		box-sizing: border-box;
 		margin-bottom: 0;
 	}
 

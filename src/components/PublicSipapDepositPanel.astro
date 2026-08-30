@@ -1163,15 +1163,16 @@ const { stepPanel = 7, variant = 'booking', receiptRejected = false } = Astro.pr
 
 	/* Gestión de reserva: dashboard compacto, chip de timer, cards zinc. */
 	.sipap-deposit-panel--manage .sipap-hold-banner {
-		display: inline-flex;
+		display: flex;
 		align-items: center;
-		width: fit-content;
+		width: 100%;
 		max-width: 100%;
 		margin-bottom: 0.85rem;
-		padding: 0.35rem 0.8rem;
+		padding: 0.45rem 0.9rem;
 		border-radius: 999px;
 		border-color: rgb(249 115 22 / 0.28);
 		background: rgb(249 115 22 / 0.12);
+		box-sizing: border-box;
 	}
 
 	.sipap-deposit-panel--manage .sipap-hold-banner__text {
@@ -1192,11 +1193,6 @@ const { stepPanel = 7, variant = 'booking', receiptRejected = false } = Astro.pr
 	.sipap-deposit-panel--manage .sipap-panel {
 		border-color: #27272a;
 		background: #18181b;
-	}
-
-	.sipap-deposit-panel--manage .sipap-summary-ticket {
-		background: #1e1e2e;
-		border-color: #27272a;
 	}
 
 	.sipap-deposit-panel--manage .sipap-panel__kicker {
