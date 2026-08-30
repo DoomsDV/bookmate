@@ -27,7 +27,17 @@ export interface CobroItem {
 	currency: string;
 	payment_status?: string | null;
 	ocr_status?: string | null;
-	ui_status?: 'pending' | 'approved' | 'rejected' | 'other' | 'refund_pending' | 'refund_sent' | 'refund_awaiting_alias' | string;
+	ui_status?:
+		| 'pending'
+		| 'approved'
+		| 'rejected'
+		| 'other'
+		| 'refund_pending'
+		| 'refund_sent'
+		| 'refund_awaiting_alias'
+		| 'refund_dispute'
+		| 'refund_waived'
+		| string;
 	payment_reference?: string | null;
 	receipt_url?: string | null;
 	ocr_reference?: string | null;
@@ -42,6 +52,9 @@ export interface CobroItem {
 	refund_alias?: string | null;
 	refund_claim_open?: number | null;
 	refund_sla_breached?: number | null;
+	refund_dispute_status?: string | null;
+	refund_dispute_due_at?: string | null;
+	refund_dispute_has_proof?: number | null;
 }
 
 export interface CobrosListMeta {
@@ -132,6 +145,9 @@ const normalizeItem = (raw: any): CobroItem | null => {
 		refund_alias: String(raw?.refund_alias || '').trim() || null,
 		refund_claim_open: Number(raw?.refund_claim_open ?? 0) || 0,
 		refund_sla_breached: Number(raw?.refund_sla_breached ?? 0) || 0,
+		refund_dispute_status: String(raw?.refund_dispute_status || '').trim() || null,
+		refund_dispute_due_at: String(raw?.refund_dispute_due_at || '').trim() || null,
+		refund_dispute_has_proof: Number(raw?.refund_dispute_has_proof ?? 0) || 0,
 	};
 };
 
@@ -245,6 +261,48 @@ export const markRefundSentWithOrds = async (token: string, transactionId: numbe
 	return {
 		message: String(payload.message || 'Reembolso marcado como enviado.').trim(),
 		data: payload.data || null,
+	};
+};
+
+export const uploadRefundProofWithOrds = async (
+	token: string,
+	transactionId: number,
+	payload: { file_base64: string; filename: string; mime_type: string },
+	idempotencyKey?: string
+) => {
+	const headers: Record<string, string> = {
+		Accept: 'application/json',
+		Authorization: `Bearer ${token}`,
+		'Content-Type': 'application/json',
+	};
+	if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
+
+	const response = await fetch(`${COBROS_LIST_URL}/${transactionId}/refund-proof`, {
+		method: 'POST',
+		headers,
+		body: JSON.stringify(payload),
+	});
+
+	const result = await parseResponse(response, 'No fue posible subir la prueba de reembolso.');
+	return {
+		message: String(result.message || 'Prueba enviada.').trim(),
+		data: result.data || null,
+	};
+};
+
+export const getStaffRefundProofMetaWithOrds = async (token: string, transactionId: number) => {
+	const response = await fetch(`${COBROS_LIST_URL}/${transactionId}/refund-proof`, {
+		method: 'GET',
+		headers: {
+			Accept: 'application/json',
+			Authorization: `Bearer ${token}`,
+		},
+	});
+
+	const result = await parseResponse(response, 'No fue posible obtener la prueba de reembolso.');
+	return {
+		url: String(result.data?.url || '').trim(),
+		mime_type: String(result.data?.mime_type || 'application/octet-stream').trim(),
 	};
 };
 

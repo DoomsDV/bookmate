@@ -1,5 +1,8 @@
 import type { CobroItem, CobrosDatePreset, CobrosStatusFilter } from '../lib/cobros';
 import { parseApiDateTime } from '../lib/booking-datetime';
+import { createIdempotencyKey } from '../lib/idempotency';
+import { bindReceiptDropzone } from '../lib/receipt-dropzone';
+import { classifyReceiptFile, fileToBase64, receiptFileSignature } from '../lib/receipt-file';
 import {
 	bindFilterPopoverChrome,
 	closeFilterPopoverSheet,
@@ -73,6 +76,33 @@ const isExpiredCobro = (item: CobroItem) => {
 	return pay === 'EXPIRED' || ui === 'EXPIRED';
 };
 
+const isRefundItem = (item: CobroItem) =>
+	item.ui_status === 'refund_pending' ||
+	item.ui_status === 'refund_awaiting_alias' ||
+	item.ui_status === 'refund_sent' ||
+	item.ui_status === 'refund_dispute' ||
+	item.ui_status === 'refund_waived' ||
+	Boolean(String(item.refund_dispute_status || '').trim());
+
+const isDisputeOpen = (item: CobroItem) => item.ui_status === 'refund_dispute';
+
+const displayAmount = (item: CobroItem) =>
+	isRefundItem(item) && item.refund_amount != null ? item.refund_amount : item.amount;
+
+const openActionLabel = (item: CobroItem) => {
+	if (item.ui_status === 'refund_dispute') return 'Responder disputa';
+	if (
+		item.ui_status === 'refund_pending' ||
+		item.ui_status === 'refund_awaiting_alias' ||
+		item.ui_status === 'refund_sent' ||
+		item.ui_status === 'refund_waived'
+	) {
+		return 'Ver reembolso';
+	}
+	if (item.ui_status === 'pending') return 'Validar comprobante';
+	return 'Ver detalle';
+};
+
 const statusLabel = (item: CobroItem) => {
 	if (isExpiredCobro(item)) return 'Vencido';
 	if (item.ui_status === 'approved') return 'Aprobado';
@@ -81,6 +111,7 @@ const statusLabel = (item: CobroItem) => {
 	if (item.ui_status === 'refund_pending') return 'Reembolso pendiente';
 	if (item.ui_status === 'refund_awaiting_alias') return 'Esperando alias';
 	if (item.ui_status === 'refund_sent') return 'Reembolso enviado';
+	if (item.ui_status === 'refund_dispute') return 'En disputa';
 	if (item.ui_status === 'refund_waived') return 'Reembolso renunciado';
 	const raw = String(item.ocr_status || item.payment_status || '').trim().toUpperCase();
 	if (raw === 'EXPIRED') return 'Vencido';
@@ -95,6 +126,7 @@ const statusChipClass = (item: CobroItem) => {
 	if (item.ui_status === 'approved') return 'cobros-chip cobros-chip--approved';
 	if (item.ui_status === 'rejected') return 'cobros-chip cobros-chip--rejected';
 	if (item.ui_status === 'pending') return 'cobros-chip cobros-chip--pending';
+	if (item.ui_status === 'refund_dispute') return 'cobros-chip cobros-chip--dispute';
 	if (item.ui_status === 'refund_pending' || item.ui_status === 'refund_awaiting_alias') {
 		return 'cobros-chip cobros-chip--refund';
 	}
@@ -149,6 +181,35 @@ export const initCobrosPage = () => {
 	const periodSheet = root.querySelector<HTMLDialogElement>('[data-cobros-period-sheet]');
 	const modal = root.querySelector<HTMLDialogElement>('[data-cobros-modal]');
 	const fileViewer = bindFileViewer(root);
+	let disputeProofBusy = false;
+	let disputeIdemKey: string | null = null;
+	let disputeIdemSig: string | null = null;
+	const disputeDropzone = modal
+		? bindReceiptDropzone(modal, {
+				dropzone: '[data-cobros-dispute-dropzone]',
+				input: '[data-cobros-dispute-file]',
+				empty: '[data-cobros-dropzone-empty]',
+				preview: '[data-cobros-dropzone-preview]',
+				previewImage: '[data-cobros-preview-image]',
+				previewPdf: '[data-cobros-preview-pdf]',
+				previewName: '[data-cobros-preview-name]',
+				clear: '[data-cobros-preview-clear]',
+				isLocked: () => disputeProofBusy,
+				onChange: (file) => {
+					if (!file) {
+						disputeIdemKey = null;
+						disputeIdemSig = null;
+						return;
+					}
+					const statusEl = modal.querySelector<HTMLElement>('[data-cobros-modal-status]');
+					if (statusEl && !disputeProofBusy) statusEl.textContent = '';
+				},
+				onInvalid: (message) => {
+					const statusEl = modal.querySelector<HTMLElement>('[data-cobros-modal-status]');
+					if (statusEl) statusEl.textContent = message;
+				},
+			})
+		: null;
 	const featureSection = root.querySelector<HTMLElement>('[data-requires-feature="DEPOSIT_COLLECTION"]');
 	const lockedSection = root.querySelector<HTMLElement>('[data-cobros-feature-locked]');
 	const paginationEl = root.querySelector<HTMLElement>('[data-cobros-pagination]');
@@ -588,6 +649,98 @@ export const initCobrosPage = () => {
 		if (input) input.value = '';
 	};
 
+	const syncDisputeLead = (item: CobroItem) => {
+		const disputeStatus = String(item.refund_dispute_status || '').trim().toUpperCase();
+		const hasProof = Number(item.refund_dispute_has_proof || 0) === 1;
+		const canUpload = isDisputeOpen(item);
+		const showLead =
+			canUpload ||
+			hasProof ||
+			['EVIDENCE_ACCEPTED', 'CUSTOMER_FOLLOW_UP', 'EXPIRED_STRIKE', 'EVIDENCE_PROCESSING'].includes(
+				disputeStatus
+			);
+
+		modal?.querySelector<HTMLElement>('[data-cobros-dispute-lead]')?.classList.toggle('hidden', !showLead);
+		modal
+			?.querySelector<HTMLElement>('[data-cobros-dispute-proof]')
+			?.classList.toggle('hidden', !canUpload);
+		modal
+			?.querySelector<HTMLElement>('[data-cobros-dispute-actions]')
+			?.classList.toggle('hidden', !canUpload);
+
+		const deadline = modal?.querySelector<HTMLElement>('[data-cobros-dispute-deadline]');
+		const dueEl = modal?.querySelector<HTMLElement>('[data-cobros-dispute-due]');
+		const dueRaw = String(item.refund_dispute_due_at || '').trim();
+		if (deadline && dueEl && canUpload && dueRaw) {
+			const dueDate = new Date(dueRaw);
+			const overdue = !Number.isNaN(dueDate.getTime()) && dueDate.getTime() < Date.now();
+			dueEl.textContent = overdue
+				? `Venció el ${formatDateTime(dueRaw)}`
+				: `Vence el ${formatDateTime(dueRaw)}`;
+			deadline.classList.toggle('is-overdue', overdue);
+			deadline.classList.remove('hidden');
+		} else {
+			deadline?.classList.add('hidden');
+			deadline?.classList.remove('is-overdue');
+			if (dueEl) dueEl.textContent = '—';
+		}
+
+		const claimNote = modal?.querySelector<HTMLElement>('[data-cobros-claim-note]');
+		if (claimNote) {
+			if (canUpload) {
+				claimNote.textContent =
+					'El cliente abrió una disputa. Adjuntá la prueba de transferencia antes del vencimiento. Subir una prueba no cuenta como strike.';
+				claimNote.classList.remove('hidden');
+			} else if (disputeStatus === 'EVIDENCE_ACCEPTED') {
+				claimNote.textContent = 'La prueba fue aceptada y el cliente ya puede verla.';
+				claimNote.classList.remove('hidden');
+			} else if (disputeStatus === 'CUSTOMER_FOLLOW_UP') {
+				claimNote.textContent =
+					'El cliente indica que el dinero sigue sin aparecer. Hasel no puede verificar la transferencia y no aplica un strike adicional.';
+				claimNote.classList.remove('hidden');
+			} else if (disputeStatus === 'EXPIRED_STRIKE') {
+				claimNote.textContent = 'La disputa venció sin prueba aceptable y se registró un strike.';
+				claimNote.classList.remove('hidden');
+			} else if (disputeStatus === 'EVIDENCE_PROCESSING') {
+				claimNote.textContent = 'Estamos leyendo la prueba de reembolso.';
+				claimNote.classList.remove('hidden');
+			} else {
+				claimNote.textContent = '';
+				claimNote.classList.add('hidden');
+			}
+		}
+
+		const proofRow = modal?.querySelector<HTMLElement>('[data-cobros-refund-proof-row]');
+		const proofEmpty = modal?.querySelector<HTMLElement>('[data-cobros-refund-proof-empty]');
+		const proofOpenBtn = modal?.querySelector<HTMLButtonElement>('[data-cobros-refund-proof-open]');
+		const proofNameEl = modal?.querySelector<HTMLElement>('[data-cobros-refund-proof-name]');
+		if (hasProof) {
+			proofRow?.classList.remove('hidden');
+			proofEmpty?.classList.add('hidden');
+			if (proofNameEl) {
+				proofNameEl.textContent = receiptFileName(
+					`reembolso-${item.id_transaction}`,
+					item.customer_name,
+					'image'
+				);
+			}
+			if (proofOpenBtn) {
+				proofOpenBtn.onclick = () =>
+					openViewer(
+						`/api/cobros/${item.id_transaction}/refund-proof`,
+						false,
+						'Prueba de reembolso'
+					);
+			}
+		} else {
+			proofRow?.classList.add('hidden');
+			proofEmpty?.classList.toggle('hidden', canUpload || !showLead);
+			if (proofOpenBtn) proofOpenBtn.onclick = null;
+		}
+
+		if (!canUpload) disputeDropzone?.reset();
+	};
+
 	const openModal = (item: CobroItem) => {
 		selected = item;
 		if (!modal) return;
@@ -597,14 +750,11 @@ export const initCobrosPage = () => {
 			if (el) el.textContent = value;
 		};
 
-		const isRefund =
-			item.ui_status === 'refund_pending' ||
-			item.ui_status === 'refund_awaiting_alias' ||
-			item.ui_status === 'refund_sent' ||
-			item.ui_status === 'refund_waived';
-
+		const isRefund = isRefundItem(item);
+		const disputeOpen = isDisputeOpen(item);
 		const panel = modal.querySelector<HTMLElement>('[data-cobros-modal-panel]');
 		panel?.classList.toggle('is-refund-mode', isRefund);
+		panel?.classList.toggle('is-dispute-mode', disputeOpen);
 
 		setText(
 			'[data-cobros-amount-label]',
@@ -616,9 +766,12 @@ export const initCobrosPage = () => {
 			refundPanel.classList.remove(
 				'is-status-sent',
 				'is-status-pending',
-				'is-status-waived'
+				'is-status-waived',
+				'is-status-dispute'
 			);
-			if (item.ui_status === 'refund_sent') {
+			if (disputeOpen) {
+				refundPanel.classList.add('is-status-dispute');
+			} else if (item.ui_status === 'refund_sent') {
 				refundPanel.classList.add('is-status-sent');
 			} else if (
 				item.ui_status === 'refund_pending' ||
@@ -632,7 +785,7 @@ export const initCobrosPage = () => {
 
 		setText(
 			'[data-cobros-modal-title]',
-			isRefund ? 'Detalle de reembolso' : 'Validar comprobante'
+			disputeOpen ? 'Disputa de reembolso' : isRefund ? 'Detalle de reembolso' : 'Validar comprobante'
 		);
 		setText('[data-cobros-modal-subtitle]', formatDateTime(item.start_time || item.created_at));
 		setText('[data-cobros-modal-customer]', item.customer_name || '—');
@@ -641,10 +794,7 @@ export const initCobrosPage = () => {
 		setText('[data-cobros-modal-location]', item.location_name || '—');
 		setText(
 			'[data-cobros-modal-amount]',
-			formatMoney(
-				item.refund_amount != null && isRefund ? item.refund_amount : item.amount,
-				item.currency
-			)
+			formatMoney(displayAmount(item), item.currency)
 		);
 		setText('[data-cobros-modal-reference]', item.payment_reference || '—');
 		setText('[data-cobros-modal-refund-alias]', item.refund_alias || '—');
@@ -673,7 +823,8 @@ export const initCobrosPage = () => {
 			}
 			if (receiptNameEl) receiptNameEl.textContent = receiptName;
 			if (receiptOpenBtn) {
-				receiptOpenBtn.onclick = () => openViewer(receiptUrl, isPdf, receiptName);
+				receiptOpenBtn.onclick = () =>
+					openViewer(receiptUrl, isPdf, 'Comprobante de seña');
 			}
 		} else {
 			noImg?.classList.remove('hidden');
@@ -694,26 +845,17 @@ export const initCobrosPage = () => {
 			?.classList.toggle('hidden', !canMarkSent);
 		modal.querySelector<HTMLButtonElement>('[data-cobros-waive]')?.classList.toggle('hidden', !canWaive);
 		resetWaiveUi();
-
-		const claimNote = modal.querySelector<HTMLElement>('[data-cobros-claim-note]');
-		if (claimNote) {
-			if (item.refund_claim_open) {
-				claimNote.textContent = 'Hay un reclamo OPEN por SLA / cliente (cuenta como strike).';
-				claimNote.classList.remove('hidden');
-			} else if (item.refund_sla_breached) {
-				claimNote.textContent = 'SLA de 48h hábiles vencido — el cliente puede reclamar.';
-				claimNote.classList.remove('hidden');
-			} else {
-				claimNote.textContent = '';
-				claimNote.classList.add('hidden');
-			}
-		}
+		syncDisputeLead(item);
+		disputeDropzone?.reset();
+		disputeIdemKey = null;
+		disputeIdemSig = null;
 		const reasonInput = modal.querySelector<HTMLInputElement>('[data-cobros-reject-reason]');
 		if (reasonInput) reasonInput.value = item.reject_reason || '';
 		setText('[data-cobros-modal-status]', '');
 		setRejectMode(false);
 		setApproveBusy(false);
 		setRefundSentBusy(false);
+		setDisputeUploadBusy(false);
 
 		modal.classList.remove('is-closing');
 		if (!modal.open) openPanelModal(modal);
@@ -723,6 +865,9 @@ export const initCobrosPage = () => {
 
 	const closeModal = () => {
 		fileViewer?.close();
+		disputeDropzone?.reset();
+		disputeIdemKey = null;
+		disputeIdemSig = null;
 		if (!modal?.open) {
 			selected = null;
 			return;
@@ -796,14 +941,14 @@ export const initCobrosPage = () => {
 				<td class="px-4 py-3 whitespace-nowrap">${formatDateTime(item.start_time || item.created_at)}</td>
 				<td class="px-4 py-3 font-semibold">${escapeHtml(item.customer_name || '—')}</td>
 				<td class="px-4 py-3">${escapeHtml(item.service_name || '—')}</td>
-				<td class="px-4 py-3 font-bold">${formatMoney(item.amount, item.currency)}</td>
+				<td class="px-4 py-3 font-bold">${formatMoney(displayAmount(item), item.currency)}</td>
 				<td class="px-4 py-3"><span class="${statusChipClass(item)}">${statusLabel(item)}</span></td>
 				<td class="px-4 py-3 text-right">
 					<button
 						type="button"
 						class="cobros-view-btn cursor-pointer"
-						title="Ver comprobante"
-						aria-label="Ver comprobante"
+						title="${openActionLabel(item)}"
+						aria-label="${openActionLabel(item)}"
 						data-cobros-open="${item.id_transaction}"
 					>
 						<span class="material-symbols-rounded" aria-hidden="true">visibility</span>
@@ -814,14 +959,7 @@ export const initCobrosPage = () => {
 
 			const card = document.createElement('article');
 			card.className = 'cobros-card';
-			const ctaLabel =
-				item.ui_status === 'refund_pending' ||
-				item.ui_status === 'refund_awaiting_alias' ||
-				item.ui_status === 'refund_sent'
-					? 'Ver reembolso'
-					: item.ui_status === 'pending'
-						? 'Validar comprobante'
-						: 'Ver detalle';
+			const ctaLabel = openActionLabel(item);
 			card.innerHTML = `
 				<div class="cobros-card__inner">
 					<header class="cobros-card__head">
@@ -831,7 +969,7 @@ export const initCobrosPage = () => {
 						</div>
 						<span class="${statusChipClass(item)}">${statusLabel(item)}</span>
 					</header>
-					<p class="cobros-card__amount">${formatMoney(item.amount, item.currency)}</p>
+					<p class="cobros-card__amount">${formatMoney(displayAmount(item), item.currency)}</p>
 					<p class="cobros-card__when">${formatDateTime(item.start_time || item.created_at)}</p>
 					<button type="button" class="cobros-card__cta" data-cobros-open="${item.id_transaction}">
 						<span class="cobros-card__cta-label">${ctaLabel}</span>
@@ -962,6 +1100,26 @@ export const initCobrosPage = () => {
 		if (closeBtn) closeBtn.disabled = on;
 	};
 
+	const setDisputeUploadBusy = (on: boolean) => {
+		disputeProofBusy = on;
+		const btn = modal?.querySelector<HTMLButtonElement>('[data-cobros-dispute-upload]');
+		const icon = btn?.querySelector<HTMLElement>('[data-cobros-dispute-upload-icon]');
+		const label = btn?.querySelector<HTMLElement>('[data-cobros-dispute-upload-label]');
+		const closeBtn = modal?.querySelector<HTMLButtonElement>('[data-cobros-modal-close]');
+		btn?.classList.toggle('is-busy', on);
+		if (btn) {
+			btn.disabled = on;
+			btn.setAttribute('aria-busy', on ? 'true' : 'false');
+		}
+		if (icon) {
+			icon.textContent = on ? 'progress_activity' : 'upload';
+			icon.classList.toggle('animate-spin', on);
+		}
+		if (label) label.textContent = on ? 'Leyendo comprobante…' : 'Enviar prueba';
+		if (closeBtn) closeBtn.disabled = on;
+		disputeDropzone?.setLocked(on);
+	};
+
 	const setRefundSentBusy = (on: boolean) => {
 		const btn = modal?.querySelector<HTMLButtonElement>('[data-cobros-mark-refund-sent]');
 		const icon = btn?.querySelector<HTMLElement>('[data-cobros-refund-sent-icon]');
@@ -1043,6 +1201,111 @@ export const initCobrosPage = () => {
 			}
 		} finally {
 			busy = false;
+		}
+	};
+
+	const classifyOcrOutcome = (payload: Record<string, unknown>) => {
+		const data =
+			payload.data && typeof payload.data === 'object'
+				? (payload.data as Record<string, unknown>)
+				: {};
+		const ocr = String(data.ocr_status || '').trim().toUpperCase();
+		const dispute = String(data.dispute_status || '').trim().toUpperCase();
+		if (ocr === 'ACCEPTED' || dispute === 'EVIDENCE_ACCEPTED') return 'accepted' as const;
+		if (ocr === 'MANUAL_REVIEW') return 'manual_review' as const;
+		return 'retryable_error' as const;
+	};
+
+	const uploadDisputeProof = async () => {
+		if (!selected || busy) return;
+		const file = disputeDropzone?.getFile();
+		const statusEl = modal?.querySelector<HTMLElement>('[data-cobros-modal-status]');
+		if (!file) {
+			if (statusEl) statusEl.textContent = 'Elegí una foto o PDF del comprobante de reembolso.';
+			return;
+		}
+		const kind = classifyReceiptFile(file);
+		if (!kind) {
+			if (statusEl) statusEl.textContent = 'Formato no válido. Subí una imagen (JPG/PNG) o un PDF.';
+			return;
+		}
+		busy = true;
+		setDisputeUploadBusy(true);
+		if (statusEl) statusEl.textContent = 'Subiendo y leyendo el comprobante…';
+		try {
+			const signature = receiptFileSignature(file);
+			if (!disputeIdemKey || disputeIdemSig !== signature) {
+				disputeIdemKey = createIdempotencyKey();
+				disputeIdemSig = signature;
+			}
+			let uploadFile = file;
+			if (kind === 'pdf') {
+				const { prepareReceiptUploadFile } = await import('../lib/pdf-receipt-to-image');
+				uploadFile = await prepareReceiptUploadFile(file);
+			}
+			const uploadIsPdf =
+				uploadFile.type === 'application/pdf' ||
+				String(uploadFile.name || '').toLowerCase().endsWith('.pdf');
+			const fileBase64 = await fileToBase64(uploadFile);
+			const response = await fetch(`/api/cobros/${selected.id_transaction}/refund-proof`, {
+				method: 'POST',
+				headers: {
+					Accept: 'application/json',
+					'Content-Type': 'application/json',
+					'Idempotency-Key': disputeIdemKey,
+				},
+				body: JSON.stringify({
+					file_base64: fileBase64,
+					filename: uploadFile.name || (uploadIsPdf ? 'reembolso.pdf' : 'reembolso.jpg'),
+					mime_type: uploadFile.type || (uploadIsPdf ? 'application/pdf' : 'image/jpeg'),
+				}),
+			});
+			const payload = await response.json().catch(() => ({}));
+			if (!response.ok || payload.status !== 'success') {
+				disputeIdemKey = null;
+				disputeIdemSig = null;
+				throw new Error(String(payload.message || 'No fue posible subir la prueba.'));
+			}
+			const outcome = classifyOcrOutcome(payload);
+			const message =
+				String(payload.message || '').trim() ||
+				(outcome === 'accepted'
+					? 'Prueba aceptada.'
+					: outcome === 'manual_review'
+						? 'Comprobante recibido. Quedó en revisión.'
+						: 'No se pudo validar el comprobante.');
+			if (outcome === 'accepted') {
+				closeModal();
+				showFlashMessage({ type: 'success', message, autoHideMs: 4000 });
+				await load();
+				document.dispatchEvent(new CustomEvent('hasel:cobros-changed'));
+				return;
+			}
+			selected = {
+				...selected,
+				refund_dispute_has_proof: 1,
+				refund_dispute_status:
+					outcome === 'manual_review' ? 'OPEN' : selected.refund_dispute_status,
+			};
+			syncDisputeLead(selected);
+			disputeDropzone?.reset();
+			disputeIdemKey = null;
+			disputeIdemSig = null;
+			if (statusEl) statusEl.textContent = message;
+			showFlashMessage({
+				type: outcome === 'manual_review' ? 'warning' : 'error',
+				message,
+				autoHideMs: 5000,
+			});
+			document.dispatchEvent(new CustomEvent('hasel:cobros-changed'));
+		} catch (error) {
+			if (statusEl) {
+				statusEl.textContent =
+					error instanceof Error ? error.message : 'No fue posible subir la prueba.';
+			}
+		} finally {
+			busy = false;
+			setDisputeUploadBusy(false);
 		}
 	};
 
@@ -1323,6 +1586,9 @@ export const initCobrosPage = () => {
 	modal
 		?.querySelector('[data-cobros-mark-refund-sent]')
 		?.addEventListener('click', () => void markRefundSent());
+	modal
+		?.querySelector('[data-cobros-dispute-upload]')
+		?.addEventListener('click', () => void uploadDisputeProof());
 	modal?.querySelector('[data-cobros-waive]')?.addEventListener('click', () => {
 		if (!waiveConfirmReady) {
 			waiveConfirmReady = true;

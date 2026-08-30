@@ -42,7 +42,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 													<span class="font-semibold text-(--on-surface-variant)" data-cobros-summary>(0)</span>
 												</h1>
 												<p class="m-0 hidden text-[0.88rem] leading-snug text-(--on-surface-variant) sm:block">
-													Revisá señas SIPAP y validá comprobantes pendientes.
+													Revisá señas SIPAP, validá comprobantes y respondé disputas.
 												</p>
 											</div>
 											<button
@@ -502,6 +502,91 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 						</div>
 					</header>
 					<div class="cobros-detail-scroll grid min-h-0 flex-1 content-start gap-4 overflow-y-auto overscroll-contain px-5 pb-5 pt-4">
+						<section class="cobros-dispute-lead hidden" data-cobros-dispute-lead>
+							<div class="cobros-dispute-deadline hidden" data-cobros-dispute-deadline>
+								<span class="material-symbols-rounded cobros-dispute-deadline__icon" aria-hidden="true">schedule</span>
+								<div class="min-w-0">
+									<p class="cobros-dispute-deadline__kicker">Plazo de la disputa</p>
+									<strong class="cobros-dispute-deadline__due" data-cobros-dispute-due>—</strong>
+								</div>
+							</div>
+							<p class="cobros-refund-claim hidden" data-cobros-claim-note role="status"></p>
+
+							<div class="cobros-detail-receipt hidden" data-cobros-refund-proof-row>
+								<div class="cobros-detail-receipt__inner">
+									<div class="cobros-detail-receipt__icon" aria-hidden="true">
+										<span class="material-symbols-rounded" data-cobros-refund-proof-icon>receipt_long</span>
+									</div>
+									<div class="cobros-detail-receipt__copy min-w-0 flex-1">
+										<p class="cobros-detail-receipt__name" data-cobros-refund-proof-name>prueba-reembolso</p>
+										<p class="cobros-detail-receipt__meta">Prueba de reembolso (comercio)</p>
+									</div>
+									<button
+										type="button"
+										class="cobros-detail-receipt__cta group"
+										title="Ver prueba de reembolso"
+										aria-label="Ver prueba de reembolso"
+										data-cobros-refund-proof-open
+									>
+										<span class="cobros-detail-receipt__cta-label">Ver</span>
+										<span class="cobros-detail-receipt__cta-icon" aria-hidden="true">
+											<span class="material-symbols-rounded">visibility</span>
+										</span>
+									</button>
+								</div>
+							</div>
+							<p class="cobros-detail-empty hidden" data-cobros-refund-proof-empty>
+								Todavía no hay prueba de reembolso.
+							</p>
+
+							<div class="cobros-dispute-upload hidden" data-cobros-dispute-proof>
+								<p class="cobros-dispute-upload__title" id="cobros-dispute-upload-title">
+									Prueba de transferencia
+								</p>
+								<p class="cobros-dispute-upload__hint" id="cobros-dispute-upload-hint">
+									JPG, PNG o PDF (máx. 8 MB). Preferí una foto nítida del comprobante de la devolución.
+								</p>
+								<div class="cobros-dropzone-wrap">
+									<label
+										class="cobros-dropzone"
+										data-cobros-dispute-dropzone
+										aria-labelledby="cobros-dispute-upload-title"
+										aria-describedby="cobros-dispute-upload-hint"
+									>
+										<input
+											type="file"
+											accept="image/jpeg,image/png,.jpg,.jpeg,.png,application/pdf,.pdf"
+											class="sr-only"
+											data-cobros-dispute-file
+										/>
+										<div class="cobros-dropzone__empty" data-cobros-dropzone-empty>
+											<span class="material-symbols-rounded cobros-dropzone__icon" aria-hidden="true">cloud_upload</span>
+											<span class="cobros-dropzone__title">Subí el comprobante o arrastralo acá</span>
+										</div>
+										<div class="cobros-dropzone__preview hidden" data-cobros-dropzone-preview>
+											<img
+												alt="Vista previa de la prueba de reembolso"
+												class="cobros-dropzone__thumb hidden"
+												data-cobros-preview-image
+											/>
+											<div class="cobros-dropzone__pdf hidden" data-cobros-preview-pdf>
+												<span class="material-symbols-rounded" aria-hidden="true">description</span>
+												<span class="cobros-dropzone__filename" data-cobros-preview-name></span>
+											</div>
+										</div>
+									</label>
+									<button
+										type="button"
+										class="cobros-dropzone__clear hidden"
+										data-cobros-preview-clear
+										aria-label="Quitar archivo"
+									>
+										<span class="material-symbols-rounded" aria-hidden="true">delete</span>
+									</button>
+								</div>
+							</div>
+						</section>
+
 						<div class="cobros-detail-receipt hidden" data-cobros-receipt-row>
 							<div class="cobros-detail-receipt__inner">
 								<div class="cobros-detail-receipt__icon" aria-hidden="true">
@@ -509,13 +594,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 								</div>
 								<div class="cobros-detail-receipt__copy min-w-0 flex-1">
 									<p class="cobros-detail-receipt__name" data-cobros-receipt-name>comprobante</p>
-									<p class="cobros-detail-receipt__meta">Comprobante adjunto</p>
+									<p class="cobros-detail-receipt__meta" data-cobros-receipt-meta>Comprobante de seña (cliente)</p>
 								</div>
 								<button
 									type="button"
 									class="cobros-detail-receipt__cta group"
-									title="Ver comprobante"
-									aria-label="Ver comprobante"
+									title="Ver comprobante de seña"
+									aria-label="Ver comprobante de seña"
 									data-cobros-receipt-open
 								>
 									<span class="cobros-detail-receipt__cta-label">Ver</span>
@@ -526,7 +611,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 							</div>
 						</div>
 						<p class="cobros-detail-empty hidden" data-cobros-modal-no-image>
-							Sin comprobante adjunto.
+							Sin comprobante de seña.
 						</p>
 
 						<section class="cobros-detail-sheet" data-cobros-ticket>
@@ -569,7 +654,6 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 									<strong class="cobros-refund-alias" data-cobros-modal-refund-alias>—</strong>
 								</div>
 							</div>
-							<p class="cobros-refund-claim hidden" data-cobros-claim-note></p>
 						</section>
 					</div>
 
@@ -658,12 +742,26 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 								</button>
 							</div>
 						</div>
-						<p class="text-sm text-(--on-surface-variant)" data-cobros-modal-status></p>
+						<div class="hidden grid gap-3" data-cobros-dispute-actions>
+							<div class="cobros-modal-actions cobros-modal-actions--refund">
+								<button
+									type="button"
+									class="cobros-modal-btn cobros-modal-btn--primary cobros-modal-btn--island group"
+									data-cobros-dispute-upload
+								>
+									<span class="cobros-modal-btn__label" data-cobros-dispute-upload-label>Enviar prueba</span>
+									<span class="cobros-modal-btn__icon-ring" aria-hidden="true">
+										<span class="material-symbols-rounded" data-cobros-dispute-upload-icon>upload</span>
+									</span>
+								</button>
+							</div>
+						</div>
+						<p class="text-sm text-(--on-surface-variant)" data-cobros-modal-status role="status" aria-live="polite"></p>
 					</footer>
 				</div>
 			</dialog>
 
-			<FileViewer label="Comprobante" />
+			<FileViewer label="Archivo" />
 		</div>
 	</cobros-manager>
 </Layout>
@@ -764,7 +862,13 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	.cobros-refund-panel.hidden,
 	[data-cobros-waive-wrap].hidden,
 	[data-cobros-mark-refund-sent].hidden,
-	[data-cobros-waive].hidden {
+	[data-cobros-waive].hidden,
+	[data-cobros-dispute-lead].hidden,
+	[data-cobros-dispute-proof].hidden,
+	[data-cobros-dispute-actions].hidden,
+	[data-cobros-dispute-deadline].hidden,
+	[data-cobros-refund-proof-row].hidden,
+	[data-cobros-refund-proof-empty].hidden {
 		display: none !important;
 	}
 
@@ -1313,6 +1417,11 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		color: #93c5fd;
 	}
 
+	:global(html[data-theme='dark'] .cobros-chip--dispute) {
+		background: color-mix(in srgb, #fb923c 16%, transparent);
+		color: #fdba74;
+	}
+
 	:global(html[data-theme='dark'] .cobros-chip--sent),
 	:global(html[data-theme='dark'] .cobros-chip--other) {
 		background: rgba(255, 255, 255, 0.08);
@@ -1354,6 +1463,10 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	:global(.cobros-chip--refund) {
 		background: #dbeafe;
 		color: #1e40af;
+	}
+	:global(.cobros-chip--dispute) {
+		background: #ffedd5;
+		color: #9a3412;
 	}
 	:global(.cobros-chip--sent) {
 		background: #e5e7eb;
@@ -1485,7 +1598,8 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 	}
 
 	.cobros-modal-btn.is-busy [data-cobros-approve-icon],
-	.cobros-modal-btn.is-busy [data-cobros-refund-sent-icon] {
+	.cobros-modal-btn.is-busy [data-cobros-refund-sent-icon],
+	.cobros-modal-btn.is-busy [data-cobros-dispute-upload-icon] {
 		animation: cobros-btn-spin 650ms linear infinite;
 	}
 
@@ -1867,6 +1981,15 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		color: #16a34a;
 	}
 
+	.cobros-refund-panel.is-status-dispute .cobros-refund-status {
+		background: color-mix(in srgb, #f97316 16%, transparent);
+		color: #c2410c;
+	}
+
+	html[data-theme='dark'] .cobros-refund-panel.is-status-dispute .cobros-refund-status {
+		color: #fdba74;
+	}
+
 	html[data-theme='dark'] .cobros-refund-panel.is-status-sent .cobros-refund-status {
 		color: #86efac;
 	}
@@ -1957,10 +2080,235 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		text-transform: uppercase;
 	}
 
+	.cobros-modal__panel.is-dispute-mode .panel-modal-header__title::before {
+		content: 'Disputa';
+		background: color-mix(in srgb, #f97316 16%, transparent);
+		color: #c2410c;
+	}
+
+	html[data-theme='dark'] .cobros-modal__panel.is-dispute-mode .panel-modal-header__title::before {
+		color: #fdba74;
+	}
+
+	.sr-only {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		padding: 0;
+		margin: -1px;
+		overflow: hidden;
+		clip: rect(0, 0, 0, 0);
+		white-space: nowrap;
+		border: 0;
+	}
+
+	.cobros-dispute-lead:not(.hidden) {
+		display: grid;
+		gap: 0.75rem;
+	}
+
+	.cobros-dispute-deadline {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.7rem;
+		padding: 0.8rem 0.95rem;
+		border-radius: 1rem;
+		border: 1px solid color-mix(in srgb, #f97316 32%, transparent);
+		background: color-mix(in srgb, #f97316 10%, var(--control-surface));
+	}
+
+	.cobros-dispute-deadline.is-overdue {
+		border-color: color-mix(in srgb, #ef4444 36%, transparent);
+		background: color-mix(in srgb, #ef4444 10%, var(--control-surface));
+	}
+
+	.cobros-dispute-deadline__icon {
+		flex-shrink: 0;
+		font-size: 1.25rem;
+		line-height: 1.2;
+		color: #c2410c;
+	}
+
+	.cobros-dispute-deadline.is-overdue .cobros-dispute-deadline__icon {
+		color: #b91c1c;
+	}
+
+	.cobros-dispute-deadline__kicker {
+		margin: 0 0 0.15rem;
+		font-size: 0.68rem;
+		font-weight: 700;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--on-surface-variant);
+	}
+
+	.cobros-dispute-deadline__due {
+		display: block;
+		font-size: 0.92rem;
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		color: #9a3412;
+	}
+
+	.cobros-dispute-deadline.is-overdue .cobros-dispute-deadline__due {
+		color: #b91c1c;
+	}
+
+	html[data-theme='dark'] .cobros-dispute-deadline__icon,
+	html[data-theme='dark'] .cobros-dispute-deadline__due {
+		color: #fdba74;
+	}
+
+	html[data-theme='dark'] .cobros-dispute-deadline.is-overdue .cobros-dispute-deadline__icon,
+	html[data-theme='dark'] .cobros-dispute-deadline.is-overdue .cobros-dispute-deadline__due {
+		color: #fca5a5;
+	}
+
+	.cobros-dispute-upload:not(.hidden) {
+		display: grid;
+		gap: 0.55rem;
+	}
+
+	.cobros-dispute-upload__title {
+		margin: 0;
+		font-size: 0.86rem;
+		font-weight: 800;
+		color: var(--on-surface);
+	}
+
+	.cobros-dispute-upload__hint {
+		margin: 0;
+		font-size: 0.78rem;
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--on-surface-variant);
+	}
+
+	.cobros-dropzone-wrap {
+		position: relative;
+	}
+
+	.cobros-dropzone {
+		display: grid;
+		min-height: 7.5rem;
+		place-items: center;
+		padding: 1rem;
+		border-radius: 1.15rem;
+		border: 1.5px dashed color-mix(in srgb, var(--on-surface) 18%, transparent);
+		background: color-mix(in srgb, var(--on-surface) 3%, var(--surface-container));
+		cursor: pointer;
+		transition: border-color 160ms ease, background 160ms ease;
+	}
+
+	.cobros-dropzone:hover,
+	.cobros-dropzone.is-dragging {
+		border-color: color-mix(in srgb, var(--primary) 55%, transparent);
+		background: color-mix(in srgb, var(--primary) 8%, var(--surface-container));
+	}
+
+	.cobros-dropzone:focus-within {
+		outline: 2px solid var(--primary);
+		outline-offset: 3px;
+	}
+
+	.cobros-dropzone.is-locked,
+	.cobros-dropzone.is-locked:hover {
+		cursor: not-allowed;
+		opacity: 0.72;
+	}
+
+	.cobros-dropzone.has-preview {
+		min-height: 8.5rem;
+		padding: 0.55rem;
+		border-style: solid;
+	}
+
+	.cobros-dropzone__empty {
+		display: grid;
+		justify-items: center;
+		gap: 0.4rem;
+		text-align: center;
+	}
+
+	.cobros-dropzone__empty.hidden,
+	.cobros-dropzone__preview.hidden,
+	.cobros-dropzone__thumb.hidden,
+	.cobros-dropzone__pdf.hidden,
+	.cobros-dropzone__clear.hidden {
+		display: none;
+	}
+
+	.cobros-dropzone__icon {
+		font-size: 1.6rem;
+		color: var(--on-surface-variant);
+	}
+
+	.cobros-dropzone__title {
+		font-size: 0.86rem;
+		font-weight: 750;
+		color: var(--on-surface);
+	}
+
+	.cobros-dropzone__preview {
+		display: grid;
+		width: 100%;
+		place-items: center;
+	}
+
+	.cobros-dropzone__thumb {
+		max-height: 9rem;
+		width: 100%;
+		object-fit: contain;
+		border-radius: 0.85rem;
+	}
+
+	.cobros-dropzone__pdf {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.85rem 1rem;
+		color: var(--on-surface);
+		font-size: 0.86rem;
+		font-weight: 700;
+	}
+
+	.cobros-dropzone__filename {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		max-width: 14rem;
+	}
+
+	.cobros-dropzone__clear {
+		position: absolute;
+		top: 0.45rem;
+		right: 0.45rem;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border: 0;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--surface-bright) 92%, transparent);
+		color: var(--on-surface);
+		cursor: pointer;
+		box-shadow: 0 4px 16px rgb(0 0 0 / 0.12);
+	}
+
+	.cobros-dropzone__clear:hover {
+		background: var(--surface-bright);
+	}
+
+	.cobros-dropzone__clear .material-symbols-rounded {
+		font-size: 1.05rem;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.cobros-detail-receipt,
 		.cobros-detail-sheet,
-		.cobros-refund-panel {
+		.cobros-refund-panel,
+		.cobros-dispute-lead {
 			animation: none;
 			opacity: 1;
 			transform: none;
@@ -1977,8 +2325,7 @@ const initialLoadError = token ? '' : 'No hay sesion valida para consultar cobro
 		display: none;
 	}
 
-	.cobros-modal-footer [data-cobros-modal-actions]:not(.hidden) + [data-cobros-modal-status]:not(:empty),
-	.cobros-modal-footer [data-cobros-refund-actions]:not(.hidden) + [data-cobros-modal-status]:not(:empty) {
+	.cobros-modal-footer [data-cobros-modal-status]:not(:empty) {
 		margin-top: 0.75rem;
 	}
 

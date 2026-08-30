@@ -1,9 +1,16 @@
 import { showFlashMessage } from '../lib/flash';
 import { createIdempotencyKey } from '../lib/idempotency';
 import {
+	RECEIPT_MAX_BYTES,
+	classifyReceiptFile,
+	fileToBase64,
+} from '../lib/receipt-file';
+import {
 	reconcileReceiptUpload,
 	type ReceiptUploadPayload,
 } from '../lib/public-receipt-reconcile';
+
+export { classifyReceiptFile };
 
 export type RefundPolicyCode = 'FLEXIBLE' | 'MODERATE' | 'STRICT';
 
@@ -65,9 +72,6 @@ const SUBMIT_IDLE_LABEL = 'Confirmar y enviar comprobante';
 const SUBMIT_CONFIRMED_LABEL = 'Confirmado';
 const SUBMIT_SENT_LABEL = 'Comprobante enviado';
 const SUBMIT_LOADING_LABEL = 'Enviando…';
-const MAX_RECEIPT_BYTES = 8 * 1024 * 1024;
-const RECEIPT_IMAGE_MIMES = new Set(['image/jpeg', 'image/png']);
-const RECEIPT_PDF_MIMES = new Set(['application/pdf']);
 
 export const normalizePolicyCode = (value: unknown): RefundPolicyCode | null => {
 	const code = String(value || '')
@@ -115,30 +119,6 @@ export const formatSipapTransferClipboard = (root: ParentNode) => {
 	if (alias) parts.push(`Alias: ${alias}`);
 	if (reference) parts.push(`Concepto: ${reference}`);
 	return parts.join(' - ');
-};
-
-export const classifyReceiptFile = (file: File): 'image' | 'pdf' | null => {
-	const name = String(file.name || '').toLowerCase();
-	const type = String(file.type || '').toLowerCase();
-	if (
-		type === 'image/svg+xml' ||
-		type === 'text/html' ||
-		name.endsWith('.svg') ||
-		name.endsWith('.html') ||
-		name.endsWith('.htm')
-	) {
-		return null;
-	}
-	if (RECEIPT_PDF_MIMES.has(type) || name.endsWith('.pdf')) return 'pdf';
-	if (
-		RECEIPT_IMAGE_MIMES.has(type) ||
-		name.endsWith('.jpg') ||
-		name.endsWith('.jpeg') ||
-		name.endsWith('.png')
-	) {
-		return 'image';
-	}
-	return null;
 };
 
 const isAbortError = (error: unknown) =>
@@ -579,18 +559,6 @@ export const setSipapReceiptStatus = (
 	if (fileInput) fileInput.disabled = true;
 };
 
-const fileToBase64 = (file: File) =>
-	new Promise<string>((resolve, reject) => {
-		const reader = new FileReader();
-		reader.onload = () => {
-			const result = String(reader.result || '');
-			const comma = result.indexOf(',');
-			resolve(comma >= 0 ? result.slice(comma + 1) : result);
-		};
-		reader.onerror = () => reject(new Error('No se pudo leer el archivo.'));
-		reader.readAsDataURL(file);
-	});
-
 const assignReceiptFile = (root: ParentNode, fileInput: HTMLInputElement, file: File) => {
 	const kind = classifyReceiptFile(file);
 	if (!kind) {
@@ -601,7 +569,7 @@ const assignReceiptFile = (root: ParentNode, fileInput: HTMLInputElement, file: 
 		);
 		return false;
 	}
-	if (file.size > MAX_RECEIPT_BYTES) {
+	if (file.size > RECEIPT_MAX_BYTES) {
 		setSipapReceiptStatus(root, { message: 'El archivo supera 8 MB.' }, 'error');
 		return false;
 	}
@@ -693,7 +661,7 @@ export const bindSipapReceiptUpload = (
 				options?.onError?.('Formato no válido. Subí una imagen (JPG/PNG) o un PDF.');
 				return;
 			}
-			if (file.size > MAX_RECEIPT_BYTES) {
+			if (file.size > RECEIPT_MAX_BYTES) {
 				setSipapReceiptStatus(root, { message: 'El archivo supera 8 MB.' }, 'error');
 				options?.onError?.('El archivo supera 8 MB.');
 				return;

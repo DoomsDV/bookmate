@@ -45,11 +45,25 @@ export function bindFileViewer(root: ParentNode, signal?: AbortSignal): FileView
 		if (nameEl) nameEl.textContent = name;
 		if (img) {
 			img.alt = name;
+			img.onerror = null;
 			img.classList.toggle('hidden', isPdf);
-			if (isPdf) img.removeAttribute('src');
-			else img.src = url;
+			if (isPdf) {
+				img.removeAttribute('src');
+			} else {
+				img.onerror = () => {
+					img.classList.add('hidden');
+					img.removeAttribute('src');
+					if (frame) {
+						frame.title = name;
+						frame.classList.remove('hidden');
+						frame.src = url;
+					}
+				};
+				img.src = url;
+			}
 		}
 		if (frame) {
+			frame.title = name;
 			frame.classList.toggle('hidden', !isPdf);
 			frame.src = isPdf ? url : 'about:blank';
 		}
