@@ -1,8 +1,13 @@
 const PANEL_MODAL_OPEN_CLASS = 'panel-modal-open';
 const PANEL_MOBILE_MQ = '(max-width: 1023.98px)';
 
+type PanelScrollSnapshot = {
+	roots: Map<HTMLElement, number>;
+	windowY: number | null;
+};
+
 let lockCount = 0;
-let savedScrollTops: Map<HTMLElement, number> | null = null;
+let savedScrollSnapshot: PanelScrollSnapshot | null = null;
 let viewportRestoreCleanup: (() => void) | null = null;
 const dialogUnlockers = new WeakMap<HTMLDialogElement, () => void>();
 
@@ -21,11 +26,17 @@ export function getPanelScrollRoots(): HTMLElement[] {
 	].filter((node): node is HTMLElement => Boolean(node));
 }
 
-export function restorePanelScrollLayout(saved = savedScrollTops) {
-	if (!saved) return;
-	window.scrollTo(0, 0);
-	for (const [root, scrollTop] of saved) {
-		root.scrollTop = scrollTop;
+export function restorePanelScrollLayout(snapshot = savedScrollSnapshot) {
+	if (!snapshot) return;
+	if (snapshot.roots.size > 0) {
+		window.scrollTo(0, 0);
+		for (const [root, scrollTop] of snapshot.roots) {
+			root.scrollTop = scrollTop;
+		}
+		return;
+	}
+	if (snapshot.windowY != null) {
+		window.scrollTo(0, snapshot.windowY);
 	}
 }
 
@@ -34,12 +45,12 @@ function cancelViewportRestore() {
 	viewportRestoreCleanup = null;
 }
 
-function schedulePanelScrollRestore(saved: Map<HTMLElement, number> | null) {
-	if (!saved) return;
+function schedulePanelScrollRestore(snapshot: PanelScrollSnapshot | null) {
+	if (!snapshot) return;
 
 	cancelViewportRestore();
 
-	const restore = () => restorePanelScrollLayout(saved);
+	const restore = () => restorePanelScrollLayout(snapshot);
 
 	restore();
 	requestAnimationFrame(restore);
@@ -77,7 +88,11 @@ export function lockPanelScroll(): () => void {
 
 	if (lockCount === 0) {
 		const roots = getPanelScrollRoots();
-		savedScrollTops = new Map(roots.map((root) => [root, root.scrollTop]));
+		const rootsMap = new Map(roots.map((root) => [root, root.scrollTop]));
+		savedScrollSnapshot = {
+			roots: rootsMap,
+			windowY: rootsMap.size === 0 ? window.scrollY : null,
+		};
 		document.documentElement.classList.add(PANEL_MODAL_OPEN_CLASS);
 	}
 	lockCount += 1;
@@ -90,10 +105,10 @@ export function lockPanelScroll(): () => void {
 		lockCount -= 1;
 		if (lockCount > 0) return;
 
-		const saved = savedScrollTops;
+		const saved = savedScrollSnapshot;
 		document.documentElement.classList.remove(PANEL_MODAL_OPEN_CLASS);
 		schedulePanelScrollRestore(saved);
-		savedScrollTops = null;
+		savedScrollSnapshot = null;
 	};
 }
 
