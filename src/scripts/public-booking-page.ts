@@ -2899,6 +2899,8 @@ export const initializePublicBookingPage = () => {
 			fillSipapDepositPanel(root, hold, profile.deposit_settings, {
 				serviceName: selectedService?.name,
 				professionalName: profile.full_name,
+				professionalImageUrl: profile.image_url,
+				specialty: profile.specialty,
 				depositAmount: calculateDepositAmount(selectedService),
 			});
 			populateSuccessTicket();
@@ -3134,6 +3136,8 @@ export const initializePublicBookingPage = () => {
 		fillSipapDepositPanel(root, hold, profile.deposit_settings, {
 			serviceName: stored.context.serviceName ?? service.name,
 			professionalName: stored.context.professionalName ?? profile.full_name,
+			professionalImageUrl: profile.image_url,
+			specialty: profile.specialty,
 			depositAmount: stored.context.depositAmount ?? calculateDepositAmount(service),
 		});
 		fillPublicBookingSuccessTicket(root, {

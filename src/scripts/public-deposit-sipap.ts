@@ -5,6 +5,7 @@ import {
 	classifyReceiptFile,
 	fileToBase64,
 } from '../lib/receipt-file';
+import { getPublicProfileSpecialtyLabel } from '../lib/public-profile-labels';
 import {
 	isAmbiguousReceiptFailure,
 	isDepositConfirmed,
@@ -339,6 +340,8 @@ export const fillSipapDepositPanel = (
 	context?: {
 		serviceName?: string | null;
 		professionalName?: string | null;
+		professionalImageUrl?: string | null;
+		specialty?: string | null;
 		depositAmount?: number | null;
 	}
 ) => {
@@ -395,6 +398,34 @@ export const fillSipapDepositPanel = (
 			: `Seña por: ${serviceName}`
 		: 'Seña por: —';
 	setText('[data-sipap-for]', forLabel);
+
+	const proBlock = root.querySelector<HTMLElement>('[data-sipap-pro]');
+	const proNameEl = root.querySelector<HTMLElement>('[data-sipap-pro-name]');
+	const proRoleEl = root.querySelector<HTMLElement>('[data-sipap-pro-specialty]');
+	const proImage = root.querySelector<HTMLImageElement>('[data-sipap-pro-image]');
+	const proFallback = root.querySelector<HTMLElement>('[data-sipap-pro-fallback]');
+	const specialtyLabel = getPublicProfileSpecialtyLabel(context?.specialty);
+	if (proNameEl) proNameEl.textContent = professionalName || '—';
+	if (proRoleEl) {
+		proRoleEl.textContent = specialtyLabel || '';
+		proRoleEl.classList.toggle('hidden', !specialtyLabel);
+		proRoleEl.toggleAttribute('hidden', !specialtyLabel);
+	}
+	const imageUrl = String(context?.professionalImageUrl || '').trim();
+	if (proImage) {
+		if (imageUrl) {
+			proImage.src = imageUrl;
+			proImage.alt = professionalName ? `Foto de ${professionalName}` : '';
+			proImage.classList.remove('hidden');
+		} else {
+			proImage.removeAttribute('src');
+			proImage.alt = '';
+			proImage.classList.add('hidden');
+		}
+	}
+	proFallback?.classList.toggle('hidden', Boolean(imageUrl));
+	proBlock?.classList.toggle('hidden', !professionalName);
+	proBlock?.toggleAttribute('hidden', !professionalName);
 
 	const refInput = root.querySelector<HTMLInputElement>('[data-sipap-reference-value]');
 	if (refInput) refInput.value = reference;

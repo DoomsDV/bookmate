@@ -880,7 +880,8 @@ html:has(.sipap-deposit-panel:not(.hidden)) body,
 	overflow: visible;
 }
 
-.public-booking-sheet:has([data-step-panel='7']:not(.hidden)) .public-booking-stepper {
+.public-booking-sheet:has([data-step-panel='7']:not(.hidden)) .public-booking-stepper,
+.public-booking-sheet:has([data-step-panel='7']:not(.hidden)) [data-booking-profile-header] {
 	display: none;
 }
 

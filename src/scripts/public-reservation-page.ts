@@ -64,6 +64,7 @@ type PublicReservationDetail = {
 	ser_id_service: number;
 	service_name?: string;
 	professional_name?: string;
+	professional_image_url?: string;
 	start_time: string;
 	end_time?: string;
 	status?: string;
@@ -1490,6 +1491,7 @@ export const initializePublicReservationPage = () => {
 			{
 				serviceName: reservation.service_name,
 				professionalName: reservation.professional_name,
+				professionalImageUrl: reservation.professional_image_url,
 				depositAmount: reservation.deposit_amount ?? undefined,
 			}
 		);

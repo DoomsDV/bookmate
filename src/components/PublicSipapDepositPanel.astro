@@ -211,6 +211,16 @@ const copyRows = [
 		<aside class="sipap-panel sipap-summary-ticket" aria-label="Resumen de la seña">
 			<div class="sipap-panel__core sipap-summary-ticket__core">
 				<p class="sipap-panel__kicker">Resumen</p>
+				<div class="sipap-pro hidden" data-sipap-pro hidden>
+					<img class="sipap-pro__avatar hidden" alt="" data-sipap-pro-image />
+					<span class="sipap-pro__avatar sipap-pro__avatar--empty" data-sipap-pro-fallback aria-hidden="true">
+						<span class="material-symbols-rounded">account_circle</span>
+					</span>
+					<div class="sipap-pro__text">
+						<p class="sipap-pro__name" data-sipap-pro-name>—</p>
+						<p class="sipap-pro__role hidden" data-sipap-pro-specialty hidden></p>
+					</div>
+				</div>
 				<p class="sipap-summary-ticket__amount" data-sipap-amount>—</p>
 				<p class="sipap-summary-ticket__for" data-sipap-for>Seña por: —</p>
 				<details class="sipap-policy-details">
@@ -276,27 +286,27 @@ const copyRows = [
 	}
 
 	.sipap-deposit-panel {
-		--sipap-accent: #e4531a;
-		--sipap-accent-soft: #fff1e8;
-		--sipap-paper: #f7f4ef;
-		--sipap-card: #fffdf8;
-		--sipap-ink: #1c1917;
-		--sipap-muted: #57534e;
-		--sipap-line: #e4ddd3;
+		--sipap-accent: #a8c7fa;
+		--sipap-on-accent: #062e6f;
+		--sipap-accent-soft: color-mix(in srgb, #a8c7fa 16%, #18181b);
+		--sipap-paper: transparent;
+		--sipap-card: #18181b;
+		--sipap-ink: #f4f4f5;
+		--sipap-muted: #a1a1aa;
+		--sipap-line: #27272a;
 		--sipap-dock-space: 7.5rem;
 		container-type: inline-size;
 		text-align: left;
-	}
-
-	.sipap-deposit-panel:not(.sipap-deposit-panel--manage) {
-		padding: 0.85rem 0.85rem 1rem;
-		border-radius: 1.25rem;
-		background: var(--sipap-paper);
 		color: var(--sipap-ink);
 		--on-surface: var(--sipap-ink);
 		--on-surface-variant: var(--sipap-muted);
 		--outline-variant: var(--sipap-line);
 		--primary: var(--sipap-accent);
+	}
+
+	.sipap-deposit-panel:not(.sipap-deposit-panel--manage) {
+		padding: 0.15rem 0 0.35rem;
+		background: transparent;
 	}
 
 	.sipap-hold-banner {
@@ -307,13 +317,13 @@ const copyRows = [
 		padding: 0.7rem 0.9rem;
 		border-radius: 0.9rem;
 		border: 1px solid color-mix(in srgb, var(--sipap-accent) 28%, transparent);
-		background: color-mix(in srgb, var(--sipap-accent) 10%, var(--sipap-paper));
+		background: color-mix(in srgb, var(--sipap-accent) 12%, #18181b);
 		color: var(--sipap-ink);
 	}
 
 	.sipap-hold-banner.is-expired {
 		border-color: color-mix(in srgb, var(--sipap-accent) 42%, transparent);
-		background: color-mix(in srgb, var(--sipap-accent) 16%, var(--sipap-paper));
+		background: color-mix(in srgb, var(--sipap-accent) 18%, #18181b);
 	}
 
 	.sipap-hold-banner.hidden {
@@ -326,12 +336,12 @@ const copyRows = [
 	}
 
 	.sipap-hold-banner.is-submitted {
-		border-color: color-mix(in srgb, #d97706 35%, transparent);
-		background: color-mix(in srgb, #fbbf24 16%, var(--sipap-paper));
+		border-color: color-mix(in srgb, var(--sipap-accent) 32%, transparent);
+		background: color-mix(in srgb, var(--sipap-accent) 12%, #18181b);
 	}
 
 	.sipap-hold-banner.is-submitted .sipap-hold-banner__icon {
-		color: #b45309;
+		color: var(--sipap-accent);
 	}
 
 	.sipap-hold-banner__icon {
@@ -363,13 +373,76 @@ const copyRows = [
 	.sipap-deposit-title {
 		margin: 0;
 		max-width: none;
-		font-size: 1.45rem;
-		font-weight: 650;
-		letter-spacing: -0.035em;
+		font-size: 1.65rem;
+		font-weight: 700;
+		letter-spacing: -0.04em;
 		line-height: 1.15;
 		text-align: left;
 		text-wrap: balance;
 		color: var(--sipap-ink);
+	}
+
+	.sipap-pro {
+		display: flex;
+		align-items: center;
+		gap: 0.7rem;
+		margin: 0.75rem 0 0;
+		padding-bottom: 0.85rem;
+		border-bottom: 1px solid var(--sipap-line);
+	}
+
+	.sipap-pro.hidden {
+		display: none;
+	}
+
+	.sipap-pro__avatar {
+		width: 2.75rem;
+		height: 2.75rem;
+		flex-shrink: 0;
+		border-radius: 999px;
+		object-fit: cover;
+		background: #27272a;
+	}
+
+	.sipap-pro__avatar--empty {
+		display: grid;
+		place-items: center;
+		color: var(--sipap-muted);
+	}
+
+	.sipap-pro__avatar--empty.hidden,
+	.sipap-pro__avatar.hidden {
+		display: none;
+	}
+
+	.sipap-pro__avatar--empty .material-symbols-rounded {
+		font-size: 1.65rem;
+		line-height: 1;
+	}
+
+	.sipap-pro__text {
+		min-width: 0;
+	}
+
+	.sipap-pro__name {
+		margin: 0;
+		font-size: 0.92rem;
+		font-weight: 550;
+		letter-spacing: -0.015em;
+		line-height: 1.25;
+		color: var(--sipap-ink);
+	}
+
+	.sipap-pro__role {
+		margin: 0.15rem 0 0;
+		font-size: 0.78rem;
+		font-weight: 500;
+		line-height: 1.3;
+		color: var(--sipap-muted);
+	}
+
+	.sipap-pro__role.hidden {
+		display: none;
 	}
 
 	.sipap-layout {
@@ -399,7 +472,7 @@ const copyRows = [
 		border: 1px solid var(--sipap-line);
 		background: var(--sipap-card);
 		color: var(--sipap-ink);
-		box-shadow: 0 10px 28px color-mix(in srgb, #1c1917 6%, transparent);
+		box-shadow: none;
 		--on-surface: var(--sipap-ink);
 		--on-surface-variant: var(--sipap-muted);
 	}
@@ -458,7 +531,7 @@ const copyRows = [
 		height: 1.55rem;
 		border-radius: 999px;
 		background: var(--sipap-accent);
-		color: #fff;
+		color: var(--sipap-on-accent);
 		font-size: 0.78rem;
 		font-weight: 750;
 		line-height: 1;
@@ -490,8 +563,8 @@ const copyRows = [
 		margin-top: 0.7rem;
 		padding: 0.75rem 0.85rem;
 		border-radius: 0.85rem;
-		border: 1px solid color-mix(in srgb, #dc2626 32%, transparent);
-		background: color-mix(in srgb, #dc2626 8%, var(--sipap-card));
+		border: 1px solid color-mix(in srgb, #ef4444 38%, transparent);
+		background: color-mix(in srgb, #ef4444 12%, #18181b);
 	}
 
 	.sipap-reject-alert.hidden {
@@ -503,7 +576,7 @@ const copyRows = [
 		margin-top: 0.05rem;
 		font-size: 1.15rem;
 		line-height: 1;
-		color: #dc2626;
+		color: #f87171;
 	}
 
 	.sipap-reject-alert__title {
@@ -511,7 +584,7 @@ const copyRows = [
 		font-size: 0.86rem;
 		font-weight: 750;
 		line-height: 1.3;
-		color: #991b1b;
+		color: #fecaca;
 	}
 
 	.sipap-reject-alert__text {
@@ -519,7 +592,7 @@ const copyRows = [
 		font-size: 0.8rem;
 		font-weight: 500;
 		line-height: 1.4;
-		color: #b91c1c;
+		color: #fca5a5;
 	}
 
 	.sipap-dropzone-wrap {
@@ -680,7 +753,7 @@ const copyRows = [
 		flex-shrink: 0;
 		font-size: 0.72rem;
 		font-weight: 700;
-		color: #15803d;
+		color: #4ade80;
 	}
 
 	.sipap-bank-row.is-copied .sipap-copy-feedback,
@@ -697,7 +770,7 @@ const copyRows = [
 
 	.sipap-bank-row.is-copied .sipap-copy-glyph,
 	.sipap-ref-block__code.is-copied .sipap-copy-glyph {
-		color: #15803d;
+		color: #4ade80;
 	}
 
 	.sipap-dropzone {
@@ -710,9 +783,9 @@ const copyRows = [
 		align-items: center;
 		justify-content: center;
 		padding: 1.15rem 1rem;
-		border: 1.5px dashed color-mix(in srgb, var(--sipap-line) 20%, #a8a29e);
+		border: 1.5px dashed color-mix(in srgb, var(--sipap-line) 30%, #71717a);
 		border-radius: 0.95rem;
-		background: color-mix(in srgb, var(--sipap-paper) 70%, #fff);
+		background: #141414;
 		box-shadow: none;
 		cursor: pointer;
 		transition:
@@ -782,7 +855,7 @@ const copyRows = [
 		justify-content: center;
 		overflow: hidden;
 		border-radius: inherit;
-		background: #fff;
+		background: #111113;
 	}
 
 	.sipap-dropzone__thumb {
@@ -790,7 +863,7 @@ const copyRows = [
 		width: 100%;
 		height: 10rem;
 		object-fit: contain;
-		background: #fff;
+		background: #111113;
 	}
 
 	.sipap-dropzone__pdf {
@@ -883,7 +956,7 @@ const copyRows = [
 		min-height: 3rem;
 		border: 0;
 		background: var(--sipap-accent);
-		color: #fff;
+		color: var(--sipap-on-accent);
 		text-align: center;
 		box-shadow: none;
 		transition:
@@ -924,13 +997,13 @@ const copyRows = [
 	}
 
 	.sipap-submit-cta:focus-visible {
-		outline: 2px solid #fb923c;
+		outline: 2px solid var(--sipap-accent);
 		outline-offset: 3px;
 	}
 
 	.sipap-submit-cta:disabled:not(.is-loading) {
-		background: #d6d3d1 !important;
-		color: #57534e !important;
+		background: #3f3f46 !important;
+		color: #a1a1aa !important;
 		cursor: not-allowed;
 		opacity: 1;
 		filter: none;
@@ -943,7 +1016,7 @@ const copyRows = [
 
 	.sipap-submit-cta.is-loading:disabled {
 		background: var(--sipap-accent) !important;
-		color: #fff !important;
+		color: var(--sipap-on-accent) !important;
 		cursor: wait;
 		opacity: 0.92;
 		filter: none;
@@ -973,11 +1046,11 @@ const copyRows = [
 	}
 
 	.sipap-upload-status[data-state='error'] {
-		color: #b91c1c;
+		color: #f87171;
 	}
 
 	.sipap-upload-status[data-state='success'] {
-		color: #15803d;
+		color: #4ade80;
 	}
 
 	.sipap-upload-status[data-state='loading'] {
@@ -985,7 +1058,7 @@ const copyRows = [
 	}
 
 	.sipap-upload-status[data-state='review'] {
-		color: #b45309;
+		color: var(--sipap-accent);
 	}
 
 	.sipap-summary-ticket__amount {
@@ -1048,7 +1121,7 @@ const copyRows = [
 	}
 
 	.sipap-policy-details[open] .sipap-policy-summary__action {
-		color: color-mix(in srgb, var(--sipap-accent) 80%, #1c1917);
+		color: color-mix(in srgb, var(--sipap-accent) 80%, #fff);
 	}
 
 	.sipap-policy-details__copy {
@@ -1065,7 +1138,7 @@ const copyRows = [
 		}
 
 		.sipap-deposit-title {
-			font-size: 1.3rem;
+			font-size: 1.5rem;
 		}
 
 		.sipap-summary-ticket {
@@ -1088,8 +1161,8 @@ const copyRows = [
 			z-index: 24;
 			margin-top: 0;
 			padding: 0.65rem 1rem calc(0.65rem + env(safe-area-inset-bottom, 0px));
-			border-top: 1px solid rgb(28 25 23 / 0.08);
-			background: color-mix(in srgb, var(--sipap-card) 92%, transparent);
+			border-top: 1px solid rgb(255 255 255 / 0.08);
+			background: color-mix(in srgb, #121212 82%, transparent);
 			backdrop-filter: blur(14px);
 			-webkit-backdrop-filter: blur(14px);
 		}
@@ -1139,7 +1212,7 @@ const copyRows = [
 		}
 
 		.sipap-deposit-title {
-			font-size: 1.7rem;
+			font-size: 1.95rem;
 		}
 
 		.sipap-main,
@@ -1168,21 +1241,15 @@ const copyRows = [
 		}
 	}
 
-	.sipap-deposit-panel--manage {
-		--on-surface: inherit;
-		--on-surface-variant: inherit;
-		color: inherit;
-	}
-
 	.sipap-deposit-panel--manage .sipap-hold-banner {
 		width: 100%;
 		max-width: 100%;
 		margin-bottom: 0.85rem;
 		padding: 0.5rem 0.95rem;
 		border-radius: 999px;
-		border-color: rgb(249 115 22 / 0.28);
-		background: rgb(249 115 22 / 0.12);
-		color: var(--on-surface);
+		border-color: color-mix(in srgb, var(--sipap-accent) 28%, transparent);
+		background: color-mix(in srgb, var(--sipap-accent) 12%, #18181b);
+		color: var(--sipap-ink);
 		box-sizing: border-box;
 	}
 
@@ -1196,11 +1263,15 @@ const copyRows = [
 		margin-top: 0.35rem;
 	}
 
+	.sipap-deposit-panel--manage .sipap-pro {
+		display: none;
+	}
+
 	.sipap-deposit-panel--manage .sipap-deposit-title {
-		font-size: clamp(1.2rem, 2.4vw, 1.55rem);
-		font-weight: 600;
+		font-size: clamp(1.35rem, 2.6vw, 1.75rem);
+		font-weight: 700;
 		letter-spacing: -0.04em;
-		color: var(--on-surface);
+		color: var(--sipap-ink);
 	}
 
 	@media (min-width: 640px) {
